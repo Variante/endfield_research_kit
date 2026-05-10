@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>&#32456;&#26411;&#22320;&#23545;&#35805;&#27983;&#35272;&#22120; / Endfield Story Browser</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-active-view="story">
+<div id="shell">
+  <header id="topbar">
+    <div class="topbar-copy">
+      <div id="shell-title" class="topbar-title">&#32456;&#26411;&#22320;&#27983;&#35272;&#22120;&#22871;&#20214;</div>
+      <div id="shell-subtitle" class="topbar-subtitle">&#23545;&#35805;&#27983;&#35272;&#22120; + &#23548;&#20986;&#36164;&#28304;&#27983;&#35272;&#22120;</div>
+    </div>
+    <div class="topbar-actions">
+      <label class="topbar-control" for="ui-language">
+        <span id="ui-language-label">&#30028;&#38754;</span>
+        <select id="ui-language">
+          <option value="zh">&#20013;&#25991;</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+      <nav id="view-tabs" aria-label="Primary views">
+        <button id="story-tab" class="view-tab is-active" type="button" data-view="story">&#21095;&#24773;</button>
+        <button id="reference-tab" class="view-tab" type="button" data-view="reference">&#21442;&#32771;</button>
+        <button id="updates-tab" class="view-tab" type="button" data-view="updates">&#26356;&#26032;</button>
+        <button id="assets-tab" class="view-tab" type="button" data-view="assets">&#36164;&#28304;</button>
+      </nav>
+    </div>
+  </header>
+
+  <div id="views">
+    <section id="story-view" class="page-view is-active" data-view="story">
+      <div id="app">
+        <aside id="left">
+          <header>
+            <h1 id="app-title">&#32456;&#26411;&#22320;&#23545;&#35805;&#27983;&#35272;&#22120;</h1>
+            <div id="stats"><span id="count">?</span> <span id="count-label">&#26465;&#20250;&#35805;</span></div>
+            <div class="sidebar-header-actions">
+              <button id="filter-toggle" class="panel-toggle" type="button" aria-controls="filter-panel" aria-expanded="true">&#38544;&#34255;&#31579;&#36873;</button>
+              <button id="reset" type="button">&#37325;&#32622;&#31579;&#36873;</button>
+            </div>
+          </header>
+
+          <div id="filter-panel" class="filters">
+            <div class="filter-row">
+              <label id="language-label" for="language">&#35821;&#35328;</label>
+              <select id="language"></select>
+            </div>
+
+            <input id="q" type="search" placeholder="&#25628;&#32034; ID / &#20219;&#21153; / &#35282;&#33394; / &#25991;&#26412;" autofocus>
+
+            <div class="filter-row">
+              <label id="kind-label" for="kind-filter">&#31867;&#22411;</label>
+              <div id="kind-filter" class="chips" data-multi="1"></div>
+            </div>
+            <div class="filter-divider" aria-hidden="true"></div>
+            <div class="filter-row">
+              <label id="type-label" for="type-filter">&#21095;&#24773;&#32447;</label>
+              <div id="type-filter" class="chips" data-multi="1"></div>
+            </div>
+            <div class="filter-row">
+              <label id="story-issue-label" for="story-issue-filter">&#24674;&#22797;&#38382;&#39064;</label>
+              <div id="story-issue-filter" class="chips" data-multi="1"></div>
+            </div>
+            <div class="filter-row">
+              <label id="sort-label" for="sort">&#25490;&#24207;</label>
+              <select id="sort">
+                <option id="sort-natural" value="natural">&#25353;&#21095;&#24773;&#32447;&#21644;&#20219;&#21153;&#39034;&#24207;</option>
+                <option id="sort-lines-desc" value="lines-desc">&#25353;&#34892;&#25968;&#20174;&#22810;&#21040;&#23569;</option>
+                <option id="sort-lines-asc" value="lines-asc">&#25353;&#34892;&#25968;&#20174;&#23569;&#21040;&#22810;</option>
+                <option id="sort-key" value="key">&#25353;&#38190;&#20540; (A-Z)</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="list-meta"><span id="shown">0</span> / <span id="total">0</span> <span id="list-meta-label">&#26465;</span></div>
+          <div id="list-wrap">
+            <div id="list-spacer"></div>
+            <div id="list"></div>
+          </div>
+        </aside>
+        <div id="story-splitter" class="pane-splitter" role="separator" aria-label="Resize sidebar" aria-orientation="vertical" tabindex="0"></div>
+
+        <main id="right">
+          <div id="conv-empty">&#20174;&#24038;&#20391;&#36873;&#25321;&#19968;&#27573;&#23545;&#35805;</div>
+          <div id="conv" hidden>
+            <header id="conv-header">
+              <div id="conv-header-main">
+                <div id="conv-title"></div>
+                <div id="conv-line-order" hidden></div>
+                <div id="conv-meta"></div>
+              </div>
+              <button id="reveal-current" type="button">&#23450;&#20301;&#24403;&#21069;&#25991;&#20214;</button>
+            </header>
+            <div id="conv-warnings" hidden></div>
+            <div id="conv-related" hidden></div>
+            <div class="conv-controls">
+              <label><input type="checkbox" id="show-empty"> <span id="show-empty-label">&#26174;&#31034;&#31354;&#30333;&#23545;&#35805;&#34892;</span></label>
+              <label><input type="checkbox" id="show-raw"> <span id="show-raw-label">&#26174;&#31034;&#21407;&#22987; JSON / &#25991;&#26412;&#26469;&#28304;</span></label>
+              <label><input type="checkbox" id="inline-tag-mode"> <span id="inline-tag-mode-label">&#26174;&#31034;&#26631;&#31614;&#21407;&#25991;</span></label>
+              <label><input type="checkbox" id="gender-variant"> <span id="gender-variant-label">Gender: M</span></label>
+            </div>
+            <div id="conv-lines"></div>
+          </div>
+        </main>
+      </div>
+    </section>
+
+    <section id="reference-view" class="page-view" data-view="reference" hidden>
+      <div id="reference-app">
+        <aside id="reference-left">
+          <header>
+            <h1 id="reference-title">&#25991;&#26412;&#21442;&#32771;</h1>
+            <div id="reference-stats"><span id="reference-count">?</span> <span id="reference-count-label">&#24352;&#34920;</span></div>
+          </header>
+
+          <div class="filters">
+            <input id="reference-q" type="search" placeholder="&#25628;&#32034;&#34920; / ID / &#25991;&#26412;">
+            <div class="filter-row">
+              <label id="reference-source-label" for="reference-source">&#26469;&#28304;</label>
+              <select id="reference-source">
+                <option id="reference-source-all" value="">&#20840;&#37096;</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="reference-list-meta"><span id="reference-shown">0</span> / <span id="reference-total">0</span> <span id="reference-list-unit">&#24352;&#34920;</span></div>
+          <div id="reference-list"></div>
+        </aside>
+
+        <main id="reference-right">
+          <div id="reference-empty">&#20174;&#24038;&#20391;&#36873;&#25321;&#19968;&#24352;&#34920;</div>
+          <div id="reference-detail" hidden>
+            <header id="reference-detail-header">
+              <div id="reference-detail-title"></div>
+              <div id="reference-detail-meta"></div>
+            </header>
+            <div id="reference-rows"></div>
+          </div>
+        </main>
+      </div>
+    </section>
+
+    <section id="updates-view" class="page-view" data-view="updates" hidden>
+      <div id="updates-app">
+        <aside id="updates-left">
+          <header>
+            <h1 id="updates-title">&#28216;&#25103;&#25968;&#25454;&#26356;&#26032;</h1>
+            <div id="updates-stats"><span id="updates-count">?</span> <span id="updates-count-label">&#39033;&#21464;&#21270;</span></div>
+          </header>
+
+          <div class="filters">
+            <input id="updates-q" type="search" placeholder="&#25628;&#32034;&#36335;&#24452; / &#25193;&#23637;&#21517;">
+            <div class="filter-row">
+              <label id="updates-status-label" for="updates-status">&#29366;&#24577;</label>
+              <select id="updates-status">
+                <option id="updates-status-all" value="">&#20840;&#37096;</option>
+                <option id="updates-status-added" value="added">Added</option>
+                <option id="updates-status-modified" value="modified">Modified</option>
+                <option id="updates-status-deleted" value="deleted">Deleted</option>
+              </select>
+            </div>
+            <div class="filter-row">
+              <label id="updates-category-label" for="updates-category">&#20998;&#31867;</label>
+              <select id="updates-category">
+                <option id="updates-category-all" value="">&#20840;&#37096;</option>
+              </select>
+            </div>
+            <div class="filter-row">
+              <label id="updates-extension-label" for="updates-extension">&#25193;&#23637;&#21517;</label>
+              <select id="updates-extension">
+                <option id="updates-extension-all" value="">&#20840;&#37096;</option>
+              </select>
+            </div>
+            <div class="filter-row">
+              <label id="updates-sort-label" for="updates-sort">&#25490;&#24207;</label>
+              <select id="updates-sort">
+                <option id="updates-sort-path" value="path">&#36335;&#24452; (A-Z)</option>
+                <option id="updates-sort-status" value="status">&#29366;&#24577;</option>
+                <option id="updates-sort-size-delta" value="size-delta">&#22823;&#23567;&#21464;&#21270;</option>
+                <option id="updates-sort-line-delta" value="line-delta">&#34892;&#25968;&#21464;&#21270;</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="updates-list-meta"><span id="updates-shown">0</span> / <span id="updates-total">0</span> <span id="updates-list-meta-label">&#26465;</span></div>
+          <div id="updates-list"></div>
+        </aside>
+
+        <main id="updates-right">
+          <section id="updates-summary">
+            <div class="updates-summary-stat">
+              <span id="updates-summary-total" class="updates-summary-value">0</span>
+              <span id="updates-summary-total-label" class="updates-summary-label">&#24635;&#35745;</span>
+            </div>
+            <div class="updates-summary-stat">
+              <span id="updates-summary-added" class="updates-summary-value">0</span>
+              <span id="updates-summary-added-label" class="updates-summary-label">&#26032;&#22686;</span>
+            </div>
+            <div class="updates-summary-stat">
+              <span id="updates-summary-modified" class="updates-summary-value">0</span>
+              <span id="updates-summary-modified-label" class="updates-summary-label">&#20462;&#25913;</span>
+            </div>
+            <div class="updates-summary-stat">
+              <span id="updates-summary-deleted" class="updates-summary-value">0</span>
+              <span id="updates-summary-deleted-label" class="updates-summary-label">&#21024;&#38500;</span>
+            </div>
+          </section>
+          <div id="updates-run-meta"></div>
+          <div id="updates-truncated-note" hidden></div>
+
+          <div id="updates-empty">&#20174;&#24038;&#20391;&#36873;&#25321;&#19968;&#39033;&#21464;&#21270;</div>
+          <div id="updates-detail" hidden>
+            <header id="updates-detail-header">
+              <div id="updates-detail-title"></div>
+              <div id="updates-detail-meta"></div>
+            </header>
+            <div id="updates-detail-facts"></div>
+          </div>
+        </main>
+      </div>
+    </section>
+
+    <section id="assets-view" class="page-view" data-view="assets" hidden>
+      <div id="asset-app">
+        <aside id="asset-left">
+          <header>
+            <h1 id="asset-app-title">&#23548;&#20986;&#36164;&#28304;&#27983;&#35272;&#22120;</h1>
+            <div id="asset-stats"><span id="asset-count">?</span> <span id="asset-count-label">&#39033;&#36164;&#28304;</span></div>
+            <div class="sidebar-header-actions">
+              <button id="asset-filter-toggle" class="panel-toggle" type="button" aria-controls="asset-filter-panel" aria-expanded="true">&#38544;&#34255;&#31579;&#36873;</button>
+              <button id="asset-reset" type="button">&#37325;&#32622;&#31579;&#36873;</button>
+            </div>
+          </header>
+
+          <div id="asset-filter-panel" class="filters">
+            <input id="asset-q" type="search" placeholder="&#25628;&#32034;&#36335;&#24452; / &#21517;&#31216; / &#25991;&#20214;&#22841; / &#20998;&#31867;">
+
+            <div class="filter-row">
+              <label id="asset-type-label" for="asset-type-filter">&#31867;&#22411;</label>
+              <div id="asset-type-filter" class="chips" data-multi="1"></div>
+            </div>
+
+            <div class="filter-row">
+              <label id="asset-source-label" for="asset-source">&#26469;&#28304;</label>
+              <select id="asset-source">
+                <option id="asset-source-all-option" value="">&#20840;&#37096;&#26469;&#28304;</option>
+              </select>
+            </div>
+
+            <div class="filter-row">
+              <label id="asset-sort-label" for="asset-sort">&#25490;&#24207;</label>
+              <select id="asset-sort">
+                <option id="asset-sort-path" value="path">&#36335;&#24452; (A-Z)</option>
+                <option id="asset-sort-size-desc" value="size-desc">&#25991;&#20214;&#22823;&#23567;&#20174;&#22823;&#21040;&#23567;</option>
+                <option id="asset-sort-size-asc" value="size-asc">&#25991;&#20214;&#22823;&#23567;&#20174;&#23567;&#21040;&#22823;</option>
+                <option id="asset-sort-name" value="name">&#25991;&#20214;&#21517; (A-Z)</option>
+              </select>
+            </div>
+
+          </div>
+
+          <div id="asset-list-meta"><span id="asset-shown">0</span> / <span id="asset-total">0</span> <span id="asset-list-meta-label">&#26465;&#30446;</span></div>
+          <div id="asset-list-wrap">
+            <div id="asset-list-spacer"></div>
+            <div id="asset-list"></div>
+          </div>
+        </aside>
+        <div id="asset-splitter" class="pane-splitter" role="separator" aria-label="Resize sidebar" aria-orientation="vertical" tabindex="0"></div>
+
+        <main id="asset-right">
+          <div id="asset-empty">&#20174;&#24038;&#20391;&#36873;&#25321;&#19968;&#24352;&#22270;&#29255;&#25110;&#27169;&#22411;&#25991;&#20214;&#12290;</div>
+          <div id="asset-detail" hidden>
+            <header id="asset-detail-header">
+              <div id="asset-detail-title"></div>
+              <div id="asset-detail-meta"></div>
+            </header>
+
+            <div class="asset-detail-toolbar">
+              <a id="asset-open-raw" class="asset-link-button" href="#" target="_blank" rel="noopener">&#25171;&#24320;&#21407;&#22987;&#25991;&#20214;</a>
+              <a id="asset-download-current" class="asset-link-button" href="#" download>Download current file</a>
+              <a id="asset-download-bundle" class="asset-link-button" href="#" download hidden>Download bundle</a>
+              <button id="asset-copy-path" type="button">&#22797;&#21046;&#30456;&#23545;&#36335;&#24452;</button>
+            </div>
+
+            <div id="asset-detail-body">
+              <section class="asset-panel asset-preview-panel">
+                <div id="asset-preview-label" class="asset-panel-label">&#39044;&#35272;</div>
+                <div id="asset-preview-stage">
+                  <div id="asset-preview-placeholder">&#39044;&#35272;&#20250;&#26174;&#31034;&#22312;&#36825;&#37324;&#12290;</div>
+                  <img id="asset-preview-image" alt="" hidden>
+                  <canvas id="asset-model-canvas" hidden></canvas>
+                </div>
+                <div id="asset-preview-note" class="asset-preview-note" hidden></div>
+              </section>
+
+              <section class="asset-panel asset-info-panel">
+                <div id="asset-inspector-label" class="asset-panel-label">&#36164;&#28304;&#26816;&#26597;&#22120;</div>
+                <div id="asset-facts" class="asset-facts"></div>
+
+                <div id="asset-related-wrap" hidden>
+                  <div id="asset-related-label" class="asset-subhead">&#30456;&#20851;&#25991;&#20214;</div>
+                  <div id="asset-related" class="asset-related-list"></div>
+                </div>
+
+                <div id="asset-variants-wrap" hidden>
+                  <div id="asset-variants-label" class="asset-subhead">LOD variants</div>
+                  <div id="asset-variants" class="asset-variant-list"></div>
+                </div>
+
+                <div id="asset-materials-wrap" hidden>
+                  <div id="asset-materials-label" class="asset-subhead">&#20851;&#32852;&#26448;&#36136;</div>
+                  <div id="asset-materials" class="asset-related-list"></div>
+                </div>
+
+                <div id="asset-textures-wrap" hidden>
+                  <div id="asset-textures-label" class="asset-subhead">&#20851;&#32852;&#36148;&#22270;</div>
+                  <div id="asset-textures" class="asset-related-list"></div>
+                </div>
+
+                <div id="asset-references-wrap" hidden>
+                  <div id="asset-references-label" class="asset-subhead">&#24341;&#29992;&#27492;&#36164;&#28304;&#30340;&#25991;&#20214;</div>
+                  <div id="asset-references" class="asset-related-list"></div>
+                </div>
+
+                <div id="asset-model-stats-wrap" hidden>
+                  <div id="asset-model-stats-label" class="asset-subhead">&#27169;&#22411;&#32479;&#35745;</div>
+                  <div id="asset-model-stats" class="asset-model-stats"></div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </main>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script src="app_labels.js"></script>
+<script src="app_tree.js"></script>
+<script src="app.js"></script>
+<script src="assets.js"></script>
+<script src="reference.js"></script>
+<script src="updates.js"></script>
+</body>
+</html>

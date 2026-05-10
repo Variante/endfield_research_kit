@@ -1,0 +1,1903 @@
+// Endfield conversation browser - shared label/type helpers.
+
+const UI_TEXTS = {
+  zh: {
+    suiteTitle: "\u7ec8\u672b\u5730\u6d4f\u89c8\u5668\u5957\u4ef6",
+    suiteSubtitle: "\u5bf9\u8bdd + \u6587\u672c\u53c2\u8003 + \u5bfc\u51fa\u8d44\u6e90",
+    storyTab: "\u5267\u60c5",
+    assetsTab: "\u8d44\u6e90",
+    uiLanguage: "\u754c\u9762",
+    uiLanguageChinese: "\u4e2d\u6587",
+    uiLanguageEnglish: "English",
+    pageTitle: "\u7ec8\u672b\u5730\u5bf9\u8bdd\u6d4f\u89c8\u5668 / Endfield Story Browser",
+    appTitle: "\u7ec8\u672b\u5730\u5bf9\u8bdd\u6d4f\u89c8\u5668",
+    countLabel: "\u6761\u4f1a\u8bdd",
+    searchPlaceholder: "\u641c\u7d22 ID / \u4efb\u52a1 / \u89d2\u8272 / \u6587\u672c",
+    language: "\u8bed\u8a00",
+    kind: "\u7c7b\u578b",
+    type: "\u5267\u60c5\u7ebf",
+    storyIssueFilter: "\u6062\u590d\u95ee\u9898",
+    storyIssueMissingLineOrder: "\u7f3a\u5c11\u884c\u987a\u5e8f",
+    storyIssueUncoveredLines: "\u672a\u8986\u76d6\u53f0\u8bcd",
+    storyIssueInferredOptionLayout: "\u9009\u9879\u5b9a\u4f4d\u7f3a\u5931",
+    storyIssueDuplicateTimestamps: "\u65f6\u95f4\u6233\u91cd\u590d",
+    sort: "\u6392\u5e8f",
+    sortNatural: "\u6309\u5267\u60c5\u7ebf\u548c\u4efb\u52a1\u987a\u5e8f",
+    sortLinesDesc: "\u6309\u884c\u6570\u4ece\u591a\u5230\u5c11",
+    sortLinesAsc: "\u6309\u884c\u6570\u4ece\u5c11\u5230\u591a",
+    sortKey: "\u6309\u952e\u503c (A-Z)",
+    reset: "\u91cd\u7f6e\u7b5b\u9009",
+    listUnit: "\u6761",
+    lineUnit: "\u884c",
+    emptyConversation: "\u4ece\u5de6\u4fa7\u9009\u62e9\u4e00\u6bb5\u5bf9\u8bdd",
+    revealCurrent: "\u5b9a\u4f4d\u5f53\u524d\u6587\u4ef6",
+    showEmpty: "\u663e\u793a\u7a7a\u767d\u5bf9\u8bdd\u884c",
+    showRaw: "\u663e\u793a\u539f\u59cb JSON / \u6587\u672c\u6765\u6e90",
+    inlineTagMode: "\u663e\u793a\u6807\u7b7e\u539f\u6587",
+    genderVariant: "\u6027\u522b\uff1a{gender}",
+    showFilters: "\u663e\u793a\u7b5b\u9009",
+    hideFilters: "\u9690\u85cf\u7b5b\u9009",
+    loading: "\u52a0\u8f7d\u4e2d\u2026",
+    loadErrorPrefix: "\u52a0\u8f7d\u5931\u8d25: ",
+    emptyPreview: "(\u65e0\u9884\u89c8)",
+    systemSpeaker: "(\u7cfb\u7edf)",
+    radioSpeaker: "(\u7535\u53f0)",
+    linkedMission: "\u94fe\u63a5\u4efb\u52a1",
+    summary: "\u5267\u60c5\u6982\u8981",
+    hints: "\u6279\u6ce8",
+    metadata: "Metadata",
+    wikiImages: "\u56fe\u7247",
+    wikiMedia: "\u5a92\u4f53",
+    missionNotes: "\u4efb\u52a1\u5907\u6ce8",
+    missionTimelineRecovery: "\u4efb\u52a1\u65f6\u95f4\u7ebf\u6062\u590d",
+    missionTimelineTree: "\u4efb\u52a1\u6811",
+    missionTimelineQuests: "\u4efb\u52a1",
+    missionTimelineBranches: "\u5206\u652f",
+    missionTimelineEdges: "\u573a\u666f\u8fb9",
+    missionTimelineSceneGraph: "\u573a\u666f\u8fb9\u56fe",
+    missionTimelineSceneOrder: "\u573a\u666f\u987a\u5e8f",
+    missionTimelineOrderUnknown: "\u987a\u5e8f\u672a\u77e5",
+    missionTimelineEdgeList: "\u8fb9\u5217\u8868",
+    missionTimelineComponent: "\u8fde\u901a\u5206\u91cf",
+    missionTimelineNodes: "\u8282\u70b9",
+    missionTimelineEvidence: "\u65f6\u95f4\u7ebf\u8bc1\u636e",
+    missionTimelineUnresolved: "\u672a\u89e3\u6790",
+    missionTimelineLoop: "\u56de\u73af",
+    missionTimelineReused: "\u5df2\u5728\u5176\u4ed6\u5206\u652f\u5c55\u5f00",
+    missionTimelineUnrooted: "\u65e0\u660e\u786e\u5165\u53e3",
+    missionTimelineGuard: "\u5206\u652f\u6761\u4ef6",
+    missionTimelineSource: "\u6765\u6e90",
+    missionTimelineObjectives: "\u76ee\u6807",
+    missionTimelineActions: "\u5ba2\u6237\u7aef\u52a8\u4f5c",
+    missionTimelineTracking: "\u8ffd\u8e2a",
+    missionTimelineScenes: "\u573a\u666f",
+    missionTimelineResources: "\u8d44\u6e90",
+    missionTimelineLocations: "\u4f4d\u7f6e",
+    missionTimelineMapPins: "\u5730\u56fe\u70b9",
+    missionTimelineGraphLinks: "\u573a\u666f\u94fe\u63a5",
+    missionTimelineFlow: "\u6d41\u7a0b",
+    missionTimelinePrev: "\u524d\u7f6e",
+    lineOrderRecovery: "\u884c\u987a\u5e8f\u6062\u590d",
+    lineOrderNotNeeded: "\u5355\u884c\u573a\u666f\uff0c\u65e0\u9700\u989d\u5916\u7684\u884c\u987a\u5e8f\u6062\u590d\u3002",
+    lineOrderMissing: "\u672a\u6062\u590d\u51fa\u660e\u786e\u7684\u884c\u987a\u5e8f\u3002",
+    lineOrderModeDialogTree: "\u76f4\u63a5\u4f7f\u7528 DialogTree \u987a\u5e8f",
+    lineOrderModeDialogTreeFragment: "\u4f7f\u7528\u5176\u4ed6 DialogTree \u6b8b\u7247\u7684\u6388\u6743\u987a\u5e8f",
+    lineOrderModeDialogTreeExtraConfig: "\u4f7f\u7528 extra_config \u7684\u6388\u6743\u987a\u5e8f",
+    lineOrderModeAuthoredBlend: "\u6df7\u5408\u591a\u4e2a\u6388\u6743\u6765\u6e90",
+    lineOrderModeDialogTimeline: "\u4f7f\u7528 dialogTimeline \u7684\u6388\u6743\u987a\u5e8f",
+    lineOrderModeLineIdSuffix: "\u56de\u9000\u884c\u987a\u5e8f",
+    lineOrderModeFallback: "\u56de\u9000\u987a\u5e8f",
+    lineOrderModeMissing: "\u7f3a\u5c11\u884c\u987a\u5e8f\u5757",
+    lineOrderConfirmed: "\u4fdd\u6301\u5f53\u524d\u987a\u5e8f",
+    lineOrderReordered: "\u91cd\u6392 {moved}/{total}",
+    lineOrderSource: "\u6765\u6e90",
+    lineOrderCoverage: "\u8986\u76d6 {count} \u884c",
+    lineOrderTree: "DialogTree",
+    lineOrderTreeContribution: "\u8d21\u732e\u7684\u884c",
+    lineOrderSequence: "\u6700\u7ec8\u8f93\u51fa\u987a\u5e8f",
+    lineOrderPreviewEmpty: "(\u65e0\u6587\u672c\u9884\u89c8)",
+    lineOrderFile: "\u6587\u4ef6",
+    lineOrderConversationFlow: "\u6062\u590d\u51fa\u7684\u5bf9\u8bdd\u6d41\u7a0b",
+    lineOrderConversationFlowNote: "\u8fd9\u91cc\u628a\u4e3b\u5e72\u53f0\u8bcd\u3001\u9009\u9879\u7ec4\u4ee5\u53ca sceneGraphLinks \u91cc\u7684\u8df3\u8f6c / \u56de\u73af\u5408\u5e76\u6210\u4e00\u68f5\u53ef\u8bfb\u7684 DialogTree \u5bf9\u8bdd\u6811\u3002",
+    lineOrderBeforeScene: "\u5f00\u573a\u524d",
+    lineOrderAfterLine: "\u63a5\u5728",
+    lineOrderPlacementUncertain: "\u4f4d\u7f6e\u5f85\u786e\u8ba4",
+    lineOrderPlacementUnknown: "\u4f4d\u7f6e\u4e0d\u660e",
+    lineOrderOption: "\u9009\u9879",
+    lineOrderCommonContinuation: "\u5171\u540c\u540e\u7eed",
+    lineOrderContinueInScene: "\u7ee7\u7eed\u5f53\u524d\u573a\u666f",
+    lineOrderJumpToScene: "\u8df3\u8f6c\u5230\u573a\u666f",
+    lineOrderLoopToLine: "\u56de\u5230\u524d\u9762\u7684\u53f0\u8bcd",
+    lineOrderLoopToScene: "\u56de\u5230\u5f53\u524d\u573a\u666f",
+    lineOrderSubmenu: "\u5b50\u83dc\u5355",
+    lineOrderTerminal: "\u7ec8\u70b9",
+    lineOrderPathLineIds: "\u8def\u5f84\u884c ID",
+    lineOrderOutcome: "\u7ed3\u679c",
+    lineOrderMethod: "\u6062\u590d\u65b9\u5f0f",
+    lineOrderLineIdReference: "\u884c ID \u987a\u5e8f",
+    lineOrderLineIdReferenceNote: "",
+    lineOrderDiffersFromLineIdOrder: "\u4e0d\u540c\u4e8e\u884c ID \u987a\u5e8f",
+    lineOrderAddedCount: "\u5e76\u5165 {count} \u884c",
+    lineOrderModeDetailDialogTree: "\u6cbf\u5f53\u524d\u573a\u666f\u7684 DialogTree \u4e3b\u5e72\u4e0e\u5206\u652f\u6062\u590d\u987a\u5e8f\u3002",
+    lineOrderModeDetailDialogTreeFragment: "\u501f\u7528\u6307\u5411\u5f53\u524d\u573a\u666f\u7684\u5176\u4ed6 DialogTree \u6b8b\u7247\u6765\u8865\u9f50\u6388\u6743\u987a\u5e8f\u3002",
+    lineOrderModeDetailDialogTreeExtraConfig: "\u4f7f\u7528 extra_config \u91cc\u58f0\u660e\u7684\u6388\u6743\u987a\u5e8f\u3002",
+    lineOrderModeDetailAuthoredBlend: "\u6309\u8986\u76d6\u7387\u548c\u4f18\u5148\u7ea7\u5408\u5e76\u591a\u4e2a\u6388\u6743\u6765\u6e90\u3002",
+    lineOrderModeDetailDialogTimeline: "\u4f7f\u7528 dialogTimeline \u91cc\u8bb0\u5f55\u7684\u6388\u6743\u987a\u5e8f\u3002",
+    lineOrderModeDetailLineIdSuffix: "\u5f53\u524d\u573a\u666f\u6ca1\u6709\u6062\u590d\u51fa\u53ef\u7528\u7684\u6388\u6743\u884c\u987a\u5e8f\u6765\u6e90\u3002",
+    lineOrderModeDetailFallback: "\u4f7f\u7528\u56de\u9000\u7b56\u7565 {mode} \u6062\u590d\u987a\u5e8f\u3002",
+    optionGroup: "\u7b2c {group} \u7ec4\u9009\u9879",
+    relatedScenesHeading: "\u5171\u7528 Unity Timeline",
+    archiveLinksHeading: "\u6863\u6848\u5173\u8054",
+    archiveReports: "\u62a5\u544a",
+    archiveMaterials: "\u76f8\u5173\u6863\u6848",
+    branchHintLabel: "\u2192 \u8df3\u8f6c\u5230",
+    optTargetMenu: "\u2192 \u7b2c {g} \u7ec4\u9009\u9879",
+    optTargetReturnsToMenu: "\u21a9 \u8fd4\u56de\u7b2c {g} \u7ec4",
+    optTargetSelfMenu: "\u21ba \u91cd\u542f\u672c\u7ec4\u9009\u9879",
+    optTargetScene: "\u2192 {key}",
+    optTargetSceneSubmenu: "\u2192 \u5b50\u573a\u666f {key}",
+    optTargetTerminal: "\u25a0 \u7ed3\u675f\u5267\u60c5",
+    optTargetAccessedFrom: "\u2190 \u4ece",
+    optRiskInferredFollowingLine: "\u63a8\u6d4b\u56de\u5e94",
+    optRiskInferredFollowingLineTitle: "\u6e90\u6570\u636e\u6ca1\u6709\u660e\u786e\u5199\u51fa\u8be5\u9009\u9879\u7684\u76ee\u6807\u53f0\u8bcd\uff1b\u6309 Timeline \u987a\u5e8f\u63a8\u6d4b\u53ef\u80fd\u5bf9\u5e94 {line}\u3002",
+    preDialogOptions: "\u5bf9\u8bdd\u9009\u9879\uff08\u5f00\u573a\u524d\uff09",
+    uncertainDialogOptions: "\u5bf9\u8bdd\u9009\u9879\uff08\u4f4d\u7f6e\u5f85\u786e\u8ba4\uff09",
+    orphanDialogOptions: "\u5bf9\u8bdd\u9009\u9879\uff08\u4f4d\u7f6e\u4e0d\u660e\uff09",
+    radio: "\u8bed\u97f3\u901a\u8baf",
+    envTalk: "\u73af\u5883\u5bf9\u8bdd",
+    commonContinues: "\u5267\u60c5\u7ee7\u7eed",
+    warningTitle: "\u63d0\u793a",
+    warningInferredOptionLayoutTitle: "\u9009\u9879\u4f4d\u7f6e\u63d0\u793a",
+    warningInferredOptionLayoutBody: "\u9009\u9879\u4f4d\u7f6e\u6765\u81ea\u56de\u9000\u6216\u63a8\u65ad\u3002",
+    warningDuplicateTimestampsTitle: "\u65f6\u95f4\u6233\u63d0\u793a",
+    warningDuplicateTimestampsBody: "\u672c\u573a\u666f\u6709\u591a\u884c\u663e\u793a\u4e3a\u76f8\u540c\u7684\u65f6\u95f4\u6233\uff0c\u53ef\u80fd\u662f Timeline \u6062\u590d\u51b2\u7a81\u3002",
+    warningDuplicateTimestampLines: "\u91cd\u590d\u884c",
+    warningSceneOrderDisorderTitle: "\u987a\u5e8f\u63d0\u793a",
+    warningSceneOrderDisorderBody: "\u672c\u573a\u666f\u7684\u987a\u5e8f\u6216\u9009\u9879\u5b9a\u4f4d\u4e0d\u662f\u5b8c\u6574\u6388\u6743\u7ed3\u679c\u3002",
+    warningAspectLineOrder: "\u884c\u987a\u5e8f",
+    warningAspectOptionLayout: "\u9009\u9879\u4f4d\u7f6e",
+    warningStatusDirect: "\u5df2\u6709\u6388\u6743\u987a\u5e8f",
+    warningStatusPartial: "\u90e8\u5206\u6388\u6743\u8986\u76d6",
+    warningStatusFallback: "\u56de\u9000\u6062\u590d",
+    warningStatusMissing: "\u7f3a\u5c11\u987a\u5e8f\u5757",
+    warningStatusAuthored: "\u5df2\u6709\u6388\u6743\u951a\u70b9",
+    warningStatusInferred: "\u4f4d\u7f6e\u4e3a\u63a8\u65ad",
+    warningStatusNotNeeded: "\u65e0\u9700\u5206\u6790",
+    warningLineOrderSummaryLineIdSuffix: "\u672a\u627e\u5230\u6388\u6743\u884c\u987a\u5e8f",
+    warningLineOrderDetailLineIdSuffix: "",
+    warningLineOrderSummaryMissing: "\u672a\u627e\u5230\u884c\u987a\u5e8f\u6570\u636e",
+    warningLineOrderDetailMissing: "",
+    warningLineOrderSummaryFallback: "\u4f7f\u7528\u56de\u9000\u987a\u5e8f",
+    warningLineOrderDetailFallback: "",
+    warningLineOrderSummaryPartial: "\u6388\u6743\u987a\u5e8f\u53ea\u8986\u76d6\u4e86\u90e8\u5206\u53f0\u8bcd",
+    warningLineOrderDetailPartial: "",
+    lineOrderUncoveredCount: "\u672a\u8986\u76d6 {count} \u884c",
+    lineOrderUncoveredLines: "\u672a\u8986\u76d6\u884c",
+    lineOrderUncoveredBadge: "\u672a\u8986\u76d6",
+    duplicateTimestampBadge: "\u65f6\u95f4\u6233\u91cd\u590d",
+    warningOptionLayoutSummaryNoTreeReference: "\u9009\u9879\u4f4d\u7f6e\u5168\u90e8\u6765\u81ea\u56de\u9000",
+    warningOptionLayoutDetailNoTreeReference: "",
+    warningOptionLayoutSummaryNoAuthoredGroupAnchor: "\u9009\u9879\u4f4d\u7f6e\u7f3a\u5c11\u6388\u6743\u951a\u70b9",
+    warningOptionLayoutDetailNoAuthoredGroupAnchor: "",
+    warningOptionLayoutSummaryPartialAuthoredCoverage: "\u53ea\u6709\u90e8\u5206\u9009\u9879\u4f4d\u7f6e\u6709\u6388\u6743\u951a\u70b9",
+    warningOptionLayoutDetailPartialAuthoredCoverage: "",
+    warningOptionLayoutSummaryInferred: "\u9009\u9879\u4f4d\u7f6e\u6765\u81ea\u63a8\u65ad",
+    warningOptionLayoutDetailInferred: "",
+  },
+  en: {
+    suiteTitle: "Endfield Browser Suite",
+    suiteSubtitle: "Story + text reference + exported assets",
+    storyTab: "Story",
+    assetsTab: "Assets",
+    uiLanguage: "UI",
+    uiLanguageChinese: "Chinese",
+    uiLanguageEnglish: "English",
+    pageTitle: "Endfield Story Browser",
+    appTitle: "Endfield Story Browser",
+    countLabel: "conversations",
+    searchPlaceholder: "Search ID / mission / actor / text",
+    language: "Language",
+    kind: "Type",
+    type: "Storyline",
+    storyIssueFilter: "Recovery",
+    storyIssueMissingLineOrder: "Missing order",
+    storyIssueUncoveredLines: "Uncovered lines",
+    storyIssueInferredOptionLayout: "No option anchor",
+    storyIssueDuplicateTimestamps: "Duplicate timestamps",
+    sort: "Sort",
+    sortNatural: "Storyline and mission order",
+    sortLinesDesc: "Line count (high to low)",
+    sortLinesAsc: "Line count (low to high)",
+    sortKey: "Key (A-Z)",
+    reset: "Reset filters",
+    listUnit: "items",
+    lineUnit: "lines",
+    emptyConversation: "Choose a conversation from the left",
+    revealCurrent: "Reveal current file",
+    showEmpty: "Show empty rows",
+    showRaw: "Show raw JSON / text sources",
+    inlineTagMode: "Show raw tags",
+    genderVariant: "Gender: {gender}",
+    showFilters: "Show filters",
+    hideFilters: "Hide filters",
+    loading: "Loading...",
+    loadErrorPrefix: "Load error: ",
+    emptyPreview: "(no preview)",
+    systemSpeaker: "(System)",
+    radioSpeaker: "(Radio)",
+    linkedMission: "Linked mission",
+    summary: "Scene Summary",
+    hints: "Annotations",
+    metadata: "Metadata",
+    wikiImages: "Images",
+    wikiMedia: "Media",
+    missionNotes: "Mission Notes",
+    missionTimelineRecovery: "Mission Timeline Recovery",
+    missionTimelineTree: "Quest Tree",
+    missionTimelineQuests: "quests",
+    missionTimelineBranches: "branches",
+    missionTimelineEdges: "scene edges",
+    missionTimelineSceneGraph: "Scene Edge Graph",
+    missionTimelineSceneOrder: "Scene Order",
+    missionTimelineOrderUnknown: "Order unknown",
+    missionTimelineEdgeList: "Edge list",
+    missionTimelineComponent: "Component",
+    missionTimelineNodes: "nodes",
+    missionTimelineEvidence: "timeline evidence",
+    missionTimelineUnresolved: "unresolved",
+    missionTimelineLoop: "loop",
+    missionTimelineReused: "expanded elsewhere",
+    missionTimelineUnrooted: "No explicit entry",
+    missionTimelineGuard: "branch guard",
+    missionTimelineSource: "source",
+    missionTimelineObjectives: "objectives",
+    missionTimelineActions: "client actions",
+    missionTimelineTracking: "tracking",
+    missionTimelineScenes: "scenes",
+    missionTimelineResources: "resources",
+    missionTimelineLocations: "locations",
+    missionTimelineMapPins: "map pins",
+    missionTimelineGraphLinks: "scene links",
+    missionTimelineFlow: "flow",
+    missionTimelinePrev: "prev",
+    lineOrderRecovery: "Line-Order Recovery",
+    lineOrderNotNeeded: "Single-line scene; explicit line-order recovery is not needed.",
+    lineOrderMissing: "No explicit line-order recovery was found for this scene.",
+    lineOrderModeDialogTree: "direct dialogTree order",
+    lineOrderModeDialogTreeFragment: "authored order via dialogTreeFragment",
+    lineOrderModeDialogTreeExtraConfig: "authored order via dialogTreeExtraConfig",
+    lineOrderModeAuthoredBlend: "authored blend",
+    lineOrderModeDialogTimeline: "authored order via dialogTimeline",
+    lineOrderModeLineIdSuffix: "fallback line order",
+    lineOrderModeFallback: "fallback order",
+    lineOrderModeMissing: "missing line-order block",
+    lineOrderConfirmed: "kept current order",
+    lineOrderReordered: "reordered {moved}/{total}",
+    lineOrderSource: "Source",
+    lineOrderCoverage: "covers {count} line(s)",
+    lineOrderTree: "DialogTree",
+    lineOrderTreeContribution: "Recovered line path",
+    lineOrderSequence: "Final emitted order",
+    lineOrderPreviewEmpty: "(no text preview)",
+    lineOrderFile: "File",
+    lineOrderConversationFlow: "Recovered conversation flow",
+    lineOrderConversationFlowNote: "This merges the recovered trunk lines, anchored option groups, and sceneGraphLinks jumps/loopbacks into one readable dialogTree conversation.",
+    lineOrderBeforeScene: "before scene",
+    lineOrderAfterLine: "after",
+    lineOrderPlacementUncertain: "placement uncertain",
+    lineOrderPlacementUnknown: "placement unknown",
+    lineOrderOption: "Option",
+    lineOrderCommonContinuation: "shared continuation",
+    lineOrderContinueInScene: "continues in scene",
+    lineOrderJumpToScene: "jumps to scene",
+    lineOrderLoopToLine: "loops back to earlier line",
+    lineOrderLoopToScene: "re-enters current scene",
+    lineOrderSubmenu: "Submenu",
+    lineOrderTerminal: "Terminal",
+    lineOrderPathLineIds: "Path line IDs",
+    lineOrderOutcome: "Outcome",
+    lineOrderMethod: "Recovery method",
+    lineOrderLineIdReference: "Line ID order",
+    lineOrderLineIdReferenceNote: "",
+    lineOrderDiffersFromLineIdOrder: "differs from line ID order",
+    lineOrderAddedCount: "added {count}",
+    lineOrderModeDetailDialogTree: "Recovered from the current scene's DialogTree trunk and branch traversal.",
+    lineOrderModeDetailDialogTreeFragment: "Borrowed authored ordering from other DialogTree fragments that point into this scene.",
+    lineOrderModeDetailDialogTreeExtraConfig: "Used the authored ordering declared in extra_config.",
+    lineOrderModeDetailAuthoredBlend: "Merged multiple authored sources by coverage and priority.",
+    lineOrderModeDetailDialogTimeline: "Used the authored ordering recorded in dialogTimeline.",
+    lineOrderModeDetailLineIdSuffix: "No usable authored line-order source was recovered for this scene.",
+    lineOrderModeDetailFallback: "Recovered order via fallback strategy {mode}.",
+    optionGroup: "Option Group {group}",
+    relatedScenesHeading: "Shared Unity Timeline",
+    archiveLinksHeading: "Archive Links",
+    archiveReports: "Reports",
+    archiveMaterials: "Connected Files",
+    branchHintLabel: "jumps to",
+    optTargetMenu: "Menu {g}",
+    optTargetReturnsToMenu: "back to Menu {g}",
+    optTargetSelfMenu: "repeats this menu",
+    optTargetScene: "{key}",
+    optTargetSceneSubmenu: "submenu {key}",
+    optTargetTerminal: "ends story",
+    optTargetAccessedFrom: "from",
+    optRiskInferredFollowingLine: "inferred reply",
+    optRiskInferredFollowingLineTitle: "The source data does not name an explicit target line for this option; Timeline order suggests it may correspond to {line}.",
+    preDialogOptions: "Dialogue Options (Before Scene)",
+    uncertainDialogOptions: "Dialogue Options (Placement Uncertain)",
+    orphanDialogOptions: "Dialogue Options (Unknown Position)",
+    radio: "Radio",
+    envTalk: "Ambient Talk",
+    commonContinues: "story continues",
+    warningTitle: "Display Warning",
+    warningInferredOptionLayoutTitle: "Option placement note",
+    warningInferredOptionLayoutBody: "Option placement is inferred or fallback-based.",
+    warningDuplicateTimestampsTitle: "Timestamp note",
+    warningDuplicateTimestampsBody: "Multiple lines in this scene render with the same timeline timestamp, which may indicate a Timeline recovery conflict.",
+    warningDuplicateTimestampLines: "Duplicate lines",
+    warningSceneOrderDisorderTitle: "Order note",
+    warningSceneOrderDisorderBody: "Scene order or option placement is not fully authored here.",
+    warningAspectLineOrder: "Line order",
+    warningAspectOptionLayout: "Option placement",
+    warningStatusDirect: "authored order present",
+    warningStatusPartial: "partial coverage",
+    warningStatusFallback: "fallback recovery",
+    warningStatusMissing: "missing order block",
+    warningStatusAuthored: "authored anchors present",
+    warningStatusInferred: "placement inferred",
+    warningStatusNotNeeded: "not needed",
+    warningLineOrderSummaryLineIdSuffix: "no authored line order found",
+    warningLineOrderDetailLineIdSuffix: "",
+    warningLineOrderSummaryMissing: "no line-order data found",
+    warningLineOrderDetailMissing: "",
+    warningLineOrderSummaryFallback: "using fallback line order",
+    warningLineOrderDetailFallback: "",
+    warningLineOrderSummaryPartial: "authored order covers only part of the scene",
+    warningLineOrderDetailPartial: "",
+    lineOrderUncoveredCount: "{count} line(s) not covered",
+    lineOrderUncoveredLines: "Uncovered lines",
+    lineOrderUncoveredBadge: "Not covered",
+    duplicateTimestampBadge: "Duplicate timestamp",
+    warningOptionLayoutSummaryNoTreeReference: "option positions lack authored anchors",
+    warningOptionLayoutDetailNoTreeReference: "",
+    warningOptionLayoutSummaryNoAuthoredGroupAnchor: "option positions are missing authored anchors",
+    warningOptionLayoutDetailNoAuthoredGroupAnchor: "",
+    warningOptionLayoutSummaryPartialAuthoredCoverage: "only part of the option layout is authored",
+    warningOptionLayoutDetailPartialAuthoredCoverage: "",
+    warningOptionLayoutSummaryInferred: "option placement is inferred",
+    warningOptionLayoutDetailInferred: "",
+  },
+};
+
+const KIND_LABELS = {
+  zh: {
+    dlg: { name: "\u5267\u60c5\u5bf9\u8bdd", cls: "badge-dlg" },
+    sns: { name: "\u7ec8\u7aef\u6d88\u606f", cls: "badge-sns" },
+    cutscene: { name: "\u8fc7\u573a\u6f14\u51fa", cls: "badge-cutscene" },
+    black: { name: "\u9ed1\u5c4f\u5b57\u5e55", cls: "badge-black" },
+    remotecomm: { name: "\u8fdc\u7a0b\u901a\u8bdd", cls: "badge-remotecomm" },
+    radio: { name: "\u8bed\u97f3\u901a\u8baf", cls: "badge-radio" },
+    reading: { name: "\u5f55\u97f3", cls: "badge-reading" },
+    mail: { name: "\u90ae\u4ef6", cls: "badge-mail" },
+    prts: { name: "\u6863\u6848\u5e93", cls: "badge-prts" },
+    wiki: { name: "\u63cf\u8ff0\u6587\u672c", cls: "badge-wiki" },
+    responsive: { name: "\u4eba\u7269\u53cd\u5e94", cls: "badge-responsive" },
+    env: { name: "\u73af\u5883\u4f1a\u8bdd", cls: "badge-env" },
+    misc: { name: "\u6742\u9879", cls: "badge-misc" },
+  },
+  en: {
+    dlg: { name: "Story", cls: "badge-dlg" },
+    sns: { name: "Terminal Message", cls: "badge-sns" },
+    cutscene: { name: "Cutscene", cls: "badge-cutscene" },
+    black: { name: "Black Screen", cls: "badge-black" },
+    remotecomm: { name: "Remote Comm", cls: "badge-remotecomm" },
+    radio: { name: "Radio", cls: "badge-radio" },
+    reading: { name: "Recording", cls: "badge-reading" },
+    mail: { name: "Mail", cls: "badge-mail" },
+    prts: { name: "Archive", cls: "badge-prts" },
+    wiki: { name: "Text Description", cls: "badge-wiki" },
+    responsive: { name: "Character Reactions", cls: "badge-responsive" },
+    env: { name: "Ambient Talk", cls: "badge-env" },
+    misc: { name: "Misc", cls: "badge-misc" },
+  },
+};
+
+const STRUCTURED_LABEL_ACRONYMS = {
+  ai: "AI",
+  db: "DB",
+  dm: "DM",
+  gm: "GM",
+  id: "ID",
+  npc: "NPC",
+  prts: "Archive",
+  sns: "SNS",
+  ui: "UI",
+};
+
+const SPECIAL_SIM_ACTOR_IDS = new Set(["endmin", "endminf", "endminm"]);
+const PRTS_CATEGORY_KEYS = new Set(["collection", "digital", "document", "media", "paper", "report", "research_report"]);
+// Keep PRTS categories aligned with the metadata-tag reading order.
+const PRTS_CATEGORY_ORDER = ["collection", "document", "paper", "digital", "media", "report", "research_report"];
+const PRTS_PAGE_CATEGORY_PRIORITY = ["report", "paper", "digital", "document", "collection", "media", "research_report"];
+const PRTS_CATEGORY_ALIASES = {
+  multi_media: "media",
+};
+const PRTS_CATEGORY_DISPLAY_LABELS = {
+  zh: {
+    collection: "\u6863\u6848\u5e93 - \u85cf\u54c1",
+    digital: "\u6863\u6848\u5e93 - \u7535\u5b50\u6863\u6848",
+    document: "\u6863\u6848\u5e93 - \u4e2d\u67a2\u6863\u6848",
+    media: "\u6863\u6848\u5e93 - \u591a\u5a92\u4f53",
+    paper: "\u6863\u6848\u5e93 - \u7eb8\u8d28\u8bb0\u5f55",
+    report: "\u6863\u6848\u5e93 - \u62a5\u544a",
+    research_report: "\u6863\u6848\u5e93 - \u62a5\u544a",
+  },
+  en: {
+    collection: "Archive - Peculiars",
+    digital: "Archive - E-Files",
+    document: "Archive - Nexus Files",
+    media: "Archive - Multimedia",
+    paper: "Archive - Manuscripts",
+    report: "Archive - Reports",
+    research_report: "Archive - Reports",
+  },
+};
+
+const WORLD_TEXT_TYPE_KEYS = new Set(["env", "map", "settlement", "worldtext", "tablefamily:worldtext", "prtscat:collection"]);
+const OTHER_TYPE_FAMILIES = new Set([
+  "activity", "battlepass", "cashshop", "dungeon", "enemy", "error", "factory",
+  "gachapool", "gamemechanic", "generalability", "instruction", "loading",
+  "richcontent", "spaceship", "text",
+]);
+
+const TABLE_TYPE_FAMILY_RULES = [
+  { prefix: "battlepass", family: "battlepass" },
+  { prefix: "gamesystem", family: "system" },
+  { prefix: "systemjump", family: "item" },
+  { prefix: "gamemechanic", family: "gamemechanic" },
+  { prefix: "richcontent", family: "richcontent" },
+  { prefix: "errorcode", family: "error" },
+  { prefix: "instructionbook", family: "instruction" },
+  { prefix: "intro", family: "instruction" },
+  { prefix: "loading", family: "loading" },
+  { prefix: "weekraid", family: "dungeon" },
+  { prefix: "worldenergy", family: "worldtext" },
+  { prefix: "qualitysubsetting", family: "quality" },
+  { prefix: "useitem", family: "item" },
+  { prefix: "aibark", family: "aibark" },
+  { prefix: "activity", family: "activity" },
+  { prefix: "achievement", family: "achievement" },
+  { prefix: "adventure", family: "battlepass" },
+  { prefix: "attribute", family: "gamemechanic" },
+  { prefix: "cashshop", family: "cashshop" },
+  { prefix: "recharge", family: "cashshop" },
+  { prefix: "character", family: "gamemechanic" },
+  { prefix: "chargrowth", family: "gamemechanic" },
+  { prefix: "char", family: "gamemechanic" },
+  { prefix: "checkin", family: "checkin" },
+  { prefix: "doodad", family: "worldtext" },
+  { prefix: "distribution", family: "worldtext" },
+  { prefix: "dialog", family: "dialog" },
+  { prefix: "displayenemytype", family: "enemy" },
+  { prefix: "domain", family: "worldtext" },
+  { prefix: "dungeon", family: "dungeon" },
+  { prefix: "enemy", family: "enemy" },
+  { prefix: "equip", family: "item" },
+  { prefix: "fac", family: "factory" },
+  { prefix: "factory", family: "factory" },
+  { prefix: "friendchat", family: "friendchat" },
+  { prefix: "foodsubmitstageid", family: "activity" },
+  { prefix: "gachacharpool", family: "gachapool" },
+  { prefix: "giftpackcashshop", family: "cashshop" },
+  { prefix: "gacha", family: "gachapool" },
+  { prefix: "gamepad", family: "gamepad" },
+  { prefix: "gem", family: "gamemechanic" },
+  { prefix: "highdifficulty", family: "activity" },
+  { prefix: "ethersubmitbuffshow", family: "worldtext" },
+  { prefix: "hyperlink", family: "instruction" },
+  { prefix: "importantreward", family: "item" },
+  { prefix: "item", family: "item" },
+  { prefix: "kitestation", family: "worldtext" },
+  { prefix: "level", family: "dungeon" },
+  { prefix: "mail", family: "mail" },
+  { prefix: "map", family: "worldtext" },
+  { prefix: "missionextra", family: "mission" },
+  { prefix: "money", family: "money" },
+  { prefix: "picture", family: "picture" },
+  { prefix: "planting", family: "worldtext" },
+  { prefix: "potential", family: "potential" },
+  { prefix: "prtsdocument", family: "prtsdocument" },
+  { prefix: "prts", family: "prts" },
+  { prefix: "radio", family: "radio" },
+  { prefix: "readingpopup", family: "reading" },
+  { prefix: "recyclebin", family: "worldtext" },
+  { prefix: "socialbuilding", family: "social" },
+  { prefix: "settlement", family: "worldtext" },
+  { prefix: "skill", family: "gamemechanic" },
+  { prefix: "shop", family: "worldtext" },
+  { prefix: "snapshot", family: "generalability" },
+  { prefix: "sns", family: "sns" },
+  { prefix: "spaceship", family: "spaceship" },
+  { prefix: "submititem", family: "worldtext" },
+  { prefix: "system", family: "system" },
+  { prefix: "tag", family: "tag" },
+  { prefix: "text", family: "text" },
+  { prefix: "training", family: "training" },
+  { prefix: "generalability", family: "generalability" },
+  { prefix: "weapon", family: "wiki" },
+  { prefix: "wiki", family: "wiki" },
+];
+
+const TABLE_TYPE_FAMILY_LABELS = {
+  zh: {
+    activity: "\u6d3b\u52a8\u6587\u672c",
+    achievement: "\u8680\u523b\u7ae0",
+    adventure: "\u5192\u9669",
+    aibark: "AI Bark",
+    attribute: "\u5c5e\u6027",
+    battlepass: "\u901a\u884c\u8bc1\u6587\u672c",
+    cashshop: "\u5546\u57ce",
+    character: "\u5e72\u5458\u6218\u6597\u6587\u672c",
+    checkin: "\u7b7e\u5230",
+    dialog: "\u5bf9\u8bdd",
+    domain: "\u533a\u57df\u7b49\u7ea7\u4e0e\u8d27\u8fd0\u6587\u672c",
+    dungeon: "\u526f\u672c",
+    enemy: "\u654c\u4eba",
+    equip: "\u88c5\u5907",
+    error: "\u9519\u8bef",
+    factory: "\u96c6\u6210\u5de5\u4e1a\u6587\u672c",
+    distribution: "\u5206\u53d1",
+    doodad: "\u6446\u4ef6",
+    friendchat: "\u597d\u53cb\u804a\u5929",
+    gachapool: "\u62bd\u5361\u6c60\u6587\u672c",
+    giftpackcashshop: "\u793c\u5305\u5546\u5e97\u6587\u672c",
+    gamepad: "\u624b\u67c4\u64cd\u4f5c\u6587\u672c",
+    generalability: "\u4e00\u822c\u80fd\u529b",
+    gem: "\u57fa\u8d28",
+    gamemechanic: "\u6e38\u620f\u673a\u5236",
+    hyperlink: "\u8d85\u94fe\u63a5\u6587\u672c",
+    importantreward: "\u8d35\u91cd\u5956\u52b1\u6587\u672c",
+    instruction: "\u6307\u5357",
+    item: "\u7269\u54c1",
+    kitestation: "\u73af\u5883\u76d1\u6d4b\u7ad9\u6587\u672c",
+    level: "\u5173\u5361",
+    loading: "\u63d0\u793a",
+    mail: "\u90ae\u4ef6",
+    map: "\u5730\u56fe",
+    mission: "\u4efb\u52a1",
+    money: "\u8c03\u5ea6\u5238\u53d8\u5316\u6587\u672c",
+    picture: "\u56fe\u7247",
+    planting: "\u79cd\u690d\u6587\u672c",
+    potential: "\u6f5c\u80fd",
+    prtsdocument: "\u6863\u6848\u5e93",
+    prts: "\u6863\u6848\u5e93",
+    radio: "\u65e0\u7ebf\u7535",
+    quality: "\u753b\u8d28",
+    reading: "\u5f55\u97f3",
+    recycle: "\u56de\u6536",
+    richcontent: "\u5bcc\u6587\u672c",
+    settlement: "\u805a\u843d",
+    skill: "\u6e38\u620f\u673a\u5236",
+    shop: "\u5546\u5e97",
+    snapshot: "\u4e00\u822c\u80fd\u529b",
+    social: "\u793e\u4ea4",
+    sns: "\u7ec8\u7aef\u804a\u5929\u4f1a\u8bdd\u540d",
+    spaceship: "\u5e1d\u6c5f\u53f7\u6587\u672c",
+    system: "\u7cfb\u7edf",
+    systemjump: "\u7269\u54c1\u83b7\u53d6\u6e20\u9053\u6587\u672c",
+    tag: "\u6807\u7b7e",
+    text: "\u6587\u672c",
+    training: "\u8bad\u7ec3",
+    weapon: "\u6b66\u5668",
+    weekraid: "\u5468\u5e38\u526f\u672c",
+    wiki: "\u767e\u79d1",
+    worldenergy: "\u4e16\u754c\u80fd\u91cf",
+    worldtext: "\u5927\u4e16\u754c",
+  },
+  en: {
+    activity: "Activity Text",
+    achievement: "Achievement",
+    adventure: "Adventure",
+    aibark: "AI Bark",
+    attribute: "Attribute",
+    battlepass: "Battle Pass Text",
+    cashshop: "Cash Shop",
+    character: "Operator Combat Text",
+    checkin: "Check-In",
+    dialog: "Dialog",
+    domain: "Area Level and Freight Text",
+    dungeon: "Dungeon",
+    enemy: "Enemy",
+    equip: "Equipment",
+    error: "Error",
+    factory: "Integrated Industry Text",
+    distribution: "Distribution",
+    doodad: "Doodad",
+    friendchat: "Friend Chat",
+    gachapool: "Gacha Pool Text",
+    giftpackcashshop: "Gift Pack Shop Text",
+    gamepad: "Gamepad Operation Text",
+    generalability: "General Ability",
+    gem: "Substrate",
+    gamemechanic: "Game Mechanic",
+    hyperlink: "Hyperlink Text",
+    importantreward: "Important Reward Text",
+    instruction: "Instruction",
+    item: "Item",
+    kitestation: "Environmental Monitoring Station Text",
+    level: "Level",
+    loading: "Tip",
+    mail: "Mail",
+    map: "Map",
+    mission: "Mission",
+    money: "Dispatch Ticket Change Text",
+    picture: "Picture",
+    planting: "Planting Text",
+    potential: "Potential",
+    prtsdocument: "Archive",
+    prts: "Archive",
+    radio: "Radio",
+    quality: "Quality",
+    reading: "Recording",
+    recycle: "Recycle",
+    richcontent: "Rich Content",
+    settlement: "Settlement",
+    skill: "Game Mechanic",
+    shop: "Shop",
+    snapshot: "General Ability",
+    social: "Social",
+    sns: "Terminal Chat Session Name",
+    spaceship: "Dijiang Text",
+    system: "System",
+    systemjump: "Item Acquisition Channel Text",
+    tag: "Tag",
+    text: "Text",
+    training: "Training",
+    weapon: "Weapon",
+    weekraid: "Weekly Raid",
+    wiki: "Wiki",
+    worldenergy: "World Energy",
+    worldtext: "Open World",
+  },
+};
+
+const DEFAULT_DATA_TYPE_KEY = "other";
+const DEFAULT_METADATA_TAG_KEY = "other";
+
+const DATA_TYPE_LABELS = {
+  zh: {
+    e: "\u4e3b\u7ebf\u4efb\u52a1 (e)",
+    a: "\u6d3b\u52a8\u4efb\u52a1 (a)",
+    c: "\u4e2a\u4eba\u4efb\u52a1 (c)",
+    topic: "\u7ec8\u7aef\u804a\u5929",
+    gm: "\u91cd\u8981\u4efb\u52a1 (gm)",
+    sm: "\u6b21\u8981\u4efb\u52a1 (sm)",
+    m: "\u65e5\u5e38\u4efb\u52a1 (m)",
+    f: "\u57fa\u5efa\u636e\u70b9\u4efb\u52a1 (f)",
+    db: "\u8680\u50cf\u5bfb\u9057 (db)",
+    dm: "dm \u7cfb\u5217",
+    indie: "\u72ec\u7acb\u573a\u666f (indie)",
+    map: "\u5927\u4e16\u754c",
+    sim: "\u5e72\u5458",
+    timeline: "\u6a21\u62df\u7a7a\u95f4 (blackbox)",
+    env: "\u5927\u4e16\u754c",
+    sns: "\u7ec8\u7aef\u804a\u5929\u4f1a\u8bdd\u540d",
+    mail: "\u90ae\u4ef6 (mail)",
+    prts: "\u6863\u6848\u5e93",
+    wiki: "\u767e\u79d1",
+    eny: "Boss\u6218",
+    responsive: "\u4eba\u7269\u53cd\u5e94",
+    table_blocdatatable: "\u52bf\u529b\u540d\u79f0",
+    table_commondeathtips: "\u63d0\u793a",
+    table_compositeattributeshowconfigtable: "\u8bcd\u6761\u540d",
+    table_displayenemytypetable: "\u654c\u4eba",
+    table_ethersubmitbuffshowtable: "\u919a\u8d28\u63d0\u4ea4\u589e\u76ca",
+    spaceship: "\u5e1d\u6c5f\u53f7\u6587\u672c",
+    dungeon: "\u526f\u672c",
+    worldtext: "\u5927\u4e16\u754c",
+    task: "\u4efb\u52a1",
+    test: "\u6d4b\u8bd5 (test)",
+    blackbox: "Blackbox",
+    other: "\u63cf\u8ff0\u6587\u672c",
+    x: "\u63cf\u8ff0\u6587\u672c",
+  },
+  en: {
+    e: "Main Story Mission (e)",
+    a: "Event Mission (a)",
+    c: "Character Story (c)",
+    topic: "Terminal Chat",
+    gm: "Major Mission (gm)",
+    sm: "Minor Mission (sm)",
+    m: "Daily Mission (m)",
+    f: "Base Outpost Mission (f)",
+    db: "db Series",
+    dm: "dm Series",
+    indie: "Indie",
+    map: "Open World",
+    sim: "Operator",
+    timeline: "Blackbox (timeline)",
+    env: "Open World",
+    sns: "Terminal Chat Session Name",
+    mail: "Mail",
+    prts: "Archive",
+    wiki: "Wiki",
+    eny: "Boss Battle",
+    responsive: "Character Reactions",
+    table_blocdatatable: "Faction Names",
+    table_commondeathtips: "Tip",
+    table_compositeattributeshowconfigtable: "Attribute Terms",
+    table_displayenemytypetable: "Enemy",
+    table_ethersubmitbuffshowtable: "Ether Submission Buffs",
+    spaceship: "Dijiang Text",
+    dungeon: "Dungeon",
+    worldtext: "Open World",
+    task: "Task",
+    test: "Test (test)",
+    blackbox: "Blackbox",
+    other: "Text Description",
+    x: "Text Description",
+  },
+};
+
+const METADATA_TAG_ORDER = [
+  "achievement",
+  "archive",
+  "growth",
+  "skillPatch",
+  "gameMechanic",
+  "tutorialStep",
+  "errorCode",
+  "enemyAbility",
+  "wikiType",
+  "activity",
+  "battlePass",
+  "character",
+  "dungeon",
+  "enemy",
+  "factory",
+  "worldtext",
+  "item",
+  "money",
+  "system",
+  "systemJump",
+  "document",
+  "paper",
+  "digital",
+  "picture",
+  "text",
+  "summary",
+  "sceneGraph",
+  "graphFragment",
+  "levelBinding",
+  "envTalk",
+  "radio",
+  "cutscene",
+  "other",
+];
+
+const METADATA_TAG_KEEP = new Set(METADATA_TAG_ORDER);
+
+const METADATA_TAG_LABELS = {
+  zh: {
+    achievement: "\u8680\u523b\u7ae0",
+    archive: "\u6863\u6848",
+    growth: "\u6210\u957f",
+    skillPatch: "\u6280\u80fd\u8bcd\u6761",
+    gameMechanic: "\u6e38\u620f\u673a\u5236",
+    tutorialStep: "\u6559\u7a0b\u6b65\u9aa4",
+    errorCode: "\u9519\u8bef\u7801",
+    enemyAbility: "\u654c\u4eba\u80fd\u529b",
+    wikiType: "\u767e\u79d1 (wiki)",
+    activity: "\u6d3b\u52a8\u6587\u672c",
+    battlePass: "\u901a\u884c\u8bc1\u6587\u672c",
+    character: "\u5e72\u5458\u6218\u6597\u6587\u672c",
+    dungeon: "\u526f\u672c",
+    enemy: "\u654c\u4eba",
+    factory: "\u5de5\u5382",
+    worldtext: "\u5927\u4e16\u754c",
+    item: "\u7269\u54c1",
+    money: "\u8c03\u5ea6\u5238\u53d8\u5316\u6587\u672c",
+    system: "\u7cfb\u7edf",
+    systemJump: "\u7269\u54c1\u83b7\u53d6\u6e20\u9053\u6587\u672c",
+    document: "\u6587\u6863",
+    paper: "\u7eb8\u8d28\u8d44\u6599",
+    digital: "\u6570\u5b57\u8d44\u6599",
+    picture: "\u56fe\u50cf",
+    text: "\u6587\u672c",
+    summary: "\u6982\u8981",
+    sceneGraph: "\u573a\u666f\u56fe",
+    graphFragment: "\u56fe\u788e\u7247",
+    levelBinding: "\u5173\u5361\u7ed1\u5b9a",
+    envTalk: "\u73af\u5883\u5bf9\u8bdd",
+    radio: "\u65e0\u7ebf\u7535",
+    cutscene: "\u8fc7\u573a",
+    responsive: "\u4eba\u7269\u53cd\u5e94",
+    other: "\u5176\u5b83",
+  },
+  en: {
+    achievement: "Achievement",
+    archive: "Archive",
+    growth: "Growth",
+    skillPatch: "Skill Patch",
+    gameMechanic: "Game Mechanic",
+    tutorialStep: "Tutorial Step",
+    errorCode: "Error Code",
+    enemyAbility: "Enemy Ability",
+    wikiType: "Wiki",
+    activity: "Activity Text",
+    battlePass: "Battle Pass Text",
+    character: "Operator Combat Text",
+    dungeon: "Dungeon",
+    enemy: "Enemy",
+    factory: "Factory",
+    worldtext: "Open World",
+    item: "Item",
+    money: "Dispatch Ticket Change Text",
+    system: "System",
+    systemJump: "Item Acquisition Channel Text",
+    document: "Document",
+    paper: "Paper",
+    digital: "Digital",
+    picture: "Picture",
+    text: "Text",
+    summary: "Summary",
+    sceneGraph: "Scene Graph",
+    graphFragment: "Graph Fragment",
+    levelBinding: "Level Binding",
+    envTalk: "Ambient Talk",
+    radio: "Radio",
+    cutscene: "Cutscene",
+    responsive: "Character Reactions",
+    other: "Other",
+  },
+};
+
+const STORY_ISSUE_ORDER = [
+  "missingLineOrder",
+  "uncoveredLines",
+  "duplicateTimestamps",
+  "inferredOptionLayout",
+];
+
+function uiText(key) {
+  const locale = UI_TEXTS[STATE.uiLocale] || UI_TEXTS.en;
+  return locale[key] || UI_TEXTS.en[key] || key;
+}
+
+function localeTable(source) {
+  return source[STATE.uiLocale] || source.en || {};
+}
+
+function localeValue(source, key, fallback = "") {
+  const localeEntries = source[STATE.uiLocale] || {};
+  const englishEntries = source.en || {};
+  return localeEntries[key] || englishEntries[key] || fallback;
+}
+
+function kindLabels() {
+  const localeLabels = localeTable(KIND_LABELS);
+  const labels = { ...KIND_LABELS.en, ...localeLabels };
+  if (!localeLabels.radio) labels.radio = { name: uiText("radio"), cls: "badge-radio" };
+  return labels;
+}
+
+function dataTypeLabels() {
+  return localeTable(DATA_TYPE_LABELS);
+}
+
+function formatStructuredLabel(value) {
+  let raw = String(value || "").trim();
+  if (!raw) return "Misc";
+  if (raw.startsWith("table_")) raw = raw.slice("table_".length);
+  raw = raw.replace(/^wiki_/, "");
+  raw = raw.replace(/_/g, " ");
+  raw = raw.replace(/(?<=[a-z0-9])(?=[A-Z])/g, " ");
+  raw = raw.replace(/\s+/g, " ").trim();
+  if (!raw) return "Misc";
+  return raw
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => {
+      const lower = part.toLowerCase();
+      if (STRUCTURED_LABEL_ACRONYMS[lower]) return STRUCTURED_LABEL_ACRONYMS[lower];
+      return lower.slice(0, 1).toUpperCase() + lower.slice(1);
+    })
+    .join(" ");
+}
+
+function tableTypeFamilyValue(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) return "";
+  if (raw.startsWith("tablefamily:")) return raw.slice("tablefamily:".length);
+  if (!raw.startsWith("table_")) return "";
+  const stem = raw.slice("table_".length);
+  for (const rule of TABLE_TYPE_FAMILY_RULES) {
+    if (stem.startsWith(rule.prefix)) return rule.family;
+  }
+  return "";
+}
+
+function tableTypeFamilyKey(value) {
+  const family = tableTypeFamilyValue(value);
+  return family ? `tablefamily:${family}` : "";
+}
+
+function tableTypeFamilyLabel(value) {
+  const family = tableTypeFamilyValue(value);
+  if (!family) return "";
+  return localeValue(TABLE_TYPE_FAMILY_LABELS, family, formatStructuredLabel(family));
+}
+
+function prtsCategoryDisplayLabels() {
+  return localeTable(PRTS_CATEGORY_DISPLAY_LABELS);
+}
+
+function kindMeta(kind) {
+  const labels = kindLabels();
+  if (labels[kind]) return labels[kind];
+  const isTable = String(kind || "").startsWith("table_");
+  return {
+    name: isTable ? (labels.wiki?.name || formatStructuredLabel(kind)) : formatStructuredLabel(kind),
+    cls: isTable ? "badge-wiki" : "badge-misc",
+  };
+}
+
+function prtsCategoryLabel(type) {
+  const raw = String(type || "");
+  if (!raw.startsWith("prtscat:")) return "";
+  const categoryKey = normalizePrtsCategoryKey(raw.slice("prtscat:".length));
+  if (!categoryKey) return "";
+  const labels = prtsCategoryDisplayLabels();
+  return labels[categoryKey]
+    || PRTS_CATEGORY_DISPLAY_LABELS.en[categoryKey]
+    || STATE.prtsCategoryLabels[categoryKey]
+    || formatStructuredLabel(categoryKey);
+}
+
+function dataTypeLabel(dataType) {
+  const dynamicPrtsLabel = prtsCategoryLabel(dataType);
+  if (dynamicPrtsLabel) return dynamicPrtsLabel;
+  const familyLabel = tableTypeFamilyLabel(dataType);
+  if (familyLabel) return familyLabel;
+  const labels = dataTypeLabels();
+  return labels[dataType] || formatStructuredLabel(dataType);
+}
+
+function compareDataTypeKeys(a, b, counts = null) {
+  if (a === DEFAULT_DATA_TYPE_KEY && b !== DEFAULT_DATA_TYPE_KEY) return 1;
+  if (b === DEFAULT_DATA_TYPE_KEY && a !== DEFAULT_DATA_TYPE_KEY) return -1;
+  const aPinned = pinnedContentTypeRank(a);
+  const bPinned = pinnedContentTypeRank(b);
+  if (aPinned !== bPinned) return aPinned - bPinned;
+  if (counts && !Number.isFinite(aPinned)) {
+    const aCount = counts[a] || 0;
+    const bCount = counts[b] || 0;
+    if (aCount !== bCount) return bCount - aCount;
+  }
+  return dataTypeLabel(a).localeCompare(dataTypeLabel(b), undefined, { numeric: true });
+}
+
+const CONTENT_TYPE_PIN_ORDER = ["e", "a", "gm", "c", "sm", "m", "f"];
+const MISSION_STORY_TYPE_KEYS = new Set(["e", "a", "gm", "c", "sm", "m", "f", "db", "dm"]);
+
+function pinnedContentTypeRank(type) {
+  const normalized = String(type || "").trim();
+  const directIndex = CONTENT_TYPE_PIN_ORDER.indexOf(normalized);
+  if (directIndex !== -1) return directIndex;
+  if (normalized === "prts") return CONTENT_TYPE_PIN_ORDER.length;
+  if (normalized.startsWith("prtscat:")) {
+    const categoryKey = normalizePrtsCategoryKey(normalized.slice("prtscat:".length));
+    const categoryIndex = PRTS_CATEGORY_ORDER.indexOf(categoryKey);
+    return CONTENT_TYPE_PIN_ORDER.length + 1 + (categoryIndex === -1 ? PRTS_CATEGORY_ORDER.length : categoryIndex);
+  }
+  return Number.POSITIVE_INFINITY;
+}
+
+function metadataTagLabels() {
+  return localeTable(METADATA_TAG_LABELS);
+}
+
+function metadataTagLabel(tag) {
+  const labels = metadataTagLabels();
+  return labels[tag] || METADATA_TAG_LABELS.en[tag] || tag;
+}
+
+function storyIssueLabel(code) {
+  if (code === "missingLineOrder") return uiText("storyIssueMissingLineOrder");
+  if (code === "uncoveredLines") return uiText("storyIssueUncoveredLines");
+  if (code === "duplicateTimestamps") return uiText("storyIssueDuplicateTimestamps");
+  if (code === "inferredOptionLayout") return uiText("storyIssueInferredOptionLayout");
+  return formatStructuredLabel(code);
+}
+
+function entryStoryIssues(entry) {
+  if (!entry || !Array.isArray(entry.storyIssues)) return [];
+  return entry.storyIssues.filter(Boolean);
+}
+
+function entryMatchesStoryIssueFilters(entry, filters) {
+  if (!filters || !filters.size) return true;
+  const issues = new Set(entryStoryIssues(entry));
+  for (const code of filters) {
+    if (!issues.has(code)) return false;
+  }
+  return true;
+}
+
+function entryHasTag(entry, tag) {
+  if (!entry || !Array.isArray(entry.tags)) return false;
+  return entry.tags.includes(tag);
+}
+
+function entryHasSourceTag(entry) {
+  return entryHasTag(entry, "source_streaming") || entryHasTag(entry, "source_persistent");
+}
+
+function normalizeMetadataTag(rawTag) {
+  const tag = String(rawTag || "").trim();
+  const lowerTag = tag.toLowerCase();
+  if (!tag) return "";
+  if (tag === "loadingTip" || tag === "tip" || tag === "task") return DEFAULT_METADATA_TAG_KEY;
+  if (tag === "snsChat") return DEFAULT_METADATA_TAG_KEY;
+  if (tag === "mail") return "";
+  if (lowerTag === "dungeon") return "";
+  if (lowerTag === "worldtext" || tag === "collection") return "worldtext";
+  if (tag === "systemJump") return "item";
+  if (tag === "character" || tag === "attribute" || tag === "gem") return "gameMechanic";
+  if (tag === "kitestation" || tag === "ethersubmitbuffshow") return "worldtext";
+  if (tag === "money") return "";
+  if (tag === "wiki" || tag === "variant") return "";
+  if (tag === "source_streaming" || tag === "source_persistent") return "";
+  if (tag.startsWith("source_")) return "";
+  if (tag.startsWith("table_") || tag.startsWith("group_") || tag.startsWith("category_")) return "";
+  if (/^[a-z0-9]+_stage_\d+$/i.test(tag)) return "";
+  if (tag.startsWith("wiki_type_")) {
+    return "wikiType";
+  }
+  return METADATA_TAG_KEEP.has(tag) ? tag : "";
+}
+
+function compareMetadataTags(a, b) {
+  const ai = METADATA_TAG_ORDER.indexOf(a);
+  const bi = METADATA_TAG_ORDER.indexOf(b);
+  if (ai === -1 && bi === -1) {
+    return metadataTagLabel(a).localeCompare(metadataTagLabel(b));
+  }
+  if (ai === -1) return 1;
+  if (bi === -1) return -1;
+  return ai - bi;
+}
+
+function entryMetadataTags(entry) {
+  if (!entry) return [];
+  if (Array.isArray(entry._metadataTagsNormalized)) return entry._metadataTagsNormalized;
+  const out = [];
+  const seen = new Set();
+  const taskLike = entryTaskLike(entry);
+  const wikiCollectionGroup = entryWikiCollectionGroup(entry);
+  for (const rawTag of (entry.tags || [])) {
+    const tag = normalizeMetadataTag(rawTag);
+    if (tag === "achievement" && (entry.d === "table_achievementtable" || entry.t === "table_achievementtable")) {
+      continue;
+    }
+    if (tag === "worldtext" && (taskLike || wikiCollectionGroup)) continue;
+    if (!tag || seen.has(tag)) continue;
+    seen.add(tag);
+    out.push(tag);
+  }
+  if ((taskLike || wikiCollectionGroup) && !seen.has(DEFAULT_METADATA_TAG_KEY)) {
+    seen.add(DEFAULT_METADATA_TAG_KEY);
+    out.push(DEFAULT_METADATA_TAG_KEY);
+  }
+  if (!out.length) {
+    out.push(DEFAULT_METADATA_TAG_KEY);
+  }
+  out.sort(compareMetadataTags);
+  entry._metadataTagsNormalized = out;
+  return out;
+}
+
+function entryMetadataTagSummary(entry, limit = 5) {
+  const labels = entryMetadataTags(entry).map(metadataTagLabel);
+  if (!labels.length) return "";
+  if (labels.length <= limit) return labels.join(", ");
+  return `${labels.slice(0, limit).join(", ")} +${labels.length - limit}`;
+}
+
+function groupedKindKey(kind) {
+  const raw = String(kind || "");
+  if (raw === "misc") return "dlg";
+  if (raw === "table_prtsreading" || raw === "table_readingpopuptable") return "reading";
+  if (raw === "wiki" || raw.startsWith("table_")) return "wiki";
+  return String(kind || "");
+}
+
+function entryGroupedKindKey(entry) {
+  if (!entry) return "";
+  const key = String(entry.k || "");
+  if (key.startsWith("misc_")) return "dlg";
+  return groupedKindKey(entry.d);
+}
+
+function shouldSuppressKindChip(kind) {
+  const raw = String(kind || "");
+  return raw.startsWith("table_activity") || raw === "responsive";
+}
+
+function kindFilterToken(kind) {
+  return `kind:${kind}`;
+}
+
+function entryKindFilterTokens(entry) {
+  const tokens = new Set();
+  if (!entry) return tokens;
+
+  const kindKey = entryGroupedKindKey(entry);
+  if (kindKey) tokens.add(kindFilterToken(kindKey));
+  return tokens;
+}
+
+function pruneFilterSet(set, availableValues) {
+  if (!set || !(set instanceof Set)) return;
+  for (const value of Array.from(set)) {
+    if (!availableValues.has(value)) set.delete(value);
+  }
+}
+
+function entryMatchesKindFilters(entry, filters) {
+  if (!filters || !filters.size) return true;
+  for (const token of entryKindFilterTokens(entry)) {
+    if (filters.has(token)) return true;
+  }
+  return false;
+}
+
+function normalizeGroupedTagLabel(label) {
+  return String(label || "")
+    .replace(/\/\s*(?:Streaming|Persistent)\s*\/\s*/gi, "/ ")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+\/\s+/g, " / ")
+    .trim();
+}
+
+function normalizeGroupedTagKey(value) {
+  return String(value || "")
+    .replace(/\/\s*(?:Streaming|Persistent)\s*\/\s*/gi, "/")
+    .replace(/(^|[_/\s-])(streaming|persistent)(?=([_/\s-]|$))/gi, "$1")
+    .replace(/[\/\s-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function sourceGroupSubtitle(entry) {
+  if (!entry || !Array.isArray(entry.tags)) return "";
+  const entryTypeKey = String(entry.t || entry.d || "");
+  if (entryTypeKey !== "table_ethersubmitbuffshowtable") return "";
+  const groupTag = entry.tags.find((tag) => String(tag || "").startsWith("group_"));
+  if (!groupTag) return "";
+  return String(groupTag)
+    .slice("group_".length)
+    .replace(/_\d+$/i, "")
+    .trim();
+}
+
+function normalizeActorNames(raw) {
+  // Accept legacy {aid: "name"} or current {aid: ["name", ...]}.
+  const out = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (Array.isArray(v)) out[k] = v.slice();
+    else if (v) out[k] = [v];
+    else out[k] = [];
+  }
+  return out;
+}
+
+function computeSimActorIds(entries) {
+  const out = new Set();
+  for (const actorId of SPECIAL_SIM_ACTOR_IDS) out.add(actorId);
+  for (const entry of entries || []) {
+    const actorId = simCharacterId(entry);
+    if (actorId) out.add(actorId);
+  }
+  return out;
+}
+
+function computeRawStoryTypes(entries) {
+  const out = new Set();
+  for (const entry of entries || []) {
+    const rawType = String(entry && entry.t || "").trim();
+    if (rawType) out.add(rawType);
+  }
+  return out;
+}
+
+function normalizePrtsCategoryKey(raw) {
+  let value = String(raw || "").trim().toLowerCase();
+  if (!value) return "";
+  if (value.startsWith("category_")) value = value.slice("category_".length);
+  value = PRTS_CATEGORY_ALIASES[value] || value;
+  for (const key of PRTS_CATEGORY_KEYS) {
+    if (value === key) return key;
+    if (value.startsWith(`${key}_`)) return key;
+    if (value.includes(`nar_${key}_`)) return key;
+  }
+  return "";
+}
+
+function isPrtsArchiveEntry(entry) {
+  if (!entry) return false;
+  const kind = String(entry.d || "");
+  const type = String(entry.t || "");
+  return kind === "prts" || kind.startsWith("table_prts") || type === "prts" || type.startsWith("table_prts");
+}
+
+function normalizePrtsPageCategoryKey(raw) {
+  const key = normalizePrtsCategoryKey(raw);
+  return key === "research_report" ? "report" : key;
+}
+
+function entryArchiveMetadata(entryOrKey) {
+  if (typeof STATE === "undefined" || !STATE || !STATE.archiveMetadataByKey) return null;
+  const key = typeof entryOrKey === "string"
+    ? entryOrKey
+    : String(entryOrKey && entryOrKey.k || "");
+  return key ? (STATE.archiveMetadataByKey.get(key) || null) : null;
+}
+
+function entryPrtsTagPageKey(entry) {
+  if (!entry || !Array.isArray(entry.tags)) return "";
+  const tagCategories = new Set();
+  for (const rawTag of entry.tags) {
+    const category = normalizePrtsPageCategoryKey(rawTag);
+    if (category) tagCategories.add(category);
+  }
+  for (const category of PRTS_PAGE_CATEGORY_PRIORITY) {
+    if (tagCategories.has(normalizePrtsPageCategoryKey(category))) {
+      return normalizePrtsPageCategoryKey(category);
+    }
+  }
+  return "";
+}
+
+function entryPrtsKeyPageKey(entry) {
+  if (!entry) return "";
+  for (const value of [entry.m, entry.k]) {
+    const category = normalizePrtsPageCategoryKey(value);
+    if (category) return category;
+  }
+  return "";
+}
+
+function entryPrtsPageKey(entry) {
+  if (!isPrtsArchiveEntry(entry)) return "";
+  const metadata = entryArchiveMetadata(entry);
+  const metadataPage = normalizePrtsPageCategoryKey(metadata && metadata.page);
+  if (metadataPage) return metadataPage;
+  return entryPrtsTagPageKey(entry) || entryPrtsKeyPageKey(entry);
+}
+
+function normalizeArchiveResearchId(value) {
+  return String(value || "").trim();
+}
+
+function inferArchiveResearchId(entry) {
+  const text = [entry && entry.k, entry && entry.m].map((part) => String(part || "")).join(" ");
+  let match = text.match(/research_[a-z0-9_]+/i);
+  if (match) return match[0];
+  match = text.match(/map\d+_research\d+/i);
+  return match ? match[0] : "";
+}
+
+function entryArchiveResearchInfo(entry) {
+  if (!isPrtsArchiveEntry(entry)) return null;
+  const metadata = entryArchiveMetadata(entry);
+  const primaryResearchId = normalizeArchiveResearchId(
+    metadata && (metadata.primaryResearchId || (metadata.researchIds && metadata.researchIds[0]))
+  ) || inferArchiveResearchId(entry);
+  if (!primaryResearchId) return null;
+
+  const group = typeof STATE !== "undefined" && STATE && STATE.archiveResearchById
+    ? STATE.archiveResearchById.get(primaryResearchId)
+    : null;
+  const title = (group && group.title) || (metadata && metadata.researchTitle) || "";
+  const desc = (group && group.desc) || (metadata && metadata.researchDesc) || "";
+  return {
+    id: primaryResearchId,
+    title,
+    desc,
+  };
+}
+
+function isArchiveReportDataType(dataType) {
+  const raw = String(dataType || "");
+  if (!raw.startsWith("prtscat:")) return false;
+  const category = normalizePrtsPageCategoryKey(raw.slice("prtscat:".length));
+  return category === "report";
+}
+
+function entryPrtsCategoryKey(entry) {
+  if (!isPrtsArchiveEntry(entry)) return "";
+  const resolved = entryPrtsPageKey(entry);
+  if (resolved) {
+    return resolved;
+  }
+  return "";
+}
+
+function entryPrtsDataType(entry) {
+  if (!isPrtsArchiveEntry(entry)) return "";
+  const categoryKey = entryPrtsCategoryKey(entry);
+  return categoryKey ? `prtscat:${categoryKey}` : "prts";
+}
+
+function computePrtsCategoryLabels(entries) {
+  const out = {};
+  for (const entry of entries || []) {
+    if (String(entry && entry.d || "") !== "table_prtscategory") continue;
+    const categoryKey = entryPrtsCategoryKey(entry);
+    if (!categoryKey) continue;
+    const title = cleanDisplayTitle(entry.title || "", entry.m || "") || String(entry.title || "").trim();
+    if (title) out[categoryKey] = title;
+  }
+  return out;
+}
+
+function hasRawStoryType(type) {
+  const rawType = String(type || "").trim();
+  return !!rawType && STATE.rawStoryTypes.has(rawType);
+}
+
+function actorDisplay(aid) {
+  const v = STATE.actorNames[aid];
+  if (!v || !v.length) return aid;
+  if (String(aid).startsWith("sns_")) {
+    return selectSnsActorDisplay(v) || aid;
+  }
+  return v
+    .map((name) => stripBraceSegments(name) || String(name || "").trim())
+    .filter(Boolean)
+    .join(" / ") || aid;
+}
+
+function characterTailFromMissionId(missionId) {
+  const m = String(missionId || "").match(/^chr_\d+_(.+)$/);
+  return m ? m[1] : "";
+}
+
+function characterDisplayFromActorId(aid, preferExplicit = false) {
+  const actorId = String(aid || "");
+  if (!actorId) return "";
+  const names = STATE.actorNames[actorId] || [];
+  if (preferExplicit) {
+    for (const rawName of names) {
+      const explicit = extractExplicitBraceText(rawName);
+      if (explicit) return explicit;
+    }
+  }
+  if (names.length) return actorDisplay(actorId);
+  if (/^endmin(?:[fm])?$/.test(actorId)) return "\u7ba1\u7406\u5458";
+  return "";
+}
+
+function characterDisplayFromMissionId(missionId, preferExplicit = false) {
+  const mid = String(missionId || "");
+  if (!mid.startsWith("chr_")) return "";
+
+  const missionName = STATE.missionNames[mid] || "";
+  if (missionName && missionName !== mid) {
+    if (preferExplicit) {
+      const explicit = extractExplicitBraceText(missionName);
+      if (explicit) return explicit;
+    }
+    return stripBraceSegments(missionName) || String(missionName || "").trim();
+  }
+
+  return characterDisplayFromActorId(characterTailFromMissionId(mid), preferExplicit);
+}
+
+function continueActorIdFromMissionId(missionId) {
+  const m = String(missionId || "").match(/^continue_(?:self|other)_([a-z0-9_]+)$/i);
+  return m ? String(m[1] || "").toLowerCase() : "";
+}
+
+function continueActorDisplayFromMissionId(missionId, preferExplicit = false) {
+  const actorId = continueActorIdFromMissionId(missionId);
+  if (!actorId) return "";
+  return characterDisplayFromActorId(actorId, preferExplicit) || actorDisplay(actorId);
+}
+
+function missionDisplay(mid, typeHint = "") {
+  const missionId = String(mid || "");
+  if (!missionId) return "";
+  void typeHint;
+  const chrName = characterDisplayFromMissionId(missionId, true);
+  if (chrName) return chrName;
+  const continueName = continueActorDisplayFromMissionId(missionId, true);
+  if (continueName) return continueName;
+  return STATE.missionNames[missionId] || "";
+}
+
+function isExplicitTestEntryKey(value) {
+  const key = String(value || "").trim().toLowerCase();
+  if (!key) return false;
+  return key.startsWith("test") || key.endsWith("test");
+}
+
+function hasEmbeddedTestSegment(value) {
+  return /(?:^|_)test(?:_|$)/i.test(String(value || "").trim());
+}
+
+function missionTypeFromId(mid) {
+  const missionId = String(mid || "");
+  if (!missionId) return "";
+  if (missionId.startsWith("topic_")) return "topic";
+  if (missionId.startsWith("blackbox")) return "timeline";
+  if (missionId.startsWith("sr_")) return "f";
+  const m = missionId.match(/^([a-z]+)(\d+)?/);
+  if (!m) return "";
+  return m[1] || "";
+}
+
+function storyMissionTypeFromId(mid) {
+  const missionType = missionTypeFromId(mid);
+  return MISSION_STORY_TYPE_KEYS.has(missionType) ? missionType : "";
+}
+
+function entryStoryMissionId(entry) {
+  if (!entry) return "";
+  const missionId = String(entry.storyMission || entry.m || "").trim().toLowerCase();
+  return storyMissionTypeFromId(missionId) ? missionId : "";
+}
+
+function entryWikiCollectionGroup(entry) {
+  return String(entry && entry.m || "").trim().toLowerCase().startsWith("wiki_collection_");
+}
+
+function entrySnsChatTableGroup(entry) {
+  return String(entry && entry.m || "").trim().toLowerCase() === "snschattable";
+}
+
+function foldedEntryTypeKey(typeKey, entry) {
+  const normalized = String(typeKey || "").trim().toLowerCase();
+  const family = normalized.startsWith("tablefamily:") ? normalized.slice("tablefamily:".length) : normalized;
+  if (!normalized || normalized === "?") return DEFAULT_DATA_TYPE_KEY;
+  const storyMissionId = entryStoryMissionId(entry);
+  if (storyMissionId) return storyMissionTypeFromId(storyMissionId);
+  if (isMissionlessCutscene(entry)) return "other";
+  if (entryWikiCollectionGroup(entry)) return "other";
+  if (entrySnsChatTableGroup(entry)) return "other";
+  if (entryTaskLike(entry)) return "other";
+  if (normalized === "tip" || normalized === "task" || family === "tip" || family === "task") return "other";
+  if (entryHasTag(entry, "collection") || WORLD_TEXT_TYPE_KEYS.has(normalized)) return "worldtext";
+  if (normalized === "x" || OTHER_TYPE_FAMILIES.has(family)) return "other";
+  return typeKey;
+}
+
+function isMissionlessCutscene(entry) {
+  if (!entry || String(entry.d || "") !== "cutscene") return false;
+  return !entryStoryMissionId(entry);
+}
+
+function entryTaskLike(entry) {
+  if (entryHasTag(entry, "task")) return true;
+  const text = [entry && entry.k, entry && entry.m, entry && entry.d, entry && entry.t]
+    .map((part) => String(part || "").toLowerCase())
+    .join(" ");
+  return /(?:^|[_:-])task(?:[_:-]|$)|tasktable/.test(text);
+}
+
+function entryDataType(entry) {
+  if (!entry) return DEFAULT_DATA_TYPE_KEY;
+  const entryKey = String(entry.k || "");
+  const rawDataKind = String(entry.d || "").trim();
+  const rawType = String(entry.t || "").trim();
+  const normalizedType = rawType.toLowerCase();
+  const fold = (typeKey) => foldedEntryTypeKey(typeKey, entry);
+
+  if (entryKey.startsWith("misc_sr_") || String(entry.m || "").startsWith("sr_")) return fold("tablefamily:spaceship");
+  if (rawDataKind === "sns") return "topic";
+  if (rawDataKind === "mail" || normalizedType === "mail") return fold("mail");
+  if (isExplicitTestEntryKey(entryKey) || entryKey.startsWith("sns_test_")) return fold("test");
+  if (normalizedType === "teammate" || normalizedType === "transition") return fold("test");
+  if (rawDataKind === "table_valuabledepot" || normalizedType === "table_valuabledepot") return fold("test");
+  if (rawDataKind === "cutscene" && /(?:^|_)transition(?:_|$)/i.test(entryKey)) return fold("test");
+  if ((rawDataKind === "dlg" || rawDataKind === "radio") && normalizedType === "test") return fold("test");
+  if ((normalizedType === "enemy" || normalizedType === "seamless") && hasEmbeddedTestSegment(entryKey)) return fold("test");
+  if (normalizedType === "blackbox") return fold("timeline");
+  if (normalizedType === "lv") return fold("eny");
+  if (normalizedType === "dung") return fold("tablefamily:dungeon");
+  if (
+    rawDataKind === "table_commondeathtips" ||
+    normalizedType === "table_commondeathtips" ||
+    rawDataKind === "table_loadingtipstable" ||
+    normalizedType === "table_loadingtipstable"
+  ) return fold("other");
+  if (
+    (rawDataKind === "table_prtsreading" || rawDataKind === "table_readingpopuptable")
+    && (!rawType || normalizedType.startsWith("table_"))
+  ) {
+    const missionType = missionTypeFromId(entry.m);
+    if (missionType && hasRawStoryType(missionType)) return fold(missionType);
+  }
+  if (
+    rawDataKind === "responsive" ||
+    (rawDataKind === "table_aibarktext" && (!rawType || rawType === rawDataKind))
+  ) return fold("sim");
+  if (continueActorIdFromMissionId(entry.m) || pairedSimActorId(entry) || linkedSimActorId(entry)) return fold("sim");
+  const prtsCategory = entryPrtsCategoryKey(entry);
+  if (prtsCategory) return fold(`prtscat:${prtsCategory}`);
+  const tableFamily = tableTypeFamilyKey(rawType || rawDataKind);
+  if (tableFamily === "tablefamily:sns") return fold("other");
+  if (tableFamily) return fold(tableFamily);
+  if (rawDataKind === "env") {
+    const missionType = missionTypeFromId(entry.m);
+    if (missionType && missionType !== "env" && hasRawStoryType(missionType)) return fold(missionType);
+  }
+  if (normalizedType === "test" && !isExplicitTestEntryKey(entryKey)) return fold(rawDataKind || "");
+  return fold(rawType || DEFAULT_DATA_TYPE_KEY);
+}
+
+function entryDataTypes(entry) {
+  if (!entry) return [DEFAULT_DATA_TYPE_KEY];
+  if (Array.isArray(entry._dataTypesNormalized)) return entry._dataTypesNormalized;
+
+  const out = [];
+  const seen = new Set();
+  const add = (typeKey, fallbackToDefault = false) => {
+    const raw = String(typeKey || "").trim();
+    if (!raw && !fallbackToDefault) return;
+    const key = raw || DEFAULT_DATA_TYPE_KEY;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(key);
+  };
+
+  add(entryDataType(entry), true);
+  add(entryPrtsDataType(entry));
+
+  entry._dataTypesNormalized = out;
+  return out;
+}
+
+function entryMatchesDataTypeFilters(entry, filters) {
+  if (!filters || !filters.size) return true;
+  return entryDataTypes(entry).some((dataType) => filters.has(dataType));
+}
+
+function extractBraceText(text) {
+  if (!text) return "";
+  const m = String(text).match(/\{([^{}]+)\}/);
+  return m ? m[1] : String(text);
+}
+
+function extractExplicitBraceText(text) {
+  if (!text) return "";
+  const m = String(text).match(/\{([^{}]+)\}/);
+  return m ? m[1].trim() : "";
+}
+
+function stripBraceSegments(text) {
+  return String(text || "")
+    .replace(/\{[^{}]*\}/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function formatDlgSpeakerName(name, fallback = "") {
+  const original = String(name || fallback || "").trim();
+  if (!original) {
+    return { display: fallback || "", original: "" };
+  }
+
+  const display = stripBraceSegments(original) || fallback || original;
+  return {
+    display,
+    original: display === original ? "" : original,
+  };
+}
+
+function appendSpeakerLabel(container, displayName, {
+  originalName = "",
+  aid = "",
+  nameClass = "speaker-name",
+  aidClass = "actor-id",
+} = {}) {
+  const name = document.createElement("span");
+  name.className = nameClass;
+  name.textContent = displayName;
+  if (originalName) {
+    name.classList.add("speaker-name-with-popup");
+    name.tabIndex = 0;
+
+    const popup = document.createElement("span");
+    popup.className = "speaker-name-popup";
+    popup.textContent = originalName;
+    name.appendChild(popup);
+  }
+  container.appendChild(name);
+
+  if (aid) {
+    const aidNode = document.createElement("span");
+    aidNode.className = aidClass;
+    aidNode.textContent = aid;
+    container.appendChild(aidNode);
+  }
+}
+
+function resolveLineId(line) {
+  if (!line || typeof line !== "object") return "";
+  if (line.id) return String(line.id);
+  if (line.cid !== undefined && line.cid !== null && line.cid !== "") {
+    return `cid:${line.cid}`;
+  }
+  return "";
+}
+
+function appendLineId(container, line, className = "line-id") {
+  const lineId = resolveLineId(line);
+  if (!lineId) return;
+
+  const node = document.createElement("div");
+  node.className = className;
+  node.textContent = lineId;
+  container.appendChild(node);
+}
+
+function appendUncoveredLineBadge(container, className = "line-coverage-badge") {
+  const node = document.createElement("span");
+  node.className = className;
+  node.textContent = uiText("lineOrderUncoveredBadge");
+  container.appendChild(node);
+}
+
+function appendDuplicateTimestampBadge(container, className = "line-coverage-badge line-duplicate-timestamp-badge") {
+  const node = document.createElement("span");
+  node.className = className;
+  node.textContent = uiText("duplicateTimestampBadge");
+  container.appendChild(node);
+}
+
+function resolveOptionId(option) {
+  if (!option || typeof option !== "object") return "";
+  if (option.id) return String(option.id);
+  if (option.optionId) return String(option.optionId);
+  return "";
+}
+
+function appendOptionId(container, option, className = "option-id") {
+  const optionId = resolveOptionId(option);
+  if (!optionId) return;
+
+  const node = document.createElement("div");
+  node.className = className;
+  node.textContent = optionId;
+  container.appendChild(node);
+}
+
+function isQuestionMarkOnlyName(text) {
+  return /^[?\uFF1F\s]+$/.test(String(text || "").trim());
+}
+
+function selectSnsActorDisplay(names) {
+  let fallback = "";
+  for (const rawName of names) {
+    const originalName = String(rawName || "").trim();
+    if (!originalName) continue;
+
+    const name = stripBraceSegments(originalName) || originalName;
+    if (!name) continue;
+    if (isQuestionMarkOnlyName(name)) continue;
+    if (!fallback || name.length < fallback.length) fallback = name;
+  }
+  return fallback;
+}
+
+function displayNamedKey(title, key, fallbackMissionId = "") {
+  const cleanTitle = cleanDisplayTitle(title || "", fallbackMissionId);
+  if (cleanTitle && cleanTitle !== key) return `${cleanTitle} (${key})`;
+  return key || cleanTitle;
+}
+
+function cleanDisplayTitle(text, fallbackMissionId = "") {
+  const raw = String(text || "").trim();
+  if (!raw) return "";
+
+  const explicit = extractExplicitBraceText(raw);
+  if (explicit) {
+    const suffix = raw.replace(/^.*?\{[^{}]+\}/, "").trim();
+    return `${explicit}${suffix ? " " + suffix : ""}`.trim();
+  }
+
+  const chrName = characterDisplayFromMissionId(fallbackMissionId, true);
+  if (chrName && raw.startsWith(String(fallbackMissionId || ""))) {
+    return `${chrName}${raw.slice(String(fallbackMissionId || "").length)}`.trim();
+  }
+
+  return raw;
+}
+
+function displayEntryTitle(entry) {
+  return cleanDisplayTitle(entry.title || entry.k || "", entry && entry.m ? entry.m : "");
+}
+
+function displayConvTitle(conv) {
+  const missionTitle = conv.mission ? missionDisplay(conv.mission, conv.kind) : "";
+  if (conv.kind === "sns") return displayNamedKey(conv.title || "", conv.key, conv.mission || "");
+  if (["mail", "prts", "wiki", "responsive"].includes(conv.kind) || String(conv.kind || "").startsWith("table_")) {
+    return displayNamedKey(conv.title || missionTitle || "", conv.key, conv.mission || "");
+  }
+  return displayNamedKey(
+    missionTitle || conv.title || "",
+    conv.key,
+    conv.mission || ""
+  );
+}
+
+function simCharacterId(entry) {
+  const key = String(entry && entry.k || "");
+  let m = key.match(/^misc_sim_(?:gift|talk|rest|work)_([^_]+)/);
+  if (m) return m[1];
+  m = key.match(/^env_greetEnvTalk_([^_]+)/);
+  return m ? m[1] : "";
+}
+
+function isKnownSimActorId(actorId) {
+  const normalized = String(actorId || "").trim().toLowerCase();
+  if (!normalized) return false;
+  return SPECIAL_SIM_ACTOR_IDS.has(normalized) || STATE.simActorIds.has(normalized);
+}
+
+function actorNameKeys(actorId) {
+  const out = new Set();
+  for (const name of STATE.actorNames[String(actorId || "").trim().toLowerCase()] || []) {
+    for (const value of [name, stripBraceSegments(name), extractExplicitBraceText(name)]) {
+      const text = String(value || "").trim().toLowerCase();
+      if (text) out.add(text);
+    }
+  }
+  return out;
+}
+
+function sameNamedSimActorId(actorId) {
+  const sourceId = String(actorId || "").trim().toLowerCase();
+  const sourceNames = actorNameKeys(sourceId);
+  if (!sourceNames.size) return "";
+  const matches = [];
+  for (const candidate of STATE.simActorIds) {
+    if (candidate === sourceId || SPECIAL_SIM_ACTOR_IDS.has(candidate)) continue;
+    for (const name of actorNameKeys(candidate)) {
+      if (sourceNames.has(name)) {
+        matches.push(candidate);
+        break;
+      }
+    }
+  }
+  return matches.length === 1 ? matches[0] : "";
+}
+
+function linkedSimActorId(entry) {
+  if (!entry) return "";
+  const actorId = characterTailFromMissionId(entry.m);
+  if (!actorId) return "";
+  return isKnownSimActorId(actorId) ? actorId : "";
+}
+
+function normalizedEntryActorId(rawActorId) {
+  let raw = String(rawActorId || "").trim().toLowerCase();
+  if (!raw) return "";
+  if (STATE.actorNames[raw]) return sameNamedSimActorId(raw) || raw;
+  for (;;) {
+    let changed = false;
+    if (raw.startsWith("sns_")) {
+      raw = raw.slice(4);
+      changed = true;
+    }
+    if (raw.startsWith("npc_")) {
+      raw = raw.slice(4);
+      changed = true;
+    }
+    const chrMatch = raw.match(/^chr_\d+_(.+)$/);
+    if (chrMatch) {
+      raw = chrMatch[1];
+      changed = true;
+    }
+    if (!changed) break;
+    if (STATE.actorNames[raw]) return sameNamedSimActorId(raw) || raw;
+  }
+  if (raw.includes("_")) return raw.split("_").pop() || "";
+  return raw;
+}
+
+function addPairedOperatorCandidate(rawActorId, operatorCandidates, adminCandidates) {
+  const actorId = normalizedEntryActorId(rawActorId);
+  if (!actorId) return;
+  if (!isKnownSimActorId(actorId)) return;
+  if (SPECIAL_SIM_ACTOR_IDS.has(actorId)) adminCandidates.add(actorId);
+  else operatorCandidates.add(actorId);
+}
+
+function scanPairedOperatorCandidates(rawText, operatorCandidates, adminCandidates) {
+  const raw = String(rawText || "").toLowerCase();
+  if (!raw) return;
+
+  for (const match of raw.matchAll(/(?:sns_)?chr_\d+_([a-z0-9_]+)/g)) {
+    addPairedOperatorCandidate(match[0], operatorCandidates, adminCandidates);
+    addPairedOperatorCandidate(match[1], operatorCandidates, adminCandidates);
+  }
+
+  const tokens = raw.split(/[^a-z0-9_]+/).filter(Boolean);
+  for (const token of tokens) {
+    addPairedOperatorCandidate(token, operatorCandidates, adminCandidates);
+    for (const part of token.split("_")) {
+      addPairedOperatorCandidate(part, operatorCandidates, adminCandidates);
+    }
+  }
+}
+
+function entryHasChrStyleOperatorHint(entry) {
+  if (!entry) return false;
+  const values = [entry.k, entry.m, ...(entry.tags || [])];
+  return values.some((value) => /(?:^|[^a-z0-9])(?:sns_)?chr_\d+_[a-z0-9_]+/i.test(String(value || "")));
+}
+
+function entryWorldTextLike(entry) {
+  const rawType = String(entry && (entry.t || entry.d) || "").trim().toLowerCase();
+  return WORLD_TEXT_TYPE_KEYS.has(rawType) || entryHasTag(entry, "worldtext") || entryHasTag(entry, "collection");
+}
+
+function entryCanPairWithSimActor(entry) {
+  if (!entry) return false;
+  if (String(entry.k || "").startsWith("wiki_chr_")) return true;
+  if (String(entry.m || "").startsWith("chr_")) return true;
+  if (String(entry.d || "") === "sns" && String(entry.k || "").startsWith("sns_topic_")) return true;
+  if (entryWorldTextLike(entry) && Array.isArray(entry.c) && entry.c.length) return true;
+  if (entryHasChrStyleOperatorHint(entry)) return true;
+  const rawTableType = String(entry.t || entry.d || "").trim().toLowerCase();
+  if (/^table_(?:character|chargrowth|char|potential)/.test(rawTableType)) return true;
+  if (Array.isArray(entry.tags) && entry.tags.includes("character")) return true;
+  return false;
+}
+
+function pairedSimActorId(entry) {
+  if (!entryCanPairWithSimActor(entry)) return "";
+  if (entry && Object.prototype.hasOwnProperty.call(entry, "_pairedSimActorId")) {
+    return entry._pairedSimActorId || "";
+  }
+
+  const operatorCandidates = new Set();
+  const adminCandidates = new Set();
+  addPairedOperatorCandidate(simCharacterId(entry), operatorCandidates, adminCandidates);
+  addPairedOperatorCandidate(linkedSimActorId(entry), operatorCandidates, adminCandidates);
+  addPairedOperatorCandidate(aiBarkSimActorId(entry), operatorCandidates, adminCandidates);
+  addPairedOperatorCandidate(continueActorIdFromMissionId(entry && entry.m), operatorCandidates, adminCandidates);
+
+  for (const rawActorId of (entry.c || [])) {
+    addPairedOperatorCandidate(rawActorId, operatorCandidates, adminCandidates);
+  }
+  for (const rawText of [entry.k, entry.m, ...(entry.tags || [])]) {
+    scanPairedOperatorCandidates(rawText, operatorCandidates, adminCandidates);
+  }
+
+  let resolved = "";
+  if (operatorCandidates.size === 1) {
+    resolved = Array.from(operatorCandidates)[0];
+  } else if (!operatorCandidates.size && adminCandidates.size === 1) {
+    resolved = Array.from(adminCandidates)[0];
+  }
+  if (entry) entry._pairedSimActorId = resolved;
+  return resolved;
+}
+
+function aiBarkSimActorId(entry) {
+  if (!entry || (entry.d !== "table_aibarktext" && entry.d !== "responsive")) return "";
+  for (const rawActorId of (entry.c || [])) {
+    const actorId = normalizedEntryActorId(rawActorId);
+    if (!actorId) continue;
+    if (isKnownSimActorId(actorId)) return actorId;
+    if (/^endmin(?:[fm])?$/.test(actorId)) return actorId;
+    if ((STATE.actorNames[actorId] || []).length) return actorId;
+  }
+  return "";
+}
