@@ -6,6 +6,8 @@ from `webui/data/` and keeps heavyweight recovery work in the Python builders.
 ## Browser Files
 
 - `index.html` and `style.css`: shared shell, tabs, and layout.
+- `shared.js`: small dependency-free browser utilities used by the static
+  views.
 - `app_labels.js`: UI text, labels, and shared story formatting helpers.
 - `app_tree.js`: story filters, grouping, sorting, and sidebar tree rows.
 - `app.js`: story data loading and conversation rendering.

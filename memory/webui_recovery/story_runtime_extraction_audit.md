@@ -89,15 +89,49 @@ Current CN WebUI story index already includes:
 ## Remaining Recovery Issues
 
 After the 2026-05-11 CN rebuild, the WebUI recovery filter no longer treats
-partial/fallback line ordering as a missing line-order block. The strict
-scene-order report has:
+partial/fallback line ordering as a missing line-order block. It does treat
+Timeline-inferred option replies (`inferredOptionResponse`, shown in the UI as
+`推测回应`) as recovery issues, because the option metadata does not name an
+explicit target trunk line. The strict recovery report has:
 
+- Flagged scenes: 93
 - Missing line-order blocks: 0
 - Partial authored line order: 11 scenes
 - Fallback line order: 3 scenes
 - Scenes with uncovered lines: 14
 - Inferred option placement: 20 scenes
+- Inferred option responses: 60 scenes
 - Duplicate timestamps: 0 scenes
+
+Runtime Jump Track option-route recovery, added later on 2026-05-11, explains
+some option replies that were previously only inferred from adjacent Timeline
+lines. The Timeline parser now treats forward `Runtime Jump Track` clips as
+per-option skip windows: for a selected `optionIndex`, lines inside that skip
+window are skipped and the remaining lines before the next option group become
+that option's branch path.
+
+Current CN gains from this pass:
+
+- `timeline_line_orders.json`: 25 Timeline entries with route evidence,
+  containing 57 option routes.
+- WebUI CN conv output: 14 scenes and 16 option groups now have
+  `timelineRouteBranches` evidence.
+- Those route-backed groups account for 91 branch-line assignments that no
+  longer need `inferredFollowingLines` risk tags.
+- Strict recovery report improvement: flagged scenes dropped from 98 to 93,
+  and inferred option-response scenes dropped from 65 to 60.
+
+Example: `dlg_e1m1_5` group 1 is no longer an inferred option response.
+Runtime Jump Track skip windows recover:
+
+- `option_dlg_e1m1_5_1_001` -> `dlg_e1m1_5_002`, `dlg_e1m1_5_003`
+- `option_dlg_e1m1_5_1_002` -> `dlg_e1m1_5_004`, `dlg_e1m1_5_005`,
+  `dlg_e1m1_5_006`
+- both branches continue to `option_dlg_e1m1_5_2_001`
+
+`dlg_e1m1_5` group 3 remains inferred because the current Timeline/DLL dump
+does not expose matching runtime-jump route evidence for that later option
+group.
 
 `dlg_e0m2_1` is now resolved by the `dialogTreeCinematicTimeline` stitch:
 `dlgtl_e0m2_1_sub_1` inserts line 005 after trunk line 004, and
@@ -105,8 +139,8 @@ scene-order report has:
 timestamp diagnostics are scoped per Timeline segment, so separate sub-timelines
 can both start at 0.0 seconds without creating a false recovery issue.
 
-The broader inferred-option-anchor diagnostic remains larger than the strict
-Recovery filter: 98 scenes and 183 inferred groups, mostly `lineNumber`
+The broader inferred-option-anchor diagnostic remains useful context for option
+placement work: 98 scenes and 183 inferred groups, mostly `lineNumber`
 placements. Source/video side queues also remain: 18 source-link keys are
 referenced by extracted source data but missing from WebUI entries, and 33
 narrative video refs are unresolved.
@@ -165,8 +199,12 @@ decompilation:
      option data fields.
    - IL2CPP metadata exposes `DialogTimelineOptionData`, `DialogOptionBehaviour`,
      `centerPanelId`, `popUpPanelId`, and `ApplyPanelId`.
-   - Next target is the concrete asset/table that stores per-scene option
-     panel placement and explicit target indices.
+   - **Partially implemented 2026-05-11** with Runtime Jump Track route
+     recovery in `scripts/recover_timeline_line_orders.py` and
+     `scripts/webui/build_story.py`.
+   - Remaining target: find the concrete asset/table or runtime state that
+     stores explicit option target indices for groups that do not have
+     Runtime Jump Track skip-window evidence.
 
 4. Bring Reading/PRTS/RemoteComm into the same source graph.
    - Tables already exist for reading popups, PRTS documents/notes/records,

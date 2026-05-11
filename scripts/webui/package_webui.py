@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Iterable
 
+from common import normalize_posix
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 WEBUI_ROOT = PROJECT_ROOT / "webui"
@@ -198,10 +199,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def default_output_path(project_root: Path) -> Path:
     datestamp = datetime.now().strftime("%Y%m%d")
     return project_root / f"{ZIP_NAME_PREFIX}-{datestamp}.zip"
-
-
-def normalize_posix(value: str) -> str:
-    return str(value or "").replace("\\", "/").strip("/")
 
 
 def posix_to_path(value: str) -> Path:

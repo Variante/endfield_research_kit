@@ -917,6 +917,15 @@ def inferred_option_warning(conv: dict) -> dict | None:
     return None
 
 
+def inferred_option_response_warning(conv: dict) -> dict | None:
+    if not has_meaningful_options(conv):
+        return None
+    for warning in (conv.get("warnings") or []):
+        if isinstance(warning, dict) and warning.get("code") == "inferredOptionResponse":
+            return warning
+    return None
+
+
 def _normalize_group_details(conv: dict, warning: dict | None) -> list[dict]:
     if isinstance(warning, dict):
         raw_group_details = warning.get("groupDetails") or []
@@ -1442,7 +1451,8 @@ def collect_scene_order_gap_rows(root: Path, conv_dir: Path) -> list[dict]:
         line_order_pattern = classify_line_order_failure(line_order_analysis)
         option_position_pattern = classify_option_position_failure(conv, option_layout_analysis)
         inferred_options = option_layout_analysis["status"] == "inferred"
-        if line_order_analysis["status"] == "direct" and not inferred_options:
+        inferred_responses = inferred_option_response_warning(conv) is not None
+        if line_order_analysis["status"] == "direct" and not inferred_options and not inferred_responses:
             continue
 
         option_groups = [
@@ -1464,6 +1474,7 @@ def collect_scene_order_gap_rows(root: Path, conv_dir: Path) -> list[dict]:
             "lineOrderPatternCode": line_order_pattern["code"],
             "lineOrderPattern": line_order_pattern,
             "inferredOptionLayout": inferred_options,
+            "inferredOptionResponse": inferred_responses,
             "optionLayoutStatus": option_layout_analysis["status"],
             "optionLayoutReason": option_layout_analysis["reasonCode"],
             "optionLayoutSummary": option_layout_analysis["reason"],
@@ -1494,6 +1505,7 @@ def collect_scene_order_gap_rows(root: Path, conv_dir: Path) -> list[dict]:
         key=lambda row: (
             0 if row["lineOrderStatus"] == "missing" else 1,
             0 if row["inferredOptionLayout"] else 1,
+            0 if row["inferredOptionResponse"] else 1,
             row["mission"],
             row["key"],
         )
@@ -1524,6 +1536,7 @@ def build_scene_order_gap_summary(rows: list[dict], language: str) -> dict:
         "partialLineOrder": sum(1 for row in rows if row["lineOrderStatus"] == "partial"),
         "fallbackLineOrder": sum(1 for row in rows if row["lineOrderStatus"] == "fallback"),
         "inferredOptionLayout": sum(1 for row in rows if row["inferredOptionLayout"]),
+        "inferredOptionResponse": sum(1 for row in rows if row.get("inferredOptionResponse")),
         "lineOrderReasonCounts": line_reason_counts,
         "lineOrderPatternCounts": line_pattern_counts,
         "optionLayoutReasonCounts": option_reason_counts,
@@ -1574,6 +1587,7 @@ def render_scene_order_gap_markdown(summary: dict, rows: list[dict]) -> str:
         f"- partial authored line order: `{summary.get('partialLineOrder', 0)}`",
         f"- fallback line order: `{summary['fallbackLineOrder']}`",
         f"- inferred option placement: `{summary['inferredOptionLayout']}`",
+        f"- inferred option response: `{summary.get('inferredOptionResponse', 0)}`",
         f"- missing line order + inferred option placement: `{summary['bothMissingOrderAndInferredOptions']}`",
         f"- fallback line order + inferred option placement: `{summary['bothFallbackOrderAndInferredOptions']}`",
     ]
@@ -1634,15 +1648,20 @@ def render_scene_order_gap_markdown(summary: dict, rows: list[dict]) -> str:
         "",
         "## Scenes",
         "",
-        "| Scene | Mission | Line-Order Pattern | Option-Position Pattern | Lines | Opt Groups | Path |",
-        "| --- | --- | --- | --- | ---: | ---: | --- |",
+        "| Scene | Mission | Line-Order Pattern | Option-Position Pattern | Option Response | Lines | Opt Groups | Path |",
+        "| --- | --- | --- | --- | --- | ---: | ---: | --- |",
     ])
 
     for row in rows:
         line_cell = _render_pattern_cell(row.get("lineOrderPattern") or {})
         option_cell = _render_pattern_cell(row.get("optionPositionPattern") or {})
+        response_cell = (
+            "**inferred**<br>`optionTargetsMissing`"
+            if row.get("inferredOptionResponse")
+            else ""
+        )
         lines.append(
-            f"| `{row['key']}` | `{row['mission']}` | {line_cell} | {option_cell} | "
+            f"| `{row['key']}` | `{row['mission']}` | {line_cell} | {option_cell} | {response_cell} | "
             f"{row['lineCount']} | {row['optionGroupCount']} | `{_escape_table_text(row['path'])}` |"
         )
 

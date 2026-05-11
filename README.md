@@ -185,6 +185,20 @@ kept under `tools/`:
   <https://git.nekolab.app/fluffield/fluffy-dumper>
 - `tools/endfield_asset_map_filter.py`: local helper maintained in this repo
   for asset-map filtering experiments.
+- `tools/endfield_source_graph.py`: local SQLite source-graph builder that
+  connects story, reference text, tables, audio, videos, assets, character
+  recovery manifests, material links, and optional AnimeStudio asset maps.
+  Outputs are written under `reports/source_graph/`. Use
+  `python tools\endfield_source_graph.py build --skip-asset-maps` for quick
+  iteration, `python tools\endfield_source_graph.py build` for the full graph,
+  and `python tools\endfield_source_graph.py query zhuangfy --limit 20` for a
+  simple search.
+- Source-graph follow-up tools: `tools/endfield_voice_audio_linker.py`,
+  `tools/endfield_character_recovery_planner.py`,
+  `tools/endfield_story_branch_resolver.py`,
+  `tools/endfield_map_level_indexer.py`, and
+  `tools/endfield_semantic_update_classifier.py` build richer reports under
+  `reports/source_graph/`.
 
 Use `scripts/README.md` for the maintained script map. Keep new throwaway
 experiments in `scratch/`, and promote only reusable shared helpers to `tools/`.

@@ -58,6 +58,20 @@ current source of truth instead:
 - detailed WebUI recovery notes: `memory/webui_recovery/`
 - shader/animation recovery snapshots: dedicated files in `memory/`
 
+## Project Local Skills
+
+Project-only Codex skills live under `.codex/skills/`. When a task matches one
+of these workflows, open the matching `SKILL.md` before acting:
+
+- `.codex/skills/endfield-webui-workflow/`: WebUI refresh, serving, packaging,
+  Updates tab, and static frontend scope.
+- `.codex/skills/endfield-story-recovery/`: DialogIdTable registry,
+  story-source links, Timeline/mission recovery, and scene-order warnings.
+- `.codex/skills/endfield-source-graph/`: source graph build/query and
+  graph-backed follow-up reports.
+- `.codex/skills/endfield-character-recovery-lab/`: Unity character recovery
+  viewer, shader tuning, generated manifests, previews, and ACL sampling.
+
 The retired exploration snapshots were collapsed because they mixed active
 workflow guidance with stale conclusions, obsolete package behavior based on
 `reports/`, and Blender/actor recovery detail outside the root active scope.

@@ -90,6 +90,15 @@
     },
   };
 
+  const {
+    $,
+    applyTemplate,
+    escapeHtml,
+    formatNumber,
+    formatSignedNumber,
+    normalizeUiLocale,
+    rebuildSelect,
+  } = window.WebUI;
   const STATUS_ORDER = { added: 0, modified: 1, deleted: 2 };
   const UPDATE_STATE = {
     uiLocale: "zh",
@@ -102,12 +111,7 @@
     selectedEntry: null,
   };
 
-  const up$ = (sel) => document.querySelector(sel);
-
-  function normalizeUiLocale(locale) {
-    const value = String(locale || "").toLowerCase();
-    return value === "zh" || value === "en" ? value : "";
-  }
+  const up$ = $;
 
   function resolveInitialUiLocale() {
     const fromWindow = normalizeUiLocale(window.WEBUI_UI_LOCALE);
@@ -118,17 +122,7 @@
   function updateText(key, replacements = {}) {
     const locale = UPDATE_TEXTS[UPDATE_STATE.uiLocale] || UPDATE_TEXTS.en;
     const template = locale[key] || UPDATE_TEXTS.en[key] || key;
-    return template.replace(/\{(\w+)\}/g, (_, name) => String(replacements[name] ?? ""));
-  }
-
-  function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    }[ch]));
+    return applyTemplate(template, replacements);
   }
 
   function normalizeExtension(value) {
@@ -145,17 +139,6 @@
     if (value === "asset_model") return `${updateText("exportedAsset")} / model`;
     if (value === "asset_video") return `${updateText("exportedAsset")} / video`;
     return value.replace(/_/g, " ");
-  }
-
-  function formatNumber(value) {
-    const number = Number(value);
-    return Number.isFinite(number) ? number.toLocaleString() : "";
-  }
-
-  function formatSignedNumber(value) {
-    const number = Number(value);
-    if (!Number.isFinite(number)) return "";
-    return `${number > 0 ? "+" : ""}${number.toLocaleString()}`;
   }
 
   function formatBytes(bytes) {
@@ -330,21 +313,6 @@
     }
     renderUpdateSummary();
     renderUpdateList();
-  }
-
-  function rebuildSelect(select, values, labeler) {
-    if (!select) return;
-    const current = select.value;
-    const all = select.querySelector("option[value='']");
-    select.replaceChildren();
-    if (all) select.appendChild(all);
-    for (const value of values) {
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = labeler ? labeler(value) : value;
-      select.appendChild(option);
-    }
-    select.value = Array.from(select.options).some((option) => option.value === current) ? current : "";
   }
 
   function populateUpdateFilters() {

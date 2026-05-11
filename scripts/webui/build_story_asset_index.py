@@ -8,6 +8,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from build_story_paths import _asset_source_family, resolve_asset_source_roots, resolve_material_source_roots
+from common import write_json
 
 ASSET_KIND_BY_EXT = {
     ".obj": "model",
@@ -262,9 +263,7 @@ def build_asset_index(out_path: Path, *, root: Path, export_root: Path) -> dict:
         "entries": entries,
         "relations": relations,
     }
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with out_path.open("w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+    write_json(out_path, payload)
 
     print(
         "Asset index written:",
@@ -330,9 +329,7 @@ def build_video_index(out_path: Path, *, root: Path, export_root: Path) -> dict:
         },
         "entries": entries,
     }
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with out_path.open("w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+    write_json(out_path, payload)
 
     print(
         "Video index written:",

@@ -14,7 +14,7 @@ Reads:
   export_full/structured/StreamingAssets/Table/RemoteCommonTable.json    (remote comm story calls)
   export_full/structured/StreamingAssets/Table/EnvTalkTable.json         (ambient / environment talk)
 
-Falls back to the legacy top-level export_full/StreamingAssets/... layout when needed.
+Uses the structured export_full layout produced by the current WebUI export.
 
 Writes:
   webui/data/manifest.json                 (available language bundles)
@@ -47,6 +47,7 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 from build_story_asset_index import build_asset_index as shared_build_asset_index
+from common import write_json
 from build_story_paths import _existing_unique_paths, _resolve_recovered_dir, _resolve_structured_source_dir
 from build_story_reports import (
     build_scene_order_gap_summary as shared_build_scene_order_gap_summary,
@@ -102,12 +103,10 @@ ANIME_TREE_DIRS = [
     _resolve_recovered_dir(
         EXPORT_ROOT,
         ("recovered", "AnimeStudio-net9-extracted"),
-        ("AnimeStudio-net9-extracted",),
     ),
     _resolve_recovered_dir(
         EXPORT_ROOT,
         ("recovered", "AnimeStudio", "main", "TextAsset"),
-        ("AnimeStudio", "main", "TextAsset"),
     ),
 ]
 ANIME_RESOURCE_DIRS = _existing_unique_paths([
@@ -3375,6 +3374,61 @@ def _normalize_dialog_timeline_option_rows(value) -> list[dict]:
     return out
 
 
+def _normalize_dialog_timeline_option_routes(value) -> dict[str, dict]:
+    if not isinstance(value, dict):
+        return {}
+    out: dict[str, dict] = {}
+    for raw_option_id, raw in value.items():
+        if not isinstance(raw, dict):
+            continue
+        option_id = str(raw_option_id or raw.get("id") or "").strip()
+        if not option_id:
+            continue
+        path_line_ids = _normalize_line_order_ids(raw.get("pathLineIds"))
+        skipped_line_ids = _normalize_line_order_ids(raw.get("skippedLineIds"))
+        if not path_line_ids:
+            continue
+        record: dict = {
+            "source": str(raw.get("source") or "runtimeJumpTrack"),
+            "pathLineIds": path_line_ids,
+            "skippedLineIds": skipped_line_ids,
+        }
+        for field in ("groupKey", "continuationGroupKey"):
+            value_for_field = str(raw.get(field) or "").strip()
+            if value_for_field:
+                record[field] = value_for_field
+        continuation_option_ids = _normalize_line_order_ids(raw.get("continuationOptionIds"))
+        if continuation_option_ids:
+            record["continuationOptionIds"] = continuation_option_ids
+        for field in ("optionIndex",):
+            value_for_field = raw.get(field)
+            if isinstance(value_for_field, int):
+                record[field] = value_for_field
+        for field in ("start", "end"):
+            value_for_field = raw.get(field)
+            if isinstance(value_for_field, (int, float)):
+                record[field] = round(float(value_for_field), 3)
+        skip_ranges: list[dict] = []
+        for raw_range in raw.get("skipRanges") or []:
+            if not isinstance(raw_range, dict):
+                continue
+            range_record: dict = {}
+            for field in ("start", "end", "duration"):
+                value_for_field = raw_range.get(field)
+                if isinstance(value_for_field, (int, float)):
+                    range_record[field] = round(float(value_for_field), 3)
+            for field in ("track", "trackName", "assetTrack", "displayName"):
+                value_for_field = str(raw_range.get(field) or "").strip()
+                if value_for_field:
+                    range_record[field] = value_for_field
+            if range_record:
+                skip_ranges.append(range_record)
+        if skip_ranges:
+            record["skipRanges"] = skip_ranges
+        out[option_id] = record
+    return dict(sorted(out.items()))
+
+
 def _index_dialog_timeline_entry(index: dict[str, list[dict]], raw_key: str, entry: dict) -> None:
     line_ids = _normalize_line_order_ids(entry.get("lineIds"))
     option_ids = _normalize_line_order_ids(entry.get("optionIds"))
@@ -3394,6 +3448,7 @@ def _index_dialog_timeline_entry(index: dict[str, list[dict]], raw_key: str, ent
     ] if timed_line_ids else line_ids
     option_positions = _normalize_dialog_timeline_option_positions(entry.get("optionPositions"))
     option_rows = _normalize_dialog_timeline_option_rows(entry.get("options"))
+    option_routes = _normalize_dialog_timeline_option_routes(entry.get("optionRoutes"))
     normalized = {
         "sourceKey": timeline or raw_key,
         "timeline": timeline,
@@ -3404,6 +3459,7 @@ def _index_dialog_timeline_entry(index: dict[str, list[dict]], raw_key: str, ent
         "lineTimings": line_timings,
         "optionPositions": option_positions,
         "optionRows": option_rows,
+        "optionRoutes": option_routes,
     }
     identity = (
         normalized["sourceKey"],
@@ -3412,6 +3468,7 @@ def _index_dialog_timeline_entry(index: dict[str, list[dict]], raw_key: str, ent
         tuple(option_ids),
         json.dumps(option_anchors, sort_keys=True, ensure_ascii=False),
         json.dumps(option_rows, sort_keys=True, ensure_ascii=False),
+        json.dumps(option_routes, sort_keys=True, ensure_ascii=False),
     )
     for alias in _dialog_timeline_aliases(raw_key, entry, ordered_line_ids, option_ids):
         bucket = index.setdefault(alias, [])
@@ -3467,6 +3524,8 @@ def _load_dialog_timeline_line_order_index() -> dict[str, list[dict]]:
                 public["optionPositions"] = entry["optionPositions"]
             if entry.get("optionRows"):
                 public["optionRows"] = entry["optionRows"]
+            if entry.get("optionRoutes"):
+                public["optionRoutes"] = entry["optionRoutes"]
             public_entries.append(public)
         public_entries.sort(key=lambda item: (-len(item["lineIds"]), item["sourceKey"], item["file"]))
         cleaned[key] = public_entries
@@ -6110,6 +6169,38 @@ def build_language_bundle(
             if candidate:
                 npc_templates_by_template_id[candidate].append(template_row_id)
 
+    npc_data_key_by_id: dict[str, str] = {}
+    npc_data_keys_by_group: dict[str, list[str]] = defaultdict(list)
+    for npc_row_id, row in npc_rows.items():
+        if not isinstance(row, dict):
+            continue
+        data_key = str(row.get("dataKey") or "").strip()
+        if not data_key:
+            continue
+        for key in (
+            str(npc_row_id or "").strip(),
+            str(row.get("npcId") or "").strip(),
+            str(row.get("normalCfg") or "").strip(),
+        ):
+            if key and key not in npc_data_key_by_id:
+                npc_data_key_by_id[key] = data_key
+        group_id = str(row.get("npcGroupId") or "").strip()
+        if group_id and data_key not in npc_data_keys_by_group[group_id]:
+            npc_data_keys_by_group[group_id].append(data_key)
+
+    def npc_template_row_id_for_candidate(value: str) -> str:
+        raw = str(value or "").strip()
+        if not raw:
+            return ""
+        candidates = _unique_preserve([raw, norm_template_id(raw)])
+        for candidate in candidates:
+            if candidate in npc_templates:
+                return candidate
+            template_row_ids = npc_templates_by_template_id.get(candidate) or []
+            if template_row_ids:
+                return template_row_ids[0]
+        return ""
+
     def resolve_npc_template_row(row_id: str, row: dict) -> tuple[str, dict | None]:
         candidates: list[str] = []
 
@@ -6287,16 +6378,52 @@ def build_language_bundle(
         EnvTalk actor ids sometimes encode the speaker as a scoped proxy such
         as `chen_map01_e2m5`. The prefix is still the real speaker id, while
         the suffix only tells us which map/mission proxy emitted the bark.
+        Some ids instead use NPC template/group ids, such as
+        `npc_spl_andrew_01_g01_map01_lv001_e1m3_001`; resolve those through
+        NpcTable and NpcTemplateGroupTable so the browser can show the real
+        display name.
         """
         raw = str(actor_id or "").strip()
         if not raw:
             return []
         out: list[str] = []
-        for marker in ("_map", "_base"):
+
+        def add_candidate(value: str) -> None:
+            value = str(value or "").strip()
+            if value and value not in out:
+                out.append(value)
+
+        add_candidate(raw)
+        for marker in ("_map", "_base", "_dung", "_data_sub"):
             idx = raw.find(marker)
             if idx > 0:
-                out.append(raw[:idx])
-        return _unique_preserve(out)
+                add_candidate(raw[:idx])
+
+        index = 0
+        while index < len(out):
+            current = out[index]
+            index += 1
+
+            if current.startswith("npc_tpl_"):
+                add_candidate(norm_template_id(current))
+
+            data_key = npc_data_key_by_id.get(current)
+            if data_key:
+                add_candidate(data_key)
+            for data_key in npc_data_keys_by_group.get(current, []):
+                add_candidate(data_key)
+
+            group_base = re.sub(r"_g\d+$", "", current)
+            if group_base != current:
+                add_candidate(group_base)
+
+            template_row_id = npc_template_row_id_for_candidate(current)
+            if template_row_id:
+                add_candidate(template_row_id)
+                template_row = npc_templates.get(template_row_id) or {}
+                add_candidate(str(template_row.get("npcNameId") or ""))
+
+        return out
 
     def npc_proxy_actor_candidates(proxy_id: str) -> list[str]:
         raw = str(proxy_id or "").strip()
@@ -6317,11 +6444,16 @@ def build_language_bundle(
     def add_actor_template_name(aid: str) -> None:
         if not aid:
             return
-        row = npc_templates.get(aid)
+        template_row_id = npc_template_row_id_for_candidate(aid)
+        row = npc_templates.get(template_row_id) if template_row_id else None
         if not isinstance(row, dict):
             return
-        add_actor_text(aid, named_text(str(row.get("name") or "")))
-        add_actor_text(aid, named_text(str(row.get("title") or "")))
+        canonical_aid = str(row.get("npcNameId") or "").strip()
+        for target_aid in _unique_preserve([aid, canonical_aid]):
+            add_actor_text(target_aid, named_text(str(row.get("name") or "")))
+            add_actor_text(target_aid, named_text(str(row.get("title") or "")))
+        if canonical_aid and actor_name_sets.get(canonical_aid):
+            actor_name_sets[aid].update(actor_name_sets[canonical_aid])
 
     for entry in dialogs.values():
         add_actor_name(entry.get("actorNameId") or "", entry.get("actorName", {}).get("id"))
@@ -6780,6 +6912,7 @@ def build_language_bundle(
         })
 
     options_by_key: dict[str, dict[int, list[dict]]] = defaultdict(lambda: defaultdict(list))
+    dialog_option_text_by_id: dict[str, str] = {}
     dialog_option_signature_by_id: dict[str, tuple[str, str]] = {}
     dialog_option_ids_by_scene_group: dict[tuple[str, int], list[tuple[int, str]]] = defaultdict(list)
     option_orphans = 0
@@ -6792,6 +6925,7 @@ def build_language_bundle(
         option_text = t(entry.get("optionText", {}).get("id"))
         option_icon = entry.get("iconType", "") or ""
         option_scene_key = f"dlg_{mission}_{scene}"
+        dialog_option_text_by_id[oid] = option_text
         dialog_option_signature_by_id[oid] = (_option_text_signature(option_text), option_icon)
         dialog_option_ids_by_scene_group[(option_scene_key, grp)].append((idx, oid))
         target = attach_target(mission, scene)
@@ -6947,6 +7081,7 @@ def build_language_bundle(
         timeline_after: dict[str, str] = {}
         timeline_after_line_ids: dict[str, list[str]] = {}
         timeline_option_rows: dict[str, list[dict]] = defaultdict(list)
+        timeline_option_routes: dict[str, list[dict]] = defaultdict(list)
         timeline_pre: set[str] = set()
         timeline_authored_option_ids: set[str] = set()
         timeline_sources: set[str] = set()
@@ -7003,6 +7138,11 @@ def build_language_bundle(
                     if _dialog_tree_option_prefix(opt_id) != conv_key:
                         continue
                     timeline_option_rows[opt_id].append(row)
+                for opt_id, route in (timeline.get("optionRoutes") or {}).items():
+                    if _dialog_tree_option_prefix(opt_id) != conv_key:
+                        continue
+                    if isinstance(route, dict):
+                        timeline_option_routes[opt_id].append(route)
                 for opt_id, anchor in (timeline.get("optionAnchors") or {}).items():
                     if _dialog_tree_option_prefix(opt_id) != conv_key:
                         continue
@@ -7246,6 +7386,7 @@ def build_language_bundle(
         unanchored_group_count = 0
         fallback_group_labels: list[str] = []
         group_details: list[dict] = []
+        option_response_risks: list[dict] = []
 
         def preferred_timeline_option_row(opt_id: str) -> dict:
             rows = timeline_option_rows.get(opt_id) or []
@@ -7260,6 +7401,81 @@ def build_language_bundle(
                     row.get("assetTrack") or "",
                 ),
             )
+
+        def preferred_timeline_option_route(opt_id: str) -> dict:
+            routes = timeline_option_routes.get(opt_id) or []
+            if not routes:
+                return {}
+            return max(
+                routes,
+                key=lambda route: (
+                    len(route.get("pathLineIds") or []),
+                    -float(route.get("start") or 0.0),
+                    str(route.get("source") or ""),
+                ),
+            )
+
+        def timeline_route_branch_for_group(group_opt_ids: list[str], after_id: str) -> dict:
+            if len(group_opt_ids) < 2 or not after_id:
+                return {}
+            if any(tree_branches.get(opt_id) for opt_id in group_opt_ids):
+                return {}
+            anchors = [timeline_after.get(opt_id) or "" for opt_id in group_opt_ids]
+            if not all(anchor == after_id for anchor in anchors):
+                return {}
+            routes = [preferred_timeline_option_route(opt_id) for opt_id in group_opt_ids]
+            if not all(route.get("pathLineIds") for route in routes):
+                return {}
+            branch_line_ids_by_option: dict[str, list[str]] = {}
+            skipped_line_ids_by_option: dict[str, list[str]] = {}
+            for opt_id, route in zip(group_opt_ids, routes):
+                path_line_ids = [
+                    str(line_id)
+                    for line_id in (route.get("pathLineIds") or [])
+                    if line_id in valid_line_ids
+                ]
+                if not path_line_ids:
+                    return {}
+                branch_line_ids_by_option[opt_id] = path_line_ids
+                skipped_line_ids_by_option[opt_id] = [
+                    str(line_id)
+                    for line_id in (route.get("skippedLineIds") or [])
+                    if line_id in valid_line_ids
+                ]
+            if len({tuple(value) for value in branch_line_ids_by_option.values()}) < 2:
+                return {}
+            continuation_option_ids = _unique_preserve([
+                str(option_id)
+                for route in routes
+                for option_id in (route.get("continuationOptionIds") or [])
+                if str(option_id or "").strip()
+            ])
+            return {
+                "code": "timelineRouteBranches",
+                "reason": "runtimeJumpTrack",
+                "detail": (
+                    "Runtime Jump Track clips in the dialog Timeline mark "
+                    "which time ranges each selected optionIndex skips; branch "
+                    "lines are recovered by removing those skipped ranges from "
+                    "the route window."
+                ),
+                "after": after_id,
+                "optionIds": group_opt_ids,
+                "branchLineIdsByOption": branch_line_ids_by_option,
+                "skippedLineIdsByOption": skipped_line_ids_by_option,
+                "continuationOptionIds": continuation_option_ids,
+                "source": "dialogTimeline",
+                "optionIndex": [
+                    route.get("optionIndex")
+                    for route in routes
+                ],
+                "assetTracks": _unique_preserve([
+                    str(raw_range.get("track") or raw_range.get("assetTrack") or "")
+                    for route in routes
+                    for raw_range in (route.get("skipRanges") or [])
+                    if str(raw_range.get("track") or raw_range.get("assetTrack") or "").strip()
+                ]),
+            }
 
         def following_line_risk_for_group(group_opt_ids: list[str], after_id: str) -> dict:
             if len(group_opt_ids) < 2 or not after_id:
@@ -7336,6 +7552,19 @@ def build_language_bundle(
                     if row.get("assetTrack")
                 ]),
             }
+
+        def option_risk_line_ids(following_line_risk: dict, option_count: int) -> list[str]:
+            candidate_line_ids = [
+                str(line_id)
+                for line_id in (following_line_risk.get("candidateLineIds") or [])
+                if line_id in valid_line_ids
+            ]
+            if len(candidate_line_ids) == option_count:
+                return candidate_line_ids
+            common_line_id = str(following_line_risk.get("commonContinuationLineId") or "")
+            if common_line_id in valid_line_ids:
+                return [common_line_id for _ in range(option_count)]
+            return []
 
         for order, g in enumerate(sorted(groups_map), start=1):
             opts = sorted(groups_map[g], key=lambda o: o["i"])
@@ -7482,15 +7711,38 @@ def build_language_bundle(
                 group["after"] = after
             elif used_group_fallback and fallback_anchor_id:
                 group["after"] = fallback_anchor_id
-            following_line_risk = following_line_risk_for_group(group_opt_ids, group.get("after") or "")
+            timeline_route_branch = timeline_route_branch_for_group(group_opt_ids, group.get("after") or "")
+            route_branch_lines_by_option = timeline_route_branch.get("branchLineIdsByOption") or {}
+            if timeline_route_branch.get("continuationOptionIds"):
+                group["continuationOptionIds"] = timeline_route_branch["continuationOptionIds"]
+            for opt in opts:
+                opt_id = opt.get("id") or ""
+                if opt.get("branchLines"):
+                    continue
+                route_branch_lines = [
+                    line_id
+                    for line_id in (route_branch_lines_by_option.get(opt_id) or [])
+                    if line_id in valid_line_ids
+                ]
+                if route_branch_lines:
+                    opt["branchLines"] = route_branch_lines
+                    rendered_branch_paths.append(tuple(route_branch_lines))
+            following_line_risk = timeline_route_branch or following_line_risk_for_group(group_opt_ids, group.get("after") or "")
             if following_line_risk:
                 group["optionBranchRisk"] = following_line_risk
-                for opt, line_id in zip(opts, following_line_risk.get("candidateLineIds") or []):
-                    opt.setdefault("riskTags", []).append({
-                        "code": "inferredFollowingLine",
-                        "lineId": line_id,
-                        "reason": following_line_risk["reason"],
+                if following_line_risk.get("code") == "inferredFollowingLines":
+                    option_response_risks.append({
+                        "group": g,
+                        **following_line_risk,
                     })
+                    for opt, line_id in zip(opts, option_risk_line_ids(following_line_risk, len(opts))):
+                        opt.setdefault("riskTags", []).append({
+                            "code": "inferredFollowingLine",
+                            "lineId": line_id,
+                            "reason": following_line_risk["reason"],
+                            "branchRiskCode": following_line_risk.get("code") or "",
+                            "source": following_line_risk.get("source") or "",
+                        })
             if sibling_anchor_record and sibling_anchor_record.get("siblingScenes"):
                 group["branchHint"] = {
                     "scenes": sibling_anchor_record["siblingScenes"],
@@ -7575,6 +7827,28 @@ def build_language_bundle(
                 "cinematicSources": sorted(cinematic_sources),
                 "textAliasSources": sorted(text_alias_sources),
                 "authoredOptionCount": len(authored_option_ids),
+            })
+        if option_response_risks:
+            warnings.append({
+                "code": "inferredOptionResponse",
+                "reason": "optionTargetsMissing",
+                "detail": (
+                    "one or more option responses are inferred from Timeline order "
+                    "because the option metadata does not name explicit target trunk ids"
+                ),
+                "groups": option_response_risks,
+                "optionIds": _unique_preserve([
+                    option_id
+                    for risk in option_response_risks
+                    for option_id in (risk.get("optionIds") or [])
+                    if option_id
+                ]),
+                "lineIds": _unique_preserve([
+                    line_id
+                    for risk in option_response_risks
+                    for line_id in (risk.get("candidateLineIds") or [])
+                    if line_id
+                ]),
             })
         return {
             "groups": out,
@@ -7743,7 +8017,60 @@ def build_language_bundle(
                 parts.extend(str(line_id) for line_id in (opt.get("pathLineIds") or []) if line_id)
                 parts.extend(str(scene_key) for scene_key in (opt.get("sceneKeys") or []) if scene_key)
                 parts.extend(str(scene_key) for scene_key in (opt.get("submenuSceneKeys") or []) if scene_key)
+                for target in opt.get("submenuTargets") or []:
+                    if not isinstance(target, dict):
+                        continue
+                    parts.extend(
+                        str(target.get(key) or "")
+                        for key in ("sceneKey", "optionId", "text")
+                        if target.get(key)
+                    )
         return " ".join(parts)
+
+    def attach_submenu_targets(links: list[dict]) -> None:
+        for link in links or []:
+            for opt in link.get("options") or []:
+                if not isinstance(opt, dict):
+                    continue
+                submenu_scene_keys = [
+                    str(scene_key)
+                    for scene_key in (opt.get("submenuSceneKeys") or [])
+                    if str(scene_key).strip()
+                ]
+                if not submenu_scene_keys:
+                    continue
+                debug = opt.get("_debug") if isinstance(opt.get("_debug"), dict) else {}
+                return_option_ids = [
+                    str(option_id)
+                    for option_id in (debug.get("returnOptionIds") or [])
+                    if str(option_id).strip()
+                ]
+                targets: list[dict] = []
+                seen_targets: set[tuple[str, str]] = set()
+                for idx, option_id in enumerate(return_option_ids):
+                    scene_key = _dialog_tree_option_prefix(option_id) or ""
+                    if not scene_key and idx < len(submenu_scene_keys):
+                        scene_key = submenu_scene_keys[idx]
+                    if not scene_key:
+                        continue
+                    key = (scene_key, option_id)
+                    if key in seen_targets:
+                        continue
+                    seen_targets.add(key)
+                    target = {
+                        "sceneKey": scene_key,
+                        "optionId": option_id,
+                    }
+                    if text := dialog_option_text_by_id.get(option_id):
+                        target["text"] = text
+                    targets.append(target)
+                for scene_key in submenu_scene_keys:
+                    if any(target.get("sceneKey") == scene_key for target in targets):
+                        continue
+                    target = {"sceneKey": scene_key}
+                    targets.append(target)
+                if targets:
+                    opt["submenuTargets"] = targets
 
     def dialog_story_issue_codes(payload: dict) -> list[str]:
         codes: list[str] = []
@@ -7775,6 +8102,11 @@ def build_language_bundle(
             for item in (payload.get("warnings") or [])
         ):
             codes.append("duplicateTimestamps")
+        if any(
+            isinstance(item, dict) and item.get("code") == "inferredOptionResponse"
+            for item in (payload.get("warnings") or [])
+        ):
+            codes.append("inferredOptionResponse")
         return codes
 
     print(
@@ -7911,6 +8243,7 @@ def build_language_bundle(
             payload["graphFragments"] = graph_fragments
         scene_graph_links = build_dialog_tree_scene_link_payload(out_key)
         if scene_graph_links:
+            attach_submenu_targets(scene_graph_links)
             payload["sceneGraphLinks"] = scene_graph_links
             scene_graph_links_by_key[out_key] = scene_graph_links
         attach_runtime_registry_debug(payload)
@@ -14189,7 +14522,7 @@ def main(argv: list[str] | None = None) -> None:
     if not available_languages:
         raise SystemExit(
             "No I18nTextTable_*.json files found in export_full/structured/StreamingAssets/Table "
-            "(or the legacy export_full/StreamingAssets/Table fallback)."
+            "from the current WebUI export."
         )
 
     target_languages = normalize_language_selection(args.languages, available_languages)
@@ -14235,8 +14568,7 @@ def main(argv: list[str] | None = None) -> None:
         "languages": [language_info(code) for code in target_languages],
         "stats": stats,
     }
-    with (OUT_DIR / "manifest.json").open("w", encoding="utf-8") as f:
-        json.dump(manifest, f, ensure_ascii=False, indent=2)
+    write_json(OUT_DIR / "manifest.json", manifest, indent=2, compact=False)
 
     default_dir = LANG_DIR / default_language
     shutil.copy2(default_dir / "index.json", OUT_DIR / "index.json")

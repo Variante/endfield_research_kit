@@ -14,8 +14,8 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from build_asset_bundles import build_asset_bundles
-from build_story import ASSET_DIR, EXPORT_ROOT, OUT_DIR, build_asset_index
-from build_story_asset_index import build_video_index
+from build_story_asset_index import build_asset_index, build_video_index
+from common import ASSET_DIR, EXPORT_ROOT, OUT_DIR, ROOT
 
 
 def main() -> None:
@@ -24,8 +24,8 @@ def main() -> None:
     ASSET_DIR.mkdir(parents=True, exist_ok=True)
 
     print(f"Building asset browser index from {EXPORT_ROOT}...")
-    asset_stats = build_asset_index(ASSET_DIR / "index.json", export_root=EXPORT_ROOT)
-    video_stats = build_video_index(ASSET_DIR / "videos.json", root=Path(__file__).resolve().parents[2], export_root=EXPORT_ROOT)
+    asset_stats = build_asset_index(ASSET_DIR / "index.json", root=ROOT, export_root=EXPORT_ROOT)
+    video_stats = build_video_index(ASSET_DIR / "videos.json", root=ROOT, export_root=EXPORT_ROOT)
     print(
         "\nAsset root copy:",
         ASSET_DIR / "index.json",

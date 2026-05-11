@@ -517,7 +517,9 @@ html, body {
   margin-right: 2px;
 }
 
-.opt-target-chips {
+.opt-target-chips,
+.opt-jump-tags,
+.branch-loop-tags {
   margin-top: 4px;
   display: flex;
   flex-wrap: wrap;
@@ -567,6 +569,54 @@ a.opt-target-chip { cursor: pointer; }
   background: rgba(232, 96, 96, 0.16);
   border-color: rgba(232, 96, 96, 0.45);
 }
+.opt-target-chip-line {
+  color: #d9eef8;
+  background: rgba(84, 173, 194, 0.16);
+  border-color: rgba(84, 173, 194, 0.45);
+}
+.opt-target-chip-line:hover { background: rgba(84, 173, 194, 0.30); }
+.opt-target-chip-line.is-tree,
+.opt-target-chip-merge.is-tree {
+  color: #c8f0d8;
+  background: rgba(96, 200, 130, 0.16);
+  border-color: rgba(96, 200, 130, 0.45);
+}
+.opt-target-chip-line.is-tree:hover,
+.opt-target-chip-merge.is-tree:hover {
+  background: rgba(96, 200, 130, 0.30);
+}
+.opt-target-chip-line.is-shared,
+.opt-target-chip-merge.is-shared {
+  color: #d8c8f0;
+  background: rgba(150, 110, 220, 0.16);
+  border-color: rgba(150, 110, 220, 0.45);
+}
+.opt-target-chip-line.is-shared:hover,
+.opt-target-chip-merge.is-shared:hover {
+  background: rgba(150, 110, 220, 0.30);
+}
+.opt-target-chip-line.is-inferred,
+.opt-target-chip-merge.is-inferred {
+  color: #ffe8b0;
+  background: rgba(232, 185, 79, 0.14);
+  border-color: rgba(232, 185, 79, 0.45);
+}
+.opt-target-chip-line.is-inferred:hover,
+.opt-target-chip-merge.is-inferred:hover {
+  background: rgba(232, 185, 79, 0.26);
+}
+.opt-target-chip-loop {
+  color: #ffe2c2;
+  background: rgba(232, 168, 96, 0.16);
+  border-color: rgba(232, 168, 96, 0.45);
+}
+.opt-target-chip-loop:hover { background: rgba(232, 168, 96, 0.30); }
+.opt-target-chip-merge {
+  color: #d9e8ff;
+  background: rgba(130, 160, 220, 0.16);
+  border-color: rgba(130, 160, 220, 0.45);
+}
+.opt-target-chip-merge:hover { background: rgba(130, 160, 220, 0.30); }
 .opt-target-chip-source {
   color: #cfe1ff;
   background: rgba(108, 162, 232, 0.12);
@@ -609,6 +659,14 @@ a.opt-target-chip { cursor: pointer; }
 }
 .opt-group.opt-group-flash {
   animation: opt-group-flash 1.4s ease-out 1;
+}
+@keyframes line-flash {
+  0%   { box-shadow: 0 0 0 2px rgba(84, 173, 194, 0.85); }
+  100% { box-shadow: 0 0 0 2px rgba(84, 173, 194, 0); }
+}
+.line.line-flash,
+.branch-line.line-flash {
+  animation: line-flash 1.4s ease-out 1;
 }
 
 .line {
@@ -1515,6 +1573,12 @@ a.opt-target-chip { cursor: pointer; }
   text-align: center; letter-spacing: 0.5px;
   text-transform: uppercase;
 }
+.branch-merge .opt-target-chip {
+  margin-left: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+  vertical-align: middle;
+}
 
 .flow-dlg-ref {
   border: 0;
@@ -1541,6 +1605,9 @@ a.opt-target-chip { cursor: pointer; }
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+.branch-common-lines {
+  margin-top: 8px;
 }
 .branch-line {
   padding-top: 8px;

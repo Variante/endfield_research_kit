@@ -13,6 +13,15 @@
     "O", "OP", "ORM", "P", "PACK", "R", "RM", "ROUGH", "ROUGHNESS",
     "S", "SM", "SPEC", "ST", "T",
   ]);
+  const {
+    $,
+    $$,
+    applyTemplate,
+    escapeHtml,
+    normalizeUiLocale,
+    storageGet,
+    storageSet,
+  } = window.WebUI;
   const ASSET_UI_TEXTS = {
     zh: {
       showFilters: "\u663e\u793a\u7b5b\u9009",
@@ -232,9 +241,6 @@
     },
   };
 
-  const $ = (sel) => document.querySelector(sel);
-  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-
   function stripAssetLodSuffix(value) {
     return String(value || "").replace(/(?:[_-])lod\d+$/i, "");
   }
@@ -291,45 +297,28 @@
   }
 
   function resolveInitialFiltersCollapsed() {
-    try {
-      const stored = localStorage.getItem(FILTER_PANEL_STORAGE_KEY);
-      if (stored === "1") return true;
-      if (stored === "0") return false;
-    } catch (_error) {
-      // Ignore storage failures.
-    }
+    const stored = storageGet(FILTER_PANEL_STORAGE_KEY);
+    if (stored === "1") return true;
+    if (stored === "0") return false;
     return isMobileLayout();
   }
 
   function persistFiltersCollapsed(collapsed) {
-    try {
-      localStorage.setItem(FILTER_PANEL_STORAGE_KEY, collapsed ? "1" : "0");
-    } catch (_error) {
-      // Ignore storage failures.
-    }
-  }
-
-  function normalizeUiLocale(locale) {
-    const value = String(locale || "").toLowerCase();
-    return value === "zh" || value === "en" ? value : "";
+    storageSet(FILTER_PANEL_STORAGE_KEY, collapsed ? "1" : "0");
   }
 
   function resolveInitialUiLocale() {
     const fromWindow = normalizeUiLocale(window.WEBUI_UI_LOCALE);
     if (fromWindow) return fromWindow;
-    try {
-      const stored = normalizeUiLocale(localStorage.getItem(UI_LOCALE_STORAGE_KEY));
-      if (stored) return stored;
-    } catch (_error) {
-      // Ignore storage failures.
-    }
+    const stored = normalizeUiLocale(storageGet(UI_LOCALE_STORAGE_KEY));
+    if (stored) return stored;
     return document.documentElement.lang.toLowerCase().startsWith("zh") ? "zh" : "en";
   }
 
   function assetUiText(key, replacements = {}) {
     const locale = ASSET_UI_TEXTS[ASSET_STATE.uiLocale] || ASSET_UI_TEXTS.en;
     const template = locale[key] || ASSET_UI_TEXTS.en[key] || key;
-    return template.replace(/\{(\w+)\}/g, (_, name) => String(replacements[name] ?? ""));
+    return applyTemplate(template, replacements);
   }
 
   function assetKindLabel(kind) {
@@ -2513,14 +2502,6 @@
       out[key] = (out[key] || 0) + 1;
     }
     return out;
-  }
-
-  function escapeHtml(value) {
-    return String(value || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/\"/g, "&quot;");
   }
 
   function formatBytes(bytes) {

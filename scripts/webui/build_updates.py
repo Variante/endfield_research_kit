@@ -34,6 +34,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from build_story_asset_index import ASSET_KIND_BY_EXT, VIDEO_EXTENSIONS
 from build_story_paths import resolve_asset_source_roots
+from common import display_extension, normalize_posix, read_json, write_json
 
 DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
 DEFAULT_STATE_DIR = ROOT / ".game-data-tracker"
@@ -111,14 +112,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Do not write timestamped raw tracker history under the state directory.",
     )
     return parser.parse_args(argv)
-
-
-def normalize_posix(path: str) -> str:
-    return path.replace("\\", "/").strip("/")
-
-
-def display_extension(value: str) -> str:
-    return str(value or "").strip() or "[no extension]"
 
 
 def tracker_has_baseline(state_dir: Path) -> bool:
@@ -249,12 +242,7 @@ def build_asset_snapshot(
 
 
 def load_asset_state(path: Path) -> dict[str, dict[str, Any]]:
-    if not path.exists():
-        return {}
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {}
+    payload = read_json(path, default={})
     if int(payload.get("schemaVersion") or 0) != ASSET_STATE_SCHEMA_VERSION:
         return {}
     assets = payload.get("assets")
@@ -270,8 +258,7 @@ def write_asset_state(path: Path, assets: dict[str, dict[str, Any]], *, export_r
         "sourceRoot": str(export_root),
         "assets": assets,
     }
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    write_json(path, payload)
 
 
 def asset_update_entry(status: str, asset: dict[str, Any], old_asset: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -579,8 +566,7 @@ def main(argv: list[str] | None = None) -> int:
         sample_limit=args.sample_limit,
     )
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(webui_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_json(out_path, webui_payload, indent=2, compact=False)
 
     totals = webui_payload["gameTotals"]
     if webui_payload["baselineInitialized"]:

@@ -19,7 +19,7 @@ const FILTER_PANEL_STORAGE_KEY = "webui_filters_collapsed";
 const STORY_SPLITTER_STORAGE_KEY = "webui_story_splitter_width";
 const ASSET_SPLITTER_STORAGE_KEY = "webui_asset_splitter_width";
 const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
-const LEGACY_LANGUAGE = {
+const DEFAULT_LANGUAGE_INFO = {
   code: "CN",
   label: "Chinese (Simplified)",
   nativeLabel: "\u7b80\u4f53\u4e2d\u6587",
@@ -30,7 +30,7 @@ const STATE = {
   manifest: null,
   index: null,
   language: null,
-  languageInfo: LEGACY_LANGUAGE,
+  languageInfo: DEFAULT_LANGUAGE_INFO,
   uiLocale: "zh",
   actorNames: {},        // aid -> [name, ...]
   missionNames: {},      // mission id -> display name
@@ -68,8 +68,7 @@ const STATE = {
   inlineTagDisplayMode: DEFAULT_INLINE_TAG_DISPLAY_MODE,
 };
 
-const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const { $, $$, storageGet, storageSet, normalizeUiLocale, escapeHtml } = window.WebUI;
 
 function createDefaultFilters() {
   return {
@@ -272,13 +271,6 @@ function setupPaneSplitter({ container, pane, splitter, storageKey, minRightWidt
   syncWidth();
 }
 
-function storageGet(key) {
-  try { return localStorage.getItem(key); } catch (_) { return null; }
-}
-function storageSet(key, value) {
-  try { localStorage.setItem(key, value); } catch (_) {}
-}
-
 function persistFiltersCollapsed(collapsed) {
   storageSet(FILTER_PANEL_STORAGE_KEY, collapsed ? "1" : "0");
 }
@@ -292,17 +284,12 @@ function resolveInitialFiltersCollapsed() {
 
 
 function getLanguageInfo(code) {
-  if (!STATE.manifest || !Array.isArray(STATE.manifest.languages)) return LEGACY_LANGUAGE;
-  return STATE.manifest.languages.find((lang) => lang.code === code) || LEGACY_LANGUAGE;
+  if (!STATE.manifest || !Array.isArray(STATE.manifest.languages)) return DEFAULT_LANGUAGE_INFO;
+  return STATE.manifest.languages.find((lang) => lang.code === code) || STATE.manifest.languages[0] || DEFAULT_LANGUAGE_INFO;
 }
 
 function resolveUiLocale(info) {
   return info && info.uiLocale ? info.uiLocale : "en";
-}
-
-function normalizeUiLocale(locale) {
-  const value = String(locale || "").toLowerCase();
-  return value === "zh" || value === "en" ? value : "";
 }
 
 function persistUiLocaleSelection(locale) {
@@ -353,9 +340,6 @@ function setUiLocale(locale, { persist = true, refresh = true } = {}) {
 
 
 function dataPath(relativePath, languageCode = STATE.language) {
-  if (STATE.manifest && STATE.manifest.legacyRoot) {
-    return `data/${relativePath}`;
-  }
   return `data/lang/${encodeURIComponent(languageCode)}/${relativePath}`;
 }
 
@@ -1238,7 +1222,7 @@ function resolveInitialLanguage() {
   const stored = (storageGet(LANGUAGE_STORAGE_KEY) || "").toUpperCase();
   if (stored && getLanguageInfo(stored).code === stored) return stored;
 
-  return (STATE.manifest && STATE.manifest.defaultLanguage) || LEGACY_LANGUAGE.code;
+  return (STATE.manifest && STATE.manifest.defaultLanguage) || DEFAULT_LANGUAGE_INFO.code;
 }
 
 function applyUiStrings() {
@@ -1311,9 +1295,7 @@ function buildLanguageSelect() {
 
   const select = $("#language");
   select.innerHTML = "";
-  const languages = (STATE.manifest && STATE.manifest.languages && STATE.manifest.languages.length)
-    ? STATE.manifest.languages
-    : [LEGACY_LANGUAGE];
+  const languages = STATE.manifest.languages;
 
   for (const language of languages) {
     const option = document.createElement("option");
@@ -1363,21 +1345,13 @@ function showFatalError(error) {
 }
 
 async function loadManifest() {
-  try {
-    const res = await fetch("data/manifest.json");
-    if (!res.ok) throw new Error(`manifest.json HTTP ${res.status}`);
-    const manifest = await res.json();
-    if (!manifest.languages || !manifest.languages.length) {
-      manifest.languages = [LEGACY_LANGUAGE];
-    }
-    return manifest;
-  } catch (_error) {
-    return {
-      defaultLanguage: LEGACY_LANGUAGE.code,
-      languages: [LEGACY_LANGUAGE],
-      legacyRoot: true,
-    };
+  const res = await fetch("data/manifest.json");
+  if (!res.ok) throw new Error(`manifest.json HTTP ${res.status}`);
+  const manifest = await res.json();
+  if (!Array.isArray(manifest.languages) || !manifest.languages.length) {
+    throw new Error("manifest.json does not list any languages");
   }
+  return manifest;
 }
 
 async function switchLanguage(languageCode, { preserveSelection = true } = {}) {
@@ -1880,6 +1854,44 @@ function isSameConversationSceneKey(sceneKey, conv) {
   return conversationAliasBaseKey(raw) === conversationAliasBaseKey(current);
 }
 
+function lineAnchorId(convKey, lineId) {
+  const convPart = encodeURIComponent(String(convKey || ""));
+  const linePart = encodeURIComponent(String(lineId || ""));
+  return `line-${convPart}-${linePart}`;
+}
+
+function setLineAnchor(node, convKey, lineId) {
+  const id = String(lineId || "");
+  if (!node || !convKey || !id) return;
+  node.id = lineAnchorId(convKey, id);
+  node.dataset.lineId = id;
+}
+
+function scrollToLineAnchor(convKey, lineId) {
+  const anchor = document.getElementById(lineAnchorId(convKey, lineId));
+  if (!anchor) return false;
+  anchor.scrollIntoView({ block: "center", behavior: "smooth" });
+  anchor.classList.remove("line-flash");
+  void anchor.offsetWidth;
+  anchor.classList.add("line-flash");
+  return true;
+}
+
+function createLineJumpChip(conv, lineId, labelKey, className, titleKey) {
+  const line = String(lineId || "");
+  if (!line) return null;
+  const chip = document.createElement("a");
+  chip.className = className;
+  chip.textContent = uiText(labelKey).replace("{line}", line);
+  chip.href = `#${lineAnchorId(conv && conv.key, line)}`;
+  chip.title = uiText(titleKey || "optJumpLineTitle").replace("{line}", line);
+  chip.addEventListener("click", (event) => {
+    event.preventDefault();
+    scrollToLineAnchor(conv && conv.key, line);
+  });
+  return chip;
+}
+
 function optionGroupNumberFromOptionId(optionId, convKey) {
   const raw = String(optionId || "");
   const candidates = new Set([
@@ -1894,6 +1906,157 @@ function optionGroupNumberFromOptionId(optionId, convKey) {
     if (m) return parseInt(m[1], 10);
   }
   return null;
+}
+
+function sameSceneOptionOutcomes(option, conv, outcomesByOptionId) {
+  if (!option || !outcomesByOptionId) return [];
+  return (outcomesByOptionId.get(option.id) || []).filter((outcome) => {
+    const firstSceneKey = String(outcome.firstSceneKey || "");
+    return !firstSceneKey || isSameConversationSceneKey(firstSceneKey, conv);
+  });
+}
+
+function optionRiskLineInfos(option) {
+  const out = [];
+  for (const tag of Array.isArray(option && option.riskTags) ? option.riskTags : []) {
+    const lineId = String(tag && tag.lineId || "");
+    if (!lineId || out.some((item) => item.lineId === lineId)) continue;
+    const branchRiskCode = String(tag.branchRiskCode || "");
+    const source = branchRiskCode === "cosmeticChoice"
+      ? "shared"
+      : (branchRiskCode === "inferredFollowingLines" || tag.source === "dialogTimeline" ? "inferred" : "tree");
+    out.push({ lineId, source });
+  }
+  return out;
+}
+
+function optionBranchRiskJumpInfo(risk) {
+  const lineId = String(risk && risk.commonContinuationLineId || "");
+  if (!lineId) return null;
+  const code = String(risk && risk.code || "");
+  return {
+    lineId,
+    source: code === "cosmeticChoice" ? "shared" : "inferred",
+  };
+}
+
+function firstOptionJumpInfo(option, group, conv, outcomesByOptionId) {
+  const branchLines = normalizeLineOrderIdList(option && option.branchLines);
+  if (branchLines.length) return { lineId: branchLines[0], source: "tree" };
+
+  for (const outcome of sameSceneOptionOutcomes(option, conv, outcomesByOptionId)) {
+    const lineId = String(outcome.firstLineId || "");
+    if (lineId) return { lineId, source: "tree" };
+  }
+
+  const riskLineInfos = optionRiskLineInfos(option);
+  if (riskLineInfos.length) return riskLineInfos[0];
+
+  return optionBranchRiskJumpInfo(group && group.optionBranchRisk) || { lineId: "", source: "" };
+}
+
+function optionJumpLabelKey(source) {
+  if (source === "tree") return "optJumpLineTree";
+  if (source === "shared") return "optJumpLineShared";
+  if (source === "inferred") return "optJumpLineInferred";
+  return "optJumpLine";
+}
+
+function optionJumpTitleKey(source) {
+  if (source === "tree") return "optJumpLineTitleTree";
+  if (source === "shared") return "optJumpLineTitleShared";
+  if (source === "inferred") return "optJumpLineTitleInferred";
+  return "optJumpLineTitle";
+}
+
+function optionJumpSourceClass(source) {
+  return source ? ` is-${source}` : "";
+}
+
+function optionGroupForOptionId(conv, optionId) {
+  const targetGroup = optionGroupNumberFromOptionId(optionId, conv && conv.key);
+  if (targetGroup === null) return null;
+  for (const group of (conv && conv.optionGroups) || []) {
+    if (Number(group && group.g) === targetGroup) return group;
+  }
+  return null;
+}
+
+function optionLoopLineIds(option, group, conv, outcomesByOptionId, lineOrderIndexById = null) {
+  const out = [];
+  const currentGroup = group && group.g != null
+    ? Number(group.g)
+    : optionGroupNumberFromOptionId(option && option.id, conv && conv.key);
+  const currentAfterLineId = String(group && group.after || "");
+  const hasCurrentLineIdx = lineOrderIndexById instanceof Map && lineOrderIndexById.has(currentAfterLineId);
+  const currentLineIdx = hasCurrentLineIdx ? lineOrderIndexById.get(currentAfterLineId) : null;
+  for (const outcome of sameSceneOptionOutcomes(option, conv, outcomesByOptionId)) {
+    if (!outcome.loop) continue;
+    const debug = outcome._debug || {};
+    const returnOptionIds = (debug.returnOptionIds || []).filter(Boolean);
+    const targetGroupInfo = returnOptionIds.length ? optionGroupForOptionId(conv, returnOptionIds[0]) : null;
+    const targetGroup = returnOptionIds.length
+      ? optionGroupNumberFromOptionId(returnOptionIds[0], conv && conv.key)
+      : null;
+    const targetAfterLineId = String(targetGroupInfo && targetGroupInfo.after || "");
+    const hasTargetLineIdx = lineOrderIndexById instanceof Map && lineOrderIndexById.has(targetAfterLineId);
+    const targetLineIdx = hasTargetLineIdx ? lineOrderIndexById.get(targetAfterLineId) : null;
+    const sameMenuLoop = outcome.loop.kind === "sameOptionMenuReturn";
+    const backwardByLine = hasCurrentLineIdx && hasTargetLineIdx && targetLineIdx <= currentLineIdx;
+    const backwardByGroup = !hasCurrentLineIdx && !hasTargetLineIdx && targetGroup !== null
+      && currentGroup !== null
+      && targetGroup <= currentGroup;
+    const backwardLoop = backwardByLine || backwardByGroup;
+    if (!sameMenuLoop && !backwardLoop) continue;
+    const pathLineIds = normalizeLineOrderIdList(outcome.pathLineIds);
+    const lineId = String(targetGroupInfo && targetGroupInfo.after || "")
+      || pathLineIds[0]
+      || String(outcome.firstLineId || "");
+    if (lineId && !out.includes(lineId)) out.push(lineId);
+  }
+  return out;
+}
+
+function renderOptionJumpTags(option, group, conv, outcomesByOptionId) {
+  const jumpInfo = firstOptionJumpInfo(option, group, conv, outcomesByOptionId);
+  const jumpLineId = String(jumpInfo.lineId || "");
+  if (!jumpLineId) return null;
+
+  const wrap = document.createElement("div");
+  wrap.className = "opt-jump-tags";
+  const jumpChip = createLineJumpChip(
+    conv,
+    jumpLineId,
+    optionJumpLabelKey(jumpInfo.source),
+    "opt-target-chip opt-target-chip-line" + optionJumpSourceClass(jumpInfo.source),
+    optionJumpTitleKey(jumpInfo.source)
+  );
+  if (jumpChip) wrap.appendChild(jumpChip);
+  return wrap.childNodes.length ? wrap : null;
+}
+
+function renderOptionLoopTagsForLineIds(conv, loopLineIds) {
+  if (!loopLineIds.length) return null;
+
+  const wrap = document.createElement("div");
+  wrap.className = "branch-loop-tags";
+  for (const lineId of loopLineIds) {
+    const loopChip = createLineJumpChip(
+      conv,
+      lineId,
+      "optJumpLoopLine",
+      "opt-target-chip opt-target-chip-loop",
+      "optJumpLoopLineTitle"
+    );
+    if (loopChip) wrap.appendChild(loopChip);
+  }
+  return wrap.childNodes.length ? wrap : null;
+}
+
+function optionGroupMergeInfo(group) {
+  const mergeLineId = String(group && group.branchMerge || "");
+  if (mergeLineId) return { lineId: mergeLineId, source: "tree" };
+  return optionBranchRiskJumpInfo(group && group.optionBranchRisk);
 }
 
 function summarizeOptionTargets(option, conv, outcomesByOptionId) {
@@ -1917,8 +2080,23 @@ function summarizeOptionTargets(option, conv, outcomesByOptionId) {
       continue;
     }
 
+    const seenSubmenuScenes = new Set();
+    for (const submenuTarget of outcome.submenuTargets || []) {
+      if (!submenuTarget || typeof submenuTarget !== "object") continue;
+      const sk = String(submenuTarget.sceneKey || "");
+      if (!sk || isSameConversationSceneKey(sk, conv)) continue;
+      const optionId = String(submenuTarget.optionId || "");
+      const optionText = String(submenuTarget.text || "");
+      seenSubmenuScenes.add(sk);
+      push(`submenu:${sk}:${optionId || optionText}`, {
+        kind: "sceneSubmenu",
+        sceneKey: sk,
+        optionId,
+        optionText,
+      });
+    }
     for (const sk of outcome.submenuSceneKeys || []) {
-      if (sk && !isSameConversationSceneKey(sk, conv)) {
+      if (sk && !seenSubmenuScenes.has(sk) && !isSameConversationSceneKey(sk, conv)) {
         push(`submenu:${sk}`, { kind: "sceneSubmenu", sceneKey: sk });
       }
     }
@@ -2024,6 +2202,7 @@ function renderOptionTargetChips(option, conv, outcomesByOptionId, options = {})
     if (grp && grp.g != null) groupByG.set(grp.g, grp);
   }
   const isReturnOverride = typeof options.isReturnTarget === "function" ? options.isReturnTarget : null;
+  const hideSelfMenu = Boolean(options.hideSelfMenu);
 
   const wrap = document.createElement("div");
   wrap.className = "opt-target-chips";
@@ -2041,7 +2220,7 @@ function renderOptionTargetChips(option, conv, outcomesByOptionId, options = {})
         label,
         "opt-target-chip opt-target-chip-menu" + (isReturn ? " is-return" : "")
       );
-    } else if (target.kind === "selfMenu") {
+    } else if (target.kind === "selfMenu" && !hideSelfMenu) {
       chip = document.createElement("span");
       chip.className = "opt-target-chip opt-target-chip-self";
       chip.textContent = uiText("optTargetSelfMenu");
@@ -2050,11 +2229,19 @@ function renderOptionTargetChips(option, conv, outcomesByOptionId, options = {})
       const resolvedSceneKey = resolveConversationEntryKey(rawSceneKey) || rawSceneKey;
       chip = document.createElement("a");
       chip.className = "opt-target-chip opt-target-chip-scene";
-      chip.textContent = (target.kind === "sceneSubmenu" ? uiText("optTargetSceneSubmenu") : uiText("optTargetScene"))
+      const sceneLabel = (target.kind === "sceneSubmenu" ? uiText("optTargetSceneSubmenu") : uiText("optTargetScene"))
         .replace("{key}", rawSceneKey);
+      chip.textContent = target.kind === "sceneSubmenu" && target.optionText
+        ? `${target.optionText} ${sceneLabel}`
+        : sceneLabel;
       chip.href = `#${encodeURIComponent(resolvedSceneKey)}`;
+      if (target.optionId) {
+        chip.title = `${target.optionId} -> ${rawSceneKey}`;
+      }
       if (resolvedSceneKey && resolvedSceneKey !== rawSceneKey) {
-        chip.title = `${rawSceneKey} -> ${resolvedSceneKey}`;
+        chip.title = chip.title
+          ? `${chip.title} (${resolvedSceneKey})`
+          : `${rawSceneKey} -> ${resolvedSceneKey}`;
       }
       chip.addEventListener("click", (event) => {
         event.preventDefault();
@@ -2398,6 +2585,17 @@ function renderConvWarning(warning) {
     title = uiText("warningInferredOptionLayoutTitle");
     body = uiText("warningInferredOptionLayoutBody");
   }
+  if (warning.code === "inferredOptionResponse") {
+    title = uiText("warningInferredOptionResponseTitle");
+    body = uiText("warningInferredOptionResponseBody");
+    const lineIds = normalizeLineOrderIdList(warning.lineIds);
+    if (lineIds.length) {
+      const section = document.createElement("section");
+      section.className = "conv-warning-section";
+      appendLineIdTagList(section, "", lineIds);
+      detailSections.push(section);
+    }
+  }
   if (warning.code === "duplicateTimestamps") {
     title = uiText("warningDuplicateTimestampsTitle");
     body = uiText("warningDuplicateTimestampsBody");
@@ -2669,13 +2867,23 @@ function findLineOrderContinuationGroups(group, ctx) {
   }
   const groups = [];
   const seen = new Set();
+  const pushGroup = (candidate) => {
+    if (!candidate || candidate === group || seen.has(candidate)) return;
+    groups.push(candidate);
+    seen.add(candidate);
+  };
+  for (const optionId of normalizeLineOrderIdList(group.continuationOptionIds)) {
+    pushGroup(optionGroupForOptionId(ctx.conv, optionId));
+  }
+  for (const optionId of normalizeLineOrderIdList(group.optionBranchRisk && group.optionBranchRisk.continuationOptionIds)) {
+    pushGroup(optionGroupForOptionId(ctx.conv, optionId));
+  }
   for (const option of group.options || []) {
     for (const lineId of normalizeLineOrderIdList(option.branchLines)) {
       for (const candidate of ctx.groupsByLineId.get(lineId) || []) {
         if (!candidate || candidate === group || seen.has(candidate)) continue;
         if (!isLineOrderSharedContinuationGroup(group, candidate, ctx.outcomesByOptionId, ctx.conv.key)) continue;
-        groups.push(candidate);
-        seen.add(candidate);
+        pushGroup(candidate);
       }
     }
   }
@@ -2964,9 +3172,10 @@ function renderLineOrderRecovery(conv) {
   return strip;
 }
 
-function renderDialogBranchLine(line, inlineGroups = [], renderOptGroup = null) {
+function renderDialogBranchLine(line, inlineGroups = [], renderOptGroup = null, convKey = "") {
   const item = document.createElement("div");
   item.className = "branch-line";
+  setLineAnchor(item, convKey, line && line.id);
 
   const actor = document.createElement("div");
   actor.className = "branch-line-speaker";
@@ -3246,6 +3455,11 @@ function renderConv(conv) {
     : null;
   const snsBranchData = buildSnsBranchGroups(conv);
   const dlgLineById = new Map(conv.lines.map((ln) => [ln.id, ln]));
+  const lineOrderIndexById = new Map(
+    conv.lines
+      .map((ln, idx) => [String(ln && ln.id || ""), idx])
+      .filter(([lineId]) => lineId)
+  );
   const dlgBranchSkipIds = new Set();
   const uncertainOptionLayout = convHasWarning(conv, "inferredOptionLayout");
   const uncoveredLineIdSet = getConvUncoveredLineIdSet(conv);
@@ -3391,7 +3605,176 @@ function renderConv(conv) {
   };
   const chipOptions = { isReturnTarget: (target) => renderedOptGroups.has(target) };
 
-  const renderOptGroup = (grp) => {
+  const optionLineUsageByGroup = new WeakMap();
+  const optionCandidateLineIdsByOption = new WeakMap();
+  const branchColumnLineIdsByOption = new WeakMap();
+  const branchDisplayModelByGroup = new WeakMap();
+
+  const optionListForGroup = (grp) => {
+    const opts = grp && grp.options ? grp.options : [];
+    return Array.isArray(opts) ? opts : (opts ? [opts] : []);
+  };
+
+  const optionPathLineIds = (opt) => {
+    const out = [];
+    for (const outcome of sameSceneOptionOutcomes(opt, conv, outcomesByOptionId)) {
+      for (const lineId of normalizeLineOrderIdList(outcome.pathLineIds)) {
+        if (lineIdSet.has(lineId) && !out.includes(lineId)) out.push(lineId);
+      }
+    }
+    return out;
+  };
+
+  const optionCandidateLineIds = (opt) => {
+    if (optionCandidateLineIdsByOption.has(opt)) return optionCandidateLineIdsByOption.get(opt);
+    const out = [];
+    const push = (lineId) => {
+      if (lineId && lineIdSet.has(lineId) && !out.includes(lineId)) out.push(lineId);
+    };
+    for (const lineId of normalizeLineOrderIdList(opt && opt.branchLines)) push(lineId);
+    for (const lineId of optionPathLineIds(opt)) push(lineId);
+    optionCandidateLineIdsByOption.set(opt, out);
+    return out;
+  };
+
+  const optionLineUsageForGroup = (grp) => {
+    if (optionLineUsageByGroup.has(grp)) return optionLineUsageByGroup.get(grp);
+    const usage = new Map();
+    for (const opt of optionListForGroup(grp)) {
+      for (const lineId of optionCandidateLineIds(opt)) {
+        usage.set(lineId, (usage.get(lineId) || 0) + 1);
+      }
+    }
+    optionLineUsageByGroup.set(grp, usage);
+    return usage;
+  };
+
+  const branchColumnLineIdsForOption = (grp, opt) => {
+    if (branchColumnLineIdsByOption.has(opt)) return branchColumnLineIdsByOption.get(opt);
+    const out = [];
+    const push = (lineId) => {
+      if (lineId && lineIdSet.has(lineId) && !out.includes(lineId)) out.push(lineId);
+    };
+    const usage = optionLineUsageForGroup(grp);
+    for (const lineId of optionCandidateLineIds(opt)) {
+      if ((usage.get(lineId) || 0) === 1) push(lineId);
+    }
+    branchColumnLineIdsByOption.set(opt, out);
+    return out;
+  };
+
+  const collectBranchColumnLineIds = (grp, opt, seenGroups = new Set()) => {
+    const out = [];
+    const push = (lineId) => {
+      if (lineId && lineIdSet.has(lineId) && !out.includes(lineId)) out.push(lineId);
+    };
+    if (!grp || seenGroups.has(grp)) return out;
+    seenGroups.add(grp);
+    for (const lineId of optionCandidateLineIds(opt)) {
+      push(lineId);
+      for (const childGroup of groupsByLineId.get(lineId) || []) {
+        if (!childGroup || childGroup === grp || seenGroups.has(childGroup)) continue;
+        if (isLineOrderSharedContinuationGroup(grp, childGroup, outcomesByOptionId, conv.key)) continue;
+        for (const childOpt of optionListForGroup(childGroup)) {
+          for (const childLineId of collectBranchColumnLineIds(childGroup, childOpt, seenGroups)) {
+            push(childLineId);
+          }
+        }
+      }
+    }
+    seenGroups.delete(grp);
+    return out;
+  };
+
+  const branchDisplayModelForGroup = (grp) => {
+    if (branchDisplayModelByGroup.has(grp)) return branchDisplayModelByGroup.get(grp);
+    const opts = optionListForGroup(grp);
+    const usage = optionLineUsageForGroup(grp);
+    const commonDirect = new Set(
+      [...usage.entries()]
+        .filter(([, count]) => count > 1)
+        .map(([lineId]) => lineId)
+    );
+    const recursiveByOption = new WeakMap();
+    const recursiveUsage = new Map();
+    for (const opt of opts) {
+      const recursive = [];
+      const push = (lineId) => {
+        if (lineId && lineIdSet.has(lineId) && !recursive.includes(lineId)) recursive.push(lineId);
+      };
+      for (const lineId of optionCandidateLineIds(opt)) {
+        if (commonDirect.has(lineId)) continue;
+        for (const childGroup of groupsByLineId.get(lineId) || []) {
+          if (!childGroup || childGroup === grp) continue;
+          if (isLineOrderSharedContinuationGroup(grp, childGroup, outcomesByOptionId, conv.key)) continue;
+          for (const childOpt of optionListForGroup(childGroup)) {
+            for (const childLineId of collectBranchColumnLineIds(childGroup, childOpt)) {
+              push(childLineId);
+            }
+          }
+        }
+      }
+      recursiveByOption.set(opt, recursive);
+      for (const lineId of recursive) {
+        recursiveUsage.set(lineId, (recursiveUsage.get(lineId) || 0) + 1);
+      }
+    }
+    const commonRecursive = new Set(
+      [...recursiveUsage.entries()]
+        .filter(([, count]) => count > 1)
+        .map(([lineId]) => lineId)
+    );
+    const optionLineIds = new WeakMap();
+    const commonLineIds = [];
+    const pushCommon = (lineId) => {
+      if (lineId && lineIdSet.has(lineId) && !commonLineIds.includes(lineId)) commonLineIds.push(lineId);
+    };
+    for (const opt of opts) {
+      const direct = [];
+      for (const lineId of optionCandidateLineIds(opt)) {
+        if (commonDirect.has(lineId)) {
+          pushCommon(lineId);
+        } else if ((usage.get(lineId) || 0) === 1 && !direct.includes(lineId)) {
+          direct.push(lineId);
+        }
+      }
+      for (const lineId of recursiveByOption.get(opt) || []) {
+        if (commonRecursive.has(lineId)) pushCommon(lineId);
+      }
+      optionLineIds.set(opt, direct);
+    }
+    const model = { optionLineIds, commonLineIds };
+    branchDisplayModelByGroup.set(grp, model);
+    return model;
+  };
+
+  const renderBranchPathLines = (lineIds, ownerGroup, renderCtx) => {
+    const lines = document.createElement("div");
+    lines.className = "branch-lines";
+    const suppressedLineIds = renderCtx && renderCtx.suppressedLineIds
+      ? renderCtx.suppressedLineIds
+      : new Set();
+    const afterIdx = lineRawIdx({ id: (ownerGroup && ownerGroup.after) || "" }) ?? -1;
+    for (const lid of lineIds) {
+      if (suppressedLineIds.has(lid)) continue;
+      const line = dlgLineById.get(lid);
+      if (!line) continue;
+      const lidIdx = lineRawIdx({ id: lid }) ?? -1;
+      const anchorsOtherGroup = (groupsByLineId.get(lid) || [])
+        .some((other) => other && other !== ownerGroup);
+      const isBackLoopAnchor = anchorsOtherGroup && lidIdx <= afterIdx;
+      if (isBackLoopAnchor) continue;
+      lines.appendChild(renderDialogBranchLine(
+        line,
+        attachedGroupsForLine(lid),
+        (group) => renderOptGroup(group, { ...renderCtx, branchColumn: true }),
+        conv.key
+      ));
+    }
+    return lines.childNodes.length ? lines : null;
+  };
+
+  const renderOptGroup = (grp, renderCtx = {}) => {
     const frag = document.createDocumentFragment();
     if (!grp || renderedOptGroups.has(grp)) return frag;
     renderedOptGroups.add(grp);
@@ -3449,9 +3832,12 @@ function renderConv(conv) {
       g.appendChild(hint);
     }
 
-    const opts = grp.options || [];
+    const opts = optionListForGroup(grp);
     const multi = opts.length >= 2;
-    const showBranchContent = optionGroupHasBranchContent(grp);
+    const branchModel = branchDisplayModelForGroup(grp);
+    const showBranchContent = optionGroupHasBranchContent(grp)
+      || opts.some((opt) => (branchModel.optionLineIds.get(opt) || []).length)
+      || branchModel.commonLineIds.length;
 
     if (!multi) {
       const singleFollowups = findOutcomeMenuTargetGroups(grp, conv, outcomesByOptionId)
@@ -3463,16 +3849,37 @@ function renderConv(conv) {
         const icon = opt.icon && opt.icon !== "Default"
           ? ` <span class="opt-icon">[${escapeHtml(opt.icon)}]</span>` : "";
         o.innerHTML = `- ${highlight(opt.text || "(empty)", STATE.filters.q)}${icon}`;
-        const targetChips = renderOptionTargetChips(opt, conv, outcomesByOptionId, chipOptions);
+        const loopLineIds = optionLoopLineIds(opt, grp, conv, outcomesByOptionId, lineOrderIndexById);
+        const showLoopTags = renderCtx.branchColumn || !optionCandidateLineIds(opt).length;
+        const targetChips = renderOptionTargetChips(
+          opt,
+          conv,
+          outcomesByOptionId,
+          { ...chipOptions, hideSelfMenu: showLoopTags && loopLineIds.length > 0 }
+        );
         if (targetChips) o.appendChild(targetChips);
+        const jumpTags = renderOptionJumpTags(opt, grp, conv, outcomesByOptionId);
+        if (jumpTags) o.appendChild(jumpTags);
         const riskTags = renderOptionRiskTags(opt);
         if (riskTags) o.appendChild(riskTags);
         appendOptionId(o, opt);
         appendDebugTrace(o, opt._debug, "option");
         g.appendChild(o);
+        if (renderCtx.branchColumn) {
+          // Single-option prompts should only absorb lines that the trunk has
+          // already hidden as branch-specific content.
+          const branchLineIds = branchColumnLineIdsForOption(grp, opt)
+            .filter((lineId) => dlgBranchSkipIds.has(lineId));
+          const pathLines = renderBranchPathLines(branchLineIds, grp, renderCtx);
+          if (pathLines) g.appendChild(pathLines);
+        }
+        if (showLoopTags) {
+          const loopTags = renderOptionLoopTagsForLineIds(conv, loopLineIds);
+          if (loopTags) g.appendChild(loopTags);
+        }
       }
       for (const followup of singleFollowups) {
-        frag.appendChild(renderOptGroup(followup));
+        frag.appendChild(renderOptGroup(followup, renderCtx));
       }
       return frag;
     }
@@ -3484,6 +3891,36 @@ function renderConv(conv) {
       .filter((target) => !continuationGroupSet.has(target) && isPullEligible(target));
     const allFollowupGroups = continuationGroups.concat(outcomeMenuTargets);
     for (const group of allFollowupGroups) continuationOptGroups.add(group);
+    const commonLineIdSet = new Set(branchModel.commonLineIds);
+    const isCommonTailFollowup = (group) => {
+      if (!commonLineIdSet.size) return false;
+      const groupLineIds = [];
+      const push = (lineId) => {
+        if (lineId && !groupLineIds.includes(lineId)) groupLineIds.push(lineId);
+      };
+      for (const opt of optionListForGroup(group)) {
+        for (const lineId of collectBranchColumnLineIds(group, opt)) push(lineId);
+      }
+      return groupLineIds.length > 0 && groupLineIds.every((lineId) => commonLineIdSet.has(lineId));
+    };
+    const followupGroupsToRender = [];
+    const absorbedFollowupGroups = new Set();
+    for (const group of allFollowupGroups) {
+      if (isCommonTailFollowup(group)) {
+        absorbedFollowupGroups.add(group);
+      } else {
+        followupGroupsToRender.push(group);
+      }
+    }
+
+    const inheritedSuppressedLineIds = renderCtx.suppressedLineIds || new Set();
+    const branchSuppressedLineIds = new Set(inheritedSuppressedLineIds);
+    for (const lineId of branchModel.commonLineIds) branchSuppressedLineIds.add(lineId);
+    const branchRenderCtx = {
+      ...renderCtx,
+      branchColumn: true,
+      suppressedLineIds: branchSuppressedLineIds,
+    };
 
     const cols = document.createElement("div");
     cols.className = "branch-columns";
@@ -3496,46 +3933,81 @@ function renderConv(conv) {
       const head = document.createElement("div");
       head.className = "branch-head";
       head.innerHTML = `- ${highlight(opt.text || "(empty)", STATE.filters.q)}${icon}`;
-      const targetChips = renderOptionTargetChips(opt, conv, outcomesByOptionId, chipOptions);
+      const loopLineIds = optionLoopLineIds(opt, grp, conv, outcomesByOptionId, lineOrderIndexById);
+      const targetChips = renderOptionTargetChips(
+        opt,
+        conv,
+        outcomesByOptionId,
+        { ...chipOptions, hideSelfMenu: loopLineIds.length > 0 }
+      );
       if (targetChips) head.appendChild(targetChips);
+      const jumpTags = renderOptionJumpTags(opt, grp, conv, outcomesByOptionId);
+      if (jumpTags) head.appendChild(jumpTags);
       const riskTags = renderOptionRiskTags(opt);
       if (riskTags) head.appendChild(riskTags);
       appendOptionId(head, opt);
       col.appendChild(head);
-      if (showBranchContent && opt.branchLines && opt.branchLines.length) {
-        const lines = document.createElement("div");
-        lines.className = "branch-lines";
-        for (const lid of opt.branchLines) {
-          const line = dlgLineById.get(lid);
-          if (!line) continue;
-          // If this branchLine is another group's anchor (e.g. a back-loop
-          // pointing at a menu's lead-in line), skip it: the line already
-          // renders in the trunk where that group is anchored, so duplicating
-          // it inside this column would just clutter the column.
-          const anchorsOtherGroup = (groupsByLineId.get(lid) || [])
-            .some((other) => other && other !== grp);
-          if (anchorsOtherGroup) continue;
-          lines.appendChild(renderDialogBranchLine(
-            line,
-            attachedGroupsForLine(lid),
-            renderOptGroup
-          ));
-        }
-        if (lines.childNodes.length) col.appendChild(lines);
+      const branchLineIds = branchModel.optionLineIds.get(opt) || [];
+      if (showBranchContent && branchLineIds.length) {
+        const lines = renderBranchPathLines(branchLineIds, grp, branchRenderCtx);
+        if (lines) col.appendChild(lines);
       }
+      const loopTags = renderOptionLoopTagsForLineIds(conv, loopLineIds);
+      if (loopTags) col.appendChild(loopTags);
       appendDebugTrace(col, opt._debug, "option");
       cols.appendChild(col);
     }
     g.appendChild(cols);
 
-    if (!showBranchContent || grp.branchMerge) {
+    let commonLinesAfterGroup = null;
+    if (branchModel.commonLineIds.length) {
       const merge = document.createElement("div");
       merge.className = "branch-merge";
       merge.textContent = "-> " + uiText("commonContinues");
+      const mergeLineId = branchModel.commonLineIds[0];
+      if (mergeLineId) {
+        merge.appendChild(document.createTextNode(" "));
+        const mergeChip = createLineJumpChip(
+          conv,
+          mergeLineId,
+          "optJumpMergeLine",
+          "opt-target-chip opt-target-chip-merge is-tree",
+          "optJumpMergeLineTitle"
+        );
+        if (mergeChip) merge.appendChild(mergeChip);
+      }
+      g.appendChild(merge);
+
+      commonLinesAfterGroup = renderBranchPathLines(
+        branchModel.commonLineIds,
+        grp,
+        { ...renderCtx, branchColumn: true }
+      );
+      if (commonLinesAfterGroup) {
+        commonLinesAfterGroup.classList.add("branch-common-lines");
+      }
+    } else if (!showBranchContent || grp.branchMerge) {
+      const merge = document.createElement("div");
+      merge.className = "branch-merge";
+      merge.textContent = "-> " + uiText("commonContinues");
+      const mergeInfo = optionGroupMergeInfo(grp);
+      if (mergeInfo && mergeInfo.lineId) {
+        merge.appendChild(document.createTextNode(" "));
+        const mergeChip = createLineJumpChip(
+          conv,
+          mergeInfo.lineId,
+          optionJumpLabelKey(mergeInfo.source),
+          "opt-target-chip opt-target-chip-merge" + optionJumpSourceClass(mergeInfo.source),
+          optionJumpTitleKey(mergeInfo.source)
+        );
+        if (mergeChip) merge.appendChild(mergeChip);
+      }
       g.appendChild(merge);
     }
 
-    for (const group of allFollowupGroups) {
+    for (const group of absorbedFollowupGroups) renderedOptGroups.add(group);
+    if (commonLinesAfterGroup) frag.appendChild(commonLinesAfterGroup);
+    for (const group of followupGroupsToRender) {
       frag.appendChild(renderOptGroup(group));
     }
     return frag;
@@ -3555,10 +4027,16 @@ function renderConv(conv) {
 
   if (conv.kind === "dlg") {
     for (const grp of conv.optionGroups || []) {
-      if (!optionGroupHasBranchContent(grp)) continue;
+      const opts = optionListForGroup(grp);
+      if (opts.length < 2) continue;
+      const branchModel = branchDisplayModelForGroup(grp);
+      const groupHasColumnContent = optionGroupHasBranchContent(grp)
+        || opts.some((opt) => (branchModel.optionLineIds.get(opt) || []).length)
+        || branchModel.commonLineIds.length;
+      if (!groupHasColumnContent) continue;
       const afterIdx = lineRawIdx({ id: grp.after || "" }) ?? -1;
-      for (const opt of grp.options || []) {
-        for (const lid of opt.branchLines || []) {
+      for (const opt of opts) {
+        for (const lid of collectBranchColumnLineIds(grp, opt)) {
           const lidIdx = lineRawIdx({ id: lid }) ?? -1;
           if (lidIdx <= afterIdx) continue;
           // A branchLine that points at *another* group's anchor is a
@@ -3567,7 +4045,8 @@ function renderConv(conv) {
           // the anchored group from ever rendering at its real position.
           const anchorsOtherGroup = (groupsByLineId.get(lid) || [])
             .some((other) => other && other !== grp);
-          if (anchorsOtherGroup) continue;
+          const isBackLoopAnchor = anchorsOtherGroup && lidIdx <= afterIdx;
+          if (isBackLoopAnchor) continue;
           dlgBranchSkipIds.add(lid);
         }
       }
@@ -3601,6 +4080,7 @@ function renderConv(conv) {
         + (ln.text ? "" : " empty")
         + (ln.id && uncoveredLineIdSet.has(ln.id) ? " line-uncovered" : "")
         + (ln.id && duplicateTimestampLineIdSet.has(ln.id) ? " line-duplicate-timestamp" : "");
+      setLineAnchor(row, conv.key, ln.id);
 
     const actor = document.createElement("div");
     actor.className = "actor";
@@ -4152,6 +4632,8 @@ function renderMissionTimelineSceneOrder(sceneGraph, flowKeyMap, currentKey) {
   const allNodes = missionTimelineArray(sceneGraph && sceneGraph.nodes)
     .filter((node) => node && String(node.key || "").trim());
   if (!allNodes.length) return null;
+  const sceneEdges = missionTimelineArray(sceneGraph && sceneGraph.edges)
+    .filter((edge) => edge && String(edge.from || "").trim() && String(edge.to || "").trim());
 
   const confirmed = allNodes
     .filter((node) => node.orderConfirmed !== false)
@@ -4164,25 +4646,43 @@ function renderMissionTimelineSceneOrder(sceneGraph, flowKeyMap, currentKey) {
 
   const details = document.createElement("details");
   details.className = "mission-timeline-details";
-  details.open = true;
   const summary = document.createElement("summary");
   summary.textContent = `${uiText("missionTimelineSceneOrder")} (${confirmed.length}${unconfirmed.length ? ` + ${unconfirmed.length} ${uiText("missionTimelineOrderUnknown")}` : ""})`;
   details.appendChild(summary);
 
-  const row = document.createElement("div");
-  row.className = "mission-timeline-edge";
-  for (const [index, node] of confirmed.entries()) {
-    if (index) {
-      const arrow = document.createElement("span");
-      arrow.className = "mission-timeline-arrow";
-      arrow.textContent = "->";
-      row.appendChild(arrow);
-    }
-    const chip = createFlowSceneChip(node.key || "?", flowKeyMap, currentKey);
-    if (node.kind) chip.title = [chip.title, node.kind].filter(Boolean).join("\n");
-    row.appendChild(chip);
+  const sceneOrderMap = buildMissionTimelineSceneOrderMap(sceneGraph);
+  const graph = renderMissionTimelineSceneEdgeGraph(sceneEdges, flowKeyMap, currentKey, { sceneOrderMap });
+  if (graph) {
+    details.appendChild(graph);
   }
-  details.appendChild(row);
+
+  if (!graph || confirmed.length <= 30) {
+    const row = document.createElement("div");
+    row.className = "mission-timeline-edge" + (graph ? " mission-timeline-order-reference" : "");
+    if (graph) {
+      const label = document.createElement("span");
+      label.className = "mission-timeline-unknown-label";
+      label.textContent = uiText("missionTimelineOrderReference");
+      row.appendChild(label);
+    }
+    for (const [index, node] of confirmed.entries()) {
+      if (index) {
+        const arrow = document.createElement("span");
+        arrow.className = "mission-timeline-arrow";
+        arrow.textContent = "->";
+        row.appendChild(arrow);
+      }
+      const chip = createFlowSceneChip(node.key || "?", flowKeyMap, currentKey);
+      if (node.kind) chip.title = [chip.title, node.kind].filter(Boolean).join("\n");
+      row.appendChild(chip);
+    }
+    details.appendChild(row);
+  } else if (confirmed.length) {
+    const more = document.createElement("div");
+    more.className = "mission-timeline-more";
+    more.textContent = uiText("missionTimelineOrderReferenceHidden").replace("{count}", String(confirmed.length));
+    details.appendChild(more);
+  }
 
   if (unconfirmed.length) {
     const unknownRow = document.createElement("div");
@@ -4628,13 +5128,6 @@ function speakerName(speaker) {
   const tail = parts[parts.length - 1];
   if (STATE.actorNames[tail]) return actorDisplay(tail);
   return stripBraceSegments(speaker) || speaker;
-}
-
-// ---------- helpers ----------
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[c]));
 }
 
 function formatTimelineSeconds(value) {

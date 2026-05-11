@@ -36,6 +36,7 @@
     },
   };
   const ROW_RENDER_LIMIT = 500;
+  const { $, escapeHtml, textIncludes } = window.WebUI;
   const REF_STATE = {
     index: null,
     tables: [],
@@ -51,7 +52,7 @@
     loadingIndex: null,
   };
 
-  const ref$ = (sel) => document.querySelector(sel);
+  const ref$ = $;
 
   function refLocale() {
     const raw = String(window.WEBUI_UI_LOCALE || "zh").toLowerCase();
@@ -68,13 +69,7 @@
   }
 
   function referenceDataPath(relativePath) {
-    const rel = `reference/${relativePath}`;
-    if (typeof dataPath === "function") return dataPath(rel, currentLanguage());
-    return `data/lang/${encodeURIComponent(currentLanguage())}/${rel}`;
-  }
-
-  function textIncludes(value, q) {
-    return String(value || "").toLowerCase().includes(q);
+    return dataPath(`reference/${relativePath}`, currentLanguage());
   }
 
   function referenceSearchKey(q, source) {

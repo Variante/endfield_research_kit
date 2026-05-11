@@ -73,6 +73,8 @@ Expected active inputs and outputs:
 - `webui/build_assets.py`: builds the WebUI asset index.
 - `webui/package_webui.py`: packages a shareable WebUI build from `serve.py`,
   `..\webui\`, and displayed media files under `..\export_full\`.
+- `webui/common.py`: small shared constants and JSON/path helpers for the
+  WebUI builders.
 
 ## WebUI Story Helpers
 
