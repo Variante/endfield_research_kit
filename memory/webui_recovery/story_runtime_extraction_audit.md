@@ -113,10 +113,10 @@ that option's branch path.
 Current CN gains from this pass:
 
 - `timeline_line_orders.json`: 25 Timeline entries with route evidence,
-  containing 57 option routes.
-- WebUI CN conv output: 14 scenes and 16 option groups now have
+  containing 59 option routes.
+- WebUI CN conv output: 15 scenes and 17 option groups now have
   `timelineRouteBranches` evidence.
-- Those route-backed groups account for 91 branch-line assignments that no
+- Those route-backed groups account for 93 branch-line assignments that no
   longer need `inferredFollowingLines` risk tags.
 - Strict recovery report improvement: flagged scenes dropped from 98 to 93,
   and inferred option-response scenes dropped from 65 to 60.
@@ -132,6 +132,19 @@ Runtime Jump Track skip windows recover:
 `dlg_e1m1_5` group 3 remains inferred because the current Timeline/DLL dump
 does not expose matching runtime-jump route evidence for that later option
 group.
+
+A second, narrower Runtime Jump rule was added for one shape exposed by
+`reports/runtime_jump_option_route_audit_CN.json`: a multi-option group whose
+next authored slot is a single-option boundary sitting on one branch line. The
+rule still requires complete forward jump coverage and distinct non-empty
+paths for every option. It recovers `dlg_c28m3_23` group 2:
+
+- `option_dlg_c28m3_23_2_001` -> `dlg_c28m3_23_014`
+- `option_dlg_c28m3_23_2_002` -> `dlg_c28m3_23_015`
+
+After that promotion, the audit has 107 remaining inferred groups; 11 have
+nearby Runtime Jump clips, and 0 pass the strict second-rule check. The nearby
+cases are therefore diagnostic only for now.
 
 `dlg_e0m2_1` is now resolved by the `dialogTreeCinematicTimeline` stitch:
 `dlgtl_e0m2_1_sub_1` inserts line 005 after trunk line 004, and

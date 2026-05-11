@@ -792,6 +792,87 @@ def _time_ranges_for_option(jump_clips: list[dict], option_index: int) -> list[d
     ]
 
 
+def _build_runtime_jump_candidate_routes(
+    slot: dict,
+    route_end: float,
+    line_rows: list[dict],
+    group_jump_clips: list[dict],
+    continuation_slot: dict | None = None,
+    source: str = "runtimeJumpTrack",
+) -> dict[str, dict]:
+    if not group_jump_clips:
+        return {}
+    if not route_end:
+        route_end = max(as_float(clip.get("end")) for clip in group_jump_clips)
+    if route_end <= slot["end"]:
+        return {}
+
+    scene_lines = [
+        line
+        for line in line_rows
+        if line_stem(str(line.get("id") or "")) == slot["sceneKey"]
+        and _line_is_in_time_range(line, slot["end"], route_end)
+    ]
+    if not scene_lines:
+        return {}
+
+    candidate_routes: dict[str, dict] = {}
+    for row in slot["optionRows"]:
+        option_id = str(row.get("id") or "")
+        option_index = as_int(row.get("optionIndex"))
+        if not option_id or option_index is None:
+            continue
+        skip_ranges = _time_ranges_for_option(group_jump_clips, option_index)
+        skipped_line_ids: list[str] = []
+        path_line_ids: list[str] = []
+        for line in scene_lines:
+            line_id = str(line.get("id") or "")
+            if not line_id:
+                continue
+            if any(_line_is_in_time_range(line, as_float(skip.get("start")), as_float(skip.get("end"))) for skip in skip_ranges):
+                skipped_line_ids.append(line_id)
+            else:
+                path_line_ids.append(line_id)
+        if not path_line_ids or not skip_ranges:
+            continue
+        route = {
+            "source": source,
+            "groupKey": slot["groupKey"],
+            "optionIndex": option_index,
+            "start": round(slot["start"], 3),
+            "end": round(route_end, 3),
+            "pathLineIds": path_line_ids,
+            "skippedLineIds": skipped_line_ids,
+            "skipRanges": [
+                {
+                    "start": skip.get("start"),
+                    "end": skip.get("end"),
+                    "duration": skip.get("duration"),
+                    "track": skip.get("track") or "",
+                    "trackName": skip.get("trackName") or "",
+                    "assetTrack": skip.get("assetTrack") or "",
+                    "displayName": skip.get("displayName") or "",
+                }
+                for skip in skip_ranges
+            ],
+        }
+        if continuation_slot:
+            route["continuationGroupKey"] = continuation_slot["groupKey"]
+            route["continuationOptionIds"] = [
+                str(next_row.get("id") or "")
+                for next_row in continuation_slot["optionRows"]
+                if str(next_row.get("id") or "")
+            ]
+        candidate_routes[option_id] = route
+
+    if len(candidate_routes) != len(slot["optionRows"]):
+        return {}
+    distinct_paths = {tuple(route.get("pathLineIds") or []) for route in candidate_routes.values()}
+    if len(distinct_paths) < 2:
+        return {}
+    return candidate_routes
+
+
 def build_option_routes(
     lines: list[dict],
     options: list[dict],
@@ -898,75 +979,41 @@ def build_option_routes(
         ]
         if not group_jump_clips:
             continue
-        if not route_end:
-            route_end = max(as_float(clip.get("end")) for clip in group_jump_clips)
-        if route_end <= slot["end"]:
+
+        candidate_routes = _build_runtime_jump_candidate_routes(
+            slot,
+            route_end,
+            line_rows,
+            group_jump_clips,
+            next_slot,
+        )
+        if candidate_routes:
+            routes.update(candidate_routes)
             continue
 
-        scene_lines = [
-            line
-            for line in line_rows
-            if line_stem(str(line.get("id") or "")) == slot["sceneKey"]
-            and _line_is_in_time_range(line, slot["end"], route_end)
+        if not next_slot or len(next_slot["optionRows"]) != 1:
+            continue
+        extended_jump_clips = [
+            clip
+            for clip in jump_clips
+            if clip.get("optionIndex") in option_index_set
+            and (not slot["sourceFiles"] or str(clip.get("sourceFile") or "") in slot["sourceFiles"])
+            and as_float(clip.get("start")) >= slot["end"] - ROUTE_TIME_EPSILON
+            and as_float(clip.get("start")) < next_slot["end"] + ROUTE_TIME_EPSILON
         ]
-        if not scene_lines:
+        if not extended_jump_clips:
             continue
-
-        candidate_routes: dict[str, dict] = {}
-        for row in slot["optionRows"]:
-            option_id = str(row.get("id") or "")
-            option_index = as_int(row.get("optionIndex"))
-            if not option_id or option_index is None:
-                continue
-            skip_ranges = _time_ranges_for_option(group_jump_clips, option_index)
-            skipped_line_ids: list[str] = []
-            path_line_ids: list[str] = []
-            for line in scene_lines:
-                line_id = str(line.get("id") or "")
-                if not line_id:
-                    continue
-                if any(_line_is_in_time_range(line, as_float(skip.get("start")), as_float(skip.get("end"))) for skip in skip_ranges):
-                    skipped_line_ids.append(line_id)
-                else:
-                    path_line_ids.append(line_id)
-            if not path_line_ids or not skip_ranges:
-                continue
-            route = {
-                "source": "runtimeJumpTrack",
-                "groupKey": slot["groupKey"],
-                "optionIndex": option_index,
-                "start": round(slot["start"], 3),
-                "end": round(route_end, 3),
-                "pathLineIds": path_line_ids,
-                "skippedLineIds": skipped_line_ids,
-                "skipRanges": [
-                    {
-                        "start": skip.get("start"),
-                        "end": skip.get("end"),
-                        "duration": skip.get("duration"),
-                        "track": skip.get("track") or "",
-                        "trackName": skip.get("trackName") or "",
-                        "assetTrack": skip.get("assetTrack") or "",
-                        "displayName": skip.get("displayName") or "",
-                    }
-                    for skip in skip_ranges
-                ],
-            }
-            if next_slot:
-                route["continuationGroupKey"] = next_slot["groupKey"]
-                route["continuationOptionIds"] = [
-                    str(next_row.get("id") or "")
-                    for next_row in next_slot["optionRows"]
-                    if str(next_row.get("id") or "")
-                ]
-            candidate_routes[option_id] = route
-
-        if len(candidate_routes) != len(slot["optionRows"]):
-            continue
-        distinct_paths = {tuple(route.get("pathLineIds") or []) for route in candidate_routes.values()}
-        if len(distinct_paths) < 2:
-            continue
-        routes.update(candidate_routes)
+        extended_route_end = max(as_float(clip.get("end")) for clip in extended_jump_clips)
+        candidate_routes = _build_runtime_jump_candidate_routes(
+            slot,
+            extended_route_end,
+            line_rows,
+            extended_jump_clips,
+            None,
+            source="runtimeJumpTrackSingleOptionBoundary",
+        )
+        if candidate_routes:
+            routes.update(candidate_routes)
 
     return dict(sorted(routes.items()))
 

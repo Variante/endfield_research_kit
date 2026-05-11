@@ -101,6 +101,10 @@ These are kept because the WebUI story builders import or use them:
   `Data/Video/PC/Narrative/Cutscene` and `RemoteComm`, attaches matching
   `narrativeVideos` to dialog/cutscene/remotecomm conv JSON, and writes
   `reports/narrative_videos_<LANG>.json` / `.md`.
+- `webui/build_runtime_jump_option_route_audit.py`: audits remaining
+  `inferredFollowingLines` option groups against nearby Runtime Jump Track
+  clips and writes `reports/runtime_jump_option_route_audit_<LANG>.json` /
+  `.md`. Use it before promoting any new automatic option-route rule.
 - `scene_order_gap_shared.py`: classifies each scene's line-order and
   option-layout recovery quality. Consumes the DialogIdTable registry above
   to upgrade `lineIdSuffix`-mode scenes to one of:

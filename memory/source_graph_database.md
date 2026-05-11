@@ -206,6 +206,10 @@ Current known gaps from the 2026-05-11 reports:
   edges, `110` missing anchors, `83` missing group anchors, `6` anchor
   mismatches, and `3` inconsistent option anchors. The likely next source is
   deeper AnimeStudio graph/Lua/task-flow recovery.
+  The graph builder also ingests `timelineRouteBranches.branchLineIdsByOption`
+  directly as `timeline_route_branch` `option_first_line` / `option_path_line`
+  edges, so Runtime Jump recovered branches no longer collapse back to one
+  generic candidate-line hint.
 - Character recovery candidates need more manifests and shader certainty. In
   the top `20` reports, `17` candidates are missing shader evidence and `17`
   are missing character recovery manifests; `3` lack a CharacterTable identity
