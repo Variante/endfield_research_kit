@@ -1009,7 +1009,7 @@ def build_option_routes(
             extended_route_end,
             line_rows,
             extended_jump_clips,
-            None,
+            next_slot,
             source="runtimeJumpTrackSingleOptionBoundary",
         )
         if candidate_routes:
