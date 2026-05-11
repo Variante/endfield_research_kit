@@ -13,6 +13,12 @@ rem - build the asset index
 python .\scripts\export_full_from_game.py --skip-raw-vfs --skip-source-inventory %*
 if errorlevel 1 exit /b %errorlevel%
 
+python .\scripts\recover_dialog_id_registry.py --quiet
+if errorlevel 1 exit /b %errorlevel%
+
+python .\scripts\webui\build_story_source_links.py
+if errorlevel 1 exit /b %errorlevel%
+
 python .\scripts\webui\build_updates.py
 if errorlevel 1 exit /b %errorlevel%
 

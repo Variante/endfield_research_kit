@@ -901,6 +901,28 @@ a.opt-target-chip { cursor: pointer; }
 }
 .summary-text { font-size: 13px; color: var(--text); }
 .summary-text + .summary-text { margin-top: 4px; }
+.source-link-row {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.source-link-more {
+  color: var(--muted);
+}
+.narrative-video-box {
+  border-left-color: #5f9ea0;
+}
+.narrative-video-box .summary-label {
+  color: #aee8ea;
+}
+.narrative-video-grid {
+  margin-top: 8px;
+}
+.narrative-video-more {
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 6px;
+}
 .wiki-media-box {
   border-left-color: #7fb98e;
 }

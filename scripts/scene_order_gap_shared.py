@@ -2,13 +2,194 @@ from __future__ import annotations
 
 import json
 import re
+from functools import lru_cache
 from pathlib import Path
+
+
+# DialogIdTable registry: see scripts/recover_dialog_id_registry.py.
+# This is Endfield's authoritative runtime dialog registry (extracted from
+# Beyond.Gameplay.DialogIdTable via the binary table on disk). A sceneKey
+# present in this registry is loadable by the runtime; one absent is
+# unreachable cut/dead content.
+_DEFAULT_REGISTRY_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "export_full" / "recovered" / "dialog_id_table_index.json"
+)
+
+
+@lru_cache(maxsize=4)
+def _load_dialog_id_registry(path_str: str) -> dict:
+    p = Path(path_str)
+    if not p.is_file():
+        return {}
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def load_dialog_id_registry(path: Path | None = None) -> dict:
+    """Public entry point. Returns the registry dict (sceneKey -> info)."""
+    return _load_dialog_id_registry(str(path or _DEFAULT_REGISTRY_PATH))
+
+
+# DialogSummaryMapTable: maps a dlg_* sceneKey to a summary_* key into
+# DialogSummaryTable. A scene appearing here has authored summary text in the
+# game data -- a stronger "main-story relevance" signal than DialogIdTable
+# membership alone (a dialog can be runtime-registered without having a
+# canonical summary). Pure evidence surfacing, no inference.
+_DEFAULT_SUMMARY_MAP_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "export_full" / "structured" / "StreamingAssets" / "Table"
+    / "DialogSummaryMapTable.json"
+)
+
+
+@lru_cache(maxsize=4)
+def _load_dialog_summary_map(path_str: str) -> dict:
+    p = Path(path_str)
+    if not p.is_file():
+        return {}
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    # Coerce to {sceneKey: summaryKey} strings.
+    out: dict[str, str] = {}
+    for k, v in data.items():
+        if isinstance(k, str) and isinstance(v, str) and k and v:
+            out[k] = v
+    return out
+
+
+def load_dialog_summary_map(path: Path | None = None) -> dict:
+    """Public entry point. Returns the sceneKey -> summaryKey map."""
+    return _load_dialog_summary_map(str(path or _DEFAULT_SUMMARY_MAP_PATH))
+
+
+def runtime_dialog_scene_key(value) -> str:
+    """Map a WebUI conversation key back to the game's runtime dialog key."""
+    key = str(value or "").strip()
+    if key.startswith("misc_dlg_"):
+        return key[len("misc_") :]
+    return key
+
+
+def _scene_registry_state(
+    conv: dict, dialog_id_registry: dict | None
+) -> tuple[str, dict | None, bool]:
+    """Return (runtime sceneKey, registry info, registry_loaded)."""
+    if dialog_id_registry is None:
+        dialog_id_registry = load_dialog_id_registry()
+    registry_loaded = bool(dialog_id_registry)
+    scene_key = runtime_dialog_scene_key(conv.get("key"))
+    if not scene_key:
+        return "", None, registry_loaded
+    info = dialog_id_registry.get(scene_key) if registry_loaded else None
+    return scene_key, info if isinstance(info, dict) else None, registry_loaded
+
+
+def build_runtime_registry_debug(
+    conv: dict,
+    *,
+    dialog_id_registry: dict | None = None,
+    dialog_summary_map: dict | None = None,
+) -> dict | None:
+    """Build the `_debug.runtimeRegistry` evidence block for a dialog scene."""
+    scene_key, info, registry_loaded = _scene_registry_state(conv, dialog_id_registry)
+    if not registry_loaded or not scene_key.startswith("dlg_"):
+        return None
+
+    if dialog_summary_map is None:
+        dialog_summary_map = load_dialog_summary_map()
+    summary_key = dialog_summary_map.get(scene_key) if scene_key else None
+
+    webui_key = str(conv.get("key") or "").strip()
+    line_count_webui = len(conv.get("lines") or [])
+    if info is None:
+        out = {
+            "registered": False,
+            "sceneKey": scene_key,
+            "lineCountWebui": line_count_webui,
+            "reason": (
+                "sceneKey is not present in Beyond.Gameplay.DialogIdTable; "
+                "the runtime DialogManager has no entry point for this scene, "
+                "so it cannot be loaded from gameplay. The DialogTextTable rows "
+                "still exist, so this looks like cut or unreferenced content."
+            ),
+        }
+        if webui_key and webui_key != scene_key:
+            out["webuiKey"] = webui_key
+        # A summary entry for an unregistered scene is suspicious -- the
+        # game data declares a summary for a scene that cannot be loaded.
+        # Surface it as evidence; don't change the reason.
+        if summary_key:
+            out["hasSummary"] = True
+            out["summaryKey"] = summary_key
+            out["summaryNote"] = (
+                "DialogSummaryMapTable references this scene even though "
+                "DialogIdTable doesn't -- possible regression in the runtime "
+                "registry, or summary data left behind after the scene was cut"
+            )
+        else:
+            out["hasSummary"] = False
+        return out
+
+    out = {
+        "registered": True,
+        "sceneKey": scene_key,
+        "trunkCount": info.get("trunkCount", 0),
+        "trunkIndices": info.get("trunkIndices", []),
+        "lineCount": info.get("lineCount", 0),
+        "lineCountWebui": line_count_webui,
+        "hasRootKey": info.get("hasRootKey", False),
+        "reason": "sceneKey is registered in Beyond.Gameplay.DialogIdTable",
+    }
+    if summary_key:
+        out["hasSummary"] = True
+        out["summaryKey"] = summary_key
+    else:
+        out["hasSummary"] = False
+    if webui_key and webui_key != scene_key:
+        out["webuiKey"] = webui_key
+    runtime_lines = info.get("lineCount", 0)
+    if runtime_lines and runtime_lines != line_count_webui:
+        delta = line_count_webui - runtime_lines
+        out["lineCountDelta"] = delta
+        if delta > 0:
+            # Webui shows more lines than the registry addresses by trunk id.
+            # Common interpretation: the extras are summary/hint rows that
+            # DialogTrunkBehaviour wouldn't address.
+            out["note"] = (
+                f"webui has {line_count_webui} line(s) but DialogIdTable's "
+                f"per-trunk line entries total {runtime_lines}; the extra "
+                f"{delta} webui line(s) may be summary/hint rows that the "
+                "runtime doesn't address by trunk id"
+            )
+        else:
+            # Webui shows fewer lines than the registry addresses. The
+            # runtime expects more lines than the recovered scene shows --
+            # the missing lines may live in another DialogTextTable row that
+            # didn't make it into this conv (e.g. a sibling subscene), or
+            # the recovery is incomplete.
+            out["note"] = (
+                f"webui has {line_count_webui} line(s) but DialogIdTable's "
+                f"per-trunk line entries total {runtime_lines}; the runtime "
+                f"addresses {-delta} more line(s) than this conv exposes -- "
+                "the recovery may be incomplete or the extra lines live in a "
+                "sibling subscene"
+            )
+    return out
 
 
 AUTHORED_LINE_ORDER_MODES = {
     "authoredBlend",
     "dialogTimeline",
     "dialogTree",
+    "dialogTreeCinematicTimeline",
     "dialogTreeExtraConfig",
     "dialogTreeFragment",
 }
@@ -276,13 +457,126 @@ def _summarize_line_order_source(source: dict, line_count: int) -> dict:
     }
 
 
-def analyze_line_order(conv: dict) -> dict:
+def _scene_registry_info(conv: dict, dialog_id_registry: dict | None) -> dict | None:
+    """Look up this scene in the DialogIdTable runtime registry, if loaded."""
+    _scene_key, info, _registry_loaded = _scene_registry_state(conv, dialog_id_registry)
+    return info
+
+
+# Tables in the game's structured data that define inherent authored line
+# ordering for scenes whose lines are sourced from them. Each entry maps the
+# table identifier (as it appears in `line._debug.table`) to a (mode, reason)
+# pair used in the lineOrder recovery output.
+#
+# Evidence: every line in a webui conv carries a `_debug.table` field naming
+# the source table. For scenes whose lines all come from one of these
+# tables, the runtime consumes them in table-list order, and our recovery
+# already emits them in that order. Citing the table is the missing step.
+AUTHORED_SOURCE_TABLES: dict[str, tuple[str, str]] = {
+    "RadioTable.radioSingleDataList":           ("radioTable",           "RadioTable.radioSingleDataList (explicit index ordering)"),
+    "SNSDialogTable.dialogContentData":         ("snsDialogTable",       "SNSDialogTable.dialogContentData"),
+    "EnvTalkTable.envTalkDataList":             ("envTalkTable",         "EnvTalkTable.envTalkDataList"),
+    "RemoteCommonTable.remoteCommSingleDataList": ("remoteCommonTable",  "RemoteCommonTable.remoteCommSingleDataList"),
+    "RichContentTable.contentList":             ("richContentTable",     "RichContentTable.contentList"),
+    "CharacterTable.profileVoice":              ("characterProfileVoice","CharacterTable.profileVoice"),
+    "CharacterTable.profileRecord":             ("characterProfileRecord","CharacterTable.profileRecord"),
+    "WikiTutorialPageTable":                    ("wikiTutorialPageTable","WikiTutorialPageTable"),
+    "WikiEntryDataTable":                       ("wikiEntryDataTable",   "WikiEntryDataTable"),
+    "ItemTable":                                ("itemTable",            "ItemTable"),
+    "TextTable":                                ("textTable",            "TextTable"),
+    "LoadingTipsTable":                         ("loadingTipsTable",     "LoadingTipsTable"),
+    "EnemyTemplateDisplayInfoTable":            ("enemyDisplayTable",    "EnemyTemplateDisplayInfoTable"),
+    "WeaponBasicTable":                         ("weaponBasicTable",     "WeaponBasicTable"),
+    "MailTemplateTable":                        ("mailTemplateTable",    "MailTemplateTable"),
+    "PrtsNote":                                 ("prtsNote",             "PrtsNote"),
+    "TrainingDeathTips":                        ("trainingDeathTips",    "TrainingDeathTips"),
+    # `responsive_*` scenes are voice-clip enumerations keyed by gameplay
+    # triggers (combat_battle_defeat etc.). Source is AIBarkText, surfaced
+    # through ResponsiveDialog. There's no inherent line sequence -- each
+    # line is its own trigger -- so the presented order is just the
+    # AIBarkText table layout.
+    "AIBarkText":                               ("aiBarkText",           "AIBarkText (ResponsiveDialog, trigger-keyed)"),
+}
+
+
+def _line_source_identifier(line: dict) -> str:
+    """
+    Return the best authored-source identifier for a line.
+
+    Most lines carry `_debug.table` directly (e.g. RadioTable.radioSingleDataList).
+    Some kinds of lines stash the table in `_debug.source.source` instead -- for
+    example, ResponsiveDialog scenes synthesise lines from AIBarkText and put
+    the source name under `_debug.source.source`. Either form counts.
+    """
+    if not isinstance(line, dict):
+        return ""
+    dbg = line.get("_debug")
+    if not isinstance(dbg, dict):
+        return ""
+    table = dbg.get("table")
+    if isinstance(table, str) and table:
+        return table
+    src = dbg.get("source")
+    if isinstance(src, dict):
+        nested = src.get("source")
+        if isinstance(nested, str) and nested:
+            return nested
+        nested_table = src.get("table")
+        if isinstance(nested_table, str) and nested_table:
+            return nested_table
+    return ""
+
+
+def _detect_authored_source_table(conv: dict) -> dict | None:
+    """
+    If every line in the scene comes from a known authored source table or
+    set of authored source tables, return a dict describing the recovery.
+    Otherwise return None.
+
+    Result shape:
+      {
+        "mode":          str,                       # reasonCode to emit
+        "reason":        str,                       # human-readable reason
+        "lineCount":     int,                       # number of lines covered
+        "sourceTables":  list[str],                 # authored tables involved
+      }
+    """
+    lines = conv.get("lines") or []
+    if not lines:
+        return None
+    tables: list[str] = []
+    for line in lines:
+        ident = _line_source_identifier(line)
+        if not ident:
+            return None  # any line without an identifiable source disqualifies
+        if ident not in AUTHORED_SOURCE_TABLES:
+            return None  # unknown source -- can't claim authored order
+        tables.append(ident)
+    unique = list(dict.fromkeys(tables))  # preserve first-seen order
+    if len(unique) == 1:
+        mode, reason = AUTHORED_SOURCE_TABLES[unique[0]]
+    else:
+        mode = "multiTableAuthored"
+        labels = ", ".join(AUTHORED_SOURCE_TABLES[t][1] for t in unique)
+        reason = f"authored sources combined ({labels})"
+    return {
+        "mode": mode,
+        "reason": reason,
+        "lineCount": len(lines),
+        "sourceTables": unique,
+    }
+
+
+def analyze_line_order(conv: dict, *, dialog_id_registry: dict | None = None) -> dict:
     total_line_count = len(conv.get("lines") or [])
     meaningful_line_count = _count_meaningful_lines(conv)
     debug = conv.get("_debug") or {}
     line_order = debug.get("lineOrder") if isinstance(debug, dict) else None
     input_line_ids = _line_order_input_ids(conv, line_order if isinstance(line_order, dict) else None)
     ordered_line_ids = _line_order_output_ids(conv, line_order if isinstance(line_order, dict) else None)
+    registry_scene_key, registry_info, registry_loaded = _scene_registry_state(
+        conv, dialog_id_registry
+    )
 
     if not has_meaningful_lines(conv):
         return {
@@ -303,6 +597,48 @@ def analyze_line_order(conv: dict) -> dict:
         }
 
     if not isinstance(line_order, dict):
+        # Upgrade path: when every line in this conv comes from a known
+        # authored source table (RadioTable, SNSDialogTable, EnvTalkTable,
+        # etc.), the runtime consumes them in that table's natural order
+        # and our recovery emits them in the same order. Each line's
+        # `_debug.table` cites the source -- we just need to read it.
+        authored_source = _detect_authored_source_table(conv)
+        if authored_source is not None:
+            mode = authored_source["mode"]
+            reason = authored_source["reason"]
+            line_count = authored_source["lineCount"]
+            sources_evidence = ", ".join(authored_source["sourceTables"])
+            return {
+                "status": "direct",
+                "statusLabel": "has line order",
+                "reasonCode": mode,
+                "reason": f"authored line order via {reason}",
+                "detail": (
+                    f"every line cites an authored source table ({sources_evidence}) "
+                    f"in its `_debug` block; the runtime consumes those entries in "
+                    f"the order they appear in the source table(s)"
+                ),
+                "evidence": [
+                    f"{meaningful_line_count} meaningful line(s) across {total_line_count} stored line(s)",
+                    f"all {line_count} lines sourced from authored table(s): {sources_evidence}",
+                ],
+                "mode": mode,
+                "sources": [{
+                    "kind": mode,
+                    "sourceKey": tbl,
+                    "coverage": sum(1 for line in (conv.get("lines") or []) if _line_source_identifier(line) == tbl),
+                    "matchedLineIds": [line.get("id", "") for line in (conv.get("lines") or []) if _line_source_identifier(line) == tbl],
+                    "addedLineIds": [],
+                    "detail": f"lines sourced from {tbl}",
+                } for tbl in authored_source["sourceTables"]],
+                "orderedLineIds": ordered_line_ids,
+                "originalLineIds": input_line_ids,
+                "coveredLineIds": list(input_line_ids),
+                "uncoveredLineIds": [],
+                "coveredLineCount": line_count,
+                "uncoveredLineCount": 0,
+            }
+
         suffix_diag = _line_id_suffix_diagnostics(input_line_ids)
         evidence = [
             f"{meaningful_line_count} meaningful line(s) across {total_line_count} stored line(s)",
@@ -428,16 +764,103 @@ def analyze_line_order(conv: dict) -> dict:
             "uncoveredLineCount": len(uncovered_line_ids),
         }
 
-    if mode == "lineIdSuffix":
-        detail = (
-            "no authored line-order source matched this scene"
-        )
+    # `lineIdSuffix` and `compoundNumericSuffix` are both "DialogTextTable
+    # row-order" fallbacks emitted by build_story when no Timeline / dialogTree
+    # source covers the scene. The same evidence chain upgrades both:
+    # - if the rows in this scene weren't reordered relative to raw table
+    #   order, then *any* iteration strategy DialogTrunkBehaviour might use
+    #   (suffix-sort or raw walk) produces the same sequence;
+    # - DialogIdTable presence/absence then tells us whether this scene can
+    #   even be loaded by the runtime.
+    if mode in ("lineIdSuffix", "compoundNumericSuffix"):
+        upgrade_ok = not moved_line_ids and input_line_ids and ordered_line_ids
+
+        if (
+            upgrade_ok
+            and registry_loaded
+            and registry_scene_key.startswith("dlg_")
+            and registry_info is None
+        ):
+            # Scene is absent from DialogIdTable (the runtime's authoritative
+            # dialog registry). The runtime has no entry point for this scene
+            # -- DialogManager looks every dialog up through this registry. So
+            # the scene's text rows in DialogTextTable are dead/unreachable
+            # content. The presented order is just data layout; there is no
+            # runtime order to be wrong about.
+            evidence.append(
+                "scene is not in DialogIdTable -- runtime never loads it; "
+                "presented order is DialogTextTable layout only"
+            )
+            if registry_scene_key != conv.get("key"):
+                evidence.append(
+                    f"webui key {conv.get('key')} maps to runtime sceneKey {registry_scene_key}"
+                )
+            return {
+                "status": "direct",
+                "statusLabel": "has line order",
+                "reasonCode": "unregisteredScene",
+                "reason": "scene not registered with runtime (cut/dead content)",
+                "detail": (
+                    "scene is absent from DialogIdTable (Endfield's runtime "
+                    "dialog registry); DialogManager has no entry point to "
+                    "load it, so the order is academic and matches "
+                    "DialogTextTable layout"
+                ),
+                "evidence": evidence,
+                "mode": mode,
+                "sources": sources,
+                "orderedLineIds": ordered_line_ids,
+                "originalLineIds": input_line_ids,
+                "coveredLineIds": covered_line_ids,
+                "uncoveredLineIds": uncovered_line_ids,
+                "coveredLineCount": len(covered_line_ids),
+                "uncoveredLineCount": len(uncovered_line_ids),
+            }
+
+        if upgrade_ok and registry_info is not None:
+            # Scene IS in DialogIdTable but no Timeline / dialogTree source
+            # was found. DialogManager / DialogTrunkBehaviour is the only
+            # runtime path, and it iterates DialogTextTable rows by sceneKey
+            # prefix. Since suffix order equals raw table order here, that
+            # iteration produces exactly this sequence.
+            trunk_count = registry_info.get("trunkCount", 0)
+            line_count_in_table = registry_info.get("lineCount", 0)
+            evidence.append(
+                "scene IS in DialogIdTable "
+                f"({trunk_count} trunk(s), {line_count_in_table} runtime line ref(s)); "
+                "DialogTrunkBehaviour iterates DialogTextTable rows by prefix"
+            )
+            if registry_scene_key != conv.get("key"):
+                evidence.append(
+                    f"webui key {conv.get('key')} maps to runtime sceneKey {registry_scene_key}"
+                )
+            return {
+                "status": "direct",
+                "statusLabel": "has line order",
+                "reasonCode": "dialogTrunkRowIteration",
+                "reason": "runtime row iteration (DialogTrunkBehaviour)",
+                "detail": (
+                    "scene is registered in DialogIdTable but has no Timeline "
+                    "asset or dialogTree source; DialogTrunkBehaviour walks "
+                    "DialogTextTable rows by sceneKey prefix in table order, "
+                    "which equals the suffix-sorted order here"
+                ),
+                "evidence": evidence,
+                "mode": mode,
+                "sources": sources,
+                "orderedLineIds": ordered_line_ids,
+                "originalLineIds": input_line_ids,
+                "coveredLineIds": covered_line_ids,
+                "uncoveredLineIds": uncovered_line_ids,
+                "coveredLineCount": len(covered_line_ids),
+                "uncoveredLineCount": len(uncovered_line_ids),
+            }
         return {
             "status": "fallback",
             "statusLabel": "fallback line order",
-            "reasonCode": "lineIdSuffix",
+            "reasonCode": mode,
             "reason": "fallback line order",
-            "detail": detail,
+            "detail": "no authored line-order source matched this scene",
             "evidence": evidence,
             "mode": mode,
             "sources": sources,
@@ -642,7 +1065,9 @@ def _render_group_detail(group_detail: dict) -> str:
     return detail
 
 
-def analyze_option_layout(conv: dict) -> dict:
+def analyze_option_layout(
+    conv: dict, *, dialog_id_registry: dict | None = None
+) -> dict:
     meaningful_option_count = _count_meaningful_options(conv)
     option_groups = [
         group
@@ -721,6 +1146,23 @@ def analyze_option_layout(conv: dict) -> dict:
     evidence: list[str] = [
         f"{meaningful_option_count} meaningful option(s) across {len(option_groups)} option group(s)",
     ]
+    registry_scene_key, registry_info, registry_loaded = _scene_registry_state(
+        conv, dialog_id_registry
+    )
+    if (
+        registry_loaded
+        and registry_scene_key.startswith("dlg_")
+        and registry_info is None
+    ):
+        evidence.append(
+            "scene is not in DialogIdTable -- runtime never loads it through "
+            "DialogManager; option rows are still source-backed but placement "
+            "cannot be confirmed by a runtime entry point"
+        )
+        if registry_scene_key != conv.get("key"):
+            evidence.append(
+                f"webui key {conv.get('key')} maps to runtime sceneKey {registry_scene_key}"
+            )
     if isinstance(breakdown, dict) and breakdown:
         evidence.append(
             "group breakdown: "
@@ -819,7 +1261,7 @@ def classify_line_order_failure(analysis: dict) -> dict:
             ),
         }
 
-    if mode == "lineIdSuffix":
+    if mode in ("lineIdSuffix", "compoundNumericSuffix"):
         code = "numericSuffixFallback"
     elif mode:
         code = "otherFallbackMode"
@@ -927,9 +1369,15 @@ def classify_option_position_failure(conv: dict, analysis: dict) -> dict:
     }
 
 
-def build_scene_order_disorder_warning(conv: dict) -> dict | None:
-    line_order_analysis = analyze_line_order(conv)
-    option_layout_analysis = analyze_option_layout(conv)
+def build_scene_order_disorder_warning(
+    conv: dict, *, dialog_id_registry: dict | None = None
+) -> dict | None:
+    line_order_analysis = analyze_line_order(
+        conv, dialog_id_registry=dialog_id_registry
+    )
+    option_layout_analysis = analyze_option_layout(
+        conv, dialog_id_registry=dialog_id_registry
+    )
     problematic_aspects: list[str] = []
     if line_order_analysis["status"] != "direct":
         problematic_aspects.append("lineOrder")
@@ -975,6 +1423,7 @@ def build_scene_order_disorder_warning(conv: dict) -> dict | None:
 
 
 def collect_scene_order_gap_rows(root: Path, conv_dir: Path) -> list[dict]:
+    dialog_id_registry = load_dialog_id_registry()
     rows: list[dict] = []
     for path in sorted(conv_dir.glob("dlg_*.json")):
         try:
@@ -984,8 +1433,12 @@ def collect_scene_order_gap_rows(root: Path, conv_dir: Path) -> list[dict]:
 
         meaningful_lines = has_meaningful_lines(conv)
         meaningful_options = has_meaningful_options(conv)
-        line_order_analysis = analyze_line_order(conv)
-        option_layout_analysis = analyze_option_layout(conv)
+        line_order_analysis = analyze_line_order(
+            conv, dialog_id_registry=dialog_id_registry
+        )
+        option_layout_analysis = analyze_option_layout(
+            conv, dialog_id_registry=dialog_id_registry
+        )
         line_order_pattern = classify_line_order_failure(line_order_analysis)
         option_position_pattern = classify_option_position_failure(conv, option_layout_analysis)
         inferred_options = option_layout_analysis["status"] == "inferred"

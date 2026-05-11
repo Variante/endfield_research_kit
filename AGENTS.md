@@ -5,7 +5,7 @@ Agent notes for this repo. User-facing usage belongs in `README.md`.
 Keep root-level docs and workflow guidance focused on:
 
 - the static WebUI in `webui/`
-- the Unity shader lab in `unity_endfield_graph_shader_lab/`
+- the Unity character recovery lab in `unity_endfield_graph_shader_lab/`
 
 Move observations, conclusions, older exploration notes, and status snapshots to
 `memory/`. Do not use `reports/` for investigation conclusions.
@@ -27,20 +27,19 @@ Useful direct commands:
 ```bat
 python scripts\webui\build_updates.py
 python scripts\webui\build_updates.py --reset-baseline
+python scripts\webui\build_story_source_links.py
 python scripts\webui\build_story.py --languages CN --default-language CN
 python scripts\webui\build_story.py --languages CN EN JP --default-language CN
 python scripts\webui\build_assets.py
 python scripts\webui\package_webui.py
 ```
 
-Shader lab:
+Unity character recovery lab:
 
 ```bat
 cd unity_endfield_graph_shader_lab
-.\open_shader_lab.bat
-.\build_shader_lab_scene.bat
-.\build_wulfa_scene.bat
-.\build_wulfa_animations.bat
+.\open_character_recovery_lab.bat
+.\build_all_character_recovery.bat
 ```
 
 The Python tooling is intended to stay stdlib-only unless a task explicitly
@@ -89,7 +88,7 @@ local rebuild noise and baselined silently.
 
 - Prefer the layout rooted at `serve.py`, `export.bat`, `webui/`,
   `scripts/webui/`, and `unity_endfield_graph_shader_lab/`.
-- Keep `README.md` focused on active WebUI and shader-lab usage.
+- Keep `README.md` focused on active WebUI and Unity character recovery usage.
 - Keep observations, conclusions, investigation notes, and status snapshots in
   `memory/`.
 - Keep `reports/` for durable generated reports only, not agent conclusions or
@@ -99,6 +98,8 @@ local rebuild noise and baselined silently.
 - Use `tmp/` for temporary results, intermediate output, and disposable files.
 - Put durable shared tools under `tools/`. Existing tools there may be used and
   patched as needed.
+- For `tools/Ruri.ShaderDecompiler`, regularly pull upstream before rebuild or
+  recovery work: `git -C tools\Ruri.ShaderDecompiler pull --ff-only`.
 - Keep `ue5_*` and `unity_*` directories self-contained. Code, assets, generated
   files, and helpers related to those projects should live inside the matching
   project folder.
@@ -113,6 +114,7 @@ WebUI:
 - `scripts/export_full_from_game.py`
 - `scripts/track_export_changes.py`
 - `scripts/webui/build_updates.py`
+- `scripts/webui/build_story_source_links.py`
 - `scripts/webui/build_story.py`
 - `scripts/webui/build_assets.py`
 - `scripts/webui/package_webui.py`
@@ -124,7 +126,7 @@ Story reconstruction helpers used by WebUI builders:
 - `scripts/recover_mission_timelines.py`
 - `scripts/scene_order_gap_shared.py`
 
-Unity shader lab:
+Unity character recovery lab:
 
 - project-local scripts under `unity_endfield_graph_shader_lab/`
 

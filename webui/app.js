@@ -1138,6 +1138,94 @@ function renderWikiMediaBlock(conv) {
   return box;
 }
 
+function formatAssetBytes(size) {
+  const bytes = Number(size) || 0;
+  if (bytes <= 0) return "";
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${bytes} B`;
+}
+
+function scoreNarrativeVideoRef(ref) {
+  const rel = String(ref && ref.rel || "");
+  const source = String(ref && ref.source || "");
+  const format = String(ref && ref.format || "").toLowerCase();
+  const gender = String(ref && ref.gender || "").toLowerCase();
+  const activeGender = resolveGenderVariant();
+  let score = 0;
+  if (isBrowserPlayableVideo(rel)) score += 1000;
+  if (format === "mp4") score += 100;
+  else if (format === "webm" || format === "ogv") score += 80;
+  else if (format === "usm") score += 10;
+  if (source === "StreamingAssets-structured") score += 60;
+  else if (source === "Persistent-structured") score += 50;
+  else if (source === "raw_vfs") score += 5;
+  if (gender === activeGender) score += 90;
+  else if (!gender) score += 60;
+  return score;
+}
+
+function narrativeVideoRefsForConv(conv) {
+  const refs = Array.isArray(conv && conv.narrativeVideos)
+    ? conv.narrativeVideos.filter((ref) => ref && ref.rel)
+    : [];
+  if (!refs.length) return [];
+
+  const byStem = new Map();
+  for (const ref of refs) {
+    const key = String(ref.baseStem || ref.stem || ref.name || ref.rel);
+    const current = byStem.get(key);
+    if (!current || scoreNarrativeVideoRef(ref) > scoreNarrativeVideoRef(current)) {
+      byStem.set(key, ref);
+    }
+  }
+  return Array.from(byStem.values())
+    .sort((a, b) => scoreNarrativeVideoRef(b) - scoreNarrativeVideoRef(a)
+      || String(a.name || a.rel).localeCompare(String(b.name || b.rel)))
+    .slice(0, 4);
+}
+
+function renderNarrativeVideosBlock(conv) {
+  if (!STATE.wikiVideoLookupLoaded) return null;
+  const refs = narrativeVideoRefsForConv(conv);
+  if (!refs.length) return null;
+
+  const box = document.createElement("div");
+  box.className = "summary-box narrative-video-box";
+
+  const label = document.createElement("div");
+  label.className = "summary-label";
+  label.textContent = uiText("narrativeVideo");
+  box.appendChild(label);
+
+  const grid = document.createElement("div");
+  grid.className = "wiki-image-grid narrative-video-grid";
+  for (const ref of refs) {
+    const size = formatAssetBytes(ref.size);
+    const gender = ref.gender ? ref.gender.toUpperCase() : "";
+    const suffix = [gender, size].filter(Boolean).join(", ");
+    grid.appendChild(renderWikiVideoItem({
+      rel: ref.rel,
+      name: ref.name,
+      label: suffix ? `${ref.name} (${suffix})` : ref.name,
+      size: ref.size,
+    }));
+  }
+  box.appendChild(grid);
+
+  const omitted = Math.max(0, Number(conv.narrativeVideosOmitted || 0)
+    + (Array.isArray(conv.narrativeVideos) ? conv.narrativeVideos.length - refs.length : 0));
+  if (omitted > 0) {
+    const row = document.createElement("div");
+    row.className = "summary-text narrative-video-more";
+    row.textContent = uiText("narrativeVideoMore").replace("{count}", String(omitted));
+    box.appendChild(row);
+  }
+
+  appendDebugTrace(box, conv && conv._debug && conv._debug.narrativeVideos, "narrative videos");
+  return box;
+}
+
 function persistLanguageSelection(languageCode) {
   storageSet(LANGUAGE_STORAGE_KEY, languageCode);
 }
@@ -2273,6 +2361,7 @@ function renderSceneOrderWarningAspect(aspectKey, data) {
     );
     appendLineIdTagList(section, "", data.uncoveredLineIds);
   }
+  appendWarningEvidence(section, data.evidence);
   return section;
 }
 
@@ -2358,16 +2447,28 @@ function convHasWarning(conv, code) {
 
 function renderableConvWarnings(conv) {
   const warnings = getConvWarnings(conv);
+  let visible = warnings;
   if (warnings.some((warning) => warning.code === "sceneOrderDisorder")) {
-    return warnings.filter((warning) => warning.code !== "inferredOptionLayout");
+    visible = warnings.filter((warning) => warning.code !== "inferredOptionLayout");
   }
-  return warnings;
+  return visible;
+}
+
+function convRuntimeRegistry(conv) {
+  const debug = conv && conv._debug && typeof conv._debug === "object"
+    ? conv._debug
+    : null;
+  const registry = debug && debug.runtimeRegistry && typeof debug.runtimeRegistry === "object"
+    ? debug.runtimeRegistry
+    : null;
+  return registry;
 }
 
 function lineOrderModeText(mode) {
   if (mode === "dialogTree") return uiText("lineOrderModeDialogTree");
   if (mode === "dialogTreeFragment") return uiText("lineOrderModeDialogTreeFragment");
   if (mode === "dialogTreeExtraConfig") return uiText("lineOrderModeDialogTreeExtraConfig");
+  if (mode === "dialogTreeCinematicTimeline") return uiText("lineOrderModeDialogTreeCinematicTimeline");
   if (mode === "authoredBlend") return uiText("lineOrderModeAuthoredBlend");
   if (mode === "dialogTimeline") return uiText("lineOrderModeDialogTimeline");
   if (mode === "lineIdSuffix") return uiText("lineOrderModeLineIdSuffix");
@@ -2388,10 +2489,88 @@ function lineOrderTone(mode) {
   return "missing";
 }
 
+function lineOrderRuntimeMode(conv, lineOrder, originalLineIds, orderedLineIds) {
+  const registry = convRuntimeRegistry(conv);
+  if (!registry || !lineOrder || lineOrder.mode !== "lineIdSuffix") return null;
+  if (!originalLineIds.length || !orderedLineIds.length) return null;
+  if (!lineOrderIdListEquals(originalLineIds, orderedLineIds)) return null;
+  const title = registry.reason ? String(registry.reason) : "";
+  if (registry.registered === false) {
+    return {
+      text: uiText("lineOrderModeUnregisteredScene"),
+      tone: "neutral",
+      title,
+    };
+  }
+  if (registry.registered === true) {
+    return {
+      text: uiText("lineOrderModeRuntimeRowIteration"),
+      tone: "success",
+      title,
+    };
+  }
+  return null;
+}
+
+function lineOrderRegistryChip(registry) {
+  if (!registry) return null;
+  const title = registry.reason ? String(registry.reason) : "";
+  if (registry.registered === false) {
+    return {
+      text: uiText("lineOrderRegistryUnregistered"),
+      tone: "neutral",
+      title,
+    };
+  }
+  if (registry.registered === true) {
+    const trunks = Number(registry.trunkCount) || 0;
+    const lines = Number(registry.lineCount) || 0;
+    if (trunks || lines) {
+      return {
+        text: uiText("lineOrderRegistryTrunks")
+          .replace("{trunks}", String(trunks))
+          .replace("{lines}", String(lines)),
+        tone: "success",
+        title,
+      };
+    }
+    return {
+      text: uiText("lineOrderRegistryRegistered"),
+      tone: "success",
+      title,
+    };
+  }
+  return null;
+}
+
+function lineOrderRegistryDeltaChip(registry) {
+  if (!registry || registry.registered !== true) return null;
+  const raw = registry.lineCountDelta;
+  if (typeof raw !== "number" || !Number.isFinite(raw) || raw === 0) return null;
+  const absText = String(Math.abs(raw));
+  const labelKey = raw > 0
+    ? "lineOrderRegistryDeltaPositive"
+    : "lineOrderRegistryDeltaNegative";
+  const text = uiText(labelKey).replace("{count}", absText);
+  const title = registry.note
+    ? String(registry.note)
+    : (registry.reason ? String(registry.reason) : "");
+  // Negative delta = webui shows fewer lines than the runtime registry
+  // addresses. That's a stronger signal (something missing) than positive
+  // delta (extra summary/hint rows in webui that the runtime doesn't
+  // address by trunk id), so colour them differently.
+  return {
+    text,
+    tone: raw > 0 ? "neutral" : "fallback",
+    title,
+  };
+}
+
 function lineOrderModeDetailText(mode) {
   if (mode === "dialogTree") return uiText("lineOrderModeDetailDialogTree");
   if (mode === "dialogTreeFragment") return uiText("lineOrderModeDetailDialogTreeFragment");
   if (mode === "dialogTreeExtraConfig") return uiText("lineOrderModeDetailDialogTreeExtraConfig");
+  if (mode === "dialogTreeCinematicTimeline") return uiText("lineOrderModeDetailDialogTreeCinematicTimeline");
   if (mode === "authoredBlend") return uiText("lineOrderModeDetailAuthoredBlend");
   if (mode === "dialogTimeline") return uiText("lineOrderModeDetailDialogTimeline");
   if (mode === "lineIdSuffix") return uiText("lineOrderModeDetailLineIdSuffix");
@@ -2420,10 +2599,11 @@ function buildLineIdReferenceOrder(lineIds) {
   return rows.map((row) => row.lineId);
 }
 
-function createLineOrderStatChip(text, tone = "") {
+function createLineOrderStatChip(text, tone = "", title = "") {
   const chip = document.createElement("span");
   chip.className = "line-order-chip" + (tone ? ` is-${tone}` : "");
   chip.textContent = text;
+  if (title) chip.title = title;
   return chip;
 }
 
@@ -2663,6 +2843,45 @@ function renderCutsceneInfoPanel(conv) {
   return box;
 }
 
+function renderSourceLinksBlock(conv) {
+  const links = Array.isArray(conv && conv.sourceLinks)
+    ? conv.sourceLinks.filter((link) => link && typeof link === "object")
+    : [];
+  if (!links.length) return null;
+
+  const box = document.createElement("div");
+  box.className = "summary-box source-links-box";
+
+  const label = document.createElement("div");
+  label.className = "summary-label";
+  label.textContent = uiText("sourceEvidence");
+  box.appendChild(label);
+
+  for (const link of links.slice(0, 8)) {
+    const row = document.createElement("div");
+    row.className = "summary-text source-link-row";
+    const bits = [];
+    if (link.source) bits.push(String(link.source));
+    if (link.file) bits.push(String(link.file));
+    if (link.path) bits.push(String(link.path));
+    if (link.raw) bits.push(String(link.raw));
+    row.textContent = bits.join(" · ");
+    box.appendChild(row);
+    appendDebugTrace(row, link._debug, "source link");
+  }
+
+  const omitted = Number(conv.sourceLinksOmitted || 0);
+  if (omitted > 0) {
+    const row = document.createElement("div");
+    row.className = "summary-text source-link-row source-link-more";
+    row.textContent = uiText("sourceEvidenceMore").replace("{count}", String(omitted));
+    box.appendChild(row);
+  }
+
+  appendDebugTrace(box, conv && conv._debug && conv._debug.sourceLinks, "source links");
+  return box;
+}
+
 function summaryLabelForConv(conv) {
   return conv && (
     ["wiki", "mail", "prts", "responsive"].includes(conv.kind)
@@ -2712,7 +2931,25 @@ function renderLineOrderRecovery(conv) {
 
   const strip = document.createElement("div");
   strip.className = "line-order-summary line-order-summary-flat";
-  strip.appendChild(createLineOrderStatChip(lineOrderModeText(lineOrder.mode), lineOrderTone(lineOrder.mode)));
+  const registry = convRuntimeRegistry(conv);
+  const runtimeMode = lineOrderRuntimeMode(conv, lineOrder, originalLineIds, orderedLineIds);
+  strip.appendChild(createLineOrderStatChip(
+    runtimeMode ? runtimeMode.text : lineOrderModeText(lineOrder.mode),
+    runtimeMode ? runtimeMode.tone : lineOrderTone(lineOrder.mode),
+    runtimeMode ? runtimeMode.title : ""
+  ));
+  const registryChip = lineOrderRegistryChip(registry);
+  if (registryChip && !(runtimeMode && registry && registry.registered === false)) {
+    strip.appendChild(createLineOrderStatChip(
+      registryChip.text,
+      registryChip.tone,
+      registryChip.title
+    ));
+  }
+  const deltaChip = lineOrderRegistryDeltaChip(registry);
+  if (deltaChip) {
+    strip.appendChild(createLineOrderStatChip(deltaChip.text, deltaChip.tone, deltaChip.title));
+  }
   if (differsFromLineIdOrder) {
     strip.appendChild(createLineOrderStatChip(uiText("lineOrderDiffersFromLineIdOrder"), "success"));
   }
@@ -3028,6 +3265,12 @@ function renderConv(conv) {
 
   const archiveLinksBlock = renderArchiveLinksBlock(entry, conv);
   if (archiveLinksBlock) frag.appendChild(archiveLinksBlock);
+
+  const sourceLinksBlock = renderSourceLinksBlock(conv);
+  if (sourceLinksBlock) frag.appendChild(sourceLinksBlock);
+
+  const narrativeVideoBlock = renderNarrativeVideosBlock(conv);
+  if (narrativeVideoBlock) frag.appendChild(narrativeVideoBlock);
 
   const wikiMediaBlock = renderWikiMediaBlock(conv);
   if (wikiMediaBlock) frag.appendChild(wikiMediaBlock);

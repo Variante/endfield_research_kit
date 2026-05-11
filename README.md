@@ -5,8 +5,9 @@ surfaces:
 
 - `webui/`: a static browser for story, reference text, exported assets, and
   source-data update diffs.
-- `unity_endfield_graph_shader_lab/`: a Unity 2022.3 project for recovered
-  graph/character shader work and render/animation checks.
+- `unity_endfield_graph_shader_lab/`: the Unity 2022.3 Endfield Character
+  Recovery Lab for recovered character shaders, render checks, meshes, and
+  animation playback.
 
 This repository is for research and study purposes only. It is intended for
 local inspection of data from a legally obtained installation, with generated
@@ -51,6 +52,8 @@ Then open `http://127.0.0.1:8765/`.
 `export.bat` is the normal browser-data refresh. It runs:
 
 - `scripts/export_full_from_game.py --skip-raw-vfs --skip-source-inventory`
+- `scripts/recover_dialog_id_registry.py --quiet`
+- `scripts/webui/build_story_source_links.py`
 - `scripts/webui/build_updates.py`
 - `scripts/webui/build_story.py --languages CN --default-language CN`
 - `scripts/webui/build_assets.py`
@@ -130,7 +133,7 @@ Generated WebUI outputs include:
 - `webui/data/assets/index.json`
 - `webui/data/updates/latest.json`
 
-## Unity Shader Lab
+## Unity Character Recovery Lab
 
 The Unity project lives in `unity_endfield_graph_shader_lab/`.
 
@@ -138,14 +141,12 @@ Common commands:
 
 ```bat
 cd unity_endfield_graph_shader_lab
-.\open_shader_lab.bat
-.\build_shader_lab_scene.bat
-.\build_wulfa_scene.bat
-.\build_wulfa_animations.bat
+.\open_character_recovery_lab.bat
+.\build_all_character_recovery.bat
 ```
 
-See `unity_endfield_graph_shader_lab/README.md` for the full shader-lab
-workflow. In this checkout, shader-lab helpers are project-local under
+See `unity_endfield_graph_shader_lab/README.md` for the full character recovery
+workflow. In this checkout, Unity recovery helpers are project-local under
 `unity_endfield_graph_shader_lab/` rather than active files under `scripts/`.
 
 ## Tool Pointers
@@ -182,9 +183,8 @@ kept under `tools/`:
 - `tools/fluffy-dumper-src/`: maintained dumping support kept as source for
   inspection and patching. Upstream mirror:
   <https://git.nekolab.app/fluffield/fluffy-dumper>
-- `tools/endfield_asset_map_filter.py` and `tools/unity_vat_import.cs`: local
-  helper files maintained in this repo for asset-map filtering and Unity import
-  experiments.
+- `tools/endfield_asset_map_filter.py`: local helper maintained in this repo
+  for asset-map filtering experiments.
 
 Use `scripts/README.md` for the maintained script map. Keep new throwaway
 experiments in `scratch/`, and promote only reusable shared helpers to `tools/`.
@@ -193,8 +193,8 @@ experiments in `scratch/`, and promote only reusable shared helpers to `tools/`.
 
 - `webui/`: static app and generated browser data.
 - `scripts/webui/`: WebUI builders and packaging tools.
-- `scripts/`: WebUI/export helpers plus shader-lab generation scripts.
-- `unity_endfield_graph_shader_lab/`: Unity shader lab project.
+- `scripts/`: WebUI/export helpers.
+- `unity_endfield_graph_shader_lab/`: Unity character recovery lab project.
 - `export_full/`: generated data exported from the installed client.
 - `reports/`: durable WebUI/export summaries.
 - `scratch/`: disposable local outputs.

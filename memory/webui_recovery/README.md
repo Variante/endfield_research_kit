@@ -16,14 +16,15 @@ python serve.py
 `export.bat` is the current WebUI recovery pipeline:
 
 1. `scripts/export_full_from_game.py --skip-raw-vfs --skip-source-inventory`
-2. `scripts/webui/build_updates.py`
-3. `scripts/webui/build_story.py --languages CN --default-language CN`
-4. `scripts/webui/build_assets.py`
+2. `scripts/recover_dialog_id_registry.py --quiet`
+3. `scripts/webui/build_updates.py`
+4. `scripts/webui/build_story.py --languages CN --default-language CN`
+5. `scripts/webui/build_assets.py`
 
 The pipeline writes the browser inputs under `webui/data/` and reads exported
 game data from `export_full/`. It does not require `scratch/`, `reports/`, or
 `tmp/` as active inputs. `reports/` remains an output area for generated
-summaries and diagnostics.
+summaries and diagnostics. The game itself does **not** need to be running.
 
 ## Page Files
 
@@ -32,6 +33,15 @@ summaries and diagnostics.
 - `updates_page.md`: recovered Updates page.
 - `assets_page.md`: recovered Assets page.
 - `package_and_serving.md`: packaging and local serving.
+- `dialog_id_registry.md`: runtime `DialogIdTable` registry recovery
+  (May 2026 work). Explains why scenes are now classified as
+  `unregisteredScene` vs `dialogTrunkRowIteration` instead of falling back
+  to a generic `lineIdSuffix` warning. Includes the IL2CPP class-hierarchy
+  evidence and operational notes for game updates.
+- `game_update_playbook.md`: operational checklist for what to run after
+  the game updates. The 95% case is one command (`.\export.bat`). The
+  5% case is documented step-by-step including the IL2CPP runtime-dump
+  flow if the dialog system itself has been restructured.
 
 ## Expected Generated WebUI Data
 

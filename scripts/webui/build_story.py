@@ -54,6 +54,7 @@ from build_story_reports import (
     write_inferred_option_anchors_report as shared_write_inferred_option_anchors_report,
     write_scene_order_gap_reports as shared_write_scene_order_gap_reports,
 )
+from build_story_source_links import build_source_links as build_story_source_links
 from recover_timeline_line_orders import (
     TimelineRecoveryConfig,
     default_order_out as timeline_recovery_order_out,
@@ -72,11 +73,16 @@ from recover_mission_timelines import (
     summarize as summarize_mission_timeline_recovery,
     write_json as write_mission_timeline_recovery_json,
 )
-from scene_order_gap_shared import build_scene_order_disorder_warning as shared_build_scene_order_disorder_warning
+from scene_order_gap_shared import (
+    build_runtime_registry_debug as shared_build_runtime_registry_debug,
+    build_scene_order_disorder_warning as shared_build_scene_order_disorder_warning,
+    load_dialog_id_registry as shared_load_dialog_id_registry,
+)
 
 
 REPORTS_DIR = ROOT / "reports"
 EXPORT_ROOT = ROOT / "export_full"
+STORY_SOURCE_LINKS_PATH = EXPORT_ROOT / "recovered" / "story_source_links.json"
 
 
 STREAMING_ASSETS_DIR = _resolve_structured_source_dir(EXPORT_ROOT, "StreamingAssets")
@@ -246,6 +252,15 @@ CUTSCENE_TEXT_ROW_RE = re.compile(
 )
 PRINTABLE_ASCII_MIN = 32
 PRINTABLE_ASCII_MAX = 126
+NARRATIVE_VIDEO_EXTENSIONS = {
+    ".mp4",
+    ".webm",
+    ".mov",
+    ".avi",
+    ".m4v",
+    ".ogv",
+    ".usm",
+}
 
 
 _MISSION_FLOW_CACHE: dict[str, dict | None] = {}
@@ -267,6 +282,7 @@ _JSON_FILE_CACHE: dict[str, dict] = {}
 _MISSION_AREA_CACHE: dict[str, dict] | None = None
 _NPC_PROXY_TABLE_CACHE: dict[str, dict] | None = None
 _CUTSCENE_ASSET_CACHE: dict[str, dict] | None = None
+_NARRATIVE_VIDEO_CACHE: list[dict] | None = None
 _DIALOG_REF_FIELDS = ("_dialogId", "snsDialogId")
 _CUTSCENE_REF_FIELDS = ("_cutsceneId",)
 _REMOTECOMM_REF_FIELDS = ("_remoteCommId",)
@@ -1019,6 +1035,133 @@ def _infer_cutscene_mission_and_scene(
         mission = parts[0]
         return mission, "_".join(parts[1:]) or "0"
     return canonical_key, "0"
+
+
+def _relative_asset_ref(label: str, source_root: Path, path: Path) -> str:
+    try:
+        rel_suffix = path.relative_to(source_root).as_posix()
+    except ValueError:
+        rel_suffix = path.name
+    return f"{label}/{rel_suffix}" if rel_suffix else label
+
+
+def _iter_narrative_video_roots(kind_dir: str):
+    structured_roots = (
+        ("StreamingAssets-structured", STREAMING_ASSETS_DIR),
+        ("Persistent-structured", PERSISTENT_ASSETS_DIR),
+    )
+    for label, source_root in structured_roots:
+        video_dir = source_root / "Data" / "Video" / "PC" / "Narrative" / kind_dir
+        if video_dir.exists():
+            yield label, source_root, video_dir
+
+    raw_vfs_root = EXPORT_ROOT / "raw_vfs"
+    for source in ("StreamingAssets", "Persistent"):
+        files_root = raw_vfs_root / source / "files"
+        if not files_root.exists():
+            continue
+        for bucket_dir in sorted(files_root.iterdir()):
+            if not bucket_dir.is_dir():
+                continue
+            video_dir = bucket_dir / "Data" / "Video" / "PC" / "Narrative" / kind_dir
+            if video_dir.exists():
+                yield "raw_vfs", raw_vfs_root, video_dir
+
+
+def _strip_gender_video_prefix(stem: str) -> tuple[str, str]:
+    value = str(stem or "").strip()
+    if match := re.match(r"^(?P<gender>f|m)_(?P<rest>.+)$", value, re.IGNORECASE):
+        return match.group("gender").lower(), match.group("rest")
+    return "", value
+
+
+def _narrative_video_key_candidates(kind: str, stem: str) -> list[str]:
+    _, base = _strip_gender_video_prefix(stem)
+    candidates: list[str] = []
+
+    def add(candidate: str) -> None:
+        candidate = str(candidate or "").strip()
+        if candidate and candidate not in candidates:
+            candidates.append(candidate)
+
+    def letter_suffix_alias(value: str) -> str:
+        match = re.match(r"^(.+_\d+)[a-z]+$", str(value or ""), re.IGNORECASE)
+        return match.group(1) if match else ""
+
+    if kind == "cutscene":
+        raw = base
+        if raw.startswith("cs_video_"):
+            raw = raw[len("cs_video_"):]
+        raw_alias = letter_suffix_alias(raw)
+        if raw.startswith("dlg_"):
+            add(raw)
+            add(raw_alias)
+            add(f"misc_{raw}")
+            if raw_alias:
+                add(f"misc_{raw_alias}")
+        if raw.startswith("cutscene_"):
+            add(_canonical_cutscene_key(raw) or raw)
+            if raw_alias:
+                add(_canonical_cutscene_key(raw_alias) or raw_alias)
+        else:
+            add(_canonical_cutscene_key(f"cutscene_{raw}") or f"cutscene_{raw}")
+            if raw_alias:
+                add(_canonical_cutscene_key(f"cutscene_{raw_alias}") or f"cutscene_{raw_alias}")
+            if not raw.startswith("dlg_"):
+                add(f"dlg_{raw}")
+                if raw_alias:
+                    add(f"dlg_{raw_alias}")
+        add(raw)
+        add(raw_alias)
+    elif kind == "remotecomm":
+        add(base)
+        if not base.startswith("remotecomm_"):
+            add(f"remotecomm_{base}")
+    return candidates
+
+
+def _load_narrative_video_assets() -> list[dict]:
+    global _NARRATIVE_VIDEO_CACHE
+    if _NARRATIVE_VIDEO_CACHE is not None:
+        return _NARRATIVE_VIDEO_CACHE
+
+    out: list[dict] = []
+    for kind, kind_dir in (("cutscene", "Cutscene"), ("remotecomm", "RemoteComm")):
+        for label, source_root, video_dir in _iter_narrative_video_roots(kind_dir):
+            for path in sorted(video_dir.iterdir()):
+                if not path.is_file() or path.suffix.lower() not in NARRATIVE_VIDEO_EXTENSIONS:
+                    continue
+                gender, base_stem = _strip_gender_video_prefix(path.stem)
+                candidates = _narrative_video_key_candidates(kind, path.stem)
+                if not candidates:
+                    continue
+                try:
+                    size = path.stat().st_size
+                except OSError:
+                    size = 0
+                out.append({
+                    "kind": kind,
+                    "name": path.name,
+                    "stem": path.stem,
+                    "baseStem": base_stem,
+                    "gender": gender,
+                    "format": path.suffix.lower().lstrip("."),
+                    "size": size,
+                    "source": label,
+                    "rel": _relative_asset_ref(label, source_root, path),
+                    "keyCandidates": candidates,
+                })
+
+    out.sort(key=lambda ref: (
+        str(ref.get("kind") or ""),
+        str((ref.get("keyCandidates") or [""])[0]),
+        str(ref.get("baseStem") or ""),
+        str(ref.get("gender") or ""),
+        str(ref.get("source") or ""),
+        str(ref.get("name") or ""),
+    ))
+    _NARRATIVE_VIDEO_CACHE = out
+    return out
 
 
 def _load_cutscene_assets() -> dict[str, dict]:
@@ -3828,6 +3971,42 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
 
     source_scene_keys = sorted(scene_line_ids_by_prefix)
 
+    cinematic_timeline_anchors: list[dict] = []
+    seen_cinematic_timeline_anchors: set[tuple[str, str]] = set()
+    for node in nodes:
+        if not isinstance(node, dict) or _node_short_type(node) != "DialogTreeCinematicNode":
+            continue
+        node_id = str(node.get("$id") or "")
+        action = node.get("_actionData") or {}
+        if not node_id or not isinstance(action, dict):
+            continue
+        action_name = str(action.get("name") or "").strip()
+        if not action_name:
+            continue
+        identity = (node_id, action_name)
+        if identity in seen_cinematic_timeline_anchors:
+            continue
+        seen_cinematic_timeline_anchors.add(identity)
+        anchor: dict[str, object] = {
+            "sourceKey": tree_key,
+            "file": tree_path.relative_to(ROOT).as_posix(),
+            "nodeId": node_id,
+            "timeline": action_name,
+        }
+        target_node_ids = [
+            str(target_id)
+            for target_id in _unique_preserve(succs.get(node_id, []))
+            if target_id
+        ]
+        if target_node_ids:
+            anchor["targetNodeIds"] = target_node_ids
+            anchor["targetCount"] = len(target_node_ids)
+            if before := first_trunk_on_path(target_node_ids[0]):
+                anchor["before"] = before
+        if after := nearest_trunk_id(node_id):
+            anchor["after"] = after
+        cinematic_timeline_anchors.append(anchor)
+
     cinematic_finish_groups: list[dict] = []
     for node in nodes:
         if not isinstance(node, dict) or _node_short_type(node) != "DialogTreeCinematicNode":
@@ -4265,6 +4444,7 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
         "pre": pre_option_ids,
         "actionAssets": action_assets,
         "cinematicOnly": bool(action_assets) and not line_ids,
+        "cinematicTimelineAnchors": cinematic_timeline_anchors,
         "cinematicFinishGroups": cinematic_finish_groups,
         "targetFragments": target_fragments,
         "sceneLinks": scene_links,
@@ -4304,6 +4484,7 @@ def _load_dialog_tree_file(tree_key: str) -> dict | None:
         "pre": source.get("pre") or [],
         "actionAssets": source.get("actionAssets") or [],
         "cinematicOnly": bool(source.get("cinematicOnly")),
+        "cinematicTimelineAnchors": source.get("cinematicTimelineAnchors") or [],
         "cinematicFinishGroups": source.get("cinematicFinishGroups") or [],
     }
     _DIALOG_TREE_FILE_CACHE[tree_key] = result
@@ -4350,6 +4531,7 @@ def _load_related_dialog_tree_files(conv_key: str, original_line_ids: list[str] 
             "pre": source.get("pre") or [],
             "actionAssets": source.get("actionAssets") or [],
             "cinematicOnly": bool(source.get("cinematicOnly")),
+            "cinematicTimelineAnchors": source.get("cinematicTimelineAnchors") or [],
             "cinematicFinishGroups": source.get("cinematicFinishGroups") or [],
         })
 
@@ -4552,7 +4734,8 @@ def resolve_scene_line_order(conv_key: str, original_line_ids: list[str]) -> tup
             )
             seen_candidate_files.add(identity)
 
-    for timeline in load_dialog_timeline_line_orders(conv_key):
+    timeline_entries = load_dialog_timeline_line_orders(conv_key)
+    for timeline in timeline_entries:
         add_candidate(
             "dialogTimeline",
             timeline.get("sourceKey") or timeline.get("timeline") or conv_key,
@@ -4560,6 +4743,99 @@ def resolve_scene_line_order(conv_key: str, original_line_ids: list[str]) -> tup
             timeline.get("lineIds") or [],
             1,
         )
+
+    def resolve_cinematic_timeline_stitch() -> tuple[list[str], dict] | None:
+        if not tree_file:
+            return None
+        anchors = [
+            anchor
+            for anchor in (tree_file.get("cinematicTimelineAnchors") or [])
+            if isinstance(anchor, dict) and anchor.get("timeline")
+        ]
+        if not anchors or not timeline_entries:
+            return None
+        tree_line_ids = [
+            line_id
+            for line_id in (tree_file.get("lineIds") or [])
+            if line_id in available_set
+        ]
+        if not tree_line_ids:
+            return None
+
+        timeline_by_name: dict[str, list[dict]] = defaultdict(list)
+        for entry in timeline_entries:
+            for name in (
+                str(entry.get("timeline") or ""),
+                str(entry.get("sourceKey") or ""),
+            ):
+                if name and entry not in timeline_by_name[name]:
+                    timeline_by_name[name].append(entry)
+
+        inserted_by_after: dict[str, list[str]] = defaultdict(list)
+        contributing_sources: list[dict] = [{
+            "kind": "dialogTree",
+            "sourceKey": tree_file.get("sourceKey") or conv_key,
+            "file": tree_file.get("file") or "",
+            "coverage": len(tree_line_ids),
+            "matchedLineIds": tree_line_ids,
+            "addedLineIds": list(tree_line_ids),
+        }]
+        used_anchor_details: list[dict] = []
+        seen_line_ids: set[str] = set(tree_line_ids)
+        for anchor in anchors:
+            timeline_name = str(anchor.get("timeline") or "")
+            after_line_id = str(anchor.get("after") or "")
+            if not timeline_name or after_line_id not in tree_line_ids:
+                continue
+            for entry in timeline_by_name.get(timeline_name, []):
+                matched = [
+                    line_id
+                    for line_id in (entry.get("lineIds") or [])
+                    if line_id in available_set
+                ]
+                added = [line_id for line_id in matched if line_id not in seen_line_ids]
+                if not added:
+                    continue
+                seen_line_ids.update(added)
+                inserted_by_after[after_line_id].extend(added)
+                contributing_sources.append({
+                    "kind": "dialogTimeline",
+                    "sourceKey": entry.get("sourceKey") or entry.get("timeline") or timeline_name,
+                    "file": entry.get("file") or "",
+                    "coverage": len(matched),
+                    "matchedLineIds": matched,
+                    "addedLineIds": added,
+                })
+                used_anchor_details.append({
+                    "timeline": timeline_name,
+                    "nodeId": str(anchor.get("nodeId") or ""),
+                    "after": after_line_id,
+                    "before": str(anchor.get("before") or ""),
+                    "addedLineIds": added,
+                })
+
+        if not used_anchor_details:
+            return None
+        ordered: list[str] = []
+        for line_id in tree_line_ids:
+            if line_id not in ordered:
+                ordered.append(line_id)
+            for inserted_id in inserted_by_after.get(line_id, []):
+                if inserted_id not in ordered:
+                    ordered.append(inserted_id)
+        if set(ordered) != available_set or len(ordered) != len(available_set):
+            return None
+        return ordered, {
+            "mode": "dialogTreeCinematicTimeline",
+            "originalLineIds": available_line_ids,
+            "orderedLineIds": ordered,
+            "sources": contributing_sources,
+            "stitch": "dialogTreeCinematicAnchors",
+            "cinematicTimelineAnchors": used_anchor_details,
+        }
+
+    if cinematic_stitch := resolve_cinematic_timeline_stitch():
+        return cinematic_stitch
 
     for fragment in load_dialog_tree_fragments(conv_key):
         add_candidate(
@@ -5153,6 +5429,27 @@ def load_json_path_uncached(path: Path, label: str | None = None) -> dict:
     return data if isinstance(data, dict) else {}
 
 
+def load_story_source_links() -> dict[str, list[dict]]:
+    """Load or build the language-independent story source-link index."""
+    if not STORY_SOURCE_LINKS_PATH.exists():
+        print("  building story source links")
+        build_story_source_links(output=STORY_SOURCE_LINKS_PATH)
+    if not STORY_SOURCE_LINKS_PATH.exists():
+        return {}
+    try:
+        payload = load_json_path_uncached(STORY_SOURCE_LINKS_PATH, "story_source_links.json")
+    except (OSError, json.JSONDecodeError):
+        return {}
+    links = payload.get("links") if isinstance(payload, dict) else {}
+    if not isinstance(links, dict):
+        return {}
+    return {
+        str(key): rows
+        for key, rows in links.items()
+        if key and isinstance(rows, list)
+    }
+
+
 def parse_mission(mission: str) -> tuple[str, int]:
     """Split 'a1m6d1' -> ('a', 1); 'c13m2d5' -> ('c', 13)."""
     if mission.startswith("blackbox"):
@@ -5237,6 +5534,9 @@ def build_language_bundle(
     mission_dir = out_dir / "mission"
     out_dir.mkdir(parents=True, exist_ok=True)
     conv_dir.mkdir(parents=True, exist_ok=True)
+    dialog_id_registry = shared_load_dialog_id_registry()
+    story_source_links = load_story_source_links()
+    narrative_video_assets = _load_narrative_video_assets()
 
     # Wipe old conv files so renamed/removed groups don't linger.
     for old in conv_dir.glob("*.json"):
@@ -7281,8 +7581,23 @@ def build_language_bundle(
             "warnings": warnings,
         }
 
+    def attach_runtime_registry_debug(payload: dict) -> None:
+        debug = payload.setdefault("_debug", {})
+        if not isinstance(debug, dict):
+            debug = {}
+            payload["_debug"] = debug
+        block = shared_build_runtime_registry_debug(
+            payload, dialog_id_registry=dialog_id_registry
+        )
+        if block is None:
+            debug.pop("runtimeRegistry", None)
+            return
+        debug["runtimeRegistry"] = block
+
     def attach_scene_order_warning(payload: dict) -> None:
-        warning = shared_build_scene_order_disorder_warning(payload)
+        warning = shared_build_scene_order_disorder_warning(
+            payload, dialog_id_registry=dialog_id_registry
+        )
         if warning is None:
             return
         existing_warnings = [
@@ -7299,23 +7614,26 @@ def build_language_bundle(
         return f"{minutes}:{remaining:04.1f}"
 
     def build_duplicate_timestamp_warning(payload: dict) -> dict | None:
-        buckets: dict[str, list[dict]] = defaultdict(list)
+        buckets: dict[tuple[str, str], list[dict]] = defaultdict(list)
         for line in payload.get("lines") or []:
             if not isinstance(line, dict):
                 continue
             ts = line.get("ts")
             if not isinstance(ts, (int, float)):
                 continue
-            buckets[format_webui_timeline_seconds(ts)].append(line)
+            debug = line.get("_debug") if isinstance(line.get("_debug"), dict) else {}
+            timing_debug = debug.get("timelineTiming") if isinstance(debug, dict) else {}
+            timeline = str(timing_debug.get("timeline") or "") if isinstance(timing_debug, dict) else ""
+            buckets[(timeline, format_webui_timeline_seconds(ts))].append(line)
 
         groups: list[dict] = []
-        for label, lines_for_ts in sorted(
+        for (timeline, label), lines_for_ts in sorted(
             buckets.items(),
             key=lambda item: min(float(line.get("ts") or 0.0) for line in item[1]),
         ):
             if len(lines_for_ts) < 2:
                 continue
-            groups.append({
+            group = {
                 "timestamp": label,
                 "lineIds": [str(line.get("id") or "") for line in lines_for_ts if line.get("id")],
                 "lines": [
@@ -7328,7 +7646,10 @@ def build_language_bundle(
                     for line in lines_for_ts
                     if line.get("id")
                 ],
-            })
+            }
+            if timeline:
+                group["timeline"] = timeline
+            groups.append(group)
         if not groups:
             return None
         line_ids: list[str] = []
@@ -7339,7 +7660,7 @@ def build_language_bundle(
         return {
             "code": "duplicateTimestamps",
             "reason": "duplicateDisplayTimestamp",
-            "detail": "two or more lines share the same WebUI timeline timestamp label",
+            "detail": "two or more lines share the same WebUI timeline timestamp label within one timeline segment",
             "groups": groups,
             "lineIds": line_ids,
         }
@@ -7438,8 +7759,13 @@ def build_language_bundle(
             line_order = warning.get("lineOrder") if isinstance(warning.get("lineOrder"), dict) else {}
             option_layout = warning.get("optionLayout") if isinstance(warning.get("optionLayout"), dict) else {}
 
-            if str(line_order.get("status") or "") not in {"", "direct"}:
+            line_order_status = str(line_order.get("status") or "")
+            if line_order_status == "missing":
                 codes.append("missingLineOrder")
+            elif line_order_status == "partial":
+                codes.append("partialLineOrder")
+            elif line_order_status == "fallback":
+                codes.append("fallbackLineOrder")
             if int(line_order.get("uncoveredLineCount") or 0) > 0:
                 codes.append("uncoveredLines")
             if str(option_layout.get("status") or "") == "inferred":
@@ -7554,6 +7880,13 @@ def build_language_bundle(
                     line["ts"] = timing["start"]
                 if isinstance(timing.get("duration"), (int, float)):
                     line["dur"] = timing["duration"]
+                timing_debug = {
+                    key: timing[key]
+                    for key in ("timeline", "start", "duration")
+                    if timing.get(key) not in (None, "")
+                }
+                if timing_debug:
+                    line.setdefault("_debug", {})["timelineTiming"] = timing_debug
         # Cross-link with other dialog scenes that share this scene's Unity
         # Timeline. Surfaces cases like dlg_e2m6_11 + dlg_e2m6_19 where a single
         # cinematic recording is split into two DialogTextTable scenes.
@@ -7580,6 +7913,7 @@ def build_language_bundle(
         if scene_graph_links:
             payload["sceneGraphLinks"] = scene_graph_links
             scene_graph_links_by_key[out_key] = scene_graph_links
+        attach_runtime_registry_debug(payload)
         attach_scene_order_warning(payload)
         attach_duplicate_timestamp_warning(payload)
         story_issue_codes = dialog_story_issue_codes(payload)
@@ -12098,6 +12432,7 @@ def build_language_bundle(
             if scene_graph_links:
                 payload["sceneGraphLinks"] = scene_graph_links
                 scene_graph_links_by_key[out_key] = scene_graph_links
+            attach_runtime_registry_debug(payload)
             attach_scene_order_warning(payload)
             with (conv_dir / f"{out_key}.json").open("w", encoding="utf-8") as f:
                 json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
@@ -12211,6 +12546,479 @@ def build_language_bundle(
 
     for entry in index_entries:
         merge_conv_hint_search_text(entry)
+
+    def compact_story_source_link(link: dict) -> dict:
+        source = str(link.get("source") or "")
+        file_ref = str(link.get("file") or "")
+        path_ref = str(link.get("path") or "")
+        raw = str(link.get("raw") or "")
+        context = link.get("context") if isinstance(link.get("context"), dict) else {}
+        compact = {
+            "source": source,
+            "file": file_ref,
+            "path": path_ref,
+            "raw": raw,
+            "kind": str(link.get("kind") or ""),
+            "context": context,
+            "_debug": {
+                "source": {
+                    "source": source,
+                    "file": file_ref,
+                    "path": path_ref,
+                    "raw": raw,
+                    "kind": str(link.get("kind") or ""),
+                    "matchKind": str(link.get("matchKind") or ""),
+                    "context": context,
+                },
+            },
+        }
+        for optional in ("sourceKey", "mission", "levelId", "scriptId", "templateGroup", "templateId"):
+            if link.get(optional):
+                compact[optional] = link[optional]
+                compact["_debug"]["source"][optional] = link[optional]
+        return compact
+
+    def story_source_link_search_text(links: list[dict]) -> str:
+        parts: list[str] = []
+        for link in links:
+            for field in ("raw", "source", "file", "path", "mission", "levelId", "scriptId", "templateId"):
+                value = link.get(field)
+                if value:
+                    parts.append(str(value))
+            context = link.get("context") if isinstance(link.get("context"), dict) else {}
+            owner = context.get("owner") if isinstance(context.get("owner"), dict) else {}
+            for value in owner.values():
+                if value:
+                    parts.append(str(value))
+        return " ".join(parts)
+
+    def story_source_link_index_summary(links: list[dict]) -> dict:
+        source_counts = Counter(str(link.get("source") or "") for link in links)
+        files = _unique_preserve(str(link.get("file") or "") for link in links if link.get("file"))
+        return {
+            "n": len(links),
+            "sources": {
+                key: source_counts[key]
+                for key in sorted(source_counts)
+                if key
+            },
+            "files": files[:5],
+        }
+
+    def story_source_link_report_rows(keys: set[str]) -> list[dict]:
+        rows: list[dict] = []
+        for key in sorted(keys):
+            links = story_source_links.get(key) or []
+            source_counts = Counter(str(link.get("source") or "") for link in links)
+            rows.append({
+                "key": key,
+                "kind": str((links[0] if links else {}).get("kind") or ""),
+                "references": len(links),
+                "sources": {
+                    source: source_counts[source]
+                    for source in sorted(source_counts)
+                    if source
+                },
+                "files": _unique_preserve(
+                    str(link.get("file") or "")
+                    for link in links
+                    if link.get("file")
+                )[:8],
+            })
+        return rows
+
+    def render_story_source_link_report_md(report: dict) -> str:
+        summary = report.get("summary") or {}
+        lines = [
+            f"# Story Source Links ({language_code})",
+            "",
+            "## Summary",
+            "",
+            f"- Source-link keys: `{summary.get('sourceLinkKeys', 0)}`",
+            f"- Source references: `{summary.get('sourceReferences', 0)}`",
+            f"- Attached WebUI keys: `{summary.get('attachedKeys', 0)}`",
+            f"- Attached references: `{summary.get('attachedReferences', 0)}`",
+            f"- Referenced but missing in WebUI: `{summary.get('referencedMissingKeys', 0)}`",
+            f"- Story entries without source links: `{summary.get('storyEntriesWithoutSourceLinks', 0)}`",
+            "",
+            "## Missing Referenced Keys",
+            "",
+        ]
+        for row in (report.get("referencedMissing") or [])[:80]:
+            lines.append(f"- `{row.get('key')}` ({row.get('kind')}, `{row.get('references')}` refs)")
+        if not report.get("referencedMissing"):
+            lines.append("- None")
+        lines.extend(["", "## Story Entries Without Source Links", ""])
+        for row in (report.get("storyEntriesWithoutSourceLinks") or [])[:80]:
+            label = row.get("mission") or ""
+            lines.append(f"- `{row.get('key')}` ({row.get('kind')}{', ' + label if label else ''})")
+        if not report.get("storyEntriesWithoutSourceLinks"):
+            lines.append("- None")
+        lines.append("")
+        return "\n".join(lines)
+
+    def attach_story_source_links_to_outputs() -> dict:
+        if not story_source_links:
+            return {}
+        available_keys = {
+            str(entry.get("k") or "")
+            for entry in index_entries
+            if entry.get("k")
+        }
+        def resolve_source_link_key(source_key: str) -> str:
+            if source_key in available_keys:
+                return source_key
+            if source_key.startswith("dlg_"):
+                misc_key = f"misc_{source_key}"
+                if misc_key in available_keys:
+                    return misc_key
+                match = re.match(r"^(dlg_.+_\d+)d\d+$", source_key)
+                if match and match.group(1) in available_keys:
+                    return match.group(1)
+            if source_key.startswith("cutscene_") and source_key.endswith("_start"):
+                base_key = source_key.removesuffix("_start")
+                if base_key in available_keys:
+                    return base_key
+            return ""
+
+        resolved_source_links: dict[str, list[dict]] = defaultdict(list)
+        unresolved_source_keys: set[str] = set()
+        for source_key, links in story_source_links.items():
+            resolved_key = resolve_source_link_key(source_key)
+            if not resolved_key:
+                unresolved_source_keys.add(source_key)
+                continue
+            for link in links:
+                resolved_link = dict(link)
+                if source_key != resolved_key:
+                    resolved_link["sourceKey"] = source_key
+                resolved_source_links[resolved_key].append(resolved_link)
+
+        attached_keys: set[str] = set()
+        attached_refs = 0
+        for entry in index_entries:
+            key = str(entry.get("k") or "")
+            links = resolved_source_links.get(key) or []
+            if not links:
+                continue
+            attached_keys.add(key)
+            attached_refs += len(links)
+            compact_links = [compact_story_source_link(link) for link in links[:12]]
+            omitted = max(0, len(links) - len(compact_links))
+            entry["src"] = story_source_link_index_summary(links)
+            entry["x"] = merge_search_text(entry.get("x", ""), story_source_link_search_text(links))
+            tags = entry.setdefault("tags", [])
+            if "sourceLinked" not in tags:
+                tags.append("sourceLinked")
+
+            conv_path = conv_dir / f"{key}.json"
+            if not conv_path.exists():
+                continue
+            try:
+                payload = json.loads(conv_path.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            payload["sourceLinks"] = compact_links
+            if omitted:
+                payload["sourceLinksOmitted"] = omitted
+            debug = payload.setdefault("_debug", {})
+            debug["sourceLinks"] = {
+                "source": {
+                    "index": STORY_SOURCE_LINKS_PATH.relative_to(ROOT).as_posix(),
+                    "key": key,
+                    "count": len(links),
+                    "shown": len(compact_links),
+                    "omitted": omitted,
+                },
+            }
+            with conv_path.open("w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+
+        referenced_missing = unresolved_source_keys
+        source_link_candidate_kinds = set(MISSION_SCENE_ENTRY_KINDS) | {"env", "misc"}
+        story_entries_without_links = [
+            {
+                "key": str(entry.get("k") or ""),
+                "kind": str(entry.get("d") or ""),
+                "mission": str(entry.get("m") or ""),
+            }
+            for entry in index_entries
+            if entry.get("k")
+            and entry.get("d") in source_link_candidate_kinds
+            and entry.get("k") not in resolved_source_links
+        ]
+        report = {
+            "generated": int(time.time()),
+            "language": language_code,
+            "sourceIndex": STORY_SOURCE_LINKS_PATH.relative_to(ROOT).as_posix(),
+            "summary": {
+                "sourceLinkKeys": len(story_source_links),
+                "sourceReferences": sum(len(rows) for rows in story_source_links.values()),
+                "attachedKeys": len(attached_keys),
+                "attachedReferences": attached_refs,
+                "referencedMissingKeys": len(referenced_missing),
+                "storyEntriesWithoutSourceLinks": len(story_entries_without_links),
+            },
+            "referencedMissing": sorted(
+                story_source_link_report_rows(referenced_missing),
+                key=lambda row: (-int(row.get("references") or 0), row.get("key") or ""),
+            )[:300],
+            "storyEntriesWithoutSourceLinks": story_entries_without_links[:500],
+        }
+        report_json = REPORTS_DIR / f"story_source_links_{language_code}.json"
+        report_md = REPORTS_DIR / f"story_source_links_{language_code}.md"
+        REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+        report_json.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        report_md.write_text(render_story_source_link_report_md(report), encoding="utf-8")
+        report["report"] = {
+            "json": report_json.relative_to(ROOT).as_posix(),
+            "markdown": report_md.relative_to(ROOT).as_posix(),
+        }
+        return report
+
+    story_source_link_report = attach_story_source_links_to_outputs()
+
+    def compact_narrative_video_ref(ref: dict) -> dict:
+        compact = {
+            "name": str(ref.get("name") or ""),
+            "rel": str(ref.get("rel") or ""),
+            "source": str(ref.get("source") or ""),
+            "format": str(ref.get("format") or ""),
+            "size": int(ref.get("size") or 0),
+            "stem": str(ref.get("stem") or ""),
+            "baseStem": str(ref.get("baseStem") or ""),
+            "kind": str(ref.get("kind") or ""),
+            "_debug": {
+                "source": {
+                    "rel": str(ref.get("rel") or ""),
+                    "source": str(ref.get("source") or ""),
+                    "name": str(ref.get("name") or ""),
+                    "kind": str(ref.get("kind") or ""),
+                    "keyCandidates": list(ref.get("keyCandidates") or []),
+                },
+            },
+        }
+        if ref.get("gender"):
+            compact["gender"] = str(ref["gender"])
+            compact["_debug"]["source"]["gender"] = str(ref["gender"])
+        if ref.get("resolvedKey"):
+            compact["_debug"]["source"]["resolvedKey"] = str(ref["resolvedKey"])
+        return compact
+
+    def narrative_video_sort_key(ref: dict) -> tuple:
+        source = str(ref.get("source") or "")
+        fmt = str(ref.get("format") or "")
+        source_rank = {
+            "StreamingAssets-structured": 0,
+            "Persistent-structured": 1,
+            "raw_vfs": 2,
+        }.get(source, 9)
+        format_rank = {
+            "mp4": 0,
+            "webm": 1,
+            "ogv": 2,
+            "mov": 3,
+            "m4v": 4,
+            "avi": 5,
+            "usm": 6,
+        }.get(fmt, 9)
+        gender = str(ref.get("gender") or "")
+        gender_rank = {"": 0, "m": 1, "f": 2}.get(gender, 9)
+        return (
+            str(ref.get("baseStem") or ""),
+            gender_rank,
+            format_rank,
+            source_rank,
+            str(ref.get("rel") or ""),
+        )
+
+    def narrative_video_search_text(refs: list[dict]) -> str:
+        parts: list[str] = []
+        for ref in refs:
+            for field in ("name", "rel", "source", "stem", "baseStem", "gender", "format", "kind"):
+                value = ref.get(field)
+                if value:
+                    parts.append(str(value))
+        return " ".join(parts)
+
+    def narrative_video_index_summary(refs: list[dict]) -> dict:
+        source_counts = Counter(str(ref.get("source") or "") for ref in refs)
+        format_counts = Counter(str(ref.get("format") or "") for ref in refs)
+        names = _unique_preserve(str(ref.get("name") or "") for ref in refs if ref.get("name"))
+        return {
+            "n": len(refs),
+            "sources": {
+                key: source_counts[key]
+                for key in sorted(source_counts)
+                if key
+            },
+            "formats": {
+                key: format_counts[key]
+                for key in sorted(format_counts)
+                if key
+            },
+            "files": names[:5],
+        }
+
+    def render_narrative_video_report_md(report: dict) -> str:
+        summary = report.get("summary") or {}
+        lines = [
+            f"# Narrative Videos ({language_code})",
+            "",
+            "## Summary",
+            "",
+            f"- Scanned video files: `{summary.get('scannedVideos', 0)}`",
+            f"- Attached WebUI keys: `{summary.get('attachedKeys', 0)}`",
+            f"- Attached video refs: `{summary.get('attachedVideos', 0)}`",
+            f"- Unresolved video refs: `{summary.get('unresolvedVideos', 0)}`",
+            "",
+            "## Attached Keys",
+            "",
+        ]
+        for row in (report.get("attached") or [])[:120]:
+            names = ", ".join((row.get("files") or [])[:4])
+            lines.append(f"- `{row.get('key')}` ({row.get('kind')}, `{row.get('videos')}` refs): {names}")
+        if not report.get("attached"):
+            lines.append("- None")
+        lines.extend(["", "## Unresolved Videos", ""])
+        for row in (report.get("unresolved") or [])[:120]:
+            candidates = ", ".join(f"`{candidate}`" for candidate in (row.get("keyCandidates") or [])[:4])
+            lines.append(f"- `{row.get('name')}` ({row.get('kind')}) -> {candidates}")
+        if not report.get("unresolved"):
+            lines.append("- None")
+        lines.append("")
+        return "\n".join(lines)
+
+    def attach_narrative_videos_to_outputs() -> dict:
+        if not narrative_video_assets:
+            return {}
+        available_keys = {
+            str(entry.get("k") or "")
+            for entry in index_entries
+            if entry.get("k")
+        }
+
+        def resolve_video_key(ref: dict) -> str:
+            for candidate in ref.get("keyCandidates") or []:
+                candidate = str(candidate or "")
+                if candidate in available_keys:
+                    return candidate
+                if candidate.startswith("dlg_"):
+                    misc_key = f"misc_{candidate}"
+                    if misc_key in available_keys:
+                        return misc_key
+                    match = re.match(r"^(dlg_.+_\d+)d\d+$", candidate)
+                    if match and match.group(1) in available_keys:
+                        return match.group(1)
+            return ""
+
+        resolved_videos: dict[str, list[dict]] = defaultdict(list)
+        unresolved_videos: list[dict] = []
+        for ref in narrative_video_assets:
+            resolved_key = resolve_video_key(ref)
+            if not resolved_key:
+                unresolved_videos.append(ref)
+                continue
+            resolved_ref = dict(ref)
+            resolved_ref["resolvedKey"] = resolved_key
+            resolved_videos[resolved_key].append(resolved_ref)
+
+        attached_rows: list[dict] = []
+        attached_refs = 0
+        for entry in index_entries:
+            key = str(entry.get("k") or "")
+            refs = sorted(resolved_videos.get(key) or [], key=narrative_video_sort_key)
+            if not refs:
+                continue
+            attached_refs += len(refs)
+            compact_refs = [compact_narrative_video_ref(ref) for ref in refs[:16]]
+            omitted = max(0, len(refs) - len(compact_refs))
+            entry["vid"] = narrative_video_index_summary(refs)
+            entry["x"] = merge_search_text(entry.get("x", ""), narrative_video_search_text(refs))
+            tags = entry.setdefault("tags", [])
+            if "narrativeVideo" not in tags:
+                tags.append("narrativeVideo")
+
+            conv_path = conv_dir / f"{key}.json"
+            if conv_path.exists():
+                try:
+                    payload = json.loads(conv_path.read_text(encoding="utf-8"))
+                except Exception:
+                    payload = None
+                if isinstance(payload, dict):
+                    payload["narrativeVideos"] = compact_refs
+                    if omitted:
+                        payload["narrativeVideosOmitted"] = omitted
+                    if isinstance(payload.get("cutscene"), dict):
+                        payload["cutscene"]["videoRefs"] = compact_refs
+                    debug = payload.setdefault("_debug", {})
+                    debug["narrativeVideos"] = {
+                        "source": {
+                            "key": key,
+                            "count": len(refs),
+                            "shown": len(compact_refs),
+                            "omitted": omitted,
+                        },
+                    }
+                    with conv_path.open("w", encoding="utf-8") as f:
+                        json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+
+            source_counts = Counter(str(ref.get("source") or "") for ref in refs)
+            attached_rows.append({
+                "key": key,
+                "kind": str(entry.get("d") or ""),
+                "mission": str(entry.get("m") or ""),
+                "videos": len(refs),
+                "sources": {
+                    source: source_counts[source]
+                    for source in sorted(source_counts)
+                    if source
+                },
+                "files": _unique_preserve(
+                    str(ref.get("name") or "")
+                    for ref in refs
+                    if ref.get("name")
+                )[:12],
+            })
+
+        unresolved_rows = [
+            {
+                "name": str(ref.get("name") or ""),
+                "kind": str(ref.get("kind") or ""),
+                "rel": str(ref.get("rel") or ""),
+                "keyCandidates": list(ref.get("keyCandidates") or []),
+            }
+            for ref in unresolved_videos
+        ]
+        report = {
+            "generated": int(time.time()),
+            "language": language_code,
+            "summary": {
+                "scannedVideos": len(narrative_video_assets),
+                "attachedKeys": len(attached_rows),
+                "attachedVideos": attached_refs,
+                "unresolvedVideos": len(unresolved_videos),
+                "cutsceneVideoFiles": sum(1 for ref in narrative_video_assets if ref.get("kind") == "cutscene"),
+                "remotecommVideoFiles": sum(1 for ref in narrative_video_assets if ref.get("kind") == "remotecomm"),
+            },
+            "attached": sorted(
+                attached_rows,
+                key=lambda row: (-int(row.get("videos") or 0), row.get("key") or ""),
+            )[:500],
+            "unresolved": unresolved_rows[:500],
+        }
+        report_json = REPORTS_DIR / f"narrative_videos_{language_code}.json"
+        report_md = REPORTS_DIR / f"narrative_videos_{language_code}.md"
+        REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+        report_json.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        report_md.write_text(render_narrative_video_report_md(report), encoding="utf-8")
+        report["report"] = {
+            "json": report_json.relative_to(ROOT).as_posix(),
+            "markdown": report_md.relative_to(ROOT).as_posix(),
+        }
+        return report
+
+    narrative_video_report = attach_narrative_videos_to_outputs()
 
     def normalize_index_entry_defaults(entry: dict) -> None:
         type_key = str(entry.get("t") or "").strip()
@@ -13238,6 +14046,17 @@ def build_language_bundle(
                 "bytes": mission_data_bytes,
             }
         index_payload["missionTimelineRecovery"] = mission_timeline_report
+        if story_source_link_report:
+            index_payload["storySourceLinks"] = {
+                "sourceIndex": story_source_link_report.get("sourceIndex"),
+                "summary": story_source_link_report.get("summary"),
+                "report": story_source_link_report.get("report"),
+            }
+        if narrative_video_report:
+            index_payload["narrativeVideos"] = {
+                "summary": narrative_video_report.get("summary"),
+                "report": narrative_video_report.get("report"),
+            }
         if include_reference_in_story_index:
             index_payload["missionExtras"] = mission_extras_payload
             index_payload["missionFlows"] = mission_flows_payload
@@ -13260,6 +14079,20 @@ def build_language_bundle(
         f"{mission_timeline_recovery_payload['summary']['missionCount']} missions, "
         f"{mission_timeline_recovery_payload['summary']['questCount']} quests"
     )
+    if story_source_link_report:
+        source_summary = story_source_link_report.get("summary") or {}
+        print(
+            "  source links:  "
+            f"{source_summary.get('attachedKeys', 0)} keys, "
+            f"{source_summary.get('attachedReferences', 0)} refs attached"
+        )
+    if narrative_video_report:
+        video_summary = narrative_video_report.get("summary") or {}
+        print(
+            "  narrative vid: "
+            f"{video_summary.get('attachedKeys', 0)} keys, "
+            f"{video_summary.get('attachedVideos', 0)} refs attached"
+        )
     if reference_stats:
         print(f"  reference:     {reference_stats.get('bytes', 0)/1024/1024:.1f} MB across {reference_stats.get('tables', 0)} tables")
     print(f"  index:         {index_path.stat().st_size/1024:.1f} KB")
@@ -13287,6 +14120,10 @@ def build_language_bundle(
         "inferredOptionAnchorsData": str(inferred_anchor_report["json"].relative_to(ROOT)).replace("\\", "/"),
         "inferredOptionAnchorsScenes": inferred_anchor_report["summary"]["totalScenes"],
         "inferredOptionAnchorsGroups": inferred_anchor_report["summary"]["totalInferredGroups"],
+        "narrativeVideoReport": str((narrative_video_report.get("report") or {}).get("markdown") or ""),
+        "narrativeVideoData": str((narrative_video_report.get("report") or {}).get("json") or ""),
+        "narrativeVideoKeys": int((narrative_video_report.get("summary") or {}).get("attachedKeys", 0)),
+        "narrativeVideoRefs": int((narrative_video_report.get("summary") or {}).get("attachedVideos", 0)),
     }
 
 
