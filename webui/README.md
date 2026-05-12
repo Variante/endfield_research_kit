@@ -21,7 +21,9 @@ from `webui/data/` and keeps heavyweight recovery work in the Python builders.
   option groups, line-order notes, raw source traces, and inline media
   rendering for SNS/content images. Narrative video blocks show the best
   playable active-gender/source variant for each distinct video, without
-  counting hidden duplicate format/source variants as extra videos.
+  counting hidden duplicate format/source variants as extra videos. Option
+  groups recovered from Runtime Jump route tracks display each option's full
+  recovered line path instead of collapsing shared tails.
 - `Reference`: raw localized rows from `data/lang/<code>/reference/`, with
   source/table filters and on-demand table loading.
 - `Updates`: latest change summary from `data/updates/latest.json`, generated

@@ -40,6 +40,10 @@ def safe_join(base: Path, raw_path: str) -> Path:
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
+    def end_headers(self) -> None:
+        self.send_header("Cache-Control", "no-store, max-age=0")
+        super().end_headers()
+
     def translate_path(self, path: str) -> str:
         request_path = unquote(urlsplit(path).path or "/")
 

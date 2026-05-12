@@ -49,6 +49,10 @@ python serve.py
 
 Then open `http://127.0.0.1:8765/`.
 
+The local server sends no-store headers, and the Story browser revalidates
+generated JSON when loading or reselecting conversations, so a browser reload
+after `export.bat` should show the refreshed data without changing ports.
+
 The current Story/Reference inline media behavior treats SNS emoji images such
 as `sns_emoji_*` as regular inline emoji with no popup/modal preview, while
 non-emoji SNS media such as `sns_image_*` and `sns_sticker_*` render at normal

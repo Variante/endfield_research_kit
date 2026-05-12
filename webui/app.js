@@ -21,6 +21,7 @@ const FILTER_PANEL_STORAGE_KEY = "webui_filters_collapsed";
 const STORY_SPLITTER_STORAGE_KEY = "webui_story_splitter_width";
 const ASSET_SPLITTER_STORAGE_KEY = "webui_asset_splitter_width";
 const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
+const WEBUI_DATA_CACHE_TAG = "20260512-route-ui";
 const DEFAULT_LANGUAGE_INFO = {
   code: "CN",
   label: "Chinese (Simplified)",
@@ -345,6 +346,18 @@ function dataPath(relativePath, languageCode = STATE.language) {
   return `data/lang/${encodeURIComponent(languageCode)}/${relativePath}`;
 }
 
+function cacheBustedPath(path, token = WEBUI_DATA_CACHE_TAG) {
+  const sep = String(path).includes("?") ? "&" : "?";
+  return `${path}${sep}v=${encodeURIComponent(token)}`;
+}
+
+function fetchJson(path, { fresh = false } = {}) {
+  const token = fresh ? `${WEBUI_DATA_CACHE_TAG}-${Date.now()}` : WEBUI_DATA_CACHE_TAG;
+  return fetch(cacheBustedPath(path, token), {
+    cache: fresh ? "no-store" : "no-cache",
+  });
+}
+
 function clearArchiveClassificationCaches(entries = STATE.entries) {
   for (const entry of entries || []) {
     if (!entry || !isPrtsArchiveEntry(entry)) continue;
@@ -539,7 +552,7 @@ async function ensureArchiveMetadataIndex(languageCode, token = STATE.indexReque
     try {
       const cached = STATE.convCache.get(entry.k);
       if (cached) return archiveMetadataFromConv(entry, cached);
-      const res = await fetch(dataPath(`conv/${encodeURIComponent(entry.k)}.json`, languageCode));
+      const res = await fetchJson(dataPath(`conv/${encodeURIComponent(entry.k)}.json`, languageCode));
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const conv = await res.json();
       return archiveMetadataFromConv(entry, conv);
@@ -603,7 +616,7 @@ async function ensureMissionData(mission, languageCode = STATE.language) {
   }
 
   try {
-    const res = await fetch(dataPath(file, languageCode));
+    const res = await fetchJson(dataPath(file, languageCode));
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (STATE.language === languageCode) {
@@ -678,7 +691,7 @@ function ensureInlineImageAssetLookup() {
   if (STATE.inlineImageLookupLoaded) return Promise.resolve();
   if (STATE.inlineImageLookupPromise) return STATE.inlineImageLookupPromise;
 
-  STATE.inlineImageLookupPromise = fetch("data/assets/index.json")
+  STATE.inlineImageLookupPromise = fetchJson("data/assets/index.json")
     .then((res) => {
       if (!res.ok) throw new Error(`assets/index.json HTTP ${res.status}`);
       return res.json();
@@ -758,7 +771,7 @@ function ensureWikiVideoAssetLookup() {
   if (STATE.wikiVideoLookupLoaded) return Promise.resolve();
   if (STATE.wikiVideoLookupPromise) return STATE.wikiVideoLookupPromise;
 
-  STATE.wikiVideoLookupPromise = fetch("data/assets/videos.json")
+  STATE.wikiVideoLookupPromise = fetchJson("data/assets/videos.json")
     .then((res) => {
       if (!res.ok) throw new Error(`assets/videos.json HTTP ${res.status}`);
       return res.json();
@@ -1363,7 +1376,7 @@ function showFatalError(error) {
 }
 
 async function loadManifest() {
-  const res = await fetch("data/manifest.json");
+  const res = await fetchJson("data/manifest.json", { fresh: true });
   if (!res.ok) throw new Error(`manifest.json HTTP ${res.status}`);
   const manifest = await res.json();
   if (!Array.isArray(manifest.languages) || !manifest.languages.length) {
@@ -1386,7 +1399,7 @@ async function switchLanguage(languageCode, { preserveSelection = true } = {}) {
   applyUiStrings();
 
   try {
-    const res = await fetch(dataPath("index.json", info.code));
+    const res = await fetchJson(dataPath("index.json", info.code), { fresh: true });
     if (!res.ok) throw new Error(`index.json HTTP ${res.status}`);
     const index = await res.json();
     if (token !== STATE.indexRequestToken) return;
@@ -1626,13 +1639,14 @@ function renderItem(row) {
 }
 
 // ---------- conversation pane ----------
-async function loadConv(key) {
+async function loadConv(key, { force = false } = {}) {
   const languageCode = STATE.language;
+  const wasSelected = STATE.selectedKey === key;
   STATE.selectedKey = key;
   $$(".item").forEach((n) => n.classList.toggle("selected", n.dataset.key === key));
   syncRevealCurrentButton();
 
-  if (STATE.convCache.has(key)) {
+  if (!force && !wasSelected && STATE.convCache.has(key)) {
     const cached = STATE.convCache.get(key);
     await ensureMissionData(cached && cached.mission, languageCode);
     if (STATE.selectedKey === key && STATE.language === languageCode) {
@@ -1654,7 +1668,9 @@ async function loadConv(key) {
   $("#conv-lines").innerHTML = "";
 
   try {
-    const res = await fetch(dataPath(`conv/${encodeURIComponent(key)}.json`, languageCode));
+    const res = await fetchJson(dataPath(`conv/${encodeURIComponent(key)}.json`, languageCode), {
+      fresh: force || wasSelected,
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const conv = await res.json();
     if (STATE.selectedKey === key && STATE.language === languageCode) {
@@ -1948,6 +1964,11 @@ function optionRiskLineInfos(option) {
   return out;
 }
 
+function optionGroupHasTimelineRouteBranches(group) {
+  const risk = group && group.optionBranchRisk;
+  return Boolean(risk && risk.code === "timelineRouteBranches");
+}
+
 function optionBranchRiskJumpInfo(risk) {
   const lineId = String(risk && risk.commonContinuationLineId || "");
   if (!lineId) return null;
@@ -1960,7 +1981,12 @@ function optionBranchRiskJumpInfo(risk) {
 
 function firstOptionJumpInfo(option, group, conv, outcomesByOptionId) {
   const branchLines = normalizeLineOrderIdList(option && option.branchLines);
-  if (branchLines.length) return { lineId: branchLines[0], source: "tree" };
+  if (branchLines.length) {
+    return {
+      lineId: branchLines[0],
+      source: optionGroupHasTimelineRouteBranches(group) ? "timeline" : "tree",
+    };
+  }
 
   for (const outcome of sameSceneOptionOutcomes(option, conv, outcomesByOptionId)) {
     const lineId = String(outcome.firstLineId || "");
@@ -1975,6 +2001,7 @@ function firstOptionJumpInfo(option, group, conv, outcomesByOptionId) {
 
 function optionJumpLabelKey(source) {
   if (source === "tree") return "optJumpLineTree";
+  if (source === "timeline") return "optJumpLineTimeline";
   if (source === "shared") return "optJumpLineShared";
   if (source === "inferred") return "optJumpLineInferred";
   return "optJumpLine";
@@ -1982,6 +2009,7 @@ function optionJumpLabelKey(source) {
 
 function optionJumpTitleKey(source) {
   if (source === "tree") return "optJumpLineTitleTree";
+  if (source === "timeline") return "optJumpLineTitleTimeline";
   if (source === "shared") return "optJumpLineTitleShared";
   if (source === "inferred") return "optJumpLineTitleInferred";
   return "optJumpLineTitle";
@@ -3709,6 +3737,15 @@ function renderConv(conv) {
   const branchDisplayModelForGroup = (grp) => {
     if (branchDisplayModelByGroup.has(grp)) return branchDisplayModelByGroup.get(grp);
     const opts = optionListForGroup(grp);
+    if (optionGroupHasTimelineRouteBranches(grp)) {
+      const optionLineIds = new WeakMap();
+      for (const opt of opts) {
+        optionLineIds.set(opt, optionCandidateLineIds(opt));
+      }
+      const model = { optionLineIds, commonLineIds: [] };
+      branchDisplayModelByGroup.set(grp, model);
+      return model;
+    }
     const usage = optionLineUsageForGroup(grp);
     const commonDirect = new Set(
       [...usage.entries()]

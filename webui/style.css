@@ -585,6 +585,16 @@ a.opt-target-chip { cursor: pointer; }
 .opt-target-chip-merge.is-tree:hover {
   background: rgba(96, 200, 130, 0.30);
 }
+.opt-target-chip-line.is-timeline,
+.opt-target-chip-merge.is-timeline {
+  color: #cfe1ff;
+  background: rgba(108, 162, 232, 0.16);
+  border-color: rgba(108, 162, 232, 0.45);
+}
+.opt-target-chip-line.is-timeline:hover,
+.opt-target-chip-merge.is-timeline:hover {
+  background: rgba(108, 162, 232, 0.30);
+}
 .opt-target-chip-line.is-shared,
 .opt-target-chip-merge.is-shared {
   color: #d8c8f0;
