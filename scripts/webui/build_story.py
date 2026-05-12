@@ -5593,15 +5593,48 @@ def build_language_bundle(
     mission_dir = out_dir / "mission"
     out_dir.mkdir(parents=True, exist_ok=True)
     conv_dir.mkdir(parents=True, exist_ok=True)
+    if write_reference:
+        reference_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        shutil.rmtree(reference_dir, ignore_errors=True)
     dialog_id_registry = shared_load_dialog_id_registry()
     story_source_links = load_story_source_links()
     narrative_video_assets = _load_narrative_video_assets()
+    written_conv_paths: set[Path] = set()
+    written_reference_paths: set[Path] = set()
+    written_mission_paths: set[Path] = set()
 
-    # Wipe old conv files so renamed/removed groups don't linger.
-    for old in conv_dir.glob("*.json"):
-        old.unlink()
-    shutil.rmtree(reference_dir, ignore_errors=True)
-    shutil.rmtree(mission_dir, ignore_errors=True)
+    def remember_written(path: Path, bucket: set[Path]) -> Path:
+        bucket.add(path.resolve())
+        return path
+
+    def write_conv_payload(out_key: str, payload: dict) -> Path:
+        path = conv_dir / f"{out_key}.json"
+        write_json(path, payload)
+        return remember_written(path, written_conv_paths)
+
+    def write_reference_payload(rel_file: str, payload: dict) -> Path:
+        path = reference_dir / rel_file
+        write_json(path, payload)
+        return remember_written(path, written_reference_paths)
+
+    def write_mission_payload(rel_file: str, payload: dict) -> Path:
+        path = out_dir / rel_file
+        write_json(path, payload)
+        return remember_written(path, written_mission_paths)
+
+    def cleanup_stale_json(root: Path, written_paths: set[Path]) -> None:
+        if not root.exists():
+            return
+        for path in sorted(root.rglob("*.json")):
+            if path.resolve() not in written_paths:
+                path.unlink()
+        for path in sorted(root.rglob("*"), key=lambda item: len(item.parts), reverse=True):
+            if path.is_dir():
+                try:
+                    path.rmdir()
+                except OSError:
+                    pass
 
     print(f"\n[{language_code}] Loading tables...")
     i18n_by_source = {
@@ -8250,8 +8283,7 @@ def build_language_bundle(
         attach_scene_order_warning(payload)
         attach_duplicate_timestamp_warning(payload)
         story_issue_codes = dialog_story_issue_codes(payload)
-        with (conv_dir / f"{out_key}.json").open("w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+        write_conv_payload(out_key, payload)
 
         entry = {
             "k": out_key,                # key
@@ -8499,8 +8531,7 @@ def build_language_bundle(
                 "title": display_title_debug,
             },
         }
-        with (conv_dir / f"{out_key}.json").open("w", encoding="utf-8") as f:
-            json.dump(sns_payload, f, ensure_ascii=False, separators=(",", ":"))
+        write_conv_payload(out_key, sns_payload)
 
         entry = {
             "k": out_key,
@@ -8572,8 +8603,7 @@ def build_language_bundle(
                     "key": radio["target"],
                 }
             }
-        with (conv_dir / f"{out_key}.json").open("w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+        write_conv_payload(out_key, payload)
         radio_out_keys.add(out_key)
 
         entry = {
@@ -8659,8 +8689,7 @@ def build_language_bundle(
                 "title": mission_name_trace(mission),
             },
         }
-        with (conv_dir / f"{out_key}.json").open("w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+        write_conv_payload(out_key, payload)
         black_out_keys.add(out_key)
 
         entry = {
@@ -8797,8 +8826,7 @@ def build_language_bundle(
                 "title": mission_name_trace(remote["mission"]),
             },
         }
-        with (conv_dir / f"{remote['key']}.json").open("w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+        write_conv_payload(remote["key"], payload)
         remotecomm_out_keys.add(remote["key"])
 
         entry = {
@@ -9074,8 +9102,7 @@ def build_language_bundle(
                 },
             },
         }
-        with (conv_dir / f"{cutscene_key}.json").open("w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+        write_conv_payload(cutscene_key, payload)
         cutscene_out_keys.add(cutscene_key)
 
         search_text = " ".join(part for part in [
@@ -9271,8 +9298,7 @@ def build_language_bundle(
         if env_npc:
             env_payload["npc"] = env_npc
             env_payload["_debug"]["npc"] = env_npc["_debug"]
-        with (conv_dir / f"{out_key}.json").open("w", encoding="utf-8") as f:
-            json.dump(env_payload, f, ensure_ascii=False, separators=(",", ":"))
+        write_conv_payload(out_key, env_payload)
 
         index_entry = {
             "k": out_key,
@@ -9609,8 +9635,7 @@ def build_language_bundle(
                 "groupId": group_id,
                 "groupName": group_name,
             }
-        with (conv_dir / f"{row_id}.json").open("w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+        write_conv_payload(row_id, payload)
         entry = {
             "k": row_id,
             "d": "wiki",
@@ -9752,8 +9777,7 @@ def build_language_bundle(
         }
         if summary_rows:
             payload["summary"] = summary_rows
-        with (conv_dir / f"{out_key}.json").open("w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+        write_conv_payload(out_key, payload)
         entry = {
             "k": out_key,
             "d": "table_charactertable",
@@ -9893,8 +9917,7 @@ def build_language_bundle(
             payload["summary"] = summary_rows
         if debug_extra:
             payload["_debug"].update(debug_extra)
-        with (conv_dir / f"{out_key}.json").open("w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+        write_conv_payload(out_key, payload)
         entry = {
             "k": out_key,
             "d": ref_kind,
@@ -10442,7 +10465,7 @@ def build_language_bundle(
                 for nested in value:
                     visit(nested)
 
-        for conv_path in conv_dir.glob("*.json"):
+        for conv_path in sorted(written_conv_paths):
             if conv_path.stem.startswith("wiki_collection_texttable_"):
                 continue
             try:
@@ -11464,8 +11487,7 @@ def build_language_bundle(
                     "label": collection_display_name(table_path.stem),
                     "rows": row_payloads,
                 }
-                with out_path.open("w", encoding="utf-8") as f:
-                    json.dump(out_payload, f, ensure_ascii=False, separators=(",", ":"))
+                write_reference_payload(rel_file, out_payload)
                 file_bytes = out_path.stat().st_size
                 total_bytes += file_bytes
                 total_rows += len(row_payloads)
@@ -11493,8 +11515,7 @@ def build_language_bundle(
                 "bytes": total_bytes,
             },
         }
-        with (reference_dir / "index.json").open("w", encoding="utf-8") as f:
-            json.dump(index_payload, f, ensure_ascii=False, separators=(",", ":"))
+        write_reference_payload("index.json", index_payload)
 
         print(
             f"Raw reference bundle written: {len(table_index)} tables; "
@@ -12046,8 +12067,7 @@ def build_language_bundle(
                 sender_id,
                 pick_fields(sender_row, "id", "senderIcon", "senderName"),
             )
-        with (conv_dir / f"{out_key}.json").open("w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+        write_conv_payload(out_key, payload)
         entry = {
             "k": out_key,
             "d": "mail",
@@ -12325,8 +12345,7 @@ def build_language_bundle(
                 pick_fields(page_row, "icon", "name", "pageType"),
             )
         payload["_debug"].update(debug_extra)
-        with (conv_dir / f"{row_id}.json").open("w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+        write_conv_payload(row_id, payload)
         entry = {
             "k": row_id,
             "d": "prts",
@@ -12400,8 +12419,7 @@ def build_language_bundle(
         }
         if summary_rows:
             payload["summary"] = summary_rows
-        with (conv_dir / f"{note_id}.json").open("w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+        write_conv_payload(note_id, payload)
         note_tags = ["note"]
         if note_category:
             note_tags.extend([note_category, f"category_{collection_slug(note_category)}"])
@@ -12637,8 +12655,7 @@ def build_language_bundle(
                 },
             },
         }
-        with (conv_dir / f"{out_key}.json").open("w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+        write_conv_payload(out_key, payload)
         entry = {
             "k": out_key,
             "d": "responsive",
@@ -12767,8 +12784,7 @@ def build_language_bundle(
                 scene_graph_links_by_key[out_key] = scene_graph_links
             attach_runtime_registry_debug(payload)
             attach_scene_order_warning(payload)
-            with (conv_dir / f"{out_key}.json").open("w", encoding="utf-8") as f:
-                json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+            write_conv_payload(out_key, payload)
             entry = {
                 "k": out_key, "d": "dlg", "m": mission, "s": scene,
                 "t": type_, "a": act, "c": sorted(actors),
@@ -13064,8 +13080,8 @@ def build_language_bundle(
                     "omitted": omitted,
                 },
             }
-            with conv_path.open("w", encoding="utf-8") as f:
-                json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+            write_json(conv_path, payload)
+            remember_written(conv_path, written_conv_paths)
 
         referenced_missing = unresolved_source_keys
         source_link_candidate_kinds = set(MISSION_SCENE_ENTRY_KINDS) | {"env", "misc"}
@@ -13101,7 +13117,7 @@ def build_language_bundle(
         report_json = REPORTS_DIR / f"story_source_links_{language_code}.json"
         report_md = REPORTS_DIR / f"story_source_links_{language_code}.md"
         REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-        report_json.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        write_json(report_json, report, indent=2, compact=False)
         report_md.write_text(render_story_source_link_report_md(report), encoding="utf-8")
         report["report"] = {
             "json": report_json.relative_to(ROOT).as_posix(),
@@ -13293,8 +13309,8 @@ def build_language_bundle(
                             "omitted": omitted,
                         },
                     }
-                    with conv_path.open("w", encoding="utf-8") as f:
-                        json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+                    write_json(conv_path, payload)
+                    remember_written(conv_path, written_conv_paths)
 
             source_counts = Counter(str(ref.get("source") or "") for ref in refs)
             attached_rows.append({
@@ -13343,7 +13359,7 @@ def build_language_bundle(
         report_json = REPORTS_DIR / f"narrative_videos_{language_code}.json"
         report_md = REPORTS_DIR / f"narrative_videos_{language_code}.md"
         REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-        report_json.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        write_json(report_json, report, indent=2, compact=False)
         report_md.write_text(render_narrative_video_report_md(report), encoding="utf-8")
         report["report"] = {
             "json": report_json.relative_to(ROOT).as_posix(),
@@ -14353,47 +14369,49 @@ def build_language_bundle(
                 payload["flow"] = mission_flows_payload[mission]
             if mission in mission_timelines_by_mission:
                 payload["timelineRecovery"] = mission_timelines_by_mission[mission]
-            out_path = out_dir / rel_file
-            with out_path.open("w", encoding="utf-8") as f:
-                json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+            out_path = write_mission_payload(rel_file, payload)
             mission_data_files[mission] = rel_file
             mission_data_bytes += out_path.stat().st_size
 
-    with (out_dir / "index.json").open("w", encoding="utf-8") as f:
-        index_payload = {
-            "generated": int(time.time()),
-            "profile": profile,
-            "actorNames": actor_names,
-            "missionNames": mission_names,
-            "entries": index_entries,
+    index_payload = {
+        "generated": int(time.time()),
+        "profile": profile,
+        "actorNames": actor_names,
+        "missionNames": mission_names,
+        "entries": index_entries,
+    }
+    if write_reference and reference_stats:
+        index_payload["reference"] = {
+            "index": "reference/index.json",
+            "stats": reference_stats,
         }
-        if write_reference and reference_stats:
-            index_payload["reference"] = {
-                "index": "reference/index.json",
-                "stats": reference_stats,
-            }
-        if mission_data_files:
-            index_payload["missionData"] = {
-                "files": mission_data_files,
-                "missions": len(mission_data_files),
-                "bytes": mission_data_bytes,
-            }
-        index_payload["missionTimelineRecovery"] = mission_timeline_report
-        if story_source_link_report:
-            index_payload["storySourceLinks"] = {
-                "sourceIndex": story_source_link_report.get("sourceIndex"),
-                "summary": story_source_link_report.get("summary"),
-                "report": story_source_link_report.get("report"),
-            }
-        if narrative_video_report:
-            index_payload["narrativeVideos"] = {
-                "summary": narrative_video_report.get("summary"),
-                "report": narrative_video_report.get("report"),
-            }
-        if include_reference_in_story_index:
-            index_payload["missionExtras"] = mission_extras_payload
-            index_payload["missionFlows"] = mission_flows_payload
-        json.dump(index_payload, f, ensure_ascii=False, separators=(",", ":"))
+    if mission_data_files:
+        index_payload["missionData"] = {
+            "files": mission_data_files,
+            "missions": len(mission_data_files),
+            "bytes": mission_data_bytes,
+        }
+    index_payload["missionTimelineRecovery"] = mission_timeline_report
+    if story_source_link_report:
+        index_payload["storySourceLinks"] = {
+            "sourceIndex": story_source_link_report.get("sourceIndex"),
+            "summary": story_source_link_report.get("summary"),
+            "report": story_source_link_report.get("report"),
+        }
+    if narrative_video_report:
+        index_payload["narrativeVideos"] = {
+            "summary": narrative_video_report.get("summary"),
+            "report": narrative_video_report.get("report"),
+        }
+    if include_reference_in_story_index:
+        index_payload["missionExtras"] = mission_extras_payload
+        index_payload["missionFlows"] = mission_flows_payload
+    write_json(out_dir / "index.json", index_payload)
+
+    cleanup_stale_json(conv_dir, written_conv_paths)
+    cleanup_stale_json(mission_dir, written_mission_paths)
+    if write_reference:
+        cleanup_stale_json(reference_dir, written_reference_paths)
 
     total_size = sum(p.stat().st_size for p in conv_dir.glob("*.json"))
     conv_count = len(list(conv_dir.glob("*.json")))
@@ -14534,7 +14552,6 @@ def main(argv: list[str] | None = None) -> None:
         )
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    shutil.rmtree(LANG_DIR, ignore_errors=True)
     LANG_DIR.mkdir(parents=True, exist_ok=True)
     shutil.rmtree(OUT_DIR / "conv", ignore_errors=True)
     for stale_file in ("manifest.json", "index.json", "actors.json"):
@@ -14559,6 +14576,9 @@ def main(argv: list[str] | None = None) -> None:
                 write_reference=not args.skip_reference,
             )
         )
+    for language_dir in LANG_DIR.iterdir():
+        if language_dir.is_dir() and language_dir.name not in target_languages:
+            shutil.rmtree(language_dir, ignore_errors=True)
 
     manifest = {
         "generated": int(time.time()),

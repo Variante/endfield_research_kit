@@ -35,10 +35,21 @@ def write_json(
     indent: int | None = None,
     compact: bool = True,
     trailing_newline: bool = False,
-) -> None:
+) -> bool:
     path.parent.mkdir(parents=True, exist_ok=True)
     separators = (",", ":") if compact and indent is None else None
     text = json.dumps(payload, ensure_ascii=False, indent=indent, separators=separators)
     if trailing_newline:
         text += "\n"
+    return write_text_if_changed(path, text)
+
+
+def write_text_if_changed(path: Path, text: str) -> bool:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        if path.exists() and path.read_text(encoding="utf-8") == text:
+            return False
+    except OSError:
+        pass
     path.write_text(text, encoding="utf-8")
+    return True

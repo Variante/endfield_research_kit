@@ -64,6 +64,13 @@ For an initial build where there is no useful update history yet:
 .\export.bat --init-build
 ```
 
+For faster local refreshes that can reuse the existing asset search indexes and
+skip demo bundle zip generation:
+
+```bat
+.\export.bat --fast-assets
+```
+
 CN is exported by default. To build more languages after the export:
 
 ```bat
@@ -147,6 +154,11 @@ Generated WebUI outputs include:
 - `webui/data/lang/<code>/reference/**`
 - `webui/data/assets/index.json`
 - `webui/data/updates/latest.json`
+
+Asset indexing scans the active WebUI export roots by default and skips legacy
+`export_full/inventory`, `export_full/raw_vfs`, and `export_full/unresolved`
+folders. Use `python scripts\webui\build_assets.py --include-extra-roots` only
+when you intentionally want those older heavy roots included.
 
 ## Unity Character Recovery Lab
 

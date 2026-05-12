@@ -24,6 +24,8 @@ From the repo root:
 
 Use `.\export.bat --init-build` for initial or baseline-only builds where the
 Updates feed should be baselined instead of reporting changes.
+Use `.\export.bat --fast-assets` for local refreshes that can reuse existing
+asset indexes and skip demo bundle zip generation.
 
 `package_webui.bat` runs `scripts/webui/package_webui.py` and creates a
 shareable zip from `serve.py`, `webui/`, and displayed media resolved from
@@ -75,7 +77,11 @@ Expected active inputs and outputs:
   convs with DialogIdTable runtime registry evidence, links narrative
   Cutscene/RemoteComm video files to matching story entries, and writes
   generated WebUI data plus durable reports.
-- `webui/build_assets.py`: builds the WebUI asset index.
+- `webui/build_assets.py`: builds the WebUI asset index. By default it scans
+  only active WebUI export roots and skips legacy `inventory`, `raw_vfs`, and
+  `unresolved` roots. Pass `--include-extra-roots` to include those, or
+  `--fast` to reuse existing indexes when present and skip demo bundle zip
+  generation, or `--skip-bundles` to rebuild indexes without bundle zips.
 - `webui/package_webui.py`: packages a shareable WebUI build from `serve.py`,
   `..\webui\`, and displayed media files under `..\export_full\`.
 - `webui/common.py`: small shared constants and JSON/path helpers for the

@@ -17,8 +17,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from build_story import ASSET_DIR, ROOT
 from build_story_asset_index import ASSET_LOD_SUFFIX_RE, ASSET_SINGLE_PREFIX_RE
+from common import ASSET_DIR, ROOT, write_json
 
 
 DEMO_BUNDLES = (
@@ -645,8 +645,7 @@ def build_asset_bundles(index_path: Path = ASSET_DIR / "index.json", out_dir: Pa
         "byAssetRel": {rel: ids for rel, ids in sorted(by_asset_rel.items())},
     }
     index_path_out = out_dir / "index.json"
-    with index_path_out.open("w", encoding="utf-8") as f:
-        json.dump(index_payload, f, ensure_ascii=False, separators=(",", ":"))
+    write_json(index_path_out, index_payload)
 
     print(
         "Asset bundle index written:",

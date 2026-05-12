@@ -15,6 +15,7 @@ Move observations, conclusions, older exploration notes, and status snapshots to
 ```bat
 .\export.bat
 .\export.bat --init-build
+.\export.bat --fast-assets
 python serve.py
 python serve.py 9000
 ```
@@ -24,6 +25,8 @@ browser, skips raw VFS and source inventory, builds the Updates feed, builds CN
 story/reference data by default, and rebuilds the asset index.
 Use `--init-build` for first-time/baseline-only builds where the Updates feed
 should be baselined instead of reporting changes.
+Use `--fast-assets` for local refreshes that can reuse existing asset indexes
+and skip demo bundle zip generation.
 
 Useful direct commands:
 
@@ -36,6 +39,7 @@ python scripts\webui\build_story_source_links.py
 python scripts\webui\build_story.py --languages CN --default-language CN
 python scripts\webui\build_story.py --languages CN EN JP --default-language CN
 python scripts\webui\build_assets.py
+python scripts\webui\build_assets.py --fast
 python scripts\webui\package_webui.py
 ```
 
