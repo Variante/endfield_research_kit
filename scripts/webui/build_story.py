@@ -38,6 +38,7 @@ import re
 import shutil
 import sys
 import time
+from bisect import bisect_left
 from collections import Counter, defaultdict, deque
 from pathlib import Path
 
@@ -333,6 +334,16 @@ def _get_anime_tree_path_index() -> dict[str, Path]:
     return _ANIME_TREE_PATH_INDEX
 
 
+def _iter_sorted_stems_with_prefix(sorted_stems: list[str], prefix: str):
+    index = bisect_left(sorted_stems, prefix)
+    while index < len(sorted_stems):
+        stem = sorted_stems[index]
+        if not stem.startswith(prefix):
+            break
+        yield stem
+        index += 1
+
+
 def _iter_related_dialog_tree_paths(conv_key: str):
     seen: set[str] = set()
     exact_stems = [conv_key]
@@ -363,9 +374,7 @@ def _iter_related_dialog_tree_paths(conv_key: str):
     all_stems = _ANIME_TREE_SORTED_STEMS or sorted(path_index.keys())
     for stem in prefix_stems:
         prefix = f"{stem}_"
-        for candidate_stem in all_stems:
-            if not candidate_stem.startswith(prefix):
-                continue
+        for candidate_stem in _iter_sorted_stems_with_prefix(all_stems, prefix):
             path = path_index[candidate_stem]
             key = str(path).lower()
             if key in seen:
@@ -5600,12 +5609,15 @@ def build_language_bundle(
     dialog_id_registry = shared_load_dialog_id_registry()
     story_source_links = load_story_source_links()
     narrative_video_assets = _load_narrative_video_assets()
-    written_conv_paths: set[Path] = set()
-    written_reference_paths: set[Path] = set()
-    written_mission_paths: set[Path] = set()
+    written_conv_paths: set[str] = set()
+    written_reference_paths: set[str] = set()
+    written_mission_paths: set[str] = set()
 
-    def remember_written(path: Path, bucket: set[Path]) -> Path:
-        bucket.add(path.resolve())
+    def written_path_key(path: Path) -> str:
+        return str(path).lower()
+
+    def remember_written(path: Path, bucket: set[str]) -> Path:
+        bucket.add(written_path_key(path))
         return path
 
     def write_conv_payload(out_key: str, payload: dict) -> Path:
@@ -5623,11 +5635,11 @@ def build_language_bundle(
         write_json(path, payload)
         return remember_written(path, written_mission_paths)
 
-    def cleanup_stale_json(root: Path, written_paths: set[Path]) -> None:
+    def cleanup_stale_json(root: Path, written_paths: set[str]) -> None:
         if not root.exists():
             return
         for path in sorted(root.rglob("*.json")):
-            if path.resolve() not in written_paths:
+            if written_path_key(path) not in written_paths:
                 path.unlink()
         for path in sorted(root.rglob("*"), key=lambda item: len(item.parts), reverse=True):
             if path.is_dir():

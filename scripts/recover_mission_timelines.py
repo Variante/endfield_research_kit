@@ -101,12 +101,23 @@ TRACKING_COPY_FIELDS = (
     "snsDialogId",
 )
 
+_ROOT_RESOLVED = ROOT.resolve()
+_REL_PATH_CACHE: dict[str, str] = {}
+
 
 def rel_path(path: Path) -> str:
+    cache_key = str(path)
+    if cache_key in _REL_PATH_CACHE:
+        return _REL_PATH_CACHE[cache_key]
     try:
-        return path.resolve().relative_to(ROOT.resolve()).as_posix()
+        result = path.relative_to(ROOT).as_posix()
     except ValueError:
-        return path.as_posix()
+        try:
+            result = path.resolve().relative_to(_ROOT_RESOLVED).as_posix()
+        except (OSError, ValueError):
+            result = path.as_posix()
+    _REL_PATH_CACHE[cache_key] = result
+    return result
 
 
 def source_ref(path: Path, field: str) -> dict:
