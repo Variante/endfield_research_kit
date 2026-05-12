@@ -53,6 +53,8 @@ python scripts\webui\build_option_playable_semantics_audit.py --language CN --on
 python scripts\webui\build_option_logic_id_audit.py --language CN
 python scripts\webui\build_dialog_tree_option_route_audit.py --language CN
 python scripts\webui\build_timeline_option_flow_audit.py --language CN
+python scripts\webui\build_timeline_binding_audit.py --language CN --only-interesting
+python tools\endfield-il2cpp\catalog_option_flow_metadata.py --cache-metadata
 ```
 
 `build_option_playable_semantics_audit.py` checks remaining inferred option
@@ -79,6 +81,23 @@ against raw Timeline trunk clips. Current CN results show one promotable
 runtime evidence. It resolves `misc_dlg_*` WebUI keys back to their underlying
 `dlg_*` Timeline entries, so those scenes should not be treated as missing
 Timeline data.
+
+`build_timeline_binding_audit.py` checks the same queue against Timeline track
+and binding layout. Current CN results show only one option-named track mapping
+(`dlg_c28m3_10` group 1, candidates on `Option 1` / `Option 2` tracks), which
+supports the existing raw trunk clip mapping. The rest are either a single
+trunk track or option-clip tracks that do not match candidate response tracks,
+so track layout should be treated as negative evidence unless this audit finds
+new option-named or binding-split cases after future exports.
+
+`catalog_option_flow_metadata.py` is the offline IL2CPP metadata pass for the
+next backend-only recovery step. It validates/caches `global-metadata.dat` when
+available, parses its tables instead of doing a raw string scan, then reports
+option-flow fields and method-body targets. Current useful targets include
+`DialogTimelineManager._SelectIndexInTimeline`,
+`TryTriggerTrunkBindingOption`, `SetDialogOption`, `OnJumpForward`,
+`DialogOptionBehaviour.InitDialogOptions`, `DialogTrunkBehaviour.InitDialogTrunk`,
+and DialogTree `GetNextIndex` / `SelectIndex` methods.
 
 ## Frontend File Map
 

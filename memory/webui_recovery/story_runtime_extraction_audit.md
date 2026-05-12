@@ -4,24 +4,20 @@ Date: 2026-05-11
 
 ## Summary
 
-Yes: the repo can use the IL2CPP tooling and the already-exported game data
-to recover more story-adjacent information. For this game, `Il2CppDumper` is
-not the best first step for normal WebUI enrichment because HGP relocates
-`MetadataRegistration`, but `global-metadata.dat` is still very useful as an
-offline runtime-vocabulary source. The actual story payload is mostly in the
+Yes: the repo can use offline IL2CPP metadata and the already-exported game
+data to recover more story-adjacent information. `global-metadata.dat` is useful
+as a runtime-vocabulary source, but the actual story payload is mostly in the
 structured tables, mission/runtime JSON, Lua UI scripts, and recovered
 AnimeStudio/Unity asset map.
 
 ## Verified This Pass
 
-- `tools/endfield-il2cpp/verify_dialog_class_hierarchy.py` passes against:
+- `tools/endfield-il2cpp/catalog_option_flow_metadata.py` parses:
   `D:\Program Files\Endfield Game\Endfield_Data\il2cpp_data\Metadata\global-metadata.dat`
   - metadata size: 57,526,184 bytes
   - version: 29
-  - dialog runtime hierarchy is unchanged from the May 2026 baseline.
-- `tools/endfield-il2cpp/catalog_dialog_classes.py` now also buckets
-  Cutscene, SNS, EnvTalk, Interact, and Reading runtime vocabulary.
-- Full runtime vocabulary report:
+  - dialog option/timeline/trunk focus fields are cataloged for drift checks.
+- Historical broader runtime vocabulary report:
   `reports/story_runtime_catalog_2026-05-11.json`
 
 Useful catalog counts from this pass:
@@ -358,6 +354,49 @@ audit has 106 remaining inferred groups; 10 have nearby Runtime Jump clips,
 and 0 pass the strict promotion checks. The nearby cases are therefore
 diagnostic only for now.
 
+The WebUI now renders these route-backed groups as option-specific prefixes
+plus one shared suffix. For `dlg_c13m2_12`, that means option 2 shows
+`dlg_c13m2_12_027` and a reverse-route loop marker, `dlg_c13m2_12_003` through
+`dlg_c13m2_12_005` render once as the shared continuation, and the next
+single-option group stays anchored after `dlg_c13m2_12_006`. In the current CN
+bundle, 6 of the 18 `timelineRouteBranches` groups have this shared-suffix
+shape, and 10 carry anchored continuation option evidence that should render
+at the recovered line instead of being pulled up under the previous menu.
+
+The renderer now treats branch path lines as single-owner lines rather than
+using numeric suffix order to decide trunk visibility. This fixes cases where
+Timeline order places a lower-suffix line after a higher-suffix option anchor,
+such as `dlg_e6m1_10_012` after `dlg_e6m1_10_020`. A live WebUI audit over
+the 1,272 current CN dialog-kind conversations with option groups found no
+duplicate rendered `data-line-id` values after this change.
+
+The follow-up renderer was flattened for branch-owned option anchors. Branch
+path lines no longer mount child option groups inside `.branch-line`; instead,
+groups anchored to lines owned by a branch route render as flat siblings in
+the owning branch chain. Single-option groups render only the option prompt,
+then their recovered path lines render as flat line siblings beside the option
+prompt in that same chain; inside branch columns they use the same compact
+branch-line styling as direct branch lines. For
+`option_dlg_gm01m8_3_11`, the scene graph evidence says option 1 reaches
+`dlg_gm01m8_3_012`, then group 12 reaches regular line `dlg_gm01m8_3_013`;
+option 2 reaches `dlg_gm01m8_3_014` through `dlg_gm01m8_3_016`, then group 16
+joins the same continuation at `dlg_gm01m8_3_017`. The WebUI now renders group
+12 and `dlg_gm01m8_3_013` at the same level inside the option-1 column, renders
+group 16 inside the option-2 column, then resumes `dlg_gm01m8_3_017` once as
+the common continuation below both columns. A live browser audit over the same
+1,272 CN dialog-kind conversations found no duplicate rendered line ids, no
+`.branch-line .opt-group` nests, no single-option groups containing rendered
+line rows, and no legacy `.opt-block-branch-inline` blocks.
+
+The branch-anchor rule is general, not keyed to `dlg_gm01m8_3`. A CN data scan
+over 1,272 dialog conversations with options found 276 multi-option branch
+parents, 65 branch-local child groups that should stay in the owning option
+column, and 20 cases where a child group is anchored to a branch line but the
+outcome evidence proves it is shared by every option. The WebUI gives the
+shared-continuation evidence priority in those conflicts, so cases such as
+`dlg_e10m1_3` render group 3 once below the two group-2 columns instead of
+claiming it under only the `dlg_e10m1_3_007` column.
+
 On 2026-05-12 `scripts/webui/build_runtime_jump_option_route_audit.py` gained
 targeted filters so these diagnostics can be checked without a full global
 scan:
@@ -388,6 +427,69 @@ placement work: 98 scenes and 183 inferred groups, mostly `lineNumber`
 placements. Source/video side queues also remain: 18 source-link keys are
 referenced by extracted source data but missing from WebUI entries, and 33
 narrative video refs are unresolved.
+
+`scripts/webui/build_timeline_binding_audit.py` was added to test one more
+backend-only branch hypothesis: whether unresolved option responses separate
+cleanly by Timeline track, actor binding, or option-clip track placement.
+
+Current CN result:
+
+- `106` inferred response groups audited.
+- `106` groups have option Timeline clip rows.
+- `40` groups are `singleTrunkTrackOnly`.
+- `65` groups are `optionClipTrackDifferentFromCandidates`, meaning the option
+  clip track does not explain the response target lines.
+- `1` group has an option-named track mapping:
+  `dlg_c28m3_10` group 1 has candidate lines on `Option 1` and `Option 2`
+  tracks, supporting the existing raw trunk `clipOptionIndex` mapping.
+- `0` groups have candidate actor/binding splits.
+
+Recovery gain: this adds a useful negative/confirmation audit. It does not
+unlock a new broad automatic recovery rule, but it confirms that Timeline
+track layout supports the already-promoted `dlg_c28m3_10` mapping and warns
+against using option-clip track ids as branch targets for the remaining queue.
+If future game exports add more `Option N` tracks or binding-split candidates,
+this report will surface them quickly.
+
+`tools/endfield-il2cpp/catalog_option_flow_metadata.py` was then added as the
+next backend-only runtime evidence pass. It parses `global-metadata.dat` tables
+directly instead of scanning identifier strings, including type, field, method,
+parameter, image, and nested-type tables. The parser handles Endfield's local
+v29 layout (`92` byte type records with start-index fields before flags).
+
+Current output:
+
+- `reports/option_flow_runtime_metadata.json`
+- `reports/option_flow_runtime_metadata.md`
+- metadata version `29`, `60,261` type definitions, `461,579` methods,
+  `278,566` fields.
+- `4,549` Beyond-assembly option/timeline/trunk-related matched types.
+- `9` focus types and `54` likely method-body targets.
+
+Important recovered runtime shape:
+
+- `DialogTimelineOptionData` fields are exactly `optionIndex`,
+  `changeFinishNum`, and `targetFinishNum`.
+- `DialogOptionPlayableAsset` owns `options` and builds runtime playables via
+  `GenPlayable`.
+- `DialogOptionBehaviour` owns `m_options` and initializes them via
+  `InitDialogOptions`.
+- `DialogTrunkBehaviour` owns `m_trunkId` and initializes trunk playback via
+  `InitDialogTrunk`.
+- `DialogTimelineManager` owns `m_preTriggeredOptionAsset` and `m_options`;
+  the most relevant selection-flow methods are `_SelectIndexInTimeline`,
+  `TryTriggerTrunkBindingOption`, `SetDialogOption`, `ResetDialogOption`,
+  `_TryDoNext`, `OnJumpForward`, and `SelectIndex`.
+- DialogTree flow remains targetable through `DialogTreeController.SelectIndex`,
+  `DialogTreeController.Next`, `DialogTreeOptionNode.GetNextIndex`,
+  `DialogTreeOptionNode.GetChatOptionData`, and
+  `DialogTreeExOptionNode.GetNextIndex`.
+
+Recovery gain: this confirms that the explicit branch target is not simply a
+hidden extra field on `DialogTimelineOptionData`; the runtime fields match the
+decoded AnimeStudio option data we already audited. It also gives stable
+method indices/tokens for future targeted backend audits, so we can focus on a
+short option-selection call chain instead of searching the whole binary.
 
 ## Runtime/Lua Hooks Worth Mining
 
@@ -456,9 +558,8 @@ decompilation:
    - Useful next step: cross-link `Dialog OpenUI` actions and mission actions
      to these entries.
 
-5. Keep live IL2CPP dumping as a last-resort path.
-   - Use only when method bodies are needed, not for routine data extraction.
-   - Requires the game running and elevated tooling (`pe-sieve`, `procdump`,
-     reflection dump, then `Il2CppDumper` manual addresses).
+5. Keep IL2CPP work offline unless a concrete method-body target appears.
+   - Use `catalog_option_flow_metadata.py` to cache/catalog metadata and watch
+     focus-type drift after updates.
    - Current offline metadata and structured exports are enough for the next
      story-recovery improvements above.

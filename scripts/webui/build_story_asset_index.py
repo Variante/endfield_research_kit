@@ -11,7 +11,6 @@ from typing import Any
 from build_story_paths import (
     _asset_source_family,
     resolve_asset_source_roots,
-    resolve_extra_asset_source_roots,
     resolve_material_source_roots,
 )
 from common import write_json
@@ -120,17 +119,6 @@ def _root_rel(path: Path, root: Path) -> str:
     return path.relative_to(root).as_posix() if path.is_relative_to(root) else str(path)
 
 
-def _selected_asset_source_roots(
-    export_root: Path,
-    *,
-    include_extra_roots: bool = False,
-) -> list[tuple[str, Path]]:
-    roots = resolve_asset_source_roots(export_root)
-    if include_extra_roots:
-        roots = [*roots, *resolve_extra_asset_source_roots(export_root)]
-    return roots
-
-
 def _label_text(labels: dict[str, str], fallback: Path) -> str:
     return ", ".join(f"{source}:{label}" for source, label in labels.items()) or str(fallback)
 
@@ -139,7 +127,6 @@ def scan_exported_media_assets(
     *,
     root: Path,
     export_root: Path,
-    include_extra_roots: bool = False,
 ) -> dict[str, Any]:
     """Scan exported media once and derive image/model/video indexes from it."""
     asset_entries: list[dict] = []
@@ -152,7 +139,7 @@ def scan_exported_media_assets(
     obj_rels_by_source_base: dict[tuple[str, str], list[str]] = defaultdict(list)
     obj_rels_by_base: dict[str, list[str]] = defaultdict(list)
 
-    asset_roots = _selected_asset_source_roots(export_root, include_extra_roots=include_extra_roots)
+    asset_roots = resolve_asset_source_roots(export_root)
     material_roots = resolve_material_source_roots(export_root)
     media_root_labels = {source: _root_rel(path, root) for source, path in asset_roots}
     asset_root_labels = {
@@ -376,13 +363,11 @@ def build_asset_index(
     *,
     root: Path,
     export_root: Path,
-    include_extra_roots: bool = False,
 ) -> dict:
     """Scan exported image/model files into a lightweight search index."""
     scan = scan_exported_media_assets(
         root=root,
         export_root=export_root,
-        include_extra_roots=include_extra_roots,
     )
     payload = _asset_payload(scan, root=root, export_root=export_root)
     write_json(out_path, payload)
@@ -404,13 +389,11 @@ def build_video_index(
     *,
     root: Path,
     export_root: Path,
-    include_extra_roots: bool = False,
 ) -> dict:
     """Scan exported video files into a small exact-name lookup index."""
     scan = scan_exported_media_assets(
         root=root,
         export_root=export_root,
-        include_extra_roots=include_extra_roots,
     )
     payload = _video_payload(scan, root=root, export_root=export_root)
     write_json(out_path, payload)
@@ -425,13 +408,11 @@ def build_asset_indexes(
     *,
     root: Path,
     export_root: Path,
-    include_extra_roots: bool = False,
 ) -> tuple[dict, dict]:
     """Build image/model and video indexes from a single filesystem scan."""
     scan = scan_exported_media_assets(
         root=root,
         export_root=export_root,
-        include_extra_roots=include_extra_roots,
     )
     asset_payload = _asset_payload(scan, root=root, export_root=export_root)
     video_payload = _video_payload(scan, root=root, export_root=export_root)

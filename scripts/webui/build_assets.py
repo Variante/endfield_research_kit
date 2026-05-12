@@ -24,11 +24,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         description="Build the WebUI exported asset indexes.",
     )
     parser.add_argument(
-        "--include-extra-roots",
-        action="store_true",
-        help="Also scan legacy export_full/inventory, raw_vfs, and unresolved roots.",
-    )
-    parser.add_argument(
         "--skip-bundles",
         "--index-only",
         dest="skip_bundles",
@@ -109,7 +104,6 @@ def main(argv: list[str] | None = None) -> None:
             video_index_path,
             root=ROOT,
             export_root=EXPORT_ROOT,
-            include_extra_roots=args.include_extra_roots,
         )
     print(
         "\nAsset root copy:",

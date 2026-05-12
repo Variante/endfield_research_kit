@@ -83,13 +83,6 @@ def resolve_asset_source_roots(export_root: Path) -> list[tuple[str, Path]]:
     return roots
 
 
-def resolve_extra_asset_source_roots(export_root: Path) -> list[tuple[str, Path]]:
-    roots: list[tuple[str, Path]] = []
-    for extra_root in ("inventory", "raw_vfs", "unresolved"):
-        _append_labeled_root(roots, extra_root, export_root / extra_root)
-    return roots
-
-
 def resolve_material_source_roots(export_root: Path) -> list[tuple[str, Path]]:
     roots: list[tuple[str, Path]] = []
     for source in ("StreamingAssets", "Persistent"):

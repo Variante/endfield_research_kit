@@ -8,6 +8,24 @@ function searchTextIncludes(value, q) {
   return normalizeSearchText(value).includes(q);
 }
 
+function entrySearchAliasBaseKey(key) {
+  const raw = String(key || "");
+  if (raw.startsWith("misc_")) return raw.slice(5);
+  return raw;
+}
+
+function entryMatchesOptionIdSearch(entry, q) {
+  if (!entry || !q || !q.includes("option_")) return false;
+  const keys = [
+    String(entry.k || ""),
+    entrySearchAliasBaseKey(entry.k),
+  ].filter(Boolean);
+  for (const key of new Set(keys)) {
+    if (q.includes(`option_${normalizeSearchText(key)}_`)) return true;
+  }
+  return false;
+}
+
 function entryTreeDataType(entry) {
   const types = entryTreeDataTypes(entry);
   return types[0] || DEFAULT_DATA_TYPE_KEY;
@@ -469,6 +487,7 @@ function applyFilters() {
         if (searchTextIncludes(tag, q)) return true;
         if (searchTextIncludes(metadataTagLabel(tag), q)) return true;
       }
+      if (entryMatchesOptionIdSearch(e, q)) return true;
       if (e.p && searchTextIncludes(e.p, q)) return true;
       if (e.x && searchTextIncludes(e.x, q)) return true;
       for (const aid of e.c) {

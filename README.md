@@ -182,10 +182,7 @@ Generated WebUI outputs include:
 - `webui/data/assets/index.json`
 - `webui/data/updates/latest.json`
 
-Asset indexing scans the active WebUI export roots by default and skips legacy
-`export_full/inventory`, `export_full/raw_vfs`, and `export_full/unresolved`
-folders. Use `python scripts\webui\build_assets.py --include-extra-roots` only
-when you intentionally want those older heavy roots included.
+Asset indexing scans only the active WebUI export roots.
 
 ## Unity Character Recovery Lab
 
@@ -211,17 +208,16 @@ kept under `tools/`:
 - `tools/AnimeStudio/`: AnimeStudio extraction/recovery helpers used by the
   exported story and media data. Upstream:
   <https://github.com/Escartem/AnimeStudio>
-- `tools/Cpp2IL-nightly/` and `tools/Cpp2IL-src/`: IL2CPP metadata inspection
-  support. Upstream: <https://github.com/SamboyCoding/Cpp2IL>; releases:
-  <https://github.com/SamboyCoding/Cpp2IL/releases>
-- `tools/Cpp2IL.Plugin.StrippedCodeRegSupport.dll`: Cpp2IL plugin kept beside
-  the Cpp2IL binary for stripped registration cases. Upstream:
-  <https://github.com/SamboyCoding/Cpp2IL>
-- `tools/Il2CppDumper-src/`: IL2CPP metadata inspection support for comparison
-  and fallback checks. Upstream: <https://github.com/Perfare/Il2CppDumper>
-- `tools/TypeTree/`: Unity type-tree reference tooling for decoding serialized
-  assets. Upstream: <https://github.com/FractalTools/TypeTree>
-- `tools/TypeTreeDumps/`: Unity type-tree dump references. Upstream:
+- `tools/endfield-il2cpp/`: local offline IL2CPP metadata catalog helper.
+  It validates/caches `global-metadata.dat` when available and writes
+  option-flow runtime evidence reports; it is not part of the normal
+  `export.bat` WebUI refresh.
+- `tools/TypeTree/`: optional Unity type-tree reference tooling for decoding
+  serialized asset schemas when AnimeStudio/AssetStudio-style output is missing
+  fields. Upstream: <https://github.com/FractalTools/TypeTree>
+- `tools/TypeTreeDumps/`: optional Unity type-tree dump references used as
+  schema lookups for Unity class layouts. They are not part of normal
+  `export.bat` refreshes. Upstream:
   <https://github.com/AssetRipper/TypeTreeDumps>
 - `tools/Ruri.ShaderDecompiler/`: shader decompiler used around the Unity lab.
   Upstream: <https://github.com/ShiyumeMeguri/Ruri.ShaderDecompiler>

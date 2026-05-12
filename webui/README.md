@@ -21,9 +21,23 @@ from `webui/data/` and keeps heavyweight recovery work in the Python builders.
   option groups, line-order notes, raw source traces, and inline media
   rendering for SNS/content images. Narrative video blocks show the best
   playable active-gender/source variant for each distinct video, without
-  counting hidden duplicate format/source variants as extra videos. Option
-  groups recovered from Runtime Jump route tracks display each option's full
-  recovered line path instead of collapsing shared tails. DialogIdTable
+  counting hidden duplicate format/source variants as extra videos. Story
+  search includes option ids as well as line ids/text. Option
+  groups recovered from Runtime Jump route tracks preserve option-specific
+  route lines, merge shared suffix lines once, and render branch-owned
+  follow-up option groups as flat siblings in the owning branch chain instead
+  of nesting them inside branch-line cards. Timeline-inferred groups with
+  strict `trunkClipOptionIndex` evidence render their per-option candidate
+  lines in the same branch-column view. Single-option follow-ups render
+  their recovered next lines as flat line siblings beside the option prompt in
+  that same chain, using branch-line styling inside branch columns and full
+  regular-line styling after the branches merge. When route outcomes prove a
+  follow-up group is shared by every option, that shared-continuation evidence
+  takes precedence over a single `after` anchor and the group resumes once
+  below the option columns. Shared continuation lines resume once after
+  branch-local prompts. Branch-owned dialog lines render once in the option path
+  and are removed from the trunk even when
+  recovered Timeline order disagrees with numeric line suffix order. DialogIdTable
   recovery chips expose runtime trunk line refs and runtime option refs in
   their tooltip when that evidence is available.
 - `Reference`: raw localized rows from `data/lang/<code>/reference/`, with

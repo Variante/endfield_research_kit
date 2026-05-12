@@ -85,11 +85,10 @@ Expected active inputs and outputs:
   generated WebUI data plus durable reports. The static frontend currently
   treats SNS emoji ids such as `sns_emoji_*` as inline emoji, while non-emoji
   SNS media such as `sns_image_*` and `sns_sticker_*` render as normal images.
-- `webui/build_assets.py`: builds the WebUI asset index. By default it scans
-  only active WebUI export roots and skips legacy `inventory`, `raw_vfs`, and
-  `unresolved` roots. Pass `--include-extra-roots` to include those, or
-  `--fast` to reuse existing indexes when present and skip demo bundle zip
-  generation, or `--skip-bundles` to rebuild indexes without bundle zips.
+- `webui/build_assets.py`: builds the WebUI asset index from active WebUI
+  export roots. Pass `--fast` to reuse existing indexes when present and skip
+  demo bundle zip generation, or `--skip-bundles` to rebuild indexes without
+  bundle zips.
 - `webui/package_webui.py`: packages a shareable WebUI build from `serve.py`,
   `..\webui\`, and displayed media files under `..\export_full\`.
 - `webui/common.py`: small shared constants and JSON/path helpers for the
@@ -174,7 +173,10 @@ These are kept because the WebUI story builders import or use them:
 ### IL2CPP-derived evidence (out-of-band)
 
 The C# class hierarchy backing the recovery modes was confirmed by scanning
-`global-metadata.dat` from the game's IL2CPP runtime. Relevant runtime types:
+`global-metadata.dat` from the game's IL2CPP runtime. The maintained helper is
+`tools/endfield-il2cpp/catalog_option_flow_metadata.py`; it validates/caches
+the metadata artifact and writes drift reports outside the normal WebUI build.
+Relevant runtime types:
 
 - `Beyond.Gameplay.Core.DialogManager` (partial across `.DialogTree.cs`,
   `.Level.cs`, `.LifeCycle.cs`, `.Timeline.cs`) -- routes every dialog load

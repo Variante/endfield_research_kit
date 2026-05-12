@@ -3363,6 +3363,7 @@ def _normalize_dialog_timeline_option_rows(value) -> list[dict]:
             "anchorLineId",
             "track",
             "trackName",
+            "sourceFile",
             "assetName",
             "assetTrack",
             "trunkId",
@@ -3376,6 +3377,7 @@ def _normalize_dialog_timeline_option_rows(value) -> list[dict]:
             "index",
             "optionIndex",
             "clipOptionIndex",
+            "trackPathId",
             "assetPathId",
             "logicId",
             "selectedFlag",
@@ -8125,6 +8127,8 @@ def build_language_bundle(
         if out_key in options_by_key:
             for opts in options_by_key[out_key].values():
                 for o in opts:
+                    if o.get("id"):
+                        parts.append(str(o["id"]))
                     if o["text"]:
                         parts.append(o["text"])
         return " ".join(parts)

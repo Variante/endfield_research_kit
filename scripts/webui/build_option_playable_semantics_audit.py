@@ -295,7 +295,9 @@ def compact_option_row(row: dict[str, Any]) -> dict[str, Any]:
         "assetPathId",
         "assetTrack",
         "trackName",
+        "trackPathId",
         "track",
+        "sourceFile",
     )
     return {field: row.get(field) for field in fields if row.get(field) not in (None, "", [], {})}
 

@@ -113,7 +113,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--skip-asset-updates",
-        "--skip-exported-assets",
         dest="skip_asset_updates",
         action="store_true",
         help=(

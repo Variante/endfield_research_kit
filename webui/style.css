@@ -1537,12 +1537,6 @@ a.opt-target-chip { cursor: pointer; }
 .opt-block { margin-top: 12px; }
 .opt-block-inline { margin: -4px 0 4px 122px; }
 .opt-block-inline .opt-group { margin-bottom: 4px; }
-.opt-block-branch-inline {
-  margin: 8px 0 0;
-}
-.opt-block-branch-inline .opt-group {
-  margin-bottom: 4px;
-}
 .opt-group {
   margin-bottom: 10px; padding: 8px 10px;
   background: var(--bg-3); border-radius: 3px;

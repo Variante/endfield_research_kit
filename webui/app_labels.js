@@ -1746,7 +1746,11 @@ function appendOptionId(container, option, className = "option-id") {
 
   const node = document.createElement("div");
   node.className = className;
-  node.textContent = optionId;
+  if (typeof highlightTextFragment === "function" && typeof STATE !== "undefined") {
+    node.innerHTML = highlightTextFragment(optionId, STATE.filters && STATE.filters.q);
+  } else {
+    node.textContent = optionId;
+  }
   container.appendChild(node);
 }
 
