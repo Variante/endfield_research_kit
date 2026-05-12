@@ -1,0 +1,580 @@
+#!/usr/bin/env python3
+"""Audit unresolved option responses against authored DialogTree route evidence.
+
+`build_story.py` already decodes a lot of AnimeStudio DialogTree structure.
+This report asks whether remaining `inferredOptionResponse` groups are missing
+because source files are absent, because the tree parser sees only anchors, or
+because the authored tree contains route evidence the WebUI has not promoted.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+from collections import Counter
+from pathlib import Path
+from typing import Any
+
+import build_option_playable_semantics_audit as semantics
+import build_story as story
+
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def read_json(path: Path, default: Any = None) -> Any:
+    try:
+        with path.open("r", encoding="utf-8-sig") as handle:
+            return json.load(handle)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return default
+
+
+def write_json(path: Path, value: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def safe_key(value: Any) -> str:
+    return str(value if value is not None else "").strip()
+
+
+def rel_path(path: Path | str) -> str:
+    raw_path = Path(path)
+    try:
+        return raw_path.resolve().relative_to(ROOT.resolve()).as_posix()
+    except (OSError, ValueError):
+        return raw_path.as_posix()
+
+
+def unique_preserve(values: list[Any]) -> list[Any]:
+    out: list[Any] = []
+    seen: set[Any] = set()
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        out.append(value)
+    return out
+
+
+def md_escape(value: Any) -> str:
+    return safe_key(value).replace("|", "\\|").replace("\n", " ")
+
+
+def compact_source(meta: dict[str, Any] | None, kind: str) -> dict[str, Any] | None:
+    if not isinstance(meta, dict):
+        return None
+
+    def signal_count(value: Any) -> int:
+        if isinstance(value, (dict, list, tuple, set)):
+            return len(value)
+        if safe_key(value):
+            return 1
+        return 0
+
+    out = {
+        "kind": kind,
+        "sourceKey": safe_key(meta.get("sourceKey")),
+        "file": safe_key(meta.get("file")),
+        "lineCount": len(meta.get("lineIds") or []),
+        "optionCount": len(meta.get("optionIds") or []),
+    }
+    signal_counts = {
+        "terminal": sum((meta.get("terminalCounts") or {}).values()),
+        "after": signal_count(meta.get("after")),
+        "branches": signal_count(meta.get("branches")),
+        "merge": signal_count(meta.get("merge")),
+        "converge": signal_count(meta.get("converge")),
+        "pre": signal_count(meta.get("pre")),
+        "actionAssets": len(meta.get("actionAssets") or {}),
+        "cinematicTimelineAnchors": len(meta.get("cinematicTimelineAnchors") or {}),
+        "sceneLinks": len(meta.get("sceneLinks") or []),
+        "targetFragments": len(meta.get("targetFragments") or []),
+        "cinematicFinishGroups": len(meta.get("cinematicFinishGroups") or []),
+    }
+    out["signalCounts"] = {key: value for key, value in signal_counts.items() if value}
+    if meta.get("cinematicOnly"):
+        out["cinematicOnly"] = True
+    return out
+
+
+def load_conv_line_ids(conv_dir: Path, story_key: str) -> list[str]:
+    conv = read_json(conv_dir / f"{story_key}.json", {})
+    if not isinstance(conv, dict):
+        return []
+    return [
+        safe_key(line.get("id"))
+        for line in conv.get("lines") or []
+        if isinstance(line, dict) and safe_key(line.get("id"))
+    ]
+
+
+def tree_sources_for_group(
+    story_key: str,
+    line_ids: list[str],
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None, list[dict[str, Any]], list[dict[str, Any]]]:
+    direct = story._load_dialog_tree_file(story_key)
+    related = story._load_related_dialog_tree_files(story_key, line_ids)
+    fragments = story.load_dialog_tree_fragments(story_key)
+    scene_links = story.load_dialog_tree_scene_links(story_key)
+    sources: list[dict[str, Any]] = []
+    if direct_source := compact_source(direct, "direct"):
+        sources.append(direct_source)
+    for meta in related:
+        if source := compact_source(meta, "related"):
+            sources.append(source)
+    for fragment in fragments:
+        if source := compact_source(fragment, "fragment"):
+            sources.append(source)
+    for link in scene_links:
+        if source := compact_source(link, "sceneLink"):
+            source["optionCount"] = len(link.get("options") or [])
+            sources.append(source)
+    return sources, direct, fragments, scene_links
+
+
+def option_ids_in_fragment_groups(fragment: dict[str, Any], option_id: str) -> list[dict[str, Any]]:
+    matches: list[dict[str, Any]] = []
+    for group in fragment.get("optionGroups") or []:
+        if not isinstance(group, dict):
+            continue
+        if option_id not in (group.get("optionIds") or []):
+            continue
+        entry: dict[str, Any] = {
+            "sourceKey": safe_key(fragment.get("sourceKey")),
+            "file": safe_key(fragment.get("file")),
+            "mode": safe_key(group.get("mode")),
+            "after": safe_key(group.get("after")),
+            "position": safe_key(group.get("position")),
+        }
+        if group.get("branches"):
+            entry["branches"] = group.get("branches")
+        if group.get("merge"):
+            entry["merge"] = group.get("merge")
+        matches.append({key: value for key, value in entry.items() if value not in ("", [], {})})
+    return matches
+
+
+def option_scene_link_matches(scene_links: list[dict[str, Any]], option_id: str) -> list[dict[str, Any]]:
+    matches: list[dict[str, Any]] = []
+    for link in scene_links:
+        for option in link.get("options") or []:
+            if not isinstance(option, dict) or option.get("optionId") != option_id:
+                continue
+            entry: dict[str, Any] = {
+                "sourceKey": safe_key(link.get("sourceKey")),
+                "file": safe_key(link.get("file")),
+                "after": safe_key(link.get("after")),
+                "outcomeKind": safe_key(option.get("outcomeKind")),
+                "firstLineId": safe_key(option.get("firstLineId")),
+                "firstSceneKey": safe_key(option.get("firstSceneKey")),
+                "terminal": safe_key(option.get("terminal")),
+            }
+            for field in ("pathLineIds", "sceneKeys", "submenuSceneKeys"):
+                if option.get(field):
+                    entry[field] = option.get(field)
+            if option.get("loop"):
+                entry["loop"] = option.get("loop")
+            matches.append({key: value for key, value in entry.items() if value not in ("", [], {})})
+    return matches
+
+
+def option_evidence(
+    option: dict[str, Any],
+    tree_meta: dict[str, Any] | None,
+    fragments: list[dict[str, Any]],
+    scene_links: list[dict[str, Any]],
+) -> dict[str, Any]:
+    option_id = safe_key(option.get("optionId"))
+    tree_meta = tree_meta or {}
+    branches = (tree_meta.get("branches") or {}).get(option_id) or []
+    merge = safe_key((tree_meta.get("merge") or {}).get(option_id))
+    converge = safe_key((tree_meta.get("converge") or {}).get(option_id))
+    after = safe_key((tree_meta.get("after") or {}).get(option_id))
+    pre = option_id in (tree_meta.get("pre") or [])
+    fragment_matches: list[dict[str, Any]] = []
+    for fragment in fragments:
+        fragment_matches.extend(option_ids_in_fragment_groups(fragment, option_id))
+    scene_link_matches = option_scene_link_matches(scene_links, option_id)
+    out: dict[str, Any] = {
+        "optionId": option_id,
+        "candidateLineId": safe_key(option.get("candidateLineId")),
+        "treeAfter": after,
+        "treeBranches": branches,
+        "treeMerge": merge,
+        "treeConverge": converge,
+        "treePre": pre,
+        "treeAfterSources": (tree_meta.get("afterSources") or {}).get(option_id) or [],
+        "treePreSources": (tree_meta.get("preSources") or {}).get(option_id) or [],
+        "fragmentMatches": fragment_matches,
+        "sceneLinkMatches": scene_link_matches,
+        "timelineRoute": option.get("route") or {},
+        "bestTimelineRow": option.get("bestRow") or {},
+    }
+    return {key: value for key, value in out.items() if value not in ("", [], {}, False)}
+
+
+def candidate_match_count(option_details: list[dict[str, Any]]) -> int:
+    matches = 0
+    for detail in option_details:
+        candidate = safe_key(detail.get("candidateLineId"))
+        if not candidate:
+            continue
+        if any(candidate in signature for signature in option_route_signatures(detail)):
+            matches += 1
+    return matches
+
+
+def option_route_signatures(detail: dict[str, Any]) -> set[tuple[str, ...]]:
+    signatures: set[tuple[str, ...]] = set()
+    branches = tuple(safe_key(value) for value in detail.get("treeBranches") or [] if safe_key(value))
+    if branches:
+        signatures.add(branches)
+    for match in detail.get("sceneLinkMatches") or []:
+        path = tuple(safe_key(value) for value in match.get("pathLineIds") or [] if safe_key(value))
+        if path:
+            signatures.add(path)
+            continue
+        if first_line_id := safe_key(match.get("firstLineId")):
+            signatures.add((first_line_id,))
+        elif terminal := safe_key(match.get("terminal")):
+            signatures.add((f"terminal:{terminal}",))
+    return signatures
+
+
+def option_route_signature_sets(option_details: list[dict[str, Any]]) -> list[set[tuple[str, ...]]]:
+    return [option_route_signatures(detail) for detail in option_details]
+
+
+def has_shared_route(option_details: list[dict[str, Any]]) -> bool:
+    signature_sets = option_route_signature_sets(option_details)
+    if len(signature_sets) < 2 or not all(signature_sets):
+        return False
+    union: set[tuple[str, ...]] = set()
+    for signatures in signature_sets:
+        union.update(signatures)
+    return len(union) == 1
+
+
+def classify_group(
+    row: dict[str, Any],
+    tree_sources: list[dict[str, Any]],
+    option_details: list[dict[str, Any]],
+) -> tuple[str, str]:
+    has_tree_source = bool(tree_sources)
+    option_count = len(row.get("options") or [])
+    branch_count = sum(1 for detail in option_details if detail.get("treeBranches"))
+    scene_route_count = sum(
+        1
+        for detail in option_details
+        if any(
+            match.get("firstLineId") or match.get("pathLineIds") or match.get("terminal") or match.get("loop")
+            for match in detail.get("sceneLinkMatches") or []
+        )
+    )
+    convergence_values = {
+        safe_key(detail.get("treeConverge"))
+        for detail in option_details
+        if safe_key(detail.get("treeConverge"))
+    }
+    anchor_count = sum(1 for detail in option_details if detail.get("treeAfter") or detail.get("treePre"))
+    fragment_signal_count = sum(1 for detail in option_details if detail.get("fragmentMatches"))
+    route_match_count = candidate_match_count(option_details)
+
+    if has_shared_route(option_details):
+        return "treeSharedRoute", "avoidPerOptionInferenceOrCollapseToSharedRoute"
+    if option_count and route_match_count == option_count:
+        return "explicitTreeRoute", "promoteDialogTreeRoute"
+    if branch_count or scene_route_count:
+        if route_match_count:
+            return "treeRoutePartialMatch", "inspectParserOrCandidateMapping"
+        return "treeRouteCandidateMismatch", "inspectParserOrCandidateMapping"
+    if convergence_values and len(convergence_values) == 1:
+        common = safe_key(row.get("commonContinuationLineId"))
+        recommendation = "treatAsCosmeticOrConverged" if common in convergence_values else "inspectConvergenceMapping"
+        return "treeConvergence", recommendation
+    if anchor_count:
+        return "treeAnchorOnly", "needsRuntimeMethodBodyOrOptionNodeTargetDecode"
+    if fragment_signal_count:
+        return "treeFragmentOnly", "inspectFragmentPromotion"
+    if has_tree_source:
+        only_cinematic_sources = all(
+            bool(source.get("cinematicOnly"))
+            or (
+                not source.get("optionCount")
+                and not (source.get("signalCounts") or {}).get("branches")
+                and not (source.get("signalCounts") or {}).get("after")
+                and bool((source.get("signalCounts") or {}).get("actionAssets"))
+            )
+            for source in tree_sources
+        )
+        if only_cinematic_sources and any(option.get("bestTimelineRow") for option in option_details):
+            return "cinematicTreeTimelineOnly", "needsRuntimeMethodBodyOrTimelineTargetDecode"
+        mentioned_options = sum(
+            1
+            for detail in option_details
+            if detail.get("treeAfter")
+            or detail.get("treeBranches")
+            or detail.get("treeMerge")
+            or detail.get("treeConverge")
+            or detail.get("treePre")
+            or detail.get("sceneLinkMatches")
+            or detail.get("fragmentMatches")
+        )
+        if mentioned_options:
+            return "treePresentNoRouteDecoded", "patchDialogTreeDecoder"
+        if option_count:
+            return "treePresentOptionMissing", "recoverMissingTreeOrOptionIds"
+        return "treePresentNoOptionGroup", "inspectWarningSource"
+    if any(option.get("bestTimelineRow") for option in option_details):
+        return "timelineOnlyNoTree", "needsRuntimeMethodBodyOrTimelineTargetDecode"
+    return "sourceMissing", "findAdditionalGameDataSource"
+
+
+def collect_rows(
+    language: str,
+    conv_dir: Path,
+    timeline_orders_path: Path,
+    *,
+    story_filters: list[str] | None = None,
+    group_filters: set[int] | None = None,
+    only_interesting: bool = False,
+) -> list[dict[str, Any]]:
+    semantics_rows = semantics.collect_rows(
+        language,
+        conv_dir,
+        timeline_orders_path,
+        story_filters=story_filters,
+        group_filters=group_filters,
+        only_interesting=only_interesting,
+    )
+    rows: list[dict[str, Any]] = []
+    for row in semantics_rows:
+        story_key = safe_key(row.get("storyKey"))
+        line_ids = load_conv_line_ids(conv_dir, story_key)
+        tree_sources, _direct, fragments, scene_links = tree_sources_for_group(story_key, line_ids)
+        tree_meta = story.load_dialog_tree(story_key) or {}
+        option_details = [
+            option_evidence(option, tree_meta, fragments, scene_links)
+            for option in row.get("options") or []
+        ]
+        classification, recommendation = classify_group(row, tree_sources, option_details)
+        rows.append({
+            "language": language,
+            "storyKey": story_key,
+            "mission": row.get("mission"),
+            "group": row.get("group"),
+            "after": row.get("after"),
+            "candidateLineIds": row.get("candidateLineIds") or [],
+            "commonContinuationLineId": row.get("commonContinuationLineId"),
+            "semanticsClassification": row.get("classification"),
+            "semanticsRecommendation": row.get("recommendation"),
+            "classification": classification,
+            "recommendation": recommendation,
+            "treeSources": tree_sources,
+            "treeSourceKeys": unique_preserve([source.get("sourceKey") for source in tree_sources if source.get("sourceKey")]),
+            "optionDetails": option_details,
+        })
+    rows.sort(key=lambda item: (item.get("mission") or "", item.get("storyKey") or "", item.get("group") or 0))
+    return rows
+
+
+def summarize_rows(
+    language: str,
+    rows: list[dict[str, Any]],
+    *,
+    story_filters: list[str] | None = None,
+    group_filters: set[int] | None = None,
+    only_interesting: bool = False,
+) -> dict[str, Any]:
+    classifications = Counter(row.get("classification") or "" for row in rows)
+    recommendations = Counter(row.get("recommendation") or "" for row in rows)
+    semantic_classifications = Counter(row.get("semanticsClassification") or "" for row in rows)
+    source_kinds = Counter(
+        source.get("kind") or ""
+        for row in rows
+        for source in row.get("treeSources") or []
+    )
+    route_candidate_hit_groups = sum(1 for row in rows if candidate_match_count(row.get("optionDetails") or []))
+    return {
+        "language": language,
+        "filters": {
+            "stories": story_filters or [],
+            "groups": sorted(group_filters or set()),
+            "onlyInteresting": bool(only_interesting),
+        },
+        "inferredResponseGroupCount": len(rows),
+        "classificationCounts": dict(classifications),
+        "recommendationCounts": dict(recommendations),
+        "semanticsClassificationCounts": dict(semantic_classifications),
+        "sourceKindCounts": dict(source_kinds),
+        "routeCandidateHitGroupCount": route_candidate_hit_groups,
+        "explicitPerOptionRouteGroupCount": classifications.get("explicitTreeRoute", 0),
+        "sharedRouteGroupCount": classifications.get("treeSharedRoute", 0),
+    }
+
+
+def option_summary(row: dict[str, Any]) -> str:
+    parts: list[str] = []
+    for detail in row.get("optionDetails") or []:
+        fields: list[str] = []
+        if detail.get("treeBranches"):
+            fields.append("branches=" + ",".join(safe_key(value) for value in detail.get("treeBranches") or []))
+        if detail.get("treeConverge"):
+            fields.append(f"converge={detail.get('treeConverge')}")
+        if detail.get("treeAfter"):
+            fields.append(f"after={detail.get('treeAfter')}")
+        if detail.get("sceneLinkMatches"):
+            firsts = [
+                safe_key(match.get("firstLineId") or match.get("terminal") or match.get("outcomeKind"))
+                for match in detail.get("sceneLinkMatches") or []
+            ]
+            fields.append("sceneLink=" + ",".join(value for value in firsts if value))
+        if detail.get("fragmentMatches"):
+            fields.append(f"fragments={len(detail.get('fragmentMatches') or [])}")
+        best_row = detail.get("bestTimelineRow") or {}
+        if best_row.get("logicId") not in (None, 0, ""):
+            fields.append(f"logicId={best_row.get('logicId')}")
+        parts.append(
+            f"{detail.get('optionId')} -> {detail.get('candidateLineId')} "
+            f"({'; '.join(fields) or 'no tree route'})"
+        )
+    return "; ".join(parts)
+
+
+def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
+    lines = [
+        f"# DialogTree Option Route Audit - {summary['language']}",
+        "",
+        f"- Inferred response groups audited: `{summary['inferredResponseGroupCount']}`",
+        f"- Authored route candidate-hit groups: `{summary['routeCandidateHitGroupCount']}`",
+        f"- Explicit per-option authored routes: `{summary['explicitPerOptionRouteGroupCount']}`",
+        f"- Shared authored routes: `{summary['sharedRouteGroupCount']}`",
+        "",
+        "## Classification Counts",
+        "",
+    ]
+    for key, count in summary.get("classificationCounts", {}).items():
+        lines.append(f"- `{key}`: {count}")
+    lines.extend(["", "## Recommendation Counts", ""])
+    for key, count in summary.get("recommendationCounts", {}).items():
+        lines.append(f"- `{key}`: {count}")
+    lines.extend(["", "## Source Kind Counts", ""])
+    for key, count in summary.get("sourceKindCounts", {}).items():
+        lines.append(f"- `{key}`: {count}")
+    lines.extend([
+        "",
+        "## Groups",
+        "",
+        "| Scene | Group | After | Candidates | Common | Class | Recommendation | Sources | Evidence |",
+        "| --- | ---: | --- | --- | --- | --- | --- | --- | --- |",
+    ])
+    for row in rows:
+        sources = ", ".join(row.get("treeSourceKeys") or [])
+        lines.append(
+            "| "
+            f"`{md_escape(row.get('storyKey'))}` "
+            f"| {md_escape(row.get('group'))} "
+            f"| `{md_escape(row.get('after'))}` "
+            f"| `{md_escape(', '.join(row.get('candidateLineIds') or []))}` "
+            f"| `{md_escape(row.get('commonContinuationLineId'))}` "
+            f"| `{md_escape(row.get('classification'))}` "
+            f"| `{md_escape(row.get('recommendation'))}` "
+            f"| `{md_escape(sources)}` "
+            f"| {md_escape(option_summary(row))} |"
+        )
+    if not rows:
+        lines.append("| _(none)_ |  |  |  |  |  |  |  |  |")
+    return "\n".join(lines)
+
+
+def build_report(
+    language: str,
+    conv_dir: Path,
+    timeline_orders_path: Path,
+    reports_dir: Path,
+    *,
+    story_filters: list[str] | None = None,
+    group_filters: set[int] | None = None,
+    only_interesting: bool = False,
+) -> dict[str, Any]:
+    rows = collect_rows(
+        language,
+        conv_dir,
+        timeline_orders_path,
+        story_filters=story_filters,
+        group_filters=group_filters,
+        only_interesting=only_interesting,
+    )
+    summary = summarize_rows(
+        language,
+        rows,
+        story_filters=story_filters,
+        group_filters=group_filters,
+        only_interesting=only_interesting,
+    )
+    payload = {
+        "summary": summary,
+        "groups": rows,
+    }
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    suffix = semantics.safe_report_suffix(story_filters or [], group_filters or set(), only_interesting)
+    out_json = reports_dir / f"dialog_tree_option_route_audit_{language}{suffix}.json"
+    out_md = reports_dir / f"dialog_tree_option_route_audit_{language}{suffix}.md"
+    write_json(out_json, payload)
+    out_md.write_text(render_markdown(summary, rows) + "\n", encoding="utf-8")
+    return {"summary": summary, "json": out_json, "markdown": out_md}
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--language", default="CN")
+    parser.add_argument("--conv-dir", type=Path)
+    parser.add_argument(
+        "--timeline-orders",
+        type=Path,
+        default=ROOT / "export_full" / "recovered" / "AnimeStudio-cli" / "timeline_line_orders.json",
+    )
+    parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports")
+    parser.add_argument("--story", action="append", help="Story key, substring, glob, or comma-list to audit.")
+    parser.add_argument("--group", action="append", help="Option group number or comma-list to audit.")
+    parser.add_argument(
+        "--only-interesting",
+        action="store_true",
+        help="Reuse the playable-semantics audit's high-signal subset.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
+    language = args.language
+    conv_dir = args.conv_dir or ROOT / "webui" / "data" / "lang" / language / "conv"
+    story_filters = semantics.split_csv_values(args.story)
+    try:
+        group_filters = semantics.parse_group_filters(args.group)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+    result = build_report(
+        language,
+        conv_dir,
+        args.timeline_orders,
+        args.reports_dir,
+        story_filters=story_filters,
+        group_filters=group_filters,
+        only_interesting=args.only_interesting,
+    )
+    summary = result["summary"]
+    print(f"DialogTree option route audit: {result['markdown']}")
+    print(f"DialogTree option route data:  {result['json']}")
+    print(
+        "Audited "
+        f"{summary['inferredResponseGroupCount']} inferred response groups; "
+        f"{summary['routeCandidateHitGroupCount']} groups have authored route candidate hits; "
+        f"{summary['explicitPerOptionRouteGroupCount']} are explicit per-option routes."
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

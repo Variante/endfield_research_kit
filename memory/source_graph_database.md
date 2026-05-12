@@ -36,6 +36,8 @@ Search the graph:
 ```bat
 python tools\endfield_source_graph.py query zhuangfy --limit 20
 python tools\endfield_source_graph.py query dlg_c27m3_6 --limit 20
+python tools\endfield_source_graph.py story dlg_c17m1_5 --limit-lines 8
+python tools\endfield_source_graph.py issues --code inferredOptionResponse --limit 20
 ```
 
 Useful build flags:
@@ -123,6 +125,7 @@ container ownership, and exported asset matches.
 - `webui/data/lang/CN/mission/*.json`
 - `webui/data/lang/CN/reference/**`
 - `export_full/recovered/story_source_links.json`
+- `export_full/recovered/AnimeStudio-cli/timeline_line_orders.json`
 - actor material JSON under recovered AnimeStudio outputs
 - Unity character recovery manifests under `unity_endfield_graph_shader_lab/`
 - selected structured tables under `export_full/structured/StreamingAssets/Table/`
@@ -163,6 +166,62 @@ with `--skip-asset-maps` and reference rows enabled, produced:
 
 Use the quick build for normal iteration. Use the full build when Unity asset
 container, PathID, and exported asset relationship coverage matters.
+
+On 2026-05-12 the graph builder gained first-class ingestion for raw
+`timeline_line_orders.json` evidence. It now adds Timeline nodes, raw Timeline
+line clip order, option clip anchors, Runtime Jump option routes, skipped line
+edges, continuation option edges, runtime jump clip nodes, and links to the
+extracted Timeline/PlayableAsset JSON files. The quick validation build with
+`--skip-asset-maps --skip-reference-rows --skip-followups` produced:
+
+- `273` `timeline` nodes
+- `59` `timeline_option_route` nodes
+- `63` `runtime_jump_clip` nodes
+- `4,004` `timeline_line_clip` edges
+- `1,001` `timeline_option_clip` edges
+- `336` `timeline_route_path_line` edges
+- `222` `timeline_route_skips_line` edges
+
+Example check:
+`python tools\endfield_source_graph.py query option_dlg_c17m1_5_1_001 --kind option --limit 30`
+now shows the selected option's raw Runtime Jump route, path lines, skipped
+line `dlg_c17m1_5_022`, continuation options, and source clip JSON.
+
+The same pass also promotes WebUI recovery warnings into graph nodes. The
+`story` command now includes `warnings`, and the `issues` command lists
+warning-bearing scenes with nearby graph evidence counts. For example:
+
+```bat
+python tools\endfield_source_graph.py story dlg_c17m1_5 --limit-lines 8
+python tools\endfield_source_graph.py issues --code inferredOptionResponse --limit 20
+```
+
+Use this before changing WebUI recovery rules: it distinguishes raw Timeline
+clip evidence (`timeline_option_clip`, `timeline_option_anchor_line`,
+`has_timeline_route`) from lower-confidence inferred branch edges
+(`option_branch_risk`).
+
+The Timeline extractor now preserves additional `DialogOptionPlayableAsset`
+fields in `timeline_line_orders.json` and graph edge payloads, including
+`trunkId`, `dialogId`, `logicId`, `selectedFlag`, `conditionRid`,
+`changeFinishNum`, and `targetFinishNum`. Empty `trunkId`/`dialogId` fields are
+important negative evidence for inferred response groups: they explain why the
+builder can place the option clip but cannot promote a target trunk line as
+authored.
+
+On 2026-05-12 the quick graph was refreshed after the raw trunk
+`clipOptionIndex` recovery pass:
+
+```bat
+python tools\endfield_source_graph.py build --skip-asset-maps --skip-reference-rows --skip-followups
+```
+
+This produced `846,270` nodes, `630,097` edges, and `698,881` aliases. Option
+branch-risk edges now preserve `candidateMapping`,
+`candidateLineIdsByOption`, and `candidateLineClipOptionIndex` when the WebUI
+builder has that evidence. For example,
+`option_dlg_c28m3_10_1_001 -> dlg_c28m3_10_023` carries
+`candidateMapping=trunkClipOptionIndex` and raw clip indices `[1, 2]`.
 
 ## Current Follow-Up Reports
 

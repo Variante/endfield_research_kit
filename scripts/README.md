@@ -124,6 +124,31 @@ These are kept because the WebUI story builders import or use them:
   `inferredFollowingLines` option groups against nearby Runtime Jump Track
   clips and writes `reports/runtime_jump_option_route_audit_<LANG>.json` /
   `.md`. Use it before promoting any new automatic option-route rule.
+- `webui/build_option_playable_semantics_audit.py`: audits remaining
+  `inferredOptionResponse` groups against decoded
+  `DialogOptionPlayableAsset` fields such as `logicId`, `trunkId`,
+  `dialogId`, `conditionRid`, `changeFinishNum`, and `targetFinishNum`. Use
+  `--only-interesting` to focus on groups where `logicId` is the only
+  non-default semantic clue, or `--story <key> --group <n>` for a targeted
+  scene check.
+- `webui/build_option_logic_id_audit.py`: follows up on the `logicId` queue by
+  scanning structured tables, `MissionRuntimeAsset`, `LevelScriptData`,
+  `LevelScriptTemplateData`, gameplay config, and Lua consumer terms for exact
+  references to option `logicId` values. Same-mission mission/level-script
+  matches would be high-value evidence; table/config-only matches are
+  diagnostic unless another source links them to the dialog.
+- `webui/build_dialog_tree_option_route_audit.py`: audits remaining
+  `inferredOptionResponse` groups against decoded AnimeStudio DialogTree
+  routes, related scene links, target fragments, and cinematic wrappers. Use it
+  after the option-playable and `logicId` audits to separate cases where
+  `build_story.py` could promote authored tree evidence from the larger queue
+  that needs deeper Timeline/runtime option-target decoding.
+- `webui/build_timeline_option_flow_audit.py`: audits remaining
+  `inferredOptionResponse` groups against raw Timeline trunk clips. It reports
+  whether candidate response clips carry useful non-default `optionIndex`
+  values, resolves `misc_dlg_*` WebUI aliases to underlying `dlg_*` Timeline
+  entries, and separates promotable `trunkClipOptionIndexRoute` cases from the
+  common default `optionIndex=0` adjacent layouts that are diagnostic only.
 - `scene_order_gap_shared.py`: classifies each scene's line-order and
   option-layout recovery quality. Consumes the DialogIdTable registry above
   to upgrade `lineIdSuffix`-mode scenes to one of:

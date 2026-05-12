@@ -35,6 +35,8 @@ GRAPH_DIR = ROOT / "reports" / "source_graph"
 DEFAULT_DB = GRAPH_DIR / "endfield_source_graph.sqlite"
 DEFAULT_SUMMARY_JSON = GRAPH_DIR / "summary.json"
 DEFAULT_SUMMARY_MD = GRAPH_DIR / "summary.md"
+TIMELINE_LINE_ORDERS_REL = Path("recovered") / "AnimeStudio-cli" / "timeline_line_orders.json"
+TIMELINE_LINE_ORDERS_PATH = EXPORT_ROOT / TIMELINE_LINE_ORDERS_REL
 
 ASSET_MAPS = {
     "StreamingAssets": (
@@ -127,6 +129,17 @@ def compact_payload(value: Any, *, depth: int = 2, list_limit: int = 12) -> Any:
     if isinstance(value, str):
         return compact_text(value, 500)
     return value
+
+
+def _unique_preserve(values: Iterable[Any]) -> list[Any]:
+    out: list[Any] = []
+    seen: set[Any] = set()
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        out.append(value)
+    return out
 
 
 def safe_key(value: Any) -> str:
@@ -382,6 +395,8 @@ class SourceGraphBuilder:
             self.commit_step("videos")
             self.ingest_webui_story()
             self.commit_step("story")
+            self.ingest_timeline_line_orders()
+            self.commit_step("timelineLineOrders")
             self.ingest_story_source_links()
             self.commit_step("storySourceLinks")
             self.ingest_materials()
@@ -498,6 +513,7 @@ class SourceGraphBuilder:
             self.add_lines_and_options(conv, story_node)
             self.add_narrative_videos(conv, story_node)
             self.add_scene_graph_edges(conv, story_node)
+            self.add_recovery_warnings(conv, story_node)
 
     def add_story_node(self, story_key: str, data: dict[str, Any], *, path: str = "") -> str:
         summary = data.get("summary")
@@ -568,6 +584,9 @@ class SourceGraphBuilder:
                     "riskDetail": branch_risk.get("detail"),
                     "riskSource": branch_risk.get("source"),
                     "candidateLineIds": branch_risk.get("candidateLineIds"),
+                    "candidateLineIdsByOption": branch_risk.get("candidateLineIdsByOption"),
+                    "candidateMapping": branch_risk.get("candidateMapping"),
+                    "candidateLineClipOptionIndex": branch_risk.get("candidateLineClipOptionIndex"),
                     "commonContinuationLineId": branch_risk.get("commonContinuationLineId"),
                     "branchLineIdsByOption": branch_risk.get("branchLineIdsByOption"),
                     "skippedLineIdsByOption": branch_risk.get("skippedLineIdsByOption"),
@@ -583,6 +602,12 @@ class SourceGraphBuilder:
             if not branch_option_ids:
                 branch_option_ids = [safe_key(option.get("id")) for option in options if safe_key(option.get("id"))]
             candidate_line_ids = [safe_key(value) for value in branch_risk.get("candidateLineIds") or [] if safe_key(value)]
+            raw_candidate_lines_by_option = branch_risk.get("candidateLineIdsByOption") or {}
+            candidate_lines_by_option = {
+                safe_key(option_id): safe_key(line_id)
+                for option_id, line_id in raw_candidate_lines_by_option.items()
+                if safe_key(option_id) and safe_key(line_id)
+            } if isinstance(raw_candidate_lines_by_option, dict) else {}
             common_line_id = safe_key(branch_risk.get("commonContinuationLineId"))
             raw_branch_lines_by_option = branch_risk.get("branchLineIdsByOption") or {}
             branch_lines_by_option = {
@@ -608,6 +633,8 @@ class SourceGraphBuilder:
                         "code": branch_risk.get("code"),
                         "reason": branch_risk.get("reason"),
                         "source": branch_risk.get("source"),
+                        "candidateMapping": branch_risk.get("candidateMapping"),
+                        "candidateLineClipOptionIndex": branch_risk.get("candidateLineClipOptionIndex"),
                     }
                     if option_id in branch_lines_by_option:
                         hint["branchLineIds"] = branch_lines_by_option[option_id]
@@ -615,10 +642,13 @@ class SourceGraphBuilder:
                         hint["skippedLineIds"] = skipped_lines_by_option[option_id]
                     if continuation_option_ids:
                         hint["continuationOptionIds"] = continuation_option_ids
-                    if index < len(candidate_line_ids):
+                    if option_id in candidate_lines_by_option:
+                        hint["candidateLineId"] = candidate_lines_by_option[option_id]
+                    elif index < len(candidate_line_ids):
                         hint["candidateLineId"] = candidate_line_ids[index]
                     if common_line_id:
                         hint["commonContinuationLineId"] = common_line_id
+                    hint = {key: value for key, value in hint.items() if value not in (None, "", [], {})}
                     option_branch_hints[option_id] = hint
 
             for option in options:
@@ -710,6 +740,473 @@ class SourceGraphBuilder:
                     self.add_edge(option_node, self.add_node("line", line_id), "option_path_line", source="scene_graph")
                 for scene_key in option.get("sceneKeys") or []:
                     self.add_edge(option_node, self.add_node("story", scene_key), "option_path_story", source="scene_graph")
+
+    def add_recovery_warnings(self, conv: dict[str, Any], story_node: str) -> None:
+        story_key = safe_key(conv.get("key"))
+        if not story_key:
+            return
+        for warning_index, warning in enumerate(conv.get("warnings") or []):
+            if not isinstance(warning, dict):
+                continue
+            code = safe_key(warning.get("code")) or "warning"
+            warning_node = self.add_node(
+                "story_recovery_warning",
+                f"{story_key}:{warning_index}:{code}",
+                name=code,
+                source="webui/recovery",
+                data=compact_payload(warning, depth=5, list_limit=80),
+            )
+            self.add_edge(story_node, warning_node, "has_recovery_warning", source="webui/recovery", evidence=code)
+
+            for group_warning in warning.get("groups") or []:
+                if not isinstance(group_warning, dict):
+                    continue
+                group_key = safe_key(group_warning.get("group"))
+                if group_key:
+                    group_node = self.add_node(
+                        "option_group",
+                        self.timeline_group_key(story_key, group_key),
+                        source="webui/recovery",
+                    )
+                    self.add_edge(
+                        warning_node,
+                        group_node,
+                        "warning_option_group",
+                        source="webui/recovery",
+                        evidence=group_key,
+                        data=compact_payload(group_warning, depth=2, list_limit=12),
+                    )
+                for option_id in group_warning.get("optionIds") or []:
+                    option_key = safe_key(option_id)
+                    if option_key:
+                        option_node = self.add_node("option", option_key, source="webui/recovery")
+                        self.add_edge(warning_node, option_node, "warning_option", source="webui/recovery", evidence=code)
+                for line_id in group_warning.get("candidateLineIds") or []:
+                    line_key = safe_key(line_id)
+                    if line_key:
+                        line_node = self.add_node("line", line_key, source="webui/recovery")
+                        self.add_edge(warning_node, line_node, "warning_candidate_line", source="webui/recovery", evidence=code)
+                common_line_id = safe_key(group_warning.get("commonContinuationLineId"))
+                if common_line_id:
+                    line_node = self.add_node("line", common_line_id, source="webui/recovery")
+                    self.add_edge(warning_node, line_node, "warning_continuation_line", source="webui/recovery", evidence=code)
+                for asset_track in group_warning.get("assetTracks") or []:
+                    asset_track_key = safe_key(asset_track)
+                    if asset_track_key:
+                        file_node = self.add_file(asset_track_key, kind="recovery_warning_source", source="webui/recovery")
+                        self.add_edge(warning_node, file_node, "warning_source_file", source="webui/recovery", evidence=code)
+
+            for option_id in warning.get("optionIds") or []:
+                option_key = safe_key(option_id)
+                if option_key:
+                    option_node = self.add_node("option", option_key, source="webui/recovery")
+                    self.add_edge(warning_node, option_node, "warning_option", source="webui/recovery", evidence=code)
+            for line_id in warning.get("lineIds") or []:
+                line_key = safe_key(line_id)
+                if line_key:
+                    line_node = self.add_node("line", line_key, source="webui/recovery")
+                    self.add_edge(warning_node, line_node, "warning_candidate_line", source="webui/recovery", evidence=code)
+
+    def ingest_timeline_line_orders(self) -> None:
+        path = self.export_root / TIMELINE_LINE_ORDERS_REL
+        payload = read_json(path, {})
+        if not isinstance(payload, dict) or not payload:
+            return
+        meta = payload.get("_meta") if isinstance(payload.get("_meta"), dict) else {}
+        dataset = self.add_node(
+            "dataset",
+            "timeline_line_orders",
+            name="Timeline line/order recovery",
+            source="AnimeStudio/timeline",
+            path=slash(path),
+            data=meta,
+        )
+        self.add_file(slash(path), kind="timeline_line_orders", source="AnimeStudio/timeline", data=meta)
+
+        for raw_key, entry in payload.items():
+            if raw_key.startswith("_") or not isinstance(entry, dict):
+                continue
+            story_key = safe_key(entry.get("dialogKey") or raw_key)
+            if not story_key:
+                continue
+            story_node = self.add_node("story", story_key, source="timeline_line_orders")
+            timeline_key = safe_key(entry.get("timeline") or f"{story_key}:timeline")
+            timeline_node = self.add_node(
+                "timeline",
+                timeline_key,
+                name=timeline_key,
+                source="timeline_line_orders",
+                path=safe_key(entry.get("source")),
+                data={
+                    "dialogKey": story_key,
+                    "lineCount": len(entry.get("lines") or entry.get("lineIds") or []),
+                    "optionCount": len(entry.get("options") or entry.get("optionIds") or []),
+                    "optionRouteCount": len(entry.get("optionRoutes") or {}),
+                    "trackCount": entry.get("trackCount"),
+                    "duplicateClipCount": entry.get("duplicateClipCount"),
+                    "duplicateOptionClipCount": entry.get("duplicateOptionClipCount"),
+                    "source": entry.get("source"),
+                    "sourceRoots": compact_payload(entry.get("sourceRoots") or [], depth=1, list_limit=6),
+                },
+            )
+            self.add_alias(timeline_key.lower(), timeline_node, kind="timeline_name", source="timeline_line_orders")
+            self.add_edge(dataset, timeline_node, "has_timeline", source="timeline_line_orders")
+            self.add_edge(story_node, timeline_node, "has_timeline_recovery", source="timeline_line_orders")
+            self.add_edge(timeline_node, story_node, "timeline_targets_story", source="timeline_line_orders")
+            for source_root in entry.get("sourceRoots") or []:
+                file_node = self.add_file(source_root, kind="timeline_source_json", source="timeline_line_orders")
+                self.add_edge(timeline_node, file_node, "timeline_source_file", source="timeline_line_orders")
+
+            for line_index, line in enumerate(entry.get("lines") or []):
+                if not isinstance(line, dict):
+                    continue
+                line_id = safe_key(line.get("id"))
+                if not line_id:
+                    continue
+                line_node = self.add_node(
+                    "line",
+                    line_id,
+                    name=line_id,
+                    source="timeline_line_orders",
+                    data=self.timeline_clip_payload(line, story_key, line_index),
+                )
+                clip_data = self.timeline_clip_payload(line, story_key, line_index)
+                self.add_edge(
+                    timeline_node,
+                    line_node,
+                    "timeline_line_clip",
+                    source="timeline_line_orders",
+                    evidence=str(line_index),
+                    data=clip_data,
+                )
+                self.add_edge(
+                    story_node,
+                    line_node,
+                    "has_timeline_line",
+                    source="timeline_line_orders",
+                    evidence=str(line_index),
+                    data=clip_data,
+                )
+                self.add_timeline_clip_files(line_node, line, prefix="timeline_line")
+
+            for option_index, option in enumerate(entry.get("options") or []):
+                if not isinstance(option, dict):
+                    continue
+                self.ingest_timeline_option_clip(
+                    story_node=story_node,
+                    timeline_node=timeline_node,
+                    story_key=story_key,
+                    option=option,
+                    option_index=option_index,
+                )
+
+            option_routes = entry.get("optionRoutes") or {}
+            if isinstance(option_routes, dict):
+                for option_id, route in option_routes.items():
+                    if isinstance(route, dict):
+                        self.ingest_timeline_option_route(
+                            timeline_node=timeline_node,
+                            story_key=story_key,
+                            option_id=safe_key(option_id),
+                            route=route,
+                        )
+
+    def timeline_clip_payload(self, clip: dict[str, Any], story_key: str, index: int) -> dict[str, Any]:
+        data = {
+            "dialogKey": story_key,
+            "index": index,
+            "timeline": clip.get("timeline"),
+            "start": clip.get("start"),
+            "duration": clip.get("duration"),
+            "trackName": clip.get("trackName"),
+            "trackPathId": clip.get("trackPathId"),
+            "track": clip.get("track"),
+            "sourceFile": clip.get("sourceFile"),
+            "lineIdSource": clip.get("lineIdSource"),
+            "assetName": clip.get("assetName"),
+            "assetPathId": clip.get("assetPathId"),
+            "assetTrack": clip.get("assetTrack"),
+            "groupKey": clip.get("groupKey"),
+            "optionIndex": clip.get("optionIndex"),
+            "clipOptionIndex": clip.get("clipOptionIndex"),
+            "anchorMode": clip.get("anchorMode"),
+            "anchorLineId": clip.get("anchorLineId"),
+            "trunkId": clip.get("trunkId"),
+            "dialogId": clip.get("dialogId"),
+            "logicId": clip.get("logicId"),
+            "selectedFlag": clip.get("selectedFlag"),
+            "setGreyed": clip.get("setGreyed"),
+            "main": clip.get("main"),
+            "isChat": clip.get("isChat"),
+            "changeFinishNum": clip.get("changeFinishNum"),
+            "targetFinishNum": clip.get("targetFinishNum"),
+            "useExOptionColor": clip.get("useExOptionColor"),
+            "overrideOptionIcon": clip.get("overrideOptionIcon"),
+            "overrideOptionIconType": clip.get("overrideOptionIconType"),
+            "conditionRid": clip.get("conditionRid"),
+        }
+        return {key: value for key, value in data.items() if value not in (None, "", [], {})}
+
+    def add_timeline_clip_files(self, owner_node: str, clip: dict[str, Any], *, prefix: str) -> None:
+        track = safe_key(clip.get("track"))
+        if track:
+            track_file = self.add_file(
+                track,
+                kind=f"{prefix}_track_json",
+                source="timeline_line_orders",
+                data={"trackName": clip.get("trackName"), "trackPathId": clip.get("trackPathId")},
+            )
+            self.add_edge(
+                owner_node,
+                track_file,
+                f"{prefix}_track_file",
+                source="timeline_line_orders",
+                evidence=safe_key(clip.get("trackName")),
+            )
+        asset_track = safe_key(clip.get("assetTrack"))
+        if asset_track:
+            asset_file = self.add_file(
+                asset_track,
+                kind=f"{prefix}_asset_json",
+                source="timeline_line_orders",
+                data={"assetName": clip.get("assetName"), "assetPathId": clip.get("assetPathId")},
+            )
+            self.add_edge(
+                owner_node,
+                asset_file,
+                f"{prefix}_asset_file",
+                source="timeline_line_orders",
+                evidence=safe_key(clip.get("assetName")),
+            )
+
+    def timeline_group_key(self, story_key: str, group_key: Any) -> str:
+        return f"{story_key}#optionGroup:{safe_key(group_key)}"
+
+    def timeline_group_index(self, group_key: Any) -> Any:
+        group_text = safe_key(group_key)
+        return int(group_text) if group_text.isdigit() else group_text
+
+    def ingest_timeline_option_clip(
+        self,
+        *,
+        story_node: str,
+        timeline_node: str,
+        story_key: str,
+        option: dict[str, Any],
+        option_index: int,
+    ) -> None:
+        option_id = safe_key(option.get("id"))
+        if not option_id:
+            return
+        clip_data = self.timeline_clip_payload(option, story_key, option_index)
+        option_node = self.add_node(
+            "option",
+            option_id,
+            name=option_id,
+            source="timeline_line_orders",
+            data={"index": option.get("optionIndex"), "groupKey": option.get("groupKey"), "timeline": option.get("timeline")},
+        )
+        self.add_edge(
+            timeline_node,
+            option_node,
+            "timeline_option_clip",
+            source="timeline_line_orders",
+            evidence=str(option_index),
+            data=clip_data,
+        )
+        group_key = safe_key(option.get("groupKey"))
+        if group_key:
+            group_node = self.add_node(
+                "option_group",
+                self.timeline_group_key(story_key, group_key),
+                source="timeline_line_orders",
+                data={"g": group_key, "index": self.timeline_group_index(group_key), "after": option.get("anchorLineId")},
+            )
+            self.add_edge(story_node, group_node, "has_option_group", source="timeline_line_orders", evidence=group_key)
+            self.add_edge(timeline_node, group_node, "timeline_has_option_group", source="timeline_line_orders", evidence=group_key)
+            self.add_edge(
+                group_node,
+                option_node,
+                "has_option",
+                source="timeline_line_orders",
+                evidence=safe_key(option.get("optionIndex") if option.get("optionIndex") is not None else option_index),
+            )
+        anchor_line_id = safe_key(option.get("anchorLineId"))
+        if anchor_line_id:
+            line_node = self.add_node("line", anchor_line_id, source="timeline_line_orders")
+            self.add_edge(
+                option_node,
+                line_node,
+                "timeline_option_anchor_line",
+                source="timeline_line_orders",
+                evidence=safe_key(option.get("anchorMode")),
+                data=clip_data,
+            )
+            if group_key:
+                self.add_edge(group_node, line_node, "anchored_after_line", source="timeline_line_orders", data=clip_data)
+        self.add_timeline_clip_files(option_node, option, prefix="timeline_option")
+
+    def timeline_route_payload(self, story_key: str, option_id: str, route: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "dialogKey": story_key,
+            "optionId": option_id,
+            "source": route.get("source"),
+            "groupKey": route.get("groupKey"),
+            "optionIndex": route.get("optionIndex"),
+            "start": route.get("start"),
+            "end": route.get("end"),
+            "pathLineIds": route.get("pathLineIds") or [],
+            "skippedLineIds": route.get("skippedLineIds") or [],
+            "skipRangeCount": len(route.get("skipRanges") or []),
+            "continuationGroupKey": route.get("continuationGroupKey"),
+            "continuationOptionIds": route.get("continuationOptionIds") or [],
+        }
+
+    def ingest_timeline_option_route(
+        self,
+        *,
+        timeline_node: str,
+        story_key: str,
+        option_id: str,
+        route: dict[str, Any],
+    ) -> None:
+        if not option_id:
+            return
+        option_node = self.add_node("option", option_id, name=option_id, source="timeline_line_orders")
+        route_key = f"{story_key}:{option_id}"
+        route_data = self.timeline_route_payload(story_key, option_id, route)
+        route_node = self.add_node(
+            "timeline_option_route",
+            route_key,
+            name=option_id,
+            source="timeline_line_orders",
+            data=route_data,
+        )
+        evidence = ":".join(
+            safe_key(value)
+            for value in (route.get("source"), route.get("groupKey"), route.get("optionIndex"))
+            if safe_key(value)
+        )
+        self.add_edge(option_node, route_node, "has_timeline_route", source="timeline_line_orders", evidence=evidence, data=route_data)
+        self.add_edge(timeline_node, route_node, "timeline_has_option_route", source="timeline_line_orders", evidence=option_id)
+
+        for line_index, line_id in enumerate(route.get("pathLineIds") or []):
+            line_key = safe_key(line_id)
+            if not line_key:
+                continue
+            line_node = self.add_node("line", line_key, source="timeline_line_orders")
+            edge_data = {
+                "dialogKey": story_key,
+                "optionId": option_id,
+                "routeSource": route.get("source"),
+                "groupKey": route.get("groupKey"),
+                "optionIndex": route.get("optionIndex"),
+                "order": line_index,
+                "start": route.get("start"),
+                "end": route.get("end"),
+            }
+            self.add_edge(route_node, line_node, "timeline_route_path_line", source="timeline_line_orders", evidence=str(line_index), data=edge_data)
+            self.add_edge(option_node, line_node, "timeline_route_path_line", source="timeline_line_orders", evidence=str(line_index), data=edge_data)
+            if line_index == 0:
+                self.add_edge(option_node, line_node, "timeline_route_first_line", source="timeline_line_orders", evidence=evidence, data=edge_data)
+
+        for line_index, line_id in enumerate(route.get("skippedLineIds") or []):
+            line_key = safe_key(line_id)
+            if not line_key:
+                continue
+            line_node = self.add_node("line", line_key, source="timeline_line_orders")
+            edge_data = {
+                "dialogKey": story_key,
+                "optionId": option_id,
+                "routeSource": route.get("source"),
+                "groupKey": route.get("groupKey"),
+                "optionIndex": route.get("optionIndex"),
+                "skippedOrder": line_index,
+                "start": route.get("start"),
+                "end": route.get("end"),
+            }
+            self.add_edge(route_node, line_node, "timeline_route_skips_line", source="timeline_line_orders", evidence=str(line_index), data=edge_data)
+            self.add_edge(option_node, line_node, "timeline_route_skips_line", source="timeline_line_orders", evidence=str(line_index), data=edge_data)
+
+        for continuation_index, continuation_id in enumerate(route.get("continuationOptionIds") or []):
+            continuation_key = safe_key(continuation_id)
+            if not continuation_key:
+                continue
+            continuation_node = self.add_node("option", continuation_key, source="timeline_line_orders")
+            edge_data = {
+                "dialogKey": story_key,
+                "optionId": option_id,
+                "continuationGroupKey": route.get("continuationGroupKey"),
+                "order": continuation_index,
+            }
+            self.add_edge(
+                route_node,
+                continuation_node,
+                "timeline_route_continues_to_option",
+                source="timeline_line_orders",
+                evidence=str(continuation_index),
+                data=edge_data,
+            )
+            self.add_edge(
+                option_node,
+                continuation_node,
+                "timeline_route_continues_to_option",
+                source="timeline_line_orders",
+                evidence=str(continuation_index),
+                data=edge_data,
+            )
+
+        for jump_index, jump in enumerate(route.get("skipRanges") or []):
+            if isinstance(jump, dict):
+                self.ingest_runtime_jump_clip(
+                    option_node=option_node,
+                    route_node=route_node,
+                    story_key=story_key,
+                    option_id=option_id,
+                    route=route,
+                    jump=jump,
+                    jump_index=jump_index,
+                )
+
+    def ingest_runtime_jump_clip(
+        self,
+        *,
+        option_node: str,
+        route_node: str,
+        story_key: str,
+        option_id: str,
+        route: dict[str, Any],
+        jump: dict[str, Any],
+        jump_index: int,
+    ) -> None:
+        jump_key = safe_key(jump.get("assetTrack") or jump.get("track"))
+        if not jump_key:
+            jump_key = f"{story_key}:{option_id}:runtimeJump:{jump_index}:{jump.get('start')}:{jump.get('end')}"
+        jump_data = {
+            "dialogKey": story_key,
+            "optionId": option_id,
+            "routeSource": route.get("source"),
+            "groupKey": route.get("groupKey"),
+            "optionIndex": route.get("optionIndex"),
+            "start": jump.get("start"),
+            "end": jump.get("end"),
+            "duration": jump.get("duration"),
+            "trackName": jump.get("trackName"),
+            "displayName": jump.get("displayName"),
+            "track": jump.get("track"),
+            "assetTrack": jump.get("assetTrack"),
+        }
+        jump_node = self.add_node(
+            "runtime_jump_clip",
+            jump_key,
+            name=Path(jump_key).stem,
+            source="timeline_line_orders",
+            path=safe_key(jump.get("assetTrack") or jump.get("track")),
+            data=jump_data,
+        )
+        self.add_edge(route_node, jump_node, "route_uses_runtime_jump", source="timeline_line_orders", evidence=str(jump_index), data=jump_data)
+        self.add_edge(option_node, jump_node, "timeline_route_runtime_jump", source="timeline_line_orders", evidence=str(jump_index), data=jump_data)
+        self.add_timeline_clip_files(jump_node, jump, prefix="runtime_jump")
 
     def ingest_story_source_links(self) -> None:
         path = EXPORT_ROOT / "recovered" / "story_source_links.json"
@@ -1338,10 +1835,13 @@ QUERY_KIND_PRIORITY = {
     "option_group": 1,
     "option": 2,
     "line": 3,
-    "mission": 4,
-    "actor": 5,
-    "audio": 6,
-    "file": 7,
+    "timeline": 4,
+    "timeline_option_route": 5,
+    "runtime_jump_clip": 6,
+    "mission": 7,
+    "actor": 8,
+    "audio": 9,
+    "file": 10,
 }
 
 NODE_ID_PREFIXES = (
@@ -1353,6 +1853,9 @@ NODE_ID_PREFIXES = (
     "actor",
     "audio",
     "video",
+    "timeline",
+    "timeline_option_route",
+    "runtime_jump_clip",
     "file",
     "table_row",
 )
@@ -1365,6 +1868,27 @@ OPTION_BRANCH_EDGE_KINDS = (
     "option_path_story",
     "option_merge_line",
     "option_enters_story",
+    "has_timeline_route",
+    "timeline_option_anchor_line",
+    "timeline_route_first_line",
+    "timeline_route_path_line",
+    "timeline_route_skips_line",
+    "timeline_route_continues_to_option",
+    "timeline_route_runtime_jump",
+)
+
+ISSUE_EVIDENCE_EDGE_KINDS = (
+    "option_first_line",
+    "option_path_line",
+    "option_merge_line",
+    "has_timeline_route",
+    "timeline_option_anchor_line",
+    "timeline_option_clip",
+    "timeline_route_first_line",
+    "timeline_route_path_line",
+    "timeline_route_skips_line",
+    "timeline_route_continues_to_option",
+    "timeline_route_runtime_jump",
 )
 
 
@@ -1575,6 +2099,87 @@ def story_arrangement(db_path: Path, story_key: str, *, limit_lines: int = 0) ->
         story_row = conn.execute("SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?", (seed,)).fetchone()
         story_data = parse_json_text(story_row["data"])
 
+        warning_rows = conn.execute(
+            """
+            SELECT edge.evidence, edge.source, edge.data AS edgeData,
+                   warning.id, warning.kind, warning.name, warning.source AS nodeSource, warning.path, warning.data
+            FROM edges edge
+            JOIN nodes warning ON warning.id = edge.dst
+            WHERE edge.src = ? AND edge.kind = 'has_recovery_warning'
+            ORDER BY edge.id
+            """,
+            (seed,),
+        ).fetchall()
+        warnings = []
+        for row in warning_rows:
+            warning_data = parse_json_text(row["data"])
+            warnings.append({
+                "id": row["id"],
+                "key": node_key(row["id"]),
+                "code": warning_data.get("code") or row["name"],
+                "reason": warning_data.get("reason"),
+                "detail": warning_data.get("detail"),
+                "groups": warning_data.get("groups") or [],
+                "optionIds": warning_data.get("optionIds") or [],
+                "lineIds": warning_data.get("lineIds") or [],
+                "source": row["source"],
+            })
+
+        timeline_rows = conn.execute(
+            """
+            SELECT edge.source AS edgeSource, edge.evidence, edge.data AS edgeData,
+                   timeline.id, timeline.kind, timeline.name, timeline.source AS nodeSource, timeline.path, timeline.data AS timelineData
+            FROM edges edge
+            JOIN nodes timeline ON timeline.id = edge.dst
+            WHERE edge.src = ? AND edge.kind = 'has_timeline_recovery'
+            ORDER BY timeline.name
+            """,
+            (seed,),
+        ).fetchall()
+        timeline_refs = []
+        timeline_lines = []
+        for timeline_row in timeline_rows:
+            timeline_ref = compact_node_ref(
+                {
+                    "id": timeline_row["id"],
+                    "kind": timeline_row["kind"],
+                    "name": timeline_row["name"],
+                    "path": timeline_row["path"],
+                    "data": timeline_row["timelineData"],
+                }
+            )
+            if timeline_row["edgeSource"]:
+                timeline_ref["source"] = timeline_row["edgeSource"]
+            timeline_refs.append(timeline_ref)
+
+            clip_rows = conn.execute(
+                """
+                SELECT edge.evidence, edge.source, edge.data,
+                       line.id, line.kind, line.name, line.source AS nodeSource, line.path, line.data AS lineData
+                FROM edges edge
+                JOIN nodes line ON line.id = edge.dst
+                WHERE edge.src = ? AND edge.kind = 'timeline_line_clip'
+                ORDER BY CAST(edge.evidence AS INTEGER), edge.id
+                """,
+                (timeline_row["id"],),
+            ).fetchall()
+            for clip_row in clip_rows:
+                line_ref = compact_node_ref(
+                    {
+                        "id": clip_row["id"],
+                        "kind": clip_row["kind"],
+                        "name": clip_row["name"],
+                        "path": clip_row["path"],
+                        "data": clip_row["lineData"],
+                    },
+                    clip_row,
+                )
+                line_ref["timeline"] = timeline_row["name"]
+                line_ref["order"] = int(clip_row["evidence"]) if safe_key(clip_row["evidence"]).isdigit() else len(timeline_lines)
+                timeline_lines.append(line_ref)
+        if limit_lines > 0:
+            timeline_lines = timeline_lines[:limit_lines]
+
         line_rows = conn.execute(
             """
             SELECT edge.evidence, edge.source, edge.data AS edgeData,
@@ -1596,10 +2201,12 @@ def story_arrangement(db_path: Path, story_key: str, *, limit_lines: int = 0) ->
 
         group_rows = conn.execute(
             """
-            SELECT group_node.id, group_node.kind, group_node.name, group_node.source, group_node.path, group_node.data
+            SELECT group_node.id, group_node.kind, group_node.name, group_node.source, group_node.path, group_node.data,
+                   MIN(edge.id) AS firstEdgeId
             FROM edges edge
             JOIN nodes group_node ON group_node.id = edge.dst
             WHERE edge.src = ? AND edge.kind = 'has_option_group'
+            GROUP BY group_node.id, group_node.kind, group_node.name, group_node.source, group_node.path, group_node.data
             ORDER BY group_node.name
             """,
             (seed,),
@@ -1620,11 +2227,13 @@ def story_arrangement(db_path: Path, story_key: str, *, limit_lines: int = 0) ->
             }
             option_rows = conn.execute(
                 """
-                SELECT option_node.id, option_node.kind, option_node.name, option_node.source, option_node.path, option_node.data
+                SELECT option_node.id, option_node.kind, option_node.name, option_node.source, option_node.path, option_node.data,
+                       MIN(edge.id) AS firstEdgeId
                 FROM edges edge
                 JOIN nodes option_node ON option_node.id = edge.dst
                 WHERE edge.src = ? AND edge.kind = 'has_option'
-                ORDER BY edge.id
+                GROUP BY option_node.id, option_node.kind, option_node.name, option_node.source, option_node.path, option_node.data
+                ORDER BY firstEdgeId
                 """,
                 (group_row["id"],),
             ).fetchall()
@@ -1678,7 +2287,133 @@ def story_arrangement(db_path: Path, story_key: str, *, limit_lines: int = 0) ->
                 "preview": story_data.get("preview"),
             },
             "lines": lines,
+            "warnings": warnings,
+            "timelineRecovery": {
+                "timelines": timeline_refs,
+                "lines": timeline_lines,
+            },
             "optionGroups": groups,
+        }
+
+
+def recovery_issues(db_path: Path, *, code: str = "", limit: int = 40) -> dict[str, Any]:
+    edge_placeholders = ",".join("?" for _ in ISSUE_EVIDENCE_EDGE_KINDS)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        total_count = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM edges edge
+            JOIN nodes warning ON warning.id = edge.dst
+            WHERE edge.kind = 'has_recovery_warning'
+              AND (? = '' OR warning.name = ?)
+            """,
+            (code, code),
+        ).fetchone()[0]
+        rows = conn.execute(
+            """
+            SELECT story.id AS storyNode, story.name AS storyKey, story.data AS storyData,
+                   warning.id AS warningNode, warning.name AS warningCode, warning.data AS warningData
+            FROM edges edge
+            JOIN nodes story ON story.id = edge.src
+            JOIN nodes warning ON warning.id = edge.dst
+            WHERE edge.kind = 'has_recovery_warning'
+              AND (? = '' OR warning.name = ?)
+            ORDER BY story.name, warning.name
+            LIMIT ?
+            """,
+            (code, code, limit),
+        ).fetchall()
+        issues = []
+        for row in rows:
+            story_data = parse_json_text(row["storyData"])
+            warning_data = parse_json_text(row["warningData"])
+            option_ids = _unique_preserve([
+                safe_key(option_id)
+                for option_id in warning_data.get("optionIds") or []
+                if safe_key(option_id)
+            ])
+            line_ids = _unique_preserve([
+                safe_key(line_id)
+                for line_id in warning_data.get("lineIds") or []
+                if safe_key(line_id)
+            ])
+            group_ids: list[Any] = []
+            for group in warning_data.get("groups") or []:
+                if not isinstance(group, dict):
+                    continue
+                group_ids.append(group.get("group"))
+                for option_id in group.get("optionIds") or []:
+                    option_key = safe_key(option_id)
+                    if option_key and option_key not in option_ids:
+                        option_ids.append(option_key)
+                for line_id in group.get("candidateLineIds") or []:
+                    line_key = safe_key(line_id)
+                    if line_key and line_key not in line_ids:
+                        line_ids.append(line_key)
+                common_line = safe_key(group.get("commonContinuationLineId"))
+                if common_line and common_line not in line_ids:
+                    line_ids.append(common_line)
+
+            evidence_counts: Counter[str] = Counter()
+            evidence_samples: dict[str, list[dict[str, Any]]] = defaultdict(list)
+            for option_id in option_ids:
+                option_node = f"option:{option_id}"
+                evidence_rows = conn.execute(
+                    f"""
+                    SELECT edge.kind, edge.source, edge.evidence,
+                           src.id AS srcId, src.kind AS srcKind, src.name AS srcName,
+                           dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName
+                    FROM edges edge
+                    JOIN nodes src ON src.id = edge.src
+                    JOIN nodes dst ON dst.id = edge.dst
+                    WHERE (edge.src = ? OR edge.dst = ?)
+                      AND edge.kind IN ({edge_placeholders})
+                    ORDER BY edge.kind, edge.id
+                    """,
+                    (option_node, option_node, *ISSUE_EVIDENCE_EDGE_KINDS),
+                ).fetchall()
+                for evidence_row in evidence_rows:
+                    edge_kind = evidence_row["kind"]
+                    evidence_counts[edge_kind] += 1
+                    samples = evidence_samples[edge_kind]
+                    if len(samples) < 5:
+                        if evidence_row["srcId"] == option_node:
+                            target_id = evidence_row["dstId"]
+                            target_kind = evidence_row["dstKind"]
+                        else:
+                            target_id = evidence_row["srcId"]
+                            target_kind = evidence_row["srcKind"]
+                        samples.append({
+                            "optionId": option_id,
+                            "target": node_key(target_id),
+                            "targetKind": target_kind,
+                            "source": evidence_row["source"],
+                            "evidence": evidence_row["evidence"],
+                        })
+
+            timeline_count = conn.execute(
+                "SELECT COUNT(*) FROM edges WHERE src = ? AND kind = 'has_timeline_recovery'",
+                (row["storyNode"],),
+            ).fetchone()[0]
+            issues.append({
+                "storyKey": row["storyKey"],
+                "mission": story_data.get("mission"),
+                "kind": story_data.get("kind"),
+                "warning": warning_data.get("code") or row["warningCode"],
+                "reason": warning_data.get("reason"),
+                "groupIds": group_ids,
+                "optionIds": option_ids,
+                "lineIds": line_ids,
+                "timelineRecoveryCount": timeline_count,
+                "evidenceCounts": dict(evidence_counts),
+                "evidenceSamples": dict(evidence_samples),
+            })
+        return {
+            "code": code,
+            "totalCount": total_count,
+            "returned": len(issues),
+            "issues": issues,
         }
 
 
@@ -1704,6 +2439,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     story.add_argument("story_key")
     story.add_argument("--db", type=Path, default=DEFAULT_DB)
     story.add_argument("--limit-lines", type=int, default=0, help="Only include the first N ordered lines; 0 includes all.")
+
+    issues = sub.add_parser("issues", help="List WebUI recovery warnings with nearby graph evidence")
+    issues.add_argument("--db", type=Path, default=DEFAULT_DB)
+    issues.add_argument("--code", default="", help="Optional warning code filter, such as inferredOptionResponse.")
+    issues.add_argument("--limit", type=int, default=40)
 
     return parser.parse_args(argv)
 
@@ -1737,6 +2477,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "story":
         result = story_arrangement(args.db, args.story_key, limit_lines=args.limit_lines)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "issues":
+        result = recovery_issues(args.db, code=args.code, limit=args.limit)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     raise SystemExit(f"Unknown command: {args.command}")

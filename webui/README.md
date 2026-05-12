@@ -19,7 +19,9 @@ from `webui/data/` and keeps heavyweight recovery work in the Python builders.
 
 - `Story`: language switch, search, filters, conversation detail, summaries,
   option groups, line-order notes, raw source traces, and inline media
-  rendering for SNS/content images.
+  rendering for SNS/content images. Narrative video blocks show the best
+  playable active-gender/source variant for each distinct video, without
+  counting hidden duplicate format/source variants as extra videos.
 - `Reference`: raw localized rows from `data/lang/<code>/reference/`, with
   source/table filters and on-demand table loading.
 - `Updates`: latest change summary from `data/updates/latest.json`, generated

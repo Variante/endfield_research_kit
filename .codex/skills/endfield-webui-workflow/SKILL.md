@@ -40,6 +40,46 @@ because it commonly takes about 30 minutes:
 timeout_ms >= 2700000
 ```
 
+## Recovery Investigation Commands
+
+Use these for story recovery quality work before changing `build_story.py`
+rules:
+
+```bat
+python tools\endfield_source_graph.py story dlg_c17m1_5 --limit-lines 8
+python tools\endfield_source_graph.py issues --code inferredOptionResponse --limit 20
+python scripts\webui\build_runtime_jump_option_route_audit.py --language CN --story dlg_e1m1_5 --group 3
+python scripts\webui\build_option_playable_semantics_audit.py --language CN --only-interesting
+python scripts\webui\build_option_logic_id_audit.py --language CN
+python scripts\webui\build_dialog_tree_option_route_audit.py --language CN
+python scripts\webui\build_timeline_option_flow_audit.py --language CN
+```
+
+`build_option_playable_semantics_audit.py` checks remaining inferred option
+responses against decoded `DialogOptionPlayableAsset` fields. The most useful
+current queue is groups with non-default `logicId`; default-only rows and
+clip-placement-only rows should be treated as lower-signal until new evidence
+appears.
+
+`build_option_logic_id_audit.py` checks whether those `logicId` values have
+strong external references in mission/level-script sources. Same-mission
+matches would be promising; table/config-only matches are weak unless another
+source links them to the dialog.
+
+`build_dialog_tree_option_route_audit.py` checks the unresolved option-response
+queue against decoded AnimeStudio DialogTree routes, scene links, fragments,
+and cinematic wrappers. Current CN results show most remaining cases are
+cinematic-tree-to-Timeline only, so the next high-value work is Timeline/runtime
+option target decoding rather than looser DialogTree promotion.
+
+`build_timeline_option_flow_audit.py` checks unresolved option responses
+against raw Timeline trunk clips. Current CN results show one promotable
+`trunkClipOptionIndexRoute` case (`dlg_c28m3_10` group 1) and many default raw
+`optionIndex=0` adjacent layouts that should not be promoted without new
+runtime evidence. It resolves `misc_dlg_*` WebUI keys back to their underlying
+`dlg_*` Timeline entries, so those scenes should not be treated as missing
+Timeline data.
+
 ## Frontend File Map
 
 - `webui/index.html`: shell and tab containers

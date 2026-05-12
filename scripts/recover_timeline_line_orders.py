@@ -481,12 +481,36 @@ def option_entries_from_payload(payload) -> list[dict]:
             option_id = str(value.get("_optionId") or "").strip()
             if looks_like_dialog_option_id(option_id) and option_id not in seen:
                 seen.add(option_id)
-                entries.append({
+                entry = {
                     "id": option_id,
                     "groupKey": option_group_key(option_id),
                     "index": as_int(value.get("index")),
                     "optionIndex": as_int(value.get("optionIndex")),
-                })
+                }
+                for field in ("trunkId", "dialogId", "overrideOptionIconType"):
+                    field_value = str(value.get(field) or "").strip()
+                    if field_value:
+                        entry[field] = field_value
+                for field in (
+                    "logicId",
+                    "selectedFlag",
+                    "setGreyed",
+                    "main",
+                    "isChat",
+                    "changeFinishNum",
+                    "targetFinishNum",
+                    "useExOptionColor",
+                    "overrideOptionIcon",
+                ):
+                    field_value = as_int(value.get(field))
+                    if field_value is not None:
+                        entry[field] = field_value
+                condition_data = value.get("conditionData")
+                if isinstance(condition_data, dict):
+                    condition_rid = as_int(condition_data.get("rid"))
+                    if condition_rid is not None:
+                        entry["conditionRid"] = condition_rid
+                entries.append(entry)
             for child in value.values():
                 visit(child)
         elif isinstance(value, list):
@@ -1055,6 +1079,9 @@ def collect_timeline_signals(
                     row["assetPathId"] = line_identity["assetPathId"]
                     row["assetName"] = line_identity.get("assetName") or ""
                     row["assetTrack"] = line_identity.get("assetTrack") or ""
+                clip_option_index = as_int(clip.get("optionIndex"))
+                if clip_option_index is not None:
+                    row["clipOptionIndex"] = clip_option_index
                 display_line_id = line_identity.get("displayLineId") or ""
                 if display_line_id and display_line_id != line_id:
                     row["displayLineId"] = display_line_id
@@ -1410,11 +1437,19 @@ def timeline_entry_has_line_sources(entry: dict) -> bool:
     )
 
 
+def timeline_entry_has_line_clip_option_indices(entry: dict) -> bool:
+    return any(
+        isinstance(line, dict) and isinstance(line.get("clipOptionIndex"), int)
+        for line in (entry.get("lines") or [])
+    )
+
+
 def timeline_entry_rank(entry: dict) -> tuple:
     return (
         -len(entry.get("lineIds") or []),
         0 if entry.get("optionAnchors") else 1,
         0 if timeline_entry_has_line_sources(entry) else 1,
+        0 if timeline_entry_has_line_clip_option_indices(entry) else 1,
         str(entry.get("timeline") or ""),
         str(entry.get("source") or ""),
     )

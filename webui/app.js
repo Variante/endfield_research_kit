@@ -8,6 +8,7 @@ const ROW_ITEM_H = 50;
 const OVERSCAN_PX = 200;
 const WIKI_MEDIA_MAX_IMAGES = 12;
 const WIKI_MEDIA_MAX_VIDEOS = 8;
+const NARRATIVE_VIDEO_DISPLAY_LIMIT = 4;
 // Change to "raw" to show source text with angle-bracket tags instead of rendered rich text.
 const DEFAULT_INLINE_TAG_DISPLAY_MODE = "rendered";
 var WEBUI_INLINE_TAG_DISPLAY_MODE = DEFAULT_INLINE_TAG_DISPLAY_MODE;
@@ -15,6 +16,7 @@ const INLINE_TAG_DISPLAY_MODE_STORAGE_KEY = "webui_inline_tag_mode";
 const LANGUAGE_STORAGE_KEY = "webui_lang";
 const UI_LOCALE_STORAGE_KEY = "webui_ui_locale";
 const GENDER_VARIANT_STORAGE_KEY = "webui_gender_variant";
+const DEFAULT_GENDER_VARIANT = "f";
 const FILTER_PANEL_STORAGE_KEY = "webui_filters_collapsed";
 const STORY_SPLITTER_STORAGE_KEY = "webui_story_splitter_width";
 const ASSET_SPLITTER_STORAGE_KEY = "webui_asset_splitter_width";
@@ -1153,7 +1155,13 @@ function narrativeVideoRefsForConv(conv) {
   const refs = Array.isArray(conv && conv.narrativeVideos)
     ? conv.narrativeVideos.filter((ref) => ref && ref.rel)
     : [];
-  if (!refs.length) return [];
+  return narrativeVideoSelectionForRefs(refs).refs;
+}
+
+function narrativeVideoSelectionForRefs(refs) {
+  if (!Array.isArray(refs) || !refs.length) {
+    return { refs: [], omitted: 0 };
+  }
 
   const byStem = new Map();
   for (const ref of refs) {
@@ -1163,15 +1171,26 @@ function narrativeVideoRefsForConv(conv) {
       byStem.set(key, ref);
     }
   }
-  return Array.from(byStem.values())
+  const distinctRefs = Array.from(byStem.values())
     .sort((a, b) => scoreNarrativeVideoRef(b) - scoreNarrativeVideoRef(a)
-      || String(a.name || a.rel).localeCompare(String(b.name || b.rel)))
-    .slice(0, 4);
+      || String(a.name || a.rel).localeCompare(String(b.name || b.rel)));
+  return {
+    refs: distinctRefs.slice(0, NARRATIVE_VIDEO_DISPLAY_LIMIT),
+    omitted: Math.max(0, distinctRefs.length - NARRATIVE_VIDEO_DISPLAY_LIMIT),
+  };
+}
+
+function narrativeVideoSelectionForConv(conv) {
+  const refs = Array.isArray(conv && conv.narrativeVideos)
+    ? conv.narrativeVideos.filter((ref) => ref && ref.rel)
+    : [];
+  return narrativeVideoSelectionForRefs(refs);
 }
 
 function renderNarrativeVideosBlock(conv) {
   if (!STATE.wikiVideoLookupLoaded) return null;
-  const refs = narrativeVideoRefsForConv(conv);
+  const selection = narrativeVideoSelectionForConv(conv);
+  const refs = selection.refs;
   if (!refs.length) return null;
 
   const box = document.createElement("div");
@@ -1197,8 +1216,7 @@ function renderNarrativeVideosBlock(conv) {
   }
   box.appendChild(grid);
 
-  const omitted = Math.max(0, Number(conv.narrativeVideosOmitted || 0)
-    + (Array.isArray(conv.narrativeVideos) ? conv.narrativeVideos.length - refs.length : 0));
+  const omitted = selection.omitted;
   if (omitted > 0) {
     const row = document.createElement("div");
     row.className = "summary-text narrative-video-more";
@@ -5368,7 +5386,7 @@ function normalizeGenderVariant(value) {
 }
 
 function persistGenderVariant(value) {
-  storageSet(GENDER_VARIANT_STORAGE_KEY, normalizeGenderVariant(value) || "m");
+  storageSet(GENDER_VARIANT_STORAGE_KEY, normalizeGenderVariant(value) || DEFAULT_GENDER_VARIANT);
 }
 
 function resolveStoredGenderVariant() {
@@ -5384,7 +5402,7 @@ function syncGenderVariantControl() {
 }
 
 function setGenderVariant(value, { persist = true, refresh = true } = {}) {
-  const next = normalizeGenderVariant(value) || "m";
+  const next = normalizeGenderVariant(value) || DEFAULT_GENDER_VARIANT;
   STATE.genderVariant = next;
   if (persist) persistGenderVariant(next);
   syncGenderVariantControl();
@@ -5479,14 +5497,14 @@ function resolveGenderVariant(preferred = "") {
     return stored;
   }
 
-  const fallback = normalizeGenderVariant(preferred);
+  const fallback = normalizeGenderVariant(DEFAULT_GENDER_VARIANT) || normalizeGenderVariant(preferred);
   if (fallback) {
     STATE.genderVariant = fallback;
     return fallback;
   }
 
-  STATE.genderVariant = "m";
-  return "m";
+  STATE.genderVariant = "f";
+  return "f";
 }
 
 function hasInlineRichTextTag(text) {
@@ -5568,7 +5586,7 @@ function renderGenderVariantHtml(text, q) {
 
 function syncGenderToggle(node) {
   if (!node) return;
-  const active = resolveGenderVariant(node.dataset.genderInitial || node.dataset.genderActive || "m");
+  const active = resolveGenderVariant(node.dataset.genderInitial || node.dataset.genderActive || DEFAULT_GENDER_VARIANT);
   const encoded = active === "f" ? node.dataset.genderTextF : node.dataset.genderTextM;
   node.dataset.genderActive = active;
   node.setAttribute("aria-pressed", active === "f" ? "true" : "false");
@@ -5583,7 +5601,7 @@ function syncAllGenderToggles(root = $("#conv-lines")) {
 }
 
 function toggleGenderToggle(node) {
-  const active = resolveGenderVariant(node && (node.dataset.genderInitial || node.dataset.genderActive || "m"));
+  const active = resolveGenderVariant(node && (node.dataset.genderInitial || node.dataset.genderActive || DEFAULT_GENDER_VARIANT));
   setGenderVariant(active === "f" ? "m" : "f");
 }
 

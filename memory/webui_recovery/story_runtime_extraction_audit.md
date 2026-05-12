@@ -121,6 +121,184 @@ Current CN gains from this pass:
 - Strict recovery report improvement: flagged scenes dropped from 98 to 93,
   and inferred option-response scenes dropped from 65 to 60.
 
+On 2026-05-12 `tools/endfield_source_graph.py` was updated to ingest the raw
+Timeline recovery file directly. This does not change WebUI conv output by
+itself, but it improves recovery investigation quality: source graph `story`
+and `query` commands can now show raw Timeline line clip order, option clip
+anchors, Runtime Jump route path lines, skipped lines, continuation options,
+runtime jump clip nodes, and the extracted JSON files behind each clip.
+Use this to audit examples before promoting another automatic WebUI rule.
+The graph also ingests WebUI recovery warnings, so unresolved queues can be
+listed with nearby evidence:
+
+```bat
+python tools\endfield_source_graph.py issues --code inferredOptionResponse --limit 20
+```
+
+That command is the fastest next-entry point for separating cases with only
+Timeline clip placement from cases that have stronger route/skip evidence.
+
+After widening `DialogOptionPlayableAsset` extraction, a quick graph aggregate
+over `inferredOptionResponse` warnings found:
+
+- `63` warning records have raw `timeline_option_clip` evidence.
+- `19` warning records also have `timeline_option_anchor_line` evidence.
+- `0` warning records have `has_timeline_route`,
+  `timeline_route_skips_line`, or `timeline_route_runtime_jump` evidence.
+
+So the current unresolved option-response queue is not secretly backed by
+Runtime Jump routes. The next likely recovery source is deeper interpretation
+of option clip fields (`logicId`, finish-number fields, condition references,
+or linked dialog tree/cinematic state), not looser skip-window promotion.
+
+`scripts/webui/build_option_playable_semantics_audit.py` was added as the
+follow-up audit for that queue:
+
+```bat
+python scripts\webui\build_option_playable_semantics_audit.py --language CN
+python scripts\webui\build_option_playable_semantics_audit.py --language CN --only-interesting
+python scripts\webui\build_option_playable_semantics_audit.py --language CN --story dlg_c17m1_5 --group 3
+```
+
+Current CN result:
+
+- `107` remaining inferred response groups audited.
+- `0` decoded option rows expose explicit `trunkId` or `dialogId` target
+  fields.
+- `targetFinishNum` only appears as default-like `-1` or `0`, with
+  `changeFinishNum=0`, so it is not branch-target evidence yet.
+- `conditionRid` is `-2` in all decoded rows.
+- `77` groups have nonzero `logicId` values and are the only currently
+  interesting semantic queue. Across those groups, `157` best option rows have
+  nonzero `logicId` values.
+- `30` groups have only decoded default fields.
+- `0` groups have Timeline clip placement only after `misc_dlg_*` aliases are
+  resolved to the underlying `dlg_*` Timeline entries.
+- `46` of the `77` `logicId` groups use contiguous nonzero values, which makes
+  `logicId` look more like option-state numbering than a target line id.
+- Only `2` nonzero best-row `logicId` values equal the candidate line suffix.
+- `9` same-story `logicId` values repeat with different candidate lines
+  (`dlg_e1m10_5`, `dlg_e6m1_10`, `dlg_e6m1_12`, `dlg_e6m3_10`, and
+  `dlg_f1m9d4_1`), which is strong negative evidence against treating
+  `logicId` as a direct branch target.
+
+Recovery gain: this pass does not promote more line order automatically, but it
+removes two tempting false leads (`trunkId`/`dialogId` target fields and
+finish-number fields). It also shows that `logicId` is probably not a direct
+line target. The next high-value search is where `logicId` is consumed as
+option state, completion, or UI gating, and whether that state can explain
+repeat option prompts rather than branch entry lines.
+
+`scripts/webui/build_option_logic_id_audit.py` was then added to scan those
+`logicId` values against non-Timeline game-data sources:
+
+```bat
+python scripts\webui\build_option_logic_id_audit.py --language CN
+python scripts\webui\build_option_logic_id_audit.py --language CN --story dlg_c17m1_5 --group 3
+python scripts\webui\build_option_logic_id_audit.py --language CN --story dlg_c28m3_23 --group 1
+```
+
+Current CN result:
+
+- `77` logic-bearing inferred response groups.
+- `157` logic-bearing option rows.
+- `117` unique nonzero option `logicId` values.
+- `1,464` JSON files parsed from structured tables, `MissionRuntimeAsset`,
+  `LevelScriptData`, `LevelScriptTemplateData`, and gameplay config.
+- `0` same-mission exact matches in `MissionRuntimeAsset`, `LevelScriptData`,
+  or `LevelScriptTemplateData`.
+- `7` exact external matches total, all weak table/config matches:
+  `logicId` `2`/`3` in `ScriptTaskExtraInfoTable` tracking entities and
+  `31`/`147` in `MapMarkInsTable` camp map marks.
+- Dialog Lua has `0` `logicId` consumer hits. It exposes option UI fields such
+  as `optionId`, text/icon data, and `setGreyed`, but not the Timeline option
+  `logicId`.
+
+Recovery gain: the `logicId` branch-target hypothesis is now very unlikely for
+the unresolved option-response queue. Future recovery work should prioritize
+new source families that can expose authored branch links directly: dialog tree
+asset extraction, PlayableDirector track binding semantics, or runtime method
+body recovery for option selection flow.
+
+`scripts/webui/build_dialog_tree_option_route_audit.py` was added to answer
+the next branch-source question: do remaining inferred option responses already
+have authored DialogTree route evidence that `build_story.py` failed to
+promote?
+
+```bat
+python scripts\webui\build_dialog_tree_option_route_audit.py --language CN
+python scripts\webui\build_dialog_tree_option_route_audit.py --language CN --story dlg_c17m1_5 --group 3
+python scripts\webui\build_dialog_tree_option_route_audit.py --language CN --story dlg_e3m6_11 --group 4
+```
+
+Current CN result:
+
+- `107` remaining inferred response groups audited.
+- `0` groups have clean per-option authored DialogTree routes to promote.
+- `98` groups are `cinematicTreeTimelineOnly`: the DialogTree source exists,
+  but it is a cinematic wrapper that launches a `dlgtl_*` Timeline; option
+  route information must come from Timeline/runtime selection flow.
+- `6` groups have no matching DialogTree source (`sourceMissing`), currently
+  all in `misc_dlg_*` scenes.
+- `1` group (`dlg_e2m5_3` group 1) has tree files but no decoded option route
+  signal, so it is the only current DialogTree-decoder follow-up.
+- `2` groups (`dlg_e3m6_11` group 4 and `dlg_e6m2_7` group 1) have authored
+  shared-route evidence. Both options route into the same authored path, so
+  they should not be treated as confirmed per-option branches.
+
+Recovery gain: this closes the obvious AnimeStudio DialogTree promotion path
+for the unresolved queue. The biggest remaining quality lever is deeper
+Timeline/runtime option-target decoding, not broader DialogTree inference.
+
+AnimeStudio CLI was also patched so future MonoBehaviour JSON exports include
+resolved MonoScript metadata under `$animestudio` (`scriptFullName`,
+`scriptAssemblyName`, and script PPtr ids when resolvable). This is an export
+quality improvement for future audits: it makes Timeline assets easier to map
+back to runtime classes, but it does not change current WebUI recovery until
+the local game data is re-exported.
+
+`scripts/webui/build_timeline_option_flow_audit.py` was then added for the
+remaining Timeline-only option response queue:
+
+```bat
+python scripts\webui\build_timeline_option_flow_audit.py --language CN
+python scripts\webui\build_timeline_option_flow_audit.py --language CN --story dlg_c28m3_10 --group 1
+```
+
+Current CN result:
+
+- `107` remaining inferred response groups audited.
+- `106` groups have adjacent candidate response clips whose raw trunk
+  `optionIndex` is only `0`; these are default clip values, not route evidence.
+- `0` groups remain Timeline-layout unresolved after the audit was patched to
+  resolve `misc_dlg_*` WebUI story keys to their underlying `dlg_*` Timeline
+  entries.
+- `1` group has a promotable raw trunk clip mapping:
+  `dlg_c28m3_10` group 1. The Timeline order is `_025`, then `_023`, but the
+  candidate clips carry raw `clipOptionIndex` values `2`, then `1`, matching
+  option indices `1` and `2` after reordering.
+
+Recovery gain: `scripts/recover_timeline_line_orders.py` now preserves line
+clip `clipOptionIndex`, and `scripts/webui/build_story.py` uses it only when
+the candidate line indices are complete, distinct, and exactly match the
+group's option indices. After the CN rebuild, `dlg_c28m3_10` group 1 maps:
+
+- `option_dlg_c28m3_10_1_001` -> `dlg_c28m3_10_023`
+- `option_dlg_c28m3_10_1_002` -> `dlg_c28m3_10_025`
+
+The same audit is also negative evidence: most remaining inferred option
+responses do not expose useful per-option target data through raw trunk clip
+`optionIndex`, so future work should focus on PlayableDirector binding
+semantics or runtime option-selection method bodies.
+
+The option-playable semantics audit now uses the same `misc_dlg_*` to `dlg_*`
+Timeline aliasing. That changes the decoded-field totals to `77`
+`logicIdOnly` groups and `30` `defaultOptionFieldsOnly` groups; explicit
+target fields remain at `0`. The source graph was refreshed with this rebuilt
+WebUI data, and option branch-risk edges now preserve `candidateMapping` plus
+`candidateLineClipOptionIndex` evidence, so `dlg_c28m3_10` graph queries show
+why option `_001` maps to line `_023` and option `_002` maps to `_025`.
+
 Example: `dlg_e1m1_5` group 1 is no longer an inferred option response.
 Runtime Jump Track skip windows recover:
 

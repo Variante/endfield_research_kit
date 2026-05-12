@@ -3310,6 +3310,10 @@ def _normalize_dialog_timeline_lines(value, line_ids: list[str]) -> list[dict]:
         actor = str(raw.get("actor") or "").strip()
         if actor:
             record["actor"] = actor
+        for field in ("clipOptionIndex",):
+            value_for_field = raw.get(field)
+            if isinstance(value_for_field, int):
+                record[field] = value_for_field
         out.append(record)
     out.sort(key=lambda item: (item["start"], item["id"]))
     return out
@@ -3361,11 +3365,29 @@ def _normalize_dialog_timeline_option_rows(value) -> list[dict]:
             "trackName",
             "assetName",
             "assetTrack",
+            "trunkId",
+            "dialogId",
+            "overrideOptionIconType",
         ):
             value_for_field = str(raw.get(field) or "").strip()
             if value_for_field:
                 record[field] = value_for_field
-        for field in ("index", "optionIndex", "clipOptionIndex", "assetPathId"):
+        for field in (
+            "index",
+            "optionIndex",
+            "clipOptionIndex",
+            "assetPathId",
+            "logicId",
+            "selectedFlag",
+            "setGreyed",
+            "main",
+            "isChat",
+            "changeFinishNum",
+            "targetFinishNum",
+            "useExOptionColor",
+            "overrideOptionIcon",
+            "conditionRid",
+        ):
             value_for_field = raw.get(field)
             if isinstance(value_for_field, int):
                 record[field] = value_for_field
@@ -7136,6 +7158,7 @@ def build_language_bundle(
         timeline_entries: list[dict] = []
         timeline_after: dict[str, str] = {}
         timeline_after_line_ids: dict[str, list[str]] = {}
+        timeline_after_line_timings: dict[str, dict[str, dict]] = {}
         timeline_option_rows: dict[str, list[dict]] = defaultdict(list)
         timeline_option_routes: dict[str, list[dict]] = defaultdict(list)
         timeline_pre: set[str] = set()
@@ -7183,6 +7206,11 @@ def build_language_bundle(
                     for line_id in (timeline.get("lineIds") or [])
                     if str(line_id).strip()
                 ]
+                timeline_line_timing_by_id = {
+                    str(row.get("id") or ""): row
+                    for row in (timeline.get("lineTimings") or [])
+                    if isinstance(row, dict) and str(row.get("id") or "").strip()
+                }
                 if source_key:
                     timeline_sources.add(source_key)
                 if file_path:
@@ -7210,6 +7238,7 @@ def build_language_bundle(
                         timeline_after.setdefault(opt_id, after_id)
                         if timeline_line_ids and opt_id not in timeline_after_line_ids:
                             timeline_after_line_ids[opt_id] = timeline_line_ids
+                            timeline_after_line_timings[opt_id] = timeline_line_timing_by_id
                     elif anchor.get("position") == "pre":
                         timeline_authored_option_ids.add(opt_id)
                         timeline_pre.add(opt_id)
@@ -7564,10 +7593,12 @@ def build_language_bundle(
                             "source": "dialogTree",
                         }
             timeline_line_ids: list[str] = []
+            timeline_line_timing_by_id: dict[str, dict] = {}
             for opt_id in group_opt_ids:
                 candidate_order = timeline_after_line_ids.get(opt_id) or []
                 if after_id in candidate_order:
                     timeline_line_ids = candidate_order
+                    timeline_line_timing_by_id = timeline_after_line_timings.get(opt_id) or {}
                     break
             if not timeline_line_ids or after_id not in timeline_line_ids:
                 return {}
@@ -7585,14 +7616,56 @@ def build_language_bundle(
                     common_continuation_id = line_id
                     break
             preferred_rows = [preferred_timeline_option_row(opt_id) for opt_id in group_opt_ids]
-            return {
-                "code": "inferredFollowingLines",
-                "reason": "optionTargetsMissing",
-                "detail": (
+            option_indices = [
+                row.get("optionIndex") if isinstance(row.get("optionIndex"), int) else None
+                for row in preferred_rows
+            ]
+            candidate_clip_indices = [
+                (timeline_line_timing_by_id.get(line_id) or {}).get("clipOptionIndex")
+                for line_id in candidate_line_ids
+            ]
+            candidate_mapping = ""
+            if (
+                len(candidate_clip_indices) == len(candidate_line_ids) == len(option_indices)
+                and all(isinstance(value, int) for value in candidate_clip_indices)
+                and all(isinstance(value, int) for value in option_indices)
+                and len(set(candidate_clip_indices)) == len(candidate_clip_indices)
+                and set(candidate_clip_indices) == set(option_indices)
+            ):
+                line_id_by_clip_index = {
+                    clip_index: line_id
+                    for line_id, clip_index in zip(candidate_line_ids, candidate_clip_indices)
+                }
+                reordered_candidate_line_ids = [
+                    line_id_by_clip_index.get(option_index)
+                    for option_index in option_indices
+                ]
+                if (
+                    len(reordered_candidate_line_ids) == len(candidate_line_ids)
+                    and all(line_id in valid_line_ids for line_id in reordered_candidate_line_ids)
+                ):
+                    candidate_line_ids = [str(line_id) for line_id in reordered_candidate_line_ids]
+                    candidate_mapping = "trunkClipOptionIndex"
+                    candidate_clip_indices = [
+                        (timeline_line_timing_by_id.get(line_id) or {}).get("clipOptionIndex")
+                        for line_id in candidate_line_ids
+                    ]
+            detail = (
+                "Timeline option metadata anchors this group to a trunk line, "
+                "but the option entries do not name explicit target trunk ids; "
+                "the following line candidates are inferred from Timeline order."
+            )
+            if candidate_mapping:
+                detail = (
                     "Timeline option metadata anchors this group to a trunk line, "
                     "but the option entries do not name explicit target trunk ids; "
-                    "the following line candidates are inferred from Timeline order."
-                ),
+                    "candidate response lines are matched to options by the raw "
+                    "trunk clip optionIndex values."
+                )
+            risk = {
+                "code": "inferredFollowingLines",
+                "reason": "optionTargetsMissing",
+                "detail": detail,
                 "after": after_id,
                 "optionIds": group_opt_ids,
                 "candidateLineIds": candidate_line_ids,
@@ -7608,6 +7681,14 @@ def build_language_bundle(
                     if row.get("assetTrack")
                 ]),
             }
+            if candidate_mapping:
+                risk["candidateMapping"] = candidate_mapping
+                risk["candidateLineIdsByOption"] = {
+                    opt_id: line_id
+                    for opt_id, line_id in zip(group_opt_ids, candidate_line_ids)
+                }
+                risk["candidateLineClipOptionIndex"] = candidate_clip_indices
+            return risk
 
         def option_risk_line_ids(following_line_risk: dict, option_count: int) -> list[str]:
             candidate_line_ids = [
