@@ -1701,6 +1701,13 @@ mark { background: #5c4d1f; color: #ffe79b; padding: 0 2px; border-radius: 2px; 
 }
 
 .inline-image-tag.is-emoji {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  line-height: 1;
+  vertical-align: -0.2em;
   cursor: default;
 }
 
@@ -1713,11 +1720,17 @@ mark { background: #5c4d1f; color: #ffe79b; padding: 0 2px; border-radius: 2px; 
 }
 
 .inline-image-tag.is-emoji .inline-image-thumb {
-  width: 1.6em;
-  height: 1.6em;
+  width: 1.45em;
+  height: 1.45em;
+  border-radius: 0;
+}
+
+.inline-image-tag.is-emoji .inline-image-popover {
+  display: none !important;
 }
 
 .inline-image-tag.is-sns-image {
+  padding: 4px;
   border-radius: 6px;
   vertical-align: top;
 }
@@ -1757,6 +1770,8 @@ mark { background: #5c4d1f; color: #ffe79b; padding: 0 2px; border-radius: 2px; 
   bottom: calc(100% + 10px);
   transform: translateX(-50%);
   display: none;
+  box-sizing: border-box;
+  max-width: min(260px, calc(100vw - 24px));
   padding: 8px;
   border-radius: 8px;
   border: 1px solid var(--border);
@@ -1774,7 +1789,7 @@ mark { background: #5c4d1f; color: #ffe79b; padding: 0 2px; border-radius: 2px; 
 
 .inline-image-popover img {
   display: block;
-  max-width: min(220px, 40vw);
+  max-width: 100%;
   max-height: min(220px, 35vh);
   width: auto;
   height: auto;
@@ -1797,6 +1812,7 @@ body.inline-image-modal-open {
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
   padding: 28px;
   background: rgba(7, 10, 14, 0.76);
   backdrop-filter: blur(6px);
@@ -1807,8 +1823,11 @@ body.inline-image-modal-open {
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-width: min(94vw, 1120px);
-  max-height: 92vh;
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: min(100%, 1120px);
+  max-height: 100%;
+  min-width: 0;
   padding: 18px;
   border: 1px solid rgba(149, 177, 214, 0.28);
   border-radius: 8px;
@@ -1818,8 +1837,9 @@ body.inline-image-modal-open {
 
 .inline-image-modal-img {
   display: block;
-  max-width: calc(94vw - 64px);
-  max-height: calc(92vh - 88px);
+  max-width: 100%;
+  max-height: calc(100vh - 148px);
+  min-width: 0;
   width: auto;
   height: auto;
   object-fit: contain;

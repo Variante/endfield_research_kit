@@ -49,6 +49,11 @@ python serve.py
 
 Then open `http://127.0.0.1:8765/`.
 
+The current Story/Reference inline media behavior treats SNS emoji images such
+as `sns_emoji_*` as regular inline emoji with no popup/modal preview, while
+non-emoji SNS media such as `sns_image_*` and `sns_sticker_*` render at normal
+image proportions with bounded hover/modal previews.
+
 `export.bat` is the normal browser-data refresh. It runs:
 
 - `scripts/export_full_from_game.py --skip-raw-vfs --skip-source-inventory`

@@ -5194,7 +5194,35 @@ function extractInlineImageIdFromTag(rawTag) {
 function isInlineEmojiImageId(imageId, asset = null) {
   const normalized = normalizeInlineImageId(imageId);
   const rel = String(asset && asset.rel ? asset.rel : "").toLowerCase();
-  return normalized.includes("emoji") || normalized.includes("emoiji") || rel.includes("emoji") || rel.includes("emoiji");
+  const stem = String(asset && asset.stem ? asset.stem : "").toLowerCase();
+  return (
+    normalized.includes("emoji")
+    || normalized.includes("emoiji")
+    || stem.includes("emoji")
+    || stem.includes("emoiji")
+    || rel.includes("emoji")
+    || rel.includes("emoiji")
+  );
+}
+
+function isInlineSnsMediaImageId(rawId, normalized, asset = null) {
+  if (isInlineEmojiImageId(normalized || rawId, asset)) return false;
+
+  const raw = cleanInlineImageIdValue(rawId).replace(/\\/g, "/").toLowerCase();
+  const stem = String(asset && asset.stem ? asset.stem : normalizeInlineImageId(normalized || rawId)).toLowerCase();
+  const rel = String(asset && asset.rel ? asset.rel : "").toLowerCase();
+  return (
+    raw.startsWith("sns_")
+    || raw.startsWith("cg_image_")
+    || stem.startsWith("sns_")
+    || stem.startsWith("cg_image_")
+    || stem.startsWith("deco_sns_tweet_decorate_")
+    || stem.startsWith("bg_sns_tweet_decorate_")
+    || rel.includes("/sns_")
+    || rel.includes("/cg_image_")
+    || rel.includes("/deco_sns_tweet_decorate_")
+    || rel.includes("/bg_sns_tweet_decorate_")
+  );
 }
 
 function isInlineContentImageId(rawId, normalized, asset = null) {
@@ -5216,14 +5244,17 @@ function renderInlineImageTagHtml(imageId, q, rawTag = "") {
   const classes = ["inline-image-tag"];
   const attrs = [`data-inline-image-id="${escapeHtml(normalized || rawId)}"`];
   const src = asset ? exportedAssetHref(asset.rel) : "";
+  const isEmoji = asset ? isInlineEmojiImageId(normalized, asset) : false;
 
   if (asset) {
     classes.push("has-preview");
-    if (isInlineEmojiImageId(normalized, asset)) classes.push("is-emoji");
-    if (/^(?:sns_image|cg_image)_/i.test(normalized)) classes.push("is-sns-image");
+    if (isEmoji) classes.push("is-emoji");
+    if (isInlineSnsMediaImageId(rawId, normalized, asset)) classes.push("is-sns-image");
     if (isInlineContentImageId(rawId, normalized, asset)) classes.push("is-content-image");
-    attrs.push(`tabindex="0"`);
-    attrs.push(`title="${escapeHtml(asset.name)}"`);
+    if (!isEmoji) {
+      attrs.push(`tabindex="0"`);
+      attrs.push(`title="${escapeHtml(asset.name)}"`);
+    }
     attrs.push(`data-inline-image-src="${escapeHtml(src)}"`);
     attrs.push(`data-inline-image-name="${escapeHtml(asset.name)}"`);
   }
@@ -5232,7 +5263,7 @@ function renderInlineImageTagHtml(imageId, q, rawTag = "") {
   const thumb = asset
     ? `<img class="inline-image-thumb" src="${escapeHtml(src)}" alt="${escapeHtml(rawId)}" loading="lazy">`
     : "";
-  const preview = asset
+  const preview = asset && !isEmoji
     ? `<span class="inline-image-popover"><img src="${escapeHtml(src)}" alt="${escapeHtml(rawId)}" loading="lazy"></span>`
     : "";
 

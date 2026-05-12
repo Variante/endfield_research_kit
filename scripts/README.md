@@ -82,7 +82,9 @@ Expected active inputs and outputs:
   optional extra languages. It reads from `..\export_full\`, stamps dialog
   convs with DialogIdTable runtime registry evidence, links narrative
   Cutscene/RemoteComm video files to matching story entries, and writes
-  generated WebUI data plus durable reports.
+  generated WebUI data plus durable reports. The static frontend currently
+  treats SNS emoji ids such as `sns_emoji_*` as inline emoji, while non-emoji
+  SNS media such as `sns_image_*` and `sns_sticker_*` render as normal images.
 - `webui/build_assets.py`: builds the WebUI asset index. By default it scans
   only active WebUI export roots and skips legacy `inventory`, `raw_vfs`, and
   `unresolved` roots. Pass `--include-extra-roots` to include those, or

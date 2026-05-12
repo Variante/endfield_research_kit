@@ -18,7 +18,8 @@ from `webui/data/` and keeps heavyweight recovery work in the Python builders.
 ## Current Scope
 
 - `Story`: language switch, search, filters, conversation detail, summaries,
-  option groups, line-order notes, and raw source traces.
+  option groups, line-order notes, raw source traces, and inline media
+  rendering for SNS/content images.
 - `Reference`: raw localized rows from `data/lang/<code>/reference/`, with
   source/table filters and on-demand table loading.
 - `Updates`: latest change summary from `data/updates/latest.json`, generated
@@ -26,6 +27,17 @@ from `webui/data/` and keeps heavyweight recovery work in the Python builders.
   image/model/video asset diffs, never generated WebUI files.
 - `Assets`: exported file search, metadata, raw links, related files, and
   previews where the browser supports them.
+
+## Inline Media Rules
+
+- SNS emoji assets such as `sns_emoji_*` are rendered as regular inline emoji.
+  They stay inline and do not open hover popovers or the full-screen modal.
+- Non-emoji SNS media such as `sns_image_*`, `sns_sticker_*`,
+  `deco_sns_tweet_decorate_*`, `bg_sns_tweet_decorate_*`, and matching
+  `cg_image_*` assets should render with their normal image proportions rather
+  than the compact emoji treatment.
+- Inline image popovers and the modal preview should stay inside their visual
+  border and the viewport.
 
 ## Explicit Non-Goals
 
