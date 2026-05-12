@@ -107,6 +107,24 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Delete existing tracker state, rescan, and write an empty baseline feed.",
     )
     parser.add_argument(
+        "--skip-asset-updates",
+        "--skip-exported-assets",
+        dest="skip_asset_updates",
+        action="store_true",
+        help=(
+            "Skip the exported image/model/video asset diff. Useful for initial "
+            "WebUI builds where only a game-data baseline/feed is needed."
+        ),
+    )
+    parser.add_argument(
+        "--baseline-only",
+        action="store_true",
+        help=(
+            "Update the game-data tracker state but suppress reported changes "
+            "and skip exported asset diffing. Use for initial WebUI data builds."
+        ),
+    )
+    parser.add_argument(
         "--no-history",
         action="store_true",
         help="Do not write timestamped raw tracker history under the state directory.",
@@ -353,14 +371,16 @@ def build_update_payload(
     *,
     game_root: Path,
     baseline_initialized: bool,
+    baseline_only: bool,
     sample_limit: int,
 ) -> dict[str, Any]:
     changes = raw_payload.get("changes") or {}
     samples = raw_payload.get("samples") or {}
     now = dt.datetime.now(dt.timezone.utc).astimezone()
+    suppress_changes = baseline_initialized or baseline_only
 
     entries: list[dict[str, Any]] = []
-    if not baseline_initialized:
+    if not suppress_changes:
         for status in ("added", "modified", "deleted"):
             for raw_entry in samples.get(status, []) or []:
                 if isinstance(raw_entry, dict):
@@ -369,9 +389,9 @@ def build_update_payload(
     entries.sort(key=lambda entry: (STATUS_ORDER.get(str(entry.get("status")), 99), str(entry.get("path", "")).lower()))
 
     totals = {
-        "added": 0 if baseline_initialized else int(changes.get("added") or 0),
-        "modified": 0 if baseline_initialized else int(changes.get("modified") or 0),
-        "deleted": 0 if baseline_initialized else int(changes.get("deleted") or 0),
+        "added": 0 if suppress_changes else int(changes.get("added") or 0),
+        "modified": 0 if suppress_changes else int(changes.get("modified") or 0),
+        "deleted": 0 if suppress_changes else int(changes.get("deleted") or 0),
     }
     totals["changed"] = totals["added"] + totals["modified"] + totals["deleted"]
 
@@ -393,6 +413,7 @@ def build_update_payload(
         "source": "original_game_data",
         "sourceRoot": str(game_root),
         "baselineInitialized": baseline_initialized,
+        "baselineOnly": baseline_only,
         "gameTotals": game_totals,
         "totals": totals,
         "tracker": {
@@ -400,11 +421,16 @@ def build_update_payload(
             "finishedAt": raw_payload.get("finished_at"),
             "durationSeconds": raw_payload.get("duration_seconds"),
             "scannedFiles": raw_payload.get("scanned_files"),
-            "metadataOnlyUpdates": 0 if baseline_initialized else int(changes.get("metadata_only_updates") or 0),
+            "metadataOnlyUpdates": 0 if suppress_changes else int(changes.get("metadata_only_updates") or 0),
             "reusedMetadataMatches": int(changes.get("reused_metadata_matches") or 0),
             "sampleLimit": sample_limit,
             "truncated": truncated,
             "suppressedInitialAdded": int(changes.get("added") or 0) if baseline_initialized else 0,
+            "suppressedBaselineOnly": {
+                "added": int(changes.get("added") or 0) if baseline_only else 0,
+                "modified": int(changes.get("modified") or 0) if baseline_only else 0,
+                "deleted": int(changes.get("deleted") or 0) if baseline_only else 0,
+            },
         },
         "breakdown": {
             "byCategory": dict(categories.most_common()),
@@ -421,10 +447,34 @@ def attach_asset_updates(
     export_root: Path,
     state_dir: Path,
     sample_limit: int,
+    skip_asset_updates: bool = False,
 ) -> None:
     asset_state_path = state_dir / "asset-state.json"
     old_assets = load_asset_state(asset_state_path)
     asset_scan_available = export_root.exists()
+    if skip_asset_updates:
+        payload["assetTotals"] = zero_totals()
+        payload["totals"] = combine_totals(payload.get("gameTotals") or zero_totals())
+        payload["assets"] = {
+            "source": "exported_assets",
+            "sourceRoot": str(export_root),
+            "statePath": str(asset_state_path),
+            "available": asset_scan_available,
+            "skipped": True,
+            "skipReason": "skip_asset_updates",
+            "stateUpdated": False,
+            "baselineInitialized": False,
+            "existingBaseline": bool(old_assets),
+            "reported": False,
+            "reportedOnlyWhenGameDataChanges": True,
+            "scannedAssets": 0,
+            "sampleLimit": sample_limit,
+            "totals": zero_totals(),
+            "truncated": {"added": 0, "modified": 0, "deleted": 0},
+            "breakdown": {"byKind": {}, "byExtension": {}},
+        }
+        return
+
     if not asset_scan_available:
         payload["assetTotals"] = zero_totals()
         payload["totals"] = combine_totals(payload.get("gameTotals") or zero_totals())
@@ -549,7 +599,7 @@ def main(argv: list[str] | None = None) -> int:
         report_md=report_md,
         sample_limit=args.sample_limit,
         top_line_limit=args.top_line_limit,
-        write_history=bool(had_baseline and not args.no_history),
+        write_history=bool(had_baseline and not args.no_history and not args.baseline_only),
     )
 
     raw_payload = json.loads(report_json.read_text(encoding="utf-8"))
@@ -557,6 +607,7 @@ def main(argv: list[str] | None = None) -> int:
         raw_payload,
         game_root=game_root,
         baseline_initialized=not had_baseline,
+        baseline_only=args.baseline_only,
         sample_limit=args.sample_limit,
     )
     attach_asset_updates(
@@ -564,6 +615,7 @@ def main(argv: list[str] | None = None) -> int:
         export_root=export_root,
         state_dir=state_dir,
         sample_limit=args.sample_limit,
+        skip_asset_updates=bool(args.skip_asset_updates or args.baseline_only),
     )
 
     write_json(out_path, webui_payload, indent=2, compact=False)
@@ -571,18 +623,29 @@ def main(argv: list[str] | None = None) -> int:
     totals = webui_payload["gameTotals"]
     if webui_payload["baselineInitialized"]:
         print(f"[build_updates] Baseline initialized from {game_root}")
+    elif webui_payload.get("baselineOnly"):
+        suppressed = (webui_payload.get("tracker") or {}).get("suppressedBaselineOnly") or {}
+        print(
+            "[build_updates] Baseline-only feed:"
+            f" suppressed added={int(suppressed.get('added') or 0)},"
+            f" modified={int(suppressed.get('modified') or 0)},"
+            f" deleted={int(suppressed.get('deleted') or 0)}"
+        )
     else:
         print(
             "[build_updates] Game-data changes:"
             f" added={totals['added']}, modified={totals['modified']}, deleted={totals['deleted']}"
         )
     asset_totals = webui_payload.get("assetTotals") or {}
-    print(
-        "[build_updates] Asset changes:"
-        f" added={int(asset_totals.get('added') or 0)},"
-        f" modified={int(asset_totals.get('modified') or 0)},"
-        f" deleted={int(asset_totals.get('deleted') or 0)}"
-    )
+    if (webui_payload.get("assets") or {}).get("skipped"):
+        print("[build_updates] Asset changes: skipped (--skip-asset-updates)")
+    else:
+        print(
+            "[build_updates] Asset changes:"
+            f" added={int(asset_totals.get('added') or 0)},"
+            f" modified={int(asset_totals.get('modified') or 0)},"
+            f" deleted={int(asset_totals.get('deleted') or 0)}"
+        )
     print(f"[build_updates] WebUI feed: {out_path}")
     return 0
 

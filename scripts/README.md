@@ -22,6 +22,9 @@ From the repo root:
 - `scripts/webui/build_story.py --languages CN --default-language CN`
 - `scripts/webui/build_assets.py`
 
+Use `.\export.bat --init-build` for initial or baseline-only builds where the
+Updates feed should be baselined instead of reporting changes.
+
 `package_webui.bat` runs `scripts/webui/package_webui.py` and creates a
 shareable zip from `serve.py`, `webui/`, and displayed media resolved from
 `export_full/`. It excludes 3D/model payloads and does not include
@@ -64,7 +67,9 @@ Expected active inputs and outputs:
 - `webui/build_updates.py`: writes `webui/data/updates/latest.json` from the
   original installed game data only. Tracker state lives under
   `..\.game-data-tracker\`; generated summary reports live under
-  `..\reports\`.
+  `..\reports\`. Pass `--baseline-only` to update tracker state while writing
+  an empty feed, or `--skip-asset-updates` to skip only the exported
+  image/model/video asset diff.
 - `webui/build_story.py`: builds CN story/reference data by default, with
   optional extra languages. It reads from `..\export_full\`, stamps dialog
   convs with DialogIdTable runtime registry evidence, links narrative

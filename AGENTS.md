@@ -14,6 +14,7 @@ Move observations, conclusions, older exploration notes, and status snapshots to
 
 ```bat
 .\export.bat
+.\export.bat --init-build
 python serve.py
 python serve.py 9000
 ```
@@ -21,11 +22,15 @@ python serve.py 9000
 `export.bat` is the canonical WebUI refresh. It exports only data needed by the
 browser, skips raw VFS and source inventory, builds the Updates feed, builds CN
 story/reference data by default, and rebuilds the asset index.
+Use `--init-build` for first-time/baseline-only builds where the Updates feed
+should be baselined instead of reporting changes.
 
 Useful direct commands:
 
 ```bat
 python scripts\webui\build_updates.py
+python scripts\webui\build_updates.py --baseline-only
+python scripts\webui\build_updates.py --skip-asset-updates
 python scripts\webui\build_updates.py --reset-baseline
 python scripts\webui\build_story_source_links.py
 python scripts\webui\build_story.py --languages CN --default-language CN

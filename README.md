@@ -58,6 +58,12 @@ Then open `http://127.0.0.1:8765/`.
 - `scripts/webui/build_story.py --languages CN --default-language CN`
 - `scripts/webui/build_assets.py`
 
+For an initial build where there is no useful update history yet:
+
+```bat
+.\export.bat --init-build
+```
+
 CN is exported by default. To build more languages after the export:
 
 ```bat
@@ -100,6 +106,15 @@ The same builder also diffs exported image/model/video assets from
 asset diffs are only reported when the `Endfield_Data` tracker sees a real
 source-data change; export or WebUI rebuild noise without a source-data change
 is silently absorbed into the asset baseline.
+
+Write an empty baseline feed for a first-time or baseline-only build:
+
+```bat
+python scripts\webui\build_updates.py --baseline-only
+```
+
+If you still want game-data changes but not the exported asset diff, use
+`--skip-asset-updates`.
 
 Reset the baseline only when you intentionally want to treat the current
 installed game files as the new "no changes yet" state:
