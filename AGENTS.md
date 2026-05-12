@@ -22,7 +22,9 @@ python serve.py 9000
 
 `export.bat` is the canonical WebUI refresh. It exports only data needed by the
 browser, skips raw VFS and source inventory, builds the Updates feed, builds CN
-story/reference data by default, and rebuilds the asset index.
+story/reference data by default, and rebuilds the asset index. It also verifies
+that `export_full/` matches the current installed `Endfield_Data` fingerprints
+before the long WebUI builders run.
 Use `--init-build` for first-time/baseline-only builds where the Updates feed
 should be baselined instead of reporting changes.
 Use `--fast-assets` for local refreshes that can reuse existing asset indexes
@@ -35,6 +37,7 @@ python scripts\webui\build_updates.py
 python scripts\webui\build_updates.py --baseline-only
 python scripts\webui\build_updates.py --skip-asset-updates
 python scripts\webui\build_updates.py --reset-baseline
+python scripts\webui\verify_export_freshness.py
 python scripts\webui\build_story_source_links.py
 python scripts\webui\build_story.py --languages CN --default-language CN
 python scripts\webui\build_story.py --languages CN EN JP --default-language CN
@@ -42,6 +45,10 @@ python scripts\webui\build_assets.py
 python scripts\webui\build_assets.py --fast
 python scripts\webui\package_webui.py
 ```
+
+`scripts/webui/build_story.py` commonly takes about 30 minutes. Whenever Codex
+runs this command directly, use a longer shell timeout, such as 45-60 minutes
+(`timeout_ms` of at least `2700000`).
 
 Unity character recovery lab:
 
@@ -100,6 +107,9 @@ D:\Program Files\Endfield Game\Endfield_Data
 by default and stores state under `.game-data-tracker/`. Do not point this
 tracker at `webui/`, `export_full/`, `reports/`, `memory/`, or `scratch/`.
 WebUI edits and generated output must not appear as game-data updates.
+Local CrashSight telemetry files under
+`Plugins/x86_64/wesight/crashsight_data/` are ignored as volatile local runtime
+state, not installed content updates.
 
 The builder may scan exported assets under `export_full/` to add image/model/video
 asset-level entries to the Updates page, but it must only report those entries

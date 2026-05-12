@@ -56,6 +56,9 @@ rem - build the asset index
 python .\scripts\export_full_from_game.py --skip-raw-vfs --skip-source-inventory %EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 
+python .\scripts\webui\verify_export_freshness.py
+if errorlevel 1 exit /b %errorlevel%
+
 python .\scripts\recover_dialog_id_registry.py --quiet
 if errorlevel 1 exit /b %errorlevel%
 
@@ -78,6 +81,7 @@ exit /b 0
 echo Usage: export.bat [--init-build] [--fast-assets] [--skip-asset-updates] [export_full_from_game.py options]
 echo.
 echo Runs the WebUI-focused export/build pipeline. Story/reference output is CN only.
+echo Verifies export freshness before the long WebUI builders run.
 echo.
 echo   --init-build          Write an empty baseline Updates feed and skip asset diffing.
 echo   --fast-assets         Build asset indexes but skip demo bundle zip generation.

@@ -1333,22 +1333,136 @@ def classify_update_path(path: str) -> str:
     return "other"
 
 
-def query_graph(db_path: Path, term: str, *, limit: int = 40) -> dict[str, Any]:
+QUERY_KIND_PRIORITY = {
+    "story": 0,
+    "option_group": 1,
+    "option": 2,
+    "line": 3,
+    "mission": 4,
+    "actor": 5,
+    "audio": 6,
+    "file": 7,
+}
+
+NODE_ID_PREFIXES = (
+    "story",
+    "option_group",
+    "option",
+    "line",
+    "mission",
+    "actor",
+    "audio",
+    "video",
+    "file",
+    "table_row",
+)
+
+OPTION_BRANCH_EDGE_KINDS = (
+    "option_anchor_after",
+    "option_first_line",
+    "option_branch_line",
+    "option_path_line",
+    "option_path_story",
+    "option_merge_line",
+    "option_enters_story",
+)
+
+
+def exact_node_candidates(term: str) -> list[str]:
+    candidates = [term]
+    if ":" not in term:
+        candidates.extend(f"{prefix}:{term}" for prefix in NODE_ID_PREFIXES)
+    return candidates
+
+
+def node_sort_key(row: dict[str, Any], term: str, exact_ids: set[str]) -> tuple[int, int, str]:
+    term_lower = term.lower()
+    row_id = safe_key(row.get("id")).lower()
+    row_name = safe_key(row.get("name")).lower()
+    row_path = safe_key(row.get("path")).lower()
+    if row_id in exact_ids:
+        match_rank = 0
+    elif row_name == term_lower:
+        match_rank = 1
+    elif row_path == term_lower:
+        match_rank = 2
+    else:
+        match_rank = 3
+    kind_rank = QUERY_KIND_PRIORITY.get(safe_key(row.get("kind")), 99)
+    return (match_rank, kind_rank, safe_key(row.get("name") or row.get("id")))
+
+
+def resolve_seed_node(conn: sqlite3.Connection, term: str, nodes: list[dict[str, Any]], *, kind: str = "") -> str:
+    exact_alias = conn.execute(
+        """
+        SELECT aliases.node_id
+        FROM aliases
+        JOIN nodes ON nodes.id = aliases.node_id
+        WHERE LOWER(aliases.alias) = LOWER(?)
+          AND (? = '' OR nodes.kind = ?)
+        ORDER BY
+          CASE aliases.kind
+            WHEN 'story_key' THEN 0
+            WHEN 'line_id' THEN 1
+            ELSE 2
+          END,
+          CASE nodes.kind
+            WHEN 'story' THEN 0
+            WHEN 'option' THEN 1
+            WHEN 'line' THEN 2
+            ELSE 3
+          END
+        LIMIT 1
+        """,
+        (term, kind, kind),
+    ).fetchone()
+    if exact_alias:
+        return exact_alias["node_id"]
+    if nodes:
+        return nodes[0]["id"]
+    return ""
+
+
+def query_graph(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
     like = f"%{term}%"
+    exact_candidates = exact_node_candidates(term)
+    exact_placeholders = ",".join("?" for _ in exact_candidates)
     with sqlite3.connect(db_path) as conn:
         conn.row_factory = sqlite3.Row
-        nodes = rows_to_dicts(
+        exact_nodes = rows_to_dicts(
             conn.execute(
-                """
+                f"""
                 SELECT id, kind, name, source, path
                 FROM nodes
-                WHERE id LIKE ? OR name LIKE ? OR path LIKE ?
+                WHERE (id IN ({exact_placeholders}) OR LOWER(name) = LOWER(?) OR LOWER(path) = LOWER(?))
+                  AND (? = '' OR kind = ?)
                 ORDER BY kind, name
                 LIMIT ?
                 """,
-                (like, like, like, limit),
+                (*exact_candidates, term, term, kind, kind, limit),
             ).fetchall()
         )
+        exact_ids = {row["id"].lower() for row in exact_nodes}
+        fuzzy_limit = max(limit - len(exact_nodes), 0)
+        fuzzy_nodes: list[dict[str, Any]] = []
+        if fuzzy_limit:
+            fuzzy_nodes = rows_to_dicts(
+                conn.execute(
+                    f"""
+                    SELECT id, kind, name, source, path
+                    FROM nodes
+                    WHERE (id LIKE ? OR name LIKE ? OR path LIKE ?)
+                      AND id NOT IN ({exact_placeholders})
+                      AND (? = '' OR kind = ?)
+                    ORDER BY kind, name
+                    LIMIT ?
+                    """,
+                    (like, like, like, *exact_candidates, kind, kind, fuzzy_limit),
+                ).fetchall()
+            )
+        nodes = [*exact_nodes, *fuzzy_nodes]
+        nodes.sort(key=lambda row: node_sort_key(row, term, exact_ids))
+        nodes = nodes[:limit]
         aliases = rows_to_dicts(
             conn.execute(
                 """
@@ -1362,8 +1476,8 @@ def query_graph(db_path: Path, term: str, *, limit: int = 40) -> dict[str, Any]:
             ).fetchall()
         )
         related: list[dict[str, Any]] = []
-        if nodes:
-            seed = nodes[0]["id"]
+        seed = resolve_seed_node(conn, term, nodes, kind=kind)
+        if seed:
             related = rows_to_dicts(
                 conn.execute(
                     """
@@ -1380,7 +1494,192 @@ def query_graph(db_path: Path, term: str, *, limit: int = 40) -> dict[str, Any]:
                     (seed, seed, limit),
                 ).fetchall()
             )
-        return {"nodes": nodes, "aliases": aliases, "relatedToFirstNode": related}
+        return {"seedNode": seed, "nodes": nodes, "aliases": aliases, "relatedToFirstNode": related}
+
+
+def compact_node_ref(row: sqlite3.Row, edge_row: sqlite3.Row | None = None) -> dict[str, Any]:
+    data = parse_json_text(row["data"])
+    ref: dict[str, Any] = {
+        "id": row["id"],
+        "key": node_key(row["id"]),
+        "kind": row["kind"],
+        "name": row["name"],
+    }
+    if row["path"]:
+        ref["path"] = row["path"]
+    if isinstance(data, dict):
+        for key in ("actor", "actorId", "audio", "text", "timestamp", "duration"):
+            value = data.get(key)
+            if value not in (None, "", [], {}):
+                ref[key] = value
+    if edge_row is not None:
+        if edge_row["source"]:
+            ref["source"] = edge_row["source"]
+        if edge_row["evidence"]:
+            ref["evidence"] = edge_row["evidence"]
+        edge_data = parse_json_text(edge_row["data"])
+        if edge_data:
+            ref["edgeData"] = edge_data
+    return ref
+
+
+def node_key(node_id: str) -> str:
+    return node_id.split(":", 1)[1] if ":" in node_id else node_id
+
+
+def option_group_sort_key(group: dict[str, Any]) -> tuple[int, str]:
+    data = group.get("data") or {}
+    index = data.get("index") or data.get("g")
+    if isinstance(index, int):
+        return (index, group["key"])
+    if isinstance(index, str) and index.isdigit():
+        return (int(index), group["key"])
+    match = re.search(r"#optionGroup:(\d+)", group["key"])
+    if match:
+        return (int(match.group(1)), group["key"])
+    return (999999, group["key"])
+
+
+def option_sort_key(option: dict[str, Any]) -> tuple[int, str]:
+    data = option.get("data") or {}
+    index = data.get("index")
+    if isinstance(index, int):
+        return (index, option["key"])
+    if isinstance(index, str) and index.isdigit():
+        return (int(index), option["key"])
+    match = re.search(r"_(\d+)$", option["key"])
+    if match:
+        return (int(match.group(1)), option["key"])
+    return (999999, option["key"])
+
+
+def story_arrangement(db_path: Path, story_key: str, *, limit_lines: int = 0) -> dict[str, Any]:
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        seed_nodes = rows_to_dicts(
+            conn.execute(
+                """
+                SELECT id, kind, name, source, path
+                FROM nodes
+                WHERE kind = 'story'
+                  AND (LOWER(name) = LOWER(?) OR LOWER(id) = LOWER(?) OR LOWER(id) = LOWER(?))
+                LIMIT 1
+                """,
+                (story_key, story_key, f"story:{story_key}"),
+            ).fetchall()
+        )
+        seed = resolve_seed_node(conn, story_key, seed_nodes, kind="story")
+        if not seed:
+            raise ValueError(f"story not found: {story_key}")
+
+        story_row = conn.execute("SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?", (seed,)).fetchone()
+        story_data = parse_json_text(story_row["data"])
+
+        line_rows = conn.execute(
+            """
+            SELECT edge.evidence, edge.source, edge.data AS edgeData,
+                   line.id, line.kind, line.name, line.source AS nodeSource, line.path, line.data
+            FROM edges edge
+            JOIN nodes line ON line.id = edge.dst
+            WHERE edge.src = ? AND edge.kind = 'has_line'
+            ORDER BY CAST(edge.evidence AS INTEGER), edge.id
+            """,
+            (seed,),
+        ).fetchall()
+        lines = []
+        for row in line_rows:
+            line_ref = compact_node_ref(row)
+            line_ref["order"] = int(row["evidence"]) if safe_key(row["evidence"]).isdigit() else len(lines)
+            lines.append(line_ref)
+        if limit_lines > 0:
+            lines = lines[:limit_lines]
+
+        group_rows = conn.execute(
+            """
+            SELECT group_node.id, group_node.kind, group_node.name, group_node.source, group_node.path, group_node.data
+            FROM edges edge
+            JOIN nodes group_node ON group_node.id = edge.dst
+            WHERE edge.src = ? AND edge.kind = 'has_option_group'
+            ORDER BY group_node.name
+            """,
+            (seed,),
+        ).fetchall()
+
+        groups = []
+        for group_row in group_rows:
+            group_data = parse_json_text(group_row["data"])
+            group = {
+                "id": group_row["id"],
+                "key": node_key(group_row["id"]),
+                "after": group_data.get("after"),
+                "risk": group_data.get("risk"),
+                "reason": group_data.get("reason"),
+                "riskSource": group_data.get("riskSource"),
+                "data": group_data,
+                "options": [],
+            }
+            option_rows = conn.execute(
+                """
+                SELECT option_node.id, option_node.kind, option_node.name, option_node.source, option_node.path, option_node.data
+                FROM edges edge
+                JOIN nodes option_node ON option_node.id = edge.dst
+                WHERE edge.src = ? AND edge.kind = 'has_option'
+                ORDER BY edge.id
+                """,
+                (group_row["id"],),
+            ).fetchall()
+            for option_row in option_rows:
+                option_data = parse_json_text(option_row["data"])
+                option = {
+                    "id": option_row["id"],
+                    "key": node_key(option_row["id"]),
+                    "text": option_data.get("text") or option_row["name"],
+                    "icon": option_data.get("icon"),
+                    "data": option_data,
+                    "branches": {},
+                }
+                branch_rows = conn.execute(
+                    f"""
+                    SELECT edge.kind AS edgeKind, edge.source, edge.evidence, edge.data,
+                           target.id, target.kind, target.name, target.source AS nodeSource, target.path, target.data AS targetData
+                    FROM edges edge
+                    JOIN nodes target ON target.id = edge.dst
+                    WHERE edge.src = ?
+                      AND edge.kind IN ({','.join('?' for _ in OPTION_BRANCH_EDGE_KINDS)})
+                    ORDER BY edge.kind, edge.id
+                    """,
+                    (option_row["id"], *OPTION_BRANCH_EDGE_KINDS),
+                ).fetchall()
+                for branch_row in branch_rows:
+                    target_row = {
+                        "id": branch_row["id"],
+                        "kind": branch_row["kind"],
+                        "name": branch_row["name"],
+                        "path": branch_row["path"],
+                        "data": branch_row["targetData"],
+                    }
+                    option["branches"].setdefault(branch_row["edgeKind"], []).append(
+                        compact_node_ref(target_row, branch_row)
+                    )
+                group["options"].append(option)
+            group["options"].sort(key=option_sort_key)
+            groups.append(group)
+        groups.sort(key=option_group_sort_key)
+
+        return {
+            "story": {
+                "id": story_row["id"],
+                "key": story_row["name"],
+                "path": story_row["path"],
+                "kind": story_data.get("kind"),
+                "mission": story_data.get("mission"),
+                "scene": story_data.get("scene"),
+                "lineCount": story_data.get("lineCount"),
+                "preview": story_data.get("preview"),
+            },
+            "lines": lines,
+            "optionGroups": groups,
+        }
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -1399,6 +1698,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     query.add_argument("term")
     query.add_argument("--db", type=Path, default=DEFAULT_DB)
     query.add_argument("--limit", type=int, default=40)
+    query.add_argument("--kind", default="", help="Optional node kind filter, such as story, option, line, or audio.")
+
+    story = sub.add_parser("story", help="Show recovered line order and option branch evidence for one story key")
+    story.add_argument("story_key")
+    story.add_argument("--db", type=Path, default=DEFAULT_DB)
+    story.add_argument("--limit-lines", type=int, default=0, help="Only include the first N ordered lines; 0 includes all.")
 
     return parser.parse_args(argv)
 
@@ -1427,7 +1732,11 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Wrote follow-up indexes under {slash(GRAPH_DIR)}")
         return 0
     if args.command == "query":
-        result = query_graph(args.db, args.term, limit=args.limit)
+        result = query_graph(args.db, args.term, limit=args.limit, kind=args.kind)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "story":
+        result = story_arrangement(args.db, args.story_key, limit_lines=args.limit_lines)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     raise SystemExit(f"Unknown command: {args.command}")

@@ -16,6 +16,7 @@ From the repo root:
 `export.bat` is the normal WebUI refresh path. It runs:
 
 - `scripts/export_full_from_game.py --skip-raw-vfs --skip-source-inventory`
+- `scripts/webui/verify_export_freshness.py`
 - `scripts/recover_dialog_id_registry.py --quiet`
 - `scripts/webui/build_story_source_links.py`
 - `scripts/webui/build_updates.py`
@@ -64,6 +65,11 @@ Expected active inputs and outputs:
   The normal WebUI wrapper is `..\export.bat`, which skips raw VFS and source
   inventory. It writes generated summaries under `..\reports\` but does not
   require `reports`, `scratch`, or `tmp` as active inputs.
+- `webui/verify_export_freshness.py`: compares the latest export summary with
+  the current installed `Endfield_Data` source fingerprints and verifies the
+  WebUI-required export folders are present. `export.bat` runs it immediately
+  after `export_full_from_game.py` so game updates do not silently reuse stale
+  `export_full/` data.
 - `track_export_changes.py`: generic file-tree tracker used by the WebUI
   Updates builder.
 - `webui/build_updates.py`: writes `webui/data/updates/latest.json` from the

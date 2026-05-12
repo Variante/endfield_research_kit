@@ -52,6 +52,7 @@ Then open `http://127.0.0.1:8765/`.
 `export.bat` is the normal browser-data refresh. It runs:
 
 - `scripts/export_full_from_game.py --skip-raw-vfs --skip-source-inventory`
+- `scripts/webui/verify_export_freshness.py`
 - `scripts/recover_dialog_id_registry.py --quiet`
 - `scripts/webui/build_story_source_links.py`
 - `scripts/webui/build_updates.py`
@@ -107,6 +108,9 @@ It does not scan `webui/`, `memory/`, or other generated repo files, so WebUI
 edits do not appear as upstream data changes. Tracker state lives in
 `.game-data-tracker/`. The first scan initializes the baseline and writes an
 empty update feed; later scans show only changes from the original source tree.
+Local CrashSight telemetry files under `Plugins/x86_64/wesight/crashsight_data/`
+are ignored because they churn during normal local runs and are not installed
+content updates.
 
 The same builder also diffs exported image/model/video assets from
 `export_full/` and adds those asset-level changes to the Updates page. Those
@@ -131,6 +135,20 @@ python scripts\webui\build_updates.py --reset-baseline
 ```
 
 The WebUI feed is written to `webui/data/updates/latest.json`.
+
+## Export Freshness
+
+`export.bat` verifies that `export_full/` still matches the installed
+`Endfield_Data` source fingerprints before running the long WebUI builders. To
+check that guard directly:
+
+```bat
+python scripts\webui\verify_export_freshness.py
+```
+
+If it reports stale source roots, rerun `.\export.bat` so future game-data
+changes are re-extracted before `build_story.py` or asset indexing reads
+`export_full/`.
 
 ## What The Browser Reads
 

@@ -9,6 +9,7 @@ is strong enough to justify another recovery rule.
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import sys
 from collections import Counter
@@ -32,6 +33,18 @@ from recover_timeline_line_orders import (  # noqa: E402
 
 ROUTE_EPSILON = 0.001
 NEARBY_PADDING_SECONDS = 1.0
+SAFE_REPORT_REPLACEMENTS = str.maketrans({
+    "\\": "_",
+    "/": "_",
+    ":": "_",
+    "*": "_",
+    "?": "_",
+    "\"": "_",
+    "<": "_",
+    ">": "_",
+    "|": "_",
+    ",": "_",
+})
 
 
 def read_json(path: Path, default: Any = None) -> Any:
@@ -61,6 +74,75 @@ def resolve_repo_path(path_text: str) -> Path:
 
 def safe_key(value: Any) -> str:
     return str(value if value is not None else "").strip()
+
+
+def split_csv_values(values: list[str] | None) -> list[str]:
+    out: list[str] = []
+    for value in values or []:
+        for item in str(value).split(","):
+            item = item.strip()
+            if item:
+                out.append(item)
+    return out
+
+
+def parse_group_filters(values: list[str] | None) -> set[int]:
+    groups: set[int] = set()
+    for value in split_csv_values(values):
+        try:
+            groups.add(int(value))
+        except ValueError as exc:
+            raise ValueError(f"group must be an integer: {value}") from exc
+    return groups
+
+
+def story_matches(story_key: str, filters: list[str]) -> bool:
+    if not filters:
+        return True
+    lowered = story_key.lower()
+    for item in filters:
+        pattern = item.lower()
+        if pattern == lowered or pattern in lowered:
+            return True
+        if any(ch in pattern for ch in "*?[]") and fnmatch.fnmatch(lowered, pattern):
+            return True
+    return False
+
+
+def filtered_conv_paths(conv_dir: Path, story_filters: list[str]) -> list[Path]:
+    if not story_filters:
+        return sorted(conv_dir.glob("*.json"))
+
+    paths: dict[Path, None] = {}
+    for story_filter in story_filters:
+        if any(ch in story_filter for ch in "*?[]"):
+            for path in conv_dir.glob(f"{story_filter}.json"):
+                paths[path] = None
+            continue
+        exact = conv_dir / f"{story_filter}.json"
+        if exact.exists():
+            paths[exact] = None
+            continue
+        for path in conv_dir.glob("*.json"):
+            if story_matches(path.stem, [story_filter]):
+                paths[path] = None
+    return sorted(paths)
+
+
+def safe_report_suffix(story_filters: list[str], group_filters: set[int], only_nearby_jumps: bool) -> str:
+    parts: list[str] = []
+    if story_filters:
+        parts.append("story_" + "_".join(story_filters[:4]))
+        if len(story_filters) > 4:
+            parts.append(f"plus_{len(story_filters) - 4}")
+    if group_filters:
+        parts.append("group_" + "_".join(str(value) for value in sorted(group_filters)))
+    if only_nearby_jumps:
+        parts.append("nearby")
+    if not parts:
+        return ""
+    suffix = "_".join(parts).translate(SAFE_REPORT_REPLACEMENTS)
+    return "_" + suffix[:120].strip("_")
 
 
 def time_range_overlaps(start: float, end: float, window_start: float, window_end: float) -> bool:
@@ -423,32 +505,63 @@ def audit_group(
     }
 
 
-def collect_audit_rows(language: str, conv_dir: Path, timeline_orders_path: Path) -> list[dict[str, Any]]:
+def collect_audit_rows(
+    language: str,
+    conv_dir: Path,
+    timeline_orders_path: Path,
+    *,
+    story_filters: list[str] | None = None,
+    group_filters: set[int] | None = None,
+    only_nearby_jumps: bool = False,
+) -> list[dict[str, Any]]:
     timeline_orders = read_json(timeline_orders_path, {}) or {}
     jump_cache = RuntimeJumpCache()
     rows: list[dict[str, Any]] = []
+    story_filters = story_filters or []
+    group_filters = group_filters or set()
 
-    for conv_path in sorted(conv_dir.glob("*.json")):
+    for conv_path in filtered_conv_paths(conv_dir, story_filters):
         conv = read_json(conv_path, {})
         if not isinstance(conv, dict) or conv.get("kind") != "dlg":
             continue
-        timeline_rows = best_timeline_option_rows(timeline_orders.get(conv.get("key")) or {})
+        scene_key = safe_key(conv.get("key") or conv_path.stem)
+        if not story_matches(scene_key, story_filters):
+            continue
+        timeline_rows = best_timeline_option_rows(timeline_orders.get(scene_key) or {})
         for group in conv.get("optionGroups") or []:
             if not isinstance(group, dict):
+                continue
+            group_index = as_int(group.get("g"))
+            if group_filters and group_index not in group_filters:
                 continue
             risk = group.get("optionBranchRisk") or {}
             if not isinstance(risk, dict) or risk.get("code") != "inferredFollowingLines":
                 continue
-            rows.append(audit_group(conv, group, risk, timeline_rows, jump_cache))
+            row = audit_group(conv, group, risk, timeline_rows, jump_cache)
+            if only_nearby_jumps and not row.get("nearbyRuntimeJumps"):
+                continue
+            rows.append(row)
 
     rows.sort(key=lambda row: (row.get("mission") or "", row.get("sceneKey") or "", row.get("group") or 0))
     return rows
 
 
-def summarize_rows(language: str, rows: list[dict[str, Any]]) -> dict[str, Any]:
+def summarize_rows(
+    language: str,
+    rows: list[dict[str, Any]],
+    *,
+    story_filters: list[str] | None = None,
+    group_filters: set[int] | None = None,
+    only_nearby_jumps: bool = False,
+) -> dict[str, Any]:
     recommendations = Counter(row.get("recommendation") or "" for row in rows)
     return {
         "language": language,
+        "filters": {
+            "stories": story_filters or [],
+            "groups": sorted(group_filters or []),
+            "onlyNearbyJumps": only_nearby_jumps,
+        },
         "inferredFollowingLineGroupCount": len(rows),
         "groupsWithNearbyRuntimeJumps": sum(1 for row in rows if row.get("nearbyRuntimeJumps")),
         "groupsWithCompleteForwardCoverage": sum(
@@ -535,17 +648,40 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def build_report(language: str, conv_dir: Path, timeline_orders_path: Path, reports_dir: Path) -> dict[str, Any]:
-    rows = collect_audit_rows(language, conv_dir, timeline_orders_path)
-    summary = summarize_rows(language, rows)
+def build_report(
+    language: str,
+    conv_dir: Path,
+    timeline_orders_path: Path,
+    reports_dir: Path,
+    *,
+    story_filters: list[str] | None = None,
+    group_filters: set[int] | None = None,
+    only_nearby_jumps: bool = False,
+) -> dict[str, Any]:
+    rows = collect_audit_rows(
+        language,
+        conv_dir,
+        timeline_orders_path,
+        story_filters=story_filters,
+        group_filters=group_filters,
+        only_nearby_jumps=only_nearby_jumps,
+    )
+    summary = summarize_rows(
+        language,
+        rows,
+        story_filters=story_filters,
+        group_filters=group_filters,
+        only_nearby_jumps=only_nearby_jumps,
+    )
     payload = {
         "summary": summary,
         "groups": rows,
     }
 
     reports_dir.mkdir(parents=True, exist_ok=True)
-    out_json = reports_dir / f"runtime_jump_option_route_audit_{language}.json"
-    out_md = reports_dir / f"runtime_jump_option_route_audit_{language}.md"
+    suffix = safe_report_suffix(story_filters or [], group_filters or set(), only_nearby_jumps)
+    out_json = reports_dir / f"runtime_jump_option_route_audit_{language}{suffix}.json"
+    out_md = reports_dir / f"runtime_jump_option_route_audit_{language}{suffix}.md"
     write_json(out_json, payload)
     out_md.write_text(render_markdown(summary, rows) + "\n", encoding="utf-8")
     return {
@@ -561,6 +697,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--conv-dir", type=Path)
     parser.add_argument("--timeline-orders", type=Path, default=ROOT / "export_full" / "recovered" / "AnimeStudio-cli" / "timeline_line_orders.json")
     parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports")
+    parser.add_argument("--story", action="append", help="Story key, substring, glob, or comma-list to audit.")
+    parser.add_argument("--group", action="append", help="Option group number or comma-list to audit.")
+    parser.add_argument("--only-nearby-jumps", action="store_true", help="Emit only audited groups that have nearby Runtime Jump Track clips.")
     return parser.parse_args(argv)
 
 
@@ -568,7 +707,20 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     language = args.language
     conv_dir = args.conv_dir or ROOT / "webui" / "data" / "lang" / language / "conv"
-    result = build_report(language, conv_dir, args.timeline_orders, args.reports_dir)
+    story_filters = split_csv_values(args.story)
+    try:
+        group_filters = parse_group_filters(args.group)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+    result = build_report(
+        language,
+        conv_dir,
+        args.timeline_orders,
+        args.reports_dir,
+        story_filters=story_filters,
+        group_filters=group_filters,
+        only_nearby_jumps=args.only_nearby_jumps,
+    )
     summary = result["summary"]
     print(f"Runtime jump option route audit: {result['markdown']}")
     print(f"Runtime jump option route data:  {result['json']}")

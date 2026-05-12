@@ -146,6 +146,25 @@ After that promotion, the audit has 107 remaining inferred groups; 11 have
 nearby Runtime Jump clips, and 0 pass the strict second-rule check. The nearby
 cases are therefore diagnostic only for now.
 
+On 2026-05-12 `scripts/webui/build_runtime_jump_option_route_audit.py` gained
+targeted filters so these diagnostics can be checked without a full global
+scan:
+
+```bat
+python scripts\webui\build_runtime_jump_option_route_audit.py --language CN --story dlg_e1m1_5 --group 3
+python scripts\webui\build_runtime_jump_option_route_audit.py --language CN --story dlg_c28m3_23 --group 1
+python scripts\webui\build_runtime_jump_option_route_audit.py --language CN --story dlg_c13m2_12 --group 1
+```
+
+Current spot checks still do not justify another automatic route rule:
+
+- `dlg_e1m1_5` group 3 has no nearby Runtime Jump clips.
+- `dlg_c28m3_23` group 1 has nearby forward jumps, but they belong to option
+  indices 3 and 4 rather than the inferred group's option indices 1 and 2.
+- `dlg_c13m2_12` group 1 has nearby jump clips, but one is reverse/direction
+  marked and the reconstructed path does not match the inferred candidate
+  response layout.
+
 `dlg_e0m2_1` is now resolved by the `dialogTreeCinematicTimeline` stitch:
 `dlgtl_e0m2_1_sub_1` inserts line 005 after trunk line 004, and
 `dlgtl_e0m2_1_sub_2` inserts lines 009-010 after trunk line 008. Duplicate

@@ -47,6 +47,11 @@ SCHEMA_VERSION = 1
 ASSET_STATE_SCHEMA_VERSION = 1
 STATUS_ORDER = {"added": 0, "modified": 1, "deleted": 2}
 ASSET_HASH_CHUNK_SIZE = 1024 * 1024
+IGNORED_GAME_PATH_PREFIXES = (
+    # CrashSight writes local crash/telemetry state under the game install.
+    # These files churn between runs but are not installed content updates.
+    "plugins/x86_64/wesight/crashsight_data/",
+)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -173,6 +178,11 @@ def classify_game_data_path(path: str) -> str:
     return lower.split("/", 1)[0] or "other"
 
 
+def is_ignored_game_update_path(path: str) -> bool:
+    lower = normalize_posix(path).lower()
+    return any(lower.startswith(prefix) for prefix in IGNORED_GAME_PATH_PREFIXES)
+
+
 def normalized_entry(status: str, raw: dict[str, Any]) -> dict[str, Any]:
     path = normalize_posix(str(raw.get("path") or ""))
     extension = str(raw.get("extension") or "")
@@ -194,6 +204,26 @@ def normalized_entry(status: str, raw: dict[str, Any]) -> dict[str, Any]:
         if raw.get(key) is not None:
             entry[key] = raw[key]
     return entry
+
+
+def filtered_game_entries(
+    samples: dict[str, Any],
+    *,
+    suppress_changes: bool,
+) -> tuple[list[dict[str, Any]], Counter[str]]:
+    entries: list[dict[str, Any]] = []
+    ignored_counts: Counter[str] = Counter()
+    if suppress_changes:
+        return entries, ignored_counts
+    for status in ("added", "modified", "deleted"):
+        for raw_entry in samples.get(status, []) or []:
+            if not isinstance(raw_entry, dict):
+                continue
+            if is_ignored_game_update_path(str(raw_entry.get("path") or "")):
+                ignored_counts[status] += 1
+                continue
+            entries.append(normalized_entry(status, raw_entry))
+    return entries, ignored_counts
 
 
 def asset_kind_for_suffix(suffix: str) -> str:
@@ -379,19 +409,16 @@ def build_update_payload(
     now = dt.datetime.now(dt.timezone.utc).astimezone()
     suppress_changes = baseline_initialized or baseline_only
 
-    entries: list[dict[str, Any]] = []
-    if not suppress_changes:
-        for status in ("added", "modified", "deleted"):
-            for raw_entry in samples.get(status, []) or []:
-                if isinstance(raw_entry, dict):
-                    entries.append(normalized_entry(status, raw_entry))
+    entries, ignored_counts = filtered_game_entries(samples, suppress_changes=suppress_changes)
 
     entries.sort(key=lambda entry: (STATUS_ORDER.get(str(entry.get("status")), 99), str(entry.get("path", "")).lower()))
 
     totals = {
-        "added": 0 if suppress_changes else int(changes.get("added") or 0),
-        "modified": 0 if suppress_changes else int(changes.get("modified") or 0),
-        "deleted": 0 if suppress_changes else int(changes.get("deleted") or 0),
+        status: max(
+            0,
+            0 if suppress_changes else int(changes.get(status) or 0) - int(ignored_counts.get(status) or 0),
+        )
+        for status in ("added", "modified", "deleted")
     }
     totals["changed"] = totals["added"] + totals["modified"] + totals["deleted"]
 
@@ -425,6 +452,8 @@ def build_update_payload(
             "reusedMetadataMatches": int(changes.get("reused_metadata_matches") or 0),
             "sampleLimit": sample_limit,
             "truncated": truncated,
+            "ignoredVolatileChanges": dict(ignored_counts),
+            "ignoredVolatilePathPrefixes": list(IGNORED_GAME_PATH_PREFIXES),
             "suppressedInitialAdded": int(changes.get("added") or 0) if baseline_initialized else 0,
             "suppressedBaselineOnly": {
                 "added": int(changes.get("added") or 0) if baseline_only else 0,
