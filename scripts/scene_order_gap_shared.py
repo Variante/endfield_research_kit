@@ -78,6 +78,40 @@ def runtime_dialog_scene_key(value) -> str:
     return key
 
 
+def registry_lines_by_trunk(info: dict | None) -> dict[str, list[str]]:
+    """Return normalized DialogIdTable trunk -> line refs for debug output."""
+    if not isinstance(info, dict):
+        return {}
+    raw = info.get("linesByTrunk")
+    if not isinstance(raw, dict):
+        return {}
+    out: dict[str, list[str]] = {}
+    for trunk, values in raw.items():
+        if not isinstance(values, list):
+            continue
+        ids = [str(value).strip() for value in values if str(value or "").strip()]
+        if ids:
+            out[str(trunk)] = ids
+    return out
+
+
+def registry_options_by_group(info: dict | None) -> dict[str, list[str]]:
+    """Return normalized DialogIdTable option group -> option ids."""
+    if not isinstance(info, dict):
+        return {}
+    raw = info.get("optionsByGroup")
+    if not isinstance(raw, dict):
+        return {}
+    out: dict[str, list[str]] = {}
+    for group, values in raw.items():
+        if not isinstance(values, list):
+            continue
+        ids = [str(value).strip() for value in values if str(value or "").strip()]
+        if ids:
+            out[str(group)] = ids
+    return out
+
+
 def _scene_registry_state(
     conv: dict, dialog_id_registry: dict | None
 ) -> tuple[str, dict | None, bool]:
@@ -155,6 +189,14 @@ def build_runtime_registry_debug(
         out["hasSummary"] = False
     if webui_key and webui_key != scene_key:
         out["webuiKey"] = webui_key
+    lines_by_trunk = registry_lines_by_trunk(info)
+    if lines_by_trunk:
+        out["linesByTrunk"] = lines_by_trunk
+    options_by_group = registry_options_by_group(info)
+    if options_by_group:
+        out["optionGroupCount"] = len(options_by_group)
+        out["optionCount"] = sum(len(values) for values in options_by_group.values())
+        out["optionsByGroup"] = options_by_group
     runtime_lines = info.get("lineCount", 0)
     if runtime_lines and runtime_lines != line_count_webui:
         delta = line_count_webui - runtime_lines

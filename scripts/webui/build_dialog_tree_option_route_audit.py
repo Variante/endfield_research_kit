@@ -16,6 +16,12 @@ from typing import Any
 
 import build_option_playable_semantics_audit as semantics
 import build_story as story
+from scene_order_gap_shared import (
+    load_dialog_id_registry,
+    registry_lines_by_trunk,
+    registry_options_by_group,
+    runtime_dialog_scene_key,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -256,10 +262,39 @@ def has_shared_route(option_details: list[dict[str, Any]]) -> bool:
     return len(union) == 1
 
 
+def runtime_registry_evidence(story_key: str, dialog_id_registry: dict[str, Any]) -> dict[str, Any] | None:
+    scene_key = runtime_dialog_scene_key(story_key)
+    if not scene_key or not scene_key.startswith("dlg_"):
+        return None
+    info = dialog_id_registry.get(scene_key)
+    if not isinstance(info, dict):
+        return {
+            "registered": False,
+            "sceneKey": scene_key,
+        }
+    lines_by_trunk = registry_lines_by_trunk(info)
+    options_by_group = registry_options_by_group(info)
+    out: dict[str, Any] = {
+        "registered": True,
+        "sceneKey": scene_key,
+        "trunkCount": info.get("trunkCount", 0),
+        "trunkIndices": info.get("trunkIndices", []),
+        "lineCount": info.get("lineCount", 0),
+    }
+    if lines_by_trunk:
+        out["linesByTrunk"] = lines_by_trunk
+    if options_by_group:
+        out["optionGroupCount"] = len(options_by_group)
+        out["optionCount"] = sum(len(values) for values in options_by_group.values())
+        out["optionsByGroup"] = options_by_group
+    return out
+
+
 def classify_group(
     row: dict[str, Any],
     tree_sources: list[dict[str, Any]],
     option_details: list[dict[str, Any]],
+    runtime_registry: dict[str, Any] | None = None,
 ) -> tuple[str, str]:
     has_tree_source = bool(tree_sources)
     option_count = len(row.get("options") or [])
@@ -324,6 +359,8 @@ def classify_group(
         if mentioned_options:
             return "treePresentNoRouteDecoded", "patchDialogTreeDecoder"
         if option_count:
+            if runtime_registry and runtime_registry.get("linesByTrunk"):
+                return "treePresentRuntimeTrunkOnly", "decodeRuntimeTrunkOptionMapping"
             return "treePresentOptionMissing", "recoverMissingTreeOrOptionIds"
         return "treePresentNoOptionGroup", "inspectWarningSource"
     if any(option.get("bestTimelineRow") for option in option_details):
@@ -349,6 +386,7 @@ def collect_rows(
         only_interesting=only_interesting,
     )
     rows: list[dict[str, Any]] = []
+    dialog_id_registry = load_dialog_id_registry()
     for row in semantics_rows:
         story_key = safe_key(row.get("storyKey"))
         line_ids = load_conv_line_ids(conv_dir, story_key)
@@ -358,7 +396,10 @@ def collect_rows(
             option_evidence(option, tree_meta, fragments, scene_links)
             for option in row.get("options") or []
         ]
-        classification, recommendation = classify_group(row, tree_sources, option_details)
+        runtime_registry = runtime_registry_evidence(story_key, dialog_id_registry)
+        classification, recommendation = classify_group(
+            row, tree_sources, option_details, runtime_registry
+        )
         rows.append({
             "language": language,
             "storyKey": story_key,
@@ -374,9 +415,34 @@ def collect_rows(
             "treeSources": tree_sources,
             "treeSourceKeys": unique_preserve([source.get("sourceKey") for source in tree_sources if source.get("sourceKey")]),
             "optionDetails": option_details,
+            "runtimeRegistry": runtime_registry,
         })
     rows.sort(key=lambda item: (item.get("mission") or "", item.get("storyKey") or "", item.get("group") or 0))
     return rows
+
+
+def runtime_option_ids_for_group(row: dict[str, Any]) -> list[str]:
+    registry = row.get("runtimeRegistry") or {}
+    if not isinstance(registry, dict):
+        return []
+    options_by_group = registry.get("optionsByGroup") or {}
+    if not isinstance(options_by_group, dict):
+        return []
+    group = safe_key(row.get("group"))
+    values = options_by_group.get(group) or []
+    if not isinstance(values, list):
+        return []
+    return [safe_key(value) for value in values if safe_key(value)]
+
+
+def runtime_group_contains_all_options(row: dict[str, Any]) -> bool:
+    runtime_ids = set(runtime_option_ids_for_group(row))
+    option_ids = {
+        safe_key(detail.get("optionId"))
+        for detail in row.get("optionDetails") or []
+        if safe_key(detail.get("optionId"))
+    }
+    return bool(option_ids) and option_ids.issubset(runtime_ids)
 
 
 def summarize_rows(
@@ -396,6 +462,11 @@ def summarize_rows(
         for source in row.get("treeSources") or []
     )
     route_candidate_hit_groups = sum(1 for row in rows if candidate_match_count(row.get("optionDetails") or []))
+    runtime_registry_line_groups = sum(
+        1 for row in rows if (row.get("runtimeRegistry") or {}).get("linesByTrunk")
+    )
+    runtime_registry_option_groups = sum(1 for row in rows if runtime_option_ids_for_group(row))
+    runtime_registry_complete_option_groups = sum(1 for row in rows if runtime_group_contains_all_options(row))
     return {
         "language": language,
         "filters": {
@@ -411,6 +482,9 @@ def summarize_rows(
         "routeCandidateHitGroupCount": route_candidate_hit_groups,
         "explicitPerOptionRouteGroupCount": classifications.get("explicitTreeRoute", 0),
         "sharedRouteGroupCount": classifications.get("treeSharedRoute", 0),
+        "runtimeRegistryLineGroupCount": runtime_registry_line_groups,
+        "runtimeRegistryOptionGroupCount": runtime_registry_option_groups,
+        "runtimeRegistryCompleteOptionGroupCount": runtime_registry_complete_option_groups,
     }
 
 
@@ -442,6 +516,30 @@ def option_summary(row: dict[str, Any]) -> str:
     return "; ".join(parts)
 
 
+def runtime_summary(row: dict[str, Any]) -> str:
+    registry = row.get("runtimeRegistry") or {}
+    if not isinstance(registry, dict):
+        return ""
+    if registry.get("registered") is False:
+        return "unregistered"
+    lines_by_trunk = registry.get("linesByTrunk") or {}
+    parts: list[str] = []
+    if isinstance(lines_by_trunk, dict):
+        for trunk, line_ids in lines_by_trunk.items():
+            values = [safe_key(value) for value in line_ids or [] if safe_key(value)]
+            if values:
+                parts.append(f"trunk {trunk}: " + ",".join(values))
+    runtime_option_ids = runtime_option_ids_for_group(row)
+    if runtime_option_ids:
+        group = safe_key(row.get("group"))
+        parts.append(f"options {group}: " + ",".join(runtime_option_ids))
+    if parts:
+        return "; ".join(parts)
+    if registry.get("registered") is True:
+        return "registered"
+    return ""
+
+
 def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
     lines = [
         f"# DialogTree Option Route Audit - {summary['language']}",
@@ -450,6 +548,9 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
         f"- Authored route candidate-hit groups: `{summary['routeCandidateHitGroupCount']}`",
         f"- Explicit per-option authored routes: `{summary['explicitPerOptionRouteGroupCount']}`",
         f"- Shared authored routes: `{summary['sharedRouteGroupCount']}`",
+        f"- Groups with DialogIdTable trunk line refs: `{summary['runtimeRegistryLineGroupCount']}`",
+        f"- Groups with DialogIdTable option refs for the current group: `{summary['runtimeRegistryOptionGroupCount']}`",
+        f"- Groups whose current WebUI options are all present in DialogIdTable: `{summary['runtimeRegistryCompleteOptionGroupCount']}`",
         "",
         "## Classification Counts",
         "",
@@ -466,8 +567,8 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
         "",
         "## Groups",
         "",
-        "| Scene | Group | After | Candidates | Common | Class | Recommendation | Sources | Evidence |",
-        "| --- | ---: | --- | --- | --- | --- | --- | --- | --- |",
+        "| Scene | Group | After | Candidates | Common | Class | Recommendation | Sources | Runtime | Evidence |",
+        "| --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- |",
     ])
     for row in rows:
         sources = ", ".join(row.get("treeSourceKeys") or [])
@@ -481,10 +582,11 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
             f"| `{md_escape(row.get('classification'))}` "
             f"| `{md_escape(row.get('recommendation'))}` "
             f"| `{md_escape(sources)}` "
+            f"| `{md_escape(runtime_summary(row))}` "
             f"| {md_escape(option_summary(row))} |"
         )
     if not rows:
-        lines.append("| _(none)_ |  |  |  |  |  |  |  |  |")
+        lines.append("| _(none)_ |  |  |  |  |  |  |  |  |  |")
     return "\n".join(lines)
 
 

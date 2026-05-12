@@ -232,24 +232,44 @@ python scripts\webui\build_dialog_tree_option_route_audit.py --language CN --sto
 python scripts\webui\build_dialog_tree_option_route_audit.py --language CN --story dlg_e3m6_11 --group 4
 ```
 
-Current CN result:
+Current CN result after the 2026-05-12 DialogIdTable evidence pass:
 
-- `107` remaining inferred response groups audited.
+- `106` remaining inferred response groups audited.
 - `0` groups have clean per-option authored DialogTree routes to promote.
-- `98` groups are `cinematicTreeTimelineOnly`: the DialogTree source exists,
+- `97` groups are `cinematicTreeTimelineOnly`: the DialogTree source exists,
   but it is a cinematic wrapper that launches a `dlgtl_*` Timeline; option
   route information must come from Timeline/runtime selection flow.
-- `6` groups have no matching DialogTree source (`sourceMissing`), currently
-  all in `misc_dlg_*` scenes.
-- `1` group (`dlg_e2m5_3` group 1) has tree files but no decoded option route
-  signal, so it is the only current DialogTree-decoder follow-up.
+- `6` groups are `timelineOnlyNoTree`, currently all scenes whose WebUI key
+  had to be resolved back to an underlying `dlg_*` Timeline source.
+- `1` group (`dlg_e2m5_3` group 1) is
+  `treePresentRuntimeTrunkOnly`: DialogTree covers a later option group, while
+  `DialogIdTable` exposes runtime trunk refs for the earlier group
+  (`trunk 1: dlg_e2m5_3_1_001, dlg_e2m5_3_1_002`). The next action is
+  `decodeRuntimeTrunkOptionMapping`, not a looser DialogTree promotion.
 - `2` groups (`dlg_e3m6_11` group 4 and `dlg_e6m2_7` group 1) have authored
   shared-route evidence. Both options route into the same authored path, so
   they should not be treated as confirmed per-option branches.
+- All `106` audited rows now carry DialogIdTable trunk line refs in the JSON
+  and Markdown reports.
+- After `scripts/recover_dialog_id_registry.py` was widened to extract
+  `option_dlg_*` tokens from the same binary table, all `106` audited rows
+  also have DialogIdTable option refs for the current group, and all current
+  WebUI option IDs are present in those refs. The current registry extraction
+  finds `3,725` runtime option IDs across `1,185` scenes.
+- A spot byte check around `dlg_e2m5_3` option IDs shows multiple duplicate
+  option-id blocks with nearby dense little-endian integers such as `489`,
+  `490`, and `491`. They do not match Timeline `logicId` values (`2` and `4`)
+  and should be treated as registry/string ordinals until a fuller
+  MemoryPack decoder proves otherwise.
 
 Recovery gain: this closes the obvious AnimeStudio DialogTree promotion path
-for the unresolved queue. The biggest remaining quality lever is deeper
-Timeline/runtime option-target decoding, not broader DialogTree inference.
+for the unresolved queue and adds a runtime grouping lens. DialogIdTable now
+confirms that the unresolved option IDs are real runtime options, not WebUI
+inventions or missing table joins. Its trunk refs explain which original trunk
+rows the runtime knows about, but they are not branch targets by themselves.
+The biggest remaining quality lever is decoding how option selection maps to
+those runtime trunk refs or to Timeline target state, not broader DialogTree
+inference.
 
 AnimeStudio CLI was also patched so future MonoBehaviour JSON exports include
 resolved MonoScript metadata under `$animestudio` (`scriptFullName`,

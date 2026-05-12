@@ -21,7 +21,7 @@ const FILTER_PANEL_STORAGE_KEY = "webui_filters_collapsed";
 const STORY_SPLITTER_STORAGE_KEY = "webui_story_splitter_width";
 const ASSET_SPLITTER_STORAGE_KEY = "webui_asset_splitter_width";
 const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
-const WEBUI_DATA_CACHE_TAG = "20260512-route-ui";
+const WEBUI_DATA_CACHE_TAG = "20260512-runtime-trunks";
 const DEFAULT_LANGUAGE_INFO = {
   code: "CN",
   label: "Chinese (Simplified)",
@@ -2708,6 +2708,54 @@ function convRuntimeRegistry(conv) {
   return registry;
 }
 
+function runtimeRegistryLinesByTrunk(registry) {
+  const raw = registry && registry.linesByTrunk && typeof registry.linesByTrunk === "object"
+    ? registry.linesByTrunk
+    : null;
+  if (!raw) return [];
+  return Object.entries(raw)
+    .map(([trunk, values]) => {
+      const lineIds = Array.isArray(values)
+        ? values.map((value) => String(value || "").trim()).filter(Boolean)
+        : [];
+      if (!lineIds.length) return "";
+      return `trunk ${trunk}: ${lineIds.join(", ")}`;
+    })
+    .filter(Boolean);
+}
+
+function runtimeRegistryOptionsByGroup(registry) {
+  const raw = registry && registry.optionsByGroup && typeof registry.optionsByGroup === "object"
+    ? registry.optionsByGroup
+    : null;
+  if (!raw) return [];
+  return Object.entries(raw)
+    .map(([group, values]) => {
+      const optionIds = Array.isArray(values)
+        ? values.map((value) => String(value || "").trim()).filter(Boolean)
+        : [];
+      if (!optionIds.length) return "";
+      return `option group ${group}: ${optionIds.join(", ")}`;
+    })
+    .filter(Boolean);
+}
+
+function lineOrderRegistryTitle(registry, fallback = "") {
+  if (!registry) return "";
+  const parts = [];
+  const primary = fallback
+    ? String(fallback)
+    : (registry.reason ? String(registry.reason) : "");
+  if (primary) parts.push(primary);
+  if (registry.sceneKey) parts.push(`sceneKey: ${registry.sceneKey}`);
+  if (registry.webuiKey && registry.webuiKey !== registry.sceneKey) {
+    parts.push(`webuiKey: ${registry.webuiKey}`);
+  }
+  for (const line of runtimeRegistryLinesByTrunk(registry)) parts.push(line);
+  for (const line of runtimeRegistryOptionsByGroup(registry)) parts.push(line);
+  return parts.join("\n");
+}
+
 function lineOrderModeText(mode) {
   if (mode === "dialogTree") return uiText("lineOrderModeDialogTree");
   if (mode === "dialogTreeFragment") return uiText("lineOrderModeDialogTreeFragment");
@@ -2738,7 +2786,7 @@ function lineOrderRuntimeMode(conv, lineOrder, originalLineIds, orderedLineIds) 
   if (!registry || !lineOrder || lineOrder.mode !== "lineIdSuffix") return null;
   if (!originalLineIds.length || !orderedLineIds.length) return null;
   if (!lineOrderIdListEquals(originalLineIds, orderedLineIds)) return null;
-  const title = registry.reason ? String(registry.reason) : "";
+  const title = lineOrderRegistryTitle(registry);
   if (registry.registered === false) {
     return {
       text: uiText("lineOrderModeUnregisteredScene"),
@@ -2758,7 +2806,7 @@ function lineOrderRuntimeMode(conv, lineOrder, originalLineIds, orderedLineIds) 
 
 function lineOrderRegistryChip(registry) {
   if (!registry) return null;
-  const title = registry.reason ? String(registry.reason) : "";
+  const title = lineOrderRegistryTitle(registry);
   if (registry.registered === false) {
     return {
       text: uiText("lineOrderRegistryUnregistered"),
@@ -2796,9 +2844,7 @@ function lineOrderRegistryDeltaChip(registry) {
     ? "lineOrderRegistryDeltaPositive"
     : "lineOrderRegistryDeltaNegative";
   const text = uiText(labelKey).replace("{count}", absText);
-  const title = registry.note
-    ? String(registry.note)
-    : (registry.reason ? String(registry.reason) : "");
+  const title = lineOrderRegistryTitle(registry, registry.note || registry.reason || "");
   // Negative delta = webui shows fewer lines than the runtime registry
   // addresses. That's a stronger signal (something missing) than positive
   // delta (extra summary/hint rows in webui that the runtime doesn't

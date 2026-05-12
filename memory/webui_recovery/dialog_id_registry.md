@@ -110,6 +110,9 @@ build the registry. ID format observed:
 - Per-line keys: `dlg_<sceneKey>_<trunkIdx>_<lineDigits>` where trunkIdx
   is a small positive int and lineDigits is 3-5 digits (e.g.
   `dlg_e10m3_1_1_001`, `dlg_e10m3_1_2_001`, ...).
+- Option keys: `option_dlg_<sceneKey>_<groupIdx>_<optionDigits>` where
+  optionDigits is three digits (e.g. `option_dlg_e2m5_3_1_001`). These are
+  runtime option registrations, not route targets by themselves.
 - Some scenes appear only through per-line keys with no explicit scene-
   root token. We still count those as registered.
 
@@ -136,6 +139,13 @@ Input: `export_full/structured/StreamingAssets/Data/Json/GameplayConfig/DialogId
 Output: `export_full/recovered/dialog_id_table_index.json` — a dict keyed
 by sceneKey:
 
+As of the 2026-05-12 extractor pass, the current installed data yields:
+
+- `4,496` registered scenes.
+- `1,058` scenes with trunk/line decomposition.
+- `1,185` scenes with option registrations.
+- `3,725` extracted option IDs.
+
 ```json
 "dlg_e10m3_1": {
   "registered": true,
@@ -147,6 +157,11 @@ by sceneKey:
     "1": ["dlg_e10m3_1_1_001", "dlg_e10m3_1_1_002"],
     "2": ["dlg_e10m3_1_2_001"],
     "3": ["dlg_e10m3_1_3_001"]
+  },
+  "optionGroupCount": 1,
+  "optionCount": 2,
+  "optionsByGroup": {
+    "1": ["option_dlg_e10m3_1_1_001", "option_dlg_e10m3_1_1_002"]
   }
 }
 ```
@@ -192,6 +207,9 @@ directly without re-deriving it. The block looks like:
   "lineCount": 4,
   "lineCountWebui": 5,
   "hasRootKey": true,
+  "optionsByGroup": {
+    "1": ["option_dlg_e2m5_3_1_001", "option_dlg_e2m5_3_1_002"]
+  },
   "reason": "sceneKey is registered in Beyond.Gameplay.DialogIdTable",
   "lineCountDelta": 1,
   "note": "webui has 5 line(s) but DialogIdTable's per-trunk line entries total 4; the extra webui line(s) may be summary/hint rows that the runtime doesn't address by trunk id"
