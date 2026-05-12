@@ -110,16 +110,17 @@ per-option skip windows: for a selected `optionIndex`, lines inside that skip
 window are skipped and the remaining lines before the next option group become
 that option's branch path.
 
-Current CN gains from this pass:
+Current CN gains from this pass, after the 2026-05-12 directional Runtime Jump
+extension:
 
-- `timeline_line_orders.json`: 25 Timeline entries with route evidence,
-  containing 59 option routes.
-- WebUI CN conv output: 15 scenes and 17 option groups now have
+- `timeline_line_orders.json`: 27 Timeline entries with route evidence,
+  containing 61 option routes.
+- WebUI CN conv output: 16 scenes and 18 option groups now have
   `timelineRouteBranches` evidence.
-- Those route-backed groups account for 93 branch-line assignments that no
+- Those route-backed groups account for 100 branch-line assignments that no
   longer need `inferredFollowingLines` risk tags.
-- Strict recovery report improvement: flagged scenes dropped from 98 to 93,
-  and inferred option-response scenes dropped from 65 to 60.
+- Strict recovery report improvement: flagged scenes dropped from 98 to 92,
+  and inferred option-response scenes dropped from 65 to 59.
 
 On 2026-05-12 `tools/endfield_source_graph.py` was updated to ingest the raw
 Timeline recovery file directly. This does not change WebUI conv output by
@@ -320,9 +321,22 @@ paths for every option. It recovers `dlg_c28m3_23` group 2:
 - `option_dlg_c28m3_23_2_001` -> `dlg_c28m3_23_014`
 - `option_dlg_c28m3_23_2_002` -> `dlg_c28m3_23_015`
 
-After that promotion, the audit has 107 remaining inferred groups; 11 have
-nearby Runtime Jump clips, and 0 pass the strict second-rule check. The nearby
-cases are therefore diagnostic only for now.
+On 2026-05-12 a directional Runtime Jump rule resolved the `dlg_c13m2_12`
+group 1 contradiction. The key evidence is that the reverse clip for option 2
+starts at the option prompt and covers `dlg_c13m2_12_027`, while the forward
+clip for option 1 skips that same line. The recovered routes are:
+
+- `option_dlg_c13m2_12_1_001` -> `dlg_c13m2_12_003`,
+  `dlg_c13m2_12_004`, `dlg_c13m2_12_005`
+- `option_dlg_c13m2_12_1_002` -> `dlg_c13m2_12_027`,
+  `dlg_c13m2_12_003`, `dlg_c13m2_12_004`, `dlg_c13m2_12_005`
+
+That changed `dlg_c13m2_12` group 1 from `inferredFollowingLines` into
+`timelineRouteBranches`, with both the forward skip track and the reverse
+range track preserved in the WebUI evidence payload. After that promotion, the
+audit has 106 remaining inferred groups; 10 have nearby Runtime Jump clips,
+and 0 pass the strict promotion checks. The nearby cases are therefore
+diagnostic only for now.
 
 On 2026-05-12 `scripts/webui/build_runtime_jump_option_route_audit.py` gained
 targeted filters so these diagnostics can be checked without a full global
@@ -334,14 +348,14 @@ python scripts\webui\build_runtime_jump_option_route_audit.py --language CN --st
 python scripts\webui\build_runtime_jump_option_route_audit.py --language CN --story dlg_c13m2_12 --group 1
 ```
 
-Current spot checks still do not justify another automatic route rule:
+Current spot checks after the directional-rule promotion still do not justify
+another automatic route rule:
 
 - `dlg_e1m1_5` group 3 has no nearby Runtime Jump clips.
 - `dlg_c28m3_23` group 1 has nearby forward jumps, but they belong to option
   indices 3 and 4 rather than the inferred group's option indices 1 and 2.
-- `dlg_c13m2_12` group 1 has nearby jump clips, but one is reverse/direction
-  marked and the reconstructed path does not match the inferred candidate
-  response layout.
+- The remaining nearby Runtime Jump cases either contradict the current
+  inferred first line or lack complete option coverage.
 
 `dlg_e0m2_1` is now resolved by the `dialogTreeCinematicTimeline` stitch:
 `dlgtl_e0m2_1_sub_1` inserts line 005 after trunk line 004, and

@@ -3424,6 +3424,9 @@ def _normalize_dialog_timeline_option_routes(value) -> dict[str, dict]:
             "pathLineIds": path_line_ids,
             "skippedLineIds": skipped_line_ids,
         }
+        reverse_range_line_ids = _normalize_line_order_ids(raw.get("reverseRangeLineIds"))
+        if reverse_range_line_ids:
+            record["reverseRangeLineIds"] = reverse_range_line_ids
         for field in ("groupKey", "continuationGroupKey"):
             value_for_field = str(raw.get(field) or "").strip()
             if value_for_field:
@@ -3439,23 +3442,34 @@ def _normalize_dialog_timeline_option_routes(value) -> dict[str, dict]:
             value_for_field = raw.get(field)
             if isinstance(value_for_field, (int, float)):
                 record[field] = round(float(value_for_field), 3)
-        skip_ranges: list[dict] = []
-        for raw_range in raw.get("skipRanges") or []:
-            if not isinstance(raw_range, dict):
-                continue
-            range_record: dict = {}
-            for field in ("start", "end", "duration"):
-                value_for_field = raw_range.get(field)
-                if isinstance(value_for_field, (int, float)):
-                    range_record[field] = round(float(value_for_field), 3)
-            for field in ("track", "trackName", "assetTrack", "displayName"):
-                value_for_field = str(raw_range.get(field) or "").strip()
-                if value_for_field:
-                    range_record[field] = value_for_field
-            if range_record:
-                skip_ranges.append(range_record)
+        def normalize_ranges(raw_ranges) -> list[dict]:
+            ranges: list[dict] = []
+            for raw_range in raw_ranges or []:
+                if not isinstance(raw_range, dict):
+                    continue
+                range_record: dict = {}
+                for field in ("start", "end", "duration", "crossFadeDurationAfterJump"):
+                    value_for_field = raw_range.get(field)
+                    if isinstance(value_for_field, (int, float)):
+                        range_record[field] = round(float(value_for_field), 3)
+                for field in ("track", "trackName", "assetTrack", "displayName"):
+                    value_for_field = str(raw_range.get(field) or "").strip()
+                    if value_for_field:
+                        range_record[field] = value_for_field
+                for field in ("isReverseJump", "needChangeOptionAfterJump", "optionIndexAfterJump", "isJumpFirst"):
+                    value_for_field = raw_range.get(field)
+                    if isinstance(value_for_field, int):
+                        range_record[field] = value_for_field
+                if range_record:
+                    ranges.append(range_record)
+            return ranges
+
+        skip_ranges = normalize_ranges(raw.get("skipRanges"))
+        reverse_ranges = normalize_ranges(raw.get("reverseRanges"))
         if skip_ranges:
             record["skipRanges"] = skip_ranges
+        if reverse_ranges:
+            record["reverseRanges"] = reverse_ranges
         out[option_id] = record
     return dict(sorted(out.items()))
 
@@ -7513,6 +7527,7 @@ def build_language_bundle(
                 return {}
             branch_line_ids_by_option: dict[str, list[str]] = {}
             skipped_line_ids_by_option: dict[str, list[str]] = {}
+            reverse_range_line_ids_by_option: dict[str, list[str]] = {}
             for opt_id, route in zip(group_opt_ids, routes):
                 path_line_ids = [
                     str(line_id)
@@ -7525,6 +7540,11 @@ def build_language_bundle(
                 skipped_line_ids_by_option[opt_id] = [
                     str(line_id)
                     for line_id in (route.get("skippedLineIds") or [])
+                    if line_id in valid_line_ids
+                ]
+                reverse_range_line_ids_by_option[opt_id] = [
+                    str(line_id)
+                    for line_id in (route.get("reverseRangeLineIds") or [])
                     if line_id in valid_line_ids
                 ]
             if len({tuple(value) for value in branch_line_ids_by_option.values()}) < 2:
@@ -7540,14 +7560,19 @@ def build_language_bundle(
                 "reason": "runtimeJumpTrack",
                 "detail": (
                     "Runtime Jump Track clips in the dialog Timeline mark "
-                    "which time ranges each selected optionIndex skips; branch "
-                    "lines are recovered by removing those skipped ranges from "
-                    "the route window."
+                    "which time ranges each selected optionIndex skips or "
+                    "re-enters; branch lines are recovered from those "
+                    "directional route windows."
                 ),
                 "after": after_id,
                 "optionIds": group_opt_ids,
                 "branchLineIdsByOption": branch_line_ids_by_option,
                 "skippedLineIdsByOption": skipped_line_ids_by_option,
+                "reverseRangeLineIdsByOption": {
+                    opt_id: line_ids
+                    for opt_id, line_ids in reverse_range_line_ids_by_option.items()
+                    if line_ids
+                },
                 "continuationOptionIds": continuation_option_ids,
                 "source": "dialogTimeline",
                 "optionIndex": [
@@ -7557,7 +7582,7 @@ def build_language_bundle(
                 "assetTracks": _unique_preserve([
                     str(raw_range.get("track") or raw_range.get("assetTrack") or "")
                     for route in routes
-                    for raw_range in (route.get("skipRanges") or [])
+                    for raw_range in ((route.get("skipRanges") or []) + (route.get("reverseRanges") or []))
                     if str(raw_range.get("track") or raw_range.get("assetTrack") or "").strip()
                 ]),
             }

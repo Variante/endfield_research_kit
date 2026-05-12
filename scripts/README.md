@@ -122,8 +122,10 @@ These are kept because the WebUI story builders import or use them:
   `reports/narrative_videos_<LANG>.json` / `.md`.
 - `webui/build_runtime_jump_option_route_audit.py`: audits remaining
   `inferredFollowingLines` option groups against nearby Runtime Jump Track
-  clips and writes `reports/runtime_jump_option_route_audit_<LANG>.json` /
-  `.md`. Use it before promoting any new automatic option-route rule.
+  clips, including forward skip ranges, reverse/directional ranges, and
+  `needChangeOptionAfterJump` markers. It writes
+  `reports/runtime_jump_option_route_audit_<LANG>.json` / `.md`. Use it
+  before promoting any new automatic option-route rule.
 - `webui/build_option_playable_semantics_audit.py`: audits remaining
   `inferredOptionResponse` groups against decoded
   `DialogOptionPlayableAsset` fields such as `logicId`, `trunkId`,

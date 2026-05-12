@@ -303,10 +303,10 @@ def infer_route_paths(
     candidate_line_ids: list[str],
     common_line_id: str,
     nearby_jumps: list[dict[str, Any]],
-) -> tuple[dict[str, list[str]], dict[str, list[str]], bool]:
+) -> tuple[dict[str, list[str]], dict[str, list[str]], dict[str, dict[str, Any]], bool]:
     _option_start, option_end = option_time_window(option_rows)
     if option_end is None:
-        return {}, {}, False
+        return {}, {}, {}, False
 
     line_rows = [line for line in conv.get("lines") or [] if isinstance(line, dict)]
     common_start = None
@@ -323,7 +323,7 @@ def infer_route_paths(
         candidate_ends = [value for value in candidate_ends if value is not None]
         common_start = max(candidate_ends) if candidate_ends else option_end
     if common_start <= option_end:
-        return {}, {}, False
+        return {}, {}, {}, False
 
     scene_key = safe_key(conv.get("key"))
     route_lines = [
@@ -334,33 +334,69 @@ def infer_route_paths(
         and as_float(line.get("ts")) < common_start - ROUTE_EPSILON
     ]
     if not route_lines:
-        return {}, {}, False
+        return {}, {}, {}, False
 
     by_option: dict[str, list[str]] = {}
+    jump_effects_by_option: dict[str, dict[str, Any]] = {}
     for option_id, row in zip(option_ids, option_rows):
         option_index = as_int(row.get("optionIndex"))
         if option_index is None:
             continue
-        skips = [
+        related_jumps = [
             clip
             for clip in nearby_jumps
-            if clip.get("optionIndex") == option_index and is_forward_jump(clip)
+            if clip.get("optionIndex") == option_index
         ]
-        if not skips:
-            continue
+        skips = [
+            clip
+            for clip in related_jumps
+            if is_forward_jump(clip)
+        ]
         path_line_ids: list[str] = []
+        forward_skipped_line_ids: list[str] = []
+        reverse_range_line_ids: list[str] = []
         for line in route_lines:
             line_id = safe_key(line.get("id"))
             line_start = as_float(line.get("ts"))
-            if any(
+            in_forward_skip = any(
                 line_start >= as_float(skip.get("start")) - ROUTE_EPSILON
                 and line_start < as_float(skip.get("end")) - ROUTE_EPSILON
                 for skip in skips
-            ):
+            )
+            if in_forward_skip:
+                if line_id:
+                    forward_skipped_line_ids.append(line_id)
                 continue
             if line_id:
                 path_line_ids.append(line_id)
-        by_option[option_id] = path_line_ids
+            if any(
+                not is_forward_jump(jump)
+                and line_start >= as_float(jump.get("start")) - ROUTE_EPSILON
+                and line_start < as_float(jump.get("end")) - ROUTE_EPSILON
+                for jump in related_jumps
+            ) and line_id:
+                reverse_range_line_ids.append(line_id)
+        if skips:
+            by_option[option_id] = path_line_ids
+        option_change_jumps = [
+            {
+                "start": jump.get("start"),
+                "end": jump.get("end"),
+                "optionIndexAfterJump": jump.get("optionIndexAfterJump"),
+                "isForwardJump": is_forward_jump(jump),
+                "displayName": jump.get("displayName") or "",
+                "assetTrack": jump.get("assetTrack") or "",
+            }
+            for jump in related_jumps
+            if as_int(jump.get("needChangeOptionAfterJump"))
+        ]
+        if forward_skipped_line_ids or reverse_range_line_ids or option_change_jumps:
+            jump_effects_by_option[option_id] = {
+                "optionIndex": option_index,
+                "forwardSkippedLineIds": forward_skipped_line_ids,
+                "reverseRangeLineIds": reverse_range_line_ids,
+                "optionChangeJumps": option_change_jumps,
+            }
 
     expected = {
         option_id: [candidate_line_ids[index]]
@@ -368,12 +404,13 @@ def infer_route_paths(
         if index < len(candidate_line_ids) and candidate_line_ids[index]
     }
     paths_match_candidates = bool(expected) and all(by_option.get(option_id) == expected[option_id] for option_id in expected)
-    return by_option, expected, paths_match_candidates
+    return by_option, expected, jump_effects_by_option, paths_match_candidates
 
 
 def runtime_path_diagnostics(
     inferred_paths: dict[str, list[str]],
     expected_paths: dict[str, list[str]],
+    jump_effects_by_option: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     runtime_first_by_option = {
         option_id: path[0]
@@ -399,11 +436,37 @@ def runtime_path_diagnostics(
                 "runtimeFirstLineId": runtime_first,
                 "runtimeFirstLineCandidateOwner": candidate_owner_by_line.get(runtime_first),
             })
+    directional_first_by_option = dict(runtime_first_by_option)
+    for option_id, effects in jump_effects_by_option.items():
+        reverse_lines = effects.get("reverseRangeLineIds") or []
+        if reverse_lines:
+            directional_first_by_option[option_id] = reverse_lines[0]
+    directional_conflicts: list[dict[str, Any]] = []
+    for option_id, directional_first in directional_first_by_option.items():
+        expected_first = expected_first_by_option.get(option_id)
+        if expected_first and directional_first != expected_first:
+            directional_conflicts.append({
+                "optionId": option_id,
+                "expectedFirstLineId": expected_first,
+                "directionalFirstLineId": directional_first,
+                "directionalFirstLineCandidateOwner": candidate_owner_by_line.get(directional_first),
+            })
+    expected_first_set = {value for value in expected_first_by_option.values() if value}
+    directional_first_set = {value for value in directional_first_by_option.values() if value}
+    directional_covers_candidates = (
+        bool(expected_first_set)
+        and expected_first_set == directional_first_set
+        and len(directional_first_by_option) >= len(expected_first_by_option)
+    )
     return {
         "expectedFirstLineByOption": expected_first_by_option,
         "runtimeFirstLineByOption": runtime_first_by_option,
+        "directionalFirstLineByOption": directional_first_by_option,
+        "directionalFirstLinesCoverCandidates": directional_covers_candidates,
         "runtimePathConflicts": conflicts,
         "runtimePathConflictCount": len(conflicts),
+        "directionalFirstLineConflicts": directional_conflicts,
+        "directionalFirstLineConflictCount": len(directional_conflicts),
     }
 
 
@@ -477,7 +540,7 @@ def audit_group(
         }
         if value not in option_index_set
     )
-    inferred_paths, expected_paths, paths_match_candidates = infer_route_paths(
+    inferred_paths, expected_paths, jump_effects_by_option, paths_match_candidates = infer_route_paths(
         conv,
         option_rows,
         option_ids,
@@ -485,7 +548,7 @@ def audit_group(
         common_line_id,
         nearby_jumps,
     )
-    path_diagnostics = runtime_path_diagnostics(inferred_paths, expected_paths)
+    path_diagnostics = runtime_path_diagnostics(inferred_paths, expected_paths, jump_effects_by_option)
     distinct_paths = {tuple(path) for path in inferred_paths.values() if path}
     passes_narrow_route_rule = (
         complete_forward_coverage
@@ -499,6 +562,8 @@ def audit_group(
         recommendation = "promoteableRouteRuleCandidate"
     elif not nearby_jumps:
         recommendation = "noNearbyRuntimeJump"
+    elif path_diagnostics["directionalFirstLinesCoverCandidates"] and path_diagnostics["directionalFirstLineConflictCount"]:
+        recommendation = "reviewDirectionalRuntimeJumpMapping"
     elif path_diagnostics["runtimePathConflictCount"]:
         recommendation = "nearbyRuntimeJumpContradictsInferredPath"
     elif not complete_forward_coverage:
@@ -538,6 +603,7 @@ def audit_group(
             "mismatchedJumpIndices": mismatched_jump_indices,
             "inferredPathsByOption": inferred_paths,
             "expectedPathsByOption": expected_paths,
+            "runtimeJumpEffectsByOption": jump_effects_by_option,
             "pathsMatchCandidates": paths_match_candidates,
             **path_diagnostics,
             "passesNarrowRouteRule": passes_narrow_route_rule,
@@ -618,6 +684,30 @@ def summarize_rows(
         "groupsWithRuntimePathConflicts": sum(
             1 for row in rows if row.get("checks", {}).get("runtimePathConflictCount")
         ),
+        "groupsWithDirectionalCandidateCoverage": sum(
+            1 for row in rows if row.get("checks", {}).get("directionalFirstLinesCoverCandidates")
+        ),
+        "groupsWithDirectionalMappingConflicts": sum(
+            1 for row in rows if row.get("checks", {}).get("directionalFirstLineConflictCount")
+        ),
+        "groupsWithReverseRangeLineEvidence": sum(
+            1
+            for row in rows
+            if any(
+                effects.get("reverseRangeLineIds")
+                for effects in (row.get("checks", {}).get("runtimeJumpEffectsByOption") or {}).values()
+                if isinstance(effects, dict)
+            )
+        ),
+        "groupsWithOptionChangeJumps": sum(
+            1
+            for row in rows
+            if any(
+                effects.get("optionChangeJumps")
+                for effects in (row.get("checks", {}).get("runtimeJumpEffectsByOption") or {}).values()
+                if isinstance(effects, dict)
+            )
+        ),
         "groupsPassingNarrowRouteRule": sum(
             1 for row in rows if row.get("checks", {}).get("passesNarrowRouteRule")
         ),
@@ -641,7 +731,7 @@ def jump_summary(row: dict[str, Any]) -> str:
 
 def runtime_path_summary(row: dict[str, Any]) -> str:
     checks = row.get("checks") or {}
-    first_by_option = checks.get("runtimeFirstLineByOption") or {}
+    first_by_option = checks.get("directionalFirstLineByOption") or checks.get("runtimeFirstLineByOption") or {}
     if not isinstance(first_by_option, dict) or not first_by_option:
         return ""
     parts = []
@@ -650,6 +740,31 @@ def runtime_path_summary(row: dict[str, Any]) -> str:
         marker = "" if not expected or expected == line_id else f" != {expected}"
         parts.append(f"{option_id} -> {line_id}{marker}")
     return "; ".join(parts)
+
+
+def jump_effect_summary(row: dict[str, Any]) -> str:
+    effects_by_option = (row.get("checks") or {}).get("runtimeJumpEffectsByOption") or {}
+    if not isinstance(effects_by_option, dict):
+        return ""
+    parts: list[str] = []
+    for option_id, effects in effects_by_option.items():
+        if not isinstance(effects, dict):
+            continue
+        details: list[str] = []
+        if effects.get("forwardSkippedLineIds"):
+            details.append("skip " + ",".join(effects["forwardSkippedLineIds"]))
+        if effects.get("reverseRangeLineIds"):
+            details.append("reverse " + ",".join(effects["reverseRangeLineIds"]))
+        change_targets = [
+            str(item.get("optionIndexAfterJump"))
+            for item in effects.get("optionChangeJumps") or []
+            if item.get("optionIndexAfterJump") is not None
+        ]
+        if change_targets:
+            details.append("change->" + ",".join(change_targets))
+        if details:
+            parts.append(f"{option_id}: {'; '.join(details)}")
+    return " | ".join(parts)
 
 
 def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
@@ -663,6 +778,10 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
         f"- Groups with pre-option jump timing: `{summary['groupsWithPreOptionJumps']}`",
         f"- Groups with Runtime Jump path evidence: `{summary['groupsWithRuntimePathEvidence']}`",
         f"- Groups where Runtime Jump path evidence contradicts the current inferred first line: `{summary['groupsWithRuntimePathConflicts']}`",
+        f"- Groups where directional Runtime Jump effects cover all current candidate first lines: `{summary['groupsWithDirectionalCandidateCoverage']}`",
+        f"- Groups where directional Runtime Jump mapping disagrees with current inferred first lines: `{summary['groupsWithDirectionalMappingConflicts']}`",
+        f"- Groups with reverse-jump line-range evidence: `{summary['groupsWithReverseRangeLineEvidence']}`",
+        f"- Groups with `needChangeOptionAfterJump` clips: `{summary['groupsWithOptionChangeJumps']}`",
         f"- Groups passing the strict second-rule check: `{summary['groupsPassingNarrowRouteRule']}`",
         "",
         "## Recommendation Counts",
@@ -690,8 +809,8 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
         "",
         "## Groups With Nearby Runtime Jump Clips",
         "",
-        "| Scene | Group | After | Options | Candidates | Common | Nearby jumps | Runtime path check | Recommendation |",
-        "| --- | ---: | --- | --- | --- | --- | --- | --- | --- |",
+        "| Scene | Group | After | Options | Candidates | Common | Nearby jumps | Runtime line effects | Runtime path check | Recommendation |",
+        "| --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- |",
     ])
     for row in nearby_rows:
         lines.append(
@@ -703,11 +822,12 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
             f"| `{md_escape(', '.join(row.get('candidateLineIds') or []))}` "
             f"| `{md_escape(row.get('commonContinuationLineId'))}` "
             f"| {md_escape(jump_summary(row))} "
+            f"| {md_escape(jump_effect_summary(row))} "
             f"| {md_escape(runtime_path_summary(row))} "
             f"| `{md_escape(row.get('recommendation'))}` |"
         )
     if not nearby_rows:
-        lines.append("| _(none)_ |  |  |  |  |  |  |  |  |")
+        lines.append("| _(none)_ |  |  |  |  |  |  |  |  |  |")
     return "\n".join(lines)
 
 
