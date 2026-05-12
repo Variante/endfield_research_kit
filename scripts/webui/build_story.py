@@ -6149,6 +6149,17 @@ def build_language_bundle(
             "trace": named_text_trace("SNSChatTable", chat_id, "name", row.get("name")),
         }
 
+    def chat_type(chat_id: str) -> int:
+        if not chat_id:
+            return 0
+        row = sns_chats.get(chat_id)
+        if not isinstance(row, dict):
+            return 0
+        try:
+            return int(row.get("chatType") or 0)
+        except (TypeError, ValueError):
+            return 0
+
     def topic_name(topic_id: str) -> str:
         """Resolve an SNS topic id like `topic_chr_0004_pelica` to its localized title."""
         if not topic_id:
@@ -8337,9 +8348,10 @@ def build_language_bundle(
         m = SNS_RE.match(sns_id)
         mission = m.group(1) if m else sns_id
         scene = int(m.group(2)) if m else 0
-        is_topic_chat = sns_id.startswith("sns_topic_") and bool(entry.get("chatId"))
+        chat_id = str(entry.get("chatId") or "")
+        is_topic_chat = sns_id.startswith("sns_topic_") and bool(chat_id)
         if is_topic_chat:
-            mission = f"topic_{entry.get('chatId')}"
+            mission = f"topic_{chat_id}"
         type_, act = parse_mission(mission)
 
         # Reconstruct order by following nextContentId from -1's preContentId backwards,
@@ -8493,22 +8505,41 @@ def build_language_bundle(
         out_key = sns_id
         title_topic_id = entry.get("topicId") or mission.removeprefix("topic_")
         topic_title_trace = topic_name_trace(title_topic_id)
-        chat_title_trace = chat_name_trace(entry.get("chatId", "")) if is_topic_chat else None
+        chat_title_trace = chat_name_trace(chat_id)
         mission_title_trace = mission_name_trace(mission)
-        chat_title = chat_name(entry.get("chatId", "")) if is_topic_chat else ""
+        chat_title = chat_name(chat_id)
+        chat_type_value = chat_type(chat_id)
         mission_title = mission_name(mission)
         topic_title = topic_name(title_topic_id)
-        display_title = topic_title or chat_title or mission_title or sns_raw_title(out_key)
-        display_title_debug = (
-            topic_title_trace
-            or chat_title_trace
-            or mission_title_trace
-            or {"source": sns_raw_title(out_key)}
-        )
+
+        title_choices: list[tuple[str, dict | None]] = []
+        if is_topic_chat:
+            title_choices.extend([
+                (topic_title, topic_title_trace),
+                (chat_title, chat_title_trace),
+            ])
+        else:
+            title_choices.append((topic_title, topic_title_trace))
+        title_choices.extend([
+            (mission_title, mission_title_trace),
+            (chat_title, chat_title_trace),
+            (sns_raw_title(out_key), {"source": sns_raw_title(out_key)}),
+        ])
+
+        display_title = ""
+        display_title_debug: dict | None = None
+        for title_value, title_debug in title_choices:
+            if title_value:
+                display_title = title_value
+                display_title_debug = title_debug or {"source": title_value}
+                break
+        if not display_title:
+            display_title = sns_raw_title(out_key)
+            display_title_debug = {"source": display_title}
+
         def is_admin_sns_speaker(speaker_id: str) -> bool:
             return (speaker_actor_id(speaker_id) or speaker_id).lower() in ADMIN_ACTOR_IDS
 
-        chat_id = str(entry.get("chatId") or "")
         primary_speaker = speakers[0] if speakers else ""
         if primary_speaker and is_admin_sns_speaker(primary_speaker):
             primary_speaker = speakers[1] if len(speakers) > 1 else ""
@@ -8531,6 +8562,8 @@ def build_language_bundle(
             "scene": scene,
             "title": display_title,
             "chatId": chat_id,
+            "chatTitle": chat_title,
+            "chatType": chat_type_value,
             "chatGroupSpeaker": primary_speaker,
             "relatedMissionId": entry.get("relatedMissionId", ""),
             "lines": lines,
@@ -8541,6 +8574,7 @@ def build_language_bundle(
                     pick_fields(entry, "chatId", "relatedMissionId", "topicId", "dialogContentData"),
                 ),
                 "title": display_title_debug,
+                "chat": chat_title_trace,
             },
         }
         write_conv_payload(out_key, sns_payload)
@@ -8554,6 +8588,8 @@ def build_language_bundle(
             "a": act,
             "title": display_title,
             "chatId": chat_id,
+            "chatTitle": chat_title,
+            "chatType": chat_type_value,
             "chatGroupSpeaker": primary_speaker,
             "c": index_speakers,
             "n": len(lines),
@@ -8568,10 +8604,11 @@ def build_language_bundle(
             for option in (line.get("options") or [])
             if option.get("text")
         )
-        entry["x"] = merge_search_text(
-            display_title,
-            sns_line_text,
-        )
+        entry["x"] = display_title
+        for title_text in (chat_title, topic_title, mission_title):
+            if title_text and title_text != display_title:
+                entry["x"] = merge_search_text(entry["x"], title_text)
+        entry["x"] = merge_search_text(entry["x"], sns_line_text)
         entry["x"] = merge_search_text(
             entry["x"],
             sns_option_text,

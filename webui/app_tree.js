@@ -45,6 +45,17 @@ function simTreeGroupInfo(entry) {
 
 function topicTreeGroupInfo(entry) {
   if (!entry || String(entry.d || "") !== "sns") return null;
+  const chatTitle = snsChannelDisplayTitle(entry);
+  const chatId = String(entry.chatId || "").trim();
+  if (chatTitle) {
+    return {
+      key: `snschat:${(chatId || chatTitle).toLowerCase()}`,
+      label: chatTitle,
+      raw: chatId && chatId !== chatTitle ? chatId : "",
+      mono: false,
+    };
+  }
+
   const actorId = String(entry.chatGroupSpeaker || (entry.c && entry.c[0]) || "").trim();
   if (!actorId) return null;
   if (SPECIAL_SIM_ACTOR_IDS.has(actorId.toLowerCase())) return null;

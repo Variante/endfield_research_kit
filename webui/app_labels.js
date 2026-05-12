@@ -1788,13 +1788,31 @@ function cleanDisplayTitle(text, fallbackMissionId = "") {
   return raw;
 }
 
+function snsChannelDisplayTitle(item) {
+  const chatType = Number(item && item.chatType);
+  if (chatType !== 2) return "";
+  const missionId = String(item && (item.m || item.mission) || "");
+  return cleanDisplayTitle(item && item.chatTitle || "", missionId);
+}
+
+function displaySnsTitle(item, fallback = "") {
+  const missionId = String(item && (item.m || item.mission) || "");
+  const baseTitle = cleanDisplayTitle(item && item.title || fallback, missionId);
+  const chatTitle = snsChannelDisplayTitle(item);
+  if (chatTitle && baseTitle && chatTitle !== baseTitle) return `${chatTitle} - ${baseTitle}`;
+  return chatTitle || baseTitle;
+}
+
 function displayEntryTitle(entry) {
+  if (String(entry && entry.d || "") === "sns") {
+    return displaySnsTitle(entry, entry && entry.k || "");
+  }
   return cleanDisplayTitle(entry.title || entry.k || "", entry && entry.m ? entry.m : "");
 }
 
 function displayConvTitle(conv) {
   const missionTitle = conv.mission ? missionDisplay(conv.mission, conv.kind) : "";
-  if (conv.kind === "sns") return displayNamedKey(conv.title || "", conv.key, conv.mission || "");
+  if (conv.kind === "sns") return displayNamedKey(displaySnsTitle(conv, conv.key || ""), conv.key, conv.mission || "");
   if (["mail", "prts", "wiki", "responsive"].includes(conv.kind) || String(conv.kind || "").startsWith("table_")) {
     return displayNamedKey(conv.title || missionTitle || "", conv.key, conv.mission || "");
   }

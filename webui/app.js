@@ -3376,6 +3376,8 @@ function renderConv(conv) {
   if (conv.mission) meta.push(`mission=${conv.mission}`);
   if (conv.scene !== undefined) meta.push(`scene=${conv.scene}`);
   if (conv.chatId) meta.push(`chat=${conv.chatId}`);
+  if (conv.chatTitle) meta.push(`chatTitle=${conv.chatTitle}`);
+  if (conv.chatType !== undefined) meta.push(`chatType=${conv.chatType}`);
   if (conv.relatedMissionId) meta.push(`related=${conv.relatedMissionId}`);
   if (conv.cooldown !== undefined) meta.push(`cooldown=${conv.cooldown}`);
   meta.push(`lines=${conv.lines.length}`);
