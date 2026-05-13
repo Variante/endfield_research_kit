@@ -2219,14 +2219,21 @@ function timelineReverseRangeLineIdsForOption(option, group) {
   return lineOrderUniqueList(byOption && byOption[optionId]);
 }
 
-function optionLoopLineIds(option, group, conv, outcomesByOptionId, lineOrderIndexById = null) {
+function optionLoopMarkers(option, group, conv, outcomesByOptionId, lineOrderIndexById = null) {
   const out = [];
+  const push = (placementLineId, targetLineId) => {
+    const placement = String(placementLineId || "").trim();
+    const target = String(targetLineId || placement || "").trim();
+    if (!placement || !target) return;
+    if (out.some((item) => item.placementLineId === placement && item.targetLineId === target)) return;
+    out.push({ placementLineId: placement, targetLineId: target });
+  };
   const currentGroup = group && group.g != null
     ? Number(group.g)
     : optionGroupNumberFromOptionId(option && option.id, conv && conv.key);
   const currentAfterLineId = String(group && group.after || "");
   if (currentAfterLineId && timelineReverseRangeLineIdsForOption(option, group).length) {
-    out.push(currentAfterLineId);
+    push(currentAfterLineId, currentAfterLineId);
   }
   const hasCurrentLineIdx = lineOrderIndexById instanceof Map && lineOrderIndexById.has(currentAfterLineId);
   const currentLineIdx = hasCurrentLineIdx ? lineOrderIndexById.get(currentAfterLineId) : null;
@@ -2249,12 +2256,41 @@ function optionLoopLineIds(option, group, conv, outcomesByOptionId, lineOrderInd
     const backwardLoop = backwardByLine || backwardByGroup;
     if (!sameMenuLoop && !backwardLoop) continue;
     const pathLineIds = normalizeLineOrderIdList(outcome.pathLineIds);
-    const lineId = String(targetGroupInfo && targetGroupInfo.after || "")
+    const placementLineId = pathLineIds[pathLineIds.length - 1]
+      || targetAfterLineId
       || pathLineIds[0]
       || String(outcome.firstLineId || "");
-    if (lineId && !out.includes(lineId)) out.push(lineId);
+    const targetLineId = targetAfterLineId
+      || currentAfterLineId
+      || pathLineIds[0]
+      || String(outcome.firstLineId || "");
+    push(placementLineId, targetLineId);
   }
   return out;
+}
+
+function normalizeLoopMarkers(value) {
+  const out = [];
+  const push = (placementLineId, targetLineId) => {
+    const placement = String(placementLineId || "").trim();
+    const target = String(targetLineId || placement || "").trim();
+    if (!placement || !target) return;
+    if (out.some((item) => item.placementLineId === placement && item.targetLineId === target)) return;
+    out.push({ placementLineId: placement, targetLineId: target });
+  };
+  for (const item of Array.isArray(value) ? value : []) {
+    if (item && typeof item === "object") {
+      push(item.placementLineId || item.lineId || item.targetLineId, item.targetLineId || item.lineId);
+    } else {
+      push(item, item);
+    }
+  }
+  return out;
+}
+
+function loopMarkersForPlacement(markers, lineId) {
+  const target = String(lineId || "");
+  return normalizeLoopMarkers(markers).filter((marker) => marker.placementLineId === target);
 }
 
 function renderOptionJumpTags(option, group, conv, outcomesByOptionId) {
@@ -2275,15 +2311,16 @@ function renderOptionJumpTags(option, group, conv, outcomesByOptionId) {
   return wrap.childNodes.length ? wrap : null;
 }
 
-function renderOptionLoopTagsForLineIds(conv, loopLineIds) {
-  if (!loopLineIds.length) return null;
+function renderOptionLoopTagsForMarkers(conv, loopMarkers) {
+  const markers = normalizeLoopMarkers(loopMarkers);
+  if (!markers.length) return null;
 
   const wrap = document.createElement("div");
   wrap.className = "branch-loop-tags";
-  for (const lineId of loopLineIds) {
+  for (const marker of markers) {
     const loopChip = createLineJumpChip(
       conv,
-      lineId,
+      marker.targetLineId,
       "optJumpLoopLine",
       "opt-target-chip opt-target-chip-loop",
       "optJumpLoopLineTitle"
@@ -3955,6 +3992,8 @@ function renderConv(conv) {
     if (ln.id && duplicateTimestampLineIdSet.has(ln.id)) {
       appendDuplicateTimestampBadge(body);
     }
+    const loopTags = renderOptionLoopTagsForMarkers(conv, options.loopMarkers || []);
+    if (loopTags) body.appendChild(loopTags);
     row.appendChild(body);
     return row;
   };
@@ -4197,7 +4236,10 @@ function renderConv(conv) {
       if (!line) continue;
       if (isBackLoopAnchorLineForGroup(ownerGroup, lid)) continue;
       renderedDlgLineIds.add(lid);
-      lines.appendChild(renderDialogFlowLine(line, { branchColumn: true }));
+      lines.appendChild(renderDialogFlowLine(line, {
+        branchColumn: true,
+        loopMarkers: loopMarkersForPlacement(renderCtx && renderCtx.loopMarkers, lid),
+      }));
     }
     return lines.childNodes.length ? lines : null;
   };
@@ -4220,8 +4262,13 @@ function renderConv(conv) {
       renderedDlgLineIds.add(lid);
       lines.appendChild(
         renderCtx && renderCtx.branchColumn
-          ? renderDialogFlowLine(line, { branchColumn: true })
-          : renderDialogFlowLine(line)
+          ? renderDialogFlowLine(line, {
+              branchColumn: true,
+              loopMarkers: loopMarkersForPlacement(renderCtx && renderCtx.loopMarkers, lid),
+            })
+          : renderDialogFlowLine(line, {
+              loopMarkers: loopMarkersForPlacement(renderCtx && renderCtx.loopMarkers, lid),
+            })
       );
     }
     return lines.childNodes.length ? lines : null;
@@ -4322,13 +4369,21 @@ function renderConv(conv) {
         const icon = opt.icon && opt.icon !== "Default"
           ? ` <span class="opt-icon">[${escapeHtml(opt.icon)}]</span>` : "";
         o.innerHTML = `- ${highlight(opt.text || "(empty)", STATE.filters.q)}${icon}`;
-        const loopLineIds = optionLoopLineIds(opt, grp, conv, outcomesByOptionId, lineOrderIndexById);
-        const showLoopTags = renderCtx.branchColumn || !optionCandidateLineIds(opt, grp).length;
+        const loopMarkers = optionLoopMarkers(opt, grp, conv, outcomesByOptionId, lineOrderIndexById);
+        const branchLineIds = renderCtx.branchColumn
+          ? branchColumnLineIdsForOption(grp, opt)
+              .filter((lineId) => dlgBranchSkipIds.has(lineId))
+              .filter((lineId) => !(renderCtx.stopBeforeLineIds && renderCtx.stopBeforeLineIds.has(lineId)))
+          : [];
+        const inlineLoopMarkers = loopMarkers.filter((marker) => branchLineIds.includes(marker.placementLineId));
+        const headerLoopMarkers = loopMarkers.filter((marker) => !inlineLoopMarkers.includes(marker));
+        const showLoopTags = headerLoopMarkers.length
+          && (renderCtx.branchColumn || !optionCandidateLineIds(opt, grp).length);
         const targetChips = renderOptionTargetChips(
           opt,
           conv,
           outcomesByOptionId,
-          { ...chipOptions, hideSelfMenu: showLoopTags && loopLineIds.length > 0 }
+          { ...chipOptions, hideSelfMenu: loopMarkers.length > 0 }
         );
         if (targetChips) o.appendChild(targetChips);
         const jumpTags = renderOptionJumpTags(opt, grp, conv, outcomesByOptionId);
@@ -4341,15 +4396,15 @@ function renderConv(conv) {
         if (renderCtx.branchColumn) {
           // Single-option prompts should only absorb lines that the trunk has
           // already hidden as branch-specific content.
-          const branchLineIds = branchColumnLineIdsForOption(grp, opt)
-            .filter((lineId) => dlgBranchSkipIds.has(lineId))
-            .filter((lineId) => !(renderCtx.stopBeforeLineIds && renderCtx.stopBeforeLineIds.has(lineId)));
           for (const lineId of branchLineIds) singleRenderedBranchLineIds.add(lineId);
-          const pathLines = renderSingleOptionPathLines(branchLineIds, grp, renderCtx);
+          const pathLines = renderSingleOptionPathLines(branchLineIds, grp, {
+            ...renderCtx,
+            loopMarkers: inlineLoopMarkers,
+          });
           if (pathLines) singlePathLineFragments.push(pathLines);
         }
         if (showLoopTags) {
-          const loopTags = renderOptionLoopTagsForLineIds(conv, loopLineIds);
+          const loopTags = renderOptionLoopTagsForMarkers(conv, headerLoopMarkers);
           if (loopTags) g.appendChild(loopTags);
         }
       }
@@ -4452,12 +4507,12 @@ function renderConv(conv) {
       const head = document.createElement("div");
       head.className = "branch-head";
       head.innerHTML = `- ${highlight(opt.text || "(empty)", STATE.filters.q)}${icon}`;
-      const loopLineIds = optionLoopLineIds(opt, grp, conv, outcomesByOptionId, lineOrderIndexById);
+      const loopMarkers = optionLoopMarkers(opt, grp, conv, outcomesByOptionId, lineOrderIndexById);
       const targetChips = renderOptionTargetChips(
         opt,
         conv,
         outcomesByOptionId,
-        { ...chipOptions, hideSelfMenu: loopLineIds.length > 0 }
+        { ...chipOptions, hideSelfMenu: loopMarkers.length > 0 }
       );
       if (targetChips) head.appendChild(targetChips);
       const jumpTags = renderOptionJumpTags(opt, grp, conv, outcomesByOptionId);
@@ -4467,8 +4522,13 @@ function renderConv(conv) {
       appendOptionId(head, opt);
       col.appendChild(head);
       const branchLineIds = branchModel.optionLineIds.get(opt) || [];
+      const inlineLoopMarkers = loopMarkers.filter((marker) => branchLineIds.includes(marker.placementLineId));
+      const headerLoopMarkers = loopMarkers.filter((marker) => !inlineLoopMarkers.includes(marker));
       if (showBranchContent && branchLineIds.length) {
-        const lines = renderBranchPathLines(branchLineIds, grp, branchRenderCtx);
+        const lines = renderBranchPathLines(branchLineIds, grp, {
+          ...branchRenderCtx,
+          loopMarkers: inlineLoopMarkers,
+        });
         if (lines) col.appendChild(lines);
       }
       const branchLineIdSet = new Set(branchLineIds);
@@ -4480,7 +4540,7 @@ function renderConv(conv) {
           stopBeforeLineIds: branchFollowupStopLineIds,
         }));
       }
-      const loopTags = renderOptionLoopTagsForLineIds(conv, loopLineIds);
+      const loopTags = renderOptionLoopTagsForMarkers(conv, headerLoopMarkers);
       if (loopTags) col.appendChild(loopTags);
       appendDebugTrace(col, opt._debug, "option");
       cols.appendChild(col);
