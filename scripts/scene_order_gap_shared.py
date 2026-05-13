@@ -1570,6 +1570,12 @@ def _placement_has_source_edge(placement: dict | None) -> bool:
     return bool(int(placement.get("sourceBackedEdgeCount") or 0))
 
 
+def _placement_has_source_sequence(placement: dict | None) -> bool:
+    if not isinstance(placement, dict):
+        return False
+    return bool(int(placement.get("sourceBackedSequenceCount") or 0))
+
+
 def _placement_has_timeline(placement: dict | None) -> bool:
     if not isinstance(placement, dict):
         return False
@@ -1625,6 +1631,7 @@ def collect_scene_order_gap_rows(root: Path, conv_dir: Path) -> list[dict]:
             "scenePlacementEvidenceKinds": scene_placement.get("evidenceKinds") or [],
             "scenePlacementHasStoryRef": _placement_has_story_ref(scene_placement),
             "scenePlacementHasSourceEdge": _placement_has_source_edge(scene_placement),
+            "scenePlacementHasSourceSequence": _placement_has_source_sequence(scene_placement),
             "scenePlacementHasTimeline": _placement_has_timeline(scene_placement),
             "inferredOptionLayout": inferred_options,
             "inferredOptionResponse": inferred_responses,
@@ -1702,6 +1709,7 @@ def build_scene_order_gap_summary(rows: list[dict], language: str) -> dict:
         "scenePlacementEvidenceCounts": placement_kind_counts,
         "scenePlacementStoryRef": sum(1 for row in rows if row.get("scenePlacementHasStoryRef")),
         "scenePlacementSourceEdge": sum(1 for row in rows if row.get("scenePlacementHasSourceEdge")),
+        "scenePlacementSourceSequence": sum(1 for row in rows if row.get("scenePlacementHasSourceSequence")),
         "scenePlacementTimeline": sum(1 for row in rows if row.get("scenePlacementHasTimeline")),
         "scenePlacementAny": sum(1 for row in rows if row.get("scenePlacementEvidenceKinds")),
         "bothMissingOrderAndInferredOptions": sum(
@@ -1767,6 +1775,19 @@ def _render_scene_placement_cell(row: dict) -> str:
             f"in={_as_int(placement.get('incomingEdgeCount'))}, "
             f"out={_as_int(placement.get('outgoingEdgeCount'))}"
         )
+    source_sequence_count = _as_int(placement.get("sourceBackedSequenceCount"))
+    if source_sequence_count:
+        parts.append(f"sequences: {source_sequence_count}")
+        for neighbor in (placement.get("sequenceNeighbors") or [])[:2]:
+            if not isinstance(neighbor, dict):
+                continue
+            window = [
+                str(value)
+                for value in (neighbor.get("window") or [])
+                if str(value or "")
+            ]
+            if window:
+                parts.append("seq: " + " -> ".join(f"`{value}`" for value in window))
     timelines = [str(value) for value in (placement.get("timelines") or []) if str(value or "")]
     if timelines:
         shown = ", ".join(f"`{value}`" for value in timelines[:3])
@@ -1794,6 +1815,7 @@ def render_scene_order_gap_markdown(summary: dict, rows: list[dict]) -> str:
         f"- fallback line order + inferred option placement: `{summary['bothFallbackOrderAndInferredOptions']}`",
         f"- scenes with mission/story-ref placement evidence: `{summary.get('scenePlacementStoryRef', 0)}`",
         f"- scenes with source-backed scene-edge evidence: `{summary.get('scenePlacementSourceEdge', 0)}`",
+        f"- scenes with source-backed scene-sequence evidence: `{summary.get('scenePlacementSourceSequence', 0)}`",
         f"- scenes with timeline evidence: `{summary.get('scenePlacementTimeline', 0)}`",
     ]
 

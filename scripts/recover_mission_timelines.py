@@ -848,6 +848,37 @@ def compact_edge_for_scene(edge: dict, scene_key: str, direction: str) -> dict:
     return row
 
 
+def compact_sequence_for_scene(sequence: dict, index: int) -> dict:
+    scene_keys = [
+        str(value)
+        for value in (sequence.get("sceneKeys") or [])
+        if str(value or "")
+    ]
+    start = max(0, index - 2)
+    end = min(len(scene_keys), index + 3)
+    row = {
+        "kind": sequence.get("kind") or "",
+        "sourceFile": sequence.get("sourceFile") or "",
+        "levelId": sequence.get("levelId") or "",
+        "index": index,
+        "previous": scene_keys[index - 1] if index > 0 else "",
+        "next": scene_keys[index + 1] if index + 1 < len(scene_keys) else "",
+        "window": scene_keys[start:end],
+    }
+    positions = sequence.get("positions")
+    if isinstance(positions, list) and positions:
+        row["positions"] = positions[:10]
+    edge_count = sequence.get("edgeCount")
+    if isinstance(edge_count, int) and edge_count:
+        row["edgeCount"] = edge_count
+    return {
+        key: value
+        for key, value in row.items()
+        if value not in (None, "", [], {}, 0)
+        or key in {"kind", "index", "window"}
+    }
+
+
 def compact_scene_timeline_entry(entry: dict) -> dict:
     row: dict[str, Any] = {}
     for key in ("sourceKey", "timeline", "dialogKey", "file"):
@@ -871,6 +902,7 @@ def build_scene_placement_index(
     client_actions: list[dict],
     timeline_evidence: dict[str, list[dict]],
     source_backed_scene_edges: list[dict],
+    source_backed_scene_sequences: list[dict] | None = None,
 ) -> dict[str, dict]:
     """Build compact, evidence-only scene placement signals for one mission."""
     rows: dict[str, dict] = {}
@@ -895,6 +927,9 @@ def build_scene_placement_index(
                 "outgoingEdgeCount": 0,
                 "incomingEdges": [],
                 "outgoingEdges": [],
+                "sourceBackedSequenceCount": 0,
+                "sequenceNeighborCount": 0,
+                "sequenceNeighbors": [],
                 "timelineEvidenceCount": 0,
                 "timelines": [],
                 "timelineEvidence": [],
@@ -964,6 +999,23 @@ def build_scene_placement_index(
             if len(row["incomingEdges"]) < 10:
                 row["incomingEdges"].append(compact_edge_for_scene(edge, to_key, "incoming"))
 
+    for sequence in source_backed_scene_sequences or []:
+        if not isinstance(sequence, dict):
+            continue
+        scene_keys = [
+            str(scene_key).strip()
+            for scene_key in (sequence.get("sceneKeys") or [])
+            if str(scene_key or "").strip()
+        ]
+        for index, scene_key in enumerate(scene_keys):
+            row = ensure(scene_key)
+            row["sourceBackedSequenceCount"] += 1
+            row["sequenceNeighborCount"] += 1
+            if len(row["sequenceNeighbors"]) < 8:
+                row["sequenceNeighbors"].append(
+                    compact_sequence_for_scene(sequence, index)
+                )
+
     compact_rows: dict[str, dict] = {}
     for scene_key, row in sorted(rows.items(), key=lambda item: natural_key(item[0])):
         if row["storyRefCount"]:
@@ -972,6 +1024,8 @@ def build_scene_placement_index(
             unique_append(row["evidenceKinds"], "clientActionStoryRef")
         if row["sourceBackedEdgeCount"]:
             unique_append(row["evidenceKinds"], "sourceBackedSceneEdge")
+        if row["sourceBackedSequenceCount"]:
+            unique_append(row["evidenceKinds"], "sourceBackedSceneSequence")
         if row["timelineEvidenceCount"]:
             unique_append(row["evidenceKinds"], "timelineEvidence")
         row["questIds"].sort(key=natural_key)
@@ -985,6 +1039,105 @@ def build_scene_placement_index(
             or key in {"sceneKey", "kind", "evidenceKinds"}
         }
     return compact_rows
+
+
+SEQUENCE_SCENE_KINDS = {"dlg", "cutscene", "remotecomm", "radio", "sns"}
+
+
+def is_sequence_scene_key(scene_key: str) -> bool:
+    return story_scene_kind(str(scene_key or "")) in SEQUENCE_SCENE_KINDS
+
+
+def first_string(values: Any) -> str:
+    if not isinstance(values, list):
+        return ""
+    for value in values:
+        text = str(value or "").strip()
+        if text:
+            return text
+    return ""
+
+
+def first_position(edge: dict) -> int:
+    positions = edge.get("positions")
+    if not isinstance(positions, list):
+        return 10**9
+    numeric_positions = [
+        int(value)
+        for value in positions
+        if isinstance(value, (int, float))
+    ]
+    return min(numeric_positions) if numeric_positions else 10**9
+
+
+def build_source_backed_scene_sequences(source_backed_scene_edges: list[dict]) -> list[dict]:
+    """Group levelscript scene-chain edges into source-local scene sequences."""
+    grouped: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for edge in source_backed_scene_edges:
+        if not isinstance(edge, dict) or edge.get("kind") != "levelscriptSceneChain":
+            continue
+        from_key = str(edge.get("from") or "").strip()
+        to_key = str(edge.get("to") or "").strip()
+        if not (is_sequence_scene_key(from_key) or is_sequence_scene_key(to_key)):
+            continue
+        source_file = first_string(edge.get("sourceFiles"))
+        if not source_file:
+            continue
+        level_id = first_string(edge.get("levelIds"))
+        grouped[(source_file, level_id)].append(edge)
+
+    sequences: list[dict] = []
+
+    def append_scene(scene_keys: list[str], scene_key: str) -> None:
+        scene_key = str(scene_key or "").strip()
+        if not scene_key or not is_sequence_scene_key(scene_key):
+            return
+        if not scene_keys or scene_keys[-1] != scene_key:
+            scene_keys.append(scene_key)
+
+    for (source_file, level_id), edges in sorted(
+        grouped.items(),
+        key=lambda item: natural_key("|".join(item[0])),
+    ):
+        scene_keys: list[str] = []
+        positions: list[int] = []
+        edge_count = 0
+
+        def flush() -> None:
+            nonlocal scene_keys, positions, edge_count
+            if len(scene_keys) >= 2:
+                sequences.append({
+                    "kind": "levelscriptSceneChain",
+                    "sourceFile": source_file,
+                    "levelId": level_id,
+                    "sceneKeys": scene_keys,
+                    "positions": positions,
+                    "edgeCount": edge_count,
+                })
+            scene_keys = []
+            positions = []
+            edge_count = 0
+
+        for edge in sorted(
+            edges,
+            key=lambda item: (
+                first_position(item),
+                natural_key(str(item.get("from") or "")),
+                natural_key(str(item.get("to") or "")),
+            ),
+        ):
+            from_key = str(edge.get("from") or "").strip()
+            to_key = str(edge.get("to") or "").strip()
+            if scene_keys and is_sequence_scene_key(from_key) and scene_keys[-1] != from_key:
+                flush()
+            append_scene(scene_keys, from_key)
+            append_scene(scene_keys, to_key)
+            position = first_position(edge)
+            if position != 10**9:
+                positions.append(position)
+            edge_count += 1
+        flush()
+    return sequences
 
 
 def source_backed_scene_edges_from_scene_graph(scene_graph: dict | None, source: dict | None = None) -> list[dict]:
@@ -1176,11 +1329,13 @@ def recover_mission(
         if source_backed_scene_edges is not None
         else load_source_backed_scene_edges(mission_id, generated_mission_dir)
     )
+    scene_sequences = build_source_backed_scene_sequences(scene_edges)
     scene_placement = build_scene_placement_index(
         quests,
         client_actions,
         timeline_evidence,
         scene_edges,
+        scene_sequences,
     )
     payload = {
         "mission": mission_id,
@@ -1193,6 +1348,7 @@ def recover_mission(
         "questTree": build_quest_tree(quests, quest_edges),
         "branchPoints": build_branch_points(quest_edges, quests_by_id),
         "sourceBackedSceneEdges": scene_edges,
+        "sourceBackedSceneSequences": scene_sequences,
         "referencedScenes": referenced_scenes,
         "sceneTimelineEvidence": timeline_evidence,
         "scenePlacement": scene_placement,
@@ -1224,9 +1380,11 @@ def summarize(
     missions_with_branches = 0
     missions_with_timeline = 0
     missions_with_scene_edges = 0
+    missions_with_scene_sequences = 0
     missions_with_quest_loops = 0
     quest_loop_count = 0
     scene_edge_counter: Counter = Counter()
+    scene_sequence_total = 0
     scene_placement_counter: Counter = Counter()
     scene_placement_total = 0
     for mission in recovered:
@@ -1236,6 +1394,9 @@ def summarize(
             missions_with_timeline += 1
         if mission.get("sourceBackedSceneEdges"):
             missions_with_scene_edges += 1
+        if mission.get("sourceBackedSceneSequences"):
+            missions_with_scene_sequences += 1
+            scene_sequence_total += len(mission.get("sourceBackedSceneSequences") or [])
         loops = ((mission.get("questTree") or {}).get("loops") or [])
         if loops:
             missions_with_quest_loops += 1
@@ -1266,6 +1427,8 @@ def summarize(
         "questTreeLoops": quest_loop_count,
         "missionsWithDialogTimelineEvidence": missions_with_timeline,
         "missionsWithSourceBackedSceneEdges": missions_with_scene_edges,
+        "missionsWithSourceBackedSceneSequences": missions_with_scene_sequences,
+        "sourceBackedSceneSequences": scene_sequence_total,
         "scenePlacementEntries": scene_placement_total,
         "timelineEvidence": timeline_meta,
         "unresolvedByKind": dict(unresolved_counter.most_common()),
@@ -1292,6 +1455,8 @@ def render_markdown(payload: dict) -> str:
         f"- missions with quest-tree loops: `{summary.get('missionsWithQuestTreeLoops', 0)}`",
         f"- missions with dialog timeline evidence: `{summary['missionsWithDialogTimelineEvidence']}`",
         f"- missions with source-backed scene edges: `{summary['missionsWithSourceBackedSceneEdges']}`",
+        f"- missions with source-backed scene sequences: `{summary.get('missionsWithSourceBackedSceneSequences', 0)}`",
+        f"- source-backed scene sequences: `{summary.get('sourceBackedSceneSequences', 0)}`",
         f"- scene placement entries: `{summary.get('scenePlacementEntries', 0)}`",
         f"- timeline evidence file: `{summary['timelineEvidence'].get('path', '')}`",
         "",
@@ -1337,8 +1502,8 @@ def render_markdown(payload: dict) -> str:
         "",
         "## Mission Index",
         "",
-        "| Mission | Quests | Branches | Timeline Scenes | Scene Edges | Scene Signals | Unresolved | Level |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| Mission | Quests | Branches | Timeline Scenes | Scene Edges | Scene Seq | Scene Signals | Unresolved | Level |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ])
     for mission in payload.get("missions") or []:
         metadata = mission.get("metadata") or {}
@@ -1349,6 +1514,7 @@ def render_markdown(payload: dict) -> str:
             f"{len(mission.get('branchPoints') or [])} | "
             f"{len(mission.get('sceneTimelineEvidence') or {})} | "
             f"{len(mission.get('sourceBackedSceneEdges') or [])} | "
+            f"{len(mission.get('sourceBackedSceneSequences') or [])} | "
             f"{len(mission.get('scenePlacement') or {})} | "
             f"{len(mission.get('unresolved') or [])} | "
             f"`{metadata.get('levelId', '')}` |"
