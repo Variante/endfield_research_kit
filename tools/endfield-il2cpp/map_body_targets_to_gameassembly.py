@@ -1018,6 +1018,23 @@ def next_call_after(
     return None
 
 
+def calls_resolving_method(
+    call_rows: list[dict[str, Any]],
+    method_name: str,
+    *,
+    type_suffix: str | None = None,
+) -> list[dict[str, Any]]:
+    return [
+        call
+        for call in call_rows
+        if (
+            call_resolves_type_method(call, type_suffix, method_name)
+            if type_suffix
+            else call_resolves_method(call, method_name)
+        )
+    ]
+
+
 def call_at_offset(call_rows: list[dict[str, Any]], offset: int) -> dict[str, Any] | None:
     return next((call for call in call_rows if int(call.get("offset") or 0) == offset), None)
 
@@ -1387,14 +1404,7 @@ def extract_option_flow_facts(
 
     if method == "DialogTimelineDoNext":
         def calls_named(method_name: str) -> list[dict[str, Any]]:
-            return [
-                call
-                for call in call_rows
-                if any(
-                    str(target.get("method") or "") == method_name
-                    for target in (call.get("resolved") or [])
-                )
-            ]
+            return calls_resolving_method(call_rows, method_name)
 
         active_at_time_calls = calls_named("GetActiveClipsAtGivenTime")
         active_range_calls = calls_named("GetActiveClipsAtGivenTimeRange")
@@ -1453,6 +1463,38 @@ def extract_option_flow_facts(
                         r"movsd \[[a-z0-9]+\+0x18\], xmm2$",
                         r"mov \[[a-z0-9]+\+0x8\], rcx$",
                         r"comisd xmm\d+, xmm\d+$",
+                    ),
+                ),
+                "timelinePointQueryState": compact_matching_instructions(
+                    instructions,
+                    max(0, int(active_at_time_calls[0].get("offset") or 0) - 80)
+                    if active_at_time_calls
+                    else 0,
+                    int(active_at_time_calls[0].get("offset") or 0) + 24
+                    if active_at_time_calls
+                    else 0,
+                    (
+                        r"movsd xmm1, \[rsp\+0x88\]$",
+                        r"addsd xmm1, \[rsp\+0x80\]$",
+                        r"xor r9d, r9d$",
+                        r"xor r8d, r8d$",
+                        r"mov rcx, rax$",
+                    ),
+                ),
+                "timelineRangeQueryState": compact_matching_instructions(
+                    instructions,
+                    max(0, int(active_range_calls[0].get("offset") or 0) - 96)
+                    if active_range_calls
+                    else 0,
+                    int(active_range_calls[0].get("offset") or 0) + 24
+                    if active_range_calls
+                    else 0,
+                    (
+                        r"mov rdx, \[rcx\+0xb8\]$",
+                        r"subsd xmm1, xmm6$",
+                        r"mov r9, \[rdx\+0x80\]$",
+                        r"movaps xmm2, xmm7$",
+                        r"mov rcx, r14$",
                     ),
                 ),
             }
@@ -1748,6 +1790,22 @@ def extract_option_flow_facts(
                 "endTimeAdjustment": compact_instruction(adjustment) if adjustment else {},
                 "disableLoopCall": compact_call_reference(disable_call),
                 "selectedClipStore": compact_instruction(selected_clip_store) if selected_clip_store else {},
+                "setToDisableState": compact_matching_instructions(
+                    instructions,
+                    int(set_call.get("offset") or 0) if set_call else call_offset,
+                    call_offset + 16,
+                    (
+                        r"mov rdx, rax$",
+                        r"mov rcx, r14$",
+                        r"movsd xmm7, \[rsi\+0x18\]$",
+                        r"movsd xmm6, \[rbx\+0x18\]$",
+                        r"subsd xmm6, ",
+                        r"movaps xmm2, xmm6$",
+                        r"movaps xmm1, xmm7$",
+                        r"mov rcx, r15$",
+                        r"mov \[r14\+0x1a8\], rbx$",
+                    ),
+                ),
                 "startSourceSlice": backward_register_slice(
                     instructions,
                     call_offset,
@@ -1760,6 +1818,103 @@ def extract_option_flow_facts(
                 ),
             }
             add_fact_window(fact, instructions, call_offset, before=24, after=10)
+            facts.append(fact)
+
+    if method == "DialogTimelineDisableLoopInRange":
+        get_all_playables_call = next_call_after(
+            call_rows,
+            0,
+            type_suffix=".DialogUtils",
+            method_name="DialogTimelineGetAllTimelinePlayable",
+        )
+        active_range_calls = calls_resolving_method(call_rows, "GetActiveClipsAtGivenTimeRange")
+        if get_all_playables_call and active_range_calls:
+            playable_offset = int(get_all_playables_call.get("offset") or 0)
+            range_call = active_range_calls[0]
+            range_offset = int(range_call.get("offset") or 0)
+            fact = {
+                "kind": "disableLoopRangeActiveClipScan",
+                "summary": (
+                    "DialogTimelineDisableLoopInRange enumerates Timeline playables, "
+                    "queries clips active in the selected start/end range, and disables "
+                    "looping for matching runtime elements."
+                ),
+                "interpretation": (
+                    "The disable pass uses the selected clip time interval as cleanup "
+                    "after the option gate; it supports clip-order evidence but does "
+                    "not by itself identify a new option branch target."
+                ),
+                "allTimelinePlayableCall": compact_call_reference(get_all_playables_call),
+                "timelineActiveClipCalls": compact_call_sequence(
+                    active_range_calls,
+                    pe=pe,
+                    include_target_preview=True,
+                ),
+                "outerTimelinePlayableEnumerationCalls": compact_call_sequence(
+                    [
+                        call
+                        for call in (call_at_offset(call_rows, 0x13F), call_at_offset(call_rows, 0x173))
+                        if call
+                    ],
+                    pe=pe,
+                    include_target_preview=True,
+                ),
+                "innerClipEnumerationCalls": compact_call_sequence(
+                    [
+                        call
+                        for call in (call_at_offset(call_rows, 0x21A), call_at_offset(call_rows, 0x257))
+                        if call
+                    ],
+                    pe=pe,
+                    include_target_preview=True,
+                ),
+                "activeClipFilterCalls": compact_call_sequence(
+                    [call for call in (call_at_offset(call_rows, 0x26C),) if call],
+                    pe=pe,
+                    include_target_preview=True,
+                ),
+                "rangeArgumentState": compact_matching_instructions(
+                    instructions,
+                    0,
+                    range_offset,
+                    (
+                        r"movsd \[[a-z0-9]+\+0x18\], xmm2$",
+                        r"movsd \[[a-z0-9]+\+0x10\], xmm1$",
+                        r"movaps xmm6, xmm2$",
+                        r"movaps xmm7, xmm1$",
+                        r"mov rbx, rcx$",
+                        r"movaps xmm2, xmm6$",
+                        r"movaps xmm1, xmm7$",
+                    ),
+                ),
+                "playableTraversalState": compact_matching_instructions(
+                    instructions,
+                    playable_offset,
+                    range_offset,
+                    (
+                        r"test rax, rax$",
+                        r"mov rdx, rax$",
+                        r"lea rcx, \[rsp\+0x80\]$",
+                        r"mov rcx, \[rsp\+0x68\]$",
+                        r"mov rbx, rax$",
+                        r"test rbx, rbx$",
+                    ),
+                ),
+                "activeRangeClipState": compact_matching_instructions(
+                    instructions,
+                    range_offset,
+                    range_offset + 160,
+                    (
+                        r"mov rdx, rax$",
+                        r"mov rcx, [a-z0-9]+$",
+                        r"test rdx, rdx$",
+                        r"test rax, rax$",
+                        r"mov rbx, rax$",
+                        r"call 0x18003f5a0$",
+                    ),
+                ),
+            }
+            add_fact_window(fact, instructions, range_offset, before=20, after=20)
             facts.append(fact)
 
     if method == "_TryDoNext":
@@ -2430,10 +2585,16 @@ def option_flow_fact_lines(facts: list[dict[str, Any]]) -> list[str]:
             "playableClipListLoads",
             "activeClipCollectionState",
             "timelineTimeArgumentState",
+            "timelinePointQueryState",
+            "timelineRangeQueryState",
             "resultListAccesses",
             "timelineRootAndLoopState",
             "stateLoads",
             "candidateChecks",
+            "setToDisableState",
+            "rangeArgumentState",
+            "playableTraversalState",
+            "activeRangeClipState",
         ):
             instr_text = summarize_instruction_window(fact.get(instr_list_key) or [], limit=16)
             if instr_text:
