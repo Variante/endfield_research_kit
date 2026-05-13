@@ -810,6 +810,8 @@ def unique_append(bucket: list, value: Any) -> None:
 def story_scene_kind(scene_key: str) -> str:
     if scene_key.startswith("dlg_"):
         return "dlg"
+    if scene_key.startswith("black_"):
+        return "black"
     if scene_key.startswith("cutscene_"):
         return "cutscene"
     if scene_key.startswith("remotecomm_"):
@@ -903,6 +905,7 @@ def build_scene_placement_index(
     timeline_evidence: dict[str, list[dict]],
     source_backed_scene_edges: list[dict],
     source_backed_scene_sequences: list[dict] | None = None,
+    source_backed_story_call_contexts: list[dict] | None = None,
 ) -> dict[str, dict]:
     """Build compact, evidence-only scene placement signals for one mission."""
     rows: dict[str, dict] = {}
@@ -930,6 +933,8 @@ def build_scene_placement_index(
                 "sourceBackedSequenceCount": 0,
                 "sequenceNeighborCount": 0,
                 "sequenceNeighbors": [],
+                "sourceBackedStoryCallContextCount": 0,
+                "storyCallContexts": [],
                 "timelineEvidenceCount": 0,
                 "timelines": [],
                 "timelineEvidence": [],
@@ -1016,6 +1021,22 @@ def build_scene_placement_index(
                     compact_sequence_for_scene(sequence, index)
                 )
 
+    for context in source_backed_story_call_contexts or []:
+        if not isinstance(context, dict):
+            continue
+        scene_keys = [
+            str(scene_key).strip()
+            for scene_key in (context.get("sceneKeys") or [])
+            if str(scene_key or "").strip()
+        ]
+        for index, scene_key in enumerate(scene_keys):
+            row = ensure(scene_key)
+            row["sourceBackedStoryCallContextCount"] += 1
+            if len(row["storyCallContexts"]) < 8:
+                row["storyCallContexts"].append(
+                    compact_sequence_for_scene(context, index)
+                )
+
     compact_rows: dict[str, dict] = {}
     for scene_key, row in sorted(rows.items(), key=lambda item: natural_key(item[0])):
         if row["storyRefCount"]:
@@ -1026,6 +1047,8 @@ def build_scene_placement_index(
             unique_append(row["evidenceKinds"], "sourceBackedSceneEdge")
         if row["sourceBackedSequenceCount"]:
             unique_append(row["evidenceKinds"], "sourceBackedSceneSequence")
+        if row["sourceBackedStoryCallContextCount"]:
+            unique_append(row["evidenceKinds"], "sourceBackedStoryCallContext")
         if row["timelineEvidenceCount"]:
             unique_append(row["evidenceKinds"], "timelineEvidence")
         row["questIds"].sort(key=natural_key)
@@ -1041,7 +1064,7 @@ def build_scene_placement_index(
     return compact_rows
 
 
-SEQUENCE_SCENE_KINDS = {"dlg", "cutscene", "remotecomm", "radio", "sns"}
+SEQUENCE_SCENE_KINDS = {"dlg", "black", "cutscene", "remotecomm", "radio", "sns"}
 
 
 def is_sequence_scene_key(scene_key: str) -> bool:
@@ -1140,6 +1163,105 @@ def build_source_backed_scene_sequences(source_backed_scene_edges: list[dict]) -
     return sequences
 
 
+def source_backed_story_call_contexts_from_scene_graph(
+    scene_graph: dict | None,
+    source: dict | None = None,
+) -> list[dict]:
+    contexts = (scene_graph or {}).get("levelscriptStoryCallContexts")
+    if not isinstance(contexts, list):
+        return []
+
+    out: list[dict] = []
+    for index, context in enumerate(contexts):
+        if not isinstance(context, dict):
+            continue
+        scene_keys: list[str] = []
+        for scene_key in context.get("sequence") or context.get("sceneKeys") or []:
+            scene_key = str(scene_key or "").strip()
+            if not scene_key or not is_sequence_scene_key(scene_key):
+                continue
+            if not scene_keys or scene_keys[-1] != scene_key:
+                scene_keys.append(scene_key)
+        if not scene_keys:
+            continue
+        row = {
+            "kind": context.get("kind") or "levelscriptFileStoryCallOrder",
+            "sourceFile": context.get("file") or context.get("sourceFile") or "",
+            "levelId": context.get("levelId") or "",
+            "sceneKeys": scene_keys,
+            "recoveredBy": "scripts/webui/build_story.py",
+        }
+        if source:
+            bundle_source = dict(source)
+            bundle_source["field"] = f"{bundle_source.get('field', 'flow.sceneGraph.levelscriptStoryCallContexts')}[{index}]"
+            row["bundleSource"] = bundle_source
+        out.append(row)
+    return out
+
+
+def source_backed_story_call_contexts_from_scene_bindings(
+    scene_bindings: dict | None,
+    source: dict | None = None,
+) -> list[dict]:
+    if not isinstance(scene_bindings, dict):
+        return []
+
+    by_file: dict[tuple[str, str], list[tuple[int, int, str]]] = defaultdict(list)
+    seen: set[tuple[str, str, int, int, str]] = set()
+    for binding in scene_bindings.values():
+        if not isinstance(binding, dict):
+            continue
+        for chain in binding.get("chains") or []:
+            if not isinstance(chain, dict):
+                continue
+            source_file = str(chain.get("file") or "").strip()
+            if not source_file:
+                continue
+            level_id = str(chain.get("levelId") or "").strip()
+            for step in chain.get("steps") or []:
+                if not isinstance(step, dict):
+                    continue
+                step_source = ((step.get("_debug") or {}).get("source") or {})
+                start = step_source.get("start")
+                if not isinstance(start, int):
+                    start = 10**9
+                for payload_index, payload in enumerate(step.get("payloads") or []):
+                    if not isinstance(payload, dict):
+                        continue
+                    scene_key = str(payload.get("sceneKey") or payload.get("nodeKey") or "").strip()
+                    if not scene_key or not is_sequence_scene_key(scene_key):
+                        continue
+                    signature = (source_file, level_id, start, payload_index, scene_key)
+                    if signature in seen:
+                        continue
+                    seen.add(signature)
+                    by_file[(source_file, level_id)].append((start, payload_index, scene_key))
+
+    out: list[dict] = []
+    for index, ((source_file, level_id), items) in enumerate(
+        sorted(by_file.items(), key=lambda item: natural_key("|".join(item[0])))
+    ):
+        scene_keys: list[str] = []
+        for _, __, scene_key in sorted(items):
+            if not scene_keys or scene_keys[-1] != scene_key:
+                scene_keys.append(scene_key)
+        if not scene_keys:
+            continue
+        row = {
+            "kind": "levelscriptFileStoryCallOrder",
+            "sourceFile": source_file,
+            "levelId": level_id,
+            "sceneKeys": scene_keys,
+            "recoveredBy": "scripts/webui/build_story.py",
+        }
+        if source:
+            bundle_source = dict(source)
+            bundle_source["field"] = f"{bundle_source.get('field', 'extras.sceneBindings')}#{index}"
+            row["bundleSource"] = bundle_source
+        out.append(row)
+    return out
+
+
 def source_backed_scene_edges_from_scene_graph(scene_graph: dict | None, source: dict | None = None) -> list[dict]:
     edges = (scene_graph or {}).get("edges")
     if not isinstance(edges, list):
@@ -1218,6 +1340,30 @@ def load_source_backed_scene_edges(mission_id: str, generated_mission_dir: Path 
     )
 
 
+def load_source_backed_story_call_contexts(mission_id: str, generated_mission_dir: Path | None) -> list[dict]:
+    """Load file-local LevelScript story-call context from generated mission bundles."""
+    if not generated_mission_dir:
+        return []
+    path = generated_mission_dir / f"{mission_id}.json"
+    if not path.exists():
+        return []
+    try:
+        payload = load_json(path)
+    except (OSError, json.JSONDecodeError):
+        return []
+    scene_graph = ((payload.get("flow") or {}).get("sceneGraph") or {})
+    contexts = source_backed_story_call_contexts_from_scene_graph(
+        scene_graph,
+        source=source_ref(path, "flow.sceneGraph.levelscriptStoryCallContexts"),
+    )
+    if contexts:
+        return contexts
+    return source_backed_story_call_contexts_from_scene_bindings(
+        ((payload.get("extras") or {}).get("sceneBindings") or {}),
+        source=source_ref(path, "extras.sceneBindings"),
+    )
+
+
 def extract_quest(raw_quest: dict, source_path: Path, quest_field: str) -> dict:
     quest_id = raw_quest.get("questId") or ""
     quest = {
@@ -1261,6 +1407,7 @@ def recover_mission(
     timeline_index: dict[str, list[dict]],
     generated_mission_dir: Path | None,
     source_backed_scene_edges: list[dict] | None = None,
+    source_backed_story_call_contexts: list[dict] | None = None,
 ) -> dict:
     raw = load_json(path)
     mission_id = raw.get("missionId") or path.stem
@@ -1330,12 +1477,18 @@ def recover_mission(
         else load_source_backed_scene_edges(mission_id, generated_mission_dir)
     )
     scene_sequences = build_source_backed_scene_sequences(scene_edges)
+    story_call_contexts = (
+        source_backed_story_call_contexts
+        if source_backed_story_call_contexts is not None
+        else load_source_backed_story_call_contexts(mission_id, generated_mission_dir)
+    )
     scene_placement = build_scene_placement_index(
         quests,
         client_actions,
         timeline_evidence,
         scene_edges,
         scene_sequences,
+        story_call_contexts,
     )
     payload = {
         "mission": mission_id,
@@ -1349,6 +1502,7 @@ def recover_mission(
         "branchPoints": build_branch_points(quest_edges, quests_by_id),
         "sourceBackedSceneEdges": scene_edges,
         "sourceBackedSceneSequences": scene_sequences,
+        "sourceBackedStoryCallContexts": story_call_contexts,
         "referencedScenes": referenced_scenes,
         "sceneTimelineEvidence": timeline_evidence,
         "scenePlacement": scene_placement,
@@ -1381,10 +1535,12 @@ def summarize(
     missions_with_timeline = 0
     missions_with_scene_edges = 0
     missions_with_scene_sequences = 0
+    missions_with_story_call_contexts = 0
     missions_with_quest_loops = 0
     quest_loop_count = 0
     scene_edge_counter: Counter = Counter()
     scene_sequence_total = 0
+    story_call_context_total = 0
     scene_placement_counter: Counter = Counter()
     scene_placement_total = 0
     for mission in recovered:
@@ -1397,6 +1553,9 @@ def summarize(
         if mission.get("sourceBackedSceneSequences"):
             missions_with_scene_sequences += 1
             scene_sequence_total += len(mission.get("sourceBackedSceneSequences") or [])
+        if mission.get("sourceBackedStoryCallContexts"):
+            missions_with_story_call_contexts += 1
+            story_call_context_total += len(mission.get("sourceBackedStoryCallContexts") or [])
         loops = ((mission.get("questTree") or {}).get("loops") or [])
         if loops:
             missions_with_quest_loops += 1
@@ -1429,6 +1588,8 @@ def summarize(
         "missionsWithSourceBackedSceneEdges": missions_with_scene_edges,
         "missionsWithSourceBackedSceneSequences": missions_with_scene_sequences,
         "sourceBackedSceneSequences": scene_sequence_total,
+        "missionsWithSourceBackedStoryCallContexts": missions_with_story_call_contexts,
+        "sourceBackedStoryCallContexts": story_call_context_total,
         "scenePlacementEntries": scene_placement_total,
         "timelineEvidence": timeline_meta,
         "unresolvedByKind": dict(unresolved_counter.most_common()),
@@ -1457,6 +1618,8 @@ def render_markdown(payload: dict) -> str:
         f"- missions with source-backed scene edges: `{summary['missionsWithSourceBackedSceneEdges']}`",
         f"- missions with source-backed scene sequences: `{summary.get('missionsWithSourceBackedSceneSequences', 0)}`",
         f"- source-backed scene sequences: `{summary.get('sourceBackedSceneSequences', 0)}`",
+        f"- missions with source-backed story-call context: `{summary.get('missionsWithSourceBackedStoryCallContexts', 0)}`",
+        f"- source-backed story-call contexts: `{summary.get('sourceBackedStoryCallContexts', 0)}`",
         f"- scene placement entries: `{summary.get('scenePlacementEntries', 0)}`",
         f"- timeline evidence file: `{summary['timelineEvidence'].get('path', '')}`",
         "",
@@ -1502,8 +1665,8 @@ def render_markdown(payload: dict) -> str:
         "",
         "## Mission Index",
         "",
-        "| Mission | Quests | Branches | Timeline Scenes | Scene Edges | Scene Seq | Scene Signals | Unresolved | Level |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| Mission | Quests | Branches | Timeline Scenes | Scene Edges | Scene Seq | Story Calls | Scene Signals | Unresolved | Level |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ])
     for mission in payload.get("missions") or []:
         metadata = mission.get("metadata") or {}
@@ -1515,6 +1678,7 @@ def render_markdown(payload: dict) -> str:
             f"{len(mission.get('sceneTimelineEvidence') or {})} | "
             f"{len(mission.get('sourceBackedSceneEdges') or [])} | "
             f"{len(mission.get('sourceBackedSceneSequences') or [])} | "
+            f"{len(mission.get('sourceBackedStoryCallContexts') or [])} | "
             f"{len(mission.get('scenePlacement') or {})} | "
             f"{len(mission.get('unresolved') or [])} | "
             f"`{metadata.get('levelId', '')}` |"

@@ -1521,6 +1521,76 @@ def build_scene_order_disorder_warning(
     }
 
 
+_PLACEMENT_COUNT_FIELDS = {
+    "storyRefCount",
+    "clientActionCount",
+    "sourceBackedEdgeCount",
+    "incomingEdgeCount",
+    "outgoingEdgeCount",
+    "sourceBackedSequenceCount",
+    "sequenceNeighborCount",
+    "sourceBackedStoryCallContextCount",
+    "timelineEvidenceCount",
+}
+
+_PLACEMENT_LIST_FIELDS = {
+    "evidenceKinds",
+    "questIds",
+    "storyRefKinds",
+    "storyRefSources",
+    "clientActionTypes",
+    "clientActionSources",
+    "incomingEdges",
+    "outgoingEdges",
+    "sequenceNeighbors",
+    "storyCallContexts",
+    "timelines",
+    "timelineEvidence",
+    "missions",
+    "missionFiles",
+}
+
+
+def _append_unique_values(bucket: list, values: list, limit: int = 32) -> None:
+    seen = {
+        json.dumps(value, ensure_ascii=False, sort_keys=True)
+        for value in bucket
+    }
+    for value in values:
+        signature = json.dumps(value, ensure_ascii=False, sort_keys=True)
+        if signature in seen:
+            continue
+        seen.add(signature)
+        bucket.append(value)
+        if len(bucket) >= limit:
+            return
+
+
+def _merge_scene_placement_row(existing: dict, incoming: dict) -> dict:
+    out = dict(existing)
+    out.setdefault("sceneKey", incoming.get("sceneKey") or existing.get("sceneKey") or "")
+    out.setdefault("kind", incoming.get("kind") or existing.get("kind") or "")
+    for field in _PLACEMENT_COUNT_FIELDS:
+        out[field] = _as_int(out.get(field)) + _as_int(incoming.get(field))
+    for field in _PLACEMENT_LIST_FIELDS:
+        values = incoming.get(field)
+        if values in (None, "", [], {}):
+            continue
+        if not isinstance(values, list):
+            values = [values]
+        bucket = out.setdefault(field, [])
+        if not isinstance(bucket, list):
+            bucket = [bucket]
+            out[field] = bucket
+        _append_unique_values(bucket, values)
+    return {
+        key: value
+        for key, value in out.items()
+        if value not in (None, "", [], {}, 0)
+        or key in {"sceneKey", "kind", "evidenceKinds"}
+    }
+
+
 def _load_scene_placement_index(root: Path, conv_dir: Path) -> dict[str, dict]:
     """Load per-scene mission placement signals emitted by build_story.py."""
     mission_dir = conv_dir.parent / "mission"
@@ -1545,13 +1615,16 @@ def _load_scene_placement_index(root: Path, conv_dir: Path) -> dict[str, dict]:
             key = runtime_dialog_scene_key(scene_key)
             row = dict(placement)
             row.setdefault("sceneKey", key)
-            row["mission"] = mission
+            row["missions"] = [mission]
             try:
                 mission_file = path.relative_to(root)
             except ValueError:
                 mission_file = path
-            row["missionFile"] = str(mission_file).replace("\\", "/")
-            out[key] = row
+            row["missionFiles"] = [str(mission_file).replace("\\", "/")]
+            if key in out:
+                out[key] = _merge_scene_placement_row(out[key], row)
+            else:
+                out[key] = row
     return out
 
 
@@ -1574,6 +1647,12 @@ def _placement_has_source_sequence(placement: dict | None) -> bool:
     if not isinstance(placement, dict):
         return False
     return bool(int(placement.get("sourceBackedSequenceCount") or 0))
+
+
+def _placement_has_story_call_context(placement: dict | None) -> bool:
+    if not isinstance(placement, dict):
+        return False
+    return bool(int(placement.get("sourceBackedStoryCallContextCount") or 0))
 
 
 def _placement_has_timeline(placement: dict | None) -> bool:
@@ -1632,6 +1711,7 @@ def collect_scene_order_gap_rows(root: Path, conv_dir: Path) -> list[dict]:
             "scenePlacementHasStoryRef": _placement_has_story_ref(scene_placement),
             "scenePlacementHasSourceEdge": _placement_has_source_edge(scene_placement),
             "scenePlacementHasSourceSequence": _placement_has_source_sequence(scene_placement),
+            "scenePlacementHasStoryCallContext": _placement_has_story_call_context(scene_placement),
             "scenePlacementHasTimeline": _placement_has_timeline(scene_placement),
             "inferredOptionLayout": inferred_options,
             "inferredOptionResponse": inferred_responses,
@@ -1710,6 +1790,7 @@ def build_scene_order_gap_summary(rows: list[dict], language: str) -> dict:
         "scenePlacementStoryRef": sum(1 for row in rows if row.get("scenePlacementHasStoryRef")),
         "scenePlacementSourceEdge": sum(1 for row in rows if row.get("scenePlacementHasSourceEdge")),
         "scenePlacementSourceSequence": sum(1 for row in rows if row.get("scenePlacementHasSourceSequence")),
+        "scenePlacementStoryCallContext": sum(1 for row in rows if row.get("scenePlacementHasStoryCallContext")),
         "scenePlacementTimeline": sum(1 for row in rows if row.get("scenePlacementHasTimeline")),
         "scenePlacementAny": sum(1 for row in rows if row.get("scenePlacementEvidenceKinds")),
         "bothMissingOrderAndInferredOptions": sum(
@@ -1788,6 +1869,19 @@ def _render_scene_placement_cell(row: dict) -> str:
             ]
             if window:
                 parts.append("seq: " + " -> ".join(f"`{value}`" for value in window))
+    story_call_count = _as_int(placement.get("sourceBackedStoryCallContextCount"))
+    if story_call_count:
+        parts.append(f"story calls: {story_call_count}")
+        for context in (placement.get("storyCallContexts") or [])[:2]:
+            if not isinstance(context, dict):
+                continue
+            window = [
+                str(value)
+                for value in (context.get("window") or [])
+                if str(value or "")
+            ]
+            if window:
+                parts.append("calls: " + " -> ".join(f"`{value}`" for value in window))
     timelines = [str(value) for value in (placement.get("timelines") or []) if str(value or "")]
     if timelines:
         shown = ", ".join(f"`{value}`" for value in timelines[:3])
@@ -1816,6 +1910,7 @@ def render_scene_order_gap_markdown(summary: dict, rows: list[dict]) -> str:
         f"- scenes with mission/story-ref placement evidence: `{summary.get('scenePlacementStoryRef', 0)}`",
         f"- scenes with source-backed scene-edge evidence: `{summary.get('scenePlacementSourceEdge', 0)}`",
         f"- scenes with source-backed scene-sequence evidence: `{summary.get('scenePlacementSourceSequence', 0)}`",
+        f"- scenes with source-backed story-call context: `{summary.get('scenePlacementStoryCallContext', 0)}`",
         f"- scenes with timeline evidence: `{summary.get('scenePlacementTimeline', 0)}`",
     ]
 

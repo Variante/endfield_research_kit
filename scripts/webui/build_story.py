@@ -90,6 +90,7 @@ from recover_mission_timelines import (
     recover_mission as recover_source_mission_timeline,
     render_markdown as render_mission_timeline_markdown,
     source_backed_scene_edges_from_scene_graph,
+    source_backed_story_call_contexts_from_scene_graph,
     summarize as summarize_mission_timeline_recovery,
     write_json as write_mission_timeline_recovery_json,
 )
@@ -14912,6 +14913,8 @@ def build_language_bundle(
         chain_nodes: set[str] = set()
         chain_sequences: list[dict] = []
         scene_chain_sequences: list[dict] = []
+        story_call_items_by_file: dict[tuple[str, str], list[tuple[int, int, str]]] = defaultdict(list)
+        seen_story_call_items: set[tuple[str, str, int, int, str]] = set()
         if flow:
             for quest in flow.get("quests") or []:
                 for hint in quest.get("tracking") or []:
@@ -14923,7 +14926,11 @@ def build_language_bundle(
             for chain in scene_entry.get("chains") or []:
                 sequence: list[str] = []
                 for step in chain.get("steps") or []:
-                    for payload in step.get("payloads") or []:
+                    source_info = (step.get("_debug") or {}).get("source") or {}
+                    start = source_info.get("start")
+                    if not isinstance(start, int):
+                        start = 10**9
+                    for payload_index, payload in enumerate(step.get("payloads") or []):
                         raw_text = str(payload.get("text") or "")
                         node_key = str(
                             resolve_scene_ref_out_key(raw_text, available)
@@ -14936,6 +14943,15 @@ def build_language_bundle(
                         )
                         if not node_key:
                             continue
+                        file_ref = chain.get("file") or ""
+                        level_id = chain.get("levelId") or ""
+                        if file_ref and _is_story_scene_graph_key(node_key, available):
+                            signature = (file_ref, level_id, start, payload_index, node_key)
+                            if signature not in seen_story_call_items:
+                                seen_story_call_items.add(signature)
+                                story_call_items_by_file[(file_ref, level_id)].append(
+                                    (start, payload_index, node_key)
+                                )
                         if not sequence or sequence[-1] != node_key:
                             sequence.append(node_key)
                 if not sequence:
@@ -14957,6 +14973,19 @@ def build_language_bundle(
                 chain_sequences.append({
                     "file": chain.get("file") or "",
                     "levelId": chain.get("levelId") or "",
+                    "sequence": sequence,
+                })
+        story_call_contexts: list[dict] = []
+        for (file_ref, level_id), items in sorted(story_call_items_by_file.items()):
+            sequence: list[str] = []
+            for _, __, node_key in sorted(items):
+                if not sequence or sequence[-1] != node_key:
+                    sequence.append(node_key)
+            if sequence:
+                story_call_contexts.append({
+                    "kind": "levelscriptFileStoryCallOrder",
+                    "file": file_ref,
+                    "levelId": level_id,
                     "sequence": sequence,
                 })
         all_nodes = set(available) | ui_nodes | chain_nodes
@@ -15302,6 +15331,8 @@ def build_language_bundle(
         payload = {"nodes": nodes, "edges": edges}
         if scene_entry:
             payload.update(scene_entry)
+        if story_call_contexts:
+            payload["levelscriptStoryCallContexts"] = story_call_contexts
         return payload
 
     def build_mission_timeline_recovery_report(
@@ -15320,6 +15351,9 @@ def build_language_bundle(
                     timeline_index,
                     None,
                     source_backed_scene_edges_from_scene_graph(
+                        scene_graphs.get(mission_id)
+                    ),
+                    source_backed_story_call_contexts_from_scene_graph(
                         scene_graphs.get(mission_id)
                     ),
                 )
