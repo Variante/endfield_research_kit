@@ -28,6 +28,40 @@ from common import (
 )
 
 
+KNOWN_OPTION_PAYLOAD_FIELDS = {
+    "$animestudio",
+    "_optionId",
+    "index",
+    "optionIndex",
+    "trunkId",
+    "dialogId",
+    "overrideOptionIconType",
+    "logicId",
+    "selectedFlag",
+    "setGreyed",
+    "main",
+    "isChat",
+    "changeFinishNum",
+    "targetFinishNum",
+    "useExOptionColor",
+    "overrideOptionIcon",
+    "optionIconColor",
+    "conditionData",
+}
+
+REFERENCE_KEYS = {
+    "fileID",
+    "guid",
+    "m_FileID",
+    "m_Guid",
+    "m_PathID",
+    "pathID",
+    "pathId",
+    "rid",
+    "type",
+}
+
+
 def as_float(value: Any) -> float:
     try:
         return float(value)
@@ -203,6 +237,129 @@ def compact_option_row(row: dict[str, Any]) -> dict[str, Any]:
     return {field: row.get(field) for field in fields if row.get(field) not in (None, "", [], {})}
 
 
+def raw_asset_path(asset_track: str) -> Path | None:
+    text = safe_key(asset_track)
+    if not text:
+        return None
+    path = Path(text)
+    if not path.is_absolute():
+        path = ROOT / path
+    return path if path.is_file() else None
+
+
+def option_payload_from_asset(asset_track: str, option_id: str, cache: dict[str, Any]) -> dict[str, Any]:
+    option_id = safe_key(option_id)
+    if not option_id:
+        return {}
+    asset_track = safe_key(asset_track)
+    if asset_track not in cache:
+        path = raw_asset_path(asset_track)
+        cache[asset_track] = read_json(path, {}) if path else {}
+    payload = cache.get(asset_track)
+    if not isinstance(payload, dict):
+        return {}
+
+    def visit(node: Any) -> dict[str, Any]:
+        if isinstance(node, dict):
+            if safe_key(node.get("_optionId")) == option_id:
+                return node
+            for value in node.values():
+                found = visit(value)
+                if found:
+                    return found
+        elif isinstance(node, list):
+            for value in node:
+                found = visit(value)
+                if found:
+                    return found
+        return {}
+
+    return visit(payload)
+
+
+def compact_scalar(value: Any) -> Any:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return round(value, 6)
+    if isinstance(value, str):
+        text = value.strip()
+        if len(text) <= 160:
+            return text
+    return None
+
+
+def compact_reference(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    out = {}
+    for key in sorted(REFERENCE_KEYS):
+        if key in value and value.get(key) not in (None, "", [], {}):
+            out[key] = value.get(key)
+    return out
+
+
+def raw_payload_diagnostics(row: dict[str, Any], cache: dict[str, Any]) -> dict[str, Any]:
+    payload = option_payload_from_asset(
+        safe_key(row.get("assetTrack")),
+        safe_key(row.get("id")),
+        cache,
+    )
+    if not payload:
+        return {}
+    raw_keys = sorted(key for key in payload if key != "$animestudio")
+    extra_scalars: dict[str, Any] = {}
+    extra_refs: dict[str, Any] = {}
+    nested_scalar_keys: dict[str, list[str]] = {}
+    for key, value in payload.items():
+        if key in KNOWN_OPTION_PAYLOAD_FIELDS or key.startswith("$"):
+            continue
+        scalar = compact_scalar(value)
+        if scalar not in (None, "", [], {}):
+            extra_scalars[key] = scalar
+            continue
+        ref = compact_reference(value)
+        if ref:
+            extra_refs[key] = ref
+            continue
+        if isinstance(value, dict):
+            child_scalars = []
+            child_refs = {}
+            for child_key, child_value in value.items():
+                scalar = compact_scalar(child_value)
+                if scalar not in (None, "", [], {}):
+                    child_scalars.append(child_key)
+                ref = compact_reference(child_value)
+                if ref:
+                    child_refs[child_key] = ref
+            if child_scalars:
+                nested_scalar_keys[key] = sorted(child_scalars)
+            if child_refs:
+                extra_refs[key] = child_refs
+    out = {"rawPayloadKeys": raw_keys}
+    if extra_scalars:
+        out["rawExtraScalars"] = extra_scalars
+    if extra_refs:
+        out["rawExtraRefs"] = extra_refs
+    if nested_scalar_keys:
+        out["rawNestedScalarKeys"] = nested_scalar_keys
+    return out
+
+
+def compact_option_rows_with_raw_payload(
+    option_rows: list[dict[str, Any]],
+    cache: dict[str, Any],
+) -> list[dict[str, Any]]:
+    rows = []
+    for row in option_rows:
+        compact = compact_option_row(row)
+        compact.update(raw_payload_diagnostics(compact, cache))
+        rows.append(compact)
+    return rows
+
+
 def compact_line(line_id: str, conv_lines: dict[str, dict[str, Any]], timeline_lines: dict[str, dict[str, Any]]) -> dict[str, Any]:
     conv_line = conv_lines.get(line_id) or {}
     timeline_line = timeline_lines.get(line_id) or {}
@@ -286,6 +443,7 @@ def collect_rows(
     timeline_orders = read_json(timeline_orders_path, {}) or {}
     story_filters = story_filters or []
     group_filters = group_filters or set()
+    raw_asset_cache: dict[str, Any] = {}
     rows: list[dict[str, Any]] = []
 
     for conv_path in filtered_conv_paths(conv_dir, story_filters):
@@ -328,7 +486,8 @@ def collect_rows(
                 option_entries: list[dict[str, Any]] = []
                 for index, option_id in enumerate(option_ids):
                     option_rows = sorted(rows_by_option.get(option_id) or [], key=option_row_rank)
-                    best_row = compact_option_row(option_rows[0]) if option_rows else {}
+                    compact_rows = compact_option_rows_with_raw_payload(option_rows, raw_asset_cache)
+                    best_row = compact_rows[0] if compact_rows else {}
                     candidate_line_id = candidate_line_ids[index] if index < len(candidate_line_ids) else ""
                     option_entries.append({
                         "optionId": option_id,
@@ -336,7 +495,7 @@ def collect_rows(
                         "candidateLineId": candidate_line_id,
                         "candidateLine": compact_line(candidate_line_id, conv_lines, timeline_lines) if candidate_line_id else {},
                         "bestRow": best_row,
-                        "allRows": [compact_option_row(row) for row in option_rows],
+                        "allRows": compact_rows,
                         "route": routes.get(option_id) or {},
                     })
 
@@ -388,6 +547,10 @@ def summarize_rows(
     logic_ids: Counter[str] = Counter()
     finish_values: Counter[str] = Counter()
     condition_rids: Counter[str] = Counter()
+    raw_payload_keys: Counter[str] = Counter()
+    raw_extra_scalar_keys: Counter[str] = Counter()
+    raw_extra_ref_keys: Counter[str] = Counter()
+    raw_nested_scalar_keys: Counter[str] = Counter()
     logic_candidate_map: dict[tuple[str, int], set[str]] = defaultdict(set)
     logic_option_row_count = 0
     logic_equals_candidate_suffix_count = 0
@@ -406,6 +569,15 @@ def summarize_rows(
                 if line_suffix_int(candidate_line_id) == best_logic_id:
                     logic_equals_candidate_suffix_count += 1
             for option_row in option.get("allRows") or []:
+                for key in option_row.get("rawPayloadKeys") or []:
+                    raw_payload_keys[safe_key(key)] += 1
+                for key in (option_row.get("rawExtraScalars") or {}).keys():
+                    raw_extra_scalar_keys[safe_key(key)] += 1
+                for key in (option_row.get("rawExtraRefs") or {}).keys():
+                    raw_extra_ref_keys[safe_key(key)] += 1
+                for key, child_keys in (option_row.get("rawNestedScalarKeys") or {}).items():
+                    for child_key in child_keys or []:
+                        raw_nested_scalar_keys[f"{key}.{child_key}"] += 1
                 if option_row.get("logicId") is not None:
                     logic_ids[str(option_row["logicId"])] += 1
                 if option_row.get("targetFinishNum") is not None:
@@ -450,6 +622,10 @@ def summarize_rows(
         "repeatedStoryLogicIdCandidateConflicts": repeated_conflicts[:30],
         "targetFinishNumCounts": dict(sorted(finish_values.items())),
         "conditionRidCounts": dict(sorted(condition_rids.items())),
+        "rawPayloadKeyCounts": dict(sorted(raw_payload_keys.items())),
+        "rawExtraScalarKeyCounts": dict(sorted(raw_extra_scalar_keys.items())),
+        "rawExtraRefKeyCounts": dict(sorted(raw_extra_ref_keys.items())),
+        "rawNestedScalarKeyCounts": dict(sorted(raw_nested_scalar_keys.items())),
     }
 
 
@@ -461,6 +637,15 @@ def option_summary(row: dict[str, Any]) -> str:
         for field in ("logicId", "targetFinishNum", "changeFinishNum", "conditionRid", "trunkId", "dialogId"):
             if best.get(field) not in (None, "", [], {}):
                 fields.append(f"{field}={best[field]}")
+        extra_scalars = sorted((best.get("rawExtraScalars") or {}).keys())
+        extra_refs = sorted((best.get("rawExtraRefs") or {}).keys())
+        nested_scalars = sorted((best.get("rawNestedScalarKeys") or {}).keys())
+        if extra_scalars:
+            fields.append("extraScalars=" + ",".join(extra_scalars))
+        if extra_refs:
+            fields.append("extraRefs=" + ",".join(extra_refs))
+        if nested_scalars:
+            fields.append("nestedScalars=" + ",".join(nested_scalars))
         parts.append(f"{option.get('optionId')} -> {option.get('candidateLineId')} ({', '.join(fields) or 'no fields'})")
     return "; ".join(parts)
 
@@ -488,6 +673,10 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
         f"- `logicId` top values: `{summary.get('topLogicIds', [])}`",
         f"- `targetFinishNum`: `{summary.get('targetFinishNumCounts', {})}`",
         f"- `conditionRid`: `{summary.get('conditionRidCounts', {})}`",
+        f"- Raw option payload keys: `{summary.get('rawPayloadKeyCounts', {})}`",
+        f"- Raw extra scalar keys not carried by timeline orders: `{summary.get('rawExtraScalarKeyCounts', {})}`",
+        f"- Raw extra reference keys not carried by timeline orders: `{summary.get('rawExtraRefKeyCounts', {})}`",
+        f"- Raw nested scalar keys not carried by timeline orders: `{summary.get('rawNestedScalarKeyCounts', {})}`",
         "",
         "## LogicId Diagnostics",
         "",
