@@ -303,6 +303,32 @@ function buildDataTypeChips() {
   }
 }
 
+function buildMediaChips() {
+  const wrap = $("#media-filter");
+  if (!wrap) return;
+
+  const counts = {};
+  for (const entry of STATE.entries) {
+    for (const mediaKey of entryMediaTypeFilterKeys(entry)) {
+      counts[mediaKey] = (counts[mediaKey] || 0) + 1;
+    }
+  }
+  wrap.innerHTML = "";
+  const mediaKeys = MEDIA_TYPE_FILTER_KEYS.filter((key) => counts[key]);
+  pruneFilterSet(STATE.filters.media, new Set(mediaKeys));
+  for (const mediaKey of mediaKeys) {
+    const n = counts[mediaKey] || 0;
+    if (!n) continue;
+    const chip = document.createElement("span");
+    chip.className = "chip media-chip";
+    chip.dataset.value = mediaKey;
+    if (STATE.filters.media.has(mediaKey)) chip.classList.add("on");
+    chip.textContent = `${mediaTypeFilterLabel(mediaKey)} (${n})`;
+    chip.addEventListener("click", () => toggleSet(STATE.filters.media, mediaKey, chip));
+    wrap.appendChild(chip);
+  }
+}
+
 function buildStoryIssueChips() {
   const wrap = $("#story-issue-filter");
   if (!wrap) return;
@@ -326,6 +352,35 @@ function buildStoryIssueChips() {
     if (STATE.filters.issues.has(code)) chip.classList.add("on");
     chip.textContent = `${storyIssueLabel(code)} (${n})`;
     chip.addEventListener("click", () => toggleSet(STATE.filters.issues, code, chip));
+    wrap.appendChild(chip);
+  }
+}
+
+function buildRecoveryMethodChips() {
+  const wrap = $("#recovery-method-filter");
+  if (!wrap) return;
+
+  wrap.innerHTML = "";
+  const counts = {};
+  for (const entry of STATE.entries) {
+    for (const method of new Set(entryRecoveryMethods(entry))) {
+      counts[method] = (counts[method] || 0) + 1;
+    }
+  }
+
+  const methodKeys = Object.keys(counts)
+    .filter(Boolean)
+    .sort((a, b) => compareRecoveryMethodKeys(a, b, counts));
+  pruneFilterSet(STATE.filters.recoveryMethods, new Set(methodKeys));
+  for (const method of methodKeys) {
+    const n = counts[method] || 0;
+    if (!n) continue;
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    chip.dataset.value = method;
+    if (STATE.filters.recoveryMethods.has(method)) chip.classList.add("on");
+    chip.textContent = `${recoveryMethodLabel(method)} (${n})`;
+    chip.addEventListener("click", () => toggleSet(STATE.filters.recoveryMethods, method, chip));
     wrap.appendChild(chip);
   }
 }
@@ -467,7 +522,9 @@ function applyFilters() {
 
   if (f.kinds.size) out = out.filter((e) => entryMatchesKindFilters(e, f.kinds));
   if (f.dataTypes.size) out = out.filter((e) => entryMatchesTreeDataTypeFilters(e, f.dataTypes));
+  if (f.media.size) out = out.filter((e) => entryMatchesMediaFilters(e, f.media));
   if (f.issues.size) out = out.filter((e) => entryMatchesStoryIssueFilters(e, f.issues));
+  if (f.recoveryMethods.size) out = out.filter((e) => entryMatchesRecoveryMethodFilters(e, f.recoveryMethods));
   if (f.q) {
     const q = f.q;
     if (typeof ensureStorySearchIndexLoaded === "function" && !STATE.storySearchLoaded) {
@@ -488,9 +545,17 @@ function applyFilters() {
         if (group.label && searchTextIncludes(group.label, q)) return true;
         if (group.raw && searchTextIncludes(group.raw, q)) return true;
       }
+      for (const typeKey of entryMediaTypeFilterKeys(e)) {
+        if (searchTextIncludes(typeKey, q)) return true;
+        if (searchTextIncludes(typeFilterLabel(typeKey), q)) return true;
+      }
       for (const tag of entryMetadataTags(e)) {
         if (searchTextIncludes(tag, q)) return true;
         if (searchTextIncludes(metadataTagLabel(tag), q)) return true;
+      }
+      for (const method of entryRecoveryMethods(e)) {
+        if (searchTextIncludes(method, q)) return true;
+        if (searchTextIncludes(recoveryMethodLabel(method), q)) return true;
       }
       if (entryMatchesOptionIdSearch(e, q)) return true;
       if (e.p && searchTextIncludes(e.p, q)) return true;

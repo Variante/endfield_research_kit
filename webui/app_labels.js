@@ -13,10 +13,14 @@ const UI_TEXTS = {
     appTitle: "\u7ec8\u672b\u5730\u5bf9\u8bdd\u6d4f\u89c8\u5668",
     countLabel: "\u6761\u4f1a\u8bdd",
     searchPlaceholder: "\u641c\u7d22 ID / \u4efb\u52a1 / \u89d2\u8272 / \u6587\u672c",
+    basicFilters: "\u57fa\u7840\u7b5b\u9009",
+    searchFilter: "\u641c\u7d22",
     language: "\u8bed\u8a00",
     kind: "\u7c7b\u578b",
     type: "\u5267\u60c5\u7ebf",
+    mediaFilter: "\u5a92\u4f53",
     storyIssueFilter: "\u6062\u590d\u95ee\u9898",
+    recoveryMethodFilter: "\u6062\u590d\u65b9\u5f0f",
     storyIssueMissingLineOrder: "\u7f3a\u5c11\u884c\u987a\u5e8f",
     storyIssuePartialLineOrder: "\u90e8\u5206\u987a\u5e8f",
     storyIssueFallbackLineOrder: "\u56de\u9000\u987a\u5e8f",
@@ -24,6 +28,21 @@ const UI_TEXTS = {
     storyIssueInferredOptionLayout: "\u9009\u9879\u5b9a\u4f4d\u7f3a\u5931",
     storyIssueInferredOptionResponse: "\u9009\u9879\u56de\u5e94\u4e3a\u63a8\u6d4b",
     storyIssueDuplicateTimestamps: "\u65f6\u95f4\u6233\u91cd\u590d",
+    recoveryMethodLinePrefix: "\u884c\u987a\u5e8f",
+    recoveryMethodOptionPrefix: "\u9009\u9879",
+    recoveryMethodOptionLayoutAuthored: "\u6388\u6743\u951a\u70b9",
+    recoveryMethodOptionLayoutPartial: "\u90e8\u5206\u6388\u6743\u951a\u70b9",
+    recoveryMethodOptionLayoutFallback: "\u56de\u9000\u5b9a\u4f4d",
+    recoveryMethodOptionLayoutNoAnchor: "\u7f3a\u5c11\u6388\u6743\u951a\u70b9",
+    recoveryMethodOptionSceneGraph: "SceneGraph \u5206\u652f",
+    recoveryMethodOptionDialogTreeFragment: "DialogTree \u7247\u6bb5",
+    recoveryMethodOptionRuntimeJump: "Runtime Jump \u5206\u652f",
+    recoveryMethodOptionRawIndexMatched: "\u7d22\u5f15\u5339\u914d",
+    recoveryMethodOptionTimelineAdjacent: "Timeline \u76f8\u90bb\u884c\u63a8\u6d4b",
+    recoveryMethodOptionCommonContinuation: "\u5171\u540c\u540e\u7eed",
+    recoveryMethodOptionContinuationOption: "\u540e\u7eed\u9009\u9879",
+    recoveryMethodOptionSharedMerge: "\u5171\u4eab\u5408\u6d41",
+    recoveryMethodOptionSiblingSceneHint: "\u5144\u5f1f\u573a\u666f\u63d0\u793a",
     sort: "\u6392\u5e8f",
     sortNatural: "\u6309\u5267\u60c5\u7ebf\u548c\u4efb\u52a1\u987a\u5e8f",
     sortLinesDesc: "\u6309\u884c\u6570\u4ece\u591a\u5230\u5c11",
@@ -94,7 +113,9 @@ const UI_TEXTS = {
     lineOrderModeDialogTreeExtraConfig: "\u4f7f\u7528 extra_config \u7684\u6388\u6743\u987a\u5e8f",
     lineOrderModeDialogTreeCinematicTimeline: "\u4f7f\u7528 DialogTree \u5267\u60c5\u8282\u70b9\u62fc\u63a5 Timeline",
     lineOrderModeAuthoredBlend: "\u6df7\u5408\u591a\u4e2a\u6388\u6743\u6765\u6e90",
+    lineOrderModeAuthoredNumericStitch: "\u6309\u6388\u6743\u6570\u5b57\u987a\u5e8f\u62fc\u63a5",
     lineOrderModeDialogTimeline: "\u4f7f\u7528 dialogTimeline \u7684\u6388\u6743\u987a\u5e8f",
+    lineOrderModeCompoundNumericSuffix: "\u6309\u590d\u5408\u6570\u5b57\u540e\u7f00\u62fc\u63a5",
     lineOrderModeLineIdSuffix: "\u56de\u9000\u884c\u987a\u5e8f",
     lineOrderModeRuntimeRowIteration: "\u8fd0\u884c\u65f6\u884c\u8fed\u4ee3",
     lineOrderModeUnregisteredScene: "\u672a\u5728 DialogIdTable \u6ce8\u518c",
@@ -140,6 +161,7 @@ const UI_TEXTS = {
     lineOrderModeDetailDialogTreeExtraConfig: "\u4f7f\u7528 extra_config \u91cc\u58f0\u660e\u7684\u6388\u6743\u987a\u5e8f\u3002",
     lineOrderModeDetailDialogTreeCinematicTimeline: "\u6309 DialogTree \u4e2d\u7684\u5267\u60c5\u8282\u70b9\u628a\u5c40\u90e8 Timeline \u53f0\u8bcd\u63d2\u56de\u4e3b\u5e72\u987a\u5e8f\u3002",
     lineOrderModeDetailAuthoredBlend: "\u6309\u8986\u76d6\u7387\u548c\u4f18\u5148\u7ea7\u5408\u5e76\u591a\u4e2a\u6388\u6743\u6765\u6e90\u3002",
+    lineOrderModeDetailAuthoredNumericStitch: "\u4e3b DialogTree \u7ed9\u51fa\u90e8\u5206\u987a\u5e8f\uff0c\u7f3a\u53e3\u884c\u6309\u6570\u5b57\u540e\u7f00\u63d2\u56de\u3002",
     lineOrderModeDetailDialogTimeline: "\u4f7f\u7528 dialogTimeline \u91cc\u8bb0\u5f55\u7684\u6388\u6743\u987a\u5e8f\u3002",
     lineOrderModeDetailLineIdSuffix: "\u5f53\u524d\u573a\u666f\u6ca1\u6709\u6062\u590d\u51fa\u53ef\u7528\u7684\u6388\u6743\u884c\u987a\u5e8f\u6765\u6e90\u3002",
     lineOrderModeDetailFallback: "\u4f7f\u7528\u56de\u9000\u7b56\u7565 {mode} \u6062\u590d\u987a\u5e8f\u3002",
@@ -170,6 +192,8 @@ const UI_TEXTS = {
     optJumpMergeLine: "\u2192 {line}",
     optJumpMergeLineTitle: "\u5206\u652f\u5408\u6d41\u540e\u7ee7\u7eed\u5230\uff1a{line}\u3002",
     optTargetAccessedFrom: "\u2190 \u4ece",
+    optRiskRawIndexMatchedLine: "\u7d22\u5f15\u5339\u914d",
+    optRiskRawIndexMatchedLineTitle: "\u6e90\u6570\u636e\u6ca1\u6709\u660e\u786e\u5199\u51fa\u8be5\u9009\u9879\u7684\u76ee\u6807\u53f0\u8bcd\uff1b\u4f46 Timeline raw optionIndex \u4e0e\u9009\u9879\u5e8f\u53f7\u5339\u914d\uff0c\u56de\u590d\u884c\u6062\u590d\u5230 {line}\u3002\u8fd9\u4ecd\u7136\u5c5e\u4e8e\u6062\u590d\u63a8\u65ad\uff0c\u4f46\u6bd4\u76f8\u90bb\u884c\u63a8\u6d4b\u66f4\u5f3a\u3002",
     optRiskInferredFollowingLine: "\u63a8\u6d4b\u56de\u5e94",
     optRiskInferredFollowingLineTitle: "\u6e90\u6570\u636e\u6ca1\u6709\u660e\u786e\u5199\u51fa\u8be5\u9009\u9879\u7684\u76ee\u6807\u53f0\u8bcd\uff1b\u6309 Timeline \u987a\u5e8f\u63a8\u6d4b\u53ef\u80fd\u5bf9\u5e94 {line}\u3002",
     preDialogOptions: "\u5bf9\u8bdd\u9009\u9879\uff08\u5f00\u573a\u524d\uff09",
@@ -207,7 +231,7 @@ const UI_TEXTS = {
     warningLineOrderDetailPartial: "",
     lineOrderUncoveredCount: "\u672a\u8986\u76d6 {count} \u884c",
     lineOrderUncoveredLines: "\u672a\u8986\u76d6\u884c",
-    lineOrderUncoveredBadge: "\u672a\u8986\u76d6",
+    lineOrderUncoveredBadge: "uncovered",
     duplicateTimestampBadge: "\u65f6\u95f4\u6233\u91cd\u590d",
     warningOptionLayoutSummaryNoTreeReference: "\u9009\u9879\u4f4d\u7f6e\u5168\u90e8\u6765\u81ea\u56de\u9000",
     warningOptionLayoutDetailNoTreeReference: "",
@@ -230,10 +254,14 @@ const UI_TEXTS = {
     appTitle: "Endfield Story Browser",
     countLabel: "conversations",
     searchPlaceholder: "Search ID / mission / actor / text",
+    basicFilters: "Basic Filters",
+    searchFilter: "Search",
     language: "Language",
     kind: "Type",
     type: "Storyline",
+    mediaFilter: "Media",
     storyIssueFilter: "Recovery",
+    recoveryMethodFilter: "Recovery Method",
     storyIssueMissingLineOrder: "Missing order",
     storyIssuePartialLineOrder: "Partial order",
     storyIssueFallbackLineOrder: "Fallback order",
@@ -241,6 +269,21 @@ const UI_TEXTS = {
     storyIssueInferredOptionLayout: "No option anchor",
     storyIssueInferredOptionResponse: "Inferred reply",
     storyIssueDuplicateTimestamps: "Duplicate timestamps",
+    recoveryMethodLinePrefix: "Line order",
+    recoveryMethodOptionPrefix: "Option",
+    recoveryMethodOptionLayoutAuthored: "authored anchors",
+    recoveryMethodOptionLayoutPartial: "partial authored anchors",
+    recoveryMethodOptionLayoutFallback: "fallback placement",
+    recoveryMethodOptionLayoutNoAnchor: "missing authored anchors",
+    recoveryMethodOptionSceneGraph: "SceneGraph branches",
+    recoveryMethodOptionDialogTreeFragment: "DialogTree fragments",
+    recoveryMethodOptionRuntimeJump: "Runtime Jump branches",
+    recoveryMethodOptionRawIndexMatched: "index matched",
+    recoveryMethodOptionTimelineAdjacent: "Timeline adjacent inference",
+    recoveryMethodOptionCommonContinuation: "shared continuation",
+    recoveryMethodOptionContinuationOption: "continuation option",
+    recoveryMethodOptionSharedMerge: "shared merge",
+    recoveryMethodOptionSiblingSceneHint: "sibling scene hint",
     sort: "Sort",
     sortNatural: "Storyline and mission order",
     sortLinesDesc: "Line count (high to low)",
@@ -311,7 +354,9 @@ const UI_TEXTS = {
     lineOrderModeDialogTreeExtraConfig: "authored order via dialogTreeExtraConfig",
     lineOrderModeDialogTreeCinematicTimeline: "dialogTree cinematic timeline stitch",
     lineOrderModeAuthoredBlend: "authored blend",
+    lineOrderModeAuthoredNumericStitch: "authored numeric stitch",
     lineOrderModeDialogTimeline: "authored order via dialogTimeline",
+    lineOrderModeCompoundNumericSuffix: "compound numeric suffix stitch",
     lineOrderModeLineIdSuffix: "fallback line order",
     lineOrderModeRuntimeRowIteration: "runtime row iteration",
     lineOrderModeUnregisteredScene: "not registered in DialogIdTable",
@@ -357,6 +402,7 @@ const UI_TEXTS = {
     lineOrderModeDetailDialogTreeExtraConfig: "Used the authored ordering declared in extra_config.",
     lineOrderModeDetailDialogTreeCinematicTimeline: "Inserted local Timeline dialog clips at their parent DialogTree cinematic nodes.",
     lineOrderModeDetailAuthoredBlend: "Merged multiple authored sources by coverage and priority.",
+    lineOrderModeDetailAuthoredNumericStitch: "The main DialogTree supplies partial order; numeric suffixes place the uncovered gap rows back into the sequence.",
     lineOrderModeDetailDialogTimeline: "Used the authored ordering recorded in dialogTimeline.",
     lineOrderModeDetailLineIdSuffix: "No usable authored line-order source was recovered for this scene.",
     lineOrderModeDetailFallback: "Recovered order via fallback strategy {mode}.",
@@ -387,6 +433,8 @@ const UI_TEXTS = {
     optJumpMergeLine: "-> {line}",
     optJumpMergeLineTitle: "Branch paths merge and continue at {line}.",
     optTargetAccessedFrom: "from",
+    optRiskRawIndexMatchedLine: "index matched",
+    optRiskRawIndexMatchedLineTitle: "The source data does not name an explicit target line for this option, but Timeline raw optionIndex matches the option index and recovers the reply at {line}. This is still recovered inference, but stronger than adjacent-line inference.",
     optRiskInferredFollowingLine: "inferred reply",
     optRiskInferredFollowingLineTitle: "The source data does not name an explicit target line for this option; Timeline order suggests it may correspond to {line}.",
     preDialogOptions: "Dialogue Options (Before Scene)",
@@ -424,7 +472,7 @@ const UI_TEXTS = {
     warningLineOrderDetailPartial: "",
     lineOrderUncoveredCount: "{count} line(s) not covered",
     lineOrderUncoveredLines: "Uncovered lines",
-    lineOrderUncoveredBadge: "Not covered",
+    lineOrderUncoveredBadge: "uncovered",
     duplicateTimestampBadge: "Duplicate timestamp",
     warningOptionLayoutSummaryNoTreeReference: "option positions lack authored anchors",
     warningOptionLayoutDetailNoTreeReference: "",
@@ -807,6 +855,28 @@ const DATA_TYPE_LABELS = {
   },
 };
 
+const MEDIA_TYPE_FILTER_KEYS = ["media:video", "media:image", "media:sticker", "media:emoji"];
+const MEDIA_TYPE_TAG_BY_KEY = {
+  "media:video": "mediaVideo",
+  "media:image": "mediaImage",
+  "media:sticker": "mediaSticker",
+  "media:emoji": "mediaEmoji",
+};
+const MEDIA_TYPE_FILTER_LABELS = {
+  zh: {
+    "media:video": "\u542b\u89c6\u9891",
+    "media:image": "\u542b\u56fe\u7247",
+    "media:sticker": "\u542b\u8d34\u7eb8 (\u975e\u8868\u60c5)",
+    "media:emoji": "\u542b\u8868\u60c5",
+  },
+  en: {
+    "media:video": "Has video",
+    "media:image": "Has image",
+    "media:sticker": "Has sticker (not emoji)",
+    "media:emoji": "Has emoji",
+  },
+};
+
 const METADATA_TAG_ORDER = [
   "achievement",
   "archive",
@@ -922,12 +992,39 @@ const METADATA_TAG_LABELS = {
 
 const STORY_ISSUE_ORDER = [
   "missingLineOrder",
-  "partialLineOrder",
   "fallbackLineOrder",
   "uncoveredLines",
   "duplicateTimestamps",
   "inferredOptionLayout",
   "inferredOptionResponse",
+];
+
+const STORY_RECOVERY_METHOD_ORDER = [
+  "lineOrder:dialogTree",
+  "lineOrder:dialogTreeFragment",
+  "lineOrder:dialogTreeExtraConfig",
+  "lineOrder:dialogTreeCinematicTimeline",
+  "lineOrder:authoredBlend",
+  "lineOrder:authoredNumericStitch",
+  "lineOrder:dialogTimeline",
+  "lineOrder:runtimeRowIteration",
+  "lineOrder:unregisteredScene",
+  "lineOrder:compoundNumericSuffix",
+  "lineOrder:lineIdSuffix",
+  "lineOrder:missing",
+  "optionLayout:authored",
+  "optionLayout:partialAuthoredCoverage",
+  "optionLayout:fallback",
+  "optionLayout:noAuthoredGroupAnchor",
+  "optionBranch:sceneGraph",
+  "optionBranch:dialogTreeFragment",
+  "optionBranch:runtimeJump",
+  "optionBranch:rawIndexMatched",
+  "optionBranch:timelineAdjacent",
+  "optionBranch:commonContinuation",
+  "optionBranch:continuationOption",
+  "optionBranch:sharedMerge",
+  "optionBranch:siblingSceneHint",
 ];
 
 function uiText(key) {
@@ -1034,6 +1131,19 @@ function dataTypeLabel(dataType) {
   return labels[dataType] || formatStructuredLabel(dataType);
 }
 
+function isMediaTypeFilterKey(key) {
+  return MEDIA_TYPE_FILTER_KEYS.includes(String(key || ""));
+}
+
+function mediaTypeFilterLabel(key) {
+  const labels = localeTable(MEDIA_TYPE_FILTER_LABELS);
+  return labels[key] || MEDIA_TYPE_FILTER_LABELS.en[key] || formatStructuredLabel(key);
+}
+
+function typeFilterLabel(key) {
+  return isMediaTypeFilterKey(key) ? mediaTypeFilterLabel(key) : dataTypeLabel(key);
+}
+
 function compareDataTypeKeys(a, b, counts = null) {
   if (a === DEFAULT_DATA_TYPE_KEY && b !== DEFAULT_DATA_TYPE_KEY) return 1;
   if (b === DEFAULT_DATA_TYPE_KEY && a !== DEFAULT_DATA_TYPE_KEY) return -1;
@@ -1046,6 +1156,14 @@ function compareDataTypeKeys(a, b, counts = null) {
     if (aCount !== bCount) return bCount - aCount;
   }
   return dataTypeLabel(a).localeCompare(dataTypeLabel(b), undefined, { numeric: true });
+}
+
+function compareTypeFilterKeys(a, b, counts = null) {
+  const aMedia = isMediaTypeFilterKey(a);
+  const bMedia = isMediaTypeFilterKey(b);
+  if (aMedia && bMedia) return MEDIA_TYPE_FILTER_KEYS.indexOf(a) - MEDIA_TYPE_FILTER_KEYS.indexOf(b);
+  if (aMedia !== bMedia) return aMedia ? -1 : 1;
+  return compareDataTypeKeys(a, b, counts);
 }
 
 const CONTENT_TYPE_PIN_ORDER = ["e", "a", "gm", "c", "sm", "m", "f"];
@@ -1094,6 +1212,65 @@ function entryMatchesStoryIssueFilters(entry, filters) {
   const issues = new Set(entryStoryIssues(entry));
   for (const code of filters) {
     if (!issues.has(code)) return false;
+  }
+  return true;
+}
+
+function recoveryMethodLabel(method) {
+  const raw = String(method || "");
+  const withPrefix = (prefixKey, text) => `${uiText(prefixKey)}: ${text}`;
+  if (raw === "lineOrder:dialogTree") return withPrefix("recoveryMethodLinePrefix", uiText("lineOrderModeDialogTree"));
+  if (raw === "lineOrder:dialogTreeFragment") return withPrefix("recoveryMethodLinePrefix", uiText("lineOrderModeDialogTreeFragment"));
+  if (raw === "lineOrder:dialogTreeExtraConfig") return withPrefix("recoveryMethodLinePrefix", uiText("lineOrderModeDialogTreeExtraConfig"));
+  if (raw === "lineOrder:dialogTreeCinematicTimeline") return withPrefix("recoveryMethodLinePrefix", uiText("lineOrderModeDialogTreeCinematicTimeline"));
+  if (raw === "lineOrder:authoredBlend") return withPrefix("recoveryMethodLinePrefix", uiText("lineOrderModeAuthoredBlend"));
+  if (raw === "lineOrder:authoredNumericStitch") return withPrefix("recoveryMethodLinePrefix", uiText("lineOrderModeAuthoredNumericStitch"));
+  if (raw === "lineOrder:dialogTimeline") return withPrefix("recoveryMethodLinePrefix", uiText("lineOrderModeDialogTimeline"));
+  if (raw === "lineOrder:runtimeRowIteration") return withPrefix("recoveryMethodLinePrefix", uiText("lineOrderModeRuntimeRowIteration"));
+  if (raw === "lineOrder:unregisteredScene") return withPrefix("recoveryMethodLinePrefix", uiText("lineOrderModeUnregisteredScene"));
+  if (raw === "lineOrder:compoundNumericSuffix") return withPrefix("recoveryMethodLinePrefix", uiText("lineOrderModeCompoundNumericSuffix"));
+  if (raw === "lineOrder:lineIdSuffix") return withPrefix("recoveryMethodLinePrefix", uiText("lineOrderModeLineIdSuffix"));
+  if (raw === "lineOrder:missing") return withPrefix("recoveryMethodLinePrefix", uiText("lineOrderModeMissing"));
+  if (raw === "optionLayout:authored") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionLayoutAuthored"));
+  if (raw === "optionLayout:partialAuthoredCoverage") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionLayoutPartial"));
+  if (raw === "optionLayout:fallback") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionLayoutFallback"));
+  if (raw === "optionLayout:noAuthoredGroupAnchor") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionLayoutNoAnchor"));
+  if (raw === "optionBranch:sceneGraph") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionSceneGraph"));
+  if (raw === "optionBranch:dialogTreeFragment") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionDialogTreeFragment"));
+  if (raw === "optionBranch:runtimeJump") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionRuntimeJump"));
+  if (raw === "optionBranch:rawIndexMatched") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionRawIndexMatched"));
+  if (raw === "optionBranch:timelineAdjacent") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionTimelineAdjacent"));
+  if (raw === "optionBranch:commonContinuation") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionCommonContinuation"));
+  if (raw === "optionBranch:continuationOption") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionContinuationOption"));
+  if (raw === "optionBranch:sharedMerge") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionSharedMerge"));
+  if (raw === "optionBranch:siblingSceneHint") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionSiblingSceneHint"));
+  return formatStructuredLabel(raw);
+}
+
+function compareRecoveryMethodKeys(a, b, counts = null) {
+  const ar = STORY_RECOVERY_METHOD_ORDER.indexOf(a);
+  const br = STORY_RECOVERY_METHOD_ORDER.indexOf(b);
+  const aKnown = ar !== -1;
+  const bKnown = br !== -1;
+  if (aKnown && bKnown && ar !== br) return ar - br;
+  if (aKnown !== bKnown) return aKnown ? -1 : 1;
+  if (counts) {
+    const delta = (counts[b] || 0) - (counts[a] || 0);
+    if (delta) return delta;
+  }
+  return recoveryMethodLabel(a).localeCompare(recoveryMethodLabel(b), undefined, { numeric: true });
+}
+
+function entryRecoveryMethods(entry) {
+  if (!entry || !Array.isArray(entry.recoveryMethods)) return [];
+  return entry.recoveryMethods.filter(Boolean);
+}
+
+function entryMatchesRecoveryMethodFilters(entry, filters) {
+  if (!filters || !filters.size) return true;
+  const methods = new Set(entryRecoveryMethods(entry));
+  for (const method of filters) {
+    if (!methods.has(method)) return false;
   }
   return true;
 }
@@ -1635,9 +1812,42 @@ function entryDataTypes(entry) {
   return out;
 }
 
+function entryMediaTypeFilterKeys(entry) {
+  if (!entry) return [];
+  if (Array.isArray(entry._mediaTypeFilterKeys)) return entry._mediaTypeFilterKeys;
+  const tags = new Set((entry.tags || []).map((tag) => String(tag || "")));
+  const out = [];
+  for (const key of MEDIA_TYPE_FILTER_KEYS) {
+    const tag = MEDIA_TYPE_TAG_BY_KEY[key];
+    if (!tag || !tags.has(tag)) continue;
+    out.push(key);
+  }
+  if (!out.includes("media:video") && (tags.has("narrativeVideo") || entry.vid)) out.unshift("media:video");
+  entry._mediaTypeFilterKeys = out;
+  return out;
+}
+
+function entryTypeFilterKeys(entry) {
+  return [...entryDataTypes(entry), ...entryMediaTypeFilterKeys(entry)];
+}
+
 function entryMatchesDataTypeFilters(entry, filters) {
   if (!filters || !filters.size) return true;
   return entryDataTypes(entry).some((dataType) => filters.has(dataType));
+}
+
+function entryMatchesTypeFilters(entry, filters) {
+  if (!filters || !filters.size) return true;
+  return entryTypeFilterKeys(entry).some((key) => filters.has(key));
+}
+
+function entryMatchesMediaFilters(entry, filters) {
+  if (!filters || !filters.size) return true;
+  const keys = new Set(entryMediaTypeFilterKeys(entry));
+  for (const key of filters) {
+    if (!keys.has(key)) return false;
+  }
+  return true;
 }
 
 function extractBraceText(text) {
@@ -1715,7 +1925,11 @@ function appendLineId(container, line, className = "line-id") {
 
   const node = document.createElement("div");
   node.className = className;
-  node.textContent = lineId;
+  if (typeof highlightTextFragment === "function" && typeof STATE !== "undefined") {
+    node.innerHTML = highlightTextFragment(lineId, STATE.filters && STATE.filters.q);
+  } else {
+    node.textContent = lineId;
+  }
   container.appendChild(node);
 }
 

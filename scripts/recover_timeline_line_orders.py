@@ -350,6 +350,7 @@ def run_cli(cli: Path, chk: Path, out_dir: Path, filter_data: Path) -> int:
         str(filter_data),
         "--types",
         "MonoBehaviour:Both",
+        "PlayableDirector:Both",
         "TextAsset:Both",
     ]
     return subprocess.call(cmd)

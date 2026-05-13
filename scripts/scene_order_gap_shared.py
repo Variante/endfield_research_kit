@@ -229,6 +229,7 @@ def build_runtime_registry_debug(
 
 AUTHORED_LINE_ORDER_MODES = {
     "authoredBlend",
+    "authoredNumericStitch",
     "dialogTimeline",
     "dialogTree",
     "dialogTreeCinematicTimeline",
@@ -431,6 +432,34 @@ def _line_order_output_ids(conv: dict, line_order: dict | None) -> list[str]:
         if ordered:
             return ordered
     return _line_order_input_ids(conv, line_order)
+
+
+def _option_branch_line_ids(conv: dict) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+
+    def add(values) -> None:
+        for line_id in _normalize_line_ids(values):
+            if line_id not in seen:
+                seen.add(line_id)
+                out.append(line_id)
+
+    for group in (conv.get("optionGroups") or []):
+        if not isinstance(group, dict):
+            continue
+        risk = group.get("optionBranchRisk")
+        if isinstance(risk, dict):
+            add(risk.get("lineIds"))
+            by_option = risk.get("branchLineIdsByOption")
+            if isinstance(by_option, dict):
+                for values in by_option.values():
+                    add(values)
+        for option in (group.get("options") or []):
+            if not isinstance(option, dict):
+                continue
+            add(option.get("branchLines"))
+            add(option.get("pathLineIds"))
+    return out
 
 
 def _moved_line_ids(original_ids: list[str], ordered_ids: list[str]) -> list[str]:
@@ -754,6 +783,22 @@ def analyze_line_order(conv: dict, *, dialog_id_registry: dict | None = None) ->
         for line_id in input_line_ids
         if line_id and line_id not in seen_covered
     ]
+    branch_line_ids = set(_option_branch_line_ids(conv))
+    branch_covered_line_ids = [
+        line_id for line_id in uncovered_line_ids if line_id in branch_line_ids
+    ]
+    if branch_covered_line_ids:
+        for line_id in branch_covered_line_ids:
+            if line_id not in seen_covered:
+                seen_covered.add(line_id)
+                covered_line_ids.append(line_id)
+        uncovered_line_ids = [
+            line_id for line_id in uncovered_line_ids if line_id not in branch_line_ids
+        ]
+        evidence.append(
+            f"{len(branch_covered_line_ids)} line(s) are covered by option branch payloads: "
+            f"{_summarize_items(branch_covered_line_ids, limit=8)}"
+        )
     if uncovered_line_ids:
         evidence.append(
             f"{len(uncovered_line_ids)} line(s) not covered by authored sources: "
@@ -780,6 +825,7 @@ def analyze_line_order(conv: dict, *, dialog_id_registry: dict | None = None) ->
                 "originalLineIds": input_line_ids,
                 "coveredLineIds": covered_line_ids,
                 "uncoveredLineIds": uncovered_line_ids,
+                "branchCoveredLineIds": branch_covered_line_ids,
                 "coveredLineCount": len(covered_line_ids),
                 "uncoveredLineCount": len(uncovered_line_ids),
             }
@@ -802,6 +848,7 @@ def analyze_line_order(conv: dict, *, dialog_id_registry: dict | None = None) ->
             "originalLineIds": input_line_ids,
             "coveredLineIds": covered_line_ids,
             "uncoveredLineIds": uncovered_line_ids,
+            "branchCoveredLineIds": branch_covered_line_ids,
             "coveredLineCount": len(covered_line_ids),
             "uncoveredLineCount": len(uncovered_line_ids),
         }
@@ -1461,6 +1508,7 @@ def build_scene_order_disorder_warning(
             "uncoveredLineCount": _as_int(line_order_analysis.get("uncoveredLineCount")),
             "coveredLineIds": _normalize_line_ids(line_order_analysis.get("coveredLineIds")),
             "uncoveredLineIds": _normalize_line_ids(line_order_analysis.get("uncoveredLineIds")),
+            "branchCoveredLineIds": _normalize_line_ids(line_order_analysis.get("branchCoveredLineIds")),
         },
         "optionLayout": {
             "status": option_layout_analysis["status"],

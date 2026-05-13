@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>&#32456;&#26411;&#22320;&#23545;&#35805;&#27983;&#35272;&#22120; / Endfield Story Browser</title>
-<link rel="stylesheet" href="style.css?v=20260512-risk-branch-render">
+<link rel="stylesheet" href="style.css?v=20260512-basic-filter-section">
 </head>
 <body data-active-view="story">
 <div id="shell">
@@ -44,35 +44,76 @@
           </header>
 
           <div id="filter-panel" class="filters">
-            <div class="filter-row">
-              <label id="language-label" for="language">&#35821;&#35328;</label>
-              <select id="language"></select>
-            </div>
+            <section class="filter-section filter-section-basic" data-filter-section="basic" data-fixed-open="1">
+              <div class="filter-section-title">
+                <span id="basic-filter-label">&#22522;&#30784;&#31579;&#36873;</span>
+              </div>
+              <div id="filter-section-basic-body" class="filter-section-body filter-section-body-stack">
+                <div class="filter-control-row">
+                  <label id="language-label" for="language">&#35821;&#35328;</label>
+                  <select id="language"></select>
+                </div>
+                <div class="filter-control-row">
+                  <label id="search-label" for="q">&#25628;&#32034;</label>
+                  <input id="q" type="search" placeholder="&#25628;&#32034; ID / &#20219;&#21153; / &#35282;&#33394; / &#25991;&#26412;" autofocus>
+                </div>
+                <div class="filter-control-row">
+                  <label id="sort-label" for="sort">&#25490;&#24207;</label>
+                  <select id="sort">
+                    <option id="sort-natural" value="natural">&#25353;&#21095;&#24773;&#32447;&#21644;&#20219;&#21153;&#39034;&#24207;</option>
+                    <option id="sort-lines-desc" value="lines-desc">&#25353;&#34892;&#25968;&#20174;&#22810;&#21040;&#23569;</option>
+                    <option id="sort-lines-asc" value="lines-asc">&#25353;&#34892;&#25968;&#20174;&#23569;&#21040;&#22810;</option>
+                    <option id="sort-key" value="key">&#25353;&#38190;&#20540; (A-Z)</option>
+                  </select>
+                </div>
+              </div>
+            </section>
 
-            <input id="q" type="search" placeholder="&#25628;&#32034; ID / &#20219;&#21153; / &#35282;&#33394; / &#25991;&#26412;" autofocus>
+            <section class="filter-section" data-filter-section="kind">
+              <button class="filter-section-toggle" type="button" aria-expanded="true" aria-controls="filter-section-kind-body">
+                <span id="kind-label">&#31867;&#22411;</span>
+              </button>
+              <div id="filter-section-kind-body" class="filter-section-body">
+                <div id="kind-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
 
-            <div class="filter-row">
-              <label id="kind-label" for="kind-filter">&#31867;&#22411;</label>
-              <div id="kind-filter" class="chips" data-multi="1"></div>
-            </div>
-            <div class="filter-divider" aria-hidden="true"></div>
-            <div class="filter-row">
-              <label id="type-label" for="type-filter">&#21095;&#24773;&#32447;</label>
-              <div id="type-filter" class="chips" data-multi="1"></div>
-            </div>
-            <div class="filter-row">
-              <label id="story-issue-label" for="story-issue-filter">&#24674;&#22797;&#38382;&#39064;</label>
-              <div id="story-issue-filter" class="chips" data-multi="1"></div>
-            </div>
-            <div class="filter-row">
-              <label id="sort-label" for="sort">&#25490;&#24207;</label>
-              <select id="sort">
-                <option id="sort-natural" value="natural">&#25353;&#21095;&#24773;&#32447;&#21644;&#20219;&#21153;&#39034;&#24207;</option>
-                <option id="sort-lines-desc" value="lines-desc">&#25353;&#34892;&#25968;&#20174;&#22810;&#21040;&#23569;</option>
-                <option id="sort-lines-asc" value="lines-asc">&#25353;&#34892;&#25968;&#20174;&#23569;&#21040;&#22810;</option>
-                <option id="sort-key" value="key">&#25353;&#38190;&#20540; (A-Z)</option>
-              </select>
-            </div>
+            <section class="filter-section" data-filter-section="type">
+              <button class="filter-section-toggle" type="button" aria-expanded="true" aria-controls="filter-section-type-body">
+                <span id="type-label">&#21095;&#24773;&#32447;</span>
+              </button>
+              <div id="filter-section-type-body" class="filter-section-body">
+                <div id="type-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+
+            <section class="filter-section" data-filter-section="media">
+              <button class="filter-section-toggle" type="button" aria-expanded="true" aria-controls="filter-section-media-body">
+                <span id="media-label">&#23186;&#20307;</span>
+              </button>
+              <div id="filter-section-media-body" class="filter-section-body">
+                <div id="media-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+
+            <section class="filter-section is-collapsed" data-filter-section="story-issue" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="filter-section-story-issue-body">
+                <span id="story-issue-label">&#24674;&#22797;&#38382;&#39064;</span>
+              </button>
+              <div id="filter-section-story-issue-body" class="filter-section-body" hidden>
+                <div id="story-issue-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+
+            <section class="filter-section is-collapsed" data-filter-section="recovery-method" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="filter-section-recovery-method-body">
+                <span id="recovery-method-label">&#24674;&#22797;&#26041;&#24335;</span>
+              </button>
+              <div id="filter-section-recovery-method-body" class="filter-section-body" hidden>
+                <div id="recovery-method-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+
           </div>
 
           <div id="list-meta"><span id="shown">0</span> / <span id="total">0</span> <span id="list-meta-label">&#26465;</span></div>
@@ -338,12 +379,12 @@
   </div>
 </div>
 
-<script src="shared.js?v=20260512-risk-branch-render"></script>
-<script src="app_labels.js?v=20260512-risk-branch-render"></script>
-<script src="app_tree.js?v=20260512-risk-branch-render"></script>
-<script src="app.js?v=20260512-risk-branch-render"></script>
-<script src="assets.js?v=20260512-risk-branch-render"></script>
-<script src="reference.js?v=20260512-risk-branch-render"></script>
-<script src="updates.js?v=20260512-risk-branch-render"></script>
+<script src="shared.js?v=20260512-basic-filter-section"></script>
+<script src="app_labels.js?v=20260513-media-filter-section"></script>
+<script src="app_tree.js?v=20260513-media-filter-section"></script>
+<script src="app.js?v=20260513-media-filter-section"></script>
+<script src="assets.js?v=20260512-basic-filter-section"></script>
+<script src="reference.js?v=20260512-basic-filter-section"></script>
+<script src="updates.js?v=20260512-basic-filter-section"></script>
 </body>
 </html>

@@ -18,10 +18,11 @@ const UI_LOCALE_STORAGE_KEY = "webui_ui_locale";
 const GENDER_VARIANT_STORAGE_KEY = "webui_gender_variant";
 const DEFAULT_GENDER_VARIANT = "f";
 const FILTER_PANEL_STORAGE_KEY = "webui_filters_collapsed";
+const FILTER_SECTION_STORAGE_KEY = "webui_filter_sections_collapsed_v2";
 const STORY_SPLITTER_STORAGE_KEY = "webui_story_splitter_width";
 const ASSET_SPLITTER_STORAGE_KEY = "webui_asset_splitter_width";
 const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
-const WEBUI_DATA_CACHE_TAG = "20260512-risk-branch-render";
+const WEBUI_DATA_CACHE_TAG = "20260513-merged-line-order-tags";
 const DEFAULT_LANGUAGE_INFO = {
   code: "CN",
   label: "Chinese (Simplified)",
@@ -62,6 +63,7 @@ const STATE = {
   showEmpty: false,
   showRaw: false,
   filtersCollapsed: false,
+  filterSectionsCollapsed: new Set(),
   indexRequestToken: 0,
   inlineImageLookupLoaded: false,
   inlineImageLookupPromise: null,
@@ -83,7 +85,9 @@ function createDefaultFilters() {
     q: "",
     kinds: new Set(),
     dataTypes: new Set(),
+    media: new Set(),
     issues: new Set(),
+    recoveryMethods: new Set(),
   };
 }
 
@@ -290,6 +294,84 @@ function resolveInitialFiltersCollapsed() {
   return isMobileLayout();
 }
 
+function availableFilterSectionKeys() {
+  return new Set($$(".filter-section[data-filter-section]:not([data-fixed-open='1'])").map((section) => section.dataset.filterSection).filter(Boolean));
+}
+
+function defaultCollapsedFilterSectionKeys() {
+  return new Set($$(".filter-section[data-default-collapsed='1']:not([data-fixed-open='1'])").map((section) => section.dataset.filterSection).filter(Boolean));
+}
+
+function resolveInitialFilterSectionsCollapsed() {
+  const available = availableFilterSectionKeys();
+  const stored = storageGet(FILTER_SECTION_STORAGE_KEY);
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        return new Set(parsed.filter((key) => available.has(key)));
+      }
+    } catch (_error) {
+      // Fall back to the markup defaults.
+    }
+  }
+  return defaultCollapsedFilterSectionKeys();
+}
+
+function persistFilterSectionsCollapsed() {
+  storageSet(FILTER_SECTION_STORAGE_KEY, JSON.stringify([...STATE.filterSectionsCollapsed]));
+}
+
+function syncFilterSection(section) {
+  if (!section) return;
+  const key = section.dataset.filterSection || "";
+  const fixedOpen = section.dataset.fixedOpen === "1";
+  const collapsed = !fixedOpen && STATE.filterSectionsCollapsed.has(key);
+  const button = section.querySelector(".filter-section-toggle");
+  const bodyId = button ? button.getAttribute("aria-controls") : "";
+  const body = bodyId ? document.getElementById(bodyId) : section.querySelector(".filter-section-body");
+
+  section.classList.toggle("is-collapsed", collapsed);
+  if (button) button.setAttribute("aria-expanded", String(!collapsed));
+  if (body) body.hidden = collapsed;
+}
+
+function syncFilterSections() {
+  for (const section of $$(".filter-section[data-filter-section]")) {
+    syncFilterSection(section);
+  }
+}
+
+function setFilterSectionCollapsed(key, collapsed, { persist = true } = {}) {
+  if (!key) return;
+  const section = $$(".filter-section[data-filter-section]")
+    .find((candidate) => candidate.dataset.filterSection === key);
+  if (section && section.dataset.fixedOpen === "1") {
+    STATE.filterSectionsCollapsed.delete(key);
+    syncFilterSection(section);
+    if (persist) persistFilterSectionsCollapsed();
+    return;
+  }
+  if (collapsed) STATE.filterSectionsCollapsed.add(key);
+  else STATE.filterSectionsCollapsed.delete(key);
+  syncFilterSection(section);
+  if (persist) persistFilterSectionsCollapsed();
+  requestAnimationFrame(renderList);
+}
+
+function initFilterSections() {
+  STATE.filterSectionsCollapsed = resolveInitialFilterSectionsCollapsed();
+  for (const button of $$(".filter-section-toggle")) {
+    const section = button.closest(".filter-section[data-filter-section]");
+    if (!section) continue;
+    button.addEventListener("click", () => {
+      const key = section.dataset.filterSection || "";
+      setFilterSectionCollapsed(key, !STATE.filterSectionsCollapsed.has(key));
+    });
+  }
+  syncFilterSections();
+}
+
 
 function getLanguageInfo(code) {
   if (!STATE.manifest || !Array.isArray(STATE.manifest.languages)) return DEFAULT_LANGUAGE_INFO;
@@ -337,7 +419,9 @@ function setUiLocale(locale, { persist = true, refresh = true } = {}) {
 
   buildKindChips();
   buildDataTypeChips();
+  buildMediaChips();
   buildStoryIssueChips();
+  buildRecoveryMethodChips();
   applyFilters();
 
   if (STATE.selectedKey) {
@@ -1356,10 +1440,17 @@ function applyUiStrings() {
   }
   $("#app-title").textContent = uiText("appTitle");
   $("#count-label").textContent = uiText("countLabel");
+  const basicFilterLabel = $("#basic-filter-label");
+  if (basicFilterLabel) basicFilterLabel.textContent = uiText("basicFilters");
   $("#language-label").textContent = uiText("language");
   $("#kind-label").textContent = uiText("kind");
   $("#type-label").textContent = uiText("type");
+  const mediaLabel = $("#media-label");
+  if (mediaLabel) mediaLabel.textContent = uiText("mediaFilter");
   $("#story-issue-label").textContent = uiText("storyIssueFilter");
+  $("#recovery-method-label").textContent = uiText("recoveryMethodFilter");
+  const searchLabel = $("#search-label");
+  if (searchLabel) searchLabel.textContent = uiText("searchFilter");
   $("#sort-label").textContent = uiText("sort");
   $("#reset").textContent = uiText("reset");
   const sortSelect = $("#sort");
@@ -1511,7 +1602,9 @@ async function switchLanguage(languageCode, { preserveSelection = true } = {}) {
     $("#count").textContent = STATE.entries.length.toLocaleString();
     buildKindChips();
     buildDataTypeChips();
+    buildMediaChips();
     buildStoryIssueChips();
+    buildRecoveryMethodChips();
     applyFilters();
     window.dispatchEvent(new CustomEvent("webui:language-changed", {
       detail: { language: info.code },
@@ -1535,6 +1628,7 @@ async function init() {
     STATE.manifest = await loadManifest();
     buildLanguageSelect();
     bindEvents();
+    initFilterSections();
     setFiltersCollapsed(resolveInitialFiltersCollapsed(), { persist: false });
 
     const initialLanguage = resolveInitialLanguage();
@@ -1852,28 +1946,31 @@ function buildSnsBranchGroups(conv) {
   return { byAnchorCid, skipCids };
 }
 
-function renderSnsBranchLine(line) {
+function renderSnsBranchLine(line, convKey = "") {
   const item = document.createElement("div");
-  item.className = "branch-line";
+  item.className = "line branch-flow-line branch-sns-line" + (line && line.text ? "" : " empty");
+  setLineAnchor(item, convKey, resolveLineId(line));
 
   const speaker = document.createElement("div");
-  speaker.className = "branch-line-speaker";
+  speaker.className = "actor";
   const sp = line.speaker || "";
   const display = sp ? speakerName(sp) : uiText("systemSpeaker");
   speaker.innerHTML = escapeHtml(display) +
-    (sp ? `<span class="branch-line-speaker-id">${escapeHtml(sp)}</span>` : "");
+    (sp ? `<span class="actor-id">${escapeHtml(sp)}</span>` : "");
   item.appendChild(speaker);
 
+  const body = document.createElement("div");
+  body.className = "body";
   if (line.text) {
     const text = document.createElement("div");
-    text.className = "branch-line-text";
+    text.className = "text";
     text.innerHTML = highlight(line.text, STATE.filters.q);
-    item.appendChild(text);
+    body.appendChild(text);
   } else if (line.linkMission) {
     const system = document.createElement("div");
-    system.className = "branch-line-system";
+    system.className = "system";
     system.textContent = `-> ${uiText("linkedMission")}: ${line.linkMission}`;
-    item.appendChild(system);
+    body.appendChild(system);
   }
 
   if (line.options && line.options.length) {
@@ -1887,15 +1984,16 @@ function renderSnsBranchLine(line) {
       appendDebugTrace(o, opt._debug, "reply option");
       opts.appendChild(o);
     }
-    item.appendChild(opts);
+    body.appendChild(opts);
   }
 
-  appendLineId(item, line, "branch-line-id");
-  appendDebugTrace(item, line._debug, "branch line");
+  appendLineId(body, line);
+  appendDebugTrace(body, line._debug, "branch line");
+  item.appendChild(body);
   return item;
 }
 
-function renderSnsBranchGroup(group) {
+function renderSnsBranchGroup(group, convKey = "") {
   const block = document.createElement("div");
   block.className = "opt-block opt-block-inline opt-block-sns";
 
@@ -1919,7 +2017,7 @@ function renderSnsBranchGroup(group) {
     if (branch.lines.length) {
       const lines = document.createElement("div");
       lines.className = "branch-lines";
-      for (const line of branch.lines) lines.appendChild(renderSnsBranchLine(line));
+      for (const line of branch.lines) lines.appendChild(renderSnsBranchLine(line, convKey));
       col.appendChild(lines);
     }
 
@@ -2060,9 +2158,10 @@ function optionBranchRiskJumpInfo(risk) {
   const lineId = String(risk && risk.commonContinuationLineId || "");
   if (!lineId) return null;
   const code = String(risk && risk.code || "");
+  const sharedCodes = new Set(["cosmeticChoice", "sharedTimelineContinuation"]);
   return {
     lineId,
-    source: code === "cosmeticChoice" ? "shared" : "inferred",
+    source: sharedCodes.has(code) ? "shared" : "inferred",
   };
 }
 
@@ -2228,27 +2327,6 @@ function summarizeOptionTargets(option, conv, outcomesByOptionId) {
       continue;
     }
 
-    const seenSubmenuScenes = new Set();
-    for (const submenuTarget of outcome.submenuTargets || []) {
-      if (!submenuTarget || typeof submenuTarget !== "object") continue;
-      const sk = String(submenuTarget.sceneKey || "");
-      if (!sk || isSameConversationSceneKey(sk, conv)) continue;
-      const optionId = String(submenuTarget.optionId || "");
-      const optionText = String(submenuTarget.text || "");
-      seenSubmenuScenes.add(sk);
-      push(`submenu:${sk}:${optionId || optionText}`, {
-        kind: "sceneSubmenu",
-        sceneKey: sk,
-        optionId,
-        optionText,
-      });
-    }
-    for (const sk of outcome.submenuSceneKeys || []) {
-      if (sk && !seenSubmenuScenes.has(sk) && !isSameConversationSceneKey(sk, conv)) {
-        push(`submenu:${sk}`, { kind: "sceneSubmenu", sceneKey: sk });
-      }
-    }
-
     const loop = outcome.loop || {};
     const debug = outcome._debug || {};
     const returnOptionIds = (debug.returnOptionIds || []).filter(Boolean);
@@ -2260,6 +2338,29 @@ function summarizeOptionTargets(option, conv, outcomesByOptionId) {
     // renders inline as a followup of the calling group.
     const pathLineIds = (outcome.pathLineIds || []).filter(Boolean);
     const isDirectMenuJump = pathLineIds.length === 0 && optionBranchLineIds.length === 0;
+
+    if (isDirectMenuJump) {
+      const seenSubmenuScenes = new Set();
+      for (const submenuTarget of outcome.submenuTargets || []) {
+        if (!submenuTarget || typeof submenuTarget !== "object") continue;
+        const sk = String(submenuTarget.sceneKey || "");
+        if (!sk || isSameConversationSceneKey(sk, conv)) continue;
+        const optionId = String(submenuTarget.optionId || "");
+        const optionText = String(submenuTarget.text || "");
+        seenSubmenuScenes.add(sk);
+        push(`submenu:${sk}:${optionId || optionText}`, {
+          kind: "sceneSubmenu",
+          sceneKey: sk,
+          optionId,
+          optionText,
+        });
+      }
+      for (const sk of outcome.submenuSceneKeys || []) {
+        if (sk && !seenSubmenuScenes.has(sk) && !isSameConversationSceneKey(sk, conv)) {
+          push(`submenu:${sk}`, { kind: "sceneSubmenu", sceneKey: sk });
+        }
+      }
+    }
 
     if (loop.kind === "sameOptionMenuReturn") {
       if (isDirectMenuJump) push("self", { kind: "selfMenu" });
@@ -2412,12 +2513,20 @@ function renderOptionRiskTags(option) {
   const wrap = document.createElement("div");
   wrap.className = "opt-risk-tags";
   for (const tag of tags) {
-    if (!tag || tag.code !== "inferredFollowingLine") continue;
+    if (!tag) continue;
     const node = document.createElement("span");
-    node.className = "opt-risk-tag opt-risk-tag-inferred";
-    node.textContent = uiText("optRiskInferredFollowingLine");
     const lineId = String(tag.lineId || "");
-    node.title = uiText("optRiskInferredFollowingLineTitle").replace("{line}", lineId || "?");
+    if (tag.code === "rawOptionIndexMatchedLine") {
+      node.className = "opt-risk-tag opt-risk-tag-indexed";
+      node.textContent = uiText("optRiskRawIndexMatchedLine");
+      node.title = uiText("optRiskRawIndexMatchedLineTitle").replace("{line}", lineId || "?");
+    } else if (tag.code === "inferredFollowingLine") {
+      node.className = "opt-risk-tag opt-risk-tag-inferred";
+      node.textContent = uiText("optRiskInferredFollowingLine");
+      node.title = uiText("optRiskInferredFollowingLineTitle").replace("{line}", lineId || "?");
+    } else {
+      continue;
+    }
     wrap.appendChild(node);
   }
   return wrap.childNodes.length ? wrap : null;
@@ -2507,16 +2616,23 @@ function findConvWarning(conv, code) {
   return getConvWarnings(conv).find((warning) => warning.code === code) || null;
 }
 
-function getConvPartialLineOrderWarning(conv) {
+function getConvLineOrderCoverageWarning(conv) {
   const warning = findConvWarning(conv, "sceneOrderDisorder");
   const lineOrder = warning && warning.lineOrder && typeof warning.lineOrder === "object"
     ? warning.lineOrder
     : null;
+  if (!lineOrder) return null;
+  const ids = normalizeLineOrderIdList(lineOrder.uncoveredLineIds);
+  return ids.length || Number(lineOrder.uncoveredLineCount) > 0 ? lineOrder : null;
+}
+
+function getConvPartialLineOrderWarning(conv) {
+  const lineOrder = getConvLineOrderCoverageWarning(conv);
   return lineOrder && lineOrder.status === "partial" ? lineOrder : null;
 }
 
 function getConvUncoveredLineIds(conv) {
-  const lineOrder = getConvPartialLineOrderWarning(conv);
+  const lineOrder = getConvLineOrderCoverageWarning(conv);
   return lineOrder ? normalizeLineOrderIdList(lineOrder.uncoveredLineIds) : [];
 }
 
@@ -2864,6 +2980,7 @@ function lineOrderModeText(mode) {
   if (mode === "dialogTreeExtraConfig") return uiText("lineOrderModeDialogTreeExtraConfig");
   if (mode === "dialogTreeCinematicTimeline") return uiText("lineOrderModeDialogTreeCinematicTimeline");
   if (mode === "authoredBlend") return uiText("lineOrderModeAuthoredBlend");
+  if (mode === "authoredNumericStitch") return uiText("lineOrderModeAuthoredNumericStitch");
   if (mode === "dialogTimeline") return uiText("lineOrderModeDialogTimeline");
   if (mode === "lineIdSuffix") return uiText("lineOrderModeLineIdSuffix");
   if (mode) return `${uiText("lineOrderModeFallback")}: ${mode}`;
@@ -2876,6 +2993,7 @@ function lineOrderTone(mode) {
     || mode === "dialogTreeFragment"
     || mode === "dialogTreeExtraConfig"
     || mode === "authoredBlend"
+    || mode === "authoredNumericStitch"
     || mode === "dialogTimeline"
   ) return "authored";
   if (mode === "lineIdSuffix") return "fallback";
@@ -2964,6 +3082,7 @@ function lineOrderModeDetailText(mode) {
   if (mode === "dialogTreeExtraConfig") return uiText("lineOrderModeDetailDialogTreeExtraConfig");
   if (mode === "dialogTreeCinematicTimeline") return uiText("lineOrderModeDetailDialogTreeCinematicTimeline");
   if (mode === "authoredBlend") return uiText("lineOrderModeDetailAuthoredBlend");
+  if (mode === "authoredNumericStitch") return uiText("lineOrderModeDetailAuthoredNumericStitch");
   if (mode === "dialogTimeline") return uiText("lineOrderModeDetailDialogTimeline");
   if (mode === "lineIdSuffix") return uiText("lineOrderModeDetailLineIdSuffix");
   if (mode) return uiText("lineOrderModeDetailFallback").replace("{mode}", mode);
@@ -3364,38 +3483,6 @@ function renderLineOrderRecovery(conv) {
     );
   }
   return strip;
-}
-
-function renderDialogBranchLine(line, convKey = "") {
-  const item = document.createElement("div");
-  item.className = "branch-line";
-  setLineAnchor(item, convKey, line && line.id);
-
-  const actor = document.createElement("div");
-  actor.className = "branch-line-speaker";
-  const speaker = resolveRenderedSpeaker(line);
-  if (speaker.display || speaker.aid) {
-    appendSpeakerLabel(actor, speaker.display, {
-      originalName: speaker.original,
-      aid: speaker.aid,
-      nameClass: "speaker-name",
-      aidClass: "branch-line-speaker-id",
-    });
-  }
-  item.appendChild(actor);
-
-  if (line.text) {
-    const text = document.createElement("div");
-    text.className = "branch-line-text";
-    text.innerHTML = highlight(line.text, STATE.filters.q);
-    item.appendChild(text);
-  }
-
-  appendLineId(item, line, "branch-line-id");
-
-  appendDebugTrace(item, line._debug, "branch line");
-
-  return item;
 }
 
 function conversationHintRows(conv) {
@@ -3838,9 +3925,10 @@ function renderConv(conv) {
   };
   const chipOptions = { isReturnTarget: (target) => renderedOptGroups.has(target) };
 
-  const renderDialogFlowLine = (ln) => {
+  const renderDialogFlowLine = (ln, options = {}) => {
     const row = document.createElement("div");
     row.className = "line"
+      + (options.branchColumn ? " branch-flow-line" : "")
       + (ln.text ? "" : " empty")
       + (ln.id && uncoveredLineIdSet.has(ln.id) ? " line-uncovered" : "")
       + (ln.id && duplicateTimestampLineIdSet.has(ln.id) ? " line-duplicate-timestamp" : "");
@@ -4095,6 +4183,15 @@ function renderConv(conv) {
       }
       optionLineIds.set(opt, direct);
     }
+    if (
+      commonLineIds.length
+      && !optionGroupHasBranchContent(grp)
+      && !opts.some((opt) => (optionLineIds.get(opt) || []).length)
+    ) {
+      const model = { optionLineIds, commonLineIds: [] };
+      branchDisplayModelByGroup.set(grp, model);
+      return model;
+    }
     const model = { optionLineIds, commonLineIds };
     branchDisplayModelByGroup.set(grp, model);
     return model;
@@ -4113,7 +4210,7 @@ function renderConv(conv) {
       if (!line) continue;
       if (isBackLoopAnchorLineForGroup(ownerGroup, lid)) continue;
       renderedDlgLineIds.add(lid);
-      lines.appendChild(renderDialogBranchLine(line, conv.key));
+      lines.appendChild(renderDialogFlowLine(line, { branchColumn: true }));
     }
     return lines.childNodes.length ? lines : null;
   };
@@ -4136,9 +4233,29 @@ function renderConv(conv) {
       renderedDlgLineIds.add(lid);
       lines.appendChild(
         renderCtx && renderCtx.branchColumn
-          ? renderDialogBranchLine(line, conv.key)
+          ? renderDialogFlowLine(line, { branchColumn: true })
           : renderDialogFlowLine(line)
       );
+    }
+    return lines.childNodes.length ? lines : null;
+  };
+
+  const renderCommonContinuationLines = (lineIds, ownerGroup, renderCtx) => {
+    if (renderCtx && renderCtx.branchColumn) {
+      return renderBranchPathLines(lineIds, ownerGroup, renderCtx);
+    }
+    const lines = document.createDocumentFragment();
+    const suppressedLineIds = renderCtx && renderCtx.suppressedLineIds
+      ? renderCtx.suppressedLineIds
+      : new Set();
+    for (const lid of lineIds) {
+      if (suppressedLineIds.has(lid)) continue;
+      if (renderedDlgLineIds.has(lid)) continue;
+      if (isBackLoopAnchorLineForGroup(ownerGroup, lid)) continue;
+      const line = dlgLineById.get(lid);
+      if (!line || isResearchHintLine(line)) continue;
+      renderedDlgLineIds.add(lid);
+      lines.appendChild(renderDialogFlowLine(line));
     }
     return lines.childNodes.length ? lines : null;
   };
@@ -4402,12 +4519,12 @@ function renderConv(conv) {
       }
       g.appendChild(merge);
 
-      commonLinesAfterGroup = renderBranchPathLines(
+      commonLinesAfterGroup = renderCommonContinuationLines(
         branchModel.commonLineIds,
         grp,
-        { ...renderCtx, branchColumn: true }
+        renderCtx
       );
-      if (commonLinesAfterGroup) {
+      if (commonLinesAfterGroup && commonLinesAfterGroup.nodeType === 1) {
         commonLinesAfterGroup.classList.add("branch-common-lines");
       }
     } else if (!showBranchContent || grp.branchMerge) {
@@ -4600,7 +4717,7 @@ function renderConv(conv) {
     }
 
     if (snsBranchGroup) {
-      frag.appendChild(renderSnsBranchGroup(snsBranchGroup));
+      frag.appendChild(renderSnsBranchGroup(snsBranchGroup, conv.key));
     }
 
     if (branchOnlyNode) {

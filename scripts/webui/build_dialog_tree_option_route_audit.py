@@ -36,6 +36,54 @@ from scene_order_gap_shared import (
 )
 
 
+def compact_cinematic_anchor(anchor: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(anchor, dict):
+        return {}
+    return compact_dict({
+        "sourceKey": safe_key(anchor.get("sourceKey")),
+        "file": safe_key(anchor.get("file")),
+        "timeline": safe_key(anchor.get("timeline")),
+        "nodeId": safe_key(anchor.get("nodeId")),
+        "after": safe_key(anchor.get("after")),
+        "before": safe_key(anchor.get("before")),
+        "targetNodeIds": [safe_key(value) for value in anchor.get("targetNodeIds") or [] if safe_key(value)],
+        "targetCount": anchor.get("targetCount"),
+    })
+
+
+def compact_cinematic_finish_group(group: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(group, dict):
+        return {}
+    return compact_dict({
+        "sourceKey": safe_key(group.get("sourceKey")),
+        "file": safe_key(group.get("file")),
+        "timeline": safe_key(group.get("timeline")),
+        "nodeId": safe_key(group.get("nodeId")),
+        "after": safe_key(group.get("after")),
+        "finishNums": list(group.get("finishNums") or []),
+        "targetNodeIds": [safe_key(value) for value in group.get("targetNodeIds") or [] if safe_key(value)],
+        "targetCount": group.get("targetCount"),
+    })
+
+
+def compact_action_asset_names(value: Any, limit: int = 12) -> list[str]:
+    names: list[str] = []
+    if isinstance(value, dict):
+        for key in value:
+            key_text = safe_key(key)
+            if key_text:
+                names.append(key_text)
+    elif isinstance(value, list):
+        for item in value:
+            if isinstance(item, dict):
+                text = safe_key(item.get("name") or item.get("timeline") or item.get("sourceKey"))
+            else:
+                text = safe_key(item)
+            if text:
+                names.append(text)
+    return unique_preserve(names)[:limit]
+
+
 def compact_source(meta: dict[str, Any] | None, kind: str) -> dict[str, Any] | None:
     if not isinstance(meta, dict):
         return None
@@ -68,6 +116,26 @@ def compact_source(meta: dict[str, Any] | None, kind: str) -> dict[str, Any] | N
         "cinematicFinishGroups": len(meta.get("cinematicFinishGroups") or []),
     }
     out["signalCounts"] = {key: value for key, value in signal_counts.items() if value}
+    if action_assets := compact_action_asset_names(meta.get("actionAssets")):
+        out["actionAssets"] = action_assets
+    anchors = [
+        compact
+        for anchor in (meta.get("cinematicTimelineAnchors") or [])
+        if (compact := compact_cinematic_anchor(anchor))
+    ]
+    if anchors:
+        out["cinematicTimelineAnchors"] = anchors[:8]
+        if len(anchors) > 8:
+            out["cinematicTimelineAnchorsOmitted"] = len(anchors) - 8
+    finish_groups = [
+        compact
+        for group in (meta.get("cinematicFinishGroups") or [])
+        if (compact := compact_cinematic_finish_group(group))
+    ]
+    if finish_groups:
+        out["cinematicFinishGroups"] = finish_groups[:8]
+        if len(finish_groups) > 8:
+            out["cinematicFinishGroupsOmitted"] = len(finish_groups) - 8
     if meta.get("cinematicOnly"):
         out["cinematicOnly"] = True
     return out
@@ -231,6 +299,134 @@ def has_shared_route(option_details: list[dict[str, Any]]) -> bool:
     return len(union) == 1
 
 
+def as_report_int(value: Any) -> int | None:
+    return semantics.as_int(value)
+
+
+def best_timeline_field_values(option_details: list[dict[str, Any]], field: str) -> list[int]:
+    values: list[int] = []
+    for detail in option_details:
+        best_row = detail.get("bestTimelineRow") or {}
+        value = as_report_int(best_row.get(field))
+        if value is not None:
+            values.append(value)
+    return values
+
+
+def option_field_matrix(option_details: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    fields = (
+        "optionIndex",
+        "clipOptionIndex",
+        "index",
+        "logicId",
+        "conditionRid",
+        "changeFinishNum",
+        "targetFinishNum",
+        "anchorMode",
+        "start",
+        "duration",
+        "trackName",
+    )
+    rows: list[dict[str, Any]] = []
+    for detail in option_details:
+        best_row = detail.get("bestTimelineRow") or {}
+        row = {
+            "optionId": safe_key(detail.get("optionId")),
+            "candidateLineId": safe_key(detail.get("candidateLineId")),
+        }
+        for field in fields:
+            if best_row.get(field) not in (None, "", [], {}):
+                row[field] = best_row.get(field)
+        rows.append(compact_dict(row))
+    return rows
+
+
+def cinematic_diagnostics(
+    row: dict[str, Any],
+    tree_sources: list[dict[str, Any]],
+    option_details: list[dict[str, Any]],
+) -> dict[str, Any]:
+    anchors: list[dict[str, Any]] = []
+    finish_groups: list[dict[str, Any]] = []
+    for source in tree_sources:
+        anchors.extend(source.get("cinematicTimelineAnchors") or [])
+        finish_groups.extend(source.get("cinematicFinishGroups") or [])
+
+    finish_nums_by_group: list[list[int]] = []
+    for group in finish_groups:
+        values = [
+            value
+            for value in (as_report_int(raw) for raw in group.get("finishNums") or [])
+            if value is not None
+        ]
+        if values:
+            finish_nums_by_group.append(values)
+
+    field_values = {
+        field: best_timeline_field_values(option_details, field)
+        for field in (
+            "optionIndex",
+            "clipOptionIndex",
+            "index",
+            "logicId",
+            "conditionRid",
+            "changeFinishNum",
+            "targetFinishNum",
+        )
+    }
+    option_finish_signal = [
+        {
+            "optionId": safe_key(detail.get("optionId")),
+            "changeFinishNum": (detail.get("bestTimelineRow") or {}).get("changeFinishNum"),
+            "targetFinishNum": (detail.get("bestTimelineRow") or {}).get("targetFinishNum"),
+        }
+        for detail in option_details
+        if (detail.get("bestTimelineRow") or {}).get("changeFinishNum") not in (None, "", 0)
+        or (detail.get("bestTimelineRow") or {}).get("targetFinishNum") not in (None, "", 0, -1)
+    ]
+
+    finish_matches: list[dict[str, Any]] = []
+    all_finish_nums = {value for values in finish_nums_by_group for value in values}
+    if all_finish_nums:
+        for field, values in field_values.items():
+            value_set = set(values)
+            exact = sorted(value_set & all_finish_nums)
+            plus_one = sorted({value for value in value_set if value + 1 in all_finish_nums})
+            minus_one = sorted({value for value in value_set if value - 1 in all_finish_nums})
+            if exact or plus_one or minus_one:
+                finish_matches.append(compact_dict({
+                    "field": field,
+                    "exact": exact,
+                    "valuePlusOne": plus_one,
+                    "valueMinusOne": minus_one,
+                }))
+
+    timeline = safe_key(row.get("timeline"))
+    timeline_matches = [
+        safe_key(group.get("timeline"))
+        for group in finish_groups
+        if timeline and safe_key(group.get("timeline")) == timeline
+    ]
+
+    return compact_dict({
+        "timeline": timeline,
+        "timelineAnchorCount": len(anchors),
+        "finishGroupCount": len(finish_groups),
+        "cinematicTimelines": unique_preserve([
+            safe_key(item.get("timeline"))
+            for item in [*anchors, *finish_groups]
+            if safe_key(item.get("timeline"))
+        ]),
+        "timelineMatches": unique_preserve(timeline_matches),
+        "finishNums": finish_nums_by_group,
+        "finishNumberFieldMatches": finish_matches,
+        "optionFinishSignals": option_finish_signal,
+        "optionFields": option_field_matrix(option_details),
+        "anchors": anchors[:4],
+        "finishGroups": finish_groups[:4],
+    })
+
+
 def runtime_registry_evidence(story_key: str, dialog_id_registry: dict[str, Any]) -> dict[str, Any] | None:
     scene_key = runtime_dialog_scene_key(story_key)
     if not scene_key or not scene_key.startswith("dlg_"):
@@ -369,11 +565,13 @@ def collect_rows(
         classification, recommendation = classify_group(
             row, tree_sources, option_details, runtime_registry
         )
+        cinematic = cinematic_diagnostics(row, tree_sources, option_details)
         rows.append({
             "language": language,
             "storyKey": story_key,
             "mission": row.get("mission"),
             "group": row.get("group"),
+            "timeline": row.get("timeline"),
             "after": row.get("after"),
             "candidateLineIds": row.get("candidateLineIds") or [],
             "commonContinuationLineId": row.get("commonContinuationLineId"),
@@ -384,6 +582,7 @@ def collect_rows(
             "treeSources": tree_sources,
             "treeSourceKeys": unique_preserve([source.get("sourceKey") for source in tree_sources if source.get("sourceKey")]),
             "optionDetails": option_details,
+            "cinematicDiagnostics": cinematic,
             "runtimeRegistry": runtime_registry,
         })
     rows.sort(key=lambda item: (item.get("mission") or "", item.get("storyKey") or "", item.get("group") or 0))
@@ -436,6 +635,18 @@ def summarize_rows(
     )
     runtime_registry_option_groups = sum(1 for row in rows if runtime_option_ids_for_group(row))
     runtime_registry_complete_option_groups = sum(1 for row in rows if runtime_group_contains_all_options(row))
+    cinematic_anchor_groups = sum(
+        1 for row in rows if (row.get("cinematicDiagnostics") or {}).get("timelineAnchorCount")
+    )
+    cinematic_finish_groups = sum(
+        1 for row in rows if (row.get("cinematicDiagnostics") or {}).get("finishGroupCount")
+    )
+    option_finish_signal_groups = sum(
+        1 for row in rows if (row.get("cinematicDiagnostics") or {}).get("optionFinishSignals")
+    )
+    finish_number_match_groups = sum(
+        1 for row in rows if (row.get("cinematicDiagnostics") or {}).get("finishNumberFieldMatches")
+    )
     return {
         "language": language,
         "filters": {
@@ -454,6 +665,10 @@ def summarize_rows(
         "runtimeRegistryLineGroupCount": runtime_registry_line_groups,
         "runtimeRegistryOptionGroupCount": runtime_registry_option_groups,
         "runtimeRegistryCompleteOptionGroupCount": runtime_registry_complete_option_groups,
+        "cinematicTimelineAnchorGroupCount": cinematic_anchor_groups,
+        "cinematicFinishGroupCount": cinematic_finish_groups,
+        "optionFinishSignalGroupCount": option_finish_signal_groups,
+        "finishNumberFieldMatchGroupCount": finish_number_match_groups,
     }
 
 
@@ -476,8 +691,14 @@ def option_summary(row: dict[str, Any]) -> str:
         if detail.get("fragmentMatches"):
             fields.append(f"fragments={len(detail.get('fragmentMatches') or [])}")
         best_row = detail.get("bestTimelineRow") or {}
-        if best_row.get("logicId") not in (None, 0, ""):
+        if best_row.get("logicId") not in (None, "", 0):
             fields.append(f"logicId={best_row.get('logicId')}")
+        if best_row.get("conditionRid") not in (None, "", -2):
+            fields.append(f"conditionRid={best_row.get('conditionRid')}")
+        if best_row.get("changeFinishNum") not in (None, "", 0):
+            fields.append(f"changeFinishNum={best_row.get('changeFinishNum')}")
+        if best_row.get("targetFinishNum") not in (None, "", 0, -1):
+            fields.append(f"targetFinishNum={best_row.get('targetFinishNum')}")
         parts.append(
             f"{detail.get('optionId')} -> {detail.get('candidateLineId')} "
             f"({'; '.join(fields) or 'no tree route'})"
@@ -509,6 +730,35 @@ def runtime_summary(row: dict[str, Any]) -> str:
     return ""
 
 
+def cinematic_summary(row: dict[str, Any]) -> str:
+    diagnostics = row.get("cinematicDiagnostics") or {}
+    if not isinstance(diagnostics, dict):
+        return ""
+    parts: list[str] = []
+    if diagnostics.get("timelineAnchorCount"):
+        parts.append(f"anchors={diagnostics.get('timelineAnchorCount')}")
+    if diagnostics.get("finishGroupCount"):
+        parts.append(f"finishGroups={diagnostics.get('finishGroupCount')}")
+    if diagnostics.get("cinematicTimelines"):
+        parts.append("timelines=" + ",".join(diagnostics.get("cinematicTimelines") or []))
+    if diagnostics.get("finishNums"):
+        finish_sets = [
+            "/".join(str(value) for value in values)
+            for values in diagnostics.get("finishNums") or []
+        ]
+        parts.append("finishNums=" + ",".join(finish_sets[:4]))
+    if diagnostics.get("finishNumberFieldMatches"):
+        matches = [
+            safe_key(match.get("field"))
+            for match in diagnostics.get("finishNumberFieldMatches") or []
+            if safe_key(match.get("field"))
+        ]
+        parts.append("matches=" + ",".join(matches))
+    if diagnostics.get("optionFinishSignals"):
+        parts.append(f"optionFinishSignals={len(diagnostics.get('optionFinishSignals') or [])}")
+    return "; ".join(parts)
+
+
 def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
     lines = [
         f"# DialogTree Option Route Audit - {summary['language']}",
@@ -520,6 +770,10 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
         f"- Groups with DialogIdTable trunk line refs: `{summary['runtimeRegistryLineGroupCount']}`",
         f"- Groups with DialogIdTable option refs for the current group: `{summary['runtimeRegistryOptionGroupCount']}`",
         f"- Groups whose current WebUI options are all present in DialogIdTable: `{summary['runtimeRegistryCompleteOptionGroupCount']}`",
+        f"- Groups with cinematic Timeline anchors: `{summary['cinematicTimelineAnchorGroupCount']}`",
+        f"- Groups with cinematic finish-number branches: `{summary['cinematicFinishGroupCount']}`",
+        f"- Groups with option finish-number fields: `{summary['optionFinishSignalGroupCount']}`",
+        f"- Groups where finish-number fields match cinematic finish nums: `{summary['finishNumberFieldMatchGroupCount']}`",
         "",
         "## Classification Counts",
         "",
@@ -536,8 +790,8 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
         "",
         "## Groups",
         "",
-        "| Scene | Group | After | Candidates | Common | Class | Recommendation | Sources | Runtime | Evidence |",
-        "| --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Scene | Group | After | Candidates | Common | Class | Recommendation | Sources | Runtime | Cinematic | Evidence |",
+        "| --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ])
     for row in rows:
         sources = ", ".join(row.get("treeSourceKeys") or [])
@@ -552,10 +806,11 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
             f"| `{md_escape(row.get('recommendation'))}` "
             f"| `{md_escape(sources)}` "
             f"| `{md_escape(runtime_summary(row))}` "
+            f"| `{md_escape(cinematic_summary(row))}` "
             f"| {md_escape(option_summary(row))} |"
         )
     if not rows:
-        lines.append("| _(none)_ |  |  |  |  |  |  |  |  |  |")
+        lines.append("| _(none)_ |  |  |  |  |  |  |  |  |  |  |")
     return "\n".join(lines)
 
 

@@ -54,6 +54,7 @@ ANIMESTUDIO_JSON_TYPES = (
     "AnimatorOverrideController:Both",
     "MonoScript:Both",
     "PlayerSettings:Both",
+    "PlayableDirector:Both",
     "ResourceManager:Both",
     "SpriteAtlas:Both",
     "NapAssetBundleIndexAsset:Both",

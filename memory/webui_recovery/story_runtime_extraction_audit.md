@@ -375,8 +375,8 @@ path lines no longer mount child option groups inside `.branch-line`; instead,
 groups anchored to lines owned by a branch route render as flat siblings in
 the owning branch chain. Single-option groups render only the option prompt,
 then their recovered path lines render as flat line siblings beside the option
-prompt in that same chain; inside branch columns they use the same compact
-branch-line styling as direct branch lines. For
+prompt in that same chain; inside branch columns they use compact regular-line
+styling, matching direct branch dialog lines. For
 `option_dlg_gm01m8_3_11`, the scene graph evidence says option 1 reaches
 `dlg_gm01m8_3_012`, then group 12 reaches regular line `dlg_gm01m8_3_013`;
 option 2 reaches `dlg_gm01m8_3_014` through `dlg_gm01m8_3_016`, then group 16
@@ -563,3 +563,239 @@ decompilation:
      focus-type drift after updates.
    - Current offline metadata and structured exports are enough for the next
      story-recovery improvements above.
+
+## 2026-05-13 Audit Tool Signal Pass
+
+`scripts/webui/build_dialog_tree_option_route_audit.py` and
+`scripts/webui/build_timeline_option_flow_audit.py` were expanded to expose
+more branch-recovery evidence before promoting more WebUI story routes.
+
+New DialogTree audit signal:
+
+- compact AnimeStudio action asset, cinematic timeline anchor, and cinematic
+  finish-group summaries are included in JSON and Markdown rows.
+- option field matrices now show `logicId`, `conditionRid`,
+  `changeFinishNum`, and `targetFinishNum` across candidate option rows.
+- summary counters now distinguish cinematic timeline anchors, cinematic
+  finish groups, option finish-number fields, and finish-number matches.
+
+Current CN results:
+
+- `106` inferred response groups audited.
+- `100` groups have cinematic timeline anchors.
+- `0` groups have cinematic finish-number branches.
+- `0` groups have option finish-number fields.
+- `0` groups have finish-number fields matching cinematic finish groups.
+- `2` groups remain shared authored routes: `dlg_e3m6_11` group `4` and
+  `dlg_e6m2_7` group `1`.
+- `dlg_e2m5_3` group `1` remains the main runtime-trunk-only target.
+
+New Timeline option-flow audit signal:
+
+- each group now includes a compact candidate window summary showing whether
+  candidate trunk lines are contiguous, whether they start the audited window,
+  candidate offset patterns, raw trunk clip `optionIndex` mappings,
+  option/clip row indices, logic-id contiguity, and source track names.
+- summary counters now track contiguous candidate windows, candidates at the
+  window start, raw option-index mapping matches, nonzero raw option-index
+  matches, and contiguous `logicId` groups.
+
+Current CN results:
+
+- `105` of `106` groups have contiguous candidate lines at the start of the
+  audited window, but these are all default-adjacent windows with raw
+  `optionIndex = 0`.
+- `31` groups have raw option-index sets matching option rows, but almost all
+  are all-zero default matches and should not be promoted as branch evidence.
+- `1` group has a nonzero raw option-index mapping: `dlg_c28m3_10` group `1`,
+  with `Option 1` / `Option 2` tracks mapping to trunk raw indices `1` / `2`.
+- `45` groups have contiguous best-row `logicId` values, supporting the
+  conclusion that `logicId` is usually sequential option/state numbering
+  rather than an explicit branch target.
+
+Recovery gain: the added diagnostics narrow the queue instead of broadening
+automatic promotion. Current decoded data does not expose a finish-number
+branch path, and most remaining inferred groups look like adjacent timeline
+windows without explicit route evidence. The next useful implementation work is
+to special-case or re-check `dlg_c28m3_10`, collapse the two shared-route cases
+where appropriate, and target runtime trunk decoding for `dlg_e2m5_3`.
+
+Follow-up implementation: `dlg_c28m3_10` group `1` was promoted from first-line
+raw-index mapping to multi-line same-index branch runs. A scan across current
+`timeline_line_orders.json` found three strict raw `clipOptionIndex` / option
+`optionIndex` matches:
+
+- `dlg_c28m1_2` group `4`: already covered by scene-graph branch evidence,
+  with single-line raw-index starts.
+- `dlg_c28m3_23` group `2`: already covered by Runtime Jump route evidence,
+  with single-line raw-index starts.
+- `dlg_c28m3_10` group `1`: the only extended same-index run. The recovered
+  inferred branch evidence is now
+  `option_dlg_c28m3_10_1_001 -> dlg_c28m3_10_023, dlg_c28m3_10_024` and
+  `option_dlg_c28m3_10_1_002 -> dlg_c28m3_10_025, dlg_c28m3_10_026`, with
+  `dlg_c28m3_10_021` as the merge/common continuation.
+
+The rule remains conservative: it still requires the first candidate response
+clips after the option anchor to contain a complete, distinct, nonzero raw
+`clipOptionIndex` set matching the group's option indices before collecting
+additional same-index branch lines.
+Because this is stronger than adjacent-order inference, the WebUI keeps the
+structured branch evidence and renders a distinct per-option `index matched`
+chip for that strong raw-index sample instead of the weaker inferred-reply
+chip. It is also removed from the unresolved `inferredOptionResponse` issue
+queue while remaining visible through the Story recovery-method filter as
+`optionBranch:rawIndexMatched`.
+
+## 2026-05-13 Runtime Selection Body Mapping
+
+`tools/endfield-il2cpp/catalog_option_flow_metadata.py` was widened to include
+the `DialogUtils` option/timeline helpers in the compact focus pass:
+`DialogChooseOption`, `DialogTimelineDoNext`,
+`DialogTimelineGetAllActiveClips`, and `DialogTimelineDisableLoopInRange`.
+
+`tools/endfield-il2cpp/map_body_targets_to_gameassembly.py` now maps those
+focused metadata methods to `GameAssembly.dll` method pointers through
+`CodeRegistration`, scans direct `call rel32` edges, and records a small
+pre-call argument context. The decoder tracks the normal Windows x64 argument
+registers plus common XMM moves used by timeline start/end float arguments,
+and clears stale argument writes after intervening calls.
+
+Current focused output:
+
+- `reports/option_flow_runtime_metadata_focus.json` / `.md`
+- `reports/option_flow_body_targets_gameassembly.json` / `.md`
+- `29 / 29` focused body targets mapped.
+- `205` resolved direct calls.
+- `63` dialog-related direct calls.
+- `12` direct calls to catalog targets.
+- `14` important direct-call edges.
+
+Strong selection-flow evidence from the GameAssembly report:
+
+- `DialogTimelineManager.SelectIndex(index)` calls
+  `_SelectIndexInTimeline(index)` with `rdx=esi`.
+- `_SelectIndexInTimeline(index)` calls
+  `DialogUtils.DialogChooseOption(timelineRoot, optionIndex)` with
+  `rdx=ebx`, then calls `_TryDoNext(fromSelectOption)` with `rdx=1`.
+- `_TryDoNext(fromSelectOption)` can call
+  `TryTriggerTrunkBindingOption()` and later
+  `DialogUtils.DialogTimelineDoNext(timelineRoot, startTime, endTime)`;
+  the report now shows the timeline-root register and XMM start/end argument
+  setup for those calls.
+
+Recovery gain: this confirms the runtime chain that consumes the selected
+option index and then advances the dialog timeline, but it still does not
+expose per-option target trunk rows for the unresolved no-runtime-jump groups.
+For WebUI promotion, the current safe evidence remains explicit DialogTree
+branches, Runtime Jump route windows, or raw nonzero `clipOptionIndex` runs.
+The remaining branch-target problem likely requires decoding local state inside
+`DialogChooseOption`, `TryTriggerTrunkBindingOption`, or
+`DialogTimelineDoNext`, not another serialized field search.
+
+Follow-up body-summary pass: the GameAssembly mapper now also emits compact
+method-body summaries for the focused selection methods. The important local
+state shape is:
+
+- `DialogTimelineManager.SetDialogOption(options)` treats manager field
+  `this+0x1e0` as the active option list and compares list counts through
+  `+0x18`.
+- `_SelectIndexInTimeline(index)` uses the selected UI index to fetch an
+  option row from `this+0x1e0`, then reads that option row's raw
+  `optionIndex` from offset `+0x98`.
+- `DialogChooseOption(timelineRoot, optionIndex)` writes that raw optionIndex
+  into a timeline/playable object field at `+0x18` and passes the same value
+  into the hotfix wrapper path.
+
+Recovery gain: this explains why nonzero raw `clipOptionIndex` mappings are
+strong branch evidence, and why all-zero option groups should not be rendered
+as separate inferred per-option replies. `scripts/webui/build_story.py` now
+classifies groups where all option rows and adjacent candidate trunk clips have
+raw `optionIndex = 0` as `sharedTimelineContinuation` with a shared jump to
+the first continuation line. This removes the weak inferred-reply chips while
+leaving the normal following lines below the option box.
+
+Current CN rebuild result after that rule:
+
+- flagged scenes: `79`
+- inferred option-response scenes: `46`
+- `29` option groups now use `sharedTimelineContinuation`
+- `dlg_e2m5_3` group `1` is now shared continuation:
+  common line `dlg_e2m5_3_003`, option indices `[0, 0]`.
+- Under this earlier all-option-index-zero-only rule, `dlg_e1m1_5` group `3`
+  remained unresolved because its best option rows have raw option indices
+  `[0, 1]`. The broader default trunk clip rule below supersedes that status.
+
+## 2026-05-13 Default Trunk Clip Continuation
+
+`scripts/webui/build_timeline_option_flow_audit.py` now buckets unresolved
+Timeline option groups by raw option-index pattern and by candidate/window
+trunk `clipOptionIndex` pattern. It also emits per-line raw clip indices,
+recovered line `clipOptionIndex` values, nonzero-coverage booleans, and any
+recovered Runtime Jump routes adjacent to the option group.
+
+The audit before promotion found:
+
+- `73` unresolved inferred response groups.
+- `52` had mixed option-row `optionIndex` values such as `[0, 1]`.
+- `21` had strict nonzero option-row `optionIndex` values.
+- `73 / 73` candidate response windows had candidate trunk
+  `clipOptionIndex = 0` only.
+- `0 / 52` mixed groups had nonzero candidate/window clip coverage.
+- `0 / 52` mixed groups had recovered Runtime Jump routes.
+
+A broader scan across all recovered AnimeStudio timeline option groups found
+`149` mixed `[0, nonzero]` groups and no counterexample with a nonzero
+candidate/window clip or Runtime Jump route. That made the safer promotion
+broader than the earlier all-option-index-zero rule: when the adjacent
+candidate response window itself is all `clipOptionIndex = 0`, and no Runtime
+Jump route branch was recovered, the WebUI now treats the window as shared
+Timeline continuation starting at the first candidate line. It does not invent
+per-option branch targets.
+
+Initial CN rebuild result after this rule was too aggressive:
+
+- flagged scenes: `33`
+- inferred option-response scenes: `0`
+- `103` option groups used `sharedTimelineContinuation`
+  - `30` retained reason `rawOptionIndexConverges`
+  - `73` used reason `defaultTrunkClipContinuation`
+
+User review found the false positive: `dlg_e2m5_2` group `3` has strict
+nonzero option indices `[1, 2, 3]`, and the candidate lines are semantically
+the three option replies:
+
+- `option_dlg_e2m5_2_3_001` ("是我。") -> `dlg_e2m5_2_023`
+- `option_dlg_e2m5_2_3_002` ("是佩丽卡。") -> `dlg_e2m5_2_024`
+- `option_dlg_e2m5_2_3_003` ("是这位陈千语。") -> `dlg_e2m5_2_025`
+- merge/common continuation: `dlg_e2m5_2_026`
+
+The correction keeps `sharedTimelineContinuation` for all-zero and mixed
+`[0, nonzero]` option-row patterns, but no longer promotes strict-nonzero
+groups when the only evidence is an all-zero candidate trunk clip window.
+Strict nonzero groups return to `inferredFollowingLines` unless Runtime Jump
+routes or raw nonzero same-index trunk clips provide stronger evidence.
+
+Corrected CN rebuild result:
+
+- flagged scenes: `48`
+- inferred option-response scenes: `15`
+- timeline option-flow audit unresolved groups: `21`
+- all `21` unresolved audit groups are strict-nonzero option-index groups with
+  all-zero candidate trunk clips and no recovered Runtime Jump routes.
+- `82` option groups use `sharedTimelineContinuation`
+  - `30` retain reason `rawOptionIndexConverges`
+  - `52` use reason `defaultTrunkClipContinuation`
+
+Sample outcomes:
+
+- `dlg_e1m1_5` group `3` is now shared continuation:
+  `optionIndex [0, 1]`, candidate clip indices `[0, 0]`, common continuation
+  `dlg_e1m1_5_036`, with `dlg_e1m1_5_036` and `dlg_e1m1_5_037` left as normal
+  following lines below the option box.
+- `dlg_c28m3_23` group `1` is no longer shared continuation after the
+  strict-nonzero correction. It remains in the audit queue with candidates
+  `dlg_c28m3_23_009, dlg_c28m3_23_010` and common continuation
+  `dlg_c28m3_23_014`.
+- `dlg_c28m3_10` group `1` remains the one strong raw-index branch mapping:
+  option `1` maps to `dlg_c28m3_10_023, dlg_c28m3_10_024`; option `2` maps to
+  `dlg_c28m3_10_025, dlg_c28m3_10_026`.

@@ -35,6 +35,8 @@ from __future__ import annotations
 import argparse
 import base64
 import binascii
+import copy
+import html
 import json
 import os
 import re
@@ -270,6 +272,16 @@ NARRATIVE_VIDEO_EXTENSIONS = {
     ".ogv",
     ".usm",
 }
+DIALOG_OPTION_ID_CORRECTIONS = {
+    # DialogOptionTable numbers this second topic as group 2, but the recovered
+    # env_12 flow and adjacent env topic rows use one pre-scene menu where this
+    # should be the second choice.
+    "option_dlg_map01_lv002_env_12_2_001": "option_dlg_map01_lv002_env_12_1_002",
+}
+DIALOG_OPTION_GROUP_POSITION_OVERRIDES = {
+    ("dlg_map01_lv002_env_12", 1): "pre",
+}
+CORRECTED_DIALOG_OPTION_IDS = set(DIALOG_OPTION_ID_CORRECTIONS.values())
 
 
 _MISSION_FLOW_CACHE: dict[str, dict | None] = {}
@@ -413,7 +425,37 @@ def _load_anime_resource_payload(path: Path):
     except (ValueError, binascii.Error, UnicodeDecodeError, json.JSONDecodeError):
         return payload
 
+    if isinstance(decoded_payload, dict):
+        asset_name = str(payload.get("Name") or payload.get("m_Name") or "").strip()
+        if asset_name:
+            decoded_payload = dict(decoded_payload)
+            decoded_payload["_assetName"] = asset_name
+
     return decoded_payload
+
+
+def _dialog_tree_semantic_signature(record: dict) -> str:
+    """Return a stable signature for DialogTree evidence, ignoring asset aliases."""
+
+    ignored_keys = {"assetName", "file", "sourceKey"}
+
+    def scrub(value):
+        if isinstance(value, dict):
+            return {
+                key: scrub(value[key])
+                for key in sorted(value)
+                if key not in ignored_keys
+            }
+        if isinstance(value, list):
+            return [scrub(item) for item in value]
+        return value
+
+    return json.dumps(
+        scrub(record),
+        ensure_ascii=True,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
 
 
 def _extract_ref_strings(node, field_names: tuple[str, ...]) -> list[str]:
@@ -3658,6 +3700,7 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
     if not isinstance(tree, dict):
         _DIALOG_TREE_SOURCE_CACHE[tree_key] = None
         return None
+    asset_name = str(tree.pop("_assetName", "") or "").strip()
 
     nodes = [
         dict(node) if isinstance(node, dict) else node
@@ -3901,6 +3944,44 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
             for entry in (node.get("_normalOptions") or [])
             if isinstance(entry, dict) and entry.get("_optionId")
         ])
+
+    def downstream_local_trunk_ids(
+        start_ids: list[str | None],
+        *,
+        target_key: str,
+        stop_node_id: str,
+    ) -> set[str]:
+        """Collect target-scene trunks reached before returning to a larger hub.
+
+        A source option node can have loop-back predecessors from follow-up
+        prompts. Those predecessor trunks are real graph predecessors, but they
+        are not where the parent menu first appears. Follow through local
+        same-scene option nodes so those loop returns can be excluded from menu
+        anchoring, and stop at mixed-scene hubs.
+        """
+
+        out: set[str] = set()
+        seen: set[str] = set()
+        queue = deque(str(start_id) for start_id in start_ids if start_id)
+        while queue:
+            cur = queue.popleft()
+            if cur in seen:
+                continue
+            seen.add(cur)
+            if cur == stop_node_id:
+                continue
+            typ = node_type(cur)
+            trunk_id = node_trunk_id(cur)
+            if trunk_id and _dialog_tree_scene_prefix(trunk_id) == target_key:
+                out.add(trunk_id)
+            if typ in ("DialogTreeFinishNode", "DialogTreeOpenUINode"):
+                continue
+            if typ == "DialogTreeOptionNode":
+                prefixes = option_node_scene_prefixes(cur)
+                if not prefixes or any(prefix != target_key for prefix in prefixes):
+                    continue
+            queue.extend(str(nxt) for nxt in succs.get(cur, []) if nxt)
+        return out
 
     def summarize_option_target(start_id: str | None) -> dict:
         path = walk_linear_path(start_id)
@@ -4152,11 +4233,13 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
             targets = targets * len(opt_entries)
 
         paths_by_option: dict[str, list[str]] = {}
+        target_node_by_option: dict[str, str | None] = {}
         first_trunk_by_option: dict[str, str | None] = {}
         terminal_kind_by_option: dict[str, str] = {}
         for idx, entry in enumerate(opt_entries):
             opt_id = entry["_optionId"]
             target = targets[idx] if idx < len(targets) else None
+            target_node_by_option[opt_id] = target
             option_path = walk_linear_path(target)
             paths_by_option[opt_id] = option_path
             first_trunk_by_option[opt_id] = first_trunk_on_path(target)
@@ -4178,6 +4261,7 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
         else:
             common_node = first_common_node(list(paths_by_option.values()))
             merge_trunk = first_trunk_on_path(common_node) if common_node else None
+            exclusive_trunks_by_option: dict[str, list[str]] = {}
             for opt_id, option_path in paths_by_option.items():
                 exclusive_trunks: list[str] = []
                 for node_id in option_path:
@@ -4186,10 +4270,14 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
                     trunk_id = node_trunk_id(node_id)
                     if trunk_id:
                         exclusive_trunks.append(trunk_id)
+                exclusive_trunks_by_option[opt_id] = exclusive_trunks
                 if exclusive_trunks:
                     branch_map[opt_id] = exclusive_trunks
                     if merge_trunk:
                         merge_map[opt_id] = merge_trunk
+            if merge_trunk and not any(exclusive_trunks_by_option.values()):
+                for entry in opt_entries:
+                    converge_map[entry["_optionId"]] = merge_trunk
 
         scene_option_prefixes = _unique_preserve([
             prefix
@@ -4233,11 +4321,16 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
                 for node_id in paths_by_option.get(opt_id, [])
                 if (trunk_id := node_trunk_id(node_id))
             }
+            loop_return_trunk_ids = downstream_local_trunk_ids(
+                [target_node_by_option.get(opt_id) for opt_id in target_opt_ids],
+                target_key=target_key,
+                stop_node_id=opt_node["$id"],
+            )
             backward_trunk = (
                 nearest_option_anchor_trunk_id(
                     opt_node["$id"],
                     prefix=target_key,
-                    excluded_trunks=forward_trunk_ids,
+                    excluded_trunks=forward_trunk_ids | loop_return_trunk_ids,
                 )
                 or nearest_layout_trunk_id(opt_node["$id"], prefix=target_key)
             )
@@ -4248,7 +4341,7 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
             # introduces the scene. Suppress it only when the backward trunk
             # is actually on one of this option group's own forward paths.
             group_after = backward_trunk
-            if backward_trunk and backward_trunk in forward_trunk_ids:
+            if backward_trunk and backward_trunk in (forward_trunk_ids | loop_return_trunk_ids):
                 group_after = None
             summaries: list[dict] = []
             has_interesting_target = False
@@ -4426,6 +4519,7 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
     source = {
         "sourceKey": tree_key,
         "file": repo_rel(tree_path),
+        **({"assetName": asset_name} if asset_name else {}),
         "lineIds": line_ids,
         "lineGraph": line_graph,
         "lineOrder": {
@@ -4541,6 +4635,7 @@ def load_dialog_tree_fragments(conv_key: str) -> list[dict]:
     global _DIALOG_TREE_FRAGMENT_TARGETS_CACHE
     if _DIALOG_TREE_FRAGMENT_TARGETS_CACHE is None:
         targets: dict[str, list[dict]] = defaultdict(list)
+        seen_signatures_by_target: dict[str, set[str]] = defaultdict(set)
         for path in _iter_anime_tree_files("dlg_*.json"):
             if path.name.endswith("_extra_config.json"):
                 continue
@@ -4550,8 +4645,13 @@ def load_dialog_tree_fragments(conv_key: str) -> list[dict]:
                 continue
             for fragment in source.get("targetFragments") or []:
                 target_key = fragment.get("targetKey") or ""
-                if not target_key or target_key == source_key:
+                source_asset_name = source.get("assetName") or ""
+                if not target_key or target_key in {source_key, source_asset_name}:
                     continue
+                signature = _dialog_tree_semantic_signature(fragment)
+                if signature in seen_signatures_by_target[target_key]:
+                    continue
+                seen_signatures_by_target[target_key].add(signature)
                 targets[target_key].append(fragment)
         for bucket in targets.values():
             bucket.sort(key=lambda item: item["sourceKey"])
@@ -4564,6 +4664,7 @@ def load_dialog_tree_scene_links(conv_key: str) -> list[dict]:
     global _DIALOG_TREE_SCENE_LINKS_CACHE
     if _DIALOG_TREE_SCENE_LINKS_CACHE is None:
         scene_links: dict[str, list[dict]] = defaultdict(list)
+        seen_signatures_by_scene: dict[str, set[str]] = defaultdict(set)
         for path in _iter_anime_tree_files("dlg_*.json"):
             if path.name.endswith("_extra_config.json"):
                 continue
@@ -4573,6 +4674,10 @@ def load_dialog_tree_scene_links(conv_key: str) -> list[dict]:
             for link in source.get("sceneLinks") or []:
                 scene_key = link.get("sceneKey") or ""
                 if scene_key:
+                    signature = _dialog_tree_semantic_signature(link)
+                    if signature in seen_signatures_by_scene[scene_key]:
+                        continue
+                    seen_signatures_by_scene[scene_key].add(signature)
                     scene_links[scene_key].append(link)
         for bucket in scene_links.values():
             bucket.sort(key=lambda item: ((item.get("sourceKey") or ""), (item.get("after") or "")))
@@ -4843,14 +4948,9 @@ def resolve_scene_line_order(conv_key: str, original_line_ids: list[str]) -> tup
             2,
         )
 
-    if extra_config := _load_dialog_tree_extra_config(conv_key):
-        add_candidate(
-            "dialogTreeExtraConfig",
-            extra_config.get("sourceKey") or conv_key,
-            extra_config.get("file") or "",
-            extra_config.get("lineIds") or [],
-            3,
-        )
+    # Extra config TextAssets are voice/audio sidecars. Their JSON key order is
+    # not reliable execution order, so do not let them override the main
+    # DialogTree, Timeline, fragments, or numeric fallback stitching.
 
     if not candidates:
         # Final fallback: if every line id ends in a unique numeric suffix
@@ -5539,6 +5639,160 @@ def build_language_bundle(
     written_conv_paths: set[str] = set()
     written_reference_paths: set[str] = set()
     written_mission_paths: set[str] = set()
+    conv_media_tags_by_key: dict[str, set[str]] = defaultdict(set)
+
+    inline_image_tag_re = re.compile(
+        r"<image\b(?!\s*=)[^>]*>[\s\S]*?</image>"
+        r"|<image\s*=[^>]+>"
+        r"|<image\b(?=[^>]*(?:src|source|path|name|id)\s*=)[^>]*>",
+        flags=re.IGNORECASE,
+    )
+
+    def clean_media_id_value(value: object) -> str:
+        text = html.unescape(str(value or "")).strip()
+        text = text.replace(r"\"", '"').replace(r"\'", "'")
+        for _ in range(3):
+            unwrapped = re.sub(r'^[\'"]+|[\'"]+$', "", text).strip()
+            if unwrapped == text:
+                break
+            text = unwrapped
+        return text
+
+    def normalize_media_id(value: object) -> str:
+        trimmed = clean_media_id_value(value).replace("\\", "/")
+        if not trimmed:
+            return ""
+        without_prefix = re.sub(r"^SNS/Emoji/", "", trimmed, flags=re.IGNORECASE)
+        last_segment = without_prefix.split("/")[-1] or without_prefix
+        return re.sub(r"\.[^.]+$", "", last_segment, flags=re.IGNORECASE).lower()
+
+    def inline_image_id_from_tag(raw_tag: str) -> str:
+        raw = str(raw_tag or "").strip()
+        if not raw:
+            return ""
+        body_match = re.match(r"^<image\b(?!\s*=)[^>]*>([\s\S]*?)</image>$", raw, flags=re.IGNORECASE)
+        if body_match:
+            return clean_media_id_value(body_match.group(1))
+        quoted_direct = re.match(r"""^<image\s*=\s*(["'])([\s\S]*?)\1""", raw, flags=re.IGNORECASE)
+        if quoted_direct:
+            return clean_media_id_value(quoted_direct.group(2))
+        loose_direct = re.match(r"^<image\s*=\s*([^>\s]+)", raw, flags=re.IGNORECASE)
+        if loose_direct:
+            return clean_media_id_value(loose_direct.group(1))
+        quoted_attr = re.search(
+            r"""\b(?:src|source|path|name|id)\s*=\s*(["'])([\s\S]*?)\1""",
+            raw,
+            flags=re.IGNORECASE,
+        )
+        if quoted_attr:
+            return clean_media_id_value(quoted_attr.group(2))
+        loose_attr = re.search(r"\b(?:src|source|path|name|id)\s*=\s*([^>\s]+)", raw, flags=re.IGNORECASE)
+        return clean_media_id_value(loose_attr.group(1)) if loose_attr else ""
+
+    def image_ids_from_text(text: object) -> list[str]:
+        source = str(text or "")
+        if "<image" not in source.lower():
+            return []
+        return [
+            image_id
+            for image_id in (inline_image_id_from_tag(match.group(0)) for match in inline_image_tag_re.finditer(source))
+            if image_id
+        ]
+
+    def media_id_is_emoji(value: object) -> bool:
+        normalized = normalize_media_id(value)
+        return "emoji" in normalized or "emoiji" in normalized
+
+    def media_id_is_sticker(value: object) -> bool:
+        normalized = normalize_media_id(value)
+        if not normalized or media_id_is_emoji(normalized):
+            return False
+        return normalized.startswith("sns_sticker_") or "sticker" in normalized
+
+    def collect_payload_media_tags(payload: dict) -> set[str]:
+        tags: set[str] = set()
+
+        def add_media_id(value: object) -> None:
+            normalized = normalize_media_id(value)
+            if not normalized:
+                return
+            if media_id_is_emoji(normalized):
+                tags.add("mediaEmoji")
+                return
+            tags.add("mediaSticker" if media_id_is_sticker(normalized) else "mediaImage")
+
+        def add_text_images(value: object) -> None:
+            for image_id in image_ids_from_text(value):
+                add_media_id(image_id)
+
+        def source_from_debug(debug: object) -> dict:
+            if not isinstance(debug, dict):
+                return {}
+            source = debug.get("source") or {}
+            if isinstance(source, dict) and isinstance(source.get("source"), dict):
+                return source["source"]
+            return source if isinstance(source, dict) else {}
+
+        def add_media_from_source(source: dict) -> None:
+            if not isinstance(source, dict):
+                return
+            for field in ("image", "emoji", "emojiResPath", "optionResPath"):
+                add_media_id(source.get(field))
+            for image_id in source.get("contentParam") or []:
+                add_media_id(image_id)
+
+            raw_content_params = source.get("contentParams")
+            if not isinstance(raw_content_params, str) or not raw_content_params.strip():
+                return
+            try:
+                content_params = json.loads(raw_content_params)
+            except json.JSONDecodeError:
+                return
+
+            def visit_content_param(node: object) -> None:
+                if isinstance(node, dict):
+                    for key, value in node.items():
+                        if key in {"image", "imageResPath", "emoji", "emojiResPath", "optionResPath"}:
+                            add_media_id(value)
+                        elif isinstance(value, (dict, list)):
+                            visit_content_param(value)
+                elif isinstance(node, list):
+                    for item in node:
+                        visit_content_param(item)
+
+            visit_content_param(content_params)
+
+        def visit_line(line: object) -> None:
+            if not isinstance(line, dict):
+                return
+            add_text_images(line.get("text"))
+            add_media_id(line.get("image"))
+            add_media_id(line.get("emoji"))
+            for image_id in line.get("images") or []:
+                add_media_id(image_id)
+            source = source_from_debug(line.get("_debug"))
+            add_media_from_source(source)
+            if source.get("video"):
+                tags.add("mediaVideo")
+            for option in line.get("options") or []:
+                if not isinstance(option, dict):
+                    continue
+                add_text_images(option.get("text"))
+                add_media_id(option.get("image"))
+                add_media_id(option.get("emoji"))
+                add_media_from_source(source_from_debug(option.get("_debug")))
+
+        for line in payload.get("lines") or []:
+            visit_line(line)
+        for row in payload.get("summary") or []:
+            if isinstance(row, dict):
+                add_text_images(row.get("text"))
+        if payload.get("narrativeVideos"):
+            tags.add("mediaVideo")
+        cutscene = payload.get("cutscene")
+        if isinstance(cutscene, dict) and cutscene.get("videoRefs"):
+            tags.add("mediaVideo")
+        return tags
 
     def written_path_key(path: Path) -> str:
         return str(path).lower()
@@ -5550,6 +5804,9 @@ def build_language_bundle(
     def write_conv_payload(out_key: str, payload: dict) -> Path:
         path = conv_dir / f"{out_key}.json"
         write_json(path, payload)
+        media_tags = collect_payload_media_tags(payload)
+        if media_tags:
+            conv_media_tags_by_key[out_key].update(media_tags)
         return remember_written(path, written_conv_paths)
 
     def write_reference_payload(rel_file: str, payload: dict) -> Path:
@@ -6684,6 +6941,40 @@ def build_language_bundle(
                     parts.append(str(value))
         return " ".join(parts)
 
+    def line_identity_haystack(lines: list[dict]) -> str:
+        parts: list[str] = []
+        for line in lines:
+            line_id = line.get("id")
+            if line_id:
+                parts.append(str(line_id))
+            cid = line.get("cid")
+            if cid is not None and cid != "":
+                parts.append(f"cid:{cid}")
+        return " ".join(parts)
+
+    def line_option_haystack(lines: list[dict]) -> str:
+        parts: list[str] = []
+        for line in lines:
+            for option in line.get("options") or []:
+                if not isinstance(option, dict):
+                    continue
+                for field in ("id", "optionId", "text", "image", "emoji"):
+                    value = option.get(field)
+                    if value:
+                        parts.append(str(value))
+        return " ".join(parts)
+
+    def indexed_line_haystack(lines: list[dict], *fields: str) -> str:
+        return " ".join(
+            part
+            for part in (
+                line_identity_haystack(lines),
+                line_haystack(lines, *fields),
+                line_option_haystack(lines),
+            )
+            if part
+        )
+
     # ---------- SNS dialogs ----------
     sns_groups: dict[str, dict] = {}
     for sns_id, entry in sns.items():
@@ -6897,9 +7188,11 @@ def build_language_bundle(
     options_by_key: dict[str, dict[int, list[dict]]] = defaultdict(lambda: defaultdict(list))
     dialog_option_text_by_id: dict[str, str] = {}
     dialog_option_signature_by_id: dict[str, tuple[str, str]] = {}
+    dialog_option_payload_by_id: dict[str, dict] = {}
     dialog_option_ids_by_scene_group: dict[tuple[str, int], list[tuple[int, str]]] = defaultdict(list)
     option_orphans = 0
-    for oid, entry in dlg_opts.items():
+    for raw_oid, entry in dlg_opts.items():
+        oid = DIALOG_OPTION_ID_CORRECTIONS.get(raw_oid, raw_oid)
         m = OPTION_RE.match(oid)
         if not m:
             # `dlg_spaceship_*` UI options have no scene; skip.
@@ -6910,29 +7203,41 @@ def build_language_bundle(
         option_scene_key = f"dlg_{mission}_{scene}"
         dialog_option_text_by_id[oid] = option_text
         dialog_option_signature_by_id[oid] = (_option_text_signature(option_text), option_icon)
+        if oid != raw_oid:
+            dialog_option_text_by_id[raw_oid] = option_text
+            dialog_option_signature_by_id[raw_oid] = (_option_text_signature(option_text), option_icon)
         dialog_option_ids_by_scene_group[(option_scene_key, grp)].append((idx, oid))
         target = attach_target(mission, scene)
         if target is None:
             option_orphans += 1
             continue
-        options_by_key[target][grp].append({
+        option_debug = {
+            **source_ref(
+                "DialogOptionTable",
+                raw_oid,
+                pick_fields(entry, "optionText", "iconType"),
+            ),
+            "fields": {
+                "text": text_trace(
+                    "DialogOptionTable", raw_oid, "optionText", entry.get("optionText")
+                ),
+            },
+        }
+        if oid != raw_oid:
+            option_debug["idCorrection"] = {
+                "from": raw_oid,
+                "to": oid,
+                "reason": "DialogOptionTable group number disagrees with recovered env_12 menu order.",
+            }
+        option_entry = {
             "id": oid,
             "i": idx,
             "text": option_text,
             "icon": option_icon,
-            "_debug": {
-                **source_ref(
-                    "DialogOptionTable",
-                    oid,
-                    pick_fields(entry, "optionText", "iconType"),
-                ),
-                "fields": {
-                    "text": text_trace(
-                        "DialogOptionTable", oid, "optionText", entry.get("optionText")
-                    ),
-                },
-            },
-        })
+            "_debug": option_debug,
+        }
+        options_by_key[target][grp].append(option_entry)
+        dialog_option_payload_by_id[oid] = option_entry
     dialog_option_group_ids_by_key: dict[tuple[str, int], list[str]] = {
         key: [oid for _idx, oid in sorted(entries)]
         for key, entries in dialog_option_ids_by_scene_group.items()
@@ -7540,7 +7845,68 @@ def build_language_bundle(
                 (timeline_line_timing_by_id.get(line_id) or {}).get("clipOptionIndex")
                 for line_id in candidate_line_ids
             ]
+            def index_pattern(values: list[object]) -> str:
+                ints = [value for value in values if isinstance(value, int)]
+                if not ints:
+                    return "missing"
+                if len(ints) < len(values):
+                    return "partialMissing"
+                has_zero = any(value == 0 for value in ints)
+                has_nonzero = any(value != 0 for value in ints)
+                if has_zero and has_nonzero:
+                    return "mixedZeroNonzero"
+                if has_zero:
+                    return "allZero"
+                if has_nonzero:
+                    return "strictNonzero"
+                return "other"
+
+            if (
+                candidate_clip_indices
+                and len(candidate_clip_indices) == len(candidate_line_ids)
+                and all(value == 0 for value in candidate_clip_indices)
+            ):
+                option_index_pattern = index_pattern(option_indices)
+                candidate_clip_index_pattern = index_pattern(candidate_clip_indices)
+                if option_index_pattern in {"allZero", "mixedZeroNonzero"}:
+                    reason = "defaultTrunkClipContinuation"
+                    detail = (
+                        "Runtime selection maps the selected UI option through "
+                        "DialogTimelineOptionData.optionIndex before advancing "
+                        "the Timeline. The adjacent trunk candidate clips all "
+                        "carry clipOptionIndex 0, and no Runtime Jump route was "
+                        "recovered for this group, so the window is kept as a "
+                        "shared Timeline continuation instead of inferred "
+                        "per-option branch replies."
+                    )
+                    if option_index_pattern == "allZero":
+                        reason = "rawOptionIndexConverges"
+                        detail = (
+                            "Runtime selection maps the selected UI option through "
+                            "DialogTimelineOptionData.optionIndex before advancing "
+                            "the Timeline. All option rows in this group resolve to "
+                            "raw optionIndex 0, so the adjacent trunk lines are kept "
+                            "as shared continuation instead of inferred per-option "
+                            "branch replies."
+                        )
+                    return {
+                        "code": "sharedTimelineContinuation",
+                        "reason": reason,
+                        "detail": detail,
+                        "after": after_id,
+                        "optionIds": group_opt_ids,
+                        "candidateLineIds": [],
+                        "candidateWindowLineIds": candidate_line_ids,
+                        "commonContinuationLineId": candidate_line_ids[0],
+                        "source": "dialogTimeline",
+                        "optionIndex": option_indices,
+                        "candidateLineClipOptionIndex": candidate_clip_indices,
+                        "optionIndexPattern": option_index_pattern,
+                        "candidateLineClipOptionIndexPattern": candidate_clip_index_pattern,
+                    }
             candidate_mapping = ""
+            branch_line_ids_by_option: dict[str, list[str]] = {}
+            branch_clip_indices_by_option: dict[str, list[int]] = {}
             if (
                 len(candidate_clip_indices) == len(candidate_line_ids) == len(option_indices)
                 and all(isinstance(value, int) for value in candidate_clip_indices)
@@ -7566,6 +7932,45 @@ def build_language_bundle(
                         (timeline_line_timing_by_id.get(line_id) or {}).get("clipOptionIndex")
                         for line_id in candidate_line_ids
                     ]
+                    option_index_set = {value for value in option_indices if isinstance(value, int) and value != 0}
+                    branch_line_ids_by_index: dict[int, list[str]] = {value: [] for value in option_index_set}
+                    branch_clip_indices_by_index: dict[int, list[int]] = {value: [] for value in option_index_set}
+                    branch_window_end_index = after_index + len(candidate_line_ids)
+                    for index, line_id in enumerate(timeline_line_ids[after_index + 1 :], start=after_index + 1):
+                        if line_id not in valid_line_ids:
+                            continue
+                        clip_index = (timeline_line_timing_by_id.get(line_id) or {}).get("clipOptionIndex")
+                        if isinstance(clip_index, int) and clip_index in option_index_set:
+                            branch_line_ids_by_index.setdefault(clip_index, []).append(line_id)
+                            branch_clip_indices_by_index.setdefault(clip_index, []).append(clip_index)
+                            branch_window_end_index = index
+                            continue
+                        break
+                    for opt_id, option_index in zip(group_opt_ids, option_indices):
+                        if not isinstance(option_index, int):
+                            continue
+                        branch_lines = [
+                            line_id
+                            for line_id in (branch_line_ids_by_index.get(option_index) or [])
+                            if line_id in valid_line_ids
+                        ]
+                        if not branch_lines:
+                            branch_lines = [
+                                line_id
+                                for line_id in [line_id_by_clip_index.get(option_index)]
+                                if line_id in valid_line_ids
+                            ]
+                        if branch_lines:
+                            branch_line_ids_by_option[opt_id] = branch_lines
+                            branch_clip_indices_by_option[opt_id] = [
+                                int(value)
+                                for value in (branch_clip_indices_by_index.get(option_index) or [option_index])
+                                if isinstance(value, int)
+                            ]
+                    for line_id in timeline_line_ids[branch_window_end_index + 1 :]:
+                        if line_id in valid_line_ids:
+                            common_continuation_id = line_id
+                            break
             detail = (
                 "Timeline option metadata anchors this group to a trunk line, "
                 "but the option entries do not name explicit target trunk ids; "
@@ -7575,8 +7980,8 @@ def build_language_bundle(
                 detail = (
                     "Timeline option metadata anchors this group to a trunk line, "
                     "but the option entries do not name explicit target trunk ids; "
-                    "candidate response lines are matched to options by the raw "
-                    "trunk clip optionIndex values."
+                    "candidate response lines and same-index branch continuations "
+                    "are matched to options by the raw trunk clip optionIndex values."
                 )
             risk = {
                 "code": "inferredFollowingLines",
@@ -7600,13 +8005,43 @@ def build_language_bundle(
             if candidate_mapping:
                 risk["candidateMapping"] = candidate_mapping
                 risk["candidateLineIdsByOption"] = {
-                    opt_id: line_id
+                    opt_id: branch_line_ids_by_option.get(opt_id) or [line_id]
                     for opt_id, line_id in zip(group_opt_ids, candidate_line_ids)
                 }
                 risk["candidateLineClipOptionIndex"] = candidate_clip_indices
+                if branch_line_ids_by_option:
+                    risk["branchLineIdsByOption"] = branch_line_ids_by_option
+                if branch_clip_indices_by_option:
+                    risk["branchLineClipOptionIndexByOption"] = branch_clip_indices_by_option
             return risk
 
         def option_risk_line_ids(following_line_risk: dict, option_count: int) -> list[str]:
+            option_ids = [
+                str(option_id)
+                for option_id in (following_line_risk.get("optionIds") or [])
+                if str(option_id or "").strip()
+            ]
+            candidate_lines_by_option = following_line_risk.get("candidateLineIdsByOption")
+            if isinstance(candidate_lines_by_option, dict) and len(option_ids) == option_count:
+                mapped_line_ids: list[str] = []
+                for option_id in option_ids:
+                    mapped_value = candidate_lines_by_option.get(option_id)
+                    if isinstance(mapped_value, list):
+                        line_id = next(
+                            (
+                                str(value)
+                                for value in mapped_value
+                                if str(value or "") in valid_line_ids
+                            ),
+                            "",
+                        )
+                    else:
+                        line_id = str(mapped_value or "")
+                    if line_id not in valid_line_ids:
+                        break
+                    mapped_line_ids.append(line_id)
+                if len(mapped_line_ids) == option_count:
+                    return mapped_line_ids
             candidate_line_ids = [
                 str(line_id)
                 for line_id in (following_line_risk.get("candidateLineIds") or [])
@@ -7619,9 +8054,30 @@ def build_language_bundle(
                 return [common_line_id for _ in range(option_count)]
             return []
 
+        def all_option_response_risk_line_ids(following_line_risk: dict) -> list[str]:
+            out: list[str] = []
+
+            def push(line_id: object) -> None:
+                value = str(line_id or "")
+                if value and value in valid_line_ids and value not in out:
+                    out.append(value)
+
+            for line_id in following_line_risk.get("candidateLineIds") or []:
+                push(line_id)
+            branch_lines_by_option = following_line_risk.get("branchLineIdsByOption")
+            if isinstance(branch_lines_by_option, dict):
+                for line_ids in branch_lines_by_option.values():
+                    if isinstance(line_ids, list):
+                        for line_id in line_ids:
+                            push(line_id)
+                    else:
+                        push(line_ids)
+            return out
+
         for order, g in enumerate(sorted(groups_map), start=1):
             opts = sorted(groups_map[g], key=lambda o: o["i"])
             group_opt_ids = group_option_ids_by_group.get(g, [])
+            placement_override = DIALOG_OPTION_GROUP_POSITION_OVERRIDES.get((conv_key or "", g), "")
             cinematic_after_candidate = cinematic_after_by_group.get(g, "")
             cinematic_group_sources = cinematic_sources_by_group.get(g, [])
             text_alias_after_candidate = text_alias_after_by_group.get(g, "")
@@ -7702,6 +8158,9 @@ def build_language_bundle(
             unauthored_group_option_ids = [
                 opt_id for opt_id in group_opt_ids if opt_id and opt_id not in authored_option_ids
             ]
+            direct_pre_option_ids = [
+                opt_id for opt_id in group_opt_ids if opt_id in tree_pre or opt_id in timeline_pre
+            ]
             group_is_authored_pre = bool(group_opt_ids) and all(
                 opt_id in tree_pre or opt_id in timeline_pre
                 for opt_id in group_opt_ids
@@ -7718,6 +8177,10 @@ def build_language_bundle(
                 group["position"] = "pre"
                 pre_group_count += 1
                 group_status = "authoredPre"
+            elif placement_override == "pre" and direct_pre_option_ids:
+                group["position"] = "pre"
+                pre_group_count += 1
+                group_status = "correctedPre"
             elif order - 1 < len(fallback_after_ids):
                 fallback_anchor_id = fallback_after_ids[order - 1]
                 used_fallback_layout = True
@@ -7780,22 +8243,58 @@ def build_language_bundle(
                 if route_branch_lines:
                     opt["branchLines"] = route_branch_lines
                     rendered_branch_paths.append(tuple(route_branch_lines))
+            if placement_override == "pre":
+                corrected_opts_without_branch = [
+                    opt
+                    for opt in opts
+                    if opt.get("id") in CORRECTED_DIALOG_OPTION_IDS and not opt.get("branchLines")
+                ]
+                if len(corrected_opts_without_branch) == 1:
+                    covered_line_ids = {
+                        line_id
+                        for opt in opts
+                        for line_id in (opt.get("branchLines") or [])
+                        if line_id in valid_line_ids
+                    }
+                    remaining_line_ids = [
+                        line_id
+                        for _idx, line_id in line_idxs
+                        if line_id in valid_line_ids and line_id not in covered_line_ids
+                    ]
+                    if remaining_line_ids:
+                        corrected_opt = corrected_opts_without_branch[0]
+                        corrected_opt["branchLines"] = remaining_line_ids
+                        corrected_opt.setdefault("_debug", {})["branchLineCorrection"] = {
+                            "mode": "remainingLinesForCorrectedPreGroup",
+                            "reason": "The corrected pre-scene option uses the only line span not covered by authored DialogTree branches.",
+                            "lineIds": remaining_line_ids,
+                        }
+                        rendered_branch_paths.append(tuple(remaining_line_ids))
             following_line_risk = timeline_route_branch or following_line_risk_for_group(group_opt_ids, group.get("after") or "")
             if following_line_risk:
                 group["optionBranchRisk"] = following_line_risk
                 if following_line_risk.get("code") == "inferredFollowingLines":
-                    option_response_risks.append({
-                        "group": g,
-                        **following_line_risk,
-                    })
+                    strong_raw_index_mapping = (
+                        following_line_risk.get("candidateMapping") == "trunkClipOptionIndex"
+                        and bool(following_line_risk.get("branchLineIdsByOption"))
+                    )
+                    if not strong_raw_index_mapping:
+                        option_response_risks.append({
+                            "group": g,
+                            **following_line_risk,
+                        })
+                    tag_code = "rawOptionIndexMatchedLine" if strong_raw_index_mapping else "inferredFollowingLine"
                     for opt, line_id in zip(opts, option_risk_line_ids(following_line_risk, len(opts))):
-                        opt.setdefault("riskTags", []).append({
-                            "code": "inferredFollowingLine",
+                        tag = {
+                            "code": tag_code,
                             "lineId": line_id,
                             "reason": following_line_risk["reason"],
                             "branchRiskCode": following_line_risk.get("code") or "",
                             "source": following_line_risk.get("source") or "",
-                        })
+                        }
+                        if strong_raw_index_mapping:
+                            tag["candidateMapping"] = following_line_risk.get("candidateMapping") or ""
+                        opt.setdefault("riskTags", []).append(tag)
             if sibling_anchor_record and sibling_anchor_record.get("siblingScenes"):
                 group["branchHint"] = {
                     "scenes": sibling_anchor_record["siblingScenes"],
@@ -7833,6 +8332,7 @@ def build_language_bundle(
                 "preOptionIds": pre_option_ids,
                 "timelinePreOptionIds": timeline_pre_option_ids,
                 "fallbackAnchorId": fallback_anchor_id,
+                "positionOverride": placement_override,
                 "cinematicSources": cinematic_group_sources,
                 "textAliasSources": text_alias_group_sources,
             })
@@ -7899,7 +8399,7 @@ def build_language_bundle(
                 "lineIds": _unique_preserve([
                     line_id
                     for risk in option_response_risks
-                    for line_id in (risk.get("candidateLineIds") or [])
+                    for line_id in all_option_response_risk_line_ids(risk)
                     if line_id
                 ]),
             })
@@ -8016,8 +8516,9 @@ def build_language_bundle(
         if out_key in options_by_key:
             for opts in options_by_key[out_key].values():
                 for o in opts:
-                    if o.get("id"):
-                        parts.append(str(o["id"]))
+                    for id_field in ("id", "optionId"):
+                        if o.get(id_field):
+                            parts.append(str(o[id_field]))
                     if o["text"]:
                         parts.append(o["text"])
         return " ".join(parts)
@@ -8127,6 +8628,255 @@ def build_language_bundle(
                 if targets:
                     opt["submenuTargets"] = targets
 
+    def clone_dialog_option_for_hub(option_id: str, hub_index: int, target_scene_key: str = "") -> dict | None:
+        option_id = str(option_id or "").strip()
+        if not option_id:
+            return None
+        base = dialog_option_payload_by_id.get(option_id)
+        if base:
+            option = copy.deepcopy(base)
+        else:
+            text, icon = dialog_option_signature_by_id.get(option_id, ("", ""))
+            option = {
+                "id": option_id,
+                "i": hub_index,
+                "text": text,
+                "icon": icon or "",
+                "_debug": {
+                    "table": "DialogOptionTable",
+                    "rowId": option_id,
+                    "source": {},
+                    "hubOnly": True,
+                },
+            }
+        option["i"] = hub_index
+        if target_scene_key:
+            option["targetSceneKey"] = target_scene_key
+            option.setdefault("_debug", {})["hubTargetSceneKey"] = target_scene_key
+        return option
+
+    def scene_link_option_payload(raw_option: dict) -> dict:
+        entry = {
+            "optionId": raw_option.get("optionId") or "",
+        }
+        for key in ("firstLineId", "firstSceneKey", "terminal"):
+            if raw_option.get(key):
+                entry[key] = raw_option[key]
+        for key in ("pathLineIds", "sceneKeys", "submenuSceneKeys"):
+            if raw_option.get(key):
+                entry[key] = raw_option[key]
+        if raw_option.get("loop"):
+            entry["loop"] = raw_option["loop"]
+        if raw_option.get("outcomeKind"):
+            entry["outcomeKind"] = raw_option["outcomeKind"]
+        if raw_option.get("_debug"):
+            entry["_debug"] = raw_option["_debug"]
+        return entry
+
+    def source_hub_option_groups(conv_key: str, valid_line_ids: set[str]) -> tuple[list[dict], list[dict]]:
+        source = _load_dialog_tree_source(conv_key)
+        if not source:
+            return [], []
+        raw_links = [
+            link
+            for link in (source.get("sceneLinks") or [])
+            if isinstance(link, dict)
+            and (link.get("sourceKey") or "") == conv_key
+        ]
+        if not raw_links:
+            return [], []
+
+        nodes_by_id = {
+            str(node.get("id") or ""): node
+            for node in ((source.get("lineGraph") or {}).get("nodes") or [])
+            if isinstance(node, dict) and node.get("id") is not None
+        }
+        by_source_node: dict[str, list[dict]] = defaultdict(list)
+        for link in raw_links:
+            link_debug = link.get("_debug") if isinstance(link.get("_debug"), dict) else {}
+            source_node_id = str(link_debug.get("sourceOptionNodeId") or "").strip()
+            group_scene_keys = [
+                str(scene_key)
+                for scene_key in (link_debug.get("groupSceneKeys") or [])
+                if str(scene_key or "").strip()
+            ]
+            if source_node_id and conv_key in group_scene_keys and len(set(group_scene_keys)) > 1:
+                by_source_node[source_node_id].append(link)
+
+        hub_groups: list[dict] = []
+        hub_scene_links: list[dict] = []
+        for source_node_id, links in sorted(by_source_node.items()):
+            local_after = next(
+                (
+                    str(link.get("after") or "")
+                    for link in links
+                    if (link.get("sceneKey") or "") == conv_key
+                    and str(link.get("after") or "") in valid_line_ids
+                ),
+                "",
+            )
+            if not local_after:
+                continue
+            node_option_ids = [
+                str(option_id)
+                for option_id in (nodes_by_id.get(source_node_id, {}).get("optionIds") or [])
+                if str(option_id or "").strip()
+            ]
+            if len(node_option_ids) < 2:
+                continue
+            raw_option_by_id: dict[str, dict] = {}
+            target_scene_by_option: dict[str, str] = {}
+            group_scene_keys: list[str] = []
+            target_scene_keys: list[str] = []
+            for link in links:
+                link_debug = link.get("_debug") if isinstance(link.get("_debug"), dict) else {}
+                group_scene_keys.extend(
+                    str(scene_key)
+                    for scene_key in (link_debug.get("groupSceneKeys") or [])
+                    if str(scene_key or "").strip()
+                )
+                target_scene_keys.extend(
+                    str(scene_key)
+                    for scene_key in (link_debug.get("targetSceneKeys") or [])
+                    if str(scene_key or "").strip()
+                )
+                scene_key = str(link.get("sceneKey") or "")
+                for raw_option in link.get("options") or []:
+                    if not isinstance(raw_option, dict):
+                        continue
+                    option_id = str(raw_option.get("optionId") or "").strip()
+                    if not option_id:
+                        continue
+                    raw_option_by_id.setdefault(option_id, raw_option)
+                    if scene_key:
+                        target_scene_by_option.setdefault(option_id, scene_key)
+            ordered_option_ids = [
+                option_id
+                for option_id in node_option_ids
+                if option_id in raw_option_by_id or option_id in dialog_option_payload_by_id
+            ]
+            if len(ordered_option_ids) < 2:
+                continue
+            group_ids = [
+                parts[1]
+                for option_id in ordered_option_ids
+                if (parts := _option_id_group_parts(option_id))
+            ]
+            group_id = group_ids[0] if group_ids else 1
+            options = [
+                option
+                for option in (
+                    clone_dialog_option_for_hub(
+                        option_id,
+                        hub_index,
+                        target_scene_by_option.get(option_id, ""),
+                    )
+                    for hub_index, option_id in enumerate(ordered_option_ids, start=1)
+                )
+                if option is not None
+            ]
+            if len(options) < 2:
+                continue
+            hub_groups.append({
+                "g": group_id,
+                "after": local_after,
+                "options": options,
+                "hubMenu": {
+                    "sourceKey": conv_key,
+                    "sourceOptionNodeId": source_node_id,
+                    "sourceFile": source.get("file") or "",
+                    "sceneKeys": _unique_preserve(group_scene_keys),
+                },
+            })
+            hub_scene_links.append({
+                "sourceKey": conv_key,
+                "file": source.get("file") or "",
+                "after": local_after,
+                "options": [
+                    scene_link_option_payload(raw_option_by_id[option_id])
+                    for option_id in ordered_option_ids
+                    if option_id in raw_option_by_id
+                ],
+                "sceneSpan": True,
+                "sourceSceneKeys": source.get("sourceSceneKeys") or sorted(set(group_scene_keys)),
+                "_debug": {
+                    "source": {
+                        "targetKey": conv_key,
+                        "sourceKey": conv_key,
+                        "file": source.get("file") or "",
+                    },
+                    "link": {
+                        "sourceOptionNodeId": source_node_id,
+                        "groupSceneKeys": _unique_preserve(group_scene_keys),
+                        "targetSceneKeys": _unique_preserve(target_scene_keys),
+                        "sourceHubMenu": True,
+                    },
+                },
+            })
+        return hub_groups, hub_scene_links
+
+    def apply_source_hub_option_groups(payload: dict, scene_graph_links: list[dict]) -> list[dict]:
+        def group_after_suffix(group: dict) -> int:
+            match = re.search(r"_(\d+)$", str(group.get("after") or ""))
+            return int(match.group(1)) if match else -1
+
+        def link_source_node_id(link: dict) -> str:
+            debug = link.get("_debug") if isinstance(link.get("_debug"), dict) else {}
+            link_debug = debug.get("link") if isinstance(debug.get("link"), dict) else {}
+            return str(link_debug.get("sourceOptionNodeId") or "")
+
+        def link_option_ids(link: dict) -> set[str]:
+            return {
+                str(option.get("optionId") or "")
+                for option in (link.get("options") or [])
+                if isinstance(option, dict) and str(option.get("optionId") or "")
+            }
+
+        conv_key = str(payload.get("key") or "")
+        valid_line_ids = {
+            str(line.get("id") or "")
+            for line in (payload.get("lines") or [])
+            if isinstance(line, dict) and str(line.get("id") or "")
+        }
+        hub_groups, hub_links = source_hub_option_groups(conv_key, valid_line_ids)
+        if not hub_groups:
+            return scene_graph_links
+        groups = [
+            group
+            for group in (payload.get("optionGroups") or [])
+            if isinstance(group, dict)
+        ]
+        for hub_group in hub_groups:
+            hub_g = hub_group.get("g")
+            replaced = False
+            for idx, existing_group in enumerate(groups):
+                if existing_group.get("g") == hub_g and existing_group.get("after") == hub_group.get("after"):
+                    groups[idx] = hub_group
+                    replaced = True
+                    break
+            if not replaced:
+                groups.append(hub_group)
+        groups.sort(key=lambda group: (group_after_suffix(group), group.get("g") or 0))
+        payload["optionGroups"] = groups
+        for hub_link in hub_links:
+            if hub_link.get("options"):
+                hub_debug = hub_link.get("_debug") if isinstance(hub_link.get("_debug"), dict) else {}
+                hub_link_debug = hub_debug.get("link") if isinstance(hub_debug.get("link"), dict) else {}
+                hub_source_node_id = str(hub_link_debug.get("sourceOptionNodeId") or "")
+                hub_after = str(hub_link.get("after") or "")
+                hub_option_ids = link_option_ids(hub_link)
+                scene_graph_links[:] = [
+                    existing
+                    for existing in scene_graph_links
+                    if not (
+                        str(existing.get("after") or "") == hub_after
+                        and link_source_node_id(existing) == hub_source_node_id
+                        and link_option_ids(existing).issubset(hub_option_ids)
+                    )
+                ]
+                scene_graph_links.append(hub_link)
+        return scene_graph_links
+
     def dialog_story_issue_codes(payload: dict) -> list[str]:
         codes: list[str] = []
         warning = next(
@@ -8144,8 +8894,6 @@ def build_language_bundle(
             line_order_status = str(line_order.get("status") or "")
             if line_order_status == "missing":
                 codes.append("missingLineOrder")
-            elif line_order_status == "partial":
-                codes.append("partialLineOrder")
             elif line_order_status == "fallback":
                 codes.append("fallbackLineOrder")
             if int(line_order.get("uncoveredLineCount") or 0) > 0:
@@ -8163,6 +8911,91 @@ def build_language_bundle(
         ):
             codes.append("inferredOptionResponse")
         return codes
+
+    def _line_id_list_equal(left: object, right: object) -> bool:
+        if not isinstance(left, list) or not isinstance(right, list):
+            return False
+        return [str(value or "") for value in left] == [str(value or "") for value in right]
+
+    def dialog_recovery_methods(payload: dict) -> list[str]:
+        methods: list[str] = []
+
+        def add(method: str) -> None:
+            if method and method not in methods:
+                methods.append(method)
+
+        debug = payload.get("_debug") if isinstance(payload.get("_debug"), dict) else {}
+        line_order = debug.get("lineOrder") if isinstance(debug.get("lineOrder"), dict) else {}
+        line_order_mode = str(line_order.get("mode") or "")
+        if line_order_mode == "lineIdSuffix":
+            registry = debug.get("runtimeRegistry") if isinstance(debug.get("runtimeRegistry"), dict) else {}
+            original_line_ids = line_order.get("originalLineIds") or []
+            ordered_line_ids = line_order.get("orderedLineIds") or []
+            if registry.get("registered") is True and _line_id_list_equal(original_line_ids, ordered_line_ids):
+                add("lineOrder:runtimeRowIteration")
+            elif registry.get("registered") is False:
+                add("lineOrder:unregisteredScene")
+            else:
+                add("lineOrder:lineIdSuffix")
+        elif line_order_mode:
+            add(f"lineOrder:{line_order_mode}")
+        elif len(payload.get("lines") or []) > 1:
+            add("lineOrder:missing")
+
+        option_groups = [
+            group
+            for group in (payload.get("optionGroups") or [])
+            if isinstance(group, dict)
+        ]
+        warnings = [
+            warning
+            for warning in (payload.get("warnings") or [])
+            if isinstance(warning, dict)
+        ]
+        layout_warning = next(
+            (warning for warning in warnings if warning.get("code") == "inferredOptionLayout"),
+            None,
+        )
+        if layout_warning:
+            reason = str(layout_warning.get("reason") or "")
+            if reason == "partialAuthoredCoverage":
+                add("optionLayout:partialAuthoredCoverage")
+            elif reason == "noAuthoredGroupAnchor":
+                add("optionLayout:noAuthoredGroupAnchor")
+            else:
+                add("optionLayout:fallback")
+        elif option_groups:
+            add("optionLayout:authored")
+
+        if payload.get("sceneGraphLinks"):
+            add("optionBranch:sceneGraph")
+        if payload.get("graphFragments"):
+            add("optionBranch:dialogTreeFragment")
+
+        for group in option_groups:
+            if group.get("branchMerge"):
+                add("optionBranch:sharedMerge")
+            if group.get("continuationOptionIds"):
+                add("optionBranch:continuationOption")
+            if group.get("branchHint"):
+                add("optionBranch:siblingSceneHint")
+            risk = group.get("optionBranchRisk") if isinstance(group.get("optionBranchRisk"), dict) else {}
+            if not risk:
+                continue
+            if risk.get("code") == "timelineRouteBranches":
+                add("optionBranch:runtimeJump")
+            elif risk.get("candidateMapping") == "trunkClipOptionIndex":
+                add("optionBranch:rawIndexMatched")
+            elif risk.get("code") == "inferredFollowingLines":
+                add("optionBranch:timelineAdjacent")
+            elif risk.get("code") == "sharedTimelineContinuation":
+                add("optionBranch:commonContinuation")
+            if risk.get("commonContinuationLineId"):
+                add("optionBranch:commonContinuation")
+            if risk.get("continuationOptionIds"):
+                add("optionBranch:continuationOption")
+
+        return methods
 
     print(
         f"Extras: summary={len(summary_by_key)} scenes ({summary_orphans} orphans), "
@@ -8297,6 +9130,7 @@ def build_language_bundle(
         if graph_fragments:
             payload["graphFragments"] = graph_fragments
         scene_graph_links = build_dialog_tree_scene_link_payload(out_key)
+        scene_graph_links = apply_source_hub_option_groups(payload, scene_graph_links)
         if scene_graph_links:
             attach_submenu_targets(scene_graph_links)
             payload["sceneGraphLinks"] = scene_graph_links
@@ -8305,6 +9139,7 @@ def build_language_bundle(
         attach_scene_order_warning(payload)
         attach_duplicate_timestamp_warning(payload)
         story_issue_codes = dialog_story_issue_codes(payload)
+        recovery_methods = dialog_recovery_methods(payload)
         write_conv_payload(out_key, payload)
 
         entry = {
@@ -8321,7 +9156,7 @@ def build_language_bundle(
         if (tags := entry_tags(out_key, mission)):
             entry["tags"] = tags
         entry["x"] = merge_search_text(
-            line_haystack(lines, "text", "actor", "aid", "hint"),
+            indexed_line_haystack(lines, "text", "actor", "aid", "hint"),
             extras_text(out_key),
         )
         entry["x"] = merge_search_text(entry.get("x", ""), mission_context_text(mission))
@@ -8337,6 +9172,8 @@ def build_language_bundle(
                 tags.append("sceneGraph")
         if story_issue_codes:
             entry["storyIssues"] = story_issue_codes
+        if recovery_methods:
+            entry["recoveryMethods"] = recovery_methods
         if not entry["x"]:
             entry.pop("x")
         index_entries.append(entry)
@@ -8596,22 +9433,12 @@ def build_language_bundle(
         }
         if (tags := entry_tags(out_key, mission)):
             entry["tags"] = tags
-        sns_line_text = line_haystack(lines, "text", "speaker", "linkMission")
-        sns_option_text = " ".join(
-            str(option.get("text") or "")
-            for line in lines
-            for option in (line.get("options") or [])
-            if option.get("text")
-        )
+        sns_line_text = indexed_line_haystack(lines, "text", "speaker", "linkMission")
         entry["x"] = display_title
         for title_text in (chat_title, topic_title, mission_title):
             if title_text and title_text != display_title:
                 entry["x"] = merge_search_text(entry["x"], title_text)
         entry["x"] = merge_search_text(entry["x"], sns_line_text)
-        entry["x"] = merge_search_text(
-            entry["x"],
-            sns_option_text,
-        )
         entry["x"] = merge_search_text(
             entry["x"],
             extras_text(out_key),
@@ -8666,7 +9493,7 @@ def build_language_bundle(
             "p": radio["p"],
             "tags": ["radio"],
         }
-        if (xt := line_haystack(radio["lines"], "text", "actor", "aid")):
+        if (xt := indexed_line_haystack(radio["lines"], "text", "actor", "aid")):
             entry["x"] = xt
         entry["x"] = merge_search_text(entry.get("x", ""), mission_context_text(radio["m"]))
         if not entry["x"]:
@@ -8751,7 +9578,7 @@ def build_language_bundle(
             "n": len(lines),
             "p": preview(prev_text),
         }
-        if (xt := line_haystack(lines, "text")):
+        if (xt := indexed_line_haystack(lines, "text")):
             entry["x"] = xt
         entry["x"] = merge_search_text(entry.get("x", ""), mission_context_text(mission))
         if not entry["x"]:
@@ -8888,7 +9715,7 @@ def build_language_bundle(
             "n": len(remote["lines"]),
             "p": preview(remote["preview"]),
         }
-        if (xt := line_haystack(remote["lines"], "text", "actor", "aid", "hint")):
+        if (xt := indexed_line_haystack(remote["lines"], "text", "actor", "aid", "hint")):
             entry["x"] = xt
         entry["x"] = merge_search_text(entry.get("x", ""), mission_context_text(remote["mission"]))
         if not entry["x"]:
@@ -9163,7 +9990,7 @@ def build_language_bundle(
             " ".join(cutscene.get("audioEvents") or []),
             " ".join(cutscene.get("tags") or []),
             " ".join(text_groups),
-            line_haystack(lines, "text"),
+            indexed_line_haystack(lines, "text"),
             component_summary,
             " ".join(variant["name"] for variant in (cutscene.get("variants") or [])),
             " ".join(cutscene.get("keepCameraPaths") or []),
@@ -9361,7 +10188,7 @@ def build_language_bundle(
             "p": preview(prev_text),
             "tags": index_tags,
         }
-        if (xt := line_haystack(lines, "text", "actor", "aid", "emoji")):
+        if (xt := indexed_line_haystack(lines, "text", "actor", "aid", "emoji")):
             index_entry["x"] = xt
         index_entry["x"] = merge_search_text(index_entry.get("x", ""), mission_context_text(mission))
         if not index_entry["x"]:
@@ -12883,6 +13710,8 @@ def build_language_bundle(
                 scene_graph_links_by_key[out_key] = scene_graph_links
             attach_runtime_registry_debug(payload)
             attach_scene_order_warning(payload)
+            story_issue_codes = dialog_story_issue_codes(payload)
+            recovery_methods = dialog_recovery_methods(payload)
             write_conv_payload(out_key, payload)
             entry = {
                 "k": out_key, "d": "dlg", "m": mission, "s": scene,
@@ -12892,7 +13721,11 @@ def build_language_bundle(
             if (tags := entry_tags(out_key, mission)):
                 entry["tags"] = tags
             entry["x"] = merge_search_text(
+                indexed_line_haystack(lines, "text", "actor", "aid", "hint"),
                 extras_text(out_key),
+            )
+            entry["x"] = merge_search_text(
+                entry.get("x", ""),
                 mission_context_text(mission),
             )
             entry["x"] = merge_search_text(entry.get("x", ""), graph_fragments_text(graph_fragments))
@@ -12905,6 +13738,10 @@ def build_language_bundle(
                 tags = entry.setdefault("tags", [])
                 if "sceneGraph" not in tags:
                     tags.append("sceneGraph")
+            if story_issue_codes:
+                entry["storyIssues"] = story_issue_codes
+            if recovery_methods:
+                entry["recoveryMethods"] = recovery_methods
             if not entry["x"]:
                 entry.pop("x")
             index_entries.append(entry)
@@ -13386,6 +14223,7 @@ def build_language_bundle(
             tags = entry.setdefault("tags", [])
             if "narrativeVideo" not in tags:
                 tags.append("narrativeVideo")
+            conv_media_tags_by_key[key].add("mediaVideo")
 
             conv_path = conv_dir / f"{key}.json"
             if conv_path.exists():
@@ -13473,8 +14311,10 @@ def build_language_bundle(
         if not type_key or type_key in {"?", "x"}:
             entry["t"] = "other"
 
+        raw_tags = list(entry.get("tags") or [])
+        raw_tags.extend(sorted(conv_media_tags_by_key.get(str(entry.get("k") or ""), set())))
         tags = []
-        for raw_tag in entry.get("tags") or []:
+        for raw_tag in raw_tags:
             tag = str(raw_tag or "").strip()
             if tag and tag not in tags:
                 tags.append(tag)
@@ -13500,7 +14340,7 @@ def build_language_bundle(
         if env_entry.get("id"):
             parts.append(str(env_entry["id"]))
         if env_entry.get("lines"):
-            parts.append(line_haystack(env_entry["lines"], "text", "actor", "aid", "emoji"))
+            parts.append(indexed_line_haystack(env_entry["lines"], "text", "actor", "aid", "emoji"))
         npc = env_entry.get("npc") or {}
         for field in ("npcId", "name", "title", "dialogSelector"):
             value = npc.get(field)

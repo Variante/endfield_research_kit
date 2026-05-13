@@ -603,10 +603,17 @@ class SourceGraphBuilder:
                 branch_option_ids = [safe_key(option.get("id")) for option in options if safe_key(option.get("id"))]
             candidate_line_ids = [safe_key(value) for value in branch_risk.get("candidateLineIds") or [] if safe_key(value)]
             raw_candidate_lines_by_option = branch_risk.get("candidateLineIdsByOption") or {}
+
+            def normalize_candidate_line_ids(value: Any) -> list[str]:
+                if isinstance(value, list):
+                    return [safe_key(line_id) for line_id in value if safe_key(line_id)]
+                line_id = safe_key(value)
+                return [line_id] if line_id else []
+
             candidate_lines_by_option = {
-                safe_key(option_id): safe_key(line_id)
-                for option_id, line_id in raw_candidate_lines_by_option.items()
-                if safe_key(option_id) and safe_key(line_id)
+                safe_key(option_id): normalize_candidate_line_ids(line_ids)
+                for option_id, line_ids in raw_candidate_lines_by_option.items()
+                if safe_key(option_id) and normalize_candidate_line_ids(line_ids)
             } if isinstance(raw_candidate_lines_by_option, dict) else {}
             common_line_id = safe_key(branch_risk.get("commonContinuationLineId"))
             raw_branch_lines_by_option = branch_risk.get("branchLineIdsByOption") or {}
@@ -643,7 +650,10 @@ class SourceGraphBuilder:
                     if continuation_option_ids:
                         hint["continuationOptionIds"] = continuation_option_ids
                     if option_id in candidate_lines_by_option:
-                        hint["candidateLineId"] = candidate_lines_by_option[option_id]
+                        hint["candidateLineIds"] = candidate_lines_by_option[option_id]
+                        hint["candidateLineId"] = candidate_lines_by_option[option_id][0]
+                        if option_id not in branch_lines_by_option and len(candidate_lines_by_option[option_id]) > 1:
+                            hint["branchLineIds"] = candidate_lines_by_option[option_id]
                     elif index < len(candidate_line_ids):
                         hint["candidateLineId"] = candidate_line_ids[index]
                     if common_line_id:
