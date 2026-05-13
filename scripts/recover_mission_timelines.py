@@ -800,6 +800,193 @@ def attach_timeline_evidence(refs: list[dict], timeline_index: dict[str, list[di
     return evidence, unresolved
 
 
+def unique_append(bucket: list, value: Any) -> None:
+    if value in (None, "", [], {}):
+        return
+    if value not in bucket:
+        bucket.append(value)
+
+
+def story_scene_kind(scene_key: str) -> str:
+    if scene_key.startswith("dlg_"):
+        return "dlg"
+    if scene_key.startswith("cutscene_"):
+        return "cutscene"
+    if scene_key.startswith("remotecomm_"):
+        return "remotecomm"
+    if scene_key.startswith("radio_"):
+        return "radio"
+    if scene_key.startswith("sns_"):
+        return "sns"
+    return "storyRef"
+
+
+def compact_source(source: Any) -> dict:
+    if not isinstance(source, dict):
+        return {}
+    out: dict[str, Any] = {}
+    for key in ("file", "field"):
+        value = source.get(key)
+        if value not in (None, "", [], {}):
+            out[key] = value
+    return out
+
+
+def compact_edge_for_scene(edge: dict, scene_key: str, direction: str) -> dict:
+    other_key = edge.get("from") if direction == "incoming" else edge.get("to")
+    row = {
+        "direction": direction,
+        "neighbor": other_key or "",
+        "kind": edge.get("kind") or "",
+    }
+    for key in ("sourceFiles", "sourceKeys", "questIds", "levelIds", "optionIds", "positions"):
+        values = edge.get(key)
+        if isinstance(values, list) and values:
+            row[key] = values[:6]
+    if edge.get("bundleSource"):
+        row["bundleSource"] = compact_source(edge.get("bundleSource"))
+    return row
+
+
+def compact_scene_timeline_entry(entry: dict) -> dict:
+    row: dict[str, Any] = {}
+    for key in ("sourceKey", "timeline", "dialogKey", "file"):
+        value = entry.get(key)
+        if value not in (None, "", [], {}):
+            row[key] = value
+    line_ids = entry.get("lineIds") or []
+    if isinstance(line_ids, list):
+        row["lineCount"] = len(line_ids)
+    option_anchors = entry.get("optionAnchors") or {}
+    if isinstance(option_anchors, dict):
+        row["optionAnchorCount"] = len(option_anchors)
+    option_routes = entry.get("optionRoutes") or {}
+    if isinstance(option_routes, dict):
+        row["optionRouteCount"] = len(option_routes)
+    return row
+
+
+def build_scene_placement_index(
+    quests: list[dict],
+    client_actions: list[dict],
+    timeline_evidence: dict[str, list[dict]],
+    source_backed_scene_edges: list[dict],
+) -> dict[str, dict]:
+    """Build compact, evidence-only scene placement signals for one mission."""
+    rows: dict[str, dict] = {}
+
+    def ensure(scene_key: str) -> dict:
+        scene_key = str(scene_key or "").strip()
+        row = rows.get(scene_key)
+        if row is None:
+            row = {
+                "sceneKey": scene_key,
+                "kind": story_scene_kind(scene_key),
+                "evidenceKinds": [],
+                "questIds": [],
+                "storyRefKinds": [],
+                "storyRefCount": 0,
+                "storyRefSources": [],
+                "clientActionTypes": [],
+                "clientActionCount": 0,
+                "clientActionSources": [],
+                "sourceBackedEdgeCount": 0,
+                "incomingEdgeCount": 0,
+                "outgoingEdgeCount": 0,
+                "incomingEdges": [],
+                "outgoingEdges": [],
+                "timelineEvidenceCount": 0,
+                "timelines": [],
+                "timelineEvidence": [],
+            }
+            rows[scene_key] = row
+        return row
+
+    for quest in quests:
+        quest_id = str(quest.get("questId") or "")
+        for ref in quest.get("storyRefs") or []:
+            if not isinstance(ref, dict):
+                continue
+            scene_key = str(ref.get("sceneKey") or "").strip()
+            if not scene_key:
+                continue
+            row = ensure(scene_key)
+            row["storyRefCount"] += 1
+            unique_append(row["questIds"], quest_id)
+            unique_append(row["storyRefKinds"], ref.get("kind"))
+            source = compact_source(ref.get("source"))
+            if source and len(row["storyRefSources"]) < 8:
+                row["storyRefSources"].append(source)
+
+    for action in client_actions:
+        quest_id = str(action.get("questId") or "")
+        action_type = str(action.get("actionType") or "")
+        for ref in action.get("storyRefs") or []:
+            if not isinstance(ref, dict):
+                continue
+            scene_key = str(ref.get("sceneKey") or "").strip()
+            if not scene_key:
+                continue
+            row = ensure(scene_key)
+            row["clientActionCount"] += 1
+            unique_append(row["questIds"], quest_id)
+            unique_append(row["storyRefKinds"], ref.get("kind"))
+            unique_append(row["clientActionTypes"], action_type)
+            source = compact_source(ref.get("source"))
+            if source and len(row["clientActionSources"]) < 8:
+                row["clientActionSources"].append(source)
+
+    for scene_key, entries in timeline_evidence.items():
+        row = ensure(scene_key)
+        for entry in entries or []:
+            if not isinstance(entry, dict):
+                continue
+            row["timelineEvidenceCount"] += 1
+            unique_append(row["timelines"], entry.get("timeline") or entry.get("sourceKey"))
+            if len(row["timelineEvidence"]) < 8:
+                row["timelineEvidence"].append(compact_scene_timeline_entry(entry))
+
+    for edge in source_backed_scene_edges:
+        if not isinstance(edge, dict):
+            continue
+        from_key = str(edge.get("from") or "").strip()
+        to_key = str(edge.get("to") or "").strip()
+        if from_key:
+            row = ensure(from_key)
+            row["sourceBackedEdgeCount"] += 1
+            row["outgoingEdgeCount"] += 1
+            if len(row["outgoingEdges"]) < 10:
+                row["outgoingEdges"].append(compact_edge_for_scene(edge, from_key, "outgoing"))
+        if to_key:
+            row = ensure(to_key)
+            row["sourceBackedEdgeCount"] += 1
+            row["incomingEdgeCount"] += 1
+            if len(row["incomingEdges"]) < 10:
+                row["incomingEdges"].append(compact_edge_for_scene(edge, to_key, "incoming"))
+
+    compact_rows: dict[str, dict] = {}
+    for scene_key, row in sorted(rows.items(), key=lambda item: natural_key(item[0])):
+        if row["storyRefCount"]:
+            unique_append(row["evidenceKinds"], "missionStoryRef")
+        if row["clientActionCount"]:
+            unique_append(row["evidenceKinds"], "clientActionStoryRef")
+        if row["sourceBackedEdgeCount"]:
+            unique_append(row["evidenceKinds"], "sourceBackedSceneEdge")
+        if row["timelineEvidenceCount"]:
+            unique_append(row["evidenceKinds"], "timelineEvidence")
+        row["questIds"].sort(key=natural_key)
+        row["storyRefKinds"].sort()
+        row["clientActionTypes"].sort()
+        row["timelines"].sort(key=natural_key)
+        compact_rows[scene_key] = {
+            key: value
+            for key, value in row.items()
+            if value not in (None, "", [], {}, 0)
+            or key in {"sceneKey", "kind", "evidenceKinds"}
+        }
+    return compact_rows
+
+
 def source_backed_scene_edges_from_scene_graph(scene_graph: dict | None, source: dict | None = None) -> list[dict]:
     edges = (scene_graph or {}).get("edges")
     if not isinstance(edges, list):
@@ -984,6 +1171,17 @@ def recover_mission(
         for quest in quests
         if not quest.get("prevQuestIds")
     ]
+    scene_edges = (
+        source_backed_scene_edges
+        if source_backed_scene_edges is not None
+        else load_source_backed_scene_edges(mission_id, generated_mission_dir)
+    )
+    scene_placement = build_scene_placement_index(
+        quests,
+        client_actions,
+        timeline_evidence,
+        scene_edges,
+    )
     payload = {
         "mission": mission_id,
         "metadata": metadata,
@@ -994,13 +1192,10 @@ def recover_mission(
         "questEdges": quest_edges,
         "questTree": build_quest_tree(quests, quest_edges),
         "branchPoints": build_branch_points(quest_edges, quests_by_id),
-        "sourceBackedSceneEdges": (
-            source_backed_scene_edges
-            if source_backed_scene_edges is not None
-            else load_source_backed_scene_edges(mission_id, generated_mission_dir)
-        ),
+        "sourceBackedSceneEdges": scene_edges,
         "referencedScenes": referenced_scenes,
         "sceneTimelineEvidence": timeline_evidence,
+        "scenePlacement": scene_placement,
         "unresolved": unresolved,
     }
     return payload
@@ -1032,6 +1227,8 @@ def summarize(
     missions_with_quest_loops = 0
     quest_loop_count = 0
     scene_edge_counter: Counter = Counter()
+    scene_placement_counter: Counter = Counter()
+    scene_placement_total = 0
     for mission in recovered:
         if mission.get("branchPoints"):
             missions_with_branches += 1
@@ -1045,6 +1242,10 @@ def summarize(
             quest_loop_count += len(loops)
         for edge in mission.get("sourceBackedSceneEdges") or []:
             scene_edge_counter[edge.get("kind") or "edge"] += 1
+        scene_placement_total += len(mission.get("scenePlacement") or {})
+        for placement in (mission.get("scenePlacement") or {}).values():
+            for kind in placement.get("evidenceKinds") or []:
+                scene_placement_counter[kind] += 1
         for item in mission.get("unresolved") or []:
             unresolved_counter[item.get("kind") or "unknown"] += 1
         for quest in mission.get("quests") or []:
@@ -1065,9 +1266,11 @@ def summarize(
         "questTreeLoops": quest_loop_count,
         "missionsWithDialogTimelineEvidence": missions_with_timeline,
         "missionsWithSourceBackedSceneEdges": missions_with_scene_edges,
+        "scenePlacementEntries": scene_placement_total,
         "timelineEvidence": timeline_meta,
         "unresolvedByKind": dict(unresolved_counter.most_common()),
         "sourceBackedSceneEdgesByKind": dict(scene_edge_counter.most_common()),
+        "scenePlacementEvidenceByKind": dict(scene_placement_counter.most_common()),
         "clientActionsByType": dict(action_counter.most_common()),
         "conditionTypes": dict(condition_counter.most_common()),
         "trackingTypes": dict(tracking_counter.most_common()),
@@ -1089,6 +1292,7 @@ def render_markdown(payload: dict) -> str:
         f"- missions with quest-tree loops: `{summary.get('missionsWithQuestTreeLoops', 0)}`",
         f"- missions with dialog timeline evidence: `{summary['missionsWithDialogTimelineEvidence']}`",
         f"- missions with source-backed scene edges: `{summary['missionsWithSourceBackedSceneEdges']}`",
+        f"- scene placement entries: `{summary.get('scenePlacementEntries', 0)}`",
         f"- timeline evidence file: `{summary['timelineEvidence'].get('path', '')}`",
         "",
         "## Unresolved Evidence",
@@ -1111,6 +1315,16 @@ def render_markdown(payload: dict) -> str:
         lines.append("- none")
     lines.extend([
         "",
+        "## Scene Placement Signals",
+        "",
+    ])
+    if summary.get("scenePlacementEvidenceByKind"):
+        for key, count in summary["scenePlacementEvidenceByKind"].items():
+            lines.append(f"- `{key}`: `{count}`")
+    else:
+        lines.append("- none")
+    lines.extend([
+        "",
         "## Client Actions",
         "",
     ])
@@ -1123,8 +1337,8 @@ def render_markdown(payload: dict) -> str:
         "",
         "## Mission Index",
         "",
-        "| Mission | Quests | Branches | Timeline Scenes | Scene Edges | Unresolved | Level |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| Mission | Quests | Branches | Timeline Scenes | Scene Edges | Scene Signals | Unresolved | Level |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ])
     for mission in payload.get("missions") or []:
         metadata = mission.get("metadata") or {}
@@ -1135,6 +1349,7 @@ def render_markdown(payload: dict) -> str:
             f"{len(mission.get('branchPoints') or [])} | "
             f"{len(mission.get('sceneTimelineEvidence') or {})} | "
             f"{len(mission.get('sourceBackedSceneEdges') or [])} | "
+            f"{len(mission.get('scenePlacement') or {})} | "
             f"{len(mission.get('unresolved') or [])} | "
             f"`{metadata.get('levelId', '')}` |"
         )

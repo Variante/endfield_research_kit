@@ -43,6 +43,7 @@ const UI_TEXTS = {
     recoveryMethodOptionContinuationOption: "\u540e\u7eed\u9009\u9879",
     recoveryMethodOptionSharedMerge: "\u5171\u4eab\u5408\u6d41",
     recoveryMethodOptionSiblingSceneHint: "\u5144\u5f1f\u573a\u666f\u63d0\u793a",
+    recoveryMethodOptionSiblingSceneText: "\u5144\u5f1f\u573a\u666f\u6587\u672c\u5206\u652f",
     sort: "\u6392\u5e8f",
     sortNatural: "\u6309\u5267\u60c5\u7ebf\u548c\u4efb\u52a1\u987a\u5e8f",
     sortLinesDesc: "\u6309\u884c\u6570\u4ece\u591a\u5230\u5c11",
@@ -284,6 +285,7 @@ const UI_TEXTS = {
     recoveryMethodOptionContinuationOption: "continuation option",
     recoveryMethodOptionSharedMerge: "shared merge",
     recoveryMethodOptionSiblingSceneHint: "sibling scene hint",
+    recoveryMethodOptionSiblingSceneText: "sibling scene text branches",
     sort: "Sort",
     sortNatural: "Storyline and mission order",
     sortLinesDesc: "Line count (high to low)",
@@ -1024,6 +1026,7 @@ const STORY_RECOVERY_METHOD_ORDER = [
   "optionBranch:commonContinuation",
   "optionBranch:continuationOption",
   "optionBranch:sharedMerge",
+  "optionBranch:siblingSceneText",
   "optionBranch:siblingSceneHint",
 ];
 
@@ -1243,6 +1246,7 @@ function recoveryMethodLabel(method) {
   if (raw === "optionBranch:commonContinuation") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionCommonContinuation"));
   if (raw === "optionBranch:continuationOption") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionContinuationOption"));
   if (raw === "optionBranch:sharedMerge") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionSharedMerge"));
+  if (raw === "optionBranch:siblingSceneText") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionSiblingSceneText"));
   if (raw === "optionBranch:siblingSceneHint") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionSiblingSceneHint"));
   return formatStructuredLabel(raw);
 }

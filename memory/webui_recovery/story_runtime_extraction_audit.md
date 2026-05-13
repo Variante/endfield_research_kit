@@ -799,3 +799,394 @@ Sample outcomes:
 - `dlg_c28m3_10` group `1` remains the one strong raw-index branch mapping:
   option `1` maps to `dlg_c28m3_10_023, dlg_c28m3_10_024`; option `2` maps to
   `dlg_c28m3_10_025, dlg_c28m3_10_026`.
+
+## 2026-05-13 IL2CPP Value-Flow Windows And E2M6 Clues
+
+`tools/endfield-il2cpp/map_body_targets_to_gameassembly.py` now emits compact
+field/value-flow decision windows in addition to direct call edges. This makes
+the option-selection evidence easier to audit without opening a disassembler.
+The regenerated reports are:
+
+- `reports/option_flow_body_targets_gameassembly.json`
+- `reports/option_flow_body_targets_gameassembly.md`
+
+New high-signal windows:
+
+- `_SelectIndexInTimeline(index)` fetches `this+0x1e0[index]`, then reads
+  `[selectedOption+0x98]` and passes that value as `rdx` to
+  `DialogChooseOption`.
+- `DialogChooseOption(timelineRoot, optionIndex)` writes the selected raw
+  `optionIndex` into `[rax+0x18]` and passes the same value into the wrapper
+  path.
+- `TryTriggerTrunkBindingOption()` gets active clips, checks `[rax+0x18]`,
+  calls `SetDialogOption`, and then calls `DialogTimelineDisableLoopInRange`
+  with the selected time range.
+
+Interpretation: IL2CPP confirms that runtime option selection is driven by the
+raw per-option value at the selected option object's `+0x98`, then stored into
+a timeline/playable object field at `+0x18`. This strengthens the existing raw
+`clipOptionIndex` promotion rule, but it still does not by itself identify
+branch target rows when all adjacent trunk clips carry default
+`clipOptionIndex = 0`.
+
+The mapper was then deepened to separate register reads from register writes,
+decode more short conditional branches and scalar SSE operations, include the
+`DialogTimelineGetAllActiveClips` and `DialogTimelineDisableLoopInRange`
+bodies, and emit explicit `optionFlowFacts`. The regenerated
+`reports/option_flow_body_targets_gameassembly.*` report extracts `6` facts:
+
+- `_SelectIndexInTimeline`: UI `index` is used to look up a selected Timeline
+  option object, then that object's `+0x98` value is passed to
+  `DialogChooseOption`.
+- `DialogChooseOption`: the selected option index is written into a runtime
+  option/playable object's `+0x18` field.
+- `_TryDoNext`: checks the manager's current option `+0x18` before entering
+  trunk-binding option handling.
+- `TryTriggerTrunkBindingOption`: only calls `SetDialogOption` for an active
+  clip whose runtime `+0x18` option field is positive.
+- `SetDialogOption`: compares the manager current option `+0x18` against the
+  candidate option `+0x18`, and treats zero as the default/non-branch case.
+- `TryTriggerTrunkBindingOption`: after selecting an active option clip, passes
+  clip time fields into `DialogTimelineDisableLoopInRange`
+  (`[rsi+0x18]` as start, `[rbx+0x18]` minus a small scalar constant as end).
+
+This corrected one earlier over-broad-looking trace: after
+`mov ebx, [rax+0x98]`, the register is no longer considered `param:index`.
+The useful conclusion stays the same but is sharper: runtime branch selection
+depends on nonzero runtime option fields, and all-zero adjacent trunk clip
+windows remain insufficient evidence for per-option branch recovery without
+another way to map active runtime clips back to authored Timeline rows.
+
+For `dlg_e2m6_11`, there is a strong non-IL2CPP placement clue:
+
+- Current WebUI data places group 1 after `dlg_e2m6_11_006` only by
+  `siblingTimelinePosition`, and records `branchHint.scenes = [dlg_e2m6_19]`
+  on shared timeline `dlgtl_e2m6_11_sub_1`.
+- `dlg_e2m6_19` has authored `scene_graph` branches for the same option prompt
+  shape:
+  - option 1 reaches `dlg_e2m6_19_002`, `dlg_e2m6_19_003`;
+  - option 2 reaches `dlg_e2m6_19_004`.
+- Those branch line texts exactly match `dlg_e2m6_11_007`,
+  `dlg_e2m6_11_008`, and `dlg_e2m6_11_009`.
+
+So the likely transplanted mapping for `dlg_e2m6_11` is:
+
+- `option_dlg_e2m6_11_1_001` -> `dlg_e2m6_11_007`,
+  `dlg_e2m6_11_008`
+- `option_dlg_e2m6_11_1_002` -> `dlg_e2m6_11_009`
+
+A guarded sibling-scene text transplant rule was added to `build_story.py` for
+this case. It only runs when the option anchor itself is a fallback
+`siblingTimelinePosition`, the sibling scene has authored SceneGraph branches
+for a compatible option sequence, and each sibling branch line text maps to a
+unique local line after the fallback anchor. The CN rebuild found exactly one
+generated group with `optionBranchRisk.code = siblingSceneTextBranches`:
+`dlg_e2m6_11` group 1. The generated mapping is:
+
+- `option_dlg_e2m6_11_1_001` -> `dlg_e2m6_11_007`,
+  `dlg_e2m6_11_008`
+- `option_dlg_e2m6_11_1_002` -> `dlg_e2m6_11_009`
+
+The broader quality counts are unchanged after this patch: `48` flagged
+scenes, `19` scenes with inferred option layout, and `15` scenes with inferred
+option response. `dlg_e2m6_11` still keeps `inferredOptionLayout` because its
+option box position is inferred from the sibling timeline, but the option
+response rows are now recovered from sibling SceneGraph text evidence.
+
+For `dlg_e2m6_18`, the evidence remains weak:
+
+- The scene is absent from `DialogIdTable`, so runtime DialogManager has no
+  entry point for it.
+- There is no recovered Timeline, no DialogTree option branch, no related
+  sibling scene, and source-graph option queries only show `has_option`.
+- The current placement after `dlg_e2m6_18_001` is therefore a line-number
+  fallback plus natural reading order, not confirmed runtime or authored route
+  evidence.
+
+## 2026-05-13 Runtime-Gate Audit Surface
+
+`scripts/webui/build_timeline_option_flow_audit.py` now imports the compact
+`optionFlowFacts` from `reports/option_flow_body_targets_gameassembly.json`
+and adds a `runtimeGate` block to each audited Timeline option group. That
+block translates the IL2CPP finding into per-line evidence: selected option
+rows feed runtime `+0x18`, and active branch clips require a positive runtime
+option field, so candidate trunk clips whose raw/runtime option field is `0`
+do not satisfy the branch gate.
+
+Current CN audit result after the patch:
+
+- `21` inferred response groups remain in the Timeline audit queue.
+- all `21` have verdict
+  `strictOptionRowsButAllZeroCandidateRuntimeField`.
+- `0` groups have candidate runtime fields mapping back to option indices.
+- `1` group has a nonzero runtime field elsewhere in the audited window:
+  `dlg_c28m3_23` group `1`, where candidates `dlg_c28m3_23_009` and
+  `dlg_c28m3_23_010` are still `0`, while common continuation
+  `dlg_c28m3_23_014` carries runtime field `3`.
+
+Recovery implication: this makes the negative evidence easier to inspect
+without changing WebUI output. It also keeps the `dlg_e2m5_2` group `3` false
+positive safely blocked: its three candidate response rows are adjacent and
+semantically branch-like, but the candidate runtime fields are still all zero,
+so the audit does not promote a shared continuation or a raw-index route.
+
+AnimeStudio exporter check: the current exported MonoBehaviour JSON already
+contains the option playable rows, raw trunk clip fields, track/file
+provenance, type-tree field paths, and resolved script metadata needed by this
+audit. There is no clear C# exporter gap for these option groups yet. The next
+AnimeStudio patch should wait for a specific missing serialized signal, such
+as stronger PlayableDirector binding detail or an unresolved PPtr relation
+that is not already present in `$animestudio`.
+
+## 2026-05-13 Active Clip Slice Pass
+
+`tools/endfield-il2cpp/map_body_targets_to_gameassembly.py` was patched again
+to emit backward register slices for the hot `TryTriggerTrunkBindingOption`
+path. The regenerated `reports/option_flow_body_targets_gameassembly.*` report
+now shows where the active option object and loop-disable range arguments come
+from instead of only showing the final calls.
+
+New concrete shape in `TryTriggerTrunkBindingOption`:
+
+- `DialogTimelineGetAllActiveClips(timelineRoot, outClips)` is called at
+  `+0x25b`.
+- The candidate object passed into `SetDialogOption` is loaded from
+  `[rbx+0x28]`, checked at `[rax+0x18] > 0`, and then passed as
+  `rdx = rax` at `+0x3f1`.
+- The loop-disable start time is loaded from `[rsi+0x18]` into `xmm7`.
+- The loop-disable end time is loaded from `[rbx+0x18]` into `xmm6`, adjusted
+  by a small constant, and passed as `xmm2`.
+- After `DialogTimelineDisableLoopInRange`, the same `rbx` is stored to
+  manager field `[r14+0x1a8]`.
+
+Interpretation: `rbx` is now a stronger candidate for the active clip/list
+node or end-boundary node, while `rax = [rbx+0x28]` is the option object whose
+runtime option field gates `SetDialogOption`. `rsi` appears to hold the
+start-boundary node used for the disable range. The next useful mapper patch
+is to decode the list/enumerator calls between `DialogTimelineGetAllActiveClips`
+and the `rbx`/`rsi` assignments so the report can name whether these are
+current/previous/next active clips and map the start/end time range back to
+Timeline clip windows.
+
+Follow-up AnimeStudio log audit:
+
+- Current summary reports pointed at cached AnimeStudio stdout logs under
+  `reports/20260421_041136`, `reports/20260424_142747`, and
+  `reports/20260511_181106`.
+- JSON-by-type logs do contain MonoBehaviour export errors:
+  - StreamingAssets: `29` `Unable to read beyond the end of the stream`
+    MonoBehaviour failures.
+  - Persistent: `19` equivalent MonoBehaviour failures.
+  - `0` of those JSON export failures have story-like names (`dlg`,
+    `dlgtl`, `dialog`, `timeline`, `cutscene`, `option`, `trunk`,
+    `playable`).
+- Convert-by-type logs are noisier. The 2026-05-11 Persistent convert log has
+  many GameObject/AnimationClip export errors; `140` broadly match story-like
+  keywords, including `dlgtl_*` actor/light/effect objects and cutscene
+  lighting/camera objects. These affect model/FBX conversion visibility, not
+  the JSON Timeline/MonoBehaviour data path used by story line-order recovery.
+
+Two patches came out of this:
+
+- `scripts/export_full_from_game.py` now scans AnimeStudio stdout/stderr logs
+  and records log issue counts plus export-error samples in
+  `export_full_summary.json` / `.md`, so future summaries no longer hide
+  AnimeStudio errors behind `failed_to_decode.txt = 0`.
+- AnimeStudio CLI `ExportMonoBehaviour` now writes a metadata-only JSON
+  fallback when normal type-tree decoding fails. The fallback preserves
+  `$animestudio`, raw data hash/optional sidecar, script metadata, path id,
+  and `decodeError` instead of letting those MonoBehaviours disappear. The CLI
+  rebuild passed after the patch.
+
+Recovery implication: we did miss AnimeStudio log issues operationally, but
+the current missed JSON MonoBehaviours do not explain unresolved option
+branches. The convert-stage story-like failures may matter for future visual
+cutscene/lighting recovery, but they are not evidence for changing
+`build_story.py` option routing rules.
+
+## 2026-05-13 AnimeStudio Log Recheck And Active Traversal Fact
+
+The first post-patch AnimeStudio summary was misleading because
+`scripts/export_full_from_game.py` kept the cached stage stdout/stderr paths
+when a fresh AnimeStudio command result existed. That made the summary scan old
+April/May logs even though the new run had already succeeded. The exporter
+summary now replaces stage log paths with the current `CommandResult` paths and
+classifies metadata-only MonoBehaviour JSON fallbacks separately from real
+export errors.
+
+Fresh evidence after the fix:
+
+- `reports/20260513_032741/*_animestudio_json_by_type.stdout.log` contains
+  metadata-only fallback warnings, not `[Error] Export ... error` rows.
+- A narrow Persistent refresh at `reports/20260513_034816` ran only
+  `MonoBehaviour` for `json_by_type` in `9.161s`.
+- Persistent JSON summary now reports `export_error_count = 0`,
+  `story_like_export_error_count = 0`, and `metadata_only_json_count = 18`.
+- The fallback rows are enemy/npc behavior MonoBehaviours such as
+  `BB_eny_0057_dog`, `BB_eny_0055_hscrane_hard`, and
+  `BB_eny_scripted_move_base`; none are dialog/timeline/option-looking names.
+
+So the AnimeStudio patch did recover otherwise-missing JSON placeholders and
+made the logs auditable, but it still does not reveal a missing serialized
+story route signal.
+
+The IL2CPP mapper was then deepened around the active clip traversal window.
+`reports/option_flow_body_targets_gameassembly.*` now includes a seventh
+`optionFlowFacts` entry, `activeClipTraversalWindow`, for
+`TryTriggerTrunkBindingOption`:
+
+- after `DialogTimelineGetAllActiveClips` at `+0x25b`, the method makes three
+  unresolved iterator/setup calls at `+0x28a`, `+0x2c1`, and `+0x2e5`;
+- then it makes seven lookup/equality calls through the candidate scan window,
+  including `PlayableDirectorUtility.GetTimelinePlayable` at `+0x346` and
+  `Object.op_Equality` at `+0x3c1`;
+- recovered state loads show `rsi = [rsp+0x30]`, `r13 = rax`, and repeated
+  `rbx = rax` assignments;
+- candidate checks show the payload load `rax = [rbx+0x28]`, followed by
+  `cmp [rax+0x18], 0x0` before `SetDialogOption`.
+
+Interpretation: `rbx` is the selected active clip/list node, `[rbx+0x28]` is
+the option payload object whose runtime `+0x18` gates branch selection, and
+`rsi` is the paired start-boundary node later used for the
+`DialogTimelineDisableLoopInRange` start time. This strengthens the runtime
+model for active clip selection, but it still does not map all-zero candidate
+Timeline rows back to per-option branches.
+
+The regenerated CN Timeline option-flow audit now sees `7` IL2CPP facts and
+still reports the same recovery verdicts:
+
+- `21` inferred-response groups remain audited.
+- all `21` candidates have all-zero runtime fields.
+- `0` groups have candidate runtime fields that map back to option indices.
+- `1` group (`dlg_c28m3_23` group `1`) has a nonzero runtime field elsewhere
+  in the window, outside the candidate response rows.
+
+Recovery implication: do not relax the WebUI branch-promotion rule based only
+on active clip traversal. The next useful IL2CPP step is naming the three
+unresolved iterator/setup helpers or finding a way to join the active
+clip/list nodes back to authored Timeline clip rows.
+
+Follow-up decode of those traversal helper targets improved the names by
+instruction shape:
+
+- `+0x28a -> 0x182b37b40` is `listEnumeratorCtorLike`: it stores the active
+  clip list into the stack enumerator struct and clears enumerator state.
+- `+0x2c1 -> 0x1827201e0` is `listEnumeratorMoveNextLike`: it reads list size
+  and version fields, advances the index, and stores the current item at
+  `[rcx+0x10]`.
+- `+0x2e5 -> 0x180425e00` remains an unclassified
+  virtual/generic invoker-like call that jumps through a vtable/generic slot.
+- `+0x33c -> 0x185b36e94` is `unityObjectFieldGetterLike`; in this call site it
+  feeds `PlayableDirectorUtility.GetTimelinePlayable`.
+- `+0x368`, `+0x387`, and `+0x3a5` all target `0x183151c50`, classified as
+  `genericLookupHelperLike`, and use `[rsi+0x48]` plus candidate indexes
+  (`[rax+0x1c]`, `[r13+0x20]`, and `-1`) to materialize candidate active clip
+  nodes.
+
+This means the runtime path is now clearer: it enumerates active clips, obtains
+the current playable, then uses generic lookups to produce candidate clip nodes
+before applying the positive `+0x18` option gate. It still does not expose a
+serialized or runtime field that maps an all-zero candidate response row to a
+specific selected option.
+
+The mapper now also emits `activeClipsFromTimelinePlayableClipLists` from
+`DialogTimelineGetAllActiveClips` itself. This is the first strong bridge from
+runtime active clips back toward authored Timeline rows:
+
+- `DialogTimelineGetAllActiveClips` calls
+  `DialogTimelineGetAllTimelinePlayable` at `+0x189`.
+- It enumerates the resulting Timeline playable list with
+  `listEnumeratorCtorWrapperLike` and `listEnumeratorMoveNextLike` helpers.
+- For each playable, it loads `rdx = [rax+0x40]`, then enumerates that clip
+  list with `listEnumeratorCtorLike` and `listEnumeratorMoveNextLike`.
+- Each candidate clip is passed through `unityObjectAliveFilterLike`, then
+  appended to `outClips` through a `listAddLike` helper.
+
+This answers one prior unknown: the active clip nodes consumed by
+`TryTriggerTrunkBindingOption` come from per-playable clip lists, not from a
+separate branch table. The regenerated audit now sees `8` IL2CPP facts. Its
+verdict remains unchanged because the candidate rows in the unresolved queue
+still carry all-zero runtime option fields.
+
+`DialogTimelineGetAllTimelinePlayable` has now been promoted into the IL2CPP
+body-target set and emits `timelinePlayableListFromTimelineRoot`. The recovered
+shape is:
+
+- the method creates/reuses a result list through helper calls at `+0xf6` and
+  `+0x111`;
+- it derives a Timeline-root collection through calls at `+0x119` and
+  `+0x134`;
+- it loops over the collection using a `listGetItemLike` helper at `+0x14c`;
+- each item is resolved through `PlayableDirectorUtility.GetTimelinePlayable`
+  at `+0x156`;
+- non-null playables are appended to the result list through `listAddLike` at
+  `+0x193`;
+- the result list is stored/read through a global/static handle path ending in
+  `+0x98`.
+
+Together with `activeClipsFromTimelinePlayableClipLists`, the runtime chain is
+now:
+
+`timelineRoot -> Timeline playable list -> playable +0x40 clip list -> active
+clip node -> [clip+0x28] option payload -> payload +0x18 branch gate`.
+
+The CN Timeline option-flow audit now sees `9` IL2CPP facts. The verdict is
+still unchanged: all `21` unresolved inferred-response groups have all-zero
+candidate runtime fields and no candidate runtime-field mapping back to option
+indices. This completes the currently useful IL2CPP structure pass without
+creating a new WebUI promotion rule.
+
+## 2026-05-13 Scene Placement Signals And Timeline DoNext
+
+`scripts/recover_mission_timelines.py` now emits a compact `scenePlacement`
+index for each recovered mission. It stays evidence-only and records, per
+scene key, which signals exist:
+
+- `missionStoryRef`: direct MissionRuntimeAsset story references, with quest ids
+  and source fields.
+- `clientActionStoryRef`: client-action references such as radio/menu actions.
+- `sourceBackedSceneEdge`: source-backed LevelScript/AnimeStudio scene graph
+  edges.
+- `timelineEvidence`: recovered AnimeStudio Timeline entries.
+
+The regenerated CN mission timeline report now has:
+
+- `3,357` scene placement entries.
+- `2,591` scenes with source-backed scene-edge signals.
+- `512` scenes with MissionRuntimeAsset story refs.
+- `322` scenes with client-action story refs.
+- `40` scenes with timeline evidence.
+
+`reports/scene_order_gap_report_CN.*` now joins those placement signals onto the
+remaining flagged dialog scenes. Current flagged-scene coverage:
+
+- `7` flagged scenes have mission/story-ref placement evidence.
+- `18` flagged scenes have source-backed scene-edge evidence.
+- `2` flagged scenes have timeline evidence.
+
+The `e2m6` clue is now explicit in generated data:
+
+- `dlg_e2m6_11` has a source-backed LevelScript outgoing edge from
+  `export_full/structured/StreamingAssets/Data/Json/LevelScriptData/map01_lv006/3500010031.json`.
+- `dlg_e2m6_19` has MissionRuntimeAsset evidence from
+  `questDic.e2m6_q#10.objectiveList[0].condition.subConditions[1]._dialogId.constValue`
+  and shares Timeline `dlgtl_e2m6_11_sub_1`.
+- `dlg_e2m6_18` still has no mission placement signal and remains marked
+  unregistered/cut by the scene-order gap report.
+
+The IL2CPP mapper also gained a tenth fact,
+`timelineDoNextActiveClipQueries`, for `DialogUtils.DialogTimelineDoNext`.
+It shows runtime advancement resolving playable graph roots and calling:
+
+- `TimelinePlayable.GetActiveClipsAtGivenTime` at `+0x844`;
+- `TimelinePlayable.UpdateIntervalTree` at `+0xcb9`;
+- `TimelinePlayable.GetActiveClipsAtGivenTimeRange` at `+0xf5d`;
+- `TimelineRuntimeUtils.SetNewTimeForCutsceneRoot` at `+0x11da`.
+
+Interpretation: runtime dialog/cutscene advancement is driven by Timeline
+active-clip time windows, which strengthens intra-Timeline line/cutscene order
+evidence. It still does not create a branch-target promotion rule for all-zero
+candidate option rows. The refreshed CN Timeline option-flow audit now sees
+`10` IL2CPP facts and keeps the same verdict: `21` inferred-response groups,
+all `21` candidate sets have all-zero runtime fields, and `0` groups are
+promotable by the runtime gate.

@@ -67,6 +67,16 @@ ANIMESTUDIO_STAGE_OPTIONS: dict[str, dict[str, Any]] = {
 
 FAILED_EXTRACT_RE = re.compile(r"Failed to extract (?P<file>.+?): (?P<reason>.+)")
 WARNING_FAIL_RE = re.compile(r"Warning:\s+(?P<count>\d+)\s+files failed")
+ANIMESTUDIO_LOG_LINE_RE = re.compile(r"^\[(?P<level>Error|Warning)\]\s*(?P<message>.*)$")
+ANIMESTUDIO_EXPORT_ERROR_RE = re.compile(r"^\[Error\]\s+Export\s+(?P<asset>.+?)\s+error\s*$")
+ANIMESTUDIO_METADATA_ONLY_JSON_RE = re.compile(
+    r"^\[Warning\]\s+Exporting MonoBehaviour (?P<asset>.+?) as metadata-only JSON after (?P<exception>[^:]+): (?P<reason>.+)$"
+)
+ANIMESTUDIO_STORY_HINT_RE = re.compile(
+    r"(dlg|dlgtl|dialog|timeline|cutscene|option|trunk|playable)",
+    re.IGNORECASE,
+)
+ANIMESTUDIO_LOG_SAMPLE_LIMIT = 20
 
 
 @dataclass
@@ -622,6 +632,119 @@ def parse_warning_failure_count(stdout_text: str) -> int:
     return count
 
 
+def summarize_animestudio_log_issues(stdout_log: str | Path | None, stderr_log: str | Path | None) -> dict[str, Any]:
+    summary: dict[str, Any] = {
+        "error_count": 0,
+        "warning_count": 0,
+        "exception_count": 0,
+        "end_of_stream_count": 0,
+        "export_error_count": 0,
+        "story_like_export_error_count": 0,
+        "metadata_only_json_count": 0,
+        "samples": [],
+        "export_error_samples": [],
+        "story_like_export_error_samples": [],
+        "metadata_only_json_samples": [],
+        "missing_logs": [],
+    }
+
+    def add_sample(key: str, item: dict[str, Any]) -> None:
+        samples = summary.setdefault(key, [])
+        if len(samples) < ANIMESTUDIO_LOG_SAMPLE_LIMIT:
+            samples.append(item)
+
+    for stream_name, raw_path in (("stdout", stdout_log), ("stderr", stderr_log)):
+        if not raw_path:
+            continue
+        path = Path(raw_path)
+        if not path.exists():
+            summary["missing_logs"].append(str(path))
+            continue
+
+        pending_export_sample: dict[str, Any] | None = None
+        try:
+            with path.open("r", encoding="utf-8", errors="replace") as handle:
+                for line_number, line in enumerate(handle, 1):
+                    text = line.rstrip("\r\n")
+                    if pending_export_sample is not None and not pending_export_sample.get("reason"):
+                        stripped = text.strip()
+                        if stripped and not stripped.startswith("at "):
+                            pending_export_sample["reason"] = stripped
+
+                    level_match = ANIMESTUDIO_LOG_LINE_RE.match(text)
+                    if level_match:
+                        level = level_match.group("level").lower()
+                        summary[f"{level}_count"] += 1
+                        add_sample(
+                            "samples",
+                            {
+                                "stream": stream_name,
+                                "line": line_number,
+                                "level": level,
+                                "message": level_match.group("message").strip(),
+                            },
+                        )
+
+                    if "Exception" in text:
+                        summary["exception_count"] += 1
+                    if "Unable to read beyond the end of the stream" in text:
+                        summary["end_of_stream_count"] += 1
+
+                    metadata_only_match = ANIMESTUDIO_METADATA_ONLY_JSON_RE.match(text)
+                    if metadata_only_match:
+                        asset = metadata_only_match.group("asset").strip()
+                        summary["metadata_only_json_count"] += 1
+                        add_sample(
+                            "metadata_only_json_samples",
+                            {
+                                "stream": stream_name,
+                                "line": line_number,
+                                "asset": asset,
+                                "exception": metadata_only_match.group("exception").strip(),
+                                "reason": metadata_only_match.group("reason").strip(),
+                            },
+                        )
+
+                    export_match = ANIMESTUDIO_EXPORT_ERROR_RE.match(text)
+                    if not export_match:
+                        continue
+                    asset = export_match.group("asset").strip()
+                    summary["export_error_count"] += 1
+                    export_sample = {
+                        "stream": stream_name,
+                        "line": line_number,
+                        "asset": asset,
+                        "reason": "",
+                    }
+                    add_sample("export_error_samples", export_sample)
+                    pending_export_sample = export_sample
+                    if ANIMESTUDIO_STORY_HINT_RE.search(asset):
+                        summary["story_like_export_error_count"] += 1
+                        add_sample("story_like_export_error_samples", export_sample)
+        except OSError as exc:
+            add_sample(
+                "samples",
+                {
+                    "stream": stream_name,
+                    "line": None,
+                    "level": "error",
+                    "message": f"unable to read log {path}: {exc}",
+                },
+            )
+
+    if not summary["missing_logs"]:
+        summary.pop("missing_logs", None)
+    if not summary["samples"]:
+        summary.pop("samples", None)
+    if not summary["export_error_samples"]:
+        summary.pop("export_error_samples", None)
+    if not summary["story_like_export_error_samples"]:
+        summary.pop("story_like_export_error_samples", None)
+    if not summary["metadata_only_json_samples"]:
+        summary.pop("metadata_only_json_samples", None)
+    return summary
+
+
 def is_manifest_reference_missing(source: str, reason: str) -> bool:
     if source != "Persistent":
         return False
@@ -881,6 +1004,12 @@ def summarize_animestudio_source(
         result[stage]["cache_state"] = plan.get("cache_state") if plan else previous_stage.get("cache_state")
         if current is not None:
             result[stage]["returncode"] = current.returncode
+            result[stage]["stdout_log"] = current.stdout_log
+            result[stage]["stderr_log"] = current.stderr_log
+        result[stage]["log_issues"] = summarize_animestudio_log_issues(
+            result[stage].get("stdout_log"),
+            result[stage].get("stderr_log"),
+        )
     result["total_files"] = sum(item["file_count"] for item in result.values() if isinstance(item, dict) and "file_count" in item)
     return result
 
@@ -1345,6 +1474,41 @@ def main() -> int:
                     f"cached=`{len(stage_info.get('cached_items') or [])}`, "
                     f"run=`{len(stage_info.get('run_items') or [])}`"
                 )
+                issues = stage_info.get("log_issues") or {}
+                if any(
+                    int(issues.get(key) or 0)
+                    for key in (
+                        "error_count",
+                        "warning_count",
+                        "exception_count",
+                        "end_of_stream_count",
+                        "export_error_count",
+                    )
+                ):
+                    md_lines.append(
+                        "    log issues: "
+                        f"errors=`{issues.get('error_count', 0)}`, "
+                        f"warnings=`{issues.get('warning_count', 0)}`, "
+                        f"exceptions=`{issues.get('exception_count', 0)}`, "
+                        f"eof=`{issues.get('end_of_stream_count', 0)}`, "
+                        f"export_errors=`{issues.get('export_error_count', 0)}`, "
+                        f"story_like_export_errors=`{issues.get('story_like_export_error_count', 0)}`, "
+                        f"metadata_only_json=`{issues.get('metadata_only_json_count', 0)}`"
+                    )
+                    samples = issues.get("story_like_export_error_samples") or issues.get("export_error_samples") or []
+                    for sample in samples[:3]:
+                        md_lines.append(
+                            "    export error sample: "
+                            f"`{sample.get('asset')}`"
+                            + (f" - {sample.get('reason')}" if sample.get("reason") else "")
+                        )
+                    if not samples:
+                        for sample in (issues.get("metadata_only_json_samples") or [])[:3]:
+                            md_lines.append(
+                                "    metadata-only sample: "
+                                f"`{sample.get('asset')}`"
+                                + (f" - {sample.get('exception')}" if sample.get("exception") else "")
+                            )
 
     md_lines.extend(
         [

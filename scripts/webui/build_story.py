@@ -45,6 +45,7 @@ import sys
 import time
 from bisect import bisect_left
 from collections import Counter, defaultdict, deque
+from difflib import SequenceMatcher
 from pathlib import Path
 
 from common import (
@@ -7574,6 +7575,143 @@ def build_language_bundle(
                 signatures.append(signature)
             return signatures
 
+        def option_signatures_compatible(left_ids: list[str], right_ids: list[str]) -> bool:
+            if len(left_ids) != len(right_ids) or not left_ids:
+                return False
+            for left_id, right_id in zip(left_ids, right_ids):
+                left_text, left_icon = dialog_option_signature_by_id.get(left_id, ("", ""))
+                right_text, right_icon = dialog_option_signature_by_id.get(right_id, ("", ""))
+                if not left_text or not right_text:
+                    return False
+                if left_icon and right_icon and left_icon != right_icon:
+                    return False
+                if left_text == right_text:
+                    continue
+                if left_text in right_text or right_text in left_text:
+                    continue
+                if SequenceMatcher(None, left_text, right_text).ratio() < 0.92:
+                    return False
+            return True
+
+        def dialog_line_text_signature(line_id: str) -> str:
+            row = dialogs.get(line_id)
+            if not isinstance(row, dict):
+                return ""
+            text_value = t((row.get("dialogText") or {}).get("id"))
+            return _option_text_signature(text_value)
+
+        def sibling_scene_text_branch_for_group(
+            group_opt_ids: list[str],
+            after_id: str,
+            sibling_anchor_record: dict | None,
+            group_id: int,
+        ) -> dict:
+            if (
+                not group_opt_ids
+                or len(group_opt_ids) < 2
+                or not after_id
+                or not sibling_anchor_record
+            ):
+                return {}
+            sibling_scenes = [
+                str(scene_key)
+                for scene_key in (sibling_anchor_record.get("siblingScenes") or [])
+                if str(scene_key or "").strip() and str(scene_key) != conv_key
+            ]
+            if not sibling_scenes:
+                return {}
+            local_line_ids = [line_id for _idx, line_id in line_idxs if line_id in valid_line_ids]
+            if after_id in local_line_ids:
+                local_candidate_line_ids = local_line_ids[local_line_ids.index(after_id) + 1:]
+            else:
+                local_candidate_line_ids = local_line_ids
+            if not local_candidate_line_ids:
+                return {}
+            local_signature_by_line_id = {
+                line_id: _option_text_signature(str(line.get("text") or ""))
+                for line in (lines or [])
+                if (line_id := str(line.get("id") or "")) in valid_line_ids
+            }
+            if not local_signature_by_line_id:
+                return {}
+            for sibling_scene in sibling_scenes:
+                sibling_opt_ids = dialog_option_group_ids_by_key.get((sibling_scene, group_id)) or []
+                if not option_signatures_compatible(group_opt_ids, sibling_opt_ids):
+                    continue
+                sibling_tree = load_dialog_tree(sibling_scene) or {}
+                sibling_branches = sibling_tree.get("branches") or {}
+                branch_line_ids_by_option: dict[str, list[str]] = {}
+                sibling_line_ids_by_option: dict[str, list[str]] = {}
+                used_local_line_ids: set[str] = set()
+                for local_opt_id, sibling_opt_id in zip(group_opt_ids, sibling_opt_ids):
+                    sibling_branch_line_ids = [
+                        str(line_id)
+                        for line_id in (sibling_branches.get(sibling_opt_id) or [])
+                        if str(line_id or "").strip()
+                    ]
+                    if not sibling_branch_line_ids:
+                        branch_line_ids_by_option = {}
+                        break
+                    mapped_line_ids: list[str] = []
+                    for sibling_line_id in sibling_branch_line_ids:
+                        sibling_signature = dialog_line_text_signature(sibling_line_id)
+                        if not sibling_signature:
+                            mapped_line_ids = []
+                            break
+                        matches = [
+                            local_line_id
+                            for local_line_id in local_candidate_line_ids
+                            if local_line_id not in used_local_line_ids
+                            and local_signature_by_line_id.get(local_line_id) == sibling_signature
+                        ]
+                        if len(matches) != 1:
+                            mapped_line_ids = []
+                            break
+                        mapped_line_id = matches[0]
+                        used_local_line_ids.add(mapped_line_id)
+                        mapped_line_ids.append(mapped_line_id)
+                    if not mapped_line_ids:
+                        branch_line_ids_by_option = {}
+                        break
+                    branch_line_ids_by_option[local_opt_id] = mapped_line_ids
+                    sibling_line_ids_by_option[local_opt_id] = sibling_branch_line_ids
+                if len(branch_line_ids_by_option) != len(group_opt_ids):
+                    continue
+                if len({tuple(line_ids) for line_ids in branch_line_ids_by_option.values()}) < 2:
+                    continue
+                sibling_option_ids_by_option = {
+                    local_opt_id: sibling_opt_id
+                    for local_opt_id, sibling_opt_id in zip(group_opt_ids, sibling_opt_ids)
+                }
+                source_bits = _unique_preserve([
+                    str(value)
+                    for value in (
+                        sibling_scene,
+                        sibling_tree.get("sourceKey") or "",
+                        sibling_tree.get("file") or "",
+                        sibling_anchor_record.get("timeline") or "",
+                    )
+                    if str(value or "").strip()
+                ])
+                return {
+                    "code": "siblingSceneTextBranches",
+                    "reason": "siblingSceneTextMatch",
+                    "detail": (
+                        "A sibling scene on the same dialog Timeline has authored "
+                        "SceneGraph option branches whose branch texts exactly "
+                        "match local lines after this fallback option anchor."
+                    ),
+                    "after": after_id,
+                    "optionIds": group_opt_ids,
+                    "branchLineIdsByOption": branch_line_ids_by_option,
+                    "siblingScene": sibling_scene,
+                    "siblingOptionIdsByOption": sibling_option_ids_by_option,
+                    "siblingBranchLineIdsByOption": sibling_line_ids_by_option,
+                    "source": "siblingSceneGraphText",
+                    "sources": source_bits,
+                }
+            return {}
+
         def source_bits_for_options(option_ids: list[str], source_map: dict[str, object]) -> list[str]:
             source_bits: list[str] = []
             for opt_id in option_ids:
@@ -8229,6 +8367,7 @@ def build_language_bundle(
                 group["after"] = fallback_anchor_id
             timeline_route_branch = timeline_route_branch_for_group(group_opt_ids, group.get("after") or "")
             route_branch_lines_by_option = timeline_route_branch.get("branchLineIdsByOption") or {}
+            sibling_text_branch = {}
             if timeline_route_branch.get("continuationOptionIds"):
                 group["continuationOptionIds"] = timeline_route_branch["continuationOptionIds"]
             for opt in opts:
@@ -8243,6 +8382,24 @@ def build_language_bundle(
                 if route_branch_lines:
                     opt["branchLines"] = route_branch_lines
                     rendered_branch_paths.append(tuple(route_branch_lines))
+            if not any(opt.get("branchLines") for opt in opts):
+                sibling_text_branch = sibling_scene_text_branch_for_group(
+                    group_opt_ids,
+                    group.get("after") or "",
+                    sibling_anchor_record if inferred_anchor_mode == "siblingTimelinePosition" else None,
+                    g,
+                )
+                sibling_branch_lines_by_option = sibling_text_branch.get("branchLineIdsByOption") or {}
+                for opt in opts:
+                    opt_id = opt.get("id") or ""
+                    branch_lines = [
+                        line_id
+                        for line_id in (sibling_branch_lines_by_option.get(opt_id) or [])
+                        if line_id in valid_line_ids
+                    ]
+                    if branch_lines:
+                        opt["branchLines"] = branch_lines
+                        rendered_branch_paths.append(tuple(branch_lines))
             if placement_override == "pre":
                 corrected_opts_without_branch = [
                     opt
@@ -8270,7 +8427,11 @@ def build_language_bundle(
                             "lineIds": remaining_line_ids,
                         }
                         rendered_branch_paths.append(tuple(remaining_line_ids))
-            following_line_risk = timeline_route_branch or following_line_risk_for_group(group_opt_ids, group.get("after") or "")
+            following_line_risk = (
+                timeline_route_branch
+                or sibling_text_branch
+                or following_line_risk_for_group(group_opt_ids, group.get("after") or "")
+            )
             if following_line_risk:
                 group["optionBranchRisk"] = following_line_risk
                 if following_line_risk.get("code") == "inferredFollowingLines":
@@ -8984,6 +9145,8 @@ def build_language_bundle(
                 continue
             if risk.get("code") == "timelineRouteBranches":
                 add("optionBranch:runtimeJump")
+            elif risk.get("code") == "siblingSceneTextBranches":
+                add("optionBranch:siblingSceneText")
             elif risk.get("candidateMapping") == "trunkClipOptionIndex":
                 add("optionBranch:rawIndexMatched")
             elif risk.get("code") == "inferredFollowingLines":

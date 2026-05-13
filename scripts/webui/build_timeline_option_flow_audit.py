@@ -29,6 +29,7 @@ from common import (
 
 
 EPSILON = 0.001
+DEFAULT_IL2CPP_REPORT = ROOT / "reports" / "option_flow_body_targets_gameassembly.json"
 
 
 def as_float(value: Any) -> float | None:
@@ -301,6 +302,166 @@ def compact_runtime_route(route: dict[str, Any]) -> dict[str, Any]:
     return compact_dict(out, empty_values=(None, "", [], {}))
 
 
+def compact_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
+def load_il2cpp_option_flow_facts(report_path: Path | None) -> dict[str, Any]:
+    if not report_path:
+        return {}
+    path = report_path
+    if not path.is_absolute():
+        path = ROOT / path
+    if not path.exists():
+        return {
+            "source": compact_path(path),
+            "missing": True,
+            "factCount": 0,
+            "factKindCounts": {},
+            "facts": [],
+        }
+    payload = read_json(path, {}) or {}
+    facts: list[dict[str, Any]] = []
+    for target in payload.get("bodyTargets") or []:
+        if not isinstance(target, dict):
+            continue
+        body_summary = target.get("methodBodySummary")
+        if not isinstance(body_summary, dict):
+            continue
+        for fact in body_summary.get("optionFlowFacts") or []:
+            if not isinstance(fact, dict):
+                continue
+            facts.append(compact_dict({
+                "type": target.get("type"),
+                "method": target.get("method"),
+                "kind": fact.get("kind"),
+                "summary": fact.get("summary"),
+            }))
+    kind_counts = Counter(safe_key(fact.get("kind")) or "unknown" for fact in facts)
+    return {
+        "source": compact_path(path),
+        "missing": False,
+        "factCount": len(facts),
+        "factKindCounts": dict(sorted(kind_counts.items())),
+        "facts": facts,
+    }
+
+
+def runtime_value_by_line(
+    line_ids: list[str],
+    raw_by_line: dict[str, int],
+    clip_by_line: dict[str, int],
+) -> dict[str, int]:
+    out: dict[str, int] = {}
+    for line_id in line_ids:
+        if line_id in raw_by_line:
+            out[line_id] = raw_by_line[line_id]
+        elif line_id in clip_by_line:
+            out[line_id] = clip_by_line[line_id]
+    return out
+
+
+def line_ids_with_nonzero(values_by_line: dict[str, int]) -> list[str]:
+    return [line_id for line_id, value in values_by_line.items() if value != 0]
+
+
+def option_clip_timing(option_rows: list[dict[str, Any]], candidate_details: list[dict[str, Any]]) -> dict[str, Any]:
+    option_starts: list[float] = []
+    option_ends: list[float] = []
+    for row in option_rows:
+        start = as_float(row.get("start"))
+        duration = as_float(row.get("duration")) or 0.0
+        if start is None:
+            continue
+        option_starts.append(start)
+        option_ends.append(start + duration)
+    candidate_starts = [
+        start
+        for detail in candidate_details
+        if (start := as_float(detail.get("start"))) is not None
+    ]
+    option_start = min(option_starts) if option_starts else None
+    option_end = max(option_ends) if option_ends else None
+    first_candidate_start = min(candidate_starts) if candidate_starts else None
+    gap = None
+    if option_end is not None and first_candidate_start is not None:
+        gap = first_candidate_start - option_end
+    return compact_dict({
+        "optionClipStart": round(option_start, 6) if option_start is not None else None,
+        "optionClipEnd": round(option_end, 6) if option_end is not None else None,
+        "firstCandidateStart": round(first_candidate_start, 6) if first_candidate_start is not None else None,
+        "optionClipToFirstCandidateGap": round(gap, 6) if gap is not None else None,
+    }, empty_values=(None, "", [], {}))
+
+
+def runtime_gate_evidence(
+    option_rows: list[dict[str, Any]],
+    candidate_ids: list[str],
+    window_ids: list[str],
+    candidate_details: list[dict[str, Any]],
+    raw_by_line: dict[str, int],
+    raw_by_window_line: dict[str, int],
+    clip_by_line: dict[str, int],
+    clip_by_window_line: dict[str, int],
+) -> dict[str, Any]:
+    option_indices = field_values_by_option(option_rows, "optionIndex")
+    option_index_values = list(option_indices.values())
+    option_pattern = integer_pattern(option_index_values, expected_count=len(option_rows))
+    candidate_runtime = runtime_value_by_line(candidate_ids, raw_by_line, clip_by_line)
+    window_runtime = runtime_value_by_line(window_ids, raw_by_window_line, clip_by_window_line)
+    candidate_runtime_values = [candidate_runtime[line_id] for line_id in candidate_ids if line_id in candidate_runtime]
+    window_runtime_values = [window_runtime[line_id] for line_id in window_ids if line_id in window_runtime]
+    candidate_runtime_pattern = integer_pattern(candidate_runtime_values, expected_count=len(candidate_ids))
+    window_runtime_pattern = integer_pattern(window_runtime_values)
+    nonzero_candidate_ids = line_ids_with_nonzero(candidate_runtime)
+    nonzero_window_ids = line_ids_with_nonzero(window_runtime)
+    candidate_set = set(candidate_ids)
+    nonzero_window_outside_candidates = [
+        line_id for line_id in nonzero_window_ids if line_id not in candidate_set
+    ]
+    candidate_all_zero = bool(candidate_runtime_values) and candidate_runtime_pattern == "allZero"
+    candidate_nonzero_matches = (
+        bool(candidate_runtime_values)
+        and len(candidate_runtime_values) == len(option_index_values)
+        and set(candidate_runtime_values) == set(option_index_values)
+        and any(value != 0 for value in candidate_runtime_values)
+    )
+
+    if candidate_nonzero_matches:
+        verdict = "candidateRuntimeFieldMapsOptions"
+    elif option_pattern == "strictNonzero" and candidate_all_zero:
+        verdict = "strictOptionRowsButAllZeroCandidateRuntimeField"
+    elif option_pattern == "mixedZeroNonzero" and candidate_all_zero:
+        verdict = "mixedOptionRowsWithAllZeroCandidateRuntimeField"
+    elif option_pattern == "allZero" and candidate_all_zero:
+        verdict = "allZeroSharedContinuationCandidate"
+    elif candidate_runtime_pattern == "missing":
+        verdict = "missingCandidateRuntimeField"
+    elif nonzero_candidate_ids:
+        verdict = "candidateRuntimeFieldHasNonzeroButNoCompleteMap"
+    else:
+        verdict = "candidateRuntimeFieldUnresolved"
+
+    return compact_dict({
+        "source": "IL2CPP optionFlowFacts: selected option +0x98 becomes runtime +0x18; active branch clips require positive +0x18",
+        "verdict": verdict,
+        "optionIndexPattern": option_pattern,
+        "candidateRuntimeFieldPattern": candidate_runtime_pattern,
+        "windowRuntimeFieldPattern": window_runtime_pattern,
+        "candidateRuntimeFieldByLine": candidate_runtime,
+        "windowRuntimeFieldByLine": window_runtime,
+        "nonzeroCandidateLineIds": nonzero_candidate_ids,
+        "nonzeroWindowLineIds": nonzero_window_ids,
+        "nonzeroWindowLineIdsOutsideCandidates": nonzero_window_outside_candidates,
+        "candidateRuntimeFieldAllZero": candidate_all_zero,
+        "candidateRuntimeFieldMapsOptionIndices": candidate_nonzero_matches,
+        "timing": option_clip_timing(option_rows, candidate_details),
+    }, empty_values=(None, "", [], {}))
+
+
 def window_pattern(
     option_rows: list[dict[str, Any]],
     candidate_details: list[dict[str, Any]],
@@ -324,6 +485,16 @@ def window_pattern(
     raw_by_window_line = candidate_raw_option_index_by_line(window_details)
     clip_by_line = line_clip_option_index_by_line(candidate_details)
     clip_by_window_line = line_clip_option_index_by_line(window_details)
+    runtime_gate = runtime_gate_evidence(
+        option_rows,
+        candidate_ids,
+        window_ids,
+        candidate_details,
+        raw_by_line,
+        raw_by_window_line,
+        clip_by_line,
+        clip_by_window_line,
+    )
     raw_by_option: dict[str, int] = {}
     for option, candidate_id in zip(option_rows, candidate_ids):
         option_id = safe_key(option.get("optionId"))
@@ -388,6 +559,7 @@ def window_pattern(
         "rawClipOptionIndexWindowLineIdsByIndex": line_ids_by_index(window_ids, raw_by_window_line),
         "clipOptionIndexLineIdsByIndex": line_ids_by_index(candidate_ids, clip_by_line),
         "clipOptionIndexWindowLineIdsByIndex": line_ids_by_index(window_ids, clip_by_window_line),
+        "runtimeGate": runtime_gate,
         "rawIndexMatchesOptionIndexSet": raw_index_matches_option_index,
         "nonzeroRawIndexMatchesOptionIndexSet": raw_index_matches_option_index and raw_index_has_nonzero,
         "optionRunLineIdsByOption": option_run_line_ids_by_option,
@@ -563,6 +735,10 @@ def summarize_rows(
     mixed_groups_with_nonzero_candidate_clip_coverage = 0
     mixed_groups_with_nonzero_window_clip_coverage = 0
     mixed_groups_with_runtime_route = 0
+    runtime_gate_verdicts: Counter[str] = Counter()
+    groups_with_candidate_runtime_all_zero = 0
+    groups_with_candidate_runtime_mapping = 0
+    groups_with_nonzero_window_runtime_outside_candidates = 0
     for row in rows:
         pattern = row.get("windowPattern") or {}
         option_pattern = safe_key(pattern.get("optionIndexPattern")) or "missing"
@@ -570,6 +746,15 @@ def summarize_rows(
         window_raw_pattern = safe_key(pattern.get("windowRawClipOptionIndexPattern")) or "missing"
         candidate_clip_pattern = safe_key(pattern.get("candidateClipOptionIndexPattern")) or "missing"
         window_clip_pattern = safe_key(pattern.get("windowClipOptionIndexPattern")) or "missing"
+        runtime_gate = pattern.get("runtimeGate") if isinstance(pattern.get("runtimeGate"), dict) else {}
+        runtime_gate_verdict = safe_key(runtime_gate.get("verdict")) or "missing"
+        runtime_gate_verdicts[runtime_gate_verdict] += 1
+        if runtime_gate.get("candidateRuntimeFieldAllZero"):
+            groups_with_candidate_runtime_all_zero += 1
+        if runtime_gate.get("candidateRuntimeFieldMapsOptionIndices"):
+            groups_with_candidate_runtime_mapping += 1
+        if runtime_gate.get("nonzeroWindowLineIdsOutsideCandidates"):
+            groups_with_nonzero_window_runtime_outside_candidates += 1
         option_index_patterns[option_pattern] += 1
         candidate_raw_patterns[candidate_raw_pattern] += 1
         window_raw_patterns[window_raw_pattern] += 1
@@ -638,6 +823,10 @@ def summarize_rows(
         "mixedGroupsWithNonzeroCandidateClipCoverage": mixed_groups_with_nonzero_candidate_clip_coverage,
         "mixedGroupsWithNonzeroWindowClipCoverage": mixed_groups_with_nonzero_window_clip_coverage,
         "mixedGroupsWithRuntimeRoute": mixed_groups_with_runtime_route,
+        "runtimeGateVerdictCounts": dict(sorted(runtime_gate_verdicts.items())),
+        "groupsWithCandidateRuntimeFieldAllZero": groups_with_candidate_runtime_all_zero,
+        "groupsWithCandidateRuntimeFieldMapping": groups_with_candidate_runtime_mapping,
+        "groupsWithNonzeroWindowRuntimeFieldOutsideCandidates": groups_with_nonzero_window_runtime_outside_candidates,
     }
 
 
@@ -679,6 +868,12 @@ def window_summary(row: dict[str, Any]) -> str:
         parts.append(f"candRaw={pattern.get('candidateRawClipOptionIndexPattern')}")
     if pattern.get("windowRawClipOptionIndexPattern"):
         parts.append(f"winRaw={pattern.get('windowRawClipOptionIndexPattern')}")
+    runtime_gate = pattern.get("runtimeGate") if isinstance(pattern.get("runtimeGate"), dict) else {}
+    if runtime_gate.get("verdict"):
+        parts.append(f"runtimeGate={runtime_gate.get('verdict')}")
+    outside_ids = runtime_gate.get("nonzeroWindowLineIdsOutsideCandidates") or []
+    if outside_ids:
+        parts.append("nonzeroOutside=" + ",".join(outside_ids))
     if pattern.get("nonzeroOptionIndexCoveredByCandidateClip"):
         parts.append("nonzeroCandClipCovered")
     if pattern.get("nonzeroOptionIndexCoveredByWindowClip"):
@@ -767,6 +962,11 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
         f"`{summary.get('mixedGroupsWithNonzeroCandidateClipCoverage', 0)}` / "
         f"`{summary.get('mixedGroupsWithNonzeroWindowClipCoverage', 0)}`",
         f"- Mixed groups with recovered Runtime Jump routes: `{summary.get('mixedGroupsWithRuntimeRoute', 0)}`",
+        f"- Runtime gate verdicts: `{summary.get('runtimeGateVerdictCounts', {})}`",
+        f"- Groups with all-zero candidate runtime fields: "
+        f"`{summary.get('groupsWithCandidateRuntimeFieldAllZero', 0)}`",
+        f"- Groups with nonzero window runtime fields outside candidate lines: "
+        f"`{summary.get('groupsWithNonzeroWindowRuntimeFieldOutsideCandidates', 0)}`",
         "",
         "## Classification Counts",
         "",
@@ -776,6 +976,21 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
     lines.extend(["", "## Recommendation Counts", ""])
     for key, count in summary.get("recommendationCounts", {}).items():
         lines.append(f"- `{key}`: {count}")
+    il2cpp_summary = summary.get("il2cppOptionFlow") if isinstance(summary.get("il2cppOptionFlow"), dict) else {}
+    if il2cpp_summary:
+        lines.extend(["", "## IL2CPP Option Flow Facts", ""])
+        lines.append(
+            f"- Source: `{md_escape(il2cpp_summary.get('source'))}`; "
+            f"facts: `{il2cpp_summary.get('factCount', 0)}`; "
+            f"kinds: `{il2cpp_summary.get('factKindCounts', {})}`"
+        )
+        if il2cpp_summary.get("missing"):
+            lines.append("- IL2CPP report is missing; runtime gate verdicts use the built-in field interpretation only.")
+        for fact in il2cpp_summary.get("facts") or []:
+            lines.append(
+                f"- `{md_escape(fact.get('type'))}.{md_escape(fact.get('method'))}` "
+                f"`{md_escape(fact.get('kind'))}`: {md_escape(fact.get('summary'))}"
+            )
     lines.extend([
         "",
         "## Groups",
@@ -811,6 +1026,7 @@ def build_report(
     story_filters: list[str] | None = None,
     group_filters: set[int] | None = None,
     only_interesting: bool = False,
+    il2cpp_report_path: Path | None = DEFAULT_IL2CPP_REPORT,
 ) -> dict[str, Any]:
     rows = collect_rows(
         language,
@@ -827,6 +1043,7 @@ def build_report(
         group_filters=group_filters,
         only_interesting=only_interesting,
     )
+    summary["il2cppOptionFlow"] = load_il2cpp_option_flow_facts(il2cpp_report_path)
     payload = {
         "summary": summary,
         "groups": rows,
@@ -850,6 +1067,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=ROOT / "export_full" / "recovered" / "AnimeStudio-cli" / "timeline_line_orders.json",
     )
     parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports")
+    parser.add_argument(
+        "--il2cpp-report",
+        type=Path,
+        default=DEFAULT_IL2CPP_REPORT,
+        help="Optional GameAssembly option-flow report to summarize beside the timeline evidence.",
+    )
     parser.add_argument("--story", action="append", help="Story key, substring, glob, or comma-list to audit.")
     parser.add_argument("--group", action="append", help="Option group number or comma-list to audit.")
     parser.add_argument(
@@ -877,6 +1100,7 @@ def main(argv: list[str] | None = None) -> int:
         story_filters=story_filters,
         group_filters=group_filters,
         only_interesting=args.only_interesting,
+        il2cpp_report_path=args.il2cpp_report,
     )
     summary = result["summary"]
     print(f"Timeline option flow audit: {result['markdown']}")
@@ -884,7 +1108,8 @@ def main(argv: list[str] | None = None) -> int:
     print(
         "Audited "
         f"{summary['inferredResponseGroupCount']} inferred response groups; "
-        f"{summary['groupsWithNonzeroCandidateRawClipOptionIndex']} groups have nonzero candidate trunk raw optionIndex."
+        f"{summary['groupsWithNonzeroCandidateRawClipOptionIndex']} groups have nonzero candidate trunk raw optionIndex; "
+        f"{summary.get('groupsWithCandidateRuntimeFieldAllZero', 0)} groups have all-zero candidate runtime fields."
     )
     return 0
 
