@@ -501,6 +501,39 @@ def runtime_path_diagnostics(
     }
 
 
+def post_jump_change_diagnostics(
+    option_ids: list[str],
+    option_rows: list[dict[str, Any]],
+    jump_effects_by_option: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    expected_option_ids = [
+        option_id
+        for option_id, row in zip(option_ids, option_rows)
+        if option_id and as_int(row.get("optionIndex")) is not None
+    ]
+    targets_by_option: dict[str, list[int]] = {}
+    for option_id in expected_option_ids:
+        effects = jump_effects_by_option.get(option_id) or {}
+        targets = [
+            as_int(jump.get("optionIndexAfterJump"))
+            for jump in effects.get("optionChangeJumps") or []
+            if as_int(jump.get("optionIndexAfterJump")) is not None
+        ]
+        if targets:
+            targets_by_option[option_id] = targets
+    changed_option_ids = set(targets_by_option)
+    complete_coverage = bool(expected_option_ids) and set(expected_option_ids).issubset(changed_option_ids)
+    all_targets = [target for targets in targets_by_option.values() for target in targets]
+    all_reset_to_default = complete_coverage and bool(all_targets) and all(target == 0 for target in all_targets)
+    has_nonzero_target = any(target not in (None, 0) for target in all_targets)
+    return {
+        "postJumpOptionChangeTargetsByOption": targets_by_option,
+        "postJumpOptionChangeCompleteCoverage": complete_coverage,
+        "postJumpOptionChangeAllResetToDefault": all_reset_to_default,
+        "postJumpOptionChangeHasNonzeroTarget": has_nonzero_target,
+    }
+
+
 def audit_group(
     conv: dict[str, Any],
     group: dict[str, Any],
@@ -581,6 +614,7 @@ def audit_group(
         risk,
     )
     path_diagnostics = runtime_path_diagnostics(inferred_paths, expected_paths, jump_effects_by_option)
+    post_jump_diagnostics = post_jump_change_diagnostics(option_ids, option_rows, jump_effects_by_option)
     distinct_paths = {tuple(path) for path in inferred_paths.values() if path}
     passes_narrow_route_rule = (
         complete_forward_coverage
@@ -639,6 +673,7 @@ def audit_group(
             "runtimeJumpEffectsByOption": jump_effects_by_option,
             "pathsMatchCandidates": paths_match_candidates,
             **path_diagnostics,
+            **post_jump_diagnostics,
             "passesNarrowRouteRule": passes_narrow_route_rule,
         },
         "recommendation": recommendation,
@@ -742,6 +777,24 @@ def summarize_rows(
                 if isinstance(effects, dict)
             )
         ),
+        "groupsWithCompletePostJumpResetToDefault": sum(
+            1
+            for row in rows
+            if row.get("checks", {}).get("postJumpOptionChangeAllResetToDefault")
+        ),
+        "groupsWithPartialPostJumpOptionChanges": sum(
+            1
+            for row in rows
+            if (
+                row.get("checks", {}).get("postJumpOptionChangeTargetsByOption")
+                and not row.get("checks", {}).get("postJumpOptionChangeCompleteCoverage")
+            )
+        ),
+        "groupsWithNonzeroPostJumpOptionChangeTargets": sum(
+            1
+            for row in rows
+            if row.get("checks", {}).get("postJumpOptionChangeHasNonzeroTarget")
+        ),
         "groupsPassingNarrowRouteRule": sum(
             1 for row in rows if row.get("checks", {}).get("passesNarrowRouteRule")
         ),
@@ -798,6 +851,25 @@ def jump_effect_summary(row: dict[str, Any]) -> str:
     return " | ".join(parts)
 
 
+def post_jump_change_summary(row: dict[str, Any]) -> str:
+    checks = row.get("checks") or {}
+    targets = checks.get("postJumpOptionChangeTargetsByOption") or {}
+    if not isinstance(targets, dict) or not targets:
+        return ""
+    pieces = [
+        f"{option_id}->{','.join(str(value) for value in values)}"
+        for option_id, values in targets.items()
+    ]
+    suffix = ""
+    if checks.get("postJumpOptionChangeAllResetToDefault"):
+        suffix = " (all reset to default)"
+    elif not checks.get("postJumpOptionChangeCompleteCoverage"):
+        suffix = " (partial)"
+    elif checks.get("postJumpOptionChangeHasNonzeroTarget"):
+        suffix = " (nonzero target)"
+    return "; ".join(pieces) + suffix
+
+
 def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
     lines = [
         f"# Runtime Jump Option Route Audit - {summary['language']}",
@@ -813,6 +885,9 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
         f"- Groups where directional Runtime Jump mapping disagrees with current inferred first lines: `{summary['groupsWithDirectionalMappingConflicts']}`",
         f"- Groups with reverse-jump line-range evidence: `{summary['groupsWithReverseRangeLineEvidence']}`",
         f"- Groups with `needChangeOptionAfterJump` clips: `{summary['groupsWithOptionChangeJumps']}`",
+        f"- Groups where all current options reset to default after jump: `{summary['groupsWithCompletePostJumpResetToDefault']}`",
+        f"- Groups with partial post-jump option changes: `{summary['groupsWithPartialPostJumpOptionChanges']}`",
+        f"- Groups with nonzero post-jump option targets: `{summary['groupsWithNonzeroPostJumpOptionChangeTargets']}`",
         f"- Groups passing the strict second-rule check: `{summary['groupsPassingNarrowRouteRule']}`",
         f"- Existing candidate mapping sources: `{summary.get('riskCandidateMappingCounts', {})}`",
         "",
@@ -841,8 +916,8 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
         "",
         "## Groups With Nearby Runtime Jump Clips",
         "",
-        "| Scene | Group | After | Options | Candidates | Common | Nearby jumps | Runtime line effects | Runtime path check | Recommendation |",
-        "| --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Scene | Group | After | Options | Candidates | Common | Nearby jumps | Runtime line effects | Post-jump option change | Runtime path check | Recommendation |",
+        "| --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ])
     for row in nearby_rows:
         lines.append(
@@ -855,11 +930,12 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
             f"| `{md_escape(row.get('commonContinuationLineId'))}` "
             f"| {md_escape(jump_summary(row))} "
             f"| {md_escape(jump_effect_summary(row))} "
+            f"| {md_escape(post_jump_change_summary(row))} "
             f"| {md_escape(runtime_path_summary(row))} "
             f"| `{md_escape(row.get('recommendation'))}` |"
         )
     if not nearby_rows:
-        lines.append("| _(none)_ |  |  |  |  |  |  |  |  |  |")
+        lines.append("| _(none)_ |  |  |  |  |  |  |  |  |  |  |")
     return "\n".join(lines)
 
 
