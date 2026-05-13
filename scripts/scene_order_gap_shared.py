@@ -1130,22 +1130,6 @@ def _render_group_detail(group_detail: dict) -> str:
         }
         fallback_label = mode_labels.get(inferred_anchor_mode, "fallback candidate")
         detail = f"{label} {fallback_label} near `{after}`" if after else f"{label} {fallback_label}"
-    elif status == "tableKeyAfter":
-        mode_descriptions = {
-            "dialogOptionTableKey:directLine": (
-                "DialogOptionTable key matches an existing DialogTextTable line"
-            ),
-            "dialogOptionTableKey:priorLine": (
-                "DialogOptionTable key lands in a missing line slot; anchored to "
-                "the last existing line before that slot"
-            ),
-        }
-        mode_label = mode_descriptions.get(
-            inferred_anchor_mode, "DialogOptionTable key-encoded anchor"
-        )
-        detail = (
-            f"{label} {mode_label}, anchor `{after}`" if after else f"{label} {mode_label}"
-        )
     elif status == "unanchored":
         detail = f"{label} unanchored"
     else:
@@ -1283,7 +1267,6 @@ def analyze_option_layout(
             f"total={int(breakdown.get('total', len(option_groups)))}, "
             f"authoredAfter={int(breakdown.get('authoredAfter', 0))}, "
             f"authoredPre={int(breakdown.get('authoredPre', 0))}, "
-            f"tableKeyAfter={int(breakdown.get('tableKeyAfter', 0))}, "
             f"fallbackAfter={int(breakdown.get('fallbackAfter', 0))}, "
             f"unanchored={int(breakdown.get('unanchored', 0))}"
         )
@@ -1422,10 +1405,9 @@ def classify_option_position_failure(conv: dict, analysis: dict) -> dict:
     total = _as_int(breakdown.get("total"), len(group_details))
     authored_after = _as_int(breakdown.get("authoredAfter"))
     authored_pre = _as_int(breakdown.get("authoredPre"))
-    table_key_after = _as_int(breakdown.get("tableKeyAfter"))
     fallback_after = _as_int(breakdown.get("fallbackAfter"))
     unanchored = _as_int(breakdown.get("unanchored"))
-    authored_total = authored_after + authored_pre + table_key_after
+    authored_total = authored_after + authored_pre
 
     if total and fallback_after == total and not authored_total and not unanchored:
         code = "syntheticAfterAllGroups"
@@ -1472,7 +1454,6 @@ def classify_option_position_failure(conv: dict, analysis: dict) -> dict:
         "groups: "
         f"authoredAfter={authored_after}, "
         f"authoredPre={authored_pre}, "
-        f"tableKeyAfter={table_key_after}, "
         f"fallbackAfter={fallback_after}, "
         f"unanchored={unanchored}"
     )

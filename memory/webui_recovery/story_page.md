@@ -166,22 +166,6 @@ value that exactly matches the group's option indices. The first recovered case
 is `dlg_c28m3_10` group 1; most remaining adjacent response layouts still carry
 only default `0` values and stay marked as inferred.
 
-Option group anchors fall back to the DialogOptionTable key encoding when no
-DialogTree / scene-link / timeline source names the group. Each option key
-`option_<scene>_<g>_<n>` records `g` as the DialogTextTable line index after
-which the option group renders, so `g` is resolved against the same scene's
-recovered `dlg_<scene>_<NNN>` lines. The matching anchor is reported with
-status `tableKeyAfter` and inferred-anchor mode
-`dialogOptionTableKey:directLine` when `g` is an existing line index, or
-`dialogOptionTableKey:priorLine` when `g` lands in a missing line slot and the
-last existing line `< g` provides the anchor. Source: the option key naming
-convention is part of the same runtime registry that drives DialogIdTable
-and is observed consistently across every dialog scene in the 2026-05-13 CN
-build. Because the encoding is source-defined, table-key anchors are not
-counted as inferred fallback and do not raise `inferredOptionLayout`
-warnings on their own; only genuinely unresolved sparse-gap / lastLine
-groups still surface as inferred.
-
 LevelScript story/hash singleton cases are exposed as diagnostics, not scene
 ordering. Current source-backed hash-terminal evidence uses terminal records
 with `code=0x0e34`, `kind=0x00`, and `nextId=-1`; examples include

@@ -7823,35 +7823,29 @@ def build_language_bundle(
                     line_idxs.append((int(m.group(1)), lid))
         line_idxs.sort()
 
-        # Anchor signals when DialogTree/timeline data leaves option groups
-        # unanchored, in priority order:
-        #   1. DialogOptionTable key encoding — `option_<scene>_<g>_<n>` names
-        #      the line index `g` after which the option group renders. When
-        #      `g` exists in DialogTextTable, the anchor is that line; when
-        #      `g` is a missing slot, the anchor is the last existing line
-        #      with index < g. This is source-defined, not inference.
+        # Fallback anchors when DialogTree/timeline data leaves option groups
+        # unanchored. Three signals, in priority order:
+        #   1. sparse-gap boundaries — between two contiguous numbering runs,
+        #      the player choice plays during the missing slot.
         #   2. timeline option-clip positions — when this conv shares a Unity
         #      Timeline with another scene (e.g. dlg_e2m6_11 + dlg_e2m6_19),
         #      the option clip's start time tells us which of THIS conv's
         #      lines plays just before the choice. We surface that even when
         #      the recorded `_optionId` belongs to the sibling scene.
-        #   3. sparse-gap ordinal heuristic — historical fallback kept for
-        #      coverage when the key encoding cannot apply.
-        #   4. exact group/line number ordinal fallback — kept for coverage.
-        #   5. dialog last line — for cinematic-finish patterns where one
+        #   3. exact group/line number — in contiguous table-only scenes,
+        #      option group g=1 usually follows line _001.
+        #   4. dialog last line — for cinematic-finish patterns where one
         #      option clip drives end-of-arc finish-num branches.
-        # The choice writes to optionGroups[].after; `inferredAnchorMode` in
-        # the warning's groupDetails records which signal won.
+        # All three write to optionGroups[].after; `inferredAnchorMode` in the
+        # warning's groupDetails records which signal won.
         fallback_after_ids: list[str] = []
         fallback_group_line_ids: dict[int, str] = {}
         last_line_fallback_id = ""
-        sorted_line_index_keys: list[int] = []
         if line_idxs:
             fallback_group_line_ids = {
                 idx: line_id
                 for idx, line_id in line_idxs
             }
-            sorted_line_index_keys = sorted(fallback_group_line_ids)
             runs: list[list[tuple[int, str]]] = [[line_idxs[0]]]
             for prev, nxt in zip(line_idxs, line_idxs[1:]):
                 if nxt[0] == prev[0] + 1:
@@ -7866,39 +7860,6 @@ def build_language_bundle(
                         gap_after_ids.append(prev_run[-1][1])
             fallback_after_ids.extend(gap_after_ids)
             last_line_fallback_id = line_idxs[-1][1]
-
-        def table_key_anchor_for_group(g: int) -> tuple[str, str]:
-            """Resolve the DialogOptionTable key-encoded anchor for group `g`.
-
-            The runtime option key `option_<scene>_<g>_<n>` records that the
-            option group renders after DialogTextTable line index `g`. When
-            line index `g` exists for this scene, the anchor is that line.
-            When `g` lands in a missing slot (i.e. the slot where a recorded
-            player-response audio line would otherwise live), the anchor is
-            the last existing line with index `< g`. Returns ("", "") when
-            no suitable anchor exists.
-            """
-            if not sorted_line_index_keys:
-                return "", ""
-            line_id = fallback_group_line_ids.get(g)
-            if line_id:
-                return line_id, "directLine"
-            prior_index: int | None = None
-            for idx in sorted_line_index_keys:
-                if idx < g:
-                    prior_index = idx
-                else:
-                    break
-            if prior_index is None:
-                return "", ""
-            return fallback_group_line_ids[prior_index], "priorLine"
-
-        table_key_anchor_by_group: dict[int, tuple[str, str]] = {}
-        if groups_map and sorted_line_index_keys:
-            for group_id in groups_map:
-                anchor_id, anchor_mode = table_key_anchor_for_group(int(group_id))
-                if anchor_id and anchor_id in valid_line_ids:
-                    table_key_anchor_by_group[int(group_id)] = (anchor_id, anchor_mode)
 
         sibling_position_anchors = collect_option_position_anchors(conv_key) if conv_key else []
 
@@ -7915,14 +7876,6 @@ def build_language_bundle(
             for group_opt_ids in group_option_ids_by_group.values()
             if group_opt_ids
         )
-
-        table_key_authored_option_ids: set[str] = set()
-        if table_key_anchor_by_group:
-            for group_id, opt_ids in group_option_ids_by_group.items():
-                if int(group_id) in table_key_anchor_by_group:
-                    table_key_authored_option_ids.update(
-                        opt_id for opt_id in opt_ids if opt_id
-                    )
 
         def cinematic_finish_anchor(finish_group: dict, option_count: int) -> tuple[str, list[str]]:
             finish_nums = finish_group.get("finishNums") or []
@@ -8216,15 +8169,12 @@ def build_language_bundle(
             | tree_pre
             | scene_link_authored_option_ids
             | timeline_authored_option_ids
-            | table_key_authored_option_ids
         )
         authored_group_count = 0
         pre_group_count = 0
         fallback_group_count = 0
-        table_key_group_count = 0
         unanchored_group_count = 0
         fallback_group_labels: list[str] = []
-        table_key_group_labels: list[str] = []
         group_details: list[dict] = []
         option_response_risks: list[dict] = []
 
@@ -8724,14 +8674,6 @@ def build_language_bundle(
                 group["position"] = "pre"
                 pre_group_count += 1
                 group_status = "correctedPre"
-            elif int(g) in table_key_anchor_by_group:
-                table_key_anchor_id, table_key_anchor_kind = table_key_anchor_by_group[int(g)]
-                fallback_anchor_id = table_key_anchor_id
-                used_group_fallback = True
-                table_key_group_count += 1
-                table_key_group_labels.append(f"g{g}")
-                group_status = "tableKeyAfter"
-                inferred_anchor_mode = f"dialogOptionTableKey:{table_key_anchor_kind}"
             elif order - 1 < len(fallback_after_ids):
                 fallback_anchor_id = fallback_after_ids[order - 1]
                 used_fallback_layout = True
@@ -8904,16 +8846,13 @@ def build_language_bundle(
         warnings: list[dict] = []
         if used_any_fallback_option_layout or (used_fallback_layout and not authored_option_ids):
             total_groups = len(out)
-            sourced_group_count = (
-                authored_group_count + pre_group_count + table_key_group_count
-            )
             if not authored_option_ids:
                 reason_short = "noTreeReference"
                 reason_text = (
                     "no AnimeStudio tree references any option for this scene; "
                     "group positions are unanchored and fallback candidates are diagnostic only"
                 )
-            elif sourced_group_count == 0:
+            elif authored_group_count + pre_group_count == 0:
                 reason_short = "noAuthoredGroupAnchor"
                 reason_text = (
                     "tree data exists for this scene's options but no group "
@@ -8923,10 +8862,9 @@ def build_language_bundle(
             else:
                 reason_short = "partialAuthoredCoverage"
                 reason_text = (
-                    f"{sourced_group_count} of {total_groups} option "
-                    f"groups anchored from tree or DialogOptionTable key data; "
-                    f"{fallback_group_count} only have diagnostic fallback "
-                    f"candidates ({', '.join(fallback_group_labels)})"
+                    f"{authored_group_count + pre_group_count} of {total_groups} option "
+                    f"groups anchored from tree data; {fallback_group_count} only have "
+                    f"diagnostic fallback candidates ({', '.join(fallback_group_labels)})"
                 )
             warnings.append({
                 "code": "inferredOptionLayout",
@@ -8936,13 +8874,11 @@ def build_language_bundle(
                     "total": total_groups,
                     "authoredAfter": authored_group_count,
                     "authoredPre": pre_group_count,
-                    "tableKeyAfter": table_key_group_count,
                     "fallbackAfter": fallback_group_count,
                     "unanchored": unanchored_group_count,
                 },
                 "fallbackGroups": fallback_group_labels,
                 "fallbackAnchorIds": fallback_after_ids,
-                "tableKeyGroups": table_key_group_labels,
                 "groupDetails": group_details,
                 "treeSources": tree_meta.get("sources") or [],
                 "sceneLinkSources": sorted(scene_link_sources),
