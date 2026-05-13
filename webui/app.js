@@ -2027,13 +2027,6 @@ function renderSnsBranchGroup(group, convKey = "") {
 
   optGroup.appendChild(cols);
 
-  if (group.mergeCid !== null) {
-    const merge = document.createElement("div");
-    merge.className = "branch-merge";
-      merge.textContent = "-> " + uiText("commonContinues");
-    optGroup.appendChild(merge);
-  }
-
   block.appendChild(optGroup);
   return block;
 }
@@ -2298,12 +2291,6 @@ function renderOptionLoopTagsForLineIds(conv, loopLineIds) {
     if (loopChip) wrap.appendChild(loopChip);
   }
   return wrap.childNodes.length ? wrap : null;
-}
-
-function optionGroupMergeInfo(group) {
-  const mergeLineId = String(group && group.branchMerge || "");
-  if (mergeLineId) return { lineId: mergeLineId, source: "tree" };
-  return optionBranchRiskJumpInfo(group && group.optionBranchRisk);
 }
 
 function summarizeOptionTargets(option, conv, outcomesByOptionId) {
@@ -4502,23 +4489,6 @@ function renderConv(conv) {
 
     let commonLinesAfterGroup = null;
     if (branchModel.commonLineIds.length) {
-      const merge = document.createElement("div");
-      merge.className = "branch-merge";
-      merge.textContent = "-> " + uiText("commonContinues");
-      const mergeLineId = branchModel.commonLineIds[0];
-      if (mergeLineId) {
-        merge.appendChild(document.createTextNode(" "));
-        const mergeChip = createLineJumpChip(
-          conv,
-          mergeLineId,
-          "optJumpMergeLine",
-          "opt-target-chip opt-target-chip-merge is-tree",
-          "optJumpMergeLineTitle"
-        );
-        if (mergeChip) merge.appendChild(mergeChip);
-      }
-      g.appendChild(merge);
-
       commonLinesAfterGroup = renderCommonContinuationLines(
         branchModel.commonLineIds,
         grp,
@@ -4527,23 +4497,6 @@ function renderConv(conv) {
       if (commonLinesAfterGroup && commonLinesAfterGroup.nodeType === 1) {
         commonLinesAfterGroup.classList.add("branch-common-lines");
       }
-    } else if (!showBranchContent || grp.branchMerge) {
-      const merge = document.createElement("div");
-      merge.className = "branch-merge";
-      merge.textContent = "-> " + uiText("commonContinues");
-      const mergeInfo = optionGroupMergeInfo(grp);
-      if (mergeInfo && mergeInfo.lineId) {
-        merge.appendChild(document.createTextNode(" "));
-        const mergeChip = createLineJumpChip(
-          conv,
-          mergeInfo.lineId,
-          optionJumpLabelKey(mergeInfo.source),
-          "opt-target-chip opt-target-chip-merge" + optionJumpSourceClass(mergeInfo.source),
-          optionJumpTitleKey(mergeInfo.source)
-        );
-        if (mergeChip) merge.appendChild(mergeChip);
-      }
-      g.appendChild(merge);
     }
 
     for (const group of absorbedFollowupGroups) renderedOptGroups.add(group);

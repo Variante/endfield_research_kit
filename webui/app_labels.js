@@ -41,7 +41,6 @@ const UI_TEXTS = {
     recoveryMethodOptionTimelineAdjacent: "Timeline \u76f8\u90bb\u884c\u63a8\u6d4b",
     recoveryMethodOptionCommonContinuation: "\u5171\u540c\u540e\u7eed",
     recoveryMethodOptionContinuationOption: "\u540e\u7eed\u9009\u9879",
-    recoveryMethodOptionSharedMerge: "\u5171\u4eab\u5408\u6d41",
     recoveryMethodOptionSiblingSceneHint: "\u5144\u5f1f\u573a\u666f\u63d0\u793a",
     recoveryMethodOptionSiblingSceneText: "\u5144\u5f1f\u573a\u666f\u6587\u672c\u5206\u652f",
     sort: "\u6392\u5e8f",
@@ -190,8 +189,6 @@ const UI_TEXTS = {
     optJumpLineTitleInferred: "\u76ee\u6807\u884c\u7531 Timeline \u987a\u5e8f\u63a8\u6d4b\uff1a{line}\u3002",
     optJumpLoopLine: "\u21ba \u5faa\u73af {line}",
     optJumpLoopLineTitle: "\u8be5\u9009\u9879\u8def\u5f84\u4f1a\u56de\u5230\u5faa\u73af\u5f00\u59cb\u4f4d\u7f6e\uff1a{line}\u3002",
-    optJumpMergeLine: "\u2192 {line}",
-    optJumpMergeLineTitle: "\u5206\u652f\u5408\u6d41\u540e\u7ee7\u7eed\u5230\uff1a{line}\u3002",
     optTargetAccessedFrom: "\u2190 \u4ece",
     optRiskRawIndexMatchedLine: "\u7d22\u5f15\u5339\u914d",
     optRiskRawIndexMatchedLineTitle: "\u6e90\u6570\u636e\u6ca1\u6709\u660e\u786e\u5199\u51fa\u8be5\u9009\u9879\u7684\u76ee\u6807\u53f0\u8bcd\uff1b\u4f46 Timeline raw optionIndex \u4e0e\u9009\u9879\u5e8f\u53f7\u5339\u914d\uff0c\u56de\u590d\u884c\u6062\u590d\u5230 {line}\u3002\u8fd9\u4ecd\u7136\u5c5e\u4e8e\u6062\u590d\u63a8\u65ad\uff0c\u4f46\u6bd4\u76f8\u90bb\u884c\u63a8\u6d4b\u66f4\u5f3a\u3002",
@@ -202,7 +199,6 @@ const UI_TEXTS = {
     orphanDialogOptions: "\u5bf9\u8bdd\u9009\u9879\uff08\u4f4d\u7f6e\u4e0d\u660e\uff09",
     radio: "\u8bed\u97f3\u901a\u8baf",
     envTalk: "\u73af\u5883\u5bf9\u8bdd",
-    commonContinues: "\u5267\u60c5\u7ee7\u7eed",
     warningTitle: "\u63d0\u793a",
     warningInferredOptionLayoutTitle: "\u9009\u9879\u4f4d\u7f6e\u63d0\u793a",
     warningInferredOptionLayoutBody: "\u9009\u9879\u4f4d\u7f6e\u6765\u81ea\u56de\u9000\u6216\u63a8\u65ad\u3002",
@@ -283,7 +279,6 @@ const UI_TEXTS = {
     recoveryMethodOptionTimelineAdjacent: "Timeline adjacent inference",
     recoveryMethodOptionCommonContinuation: "shared continuation",
     recoveryMethodOptionContinuationOption: "continuation option",
-    recoveryMethodOptionSharedMerge: "shared merge",
     recoveryMethodOptionSiblingSceneHint: "sibling scene hint",
     recoveryMethodOptionSiblingSceneText: "sibling scene text branches",
     sort: "Sort",
@@ -432,8 +427,6 @@ const UI_TEXTS = {
     optJumpLineTitleInferred: "The target line is inferred from Timeline order: {line}.",
     optJumpLoopLine: "loop {line}",
     optJumpLoopLineTitle: "This option path returns to the beginning of the loop at {line}.",
-    optJumpMergeLine: "-> {line}",
-    optJumpMergeLineTitle: "Branch paths merge and continue at {line}.",
     optTargetAccessedFrom: "from",
     optRiskRawIndexMatchedLine: "index matched",
     optRiskRawIndexMatchedLineTitle: "The source data does not name an explicit target line for this option, but Timeline raw optionIndex matches the option index and recovers the reply at {line}. This is still recovered inference, but stronger than adjacent-line inference.",
@@ -444,7 +437,6 @@ const UI_TEXTS = {
     orphanDialogOptions: "Dialogue Options (Unknown Position)",
     radio: "Radio",
     envTalk: "Ambient Talk",
-    commonContinues: "story continues",
     warningTitle: "Display Warning",
     warningInferredOptionLayoutTitle: "Option placement note",
     warningInferredOptionLayoutBody: "Option placement is inferred or fallback-based.",
@@ -1025,7 +1017,6 @@ const STORY_RECOVERY_METHOD_ORDER = [
   "optionBranch:timelineAdjacent",
   "optionBranch:commonContinuation",
   "optionBranch:continuationOption",
-  "optionBranch:sharedMerge",
   "optionBranch:siblingSceneText",
   "optionBranch:siblingSceneHint",
 ];
@@ -1245,7 +1236,6 @@ function recoveryMethodLabel(method) {
   if (raw === "optionBranch:timelineAdjacent") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionTimelineAdjacent"));
   if (raw === "optionBranch:commonContinuation") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionCommonContinuation"));
   if (raw === "optionBranch:continuationOption") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionContinuationOption"));
-  if (raw === "optionBranch:sharedMerge") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionSharedMerge"));
   if (raw === "optionBranch:siblingSceneText") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionSiblingSceneText"));
   if (raw === "optionBranch:siblingSceneHint") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionSiblingSceneHint"));
   return formatStructuredLabel(raw);

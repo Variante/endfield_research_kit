@@ -8222,7 +8222,6 @@ def build_language_bundle(
             text_alias_group_sources = text_alias_sources_by_group.get(g, [])
             text_alias_foreign_option_ids = text_alias_foreign_option_ids_by_group.get(g, [])
             group = {"g": g, "options": opts}
-            rendered_branch_paths: list[tuple[str, ...]] = []
             after = None
             tree_after_option_ids: list[str] = []
             scene_link_after_option_ids: list[str] = []
@@ -8286,7 +8285,6 @@ def build_language_bundle(
                 ]
                 if branch_lines:
                     opt["branchLines"] = branch_lines
-                rendered_branch_paths.append(tuple(branch_lines))
             pre_option_ids = [opt_id for opt_id in group_opt_ids if opt_id in tree_pre]
             timeline_pre_option_ids = [opt_id for opt_id in group_opt_ids if opt_id in timeline_pre]
             text_alias_pre_option_ids = list(group_opt_ids) if g in text_alias_pre_by_group else []
@@ -8381,7 +8379,6 @@ def build_language_bundle(
                 ]
                 if route_branch_lines:
                     opt["branchLines"] = route_branch_lines
-                    rendered_branch_paths.append(tuple(route_branch_lines))
             if not any(opt.get("branchLines") for opt in opts):
                 sibling_text_branch = sibling_scene_text_branch_for_group(
                     group_opt_ids,
@@ -8399,7 +8396,6 @@ def build_language_bundle(
                     ]
                     if branch_lines:
                         opt["branchLines"] = branch_lines
-                        rendered_branch_paths.append(tuple(branch_lines))
             if placement_override == "pre":
                 corrected_opts_without_branch = [
                     opt
@@ -8426,7 +8422,6 @@ def build_language_bundle(
                             "reason": "The corrected pre-scene option uses the only line span not covered by authored DialogTree branches.",
                             "lineIds": remaining_line_ids,
                         }
-                        rendered_branch_paths.append(tuple(remaining_line_ids))
             following_line_risk = (
                 timeline_route_branch
                 or sibling_text_branch
@@ -8461,13 +8456,6 @@ def build_language_bundle(
                     "scenes": sibling_anchor_record["siblingScenes"],
                     "timeline": sibling_anchor_record.get("timeline") or "",
                 }
-            distinct_paths = set(rendered_branch_paths)
-            if len(distinct_paths) >= 2:
-                for opt in opts:
-                    merge_id = tree_merge.get(opt.get("id") or "")
-                    if merge_id and merge_id in valid_line_ids:
-                        group["branchMerge"] = merge_id
-                        break
             if used_group_fallback:
                 group_has_authored_coverage = bool(group_opt_ids) and all(
                     opt_id in authored_option_ids for opt_id in group_opt_ids
@@ -9134,8 +9122,6 @@ def build_language_bundle(
             add("optionBranch:dialogTreeFragment")
 
         for group in option_groups:
-            if group.get("branchMerge"):
-                add("optionBranch:sharedMerge")
             if group.get("continuationOptionIds"):
                 add("optionBranch:continuationOption")
             if group.get("branchHint"):
