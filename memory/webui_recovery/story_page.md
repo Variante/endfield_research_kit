@@ -166,6 +166,23 @@ value that exactly matches the group's option indices. The first recovered case
 is `dlg_c28m3_10` group 1; most remaining adjacent response layouts still carry
 only default `0` values and stay marked as inferred.
 
+The `inferred_option_anchors_CN.md` report lists ~97 scenes where no
+DialogTree / scene-link / dialog Timeline source names the option group's
+anchor and the builder falls back to `lineNumber` / `sparseGap` / `lastLine`
+ordinal heuristics. These remain genuinely inferred — do NOT promote them
+to source-backed. Empirical cross-check against tree-authored scenes shows
+the `option_<scene>_<g>_<n>` key encoding is closer to a trunk index than a
+flat DialogTextTable line index, and 73% of registered tree-authored
+option groups disagree with the `g = flat line index` rule (e.g.
+`dlg_a1m10_1` tree anchors group 2 at `_003`, group 3 at `_007`, not
+`_002` and `_003`). The runtime trunk → flat mapping that converts the
+registry's per-trunk line ids to flat DialogTextTable rows is not in the
+exported source data; recovering the correct anchor for these unregistered
+or no-tree scenes would require additional runtime evidence. The 97
+inferred scenes also have zero matching `au_dlg_<scene>_*.wem` paths in
+`AudioDialog.json`, which is itself a signal that the runtime may never
+present them through the standard dialog loader.
+
 LevelScript story/hash singleton cases are exposed as diagnostics, not scene
 ordering. Current source-backed hash-terminal evidence uses terminal records
 with `code=0x0e34`, `kind=0x00`, and `nextId=-1`; examples include
