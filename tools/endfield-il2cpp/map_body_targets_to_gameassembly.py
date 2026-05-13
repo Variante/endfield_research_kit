@@ -36,10 +36,11 @@ DEFAULT_JSON = Path("reports/option_flow_body_targets_gameassembly.json")
 DEFAULT_MD = Path("reports/option_flow_body_targets_gameassembly.md")
 DEFAULT_CODE_REGISTRATION = 0x18A31FAC0
 DEFAULT_BODY_SUMMARY_METHOD_RE = (
+    r"GenPlayable|InitDialogOptions|"
     r"DialogChooseOption|DialogTimelineDoNext|DialogTimelineGetAllTimelinePlayable|"
     r"DialogTimelineGetAllActiveClips|DialogTimelineDisableLoopInRange|"
     r"TryTriggerTrunkBindingOption|_TryDoNext|_SelectIndexInTimeline|"
-    r"SetDialogOption|ResetDialogOption"
+    r"SelectIndex|OnJumpForward|SetDialogOption|ResetDialogOption"
 )
 ARG_GP_REGISTERS = ("rcx", "rdx", "r8", "r9")
 ARG_XMM_REGISTERS = ("xmm0", "xmm1", "xmm2", "xmm3")
@@ -1314,8 +1315,146 @@ def extract_option_flow_facts(
     call_rows: list[dict[str, Any]],
     pe: PeImage | None = None,
 ) -> list[dict[str, Any]]:
+    type_name = str(row.get("type") or "")
     method = str(row.get("method") or "")
     facts: list[dict[str, Any]] = []
+
+    if type_name.endswith(".DialogOptionPlayableAsset") and method == "GenPlayable":
+        init_call = next_call_after(
+            call_rows,
+            0,
+            type_suffix=".DialogOptionBehaviour",
+            method_name="InitDialogOptions",
+        )
+        if init_call:
+            fact = {
+                "kind": "optionPlayableSerializedRowsToBehaviour",
+                "summary": (
+                    "DialogOptionPlayableAsset.GenPlayable passes the serialized option row list "
+                    "from the asset into DialogOptionBehaviour.InitDialogOptions."
+                ),
+                "serializedOptionRowsField": "asset+0x28",
+                "initDialogOptionsCall": compact_call_reference(init_call),
+                "initDialogOptionsArguments": {
+                    key: compact_write(value)
+                    for key, value in ((init_call.get("argumentContext") or {}).get("argRegisterWrites") or {}).items()
+                    if key in {"rcx", "rdx", "r8"}
+                },
+                "interpretation": (
+                    "The serialized Timeline option rows are the source for runtime option data; "
+                    "this call does not expose a separate branch-target field."
+                ),
+            }
+            add_fact_window(fact, instructions, int(init_call.get("offset") or 0))
+            facts.append(fact)
+
+    if type_name.endswith(".DialogTimelineManager") and method == "SelectIndex":
+        select_timeline_call = next_call_after(
+            call_rows,
+            0,
+            type_suffix=".DialogTimelineManager",
+            method_name="_SelectIndexInTimeline",
+        )
+        reset_call = next_call_after(
+            call_rows,
+            int(select_timeline_call.get("offset") or 0) if select_timeline_call else 0,
+            type_suffix=".DialogTimelineManager",
+            method_name="ResetDialogOption",
+        )
+        if select_timeline_call:
+            fact = {
+                "kind": "timelineSelectCallsChooseThenReset",
+                "summary": (
+                    "DialogTimelineManager.SelectIndex records the UI selection, calls "
+                    "_SelectIndexInTimeline with that index, then calls ResetDialogOption."
+                ),
+                "selectTimelineCall": compact_call_reference(select_timeline_call),
+                "resetDialogOptionCall": compact_call_reference(reset_call),
+                "selectionIndexArgument": compact_write(
+                    ((select_timeline_call.get("argumentContext") or {}).get("argRegisterWrites") or {}).get("rdx")
+                ),
+                "interpretation": (
+                    "ResetDialogOption is post-selection cleanup around the runtime option gate, "
+                    "not an authored branch-target lookup."
+                ),
+            }
+            add_fact_window(fact, instructions, int(select_timeline_call.get("offset") or 0), before=10, after=14)
+            facts.append(fact)
+
+    if type_name.endswith(".DialogTimelineManager") and method == "OnJumpForward":
+        stop_calls = [
+            call
+            for call in call_rows
+            if any(
+                target.get("method") in {"_StopLipSync", "_StopVoice"}
+                for target in call.get("resolved") or []
+            )
+        ]
+        branch_calls = [
+            call
+            for call in call_rows
+            if any(
+                target.get("method") in {"DialogChooseOption", "SetDialogOption", "ResetDialogOption"}
+                for target in call.get("resolved") or []
+            )
+        ]
+        if stop_calls or not branch_calls:
+            fact = {
+                "kind": "jumpForwardNoOptionRouteTarget",
+                "summary": (
+                    "DialogTimelineManager.OnJumpForward stops current playback state but has no "
+                    "direct option choose/set/reset call in the recovered body."
+                ),
+                "stopCalls": compact_call_sequence(stop_calls),
+                "optionRouteCalls": compact_call_sequence(branch_calls),
+                "interpretation": (
+                    "Runtime Jump clips may move playback time, but this method does not expose "
+                    "a serialized option-branch target."
+                ),
+            }
+            add_fact_window(
+                fact,
+                instructions,
+                int(stop_calls[0].get("offset") or 0) if stop_calls else 0,
+                before=6,
+                after=10,
+            )
+            facts.append(fact)
+
+    if type_name.endswith(".DialogTimelineManager") and method == "ResetDialogOption":
+        clear_selected_clip = next(
+            (
+                instr
+                for instr in instructions
+                if str(instr.get("text") or "") == "and [rdi+0x1a8], 0x0"
+            ),
+            None,
+        )
+        refresh_call = next_call_after(
+            call_rows,
+            int(clear_selected_clip.get("offset") or 0) if clear_selected_clip else 0,
+            type_suffix=".DialogTimelineManager",
+            method_name="DoRefreshTimelineLoopEnable",
+        )
+        if clear_selected_clip:
+            fact = {
+                "kind": "resetClearsSelectedActiveClip",
+                "summary": (
+                    "ResetDialogOption clears the selected active clip pointer and refreshes "
+                    "Timeline loop state."
+                ),
+                "selectedActiveClipField": "this+0x1a8",
+                "currentOptionListField": "this+0x1e0",
+                "clearOffset": clear_selected_clip.get("offset"),
+                "clearInstruction": clear_selected_clip.get("text"),
+                "refreshTimelineLoopCall": compact_call_reference(refresh_call),
+                "interpretation": (
+                    "This supports treating post-jump option resets as cleanup/default state, "
+                    "not as evidence that all candidate response lines share one branch."
+                ),
+            }
+            add_fact_window(fact, instructions, int(clear_selected_clip.get("offset") or 0), before=6, after=10)
+            facts.append(fact)
 
     if method == "_SelectIndexInTimeline":
         for instr in instructions:

@@ -1190,3 +1190,30 @@ candidate option rows. The refreshed CN Timeline option-flow audit now sees
 `10` IL2CPP facts and keeps the same verdict: `21` inferred-response groups,
 all `21` candidate sets have all-zero runtime fields, and `0` groups are
 promotable by the runtime gate.
+
+## 2026-05-13 Selection Reset And Jump-Forward Facts
+
+`tools/endfield-il2cpp/map_body_targets_to_gameassembly.py` now includes the
+selection wrapper and jump/reset methods in its default body-summary pass. The
+regenerated `reports/option_flow_body_targets_gameassembly.*` report extracts
+`15` option-flow facts, adding:
+
+- `optionPlayableSerializedRowsToBehaviour`: `DialogOptionPlayableAsset.GenPlayable`
+  passes the serialized option row list from asset field `+0x28` into
+  `DialogOptionBehaviour.InitDialogOptions`.
+- `timelineSelectCallsChooseThenReset`: `DialogTimelineManager.SelectIndex`
+  calls `_SelectIndexInTimeline` with the selected UI index, then calls
+  `ResetDialogOption`.
+- `jumpForwardNoOptionRouteTarget`: `OnJumpForward` stops lip sync and voice
+  playback, but the recovered body has no direct `DialogChooseOption`,
+  `SetDialogOption`, or `ResetDialogOption` route-target call.
+- `resetClearsSelectedActiveClip`: `ResetDialogOption` clears manager field
+  `+0x1a8` and refreshes Timeline loop state.
+
+Interpretation: this makes the cleanup/reset side of option selection explicit.
+It supports the current conservative handling of post-jump option resets as
+runtime state cleanup, not as proof that all all-zero candidate response rows
+merge into one branch. After consuming the new facts, the CN Timeline
+option-flow audit still reports `21` inferred-response groups, all `21` with
+all-zero candidate runtime fields, and `0` promotable groups by the runtime
+gate.
