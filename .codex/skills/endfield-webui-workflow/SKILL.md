@@ -30,8 +30,9 @@ python scripts\webui\package_webui.py
 ```
 
 Use `export.bat` as the default browser-data refresh path. It exports only the
-active WebUI inputs, verifies export freshness, rebuilds the Updates feed,
-rebuilds CN story/reference data by default, and refreshes the asset index.
+active WebUI inputs, verifies export freshness, rebuilds DialogIdTable and
+story source-link evidence, rebuilds the Updates feed, rebuilds CN
+story/reference data by default, and refreshes the asset index.
 
 When running `python scripts\webui\build_story.py` directly, use a longer
 timeout. The default CN lean build currently takes about 3 minutes on this
@@ -57,6 +58,7 @@ python scripts\webui\build_dialog_tree_option_route_audit.py --language CN
 python scripts\webui\build_timeline_option_flow_audit.py --language CN
 python scripts\webui\build_timeline_binding_audit.py --language CN --only-interesting
 python tools\endfield-il2cpp\catalog_option_flow_metadata.py --cache-metadata
+python tools\endfield-il2cpp\map_body_targets_to_gameassembly.py
 ```
 
 `build_option_playable_semantics_audit.py` checks remaining inferred option
@@ -160,3 +162,5 @@ Useful built-in fixture conversations already generated in the CN data:
 - Keep root docs focused on active workflow, not investigation conclusions.
 - Put durable conclusions in `memory/`, not `reports/`.
 - Do not point Updates tracking at `webui/` or other generated repo folders.
+- Treat ignored local vendor/tool caches under `tools/` as optional workflow
+  dependencies; the tracked helper set is intentionally small.

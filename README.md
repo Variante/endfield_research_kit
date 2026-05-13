@@ -202,37 +202,13 @@ workflow. In this checkout, Unity recovery helpers are project-local under
 
 ## Tool Pointers
 
-The normal workflows use Python stdlib scripts plus local helper tools already
-kept under `tools/`:
+The active workflows use Python stdlib scripts plus a small tracked helper set
+under `tools/`. The `tools/` directory is ignored by default, so large vendor
+checkouts and generated tool caches can exist locally without becoming part of
+the maintained repo surface.
 
-- `tools/AnimeStudio/`: AnimeStudio extraction/recovery helpers used by the
-  exported story and media data. Upstream:
-  <https://github.com/Escartem/AnimeStudio>
-- `tools/endfield-il2cpp/`: local offline IL2CPP metadata catalog helper.
-  It validates/caches `global-metadata.dat` when available and writes
-  option-flow runtime evidence reports; it is not part of the normal
-  `export.bat` WebUI refresh.
-- `tools/TypeTree/`: optional Unity type-tree reference tooling for decoding
-  serialized asset schemas when AnimeStudio/AssetStudio-style output is missing
-  fields. Upstream: <https://github.com/FractalTools/TypeTree>
-- `tools/TypeTreeDumps/`: optional Unity type-tree dump references used as
-  schema lookups for Unity class layouts. They are not part of normal
-  `export.bat` refreshes. Upstream:
-  <https://github.com/AssetRipper/TypeTreeDumps>
-- `tools/Ruri.ShaderDecompiler/`: shader decompiler used around the Unity lab.
-  Upstream: <https://github.com/ShiyumeMeguri/Ruri.ShaderDecompiler>
-- `tools/FractalMiner/`: Unity asset and shader-analysis helper. Upstream:
-  <https://github.com/ShiyumeMeguri/FractalMiner>
-- `tools/AllShader_1.2.4-Assets/`: shader reference assets from FractalMiner's
-  EndField project assets:
-  <https://github.com/ShiyumeMeguri/FractalMiner/tree/main/Assets/Project/EndField>
-- `tools/acl-upstream/`: Animation Compression Library reference source.
-  Upstream: <https://github.com/nfrechette/acl>
-- `tools/endfield_acl_sampler/`: local ACL sampling helper for actor animation
-  recovery; it is maintained in this repo and built against `tools/acl-upstream/`.
-- `tools/fluffy-dumper-src/`: maintained dumping support kept as source for
-  inspection and patching. Upstream mirror:
-  <https://git.nekolab.app/fluffield/fluffy-dumper>
+Tracked helpers:
+
 - `tools/endfield_asset_map_filter.py`: local helper maintained in this repo
   for asset-map filtering experiments.
 - `tools/endfield_source_graph.py`: local SQLite source-graph builder that
@@ -244,14 +220,24 @@ kept under `tools/`:
   and `python tools\endfield_source_graph.py query zhuangfy --limit 20` for a
   simple search.
 - Source-graph follow-up tools: `tools/endfield_voice_audio_linker.py`,
-  `tools/endfield_character_recovery_planner.py`,
   `tools/endfield_story_branch_resolver.py`,
   `tools/endfield_map_level_indexer.py`, and
   `tools/endfield_semantic_update_classifier.py` build richer reports under
   `reports/source_graph/`.
+- `tools/endfield-il2cpp/`: tracked offline IL2CPP metadata helpers. The
+  catalog validates/caches `global-metadata.dat`, the mapper links focused
+  method targets to `GameAssembly.dll` addresses, and both write option-flow
+  evidence reports. These are out-of-band diagnostics, not normal
+  `export.bat` steps.
+
+Optional local tool/vendor directories may also exist under ignored `tools/`,
+including AnimeStudio, Ruri.ShaderDecompiler, FractalMiner, TypeTree,
+TypeTreeDumps, ACL helpers, and dumping support. Keep their generated outputs
+local; document only the workflow contract that depends on them.
 
 Use `scripts/README.md` for the maintained script map. Keep new throwaway
-experiments in `scratch/`, and promote only reusable shared helpers to `tools/`.
+experiments in `scratch/`, and promote reusable shared helpers only with
+matching docs and intentional tracking.
 
 ## Active Layout
 
@@ -262,10 +248,11 @@ experiments in `scratch/`, and promote only reusable shared helpers to `tools/`.
 - `export_full/`: generated data exported from the installed client.
 - `reports/`: durable WebUI/export summaries.
 - `scratch/`: disposable local outputs.
-- `memory/`: archived exploration notes and one-off utilities.
+- `memory/`: durable notes, conclusions, and recovery snapshots.
 
 ## Script Notes
 
 `scripts/README.md` lists the active script groups. New one-off exploration
-scripts should start in `memory/` or `scratch/` and only move into a maintained
-workflow once they are promoted.
+scripts should start in `scratch/` or `tmp/`; durable conclusions belong in
+`memory/`, and reusable helpers should move into a maintained workflow only
+when they are promoted.

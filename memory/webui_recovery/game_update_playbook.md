@@ -16,9 +16,10 @@ automatically:
 .\export.bat
 ```
 
-That's it. The pipeline re-extracts the new game data, rebuilds
-`DialogIdTable` registry, regenerates every conv JSON, refreshes
-warnings. **No tool in this playbook needs the game running.**
+That's it. The pipeline re-extracts the new game data, verifies export
+freshness, rebuilds `DialogIdTable` registry, refreshes story source-link
+evidence, regenerates every conv JSON, and refreshes warnings. **No tool in
+this playbook needs the game running.**
 
 Then, if the installed IL2CPP metadata file exists, run the separate metadata
 catalog canary. `export.bat` does not generate this file; it only caches a
@@ -48,16 +49,22 @@ Order of operations:
    `D:\Program Files\Endfield Game\Endfield_Data\`. The game does NOT
    need to be running. If the game is open, close it first -- some
    files may be locked.
-2. `scripts/recover_dialog_id_registry.py --quiet` re-builds
+2. `scripts/webui/verify_export_freshness.py` checks that `export_full/`
+   matches the installed source fingerprints before the long WebUI builders
+   run.
+3. `scripts/recover_dialog_id_registry.py --quiet` re-builds
    `export_full/recovered/dialog_id_table_index.json` from the freshly-
    extracted `DialogIdTable.json`. This is the file
    `scene_order_gap_shared.py` reads to decide whether each scene is
    runtime-registered or unregistered (cut content).
-3. `scripts/webui/build_updates.py` rebuilds the per-asset update feed.
-4. `scripts/webui/build_story.py --languages CN --default-language CN`
+4. `scripts/webui/build_story_source_links.py` rebuilds mission, level-script,
+   cutscene, remotecomm, SNS, radio, and reading-popup source references.
+5. `scripts/webui/build_updates.py` rebuilds the original game-data update
+   feed, with exported asset diffs gated by real installed-data changes.
+6. `scripts/webui/build_story.py --languages CN --default-language CN`
    regenerates every conv JSON and embeds the right warnings. Every
    scene gets re-classified against the new registry.
-5. `scripts/webui/build_assets.py` rebuilds the asset index.
+7. `scripts/webui/build_assets.py` rebuilds the asset index.
 
 After this, the WebUI is consistent with the new game version. Open the
 WebUI at `python serve.py` and spot-check.

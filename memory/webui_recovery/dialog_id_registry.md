@@ -255,8 +255,8 @@ can run them without rerunning the full pipeline.
 ### Does this need the game running in the background?
 
 No. Everything in `export.bat` reads from the **installed game files on
-disk** (`D:\Program Files\Endfield Game\Endfield_Data\`). The game can be
-closed, and on most updates it will be — we only need the files.
+disk** (`D:\Program Files\Endfield Game\Endfield_Data\`). The game can stay
+closed; on most updates we only need the files.
 
 The IL2CPP runtime-dump work (pe-sieve, procdump, custom PowerShell P/Invoke
 wrappers around `RtlCreateProcessReflection`) **did** need the game running
@@ -265,10 +265,9 @@ investigation to confirm the C# class hierarchy. The findings were captured
 in code comments and in this document; the runtime dumps themselves are no
 longer needed. Future maintainers should not rerun them.
 
-The runtime-dump scripts and outputs live in
-`scratch/il2cpp_runtime_dump/` and `scratch/cpp2il_endfield/`. Both are
-disposable; the recovery does not depend on them. They are kept as
-provenance for anyone re-auditing the conclusions.
+Those runtime-dump scripts and outputs were disposable scratch artifacts and
+may be absent after tool cleanup. The maintained path is the offline metadata
+helper under `tools/endfield-il2cpp/`.
 
 ### What happens if they upgrade the game data?
 
@@ -276,12 +275,16 @@ Rerun `export.bat`. The pipeline picks up the new game data automatically:
 
 1. `export_full_from_game.py` re-extracts everything from the install,
    including the new `DialogIdTable.json`.
-2. `recover_dialog_id_registry.py` rebuilds
+2. `verify_export_freshness.py` confirms the new `export_full/` matches the
+   installed source fingerprints before the long WebUI builders run.
+3. `recover_dialog_id_registry.py` rebuilds
    `export_full/recovered/dialog_id_table_index.json`. Scenes added in the
    update appear; scenes removed disappear. Trunk counts update.
-3. `build_story.py` rebuilds all conv JSONs and stamps
+4. `build_story_source_links.py` rebuilds mission, level-script, cutscene,
+   remotecomm, SNS, radio, and reading-popup source evidence.
+5. `build_story.py` rebuilds all conv JSONs and stamps
    `_debug.runtimeRegistry` from the new registry.
-4. `annotate_conv_with_registry.py` remains available as a stand-alone
+6. `annotate_conv_with_registry.py` remains available as a stand-alone
    refresher for existing conv files, but normal `export.bat` runs do not
    need it because `build_story.py` now writes `_debug.runtimeRegistry`
    directly.
@@ -303,11 +306,10 @@ Rerun `export.bat`. The pipeline picks up the new game data automatically:
    becomes incomplete. The recovery would still classify those scenes as
    `unregisteredScene` (correctly, if the new class doesn't register them
    in `DialogIdTable`) or fall back to `lineIdSuffix` (if the order
-   becomes ambiguous). **Detection**: re-run the catalog scan
-   (`scratch/il2cpp_runtime_dump/catalog_dialog_classes.py`) against the
-   new `global-metadata.dat` and grep for new `Dialog*` /
-   `Mingbao*` / `Letter*Panel*` etc. class names. Steady state today: zero
-   such matches. If a new one appears, this document needs updating.
+   becomes ambiguous). **Detection**: run the offline metadata catalog under
+   `tools/endfield-il2cpp/` against the new `global-metadata.dat` and inspect
+   the dialog/option focus reports for new loader classes or methods. If a
+   new one appears, this document needs updating.
 3. **Per-line ID schema change.** Our trunk-decomposition regex expects
    `dlg_<scene>_<trunkInt>_<lineDigits>`. A different format (e.g. mixed-
    case trunk tags, more nested segments) would silently drop the trunk
@@ -349,26 +351,22 @@ These were considered and rejected for the "solid evidence" bar:
 
 ## Where the IL2CPP-side evidence lives
 
-The investigation that proved the class hierarchy left a trail in
-`scratch/il2cpp_runtime_dump/`. None of it is on the critical path of the
-WebUI build; the recovery doesn't depend on any of these outputs. They're
-kept as provenance:
+The maintained evidence path is now:
 
-- `scan_metadata_strings.py` / `catalog_dialog_classes.py` — the
-  metadata.dat string scans that confirmed the dialog class hierarchy.
-  This is the cheap, deterministic source of truth. Rerun if a major
-  game update lands; the recovery's class names should match what's in
-  this output.
-- `dump_module_via_reflection.ps1` / `dump_module_at_address.ps1` /
-  `find_metadata_in_minidump.py` / `rerank_candidates.py` — the
-  procdump + pe-sieve + custom-reflection pipeline that confirmed
-  `MetadataRegistration` is in HGP-relocated memory. Documented in case
-  someone later wants to push IL2CPP decompilation further, but **not
-  needed for ongoing WebUI work**.
-- `README.md` (inside `scratch/il2cpp_runtime_dump/`) is the operational
-  runbook for the pe-sieve / Il2CppDumper flow. If you re-run it for any
-  reason: **HGP and AntiCheatExpert protect the game**. Use an alt
-  account or no account; never log in while running these tools.
+- `tools/endfield-il2cpp/catalog_option_flow_metadata.py`: validates/caches
+  `global-metadata.dat`, catalogs dialog/timeline/trunk/option fields and
+  method targets, and writes drift reports.
+- `tools/endfield-il2cpp/map_body_targets_to_gameassembly.py`: maps focused
+  metadata method targets to `GameAssembly.dll` addresses and simple direct
+  call edges.
+- `reports/option_flow_runtime_metadata*.json` / `.md` and
+  `reports/option_flow_body_targets_gameassembly.*`: generated evidence
+  reports.
+
+Historical live-process dump artifacts were scratch-only provenance and are
+not part of the active workflow. Do not restore or rerun the pe-sieve,
+procdump, Cpp2IL, or Il2CppDumper path unless a concrete future investigation
+requires it.
 
 ## Quick command reference
 

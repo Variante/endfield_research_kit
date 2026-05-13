@@ -66,7 +66,6 @@ reports under subdirectories of `reports/source_graph/`:
 
 ```bat
 python tools\endfield_voice_audio_linker.py
-python tools\endfield_character_recovery_planner.py
 python tools\endfield_story_branch_resolver.py
 python tools\endfield_map_level_indexer.py
 python tools\endfield_semantic_update_classifier.py
@@ -77,7 +76,6 @@ Focused examples:
 ```bat
 python tools\endfield_voice_audio_linker.py --story dlg_e1m5_4 --limit 10
 python tools\endfield_voice_audio_linker.py inspect au_dlg_e1m5_4_018 --story dlg_e1m5_4 --limit 1
-python tools\endfield_character_recovery_planner.py --character chr_0030_zhuangfy --limit 1
 python tools\endfield_story_branch_resolver.py --story dlg_a1m10_1 --limit 1
 python tools\endfield_map_level_indexer.py --level map01_fc001 --limit 8
 ```
@@ -86,15 +84,16 @@ Follow-up output directories:
 
 - `voice_audio/`: story line to audio path reports, by-story and by-speaker
   groupings, missing path samples, and orphan audio definitions.
-- `character_recovery/`: ranked character recovery reports with per-character
-  mesh, material, texture, shader, animation, manifest, and Unity asset
-  evidence.
 - `story_branches/`: option group and branch route reports with per-story JSON
   and unresolved gap counts.
 - `map_levels/`: map/level/mark indexes with linked table row evidence and
   related asset matches.
 - `update_classification/`: semantic classification for WebUI update feed
   entries.
+
+Legacy/local `character_recovery/` reports may exist from the retired ignored
+character recovery planner; the tracked source graph still emits the
+lightweight top-level `character_recovery_candidates.json`.
 
 ## Graph Shape
 
@@ -230,9 +229,11 @@ The 2026-05-11 follow-up pass completed successfully:
 - Voice/audio report: `31,177` line/audio relationships across `6,171` stories
   and `1,028` speakers. `14,579` relationships have resolved audio paths;
   `16,598` still need path recovery.
-- Character recovery planner: top `20` reports written from `1,778` candidates.
-  Top recovered candidates include `zhuangfy`, `mifu`, `wulfa`, `tangtang`,
-  `endminf`, `endminm`, `wolfgd`, and `laevat`.
+- A local character recovery planner also wrote top `20` reports from `1,778`
+  candidates. That planner is no longer part of the tracked active tool set
+  after the cleanup; keep using the graph builder's
+  `character_recovery_candidates.json` unless the planner is intentionally
+  restored.
 - Story branch resolver: `1,272` option-bearing stories, `2,553` option groups,
   `3,957` options, and `3,428` unresolved gaps after ingesting WebUI
   `optionBranchRisk` evidence as graph edges. Status split: `555` resolved,
@@ -246,7 +247,7 @@ The 2026-05-11 follow-up pass completed successfully:
 Verification command:
 
 ```bat
-python -m py_compile tools\endfield_voice_audio_linker.py tools\endfield_character_recovery_planner.py tools\endfield_story_branch_resolver.py tools\endfield_map_level_indexer.py tools\endfield_semantic_update_classifier.py
+python -m py_compile tools\endfield_voice_audio_linker.py tools\endfield_story_branch_resolver.py tools\endfield_map_level_indexer.py tools\endfield_semantic_update_classifier.py
 ```
 
 ## Missing And Improvement Backlog
@@ -285,9 +286,10 @@ Current known gaps from the 2026-05-11 reports:
 - The full graph is large: about `5.05 GB`, with a full build time around
   `9.7` minutes. A compact graph profile, incremental rebuild mode, or report
   manifest could make day-to-day iteration lighter.
-- `tools/` and `reports/` are ignored by this checkout. That matches the local
-  tool/generated-report setup, but promoted source-graph tools will need an
-  explicit unignore or a tracked home if they should be versioned.
+- `tools/` is ignored by default, but a small source-graph/WebUI helper set is
+  already tracked there. New helper outputs, vendor clones, and local planners
+  remain ignored unless they are intentionally promoted with documentation.
+  `reports/` stays generated output.
 
 Good next improvements:
 

@@ -133,10 +133,12 @@ local rebuild noise and baselined silently.
 - Use `scratch/` for attempts, tool prototypes, generated previews, and tools
   written during exploration before they are promoted.
 - Use `tmp/` for temporary results, intermediate output, and disposable files.
-- Put durable shared tools under `tools/`. Existing tools there may be used and
-  patched as needed.
-- For `tools/Ruri.ShaderDecompiler`, regularly pull upstream before rebuild or
-  recovery work: `git -C tools\Ruri.ShaderDecompiler pull --ff-only`.
+- Put durable shared helper code under the maintained script/tool surface.
+  `tools/` is ignored by default except for already tracked helper scripts, so
+  new promoted tools need intentional tracking and documentation.
+- Local vendor/tool caches may live under ignored `tools/`. If
+  `tools/Ruri.ShaderDecompiler` is present, regularly pull upstream before
+  rebuild or recovery work: `git -C tools\Ruri.ShaderDecompiler pull --ff-only`.
 - Keep `ue5_*` and `unity_*` directories self-contained. Code, assets, generated
   files, and helpers related to those projects should live inside the matching
   project folder.
@@ -150,6 +152,8 @@ WebUI:
 
 - `scripts/export_full_from_game.py`
 - `scripts/track_export_changes.py`
+- `scripts/recover_dialog_id_registry.py`
+- `scripts/webui/verify_export_freshness.py`
 - `scripts/webui/build_updates.py`
 - `scripts/webui/build_story_source_links.py`
 - `scripts/webui/build_story.py`
@@ -167,4 +171,6 @@ Unity character recovery lab:
 
 - project-local scripts under `unity_endfield_graph_shader_lab/`
 
-Archived exploration scripts live under `memory/scripts_archive/`.
+The old archived-script bucket has been retired. Do not recreate it; put
+disposable scripts in `scratch/` or `tmp/`, and promote only maintained
+workflow code.

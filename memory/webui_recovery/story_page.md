@@ -52,7 +52,8 @@ Primary command:
 python scripts\webui\build_story.py --languages CN --default-language CN
 ```
 
-`export.bat` runs this command after the export and Updates feed build.
+`export.bat` runs this command after export freshness verification,
+DialogIdTable recovery, story source-link rebuilding, and the Updates feed.
 
 For extra language bundles:
 
@@ -95,10 +96,18 @@ export_full/recovered/AnimeStudio-cli/*/json_by_type/MonoBehaviour
 Story order helpers imported by the builder:
 
 ```text
+scripts/recover_dialog_id_registry.py
 scripts/recover_timeline_line_orders.py
 scripts/recover_mission_timelines.py
 scripts/scene_order_gap_shared.py
 scripts/webui/build_story_reports.py
+```
+
+Prebuilt evidence inputs used by the builder:
+
+```text
+export_full/recovered/dialog_id_table_index.json
+export_full/recovered/story_source_links.json
 ```
 
 ## Outputs

@@ -16,10 +16,12 @@ python serve.py
 `export.bat` is the current WebUI recovery pipeline:
 
 1. `scripts/export_full_from_game.py --skip-raw-vfs --skip-source-inventory`
-2. `scripts/recover_dialog_id_registry.py --quiet`
-3. `scripts/webui/build_updates.py`
-4. `scripts/webui/build_story.py --languages CN --default-language CN`
-5. `scripts/webui/build_assets.py`
+2. `scripts/webui/verify_export_freshness.py`
+3. `scripts/recover_dialog_id_registry.py --quiet`
+4. `scripts/webui/build_story_source_links.py`
+5. `scripts/webui/build_updates.py`
+6. `scripts/webui/build_story.py --languages CN --default-language CN`
+7. `scripts/webui/build_assets.py`
 
 The pipeline writes the browser inputs under `webui/data/` and reads exported
 game data from `export_full/`. It does not require `scratch/`, `reports/`, or
@@ -40,8 +42,8 @@ summaries and diagnostics. The game itself does **not** need to be running.
   evidence and operational notes for game updates.
 - `game_update_playbook.md`: operational checklist for what to run after
   the game updates. The 95% case is one command (`.\export.bat`). The
-  5% case is documented step-by-step including the IL2CPP runtime-dump
-  flow if the dialog system itself has been restructured.
+  5% case is documented step-by-step around the offline IL2CPP metadata
+  canary and targeted follow-up audits.
 
 ## Expected Generated WebUI Data
 
@@ -80,8 +82,9 @@ The WebUI recovery path expects these active roots:
 - WebUI output root: `webui/data/`
 - update tracker state: `.game-data-tracker/`
 - generated reports: `reports/`
-- durable helper tools: `tools/`
+- durable helper tools: tracked scripts under `tools/`, plus optional ignored
+  local vendor/tool caches where a workflow explicitly expects them
 
 Do not make the WebUI recovery depend on `scratch/` or `tmp/`. If an experiment
-becomes necessary for repeatable recovery, promote the helper to `tools/` or an
-active script path and document the promotion.
+becomes necessary for repeatable recovery, promote the helper to an active
+script path or intentionally tracked tool and document the promotion.

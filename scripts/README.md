@@ -55,9 +55,11 @@ Expected active inputs and outputs:
   previews, and experiment output that has not become part of a maintained
   workflow.
 - `../tmp/`: disposable intermediate output and temporary files.
-- `../tools/`: durable shared tools. If a workflow needs reusable helper data
-  such as AnimeStudio DummyDlls, place it here or pass it explicitly rather
-  than relying on `scratch/` or `tmp/`.
+- `../tools/`: tracked lightweight helper scripts plus ignored local
+  vendor/tool caches. If a workflow needs reusable helper data such as
+  AnimeStudio DummyDlls, place it here or pass it explicitly rather than
+  relying on `scratch/` or `tmp/`. New promoted tools need intentional
+  tracking and documentation because this directory is ignored by default.
 
 ## WebUI
 
@@ -173,9 +175,11 @@ These are kept because the WebUI story builders import or use them:
 ### IL2CPP-derived evidence (out-of-band)
 
 The C# class hierarchy backing the recovery modes was confirmed by scanning
-`global-metadata.dat` from the game's IL2CPP runtime. The maintained helper is
-`tools/endfield-il2cpp/catalog_option_flow_metadata.py`; it validates/caches
-the metadata artifact and writes drift reports outside the normal WebUI build.
+`global-metadata.dat` from the game's IL2CPP runtime. The maintained helpers
+under `tools/endfield-il2cpp/` validate/cache the metadata artifact, catalog
+option-flow fields and method targets, and map focused body targets to
+`GameAssembly.dll` addresses. They write drift/evidence reports outside the
+normal WebUI build.
 Relevant runtime types:
 
 - `Beyond.Gameplay.Core.DialogManager` (partial across `.DialogTree.cs`,
@@ -202,7 +206,7 @@ a shared WebUI/export workflow.
 
 ## Archived
 
-Older one-off recovery utilities live in `../memory/scripts_archive/`. UE5
-pose-demo helpers now live with the UE project under
-`../ue5_zhuangfy_pose_demo 5.3/Scripts/`. Put new experiments in `../scratch/`
-and move observations or conclusions to `../memory/` when they need to be kept.
+The old archived-script bucket has been retired. UE5 pose-demo helpers live
+with the UE project under `../ue5_zhuangfy_pose_demo 5.3/Scripts/`.
+Put new experiments in `../scratch/` or `../tmp/`, and move observations or
+conclusions to `../memory/` when they need to be kept.
