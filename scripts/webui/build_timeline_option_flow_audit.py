@@ -397,6 +397,107 @@ def option_clip_timing(option_rows: list[dict[str, Any]], candidate_details: lis
     }, empty_values=(None, "", [], {}))
 
 
+def compact_timeline_option_context_row(row: dict[str, Any]) -> dict[str, Any]:
+    return compact_dict({
+        "optionId": row.get("id"),
+        "groupKey": row.get("groupKey"),
+        "optionIndex": row.get("optionIndex"),
+        "clipOptionIndex": row.get("clipOptionIndex"),
+        "index": row.get("index"),
+        "anchorMode": row.get("anchorMode"),
+        "anchorLineId": row.get("anchorLineId"),
+        "start": row.get("start"),
+        "duration": row.get("duration"),
+        "trackName": row.get("trackName"),
+        "trackPathId": row.get("trackPathId"),
+        "assetTrack": row.get("assetTrack"),
+    }, empty_values=(None, "", [], {}))
+
+
+def dedupe_context_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    seen: set[tuple[Any, ...]] = set()
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        key = (
+            row.get("optionId"),
+            row.get("groupKey"),
+            row.get("optionIndex"),
+            row.get("anchorMode"),
+            row.get("anchorLineId"),
+            row.get("start"),
+            row.get("assetTrack"),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(row)
+    return out
+
+
+def window_other_option_context(
+    timeline_option_rows: list[dict[str, Any]],
+    current_option_ids: list[str],
+    candidate_ids: list[str],
+    common_id: str,
+    window_ids: list[str],
+    window_runtime_by_line: dict[str, int],
+) -> dict[str, Any]:
+    current_option_set = set(current_option_ids)
+    candidate_set = set(candidate_ids)
+    window_set = set(window_ids)
+    other_rows = [
+        row
+        for row in timeline_option_rows
+        if isinstance(row, dict)
+        and safe_key(row.get("id"))
+        and safe_key(row.get("id")) not in current_option_set
+    ]
+    anchor_rows_by_line: dict[str, list[dict[str, Any]]] = {}
+    for row in other_rows:
+        anchor_line_id = safe_key(row.get("anchorLineId"))
+        if anchor_line_id in window_set:
+            anchor_rows_by_line.setdefault(anchor_line_id, []).append(
+                compact_timeline_option_context_row(row)
+            )
+    runtime_rows_by_line: dict[str, list[dict[str, Any]]] = {}
+    for line_id in window_ids:
+        value = window_runtime_by_line.get(line_id)
+        if value in (None, 0):
+            continue
+        for row in other_rows:
+            if as_int(row.get("optionIndex")) == value:
+                runtime_rows_by_line.setdefault(line_id, []).append(
+                    compact_timeline_option_context_row(row)
+                )
+    anchor_rows_by_line = {
+        line_id: dedupe_context_rows(rows)
+        for line_id, rows in anchor_rows_by_line.items()
+        if rows
+    }
+    runtime_rows_by_line = {
+        line_id: dedupe_context_rows(rows)
+        for line_id, rows in runtime_rows_by_line.items()
+        if rows
+    }
+    candidate_anchor_line_ids = [
+        line_id for line_id in candidate_ids if line_id in anchor_rows_by_line
+    ]
+    common_runtime_rows = runtime_rows_by_line.get(common_id) or []
+    if not candidate_anchor_line_ids and not anchor_rows_by_line and not runtime_rows_by_line:
+        return {}
+    out = {
+        "candidateLineIdsUsedAsOtherOptionAnchors": candidate_anchor_line_ids,
+        "anchorRowsByWindowLine": anchor_rows_by_line,
+        "runtimeOptionRowsByWindowLine": runtime_rows_by_line,
+        "commonContinuationRuntimeOptionRows": common_runtime_rows,
+    }
+    if common_runtime_rows:
+        out["commonContinuationRuntimeMatchesOtherOptionRows"] = True
+    if runtime_rows_by_line:
+        out["windowRuntimeFieldExplainedByOtherOptionRows"] = True
+    return compact_dict(out, empty_values=(None, "", [], {}))
+
+
 def runtime_gate_evidence(
     option_rows: list[dict[str, Any]],
     candidate_ids: list[str],
@@ -468,6 +569,7 @@ def window_pattern(
     window_details: list[dict[str, Any]],
     window_ids: list[str],
     common_id: str,
+    timeline_option_rows: list[dict[str, Any]],
 ) -> dict[str, Any]:
     candidate_ids = [safe_key(detail.get("id")) for detail in candidate_details if safe_key(detail.get("id"))]
     candidate_set = set(candidate_ids)
@@ -485,6 +587,7 @@ def window_pattern(
     raw_by_window_line = candidate_raw_option_index_by_line(window_details)
     clip_by_line = line_clip_option_index_by_line(candidate_details)
     clip_by_window_line = line_clip_option_index_by_line(window_details)
+    window_runtime_by_line = runtime_value_by_line(window_ids, raw_by_window_line, clip_by_window_line)
     runtime_gate = runtime_gate_evidence(
         option_rows,
         candidate_ids,
@@ -494,6 +597,14 @@ def window_pattern(
         raw_by_window_line,
         clip_by_line,
         clip_by_window_line,
+    )
+    other_option_context = window_other_option_context(
+        timeline_option_rows,
+        [safe_key(row.get("optionId")) for row in option_rows if safe_key(row.get("optionId"))],
+        candidate_ids,
+        common_id,
+        window_ids,
+        window_runtime_by_line,
     )
     raw_by_option: dict[str, int] = {}
     for option, candidate_id in zip(option_rows, candidate_ids):
@@ -560,6 +671,7 @@ def window_pattern(
         "clipOptionIndexLineIdsByIndex": line_ids_by_index(candidate_ids, clip_by_line),
         "clipOptionIndexWindowLineIdsByIndex": line_ids_by_index(window_ids, clip_by_window_line),
         "runtimeGate": runtime_gate,
+        "otherOptionContext": other_option_context,
         "rawIndexMatchesOptionIndexSet": raw_index_matches_option_index,
         "nonzeroRawIndexMatchesOptionIndexSet": raw_index_matches_option_index and raw_index_has_nonzero,
         "optionRunLineIdsByOption": option_run_line_ids_by_option,
@@ -675,7 +787,14 @@ def collect_rows(
                 "anchorLineId": best.get("anchorLineId"),
                 "assetTrack": best.get("assetTrack"),
             })
-        pattern = window_pattern(option_rows, candidate_details, window_details, window_ids, common_id)
+        pattern = window_pattern(
+            option_rows,
+            candidate_details,
+            window_details,
+            window_ids,
+            common_id,
+            entry.get("options") if isinstance(entry.get("options"), list) else [],
+        )
         routes = entry.get("optionRoutes") if isinstance(entry.get("optionRoutes"), dict) else {}
         nearby_runtime_routes = {
             option_id: route
@@ -739,6 +858,9 @@ def summarize_rows(
     groups_with_candidate_runtime_all_zero = 0
     groups_with_candidate_runtime_mapping = 0
     groups_with_nonzero_window_runtime_outside_candidates = 0
+    groups_with_candidate_line_used_as_other_option_anchor = 0
+    groups_with_common_runtime_matching_other_option = 0
+    groups_with_window_runtime_explained_by_other_option = 0
     for row in rows:
         pattern = row.get("windowPattern") or {}
         option_pattern = safe_key(pattern.get("optionIndexPattern")) or "missing"
@@ -755,6 +877,17 @@ def summarize_rows(
             groups_with_candidate_runtime_mapping += 1
         if runtime_gate.get("nonzeroWindowLineIdsOutsideCandidates"):
             groups_with_nonzero_window_runtime_outside_candidates += 1
+        other_option_context = (
+            pattern.get("otherOptionContext")
+            if isinstance(pattern.get("otherOptionContext"), dict)
+            else {}
+        )
+        if other_option_context.get("candidateLineIdsUsedAsOtherOptionAnchors"):
+            groups_with_candidate_line_used_as_other_option_anchor += 1
+        if other_option_context.get("commonContinuationRuntimeMatchesOtherOptionRows"):
+            groups_with_common_runtime_matching_other_option += 1
+        if other_option_context.get("windowRuntimeFieldExplainedByOtherOptionRows"):
+            groups_with_window_runtime_explained_by_other_option += 1
         option_index_patterns[option_pattern] += 1
         candidate_raw_patterns[candidate_raw_pattern] += 1
         window_raw_patterns[window_raw_pattern] += 1
@@ -827,6 +960,9 @@ def summarize_rows(
         "groupsWithCandidateRuntimeFieldAllZero": groups_with_candidate_runtime_all_zero,
         "groupsWithCandidateRuntimeFieldMapping": groups_with_candidate_runtime_mapping,
         "groupsWithNonzeroWindowRuntimeFieldOutsideCandidates": groups_with_nonzero_window_runtime_outside_candidates,
+        "groupsWithCandidateLineUsedAsOtherOptionAnchor": groups_with_candidate_line_used_as_other_option_anchor,
+        "groupsWithCommonRuntimeMatchingOtherOption": groups_with_common_runtime_matching_other_option,
+        "groupsWithWindowRuntimeExplainedByOtherOption": groups_with_window_runtime_explained_by_other_option,
     }
 
 
@@ -874,6 +1010,28 @@ def window_summary(row: dict[str, Any]) -> str:
     outside_ids = runtime_gate.get("nonzeroWindowLineIdsOutsideCandidates") or []
     if outside_ids:
         parts.append("nonzeroOutside=" + ",".join(outside_ids))
+    other_option_context = (
+        pattern.get("otherOptionContext")
+        if isinstance(pattern.get("otherOptionContext"), dict)
+        else {}
+    )
+    candidate_anchor_ids = other_option_context.get("candidateLineIdsUsedAsOtherOptionAnchors") or []
+    if candidate_anchor_ids:
+        parts.append("candidateAnchorsOtherOption=" + ",".join(candidate_anchor_ids))
+    runtime_rows_by_line = other_option_context.get("runtimeOptionRowsByWindowLine") or {}
+    if runtime_rows_by_line:
+        runtime_bits: list[str] = []
+        for line_id, rows in runtime_rows_by_line.items():
+            option_ids = [
+                safe_key(row.get("optionId"))
+                for row in rows
+                if isinstance(row, dict) and safe_key(row.get("optionId"))
+            ]
+            option_ids = list(dict.fromkeys(option_ids))
+            if option_ids:
+                runtime_bits.append(f"{line_id}->{'/'.join(option_ids)}")
+        if runtime_bits:
+            parts.append("runtimeMatchesOtherOption=" + ",".join(runtime_bits))
     if pattern.get("nonzeroOptionIndexCoveredByCandidateClip"):
         parts.append("nonzeroCandClipCovered")
     if pattern.get("nonzeroOptionIndexCoveredByWindowClip"):
@@ -967,6 +1125,12 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
         f"`{summary.get('groupsWithCandidateRuntimeFieldAllZero', 0)}`",
         f"- Groups with nonzero window runtime fields outside candidate lines: "
         f"`{summary.get('groupsWithNonzeroWindowRuntimeFieldOutsideCandidates', 0)}`",
+        f"- Groups where candidate lines anchor another option group: "
+        f"`{summary.get('groupsWithCandidateLineUsedAsOtherOptionAnchor', 0)}`",
+        f"- Groups where common continuation runtime field matches another option row: "
+        f"`{summary.get('groupsWithCommonRuntimeMatchingOtherOption', 0)}`",
+        f"- Groups where nonzero window runtime fields are explained by another option row: "
+        f"`{summary.get('groupsWithWindowRuntimeExplainedByOtherOption', 0)}`",
         "",
         "## Classification Counts",
         "",

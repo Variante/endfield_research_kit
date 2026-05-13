@@ -36,8 +36,6 @@ from recover_timeline_line_orders import (  # noqa: E402
     as_float,
     as_int,
     line_stem,
-    load_monobehaviour_records,
-    runtime_jump_clip_rows,
 )
 
 
@@ -89,6 +87,94 @@ def compact_jump(clip: dict[str, Any]) -> dict[str, Any]:
         if field in clip:
             out[field] = clip[field]
     return out
+
+
+def animestudio_meta(payload: dict[str, Any]) -> dict[str, Any]:
+    meta = payload.get("$animestudio") if isinstance(payload, dict) else {}
+    return meta if isinstance(meta, dict) else {}
+
+
+def lightweight_runtime_jump_clip_rows(mono_dir: Path) -> list[dict[str, Any]]:
+    clip_assets: dict[tuple[str, int], tuple[dict[str, Any], dict[str, Any], Path]] = {}
+    for path in mono_dir.glob("RuntimeJumpClip*.json"):
+        payload = read_json(path, {})
+        if not isinstance(payload, dict):
+            continue
+        meta = animestudio_meta(payload)
+        path_id = as_int(meta.get("pathId"))
+        source_file = safe_key(meta.get("sourceFile"))
+        if path_id is None or not source_file:
+            continue
+        clip_assets[(source_file, path_id)] = (payload, meta, path)
+
+    rows: list[dict[str, Any]] = []
+    for path in mono_dir.glob("Runtime Jump Track*.json"):
+        payload = read_json(path, {})
+        if not isinstance(payload, dict):
+            continue
+        meta = animestudio_meta(payload)
+        source_file = safe_key(meta.get("sourceFile"))
+        track_name = safe_key(meta.get("name")) or path.stem
+        track_path_id = as_int(meta.get("pathId"))
+        track_option_index = as_int(payload.get("OptionIndex"))
+        clips = payload.get("m_Clips")
+        if not isinstance(clips, list):
+            continue
+        for clip in clips:
+            if not isinstance(clip, dict):
+                continue
+            option_index = as_int(clip.get("optionIndex"))
+            if option_index is None:
+                option_index = track_option_index
+            if option_index is None:
+                continue
+            start = as_float(clip.get("m_Start"))
+            duration = as_float(clip.get("m_Duration"))
+            if duration <= 0.0:
+                continue
+            asset_ref = clip.get("m_Asset") if isinstance(clip.get("m_Asset"), dict) else {}
+            asset_path_id = as_int(asset_ref.get("m_PathID"))
+            asset_payload: dict[str, Any] = {}
+            asset_meta: dict[str, Any] = {}
+            asset_path: Path | None = None
+            if asset_path_id is not None:
+                asset = clip_assets.get((source_file, asset_path_id))
+                if asset:
+                    asset_payload, asset_meta, asset_path = asset
+            row = {
+                "kind": "runtimeJump",
+                "optionIndex": option_index,
+                "start": round(start, 3),
+                "duration": round(duration, 3),
+                "end": round(start + duration, 3),
+                "track": slash(path),
+                "trackName": track_name,
+                "trackPathId": track_path_id,
+                "sourceFile": source_file,
+                "timeline": "",
+                "displayName": safe_key(clip.get("m_DisplayName")),
+            }
+            if asset_path is not None:
+                row["assetName"] = safe_key(asset_meta.get("name"))
+                row["assetPathId"] = asset_path_id
+                row["assetTrack"] = slash(asset_path)
+            for field in (
+                "isReverseJump",
+                "needChangeOptionAfterJump",
+                "optionIndexAfterJump",
+                "isJumpFirst",
+            ):
+                value = as_int(asset_payload.get(field)) if isinstance(asset_payload, dict) else None
+                if value is not None:
+                    row[field] = value
+            if isinstance(asset_payload, dict) and "crossFadeDurationAfterJump" in asset_payload:
+                row["crossFadeDurationAfterJump"] = round(
+                    as_float(asset_payload.get("crossFadeDurationAfterJump")),
+                    3,
+                )
+            rows.append(row)
+    rows.sort(key=lambda row: (row["start"], row["optionIndex"], row.get("track") or ""))
+    return rows
 
 
 def line_time(line: dict[str, Any] | None) -> tuple[float | None, float | None]:
@@ -148,6 +234,7 @@ def timeline_option_row(
 class RuntimeJumpCache:
     def __init__(self) -> None:
         self._mono_dirs: dict[Path, dict[str, Any]] = {}
+        self._asset_source_files: dict[Path, str] = {}
 
     def load(self, mono_dir: Path) -> dict[str, Any]:
         mono_dir = mono_dir.resolve()
@@ -155,16 +242,23 @@ class RuntimeJumpCache:
         if cached is not None:
             return cached
 
-        records_by_key, _children_by_parent, _timeline_roots = load_monobehaviour_records(mono_dir)
-        records = list(records_by_key.values())
-        records_by_path = {slash(record["path"]): record for record in records}
-        runtime_jumps = runtime_jump_clip_rows("", records, records_by_key)
         cached = {
-            "recordsByPath": records_by_path,
-            "runtimeJumps": runtime_jumps,
+            "runtimeJumps": lightweight_runtime_jump_clip_rows(mono_dir),
         }
         self._mono_dirs[mono_dir] = cached
         return cached
+
+    def source_file_for_asset_track(self, asset_path: Path) -> str:
+        asset_path = asset_path.resolve()
+        cached = self._asset_source_files.get(asset_path)
+        if cached is not None:
+            return cached
+        payload = read_json(asset_path, {})
+        source_file = ""
+        if isinstance(payload, dict):
+            source_file = safe_key(animestudio_meta(payload).get("sourceFile"))
+        self._asset_source_files[asset_path] = source_file
+        return source_file
 
     def source_files_for_asset_tracks(self, asset_tracks: list[str]) -> tuple[set[str], list[dict[str, Any]], list[str]]:
         source_files: set[str] = set()
@@ -181,10 +275,10 @@ class RuntimeJumpCache:
                 missing_tracks.append(asset_track)
                 continue
             cached = self.load(mono_dir)
-            record = cached["recordsByPath"].get(slash(asset_path))
-            if record:
-                source_files.add(safe_key(record.get("sourceFile")))
-            else:
+            source_file = self.source_file_for_asset_track(asset_path)
+            if source_file:
+                source_files.add(source_file)
+            elif not asset_path.exists():
                 missing_tracks.append(asset_track)
             if mono_dir.resolve() not in seen_mono_dirs:
                 seen_mono_dirs.add(mono_dir.resolve())
@@ -208,6 +302,34 @@ def option_time_window(option_rows: list[dict[str, Any]]) -> tuple[float | None,
     return min(starts), max(ends)
 
 
+def expected_paths_from_risk(
+    option_ids: list[str],
+    candidate_line_ids: list[str],
+    risk: dict[str, Any],
+) -> dict[str, list[str]]:
+    for field in ("branchLineIdsByOption", "candidateLineIdsByOption"):
+        raw_mapping = risk.get(field)
+        if not isinstance(raw_mapping, dict):
+            continue
+        expected: dict[str, list[str]] = {}
+        for option_id in option_ids:
+            raw_value = raw_mapping.get(option_id)
+            if isinstance(raw_value, list):
+                line_ids = [safe_key(value) for value in raw_value if safe_key(value)]
+            else:
+                line_id = safe_key(raw_value)
+                line_ids = [line_id] if line_id else []
+            if line_ids:
+                expected[option_id] = line_ids
+        if expected:
+            return expected
+    return {
+        option_id: [candidate_line_ids[index]]
+        for index, option_id in enumerate(option_ids)
+        if index < len(candidate_line_ids) and candidate_line_ids[index]
+    }
+
+
 def infer_route_paths(
     conv: dict[str, Any],
     option_rows: list[dict[str, Any]],
@@ -215,6 +337,7 @@ def infer_route_paths(
     candidate_line_ids: list[str],
     common_line_id: str,
     nearby_jumps: list[dict[str, Any]],
+    risk: dict[str, Any],
 ) -> tuple[dict[str, list[str]], dict[str, list[str]], dict[str, dict[str, Any]], bool]:
     _option_start, option_end = option_time_window(option_rows)
     if option_end is None:
@@ -310,11 +433,7 @@ def infer_route_paths(
                 "optionChangeJumps": option_change_jumps,
             }
 
-    expected = {
-        option_id: [candidate_line_ids[index]]
-        for index, option_id in enumerate(option_ids)
-        if index < len(candidate_line_ids) and candidate_line_ids[index]
-    }
+    expected = expected_paths_from_risk(option_ids, candidate_line_ids, risk)
     paths_match_candidates = bool(expected) and all(by_option.get(option_id) == expected[option_id] for option_id in expected)
     return by_option, expected, jump_effects_by_option, paths_match_candidates
 
@@ -459,6 +578,7 @@ def audit_group(
         candidate_line_ids,
         common_line_id,
         nearby_jumps,
+        risk,
     )
     path_diagnostics = runtime_path_diagnostics(inferred_paths, expected_paths, jump_effects_by_option)
     distinct_paths = {tuple(path) for path in inferred_paths.values() if path}
@@ -497,6 +617,7 @@ def audit_group(
         "candidateLineIds": candidate_line_ids,
         "commonContinuationLineId": common_line_id,
         "assetTracks": asset_tracks,
+        "riskCandidateMapping": safe_key(risk.get("candidateMapping")),
         "sourceFiles": sorted(source_files),
         "missingAssetTracks": missing_tracks,
         "timeWindow": {
@@ -574,6 +695,7 @@ def summarize_rows(
     only_nearby_jumps: bool = False,
 ) -> dict[str, Any]:
     recommendations = Counter(row.get("recommendation") or "" for row in rows)
+    risk_mappings = Counter(safe_key(row.get("riskCandidateMapping")) or "none" for row in rows)
     return {
         "language": language,
         "filters": {
@@ -623,6 +745,7 @@ def summarize_rows(
         "groupsPassingNarrowRouteRule": sum(
             1 for row in rows if row.get("checks", {}).get("passesNarrowRouteRule")
         ),
+        "riskCandidateMappingCounts": dict(sorted(risk_mappings.items())),
         "recommendationCounts": dict(sorted(recommendations.items())),
     }
 
@@ -691,6 +814,7 @@ def render_markdown(summary: dict[str, Any], rows: list[dict[str, Any]]) -> str:
         f"- Groups with reverse-jump line-range evidence: `{summary['groupsWithReverseRangeLineEvidence']}`",
         f"- Groups with `needChangeOptionAfterJump` clips: `{summary['groupsWithOptionChangeJumps']}`",
         f"- Groups passing the strict second-rule check: `{summary['groupsPassingNarrowRouteRule']}`",
+        f"- Existing candidate mapping sources: `{summary.get('riskCandidateMappingCounts', {})}`",
         "",
         "## Recommendation Counts",
         "",
