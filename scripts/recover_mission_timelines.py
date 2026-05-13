@@ -881,6 +881,46 @@ def compact_sequence_for_scene(sequence: dict, index: int) -> dict:
     }
 
 
+def compact_levelscript_step(step: Any) -> dict:
+    if not isinstance(step, dict):
+        return {}
+    row: dict[str, Any] = {}
+    for key in ("nodeKey", "payloadText", "localId", "nextId"):
+        value = step.get(key)
+        if value not in (None, "", [], {}):
+            row[key] = value
+    source = step.get("source")
+    if isinstance(source, dict):
+        compact_source = {
+            key: source.get(key)
+            for key in ("layout", "code", "kind", "uid", "start")
+            if source.get(key) not in (None, "", [], {})
+        }
+        if compact_source:
+            row["source"] = compact_source
+    return row
+
+
+def compact_hash_terminal(terminal: dict) -> dict:
+    row = {
+        "direction": terminal.get("direction") or "",
+        "hash": terminal.get("hash") or "",
+        "sourceFile": terminal.get("sourceFile") or "",
+        "levelId": terminal.get("levelId") or "",
+    }
+    source_step = compact_levelscript_step(terminal.get("sourceStep"))
+    hash_step = compact_levelscript_step(terminal.get("hashStep"))
+    if source_step:
+        row["sourceStep"] = source_step
+    if hash_step:
+        row["hashStep"] = hash_step
+    return {
+        key: value
+        for key, value in row.items()
+        if value not in (None, "", [], {})
+    }
+
+
 def compact_scene_timeline_entry(entry: dict) -> dict:
     row: dict[str, Any] = {}
     for key in ("sourceKey", "timeline", "dialogKey", "file"):
@@ -906,6 +946,7 @@ def build_scene_placement_index(
     source_backed_scene_edges: list[dict],
     source_backed_scene_sequences: list[dict] | None = None,
     source_backed_story_call_contexts: list[dict] | None = None,
+    source_backed_hash_terminals: list[dict] | None = None,
 ) -> dict[str, dict]:
     """Build compact, evidence-only scene placement signals for one mission."""
     rows: dict[str, dict] = {}
@@ -935,6 +976,8 @@ def build_scene_placement_index(
                 "sequenceNeighbors": [],
                 "sourceBackedStoryCallContextCount": 0,
                 "storyCallContexts": [],
+                "sourceBackedHashTerminalCount": 0,
+                "hashTerminals": [],
                 "timelineEvidenceCount": 0,
                 "timelines": [],
                 "timelineEvidence": [],
@@ -1037,6 +1080,17 @@ def build_scene_placement_index(
                     compact_sequence_for_scene(context, index)
                 )
 
+    for terminal in source_backed_hash_terminals or []:
+        if not isinstance(terminal, dict):
+            continue
+        scene_key = str(terminal.get("sceneKey") or "").strip()
+        if not scene_key:
+            continue
+        row = ensure(scene_key)
+        row["sourceBackedHashTerminalCount"] += 1
+        if len(row["hashTerminals"]) < 8:
+            row["hashTerminals"].append(compact_hash_terminal(terminal))
+
     compact_rows: dict[str, dict] = {}
     for scene_key, row in sorted(rows.items(), key=lambda item: natural_key(item[0])):
         if row["storyRefCount"]:
@@ -1049,6 +1103,8 @@ def build_scene_placement_index(
             unique_append(row["evidenceKinds"], "sourceBackedSceneSequence")
         if row["sourceBackedStoryCallContextCount"]:
             unique_append(row["evidenceKinds"], "sourceBackedStoryCallContext")
+        if row["sourceBackedHashTerminalCount"]:
+            unique_append(row["evidenceKinds"], "sourceBackedHashTerminal")
         if row["timelineEvidenceCount"]:
             unique_append(row["evidenceKinds"], "timelineEvidence")
         row["questIds"].sort(key=natural_key)
@@ -1069,6 +1125,10 @@ SEQUENCE_SCENE_KINDS = {"dlg", "black", "cutscene", "remotecomm", "radio", "sns"
 
 def is_sequence_scene_key(scene_key: str) -> bool:
     return story_scene_kind(str(scene_key or "")) in SEQUENCE_SCENE_KINDS
+
+
+def is_levelscript_hash_key(node_key: str) -> bool:
+    return re.match(r"^#[0-9a-fA-F]{8}$", str(node_key or "")) is not None
 
 
 def first_string(values: Any) -> str:
@@ -1199,6 +1259,41 @@ def source_backed_story_call_contexts_from_scene_graph(
     return out
 
 
+def source_backed_hash_terminals_from_scene_graph(
+    scene_graph: dict | None,
+    source: dict | None = None,
+) -> list[dict]:
+    terminals = (scene_graph or {}).get("levelscriptHashTerminals")
+    if not isinstance(terminals, list):
+        return []
+
+    out: list[dict] = []
+    for index, terminal in enumerate(terminals):
+        if not isinstance(terminal, dict):
+            continue
+        scene_key = str(terminal.get("sceneKey") or "").strip()
+        hash_key = str(terminal.get("hash") or "").strip()
+        if not scene_key or not is_sequence_scene_key(scene_key) or not is_levelscript_hash_key(hash_key):
+            continue
+        row = {
+            "kind": terminal.get("kind") or "levelscriptHashTerminal",
+            "sourceFile": terminal.get("file") or terminal.get("sourceFile") or "",
+            "levelId": terminal.get("levelId") or "",
+            "sceneKey": scene_key,
+            "hash": hash_key,
+            "direction": terminal.get("direction") or "",
+            "sourceStep": terminal.get("sourceStep") or {},
+            "hashStep": terminal.get("hashStep") or {},
+            "recoveredBy": "scripts/webui/build_story.py",
+        }
+        if source:
+            bundle_source = dict(source)
+            bundle_source["field"] = f"{bundle_source.get('field', 'flow.sceneGraph.levelscriptHashTerminals')}[{index}]"
+            row["bundleSource"] = bundle_source
+        out.append(row)
+    return out
+
+
 def source_backed_story_call_contexts_from_scene_bindings(
     scene_bindings: dict | None,
     source: dict | None = None,
@@ -1259,6 +1354,83 @@ def source_backed_story_call_contexts_from_scene_bindings(
             bundle_source["field"] = f"{bundle_source.get('field', 'extras.sceneBindings')}#{index}"
             row["bundleSource"] = bundle_source
         out.append(row)
+    return out
+
+
+def source_backed_hash_terminals_from_scene_bindings(
+    scene_bindings: dict | None,
+    source: dict | None = None,
+) -> list[dict]:
+    if not isinstance(scene_bindings, dict):
+        return []
+
+    out: list[dict] = []
+    seen: set[tuple] = set()
+    for binding in scene_bindings.values():
+        if not isinstance(binding, dict):
+            continue
+        for chain in binding.get("chains") or []:
+            if not isinstance(chain, dict):
+                continue
+            source_file = str(chain.get("file") or "").strip()
+            level_id = str(chain.get("levelId") or "").strip()
+            nodes: list[tuple[str, dict]] = []
+            for step in chain.get("steps") or []:
+                if not isinstance(step, dict):
+                    continue
+                for payload in step.get("payloads") or []:
+                    if not isinstance(payload, dict):
+                        continue
+                    node_key = str(payload.get("sceneKey") or payload.get("nodeKey") or "").strip()
+                    if not node_key:
+                        continue
+                    step_source = ((step.get("_debug") or {}).get("source") or {})
+                    compact_step = {
+                        "nodeKey": node_key,
+                        "payloadText": payload.get("text") or "",
+                        "localId": step.get("localId"),
+                        "nextId": step.get("nextId"),
+                        "source": {
+                            key: step_source.get(key)
+                            for key in ("layout", "code", "kind", "uid", "start")
+                            if step_source.get(key) not in (None, "", [], {})
+                        },
+                    }
+                    if not compact_step["source"]:
+                        compact_step.pop("source", None)
+                    if not nodes or nodes[-1][0] != node_key:
+                        nodes.append((node_key, compact_step))
+            for pos, ((src, source_step), (dst, hash_step)) in enumerate(zip(nodes, nodes[1:])):
+                if is_levelscript_hash_key(src) and is_sequence_scene_key(dst):
+                    scene_key = dst
+                    hash_key = src
+                    direction = "hash->story"
+                elif is_sequence_scene_key(src) and is_levelscript_hash_key(dst):
+                    scene_key = src
+                    hash_key = dst
+                    direction = "story->hash"
+                else:
+                    continue
+                signature = (source_file, level_id, scene_key, hash_key, direction, pos)
+                if signature in seen:
+                    continue
+                seen.add(signature)
+                row = {
+                    "kind": "levelscriptHashTerminal",
+                    "sourceFile": source_file,
+                    "levelId": level_id,
+                    "sceneKey": scene_key,
+                    "hash": hash_key,
+                    "direction": direction,
+                    "sourceStep": source_step,
+                    "hashStep": hash_step,
+                    "recoveredBy": "scripts/webui/build_story.py",
+                }
+                if source:
+                    bundle_source = dict(source)
+                    bundle_source["field"] = f"{bundle_source.get('field', 'extras.sceneBindings')}#{len(out)}"
+                    row["bundleSource"] = bundle_source
+                out.append(row)
     return out
 
 
@@ -1364,6 +1536,30 @@ def load_source_backed_story_call_contexts(mission_id: str, generated_mission_di
     )
 
 
+def load_source_backed_hash_terminals(mission_id: str, generated_mission_dir: Path | None) -> list[dict]:
+    """Load source-backed story/hash terminal diagnostics from generated mission bundles."""
+    if not generated_mission_dir:
+        return []
+    path = generated_mission_dir / f"{mission_id}.json"
+    if not path.exists():
+        return []
+    try:
+        payload = load_json(path)
+    except (OSError, json.JSONDecodeError):
+        return []
+    scene_graph = ((payload.get("flow") or {}).get("sceneGraph") or {})
+    terminals = source_backed_hash_terminals_from_scene_graph(
+        scene_graph,
+        source=source_ref(path, "flow.sceneGraph.levelscriptHashTerminals"),
+    )
+    if terminals:
+        return terminals
+    return source_backed_hash_terminals_from_scene_bindings(
+        ((payload.get("extras") or {}).get("sceneBindings") or {}),
+        source=source_ref(path, "extras.sceneBindings"),
+    )
+
+
 def extract_quest(raw_quest: dict, source_path: Path, quest_field: str) -> dict:
     quest_id = raw_quest.get("questId") or ""
     quest = {
@@ -1408,6 +1604,7 @@ def recover_mission(
     generated_mission_dir: Path | None,
     source_backed_scene_edges: list[dict] | None = None,
     source_backed_story_call_contexts: list[dict] | None = None,
+    source_backed_hash_terminals: list[dict] | None = None,
 ) -> dict:
     raw = load_json(path)
     mission_id = raw.get("missionId") or path.stem
@@ -1482,6 +1679,11 @@ def recover_mission(
         if source_backed_story_call_contexts is not None
         else load_source_backed_story_call_contexts(mission_id, generated_mission_dir)
     )
+    hash_terminals = (
+        source_backed_hash_terminals
+        if source_backed_hash_terminals is not None
+        else load_source_backed_hash_terminals(mission_id, generated_mission_dir)
+    )
     scene_placement = build_scene_placement_index(
         quests,
         client_actions,
@@ -1489,6 +1691,7 @@ def recover_mission(
         scene_edges,
         scene_sequences,
         story_call_contexts,
+        hash_terminals,
     )
     payload = {
         "mission": mission_id,
@@ -1503,6 +1706,7 @@ def recover_mission(
         "sourceBackedSceneEdges": scene_edges,
         "sourceBackedSceneSequences": scene_sequences,
         "sourceBackedStoryCallContexts": story_call_contexts,
+        "sourceBackedHashTerminals": hash_terminals,
         "referencedScenes": referenced_scenes,
         "sceneTimelineEvidence": timeline_evidence,
         "scenePlacement": scene_placement,
@@ -1522,6 +1726,152 @@ def mission_files(mra_dir: Path, selected: set[str]) -> list[Path]:
     return sorted(files, key=lambda path: natural_key(path.stem))
 
 
+EXPECTED_HASH_TERMINAL_PATTERN = {
+    "direction": "story->hash",
+    "layout": "plain",
+    "code": "0x0e34",
+    "kind": "0x00",
+    "nextId": -1,
+}
+
+
+def _terminal_hash_step(terminal: dict) -> dict:
+    hash_step = terminal.get("hashStep")
+    return hash_step if isinstance(hash_step, dict) else {}
+
+
+def _terminal_hash_source(terminal: dict) -> dict:
+    source = _terminal_hash_step(terminal).get("source")
+    return source if isinstance(source, dict) else {}
+
+
+def _terminal_pattern(terminal: dict) -> dict:
+    hash_step = _terminal_hash_step(terminal)
+    source = _terminal_hash_source(terminal)
+    return {
+        "direction": terminal.get("direction") or "",
+        "layout": source.get("layout") or "",
+        "code": source.get("code") or "",
+        "kind": source.get("kind") or "",
+        "nextId": hash_step.get("nextId"),
+    }
+
+
+def _pattern_counter_key(pattern: dict) -> tuple:
+    return (
+        pattern.get("direction") or "",
+        pattern.get("layout") or "",
+        pattern.get("code") or "",
+        pattern.get("kind") or "",
+        pattern.get("nextId"),
+    )
+
+
+def _terminal_matches_expected_pattern(pattern: dict) -> bool:
+    return all(
+        pattern.get(key) == expected
+        for key, expected in EXPECTED_HASH_TERMINAL_PATTERN.items()
+    )
+
+
+def _hash_terminal_catalog_sample(mission_id: str, terminal: dict) -> dict:
+    pattern = _terminal_pattern(terminal)
+    sample = {
+        "mission": mission_id,
+        "sceneKey": terminal.get("sceneKey") or "",
+        "hash": terminal.get("hash") or "",
+        "sourceFile": terminal.get("sourceFile") or "",
+        **pattern,
+    }
+    return {
+        key: value
+        for key, value in sample.items()
+        if value not in (None, "", [], {})
+    }
+
+
+def build_hash_terminal_catalog(recovered: list[dict]) -> dict:
+    pattern_counter: Counter = Counter()
+    hash_counter: Counter = Counter()
+    missions_by_hash: dict[str, set[str]] = defaultdict(set)
+    scenes_by_hash: dict[str, set[str]] = defaultdict(set)
+    files_by_hash: dict[str, set[str]] = defaultdict(set)
+    samples_by_hash: dict[str, list[dict]] = defaultdict(list)
+    sample_signatures_by_hash: dict[str, set[str]] = defaultdict(set)
+    exceptions: list[dict] = []
+    exception_count = 0
+
+    for mission in recovered:
+        mission_id = str(mission.get("mission") or "")
+        for terminal in mission.get("sourceBackedHashTerminals") or []:
+            if not isinstance(terminal, dict):
+                continue
+            hash_key = str(terminal.get("hash") or "").strip()
+            if not hash_key:
+                continue
+            pattern = _terminal_pattern(terminal)
+            pattern_counter[_pattern_counter_key(pattern)] += 1
+            hash_counter[hash_key] += 1
+            if mission_id:
+                missions_by_hash[hash_key].add(mission_id)
+            scene_key = str(terminal.get("sceneKey") or "").strip()
+            if scene_key:
+                scenes_by_hash[hash_key].add(scene_key)
+            source_file = str(terminal.get("sourceFile") or "").strip()
+            if source_file:
+                files_by_hash[hash_key].add(source_file)
+
+            sample = _hash_terminal_catalog_sample(mission_id, terminal)
+            sample_signature = json.dumps(sample, ensure_ascii=False, sort_keys=True)
+            if (
+                sample_signature not in sample_signatures_by_hash[hash_key]
+                and len(samples_by_hash[hash_key]) < 5
+            ):
+                sample_signatures_by_hash[hash_key].add(sample_signature)
+                samples_by_hash[hash_key].append(sample)
+
+            if not _terminal_matches_expected_pattern(pattern):
+                exception_count += 1
+                if len(exceptions) < 50:
+                    exceptions.append(sample)
+
+    pattern_counts = []
+    for key, count in pattern_counter.most_common():
+        direction, layout, code, kind, next_id = key
+        pattern_counts.append({
+            "count": count,
+            "direction": direction,
+            "layout": layout,
+            "code": code,
+            "kind": kind,
+            "nextId": next_id,
+        })
+
+    top_hashes = []
+    for hash_key, count in hash_counter.most_common(20):
+        top_hashes.append({
+            "hash": hash_key,
+            "count": count,
+            "missionCount": len(missions_by_hash.get(hash_key) or []),
+            "sceneCount": len(scenes_by_hash.get(hash_key) or []),
+            "sourceFileCount": len(files_by_hash.get(hash_key) or []),
+            "missions": sorted(missions_by_hash.get(hash_key) or [], key=natural_key)[:10],
+            "scenes": sorted(scenes_by_hash.get(hash_key) or [], key=natural_key)[:12],
+            "sourceFiles": sorted(files_by_hash.get(hash_key) or [], key=natural_key)[:5],
+            "samples": samples_by_hash.get(hash_key) or [],
+        })
+
+    return {
+        "expectedTerminalPattern": EXPECTED_HASH_TERMINAL_PATTERN,
+        "uniqueHashes": len(hash_counter),
+        "patternCounts": pattern_counts,
+        "topHashes": top_hashes,
+        "exceptionCount": exception_count,
+        "exceptions": exceptions,
+        "allMatchExpectedTerminalPattern": exception_count == 0,
+    }
+
+
 def summarize(
     recovered: list[dict],
     timeline_meta: dict,
@@ -1536,11 +1886,14 @@ def summarize(
     missions_with_scene_edges = 0
     missions_with_scene_sequences = 0
     missions_with_story_call_contexts = 0
+    missions_with_hash_terminals = 0
     missions_with_quest_loops = 0
     quest_loop_count = 0
     scene_edge_counter: Counter = Counter()
     scene_sequence_total = 0
     story_call_context_total = 0
+    hash_terminal_total = 0
+    hash_terminal_catalog = build_hash_terminal_catalog(recovered)
     scene_placement_counter: Counter = Counter()
     scene_placement_total = 0
     for mission in recovered:
@@ -1556,6 +1909,9 @@ def summarize(
         if mission.get("sourceBackedStoryCallContexts"):
             missions_with_story_call_contexts += 1
             story_call_context_total += len(mission.get("sourceBackedStoryCallContexts") or [])
+        if mission.get("sourceBackedHashTerminals"):
+            missions_with_hash_terminals += 1
+            hash_terminal_total += len(mission.get("sourceBackedHashTerminals") or [])
         loops = ((mission.get("questTree") or {}).get("loops") or [])
         if loops:
             missions_with_quest_loops += 1
@@ -1590,6 +1946,11 @@ def summarize(
         "sourceBackedSceneSequences": scene_sequence_total,
         "missionsWithSourceBackedStoryCallContexts": missions_with_story_call_contexts,
         "sourceBackedStoryCallContexts": story_call_context_total,
+        "missionsWithSourceBackedHashTerminals": missions_with_hash_terminals,
+        "sourceBackedHashTerminals": hash_terminal_total,
+        "sourceBackedHashTerminalUniqueHashes": hash_terminal_catalog.get("uniqueHashes", 0),
+        "sourceBackedHashTerminalExceptionCount": hash_terminal_catalog.get("exceptionCount", 0),
+        "hashTerminalCatalog": hash_terminal_catalog,
         "scenePlacementEntries": scene_placement_total,
         "timelineEvidence": timeline_meta,
         "unresolvedByKind": dict(unresolved_counter.most_common()),
@@ -1620,6 +1981,10 @@ def render_markdown(payload: dict) -> str:
         f"- source-backed scene sequences: `{summary.get('sourceBackedSceneSequences', 0)}`",
         f"- missions with source-backed story-call context: `{summary.get('missionsWithSourceBackedStoryCallContexts', 0)}`",
         f"- source-backed story-call contexts: `{summary.get('sourceBackedStoryCallContexts', 0)}`",
+        f"- missions with source-backed hash terminals: `{summary.get('missionsWithSourceBackedHashTerminals', 0)}`",
+        f"- source-backed hash terminals: `{summary.get('sourceBackedHashTerminals', 0)}`",
+        f"- unique source-backed terminal hashes: `{summary.get('sourceBackedHashTerminalUniqueHashes', 0)}`",
+        f"- hash-terminal pattern exceptions: `{summary.get('sourceBackedHashTerminalExceptionCount', 0)}`",
         f"- scene placement entries: `{summary.get('scenePlacementEntries', 0)}`",
         f"- timeline evidence file: `{summary['timelineEvidence'].get('path', '')}`",
         "",
@@ -1651,6 +2016,83 @@ def render_markdown(payload: dict) -> str:
             lines.append(f"- `{key}`: `{count}`")
     else:
         lines.append("- none")
+    catalog = summary.get("hashTerminalCatalog") or {}
+    lines.extend([
+        "",
+        "## Hash Terminal Catalog",
+        "",
+    ])
+    if catalog:
+        expected = catalog.get("expectedTerminalPattern") or {}
+        lines.append(f"- unique hashes: `{catalog.get('uniqueHashes', 0)}`")
+        lines.append(
+            f"- all match expected terminal pattern: "
+            f"`{'yes' if catalog.get('allMatchExpectedTerminalPattern') else 'no'}`"
+        )
+        if expected:
+            lines.append(
+                "- expected terminal pattern: "
+                f"`{expected.get('direction', '')}` "
+                f"`{expected.get('layout', '')}` "
+                f"`{expected.get('code', '')}` "
+                f"`{expected.get('kind', '')}` "
+                f"`nextId={expected.get('nextId')}`"
+            )
+        pattern_counts = catalog.get("patternCounts") or []
+        if pattern_counts:
+            lines.extend(["", "### Terminal Patterns", ""])
+            for pattern in pattern_counts[:12]:
+                lines.append(
+                    "- "
+                    f"`{pattern.get('direction', '')}` "
+                    f"`{pattern.get('layout', '')}` "
+                    f"`{pattern.get('code', '')}` "
+                    f"`{pattern.get('kind', '')}` "
+                    f"`nextId={pattern.get('nextId')}`: "
+                    f"`{pattern.get('count', 0)}`"
+                )
+        top_hashes = catalog.get("topHashes") or []
+        if top_hashes:
+            lines.extend(["", "### Top Hashes", ""])
+            for item in top_hashes[:10]:
+                scene_samples = (item.get("scenes") or [])[:6]
+                scenes = ", ".join(f"`{scene}`" for scene in scene_samples)
+                remaining_scenes = int(item.get("sceneCount") or 0) - len(scene_samples)
+                if remaining_scenes > 0:
+                    scenes += f", +{remaining_scenes}"
+                mission_samples = (item.get("missions") or [])[:6]
+                missions = ", ".join(f"`{mission}`" for mission in mission_samples)
+                remaining_missions = int(item.get("missionCount") or 0) - len(mission_samples)
+                if remaining_missions > 0:
+                    missions += f", +{remaining_missions}"
+                lines.append(
+                    "- "
+                    f"`{item.get('hash', '')}`: "
+                    f"count=`{item.get('count', 0)}`, "
+                    f"missions=`{item.get('missionCount', 0)}`, "
+                    f"scenes=`{item.get('sceneCount', 0)}`"
+                    + (f"; mission samples: {missions}" if missions else "")
+                    + (f"; scene samples: {scenes}" if scenes else "")
+                )
+        exceptions = catalog.get("exceptions") or []
+        lines.extend(["", "### Pattern Exceptions", ""])
+        if exceptions:
+            for item in exceptions[:20]:
+                lines.append(
+                    "- "
+                    f"`{item.get('mission', '')}` "
+                    f"`{item.get('sceneKey', '')}` -> "
+                    f"`{item.get('hash', '')}` "
+                    f"`{item.get('direction', '')}` "
+                    f"`{item.get('layout', '')}` "
+                    f"`{item.get('code', '')}` "
+                    f"`{item.get('kind', '')}` "
+                    f"`nextId={item.get('nextId')}`"
+                )
+        else:
+            lines.append("- none")
+    else:
+        lines.append("- none")
     lines.extend([
         "",
         "## Client Actions",
@@ -1665,8 +2107,8 @@ def render_markdown(payload: dict) -> str:
         "",
         "## Mission Index",
         "",
-        "| Mission | Quests | Branches | Timeline Scenes | Scene Edges | Scene Seq | Story Calls | Scene Signals | Unresolved | Level |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| Mission | Quests | Branches | Timeline Scenes | Scene Edges | Scene Seq | Story Calls | Hash Terms | Scene Signals | Unresolved | Level |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ])
     for mission in payload.get("missions") or []:
         metadata = mission.get("metadata") or {}
@@ -1679,6 +2121,7 @@ def render_markdown(payload: dict) -> str:
             f"{len(mission.get('sourceBackedSceneEdges') or [])} | "
             f"{len(mission.get('sourceBackedSceneSequences') or [])} | "
             f"{len(mission.get('sourceBackedStoryCallContexts') or [])} | "
+            f"{len(mission.get('sourceBackedHashTerminals') or [])} | "
             f"{len(mission.get('scenePlacement') or {})} | "
             f"{len(mission.get('unresolved') or [])} | "
             f"`{metadata.get('levelId', '')}` |"

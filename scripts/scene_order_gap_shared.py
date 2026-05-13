@@ -1130,6 +1130,22 @@ def _render_group_detail(group_detail: dict) -> str:
         }
         fallback_label = mode_labels.get(inferred_anchor_mode, "fallback candidate")
         detail = f"{label} {fallback_label} near `{after}`" if after else f"{label} {fallback_label}"
+    elif status == "tableKeyAfter":
+        mode_descriptions = {
+            "dialogOptionTableKey:directLine": (
+                "DialogOptionTable key matches an existing DialogTextTable line"
+            ),
+            "dialogOptionTableKey:priorLine": (
+                "DialogOptionTable key lands in a missing line slot; anchored to "
+                "the last existing line before that slot"
+            ),
+        }
+        mode_label = mode_descriptions.get(
+            inferred_anchor_mode, "DialogOptionTable key-encoded anchor"
+        )
+        detail = (
+            f"{label} {mode_label}, anchor `{after}`" if after else f"{label} {mode_label}"
+        )
     elif status == "unanchored":
         detail = f"{label} unanchored"
     else:
@@ -1267,6 +1283,7 @@ def analyze_option_layout(
             f"total={int(breakdown.get('total', len(option_groups)))}, "
             f"authoredAfter={int(breakdown.get('authoredAfter', 0))}, "
             f"authoredPre={int(breakdown.get('authoredPre', 0))}, "
+            f"tableKeyAfter={int(breakdown.get('tableKeyAfter', 0))}, "
             f"fallbackAfter={int(breakdown.get('fallbackAfter', 0))}, "
             f"unanchored={int(breakdown.get('unanchored', 0))}"
         )
@@ -1405,9 +1422,10 @@ def classify_option_position_failure(conv: dict, analysis: dict) -> dict:
     total = _as_int(breakdown.get("total"), len(group_details))
     authored_after = _as_int(breakdown.get("authoredAfter"))
     authored_pre = _as_int(breakdown.get("authoredPre"))
+    table_key_after = _as_int(breakdown.get("tableKeyAfter"))
     fallback_after = _as_int(breakdown.get("fallbackAfter"))
     unanchored = _as_int(breakdown.get("unanchored"))
-    authored_total = authored_after + authored_pre
+    authored_total = authored_after + authored_pre + table_key_after
 
     if total and fallback_after == total and not authored_total and not unanchored:
         code = "syntheticAfterAllGroups"
@@ -1454,6 +1472,7 @@ def classify_option_position_failure(conv: dict, analysis: dict) -> dict:
         "groups: "
         f"authoredAfter={authored_after}, "
         f"authoredPre={authored_pre}, "
+        f"tableKeyAfter={table_key_after}, "
         f"fallbackAfter={fallback_after}, "
         f"unanchored={unanchored}"
     )
@@ -1530,6 +1549,7 @@ _PLACEMENT_COUNT_FIELDS = {
     "sourceBackedSequenceCount",
     "sequenceNeighborCount",
     "sourceBackedStoryCallContextCount",
+    "sourceBackedHashTerminalCount",
     "timelineEvidenceCount",
 }
 
@@ -1544,6 +1564,7 @@ _PLACEMENT_LIST_FIELDS = {
     "outgoingEdges",
     "sequenceNeighbors",
     "storyCallContexts",
+    "hashTerminals",
     "timelines",
     "timelineEvidence",
     "missions",
@@ -1655,6 +1676,12 @@ def _placement_has_story_call_context(placement: dict | None) -> bool:
     return bool(int(placement.get("sourceBackedStoryCallContextCount") or 0))
 
 
+def _placement_has_hash_terminal(placement: dict | None) -> bool:
+    if not isinstance(placement, dict):
+        return False
+    return bool(int(placement.get("sourceBackedHashTerminalCount") or 0))
+
+
 def _placement_has_timeline(placement: dict | None) -> bool:
     if not isinstance(placement, dict):
         return False
@@ -1712,6 +1739,7 @@ def collect_scene_order_gap_rows(root: Path, conv_dir: Path) -> list[dict]:
             "scenePlacementHasSourceEdge": _placement_has_source_edge(scene_placement),
             "scenePlacementHasSourceSequence": _placement_has_source_sequence(scene_placement),
             "scenePlacementHasStoryCallContext": _placement_has_story_call_context(scene_placement),
+            "scenePlacementHasHashTerminal": _placement_has_hash_terminal(scene_placement),
             "scenePlacementHasTimeline": _placement_has_timeline(scene_placement),
             "inferredOptionLayout": inferred_options,
             "inferredOptionResponse": inferred_responses,
@@ -1791,6 +1819,7 @@ def build_scene_order_gap_summary(rows: list[dict], language: str) -> dict:
         "scenePlacementSourceEdge": sum(1 for row in rows if row.get("scenePlacementHasSourceEdge")),
         "scenePlacementSourceSequence": sum(1 for row in rows if row.get("scenePlacementHasSourceSequence")),
         "scenePlacementStoryCallContext": sum(1 for row in rows if row.get("scenePlacementHasStoryCallContext")),
+        "scenePlacementHashTerminal": sum(1 for row in rows if row.get("scenePlacementHasHashTerminal")),
         "scenePlacementTimeline": sum(1 for row in rows if row.get("scenePlacementHasTimeline")),
         "scenePlacementAny": sum(1 for row in rows if row.get("scenePlacementEvidenceKinds")),
         "bothMissingOrderAndInferredOptions": sum(
@@ -1882,6 +1911,34 @@ def _render_scene_placement_cell(row: dict) -> str:
             ]
             if window:
                 parts.append("calls: " + " -> ".join(f"`{value}`" for value in window))
+    hash_terminal_count = _as_int(placement.get("sourceBackedHashTerminalCount"))
+    if hash_terminal_count:
+        parts.append(f"hash terminals: {hash_terminal_count}")
+        for terminal in (placement.get("hashTerminals") or [])[:2]:
+            if not isinstance(terminal, dict):
+                continue
+            hash_key = str(terminal.get("hash") or "")
+            direction = str(terminal.get("direction") or "")
+            hash_step = terminal.get("hashStep")
+            if not isinstance(hash_step, dict):
+                hash_step = {}
+            source = hash_step.get("source")
+            if not isinstance(source, dict):
+                source = {}
+            bits = []
+            if direction:
+                bits.append(direction)
+            if hash_key:
+                bits.append(f"`{hash_key}`")
+            for label, key in (("code", "code"), ("kind", "kind")):
+                value = source.get(key)
+                if value not in (None, "", [], {}):
+                    bits.append(f"{label}={value}")
+            next_id = hash_step.get("nextId")
+            if next_id not in (None, "", [], {}):
+                bits.append(f"next={next_id}")
+            if bits:
+                parts.append("hash: " + " ".join(str(bit) for bit in bits))
     timelines = [str(value) for value in (placement.get("timelines") or []) if str(value or "")]
     if timelines:
         shown = ", ".join(f"`{value}`" for value in timelines[:3])
@@ -1911,6 +1968,7 @@ def render_scene_order_gap_markdown(summary: dict, rows: list[dict]) -> str:
         f"- scenes with source-backed scene-edge evidence: `{summary.get('scenePlacementSourceEdge', 0)}`",
         f"- scenes with source-backed scene-sequence evidence: `{summary.get('scenePlacementSourceSequence', 0)}`",
         f"- scenes with source-backed story-call context: `{summary.get('scenePlacementStoryCallContext', 0)}`",
+        f"- scenes with source-backed hash-terminal evidence: `{summary.get('scenePlacementHashTerminal', 0)}`",
         f"- scenes with timeline evidence: `{summary.get('scenePlacementTimeline', 0)}`",
     ]
 
