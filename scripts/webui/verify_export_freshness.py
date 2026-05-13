@@ -10,13 +10,12 @@ before rebuilding story/assets.
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 from typing import Any
 
+from common import ROOT, read_json, rel_path as slash
 
-ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
@@ -38,21 +37,6 @@ REQUIRED_ANIMESTUDIO_DIRS = (
     ("json_by_type", "TextAsset"),
     ("json_by_type", "MonoBehaviour"),
 )
-
-
-def read_json(path: Path, default: Any = None) -> Any:
-    try:
-        with path.open("r", encoding="utf-8-sig") as handle:
-            return json.load(handle)
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return default
-
-
-def slash(path: Path) -> str:
-    try:
-        return path.resolve().relative_to(ROOT.resolve()).as_posix()
-    except ValueError:
-        return path.as_posix().replace("\\", "/")
 
 
 def ordered_unique(values: list[str] | tuple[str, ...]) -> tuple[str, ...]:

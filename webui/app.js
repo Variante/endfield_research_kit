@@ -76,7 +76,7 @@ const STATE = {
   inlineTagDisplayMode: DEFAULT_INLINE_TAG_DISPLAY_MODE,
 };
 
-const { $, $$, storageGet, storageSet, normalizeUiLocale, escapeHtml } = window.WebUI;
+const { $, $$, storageGet, storageSet, normalizeUiLocale, escapeHtml, exportFullHref } = window.WebUI;
 
 function createDefaultFilters() {
   return {
@@ -5603,25 +5603,7 @@ function formatTimelineSeconds(value) {
 }
 
 function exportedAssetHref(relPath) {
-  const normalizedRel = String(relPath || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
-  if (!normalizedRel) return "/exported/";
-
-  const [source, ...rest] = normalizedRel.split("/").filter(Boolean);
-  const relWithinSource = rest.join("/");
-  let exportedRel = normalizedRel;
-  const sourceRoot = STATE.inlineImageSourceRoots && STATE.inlineImageSourceRoots[source];
-  if (sourceRoot) {
-    let normalizedRoot = String(sourceRoot || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
-    const exportRoot = String(STATE.inlineImageExportRoot || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
-    if (exportRoot && normalizedRoot.startsWith(`${exportRoot}/`)) {
-      normalizedRoot = normalizedRoot.slice(exportRoot.length + 1);
-    } else if (normalizedRoot === exportRoot) {
-      normalizedRoot = "";
-    }
-    exportedRel = [normalizedRoot, relWithinSource].filter(Boolean).join("/");
-  }
-
-  return `/exported/${exportedRel.split("/").map(encodeURIComponent).join("/")}`;
+  return exportFullHref(relPath, STATE.inlineImageSourceRoots, STATE.inlineImageExportRoot);
 }
 
 function highlightTextFragment(text, q) {

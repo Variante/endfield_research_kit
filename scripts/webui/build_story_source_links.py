@@ -16,13 +16,12 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+from common import EXPORT_ROOT, REPORTS_DIR, ROOT, rel_path as slash
 
-ROOT = Path(__file__).resolve().parents[2]
-EXPORT_ROOT = ROOT / "export_full"
 DATA_JSON_DIR = EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json"
 DEFAULT_OUTPUT = EXPORT_ROOT / "recovered" / "story_source_links.json"
-DEFAULT_REPORT_JSON = ROOT / "reports" / "story_source_links.json"
-DEFAULT_REPORT_MD = ROOT / "reports" / "story_source_links.md"
+DEFAULT_REPORT_JSON = REPORTS_DIR / "story_source_links.json"
+DEFAULT_REPORT_MD = REPORTS_DIR / "story_source_links.md"
 
 DEFAULT_SCAN_ROOTS = (
     DATA_JSON_DIR / "MissionRuntimeAsset",
@@ -61,13 +60,6 @@ CONTEXT_FIELDS = (
     "snsDialogId",
     "type",
 )
-
-
-def slash(path: Path) -> str:
-    try:
-        return path.relative_to(ROOT).as_posix()
-    except ValueError:
-        return path.as_posix()
 
 
 def normalize_dialog_id(raw: str) -> str:

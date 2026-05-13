@@ -33,11 +33,13 @@ Use `export.bat` as the default browser-data refresh path. It exports only the
 active WebUI inputs, verifies export freshness, rebuilds the Updates feed,
 rebuilds CN story/reference data by default, and refreshes the asset index.
 
-When running `python scripts\webui\build_story.py` directly, use a long timeout
-because it commonly takes about 30 minutes:
+When running `python scripts\webui\build_story.py` directly, use a longer
+timeout. The default CN lean build currently takes about 3 minutes on this
+checkout, while multi-language builds or forced timeline recovery can take
+longer:
 
 ```text
-timeout_ms >= 2700000
+timeout_ms >= 900000
 ```
 
 ## Recovery Investigation Commands

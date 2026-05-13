@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+from common import ROOT, read_json, write_report_json
+
 SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
@@ -33,10 +33,7 @@ def write_scene_order_gap_reports(root: Path, reports_dir: Path, language: str, 
     out_json = reports_dir / f"scene_order_gap_report_{language}.json"
 
     out_md.write_text(shared_render_scene_order_gap_markdown(summary, rows) + "\n", encoding="utf-8")
-    out_json.write_text(
-        json.dumps({"summary": summary, "scenes": rows}, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    write_report_json(out_json, {"summary": summary, "scenes": rows})
 
     print(f"  scene-order report: {out_md}")
     print(f"  scene-order data:   {out_json}")
@@ -56,11 +53,7 @@ def collect_inferred_option_anchor_rows(conv_dir: Path) -> list[dict]:
     """
     rows: list[dict] = []
     for path in sorted(conv_dir.glob("*.json")):
-        try:
-            with path.open(encoding="utf-8-sig") as f:
-                payload = json.load(f)
-        except (OSError, json.JSONDecodeError):
-            continue
+        payload = read_json(path, {})
         if not isinstance(payload, dict):
             continue
         if str(payload.get("kind") or "") != "dlg":
@@ -130,10 +123,7 @@ def write_inferred_option_anchors_report(reports_dir: Path, language: str, conv_
     out_json = reports_dir / f"inferred_option_anchors_{language}.json"
     out_md = reports_dir / f"inferred_option_anchors_{language}.md"
 
-    out_json.write_text(
-        json.dumps({"summary": summary, "scenes": rows}, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    write_report_json(out_json, {"summary": summary, "scenes": rows})
 
     md_lines = [
         f"# Inferred option anchors — {language}",

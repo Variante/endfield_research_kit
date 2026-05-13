@@ -9,15 +9,25 @@ is strong enough to justify another recovery rule.
 from __future__ import annotations
 
 import argparse
-import fnmatch
-import json
 import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from common import (
+    ROOT,
+    filtered_json_paths as filtered_conv_paths,
+    md_escape,
+    parse_group_filters,
+    read_json,
+    safe_key,
+    safe_report_suffix,
+    split_csv_values,
+    story_matches,
+    write_report_json as write_json,
+)
 
-ROOT = Path(__file__).resolve().parents[2]
+
 SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
@@ -33,31 +43,6 @@ from recover_timeline_line_orders import (  # noqa: E402
 
 ROUTE_EPSILON = 0.001
 NEARBY_PADDING_SECONDS = 1.0
-SAFE_REPORT_REPLACEMENTS = str.maketrans({
-    "\\": "_",
-    "/": "_",
-    ":": "_",
-    "*": "_",
-    "?": "_",
-    "\"": "_",
-    "<": "_",
-    ">": "_",
-    "|": "_",
-    ",": "_",
-})
-
-
-def read_json(path: Path, default: Any = None) -> Any:
-    try:
-        with path.open("r", encoding="utf-8-sig") as handle:
-            return json.load(handle)
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return default
-
-
-def write_json(path: Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def slash(path: Path) -> str:
@@ -70,79 +55,6 @@ def slash(path: Path) -> str:
 def resolve_repo_path(path_text: str) -> Path:
     path = Path(path_text)
     return path if path.is_absolute() else ROOT / path
-
-
-def safe_key(value: Any) -> str:
-    return str(value if value is not None else "").strip()
-
-
-def split_csv_values(values: list[str] | None) -> list[str]:
-    out: list[str] = []
-    for value in values or []:
-        for item in str(value).split(","):
-            item = item.strip()
-            if item:
-                out.append(item)
-    return out
-
-
-def parse_group_filters(values: list[str] | None) -> set[int]:
-    groups: set[int] = set()
-    for value in split_csv_values(values):
-        try:
-            groups.add(int(value))
-        except ValueError as exc:
-            raise ValueError(f"group must be an integer: {value}") from exc
-    return groups
-
-
-def story_matches(story_key: str, filters: list[str]) -> bool:
-    if not filters:
-        return True
-    lowered = story_key.lower()
-    for item in filters:
-        pattern = item.lower()
-        if pattern == lowered or pattern in lowered:
-            return True
-        if any(ch in pattern for ch in "*?[]") and fnmatch.fnmatch(lowered, pattern):
-            return True
-    return False
-
-
-def filtered_conv_paths(conv_dir: Path, story_filters: list[str]) -> list[Path]:
-    if not story_filters:
-        return sorted(conv_dir.glob("*.json"))
-
-    paths: dict[Path, None] = {}
-    for story_filter in story_filters:
-        if any(ch in story_filter for ch in "*?[]"):
-            for path in conv_dir.glob(f"{story_filter}.json"):
-                paths[path] = None
-            continue
-        exact = conv_dir / f"{story_filter}.json"
-        if exact.exists():
-            paths[exact] = None
-            continue
-        for path in conv_dir.glob("*.json"):
-            if story_matches(path.stem, [story_filter]):
-                paths[path] = None
-    return sorted(paths)
-
-
-def safe_report_suffix(story_filters: list[str], group_filters: set[int], only_nearby_jumps: bool) -> str:
-    parts: list[str] = []
-    if story_filters:
-        parts.append("story_" + "_".join(story_filters[:4]))
-        if len(story_filters) > 4:
-            parts.append(f"plus_{len(story_filters) - 4}")
-    if group_filters:
-        parts.append("group_" + "_".join(str(value) for value in sorted(group_filters)))
-    if only_nearby_jumps:
-        parts.append("nearby")
-    if not parts:
-        return ""
-    suffix = "_".join(parts).translate(SAFE_REPORT_REPLACEMENTS)
-    return "_" + suffix[:120].strip("_")
 
 
 def time_range_overlaps(start: float, end: float, window_start: float, window_end: float) -> bool:
@@ -715,10 +627,6 @@ def summarize_rows(
     }
 
 
-def md_escape(value: Any) -> str:
-    return str(value if value is not None else "").replace("|", "\\|").replace("\n", " ")
-
-
 def jump_summary(row: dict[str, Any]) -> str:
     parts: list[str] = []
     for clip in row.get("nearbyRuntimeJumps") or []:
@@ -862,7 +770,12 @@ def build_report(
     }
 
     reports_dir.mkdir(parents=True, exist_ok=True)
-    suffix = safe_report_suffix(story_filters or [], group_filters or set(), only_nearby_jumps)
+    suffix = safe_report_suffix(
+        story_filters or [],
+        group_filters or set(),
+        only_nearby_jumps,
+        flag_label="nearby",
+    )
     out_json = reports_dir / f"runtime_jump_option_route_audit_{language}{suffix}.json"
     out_md = reports_dir / f"runtime_jump_option_route_audit_{language}{suffix}.md"
     write_json(out_json, payload)

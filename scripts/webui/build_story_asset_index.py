@@ -13,7 +13,7 @@ from build_story_paths import (
     resolve_asset_source_roots,
     resolve_material_source_roots,
 )
-from common import write_json
+from common import rel_path, write_json
 
 ASSET_KIND_BY_EXT = {
     ".obj": "model",
@@ -115,10 +115,6 @@ def _append_unique(items: list[dict], candidate: dict) -> None:
         items.append(candidate)
 
 
-def _root_rel(path: Path, root: Path) -> str:
-    return path.relative_to(root).as_posix() if path.is_relative_to(root) else str(path)
-
-
 def _label_text(labels: dict[str, str], fallback: Path) -> str:
     return ", ".join(f"{source}:{label}" for source, label in labels.items()) or str(fallback)
 
@@ -141,9 +137,9 @@ def scan_exported_media_assets(
 
     asset_roots = resolve_asset_source_roots(export_root)
     material_roots = resolve_material_source_roots(export_root)
-    media_root_labels = {source: _root_rel(path, root) for source, path in asset_roots}
+    media_root_labels = {source: rel_path(path, root) for source, path in asset_roots}
     asset_root_labels = {
-        source: _root_rel(path, root)
+        source: rel_path(path, root)
         for source, path in [*asset_roots, *material_roots]
     }
 
@@ -306,7 +302,7 @@ def _asset_payload(scan: dict[str, Any], *, root: Path, export_root: Path) -> di
     counts = scan["counts"]
     return {
         "generated": int(time.time()),
-        "root": export_root.relative_to(root).as_posix() if export_root.is_relative_to(root) else str(export_root),
+        "root": rel_path(export_root, root),
         "sourceRoots": scan["assetRootLabels"],
         "counts": {
             "total": counts["total"],
@@ -322,7 +318,7 @@ def _video_payload(scan: dict[str, Any], *, root: Path, export_root: Path) -> di
     counts = scan["videoCounts"]
     return {
         "generated": int(time.time()),
-        "root": export_root.relative_to(root).as_posix() if export_root.is_relative_to(root) else str(export_root),
+        "root": rel_path(export_root, root),
         "sourceRoots": scan["mediaRootLabels"],
         "counts": {
             "total": counts["total"],

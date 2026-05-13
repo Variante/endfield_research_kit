@@ -45,17 +45,29 @@ from bisect import bisect_left
 from collections import Counter, defaultdict, deque
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+from common import (
+    ASSET_DIR,
+    EXPORT_ROOT,
+    LANG_DIR,
+    OUT_DIR,
+    REPORTS_DIR,
+    ROOT,
+    first_string_field as _first_string_field,
+    is_present,
+    rel_path as repo_rel,
+    unique_preserve as _unique_preserve,
+    unique_strings,
+    walk_const_values as _walk_const_values,
+    walk_field_values as _walk_field_values,
+    write_json,
+)
+
 SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from build_story_asset_index import build_asset_index as shared_build_asset_index
-from common import write_json
 from build_story_paths import _existing_unique_paths, _resolve_recovered_dir, _resolve_structured_source_dir
 from build_story_reports import (
-    build_scene_order_gap_summary as shared_build_scene_order_gap_summary,
-    collect_scene_order_gap_rows as shared_collect_scene_order_gap_rows,
     write_inferred_option_anchors_report as shared_write_inferred_option_anchors_report,
     write_scene_order_gap_reports as shared_write_scene_order_gap_reports,
 )
@@ -85,8 +97,6 @@ from scene_order_gap_shared import (
 )
 
 
-REPORTS_DIR = ROOT / "reports"
-EXPORT_ROOT = ROOT / "export_full"
 STORY_SOURCE_LINKS_PATH = EXPORT_ROOT / "recovered" / "story_source_links.json"
 
 
@@ -120,10 +130,6 @@ ANIME_RESOURCE_DIRS = _existing_unique_paths([
     EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "StreamingAssets" / "json_by_type" / "MonoBehaviour",
     EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "Persistent" / "json_by_type" / "MonoBehaviour",
 ])
-EXPORTED_DIR = EXPORT_ROOT
-OUT_DIR = ROOT / "webui" / "data"
-LANG_DIR = OUT_DIR / "lang"
-ASSET_DIR = OUT_DIR / "assets"
 DEFAULT_LANGUAGE = "CN"
 BUILD_PROFILES = ("lean", "full")
 DEFAULT_BUILD_PROFILE = "lean"
@@ -410,63 +416,12 @@ def _load_anime_resource_payload(path: Path):
     return decoded_payload
 
 
-def _walk_const_values(node, field_name):
-    if isinstance(node, dict):
-        for k, v in node.items():
-            if k == field_name:
-                if isinstance(v, dict) and "constValue" in v:
-                    yield v["constValue"]
-                elif isinstance(v, str):
-                    yield v
-            else:
-                yield from _walk_const_values(v, field_name)
-    elif isinstance(node, list):
-        for item in node:
-            yield from _walk_const_values(item, field_name)
-
-
-def _extract_dialog_refs(quest) -> list[str]:
-    seen: set[str] = set()
-    out: list[str] = []
-    for field in _DIALOG_REF_FIELDS:
-        for val in _walk_const_values(quest, field):
-            if isinstance(val, str) and val and val not in seen:
-                seen.add(val)
-                out.append(val)
-    return out
-
-
-def _extract_cutscene_refs(quest) -> list[str]:
-    seen: set[str] = set()
-    out: list[str] = []
-    for field in _CUTSCENE_REF_FIELDS:
-        for val in _walk_const_values(quest, field):
-            if isinstance(val, str) and val and val not in seen:
-                seen.add(val)
-                out.append(val)
-    return out
-
-
-def _extract_remotecomm_refs(quest) -> list[str]:
-    seen: set[str] = set()
-    out: list[str] = []
-    for field in _REMOTECOMM_REF_FIELDS:
-        for val in _walk_const_values(quest, field):
-            if isinstance(val, str) and val and val not in seen:
-                seen.add(val)
-                out.append(val)
-    return out
-
-
-def _extract_radio_refs(quest) -> list[str]:
-    seen: set[str] = set()
-    out: list[str] = []
-    for field in _RADIO_REF_FIELDS:
-        for val in _walk_const_values(quest, field):
-            if isinstance(val, str) and val and val not in seen:
-                seen.add(val)
-                out.append(val)
-    return out
+def _extract_ref_strings(node, field_names: tuple[str, ...]) -> list[str]:
+    return unique_strings(
+        value
+        for field_name in field_names
+        for value in _walk_const_values(node, field_name)
+    )
 
 
 def _extract_client_action_refs(raw: dict, field_names: tuple[str, ...]) -> dict[str, list[str]]:
@@ -476,13 +431,7 @@ def _extract_client_action_refs(raw: dict, field_names: tuple[str, ...]) -> dict
         action_id = action.get("_ID")
         if not isinstance(action_id, int):
             continue
-        refs: list[str] = []
-        seen: set[str] = set()
-        for field_name in field_names:
-            for val in _walk_const_values(action, field_name):
-                if isinstance(val, str) and val and val not in seen:
-                    seen.add(val)
-                    refs.append(val)
+        refs = _extract_ref_strings(action, field_names)
         if refs:
             refs_by_action_id[action_id] = refs
 
@@ -623,21 +572,6 @@ def _extract_objective_tracking_hints(obj: dict) -> list[dict]:
     return _extract_tracking_hints(quest_like)
 
 
-def _walk_field_values(node, field_name):
-    if isinstance(node, dict):
-        for k, v in node.items():
-            if k == field_name:
-                if isinstance(v, dict) and "constValue" in v:
-                    yield v["constValue"]
-                else:
-                    yield v
-            else:
-                yield from _walk_field_values(v, field_name)
-    elif isinstance(node, list):
-        for item in node:
-            yield from _walk_field_values(item, field_name)
-
-
 def _extract_condition_anchor_leaves(cond) -> list[dict]:
     if not isinstance(cond, dict):
         return []
@@ -649,19 +583,18 @@ def _extract_condition_anchor_leaves(cond) -> list[dict]:
         return out
 
     leaf: dict = {"type": short or "Unknown"}
-    story_refs: list[str] = []
-    for field_name in (*_DIALOG_REF_FIELDS, *_CUTSCENE_REF_FIELDS, *_REMOTECOMM_REF_FIELDS, *_RADIO_REF_FIELDS):
-        for value in _walk_field_values(cond, field_name):
-            if isinstance(value, str) and value and value not in story_refs:
-                story_refs.append(value)
+    story_refs = _extract_ref_strings(
+        cond,
+        (*_DIALOG_REF_FIELDS, *_CUTSCENE_REF_FIELDS, *_REMOTECOMM_REF_FIELDS, *_RADIO_REF_FIELDS),
+    )
     if story_refs:
         leaf["storyRefs"] = story_refs
 
-    level_ids: list[str] = []
-    for field_name in ("_sceneId", "_levelId"):
-        for value in _walk_field_values(cond, field_name):
-            if isinstance(value, str) and value and value not in level_ids:
-                level_ids.append(value)
+    level_ids = unique_strings(
+        value
+        for field_name in ("_sceneId", "_levelId")
+        for value in _walk_field_values(cond, field_name)
+    )
     if level_ids:
         leaf["sceneIds"] = level_ids
 
@@ -686,13 +619,10 @@ def _extract_condition_anchor_leaves(cond) -> list[dict]:
         leaf["logicIds"] = logic_ids
 
     quest_refs: list[dict] = []
-    quest_ids = [
-        value for value in _walk_field_values(cond, "_questId")
-        if isinstance(value, str) and value
-    ]
+    quest_ids = unique_strings(_walk_field_values(cond, "_questId"))
     target_states = list(_walk_field_values(cond, "_targetQuestState"))
     target_state = target_states[0] if target_states else None
-    for quest_id in _unique_preserve(quest_ids):
+    for quest_id in quest_ids:
         quest_ref = {"questId": quest_id}
         if isinstance(target_state, (int, float, str)):
             quest_ref["targetState"] = target_state
@@ -700,12 +630,9 @@ def _extract_condition_anchor_leaves(cond) -> list[dict]:
     if quest_refs:
         leaf["questStateRefs"] = quest_refs
 
-    compare_keys = [
-        value for value in _walk_field_values(cond, "_key")
-        if isinstance(value, str) and value
-    ]
+    compare_keys = unique_strings(_walk_field_values(cond, "_key"))
     if compare_keys:
-        leaf["keys"] = _unique_preserve(compare_keys)
+        leaf["keys"] = compare_keys
     compare_values = list(_walk_field_values(cond, "_compareValue"))
     if compare_values:
         leaf["compareValues"] = _unique_preserve(compare_values)
@@ -1215,7 +1142,7 @@ def _load_cutscene_assets() -> dict[str, dict]:
         entry["variants"].append({
             "name": path.stem,
             "part": part,
-            "file": str(path.relative_to(ROOT)).replace("\\", "/"),
+            "file": repo_rel(path),
             "path": str(payload.get("path") or ""),
             "version": str(payload.get("version") or raw.get("m_Version") or ""),
         })
@@ -1246,7 +1173,7 @@ def _load_cutscene_assets() -> dict[str, dict]:
             "noUIDispatch",
             "npcVisibleRuleType",
         ):
-            if meta_key in payload and payload.get(meta_key) not in (None, "", [], {}):
+            if meta_key in payload and is_present(payload.get(meta_key)):
                 entry["metadata"][meta_key].append(payload[meta_key])
         keep_camera_path = str(payload.get("keepCameraPath") or "")
         if keep_camera_path:
@@ -1509,7 +1436,7 @@ def _load_mission_levelscript_dialogs(mission_id: str, level_ids: list[str]) -> 
             if dialogs:
                 hints.append({
                     "levelId": level_id,
-                    "file": path.relative_to(ROOT).as_posix(),
+                    "file": repo_rel(path),
                     "fileOrder": _levelscript_file_sort_key(path),
                     "dialogs": dialogs,
                 })
@@ -1809,7 +1736,7 @@ def _load_levelscript_binding_data(level_id: str) -> dict:
                 break
 
         out["files"].append({
-            "file": path.relative_to(ROOT).as_posix(),
+            "file": repo_rel(path),
             "records": records,
         })
 
@@ -2248,20 +2175,20 @@ def load_mission_flow(mission_id: str) -> dict | None:
         }
         quest_story_node = dict(quest)
         quest_story_node.pop("failedCondition", None)
-        dialogs = _extract_dialog_refs(quest_story_node)
+        dialogs = _extract_ref_strings(quest_story_node, _DIALOG_REF_FIELDS)
         if dialogs:
             entry["dialogs"] = dialogs
         cutscenes = [
             canonical
-            for cutscene_id in _extract_cutscene_refs(quest_story_node)
+            for cutscene_id in _extract_ref_strings(quest_story_node, _CUTSCENE_REF_FIELDS)
             if (canonical := _canonical_cutscene_key(cutscene_id))
         ]
         if cutscenes:
             entry["cutscenes"] = _unique_preserve(cutscenes)
-        remotecomms = _extract_remotecomm_refs(quest_story_node)
+        remotecomms = _extract_ref_strings(quest_story_node, _REMOTECOMM_REF_FIELDS)
         if remotecomms:
             entry["remotecomms"] = _unique_preserve(remotecomms)
-        radios = _extract_radio_refs(quest_story_node)
+        radios = _extract_ref_strings(quest_story_node, _RADIO_REF_FIELDS)
         if radios:
             entry["radios"] = _unique_preserve(radios)
         tracking = _extract_tracking_hints(quest)
@@ -2351,45 +2278,6 @@ def load_mission_flow(mission_id: str) -> dict | None:
 def _node_short_type(node: dict) -> str:
     t = node.get("$type", "")
     return t.split(",", 1)[0].rsplit(".", 1)[-1]
-
-
-def _first_string_field(obj, field_name) -> str | None:
-    if isinstance(obj, dict):
-        for k, v in obj.items():
-            if k == field_name and isinstance(v, str):
-                return v
-            found = _first_string_field(v, field_name)
-            if found is not None:
-                return found
-    elif isinstance(obj, list):
-        for it in obj:
-            found = _first_string_field(it, field_name)
-            if found is not None:
-                return found
-    return None
-
-
-def _all_string_fields(obj, field_name):
-    if isinstance(obj, dict):
-        for k, v in obj.items():
-            if k == field_name and isinstance(v, str):
-                yield v
-            else:
-                yield from _all_string_fields(v, field_name)
-    elif isinstance(obj, list):
-        for it in obj:
-            yield from _all_string_fields(it, field_name)
-
-
-def _unique_preserve(seq):
-    out = []
-    seen = set()
-    for item in seq:
-        if item in seen:
-            continue
-        seen.add(item)
-        out.append(item)
-    return out
 
 
 def _scene_graph_runtime_payload_key(
@@ -3133,7 +3021,7 @@ def _load_dialog_tree_extra_config(tree_key: str) -> dict | None:
             continue
         result = {
             "sourceKey": tree_key,
-            "file": path.relative_to(ROOT).as_posix(),
+            "file": repo_rel(path),
             "lineIds": line_ids,
         }
     _DIALOG_TREE_EXTRA_CONFIG_CACHE[tree_key] = result
@@ -3818,7 +3706,7 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
             action_path = _find_anime_tree_path(f"{candidate_name}.json")
             if not action_path.exists():
                 continue
-            rel_path = action_path.relative_to(ROOT).as_posix()
+            rel_path = repo_rel(action_path)
             dedup = (action_name, rel_path)
             if dedup in seen_action_assets:
                 continue
@@ -4098,7 +3986,7 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
         seen_cinematic_timeline_anchors.add(identity)
         anchor: dict[str, object] = {
             "sourceKey": tree_key,
-            "file": tree_path.relative_to(ROOT).as_posix(),
+            "file": repo_rel(tree_path),
             "nodeId": node_id,
             "timeline": action_name,
         }
@@ -4145,7 +4033,7 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
                 finish_nums.append(value)
         finish_group: dict[str, object] = {
             "sourceKey": tree_key,
-            "file": tree_path.relative_to(ROOT).as_posix(),
+            "file": repo_rel(tree_path),
             "nodeId": node_id,
             "timeline": action_name,
             "finishNums": finish_nums,
@@ -4237,7 +4125,7 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
             fragment = {
                 "sourceKey": tree_key,
                 "targetKey": target_key,
-                "file": tree_path.relative_to(ROOT).as_posix(),
+                "file": repo_rel(tree_path),
                 "lineIds": list(scene_line_ids_by_prefix.get(target_key, [])),
                 "optionGroups": [],
                 "terminalCounts": {"openUi": 0, "finish": 0},
@@ -4419,7 +4307,7 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
             scene_link_builders[target_key].append({
                 "sourceKey": tree_key,
                 "sceneKey": target_key,
-                "file": tree_path.relative_to(ROOT).as_posix(),
+                "file": repo_rel(tree_path),
                 "after": group_after or "",
                 "options": option_summaries,
                 **({"position": "pre"} if group_is_pre else {}),
@@ -4537,7 +4425,7 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
 
     source = {
         "sourceKey": tree_key,
-        "file": tree_path.relative_to(ROOT).as_posix(),
+        "file": repo_rel(tree_path),
         "lineIds": line_ids,
         "lineGraph": line_graph,
         "lineOrder": {
@@ -5504,11 +5392,15 @@ def language_info(code: str) -> dict:
     }
 
 
-def load(name: str) -> dict:
-    path = TABLE_DIR / name
-    print(f"  loading {name} ({path.stat().st_size/1024/1024:.1f} MB)")
+def _read_json_with_size_log(path: Path, label: str | None = None):
+    name = label or path.name
+    print(f"  loading {name} ({path.stat().st_size / 1024 / 1024:.1f} MB)")
     with path.open(encoding="utf-8") as f:
         return json.load(f)
+
+
+def load(name: str) -> dict:
+    return _read_json_with_size_log(TABLE_DIR / name, name)
 
 
 def load_optional_table_json(table_dir: Path, name: str, label: str | None = None) -> dict:
@@ -5522,19 +5414,13 @@ def load_json_path(path: Path, label: str | None = None) -> dict:
     cache_key = str(path)
     if cache_key in _JSON_FILE_CACHE:
         return _JSON_FILE_CACHE[cache_key]
-    name = label or path.name
-    print(f"  loading {name} ({path.stat().st_size/1024/1024:.1f} MB)")
-    with path.open(encoding="utf-8") as f:
-        data = json.load(f)
+    data = _read_json_with_size_log(path, label)
     _JSON_FILE_CACHE[cache_key] = data if isinstance(data, dict) else {}
     return _JSON_FILE_CACHE[cache_key]
 
 
 def load_json_path_uncached(path: Path, label: str | None = None) -> dict:
-    name = label or path.name
-    print(f"  loading {name} ({path.stat().st_size/1024/1024:.1f} MB)")
-    with path.open(encoding="utf-8") as f:
-        data = json.load(f)
+    data = _read_json_with_size_log(path, label)
     return data if isinstance(data, dict) else {}
 
 
@@ -5887,7 +5773,7 @@ def build_language_bundle(
             "source": source,
         }
         for k, v in extra.items():
-            if v not in (None, "", [], {}):
+            if is_present(v):
                 out[k] = v
         return out
 
@@ -6906,10 +6792,10 @@ def build_language_bundle(
                 "levelId": level_id,
                 "hostType": level_host_type(level_id),
                 "kind": ref_meta["kind"],
-                "file": path.relative_to(ROOT).as_posix(),
+                "file": repo_rel(path),
                 "_debug": {
                     "source": {
-                        "file": path.relative_to(ROOT).as_posix(),
+                        "file": repo_rel(path),
                         "levelId": level_id,
                         "kind": ref_meta["kind"],
                         "missionId": mission_id,
@@ -12159,7 +12045,7 @@ def build_language_bundle(
                 if isinstance(row, dict):
                     for field in ("groupId", "categoryId", "type", "gameCategory", "charId", "profession", "weaponType", "owner"):
                         value = row.get(field)
-                        if value not in (None, "", [], {}):
+                        if is_present(value):
                             search_parts.append(str(value))
                 page_tags = collection_tags(
                     table_name,
@@ -12403,12 +12289,12 @@ def build_language_bundle(
             content_param = node.get("contentParam")
             if isinstance(content_param, list):
                 values.extend(str(value) for value in content_param if str(value))
-            elif content_param not in (None, "", [], {}):
+            elif is_present(content_param):
                 values.append(str(content_param))
             content_params = node.get("contentParams")
             if isinstance(content_params, list):
                 values.extend(str(value) for value in content_params if str(value))
-            elif content_params not in (None, "", [], {}):
+            elif is_present(content_params):
                 values.append(str(content_params))
             for value in values:
                 for alias in prts_attachment_aliases(value):
@@ -13286,7 +13172,7 @@ def build_language_bundle(
             debug = payload.setdefault("_debug", {})
             debug["sourceLinks"] = {
                 "source": {
-                    "index": STORY_SOURCE_LINKS_PATH.relative_to(ROOT).as_posix(),
+                    "index": repo_rel(STORY_SOURCE_LINKS_PATH),
                     "key": key,
                     "count": len(links),
                     "shown": len(compact_links),
@@ -13312,7 +13198,7 @@ def build_language_bundle(
         report = {
             "generated": int(time.time()),
             "language": language_code,
-            "sourceIndex": STORY_SOURCE_LINKS_PATH.relative_to(ROOT).as_posix(),
+            "sourceIndex": repo_rel(STORY_SOURCE_LINKS_PATH),
             "summary": {
                 "sourceLinkKeys": len(story_source_links),
                 "sourceReferences": sum(len(rows) for rows in story_source_links.values()),
@@ -13333,8 +13219,8 @@ def build_language_bundle(
         write_json(report_json, report, indent=2, compact=False)
         report_md.write_text(render_story_source_link_report_md(report), encoding="utf-8")
         report["report"] = {
-            "json": report_json.relative_to(ROOT).as_posix(),
-            "markdown": report_md.relative_to(ROOT).as_posix(),
+            "json": repo_rel(report_json),
+            "markdown": repo_rel(report_md),
         }
         return report
 
@@ -13575,8 +13461,8 @@ def build_language_bundle(
         write_json(report_json, report, indent=2, compact=False)
         report_md.write_text(render_narrative_video_report_md(report), encoding="utf-8")
         report["report"] = {
-            "json": report_json.relative_to(ROOT).as_posix(),
-            "markdown": report_md.relative_to(ROOT).as_posix(),
+            "json": repo_rel(report_json),
+            "markdown": repo_rel(report_md),
         }
         return report
 
@@ -14540,8 +14426,8 @@ def build_language_bundle(
         encoding="utf-8",
     )
     mission_timeline_report = {
-        "json": str(mission_timeline_json.relative_to(ROOT)).replace("\\", "/"),
-        "markdown": str(mission_timeline_md.relative_to(ROOT)).replace("\\", "/"),
+        "json": repo_rel(mission_timeline_json),
+        "markdown": repo_rel(mission_timeline_md),
         "summary": mission_timeline_recovery_payload["summary"],
         "evidencePolicy": MISSION_TIMELINE_EVIDENCE_POLICY,
     }
@@ -14656,8 +14542,8 @@ def build_language_bundle(
     total_size = sum(p.stat().st_size for p in conv_dir.glob("*.json"))
     conv_count = len(list(conv_dir.glob("*.json")))
     index_path = out_dir / "index.json"
-    scene_order_report = write_scene_order_gap_reports(language_code, conv_dir)
-    inferred_anchor_report = write_inferred_option_anchors_report(language_code, conv_dir)
+    scene_order_report = shared_write_scene_order_gap_reports(ROOT, REPORTS_DIR, language_code, conv_dir)
+    inferred_anchor_report = shared_write_inferred_option_anchors_report(REPORTS_DIR, language_code, conv_dir)
     print(f"\n[{language_code}] Done in {time.time()-t0:.1f}s")
     print(f"  profile:       {profile}")
     print(f"  conversations: {len(index_entries)}")
@@ -14704,11 +14590,11 @@ def build_language_bundle(
         "referenceTables": int(reference_stats.get("tables", 0)) if reference_stats else 0,
         "referenceRows": int(reference_stats.get("rows", 0)) if reference_stats else 0,
         "indexBytes": index_path.stat().st_size,
-        "sceneOrderGapReport": str(scene_order_report["markdown"].relative_to(ROOT)).replace("\\", "/"),
-        "sceneOrderGapData": str(scene_order_report["json"].relative_to(ROOT)).replace("\\", "/"),
+        "sceneOrderGapReport": repo_rel(scene_order_report["markdown"]),
+        "sceneOrderGapData": repo_rel(scene_order_report["json"]),
         "sceneOrderGapCount": scene_order_report["summary"]["totalFlaggedScenes"],
-        "inferredOptionAnchorsReport": str(inferred_anchor_report["markdown"].relative_to(ROOT)).replace("\\", "/"),
-        "inferredOptionAnchorsData": str(inferred_anchor_report["json"].relative_to(ROOT)).replace("\\", "/"),
+        "inferredOptionAnchorsReport": repo_rel(inferred_anchor_report["markdown"]),
+        "inferredOptionAnchorsData": repo_rel(inferred_anchor_report["json"]),
         "inferredOptionAnchorsScenes": inferred_anchor_report["summary"]["totalScenes"],
         "inferredOptionAnchorsGroups": inferred_anchor_report["summary"]["totalInferredGroups"],
         "narrativeVideoReport": str((narrative_video_report.get("report") or {}).get("markdown") or ""),
@@ -14716,25 +14602,6 @@ def build_language_bundle(
         "narrativeVideoKeys": int((narrative_video_report.get("summary") or {}).get("attachedKeys", 0)),
         "narrativeVideoRefs": int((narrative_video_report.get("summary") or {}).get("attachedVideos", 0)),
     }
-
-
-def build_asset_index(out_path: Path, export_root: Path = EXPORTED_DIR) -> dict:
-    return shared_build_asset_index(out_path, root=ROOT, export_root=export_root)
-
-def collect_scene_order_gap_rows(conv_dir: Path) -> list[dict]:
-    return shared_collect_scene_order_gap_rows(ROOT, conv_dir)
-
-
-def build_scene_order_gap_summary(rows: list[dict], language: str) -> dict:
-    return shared_build_scene_order_gap_summary(rows, language)
-
-
-def write_scene_order_gap_reports(language: str, conv_dir: Path) -> dict:
-    return shared_write_scene_order_gap_reports(ROOT, REPORTS_DIR, language, conv_dir)
-
-
-def write_inferred_option_anchors_report(language: str, conv_dir: Path) -> dict:
-    return shared_write_inferred_option_anchors_report(REPORTS_DIR, language, conv_dir)
 
 
 def recover_timeline_orders_for_build(mode: str, force: bool = False) -> None:

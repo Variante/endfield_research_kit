@@ -9,62 +9,31 @@ because the authored tree contains route evidence the WebUI has not promoted.
 from __future__ import annotations
 
 import argparse
-import json
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
 import build_option_playable_semantics_audit as semantics
 import build_story as story
+from common import (
+    ROOT,
+    compact_dict,
+    md_escape,
+    parse_group_filters,
+    read_json,
+    rel_path,
+    safe_key,
+    safe_report_suffix,
+    split_csv_values,
+    unique_preserve,
+    write_report_json as write_json,
+)
 from scene_order_gap_shared import (
     load_dialog_id_registry,
     registry_lines_by_trunk,
     registry_options_by_group,
     runtime_dialog_scene_key,
 )
-
-
-ROOT = Path(__file__).resolve().parents[2]
-
-
-def read_json(path: Path, default: Any = None) -> Any:
-    try:
-        with path.open("r", encoding="utf-8-sig") as handle:
-            return json.load(handle)
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return default
-
-
-def write_json(path: Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-
-def safe_key(value: Any) -> str:
-    return str(value if value is not None else "").strip()
-
-
-def rel_path(path: Path | str) -> str:
-    raw_path = Path(path)
-    try:
-        return raw_path.resolve().relative_to(ROOT.resolve()).as_posix()
-    except (OSError, ValueError):
-        return raw_path.as_posix()
-
-
-def unique_preserve(values: list[Any]) -> list[Any]:
-    out: list[Any] = []
-    seen: set[Any] = set()
-    for value in values:
-        if value in seen:
-            continue
-        seen.add(value)
-        out.append(value)
-    return out
-
-
-def md_escape(value: Any) -> str:
-    return safe_key(value).replace("|", "\\|").replace("\n", " ")
 
 
 def compact_source(meta: dict[str, Any] | None, kind: str) -> dict[str, Any] | None:
@@ -217,7 +186,7 @@ def option_evidence(
         "timelineRoute": option.get("route") or {},
         "bestTimelineRow": option.get("bestRow") or {},
     }
-    return {key: value for key, value in out.items() if value not in ("", [], {}, False)}
+    return compact_dict(out, empty_values=("", [], {}, False))
 
 
 def candidate_match_count(option_details: list[dict[str, Any]]) -> int:
@@ -620,7 +589,7 @@ def build_report(
         "groups": rows,
     }
     reports_dir.mkdir(parents=True, exist_ok=True)
-    suffix = semantics.safe_report_suffix(story_filters or [], group_filters or set(), only_interesting)
+    suffix = safe_report_suffix(story_filters or [], group_filters or set(), only_interesting)
     out_json = reports_dir / f"dialog_tree_option_route_audit_{language}{suffix}.json"
     out_md = reports_dir / f"dialog_tree_option_route_audit_{language}{suffix}.md"
     write_json(out_json, payload)
@@ -652,9 +621,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     language = args.language
     conv_dir = args.conv_dir or ROOT / "webui" / "data" / "lang" / language / "conv"
-    story_filters = semantics.split_csv_values(args.story)
+    story_filters = split_csv_values(args.story)
     try:
-        group_filters = semantics.parse_group_filters(args.group)
+        group_filters = parse_group_filters(args.group)
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc
     result = build_report(

@@ -10,17 +10,25 @@ targets?
 from __future__ import annotations
 
 import argparse
-import fnmatch
-import json
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
 import build_option_playable_semantics_audit as semantics
+from common import (
+    EXPORT_ROOT,
+    ROOT,
+    md_escape,
+    parse_group_filters,
+    read_json,
+    rel_path,
+    safe_key,
+    safe_report_suffix,
+    split_csv_values,
+    write_report_json as write_json,
+)
 
 
-ROOT = Path(__file__).resolve().parents[2]
-EXPORT_ROOT = ROOT / "export_full"
 STRUCTURED_ROOT = EXPORT_ROOT / "structured" / "StreamingAssets"
 DATA_JSON_ROOT = STRUCTURED_ROOT / "Data" / "Json"
 TABLE_ROOT = STRUCTURED_ROOT / "Table"
@@ -75,51 +83,6 @@ CONTEXT_FIELDS = (
     "missionAreaId",
     "templateId",
 )
-
-
-def read_json(path: Path, default: Any = None) -> Any:
-    try:
-        with path.open("r", encoding="utf-8-sig") as handle:
-            return json.load(handle)
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return default
-
-
-def write_json(path: Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-
-def rel_path(path: Path) -> str:
-    try:
-        return path.resolve().relative_to(ROOT.resolve()).as_posix()
-    except (OSError, ValueError):
-        return path.as_posix()
-
-
-def safe_key(value: Any) -> str:
-    return str(value if value is not None else "").strip()
-
-
-def split_csv_values(values: list[str] | None) -> list[str]:
-    return semantics.split_csv_values(values)
-
-
-def parse_group_filters(values: list[str] | None) -> set[int]:
-    return semantics.parse_group_filters(values)
-
-
-def story_matches(story_key: str, filters: list[str]) -> bool:
-    if not filters:
-        return True
-    lowered = story_key.lower()
-    for item in filters:
-        pattern = item.lower()
-        if lowered == pattern or pattern in lowered:
-            return True
-        if any(ch in pattern for ch in "*?[]") and fnmatch.fnmatch(lowered, pattern):
-            return True
-    return False
 
 
 def collect_logic_options(
@@ -423,16 +386,12 @@ def build_report(
         "luaConsumerHits": lua_hits,
     }
     reports_dir.mkdir(parents=True, exist_ok=True)
-    suffix = semantics.safe_report_suffix(story_filters, group_filters, False)
+    suffix = safe_report_suffix(story_filters, group_filters, False)
     out_json = reports_dir / f"option_logic_id_audit_{language}{suffix}.json"
     out_md = reports_dir / f"option_logic_id_audit_{language}{suffix}.md"
     write_json(out_json, payload)
     out_md.write_text(render_markdown(payload) + "\n", encoding="utf-8")
     return {"summary": summary, "json": out_json, "markdown": out_md}
-
-
-def md_escape(value: Any) -> str:
-    return str(value if value is not None else "").replace("|", "\\|").replace("\n", " ")
 
 
 def render_markdown(payload: dict[str, Any]) -> str:

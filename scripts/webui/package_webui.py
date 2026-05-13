@@ -20,11 +20,9 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Iterable
 
-from common import normalize_posix
+from common import EXPORT_ROOT, ROOT as PROJECT_ROOT, normalize_posix
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
 WEBUI_ROOT = PROJECT_ROOT / "webui"
-EXPORT_ROOT = PROJECT_ROOT / "export_full"
 ZIP_NAME_PREFIX = "endfield-story-exported"
 
 TEXT_EXTENSIONS = {

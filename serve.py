@@ -1,43 +1,24 @@
-"""Tiny static-file server for the unified browser.
+"""Tiny static-file server for the WebUI.
 
 Usage:
     python serve.py        # serves on http://localhost:8765
     python serve.py 9000   # custom port
 
-Serves the `webui` app at `/` and raw exported assets at `/exported/...`.
-Opens your default browser automatically.
+Serves the `webui` app at `/` and raw exported assets at `/export_full/...`.
 """
 from __future__ import annotations
 
 import http.server
 import os
-import socketserver
 import sys
 import webbrowser
-from pathlib import Path, PurePosixPath
-from urllib.parse import unquote, urlsplit
+from pathlib import Path
+from urllib.parse import urlsplit
 
 DEFAULT_PORT = 8765
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).parent
 WEBUI_ROOT = PROJECT_ROOT / "webui"
-EXPORTED_ROOT = PROJECT_ROOT / "export_full"
-
-
-def safe_join(base: Path, raw_path: str) -> Path:
-    """Resolve a URL path under a fixed base directory."""
-    cur = base.resolve()
-    for part in PurePosixPath(raw_path).parts:
-        if part in ("", "."):
-            continue
-        if part == "..":
-            return base.resolve()
-        cur = cur / part
-    resolved = cur.resolve()
-    try:
-        resolved.relative_to(base.resolve())
-    except ValueError:
-        return base.resolve()
-    return resolved
+EXPORT_FULL_ROOT = PROJECT_ROOT / "export_full"
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -46,15 +27,19 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
     def translate_path(self, path: str) -> str:
-        request_path = unquote(urlsplit(path).path or "/")
+        request_path = urlsplit(path).path or "/"
+        root = WEBUI_ROOT
+        export_full = request_path.startswith("/export_full/") or request_path == "/export_full"
 
-        if request_path.startswith("/exported/") or request_path == "/exported":
-            rel = request_path[len("/exported/"):] if request_path != "/exported" else ""
-            return str(safe_join(EXPORTED_ROOT, rel))
+        if export_full:
+            root = EXPORT_FULL_ROOT
+            request_path = "/" + request_path.removeprefix("/export_full").lstrip("/")
 
-        if request_path in ("", "/"):
+        if not export_full and request_path in ("", "/"):
             request_path = "/index.html"
-        return str(safe_join(WEBUI_ROOT, request_path.lstrip("/")))
+
+        self.directory = str(root)
+        return super().translate_path(request_path)
 
     def log_message(self, fmt, *args):
         # Quiet down access logs (keep errors).
@@ -62,53 +47,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             super().log_message(fmt, *args)
 
 
-class ReusableThreadingTCPServer(socketserver.ThreadingTCPServer):
-    allow_reuse_address = True
-    daemon_threads = True
-
-
-def parse_port(argv: list[str]) -> int:
-    if len(argv) <= 1:
-        return DEFAULT_PORT
-    try:
-        return int(argv[1])
-    except ValueError as exc:
-        raise SystemExit(f"Invalid port: {argv[1]!r}") from exc
-
-
 def main(argv: list[str] | None = None) -> None:
-    port = parse_port(argv or sys.argv)
-    story_manifest = WEBUI_ROOT / "data" / "manifest.json"
-    asset_index = WEBUI_ROOT / "data" / "assets" / "index.json"
+    argv = argv or sys.argv
+    port = int(argv[1]) if len(argv) > 1 else DEFAULT_PORT
 
-    if not WEBUI_ROOT.exists():
-        print(f"webui/ directory not found: {WEBUI_ROOT}")
-        sys.exit(1)
-
-    if not story_manifest.exists():
-        print("Required story build output not found:")
-        print(" -", story_manifest)
-        print("Run the preprocessor first:  python scripts/webui/build_story.py")
-        sys.exit(1)
-
-    if not EXPORTED_ROOT.exists():
-        print(f"exported/ directory not found: {EXPORTED_ROOT}")
-        sys.exit(1)
-
-    if not asset_index.exists():
-        print("Warning: asset index not found.")
-        print("The story browser will still work.")
-        print("Build the asset index when needed:  python scripts/webui/build_assets.py")
-
-    with ReusableThreadingTCPServer(("127.0.0.1", port), Handler) as httpd:
+    with http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler) as httpd:
         url = f"http://127.0.0.1:{port}/"
-        print(f"Serving {WEBUI_ROOT} and {EXPORTED_ROOT} at {url}")
+        print(f"Serving {WEBUI_ROOT} and {EXPORT_FULL_ROOT} at {url}")
         print("Press Ctrl-C to stop.")
         if os.environ.get("WEBUI_NO_BROWSER", "").lower() not in {"1", "true", "yes"}:
-            try:
-                webbrowser.open(url)
-            except Exception:
-                pass
+            webbrowser.open(url)
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:

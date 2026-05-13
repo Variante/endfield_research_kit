@@ -10,33 +10,25 @@ currently surfaced in `timeline_line_orders.json`.
 from __future__ import annotations
 
 import argparse
-import json
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
 import build_option_playable_semantics_audit as semantics
+from common import (
+    ROOT,
+    compact_dict,
+    md_escape,
+    parse_group_filters,
+    read_json,
+    safe_key,
+    safe_report_suffix,
+    split_csv_values,
+    write_report_json as write_json,
+)
 
 
-ROOT = Path(__file__).resolve().parents[2]
 EPSILON = 0.001
-
-
-def read_json(path: Path, default: Any = None) -> Any:
-    try:
-        with path.open("r", encoding="utf-8-sig") as handle:
-            return json.load(handle)
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return default
-
-
-def write_json(path: Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-
-def safe_key(value: Any) -> str:
-    return str(value if value is not None else "").strip()
 
 
 def as_float(value: Any) -> float | None:
@@ -60,10 +52,6 @@ def as_int(value: Any) -> int | None:
         if text.isdigit():
             return int(text)
     return None
-
-
-def md_escape(value: Any) -> str:
-    return safe_key(value).replace("|", "\\|").replace("\n", " ")
 
 
 def path_from_export(value: Any) -> Path:
@@ -118,7 +106,7 @@ def raw_clip_for_line(line: dict[str, Any], track_cache: TrackCache) -> dict[str
     if not matches:
         return {}
     matches.sort(key=lambda item: (as_float(item.get("start")) or 0.0, as_float(item.get("duration")) or 0.0))
-    return {key: value for key, value in matches[0].items() if value not in (None, "", [], {})}
+    return compact_dict(matches[0])
 
 
 def line_detail(
@@ -141,7 +129,7 @@ def line_detail(
     raw_clip = raw_clip_for_line(line, track_cache) if line else {}
     if raw_clip:
         out["rawClip"] = raw_clip
-    return {key: value for key, value in out.items() if value not in (None, "", [], {})}
+    return compact_dict(out)
 
 
 def timeline_window(
@@ -440,7 +428,7 @@ def build_report(
         "groups": rows,
     }
     reports_dir.mkdir(parents=True, exist_ok=True)
-    suffix = semantics.safe_report_suffix(story_filters or [], group_filters or set(), only_interesting)
+    suffix = safe_report_suffix(story_filters or [], group_filters or set(), only_interesting)
     out_json = reports_dir / f"timeline_option_flow_audit_{language}{suffix}.json"
     out_md = reports_dir / f"timeline_option_flow_audit_{language}{suffix}.md"
     write_json(out_json, payload)
@@ -472,9 +460,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     language = args.language
     conv_dir = args.conv_dir or ROOT / "webui" / "data" / "lang" / language / "conv"
-    story_filters = semantics.split_csv_values(args.story)
+    story_filters = split_csv_values(args.story)
     try:
-        group_filters = semantics.parse_group_filters(args.group)
+        group_filters = parse_group_filters(args.group)
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc
     result = build_report(

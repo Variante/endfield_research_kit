@@ -8,32 +8,23 @@ track, track binding, actor binding, or option-clip placement?
 from __future__ import annotations
 
 import argparse
-import json
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
 import build_option_playable_semantics_audit as semantics
-
-
-ROOT = Path(__file__).resolve().parents[2]
-
-
-def read_json(path: Path, default: Any = None) -> Any:
-    try:
-        with path.open("r", encoding="utf-8-sig") as handle:
-            return json.load(handle)
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return default
-
-
-def write_json(path: Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-
-def safe_key(value: Any) -> str:
-    return str(value if value is not None else "").strip()
+from common import (
+    ROOT,
+    compact_dict,
+    md_escape,
+    parse_group_filters,
+    read_json,
+    safe_key,
+    safe_report_suffix,
+    split_csv_values,
+    unique_preserve,
+    write_report_json as write_json,
+)
 
 
 def as_int(value: Any) -> int | None:
@@ -45,21 +36,6 @@ def as_float(value: Any) -> float | None:
         return float(value)
     except (TypeError, ValueError):
         return None
-
-
-def md_escape(value: Any) -> str:
-    return safe_key(value).replace("|", "\\|").replace("\n", " ")
-
-
-def unique_preserve(values: list[Any]) -> list[Any]:
-    out: list[Any] = []
-    seen: set[Any] = set()
-    for value in values:
-        if value in seen:
-            continue
-        seen.add(value)
-        out.append(value)
-    return out
 
 
 def compact_float(value: Any) -> float | None:
@@ -85,7 +61,7 @@ def compact_timeline_line(line_id: str, line: dict[str, Any] | None, position: i
         "clipOptionIndex": line.get("clipOptionIndex"),
         "sourceFile": safe_key(line.get("sourceFile")),
     }
-    return {key: value for key, value in out.items() if value not in (None, "", [], {})}
+    return compact_dict(out)
 
 
 def compact_option_row(row: dict[str, Any]) -> dict[str, Any]:
@@ -108,7 +84,7 @@ def compact_option_row(row: dict[str, Any]) -> dict[str, Any]:
         "assetTrack": safe_key(row.get("assetTrack")),
         "sourceFile": safe_key(row.get("sourceFile")),
     }
-    return {key: value for key, value in out.items() if value not in (None, "", [], {})}
+    return compact_dict(out)
 
 
 def track_key(row: dict[str, Any]) -> str:
@@ -484,7 +460,7 @@ def build_report(
         "groups": rows,
     }
     reports_dir.mkdir(parents=True, exist_ok=True)
-    suffix = semantics.safe_report_suffix(story_filters or [], group_filters or set(), only_interesting)
+    suffix = safe_report_suffix(story_filters or [], group_filters or set(), only_interesting)
     out_json = reports_dir / f"timeline_binding_audit_{language}{suffix}.json"
     out_md = reports_dir / f"timeline_binding_audit_{language}{suffix}.md"
     write_json(out_json, payload)
@@ -516,9 +492,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     language = args.language
     conv_dir = args.conv_dir or ROOT / "webui" / "data" / "lang" / language / "conv"
-    story_filters = semantics.split_csv_values(args.story)
+    story_filters = split_csv_values(args.story)
     try:
-        group_filters = semantics.parse_group_filters(args.group)
+        group_filters = parse_group_filters(args.group)
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc
     result = build_report(

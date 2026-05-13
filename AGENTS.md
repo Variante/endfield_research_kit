@@ -46,9 +46,10 @@ python scripts\webui\build_assets.py --fast
 python scripts\webui\package_webui.py
 ```
 
-`scripts/webui/build_story.py` commonly takes about 30 minutes. Whenever Codex
-runs this command directly, use a longer shell timeout, such as 45-60 minutes
-(`timeout_ms` of at least `2700000`).
+`scripts/webui/build_story.py` currently takes about 3 minutes for the default
+CN lean build on this checkout. Multi-language builds or forced timeline
+recovery can take longer; when Codex runs this command directly, use a longer
+shell timeout, such as 10-15 minutes (`timeout_ms` of at least `900000`).
 
 Unity character recovery lab:
 

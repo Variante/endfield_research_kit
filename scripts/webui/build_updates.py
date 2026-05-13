@@ -26,22 +26,21 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from common import EXPORT_ROOT, OUT_DIR, REPORTS_DIR, ROOT, display_extension, normalize_posix, read_json, write_json
 
-ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from build_story_asset_index import ASSET_KIND_BY_EXT, VIDEO_EXTENSIONS
 from build_story_paths import resolve_asset_source_roots
-from common import display_extension, normalize_posix, read_json, write_json
 
 DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
 DEFAULT_STATE_DIR = ROOT / ".game-data-tracker"
-DEFAULT_EXPORT_ROOT = ROOT / "export_full"
-DEFAULT_OUT = ROOT / "webui" / "data" / "updates" / "latest.json"
-DEFAULT_REPORT_JSON = ROOT / "reports" / "game-data-change-summary.json"
-DEFAULT_REPORT_MD = ROOT / "reports" / "game-data-change-summary.md"
+DEFAULT_EXPORT_ROOT = EXPORT_ROOT
+DEFAULT_OUT = OUT_DIR / "updates" / "latest.json"
+DEFAULT_REPORT_JSON = REPORTS_DIR / "game-data-change-summary.json"
+DEFAULT_REPORT_MD = REPORTS_DIR / "game-data-change-summary.md"
 TRACKER = ROOT / "scripts" / "track_export_changes.py"
 SCHEMA_VERSION = 1
 ASSET_STATE_SCHEMA_VERSION = 1

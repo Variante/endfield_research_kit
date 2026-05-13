@@ -18,6 +18,7 @@
     $$,
     applyTemplate,
     escapeHtml,
+    exportFullHref,
     normalizeUiLocale,
     storageGet,
     storageSet,
@@ -2473,26 +2474,7 @@
   }
 
   function assetHref(relPath) {
-    const normalizedRel = String(relPath || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
-    if (!normalizedRel) return "/exported/";
-
-    const [source, ...rest] = normalizedRel.split("/").filter(Boolean);
-    const relWithinSource = rest.join("/");
-    let exportedRel = normalizedRel;
-
-    const sourceRoot = ASSET_STATE.sourceRoots[source];
-    if (sourceRoot) {
-      let normalizedRoot = sourceRoot;
-      const exportRootPrefix = ASSET_STATE.exportRoot;
-      if (exportRootPrefix && normalizedRoot.startsWith(`${exportRootPrefix}/`)) {
-        normalizedRoot = normalizedRoot.slice(exportRootPrefix.length + 1);
-      } else if (normalizedRoot === exportRootPrefix) {
-        normalizedRoot = "";
-      }
-      exportedRel = [normalizedRoot, relWithinSource].filter(Boolean).join("/");
-    }
-
-    return `/exported/${exportedRel.split("/").map(encodeURIComponent).join("/")}`;
+    return exportFullHref(relPath, ASSET_STATE.sourceRoots, ASSET_STATE.exportRoot);
   }
 
   function countBy(arr, fn) {

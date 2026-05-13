@@ -9,122 +9,23 @@ decoded option-playable fields such as `logicId`, `trunkId`, `dialogId`,
 from __future__ import annotations
 
 import argparse
-import fnmatch
-import json
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-
-ROOT = Path(__file__).resolve().parents[2]
-SAFE_REPORT_REPLACEMENTS = str.maketrans({
-    "\\": "_",
-    "/": "_",
-    ":": "_",
-    "*": "_",
-    "?": "_",
-    "\"": "_",
-    "<": "_",
-    ">": "_",
-    "|": "_",
-    ",": "_",
-})
-
-
-def read_json(path: Path, default: Any = None) -> Any:
-    try:
-        with path.open("r", encoding="utf-8-sig") as handle:
-            return json.load(handle)
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return default
-
-
-def write_json(path: Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-
-def safe_key(value: Any) -> str:
-    return str(value if value is not None else "").strip()
-
-
-def split_csv_values(values: list[str] | None) -> list[str]:
-    out: list[str] = []
-    for value in values or []:
-        for item in str(value).split(","):
-            item = item.strip()
-            if item:
-                out.append(item)
-    return out
-
-
-def parse_group_filters(values: list[str] | None) -> set[int]:
-    groups: set[int] = set()
-    for value in split_csv_values(values):
-        try:
-            groups.add(int(value))
-        except ValueError as exc:
-            raise ValueError(f"group must be an integer: {value}") from exc
-    return groups
-
-
-def story_matches(story_key: str, filters: list[str]) -> bool:
-    if not filters:
-        return True
-    lowered = story_key.lower()
-    for item in filters:
-        pattern = item.lower()
-        if pattern == lowered or pattern in lowered:
-            return True
-        if any(ch in pattern for ch in "*?[]") and fnmatch.fnmatch(lowered, pattern):
-            return True
-    return False
-
-
-def filtered_conv_paths(conv_dir: Path, story_filters: list[str]) -> list[Path]:
-    if not story_filters:
-        return sorted(conv_dir.glob("*.json"))
-    paths: dict[Path, None] = {}
-    for story_filter in story_filters:
-        if any(ch in story_filter for ch in "*?[]"):
-            for path in conv_dir.glob(f"{story_filter}.json"):
-                paths[path] = None
-            continue
-        exact = conv_dir / f"{story_filter}.json"
-        if exact.exists():
-            paths[exact] = None
-            continue
-        for path in conv_dir.glob("*.json"):
-            if story_matches(path.stem, [story_filter]):
-                paths[path] = None
-    return sorted(paths)
-
-
-def safe_report_suffix(story_filters: list[str], group_filters: set[int], only_interesting: bool) -> str:
-    parts: list[str] = []
-    if story_filters:
-        parts.append("story_" + "_".join(story_filters[:4]))
-        if len(story_filters) > 4:
-            parts.append(f"plus_{len(story_filters) - 4}")
-    if group_filters:
-        parts.append("group_" + "_".join(str(value) for value in sorted(group_filters)))
-    if only_interesting:
-        parts.append("interesting")
-    if not parts:
-        return ""
-    suffix = "_".join(parts).translate(SAFE_REPORT_REPLACEMENTS)
-    return "_" + suffix[:120].strip("_")
-
-
-def unique_preserve(values: list[Any]) -> list[Any]:
-    out: list[Any] = []
-    seen: set[Any] = set()
-    for value in values:
-        if value in seen:
-            continue
-        seen.add(value)
-        out.append(value)
-    return out
+from common import (
+    ROOT,
+    filtered_json_paths as filtered_conv_paths,
+    md_escape,
+    parse_group_filters,
+    read_json,
+    safe_key,
+    safe_report_suffix,
+    split_csv_values,
+    story_matches,
+    unique_preserve,
+    write_report_json as write_json,
+)
 
 
 def as_float(value: Any) -> float:
@@ -550,10 +451,6 @@ def summarize_rows(
         "targetFinishNumCounts": dict(sorted(finish_values.items())),
         "conditionRidCounts": dict(sorted(condition_rids.items())),
     }
-
-
-def md_escape(value: Any) -> str:
-    return str(value if value is not None else "").replace("|", "\\|").replace("\n", " ")
 
 
 def option_summary(row: dict[str, Any]) -> str:
