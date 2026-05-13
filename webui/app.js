@@ -1,5 +1,5 @@
 // Endfield conversation browser - single-file vanilla JS.
-// Loads data/index.json once, lazy-loads data/conv/<key>.json on demand.
+// Loads data/manifest.json and language sidecars, then lazy-loads conversations.
 // Left pane is a 3-level tree (kind / story-line / mission) with a
 // virtualized scroll that supports mixed row heights.
 
@@ -51,6 +51,11 @@ const STATE = {
   archiveMetadataByKey: new Map(),
   archiveResearchById: new Map(),
   archiveMetadataLanguage: "",
+  storySearchLoaded: false,
+  storySearchPromise: null,
+  storySearchLanguage: "",
+  storyMediaPayload: null,
+  storyMediaPromise: null,
   expanded: new Set(),   // group paths the user opened
   filters: createDefaultFilters(),
   sortMode: "natural",
@@ -356,6 +361,89 @@ function fetchJson(path, { fresh = false } = {}) {
   return fetch(cacheBustedPath(path, token), {
     cache: fresh ? "no-store" : "no-cache",
   });
+}
+
+async function loadLanguageSidecar(index, key, languageCode) {
+  const rel = index && typeof index[key] === "string" ? index[key] : "";
+  if (!rel) throw new Error(`index.json missing ${key} sidecar`);
+  const res = await fetchJson(dataPath(rel, languageCode), { fresh: true });
+  if (!res.ok) throw new Error(`${rel} HTTP ${res.status}`);
+  return res.json();
+}
+
+function applyStorySearchPayload(payload) {
+  const byKey = new Map();
+  for (const row of (payload && payload.entries) || []) {
+    const key = String(row && row.k || "");
+    const text = String(row && row.x || "").trim();
+    if (key && text) byKey.set(key, text);
+  }
+
+  if (!byKey.size) return;
+  for (const entry of STATE.entries || []) {
+    const text = byKey.get(String(entry && entry.k || ""));
+    if (text) entry.x = text;
+  }
+}
+
+async function ensureStorySearchIndexLoaded(languageCode = STATE.language, token = STATE.indexRequestToken) {
+  if (STATE.storySearchLoaded && STATE.storySearchLanguage === languageCode) return true;
+  if (STATE.storySearchPromise) return STATE.storySearchPromise;
+
+  const rel = STATE.index && typeof STATE.index.search === "string" ? STATE.index.search : "";
+  if (!rel) {
+    STATE.storySearchLoaded = true;
+    STATE.storySearchLanguage = languageCode;
+    return true;
+  }
+
+  STATE.storySearchPromise = fetchJson(dataPath(rel, languageCode), { fresh: true })
+    .then((res) => {
+      if (!res.ok) throw new Error(`${rel} HTTP ${res.status}`);
+      return res.json();
+    })
+    .then((payload) => {
+      if (token !== STATE.indexRequestToken || STATE.language !== languageCode) return false;
+      applyStorySearchPayload(payload);
+      STATE.storySearchLoaded = true;
+      STATE.storySearchLanguage = languageCode;
+      STATE.storySearchPromise = null;
+      return true;
+    })
+    .catch((_error) => {
+      if (token === STATE.indexRequestToken && STATE.language === languageCode) {
+        STATE.storySearchLoaded = true;
+        STATE.storySearchLanguage = languageCode;
+      }
+      STATE.storySearchPromise = null;
+      return false;
+    });
+
+  return STATE.storySearchPromise;
+}
+
+function loadStoryMediaPayload() {
+  if (STATE.storyMediaPayload) return Promise.resolve(STATE.storyMediaPayload);
+  if (STATE.storyMediaPromise) return STATE.storyMediaPromise;
+  STATE.storyMediaPromise = fetchJson("data/assets/story_media.json")
+    .then((res) => {
+      if (!res.ok) throw new Error(`assets/story_media.json HTTP ${res.status}`);
+      return res.json();
+    })
+    .then((payload) => {
+      STATE.storyMediaPayload = payload || {};
+      STATE.storyMediaPromise = null;
+      return STATE.storyMediaPayload;
+    })
+    .catch((error) => {
+      STATE.storyMediaPromise = null;
+      throw error;
+    });
+  return STATE.storyMediaPromise;
+}
+
+function storyMediaEntries(payload, kind) {
+  return ((payload && payload.entries) || []).filter((entry) => entry && entry.k === kind && entry.r);
 }
 
 function clearArchiveClassificationCaches(entries = STATE.entries) {
@@ -691,19 +779,14 @@ function ensureInlineImageAssetLookup() {
   if (STATE.inlineImageLookupLoaded) return Promise.resolve();
   if (STATE.inlineImageLookupPromise) return STATE.inlineImageLookupPromise;
 
-  STATE.inlineImageLookupPromise = fetchJson("data/assets/index.json")
-    .then((res) => {
-      if (!res.ok) throw new Error(`assets/index.json HTTP ${res.status}`);
-      return res.json();
-    })
+  STATE.inlineImageLookupPromise = loadStoryMediaPayload()
     .then((payload) => {
       const byStem = new Map();
       const byNumber = new Map();
       STATE.inlineImageSourceRoots = payload && payload.sourceRoots ? payload.sourceRoots : {};
       STATE.inlineImageExportRoot = String(payload && payload.root ? payload.root : "export_full");
 
-      for (const raw of payload.entries || []) {
-        if (!raw || raw.k !== "image" || !raw.r) continue;
+      for (const raw of storyMediaEntries(payload, "image")) {
         const rel = String(raw.r || "");
         const parts = rel.split("/").filter(Boolean);
         const name = parts[parts.length - 1] || rel;
@@ -771,11 +854,7 @@ function ensureWikiVideoAssetLookup() {
   if (STATE.wikiVideoLookupLoaded) return Promise.resolve();
   if (STATE.wikiVideoLookupPromise) return STATE.wikiVideoLookupPromise;
 
-  STATE.wikiVideoLookupPromise = fetchJson("data/assets/videos.json")
-    .then((res) => {
-      if (!res.ok) throw new Error(`assets/videos.json HTTP ${res.status}`);
-      return res.json();
-    })
+  STATE.wikiVideoLookupPromise = loadStoryMediaPayload()
     .then((payload) => {
       const byStem = new Map();
       if (payload && payload.sourceRoots) {
@@ -786,8 +865,7 @@ function ensureWikiVideoAssetLookup() {
       }
       STATE.inlineImageExportRoot = String(payload && payload.root ? payload.root : STATE.inlineImageExportRoot || "export_full");
 
-      for (const raw of payload.entries || []) {
-        if (!raw || raw.k !== "video" || !raw.r) continue;
+      for (const raw of storyMediaEntries(payload, "video")) {
         const rel = String(raw.r || "");
         const parts = rel.split("/").filter(Boolean);
         const name = parts[parts.length - 1] || rel;
@@ -1404,14 +1482,23 @@ async function switchLanguage(languageCode, { preserveSelection = true } = {}) {
     const index = await res.json();
     if (token !== STATE.indexRequestToken) return;
 
+    const [actorsPayload, missionsPayload] = await Promise.all([
+      loadLanguageSidecar(index, "actors", info.code),
+      loadLanguageSidecar(index, "missions", info.code),
+    ]);
+    if (token !== STATE.indexRequestToken) return;
+
     STATE.index = index;
-    STATE.actorNames = normalizeActorNames(index.actorNames || {});
-    STATE.missionNames = index.missionNames || {};
+    STATE.actorNames = normalizeActorNames(actorsPayload.actorNames || {});
+    STATE.missionNames = missionsPayload.missionNames || {};
     STATE.entries = normalizeLoadedEntries(index.entries || []);
     STATE.entryByKey = new Map(STATE.entries.map((entry) => [entry.k, entry]));
     STATE.archiveMetadataByKey = new Map();
     STATE.archiveResearchById = new Map();
     STATE.archiveMetadataLanguage = "";
+    STATE.storySearchLoaded = false;
+    STATE.storySearchPromise = null;
+    STATE.storySearchLanguage = "";
     STATE.simActorIds = computeSimActorIds(STATE.entries);
     STATE.rawStoryTypes = computeRawStoryTypes(STATE.entries);
     await ensureArchiveMetadataIndex(info.code, token);

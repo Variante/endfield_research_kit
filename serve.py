@@ -10,6 +10,7 @@ Opens your default browser automatically.
 from __future__ import annotations
 
 import http.server
+import os
 import socketserver
 import sys
 import webbrowser
@@ -77,16 +78,16 @@ def parse_port(argv: list[str]) -> int:
 
 def main(argv: list[str] | None = None) -> None:
     port = parse_port(argv or sys.argv)
-    story_index = WEBUI_ROOT / "data" / "index.json"
+    story_manifest = WEBUI_ROOT / "data" / "manifest.json"
     asset_index = WEBUI_ROOT / "data" / "assets" / "index.json"
 
     if not WEBUI_ROOT.exists():
         print(f"webui/ directory not found: {WEBUI_ROOT}")
         sys.exit(1)
 
-    if not story_index.exists():
+    if not story_manifest.exists():
         print("Required story build output not found:")
-        print(" -", story_index)
+        print(" -", story_manifest)
         print("Run the preprocessor first:  python scripts/webui/build_story.py")
         sys.exit(1)
 
@@ -103,10 +104,11 @@ def main(argv: list[str] | None = None) -> None:
         url = f"http://127.0.0.1:{port}/"
         print(f"Serving {WEBUI_ROOT} and {EXPORTED_ROOT} at {url}")
         print("Press Ctrl-C to stop.")
-        try:
-            webbrowser.open(url)
-        except Exception:
-            pass
+        if os.environ.get("WEBUI_NO_BROWSER", "").lower() not in {"1", "true", "yes"}:
+            try:
+                webbrowser.open(url)
+            except Exception:
+                pass
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:

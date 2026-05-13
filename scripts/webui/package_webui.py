@@ -142,10 +142,8 @@ class PackagePlan:
     filtered_video_payload: dict
     exported_images: list[ExportedImage]
     exported_videos: list[ExportedImage]
-    unresolved_image_ids: set[str]
-    unresolved_video_ids: set[str]
-    image_ids: set[str]
-    video_refs: set[tuple[str, str]]
+    image_refs: int
+    video_refs: int
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -511,6 +509,12 @@ def load_asset_index(asset_index_path: Path) -> dict:
         return json.load(fh)
 
 
+def load_required_asset_index(asset_index_path: Path) -> dict:
+    if not asset_index_path.exists():
+        raise SystemExit(f"Required asset index not found: {asset_index_path}")
+    return load_asset_index(asset_index_path)
+
+
 def build_inline_image_lookup(entries: Iterable[dict]) -> tuple[dict[str, AssetCandidate], dict[str, AssetCandidate]]:
     by_stem: dict[str, AssetCandidate] = {}
     by_number: dict[str, AssetCandidate] = {}
@@ -781,70 +785,35 @@ def plan_package(args: argparse.Namespace) -> PackagePlan:
     project_root = args.project_root.resolve()
     export_root = args.export_root.resolve()
 
-    asset_payload = load_asset_index(webui_root / "data" / "assets" / "index.json")
-    video_payload = load_asset_index(webui_root / "data" / "assets" / "videos.json")
-    image_ids = collect_inline_image_ids(webui_root)
-    wiki_image_ids = collect_wiki_media_image_ids(webui_root)
-    video_refs = collect_wiki_video_refs(webui_root)
-    by_stem, by_number = build_inline_image_lookup(asset_payload.get("entries") or [])
-    video_by_stem = build_video_lookup(video_payload.get("entries") or [])
+    story_media_payload = load_required_asset_index(webui_root / "data" / "assets" / "story_media.json")
+    story_entries = [
+        dict(entry)
+        for entry in (story_media_payload.get("entries") or [])
+        if isinstance(entry, dict) and entry.get("r")
+    ]
+    selected_images = [entry for entry in story_entries if entry.get("k") == "image"]
+    selected_videos = [entry for entry in story_entries if entry.get("k") == "video"]
 
-    selected_by_rel: dict[str, dict] = {}
-    unresolved_ids: set[str] = set()
-    unresolved_video_ids: set[str] = set()
-    for image_id in sorted(image_ids):
-        candidates = resolve_inline_image_assets(image_id, by_stem, by_number)
-        if not candidates:
-            unresolved_ids.add(image_id)
-            continue
-        for candidate in candidates:
-            entry = dict(candidate.entry)
-            entry["k"] = "image"
-            entry["r"] = candidate.rel
-            selected_by_rel[candidate.rel] = entry
-
-    for image_id in sorted(wiki_image_ids):
-        candidates = resolve_exact_image_assets(image_id, by_stem)
-        if not candidates:
-            continue
-        for candidate in candidates:
-            entry = dict(candidate.entry)
-            entry["k"] = "image"
-            entry["r"] = candidate.rel
-            selected_by_rel[candidate.rel] = entry
-
-    selected_video_by_rel: dict[str, dict] = {}
-    for video_id, device_type in sorted(video_refs):
-        candidate = resolve_exact_video_asset(video_id, device_type, video_by_stem)
-        if not candidate:
-            unresolved_video_ids.add(video_id)
-            continue
-        entry = dict(candidate.entry)
-        entry["k"] = "video"
-        entry["r"] = candidate.rel
-        selected_video_by_rel[candidate.rel] = entry
-
-    filtered_payload = filtered_asset_index(asset_payload, list(selected_by_rel.values()), kind="image")
-    filtered_video_payload = filtered_asset_index(video_payload, list(selected_video_by_rel.values()), kind="video")
+    filtered_payload = filtered_asset_index(story_media_payload, selected_images, kind="image")
+    filtered_video_payload = filtered_asset_index(story_media_payload, selected_videos, kind="video")
 
     exported_images = [
         resolve_exported_image(project_root, export_root, filtered_payload, rel)
-        for rel in sorted(selected_by_rel)
+        for rel in sorted(str(entry.get("r") or "") for entry in selected_images)
     ]
     exported_videos = [
         resolve_exported_image(project_root, export_root, filtered_video_payload, rel)
-        for rel in sorted(selected_video_by_rel)
+        for rel in sorted(str(entry.get("r") or "") for entry in selected_videos)
     ]
+    counts = story_media_payload.get("counts") if isinstance(story_media_payload.get("counts"), dict) else {}
 
     return PackagePlan(
         filtered_asset_payload=filtered_payload,
         filtered_video_payload=filtered_video_payload,
         exported_images=exported_images,
         exported_videos=exported_videos,
-        unresolved_image_ids=unresolved_ids,
-        unresolved_video_ids=unresolved_video_ids,
-        image_ids=image_ids | wiki_image_ids,
-        video_refs=video_refs,
+        image_refs=int(counts.get("imageIds") or len(selected_images)),
+        video_refs=int(counts.get("videoRefs") or len(selected_videos)),
     )
 
 
@@ -891,18 +860,10 @@ def create_package(args: argparse.Namespace) -> int:
     print(f"Output zip: {output}")
     generated_text_count = 5 if args.include_asset_browser else 6
     print(f"Text files: {len(copied_text_files) + generated_text_count:,}")
-    print(f"Story image IDs: {len(plan.image_ids):,}")
+    print(f"Story image IDs: {plan.image_refs:,}")
     print(f"Resolved image files: {len(existing_images):,}")
-    print(f"Wiki video refs: {len(plan.video_refs):,}")
+    print(f"Wiki video refs: {plan.video_refs:,}")
     print(f"Resolved video files: {len(existing_videos):,}")
-    if plan.unresolved_image_ids:
-        preview = ", ".join(sorted(plan.unresolved_image_ids)[:10])
-        suffix = "..." if len(plan.unresolved_image_ids) > 10 else ""
-        print(f"Unresolved image IDs: {len(plan.unresolved_image_ids):,} ({preview}{suffix})")
-    if plan.unresolved_video_ids:
-        preview = ", ".join(sorted(plan.unresolved_video_ids)[:10])
-        suffix = "..." if len(plan.unresolved_video_ids) > 10 else ""
-        print(f"Unresolved video IDs: {len(plan.unresolved_video_ids):,} ({preview}{suffix})")
     if missing_images:
         preview = ", ".join(image.rel for image in missing_images[:10])
         suffix = "..." if len(missing_images) > 10 else ""

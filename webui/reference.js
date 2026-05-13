@@ -72,8 +72,60 @@
     return dataPath(`reference/${relativePath}`, currentLanguage());
   }
 
+  function referenceTableKey(table) {
+    return [
+      table && table.source ? table.source : "",
+      table && table.table ? table.table : "",
+      table && table.file ? table.file : "",
+    ].join("\u0000");
+  }
+
   function referenceSearchKey(q, source) {
     return `${source || ""}\u0000${q || ""}`;
+  }
+
+  async function fetchReferenceJson(relativePath) {
+    const res = await fetch(referenceDataPath(relativePath));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  }
+
+  function applyReferenceTableMetadata(payload, table) {
+    return {
+      ...(payload || {}),
+      source: table.sourceLabel || table.source || (payload && payload.source) || "",
+      sourceKey: table.source || "",
+      table: table.table || (payload && payload.table) || "",
+      label: table.label || (payload && payload.label) || "",
+    };
+  }
+
+  function mergeReferenceOverlay(basePayload, overlayPayload) {
+    const byId = new Map();
+    for (const row of (basePayload && basePayload.rows) || []) {
+      const id = String(row && row.id || "");
+      if (id) byId.set(id, row);
+    }
+    for (const id of overlayPayload.removedRows || []) {
+      byId.delete(String(id || ""));
+    }
+    for (const row of overlayPayload.rows || []) {
+      const id = String(row && row.id || "");
+      if (id) byId.set(id, row);
+    }
+
+    const rowOrder = Array.isArray(overlayPayload.rowOrder)
+      ? overlayPayload.rowOrder.map((id) => String(id || "")).filter(Boolean)
+      : [];
+    const rows = rowOrder.length
+      ? rowOrder.map((id) => byId.get(id)).filter(Boolean)
+      : Array.from(byId.values());
+
+    return {
+      ...(basePayload || {}),
+      ...(overlayPayload || {}),
+      rows,
+    };
   }
 
   function tableMetadataMatches(table, q) {
@@ -87,32 +139,37 @@
 
   function tableContentMatches(table, q, source) {
     const matches = REF_STATE.contentMatches.get(referenceSearchKey(q, source));
-    return !!(matches && matches.has(table.file));
+    return !!(matches && matches.has(referenceTableKey(table)));
   }
 
   async function loadReferencePayload(table) {
-    const cached = REF_STATE.tableCache.get(table.file);
+    const cacheKey = referenceTableKey(table);
+    const cached = REF_STATE.tableCache.get(cacheKey);
     if (cached) return cached;
 
-    const pending = REF_STATE.tableLoads.get(table.file);
+    const pending = REF_STATE.tableLoads.get(cacheKey);
     if (pending) return pending;
 
-    const promise = fetch(referenceDataPath(table.file))
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((payload) => {
-        REF_STATE.tableCache.set(table.file, payload);
-        REF_STATE.tableLoads.delete(table.file);
+    const promise = fetchReferenceJson(table.file)
+      .then(async (payload) => {
+        if (payload && payload.baseFile) {
+          const basePayload = await fetchReferenceJson(payload.baseFile);
+          return mergeReferenceOverlay(basePayload, payload);
+        }
         return payload;
       })
+      .then((payload) => {
+        const normalized = applyReferenceTableMetadata(payload, table);
+        REF_STATE.tableCache.set(cacheKey, normalized);
+        REF_STATE.tableLoads.delete(cacheKey);
+        return normalized;
+      })
       .catch((error) => {
-        REF_STATE.tableLoads.delete(table.file);
+        REF_STATE.tableLoads.delete(cacheKey);
         throw error;
       });
 
-    REF_STATE.tableLoads.set(table.file, promise);
+    REF_STATE.tableLoads.set(cacheKey, promise);
     return promise;
   }
 
@@ -275,7 +332,7 @@
         try {
           const payload = await loadReferencePayload(table);
           if ((payload.rows || []).some((row) => rowMatches(row, q))) {
-            matches.add(table.file);
+            matches.add(referenceTableKey(table));
             queueRender();
           }
         } catch (_error) {
@@ -320,7 +377,7 @@
       button.className = "reference-table-row";
       button.classList.toggle(
         "is-selected",
-        !!(REF_STATE.selectedTable && REF_STATE.selectedTable.file === table.file),
+        !!(REF_STATE.selectedTable && referenceTableKey(REF_STATE.selectedTable) === referenceTableKey(table)),
       );
       button.innerHTML =
         `<div class="reference-table-name">` +
@@ -352,7 +409,7 @@
 
     try {
       const payload = await loadReferencePayload(table);
-      if (!REF_STATE.selectedTable || REF_STATE.selectedTable.file !== table.file) return;
+      if (!REF_STATE.selectedTable || referenceTableKey(REF_STATE.selectedTable) !== referenceTableKey(table)) return;
       REF_STATE.selectedPayload = payload;
       renderReferenceRows();
     } catch (error) {

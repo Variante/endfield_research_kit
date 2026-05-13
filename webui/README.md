@@ -48,6 +48,20 @@ from `webui/data/` and keeps heavyweight recovery work in the Python builders.
 - `Assets`: exported file search, metadata, raw links, related files, and
   previews where the browser supports them.
 
+## Data Layout
+
+- `data/manifest.json`: language list and build stats.
+- `data/lang/<code>/index.json`: lightweight story tree entries only.
+- `data/lang/<code>/actors.json`, `missions.json`, and `search.json`: lazy
+  sidecars for display names and full-text search.
+- `data/lang/<code>/conv/` and `mission/`: conversation and mission payloads
+  loaded on demand.
+- `data/lang/<code>/reference/`: Reference tables; persistent rows may share
+  streaming payloads or use small overlay files for changed rows.
+- `data/assets/story_media.json`: compact Story inline image/video lookup using
+  the same `entries` shape as the full asset indexes. The full
+  `data/assets/index.json` remains for the Assets tab.
+
 ## Inline Media Rules
 
 - SNS emoji assets such as `sns_emoji_*` are rendered as regular inline emoji.

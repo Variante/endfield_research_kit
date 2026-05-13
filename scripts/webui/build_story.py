@@ -19,6 +19,9 @@ Uses the structured export_full layout produced by the current WebUI export.
 Writes:
   webui/data/manifest.json                 (available language bundles)
   webui/data/lang/<code>/index.json        (lightweight conversation list)
+  webui/data/lang/<code>/actors.json       (actor display names)
+  webui/data/lang/<code>/missions.json     (mission display names)
+  webui/data/lang/<code>/search.json       (lazy full-text search text)
   webui/data/lang/<code>/conv/<key>.json
   webui/data/lang/<code>/mission/<id>.json (lazy mission context/flow)
   webui/data/lang/<code>/reference/...     (raw localized table reference)
@@ -11572,6 +11575,8 @@ def build_language_bundle(
         reference_dir.mkdir(parents=True, exist_ok=True)
         generated = int(time.time())
         table_index: list[dict] = []
+        base_reference_rows: dict[str, list[dict]] = {}
+        base_reference_files: dict[str, str] = {}
         total_rows = 0
         total_texts = 0
         total_bytes = 0
@@ -11637,7 +11642,6 @@ def build_language_bundle(
                     continue
 
                 rel_file = f"{table_source}/{table_path.stem}.json"
-                out_path = reference_dir / rel_file
                 out_payload = {
                     "generated": generated,
                     "language": language_code,
@@ -11646,12 +11650,54 @@ def build_language_bundle(
                     "label": collection_display_name(table_path.stem),
                     "rows": row_payloads,
                 }
-                write_reference_payload(rel_file, out_payload)
-                file_bytes = out_path.stat().st_size
+                storage = "full"
+                base_file = ""
+                overlay_rows = 0
+                removed_rows = 0
+
+                if table_source == "persistent" and table_name in base_reference_rows:
+                    base_rows = base_reference_rows.get(table_name) or []
+                    base_file = base_reference_files.get(table_name) or ""
+                    base_by_id = {str(row.get("id") or ""): row for row in base_rows}
+                    current_by_id = {str(row.get("id") or ""): row for row in row_payloads}
+                    removed_ids = sorted(row_id for row_id in base_by_id if row_id not in current_by_id)
+                    changed_rows = [
+                        row for row in row_payloads
+                        if base_by_id.get(str(row.get("id") or "")) != row
+                    ]
+                    overlay_rows = len(changed_rows)
+                    removed_rows = len(removed_ids)
+                    if not changed_rows and not removed_ids and base_file:
+                        rel_file = base_file
+                        storage = "shared"
+                        file_bytes = 0
+                    else:
+                        rel_file = f"overlays/{table_source}/{table_path.stem}.json"
+                        out_payload = {
+                            "generated": generated,
+                            "language": language_code,
+                            "source": collection_source_label(table_source),
+                            "table": table_name,
+                            "label": collection_display_name(table_path.stem),
+                            "baseFile": base_file,
+                            "rowOrder": [str(row.get("id") or "") for row in row_payloads],
+                            "removedRows": removed_ids,
+                            "rows": changed_rows,
+                        }
+                        out_path = write_reference_payload(rel_file, out_payload)
+                        file_bytes = out_path.stat().st_size
+                        storage = "overlay"
+                else:
+                    out_path = write_reference_payload(rel_file, out_payload)
+                    file_bytes = out_path.stat().st_size
+                    if table_source == "streaming":
+                        base_reference_rows[table_name] = row_payloads
+                        base_reference_files[table_name] = rel_file
+
                 total_bytes += file_bytes
                 total_rows += len(row_payloads)
                 total_texts += table_texts
-                table_index.append({
+                table_row = {
                     "source": table_source,
                     "sourceLabel": collection_source_label(table_source),
                     "table": table_name,
@@ -11660,7 +11706,15 @@ def build_language_bundle(
                     "rows": len(row_payloads),
                     "texts": table_texts,
                     "bytes": file_bytes,
-                })
+                    "storage": storage,
+                }
+                if base_file:
+                    table_row["baseFile"] = base_file
+                if overlay_rows:
+                    table_row["overlayRows"] = overlay_rows
+                if removed_rows:
+                    table_row["removedRows"] = removed_rows
+                table_index.append(table_row)
 
         table_index.sort(key=lambda row: (row["source"], row["label"], row["table"]))
         index_payload = {
@@ -14532,11 +14586,38 @@ def build_language_bundle(
             mission_data_files[mission] = rel_file
             mission_data_bytes += out_path.stat().st_size
 
-    index_payload = {
-        "generated": int(time.time()),
-        "profile": profile,
+    generated = int(time.time())
+    search_entries: list[dict] = []
+    for entry in index_entries:
+        search_text = str(entry.pop("x", "") or "").strip()
+        if search_text:
+            search_entries.append({
+                "k": str(entry.get("k") or ""),
+                "x": search_text,
+            })
+
+    write_json(out_dir / "actors.json", {
+        "generated": generated,
+        "language": language_code,
         "actorNames": actor_names,
+    })
+    write_json(out_dir / "missions.json", {
+        "generated": generated,
+        "language": language_code,
         "missionNames": mission_names,
+    })
+    write_json(out_dir / "search.json", {
+        "generated": generated,
+        "language": language_code,
+        "entries": search_entries,
+    })
+
+    index_payload = {
+        "generated": generated,
+        "profile": profile,
+        "actors": "actors.json",
+        "missions": "missions.json",
+        "search": "search.json",
         "entries": index_entries,
     }
     if write_reference and reference_stats:
@@ -14749,11 +14830,7 @@ def main(argv: list[str] | None = None) -> None:
     }
     write_json(OUT_DIR / "manifest.json", manifest, indent=2, compact=False)
 
-    default_dir = LANG_DIR / default_language
-    shutil.copy2(default_dir / "index.json", OUT_DIR / "index.json")
-
     print("\nManifest written to", OUT_DIR / "manifest.json")
-    print("Default root copy:", OUT_DIR / "index.json")
 
 
 if __name__ == "__main__":

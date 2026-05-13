@@ -470,6 +470,11 @@ function applyFilters() {
   if (f.issues.size) out = out.filter((e) => entryMatchesStoryIssueFilters(e, f.issues));
   if (f.q) {
     const q = f.q;
+    if (typeof ensureStorySearchIndexLoaded === "function" && !STATE.storySearchLoaded) {
+      void ensureStorySearchIndexLoaded().then(() => {
+        if (STATE.filters.q && STATE.storySearchLoaded) applyFilters();
+      });
+    }
     out = out.filter((e) => {
       if (searchTextIncludes(e.k, q)) return true;
       if (searchTextIncludes(e.m, q)) return true;
