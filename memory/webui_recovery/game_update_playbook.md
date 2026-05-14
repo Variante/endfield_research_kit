@@ -49,22 +49,22 @@ Order of operations:
    `D:\Program Files\Endfield Game\Endfield_Data\`. The game does NOT
    need to be running. If the game is open, close it first -- some
    files may be locked.
-2. `scripts/webui/verify_export_freshness.py` checks that `export_full/`
+2. `scripts/verify_export_freshness.py` checks that `export_full/`
    matches the installed source fingerprints before the long WebUI builders
    run.
-3. `scripts/recover_dialog_id_registry.py --quiet` re-builds
+3. `scripts/story_builder/dialog_registry.py --quiet` re-builds
    `export_full/recovered/dialog_id_table_index.json` from the freshly-
    extracted `DialogIdTable.json`. This is the file
    `scene_order_gap_shared.py` reads to decide whether each scene is
    runtime-registered or unregistered (cut content).
-4. `scripts/webui/build_story_source_links.py` rebuilds mission, level-script,
+4. `scripts/story_builder/source_links.py` rebuilds mission, level-script,
    cutscene, remotecomm, SNS, radio, and reading-popup source references.
-5. `scripts/webui/build_updates.py` rebuilds the original game-data update
+5. `scripts/build_updates.py` rebuilds the original game-data update
    feed, with exported asset diffs gated by real installed-data changes.
-6. `scripts/webui/build_story.py --languages CN --default-language CN`
+6. `scripts/story_builder/build.py --languages CN --default-language CN`
    regenerates every conv JSON and embeds the right warnings. Every
    scene gets re-classified against the new registry.
-7. `scripts/webui/build_assets.py` rebuilds the asset index.
+7. `scripts/build_assets.py` rebuilds the asset index.
 
 After this, the WebUI is consistent with the new game version. Open the
 WebUI at `python serve.py` and spot-check.
@@ -176,7 +176,7 @@ method-body question justifies a new tool.
 
 ## When the registry is wrong shape
 
-Symptoms: `recover_dialog_id_registry.py --quiet` runs but reports
+Symptoms: `story_builder/dialog_registry.py --quiet` runs but reports
 near-zero entries; many scenes that should be registered come back as
 `unregisteredScene`.
 
@@ -188,7 +188,7 @@ Triage:
 
 1. Run the recovery without `--quiet` and inspect the count:
    ```
-   python scripts\recover_dialog_id_registry.py
+   python scripts\story_builder\dialog_registry.py
    ```
    Compare to the May 2026 baseline (~4 500 entries). A drop to 0-100
    means the extractor's regex isn't finding identifiers.
@@ -204,7 +204,7 @@ Triage:
    which is the actual input.)
 
 3. If you can still see ASCII `dlg_*` strings: the regex in
-   `scripts/recover_dialog_id_registry.py` needs widening. If you
+   `scripts/story_builder/dialog_registry.py` needs widening. If you
    can't see them: the table is now encrypted / serialized
    differently, and you need to identify how the runtime decodes it. Use
    `global-metadata.dat` to find the `DialogIdTable`-related methods first;
@@ -218,5 +218,5 @@ Triage:
 | Normal post-update refresh | `.\export.bat` | No (close it) |
 | Cache/catalog IL2CPP metadata | `tools\endfield-il2cpp\catalog_option_flow_metadata.py --cache-metadata` | No |
 | Focus option-flow drift | `tools\endfield-il2cpp\catalog_option_flow_metadata.py --only-focus` | No |
-| Sanity-check the registry | `scripts\recover_dialog_id_registry.py` (no --quiet) | No |
+| Sanity-check the registry | `scripts\story_builder\dialog_registry.py` (no --quiet) | No |
 | New IL2CPP investigation | Add a targeted offline audit from catalog evidence | No |

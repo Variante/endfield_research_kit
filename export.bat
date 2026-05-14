@@ -49,25 +49,25 @@ rem - build the asset index
 python .\scripts\export_full_from_game.py --skip-raw-vfs --skip-source-inventory %EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\webui\verify_export_freshness.py %VERIFY_EXPORT_ARGS%
+python .\scripts\verify_export_freshness.py %VERIFY_EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\recover_dialog_id_registry.py --quiet
+python .\scripts\story_builder\dialog_registry.py --quiet
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\recover_video_bindings.py
+python .\scripts\story_builder\video_bindings.py
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\webui\build_story_source_links.py
+python .\scripts\story_builder\source_links.py
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\webui\build_updates.py %BUILD_UPDATES_ARGS%
+python .\scripts\build_updates.py %BUILD_UPDATES_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\webui\build_story.py --languages CN --default-language CN
+python .\scripts\story_builder\build.py --languages CN --default-language CN
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\webui\build_assets.py %BUILD_ASSETS_ARGS%
+python .\scripts\build_assets.py %BUILD_ASSETS_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 
 endlocal

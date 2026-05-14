@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Audit unresolved option responses against authored DialogTree route evidence.
 
-`build_story.py` already decodes a lot of AnimeStudio DialogTree structure.
+`story_builder/build.py` already decodes a lot of AnimeStudio DialogTree structure.
 This report asks whether remaining `inferredOptionResponse` groups are missing
 because source files are absent, because the tree parser sees only anchors, or
 because the authored tree contains route evidence the WebUI has not promoted.
@@ -9,12 +9,18 @@ because the authored tree contains route evidence the WebUI has not promoted.
 from __future__ import annotations
 
 import argparse
+import sys
 from collections import Counter
 from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+for _path in (_REPO_ROOT / "scripts",):
+    if str(_path) not in sys.path:
+        sys.path.insert(0, str(_path))
 from typing import Any
 
 import build_option_playable_semantics_audit as semantics
-import build_story as story
+import story_builder as story
 from common import (
     ROOT,
     compact_dict,

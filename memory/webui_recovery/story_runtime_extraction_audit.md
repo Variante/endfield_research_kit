@@ -148,13 +148,13 @@ Runtime Jump routes. The next likely recovery source is deeper interpretation
 of option clip fields (`logicId`, finish-number fields, condition references,
 or linked dialog tree/cinematic state), not looser skip-window promotion.
 
-`scripts/webui/build_option_playable_semantics_audit.py` was added as the
+`scripts/story_recovery/build_option_playable_semantics_audit.py` was added as the
 follow-up audit for that queue:
 
 ```bat
-python scripts\webui\build_option_playable_semantics_audit.py --language CN
-python scripts\webui\build_option_playable_semantics_audit.py --language CN --only-interesting
-python scripts\webui\build_option_playable_semantics_audit.py --language CN --story dlg_c17m1_5 --group 3
+python scripts\story_recovery\build_option_playable_semantics_audit.py --language CN
+python scripts\story_recovery\build_option_playable_semantics_audit.py --language CN --only-interesting
+python scripts\story_recovery\build_option_playable_semantics_audit.py --language CN --story dlg_c17m1_5 --group 3
 ```
 
 Current CN result:
@@ -186,13 +186,13 @@ line target. The next high-value search is where `logicId` is consumed as
 option state, completion, or UI gating, and whether that state can explain
 repeat option prompts rather than branch entry lines.
 
-`scripts/webui/build_option_logic_id_audit.py` was then added to scan those
+`scripts/story_recovery/build_option_logic_id_audit.py` was then added to scan those
 `logicId` values against non-Timeline game-data sources:
 
 ```bat
-python scripts\webui\build_option_logic_id_audit.py --language CN
-python scripts\webui\build_option_logic_id_audit.py --language CN --story dlg_c17m1_5 --group 3
-python scripts\webui\build_option_logic_id_audit.py --language CN --story dlg_c28m3_23 --group 1
+python scripts\story_recovery\build_option_logic_id_audit.py --language CN
+python scripts\story_recovery\build_option_logic_id_audit.py --language CN --story dlg_c17m1_5 --group 3
+python scripts\story_recovery\build_option_logic_id_audit.py --language CN --story dlg_c28m3_23 --group 1
 ```
 
 Current CN result:
@@ -217,15 +217,15 @@ new source families that can expose authored branch links directly: dialog tree
 asset extraction, PlayableDirector track binding semantics, or runtime method
 body recovery for option selection flow.
 
-`scripts/webui/build_dialog_tree_option_route_audit.py` was added to answer
+`scripts/story_recovery/build_dialog_tree_option_route_audit.py` was added to answer
 the next branch-source question: do remaining inferred option responses already
-have authored DialogTree route evidence that `build_story.py` failed to
+have authored DialogTree route evidence that the Story builder failed to
 promote?
 
 ```bat
-python scripts\webui\build_dialog_tree_option_route_audit.py --language CN
-python scripts\webui\build_dialog_tree_option_route_audit.py --language CN --story dlg_c17m1_5 --group 3
-python scripts\webui\build_dialog_tree_option_route_audit.py --language CN --story dlg_e3m6_11 --group 4
+python scripts\story_recovery\build_dialog_tree_option_route_audit.py --language CN
+python scripts\story_recovery\build_dialog_tree_option_route_audit.py --language CN --story dlg_c17m1_5 --group 3
+python scripts\story_recovery\build_dialog_tree_option_route_audit.py --language CN --story dlg_e3m6_11 --group 4
 ```
 
 Current CN result after the 2026-05-12 DialogIdTable evidence pass:
@@ -247,7 +247,7 @@ Current CN result after the 2026-05-12 DialogIdTable evidence pass:
   they should not be treated as confirmed per-option branches.
 - All `106` audited rows now carry DialogIdTable trunk line refs in the JSON
   and Markdown reports.
-- After `scripts/recover_dialog_id_registry.py` was widened to extract
+- After `scripts/story_builder/dialog_registry.py` was widened to extract
   `option_dlg_*` tokens from the same binary table, all `106` audited rows
   also have DialogIdTable option refs for the current group, and all current
   WebUI option IDs are present in those refs. The current registry extraction
@@ -274,12 +274,12 @@ quality improvement for future audits: it makes Timeline assets easier to map
 back to runtime classes, but it does not change current WebUI recovery until
 the local game data is re-exported.
 
-`scripts/webui/build_timeline_option_flow_audit.py` was then added for the
+`scripts/story_recovery/build_timeline_option_flow_audit.py` was then added for the
 remaining Timeline-only option response queue:
 
 ```bat
-python scripts\webui\build_timeline_option_flow_audit.py --language CN
-python scripts\webui\build_timeline_option_flow_audit.py --language CN --story dlg_c28m3_10 --group 1
+python scripts\story_recovery\build_timeline_option_flow_audit.py --language CN
+python scripts\story_recovery\build_timeline_option_flow_audit.py --language CN --story dlg_c28m3_10 --group 1
 ```
 
 Current CN result:
@@ -295,8 +295,8 @@ Current CN result:
   candidate clips carry raw `clipOptionIndex` values `2`, then `1`, matching
   option indices `1` and `2` after reordering.
 
-Recovery gain: `scripts/recover_timeline_line_orders.py` now preserves line
-clip `clipOptionIndex`, and `scripts/webui/build_story.py` uses it only when
+Recovery gain: `scripts/story_builder/timeline_recovery.py` now preserves line
+clip `clipOptionIndex`, and `scripts/story_builder/build.py` uses it only when
 the candidate line indices are complete, distinct, and exactly match the
 group's option indices. After the CN rebuild, `dlg_c28m3_10` group 1 maps:
 
@@ -397,14 +397,14 @@ shared-continuation evidence priority in those conflicts, so cases such as
 `dlg_e10m1_3` render group 3 once below the two group-2 columns instead of
 claiming it under only the `dlg_e10m1_3_007` column.
 
-On 2026-05-12 `scripts/webui/build_runtime_jump_option_route_audit.py` gained
+On 2026-05-12 `scripts/story_recovery/build_runtime_jump_option_route_audit.py` gained
 targeted filters so these diagnostics can be checked without a full global
 scan:
 
 ```bat
-python scripts\webui\build_runtime_jump_option_route_audit.py --language CN --story dlg_e1m1_5 --group 3
-python scripts\webui\build_runtime_jump_option_route_audit.py --language CN --story dlg_c28m3_23 --group 1
-python scripts\webui\build_runtime_jump_option_route_audit.py --language CN --story dlg_c13m2_12 --group 1
+python scripts\story_recovery\build_runtime_jump_option_route_audit.py --language CN --story dlg_e1m1_5 --group 3
+python scripts\story_recovery\build_runtime_jump_option_route_audit.py --language CN --story dlg_c28m3_23 --group 1
+python scripts\story_recovery\build_runtime_jump_option_route_audit.py --language CN --story dlg_c13m2_12 --group 1
 ```
 
 Current spot checks after the directional-rule promotion still do not justify
@@ -428,7 +428,7 @@ placements. Source/video side queues also remain: 18 source-link keys are
 referenced by extracted source data but missing from WebUI entries, and 33
 narrative video refs are unresolved.
 
-`scripts/webui/build_timeline_binding_audit.py` was added to test one more
+`scripts/story_recovery/build_timeline_binding_audit.py` was added to test one more
 backend-only branch hypothesis: whether unresolved option responses separate
 cleanly by Timeline track, actor binding, or option-clip track placement.
 
@@ -514,10 +514,10 @@ decompilation:
 
 1. Add a mission/source-link extractor for `MissionRuntimeAsset`,
    `LevelScriptData`, and `LevelScriptTemplateData`. **Implemented
-   2026-05-11** as `scripts/webui/build_story_source_links.py`.
+   2026-05-11** as `scripts/story_builder/source_links.py`.
    - Output: `export_full/recovered/story_source_links.json`, plus
      `reports/story_source_links.json` / `.md`.
-   - `build_story.py` now stamps matching conv JSON files with
+   - the Story builder now stamps matching conv JSON files with
      `sourceLinks`, adds compact `src` evidence to index entries, and writes
      per-language coverage/orphan reports such as
      `reports/story_source_links_CN.json`.
@@ -525,7 +525,7 @@ decompilation:
      in the WebUI.
 
 2. Add a cutscene/detail video miner. **Partially implemented 2026-05-11**
-   in `scripts/webui/build_story.py`.
+   in `scripts/story_builder/build.py`.
    - Inputs: exported narrative videos under
      `Data/Video/PC/Narrative/Cutscene` and `RemoteComm`, plus current WebUI
      story keys.
@@ -546,8 +546,8 @@ decompilation:
    - IL2CPP metadata exposes `DialogTimelineOptionData`, `DialogOptionBehaviour`,
      `centerPanelId`, `popUpPanelId`, and `ApplyPanelId`.
    - **Partially implemented 2026-05-11** with Runtime Jump Track route
-     recovery in `scripts/recover_timeline_line_orders.py` and
-     `scripts/webui/build_story.py`.
+     recovery in `scripts/story_builder/timeline_recovery.py` and
+     `scripts/story_builder/build.py`.
    - Remaining target: find the concrete asset/table or runtime state that
      stores explicit option target indices for groups that do not have
      Runtime Jump Track skip-window evidence.
@@ -566,8 +566,8 @@ decompilation:
 
 ## 2026-05-13 Audit Tool Signal Pass
 
-`scripts/webui/build_dialog_tree_option_route_audit.py` and
-`scripts/webui/build_timeline_option_flow_audit.py` were expanded to expose
+`scripts/story_recovery/build_dialog_tree_option_route_audit.py` and
+`scripts/story_recovery/build_timeline_option_flow_audit.py` were expanded to expose
 more branch-recovery evidence before promoting more WebUI story routes.
 
 New DialogTree audit signal:
@@ -708,7 +708,7 @@ state shape is:
 
 Recovery gain: this explains why nonzero raw `clipOptionIndex` mappings are
 strong branch evidence, and why all-zero option groups should not be rendered
-as separate inferred per-option replies. `scripts/webui/build_story.py` now
+as separate inferred per-option replies. `scripts/story_builder/build.py` now
 classifies groups where all option rows and adjacent candidate trunk clips have
 raw `optionIndex = 0` as `sharedTimelineContinuation` with a shared jump to
 the first continuation line. This removes the weak inferred-reply chips while
@@ -727,7 +727,7 @@ Current CN rebuild result after that rule:
 
 ## 2026-05-13 Default Trunk Clip Continuation
 
-`scripts/webui/build_timeline_option_flow_audit.py` now buckets unresolved
+`scripts/story_recovery/build_timeline_option_flow_audit.py` now buckets unresolved
 Timeline option groups by raw option-index pattern and by candidate/window
 trunk `clipOptionIndex` pattern. It also emits per-line raw clip indices,
 recovered line `clipOptionIndex` values, nonzero-coverage booleans, and any
@@ -875,7 +875,7 @@ So the likely transplanted mapping for `dlg_e2m6_11` is:
   `dlg_e2m6_11_008`
 - `option_dlg_e2m6_11_1_002` -> `dlg_e2m6_11_009`
 
-A guarded sibling-scene text transplant rule was added to `build_story.py` for
+A guarded sibling-scene text transplant rule was added to the Story builder for
 this case. It only runs when the option anchor itself is a fallback
 `siblingTimelinePosition`, the sibling scene has authored SceneGraph branches
 for a compatible option sequence, and each sibling branch line text maps to a
@@ -905,7 +905,7 @@ For `dlg_e2m6_18`, the evidence remains weak:
 
 ## 2026-05-13 Runtime-Gate Audit Surface
 
-`scripts/webui/build_timeline_option_flow_audit.py` now imports the compact
+`scripts/story_recovery/build_timeline_option_flow_audit.py` now imports the compact
 `optionFlowFacts` from `reports/option_flow_body_targets_gameassembly.json`
 and adds a `runtimeGate` block to each audited Timeline option group. That
 block translates the IL2CPP finding into per-line evidence: selected option
@@ -1002,7 +1002,7 @@ Recovery implication: we did miss AnimeStudio log issues operationally, but
 the current missed JSON MonoBehaviours do not explain unresolved option
 branches. The convert-stage story-like failures may matter for future visual
 cutscene/lighting recovery, but they are not evidence for changing
-`build_story.py` option routing rules.
+the Story builder option routing rules.
 
 ## 2026-05-13 AnimeStudio Log Recheck And Active Traversal Fact
 
@@ -1138,7 +1138,7 @@ creating a new WebUI promotion rule.
 
 ## 2026-05-13 Scene Placement Signals And Timeline DoNext
 
-`scripts/recover_mission_timelines.py` now emits a compact `scenePlacement`
+`scripts/story_builder/mission_recovery.py` now emits a compact `scenePlacement`
 index for each recovered mission. It stays evidence-only and records, per
 scene key, which signals exist:
 

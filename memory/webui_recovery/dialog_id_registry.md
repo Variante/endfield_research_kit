@@ -124,14 +124,14 @@ between the two via the trunk decomposition we don't fully parse.
 
 ## Scripts
 
-### `scripts/recover_dialog_id_registry.py`
+### `scripts/story_builder/dialog_registry.py`
 
 Extracts `DialogIdTable.json` into a fast-lookup JSON registry.
 
 Usage (already in `export.bat`):
 
 ```
-python scripts/recover_dialog_id_registry.py --quiet
+python scripts/story_builder/dialog_registry.py --quiet
 ```
 
 Input: `export_full/structured/StreamingAssets/Data/Json/GameplayConfig/DialogIdTable.json`
@@ -193,7 +193,7 @@ table order (`moved_line_ids` empty), it now decides between:
 If neither path applies (suffix sort did move lines), the old
 `lineIdSuffix` fallback status is kept and a warning is emitted as before.
 
-### `scripts/annotate_conv_with_registry.py`
+### `scripts/story_recovery/annotate_conv_with_registry.py`
 
 Stamps each conv JSON's `_debug` block with a `runtimeRegistry` evidence
 record. This is pure surfacing — the WebUI can render the evidence
@@ -222,12 +222,12 @@ extra webui lines (summary text, hints) that don't show up in the runtime's
 trunk-indexed registry. This is informational, not a bug indicator — but
 it surfaces inconsistencies for inspection.
 
-### `scripts/rewrite_scene_order_warnings.py`
+### `scripts/story_recovery/rewrite_scene_order_warnings.py`
 
 One-shot warning rebuild for conv JSONs. Updated to pass the registry to
 `build_scene_order_disorder_warning`. Run this after editing
 `scene_order_gap_shared.py` to refresh warnings without a full
-`build_story.py` rerun.
+the Story builder rerun.
 
 ## Wiring
 
@@ -236,18 +236,18 @@ before `build_updates.py`:
 
 ```
 python .\scripts\export_full_from_game.py --skip-raw-vfs --skip-source-inventory %*
-python .\scripts\recover_dialog_id_registry.py --quiet
-python .\scripts\webui\build_updates.py
-python .\scripts\webui\build_story.py --languages CN --default-language CN
-python .\scripts\webui\build_assets.py
+python .\scripts\story_builder\dialog_registry.py --quiet
+python .\scripts\build_updates.py
+python .\scripts\story_builder\build.py --languages CN --default-language CN
+python .\scripts\build_assets.py
 ```
 
-`build_story.py` loads the registry once, stamps each dialog conv with
+the Story builder loads the registry once, stamps each dialog conv with
 `_debug.runtimeRegistry`, and passes the same registry into
 `shared_build_scene_order_disorder_warning(payload)`.
 
-For pre-existing builds, `scripts/annotate_conv_with_registry.py` and
-`scripts/rewrite_scene_order_warnings.py` are stand-alone refreshers; you
+For pre-existing builds, `scripts/story_recovery/annotate_conv_with_registry.py` and
+`scripts/story_recovery/rewrite_scene_order_warnings.py` are stand-alone refreshers; you
 can run them without rerunning the full pipeline.
 
 ## Operational answers
@@ -277,25 +277,25 @@ Rerun `export.bat`. The pipeline picks up the new game data automatically:
    including the new `DialogIdTable.json`.
 2. `verify_export_freshness.py` confirms the new `export_full/` matches the
    installed source fingerprints before the long WebUI builders run.
-3. `recover_dialog_id_registry.py` rebuilds
+3. `story_builder/dialog_registry.py` rebuilds
    `export_full/recovered/dialog_id_table_index.json`. Scenes added in the
    update appear; scenes removed disappear. Trunk counts update.
-4. `build_story_source_links.py` rebuilds mission, level-script, cutscene,
+4. `story_builder/source_links.py` rebuilds mission, level-script, cutscene,
    remotecomm, SNS, radio, and reading-popup source evidence.
-5. `build_story.py` rebuilds all conv JSONs and stamps
+5. the Story builder rebuilds all conv JSONs and stamps
    `_debug.runtimeRegistry` from the new registry.
 6. `annotate_conv_with_registry.py` remains available as a stand-alone
    refresher for existing conv files, but normal `export.bat` runs do not
-   need it because `build_story.py` now writes `_debug.runtimeRegistry`
+   need it because the Story builder now writes `_debug.runtimeRegistry`
    directly.
 
 ### Known fragility points (read before debugging a quiet failure)
 
-1. **Binary format change.** `recover_dialog_id_registry.py` extracts
+1. **Binary format change.** `story_builder/dialog_registry.py` extracts
    ASCII tokens with the regex `(dlg_[A-Za-z0-9_]{2,80}|radio_[A-Za-z0-9_]{2,80})`.
    If a future game version starts encrypting `DialogIdTable.json` at rest,
    the extractor returns an empty dict and every scene becomes
-   `unregistered`. **Detection**: `recover_dialog_id_registry.py` reports
+   `unregistered`. **Detection**: `story_builder/dialog_registry.py` reports
    the total registered-scene count when run without `--quiet`; a drop
    from ~4 500 to ~0 is the smoking gun. **Fix**: investigate the new
    binary format; the in-memory representation is still
@@ -379,9 +379,9 @@ Fresh build from scratch (game closed, install present on disk):
 Refresh just the registry + warnings without re-export:
 
 ```
-python .\scripts\recover_dialog_id_registry.py
-python .\scripts\rewrite_scene_order_warnings.py
-python .\scripts\annotate_conv_with_registry.py   # optional, refresh existing _debug blocks
+python .\scripts\story_builder\dialog_registry.py
+python .\scripts\story_recovery\rewrite_scene_order_warnings.py
+python .\scripts\story_recovery\annotate_conv_with_registry.py   # optional, refresh existing _debug blocks
 ```
 
 Verify a specific scene's classification:

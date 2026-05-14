@@ -8,7 +8,7 @@ updates. Exported asset diffs from ``export_full/`` are included only when the
 original game-data tracker reports a real game update.
 
 Run from the repo root:
-    python scripts/webui/build_updates.py
+    python scripts/build_updates.py
 """
 from __future__ import annotations
 
@@ -32,8 +32,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from build_story_asset_index import ASSET_KIND_BY_EXT, VIDEO_EXTENSIONS
-from build_story_paths import resolve_asset_source_roots
+from asset_builder.index import ASSET_KIND_BY_EXT, VIDEO_EXTENSIONS
+from source_paths import resolve_asset_source_roots
 
 DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
 DEFAULT_STATE_DIR = ROOT / ".game-data-tracker"
@@ -565,7 +565,7 @@ def build_update_payload(
         "schemaVersion": SCHEMA_VERSION,
         "generated": int(time.time()),
         "generatedAt": now.isoformat(),
-        "generatedBy": "scripts/webui/build_updates.py",
+        "generatedBy": "scripts/build_updates.py",
         "source": "original_game_data",
         "sourceRoot": str(game_root),
         "baselineInitialized": baseline_initialized,

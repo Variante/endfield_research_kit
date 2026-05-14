@@ -1,6 +1,7 @@
 """Recover dialog line order from Unity Timeline assets in one pass.
 
-This script is the canonical Timeline recovery pipeline for the webui build:
+This module is the canonical Timeline recovery pipeline for the WebUI Story
+build:
 
 1. Discover AnimeStudio CLI AssetMaps under export_full/recovered/AnimeStudio-cli.
 2. Select dialog Timeline asset folders in a general way (`dlgtl_*`, `f_dlgtl_*`,
@@ -13,7 +14,7 @@ This script is the canonical Timeline recovery pipeline for the webui build:
 The main output is:
   export_full/recovered/AnimeStudio-cli/timeline_line_orders.json
 
-`scripts/webui/build_story.py` imports that JSON directly when present, using
+`scripts/story_builder/build.py` imports that JSON directly when present, using
 line clips for conversation order and option clips/bindings for authored choice
 placement.
 """
@@ -32,7 +33,7 @@ from pathlib import Path
 from typing import Callable
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_RECOVERY_ROOT = EXPORT_ROOT / "recovered" / "AnimeStudio-cli"
 DEFAULT_EXTRACT_DIR = DEFAULT_RECOVERY_ROOT / "timeline_extract"
@@ -1628,7 +1629,7 @@ def collapse_by_dialog_key(entries: list[dict]) -> dict:
 
     payload: dict = {
         "_meta": {
-            "generatedBy": "scripts/recover_timeline_line_orders.py",
+            "generatedBy": "scripts/story_builder/timeline_recovery.py",
             "timelineCount": len(entries),
             "dialogKeyCount": len(grouped),
             "optionTimelineCount": sum(1 for entry in entries if entry.get("optionIds")),
@@ -1711,7 +1712,7 @@ def merge_timeline_payloads(base_payload: dict, update_payload: dict) -> dict:
 
     merged: dict = {
         "_meta": {
-            "generatedBy": "scripts/recover_timeline_line_orders.py",
+            "generatedBy": "scripts/story_builder/timeline_recovery.py",
             "merged": True,
         }
     }
@@ -1935,7 +1936,7 @@ def recover_timeline_line_orders(config: TimelineRecoveryConfig | None = None) -
         log(f"wrote {rel_path(order_out)} ({meta['timelineCount']} timeline(s), {meta['dialogKeyCount']} dialog key(s))")
 
     summary = {
-        "generatedBy": "scripts/recover_timeline_line_orders.py",
+        "generatedBy": "scripts/story_builder/timeline_recovery.py",
         "generatedAt": int(time.time()),
         "exportRoot": rel_path(export_root),
         "extractDir": rel_path(extract_dir),

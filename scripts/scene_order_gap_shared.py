@@ -6,7 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 
 
-# DialogIdTable registry: see scripts/recover_dialog_id_registry.py.
+# DialogIdTable registry: see scripts/story_builder/dialog_registry.py.
 # This is Endfield's authoritative runtime dialog registry (extracted from
 # Beyond.Gameplay.DialogIdTable via the binary table on disk). A sceneKey
 # present in this registry is loadable by the runtime; one absent is
@@ -854,7 +854,7 @@ def analyze_line_order(conv: dict, *, dialog_id_registry: dict | None = None) ->
         }
 
     # `lineIdSuffix` and `compoundNumericSuffix` are both "DialogTextTable
-    # row-order" fallbacks emitted by build_story when no Timeline / dialogTree
+    # row-order" fallbacks emitted by the Story builder when no Timeline / dialogTree
     # source covers the scene. The same evidence chain upgrades both:
     # - if the rows in this scene weren't reordered relative to raw table
     #   order, then *any* iteration strategy DialogTrunkBehaviour might use
@@ -1594,7 +1594,7 @@ def _merge_scene_placement_row(existing: dict, incoming: dict) -> dict:
 
 
 def _load_scene_placement_index(root: Path, conv_dir: Path) -> dict[str, dict]:
-    """Load per-scene mission placement signals emitted by build_story.py."""
+    """Load per-scene mission placement signals emitted by the Story builder."""
     mission_dir = conv_dir.parent / "mission"
     if not mission_dir.is_dir():
         return {}

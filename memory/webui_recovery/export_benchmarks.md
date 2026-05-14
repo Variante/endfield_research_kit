@@ -17,7 +17,7 @@ Result:
 - `Persistent` structured dump: `505.495` seconds.
 - AnimeStudio broad export: cache hit for all selected stages and sources; no
   stages reran.
-- Remaining time was mostly CN `build_story.py`, plus freshness verification,
+- Remaining time was mostly CN the Story builder, plus freshness verification,
   DialogIdTable recovery, source-link building, Updates, and fast asset index
   refresh.
 
@@ -25,8 +25,8 @@ Follow-up observation:
 
 - Initial benchmark output showed volatile local CrashSight files under
   `Plugins/x86_64/wesight/crashsight_data/` as game-data changes. These are
-  now filtered by `scripts/webui/build_updates.py`.
-- After rerunning `python scripts\webui\build_updates.py`, unchanged content
+  now filtered by `scripts/build_updates.py`.
+- After rerunning `python scripts\build_updates.py`, unchanged content
   produced `gameTotals.changed = 0`, `assetTotals.changed = 0`, and an empty
   Updates entry list.
 
@@ -36,13 +36,13 @@ Likely speed target:
   when source fingerprints are unchanged. On this run, the two structured dumps
   alone cost about `17.1` minutes.
 
-## 2026-05-12 - `build_story.py` CN Story Build Speed Pass
+## 2026-05-12 - the Story builder CN Story Build Speed Pass
 
 Commands:
 
 ```bat
-python -m cProfile -o reports\build_story_cprofile_20260512.prof scripts\webui\build_story.py --languages CN --default-language CN
-Measure-Command { python scripts\webui\build_story.py --languages CN --default-language CN }
+python -m cProfile -o reports\build_story_cprofile_20260512.prof scripts\story_builder\build.py --languages CN --default-language CN
+Measure-Command { python scripts\story_builder\build.py --languages CN --default-language CN }
 ```
 
 Findings:

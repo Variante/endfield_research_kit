@@ -8,7 +8,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from build_story_paths import (
+from source_paths import (
     _asset_source_family,
     resolve_asset_source_roots,
     resolve_material_source_roots,

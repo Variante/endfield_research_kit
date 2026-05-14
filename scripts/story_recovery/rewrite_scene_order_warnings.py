@@ -2,7 +2,7 @@
 """
 In-place rewrite of `warnings` arrays in webui conv JSON files to match the
 current scene_order_gap_shared logic. Useful after tightening the criteria
-for `sceneOrderDisorder` warnings without re-running build_story.py.
+for `sceneOrderDisorder` warnings without re-running story_builder/build.py.
 """
 from __future__ import annotations
 
@@ -10,8 +10,10 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
+ROOT = Path(__file__).resolve().parents[2]
+for _path in (ROOT / "scripts",):
+    if str(_path) not in sys.path:
+        sys.path.insert(0, str(_path))
 
 from scene_order_gap_shared import (  # noqa: E402
     build_scene_order_disorder_warning,

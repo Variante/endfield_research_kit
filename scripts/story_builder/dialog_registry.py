@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Extract Endfield's runtime DialogIdTable into a JSON registry.
+Extract Endfield's runtime DialogIdTable into a JSON registry for Story builds.
 
 DialogIdTable is the runtime's authoritative dialog registry: every dialog
 the runtime can load must appear here. Each entry is a MemoryPack-serialized
@@ -37,7 +37,7 @@ from pathlib import Path
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
-DEFAULT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_ROOT = Path(__file__).resolve().parents[2]
 
 DEFAULT_INPUT  = DEFAULT_ROOT / "export_full/structured/StreamingAssets/Data/Json/GameplayConfig/DialogIdTable.json"
 DEFAULT_OUTPUT = DEFAULT_ROOT / "export_full/recovered/dialog_id_table_index.json"

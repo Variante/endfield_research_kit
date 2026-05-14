@@ -16,12 +16,12 @@ python serve.py
 `export.bat` is the current WebUI recovery pipeline:
 
 1. `scripts/export_full_from_game.py --skip-raw-vfs --skip-source-inventory`
-2. `scripts/webui/verify_export_freshness.py`
-3. `scripts/recover_dialog_id_registry.py --quiet`
-4. `scripts/webui/build_story_source_links.py`
-5. `scripts/webui/build_updates.py`
-6. `scripts/webui/build_story.py --languages CN --default-language CN`
-7. `scripts/webui/build_assets.py`
+2. `scripts/verify_export_freshness.py`
+3. `scripts/story_builder/dialog_registry.py --quiet`
+4. `scripts/story_builder/source_links.py`
+5. `scripts/build_updates.py`
+6. `scripts/story_builder/build.py --languages CN --default-language CN`
+7. `scripts/build_assets.py`
 
 The pipeline writes the browser inputs under `webui/data/` and reads exported
 game data from `export_full/`. It does not require `scratch/`, `reports/`, or
@@ -66,11 +66,11 @@ webui/data/
   assets/bundles/index.json
 ```
 
-Extra language folders may exist when `build_story.py` is run with more
+Extra language folders may exist when the Story builder is run with more
 languages, for example:
 
 ```bat
-python scripts\webui\build_story.py --languages CN EN JP --default-language CN
+python scripts\story_builder\build.py --languages CN EN JP --default-language CN
 ```
 
 ## Active Source Roots

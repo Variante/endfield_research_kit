@@ -51,7 +51,7 @@ from typing import Any, Iterable
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 EXPORT_ROOT = ROOT / "export_full"
 RECOVERED_DIR = EXPORT_ROOT / "recovered"
 ANIMESTUDIO_CLI = RECOVERED_DIR / "AnimeStudio-cli"
