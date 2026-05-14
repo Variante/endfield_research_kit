@@ -6116,10 +6116,24 @@ function renderInlineImageTagHtml(imageId, q, rawTag = "") {
   return `<span class="${classes.join(" ")}" ${attrs.join(" ")}>${thumb}${label}${preview}</span>`;
 }
 
+function inlineImageIdsInText(text) {
+  const ids = new Set();
+  const source = String(text || "");
+  const tokenRe = /<image\b(?!\s*=)[^>]*>[\s\S]*?<\/image>|<image\s*=[^>]+>|<image\b(?=[^>]*(?:src|source|path|name|id)\s*=)[^>]*>/gi;
+  let match;
+  while ((match = tokenRe.exec(source))) {
+    const normalized = normalizeInlineImageId(extractInlineImageIdFromTag(match[0] || ""));
+    if (normalized) ids.add(normalized);
+  }
+  return ids;
+}
+
 function lineMediaIds(line) {
   const ids = [];
+  const inlineIds = inlineImageIdsInText(line && line.text);
   const push = (value) => {
     const normalized = normalizeInlineImageId(value);
+    if (inlineIds.has(normalized)) return;
     if (normalized && !ids.includes(normalized)) ids.push(normalized);
   };
   if (line && Array.isArray(line.images)) {
