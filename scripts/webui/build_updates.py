@@ -201,6 +201,10 @@ def normalized_entry(status: str, raw: dict[str, Any]) -> dict[str, Any]:
     ):
         if raw.get(key) is not None:
             entry[key] = raw[key]
+    if raw.get("text_diff"):
+        entry["text_diff"] = raw["text_diff"]
+        if raw.get("text_diff_truncated"):
+            entry["text_diff_truncated"] = True
     return entry
 
 
@@ -285,6 +289,13 @@ def build_asset_snapshot(
                     "digest": digest,
                 }
     return assets
+
+
+def asset_source_roots_payload(export_root: Path) -> dict[str, str]:
+    roots: dict[str, str] = {}
+    for source, source_root in resolve_asset_source_roots(export_root):
+        roots[source] = normalize_posix(str(source_root))
+    return roots
 
 
 def load_asset_state(path: Path) -> dict[str, dict[str, Any]]:
@@ -385,6 +396,126 @@ def zero_totals() -> dict[str, int]:
     return {"added": 0, "modified": 0, "deleted": 0, "changed": 0}
 
 
+def total_reported_changes(payload: dict[str, Any]) -> int:
+    totals = payload.get("totals") or payload.get("gameTotals") or {}
+    return int(totals.get("changed") or 0)
+
+
+def total_game_changes(payload: dict[str, Any]) -> int:
+    totals = payload.get("gameTotals") or {}
+    return int(totals.get("changed") or 0)
+
+
+def find_latest_changed_history(
+    *,
+    state_dir: Path,
+    game_root: Path,
+    sample_limit: int,
+) -> tuple[dict[str, Any], Path] | None:
+    history_dir = state_dir / "history"
+    if not history_dir.exists():
+        return None
+    candidates = sorted(
+        history_dir.glob("export-change-summary-*.json"),
+        key=lambda path: (path.stat().st_mtime, path.name),
+        reverse=True,
+    )
+    for path in candidates:
+        raw_payload = read_json(path, default={})
+        if not isinstance(raw_payload, dict):
+            continue
+        candidate = build_update_payload(
+            raw_payload,
+            game_root=game_root,
+            baseline_initialized=False,
+            baseline_only=False,
+            sample_limit=sample_limit,
+        )
+        if total_game_changes(candidate) > 0:
+            return raw_payload, path
+    return None
+
+
+def find_latest_update_feed_history(state_dir: Path) -> tuple[dict[str, Any], Path] | None:
+    history_dir = state_dir / "history"
+    if not history_dir.exists():
+        return None
+    candidates = sorted(
+        history_dir.glob("update-feed-*.json"),
+        key=lambda path: (path.stat().st_mtime, path.name),
+        reverse=True,
+    )
+    for path in candidates:
+        payload = read_json(path, default={})
+        if isinstance(payload, dict) and total_reported_changes(payload) > 0:
+            return payload, path
+    return None
+
+
+def write_update_feed_history(payload: dict[str, Any], state_dir: Path) -> Path | None:
+    if total_reported_changes(payload) <= 0:
+        return None
+    history_dir = state_dir / "history"
+    stamp = dt.datetime.now(dt.timezone.utc).astimezone().strftime("%Y%m%d-%H%M%S")
+    history_path = history_dir / f"update-feed-{stamp}.json"
+    write_json(history_path, payload, indent=2, compact=False)
+    return history_path
+
+
+def restore_zero_change_feed(
+    *,
+    current_payload: dict[str, Any],
+    out_path: Path,
+    state_dir: Path,
+    game_root: Path,
+    export_root: Path,
+    sample_limit: int,
+) -> tuple[dict[str, Any], str] | None:
+    existing_payload = read_json(out_path, default={})
+    if isinstance(existing_payload, dict) and total_reported_changes(existing_payload) > 0:
+        return existing_payload, "preserved_existing_feed"
+
+    latest_feed = find_latest_update_feed_history(state_dir)
+    if latest_feed is not None:
+        payload, history_path = latest_feed
+        payload["restoredAfterZeroChangeScan"] = {
+            "source": "update_feed_history",
+            "historyPath": str(history_path),
+            "zeroChangeTracker": current_payload.get("tracker") or {},
+        }
+        return payload, "restored_from_feed_history"
+
+    latest_history = find_latest_changed_history(
+        state_dir=state_dir,
+        game_root=game_root,
+        sample_limit=sample_limit,
+    )
+    if latest_history is None:
+        return None
+
+    raw_payload, history_path = latest_history
+    restored_payload = build_update_payload(
+        raw_payload,
+        game_root=game_root,
+        baseline_initialized=False,
+        baseline_only=False,
+        sample_limit=sample_limit,
+    )
+    attach_asset_updates(
+        restored_payload,
+        export_root=export_root,
+        state_dir=state_dir,
+        sample_limit=sample_limit,
+        skip_asset_updates=True,
+    )
+    restored_payload["restoredAfterZeroChangeScan"] = {
+        "source": "tracker_history",
+        "historyPath": str(history_path),
+        "zeroChangeTracker": current_payload.get("tracker") or {},
+    }
+    return restored_payload, "restored_from_history"
+
+
 def combine_totals(*totals_list: dict[str, Any]) -> dict[str, int]:
     combined = {"added": 0, "modified": 0, "deleted": 0}
     for totals in totals_list:
@@ -479,12 +610,14 @@ def attach_asset_updates(
     asset_state_path = state_dir / "asset-state.json"
     old_assets = load_asset_state(asset_state_path)
     asset_scan_available = export_root.exists()
+    asset_source_roots = asset_source_roots_payload(export_root)
     if skip_asset_updates:
         payload["assetTotals"] = zero_totals()
         payload["totals"] = combine_totals(payload.get("gameTotals") or zero_totals())
         payload["assets"] = {
             "source": "exported_assets",
             "sourceRoot": str(export_root),
+            "sourceRoots": asset_source_roots,
             "statePath": str(asset_state_path),
             "available": asset_scan_available,
             "skipped": True,
@@ -508,6 +641,7 @@ def attach_asset_updates(
         payload["assets"] = {
             "source": "exported_assets",
             "sourceRoot": str(export_root),
+            "sourceRoots": asset_source_roots,
             "statePath": str(asset_state_path),
             "available": False,
             "baselineInitialized": not old_assets,
@@ -545,6 +679,7 @@ def attach_asset_updates(
     payload["assets"] = {
         "source": "exported_assets",
         "sourceRoot": str(export_root),
+        "sourceRoots": asset_source_roots,
         "statePath": str(asset_state_path),
         "available": True,
         "baselineInitialized": asset_baseline_initialized,
@@ -645,7 +780,26 @@ def main(argv: list[str] | None = None) -> int:
         skip_asset_updates=bool(args.skip_asset_updates or args.baseline_only),
     )
 
+    zero_change_restore_source = ""
+    if (
+        had_baseline
+        and not args.baseline_only
+        and not args.reset_baseline
+        and total_game_changes(webui_payload) == 0
+    ):
+        restored = restore_zero_change_feed(
+            current_payload=webui_payload,
+            out_path=out_path,
+            state_dir=state_dir,
+            game_root=game_root,
+            export_root=export_root,
+            sample_limit=args.sample_limit,
+        )
+        if restored is not None:
+            webui_payload, zero_change_restore_source = restored
+
     write_json(out_path, webui_payload, indent=2, compact=False)
+    write_update_feed_history(webui_payload, state_dir)
 
     totals = webui_payload["gameTotals"]
     if webui_payload["baselineInitialized"]:
@@ -663,6 +817,8 @@ def main(argv: list[str] | None = None) -> int:
             "[build_updates] Game-data changes:"
             f" added={totals['added']}, modified={totals['modified']}, deleted={totals['deleted']}"
         )
+    if zero_change_restore_source:
+        print(f"[build_updates] Zero-change scan: {zero_change_restore_source}")
     asset_totals = webui_payload.get("assetTotals") or {}
     if (webui_payload.get("assets") or {}).get("skipped"):
         print("[build_updates] Asset changes: skipped (--skip-asset-updates)")

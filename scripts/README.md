@@ -28,9 +28,13 @@ Updates feed should be baselined instead of reporting changes.
 Use `.\export.bat --fast-assets` for local refreshes that can reuse existing
 asset indexes and skip demo bundle zip generation.
 
-`package_webui.bat` runs `scripts/webui/package_webui.py` and creates a
-shareable zip from `serve.py`, `webui/`, and displayed media resolved from
-`export_full/`. It excludes 3D/model payloads and does not include
+`package_webui.bat` runs `scripts/webui/package_webui.py` and creates split
+shareable zips. The main story zip contains `serve.py`, `webui/`, generated
+story/reference text data, WebUI code, and emoji images. The companion assets
+zip contains the larger displayed image/video media resolved from
+`export_full/`; extract the story zip first, then extract the assets zip into
+the same directory when media is wanted. Packaging excludes 3D/model payloads
+and does not include
 `scratch/`, `reports/`, or `tmp/`.
 
 ## Folder Contract
@@ -77,8 +81,13 @@ Expected active inputs and outputs:
 - `webui/build_updates.py`: writes `webui/data/updates/latest.json` from the
   original installed game data only. Tracker state lives under
   `..\.game-data-tracker\`; generated summary reports live under
-  `..\reports\`. Pass `--baseline-only` to update tracker state while writing
-  an empty feed, or `--skip-asset-updates` to skip only the exported
+  `..\reports\`. Zero-change reruns preserve or restore the last non-empty
+  feed from tracker history so accidental duplicate runs do not blank the
+  Updates page. Non-empty feed snapshots are written as
+  `..\.game-data-tracker\history\update-feed-*.json` so asset-level entries can
+  be recovered with the game-data entries. Pass `--baseline-only` to update
+  tracker state while writing an empty feed, or `--skip-asset-updates` to skip
+  only the exported
   image/model/video asset diff.
 - `webui/build_story.py`: builds CN story/reference data by default, with
   optional extra languages. It reads from `..\export_full\`, stamps dialog
@@ -91,8 +100,10 @@ Expected active inputs and outputs:
   export roots. Pass `--fast` to reuse existing indexes when present and skip
   demo bundle zip generation, or `--skip-bundles` to rebuild indexes without
   bundle zips.
-- `webui/package_webui.py`: packages a shareable WebUI build from `serve.py`,
-  `..\webui\`, and displayed media files under `..\export_full\`.
+- `webui/package_webui.py`: packages split shareable WebUI zips from
+  `serve.py`, `..\webui\`, and displayed media files under `..\export_full\`.
+  The primary zip is story/code/emoji only; the companion assets zip carries
+  larger images and videos.
 - `webui/common.py`: small shared constants and JSON/path helpers for the
   WebUI builders.
 

@@ -121,6 +121,14 @@ when the original `Endfield_Data` tracker reports a real game-data change. When
 there is no game-data change, exported asset differences should be treated as
 local rebuild noise and baselined silently.
 
+Zero-change reruns should not blank the Updates page. `build_updates.py`
+preserves the existing non-empty feed, or restores the latest non-empty feed
+snapshot from `.game-data-tracker/history/update-feed-*.json`. If no feed
+snapshot exists, it can fall back to the latest non-empty raw tracker report,
+which recovers game-data entries but not already-overwritten asset diffs. Use
+`--baseline-only` or `--reset-baseline` only when an empty baseline is
+intentional.
+
 ## Repo Rules
 
 - Prefer the layout rooted at `serve.py`, `export.bat`, `webui/`,

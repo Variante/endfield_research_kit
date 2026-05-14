@@ -1,6 +1,6 @@
 ---
 name: endfield-webui-workflow
-description: Use this skill for the static WebUI workflow: refresh/export, local serving, packaging, Updates tab checks, asset/index refresh, and Story/Reference frontend behavior such as inline SNS image rendering.
+description: "Use this skill for the static WebUI workflow: refresh/export, local serving, packaging, Updates tab checks, asset/index refresh, and Story/Reference frontend behavior such as inline SNS image rendering."
 ---
 
 # Endfield WebUI Workflow

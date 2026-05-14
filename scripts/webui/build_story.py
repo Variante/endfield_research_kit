@@ -43,6 +43,7 @@ import re
 import shutil
 import sys
 import time
+import unicodedata
 from bisect import bisect_left
 from collections import Counter, defaultdict, deque
 from difflib import SequenceMatcher
@@ -307,6 +308,8 @@ _MISSION_AREA_CACHE: dict[str, dict] | None = None
 _NPC_PROXY_TABLE_CACHE: dict[str, dict] | None = None
 _CUTSCENE_ASSET_CACHE: dict[str, dict] | None = None
 _NARRATIVE_VIDEO_CACHE: list[dict] | None = None
+_VIDEO_BINDINGS_CACHE: dict[str, dict] | None = None
+VIDEO_BINDINGS_PATH = EXPORT_ROOT / "recovered" / "video_bindings.json"
 _DIALOG_REF_FIELDS = ("_dialogId", "snsDialogId")
 _CUTSCENE_REF_FIELDS = ("_cutsceneId",)
 _REMOTECOMM_REF_FIELDS = ("_remoteCommId",)
@@ -1103,6 +1106,63 @@ def _narrative_video_key_candidates(kind: str, stem: str) -> list[str]:
     return candidates
 
 
+def _load_video_bindings_index() -> dict[str, dict]:
+    """Read recovered/video_bindings.json (Graph A + Graph B) keyed by fmvId.
+
+    Empty dict if the recovery output is missing or unreadable; downstream code
+    must treat any missing entry as "no authoritative binding, fall back to
+    name heuristics".
+    """
+    global _VIDEO_BINDINGS_CACHE
+    if _VIDEO_BINDINGS_CACHE is not None:
+        return _VIDEO_BINDINGS_CACHE
+    try:
+        payload = json.loads(VIDEO_BINDINGS_PATH.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        _VIDEO_BINDINGS_CACHE = {}
+        return _VIDEO_BINDINGS_CACHE
+    bindings = payload.get("bindings") if isinstance(payload, dict) else None
+    _VIDEO_BINDINGS_CACHE = bindings if isinstance(bindings, dict) else {}
+    return _VIDEO_BINDINGS_CACHE
+
+
+def _video_binding_for_stem(stem: str) -> dict | None:
+    bindings = _load_video_bindings_index()
+    if not bindings:
+        return None
+    direct = bindings.get(stem)
+    if isinstance(direct, dict):
+        return direct
+    return None
+
+
+def _authoritative_scene_keys(kind: str, binding: dict) -> list[str]:
+    """Convert a binding record into scene-key candidates suitable for index lookup.
+
+    A timeline-resolved scene id like `e6m2_7` becomes the dialog key
+    `dlg_e6m2_7`. For non-dialog scenes the raw id is also returned. Bindings
+    that only carry a hint (no timeline asset) are skipped so the heuristic
+    fallback stays in charge.
+    """
+    if not isinstance(binding, dict):
+        return []
+    if binding.get("sceneIsHint"):
+        return []
+    scene = str(binding.get("scene") or "").strip()
+    if not scene:
+        return []
+    keys: list[str] = []
+    if scene.startswith("dlg_"):
+        keys.append(scene)
+    else:
+        keys.append(f"dlg_{scene}")
+        if kind == "remotecomm" and not scene.startswith("remotecomm_"):
+            keys.append(f"remotecomm_{scene}")
+    if scene not in keys:
+        keys.append(scene)
+    return keys
+
+
 def _load_narrative_video_assets() -> list[dict]:
     global _NARRATIVE_VIDEO_CACHE
     if _NARRATIVE_VIDEO_CACHE is not None:
@@ -1115,14 +1175,23 @@ def _load_narrative_video_assets() -> list[dict]:
                 if not path.is_file() or path.suffix.lower() not in NARRATIVE_VIDEO_EXTENSIONS:
                     continue
                 gender, base_stem = _strip_gender_video_prefix(path.stem)
-                candidates = _narrative_video_key_candidates(kind, path.stem)
+                heuristic_candidates = _narrative_video_key_candidates(kind, path.stem)
+                binding = _video_binding_for_stem(path.stem)
+                authoritative_keys = _authoritative_scene_keys(kind, binding or {})
+
+                candidates: list[str] = []
+                seen: set[str] = set()
+                for value in (*authoritative_keys, *heuristic_candidates):
+                    if value and value not in seen:
+                        candidates.append(value)
+                        seen.add(value)
                 if not candidates:
                     continue
                 try:
                     size = path.stat().st_size
                 except OSError:
                     size = 0
-                out.append({
+                ref = {
                     "kind": kind,
                     "name": path.name,
                     "stem": path.stem,
@@ -1133,7 +1202,33 @@ def _load_narrative_video_assets() -> list[dict]:
                     "source": label,
                     "rel": _relative_asset_ref(label, source_root, path),
                     "keyCandidates": candidates,
-                })
+                }
+                if binding:
+                    ref["binding"] = {
+                        "fmvId": str(binding.get("fmvId") or path.stem),
+                        "scene": str(binding.get("scene") or ""),
+                        "mission": str(binding.get("mission") or ""),
+                        "missions": list(binding.get("missions") or []),
+                        "isHint": bool(binding.get("sceneIsHint")),
+                        "sourceKinds": sorted({
+                            str(s.get("kind") or "")
+                            for s in (binding.get("sources") or [])
+                            if isinstance(s, dict) and s.get("kind")
+                        }),
+                        "clips": [
+                            {
+                                "scene": c.get("scene"),
+                                "start": c.get("start"),
+                                "duration": c.get("duration"),
+                                "optionIndex": c.get("optionIndex"),
+                            }
+                            for c in (binding.get("clips") or [])
+                            if isinstance(c, dict)
+                        ][:8],
+                    }
+                if authoritative_keys:
+                    ref["authoritativeKeys"] = list(authoritative_keys)
+                out.append(ref)
 
     out.sort(key=lambda ref: (
         str(ref.get("kind") or ""),
@@ -2186,6 +2281,189 @@ def infer_mission_dialog_order(
         push(entry["k"])
 
     return {dialog_id: order for order, dialog_id in enumerate(ordered_keys)}
+
+
+def build_mission_scene_file_order(
+    mission_entries: list[dict],
+    mission_flow: dict | None,
+) -> dict:
+    """Build source-strict scene/file order from MissionRuntimeAsset quest edges.
+
+    This intentionally treats `prevQuestIdList` as a partial order. Sibling
+    quests in the same DAG layer share the same broad order bucket; the payload
+    keeps them as separate groups instead of pretending the fallback sort is
+    authored chronology.
+    """
+    entries_by_key = {
+        entry["k"]: entry
+        for entry in mission_entries
+        if entry.get("d") in MISSION_SCENE_ENTRY_KINDS and entry.get("k")
+    }
+    if not entries_by_key or not mission_flow:
+        return {}
+
+    quests = [
+        quest
+        for quest in (mission_flow.get("quests") or [])
+        if quest.get("id")
+    ]
+    if not quests:
+        return {}
+
+    quest_by_id = {quest["id"]: quest for quest in quests}
+
+    def resolve_entry_scene_ref(raw_ref: str) -> str:
+        candidates = _unique_preserve([
+            str(raw_ref or "").strip(),
+            *_scene_ref_alias_candidates(raw_ref),
+        ])
+        for candidate in candidates:
+            if not candidate:
+                continue
+            if candidate in entries_by_key:
+                return candidate
+            canonical_cutscene = _canonical_cutscene_key(candidate) or ""
+            if canonical_cutscene in entries_by_key:
+                return canonical_cutscene
+        return ""
+
+    def quest_scene_refs(quest: dict) -> list[str]:
+        refs: list[str] = []
+        for field_name in ("dialogs", "cutscenes", "remotecomms", "radios"):
+            for raw_ref in quest.get(field_name) or []:
+                resolved = resolve_entry_scene_ref(raw_ref)
+                if resolved and resolved not in refs:
+                    refs.append(resolved)
+        return refs
+
+    depth_by_id: dict[str, int] = {}
+    visiting: set[str] = set()
+    loops: set[tuple[str, ...]] = set()
+
+    def quest_depth(quest_id: str, stack: tuple[str, ...] = ()) -> int:
+        if quest_id in depth_by_id:
+            return depth_by_id[quest_id]
+        if quest_id in visiting:
+            try:
+                loop = (*stack[stack.index(quest_id):], quest_id)
+            except ValueError:
+                loop = (*stack, quest_id)
+            loops.add(loop)
+            return 0
+        quest = quest_by_id.get(quest_id)
+        if not quest:
+            return 0
+        visiting.add(quest_id)
+        prev_depths = [
+            quest_depth(prev_id, (*stack, quest_id))
+            for prev_id in (quest.get("prev") or [])
+            if prev_id in quest_by_id
+        ]
+        visiting.remove(quest_id)
+        depth_by_id[quest_id] = (max(prev_depths) + 1) if prev_depths else 0
+        return depth_by_id[quest_id]
+
+    for quest in quests:
+        quest_depth(quest["id"])
+
+    groups: list[dict] = []
+    order_map: dict[str, int] = {}
+    scene_to_quests: dict[str, list[str]] = defaultdict(list)
+    edges_by_pair: dict[tuple[str, str], dict] = {}
+    unresolved_prev: list[dict] = []
+
+    quest_refs_by_id = {
+        quest["id"]: quest_scene_refs(quest)
+        for quest in quests
+    }
+    layer_counts = Counter(
+        depth_by_id.get(quest["id"], 0)
+        for quest in quests
+        if quest_refs_by_id.get(quest["id"])
+    )
+
+    for quest in sorted(
+        quests,
+        key=lambda quest: (
+            depth_by_id.get(quest["id"], 10**9),
+            _quest_sort_key(quest),
+        ),
+    ):
+        quest_id = quest["id"]
+        refs = quest_refs_by_id.get(quest_id) or []
+        layer = depth_by_id.get(quest_id, 0)
+        for local_index, scene_key in enumerate(refs):
+            order_map.setdefault(scene_key, layer * 1000 + local_index)
+            if quest_id not in scene_to_quests[scene_key]:
+                scene_to_quests[scene_key].append(quest_id)
+        for prev_id in quest.get("prev") or []:
+            if prev_id not in quest_by_id:
+                unresolved_prev.append({
+                    "questId": quest_id,
+                    "prevQuestId": prev_id,
+                    "source": "MissionRuntimeAsset.questDic[*].prevQuestIdList",
+                })
+                continue
+            prev_refs = quest_refs_by_id.get(prev_id) or []
+            if not prev_refs or not refs:
+                continue
+            pair = (prev_refs[-1], refs[0])
+            if pair[0] == pair[1]:
+                continue
+            edge = edges_by_pair.setdefault(pair, {
+                "from": pair[0],
+                "to": pair[1],
+                "kind": "questPrev",
+                "source": "MissionRuntimeAsset.questDic[*].prevQuestIdList",
+                "questIds": [],
+            })
+            for edge_quest_id in (prev_id, quest_id):
+                if edge_quest_id and edge_quest_id not in edge["questIds"]:
+                    edge["questIds"].append(edge_quest_id)
+        if refs:
+            groups.append({
+                "questId": quest_id,
+                "layer": layer,
+                "prevQuestIds": list(quest.get("prev") or []),
+                "sceneKeys": refs,
+                "parallelLayer": layer_counts[layer] > 1,
+                "source": "MissionRuntimeAsset.questDic[*]",
+            })
+
+    if not groups and not edges_by_pair:
+        return {}
+
+    return {
+        "source": "MissionRuntimeAsset.questDic[*].prevQuestIdList",
+        "mode": "questDagPartialOrder",
+        "note": (
+            "Layer order comes from explicit quest predecessor edges. Groups in "
+            "the same layer are parallel unless another source edge connects them."
+        ),
+        "groups": groups,
+        "edges": sorted(
+            edges_by_pair.values(),
+            key=lambda edge: (
+                order_map.get(edge["from"], 10**9),
+                order_map.get(edge["to"], 10**9),
+                edge["from"],
+                edge["to"],
+            ),
+        ),
+        "sceneQuestRefs": {
+            scene_key: quest_ids
+            for scene_key, quest_ids in sorted(
+                scene_to_quests.items(),
+                key=lambda item: (order_map.get(item[0], 10**9), item[0]),
+            )
+        },
+        "orderMap": order_map,
+        "unresolvedPrevQuestRefs": unresolved_prev,
+        "loops": [
+            {"questIds": list(loop)}
+            for loop in sorted(loops)
+        ],
+    }
 
 
 def load_mission_flow(mission_id: str) -> dict | None:
@@ -10338,6 +10616,116 @@ def build_language_bundle(
                     groups.append(group)
         return groups
 
+    def fold_padded_group_into_pair(canonical_line: dict, padded_line: dict) -> None:
+        """Record `padded_line` as a `mergedDuplicateRows` entry on `canonical_line`.
+
+        Used when the leading-zero textgroup row is treated as the M sibling of an
+        unpadded F row that already carries the canonical text.
+        """
+        duplicate = {"id": padded_line.get("id") or ""}
+        if padded_line.get("text"):
+            duplicate["text"] = padded_line["text"]
+        if padded_line.get("textGroup"):
+            duplicate["textGroup"] = padded_line["textGroup"]
+        if padded_line.get("sub"):
+            duplicate["sub"] = padded_line["sub"]
+        canonical_line.setdefault("mergedDuplicateRows", []).append(duplicate)
+        debug = canonical_line.setdefault("_debug", {})
+        debug.setdefault("mergedDuplicateRows", []).append(duplicate)
+        source = debug.setdefault("source", {})
+        row_ids = source.setdefault("mergedDuplicateRowIds", [])
+        if duplicate["id"] and duplicate["id"] not in row_ids:
+            row_ids.append(duplicate["id"])
+        if padded_line.get("textGroup"):
+            groups = source.setdefault("mergedDuplicateTextGroups", [])
+            if padded_line["textGroup"] not in groups:
+                groups.append(padded_line["textGroup"])
+
+    def cutscene_pair_normalize(text: str) -> str:
+        """Strip whitespace, punctuation, and symbols so that F and M variants
+        differing only in cosmetic markers (leading space, halfwidth/fullwidth
+        punctuation, smart quotes) compare equal. Letters and digits survive."""
+        if not text:
+            return ""
+        out = []
+        for ch in str(text):
+            cat = unicodedata.category(ch)
+            if cat and cat[0] in ("L", "N"):
+                out.append(ch)
+        return "".join(out)
+
+    def tag_paired_gender(line: dict, gender: str) -> None:
+        line["gender"] = gender
+        line.setdefault("_debug", {}).setdefault("source", {})["gender"] = gender
+
+    def merge_paired_cutscene_text_groups(
+        rows: list[tuple[tuple[int, int, int, str, str], dict]],
+        canonical_group: str,
+    ) -> list[dict] | None:
+        """Pair an unpadded textgroup with its leading-zero alias as F/M variants.
+
+        Behavior per paired sequence position:
+        - identical text → keep one line, no gender flag (both genders see it).
+        - different text → emit a single line with inline `{F}…{M}…` so the
+          existing inline switch toggles it. Some cutscenes have substantive
+          per-gender script differences, not just punctuation, but they still
+          occupy the same subtitle slot.
+
+        Returns None when the inputs don't match the paired-group shape (no
+        padded alias, or some row already carries an explicit `_m`/`_f` row
+        suffix gender that the legacy deduper owns).
+        """
+        by_group: dict[str, list[tuple[tuple[int, int, int, str, str], dict]]] = defaultdict(list)
+        for sort_key, line in rows:
+            group = line.get("textGroup") or canonical_group
+            by_group[group].append((sort_key, line))
+
+        padded_groups = [g for g in by_group if g != canonical_group]
+        if not padded_groups:
+            return None
+        if any(line.get("gender") for _, line in rows):
+            return None
+
+        f_rows = sorted(by_group.get(canonical_group, []), key=lambda item: item[0])
+        m_rows: list[tuple[tuple[int, int, int, str, str], dict]] = []
+        for group_name in sorted(padded_groups):
+            m_rows.extend(sorted(by_group[group_name], key=lambda item: item[0]))
+
+        if not f_rows or not m_rows:
+            return None
+
+        f_lines = [line for _, line in f_rows]
+        m_lines = [line for _, line in m_rows]
+
+        merged: list[dict] = []
+        pair_count = min(len(f_lines), len(m_lines))
+        for idx in range(pair_count):
+            f_line = f_lines[idx]
+            m_line = m_lines[idx]
+            f_text = f_line.get("text") or ""
+            m_text = m_line.get("text") or ""
+            if f_text == m_text:
+                fold_padded_group_into_pair(f_line, m_line)
+                merged.append(f_line)
+                continue
+            f_line["text"] = f"{{F}}{f_text}{{M}}{m_text}"
+            f_line["pairedGender"] = {"F": f_text, "M": m_text}
+            debug = f_line.setdefault("_debug", {})
+            debug["pairedGender"] = {"F": f_line.get("id"), "M": m_line.get("id")}
+            if cutscene_pair_normalize(f_text) != cutscene_pair_normalize(m_text):
+                debug["pairedGenderDifference"] = "substantive"
+            fold_padded_group_into_pair(f_line, m_line)
+            merged.append(f_line)
+
+        for line in f_lines[pair_count:]:
+            tag_paired_gender(line, "F")
+            merged.append(line)
+        for line in m_lines[pair_count:]:
+            tag_paired_gender(line, "M")
+            merged.append(line)
+
+        return merged
+
     def cutscene_text_lines(asset_keys: set[str]) -> dict[str, list[dict]]:
         raw_groups: set[str] = set()
         matched_rows: list[tuple[str, dict, re.Match[str]]] = []
@@ -10351,7 +10739,7 @@ def build_language_bundle(
             raw_groups.add(match.group("group"))
             matched_rows.append((row_key, text_entry, match))
 
-        grouped: dict[str, list[tuple[tuple[int, int, str, str], dict]]] = defaultdict(list)
+        grouped: dict[str, list[tuple[tuple[int, int, int, str, str], dict]]] = defaultdict(list)
         for row_key, text_entry, match in matched_rows:
             raw_group = match.group("group")
             cutscene_key = resolve_cutscene_text_group(raw_group, asset_keys, raw_groups)
@@ -10390,10 +10778,12 @@ def build_language_bundle(
             sub_order = int(sub[1:]) if sub else -1
             alias_order = 1 if raw_group != cutscene_key else 0
             grouped[cutscene_key].append(((line_num, sub_order, alias_order, gender, row_key), line))
-        return {
-            key: merge_duplicate_cutscene_rows(rows)
-            for key, rows in grouped.items()
-        }
+
+        merged_by_key: dict[str, list[dict]] = {}
+        for cutscene_key, rows in grouped.items():
+            paired = merge_paired_cutscene_text_groups(rows, cutscene_key)
+            merged_by_key[cutscene_key] = paired if paired is not None else merge_duplicate_cutscene_rows(rows)
+        return merged_by_key
 
     def ensure_cutscene_asset(cutscene_key: str) -> dict:
         return cutscene_assets.setdefault(
@@ -14615,6 +15005,12 @@ def build_language_bundle(
             compact["_debug"]["source"]["gender"] = str(ref["gender"])
         if ref.get("resolvedKey"):
             compact["_debug"]["source"]["resolvedKey"] = str(ref["resolvedKey"])
+        binding = ref.get("binding")
+        if isinstance(binding, dict):
+            compact["binding"] = binding
+            compact["_debug"]["source"]["binding"] = binding
+        if ref.get("authoritativeKeys"):
+            compact["_debug"]["source"]["authoritativeKeys"] = list(ref["authoritativeKeys"])
         return compact
 
     def narrative_video_sort_key(ref: dict) -> tuple:
@@ -14711,7 +15107,15 @@ def build_language_bundle(
         }
 
         def resolve_video_key(ref: dict) -> str:
-            for candidate in ref.get("keyCandidates") or []:
+            authoritative_keys = list(ref.get("authoritativeKeys") or [])
+            candidate_list = list(ref.get("keyCandidates") or [])
+            if authoritative_keys:
+                for candidate in authoritative_keys:
+                    candidate = str(candidate or "")
+                    if candidate in available_keys:
+                        return candidate
+                return ""
+            for candidate in candidate_list:
                 candidate = str(candidate or "")
                 if candidate in available_keys:
                     return candidate
@@ -14773,6 +15177,29 @@ def build_language_bundle(
                             "omitted": omitted,
                         },
                     }
+                    unplaced_video_stems = sorted({
+                        str(ref.get("baseStem") or ref.get("stem") or ref.get("name") or "")
+                        for ref in refs
+                        if not any(
+                            isinstance(clip, dict) and isinstance(clip.get("start"), (int, float))
+                            for clip in (((ref.get("binding") or {}).get("clips")) or [])
+                        )
+                    })
+                    if unplaced_video_stems and str(entry.get("d") or "") in ("cutscene", "remotecomm"):
+                        unplaced_video_stems = []
+                    if unplaced_video_stems:
+                        existing_warnings = [
+                            warning for warning in (payload.get("warnings") or [])
+                            if isinstance(warning, dict)
+                            and warning.get("code") != "narrativeVideoUnplaced"
+                        ]
+                        existing_warnings.append({
+                            "code": "narrativeVideoUnplaced",
+                            "status": "missing",
+                            "videoStems": unplaced_video_stems,
+                            "videoCount": len(unplaced_video_stems),
+                        })
+                        payload["warnings"] = existing_warnings
                     write_json(conv_path, payload)
                     remember_written(conv_path, written_conv_paths)
 
@@ -15433,12 +15860,25 @@ def build_language_bundle(
             return None
 
         mission_entries = [entry for entry in index_entries if entry.get("m") == mission]
-        order_map = infer_mission_dialog_order(
+        scene_file_order = build_mission_scene_file_order(
+            mission_entries,
+            flow,
+        )
+        mission_runtime_order_map = {
+            str(key): int(value)
+            for key, value in (scene_file_order.get("orderMap") or {}).items()
+            if str(key)
+        }
+        fallback_order_map = infer_mission_dialog_order(
             mission,
             mission_entries,
             flow,
             mission_level_refs.get(mission),
         )
+        order_map = dict(mission_runtime_order_map)
+        fallback_base = (max(order_map.values()) + 1000) if order_map else 0
+        for key, value in fallback_order_map.items():
+            order_map.setdefault(key, fallback_base + value)
         node_entries = sorted(
             (entry for entry in mission_entries if entry.get("k") in available),
             key=lambda entry: (
@@ -15465,6 +15905,20 @@ def build_language_bundle(
                 edge = {"from": src, "to": dst, "kind": kind}
                 edges_by_key[(src, dst, kind)] = edge
             return edge
+
+        for source_edge in scene_file_order.get("edges") or []:
+            edge = ensure_edge(
+                source_edge.get("from") or "",
+                source_edge.get("to") or "",
+                source_edge.get("kind") or "questPrev",
+            )
+            if not edge:
+                continue
+            edge["source"] = source_edge.get("source") or scene_file_order.get("source")
+            for quest_id in source_edge.get("questIds") or []:
+                refs = edge.setdefault("questIds", [])
+                if quest_id and quest_id not in refs:
+                    refs.append(quest_id)
 
         if flow:
             quest_by_id = {
@@ -15729,6 +16183,7 @@ def build_language_bundle(
             for k in (edge.get("from") or "", edge.get("to") or "")
             if k
         }
+        mission_runtime_ordered_keys = set(mission_runtime_order_map)
         nodes = [
             {
                 "key": node_key,
@@ -15737,7 +16192,16 @@ def build_language_bundle(
                     or _scene_graph_node_kind(node_key, available)
                 ),
                 "order": graph_order_map.get(node_key, -1),
-                **({"orderConfirmed": False} if node_key not in chained_node_keys else {}),
+                **(
+                    {"orderSource": "MissionRuntimeAsset.questDic[*].prevQuestIdList"}
+                    if node_key in mission_runtime_ordered_keys
+                    else {}
+                ),
+                **(
+                    {"orderConfirmed": False}
+                    if node_key not in chained_node_keys and node_key not in mission_runtime_ordered_keys
+                    else {}
+                ),
             }
             for node_key in sorted(
                 all_nodes,
@@ -15775,6 +16239,12 @@ def build_language_bundle(
             payload["levelscriptStoryCallContexts"] = story_call_contexts
         if hash_terminal_contexts:
             payload["levelscriptHashTerminals"] = hash_terminal_contexts
+        if scene_file_order:
+            payload["sceneFileOrder"] = {
+                key: value
+                for key, value in scene_file_order.items()
+                if key != "orderMap"
+            }
         return payload
 
     def build_mission_timeline_recovery_report(

@@ -12,6 +12,9 @@
       assetPath: "\u8d44\u6e90\u8def\u5f84",
       openAsset: "\u5728\u8d44\u6e90\u9875\u6253\u5f00",
       assetSummary: "\u8d44\u6e90\u53d8\u5316",
+      mediaPreview: "\u9884\u89c8",
+      textDiff: "\u6587\u672c\u5dee\u5f02",
+      diffTruncated: "\u5dee\u5f02\u8fc7\u957f\uff0c\u5df2\u622a\u65ad\u663e\u793a\u3002",
       status: "\u72b6\u6001",
       category: "\u5206\u7c7b",
       extension: "\u6269\u5c55\u540d",
@@ -56,6 +59,9 @@
       assetPath: "Asset path",
       openAsset: "Open in Assets",
       assetSummary: "Asset changes",
+      mediaPreview: "Preview",
+      textDiff: "Text diff",
+      diffTruncated: "Diff is long, so only the first lines are shown.",
       status: "Status",
       category: "Category",
       extension: "Ext",
@@ -94,6 +100,7 @@
     $,
     applyTemplate,
     escapeHtml,
+    exportFullHref,
     formatNumber,
     formatSignedNumber,
     normalizeUiLocale,
@@ -439,6 +446,27 @@
     return url.toString();
   }
 
+  function fallbackAssetSourceRoots() {
+    return {
+      StreamingAssets: "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type",
+      "StreamingAssets-maps": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps",
+      "StreamingAssets-structured": "export_full/structured/StreamingAssets",
+      Persistent: "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type",
+      "Persistent-maps": "export_full/recovered/AnimeStudio-cli/Persistent/maps",
+      "Persistent-structured": "export_full/structured/Persistent",
+    };
+  }
+
+  function updateAssetHref(rel) {
+    const payload = UPDATE_STATE.payload || {};
+    const assets = payload.assets || {};
+    return exportFullHref(
+      rel,
+      { ...fallbackAssetSourceRoots(), ...(assets.sourceRoots || {}) },
+      assets.sourceRoot || "export_full",
+    );
+  }
+
   function factLinkRow(label, href, text) {
     if (!href || !text) return "";
     return (
@@ -447,6 +475,56 @@
         `<div class="updates-fact-value"><a class="updates-detail-link" href="${escapeHtml(href)}">${escapeHtml(text)}</a></div>` +
       `</div>`
     );
+  }
+
+  function textDiffHtml(entry) {
+    const lines = Array.isArray(entry && entry.text_diff) ? entry.text_diff : [];
+    if (!lines.length) return "";
+    const rows = lines.map((line) => {
+      const value = String(line || "");
+      let cls = "ctx";
+      if (value.startsWith("+") && !value.startsWith("+++")) cls = "add";
+      else if (value.startsWith("-") && !value.startsWith("---")) cls = "del";
+      else if (value.startsWith("@@")) cls = "hunk";
+      else if (value.startsWith("---") || value.startsWith("+++")) cls = "file";
+      return `<div class="updates-diff-line updates-diff-${cls}">${escapeHtml(value || " ")}</div>`;
+    }).join("");
+    const note = entry.text_diff_truncated
+      ? `<div class="updates-detail-note">${escapeHtml(updateText("diffTruncated"))}</div>`
+      : "";
+    return (
+      `<section class="updates-detail-panel updates-text-diff">` +
+        `<h2>${escapeHtml(updateText("textDiff"))}</h2>` +
+        `<div class="updates-diff-code" role="region" aria-label="${escapeHtml(updateText("textDiff"))}">${rows}</div>` +
+        note +
+      `</section>`
+    );
+  }
+
+  function mediaPreviewHtml(entry) {
+    const rel = entry && entry.asset_rel;
+    const kind = String(entry && entry.asset_kind || "");
+    if (!rel || entry.status === "deleted" || (kind !== "image" && kind !== "video")) return "";
+    const href = updateAssetHref(rel);
+    const media = kind === "video"
+      ? `<video class="updates-media-video" src="${escapeHtml(href)}" controls preload="metadata" playsinline></video>`
+      : `<img class="updates-media-image" src="${escapeHtml(href)}" alt="${escapeHtml(rel)}" loading="lazy">`;
+    return (
+      `<section class="updates-detail-panel updates-media-preview">` +
+        `<h2>${escapeHtml(updateText("mediaPreview"))}</h2>` +
+        `<a class="updates-media-link" href="${escapeHtml(href)}" target="_blank" rel="noopener">${media}</a>` +
+      `</section>`
+    );
+  }
+
+  function ensureDetailExtra() {
+    let extra = up$("#updates-detail-extra");
+    if (extra) return extra;
+    extra = document.createElement("div");
+    extra.id = "updates-detail-extra";
+    const facts = up$("#updates-detail-facts");
+    if (facts && facts.parentNode) facts.parentNode.insertBefore(extra, facts.nextSibling);
+    return extra;
   }
 
   function renderUpdateDetail() {
@@ -459,6 +537,8 @@
       detail.hidden = true;
       empty.hidden = false;
       empty.textContent = emptyText();
+      const extra = up$("#updates-detail-extra");
+      if (extra) extra.replaceChildren();
       return;
     }
 
@@ -489,6 +569,10 @@
       factRow(updateText("lineDelta"), formatSignedNumber(entry.line_delta)),
     ].filter(Boolean);
     up$("#updates-detail-facts").innerHTML = facts.join("") || factRow(updateText("none"), updateText("none"));
+    ensureDetailExtra().innerHTML = [
+      mediaPreviewHtml(entry),
+      textDiffHtml(entry),
+    ].filter(Boolean).join("");
   }
 
   function refreshUpdates() {

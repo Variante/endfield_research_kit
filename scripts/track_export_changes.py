@@ -4,6 +4,7 @@ import argparse
 import concurrent.futures
 import dataclasses
 import datetime as dt
+import difflib
 import hashlib
 import heapq
 import json
@@ -36,6 +37,8 @@ TEXT_EXTENSIONS = {
 
 READ_CHUNK_SIZE = 1024 * 1024
 PROGRESS_EVERY_FILES = 5000
+TEXT_DIFF_MAX_BYTES = 256 * 1024
+TEXT_DIFF_MAX_LINES = 240
 
 
 @dataclasses.dataclass(slots=True)
@@ -46,6 +49,7 @@ class SnapshotRow:
     digest: str
     line_count: int | None
     extension: str
+    text_content: str | None = None
 
 
 @dataclasses.dataclass(slots=True)
@@ -56,9 +60,11 @@ class PendingFile:
     mtime_ns: int
     extension: str
     count_lines: bool
+    capture_text: bool
     old_size: int | None
     old_digest: str | None
     old_line_count: int | None
+    old_text_content: str | None
 
 
 @dataclasses.dataclass(slots=True)
@@ -69,9 +75,11 @@ class ScannedFile:
     extension: str
     digest: str
     line_count: int | None
+    text_content: str | None
     old_size: int | None
     old_digest: str | None
     old_line_count: int | None
+    old_text_content: str | None
 
 
 @dataclasses.dataclass(slots=True)
@@ -82,6 +90,8 @@ class ChangeEntry:
     new_size: int | None = None
     old_line_count: int | None = None
     new_line_count: int | None = None
+    text_diff: list[str] | None = None
+    text_diff_truncated: bool = False
 
     def to_dict(self) -> dict[str, object]:
         payload = {
@@ -96,6 +106,10 @@ class ChangeEntry:
             payload["size_delta"] = self.new_size - self.old_size
         if self.old_line_count is not None and self.new_line_count is not None:
             payload["line_delta"] = self.new_line_count - self.old_line_count
+        if self.text_diff:
+            payload["text_diff"] = self.text_diff
+            if self.text_diff_truncated:
+                payload["text_diff_truncated"] = True
         return payload
 
 
@@ -153,6 +167,12 @@ class ChangeAccumulator:
     def record_added(self, scanned: ScannedFile) -> None:
         self.added_count += 1
         self.added_by_extension[display_extension(scanned.extension)] += 1
+        text_diff, text_diff_truncated = build_text_diff(
+            "",
+            scanned.text_content,
+            fromfile=f"a/{scanned.rel_path}",
+            tofile=f"b/{scanned.rel_path}",
+        )
         self._remember_sample(
             self.added_examples,
             ChangeEntry(
@@ -160,12 +180,20 @@ class ChangeAccumulator:
                 extension=scanned.extension,
                 new_size=scanned.size,
                 new_line_count=scanned.line_count,
+                text_diff=text_diff,
+                text_diff_truncated=text_diff_truncated,
             ),
         )
 
     def record_modified(self, scanned: ScannedFile) -> None:
         self.modified_count += 1
         self.modified_by_extension[display_extension(scanned.extension)] += 1
+        text_diff, text_diff_truncated = build_text_diff(
+            scanned.old_text_content,
+            scanned.text_content,
+            fromfile=f"a/{scanned.rel_path}",
+            tofile=f"b/{scanned.rel_path}",
+        )
         entry = ChangeEntry(
             path=scanned.rel_path,
             extension=scanned.extension,
@@ -173,6 +201,8 @@ class ChangeAccumulator:
             new_size=scanned.size,
             old_line_count=scanned.old_line_count,
             new_line_count=scanned.line_count,
+            text_diff=text_diff,
+            text_diff_truncated=text_diff_truncated,
         )
         self._remember_sample(self.modified_examples, entry)
         self._remember_line_change(entry)
@@ -183,9 +213,16 @@ class ChangeAccumulator:
         extension: str,
         old_size: int,
         old_line_count: int | None,
+        old_text_content: str | None = None,
     ) -> None:
         self.deleted_count += 1
         self.deleted_by_extension[display_extension(extension)] += 1
+        text_diff, text_diff_truncated = build_text_diff(
+            old_text_content,
+            "",
+            fromfile=f"a/{rel_path}",
+            tofile=f"b/{rel_path}",
+        )
         self._remember_sample(
             self.deleted_examples,
             ChangeEntry(
@@ -193,6 +230,8 @@ class ChangeAccumulator:
                 extension=extension,
                 old_size=old_size,
                 old_line_count=old_line_count,
+                text_diff=text_diff,
+                text_diff_truncated=text_diff_truncated,
             ),
         )
 
@@ -334,22 +373,52 @@ def is_text_extension(extension: str) -> bool:
     return extension.lower() in TEXT_EXTENSIONS
 
 
-def scan_file(path: str, count_lines: bool) -> tuple[str, int | None]:
+def build_text_diff(
+    old_text: str | None,
+    new_text: str | None,
+    *,
+    fromfile: str = "previous",
+    tofile: str = "current",
+) -> tuple[list[str] | None, bool]:
+    if old_text is None or new_text is None:
+        return None, False
+    diff = list(
+        difflib.unified_diff(
+            old_text.splitlines(),
+            new_text.splitlines(),
+            fromfile=fromfile,
+            tofile=tofile,
+            lineterm="",
+            n=3,
+        )
+    )
+    if len(diff) > TEXT_DIFF_MAX_LINES:
+        return diff[:TEXT_DIFF_MAX_LINES], True
+    return diff or None, False
+
+
+def scan_file(path: str, count_lines: bool, capture_text: bool) -> tuple[str, int | None, str | None]:
     digest = hashlib.blake2b(digest_size=16)
     line_count = 0
     last_byte: bytes | None = None
+    text_chunks: list[bytes] | None = [] if capture_text else None
     with open(path, "rb") as handle:
         while True:
             chunk = handle.read(READ_CHUNK_SIZE)
             if not chunk:
                 break
             digest.update(chunk)
+            if text_chunks is not None:
+                text_chunks.append(chunk)
             if count_lines:
                 line_count += chunk.count(b"\n")
                 last_byte = chunk[-1:]
     if count_lines and last_byte is not None and last_byte != b"\n":
         line_count += 1
-    return digest.hexdigest(), (line_count if count_lines else None)
+    text_content = None
+    if text_chunks is not None:
+        text_content = b"".join(text_chunks).decode("utf-8-sig", errors="replace")
+    return digest.hexdigest(), (line_count if count_lines else None), text_content
 
 
 def should_ignore_path(rel_path: str, ignored_exact_paths: set[str], ignored_dir_prefixes: tuple[str, ...]) -> bool:
@@ -397,10 +466,14 @@ def ensure_database_schema(conn: sqlite3.Connection) -> None:
             mtime_ns INTEGER NOT NULL,
             digest TEXT NOT NULL,
             line_count INTEGER,
-            extension TEXT NOT NULL
+            extension TEXT NOT NULL,
+            text_content TEXT
         )
         """
     )
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(files)")}
+    if "text_content" not in columns:
+        conn.execute("ALTER TABLE files ADD COLUMN text_content TEXT")
     conn.commit()
 
 
@@ -414,7 +487,8 @@ def prepare_scan_table(conn: sqlite3.Connection) -> None:
             mtime_ns INTEGER NOT NULL,
             digest TEXT NOT NULL,
             line_count INTEGER,
-            extension TEXT NOT NULL
+            extension TEXT NOT NULL,
+            text_content TEXT
         )
         """
     )
@@ -425,10 +499,21 @@ def batch_insert_rows(conn: sqlite3.Connection, rows: list[SnapshotRow]) -> None
         return
     conn.executemany(
         """
-        INSERT INTO files_scan (path, size, mtime_ns, digest, line_count, extension)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO files_scan (path, size, mtime_ns, digest, line_count, extension, text_content)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
-        [(row.path, row.size, row.mtime_ns, row.digest, row.line_count, row.extension) for row in rows],
+        [
+            (
+                row.path,
+                row.size,
+                row.mtime_ns,
+                row.digest,
+                row.line_count,
+                row.extension,
+                row.text_content,
+            )
+            for row in rows
+        ],
     )
     rows.clear()
 
@@ -444,11 +529,12 @@ def process_pending_batch(
 
     insert_rows: list[SnapshotRow] = []
     future_map = {
-        executor.submit(scan_file, item.full_path, item.count_lines): item for item in pending_batch
+        executor.submit(scan_file, item.full_path, item.count_lines, item.capture_text): item
+        for item in pending_batch
     }
     for future in concurrent.futures.as_completed(future_map):
         item = future_map[future]
-        digest, line_count = future.result()
+        digest, line_count, text_content = future.result()
         scanned = ScannedFile(
             rel_path=item.rel_path,
             size=item.size,
@@ -456,9 +542,11 @@ def process_pending_batch(
             extension=item.extension,
             digest=digest,
             line_count=line_count,
+            text_content=text_content,
             old_size=item.old_size,
             old_digest=item.old_digest,
             old_line_count=item.old_line_count,
+            old_text_content=item.old_text_content,
         )
         insert_rows.append(
             SnapshotRow(
@@ -468,6 +556,7 @@ def process_pending_batch(
                 digest=digest,
                 line_count=line_count,
                 extension=item.extension,
+                text_content=text_content,
             )
         )
         if item.old_digest is None:
@@ -481,20 +570,27 @@ def process_pending_batch(
     pending_batch.clear()
 
 
-def read_old_row(select_cursor: sqlite3.Cursor, rel_path: str) -> tuple[int, int, str, int | None, str] | None:
+def read_old_row(select_cursor: sqlite3.Cursor, rel_path: str) -> tuple[int, int, str, int | None, str, str | None] | None:
     row = select_cursor.execute(
-        "SELECT size, mtime_ns, digest, line_count, extension FROM files WHERE path = ?",
+        "SELECT size, mtime_ns, digest, line_count, extension, text_content FROM files WHERE path = ?",
         (rel_path,),
     ).fetchone()
     if row is None:
         return None
-    return int(row[0]), int(row[1]), str(row[2]), (None if row[3] is None else int(row[3])), str(row[4])
+    return (
+        int(row[0]),
+        int(row[1]),
+        str(row[2]),
+        (None if row[3] is None else int(row[3])),
+        str(row[4]),
+        None if row[5] is None else str(row[5]),
+    )
 
 
-def find_deleted_rows(conn: sqlite3.Connection) -> Iterable[tuple[str, int, int | None, str]]:
+def find_deleted_rows(conn: sqlite3.Connection) -> Iterable[tuple[str, int, int | None, str, str | None]]:
     return conn.execute(
         """
-        SELECT files.path, files.size, files.line_count, files.extension
+        SELECT files.path, files.size, files.line_count, files.extension, files.text_content
         FROM files
         LEFT JOIN files_scan ON files.path = files_scan.path
         WHERE files_scan.path IS NULL
@@ -540,6 +636,8 @@ def change_entry_from_dict(payload: dict[str, object]) -> ChangeEntry:
         new_line_count=None
         if payload.get("new_line_count") is None
         else int(payload["new_line_count"]),
+        text_diff=list(payload.get("text_diff") or []) or None,
+        text_diff_truncated=bool(payload.get("text_diff_truncated")),
     )
 
 
@@ -733,8 +831,10 @@ def main() -> int:
                     accumulator.note_scan()
                     old_row = read_old_row(select_cursor, rel_path)
                     if old_row is not None:
-                        old_size, old_mtime_ns, old_digest, old_line_count, old_extension = old_row
-                        if size == old_size and mtime_ns == old_mtime_ns:
+                        old_size, old_mtime_ns, old_digest, old_line_count, old_extension, old_text_content = old_row
+                        should_capture_text = is_text_extension(extension) and size <= TEXT_DIFF_MAX_BYTES
+                        has_cached_text = not should_capture_text or old_text_content is not None
+                        if size == old_size and mtime_ns == old_mtime_ns and has_cached_text:
                             accumulator.note_reused_metadata_match()
                             unchanged_rows.append(
                                 SnapshotRow(
@@ -744,6 +844,7 @@ def main() -> int:
                                     digest=old_digest,
                                     line_count=old_line_count,
                                     extension=old_extension,
+                                    text_content=old_text_content,
                                 )
                             )
                             if len(unchanged_rows) >= namespace.hash_batch_size:
@@ -755,7 +856,9 @@ def main() -> int:
                         old_size = None
                         old_digest = None
                         old_line_count = None
+                        old_text_content = None
 
+                    is_text = is_text_extension(extension)
                     pending_batch.append(
                         PendingFile(
                             rel_path=rel_path,
@@ -763,10 +866,12 @@ def main() -> int:
                             size=size,
                             mtime_ns=mtime_ns,
                             extension=extension,
-                            count_lines=is_text_extension(extension),
+                            count_lines=is_text,
+                            capture_text=is_text and size <= TEXT_DIFF_MAX_BYTES,
                             old_size=old_size,
                             old_digest=old_digest,
                             old_line_count=old_line_count,
+                            old_text_content=old_text_content,
                         )
                     )
                     if len(pending_batch) >= namespace.hash_batch_size:
@@ -777,8 +882,14 @@ def main() -> int:
                 batch_insert_rows(conn, unchanged_rows)
                 process_pending_batch(pending_batch, conn, accumulator, executor)
 
-                for rel_path, old_size, old_line_count, extension in find_deleted_rows(conn):
-                    accumulator.record_deleted(rel_path, extension, int(old_size), None if old_line_count is None else int(old_line_count))
+                for rel_path, old_size, old_line_count, extension, old_text_content in find_deleted_rows(conn):
+                    accumulator.record_deleted(
+                        rel_path,
+                        extension,
+                        int(old_size),
+                        None if old_line_count is None else int(old_line_count),
+                        old_text_content,
+                    )
 
                 conn.execute("DROP TABLE files")
                 conn.execute("ALTER TABLE files_scan RENAME TO files")

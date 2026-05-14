@@ -99,6 +99,11 @@ or:
 .\package_webui.bat
 ```
 
+Packaging writes two zips by default: a smaller story zip with the WebUI,
+story/reference text data, and emoji images, plus a companion assets zip with
+larger story images and videos. Extract the story zip first, then extract the
+assets zip into the same directory when those media files are needed.
+
 ## Update Tracking
 
 The Updates tab is built by:
@@ -126,6 +131,13 @@ The same builder also diffs exported image/model/video assets from
 asset diffs are only reported when the `Endfield_Data` tracker sees a real
 source-data change; export or WebUI rebuild noise without a source-data change
 is silently absorbed into the asset baseline.
+
+If the tracker is run again after a game update has already been recorded,
+`build_updates.py` preserves the last non-empty feed instead of overwriting the
+Updates page with a zero-change report. It can also restore that feed from
+`.game-data-tracker/history/` if the current `latest.json` was already blanked.
+Full non-empty feed snapshots are also kept there as `update-feed-*.json`, so
+future recovery keeps asset-level entries as well as game-data entries.
 
 Write an empty baseline feed for a first-time or baseline-only build:
 
