@@ -153,36 +153,36 @@ def scan_exported_media_assets(
                 path = base_dir / filename
                 suffix = path.suffix.lower()
                 rel_suffix = path.relative_to(source_root).as_posix()
-                rel_path = f"{source}/{rel_suffix}" if rel_suffix else source
+                asset_rel = f"{source}/{rel_suffix}" if rel_suffix else source
                 size = path.stat().st_size
 
                 kind = ASSET_KIND_BY_EXT.get(suffix)
                 if kind:
                     entry = {
                         "k": kind,
-                        "r": rel_path,
+                        "r": asset_rel,
                         "s": size,
                     }
                     asset_entries.append(entry)
                     stem = path.stem
                     if kind == "image":
-                        image_rels_by_stem[stem.lower()].append(rel_path)
+                        image_rels_by_stem[stem.lower()].append(asset_rel)
                     elif kind == "model":
                         model_base = _normalize_model_base(stem)
                         source_family = _asset_source_family(source).lower()
                         entry["_mb"] = model_base
-                        model_rels_by_source_base[(source_family, model_base)].append(rel_path)
-                        model_rels_by_base[model_base].append(rel_path)
+                        model_rels_by_source_base[(source_family, model_base)].append(asset_rel)
+                        model_rels_by_base[model_base].append(asset_rel)
                         if suffix == ".obj":
-                            obj_rels_by_source_base[(source_family, model_base)].append(rel_path)
-                            obj_rels_by_base[model_base].append(rel_path)
+                            obj_rels_by_source_base[(source_family, model_base)].append(asset_rel)
+                            obj_rels_by_base[model_base].append(asset_rel)
                     counts["total"] += 1
                     counts[kind] += 1
 
                 if suffix in VIDEO_EXTENSIONS:
                     video_entries.append({
                         "k": "video",
-                        "r": rel_path,
+                        "r": asset_rel,
                         "s": size,
                     })
                     video_counts["total"] += 1
@@ -198,11 +198,11 @@ def scan_exported_media_assets(
             continue
 
         model_base = str(entry.pop("_mb", "") or "")
-        rel_path = str(entry.get("r") or "")
-        if not model_base or Path(rel_path).suffix.lower() == ".obj":
+        model_rel = str(entry.get("r") or "")
+        if not model_base or Path(model_rel).suffix.lower() == ".obj":
             continue
 
-        source = rel_path.split("/", 1)[0]
+        source = model_rel.split("/", 1)[0]
         preview_rel = _choose_preferred_rel(
             obj_rels_by_source_base.get((_asset_source_family(source).lower(), model_base))
             or obj_rels_by_base.get(model_base)

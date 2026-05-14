@@ -30,12 +30,29 @@ Inline image behavior:
 
 - SNS emoji images such as `sns_emoji_*` are treated as regular inline emoji.
   They do not open hover popovers or the full-screen modal.
+- EnvTalk emoji-only rows such as `envEmoji_common_adaptationwork` and
+  `envEmoji_common_dislike` render their line-level `emoji` fields from
+  the Unity emoji prefab aliases and recovered RectTransform layer data in
+  `story_media.json`. The WebUI also plays recovered `AnimationClip` enter
+  curves for the background alpha flicker and body squash/stretch when the
+  row scrolls into view, with hover/focus replay for verification.
 - Non-emoji SNS media such as `sns_image_*`, `sns_sticker_*`,
   `deco_sns_tweet_decorate_*`, `bg_sns_tweet_decorate_*`, and related
   `cg_image_*` assets render with normal image proportions instead of the
   compact emoji treatment.
 - Hover popovers and the modal preview should stay inside their visible border
   and within the viewport.
+
+EnvTalk emoji runtime evidence:
+
+- `HeadLabelCtrl.ShowEnvTalk` loads `UIConst.EMOJI_PREFAB_PATH` for
+  `envTalkSingleData.emojiId`; IL2CPP supplies the head-label host types, but
+  the visible emoji composition comes from
+  `Assets/Beyond/DynamicAssets/Gameplay/UI/Prefabs/Emoji/%s.prefab`.
+- The extracted clips for `emoji_adaptationwork`, `emoji_newdislike`, and
+  `emoji_newworkhard` include matching `*in` / `*out` animations. Static Story
+  rows use the `*in` curves and hold the final frame; `*out` is reserved for a
+  future UI hide/removal event.
 
 Narrative video behavior:
 
@@ -165,6 +182,22 @@ For Timeline-inferred option responses, the builder can use raw trunk
 value that exactly matches the group's option indices. The first recovered case
 is `dlg_c28m3_10` group 1; most remaining adjacent response layouts still carry
 only default `0` values and stay marked as inferred.
+
+The 2026-05-14 final sweep confirms only three scenes in the CN export carry
+any non-zero `clipOptionIndex` on trunk lines (`dlg_c28m1_2` 2/16, `dlg_c28m3_10`
+4/25, `dlg_c28m3_23` 2/11), and none cover all responses in a group, so the
+exact-match rule already captures every source-backed case. The remaining 14
+`inferredOptionResponse` scenes (`dlg_c13m2_20`, `dlg_c17m2_1`, `dlg_c17m3_17`,
+`dlg_c27m5_4`, `dlg_c28m3_23`, `dlg_e1m10_5`, `dlg_e1m10_7`, `dlg_e2m5_2`,
+`dlg_e4m1_4`, `dlg_e4m1d5_6`, `dlg_e6m1_10`, `dlg_e6m3_14`, `dlg_e6m4_14`,
+`dlg_e9m2_14`) all have zero Runtime Jump clips, blank `trunkId`/`dialogId` on
+their DialogOptionPlayableAsset entries, and only a runtime `logicId` hook with
+no matching lookup table in the export — the per-option response branch is not
+in the source data. Of the 19 `inferredOptionLayout` `noTreeReference` scenes,
+18 have no dialog timeline data at all and the lone exception (`dlg_e2m6_11`)
+hosts a cross-scene option clip pointing at `dlg_e2m6_19`'s option ids, which
+the builder already labels with `position=pre`. No further source signals are
+available; do not promote any of these to source-backed.
 
 The `inferred_option_anchors_CN.md` report lists ~97 scenes where no
 DialogTree / scene-link / dialog Timeline source names the option group's

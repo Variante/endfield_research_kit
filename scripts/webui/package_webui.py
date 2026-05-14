@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Build a self-contained WebUI zip without the 3D asset browser payload.
+"""Build split WebUI zips without the 3D asset browser payload.
 
-The package keeps the story/reference browser text data and copies only the
-exported media files that the story renderer can display from inline
-``<image...>`` tags or inferred wiki-entry media. OBJ/FBX files, Blender
-bundles, and the asset-browser data page are intentionally left out.
+The primary package keeps the story/reference browser text data, code, and
+emoji image files. A companion assets package contains the larger exported
+image/video files that the story renderer can display from inline ``<image...>``
+tags or inferred wiki-entry media. OBJ/FBX files, Blender bundles, and the
+asset-browser data page are intentionally left out.
 """
 from __future__ import annotations
 
@@ -24,6 +25,7 @@ from common import EXPORT_ROOT, ROOT as PROJECT_ROOT, normalize_posix
 
 WEBUI_ROOT = PROJECT_ROOT / "webui"
 ZIP_NAME_PREFIX = "endfield-story-exported"
+ASSETS_ZIP_NAME_PREFIX = "endfield-story-exported-assets"
 
 TEXT_EXTENSIONS = {
     ".css",
@@ -104,7 +106,7 @@ ASSET_SHIM_JS = """(() => {
 })();
 """
 
-PACKAGE_README = """Self-contained Endfield WebUI package
+PACKAGE_README = """Endfield WebUI story package
 
 Run from this extracted directory:
 
@@ -112,9 +114,23 @@ Run from this extracted directory:
 
 Then open the printed localhost URL.
 
-This package includes the story/reference text data and only the exported image
-and video files needed by inline/wiki media in the WebUI. The 3D asset browser,
-OBJ/FBX payloads, and Blender bundle downloads are intentionally excluded.
+This package includes the story/reference text data, WebUI code, and emoji
+images. Larger story images and videos are in the companion assets zip. Extract
+that zip into the same directory after this one when you want inline/wiki media
+too.
+
+The 3D asset browser, OBJ/FBX payloads, and Blender bundle downloads are
+intentionally excluded.
+"""
+
+ASSETS_PACKAGE_README = """Endfield WebUI story assets package
+
+Extract this zip into the same directory as the matching story package, after
+the story package has been extracted.
+
+It contains larger exported image and video files used by inline/wiki media in
+the WebUI, plus the full media indexes that enable them. Emoji images, WebUI
+code, and story/reference text data are in the main story package.
 """
 
 
@@ -146,7 +162,10 @@ class PackagePlan:
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Create a self-contained WebUI zip with text data and displayed wiki media only.",
+        description=(
+            "Create split WebUI zips: a story/code/emoji zip and a companion "
+            "larger-media assets zip."
+        ),
     )
     parser.add_argument(
         "-o",
@@ -154,8 +173,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         default=None,
         help=(
-            "Zip path to write. Default: "
+            "Primary story zip path to write. Default: "
             f"{ZIP_NAME_PREFIX}-YYYYMMDD.zip, where YYYYMMDD is today's local date."
+        ),
+    )
+    parser.add_argument(
+        "--assets-output",
+        type=Path,
+        default=None,
+        help=(
+            "Companion assets zip path to write. Default: the primary output "
+            "name with -assets appended before .zip."
         ),
     )
     parser.add_argument(
@@ -195,6 +223,19 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def default_output_path(project_root: Path) -> Path:
     datestamp = datetime.now().strftime("%Y%m%d")
     return project_root / f"{ZIP_NAME_PREFIX}-{datestamp}.zip"
+
+
+def default_assets_output_path(project_root: Path) -> Path:
+    datestamp = datetime.now().strftime("%Y%m%d")
+    return project_root / f"{ASSETS_ZIP_NAME_PREFIX}-{datestamp}.zip"
+
+
+def companion_assets_output_path(output: Path, project_root: Path) -> Path:
+    if output == default_output_path(project_root):
+        return default_assets_output_path(project_root)
+    if output.suffix.lower() == ".zip":
+        return output.with_name(f"{output.stem}-assets{output.suffix}")
+    return output.with_name(f"{output.name}-assets.zip")
 
 
 def posix_to_path(value: str) -> Path:
@@ -241,6 +282,104 @@ def inline_image_number_key(value: str) -> str:
     if not match:
         return ""
     return str(int(match.group(1)))
+
+
+ENV_EMOJI_PREFAB_ALIASES: dict[str, str] = {
+    "envemoji_common_adaptationwork": "emoji_adaptationwork",
+    "envemoji_common_dislike": "emoji_newdislike",
+    "envemoji_common_newworkhard": "emoji_newworkhard",
+    "envemoji_common_workhard": "emoji_newworkhard",
+}
+
+
+ENV_EMOJI_PREFAB_LAYER_STEMS: dict[str, tuple[str, ...]] = {
+    "emoji_adaptationwork": (
+        "emoji_newbg",
+        "emoji_workhardcircle",
+        "emoji_workhardcircleblue",
+        "emoji_newdeco",
+        "emoji_workhardeye",
+        "emoji_workhardeyeright",
+        "emoji_workhardmouth",
+    ),
+    "emoji_newdislike": (
+        "emoji_newbg",
+        "emoji_circle_1",
+        "emoji_unhappyworkcircle",
+        "emoji_sigheyenew",
+        "emoji_newdislike_mouth",
+    ),
+    "emoji_newworkhard": (
+        "emoji_newbg",
+        "emoji_circle_1",
+        "emoji_unhappyworkcircle",
+        "emoji_newworkhard_deco",
+        "emoji_newworkhard_deco1",
+        "emoji_newworkhard_deco2",
+    ),
+}
+
+
+ENV_EMOJI_FALLBACK_LAYER_STEMS: dict[str, tuple[str, ...]] = {
+    "emoji_newhappy": (
+        "emoji_newbg",
+        "emoji_newdeco",
+        "emoji_newhappyeye",
+        "emoji_happymouth",
+        "emoji_happy_mouth_2",
+    ),
+    "emoji_newsad": (
+        "emoji_newsad_circle",
+        "emoji_newsad_decobg",
+        "emoji_newsad_eye",
+        "emoji_newsad_deco",
+        "emoji_sadmouth",
+    ),
+    "emoji_newsigh": (
+        "emoji_sighcircle",
+        "emoji_sighcirclenew",
+        "emoji_sigheyenew",
+        "emoji_sighmouthnew",
+        "emoji_sigh_1",
+    ),
+    "emoji_newsurprise": (
+        "emoji_surprisecircle",
+        "emoji_newsurpriseeyebg",
+        "emoji_surprisemouthnew",
+    ),
+    "emoji_unhappywork": (
+        "emoji_unhappyworkcircle",
+        "emoji_unhappyworkcircle_1",
+    ),
+    "emoji_exhaustion": (
+        "emoji_exhaustioncircle",
+        "emoji_exhaustioneye",
+        "emoji_exhaustionmouth",
+    ),
+    "emoji_empty": (
+        "emoji_emptyeye",
+    ),
+    "emoji_think": (
+        "emoji_thinkpoint",
+    ),
+    "emoji_love": (
+        "emoji_love",
+    ),
+    "emoji_thumbsup": (
+        "emoji_hand_1",
+        "emoji_hand_2",
+    ),
+}
+
+
+def resolve_env_emoji_prefab_key(value: str) -> str:
+    normalized = normalize_inline_image_id(value)
+    if not normalized:
+        return ""
+    aliased = ENV_EMOJI_PREFAB_ALIASES.get(normalized, normalized)
+    if aliased in ENV_EMOJI_PREFAB_LAYER_STEMS:
+        return aliased
+    return ""
 
 
 def extract_inline_image_id_from_tag(raw_tag: str) -> str:
@@ -296,6 +435,30 @@ def collect_inline_image_ids(webui_root: Path) -> set[str]:
                 image_id = normalize_inline_image_id(extract_inline_image_id_from_tag(match.group(0)))
                 if image_id:
                     image_ids.add(image_id)
+            try:
+                payload = json.loads(text)
+            except json.JSONDecodeError:
+                continue
+
+            def visit_media_fields(node: object) -> None:
+                if isinstance(node, dict):
+                    for key, value in node.items():
+                        if key in {"image", "emoji", "emojiResPath", "optionResPath"}:
+                            image_id = normalize_inline_image_id(str(value or ""))
+                            if image_id:
+                                image_ids.add(image_id)
+                        elif key == "images" and isinstance(value, list):
+                            for item in value:
+                                image_id = normalize_inline_image_id(str(item or ""))
+                                if image_id:
+                                    image_ids.add(image_id)
+                        elif isinstance(value, (dict, list)):
+                            visit_media_fields(value)
+                elif isinstance(node, list):
+                    for item in node:
+                        visit_media_fields(item)
+
+            visit_media_fields(payload)
 
     return image_ids
 
@@ -500,6 +663,18 @@ def is_sns_inline_image_stem(stem: str) -> bool:
     return "sns" in normalized or "emoji" in normalized
 
 
+def is_story_emoji_asset(rel: str) -> bool:
+    rel_normalized = normalize_posix(rel).lower()
+    name = rel_normalized.split("/")[-1] or rel_normalized
+    stem = re.sub(r"\.[^.]+$", "", name, flags=re.IGNORECASE)
+    return (
+        stem.startswith("emoji_")
+        or stem.startswith("sns_emoji_")
+        or "/emoji/" in rel_normalized
+        or "/sns/emoji/" in rel_normalized
+    )
+
+
 def load_asset_index(asset_index_path: Path) -> dict:
     if not asset_index_path.exists():
         return {"generated": None, "root": "export_full", "sourceRoots": {}, "entries": []}
@@ -589,6 +764,19 @@ def resolve_inline_image_assets(
 
     for stem in (normalized, f"{normalized}_m", f"{normalized}_f"):
         add(by_stem.get(stem))
+
+    prefab_key = resolve_env_emoji_prefab_key(normalized)
+    if prefab_key:
+        for stem in ENV_EMOJI_PREFAB_LAYER_STEMS.get(prefab_key, ()):
+            add(by_stem.get(stem))
+        return list(matches.values())
+
+    for stem in ENV_EMOJI_FALLBACK_LAYER_STEMS.get(normalized, ()):
+        add(by_stem.get(stem))
+
+    for stem, candidate in by_stem.items():
+        if stem.startswith(f"{normalized}_"):
+            add(candidate)
 
     if normalized.startswith("sns_image_"):
         sns_suffix = normalized[len("sns_image_") :]
@@ -820,17 +1008,22 @@ def create_package(args: argparse.Namespace) -> int:
     project_root = args.project_root.resolve()
     export_root = args.export_root.resolve()
     output = (args.output or default_output_path(project_root)).resolve()
+    assets_output = (args.assets_output or companion_assets_output_path(output, project_root)).resolve()
 
     if not webui_root.exists():
         raise SystemExit(f"WebUI root not found: {webui_root}")
     if not (project_root / "serve.py").exists():
         raise SystemExit(f"serve.py not found under project root: {project_root}")
+    if output == assets_output:
+        raise SystemExit("Primary story zip and companion assets zip must use different paths.")
 
     plan = plan_package(args)
     missing_images = [image for image in plan.exported_images if not image.source_path.exists()]
     existing_images = [image for image in plan.exported_images if image.source_path.exists()]
     missing_videos = [video for video in plan.exported_videos if not video.source_path.exists()]
     existing_videos = [video for video in plan.exported_videos if video.source_path.exists()]
+    emoji_images = [image for image in existing_images if is_story_emoji_asset(image.rel)]
+    asset_images = [image for image in existing_images if not is_story_emoji_asset(image.rel)]
 
     text_files = list(iter_webui_text_files(webui_root))
     copied_text_files = [
@@ -855,11 +1048,12 @@ def create_package(args: argparse.Namespace) -> int:
 
     print(f"WebUI root: {webui_root}")
     print(f"Export root: {export_root}")
-    print(f"Output zip: {output}")
+    print(f"Story zip: {output}")
+    print(f"Assets zip: {assets_output}")
     generated_text_count = 5 if args.include_asset_browser else 6
     print(f"Text files: {len(copied_text_files) + generated_text_count:,}")
     print(f"Story image IDs: {plan.image_refs:,}")
-    print(f"Resolved image files: {len(existing_images):,}")
+    print(f"Resolved image files: {len(existing_images):,} ({len(emoji_images):,} emoji, {len(asset_images):,} asset)")
     print(f"Wiki video refs: {plan.video_refs:,}")
     print(f"Resolved video files: {len(existing_videos):,}")
     if missing_images:
@@ -876,8 +1070,11 @@ def create_package(args: argparse.Namespace) -> int:
         return 0
 
     output.parent.mkdir(parents=True, exist_ok=True)
+    assets_output.parent.mkdir(parents=True, exist_ok=True)
     if output.exists():
         output.unlink()
+    if assets_output.exists():
+        assets_output.unlink()
 
     written: set[str] = set()
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
@@ -887,9 +1084,17 @@ def create_package(args: argparse.Namespace) -> int:
         for path in copied_text_files:
             zip_write_file(zipf, written, path, webui_arcname(webui_root, path))
 
-        asset_index_json = json.dumps(plan.filtered_asset_payload, ensure_ascii=False, separators=(",", ":"))
+        emoji_asset_entries = [
+            entry
+            for entry in (plan.filtered_asset_payload.get("entries") or [])
+            if isinstance(entry, dict) and is_story_emoji_asset(str(entry.get("r") or ""))
+        ]
+        story_asset_payload = filtered_asset_index(plan.filtered_asset_payload, emoji_asset_entries, kind="image")
+        story_video_payload = filtered_asset_index(plan.filtered_video_payload, [], kind="video")
+
+        asset_index_json = json.dumps(story_asset_payload, ensure_ascii=False, separators=(",", ":"))
         zip_writestr(zipf, written, "webui/data/assets/index.json", asset_index_json)
-        video_index_json = json.dumps(plan.filtered_video_payload, ensure_ascii=False, separators=(",", ":"))
+        video_index_json = json.dumps(story_video_payload, ensure_ascii=False, separators=(",", ":"))
         zip_writestr(zipf, written, "webui/data/assets/videos.json", video_index_json)
 
         if args.include_asset_browser:
@@ -909,13 +1114,25 @@ def create_package(args: argparse.Namespace) -> int:
             zip_writestr(zipf, written, "webui/index.html", strip_asset_view_from_index(index_html))
             zip_writestr(zipf, written, "webui/assets.js", ASSET_SHIM_JS)
 
-        for image in existing_images:
+        for image in emoji_images:
             zip_write_file(zipf, written, image.source_path, image.archive_path)
+
+    assets_written: set[str] = set()
+    with zipfile.ZipFile(assets_output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
+        zip_writestr(zipf, assets_written, "README-webui-assets-package.txt", ASSETS_PACKAGE_README)
+        asset_index_json = json.dumps(plan.filtered_asset_payload, ensure_ascii=False, separators=(",", ":"))
+        zip_writestr(zipf, assets_written, "webui/data/assets/index.json", asset_index_json)
+        video_index_json = json.dumps(plan.filtered_video_payload, ensure_ascii=False, separators=(",", ":"))
+        zip_writestr(zipf, assets_written, "webui/data/assets/videos.json", video_index_json)
+        for image in asset_images:
+            zip_write_file(zipf, assets_written, image.source_path, image.archive_path)
         for video in existing_videos:
-            zip_write_file(zipf, written, video.source_path, video.archive_path)
+            zip_write_file(zipf, assets_written, video.source_path, video.archive_path)
 
     size_mb = output.stat().st_size / (1024 * 1024)
-    print(f"Wrote {output} ({size_mb:.1f} MiB)")
+    assets_size_mb = assets_output.stat().st_size / (1024 * 1024)
+    print(f"Wrote story zip: {output} ({size_mb:.1f} MiB)")
+    print(f"Wrote assets zip: {assets_output} ({assets_size_mb:.1f} MiB)")
     return 0
 
 

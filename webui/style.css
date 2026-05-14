@@ -1075,6 +1075,29 @@ a.opt-target-chip { cursor: pointer; }
   font-style: italic;
   margin-top: 6px;
 }
+.line.video-line {
+  background: rgba(95, 158, 160, 0.10);
+  border-left: 3px solid #5f9ea0;
+  padding-left: 8px;
+  margin: 6px 0;
+}
+.line.video-line .video-line-actor {
+  color: #aee8ea;
+  font-weight: 600;
+}
+.line.video-line .video-line-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.line.video-line .wiki-video-item {
+  max-width: 360px;
+}
+.video-line-fmvid,
+.video-line-optidx {
+  font-size: 11px;
+  color: var(--muted);
+}
 .wiki-media-box {
   border-left-color: #7fb98e;
 }
@@ -1616,6 +1639,10 @@ a.opt-target-chip { cursor: pointer; }
   text-align: right;
 }
 .line.cutscene-line .text { font-style: italic; }
+/* Cutscene lines authored only for one player gender (recovered from a
+   leading-zero sibling textgroup with no pair on the active side). */
+.gender-active-f .line.cutscene-line[data-gender-only="M"],
+.gender-active-m .line.cutscene-line[data-gender-only="F"] { display: none; }
 
 /* Dialog option groups — shown below the dialog flow or inline after a line. */
 .opt-block { margin-top: 12px; }
@@ -1784,6 +1811,194 @@ mark { background: #5c4d1f; color: #ffe79b; padding: 0 2px; border-radius: 2px; 
 
 .inline-image-tag.is-emoji .inline-image-popover {
   display: none !important;
+}
+
+.line-media {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 2px;
+}
+
+.line-media-emoji {
+  position: relative;
+  display: inline-grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.line-media-emoji-layer {
+  display: block;
+  grid-area: 1 / 1;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.line-media-emoji.is-layered .line-media-emoji-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.line-media-emoji.is-prefab {
+  width: 88px;
+  height: 92px;
+  overflow: hidden;
+}
+
+.line-media-emoji-prefab-stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.62);
+  transform-origin: center;
+}
+
+.line-media-emoji-prefab-group {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50px 72px;
+}
+
+.line-media-emoji-prefab-layer {
+  position: absolute;
+  display: block;
+  object-fit: contain;
+}
+
+.line-media-emoji-prefab-layer.is-mask {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+}
+
+.line-media-emoji-prefab-layer.is-flipped {
+  transform: scaleX(-1);
+}
+
+.line-media-emoji.is-animated.is-playing .line-media-emoji-bg-group {
+  opacity: 0;
+  animation: env-emoji-bg-in 450ms linear both;
+}
+
+.line-media-emoji.is-animated.is-playing .line-media-emoji-body-group {
+  opacity: 0;
+  animation: env-emoji-sigh-body-in 450ms linear both;
+}
+
+.line-media-emoji.is-animated.is-playing.anim-workhard .line-media-emoji-body-group {
+  animation-name: env-emoji-workhard-body-in;
+}
+
+@keyframes env-emoji-bg-in {
+  0%,
+  3.7% {
+    opacity: 0;
+  }
+
+  7.4%,
+  11.1% {
+    opacity: 0.39;
+  }
+
+  14.8%,
+  18.5% {
+    opacity: 0.1;
+  }
+
+  22.2%,
+  25.9% {
+    opacity: 0.88;
+  }
+
+  29.6%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes env-emoji-sigh-body-in {
+  0%,
+  33.3% {
+    opacity: 0;
+    transform: scale(0.925, 0.925);
+  }
+
+  37%,
+  40.7% {
+    opacity: 0.5;
+    transform: scale(0.925, 0.9875);
+  }
+
+  44.4%,
+  48.1% {
+    opacity: 0.2;
+    transform: scale(0.925, 0.8);
+  }
+
+  51.9%,
+  100% {
+    opacity: 1;
+    transform: scale(1, 1);
+  }
+}
+
+@keyframes env-emoji-workhard-body-in {
+  0%,
+  33.3% {
+    opacity: 0;
+    transform: scale(1, 1);
+  }
+
+  37%,
+  40.7% {
+    opacity: 0.5;
+    transform: scale(1, 1.068);
+  }
+
+  44.4%,
+  48.1% {
+    opacity: 0.2;
+    transform: scale(1, 0.865);
+  }
+
+  51.9%,
+  100% {
+    opacity: 1;
+    transform: scale(1, 1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line-media-emoji.is-animated.is-playing .line-media-emoji-bg-group,
+  .line-media-emoji.is-animated.is-playing .line-media-emoji-body-group {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.line-media-emoji.missing {
+  width: auto;
+  height: auto;
+  min-height: 24px;
+  padding: 2px 6px;
+  border: 1px dashed rgba(108, 182, 255, 0.45);
+  border-radius: 999px;
+  color: var(--muted);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
 }
 
 .inline-image-tag.is-sns-image {
@@ -2374,6 +2589,88 @@ body.is-resizing-pane * {
 
 .updates-detail-link:hover {
   text-decoration: underline;
+}
+
+#updates-detail-extra {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.updates-detail-panel {
+  min-width: 0;
+}
+
+.updates-detail-panel h2 {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.updates-media-link {
+  display: flex;
+  min-height: 220px;
+  max-height: 62vh;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid rgba(108, 182, 255, 0.24);
+  border-radius: 6px;
+  background: #0b1015;
+}
+
+.updates-media-image,
+.updates-media-video {
+  display: block;
+  max-width: 100%;
+  max-height: 62vh;
+  object-fit: contain;
+}
+
+.updates-media-video {
+  width: 100%;
+}
+
+.updates-diff-code {
+  margin: 0;
+  max-height: 58vh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #0b1015;
+  color: var(--text);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.updates-diff-line {
+  min-height: 1.45em;
+  padding: 0 10px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.updates-diff-add {
+  background: rgba(109, 213, 140, 0.12);
+  color: #b9f5c9;
+}
+
+.updates-diff-del {
+  background: rgba(232, 185, 79, 0.12);
+  color: #f6d98a;
+}
+
+.updates-diff-hunk,
+.updates-diff-file {
+  color: #b7dbff;
+}
+
+.updates-detail-note {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 /* ------- Asset browser ------- */
