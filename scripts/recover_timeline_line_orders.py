@@ -981,6 +981,7 @@ def _build_directional_runtime_jump_candidate_routes(
 
         skipped_line_ids: list[str] = []
         reverse_range_line_ids: list[str] = []
+        out_of_reverse_line_ids: list[str] = []
         path_line_ids: list[str] = []
         for line in scene_lines:
             line_id = str(line.get("id") or "")
@@ -993,12 +994,22 @@ def _build_directional_runtime_jump_candidate_routes(
             if in_skip:
                 skipped_line_ids.append(line_id)
                 continue
-            path_line_ids.append(line_id)
-            if any(
+            in_reverse = any(
                 _line_is_in_time_range(line, as_float(reverse.get("start")), as_float(reverse.get("end")))
                 for reverse in reverse_ranges
-            ):
+            )
+            if reverse_ranges:
+                # When the option has a reverse jump, the runtime loops within
+                # that range — only lines inside the range play. Lines outside
+                # the reverse range belong to other options' branches or to
+                # shared content reached after this slot.
+                if not in_reverse:
+                    out_of_reverse_line_ids.append(line_id)
+                    continue
+                path_line_ids.append(line_id)
                 reverse_range_line_ids.append(line_id)
+            else:
+                path_line_ids.append(line_id)
 
         # A forward-only option whose skip range covers every scene line in the
         # post-slot window terminates the slot — the runtime jumps past every
@@ -1010,11 +1021,6 @@ def _build_directional_runtime_jump_candidate_routes(
             if skip_ranges and not reverse_ranges:
                 terminates_slot = True
             else:
-                continue
-        elif reverse_ranges:
-            if not reverse_range_line_ids:
-                continue
-            if path_line_ids[0] != reverse_range_line_ids[0]:
                 continue
 
         route = {
