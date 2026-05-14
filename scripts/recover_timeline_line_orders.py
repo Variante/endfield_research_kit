@@ -1000,9 +1000,18 @@ def _build_directional_runtime_jump_candidate_routes(
             ):
                 reverse_range_line_ids.append(line_id)
 
+        # A forward-only option whose skip range covers every scene line in the
+        # post-slot window terminates the slot — the runtime jumps past every
+        # remaining line and resumes outside this route. Source: per-option
+        # Runtime Jump clip with optionIndex=N and displayName="--------->"
+        # marks the range the runtime skips when option N is chosen.
+        terminates_slot = False
         if not path_line_ids:
-            continue
-        if reverse_ranges:
+            if skip_ranges and not reverse_ranges:
+                terminates_slot = True
+            else:
+                continue
+        elif reverse_ranges:
             if not reverse_range_line_ids:
                 continue
             if path_line_ids[0] != reverse_range_line_ids[0]:
@@ -1020,6 +1029,8 @@ def _build_directional_runtime_jump_candidate_routes(
             "reverseRangeLineIds": reverse_range_line_ids,
             "reverseRanges": [_compact_jump_range(reverse) for reverse in reverse_ranges],
         }
+        if terminates_slot:
+            route["terminatesSlot"] = True
         if continuation_slot:
             route["continuationGroupKey"] = continuation_slot["groupKey"]
             route["continuationOptionIds"] = [
@@ -1029,14 +1040,24 @@ def _build_directional_runtime_jump_candidate_routes(
             ]
         candidate_routes[option_id] = route
 
-    if not has_forward or not has_reverse:
+    if not has_forward and not has_reverse:
         return {}
     if len(candidate_routes) != len(slot["optionRows"]):
         return {}
-    first_lines = [route["pathLineIds"][0] for route in candidate_routes.values() if route.get("pathLineIds")]
-    if len(set(first_lines)) != len(slot["optionRows"]):
+    non_terminating_routes = [
+        route for route in candidate_routes.values() if not route.get("terminatesSlot")
+    ]
+    non_terminating_first_lines = [
+        route["pathLineIds"][0]
+        for route in non_terminating_routes
+        if route.get("pathLineIds")
+    ]
+    if len(set(non_terminating_first_lines)) != len(non_terminating_routes):
         return {}
-    distinct_paths = {tuple(route.get("pathLineIds") or []) for route in candidate_routes.values()}
+    distinct_paths = {
+        ("__terminatesSlot__",) if route.get("terminatesSlot") else tuple(route.get("pathLineIds") or [])
+        for route in candidate_routes.values()
+    }
     if len(distinct_paths) < 2:
         return {}
     return candidate_routes

@@ -3692,13 +3692,16 @@ def _normalize_dialog_timeline_option_routes(value) -> dict[str, dict]:
             continue
         path_line_ids = _normalize_line_order_ids(raw.get("pathLineIds"))
         skipped_line_ids = _normalize_line_order_ids(raw.get("skippedLineIds"))
-        if not path_line_ids:
+        terminates_slot = bool(raw.get("terminatesSlot"))
+        if not path_line_ids and not terminates_slot:
             continue
         record: dict = {
             "source": str(raw.get("source") or "runtimeJumpTrack"),
             "pathLineIds": path_line_ids,
             "skippedLineIds": skipped_line_ids,
         }
+        if terminates_slot:
+            record["terminatesSlot"] = True
         reverse_range_line_ids = _normalize_line_order_ids(raw.get("reverseRangeLineIds"))
         if reverse_range_line_ids:
             record["reverseRangeLineIds"] = reverse_range_line_ids
@@ -8214,18 +8217,29 @@ def build_language_bundle(
             if not all(anchor == after_id for anchor in anchors):
                 return {}
             routes = [preferred_timeline_option_route(opt_id) for opt_id in group_opt_ids]
-            if not all(route.get("pathLineIds") for route in routes):
+            # A route is acceptable when either it lists per-option lines OR it
+            # flags `terminatesSlot` — the latter means the option's Runtime
+            # Jump skip range covers the whole post-anchor window so no in-slot
+            # lines play.
+            if not all(
+                route.get("pathLineIds") or route.get("terminatesSlot")
+                for route in routes
+            ):
                 return {}
             branch_line_ids_by_option: dict[str, list[str]] = {}
             skipped_line_ids_by_option: dict[str, list[str]] = {}
             reverse_range_line_ids_by_option: dict[str, list[str]] = {}
+            terminating_option_ids: list[str] = []
             for opt_id, route in zip(group_opt_ids, routes):
                 path_line_ids = [
                     str(line_id)
                     for line_id in (route.get("pathLineIds") or [])
                     if line_id in valid_line_ids
                 ]
-                if not path_line_ids:
+                terminates_slot = bool(route.get("terminatesSlot"))
+                if terminates_slot and not path_line_ids:
+                    terminating_option_ids.append(opt_id)
+                elif not path_line_ids:
                     return {}
                 branch_line_ids_by_option[opt_id] = path_line_ids
                 skipped_line_ids_by_option[opt_id] = [
@@ -8238,7 +8252,11 @@ def build_language_bundle(
                     for line_id in (route.get("reverseRangeLineIds") or [])
                     if line_id in valid_line_ids
                 ]
-            if len({tuple(value) for value in branch_line_ids_by_option.values()}) < 2:
+            distinct_branch_signatures = {
+                ("__terminatesSlot__",) if opt_id in terminating_option_ids else tuple(value)
+                for opt_id, value in branch_line_ids_by_option.items()
+            }
+            if len(distinct_branch_signatures) < 2:
                 return {}
             continuation_option_ids = _unique_preserve([
                 str(option_id)
@@ -8246,7 +8264,7 @@ def build_language_bundle(
                 for option_id in (route.get("continuationOptionIds") or [])
                 if str(option_id or "").strip()
             ])
-            return {
+            payload = {
                 "code": "timelineRouteBranches",
                 "reason": "runtimeJumpTrack",
                 "detail": (
@@ -8277,6 +8295,9 @@ def build_language_bundle(
                     if str(raw_range.get("track") or raw_range.get("assetTrack") or "").strip()
                 ]),
             }
+            if terminating_option_ids:
+                payload["terminatingOptionIds"] = terminating_option_ids
+            return payload
 
         def following_line_risk_for_group(group_opt_ids: list[str], after_id: str) -> dict:
             if len(group_opt_ids) < 2 or not after_id:
