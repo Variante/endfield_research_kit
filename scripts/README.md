@@ -28,6 +28,8 @@ Use `.\export.bat --init-build` for initial or baseline-only builds where the
 Updates feed should be baselined instead of reporting changes.
 Use `.\export.bat --fast-assets` for local refreshes that can reuse existing
 asset indexes and skip demo bundle zip generation.
+Use `.\export.bat --skip-export-full` to rebuild WebUI data from an existing
+`export_full/` while still running the freshness guard before the builders.
 
 `package_webui.bat` runs `scripts/package_webui.py` and creates split
 shareable zips. The main story zip contains `serve.py`, `webui/`, generated

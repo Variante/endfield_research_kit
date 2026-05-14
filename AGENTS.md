@@ -16,6 +16,7 @@ Move observations, conclusions, older exploration notes, and status snapshots to
 .\export.bat
 .\export.bat --init-build
 .\export.bat --fast-assets
+.\export.bat --skip-export-full
 python serve.py
 python serve.py 9000
 ```
@@ -29,6 +30,8 @@ Use `--init-build` for first-time/baseline-only builds where the Updates feed
 should be baselined instead of reporting changes.
 Use `--fast-assets` for local refreshes that can reuse existing asset indexes
 and skip demo bundle zip generation.
+Use `--skip-export-full` for WebUI rebuilds that should reuse the existing
+`export_full/`; the wrapper still verifies freshness before long builders run.
 
 Useful direct commands:
 
