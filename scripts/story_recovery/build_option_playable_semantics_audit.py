@@ -9,8 +9,14 @@ decoded option-playable fields such as `logicId`, `trunkId`, `dialogId`,
 from __future__ import annotations
 
 import argparse
+import sys
 from collections import Counter, defaultdict
 from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+for _path in (_REPO_ROOT / "scripts",):
+    if str(_path) not in sys.path:
+        sys.path.insert(0, str(_path))
 from typing import Any
 
 from common import (

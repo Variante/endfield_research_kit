@@ -28,14 +28,14 @@ Main controls:
 Primary command:
 
 ```bat
-python scripts\webui\build_updates.py
+python scripts\build_updates.py
 ```
 
 Reset baseline only when intentionally treating the current installed game as
 the new no-change state:
 
 ```bat
-python scripts\webui\build_updates.py --reset-baseline
+python scripts\build_updates.py --reset-baseline
 ```
 
 `export.bat` runs `build_updates.py` before Story and Assets.
@@ -119,7 +119,7 @@ scratch work from appearing as game updates.
 After rebuilding:
 
 ```bat
-python scripts\webui\build_updates.py
+python scripts\build_updates.py
 python serve.py
 ```
 

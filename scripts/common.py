@@ -6,7 +6,7 @@ import fnmatch
 from pathlib import Path
 from typing import Any, Iterable
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 EXPORT_ROOT = ROOT / "export_full"
 OUT_DIR = ROOT / "webui" / "data"
 LANG_DIR = OUT_DIR / "lang"

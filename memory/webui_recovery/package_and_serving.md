@@ -39,7 +39,7 @@ Run from the repo root:
 or:
 
 ```bat
-python scripts\webui\package_webui.py
+python scripts\package_webui.py
 ```
 
 Dry run:
@@ -127,7 +127,7 @@ Check that output lists:
 If dry-run reports missing media, rebuild assets first:
 
 ```bat
-python scripts\webui\build_assets.py
+python scripts\build_assets.py
 ```
 
 If text or conversation data is stale, run the canonical refresh:

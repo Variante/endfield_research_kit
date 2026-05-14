@@ -26,7 +26,7 @@ Main controls:
 The Reference data is built by the same story builder:
 
 ```bat
-python scripts\webui\build_story.py --languages CN --default-language CN
+python scripts\story_builder\build.py --languages CN --default-language CN
 ```
 
 Reference output is regenerated with Story output so localized text and
@@ -81,7 +81,7 @@ it in `reference/` only. The lean Story profile depends on this separation.
 After rebuilding:
 
 ```bat
-python scripts\webui\build_story.py --languages CN --default-language CN
+python scripts\story_builder\build.py --languages CN --default-language CN
 python serve.py
 ```
 

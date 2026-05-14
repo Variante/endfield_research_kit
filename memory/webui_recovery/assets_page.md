@@ -30,16 +30,16 @@ Main controls:
 Primary command:
 
 ```bat
-python scripts\webui\build_assets.py
+python scripts\build_assets.py
 ```
 
 `export.bat` runs this after Story.
 
 The builder calls:
 
-- `build_asset_index(...)` from `scripts/webui/build_story.py`
-- `build_video_index(...)` from `scripts/webui/build_story_asset_index.py`
-- `build_asset_bundles(...)` from `scripts/webui/build_asset_bundles.py`
+- `build_asset_indexes(...)` from `scripts/asset_builder/index.py`
+- `write_story_media_index(...)` from `scripts/asset_builder/story_media.py`
+- bundled demo archive helpers from `scripts/asset_builder/bundles.py`
 
 ## Inputs
 
@@ -99,7 +99,7 @@ exploration-only data leak into `assets.js`.
 After rebuilding:
 
 ```bat
-python scripts\webui\build_assets.py
+python scripts\build_assets.py
 python serve.py
 ```
 

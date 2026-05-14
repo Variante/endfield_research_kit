@@ -4,7 +4,7 @@ Annotate each webui conv JSON with its DialogIdTable registry status.
 
 For each `dlg_*.json` / `misc_dlg_*.json` under `webui/data/lang/<lang>/conv/`,
 read the matching entry from `export_full/recovered/dialog_id_table_index.json`
-(produced by recover_dialog_id_registry.py) and write a `_debug.runtimeRegistry`
+(produced by story_builder/dialog_registry.py) and write a `_debug.runtimeRegistry`
 block summarising the runtime-side evidence:
 
   - registered:    bool, was the sceneKey present in DialogIdTable?
@@ -24,15 +24,17 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+ROOT = Path(__file__).resolve().parents[2]
+for _path in (ROOT / "scripts",):
+    if str(_path) not in sys.path:
+        sys.path.insert(0, str(_path))
+
 from scene_order_gap_shared import (  # noqa: E402
     build_runtime_registry_debug,
     load_dialog_id_registry,
 )
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-
-ROOT = Path(__file__).resolve().parents[1]
 
 
 def rewrite_conv(path: Path, registry: dict) -> bool:

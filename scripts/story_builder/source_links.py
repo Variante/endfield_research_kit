@@ -11,10 +11,15 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
+
+SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
 from common import EXPORT_ROOT, REPORTS_DIR, ROOT, rel_path as slash
 

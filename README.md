@@ -61,12 +61,13 @@ image proportions with bounded hover/modal previews.
 `export.bat` is the normal browser-data refresh. It runs:
 
 - `scripts/export_full_from_game.py --skip-raw-vfs --skip-source-inventory`
-- `scripts/webui/verify_export_freshness.py`
-- `scripts/recover_dialog_id_registry.py --quiet`
-- `scripts/webui/build_story_source_links.py`
-- `scripts/webui/build_updates.py`
-- `scripts/webui/build_story.py --languages CN --default-language CN`
-- `scripts/webui/build_assets.py`
+- `scripts/verify_export_freshness.py`
+- `scripts/story_builder/dialog_registry.py --quiet`
+- `scripts/story_builder/video_bindings.py`
+- `scripts/story_builder/source_links.py`
+- `scripts/build_updates.py`
+- `scripts/story_builder/build.py --languages CN --default-language CN`
+- `scripts/build_assets.py`
 
 For an initial build where there is no useful update history yet:
 
@@ -84,13 +85,13 @@ skip demo bundle zip generation:
 CN is exported by default. To build more languages after the export:
 
 ```bat
-python scripts\webui\build_story.py --languages CN EN JP --default-language CN
+python scripts\story_builder\build.py --languages CN EN JP --default-language CN
 ```
 
 Package a shareable browser build with:
 
 ```bat
-python scripts\webui\package_webui.py
+python scripts\package_webui.py
 ```
 
 or:
@@ -109,7 +110,7 @@ assets zip into the same directory when those media files are needed.
 The Updates tab is built by:
 
 ```bat
-python scripts\webui\build_updates.py
+python scripts\build_updates.py
 ```
 
 It tracks only the original installed data tree, defaulting to:
@@ -142,7 +143,7 @@ future recovery keeps asset-level entries as well as game-data entries.
 Write an empty baseline feed for a first-time or baseline-only build:
 
 ```bat
-python scripts\webui\build_updates.py --baseline-only
+python scripts\build_updates.py --baseline-only
 ```
 
 If you still want game-data changes but not the exported asset diff, use
@@ -152,7 +153,7 @@ Reset the baseline only when you intentionally want to treat the current
 installed game files as the new "no changes yet" state:
 
 ```bat
-python scripts\webui\build_updates.py --reset-baseline
+python scripts\build_updates.py --reset-baseline
 ```
 
 The WebUI feed is written to `webui/data/updates/latest.json`.
@@ -164,11 +165,11 @@ The WebUI feed is written to `webui/data/updates/latest.json`.
 check that guard directly:
 
 ```bat
-python scripts\webui\verify_export_freshness.py
+python scripts\verify_export_freshness.py
 ```
 
 If it reports stale source roots, rerun `.\export.bat` so future game-data
-changes are re-extracted before `build_story.py` or asset indexing reads
+changes are re-extracted before the Story builder or asset indexing reads
 `export_full/`.
 
 ## What The Browser Reads
@@ -254,7 +255,7 @@ matching docs and intentional tracking.
 ## Active Layout
 
 - `webui/`: static app and generated browser data.
-- `scripts/webui/`: WebUI builders and packaging tools.
+- `scripts/`: WebUI builders and packaging tools.
 - `scripts/`: WebUI/export helpers.
 - `unity_endfield_graph_shader_lab/`: Unity character recovery lab project.
 - `export_full/`: generated data exported from the installed client.

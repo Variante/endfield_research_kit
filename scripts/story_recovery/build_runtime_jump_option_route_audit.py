@@ -12,6 +12,11 @@ import argparse
 import sys
 from collections import Counter
 from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+for _path in (_REPO_ROOT / "scripts",):
+    if str(_path) not in sys.path:
+        sys.path.insert(0, str(_path))
 from typing import Any
 
 from common import (
@@ -32,7 +37,7 @@ SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from recover_timeline_line_orders import (  # noqa: E402
+from story_builder.timeline_recovery import (  # noqa: E402
     as_float,
     as_int,
     line_stem,

@@ -66,7 +66,7 @@ Narrative video behavior:
 Primary command:
 
 ```bat
-python scripts\webui\build_story.py --languages CN --default-language CN
+python scripts\story_builder\build.py --languages CN --default-language CN
 ```
 
 `export.bat` runs this command after export freshness verification,
@@ -75,7 +75,7 @@ DialogIdTable recovery, story source-link rebuilding, and the Updates feed.
 For extra language bundles:
 
 ```bat
-python scripts\webui\build_story.py --languages CN EN JP --default-language CN
+python scripts\story_builder\build.py --languages CN EN JP --default-language CN
 ```
 
 ## Inputs
@@ -113,11 +113,11 @@ export_full/recovered/AnimeStudio-cli/*/json_by_type/MonoBehaviour
 Story order helpers imported by the builder:
 
 ```text
-scripts/recover_dialog_id_registry.py
-scripts/recover_timeline_line_orders.py
-scripts/recover_mission_timelines.py
+scripts/story_builder/dialog_registry.py
+scripts/story_builder/timeline_recovery.py
+scripts/story_builder/mission_recovery.py
 scripts/scene_order_gap_shared.py
-scripts/webui/build_story_reports.py
+scripts/story_builder/reports.py
 ```
 
 Prebuilt evidence inputs used by the builder:
@@ -231,7 +231,7 @@ The 2026-05-13 CN mission timeline catalog has `855` such terminals across
 After rebuilding:
 
 ```bat
-python scripts\webui\build_story.py --languages CN --default-language CN
+python scripts\story_builder\build.py --languages CN --default-language CN
 python serve.py
 ```
 

@@ -1,23 +1,13 @@
-"""Build downloadable demo bundles for the WebUI asset browser.
-
-Run from the repo root:
-    python scripts/webui/build_asset_bundles.py
-"""
 from __future__ import annotations
 
 import json
 import re
-import sys
 import textwrap
 import zipfile
 from collections import defaultdict
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
-
-from build_story_asset_index import ASSET_LOD_SUFFIX_RE, ASSET_SINGLE_PREFIX_RE
+from asset_builder.index import ASSET_LOD_SUFFIX_RE, ASSET_SINGLE_PREFIX_RE
 from common import ASSET_DIR, ROOT, write_json
 
 
@@ -661,11 +651,3 @@ def build_asset_bundles(index_path: Path = ASSET_DIR / "index.json", out_dir: Pa
         "errors": errors,
         "indexBytes": index_path_out.stat().st_size if index_path_out.exists() else 0,
     }
-
-
-def main() -> None:
-    build_asset_bundles()
-
-
-if __name__ == "__main__":
-    main()

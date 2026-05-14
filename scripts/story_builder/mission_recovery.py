@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recover evidence-only mission timelines.
+"""Recover evidence-only mission timelines for the WebUI Story builder.
 
 This script builds a mission-level timeline graph from source data only:
 
@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_MRA_DIR = EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json" / "MissionRuntimeAsset"
 DEFAULT_TIMELINE_ORDERS = EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "timeline_line_orders.json"
@@ -37,7 +37,7 @@ EVIDENCE_POLICY = {
         "MissionRuntimeAsset explicit fields",
         "MissionRuntimeAsset client action maps",
         "recovered AnimeStudio timeline clip records",
-        "source-backed LevelScriptData and AnimeStudio edges recovered by build_story.py",
+        "source-backed LevelScriptData and AnimeStudio edges recovered by scripts/story_builder/build.py",
     ],
     "rejects": [
         "filename order",
@@ -1249,7 +1249,7 @@ def source_backed_story_call_contexts_from_scene_graph(
             "sourceFile": context.get("file") or context.get("sourceFile") or "",
             "levelId": context.get("levelId") or "",
             "sceneKeys": scene_keys,
-            "recoveredBy": "scripts/webui/build_story.py",
+            "recoveredBy": "scripts/story_builder/build.py",
         }
         if source:
             bundle_source = dict(source)
@@ -1284,7 +1284,7 @@ def source_backed_hash_terminals_from_scene_graph(
             "direction": terminal.get("direction") or "",
             "sourceStep": terminal.get("sourceStep") or {},
             "hashStep": terminal.get("hashStep") or {},
-            "recoveredBy": "scripts/webui/build_story.py",
+            "recoveredBy": "scripts/story_builder/build.py",
         }
         if source:
             bundle_source = dict(source)
@@ -1347,7 +1347,7 @@ def source_backed_story_call_contexts_from_scene_bindings(
             "sourceFile": source_file,
             "levelId": level_id,
             "sceneKeys": scene_keys,
-            "recoveredBy": "scripts/webui/build_story.py",
+            "recoveredBy": "scripts/story_builder/build.py",
         }
         if source:
             bundle_source = dict(source)
@@ -1424,7 +1424,7 @@ def source_backed_hash_terminals_from_scene_bindings(
                     "direction": direction,
                     "sourceStep": source_step,
                     "hashStep": hash_step,
-                    "recoveredBy": "scripts/webui/build_story.py",
+                    "recoveredBy": "scripts/story_builder/build.py",
                 }
                 if source:
                     bundle_source = dict(source)
@@ -1467,7 +1467,7 @@ def source_backed_scene_edges_from_scene_graph(scene_graph: dict | None, source:
             "from": edge.get("from") or "",
             "to": edge.get("to") or "",
             "kind": edge.get("kind") or "",
-            "recoveredBy": "scripts/webui/build_story.py",
+            "recoveredBy": "scripts/story_builder/build.py",
         }
         if source:
             bundle_source = dict(source)
@@ -1490,7 +1490,7 @@ def source_backed_scene_edges_from_scene_graph(scene_graph: dict | None, source:
 
 
 def load_source_backed_scene_edges(mission_id: str, generated_mission_dir: Path | None) -> list[dict]:
-    """Load supplemental scene edges recovered by build_story.py.
+    """Load supplemental scene edges recovered by story_builder/build.py.
 
     The generated mission bundle can contain UI ordering/rank fields. This
     helper intentionally ignores those and keeps only edge records that carry
@@ -1875,7 +1875,7 @@ def build_hash_terminal_catalog(recovered: list[dict]) -> dict:
 def summarize(
     recovered: list[dict],
     timeline_meta: dict,
-    generated_by: str = "scripts/recover_mission_timelines.py",
+    generated_by: str = "scripts/story_builder/mission_recovery.py",
 ) -> dict:
     unresolved_counter: Counter = Counter()
     action_counter: Counter = Counter()
