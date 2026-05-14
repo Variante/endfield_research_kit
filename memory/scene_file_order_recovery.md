@@ -49,6 +49,16 @@ files that belong to one scene or mission.
      presence. They do not by themselves prove chronological order between
      separate scene files.
 
+5. **LevelScript file-offset order**
+   - Source:
+     `export_full/structured/StreamingAssets/Data/Json/LevelScriptData/<level>/*.json`
+   - Ordering signal: tagged story/cutscene/radio strings encountered in byte
+     offset order within one LevelScript file.
+   - This is useful as a weak hint for files that are not connected by UID
+     `nextId` chains, especially boss/script clusters with parallel event
+     records. It is not a strong chronology source by itself and should be
+     marked separately from quest-DAG, authored scene-link, and UID-chain order.
+
 ## Fresh Coverage Checks
 
 Quick scan of `MissionRuntimeAsset` found:
@@ -130,6 +140,71 @@ dlg_c28m3_23_007  start=40.55
 That proves numeric suffix order is at best a fallback, not the primary
 ordering source.
 
+`e0m0` current mission-order status:
+
+```text
+strong: radio_e0m0_8d4 -> cutscene_e0m0_New14 -> radio_e0m0_8d8 -> cutscene_e0m0_13
+strong: cutscene_e0m0_6 -> cutscene_e0m0_7 -> cutscene_e0m0_8
+weak:   misc_dlg_e0m0_0d5 -> misc_dlg_e0m0_0d7 -> misc_dlg_e0m0_0d8 -> misc_dlg_e0m0_0d9
+weak:   cutscene_e0m0_2 -> radio_e0m0_1
+weak:   cutscene_e0m0_2ndZiplineA -> cutscene_e0m0_2ndZiplineB -> cutscene_e0m0_2ndZiplineCCamOnly
+weak:   radio_e0m0_2 -> radio_e0m0_2d8
+weak:   cutscene_e0m0_4 -> cutscene_e0m0_5 -> radio_e0m0_13 -> radio_e0m0_14 -> radio_e0m0_15 -> radio_e0m0_16 -> radio_e0m0_17 -> radio_e0m0_20 -> cutscene_e0m0_3 -> radio_e0m0_22 -> radio_e0m0_23
+weak:   radio_e0m0_8d9 -> cutscene_e0m0_lookingatpatriot -> radio_e0m0_9
+weak:   cutscene_e0m0_3 -> radio_e0m0_12
+unknown: cutscene_e0m0_tombstonecollapseCam, cutscene_e0m0_1, cutscene_e0m0_1stZipline, radio_e0m0_1d5, radio_e0m0_3d2, radio_e0m0_5d6, radio_e0m0_9d5, cutscene_e0m0_10, radio_e0m0_10, cutscene_e0m0_11, radio_e0m0_11, cutscene_e0m0_12, radio_e0m0_21, cutscene_e0m0_11111
+```
+
+Conclusion: `e0m0` is only partially confirmed. The first four-entry quest
+sequence and the `cutscene_e0m0_6/7/8` UID chain are strong. Most of the long
+radio/cutscene ordering is still file-offset order only, and several exported
+files have no mission-order clue yet.
+
+## Ongoing Recovery Plan
+
+Keep improving mission file-order recovery in small, commit-sized passes:
+
+1. Preserve the current evidence classes in the WebUI: strong, weak, and
+   unknown.
+2. For each mission under active review, generate or update an evidence audit
+   that lists every weak/unknown file and all original-data hits behind it.
+3. Promote an order edge to strong only when original data proves a quest DAG,
+   authored scene transition, UID/control-flow chain, or typed trigger/action
+   relation.
+4. Keep filename index order as a display fallback only. Unknown files should
+   remain after strong/weak placed files until better evidence is recovered.
+5. Update this `memory/` note with durable conclusions after each pass. Put
+   generated machine-readable audit output under `reports/` and disposable
+   prototypes under `scratch/` or `tmp/`.
+6. Make regular scoped commits for completed slices, without sweeping unrelated
+   local edits into the recovery commits.
+
+## Candidate Metadata Queue
+
+High-value sources to test next:
+
+- Typed `LevelScriptData` records: identify action/condition opcodes behind
+  play-cutscene, play-radio, set property, wait condition, quest advance,
+  battle clear, black fade, camera, and related mission triggers.
+- `MissionRuntimeAsset` nested action and condition fields: inspect
+  `failedCondition`, `finishCondition`, client actions, tracking targets, and
+  `CheckFMVFinish`-style dependencies for phase anchors.
+- LevelScript property ownership: pair condition checks such as
+  `CheckLevelScriptPropertyBool` with the script records that set the same
+  key, then use that relation to place nearby story files.
+- Timeline/prefab component graphs: recover `PlayableDirector`, audio/control
+  tracks, activation tracks, camera bindings, and cutscene prefab references
+  for files that currently appear only in asset paths.
+- Radio/audio metadata: use `RadioTable` continuation fields, priority, type,
+  per-line index, and `AudioDialog.path` as validation and weak tie-break
+  evidence unless another source connects the radio to a quest phase.
+- Map/route metadata: use mission track points, links, pins, areas,
+  interactives, NPCs, and spawners to explain spatial progression, but avoid
+  promoting spatial order to strong chronology without an explicit mission
+  reference.
+- Registry tables: use `StrIdNumTable` / `NumIdStrTable` as key-existence
+  validation only until runtime semantics prove those ids imply chronology.
+
 ## Recommended Recovery Algorithm
 
 For ordering files within a mission/scene:
@@ -154,6 +229,14 @@ For ordering files within a mission/scene:
    registered/unregistered, line membership, option membership, summary
    presence, text availability.
 
+9. Surface mission-order confidence separately in UI:
+   - strong: quest DAG, authored scene link, or UID-linked LevelScript scene
+     chain.
+   - weak: LevelScript file-offset order.
+   - unknown: fallback/numeric order only. Keep these after strong/weak ordered
+     files in the sidebar, sorted by the numeric index recovered from the file
+     key tail (`1`, `1d5`, `New14`, etc.).
+
 ## Avoid
 
 - Do not sort scene files only by filename suffix.
@@ -161,4 +244,5 @@ For ordering files within a mission/scene:
 - Do not flatten quest branches unless an original source edge proves a merge or
   predecessor relation.
 - Do not use generated WebUI rank/order as evidence for this recovery pass.
-
+- Do not promote LevelScript file-offset order to strong evidence until record
+  types, trigger ownership, or UID/control-flow relationships are decoded.

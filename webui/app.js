@@ -22,7 +22,7 @@ const FILTER_SECTION_STORAGE_KEY = "webui_filter_sections_collapsed_v2";
 const STORY_SPLITTER_STORAGE_KEY = "webui_story_splitter_width";
 const ASSET_SPLITTER_STORAGE_KEY = "webui_asset_splitter_width";
 const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
-const WEBUI_DATA_CACHE_TAG = "20260513-merged-line-order-tags";
+const WEBUI_DATA_CACHE_TAG = "20260514-mission-order-strength";
 const DEFAULT_LANGUAGE_INFO = {
   code: "CN",
   label: "Chinese (Simplified)",
@@ -2112,12 +2112,17 @@ function renderItem(row) {
 
   const kindCls = meta.cls;
   const kindNm = meta.name;
+  const orderStatus = entryMissionOrderStatus(e);
+  const orderBadge = orderStatus
+    ? `<span class="mission-order-badge is-${orderStatus.cls}" title="${escapeHtml(orderStatus.title)}">${escapeHtml(orderStatus.label)}</span>`
+    : "";
   const actorTxt = e.c.slice(0, 3).map(actorDisplay).join(" / ")
                  + (e.c.length > 3 ? `+${e.c.length - 3}` : "");
 
   div.innerHTML =
     `<div class="item-line1">` +
       `<span class="badge ${kindCls}">${escapeHtml(kindNm)}</span>` +
+      orderBadge +
       `<span class="item-key">${highlightTextFragment(displayEntryTitle(e), STATE.filters.q)}</span>` +
       `<span class="item-meta">${e.n} ${uiText("lineUnit")}${actorTxt ? " | " + escapeHtml(actorTxt) : ""}</span>` +
     `</div>` +

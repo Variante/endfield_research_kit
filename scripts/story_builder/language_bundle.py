@@ -9647,6 +9647,43 @@ def build_language_bundle(
                     if pos not in edge["positions"]:
                         edge["positions"].append(pos)
 
+        # Levelscript file-order edges (weak ordering hints).
+        # File-order tokens within a single SerializeReference dump usually
+        # track authored event flow even when the records aren't UID-linked,
+        # so we mine every level the mission actually touches — including
+        # levels that share a LevelData host file with another mission
+        # (mission_level_refs misses these because it keys off filename).
+        flow_level_ids: list[str] = []
+        for candidate in [(flow or {}).get("level")] + [
+            scene_id
+            for quest in ((flow or {}).get("quests") or [])
+            for scene_id in (quest.get("scenes") or [])
+        ] + [ref.get("levelId") for ref in (mission_level_refs.get(mission) or [])]:
+            if candidate and candidate not in flow_level_ids:
+                flow_level_ids.append(candidate)
+        for level_id in flow_level_ids:
+            for file_seq in _build_levelscript_file_order_scene_sequences(
+                level_id, dialog_scene_out_key, mission
+            ):
+                filtered = [k for k in file_seq["sequence"] if k in available]
+                if len(filtered) < 2:
+                    continue
+                for pos, (src, dst) in enumerate(zip(filtered, filtered[1:])):
+                    if edge := ensure_edge(src, dst, "levelscriptFileOrder"):
+                        file_ref = file_seq.get("file") or ""
+                        if file_ref:
+                            refs = edge.setdefault("sourceFiles", [])
+                            if file_ref not in refs:
+                                refs.append(file_ref)
+                        seq_level_id = file_seq.get("levelId") or ""
+                        if seq_level_id:
+                            refs = edge.setdefault("levelIds", [])
+                            if seq_level_id not in refs:
+                                refs.append(seq_level_id)
+                        edge.setdefault("positions", [])
+                        if pos not in edge["positions"]:
+                            edge["positions"].append(pos)
+
         graph_order_map = _refine_scene_graph_order(
             all_nodes,
             list(edges_by_key.values()),
@@ -9660,6 +9697,39 @@ def build_language_bundle(
             if k
         }
         mission_runtime_ordered_keys = set(mission_runtime_order_map)
+
+        strong_order_edge_kinds = {
+            "questSequence",
+            "questPrev",
+            "questFailGuard",
+            "authoredDirect",
+            "authoredMenu",
+            "levelscriptSceneChain",
+        }
+        weak_order_edge_kinds = {
+            "levelscriptFileOrder",
+        }
+        strong_ordered_keys = set(mission_runtime_ordered_keys)
+        weak_ordered_keys: set[str] = set()
+        for edge in edges_by_key.values():
+            kind = edge.get("kind") or ""
+            if kind in strong_order_edge_kinds:
+                target = strong_ordered_keys
+            elif kind in weak_order_edge_kinds:
+                target = weak_ordered_keys
+            else:
+                continue
+            for node_key in (edge.get("from") or "", edge.get("to") or ""):
+                if node_key:
+                    target.add(node_key)
+
+        def order_strength(node_key: str) -> str:
+            if node_key in strong_ordered_keys:
+                return "strong"
+            if node_key in weak_ordered_keys:
+                return "weak"
+            return "unknown"
+
         nodes = [
             {
                 "key": node_key,
@@ -9673,6 +9743,7 @@ def build_language_bundle(
                     if node_key in mission_runtime_ordered_keys
                     else {}
                 ),
+                "orderStrength": order_strength(node_key),
                 **(
                     {"orderConfirmed": False}
                     if node_key not in chained_node_keys and node_key not in mission_runtime_ordered_keys
@@ -9765,8 +9836,23 @@ def build_language_bundle(
                 if node.get("key") and isinstance(node.get("order"), int)
                 and node.get("orderConfirmed") is not False
             }
+            scene_graph_order_strength = {
+                node.get("key"): node.get("orderStrength")
+                for node in scene_graph.get("nodes") or []
+                if node.get("key") and node.get("orderStrength")
+            }
             if scene_graph_order or unconfirmed_keys:
                 attach_offsets: Counter[str] = Counter()
+
+                def annotate_order_strength(entry: dict, key: str) -> None:
+                    strength = scene_graph_order_strength.get(key)
+                    if strength == "strong":
+                        entry["goStrong"] = True
+                    elif strength == "weak":
+                        entry["goWeak"] = True
+                    elif strength == "unknown":
+                        entry["goUnknown"] = True
+
                 for entry in index_entries:
                     if entry.get("m") != mission:
                         continue
@@ -9777,12 +9863,14 @@ def build_language_bundle(
                     order = scene_graph_order.get(k)
                     if order is not None:
                         entry["go"] = order
+                        annotate_order_strength(entry, k)
                         continue
                     attached_to = entry.get("attachTo")
                     attach_order = scene_graph_order.get(attached_to)
                     if attach_order is not None:
                         attach_offsets[attached_to] += 1
                         entry["go"] = attach_order + (attach_offsets[attached_to] / 1000)
+                        annotate_order_strength(entry, attached_to)
         mission_flows_payload[mission] = payload
 
     mission_timeline_recovery_payload = build_mission_timeline_recovery_report(

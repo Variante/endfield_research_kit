@@ -280,6 +280,7 @@ def _detect_scene_graph_entries(
         "authoredDirect",
         "authoredMenu",
         "levelscriptSceneChain",
+        "levelscriptFileOrder",
     }
     incoming_kinds: dict[str, set[str]] = defaultdict(set)
     outgoing_kinds: dict[str, set[str]] = defaultdict(set)

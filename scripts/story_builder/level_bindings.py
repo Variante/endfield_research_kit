@@ -435,9 +435,44 @@ def _load_levelscript_binding_data(level_id: str) -> dict:
         out["files"].append({
             "file": repo_rel(path),
             "records": records,
+            "stringHits": sorted_hits,
         })
 
     _LEVELSCRIPT_BINDING_CACHE[level_id] = out
+    return out
+
+
+def _build_levelscript_file_order_scene_sequences(
+    level_id: str,
+    dialog_key_resolver,
+    mission_id: str = "",
+) -> list[dict]:
+    """Return per-file scene-ref sequences ordered by byte offset in each
+    levelscript file. Complements `_build_levelscript_scene_chain_map`,
+    which only follows UID `nextId` linked-list chains. Boss-fight scripts
+    sprinkle scene refs across parallel event records that aren't UID-linked;
+    file offset still tracks the SerializeReference authoring order and gives
+    a usable weak ordering hint. Caller is responsible for treating these as
+    weak edges, not tight constraints."""
+    info = _load_levelscript_binding_data(level_id)
+    out: list[dict] = []
+    for file_info in info["files"]:
+        scene_keys: list[str] = []
+        seen: set[str] = set()
+        for hit in file_info.get("stringHits") or []:
+            text = hit.get("text") or ""
+            scene_key = _resolve_payload_scene_key(text, mission_id, dialog_key_resolver)
+            if not scene_key or scene_key in seen:
+                continue
+            seen.add(scene_key)
+            scene_keys.append(scene_key)
+        if len(scene_keys) < 2:
+            continue
+        out.append({
+            "levelId": level_id,
+            "file": file_info["file"],
+            "sequence": scene_keys,
+        })
     return out
 
 

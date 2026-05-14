@@ -694,6 +694,8 @@ const KIND_ORDER = {
   misc: 11,
 };
 
+const MISSION_ORDER_STATUS_KINDS = new Set(["dlg", "sns", "cutscene", "black", "remotecomm", "radio", "video"]);
+
 function entryGraphOrder(entry) {
   const graphOrder = Number(entry && entry.go);
   return Number.isFinite(graphOrder) ? graphOrder : null;
@@ -703,6 +705,81 @@ function hasEntryGraphOrder(entry) {
   return entryGraphOrder(entry) !== null;
 }
 
+function hasEntryPlacedGraphOrder(entry) {
+  return entryGraphOrder(entry) !== null && !(entry && entry.goUnknown);
+}
+
+function entryMissionOrderStatus(entry) {
+  if (!entry || !MISSION_ORDER_STATUS_KINDS.has(entry.d)) return null;
+  if (entry.goStrong) {
+    return {
+      cls: "strong",
+      label: uiText("missionOrderStrong"),
+      title: uiText("missionOrderStrongTitle"),
+    };
+  }
+  if (entry.goWeak) {
+    return {
+      cls: "weak",
+      label: uiText("missionOrderWeak"),
+      title: uiText("missionOrderWeakTitle"),
+    };
+  }
+  if (entry.goUnknown) {
+    return {
+      cls: "unknown",
+      label: uiText("missionOrderUnknown"),
+      title: uiText("missionOrderUnknownTitle"),
+    };
+  }
+  if (!entry.m) return null;
+  return {
+    cls: "unknown",
+    label: uiText("missionOrderUnknown"),
+    title: uiText("missionOrderUnknownTitle"),
+  };
+}
+
+function entryFilenameIndexTail(entry) {
+  const key = String(entry && entry.k || "");
+  const normalizedKey = key.startsWith("misc_") ? key.slice(5) : key;
+  const mission = String(entry && entry.m || "");
+  if (mission) {
+    const marker = `_${mission}_`.toLowerCase();
+    const index = normalizedKey.toLowerCase().lastIndexOf(marker);
+    if (index >= 0) return normalizedKey.slice(index + marker.length);
+  }
+  const parts = normalizedKey.split("_").filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : normalizedKey;
+}
+
+function entryFilenameIndexNumber(entry) {
+  const tail = entryFilenameIndexTail(entry);
+  const parseMatch = (match) => {
+    if (!match) return null;
+    const whole = Number(match[1]);
+    if (!Number.isFinite(whole)) return null;
+    const decimal = match[2] ? Number(match[2]) : 0;
+    return whole + (Number.isFinite(decimal) ? decimal / 1000000 : 0);
+  };
+
+  const prefix = parseMatch(tail.match(/^(\d+)(?:d(\d+))?/i));
+  if (prefix !== null) return prefix;
+
+  let last = null;
+  for (const match of tail.matchAll(/(\d+)(?:d(\d+))?/gi)) last = match;
+  const embedded = parseMatch(last);
+  if (embedded !== null) return embedded;
+
+  return 10**9;
+}
+
+function compareEntryFilenameIndex(a, b) {
+  return (
+    entryFilenameIndexNumber(a) - entryFilenameIndexNumber(b)
+  ) || entryFilenameIndexTail(a).localeCompare(entryFilenameIndexTail(b), undefined, { numeric: true });
+}
+
 function makeItemSorter(mode, { graphOrderActive = false } = {}) {
   const kindRank = (k) => KIND_ORDER[k] ?? 99;
   const lineCount = (entry) => {
@@ -710,20 +787,26 @@ function makeItemSorter(mode, { graphOrderActive = false } = {}) {
     return Number.isFinite(count) ? count : 0;
   };
   const fallbackSceneRank = (entry) => {
-    const scene = Number(entry && entry.s);
-    return Number.isFinite(scene) ? scene : 0;
+    return entryFilenameIndexNumber(entry);
   };
   const sceneRank = (entry) => {
     const graphOrder = entryGraphOrder(entry);
-    if (graphOrder !== null) return graphOrder;
+    if (graphOrder !== null && !(entry && entry.goUnknown)) return graphOrder;
     if (entry && entry.d === "env" && entryDataType(entry) !== "env") {
       return (graphOrderActive ? 2000000 : 1000000) + fallbackSceneRank(entry);
     }
     const fallback = fallbackSceneRank(entry);
     return graphOrderActive ? 1000000 + fallback : fallback;
   };
-  const naturalCompare = (a, b) =>
-    (sceneRank(a) - sceneRank(b)) || (kindRank(a.d) - kindRank(b.d)) || a.k.localeCompare(b.k);
+  const naturalCompare = (a, b) => {
+    const rank = sceneRank(a) - sceneRank(b);
+    if (rank) return rank;
+    if (!hasEntryPlacedGraphOrder(a) && !hasEntryPlacedGraphOrder(b)) {
+      const fileIndex = compareEntryFilenameIndex(a, b);
+      if (fileIndex) return fileIndex;
+    }
+    return (kindRank(a.d) - kindRank(b.d)) || a.k.localeCompare(b.k);
+  };
   switch (mode) {
     case "lines-desc": return (a, b) => (lineCount(b) - lineCount(a)) || naturalCompare(a, b);
     case "lines-asc":  return (a, b) => (lineCount(a) - lineCount(b)) || naturalCompare(a, b);
