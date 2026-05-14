@@ -40,6 +40,10 @@ Inline image behavior:
   `deco_sns_tweet_decorate_*`, `bg_sns_tweet_decorate_*`, and related
   `cg_image_*` assets render with normal image proportions instead of the
   compact emoji treatment.
+- If an SNS/media line carries both an inline `<image=...>` token and matching
+  line-level `image`/`images` metadata, the inline token owns the visible
+  display and the line-level media strip dedupes that asset, including in raw
+  inline-tag display mode.
 - Hover popovers and the modal preview should stay inside their visible border
   and within the viewport.
 

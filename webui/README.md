@@ -79,6 +79,10 @@ from `webui/data/` and keeps heavyweight recovery work in the Python builders.
   `deco_sns_tweet_decorate_*`, `bg_sns_tweet_decorate_*`, and matching
   `cg_image_*` assets should render with their normal image proportions rather
   than the compact emoji treatment.
+- When a generated line has both an inline `<image=...>` tag and the matching
+  `image`/`images` metadata, the inline render is the canonical display; the
+  below-line media strip should not repeat the same asset, including when the
+  inline tag display is switched to raw text.
 - Inline image popovers and the modal preview should stay inside their visual
   border and the viewport.
 
