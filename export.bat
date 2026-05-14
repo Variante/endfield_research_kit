@@ -8,6 +8,7 @@ set "EXPORT_ARGS="
 set "VERIFY_EXPORT_ARGS="
 set "BUILD_UPDATES_ARGS="
 set "BUILD_ASSETS_ARGS="
+set "SKIP_EXPORT_FULL=0"
 
 :parse_args
 if "%~1"=="" goto :parsed_args
@@ -20,6 +21,11 @@ if /I "%~1"=="--init-build" (
 )
 if /I "%~1"=="--fast-assets" (
   set "BUILD_ASSETS_ARGS=%BUILD_ASSETS_ARGS% --fast"
+  shift
+  goto :parse_args
+)
+if /I "%~1"=="--skip-export-full" (
+  set "SKIP_EXPORT_FULL=1"
   shift
   goto :parse_args
 )
@@ -43,11 +49,19 @@ goto :parse_args
 rem WebUI export/build pipeline:
 rem - export structured data and AnimeStudio outputs used by Story/Reference/Assets
 rem - skip raw_vfs and source inventory because the WebUI does not require them
+rem - optionally skip the export step when reusing an already fresh export_full
 rem - build the game-data update feed
 rem - build only CN story/reference data by default
 rem - build the asset index
+if "%SKIP_EXPORT_FULL%"=="1" goto :skip_export_full
 python .\scripts\export_full_from_game.py --skip-raw-vfs --skip-source-inventory %EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
+goto :after_export_full
+
+:skip_export_full
+echo [export.bat] Skipping scripts\export_full_from_game.py; verifying existing export_full before building.
+
+:after_export_full
 
 python .\scripts\verify_export_freshness.py %VERIFY_EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
@@ -74,13 +88,14 @@ endlocal
 exit /b 0
 
 :help
-echo Usage: export.bat [--init-build] [--fast-assets] [--game-root Endfield_Data] [export_full_from_game.py options]
+echo Usage: export.bat [--init-build] [--fast-assets] [--skip-export-full] [--game-root Endfield_Data] [export_full_from_game.py options]
 echo.
 echo Runs the WebUI-focused export/build pipeline. Story/reference output is CN only.
 echo Verifies export freshness before the long WebUI builders run.
 echo.
 echo   --init-build          Write an empty baseline Updates feed and skip asset diffing.
 echo   --fast-assets         Build asset indexes but skip demo bundle zip generation.
+echo   --skip-export-full    Reuse existing export_full and only verify freshness before builders.
 echo   --game-root PATH      Use a non-default installed Endfield_Data path.
 echo.
 python .\scripts\export_full_from_game.py --help

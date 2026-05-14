@@ -82,6 +82,13 @@ skip demo bundle zip generation:
 .\export.bat --fast-assets
 ```
 
+For a WebUI rebuild from an existing export, skip the main extraction step while
+still checking that `export_full/` matches the installed game data:
+
+```bat
+.\export.bat --skip-export-full
+```
+
 CN is exported by default. To build more languages after the export:
 
 ```bat
@@ -171,6 +178,9 @@ python scripts\verify_export_freshness.py
 If it reports stale source roots, rerun `.\export.bat` so future game-data
 changes are re-extracted before the Story builder or asset indexing reads
 `export_full/`.
+
+`.\export.bat --skip-export-full` uses this same guard before it rebuilds the
+WebUI from existing `export_full/` data.
 
 ## What The Browser Reads
 
