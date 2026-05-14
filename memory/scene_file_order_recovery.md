@@ -160,6 +160,54 @@ sequence and the `cutscene_e0m0_6/7/8` UID chain are strong. Most of the long
 radio/cutscene ordering is still file-offset order only, and several exported
 files have no mission-order clue yet.
 
+Generated follow-up audit:
+
+- `reports/mission_order/e0m0_evidence_audit.json`
+- `reports/mission_order/e0m0_evidence_audit.md`
+
+Audit checkpoint, 2026-05-14:
+
+- `e0m0` currently has 48 mission entries in the CN WebUI index: 7 strong, 26
+  weak, and 15 unknown.
+- LevelScript evidence was found under both `indie_dg002` and `indie_dg004`.
+  The direct mission runtime `levelId` is `indie_dg002`, while
+  `LevelData/indie_dg004/indie_dg004_lv_data_sub_mission_e0m0.json` also
+  points to mission-specific data for this mission.
+- The strongest mission-to-LevelScript bridge is quest `e0m0_q#7`: its
+  objective waits on map `indie_dg002`, script `8700040000`, key
+  `battle_field_clear`. That LevelScript file contains the strong sequence
+  `radio_e0m0_8d4 -> cutscene_e0m0_New14 -> radio_e0m0_8d8 ->
+  cutscene_e0m0_13`.
+- Unknown entries with no MissionRuntime or LevelScript placement hit in the
+  audit were: `cutscene_e0m0_1`, `video_cs_video_e0m0_3`,
+  `radio_e0m0_9d5`, `cutscene_e0m0_10`, `radio_e0m0_10`,
+  `cutscene_e0m0_11`, `cutscene_e0m0_12`, `radio_e0m0_21`, and
+  `cutscene_e0m0_11111`.
+- Unknown entries that do have LevelScript hits but still lack decoded order
+  semantics were: `cutscene_e0m0_1stZipline`, `radio_e0m0_1d5`,
+  `radio_e0m0_3d2`, `radio_e0m0_5d6`, `radio_e0m0_11`, and
+  `cutscene_e0m0_tombstonecollapseCam`.
+- `RadioTable`, `AudioDialog`, and AssetMap hits validate many file families,
+  but they still do not prove inter-file mission chronology without a quest,
+  LevelScript control-flow, or trigger ownership bridge.
+
+Promising LevelScript opcode/kind clusters seen in e0m0:
+
+```text
+0x033e kind 0x13: cutscene play-like records
+0x033f kind 0x13: zipline cutscene variant records
+0x034a kind 0x0d: radio records
+0x034b kind 0x0d: alternate radio records
+0x046c kind 0x0e: dialog records
+0x035b/0x035d/0x0347/0x047e/0x047f/0x02e6: levelseq/cutscene-control records
+0x104a kind 0x00: radio state or played-style records
+```
+
+These opcode labels are working hypotheses until validated against runtime
+metadata or repeated cross-mission behavior. They are the next best route for
+promoting some weak LevelScript file-offset edges into stronger typed
+control-flow evidence.
+
 ## Ongoing Recovery Plan
 
 Keep improving mission file-order recovery in small, commit-sized passes:
