@@ -173,6 +173,50 @@ def collect_level_ids(
     return level_ids
 
 
+def unwrap_const(value: Any) -> Any:
+    if isinstance(value, dict) and "constValue" in value:
+        return value.get("constValue")
+    return value
+
+
+def collect_mission_runtime_script_conditions(node: Any) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+
+    def walk(value: Any, path: str, quest_id: str = "") -> None:
+        if isinstance(value, dict):
+            next_quest_id = quest_id
+            if isinstance(value.get("questId"), str):
+                next_quest_id = value["questId"]
+            type_name = safe_key(value.get("$type"))
+            has_script_id = "_scriptId" in value
+            if "LevelScript" in type_name or has_script_id:
+                script_value = unwrap_const(value.get("_scriptId", value.get("scriptId")))
+                if isinstance(script_value, dict):
+                    script_id = script_value.get("scriptId")
+                else:
+                    script_id = script_value
+                condition = {
+                    "path": path,
+                    "questId": next_quest_id,
+                    "type": type_name,
+                    "uniqueId": safe_key(value.get("uniqueId")),
+                    "mapId": unwrap_const(value.get("_mapId", value.get("mapId"))),
+                    "scriptId": script_id,
+                    "key": unwrap_const(value.get("_key", value.get("key"))),
+                    "value": unwrap_const(value.get("_value", value.get("value"))),
+                    "comparer": unwrap_const(value.get("_comparer", value.get("comparer"))),
+                }
+                out.append({key: val for key, val in condition.items() if val not in (None, "", {})})
+            for key, child in value.items():
+                walk(child, f"{path}.{key}", next_quest_id)
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                walk(child, f"{path}[{index}]", quest_id)
+
+    walk(node, "$")
+    return out
+
+
 def collect_levelscript_hits(
     mission: str,
     level_ids: list[str],
@@ -436,6 +480,7 @@ def build_report(
         }
 
     mission_runtime = read_json(mission_runtime_path, {})
+    runtime_script_conditions = collect_mission_runtime_script_conditions(mission_runtime)
     mission_counts, mission_hits = walk_string_hits(
         mission_runtime,
         needles,
@@ -455,6 +500,19 @@ def build_report(
         level_ids,
         needles,
     )
+    levelscript_by_level_script: dict[tuple[str, str], dict[str, Any]] = {}
+    for item in levelscript_files:
+        level_id = safe_key(item.get("levelId"))
+        file_name = Path(safe_key(item.get("file"))).stem
+        if level_id and file_name:
+            levelscript_by_level_script[(level_id, file_name)] = item
+    for condition in runtime_script_conditions:
+        level_id = safe_key(condition.get("mapId"))
+        script_id = safe_key(condition.get("scriptId"))
+        file_info = levelscript_by_level_script.get((level_id, script_id))
+        if file_info:
+            condition["matchedLevelScriptFile"] = file_info.get("file")
+            condition["matchedStoryKeys"] = file_info.get("matchedUniqueKeys") or []
     for key, count in levelscript_counts.items():
         entry_report[key]["hits"]["levelScriptData"] = {
             "count": count,
@@ -506,6 +564,7 @@ def build_report(
             "entryCount": len(entries),
             "statusCounts": dict(status_counts),
             "levelIdsInspected": level_ids,
+            "missionRuntimeScriptConditionCount": len(runtime_script_conditions),
             "levelScriptFilesWithMissionHits": len(levelscript_files),
             "levelDataFilesWithMissionHits": len(leveldata_files),
             "weakOrUnknownCount": len(weak_or_unknown),
@@ -524,6 +583,7 @@ def build_report(
             "sourceBackedHashTerminals": (mission_timeline or {}).get("sourceBackedHashTerminals") or [],
             "unresolved": (mission_timeline or {}).get("unresolved") or [],
         },
+        "missionRuntimeScriptConditions": runtime_script_conditions,
         "levelScriptFiles": levelscript_files,
         "levelDataFiles": leveldata_files,
         "mapTableHits": map_table_hits,
@@ -544,6 +604,7 @@ def markdown_report(payload: dict[str, Any]) -> str:
         "- Status counts: "
         + ", ".join(f"{key}={value}" for key, value in sorted(summary["statusCounts"].items())),
         "- Level ids inspected: " + ", ".join(summary["levelIdsInspected"]),
+        f"- MissionRuntime script conditions: {summary['missionRuntimeScriptConditionCount']}",
         f"- LevelScript files with mission hits: {summary['levelScriptFilesWithMissionHits']}",
         f"- LevelData files with mission hits: {summary['levelDataFilesWithMissionHits']}",
         "- Weak/unknown entries with no MissionRuntime/LevelScript hits: "
@@ -587,6 +648,24 @@ def markdown_report(payload: dict[str, Any]) -> str:
         text = " -> ".join(md_escape(hit.get("key")) for hit in sequence)
         lines.append(f"- `{md_escape(item.get('levelId'))}` `{md_escape(item.get('file'))}`: {text}")
     if not wrote_sequence:
+        lines.append("- _(none)_")
+
+    lines.extend(["", "## MissionRuntime Script Conditions", ""])
+    if payload.get("missionRuntimeScriptConditions"):
+        lines.append("| quest | type | map | script | key | value | matched story keys |")
+        lines.append("| --- | --- | --- | --- | --- | --- | --- |")
+        for item in payload["missionRuntimeScriptConditions"]:
+            lines.append(
+                "| "
+                f"`{md_escape(item.get('questId'))}` "
+                f"| `{md_escape(item.get('type'))}` "
+                f"| `{md_escape(item.get('mapId'))}` "
+                f"| `{md_escape(item.get('scriptId'))}` "
+                f"| `{md_escape(item.get('key'))}` "
+                f"| `{md_escape(item.get('value'))}` "
+                f"| {md_escape(' -> '.join(item.get('matchedStoryKeys') or []))} |"
+            )
+    else:
         lines.append("- _(none)_")
 
     lines.extend([
