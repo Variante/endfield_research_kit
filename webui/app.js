@@ -830,10 +830,25 @@ function inlineImageNumberKey(value) {
   return String(Number(match[1]));
 }
 
+// envEmoji prefab layer data is reconstructed from the original Unity prefabs at
+// `Assets/Beyond/DynamicAssets/Gameplay/UI/Prefabs/Emoji/emoji_*.prefab` by
+// scripts/recover_envemoji_prefabs.py (Image color + RectTransform fields), then
+// uniformly scaled so each prefab fits the 100×150 stage.
 const ENV_EMOJI_PREFAB_ALIASES = {
   envemoji_common_adaptationwork: "emoji_adaptationwork",
   envemoji_common_dislike: "emoji_newdislike",
+  envemoji_common_empty: "emoji_empty",
+  envemoji_common_exhaustion: "emoji_exhaustion",
+  envemoji_common_happy: "emoji_newhappy",
+  envemoji_common_love: "emoji_love",
   envemoji_common_newworkhard: "emoji_newworkhard",
+  envemoji_common_normal: "emoji_normal",
+  envemoji_common_sad: "emoji_newsad",
+  envemoji_common_sigh: "emoji_newsigh",
+  envemoji_common_surprise: "emoji_newsurprise",
+  envemoji_common_think: "emoji_think",
+  envemoji_common_thumbsup: "emoji_thumbsup",
+  envemoji_common_unhappywork: "emoji_unhappywork",
   envemoji_common_workhard: "emoji_newworkhard",
 };
 
@@ -841,55 +856,130 @@ const ENV_EMOJI_PREFAB_STAGE = { width: 100, height: 150, cx: 50, cy: 72 };
 
 const ENV_EMOJI_PREFAB_ANIMATIONS = {
   emoji_adaptationwork: "workhard",
+  emoji_empty: "sigh",
+  emoji_exhaustion: "sigh",
+  emoji_love: "workhard",
   emoji_newdislike: "sigh",
+  emoji_newhappy: "workhard",
+  emoji_newsad: "sigh",
+  emoji_newsigh: "sigh",
+  emoji_newsurprise: "workhard",
   emoji_newworkhard: "sigh",
+  emoji_normal: "sigh",
+  emoji_think: "workhard",
+  emoji_thumbsup: "workhard",
+  emoji_unhappywork: "sigh",
 };
 
 const ENV_EMOJI_PREFABS = {
   emoji_adaptationwork: [
-    { stem: "emoji_newbg", x: 0, y: 16.2, w: 89.5, h: 109.5, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.70)" },
-    { stem: "emoji_workhardcircle", x: 0, y: -38.9, w: 62.4, h: 62.4, px: 0.5, py: 0, color: "rgba(238, 222, 79, 1)" },
-    { stem: "emoji_workhardcircleblue", x: 14, y: -7.6, w: 34.2, h: 61.7, px: 0.5, py: 0.5, color: "rgba(99, 209, 255, 1)" },
-    { stem: "emoji_newdeco", x: -5.4, y: -35.5, w: 16.6, h: 15.7, px: 0.5, py: 0.5, color: "rgba(99, 209, 255, 1)" },
-    { stem: "emoji_newdeco", x: -0.1, y: 21.4, w: 16.6, h: 15.7, px: 0.5, py: 0.5, color: "rgba(255, 237, 82, 1)" },
-    { stem: "emoji_workhardeye", x: -13.6, y: -9.3, w: 10.4, h: 17, px: 0.5, py: 0.5 },
-    { stem: "emoji_workhardeyeright", x: 5.4, y: -9.3, w: 10, h: 16.6, px: 0.5, py: 0.5 },
-    { stem: "emoji_workhardmouth", x: -4.1, y: -15.7, w: 11.5, h: 6.3, px: 0.5, py: 1 },
+    { stem: "emoji_newbg", x: 0, y: 16.25, w: 89.5, h: 109.5, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.698)" },
+    { stem: "emoji_workhardcircle", x: 0, y: -6.03, w: 62.44, h: 62.44, px: 0.5, py: 0, color: "rgba(237, 221, 79, 1)" },
+    { stem: "emoji_workhardcircleblue", x: 13.99, y: 25.19, w: 34.22, h: 61.69, px: 0.5, py: 0.5, color: "rgba(99, 209, 255, 1)" },
+    { stem: "emoji_newdeco", x: -5.36, y: -2.68, w: 16.61, h: 15.66, px: 0.5, py: 0.5, color: "rgba(99, 209, 255, 1)" },
+    { stem: "emoji_newdeco", x: -0.1, y: 54.21, w: 16.61, h: 15.66, px: 0.5, py: 0.5, color: "rgba(255, 237, 81, 1)" },
+    { stem: "emoji_workhardeye", x: -13.63, y: 23.54, w: 10.36, h: 17.02, px: 0.5, py: 0.5 },
+    { stem: "emoji_workhardeyeright", x: 5.37, y: 23.52, w: 9.99, h: 16.65, px: 0.5, py: 0.5 },
+    { stem: "emoji_workhardmouth", x: -4.07, y: 17.1, w: 11.47, h: 6.29, px: 0.5, py: 1 },
+  ],
+  emoji_empty: [
+    { stem: "emoji_newbg", x: 0, y: 16.25, w: 89.5, h: 109.5, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.698)" },
+    { stem: "emoji_surprisecircle", x: 0, y: 25.19, w: 48.45, h: 46.59, px: 0.5, py: 0.5 },
+    { stem: "emoji_surprisecircle", x: 0, y: -5.53, w: 64.44, h: 61.81, px: 0.5, py: 0 },
+    { stem: "emoji_emptyeye", x: -12.77, y: 21.54, w: 12.58, h: 17.02, px: 0.5, py: 0.5 },
+    { stem: "emoji_emptyeye", x: 5.99, y: 21.54, w: 12.58, h: 17.02, px: 0.5, py: 0.5 },
+  ],
+  emoji_exhaustion: [
+    { stem: "emoji_exhaustioncircle", x: 0, y: -4.72, w: 77.48, h: 77.48, px: 0.5, py: 0 },
+    { stem: "emoji_exhaustioneye", x: -15.1, y: 32.92, w: 16.2, h: 17.07, px: 0.5, py: 0.5 },
+    { stem: "emoji_exhaustioneye", x: 15.32, y: 33.14, w: 16.2, h: 17.07, px: 0.5, py: 0.5 },
+    { stem: "emoji_exhaustionmouth", x: 0, y: 20.23, w: 28.02, h: 6.57, px: 0.5, py: 0.5 },
+    { stem: "emoji_exhaustionmouth", x: 19.26, y: 20.23, w: 28.02, h: 6.57, px: 0.5, py: 0.5 },
+    { stem: "emoji_exhaustionmouth", x: -18.39, y: 20.23, w: 28.02, h: 6.57, px: 0.5, py: 0.5 },
+    { stem: "emoji_exhaustionmouth", x: -36.75, y: 20.23, w: 28.02, h: 6.57, px: 0.5, py: 0.5 },
+  ],
+  emoji_love: [
+    { stem: "emoji_love", x: -0.51, y: 34.69, w: 45.26, h: 41.19, px: 0.5, py: 0.5, color: "rgba(255, 123, 110, 1)" },
+    { stem: "emoji_circle_1", x: 0, y: -5.49, w: 89.5, h: 85.94, px: 0.5, py: 0, color: "rgba(254, 178, 103, 1)" },
+    { stem: "emoji_circle", x: 0, y: -1.04, w: 80.35, h: 77.8, px: 0.5, py: 0, color: "rgba(254, 123, 111, 1)" },
   ],
   emoji_newdislike: [
-    { stem: "emoji_newbg", x: 0, y: 16.2, w: 89.5, h: 109.5, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.70)" },
-    { stem: "emoji_circle_1", x: 0, y: -43.9, w: 70.4, h: 67.6, px: 0.5, py: 0 },
-    { stem: "emoji_circle_1", x: 0, y: -75.1, w: 70.4, h: 67.6, px: 0.5, py: 0, color: "rgba(255, 237, 82, 1)" },
-    { stem: "emoji_unhappyworkcircle", x: 0, y: -41.5, w: 66, h: 66, px: 0.5, py: 0, color: "rgba(117, 153, 255, 1)" },
-    { stem: "emoji_sigheyenew", x: -10.7, y: 3.6, w: 11.8, h: 6.3, px: 0.5, py: 0.5, color: "rgba(117, 153, 255, 1)" },
-    { stem: "emoji_sigheyenew", x: 15.4, y: 2.2, w: 11.8, h: 6.3, px: 0.5, py: 0.5, color: "rgba(117, 153, 255, 1)", flipX: true },
-    { stem: "emoji_newdislike_mouth", x: 3.4, y: -4.4, w: 25.6, h: 8.8, px: 0.5, py: 1, color: "rgba(117, 153, 255, 1)" },
+    { stem: "emoji_newbg", x: 0, y: 16.25, w: 89.5, h: 109.5, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.698)" },
+    { stem: "emoji_unhappyworkcircle", x: 0, y: -5.95, w: 66, h: 66, px: 0.5, py: 0, color: "rgba(118, 152, 255, 1)" },
+    { stem: "emoji_sigheyenew", x: -10.74, y: 39.07, w: 11.79, h: 6.29, px: 0.5, py: 0.5, color: "rgba(118, 152, 255, 1)" },
+    { stem: "emoji_sigheyenew", x: 15.38, y: 37.69, w: 11.79, h: 6.29, px: 0.5, py: 0.5, color: "rgba(118, 152, 255, 1)", flipX: true },
+    { stem: "emoji_newdislike_mouth", x: 3.4, y: 31.05, w: 25.6, h: 8.8, px: 0.5, py: 1, color: "rgba(118, 152, 255, 1)" },
+  ],
+  emoji_newhappy: [
+    { stem: "emoji_newbg", x: 0, y: 16.25, w: 89.5, h: 109.5, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.698)" },
+    { stem: "emoji_circle_1", x: 0, y: -4.49, w: 65.12, h: 62.53, px: 0.5, py: 0, color: "rgba(255, 189, 56, 1)" },
+    { stem: "emoji_newhappyeye", x: -13.51, y: 28.62, w: 15.54, h: 9.25, px: 0.5, py: 0.5 },
+    { stem: "emoji_newhappyeye", x: 6.66, y: 28.62, w: 15.54, h: 9.25, px: 0.5, py: 0.5 },
+    { stem: "emoji_happymouth", x: -3.15, y: 20.3, w: 25.16, h: 14.8, px: 0.5, py: 1 },
+  ],
+  emoji_newsad: [
+    { stem: "emoji_newbg", x: 0, y: 16.25, w: 89.5, h: 109.5, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.698)" },
+    { stem: "emoji_newsad_circle", x: -0.07, y: -4.1, w: 64.44, h: 62.44, px: 0.5, py: 0 },
+    { stem: "emoji_newsad_eye", x: -13, y: 15.62, w: 12.32, h: 10.39, px: 0.5, py: 0 },
+    { stem: "emoji_newsad_eye", x: 8, y: 15.62, w: 12.32, h: 10.39, px: 0.5, py: 0 },
+    { stem: "emoji_newsad_deco", x: 25, y: 44.14, w: 15.84, h: 31.32, px: 0.5, py: 0.5 },
+    { stem: "emoji_newsad_decobg", x: 25, y: 44.14, w: 21.24, h: 36.72, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.8)" },
+  ],
+  emoji_newsigh: [
+    { stem: "emoji_newbg", x: 0, y: 16.25, w: 89.5, h: 109.5, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.698)" },
+    { stem: "emoji_sighcirclenew", x: 0, y: -5.95, w: 66, h: 66, px: 0.5, py: 0 },
+    { stem: "emoji_sigheyenew", x: -14.68, y: 17.67, w: 12.58, h: 6.29, px: 0.5, py: 0.5 },
+    { stem: "emoji_sigheyenew", x: 9.54, y: 17.13, w: 12.58, h: 6.29, px: 0.5, py: 0.5, flipX: true },
+    { stem: "emoji_sighmouthnew", x: -5, y: 9.05, w: 13.2, h: 6.6, px: 0.5, py: 1, color: "rgba(216, 216, 216, 1)" },
+  ],
+  emoji_newsurprise: [
+    { stem: "emoji_newbg", x: 0, y: 16.25, w: 89.5, h: 109.5, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.698)" },
+    { stem: "emoji_circle_1", x: -0.91, y: -3.65, w: 64.15, h: 61.6, px: 0.5, py: 0, color: "rgba(255, 237, 81, 1)" },
+    { stem: "emoji_newsurpriseeyebg", x: -10.07, y: 24.42, w: 12.34, h: 27.54, px: 1, py: 0.5, color: "rgba(0, 0, 0, 0.902)" },
+    { stem: "emoji_happyeye", x: -11.38, y: 24.5, w: 9.89, h: 25.42, px: 1, py: 0.5, color: "rgba(255, 237, 81, 1)" },
+    { stem: "emoji_happyeye", x: 5.8, y: 24.04, w: 9.85, h: 25.52, px: 1, py: 0.5, color: "rgba(255, 237, 81, 1)" },
+    { stem: "emoji_surprisemouthnew", x: -2.14, y: 7.21, w: 14.74, h: 4.5, px: 0.5, py: 0.5, color: "rgba(253, 236, 84, 1)" },
   ],
   emoji_newworkhard: [
-    { stem: "emoji_newbg", x: 0, y: 16.2, w: 89.5, h: 109.5, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.70)" },
-    { stem: "emoji_circle_1", x: 0, y: -43.9, w: 70.4, h: 67.6, px: 0.5, py: 0 },
-    { stem: "emoji_circle_1", x: 0, y: -75.1, w: 70.4, h: 67.6, px: 0.5, py: 0, color: "rgba(255, 237, 82, 1)" },
-    { stem: "emoji_unhappyworkcircle", x: 0, y: -41.5, w: 66, h: 66, px: 0.5, py: 0, color: "rgba(117, 153, 255, 1)" },
-    { stem: "emoji_newworkhard_deco", x: -4, y: -16.5, w: 26, h: 31.7, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.80)" },
-    { stem: "emoji_newworkhard_deco", x: -4.3, y: -15.5, w: 20, h: 24.4, px: 0.5, py: 0.5 },
-    { stem: "emoji_newworkhard_deco1", x: 3, y: -13.2, w: 29.1, h: 18.7, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.80)" },
-    { stem: "emoji_newworkhard_deco1", x: 3.9, y: -12.9, w: 22.4, h: 14.4, px: 0.5, py: 0.5 },
-    { stem: "emoji_newworkhard_deco2", x: -7.6, y: -15.9, w: 25, h: 17.7, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.80)" },
-    { stem: "emoji_newworkhard_deco2", x: -6.7, y: -15.9, w: 19.2, h: 13.6, px: 0.5, py: 0.5 },
+    { stem: "emoji_newbg", x: 0, y: 16.25, w: 89.5, h: 109.5, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.698)" },
+    { stem: "emoji_newworkhard_deco1", x: 3, y: 22.35, w: 29.12, h: 18.72, px: 0, py: 0.41, color: "rgba(0, 0, 0, 0.8)" },
+    { stem: "emoji_newworkhard_deco1", x: 18.5, y: 24.27, w: 22.4, h: 14.4, px: 0.5, py: 0.5, color: "rgba(98, 207, 255, 1)" },
+    { stem: "emoji_newworkhard_deco2", x: -7.58, y: 19.55, w: 24.96, h: 17.68, px: 0, py: 1, color: "rgba(0, 0, 0, 0.8)" },
+    { stem: "emoji_newworkhard_deco2", x: 5.73, y: 10.76, w: 19.2, h: 13.6, px: 0.5, py: 0.5, color: "rgba(98, 207, 255, 1)" },
+    { stem: "emoji_newworkhard_deco", x: -4, y: 18.99, w: 26, h: 31.72, px: 0.12, py: 0, color: "rgba(0, 0, 0, 0.8)" },
+    { stem: "emoji_newworkhard_deco", x: 5.56, y: 35.86, w: 20, h: 24.4, px: 0.5, py: 0.5, color: "rgba(98, 207, 255, 1)" },
+    { stem: "emoji_unhappyworkcircle", x: 0, y: -5.95, w: 66, h: 66, px: 0.5, py: 0, color: "rgba(98, 209, 255, 1)" },
   ],
-};
-
-const ENV_EMOJI_FALLBACK_LAYER_STEMS = {
-  emoji_newhappy: ["emoji_newbg", "emoji_newdeco", "emoji_newhappyeye", "emoji_happymouth", "emoji_happy_mouth_2"],
-  emoji_newsad: ["emoji_newsad_circle", "emoji_newsad_decobg", "emoji_newsad_eye", "emoji_newsad_deco", "emoji_sadmouth"],
-  emoji_newsigh: ["emoji_sighcircle", "emoji_sighcirclenew", "emoji_sigheyenew", "emoji_sighmouthnew", "emoji_sigh_1"],
-  emoji_newsurprise: ["emoji_surprisecircle", "emoji_newsurpriseeyebg", "emoji_surprisemouthnew"],
-  emoji_unhappywork: ["emoji_unhappyworkcircle", "emoji_unhappyworkcircle_1"],
-  emoji_exhaustion: ["emoji_exhaustioncircle", "emoji_exhaustioneye", "emoji_exhaustionmouth"],
-  emoji_empty: ["emoji_emptyeye"],
-  emoji_think: ["emoji_thinkpoint"],
-  emoji_love: ["emoji_love"],
-  emoji_thumbsup: ["emoji_hand_1", "emoji_hand_2"],
+  emoji_normal: [
+    { stem: "emoji_newbg", x: 0, y: 16.25, w: 89.5, h: 109.5, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.698)" },
+    { stem: "emoji_circle_1", x: 0, y: 26.69, w: 65.06, h: 62.47, px: 0.5, py: 0.5, color: "rgba(253, 243, 103, 1)" },
+    { stem: "emoji_circle", x: 0, y: 26.86, w: 65.5, h: 63.43, px: 0.5, py: 0.5, color: "rgba(253, 236, 84, 1)" },
+    { stem: "emoji_happyeye", x: -13.49, y: 23.61, w: 10.36, h: 17.76, px: 0.5, py: 0.5, color: "rgba(255, 237, 81, 1)" },
+    { stem: "emoji_happyeye", x: 5.99, y: 23.5, w: 10.36, h: 17.76, px: 0.5, py: 0.5, color: "rgba(255, 237, 81, 1)" },
+  ],
+  emoji_think: [
+    { stem: "emoji_workhardcircle", x: 0, y: -8.64, w: 89.5, h: 89.5, px: 0.5, py: 0, color: "rgba(255, 237, 81, 1)" },
+    { stem: "emoji_workhardcircleblue", x: 20.05, y: 37.08, w: 49.05, h: 88.43, px: 0.5, py: 0.5, color: "rgba(179, 199, 218, 1)" },
+    { stem: "emoji_thinkpoint", x: -22.01, y: 35.65, w: 11.14, h: 11.14, px: 0.5, py: 0.5 },
+    { stem: "emoji_thinkpoint", x: -7.69, y: 35.65, w: 11.14, h: 11.14, px: 0.5, py: 0.5 },
+    { stem: "emoji_thinkpoint", x: 7.69, y: 35.65, w: 11.14, h: 11.14, px: 0.5, py: 0.5 },
+    { stem: "emoji_thinkpoint", x: 22.01, y: 35.65, w: 11.14, h: 11.14, px: 0.5, py: 0.5 },
+  ],
+  emoji_thumbsup: [
+    { stem: "emoji_newbg", x: 0, y: 16.25, w: 89.5, h: 109.5, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.698)" },
+    { stem: "emoji_unhappyworkcircle", x: -0.05, y: -4.53, w: 64.69, h: 64.69, px: 0.5, py: 0, color: "rgba(255, 237, 81, 1)" },
+    { stem: "emoji_hand_2", x: -1.85, y: 22.46, w: 29.6, h: 28.12, px: 0.5, py: 0.5 },
+    { stem: "emoji_hand_1", x: 3.52, y: 39.3, w: 10.36, h: 19.98, px: 0.5, py: 0.5 },
+  ],
+  emoji_unhappywork: [
+    { stem: "emoji_newbg", x: 0, y: 16.25, w: 89.5, h: 109.5, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.698)" },
+    { stem: "emoji_unhappyworkcircle", x: -0.05, y: -4.53, w: 64.69, h: 64.69, px: 0.5, py: 0, color: "rgba(181, 181, 181, 1)" },
+    { stem: "emoji_circle_1", x: 0, y: -14.27, w: 80.84, h: 80.84, px: 0.5, py: 0, color: "rgba(226, 55, 67, 1)" },
+    { stem: "emoji_unhappyworkcircle_1", x: -0.27, y: 43.89, w: 63.68, h: 32.34, px: 0.5, py: 0.5, color: "rgba(226, 55, 67, 1)" },
+    { stem: "emoji_newdeco", x: -29.95, y: 28.86, w: 16.43, h: 15.49, px: 0.5, py: 0.5, color: "rgba(226, 55, 67, 1)" },
+    { stem: "emoji_sigheyenew", x: -8.58, y: 14.14, w: 12.43, h: 6.22, px: 0.5, py: 0 },
+    { stem: "emoji_sigheyenew", x: 15.63, y: 14.14, w: 12.43, h: 6.22, px: 0.5, py: 0 },
+  ],
 };
 
 function resolveEnvEmojiPrefabKey(value) {
@@ -1121,10 +1211,6 @@ function resolveInlineImageAssetCandidates(imageId) {
       add(STATE.inlineImageAssetByStem.get(layer.stem));
     }
     return matches;
-  }
-
-  for (const stem of ENV_EMOJI_FALLBACK_LAYER_STEMS[normalized] || []) {
-    add(STATE.inlineImageAssetByStem.get(stem));
   }
 
   for (const [stem, asset] of STATE.inlineImageAssetByStem.entries()) {

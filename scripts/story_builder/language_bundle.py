@@ -4028,80 +4028,60 @@ def build_language_bundle(
                 return candidate
         return normalized
 
+    def subtitle_locale_tokens(code: str) -> tuple[str, ...]:
+        return {
+            "CN": ("CHI", "CN"),
+            "EN": ("ENG", "EN"),
+            "JP": ("JP",),
+            "KR": ("KR", "KO"),
+            "TC": ("CHT", "TC"),
+            "MX": ("MX", "ES"),
+            "BR": ("BR", "PT"),
+        }.get(str(code or "").upper(), (str(code or "").upper(),))
 
+    def subtitle_track_language_score(track: dict) -> int:
+        name = str(track.get("parentName") or "").upper()
+        desired = subtitle_locale_tokens(language_code)
 
+        def first_desired_index(tokens: list[str]) -> int | None:
+            matches = [
+                desired.index(token)
+                for token in tokens
+                if token in desired
+            ]
+            return min(matches) if matches else None
 
+        env_tokens = re.findall(r"_ENV_([A-Z]+)", name)
+        audio_tokens = re.findall(r"_AU_([A-Z]+)", name)
+        if env_tokens:
+            env_index = first_desired_index(env_tokens)
+            if env_index is None:
+                return 100
+            audio_index = first_desired_index(audio_tokens)
+            return env_index if audio_index is not None else 10 + env_index
+        if audio_tokens:
+            audio_index = first_desired_index(audio_tokens)
+            return 20 + audio_index if audio_index is not None else 80
+        return 50
 
+    def subtitle_tracks_for_language(tracks: list[dict]) -> list[dict]:
+        scored = [
+            (subtitle_track_language_score(track), track)
+            for track in tracks
+            if isinstance(track, dict)
+        ]
+        if not scored:
+            return []
+        best_score = min(score for score, _track in scored)
+        return [
+            track for score, track in scored
+            if score == best_score
+        ]
 
-    def merge_paired_cutscene_text_groups(
-        rows: list[tuple[tuple[int, int, int, str, str], dict]],
-        canonical_group: str,
-    ) -> list[dict] | None:
-        """Pair an unpadded textgroup with its leading-zero alias as F/M variants.
-
-        Behavior per paired sequence position:
-        - identical text → keep one line, no gender flag (both genders see it).
-        - different text → emit a single line with inline `{F}…{M}…` so the
-          existing inline switch toggles it. Some cutscenes have substantive
-          per-gender script differences, not just punctuation, but they still
-          occupy the same subtitle slot.
-
-        Returns None when the inputs don't match the paired-group shape (no
-        padded alias, or some row already carries an explicit `_m`/`_f` row
-        suffix gender that the legacy deduper owns).
-        """
-        by_group: dict[str, list[tuple[tuple[int, int, int, str, str], dict]]] = defaultdict(list)
-        for sort_key, line in rows:
-            group = line.get("textGroup") or canonical_group
-            by_group[group].append((sort_key, line))
-
-        padded_groups = [g for g in by_group if g != canonical_group]
-        if not padded_groups:
-            return None
-        if any(line.get("gender") for _, line in rows):
-            return None
-
-        f_rows = sorted(by_group.get(canonical_group, []), key=lambda item: item[0])
-        m_rows: list[tuple[tuple[int, int, int, str, str], dict]] = []
-        for group_name in sorted(padded_groups):
-            m_rows.extend(sorted(by_group[group_name], key=lambda item: item[0]))
-
-        if not f_rows or not m_rows:
-            return None
-
-        f_lines = [line for _, line in f_rows]
-        m_lines = [line for _, line in m_rows]
-
-        merged: list[dict] = []
-        pair_count = min(len(f_lines), len(m_lines))
-        for idx in range(pair_count):
-            f_line = f_lines[idx]
-            m_line = m_lines[idx]
-            f_text = f_line.get("text") or ""
-            m_text = m_line.get("text") or ""
-            if f_text == m_text:
-                fold_padded_group_into_pair(f_line, m_line)
-                merged.append(f_line)
-                continue
-            f_line["text"] = f"{{F}}{f_text}{{M}}{m_text}"
-            f_line["pairedGender"] = {"F": f_text, "M": m_text}
-            debug = f_line.setdefault("_debug", {})
-            debug["pairedGender"] = {"F": f_line.get("id"), "M": m_line.get("id")}
-            if cutscene_pair_normalize(f_text) != cutscene_pair_normalize(m_text):
-                debug["pairedGenderDifference"] = "substantive"
-            fold_padded_group_into_pair(f_line, m_line)
-            merged.append(f_line)
-
-        for line in f_lines[pair_count:]:
-            tag_paired_gender(line, "F")
-            merged.append(line)
-        for line in m_lines[pair_count:]:
-            tag_paired_gender(line, "M")
-            merged.append(line)
-
-        return merged
-
-    def cutscene_text_lines(asset_keys: set[str]) -> dict[str, list[dict]]:
+    def cutscene_text_lines(
+        asset_keys: set[str],
+        subtitle_tracks_by_key: dict[str, list[dict]],
+    ) -> dict[str, list[dict]]:
         raw_groups: set[str] = set()
         matched_rows: list[tuple[str, dict, re.Match[str]]] = []
         for row_id, text_entry in text_table.items():
@@ -4115,15 +4095,20 @@ def build_language_bundle(
             matched_rows.append((row_key, text_entry, match))
 
         grouped: dict[str, list[tuple[tuple[int, int, int, str, str], dict]]] = defaultdict(list)
-        for row_key, text_entry, match in matched_rows:
-            raw_group = match.group("group")
-            cutscene_key = resolve_cutscene_text_group(raw_group, asset_keys, raw_groups)
+        lines_by_row_id: dict[str, dict] = {}
+
+        def build_cutscene_texttable_line(
+            row_key: str,
+            text_entry,
+            match: re.Match[str],
+            cutscene_key: str,
+            raw_group: str,
+        ) -> dict:
             line_num = int(match.group("line"))
             sub = match.group("sub") or ""
             gender = (match.group("gender") or "").strip("_").upper()
             cid = f"{match.group('line')}{sub}{('_' + gender.lower()) if gender else ''}"
             text = t(text_entry.get("id") if isinstance(text_entry, dict) else text_entry)
-            remember_texttable_row_usage(row_key)
             line = {
                 "id": row_key,
                 "cid": cid,
@@ -4150,14 +4135,253 @@ def build_language_bundle(
             if gender:
                 line["gender"] = gender
                 line["_debug"]["source"]["gender"] = gender
+            return line
+
+        def remember_cutscene_line_usage(line: dict) -> None:
+            remember_texttable_row_usage(line.get("id"))
+            for duplicate in line.get("mergedDuplicateRows") or []:
+                if isinstance(duplicate, dict):
+                    remember_texttable_row_usage(duplicate.get("id"))
+
+        def subtitle_start_key(value) -> float:
+            return round(float(value), 6) if isinstance(value, (int, float)) else 0.0
+
+        def subtitle_slot_key(ref: dict, timing_index: int) -> tuple[float, float, int]:
+            duration = ref.get("duration")
+            return (
+                subtitle_start_key(ref.get("start")),
+                round(float(duration), 6) if isinstance(duration, (int, float)) else 0.0,
+                timing_index,
+            )
+
+        def subtitle_clip_debug(track: dict, ref: dict) -> dict:
+            debug = {
+                "source": "animeSubtitleTrack",
+                "file": track.get("file"),
+                "parent": track.get("parentName"),
+                "parentFile": track.get("parentFile"),
+                "textId": ref.get("textId"),
+                "start": ref.get("start"),
+                "duration": ref.get("duration"),
+                "clipIndex": ref.get("clipIndex"),
+                "assetPathId": ref.get("assetPathId"),
+            }
+            if track.get("gender"):
+                debug["assetGender"] = track["gender"]
+            if track.get("pathId") not in (None, ""):
+                debug["trackPathId"] = track["pathId"]
+            if track.get("parentPathId") not in (None, ""):
+                debug["parentPathId"] = track["parentPathId"]
+            return debug
+
+        def line_matches_cutscene_key(line: dict, cutscene_key: str) -> bool:
+            row_id = str(line.get("id") or "")
+            if row_id.startswith(f"{cutscene_key}_"):
+                return True
+            if str(line.get("textGroup") or "") == cutscene_key:
+                return True
+            debug = line.get("_debug") if isinstance(line.get("_debug"), dict) else {}
+            if str(debug.get("cutsceneKey") or "") == cutscene_key:
+                return True
+            source = debug.get("source") if isinstance(debug.get("source"), dict) else {}
+            return str(source.get("textGroup") or "") == cutscene_key
+
+        def subtitle_gender_rank(gender: str) -> int:
+            return {"": 0, "F": 1, "M": 2}.get(str(gender or "").upper(), 3)
+
+        def line_has_explicit_gender_switch(line: dict) -> bool:
+            text = str(line.get("text") or "")
+            return "{F}" in text or "{M}" in text
+
+        def subtitle_candidate_rank(cutscene_key: str, candidate: dict) -> tuple[int, int, int, int, str]:
+            line = candidate.get("line") if isinstance(candidate.get("line"), dict) else {}
+            return (
+                0 if line_has_explicit_gender_switch(line) else 1,
+                0 if line_matches_cutscene_key(line, cutscene_key) else 1,
+                subtitle_gender_rank(candidate.get("gender") or ""),
+                int(candidate.get("clipIndex") or 0),
+                str(candidate.get("rowKey") or ""),
+            )
+
+        def subtitle_alternate_line_debug(candidate: dict) -> dict:
+            line = candidate.get("line") if isinstance(candidate.get("line"), dict) else {}
+            out = {
+                "id": line.get("id"),
+                "cid": line.get("cid"),
+                "text": line.get("text"),
+                "track": candidate.get("trackDebug"),
+            }
+            if line.get("textGroup"):
+                out["textGroup"] = line.get("textGroup")
+            if candidate.get("gender"):
+                out["assetGender"] = candidate.get("gender")
+            return out
+
+        def build_fallback_track_line(cutscene_key: str, row_key: str, ref: dict) -> dict:
+            match = CUTSCENE_TEXT_ROW_RE.match(row_key)
+            text_entry = text_table.get(row_key)
+            text = t(text_entry.get("id") if isinstance(text_entry, dict) else text_entry) if text_entry else ""
+            source = source_ref(
+                "AnimeStudioSubtitleTrack",
+                row_key,
+                {"textId": row_key},
+                cutsceneKey=cutscene_key,
+            )
+            if match:
+                raw_group = match.group("group")
+                line_num = int(match.group("line"))
+                sub = match.group("sub") or ""
+                gender = (match.group("gender") or "").strip("_").upper()
+                source["source"]["textGroup"] = raw_group
+                source["source"]["line"] = line_num
+                if sub:
+                    source["source"]["sub"] = sub
+                if gender:
+                    source["source"]["gender"] = gender
+                cid = f"{match.group('line')}{sub}{('_' + gender.lower()) if gender else ''}"
+            else:
+                cid = str(ref.get("clipIndex") or "")
+            return {
+                "id": row_key,
+                "cid": cid,
+                "text": text,
+                "_debug": {
+                    **source,
+                    "fields": {
+                        "text": text_trace("TextTable", row_key, "id", text_entry) if text_entry else {
+                            "table": "TextTable",
+                            "rowId": row_key,
+                            "field": "id",
+                            "raw": None,
+                            "lookup": [],
+                            "text": "",
+                        },
+                    },
+                },
+            }
+
+        for row_key, text_entry, match in matched_rows:
+            raw_group = match.group("group")
+            cutscene_key = resolve_cutscene_text_group(raw_group, asset_keys, raw_groups)
+            line_num = int(match.group("line"))
+            sub = match.group("sub") or ""
+            gender = (match.group("gender") or "").strip("_").upper()
+            line = build_cutscene_texttable_line(row_key, text_entry, match, cutscene_key, raw_group)
+            lines_by_row_id[row_key] = line
             sub_order = int(sub[1:]) if sub else -1
             alias_order = 1 if raw_group != cutscene_key else 0
             grouped[cutscene_key].append(((line_num, sub_order, alias_order, gender, row_key), line))
 
         merged_by_key: dict[str, list[dict]] = {}
+        for cutscene_key, subtitle_tracks in subtitle_tracks_by_key.items():
+            subtitle_tracks = subtitle_tracks_for_language(subtitle_tracks)
+            slot_candidates: dict[tuple[float, float, int], list[dict]] = defaultdict(list)
+            for track in subtitle_tracks:
+                timing_counts: dict[tuple[float, float], int] = defaultdict(int)
+                for ref in track.get("lines") or []:
+                    row_key = str(ref.get("textId") or "").strip()
+                    if not row_key:
+                        continue
+                    start = subtitle_start_key(ref.get("start"))
+                    duration = ref.get("duration")
+                    timing_key = (
+                        start,
+                        round(float(duration), 6) if isinstance(duration, (int, float)) else 0.0,
+                    )
+                    timing_index = timing_counts[timing_key]
+                    timing_counts[timing_key] += 1
+                    slot_key = subtitle_slot_key(ref, timing_index)
+                    track_debug = subtitle_clip_debug(track, ref)
+
+                    line = copy.deepcopy(lines_by_row_id.get(row_key))
+                    if line is None:
+                        line = build_fallback_track_line(cutscene_key, row_key, ref)
+                    line_debug = line.setdefault("_debug", {})
+                    line_debug["subtitleTrack"] = track_debug
+                    line_debug.setdefault("subtitleTracks", []).append(track_debug)
+                    line_debug.setdefault("source", {})["subtitleTrackFile"] = track.get("file")
+                    if track.get("gender"):
+                        line_debug["source"]["subtitleAssetGender"] = track["gender"]
+                    remember_cutscene_line_usage(line)
+                    slot_candidates[slot_key].append({
+                        "rowKey": row_key,
+                        "slotKey": slot_key,
+                        "gender": str(track.get("gender") or "").upper(),
+                        "clipIndex": int(ref.get("clipIndex") or 0),
+                        "sortKey": (slot_key[0], timing_index, int(ref.get("clipIndex") or 0), row_key),
+                        "line": line,
+                        "trackDebug": track_debug,
+                    })
+
+            ordered_lines: list[tuple[tuple[float, int, int, str], dict]] = []
+            for slot_key, candidates in slot_candidates.items():
+                genders = {candidate["gender"] for candidate in candidates if candidate.get("gender")}
+                if len(genders) > 1 and all(candidate.get("gender") for candidate in candidates):
+                    ranked = sorted(
+                        candidates,
+                        key=lambda candidate: subtitle_candidate_rank(cutscene_key, candidate),
+                    )
+                    chosen = ranked[0]
+                    chosen_line = chosen["line"]
+                    chosen_debug = chosen_line.setdefault("_debug", {})
+                    chosen_tracks = chosen_debug.setdefault("subtitleTracks", [])
+                    alternates: list[dict] = []
+                    by_gender: dict[str, dict] = {}
+                    chosen_text = chosen_line.get("text")
+                    chosen_id = chosen_line.get("id")
+                    explicit_switch = line_has_explicit_gender_switch(chosen_line)
+                    if chosen.get("gender"):
+                        by_gender.setdefault(chosen["gender"], chosen)
+                    for candidate in ranked[1:]:
+                        if candidate.get("gender"):
+                            by_gender.setdefault(candidate["gender"], candidate)
+                        candidate_track = candidate.get("trackDebug")
+                        if candidate_track:
+                            chosen_tracks.append(candidate_track)
+                        candidate_line = candidate.get("line") if isinstance(candidate.get("line"), dict) else {}
+                        if candidate_line.get("id") != chosen_id or candidate_line.get("text") != chosen_text:
+                            alternates.append(subtitle_alternate_line_debug(candidate))
+                    if not explicit_switch and "F" in by_gender and "M" in by_gender:
+                        f_line = by_gender["F"].get("line") if isinstance(by_gender["F"].get("line"), dict) else {}
+                        m_line = by_gender["M"].get("line") if isinstance(by_gender["M"].get("line"), dict) else {}
+                        f_text = str(f_line.get("text") or "")
+                        m_text = str(m_line.get("text") or "")
+                        if f_text != m_text:
+                            chosen_line["text"] = f"{{F}}{f_text}{{M}}{m_text}"
+                            chosen_debug["subtitleGenderSwitch"] = {
+                                "source": "animeSubtitleTrackAlignment",
+                                "F": {"id": f_line.get("id"), "text": f_text},
+                                "M": {"id": m_line.get("id"), "text": m_text},
+                            }
+                    if alternates:
+                        chosen_debug["subtitleAlternateLines"] = alternates
+                    ordered_lines.append((chosen["sortKey"], chosen_line))
+                    continue
+
+                by_row_key: dict[str, dict] = {}
+                for candidate in sorted(candidates, key=lambda c: (c["sortKey"], c["rowKey"])):
+                    existing = by_row_key.get(candidate["rowKey"])
+                    if existing is not None:
+                        existing_line = existing["line"]
+                        existing_debug = existing_line.setdefault("_debug", {})
+                        candidate_track = candidate.get("trackDebug")
+                        if candidate_track:
+                            existing_debug.setdefault("subtitleTracks", []).append(candidate_track)
+                        continue
+                    by_row_key[candidate["rowKey"]] = candidate
+                    ordered_lines.append((candidate["sortKey"], candidate["line"]))
+            if ordered_lines:
+                merged_by_key[cutscene_key] = [
+                    line for _sort_key, line in sorted(ordered_lines, key=lambda item: item[0])
+                ]
+
         for cutscene_key, rows in grouped.items():
-            paired = merge_paired_cutscene_text_groups(rows, cutscene_key)
-            merged_by_key[cutscene_key] = paired if paired is not None else merge_duplicate_cutscene_rows(rows)
+            if cutscene_key in merged_by_key:
+                continue
+            lines = merge_duplicate_cutscene_rows(rows)
+            for line in lines:
+                remember_cutscene_line_usage(line)
+            merged_by_key[cutscene_key] = lines
         return merged_by_key
 
     def ensure_cutscene_asset(cutscene_key: str) -> dict:
@@ -4182,7 +4406,7 @@ def build_language_bundle(
         )
 
     cutscene_assets = _load_cutscene_assets()
-    cutscene_text_by_key = cutscene_text_lines(set(cutscene_assets))
+    cutscene_text_by_key = cutscene_text_lines(set(cutscene_assets), _load_cutscene_subtitle_tracks())
     for cutscene_key in cutscene_text_by_key:
         ensure_cutscene_asset(cutscene_key)
     print(f"Writing {len(cutscene_assets)} cutscene conversations...")
@@ -8143,6 +8367,9 @@ def build_language_bundle(
             f"- Scanned video files: `{summary.get('scannedVideos', 0)}`",
             f"- Attached WebUI keys: `{summary.get('attachedKeys', 0)}`",
             f"- Attached video refs: `{summary.get('attachedVideos', 0)}`",
+            f"- Timeline-backed evidence rows: `{summary.get('authoritativeEvidenceRows', 0)}`",
+            f"- Standalone video files: `{summary.get('standaloneVideoKeys', 0)}`",
+            f"- Standalone video refs: `{summary.get('standaloneVideoRefs', 0)}`",
             f"- Unresolved video refs: `{summary.get('unresolvedVideos', 0)}`",
             "",
             "## Attached Keys",
@@ -8152,6 +8379,12 @@ def build_language_bundle(
             names = ", ".join((row.get("files") or [])[:4])
             lines.append(f"- `{row.get('key')}` ({row.get('kind')}, `{row.get('videos')}` refs): {names}")
         if not report.get("attached"):
+            lines.append("- None")
+        lines.extend(["", "## Standalone Videos", ""])
+        for row in (report.get("standalone") or [])[:120]:
+            names = ", ".join((row.get("files") or [])[:4])
+            lines.append(f"- `{row.get('key')}` ({row.get('mission')}, `{row.get('videos')}` refs): {names}")
+        if not report.get("standalone"):
             lines.append("- None")
         lines.extend(["", "## Unresolved Videos", ""])
         for row in (report.get("unresolved") or [])[:120]:
@@ -8194,15 +8427,211 @@ def build_language_bundle(
             return ""
 
         resolved_videos: dict[str, list[dict]] = defaultdict(list)
+        standalone_videos: dict[str, list[dict]] = defaultdict(list)
         unresolved_videos: list[dict] = []
+
+        def video_has_authoritative_story_binding(ref: dict) -> bool:
+            return bool(ref.get("authoritativeKeys"))
+
+        def standalone_video_key(ref: dict) -> str:
+            stem = str(ref.get("baseStem") or ref.get("stem") or ref.get("name") or "").strip()
+            stem = re.sub(r"\.[^.]+$", "", stem, flags=re.IGNORECASE)
+            stem = re.sub(r"[^A-Za-z0-9_]+", "_", stem).strip("_").lower()
+            return f"video_{stem or 'unknown'}"
+
+        def strip_video_gender_prefix(stem: str) -> tuple[str, str]:
+            match = re.match(r"^(?P<gender>f|m|fm)_(?P<rest>cs_video_.+)$", stem or "", flags=re.IGNORECASE)
+            if not match:
+                return "", stem or ""
+            return match.group("gender").lower(), match.group("rest")
+
+        def video_scene_hint(refs: list[dict]) -> str:
+            for ref in refs:
+                binding = ref.get("binding") if isinstance(ref.get("binding"), dict) else {}
+                scene = str(binding.get("scene") or "").strip()
+                if scene and not binding.get("isHint"):
+                    return scene.removeprefix("dlg_").removeprefix("cutscene_")
+            for ref in refs:
+                _gender, base = strip_video_gender_prefix(str(ref.get("baseStem") or ref.get("stem") or ""))
+                for prefix in ("cs_video_dlg_", "cs_video_cutscene_", "cs_video_remotecomm_", "cs_video_"):
+                    if base.startswith(prefix):
+                        return base[len(prefix):]
+                if base:
+                    return base
+            return ""
+
+        def video_mission_scene(refs: list[dict]) -> tuple[str, int]:
+            scene_hint = video_scene_hint(refs)
+            match = re.match(
+                r"^(?P<mission>[a-z]+\d+m\d+(?:d\d+)?)(?:_(?P<scene>\d+).*)?$",
+                scene_hint,
+                flags=re.IGNORECASE,
+            )
+            if not match:
+                return (scene_hint.split("_", 1)[0].lower() if scene_hint else "video", 0)
+            return match.group("mission").lower(), int(match.group("scene") or 0)
+
+        def video_title(refs: list[dict]) -> str:
+            base_names = _unique_preserve(
+                str(ref.get("baseStem") or ref.get("stem") or "")
+                for ref in refs
+                if ref.get("baseStem") or ref.get("stem")
+            )
+            if base_names:
+                return base_names[0]
+            names = _unique_preserve(str(ref.get("name") or "") for ref in refs if ref.get("name"))
+            return names[0] if names else "Narrative video"
+
         for ref in narrative_video_assets:
             resolved_key = resolve_video_key(ref)
+            if resolved_key and video_has_authoritative_story_binding(ref):
+                resolved_ref = dict(ref)
+                resolved_ref["resolvedKey"] = resolved_key
+                resolved_videos[resolved_key].append(resolved_ref)
+                continue
+            standalone_videos[standalone_video_key(ref)].append(dict(ref))
             if not resolved_key:
                 unresolved_videos.append(ref)
-                continue
-            resolved_ref = dict(ref)
-            resolved_ref["resolvedKey"] = resolved_key
-            resolved_videos[resolved_key].append(resolved_ref)
+
+        authoritative_evidence: list[dict] = []
+
+        def timeline_video_evidence_rows(key: str, refs: list[dict]) -> list[dict]:
+            rows: list[dict] = []
+            seen: set[tuple[str, str, str]] = set()
+            for ref in refs:
+                binding = ref.get("binding") if isinstance(ref.get("binding"), dict) else {}
+                if not binding or binding.get("isHint"):
+                    continue
+                source_kinds = set(binding.get("sourceKinds") or [])
+                if "timelinePlayable" not in source_kinds:
+                    continue
+                evidence_sources = [
+                    source for source in (binding.get("evidence") or [])
+                    if isinstance(source, dict) and source.get("kind") == "timelinePlayable"
+                ]
+                clips = [
+                    clip for clip in (binding.get("clips") or [])
+                    if isinstance(clip, dict)
+                ]
+                evidence_key = (
+                    str(binding.get("fmvId") or ref.get("stem") or ""),
+                    str(ref.get("rel") or ""),
+                    key,
+                )
+                if evidence_key in seen:
+                    continue
+                seen.add(evidence_key)
+                rows.append({
+                    "webuiKey": key,
+                    "webuiFile": f"data/lang/{language_code}/conv/{key}.json",
+                    "video": {
+                        "name": str(ref.get("name") or ""),
+                        "rel": str(ref.get("rel") or ""),
+                        "source": str(ref.get("source") or ""),
+                        "format": str(ref.get("format") or ""),
+                        "size": int(ref.get("size") or 0),
+                    },
+                    "binding": {
+                        "fmvId": str(binding.get("fmvId") or ref.get("stem") or ""),
+                        "scene": str(binding.get("scene") or ""),
+                        "mission": str(binding.get("mission") or ""),
+                        "sourceKinds": sorted(source_kinds),
+                    },
+                    "evidence": {
+                        "method": "timelinePlayable",
+                        "why": (
+                            "Timeline FMV clip references a BeyondFMVPlayableAsset; "
+                            "that playable's fmvId selects this narrative video."
+                        ),
+                        "sources": evidence_sources,
+                        "clips": clips[:8],
+                    },
+                })
+            return rows
+
+        def emit_standalone_video_outputs() -> list[dict]:
+            entries: list[dict] = []
+            for key, raw_refs in sorted(standalone_videos.items()):
+                refs = sorted(raw_refs, key=narrative_video_sort_key)
+                if not refs:
+                    continue
+                compact_refs = [compact_narrative_video_ref(ref) for ref in refs[:16]]
+                omitted = max(0, len(refs) - len(compact_refs))
+                mission, scene = video_mission_scene(refs)
+                type_, act = parse_mission(mission)
+                title = video_title(refs)
+                names = _unique_preserve(str(ref.get("name") or "") for ref in refs if ref.get("name"))
+                source_counts = Counter(str(ref.get("source") or "") for ref in refs)
+                format_counts = Counter(str(ref.get("format") or "") for ref in refs)
+                payload = {
+                    "key": key,
+                    "kind": "video",
+                    "mission": mission,
+                    "scene": scene,
+                    "title": title,
+                    "lines": [],
+                    "summary": [
+                        {"text": f"Standalone narrative video: {title}"},
+                        {"text": f"Mission: {mission}"},
+                        {"text": f"Files: {len(refs)} exported variant(s)"},
+                        {"text": "Attachment status: no non-name binding found for a dialog or cutscene"},
+                    ],
+                    "narrativeVideos": compact_refs,
+                    "_debug": {
+                        "title": mission_name_trace(mission),
+                        "narrativeVideos": {
+                            "source": {
+                                "key": key,
+                                "count": len(refs),
+                                "shown": len(compact_refs),
+                                "omitted": omitted,
+                                "reason": "standaloneVideoNoAuthoritativeStoryBinding",
+                            },
+                        },
+                    },
+                }
+                if omitted:
+                    payload["narrativeVideosOmitted"] = omitted
+                write_conv_payload(key, payload)
+                entry = {
+                    "k": key,
+                    "d": "video",
+                    "m": mission,
+                    "s": scene,
+                    "t": type_ if type_ != "?" else "other",
+                    "a": act,
+                    "title": title,
+                    "c": [],
+                    "n": 0,
+                    "p": preview(", ".join(names) or title),
+                    "tags": ["narrativeVideo"],
+                    "vid": narrative_video_index_summary(refs),
+                    "x": merge_search_text(
+                        " ".join([
+                            key,
+                            title,
+                            mission,
+                            " ".join(names),
+                            " ".join(str(ref.get("rel") or "") for ref in refs),
+                            " ".join(str(ref.get("stem") or "") for ref in refs),
+                        ]),
+                        mission_context_text(mission),
+                    ),
+                }
+                entry["videoSources"] = {
+                    source: source_counts[source]
+                    for source in sorted(source_counts)
+                    if source
+                }
+                entry["videoFormats"] = {
+                    fmt: format_counts[fmt]
+                    for fmt in sorted(format_counts)
+                    if fmt
+                }
+                if not entry["x"]:
+                    entry.pop("x", None)
+                entries.append(entry)
+            return entries
 
         attached_rows: list[dict] = []
         attached_refs = 0
@@ -8212,6 +8641,7 @@ def build_language_bundle(
             if not refs:
                 continue
             attached_refs += len(refs)
+            authoritative_evidence.extend(timeline_video_evidence_rows(key, refs))
             compact_refs = [compact_narrative_video_ref(ref) for ref in refs[:16]]
             omitted = max(0, len(refs) - len(compact_refs))
             entry["vid"] = narrative_video_index_summary(refs)
@@ -8286,6 +8716,11 @@ def build_language_bundle(
                 )[:12],
             })
 
+        standalone_entries = emit_standalone_video_outputs()
+        for entry in standalone_entries:
+            index_entries.append(entry)
+            conv_media_tags_by_key[str(entry.get("k") or "")].add("mediaVideo")
+
         unresolved_rows = [
             {
                 "name": str(ref.get("name") or ""),
@@ -8302,6 +8737,9 @@ def build_language_bundle(
                 "scannedVideos": len(narrative_video_assets),
                 "attachedKeys": len(attached_rows),
                 "attachedVideos": attached_refs,
+                "authoritativeEvidenceRows": len(authoritative_evidence),
+                "standaloneVideoKeys": len(standalone_entries),
+                "standaloneVideoRefs": sum(len(rows) for rows in standalone_videos.values()),
                 "unresolvedVideos": len(unresolved_videos),
                 "cutsceneVideoFiles": sum(1 for ref in narrative_video_assets if ref.get("kind") == "cutscene"),
                 "remotecommVideoFiles": sum(1 for ref in narrative_video_assets if ref.get("kind") == "remotecomm"),
@@ -8310,16 +8748,45 @@ def build_language_bundle(
                 attached_rows,
                 key=lambda row: (-int(row.get("videos") or 0), row.get("key") or ""),
             )[:500],
+            "standalone": [
+                {
+                    "key": str(entry.get("k") or ""),
+                    "mission": str(entry.get("m") or ""),
+                    "videos": int((entry.get("vid") or {}).get("n") or 0),
+                    "files": list((entry.get("vid") or {}).get("files") or []),
+                }
+                for entry in standalone_entries[:500]
+            ],
             "unresolved": unresolved_rows[:500],
         }
         report_json = REPORTS_DIR / f"narrative_videos_{language_code}.json"
         report_md = REPORTS_DIR / f"narrative_videos_{language_code}.md"
         REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+        evidence_payload = {
+            "generated": report["generated"],
+            "language": language_code,
+            "summary": {
+                "rows": len(authoritative_evidence),
+                "webuiKeys": len({row.get("webuiKey") for row in authoritative_evidence}),
+                "method": "timelinePlayable",
+            },
+            "rows": sorted(
+                authoritative_evidence,
+                key=lambda row: (
+                    str(row.get("webuiKey") or ""),
+                    str(((row.get("binding") or {}).get("fmvId")) or ""),
+                    str(((row.get("video") or {}).get("rel")) or ""),
+                ),
+            ),
+        }
+        evidence_path = out_dir / "narrative_video_evidence.json"
+        write_json(evidence_path, evidence_payload)
         write_json(report_json, report, indent=2, compact=False)
         report_md.write_text(render_narrative_video_report_md(report), encoding="utf-8")
         report["report"] = {
             "json": repo_rel(report_json),
             "markdown": repo_rel(report_md),
+            "evidence": repo_rel(evidence_path),
         }
         return report
 

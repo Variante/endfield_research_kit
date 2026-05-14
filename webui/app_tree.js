@@ -680,6 +680,7 @@ function rebuildTree({ resetScroll = true } = {}) {
 const KIND_ORDER = {
   sns: 0,
   cutscene: 1,
+  video: 1.5,
   dlg: 2,
   black: 3,
   remotecomm: 4,

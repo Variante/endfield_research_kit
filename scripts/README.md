@@ -134,7 +134,12 @@ These are kept because the WebUI story builders import or use them:
   stamps matching conv files and index entries with source evidence and
   writes per-language coverage/orphan reports.
 - `story_builder/video_bindings.py` builds the narrative video binding evidence used
-  by the Story builder.
+  by the Story builder. Timeline-backed links are preserved into
+  `webui/data/lang/<LANG>/narrative_video_evidence.json` so a WebUI video can
+  be traced to the exact `BeyondFMVPlayableAsset` / Timeline source instead of
+  relying on filename matching. Narrative videos that only match by name are
+  emitted as standalone `video` story files grouped by mission, while stronger
+  bindings remain attached to the proven dialog or cutscene.
 - `story_builder/` also scans narrative video folders under
   `Data/Video/PC/Narrative/Cutscene` and `RemoteComm`, attaches matching
   `narrativeVideos` to dialog/cutscene/remotecomm conv JSON, and writes

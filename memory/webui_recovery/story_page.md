@@ -36,6 +36,17 @@ Inline image behavior:
   `story_media.json`. The WebUI also plays recovered `AnimationClip` enter
   curves for the background alpha flicker and body squash/stretch when the
   row scrolls into view, with hover/focus replay for verification.
+- All 14 envEmoji variants (`adaptationwork`, `dislike`, `empty`,
+  `exhaustion`, `happy`, `love`, `newworkhard`, `normal`, `sad`, `sigh`,
+  `surprise`, `think`, `thumbsup`, `unhappywork`) render via
+  `ENV_EMOJI_PREFABS` in `webui/app.js`, which holds reconstructed
+  RectTransform-driven layer geometry, sprite colors, and pivot data.
+  Regenerate that table with
+  `python scripts/recover_envemoji_prefabs.py` whenever the asset map or
+  emoji prefab bundles change; the script runs `AnimeStudio.CLI` in both
+  Dump and JSON modes against `prefabs/emoji/*.prefab` bundles, walks the
+  GameObject tree to compose nested transforms, and rescales prefabs whose
+  Unity canvas is larger than the WebUI's 100×150 stage.
 - Non-emoji SNS media such as `sns_image_*`, `sns_sticker_*`,
   `deco_sns_tweet_decorate_*`, `bg_sns_tweet_decorate_*`, and related
   `cg_image_*` assets render with normal image proportions instead of the
@@ -64,6 +75,13 @@ Narrative video behavior:
   each distinct narrative video. Hidden duplicate files such as alternate
   sources, raw `.usm` exports, or inactive gender variants should not be
   counted as additional user-facing videos.
+- The builder writes `webui/data/lang/<code>/narrative_video_evidence.json`
+  with only timeline-backed video links. A row is proof only when the recovered
+  Timeline FMV clip points at a `BeyondFMVPlayableAsset` whose `fmvId` matches
+  the video; filename-only matches stay out of this evidence file.
+- Filename-only narrative video matches are standalone `video` entries grouped
+  by mission. A dialog or cutscene keeps an inline video only when the builder
+  has stronger binding evidence, such as recovered Timeline/playable data.
 
 ## Builder
 

@@ -37,6 +37,7 @@ import base64
 import binascii
 import copy
 import html
+import itertools
 import json
 import os
 import re
@@ -312,6 +313,7 @@ _JSON_FILE_CACHE: dict[str, dict] = {}
 _MISSION_AREA_CACHE: dict[str, dict] | None = None
 _NPC_PROXY_TABLE_CACHE: dict[str, dict] | None = None
 _CUTSCENE_ASSET_CACHE: dict[str, dict] | None = None
+_CUTSCENE_SUBTITLE_TRACK_CACHE: dict[str, list[dict]] | None = None
 _NARRATIVE_VIDEO_CACHE: list[dict] | None = None
 _VIDEO_BINDINGS_CACHE: dict[str, dict] | None = None
 VIDEO_BINDINGS_PATH = EXPORT_ROOT / "recovered" / "video_bindings.json"
