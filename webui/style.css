@@ -399,6 +399,31 @@ html, body {
   border-radius: 8px; font-size: 10px;
   flex-shrink: 0;
 }
+.mission-order-badge {
+  display: inline-block;
+  padding: 0 5px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 10px;
+  line-height: 1.45;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.mission-order-badge.is-strong {
+  background: rgba(109, 213, 140, 0.16);
+  border-color: rgba(109, 213, 140, 0.54);
+  color: #b9f5c8;
+}
+.mission-order-badge.is-weak {
+  background: rgba(232, 185, 79, 0.14);
+  border-color: rgba(232, 185, 79, 0.52);
+  color: #f3d38b;
+}
+.mission-order-badge.is-unknown {
+  background: rgba(124, 138, 160, 0.14);
+  border-color: rgba(124, 138, 160, 0.34);
+  color: var(--muted);
+}
 .badge-dlg { background: #24527a; color: #d6eeff; }
 .badge-sns { background: #6b3f93; color: #f2ddff; }
 .badge-cutscene { background: #8a5a24; color: #ffe5bc; }
