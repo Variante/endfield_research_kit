@@ -44,6 +44,9 @@ from `webui/data/` and keeps heavyweight recovery work in the Python builders.
   recovered Timeline order disagrees with numeric line suffix order. DialogIdTable
   recovery chips expose runtime trunk line refs and runtime option refs in
   their tooltip when that evidence is available.
+- Narrative videos without non-name binding evidence are emitted as standalone
+  `video` story files grouped by mission. Videos with recovered Timeline /
+  playable evidence stay attached to their proven dialog or cutscene.
 - `Reference`: raw localized rows from `data/lang/<code>/reference/`, with
   source/table filters and on-demand table loading.
 - `Updates`: latest change summary from `data/updates/latest.json`, generated
@@ -60,6 +63,10 @@ from `webui/data/` and keeps heavyweight recovery work in the Python builders.
   sidecars for display names and full-text search.
 - `data/lang/<code>/conv/` and `mission/`: conversation and mission payloads
   loaded on demand.
+- `data/lang/<code>/narrative_video_evidence.json`: timeline-backed video to
+  WebUI conversation evidence. These rows require recovered
+  `BeyondFMVPlayableAsset` / Timeline sources; heuristic filename matches are
+  not recorded as proof.
 - `data/lang/<code>/reference/`: Reference tables; persistent rows may share
   streaming payloads or use small overlay files for changed rows.
 - `data/assets/story_media.json`: compact Story inline image/video lookup using

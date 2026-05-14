@@ -664,6 +664,146 @@ def _decode_anime_text_asset_payload(raw: dict) -> dict:
     return payload if isinstance(payload, dict) else {}
 
 
+def _subtitle_playable_text_ids(raw: dict) -> list[str]:
+    text_id = str(raw.get("_textId") or "").strip()
+    if text_id:
+        return [text_id]
+
+    numbered: list[tuple[int, str]] = []
+    for key, value in raw.items():
+        match = re.fullmatch(r"_textId_(\d+)", str(key or ""))
+        if not match:
+            continue
+        text = str(value or "").strip()
+        if text:
+            numbered.append((int(match.group(1)), text))
+    return [text for _index, text in sorted(numbered)]
+
+
+def _cutscene_variant_gender(name: str) -> str:
+    if re.match(r"^f_", str(name or ""), re.IGNORECASE):
+        return "F"
+    if re.match(r"^m_", str(name or ""), re.IGNORECASE):
+        return "M"
+    return ""
+
+
+def _load_cutscene_subtitle_tracks() -> dict[str, list[dict]]:
+    """Return AnimeStudio subtitle clip text IDs grouped by canonical cutscene.
+
+    TextTable rows can contain loose aliases and unused leftovers. When a
+    decoded cutscene has a real Timeline subtitle track, the clip asset
+    references are the stronger source for which text IDs are actually used.
+    """
+    global _CUTSCENE_SUBTITLE_TRACK_CACHE
+    if _CUTSCENE_SUBTITLE_TRACK_CACHE is not None:
+        return _CUTSCENE_SUBTITLE_TRACK_CACHE
+
+    parent_assets: dict[int, dict] = {}
+    for path in _iter_anime_tree_files("*cutscene*.json"):
+        canonical_key = _canonical_cutscene_key(path.stem)
+        if not canonical_key:
+            continue
+        try:
+            with path.open(encoding="utf-8") as f:
+                raw = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            continue
+        info = raw.get("$animestudio") if isinstance(raw, dict) else None
+        path_id = info.get("pathId") if isinstance(info, dict) else None
+        if not isinstance(path_id, int):
+            continue
+        parent_assets[path_id] = {
+            "cutsceneKey": canonical_key,
+            "name": path.stem,
+            "gender": _cutscene_variant_gender(path.stem),
+            "file": repo_rel(path),
+        }
+
+    playable_text_ids: dict[int, list[str]] = {}
+    for path in _iter_anime_tree_files("*SubtitlePlayableAsset*.json"):
+        try:
+            with path.open(encoding="utf-8") as f:
+                raw = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(raw, dict):
+            continue
+        info = raw.get("$animestudio") if isinstance(raw.get("$animestudio"), dict) else {}
+        path_id = info.get("pathId")
+        if not isinstance(path_id, int):
+            continue
+        text_ids = _subtitle_playable_text_ids(raw)
+        if text_ids:
+            playable_text_ids[path_id] = text_ids
+
+    out: dict[str, list[dict]] = defaultdict(list)
+    for path in itertools.chain(
+        _iter_anime_tree_files("*Subtitle Track*.json"),
+        _iter_anime_tree_files("*Left Subtitle Track*.json"),
+    ):
+        try:
+            with path.open(encoding="utf-8") as f:
+                raw = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(raw, dict):
+            continue
+        clips = raw.get("m_Clips")
+        if not isinstance(clips, list) or not clips:
+            continue
+
+        parent = raw.get("m_Parent") if isinstance(raw.get("m_Parent"), dict) else {}
+        parent_id = parent.get("m_PathID")
+        parent_asset = parent_assets.get(parent_id)
+        if not parent_asset:
+            continue
+
+        track_info = raw.get("$animestudio") if isinstance(raw.get("$animestudio"), dict) else {}
+        lines: list[dict] = []
+        for clip_index, clip in enumerate(clips):
+            if not isinstance(clip, dict):
+                continue
+            asset_ref = clip.get("m_Asset") if isinstance(clip.get("m_Asset"), dict) else {}
+            asset_id = asset_ref.get("m_PathID")
+            for text_id in playable_text_ids.get(asset_id, []):
+                lines.append({
+                    "textId": text_id,
+                    "start": clip.get("m_Start"),
+                    "duration": clip.get("m_Duration"),
+                    "displayName": str(clip.get("m_DisplayName") or ""),
+                    "clipIndex": clip_index,
+                    "assetPathId": asset_id,
+                })
+        if not lines:
+            continue
+
+        lines.sort(key=lambda line: (
+            float(line["start"]) if isinstance(line.get("start"), (int, float)) else 0.0,
+            int(line.get("clipIndex") or 0),
+            str(line.get("textId") or ""),
+        ))
+        out[parent_asset["cutsceneKey"]].append({
+            "file": repo_rel(path),
+            "pathId": track_info.get("pathId"),
+            "parentPathId": parent_id,
+            "parentName": parent_asset["name"],
+            "parentFile": parent_asset["file"],
+            "gender": parent_asset.get("gender") or "",
+            "lines": lines,
+        })
+
+    for tracks in out.values():
+        tracks.sort(key=lambda track: (
+            str(track.get("parentName") or ""),
+            str(track.get("file") or ""),
+            str(track.get("pathId") or ""),
+        ))
+
+    _CUTSCENE_SUBTITLE_TRACK_CACHE = dict(out)
+    return _CUTSCENE_SUBTITLE_TRACK_CACHE
+
+
 def _infer_cutscene_mission_and_scene(
     canonical_key: str,
     known_missions: list[str],
@@ -878,6 +1018,15 @@ def _load_narrative_video_assets() -> list[dict]:
                     "keyCandidates": candidates,
                 }
                 if binding:
+                    binding_sources = [
+                        {
+                            key: source.get(key)
+                            for key in ("kind", "asset", "container", "pathId", "duration", "missions")
+                            if key in source
+                        }
+                        for source in (binding.get("sources") or [])
+                        if isinstance(source, dict)
+                    ]
                     ref["binding"] = {
                         "fmvId": str(binding.get("fmvId") or path.stem),
                         "scene": str(binding.get("scene") or ""),
@@ -900,6 +1049,8 @@ def _load_narrative_video_assets() -> list[dict]:
                             if isinstance(c, dict)
                         ][:8],
                     }
+                    if binding_sources:
+                        ref["binding"]["evidence"] = binding_sources[:8]
                 if authoritative_keys:
                     ref["authoritativeKeys"] = list(authoritative_keys)
                 out.append(ref)
