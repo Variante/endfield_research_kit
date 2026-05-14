@@ -165,6 +165,12 @@ Generated follow-up audit:
 - `reports/mission_order/e0m0_evidence_audit.json`
 - `reports/mission_order/e0m0_evidence_audit.md`
 
+Regenerate with:
+
+```bat
+python scripts\story_recovery\build_mission_order_evidence_audit.py --language CN --mission e0m0
+```
+
 Audit checkpoint, 2026-05-14:
 
 - `e0m0` currently has 48 mission entries in the CN WebUI index: 7 strong, 26
@@ -183,6 +189,12 @@ Audit checkpoint, 2026-05-14:
   `radio_e0m0_9d5`, `cutscene_e0m0_10`, `radio_e0m0_10`,
   `cutscene_e0m0_11`, `cutscene_e0m0_12`, `radio_e0m0_21`, and
   `cutscene_e0m0_11111`.
+- LevelData byte-string scanning found trigger/state context in
+  `indie_dg002_lv_data_sub_03.json` for the long radio cluster and in
+  `indie_dg002_lv_data_sub_mission_e0m1.json` for
+  `dlg_e0m0_0d5/0d7/0d8/0d9`. This did not reduce the orphan list above,
+  because LevelData string hits are still trigger/spatial context rather than
+  chronology until the blobs are decoded into explicit ownership.
 - Unknown entries that do have LevelScript hits but still lack decoded order
   semantics were: `cutscene_e0m0_1stZipline`, `radio_e0m0_1d5`,
   `radio_e0m0_3d2`, `radio_e0m0_5d6`, `radio_e0m0_11`, and
