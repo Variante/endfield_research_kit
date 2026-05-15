@@ -403,6 +403,105 @@ The recovery work should run as small, commit-sized passes. After each pass:
 - Regenerate the relevant evidence audit JSON/MD under `reports/`.
 - Avoid promoting filename-suffix order to strong.
 
+### 2026-05-14 Probe Results
+
+First reconnaissance pass over the candidate sources. Each entry records the
+shape, the *unique* ordering signal (if any), and whether the field is
+*currently exploited* by `scripts/`.
+
+- `AudioRadioContinueTable.json` (map of speaker → `selfContinue[]` /
+  `otherContinue[]` arrays of `radio_continue_self_*` and
+  `radio_continue_other_*` ids). The arrays are an authored sequence, but
+  the referenced ids are **ambient banter pool ids**, not the mission-tied
+  `radio_<scene>_*` files in the Story view. Use as banter-pool ordering only.
+  Currently not consumed by `scripts/`.
+- `AudioSequenceDialog.json` (only two top-level entries, `"1"` and `"2"`,
+  for the two protagonist gender variants; nested `sequence` maps hash ids
+  to ambient banter triplets with `cdTime`, `involvedSpeakers`, `sequence`).
+  Banter pool selector by gender, **not mission ordering**. Reject.
+- `AudioDialog.json` / `AudioDialogConfigs.json`: pure audio bank routing
+  metadata; no ordering signal. Continue treating as validation only.
+- `RadioTable.json`: 2192 entries; 1325 scene-keyed (`radio_<scene>_*`).
+  `continueAfterDialog` is `true` on 1051 of them, `continueAfterRadio` on
+  292; both true on 188. These are **flags, not pointers** — they assert "this
+  radio is a continuation of the immediately preceding dialog/radio in the
+  same trigger context" but do not name the predecessor. Combined with
+  LevelScript trigger-proximity ordering, they can promote a weak file-offset
+  pair to strong when the offset pair already places a `dlg_*` immediately
+  before a `radio_<scene>_*` flagged `continueAfterDialog=true`. The current
+  audit captures the flags as descriptive fields only
+  ([build_mission_order_evidence_audit.py#L347-L349](scripts/story_recovery/build_mission_order_evidence_audit.py#L347-L349));
+  the LevelScript-proximity-driven promotion rule is **not yet implemented**.
+- `AudioDialogCustomEventTable.json`: 41 entries, each keyed by a `dlg_*`
+  id with `preEnterEvents` / `preExitEvents` / `preloadEvents` arrays of
+  integer event ids. Not currently consumed by any script. If the event ids
+  match Wwise event ids referenced by LevelScript audio records, this
+  bridges specific dialog files to the LevelScript record that fired their
+  enter event — a strong direct ownership signal. **Next: map event ids
+  through `AudioDialog.json`/`AudioCueTable.json` to confirm.**
+- `DomainDepotDeliverTargetDialogTable.json`: 15 NPC depot entries with
+  `initialDialogId` + `repeatDialogId`. Authored *initial-before-repeat*
+  pairs (e.g. `dlg_f1m33_5 → dlg_f1m33_6`). Weak ordering signal scoped to
+  the depot interactive; currently not consumed.
+- `ConditionTable.json`: 19 entries, top-level condition graph with
+  `subConditionIds` chains referencing `questms_*` quest-state-machine ids
+  and `kernel_*` system flags. Not scene-keyed; useful for quest-level DAG
+  validation, not scene-file ordering.
+- `GlobalVarTable.json`: contains mission-scoped state flags like
+  `c13m1_delivery_state_01`, `c28m1_door`, `e4m1_all_erosion_unlock`,
+  `e5m1_adaxier_zhufa_state`. If paired with the LevelScript records that
+  set vs. check these vars, the resulting setter→checker edges become
+  strong ordering signals for the scene files those records belong to.
+  Already referenced in `scripts/scene_order_gap_shared.py`; verify which
+  setter/checker pairs are exploited and which remain idle.
+- `MissionExtraInfoTable.json`: 19 entries; only `extraInfoDesc` text and
+  `extraInfoType`. **No ordering signal.** Reject.
+- `MissionTypeInfoTable.json`: 6 entries; UI display metadata only.
+  Reject.
+- `InteractiveMissionDataTable.json`: 7 entries; `missionUseType` enum is a
+  global tag, no step granularity. Reject for file-order.
+- `SNSDialogTable.json`: `linkMissionId` plus `preContentId` /
+  `nextContentId` / `isEnd` flow. Already exploited by
+  `scripts/story_builder/language_bundle.py` (intra-conversation order plus
+  `linkMission` passthrough). No new evidence here.
+- `PrtsRecord.json`: 316 entries, mostly keyed by `nar_*` archive ids;
+  only 5 follow the `nar_<scene>_n` pattern. Each entry carries
+  `firstLvId` ("first-level id") and `contentId` pointing at the in-game
+  archive text. Not a chronology source — at best a 5-row anchor set.
+- `AchievementTable.json`: 101 entries with nested `levelInfos[*].conditions`
+  referencing `conditionId` values whose definitions live in a separate
+  condition store, not in scene files. No direct scene anchors.
+- `LoadingTipsTable.json`: 142 tips; 98 have an `unlockMissionId`,
+  covering 15 unique missions (`e1m1`, `e1m10`, `e1m2`, ..., `f1m3d1`).
+  Cross-mission anchor at coarse "mission-completed" granularity only.
+- `AdventureWorldLevelTable.json`: 7 entries; `missionId` is non-empty on
+  only 4 rows (`m0m2`, `m0m3`, `m0m4`, `m0m5`). Marginal anchor set.
+- `LevelScriptTemplateData/*.json`: 28+ template files, but the `.json`
+  extension is misleading — payload is Unity serialized binary, not
+  human-readable JSON. Templates carry no opcode→typename mapping. The
+  existing decoder at
+  [level_bindings.py#L194-L243](scripts/story_builder/level_bindings.py#L194-L243)
+  extracts `code` / `kind` / `localId` / `nextId` from real records but
+  has no semantic dictionary for those values. The opcode hypotheses in
+  the parent section remain unvalidated. Reject the template directory as a
+  dictionary source; pursue cross-mission opcode-frequency statistics
+  instead.
+
+Concrete next slices implied by the probe:
+
+1. Implement the LevelScript-proximity + `continueAfterDialog/Radio` rule
+   that promotes a weak `dlg → radio` adjacency to strong when the radio
+   flag is set.
+2. Build an `AudioDialogCustomEventTable` event-id resolver that walks
+   `AudioDialog.json` and `AudioCueTable.json` to identify the LevelScript
+   record firing the dialog enter/exit events.
+3. Inventory `GlobalVarTable` setters vs. checkers across all LevelScript
+   files for every mission-scoped var; emit a per-mission var-flow audit.
+4. Stop probing `MissionExtraInfoTable`, `MissionTypeInfoTable`,
+   `InteractiveMissionDataTable`, `AudioRadioContinueTable`,
+   `AudioSequenceDialog`, `AudioDialog`, `AudioDialogConfigs`. They are
+   confirmed dead ends for scene-file ordering.
+
 ## Recommended Recovery Algorithm
 
 For ordering files within a mission/scene:
