@@ -58,6 +58,13 @@ ANIMESTUDIO_JSON_TYPES = (
     "ResourceManager:Both",
     "SpriteAtlas:Both",
     "NapAssetBundleIndexAsset:Both",
+    # PreloadData (Unity ClassID 150) exposes per-bundle asset-cohort PPtrs,
+    # useful for identifying which assets load together with each cutscene.
+    # AvatarMask (319) carries body-part transform masks per animation, which
+    # validates which body parts move during each cutscene. Both rely on the
+    # generic TypeTree fallback in AnimeStudio (no dedicated parser needed).
+    "PreloadData:Both",
+    "AvatarMask:Both",
 )
 ANIMESTUDIO_STAGE_OPTIONS: dict[str, dict[str, Any]] = {
     "maps": {"map_op": "Both", "map_type": "JSON"},
