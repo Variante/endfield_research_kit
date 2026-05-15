@@ -874,17 +874,49 @@ PlayableDirector's container path and Timeline track set.
 
 Additional slices ready to land:
 
-1. Fold the bridge's `newAnchors` records back into
-   `build_mission_order_evidence_audit.py` so each mission audit has a
-   `playableDirector` evidence column alongside `MissionRuntime`,
-   `LevelScript`, `LevelData`, `Radio`, `Audio`, `AssetMap`. The data is
-   already cross-link computed; the audit script just needs to read the
-   cross-link JSON when it exists.
+1. ~~Fold the bridge's `newAnchors` records back into
+   `build_mission_order_evidence_audit.py`~~ — landed 2026-05-15. See
+   below.
 2. Pipe the radio-continuation candidates into
    `scripts/scene_order_gap_shared.py` as a new evidence class
    (`radio_continuation`) so the WebUI gets the promotion edges. Gate
    on the candidate set growing beyond the current 34, since each new
    edge needs to be source-explainable.
+
+### 2026-05-15 Audit Folds in PlayableDirector Evidence
+
+`build_mission_order_evidence_audit.py` now reads
+`reports/playable_director/playable_director_bridge.json` when it
+exists and adds a `hits.playableDirector` entry per audited row whose
+key matches a bridge story (case-insensitive, stripping `misc_`,
+restricted to the audit's mission). The markdown report gains a
+`PlayDir` column with `dN/bM` (director count / total bindings) and
+the summary block reports
+`playableDirectorAnchoredCount` plus
+`weakOrUnknownGainingPlayableDirectorAnchor`.
+
+Net effect across the six 2026-05-15 audits:
+
+| mission | entries | strong | weak | unknown | pd_anchored | weak/unknown→anchor |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `e0m0`  | 48 |  7 | 26 | 15 | **20** | **15** |
+| `e1m1`  | 48 | 10 | 18 | 20 |  7 |  6 |
+| `e10m4` | 81 |  0 |  0 | 81 |  2 |  2 |
+| `c17m3` | 76 |  3 |  3 | 70 |  1 |  1 |
+| `c28m3` | 59 |  9 | 18 | 32 |  1 |  0 |
+| `e9m2`  | 58 | 26 | 15 | 17 |  1 |  0 |
+
+Total: 32 PlayableDirector anchors, of which 24 promote a previously
+weak/unknown entry to "has new evidence". The audit script is a no-op
+if the bridge report is missing, so it remains safe to run without
+regenerating the bridge first.
+
+Remaining un-anchored e0m0 entries (`radio_e0m0_1d5`, `_3d2`, `_5d6`,
+`_9d5`, `_10`, `_11`, `_21`, plus `video_cs_video_e0m0_3`) are radio
+files (no PlayableDirector by design — radios are LevelScript records,
+not Timeline-driven) and one FMV. The radio-continuation rule already
+addresses `radio_<scene>_*` flagged `continueAfter*`; the remaining
+e0m0 anomaly stands because every e0m0 radio has both flags false.
 
 #### Anti-targets (not worth the decoder budget)
 
