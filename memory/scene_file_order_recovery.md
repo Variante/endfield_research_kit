@@ -502,6 +502,108 @@ Concrete next slices implied by the probe:
    `AudioSequenceDialog`, `AudioDialog`, `AudioDialogConfigs`. They are
    confirmed dead ends for scene-file ordering.
 
+### 2026-05-14 Opcode Validation (cross-mission sample)
+
+Sampled three LevelScript directories (`indie_dg002`, `indie_dg004`,
+`indie_dg005`) using `_load_levelscript_binding_data` from
+[level_bindings.py#L194-L243](scripts/story_builder/level_bindings.py#L194-L243).
+Each working hypothesis now has supporting payload evidence:
+
+- `0x033e kind 0x13` — cutscene play: payloads include
+  `cutscene_e0m0_lookingatpatriot`, `cutscene_e0m0_tombstonecollapseCam`,
+  `cutscene_e0m0_6/7/8` (across two levels). **Confirmed.**
+- `0x033f kind 0x13` — zipline cutscene variant: payloads include
+  `cutscene_e0m0_1stZipline`, `cutscene_e0m0_2ndZipline*`. **Confirmed.**
+- `0x034a kind 0x0d` — radio: payloads `radio_e0m0_1/8d4/8d8`,
+  `radio_e4m1d5_2`, `radio_e6m1_22/23/24`. **Confirmed.**
+- `0x034b kind 0x0d` — alternate radio: payloads `radio_e0m0_5d6/9/20`.
+  **Confirmed.**
+- `0x046c kind 0x0e` — dialog: payloads `dlg_e0m0_0d5/0d7/0d8/0d9`,
+  `dlg_e4m1d5_3/7`, `dlg_e6m1_5/7/9`. **Confirmed.**
+- `0x035b kind 0x0c` / `0x035d kind 0x0a` — cutscene control: payloads
+  again carry `cutscene_*` ids; consistent with control/seq variant.
+  **Confirmed.**
+- `0x0347 kind 0x0d` / `0x047e kind 0x0c` / `0x047f kind 0x09` /
+  `0x02e6 kind 0x09` — opaque control records; no in-band story payloads,
+  so they sit between cutscene plays. Likely audio/camera/trigger control
+  rather than story callsites. **Partial — hypothesis stands, but no
+  payload anchor.**
+- `0x104a kind 0x00` — radio state/played: 28 records in `indie_dg002`
+  carry `radio_e0m0_14/16_2/16_3` payloads. **Confirmed radio-adjacent;
+  state-vs-played distinction unresolved.**
+
+Implication: the play-* opcodes (`0x033e/033f`, `0x034a/034b`, `0x046c`)
+are reliable typed markers. A chain of consecutive *typed* play records
+within one LevelScript file is now stronger than raw file-offset order
+alone, because the typed sequence excludes opaque control records that
+could have hidden ownership boundaries.
+
+### 2026-05-14 Proximity-Rule Prototype
+
+[scratch/probe_radio_continuation_promotions.py](scratch/probe_radio_continuation_promotions.py)
+walks each mission audit's `levelScriptFiles[*].matchedSequence` and
+emits a promotion candidate whenever a `radio_<scene>_*` flagged
+`continueAfterDialog` follows a `dlg_*` (or `misc_dlg_*`) earlier in the
+same script file, and similarly for `continueAfterRadio`. Initial output
+on `e0m0` / `e1m1` / `c17m3`:
+
+```text
+missions audited: 3; promotion candidates: 11
+by match kind: {'after-dialog': 10, 'after-radio': 1, 'mismatched': 0}
+```
+
+Concrete `c17m3` candidates worth promoting once the rule moves out of
+scratch:
+
+- `dlg_c17m3_2  -> radio_c17m3_42` @ map01_lv005/3400320003
+- `dlg_c17m3_13 -> radio_c17m3_40` @ dung01_rdg005/24300010006
+- `dlg_c17m3_15 -> radio_c17m3_25` @ dung01_rdg005/24300010007
+- `dlg_c17m3_10 -> radio_c17m3_8`  @ dung01_rdg005/24300010009
+- `dlg_c17m3_12 -> radio_c17m3_22` @ dung01_rdg005/24300010011
+- `dlg_c17m3_25 -> radio_c17m3_58` @ dung01_rdg005/24300010024
+- `radio_c17m3_51 -> radio_c17m3_41` @ dung01_rdg005/24300010012 (after-radio)
+
+`e0m0` produces zero candidates because all 23 of its scene-keyed radios
+have both flags `false`. That confirms `e0m0` is the worst case for this
+rule and validates why the long radio cluster there remains weak.
+
+Concrete `e1m1` candidates:
+
+- `dlg_e1m1_1   -> radio_e1m1_1d5` @ map01_lv001/2100050039
+- `dlg_e1m1_4d2 -> radio_e1m1_5d3` @ map01_lv001/2100050029
+- `dlg_e1m1_6d3 -> radio_e1m1_13`  @ map01_lv001/2100050071
+
+Cross-mission radio coverage of this signal (top missions by flagged
+scene-keyed radio count):
+
+```text
+e10m4  59/59 cAD, 2 cAR
+c17m3  45/45 cAD, 2 cAR
+c28m3  38/38 cAD, 7 cAR
+e5m1   37/38 cAD, 7 cAR
+e9m2   36/36 cAD, 4 cAR     # also an inferredOptionResponse mission
+e9m3   31/31 cAD, 0 cAR
+e8m3   29/29 cAD, 9 cAR
+```
+
+Across the full table 1051/1325 scene-keyed radios have
+`continueAfterDialog=true` and 292/1325 have `continueAfterRadio=true`
+(some have both). Promotion via this rule should land hundreds of new
+strong edges once the prototype is folded into
+`scripts/story_recovery/` and the WebUI builder picks up the resulting
+strong-edge records.
+
+Next promotions of this slice:
+
+1. Promote the prototype out of `scratch/` into a `scripts/story_recovery/`
+   audit named e.g. `build_radio_continuation_audit.py` and write a
+   `reports/mission_order/radio_continuation_*.{json,md}` artifact.
+2. Decide whether the WebUI builder should consume the new strong edges
+   directly (via `scripts/scene_order_gap_shared.py` or a new evidence
+   class) or stay diagnostic until validated on more missions.
+3. Re-run mission audits and compare strong/weak/unknown counts to
+   measure how many entries the rule actually promotes.
+
 ## Recommended Recovery Algorithm
 
 For ordering files within a mission/scene:
