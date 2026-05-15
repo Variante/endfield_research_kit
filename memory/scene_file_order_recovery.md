@@ -819,6 +819,47 @@ list, and the 17 candidates now give us 17 directly authored
 `dlg → radio` adjacencies. Worth folding into the WebUI strong-edge set
 in the next builder pass.
 
+### 2026-05-15 Bridge Cross-Link to Mission Audits
+
+The bridge consumer now supports `--cross-link`, which compares its
+stories against every `<mission>_evidence_audit.json` on disk
+(case-insensitive, stripping `misc_` prefix) and emits
+`reports/playable_director/playable_director_bridge_cross_link.json`.
+
+First run, six missions:
+
+| mission | weak/unknown → anchored | already strong | total entries |
+| --- | ---: | ---: | ---: |
+| `e0m0` | **15** | 5 | 48 |
+| `e1m1` | 6 | 1 | 48 |
+| `e10m4` | 2 | 0 | 81 |
+| `c17m3` | 1 | 0 | 76 |
+| `c28m3` | 0 | 1 | 59 |
+| `e9m2` | 0 | 1 | 58 |
+
+`e0m0` is the highlight: **15 newly anchored entries** out of 41
+weak+unknown. Every previously-unknown `cutscene_e0m0_*` finds a
+PlayableDirector match, including `cutscene_e0m0_1`, `_1stZipline`,
+`_10`, `_11`, `_12`, `_11111`, and `_tombstonecollapseCam`. The
+anchor data exposes director counts (e.g. `cutscene_e0m0_2` has
+**22 directors**, `_3/_4/_5` have 11 each), which gives a richness
+signal in addition to the existence anchor.
+
+Combined with the earlier per-mission status counts, the cumulative
+2026-05-15 evidence position for `e0m0`:
+
+```text
+strong          7  (unchanged)
+weak           26 of which  8 now also have a PlayableDirector anchor
+unknown        15 of which  7 now also have a PlayableDirector anchor
+total          48; 22 entries gain new evidence from the bridge alone
+```
+
+The radio-continuation audit and the PlayableDirector bridge are
+complementary: the former addresses `radio_*` adjacency, the latter
+addresses `cutscene_*/dlgtl_*/levelseq_*` ownership. Together they
+cover most non-`dlg_` story file kinds.
+
 ### 2026-05-15 Next Slice
 
 After the next `export.bat --skip-export-full` run produces
@@ -830,6 +871,20 @@ under `reports/mission_order/preload_cohorts_*.{json,md}`. Cross-check
 the cohorts against the PlayableDirector bridge to confirm "cutscene C
 loads dialog files D1/D2 and radio R1" is consistent with the
 PlayableDirector's container path and Timeline track set.
+
+Additional slices ready to land:
+
+1. Fold the bridge's `newAnchors` records back into
+   `build_mission_order_evidence_audit.py` so each mission audit has a
+   `playableDirector` evidence column alongside `MissionRuntime`,
+   `LevelScript`, `LevelData`, `Radio`, `Audio`, `AssetMap`. The data is
+   already cross-link computed; the audit script just needs to read the
+   cross-link JSON when it exists.
+2. Pipe the radio-continuation candidates into
+   `scripts/scene_order_gap_shared.py` as a new evidence class
+   (`radio_continuation`) so the WebUI gets the promotion edges. Gate
+   on the candidate set growing beyond the current 34, since each new
+   edge needs to be source-explainable.
 
 #### Anti-targets (not worth the decoder budget)
 
