@@ -604,6 +604,159 @@ Next promotions of this slice:
 3. Re-run mission audits and compare strong/weak/unknown counts to
    measure how many entries the rule actually promotes.
 
+### 2026-05-14 Tool-Side Extraction Inventory
+
+What we extract from the original game today via the in-repo tools, and where
+the next data classes can come from. The decoder budget is intentionally
+small; each new class needs a clear story-recovery payoff.
+
+#### Extracted today
+
+- `tools/AnimeStudio/` (C# Unity asset extractor) — invoked via
+  [export_full_from_game.py#L32-L61](scripts/export_full_from_game.py#L32-L61):
+  - Convert pass: `GameObject`, `Texture2D`, `AudioClip`, `Shader`,
+    `TextAsset`, `Font`, `Mesh`, `VideoClip`, `MovieTexture`, `Sprite`,
+    `Animator`, `AnimationClip`, `MiHoYoBinData`.
+  - JSON pass: `TextAsset`, `MonoBehaviour`, `Material`, `AssetBundle`,
+    `IndexObject`, `AnimatorController`, `AnimatorOverrideController`,
+    `MonoScript`, `PlayerSettings`, `PlayableDirector`, `ResourceManager`,
+    `SpriteAtlas`, `NapAssetBundleIndexAsset`.
+  - Timeline-focused pass via
+    [timeline_recovery.py#L404-L412](scripts/story_builder/timeline_recovery.py#L404-L412):
+    `MonoBehaviour:Both`, `PlayableDirector:Both`, `TextAsset:Both`.
+  - Confirmed on disk: `export_full/recovered/AnimeStudio-cli/{Streaming
+    Assets,Persistent,timeline_extract/*}/json_by_type/PlayableDirector/`.
+- `tools/endfield-il2cpp/` (Python) — parses `global-metadata.dat` offline
+  via `catalog_option_flow_metadata.py` and resolves body-target methods to
+  `GameAssembly.dll` via `map_body_targets_to_gameassembly.py`. Reports under
+  `reports/option_flow_*` and `reports/option_flow_body_targets_*`.
+- `tools/endfield_acl_sampler/` (C++/Python) — samples ACL-compressed
+  animations for specific actors (`export_actor_samples.py`,
+  `export_funnel_samples.py`, `export_zhuangfy_samples.py`).
+- `tools/fluffy-dumper-src/` (Rust workspace) — VFS decryptor for
+  StreamingAssets bundles. Modules: `chacha20`, `vfs`, `usm`, `vgmstream`,
+  `xxhash3`, `xxtea`, `sparkbuffer`.
+- `tools/Ruri.ShaderDecompiler/` — local checkout of Ruri's shader bytecode
+  decompiler; CLAUDE.md tells us to pull upstream regularly. **No script in
+  `scripts/` currently invokes it.**
+- `tools/TypeTreeDumps/` — Unity TypeTree dumps across versions for the
+  generic JSON fallback to handle classes without a dedicated parser.
+- `tools/endfield_source_graph.py` produces
+  `reports/source_graph/endfield_source_graph.sqlite` (385K files + 343K
+  assets + 36K lines + 32K audio + 26K table rows + 8.6K stories + 4K
+  options + 1.5K actors + 1088 story_graph_sources + 912 videos + 807
+  animation_clips + 625 missions + 273 timelines + 124 textures + 7
+  shaders). Edges already cover `has_line`, `audio_path`, `defines_audio`,
+  `speaker_channel`, `uses_audio`, `spoken_by`, `option_path_line`,
+  `has_story`, `mentions_actor`, `option_enters_story`,
+  `has_timeline_line`, `option_anchor_after`, etc.
+
+#### Untapped Unity classes (no parser, would use TypeTree fallback)
+
+These are present in `ClassIDType.cs` but not in either AnimeStudio export
+pass. Adding `<name>:Both` to `ANIMESTUDIO_JSON_TYPES` or `App.config types`
+enables them without writing a new C# class because
+[AssetsManager.cs#L681](tools/AnimeStudio/AnimeStudio/AssetsManager.cs#L681)
+falls back to `new Object(objectReader)` which uses the serialized TypeTree.
+
+- `PreloadData` (ClassID 150): per-bundle list of `m_Assets` PPtrs and
+  `m_Dependencies` strings. Reveals which assets load together with a
+  cutscene/scene. **Cohort signal: if cutscene C's bundle preloads
+  `dlg_X` and `radio_Y`, those three files share a runtime cohort.**
+- `AvatarMask` (319): body-part transform masks per animation. Validates
+  which character body parts move during each cutscene; useful for the
+  Unity character recovery lab.
+- `NavMeshData` (238): navigation surface data per scene. Could correlate
+  spatial progression with mission step, but high volume + low ordering
+  payoff. Skip unless mapping work specifically calls for it.
+- `ParticleSystem` (198) + `ParticleSystemRenderer` (199): VFX parameters.
+  Low story-recovery payoff. Skip.
+- `Cubemap` / `CubemapArray` / `RenderTexture` / `CustomRenderTexture`:
+  environment maps. Skip.
+- `GraphicsSettings` (30) / `LightmapSettings` (157): scene-wide lighting
+  refs. Refs may be very large; skip unless needed.
+- `StreamingController` (1542919678 custom): named in ClassIDType.cs;
+  unclear payload without sampling. **Worth one probe.**
+
+The 2026-05-14 patch enables `PreloadData:Both` and `AvatarMask:Both` in
+both [export_full_from_game.py#L62-L66](scripts/export_full_from_game.py#L62-L66)
+and the App.config defaults at
+[App.config#L29](tools/AnimeStudio/AnimeStudio.CLI/App.config#L29). The
+PlayableDirector entry was also added to App.config so default invocations
+match the pipeline. The next `export.bat --skip-export-full` rebuild will
+produce `json_by_type/PreloadData/` and `json_by_type/AvatarMask/` outputs.
+
+#### Underused data already on disk
+
+- **PlayableDirector container paths**: each
+  `json_by_type/PlayableDirector/PlayableDirector#*.json` includes a
+  `container` field naming the cutscene prefab (e.g.
+  `assets/beyond/dynamicassets/gameplay/cutscenetransition/cutscene_map02_lv004_jinianguan_1/prefab/...`).
+  Parsing that container path yields the mission/scene context for every
+  PlayableDirector without any new tool invocation.
+- **PlayableDirector m_SceneBindings**: maps Timeline track PPtrs to scene
+  GameObject PPtrs. Combined with the GameObject `container` paths, this
+  resolves "which NPC/prop plays in which Timeline track" — a direct
+  bridge from cutscene Timeline to cutscene contents.
+- **PlayableDirector m_ExposedReferences**: named exposed-reference table
+  (string → PPtr). Designers often name these with the role they play
+  ("MainCharacter", "VoiceTrack1"), giving a free vocabulary for what each
+  binding does.
+- **AssetBundle m_Dependencies**: cross-bundle dependency graph. Source
+  graph already indexes some of this; verify coverage and emit a
+  dependency-cohort report per cutscene bundle.
+- **MonoBehaviour MarkerTrack in TimelineAsset**: Unity Timelines can carry
+  named markers at specific time positions. The MonoBehaviour JSONs likely
+  include any markers; verify by sampling a `dlgtl_*` TimelineAsset.
+- **Material `m_TexEnvs` and `m_SavedProperties`**: each Material JSON
+  exposes shader properties. Cutscene-specific materials often embed
+  scene/character keywords in their property names.
+
+#### Tools that need writing / extending
+
+1. **PreloadData consumer** (Python): after the next export with the new
+   types enabled, write a `scripts/story_recovery/build_preload_cohorts.py`
+   that walks `json_by_type/PreloadData/*.json`, resolves each `m_Assets`
+   PPtr to its asset stem via the asset map, and emits per-cutscene-bundle
+   cohort manifests. New `reports/mission_order/preload_cohorts_*.md`.
+2. **PlayableDirector context bridge** (Python): walk
+   `json_by_type/PlayableDirector/*.json`, parse each `container` path,
+   resolve `m_PlayableAsset` PPtr to the Timeline MonoBehaviour, and emit a
+   mapping of (cutscene_id → PlayableDirector path → Timeline path → scene
+   GameObject names → exposed references). This is the missing bridge
+   from `PlayableDirector#*.json` to the cutscene story file. No tool
+   patch needed; pure consumer.
+3. **Ruri.ShaderDecompiler harness**: add `scripts/decompile_shaders.py`
+   to iterate `Shader/*.shader` outputs, feed each through Ruri to recover
+   readable source, and grep for embedded story keywords (mission ids,
+   scene names) and TextAsset-style strings.
+4. **fluffy-dumper USM subtitle extractor**: USM containers carry one or
+   more `@SBT` / `@ALP` subchannels alongside `@SFV` video / `@SFA` audio.
+   The `tools/fluffy-dumper-src/usm/` crate can already index the
+   substream tags. Add a `--dump-subtitles` mode that emits per-USM
+   `subtitles.json` with timing entries; the WebUI then has line-level
+   timing for FMV cutscenes that lack a Timeline.
+5. **endfield-il2cpp class catalog expansion**: extend
+   `catalog_option_flow_metadata.py` to also catalog
+   `Beyond.Gameplay.LevelScript.*` types (record kinds, opcode names if
+   present) and `Beyond.Gameplay.Mission.*` types. This validates the
+   working opcode hypotheses against the actual C# class names.
+6. **endfield_acl_sampler extension**: add `export_levelscript_samples.py`
+   that samples the ACL clips referenced from LevelScript records to
+   confirm which cutscene the LevelScript intended to play.
+
+#### Anti-targets (not worth the decoder budget)
+
+- Patching AnimeStudio to add a dedicated `PlayableDirector` C# class —
+  the generic TypeTree fallback already exposes every field we care about.
+- Patching AnimeStudio to add `LightmapSettings` / `Cubemap` — large
+  outputs, no story payoff.
+- Writing a custom GameAssembly.dll decompiler — HGP relocates
+  MetadataRegistration; the metadata.dat string-scan approach already in
+  `tools/endfield-il2cpp/` is the deterministic path.
+- Extending fluffy-dumper to handle previously-unsupported encryption — the
+  current chacha20/xxtea path already cracks the StreamingAssets VFS.
+
 ## Recommended Recovery Algorithm
 
 For ordering files within a mission/scene:
