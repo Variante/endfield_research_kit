@@ -895,21 +895,40 @@ the summary block reports
 `playableDirectorAnchoredCount` plus
 `weakOrUnknownGainingPlayableDirectorAnchor`.
 
-Net effect across the six 2026-05-15 audits:
+Net effect across the ten 2026-05-15 audits:
 
 | mission | entries | strong | weak | unknown | pd_anchored | weak/unknown→anchor |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | `e0m0`  | 48 |  7 | 26 | 15 | **20** | **15** |
 | `e1m1`  | 48 | 10 | 18 | 20 |  7 |  6 |
+| `e2m6`  | 48 | 25 | 11 | 12 |  7 |  2 |
+| `c27m4` | 45 |  2 | 22 | 21 |  3 |  3 |
+| `e6m4`  | 58 | 20 | 17 | 21 |  3 |  3 |
 | `e10m4` | 81 |  0 |  0 | 81 |  2 |  2 |
 | `c17m3` | 76 |  3 |  3 | 70 |  1 |  1 |
 | `c28m3` | 59 |  9 | 18 | 32 |  1 |  0 |
 | `e9m2`  | 58 | 26 | 15 | 17 |  1 |  0 |
+| `f1m9`  |  0 |  0 |  0 |  0 |  0 |  0 |
+| **total** | **521** | **102** | **130** | **289** | **45** | **32** |
 
-Total: 32 PlayableDirector anchors, of which 24 promote a previously
-weak/unknown entry to "has new evidence". The audit script is a no-op
-if the bridge report is missing, so it remains safe to run without
-regenerating the bridge first.
+Total: 45 PlayableDirector anchors across 10 audits, of which 32
+promote a previously weak/unknown entry to "has new evidence" — that is
+**11%** of the 232 weak+unknown entries across these missions, in one
+pass. The audit script is a silent no-op if the bridge report is
+missing, so it remains safe to run without regenerating the bridge
+first.
+
+Note `f1m9` returned `0` entries from the WebUI index even though the
+PlayableDirector bridge has 13 stories for it. The mission key is
+present in the bridge container paths but the WebUI's `index.json`
+filter on `entry["m"] == "f1m9"` returns nothing, meaning those story
+files are routed under different mission keys at WebUI build time.
+Worth a separate probe to verify the bridge mission-id derivation
+matches the WebUI's mission grouping.
+
+Radio-continuation audit also re-ran across the same 10 audits and
+landed **48 promotion candidates** (41 after-dialog, 7 after-radio) —
+up from 34 in the prior six-mission run.
 
 Remaining un-anchored e0m0 entries (`radio_e0m0_1d5`, `_3d2`, `_5d6`,
 `_9d5`, `_10`, `_11`, `_21`, plus `video_cs_video_e0m0_3`) are radio
