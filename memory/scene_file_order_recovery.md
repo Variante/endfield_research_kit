@@ -265,6 +265,144 @@ High-value sources to test next:
 - Registry tables: use `StrIdNumTable` / `NumIdStrTable` as key-existence
   validation only until runtime semantics prove those ids imply chronology.
 
+## Expanded Clue Inventory (2026-05-14)
+
+Additional original-data sources worth probing for scene-file ordering. These
+are working hypotheses; promote to strong only if a concrete mission/scene
+chronology link is recovered.
+
+### Tier A: direct ordering signals not yet exploited
+
+- `AudioRadioContinueTable.json`: name suggests explicit radio-to-radio
+  continuation chains. If schema confirms (`prevRadio`/`nextRadio` style
+  fields), this is direct strong evidence for radio file order without needing
+  LevelScript control flow.
+- `AudioSequenceDialog.json`: "sequence dialog" naming implies an ordered
+  list/chain. Verify whether entries are per-conversation playlists or just
+  per-line voice clips.
+- `AudioDialogConfigs.json`: may carry per-conversation chunk ordering and
+  audio routing flags beyond what `AudioDialog.json` records.
+- `LevelScriptTemplateData/`: templated record skeletons keyed by record type.
+  If templates name opcode purpose (e.g. `PlayCutscene`, `WaitProperty`,
+  `Branch`), they can validate the working opcode labels in the parent
+  memory file (`0x033e`, `0x033f`, `0x034a`, `0x046c`, ...).
+- `MissionExtraInfoTable.json` / `MissionTypeInfoTable.json`: per-mission
+  metadata that may include phase labels, parent/child mission links, or
+  recommended order; not yet inspected.
+- `InteractiveMissionDataTable.json`: interactives tied to specific mission
+  steps. Where an interactive triggers a dialog/cutscene, its mission-step
+  field is a quest-phase anchor.
+
+### Tier B: state-machine and condition graph evidence
+
+- `ConditionTable.json` + `GlobalVarTable.json`: shared global flag and
+  condition definitions. Pair `setVar` actions in LevelScript with
+  `checkVar` conditions to derive "scene X happens before scene Y because
+  scene Y waits on a flag scene X sets". This is the same pattern as the
+  LevelScript-property recipe but at the global scope.
+- `MissionRuntimeAsset[*].questDic[*]._failedCondition` /
+  `_finishCondition` / `_trackingCondition`: already cited, but each nested
+  `LevelScript*Condition` carries `mapId`, `scriptId`, `key`, `value`,
+  `comparer` triples that, combined with the LevelScript property writers,
+  produce a directed phase graph. Build a per-mission property-flow graph.
+- `ResponsiveTriggers.json` / `ResponsiveDialog.json`: trigger-driven dialog
+  events. The trigger table maps a runtime event id to a dialog/cutscene
+  key. Cross-referencing trigger emit sites in LevelScript yields ordering
+  for triggered files.
+
+### Tier C: progression-side validation
+
+- `AchievementTable.json` / `AchievementStatisticTable.json`: achievements
+  with mission-completion conditions provide a coarse chronology between
+  missions (and sometimes between named scene steps within a mission when
+  achievements name a step).
+- `PrtsRecord.json` / `PrtsInvestigate.json` / `PrtsDocument.json` /
+  `PrtsReading.json` / `PrtsMultimedia.json`: the in-game archive system.
+  Entries that unlock on completing a specific scene/quest give a chronology
+  link from the unlocked entry back to the source scene.
+- `MailSenderTable.json` / `MailTemplateTable.json`: in-game mail is often
+  triggered post-quest. If a mail template references a quest finish or
+  story flag, that yields a "scene → mail" anchor without scanning bytes.
+- `WikiEntryTable.json` / `WikiEntryDataTable.json`: codex/wiki entries.
+  Similar unlock-condition logic to the Prts archive.
+- `AdventureTaskTable.json` / `AdventureLevelTable.json`: side-quest /
+  adventure progression. If these reference main-line missions as
+  prerequisites, they validate mission ordering between scene files.
+- `LoadingTipsTable.json`: loading tip unlock keys can implicitly imply a
+  mission has been reached.
+- `IntroTable.json`: opening/intro sequence ordering — first-mission anchor.
+- `GameMechanicConditionTable.json` / `GameMechanicTable.json`: feature
+  unlocks frequently gate on quest finish, giving anchor points.
+
+### Tier D: spatial/contextual evidence
+
+- `MapMarkInsTable.json` / `MapMarkTempTable.json` /
+  `TrackMapPointTable.json` / `TrackMapLinkTable.json`: map markers and
+  track-point graphs. Use as weak spatial ordering only.
+- `SpawnerConfig/`: NPC/encounter spawn entries can tie spawn enable/disable
+  to mission steps.
+- `NpcInfoTable.json` / `NpcGroupTable.json` /
+  `AtmosphereNpcTable.json` / `GameplayAndEnvironmentalNpc.json`: NPC phase
+  data — appearance states tied to mission progression.
+- `CharInteractPerformCfgs/`: character interaction performance configs
+  that may bind cutscenes to characters at specific story stages.
+- `LipSync/`: per-line lip sync data; lip-sync clip names usually carry the
+  same dialog-line ids and can validate which lines belong to which scene
+  when other tables disagree.
+- `AnimationConfig/`: animation configuration data; cross-validates
+  Timeline clip ordering for cutscenes.
+
+### Tier E: cross-cutting metadata
+
+- `TextVoIdTable.json`: text-id to voice-id mapping. Voice ids that share a
+  scene prefix confirm scene membership; can also validate that two
+  separately-keyed files belong to the same recording session.
+- `VoiceIdConflictTable.json`: voice-id conflicts may flag which lines are
+  alternates of the same anchor — useful for option-anchor validation.
+- `AudioVoiceExtraData.json`: extra voice metadata — speaker, emotion,
+  recording session tags can indicate co-authored line clusters.
+- `EmotionVoiceConfig.json`: emotion configs per voice clip; emotion-state
+  changes can hint at narrative beats.
+- `SettlementLevelPOIMapTable.json` / `SettlementBasicDataTable.json`:
+  settlement/POI progression that may unlock with story.
+- `CinematicConst.json`: cinematic constants; may include default playable
+  director chains for prologue/epilogue clusters.
+
+### Anti-clues (do not use as ordering evidence)
+
+- Filename suffix numeric / `dXX` / `New14` style indices — already an
+  established fallback only.
+- Asset bundle on-disk byte offsets — packaging order is not authoring or
+  narrative order.
+- WebUI generated rank/order fields — circular.
+- Plain string co-occurrence in `LevelData/*` without a decoded record kind.
+
+### Search workflow per candidate source
+
+For each candidate above:
+
+1. Read a small sample (1–3 entries) to confirm schema before any wide scan.
+2. Look for fields that reference `dlg_*`, `sns_*`, `cutscene_*`, `radio_*`,
+   `dlgtl_*`, mission ids, quest ids, level/script ids, or property keys.
+3. Decide whether the reference is *causal* (X depends on Y, X completes
+   after Y) or *correlational* (X mentions Y).
+4. Only causal references promote a weak edge to strong. Correlational
+   references stay as validation/weak.
+5. Land each finding as a small audit script under
+   `scripts/story_recovery/` plus a generated report under
+   `reports/mission_order/` (or a similarly scoped subdirectory). Add a
+   one-line summary under this section pointing at the audit.
+6. Commit per-source slices, do not bundle.
+
+### Reminder loop
+
+The recovery work should run as small, commit-sized passes. After each pass:
+
+- Update this section with the source(s) confirmed or rejected.
+- Update `Audit checkpoint, YYYY-MM-DD` notes in the parent section.
+- Regenerate the relevant evidence audit JSON/MD under `reports/`.
+- Avoid promoting filename-suffix order to strong.
+
 ## Recommended Recovery Algorithm
 
 For ordering files within a mission/scene:
