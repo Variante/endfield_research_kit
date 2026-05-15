@@ -918,13 +918,16 @@ pass. The audit script is a silent no-op if the bridge report is
 missing, so it remains safe to run without regenerating the bridge
 first.
 
-Note `f1m9` returned `0` entries from the WebUI index even though the
-PlayableDirector bridge has 13 stories for it. The mission key is
-present in the bridge container paths but the WebUI's `index.json`
-filter on `entry["m"] == "f1m9"` returns nothing, meaning those story
-files are routed under different mission keys at WebUI build time.
-Worth a separate probe to verify the bridge mission-id derivation
-matches the WebUI's mission grouping.
+The earlier `f1m9` anomaly turned out to be a regex bug — the bridge's
+`MISSION_FROM_SCENE_RE` stopped at `f1m9` and discarded the `d3`/`d4`
+sub-mission suffix even though the WebUI treats `f1m9d1`, `f1m9d2`,
+`f1m9d3`, `f1m9d4` as distinct missions. Fixed by moving the
+`(?:d\d+)?` segment **inside** the mission capture group, so
+`cutscene_f1m9d3_1` now resolves mission=`f1m9d3` instead of `f1m9`.
+After the fix the bridge resolves **97** distinct missions (up from
+85) and a fresh audit of `f1m9d3` adds 3 PlayDir anchors (3
+weak/unknown promoted). Edge-case verified: `e0m0_8d4` still resolves
+to `e0m0` because the `d4` is separated by an underscore.
 
 Radio-continuation audit also re-ran across the same 10 audits and
 landed **48 promotion candidates** (41 after-dialog, 7 after-radio) —

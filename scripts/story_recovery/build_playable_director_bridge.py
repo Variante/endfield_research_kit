@@ -54,8 +54,12 @@ _STORY_NAME_PATTERN = (
     r"(?P<scene>(?:[a-z]+\d+m\d+(?:d\d+)?|map\d+_lv\d+)[a-z0-9_]*)"
 )
 STORY_NAME_RE = re.compile(_STORY_NAME_PATTERN, re.IGNORECASE)
+# Mission ids in this game include their `d<n>` suffix when present
+# (e.g. `f1m9d3`, `a1m6d1`). The WebUI groups its index entries by that
+# fuller key, so we must capture the suffix when it is immediately attached
+# to the `m\d+` portion (no underscore between).
 MISSION_FROM_SCENE_RE = re.compile(
-    r"^(?P<mission>(?:[a-z]+\d+m\d+|map\d+_lv\d+))(?:d\d+)?",
+    r"^(?P<mission>(?:[a-z]+\d+m\d+(?:d\d+)?|map\d+_lv\d+))",
     re.IGNORECASE,
 )
 
