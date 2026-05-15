@@ -745,6 +745,92 @@ produce `json_by_type/PreloadData/` and `json_by_type/AvatarMask/` outputs.
    that samples the ACL clips referenced from LevelScript records to
    confirm which cutscene the LevelScript intended to play.
 
+### 2026-05-15 PlayableDirector Story-Context Bridge
+
+Promoted the bridge consumer from scratch to
+[scripts/story_recovery/build_playable_director_bridge.py](scripts/story_recovery/build_playable_director_bridge.py).
+The script walks every `PlayableDirector#*.json` under
+`export_full/recovered/AnimeStudio-cli/**/json_by_type/PlayableDirector/`,
+parses the container path (e.g.
+`assets/beyond/dynamicassets/gameplay/cutscenetransition/cutscene_map02_lv004_jinianguan_1/prefab/...`),
+matches story prefixes `cutscene`, `cutscenetransition`, `cs`, `dlgtl`,
+`dlg`, `levelseq`, `lvlseq`, `fmv`, `sns`, and emits one record per
+PlayableDirector. Reports land at
+`reports/playable_director/playable_director_bridge.{json,md}`.
+
+First full run, 2026-05-15:
+
+- PlayableDirector JSONs scanned: 12,237
+- Distinct story names resolved: 539 (was 93 before the prefix widening)
+- Distinct missions inferred: 85
+- Kind breakdown: `dlgtl=3398`, `cutscene=2174`, `levelseq=1144`
+- Without story name in container: 5,521 (likely UI/factory/effects)
+
+Track-type histogram (top 10): `Animation Track`=35480,
+`Activation Track`=16353, `Dialog Skeletal Morph Track`=3456,
+`Dialog Mute Auto Blink Track`=2880, `Dialog Trunk Track`=2672,
+`Additive Anim Track`=2128, `Entity VFX Playable Track`=1187,
+`Cinemachine Track`=1080, `Common Mask Track`=734, `Audio Track`=640.
+
+Notable lower-frequency tracks worth surfacing later: `Subtitle Track`=71
+(authored subtitle timing for cutscenes that have no separate USM subtitle
+stream), `Beyond FMV Track`=63 (FMV playback timing bound to the
+PlayableDirector), `Dialog Use Emotion Lip Sync Track`=208,
+`LipSyncTrack`=72, `小队控制1`=124 (squad-control track named in Chinese).
+
+Top missions by PlayableDirector story count: `e0m0`=48 (matches its 48
+WebUI entries — every entry is a separate PlayableDirector),
+`map02_lv002`=31, `map02_lv004`=27, `map02_lv005`=16, `c27m4`=16,
+`e2m6`=15, `f1m9`=13, `e9m2`=12, `e6m4`=12, `c17m3`=11.
+
+Implication: every story-named PlayableDirector now carries a free
+mission anchor through its container path. The WebUI builder could
+consume this report to add a "PlayableDirector container" evidence row
+to mission-order audits, giving anchor data for cutscene/dlgtl/levelseq
+files whose ownership is otherwise weak.
+
+### 2026-05-15 Radio Continuation Audit Promotion
+
+Promoted the radio-continuation probe from scratch to
+[scripts/story_recovery/build_radio_continuation_audit.py](scripts/story_recovery/build_radio_continuation_audit.py).
+The audit walks every `<mission>_evidence_audit.json` already on disk,
+pairs each `radio_<scene>_*` flagged `continueAfterDialog` (or
+`continueAfterRadio`) with its nearest preceding `dlg_*`/`radio_*` in
+the same LevelScript file, and emits
+`reports/mission_order/radio_continuation_CN.{json,md}`.
+
+Run against six missions (`e0m0`, `e1m1`, `c17m3`, `e10m4`, `c28m3`,
+`e9m2`) on 2026-05-15:
+
+```text
+missions audited: 6; promotion candidates: 34; by kind: after-dialog=30, after-radio=4
+
+per-mission:
+  e9m2  : 17 candidates (15 after-dialog, 2 after-radio)
+  c17m3 : 8 candidates (7 after-dialog, 1 after-radio)
+  e10m4 : 4 candidates (4 after-dialog)
+  e1m1  : 3 candidates (3 after-dialog)
+  c28m3 : 2 candidates (1 after-dialog, 1 after-radio)
+  e0m0  : 0 candidates (all 23 radios have both flags false — tutorial anomaly)
+```
+
+`e9m2` is significant — it sits on the inferredOptionResponse no-source
+list, and the 17 candidates now give us 17 directly authored
+`dlg → radio` adjacencies. Worth folding into the WebUI strong-edge set
+in the next builder pass.
+
+### 2026-05-15 Next Slice
+
+After the next `export.bat --skip-export-full` run produces
+`json_by_type/PreloadData/` (enabled by the 2026-05-14 patch), write a
+`scripts/story_recovery/build_preload_cohorts.py` consumer that walks
+the new PreloadData JSONs, resolves each `m_Assets` PPtr to its asset
+stem via the asset map, and emits per-cutscene-bundle cohort manifests
+under `reports/mission_order/preload_cohorts_*.{json,md}`. Cross-check
+the cohorts against the PlayableDirector bridge to confirm "cutscene C
+loads dialog files D1/D2 and radio R1" is consistent with the
+PlayableDirector's container path and Timeline track set.
+
 #### Anti-targets (not worth the decoder budget)
 
 - Patching AnimeStudio to add a dedicated `PlayableDirector` C# class —
