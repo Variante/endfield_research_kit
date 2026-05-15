@@ -927,6 +927,57 @@ Together they promote 67 unique weak/unknown entries — **15%** of the
 433 weak+unknown entries across these missions — in one pass without
 running anything beyond `--skip-asset-map`.
 
+### 2026-05-15 RadioContinuation Edges Land in the WebUI Builder
+
+Promoted `radioContinuation` from a diagnostic-only signal to a real
+WebUI evidence class. `scripts/story_builder/language_bundle.py` now:
+
+- Loads `reports/mission_order/radio_continuation_CN.json` via a
+  cached `_load_radio_continuation_candidates_by_mission` helper that
+  returns an empty dict when the audit report is missing (silent
+  no-op).
+- Inside `build_mission_scene_graph`, after the `levelscriptFileOrder`
+  edges are added, walks the mission's candidates and emits one
+  `radioContinuation` edge per `(predecessor, radio)` pair when both
+  keys are in `available`. Edges carry `sourceFiles`, `levelIds`, and
+  `continuationKinds` for provenance.
+- Adds `"radioContinuation"` to `strong_order_edge_kinds`. The
+  authored `continueAfterDialog`/`continueAfterRadio` flag combined
+  with a LevelScript file-offset adjacency is stronger than file-order
+  alone because the flag asserts the radio is meant to follow the
+  preceding dialog/radio.
+
+Full CN rebuild (`build.py --languages CN --default-language CN`)
+completes in 220.1s with no errors. After regenerating audits against
+the new index, the cumulative position across the same 10 missions
+shifts as follows:
+
+| mission   | strong before | weak before | unk before | strong after | weak after | unk after | Δstrong |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `c17m3`   |  3 |  3 | 70 | **18** |  2 | 56 | **+15** |
+| `e9m2`    | 26 | 15 | 17 | **37** |  4 | 17 | **+11** |
+| `c27m4`   |  2 | 22 | 21 | **11** | 13 | 21 |  **+9** |
+| `e1m1`    | 10 | 18 | 20 | **16** | 12 | 20 |  **+6** |
+| `e10m4`   |  0 |  0 | 81 |  **6** |  0 | 75 |  **+6** |
+| `e2m6`    | 25 | 11 | 12 | **30** |  6 | 12 |  **+5** |
+| `c28m3`   |  9 | 18 | 32 | **12** | 15 | 32 |  **+3** |
+| `e0m0`    |  7 | 26 | 15 |  7 | 26 | 15 |  +0 (anomaly) |
+| `f1m9d3`  |  8 |  2 | 12 |  8 |  2 | 12 |  +0 |
+| `e6m4`    | 20 | 17 | 21 | 20 | 17 | 21 |  +0 |
+| **total** | **110** | **132** | **301** | **165** | **97** | **281** | **+55** |
+
+Net: **+55 strong, -35 weak, -20 unknown** across 543 entries in 10
+missions. The cascading effect (where adding a single radio edge
+propagates ordering to other nodes via the scene-graph) shows up in
+e10m4 most cleanly: 4 radio-continuation candidates land 6 strong
+promotions because the radios pull two more file-order chains into a
+strong ordered region.
+
+`e0m0` stays at +0 because all 23 of its scene-keyed radios have both
+`continueAfterDialog` and `continueAfterRadio` false (the tutorial
+anomaly already noted). `f1m9d3` and `e6m4` stay at +0 because
+neither had any RadioCont candidates.
+
 The earlier `f1m9` anomaly turned out to be a regex bug — the bridge's
 `MISSION_FROM_SCENE_RE` stopped at `f1m9` and discarded the `d3`/`d4`
 sub-mission suffix even though the WebUI treats `f1m9d1`, `f1m9d2`,
