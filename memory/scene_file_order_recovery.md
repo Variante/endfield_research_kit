@@ -883,40 +883,49 @@ Additional slices ready to land:
    on the candidate set growing beyond the current 34, since each new
    edge needs to be source-explainable.
 
-### 2026-05-15 Audit Folds in PlayableDirector Evidence
+### 2026-05-15 Audit Folds in PlayableDirector + RadioContinuation Evidence
 
-`build_mission_order_evidence_audit.py` now reads
-`reports/playable_director/playable_director_bridge.json` when it
-exists and adds a `hits.playableDirector` entry per audited row whose
-key matches a bridge story (case-insensitive, stripping `misc_`,
-restricted to the audit's mission). The markdown report gains a
-`PlayDir` column with `dN/bM` (director count / total bindings) and
-the summary block reports
-`playableDirectorAnchoredCount` plus
-`weakOrUnknownGainingPlayableDirectorAnchor`.
+`build_mission_order_evidence_audit.py` now reads two prebuilt reports
+when present and folds their findings as per-entry evidence:
 
-Net effect across the ten 2026-05-15 audits:
+- `reports/playable_director/playable_director_bridge.json` → adds
+  `hits.playableDirector` with director count, total bindings,
+  Timeline names, and track-type histogram. Restricted to the audit's
+  mission (case-insensitive match, stripping `misc_`).
+- `reports/mission_order/radio_continuation_CN.json` → adds
+  `hits.radioContinuation` with the predecessor `dlg_*`/`radio_*`
+  identified by the `continueAfterDialog`/`continueAfterRadio` rule,
+  plus the LevelScript file/level pair the adjacency was observed in.
 
-| mission | entries | strong | weak | unknown | pd_anchored | weak/unknown→anchor |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `e0m0`  | 48 |  7 | 26 | 15 | **20** | **15** |
-| `e1m1`  | 48 | 10 | 18 | 20 |  7 |  6 |
-| `e2m6`  | 48 | 25 | 11 | 12 |  7 |  2 |
-| `c27m4` | 45 |  2 | 22 | 21 |  3 |  3 |
-| `e6m4`  | 58 | 20 | 17 | 21 |  3 |  3 |
-| `e10m4` | 81 |  0 |  0 | 81 |  2 |  2 |
-| `c17m3` | 76 |  3 |  3 | 70 |  1 |  1 |
-| `c28m3` | 59 |  9 | 18 | 32 |  1 |  0 |
-| `e9m2`  | 58 | 26 | 15 | 17 |  1 |  0 |
-| `f1m9`  |  0 |  0 |  0 |  0 |  0 |  0 |
-| **total** | **521** | **102** | **130** | **289** | **45** | **32** |
+The markdown report gains two columns: `PlayDir` (`dN/bM` director
+count / total bindings) and `RadioCont` (match kind + predecessor).
+The summary block reports four new fields:
+`playableDirectorAnchoredCount`, `weakOrUnknownGainingPlayableDirectorAnchor`,
+`radioContinuationAnchoredCount`, `weakOrUnknownGainingRadioContinuationAnchor`.
 
-Total: 45 PlayableDirector anchors across 10 audits, of which 32
-promote a previously weak/unknown entry to "has new evidence" — that is
-**11%** of the 232 weak+unknown entries across these missions, in one
-pass. The audit script is a silent no-op if the bridge report is
-missing, so it remains safe to run without regenerating the bridge
-first.
+Net effect across the ten 2026-05-15 audits (after replacing the empty
+`f1m9` with `f1m9d3` once the regex fix landed):
+
+| mission | entries | strong | weak | unknown | pd_anc | w/u_pd | rcont_anc | w/u_rcont | unique_w/u_promotions |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `e0m0`   | 48 |  7 | 26 | 15 | **20** | **15** |  0 |  0 | **15** |
+| `e1m1`   | 48 | 10 | 18 | 20 |  7 |  6 |  3 |  3 |  9 |
+| `c17m3`  | 76 |  3 |  3 | 70 |  1 |  1 |  8 |  8 | **9** |
+| `c28m3`  | 59 |  9 | 18 | 32 |  1 |  0 |  2 |  2 |  2 |
+| `e9m2`   | 58 | 26 | 15 | 17 |  1 |  0 | 15 |  7 |  7 |
+| `e10m4`  | 81 |  0 |  0 | 81 |  2 |  2 |  4 |  4 |  6 |
+| `c27m4`  | 45 |  2 | 22 | 21 |  3 |  3 |  7 |  5 |  8 |
+| `e2m6`   | 48 | 25 | 11 | 12 |  7 |  2 |  5 |  3 |  5 |
+| `f1m9d3` | 22 |  8 |  2 | 12 |  3 |  3 |  0 |  0 |  3 |
+| `e6m4`   | 58 | 20 | 17 | 21 |  3 |  3 |  0 |  0 |  3 |
+| **total** | **543** | **110** | **132** | **301** | **48** | **35** | **44** | **32** | **67** |
+
+Two signals are complementary: `PlayableDirector` covers
+`cutscene_*`/`dlgtl_*`/`levelseq_*` files (Timeline-driven), and
+`RadioContinuation` covers `radio_*` files (LevelScript-driven).
+Together they promote 67 unique weak/unknown entries — **15%** of the
+433 weak+unknown entries across these missions — in one pass without
+running anything beyond `--skip-asset-map`.
 
 The earlier `f1m9` anomaly turned out to be a regex bug — the bridge's
 `MISSION_FROM_SCENE_RE` stopped at `f1m9` and discarded the `d3`/`d4`

@@ -51,6 +51,9 @@ MAP_TABLES = (
 PLAYABLE_DIRECTOR_BRIDGE_PATH = (
     ROOT / "reports" / "playable_director" / "playable_director_bridge.json"
 )
+RADIO_CONTINUATION_REPORT_PATH = (
+    ROOT / "reports" / "mission_order" / "radio_continuation_CN.json"
+)
 
 
 def status_for(entry: dict[str, Any]) -> str:
@@ -494,6 +497,56 @@ def collect_playable_director_hits(
     return anchored
 
 
+def collect_radio_continuation_hits(
+    mission: str,
+    entry_report: dict[str, dict[str, Any]],
+    report_path: Path = RADIO_CONTINUATION_REPORT_PATH,
+) -> int:
+    """Add `hits.radioContinuation` from the radio-continuation audit.
+
+    Returns the number of audit entries that gained a continuation predecessor.
+    Silent no-op when the continuation report has not been generated yet.
+    """
+    if not report_path.exists():
+        return 0
+    try:
+        report = read_json(report_path, {})
+    except Exception:  # noqa: BLE001
+        return 0
+    mission_results = [
+        item for item in (report.get("results") or []) if item.get("mission") == mission
+    ]
+    if not mission_results:
+        return 0
+    candidates_by_radio: dict[str, list[dict[str, Any]]] = {}
+    for result in mission_results:
+        for cand in result.get("candidates") or []:
+            radio = cand.get("radio") or ""
+            if radio:
+                candidates_by_radio.setdefault(radio, []).append(cand)
+    anchored = 0
+    for key, info in entry_report.items():
+        normalized = key[5:] if key.startswith("misc_") else key
+        cands = candidates_by_radio.get(normalized)
+        if not cands:
+            continue
+        info["hits"]["radioContinuation"] = {
+            "matchCount": len(cands),
+            "candidates": [
+                {
+                    "match": cand.get("match"),
+                    "predecessor": cand.get("predecessor"),
+                    "levelId": cand.get("levelId"),
+                    "file": cand.get("file"),
+                }
+                for cand in cands[:6]
+            ],
+            "sourceReport": str(report_path.relative_to(ROOT)).replace("\\", "/"),
+        }
+        anchored += 1
+    return anchored
+
+
 def build_report(
     mission: str,
     *,
@@ -585,6 +638,7 @@ def build_report(
     if include_asset_map:
         collect_asset_map_counts(keys, entry_report, asset_map=ASSET_MAP)
     playable_director_anchored = collect_playable_director_hits(mission, entry_report)
+    radio_continuation_anchored = collect_radio_continuation_hits(mission, entry_report)
 
     status_counts = Counter(value["status"] for value in entry_report.values())
     weak_or_unknown = [key for key, value in entry_report.items() if value["status"] != "strong"]
@@ -600,6 +654,11 @@ def build_report(
         key
         for key in weak_or_unknown
         if entry_report[key]["hits"].get("playableDirector")
+    ]
+    weak_or_unknown_anchored_by_radio_cont = [
+        key
+        for key in weak_or_unknown
+        if entry_report[key]["hits"].get("radioContinuation")
     ]
 
     return {
@@ -631,6 +690,8 @@ def build_report(
             ],
             "playableDirectorAnchoredCount": playable_director_anchored,
             "weakOrUnknownGainingPlayableDirectorAnchor": weak_or_unknown_anchored_by_pd,
+            "radioContinuationAnchoredCount": radio_continuation_anchored,
+            "weakOrUnknownGainingRadioContinuationAnchor": weak_or_unknown_anchored_by_radio_cont,
         },
         "missionTimeline": {
             "propertyModel": (mission_timeline or {}).get("propertyModel"),
@@ -672,11 +733,15 @@ def markdown_report(payload: dict[str, Any]) -> str:
         f"{summary.get('playableDirectorAnchoredCount', 0)} "
         f"(weak/unknown newly anchored: "
         f"{len(summary.get('weakOrUnknownGainingPlayableDirectorAnchor', []))})",
+        "- Entries with radio-continuation anchor: "
+        f"{summary.get('radioContinuationAnchoredCount', 0)} "
+        f"(weak/unknown newly anchored: "
+        f"{len(summary.get('weakOrUnknownGainingRadioContinuationAnchor', []))})",
         "",
         "## Entry Evidence",
         "",
-        "| key | status | go | fallback | MissionRuntime | LevelScript | LevelData | Radio | Audio | AssetMap | PlayDir |",
-        "| --- | --- | ---: | --- | ---: | ---: | ---: | --- | ---: | ---: | --- |",
+        "| key | status | go | fallback | MissionRuntime | LevelScript | LevelData | Radio | Audio | AssetMap | PlayDir | RadioCont |",
+        "| --- | --- | ---: | --- | ---: | ---: | ---: | --- | ---: | ---: | --- | --- |",
     ]
     for key, info in payload["entries"].items():
         hits = info["hits"]
@@ -691,6 +756,16 @@ def markdown_report(payload: dict[str, Any]) -> str:
                 f"d{play_dir.get('directorCount', 0)}"
                 f"/b{play_dir.get('totalBindings', 0)}"
             )
+        radio_cont = hits.get("radioContinuation")
+        radio_cont_text = ""
+        if radio_cont:
+            first = (radio_cont.get("candidates") or [{}])[0]
+            radio_cont_text = (
+                f"{first.get('match', '?')} <- "
+                f"{first.get('predecessor', '')}"
+            )
+            if radio_cont.get("matchCount", 0) > 1:
+                radio_cont_text += f" (+{radio_cont['matchCount'] - 1})"
         graph_order = info.get("graphOrder")
         lines.append(
             "| "
@@ -704,7 +779,8 @@ def markdown_report(payload: dict[str, Any]) -> str:
             f"| {md_escape(radio_text)} "
             f"| {hits.get('audioDialog', {}).get('count', 0)} "
             f"| {hits.get('assetMapString', {}).get('count', 0)} "
-            f"| {md_escape(play_dir_text)} |"
+            f"| {md_escape(play_dir_text)} "
+            f"| {md_escape(radio_cont_text)} |"
         )
 
     lines.extend(["", "## LevelScript Sequences", ""])
