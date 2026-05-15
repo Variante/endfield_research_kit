@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import json as _radio_cont_json
+from functools import lru_cache as _radio_cont_lru_cache
+from pathlib import Path as _RadioContPath
+
 from .context import *
 from .anime_assets import *
 from .scene_graph import *
@@ -8,6 +12,39 @@ from .mission_flow import *
 from .dialog_tree import *
 from .bundle_support import *
 from .language_helpers import *
+
+
+_RADIO_CONTINUATION_REPORT_PATH = (
+    _RadioContPath(__file__).resolve().parents[2]
+    / "reports" / "mission_order" / "radio_continuation_CN.json"
+)
+
+
+@_radio_cont_lru_cache(maxsize=2)
+def _load_radio_continuation_candidates_by_mission(
+    path_str: str,
+) -> dict[str, list[dict]]:
+    """Load the radio-continuation audit report keyed by mission id.
+
+    Each value is a list of `(predecessor, radio, match, levelId, file)` dicts.
+    Returns an empty dict when the report has not been generated yet, so the
+    builder degrades to its prior behavior cleanly.
+    """
+    path = _RadioContPath(path_str)
+    if not path.is_file():
+        return {}
+    try:
+        payload = _radio_cont_json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, _radio_cont_json.JSONDecodeError):
+        return {}
+    out: dict[str, list[dict]] = {}
+    for result in payload.get("results") or []:
+        mission = result.get("mission") or ""
+        if not mission:
+            continue
+        out.setdefault(mission, []).extend(result.get("candidates") or [])
+    return out
+
 
 def build_language_bundle(
     language_code: str,
@@ -9684,6 +9721,41 @@ def build_language_bundle(
                         if pos not in edge["positions"]:
                             edge["positions"].append(pos)
 
+        # Radio-continuation edges (authored continueAfterDialog/Radio flags
+        # combined with LevelScript file-offset adjacency, audited offline by
+        # scripts/story_recovery/build_radio_continuation_audit.py). Silent
+        # no-op when the audit report has not been generated yet.
+        radio_cont_candidates = _load_radio_continuation_candidates_by_mission(
+            str(_RADIO_CONTINUATION_REPORT_PATH)
+        ).get(mission) or []
+        for cand in radio_cont_candidates:
+            predecessor = cand.get("predecessor") or ""
+            radio = cand.get("radio") or ""
+            if not predecessor or not radio:
+                continue
+            if predecessor not in available or radio not in available:
+                continue
+            if predecessor == radio:
+                continue
+            edge = ensure_edge(predecessor, radio, "radioContinuation")
+            if not edge:
+                continue
+            file_ref = cand.get("file") or ""
+            if file_ref:
+                refs = edge.setdefault("sourceFiles", [])
+                if file_ref not in refs:
+                    refs.append(file_ref)
+            level_id = cand.get("levelId") or ""
+            if level_id:
+                refs = edge.setdefault("levelIds", [])
+                if level_id not in refs:
+                    refs.append(level_id)
+            match = cand.get("match") or ""
+            if match:
+                kinds = edge.setdefault("continuationKinds", [])
+                if match not in kinds:
+                    kinds.append(match)
+
         graph_order_map = _refine_scene_graph_order(
             all_nodes,
             list(edges_by_key.values()),
@@ -9705,6 +9777,11 @@ def build_language_bundle(
             "authoredDirect",
             "authoredMenu",
             "levelscriptSceneChain",
+            # Authored continueAfterDialog/Radio flag combined with a
+            # LevelScript file-offset adjacency is stronger than file-order
+            # alone because the flag asserts the radio is meant to follow the
+            # preceding dialog/radio.
+            "radioContinuation",
         }
         weak_order_edge_kinds = {
             "levelscriptFileOrder",
