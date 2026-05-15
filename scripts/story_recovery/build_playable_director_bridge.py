@@ -33,6 +33,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 EXPORT_ROOT = ROOT / "export_full" / "recovered" / "AnimeStudio-cli"
 DEFAULT_OUT_DIR = ROOT / "reports" / "playable_director"
+AUDIT_DIR = ROOT / "reports" / "mission_order"
 
 # Any story-shaped prefix the container path may carry. Recognized as a story
 # binding when followed by either a scene id (`e1m1`, `c17m3d2`, ...) or a
@@ -200,6 +201,60 @@ def build_report(export_root: Path) -> dict[str, Any]:
     }
 
 
+def cross_link_with_mission_audits(
+    bridge_payload: dict[str, Any],
+    audit_dir: Path,
+) -> dict[str, Any]:
+    """Cross-reference each mission audit against the bridge stories.
+
+    For every `<mission>_evidence_audit.json` on disk, walk audit entries and
+    flag the ones whose `key` matches a bridge `storyName` (case-insensitive,
+    stripping any `misc_` prefix). Surface, per mission, how many weak/unknown
+    entries would gain a new PlayableDirector anchor.
+    """
+    if not audit_dir.exists():
+        return {"missions": [], "note": f"no audit dir at {audit_dir.relative_to(ROOT)}"}
+    bridge_by_lower_name: dict[str, dict[str, Any]] = {
+        story["storyName"].lower(): story for story in bridge_payload["stories"]
+    }
+    mission_summaries: list[dict[str, Any]] = []
+    for audit_path in sorted(audit_dir.glob("*_evidence_audit.json")):
+        try:
+            audit = json.loads(audit_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        mission = audit.get("mission") or audit_path.stem.split("_")[0]
+        entries = audit.get("entries") or {}
+        new_anchors: list[dict[str, Any]] = []
+        already_strong: list[str] = []
+        for key, info in entries.items():
+            normalized = key[5:] if key.startswith("misc_") else key
+            story = bridge_by_lower_name.get(normalized.lower())
+            if not story:
+                continue
+            status = info.get("status") or ""
+            record = {
+                "audit_key": key,
+                "matched_story": story["storyName"],
+                "status": status,
+                "directors": story["playableDirectorCount"],
+                "timelines": story["timelineNames"][:3],
+                "trackTypes": story["trackTypeCounts"],
+            }
+            if status == "strong":
+                already_strong.append(key)
+            else:
+                new_anchors.append(record)
+        mission_summaries.append({
+            "mission": mission,
+            "auditEntryCount": len(entries),
+            "alreadyStrongMatches": len(already_strong),
+            "weakOrUnknownGainingAnchor": len(new_anchors),
+            "newAnchors": new_anchors[:30],
+        })
+    return {"missions": mission_summaries}
+
+
 def markdown_report(payload: dict[str, Any]) -> str:
     s = payload["summary"]
     lines = [
@@ -277,6 +332,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=DEFAULT_OUT_DIR,
         help=f"Report output directory (default: {DEFAULT_OUT_DIR.relative_to(ROOT)})",
     )
+    parser.add_argument(
+        "--cross-link",
+        action="store_true",
+        help="Also cross-link bridge stories against mission-order audits on disk.",
+    )
+    parser.add_argument(
+        "--audit-dir",
+        type=Path,
+        default=AUDIT_DIR,
+        help=f"Mission audit directory for --cross-link (default: {AUDIT_DIR.relative_to(ROOT)})",
+    )
     return parser.parse_args(argv)
 
 
@@ -303,6 +369,19 @@ def main(argv: list[str] | None = None) -> int:
         f"without story name: {s['withoutStoryNameInContainer']}"
     )
     print("kind breakdown: " + ", ".join(f"{k}={v}" for k, v in s["storyKindCounts"].items()))
+
+    if args.cross_link:
+        cross = cross_link_with_mission_audits(payload, args.audit_dir)
+        cross_json = out_dir / "playable_director_bridge_cross_link.json"
+        cross_json.write_text(json.dumps(cross, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"Cross-link data:        {cross_json.relative_to(ROOT)}")
+        for entry in cross.get("missions") or []:
+            print(
+                f"  {entry['mission']}: "
+                f"{entry['weakOrUnknownGainingAnchor']} weak/unknown -> anchored, "
+                f"{entry['alreadyStrongMatches']} already strong, "
+                f"{entry['auditEntryCount']} total entries"
+            )
     return 0
 
 
