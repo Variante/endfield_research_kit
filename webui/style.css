@@ -1511,6 +1511,56 @@ a.opt-target-chip { cursor: pointer; }
   color: var(--muted);
   font-size: 12px;
 }
+.mission-timeline-chunks-details .mission-timeline-chunk {
+  margin-top: 10px;
+  padding: 6px 8px;
+  border-left: 3px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 2px;
+}
+.mission-timeline-chunks-details .mission-timeline-chunk-strong {
+  border-left-color: var(--accent, #6aaaff);
+  background: rgba(106, 170, 255, 0.05);
+}
+.mission-timeline-chunks-details .mission-timeline-chunk-weak {
+  border-left-style: dashed;
+}
+.mission-timeline-chunk-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.mission-timeline-chunk-scene-row {
+  flex-wrap: wrap;
+}
+.mission-timeline-chunk-sep {
+  color: var(--muted);
+  font-size: 11px;
+  padding: 0 2px;
+}
+.mission-timeline-chunk-divider {
+  margin: 6px 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-style: italic;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+.mission-timeline-chunk-singletons {
+  margin-top: 4px;
+  opacity: 0.78;
+}
+.mission-timeline-chunk-id {
+  font-weight: 600;
+}
+.mission-timeline-chunk-strength-strong {
+  color: #b6d6ff;
+}
+.mission-timeline-chunk-strength-weak {
+  color: var(--muted);
+}
 
 /* Shared line-order chips. */
 .binding-chip {
