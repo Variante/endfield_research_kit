@@ -1701,6 +1701,50 @@ Subtitle Track is a confirmed dead end for line-level timing
 extraction; do not pursue it further unless the runtime starts
 populating its clips.
 
+### 2026-05-16 LevelScript Cross-File Order Weak Edge
+
+New `levelscriptCrossFileOrder` weak edge kind in the WebUI builder.
+For each LevelScript level the mission touches, the builder now pairs
+*consecutive numeric LS files* (`<id>.json` followed by `<id+1>.json`)
+and connects the last story key in file N to the first story key in
+file N+1.
+
+Motivation: e10m4's `dlg_e10m4_1` and `dlg_e10m4_2` were stuck unknown
+because each lived alone in its `dung02_rdg002/24400020002.json` and
+`/24400020003.json` LS file. The existing `levelscriptFileOrder` rule
+only emits edges when a single LS file holds two or more story keys,
+so singleton files never produced cross-mission ordering hints. The
+new rule complements it.
+
+Conservative gate: only pairs files whose numeric stem deltas are
+exactly 1, so unrelated parallel-event files in the same level can't
+be flattened into one chain by accident.
+
+Measured impact on CN priority buckets (single rebuild):
+
+```text
+              before                after                delta
+main          670 / 253 / 809      670 / 427 / 635      +0 / +174 / -174
+event         71  / 6   / 54        71 / 10  / 50       +0 / +4   / -4
+major         125 / 40  / 326      125 / 78  / 288      +0 / +38  / -38
+character     277 / 102 / 382      277 / 187 / 297      +0 / +85  / -85
+TOTAL         1143 / 401 / 1571    1143 / 702 / 1270    +0 / +301 / -301
+```
+
+Net: **+301 weak / -301 unknown** across priority buckets in one
+pass. Strong rows are unchanged at 1143 (consistent with the
+edge-kind classification: cross-file order is weak only).
+
+Spot-check on e10m4: `dlg_e10m4_1` and `dlg_e10m4_2` are now weak
+(promoted from unknown) via cross-file edges between
+`dung02_rdg002/24400020002.json` -> `24400020003.json` and
+`24400020001.json` -> `24400020002.json`. e10m4 overall moved from
+`29/8/54` to `29/17/45`.
+
+The rule is **conservative** by design (delta-1 stems only) and does
+not produce any strong promotions. It is a discovery rule for the
+unknown queue.
+
 ### 2026-05-16 +0x18 Interpretation Correction
 
 The prior session's analysis named `+0x18` as a runtime `activeClipGate`
@@ -2030,6 +2074,63 @@ The follow-up slice queue, in priority order:
 4. **Connect FMV clip evidence to the WebUI builder.** The 20
    `cs_video_*` clips with start/duration are already enough to
    add an `fmvClipOrder` weak edge for the parent cutscene.
+
+### 2026-05-16 e10m4 Deep Dive
+
+Audited `reports/mission_order/e10m4_evidence_audit.md` as the
+highest-unknown priority mission. Current regenerated status is
+`strong=29`, `weak=8`, `unknown=44` across 81 entries.
+
+No new strong/weak promotions landed from this pass. The useful finding was a
+false-positive diagnostic source in the audit itself: raw LevelData byte scans
+were matching short story ids inside longer ids. Examples:
+
+- `dlg_e10m4_1` was counted inside `dlg_e10m4_19` and `dlg_e10m4_18`.
+- `dlg_e10m4_2` was counted inside `dlg_e10m4_22` and `dlg_e10m4_20`.
+- `radio_e10m4_2` was counted inside repeated `radio_e10m4_25` payloads.
+
+Fixed `scripts/story_recovery/build_mission_order_evidence_audit.py` so
+LevelData byte hits require story-id boundaries. After regeneration,
+`e10m4` LevelData adjacent story pairs dropped from 6 to 2:
+
+- `dlg_e10m4_19 -> dlg_e10m4_18` in
+  `LevelData/indie_dg005/indie_dg005_lv_data_sub_e10m1.json`
+- `radio_e10m4_25 -> radio_e10m4_61` in
+  `LevelData/dung02_rdg002/dung02_rdg002_lv_data.json`
+
+Both remaining pairs are exact-id diagnostics only. They lack a decoded quest
+owner or trigger-control edge, so they should stay weak context rather than
+promotion evidence.
+
+### 2026-05-16 Priority Audit Sweep
+
+Regenerated the other top-unknown priority audits after the LevelData
+story-id boundary fix:
+
+| mission | strong | weak | unknown | LevelData adjacent pairs | weak/unknown with no MR/proxy/variant/LS |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `e10m4` | 29 | 8 | 44 | 2 | 31 |
+| `c16m4` | 22 | 5 | 31 | 0 | 19 |
+| `c6m1` | 13 | 3 | 42 | 0 | 29 |
+| `e1m1` | 17 | 12 | 19 | 0 | 8 |
+| `c28m3` | 12 | 16 | 31 | 0 | 13 |
+
+`c16m4` deep dive did not reveal a safe new promotion. Its useful authored
+evidence is already represented by:
+
+- variant MissionRuntime scene-graph evidence from `c16m4d5` for 10 entries
+- NPC proxy dialog ownership for `dlg_c16m4_1`
+- radio-continuation edges for 7 radios
+- weak LevelScript file-order edges for the `dlg_c16m4_8` /
+  `misc_dlg_c16m4_7d7` / `dlg_c16m4_7` cluster
+
+The remaining `levelscriptChain` edges are placement/ownership anchors from
+script/control nodes to story keys or terminals. They should not be promoted as
+inter-story chronology by themselves. The consecutive `dung01_rdg003`
+LevelScript script ids around `misc_dlg_c16m4_7d5`, `7d8`, `7d7`, and
+`dlg_c16m4_7` are still filename/script-id proximity only unless a decoded
+trigger owner or MissionRuntime objective maps those script ids into a real
+quest edge.
 
 ## Avoid
 
