@@ -1701,6 +1701,50 @@ Subtitle Track is a confirmed dead end for line-level timing
 extraction; do not pursue it further unless the runtime starts
 populating its clips.
 
+### 2026-05-16 +0x18 Interpretation Correction
+
+The prior session's analysis named `+0x18` as a runtime `activeClipGate`
+field whose writer needs disassembling. That framing is **wrong**.
+
+Cross-checking the IL2CPP option type fields against the serialized
+JSON form of `DialogOptionPlayableAsset.options[*]`:
+
+```text
+JSON field order: trunkId, dialogId, setGreyed, selectedFlag, ...
+IL2CPP layout:    +0x10 trunkId (string ptr)
+                  +0x18 dialogId (string ptr)
+                  +0x20 setGreyed (int)
+                  ...
+```
+
+So `cmp [rax+0x18], 0x0` inside `TryTriggerTrunkBindingOption` is
+checking `if dialogId != null`. The memory note for the story page
+already records this exact condition: the 20 live
+`inferredOptionResponse` groups all have **blank `trunkId`/`dialogId`**
+on their `DialogOptionPlayableAsset` rows
+([memory/webui_recovery/story_page.md:218-220](memory/webui_recovery/story_page.md)).
+
+Implications:
+
+- The "20 inferredOptionResponse groups need IL2CPP +0x18 writer
+  decoded" framing is incorrect. They're stuck because the source
+  data does not author `dialogId`/`trunkId` for those option clips,
+  combined with no Runtime Jump Track route and a `logicId` that
+  resolves nowhere in the export.
+- No disassembler will unblock them; the data just lacks the routing.
+- The follow-up slice "Decode the +0x18 writer in `GameAssembly.dll`"
+  in the 2026-05-16 session checkpoint is **retracted**.
+
+What actually IS a runtime field worth decoding from disassembly:
+
+- `+0x98 selectedOptionIndex` (on the manager-side option object that
+  `_SelectIndexInTimeline` reads). This one is read but its writer
+  is not in the existing 96-byte windows.
+- `+0x200 selectedIndexStore` writer.
+
+Neither of those gates the 20 unresolved groups; they would help
+with skip/resume scenarios, not response routing.
+
 ### 2026-05-16 IL2CPP Option Runtime Field Analysis
 
 Built an interpretation layer over the existing IL2CPP body-target
