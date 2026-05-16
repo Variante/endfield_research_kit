@@ -1010,6 +1010,11 @@ def build_report(
         size = int(chunk.get("sceneCount") or 0)
         if size > chunk_max_scene_count:
             chunk_max_scene_count = size
+    chunk_order_data = (mission_timeline or {}).get("chunkOrder") or {}
+    chunk_order_edges = chunk_order_data.get("edges") or []
+    chunk_order_parallel = chunk_order_data.get("parallel") or []
+    chunk_order_incomparable = chunk_order_data.get("incomparable") or []
+    chunk_order_unattached = chunk_order_data.get("unattachedChunkIds") or []
 
     return {
         "generated": datetime.now().isoformat(timespec="seconds"),
@@ -1058,6 +1063,10 @@ def build_report(
             "chunkUnanchoredCount": chunk_strength_counter.get("unanchored", 0),
             "chunkIsolatedCount": chunk_isolated_count,
             "chunkMaxSceneCount": chunk_max_scene_count,
+            "chunkOrderEdgeCount": len(chunk_order_edges),
+            "chunkOrderParallelPairCount": len(chunk_order_parallel),
+            "chunkOrderIncomparablePairCount": len(chunk_order_incomparable),
+            "chunkOrderUnattachedChunkCount": len(chunk_order_unattached),
         },
         "missionTimeline": {
             "propertyModel": (mission_timeline or {}).get("propertyModel"),
@@ -1066,6 +1075,7 @@ def build_report(
             "sourceBackedSceneSequences": (mission_timeline or {}).get("sourceBackedSceneSequences") or [],
             "sourceBackedHashTerminals": (mission_timeline or {}).get("sourceBackedHashTerminals") or [],
             "chunks": (mission_timeline or {}).get("chunks") or [],
+            "chunkOrder": (mission_timeline or {}).get("chunkOrder") or {},
             "scenePlacement": (mission_timeline or {}).get("scenePlacement") or {},
             "unresolved": (mission_timeline or {}).get("unresolved") or [],
         },
@@ -1124,6 +1134,10 @@ def markdown_report(payload: dict[str, Any]) -> str:
         f"weak={summary.get('chunkWeakCount', 0)}, "
         f"isolated={summary.get('chunkIsolatedCount', 0)}; "
         f"max scenes/chunk {summary.get('chunkMaxSceneCount', 0)})",
+        f"- Chunk order: {summary.get('chunkOrderEdgeCount', 0)} questDag edges, "
+        f"{summary.get('chunkOrderParallelPairCount', 0)} parallel pairs, "
+        f"{summary.get('chunkOrderIncomparablePairCount', 0)} incomparable pairs, "
+        f"{summary.get('chunkOrderUnattachedChunkCount', 0)} chunks with no quest attach",
         "",
         "## Entry Evidence",
         "",
@@ -1221,6 +1235,45 @@ def markdown_report(payload: dict[str, Any]) -> str:
             )
     else:
         lines.append("- _(none)_")
+
+    chunk_order = (payload.get("missionTimeline") or {}).get("chunkOrder") or {}
+    co_edges = chunk_order.get("edges") or []
+    co_parallel = chunk_order.get("parallel") or []
+    co_incomparable = chunk_order.get("incomparable") or []
+    co_unattached = chunk_order.get("unattachedChunkIds") or []
+    lines.extend(["", "## Chunk Order (questDag)", ""])
+    if co_edges or co_parallel or co_incomparable or co_unattached:
+        if co_edges:
+            lines.append("Directed edges:")
+            lines.append("")
+            for edge in co_edges:
+                from_q = ", ".join(f"`{md_escape(q)}`" for q in edge.get("fromQuests") or [])
+                to_q = ", ".join(f"`{md_escape(q)}`" for q in edge.get("toQuests") or [])
+                lines.append(
+                    f"- `{md_escape(edge.get('from'))}` → `{md_escape(edge.get('to'))}` "
+                    f"(from {from_q} → to {to_q})"
+                )
+            lines.append("")
+        if co_parallel:
+            lines.append("Parallel pairs (share at least one quest, not orderable by questDag):")
+            for pair in co_parallel:
+                lines.append(f"- `{md_escape(pair[0])}` ‖ `{md_escape(pair[1])}`")
+            lines.append("")
+        if co_incomparable:
+            lines.append(
+                "Incomparable pairs (disjoint quest attachments, no provable order):"
+            )
+            for pair in co_incomparable:
+                lines.append(f"- `{md_escape(pair[0])}` ⊥ `{md_escape(pair[1])}`")
+            lines.append("")
+        if co_unattached:
+            unattached_text = ", ".join(f"`{md_escape(cid)}`" for cid in co_unattached)
+            lines.append(
+                f"Chunks with no MissionRuntime quest attachments: {unattached_text}"
+            )
+            lines.append("")
+    else:
+        lines.append("- _(no chunk-order evidence)_")
 
     lines.extend(["", "## LevelScript Sequences", ""])
     wrote_sequence = False

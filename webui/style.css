@@ -1548,6 +1548,10 @@ a.opt-target-chip { cursor: pointer; }
   text-align: center;
   letter-spacing: 0.05em;
 }
+.mission-timeline-chunk-divider-ordered {
+  color: var(--accent, #6aaaff);
+  font-style: normal;
+}
 .mission-timeline-chunk-singletons {
   margin-top: 4px;
   opacity: 0.78;

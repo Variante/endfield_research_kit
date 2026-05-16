@@ -5705,7 +5705,62 @@ function renderMissionTimelineSceneOrder(sceneGraph, flowKeyMap, currentKey) {
   return details;
 }
 
-function renderMissionTimelineSceneChunks(chunks, flowKeyMap, currentKey) {
+function missionTimelineSortChunksByOrder(chunks, chunkOrder) {
+  const ids = chunks.map((chunk) => String(chunk.id || ""));
+  const idSet = new Set(ids);
+  const edges = missionTimelineArray(chunkOrder && chunkOrder.edges).filter((edge) => {
+    if (!edge || typeof edge !== "object") return false;
+    const from = String(edge.from || "");
+    const to = String(edge.to || "");
+    return idSet.has(from) && idSet.has(to);
+  });
+  if (!edges.length) return { sorted: chunks, edgesByFrom: new Map() };
+
+  const successors = new Map();
+  const indegree = new Map();
+  for (const id of ids) {
+    successors.set(id, new Set());
+    indegree.set(id, 0);
+  }
+  const edgesByFrom = new Map();
+  for (const edge of edges) {
+    const from = String(edge.from);
+    const to = String(edge.to);
+    if (successors.get(from).has(to)) continue;
+    successors.get(from).add(to);
+    indegree.set(to, (indegree.get(to) || 0) + 1);
+    if (!edgesByFrom.has(from)) edgesByFrom.set(from, []);
+    edgesByFrom.get(from).push(edge);
+  }
+  // Kahn's algorithm; tiebreak by original (natural) order in chunks[].
+  const indexOf = new Map(ids.map((id, idx) => [id, idx]));
+  const ready = ids.filter((id) => (indegree.get(id) || 0) === 0);
+  ready.sort((a, b) => indexOf.get(a) - indexOf.get(b));
+  const sortedIds = [];
+  while (ready.length) {
+    const id = ready.shift();
+    sortedIds.push(id);
+    for (const next of successors.get(id)) {
+      const remaining = (indegree.get(next) || 0) - 1;
+      indegree.set(next, remaining);
+      if (remaining === 0) {
+        ready.push(next);
+      }
+    }
+    ready.sort((a, b) => indexOf.get(a) - indexOf.get(b));
+  }
+  // If a cycle dropped any nodes, append them in natural order so we never lose chunks.
+  if (sortedIds.length < ids.length) {
+    for (const id of ids) {
+      if (!sortedIds.includes(id)) sortedIds.push(id);
+    }
+  }
+  const byId = new Map(chunks.map((chunk) => [String(chunk.id || ""), chunk]));
+  const sorted = sortedIds.map((id) => byId.get(id)).filter(Boolean);
+  return { sorted, edgesByFrom };
+}
+
+function renderMissionTimelineSceneChunks(chunks, flowKeyMap, currentKey, chunkOrder = null) {
   const list = missionTimelineArray(chunks)
     .filter((chunk) => chunk && typeof chunk === "object" && Array.isArray(chunk.sceneKeys));
   if (!list.length) return null;
@@ -5724,6 +5779,8 @@ function renderMissionTimelineSceneChunks(chunks, flowKeyMap, currentKey) {
   if (strongCount) detailBits.push(`${uiText("missionTimelineChunkStrong")} ${strongCount}`);
   if (weakCount) detailBits.push(`${uiText("missionTimelineChunkWeak")} ${weakCount}`);
   if (unanchoredCount) detailBits.push(`${uiText("missionTimelineChunkUnanchored")} ${unanchoredCount}`);
+  const orderEdgeCount = missionTimelineArray(chunkOrder && chunkOrder.edges).length;
+  if (orderEdgeCount) detailBits.push(`${uiText("missionTimelineChunkOrderEdges")} ${orderEdgeCount}`);
   summary.textContent = detailBits.length
     ? `${summaryParts[0]}; ${detailBits.join(", ")})`
     : `${summaryParts[0]})`;
@@ -5734,8 +5791,9 @@ function renderMissionTimelineSceneChunks(chunks, flowKeyMap, currentKey) {
   note.textContent = uiText("missionTimelineChunkNote");
   details.appendChild(note);
 
-  const renderableChunks = list.filter((chunk) => chunk.strength !== "unanchored");
-  const isolatedChunks = list.filter((chunk) => chunk.strength === "unanchored");
+  const { sorted: sortedChunks, edgesByFrom } = missionTimelineSortChunksByOrder(list, chunkOrder);
+  const renderableChunks = sortedChunks.filter((chunk) => chunk.strength !== "unanchored");
+  const isolatedChunks = sortedChunks.filter((chunk) => chunk.strength === "unanchored");
 
   for (const chunk of renderableChunks) {
     const wrap = document.createElement("div");
@@ -5783,15 +5841,31 @@ function renderMissionTimelineSceneChunks(chunks, flowKeyMap, currentKey) {
 
     details.appendChild(wrap);
 
-    const divider = document.createElement("div");
-    divider.className = "mission-timeline-chunk-divider";
-    divider.textContent = uiText("missionTimelineChunkUnknownOrder");
-    details.appendChild(divider);
+    const nextChunk = renderableChunks[renderableChunks.indexOf(chunk) + 1];
+    if (nextChunk) {
+      const divider = document.createElement("div");
+      divider.className = "mission-timeline-chunk-divider";
+      const outgoing = (edgesByFrom.get(String(chunk.id || "")) || []).find(
+        (edge) => String(edge.to) === String(nextChunk.id || ""),
+      );
+      divider.textContent = outgoing
+        ? uiText("missionTimelineChunkOrderedArrow")
+        : uiText("missionTimelineChunkUnknownOrder");
+      if (outgoing) divider.classList.add("mission-timeline-chunk-divider-ordered");
+      details.appendChild(divider);
+    }
   }
 
-  // Drop the last divider — there's no next chunk after it.
-  if (details.lastChild && details.lastChild.classList && details.lastChild.classList.contains("mission-timeline-chunk-divider")) {
-    details.removeChild(details.lastChild);
+  const parallelPairs = missionTimelineArray(chunkOrder && chunkOrder.parallel);
+  const incomparablePairs = missionTimelineArray(chunkOrder && chunkOrder.incomparable);
+  if (parallelPairs.length || incomparablePairs.length) {
+    const noteLabel = document.createElement("div");
+    noteLabel.className = "mission-timeline-subheading";
+    const bits = [];
+    if (parallelPairs.length) bits.push(`${uiText("missionTimelineChunkParallel")} ${parallelPairs.length}`);
+    if (incomparablePairs.length) bits.push(`${uiText("missionTimelineChunkIncomparable")} ${incomparablePairs.length}`);
+    noteLabel.textContent = bits.join(" · ");
+    details.appendChild(noteLabel);
   }
 
   if (isolatedChunks.length) {
@@ -6147,7 +6221,12 @@ function renderMissionTimelineRecovery(timeline, conv, missionFlow = null) {
 
   const sceneOrderBlock = renderMissionTimelineSceneOrder(missionFlow && missionFlow.sceneGraph, flowKeyMap, currentKey);
   if (sceneOrderBlock) box.appendChild(sceneOrderBlock);
-  const chunkBlock = renderMissionTimelineSceneChunks(timeline.chunks, flowKeyMap, currentKey);
+  const chunkBlock = renderMissionTimelineSceneChunks(
+    timeline.chunks,
+    flowKeyMap,
+    currentKey,
+    timeline.chunkOrder || null,
+  );
   if (chunkBlock) box.appendChild(chunkBlock);
   const evidenceBlock = renderMissionTimelineEvidence(timeline.sceneTimelineEvidence || {}, flowKeyMap, currentKey);
   if (evidenceBlock) box.appendChild(evidenceBlock);

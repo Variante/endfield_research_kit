@@ -1413,6 +1413,183 @@ def build_scene_chunks(
     return chunks, chunk_by_scene_key
 
 
+def _quest_descendants(quest_edges: list[dict]) -> dict[str, set[str]]:
+    """Return quest_id -> set of quest_ids reachable as later quests in the DAG.
+
+    Quest edges use kind='questPrev' with from=predecessor, to=successor — the
+    same direction as chronology. Reachability is exclusive of the source
+    quest itself; cycles (very rare but they exist) terminate via the visited
+    set.
+    """
+    succ: dict[str, set[str]] = defaultdict(set)
+    nodes: set[str] = set()
+    for edge in quest_edges or []:
+        if not isinstance(edge, dict):
+            continue
+        if edge.get("kind") != "questPrev":
+            continue
+        from_id = str(edge.get("from") or "").strip()
+        to_id = str(edge.get("to") or "").strip()
+        if not from_id or not to_id:
+            continue
+        succ[from_id].add(to_id)
+        nodes.add(from_id)
+        nodes.add(to_id)
+
+    descendants: dict[str, set[str]] = {}
+
+    def visit(start: str) -> set[str]:
+        if start in descendants:
+            return descendants[start]
+        seen: set[str] = set()
+        stack = [start]
+        while stack:
+            current = stack.pop()
+            for child in succ.get(current, ()):
+                if child in seen or child == start:
+                    continue
+                seen.add(child)
+                stack.append(child)
+        descendants[start] = seen
+        return seen
+
+    for node in nodes:
+        visit(node)
+    return descendants
+
+
+def build_chunk_order(
+    chunks: list[dict],
+    scene_placement: dict[str, dict],
+    quest_edges: list[dict],
+) -> dict:
+    """Recover directed cross-chunk order from quest-DAG attachments.
+
+    Scene-to-quest attachments come from `scenePlacement[<sceneKey>].questIds`,
+    which is populated by `build_scene_placement_index` from
+    MissionRuntimeAsset quest `storyRefs` and client-action `storyRefs`. A
+    chunk's `attachedQuests` is the union of its scenes' quest attachments.
+
+    Emit X → Y when:
+
+    1. Both X and Y have non-empty quest attachments.
+    2. Their quest sets are disjoint.
+    3. Every quest qY in Y is a strict descendant of every quest qX in X in
+       the quest DAG (built from `questEdges` of kind ``questPrev``).
+
+    After collecting all such pairs, run transitive reduction so the output
+    is minimal (X→Y is dropped when there exists Z with X→Z and Z→Y in the
+    edge set).
+
+    Pairs that share a quest go under ``parallel`` (co-quest, not orderable
+    by this signal). Pairs with disjoint quests but no provable ordering go
+    under ``incomparable`` — typical of quest branches or scenes attached to
+    different branches of a fork.
+
+    Returns a dict with keys:
+        edges: list of {from, to, kind, fromQuests, toQuests, transitiveOnly}
+        parallel: list of [chunkA, chunkB]  # share ≥ 1 quest
+        incomparable: list of [chunkA, chunkB]  # disjoint, no order
+        unattachedChunkIds: list of chunk ids with no quest attachments
+        attachedQuestsByChunk: dict chunkId -> sorted quest_id list
+    """
+    descendants = _quest_descendants(quest_edges)
+    chunk_quests: dict[str, set[str]] = {}
+    for chunk in chunks:
+        chunk_id = str(chunk.get("id") or "")
+        attached: set[str] = set()
+        for scene_key in chunk.get("sceneKeys") or []:
+            for quest_id in (scene_placement.get(scene_key) or {}).get("questIds") or []:
+                quest_id_str = str(quest_id or "").strip()
+                if quest_id_str:
+                    attached.add(quest_id_str)
+        chunk_quests[chunk_id] = attached
+
+    attached_ids = [cid for cid, quests in chunk_quests.items() if quests]
+    unattached_ids = [cid for cid, quests in chunk_quests.items() if not quests]
+
+    parallel_pairs: list[tuple[str, str]] = []
+    incomparable_pairs: list[tuple[str, str]] = []
+    raw_edges: dict[tuple[str, str], dict] = {}
+
+    def chunk_descendants(quests: set[str]) -> set[str]:
+        result: set[str] = set()
+        for q in quests:
+            result |= descendants.get(q, set())
+        return result
+
+    for i, chunk_a in enumerate(attached_ids):
+        quests_a = chunk_quests[chunk_a]
+        desc_a = chunk_descendants(quests_a)
+        for chunk_b in attached_ids[i + 1 :]:
+            quests_b = chunk_quests[chunk_b]
+            if quests_a & quests_b:
+                parallel_pairs.append((chunk_a, chunk_b))
+                continue
+            desc_b = chunk_descendants(quests_b)
+            # X strictly precedes Y when every quest in Y is reachable from
+            # every quest in X via questPrev edges.
+            a_precedes_b = all(quest in desc_a for quest in quests_b)
+            b_precedes_a = all(quest in desc_b for quest in quests_a)
+            if a_precedes_b and not b_precedes_a:
+                raw_edges[(chunk_a, chunk_b)] = {
+                    "from": chunk_a,
+                    "to": chunk_b,
+                    "kind": "questDag",
+                    "fromQuests": sorted(quests_a, key=natural_key),
+                    "toQuests": sorted(quests_b, key=natural_key),
+                }
+            elif b_precedes_a and not a_precedes_b:
+                raw_edges[(chunk_b, chunk_a)] = {
+                    "from": chunk_b,
+                    "to": chunk_a,
+                    "kind": "questDag",
+                    "fromQuests": sorted(quests_b, key=natural_key),
+                    "toQuests": sorted(quests_a, key=natural_key),
+                }
+            else:
+                incomparable_pairs.append((chunk_a, chunk_b))
+
+    # Transitive reduction. We only know edges between attached chunks, all
+    # marked as questDag. Drop X→Y when X→Z and Z→Y are both present.
+    successors_by_chunk: dict[str, set[str]] = defaultdict(set)
+    for (src, dst) in raw_edges:
+        successors_by_chunk[src].add(dst)
+    transitive_to_drop: set[tuple[str, str]] = set()
+    for (src, dst) in raw_edges:
+        for mid in successors_by_chunk[src]:
+            if mid == dst:
+                continue
+            if dst in successors_by_chunk[mid]:
+                transitive_to_drop.add((src, dst))
+                break
+
+    final_edges: list[dict] = []
+    for key, edge in raw_edges.items():
+        if key in transitive_to_drop:
+            continue
+        final_edges.append(edge)
+    final_edges.sort(key=lambda item: (natural_key(item["from"]), natural_key(item["to"])))
+
+    parallel_pairs = [tuple(sorted(pair, key=natural_key)) for pair in parallel_pairs]
+    incomparable_pairs = [tuple(sorted(pair, key=natural_key)) for pair in incomparable_pairs]
+    parallel_pairs = sorted(set(parallel_pairs))
+    incomparable_pairs = sorted(set(incomparable_pairs))
+
+    return {
+        "edges": final_edges,
+        "parallel": [list(pair) for pair in parallel_pairs],
+        "incomparable": [list(pair) for pair in incomparable_pairs],
+        "unattachedChunkIds": sorted(unattached_ids, key=natural_key),
+        "attachedQuestsByChunk": {
+            cid: sorted(quests, key=natural_key)
+            for cid, quests in chunk_quests.items()
+            if quests
+        },
+        "evidencePolicy": "questDag-only; chunks with no MissionRuntime storyRefs are unattached",
+    }
+
+
 def source_backed_story_call_contexts_from_scene_graph(
     scene_graph: dict | None,
     source: dict | None = None,
@@ -1893,6 +2070,7 @@ def recover_mission(
         placement_row = scene_placement.get(scene_key)
         if placement_row is not None:
             placement_row["chunkId"] = chunk_id
+    chunk_order = build_chunk_order(chunks, scene_placement, quest_edges)
     payload = {
         "mission": mission_id,
         "metadata": metadata,
@@ -1911,6 +2089,7 @@ def recover_mission(
         "sceneTimelineEvidence": timeline_evidence,
         "scenePlacement": scene_placement,
         "chunks": chunks,
+        "chunkOrder": chunk_order,
         "unresolved": unresolved,
     }
     return payload
@@ -2105,6 +2284,12 @@ def summarize(
     chunk_strength_counter: Counter = Counter()
     missions_with_chunks = 0
     missions_with_multichunk = 0
+    chunk_order_edge_total = 0
+    chunk_order_parallel_total = 0
+    chunk_order_incomparable_total = 0
+    missions_with_chunk_order = 0
+    missions_fully_ordered_attached = 0
+    missions_partially_ordered_attached = 0
     for mission in recovered:
         if mission.get("branchPoints"):
             missions_with_branches += 1
@@ -2149,6 +2334,18 @@ def summarize(
                 chunk_strength_counter[str(chunk.get("strength") or "unanchored")] += 1
                 for kind in chunk.get("edgeKinds") or []:
                     chunk_edge_kind_counter[kind] += 1
+        chunk_order = mission.get("chunkOrder") or {}
+        edges = chunk_order.get("edges") or []
+        attached_chunks = chunk_order.get("attachedQuestsByChunk") or {}
+        if edges:
+            chunk_order_edge_total += len(edges)
+            missions_with_chunk_order += 1
+        chunk_order_parallel_total += len(chunk_order.get("parallel") or [])
+        chunk_order_incomparable_total += len(chunk_order.get("incomparable") or [])
+        if attached_chunks and not (chunk_order.get("incomparable") or []) and not (chunk_order.get("parallel") or []):
+            missions_fully_ordered_attached += 1
+        elif edges:
+            missions_partially_ordered_attached += 1
         for item in mission.get("unresolved") or []:
             unresolved_counter[item.get("kind") or "unknown"] += 1
         for quest in mission.get("quests") or []:
@@ -2187,6 +2384,12 @@ def summarize(
         "chunkMaxSceneCount": chunk_size_max,
         "chunkEdgeKindCounts": dict(chunk_edge_kind_counter.most_common()),
         "chunkStrengthCounts": dict(chunk_strength_counter.most_common()),
+        "missionsWithChunkOrder": missions_with_chunk_order,
+        "missionsFullyOrderedByQuestAttach": missions_fully_ordered_attached,
+        "missionsPartiallyOrderedByQuestAttach": missions_partially_ordered_attached,
+        "chunkOrderEdges": chunk_order_edge_total,
+        "chunkOrderParallelPairs": chunk_order_parallel_total,
+        "chunkOrderIncomparablePairs": chunk_order_incomparable_total,
         "timelineEvidence": timeline_meta,
         "unresolvedByKind": dict(unresolved_counter.most_common()),
         "sourceBackedSceneEdgesByKind": dict(scene_edge_counter.most_common()),
@@ -2227,6 +2430,10 @@ def render_markdown(payload: dict) -> str:
         f"(singletons `{summary.get('chunkSingletonCount', 0)}`, "
         f"isolated `{summary.get('chunkIsolatedCount', 0)}`, "
         f"max scenes/chunk `{summary.get('chunkMaxSceneCount', 0)}`)",
+        f"- chunk-order edges (questDag): `{summary.get('chunkOrderEdges', 0)}` "
+        f"across `{summary.get('missionsWithChunkOrder', 0)}` missions; "
+        f"parallel pairs `{summary.get('chunkOrderParallelPairs', 0)}`, "
+        f"incomparable pairs `{summary.get('chunkOrderIncomparablePairs', 0)}`",
         f"- timeline evidence file: `{summary['timelineEvidence'].get('path', '')}`",
         "",
         "## Unresolved Evidence",
