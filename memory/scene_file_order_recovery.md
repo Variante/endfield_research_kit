@@ -1661,6 +1661,46 @@ For ordering files within a mission/scene:
      files in the sidebar, sorted by the numeric index recovered from the file
      key tail (`1`, `1d5`, `New14`, etc.).
 
+### 2026-05-16 Timeline Track Clip Consumer
+
+New consumer for the PlayableDirector bridge histogram's
+high-value track types:
+[scripts/story_recovery/build_timeline_track_clip_consumer.py](scripts/story_recovery/build_timeline_track_clip_consumer.py).
+
+The script walks
+`export_full/recovered/AnimeStudio-cli/timeline_extract/<bundle>/MonoBehaviour/`
+for the three target track types and emits per-clip detail with
+authored `m_Start` / `m_Duration`:
+
+- **Beyond FMV Track** (21 clips, 20 distinct `fmvId`s): each clip's
+  `m_Asset` PPtr resolves to a sibling `BeyondFMVPlayableAsset` whose
+  `fmvId` is the `cs_video_*` story key. Provides authored cutscene
+  FMV timing inside a parent Timeline. Examples:
+  `cs_video_dlg_e6m1_9 start=4.4 dur=14.68`, `cs_video_e6m3_2
+  start=114.77 dur=130.5`, `cs_video_dlg_e2m6_14 start=119.45 dur=31.68`.
+- **Subtitle Track** (3 instances, all empty): the track exists and
+  auto-binds to `CinematicPanel/SubtitlePanel`, but every
+  `m_Clips` array is empty in the export. Subtitle text lives on
+  the Dialog Trunk Track or on FMV-prefab markers, not on this
+  track. Recorded as a presence flag only.
+- **Dialog Trunk Track** (8,824 clips across 8 folders): already
+  fully covered by `timeline_recovery.py` ->
+  `timeline_line_orders.json`. Re-summarized here for cross-validation.
+
+Output:
+`reports/playable_director/timeline_track_clips.{json,md}`.
+
+Direct use: the FMV clip table is a strong cross-reference for FMV
+ordering. Two FMV ids are gender-variant pairs sharing the same
+timeline start (`f_cs_video_dlg_e0m2_5` + `m_cs_video_dlg_e0m2_5`
+both at start=124.38), and four `cs_video_dlg_e9m4_19a/b/c` clips
+share a parent Timeline with monotonic start times — authored play
+order is preserved in the clip layout.
+
+Subtitle Track is a confirmed dead end for line-level timing
+extraction; do not pursue it further unless the runtime starts
+populating its clips.
+
 ### 2026-05-16 IL2CPP Option Runtime Field Analysis
 
 Built an interpretation layer over the existing IL2CPP body-target
