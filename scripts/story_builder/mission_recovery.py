@@ -32,6 +32,31 @@ DEFAULT_GENERATED_MISSION_DIR = ROOT / "webui" / "data" / "lang" / "CN" / "missi
 DEFAULT_OUT_JSON = ROOT / "reports" / "mission_timeline_recovery_CN.json"
 DEFAULT_OUT_MD = ROOT / "reports" / "mission_timeline_recovery_CN.md"
 
+# Mission ID prefixes the WebUI builders treat as authored story missions.
+# Tutorial / debug buckets (db, dm, hidden, map*) are excluded.
+TARGET_MISSION_PREFIXES = ("e", "a", "gm", "c", "sm", "f", "m")
+
+# Edge-kind strength classification, mirroring scripts/story_builder/language_bundle.py.
+# Strong: authored/decoded chronological evidence.
+# Weak: file/byte-offset proximity, table-collection order, or share-only hints.
+STRONG_ORDER_EDGE_KINDS = frozenset({
+    "questSequence",
+    "questPrev",
+    "questFailGuard",
+    "authoredDirect",
+    "authoredMenu",
+    "levelscriptSceneChain",
+    "radioContinuation",
+})
+WEAK_ORDER_EDGE_KINDS = frozenset({
+    "levelscriptChain",
+    "levelscriptFileOrder",
+    "levelscriptCrossFileOrder",
+    "levelDataQuestRef",
+    "prtsCollectionOrder",
+    "timelineShare",
+})
+
 EVIDENCE_POLICY = {
     "uses": [
         "MissionRuntimeAsset explicit fields",
@@ -1223,6 +1248,171 @@ def build_source_backed_scene_sequences(source_backed_scene_edges: list[dict]) -
     return sequences
 
 
+def mission_id_matches_target_prefix(mission_id: str) -> bool:
+    """Return True when mission_id starts with one of TARGET_MISSION_PREFIXES.
+
+    The prefix list is the WebUI's authored-story-mission set. Longer prefixes
+    (gm, sm) are checked before single-letter ones so `gm0m0` is not classified
+    as starting with `g` (which isn't in the set anyway).
+    """
+    text = str(mission_id or "")
+    if not text:
+        return False
+    for prefix in sorted(TARGET_MISSION_PREFIXES, key=len, reverse=True):
+        if text.startswith(prefix):
+            tail = text[len(prefix) :]
+            if tail and (tail[0].isdigit() or tail[0] == "_"):
+                return True
+    return False
+
+
+def build_scene_chunks(
+    scene_placement: dict[str, dict],
+    source_backed_scene_edges: list[dict],
+    source_backed_scene_sequences: list[dict] | None,
+    scene_timeline_evidence: dict[str, list[dict]] | None,
+) -> tuple[list[dict], dict[str, str]]:
+    """Group placed scenes into connected components by source-backed evidence.
+
+    Edges (undirected, for connected-component grouping):
+
+    - `sourceBackedSceneEdge` / decoded edge.kind: any (from, to) pair in
+      `source_backed_scene_edges` (UID chains, quest-attach, DialogTree, etc.).
+    - `levelscriptSceneChain` (sequence): consecutive pairs inside any
+      `source_backed_scene_sequences[*].sceneKeys` chain.
+    - `timelineShare`: scene keys that share a Timeline asset id
+      (`scene_timeline_evidence[scene][*].timeline` or `sourceKey`).
+
+    Chunks are numbered `c1`, `c2`, ... by natural order of each component's
+    lexicographically-first scene key, so IDs are stable across reruns when the
+    membership is stable. Isolated scenes (no joining edges) get their own
+    singleton chunk.
+
+    Returns (chunks, chunk_by_scene_key).
+    """
+    nodes: set[str] = {
+        str(scene_key)
+        for scene_key in (scene_placement or {}).keys()
+        if str(scene_key)
+    }
+    if not nodes:
+        return [], {}
+
+    parent: dict[str, str] = {n: n for n in nodes}
+
+    def find(node: str) -> str:
+        while parent[node] != node:
+            parent[node] = parent[parent[node]]
+            node = parent[node]
+        return node
+
+    def union(a: str, b: str) -> None:
+        if a == b:
+            return
+        root_a, root_b = find(a), find(b)
+        if root_a == root_b:
+            return
+        if natural_key(root_a) <= natural_key(root_b):
+            parent[root_b] = root_a
+        else:
+            parent[root_a] = root_b
+
+    edge_records: list[tuple[str, str, str]] = []
+
+    for edge in source_backed_scene_edges or []:
+        if not isinstance(edge, dict):
+            continue
+        from_key = str(edge.get("from") or "").strip()
+        to_key = str(edge.get("to") or "").strip()
+        if not (from_key and to_key) or from_key == to_key:
+            continue
+        if from_key not in nodes or to_key not in nodes:
+            continue
+        kind = str(edge.get("kind") or "sourceBackedSceneEdge")
+        edge_records.append((from_key, to_key, kind))
+
+    for sequence in source_backed_scene_sequences or []:
+        if not isinstance(sequence, dict):
+            continue
+        sequence_kind = str(sequence.get("kind") or "levelscriptSceneChain")
+        scene_keys = [
+            str(scene_key).strip()
+            for scene_key in (sequence.get("sceneKeys") or [])
+            if str(scene_key or "").strip()
+        ]
+        for a, b in zip(scene_keys, scene_keys[1:]):
+            if a == b or a not in nodes or b not in nodes:
+                continue
+            edge_records.append((a, b, sequence_kind))
+
+    if scene_timeline_evidence:
+        timeline_to_scenes: dict[str, list[str]] = defaultdict(list)
+        for scene_key, entries in scene_timeline_evidence.items():
+            if scene_key not in nodes:
+                continue
+            for entry in entries or []:
+                if not isinstance(entry, dict):
+                    continue
+                timeline_id = str(
+                    entry.get("timeline") or entry.get("sourceKey") or ""
+                ).strip()
+                if not timeline_id:
+                    continue
+                timeline_to_scenes[timeline_id].append(scene_key)
+        for timeline_id, scene_keys in timeline_to_scenes.items():
+            unique_scene_keys = list(dict.fromkeys(scene_keys))
+            if len(unique_scene_keys) < 2:
+                continue
+            anchor = unique_scene_keys[0]
+            for other in unique_scene_keys[1:]:
+                edge_records.append((anchor, other, "timelineShare"))
+
+    for a, b, _kind in edge_records:
+        union(a, b)
+
+    component_members: dict[str, list[str]] = defaultdict(list)
+    for node in nodes:
+        component_members[find(node)].append(node)
+
+    chunk_edge_kinds: dict[str, set[str]] = defaultdict(set)
+    chunk_internal_edge_count: dict[str, int] = defaultdict(int)
+    for a, _b, kind in edge_records:
+        root = find(a)
+        chunk_edge_kinds[root].add(kind)
+        chunk_internal_edge_count[root] += 1
+
+    sorted_roots = sorted(component_members.keys(), key=natural_key)
+    chunks: list[dict] = []
+    chunk_by_scene_key: dict[str, str] = {}
+    for index, root in enumerate(sorted_roots, start=1):
+        chunk_id = f"c{index}"
+        members = sorted(component_members[root], key=natural_key)
+        edge_kinds_set = chunk_edge_kinds.get(root, set())
+        edge_kinds = sorted(edge_kinds_set)
+        scene_kinds = sorted(
+            {kind for kind in (story_scene_kind(scene_key) for scene_key in members) if kind}
+        )
+        if edge_kinds_set & STRONG_ORDER_EDGE_KINDS:
+            strength = "strong"
+        elif edge_kinds_set:
+            strength = "weak"
+        else:
+            strength = "unanchored"
+        chunks.append({
+            "id": chunk_id,
+            "sceneKeys": members,
+            "sceneCount": len(members),
+            "sceneKinds": scene_kinds,
+            "edgeKinds": edge_kinds,
+            "internalEdgeCount": chunk_internal_edge_count.get(root, 0),
+            "strength": strength,
+            "isolated": len(members) == 1 and not edge_kinds_set,
+        })
+        for scene_key in members:
+            chunk_by_scene_key[scene_key] = chunk_id
+    return chunks, chunk_by_scene_key
+
+
 def source_backed_story_call_contexts_from_scene_graph(
     scene_graph: dict | None,
     source: dict | None = None,
@@ -1693,6 +1883,16 @@ def recover_mission(
         story_call_contexts,
         hash_terminals,
     )
+    chunks, chunk_by_scene_key = build_scene_chunks(
+        scene_placement,
+        scene_edges,
+        scene_sequences,
+        timeline_evidence,
+    )
+    for scene_key, chunk_id in chunk_by_scene_key.items():
+        placement_row = scene_placement.get(scene_key)
+        if placement_row is not None:
+            placement_row["chunkId"] = chunk_id
     payload = {
         "mission": mission_id,
         "metadata": metadata,
@@ -1710,6 +1910,7 @@ def recover_mission(
         "referencedScenes": referenced_scenes,
         "sceneTimelineEvidence": timeline_evidence,
         "scenePlacement": scene_placement,
+        "chunks": chunks,
         "unresolved": unresolved,
     }
     return payload
@@ -1896,6 +2097,14 @@ def summarize(
     hash_terminal_catalog = build_hash_terminal_catalog(recovered)
     scene_placement_counter: Counter = Counter()
     scene_placement_total = 0
+    chunk_total = 0
+    chunk_singleton_total = 0
+    chunk_isolated_total = 0
+    chunk_size_max = 0
+    chunk_edge_kind_counter: Counter = Counter()
+    chunk_strength_counter: Counter = Counter()
+    missions_with_chunks = 0
+    missions_with_multichunk = 0
     for mission in recovered:
         if mission.get("branchPoints"):
             missions_with_branches += 1
@@ -1922,6 +2131,24 @@ def summarize(
         for placement in (mission.get("scenePlacement") or {}).values():
             for kind in placement.get("evidenceKinds") or []:
                 scene_placement_counter[kind] += 1
+        mission_chunks = mission.get("chunks") or []
+        if mission_chunks:
+            missions_with_chunks += 1
+            chunk_total += len(mission_chunks)
+            multichunk = [chunk for chunk in mission_chunks if chunk.get("sceneCount", 0) >= 2]
+            if len(multichunk) >= 2 or (len(multichunk) >= 1 and len(mission_chunks) > 1):
+                missions_with_multichunk += 1
+            for chunk in mission_chunks:
+                size = int(chunk.get("sceneCount") or 0)
+                if size > chunk_size_max:
+                    chunk_size_max = size
+                if size <= 1:
+                    chunk_singleton_total += 1
+                if chunk.get("isolated"):
+                    chunk_isolated_total += 1
+                chunk_strength_counter[str(chunk.get("strength") or "unanchored")] += 1
+                for kind in chunk.get("edgeKinds") or []:
+                    chunk_edge_kind_counter[kind] += 1
         for item in mission.get("unresolved") or []:
             unresolved_counter[item.get("kind") or "unknown"] += 1
         for quest in mission.get("quests") or []:
@@ -1952,6 +2179,14 @@ def summarize(
         "sourceBackedHashTerminalExceptionCount": hash_terminal_catalog.get("exceptionCount", 0),
         "hashTerminalCatalog": hash_terminal_catalog,
         "scenePlacementEntries": scene_placement_total,
+        "missionsWithChunks": missions_with_chunks,
+        "missionsWithMultiChunkLayout": missions_with_multichunk,
+        "chunkCount": chunk_total,
+        "chunkSingletonCount": chunk_singleton_total,
+        "chunkIsolatedCount": chunk_isolated_total,
+        "chunkMaxSceneCount": chunk_size_max,
+        "chunkEdgeKindCounts": dict(chunk_edge_kind_counter.most_common()),
+        "chunkStrengthCounts": dict(chunk_strength_counter.most_common()),
         "timelineEvidence": timeline_meta,
         "unresolvedByKind": dict(unresolved_counter.most_common()),
         "sourceBackedSceneEdgesByKind": dict(scene_edge_counter.most_common()),
@@ -1986,6 +2221,12 @@ def render_markdown(payload: dict) -> str:
         f"- unique source-backed terminal hashes: `{summary.get('sourceBackedHashTerminalUniqueHashes', 0)}`",
         f"- hash-terminal pattern exceptions: `{summary.get('sourceBackedHashTerminalExceptionCount', 0)}`",
         f"- scene placement entries: `{summary.get('scenePlacementEntries', 0)}`",
+        f"- missions with chunks: `{summary.get('missionsWithChunks', 0)}`",
+        f"- missions with multi-chunk layout: `{summary.get('missionsWithMultiChunkLayout', 0)}`",
+        f"- chunks total: `{summary.get('chunkCount', 0)}` "
+        f"(singletons `{summary.get('chunkSingletonCount', 0)}`, "
+        f"isolated `{summary.get('chunkIsolatedCount', 0)}`, "
+        f"max scenes/chunk `{summary.get('chunkMaxSceneCount', 0)}`)",
         f"- timeline evidence file: `{summary['timelineEvidence'].get('path', '')}`",
         "",
         "## Unresolved Evidence",
