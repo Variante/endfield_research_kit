@@ -1661,6 +1661,53 @@ For ordering files within a mission/scene:
      files in the sidebar, sorted by the numeric index recovered from the file
      key tail (`1`, `1d5`, `New14`, etc.).
 
+### 2026-05-15 AudioDialogCustomEventTable Probe
+
+Audited `Table/AudioDialogCustomEventTable.json` against
+[scripts/story_recovery/build_audio_dialog_custom_events.py](scripts/story_recovery/build_audio_dialog_custom_events.py)
+to test the tier-A hypothesis "dialog enter/exit event IDs bridge specific
+`dlg_*` files to LevelScript audio records".
+
+The table holds **41 dialogs / 73 distinct event IDs** (35 unique
+signatures, 2 shared groupings). Per-mission distribution: `e8m1=10`,
+`e8m3=8`, `e10m4=5`, `e8m2=5`, `e8m5=5`, `e8m4=3`, `e10m2=2`, `e9m2=1` —
+clustered on the e8 chapter and a few e10 entries.
+
+Probes that rejected this as an ordering source:
+
+- The 73 integer event IDs do not appear (as text or as little-endian
+  int32 bytes) in any other `Table/*.json`, in any LevelScript binary
+  payload under `LevelScriptData/`, or in any recovered AnimeStudio
+  `json_by_type/MonoBehaviour/*` dialog/timeline JSON.
+- Wwise-style hashes (`FNV-1`, `FNV-1A`, `CRC32`, `Murmur3` seeds 0/1/42,
+  `djb2`, `sdbm`) of every `au_*` token extracted from
+  `global-metadata.dat` (167 candidates, including the only two
+  dialog-relevant strings `au_global_contr_narrat_dialog_in` and
+  `au_global_contr_narrat_dialog_out`) produce zero matches against the
+  73 target IDs. The hash function is therefore not any of those — it
+  is either a Wwise-internal variant baked into `GameAssembly.dll`, or
+  the event names live in compiled-only string pools that
+  `metadata.dat` does not expose.
+
+What remains usable from this table:
+
+- A **per-dialog presence flag** identifying which dialogs carry custom
+  Wwise audio enter/exit hooks (mostly e8 chapter cinematic dialogs).
+- A **shared-signature group**: 6 dialogs
+  (`dlg_e10m2_1/2`, `dlg_e10m4_15/4`, `dlg_sm2l5m1_4/6`) share
+  `preEnter=-1326707401`, `preExit=-1281540150`. This is a likely
+  "generic dialog audio profile" group — useful as a co-authored cohort
+  marker but not as a chronology edge.
+- A second pair shared signature for `dlg_e8m5_2` + `dlg_e8m5_5`
+  including a non-zero `preloadEvents=1936686820`.
+
+Output: `reports/mission_order/audio_dialog_custom_events_CN.{json,md}`.
+
+Reject this table as a scene-ordering source. Treat as a validation /
+metadata tag only. Next promising direction for option response remains
+the IL2CPP-side decoding of `DialogChooseOption` and the `+0x18`
+runtime active-clip field on `DialogOptionPlayableAsset`.
+
 ## Avoid
 
 - Do not sort scene files only by filename suffix.
