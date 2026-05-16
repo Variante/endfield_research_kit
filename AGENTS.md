@@ -21,6 +21,11 @@ python serve.py
 python serve.py 9000
 ```
 
+Before starting a WebUI server, check whether the default
+`http://127.0.0.1:8765/` server is already running. Reuse the existing default
+server instead of starting another `serve.py` process on `8765` or a custom
+port, unless the user explicitly asks for a second server.
+
 `export.bat` is the canonical WebUI refresh. It exports only data needed by the
 browser, skips raw VFS and source inventory, builds the Updates feed, builds CN
 story/reference data by default, and rebuilds the asset index. It also verifies
