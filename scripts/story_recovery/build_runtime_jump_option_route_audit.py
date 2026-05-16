@@ -3,8 +3,13 @@
 
 The story builder can already promote unambiguous Runtime Jump Track skip
 windows into `timelineRouteBranches`. This report looks at the remaining
-`inferredFollowingLines` groups and records whether nearby Runtime Jump evidence
-is strong enough to justify another recovery rule.
+`inferredOptionResponse` warning groups and records whether nearby Runtime Jump
+evidence is strong enough to justify another recovery rule.
+
+By default this follows the live WebUI warning queue instead of every
+`optionBranchRisk` diagnostic row. Some groups keep diagnostic risk metadata
+after they have already been anchored by stronger raw trunk clip `optionIndex`
+evidence; include those explicitly with `--include-promoted-risk-groups`.
 """
 from __future__ import annotations
 
@@ -693,6 +698,7 @@ def collect_audit_rows(
     story_filters: list[str] | None = None,
     group_filters: set[int] | None = None,
     only_nearby_jumps: bool = False,
+    include_promoted_risk_groups: bool = False,
 ) -> list[dict[str, Any]]:
     timeline_orders = read_json(timeline_orders_path, {}) or {}
     jump_cache = RuntimeJumpCache()
@@ -707,12 +713,28 @@ def collect_audit_rows(
         scene_key = safe_key(conv.get("key") or conv_path.stem)
         if not story_matches(scene_key, story_filters):
             continue
+        warning_group_ids: set[int] = set()
+        for warning in conv.get("warnings") or []:
+            if not isinstance(warning, dict) or warning.get("code") != "inferredOptionResponse":
+                continue
+            for group in warning.get("groups") or []:
+                if not isinstance(group, dict):
+                    continue
+                group_id = as_int(group.get("group"))
+                if group_id is not None:
+                    warning_group_ids.add(group_id)
         timeline_rows = best_timeline_option_rows(timeline_orders.get(scene_key) or {})
         for group in conv.get("optionGroups") or []:
             if not isinstance(group, dict):
                 continue
             group_index = as_int(group.get("g"))
             if group_filters and group_index not in group_filters:
+                continue
+            if (
+                not include_promoted_risk_groups
+                and group_index is not None
+                and group_index not in warning_group_ids
+            ):
                 continue
             risk = group.get("optionBranchRisk") or {}
             if not isinstance(risk, dict) or risk.get("code") != "inferredFollowingLines":
@@ -733,6 +755,7 @@ def summarize_rows(
     story_filters: list[str] | None = None,
     group_filters: set[int] | None = None,
     only_nearby_jumps: bool = False,
+    include_promoted_risk_groups: bool = False,
 ) -> dict[str, Any]:
     recommendations = Counter(row.get("recommendation") or "" for row in rows)
     risk_mappings = Counter(safe_key(row.get("riskCandidateMapping")) or "none" for row in rows)
@@ -742,6 +765,7 @@ def summarize_rows(
             "stories": story_filters or [],
             "groups": sorted(group_filters or []),
             "onlyNearbyJumps": only_nearby_jumps,
+            "includePromotedRiskGroups": include_promoted_risk_groups,
         },
         "inferredFollowingLineGroupCount": len(rows),
         "groupsWithNearbyRuntimeJumps": sum(1 for row in rows if row.get("nearbyRuntimeJumps")),
@@ -953,6 +977,7 @@ def build_report(
     story_filters: list[str] | None = None,
     group_filters: set[int] | None = None,
     only_nearby_jumps: bool = False,
+    include_promoted_risk_groups: bool = False,
 ) -> dict[str, Any]:
     rows = collect_audit_rows(
         language,
@@ -961,6 +986,7 @@ def build_report(
         story_filters=story_filters,
         group_filters=group_filters,
         only_nearby_jumps=only_nearby_jumps,
+        include_promoted_risk_groups=include_promoted_risk_groups,
     )
     summary = summarize_rows(
         language,
@@ -968,6 +994,7 @@ def build_report(
         story_filters=story_filters,
         group_filters=group_filters,
         only_nearby_jumps=only_nearby_jumps,
+        include_promoted_risk_groups=include_promoted_risk_groups,
     )
     payload = {
         "summary": summary,
@@ -975,11 +1002,18 @@ def build_report(
     }
 
     reports_dir.mkdir(parents=True, exist_ok=True)
+    suffix_flag = only_nearby_jumps or include_promoted_risk_groups
+    if only_nearby_jumps and include_promoted_risk_groups:
+        suffix_flag_label = "nearby_promoted"
+    elif only_nearby_jumps:
+        suffix_flag_label = "nearby"
+    else:
+        suffix_flag_label = "promoted"
     suffix = safe_report_suffix(
         story_filters or [],
         group_filters or set(),
-        only_nearby_jumps,
-        flag_label="nearby",
+        suffix_flag,
+        flag_label=suffix_flag_label,
     )
     out_json = reports_dir / f"runtime_jump_option_route_audit_{language}{suffix}.json"
     out_md = reports_dir / f"runtime_jump_option_route_audit_{language}{suffix}.md"
@@ -1001,6 +1035,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--story", action="append", help="Story key, substring, glob, or comma-list to audit.")
     parser.add_argument("--group", action="append", help="Option group number or comma-list to audit.")
     parser.add_argument("--only-nearby-jumps", action="store_true", help="Emit only audited groups that have nearby Runtime Jump Track clips.")
+    parser.add_argument(
+        "--include-promoted-risk-groups",
+        action="store_true",
+        help=(
+            "Also audit diagnostic optionBranchRisk groups that no longer emit "
+            "inferredOptionResponse warnings because a stronger mapping already "
+            "anchored them."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -1021,6 +1064,7 @@ def main(argv: list[str] | None = None) -> int:
         story_filters=story_filters,
         group_filters=group_filters,
         only_nearby_jumps=args.only_nearby_jumps,
+        include_promoted_risk_groups=args.include_promoted_risk_groups,
     )
     summary = result["summary"]
     print(f"Runtime jump option route audit: {result['markdown']}")
