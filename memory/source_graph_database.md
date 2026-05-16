@@ -1,48 +1,38 @@
 # Source Graph Database
 
-Date: 2026-05-11
-
-`tools/endfield_source_graph.py` builds a local SQLite relationship graph across
-the recovered WebUI data, selected structured tables, exported assets, character
+`tools/endfield_source_graph.py` builds a local SQLite relationship graph from
+recovered WebUI data, selected structured tables, exported assets, character
 recovery manifests, material links, and optional AnimeStudio asset maps.
 
-The default output directory is:
-
-```text
-reports/source_graph/
-```
-
-This was moved out of `export_full/recovered/source_graph/` on 2026-05-11.
-`export_full/` should remain the exported source-material tree; the SQLite graph
-and derived JSON/Markdown reports are generated research reports, so they live
-under `reports/`. Durable workflow notes stay here in `memory/`.
+Generated graph files live under `reports/source_graph/`. They are research
+outputs, not exported source material, so they should not be written under
+`export_full/`.
 
 ## Commands
 
-Quick iteration build without the deep AnimeStudio asset-map pass:
+Quick iteration build:
 
 ```bat
 python tools\endfield_source_graph.py build --skip-asset-maps
 ```
 
-Full graph build:
+Full build with AnimeStudio asset maps:
 
 ```bat
 python tools\endfield_source_graph.py build
 ```
 
-Search the graph:
+Useful queries:
 
 ```bat
-python tools\endfield_source_graph.py query zhuangfy --limit 20
-python tools\endfield_source_graph.py query dlg_c27m3_6 --limit 20
+python tools\endfield_source_graph.py query dlg_c17m1_5 --limit 20
 python tools\endfield_source_graph.py story dlg_c17m1_5 --limit-lines 8
 python tools\endfield_source_graph.py issues --code inferredOptionResponse --limit 20
 ```
 
-Useful build flags:
+Useful flags:
 
-- `--skip-asset-maps`: skip the huge AnimeStudio asset-map pass.
+- `--skip-asset-maps`: skip the expensive AnimeStudio asset-map pass.
 - `--skip-reference-rows`: skip WebUI reference row expansion.
 - `--skip-followups`: build only the graph and summary files.
 - `--include-all-material-json`: scan all material JSON files instead of only
@@ -50,19 +40,18 @@ Useful build flags:
 
 ## Outputs
 
-- `endfield_source_graph.sqlite`: SQLite graph database.
-- `summary.json`: machine-readable graph counts and build metadata.
-- `summary.md`: human-readable graph summary.
-- `voice_audio_links.json`: story line to audio candidates.
-- `character_recovery_candidates.json`: character, mesh, material, texture,
-  shader, and animation recovery candidates.
-- `option_branch_gaps.json`: recovered option groups and branch-following gaps.
-- `map_level_index.json`: recovered map marks and level/table links.
-- `semantic_update_summary.json`: source graph counts useful for later update
-  classification.
+Core files:
 
-The graph build also feeds standalone follow-up report tools. These write richer
-reports under subdirectories of `reports/source_graph/`:
+- `endfield_source_graph.sqlite`
+- `summary.json`
+- `summary.md`
+- `voice_audio_links.json`
+- `character_recovery_candidates.json`
+- `option_branch_gaps.json`
+- `map_level_index.json`
+- `semantic_update_summary.json`
+
+Follow-up report tools write richer reports under `reports/source_graph/`:
 
 ```bat
 python tools\endfield_voice_audio_linker.py
@@ -75,29 +64,13 @@ Focused examples:
 
 ```bat
 python tools\endfield_voice_audio_linker.py --story dlg_e1m5_4 --limit 10
-python tools\endfield_voice_audio_linker.py inspect au_dlg_e1m5_4_018 --story dlg_e1m5_4 --limit 1
 python tools\endfield_story_branch_resolver.py --story dlg_a1m10_1 --limit 1
 python tools\endfield_map_level_indexer.py --level map01_fc001 --limit 8
 ```
 
-Follow-up output directories:
-
-- `voice_audio/`: story line to audio path reports, by-story and by-speaker
-  groupings, missing path samples, and orphan audio definitions.
-- `story_branches/`: option group and branch route reports with per-story JSON
-  and unresolved gap counts.
-- `map_levels/`: map/level/mark indexes with linked table row evidence and
-  related asset matches.
-- `update_classification/`: semantic classification for WebUI update feed
-  entries.
-
-Legacy/local `character_recovery/` reports may exist from the retired ignored
-character recovery planner; the tracked source graph still emits the
-lightweight top-level `character_recovery_candidates.json`.
-
 ## Graph Shape
 
-The SQLite database has these core tables:
+Core SQLite tables:
 
 - `nodes(id, kind, name, source, path, data)`
 - `edges(src, dst, kind, source, evidence, data)`
@@ -105,17 +78,19 @@ The SQLite database has these core tables:
 - `files(path, kind, source, size, data)`
 - `meta(key, value)`
 
-Node kinds include story entries, lines, options, actors, i18n text, audio,
-videos, assets, materials, meshes, shaders, animations, map marks, structured
-table rows, reference rows, Unity asset containers, Unity assets, and Unity
-PathIDs.
+Node kinds include story entries, lines, options, actors, localized text,
+audio, videos, assets, materials, meshes, shaders, animations, map marks,
+structured table rows, reference rows, Unity asset containers, Unity assets,
+and Unity PathIDs.
 
-Edge kinds capture relationships such as story membership, line ordering,
-actor names, localized text, option anchors, audio usage, narrative video links,
-table ownership, exported files, character recovery manifest contents, asset-map
-container ownership, and exported asset matches.
+Edge kinds capture story membership, line ordering, actor names, localized
+text, option anchors, audio use, narrative video links, table ownership,
+exported files, character recovery manifest contents, asset-map container
+ownership, and exported asset matches.
 
 ## Ingested Sources
+
+High-value inputs:
 
 - `webui/data/assets/index.json`
 - `webui/data/assets/videos.json`
@@ -128,181 +103,32 @@ container ownership, and exported asset matches.
 - actor material JSON under recovered AnimeStudio outputs
 - Unity character recovery manifests under `unity_endfield_graph_shader_lab/`
 - selected structured tables under `export_full/structured/StreamingAssets/Table/`
-- AnimeStudio asset maps under `export_full/recovered/AnimeStudio-cli/`
+- optional AnimeStudio asset maps under `export_full/recovered/AnimeStudio-cli/`
 
-The selected structured tables currently include:
+Selected structured tables currently include audio, character, dialog summary,
+interactive mission, level/map, mission extra info, scene area, and special
+level-to-map tables.
 
-- `AudioDialog`
-- `AudioSequenceDialog`
-- `CharacterTable`
-- `DialogSummaryMapTable`
-- `DialogSummaryTable`
-- `InteractiveMissionDataTable`
-- `LevelDescTable`
-- `MapIdTable`
-- `MapMarkInsTable`
-- `MissionExtraInfoTable`
-- `SceneAreaTable`
-- `SpecialLevelToMapTable`
+## Current Notes
 
-## Current Build Notes
+Use the quick build for normal story/option/map investigation. Use the full
+build only when Unity asset container, PathID, or exported asset relationship
+coverage matters.
 
-The full 2026-05-11 build completed successfully and produced:
+Timeline recovery is first-class graph input. The graph records raw Timeline
+line clip order, option clip anchors, Runtime Jump routes, skipped lines,
+continuation options, runtime jump clip nodes, and links to extracted source
+JSON. This makes the `story` and `issues` commands the best starting point
+before changing WebUI story recovery rules.
 
-- `3,571,601` nodes
-- `5,081,751` edges
-- `3,001,773` aliases
-- `179,574` file records
-- SQLite size: about `5.05 GB`
-- Full build time: about `9.7 minutes`
+The graph also ingests WebUI recovery warnings. For example,
+`issues --code inferredOptionResponse` separates cases with only Timeline clip
+placement from cases with stronger route/skip evidence.
 
-The 2026-05-11 quick build after option-risk and map/scene table ingestion,
-with `--skip-asset-maps` and reference rows enabled, produced:
+Known parser limits are acceptable for current use:
 
-- `663,343` nodes
-- `742,366` edges
-- `298,527` aliases
-
-Use the quick build for normal iteration. Use the full build when Unity asset
-container, PathID, and exported asset relationship coverage matters.
-
-On 2026-05-12 the graph builder gained first-class ingestion for raw
-`timeline_line_orders.json` evidence. It now adds Timeline nodes, raw Timeline
-line clip order, option clip anchors, Runtime Jump option routes, skipped line
-edges, continuation option edges, runtime jump clip nodes, and links to the
-extracted Timeline/PlayableAsset JSON files. The quick validation build with
-`--skip-asset-maps --skip-reference-rows --skip-followups` produced:
-
-- `273` `timeline` nodes
-- `59` `timeline_option_route` nodes
-- `63` `runtime_jump_clip` nodes
-- `4,004` `timeline_line_clip` edges
-- `1,001` `timeline_option_clip` edges
-- `336` `timeline_route_path_line` edges
-- `222` `timeline_route_skips_line` edges
-
-Example check:
-`python tools\endfield_source_graph.py query option_dlg_c17m1_5_1_001 --kind option --limit 30`
-now shows the selected option's raw Runtime Jump route, path lines, skipped
-line `dlg_c17m1_5_022`, continuation options, and source clip JSON.
-
-The same pass also promotes WebUI recovery warnings into graph nodes. The
-`story` command now includes `warnings`, and the `issues` command lists
-warning-bearing scenes with nearby graph evidence counts. For example:
-
-```bat
-python tools\endfield_source_graph.py story dlg_c17m1_5 --limit-lines 8
-python tools\endfield_source_graph.py issues --code inferredOptionResponse --limit 20
-```
-
-Use this before changing WebUI recovery rules: it distinguishes raw Timeline
-clip evidence (`timeline_option_clip`, `timeline_option_anchor_line`,
-`has_timeline_route`) from lower-confidence inferred branch edges
-(`option_branch_risk`).
-
-The Timeline extractor now preserves additional `DialogOptionPlayableAsset`
-fields in `timeline_line_orders.json` and graph edge payloads, including
-`trunkId`, `dialogId`, `logicId`, `selectedFlag`, `conditionRid`,
-`changeFinishNum`, and `targetFinishNum`. Empty `trunkId`/`dialogId` fields are
-important negative evidence for inferred response groups: they explain why the
-builder can place the option clip but cannot promote a target trunk line as
-authored.
-
-On 2026-05-12 the quick graph was refreshed after the raw trunk
-`clipOptionIndex` recovery pass:
-
-```bat
-python tools\endfield_source_graph.py build --skip-asset-maps --skip-reference-rows --skip-followups
-```
-
-This produced `846,270` nodes, `630,097` edges, and `698,881` aliases. Option
-branch-risk edges now preserve `candidateMapping`,
-`candidateLineIdsByOption`, and `candidateLineClipOptionIndex` when the WebUI
-builder has that evidence. For example,
-`option_dlg_c28m3_10_1_001 -> dlg_c28m3_10_023` carries
-`candidateMapping=trunkClipOptionIndex` and raw clip indices `[1, 2]`.
-
-## Current Follow-Up Reports
-
-The 2026-05-11 follow-up pass completed successfully:
-
-- Voice/audio report: `31,177` line/audio relationships across `6,171` stories
-  and `1,028` speakers. `14,579` relationships have resolved audio paths;
-  `16,598` still need path recovery.
-- A local character recovery planner also wrote top `20` reports from `1,778`
-  candidates. That planner is no longer part of the tracked active tool set
-  after the cleanup; keep using the graph builder's
-  `character_recovery_candidates.json` unless the planner is intentionally
-  restored.
-- Story branch resolver: `1,272` option-bearing stories, `2,553` option groups,
-  `3,957` options, and `3,428` unresolved gaps after ingesting WebUI
-  `optionBranchRisk` evidence as graph edges. Status split: `555` resolved,
-  `714` partial, `3` unresolved.
-- Map/level indexer: `3` maps, `17` levels, `34` marks, `249` linked level
-  table rows, `12` linked map-only table rows, and `0` table rows still lacking
-  level linkage in the quick graph.
-- Semantic update classifier: current WebUI update feed contains `0` entries,
-  so the report is intentionally empty but keeps the bucket schema stable.
-
-Verification command:
-
-```bat
-python -m py_compile tools\endfield_voice_audio_linker.py tools\endfield_story_branch_resolver.py tools\endfield_map_level_indexer.py tools\endfield_semantic_update_classifier.py
-```
-
-## Missing And Improvement Backlog
-
-Current known gaps from the 2026-05-11 reports:
-
-- Audio path coverage is the biggest hole. The voice/audio report found
-  `31,177` line/audio relationships, but `16,598` of them still do not resolve
-  to a WEM path. Many missing examples are normal story IDs like
-  `au_dlg_a1m10_1_001`, so the next step is better AudioDialog/hash/path
-  matching rather than just more story extraction.
-- Story branch recovery is useful but incomplete. The branch resolver now
-  treats `optionBranchRisk` records with `candidateLineIds` or
-  `commonContinuationLineId` as recoverable route evidence. Remaining gaps are
-  `1,423` missing entries, `1,423` missing paths, `380` missing scene-graph
-  edges, `110` missing anchors, `83` missing group anchors, `6` anchor
-  mismatches, and `3` inconsistent option anchors. The likely next source is
-  deeper AnimeStudio graph/Lua/task-flow recovery.
-  The graph builder also ingests `timelineRouteBranches.branchLineIdsByOption`
-  directly as `timeline_route_branch` `option_first_line` / `option_path_line`
-  edges, so Runtime Jump recovered branches no longer collapse back to one
-  generic candidate-line hint.
-- Character recovery candidates need more manifests and shader certainty. In
-  the top `20` reports, `17` candidates are missing shader evidence and `17`
-  are missing character recovery manifests; `3` lack a CharacterTable identity
-  and `1` lacks an actor identity. The ranking also still has alias noise, such
-  as candidates that inherit display names from nearby meshes.
-- Map/level recovery now resolves the previous `72` table-row level gaps by
-  parsing level tokens embedded before suffixes such as `_env`, adding
-  `base01_lv001`/`base01_lv002`/`base01_lv003`, and keeping map-only rows on
-  the owning map instead of counting them as unresolved.
-- Semantic update classification has not been exercised against a real changed
-  feed yet. The current update feed has `0` entries, so the classifier emits a
-  stable empty report but still needs validation against a real or synthetic
-  update sample.
-- The full graph is large: about `5.05 GB`, with a full build time around
-  `9.7` minutes. A compact graph profile, incremental rebuild mode, or report
-  manifest could make day-to-day iteration lighter.
-- `tools/` is ignored by default, but a small source-graph/WebUI helper set is
-  already tracked there. New helper outputs, vendor clones, and local planners
-  remain ignored unless they are intentionally promoted with documentation.
-  `reports/` stays generated output.
-
-Good next improvements:
-
-- Add a graph validation command that checks JSON validity, stale paths, missing
-  report files, and expected node/edge counts after every rebuild.
-- Add an audio resolver pass that links story `au_*` IDs to AudioDialog rows by
-  normalized ID, Wwise event, and path-derived story tokens, then validates
-  candidate WEM paths with the `fluffy-dumper-src` FNV-1a/PCK ID logic. The PCK
-  data can validate exact candidates but does not recover original path strings
-  by itself.
-- Add branch gap reports grouped by mission and gap type so recovery can target
-  the highest-impact scene graph families first.
-- Add character planner outputs that generate Unity lab worklists directly,
-  separating "ready to build" from "needs shader/material/manual identity fix".
-- Add a lightweight WebUI Reports page or static index that links the generated
-  source-graph summaries without loading the 5 GB SQLite database.
+- lightweight IL2CPP metadata parsing can leave generic/array/byref type
+  indexes unresolved in reports;
+- full asset-map ingestion is expensive and should be skipped unless needed;
+- legacy local `character_recovery/` report directories may exist, but the
+  maintained graph emits the top-level recovery candidate JSON.

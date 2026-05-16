@@ -145,6 +145,13 @@ These are kept because the WebUI story builders import or use them:
   `Data/Video/PC/Narrative/Cutscene` and `RemoteComm`, attaches matching
   `narrativeVideos` to dialog/cutscene/remotecomm conv JSON, and writes
   `reports/narrative_videos_<LANG>.json` / `.md`.
+- `story_builder/manual_option_overrides.json` is a WebUI-only manual override
+  file for known option recovery gaps. It can pin an option group's displayed
+  placement with `layout.after` or `layout.position: "pre"`, and can map
+  inferred option replies with `responses.<optionId>.branchLines`. Overrides
+  only apply to matching generated groups that already hit the option-layout or
+  inferred-response recovery path; they do not promote new automatic evidence.
+  Overridden rows are tagged in the Story view.
 
 ## Story Recovery Tools
 

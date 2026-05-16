@@ -2865,12 +2865,31 @@ function renderOptionRiskTags(option) {
       node.className = "opt-risk-tag opt-risk-tag-inferred";
       node.textContent = uiText("optRiskInferredFollowingLine");
       node.title = uiText("optRiskInferredFollowingLineTitle").replace("{line}", lineId || "?");
+    } else if (tag.code === "manualOptionResponseOverride") {
+      node.className = "opt-risk-tag opt-risk-tag-manual";
+      node.textContent = uiText("optManualOverride");
+      node.title = uiText("optManualOverrideTitle")
+        .replace("{source}", String(tag.source || "scripts/story_builder/manual_option_overrides.json"))
+        .replace("{note}", "");
     } else {
       continue;
     }
     wrap.appendChild(node);
   }
   return wrap.childNodes.length ? wrap : null;
+}
+
+function renderManualOverrideTag(manualOverride) {
+  if (!manualOverride || typeof manualOverride !== "object") return null;
+  const node = document.createElement("span");
+  node.className = "manual-override-tag";
+  node.textContent = uiText("optManualOverride");
+  const source = String(manualOverride.source || "scripts/story_builder/manual_option_overrides.json");
+  const note = String(manualOverride.note || "").trim();
+  node.title = uiText("optManualOverrideTitle")
+    .replace("{source}", source)
+    .replace("{note}", note ? ` (${note})` : "");
+  return node;
 }
 
 function findOptionGroupOutcomeBacklinks(group, conv, outcomesByOptionId) {
@@ -4205,7 +4224,10 @@ function renderConv(conv) {
   const outcomesByOptionId = buildLineOrderOutcomeIndex(conv);
 
   for (const grp of conv.optionGroups || []) {
-    if (uncertainOptionLayout) {
+    const hasManualLayoutOverride = grp
+      && grp.manualOverride
+      && grp.manualOverride.kind === "optionLayout";
+    if (uncertainOptionLayout && !hasManualLayoutOverride) {
       uncertainGroups.push(grp);
       continue;
     }
@@ -4668,6 +4690,8 @@ function renderConv(conv) {
     const h = document.createElement("div");
     h.className = "opt-group-title";
     h.textContent = uiText("optionGroup").replace("{group}", grp.g);
+    const groupManualTag = renderManualOverrideTag(grp.manualOverride);
+    if (groupManualTag) h.appendChild(groupManualTag);
     g.appendChild(h);
 
     const backlinks = renderOptionGroupBacklinks(grp, conv, outcomesByOptionId);

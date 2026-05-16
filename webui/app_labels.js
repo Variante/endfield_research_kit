@@ -28,6 +28,7 @@ const UI_TEXTS = {
     storyIssueInferredOptionLayout: "\u9009\u9879\u5b9a\u4f4d\u7f3a\u5931",
     storyIssueInferredOptionResponse: "\u9009\u9879\u56de\u5e94\u4e3a\u63a8\u6d4b",
     storyIssueDuplicateTimestamps: "\u65f6\u95f4\u6233\u91cd\u590d",
+    storyIssueOverrided: "\u5df2\u624b\u52a8\u8986\u76d6",
     recoveryMethodLinePrefix: "\u884c\u987a\u5e8f",
     recoveryMethodOptionPrefix: "\u9009\u9879",
     recoveryMethodOptionLayoutAuthored: "\u6388\u6743\u951a\u70b9",
@@ -201,6 +202,8 @@ const UI_TEXTS = {
     optRiskRawIndexMatchedLineTitle: "\u6e90\u6570\u636e\u6ca1\u6709\u660e\u786e\u5199\u51fa\u8be5\u9009\u9879\u7684\u76ee\u6807\u53f0\u8bcd\uff1b\u4f46 Timeline raw optionIndex \u4e0e\u9009\u9879\u5e8f\u53f7\u5339\u914d\uff0c\u56de\u590d\u884c\u6062\u590d\u5230 {line}\u3002\u8fd9\u4ecd\u7136\u5c5e\u4e8e\u6062\u590d\u63a8\u65ad\uff0c\u4f46\u6bd4\u76f8\u90bb\u884c\u63a8\u6d4b\u66f4\u5f3a\u3002",
     optRiskInferredFollowingLine: "\u63a8\u6d4b\u56de\u5e94",
     optRiskInferredFollowingLineTitle: "\u6e90\u6570\u636e\u6ca1\u6709\u660e\u786e\u5199\u51fa\u8be5\u9009\u9879\u7684\u76ee\u6807\u53f0\u8bcd\uff1b\u6309 Timeline \u987a\u5e8f\u63a8\u6d4b\u53ef\u80fd\u5bf9\u5e94 {line}\u3002",
+    optManualOverride: "\u624b\u52a8\u8986\u76d6",
+    optManualOverrideTitle: "\u8be5\u7ed3\u679c\u7531\u672c\u5730\u624b\u52a8\u8986\u76d6\u6587\u4ef6\u63d0\u4f9b\uff1a{source}{note}",
     preDialogOptions: "\u5bf9\u8bdd\u9009\u9879\uff08\u5f00\u573a\u524d\uff09",
     uncertainDialogOptions: "\u5bf9\u8bdd\u9009\u9879\uff08\u4f4d\u7f6e\u5f85\u786e\u8ba4\uff09",
     orphanDialogOptions: "\u5bf9\u8bdd\u9009\u9879\uff08\u4f4d\u7f6e\u4e0d\u660e\uff09",
@@ -275,6 +278,7 @@ const UI_TEXTS = {
     storyIssueInferredOptionLayout: "No option anchor",
     storyIssueInferredOptionResponse: "Inferred reply",
     storyIssueDuplicateTimestamps: "Duplicate timestamps",
+    storyIssueOverrided: "Overrided",
     recoveryMethodLinePrefix: "Line order",
     recoveryMethodOptionPrefix: "Option",
     recoveryMethodOptionLayoutAuthored: "authored anchors",
@@ -448,6 +452,8 @@ const UI_TEXTS = {
     optRiskRawIndexMatchedLineTitle: "The source data does not name an explicit target line for this option, but Timeline raw optionIndex matches the option index and recovers the reply at {line}. This is still recovered inference, but stronger than adjacent-line inference.",
     optRiskInferredFollowingLine: "inferred reply",
     optRiskInferredFollowingLineTitle: "The source data does not name an explicit target line for this option; Timeline order suggests it may correspond to {line}.",
+    optManualOverride: "manual override",
+    optManualOverrideTitle: "This result comes from a local manual override file: {source}{note}",
     preDialogOptions: "Dialogue Options (Before Scene)",
     uncertainDialogOptions: "Dialogue Options (Placement Uncertain)",
     orphanDialogOptions: "Dialogue Options (Unknown Position)",
@@ -1011,6 +1017,7 @@ const STORY_ISSUE_ORDER = [
   "duplicateTimestamps",
   "inferredOptionLayout",
   "inferredOptionResponse",
+  "overrided",
 ];
 
 const STORY_RECOVERY_METHOD_ORDER = [
@@ -1213,6 +1220,7 @@ function storyIssueLabel(code) {
   if (code === "duplicateTimestamps") return uiText("storyIssueDuplicateTimestamps");
   if (code === "inferredOptionLayout") return uiText("storyIssueInferredOptionLayout");
   if (code === "inferredOptionResponse") return uiText("storyIssueInferredOptionResponse");
+  if (code === "overrided") return uiText("storyIssueOverrided");
   return formatStructuredLabel(code);
 }
 
@@ -1730,7 +1738,7 @@ function foldedEntryTypeKey(typeKey, entry) {
   if (!normalized || normalized === "?") return DEFAULT_DATA_TYPE_KEY;
   const storyMissionId = entryStoryMissionId(entry);
   if (storyMissionId) return storyMissionTypeFromId(storyMissionId);
-  if (isMissionlessCutscene(entry)) return "other";
+  if (isMissionlessCutscene(entry)) return "worldtext";
   if (entryWikiCollectionGroup(entry)) return "other";
   if (entrySnsChatTableGroup(entry)) return "other";
   if (entryTaskLike(entry)) return "other";
