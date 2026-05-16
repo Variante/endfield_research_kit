@@ -135,6 +135,53 @@ python scripts\story_builder\mission_recovery.py
 python scripts\story_recovery\build_mission_order_evidence_audit.py --all-target-prefixes --skip-asset-map
 ```
 
+## Chunk Order
+
+Per mission, `build_chunk_order` in `scripts/story_builder/mission_recovery.py`
+recovers directed cross-chunk edges from the quest DAG. The output is on each
+mission's payload as `chunkOrder: {edges, parallel, incomparable, unattachedChunkIds, attachedQuestsByChunk}`
+and surfaces in both `reports/mission_order/<mission>_evidence_audit.md`
+("Chunk Order (questDag)" section) and the WebUI mission-timeline box (chunks
+are sorted in topological order with quest-DAG arrows where evidence exists).
+
+Algorithm: each chunk's `attachedQuests` is the union of
+`scenePlacement[*].questIds` over its member scenes. Quest ancestry comes from
+`questEdges` of kind `questPrev`. Emit X → Y iff X and Y have non-empty,
+disjoint quest sets and every quest in Y is a strict descendant of every
+quest in X. Transitive reduction drops redundant edges. Parallel pairs share a
+quest. Incomparable pairs have disjoint quests but no provable order — these
+mark quest-fork siblings.
+
+Initial counts across all 418 missions:
+
+- `151` missions gain at least one chunk-order edge (`544` edges total).
+- `166` missions are fully ordered by quest attach (no parallels or
+  incomparable pairs in the attached set).
+- `54` missions are partially ordered (some edges plus parallels or
+  incomparable pairs).
+- `77` parallel chunk pairs (co-quest).
+- `263` incomparable chunk pairs (typical of branching quests).
+
+Important caveat: many e-prefix missions store scene attachments only via
+LevelScript script-condition references rather than MissionRuntime `storyRefs`
+or client-action `storyRefs`. Those scenes therefore land in
+`attachedQuestsByChunk = {}` and stay unattached for chunk-order recovery.
+`e0m0` and `e10m4` both fall in this bucket — 0 quest-DAG edges despite the
+audit's `missionRuntimeScriptConditions` block pinning specific quests to
+specific story-key sequences. Folding script-condition matches into quest
+attachments is a candidate follow-up.
+
+Evidence sources still on the queue for chunk-order recovery:
+
+- Script-condition matched story keys (`missionRuntimeScriptConditions`)
+  promoted to quest attachments.
+- `sourceBackedHashTerminals` prev/next hash chains crossing chunks.
+- Story-call contexts with directional position info.
+
+Explicitly rejected: filename/index order, scene-key numeric suffix, mission
+bundle row order. The chunks themselves already include radio-continuation
+edges in Phase 1, so radio continuation isn't a separate Phase 2 signal.
+
 ## Useful Reports
 
 Generate a mission evidence audit:
