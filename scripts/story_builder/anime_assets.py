@@ -146,16 +146,240 @@ def _extract_ref_strings(node, field_names: tuple[str, ...]) -> list[str]:
     )
 
 
+_EMBEDDED_STORY_REF_RE = re.compile(
+    r"(?:dlg|sns|cutscene|black|remotecomm|radio)_[A-Za-z0-9_]+"
+)
+_LEVELDATA_STORY_REF_RE = re.compile(
+    rb"\b(?:dlg|sns|cutscene|black|remotecomm|radio)_[A-Za-z0-9_]{2,120}"
+)
+_LEVELDATA_QUEST_ID_RE = re.compile(
+    rb"\b[A-Za-z0-9][A-Za-z0-9_]*_q#[A-Za-z0-9_]+\b"
+)
+_LEVELDATA_ASCII_RE = re.compile(rb"[ -~]{3,}")
+_LEVELDATA_STORY_MISSION_RE = re.compile(r"^([a-z]+\d+m\d+(?:d\d+)?)(?:_|$)", re.I)
+_LEVELDATA_PRIORITY_STORY_TYPES = {"e", "a", "gm", "c"}
+
+
+def _extract_embedded_story_refs(text: str) -> list[str]:
+    value = str(text or "")
+    if not value:
+        return []
+    return _unique_preserve(match.group(0) for match in _EMBEDDED_STORY_REF_RE.finditer(value))
+
+
+def _mission_from_story_ref(ref: str) -> str:
+    value = str(ref or "").strip()
+    if value.startswith("misc_"):
+        value = value[5:]
+    for prefix in ("dlg_", "sns_", "cutscene_", "black_", "remotecomm_", "radio_"):
+        if not value.startswith(prefix):
+            continue
+        rest = value[len(prefix):]
+        if match := _LEVELDATA_STORY_MISSION_RE.match(rest):
+            return match.group(1)
+    return ""
+
+
+def _mission_parent_id(mission_id: str) -> str:
+    return re.sub(r"d\d+$", "", str(mission_id or ""))
+
+
+def _mission_story_type(mission_id: str) -> str:
+    match = re.match(r"^([a-z]+)", str(mission_id or "").lower())
+    return match.group(1) if match else ""
+
+
+def _quest_id_mission(quest_id: str) -> str:
+    value = str(quest_id or "")
+    return value.split("_q#", 1)[0] if "_q#" in value else ""
+
+
+def _leveldata_story_ref_matches_quest(story_ref: str, quest_id: str) -> bool:
+    story_mission = _mission_from_story_ref(story_ref)
+    quest_mission = _quest_id_mission(quest_id)
+    if not story_mission or not quest_mission:
+        return False
+    if (
+        _mission_story_type(story_mission) not in _LEVELDATA_PRIORITY_STORY_TYPES
+        and _mission_story_type(quest_mission) not in _LEVELDATA_PRIORITY_STORY_TYPES
+    ):
+        return False
+    return (
+        story_mission == quest_mission
+        or story_mission == _mission_parent_id(quest_mission)
+        or _mission_parent_id(story_mission) == _mission_parent_id(quest_mission)
+    )
+
+
+def _leveldata_hit_distance(story_start: int, story_end: int, quest_start: int, quest_end: int) -> int:
+    if quest_start <= story_start <= quest_end:
+        return 0
+    return min(abs(quest_start - story_start), abs(quest_end - story_end))
+
+
+def _leveldata_context_strings(raw: bytes, start: int, end: int) -> list[str]:
+    context = raw[max(0, start - 220) : min(len(raw), end + 220)]
+    return [
+        match.group().decode("ascii", "ignore").strip()
+        for match in _LEVELDATA_ASCII_RE.finditer(context)
+    ]
+
+
+def _leveldata_quest_story_refs_by_mission() -> dict[str, dict[str, list[dict]]]:
+    global _LEVELDATA_QUEST_STORY_REF_CACHE
+    if _LEVELDATA_QUEST_STORY_REF_CACHE is not None:
+        return _LEVELDATA_QUEST_STORY_REF_CACHE
+
+    by_mission: dict[str, dict[str, list[dict]]] = defaultdict(lambda: defaultdict(list))
+    seen: set[tuple[str, str, str, str]] = set()
+    if not LEVELDATA_DIR.is_dir():
+        _LEVELDATA_QUEST_STORY_REF_CACHE = {}
+        return _LEVELDATA_QUEST_STORY_REF_CACHE
+
+    source_fields = {
+        "require_quest",
+        "radio_await_start",
+        "radio_escape_start",
+        "use_level_event_click",
+        "level_event_id_click",
+        "click_option_name_list",
+        "lang_int_trigger_dialog_option",
+        "isFinished",
+    }
+
+    for path in sorted(LEVELDATA_DIR.rglob("*.json")):
+        try:
+            raw = path.read_bytes()
+        except OSError:
+            continue
+        story_hits = [
+            (match.start(), match.end(), match.group().decode("ascii", "ignore"))
+            for match in _LEVELDATA_STORY_REF_RE.finditer(raw)
+        ]
+        if not story_hits:
+            continue
+        quest_hits = [
+            (match.start(), match.end(), match.group().decode("ascii", "ignore"))
+            for match in _LEVELDATA_QUEST_ID_RE.finditer(raw)
+        ]
+        if not quest_hits:
+            continue
+        file_ref = repo_rel(path)
+        for story_start, story_end, story_ref in story_hits:
+            context_start = max(0, story_start - 220)
+            context_end = min(len(raw), story_end + 220)
+            candidates = [
+                (quest_start, quest_end, quest_id)
+                for quest_start, quest_end, quest_id in quest_hits
+                if context_start <= quest_start < context_end
+                and _leveldata_story_ref_matches_quest(story_ref, quest_id)
+            ]
+            if not candidates:
+                continue
+            quest_start, quest_end, quest_id = candidates[-1]
+            quest_mission = _quest_id_mission(quest_id)
+            if not quest_mission:
+                continue
+            signature = (quest_mission, quest_id, story_ref, file_ref)
+            if signature in seen:
+                continue
+            seen.add(signature)
+
+            strings = _leveldata_context_strings(raw, min(story_start, quest_start), max(story_end, quest_end))
+            fields = _unique_preserve(
+                text
+                for text in strings
+                if (
+                    text in source_fields
+                    or text.startswith((
+                        "dlg_",
+                        "sns_",
+                        "cutscene_",
+                        "black_",
+                        "remotecomm_",
+                        "radio_",
+                    ))
+                )
+            )
+            entity = next((text for text in reversed(strings) if text.startswith("int_")), "")
+            row = {
+                "storyRef": story_ref,
+                "questId": quest_id,
+                "levelId": path.parent.name,
+                "file": file_ref,
+                "distance": _leveldata_hit_distance(
+                    story_start,
+                    story_end,
+                    quest_start,
+                    quest_end,
+                ),
+                "storyOffset": story_start,
+                "questOffset": quest_start,
+                "source": "LevelData quest/story byte-string context",
+            }
+            if entity:
+                row["entity"] = entity
+            if fields:
+                row["fields"] = fields[:12]
+            by_mission[quest_mission][quest_id].append(row)
+
+    _LEVELDATA_QUEST_STORY_REF_CACHE = {
+        mission: {
+            quest_id: sorted(
+                rows,
+                key=lambda row: (
+                    int(row.get("storyOffset") or 0),
+                    str(row.get("storyRef") or ""),
+                ),
+            )
+            for quest_id, rows in sorted(quests.items())
+        }
+        for mission, quests in sorted(by_mission.items())
+    }
+    return _LEVELDATA_QUEST_STORY_REF_CACHE
+
+
+def _leveldata_quest_story_refs_for_mission(mission_id: str) -> dict[str, list[dict]]:
+    return _leveldata_quest_story_refs_by_mission().get(str(mission_id or ""), {})
+
+
+def _quest_area_story_refs(quest: dict) -> list[str]:
+    refs: list[str] = []
+    for anchor in quest.get("objectiveAnchors") or []:
+        for ref in anchor.get("areaStoryRefs") or []:
+            if ref and ref not in refs:
+                refs.append(ref)
+        for leaf in anchor.get("conditionLeaves") or []:
+            for ref in leaf.get("areaStoryRefs") or []:
+                if ref and ref not in refs:
+                    refs.append(ref)
+    return refs
+
+
 def _extract_client_action_refs(raw: dict, field_names: tuple[str, ...]) -> dict[str, list[str]]:
     action_list = (((raw.get("actionMapRaw") or {}).get("dataMap") or {}).get("actionList") or [])
-    refs_by_action_id: dict[int, list[str]] = {}
+    actions_by_id: dict[int, dict] = {}
     for action in action_list:
         action_id = action.get("_ID")
         if not isinstance(action_id, int):
             continue
-        refs = _extract_ref_strings(action, field_names)
-        if refs:
-            refs_by_action_id[action_id] = refs
+        actions_by_id[action_id] = action
+
+    def action_chain_refs(action_id: int) -> list[str]:
+        refs: list[str] = []
+        seen: set[int] = set()
+        current = action_id
+        while isinstance(current, int) and current in actions_by_id and current not in seen:
+            seen.add(current)
+            action = actions_by_id[current]
+            for ref in _extract_ref_strings(action, field_names):
+                if ref not in refs:
+                    refs.append(ref)
+            next_id = action.get("_nextID")
+            if not isinstance(next_id, int) or next_id < 0:
+                break
+            current = next_id
+        return refs
 
     out: dict[str, list[str]] = {}
     for key_row, action_id in zip(raw.get("clientActionMapKey") or [], raw.get("clientActionMapValue") or []):
@@ -164,7 +388,7 @@ def _extract_client_action_refs(raw: dict, field_names: tuple[str, ...]) -> dict
         quest_id = key_row.get("questId")
         if not isinstance(quest_id, str) or not quest_id:
             continue
-        refs = refs_by_action_id.get(action_id)
+        refs = action_chain_refs(action_id)
         if not refs:
             continue
         bucket = out.setdefault(quest_id, [])
@@ -256,6 +480,9 @@ def _extract_tracking_hints(quest) -> list[dict]:
             mission_area_id = info.get("missionAreaId")
             if isinstance(mission_area_id, str) and mission_area_id:
                 hint["missionAreaId"] = mission_area_id
+                area_story_refs = _extract_embedded_story_refs(mission_area_id)
+                if area_story_refs:
+                    hint["areaStoryRefs"] = area_story_refs
             jump_id = info.get("jumpId")
             if isinstance(jump_id, str) and jump_id:
                 hint["jumpId"] = jump_id
@@ -312,22 +539,34 @@ def _extract_condition_anchor_leaves(cond) -> list[dict]:
     if story_refs:
         leaf["storyRefs"] = story_refs
 
+    area_story_refs = _unique_preserve(
+        ref
+        for field_name in ("_areaId", "areaId", "missionAreaId")
+        for value in _walk_field_values(cond, field_name)
+        if isinstance(value, str)
+        for ref in _extract_embedded_story_refs(value)
+    )
+    if area_story_refs:
+        leaf["areaStoryRefs"] = area_story_refs
+
     level_ids = unique_strings(
         value
-        for field_name in ("_sceneId", "_levelId")
+        for field_name in ("_sceneId", "sceneId", "_levelId", "levelId", "_mapId", "mapId")
         for value in _walk_field_values(cond, field_name)
     )
     if level_ids:
         leaf["sceneIds"] = level_ids
 
     script_ids: list[int] = []
-    for value in _walk_field_values(cond, "_scriptId"):
-        if isinstance(value, dict):
-            script_id = value.get("scriptId")
-            if isinstance(script_id, int) and script_id not in script_ids:
+    for field_name in ("_scriptId", "scriptId"):
+        for value in _walk_field_values(cond, field_name):
+            script_id = None
+            if isinstance(value, dict):
+                script_id = value.get("scriptId")
+            elif isinstance(value, int):
+                script_id = value
+            if isinstance(script_id, int) and script_id > 0 and script_id not in script_ids:
                 script_ids.append(script_id)
-        elif isinstance(value, int) and value not in script_ids:
-            script_ids.append(value)
     if script_ids:
         leaf["scriptIds"] = script_ids
 
@@ -426,6 +665,17 @@ def _extract_objective_anchors(quest: dict) -> list[dict]:
         if story_refs:
             anchor["storyRefs"] = story_refs
 
+        area_story_refs = _unique_preserve([
+            str(ref)
+            for ref in (
+                [ref for leaf in leaves for ref in (leaf.get("areaStoryRefs") or [])]
+                + [ref for hint in tracking for ref in (hint.get("areaStoryRefs") or [])]
+            )
+            if ref
+        ])
+        if area_story_refs:
+            anchor["areaStoryRefs"] = area_story_refs
+
         scene_ids = _unique_preserve([
             str(scene_id)
             for value in (
@@ -503,6 +753,7 @@ def _extract_objective_anchors(quest: dict) -> list[dict]:
             anchor.get("tracking")
             or anchor.get("conditionTypes")
             or anchor.get("storyRefs")
+            or anchor.get("areaStoryRefs")
             or anchor.get("sceneIds")
             or anchor.get("missionAreaIds")
             or anchor.get("npcProxyIds")
@@ -580,6 +831,11 @@ def _scene_ref_alias_candidates(name: str) -> list[str]:
         bases.append(match.group(1))
 
     for base in bases:
+        if base.startswith("dlg_"):
+            add(f"misc_{base}")
+        elif base.startswith("misc_dlg_"):
+            add(base[len("misc_"):])
+
         if base.startswith("cs_video_"):
             add(f"cutscene_{base[len('cs_video_'):]}")
 

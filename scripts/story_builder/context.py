@@ -309,6 +309,7 @@ _NPC_PROXY_EX_CACHE: dict | None = None
 _MISSION_LEVELSCRIPT_CACHE: dict[tuple[str, tuple[str, ...]], list[dict]] = {}
 _LEVELSCRIPT_BINDING_CACHE: dict[str, dict] = {}
 _LEVELDATA_NAMED_TABLE_CACHE: dict[str, list[dict]] = {}
+_LEVELDATA_QUEST_STORY_REF_CACHE: dict[str, dict[str, list[dict]]] | None = None
 _JSON_FILE_CACHE: dict[str, dict] = {}
 _MISSION_AREA_CACHE: dict[str, dict] | None = None
 _NPC_PROXY_TABLE_CACHE: dict[str, dict] | None = None
