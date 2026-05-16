@@ -9945,6 +9945,29 @@ def build_language_bundle(
                         edge.setdefault("positions", [])
                         if pos not in edge["positions"]:
                             edge["positions"].append(pos)
+            for pair in _build_levelscript_cross_file_scene_pairs(
+                level_id, dialog_scene_out_key, mission
+            ):
+                src = pair.get("src") or ""
+                dst = pair.get("dst") or ""
+                if src not in available or dst not in available:
+                    continue
+                if edge := ensure_edge(src, dst, "levelscriptCrossFileOrder"):
+                    for key in ("fromFile", "toFile"):
+                        file_ref = pair.get(key) or ""
+                        if file_ref:
+                            refs = edge.setdefault("sourceFiles", [])
+                            if file_ref not in refs:
+                                refs.append(file_ref)
+                    pair_level_id = pair.get("levelId") or ""
+                    if pair_level_id:
+                        refs = edge.setdefault("levelIds", [])
+                        if pair_level_id not in refs:
+                            refs.append(pair_level_id)
+                    stems = edge.setdefault("fileStems", [])
+                    stem_pair = [pair.get("fromStem"), pair.get("toStem")]
+                    if stem_pair not in stems:
+                        stems.append(stem_pair)
 
         # PRTS collection rows expose authored page order inside a single
         # reading/collection item. Treat that as weak ordering only, and only
@@ -10054,6 +10077,7 @@ def build_language_bundle(
         }
         weak_order_edge_kinds = {
             "levelscriptFileOrder",
+            "levelscriptCrossFileOrder",
             "levelDataQuestRef",
             "prtsCollectionOrder",
         }

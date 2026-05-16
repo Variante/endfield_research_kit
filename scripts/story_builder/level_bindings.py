@@ -434,6 +434,7 @@ def _load_levelscript_binding_data(level_id: str) -> dict:
 
         out["files"].append({
             "file": repo_rel(path),
+            "fileStem": path.stem,
             "records": records,
             "stringHits": sorted_hits,
         })
@@ -453,7 +454,11 @@ def _build_levelscript_file_order_scene_sequences(
     sprinkle scene refs across parallel event records that aren't UID-linked;
     file offset still tracks the SerializeReference authoring order and gives
     a usable weak ordering hint. Caller is responsible for treating these as
-    weak edges, not tight constraints."""
+    weak edges, not tight constraints.
+
+    Each entry carries `sequence`, `levelId`, `file`, and the original
+    numeric `fileStem` (if the file name was numeric) so a caller can pair
+    consecutive files within the same level for cross-file ordering hints."""
     info = _load_levelscript_binding_data(level_id)
     out: list[dict] = []
     for file_info in info["files"]:
@@ -472,6 +477,65 @@ def _build_levelscript_file_order_scene_sequences(
             "levelId": level_id,
             "file": file_info["file"],
             "sequence": scene_keys,
+            "fileStem": file_info.get("fileStem", ""),
+        })
+    return out
+
+
+def _build_levelscript_cross_file_scene_pairs(
+    level_id: str,
+    dialog_key_resolver,
+    mission_id: str = "",
+) -> list[dict]:
+    """Emit cross-file scene-ref pairs for consecutive numeric LS files in
+    the same level (`<id>.json`, `<id+1>.json`, ...). Each pair connects the
+    last story-key in file N to the first story-key in file N+1. Caller is
+    responsible for treating these as weak edges only.
+
+    A single mission scene that lives alone in its LS file does not produce
+    any intra-file sequence, but the surrounding files' story refs frequently
+    fire in numeric LS-file order, so this complements the per-file rule
+    without flattening unrelated parallel-event records into one chain."""
+    info = _load_levelscript_binding_data(level_id)
+    file_keys: list[tuple[int, str, list[str]]] = []
+    for file_info in info["files"]:
+        stem = file_info.get("fileStem") or ""
+        try:
+            stem_int = int(stem)
+        except (TypeError, ValueError):
+            continue
+        scene_keys: list[str] = []
+        seen: set[str] = set()
+        for hit in file_info.get("stringHits") or []:
+            text = hit.get("text") or ""
+            scene_key = _resolve_payload_scene_key(text, mission_id, dialog_key_resolver)
+            if not scene_key or scene_key in seen:
+                continue
+            seen.add(scene_key)
+            scene_keys.append(scene_key)
+        if not scene_keys:
+            continue
+        file_keys.append((stem_int, file_info["file"], scene_keys))
+    file_keys.sort(key=lambda row: row[0])
+
+    out: list[dict] = []
+    for idx in range(len(file_keys) - 1):
+        a_stem, a_file, a_keys = file_keys[idx]
+        b_stem, b_file, b_keys = file_keys[idx + 1]
+        if b_stem - a_stem != 1:
+            continue
+        src = a_keys[-1]
+        dst = b_keys[0]
+        if not src or not dst or src == dst:
+            continue
+        out.append({
+            "levelId": level_id,
+            "src": src,
+            "dst": dst,
+            "fromFile": a_file,
+            "toFile": b_file,
+            "fromStem": a_stem,
+            "toStem": b_stem,
         })
     return out
 
