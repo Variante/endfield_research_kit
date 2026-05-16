@@ -1701,6 +1701,35 @@ Subtitle Track is a confirmed dead end for line-level timing
 extraction; do not pursue it further unless the runtime starts
 populating its clips.
 
+### 2026-05-16 LevelScript Property Setter Opcode Candidates
+
+Scanned the 60 bridgeFound property-flow triples to find which LS
+opcode/kind carries the property key string. Results:
+
+```text
+code=0x0000 kind=0x00: 7 (likely padding / data segment, not a real opcode)
+code=0x13a5 kind=0x00: 5  <-- candidate property setter
+code=0x07fa kind=0x01: 3
+code=0x084d kind=0x00: 2
+code=0x04b8 kind=0x09: 2
+code=0x0001 kind=0x00: 1
+```
+
+`0x13a5/0x00` appears in five property-setter contexts
+(`fightFinished` in c16m1d5, `isSuccceeded` x3 in c13m1, `puzzle` in
+e5m2). The records carry only the property-key string and no adjacent
+story refs in their immediate +-3 record neighborhood, so this opcode
+alone does not produce a promotable edge.
+
+Promotion would need control-flow traversal: identify 0x13a5 records
+as candidate property setters, follow each script's `nextId` chains
+or surrounding play-* opcode records, and connect the setter to its
+authored predecessor / successor story refs. That is deeper graph
+analysis than this slice budget can deliver and remains queued.
+
+Not landing as a WebUI rule. Recording the opcode candidate for the
+next session.
+
 ### 2026-05-16 LevelScript Cross-File Order Weak Edge
 
 New `levelscriptCrossFileOrder` weak edge kind in the WebUI builder.
