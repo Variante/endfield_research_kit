@@ -74,6 +74,67 @@ script/control nodes to story keys or terminals. Do not promote them as
 inter-story chronology unless a decoded trigger owner, quest edge, UID chain,
 or typed setter/action relation proves the relation.
 
+## Scene Chunks
+
+`scripts/story_builder/mission_recovery.py` now groups every placed scene into
+a connected-component chunk. Chunks are written to
+`reports/mission_timeline_recovery_CN.json` as a top-level `chunks: [...]` list
+per mission, and each `scenePlacement[<sceneKey>].chunkId` references its
+chunk (`c1`, `c2`, ...).
+
+Joining edges (undirected, for component grouping):
+
+- `sourceBackedSceneEdges` of any kind in the source-backed scene graph
+  (questAttach, levelscriptSceneChain, levelscriptChain, levelscriptFileOrder,
+  levelscriptCrossFileOrder, radioContinuation, authoredDirect, authoredMenu).
+- Consecutive `sourceBackedSceneSequences[*].sceneKeys` pairs.
+- `sceneTimelineEvidence` scenes that share the same Timeline asset id.
+
+A chunk's `strength` is `strong` if any internal edge kind is in
+`STRONG_ORDER_EDGE_KINDS` (the same set the WebUI builder treats as authored
+chronology), otherwise `weak`, or `unanchored` when the chunk is a singleton
+with no joining edges. Chunk IDs are stable: components are numbered by the
+natural-key order of their lexicographically-first scene key.
+
+Initial counts across all 418 missions (`reports/mission_timeline_recovery_CN.json`):
+
+- `245` missions have at least one chunk.
+- `175` missions land in a multi-chunk layout.
+- `1,167` chunks total — `135` strong, `320` weak, `712` unanchored singletons.
+- Largest chunk holds `69` scenes.
+- Per-edge tally: `levelscriptChain` 345, `levelscriptFileOrder` 282,
+  `levelscriptCrossFileOrder` 236, `levelscriptSceneChain` 99,
+  `radioContinuation` 68, `levelDataQuestRef` 11, `authoredMenu` 4,
+  `authoredDirect` 3, `timelineShare` 1.
+
+Snapshot of the unknown-heavy missions from `## Current Audit Conclusions`:
+
+| mission | chunks | strong | weak | isolated | max scenes/chunk |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `e0m0` | 7 | 1 | 6 | 0 | 16 |
+| `e10m4` | 7 | 2 | 5 | 0 | 16 |
+| `c28m3` | 9 | 1 | 5 | 3 | 39 |
+| `c6m1` | 10 | 1 | 6 | 3 | 14 |
+
+Chunk membership for `e0m0` agrees with the prior audit narrative: the
+`cutscene_e0m0_6 -> _7 -> _8` UID-mediated chain plus a couple of related
+quest/hash nodes form the one strong chunk; the remaining six chunks are
+LevelScript file-offset groups not yet promoted to strong evidence. A scene
+with `status=strong` in the per-entry audit can still belong to a `weak` chunk
+when its strength comes from a non-chunk source (MissionRuntime conditioning,
+PlayableDirector anchor, etc.).
+
+The audit (`reports/mission_order/<mission>_evidence_audit.md`) now includes a
+`chunk` column in the Entry Evidence table and a `## Scene Chunks` section
+listing every chunk with its strength, edge kinds, and scene keys. To
+regenerate for every authored-story mission prefix
+(`e/a/gm/c/sm/f/m`, excludes `db/dm/hidden/map*`):
+
+```bat
+python scripts\story_builder\mission_recovery.py
+python scripts\story_recovery\build_mission_order_evidence_audit.py --all-target-prefixes --skip-asset-map
+```
+
 ## Useful Reports
 
 Generate a mission evidence audit:

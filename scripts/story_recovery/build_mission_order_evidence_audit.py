@@ -27,6 +27,10 @@ from common import (  # noqa: E402
     write_text_if_changed,
 )
 from story_builder.level_bindings import _load_levelscript_binding_data  # noqa: E402
+from story_builder.mission_recovery import (  # noqa: E402
+    TARGET_MISSION_PREFIXES,
+    mission_id_matches_target_prefix,
+)
 
 
 ORDER_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio", "video"}
@@ -995,6 +999,17 @@ def build_report(
         for key in weak_or_unknown
         if entry_report[key]["hits"].get("radioContinuation")
     ]
+    chunks = (mission_timeline or {}).get("chunks") or []
+    chunk_strength_counter: Counter = Counter()
+    chunk_isolated_count = 0
+    chunk_max_scene_count = 0
+    for chunk in chunks:
+        chunk_strength_counter[str(chunk.get("strength") or "unanchored")] += 1
+        if chunk.get("isolated"):
+            chunk_isolated_count += 1
+        size = int(chunk.get("sceneCount") or 0)
+        if size > chunk_max_scene_count:
+            chunk_max_scene_count = size
 
     return {
         "generated": datetime.now().isoformat(timespec="seconds"),
@@ -1037,6 +1052,12 @@ def build_report(
             "weakOrUnknownGainingRadioContinuationAnchor": weak_or_unknown_anchored_by_radio_cont,
             "variantMissionRuntimeAnchoredCount": variant_mission_runtime_anchored,
             "variantMissionRuntimeMissions": (webui_mission.get("flow") or {}).get("sceneGraphVariantMissions") or [],
+            "chunkCount": len(chunks),
+            "chunkStrongCount": chunk_strength_counter.get("strong", 0),
+            "chunkWeakCount": chunk_strength_counter.get("weak", 0),
+            "chunkUnanchoredCount": chunk_strength_counter.get("unanchored", 0),
+            "chunkIsolatedCount": chunk_isolated_count,
+            "chunkMaxSceneCount": chunk_max_scene_count,
         },
         "missionTimeline": {
             "propertyModel": (mission_timeline or {}).get("propertyModel"),
@@ -1044,6 +1065,8 @@ def build_report(
             "sourceBackedSceneEdges": (mission_timeline or {}).get("sourceBackedSceneEdges") or [],
             "sourceBackedSceneSequences": (mission_timeline or {}).get("sourceBackedSceneSequences") or [],
             "sourceBackedHashTerminals": (mission_timeline or {}).get("sourceBackedHashTerminals") or [],
+            "chunks": (mission_timeline or {}).get("chunks") or [],
+            "scenePlacement": (mission_timeline or {}).get("scenePlacement") or {},
             "unresolved": (mission_timeline or {}).get("unresolved") or [],
         },
         "missionRuntimeScriptConditions": runtime_script_conditions,
@@ -1096,12 +1119,18 @@ def markdown_report(payload: dict[str, Any]) -> str:
         f"{summary.get('radioContinuationAnchoredCount', 0)} "
         f"(weak/unknown newly anchored: "
         f"{len(summary.get('weakOrUnknownGainingRadioContinuationAnchor', []))})",
+        f"- Scene chunks: {summary.get('chunkCount', 0)} "
+        f"(strong={summary.get('chunkStrongCount', 0)}, "
+        f"weak={summary.get('chunkWeakCount', 0)}, "
+        f"isolated={summary.get('chunkIsolatedCount', 0)}; "
+        f"max scenes/chunk {summary.get('chunkMaxSceneCount', 0)})",
         "",
         "## Entry Evidence",
         "",
-        "| key | status | go | fallback | MissionRuntime | ProxyDlg | VariantMR | LevelScript | LevelData | Radio | Audio | Read/PRTS | AssetMap | PlayDir | RadioCont |",
-        "| --- | --- | ---: | --- | ---: | --- | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- | --- |",
+        "| key | status | chunk | go | fallback | MissionRuntime | ProxyDlg | VariantMR | LevelScript | LevelData | Radio | Audio | Read/PRTS | AssetMap | PlayDir | RadioCont |",
+        "| --- | --- | --- | ---: | --- | ---: | --- | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- | --- |",
     ]
+    scene_placement_index = (payload.get("missionTimeline") or {}).get("scenePlacement") or {}
     for key, info in payload["entries"].items():
         hits = info["hits"]
         radio = hits.get("radioTable")
@@ -1136,10 +1165,12 @@ def markdown_report(payload: dict[str, Any]) -> str:
             if proxy_dialog.get("count", 0) > 1:
                 proxy_dialog_text += f" (+{proxy_dialog['count'] - 1})"
         graph_order = info.get("graphOrder")
+        chunk_id = (scene_placement_index.get(key) or {}).get("chunkId") or ""
         lines.append(
             "| "
             f"`{md_escape(key)}` "
             f"| {md_escape(info.get('status'))} "
+            f"| {md_escape(chunk_id)} "
             f"| {graph_order if graph_order is not None else ''} "
             f"| {md_escape(info.get('fallbackTail'))} "
             f"| {hits.get('missionRuntime', {}).get('count', 0)} "
@@ -1154,6 +1185,42 @@ def markdown_report(payload: dict[str, Any]) -> str:
             f"| {md_escape(play_dir_text)} "
             f"| {md_escape(radio_cont_text)} |"
         )
+
+    chunks = (payload.get("missionTimeline") or {}).get("chunks") or []
+    lines.extend(["", "## Scene Chunks", ""])
+    if chunks:
+        chunk_counts = Counter(chunk.get("strength") or "unanchored" for chunk in chunks)
+        chunk_counts_text = ", ".join(
+            f"{name}={chunk_counts[name]}" for name in sorted(chunk_counts)
+        )
+        lines.append(
+            f"- {len(chunks)} chunks "
+            f"({chunk_counts_text}) — "
+            "connected components in source-backed scene edges, levelscript "
+            "chains, and shared Timelines. Order within a chunk is preserved "
+            "by its edges; inter-chunk order is recovered separately."
+        )
+        lines.append("")
+        lines.append("| chunk | strength | scenes | kinds | edge kinds | scene keys |")
+        lines.append("| --- | --- | ---: | --- | --- | --- |")
+        for chunk in chunks:
+            scene_keys = chunk.get("sceneKeys") or []
+            scene_kinds = ", ".join(chunk.get("sceneKinds") or []) or "—"
+            edge_kinds = ", ".join(chunk.get("edgeKinds") or []) or "_(isolated)_"
+            scene_keys_text = ", ".join(f"`{md_escape(scene_key)}`" for scene_key in scene_keys[:12])
+            if len(scene_keys) > 12:
+                scene_keys_text += f", _… (+{len(scene_keys) - 12})_"
+            lines.append(
+                "| "
+                f"`{md_escape(chunk.get('id'))}` "
+                f"| {md_escape(chunk.get('strength'))} "
+                f"| {chunk.get('sceneCount', 0)} "
+                f"| {md_escape(scene_kinds)} "
+                f"| {md_escape(edge_kinds)} "
+                f"| {scene_keys_text} |"
+            )
+    else:
+        lines.append("- _(none)_")
 
     lines.extend(["", "## LevelScript Sequences", ""])
     wrote_sequence = False
@@ -1284,7 +1351,21 @@ def markdown_report(payload: dict[str, Any]) -> str:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--language", default="CN")
-    parser.add_argument("--mission", action="append", required=True, help="Mission id, comma-list accepted.")
+    parser.add_argument(
+        "--mission",
+        action="append",
+        default=[],
+        help="Mission id, comma-list accepted. Required unless --all-target-prefixes is set.",
+    )
+    parser.add_argument(
+        "--all-target-prefixes",
+        action="store_true",
+        help=(
+            "Audit every mission in mission_timeline_recovery whose id starts "
+            f"with one of {', '.join(TARGET_MISSION_PREFIXES)} "
+            "(authored story missions; excludes db/dm/hidden/map*)."
+        ),
+    )
     parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports")
     parser.add_argument("--skip-asset-map", action="store_true", help="Skip the large AssetMap string-count pass.")
     return parser.parse_args(argv)
@@ -1300,11 +1381,31 @@ def split_missions(values: list[str]) -> list[str]:
     return unique_preserve(out)
 
 
+def collect_target_prefix_missions(language: str, reports_dir: Path) -> list[str]:
+    timeline_path = reports_dir / f"mission_timeline_recovery_{language}.json"
+    payload = read_json(timeline_path, {})
+    out: list[str] = []
+    for entry in payload.get("missions") or []:
+        mission_id = entry.get("mission") or ""
+        if mission_id and mission_id_matches_target_prefix(mission_id):
+            out.append(mission_id)
+    return unique_preserve(out)
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     out_dir = args.reports_dir / "mission_order"
     out_dir.mkdir(parents=True, exist_ok=True)
     missions = split_missions(args.mission)
+    if args.all_target_prefixes:
+        missions.extend(collect_target_prefix_missions(args.language, args.reports_dir))
+        missions = unique_preserve(missions)
+    if not missions:
+        print(
+            "error: pass --mission ... or --all-target-prefixes",
+            file=sys.stderr,
+        )
+        return 2
     for mission in missions:
         payload = build_report(
             mission,
