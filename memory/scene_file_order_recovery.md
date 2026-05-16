@@ -1661,6 +1661,67 @@ For ordering files within a mission/scene:
      files in the sidebar, sorted by the numeric index recovered from the file
      key tail (`1`, `1d5`, `New14`, etc.).
 
+### 2026-05-16 LevelScript Property-Flow Audit
+
+Audited the LevelScript-property-condition / setter bridge described in
+the candidate metadata queue. New audit script:
+[scripts/story_recovery/build_levelscript_property_flow_audit.py](scripts/story_recovery/build_levelscript_property_flow_audit.py).
+
+The audit:
+
+1. Walks every `MissionRuntimeAsset/*.json`, extracts each
+   `CheckLevelScriptPropertyBool` / `CheckLevelScriptPropertyInt`
+   triple `(mapId, scriptId, key)`, the checker mission/quest, and any
+   story refs on that quest.
+2. Locates the target LevelScript file at
+   `LevelScriptData/<mapId>/<scriptId>.json`.
+3. Tests whether the property key appears as a Unity-style length-
+   prefixed UTF-8 string (4-byte LE length followed by ASCII bytes) in
+   the LS binary.
+4. Decodes the LS file via `_load_levelscript_binding_data` and finds
+   records that carry both the property key AND adjacent story refs.
+
+Results (CN export, 2026-05-16):
+
+```text
+missions with property checks: 64
+property-typed conditions:     193
+distinct (mapId, scriptId, key) triples: 164
+bridge status:                 bridgeFound=60, bridgeSubstringOnly=3, bridgeMissing=101
+records-with-neighbor-story-refs: 18 of 60 bridgeFound rows
+```
+
+Notable bridgeFound triples:
+
+- `map01_lv006/3500150002 key=dlg_sm1l6m1_4_Done` —
+  property name literally encodes a dialog completion flag. The setter
+  must be the script record that finishes `dlg_sm1l6m1_4`.
+- `map01_lv006/3500150004 key=radio_sm1l6m1_3_Done`,
+  `radio_sm1l6m1_4_Done` — same pattern for radios.
+- `map01_lv001/2100130002 key=comm_fixed` (e1m3) — descriptive event.
+- `indie_dg002/8700040000 key=battle_field_clear` (e0m0) — matches the
+  known strong sequence `radio_e0m0_8d4 -> cutscene_e0m0_New14 ...`.
+- `map01_lv001/2100370011 key=isFinished` (c13m3) — record `0/0` at
+  delta=0 carries `dlg_c13m3_7`.
+
+Classification:
+
+- `isOrderingSource = True`: the bridge is real and per-mission.
+- `isPromotable = False`: the audit identifies WHICH scripts own the
+  property but does not yet decode the SETTER opcode/kind. Promotion
+  to strong scene-order edges in the WebUI builder needs that decoder
+  pass.
+
+bridgeMissing rows are mostly runtime-system property names
+(`isFinished`, `isSucceeded`, `puzzleSolved`, `int_sum`,
+`Check_HasPower`, etc.) that the LS script exposes implicitly without
+storing the name as a literal string.
+
+Output: `reports/mission_order/levelscript_property_flow_CN.{json,md}`.
+
+This is a foundation for follow-up scene-order promotion. Do not
+promote rows out of this audit into the WebUI yet.
+
 ### 2026-05-15 AudioDialogCustomEventTable Probe
 
 Audited `Table/AudioDialogCustomEventTable.json` against
