@@ -41,6 +41,9 @@ Inline image behavior:
   `surprise`, `think`, `thumbsup`, `unhappywork`) render via
   `ENV_EMOJI_PREFABS` in `webui/app.js`, which holds reconstructed
   RectTransform-driven layer geometry, sprite colors, and pivot data.
+  The frontend applies a small display normalization for standalone variants
+  such as `emoji_think` and `emoji_love` so the `envEmoji_common_*` set keeps a
+  consistent visual size.
   Regenerate that table with
   `python scripts/recover_envemoji_prefabs.py` whenever the asset map or
   emoji prefab bundles change; the script runs `AnimeStudio.CLI` in both

@@ -1000,6 +1000,621 @@ not Timeline-driven) and one FMV. The radio-continuation rule already
 addresses `radio_<scene>_*` flagged `continueAfter*`; the remaining
 e0m0 anomaly stands because every e0m0 radio has both flags false.
 
+### 2026-05-15 RadioContinuation Expansion Batch
+
+Followed the low-risk path of auditing more PlayableDirector-bridge missions
+now that `radioContinuation` is a real WebUI strong edge.
+
+Added 20 mission-order audits for the highest-count unaudited bridge missions:
+`map02_lv002`, `map02_lv004`, `map02_lv005`, `e0m2`, `e7m3`, `e6m3`,
+`c16m4`, `c6m1`, `e8m5`, `e6m1`, `e3m4`, `e9m4`, `e5m1`, `c17m2`,
+`c16m1`, `map02_lv001`, `e7m4`, `e8m1`, `map01_lv003`, and `f1m9d4`.
+
+Baseline before refreshing radio continuation:
+
+| metric | before |
+| --- | ---: |
+| strong | 159 |
+| weak | 156 |
+| unknown | 371 |
+
+Rebuilt `reports/mission_order/radio_continuation_CN.{json,md}` across all
+32 mission audits on disk. Candidate count rose from 48 to **128**:
+104 `after-dialog`, 24 `after-radio`. After rebuilding the CN WebUI story
+bundle and re-running the same 20 audits, the batch moved:
+
+| metric | before | after | delta |
+| --- | ---: | ---: | ---: |
+| strong | 159 | 224 | +65 |
+| weak | 156 | 91 | -65 |
+| unknown | 371 | 371 | 0 |
+
+Top promotions in this batch:
+
+| mission | strong delta | radio-continuation candidates |
+| --- | ---: | ---: |
+| `c17m2` | +12 | 16 |
+| `e6m1` | +12 | 9 |
+| `e7m3` | +10 | 19 |
+| `c16m4` | +10 | 7 |
+| `e5m1` | +9 | 8 |
+| `c16m1` | +4 | 2 |
+| `c6m1` | +3 | 2 |
+| `e9m4` | +2 | 2 |
+| `e6m3` | +2 | 1 |
+| `e7m4` | +1 | 10 |
+
+The map-scoped bridge missions (`map02_lv002`, `map02_lv004`,
+`map02_lv005`, `map02_lv001`, `map01_lv003`) stayed at zero radio candidates
+and remain entirely unknown in this audit shape. They likely need a different
+ordering source than `RadioTable.continueAfter*`.
+
+Ran a second non-map expansion batch for:
+`e10m2`, `e2m5`, `c16m3`, `e8m3`, `e8m2`, `e1m4`, `e4m1`, `c13m2`,
+`e10m1`, `gm02m4`, `e2m2`, `e3m3`, `f1m4d1`, `e1m2`, `c27m5`,
+`c28m2`, `c27m2`, `e10m3`, `c13m3`, and `e4m1d5`.
+
+That raised the radio-continuation report to **146** candidates across
+52 mission audits: 120 `after-dialog`, 26 `after-radio`. After another CN
+WebUI rebuild and audit pass, the second batch moved:
+
+| metric | before | after | delta |
+| --- | ---: | ---: | ---: |
+| strong | 133 | 158 | +25 |
+| weak | 101 | 76 | -25 |
+| unknown | 218 | 218 | 0 |
+
+Second-batch promotions were smaller but still useful:
+
+| mission | strong delta | radio-continuation candidates |
+| --- | ---: | ---: |
+| `c16m3` | +4 | 2 |
+| `e3m3` | +4 | 2 |
+| `e8m2` | +3 | 3 |
+| `e1m4` | +3 | 2 |
+| `e8m3` | +3 | 2 |
+| `e10m1` | +2 | 2 |
+| `e2m2` | +2 | 2 |
+| `e4m1` | +2 | 2 |
+| `e1m2` | +2 | 1 |
+
+Total measured radio-continuation WebUI impact so far across the original 10
+missions plus both 20-mission expansion batches: **+145 strong**,
+**-125 weak**, **-20 unknown**. The expansion batches converted only weak
+rows, while the original batch had the useful unknown-to-strong movement in
+`c17m3` and `e10m4`. Next best target is no longer more blind
+radio-continuation batching; it is either a map-scoped ordering source for the
+all-unknown `map*_lv*` rows, or the deeper PlayableDirector timeline-order
+edge derivation.
+
+### 2026-05-15 Map-Scoped LevelScript File-Order Seed
+
+The first map-scoped ordering gap was a WebUI builder omission, not missing
+evidence. Mission-order audits for `map02_lv002`, `map02_lv004`, and
+`map01_lv003` were already seeing LevelScript `matchedSequence` chains, but
+`build_mission_scene_graph` did not seed the map id itself into
+`flow_level_ids` when the mission key was already a `map##_lv###` level id.
+That meant `_build_levelscript_file_order_scene_sequences` never ran for these
+map missions during WebUI generation.
+
+Patched `scripts/story_builder/language_bundle.py` to add the mission id to
+`flow_level_ids` when it matches `^map\d+_lv\d+$`. This preserves the existing
+weak-only semantics of `levelscriptFileOrder`; it just lets map-scoped missions
+participate in the same file-order scan as normal missions with known levels.
+
+After a CN rebuild and re-running the five map-scoped audits:
+
+| mission | weak before | weak after | unknown before | unknown after |
+| --- | ---: | ---: | ---: | ---: |
+| `map02_lv002` | 0 | 8 | 52 | 44 |
+| `map02_lv004` | 0 | 8 | 22 | 14 |
+| `map01_lv003` | 0 | 9 | 46 | 37 |
+| `map02_lv005` | 0 | 0 | 12 | 12 |
+| `map02_lv001` | 0 | 0 | 14 | 14 |
+| **total** | **0** | **25** | **146** | **121** |
+
+Net: **+25 weak**, **-25 unknown**. `map02_lv005` and `map02_lv001`
+still have no WebUI-relevant LevelScript sequences in the audit output; they
+only expose LevelData/table/audio-style validation hits, so they need a
+different source before promotion.
+
+Follow-up checks:
+
+- `map02_lv005` LevelData contains the remaining `dlg_map02_lv005_1200*`
+  references, but the byte/entity order is `12001`, `12003`, `12004`,
+  `12002`, `12007`, `12005`, `12006`. That is useful placement/trigger
+  validation, not a safe chronology signal.
+- `map02_lv001` has PlayableDirector anchors for six cutscenes, but the bridge
+  records are per-cutscene prefab/timeline containers. They prove the cutscene
+  asset family exists; they do not yet expose a shared parent timeline with
+  inter-cutscene `m_Start` order.
+- The current PlayableDirector bridge is therefore still anchor-only. Promoting
+  it to ordering evidence needs a new source: a parent timeline, sequencer, or
+  control-flow edge that references multiple story keys with authored order.
+
+Added a LevelData interaction-order diagnostic to
+`scripts/story_recovery/build_mission_order_evidence_audit.py` so future map
+passes show the exact LevelData story-ref sequence plus nearby entity, quest,
+ReadingPopUp, and PRTS ids when present. This is deliberately report-only:
+LevelData interaction order is not a WebUI edge kind yet.
+
+The rerun confirms why this stays diagnostic:
+
+| mission | LevelData adjacent pairs | observed sequence |
+| --- | ---: | --- |
+| `map02_lv001` | 6 | `radio_map02_lv001_1` -> `dlg_map02_lv001_1` -> `dlg_map02_lv001_2` -> `dlg_map02_lv001_3` -> `dlg_map02_lv001_5` -> `dlg_map02_lv001_6` -> `dlg_map02_lv001_7` |
+| `map02_lv005` | 6 | `dlg_map02_lv005_12001` -> `dlg_map02_lv005_12003` -> `dlg_map02_lv005_12004` -> `dlg_map02_lv005_12002` -> `dlg_map02_lv005_12007` -> `dlg_map02_lv005_12005` -> `dlg_map02_lv005_12006` |
+
+`map02_lv001` happens to mostly look numeric after the opening radio, but
+`map02_lv005` is visibly placement/entity order. That makes the signal useful
+for finding trigger records and quest ids, but too weak to promote rows out of
+`unknown` by itself.
+
+Reran the same diagnostic on the three map missions that already gained weak
+LevelScript edges. Their LevelData sequences are also mixed placement order:
+
+| mission | LevelData adjacent pairs | note |
+| --- | ---: | --- |
+| `map02_lv002` | 28 | includes jumps such as `2` -> `3` -> `5` -> `26` -> `7` and a separate `12001`-family run |
+| `map02_lv004` | 9 | main run is `3` -> `4` -> `5` -> `6` -> `7` -> `8` -> `9` -> `1` -> `10` -> `2` |
+| `map01_lv003` | 8 | multiple short runs, including `1` -> `19` -> `2` -> `20` and a radio-led interaction run |
+
+So LevelData order should stay an audit column / diagnostic section. It is
+good at exposing which interaction records contain story keys, but not at
+recovering chronology without another authored edge.
+
+Extended that diagnostic with LevelData quest-owner lookup. When a nearby
+quest-like id such as `e5m1_q#4` appears in the LevelData context, the audit now
+resolves it back to its owning `MissionRuntimeAsset`, predecessor list, child
+quests, level, flow index, and any story refs on that exact quest.
+
+Results on the map batch:
+
+| map audit | LevelData quest owner | owner mission | owner level | outcome |
+| --- | --- | --- | --- | --- |
+| `map02_lv001` | `e5m1_q#4` | `e5m1` | `map02_lv001` | real quest node, but no story refs on the owned row; neighboring script-stage refs belong to `e5m1` stories such as `dlg_e5m1_5` / `radio_e5m1_30`, not the `map02_lv001_*` map-scoped rows |
+| `map02_lv002` | `e5m3_q#3` | `e5m3` | `map02_lv001` | real quest node, but no story refs on the owned row; nearby script evidence resolves to `e5m3` story refs such as `radio_e5m3_0d8` |
+| `map02_lv005` | none | - | - | no quest owner signal |
+| `map02_lv004` | none | - | - | no quest owner signal |
+| `map01_lv003` | none | - | - | no quest owner signal |
+
+So LevelData quest ownership is a useful provenance clue, but still not a
+promotable order edge for the map-scoped rows. It shows that some map
+interactions participate in regular mission quest graphs; it does not order the
+standalone `map##_lv###` story files.
+
+### 2026-05-15 PRTS Collection-Order Weak Edges
+
+The `rp_*` / `nar_*` trace produced one conservative promotable signal:
+`PrtsAllItem` rows have `firstLvId` + `order`, which is authored page order
+inside a single PRTS reading/collection item. This is not mission chronology,
+but it is a legitimate local sequence for multi-page documents. The builder now
+emits weak `prtsCollectionOrder` edges only when:
+
+- the row is `type=text` via `contentId=text_*`;
+- multiple rows share the same `firstLvId`;
+- each adjacent `order` slot maps to exactly one available story key;
+- ambiguous duplicate slots, such as `black_*` + `dlg_*` sharing the same text
+  content, are skipped.
+
+After rebuilding CN and rerunning the map audits:
+
+| mission | weak before | weak after | unknown before | unknown after | PRTS edges |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `map02_lv001` | 0 | 3 | 14 | 11 | 2 |
+| `map02_lv002` | 8 | 21 | 44 | 31 | 9 |
+| `map02_lv005` | 0 | 0 | 12 | 12 | 0 |
+| `map02_lv004` | 8 | 8 | 14 | 14 | 0 |
+| `map01_lv003` | 9 | 9 | 37 | 37 | 0 |
+| **total** | **25** | **41** | **121** | **105** | **11** |
+
+Net from PRTS collection order on this map batch: **+16 weak**, **-16
+unknown**. Examples:
+
+- `map02_lv001`: `dlg_map02_lv001_3` -> `dlg_map02_lv001_4` ->
+  `dlg_map02_lv001_5` from `paper_map02_3` orders 1/2/3.
+- `map02_lv002`: `paper_map02_39` orders `dlg_map02_lv002_16` ->
+  `17` -> `18` -> `19`, and `paper_map02_42` orders `22` -> `23` -> `24`.
+
+Keep this edge weak. Some collections order pages within a document, not
+world-story beats, and groups like `paper_map02_25` can jump from
+`dlg_map02_lv002_3` to `dlg_map02_lv002_12` to `dlg_map02_lv002_26`.
+
+### 2026-05-15 Option Position / Inferred Response Status
+
+The option-placement warning queue had a large false-positive component:
+table-only scenes where the option group number exactly matches an existing
+dialog line suffix (`group 1` -> line `_001`, etc.). The builder now treats
+that as a source-keyed option anchor instead of a warning-only fallback, while
+leaving `sparseGap`, `lastLine`, and sibling-timeline placement flagged.
+
+After CN rebuilds:
+
+- `reports/inferred_option_anchors_CN.md` dropped from 97 scenes / 182 groups
+  to **2 scenes / 2 groups**.
+- In the priority story buckets (`e`, `a`, `gm`, `c`), only
+  `dlg_gm01m25_5` (`sparseGap`) still needed runtime-registration triage.
+- `dlg_e2m6_11` no longer warns: the local Timeline/sibling placement is now
+  source-backed by `dlg_e2m6_19`, whose authored SceneGraph option branches
+  exactly match the local post-choice response text (`007`/`008` for option 1,
+  `009` for option 2).
+- The other remaining global layout warning is `dlg_map02_lv001_env_8`, which
+  is outside the current priority story buckets.
+- Empty one-choice rows such as `dlg_gm01m5_1` no longer emit raw
+  option-layout warnings, matching the scene-order analyzer's "no meaningful
+  options" behavior.
+
+The remaining inferred-response queue still has strong negative evidence. The
+current `reports/timeline_option_flow_audit_CN.json` summary shows:
+
+- `20` inferred response groups remain.
+- all `20` classify as `rawTrunkClipOptionIndexDefaultAdjacent`.
+- all `20` have runtime-gate verdict
+  `strictOptionRowsButAllZeroCandidateRuntimeField`.
+- candidate raw clip `optionIndex` counts are all `0`; no candidate group maps
+  back to nonzero option rows.
+
+This means option row positions are known for these groups, but the suspected
+response clips are not runtime-active branch clips. The one visible nonzero
+window case, `dlg_c28m3_23` group 1, has its nonzero field on the common
+continuation / later option region, not on the candidate response rows. Keep
+these groups blocked until a Runtime Jump Track route, explicit DialogTree
+edge, sibling SceneGraph text match, or another authored route source appears.
+
+Refreshed `reports/source_graph/endfield_source_graph.sqlite` after the option
+placement fixes to remove stale issue output. The refreshed graph now reports
+the same live queue: **15 scenes / 20 groups** with
+`inferredOptionResponse`.
+
+Rerunning the response-route audits after the graph refresh closed the obvious
+promotion paths:
+
+- `build_dialog_tree_option_route_audit.py`: 20 groups audited, 0 authored
+  route candidate hits, 0 explicit per-option routes.
+- `build_timeline_option_flow_audit.py`: 20 groups audited, 0 nonzero
+  candidate trunk/raw `optionIndex`; all candidate runtime fields are zero.
+- `build_timeline_binding_audit.py`: 20 groups audited, 0 option-named track
+  mappings.
+- `build_option_playable_semantics_audit.py --only-interesting`: 14 groups
+  with decoded option rows, 0 explicit target fields.
+- `build_option_logic_id_audit.py`: 31 logic-bearing option rows, 0
+  same-mission exact references; the two external `logicId=3` hits are unrelated
+  GameplayConfig rows.
+
+The remaining plausible response-route direction is therefore not a loose
+promotion rule. It is runtime Timeline semantics: understand how selected
+`DialogOptionPlayableAsset` rows drive active clip/time-range selection. Current
+IL2CPP facts show `_SelectIndexInTimeline` passes the selected option object's
+`+0x98` into `DialogChooseOption`, then active branch clips require a positive
+runtime `+0x18` option field. All current candidate response clips have zero in
+that runtime field, so adjacency to option clips is negative evidence until the
+active-clip/range mechanism is decoded more precisely.
+
+Refined the Runtime Jump follow-up audit so its default scope matches the live
+`inferredOptionResponse` warning queue instead of every retained diagnostic
+`optionBranchRisk` row. This excludes already anchored raw trunk
+`clipOptionIndex` cases such as `dlg_c28m3_10` from the unresolved queue while
+keeping them inspectable with `--include-promoted-risk-groups`.
+
+Current strict Runtime Jump response-route check:
+
+- `reports/runtime_jump_option_route_audit_CN.md`: 20 live inferred groups,
+  3 with nearby Runtime Jump clips, 0 strict promotions.
+- `dlg_c28m3_23` group 1 has nearby jump clips, but they belong to optionIndex
+  3/4 while the unresolved group has optionIndex 1/2.
+- `dlg_e6m1_10` group 4 and `dlg_e6m4_14` group 2 have nearby jump clips, but
+  the recovered runtime path either contradicts the inferred first line or
+  resets option state to default. Do not promote them.
+- `reports/runtime_jump_option_route_audit_CN_nearby_promoted.md` keeps the
+  promoted diagnostic comparison; `dlg_c28m3_10` remains a raw
+  `clipOptionIndex` positive case, not a live unresolved warning.
+
+Added a positive/negative control report at
+`reports/option_route_evidence_controls_CN_priority.md`. In priority buckets,
+the positive Runtime Jump route shape has **30 groups / 63 route entries**:
+all 30 groups have distinct per-option paths and skip/reverse range evidence
+for every option. The 20 live unresolved groups have no such complete shape and
+0 strict passes. This is the current evidence standard for promoting inferred
+responses from Runtime Jump data.
+
+The focused priority report is now generated by
+`scripts/story_recovery/build_priority_story_order_audit.py` at
+`reports/priority_story_order_CN.md`.
+
+Added a WebUI `LevelData` host scan for parent-variant LevelScript levels.
+Files such as `*_sub_e10m4d5.json` and `*_sub_c17m3d5.json` now seed their
+host levels into parent missions `e10m4` and `c17m3`, letting the existing
+weak `levelscriptFileOrder` edge run for priority missions that previously had
+matching audit evidence but no WebUI level seed.
+
+Measured priority impact after rebuild:
+
+| bucket | before weak | after weak | before unknown | after unknown | delta |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| main | 280 | 308 | 914 | 886 | +28 weak / -28 unknown |
+| character | 100 | 123 | 445 | 422 | +23 weak / -23 unknown |
+| event | 8 | 8 | 61 | 61 | 0 |
+| major | 38 | 38 | 331 | 331 | 0 |
+| **total** | **426** | **477** | **1751** | **1700** | **+51 weak / -51 unknown** |
+
+Strong rows are unchanged at `938`; this edge remains weak. The visible wins
+are `e10m4` unknowns dropping from 85 to **57** and `c17m3` dropping from 58
+to **35**.
+
+Expanded the mission-order audit coverage to every missing priority mission
+(`e`, `a`, `gm`, `c`) with the heavy AssetMap pass disabled. That raised the
+radio-continuation report from the earlier 44 candidates to **204** candidates
+across **145** audited missions (`after-dialog=155`, `after-radio=49`).
+
+After refreshing `reports/mission_order/radio_continuation_CN.json` and
+rebuilding CN, the extra radio edges promoted weak entries to strong entries:
+
+| bucket | strong before | strong after | weak before | weak after | unknown before | unknown after |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| main | 538 | 576 | 308 | 270 | 886 | 886 |
+| event | 62 | 62 | 8 | 8 | 61 | 61 |
+| major | 122 | 122 | 38 | 38 | 331 | 331 |
+| character | 216 | 224 | 123 | 115 | 422 | 422 |
+| **total** | **938** | **984** | **477** | **431** | **1700** | **1700** |
+
+At that point priority-bucket totals were `3115` entries: `984` strong,
+`431` weak, `1700` unknown. The radio batch did not reduce unknown rows because
+the new candidates mostly overlapped rows already recovered weakly by
+LevelScript file-order evidence, but it still made those rows strong in the
+WebUI ordering graph.
+
+The biggest remaining unknown mission queues were `e10m4` (57), `c16m4` (53),
+`c6m1` (44), `e1m1` (43), `c28m3` (41), `e9m3` (39), `e0m2` (38), `e1m2`
+(38), `e1m3` (37), and `c17m3` (35).
+
+The `e9m3` hole turned out to be a mission-discovery bug in the WebUI builder,
+not missing source data. `e9m3` is mostly radio/cutscene content, so it was not
+in `known_missions` when `language_bundle.py` scanned LevelData host filenames
+like `dung02_dg003_lv_data_sub_e9m3.json`. Adding `RadioTable` and
+`RemoteCommonTable` ids to that early known-mission seed lets the existing
+LevelData-host scan include `dung02_dg003`, and the already-authored
+LevelScript file-order / UID-chain logic then recovers the mission:
+
+| mission | before strong | before weak | before unknown | after strong | after weak | after unknown |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `e9m3` | 0 | 0 | 39 | 2 | 26 | 11 |
+
+Evidence source:
+`export_full/structured/StreamingAssets/Data/Json/LevelData/dung02_dg003/dung02_dg003_lv_data_sub_e9m3.json`
+links the mission to the dungeon host, then
+`LevelScriptData/dung02_dg003/29800030000.json`, `29800030003.json`, and
+`29800030004.json` provide the recovered sequence. The regenerated
+`reports/mission_order/e9m3_evidence_audit.md` now reports status
+`strong=2`, `weak=26`, `unknown=11`.
+
+Current priority totals after this fix are `3115` entries: `986` strong,
+`457` weak, `1672` unknown. This is a net **+2 strong / +26 weak /
+-28 unknown** in the priority scope, entirely from original game-data host and
+LevelScript evidence.
+
+The next recovery came from parent/variant MissionRuntime evidence. Some
+playable variants, such as `e10m4d5` and `c16m4d5`, own quest DAGs and
+client-action/script-condition story refs whose story keys are parent mission
+keys (`radio_e10m4_*`, `dlg_c16m4_*`, etc.). The WebUI story entries live under
+the parent mission, so `language_bundle.py` now folds matching `*d#`
+MissionRuntimeAsset quests into the **scene graph ordering pass only** when
+their story refs resolve to actual parent WebUI nodes. The visible mission flow
+payload stays parent-scoped.
+
+After rebuilding CN:
+
+| bucket | before strong | before weak | before unknown | after strong | after weak | after unknown |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| main | 578 | 296 | 858 | 611 | 272 | 849 |
+| character | 224 | 115 | 422 | 247 | 109 | 405 |
+| event | 62 | 8 | 61 | 62 | 8 | 61 |
+| major | 122 | 38 | 331 | 122 | 38 | 331 |
+| **total** | **986** | **457** | **1672** | **1042** | **427** | **1646** |
+
+Net from variant MissionRuntime scene-graph evidence: **+56 strong**,
+**-30 weak**, **-26 unknown**.
+
+Largest mission impacts:
+
+| mission | variant source | before | after |
+| --- | --- | --- | --- |
+| `e10m4` | `MissionRuntimeAsset/e10m4d5.json` plus referenced `LevelScriptData/dung02_rdg002` scripts | 6 strong / 28 weak / 57 unknown | 28 strong / 8 weak / 55 unknown |
+| `c16m4` | `MissionRuntimeAsset/c16m4d5.json` quest refs and client actions | 10 strong / 8 weak / 53 unknown | 21 strong / 4 weak / 46 unknown |
+
+`reports/mission_order/e10m4_evidence_audit.md` and
+`reports/mission_order/c16m4_evidence_audit.md` now include a `VariantMR`
+column so the provenance is visible in the generated audit rather than implied
+by the final strong/weak status.
+
+The next promotable source is NPC proxy dialog evidence. `MissionRuntimeAsset`
+quest objectives often track an NPC proxy without directly naming the dialog,
+while `GameplayConfig/NpcProxyExDataTable.json` assigns the active dialog to
+that proxy. The builder now records a `proxyDialogs` ref only when the tracked
+proxy is unique to one quest in the mission and the proxy table has exactly one
+usable dialog row for that mission. This avoids the noisy shared-proxy cases
+seen in several `gm*` missions.
+
+After rebuilding CN, priority-bucket totals moved from `1042` strong,
+`427` weak, `1646` unknown to `1075` strong, `421` weak, `1619` unknown:
+**+33 strong / -6 weak / -27 unknown**.
+
+Representative promotions:
+
+| mission | evidence | result |
+| --- | --- | --- |
+| `c6m1` | `c6m1_q#9` tracks `c6m1Unionminer2_map01_001`, whose `NpcProxyExDataTable` row assigns `dlg_c6m1_33`; `c6m1_q#talkStartDgn` tracks `wolfgd_map01_002`, which assigns `dlg_c6m1_20` | `11/4/43` -> `13/3/42` in the mission audit |
+| `e10m4` | `e10m4_q#2` tracks `zhuangfy_indie_dg005_e10m4opendoor`, which assigns `dlg_e10m4_10` | `28` -> `29` strong |
+| `c16m4` | `c16m4_q#1` tracks `pelica_base01_lv001_c16m4`, which assigns `dlg_c16m4_1` | `21` -> `22` strong |
+| `c27m4` | `c27m4_q#2` tracks `tangtang_map02_c27m3fuben`, which assigns `dlg_c27m4_14` | `12` -> `13` strong |
+
+`scripts/story_recovery/build_mission_order_evidence_audit.py` now reports a
+`ProxyDlg` column so these rows show the exact `npcProxyId <- questId`
+provenance instead of appearing as unexplained strong rows with
+`MissionRuntime=0`.
+
+Retired four priority line-order warnings with a narrow
+`numericBoundaryStitch` source. This only covers rows whose numeric suffix sits
+outside the authored DialogTree/Timeline span, such as an intro line before the
+first Timeline clip or a terminal line after the last DialogTree trunk. In-range
+holes are still flagged.
+
+The remaining priority line-order warnings are therefore small
+partial-coverage cases, not broad missing-order buckets:
+
+| bucket | scene | uncovered lines |
+| --- | --- | --- |
+| event | `dlg_a1m4_1` | `016`, `017` |
+| character | `dlg_c17m2_10` | `002` |
+| major | `dlg_gm02m13_3` | `003` |
+| major | `dlg_gm02m13_4` | `003` |
+
+These are next in line if we want to reduce priority warnings further. They
+look like in-range DialogTree/Timeline coverage holes where the builder has a
+final placement, but the uncovered lines are not directly named by the authored
+source used for that scene. Source-graph checks for the four uncovered line
+nodes only found generated `webui/story` membership, speaker, and audio edges,
+not a DialogTree/Timeline/mission-source ordering edge, so they should stay
+warning-backed until another original source appears.
+
+Added two more MissionRuntime-only recovery passes for the priority buckets:
+
+- Scene-ref aliasing now treats `dlg_*` / `misc_dlg_*` as aliases in the shared
+  source-ref resolver, and `build_mission_scene_graph` resolves normal quest
+  `dialogs`, `cutscenes`, `remotecomms`, and `radios` through that resolver
+  instead of raw string membership. This promotes quest-authored d-variant
+  dialog refs such as `dlg_e2m5_2d7` to the actual WebUI node
+  `misc_dlg_e2m5_2d7`.
+- Client action extraction now follows explicit `actionMapRaw` `_nextID`
+  chains from each `clientActionMapValue` root. This attaches chained
+  `PlayRadio` refs to the same quest only when the original MissionRuntime
+  action graph says the action follows the root.
+
+Measured CN priority impact:
+
+| pass | strong | weak | unknown | delta |
+| --- | ---: | ---: | ---: | --- |
+| after NPC proxy / variant-gate consistency | 1087 | 412 | 1616 | - |
+| after `dlg` -> `misc_dlg` quest aliasing | 1099 | 408 | 1608 | +12 strong / -4 weak / -8 unknown |
+| after `_nextID` client-action chains | 1104 | 408 | 1603 | +5 strong / -5 unknown |
+
+Representative alias promotions:
+
+| mission | promoted rows | evidence |
+| --- | --- | --- |
+| `e2m5` | `misc_dlg_e2m5_2d7`, `misc_dlg_e2m5_3d5` | `MissionRuntimeAsset/e2m5.json` quest `dialogs` / `CheckTalkOptionFinish` refs use the raw `dlg_*d*` ids |
+| `e7m2` | `misc_dlg_e7m2_3d5` | quest `e7m2_q#15` names `dlg_e7m2_3d5` |
+| `gm01m6` | `misc_dlg_gm01m6_3d5` | quest `gm01m6_q#3` names `dlg_gm01m6_3d5` |
+
+Representative `_nextID` promotions:
+
+| mission | promoted rows | evidence |
+| --- | --- | --- |
+| `e6m4` | `radio_e6m4_20`, `radio_e6m4_32` | `clientActionMapValue` roots action `27`; action `27 -> 28 -> 29` via `_nextID`, and actions `28` / `29` are `PlayRadio` |
+| `c28m1` | `radio_c28m1_6` | chained `PlayRadio` under quest `c28m1_q#10` |
+| `c28m2` | `radio_c28m2_20` | chained `PlayRadio` under quest `c28m2_q#10` |
+| `gm01m22` | `radio_gm01m22_2d7` | chained `PlayRadio` under quest `gm01m22_q#4` |
+
+Tightened `build_mission_order_evidence_audit.py` string matching so diagnostic
+MissionRuntime hits no longer count `dlg_c6m1_1` inside distinct ids like
+`dlg_c6m1_17`. The audit still allows line/audio suffixes such as
+`dlg_x_1_001`, but rejects alphanumeric continuations.
+
+Follow-up evidence checks kept the same boundary:
+
+- `dlg_gm01m25_5` is now separated as `nonRuntimeOptionLayout` in
+  `reports/priority_story_order_CN.md`. Its scene key is absent from
+  `Beyond.Gameplay.DialogIdTable`, so the runtime `DialogManager` has no
+  gameplay entry point for it. The option rows still exist in
+  `DialogOptionTable` / `DialogTextTable`, but without a runtime registry row
+  this looks like cut or unreferenced content, not an active option-location
+  bug.
+- The remaining uncovered line ids (`dlg_a1m4_1_016`, `dlg_a1m4_1_017`,
+  `dlg_c17m2_10_002`, `dlg_gm02m13_3_003`, and `dlg_gm02m13_4_003`) were
+  checked against source graph edges, decoded related DialogTree JSON and
+  extra-config files, `DialogIdTable`, `MissionRuntimeAsset`, `LevelScriptData`,
+  `AudioDialog`, and structured table hits. The exact line ids are absent from
+  the original DialogTree/timeline/mission ordering sources; they only have
+  table/audio-style presence evidence. Keep them warning-backed rather than
+  promoting a placement from numeric fallback.
+
+Added another original-data extractor fix for MissionRuntime objective script
+anchors:
+
+- Objective leaf extraction now reads both underscored and non-underscored
+  LevelScript fields: `_scriptId` / `scriptId`, `_levelId` / `levelId`,
+  `_mapId` / `mapId`, and scene-id variants. Several conditions use
+  `CheckLevelScriptStage*` with `levelId.constValue` and
+  `scriptId.constValue.scriptId`; before this pass, the audit could see those
+  script ids diagnostically, but the WebUI scene graph could not bind them back
+  to their LevelScript story refs.
+- The mission-order audit now reports `levelId`/`mapId` for these script
+  conditions so the evidence column names the original file pair instead of
+  leaving the map column blank.
+
+Measured CN priority impact:
+
+| pass | strong | weak | unknown | delta |
+| --- | ---: | ---: | ---: | --- |
+| after `_nextID` client-action chains | 1104 | 408 | 1603 | - |
+| after objective `scriptId` / `levelId` aliases | 1142 | 388 | 1585 | +38 strong / -20 weak / -18 unknown |
+
+Representative objective-script promotions:
+
+| mission | promoted rows | evidence |
+| --- | --- | --- |
+| `e2m5` | `misc_dlg_e2m5_2d8`, `misc_dlg_e2m5_2d9`, `dlg_e2m5_3` | `MissionRuntimeAsset/e2m5.json` quest `e2m5_q#23` / `e2m5_q#32` checks `map01_lv005` scripts `3400060028`, `3400060029`, and `3400060027`; those LevelScript files name the promoted scenes |
+| `e6m4` | `radio_e6m4_19`, `cutscene_e6m4_transition_1`, `dlg_e6m4_5`, `radio_e6m4_4`, `dlg_e6m4_8` | quests `e6m4_q#8`, `#11`, `#9`, and `#41` check `map02_lv002` scripts `22800110036`, `22800110006`, `22800110003`, and `22800110032` |
+| `e1m2` | `radio_e1m2_3`, `dlg_e1m2_1`, `radio_e1m2_4`, `dlg_e1m2_2`, `dlg_e1m2_3`, `radio_e1m2_6` | quest `e1m2_q#3` checks `map01_lv001` scripts `2100060024`, `2100060025`, and `2100060026` |
+
+The option-location / inferred-response boundary is unchanged after this pass:
+remaining inferred responses still fail the runtime-jump positive-control rule,
+and priority option-layout warnings are down to the single unregistered
+`dlg_gm01m25_5` non-runtime case.
+
+Added two small original-data order lanes after the objective-script pass:
+
+1. Mission area ids that embed story keys are now treated as real quest anchors.
+   The scanner reads `_areaId` / `areaId` / `missionAreaId` from
+   `MissionRuntimeAsset` objective conditions and tracking hints. This is a
+   narrow source because the original quest data literally names the story key
+   inside an area id, e.g. `e1m1_radio_e1m1_3d2`.
+   - CN priority impact: `radio_e1m1_3d2` moved from unknown to strong.
+   - Totals after this pass: `3115` priority entries; `1143` strong, `388`
+     weak, `1584` unknown.
+   - Example edge: `radio_e1m1_3 -> radio_e1m1_3d2 -> radio_e1m1_4d5`, sourced
+     from the `e1m1_q#62` quest/area anchor and normal quest predecessor edges.
+
+2. LevelData quest/story co-location is now a weak WebUI evidence class.
+   The scanner searches original `LevelData/*.json` byte-string context for a
+   nearby quest id and story id, requires the story mission to match the quest
+   mission or its parent variant, then attaches compact `levelDataStoryRefs` to
+   the matching mission-flow quest. `language_bundle.py` emits
+   `levelDataQuestRef` edges as weak only. This deliberately does not upgrade
+   to strong because LevelData proves a quest-gated host/trigger relationship,
+   not strict playback chronology.
+   - CN priority impact: strong unchanged at `1143`; weak `388 -> 401`;
+     unknown `1584 -> 1571`.
+   - New weak anchors include `radio_c16m4_2d6`, `radio_c28m3_33`,
+     `radio_e1m7_3d4`, `radio_e1m7_8`, `radio_gm01m11_3`,
+     `radio_gm01m11_4`, `radio_e10m3_9`, `radio_e5m2_18`,
+     `radio_e7m1_18`, `radio_c17m2_25`, `radio_c17m2_26`,
+     `radio_c28m1_16`, and `radio_e2m5d5_4`.
+   - Representative original-data edges:
+     - `c16m4`: `radio_c16m4_2d5 -> radio_c16m4_2d6`, quest
+       `c16m4d5_q#11`, file
+       `LevelData/dung01_rdg003/dung01_rdg003_lv_data_sub_c16m4.json`, entity
+       `int_narrative_common_empty`.
+     - `c28m3`: `dlg_c28m3_19 -> radio_c28m3_33`, quest `c28m3_q#19`, file
+       `LevelData/dung01_rdg007/dung01_rdg007_lv_data_sub_c28m3.json`.
+     - `gm01m11`: `dlg_gm01m11_2 -> radio_gm01m11_3 ->
+       radio_gm01m11_4`, quests `gm01m11_q#5` / `gm01m11_q#6`, fields
+       `radio_await_start`, `radio_escape_start`, and `require_quest`.
+
+The option-location / inferred-response boundary is still unchanged: the
+remaining inferred responses have no positive runtime jump / option target
+evidence, and `dlg_gm01m25_5` remains the only priority option-layout warning,
+classified as non-runtime/unregistered content.
+
 #### Anti-targets (not worth the decoder budget)
 
 - Patching AnimeStudio to add a dedicated `PlayableDirector` C# class —
@@ -1039,7 +1654,9 @@ For ordering files within a mission/scene:
 9. Surface mission-order confidence separately in UI:
    - strong: quest DAG, authored scene link, or UID-linked LevelScript scene
      chain.
-   - weak: LevelScript file-offset order.
+   - weak: LevelScript file-offset order, or LevelData quest/story co-location
+     where the original level data proves a quest-gated host/trigger but not
+     strict playback chronology.
    - unknown: fallback/numeric order only. Keep these after strong/weak ordered
      files in the sidebar, sorted by the numeric index recovered from the file
      key tail (`1`, `1d5`, `New14`, etc.).
