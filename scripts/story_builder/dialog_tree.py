@@ -2724,6 +2724,39 @@ def resolve_scene_line_order(conv_key: str, original_line_ids: list[str]) -> tup
         if line_id not in seen_line_ids
     ]
     ordered_line_ids = merge_uncovered_line_ids(ordered_line_ids, uncovered_line_ids)
+    boundary_stitch_line_ids: list[str] = []
+    covered_suffixes = [
+        suffix
+        for suffix in (line_suffix(line_id) for line_id in seen_line_ids)
+        if suffix is not None
+    ]
+    if covered_suffixes and all_available_line_suffixes_unique():
+        min_covered_suffix = min(covered_suffixes)
+        max_covered_suffix = max(covered_suffixes)
+        boundary_stitch_line_ids = [
+            line_id
+            for line_id in uncovered_line_ids
+            if (
+                (suffix := line_suffix(line_id)) is not None
+                and (suffix < min_covered_suffix or suffix > max_covered_suffix)
+            )
+        ]
+        if boundary_stitch_line_ids:
+            boundary_stitch_line_id_set = set(boundary_stitch_line_ids)
+            ordered_boundary_stitch_line_ids = [
+                line_id
+                for line_id in ordered_line_ids
+                if line_id in boundary_stitch_line_id_set
+            ]
+            contributing_sources.append({
+                "kind": "numericBoundaryStitch",
+                "sourceKey": conv_key,
+                "file": "DialogTextTable.rowId",
+                "matchedLineIds": ordered_boundary_stitch_line_ids,
+                "addedLineIds": ordered_boundary_stitch_line_ids,
+                "coverage": len(ordered_boundary_stitch_line_ids),
+                "priority": 9,
+            })
     numeric_stitch = False
     if (
         contributing_sources
@@ -2759,6 +2792,8 @@ def resolve_scene_line_order(conv_key: str, original_line_ids: list[str]) -> tup
     }
     if numeric_stitch:
         debug["stitch"] = "lineIdSuffixGaps"
+    elif boundary_stitch_line_ids:
+        debug["stitch"] = "numericBoundaryLines"
     return ordered_line_ids, debug
 
 

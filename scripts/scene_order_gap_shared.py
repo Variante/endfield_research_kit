@@ -1119,6 +1119,14 @@ def _render_group_detail(group_detail: dict) -> str:
 
     if status == "authoredAfter":
         detail = f"{label} authored after `{after}`" if after else f"{label} authored after anchor"
+    elif status == "keyedAfter":
+        detail = f"{label} keyed after `{after}`" if after else f"{label} keyed after matching line"
+    elif status == "siblingSceneText":
+        detail = (
+            f"{label} matched sibling SceneGraph text after `{after}`"
+            if after
+            else f"{label} matched sibling SceneGraph text"
+        )
     elif status == "authoredPre":
         detail = f"{label} authored before scene"
     elif status == "fallbackAfter":
@@ -1267,6 +1275,8 @@ def analyze_option_layout(
             f"total={int(breakdown.get('total', len(option_groups)))}, "
             f"authoredAfter={int(breakdown.get('authoredAfter', 0))}, "
             f"authoredPre={int(breakdown.get('authoredPre', 0))}, "
+            f"keyedAfter={int(breakdown.get('keyedAfter', 0))}, "
+            f"siblingSceneText={int(breakdown.get('siblingSceneText', 0))}, "
             f"fallbackAfter={int(breakdown.get('fallbackAfter', 0))}, "
             f"unanchored={int(breakdown.get('unanchored', 0))}"
         )
@@ -1406,8 +1416,10 @@ def classify_option_position_failure(conv: dict, analysis: dict) -> dict:
     authored_after = _as_int(breakdown.get("authoredAfter"))
     authored_pre = _as_int(breakdown.get("authoredPre"))
     fallback_after = _as_int(breakdown.get("fallbackAfter"))
+    keyed_after = _as_int(breakdown.get("keyedAfter"))
+    sibling_scene_text = _as_int(breakdown.get("siblingSceneText"))
     unanchored = _as_int(breakdown.get("unanchored"))
-    authored_total = authored_after + authored_pre
+    authored_total = authored_after + authored_pre + keyed_after + sibling_scene_text
 
     if total and fallback_after == total and not authored_total and not unanchored:
         code = "syntheticAfterAllGroups"
@@ -1454,6 +1466,8 @@ def classify_option_position_failure(conv: dict, analysis: dict) -> dict:
         "groups: "
         f"authoredAfter={authored_after}, "
         f"authoredPre={authored_pre}, "
+        f"keyedAfter={keyed_after}, "
+        f"siblingSceneText={sibling_scene_text}, "
         f"fallbackAfter={fallback_after}, "
         f"unanchored={unanchored}"
     )
