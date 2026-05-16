@@ -287,7 +287,18 @@ def inline_image_number_key(value: str) -> str:
 ENV_EMOJI_PREFAB_ALIASES: dict[str, str] = {
     "envemoji_common_adaptationwork": "emoji_adaptationwork",
     "envemoji_common_dislike": "emoji_newdislike",
+    "envemoji_common_empty": "emoji_empty",
+    "envemoji_common_exhaustion": "emoji_exhaustion",
+    "envemoji_common_happy": "emoji_newhappy",
+    "envemoji_common_love": "emoji_love",
     "envemoji_common_newworkhard": "emoji_newworkhard",
+    "envemoji_common_normal": "emoji_normal",
+    "envemoji_common_sad": "emoji_newsad",
+    "envemoji_common_sigh": "emoji_newsigh",
+    "envemoji_common_surprise": "emoji_newsurprise",
+    "envemoji_common_think": "emoji_think",
+    "envemoji_common_thumbsup": "emoji_thumbsup",
+    "envemoji_common_unhappywork": "emoji_unhappywork",
     "envemoji_common_workhard": "emoji_newworkhard",
 }
 
@@ -304,72 +315,87 @@ ENV_EMOJI_PREFAB_LAYER_STEMS: dict[str, tuple[str, ...]] = {
     ),
     "emoji_newdislike": (
         "emoji_newbg",
-        "emoji_circle_1",
         "emoji_unhappyworkcircle",
         "emoji_sigheyenew",
         "emoji_newdislike_mouth",
     ),
     "emoji_newworkhard": (
         "emoji_newbg",
-        "emoji_circle_1",
         "emoji_unhappyworkcircle",
         "emoji_newworkhard_deco",
         "emoji_newworkhard_deco1",
         "emoji_newworkhard_deco2",
     ),
-}
-
-
-ENV_EMOJI_FALLBACK_LAYER_STEMS: dict[str, tuple[str, ...]] = {
-    "emoji_newhappy": (
+    "emoji_empty": (
         "emoji_newbg",
-        "emoji_newdeco",
-        "emoji_newhappyeye",
-        "emoji_happymouth",
-        "emoji_happy_mouth_2",
-    ),
-    "emoji_newsad": (
-        "emoji_newsad_circle",
-        "emoji_newsad_decobg",
-        "emoji_newsad_eye",
-        "emoji_newsad_deco",
-        "emoji_sadmouth",
-    ),
-    "emoji_newsigh": (
-        "emoji_sighcircle",
-        "emoji_sighcirclenew",
-        "emoji_sigheyenew",
-        "emoji_sighmouthnew",
-        "emoji_sigh_1",
-    ),
-    "emoji_newsurprise": (
         "emoji_surprisecircle",
-        "emoji_newsurpriseeyebg",
-        "emoji_surprisemouthnew",
-    ),
-    "emoji_unhappywork": (
-        "emoji_unhappyworkcircle",
-        "emoji_unhappyworkcircle_1",
+        "emoji_emptyeye",
     ),
     "emoji_exhaustion": (
         "emoji_exhaustioncircle",
         "emoji_exhaustioneye",
         "emoji_exhaustionmouth",
     ),
-    "emoji_empty": (
-        "emoji_emptyeye",
-    ),
-    "emoji_think": (
-        "emoji_thinkpoint",
-    ),
     "emoji_love": (
         "emoji_love",
+        "emoji_circle_1",
+        "emoji_circle",
+    ),
+    "emoji_newhappy": (
+        "emoji_newbg",
+        "emoji_circle_1",
+        "emoji_newhappyeye",
+        "emoji_happymouth",
+    ),
+    "emoji_newsad": (
+        "emoji_newbg",
+        "emoji_newsad_circle",
+        "emoji_newsad_eye",
+        "emoji_newsad_deco",
+        "emoji_newsad_decobg",
+    ),
+    "emoji_newsigh": (
+        "emoji_newbg",
+        "emoji_sighcirclenew",
+        "emoji_sigheyenew",
+        "emoji_sighmouthnew",
+    ),
+    "emoji_newsurprise": (
+        "emoji_newbg",
+        "emoji_circle_1",
+        "emoji_newsurpriseeyebg",
+        "emoji_happyeye",
+        "emoji_surprisemouthnew",
+    ),
+    "emoji_normal": (
+        "emoji_newbg",
+        "emoji_circle_1",
+        "emoji_circle",
+        "emoji_happyeye",
+    ),
+    "emoji_think": (
+        "emoji_workhardcircle",
+        "emoji_workhardcircleblue",
+        "emoji_thinkpoint",
     ),
     "emoji_thumbsup": (
-        "emoji_hand_1",
+        "emoji_newbg",
+        "emoji_unhappyworkcircle",
         "emoji_hand_2",
+        "emoji_hand_1",
+    ),
+    "emoji_unhappywork": (
+        "emoji_newbg",
+        "emoji_unhappyworkcircle",
+        "emoji_circle_1",
+        "emoji_unhappyworkcircle_1",
+        "emoji_newdeco",
+        "emoji_sigheyenew",
     ),
 }
+
+
+ENV_EMOJI_FALLBACK_LAYER_STEMS: dict[str, tuple[str, ...]] = {}
 
 
 def resolve_env_emoji_prefab_key(value: str) -> str:

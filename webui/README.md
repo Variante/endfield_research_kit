@@ -81,7 +81,8 @@ from `webui/data/` and keeps heavyweight recovery work in the Python builders.
   `emoji` fields from the Unity emoji prefab aliases and recovered
   RectTransform layer data in `story_media.json`. Recovered `AnimationClip`
   enter curves drive the initial alpha flicker and squash/stretch when the
-  row scrolls into view, and replay on hover/focus.
+  row scrolls into view, and replay on hover/focus. Standalone prefab variants
+  are normalized to the same visual scale as the bubble-backed common emoji.
 - Non-emoji SNS media such as `sns_image_*`, `sns_sticker_*`,
   `deco_sns_tweet_decorate_*`, `bg_sns_tweet_decorate_*`, and matching
   `cg_image_*` assets should render with their normal image proportions rather
