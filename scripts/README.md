@@ -107,7 +107,8 @@ Expected active inputs and outputs:
   demo bundle helpers used by `build_assets.py` and the Updates builder.
 - `package_webui.py`: packages split shareable WebUI zips from
   `serve.py`, `..\webui\`, and displayed media files under `..\export_full\`.
-  The primary zip is story/code/emoji only; the companion assets zip carries
+  The primary zip is story/code/emoji only, including the full
+  `envEmoji_common_*` prefab layer sprite set; the companion assets zip carries
   larger images and videos.
 - `common.py`: small shared constants and JSON/path helpers for the
   WebUI builders.
@@ -152,11 +153,24 @@ These scripts are not part of `export.bat`; they live under
 scan:
 
 - `story_recovery/build_runtime_jump_option_route_audit.py`: audits remaining
-  `inferredFollowingLines` option groups against nearby Runtime Jump Track
-  clips, including forward skip ranges, reverse/directional ranges, and
+  live `inferredOptionResponse` warning groups against nearby Runtime Jump
+  Track clips, including forward skip ranges, reverse/directional ranges, and
   `needChangeOptionAfterJump` markers. It writes
   `reports/runtime_jump_option_route_audit_<LANG>.json` / `.md`. Use it
-  before promoting any new automatic option-route rule.
+  before promoting any new automatic option-route rule. Pass
+  `--include-promoted-risk-groups` only when you intentionally want to inspect
+  already anchored diagnostic `optionBranchRisk` rows.
+- `story_recovery/build_option_route_evidence_controls.py`: summarizes
+  positive Runtime Jump route controls from `timeline_line_orders.json` beside
+  the current negative-control `runtime_jump_option_route_audit` queue. It
+  writes `reports/option_route_evidence_controls_<LANG>_priority.json` / `.md`
+  and documents the evidence bar for promoting inferred option responses.
+- `story_recovery/build_priority_story_order_audit.py`: summarizes the current
+  main-story, event, major-mission, and character-story recovery surface from
+  the built WebUI data. It writes `reports/priority_story_order_<LANG>.json` /
+  `.md`, including ordered/unknown totals, remaining inferred responses,
+  non-runtime option-layout rows, uncovered line warnings, and top unknown
+  missions.
 - `story_recovery/build_option_playable_semantics_audit.py`: audits remaining
   `inferredOptionResponse` groups against decoded
   `DialogOptionPlayableAsset` fields such as `logicId`, `trunkId`,
