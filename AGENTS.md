@@ -81,7 +81,7 @@ current source of truth instead:
 - agent-facing repo rules: `AGENTS.md`
 - script/workflow contract: `scripts/README.md`
 - WebUI frontend scope: `webui/README.md`
-- detailed WebUI recovery notes: `memory/webui_recovery/`
+- detailed WebUI recovery notes: `memory/webui_recovery.md`
 - shader/animation recovery snapshots: dedicated files in `memory/`
 
 ## Project Local Skills
@@ -94,6 +94,9 @@ of these workflows, open the matching `SKILL.md` before acting:
   behavior.
 - `.codex/skills/endfield-source-graph/`: source graph build/query and
   graph-backed follow-up reports.
+- `.codex/skills/endfield-option-overrides/`: editing and validating
+  WebUI-only manual option recovery overrides in
+  `scripts/story_builder/manual_option_overrides.json`.
 
 The current checkout does not ship separate `endfield-story-recovery` or
 `endfield-character-recovery-lab` skill folders. For those workflows, use the

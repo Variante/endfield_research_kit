@@ -43,7 +43,10 @@ from `webui/data/` and keeps heavyweight recovery work in the Python builders.
   and are removed from the trunk even when
   recovered Timeline order disagrees with numeric line suffix order. DialogIdTable
   recovery chips expose runtime trunk line refs and runtime option refs in
-  their tooltip when that evidence is available.
+  their tooltip when that evidence is available. Known option placement or
+  inferred-response gaps can be covered for WebUI display only through
+  `scripts/story_builder/manual_option_overrides.json`; affected option groups
+  or rows show a manual override tag.
 - Narrative videos without non-name binding evidence are emitted as standalone
   `video` story files grouped by mission. Videos with recovered Timeline /
   playable evidence stay attached to their proven dialog or cutscene.

@@ -135,7 +135,7 @@ When touching this area, keep the behavior documented above in sync across:
 - `webui/app.js`
 - `webui/style.css`
 - `webui/README.md`
-- `memory/webui_recovery/story_page.md`
+- `memory/webui_recovery.md`
 
 ## Verification
 

@@ -116,6 +116,14 @@ def aliases_for_key(key: str) -> list[str]:
     return sorted(aliases, key=len, reverse=True)
 
 
+def is_story_ref_byte_boundary(raw: bytes, start: int, end: int) -> bool:
+    """Return true when a byte hit is not embedded in a longer story id."""
+    story_ref_chars = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_"
+    before_ok = start <= 0 or raw[start - 1] not in story_ref_chars
+    after_ok = end >= len(raw) or raw[end] not in story_ref_chars
+    return before_ok and after_ok
+
+
 def normalize_story_ref(raw: str) -> str:
     value = safe_key(raw)
     for prefix in ("f_", "m_", "fm_"):
@@ -525,6 +533,8 @@ def collect_leveldata_hits(
                         if index < 0:
                             break
                         search_from = index + max(1, len(alias_raw))
+                        if not is_story_ref_byte_boundary(raw, index, index + len(alias_raw)):
+                            continue
                         key_hits += 1
                         context = leveldata_context(raw, index, len(alias_raw))
                         if len(examples[key]) < 4:

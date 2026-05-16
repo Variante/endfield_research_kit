@@ -1490,8 +1490,16 @@ def build_scene_order_disorder_warning(
     option_layout_analysis = analyze_option_layout(
         conv, dialog_id_registry=dialog_id_registry
     )
+    conv_key = str(conv.get("key") or "")
+    accepts_fallback_line_order = conv_key.startswith((
+        "misc_sim",
+        "misc_blackbox",
+        "misc_timeline",
+    ))
     problematic_aspects: list[str] = []
-    if line_order_analysis["status"] != "direct":
+    if line_order_analysis["status"] != "direct" and not (
+        accepts_fallback_line_order and line_order_analysis["status"] == "fallback"
+    ):
         problematic_aspects.append("lineOrder")
     if option_layout_analysis["status"] == "inferred":
         problematic_aspects.append("optionLayout")

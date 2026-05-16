@@ -205,6 +205,16 @@ html, body {
   cursor: default;
 }
 .filter-section-toggle:hover { color: var(--text); }
+.filter-section.has-active-filters .filter-section-toggle,
+.filter-section.has-active-filters .filter-section-title {
+  color: var(--text);
+}
+.filter-section-active-count {
+  margin-left: -2px;
+  margin-right: auto;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
 .filter-section-toggle::after {
   content: "";
   width: 7px;
@@ -774,6 +784,11 @@ a.opt-target-chip { cursor: pointer; }
   color: #d8f4ff;
   border-color: rgba(108, 182, 255, 0.45);
   background: rgba(108, 182, 255, 0.14);
+}
+.opt-risk-tag-manual {
+  color: #ffd28a;
+  border-color: rgba(255, 193, 84, 0.45);
+  background: rgba(255, 193, 84, 0.14);
 }
 
 .opt-group {
@@ -1682,6 +1697,20 @@ a.opt-target-chip { cursor: pointer; }
 .opt-group-title {
   font-size: 11px; color: var(--muted); margin-bottom: 4px;
   font-family: ui-monospace, Consolas, monospace;
+}
+.manual-override-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 2px;
+  background: rgba(255, 193, 84, 0.14);
+  color: #ffd28a;
+  border: 1px solid rgba(255, 193, 84, 0.34);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  vertical-align: middle;
 }
 .opt-block .option {
   font-size: 13px; color: var(--good); padding: 2px 0;

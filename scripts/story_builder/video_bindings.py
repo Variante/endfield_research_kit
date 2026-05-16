@@ -137,8 +137,10 @@ def strip_gender(fmv_id: str) -> tuple[str, str]:
 def scene_to_mission(scene: str) -> str:
     if not scene:
         return ""
-    if scene.startswith("dlg_"):
-        scene = scene[len("dlg_"):]
+    for prefix in ("dlg_", "cutscene_", "remotecomm_", "radio_", "black_"):
+        if scene.startswith(prefix):
+            scene = scene[len(prefix):]
+            break
     match = _MISSION_FROM_DLG.match(scene)
     if match:
         return match.group("mission").lower()

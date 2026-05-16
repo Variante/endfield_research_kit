@@ -249,6 +249,50 @@ function formatLevelRef(ref) {
 }
 
 // ---------- filter UI ----------
+function filterSectionActiveCount(key) {
+  const filters = STATE.filters || createDefaultFilters();
+  switch (key) {
+    case "basic":
+      return filters.q ? 1 : 0;
+    case "kind":
+      return filters.kinds.size;
+    case "type":
+      return filters.dataTypes.size;
+    case "media":
+      return filters.media.size;
+    case "story-issue":
+      return filters.issues.size;
+    case "recovery-method":
+      return filters.recoveryMethods.size;
+    default:
+      return 0;
+  }
+}
+
+function syncFilterSectionActiveCounts() {
+  for (const section of $$(".filter-section[data-filter-section]")) {
+    const count = filterSectionActiveCount(section.dataset.filterSection || "");
+    const title = section.querySelector(".filter-section-toggle, .filter-section-title");
+    if (!title) continue;
+
+    let badge = title.querySelector(".filter-section-active-count");
+    if (!badge) {
+      badge = document.createElement("span");
+      badge.className = "filter-section-active-count";
+      badge.hidden = true;
+      const label = title.querySelector("span[id$='-label']");
+      if (label && label.nextSibling) title.insertBefore(badge, label.nextSibling);
+      else if (label) title.appendChild(badge);
+      else title.insertBefore(badge, title.firstChild);
+    }
+
+    badge.textContent = count ? `(${count})` : "";
+    badge.hidden = !count;
+    badge.setAttribute("aria-label", count ? `${count} active filters` : "");
+    section.classList.toggle("has-active-filters", !!count);
+  }
+}
+
 function buildKindChips() {
   const wrap = $("#kind-filter");
   wrap.innerHTML = "";
@@ -517,6 +561,7 @@ function bindEvents() {
 
 // ---------- filtering + tree build ----------
 function applyFilters() {
+  syncFilterSectionActiveCounts();
   const f = STATE.filters;
   let out = STATE.entries;
 
