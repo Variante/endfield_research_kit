@@ -1918,6 +1918,75 @@ metadata tag only. Next promising direction for option response remains
 the IL2CPP-side decoding of `DialogChooseOption` and the `+0x18`
 runtime active-clip field on `DialogOptionPlayableAsset`.
 
+### 2026-05-16 Session Checkpoint
+
+Summary of evidence-source audits added this pass (after the
+2026-05-15 batch of WebUI strong-edge promotions). Each is in
+`scripts/story_recovery/` and emits to `reports/`. None of them
+modify WebUI builder output yet; they are foundations for follow-up
+promotion slices once the runtime fields they hint at are decoded.
+
+| audit | source | classification | output |
+| --- | --- | --- | --- |
+| `build_audio_dialog_custom_events.py` | `AudioDialogCustomEventTable.json` | Tag only — not an ordering source | `reports/mission_order/audio_dialog_custom_events_CN.{json,md}` |
+| `build_levelscript_property_flow_audit.py` | `MissionRuntimeAsset/*` `CheckLevelScriptProperty*` + `LevelScriptData/<mapId>/<scriptId>.json` binary key probe | Ordering source, not yet promotable | `reports/mission_order/levelscript_property_flow_CN.{json,md}` |
+| `build_option_response_audio_evidence.py` | `AudioDialog.json` + Timeline `start/duration` + `DialogTextTable` speaker | Diagnostic for the 20 live `inferredOptionResponse` groups | `reports/option_response_audio_evidence_CN.{json,md}` |
+| `build_option_runtime_field_analysis.py` | `option_flow_body_targets_gameassembly.json` disassembly windows | Names runtime field offsets `+0x18` / `+0x98` / `+0xa0` / `+0x200` | `reports/option_flow_active_clip_field_analysis.{json,md}` |
+| `build_timeline_track_clip_consumer.py` | Timeline `MonoBehaviour` `Beyond FMV Track` / `Subtitle Track` / `Dialog Trunk Track` JSONs | FMV-clip evidence (21 clips / 20 ids); Subtitle dead-end confirmed | `reports/playable_director/timeline_track_clips.{json,md}` |
+
+Key new findings this session:
+
+1. **`+0x18 activeClipGate`** is the runtime field on the option
+   object that `TryTriggerTrunkBindingOption` checks before calling
+   `SetDialogOption`. Options with `[rax+0x18] == 0` get filtered
+   out. All 20 live `inferredOptionResponse` candidate clips read 0
+   in their authored serialized fields, which is why they stay
+   inferred today.
+2. **`+0x98 selectedOptionIndex`** is the runtime field that
+   `_SelectIndexInTimeline` reads and passes as `optionIndex` into
+   `DialogChooseOption`. The selected option binds to a clip via
+   this offset.
+3. **Identifying the writer of `+0x18`** is the single next decoding
+   target that would unblock all 20 inferred groups. The writer is
+   likely in `DialogTimelineManager.SetDialogOption` or
+   `DialogOptionPlayableAsset` post-bind initialization. Once
+   identified, the WebUI builder can promote authored `+0x18`
+   evidence into a real option-response edge.
+4. **LevelScript property flow** has 60 confirmed bridges between
+   MRA checker conditions and owning LS scripts. Setters are not yet
+   decoded by opcode; this is the next scene-order slice that could
+   land strong edges once the setter opcode is identified.
+5. **Beyond FMV Track** provides authored cutscene timing through
+   `BeyondFMVPlayableAsset.fmvId`. 20 distinct `cs_video_*` story
+   keys with clip start/duration. Gender variants
+   (`f_cs_video_*` + `m_cs_video_*`) share Timeline start; sequential
+   variant suffixes (`a/b/c/d`) chain monotonically.
+6. **`AudioDialogCustomEventTable`** is confirmed not a scene-order
+   source; reject this candidate.
+7. **`AudioDialog` + Timeline** monotonicity holds for 19 of 20
+   live inferred-response groups — necessary but not sufficient for
+   promotion. The 7 multi-speaker groups carry an additional
+   per-option NPC-response signal worth surfacing in the WebUI.
+
+The follow-up slice queue, in priority order:
+
+1. **Decode the `+0x18` writer in `GameAssembly.dll`.** Use a real
+   disassembler (Cpp2IL, Ghidra, or a focused x86_64 decoder) to
+   trace `DialogTimelineManager.SetDialogOption` and
+   `DialogOptionPlayableAsset` post-bind to find where `+0x18` gets
+   set to non-zero. Once known, promote authored evidence into the
+   WebUI builder.
+2. **Setter-opcode identification for LevelScript property flow.**
+   Decode which LS record opcode/kind writes property values. With
+   that, the 60 bridgeFound triples can promote scene-order edges.
+3. **Per-option NPC response speaker mapping.** For the 7
+   multi-speaker `inferredOptionResponse` groups, the responder
+   speaker per option might be authored in the
+   `DialogOptionTable.options[*].actorId` field. Worth checking.
+4. **Connect FMV clip evidence to the WebUI builder.** The 20
+   `cs_video_*` clips with start/duration are already enough to
+   add an `fmvClipOrder` weak edge for the parent cutscene.
+
 ## Avoid
 
 - Do not sort scene files only by filename suffix.
