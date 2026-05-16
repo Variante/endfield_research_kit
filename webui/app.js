@@ -5705,6 +5705,117 @@ function renderMissionTimelineSceneOrder(sceneGraph, flowKeyMap, currentKey) {
   return details;
 }
 
+function renderMissionTimelineSceneChunks(chunks, flowKeyMap, currentKey) {
+  const list = missionTimelineArray(chunks)
+    .filter((chunk) => chunk && typeof chunk === "object" && Array.isArray(chunk.sceneKeys));
+  if (!list.length) return null;
+
+  const details = document.createElement("details");
+  details.className = "mission-timeline-details mission-timeline-chunks-details";
+
+  const strongCount = list.filter((chunk) => chunk.strength === "strong").length;
+  const weakCount = list.filter((chunk) => chunk.strength === "weak").length;
+  const unanchoredCount = list.filter((chunk) => chunk.strength === "unanchored").length;
+  const summary = document.createElement("summary");
+  const summaryParts = [
+    `${uiText("missionTimelineChunks")} (${list.length}`,
+  ];
+  const detailBits = [];
+  if (strongCount) detailBits.push(`${uiText("missionTimelineChunkStrong")} ${strongCount}`);
+  if (weakCount) detailBits.push(`${uiText("missionTimelineChunkWeak")} ${weakCount}`);
+  if (unanchoredCount) detailBits.push(`${uiText("missionTimelineChunkUnanchored")} ${unanchoredCount}`);
+  summary.textContent = detailBits.length
+    ? `${summaryParts[0]}; ${detailBits.join(", ")})`
+    : `${summaryParts[0]})`;
+  details.appendChild(summary);
+
+  const note = document.createElement("div");
+  note.className = "mission-timeline-subheading";
+  note.textContent = uiText("missionTimelineChunkNote");
+  details.appendChild(note);
+
+  const renderableChunks = list.filter((chunk) => chunk.strength !== "unanchored");
+  const isolatedChunks = list.filter((chunk) => chunk.strength === "unanchored");
+
+  for (const chunk of renderableChunks) {
+    const wrap = document.createElement("div");
+    wrap.className = `mission-timeline-chunk mission-timeline-chunk-${chunk.strength || "weak"}`;
+
+    const header = document.createElement("div");
+    header.className = "mission-timeline-chunk-header";
+    const idChip = createGraphTextChip(
+      String(chunk.id || ""),
+      `mission-timeline-chunk-id mission-timeline-chunk-id-${chunk.strength || "weak"}`,
+    );
+    header.appendChild(idChip);
+    const strengthChip = createGraphTextChip(
+      uiText(
+        chunk.strength === "strong"
+          ? "missionTimelineChunkStrong"
+          : "missionTimelineChunkWeak",
+      ),
+      `mission-timeline-chunk-strength mission-timeline-chunk-strength-${chunk.strength || "weak"}`,
+    );
+    header.appendChild(strengthChip);
+    appendMissionTimelineChip(header, `${chunk.sceneCount || (chunk.sceneKeys || []).length} ${uiText("missionTimelineChunkScenes")}`);
+    for (const kind of missionTimelineArray(chunk.edgeKinds)) {
+      appendMissionTimelineChip(header, kind, "mission-timeline-chunk-edge-kind");
+    }
+    wrap.appendChild(header);
+
+    const sceneRow = document.createElement("div");
+    sceneRow.className = "mission-timeline-edge mission-timeline-chunk-scene-row";
+    const keys = missionTimelineArray(chunk.sceneKeys);
+    const visibleLimit = 24;
+    for (const [index, sceneKey] of keys.slice(0, visibleLimit).entries()) {
+      if (index) {
+        const sep = document.createElement("span");
+        sep.className = "mission-timeline-chunk-sep";
+        sep.textContent = "·";
+        sceneRow.appendChild(sep);
+      }
+      sceneRow.appendChild(createFlowSceneChip(sceneKey, flowKeyMap, currentKey));
+    }
+    if (keys.length > visibleLimit) {
+      appendMissionTimelineChip(sceneRow, `+${keys.length - visibleLimit}`);
+    }
+    wrap.appendChild(sceneRow);
+
+    details.appendChild(wrap);
+
+    const divider = document.createElement("div");
+    divider.className = "mission-timeline-chunk-divider";
+    divider.textContent = uiText("missionTimelineChunkUnknownOrder");
+    details.appendChild(divider);
+  }
+
+  // Drop the last divider — there's no next chunk after it.
+  if (details.lastChild && details.lastChild.classList && details.lastChild.classList.contains("mission-timeline-chunk-divider")) {
+    details.removeChild(details.lastChild);
+  }
+
+  if (isolatedChunks.length) {
+    const isoLabel = document.createElement("div");
+    isoLabel.className = "mission-timeline-subheading";
+    isoLabel.textContent = uiText("missionTimelineChunkSingletons").replace("{count}", String(isolatedChunks.length));
+    details.appendChild(isoLabel);
+
+    const isoRow = document.createElement("div");
+    isoRow.className = "mission-timeline-edge mission-timeline-chunk-singletons";
+    const visibleLimit = 30;
+    const keys = isolatedChunks.flatMap((chunk) => missionTimelineArray(chunk.sceneKeys));
+    for (const sceneKey of keys.slice(0, visibleLimit)) {
+      isoRow.appendChild(createFlowSceneChip(sceneKey, flowKeyMap, currentKey));
+    }
+    if (keys.length > visibleLimit) {
+      appendMissionTimelineChip(isoRow, `+${keys.length - visibleLimit}`);
+    }
+    details.appendChild(isoRow);
+  }
+
+  return details;
+}
+
 function renderMissionTimelineSceneEdges(edges, flowKeyMap, currentKey, { sceneOrderMap = null } = {}) {
   if (!edges.length) return null;
   const details = document.createElement("details");
@@ -5999,6 +6110,10 @@ function renderMissionTimelineRecovery(timeline, conv, missionFlow = null) {
   appendMissionTimelineChip(stats, `${uiText("missionTimelineQuests")} ${questCount}`);
   appendMissionTimelineChip(stats, `${uiText("missionTimelineBranches")} ${missionTimelineArray(timeline.branchPoints).length}`);
   appendMissionTimelineChip(stats, `${uiText("missionTimelineEdges")} ${missionTimelineArray(timeline.sourceBackedSceneEdges).length}`);
+  const timelineChunks = missionTimelineArray(timeline.chunks);
+  if (timelineChunks.length) {
+    appendMissionTimelineChip(stats, `${uiText("missionTimelineChunks")} ${timelineChunks.length}`);
+  }
   appendMissionTimelineChip(stats, `${uiText("missionTimelineEvidence")} ${Object.keys(timeline.sceneTimelineEvidence || {}).length}`);
   appendMissionTimelineChip(stats, `${uiText("missionTimelineUnresolved")} ${missionTimelineArray(timeline.unresolved).length}`);
   if (treeLoops) appendMissionTimelineChip(stats, `${uiText("missionTimelineLoop")} ${treeLoops}`, "mission-timeline-chip-warn");
@@ -6032,6 +6147,8 @@ function renderMissionTimelineRecovery(timeline, conv, missionFlow = null) {
 
   const sceneOrderBlock = renderMissionTimelineSceneOrder(missionFlow && missionFlow.sceneGraph, flowKeyMap, currentKey);
   if (sceneOrderBlock) box.appendChild(sceneOrderBlock);
+  const chunkBlock = renderMissionTimelineSceneChunks(timeline.chunks, flowKeyMap, currentKey);
+  if (chunkBlock) box.appendChild(chunkBlock);
   const evidenceBlock = renderMissionTimelineEvidence(timeline.sceneTimelineEvidence || {}, flowKeyMap, currentKey);
   if (evidenceBlock) box.appendChild(evidenceBlock);
   const edgeBlock = renderMissionTimelineSceneEdges(
