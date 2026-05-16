@@ -4027,6 +4027,14 @@ function renderConv(conv) {
       .filter(Boolean);
     if (actors.length) meta.push(`actors=${actors.join(", ")}`);
   }
+  if (Array.isArray(conv.fmvClips) && conv.fmvClips.length) {
+    const fmvParts = conv.fmvClips.map((c) => {
+      const start = typeof c.clipStart === "number" ? c.clipStart.toFixed(2) : "?";
+      const dur = typeof c.clipDuration === "number" ? c.clipDuration.toFixed(2) : "?";
+      return `${c.fmvId || "?"}@${start}s+${dur}s`;
+    });
+    meta.push(`fmv=${fmvParts.join(", ")}`);
+  }
   meta.push(`lines=${conv.lines.length}`);
   if (entry) {
     const metadataTagSummary = entryMetadataTagSummary(entry);

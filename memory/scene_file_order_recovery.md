@@ -1701,6 +1701,44 @@ Subtitle Track is a confirmed dead end for line-level timing
 extraction; do not pursue it further unless the runtime starts
 populating its clips.
 
+### 2026-05-16 FMV Clip Meta in Conv Payload
+
+Wired the existing `timeline_track_clips` Beyond FMV evidence into
+the WebUI conv payloads. A new precompute step writes
+`reports/playable_director/fmv_clip_by_webui_key.json` keyed by
+WebUI story key with the per-clip `fmvId`, `clipStart`,
+`clipDuration`, `assetClipDuration`. The language bundle loads the
+mapping and attaches `payload.fmvClips` on both the `dlg_*` and
+`cutscene_*` write paths; the WebUI conv-meta line surfaces the
+clip info as `fmv=<fmvId>@<start>s+<dur>s, ...`.
+
+Coverage: 18 WebUI keys carry one or more FMV clips:
+
+```text
+dlg_e6m1_9, dlg_e2m6_14, dlg_e9m2_18, dlg_e10m1_1, dlg_e10m2_5,
+dlg_e10m3_7a, dlg_e10m3_7b, dlg_e10m3_7c, dlg_e3m6_11,
+dlg_sm2l5m1_10, dlg_e0m2_5 (gender-pair), dlg_e6m1_7 (gender-pair),
+dlg_e9m4_19a, dlg_e9m4_19b, dlg_e9m4_19c, dlg_e9m4_19d,
+cutscene_e6m2_2, cutscene_e6m3_2
+```
+
+No new scene-order edges. The visible value is per-conv FMV timing
+in the WebUI meta line. This converts existing audit evidence into
+visible UI without further decode work.
+
+### 2026-05-16 Source-Graph Cross-Reference Audit (no gain)
+
+Inspected `reports/source_graph/endfield_source_graph.sqlite` (611k
+edges across 75 kinds) for unused ordering evidence. The
+ordering-relevant kinds (`graph_fragment_targets_story` 62,
+`option_anchor_after` 37, `option_enters_story` 2711,
+`anchored_after_line` 2683, `references_story` 873) are already
+consumed by the WebUI builder through `sceneGraphLinks` ->
+`authoredDirect` / `authoredMenu` strong edges, or are leaf
+data (audio path / file references / texture pathids). No unused
+ordering source found. Verified on `a1m10` and `a1m3`: all
+mission-internal dialog nodes are already strong.
+
 ### 2026-05-16 LevelScript Property Setter Opcode Candidates
 
 Scanned the 60 bridgeFound property-flow triples to find which LS

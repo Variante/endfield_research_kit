@@ -19,6 +19,11 @@ _RADIO_CONTINUATION_REPORT_PATH = (
     / "reports" / "mission_order" / "radio_continuation_CN.json"
 )
 
+_FMV_CLIP_BY_KEY_REPORT_PATH = (
+    _RadioContPath(__file__).resolve().parents[2]
+    / "reports" / "playable_director" / "fmv_clip_by_webui_key.json"
+)
+
 
 @_radio_cont_lru_cache(maxsize=2)
 def _load_radio_continuation_candidates_by_mission(
@@ -46,6 +51,27 @@ def _load_radio_continuation_candidates_by_mission(
     return out
 
 
+@_radio_cont_lru_cache(maxsize=2)
+def _load_fmv_clips_by_webui_key(path_str: str) -> dict[str, list[dict]]:
+    """Load `reports/playable_director/fmv_clip_by_webui_key.json`.
+
+    Returns `{webui_key: [{fmvId, clipStart, clipDuration, ...}, ...]}` or
+    an empty dict when the report has not been generated yet. The builder
+    surfaces these as per-conv `fmvClips` meta so the WebUI can display
+    authored FMV timing for cutscene/dialog stories that bind to a
+    `BeyondFMVPlayableAsset` clip.
+    """
+    path = _RadioContPath(path_str)
+    if not path.is_file():
+        return {}
+    try:
+        payload = _radio_cont_json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, _radio_cont_json.JSONDecodeError):
+        return {}
+    mappings = payload.get("mappings")
+    return mappings if isinstance(mappings, dict) else {}
+
+
 def build_language_bundle(
     language_code: str,
     out_dir: Path,
@@ -71,6 +97,7 @@ def build_language_bundle(
     dialog_id_registry = shared_load_dialog_id_registry()
     story_source_links = load_story_source_links()
     narrative_video_assets = _load_narrative_video_assets()
+    fmv_clips_by_key = _load_fmv_clips_by_webui_key(str(_FMV_CLIP_BY_KEY_REPORT_PATH))
     written_conv_paths: set[str] = set()
     written_reference_paths: set[str] = set()
     written_mission_paths: set[str] = set()
@@ -3493,6 +3520,8 @@ def build_language_bundle(
         attach_duplicate_timestamp_warning(payload)
         story_issue_codes = dialog_story_issue_codes(payload)
         recovery_methods = dialog_recovery_methods(payload)
+        if fmv_clips_by_key.get(out_key):
+            payload["fmvClips"] = fmv_clips_by_key[out_key]
         write_conv_payload(out_key, payload)
 
         entry = {
@@ -4574,6 +4603,8 @@ def build_language_bundle(
                 },
             },
         }
+        if fmv_clips_by_key.get(cutscene_key):
+            payload["fmvClips"] = fmv_clips_by_key[cutscene_key]
         write_conv_payload(cutscene_key, payload)
         cutscene_out_keys.add(cutscene_key)
 

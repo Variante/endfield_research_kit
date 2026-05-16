@@ -357,6 +357,63 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+_STORY_PREFIXES = ("dlg", "sns", "cutscene", "black", "radio", "remotecomm")
+
+
+def _fmv_to_webui_key(fmv_id: str) -> str:
+    """Map a `BeyondFMVPlayableAsset.fmvId` to its WebUI conv key.
+
+    Strips the optional gender prefix (`f_`/`m_`) and the `cs_video_`
+    prefix, then keeps either the embedded `dlg_*`/`sns_*`/... key or
+    falls back to a `cutscene_<remainder>` key when the rest of the
+    string doesn't carry a recognized story prefix.
+    """
+    import re as _re
+
+    value = (fmv_id or "").strip()
+    if value.startswith(("f_", "m_")):
+        value = value[2:]
+    if not value.startswith("cs_video_"):
+        return value
+    rest = value[len("cs_video_"):]
+    for prefix in _STORY_PREFIXES:
+        if rest.startswith(prefix + "_"):
+            return rest
+    return "cutscene_" + rest
+
+
+def _emit_fmv_clip_by_webui_key(records: list[dict[str, Any]], reports_dir: Path) -> Path:
+    """Emit `reports/playable_director/fmv_clip_by_webui_key.json` so the
+    WebUI builder can attach per-conv `fmvClips` meta from this audit."""
+    from collections import defaultdict as _dd
+
+    mappings: dict[str, list[dict[str, Any]]] = _dd(list)
+    for r in records:
+        if r.get("trackName") != "Beyond FMV Track":
+            continue
+        if r.get("clipStart") is None:
+            continue
+        fmv_id = r.get("fmvId") or ""
+        webui_key = _fmv_to_webui_key(fmv_id)
+        if not webui_key:
+            continue
+        mappings[webui_key].append({
+            "fmvId": fmv_id,
+            "clipStart": r.get("clipStart"),
+            "clipDuration": r.get("clipDuration"),
+            "assetClipDuration": r.get("fmvAssetClipDuration"),
+            "folder": r.get("folder"),
+        })
+
+    payload = {
+        "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "mappings": dict(mappings),
+    }
+    out = reports_dir / "fmv_clip_by_webui_key.json"
+    write_report_json(out, payload)
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     args.reports_dir.mkdir(parents=True, exist_ok=True)
@@ -372,8 +429,10 @@ def main(argv: list[str] | None = None) -> int:
     out_md = args.reports_dir / "timeline_track_clips.md"
     write_report_json(out_json, payload)
     write_text_if_changed(out_md, markdown_report(payload))
+    fmv_by_key = _emit_fmv_clip_by_webui_key(records, args.reports_dir)
     print(f"Wrote {out_json}")
     print(f"Wrote {out_md}")
+    print(f"Wrote {fmv_by_key}")
     print(
         f"Track records: {summary['trackRecordCount']} across "
         f"{summary['folderCount']} folders; "
