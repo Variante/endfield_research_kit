@@ -716,6 +716,14 @@ def infer_mission_dialog_order(
                 return canonical_cutscene
         return ""
 
+    def quest_area_scene_refs(quest: dict) -> list[str]:
+        refs: list[str] = []
+        for raw_ref in _quest_area_story_refs(quest):
+            resolved = resolve_entry_scene_ref(raw_ref)
+            if resolved and resolved not in refs:
+                refs.append(resolved)
+        return refs
+
     script_scene_ref_cache: dict[tuple[str, str], list[str]] = {}
 
     def levelscript_scene_refs_for_script(level_id: str, script_id) -> list[str]:
@@ -803,6 +811,8 @@ def infer_mission_dialog_order(
             explicit_remotecomms = [remote_id for remote_id in (quest.get("remotecomms") or []) if remote_id in entries_by_key]
             explicit_radios = [radio_id for radio_id in (quest.get("radios") or []) if radio_id in entries_by_key]
             for scene_ref in quest_condition_script_scene_refs(quest):
+                push(scene_ref)
+            for scene_ref in quest_area_scene_refs(quest):
                 push(scene_ref)
             if explicit or explicit_cutscenes or explicit_remotecomms:
                 push_unplaced_levelscript_dialogs_before(quest.get("scenes") or [], explicit)
@@ -919,6 +929,14 @@ def build_mission_scene_file_order(
                 return canonical_cutscene
         return ""
 
+    def quest_area_scene_refs(quest: dict) -> list[str]:
+        refs: list[str] = []
+        for raw_ref in _quest_area_story_refs(quest):
+            resolved = resolve_entry_scene_ref(raw_ref)
+            if resolved and resolved not in refs:
+                refs.append(resolved)
+        return refs
+
     def quest_scene_refs(quest: dict) -> list[str]:
         refs: list[str] = []
         for field_name in ("dialogs", "cutscenes", "remotecomms", "radios"):
@@ -926,6 +944,18 @@ def build_mission_scene_file_order(
                 resolved = resolve_entry_scene_ref(raw_ref)
                 if resolved and resolved not in refs:
                     refs.append(resolved)
+        for proxy_ref in quest.get("proxyDialogs") or []:
+            raw_ref = (
+                proxy_ref.get("dialogId")
+                if isinstance(proxy_ref, dict)
+                else proxy_ref
+            )
+            resolved = resolve_entry_scene_ref(raw_ref)
+            if resolved and resolved not in refs:
+                refs.append(resolved)
+        for resolved in quest_area_scene_refs(quest):
+            if resolved and resolved not in refs:
+                refs.append(resolved)
         return refs
 
     depth_by_id: dict[str, int] = {}

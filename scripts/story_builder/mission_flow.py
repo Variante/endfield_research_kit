@@ -4,6 +4,53 @@ from .context import *
 from .anime_assets import *
 from .level_bindings import *
 
+def _mission_proxy_dialog_ids(mission_id: str, proxy_id: str) -> list[str]:
+    if not mission_id or not proxy_id:
+        return []
+    rows = (_load_npc_proxy_ex().get("data") or {}).get(proxy_id) or []
+    dialog_ids: list[str] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        row_mission = str(row.get("missionId") or "")
+        if row_mission and row_mission != mission_id:
+            continue
+        dialog_id = str(row.get("dialogId") or "")
+        if dialog_id and dialog_id not in dialog_ids:
+            dialog_ids.append(dialog_id)
+    return dialog_ids
+
+
+def _attach_unique_proxy_dialog_refs(mission_id: str, quests_out: list[dict]) -> None:
+    proxy_quest_ids: dict[str, set[str]] = defaultdict(set)
+    for quest in quests_out:
+        quest_id = quest.get("id") or ""
+        for proxy_id in quest.get("proxies") or []:
+            if proxy_id and quest_id:
+                proxy_quest_ids[proxy_id].add(quest_id)
+
+    for quest in quests_out:
+        proxy_dialogs: list[dict] = []
+        seen_dialogs = set(quest.get("dialogs") or [])
+        for proxy_id in quest.get("proxies") or []:
+            if not proxy_id or len(proxy_quest_ids.get(proxy_id) or ()) != 1:
+                continue
+            dialog_ids = _mission_proxy_dialog_ids(mission_id, proxy_id)
+            if len(dialog_ids) != 1:
+                continue
+            dialog_id = dialog_ids[0]
+            if dialog_id in seen_dialogs:
+                continue
+            seen_dialogs.add(dialog_id)
+            proxy_dialogs.append({
+                "dialogId": dialog_id,
+                "npcProxyId": proxy_id,
+                "source": "NpcProxyExDataTable.data[*].dialogId",
+            })
+        if proxy_dialogs:
+            quest["proxyDialogs"] = proxy_dialogs
+
+
 def load_mission_flow(mission_id: str) -> dict | None:
     """Parse MissionRuntimeAsset/<mission>.json into a compact flow payload.
 
@@ -125,6 +172,37 @@ def load_mission_flow(mission_id: str) -> dict | None:
             *(entry.get("radios") or []),
             *radio_ids,
         ])
+
+    for quest_id, rows in _leveldata_quest_story_refs_for_mission(mission_id).items():
+        entry = quest_entries_by_id.get(quest_id)
+        if not entry:
+            continue
+        refs = _unique_preserve(
+            str(row.get("storyRef") or "")
+            for row in rows
+            if row.get("storyRef")
+        )
+        if not refs:
+            continue
+        entry["levelDataStoryRefs"] = [
+            {
+                key: value
+                for key, value in row.items()
+                if key in (
+                    "storyRef",
+                    "levelId",
+                    "file",
+                    "distance",
+                    "entity",
+                    "fields",
+                    "source",
+                )
+                and value not in (None, "", [], {})
+            }
+            for row in rows
+        ]
+
+    _attach_unique_proxy_dialog_refs(mission_id, quests_out)
 
     quests_out = _topo_sort_quests(quests_out)
 
