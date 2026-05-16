@@ -112,6 +112,12 @@ Expected active inputs and outputs:
   larger images and videos.
 - `common.py`: small shared constants and JSON/path helpers for the
   WebUI builders.
+- `recover_envemoji_prefabs.py`: regenerates the `envEmoji_common_*` prefab
+  registry consumed by the Story builder's EnvTalk emoji rows. Merges the
+  AnimeStudio JSON pass (RectTransform layer geometry, colors, enter
+  animation curves) with the Dump pass (GameObject PathID active state) so
+  duplicate child names inside emoji bundles do not collide. Not part of
+  `export.bat`; run it after Endfield updates that touch emoji prefab data.
 
 ## WebUI Story Helpers
 

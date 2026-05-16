@@ -265,8 +265,7 @@ matching docs and intentional tracking.
 ## Active Layout
 
 - `webui/`: static app and generated browser data.
-- `scripts/`: WebUI builders and packaging tools.
-- `scripts/`: WebUI/export helpers.
+- `scripts/`: WebUI builders, packaging tools, and export helpers.
 - `unity_endfield_graph_shader_lab/`: Unity character recovery lab project.
 - `export_full/`: generated data exported from the installed client.
 - `reports/`: durable WebUI/export summaries.
