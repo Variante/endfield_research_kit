@@ -871,6 +871,12 @@ const ENV_EMOJI_PREFAB_ANIMATIONS = {
   emoji_unhappywork: "sigh",
 };
 
+const ENV_EMOJI_PREFAB_RENDER = {
+  emoji_love: { scale: 0.74 },
+  emoji_newworkhard: { x: -2 },
+  emoji_think: { scale: 0.74 },
+};
+
 const ENV_EMOJI_PREFABS = {
   emoji_adaptationwork: [
     { stem: "emoji_newbg", x: 0, y: 16.25, w: 89.5, h: 109.5, px: 0.5, py: 0.5, color: "rgba(0, 0, 0, 0.698)" },
@@ -3867,7 +3873,9 @@ function isResearchHintLine(line) {
 }
 
 function renderConversationHints(conv) {
-  const rows = conversationHintRows(conv);
+  const rows = conversationHintRows(conv).filter((row) => {
+    return !isWikiCharacterArchiveConv(conv) || row.isResearch;
+  });
   if (!rows.length) return null;
 
   const box = document.createElement("div");
@@ -4013,6 +4021,12 @@ function renderConv(conv) {
   if (conv.chatType !== undefined) meta.push(`chatType=${conv.chatType}`);
   if (conv.relatedMissionId) meta.push(`related=${conv.relatedMissionId}`);
   if (conv.cooldown !== undefined) meta.push(`cooldown=${conv.cooldown}`);
+  if (conv.kind === "cutscene" && conv.cutscene && Array.isArray(conv.cutscene.actorLabels)) {
+    const actors = conv.cutscene.actorLabels
+      .map((actor) => String(actor || "").trim())
+      .filter(Boolean);
+    if (actors.length) meta.push(`actors=${actors.join(", ")}`);
+  }
   meta.push(`lines=${conv.lines.length}`);
   if (entry) {
     const metadataTagSummary = entryMetadataTagSummary(entry);
@@ -6238,6 +6252,10 @@ function lineMediaIds(line) {
 function createEnvEmojiPrefabNode(prefabKey, mediaId) {
   const layers = ENV_EMOJI_PREFABS[prefabKey] || [];
   const animationType = ENV_EMOJI_PREFAB_ANIMATIONS[prefabKey] || "";
+  const render = ENV_EMOJI_PREFAB_RENDER[prefabKey] || {};
+  const renderScale = render.scale || 1;
+  const renderX = render.x || 0;
+  const renderY = render.y || 0;
   const normalized = normalizeInlineImageId(mediaId);
   const node = document.createElement("span");
   node.className = "line-media-emoji is-prefab";
@@ -6279,12 +6297,16 @@ function createEnvEmojiPrefabNode(prefabKey, mediaId) {
       element.loading = "lazy";
     }
 
-    const left = ENV_EMOJI_PREFAB_STAGE.cx + layer.x - (layer.px ?? 0.5) * layer.w;
-    const top = ENV_EMOJI_PREFAB_STAGE.cy - layer.y - (1 - (layer.py ?? 0.5)) * layer.h;
+    const layerX = layer.x * renderScale + renderX;
+    const layerY = layer.y * renderScale + renderY;
+    const layerW = layer.w * renderScale;
+    const layerH = layer.h * renderScale;
+    const left = ENV_EMOJI_PREFAB_STAGE.cx + layerX - (layer.px ?? 0.5) * layerW;
+    const top = ENV_EMOJI_PREFAB_STAGE.cy - layerY - (1 - (layer.py ?? 0.5)) * layerH;
     element.style.left = `${left}px`;
     element.style.top = `${top}px`;
-    element.style.width = `${layer.w}px`;
-    element.style.height = `${layer.h}px`;
+    element.style.width = `${layerW}px`;
+    element.style.height = `${layerH}px`;
     (layer.stem === "emoji_newbg" ? bgGroup : bodyGroup).appendChild(element);
     rendered += 1;
   }
