@@ -1304,6 +1304,12 @@ def build_language_bundle(
         type_, _act, mission, _scene = slot_misc(re.sub(r"_\d+(_\d+)?$", "", did) or "_misc")
         if type_ != "x" and mission:
             known_missions.add(mission)
+    for radio_id in radios:
+        if m := RADIO_RE.match(radio_id):
+            known_missions.add(m.group(1))
+    for remote_id in remote_common:
+        if m := REMOTECOMM_RE.match(remote_id):
+            known_missions.add(m.group(1))
 
     env_story_missions: dict[str, str] = {}
     for env_id in env_talks:
@@ -1339,31 +1345,57 @@ def build_language_bundle(
 
 
     mission_level_refs: dict[str, list[dict]] = defaultdict(list)
+    mission_leveldata_host_refs: dict[str, list[dict]] = defaultdict(list)
+    seen_leveldata_host_refs: set[tuple[str, str, str, str]] = set()
+
+    def add_leveldata_host_ref(mission_id: str, ref_meta: dict, path: Path, relation: str) -> None:
+        if mission_id not in known_missions:
+            return
+        file_ref = repo_rel(path)
+        level_id = ref_meta["level"]
+        seen_key = (mission_id, level_id, file_ref, relation)
+        if seen_key in seen_leveldata_host_refs:
+            return
+        seen_leveldata_host_refs.add(seen_key)
+        mission_leveldata_host_refs[mission_id].append({
+            "levelId": level_id,
+            "hostType": level_host_type(level_id),
+            "kind": ref_meta["kind"],
+            "file": file_ref,
+            "token": ref_meta["token"],
+            "relation": relation,
+        })
+
     if LEVELDATA_DIR.is_dir():
         for path in LEVELDATA_DIR.rglob("*.json"):
             ref_meta = parse_level_ref_name(path.name)
             if not ref_meta:
                 continue
             mission_id = ref_meta["token"]
-            if mission_id not in known_missions:
-                continue
-            level_id = ref_meta["level"]
-            mission_level_refs[mission_id].append({
-                "levelId": level_id,
-                "hostType": level_host_type(level_id),
-                "kind": ref_meta["kind"],
-                "file": repo_rel(path),
-                "_debug": {
-                    "source": {
-                        "file": repo_rel(path),
-                        "levelId": level_id,
-                        "kind": ref_meta["kind"],
-                        "missionId": mission_id,
+            add_leveldata_host_ref(mission_id, ref_meta, path, "exact")
+            parent_mission_id = re.sub(r"d\d+$", "", mission_id)
+            if parent_mission_id != mission_id:
+                add_leveldata_host_ref(parent_mission_id, ref_meta, path, "parentVariant")
+            if mission_id in known_missions:
+                level_id = ref_meta["level"]
+                mission_level_refs[mission_id].append({
+                    "levelId": level_id,
+                    "hostType": level_host_type(level_id),
+                    "kind": ref_meta["kind"],
+                    "file": repo_rel(path),
+                    "_debug": {
+                        "source": {
+                            "file": repo_rel(path),
+                            "levelId": level_id,
+                            "kind": ref_meta["kind"],
+                            "missionId": mission_id,
+                        },
                     },
-                },
-            })
+                })
     for refs in mission_level_refs.values():
         refs.sort(key=lambda ref: (ref["hostType"], ref["levelId"], ref["kind"], ref["file"]))
+    for refs in mission_leveldata_host_refs.values():
+        refs.sort(key=lambda ref: (ref["hostType"], ref["levelId"], ref["relation"], ref["kind"], ref["file"]))
 
     def mission_context_text(mission_id: str) -> str:
         if not mission_id:
@@ -1727,7 +1759,7 @@ def build_language_bundle(
         line_idxs.sort()
 
         # Fallback anchors when DialogTree/timeline data leaves option groups
-        # unanchored. Three signals, in priority order:
+        # unanchored. Four signals, in priority order:
         #   1. sparse-gap boundaries — between two contiguous numbering runs,
         #      the player choice plays during the missing slot.
         #   2. timeline option-clip positions — when this conv shares a Unity
@@ -1736,10 +1768,12 @@ def build_language_bundle(
         #      lines plays just before the choice. We surface that even when
         #      the recorded `_optionId` belongs to the sibling scene.
         #   3. exact group/line number — in contiguous table-only scenes,
-        #      option group g=1 usually follows line _001.
+        #      option group g=1 follows line _001 by key convention. This is
+        #      promoted to a source-keyed anchor rather than a warning-only
+        #      fallback because both sides carry the same authored group index.
         #   4. dialog last line — for cinematic-finish patterns where one
         #      option clip drives end-of-arc finish-num branches.
-        # All three write to optionGroups[].after; `inferredAnchorMode` in the
+        # All four write to optionGroups[].after; `inferredAnchorMode` in the
         # warning's groupDetails records which signal won.
         fallback_after_ids: list[str] = []
         fallback_group_line_ids: dict[int, str] = {}
@@ -2063,8 +2097,6 @@ def build_language_bundle(
                 continue
 
         out: list[dict] = []
-        used_fallback_layout = False
-        used_any_fallback_option_layout = False
         authored_option_ids = (
             set(tree_after)
             | set(tree_branches)
@@ -2075,6 +2107,8 @@ def build_language_bundle(
         )
         authored_group_count = 0
         pre_group_count = 0
+        keyed_group_count = 0
+        sibling_text_group_count = 0
         fallback_group_count = 0
         unanchored_group_count = 0
         fallback_group_labels: list[str] = []
@@ -2580,6 +2614,7 @@ def build_language_bundle(
                 for opt_id in group_opt_ids
             )
             used_group_fallback = False
+            used_group_keyed = False
             group_status = "unanchored"
             fallback_anchor_id = ""
             inferred_anchor_mode = ""
@@ -2597,9 +2632,7 @@ def build_language_bundle(
                 group_status = "correctedPre"
             elif order - 1 < len(fallback_after_ids):
                 fallback_anchor_id = fallback_after_ids[order - 1]
-                used_fallback_layout = True
                 used_group_fallback = True
-                used_any_fallback_option_layout = True
                 fallback_group_count += 1
                 fallback_group_labels.append(f"g{g}")
                 group_status = "fallbackAfter"
@@ -2610,27 +2643,20 @@ def build_language_bundle(
             ):
                 sibling_anchor_record = sibling_position_anchors[order - 1]
                 fallback_anchor_id = sibling_anchor_record["afterLineId"]
-                used_fallback_layout = True
                 used_group_fallback = True
-                used_any_fallback_option_layout = True
                 fallback_group_count += 1
                 fallback_group_labels.append(f"g{g}")
                 group_status = "fallbackAfter"
                 inferred_anchor_mode = "siblingTimelinePosition"
             elif g in fallback_group_line_ids:
                 fallback_anchor_id = fallback_group_line_ids[g]
-                used_fallback_layout = True
-                used_group_fallback = True
-                used_any_fallback_option_layout = True
-                fallback_group_count += 1
-                fallback_group_labels.append(f"g{g}")
-                group_status = "fallbackAfter"
+                used_group_keyed = True
+                keyed_group_count += 1
+                group_status = "keyedAfter"
                 inferred_anchor_mode = "lineNumber"
             elif last_line_fallback_id:
                 fallback_anchor_id = last_line_fallback_id
-                used_fallback_layout = True
                 used_group_fallback = True
-                used_any_fallback_option_layout = True
                 fallback_group_count += 1
                 fallback_group_labels.append(f"g{g}")
                 group_status = "fallbackAfter"
@@ -2639,6 +2665,8 @@ def build_language_bundle(
                 unanchored_group_count += 1
             if after_is_authored and after:
                 group["after"] = after
+            elif used_group_keyed and fallback_anchor_id:
+                group["after"] = fallback_anchor_id
             elif used_group_fallback and fallback_anchor_id:
                 group["after"] = fallback_anchor_id
             timeline_route_branch = timeline_route_branch_for_group(group_opt_ids, group.get("after") or "")
@@ -2705,6 +2733,19 @@ def build_language_bundle(
                 or sibling_text_branch
                 or following_line_risk_for_group(group_opt_ids, group.get("after") or "")
             )
+            if (
+                used_group_fallback
+                and inferred_anchor_mode == "siblingTimelinePosition"
+                and following_line_risk.get("code") == "siblingSceneTextBranches"
+            ):
+                used_group_fallback = False
+                group_status = "siblingSceneText"
+                sibling_text_group_count += 1
+                if fallback_group_count > 0:
+                    fallback_group_count -= 1
+                fallback_group_labels = [
+                    label for label in fallback_group_labels if label != f"g{g}"
+                ]
             if following_line_risk:
                 group["optionBranchRisk"] = following_line_risk
                 if following_line_risk.get("code") == "inferredFollowingLines":
@@ -2734,12 +2775,6 @@ def build_language_bundle(
                     "scenes": sibling_anchor_record["siblingScenes"],
                     "timeline": sibling_anchor_record.get("timeline") or "",
                 }
-            if used_group_fallback:
-                group_has_authored_coverage = bool(group_opt_ids) and all(
-                    opt_id in authored_option_ids for opt_id in group_opt_ids
-                )
-                if not group_has_authored_coverage:
-                    used_any_fallback_option_layout = True
             group_details.append({
                 "group": g,
                 "status": group_status,
@@ -2764,8 +2799,15 @@ def build_language_bundle(
                 "textAliasSources": text_alias_group_sources,
             })
             out.append(group)
+        has_meaningful_option_text = any(
+            str(opt.get("text") or "").strip()
+            for group in out
+            for opt in (group.get("options") or [])
+            if isinstance(opt, dict)
+        )
+        has_layout_warning_groups = fallback_group_count > 0 or unanchored_group_count > 0
         warnings: list[dict] = []
-        if used_any_fallback_option_layout or (used_fallback_layout and not authored_option_ids):
+        if has_meaningful_option_text and has_layout_warning_groups:
             total_groups = len(out)
             if not authored_option_ids:
                 reason_short = "noTreeReference"
@@ -2795,6 +2837,8 @@ def build_language_bundle(
                     "total": total_groups,
                     "authoredAfter": authored_group_count,
                     "authoredPre": pre_group_count,
+                    "keyedAfter": keyed_group_count,
+                    "siblingSceneText": sibling_text_group_count,
                     "fallbackAfter": fallback_group_count,
                     "unanchored": unanchored_group_count,
                 },
@@ -4480,7 +4524,7 @@ def build_language_bundle(
             summary_rows.append({"text": f"Files: {len(cutscene['variants'])} exported asset(s)"})
         if cutscene.get("actorLabels"):
             summary_rows.append({
-                "text": "Actors: " + ", ".join(cutscene["actorLabels"][:8]),
+                "text": "Actors: " + ", ".join(cutscene["actorLabels"]),
             })
         flags: list[str] = []
         if cutscene.get("isTransition"):
@@ -9108,6 +9152,15 @@ def build_language_bundle(
     for entry in index_entries:
         if entry.get("d") in MISSION_SCENE_ENTRY_KINDS:
             scene_keys_by_mission[entry["m"]].add(entry["k"])
+    present_index_missions = sorted({e["m"] for e in index_entries if e.get("m")})
+    mission_variant_ids_by_parent: dict[str, list[str]] = defaultdict(list)
+    for path in sorted(MRA_DIR.glob("*.json")):
+        stem = path.stem
+        if stem.endswith("_meta"):
+            continue
+        parent_mission = re.sub(r"d\d+$", "", stem)
+        if parent_mission != stem and parent_mission in scene_keys_by_mission:
+            mission_variant_ids_by_parent[parent_mission].append(stem)
 
     def resolve_scene_ref_out_key(raw_ref: str, available_scene_keys: set[str]) -> str:
         if not raw_ref:
@@ -9127,6 +9180,78 @@ def build_language_bundle(
                 if canonical_cutscene in available_scene_keys:
                     return canonical_cutscene
         return ""
+
+    def quest_area_scene_refs(quest: dict, available_scene_keys: set[str]) -> list[str]:
+        refs: list[str] = []
+        for raw_ref in _quest_area_story_refs(quest):
+            resolved = resolve_scene_ref_out_key(raw_ref, available_scene_keys)
+            if resolved and resolved not in refs:
+                refs.append(resolved)
+        return refs
+
+    def quest_leveldata_scene_refs(quest: dict, available_scene_keys: set[str]) -> list[str]:
+        refs: list[str] = []
+        for row in quest.get("levelDataStoryRefs") or []:
+            raw_ref = row.get("storyRef") if isinstance(row, dict) else row
+            resolved = resolve_scene_ref_out_key(raw_ref or "", available_scene_keys)
+            if resolved and resolved not in refs:
+                refs.append(resolved)
+        return refs
+
+    def flow_has_available_scene_ref(flow: dict | None, available_scene_keys: set[str]) -> bool:
+        if not flow or not available_scene_keys:
+            return False
+        for quest in flow.get("quests") or []:
+            for field_name in ("dialogs", "cutscenes", "remotecomms", "radios", "failStoryRefs"):
+                for raw_ref in quest.get(field_name) or []:
+                    if resolve_scene_ref_out_key(raw_ref, available_scene_keys):
+                        return True
+            if quest_area_scene_refs(quest, available_scene_keys):
+                return True
+            if quest_leveldata_scene_refs(quest, available_scene_keys):
+                return True
+            for proxy_ref in quest.get("proxyDialogs") or []:
+                raw_ref = (
+                    proxy_ref.get("dialogId")
+                    if isinstance(proxy_ref, dict)
+                    else proxy_ref
+                )
+                if resolve_scene_ref_out_key(raw_ref or "", available_scene_keys):
+                    return True
+        return False
+
+    def mission_graph_flow(mission: str, flow: dict | None) -> dict | None:
+        """Return the flow used only for scene-graph ordering.
+
+        Some playable mission variants (`c16m4d5`, `e10m4d5`, etc.) carry
+        MissionRuntime quest refs for parent story keys. The parent mission is
+        where those story files live in the WebUI, so fold matching variant
+        quests into the graph pass only when their refs resolve to actual
+        parent nodes.
+        """
+        available = scene_keys_by_mission.get(mission, set())
+        if not available:
+            return flow
+        variant_quests: list[dict] = []
+        variant_missions: list[str] = []
+        for variant_mission in mission_variant_ids_by_parent.get(mission) or []:
+            variant_flow = load_mission_flow(variant_mission)
+            if not flow_has_available_scene_ref(variant_flow, available):
+                continue
+            variant_missions.append(variant_mission)
+            for quest in (variant_flow or {}).get("quests") or []:
+                variant_quest = copy.deepcopy(quest)
+                variant_quest["variantMission"] = variant_mission
+                variant_quests.append(variant_quest)
+        if not variant_quests:
+            return flow
+        graph_flow = copy.deepcopy(flow or {"quests": []})
+        graph_flow["quests"] = [
+            *list(graph_flow.get("quests") or []),
+            *variant_quests,
+        ]
+        graph_flow["variantMissionIds"] = variant_missions
+        return graph_flow
 
 
     def build_mission_scene_pins(
@@ -9162,7 +9287,8 @@ def build_language_bundle(
                 for radio_id in (quest.get("radios") or [])
                 if (resolved := resolve_scene_ref_out_key(radio_id, available_scene_keys))
             ])
-            scene_refs = primary_scene_refs or radio_scene_refs
+            area_scene_refs = quest_area_scene_refs(quest, available_scene_keys)
+            scene_refs = primary_scene_refs or radio_scene_refs or area_scene_refs
             if len(scene_refs) != 1:
                 continue
             scene_key = scene_refs[0]
@@ -9445,6 +9571,7 @@ def build_language_bundle(
                 "rootQuestIds": [],
                 "flowIndices": [],
             })
+            quest_leveldata_refs: dict[str, list[str]] = {}
 
             def gather_upstream_scene_refs(quest_id: str, seen: set[str] | None = None) -> list[str]:
                 if not quest_id:
@@ -9526,16 +9653,71 @@ def build_language_bundle(
                                         refs.append(scene_ref)
                 return refs
 
+            def quest_field_scene_refs(quest: dict, field_name: str) -> list[str]:
+                refs: list[str] = []
+                for raw_ref in quest.get(field_name) or []:
+                    resolved = resolve_scene_ref_out_key(raw_ref, available)
+                    if resolved and resolved not in refs:
+                        refs.append(resolved)
+                return refs
+
+            def add_leveldata_edge_meta(edge: dict, quest: dict, scene_refs: list[str]) -> None:
+                quest_id = quest.get("id") or ""
+                refs = edge.setdefault("questIds", [])
+                if quest_id and quest_id not in refs:
+                    refs.append(quest_id)
+                scene_ref_set = set(scene_refs)
+                for row in quest.get("levelDataStoryRefs") or []:
+                    if not isinstance(row, dict):
+                        continue
+                    resolved = resolve_scene_ref_out_key(row.get("storyRef") or "", available)
+                    if scene_ref_set and resolved not in scene_ref_set:
+                        continue
+                    file_ref = row.get("file") or ""
+                    if file_ref:
+                        source_files = edge.setdefault("sourceFiles", [])
+                        if file_ref not in source_files:
+                            source_files.append(file_ref)
+                    level_id = row.get("levelId") or ""
+                    if level_id:
+                        level_ids = edge.setdefault("levelIds", [])
+                        if level_id not in level_ids:
+                            level_ids.append(level_id)
+                    entity = row.get("entity") or ""
+                    if entity:
+                        entities = edge.setdefault("entities", [])
+                        if entity not in entities:
+                            entities.append(entity)
+                    for field in row.get("fields") or []:
+                        fields = edge.setdefault("fields", [])
+                        if field and field not in fields:
+                            fields.append(field)
+
             for quest in flow.get("quests") or []:
+                proxy_dialog_refs: list[str] = []
+                for proxy_ref in quest.get("proxyDialogs") or []:
+                    raw_ref = (
+                        proxy_ref.get("dialogId")
+                        if isinstance(proxy_ref, dict)
+                        else proxy_ref
+                    )
+                    resolved = resolve_scene_ref_out_key(raw_ref or "", available)
+                    if resolved and resolved not in proxy_dialog_refs:
+                        proxy_dialog_refs.append(resolved)
                 scene_refs = _unique_preserve([
                     *quest_condition_script_scene_refs(quest),
-                    *(dialog_id for dialog_id in (quest.get("dialogs") or []) if dialog_id in available),
-                    *(cutscene_id for cutscene_id in (quest.get("cutscenes") or []) if cutscene_id in available),
-                    *(remote_id for remote_id in (quest.get("remotecomms") or []) if remote_id in available),
-                    *(radio_id for radio_id in (quest.get("radios") or []) if radio_id in available),
+                    *quest_field_scene_refs(quest, "dialogs"),
+                    *proxy_dialog_refs,
+                    *quest_field_scene_refs(quest, "cutscenes"),
+                    *quest_field_scene_refs(quest, "remotecomms"),
+                    *quest_field_scene_refs(quest, "radios"),
+                    *quest_area_scene_refs(quest, available),
                 ])
                 quest_id = quest.get("id") or ""
                 flow_index = quest.get("flowIndex", 0)
+                leveldata_scene_refs = quest_leveldata_scene_refs(quest, available)
+                if leveldata_scene_refs:
+                    quest_leveldata_refs[quest_id] = leveldata_scene_refs
                 if scene_refs:
                     quest_scene_refs[quest_id] = scene_refs
                     first_scene = scene_refs[0]
@@ -9547,10 +9729,24 @@ def build_language_bundle(
                     if quest_id and not (quest.get("prev") or []) and quest_id not in meta["rootQuestIds"]:
                         meta["rootQuestIds"].append(quest_id)
                 for src, dst in zip(scene_refs, scene_refs[1:]):
-                    if edge := ensure_edge(src, dst, "questSequence"):
-                        refs = edge.setdefault("questIds", [])
-                        if quest_id and quest_id not in refs:
-                            refs.append(quest_id)
+                        if edge := ensure_edge(src, dst, "questSequence"):
+                            refs = edge.setdefault("questIds", [])
+                            if quest_id and quest_id not in refs:
+                                refs.append(quest_id)
+                if leveldata_scene_refs:
+                    sources = scene_refs[:]
+                    if not sources:
+                        for prev_id in quest.get("prev") or []:
+                            for scene_ref in gather_upstream_scene_refs(prev_id):
+                                if scene_ref not in sources:
+                                    sources.append(scene_ref)
+                    if sources:
+                        src = _unique_preserve(sources)[-1]
+                        if edge := ensure_edge(src, leveldata_scene_refs[0], "levelDataQuestRef"):
+                            add_leveldata_edge_meta(edge, quest, leveldata_scene_refs[:1])
+                    for src, dst in zip(leveldata_scene_refs, leveldata_scene_refs[1:]):
+                        if edge := ensure_edge(src, dst, "levelDataQuestRef"):
+                            add_leveldata_edge_meta(edge, quest, [src, dst])
                 jump_nodes = [
                     f"ui:{hint.get('jumpId')}"
                     for hint in (quest.get("tracking") or [])
@@ -9562,12 +9758,37 @@ def build_language_bundle(
                         for scene_ref in gather_upstream_scene_refs(prev_id):
                             if scene_ref not in sources:
                                 sources.append(scene_ref)
-                for jump_node in jump_nodes:
-                    for src in _unique_preserve(sources):
-                        if edge := ensure_edge(src, jump_node, "uiJump"):
-                            refs = edge.setdefault("questIds", [])
-                            if quest_id and quest_id not in refs:
-                                refs.append(quest_id)
+                    for jump_node in jump_nodes:
+                        for src in _unique_preserve(sources):
+                            if edge := ensure_edge(src, jump_node, "uiJump"):
+                                refs = edge.setdefault("questIds", [])
+                                if quest_id and quest_id not in refs:
+                                    refs.append(quest_id)
+            children_by_prev: dict[str, list[str]] = defaultdict(list)
+            for quest in flow.get("quests") or []:
+                child_id = quest.get("id") or ""
+                for prev_id in quest.get("prev") or []:
+                    if prev_id and child_id:
+                        children_by_prev[prev_id].append(child_id)
+            for quest in flow.get("quests") or []:
+                quest_id = quest.get("id") or ""
+                leveldata_scene_refs = quest_leveldata_refs.get(quest_id) or []
+                if not leveldata_scene_refs:
+                    continue
+                for child_id in children_by_prev.get(quest_id) or []:
+                    child_targets = (
+                        quest_scene_refs.get(child_id)
+                        or quest_leveldata_refs.get(child_id)
+                        or []
+                    )
+                    if not child_targets:
+                        continue
+                    if edge := ensure_edge(
+                        leveldata_scene_refs[-1],
+                        child_targets[0],
+                        "levelDataQuestRef",
+                    ):
+                        add_leveldata_edge_meta(edge, quest, leveldata_scene_refs[-1:])
             for quest in flow.get("quests") or []:
                 quest_id = quest.get("id") or ""
                 scene_refs = quest_scene_refs.get(quest_id, [])
@@ -9691,11 +9912,15 @@ def build_language_bundle(
         # levels that share a LevelData host file with another mission
         # (mission_level_refs misses these because it keys off filename).
         flow_level_ids: list[str] = []
+        if re.match(r"^map\d+_lv\d+$", mission or "", re.I):
+            flow_level_ids.append(mission)
         for candidate in [(flow or {}).get("level")] + [
             scene_id
             for quest in ((flow or {}).get("quests") or [])
             for scene_id in (quest.get("scenes") or [])
-        ] + [ref.get("levelId") for ref in (mission_level_refs.get(mission) or [])]:
+        ] + [ref.get("levelId") for ref in (mission_level_refs.get(mission) or [])] + [
+            ref.get("levelId") for ref in (mission_leveldata_host_refs.get(mission) or [])
+        ]:
             if candidate and candidate not in flow_level_ids:
                 flow_level_ids.append(candidate)
         for level_id in flow_level_ids:
@@ -9720,6 +9945,50 @@ def build_language_bundle(
                         edge.setdefault("positions", [])
                         if pos not in edge["positions"]:
                             edge["positions"].append(pos)
+
+        # PRTS collection rows expose authored page order inside a single
+        # reading/collection item. Treat that as weak ordering only, and only
+        # when each ordered slot maps to exactly one story node.
+        prts_buckets: dict[str, dict[int, list[tuple[str, str]]]] = defaultdict(lambda: defaultdict(list))
+        for row_id, row in prts_all_items.items():
+            if not isinstance(row, dict):
+                continue
+            first_lv_id = str(row.get("firstLvId") or "")
+            order = row.get("order")
+            content_id = str(row.get("contentId") or "")
+            if not first_lv_id or not isinstance(order, int) or not content_id.startswith("text_"):
+                continue
+            suffix = content_id[len("text_"):]
+            candidates = [
+                key
+                for key in (
+                    f"dlg_{suffix}",
+                    f"black_{suffix}",
+                    f"misc_dlg_{suffix}",
+                )
+                if key in available
+            ]
+            if len(candidates) != 1:
+                continue
+            prts_buckets[first_lv_id][order].append((candidates[0], str(row_id)))
+        for first_lv_id, order_map_by_bucket in prts_buckets.items():
+            ordered_slots = [
+                (order, rows[0])
+                for order, rows in sorted(order_map_by_bucket.items())
+                if len(rows) == 1
+            ]
+            if len(ordered_slots) < 2:
+                continue
+            for pos, ((_, (src, src_row)), (__, (dst, dst_row))) in enumerate(zip(ordered_slots, ordered_slots[1:])):
+                if edge := ensure_edge(src, dst, "prtsCollectionOrder"):
+                    edge["firstLvId"] = first_lv_id
+                    refs = edge.setdefault("prtsRows", [])
+                    for row_ref in (src_row, dst_row):
+                        if row_ref and row_ref not in refs:
+                            refs.append(row_ref)
+                    edge.setdefault("positions", [])
+                    if pos not in edge["positions"]:
+                        edge["positions"].append(pos)
 
         # Radio-continuation edges (authored continueAfterDialog/Radio flags
         # combined with LevelScript file-offset adjacency, audited offline by
@@ -9785,6 +10054,8 @@ def build_language_bundle(
         }
         weak_order_edge_kinds = {
             "levelscriptFileOrder",
+            "levelDataQuestRef",
+            "prtsCollectionOrder",
         }
         strong_ordered_keys = set(mission_runtime_ordered_keys)
         weak_ordered_keys: set[str] = set()
@@ -9874,9 +10145,10 @@ def build_language_bundle(
 
     mission_flows_payload: dict[str, dict] = {}
     mission_scene_graphs: dict[str, dict] = {}
-    for mission in sorted({e["m"] for e in index_entries if e.get("m")}):
+    for mission in present_index_missions:
         flow = load_mission_flow(mission)
-        scene_graph = build_mission_scene_graph(mission, flow)
+        graph_flow = mission_graph_flow(mission, flow)
+        scene_graph = build_mission_scene_graph(mission, graph_flow)
         if not flow and not scene_graph:
             continue
         payload = {"quests": (flow or {}).get("quests") or []}
@@ -9888,6 +10160,9 @@ def build_language_bundle(
                 referenced.update(q.get("remotecomms") or [])
                 referenced.update(q.get("radios") or [])
             available = scene_keys_by_mission.get(mission, set())
+            for q in flow["quests"]:
+                referenced.update(quest_area_scene_refs(q, available))
+                referenced.update(quest_leveldata_scene_refs(q, available))
             unlinked = sorted(available - referenced)
             if flow.get("level"):
                 payload["level"] = flow["level"]
@@ -9901,6 +10176,8 @@ def build_language_bundle(
                 payload["scenePins"] = scene_pins
         if scene_graph:
             payload["sceneGraph"] = scene_graph
+            if graph_flow and graph_flow.get("variantMissionIds"):
+                payload["sceneGraphVariantMissions"] = graph_flow["variantMissionIds"]
             mission_scene_graphs[mission] = scene_graph
             unconfirmed_keys: set[str] = {
                 node.get("key")
