@@ -1661,6 +1661,56 @@ For ordering files within a mission/scene:
      files in the sidebar, sorted by the numeric index recovered from the file
      key tail (`1`, `1d5`, `New14`, etc.).
 
+### 2026-05-16 IL2CPP Option Runtime Field Analysis
+
+Built an interpretation layer over the existing IL2CPP body-target
+mapper output. New script:
+[scripts/story_recovery/build_option_runtime_field_analysis.py](scripts/story_recovery/build_option_runtime_field_analysis.py).
+
+It reads `reports/option_flow_body_targets_gameassembly.json` (already
+produced by `tools/endfield-il2cpp/map_body_targets_to_gameassembly.py`)
+and extracts every `[reg+offset]` memory access in the disassembly
+window of the 14 catalog-target direct call edges, then annotates the
+named offsets that the disassembly proves matter for option flow.
+
+Confirmed runtime field semantics on the option object:
+
+- `+0x18 activeClipGate` (5 uses across `TryTriggerTrunkBindingOption`
+  and `_TryDoNext`): read as `cmp [rax+0x18], 0` before
+  `SetDialogOption(this, optionData)`. Options with this offset zero
+  are filtered out — this is the runtime gate that keeps the 20 live
+  `inferredOptionResponse` candidate clips inactive in the WebUI
+  builder, because their authored serialized fields all read 0.
+- `+0x98 selectedOptionIndex` (3 uses in `_SelectIndexInTimeline`,
+  `SkipToNextShowNode`): read as
+  `mov ebx, [rax+0x98]; mov edx, ebx; call DialogChooseOption`. The
+  optionIndex passed to `DialogChooseOption` is literally
+  `selectedOption.+0x98`.
+- `+0x200 selectedIndexStore` (1 use in `SelectIndex`): written as
+  `mov [rax+0x200], ecx` (ecx <- `this.+0xa0`) before
+  `ResetDialogOption()`. Persistent store of the selected option index
+  for the active dialog timeline.
+- `+0xa0 managerCurrentIndex` (1 use in `SelectIndex`): the
+  `DialogTimelineManager`-side index source that feeds `+0x200`.
+- `+0x28 playableOptionsList` (3 uses in `GenPlayable`,
+  `TryTriggerTrunkBindingOption`): the serialized `options` list on
+  the playable asset.
+
+18 distinct offsets appear in the 14 direct-call windows; 5 have
+named semantics, 13 remain `unknown` for now.
+
+Output: `reports/option_flow_active_clip_field_analysis.{json,md}`.
+
+Next decoding target: identify the PRODUCER/INITIALIZER of `+0x18` on
+the runtime option object. `TryTriggerTrunkBindingOption` reads it
+but does not write it; the likely writers are
+`DialogTimelineManager.SetDialogOption` or the
+`DialogOptionPlayableAsset` post-bind path. Once the writer is
+identified and the conditions under which it sets non-zero are known,
+the WebUI builder can promote authored +0x18 evidence into a real
+option-response edge. This is the key unblocker for the 20 live
+`inferredOptionResponse` groups.
+
 ### 2026-05-16 Option Response Audio / Timeline Evidence
 
 Ran a per-group AudioDialog + Timeline + speaker evidence audit on the
