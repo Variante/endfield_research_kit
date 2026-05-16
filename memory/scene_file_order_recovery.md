@@ -1661,6 +1661,65 @@ For ordering files within a mission/scene:
      files in the sidebar, sorted by the numeric index recovered from the file
      key tail (`1`, `1d5`, `New14`, etc.).
 
+### 2026-05-16 Option Response Audio / Timeline Evidence
+
+Ran a per-group AudioDialog + Timeline + speaker evidence audit on the
+20 live `inferredOptionResponse` groups across 15 scenes. New audit:
+[scripts/story_recovery/build_option_response_audio_evidence.py](scripts/story_recovery/build_option_response_audio_evidence.py)
+emitting `reports/option_response_audio_evidence_CN.{json,md}`.
+
+For each candidate line the audit captures:
+
+- `DialogTextTable` speaker id and display name
+- `AudioDialog.path`, `speakerChannel`, integer dialog key (audio
+  recording session order), `wavDuration`
+- `DialogTrunkPlayableAsset` Timeline name + `start` + `duration`
+- whether all candidates fall after the anchor on the same Timeline
+- whether the candidate set is monotonic by Timeline start time
+- whether AudioDialog keys are monotonic across the candidate set
+- whether the speakers are consistent (single responder) across
+  candidates, and whether the anchor's speaker differs from them
+
+Results (CN, 2026-05-16):
+
+```text
+groups audited:                     20
+monotonic by Timeline start:        19 / 20
+monotonic by AudioDialog key:       15 / 20
+candidates all after anchor:        19 / 20  (matches Timeline monotonicity)
+consistent candidate speaker:       13 / 20
+anchor speaker different from cand: 13 / 20  (matches)
+candidates share anchor's Timeline: 19 / 20
+```
+
+The single non-monotonic group is `misc_dlg_e5m3_0d5` g2 which has
+no Timeline data — a table-only scene.
+
+The 7 multi-speaker groups (`dlg_e1m10_7 g5`, `dlg_e4m1_4 g3`,
+`dlg_e6m1_10 g4`, `dlg_e6m3_14 g2`, `dlg_e6m4_14 g2/g3`,
+`misc_dlg_e5m3_0d5 g2`) carry an additional signal: each option may
+trigger a different NPC to respond, so the speaker pattern itself
+maps to the option index. Example: `dlg_e6m1_10 g4` candidates are
+`_016 (pelica)` and `_003 (zhuangfy)` — two-option group where the
+two response speakers are distinct characters.
+
+Classification:
+
+- Necessary signal: candidates form a coherent authored cohort
+  (same Timeline, after the anchor, monotonic start times).
+- **Not sufficient for promotion**: candidate monotonicity is
+  consistent with the option-index mapping but does not bind a
+  specific candidate to a specific option index. The
+  `DialogOptionPlayableAsset +0x18` runtime field would do that
+  binding; until it is decoded, this audit stays diagnostic.
+
+This audit is the right evidence packet to attach to each of the 20
+groups when reviewing future promotion rules. Do not land an
+automatic Timeline-monotonic option-response edge yet — the negative
+control in `build_option_route_evidence_controls.py` still demands
+authored Runtime Jump skip/reverse range evidence for every option,
+which these groups lack.
+
 ### 2026-05-16 LevelScript Property-Flow Audit
 
 Audited the LevelScript-property-condition / setter bridge described in
