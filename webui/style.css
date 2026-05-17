@@ -1565,6 +1565,15 @@ a.opt-target-chip { cursor: pointer; }
 .mission-timeline-chunk-strength-weak {
   color: var(--muted);
 }
+.mission-timeline-chip-chunk {
+  background: rgba(106, 170, 255, 0.12);
+  color: #b6d6ff;
+  border: 1px solid rgba(106, 170, 255, 0.25);
+}
+.mission-timeline-tree-unattached-chunks {
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
 
 /* Shared line-order chips. */
 .binding-chip {

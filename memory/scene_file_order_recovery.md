@@ -173,14 +173,65 @@ attachments is a candidate follow-up.
 
 Evidence sources still on the queue for chunk-order recovery:
 
-- Script-condition matched story keys (`missionRuntimeScriptConditions`)
-  promoted to quest attachments.
 - `sourceBackedHashTerminals` prev/next hash chains crossing chunks.
 - Story-call contexts with directional position info.
+- Recovered questEdges from LevelScript property-setter flow — blocked until
+  setter opcodes are decoded (the property-flow audit already identifies which
+  conditions have a bridge but explicitly marks the relation as not
+  promotable, see [reports/mission_order/levelscript_property_flow_CN.md](../reports/mission_order/levelscript_property_flow_CN.md)).
 
 Explicitly rejected: filename/index order, scene-key numeric suffix, mission
 bundle row order. The chunks themselves already include radio-continuation
 edges in Phase 1, so radio continuation isn't a separate Phase 2 signal.
+
+## Script-Condition Quest Attachment
+
+`decode_mission_script_conditions` in
+`scripts/story_builder/mission_recovery.py` walks every
+MissionRuntimeAsset for `CheckLevelScriptProperty*` nodes, capturing
+`(questId, mapId, scriptId, key)`. `build_script_condition_ownership` runs a
+global pre-pass before per-mission recovery so the attacher can apply a
+**scoped** policy: a quest attaches a scene only when the referenced
+`(mapId, scriptId)` is referenced by exactly one mission (shared LevelScripts
+don't fan out).
+
+`attach_script_condition_quests` then folds matches into
+`scenePlacement[<sceneKey>].questIds`, tags each attachment in
+`questAttachSources` with `source: scriptCondition`, and marks the placement
+row with the `scriptConditionQuestAttach` evidence kind. A diagnostic list
+`scriptConditionAttachments: [...]` is emitted per mission for traceability.
+
+Initial counts across the 418-mission run:
+
+- `59` missions gain script-condition attachments.
+- `928` attachment events recorded; `805` are new (not already covered by
+  `storyRefs`).
+- Chunk-order totals shift from the Phase 2 baseline to: 156 missions ordered
+  (`+5`), `600` quest-DAG edges (`+56`), `85` parallel pairs (`+8`), `286`
+  incomparable pairs (`+23`).
+- Sample: `e0m0_q#7` now anchors chunk `c4` via the `indie_dg002/8700040000
+  battle_field_clear` condition. e10m4 has no MissionRuntime script
+  conditions, so its chunks remain unattached for quest-DAG ordering even
+  after this promotion.
+
+## Task Tree
+
+`attach_chunks_to_quest_tree` annotates every quest-tree node with the
+chunks attached to its quest. A chunk attaches to a quest when at least one
+of its scenes lists that quest in `scenePlacement[<sceneKey>].questIds` (from
+either storyRefs or scoped script conditions). Within a quest, chunks are
+sorted by the Phase 2 chunk-order topological position when available,
+otherwise by natural order.
+
+Mission payload now carries `questTree.unattachedToQuestChunkIds` (chunks not
+attached to any quest) and `questTree.chunkAttachmentSummary` with
+`attachedChunkCount`, `unattachedChunkCount`, `questsWithChunkCount`.
+
+The audit's `## Task Tree` section renders the quest tree with attached chunk
+ids inline (e.g. `a1m3_q#SNS — c3 → a1m3_q#IntroDialog — c1 → ... → a1m3_q#FinalDialog — c2`).
+The WebUI quest tree node attaches one `mission-timeline-chip-chunk` per
+attached chunk id; an "unattached chunks" footer lists chunks with no quest
+home.
 
 ## Useful Reports
 

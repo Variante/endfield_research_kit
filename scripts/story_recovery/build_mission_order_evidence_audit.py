@@ -1071,12 +1071,14 @@ def build_report(
         "missionTimeline": {
             "propertyModel": (mission_timeline or {}).get("propertyModel"),
             "questEdges": (mission_timeline or {}).get("questEdges") or [],
+            "questTree": (mission_timeline or {}).get("questTree") or {},
             "sourceBackedSceneEdges": (mission_timeline or {}).get("sourceBackedSceneEdges") or [],
             "sourceBackedSceneSequences": (mission_timeline or {}).get("sourceBackedSceneSequences") or [],
             "sourceBackedHashTerminals": (mission_timeline or {}).get("sourceBackedHashTerminals") or [],
             "chunks": (mission_timeline or {}).get("chunks") or [],
             "chunkOrder": (mission_timeline or {}).get("chunkOrder") or {},
             "scenePlacement": (mission_timeline or {}).get("scenePlacement") or {},
+            "scriptConditionAttachments": (mission_timeline or {}).get("scriptConditionAttachments") or [],
             "unresolved": (mission_timeline or {}).get("unresolved") or [],
         },
         "missionRuntimeScriptConditions": runtime_script_conditions,
@@ -1235,6 +1237,56 @@ def markdown_report(payload: dict[str, Any]) -> str:
             )
     else:
         lines.append("- _(none)_")
+
+    quest_tree = (payload.get("missionTimeline") or {}).get("questTree") or {}
+    unattached_quest_chunks = quest_tree.get("unattachedToQuestChunkIds") or []
+    attachment_summary = quest_tree.get("chunkAttachmentSummary") or {}
+    lines.extend(["", "## Task Tree", ""])
+    if quest_tree.get("roots") or quest_tree.get("unrootedRoots"):
+        lines.append(
+            f"- attached chunks: `{attachment_summary.get('attachedChunkCount', 0)}` "
+            f"across `{attachment_summary.get('questsWithChunkCount', 0)}` quests; "
+            f"unattached chunks: `{attachment_summary.get('unattachedChunkCount', 0)}`"
+        )
+        lines.append("")
+
+        def render_tree_lines(nodes: list[dict], depth: int = 0) -> None:
+            for node in nodes or []:
+                if not isinstance(node, dict):
+                    continue
+                quest_id = node.get("questId") or ""
+                indent = "  " * depth
+                attached = node.get("attachedChunkIds") or []
+                chunks_text = (
+                    " — " + ", ".join(f"`{md_escape(cid)}`" for cid in attached)
+                    if attached
+                    else ""
+                )
+                tags = []
+                if node.get("loop"):
+                    tags.append("loop")
+                if node.get("reused"):
+                    tags.append("reused")
+                tag_text = f" _({', '.join(tags)})_" if tags else ""
+                lines.append(f"{indent}- `{md_escape(quest_id)}`{tag_text}{chunks_text}")
+                if not node.get("reused"):
+                    render_tree_lines(node.get("children") or [], depth + 1)
+
+        if quest_tree.get("roots"):
+            render_tree_lines(quest_tree["roots"])
+        if quest_tree.get("unrootedRoots"):
+            lines.append("")
+            lines.append("Unrooted (no explicit empty prevQuestIdList):")
+            lines.append("")
+            render_tree_lines(quest_tree["unrootedRoots"])
+        if unattached_quest_chunks:
+            lines.append("")
+            lines.append(
+                "Chunks not attached to any quest (no storyRef or script-condition match): "
+                + ", ".join(f"`{md_escape(cid)}`" for cid in unattached_quest_chunks)
+            )
+    else:
+        lines.append("- _(no quest tree)_")
 
     chunk_order = (payload.get("missionTimeline") or {}).get("chunkOrder") or {}
     co_edges = chunk_order.get("edges") or []
