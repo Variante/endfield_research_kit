@@ -1248,6 +1248,143 @@ def build_source_backed_scene_sequences(source_backed_scene_edges: list[dict]) -
     return sequences
 
 
+def _unwrap_const(value: Any) -> Any:
+    if isinstance(value, dict) and "constValue" in value:
+        return value.get("constValue")
+    return value
+
+
+def _safe_key(value: Any) -> str:
+    return str(value if value is not None else "").strip()
+
+
+def decode_mission_script_conditions(raw: dict) -> list[dict]:
+    """Decode MissionRuntime ``CheckLevelScriptProperty*`` conditions.
+
+    Walks the MissionRuntimeAsset tree, latching the enclosing ``questId`` as
+    it descends, and produces one record per node that carries a script id
+    (i.e. references a specific LevelScript file). Mirrors the audit's
+    ``collect_mission_runtime_script_conditions`` exactly so the two stay in
+    sync.
+    """
+    out: list[dict] = []
+
+    def walk(value: Any, quest_id: str = "") -> None:
+        if isinstance(value, dict):
+            next_quest_id = quest_id
+            if isinstance(value.get("questId"), str):
+                next_quest_id = value["questId"]
+            type_name = _safe_key(value.get("$type"))
+            has_script_id = "_scriptId" in value or "scriptId" in value
+            if "LevelScript" in type_name or has_script_id:
+                script_value = _unwrap_const(value.get("_scriptId", value.get("scriptId")))
+                if isinstance(script_value, dict):
+                    script_id = script_value.get("scriptId")
+                else:
+                    script_id = script_value
+                map_id = _unwrap_const(
+                    value.get(
+                        "_mapId",
+                        value.get(
+                            "mapId",
+                            value.get(
+                                "_levelId",
+                                value.get(
+                                    "levelId",
+                                    value.get("_sceneId", value.get("sceneId")),
+                                ),
+                            ),
+                        ),
+                    )
+                )
+                map_id_str = _safe_key(map_id)
+                script_id_str = _safe_key(script_id)
+                if map_id_str and script_id_str:
+                    out.append({
+                        "questId": next_quest_id,
+                        "type": type_name,
+                        "mapId": map_id_str,
+                        "scriptId": script_id_str,
+                        "key": _safe_key(_unwrap_const(value.get("_key", value.get("key")))),
+                        "value": _unwrap_const(value.get("_value", value.get("value"))),
+                    })
+            for child in value.values():
+                walk(child, next_quest_id)
+        elif isinstance(value, list):
+            for child in value:
+                walk(child, quest_id)
+
+    walk(raw)
+    return out
+
+
+def build_script_condition_ownership(mra_files: list[Path]) -> dict[tuple[str, str], list[str]]:
+    """Pre-pass: map every (mapId, scriptId) to the missions whose quests
+    reference it via a CheckLevelScriptProperty condition.
+
+    Used by ``recover_mission`` to gate script-condition quest attachments —
+    we only attach when exactly one mission owns the referenced LevelScript,
+    so a shared script doesn't fan out to claim the same scene from multiple
+    missions.
+    """
+    ownership: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for path in mra_files:
+        try:
+            raw = load_json(path)
+        except (OSError, json.JSONDecodeError):
+            continue
+        mission_id = raw.get("missionId") or path.stem
+        for condition in decode_mission_script_conditions(raw):
+            ownership[(condition["mapId"], condition["scriptId"])].add(mission_id)
+    return {key: sorted(values, key=natural_key) for key, values in ownership.items()}
+
+
+def levelscript_path_components(source_file: str) -> tuple[str, str]:
+    """Return ``(mapId, scriptId)`` parsed from a LevelScriptData JSON path.
+
+    Returns ``("", "")`` when the path is not a LevelScriptData file. The path
+    layout is ``.../LevelScriptData/<mapId>/<scriptId>.json``.
+    """
+    text = str(source_file or "").replace("\\", "/")
+    if "/LevelScriptData/" not in text:
+        return ("", "")
+    tail = text.split("/LevelScriptData/", 1)[1]
+    parts = tail.split("/")
+    if len(parts) < 2:
+        return ("", "")
+    map_id = parts[0]
+    script_stem = Path(parts[-1]).stem
+    return (map_id, script_stem)
+
+
+def build_levelscript_story_keys_map(
+    scene_edges: list[dict],
+) -> dict[tuple[str, str], set[str]]:
+    """Reconstruct the story keys present in each LevelScript file from the
+    mission's source-backed scene edges.
+
+    Every edge carries the LevelScriptData JSON path it was decoded from in
+    ``sourceFiles``. Both endpoints are story keys (or hash terminals) that
+    appear in that file.
+    """
+    out: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for edge in scene_edges or []:
+        if not isinstance(edge, dict):
+            continue
+        keys = [
+            str(edge.get("from") or "").strip(),
+            str(edge.get("to") or "").strip(),
+        ]
+        for source_file in edge.get("sourceFiles") or []:
+            map_id, script_id = levelscript_path_components(source_file)
+            if not (map_id and script_id):
+                continue
+            for key in keys:
+                if key:
+                    out[(map_id, script_id)].add(key)
+    return out
+
+
 def mission_id_matches_target_prefix(mission_id: str) -> bool:
     """Return True when mission_id starts with one of TARGET_MISSION_PREFIXES.
 
@@ -1965,6 +2102,73 @@ def extract_quest(raw_quest: dict, source_path: Path, quest_field: str) -> dict:
     return quest
 
 
+def attach_script_condition_quests(
+    scene_placement: dict[str, dict],
+    conditions: list[dict],
+    story_keys_map: dict[tuple[str, str], set[str]],
+    ownership: dict[tuple[str, str], list[str]] | None,
+    mission_id: str,
+) -> list[dict]:
+    """Attach quest ids to scene_placement entries based on script conditions.
+
+    For each (questId, mapId, scriptId) condition, look up the story keys that
+    appear in that LevelScript via the per-mission story_keys_map. When
+    ``ownership`` is supplied, only attach when exactly one mission owns the
+    referenced LevelScript and that mission matches ``mission_id`` — the
+    "scoped" attach policy that avoids letting shared LevelScripts pull a
+    scene into multiple missions' quest hierarchies.
+
+    Each attachment is recorded both on the placement row's ``questIds`` (so
+    Phase 2 chunk-order recovery sees it) and on its ``questAttachSources``
+    diagnostic for traceability. Returns the list of attached records for
+    auditing.
+    """
+    attached: list[dict] = []
+    if not conditions or not story_keys_map:
+        return attached
+    for condition in conditions:
+        quest_id = str(condition.get("questId") or "").strip()
+        map_id = str(condition.get("mapId") or "").strip()
+        script_id = str(condition.get("scriptId") or "").strip()
+        if not (quest_id and map_id and script_id):
+            continue
+        if ownership is not None:
+            owners = ownership.get((map_id, script_id)) or []
+            if len(owners) != 1 or owners[0] != mission_id:
+                continue
+        story_keys = story_keys_map.get((map_id, script_id)) or set()
+        if not story_keys:
+            continue
+        for scene_key in story_keys:
+            row = scene_placement.get(scene_key)
+            if row is None:
+                continue
+            quest_ids = row.setdefault("questIds", [])
+            already = quest_id in quest_ids
+            if not already:
+                quest_ids.append(quest_id)
+            sources = row.setdefault("questAttachSources", [])
+            source_record = {
+                "questId": quest_id,
+                "source": "scriptCondition",
+                "mapId": map_id,
+                "scriptId": script_id,
+                "key": condition.get("key") or "",
+            }
+            if source_record not in sources:
+                sources.append(source_record)
+            attached.append({
+                "sceneKey": scene_key,
+                "questId": quest_id,
+                "mapId": map_id,
+                "scriptId": script_id,
+                "alreadyAttached": already,
+            })
+            if "scriptConditionQuestAttach" not in (row.get("evidenceKinds") or []):
+                row.setdefault("evidenceKinds", []).append("scriptConditionQuestAttach")
+    return attached
+
+
 def recover_mission(
     path: Path,
     timeline_index: dict[str, list[dict]],
@@ -1972,6 +2176,7 @@ def recover_mission(
     source_backed_scene_edges: list[dict] | None = None,
     source_backed_story_call_contexts: list[dict] | None = None,
     source_backed_hash_terminals: list[dict] | None = None,
+    script_condition_ownership: dict[tuple[str, str], list[str]] | None = None,
 ) -> dict:
     raw = load_json(path)
     mission_id = raw.get("missionId") or path.stem
@@ -2060,6 +2265,15 @@ def recover_mission(
         story_call_contexts,
         hash_terminals,
     )
+    script_conditions = decode_mission_script_conditions(raw)
+    story_keys_by_script = build_levelscript_story_keys_map(scene_edges)
+    script_condition_attachments = attach_script_condition_quests(
+        scene_placement,
+        script_conditions,
+        story_keys_by_script,
+        script_condition_ownership,
+        mission_id,
+    )
     chunks, chunk_by_scene_key = build_scene_chunks(
         scene_placement,
         scene_edges,
@@ -2090,6 +2304,7 @@ def recover_mission(
         "scenePlacement": scene_placement,
         "chunks": chunks,
         "chunkOrder": chunk_order,
+        "scriptConditionAttachments": script_condition_attachments,
         "unresolved": unresolved,
     }
     return payload
@@ -2623,7 +2838,17 @@ def main(argv: list[str] | None = None) -> int:
         missing = sorted(selected - found)
         raise SystemExit(f"MissionRuntimeAsset missing for: {', '.join(missing)}")
 
-    recovered = [recover_mission(path, timeline_index, generated_mission_dir) for path in files]
+    all_files = mission_files(mra_dir, set())
+    script_condition_ownership = build_script_condition_ownership(all_files)
+    recovered = [
+        recover_mission(
+            path,
+            timeline_index,
+            generated_mission_dir,
+            script_condition_ownership=script_condition_ownership,
+        )
+        for path in files
+    ]
     payload = {
         "evidencePolicy": EVIDENCE_POLICY,
         "summary": summarize(recovered, timeline_meta),
