@@ -854,6 +854,7 @@ def build_mission_timeline_recovery_report(
     )
     recovered: list[dict] = []
     files = mission_timeline_files(MRA_DIR, set()) if MRA_DIR.is_dir() else []
+    script_condition_ownership = build_mission_script_condition_ownership(files)
     for path in files:
         mission_id = path.stem
         recovered.append(
@@ -870,6 +871,7 @@ def build_mission_timeline_recovery_report(
                 source_backed_hash_terminals_from_scene_graph(
                     scene_graphs.get(mission_id)
                 ),
+                script_condition_ownership=script_condition_ownership,
             )
         )
     return {
