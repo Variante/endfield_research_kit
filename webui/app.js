@@ -5526,6 +5526,10 @@ function renderMissionTimelineTreeNode(node, questById, resourceContext, flowKey
   if (quest.failedCondition) appendMissionTimelineChip(tags, uiText("missionTimelineGuard"), "mission-timeline-chip-warn");
   if (node && node.loop) appendMissionTimelineChip(tags, uiText("missionTimelineLoop"), "mission-timeline-chip-warn");
   if (node && node.reused) appendMissionTimelineChip(tags, uiText("missionTimelineReused"));
+  const attachedChunkIds = missionTimelineArray(node && node.attachedChunkIds);
+  for (const chunkId of attachedChunkIds) {
+    appendMissionTimelineChip(tags, chunkId, "mission-timeline-chip-chunk");
+  }
   head.appendChild(tags);
   panel.appendChild(head);
 
@@ -6215,6 +6219,22 @@ function renderMissionTimelineRecovery(timeline, conv, missionFlow = null) {
       unrootedLabel.textContent = uiText("missionTimelineUnrooted");
       details.appendChild(unrootedLabel);
       details.appendChild(renderMissionTimelineTree(unrootedRoots, questById, resourceContext, flowKeyMap, currentKey));
+    }
+    const unattachedChunkIds = missionTimelineArray(tree.unattachedToQuestChunkIds);
+    if (unattachedChunkIds.length) {
+      const unattachedLabel = document.createElement("div");
+      unattachedLabel.className = "mission-timeline-subheading";
+      unattachedLabel.textContent = uiText("missionTimelineTreeUnattachedChunks").replace(
+        "{count}",
+        String(unattachedChunkIds.length),
+      );
+      details.appendChild(unattachedLabel);
+      const chipRow = document.createElement("div");
+      chipRow.className = "mission-timeline-edge mission-timeline-tree-unattached-chunks";
+      for (const chunkId of unattachedChunkIds) {
+        appendMissionTimelineChip(chipRow, chunkId, "mission-timeline-chip-chunk");
+      }
+      details.appendChild(chipRow);
     }
     box.appendChild(details);
   }

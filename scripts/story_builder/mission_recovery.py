@@ -1550,6 +1550,76 @@ def build_scene_chunks(
     return chunks, chunk_by_scene_key
 
 
+def attach_chunks_to_quest_tree(
+    quest_tree: dict,
+    chunks: list[dict],
+    scene_placement: dict[str, dict],
+    chunk_order: dict | None = None,
+) -> dict:
+    """Annotate every quest-tree node with the chunks attached to its quest.
+
+    A chunk attaches to a quest when at least one of the chunk's scenes lists
+    that quest in ``scenePlacement[<sceneKey>].questIds``. The ordering of
+    chunks within a quest follows the chunk-order topological order when
+    available (Phase 2 quest-DAG resolver), otherwise natural order.
+
+    Also returns the set of chunks not attached to any quest as
+    ``unattachedToQuestChunkIds`` on the returned tree dict.
+    """
+    chunks_by_quest: dict[str, set[str]] = defaultdict(set)
+    quests_by_chunk: dict[str, set[str]] = defaultdict(set)
+    for chunk in chunks or []:
+        chunk_id = str(chunk.get("id") or "")
+        if not chunk_id:
+            continue
+        for scene_key in chunk.get("sceneKeys") or []:
+            for quest_id in (scene_placement.get(scene_key) or {}).get("questIds") or []:
+                quest_id_str = str(quest_id or "").strip()
+                if quest_id_str:
+                    chunks_by_quest[quest_id_str].add(chunk_id)
+                    quests_by_chunk[chunk_id].add(quest_id_str)
+
+    chunk_order_index: dict[str, int] = {}
+    for index, edge in enumerate((chunk_order or {}).get("edges") or []):
+        chunk_order_index.setdefault(str(edge.get("from") or ""), index)
+        chunk_order_index.setdefault(str(edge.get("to") or ""), index + 0.5)
+
+    def sort_chunk_ids(chunk_ids: list[str]) -> list[str]:
+        return sorted(
+            chunk_ids,
+            key=lambda cid: (
+                chunk_order_index.get(cid, float("inf")),
+                natural_key(cid),
+            ),
+        )
+
+    def walk(node: dict) -> None:
+        if not isinstance(node, dict):
+            return
+        quest_id = str(node.get("questId") or "")
+        attached = sorted(chunks_by_quest.get(quest_id, set()), key=natural_key)
+        if attached:
+            node["attachedChunkIds"] = sort_chunk_ids(attached)
+        for child in node.get("children") or []:
+            walk(child)
+
+    for root in quest_tree.get("roots") or []:
+        walk(root)
+    for root in quest_tree.get("unrootedRoots") or []:
+        walk(root)
+
+    attached_chunk_ids = set(quests_by_chunk.keys())
+    all_chunk_ids = [str(chunk.get("id") or "") for chunk in chunks or [] if chunk.get("id")]
+    unattached = [cid for cid in all_chunk_ids if cid not in attached_chunk_ids]
+    quest_tree["unattachedToQuestChunkIds"] = sort_chunk_ids(unattached)
+    quest_tree["chunkAttachmentSummary"] = {
+        "attachedChunkCount": len(attached_chunk_ids),
+        "unattachedChunkCount": len(unattached),
+        "questsWithChunkCount": len(chunks_by_quest),
+    }
+    return quest_tree
+
+
 def _quest_descendants(quest_edges: list[dict]) -> dict[str, set[str]]:
     """Return quest_id -> set of quest_ids reachable as later quests in the DAG.
 
@@ -2285,6 +2355,8 @@ def recover_mission(
         if placement_row is not None:
             placement_row["chunkId"] = chunk_id
     chunk_order = build_chunk_order(chunks, scene_placement, quest_edges)
+    quest_tree = build_quest_tree(quests, quest_edges)
+    attach_chunks_to_quest_tree(quest_tree, chunks, scene_placement, chunk_order)
     payload = {
         "mission": mission_id,
         "metadata": metadata,
@@ -2293,7 +2365,7 @@ def recover_mission(
         "entryQuestIds": entry_quests,
         "quests": quests,
         "questEdges": quest_edges,
-        "questTree": build_quest_tree(quests, quest_edges),
+        "questTree": quest_tree,
         "branchPoints": build_branch_points(quest_edges, quests_by_id),
         "sourceBackedSceneEdges": scene_edges,
         "sourceBackedSceneSequences": scene_sequences,
