@@ -848,6 +848,7 @@ def build_mission_map_pins(flow: dict | None) -> list[dict]:
 
 def build_mission_timeline_recovery_report(
     scene_graphs: dict[str, dict],
+    mission_flows: dict[str, dict] | None = None,
 ) -> dict:
     timeline_index, timeline_meta = load_mission_timeline_index(
         timeline_recovery_order_out(EXPORT_ROOT)
@@ -855,6 +856,7 @@ def build_mission_timeline_recovery_report(
     recovered: list[dict] = []
     files = mission_timeline_files(MRA_DIR, set()) if MRA_DIR.is_dir() else []
     script_condition_ownership = build_mission_script_condition_ownership(files)
+    mission_flows = mission_flows or {}
     for path in files:
         mission_id = path.stem
         recovered.append(
@@ -872,6 +874,7 @@ def build_mission_timeline_recovery_report(
                     scene_graphs.get(mission_id)
                 ),
                 script_condition_ownership=script_condition_ownership,
+                mission_flow=mission_flows.get(mission_id),
             )
         )
     return {

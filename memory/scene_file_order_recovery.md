@@ -184,6 +184,38 @@ Explicitly rejected: filename/index order, scene-key numeric suffix, mission
 bundle row order. The chunks themselves already include radio-continuation
 edges in Phase 1, so radio continuation isn't a separate Phase 2 signal.
 
+## Variant MissionRuntime + NPC Proxy Dialog Attachments
+
+`attach_variant_mission_runtime_quests` and
+`attach_npc_proxy_dialog_quests` mirror the script-condition attacher for
+two additional decoded relationships in the WebUI scene graph:
+
+- **Variant MissionRuntime** — when a mission borrows another mission's
+  quest graph (`flow.sceneGraphVariantMissions`), edges in this mission's
+  scene graph that carry the variant's `questIds` propagate those quest
+  attachments onto both edge endpoints with `source: variantMissionRuntime`.
+  `load_variant_quest_edges` then pulls the variant missions' MRA
+  `prevQuestIdList` edges so `build_chunk_order` can use the variant DAG to
+  order chunks that attach to variant quests.
+- **NPC proxy dialog** — `flow.quests[*].proxyDialogs[*]` bind a dialog
+  scene key to a quest via an NPC proxy. The attacher folds those quest
+  ids into `scenePlacement[<sceneKey>].questIds` with
+  `source: npcProxyDialog`.
+
+Initial counts across the 418-mission run:
+
+- variantMR: `304` attachment events across `13` missions; e10m4 alone
+  contributes `126`.
+- npcProxyDialog: `48` events across `35` missions.
+- Combined chunk-order yield: 600 → `621` edges (+21), 156 → `158`
+  missions ordered, 85 → `105` parallel pairs (most chunks touched by
+  variantMR end up co-quest because they span many variant quests).
+- e10m4's `c4` and `c5` now both anchor to multiple `e10m4d5_q#*` quests
+  but share enough quests that they're marked parallel rather than ordered.
+  Splitting overlapping-quest chunks into smaller chunks would let the
+  strict-ordering policy bite, but that requires finer-grained scene-graph
+  decoding (queued).
+
 ## Script-Condition Quest Attachment
 
 `decode_mission_script_conditions` in

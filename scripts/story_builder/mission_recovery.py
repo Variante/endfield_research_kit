@@ -2110,6 +2110,197 @@ def load_source_backed_story_call_contexts(mission_id: str, generated_mission_di
     )
 
 
+def load_variant_quest_edges(host_mra_path: Path, mission_flow: dict | None) -> list[dict]:
+    """Load questPrev edges from the host mission's variant MissionRuntime peers.
+
+    When a mission borrows another mission's quest graph (recorded in
+    ``flow.sceneGraphVariantMissions``), this helper reads each variant's MRA
+    file and emits its ``prevQuestIdList`` edges in the same format as
+    build_quest_edges. The host's chunk-order resolver can then order chunks
+    that attach to variant quests.
+    """
+    if not isinstance(mission_flow, dict):
+        return []
+    variant_missions = [
+        str(value).strip()
+        for value in mission_flow.get("sceneGraphVariantMissions") or []
+        if str(value or "").strip()
+    ]
+    if not variant_missions:
+        return []
+    mra_dir = host_mra_path.parent
+    edges: list[dict] = []
+    for variant_mission_id in variant_missions:
+        variant_path = mra_dir / f"{variant_mission_id}.json"
+        if not variant_path.exists():
+            continue
+        try:
+            variant_raw = load_json(variant_path)
+        except (OSError, json.JSONDecodeError):
+            continue
+        quest_dic = variant_raw.get("questDic") or {}
+        if not isinstance(quest_dic, dict):
+            continue
+        for quest_id, raw_quest in quest_dic.items():
+            if not isinstance(raw_quest, dict):
+                continue
+            for prev in raw_quest.get("prevQuestIdList") or []:
+                if not isinstance(prev, str) or not prev:
+                    continue
+                edges.append({
+                    "from": prev,
+                    "to": quest_id,
+                    "kind": "questPrev",
+                    "source": source_ref(
+                        variant_path,
+                        f"questDic.{quest_id}.prevQuestIdList",
+                    ),
+                    "variantMission": variant_mission_id,
+                })
+    return edges
+
+
+def load_mission_flow(mission_id: str, generated_mission_dir: Path | None) -> dict | None:
+    """Load the WebUI builder's per-mission flow payload, if available."""
+    if not generated_mission_dir:
+        return None
+    path = generated_mission_dir / f"{mission_id}.json"
+    if not path.exists():
+        return None
+    try:
+        payload = load_json(path)
+    except (OSError, json.JSONDecodeError):
+        return None
+    flow = payload.get("flow")
+    return flow if isinstance(flow, dict) else None
+
+
+def attach_variant_mission_runtime_quests(
+    scene_placement: dict[str, dict],
+    mission_flow: dict | None,
+) -> list[dict]:
+    """Attach variant-mission quest ids based on the WebUI scene graph.
+
+    Some missions reuse another mission's quest graph (the WebUI builder
+    records the foreign mission ids in ``flow.sceneGraphVariantMissions``).
+    Their decoded scene-graph edges carry ``questIds`` from those variant
+    missions; both endpoints of such edges are reachable from the variant
+    quest, so we attach the quest to the scene-placement entries.
+
+    Returns a diagnostic list of attachments.
+    """
+    attached: list[dict] = []
+    if not isinstance(mission_flow, dict):
+        return attached
+    variant_missions = {
+        str(value).strip()
+        for value in mission_flow.get("sceneGraphVariantMissions") or []
+        if str(value or "").strip()
+    }
+    if not variant_missions:
+        return attached
+    scene_graph = mission_flow.get("sceneGraph") or {}
+    for edge in scene_graph.get("edges") or []:
+        if not isinstance(edge, dict):
+            continue
+        edge_quest_ids = [
+            str(quest_id).strip()
+            for quest_id in edge.get("questIds") or []
+            if str(quest_id or "").strip()
+            and str(quest_id).split("_q#", 1)[0] in variant_missions
+        ]
+        if not edge_quest_ids:
+            continue
+        from_key = str(edge.get("from") or "").strip()
+        to_key = str(edge.get("to") or "").strip()
+        for scene_key in (from_key, to_key):
+            row = scene_placement.get(scene_key)
+            if row is None:
+                continue
+            quest_ids = row.setdefault("questIds", [])
+            sources = row.setdefault("questAttachSources", [])
+            for quest_id in edge_quest_ids:
+                already = quest_id in quest_ids
+                if not already:
+                    quest_ids.append(quest_id)
+                variant_mission = quest_id.split("_q#", 1)[0]
+                source_record = {
+                    "questId": quest_id,
+                    "source": "variantMissionRuntime",
+                    "variantMission": variant_mission,
+                    "kind": edge.get("kind") or "",
+                }
+                if source_record not in sources:
+                    sources.append(source_record)
+                attached.append({
+                    "sceneKey": scene_key,
+                    "questId": quest_id,
+                    "variantMission": variant_mission,
+                    "edgeKind": edge.get("kind") or "",
+                    "alreadyAttached": already,
+                })
+            kinds = row.setdefault("evidenceKinds", [])
+            if "variantMissionRuntimeQuestAttach" not in kinds:
+                kinds.append("variantMissionRuntimeQuestAttach")
+    return attached
+
+
+def attach_npc_proxy_dialog_quests(
+    scene_placement: dict[str, dict],
+    mission_flow: dict | None,
+) -> list[dict]:
+    """Attach quest ids based on NPC proxy dialog references.
+
+    The WebUI builder collects ``flow.quests[*].proxyDialogs[*]`` records
+    that bind an NPC proxy to a dialog scene key for a given quest. The
+    attached scene gets the quest id so chunk-order recovery and the task
+    tree can use the relationship.
+    """
+    attached: list[dict] = []
+    if not isinstance(mission_flow, dict):
+        return attached
+    for quest in mission_flow.get("quests") or []:
+        if not isinstance(quest, dict):
+            continue
+        quest_id = str(quest.get("id") or "").strip()
+        if not quest_id:
+            continue
+        for proxy_ref in quest.get("proxyDialogs") or []:
+            if not isinstance(proxy_ref, dict):
+                continue
+            scene_key = str(proxy_ref.get("dialogId") or "").strip()
+            row = scene_placement.get(scene_key)
+            if row is None:
+                misc_key = f"misc_{scene_key}" if scene_key.startswith("dlg_") else scene_key
+                row = scene_placement.get(misc_key)
+                if row is None:
+                    continue
+                scene_key = misc_key
+            quest_ids = row.setdefault("questIds", [])
+            sources = row.setdefault("questAttachSources", [])
+            already = quest_id in quest_ids
+            if not already:
+                quest_ids.append(quest_id)
+            source_record = {
+                "questId": quest_id,
+                "source": "npcProxyDialog",
+                "npcProxyId": str(proxy_ref.get("npcProxyId") or ""),
+                "dialogId": str(proxy_ref.get("dialogId") or ""),
+            }
+            if source_record not in sources:
+                sources.append(source_record)
+            attached.append({
+                "sceneKey": scene_key,
+                "questId": quest_id,
+                "npcProxyId": str(proxy_ref.get("npcProxyId") or ""),
+                "alreadyAttached": already,
+            })
+            kinds = row.setdefault("evidenceKinds", [])
+            if "npcProxyDialogQuestAttach" not in kinds:
+                kinds.append("npcProxyDialogQuestAttach")
+    return attached
+
+
 def load_source_backed_hash_terminals(mission_id: str, generated_mission_dir: Path | None) -> list[dict]:
     """Load source-backed story/hash terminal diagnostics from generated mission bundles."""
     if not generated_mission_dir:
@@ -2247,6 +2438,7 @@ def recover_mission(
     source_backed_story_call_contexts: list[dict] | None = None,
     source_backed_hash_terminals: list[dict] | None = None,
     script_condition_ownership: dict[tuple[str, str], list[str]] | None = None,
+    mission_flow: dict | None = None,
 ) -> dict:
     raw = load_json(path)
     mission_id = raw.get("missionId") or path.stem
@@ -2344,6 +2536,20 @@ def recover_mission(
         script_condition_ownership,
         mission_id,
     )
+    if mission_flow is None:
+        mission_flow = load_mission_flow(mission_id, generated_mission_dir)
+    variant_mr_attachments = attach_variant_mission_runtime_quests(
+        scene_placement,
+        mission_flow,
+    )
+    npc_proxy_attachments = attach_npc_proxy_dialog_quests(
+        scene_placement,
+        mission_flow,
+    )
+    # When variant missions contribute quest attachments, pull their quest
+    # prev-edges in too so build_chunk_order can order cross-mission chunks.
+    variant_quest_edges = load_variant_quest_edges(path, mission_flow)
+    extended_quest_edges = quest_edges + variant_quest_edges
     chunks, chunk_by_scene_key = build_scene_chunks(
         scene_placement,
         scene_edges,
@@ -2354,7 +2560,7 @@ def recover_mission(
         placement_row = scene_placement.get(scene_key)
         if placement_row is not None:
             placement_row["chunkId"] = chunk_id
-    chunk_order = build_chunk_order(chunks, scene_placement, quest_edges)
+    chunk_order = build_chunk_order(chunks, scene_placement, extended_quest_edges)
     quest_tree = build_quest_tree(quests, quest_edges)
     attach_chunks_to_quest_tree(quest_tree, chunks, scene_placement, chunk_order)
     payload = {
@@ -2377,6 +2583,8 @@ def recover_mission(
         "chunks": chunks,
         "chunkOrder": chunk_order,
         "scriptConditionAttachments": script_condition_attachments,
+        "variantMissionRuntimeAttachments": variant_mr_attachments,
+        "npcProxyDialogAttachments": npc_proxy_attachments,
         "unresolved": unresolved,
     }
     return payload

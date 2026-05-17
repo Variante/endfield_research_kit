@@ -8917,6 +8917,20 @@ def build_language_bundle(
                     resolved_link["sourceKey"] = source_key
                 resolved_source_links[resolved_key].append(resolved_link)
 
+        def unique_story_source_link_mission(links: list[dict]) -> str:
+            missions: set[str] = set()
+            for link in links:
+                mission_id = str(link.get("mission") or "").strip()
+                if not mission_id:
+                    source = link.get("source") if isinstance(link.get("source"), dict) else {}
+                    mission_id = str(source.get("mission") or "").strip()
+                if not mission_id:
+                    continue
+                type_key, _act = parse_mission(mission_id)
+                if type_key in MISSION_STORY_TYPES:
+                    missions.add(mission_id)
+            return next(iter(missions)) if len(missions) == 1 else ""
+
         attached_keys: set[str] = set()
         attached_refs = 0
         for entry in index_entries:
@@ -8930,6 +8944,10 @@ def build_language_bundle(
             omitted = max(0, len(links) - len(compact_links))
             entry["src"] = story_source_link_index_summary(links)
             entry["x"] = merge_search_text(entry.get("x", ""), story_source_link_search_text(links))
+            if entry.get("d") == "sns":
+                story_mission = unique_story_source_link_mission(links)
+                if story_mission and story_mission != entry.get("m"):
+                    entry["storyMission"] = story_mission
             tags = entry.setdefault("tags", [])
             if "sourceLinked" not in tags:
                 tags.append("sourceLinked")
@@ -8959,6 +8977,7 @@ def build_language_bundle(
 
         referenced_missing = unresolved_source_keys
         source_link_candidate_kinds = set(MISSION_SCENE_ENTRY_KINDS) | {"env", "misc"}
+
         story_entries_without_links = [
             {
                 "key": str(entry.get("k") or ""),
@@ -10826,7 +10845,8 @@ def build_language_bundle(
         mission_flows_payload[mission] = payload
 
     mission_timeline_recovery_payload = build_mission_timeline_recovery_report(
-        mission_scene_graphs
+        mission_scene_graphs,
+        mission_flows=mission_flows_payload,
     )
     mission_timelines_by_mission = {
         mission.get("mission") or "": mission
