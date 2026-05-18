@@ -52,6 +52,12 @@ from typing import Any, Iterable
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_DIR = ROOT / "scripts"
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
+from common import path_id_export_base_stem
+
 EXPORT_ROOT = ROOT / "export_full"
 RECOVERED_DIR = EXPORT_ROOT / "recovered"
 ANIMESTUDIO_CLI = RECOVERED_DIR / "AnimeStudio-cli"
@@ -83,6 +89,10 @@ _GENDER_PREFIX = re.compile(r"^(?P<g>f|m|fm)_(?P<rest>cs_video_.+)$", re.IGNOREC
 _MISSION_FROM_DLG = re.compile(
     r"^(?P<mission>[a-z]+\d+m\d+(?:d\d+)?)_(?P<rest>.+)$", re.IGNORECASE
 )
+
+
+def anime_export_base_stem(path: Path) -> str:
+    return path_id_export_base_stem(path.stem)
 
 
 def rel(path: Path) -> str:
@@ -185,7 +195,8 @@ def iter_playable_assets(extract_root: Path) -> Iterable[tuple[Path, dict[str, A
         if not mb_dir.is_dir():
             continue
         for p in sorted(mb_dir.iterdir()):
-            if not p.name.startswith("BeyondFMVPlayableAsset"):
+            base_stem = anime_export_base_stem(p)
+            if not base_stem or not base_stem.startswith("BeyondFMVPlayableAsset"):
                 continue
             try:
                 payload = json.loads(p.read_text(encoding="utf-8"))
@@ -204,8 +215,8 @@ def iter_fmv_tracks(extract_root: Path) -> Iterable[tuple[Path, dict[str, Any]]]
         if not mb_dir.is_dir():
             continue
         for p in sorted(mb_dir.iterdir()):
-            name = p.name
-            if not (name.startswith("Beyond FMV Track") or name == "FMV.json"):
+            base_stem = anime_export_base_stem(p)
+            if not (base_stem.startswith("Beyond FMV Track") or base_stem == "FMV"):
                 continue
             try:
                 payload = json.loads(p.read_text(encoding="utf-8"))

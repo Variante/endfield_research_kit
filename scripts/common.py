@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import fnmatch
+import re
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -24,10 +25,40 @@ SAFE_REPORT_REPLACEMENTS = str.maketrans({
     "|": "_",
     ",": "_",
 })
+PATH_ID_EXPORT_STEM_RE = re.compile(r"^(?P<base>.+)_p(?P<path_id>[0-9A-Fa-f]{16})$")
+PATH_ID_EXPORT_SOURCE_FAMILIES = frozenset({"streamingassets", "persistent"})
 
 
 def normalize_posix(value: str | Path) -> str:
     return str(value or "").replace("\\", "/").strip("/")
+
+
+def split_path_id_export_stem(value: Any) -> tuple[str, str] | None:
+    match = PATH_ID_EXPORT_STEM_RE.match(str(value or ""))
+    if not match:
+        return None
+    return match.group("base"), match.group("path_id").upper()
+
+
+def path_id_export_base_stem(value: Any) -> str:
+    split = split_path_id_export_stem(value)
+    return split[0] if split else ""
+
+
+def path_id_export_path_id(value: Any) -> str:
+    split = split_path_id_export_stem(value)
+    return split[1] if split else ""
+
+
+def rel_requires_path_id_export_name(rel: str | Path) -> bool:
+    normalized = normalize_posix(rel)
+    source = normalized.split("/", 1)[0]
+    if not source:
+        return False
+    if source.lower().endswith("-structured") or source.lower() == "raw_vfs":
+        return False
+    source_family = source.split("-", 1)[0].lower()
+    return source_family in PATH_ID_EXPORT_SOURCE_FAMILIES
 
 
 def display_extension(value: str) -> str:

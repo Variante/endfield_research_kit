@@ -22,20 +22,25 @@ From the repo root:
 
 ```bat
 .\export.bat
-.\export.bat --init-build
-.\export.bat --fast-assets
 .\export.bat --skip-export-full
+.\build_updates.bat
+.\build_updates.bat --init-build
+.\export_assets.bat
 python serve.py
 python serve.py 9000
 python scripts\package_webui.py
 ```
 
-Use `export.bat` as the default browser-data refresh path. It exports only the
-active WebUI inputs, verifies export freshness, rebuilds DialogIdTable and
-story source-link evidence, rebuilds the Updates feed, rebuilds CN
-story/reference data by default, and refreshes the asset index.
+Use `export.bat` as the default story/reference refresh path. It exports only
+the active Story/Reference inputs, verifies export freshness, rebuilds
+DialogIdTable and story source-link evidence, and rebuilds CN story/reference
+data by default.
 Use `--skip-export-full` when you want to rebuild WebUI data from an existing
 `export_full/`; the wrapper still verifies freshness before long builders run.
+Use `build_updates.bat` as the standalone Updates feed comparison. It skips
+asset-level update entries by default; pass `--include-asset-updates` only
+after refreshing heavy assets. Use `export_assets.bat` for the heavier
+image/model/animation decode and Assets tab indexes.
 
 When running `python scripts\story_builder\build.py` directly, use a
 longer timeout. The default CN lean build currently takes about 3 minutes on

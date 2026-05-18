@@ -20,13 +20,11 @@ python serve.py
 2. verifies `export_full/` freshness against the installed game data;
 3. rebuilds `export_full/recovered/dialog_id_table_index.json`;
 4. rebuilds story source links;
-5. rebuilds the installed-game Updates feed;
-6. builds CN Story and Reference data;
-7. rebuilds the asset indexes.
+5. builds CN Story and Reference data.
 
-Use `--init-build` for an intentional first/baseline build, `--fast-assets`
-when existing asset indexes can be reused, and `--skip-export-full` when
-rebuilding from an existing fresh `export_full/`.
+Use `--skip-export-full` when rebuilding from an existing fresh `export_full/`.
+Run `.\build_updates.bat` separately for the Updates feed and
+`.\export_assets.bat` separately for asset indexes and heavy media exports.
 
 The game does not need to be running. If it is open, close it before export so
 files are not locked.
@@ -82,15 +80,14 @@ Reference:
 
 Updates:
 
-- Built by `python scripts\build_updates.py`.
-- Tracks only the installed game data root:
-  `D:\Program Files\Endfield Game\Endfield_Data`.
-- Stores state under `.game-data-tracker/`.
-- Never point the tracker at `webui/`, `export_full/`, `reports/`, `memory/`,
-  `scratch/`, or `tmp/`.
-- Asset-level entries derived from `export_full/` are reported only when the
-  original game-data tracker reports a real installed-data change.
-- Zero-change reruns preserve or restore the latest non-empty feed snapshot.
+- Built by `.\build_updates.bat` or `python scripts\build_updates.py`.
+- Compares the saved previous export, default `export_122/`, with the current
+  `export_full/`.
+- Stores scanner cache and feed history under `.game-data-tracker/`.
+- Never point the comparison at `webui/`, `reports/`, `memory/`, `scratch/`, or
+  `tmp/`.
+- The wrapper skips asset-level entries by default; include them only after
+  refreshing heavy asset exports.
 
 Assets:
 
@@ -210,7 +207,7 @@ Important interpretation:
 
 Useful current measurements:
 
-- `.\export.bat --fast-assets` with no content update took about `41.1`
+- The old combined fast-assets export path with no content update took about `41.1`
   minutes on 2026-05-12. The two structured dumps cost about `17.1` minutes.
 - Before the Story builder speed pass, a CN build took about `807` seconds.
 - Prefix-index lookup and path-rendering caches reduced the CN build to about

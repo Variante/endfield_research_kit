@@ -22,7 +22,8 @@ const FILTER_SECTION_STORAGE_KEY = "webui_filter_sections_collapsed_v2";
 const STORY_SPLITTER_STORAGE_KEY = "webui_story_splitter_width";
 const ASSET_SPLITTER_STORAGE_KEY = "webui_asset_splitter_width";
 const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
-const WEBUI_DATA_CACHE_TAG = "20260514-mission-order-strength";
+const WEBUI_DATA_CACHE_TAG = "20260518-story-order-recovery";
+const STORY_ORDER_JSON_ENABLED = true;
 const DEFAULT_LANGUAGE_INFO = {
   code: "CN",
   label: "Chinese (Simplified)",
@@ -57,9 +58,12 @@ const STATE = {
   storySearchLanguage: "",
   storyMediaPayload: null,
   storyMediaPromise: null,
+  storyOrderPayload: null,
+  storyOrderPromise: null,
+  storyOrderIndex: new Map(),
   expanded: new Set(),   // group paths the user opened
   filters: createDefaultFilters(),
-  sortMode: "natural",
+  sortMode: "story",
   showEmpty: false,
   showRaw: false,
   filtersCollapsed: false,
@@ -78,7 +82,17 @@ const STATE = {
   inlineTagDisplayMode: DEFAULT_INLINE_TAG_DISPLAY_MODE,
 };
 
-const { $, $$, storageGet, storageSet, normalizeUiLocale, escapeHtml, exportFullHref } = window.WebUI;
+const {
+  $,
+  $$,
+  storageGet,
+  storageSet,
+  normalizeUiLocale,
+  escapeHtml,
+  exportFullHref,
+  splitPathIdExportStem,
+  relRequiresPathIdExportName,
+} = window.WebUI;
 
 function createDefaultFilters() {
   return {
@@ -526,6 +540,104 @@ function loadStoryMediaPayload() {
   return STATE.storyMediaPromise;
 }
 
+function loadStoryOrderPayload() {
+  if (STATE.storyOrderPromise) return STATE.storyOrderPromise;
+  if (!STORY_ORDER_JSON_ENABLED) {
+    const payload = { missions: {} };
+    STATE.storyOrderPayload = payload;
+    STATE.storyOrderIndex = new Map();
+    STATE.storyOrderPromise = Promise.resolve(payload);
+    return STATE.storyOrderPromise;
+  }
+  STATE.storyOrderPromise = fetchJson("data/assets/story_order.json")
+    .then(async (res) => {
+      if (!res.ok) return { missions: {} };
+      const payload = await res.json();
+      if (!payload || Number(payload.version || 0) < 6) {
+        return { missions: {} };
+      }
+      return payload;
+    })
+    .catch((error) => {
+      console.warn("Unable to load story_order.json", error);
+      return { missions: {} };
+    })
+    .then((payload) => {
+      STATE.storyOrderPayload = payload;
+      STATE.storyOrderIndex = buildStoryOrderIndex(payload);
+      return payload;
+    });
+  return STATE.storyOrderPromise;
+}
+
+// `storyOrder` is keyed by missionId, value is a Map<convKey, position>.
+function buildStoryOrderIndex(payload) {
+  const out = new Map();
+  const missions = (payload && payload.missions) || {};
+  for (const [missionId, mission] of Object.entries(missions)) {
+    const order = (mission && mission.order) || [];
+    if (!Array.isArray(order) || !order.length) continue;
+    const positions = new Map();
+    const details = new Map();
+    for (const entry of ((mission && Array.isArray(mission.entries)) ? mission.entries : [])) {
+      const key = String(entry && entry.key || "");
+      if (key && !details.has(key)) details.set(key, entry);
+    }
+    for (let i = 0; i < order.length; i++) {
+      const key = String(order[i] || "");
+      if (key && !positions.has(key)) {
+        positions.set(key, {
+          ...(details.get(key) || {}),
+          key,
+          position: i,
+        });
+      }
+    }
+    if (positions.size) out.set(String(missionId), positions);
+  }
+  return out;
+}
+
+function storyOrderDetailForEntry(entry) {
+  const index = STATE.storyOrderIndex;
+  if (!(index instanceof Map) || !index.size) return null;
+  const missionId = String(entry && entry.m || "");
+  if (!missionId) return null;
+  const positions = index.get(missionId);
+  if (!positions) return null;
+  const key = String(entry && entry.k || "");
+  return positions.get(key) || null;
+}
+
+function storyOrderPositionForEntry(entry) {
+  const detail = storyOrderDetailForEntry(entry);
+  const pos = detail && Number(detail.position);
+  return Number.isFinite(pos) ? pos : null;
+}
+
+function storyOrderBadgeClass(detail) {
+  const rank = Number(detail && detail.rank);
+  const evidence = String(detail && detail.evidence || "");
+  if (!detail || evidence === "webui-conv-fallback") return "";
+  if (Number.isFinite(rank) && rank <= 2) return "is-strong";
+  if (Number.isFinite(rank) && rank <= 11) return "is-hint";
+  return "is-weak";
+}
+
+function storyOrderEvidenceTitle(detail) {
+  if (!detail) return "";
+  const parts = [];
+  const position = Number(detail.position);
+  if (Number.isFinite(position)) parts.push(`${uiText("storyOrderBadgeTitle") || "Recovered order"} #${position + 1}`);
+  if (detail.evidence) parts.push(`evidence=${detail.evidence}`);
+  if (detail.sourceScript) parts.push(`script=${detail.sourceScript}`);
+  if (detail.sourceFile) parts.push(`file=${detail.sourceFile}`);
+  if (detail.offset !== undefined && detail.offset !== null) parts.push(`offset=${detail.offset}`);
+  if (detail.recordClass) parts.push(`record=${detail.recordClass}`);
+  if (detail.levelseq) parts.push(`levelseq=${detail.levelseq}`);
+  return parts.join("\n");
+}
+
 function storyMediaEntries(payload, kind) {
   return ((payload && payload.entries) || []).filter((entry) => entry && entry.k === kind && entry.r);
 }
@@ -830,6 +942,21 @@ function inlineImageNumberKey(value) {
   return String(Number(match[1]));
 }
 
+function storyMediaLookupStem(rel) {
+  const normalizedRel = String(rel || "").replace(/\\/g, "/");
+  const name = normalizedRel.split("/").filter(Boolean).pop() || normalizedRel;
+  const rawStem = name.replace(/\.[^.]+$/i, "").toLowerCase();
+  const split = splitPathIdExportStem(rawStem);
+  if (relRequiresPathIdExportName(normalizedRel)) {
+    return split ? { stem: split.base.toLowerCase(), rawStem, pathId: split.pathId } : null;
+  }
+  return {
+    stem: split ? split.base.toLowerCase() : rawStem,
+    rawStem,
+    pathId: split ? split.pathId : "",
+  };
+}
+
 // envEmoji prefab layer data is reconstructed from the original Unity prefabs at
 // `Assets/Beyond/DynamicAssets/Gameplay/UI/Prefabs/Emoji/emoji_*.prefab` by
 // scripts/recover_envemoji_prefabs.py (Image color + RectTransform fields), then
@@ -1080,13 +1207,15 @@ function ensureInlineImageAssetLookup() {
         const rel = String(raw.r || "");
         const parts = rel.split("/").filter(Boolean);
         const name = parts[parts.length - 1] || rel;
-        const stem = name.replace(/\.[^.]+$/i, "").toLowerCase();
+        const stemInfo = storyMediaLookupStem(rel);
+        if (!stemInfo) continue;
+        const stem = stemInfo.stem;
         if (!stem) continue;
 
         const score = scoreInlineImageAsset(rel, stem);
         if (score <= 0) continue;
 
-        const candidate = { rel, name, stem, score };
+        const candidate = { rel, name, stem, rawStem: stemInfo.rawStem, pathId: stemInfo.pathId, score };
         rememberBestInlineImageAsset(byStem, stem, candidate);
 
         const numberKey = inlineImageNumberKey(stem);
@@ -1159,9 +1288,11 @@ function ensureWikiVideoAssetLookup() {
         const rel = String(raw.r || "");
         const parts = rel.split("/").filter(Boolean);
         const name = parts[parts.length - 1] || rel;
-        const stem = name.replace(/\.[^.]+$/i, "").toLowerCase();
+        const stemInfo = storyMediaLookupStem(rel);
+        if (!stemInfo) continue;
+        const stem = stemInfo.stem;
         if (!stem) continue;
-        const candidate = { rel, name, stem, size: Number(raw.s) || 0 };
+        const candidate = { rel, name, stem, rawStem: stemInfo.rawStem, pathId: stemInfo.pathId, size: Number(raw.s) || 0 };
         if (!byStem.has(stem)) byStem.set(stem, []);
         byStem.get(stem).push(candidate);
       }
@@ -1765,8 +1896,20 @@ function applyUiStrings() {
   if (searchLabel) searchLabel.textContent = uiText("searchFilter");
   $("#sort-label").textContent = uiText("sort");
   $("#reset").textContent = uiText("reset");
+  const clearFiltersButton = $("#clear-filters");
+  if (clearFiltersButton) clearFiltersButton.textContent = uiText("clearFilters");
+  const sortStory = $("#sort-story");
+  if (sortStory) sortStory.textContent = uiText("sortStory");
+  const sortNatural = $("#sort-natural");
+  if (sortNatural) sortNatural.textContent = uiText("sortNatural");
+  const sortLinesDesc = $("#sort-lines-desc");
+  if (sortLinesDesc) sortLinesDesc.textContent = uiText("sortLinesDesc");
+  const sortLinesAsc = $("#sort-lines-asc");
+  if (sortLinesAsc) sortLinesAsc.textContent = uiText("sortLinesAsc");
+  const sortKey = $("#sort-key");
+  if (sortKey) sortKey.textContent = uiText("sortKey");
   const sortSelect = $("#sort");
-  if (sortSelect) sortSelect.value = STATE.sortMode || "natural";
+  if (sortSelect) sortSelect.value = STATE.sortMode || "story";
   $("#list-meta-label").textContent = uiText("listUnit");
   $("#conv-empty").textContent = uiText("emptyConversation");
   $("#reveal-current").textContent = uiText("revealCurrent");
@@ -1945,9 +2088,15 @@ async function init() {
 
     const initialLanguage = resolveInitialLanguage();
     setUiLocale(resolveInitialUiLocale(initialLanguage), { persist: false, refresh: false });
+    const storyOrderPromise = loadStoryOrderPayload();
     void ensureInlineImageAssetLookup();
     void ensureWikiVideoAssetLookup();
     await switchLanguage(initialLanguage, { preserveSelection: false });
+    void storyOrderPromise.then(() => {
+      if (STATE.sortMode === "story") {
+        rebuildTree({ resetScroll: false });
+      }
+    });
   } catch (error) {
     showFatalError(error);
   }
@@ -2118,9 +2267,10 @@ function renderItem(row) {
 
   const kindCls = meta.cls;
   const kindNm = meta.name;
-  const orderStatus = entryMissionOrderStatus(e);
-  const orderBadge = orderStatus
-    ? `<span class="mission-order-badge is-${orderStatus.cls}" title="${escapeHtml(orderStatus.title)}">${escapeHtml(orderStatus.label)}</span>`
+  const orderDetail = storyOrderDetailForEntry(e);
+  const orderBadgeClass = storyOrderBadgeClass(orderDetail);
+  const orderBadge = orderBadgeClass
+    ? `<span class="story-order-badge ${orderBadgeClass}" title="${escapeHtml(storyOrderEvidenceTitle(orderDetail))}">#${Number(orderDetail.position) + 1}</span>`
     : "";
   const actorTxt = e.c.slice(0, 3).map(actorDisplay).join(" / ")
                  + (e.c.length > 3 ? `+${e.c.length - 3}` : "");
@@ -3613,7 +3763,161 @@ function buildLineOrderOutcomeIndex(conv) {
   return index;
 }
 
-function renderCutsceneInfoPanel(conv) {
+function cutsceneValueText(value) {
+  if (Array.isArray(value)) return value.map(cutsceneValueText).join(", ");
+  if (value && typeof value === "object") return JSON.stringify(value);
+  if (value === undefined || value === null) return "";
+  return String(value);
+}
+
+function appendCutscenePillRow(container, labelText, values, { limit = 18 } = {}) {
+  const cleaned = missionTimelineUniqueStrings(values.map(cutsceneValueText).filter(Boolean));
+  if (!cleaned.length) return null;
+  const row = document.createElement("div");
+  row.className = "cs-pill-row";
+  const lbl = document.createElement("span");
+  lbl.className = "cs-row-label";
+  lbl.textContent = labelText;
+  row.appendChild(lbl);
+  for (const value of cleaned.slice(0, limit)) {
+    const pill = document.createElement("span");
+    pill.className = "cs-pill";
+    pill.textContent = value;
+    row.appendChild(pill);
+  }
+  if (cleaned.length > limit) {
+    const more = document.createElement("span");
+    more.className = "cs-pill";
+    more.textContent = `+${cleaned.length - limit}`;
+    row.appendChild(more);
+  }
+  container.appendChild(row);
+  return row;
+}
+
+function cutsceneScriptLabel(script) {
+  if (!script || typeof script !== "object") return "";
+  const level = script.levelId || script.mapId || "?";
+  const scriptId = script.scriptId || "?";
+  return `${level}/${scriptId}`;
+}
+
+function findCutsceneTimelinePlacement(timeline, convKey) {
+  if (!timeline || !convKey) return null;
+  const placement = timeline.scenePlacement || {};
+  return placement[convKey] || placement[`misc_${convKey}`] || null;
+}
+
+function findCutsceneTimelineChunk(timeline, convKey, placement = null) {
+  if (!timeline || !convKey) return null;
+  const chunkId = placement && placement.chunkId ? String(placement.chunkId) : "";
+  const chunks = missionTimelineArray(timeline.chunks);
+  if (chunkId) {
+    const direct = chunks.find((chunk) => String(chunk && chunk.id || "") === chunkId);
+    if (direct) return direct;
+  }
+  return chunks.find((chunk) => missionTimelineArray(chunk && chunk.sceneKeys).includes(convKey)) || null;
+}
+
+function findCutsceneTimelineSubchunk(chunk, convKey) {
+  if (!chunk || !convKey) return null;
+  return missionTimelineArray(chunk.subchunks)
+    .find((subchunk) => missionTimelineArray(subchunk && subchunk.sceneKeys).includes(convKey)) || null;
+}
+
+function appendCutsceneSourceScriptRow(container, scripts, span = null) {
+  const list = missionTimelineArray(scripts).filter((script) => script && typeof script === "object");
+  if (!list.length) return;
+  const row = document.createElement("div");
+  row.className = "cs-pill-row cs-source-script-row";
+  const lbl = document.createElement("span");
+  lbl.className = "cs-row-label";
+  lbl.textContent = uiText("missionTimelineSourceScripts") || "Source scripts";
+  row.appendChild(lbl);
+  for (const script of list.slice(0, 10)) {
+    const pill = document.createElement("span");
+    pill.className = "cs-pill";
+    pill.textContent = cutsceneScriptLabel(script);
+    if (script.file) pill.title = script.file;
+    row.appendChild(pill);
+  }
+  if (list.length > 10) {
+    const more = document.createElement("span");
+    more.className = "cs-pill";
+    more.textContent = `+${list.length - 10}`;
+    row.appendChild(more);
+  }
+  if (span && span.first && span.last) {
+    const range = document.createElement("span");
+    range.className = "cs-pill cs-pill-muted";
+    range.textContent = `${cutsceneScriptLabel(span.first)}..${cutsceneScriptLabel(span.last)}`;
+    range.title = [span.first.file, span.last.file].filter(Boolean).join("\n");
+    row.appendChild(range);
+  }
+  container.appendChild(row);
+}
+
+function appendCutsceneDetails(container, labelText, items, renderItem, { limit = 80 } = {}) {
+  const list = missionTimelineArray(items).filter((item) => item !== undefined && item !== null);
+  if (!list.length) return null;
+  const details = document.createElement("details");
+  details.className = "cs-details";
+  const summary = document.createElement("summary");
+  summary.textContent = `${labelText} (${list.length})`;
+  details.appendChild(summary);
+  const body = document.createElement("div");
+  body.className = "cs-detail-list";
+  for (const item of list.slice(0, limit)) {
+    const node = renderItem(item);
+    if (node) body.appendChild(node);
+  }
+  if (list.length > limit) {
+    const more = document.createElement("div");
+    more.className = "cs-detail-more";
+    more.textContent = `+${list.length - limit}`;
+    body.appendChild(more);
+  }
+  details.appendChild(body);
+  container.appendChild(details);
+  return details;
+}
+
+function renderCutscenePlacementEdges(placement, flowKeyMap, currentKey) {
+  if (!placement || typeof placement !== "object") return null;
+  const edges = [
+    ...missionTimelineArray(placement.incomingEdges),
+    ...missionTimelineArray(placement.outgoingEdges),
+  ].filter((edge) => edge && typeof edge === "object");
+  if (!edges.length) return null;
+  const details = document.createElement("details");
+  details.className = "cs-details cs-placement-edges";
+  const summary = document.createElement("summary");
+  summary.textContent = `${uiText("missionTimelineGraphLinks") || "Scene links"} (${edges.length})`;
+  details.appendChild(summary);
+  const body = document.createElement("div");
+  body.className = "cs-detail-list";
+  for (const edge of edges.slice(0, 20)) {
+    const row = document.createElement("div");
+    row.className = "mission-timeline-edge cs-placement-edge";
+    appendMissionTimelineChip(row, edge.direction || "edge");
+    row.appendChild(createFlowSceneChip(edge.neighbor || "?", flowKeyMap, currentKey));
+    appendMissionTimelineChip(row, edge.kind || "source");
+    const files = missionTimelineArray(edge.sourceFiles);
+    if (files.length) appendMissionTimelineChip(row, `${uiText("missionTimelineSource") || "source"} ${files.length}`);
+    if (files.length) row.title = files.join("\n");
+    body.appendChild(row);
+  }
+  if (edges.length > 20) {
+    const more = document.createElement("div");
+    more.className = "cs-detail-more";
+    more.textContent = `+${edges.length - 20}`;
+    body.appendChild(more);
+  }
+  details.appendChild(body);
+  return details;
+}
+
+function renderCutsceneInfoPanel(conv, timeline = null, missionFlow = null) {
   const cs = conv.cutscene;
   if (!cs) return null;
 
@@ -3669,6 +3973,46 @@ function renderCutsceneInfoPanel(conv) {
     box.appendChild(row);
   }
 
+  const flowKeyMap = buildFlowConversationKeyMap();
+  const placement = findCutsceneTimelinePlacement(timeline, conv.key);
+  const chunk = findCutsceneTimelineChunk(timeline, conv.key, placement);
+  const subchunk = findCutsceneTimelineSubchunk(chunk, conv.key);
+  if (placement || chunk) {
+    const placementValues = [];
+    if (placement && placement.chunkId) placementValues.push(`chunk=${placement.chunkId}`);
+    for (const questId of missionTimelineArray(placement && placement.questIds)) placementValues.push(`quest=${questId}`);
+    for (const kind of missionTimelineArray(placement && placement.evidenceKinds)) placementValues.push(kind);
+    for (const timelineName of missionTimelineArray(placement && placement.timelines).slice(0, 4)) placementValues.push(timelineName);
+    appendCutscenePillRow(box, uiText("cutscenePlacement") || "Placement", placementValues, { limit: 18 });
+    if (chunk) {
+      appendCutscenePillRow(
+        box,
+        uiText("missionTimelineChunks") || "Scene chunks",
+        [
+          chunk.id ? `chunk=${chunk.id}` : "",
+          chunk.strength ? `strength=${chunk.strength}` : "",
+          subchunk && subchunk.id ? `subchunk=${subchunk.id}` : "",
+          ...missionTimelineArray(chunk.questIds).map((questId) => `quest=${questId}`),
+          ...missionTimelineArray(chunk.levelIds).map((levelId) => `level=${levelId}`),
+        ],
+        { limit: 18 },
+      );
+      appendCutsceneSourceScriptRow(box, chunk.sourceScripts, chunk.sourceFileOrderSpan || null);
+      appendCutscenePillRow(
+        box,
+        uiText("missionTimelineSpatialCandidates") || "Spatial",
+        [
+          ...missionTimelineArray(placement && placement.spatialQuestCandidates).map(missionTimelineSpatialCandidateLabel),
+          ...missionTimelineArray(subchunk && subchunk.spatialQuestCandidates).map(missionTimelineSpatialCandidateLabel),
+          ...missionTimelineArray(chunk.spatialQuestCandidates).map(missionTimelineSpatialCandidateLabel),
+        ],
+        { limit: 12 },
+      );
+    }
+    const edgeDetails = renderCutscenePlacementEdges(placement, flowKeyMap, conv.key);
+    if (edgeDetails) box.appendChild(edgeDetails);
+  }
+
   // Technical info row
   const metaParts = [];
   const fps = Array.isArray(meta.targetFrameRate) ? meta.targetFrameRate[0] : meta.targetFrameRate;
@@ -3683,13 +4027,13 @@ function renderCutsceneInfoPanel(conv) {
   if (metaParts.length) {
     const row = document.createElement("div");
     row.className = "summary-text cs-meta-row";
-    row.textContent = metaParts.join("  ·  ");
+    row.textContent = metaParts.join(" | ");
     box.appendChild(row);
   }
 
   // Component breakdown
   const cc = cs.componentCounts || {};
-  const ccParts = Object.entries(cc).filter(([, v]) => v > 0).map(([k, v]) => `${k} ×${v}`);
+  const ccParts = Object.entries(cc).filter(([, v]) => v > 0).map(([k, v]) => `${k} x${v}`);
   if (ccParts.length) {
     const row = document.createElement("div");
     row.className = "summary-text cs-components";
@@ -3731,13 +4075,88 @@ function renderCutsceneInfoPanel(conv) {
     box.appendChild(row);
   }
 
-  // Asset path
-  if (cs.paths && cs.paths[0]) {
-    const row = document.createElement("div");
-    row.className = "summary-text cs-path";
-    row.textContent = cs.paths[0];
-    box.appendChild(row);
-  }
+  appendCutsceneDetails(
+    box,
+    uiText("cutscenePaths") || "Paths",
+    cs.paths || [],
+    (path) => {
+      const row = document.createElement("div");
+      row.className = "summary-text cs-path";
+      row.textContent = String(path || "");
+      return row;
+    },
+    { limit: 40 },
+  );
+
+  appendCutsceneDetails(
+    box,
+    uiText("cutsceneMetadata") || "Metadata",
+    Object.entries(meta),
+    ([key, value]) => {
+      const row = document.createElement("div");
+      row.className = "cs-kv-row";
+      const keyNode = document.createElement("span");
+      keyNode.className = "cs-kv-key";
+      keyNode.textContent = key;
+      const valueNode = document.createElement("span");
+      valueNode.className = "cs-kv-value";
+      valueNode.textContent = cutsceneValueText(value);
+      row.appendChild(keyNode);
+      row.appendChild(valueNode);
+      return row;
+    },
+    { limit: 80 },
+  );
+
+  appendCutsceneDetails(
+    box,
+    uiText("cutsceneVideos") || "Videos",
+    cs.videoRefs || [],
+    (video) => {
+      const row = document.createElement("div");
+      row.className = "cs-variant-row";
+      const fields = [
+        video && (video.key || video.id || video.name || video.assetKey),
+        video && video.gender,
+        video && video.format,
+        video && video.file,
+        video && video.path,
+        video && video.source,
+      ].filter(Boolean);
+      row.textContent = fields.map(String).join(" | ");
+      return row;
+    },
+    { limit: 80 },
+  );
+
+  appendCutsceneDetails(
+    box,
+    uiText("cutsceneVariants") || "Variants",
+    cs.variants || [],
+    (variant) => {
+      const row = document.createElement("div");
+      row.className = "cs-variant-row";
+      const head = document.createElement("div");
+      head.className = "cs-variant-head";
+      for (const value of [variant.name, variant.part, variant.version ? `v${variant.version}` : ""]) {
+        if (!value) continue;
+        const pill = document.createElement("span");
+        pill.className = "cs-pill";
+        pill.textContent = value;
+        head.appendChild(pill);
+      }
+      row.appendChild(head);
+      for (const value of [variant.path, variant.file]) {
+        if (!value) continue;
+        const pathRow = document.createElement("div");
+        pathRow.className = "cs-path";
+        pathRow.textContent = value;
+        row.appendChild(pathRow);
+      }
+      return row;
+    },
+    { limit: 120 },
+  );
 
   return box;
 }
@@ -4056,6 +4475,14 @@ function renderConv(conv) {
   }
   meta.push(`lines=${conv.lines.length}`);
   if (entry) {
+    const orderDetail = storyOrderDetailForEntry(entry);
+    if (orderDetail && storyOrderBadgeClass(orderDetail)) {
+      const orderBits = [`#${Number(orderDetail.position) + 1}`];
+      if (orderDetail.evidence) orderBits.push(String(orderDetail.evidence));
+      if (orderDetail.sourceScript) orderBits.push(`script=${orderDetail.sourceScript}`);
+      if (orderDetail.offset !== undefined && orderDetail.offset !== null) orderBits.push(`offset=${orderDetail.offset}`);
+      meta.push(`story_order=${orderBits.join(", ")}`);
+    }
     const metadataTagSummary = entryMetadataTagSummary(entry);
     if (metadataTagSummary) meta.push(`tags=${metadataTagSummary}`);
   }
@@ -4145,10 +4572,12 @@ function renderConv(conv) {
 
   const missionContextBlock = renderMissionContext(missionExtras);
   if (missionContextBlock) frag.appendChild(missionContextBlock);
+  const missionTimelineRecovery = getMissionTimelineRecovery(conv.mission);
+  const missionFlow = getMissionFlow(conv.mission);
   const missionTimelineBlock = renderMissionTimelineRecovery(
-    getMissionTimelineRecovery(conv.mission),
+    missionTimelineRecovery,
     conv,
-    getMissionFlow(conv.mission)
+    missionFlow
   );
   if (missionTimelineBlock) frag.appendChild(missionTimelineBlock);
 
@@ -4171,7 +4600,7 @@ function renderConv(conv) {
   // Cutscenes get a dedicated structured info panel; all other kinds use the
   // generic summary text block.
   if (conv.kind === "cutscene") {
-    const csPanel = renderCutsceneInfoPanel(conv);
+    const csPanel = renderCutsceneInfoPanel(conv, missionTimelineRecovery, missionFlow);
     if (csPanel) frag.appendChild(csPanel);
   } else if (conv.summary && conv.summary.length) {
     const box = document.createElement("div");
@@ -5415,12 +5844,88 @@ function missionTimelinePinLabel(pin) {
   const name = pin.missionAreaId || pin.npcProxyId || pin.scene || pin.trackingType || "";
   const position = pin.position || {};
   const hasPosition = ["x", "y", "z"].some((axis) => position[axis] !== undefined);
-  if (!hasPosition) return String(name || "");
+  const parent = pin.subDataParentId || pin.levelDataParentId || "";
+  const parentText = parent ? ` parent ${parent}` : "";
+  if (!hasPosition) return `${String(name || "")}${parentText}`;
   const coords = ["x", "y", "z"].map((axis) => {
     const value = Number(position[axis]);
     return Number.isFinite(value) ? value.toFixed(1) : "?";
   }).join(", ");
-  return `${name || pin.scene || "pin"} @ ${coords}`;
+  return `${name || pin.scene || "pin"} @ ${coords}${parentText}`;
+}
+
+function missionTimelineSpatialCandidateLabel(candidate) {
+  if (!candidate || typeof candidate !== "object") return "";
+  const quest = candidate.questId || "?";
+  const script = [candidate.mapId || candidate.levelId, candidate.scriptId].filter(Boolean).join("/");
+  const distance = Number(candidate.distanceXZ);
+  const distText = Number.isFinite(distance) ? ` @ ${distance.toFixed(distance >= 10 ? 1 : 2)}m` : "";
+  return [quest, script ? `via ${script}` : "", distText.trim()].filter(Boolean).join(" ");
+}
+
+function missionTimelineSpatialMatchLabel(match) {
+  if (!match || typeof match !== "object") return "";
+  const places = [];
+  if (match.subchunkId || match.chunkId) places.push(match.subchunkId || match.chunkId);
+  if (match.sceneKey) places.push(match.sceneKey);
+  const chunk = places.join(" ");
+  const script = [match.mapId || match.levelId, match.scriptId].filter(Boolean).join("/");
+  const distance = Number(match.distanceXZ);
+  const distText = Number.isFinite(distance) ? ` @ ${distance.toFixed(distance >= 10 ? 1 : 2)}m` : "";
+  return [chunk, script ? `via ${script}` : "", distText.trim()].filter(Boolean).join(" ");
+}
+
+function missionTimelineSourceScriptHintLabel(hint) {
+  if (!hint || typeof hint !== "object") return "";
+  const kind = hint.kind === "scriptCondition" ? "condition" : "spatial";
+  const places = [];
+  if (hint.subchunkId || hint.chunkId) places.push(hint.subchunkId || hint.chunkId);
+  if (hint.sceneKey) places.push(hint.sceneKey);
+  const place = places.join(" ");
+  const script = [hint.mapId || hint.levelId, hint.scriptId].filter(Boolean).join("/");
+  const key = hint.key ? `:${hint.key}` : "";
+  const distance = Number(hint.distanceXZ);
+  const distText = Number.isFinite(distance) ? ` @ ${distance.toFixed(distance >= 10 ? 1 : 2)}m` : "";
+  return [kind, place, script ? `via ${script}${key}` : key.replace(/^:/, ""), distText.trim()]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function missionTimelineSceneInfo(rawKey, flowKeyMap) {
+  const raw = String(rawKey || "");
+  const resolved = resolveFlowConversationKey(raw, flowKeyMap) || raw;
+  const entry = STATE.entryByKey.get(resolved) || STATE.entryByKey.get(raw);
+  if (!entry) return "";
+  const isCutscene = entry.d === "cutscene" || raw.startsWith("cutscene_") || resolved.startsWith("cutscene_");
+  if (!isCutscene) return "";
+  const title = String(entry.p || "").trim();
+  const tags = missionTimelineArray(entry.tags)
+    .map((tag) => String(tag || "").trim())
+    .filter((tag) => tag && tag !== "cutscene" && tag !== "cutsceneText")
+    .slice(0, 3);
+  const lineCount = Number(entry.n);
+  const parts = [];
+  if (title) parts.push(title);
+  if (tags.length) parts.push(tags.join(", "));
+  if (Number.isFinite(lineCount)) parts.push(`${lineCount} lines`);
+  return parts.join(" | ");
+}
+
+function appendMissionTimelineSceneChip(container, rawKey, flowKeyMap, currentKey, { showInfo = false } = {}) {
+  const chip = createFlowSceneChip(rawKey, flowKeyMap, currentKey);
+  const info = showInfo ? missionTimelineSceneInfo(rawKey, flowKeyMap) : "";
+  if (info) {
+    chip.title = [chip.title, info].filter(Boolean).join("\n");
+  }
+  container.appendChild(chip);
+  if (info) {
+    const label = document.createElement("span");
+    label.className = "mission-timeline-scene-info";
+    label.textContent = info.length > 48 ? `${info.slice(0, 45)}...` : info;
+    label.title = info;
+    container.appendChild(label);
+  }
+  return chip;
 }
 
 function missionTimelineFlowLocations(flowQuest, pins) {
@@ -5552,6 +6057,12 @@ function renderMissionTimelineTreeNode(node, questById, resourceContext, flowKey
     missionTimelineArray(questPins).map(missionTimelinePinLabel),
     { limit: 5 }
   );
+  appendMissionTimelineTextLine(
+    panel,
+    uiText("missionTimelineQuestSourceHints") || "quest source hints",
+    missionTimelineArray(node && node.sourceScriptHints).map(missionTimelineSourceScriptHintLabel),
+    { limit: 8 }
+  );
 
   appendMissionTimelineTextLine(
     panel,
@@ -5604,167 +6115,91 @@ function renderMissionTimelineTree(nodes, questById, resourceContext, flowKeyMap
   return list;
 }
 
-const SCENE_ORDER_UNKNOWN = 1_000_000;
+function compareMissionTimelineSceneKeys(a, b) {
+  return String(a || "").localeCompare(String(b || ""), undefined, { numeric: true, sensitivity: "base" });
+}
 
-function buildMissionTimelineSceneOrderMap(sceneGraph) {
-  const map = new Map();
-  for (const node of missionTimelineArray(sceneGraph && sceneGraph.nodes)) {
-    const key = String(node && node.key || "").trim();
-    const order = Number(node && node.order);
-    if (key && Number.isFinite(order) && !map.has(key)) {
-      map.set(key, order);
+function compareMissionTimelineChunkIds(a, b) {
+  return String(a && a.id || "").localeCompare(String(b && b.id || ""), undefined, { numeric: true, sensitivity: "base" });
+}
+
+function sortMissionTimelineChunksByName(chunks) {
+  return [...chunks].sort(compareMissionTimelineChunkIds);
+}
+
+function sortedMissionTimelineSceneKeys(keys) {
+  return missionTimelineArray(keys).slice().sort(compareMissionTimelineSceneKeys);
+}
+
+function renderMissionTimelineSubchunks(chunk, flowKeyMap, currentKey) {
+  const subchunks = missionTimelineArray(chunk && chunk.subchunks)
+    .filter((subchunk) => subchunk && typeof subchunk === "object" && Array.isArray(subchunk.sceneKeys));
+  if (!subchunks.length) return null;
+
+  const wrap = document.createElement("div");
+  wrap.className = "mission-timeline-subchunk-list";
+  const note = document.createElement("div");
+  note.className = "mission-timeline-subchunk-note";
+  note.textContent = uiText("missionTimelineSubchunkNote") || "Subchunks are diagnostic weak runs inside one scene chunk.";
+  wrap.appendChild(note);
+
+  for (const subchunk of subchunks) {
+    const sub = document.createElement("div");
+    sub.className = "mission-timeline-subchunk";
+    const head = document.createElement("div");
+    head.className = "mission-timeline-subchunk-head";
+    appendMissionTimelineChip(head, subchunk.id || "sub", "mission-timeline-subchunk-id");
+    appendMissionTimelineChip(head, `${subchunk.sceneCount || (subchunk.sceneKeys || []).length} ${uiText("missionTimelineChunkScenes")}`);
+    if (subchunk.questOrderHint) {
+      const hintChip = appendMissionTimelineChip(
+        head,
+        missionTimelineSpatialCandidateLabel(subchunk.questOrderHint),
+        "mission-timeline-chip-spatial",
+      );
+      if (hintChip) hintChip.title = subchunk.questOrderHint.note || subchunk.note || "";
     }
-  }
-  return map;
-}
-
-function missionTimelineSceneOrderValue(key, flowKeyMap, sceneOrderMap) {
-  const raw = String(key || "").trim();
-  if (!raw || !sceneOrderMap || !sceneOrderMap.size) return SCENE_ORDER_UNKNOWN;
-  const direct = sceneOrderMap.get(raw);
-  if (Number.isFinite(direct)) return direct;
-  const resolved = resolveFlowConversationKey(raw, flowKeyMap);
-  const resolvedOrder = sceneOrderMap.get(resolved);
-  return Number.isFinite(resolvedOrder) ? resolvedOrder : SCENE_ORDER_UNKNOWN;
-}
-
-function compareMissionTimelineSceneKeys(a, b, flowKeyMap, sceneOrderMap) {
-  return (
-    missionTimelineSceneOrderValue(a, flowKeyMap, sceneOrderMap) -
-    missionTimelineSceneOrderValue(b, flowKeyMap, sceneOrderMap)
-  ) || String(a || "").localeCompare(String(b || ""), undefined, { numeric: true });
-}
-
-function renderMissionTimelineSceneOrder(sceneGraph, flowKeyMap, currentKey) {
-  const allNodes = missionTimelineArray(sceneGraph && sceneGraph.nodes)
-    .filter((node) => node && String(node.key || "").trim());
-  if (!allNodes.length) return null;
-  const sceneEdges = missionTimelineArray(sceneGraph && sceneGraph.edges)
-    .filter((edge) => edge && String(edge.from || "").trim() && String(edge.to || "").trim());
-
-  const confirmed = allNodes
-    .filter((node) => node.orderConfirmed !== false)
-    .sort((a, b) => (
-      Number(a.order) - Number(b.order)
-    ) || String(a.key || "").localeCompare(String(b.key || ""), undefined, { numeric: true }));
-  const unconfirmed = allNodes
-    .filter((node) => node.orderConfirmed === false)
-    .sort((a, b) => String(a.key || "").localeCompare(String(b.key || ""), undefined, { numeric: true }));
-
-  const details = document.createElement("details");
-  details.className = "mission-timeline-details";
-  const summary = document.createElement("summary");
-  summary.textContent = `${uiText("missionTimelineSceneOrder")} (${confirmed.length}${unconfirmed.length ? ` + ${unconfirmed.length} ${uiText("missionTimelineOrderUnknown")}` : ""})`;
-  details.appendChild(summary);
-
-  const sceneOrderMap = buildMissionTimelineSceneOrderMap(sceneGraph);
-  const graph = renderMissionTimelineSceneEdgeGraph(sceneEdges, flowKeyMap, currentKey, { sceneOrderMap });
-  if (graph) {
-    details.appendChild(graph);
-  }
-
-  if (!graph || confirmed.length <= 30) {
-    const row = document.createElement("div");
-    row.className = "mission-timeline-edge" + (graph ? " mission-timeline-order-reference" : "");
-    if (graph) {
-      const label = document.createElement("span");
-      label.className = "mission-timeline-unknown-label";
-      label.textContent = uiText("missionTimelineOrderReference");
-      row.appendChild(label);
+    const spatialCandidates = missionTimelineArray(subchunk.spatialQuestCandidates);
+    if (spatialCandidates.length) {
+      const spatialText = spatialCandidates.slice(0, 3).map(missionTimelineSpatialCandidateLabel).filter(Boolean).join(", ");
+      const spatialChip = appendMissionTimelineChip(
+        head,
+        `${uiText("missionTimelineSpatialCandidates") || "spatial"} ${spatialText}`,
+        "mission-timeline-chip-spatial",
+      );
+      if (spatialChip) spatialChip.title = spatialCandidates.map(missionTimelineSpatialCandidateLabel).join("\n");
+      if (spatialCandidates.length > 3) appendMissionTimelineChip(head, `+${spatialCandidates.length - 3}`, "mission-timeline-chip-spatial");
     }
-    for (const [index, node] of confirmed.entries()) {
+    const sourceScripts = missionTimelineArray(subchunk.sourceScripts);
+    if (sourceScripts.length) {
+      const scriptText = sourceScripts.slice(0, 3).map(cutsceneScriptLabel).filter(Boolean).join(", ");
+      const scriptChip = appendMissionTimelineChip(
+        head,
+        `${uiText("missionTimelineSourceScripts") || "source scripts"} ${scriptText}`,
+        "mission-timeline-chip-source",
+      );
+      if (scriptChip) scriptChip.title = sourceScripts.map((script) => script.file || cutsceneScriptLabel(script)).join("\n");
+      if (sourceScripts.length > 3) appendMissionTimelineChip(head, `+${sourceScripts.length - 3}`, "mission-timeline-chip-source");
+    }
+    sub.appendChild(head);
+
+    const sceneRow = document.createElement("div");
+    sceneRow.className = "mission-timeline-edge mission-timeline-subchunk-scene-row";
+    for (const [index, sceneKey] of sortedMissionTimelineSceneKeys(subchunk.sceneKeys).entries()) {
       if (index) {
-        const arrow = document.createElement("span");
-        arrow.className = "mission-timeline-arrow";
-        arrow.textContent = "->";
-        row.appendChild(arrow);
+        const sep = document.createElement("span");
+        sep.className = "mission-timeline-chunk-sep";
+        sep.textContent = "-";
+        sceneRow.appendChild(sep);
       }
-      const chip = createFlowSceneChip(node.key || "?", flowKeyMap, currentKey);
-      if (node.kind) chip.title = [chip.title, node.kind].filter(Boolean).join("\n");
-      row.appendChild(chip);
+      appendMissionTimelineSceneChip(sceneRow, sceneKey, flowKeyMap, currentKey, { showInfo: true });
     }
-    details.appendChild(row);
-  } else if (confirmed.length) {
-    const more = document.createElement("div");
-    more.className = "mission-timeline-more";
-    more.textContent = uiText("missionTimelineOrderReferenceHidden").replace("{count}", String(confirmed.length));
-    details.appendChild(more);
+    sub.appendChild(sceneRow);
+    wrap.appendChild(sub);
   }
-
-  if (unconfirmed.length) {
-    const unknownRow = document.createElement("div");
-    unknownRow.className = "mission-timeline-edge mission-timeline-order-unknown";
-    const label = document.createElement("span");
-    label.className = "mission-timeline-unknown-label";
-    label.textContent = uiText("missionTimelineOrderUnknown");
-    unknownRow.appendChild(label);
-    for (const node of unconfirmed) {
-      const chip = createFlowSceneChip(node.key || "?", flowKeyMap, currentKey);
-      if (node.kind) chip.title = [chip.title, node.kind].filter(Boolean).join("\n");
-      unknownRow.appendChild(chip);
-    }
-    details.appendChild(unknownRow);
-  }
-
-  return details;
+  return wrap;
 }
 
-function missionTimelineSortChunksByOrder(chunks, chunkOrder) {
-  const ids = chunks.map((chunk) => String(chunk.id || ""));
-  const idSet = new Set(ids);
-  const edges = missionTimelineArray(chunkOrder && chunkOrder.edges).filter((edge) => {
-    if (!edge || typeof edge !== "object") return false;
-    const from = String(edge.from || "");
-    const to = String(edge.to || "");
-    return idSet.has(from) && idSet.has(to);
-  });
-  if (!edges.length) return { sorted: chunks, edgesByFrom: new Map() };
-
-  const successors = new Map();
-  const indegree = new Map();
-  for (const id of ids) {
-    successors.set(id, new Set());
-    indegree.set(id, 0);
-  }
-  const edgesByFrom = new Map();
-  for (const edge of edges) {
-    const from = String(edge.from);
-    const to = String(edge.to);
-    if (successors.get(from).has(to)) continue;
-    successors.get(from).add(to);
-    indegree.set(to, (indegree.get(to) || 0) + 1);
-    if (!edgesByFrom.has(from)) edgesByFrom.set(from, []);
-    edgesByFrom.get(from).push(edge);
-  }
-  // Kahn's algorithm; tiebreak by original (natural) order in chunks[].
-  const indexOf = new Map(ids.map((id, idx) => [id, idx]));
-  const ready = ids.filter((id) => (indegree.get(id) || 0) === 0);
-  ready.sort((a, b) => indexOf.get(a) - indexOf.get(b));
-  const sortedIds = [];
-  while (ready.length) {
-    const id = ready.shift();
-    sortedIds.push(id);
-    for (const next of successors.get(id)) {
-      const remaining = (indegree.get(next) || 0) - 1;
-      indegree.set(next, remaining);
-      if (remaining === 0) {
-        ready.push(next);
-      }
-    }
-    ready.sort((a, b) => indexOf.get(a) - indexOf.get(b));
-  }
-  // If a cycle dropped any nodes, append them in natural order so we never lose chunks.
-  if (sortedIds.length < ids.length) {
-    for (const id of ids) {
-      if (!sortedIds.includes(id)) sortedIds.push(id);
-    }
-  }
-  const byId = new Map(chunks.map((chunk) => [String(chunk.id || ""), chunk]));
-  const sorted = sortedIds.map((id) => byId.get(id)).filter(Boolean);
-  return { sorted, edgesByFrom };
-}
-
-function renderMissionTimelineSceneChunks(chunks, flowKeyMap, currentKey, chunkOrder = null) {
+function renderMissionTimelineSceneChunks(chunks, flowKeyMap, currentKey) {
   const list = missionTimelineArray(chunks)
     .filter((chunk) => chunk && typeof chunk === "object" && Array.isArray(chunk.sceneKeys));
   if (!list.length) return null;
@@ -5783,8 +6218,6 @@ function renderMissionTimelineSceneChunks(chunks, flowKeyMap, currentKey, chunkO
   if (strongCount) detailBits.push(`${uiText("missionTimelineChunkStrong")} ${strongCount}`);
   if (weakCount) detailBits.push(`${uiText("missionTimelineChunkWeak")} ${weakCount}`);
   if (unanchoredCount) detailBits.push(`${uiText("missionTimelineChunkUnanchored")} ${unanchoredCount}`);
-  const orderEdgeCount = missionTimelineArray(chunkOrder && chunkOrder.edges).length;
-  if (orderEdgeCount) detailBits.push(`${uiText("missionTimelineChunkOrderEdges")} ${orderEdgeCount}`);
   summary.textContent = detailBits.length
     ? `${summaryParts[0]}; ${detailBits.join(", ")})`
     : `${summaryParts[0]})`;
@@ -5795,13 +6228,15 @@ function renderMissionTimelineSceneChunks(chunks, flowKeyMap, currentKey, chunkO
   note.textContent = uiText("missionTimelineChunkNote");
   details.appendChild(note);
 
-  const { sorted: sortedChunks, edgesByFrom } = missionTimelineSortChunksByOrder(list, chunkOrder);
+  const sortedChunks = sortMissionTimelineChunksByName(list);
   const renderableChunks = sortedChunks.filter((chunk) => chunk.strength !== "unanchored");
   const isolatedChunks = sortedChunks.filter((chunk) => chunk.strength === "unanchored");
 
   for (const chunk of renderableChunks) {
     const wrap = document.createElement("div");
     wrap.className = `mission-timeline-chunk mission-timeline-chunk-${chunk.strength || "weak"}`;
+    const sourceTitle = missionTimelineArray(chunk.sourceFiles).join("\n");
+    if (sourceTitle) wrap.title = sourceTitle;
 
     const header = document.createElement("div");
     header.className = "mission-timeline-chunk-header";
@@ -5820,56 +6255,85 @@ function renderMissionTimelineSceneChunks(chunks, flowKeyMap, currentKey, chunkO
     );
     header.appendChild(strengthChip);
     appendMissionTimelineChip(header, `${chunk.sceneCount || (chunk.sceneKeys || []).length} ${uiText("missionTimelineChunkScenes")}`);
+    if (chunk.subchunkCount || missionTimelineArray(chunk.subchunks).length) {
+      appendMissionTimelineChip(
+        header,
+        `${uiText("missionTimelineSubchunks") || "subchunks"} ${chunk.subchunkCount || missionTimelineArray(chunk.subchunks).length}`,
+        "mission-timeline-chip-spatial",
+      );
+    }
+    for (const questId of missionTimelineArray(chunk.questIds).slice(0, 4)) {
+      appendMissionTimelineChip(header, questId, "mission-timeline-chip-chunk");
+    }
+    if (missionTimelineArray(chunk.questIds).length > 4) {
+      appendMissionTimelineChip(header, `+${missionTimelineArray(chunk.questIds).length - 4}`, "mission-timeline-chip-chunk");
+    }
+    if (chunk.questOrderHint && chunk.questOrderHint.kind === "levelscriptSpatialProximity") {
+      const placementChip = appendMissionTimelineChip(
+        header,
+        missionTimelineSpatialCandidateLabel(chunk.questOrderHint),
+        "mission-timeline-chip-spatial",
+      );
+      if (placementChip) placementChip.title = chunk.questOrderHint.note || "";
+    }
+    const spatialCandidates = missionTimelineArray(chunk.spatialQuestCandidates);
+    if (spatialCandidates.length) {
+      const spatialText = spatialCandidates.slice(0, 3).map(missionTimelineSpatialCandidateLabel).filter(Boolean).join(", ");
+      const spatialChip = appendMissionTimelineChip(
+        header,
+        `${uiText("missionTimelineSpatialCandidates") || "spatial"} ${spatialText}`,
+        "mission-timeline-chip-spatial",
+      );
+      if (spatialChip) {
+        spatialChip.title = spatialCandidates
+          .map((candidate) => [missionTimelineSpatialCandidateLabel(candidate), candidate.file].filter(Boolean).join("\n"))
+          .join("\n\n");
+      }
+      if (spatialCandidates.length > 3) appendMissionTimelineChip(header, `+${spatialCandidates.length - 3}`, "mission-timeline-chip-spatial");
+    }
+    const sourceScripts = missionTimelineArray(chunk.sourceScripts);
+    if (sourceScripts.length) {
+      const scriptText = sourceScripts.slice(0, 3).map(cutsceneScriptLabel).filter(Boolean).join(", ");
+      const scriptChip = appendMissionTimelineChip(
+        header,
+        `${uiText("missionTimelineSourceScripts") || "source scripts"} ${scriptText}`,
+        "mission-timeline-chip-source",
+      );
+      if (scriptChip) scriptChip.title = sourceScripts.map((script) => script.file || cutsceneScriptLabel(script)).join("\n");
+      if (sourceScripts.length > 3) appendMissionTimelineChip(header, `+${sourceScripts.length - 3}`, "mission-timeline-chip-source");
+    } else if (chunk.sourceFileOrderHint) {
+      appendMissionTimelineChip(header, uiText("missionTimelineChunkSourceHint") || "source-file hint", "mission-timeline-chip-source");
+    }
     for (const kind of missionTimelineArray(chunk.edgeKinds)) {
       appendMissionTimelineChip(header, kind, "mission-timeline-chunk-edge-kind");
     }
     wrap.appendChild(header);
 
-    const sceneRow = document.createElement("div");
-    sceneRow.className = "mission-timeline-edge mission-timeline-chunk-scene-row";
-    const keys = missionTimelineArray(chunk.sceneKeys);
-    const visibleLimit = 24;
-    for (const [index, sceneKey] of keys.slice(0, visibleLimit).entries()) {
-      if (index) {
-        const sep = document.createElement("span");
-        sep.className = "mission-timeline-chunk-sep";
-        sep.textContent = "·";
-        sceneRow.appendChild(sep);
+    const subchunkBlock = renderMissionTimelineSubchunks(chunk, flowKeyMap, currentKey);
+    if (subchunkBlock) {
+      wrap.appendChild(subchunkBlock);
+    } else {
+      const sceneRow = document.createElement("div");
+      sceneRow.className = "mission-timeline-edge mission-timeline-chunk-scene-row";
+      const keys = sortedMissionTimelineSceneKeys(chunk.sceneKeys);
+      const visibleLimit = 24;
+      for (const [index, sceneKey] of keys.slice(0, visibleLimit).entries()) {
+        if (index) {
+          const sep = document.createElement("span");
+          sep.className = "mission-timeline-chunk-sep";
+          sep.textContent = "-";
+          sceneRow.appendChild(sep);
+        }
+        appendMissionTimelineSceneChip(sceneRow, sceneKey, flowKeyMap, currentKey, { showInfo: true });
       }
-      sceneRow.appendChild(createFlowSceneChip(sceneKey, flowKeyMap, currentKey));
+      if (keys.length > visibleLimit) {
+        appendMissionTimelineChip(sceneRow, `+${keys.length - visibleLimit}`);
+      }
+      wrap.appendChild(sceneRow);
     }
-    if (keys.length > visibleLimit) {
-      appendMissionTimelineChip(sceneRow, `+${keys.length - visibleLimit}`);
-    }
-    wrap.appendChild(sceneRow);
 
     details.appendChild(wrap);
 
-    const nextChunk = renderableChunks[renderableChunks.indexOf(chunk) + 1];
-    if (nextChunk) {
-      const divider = document.createElement("div");
-      divider.className = "mission-timeline-chunk-divider";
-      const outgoing = (edgesByFrom.get(String(chunk.id || "")) || []).find(
-        (edge) => String(edge.to) === String(nextChunk.id || ""),
-      );
-      divider.textContent = outgoing
-        ? uiText("missionTimelineChunkOrderedArrow")
-        : uiText("missionTimelineChunkUnknownOrder");
-      if (outgoing) divider.classList.add("mission-timeline-chunk-divider-ordered");
-      details.appendChild(divider);
-    }
-  }
-
-  const parallelPairs = missionTimelineArray(chunkOrder && chunkOrder.parallel);
-  const incomparablePairs = missionTimelineArray(chunkOrder && chunkOrder.incomparable);
-  if (parallelPairs.length || incomparablePairs.length) {
-    const noteLabel = document.createElement("div");
-    noteLabel.className = "mission-timeline-subheading";
-    const bits = [];
-    if (parallelPairs.length) bits.push(`${uiText("missionTimelineChunkParallel")} ${parallelPairs.length}`);
-    if (incomparablePairs.length) bits.push(`${uiText("missionTimelineChunkIncomparable")} ${incomparablePairs.length}`);
-    noteLabel.textContent = bits.join(" · ");
-    details.appendChild(noteLabel);
   }
 
   if (isolatedChunks.length) {
@@ -5881,9 +6345,9 @@ function renderMissionTimelineSceneChunks(chunks, flowKeyMap, currentKey, chunkO
     const isoRow = document.createElement("div");
     isoRow.className = "mission-timeline-edge mission-timeline-chunk-singletons";
     const visibleLimit = 30;
-    const keys = isolatedChunks.flatMap((chunk) => missionTimelineArray(chunk.sceneKeys));
+    const keys = sortedMissionTimelineSceneKeys(isolatedChunks.flatMap((chunk) => missionTimelineArray(chunk.sceneKeys)));
     for (const sceneKey of keys.slice(0, visibleLimit)) {
-      isoRow.appendChild(createFlowSceneChip(sceneKey, flowKeyMap, currentKey));
+      appendMissionTimelineSceneChip(isoRow, sceneKey, flowKeyMap, currentKey, { showInfo: true });
     }
     if (keys.length > visibleLimit) {
       appendMissionTimelineChip(isoRow, `+${keys.length - visibleLimit}`);
@@ -5894,7 +6358,7 @@ function renderMissionTimelineSceneChunks(chunks, flowKeyMap, currentKey, chunkO
   return details;
 }
 
-function renderMissionTimelineSceneEdges(edges, flowKeyMap, currentKey, { sceneOrderMap = null } = {}) {
+function renderMissionTimelineSceneEdges(edges, flowKeyMap, currentKey) {
   if (!edges.length) return null;
   const details = document.createElement("details");
   details.className = "mission-timeline-details";
@@ -5907,18 +6371,12 @@ function renderMissionTimelineSceneEdges(edges, flowKeyMap, currentKey, { sceneO
     const to = resolveFlowConversationKey(edge.to || "", flowKeyMap) || edge.to;
     return from === currentKey || to === currentKey;
   };
-  const edgeOrder = (edge) => Math.min(
-    missionTimelineSceneOrderValue(edge && edge.from, flowKeyMap, sceneOrderMap),
-    missionTimelineSceneOrderValue(edge && edge.to, flowKeyMap, sceneOrderMap)
-  );
   const ordered = [...edges].sort((a, b) => (
     Number(touchesCurrent(b)) - Number(touchesCurrent(a))
-  ) || (
-    edgeOrder(a) - edgeOrder(b)
-  ) || compareMissionTimelineSceneKeys(a && a.from, b && b.from, flowKeyMap, sceneOrderMap)
-    || compareMissionTimelineSceneKeys(a && a.to, b && b.to, flowKeyMap, sceneOrderMap)
+  ) || compareMissionTimelineSceneKeys(a && a.from, b && b.from)
+    || compareMissionTimelineSceneKeys(a && a.to, b && b.to)
     || String(a && a.kind || "").localeCompare(String(b && b.kind || ""), undefined, { numeric: true }));
-  const graph = renderMissionTimelineSceneEdgeGraph(ordered, flowKeyMap, currentKey, { sceneOrderMap });
+  const graph = renderMissionTimelineSceneEdgeGraph(ordered, flowKeyMap, currentKey);
   if (graph) details.appendChild(graph);
 
   const listLabel = document.createElement("div");
@@ -5953,7 +6411,7 @@ function renderMissionTimelineSceneEdges(edges, flowKeyMap, currentKey, { sceneO
   return details;
 }
 
-function renderMissionTimelineSceneEdgeGraph(edges, flowKeyMap, currentKey, { sceneOrderMap = null } = {}) {
+function renderMissionTimelineSceneEdgeGraph(edges, flowKeyMap, currentKey) {
   const graphEdges = [];
   const seen = new Set();
   for (const edge of missionTimelineArray(edges)) {
@@ -5985,7 +6443,7 @@ function renderMissionTimelineSceneEdgeGraph(edges, flowKeyMap, currentKey, { sc
 
   const components = [];
   const visited = new Set();
-  for (const start of Array.from(undirected.keys()).sort((a, b) => compareMissionTimelineSceneKeys(a, b, flowKeyMap, sceneOrderMap))) {
+  for (const start of Array.from(undirected.keys()).sort(compareMissionTimelineSceneKeys)) {
     if (visited.has(start)) continue;
     const nodes = [];
     const stack = [start];
@@ -5999,15 +6457,12 @@ function renderMissionTimelineSceneEdgeGraph(edges, flowKeyMap, currentKey, { sc
         stack.push(next);
       }
     }
-    nodes.sort((a, b) => compareMissionTimelineSceneKeys(a, b, flowKeyMap, sceneOrderMap));
+    nodes.sort(compareMissionTimelineSceneKeys);
     const edgeCount = nodes.reduce((count, node) => count + missionTimelineArray(outgoing.get(node)).length, 0);
     components.push({ nodes, edgeCount });
   }
-  const componentOrder = (component) => Math.min(
-    ...component.nodes.map((node) => missionTimelineSceneOrderValue(node, flowKeyMap, sceneOrderMap))
-  );
   components.sort((a, b) => (
-    componentOrder(a) - componentOrder(b)
+    compareMissionTimelineSceneKeys(a.nodes[0], b.nodes[0])
   ) || b.edgeCount - a.edgeCount || b.nodes.length - a.nodes.length);
 
   const wrap = document.createElement("div");
@@ -6025,7 +6480,7 @@ function renderMissionTimelineSceneEdgeGraph(edges, flowKeyMap, currentKey, { sc
 
     for (const source of component.nodes) {
       const sourceEdges = missionTimelineArray(outgoing.get(source)).sort((a, b) =>
-        compareMissionTimelineSceneKeys(a && a.to, b && b.to, flowKeyMap, sceneOrderMap)
+        compareMissionTimelineSceneKeys(a && a.to, b && b.to)
           || String(a && a.kind || "").localeCompare(String(b && b.kind || ""), undefined, { numeric: true })
       );
       if (!sourceEdges.length) continue;
@@ -6171,6 +6626,84 @@ function renderMissionTimelineUnresolved(unresolved, flowKeyMap, currentKey) {
   return details;
 }
 
+function renderMissionTimelineQuestSpatialTrack(track, flowKeyMap, currentKey) {
+  const rows = missionTimelineArray(track).filter((row) => row && typeof row === "object");
+  if (!rows.length) return null;
+  const details = document.createElement("details");
+  details.className = "mission-timeline-details mission-timeline-spatial-details";
+  const summary = document.createElement("summary");
+  summary.textContent = `${uiText("missionTimelineQuestSpatialTrack") || "Quest Map Track"} (${rows.length})`;
+  details.appendChild(summary);
+  const note = document.createElement("div");
+  note.className = "mission-timeline-subheading";
+  note.textContent = uiText("missionTimelineSpatialHint") || "Map/resource metadata is a diagnostic placement hint.";
+  details.appendChild(note);
+
+  for (const item of rows.slice(0, 80)) {
+    const row = document.createElement("div");
+    row.className = "mission-timeline-spatial-row";
+    const head = document.createElement("div");
+    head.className = "mission-timeline-spatial-head";
+    appendMissionTimelineChip(head, item.questId || "?", "mission-timeline-quest-id-chip");
+    if (item.flowIndex !== undefined) appendMissionTimelineChip(head, `${uiText("missionTimelineFlow")} ${item.flowIndex}`);
+    const prev = missionTimelineArray(item.prevQuestIds);
+    if (prev.length) appendMissionTimelineChip(head, `${uiText("missionTimelinePrev")} ${prev.join(", ")}`);
+    for (const chunkId of missionTimelineArray(item.attachedChunkIds)) {
+      appendMissionTimelineChip(head, chunkId, "mission-timeline-chip-chunk");
+    }
+    if (item.distanceFromPrevious !== undefined) appendMissionTimelineChip(head, `d=${item.distanceFromPrevious}`);
+    row.appendChild(head);
+
+    appendMissionTimelineTextLine(
+      row,
+      uiText("missionTimelineMapPins"),
+      missionTimelineArray(item.pins).map(missionTimelinePinLabel),
+      { limit: 6 },
+    );
+    appendMissionTimelineTextLine(
+      row,
+      uiText("missionTimelineSpatialMatches") || "spatial matches",
+      missionTimelineArray(item.spatialSourceMatches).map(missionTimelineSpatialMatchLabel),
+      { limit: 6 },
+    );
+    appendMissionTimelineTextLine(
+      row,
+      uiText("missionTimelineObjectives"),
+      missionTimelineArray(item.descriptionKeys),
+      { limit: 6 },
+    );
+    const scriptRefs = missionTimelineArray(item.scriptRefs).map((script) => {
+      const mapId = script && (script.mapId || script.levelId || "?");
+      const scriptId = script && (script.scriptId || "?");
+      const key = script && script.key ? `:${script.key}` : "";
+      return `${mapId}/${scriptId}${key}`;
+    });
+    appendMissionTimelineTextLine(
+      row,
+      uiText("missionTimelineSourceScripts") || "source scripts",
+      scriptRefs,
+      { limit: 6 },
+    );
+    const resourceLine = renderMissionTimelineSceneRefs(
+      missionTimelineArray(item.resources).map((resource) => ({
+        key: resource && resource.key,
+        kind: resource && resource.kind,
+      })),
+      flowKeyMap,
+      currentKey,
+    );
+    if (resourceLine) row.appendChild(resourceLine);
+    details.appendChild(row);
+  }
+  if (rows.length > 80) {
+    const more = document.createElement("div");
+    more.className = "mission-timeline-more";
+    more.textContent = `+${rows.length - 80}`;
+    details.appendChild(more);
+  }
+  return details;
+}
+
 function renderMissionTimelineRecovery(timeline, conv, missionFlow = null) {
   if (!timeline || !missionTimelineArray(timeline.quests).length) return null;
   const box = document.createElement("div");
@@ -6201,7 +6734,6 @@ function renderMissionTimelineRecovery(timeline, conv, missionFlow = null) {
   const currentKey = conv && conv.key ? conv.key : "";
   const questById = new Map(missionTimelineArray(timeline.quests).map((quest) => [quest.questId, quest]));
   const resourceContext = buildMissionTimelineResourceContext(missionFlow, timeline);
-  const sceneOrderMap = buildMissionTimelineSceneOrderMap(missionFlow && missionFlow.sceneGraph);
   const tree = timeline.questTree || {};
   const roots = missionTimelineArray(tree.roots);
   const unrootedRoots = missionTimelineArray(tree.unrootedRoots);
@@ -6239,13 +6771,17 @@ function renderMissionTimelineRecovery(timeline, conv, missionFlow = null) {
     box.appendChild(details);
   }
 
-  const sceneOrderBlock = renderMissionTimelineSceneOrder(missionFlow && missionFlow.sceneGraph, flowKeyMap, currentKey);
-  if (sceneOrderBlock) box.appendChild(sceneOrderBlock);
+  const spatialBlock = renderMissionTimelineQuestSpatialTrack(
+    timeline.questSpatialTrack,
+    flowKeyMap,
+    currentKey,
+  );
+  if (spatialBlock) box.appendChild(spatialBlock);
+
   const chunkBlock = renderMissionTimelineSceneChunks(
     timeline.chunks,
     flowKeyMap,
     currentKey,
-    timeline.chunkOrder || null,
   );
   if (chunkBlock) box.appendChild(chunkBlock);
   const evidenceBlock = renderMissionTimelineEvidence(timeline.sceneTimelineEvidence || {}, flowKeyMap, currentKey);
@@ -6253,8 +6789,7 @@ function renderMissionTimelineRecovery(timeline, conv, missionFlow = null) {
   const edgeBlock = renderMissionTimelineSceneEdges(
     missionTimelineArray(timeline.sourceBackedSceneEdges),
     flowKeyMap,
-    currentKey,
-    { sceneOrderMap }
+    currentKey
   );
   if (edgeBlock) box.appendChild(edgeBlock);
   const unresolvedBlock = renderMissionTimelineUnresolved(missionTimelineArray(timeline.unresolved), flowKeyMap, currentKey);

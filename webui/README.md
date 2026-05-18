@@ -18,8 +18,9 @@ from `webui/data/` and keeps heavyweight recovery work in the Python builders.
 ## Current Scope
 
 - `Story`: language switch, search, foldable media/recovery issue/method
-  filters, a Storyline filter for mission/story buckets, and Media chips for
-  entries with videos, non-emoji images, SNS stickers, or emoji,
+  filters, a Storyline filter for mission/story buckets, Media chips for
+  entries with videos, non-emoji images, SNS stickers, or emoji, recovered
+  game-data story-order sorting with compact evidence badges in mission lists,
   conversation detail, summaries,
   option groups, line-order notes, raw source traces, and inline media
   rendering for SNS/content images. Narrative video blocks show the best
@@ -46,7 +47,13 @@ from `webui/data/` and keeps heavyweight recovery work in the Python builders.
   their tooltip when that evidence is available. Known option placement or
   inferred-response gaps can be covered for WebUI display only through
   `scripts/story_builder/manual_option_overrides.json`; affected option groups
-  or rows show a manual override tag.
+  or rows show a manual override tag. Mission Timeline Recovery shows the
+  quest tree, quest map track, scene chunks, diagnostic weak subchunks,
+  LevelScript spatial candidates, source-script hints, and source-backed scene
+  edges. Cutscene chips now include compact identifying labels, and cutscene
+  detail panels expose placement/chunk/subchunk evidence plus variants, paths,
+  metadata, videos, audio events, and actor labels to make individual
+  cutscenes easier to identify.
 - Narrative videos without non-name binding evidence are emitted as standalone
   `video` story files grouped by mission. Videos with recovered Timeline /
   playable evidence stay attached to their proven dialog or cutscene.
@@ -70,6 +77,10 @@ from `webui/data/` and keeps heavyweight recovery work in the Python builders.
   WebUI conversation evidence. These rows require recovered
   `BeyondFMVPlayableAsset` / Timeline sources; heuristic filename matches are
   not recorded as proof.
+- `data/assets/story_order.json`: recovered mission entry order from
+  original/decodeable game data. Strong rows carry MissionRuntime/property,
+  LevelScript record, levelseq, or title-card evidence; weaker rows are kept as
+  fallbacks and marked in the UI tooltip.
 - `data/lang/<code>/reference/`: Reference tables; persistent rows may share
   streaming payloads or use small overlay files for changed rows.
 - `data/assets/story_media.json`: compact Story inline image/video lookup using

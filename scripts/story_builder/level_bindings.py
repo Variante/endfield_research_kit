@@ -141,6 +141,50 @@ def _load_mission_levelscript_dialogs(mission_id: str, level_ids: list[str]) -> 
     return hints
 
 
+# LevelScript record (code, kind) -> semantic class.
+#
+# Recovered by running scratch/opcode_audit.py against indie_dg002 and
+# map01_lv001 and observing that every record in each row carries a single
+# kind of string payload (e.g. 0x0347/0x0d records carry only levelseq_*
+# strings). `set_state` rows can scope either to a quest (`<m>_q#N`) or to
+# a bare mission id; both come from the master controller. `show_guide`
+# bundles a guide-group id and text id pair.
+#
+# Re-exported from `scripts/story_recovery/build_story_order.py`; see
+# `memory/e0m0_file_order_from_binary_scripts.md` for the evidence walk.
+LEVELSCRIPT_OPCODE_TABLE: dict[tuple[int, int], str] = {
+    (0x0347, 0x0d): "play_levelseq",
+    (0x02e6, 0x09): "play_levelseq",
+    (0x047f, 0x09): "play_levelseq",
+    (0x047e, 0x0c): "play_levelseq",
+    (0x033e, 0x13): "play_cutscene",
+    (0x033f, 0x13): "play_cutscene",
+    (0x04a6, 0x09): "play_cutscene",
+    (0x035b, 0x0c): "play_cutscene",
+    (0x034a, 0x0d): "play_radio",
+    (0x034b, 0x0d): "play_radio",
+    (0x046c, 0x0e): "play_dialog",
+    (0x046d, 0x10): "play_dialog",
+    (0x0916, 0x00): "set_state",
+    (0x0915, 0x00): "set_state",
+    (0x1370, 0x00): "set_state",
+    (0x0450, 0x0f): "show_guide",
+}
+
+
+def classify_levelscript_record(record: dict) -> str:
+    """Return the semantic class for a record from
+    `_load_levelscript_binding_data`, or `""` if its `(code, kind)` is
+    not yet in the opcode table."""
+    if not isinstance(record, dict):
+        return ""
+    code = record.get("code")
+    kind = record.get("kind")
+    if not isinstance(code, int) or not isinstance(kind, int):
+        return ""
+    return LEVELSCRIPT_OPCODE_TABLE.get((code, kind), "")
+
+
 def _u16(data: bytes, off: int) -> int:
     return int.from_bytes(data[off : off + 2], "little", signed=False)
 
@@ -191,6 +235,51 @@ def _extract_tagged_ascii_strings(
     return hits
 
 
+def _extract_length_prefixed_ascii_strings(
+    data: bytes,
+    *,
+    min_len: int = 3,
+    max_len: int = 120,
+    tagged_offsets: set[int] | None = None,
+) -> list[dict]:
+    """Return plain ``<le32 length><ascii>`` strings in a LevelScript blob.
+
+    LevelScript payload text is often serialized as ``0x04`` tagged strings,
+    but property keys used by mission conditions can appear as ordinary
+    Unity length-prefixed strings. Keep these hits separate from tagged story
+    payloads so existing story-edge recovery does not accidentally promote
+    generic/debug strings.
+    """
+    hits: list[dict] = []
+    tagged_offsets = tagged_offsets or set()
+    end = len(data) - 4
+    i = 0
+    while i < end:
+        size = int.from_bytes(data[i : i + 4], "little", signed=False)
+        if size < min_len or size > max_len or i + 4 + size > len(data):
+            i += 1
+            continue
+        if i > 0 and data[i - 1] == 0x04 and (i - 1) in tagged_offsets:
+            i += 4 + size
+            continue
+        raw = data[i + 4 : i + 4 + size]
+        if not _is_printable_ascii(raw):
+            i += 1
+            continue
+        try:
+            text = raw.decode("ascii")
+        except UnicodeDecodeError:
+            i += 1
+            continue
+        hits.append({
+            "offset": i,
+            "payloadOffset": i + 4,
+            "text": text,
+        })
+        i += 4 + size
+    return hits
+
+
 def _decode_uid_record(data: bytes, uid_off: int, uid: str) -> dict | None:
     if uid_off >= 14:
         start = uid_off - 14
@@ -213,6 +302,7 @@ def _decode_uid_record(data: bytes, uid_off: int, uid: str) -> dict | None:
                         "nextId": _i32(data, start + 28),
                         "payloadStart": start + 32,
                         "strings": [],
+                        "plainStrings": [],
                     }
 
     if uid_off >= 12:
@@ -238,6 +328,7 @@ def _decode_uid_record(data: bytes, uid_off: int, uid: str) -> dict | None:
                     "nextId": _i32(data, start + 26),
                     "payloadStart": start + 30,
                     "strings": [],
+                    "plainStrings": [],
                 }
 
     return None
@@ -272,6 +363,22 @@ def _extract_uid_records(data: bytes, string_hits: list[dict]) -> list[dict]:
             scan_idx += 1
 
     return records
+
+
+def _attach_hits_to_records(records: list[dict], hits: list[dict], field: str) -> None:
+    if not records or not hits:
+        return
+    sorted_hits = sorted(hits, key=lambda hit: hit["offset"])
+    hit_idx = 0
+    for idx, record in enumerate(records):
+        next_start = records[idx + 1]["start"] if idx + 1 < len(records) else 10**18
+        record.setdefault(field, [])
+        while hit_idx < len(sorted_hits) and sorted_hits[hit_idx]["offset"] < record["payloadStart"]:
+            hit_idx += 1
+        scan_idx = hit_idx
+        while scan_idx < len(sorted_hits) and sorted_hits[scan_idx]["offset"] < next_start:
+            record[field].append(sorted_hits[scan_idx])
+            scan_idx += 1
 
 
 def _build_unique_record_target_map(records: list[dict]) -> dict[int, dict]:
@@ -412,11 +519,17 @@ def _load_levelscript_binding_data(level_id: str) -> dict:
             continue
 
         string_hits = _extract_tagged_ascii_strings(data, 0x04)
+        plain_string_hits = _extract_length_prefixed_ascii_strings(
+            data,
+            tagged_offsets={hit["offset"] for hit in string_hits},
+        )
         records = _extract_uid_records(data, string_hits)
-        if not records and not string_hits:
+        _attach_hits_to_records(records, plain_string_hits, "plainStrings")
+        if not records and not string_hits and not plain_string_hits:
             continue
 
         sorted_hits = sorted(string_hits, key=lambda hit: hit["offset"])
+        sorted_plain_hits = sorted(plain_string_hits, key=lambda hit: hit["offset"])
         for record in records:
             for hit in record["strings"]:
                 add_payload(record["uid"], hit["text"])
@@ -437,6 +550,7 @@ def _load_levelscript_binding_data(level_id: str) -> dict:
             "fileStem": path.stem,
             "records": records,
             "stringHits": sorted_hits,
+            "plainStringHits": sorted_plain_hits,
         })
 
     _LEVELSCRIPT_BINDING_CACHE[level_id] = out

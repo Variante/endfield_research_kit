@@ -8,29 +8,16 @@ from collections import defaultdict
 from pathlib import Path
 
 from asset_builder.index import ASSET_LOD_SUFFIX_RE, ASSET_SINGLE_PREFIX_RE
-from common import ASSET_DIR, ROOT, write_json
-
-
-DEMO_BUNDLES = (
-    {
-        "id": "m_wpn_funnel_0015_01_blender_demo",
-        "material_rel": "StreamingAssets-materials/Material/M_wpn_funnel_0015_01.json",
-        "label": "Blender Demo: M_wpn_funnel_0015_01",
-        "description": (
-            "Downloads the recovered material JSON, matching PNG textures, OBJ LODs, "
-            "and a Blender import helper for M_wpn_funnel_0015_01."
-        ),
-    },
-    {
-        "id": "m_item_widget_zhuangfy_09_blender_demo",
-        "material_rel": "StreamingAssets-materials/Material/M_item_widget_zhuangfy_09.json",
-        "label": "Blender Demo: M_item_widget_zhuangfy_09",
-        "description": (
-            "Downloads the recovered material JSON, matching PNG textures, OBJ LODs, "
-            "and a Blender import helper for M_item_widget_zhuangfy_09."
-        ),
-    },
+from common import (
+    ASSET_DIR,
+    ROOT,
+    path_id_export_base_stem,
+    rel_requires_path_id_export_name,
+    write_json,
 )
+
+
+DEMO_BUNDLES = ()
 
 TEXTURE_SLOT_TAG_HINTS = {
     "_BaseMap": ("D", "BaseColor", "Albedo", "Diffuse"),
@@ -74,6 +61,21 @@ def _normalize_texture_base(stem: str) -> str:
     normalized = _strip_asset_prefix(stem).lower()
     match = TEXTURE_TAG_SUFFIX_RE.match(normalized)
     return match.group("base") if match else normalized
+
+
+def _logical_rel_stem(rel: str) -> str:
+    stem = Path(_normalize_rel(rel)).stem
+    base_stem = path_id_export_base_stem(stem)
+    if rel_requires_path_id_export_name(rel):
+        return base_stem
+    return base_stem or stem
+
+
+def _required_logical_rel_stem(rel: str) -> str:
+    stem = _logical_rel_stem(rel)
+    if not stem:
+        raise ValueError(f"AnimeStudio asset rel must use _p<PathID> naming: {rel!r}")
+    return stem
 
 
 def _extract_material_texture_refs(material_payload: dict) -> list[dict]:
@@ -161,7 +163,9 @@ def _build_asset_lookup(entries: list[dict]) -> dict:
             continue
         source, _, _ = rel.partition("/")
         source_family = _source_family(source).lower()
-        stem = Path(rel).stem
+        stem = _logical_rel_stem(rel)
+        if not stem:
+            continue
         kind = entry.get("k")
         if kind == "image":
             image_rels_by_source_stem[(source_family, stem.lower())].append(rel)
@@ -205,7 +209,7 @@ def _choose_preferred_rel(candidates: list[str], source: str) -> str:
 
 def _pick_models_for_material(material_rel: str, lookup: dict) -> list[str]:
     source, _, _ = _normalize_rel(material_rel).partition("/")
-    material_name = Path(material_rel).stem
+    material_name = _required_logical_rel_stem(material_rel)
     material_base = _normalize_material_base(material_name)
     source_family = _source_family(source)
 
@@ -221,7 +225,7 @@ def _candidate_texture_stems(material_rel: str, slot: str, texture_name: str) ->
     if explicit_name:
         candidates.append(explicit_name)
 
-    material_base = _normalize_material_base(Path(material_rel).stem)
+    material_base = _normalize_material_base(_required_logical_rel_stem(material_rel))
     # Some recovered materials keep non-null texture refs but lose the texture Name field.
     for tag in TEXTURE_SLOT_TAG_HINTS.get(str(slot or ""), ()):
         candidates.append(f"T_{material_base}_{tag}")
@@ -240,7 +244,7 @@ def _resolve_texture_rel(material_rel: str, slot: str, texture_name: str, lookup
         if resolved_rel:
             return resolved_rel
 
-    material_base = _normalize_material_base(Path(material_rel).stem)
+    material_base = _normalize_material_base(_required_logical_rel_stem(material_rel))
     source_base_matches = lookup["image_rels_by_source_base"].get((source_lower, material_base)) or []
     any_base_matches = lookup["image_rels_by_base"].get(material_base) or []
     relaxed_candidates = sorted({
@@ -525,6 +529,7 @@ def _readme_text(bundle: dict) -> str:
 
 def _create_bundle_archive(bundle: dict, asset_index: dict, out_dir: Path) -> dict:
     material_rel = bundle["materialRel"]
+    material_name = _required_logical_rel_stem(material_rel)
     material_path = _resolve_export_path(material_rel, asset_index)
     if not material_path.exists():
         raise FileNotFoundError(f"Material file not found: {material_path}")
@@ -541,7 +546,7 @@ def _create_bundle_archive(bundle: dict, asset_index: dict, out_dir: Path) -> di
     material_settings = _extract_material_settings(material_payload)
     blender_config = {
         "bundleId": bundle["id"],
-        "materialName": Path(material_rel).stem,
+        "materialName": material_name,
         "baseColor": material_settings["baseColor"],
         "emissionColor": material_settings["emissionColor"],
         "emissionStrength": material_settings["emissionStrength"],

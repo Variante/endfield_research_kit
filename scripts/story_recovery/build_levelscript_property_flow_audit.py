@@ -123,7 +123,7 @@ def collect_nearby_story_refs_from_records(records: list[dict[str, Any]], key: s
         return []
     candidates: list[dict[str, Any]] = []
     for idx, record in enumerate(records):
-        strings = record.get("strings") or []
+        strings = [*(record.get("strings") or []), *(record.get("plainStrings") or [])]
         if any(s.get("text") == key for s in strings):
             # walk +/- 4 records for story-keyed strings
             window: list[dict[str, Any]] = []

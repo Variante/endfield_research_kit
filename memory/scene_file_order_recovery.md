@@ -124,6 +124,90 @@ with `status=strong` in the per-entry audit can still belong to a `weak` chunk
 when its strength comes from a non-chunk source (MissionRuntime conditioning,
 PlayableDirector anchor, etc.).
 
+Chunks now also carry diagnostic placement fields: `questIds`,
+`questAttachSources`, `sourceScripts`, `sourceFileOrderHint`, and
+`sourceFileOrderSpan`. The WebUI and audit can use the first LevelScript source
+file as a display fallback when quest-DAG edges are absent, but this remains a
+weak hint only. For `e0m0`, this lets us compare the file spans such as
+`indie_dg002/8700040000..8700040001` with the one quest-attached chunk (`c4`)
+without promoting filename/script-id order to chronology.
+
+`questSpatialTrack` records quest-local map pins, resource references, script
+condition refs, centroid movement, and attached chunks. This is shown as a
+Quest Map Track in the WebUI and in mission-order audits. It is useful for
+human inspection of e0m0's route through `indie_dg002`, but map position is
+still diagnostic unless it is bridged by a quest/story or decoded trigger edge.
+
+`levelscriptSpatialProximity` now extracts raw little-endian float32 triples
+from LevelScriptData files and compares them with quest map pins in the same
+map. Matches are capped to nearby vectors (`25m` x/z and `12m` y by default)
+and are emitted only as weak diagnostics:
+
+- scene placement rows get `spatialQuestCandidates` plus the
+  `levelscriptSpatialProximity` evidence kind;
+- chunks aggregate those candidates and may carry a weak `questOrderHint` used
+  only as a display fallback when no quest-DAG chunk edges exist;
+- `questSpatialTrack[*].spatialSourceMatches` shows which source scripts and
+  chunks sit near each quest pin;
+- `levelscriptSpatialProximity` is also emitted as a top-level per-mission
+  list for audits.
+
+Current CN run: `14,374` weak spatial matches across `175` missions, touching
+`2,870` scene-placement rows. These matches do not write to `questIds`, do not
+create `chunkOrder.edges`, and do not make a chunk strong.
+
+Weak unattached chunks can now carry diagnostic `subchunks`. These are
+contiguous runs inside one chunk, split by the best nearby quest pin from
+`levelscriptSpatialProximity`; scenes without their own spatial match inherit
+the neighboring run only for display. Subchunks never change the parent chunk's
+strength or quest attachment. Current CN run: `349` subchunks inside `66` weak
+chunks. For e0m0, c2 splits into `c2a` (zipline run near q#1 via
+`8700010007`) and `c2b` (`cutscene_e0m0_3` plus the radio cluster near q#11
+via `8700050001` / `8700020022`).
+
+Quest-tree nodes now mirror these diagnostics as `sourceScriptHints`, so the
+WebUI tree and the e0m0 audit can show weak file-to-quest candidates directly
+on the quest node without promoting them to attachments. For e0m0 this exposes
+`e0m0_q#1 <- c2a/cutscene_e0m0_1stZipline via indie_dg002/8700010007` and
+`e0m0_q#11 <- c2b/cutscene_e0m0_3/4/5 plus radio cluster via
+indie_dg002/8700050001`. These are source/spatial diagnostics only.
+
+`cutscene_e0m0_1` remains unplaced. Exact searches in the original structured
+game JSON do not find `cutscene_e0m0_1` as a LevelScript/MissionRuntime/LevelData
+reference; only prefix-neighbor files such as `cutscene_e0m0_1stZipline`,
+`cutscene_e0m0_10`, `cutscene_e0m0_11`, etc. appear. The recovered AnimeStudio
+asset exists and carries one subtitle at `19.5s` ("管理员已进入任务待命位置"), the
+path `Assets/Beyond/DynamicAssets/Gameplay/Cutscene/cutscene_e0m0_1/Prefab/cutscene_e0m0_1`,
+and black-screen/elevator-selection metadata, so it is plausible mission-start
+content by name and text. It is not currently evidence that the file is first
+in the quest chronology: the rebuilt e0m0 scene graph keeps it
+`orderStrength=unknown`, with no `scenePlacement`, no source-backed edge, and
+no LevelScript spatial match.
+
+`memory/quest_tree_source_connections.md` gives a useful strong-evidence
+control: when a quest node truly owns a story file, the join usually appears
+as a `MissionRuntimeAsset` field, `timelineRecovery.quests[*].storyRefs[]` or
+`questSpatialTrack[*].resources[]`, `scenePlacement[storyKey].questIds`,
+`conv/<storyKey>.json.sourceLinks[]`, and a source-graph
+`references_story` / `source_references_story` edge. `cutscene_e7m4_1` has
+that pattern through
+`MissionRuntimeAsset/e7m4.json questDic.e7m4_q#13..._cutsceneId.constValue`.
+The e0m0 suspects checked so far (`cutscene_e0m0_1`,
+`cutscene_e0m0_1stZipline`, `cutscene_e0m0_3`, `cutscene_e0m0_13`) do not
+have those direct source-link/source-graph edges; their usable clues are
+LevelScript scene edges, script-condition attachment for `cutscene_e0m0_13`,
+and weak spatial/file hints.
+
+Mission-area metadata adds one more diagnostic but not a new e0m0 ordering
+edge. `MissionAreaTable` entries now propagate `subDataParentId` /
+`levelDataParentId` into quest pins and Quest Map Track display. In e0m0 all
+mission-area pins `e0m1_001` through `e0m1_008` share parent `8700020000`,
+including q#1 and q#11. That parent points at the shared mission-area host
+neighborhood rather than a per-quest story trigger, so it should stay
+diagnostic only; it does not attach `cutscene_e0m0_1`, and it does not replace
+the stronger spatial candidates like q#1 via `8700010007` or q#11 via
+`8700050001`.
+
 The audit (`reports/mission_order/<mission>_evidence_audit.md`) now includes a
 `chunk` column in the Entry Evidence table and a `## Scene Chunks` section
 listing every chunk with its strength, edge kinds, and scene keys. To
@@ -164,12 +248,11 @@ Initial counts across all 418 missions:
 
 Important caveat: many e-prefix missions store scene attachments only via
 LevelScript script-condition references rather than MissionRuntime `storyRefs`
-or client-action `storyRefs`. Those scenes therefore land in
-`attachedQuestsByChunk = {}` and stay unattached for chunk-order recovery.
-`e0m0` and `e10m4` both fall in this bucket — 0 quest-DAG edges despite the
-audit's `missionRuntimeScriptConditions` block pinning specific quests to
-specific story-key sequences. Folding script-condition matches into quest
-attachments is a candidate follow-up.
+or client-action `storyRefs`. Script-condition matches are now folded into
+quest attachments only when exactly one mission owns the referenced
+`(mapId, scriptId)`. For `e0m0`, this attaches `c4` to `e0m0_q#7`, but the
+other six chunks remain unattached, so the mission still has `0` quest-DAG
+chunk-order edges.
 
 Evidence sources still on the queue for chunk-order recovery:
 
@@ -304,3 +387,95 @@ Current report families:
 - Preserve unknown entries rather than inventing total order.
 - Put generated audits under `reports/`, disposable prototypes under
   `scratch/` or `tmp/`, and durable conclusions in this file.
+
+## Case Study: `e0m0` — Where the Quest/Scene Bridge Stops
+
+Snapshot taken from the current `webui/data/lang/CN/mission/e0m0.json`. e0m0
+is the prologue mission and a good probe because it shows almost every
+class of evidence we have, while still bottoming out with most chunks
+unattached.
+
+Quest DAG (from `MissionRuntimeAsset.questDic[*].prevQuestIdList`) is a
+clean linear chain `e0m0_q#1 → ... → e0m0_q#13`. All 11 leading quests
+carry `MissionAreaTrackingInfo` or `PosTrackingInfo` in `indie_dg002`, so
+quest order plus quest map-position is fully recovered (see
+`flow.quests[*].tracking` and `flow.mapPins`).
+
+Scene placement chunks vs quest attachment:
+
+| chunk | scenes | attached quest | bridge |
+|-------|--------|----------------|--------|
+| c1 | cutscene_e0m0_6 / 7 / 8, item_mission_e0m0_hubkey, `#c5a02da1` | – | hub room script `indie_dg004/23900030000.json`; no MRA condition |
+| c2 | 1stZipline, 2ndZiplineA/B/C, cs_3/4/5, radios 12-17/20/22/23 | – | spans `indie_dg002/87000{1,2,5}*.json`; no condition |
+| c3 | cs_2, radio_e0m0_1 | – | Pei dialogue `8700020000/0001`; no condition |
+| **c4** | cs_13, cs_New14, radios 1d5/8d4/8d8 | **e0m0_q#7** | `scriptConditionQuestAttach` on `indie_dg002/8700040000.json` |
+| c5 | cs_lookingatpatriot, radios 8d9/9 | – | "Patriot" reveal transition |
+| c6 | cs_tombstonecollapseCam, misc_dlg 0d5/0d7/0d8/0d9, radio_11 | – | tombstone-collapse cluster, `8700020017/18/19` |
+| c7 | radio_2, radio_2d8 | – | `8700000004.json` only |
+
+So 6 of 7 chunks land in `unattachedToQuestChunkIds` even though the
+mission is fully quest-ordered. The only bridge that fired is the one
+`CheckLevelScriptProperty*` condition on q#7 pointing at LevelScript
+`8700040000`. No quest in this mission carries direct `storyRefs`, so
+the `missionStoryRef` and `clientActionStoryRef` evidence kinds never
+trigger.
+
+Unused signals that could close the gap for e0m0-shaped missions:
+
+1. **Quest tracking positions ↔ LevelScript embedded floats.** Implemented
+   as weak `levelscriptSpatialProximity` diagnostics. The e0m0 probe confirms
+   the expected raw vector family: `indie_dg002/8700020022.json` now produces
+   q#11 candidates for c2 (including `cutscene_e0m0_3` and
+   `radio_e0m0_12`), and a tighter neighbor in `8700050001` also sits near
+   q#11. These are visible in both the WebUI chunk/Quest Map Track and
+   `reports/mission_order/e0m0_evidence_audit.md`.
+2. **LevelScript stem ordering inside a `(mapId)` directory.** The
+   scene-graph already emits `levelscriptFileOrder` /
+   `levelscriptCrossFileOrder` edges by numeric stem, but this only
+   feeds scene→scene order, never chunk→quest attachment. If chunk X
+   shares a `(mapId, *)` neighborhood with attached chunk Y, an
+   `levelscriptStemNeighbor` attach could propagate Y's quest set to X
+   with weak strength.
+3. **`indie_dgXXX_lv_data_sub_mission_*` LevelData files.** These carry
+   per-entity `(spawn_point, Lookat*)` positions tied to mission-area
+   IDs that already appear in `quest.tracking[*].missionAreaId`. They
+   are scanned today only for `storyRef` byte-context matching
+   (`anime_assets._leveldata_quest_story_refs_by_mission`), not for
+   positional anchoring.
+
+None of the above is promotable to strong evidence; they are all weak
+signals subject to false positives (e.g. a trigger volume positioned at
+`(0, 0, 0)`, or a re-used `(mapId, scriptId)` across missions). If
+promoted they belong in a new `evidenceKind` distinct from
+`scriptConditionQuestAttach` so the WebUI can keep the attachment
+hierarchy visible.
+
+## Case Study: Cutscene-Identification Metadata Already Available
+
+`webui/data/lang/<lang>/conv/cutscene_*.json` already exposes rich
+author-supplied identification for every cutscene, but the WebUI
+mission-timeline chunk view renders only the bare `sceneKey` chip:
+
+- `cutscene.tags` — author labels in mission language. e0m0 examples:
+  `"indie, dg002, 巡野, 索道, 第一个"` (first zipline), `"迎战巨石"`
+  (boulder fight), `"与配崩的对话"` (Pei dialogue), `"看爱国者"` (look
+  at Patriot).
+- `cutscene.paths` — distinguishes
+  `Assets/.../Cutscene/...` vs `Assets/.../CutsceneTransition/...`, so
+  cinematic vs gameplay transition is recoverable.
+- `cutscene.metadata` — `isTransition`, `useBlackScreen`, `skipType`,
+  `narrativeTypeTag` provide categorical info; the `summary[*].text`
+  block already serializes a "Flags: transition, black-screen" line.
+- `cutscene.audioEvents` — names like
+  `au_music_cs_tundra_000_boss_intro` or
+  `au_vo_cs_e0m0_3_f/m` are useful disambiguators when the bare key is
+  opaque (`cutscene_e0m0_tombstonecollapseCam`).
+- `lines[*]` length — zero-line cutscenes are almost always
+  cinematics/transitions; multi-line cutscenes are dialog scenes.
+
+The cutscene panel (`renderCutscenePlacementEdges` /
+`renderConversation`) shows these when an entry is opened, but the
+chunk view in `renderMissionTimelineSceneChunks` and the unconfirmed
+order list in `renderMissionTimelineSceneOrder` do not. Surfacing a
+one-line label per scene chip in those two views is a small, additive
+WebUI change that does not require any new evidence extraction.

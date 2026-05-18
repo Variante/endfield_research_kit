@@ -20,6 +20,8 @@
     escapeHtml,
     exportFullHref,
     normalizeUiLocale,
+    splitPathIdExportStem,
+    relRequiresPathIdExportName,
     storageGet,
     storageSet,
   } = window.WebUI;
@@ -244,6 +246,19 @@
 
   function stripAssetLodSuffix(value) {
     return String(value || "").replace(/(?:[_-])lod\d+$/i, "");
+  }
+
+  function exportedAssetStemInfo(rel, name) {
+    const rawStem = String(name || "").replace(/\.[^.]+$/i, "");
+    const split = splitPathIdExportStem(rawStem);
+    if (relRequiresPathIdExportName(rel)) {
+      return split ? { stem: split.base, rawStem, pathId: split.pathId } : null;
+    }
+    return {
+      stem: split ? split.base : rawStem,
+      rawStem,
+      pathId: split ? split.pathId : "",
+    };
   }
 
   function assetGroupStem(kind, stem) {
@@ -638,7 +653,9 @@
       const dir = dirParts.join("/");
       const extIndex = name.lastIndexOf(".");
       const ext = extIndex >= 0 ? name.slice(extIndex + 1).toLowerCase() : "";
-      const stem = extIndex >= 0 ? name.slice(0, extIndex) : name;
+      const stemInfo = exportedAssetStemInfo(rel, name);
+      if (!stemInfo || !stemInfo.stem) return null;
+      const stem = stemInfo.stem;
       const groupInfo = deriveAssetGroupInfo(kind, stem);
       const textureVariant = kind === "image" ? inferTextureVariantStem(stem, ext) : null;
       const variantScope = kind === "model" || textureVariant ? source : dir;
@@ -654,6 +671,8 @@
         source,
         ext,
         stem,
+        rawStem: stemInfo.rawStem,
+        pathId: stemInfo.pathId || String(raw.pid || ""),
         family: stripAssetLodSuffix(stem),
         familyKey: `${source}::${groupInfo.key}`.toLowerCase(),
         groupKey: groupInfo.key,
@@ -667,7 +686,7 @@
         duplicateCount: 1,
         rawRels: [rel],
       };
-    });
+    }).filter(Boolean);
 
     const stemsByScope = new Map();
     for (const entry of hydrated) {
@@ -757,6 +776,8 @@
         entry.groupKey,
         entry.groupLabel,
         entry.groupRaw,
+        entry.rawStem,
+        entry.pathId,
         entry.family,
         entry.variantLabel,
         entry.ext,
