@@ -13,7 +13,13 @@ from source_paths import (
     resolve_asset_source_roots,
     resolve_material_source_roots,
 )
-from common import rel_path, write_json
+from common import (
+    path_id_export_base_stem,
+    path_id_export_path_id,
+    rel_path,
+    rel_requires_path_id_export_name,
+    write_json,
+)
 
 ASSET_KIND_BY_EXT = {
     ".obj": "model",
@@ -53,6 +59,16 @@ def _normalize_model_base(stem: str) -> str:
 
 def _normalize_material_base(stem: str) -> str:
     return _strip_asset_prefix(stem).lower()
+
+
+def _logical_export_stem(rel: str, stem: str) -> tuple[str, str] | None:
+    base_stem = path_id_export_base_stem(stem)
+    path_id = path_id_export_path_id(stem)
+    if rel_requires_path_id_export_name(rel):
+        if not base_stem:
+            return None
+        return base_stem, path_id
+    return base_stem or stem, path_id
 
 
 def _split_source_name(name: str) -> tuple[str, int | None]:
@@ -158,13 +174,18 @@ def scan_exported_media_assets(
 
                 kind = ASSET_KIND_BY_EXT.get(suffix)
                 if kind:
+                    logical = _logical_export_stem(asset_rel, path.stem)
+                    if logical is None:
+                        continue
+                    stem, path_id = logical
                     entry = {
                         "k": kind,
                         "r": asset_rel,
                         "s": size,
                     }
+                    if path_id:
+                        entry["pid"] = path_id
                     asset_entries.append(entry)
-                    stem = path.stem
                     if kind == "image":
                         image_rels_by_stem[stem.lower()].append(asset_rel)
                     elif kind == "model":
@@ -180,6 +201,8 @@ def scan_exported_media_assets(
                     counts[kind] += 1
 
                 if suffix in VIDEO_EXTENSIONS:
+                    if rel_requires_path_id_export_name(asset_rel) and not path_id_export_base_stem(path.stem):
+                        continue
                     video_entries.append({
                         "k": "video",
                         "r": asset_rel,
@@ -228,7 +251,10 @@ def scan_exported_media_assets(
             material_count += 1
             rel_suffix = material_path.relative_to(source_root).as_posix()
             material_rel = f"{source}/{rel_suffix}" if rel_suffix else source
-            material_name = material_path.stem
+            logical = _logical_export_stem(material_rel, material_path.stem)
+            if logical is None:
+                continue
+            material_name, _path_id = logical
             material_ref = {
                 "name": material_name,
                 "rel": material_rel,

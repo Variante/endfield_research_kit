@@ -2207,7 +2207,7 @@ def _load_related_dialog_tree_files(conv_key: str, original_line_ids: list[str] 
     seen_source_keys: set[str] = set()
 
     for path in _iter_related_dialog_tree_paths(conv_key):
-        source_key = path.stem
+        source_key = _anime_tree_logical_stem(path)
         if source_key == conv_key or source_key in seen_source_keys:
             continue
         source = _load_dialog_tree_source(source_key)
@@ -2255,7 +2255,7 @@ def load_dialog_tree_fragments(conv_key: str) -> list[dict]:
         for path in _iter_anime_tree_files("dlg_*.json"):
             if path.name.endswith("_extra_config.json"):
                 continue
-            source_key = path.stem
+            source_key = _anime_tree_logical_stem(path)
             source = _load_dialog_tree_source(source_key)
             if not source:
                 continue
@@ -2284,7 +2284,7 @@ def load_dialog_tree_scene_links(conv_key: str) -> list[dict]:
         for path in _iter_anime_tree_files("dlg_*.json"):
             if path.name.endswith("_extra_config.json"):
                 continue
-            source = _load_dialog_tree_source(path.stem)
+            source = _load_dialog_tree_source(_anime_tree_logical_stem(path))
             if not source:
                 continue
             for link in source.get("sceneLinks") or []:

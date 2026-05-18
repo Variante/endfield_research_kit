@@ -10,26 +10,32 @@ From the repo root:
 
 ```bat
 .\export.bat
+.\build_updates.bat
+.\export_assets.bat
 .\package_webui.bat
 ```
 
-`export.bat` is the normal WebUI refresh path. It runs:
+`export.bat` is the normal story/reference WebUI refresh path. It runs:
 
-- `scripts/export_full_from_game.py --skip-raw-vfs --skip-source-inventory`
+- `scripts/export_full_from_game.py --animestudio-scope story --animestudio-stages maps json_by_type`
 - `scripts/verify_export_freshness.py`
 - `scripts/story_builder/dialog_registry.py --quiet`
 - `scripts/story_builder/video_bindings.py`
 - `scripts/story_builder/source_links.py`
-- `scripts/build_updates.py`
 - `scripts/story_builder/build.py --languages CN --default-language CN`
-- `scripts/build_assets.py`
 
-Use `.\export.bat --init-build` for initial or baseline-only builds where the
-Updates feed should be baselined instead of reporting changes.
-Use `.\export.bat --fast-assets` for local refreshes that can reuse existing
-asset indexes and skip demo bundle zip generation.
 Use `.\export.bat --skip-export-full` to rebuild WebUI data from an existing
 `export_full/` while still running the freshness guard before the builders.
+
+`build_updates.bat` writes `webui/data/updates/latest.json` from the saved
+previous export and current `export_full/`. Use `.\build_updates.bat
+--init-build` for initial or baseline-only update feeds. The wrapper skips
+asset-level diffs by default; pass `--include-asset-updates` after refreshing
+heavy assets when those changes should appear in Updates.
+
+`export_assets.bat` runs the heavier image/model/animation AnimeStudio decode
+and then `scripts/build_assets.py` for the Assets tab indexes and compact
+Story media lookup.
 
 `package_webui.bat` runs `scripts/package_webui.py` and creates split
 shareable zips. The main story zip contains `serve.py`, `webui/`, generated
@@ -71,27 +77,28 @@ Expected active inputs and outputs:
 ## WebUI
 
 - `export_full_from_game.py`: export data from the installed Endfield client.
-  The normal WebUI wrapper is `..\export.bat`, which skips raw VFS and source
-  inventory. It writes generated summaries under `..\reports\` but does not
-  require `reports`, `scratch`, or `tmp` as active inputs.
+  The normal WebUI wrapper is `..\export.bat`, which skips raw VFS, source
+  inventory, and heavy 2D/3D/animation asset conversion. `..\export_assets.bat`
+  runs those heavier asset passes separately. Summaries are written under
+  `..\reports\`, but the workflow does not require `reports`, `scratch`, or
+  `tmp` as active inputs.
 - `verify_export_freshness.py`: compares the latest export summary with
   the current installed `Endfield_Data` source fingerprints and verifies the
   WebUI-required export folders are present. `export.bat` runs it immediately
   after `export_full_from_game.py` so game updates do not silently reuse stale
   `export_full/` data.
-- `track_export_changes.py`: generic file-tree tracker used by the WebUI
+- `track_export_changes.py`: generic file-tree scanner used by the WebUI
   Updates builder.
-- `build_updates.py`: writes `webui/data/updates/latest.json` from the
-  original installed game data only. Tracker state lives under
-  `..\.game-data-tracker\`; generated summary reports live under
-  `..\reports\`. Zero-change reruns preserve or restore the last non-empty
-  feed from tracker history so accidental duplicate runs do not blank the
-  Updates page. Non-empty feed snapshots are written as
-  `..\.game-data-tracker\history\update-feed-*.json` so asset-level entries can
-  be recovered with the game-data entries. Pass `--baseline-only` to update
-  tracker state while writing an empty feed, or `--skip-asset-updates` to skip
-  only the exported
-  image/model/video asset diff.
+- `build_updates.py`: writes `webui/data/updates/latest.json` by comparing a
+  previous exported game-data tree, default `..\export_122\`, with the current
+  `..\export_full\`. Scanner cache lives under `..\.game-data-tracker\`;
+  generated summary reports live under `..\reports\`, and non-empty feed
+  snapshots are written as `..\.game-data-tracker\history\update-feed-*.json`.
+  The root `..\build_updates.bat` wrapper runs this standalone update step.
+  Pass `--previous-export-root PATH` to compare a different saved export,
+  `--refresh-previous-export-baseline` after replacing that saved export,
+  `--baseline-only` to write an empty feed, or `--skip-asset-updates` to skip
+  only the exported image/model/video asset diff.
 - `story_builder/build.py`: builds CN story/reference data by default,
   with optional extra languages. The builder reads from `..\export_full\`, stamps dialog convs
   with DialogIdTable runtime registry evidence, links narrative
@@ -100,9 +107,8 @@ Expected active inputs and outputs:
   treats SNS emoji ids such as `sns_emoji_*` as inline emoji, while non-emoji
   SNS media such as `sns_image_*` and `sns_sticker_*` render as normal images.
 - `build_assets.py`: builds the WebUI asset index, video index, story media
-  index, and optional demo bundle zips from active WebUI export roots. Pass
-  `--fast` to reuse existing indexes when present and skip demo bundle zip
-  generation, or `--skip-bundles` to rebuild indexes without bundle zips.
+  index, and optional demo bundle zips from active WebUI export roots. It is
+  run by `..\export_assets.bat`, not the story-only `..\export.bat`.
 - `asset_builder/`: shared asset-browser indexing, story-media selection, and
   demo bundle helpers used by `build_assets.py` and the Updates builder.
 - `package_webui.py`: packages split shareable WebUI zips from
@@ -118,6 +124,17 @@ Expected active inputs and outputs:
   animation curves) with the Dump pass (GameObject PathID active state) so
   duplicate child names inside emoji bundles do not collide. Not part of
   `export.bat`; run it after Endfield updates that touch emoji prefab data.
+- AnimeStudio CLI file exports are expected to use
+  `{name}_p<PathID>` names. The export wrapper includes this naming contract in
+  its cache signature and clears refreshed type folders before rerunning them,
+  so stale files from older naming contracts are removed by a forced refresh of
+  the affected stage/type. AnimeStudio-derived WebUI inputs that do not carry
+  the PathID suffix are ignored.
+- `animestudio/rename_exports_to_path_id.py`: dry-run-first migration helper
+  for existing AnimeStudio CLI outputs from the older plain-name convention.
+  It reads the AnimeStudio map JSON files and renames only files with an
+  unambiguous PathID match; use a fresh asset export for a fully authoritative
+  rebuild.
 
 ## WebUI Story Helpers
 
@@ -184,6 +201,20 @@ scan:
   `.md`, including ordered/unknown totals, remaining inferred responses,
   non-runtime option-layout rows, uncovered line warnings, and top unknown
   missions.
+- `story_recovery/build_levelscript_control_audit.py`: audits a mission's
+  higher LevelScript control layer from MissionRuntime, LevelData script
+  ownership, decoded LevelScript story/levelseq records, cross-script numeric
+  references, and IL2CPP metadata facts. It writes
+  `reports/mission_order/<mission>_levelscript_control_audit.json` / `.md`.
+  Use it before promoting inferred file-order links into `story_order.json`;
+  direct ordering still requires decoded start/end/action opcodes.
+- `story_recovery/build_story_order.py`: builds
+  `webui/data/assets/story_order.json` from original/decodeable game data:
+  MissionRuntime quest/property anchors, decoded LevelScript play records,
+  levelseq payloads, title-card text rows, secondary LevelData level refs, weak
+  authored ordinal-name hints, and weaker suffix fallbacks. This is run by
+  `export.bat` after the CN story bundle is built so the WebUI can sort mission
+  entries by recovered file/play order.
 - `story_recovery/build_option_playable_semantics_audit.py`: audits remaining
   `inferredOptionResponse` groups against decoded
   `DialogOptionPlayableAsset` fields such as `logicId`, `trunkId`,

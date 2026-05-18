@@ -6,24 +6,12 @@ if /I "%~1"=="-h" goto :help
 
 set "EXPORT_ARGS="
 set "VERIFY_EXPORT_ARGS="
-set "BUILD_UPDATES_ARGS="
-set "BUILD_ASSETS_ARGS="
 set "SKIP_EXPORT_FULL=0"
 
 :parse_args
 if "%~1"=="" goto :parsed_args
 if /I "%~1"=="--help" goto :help
 if /I "%~1"=="-h" goto :help
-if /I "%~1"=="--init-build" (
-  set "BUILD_UPDATES_ARGS=%BUILD_UPDATES_ARGS% --baseline-only"
-  shift
-  goto :parse_args
-)
-if /I "%~1"=="--fast-assets" (
-  set "BUILD_ASSETS_ARGS=%BUILD_ASSETS_ARGS% --fast"
-  shift
-  goto :parse_args
-)
 if /I "%~1"=="--skip-export-full" (
   set "SKIP_EXPORT_FULL=1"
   shift
@@ -36,7 +24,6 @@ if /I "%~1"=="--game-root" (
   )
   set "EXPORT_ARGS=%EXPORT_ARGS% "%~1" "%~2""
   set "VERIFY_EXPORT_ARGS=%VERIFY_EXPORT_ARGS% "%~1" "%~2""
-  set "BUILD_UPDATES_ARGS=%BUILD_UPDATES_ARGS% "%~1" "%~2""
   shift
   shift
   goto :parse_args
@@ -47,14 +34,14 @@ goto :parse_args
 
 :parsed_args
 rem WebUI export/build pipeline:
-rem - export structured data and AnimeStudio outputs used by Story/Reference/Assets
+rem - export structured data and story-only AnimeStudio outputs used by Story/Reference
 rem - skip raw_vfs and source inventory because the WebUI does not require them
 rem - optionally skip the export step when reusing an already fresh export_full
-rem - build the game-data update feed
 rem - build only CN story/reference data by default
-rem - build the asset index
+rem - build recovered story file order for the WebUI Story sort
+rem - skip image/model/animation asset decoding; use export_assets.bat for that
 if "%SKIP_EXPORT_FULL%"=="1" goto :skip_export_full
-python .\scripts\export_full_from_game.py --skip-raw-vfs --skip-source-inventory %EXPORT_ARGS%
+python .\scripts\export_full_from_game.py --animestudio-scope story --animestudio-stages maps json_by_type %EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 goto :after_export_full
 
@@ -75,28 +62,26 @@ if errorlevel 1 exit /b %errorlevel%
 python .\scripts\story_builder\source_links.py
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\build_updates.py %BUILD_UPDATES_ARGS%
-if errorlevel 1 exit /b %errorlevel%
-
 python .\scripts\story_builder\build.py --languages CN --default-language CN
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\build_assets.py %BUILD_ASSETS_ARGS%
+python .\scripts\story_recovery\build_story_order.py
 if errorlevel 1 exit /b %errorlevel%
 
 endlocal
 exit /b 0
 
 :help
-echo Usage: export.bat [--init-build] [--fast-assets] [--skip-export-full] [--game-root Endfield_Data] [export_full_from_game.py options]
+echo Usage: export.bat [--skip-export-full] [--game-root Endfield_Data] [--animestudio-jobs N] [export_full_from_game.py options]
 echo.
-echo Runs the WebUI-focused export/build pipeline. Story/reference output is CN only.
+echo Runs the story-focused WebUI export/build pipeline. Story/reference output is CN only.
 echo Verifies export freshness before the long WebUI builders run.
 echo.
-echo   --init-build          Write an empty baseline Updates feed and skip asset diffing.
-echo   --fast-assets         Build asset indexes but skip demo bundle zip generation.
 echo   --skip-export-full    Reuse existing export_full and only verify freshness before builders.
 echo   --game-root PATH      Use a non-default installed Endfield_Data path.
+echo   --animestudio-jobs N  Maximum parallel AnimeStudio CLI processes for per-type export.
+echo.
+echo Updates moved to build_updates.bat. Image/model/animation asset decoding moved to export_assets.bat.
 echo.
 python .\scripts\export_full_from_game.py --help
 if errorlevel 1 (

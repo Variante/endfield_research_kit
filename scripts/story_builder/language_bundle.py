@@ -10796,52 +10796,6 @@ def build_language_bundle(
             if graph_flow and graph_flow.get("variantMissionIds"):
                 payload["sceneGraphVariantMissions"] = graph_flow["variantMissionIds"]
             mission_scene_graphs[mission] = scene_graph
-            unconfirmed_keys: set[str] = {
-                node.get("key")
-                for node in scene_graph.get("nodes") or []
-                if node.get("key") and node.get("orderConfirmed") is False
-            }
-            scene_graph_order = {
-                node.get("key"): int(node.get("order"))
-                for node in scene_graph.get("nodes") or []
-                if node.get("key") and isinstance(node.get("order"), int)
-                and node.get("orderConfirmed") is not False
-            }
-            scene_graph_order_strength = {
-                node.get("key"): node.get("orderStrength")
-                for node in scene_graph.get("nodes") or []
-                if node.get("key") and node.get("orderStrength")
-            }
-            if scene_graph_order or unconfirmed_keys:
-                attach_offsets: Counter[str] = Counter()
-
-                def annotate_order_strength(entry: dict, key: str) -> None:
-                    strength = scene_graph_order_strength.get(key)
-                    if strength == "strong":
-                        entry["goStrong"] = True
-                    elif strength == "weak":
-                        entry["goWeak"] = True
-                    elif strength == "unknown":
-                        entry["goUnknown"] = True
-
-                for entry in index_entries:
-                    if entry.get("m") != mission:
-                        continue
-                    k = entry.get("k") or ""
-                    if k in unconfirmed_keys:
-                        entry["goUnknown"] = True
-                        continue
-                    order = scene_graph_order.get(k)
-                    if order is not None:
-                        entry["go"] = order
-                        annotate_order_strength(entry, k)
-                        continue
-                    attached_to = entry.get("attachTo")
-                    attach_order = scene_graph_order.get(attached_to)
-                    if attach_order is not None:
-                        attach_offsets[attached_to] += 1
-                        entry["go"] = attach_order + (attach_offsets[attached_to] / 1000)
-                        annotate_order_strength(entry, attached_to)
         mission_flows_payload[mission] = payload
 
     mission_timeline_recovery_payload = build_mission_timeline_recovery_report(

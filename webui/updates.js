@@ -14,6 +14,15 @@
       assetSummary: "\u8d44\u6e90\u53d8\u5316",
       mediaPreview: "\u9884\u89c8",
       textDiff: "\u6587\u672c\u5dee\u5f02",
+      decodedImpact: "\u89e3\u7801\u5f71\u54cd",
+      displayImpact: "WebUI \u5f71\u54cd",
+      decodedFiles: "\u89e3\u7801\u6587\u4ef6",
+      decodedFileCount: "\u89e3\u7801\u6587\u4ef6",
+      decodedTags: "\u5173\u8054\u7c7b\u578b",
+      decodedExtensions: "\u6269\u5c55\u5206\u5e03",
+      decodedTruncated: "\u53e6\u6709 {count} \u4e2a\u89e3\u7801\u6587\u4ef6\u672a\u5728\u6b64\u5217\u51fa\u3002",
+      decodedNote: "\u8bf4\u660e",
+      decodedConfidence: "\u5339\u914d\u65b9\u5f0f",
       diffTruncated: "\u5dee\u5f02\u8fc7\u957f\uff0c\u5df2\u622a\u65ad\u663e\u793a\u3002",
       status: "\u72b6\u6001",
       category: "\u5206\u7c7b",
@@ -61,6 +70,15 @@
       assetSummary: "Asset changes",
       mediaPreview: "Preview",
       textDiff: "Text diff",
+      decodedImpact: "Decoded impact",
+      displayImpact: "WebUI impact",
+      decodedFiles: "Decoded files",
+      decodedFileCount: "Decoded files",
+      decodedTags: "Related types",
+      decodedExtensions: "Extension mix",
+      decodedTruncated: "{count} decoded files are not listed here.",
+      decodedNote: "Note",
+      decodedConfidence: "Mapping",
       diffTruncated: "Diff is long, so only the first lines are shown.",
       status: "Status",
       category: "Category",
@@ -189,6 +207,7 @@
   }
 
   function entrySearchText(entry) {
+    const decoded = entry.decodedImpact || {};
     return [
       entry.path,
       entry.status,
@@ -197,6 +216,9 @@
       entry.asset_kind,
       entry.asset_rel,
       normalizeExtension(entry.extension),
+      Object.keys(decoded.tags || {}).join(" "),
+      Object.keys(decoded.byExtension || {}).join(" "),
+      decoded.note,
     ].join(" ").toLowerCase();
   }
 
@@ -356,6 +378,7 @@
 
     const tracker = payload.tracker || {};
     const assets = payload.assets || {};
+    const decodedImpacts = payload.decodedImpacts || {};
     const gameTotals = payload.gameTotals || {};
     const assetTotals = payload.assetTotals || {};
     const meta = [];
@@ -368,6 +391,13 @@
     }
     if (assets.scannedAssets !== undefined && assets.scannedAssets !== null) {
       meta.push(`${updateText("assetSummary")}: ${formatNumber(assetTotals.changed || 0)} / ${formatNumber(assets.scannedAssets)}`);
+    }
+    if (decodedImpacts.decodedFileMentions !== undefined && decodedImpacts.decodedFileMentions !== null) {
+      const impactTags = Object.entries(decodedImpacts.byTag || {})
+        .slice(0, 4)
+        .map(([tag, count]) => `${tag} ${formatNumber(count)}`)
+        .join(", ");
+      meta.push(`${updateText("decodedImpact")}: ${formatNumber(decodedImpacts.decodedFileMentions || 0)}${impactTags ? ` (${impactTags})` : ""}`);
     }
     if (payload.sourceRoot) meta.push(`${updateText("sourceRoot")}: ${payload.sourceRoot}`);
     up$("#updates-run-meta").textContent = meta.join(" | ");
@@ -404,6 +434,12 @@
           ? formatSignedNumber(entry.line_delta)
           : "";
       const domainLabel = entry.domain === "asset" ? updateText("exportedAsset") : updateText("gameFile");
+      const decoded = entry.decodedImpact || {};
+      const decodedCount = Number(decoded.count || 0);
+      const decodedTags = Object.keys(decoded.tags || {}).slice(0, 3);
+      const decodedMeta = decodedCount > 0
+        ? `${updateText("decodedFiles")}: ${formatNumber(decodedCount)}${decodedTags.length ? ` (${decodedTags.join(", ")})` : ""}`
+        : "";
       row.innerHTML =
         `<div class="updates-row-main">` +
           `<span class="updates-status-pill updates-status-${escapeHtml(entry.status || "unknown")}">${escapeHtml(statusLabel(entry.status))}</span>` +
@@ -415,6 +451,7 @@
           categoryLabel(entry.category),
           normalizeExtension(entry.extension),
           delta,
+          decodedMeta,
         ].filter(Boolean).join(" | "))}</div>`;
       row.addEventListener("click", () => selectUpdateEntry(entry));
       fragment.appendChild(row);
@@ -517,6 +554,51 @@
     );
   }
 
+  function decodedFileHref(path) {
+    const rel = String(path || "").replace(/^export_full\//, "");
+    return exportFullHref(rel, {}, "export_full");
+  }
+
+  function labeledCountsHtml(counts) {
+    const entries = Object.entries(counts || {}).filter(([, value]) => Number(value || 0) > 0);
+    if (!entries.length) return "";
+    return entries
+      .map(([label, value]) => `<span class="updates-impact-chip">${escapeHtml(label)} ${escapeHtml(formatNumber(value) || String(value))}</span>`)
+      .join("");
+  }
+
+  function decodedImpactHtml(entry) {
+    const impact = entry && entry.decodedImpact;
+    if (!impact) return "";
+    const count = Number(impact.count || 0);
+    const sample = Array.isArray(impact.sample) ? impact.sample : [];
+    const tagHtml = labeledCountsHtml(impact.tags);
+    const extHtml = labeledCountsHtml(impact.byExtension);
+    const rows = sample
+      .map((path) => `<li><a href="${escapeHtml(decodedFileHref(path))}" target="_blank" rel="noopener">${escapeHtml(path)}</a></li>`)
+      .join("");
+    const truncated = Number(impact.truncated || 0);
+    const summaryFacts = [
+      factRow(updateText("decodedFileCount"), formatNumber(count)),
+      factRow(updateText("decodedConfidence"), impact.confidence),
+      impact.note ? factRow(updateText("decodedNote"), impact.note) : "",
+    ].filter(Boolean).join("");
+    const list = sample.length
+      ? `<ul class="updates-decoded-list">${rows}</ul>`
+      : `<div class="updates-detail-note">${escapeHtml(updateText("none"))}</div>`;
+    return (
+      `<section class="updates-detail-panel updates-decoded-impact">` +
+        `<h2>${escapeHtml(updateText("decodedImpact"))}</h2>` +
+        `<div class="updates-impact-grid">${summaryFacts}</div>` +
+        (tagHtml ? `<div class="updates-impact-chips"><span>${escapeHtml(updateText("displayImpact"))}</span>${tagHtml}</div>` : "") +
+        (extHtml ? `<div class="updates-impact-chips"><span>${escapeHtml(updateText("decodedExtensions"))}</span>${extHtml}</div>` : "") +
+        `<h3>${escapeHtml(updateText("decodedFiles"))}</h3>` +
+        list +
+        (truncated > 0 ? `<div class="updates-detail-note">${escapeHtml(updateText("decodedTruncated", { count: formatNumber(truncated) }))}</div>` : "") +
+      `</section>`
+    );
+  }
+
   function ensureDetailExtra() {
     let extra = up$("#updates-detail-extra");
     if (extra) return extra;
@@ -570,6 +652,7 @@
     ].filter(Boolean);
     up$("#updates-detail-facts").innerHTML = facts.join("") || factRow(updateText("none"), updateText("none"));
     ensureDetailExtra().innerHTML = [
+      decodedImpactHtml(entry),
       mediaPreviewHtml(entry),
       textDiffHtml(entry),
     ].filter(Boolean).join("");

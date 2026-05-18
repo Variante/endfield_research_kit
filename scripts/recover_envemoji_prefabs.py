@@ -49,6 +49,11 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
+if str(REPO / "scripts") not in sys.path:
+    sys.path.insert(0, str(REPO / "scripts"))
+
+from common import path_id_export_base_stem
+
 ASSET_MAP = REPO / "export_full" / "recovered" / "AnimeStudio-cli" / "StreamingAssets" / "maps" / "endfield_streamingassets_assets.json"
 BUNDLE_DIR = REPO / "export_full" / "raw_vfs" / "StreamingAssets" / "files" / "7064D8E2" / "Data" / "Bundles" / "Windows" / "main"
 ASSETBUNDLE_JSON_DIR = REPO / "export_full" / "recovered" / "AnimeStudio-cli" / "StreamingAssets" / "json_by_type" / "AssetBundle"
@@ -98,7 +103,8 @@ def find_bundles_for_prefabs(prefab_names):
     targets = set(prefab_names)
     found = {}
     for path in ASSETBUNDLE_JSON_DIR.iterdir():
-        if not path.name.endswith(".ab.json"):
+        stem = path_id_export_base_stem(path.stem)
+        if not stem or not stem.endswith(".ab"):
             continue
         try:
             data = path.read_bytes()
@@ -110,7 +116,7 @@ def find_bundles_for_prefabs(prefab_names):
             name = m.group(1).decode()
             if name not in targets or name in found:
                 continue
-            found[name] = path.stem  # main_xxx.ab.json → main_xxx.ab (stem strips one .json)
+            found[name] = stem
             if len(found) == len(targets):
                 return found
     return found

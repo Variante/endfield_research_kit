@@ -1000,9 +1000,12 @@ def build_report(
         if entry_report[key]["hits"].get("radioContinuation")
     ]
     chunks = (mission_timeline or {}).get("chunks") or []
+    levelscript_spatial = (mission_timeline or {}).get("levelscriptSpatialProximity") or []
     chunk_strength_counter: Counter = Counter()
     chunk_isolated_count = 0
     chunk_max_scene_count = 0
+    subchunk_count = 0
+    chunk_with_subchunks_count = 0
     for chunk in chunks:
         chunk_strength_counter[str(chunk.get("strength") or "unanchored")] += 1
         if chunk.get("isolated"):
@@ -1010,6 +1013,10 @@ def build_report(
         size = int(chunk.get("sceneCount") or 0)
         if size > chunk_max_scene_count:
             chunk_max_scene_count = size
+        subchunks = chunk.get("subchunks") or []
+        if subchunks:
+            chunk_with_subchunks_count += 1
+            subchunk_count += len(subchunks)
     chunk_order_data = (mission_timeline or {}).get("chunkOrder") or {}
     chunk_order_edges = chunk_order_data.get("edges") or []
     chunk_order_parallel = chunk_order_data.get("parallel") or []
@@ -1063,10 +1070,13 @@ def build_report(
             "chunkUnanchoredCount": chunk_strength_counter.get("unanchored", 0),
             "chunkIsolatedCount": chunk_isolated_count,
             "chunkMaxSceneCount": chunk_max_scene_count,
+            "chunkWithSubchunksCount": chunk_with_subchunks_count,
+            "subchunkCount": subchunk_count,
             "chunkOrderEdgeCount": len(chunk_order_edges),
             "chunkOrderParallelPairCount": len(chunk_order_parallel),
             "chunkOrderIncomparablePairCount": len(chunk_order_incomparable),
             "chunkOrderUnattachedChunkCount": len(chunk_order_unattached),
+            "levelscriptSpatialProximityCount": len(levelscript_spatial),
         },
         "missionTimeline": {
             "propertyModel": (mission_timeline or {}).get("propertyModel"),
@@ -1077,6 +1087,8 @@ def build_report(
             "sourceBackedHashTerminals": (mission_timeline or {}).get("sourceBackedHashTerminals") or [],
             "chunks": (mission_timeline or {}).get("chunks") or [],
             "chunkOrder": (mission_timeline or {}).get("chunkOrder") or {},
+            "questSpatialTrack": (mission_timeline or {}).get("questSpatialTrack") or [],
+            "levelscriptSpatialProximity": levelscript_spatial,
             "scenePlacement": (mission_timeline or {}).get("scenePlacement") or {},
             "scriptConditionAttachments": (mission_timeline or {}).get("scriptConditionAttachments") or [],
             "unresolved": (mission_timeline or {}).get("unresolved") or [],
@@ -1217,8 +1229,8 @@ def markdown_report(payload: dict[str, Any]) -> str:
             "by its edges; inter-chunk order is recovered separately."
         )
         lines.append("")
-        lines.append("| chunk | strength | scenes | kinds | edge kinds | scene keys |")
-        lines.append("| --- | --- | ---: | --- | --- | --- |")
+        lines.append("| chunk | strength | scenes | quests | subchunks | spatial candidates | source scripts | kinds | edge kinds | scene keys |")
+        lines.append("| --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- |")
         for chunk in chunks:
             scene_keys = chunk.get("sceneKeys") or []
             scene_kinds = ", ".join(chunk.get("sceneKinds") or []) or "—"
@@ -1226,13 +1238,128 @@ def markdown_report(payload: dict[str, Any]) -> str:
             scene_keys_text = ", ".join(f"`{md_escape(scene_key)}`" for scene_key in scene_keys[:12])
             if len(scene_keys) > 12:
                 scene_keys_text += f", _… (+{len(scene_keys) - 12})_"
+            quest_ids = chunk.get("questIds") or []
+            quest_text = ", ".join(f"`{md_escape(quest_id)}`" for quest_id in quest_ids) or "-"
+            source_scripts = chunk.get("sourceScripts") or []
+            script_texts = [
+                f"`{md_escape((script.get('levelId') or script.get('mapId') or '?') + '/' + str(script.get('scriptId') or '?'))}`"
+                for script in source_scripts[:6]
+                if isinstance(script, dict)
+            ]
+            if len(source_scripts) > 6:
+                script_texts.append(f"_+{len(source_scripts) - 6}_")
+            span = chunk.get("sourceFileOrderSpan") or {}
+            if isinstance(span, dict) and span.get("first") and span.get("last"):
+                first = span.get("first") or {}
+                last = span.get("last") or {}
+                script_texts.append(
+                    "_span "
+                    f"{md_escape(str(first.get('scriptId') or '?'))}"
+                    ".."
+                    f"{md_escape(str(last.get('scriptId') or '?'))}_"
+                )
+            source_script_text = ", ".join(script_texts) or "-"
+            spatial_candidates = chunk.get("spatialQuestCandidates") or []
+            spatial_texts = []
+            for candidate in spatial_candidates[:4]:
+                if not isinstance(candidate, dict):
+                    continue
+                label = str(candidate.get("questId") or "?")
+                if candidate.get("distanceXZ") is not None:
+                    label += f" @{candidate.get('distanceXZ')}m"
+                if candidate.get("scriptId"):
+                    label += f" via {candidate.get('scriptId')}"
+                spatial_texts.append(f"`{md_escape(label)}`")
+            if len(spatial_candidates) > 4:
+                spatial_texts.append(f"_+{len(spatial_candidates) - 4}_")
+            spatial_text = ", ".join(spatial_texts) or "-"
+            subchunk_texts = []
+            for subchunk in (chunk.get("subchunks") or [])[:6]:
+                if not isinstance(subchunk, dict):
+                    continue
+                hint = subchunk.get("questOrderHint") or {}
+                label = str(hint.get("questId") or subchunk.get("basis") or "subchunk")
+                subchunk_texts.append(
+                    f"`{md_escape(subchunk.get('id'))}` {md_escape(label)} ({subchunk.get('sceneCount', 0)})"
+                )
+            if len(chunk.get("subchunks") or []) > 6:
+                subchunk_texts.append(f"_+{len(chunk.get('subchunks') or []) - 6}_")
+            subchunk_text = ", ".join(subchunk_texts) or "-"
             lines.append(
                 "| "
                 f"`{md_escape(chunk.get('id'))}` "
                 f"| {md_escape(chunk.get('strength'))} "
                 f"| {chunk.get('sceneCount', 0)} "
+                f"| {quest_text} "
+                f"| {subchunk_text} "
+                f"| {spatial_text} "
+                f"| {source_script_text} "
                 f"| {md_escape(scene_kinds)} "
                 f"| {md_escape(edge_kinds)} "
+                f"| {scene_keys_text} |"
+            )
+    else:
+        lines.append("- _(none)_")
+
+    subchunk_rows = [
+        (chunk, subchunk)
+        for chunk in chunks
+        for subchunk in (chunk.get("subchunks") or [])
+        if isinstance(subchunk, dict)
+    ]
+    lines.extend(["", "## Scene Subchunks", ""])
+    if subchunk_rows:
+        lines.append(
+            "Diagnostic weak splits inside a chunk, usually from contiguous "
+            "LevelScript spatial-candidate runs. They do not create quest "
+            "attachments or chunk-order edges."
+        )
+        lines.append("")
+        lines.append("| parent | subchunk | hint | scenes | spatial candidates | source scripts | scene keys |")
+        lines.append("| --- | --- | --- | ---: | --- | --- | --- |")
+        for chunk, subchunk in subchunk_rows:
+            scene_keys = subchunk.get("sceneKeys") or []
+            scene_keys_text = ", ".join(f"`{md_escape(scene_key)}`" for scene_key in scene_keys[:12])
+            if len(scene_keys) > 12:
+                scene_keys_text += f", _... (+{len(scene_keys) - 12})_"
+            hint = subchunk.get("questOrderHint") or {}
+            hint_text = "-"
+            if hint:
+                hint_text = str(hint.get("questId") or hint.get("kind") or "-")
+                if hint.get("distanceXZ") is not None:
+                    hint_text += f" @{hint.get('distanceXZ')}m"
+                if hint.get("scriptId"):
+                    hint_text += f" via {hint.get('scriptId')}"
+                hint_text = f"`{md_escape(hint_text)}`"
+            spatial_texts = []
+            for candidate in (subchunk.get("spatialQuestCandidates") or [])[:4]:
+                if not isinstance(candidate, dict):
+                    continue
+                label = str(candidate.get("questId") or "?")
+                if candidate.get("distanceXZ") is not None:
+                    label += f" @{candidate.get('distanceXZ')}m"
+                if candidate.get("scriptId"):
+                    label += f" via {candidate.get('scriptId')}"
+                spatial_texts.append(f"`{md_escape(label)}`")
+            if len(subchunk.get("spatialQuestCandidates") or []) > 4:
+                spatial_texts.append(f"_+{len(subchunk.get('spatialQuestCandidates') or []) - 4}_")
+            spatial_text = ", ".join(spatial_texts) or "-"
+            script_texts = [
+                f"`{md_escape((script.get('levelId') or script.get('mapId') or '?') + '/' + str(script.get('scriptId') or '?'))}`"
+                for script in (subchunk.get("sourceScripts") or [])[:6]
+                if isinstance(script, dict)
+            ]
+            if len(subchunk.get("sourceScripts") or []) > 6:
+                script_texts.append(f"_+{len(subchunk.get('sourceScripts') or []) - 6}_")
+            script_text = ", ".join(script_texts) or "-"
+            lines.append(
+                "| "
+                f"`{md_escape(chunk.get('id'))}` "
+                f"| `{md_escape(subchunk.get('id'))}` "
+                f"| {hint_text} "
+                f"| {subchunk.get('sceneCount', 0)} "
+                f"| {spatial_text} "
+                f"| {script_text} "
                 f"| {scene_keys_text} |"
             )
     else:
@@ -1248,6 +1375,12 @@ def markdown_report(payload: dict[str, Any]) -> str:
             f"across `{attachment_summary.get('questsWithChunkCount', 0)}` quests; "
             f"unattached chunks: `{attachment_summary.get('unattachedChunkCount', 0)}`"
         )
+        hint_summary = quest_tree.get("sourceScriptHintSummary") or {}
+        if hint_summary:
+            lines.append(
+                f"- source-script hints: `{hint_summary.get('hintCount', 0)}` "
+                f"across `{hint_summary.get('questCount', 0)}` quests"
+            )
         lines.append("")
 
         def render_tree_lines(nodes: list[dict], depth: int = 0) -> None:
@@ -1262,13 +1395,43 @@ def markdown_report(payload: dict[str, Any]) -> str:
                     if attached
                     else ""
                 )
+                source_hints = node.get("sourceScriptHints") or []
+                source_texts = []
+                for hint in source_hints[:4]:
+                    if not isinstance(hint, dict):
+                        continue
+                    label_parts = []
+                    if hint.get("subchunkId") or hint.get("chunkId"):
+                        label_parts.append(str(hint.get("subchunkId") or hint.get("chunkId")))
+                    if hint.get("sceneKey"):
+                        label_parts.append(str(hint.get("sceneKey")))
+                    if not label_parts:
+                        script_label = "/".join(
+                            str(value)
+                            for value in (hint.get("mapId") or hint.get("levelId"), hint.get("scriptId"))
+                            if value
+                        )
+                        label_parts.append(script_label or str(hint.get("kind") or "source"))
+                    label = " ".join(label_parts)
+                    if hint.get("scriptId") and not label.endswith(str(hint.get("scriptId"))):
+                        label += f"/{hint.get('scriptId')}"
+                    if hint.get("distanceXZ") is not None:
+                        label += f" @{hint.get('distanceXZ')}m"
+                    source_texts.append(f"`{md_escape(label)}`")
+                if len(source_hints) > 4:
+                    source_texts.append(f"_+{len(source_hints) - 4}_")
+                sources_text = (
+                    " sources " + ", ".join(source_texts)
+                    if source_texts
+                    else ""
+                )
                 tags = []
                 if node.get("loop"):
                     tags.append("loop")
                 if node.get("reused"):
                     tags.append("reused")
                 tag_text = f" _({', '.join(tags)})_" if tags else ""
-                lines.append(f"{indent}- `{md_escape(quest_id)}`{tag_text}{chunks_text}")
+                lines.append(f"{indent}- `{md_escape(quest_id)}`{tag_text}{chunks_text}{sources_text}")
                 if not node.get("reused"):
                     render_tree_lines(node.get("children") or [], depth + 1)
 
@@ -1287,6 +1450,158 @@ def markdown_report(payload: dict[str, Any]) -> str:
             )
     else:
         lines.append("- _(no quest tree)_")
+
+    quest_track = (payload.get("missionTimeline") or {}).get("questSpatialTrack") or []
+    lines.extend(["", "## Quest Map Track", ""])
+    if quest_track:
+        lines.append(
+            "Map pins, resources, and script conditions are diagnostic placement hints; "
+            "they are not promoted to chronology without an explicit quest/story edge."
+        )
+        lines.append("")
+        lines.append("| quest | flow | prev | chunks | spatial matches | pins | scripts | resources | dist |")
+        lines.append("| --- | ---: | --- | --- | --- | --- | --- | --- | ---: |")
+
+        def pin_label(pin: dict[str, Any]) -> str:
+            name = (
+                safe_key(pin.get("missionAreaId"))
+                or safe_key(pin.get("npcProxyId"))
+                or safe_key(pin.get("scene"))
+                or safe_key(pin.get("trackingType"))
+                or "pin"
+            )
+            pos = pin.get("position") or {}
+            if isinstance(pos, dict) and {"x", "z"} <= set(pos):
+                label = (
+                    f"{name}@"
+                    f"{float(pos.get('x', 0.0)):.1f},"
+                    f"{float(pos.get('z', 0.0)):.1f}"
+                )
+            else:
+                label = name
+            parent_raw = pin.get("subDataParentId") or pin.get("levelDataParentId")
+            parent = str(parent_raw) if parent_raw not in (None, "", [], {}) else ""
+            if parent:
+                label += f" parent {parent}"
+            return label
+
+        for item in quest_track:
+            if not isinstance(item, dict):
+                continue
+            chunks_text = ", ".join(f"`{md_escape(cid)}`" for cid in item.get("attachedChunkIds") or []) or "-"
+            spatial_matches = item.get("spatialSourceMatches") or []
+            spatial_texts = []
+            for match in spatial_matches[:4]:
+                if not isinstance(match, dict):
+                    continue
+                label_parts = []
+                if match.get("subchunkId") or match.get("chunkId"):
+                    label_parts.append(str(match.get("subchunkId") or match.get("chunkId")))
+                if match.get("sceneKey"):
+                    label_parts.append(str(match.get("sceneKey")))
+                label = " ".join(label_parts) or "?"
+                if match.get("scriptId"):
+                    label += f"/{match.get('scriptId')}"
+                if match.get("distanceXZ") is not None:
+                    label += f" @{match.get('distanceXZ')}m"
+                spatial_texts.append(f"`{md_escape(label)}`")
+            if len(spatial_matches) > 4:
+                spatial_texts.append(f"_+{len(spatial_matches) - 4}_")
+            spatial_text = ", ".join(spatial_texts) or "-"
+            pins = item.get("pins") or []
+            pins_text = ", ".join(md_escape(pin_label(pin)) for pin in pins[:4] if isinstance(pin, dict)) or "-"
+            if len(pins) > 4:
+                pins_text += f", _+{len(pins) - 4}_"
+            scripts = item.get("scriptRefs") or []
+            script_texts = []
+            for script in scripts[:4]:
+                if not isinstance(script, dict):
+                    continue
+                label = (
+                    f"{script.get('mapId') or script.get('levelId') or '?'}/"
+                    f"{script.get('scriptId') or '?'}"
+                )
+                if script.get("key"):
+                    label += f":{script.get('key')}"
+                script_texts.append(f"`{md_escape(label)}`")
+            if len(scripts) > 4:
+                script_texts.append(f"_+{len(scripts) - 4}_")
+            scripts_text = ", ".join(script_texts) or "-"
+            resources = item.get("resources") or []
+            resource_texts = [
+                f"`{md_escape((resource.get('kind') or 'ref') + ':' + (resource.get('key') or ''))}`"
+                for resource in resources[:5]
+                if isinstance(resource, dict) and resource.get("key")
+            ]
+            if len(resources) > 5:
+                resource_texts.append(f"_+{len(resources) - 5}_")
+            resources_text = ", ".join(resource_texts) or "-"
+            lines.append(
+                "| "
+                f"`{md_escape(item.get('questId'))}` "
+                f"| {item.get('flowIndex', '')} "
+                f"| {md_escape(', '.join(item.get('prevQuestIds') or []) or '-')} "
+                f"| {chunks_text} "
+                f"| {spatial_text} "
+                f"| {pins_text} "
+                f"| {scripts_text} "
+                f"| {resources_text} "
+                f"| {item.get('distanceFromPrevious', '')} |"
+            )
+    else:
+        lines.append("- _(none)_")
+
+    spatial_matches = (payload.get("missionTimeline") or {}).get("levelscriptSpatialProximity") or []
+    lines.extend(["", "## LevelScript Spatial Proximity", ""])
+    if spatial_matches:
+        lines.append(
+            "Weak matches from raw LevelScript float triples to quest map pins. "
+            "These are diagnostic placement hints and are not quest-DAG edges."
+        )
+        lines.append("")
+        lines.append("| scene | quest | chunk | script | offset | vector | pin | xz dist | y delta |")
+        lines.append("| --- | --- | --- | --- | ---: | --- | --- | ---: | ---: |")
+        scene_placement = (payload.get("missionTimeline") or {}).get("scenePlacement") or {}
+
+        def pos_label(pos: Any) -> str:
+            if not isinstance(pos, dict):
+                return "-"
+            try:
+                return (
+                    f"{float(pos.get('x', 0.0)):.1f},"
+                    f"{float(pos.get('y', 0.0)):.1f},"
+                    f"{float(pos.get('z', 0.0)):.1f}"
+                )
+            except (TypeError, ValueError):
+                return "-"
+
+        for match in spatial_matches[:80]:
+            if not isinstance(match, dict):
+                continue
+            scene_key = safe_key(match.get("sceneKey"))
+            placement = scene_placement.get(scene_key) or {}
+            pin = match.get("pin") if isinstance(match.get("pin"), dict) else {}
+            pin_name = safe_key(pin.get("label")) or safe_key(pin.get("missionAreaId")) or safe_key(pin.get("trackingType")) or "-"
+            parent_raw = pin.get("subDataParentId") or pin.get("levelDataParentId")
+            if parent_raw not in (None, "", [], {}):
+                pin_name += f" parent {parent_raw}"
+            script_label = f"{match.get('mapId') or match.get('levelId') or '?'}/{match.get('scriptId') or '?'}"
+            lines.append(
+                "| "
+                f"`{md_escape(scene_key)}` "
+                f"| `{md_escape(match.get('questId'))}` "
+                f"| `{md_escape(placement.get('chunkId') or '-')}` "
+                f"| `{md_escape(script_label)}` "
+                f"| {match.get('offset', '')} "
+                f"| {md_escape(pos_label(match.get('position')))} "
+                f"| {md_escape(pin_name + '@' + pos_label(pin.get('position')))} "
+                f"| {match.get('distanceXZ', '')} "
+                f"| {match.get('yDelta', '')} |"
+            )
+        if len(spatial_matches) > 80:
+            lines.append(f"- _... +{len(spatial_matches) - 80} more matches_")
+    else:
+        lines.append("- _(none)_")
 
     chunk_order = (payload.get("missionTimeline") or {}).get("chunkOrder") or {}
     co_edges = chunk_order.get("edges") or []
@@ -1321,7 +1636,7 @@ def markdown_report(payload: dict[str, Any]) -> str:
         if co_unattached:
             unattached_text = ", ".join(f"`{md_escape(cid)}`" for cid in co_unattached)
             lines.append(
-                f"Chunks with no MissionRuntime quest attachments: {unattached_text}"
+                f"Chunks with no quest attachments: {unattached_text}"
             )
             lines.append("")
     else:

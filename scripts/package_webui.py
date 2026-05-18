@@ -21,7 +21,14 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Iterable
 
-from common import EXPORT_ROOT, ROOT as PROJECT_ROOT, normalize_posix
+from common import (
+    EXPORT_ROOT,
+    ROOT as PROJECT_ROOT,
+    normalize_posix,
+    path_id_export_base_stem,
+    path_id_export_path_id,
+    rel_requires_path_id_export_name,
+)
 
 WEBUI_ROOT = PROJECT_ROOT / "webui"
 ZIP_NAME_PREFIX = "endfield-story-exported"
@@ -689,10 +696,25 @@ def is_sns_inline_image_stem(stem: str) -> bool:
     return "sns" in normalized or "emoji" in normalized
 
 
+def media_lookup_stem(rel: str) -> tuple[str, str] | None:
+    name = normalize_posix(rel).split("/")[-1] or rel
+    stem = re.sub(r"\.[^.]+$", "", name, flags=re.IGNORECASE).lower()
+    base_stem = path_id_export_base_stem(stem).lower()
+    path_id = path_id_export_path_id(stem)
+    if rel_requires_path_id_export_name(rel):
+        if not base_stem:
+            return None
+        return base_stem, path_id
+    return base_stem or stem, path_id
+
+
 def is_story_emoji_asset(rel: str) -> bool:
     rel_normalized = normalize_posix(rel).lower()
     name = rel_normalized.split("/")[-1] or rel_normalized
-    stem = re.sub(r"\.[^.]+$", "", name, flags=re.IGNORECASE)
+    stem_info = media_lookup_stem(rel_normalized)
+    if stem_info is None:
+        return False
+    stem = stem_info[0]
     return (
         stem.startswith("emoji_")
         or stem.startswith("sns_emoji_")
@@ -725,7 +747,10 @@ def build_inline_image_lookup(entries: Iterable[dict]) -> tuple[dict[str, AssetC
         if not rel:
             continue
         name = rel.split("/")[-1] or rel
-        stem = re.sub(r"\.[^.]+$", "", name, flags=re.IGNORECASE).lower()
+        stem_info = media_lookup_stem(rel)
+        if stem_info is None:
+            continue
+        stem, path_id = stem_info
         if not stem:
             continue
 
@@ -736,6 +761,8 @@ def build_inline_image_lookup(entries: Iterable[dict]) -> tuple[dict[str, AssetC
             score=score_inline_image_asset(rel, stem),
             entry=raw,
         )
+        if path_id:
+            candidate.entry.setdefault("pid", path_id)
         remember_best(by_stem, stem, candidate)
 
         number_key = inline_image_number_key(stem)
@@ -755,7 +782,10 @@ def build_video_lookup(entries: Iterable[dict]) -> dict[str, list[AssetCandidate
         if not rel:
             continue
         name = rel.split("/")[-1] or rel
-        stem = re.sub(r"\.[^.]+$", "", name, flags=re.IGNORECASE).lower()
+        stem_info = media_lookup_stem(rel)
+        if stem_info is None:
+            continue
+        stem, path_id = stem_info
         if not stem:
             continue
         candidate = AssetCandidate(
@@ -765,6 +795,8 @@ def build_video_lookup(entries: Iterable[dict]) -> dict[str, list[AssetCandidate
             score=score_wiki_video_asset(rel),
             entry=raw,
         )
+        if path_id:
+            candidate.entry.setdefault("pid", path_id)
         by_stem.setdefault(stem, []).append(candidate)
 
     for candidates in by_stem.values():

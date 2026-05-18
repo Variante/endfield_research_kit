@@ -2,12 +2,26 @@ from __future__ import annotations
 
 from .context import *
 
+
+def _anime_tree_logical_stem(path: Path) -> str:
+    return path_id_export_base_stem(path.stem)
+
+
 def _find_anime_tree_path(filename: str) -> Path:
+    requested = Path(filename).stem
     for base in ANIME_RESOURCE_DIRS:
         candidate = base / filename
-        if candidate.exists():
+        if candidate.exists() and _anime_tree_logical_stem(candidate) == requested:
             return candidate
-    return ANIME_RESOURCE_DIRS[0] / filename if ANIME_RESOURCE_DIRS else ANIME_TREE_DIRS[0] / filename
+        for suffixed in sorted(base.glob(f"{requested}_p*.json")):
+            if _anime_tree_logical_stem(suffixed) == requested:
+                return suffixed
+    fallback = (
+        ANIME_RESOURCE_DIRS[0]
+        if ANIME_RESOURCE_DIRS
+        else EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "__missing_resource_dir__"
+    )
+    return fallback / "__missing_path_id_export__" / filename
 
 
 def _iter_anime_tree_files(pattern: str):
@@ -16,6 +30,8 @@ def _iter_anime_tree_files(pattern: str):
         if not base.exists():
             continue
         for path in sorted(base.glob(pattern)):
+            if not _anime_tree_logical_stem(path):
+                continue
             if path.name in seen:
                 continue
             seen.add(path.name)
@@ -29,7 +45,9 @@ def _get_anime_tree_path_index() -> dict[str, Path]:
         for path in _iter_anime_tree_files("*.json"):
             if path.name.endswith("_extra_config.json"):
                 continue
-            index.setdefault(path.stem, path)
+            logical_stem = _anime_tree_logical_stem(path)
+            if logical_stem:
+                index.setdefault(logical_stem, path)
         _ANIME_TREE_PATH_INDEX = index
         _ANIME_TREE_SORTED_STEMS = sorted(index.keys())
     return _ANIME_TREE_PATH_INDEX
@@ -957,7 +975,8 @@ def _load_cutscene_subtitle_tracks() -> dict[str, list[dict]]:
 
     parent_assets: dict[int, dict] = {}
     for path in _iter_anime_tree_files("*cutscene*.json"):
-        canonical_key = _canonical_cutscene_key(path.stem)
+        logical_stem = _anime_tree_logical_stem(path)
+        canonical_key = _canonical_cutscene_key(logical_stem)
         if not canonical_key:
             continue
         try:
@@ -971,8 +990,8 @@ def _load_cutscene_subtitle_tracks() -> dict[str, list[dict]]:
             continue
         parent_assets[path_id] = {
             "cutsceneKey": canonical_key,
-            "name": path.stem,
-            "gender": _cutscene_variant_gender(path.stem),
+            "name": logical_stem,
+            "gender": _cutscene_variant_gender(logical_stem),
             "file": repo_rel(path),
         }
 
@@ -1330,7 +1349,8 @@ def _load_cutscene_assets() -> dict[str, dict]:
 
     out: dict[str, dict] = {}
     for path in _iter_anime_tree_files("*cutscene*.json"):
-        canonical_key = _canonical_cutscene_key(path.stem)
+        logical_stem = _anime_tree_logical_stem(path)
+        canonical_key = _canonical_cutscene_key(logical_stem)
         if not canonical_key:
             continue
         try:
@@ -1358,10 +1378,10 @@ def _load_cutscene_assets() -> dict[str, dict]:
             },
         )
         payload = _decode_anime_text_asset_payload(raw) or raw
-        part = _cutscene_variant_part(path.stem, canonical_key)
+        part = _cutscene_variant_part(logical_stem, canonical_key)
         entry["componentCounts"][part] += 1
         entry["variants"].append({
-            "name": path.stem,
+            "name": logical_stem,
             "part": part,
             "file": repo_rel(path),
             "path": str(payload.get("path") or ""),
@@ -1480,6 +1500,14 @@ def _resolve_tracking_hint(hint: dict) -> dict:
             resolved["sourceType"] = "missionArea"
             resolved["shapeType"] = shape.get("type")
             resolved["radius"] = shape.get("radius")
+            sub_data_parent_id = area.get("subDataParentId")
+            if sub_data_parent_id not in (None, "", [], {}):
+                resolved["subDataParentId"] = sub_data_parent_id
+                resolved["levelDataParentId"] = sub_data_parent_id
+            if area.get("activeOnTravelLine") not in (None, "", [], {}):
+                resolved["activeOnTravelLine"] = area.get("activeOnTravelLine")
+            if area.get("needTrackingRoute") not in (None, "", [], {}):
+                resolved["needTrackingRoute"] = area.get("needTrackingRoute")
             route_points = (((area.get("trackingRouteInfo") or {}).get("points")) or [])
             if route_points:
                 resolved["routePointCount"] = len(route_points)
@@ -1524,6 +1552,10 @@ def _tracking_hint_pin(hint: dict) -> dict | None:
         **({"missionAreaId": hint["missionAreaId"]} if hint.get("missionAreaId") else {}),
         **({"npcProxyId": hint["npcProxyId"]} if hint.get("npcProxyId") else {}),
         **({"radius": hint["radius"]} if hint.get("radius") is not None else {}),
+        **({"subDataParentId": hint["subDataParentId"]} if hint.get("subDataParentId") is not None else {}),
+        **({"levelDataParentId": hint["levelDataParentId"]} if hint.get("levelDataParentId") is not None else {}),
+        **({"activeOnTravelLine": hint["activeOnTravelLine"]} if hint.get("activeOnTravelLine") is not None else {}),
+        **({"needTrackingRoute": hint["needTrackingRoute"]} if hint.get("needTrackingRoute") is not None else {}),
         **({"routePointCount": hint["routePointCount"]} if hint.get("routePointCount") is not None else {}),
     }
 

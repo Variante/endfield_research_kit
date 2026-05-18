@@ -54,6 +54,12 @@ TOP_LEVEL_PARENT_RE = re.compile(
     r'(?ms)^\s*"m_Parent"\s*:\s*\{\s*"m_FileID"\s*:\s*-?\d+\s*,\s*"m_PathID"\s*:\s*(-?\d+)'
 )
 TOP_LEVEL_TRACKS_RE = re.compile(r'(?m)^\s*"m_Tracks"\s*:')
+PATH_ID_SUFFIX_RE = re.compile(r"_p([0-9A-Fa-f]{16})$")
+
+
+def path_id_suffix_from_stem(stem: str) -> str:
+    match = PATH_ID_SUFFIX_RE.search(str(stem or ""))
+    return match.group(1).upper() if match else ""
 
 
 @dataclass
@@ -465,6 +471,9 @@ def iter_ref_ids(payload: dict):
             path_id = ref_path_id(clip.get("m_Asset"))
             if path_id is not None:
                 yield path_id
+    binding = payload.get("bindingOptionAssets")
+    if isinstance(binding, dict):
+        yield from iter_ref_path_ids(binding)
 
 
 def line_stem(line_id: str) -> str:
@@ -606,6 +615,8 @@ def load_monobehaviour_records(
     timeline_roots: dict[str, list[dict]] = defaultdict(list)
 
     for path in sorted(mono_dir.glob("*.json")):
+        if not path_id_suffix_from_stem(path.stem):
+            continue
         meta = extract_monobehaviour_metadata(path)
         if not meta:
             continue
@@ -1578,8 +1589,13 @@ def derive_option_positions(options: list[dict]) -> list[dict]:
     return out
 
 
-def parse_extract_dir(mono_dir: Path, timeline_filter: re.Pattern | None = None) -> list[dict]:
-    records_by_key, children_by_parent, timeline_roots = load_monobehaviour_records(mono_dir)
+def build_timeline_entries_from_roots(
+    source_label: str,
+    records_by_key: dict[tuple[str, int], dict],
+    children_by_parent: dict[tuple[str, int], list[dict]],
+    timeline_roots: dict[str, list[dict]],
+    timeline_filter: re.Pattern | None = None,
+) -> list[dict]:
     entries: list[dict] = []
     for timeline, roots in sorted(timeline_roots.items()):
         if timeline_filter and not timeline_filter.search(timeline):
@@ -1602,7 +1618,7 @@ def parse_extract_dir(mono_dir: Path, timeline_filter: re.Pattern | None = None)
             "dialogKey": primary_dialog_key(timeline, line_ids),
             "lineIds": line_ids,
             "lines": lines,
-            "source": rel_path(mono_dir),
+            "source": source_label,
             "sourceRoots": [rel_path(root["path"]) for root in sorted(roots, key=lambda item: rel_path(item["path"]))],
             "trackCount": len(records),
             "duplicateClipCount": duplicate_count,
@@ -1618,6 +1634,145 @@ def parse_extract_dir(mono_dir: Path, timeline_filter: re.Pattern | None = None)
                 entry["optionRoutes"] = option_routes
         entries.append(entry)
     return entries
+
+
+def parse_extract_dir(mono_dir: Path, timeline_filter: re.Pattern | None = None) -> list[dict]:
+    records_by_key, children_by_parent, timeline_roots = load_monobehaviour_records(mono_dir)
+    return build_timeline_entries_from_roots(
+        rel_path(mono_dir),
+        records_by_key,
+        children_by_parent,
+        timeline_roots,
+        timeline_filter,
+    )
+
+
+def path_id_suffix(path_id: int) -> str:
+    return f"{(int(path_id) & ((1 << 64) - 1)):016X}"
+
+
+def discover_full_monobehaviour_dirs(export_root: Path) -> list[Path]:
+    root = recovery_root(export_root)
+    candidates = [
+        root / "StreamingAssets" / "json_by_type" / "MonoBehaviour",
+        root / "Persistent" / "json_by_type" / "MonoBehaviour",
+    ]
+    return [path for path in candidates if path.is_dir()]
+
+
+def load_targeted_full_monobehaviour_records(
+    mono_dir: Path,
+    timeline_stems: set[str],
+    timeline_filter: re.Pattern | None = None,
+) -> tuple[dict[tuple[str, int], dict], dict[tuple[str, int], list[dict]], dict[str, list[dict]]]:
+    def stem_selected(timeline: str) -> bool:
+        if timeline_stems and timeline not in timeline_stems:
+            return False
+        if timeline_filter and not timeline_filter.search(timeline):
+            return False
+        return True
+
+    records_by_key: dict[tuple[str, int], dict] = {}
+    children_by_parent: dict[tuple[str, int], list[dict]] = defaultdict(list)
+    timeline_roots: dict[str, list[dict]] = defaultdict(list)
+    path_index: dict[str, list[Path]] = defaultdict(list)
+    seed_paths: list[Path] = []
+
+    for path in sorted(mono_dir.glob("*.json")):
+        stem = path.stem
+        suffix = path_id_suffix_from_stem(stem)
+        if not suffix:
+            continue
+        path_index[suffix].append(path)
+        if "dlgtl_" not in stem:
+            continue
+        timeline = timeline_name_from_record_name(stem)
+        if timeline and stem_selected(timeline):
+            seed_paths.append(path)
+
+    def ensure_record_path(path: Path) -> dict | None:
+        meta = extract_monobehaviour_metadata(path)
+        if not meta:
+            return None
+        path_id = as_path_id(meta.get("pathId"))
+        source_file = str(meta.get("sourceFile") or "")
+        if path_id is None or not source_file:
+            return None
+        key = (source_file, path_id)
+        previous = records_by_key.get(key)
+        if previous:
+            return previous
+        record = {
+            "key": key,
+            "sourceFile": source_file,
+            "pathId": path_id,
+            "path": path,
+            "name": str(meta.get("name") or path.stem),
+            "payload": None,
+        }
+        records_by_key[key] = record
+
+        parent_id = as_path_id(meta.get("parentId"))
+        if parent_id is not None:
+            children_by_parent[(source_file, parent_id)].append(record)
+
+        timeline = timeline_name_from_record_name(record["name"])
+        if timeline and stem_selected(timeline) and meta.get("hasTracks"):
+            timeline_roots[timeline].append(record)
+        return record
+
+    def ensure_record_key(source_file: str, path_id: int) -> dict | None:
+        key = (source_file, path_id)
+        previous = records_by_key.get(key)
+        if previous:
+            return previous
+        for path in path_index.get(path_id_suffix(path_id), []):
+            record = ensure_record_path(path)
+            if record and record["key"] == key:
+                return record
+        return None
+
+    for path in seed_paths:
+        ensure_record_path(path)
+
+    queue = deque(root["key"] for roots in timeline_roots.values() for root in roots)
+    seen: set[tuple[str, int]] = set()
+    while queue:
+        key = queue.popleft()
+        if key in seen:
+            continue
+        seen.add(key)
+        record = records_by_key.get(key)
+        if not record:
+            continue
+        source_file, _path_id = key
+        for ref_id in iter_ref_ids(record_payload(record)):
+            child = ensure_record_key(source_file, ref_id)
+            if child:
+                queue.append(child["key"])
+        for child in children_by_parent.get(key, []):
+            queue.append(child["key"])
+
+    return records_by_key, children_by_parent, timeline_roots
+
+
+def parse_full_monobehaviour_dir(
+    mono_dir: Path,
+    timeline_stems: set[str],
+    timeline_filter: re.Pattern | None = None,
+) -> list[dict]:
+    records_by_key, children_by_parent, timeline_roots = load_targeted_full_monobehaviour_records(
+        mono_dir,
+        timeline_stems,
+        timeline_filter,
+    )
+    return build_timeline_entries_from_roots(
+        rel_path(mono_dir),
+        records_by_key,
+        children_by_parent,
+        timeline_roots,
+        timeline_filter,
+    )
 
 
 def collapse_by_dialog_key(entries: list[dict]) -> dict:
@@ -1643,7 +1798,7 @@ def collapse_by_dialog_key(entries: list[dict]) -> dict:
         }
     }
     for key, variants in sorted(grouped.items()):
-        variants.sort(key=lambda item: (-len(item.get("lineIds") or []), item.get("timeline") or "", item.get("source") or ""))
+        variants.sort(key=timeline_entry_rank)
         best = dict(variants[0])
         if len(variants) > 1:
             best["variants"] = variants
@@ -1917,6 +2072,26 @@ def recover_timeline_line_orders(config: TimelineRecoveryConfig | None = None) -
             parsed = [entry for entry in parsed if len(entry.get("lineIds") or []) >= config.min_lines]
             log(f"{rel_path(mono_dir)}: {len(parsed)} timeline(s) with dialog clips")
             parse_summary.append({"monoDir": rel_path(mono_dir), "timelineCount": len(parsed)})
+            entries.extend(parsed)
+
+        target_timeline_stems = {
+            str(stem)
+            for stem in ((target_summary.get("timelineFolders") or {}) if isinstance(target_summary, dict) else {})
+            if str(stem)
+        }
+        if config.timeline_list:
+            timeline_list = config.timeline_list if config.timeline_list.is_absolute() else ROOT / config.timeline_list
+            target_timeline_stems.update(load_timeline_list(timeline_list))
+
+        for mono_dir in discover_full_monobehaviour_dirs(export_root):
+            parsed = parse_full_monobehaviour_dir(mono_dir, target_timeline_stems, timeline_filter)
+            parsed = [entry for entry in parsed if len(entry.get("lineIds") or []) >= config.min_lines]
+            log(f"{rel_path(mono_dir)}: {len(parsed)} timeline(s) with dialog clips from full MonoBehaviour")
+            parse_summary.append({
+                "monoDir": rel_path(mono_dir),
+                "timelineCount": len(parsed),
+                "source": "fullMonoBehaviour",
+            })
             entries.extend(parsed)
 
         payload = collapse_by_dialog_key(entries)

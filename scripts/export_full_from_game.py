@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 import json
 import re
 import shutil
 import subprocess
-import sys
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -19,30 +19,32 @@ DEFAULT_OUTPUT = ROOT / "export_full"
 DEFAULT_REPORTS = ROOT / "reports"
 DEFAULT_FLUFFY = ROOT / "tools" / "fluffy-dumper-src" / "target" / "release" / "fluffy-dumper.exe"
 DEFAULT_ANIMESTUDIO = ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
-DECODER = ROOT / "scripts" / "chk_decode" / "decode_persistent_vfs.py"
-PYTHON = sys.executable
 SOURCES = ("StreamingAssets", "Persistent")
 ANIMESTUDIO_STAGES = ("maps", "convert_by_type", "json_by_type")
+ANIMESTUDIO_SCOPES = ("story", "assets", "all")
 ANIMESTUDIO_GAME = "ArknightsEndfield"
 ANIMESTUDIO_LOGGER_FLAGS = ("Warning", "Error")
-ANIMESTUDIO_MANIFEST_SCHEMA_VERSION = 1
+ANIMESTUDIO_DEFAULT_JOBS = 4
+ANIMESTUDIO_MANIFEST_SCHEMA_VERSION = 2
 ANIMESTUDIO_MANIFEST_MAP_ITEM = "__maps__"
 ANIMESTUDIO_MANIFEST_MAP_LABEL = "maps"
 SOURCE_NAME_SET = frozenset(source.lower() for source in SOURCES)
+# Asset maps for Endfield have no GameObject, AudioClip, VideoClip,
+# MovieTexture, or MiHoYoBinData entries, so the WebUI export skips them.
 ANIMESTUDIO_CONVERT_TYPES = (
-    "GameObject:Both",
     "Texture2D:Both",
-    "AudioClip:Both",
     "Shader:Both",
     "TextAsset:Both",
     "Font:Both",
     "Mesh:Both",
-    "VideoClip:Both",
-    "MovieTexture:Both",
     "Sprite:Both",
     "Animator:Both",
     "AnimationClip:Both",
-    "MiHoYoBinData:Both",
+)
+ANIMESTUDIO_STORY_JSON_TYPES = (
+    "TextAsset:Both",
+    "MonoBehaviour:Both",
+    "PlayableDirector:Both",
 )
 ANIMESTUDIO_JSON_TYPES = (
     "TextAsset:Both",
@@ -66,11 +68,6 @@ ANIMESTUDIO_JSON_TYPES = (
     "PreloadData:Both",
     "AvatarMask:Both",
 )
-ANIMESTUDIO_STAGE_OPTIONS: dict[str, dict[str, Any]] = {
-    "maps": {"map_op": "Both", "map_type": "JSON"},
-    "convert_by_type": {"export_type": "Convert", "types": ANIMESTUDIO_CONVERT_TYPES},
-    "json_by_type": {"export_type": "JSON", "types": ANIMESTUDIO_JSON_TYPES},
-}
 
 FAILED_EXTRACT_RE = re.compile(r"Failed to extract (?P<file>.+?): (?P<reason>.+)")
 WARNING_FAIL_RE = re.compile(r"Warning:\s+(?P<count>\d+)\s+files failed")
@@ -195,6 +192,10 @@ def animestudio_type_name(type_spec: str | None) -> str:
     return str(type_spec).split(":", 1)[0]
 
 
+def animestudio_log_suffix(item_name: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_.-]+", "_", item_name).strip("._") or "item"
+
+
 def animestudio_manifest_entry_key(source: str, stage: str, type_spec: str | None) -> str:
     return f"{source}|{stage}|{type_spec or ANIMESTUDIO_MANIFEST_MAP_ITEM}"
 
@@ -203,6 +204,16 @@ def animestudio_stage_items(stage: str, types: tuple[str, ...]) -> list[tuple[st
     if stage == "maps":
         return [(None, ANIMESTUDIO_MANIFEST_MAP_LABEL)]
     return [(type_spec, animestudio_type_name(type_spec)) for type_spec in types]
+
+
+def animestudio_stage_options_for_scope(scope: str) -> dict[str, dict[str, Any]]:
+    json_types = ANIMESTUDIO_STORY_JSON_TYPES if scope == "story" else ANIMESTUDIO_JSON_TYPES
+    convert_types: tuple[str, ...] = () if scope == "story" else ANIMESTUDIO_CONVERT_TYPES
+    return {
+        "maps": {"map_op": "Both", "map_type": "JSON"},
+        "convert_by_type": {"export_type": "Convert", "types": convert_types},
+        "json_by_type": {"export_type": "JSON", "types": json_types},
+    }
 
 
 def animestudio_output_file_count(output_root: Path, source: str, stage: str, type_spec: str | None) -> int:
@@ -222,8 +233,29 @@ def build_animestudio_stage_signature(stage: str, options: dict[str, Any], type_
         "map_name": options.get("map_name"),
         "group_assets": "ByType",
         "game": ANIMESTUDIO_GAME,
+        "file_naming": "path_id_suffix_v1",
         "logger_flags": list(ANIMESTUDIO_LOGGER_FLAGS),
     }
+
+
+def clear_animestudio_stage_outputs(
+    output_root: Path,
+    source: str,
+    stage: str,
+    items: list[dict[str, Any]],
+) -> None:
+    if stage == "maps":
+        return
+    stage_root = animestudio_stage_dir(output_root, source, stage)
+    for item in items:
+        type_spec = item.get("type_spec")
+        if type_spec is None:
+            continue
+        target = stage_root / animestudio_type_name(type_spec)
+        if target.is_dir():
+            shutil.rmtree(target)
+        elif target.exists():
+            target.unlink()
 
 
 def build_animestudio_cache_key(
@@ -395,11 +427,17 @@ def update_animestudio_manifest_for_stage(
         }
 
 
+def copy_animestudio_plan_for_run_items(plan: dict[str, Any], run_items: list[str]) -> dict[str, Any]:
+    copied = dict(plan)
+    copied["run_items"] = list(run_items)
+    return copied
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Export all currently reachable Endfield VFS content into export_full, "
-            "including structured dumps, raw VFS extraction, and failure reports."
+            "including structured dumps, AnimeStudio recovery outputs, and failure reports."
         )
     )
     parser.add_argument(
@@ -447,6 +485,15 @@ def parse_args() -> argparse.Namespace:
         help="Limit AnimeStudio export to one or more stages (default: all)",
     )
     parser.add_argument(
+        "--animestudio-scope",
+        choices=ANIMESTUDIO_SCOPES,
+        default="all",
+        help=(
+            "`story` exports only maps plus TextAsset/MonoBehaviour/PlayableDirector JSON. "
+            "`assets`/`all` include converted image/model/animation assets and the full JSON metadata set."
+        ),
+    )
+    parser.add_argument(
         "--animestudio-refresh-types",
         nargs="+",
         default=(),
@@ -457,24 +504,23 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--animestudio-jobs",
+        type=int,
+        default=ANIMESTUDIO_DEFAULT_JOBS,
+        help=(
+            "Maximum parallel AnimeStudio CLI processes for per-type export "
+            f"(default: {ANIMESTUDIO_DEFAULT_JOBS}; use 1 for serial execution)."
+        ),
+    )
+    parser.add_argument(
         "--skip-structured",
         action="store_true",
         help="Skip fluffy-dumper structured exports",
     )
     parser.add_argument(
-        "--skip-raw-vfs",
-        action="store_true",
-        help="Skip raw VFS extraction",
-    )
-    parser.add_argument(
         "--skip-animestudio",
         action="store_true",
         help="Skip broad AnimeStudio CLI export passes",
-    )
-    parser.add_argument(
-        "--skip-source-inventory",
-        action="store_true",
-        help="Skip source file inventory and top-level metadata copy",
     )
     parser.add_argument(
         "--report-only",
@@ -752,6 +798,56 @@ def summarize_animestudio_log_issues(stdout_log: str | Path | None, stderr_log: 
     return summary
 
 
+def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]:
+    merged: dict[str, Any] = {
+        "error_count": 0,
+        "warning_count": 0,
+        "exception_count": 0,
+        "end_of_stream_count": 0,
+        "export_error_count": 0,
+        "story_like_export_error_count": 0,
+        "metadata_only_json_count": 0,
+        "samples": [],
+        "export_error_samples": [],
+        "story_like_export_error_samples": [],
+        "metadata_only_json_samples": [],
+        "missing_logs": [],
+    }
+    sample_keys = (
+        "samples",
+        "export_error_samples",
+        "story_like_export_error_samples",
+        "metadata_only_json_samples",
+    )
+    count_keys = (
+        "error_count",
+        "warning_count",
+        "exception_count",
+        "end_of_stream_count",
+        "export_error_count",
+        "story_like_export_error_count",
+        "metadata_only_json_count",
+    )
+    for result in results:
+        issues = summarize_animestudio_log_issues(result.stdout_log, result.stderr_log)
+        for key in count_keys:
+            merged[key] += int(issues.get(key) or 0)
+        for key in sample_keys:
+            target = merged.setdefault(key, [])
+            for sample in issues.get(key) or []:
+                if len(target) >= ANIMESTUDIO_LOG_SAMPLE_LIMIT:
+                    break
+                enriched = dict(sample)
+                enriched.setdefault("command", result.name)
+                target.append(enriched)
+        merged["missing_logs"].extend(issues.get("missing_logs") or [])
+
+    for key in sample_keys + ("missing_logs",):
+        if not merged.get(key):
+            merged.pop(key, None)
+    return merged
+
+
 def is_manifest_reference_missing(source: str, reason: str) -> bool:
     if source != "Persistent":
         return False
@@ -830,50 +926,6 @@ def summarize_raw_failures(log_path: Path, source: str) -> dict[str, Any]:
     }
 
 
-def build_source_inventory(game_root: Path, output_root: Path) -> dict[str, Any]:
-    inventory_root = ensure_dir(output_root / "inventory")
-    inventory_dir = ensure_dir(inventory_root / "source_inventory")
-    top_level_copy_dir = ensure_dir(inventory_root / "original_root_files")
-
-    top_level_entries: list[dict[str, Any]] = []
-    for entry in sorted(game_root.iterdir(), key=lambda p: p.name.lower()):
-        item = {
-            "name": entry.name,
-            "relative_path": entry.name,
-            "is_dir": entry.is_dir(),
-            "size": entry.stat().st_size if entry.is_file() else None,
-        }
-        top_level_entries.append(item)
-        if entry.is_file():
-            dest = top_level_copy_dir / entry.name
-            shutil.copy2(entry, dest)
-
-    file_entries: list[dict[str, Any]] = []
-    for path in sorted(game_root.rglob("*"), key=lambda p: str(p).lower()):
-        rel = path.relative_to(game_root)
-        file_entries.append(
-            {
-                "relative_path": str(rel).replace("\\", "/"),
-                "is_dir": path.is_dir(),
-                "size": path.stat().st_size if path.is_file() else None,
-            }
-        )
-
-    inventory = {
-        "game_root": str(game_root),
-        "generated_at_epoch": int(time.time()),
-        "top_level_entries": top_level_entries,
-        "entries": file_entries,
-    }
-    write_json(inventory_dir / "endfield_data_inventory.json", inventory)
-    return {
-        "inventory_json": str(inventory_dir / "endfield_data_inventory.json"),
-        "top_level_file_copy_dir": str(top_level_copy_dir),
-        "top_level_entry_count": len(top_level_entries),
-        "entry_count": len(file_entries),
-    }
-
-
 def collect_source_sizes(game_root: Path, sources: tuple[str, ...]) -> dict[str, Any]:
     result: dict[str, Any] = {}
     for source in sources:
@@ -917,6 +969,7 @@ def run_animestudio_stage(
     map_type: str | None = None,
     map_name: str | None = None,
     types: tuple[str, ...] = (),
+    command_name: str | None = None,
 ) -> CommandResult:
     work_dir = ensure_dir(animestudio_work_dir(output_root))
     stage_out = ensure_dir(animestudio_stage_dir(output_root, source, stage))
@@ -944,7 +997,151 @@ def run_animestudio_stage(
     if types:
         cmd.append("--types")
         cmd.extend(types)
-    return run_logged_command(f"{source}_animestudio_{stage}", cmd, work_dir, reports_dir, stream_output=True)
+    name = command_name or f"{source}_animestudio_{stage}"
+    return run_logged_command(name, cmd, work_dir, reports_dir, stream_output=True)
+
+
+def write_animestudio_parallel_log_index(
+    source: str,
+    stage: str,
+    reports_dir: Path,
+    results: list[CommandResult],
+) -> tuple[str, str]:
+    ensure_dir(reports_dir)
+    stdout_log = reports_dir / f"{source}_animestudio_{stage}.stdout.log"
+    stderr_log = reports_dir / f"{source}_animestudio_{stage}.stderr.log"
+
+    lines = [
+        f"Parallel AnimeStudio stage: {source} {stage}",
+        f"processes: {len(results)}",
+        "",
+        "returncode\tstdout_log\tstderr_log\tcommand",
+    ]
+    for result in results:
+        lines.append(
+            f"{result.returncode}\t{result.stdout_log}\t{result.stderr_log}\t"
+            f"{' '.join(result.argv)}"
+        )
+    stdout_log.write_text("\n".join(lines), encoding="utf-8")
+
+    failed = [result for result in results if result.returncode != 0]
+    err_lines = [
+        f"Parallel AnimeStudio stage failures: {source} {stage}",
+        f"failed_processes: {len(failed)}",
+    ]
+    for result in failed:
+        err_lines.append(f"{result.name}\treturncode={result.returncode}\tstderr={result.stderr_log}")
+    stderr_log.write_text("\n".join(err_lines), encoding="utf-8")
+    return str(stdout_log), str(stderr_log)
+
+
+def run_animestudio_stage_plan(
+    source: str,
+    input_root: Path,
+    output_root: Path,
+    reports_dir: Path,
+    animestudio_exe: Path,
+    animestudio_dummy_dlls: Path | None,
+    stage: str,
+    plan: dict[str, Any],
+    jobs: int,
+) -> list[CommandResult]:
+    options = plan["options"]
+    run_item_names = set(plan.get("run_items", []))
+    runnable_items = [
+        item for item in plan.get("items", [])
+        if item["item_name"] in run_item_names
+    ]
+    if not runnable_items:
+        plan["command_results"] = []
+        plan["succeeded_items"] = []
+        plan["failed_items"] = []
+        return []
+
+    if stage == "maps" or jobs <= 1 or len(runnable_items) <= 1:
+        clear_animestudio_stage_outputs(output_root, source, stage, runnable_items)
+        result = run_animestudio_stage(
+            source=source,
+            input_root=input_root,
+            output_root=output_root,
+            reports_dir=reports_dir,
+            animestudio_exe=animestudio_exe,
+            animestudio_dummy_dlls=animestudio_dummy_dlls,
+            stage=stage,
+            export_type=options.get("export_type"),
+            map_op=options.get("map_op"),
+            map_type=options.get("map_type"),
+            map_name=options.get("map_name"),
+            types=plan.get("type_specs_to_run", ()),
+        )
+        succeeded = list(plan.get("run_items", [])) if result.returncode == 0 else []
+        failed = [] if result.returncode == 0 else list(plan.get("run_items", []))
+        plan["command_results"] = [result]
+        plan["succeeded_items"] = succeeded
+        plan["failed_items"] = failed
+        plan["stdout_log"] = result.stdout_log
+        plan["stderr_log"] = result.stderr_log
+        return [result]
+
+    max_workers = min(max(1, jobs), len(runnable_items))
+    log(f"  animestudio stage {stage} for {source}: launching {len(runnable_items)} type jobs with max_workers={max_workers}")
+    result_by_item: dict[str, CommandResult] = {}
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_item = {}
+        for item in runnable_items:
+            clear_animestudio_stage_outputs(output_root, source, stage, [item])
+            item_name = item["item_name"]
+            type_spec = item["type_spec"]
+            command_name = f"{source}_animestudio_{stage}_{animestudio_log_suffix(item_name)}"
+            future = executor.submit(
+                run_animestudio_stage,
+                source=source,
+                input_root=input_root,
+                output_root=output_root,
+                reports_dir=reports_dir,
+                animestudio_exe=animestudio_exe,
+                animestudio_dummy_dlls=animestudio_dummy_dlls,
+                stage=stage,
+                export_type=options.get("export_type"),
+                map_op=options.get("map_op"),
+                map_type=options.get("map_type"),
+                map_name=options.get("map_name"),
+                types=(type_spec,) if type_spec is not None else (),
+                command_name=command_name,
+            )
+            future_to_item[future] = item
+
+        for future in as_completed(future_to_item):
+            item = future_to_item[future]
+            result = future.result()
+            result_by_item[item["item_name"]] = result
+            log(
+                f"  animestudio type {stage}:{item['item_name']} for {source}: "
+                f"returncode={result.returncode}"
+            )
+
+    ordered_results = [
+        result_by_item[item["item_name"]]
+        for item in runnable_items
+        if item["item_name"] in result_by_item
+    ]
+    succeeded = [
+        item["item_name"]
+        for item in runnable_items
+        if item["item_name"] in result_by_item and result_by_item[item["item_name"]].returncode == 0
+    ]
+    failed = [
+        item["item_name"]
+        for item in runnable_items
+        if item["item_name"] in result_by_item and result_by_item[item["item_name"]].returncode != 0
+    ]
+    stdout_log, stderr_log = write_animestudio_parallel_log_index(source, stage, reports_dir, ordered_results)
+    plan["command_results"] = ordered_results
+    plan["succeeded_items"] = succeeded
+    plan["failed_items"] = failed
+    plan["stdout_log"] = stdout_log
+    plan["stderr_log"] = stderr_log
+    return ordered_results
 
 
 def summarize_animestudio_source(
@@ -998,12 +1195,15 @@ def summarize_animestudio_source(
     for stage in ANIMESTUDIO_STAGES:
         current = command_results_by_name.get(f"{source}_animestudio_{stage}")
         plan = stage_plans.get(stage)
+        plan_results = plan.get("command_results", []) if plan else []
         previous_stage = previous_source.get(stage, {})
         result[stage]["selected"] = stage in selected_stages
-        result[stage]["ran_this_run"] = current is not None
+        result[stage]["ran_this_run"] = current is not None or bool(plan_results)
         result[stage]["selected_items"] = plan.get("selected_items", []) if plan else previous_stage.get("selected_items", [])
         result[stage]["cached_items"] = plan.get("cached_items", []) if plan else previous_stage.get("cached_items", [])
         result[stage]["run_items"] = plan.get("run_items", []) if plan else previous_stage.get("run_items", [])
+        result[stage]["succeeded_items"] = plan.get("succeeded_items", []) if plan else previous_stage.get("succeeded_items", [])
+        result[stage]["failed_items"] = plan.get("failed_items", []) if plan else previous_stage.get("failed_items", [])
         result[stage]["forced_refresh_items"] = (
             plan.get("forced_refresh_items", []) if plan else previous_stage.get("forced_refresh_items", [])
         )
@@ -1013,10 +1213,18 @@ def summarize_animestudio_source(
             result[stage]["returncode"] = current.returncode
             result[stage]["stdout_log"] = current.stdout_log
             result[stage]["stderr_log"] = current.stderr_log
-        result[stage]["log_issues"] = summarize_animestudio_log_issues(
-            result[stage].get("stdout_log"),
-            result[stage].get("stderr_log"),
-        )
+        elif plan_results:
+            result[stage]["returncode"] = 0 if all(item.returncode == 0 for item in plan_results) else 1
+            result[stage]["stdout_log"] = plan.get("stdout_log", result[stage].get("stdout_log"))
+            result[stage]["stderr_log"] = plan.get("stderr_log", result[stage].get("stderr_log"))
+        if plan_results:
+            result[stage]["runs"] = [asdict(item) for item in plan_results]
+            result[stage]["log_issues"] = merge_animestudio_log_issues(plan_results)
+        else:
+            result[stage]["log_issues"] = summarize_animestudio_log_issues(
+                result[stage].get("stdout_log"),
+                result[stage].get("stderr_log"),
+            )
     result["total_files"] = sum(item["file_count"] for item in result.values() if isinstance(item, dict) and "file_count" in item)
     return result
 
@@ -1081,14 +1289,16 @@ def main() -> int:
     animestudio = args.animestudio.resolve()
     selected_sources = ordered_unique(args.sources)
     selected_animestudio_stages = ordered_unique(args.animestudio_stages)
+    animestudio_stage_options = animestudio_stage_options_for_scope(args.animestudio_scope)
     refresh_selectors = ordered_unique(tuple(args.animestudio_refresh_types))
+    if args.animestudio_jobs < 1:
+        raise SystemExit("--animestudio-jobs must be at least 1")
+    animestudio_jobs = args.animestudio_jobs
 
     if not game_root.exists():
         raise SystemExit(f"Game root not found: {game_root}")
     if not fluffy.exists() and not args.skip_structured:
         raise SystemExit(f"fluffy-dumper not found: {fluffy}")
-    if not DECODER.exists() and not args.skip_raw_vfs:
-        raise SystemExit(f"Decoder not found: {DECODER}")
     if not animestudio.exists() and not args.skip_animestudio:
         raise SystemExit(f"AnimeStudio CLI not found: {animestudio}")
     if args.animestudio_dummy_dlls is not None and not looks_like_dummy_dll_dir(args.animestudio_dummy_dlls):
@@ -1105,12 +1315,14 @@ def main() -> int:
     log(f"  reports run dir: {reports_dir}")
     log(f"  selected sources: {', '.join(selected_sources)}")
     log(f"  structured export: {'disabled' if args.skip_structured else 'enabled'}")
-    log(f"  raw vfs export: {'disabled' if args.skip_raw_vfs else 'enabled'}")
+    log("  raw vfs export: disabled")
     log(f"  animestudio export: {'disabled' if args.skip_animestudio else 'enabled'}")
+    log(f"  animestudio scope: {args.animestudio_scope}")
     log(f"  animestudio stages: {', '.join(selected_animestudio_stages)}")
+    log(f"  animestudio jobs: {animestudio_jobs}")
     log(f"  animestudio refresh selectors: {', '.join(refresh_selectors) if refresh_selectors else 'none'}")
     log(f"  animestudio dummy dlls: {animestudio_dummy_dlls if animestudio_dummy_dlls else 'not configured'}")
-    log(f"  source inventory: {'disabled' if args.skip_source_inventory else 'enabled'}")
+    log("  source inventory: disabled")
     log(f"  report-only mode: {'enabled' if args.report_only else 'disabled'}")
     previous_summary_path = reports_root / "export_full_summary.json"
     legacy_summary_path = legacy_reports_dir / "export_full_summary.json"
@@ -1124,15 +1336,7 @@ def main() -> int:
             f"bytes={info['bytes']} gb={info['gigabytes']}"
         )
     inventory_summary: dict[str, Any] | None = None
-    if not args.skip_source_inventory and not args.report_only:
-        log("building source inventory")
-        inventory_summary = build_source_inventory(game_root, output_root)
-        log(
-            "inventory complete: "
-            f"entries={inventory_summary['entry_count']} "
-            f"top-level entries={inventory_summary['top_level_entry_count']}"
-        )
-    elif previous_summary.get("inventory"):
+    if previous_summary.get("inventory"):
         inventory_summary = previous_summary["inventory"]
         log("reusing previous inventory summary")
 
@@ -1157,6 +1361,8 @@ def main() -> int:
         "dummy_dlls": str(animestudio_dummy_dlls) if animestudio_dummy_dlls else None,
         "dummy_dll_signature": animestudio_dummy_dll_signature,
         "game": ANIMESTUDIO_GAME,
+        "scope": args.animestudio_scope,
+        "jobs": animestudio_jobs,
         "type_manifest_path": str(animestudio_manifest_file),
         "type_manifest_exists": animestudio_manifest_file.exists(),
         "type_manifest_entry_count": len(animestudio_manifest.get("entries", {})),
@@ -1219,48 +1425,11 @@ def main() -> int:
                 f"warnings={structured_summary[source]['warning_failure_count']}"
             )
 
-        if not args.skip_raw_vfs and not args.report_only:
-            raw_out = output_root / "raw_vfs" / source
-            log(f"  raw vfs output dir: {raw_out}")
-            cmd = [PYTHON, str(DECODER), "--persistent", str(source_root), "--out", str(raw_out)]
-            result = run_logged_command(f"{source}_raw_vfs_dump", cmd, ROOT, source_report_dir)
-            command_results.append(result)
-            command_results_by_name[result.name] = result
-
-        if not args.skip_raw_vfs:
-            raw_out = output_root / "raw_vfs" / source
-            raw_log_path = raw_out / "chk_decode_log.json"
-            summary = summarize_raw_failures(raw_log_path, source)
-            previous_raw = (previous_summary.get("raw_vfs") or {}).get(source, {})
-            current_raw = command_results_by_name.get(f"{source}_raw_vfs_dump")
-            raw_summary[source] = {
-                "output_root": str(raw_out),
-                "returncode": current_raw.returncode if current_raw is not None else previous_raw.get("returncode"),
-                "summary": summary["summary"],
-                "actual_failure_count": len(summary["actual_failures"]),
-                "manifest_missing_chunk_count": len(summary["manifest_missing_chunks"]),
-                "stdout_log": str(source_report_dir / f"{source}_raw_vfs_dump.stdout.log"),
-                "stderr_log": str(source_report_dir / f"{source}_raw_vfs_dump.stderr.log"),
-                "decoder_log_json": str(raw_log_path),
-                "decoder_failures_md": str(raw_out / "chk_decode_failures.md"),
-            }
-            raw_failures_by_source[source] = summary["actual_failures"]
-            raw_manifest_chunks_by_source[source] = summary["manifest_missing_chunks"]
-            raw_info = raw_summary[source]
-            raw_total = ((raw_info.get("summary") or {}).get("total_files"))
-            raw_ok = ((raw_info.get("summary") or {}).get("ok_files"))
-            log(
-                f"  raw vfs summary {source}: "
-                f"total_files={raw_total} ok={raw_ok} "
-                f"actual_failures={raw_info['actual_failure_count']} "
-                f"missing_chunks={raw_info['manifest_missing_chunk_count']}"
-            )
-
         animestudio_stage_plans: dict[str, dict[str, Any]] = {}
         if not args.skip_animestudio:
             log(f"  animestudio broad export root: {animestudio_source_root(output_root, source)}")
             for stage in selected_animestudio_stages:
-                options = dict(ANIMESTUDIO_STAGE_OPTIONS[stage])
+                options = dict(animestudio_stage_options[stage])
                 if stage == "maps":
                     options["map_name"] = f"endfield_{source.lower()}_assets"
                 plan = plan_animestudio_stage(
@@ -1292,12 +1461,11 @@ def main() -> int:
             if not args.report_only:
                 for stage in selected_animestudio_stages:
                     plan = animestudio_stage_plans[stage]
-                    options = plan["options"]
                     if not plan["should_run"]:
                         log(f"  animestudio stage {stage} for {source}: cache hit, skipping")
                         continue
                     log(f"  animestudio stage {stage} for {source}: running {', '.join(plan['run_items'])}")
-                    result = run_animestudio_stage(
+                    stage_results = run_animestudio_stage_plan(
                         source=source,
                         input_root=source_root,
                         output_root=output_root,
@@ -1305,28 +1473,30 @@ def main() -> int:
                         animestudio_exe=animestudio,
                         animestudio_dummy_dlls=animestudio_dummy_dlls,
                         stage=stage,
-                        export_type=options.get("export_type"),
-                        map_op=options.get("map_op"),
-                        map_type=options.get("map_type"),
-                        map_name=options.get("map_name"),
-                        types=plan.get("type_specs_to_run", ()),
+                        plan=plan,
+                        jobs=animestudio_jobs,
                     )
-                    command_results.append(result)
-                    command_results_by_name[result.name] = result
-                    if result.returncode == 0:
+                    command_results.extend(stage_results)
+                    for result in stage_results:
+                        command_results_by_name[result.name] = result
+                    succeeded_items = plan.get("succeeded_items", [])
+                    failed_items = plan.get("failed_items", [])
+                    if succeeded_items:
+                        success_plan = copy_animestudio_plan_for_run_items(plan, succeeded_items)
                         update_animestudio_manifest_for_stage(
                             manifest=animestudio_manifest,
                             output_root=output_root,
                             source=source,
                             stage=stage,
-                            plan=plan,
+                            plan=success_plan,
                             cli_signature=animestudio_cli_signature,
                             dummy_dll_signature=animestudio_dummy_dll_signature,
                             source_fingerprint=source_sizes[source],
                         )
+                        plan["item_file_counts"] = success_plan.get("item_file_counts", plan.get("item_file_counts", {}))
                         save_animestudio_manifest(animestudio_manifest_file, animestudio_manifest)
-                    else:
-                        log(f"  animestudio stage {stage} for {source} failed with returncode={result.returncode}")
+                    if failed_items:
+                        log(f"  animestudio stage {stage} for {source} failed items: {', '.join(failed_items)}")
             else:
                 for stage in selected_animestudio_stages:
                     plan = animestudio_stage_plans[stage]
@@ -1435,21 +1605,7 @@ def main() -> int:
             md_lines.append(f"  stderr: `{info.get('stderr_log')}`")
 
     md_lines.extend(["", "## Raw VFS Export"])
-    if args.skip_raw_vfs:
-        md_lines.append("- Skipped")
-    else:
-        for source in selected_sources:
-            info = raw_summary.get(source, {})
-            raw_total = ((info.get("summary") or {}).get("total_files"))
-            raw_ok = ((info.get("summary") or {}).get("ok_files"))
-            md_lines.append(
-                f"- `{source}`: returncode=`{info.get('returncode')}`, "
-                f"total_files=`{raw_total}`, ok=`{raw_ok}`, "
-                f"actual_failures=`{info.get('actual_failure_count')}`, "
-                f"manifest_missing_chunks=`{info.get('manifest_missing_chunk_count')}`"
-            )
-            md_lines.append(f"  decoder log: `{info.get('decoder_log_json')}`")
-            md_lines.append(f"  failures md: `{info.get('decoder_failures_md')}`")
+    md_lines.append("- Skipped")
 
     md_lines.extend(["", "## AnimeStudio Export"])
     if args.skip_animestudio:
@@ -1457,7 +1613,9 @@ def main() -> int:
     else:
         md_lines.append(f"- Executable: `{animestudio}`")
         md_lines.append(f"- Game: `{ANIMESTUDIO_GAME}`")
+        md_lines.append(f"- Scope: `{args.animestudio_scope}`")
         md_lines.append(f"- Selected stages: `{', '.join(selected_animestudio_stages)}`")
+        md_lines.append(f"- Parallel jobs: `{animestudio_jobs}`")
         md_lines.append(f"- Cache manifest: `{animestudio_summary.get('type_manifest_path')}`")
         md_lines.append(
             "- Refresh selectors: "
@@ -1479,7 +1637,9 @@ def main() -> int:
                     f"  {stage}: state=`{stage_info.get('cache_state')}`, "
                     f"selected=`{len(stage_info.get('selected_items') or [])}`, "
                     f"cached=`{len(stage_info.get('cached_items') or [])}`, "
-                    f"run=`{len(stage_info.get('run_items') or [])}`"
+                    f"run=`{len(stage_info.get('run_items') or [])}`, "
+                    f"succeeded=`{len(stage_info.get('succeeded_items') or [])}`, "
+                    f"failed=`{len(stage_info.get('failed_items') or [])}`"
                 )
                 issues = stage_info.get("log_issues") or {}
                 if any(

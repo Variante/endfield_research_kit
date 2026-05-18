@@ -14,9 +14,10 @@ Move observations, conclusions, older exploration notes, and status snapshots to
 
 ```bat
 .\export.bat
-.\export.bat --init-build
-.\export.bat --fast-assets
 .\export.bat --skip-export-full
+.\build_updates.bat
+.\build_updates.bat --init-build
+.\export_assets.bat
 python serve.py
 python serve.py 9000
 ```
@@ -26,17 +27,20 @@ Before starting a WebUI server, check whether the default
 server instead of starting another `serve.py` process on `8765` or a custom
 port, unless the user explicitly asks for a second server.
 
-`export.bat` is the canonical WebUI refresh. It exports only data needed by the
-browser, skips raw VFS and source inventory, builds the Updates feed, builds CN
-story/reference data by default, and rebuilds the asset index. It also verifies
-that `export_full/` matches the current installed `Endfield_Data` fingerprints
-before the long WebUI builders run.
-Use `--init-build` for first-time/baseline-only builds where the Updates feed
-should be baselined instead of reporting changes.
-Use `--fast-assets` for local refreshes that can reuse existing asset indexes
-and skip demo bundle zip generation.
+`export.bat` is the canonical story/reference WebUI refresh. It exports only
+story data needed by the browser, skips raw VFS, source inventory, and heavy
+2D/3D/animation asset conversion, and builds CN story/reference data by
+default. It also verifies that `export_full/` matches the current installed
+`Endfield_Data` fingerprints before the long WebUI builders run.
 Use `--skip-export-full` for WebUI rebuilds that should reuse the existing
 `export_full/`; the wrapper still verifies freshness before long builders run.
+Use `build_updates.bat` for the standalone Updates feed comparison. Use
+`build_updates.bat --init-build` for first-time/baseline-only builds where the
+Updates feed should be baselined instead of reporting changes. The wrapper
+passes `--skip-asset-updates` by default so stale decoded asset outputs do not
+appear in story-only refreshes.
+Use `export_assets.bat` for the heavier AnimeStudio image/model/animation
+decode plus WebUI Assets tab indexes and compact Story media lookup.
 
 Useful direct commands:
 
@@ -44,13 +48,12 @@ Useful direct commands:
 python scripts\build_updates.py
 python scripts\build_updates.py --baseline-only
 python scripts\build_updates.py --skip-asset-updates
-python scripts\build_updates.py --reset-baseline
+python scripts\build_updates.py --refresh-previous-export-baseline
 python scripts\verify_export_freshness.py
 python scripts\story_builder\source_links.py
 python scripts\story_builder\build.py --languages CN --default-language CN
 python scripts\story_builder\build.py --languages CN EN JP --default-language CN
 python scripts\build_assets.py
-python scripts\build_assets.py --fast
 python scripts\package_webui.py
 ```
 
@@ -112,34 +115,32 @@ disposable experiments in `scratch/` or `tmp/`.
 
 ## Update Tracking Rule
 
-The WebUI Updates tab must report only original installed game-data changes.
+The WebUI Updates tab must report only exported game-data changes between a
+saved previous export and the current export.
 
-`scripts/build_updates.py` tracks:
+`scripts/build_updates.py` compares:
 
 ```text
-D:\Program Files\Endfield Game\Endfield_Data
+export_122
+export_full
 ```
 
-by default and stores state under `.game-data-tracker/`. Do not point this
-tracker at `webui/`, `export_full/`, `reports/`, `memory/`, or `scratch/`.
-WebUI edits and generated output must not appear as game-data updates.
-Local CrashSight telemetry files under
-`Plugins/x86_64/wesight/crashsight_data/` are ignored as volatile local runtime
-state, not installed content updates.
+by default. Pass `--previous-export-root PATH` for a different saved previous
+export. Scanner cache and feed history live under `.game-data-tracker/`; the
+cached baseline is built from the previous export folder, then `export_full/`
+is scanned against it. Do not point this comparison at `webui/`, `reports/`,
+`memory/`, or `scratch/`. WebUI edits and generated output outside the export
+roots must not appear as game-data updates.
 
-The builder may scan exported assets under `export_full/` to add image/model/video
-asset-level entries to the Updates page, but it must only report those entries
-when the original `Endfield_Data` tracker reports a real game-data change. When
-there is no game-data change, exported asset differences should be treated as
-local rebuild noise and baselined silently.
+The builder may scan exported assets in the same two export folders to add
+image/model/video asset-level entries to the Updates page. The standalone
+`build_updates.bat` wrapper passes `--skip-asset-updates` by default; include
+asset updates only after the asset workflow refreshes heavy outputs
+intentionally.
 
-Zero-change reruns should not blank the Updates page. `build_updates.py`
-preserves the existing non-empty feed, or restores the latest non-empty feed
-snapshot from `.game-data-tracker/history/update-feed-*.json`. If no feed
-snapshot exists, it can fall back to the latest non-empty raw tracker report,
-which recovers game-data entries but not already-overwritten asset diffs. Use
-`--baseline-only` or `--reset-baseline` only when an empty baseline is
-intentional.
+Use `--baseline-only` only when an empty feed is intentional. Use
+`--refresh-previous-export-baseline` after replacing the saved previous export
+folder so the cached scanner baseline is rebuilt.
 
 ## Repo Rules
 

@@ -64,6 +64,22 @@
     return String(value || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
   }
 
+  function splitPathIdExportStem(value) {
+    const match = String(value || "").match(/^(.*)_p([0-9a-f]{16})$/i);
+    return match ? { base: match[1], pathId: match[2].toUpperCase() } : null;
+  }
+
+  function pathIdExportBaseStem(value) {
+    const split = splitPathIdExportStem(value);
+    return split ? split.base : "";
+  }
+
+  function relRequiresPathIdExportName(relPath) {
+    const source = normalizeRelPath(relPath).split("/")[0] || "";
+    if (!source || /-structured$/i.test(source) || source.toLowerCase() === "raw_vfs") return false;
+    return ["streamingassets", "persistent"].includes(source.split("-")[0].toLowerCase());
+  }
+
   function exportFullHref(relPath, sourceRoots = {}, exportRoot = "export_full") {
     const normalizedRel = normalizeRelPath(relPath);
     if (!normalizedRel) return "/export_full/";
@@ -112,6 +128,9 @@
     formatNumber,
     formatSignedNumber,
     applyTemplate,
+    splitPathIdExportStem,
+    pathIdExportBaseStem,
+    relRequiresPathIdExportName,
     exportFullHref,
     rebuildSelect,
   });
