@@ -308,6 +308,8 @@ def is_register_name(value: str) -> bool:
 
 
 def read_disp(data: bytes, pos: int, size: int) -> tuple[int, int]:
+    if pos + size > len(data):
+        return 0, len(data)
     if size == 1:
         return struct.unpack_from("<b", data, pos)[0], pos + 1
     if size == 4:
@@ -486,6 +488,8 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
     if opcode in (0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF):
         reg = (opcode - 0xB8) | (rex_b << 3)
         dst = reg_name(reg, width=width)
+        if pos + 4 > len(data):
+            return result(f"db 0x{opcode:02x}", None, offset + 1)
         imm = struct.unpack_from("<I", data, pos)[0]
         pos += 4
         return result(f"mov {dst}, 0x{imm:x}", (dst, f"0x{imm:x}"), pos)
@@ -2365,6 +2369,14 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     modules = parse_codegen_modules(pe, code_reg)
     ranges = image_method_ranges(md)
     pointers_by_image, method_by_pointer = build_pointer_indexes(pe, md, modules, ranges)
+    sorted_all_pointers = sorted(
+        {
+            pointer
+            for pointers in pointers_by_image.values()
+            for pointer in pointers
+            if pointer
+        }
+    )
     catalog_target_keys = {
         (row["methodIndex"], row["type"], row["method"])
         for row in catalog.get("bodyTargets", [])
@@ -2393,8 +2405,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             continue
         pointer = pointers[slot]
         file_offset, section, rva = pe.file_offset_for_va(pointer)
-        sorted_module_pointers = sorted({ptr for ptr in pointers if ptr})
-        scan_size, next_pointer = estimate_scan_size(pointer, sorted_module_pointers, args.max_scan_bytes)
+        scan_size, next_pointer = estimate_scan_size(pointer, sorted_all_pointers, args.max_scan_bytes)
         direct_calls, unresolved_call_count = scan_direct_calls(
             pe,
             pointer,

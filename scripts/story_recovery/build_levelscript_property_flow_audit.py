@@ -21,9 +21,10 @@ triples. This script:
 The output records two evidence classes:
 
 - **bridgeFound**: the key appears as a length-prefixed string in the
-  target LS file. This is strong evidence the property is declared /
-  set inside that script. Adjacent story-keyed records in the same LS
-  file are candidates for setter -> checker order edges.
+  target LS file. This is strong evidence the property is declared or
+  read/gated inside that script. Adjacent story-keyed records in the same
+  LS file are candidates for follow-up order evidence, but are not setter
+  proof by themselves.
 - **bridgeMissing**: the key is not in the LS binary. This is typical
   for runtime-system property names like `isFinished` and `isSucceeded`
   which the script exposes implicitly without storing the string.
@@ -56,9 +57,15 @@ from common import ROOT, md_escape, read_json, write_report_json, write_text_if_
 from build_mission_order_evidence_audit import collect_mission_runtime_script_conditions  # noqa: E402
 
 try:
-    from story_builder.level_bindings import _load_levelscript_binding_data  # noqa: E402
+    from story_builder.level_bindings import (  # noqa: E402
+        _load_levelscript_binding_data,
+        classify_levelscript_record,
+    )
+    from story_builder.levelscript_binary import decode_levelscript_record_payload  # noqa: E402
 except ImportError:
     _load_levelscript_binding_data = None
+    classify_levelscript_record = None
+    decode_levelscript_record_payload = None
 
 DATA_JSON_ROOT = ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json"
 MRA_DIR = DATA_JSON_ROOT / "MissionRuntimeAsset"
@@ -157,6 +164,80 @@ def collect_nearby_story_refs_from_records(records: list[dict[str, Any]], key: s
     return candidates
 
 
+def record_texts(record: dict[str, Any]) -> list[str]:
+    out: list[str] = []
+    for field in ("strings", "plainStrings"):
+        for hit in record.get(field) or []:
+            text = hit.get("text") if isinstance(hit, dict) else hit
+            if isinstance(text, str) and text and text not in out:
+                out.append(text)
+    return out
+
+
+def format_opcode(record: dict[str, Any]) -> str:
+    code = record.get("code")
+    kind = record.get("kind")
+    if isinstance(code, int) and isinstance(kind, int):
+        return f"0x{code:04x}/0x{kind:02x}"
+    return ""
+
+
+def next_start_by_record_start(records: list[dict[str, Any]], data_len: int) -> dict[int, int | None]:
+    starts: dict[int, int | None] = {}
+    sorted_records = sorted(records, key=lambda row: int(row.get("start") or 0))
+    for index, record in enumerate(sorted_records):
+        start = int(record.get("start") or 0)
+        starts[start] = (
+            int(sorted_records[index + 1].get("start") or data_len)
+            if index + 1 < len(sorted_records)
+            else None
+        )
+    return starts
+
+
+def collect_property_record_hits(
+    *,
+    records: list[dict[str, Any]],
+    data: bytes,
+    key: str,
+) -> list[dict[str, Any]]:
+    if not records or not data or decode_levelscript_record_payload is None:
+        return []
+    next_by_start = next_start_by_record_start(records, len(data))
+    hits: list[dict[str, Any]] = []
+    for record in records:
+        texts = record_texts(record)
+        if key not in texts:
+            continue
+        start = int(record.get("start") or 0)
+        decoded = decode_levelscript_record_payload(
+            data,
+            record,
+            next_start=next_by_start.get(start),
+        )
+        row = {
+            "recordOffset": start,
+            "recordOffsetHex": f"0x{start:x}",
+            "localId": record.get("localId"),
+            "nextId": record.get("nextId"),
+            "opcode": format_opcode(record),
+            "class": classify_levelscript_record(record) if classify_levelscript_record else "",
+            "hint": decoded.get("label") or "",
+            "hintConfidence": decoded.get("confidence") or "",
+            "propertyRole": decoded.get("propertyRole") or "",
+            "propertyEventKind": decoded.get("propertyEventKind") or "",
+            "propertyKeys": decoded.get("propertyKeys") or [],
+            "propertyOutputRefs": decoded.get("propertyOutputRefs") or [],
+            "triggerSlotIds": decoded.get("triggerSlotIds") or [],
+            "compactGate": decoded.get("compactGate") or {},
+            "gateLocalRefs": decoded.get("gateLocalRefs") or [],
+            "branchLocalRefs": decoded.get("branchLocalRefs") or [],
+            "texts": texts[:12],
+        }
+        hits.append({field: value for field, value in row.items() if value not in ("", None, [], {})})
+    return hits
+
+
 def build_audit() -> dict[str, Any]:
     if not MRA_DIR.is_dir():
         return {"error": f"missing {MRA_DIR}"}
@@ -202,6 +283,8 @@ def build_audit() -> dict[str, Any]:
 
     bridge_rows: list[dict[str, Any]] = []
     bridge_summary = Counter()
+    property_record_opcode_counts = Counter()
+    property_record_role_counts = Counter()
     record_decoder_available = _load_levelscript_binding_data is not None
     decoder_calls = 0
 
@@ -211,6 +294,7 @@ def build_audit() -> dict[str, Any]:
         detect = detect_property_key_in_ls(ls_path, key)
         bridge_status = "bridgeMissing"
         nearby_story_refs: list[dict[str, Any]] = []
+        property_record_hits: list[dict[str, Any]] = []
         if detect.get("lengthPrefixedMatch"):
             bridge_status = "bridgeFound"
             if record_decoder_available and decoder_calls < 200:
@@ -227,6 +311,23 @@ def build_audit() -> dict[str, Any]:
                         if file_path.endswith("/" + suffix) or file_path.endswith("\\" + suffix):
                             records = file_entry.get("records") or []
                             nearby_story_refs = collect_nearby_story_refs_from_records(records, key)
+                            raw_path = Path(file_path)
+                            if not raw_path.is_absolute():
+                                raw_path = ROOT / raw_path
+                            try:
+                                raw_data = raw_path.read_bytes()
+                            except OSError:
+                                raw_data = b""
+                            property_record_hits = collect_property_record_hits(
+                                records=records,
+                                data=raw_data,
+                                key=key,
+                            )
+                            for hit in property_record_hits:
+                                opcode = hit.get("opcode") or "unknown"
+                                property_record_opcode_counts[opcode] += 1
+                                role = hit.get("propertyRole") or hit.get("hint") or "unknown"
+                                property_record_role_counts[role] += 1
                             break
         elif detect.get("keySubstringMatch"):
             bridge_status = "bridgeSubstringOnly"
@@ -254,6 +355,7 @@ def build_audit() -> dict[str, Any]:
             "lsDetect": detect,
             "bridgeStatus": bridge_status,
             "nearbyStoryRefs": nearby_story_refs,
+            "propertyRecordHits": property_record_hits,
         })
 
     return {
@@ -269,16 +371,19 @@ def build_audit() -> dict[str, Any]:
             "distinctTriples": len(triples),
             "bridgeStatus": dict(bridge_summary.most_common()),
             "decodedScriptCount": decoder_calls,
+            "propertyRecordOpcodeCounts": dict(property_record_opcode_counts.most_common()),
+            "propertyRecordRoleCounts": dict(property_record_role_counts.most_common()),
         },
         "evidenceClassification": {
             "isOrderingSource": True,
             "isPromotable": False,
             "reason": (
-                "LevelScript property setters are not yet decoded by opcode. "
                 "This audit identifies which checker conditions have a real "
                 "owning LS script (key visible as length-prefixed UTF-8 in the "
-                "binary), establishing the bridge. Promotion to strong scene-"
-                "order edges requires further setter-opcode identification."
+                "binary), establishing the bridge. The named low ActionBase "
+                "setters do not exact-match these MissionRuntime check triples, "
+                "so promotion requires a decoded gate/terminal walk or another "
+                "independent runtime edge."
             ),
         },
         "rows": bridge_rows,
@@ -301,6 +406,8 @@ def markdown_report(payload: dict[str, Any]) -> str:
         f"- Distinct `(mapId, scriptId, key)` triples: `{s['distinctTriples']}`",
         f"- Bridge status: `{s['bridgeStatus']}`",
         f"- Decoded LS scripts (for nearby-story-ref enumeration): `{s['decodedScriptCount']}`",
+        f"- Property record opcodes: `{s.get('propertyRecordOpcodeCounts', {})}`",
+        f"- Property record roles: `{s.get('propertyRecordRoleCounts', {})}`",
         "",
         "## Evidence Classification",
         "",
@@ -308,11 +415,26 @@ def markdown_report(payload: dict[str, Any]) -> str:
         f"- `isPromotable`: `{payload['evidenceClassification']['isPromotable']}`",
         f"- Reason: {payload['evidenceClassification']['reason']}",
         "",
+        "## Property Record Opcode Clusters",
+        "",
+        "| opcode | count |",
+        "| --- | ---: |",
+    ]
+
+    opcode_counts = s.get("propertyRecordOpcodeCounts") or {}
+    if opcode_counts:
+        for opcode, count in opcode_counts.items():
+            lines.append(f"| `{md_escape(opcode)}` | {count} |")
+    else:
+        lines.append("| _(none)_ | 0 |")
+
+    lines.extend([
+        "",
         "## Bridge Found Rows (sample, first 40)",
         "",
-        "| mapId | scriptId | key | checker count | missions | key offset | nearby refs |",
-        "| --- | --- | --- | ---: | --- | ---: | --- |",
-    ]
+        "| mapId | scriptId | key | checker count | missions | key offset | record opcodes | nearby refs |",
+        "| --- | --- | --- | ---: | --- | ---: | --- | --- |",
+    ])
 
     bridge_rows = [row for row in payload["rows"] if row["bridgeStatus"] == "bridgeFound"]
     bridge_rows.sort(key=lambda r: (-r["checkerCount"], r["mapId"], r["scriptId"], r["key"]))
@@ -326,6 +448,31 @@ def markdown_report(payload: dict[str, Any]) -> str:
                 for n in row.get("nearbyStoryRefs") or []
                 for n in n.get("neighborStoryRefs") or []
             ) if row.get("nearbyStoryRefs") else ""
+            opcodes = ", ".join(
+                " ".join(
+                    part
+                    for part in (
+                        hit.get("opcode") or "",
+                        hit.get("hint") or "",
+                        hit.get("propertyEventKind") or "",
+                        (
+                            "gateRefs="
+                            + ",".join(str(ref) for ref in hit.get("gateLocalRefs")[:4])
+                            if hit.get("gateLocalRefs")
+                            else ""
+                        ),
+                        (
+                            "branches="
+                            + ",".join(str(ref) for ref in hit.get("branchLocalRefs")[:4])
+                            if hit.get("branchLocalRefs")
+                            else ""
+                        ),
+                    )
+                    if part
+                )
+                for hit in row.get("propertyRecordHits") or []
+                if hit.get("opcode")
+            )
             missions = ", ".join(row["checkerMissions"][:3])
             lines.append(
                 f"| `{md_escape(row['mapId'])}` "
@@ -334,6 +481,7 @@ def markdown_report(payload: dict[str, Any]) -> str:
                 f"| {row['checkerCount']} "
                 f"| `{md_escape(missions)}` "
                 f"| `{offset}` "
+                f"| `{md_escape(opcodes[:80])}` "
                 f"| `{md_escape(nearby[:120])}` |"
             )
 
@@ -362,11 +510,11 @@ def markdown_report(payload: dict[str, Any]) -> str:
         "",
         "## Notes",
         "",
-        "Bridge-found rows are candidates for follow-up scene-order promotion.",
+        "Bridge-found rows are candidates for follow-up scene-order analysis.",
         "Bridge-missing rows mostly use runtime-system property names",
         "(`isFinished`, `isSucceeded`, etc.) that the LS script exposes",
         "implicitly without storing the property name as a literal string.",
-        "Use this audit as input to a downstream setter-opcode decoder; do not",
+        "Use this audit as input to downstream gate/terminal decoders; do not",
         "promote anything to strong order edges directly from this report.",
     ])
 

@@ -1,0 +1,98 @@
+{
+  "e0m0": {
+    "source": "user-observed-gameplay",
+    "note": "Partial gameplay-observed e0m0 order used as a calibration target. This is not original-data proof; entries preserve their previous recovered evidence in recovered*BeforeObserved fields.",
+    "evidenceAlignments": {
+      "cutscene_e0m0_3": {
+        "kind": "title-card-plus-fmv-prologue",
+        "evidence": "observed-aligned:title-card-fmv-prologue",
+        "status": "partial",
+        "rank": 5,
+        "note": "Observed first position matches the cutscene's original title-card text row at 00:00:00 plus the AnimeStudio FMV playable bound at clip start 0.0. Late LevelScript play refs remain real and are treated as later reuse/check contexts, not the opening title-card occurrence.",
+        "sourceRefs": [
+          "TextTable[cutscene_e0m0_3_01] contains 00:00:00 title-card text",
+          "BeyondFMVPlayableAsset f/m_cs_video_e0m0_3 -> cutscene_e0m0_3 start=0.0",
+          "cutscene_e0m0_3 recoveredEvidenceBeforeObserved=levelseq-alias"
+        ]
+      },
+      "cutscene_e0m0_1": {
+        "kind": "asset-prologue-transition",
+        "evidence": "observed-aligned:asset-prologue-transition",
+        "status": "partial",
+        "rank": 6,
+        "note": "AnimeStudio metadata identifies this as the black-screen elevator/selection transition with one subtitle and elevator music. No decoded MissionRuntime or LevelScript trigger is known yet, so this aligns identity/theme with the observed opening rather than proving the trigger.",
+        "sourceRefs": [
+          "AnimeStudio path Assets/Beyond/DynamicAssets/Gameplay/Cutscene/cutscene_e0m0_1",
+          "audio au_music_cs_tundra_000_elevator / au_vo_cs_e0m0_1",
+          "metadata hideSquad=true skipType=1 useBlackScreen=true"
+        ]
+      },
+      "cutscene_e0m0_1stZipline": {
+        "kind": "zipline-spatial-plus-levelseq",
+        "evidence": "observed-aligned:zipline-spatial-levelseq",
+        "status": "partial",
+        "rank": 5,
+        "note": "The selected source evidence is levelseq_e0m0_003, but the related 8700010007 script has a q#1 spatial candidate near mission area e0m1_002. That explains why the first zipline can sit earlier than pure levelseq numbering suggested.",
+        "sourceRefs": [
+          "8700020023 plays levelseq_e0m0_003 and cutscene_e0m0_1stZipline",
+          "8700010007 spatial candidate near e0m0_q#1 / e0m1_002"
+        ]
+      },
+      "video_cs_video_e0m0_3": {
+        "kind": "late-video-binding-cluster",
+        "evidence": "observed-aligned:late-video-binding-cluster",
+        "status": "partial",
+        "rank": 6,
+        "note": "The video itself has only AnimeStudio timelinePlayable binding to cutscene_e0m0_3, but late LevelScript occurrences of that cutscene sit in the q#11/radio_e0m0_12 cluster. This supports the late cluster identity while the exact post-radio_12 playback edge is still not decoded.",
+        "sourceRefs": [
+          "BeyondFMVPlayableAsset f/m_cs_video_e0m0_3 -> cutscene_e0m0_3",
+          "8700020022 contains cutscene_e0m0_3 and radio_e0m0_12",
+          "no MissionRuntime CheckFMVFinish or direct cs_video_e0m0_3 LevelScript string found"
+        ]
+      }
+    },
+    "order": [
+      "cutscene_e0m0_3",
+      "cutscene_e0m0_1",
+      "cutscene_e0m0_2",
+      "radio_e0m0_1",
+      "radio_e0m0_1d5",
+      "cutscene_e0m0_1stZipline",
+      "radio_e0m0_2",
+      "radio_e0m0_2d8",
+      "cutscene_e0m0_2ndZiplineA",
+      "cutscene_e0m0_2ndZiplineB",
+      "cutscene_e0m0_2ndZiplineCCamOnly",
+      "radio_e0m0_3d2",
+      "radio_e0m0_5d6",
+      "cutscene_e0m0_13",
+      "radio_e0m0_8d4",
+      "cutscene_e0m0_New14",
+      "radio_e0m0_8d8",
+      "radio_e0m0_8d9",
+      "cutscene_e0m0_lookingatpatriot",
+      "radio_e0m0_9",
+      "cutscene_e0m0_tombstonecollapseCam",
+      "misc_dlg_e0m0_0d5",
+      "misc_dlg_e0m0_0d7",
+      "misc_dlg_e0m0_0d8",
+      "misc_dlg_e0m0_0d9",
+      "radio_e0m0_11",
+      "radio_e0m0_12",
+      "video_cs_video_e0m0_3",
+      "radio_e0m0_13",
+      "radio_e0m0_14",
+      "radio_e0m0_16",
+      "radio_e0m0_22",
+      "radio_e0m0_23",
+      "radio_e0m0_17",
+      "radio_e0m0_15",
+      "cutscene_e0m0_4",
+      "radio_e0m0_20",
+      "cutscene_e0m0_5",
+      "cutscene_e0m0_6",
+      "cutscene_e0m0_7",
+      "cutscene_e0m0_8"
+    ]
+  }
+}

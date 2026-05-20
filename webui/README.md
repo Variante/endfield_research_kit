@@ -75,12 +75,32 @@ from `webui/data/` and keeps heavyweight recovery work in the Python builders.
   loaded on demand.
 - `data/lang/<code>/narrative_video_evidence.json`: timeline-backed video to
   WebUI conversation evidence. These rows require recovered
-  `BeyondFMVPlayableAsset` / Timeline sources; heuristic filename matches are
-  not recorded as proof.
+  `BeyondFMVPlayableAsset` / Timeline sources, including gameplay cutscene
+  playables from AnimeStudio `json_by_type/MonoBehaviour`; heuristic filename
+  matches are not recorded as proof.
 - `data/assets/story_order.json`: recovered mission entry order from
   original/decodeable game data. Strong rows carry MissionRuntime/property,
-  LevelScript record, levelseq, or title-card evidence; weaker rows are kept as
-  fallbacks and marked in the UI tooltip.
+  LevelScript record, or levelseq evidence; weaker rows are kept as
+  fallbacks and marked in the UI tooltip. Entries can also expose decoded
+  LevelData file/offset and neighboring script ids as grouping diagnostics;
+  those fields are not treated as playback-order proof. When a source
+  LevelScript is known, entries also show raw binary LevelScriptData checks
+  such as serialized member count, verified scriptId offset, and decoded
+  top-level startType where the tail layout is currently understood. Compact
+  incoming/outgoing cross-script references are shown as control diagnostics
+  only, not as ordering edges. When the binary record is a decoded
+  script-pointer payload, the compact ref label also shows the raw flag byte;
+  the flag is diagnostic until the action opcode is named. Map-position
+  diagnostics from decoded LevelScript vectors matched against quest pins are
+  also exposed for source-backed rows; these support spatial/quest vicinity
+  and are not standalone chronological proof. A narrow builder rule can use
+  coherent direct same-script candidates to override weak suffix fallback for a
+  raw-ordered source-script cluster, and another constrained rule can correct
+  numeric levelseq over-anchoring when an incoming cross-file edge and
+  predecessor-script spatial candidate agree. Compact
+  mission timeline scene edges are exposed beside entries so same-script
+  file-order evidence can be checked from the Story tooltip; direct same-script
+  edges are also applied as local ordering constraints.
 - `data/lang/<code>/reference/`: Reference tables; persistent rows may share
   streaming payloads or use small overlay files for changed rows.
 - `data/assets/story_media.json`: compact Story inline image/video lookup using

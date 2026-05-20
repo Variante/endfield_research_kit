@@ -52,6 +52,10 @@ and `_007`, skipping numeric suffixes.
 
 ## Current Audit Conclusions
 
+For focused e0m0 LevelScript ordering work, including the current
+`lt:p` / `lt:mp` LevelTimeline marker plan, start with
+`memory/e0m0_file_order_from_binary_scripts.md`.
+
 `e0m0` is partially confirmed. The first four-entry quest sequence and the
 `cutscene_e0m0_6 -> cutscene_e0m0_7 -> cutscene_e0m0_8` UID chain are strong.
 Most long radio/cutscene clusters remain weak LevelScript file-offset order,
@@ -259,9 +263,18 @@ Evidence sources still on the queue for chunk-order recovery:
 - `sourceBackedHashTerminals` prev/next hash chains crossing chunks.
 - Story-call contexts with directional position info.
 - Recovered questEdges from LevelScript property-setter flow — blocked until
-  setter opcodes are decoded (the property-flow audit already identifies which
-  conditions have a bridge but explicitly marks the relation as not
-  promotable, see [reports/mission_order/levelscript_property_flow_CN.md](../reports/mission_order/levelscript_property_flow_CN.md)).
+  the compact property gate/terminal family is decoded. Low ActionBase setters
+  are now named (`SetBool`, `SetInt`, `SetIntIncrease`), and the ScriptEvent
+  high-code bands are named, but several MissionRuntime bridges still land on
+  unresolved terminal records such as `0x0bed/0x00`.
+  The property-flow audit explicitly marks the relation as not promotable, see
+  [reports/mission_order/levelscript_property_flow_CN.md](../reports/mission_order/levelscript_property_flow_CN.md).
+  The setter-candidate audit now separates exact UID key records from
+  top-level/offset-only property data and distinguishes list-clear rows from
+  terminal branch rows.
+  Update: `0x0bed/0x00` is now structurally decoded as a local terminal
+  branch carrier; the runtime class family is still unnamed, and the separate
+  `0x0a03/0x00` gate family remains unresolved.
 
 Explicitly rejected: filename/index order, scene-key numeric suffix, mission
 bundle row order. The chunks themselves already include radio-continuation
@@ -360,15 +373,142 @@ Current report families:
 
 - `reports/mission_order/<mission>_evidence_audit.{json,md}`
 - `reports/mission_order/levelscript_property_flow_CN.{json,md}`
+- `reports/mission_order/levelscript_property_setter_candidates_CN.{json,md}`
+- `reports/mission_order/levelscript_action_runtime_metadata.{json,md}`
+- `reports/mission_order/levelscript_action_map_type_indices.{json,md}`
+- `reports/mission_order/levelscript_action_map_list_audit.{json,md}`
+- `reports/mission_order/levelscript_action_body_targets_gameassembly.{json,md}`
+- `reports/mission_order/levelscript_actionbase_formatter_tags.{json,md}`
+- `reports/mission_order/memorypack_union_formatter_tag_audit.{json,md}`
+- `reports/mission_order/levelscript_header_chain_audit.{json,md}`
 - `reports/mission_order/audio_dialog_custom_events_CN.{json,md}`
 - `reports/playable_director/timeline_track_clips.{json,md}`
 
 ## Candidate Recovery Queue
 
-1. Decode LevelScript setter opcodes for property-flow bridges. The current
-   audit found `60` confirmed bridges between `MissionRuntimeAsset`
-   `CheckLevelScriptProperty*` conditions and owning LevelScript files, but
-   they are not promotable until the setter record type is identified.
+1. Decode LevelScript setter/start opcodes for property-flow and manual-start
+   bridges. The current audit found `60` confirmed bridges between
+   `MissionRuntimeAsset` `CheckLevelScriptProperty*` conditions and owning
+   LevelScript files. `build_memorypack_union_tag_audit.py` now derives `110`
+   ActionHeader/header mappings from MemoryPack union formatter tables and the
+   observed high-code banks, including low `0x0e**` / `0x0f**` ActionHeader
+   banks plus `ScriptEvent_OnCustomEvent`, `ScriptEvent_OnLeaderEnterTriggerVolume`,
+   `ScriptEvent_OnLeaderLeaveTriggerVolume`,
+   `ScriptEvent_OnScriptStageChanged`, `LevelEvent_OnDialogEnter`,
+   `LevelEvent_OnDialogExit`, `LevelEvent_OnQuestStateChanged`, and
+   `LevelEvent_OnTrainLevelEvent`. These are listener or event registrations,
+   not the setter that makes a quest edge promotable.
+   The remaining missing pieces are the compact action record that mutates or
+   completes the property (`0x0a03/0x00` / `0x0bed/0x00`) and the action record
+   that calls `ManualStartLevelScript` / `ManualEndLevelScript`.
+   `build_levelscript_opcode_shape_audit.py` now scans this globally:
+   current run covers `59,763` records / `603` opcode pairs, finds no
+   actionMap `levelId+scriptId` ManualStart-like rows, and narrows the
+   property-key non-event candidate pool to clusters led by `0x0364/0x0b`,
+   `0x03b8/0x0a`, `0x104e/0x00`, `0x1092/0x00`, `0x0176/0x08`,
+   `0x03e7/0x0a`, `0x04bb/0x09`, and related opcodes.
+   `build_levelscript_property_setter_candidate_audit.py` then focuses only
+   the `60` confirmed MissionRuntime bridges: `41` rows have exact
+   key-bearing UID records, `19` are offset-only/top-level property data, and
+   only `5` candidate observations are story-adjacent. The best repeated
+   focused clusters are `0x0a03/0x00` (`property-key-gate`), `0x0176/0x08`
+   (`property-key-ref`), `0x0bed/0x00` (`property-key-terminal`), and the
+   tiny story-adjacent `0x04b8/0x09`/`0x0000/0x00`/`0x0001/0x00` cases.
+   `build_levelscript_action_metadata_audit.py` adds the class-level check:
+   ManualStart/ManualEnd serialize `levelId + scriptId`, GetLevelScriptProperty
+   families serialize `_target + _path`, and `OnPropertyChanged` is a
+   listener. The current metadata pass also finds the real generic setter
+   family: `Set<T>` / `SetList<T>` carry `_key + _value`, while concrete
+   `SetBool`/`SetInt`/`SetPropertyPath`/`SetLevelScriptPtr` shells have no
+   useful runtime fields. No metadata type name contains
+   `UpdateLevelScriptProperty`, `OperateLevelScriptNumber`, or
+   `SetLevelScriptDone`.
+   `build_levelscript_action_body_audit.py` then maps the focused methods to
+   GameAssembly: ManualStart/End call `TryGetLevelScript` then
+   `LevelScriptRuntime.ManualStart`/`ManualEnd`; property getters call
+   `TryGetLevelScript` and `LevelScriptRuntime.get_properties`;
+   `OnPropertyChanged` registers listener paths; and runtime state updates call
+   `ModuleResetUpdateProperty`, whose module body only toggles reset/update
+   flags. The generic `Set<T>`/`SetList<T>` Execute pointers map to null in
+   this IL2CPP table, but the concrete MemoryPack wrappers do prove serialized
+   key/value order: `Deserialize` calls `set____key__` before
+   `set____value__`, and the generic wrapper setters write key/value to the
+   real instance at `+0xd0`/`+0xd8`. A new
+   `build_levelscript_action_map_type_audit.py` pass resolves the previously
+   opaque generic/list type indexes through `Il2CppMetadataRegistration`
+   (`0x18a31fcd0`): `actionList` is `List<ActionBase>`, `getterList` is
+   `List<PureGetter>`, and `headerList` is `List<ActionHeader>`; runtime
+   arrays mirror those as `ActionBase[]`, `PureGetter[]`, and
+   `ActionHeader[]`. The same body audit now includes
+   `ActionSerializedMapForMemoryPack`: its `Deserialize` body calls
+   `set___actionList__`, `set___getterList__`, and `set___headerList__` in
+   that order, and the setter bodies write runtime fields at `+0x18`,
+   `+0x20`, and `+0x10`.
+   `build_levelscript_action_map_list_audit.py` keeps the physical list split
+   honest against the opcode content: the second block is still best named
+   `getterList` because its dominant named tags are `PureGetter` shapes such
+   as `GetLevelScriptStage`, `IntEqual`, `GetMainCharacter`, and `IntCompare`,
+   while the third block is header/event dominated. It also found and promotes
+   the common two-block shape where an empty getter block is omitted and the
+   final count is really `headerList` (`1,373` files). After that inference,
+   the current scan keeps derived `ScriptEventHeader`-band rows out of
+   `getterList`; `headerList` contains `5,703` such rows, including `3,309`
+   `0x12a1/0x00` rows.
+   `build_levelscript_actionbase_tag_audit.py` now extracts the generated
+   `ActionBaseForMemoryPackFormatter..cctor` union table from GameAssembly.
+   The table is contiguous from `0x0000` through `0x04dc` (`1,245` tags) and
+   bridges raw action-map `code` values to formatter classes. This names
+   common playback actions (`0x034a/0x0d` `PlayRadio`,
+   `0x034b/0x0d` `PlayRadioAndWait`, `0x046c/0x0e` `StartDialogAction`,
+   `0x046d/0x10` `StartDialogAndTeleportAction`) and confirms real setter
+   action records (`0x03b8/0x0a` `SetBool`, `0x03e7/0x0a` `SetInt`,
+   `0x03ea/0x0a` `SetIntIncrease`). It also reclassifies `0x0176/0x08` as
+   `ListClear<float>`, not setter proof. The same audit checks
+   `FinalActionBaseForMemoryPackFormatter` separately; it contains only two
+   subgame final-action tags and does not explain the high records.
+
+   `build_memorypack_union_tag_audit.py` then scans all generated MemoryPack
+   union formatter cctors. It finds no raw union tag above `0x04dc`, so the
+   high codes are not missing ActionBase-style formatter tags. Instead, the
+   exact high opcode values are derived from ActionHeader banks over the
+   extracted formatter tags: the current run derives `110` header/event
+   mappings across `0x0exx` through `0x18xx` plus ScriptEvent runtime bands.
+   `0x0a03/0x00` and `0x0bed/0x00` remain outside that mapping.
+
+   Current implication: low ActionBase opcodes and ScriptEvent registrations
+   are class-bridged; the serialized-map list boundaries are now mostly
+   decoded. `levelscript_opcode_shape_audit` now reports `57,223` records
+   inside `ActionSerializedMap` (`39,051` action, `8,087` getter, `10,085`
+   header) out of `59,763` decoded UID records. The list audit puts
+   `0x0a03/0x00` at `1` action, `212` getter, `0` header rows, and
+   `0x0bed/0x00` at `1,529` action rows only. That moves `0x0a03/0x00`
+   into the getter-list compact gate/read family and confirms `0x0bed/0x00`
+   as an `actionList` terminal branch rather than an outside-map orphan. For e0m0
+   specifically, `battle_field_clear` is still carried by `0x0bed/0x00`, so it
+   remains a quest-to-script/property bridge rather than a decoded setter edge.
+   The follow-up terminal-branch audit now decodes the `0x0bed/0x00` tail as
+   local action refs and walks those refs through `nextId`, split lists, and
+   nested terminal branches. Current CN run: `1,529` terminal rows, `6`
+   MissionRuntime-bridged rows, `156` rows with story-key targets, and `154`
+   rows with play-action targets. For e0m0, `battle_field_clear` branches to
+   local refs `169, 189`; local `169` reaches `cutscene_e0m0_New14`,
+   `radio_e0m0_8d8`, and nearby levelseq actions. This is a decoded terminal
+   branch scene bridge, not generic setter proof.
+   The body audit also proves the serialized `ActionHeader._nextID` setter
+   writes the runtime field at `+0x60`; in compact LevelScript payloads this
+   value appears at payload offset `+0x5`. `levelscript_binary.py` now exposes
+   it as `payloadDecoded.actionHeader.nextId`, and
+   `build_levelscript_header_chain_audit.py` uses it as the true
+   `headerList` event-to-`actionList` edge. Current global run: `10,085`
+   header rows, all `10,085` named by the derived mapping, `9,961` resolving
+   to `actionList` rows, `1,647` target chains containing a named play action,
+   and `1,791` target chains carrying scene-like text. The remaining edge
+   residue is not missing data: `123` rows point at duplicate `actionList`
+   local ids and are now reported as ambiguous action targets; only one row has
+   no positive next edge.
+   ManualStart/ManualEnd is also still missing from scanned action-map
+   payloads: the global opcode audit found no action-map row with a true
+   `levelId + scriptId` payload.
 2. Trace `DialogOptionPlayableAsset` runtime field `+0x18`, the active clip
    gate checked before `SetDialogOption`, to unblock source-backed option
    response mapping.
@@ -449,6 +589,217 @@ signals subject to false positives (e.g. a trigger volume positioned at
 promoted they belong in a new `evidenceKind` distinct from
 `scriptConditionQuestAttach` so the WebUI can keep the attachment
 hierarchy visible.
+
+## 2026-05-19 Compact Gate And Setter Overlap Follow-up
+
+`0x0a03/0x00` is now structurally decoded in
+`scripts/story_builder/levelscript_binary.py` and audited by
+`scripts/story_recovery/build_levelscript_gate_audit.py`.
+
+Current CN result:
+
+- `219` compact gate rows.
+- `171` rows with a decoded property key.
+- `41` rows with an optional tail local-action ref.
+- `10` rows bridged from MissionRuntime property checks.
+- Gate-ref walks reach story/play records only rarely (`5` story, `4` play),
+  and the MissionRuntime-bridged rows mostly resolve to trigger/control setup
+  or missing local ids rather than immediate scene playback.
+
+The stable payload shape is:
+
+```text
+00 <null sentinel> 04 <first flag> ff ff ff ff
+<type code> <len> <property key>
+04 <post flag> <null sentinel> [optional i32 local ref]
+```
+
+There are also `local-ref` and rare `two-slot-key` variants. This makes
+`0x0a03/0x00` a real gate/read clue, but not a promotable setter edge.
+
+`scripts/story_recovery/build_levelscript_setter_overlap_audit.py` then
+compares MissionRuntime `CheckLevelScriptProperty*` triples against the named
+ActionBase setters from the formatter tag audit:
+
+- `0x03b8/0x0a` = `SetBool`
+- `0x03e7/0x0a` = `SetInt`
+- `0x03ea/0x0a` = `SetIntIncrease`
+
+The CN overlap result is `1,331` decoded setter-key rows and `0` exact
+`(mapId, scriptId, key)` matches to the `164` distinct MissionRuntime
+property-check triples. There is only `1` same-level/same-key fuzzy match, and
+same-key-only matches are generic (`done`, `state`, `start`).
+
+Implication: the normal ActionBase setters are real, but they do not explain
+MissionRuntime script-property completion checks in this export. The strongest
+recovered timeline signal remains the `0x0bed/0x00` terminal branch walk: for
+e0m0 q#7, `battle_field_clear` branches through local `169` to concrete play
+records (`cutscene_e0m0_New14`, `radio_e0m0_8d8`, and nearby levelseq nodes).
+`0x0a03/0x00` stays diagnostic unless a future row has both a MissionRuntime
+bridge and a gate-ref walk to concrete play/story actions.
+
+## 2026-05-19 ManualStart/ManualEnd Follow-up
+
+The missing ManualStart/ManualEnd clue is now partly decoded. The ActionBase
+formatter tag table names:
+
+- `0x02f1/0x0a` as `ManualStartLevelScript`.
+- `0x02ec/0x0a` as `ManualEndLevelScript`.
+
+`scripts/story_builder/levelscript_binary.py` now labels these rows, and
+`scripts/story_recovery/build_levelscript_manual_control_audit.py` writes
+`reports/mission_order/levelscript_manual_control_audit.{json,md}`.
+
+Current global result:
+
+- `84` manual control rows.
+- `48` ManualStart rows and `36` ManualEnd rows.
+- `74` rows are paired with the preceding trigger-volume ScriptEvent by local
+  id (`0x12a1` enter -> ManualStart, `0x12a3` leave -> ManualEnd).
+- `4` rows carry a literal script-id operand; the rest use the common
+  default/parameterized operand payload.
+- `0` rows carry a literal cross-script target; the literal script-id operands
+  point back to the current script.
+- `47` rows live in files that also contain story/playback text.
+
+This is real script activation evidence. It is not, by itself, a cross-script
+timeline edge: most rows do not serialize a literal `levelId + scriptId`
+target, and the trigger-adjacent rows usually describe when the current
+LevelScript activates/deactivates. For e0m0, locals `201 -> 202` and
+`203 -> 204` confirm trigger-enter ManualStart and trigger-leave ManualEnd
+around script `indie_dg002/8700040000`, while the direct scene-order recovery
+still comes from the `0x0bed` `battle_field_clear` branch walk.
+
+## 2026-05-19 Terminal Branch Tie-break And IL2CPP ActionMap Follow-up
+
+The strict MissionRuntime bridge pass still yields only one terminal branch
+that can move quest phase: `indie_dg002/8700040000` `battle_field_clear`
+for `e0m0_q#7`, already used for `cutscene_e0m0_New14` and
+`radio_e0m0_8d8`. The other bridged `0x0bed/0x00` rows are real property
+bridges but their branch walks resolve to control/setup records rather than
+concrete play/story actions:
+
+- `c13m1` `isSuccceeded` rows in `map01_lv001/2100350001`,
+  `2100350004`, and `2100350005`.
+- `sm2l1m1` / `sm2l1m2` `start` rows in `map02_lv001/10100020011`
+  and `10100020024`.
+
+A narrower local-order promotion was added to
+`scripts/story_recovery/build_story_order.py`: terminal branch evidence may
+now break same-phase/same-rank ties only when both scenes are in the same
+source script, the same `0x0bed` terminal record, the same nonzero branch
+root, and each scene has a unique branch membership for that terminal. On the
+current CN export this finds `8` safe nonzero path constraints, but they all
+already agree with the existing order. The rows that would currently move are
+blocked because they depend on branch-root `0` or on scenes reachable through
+multiple alternative branches; those remain diagnostics until branch-root `0`
+is proven to be a real local id rather than a sentinel in each context.
+
+Implementation note: the terminal-branch tie grouping now handles valid
+integer `targetOffset` rows. An earlier indentation bug populated groups only
+for missing/non-integer target offsets, so the safe nonzero constraints were
+computed by audits but not actually available to the story-order topological
+tie pass.
+
+The IL2CPP metadata path also narrowed the missing runtime layer. The
+`LevelScriptData.actionMap` field is serialized as
+`Beyond.Gameplay.Actions.ActionMapAssetRaw`, whose `dataMap` is
+`Beyond.Gameplay.Actions.ActionSerializedMap`. Runtime fields are named
+`headerList`, `actionList`, and `getterList`; GameAssembly body recovery
+dispatches setters in `actionList`, `getterList`, then `headerList` order, and
+the binary blobs carry the first count in the actionMap header and the later
+two counts immediately before the next UID record. The action-map list audit
+now cross-checks that order against content signatures: `getterList` has the
+expected low PureGetter families, while `headerList` is strongly
+ScriptEvent/header dominated. It also recognizes `1,373` two-block files
+where the getter block is omitted/empty and
+the final count is header-shaped. The normal
+`ActionBase` union table explains the mid-range action codes, and the
+`ScriptEventHeader` union table plus base offsets explains `0x12a*`/`0x13a*`.
+No extracted MemoryPack union table names `0x0a03` or `0x0bed` directly. The
+generic/list element type metadata is now resolved through
+`levelscript_action_map_type_indices`: `actionList=List<ActionBase>`,
+`getterList=List<PureGetter>`, and `headerList=List<ActionHeader>`. The
+remaining clue is therefore any still-unnamed compact non-ActionBase runtime
+family, not a missing ActionBase formatter tag, random outside-map record, or
+unresolved generic list element.
+
+## 2026-05-19 Header Event Chain Follow-up
+
+The original game data now recovers a large class of scene starts directly:
+
+```text
+headerList event opcode/name
+-> compact ActionHeader.nextId payload field
+-> actionList local id
+-> nextId / split-list / terminal-branch action walk
+-> named play action or story-like text
+```
+
+The fixed UID record trailer `nextId` is usually `0` for header rows and is not
+the event start edge. The start edge is the compact `ActionHeader` payload
+field. GameAssembly body recovery pins the runtime setter sequence:
+`ActionHeaderForMemoryPack.set____nextID__` writes the runtime field at
+`+0x60`, with adjacent priority / trigger / filter fields at `+0x64` through
+`+0x78`. In the compact LevelScript blobs, the same `nextId` value is the
+little-endian i32 at payload offset `+0x5`.
+
+`scripts/story_recovery/build_levelscript_header_chain_audit.py` uses this
+field to audit every decoded LevelScript file. The latest follow-up extends
+derived ActionHeader banks down to `0x0e00` and `0x0f00`, naming the remaining
+low-bank headers such as `LevelEvent_OnSquadInFightChanged`,
+`OnHitByLaser`, and `OnSettlementReadyPerformance`. Current global result:
+
+- `10,085` header rows in `2,669` files.
+- all `10,085` header rows named by MemoryPack-derived ActionHeader mapping.
+- `9,961` header rows target an `actionList` row by payload
+  `ActionHeader.nextId`.
+- `123` rows target duplicate/ambiguous `actionList` local ids.
+- `0` rows have a missing/nonexistent positive target id.
+- `0` header rows target non-action records.
+- `1,647` event target chains contain a named play action.
+- `1,791` event target chains carry scene-like text.
+- `1` row has no positive next edge.
+
+This makes event-started dialog/radio/cutscene playback recoverable for many
+mission scripts. For example, `ScriptEvent_OnLeaderEnterTriggerVolume` in
+`base01_lv001/9800010002` jumps to an action chain that plays
+`cutscene_e0m2_4`, then `dlg_e0m2_4`, then `radio_e0m2_1`.
+`scripts/story_recovery/build_story_order.py` now surfaces this as
+`headerEventEvidence` on generated `story_order.json` entries when a header
+chain reaches a concrete play/story record. Current CN rebuild annotates
+`1,351` entries across `179` missions; this is a trigger/event-path
+diagnostic, not a standalone cross-scene chronology promotion.
+
+The current `story_order.json` builder also promotes a narrower scene-order
+case: same-script `levelscriptSceneChain` edges can keep weak
+`content-suffix-fallback` groups together when all affected entries come from
+the same source script and scene chunk. This promoted `74` weak fallback entries
+across `31` missions in the latest rebuild. For e0m0 it fixes the hub-key
+sequence from `indie_dg004/23900030000`, ordering
+`cutscene_e0m0_6 -> cutscene_e0m0_7 -> cutscene_e0m0_8` as
+`levelscript-scene-chain:c1` immediately after the q#7 branch. Explicit
+AnimeStudio `timelinePlayable` video bindings remain standalone WebUI rows but
+inherit adjacency from their bound story key; the only current example is
+`video_cs_video_e0m0_3` after `cutscene_e0m0_3`.
+
+Gameplay-observed calibration is now a separate, labelled layer. The only
+current hint file is `scripts/story_recovery/manual_observed_order_hints.json`
+for e0m0. Rows moved by this layer use
+`observed-gameplay-calibration`, `observed-aligned:*`, or
+`observed-compatible:*` evidence labels and preserve their previous
+decoded/static evidence in `recovered*BeforeObserved` fields. Each observed
+row also carries an `observedEvidenceAlignmentStatus`: `source-backed`,
+`partial`, or `gap`. Do not count those observed hints as firm original-data
+order when reporting evidence coverage; use them to find the next
+activation/control-flow clues that the static recovery is still missing.
+
+Remaining limits: this is trigger/action evidence, not a total mission
+timeline by itself. Runtime ordering among simultaneously active trigger
+headers still depends on quest state, trigger volumes, properties, battle
+signals, and other conditions. Non-play chains are still useful for state and
+gate reconstruction but should not be promoted as scene chronology until their
+downstream play/story edge is decoded.
 
 ## Case Study: Cutscene-Identification Metadata Already Available
 

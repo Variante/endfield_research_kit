@@ -22,7 +22,7 @@ const FILTER_SECTION_STORAGE_KEY = "webui_filter_sections_collapsed_v2";
 const STORY_SPLITTER_STORAGE_KEY = "webui_story_splitter_width";
 const ASSET_SPLITTER_STORAGE_KEY = "webui_asset_splitter_width";
 const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
-const WEBUI_DATA_CACHE_TAG = "20260518-story-order-recovery";
+const WEBUI_DATA_CACHE_TAG = "20260518-scene-map-order-evidence";
 const STORY_ORDER_JSON_ENABLED = true;
 const DEFAULT_LANGUAGE_INFO = {
   code: "CN",
@@ -553,7 +553,7 @@ function loadStoryOrderPayload() {
     .then(async (res) => {
       if (!res.ok) return { missions: {} };
       const payload = await res.json();
-      if (!payload || Number(payload.version || 0) < 6) {
+      if (!payload || !payload.missions || typeof payload.missions !== "object") {
         return { missions: {} };
       }
       return payload;
@@ -624,17 +624,188 @@ function storyOrderBadgeClass(detail) {
   return "is-weak";
 }
 
+function storyOrderStrengthLabel(detail) {
+  const cls = storyOrderBadgeClass(detail);
+  if (cls === "is-strong") return "strong";
+  if (cls === "is-hint") return "hint";
+  if (cls === "is-weak") return "weak";
+  return "";
+}
+
+function formatStoryOrderScriptRef(ref, direction) {
+  if (!ref || typeof ref !== "object") return "";
+  const script = direction === "in" ? ref.sourceScript : ref.targetScript;
+  if (!script) return "";
+  const bits = [String(script)];
+  if (ref.offset !== undefined && ref.offset !== null && Number.isFinite(Number(ref.offset))) {
+    bits.push(`@0x${Number(ref.offset).toString(16)}`);
+  }
+  if (ref.record) bits.push(String(ref.record));
+  if (ref.class) bits.push(String(ref.class));
+  if (ref.relation) bits.push(String(ref.relation));
+  if (ref.pointerFlag !== undefined && ref.pointerFlag !== null) {
+    bits.push(`flag=${ref.pointerFlag}`);
+  }
+  return bits.join(" ");
+}
+
+function formatStoryOrderVector3(vector) {
+  if (!vector || typeof vector !== "object") return "";
+  const coords = ["x", "y", "z"].map((axis) => {
+    const value = Number(vector[axis]);
+    return Number.isFinite(value) ? value.toFixed(2) : "?";
+  });
+  return coords.join(",");
+}
+
+function formatStoryOrderSpatialCandidate(candidate) {
+  if (!candidate || typeof candidate !== "object") return "";
+  const bits = [];
+  const quest = candidate.questId || "?";
+  const script = [candidate.mapId || candidate.levelId, candidate.scriptId].filter(Boolean).join("/");
+  bits.push([quest, script ? `via ${script}` : ""].filter(Boolean).join(" "));
+  const distance = Number(candidate.distanceXZ);
+  if (Number.isFinite(distance)) bits.push(`dXZ=${distance.toFixed(distance >= 10 ? 1 : 2)}m`);
+  const distance3d = Number(candidate.distance3d);
+  if (Number.isFinite(distance3d)) bits.push(`d3=${distance3d.toFixed(distance3d >= 10 ? 1 : 2)}m`);
+  if (candidate.pinLabel) bits.push(`pin=${candidate.pinLabel}`);
+  const position = formatStoryOrderVector3(candidate.position);
+  if (position) bits.push(`pos=${position}`);
+  const pinPosition = formatStoryOrderVector3(candidate.pinPosition);
+  if (pinPosition) bits.push(`pinPos=${pinPosition}`);
+  if (candidate.offset !== undefined && candidate.offset !== null && Number.isFinite(Number(candidate.offset))) {
+    bits.push(`offset=0x${Number(candidate.offset).toString(16)}`);
+  }
+  return bits.filter(Boolean).join(" ");
+}
+
+function formatStoryOrderSceneEdge(edge) {
+  if (!edge || typeof edge !== "object") return "";
+  const bits = [];
+  if (edge.neighbor) bits.push(String(edge.neighbor));
+  if (edge.kind) bits.push(String(edge.kind));
+  const scripts = Array.isArray(edge.sourceScripts) ? edge.sourceScripts.filter(Boolean).slice(0, 4) : [];
+  if (scripts.length) bits.push(`via ${scripts.join(",")}`);
+  const positions = Array.isArray(edge.positions) ? edge.positions.filter((value) => Number.isFinite(Number(value))).slice(0, 4) : [];
+  if (positions.length) bits.push(`pos=${positions.join(",")}`);
+  return bits.join(" ");
+}
+
 function storyOrderEvidenceTitle(detail) {
   if (!detail) return "";
   const parts = [];
   const position = Number(detail.position);
   if (Number.isFinite(position)) parts.push(`${uiText("storyOrderBadgeTitle") || "Recovered order"} #${position + 1}`);
+  const strength = storyOrderStrengthLabel(detail);
+  if (strength) parts.push(`strength=${strength}`);
   if (detail.evidence) parts.push(`evidence=${detail.evidence}`);
+  if (detail.observedOrderIndex !== undefined && detail.observedOrderIndex !== null) {
+    parts.push(`observedOrder=#${Number(detail.observedOrderIndex) + 1}`);
+  }
+  if (detail.observedOrderSource) parts.push(`observedSource=${detail.observedOrderSource}`);
+  if (detail.observedEvidenceAlignmentStatus) {
+    parts.push(`observedEvidenceStatus=${detail.observedEvidenceAlignmentStatus}`);
+  }
+  if (detail.observedEvidenceAlignment) {
+    parts.push(`observedEvidence=${detail.observedEvidenceAlignment}`);
+  }
+  if (Array.isArray(detail.observedEvidenceAlignmentSourceRefs) && detail.observedEvidenceAlignmentSourceRefs.length) {
+    parts.push(`observedEvidenceRefs=${detail.observedEvidenceAlignmentSourceRefs.join("; ")}`);
+  }
+  if (detail.recoveredEvidenceBeforeObserved) {
+    parts.push(`recoveredEvidenceBeforeObserved=${detail.recoveredEvidenceBeforeObserved}`);
+  }
   if (detail.sourceScript) parts.push(`script=${detail.sourceScript}`);
   if (detail.sourceFile) parts.push(`file=${detail.sourceFile}`);
   if (detail.offset !== undefined && detail.offset !== null) parts.push(`offset=${detail.offset}`);
   if (detail.recordClass) parts.push(`record=${detail.recordClass}`);
   if (detail.levelseq) parts.push(`levelseq=${detail.levelseq}`);
+  if (detail.binaryScriptIdVerified !== undefined) {
+    parts.push(`binaryScriptIdVerified=${detail.binaryScriptIdVerified ? "true" : "false"}`);
+  }
+  if (detail.binaryScriptIdOffset) parts.push(`binaryScriptIdOffset=${detail.binaryScriptIdOffset}`);
+  if (detail.binaryMemberCount !== undefined && detail.binaryMemberCount !== null) {
+    const expected = detail.binaryExpectedMemberCount !== undefined && detail.binaryExpectedMemberCount !== null
+      ? `/${detail.binaryExpectedMemberCount}`
+      : "";
+    parts.push(`binaryMemberCount=${detail.binaryMemberCount}${expected}`);
+  }
+  if (detail.binaryStartType) {
+    const raw = detail.binaryStartTypeRaw !== undefined && detail.binaryStartTypeRaw !== null
+      ? `(${detail.binaryStartTypeRaw})`
+      : "";
+    parts.push(`binaryStartType=${detail.binaryStartType}${raw}`);
+  }
+  if (detail.binaryStartShapeList) {
+    const count = detail.binaryStartShapeListCount !== undefined && detail.binaryStartShapeListCount !== null
+      ? `:${detail.binaryStartShapeListCount}`
+      : "";
+    parts.push(`binaryStartShapeList=${detail.binaryStartShapeList}${count}`);
+  }
+  if (detail.binaryTaskMap) {
+    const count = detail.binaryTaskMapCount !== undefined && detail.binaryTaskMapCount !== null
+      ? `:${detail.binaryTaskMapCount}`
+      : "";
+    parts.push(`binaryTaskMap=${detail.binaryTaskMap}${count}`);
+  }
+  if (detail.levelDataFile) parts.push(`levelData=${detail.levelDataFile}`);
+  if (detail.levelDataOffset !== undefined && detail.levelDataOffset !== null) parts.push(`levelDataOffset=${detail.levelDataOffset}`);
+  if (Array.isArray(detail.levelDataPrevScripts) && detail.levelDataPrevScripts.length) {
+    parts.push(`levelDataPrev=${detail.levelDataPrevScripts.join(", ")}`);
+  }
+  if (Array.isArray(detail.levelDataNextScripts) && detail.levelDataNextScripts.length) {
+    parts.push(`levelDataNext=${detail.levelDataNextScripts.join(", ")}`);
+  }
+  if (Array.isArray(detail.binaryOutgoingScriptRefs) && detail.binaryOutgoingScriptRefs.length) {
+    const refs = detail.binaryOutgoingScriptRefs
+      .map((ref) => formatStoryOrderScriptRef(ref, "out"))
+      .filter(Boolean)
+      .slice(0, 6);
+    if (refs.length) parts.push(`binaryRefsOut=${refs.join("; ")}`);
+  }
+  if (Array.isArray(detail.binaryIncomingScriptRefs) && detail.binaryIncomingScriptRefs.length) {
+    const refs = detail.binaryIncomingScriptRefs
+      .map((ref) => formatStoryOrderScriptRef(ref, "in"))
+      .filter(Boolean)
+      .slice(0, 6);
+    if (refs.length) parts.push(`binaryRefsIn=${refs.join("; ")}`);
+  }
+  if (detail.sceneChunkId) parts.push(`sceneChunk=${detail.sceneChunkId}`);
+  if (Array.isArray(detail.sceneEvidenceKinds) && detail.sceneEvidenceKinds.length) {
+    parts.push(`sceneEvidence=${detail.sceneEvidenceKinds.join(", ")}`);
+  }
+  if (Array.isArray(detail.sceneQuestIds) && detail.sceneQuestIds.length) {
+    parts.push(`sceneQuests=${detail.sceneQuestIds.join(", ")}`);
+  }
+  if (Array.isArray(detail.sceneOutgoingEdges) && detail.sceneOutgoingEdges.length) {
+    const refs = detail.sceneOutgoingEdges.map(formatStoryOrderSceneEdge).filter(Boolean).slice(0, 4);
+    if (refs.length) parts.push(`sceneEdgesOut=${refs.join("; ")}`);
+  }
+  if (Array.isArray(detail.sceneIncomingEdges) && detail.sceneIncomingEdges.length) {
+    const refs = detail.sceneIncomingEdges.map(formatStoryOrderSceneEdge).filter(Boolean).slice(0, 4);
+    if (refs.length) parts.push(`sceneEdgesIn=${refs.join("; ")}`);
+  }
+  if (Array.isArray(detail.spatialQuestCandidates) && detail.spatialQuestCandidates.length) {
+    const refs = detail.spatialQuestCandidates
+      .map(formatStoryOrderSpatialCandidate)
+      .filter(Boolean)
+      .slice(0, 4);
+    if (refs.length) parts.push(`mapPosition=${refs.join("; ")}`);
+  }
+  if (Array.isArray(detail.spatialRelatedQuestCandidates) && detail.spatialRelatedQuestCandidates.length) {
+    const refs = detail.spatialRelatedQuestCandidates
+      .map(formatStoryOrderSpatialCandidate)
+      .filter(Boolean)
+      .slice(0, 4);
+    if (refs.length) parts.push(`mapPositionRelated=${refs.join("; ")}`);
+  }
+  if (detail.levelDataNote) parts.push(String(detail.levelDataNote));
+  if (detail.binaryScriptRefNote) parts.push(String(detail.binaryScriptRefNote));
+  if (detail.scenePlacementNote) parts.push(String(detail.scenePlacementNote));
+  if (detail.spatialNote) parts.push(String(detail.spatialNote));
+  if (detail.observedOrderNote) parts.push(String(detail.observedOrderNote));
+  if (detail.observedEvidenceAlignmentNote) parts.push(String(detail.observedEvidenceAlignmentNote));
+  if (detail.binaryNote) parts.push(String(detail.binaryNote));
   return parts.join("\n");
 }
 
@@ -4478,9 +4649,37 @@ function renderConv(conv) {
     const orderDetail = storyOrderDetailForEntry(entry);
     if (orderDetail && storyOrderBadgeClass(orderDetail)) {
       const orderBits = [`#${Number(orderDetail.position) + 1}`];
+      const strength = storyOrderStrengthLabel(orderDetail);
+      if (strength) orderBits.push(`strength=${strength}`);
       if (orderDetail.evidence) orderBits.push(String(orderDetail.evidence));
+      if (orderDetail.observedEvidenceAlignmentStatus) {
+        orderBits.push(`observed=${orderDetail.observedEvidenceAlignmentStatus}`);
+      }
       if (orderDetail.sourceScript) orderBits.push(`script=${orderDetail.sourceScript}`);
       if (orderDetail.offset !== undefined && orderDetail.offset !== null) orderBits.push(`offset=${orderDetail.offset}`);
+      if (orderDetail.binaryStartType) orderBits.push(`startType=${orderDetail.binaryStartType}`);
+      if (Array.isArray(orderDetail.binaryOutgoingScriptRefs) && orderDetail.binaryOutgoingScriptRefs.length) {
+        const outRef = formatStoryOrderScriptRef(orderDetail.binaryOutgoingScriptRefs[0], "out");
+        if (outRef) orderBits.push(`out=${outRef}`);
+      }
+      if (Array.isArray(orderDetail.binaryIncomingScriptRefs) && orderDetail.binaryIncomingScriptRefs.length) {
+        const inRef = formatStoryOrderScriptRef(orderDetail.binaryIncomingScriptRefs[0], "in");
+        if (inRef) orderBits.push(`in=${inRef}`);
+      }
+      const spatialCandidate = Array.isArray(orderDetail.spatialQuestCandidates) && orderDetail.spatialQuestCandidates.length
+        ? orderDetail.spatialQuestCandidates[0]
+        : (Array.isArray(orderDetail.spatialRelatedQuestCandidates) && orderDetail.spatialRelatedQuestCandidates.length
+          ? orderDetail.spatialRelatedQuestCandidates[0]
+          : null);
+      if (spatialCandidate) {
+        const spatialText = missionTimelineSpatialCandidateLabel(spatialCandidate);
+        if (spatialText) orderBits.push(`map=${spatialText}`);
+      }
+      if (Array.isArray(orderDetail.sceneOutgoingEdges) && orderDetail.sceneOutgoingEdges.length) {
+        const edgeText = formatStoryOrderSceneEdge(orderDetail.sceneOutgoingEdges[0]);
+        if (edgeText) orderBits.push(`edge=${edgeText}`);
+      }
+      if (orderDetail.levelDataFile) orderBits.push(`levelData=${orderDetail.levelDataFile}`);
       meta.push(`story_order=${orderBits.join(", ")}`);
     }
     const metadataTagSummary = entryMetadataTagSummary(entry);
@@ -5972,6 +6171,95 @@ function appendMissionTimelineTextLine(container, label, values, { limit = 8 } =
   container.appendChild(line);
 }
 
+function missionTimelineObjectiveEntries(objective) {
+  const entries = [];
+  const seen = new Set();
+  const pushEntry = (value) => {
+    if (!value) return;
+    let key = "";
+    let text = "";
+    if (typeof value === "object") {
+      key = String(value.key || value.id || "").trim();
+      text = String(value.text || value.value || "").trim();
+    } else {
+      key = String(value || "").trim();
+    }
+    const label = text || key;
+    if (!label) return;
+    const dedup = key || label;
+    if (seen.has(dedup)) return;
+    seen.add(dedup);
+    entries.push({ key, text, label });
+  };
+
+  for (const instruction of missionTimelineArray(objective && objective.objectiveInstructions)) pushEntry(instruction);
+  for (const instruction of missionTimelineArray(objective && objective.instructions)) pushEntry(instruction);
+  if (!entries.length) {
+    if (objective && objective.descriptionKey) pushEntry({ key: objective.descriptionKey });
+    for (const key of missionTimelineArray(objective && objective.multipleDescriptionKeys)) pushEntry({ key });
+  }
+  return entries;
+}
+
+function missionTimelineObjectiveRows(quest, flowQuest = null) {
+  const rows = [];
+  const rowsByIndex = new Map();
+  const ensureRow = (index) => {
+    const key = String(index || rows.length + 1);
+    if (!rowsByIndex.has(key)) {
+      const row = { index: index || "", entries: [], seen: new Set() };
+      rowsByIndex.set(key, row);
+      rows.push(row);
+    }
+    return rowsByIndex.get(key);
+  };
+  const addObjective = (objective) => {
+    if (!objective || typeof objective !== "object") return;
+    const row = ensureRow(objective.index || objective.objectiveIndex || "");
+    for (const entry of missionTimelineObjectiveEntries(objective)) {
+      const dedup = entry.key || entry.label;
+      if (!dedup || row.seen.has(dedup)) continue;
+      row.seen.add(dedup);
+      row.entries.push(entry);
+    }
+  };
+
+  for (const objective of missionTimelineArray(flowQuest && flowQuest.objectiveAnchors)) addObjective(objective);
+  for (const objective of missionTimelineArray(quest && quest.objectives)) addObjective(objective);
+  return rows.filter((row) => row.entries.length);
+}
+
+function renderMissionTimelineObjectiveLine(container, rows, { limit = 10 } = {}) {
+  const flat = [];
+  for (const row of missionTimelineArray(rows)) {
+    for (const entry of missionTimelineArray(row && row.entries)) {
+      flat.push({ ...entry, objectiveIndex: row.index || entry.objectiveIndex || "" });
+    }
+  }
+  if (!flat.length) return false;
+
+  const line = document.createElement("div");
+  line.className = "mission-timeline-line mission-timeline-objectives";
+  const labelNode = document.createElement("span");
+  labelNode.className = "mission-timeline-line-label";
+  labelNode.textContent = uiText("missionTimelineObjectiveInstructions") || uiText("missionTimelineObjectives");
+  line.appendChild(labelNode);
+
+  for (const entry of flat.slice(0, limit)) {
+    const node = document.createElement("span");
+    node.className = "mission-timeline-objective-text";
+    node.innerHTML = highlight(entry.text || entry.key || "", STATE.filters.q);
+    node.title = [
+      entry.objectiveIndex ? `#${entry.objectiveIndex}` : "",
+      entry.key || "",
+    ].filter(Boolean).join(" ");
+    line.appendChild(node);
+  }
+  if (flat.length > limit) appendMissionTimelineChip(line, `+${flat.length - limit}`);
+  container.appendChild(line);
+  return true;
+}
+
 function renderMissionTimelineSceneRefs(refs, flowKeyMap, currentKey) {
   const cleaned = [];
   const seen = new Set();
@@ -6064,11 +6352,7 @@ function renderMissionTimelineTreeNode(node, questById, resourceContext, flowKey
     { limit: 8 }
   );
 
-  appendMissionTimelineTextLine(
-    panel,
-    uiText("missionTimelineObjectives"),
-    missionTimelineArray(quest.objectives).map((objective) => objective && objective.descriptionKey)
-  );
+  renderMissionTimelineObjectiveLine(panel, missionTimelineObjectiveRows(quest, flowQuest));
   appendMissionTimelineTextLine(
     panel,
     uiText("missionTimelineTracking"),
@@ -6666,12 +6950,16 @@ function renderMissionTimelineQuestSpatialTrack(track, flowKeyMap, currentKey) {
       missionTimelineArray(item.spatialSourceMatches).map(missionTimelineSpatialMatchLabel),
       { limit: 6 },
     );
-    appendMissionTimelineTextLine(
-      row,
-      uiText("missionTimelineObjectives"),
-      missionTimelineArray(item.descriptionKeys),
-      { limit: 6 },
-    );
+    const objectiveRows = [{
+      entries: missionTimelineArray(item.objectiveInstructions).length
+        ? missionTimelineArray(item.objectiveInstructions).map((instruction) => ({
+          key: instruction && instruction.key,
+          text: instruction && instruction.text,
+          label: instruction && (instruction.text || instruction.key),
+        }))
+        : missionTimelineArray(item.descriptionKeys).map((key) => ({ key, label: key })),
+    }];
+    renderMissionTimelineObjectiveLine(row, objectiveRows, { limit: 6 });
     const scriptRefs = missionTimelineArray(item.scriptRefs).map((script) => {
       const mapId = script && (script.mapId || script.levelId || "?");
       const scriptId = script && (script.scriptId || "?");

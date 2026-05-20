@@ -69,7 +69,7 @@ def recover_timeline_orders_for_build(mode: str, force: bool = False) -> None:
         print("Timeline line-order recovery: skipped (no AnimeStudio CLI AssetMaps found)")
         return
 
-    print("Timeline line-order recovery: extracting and parsing Timeline assets...")
+    print("Timeline line-order recovery: parsing Timeline assets...")
     try:
         recover_timeline_line_orders(
             TimelineRecoveryConfig(

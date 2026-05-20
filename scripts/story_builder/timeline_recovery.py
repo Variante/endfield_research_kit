@@ -6,10 +6,10 @@ build:
 1. Discover AnimeStudio CLI AssetMaps under export_full/recovered/AnimeStudio-cli.
 2. Select dialog Timeline asset folders in a general way (`dlgtl_*`, `f_dlgtl_*`,
    and `m_dlgtl_*` under gameplay/dialog/timeline).
-3. Export only those AssetMap entries with the patched AnimeStudio CLI
-   `--filter_data` option.
-4. Parse the exported MonoBehaviour JSON into timeline line-order and
-   option-anchor data.
+3. Prefer the full AnimeStudio MonoBehaviour JSON export when it already
+   contains the needed Timeline tracks.
+4. Fall back to filtered AnimeStudio CLI `--filter_data` exports for focused
+   diagnostics or when the full export has no recoverable Timeline tracks.
 
 The main output is:
   export_full/recovered/AnimeStudio-cli/timeline_line_orders.json
@@ -43,6 +43,15 @@ TIMELINE_CONTAINER_RE = re.compile(r"(?:^|/)timeline/(?P<stem>(?:[fm]_)?dlgtl_[^
 TIMELINE_STEM_RE = re.compile(r"^(?:[fm]_)?dlgtl_.+(?:_sub_\d+|_\d+)$", re.IGNORECASE)
 TIMELINE_SUB_NAME_RE = re.compile(r"^(?P<timeline>(?:[fm]_)?dlgtl_.+?_sub_\d+)(?:_|$)")
 TIMELINE_NO_SUB_NAME_RE = re.compile(r"^(?P<timeline>(?:[fm]_)?dlgtl_.+_\d+)(?:_|$)")
+TIMELINE_ROOT_NAME_TAIL_RE = re.compile(
+    r"^(?:_(?:copy|\d+))?_Actor$",
+    re.IGNORECASE,
+)
+DIALOG_TIMELINE_WALK_RE = re.compile(
+    r"^(?:Common|FemaleOnly|MaleOnly)$|Dialog Trunk Track|Runtime Jump Track|"
+    r"Dialog Skeletal Morph Track|^Option(?:\s|\d|$)",
+    re.IGNORECASE,
+)
 LINE_ID_RE = re.compile(r"^.+_\d+(?:_\d+)?$")
 IGNORED_DISPLAY_PREFIXES = ("option_", "au_", "audio_", "bgm_", "se_")
 OPTION_ID_PREFIX = "option_dlg_"
@@ -54,12 +63,18 @@ TOP_LEVEL_PARENT_RE = re.compile(
     r'(?ms)^\s*"m_Parent"\s*:\s*\{\s*"m_FileID"\s*:\s*-?\d+\s*,\s*"m_PathID"\s*:\s*(-?\d+)'
 )
 TOP_LEVEL_TRACKS_RE = re.compile(r'(?m)^\s*"m_Tracks"\s*:')
+TOP_LEVEL_CHILDREN_RE = re.compile(r'(?m)^\s*"m_Children"\s*:')
+TOP_LEVEL_CLIPS_RE = re.compile(r'(?m)^\s*"m_Clips"\s*:')
 PATH_ID_SUFFIX_RE = re.compile(r"_p([0-9A-Fa-f]{16})$")
 
 
 def path_id_suffix_from_stem(stem: str) -> str:
     match = PATH_ID_SUFFIX_RE.search(str(stem or ""))
     return match.group(1).upper() if match else ""
+
+
+def strip_path_id_suffix(stem: str) -> str:
+    return PATH_ID_SUFFIX_RE.sub("", str(stem or ""))
 
 
 @dataclass
@@ -80,6 +95,7 @@ class TimelineRecoveryConfig:
     limit_chks: int = 0
     min_lines: int = 1
     copy_to_webui: Path | None = None
+    prefer_full_monobehaviour: bool = True
 
 
 def recovery_root(export_root: Path = EXPORT_ROOT) -> Path:
@@ -205,6 +221,8 @@ def extract_monobehaviour_metadata(path: Path) -> dict | None:
         "name": name,
         "parentId": parent_id,
         "hasTracks": bool(TOP_LEVEL_TRACKS_RE.search(text)),
+        "hasChildren": bool(TOP_LEVEL_CHILDREN_RE.search(text)),
+        "hasClips": bool(TOP_LEVEL_CLIPS_RE.search(text)),
     }
 
 
@@ -454,7 +472,7 @@ def as_int(value) -> int | None:
     return None
 
 
-def iter_ref_ids(payload: dict):
+def iter_structural_ref_ids(payload: dict):
     for field_name in ("m_Tracks", "m_Children"):
         refs = payload.get(field_name)
         if not isinstance(refs, list):
@@ -463,6 +481,9 @@ def iter_ref_ids(payload: dict):
             path_id = ref_path_id(ref)
             if path_id is not None:
                 yield path_id
+
+
+def iter_asset_ref_ids(payload: dict):
     clips = payload.get("m_Clips")
     if isinstance(clips, list):
         for clip in clips:
@@ -474,6 +495,11 @@ def iter_ref_ids(payload: dict):
     binding = payload.get("bindingOptionAssets")
     if isinstance(binding, dict):
         yield from iter_ref_path_ids(binding)
+
+
+def iter_ref_ids(payload: dict):
+    yield from iter_structural_ref_ids(payload)
+    yield from iter_asset_ref_ids(payload)
 
 
 def line_stem(line_id: str) -> str:
@@ -500,6 +526,26 @@ def timeline_name_from_record_name(name: str) -> str:
         if match:
             return match.group("timeline")
     return ""
+
+
+def is_timeline_root_seed_name(stem: str) -> bool:
+    # Dialog trunk and option tracks recovered so far live under the Actor
+    # timeline root. Seeding Audio/Effect/Light/Others forces the graph walk
+    # through large non-dialog tracks and dominates build time.
+    name = strip_path_id_suffix(stem)
+    timeline = timeline_name_from_record_name(name)
+    if not timeline or not name.startswith(timeline):
+        return False
+    return bool(TIMELINE_ROOT_NAME_TAIL_RE.match(name[len(timeline):]))
+
+
+def should_walk_timeline_record(record: dict) -> bool:
+    name = str(record.get("name") or "")
+    if is_timeline_root_seed_name(name):
+        return True
+    if record.get("hasChildren"):
+        return True
+    return bool(DIALOG_TIMELINE_WALK_RE.search(name))
 
 
 def looks_like_dialog_line_id(value: str) -> bool:
@@ -632,6 +678,8 @@ def load_monobehaviour_records(
             "path": path,
             "name": name,
             "payload": None,
+            "hasChildren": bool(meta.get("hasChildren")),
+            "hasClips": bool(meta.get("hasClips")),
         }
         records_by_key.setdefault(record["key"], record)
 
@@ -666,10 +714,16 @@ def walk_track_tree(
         out.append(record)
 
         source_file, _path_id = key
-        for child_id in iter_ref_ids(record_payload(record)):
-            queue.append((source_file, child_id))
+        payload = record_payload(record)
+        for child_id in iter_structural_ref_ids(payload):
+            child = records_by_key.get((source_file, child_id))
+            if child and should_walk_timeline_record(child):
+                queue.append(child["key"])
+        for asset_id in iter_asset_ref_ids(payload):
+            records_by_key.get((source_file, asset_id))
         for child in children_by_parent.get(key, []):
-            queue.append(child["key"])
+            if should_walk_timeline_record(child):
+                queue.append(child["key"])
 
     out.sort(key=lambda item: rel_path(item["path"]))
     return out
@@ -1684,9 +1738,9 @@ def load_targeted_full_monobehaviour_records(
         if not suffix:
             continue
         path_index[suffix].append(path)
-        if "dlgtl_" not in stem:
+        if "dlgtl_" not in stem or not is_timeline_root_seed_name(stem):
             continue
-        timeline = timeline_name_from_record_name(stem)
+        timeline = timeline_name_from_record_name(strip_path_id_suffix(stem))
         if timeline and stem_selected(timeline):
             seed_paths.append(path)
 
@@ -1709,6 +1763,8 @@ def load_targeted_full_monobehaviour_records(
             "path": path,
             "name": str(meta.get("name") or path.stem),
             "payload": None,
+            "hasChildren": bool(meta.get("hasChildren")),
+            "hasClips": bool(meta.get("hasClips")),
         }
         records_by_key[key] = record
 
@@ -1746,12 +1802,16 @@ def load_targeted_full_monobehaviour_records(
         if not record:
             continue
         source_file, _path_id = key
-        for ref_id in iter_ref_ids(record_payload(record)):
+        payload = record_payload(record)
+        for ref_id in iter_structural_ref_ids(payload):
             child = ensure_record_key(source_file, ref_id)
-            if child:
+            if child and should_walk_timeline_record(child):
                 queue.append(child["key"])
+        for ref_id in iter_asset_ref_ids(payload):
+            ensure_record_key(source_file, ref_id)
         for child in children_by_parent.get(key, []):
-            queue.append(child["key"])
+            if should_walk_timeline_record(child):
+                queue.append(child["key"])
 
     return records_by_key, children_by_parent, timeline_roots
 
@@ -1963,18 +2023,13 @@ def recover_timeline_line_orders(config: TimelineRecoveryConfig | None = None) -
     if not map_paths and not config.parse_only:
         raise FileNotFoundError(f"No AnimeStudio CLI AssetMaps found under {recovery_root(export_root)}")
 
-    cli = None if config.dry_run or config.parse_only else resolve_cli(config.cli)
-    if not config.keep_extract and not config.dry_run and not config.parse_only and extract_dir.exists():
-        log(f"wiping {rel_path(extract_dir)}")
-        shutil.rmtree(extract_dir)
-    extract_dir.mkdir(parents=True, exist_ok=True)
-
     loaded_maps: list[tuple[Path, list[dict]]] = []
     available_counts: Counter = Counter()
     map_summaries: list[dict] = []
     grouped: dict[str, list[dict]] = defaultdict(list)
     timeline_counts: Counter = Counter()
     report_summary = None
+    timeline_filter = re.compile(config.timeline_regex, re.IGNORECASE) if config.timeline_regex else None
     if config.parse_only:
         target_summary = {
             "timelineFolderCount": 0,
@@ -2028,61 +2083,25 @@ def recover_timeline_line_orders(config: TimelineRecoveryConfig | None = None) -
             "timelineFolders": dict(sorted(timeline_counts.items())),
             "report": report_summary,
         }
-        (extract_dir / "timeline_targets.json").write_text(
-            json.dumps(target_summary, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
 
-    chks = sorted(grouped.keys())
-    if config.limit_chks > 0:
-        chks = chks[: config.limit_chks]
+    target_timeline_stems = {
+        str(stem)
+        for stem in ((target_summary.get("timelineFolders") or {}) if isinstance(target_summary, dict) else {})
+        if str(stem)
+    }
+    if config.timeline_list:
+        timeline_list = config.timeline_list if config.timeline_list.is_absolute() else ROOT / config.timeline_list
+        target_timeline_stems.update(load_timeline_list(timeline_list))
 
     extract_summary: list[dict] = []
-    t_extract = time.time()
-    for index, source in enumerate(chks, 1):
-        chk_path = Path(source)
-        out_dir = extract_dir / chk_path.stem
-        filter_data_path = out_dir / "filter_data.json"
-        write_filter_data(grouped[source], filter_data_path)
-        log(f"[{index}/{len(chks)}] {chk_path.stem}: {len(grouped[source])} item(s)")
-        if config.dry_run:
-            extract_summary.append({"chk": chk_path.stem, "items": len(grouped[source]), "rc": None, "produced": 0, "seconds": 0.0})
-            continue
-        t0 = time.time()
-        rc = run_cli(cli, chk_path, out_dir, filter_data_path) if cli else 1
-        elapsed = time.time() - t0
-        mono_dir = out_dir / "MonoBehaviour"
-        produced = sum(1 for _ in mono_dir.glob("*.json")) if mono_dir.is_dir() else 0
-        log(f"    rc={rc} produced={produced} elapsed={elapsed:.1f}s")
-        extract_summary.append({"chk": chk_path.stem, "items": len(grouped[source]), "rc": rc, "produced": produced, "seconds": round(elapsed, 1)})
-        if rc != 0:
-            raise RuntimeError(f"AnimeStudio CLI failed for {chk_path} with rc={rc}")
-
     entries: list[dict] = []
     parse_summary: list[dict] = []
-    timeline_filter = re.compile(config.timeline_regex, re.IGNORECASE) if config.timeline_regex else None
-    mono_dirs = discover_extract_dirs([extract_dir])
+    extract_skipped_reason: str | None = None
+    t_extract = time.time()
+
     if config.dry_run:
-        log("dry run complete; skipped parse and output JSON")
-    elif not mono_dirs:
-        raise RuntimeError(f"No MonoBehaviour directories found under {extract_dir}")
+        log("dry run requested; skipped full MonoBehaviour parse")
     else:
-        for mono_dir in mono_dirs:
-            parsed = parse_extract_dir(mono_dir, timeline_filter)
-            parsed = [entry for entry in parsed if len(entry.get("lineIds") or []) >= config.min_lines]
-            log(f"{rel_path(mono_dir)}: {len(parsed)} timeline(s) with dialog clips")
-            parse_summary.append({"monoDir": rel_path(mono_dir), "timelineCount": len(parsed)})
-            entries.extend(parsed)
-
-        target_timeline_stems = {
-            str(stem)
-            for stem in ((target_summary.get("timelineFolders") or {}) if isinstance(target_summary, dict) else {})
-            if str(stem)
-        }
-        if config.timeline_list:
-            timeline_list = config.timeline_list if config.timeline_list.is_absolute() else ROOT / config.timeline_list
-            target_timeline_stems.update(load_timeline_list(timeline_list))
-
         for mono_dir in discover_full_monobehaviour_dirs(export_root):
             parsed = parse_full_monobehaviour_dir(mono_dir, target_timeline_stems, timeline_filter)
             parsed = [entry for entry in parsed if len(entry.get("lineIds") or []) >= config.min_lines]
@@ -2094,9 +2113,85 @@ def recover_timeline_line_orders(config: TimelineRecoveryConfig | None = None) -
             })
             entries.extend(parsed)
 
+    full_entry_count = len(entries)
+    focused_run = bool(config.target_report or config.timeline_list or config.timeline_regex or config.limit_chks > 0)
+    should_process_chks = not config.parse_only
+    should_run_cli = should_process_chks and not config.dry_run
+    if config.prefer_full_monobehaviour and full_entry_count and not focused_run:
+        should_process_chks = False
+        should_run_cli = False
+        extract_skipped_reason = "full-monobehaviour"
+        log(
+            f"full MonoBehaviour supplied {full_entry_count} timeline(s); "
+            "skipping filtered timeline_extract export"
+        )
+    elif config.parse_only:
+        extract_skipped_reason = "parse-only"
+    elif config.dry_run:
+        extract_skipped_reason = "dry-run"
+
+    cli = resolve_cli(config.cli) if should_run_cli else None
+    if should_run_cli and not config.keep_extract and extract_dir.exists():
+        log(f"wiping {rel_path(extract_dir)}")
+        shutil.rmtree(extract_dir)
+    extract_dir.mkdir(parents=True, exist_ok=True)
+    (extract_dir / "timeline_targets.json").write_text(
+        json.dumps(target_summary, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    chks = sorted(grouped.keys())
+    if config.limit_chks > 0:
+        chks = chks[: config.limit_chks]
+
+    if should_process_chks:
+        for index, source in enumerate(chks, 1):
+            chk_path = Path(source)
+            out_dir = extract_dir / chk_path.stem
+            filter_data_path = out_dir / "filter_data.json"
+            write_filter_data(grouped[source], filter_data_path)
+            log(f"[{index}/{len(chks)}] {chk_path.stem}: {len(grouped[source])} item(s)")
+            if config.dry_run:
+                extract_summary.append({
+                    "chk": chk_path.stem,
+                    "items": len(grouped[source]),
+                    "rc": None,
+                    "produced": 0,
+                    "seconds": 0.0,
+                })
+                continue
+            t0 = time.time()
+            rc = run_cli(cli, chk_path, out_dir, filter_data_path) if cli else 1
+            elapsed = time.time() - t0
+            mono_dir = out_dir / "MonoBehaviour"
+            produced = sum(1 for _ in mono_dir.glob("*.json")) if mono_dir.is_dir() else 0
+            log(f"    rc={rc} produced={produced} elapsed={elapsed:.1f}s")
+            extract_summary.append({
+                "chk": chk_path.stem,
+                "items": len(grouped[source]),
+                "rc": rc,
+                "produced": produced,
+                "seconds": round(elapsed, 1),
+            })
+            if rc != 0:
+                raise RuntimeError(f"AnimeStudio CLI failed for {chk_path} with rc={rc}")
+
+    parse_extract_outputs = config.parse_only or should_run_cli
+    if config.dry_run:
+        log("dry run complete; skipped parse and output JSON")
+    else:
+        mono_dirs = discover_extract_dirs([extract_dir]) if parse_extract_outputs else []
+        if parse_extract_outputs and not mono_dirs and not entries:
+            raise RuntimeError(f"No MonoBehaviour directories found under {extract_dir}")
+        for mono_dir in mono_dirs:
+            parsed = parse_extract_dir(mono_dir, timeline_filter)
+            parsed = [entry for entry in parsed if len(entry.get("lineIds") or []) >= config.min_lines]
+            log(f"{rel_path(mono_dir)}: {len(parsed)} timeline(s) with dialog clips")
+            parse_summary.append({"monoDir": rel_path(mono_dir), "timelineCount": len(parsed)})
+            entries.extend(parsed)
+
         payload = collapse_by_dialog_key(entries)
-        is_focused_run = bool(config.target_report or config.timeline_list or config.timeline_regex)
-        if is_focused_run and order_out.exists():
+        if focused_run and order_out.exists():
             existing_payload = load_json(order_out)
             if isinstance(existing_payload, dict):
                 payload = merge_timeline_payloads(existing_payload, payload)
@@ -2118,8 +2213,10 @@ def recover_timeline_line_orders(config: TimelineRecoveryConfig | None = None) -
         "orderOut": rel_path(order_out),
         "dryRun": config.dry_run,
         "parseOnly": config.parse_only,
+        "preferFullMonoBehaviour": config.prefer_full_monobehaviour,
         "maps": map_summaries,
         "targets": target_summary,
+        "extractSkippedReason": extract_skipped_reason,
         "extract": extract_summary,
         "parse": parse_summary,
         "elapsedSeconds": round(time.time() - t_extract, 1),
@@ -2149,6 +2246,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--include-sibling-prefixes", action="store_true", help="With --target-report, include sibling-numbered timeline folders for unmatched scenes.")
     parser.add_argument("--keep-extract", action="store_true", help="Do not wipe the extract directory before exporting.")
     parser.add_argument("--parse-only", action="store_true", help="Parse the existing extract directory without running AnimeStudio CLI.")
+    parser.add_argument(
+        "--extract-timeline-assets",
+        action="store_true",
+        help="Force filtered AnimeStudio CLI extraction even when full MonoBehaviour exports are sufficient.",
+    )
     parser.add_argument("--reuse-current", action="store_true", help="Skip recovery if the output is newer than maps and this script.")
     parser.add_argument("--dry-run", action="store_true", help="Write filter_data and summaries, but do not run the CLI or parse output.")
     parser.add_argument("--limit-chks", type=int, default=0, help="Optional smoke-test limit for number of chk files.")
@@ -2185,6 +2287,7 @@ def main(argv: list[str] | None = None) -> int:
         limit_chks=args.limit_chks,
         min_lines=args.min_lines,
         copy_to_webui=copy_to_webui,
+        prefer_full_monobehaviour=not args.extract_timeline_assets,
     )
     recover_timeline_line_orders(config)
     return 0

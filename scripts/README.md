@@ -141,8 +141,12 @@ Expected active inputs and outputs:
 These are kept because the WebUI story builders import or use them:
 
 - `story_builder/timeline_recovery.py`: parses `dlgtl_*` Timeline MonoBehaviour
-  data into authored line orders. Backs the `dialogTimeline` recovery mode,
-  which corresponds to the runtime path
+  data into authored line orders. It prefers the full AnimeStudio
+  `json_by_type/MonoBehaviour` export and only falls back to filtered
+  `timeline_extract` CLI exports for focused diagnostics or when the full
+  export has no recoverable Timeline tracks; pass
+  `--extract-timeline-assets` to force the old extraction path. Backs the
+  `dialogTimeline` recovery mode, which corresponds to the runtime path
   `Beyond.Gameplay.Core.DialogTimelineManager.PlayDialogTimeline`.
 - `story_builder/mission_recovery.py`: reconstructs mission-level quest/scene
   ordering evidence from `MissionRuntimeAsset`.
@@ -157,8 +161,23 @@ These are kept because the WebUI story builders import or use them:
   writes `export_full/recovered/story_source_links.json`; the Story builder
   stamps matching conv files and index entries with source evidence and
   writes per-language coverage/orphan reports.
+- `story_builder/levelscript_binary.py`: shared raw LevelScriptData helpers.
+  It verifies serialized script ids against file names and decodes the
+  top-level MemoryPack tail fields that are currently stable, including
+  `startType` when the adjacent `startShapeList` can be skipped safely. It
+  also decodes the three serialized `ActionSerializedMap` UID-list boundaries
+  in the GameAssembly/MetadataRegistration-backed order (`actionList`,
+  `getterList`, `headerList`) and diagnostic action payload hints, including
+  `0x0bed/0x00` terminal-branch tail refs as local LevelScript action ids and
+  compact `ActionHeader.nextId` prefixes on high-code header/event rows.
+  When a two-block action map has an omitted/empty getter block followed by a
+  header-shaped final block, it labels that final block as `headerList`.
 - `story_builder/video_bindings.py` builds the narrative video binding evidence used
-  by the Story builder. Timeline-backed links are preserved into
+  by the Story builder. It scans dialog `timeline_extract` outputs plus the
+  full story-scoped AnimeStudio `json_by_type/MonoBehaviour` exports, so
+  gameplay cutscene playables such as `*_cutscene_*_actor.playable` can bind
+  `BeyondFMVPlayableAsset.fmvId` back to a cutscene entry. Timeline-backed
+  links are preserved into
   `webui/data/lang/<LANG>/narrative_video_evidence.json` so a WebUI video can
   be traced to the exact `BeyondFMVPlayableAsset` / Timeline source instead of
   relying on filename matching. Narrative videos that only match by name are
@@ -204,17 +223,193 @@ scan:
 - `story_recovery/build_levelscript_control_audit.py`: audits a mission's
   higher LevelScript control layer from MissionRuntime, LevelData script
   ownership, decoded LevelScript story/levelseq records, cross-script numeric
-  references, and IL2CPP metadata facts. It writes
+  references, decoded map-position proximity candidates, and IL2CPP metadata
+  facts. It writes
   `reports/mission_order/<mission>_levelscript_control_audit.json` / `.md`.
+  Cross-script rows include the raw little-endian target id, record header,
+  payload relation, decoded script-pointer payload/flag bytes where available,
+  and byte window so weak links can be checked directly against the exported
+  LevelScriptData bytes.
   Use it before promoting inferred file-order links into `story_order.json`;
   direct ordering still requires decoded start/end/action opcodes.
+- `story_recovery/build_levelscript_opcode_shape_audit.py`: scans all
+  decoded `LevelScriptData` action records and groups opcode/kind pairs by
+  payload shape, actionMap role, strings, property keys, trigger slots,
+  compact script pointers, decoded compact gate/terminal local refs, and
+  ManualStart-like `levelId+scriptId` payloads.
+  It writes `reports/mission_order/levelscript_opcode_shape_audit.json` /
+  `.md` and is the first stop before naming new setter/start opcodes. It
+  reports serialized-map membership separately for `actionList`, `getterList`,
+  and `headerList`, with only residual UID records treated as outside the
+  serialized map.
+- `story_recovery/build_levelscript_action_map_list_audit.py`: audits the
+  three physical `ActionSerializedMap` UID-list blocks against GameAssembly
+  setter dispatch, MetadataRegistration type resolution, and observed opcode
+  content. It writes
+  `reports/mission_order/levelscript_action_map_list_audit.json` / `.md` and
+  documents omitted-getter/header-only two-block cases; current recovery moves
+  derived `ScriptEventHeader`-band rows into `headerList` rather than
+  `getterList`.
+- `story_recovery/build_levelscript_manual_control_audit.py`: follows the
+  now-named ActionBase manual control records (`0x02f1/0x0a`
+  `ManualStartLevelScript`, `0x02ec/0x0a` `ManualEndLevelScript`), checks for
+  literal target operands, and records the common adjacent trigger-event
+  pattern. It writes
+  `reports/mission_order/levelscript_manual_control_audit.json` / `.md`;
+  current recovery finds `84` manual control rows, `74` trigger-adjacent
+  activation pairs, only `4` rows with literal script-id operands, and `0`
+  literal cross-script targets.
+- `story_recovery/build_levelscript_property_setter_candidate_audit.py`:
+  follows the MissionRuntime property-check bridges into the target
+  `LevelScriptData` files, keeps exact key-bearing UID records separate from
+  offset-only/top-level property data, and ranks local setter/gate/listener
+  opcode candidates by chain position and decoded payload hints. It writes
+  `reports/mission_order/levelscript_property_setter_candidates_<LANG>.json`
+  / `.md`; the output is diagnostic and not direct order-promotion evidence.
+- `story_recovery/build_levelscript_gate_audit.py`: follows `0x0a03/0x00`
+  compact condition/gate records. The shared binary decoder now exposes the
+  stable shape as a property key, type code, post-key flag, and optional tail
+  local action ref. The audit walks that local ref separately from ordinary
+  `nextId`, then cross-checks MissionRuntime property bridges. It writes
+  `reports/mission_order/levelscript_gate_audit_<LANG>.json` / `.md`;
+  current CN recovery finds `219` gate rows, `171` decoded property-key rows,
+  `41` rows with tail local refs, and `10` MissionRuntime-bridged rows.
+- `story_recovery/build_levelscript_terminal_branch_audit.py`: follows
+  `0x0bed/0x00` terminal-branch records through their decoded tail local-id
+  refs, then walks `nextId`, split-list refs, and nested terminal refs to
+  expose the story/play records reachable after a compact property terminal.
+  It writes
+  `reports/mission_order/levelscript_terminal_branch_audit_<LANG>.json` /
+  `.md`; current CN recovery finds `1,529` terminal rows, `6` MissionRuntime
+  property-bridged rows, `156` rows with story-key targets, and `154` rows
+  with play-action targets.
+- `story_recovery/build_levelscript_setter_overlap_audit.py`: compares
+  MissionRuntime `CheckLevelScriptProperty*` triples against named ActionBase
+  setters (`0x03b8/0x0a` `SetBool`, `0x03e7/0x0a` `SetInt`,
+  `0x03ea/0x0a` `SetIntIncrease`). It writes
+  `reports/mission_order/levelscript_setter_overlap_<LANG>.json` / `.md`;
+  current CN recovery finds `1,331` decoded setter-key rows but `0` exact
+  `(mapId, scriptId, key)` matches to MissionRuntime property checks.
+- `story_recovery/build_levelscript_action_metadata_audit.py`: extracts a
+  focused IL2CPP metadata view for LevelScript action/event classes, including
+  ManualStart/ManualEnd, property getter, property-change listener, and
+  trigger-volume event shapes, plus the generic `Set<T>` / `SetList<T>` and
+  ParamBlackboard/ParamVariable property-storage surfaces. It also keeps the
+  `ActionMapAssetRaw -> ActionSerializedMap` layer visible. Runtime fields are
+  `headerList`, `actionList`, and `getterList`; the body audit shows setter
+  dispatch in `actionList`, `getterList`, `headerList` order, and the list
+  audit checks that against binary content signatures. This is the current
+  best lead for unnamed compact records such as `0x0a03/0x00` and
+  `0x0bed/0x00`. It writes
+  `reports/mission_order/levelscript_action_runtime_metadata.json` / `.md`
+  and is used to reject property-key records that only match read/gate/listener
+  families while keeping the generic setter family visible.
+- `story_recovery/build_levelscript_action_map_type_audit.py`: resolves the
+  ActionSerializedMap and ActionMapRuntime type indexes that the metadata-only
+  catalog leaves as `<type-index:N>`. It reads GameAssembly
+  `Il2CppMetadataRegistration` and writes
+  `reports/mission_order/levelscript_action_map_type_indices.json` / `.md`;
+  current recovery resolves `actionList` to `List<ActionBase>`, `getterList`
+  to `List<PureGetter>`, `headerList` to `List<ActionHeader>`, and the runtime
+  arrays to `ActionBase[]`, `PureGetter[]`, and `ActionHeader[]`.
+- `story_recovery/build_levelscript_action_body_audit.py`: maps the focused
+  LevelScript action/runtime metadata targets to `GameAssembly.dll` and writes
+  a compact body report at
+  `reports/mission_order/levelscript_action_body_targets_gameassembly.json`
+  / `.md`. It confirms manual start/end calls, property getter reads,
+  property-change listener registration, and the runtime
+  `UpdateRuntimeState -> ModuleResetUpdateProperty` path. It also checks the
+  generic setter follow-up: concrete MemoryPack wrappers deserialize
+  `set____key__` before `set____value__`, and their generic wrapper setters
+  store key/value at the real instance offsets `+0xd0`/`+0xd8`. It also maps
+  `ActionSerializedMapForMemoryPack.Deserialize`, confirming calls to
+  `set___actionList__`, `set___getterList__`, and `set___headerList__` in
+  that order; the setters write ActionSerializedMap fields at `+0x18`,
+  `+0x20`, and `+0x10`. It also tracks `ActionHeaderForMemoryPack` setter
+  bodies, including `set____nextID__` at runtime field `+0x60`, which backs
+  the compact payload `ActionHeader.nextId` decode used by the header-chain
+  audit. Use the ActionBase formatter tag audit below for the opcode-to-class
+  bridge.
+- `story_recovery/build_levelscript_actionbase_tag_audit.py`: extracts the
+  generated `ActionBaseForMemoryPackFormatter..cctor` union tag table from
+  `GameAssembly.dll`, also checks the tiny `FinalActionBase` formatter, and
+  decodes runtime-metadata type slots back through `global-metadata.dat`. It writes
+  `reports/mission_order/levelscript_actionbase_formatter_tags.json` / `.md`
+  and cross-references `levelscript_opcode_shape_audit`: current recovery finds
+  contiguous ActionBase tags `0x0000..0x04dc`, names common playback records
+  (`0x034a` `PlayRadio`, `0x046c` `StartDialogAction`), and confirms
+  manual control opcodes (`0x02f1/0x0a` `ManualStartLevelScript`,
+  `0x02ec/0x0a` `ManualEndLevelScript`) and setter-class opcodes such as
+  `0x03b8/0x0a` `SetBool`,
+  `0x03e7/0x0a` `SetInt`, and `0x03ea/0x0a` `SetIntIncrease`. High
+  event/gate/terminal records such as `0x0a03/0x00`, `0x0bed/0x00`,
+  `0x12a1/0x00`, `0x12a3/0x00`, and `0x13a5/0x00` are outside that
+  ActionBase tag range.
+- `story_recovery/build_memorypack_union_tag_audit.py`: scans all generated
+  MemoryPack formatter `.cctor` union registrations and writes
+  `reports/mission_order/memorypack_union_formatter_tag_audit.json` / `.md`
+  plus an all-image variant. Current recovery finds no raw union tag above
+  `0x04dc`, but derives `110` ActionHeader/header mappings from extracted
+  formatter tags and observed high-code banks, including low `0x0e**` /
+  `0x0f**` ActionHeader banks, custom events, dialog enter/exit, quest-state
+  changes, trigger-volume enter/leave, script-stage changes, and train-level
+  events. `0x0a03/0x00` is now
+  structurally decoded as a compact condition/gate record with a type code,
+  post flag, and optional tail local action ref; `0x0bed/0x00` is now decoded
+  as a compact terminal branch carrier with local action refs, though both
+  runtime class families are still unnamed.
+- `story_recovery/build_levelscript_header_chain_audit.py`: uses the compact
+  `ActionHeader.nextId` payload field on `headerList` rows to walk from
+  event/listener records into `actionList` chains. It writes
+  `reports/mission_order/levelscript_header_chain_audit.json` / `.md`;
+  current recovery finds `10,085` header rows, all `10,085` named, `9,961`
+  rows targeting `actionList`, `123` duplicate-local-id ambiguous action
+  targets, `0` missing positive targets, `1,647` event chains with named play
+  actions, and `1,791` chains with scene-like text.
 - `story_recovery/build_story_order.py`: builds
   `webui/data/assets/story_order.json` from original/decodeable game data:
   MissionRuntime quest/property anchors, decoded LevelScript play records,
-  levelseq payloads, title-card text rows, secondary LevelData level refs, weak
-  authored ordinal-name hints, and weaker suffix fallbacks. This is run by
-  `export.bat` after the CN story bundle is built so the WebUI can sort mission
-  entries by recovered file/play order.
+  levelseq payloads, resolved `lt:p` LevelTimeline markers from LevelData to
+  LevelScript UID records, secondary LevelData level refs, weak
+  authored ordinal-name hints, and weaker suffix fallbacks. Entries also carry
+  LevelData file/offset, neighboring script diagnostics, and verified
+  LevelScriptData binary tail fields where available. Source-backed entries
+  also carry compact incoming/outgoing cross-script reference diagnostics plus
+  decoded script-pointer flag bytes where available, map-position proximity
+  diagnostics from decoded LevelScript vectors matched against quest pins, and
+  compact mission timeline scene-edge diagnostics. For the few rows where a
+  decoded `0x0bed/0x00` terminal-branch walk reaches concrete play/story
+  actions that also match a MissionRuntime property check, entries carry
+  `terminalBranchEvidence` diagnostics and can use that direct bridge before
+  falling back to generic property evidence. Entries can also carry
+  `headerEventEvidence` diagnostics when a decoded `headerList`
+  `ActionHeader.nextId` edge reaches the concrete play/story record through an
+  `actionList` chain; this identifies the trigger/event path but does not
+  promote runtime chronology by itself.
+  Direct same-script scene file-order edges are applied as stable local
+  ordering constraints. Nonzero `0x0bed/0x00` terminal-branch path edges can
+  also break local ties when both scenes are reached through the same unique
+  terminal branch membership; branch-root `0` and multi-branch reachability
+  remain diagnostics only. Map-position proximity and other diagnostics remain
+  visible in WebUI tooltips and are not standalone ordering proof; a narrow
+  exception lets coherent direct same-script spatial candidates override weak
+  content suffixes for raw-ordered source-script clusters. Another
+  constrained exception corrects numeric levelseq over-anchoring when an
+  incoming cross-file scene edge and the predecessor script's spatial
+  candidate agree. Same-script `levelscriptSceneChain` edges can also keep
+  weak suffix-only scene groups together without moving stronger quest,
+  property, levelseq, or spatial anchors. Standalone video rows with explicit
+  AnimeStudio `timelinePlayable` bindings inherit adjacency from their bound
+  story key, while filename-only video matches remain ordinary fallbacks.
+  Mission-specific gameplay-observed calibration hints live in
+  `story_recovery/manual_observed_order_hints.json`; these are WebUI recovery
+  aids, not original-data proof, and generated rows keep the previous recovered
+  evidence in `recovered*BeforeObserved` fields. Hints may also carry
+  `evidenceAlignments`; those mark rows as `source-backed`, `partial`, or
+  `gap` against the observation and can replace the generic observed badge
+  with a more specific `observed-aligned:*` or `observed-compatible:*`
+  evidence label. This is run by `export.bat` after the CN story bundle is
+  built so the WebUI can sort mission entries by recovered file/play order.
 - `story_recovery/build_option_playable_semantics_audit.py`: audits remaining
   `inferredOptionResponse` groups against decoded
   `DialogOptionPlayableAsset` fields such as `logicId`, `trunkId`,

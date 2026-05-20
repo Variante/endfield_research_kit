@@ -4,6 +4,11 @@ from .context import *
 from .anime_assets import *
 from .scene_graph import *
 
+_LEVELDATA_NAMED_TABLES_CACHE: dict[str, list[list[dict]]] = {}
+_LEVELSCRIPT_UID_OCCURRENCE_CACHE: dict[tuple[str, ...], dict[str, list[dict]]] = {}
+_LEVELTIMELINE_MARKER_CACHE: dict[tuple[tuple[str, ...], tuple[str, ...]], list[dict]] = {}
+
+
 def _topo_sort_quests(quests_out: list[dict]) -> list[dict]:
     by_id = {q["id"]: q for q in quests_out if q.get("id")}
     indegree = {qid: 0 for qid in by_id}
@@ -446,12 +451,15 @@ def _extract_named_entry_tables(
             if pos + 8 > len(data):
                 ok = False
                 break
+            entry_index = len(entries)
+            entry_offset = pos
             key = int.from_bytes(data[pos : pos + 4], "little", signed=False)
             size = int.from_bytes(data[pos + 4 : pos + 8], "little", signed=False)
             pos += 8
             if size <= 0 or size > max_string_len or pos + size > len(data):
                 ok = False
                 break
+            text_offset = pos
             raw = data[pos : pos + size]
             pos += size
             if not _is_printable_ascii(raw):
@@ -460,6 +468,10 @@ def _extract_named_entry_tables(
             entries.append({
                 "key": key,
                 "text": raw.decode("ascii"),
+                "index": entry_index,
+                "tableOffset": start,
+                "entryOffset": entry_offset,
+                "textOffset": text_offset,
             })
         if ok:
             tables.append(entries)
@@ -492,6 +504,22 @@ def _load_leveldata_named_entries(path: Path) -> list[dict]:
 
     _LEVELDATA_NAMED_TABLE_CACHE[cache_key] = entries
     return entries
+
+
+def _load_leveldata_named_tables(path: Path) -> list[list[dict]]:
+    cache_key = str(path)
+    if cache_key in _LEVELDATA_NAMED_TABLES_CACHE:
+        return _LEVELDATA_NAMED_TABLES_CACHE[cache_key]
+
+    try:
+        data = path.read_bytes()
+    except OSError:
+        tables: list[list[dict]] = []
+    else:
+        tables = _extract_named_entry_tables(data)
+
+    _LEVELDATA_NAMED_TABLES_CACHE[cache_key] = tables
+    return tables
 
 
 def _load_levelscript_binding_data(level_id: str) -> dict:
@@ -555,6 +583,253 @@ def _load_levelscript_binding_data(level_id: str) -> dict:
 
     _LEVELSCRIPT_BINDING_CACHE[level_id] = out
     return out
+
+
+def _levelscript_record_for_offset(records: list[dict], offset: int, data_len: int) -> dict | None:
+    for index, record in enumerate(records):
+        start = int(record.get("start") or 0)
+        next_start = int(records[index + 1].get("start") or data_len) if index + 1 < len(records) else data_len
+        if start <= offset < next_start:
+            return record
+    return None
+
+
+def _compact_levelscript_uid_occurrence(
+    *,
+    level_id: str,
+    file_info: dict,
+    uid: str,
+    uid_offset: int,
+    record: dict | None,
+) -> dict:
+    row = {
+        "levelId": level_id,
+        "file": file_info.get("file") or "",
+        "sourceScript": file_info.get("fileStem") or "",
+        "uid": uid,
+        "uidOffset": uid_offset,
+    }
+    if record:
+        row.update({
+            "recordUid": record.get("uid") or "",
+            "recordStart": int(record.get("start") or 0),
+            "recordPayloadStart": int(record.get("payloadStart", record.get("start", 0)) or 0),
+            "recordClass": classify_levelscript_record(record),
+            "recordCode": f"0x{int(record.get('code') or 0):04x}",
+            "recordKind": f"0x{int(record.get('kind') or 0):02x}",
+            "localId": record.get("localId"),
+            "nextId": record.get("nextId"),
+            "recordStrings": [
+                hit.get("text")
+                for hit in (record.get("strings") or [])[:8]
+                if hit.get("text")
+            ],
+            "recordPlainStrings": [
+                hit.get("text")
+                for hit in (record.get("plainStrings") or [])[:8]
+                if hit.get("text")
+            ],
+        })
+    return row
+
+
+def _dedupe_uid_record_occurrences(rows: list[dict]) -> list[dict]:
+    grouped: dict[tuple, dict] = {}
+    order: list[tuple] = []
+    for row in rows:
+        key = (
+            row.get("levelId") or "",
+            row.get("file") or "",
+            row.get("recordStart", row.get("uidOffset")),
+            row.get("recordUid") or "",
+        )
+        if key not in grouped:
+            item = dict(row)
+            item["uidOffsets"] = [row.get("uidOffset")]
+            grouped[key] = item
+            order.append(key)
+            continue
+        offsets = grouped[key].setdefault("uidOffsets", [])
+        if row.get("uidOffset") not in offsets:
+            offsets.append(row.get("uidOffset"))
+    out = [grouped[key] for key in order]
+    for row in out:
+        row["uidOffsets"] = [
+            offset
+            for offset in sorted(row.get("uidOffsets") or [])
+            if offset is not None
+        ][:8]
+        row.pop("uidOffset", None)
+    return out
+
+
+def _build_levelscript_uid_occurrence_index(level_ids: list[str]) -> dict[str, list[dict]]:
+    cache_key = tuple(dict.fromkeys(str(level_id or "") for level_id in level_ids if level_id))
+    if cache_key in _LEVELSCRIPT_UID_OCCURRENCE_CACHE:
+        return _LEVELSCRIPT_UID_OCCURRENCE_CACHE[cache_key]
+
+    uid_index: dict[str, list[dict]] = defaultdict(list)
+    for level_id in cache_key:
+        info = _load_levelscript_binding_data(level_id)
+        for file_info in info.get("files") or []:
+            rel_file = str(file_info.get("file") or "")
+            if not rel_file:
+                continue
+            try:
+                data = (ROOT / rel_file).read_bytes()
+            except OSError:
+                continue
+            records = list(file_info.get("records") or [])
+            for match in HEX_UID_RE.finditer(data):
+                uid = match.group().decode("ascii")
+                offset = match.start()
+                record = _levelscript_record_for_offset(records, offset, len(data))
+                uid_index[uid].append(
+                    _compact_levelscript_uid_occurrence(
+                        level_id=level_id,
+                        file_info=file_info,
+                        uid=uid,
+                        uid_offset=offset,
+                        record=record,
+                    )
+                )
+
+    compact_index = {
+        uid: _dedupe_uid_record_occurrences(rows)
+        for uid, rows in uid_index.items()
+    }
+    _LEVELSCRIPT_UID_OCCURRENCE_CACHE[cache_key] = compact_index
+    return compact_index
+
+
+def _leveltimeline_pair_relation(source: dict, target: dict) -> str:
+    if (
+        source.get("levelId") == target.get("levelId")
+        and source.get("file") == target.get("file")
+    ):
+        if (
+            source.get("recordStart") is not None
+            and source.get("recordStart") == target.get("recordStart")
+        ):
+            return "same-record"
+        return "same-script"
+    return "cross-script"
+
+
+def _compact_leveltimeline_pair(source: dict, target: dict) -> dict:
+    relation = _leveltimeline_pair_relation(source, target)
+    return {
+        "relation": relation,
+        "levelId": source.get("levelId") if source.get("levelId") == target.get("levelId") else "",
+        "sourceScript": source.get("sourceScript") or "",
+        "targetScript": target.get("sourceScript") or "",
+        "sourceRecordStart": source.get("recordStart"),
+        "targetRecordStart": target.get("recordStart"),
+        "sourceRecordClass": source.get("recordClass") or "",
+        "targetRecordClass": target.get("recordClass") or "",
+        "sourceStrings": list(source.get("recordStrings") or [])[:6],
+        "targetStrings": list(target.get("recordStrings") or [])[:6],
+        "sourcePlainStrings": list(source.get("recordPlainStrings") or [])[:6],
+        "targetPlainStrings": list(target.get("recordPlainStrings") or [])[:6],
+    }
+
+
+def collect_leveltimeline_markers(
+    level_ids: list[str],
+    *,
+    leveldata_files: set[str] | None = None,
+) -> list[dict]:
+    """Resolve LevelData ``lt:p`` / ``lt:mp`` markers to LevelScript UID records.
+
+    LevelData may contain several named-entry tables in one file; the Story UI
+    only needs the best table for search binding, but ordering recovery needs
+    every marker-bearing table in authored byte order.
+    """
+    cache_key = (
+        tuple(dict.fromkeys(str(level_id or "") for level_id in level_ids if level_id)),
+        tuple(sorted(str(path).replace("\\", "/") for path in (leveldata_files or set()))),
+    )
+    if cache_key in _LEVELTIMELINE_MARKER_CACHE:
+        return _LEVELTIMELINE_MARKER_CACHE[cache_key]
+
+    level_key = cache_key[0]
+    allowed_files = set(cache_key[1])
+    uid_index = _build_levelscript_uid_occurrence_index(list(level_key))
+    markers: list[dict] = []
+
+    for level_id in level_key:
+        leveldata_dir = LEVELDATA_DIR / level_id
+        if not leveldata_dir.is_dir():
+            continue
+        for path in sorted(leveldata_dir.glob("*.json")):
+            rel_path = repo_rel(path)
+            if allowed_files and rel_path not in allowed_files:
+                continue
+            for table_index, table in enumerate(_load_leveldata_named_tables(path)):
+                for entry_index, entry in enumerate(table):
+                    text = str(entry.get("text") or "")
+                    match = LT_BINDING_RE.match(text)
+                    if not match:
+                        continue
+
+                    source_uid = match.group("uid1")
+                    target_uid = match.group("uid2")
+                    source_occurrences = uid_index.get(source_uid, [])
+                    target_occurrences = uid_index.get(target_uid, [])
+                    pairs = [
+                        _compact_leveltimeline_pair(source, target)
+                        for source in source_occurrences
+                        for target in target_occurrences
+                    ]
+                    relation_rank = {"same-record": 0, "same-script": 1, "cross-script": 2}
+                    pairs.sort(key=lambda pair: (
+                        relation_rank.get(str(pair.get("relation") or ""), 9),
+                        str(pair.get("sourceScript") or ""),
+                        int(pair.get("sourceRecordStart") or 0),
+                        str(pair.get("targetScript") or ""),
+                        int(pair.get("targetRecordStart") or 0),
+                    ))
+                    if any(pair.get("relation") == "same-record" for pair in pairs):
+                        status = "same-record"
+                    elif any(pair.get("relation") == "same-script" for pair in pairs):
+                        status = "same-script"
+                    elif pairs:
+                        status = "cross-script"
+                    elif source_occurrences or target_occurrences:
+                        status = "partial"
+                    else:
+                        status = "unresolved"
+
+                    marker = {
+                        "levelId": level_id,
+                        "file": rel_path,
+                        "marker": text,
+                        "kind": match.group("kind"),
+                        "sourceUid": source_uid,
+                        "targetUid": target_uid,
+                        "markerKey": entry.get("key"),
+                        "tableIndex": table_index,
+                        "entryIndex": entry_index,
+                        "tableOffset": entry.get("tableOffset"),
+                        "entryOffset": entry.get("entryOffset"),
+                        "textOffset": entry.get("textOffset"),
+                        "status": status,
+                        "sourceOccurrences": source_occurrences[:8],
+                        "targetOccurrences": target_occurrences[:8],
+                        "resolvedPairs": pairs[:8],
+                    }
+                    markers.append(marker)
+
+    markers.sort(key=lambda row: (
+        str(row.get("levelId") or ""),
+        str(row.get("file") or ""),
+        int(row.get("tableOffset") or 0),
+        int(row.get("entryIndex") or 0),
+        int(row.get("markerKey") or 0),
+        str(row.get("marker") or ""),
+    ))
+    _LEVELTIMELINE_MARKER_CACHE[cache_key] = markers
+    return markers
 
 
 def _build_levelscript_file_order_scene_sequences(

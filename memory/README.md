@@ -18,6 +18,9 @@ experiments belong under `scratch/` or `tmp/`.
   and follow-up decoder priorities.
 - `scene_file_order_recovery.md`: source-backed mission and scene ordering
   rules, current audit conclusions, and next recovery queue.
+- `e0m0_file_order_from_binary_scripts.md`: focused e0m0 LevelScript,
+  LevelData, LevelTimeline marker, and scene-order recovery evidence; start
+  here for `lt:p` / `lt:mp` follow-up work.
 - `source_graph_database.md`: local SQLite source graph build/query workflow,
   output shape, source coverage, and current limitations.
 

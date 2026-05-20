@@ -9,13 +9,9 @@ def _anime_tree_logical_stem(path: Path) -> str:
 
 def _find_anime_tree_path(filename: str) -> Path:
     requested = Path(filename).stem
-    for base in ANIME_RESOURCE_DIRS:
-        candidate = base / filename
-        if candidate.exists() and _anime_tree_logical_stem(candidate) == requested:
-            return candidate
-        for suffixed in sorted(base.glob(f"{requested}_p*.json")):
-            if _anime_tree_logical_stem(suffixed) == requested:
-                return suffixed
+    path = _get_anime_tree_path_index().get(requested)
+    if path is not None:
+        return path
     fallback = (
         ANIME_RESOURCE_DIRS[0]
         if ANIME_RESOURCE_DIRS
@@ -653,6 +649,13 @@ def _extract_objective_anchors(quest: dict) -> list[dict]:
         description = obj.get("description")
         if isinstance(description, dict) and description.get("key"):
             anchor["descriptionKey"] = str(description["key"])
+        multiple_description = [
+            str(item.get("key"))
+            for item in (obj.get("multipleDescription") or [])
+            if isinstance(item, dict) and item.get("key")
+        ]
+        if multiple_description:
+            anchor["multipleDescriptionKeys"] = _unique_preserve(multiple_description)
         if obj.get("muteTrack"):
             anchor["muteTrack"] = True
         if obj.get("isBlockObjective"):

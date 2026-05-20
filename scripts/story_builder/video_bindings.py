@@ -18,13 +18,22 @@ uses heuristic filename matching.
     conditions `Beyond.Gameplay.CheckFMVFinish` whose `_fmvId.constValue`
     names the consumed video. This covers non-dialog cutscene videos.
 
+  Graph C: Gameplay Cutscene Timeline -> FMV PlayableAsset -> video file.
+    Full AnimeStudio MonoBehaviour exports can contain cutscene playables under
+      assets/beyond/dynamicassets/gameplay/cutscene/<cutscene>/playable/.
+    These use the same `Beyond FMV Track` -> `BeyondFMVPlayableAsset.fmvId`
+    link as dialog Timelines, but they are not always present in the smaller
+    `timeline_extract/` diagnostic tree.
+
 This script joins:
   - Every `BeyondFMVPlayableAsset*.json` (and clones) under
     export_full/recovered/AnimeStudio-cli/timeline_extract/*/MonoBehaviour/.
+  - Every matching `BeyondFMVPlayableAsset*.json` / `Beyond FMV Track*.json`
+    under the story-scoped AnimeStudio `json_by_type/MonoBehaviour` export.
   - The AssetEntries maps under
     export_full/recovered/AnimeStudio-cli/{StreamingAssets,Persistent}/maps/
-    keyed by PathID to recover each playable's `dlgtl_<scene>_sub_<n>`
-    container.
+    keyed by PathID to recover each playable's `dlgtl_<scene>_sub_<n>` or
+    gameplay `cutscene_<scene>` container.
   - Every `Beyond FMV Track*.json` clip to capture timestamps and option
     routing.
   - Every `Beyond.Gameplay.CheckFMVFinish._fmvId.constValue` in
@@ -62,6 +71,10 @@ EXPORT_ROOT = ROOT / "export_full"
 RECOVERED_DIR = EXPORT_ROOT / "recovered"
 ANIMESTUDIO_CLI = RECOVERED_DIR / "AnimeStudio-cli"
 TIMELINE_EXTRACT = ANIMESTUDIO_CLI / "timeline_extract"
+MONOBEHAVIOUR_DIRS = (
+    ANIMESTUDIO_CLI / "StreamingAssets" / "json_by_type" / "MonoBehaviour",
+    ANIMESTUDIO_CLI / "Persistent" / "json_by_type" / "MonoBehaviour",
+)
 ASSET_MAPS = (
     ANIMESTUDIO_CLI / "StreamingAssets" / "maps" / "endfield_streamingassets_assets.json",
     ANIMESTUDIO_CLI / "Persistent" / "maps" / "endfield_persistent_assets.json",
@@ -84,6 +97,10 @@ DEFAULT_REPORT = ROOT / "reports" / "video_bindings.md"
 
 _DLGTL_FROM_CONTAINER = re.compile(
     r"timeline/(dlgtl_[a-z0-9]+(?:_[a-z0-9]+)*?_sub_\d+)/", re.IGNORECASE
+)
+_CUTSCENE_FROM_CONTAINER = re.compile(
+    r"(?:^|/)gameplay/cutscene/(?P<folder>(?:(?:f|m|fm)_)?cutscene_[^/]+)/playable/",
+    re.IGNORECASE,
 )
 _GENDER_PREFIX = re.compile(r"^(?P<g>f|m|fm)_(?P<rest>cs_video_.+)$", re.IGNORECASE)
 _MISSION_FROM_DLG = re.compile(
@@ -130,11 +147,17 @@ def load_asset_index() -> dict[int, dict[str, Any]]:
 def scene_from_container(container: str) -> str:
     if not container:
         return ""
-    match = _DLGTL_FROM_CONTAINER.search(container)
+    normalized = container.replace("\\", "/")
+    match = _DLGTL_FROM_CONTAINER.search(normalized)
     if not match:
-        return ""
+        match = _CUTSCENE_FROM_CONTAINER.search(normalized)
+        if not match:
+            return ""
+        folder = match.group("folder").lower()
+        gender_match = re.match(r"^(?:f|m|fm)_(cutscene_.+)$", folder, flags=re.IGNORECASE)
+        return (gender_match.group(1) if gender_match else folder).lower()
     folder = match.group(1)
-    return folder.removeprefix("dlgtl_").rsplit("_sub_", 1)[0]
+    return folder.removeprefix("dlgtl_").rsplit("_sub_", 1)[0].lower()
 
 
 def strip_gender(fmv_id: str) -> tuple[str, str]:
@@ -187,13 +210,25 @@ def iter_video_files() -> list[Path]:
     return out
 
 
-def iter_playable_assets(extract_root: Path) -> Iterable[tuple[Path, dict[str, Any]]]:
+def _iter_timeline_mono_behaviour_dirs(extract_root: Path) -> Iterable[Path]:
     if not extract_root.is_dir():
         return
     for sub in sorted(extract_root.iterdir()):
         mb_dir = sub / "MonoBehaviour"
         if not mb_dir.is_dir():
             continue
+        yield mb_dir
+
+
+def _iter_mono_behaviour_dirs() -> Iterable[Path]:
+    yield from _iter_timeline_mono_behaviour_dirs(TIMELINE_EXTRACT)
+    for mb_dir in MONOBEHAVIOUR_DIRS:
+        if mb_dir.is_dir():
+            yield mb_dir
+
+
+def iter_playable_assets() -> Iterable[tuple[Path, dict[str, Any]]]:
+    for mb_dir in _iter_mono_behaviour_dirs():
         for p in sorted(mb_dir.iterdir()):
             base_stem = anime_export_base_stem(p)
             if not base_stem or not base_stem.startswith("BeyondFMVPlayableAsset"):
@@ -207,13 +242,8 @@ def iter_playable_assets(extract_root: Path) -> Iterable[tuple[Path, dict[str, A
             yield p, payload
 
 
-def iter_fmv_tracks(extract_root: Path) -> Iterable[tuple[Path, dict[str, Any]]]:
-    if not extract_root.is_dir():
-        return
-    for sub in sorted(extract_root.iterdir()):
-        mb_dir = sub / "MonoBehaviour"
-        if not mb_dir.is_dir():
-            continue
+def iter_fmv_tracks() -> Iterable[tuple[Path, dict[str, Any]]]:
+    for mb_dir in _iter_mono_behaviour_dirs():
         for p in sorted(mb_dir.iterdir()):
             base_stem = anime_export_base_stem(p)
             if not (base_stem.startswith("Beyond FMV Track") or base_stem == "FMV"):
@@ -250,13 +280,18 @@ def build_bindings(*, verbose: bool = False) -> dict[str, Any]:
     fmv_records: list[dict[str, Any]] = []
     playable_by_pid: dict[int, dict[str, Any]] = {}
 
-    for path, payload in iter_playable_assets(TIMELINE_EXTRACT):
+    seen_playable_path_ids: set[int] = set()
+    for path, payload in iter_playable_assets():
         fmv_id = str(payload.get("fmvId") or "").strip()
         anime = payload.get("$animestudio") or {}
         try:
             pid = int(anime.get("pathId")) if anime.get("pathId") is not None else None
         except (TypeError, ValueError):
             pid = None
+        if pid is not None:
+            if pid in seen_playable_path_ids:
+                continue
+            seen_playable_path_ids.add(pid)
         entry = asset_index.get(pid) if pid is not None else None
         container = str(entry.get("Container") or "") if entry else ""
         scene = scene_from_container(container)
@@ -273,7 +308,17 @@ def build_bindings(*, verbose: bool = False) -> dict[str, Any]:
         fmv_records.append(record)
 
     track_clips: list[dict[str, Any]] = []
-    for path, payload in iter_fmv_tracks(TIMELINE_EXTRACT):
+    seen_track_path_ids: set[int] = set()
+    for path, payload in iter_fmv_tracks():
+        anime = payload.get("$animestudio") if isinstance(payload.get("$animestudio"), dict) else {}
+        try:
+            track_pid = int(anime.get("pathId")) if anime.get("pathId") is not None else None
+        except (TypeError, ValueError):
+            track_pid = None
+        if track_pid is not None:
+            if track_pid in seen_track_path_ids:
+                continue
+            seen_track_path_ids.add(track_pid)
         for clip in payload.get("m_Clips") or []:
             if not isinstance(clip, dict):
                 continue

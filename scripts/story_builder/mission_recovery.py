@@ -402,7 +402,12 @@ def extract_objectives(quest: dict, source_path: Path, quest_field: str) -> list
             if isinstance(item, dict) and item.get("key")
         ]
         if multiple_description:
-            row["multipleDescriptionKeys"] = multiple_description
+            row["multipleDescriptionKeys"] = unique_preserve(multiple_description)
+            row["multipleDescriptionSources"] = [
+                source_ref(source_path, f"{obj_field}.multipleDescription[{item_index}].key")
+                for item_index, item in enumerate(obj.get("multipleDescription") or [])
+                if isinstance(item, dict) and item.get("key")
+            ]
         flags = {
             field_name: obj.get(field_name)
             for field_name in OBJECTIVE_FLAG_FIELDS
@@ -2636,13 +2641,28 @@ def build_quest_spatial_track(
         })
         if condition_types:
             row["conditionTypes"] = condition_types
-        descriptions = [
-            str(anchor.get("descriptionKey") or "")
-            for anchor in quest.get("objectiveAnchors") or []
-            if isinstance(anchor, dict) and anchor.get("descriptionKey")
-        ]
+        descriptions = []
+        objective_instructions = []
+        for anchor in quest.get("objectiveAnchors") or []:
+            if not isinstance(anchor, dict):
+                continue
+            if anchor.get("descriptionKey"):
+                descriptions.append(str(anchor.get("descriptionKey") or ""))
+            descriptions.extend(
+                str(key)
+                for key in (anchor.get("multipleDescriptionKeys") or [])
+                if str(key or "")
+            )
+            for instruction in anchor.get("objectiveInstructions") or []:
+                if isinstance(instruction, dict):
+                    objective_instructions.append(instruction)
         if descriptions:
             row["descriptionKeys"] = unique_preserve(descriptions)[:8]
+        if objective_instructions:
+            row["objectiveInstructions"] = unique_dicts(
+                objective_instructions,
+                ("key", "text"),
+            )[:12]
         if pins:
             row["pinCount"] = len(pins)
             row["pins"] = pins[:8]
