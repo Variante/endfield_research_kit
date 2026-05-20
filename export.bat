@@ -3,6 +3,9 @@ setlocal
 
 if /I "%~1"=="--help" goto :help
 if /I "%~1"=="-h" goto :help
+if /I "%~1"=="/?" goto :help
+if /I "%~1"=="/h" goto :help
+if /I "%~1"=="help" goto :help
 
 set "EXPORT_ARGS="
 set "VERIFY_EXPORT_ARGS="
@@ -12,6 +15,9 @@ set "SKIP_EXPORT_FULL=0"
 if "%~1"=="" goto :parsed_args
 if /I "%~1"=="--help" goto :help
 if /I "%~1"=="-h" goto :help
+if /I "%~1"=="/?" goto :help
+if /I "%~1"=="/h" goto :help
+if /I "%~1"=="help" goto :help
 if /I "%~1"=="--skip-export-full" (
   set "SKIP_EXPORT_FULL=1"
   shift
@@ -74,14 +80,19 @@ exit /b 0
 :help
 echo Usage: export.bat [--skip-export-full] [--game-root Endfield_Data] [--animestudio-jobs N] [export_full_from_game.py options]
 echo.
-echo Runs the story-focused WebUI export/build pipeline. Story/reference output is CN only.
-echo Verifies export freshness before the long WebUI builders run.
+echo Runs the story/reference WebUI refresh. The wrapper exports only the browser
+echo data needed for Story and Reference, verifies export freshness, rebuilds
+echo source-link evidence, builds CN data, and refreshes Story sort order.
 echo.
 echo   --skip-export-full    Reuse existing export_full and only verify freshness before builders.
 echo   --game-root PATH      Use a non-default installed Endfield_Data path.
 echo   --animestudio-jobs N  Maximum parallel AnimeStudio CLI processes for per-type export.
 echo.
-echo Updates moved to build_updates.bat. Image/model/animation asset decoding moved to export_assets.bat.
+echo Companion wrappers:
+echo   build_updates.bat     Build the Updates tab feed.
+echo   export_assets.bat     Decode image/model/animation assets and rebuild asset indexes.
+echo   export_audio.bat      Decode audio and link playable Story audio.
+echo   package_webui.bat     Create split shareable WebUI zips.
 echo.
 python .\scripts\export_full_from_game.py --help
 if errorlevel 1 (

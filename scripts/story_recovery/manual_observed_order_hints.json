@@ -4,15 +4,17 @@
     "note": "Partial gameplay-observed e0m0 order used as a calibration target. This is not original-data proof; entries preserve their previous recovered evidence in recovered*BeforeObserved fields.",
     "evidenceAlignments": {
       "cutscene_e0m0_3": {
-        "kind": "title-card-plus-fmv-prologue",
-        "evidence": "observed-aligned:title-card-fmv-prologue",
+        "kind": "late-fmv-cutscene-container",
+        "evidence": "observed-aligned:late-fmv-cutscene-container",
         "status": "partial",
         "rank": 5,
-        "note": "Observed first position matches the cutscene's original title-card text row at 00:00:00 plus the AnimeStudio FMV playable bound at clip start 0.0. Late LevelScript play refs remain real and are treated as later reuse/check contexts, not the opening title-card occurrence.",
+        "note": "This row is the cutscene container bound to the e0m0_3 FMV/audio cluster. The FMV is now attached to this cutscene in WebUI data with its decoded timelinePlayable clip timing. The cutscene_e0m0_3_* TextTable rows remain title-card/slate name matches, not FMV dialogue. The cs_video_e0m0_3_* TextTable rows are surfaced as name-matched video-text candidates, but no decoded subtitle track ties either text family to the FMV timeline, so they are not used as playback-order proof.",
         "sourceRefs": [
-          "TextTable[cutscene_e0m0_3_01] contains 00:00:00 title-card text",
           "BeyondFMVPlayableAsset f/m_cs_video_e0m0_3 -> cutscene_e0m0_3 start=0.0",
-          "cutscene_e0m0_3 recoveredEvidenceBeforeObserved=levelseq-alias"
+          "cutscene_e0m0_3 has no decoded AnimeStudio Subtitle Track",
+          "TextTable[cutscene_e0m0_3_01..04] are loose title-card/slate rows",
+          "TextTable[cs_video_e0m0_3_01..02] are name-matched FMV text candidates without subtitle-track binding",
+          "late LevelScript refs place cutscene_e0m0_3 near the q#11/radio_e0m0_12 cluster"
         ]
       },
       "cutscene_e0m0_1": {
@@ -27,6 +29,19 @@
           "metadata hideSquad=true skipType=1 useBlackScreen=true"
         ]
       },
+      "cutscene_e0m0_2": {
+        "kind": "observed-subtitle-track-backed-perlica-dialogue",
+        "evidence": "observed-aligned:subtitle-track-backed-cutscene",
+        "status": "source-backed",
+        "rank": 3,
+        "note": "The visible text is backed by F/M AnimeStudio Subtitle Track clips, not only by TextTable prefix matching. The observed CN playback aligns to the untagged f/m_cutscene_e0m0_2_Others tracks, whose mid-scene clips use the leading-zero cutscene_e0m0_02_* TextTable family. The AU_CHI_ENV_CHI tracks are preserved as a separate localized/audio variant but do not match the observed mid-scene text.",
+        "sourceRefs": [
+          "Subtitle Track_p36CBB71B080BC634 parent=f_cutscene_e0m0_2_Others",
+          "Subtitle Track_p214A54D2005A4636 parent=m_cutscene_e0m0_2_Others",
+          "10 observed clips reference cutscene_e0m0_2_01/02, cutscene_e0m0_02_03..07, cutscene_e0m0_2_07d5/08, and cutscene_e0m0_02_10",
+          "AU_CHI_ENV_CHI tracks p3AAFB8DA8E3F54E1/p2C9FC10346D0C2E7 carry the alternate line family that previously appeared in WebUI"
+        ]
+      },
       "cutscene_e0m0_1stZipline": {
         "kind": "zipline-spatial-plus-levelseq",
         "evidence": "observed-aligned:zipline-spatial-levelseq",
@@ -39,20 +54,198 @@
         ]
       },
       "video_cs_video_e0m0_3": {
-        "kind": "late-video-binding-cluster",
-        "evidence": "observed-aligned:late-video-binding-cluster",
-        "status": "partial",
-        "rank": 6,
-        "note": "The video itself has only AnimeStudio timelinePlayable binding to cutscene_e0m0_3, but late LevelScript occurrences of that cutscene sit in the q#11/radio_e0m0_12 cluster. This supports the late cluster identity while the exact post-radio_12 playback edge is still not decoded.",
+        "kind": "attached-to-cutscene-timeline",
+        "evidence": "observed-aligned:attached-video-binding",
+        "status": "source-backed",
+        "rank": 4,
+        "note": "This standalone video row is now a media/search mirror of the FMV attached to cutscene_e0m0_3. The relative adjacency video_cs_video_e0m0_3 after cutscene_e0m0_3 is source-backed by the AnimeStudio timelinePlayable binding at start=0.0s for about 59.75s; the broader late placement still inherits the partial cutscene_e0m0_3 cluster evidence.",
         "sourceRefs": [
           "BeyondFMVPlayableAsset f/m_cs_video_e0m0_3 -> cutscene_e0m0_3",
-          "8700020022 contains cutscene_e0m0_3 and radio_e0m0_12",
-          "no MissionRuntime CheckFMVFinish or direct cs_video_e0m0_3 LevelScript string found"
+          "Beyond FMV Track clips start=0.0 duration=59.75s in f/m_cutscene_e0m0_3_actor.playable",
+          "webui cutscene_e0m0_3 carries narrativeVideos/videoRefs; video_cs_video_e0m0_3 remains standalone for media/search"
+        ]
+      },
+      "text_e0m0_1": {
+        "kind": "tombstone-reading-popup",
+        "evidence": "observed-compatible:reading-popup-levelscript",
+        "status": "source-backed",
+        "rank": 3,
+        "note": "This reading popup is the tombstone epitaph. ReadingPopUpTable and RichContentTable define the visible text, and LevelScript 8700020018 routes custom event readepitaph to a ShowUIReadingPopPanel action for text_e0m0_1 immediately before the readepitaph1-4 misc dialog sequence.",
+        "sourceRefs": [
+          "ReadingPopUpTable[text_e0m0_1] contentId=text_e0m0_1 bgType=2",
+          "RichContentTable[text_e0m0_1] title=tombstone epitaph with 3 content rows",
+          "8700020018 header 0x104e/0x00 readepitaph -> action 0x045b/0x09 text_e0m0_1",
+          "0x045b formatter actionName=ShowUIReadingPopPanel",
+          "8700020018 rawMissionHits text_e0m0_1@697 before dlg_e0m0_0d5@757"
+        ]
+      },
+      "cutscene_e0m0_New14": {
+        "kind": "q7-terminal-branch",
+        "evidence": "observed-compatible:q7-terminal-branch",
+        "status": "source-backed",
+        "rank": 3,
+        "note": "The updated placement is directly supported by the decoded e0m0_q#7 battle_field_clear terminal branch in 8700040000. The branch walk reaches cutscene_e0m0_New14 and then radio_e0m0_8d8.",
+        "sourceRefs": [
+          "8700040000 0x0bed/0x00 battle_field_clear branches=169,189",
+          "local 169 reaches cutscene_e0m0_New14 and radio_e0m0_8d8",
+          "MissionRuntime e0m0_q#7 waits on 8700040000.battle_field_clear"
+        ]
+      },
+      "radio_e0m0_13": {
+        "kind": "q11-boss-trigger-cluster",
+        "evidence": "observed-aligned:q11-boss-trigger-cluster",
+        "status": "partial",
+        "rank": 6,
+        "note": "This row is in the 8700050001 boss/final-area cluster near e0m0_q#11 with decoded trigger volumes and a concrete play_radio action. The exact observed branch interleave is not fully decoded yet.",
+        "sourceRefs": [
+          "LevelData sub_03 references 8700050001 with boss/final-area context",
+          "8700050001 triggerVolumes slots 80001/80002 near e0m1_007",
+          "8700050001 play_radio radio_e0m0_13 actionList root"
+        ]
+      },
+      "radio_e0m0_14": {
+        "kind": "q11-boss-trigger-cluster",
+        "evidence": "observed-aligned:q11-boss-trigger-cluster",
+        "status": "partial",
+        "rank": 6,
+        "note": "This row is in the 8700050001 boss/final-area cluster near e0m0_q#11 with decoded trigger volumes and a concrete play_radio action. The exact observed branch interleave is not fully decoded yet.",
+        "sourceRefs": [
+          "LevelData sub_03 references 8700050001 with boss/final-area context",
+          "8700050001 triggerVolumes slots 80001/80002 near e0m1_007",
+          "8700050001 play_radio radio_e0m0_14 actionList root"
+        ]
+      },
+      "radio_e0m0_16": {
+        "kind": "q11-boss-trigger-cluster",
+        "evidence": "observed-aligned:q11-boss-trigger-cluster",
+        "status": "partial",
+        "rank": 6,
+        "note": "This row is in the 8700050001 boss/final-area cluster near e0m0_q#11 with decoded trigger volumes and a concrete play_radio action. The exact observed branch interleave is not fully decoded yet.",
+        "sourceRefs": [
+          "LevelData sub_03 references 8700050001 with boss/final-area context",
+          "8700050001 triggerVolumes slots 80001/80002 near e0m1_007",
+          "8700050001 play_radio radio_e0m0_16 actionList root"
+        ]
+      },
+      "radio_e0m0_22": {
+        "kind": "q11-boss-trigger-cluster",
+        "evidence": "observed-aligned:q11-boss-trigger-cluster",
+        "status": "partial",
+        "rank": 6,
+        "note": "This row is in the 8700050001 boss/final-area cluster near e0m0_q#11 with decoded trigger volumes and a concrete play_radio action. The exact observed branch interleave is not fully decoded yet.",
+        "sourceRefs": [
+          "LevelData sub_03 references 8700050001 with boss/final-area context",
+          "8700050001 triggerVolumes slots 80001/80002 near e0m1_007",
+          "8700050001 play_radio radio_e0m0_22 actionList root"
+        ]
+      },
+      "radio_e0m0_23": {
+        "kind": "q11-boss-trigger-cluster",
+        "evidence": "observed-aligned:q11-boss-trigger-cluster",
+        "status": "partial",
+        "rank": 6,
+        "note": "This row is in the 8700050001 boss/final-area cluster near e0m0_q#11 with decoded trigger volumes and a concrete play_radio action. The exact observed branch interleave is not fully decoded yet.",
+        "sourceRefs": [
+          "LevelData sub_03 references 8700050001 with boss/final-area context",
+          "8700050001 triggerVolumes slots 80001/80002 near e0m1_007",
+          "8700050001 play_radio radio_e0m0_23 actionList root"
+        ]
+      },
+      "radio_e0m0_17": {
+        "kind": "q11-boss-trigger-cluster",
+        "evidence": "observed-aligned:q11-boss-trigger-cluster",
+        "status": "partial",
+        "rank": 6,
+        "note": "This row is in the 8700050001 boss/final-area cluster near e0m0_q#11 with decoded trigger volumes and a concrete play_radio action. The exact observed branch interleave is not fully decoded yet.",
+        "sourceRefs": [
+          "LevelData sub_03 references 8700050001 with boss/final-area context",
+          "8700050001 triggerVolumes slots 80001/80002 near e0m1_007",
+          "8700050001 play_radio radio_e0m0_17 actionList root"
+        ]
+      },
+      "radio_e0m0_15": {
+        "kind": "q11-boss-trigger-cluster",
+        "evidence": "observed-aligned:q11-boss-trigger-cluster",
+        "status": "partial",
+        "rank": 6,
+        "note": "This row is in the 8700050001 boss/final-area cluster near e0m0_q#11 with decoded trigger volumes and a concrete play_radio action. The exact observed branch interleave is not fully decoded yet.",
+        "sourceRefs": [
+          "LevelData sub_03 references 8700050001 with boss/final-area context",
+          "8700050001 triggerVolumes slots 80001/80002 near e0m1_007",
+          "8700050001 play_radio radio_e0m0_15 actionList root"
+        ]
+      },
+      "cutscene_e0m0_4": {
+        "kind": "q11-boss-trigger-cluster",
+        "evidence": "observed-aligned:q11-boss-trigger-cluster",
+        "status": "partial",
+        "rank": 6,
+        "note": "This cutscene is in the 8700050001 boss/final-area cluster near e0m0_q#11 with decoded trigger volumes and a concrete play_cutscene action. The exact observed branch interleave is not fully decoded yet.",
+        "sourceRefs": [
+          "LevelData sub_03 references 8700050001 with boss/final-area context",
+          "8700050001 triggerVolumes slots 80001/80002 near e0m1_007",
+          "8700050001 play_cutscene cutscene_e0m0_4 actionList root"
+        ]
+      },
+      "radio_e0m0_20": {
+        "kind": "q11-boss-trigger-cluster",
+        "evidence": "observed-aligned:q11-boss-trigger-cluster",
+        "status": "partial",
+        "rank": 6,
+        "note": "This row is in the 8700050001 boss/final-area cluster near e0m0_q#11 with decoded trigger volumes and a concrete play_radio action. The exact observed branch interleave is not fully decoded yet.",
+        "sourceRefs": [
+          "LevelData sub_03 references 8700050001 with boss/final-area context",
+          "8700050001 triggerVolumes slots 80001/80002 near e0m1_007",
+          "8700050001 play_radio radio_e0m0_20 actionList root"
+        ]
+      },
+      "cutscene_e0m0_5": {
+        "kind": "q11-boss-trigger-cluster",
+        "evidence": "observed-aligned:q11-boss-trigger-cluster",
+        "status": "partial",
+        "rank": 6,
+        "note": "This cutscene is in the 8700050001 boss/final-area cluster near e0m0_q#11 with decoded trigger volumes and a concrete play_cutscene action. The exact observed branch interleave is not fully decoded yet.",
+        "sourceRefs": [
+          "LevelData sub_03 references 8700050001 with boss/final-area context",
+          "8700050001 triggerVolumes slots 80001/80002 near e0m1_007",
+          "8700050001 play_cutscene cutscene_e0m0_5 actionList root"
+        ]
+      },
+      "cutscene_e0m0_6": {
+        "kind": "hubkey-scene-chain",
+        "evidence": "observed-aligned:hubkey-scene-chain",
+        "status": "partial",
+        "rank": 6,
+        "note": "The observed 6 -> 7 -> 8 local order is supported by the decoded indie_dg004/23900030000 scene chain and mission LevelData reference. Its placement after the q#11 boss cluster is still observational.",
+        "sourceRefs": [
+          "LevelData indie_dg004_lv_data_sub_mission_e0m0 references 23900030000",
+          "23900030000 source-backed scene chain cutscene_e0m0_6 -> 7 -> 8"
+        ]
+      },
+      "cutscene_e0m0_7": {
+        "kind": "hubkey-scene-chain",
+        "evidence": "observed-aligned:hubkey-scene-chain",
+        "status": "partial",
+        "rank": 6,
+        "note": "The observed 6 -> 7 -> 8 local order is supported by the decoded indie_dg004/23900030000 scene chain and mission LevelData reference. Its placement after the q#11 boss cluster is still observational.",
+        "sourceRefs": [
+          "LevelData indie_dg004_lv_data_sub_mission_e0m0 references 23900030000",
+          "23900030000 source-backed scene chain cutscene_e0m0_6 -> 7 -> 8"
+        ]
+      },
+      "cutscene_e0m0_8": {
+        "kind": "hubkey-scene-chain",
+        "evidence": "observed-aligned:hubkey-scene-chain",
+        "status": "partial",
+        "rank": 6,
+        "note": "The observed 6 -> 7 -> 8 local order is supported by the decoded indie_dg004/23900030000 scene chain and mission LevelData reference. Its placement after the q#11 boss cluster is still observational.",
+        "sourceRefs": [
+          "LevelData indie_dg004_lv_data_sub_mission_e0m0 references 23900030000",
+          "23900030000 source-backed scene chain cutscene_e0m0_6 -> 7 -> 8"
         ]
       }
     },
     "order": [
-      "cutscene_e0m0_3",
       "cutscene_e0m0_1",
       "cutscene_e0m0_2",
       "radio_e0m0_1",
@@ -72,13 +265,18 @@
       "radio_e0m0_8d9",
       "cutscene_e0m0_lookingatpatriot",
       "radio_e0m0_9",
+      "radio_e0m0_9d5",
+      "radio_e0m0_10",
       "cutscene_e0m0_tombstonecollapseCam",
+      "radio_e0m0_21",
+      "text_e0m0_1",
       "misc_dlg_e0m0_0d5",
       "misc_dlg_e0m0_0d7",
       "misc_dlg_e0m0_0d8",
       "misc_dlg_e0m0_0d9",
       "radio_e0m0_11",
       "radio_e0m0_12",
+      "cutscene_e0m0_3",
       "video_cs_video_e0m0_3",
       "radio_e0m0_13",
       "radio_e0m0_14",

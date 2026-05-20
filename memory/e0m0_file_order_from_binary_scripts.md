@@ -80,20 +80,27 @@ The calibration now also carries per-row evidence alignment:
   not the complete observed relative order.
 - `gap`: no decoded source support yet.
 
-Current e0m0 rebuild has `13` observed rows marked `source-backed`, `14`
-marked `partial`, and `0` marked `gap`. The big partial alignments are:
+Current e0m0 rebuild has `45` observed rows: `15` marked `source-backed`,
+`27` marked `partial`, and `3` marked `gap`. The new source-backed row is
+`text_e0m0_1`: ReadingPopUp/RichContent define the tombstone epitaph text, and
+`8700020018` routes custom event `readepitaph` to `0x045b/0x09`
+`ShowUIReadingPopPanel` before the `misc_dlg_e0m0_0d5-0d9` sequence. The big
+partial alignments are:
 `cutscene_e0m0_3` as a title-card plus FMV prologue clue,
 `cutscene_e0m0_1` as the black-screen elevator/selection transition, the first
-zipline as levelseq plus q#1 spatial clue, and `video_cs_video_e0m0_3` as the
-late q#11 video/cutscene cluster.
+zipline as levelseq plus q#1 spatial clue, `video_cs_video_e0m0_3` as the late
+q#11 video/cutscene cluster, the `8700050001` q#11 boss trigger cluster, and
+the `indie_dg004/23900030000` hub-key scene chain for
+`cutscene_e0m0_6 -> 7 -> 8`.
 
-After rebuilding `webui/data/assets/story_order.json`, the first 27 generated
-e0m0 entries match the observed list from `cutscene_e0m0_3` through
-`video_cs_video_e0m0_3`. Unlisted rows still follow the previous recovered
-order. This removes the WebUI evidence/display gap, while keeping the
-remaining decode gap visible as `partial`: the runtime activation/start graph
-still needs to explain why the prologue asset path and the later
-`cutscene_e0m0_3`/video cluster split the way the playthrough shows.
+After rebuilding `webui/data/assets/story_order.json`, the first 45 generated
+e0m0 entries match the observed list from `cutscene_e0m0_1` through
+`cutscene_e0m0_8`. Unlisted rows still follow the previous recovered order.
+This removes the missing reading-popup display gap. The remaining observed raw
+gaps are `radio_e0m0_9d5`, `radio_e0m0_10`, and `radio_e0m0_21`; the runtime
+activation/start graph still needs to explain those rows, why the prologue
+asset path and later `cutscene_e0m0_3`/video cluster split the way the
+playthrough shows, and the exact q#11 boss-cluster radio/cutscene interleave.
 
 Post-calibration source checks did not uncover a missing direct source edge:
 the source graph finds only WebUI story/line/video membership for
@@ -847,19 +854,31 @@ Current e0m0 counts before the gameplay-observed calibration layer:
   `radio_e0m0_16_1`, `radio_e0m0_16_2`, and `radio_e0m0_16_3`. These resolve
   to `0x104a/0x00` float-property signal records carrying the matching key and
   `$<localId>@_floatValue`, not to `play_radio`.
-- 8 entries still have no decoded LevelScript source:
+- 8 non-popup entries still have no decoded LevelScript source:
   `cutscene_e0m0_1`, `cutscene_e0m0_10`, `cutscene_e0m0_11`,
   `cutscene_e0m0_11111`, `cutscene_e0m0_12`, `radio_e0m0_10`,
-  `radio_e0m0_21`, and `radio_e0m0_9d5`.
+  `radio_e0m0_21`, and `radio_e0m0_9d5`. `text_e0m0_1` has now moved out of
+  this class: it is a `ShowUIReadingPopPanel` action in `8700020018`.
   Exact source-graph checks for these keys only find generated WebUI/story
   nodes (and line/audio children for the radio rows), not MissionRuntime or
   LevelScript source edges.
 
-After the observed calibration rebuild, `story_order.json` has 52 e0m0 rows:
-27 in the observed prefix and 25 still using the recovered static evidence
-directly. Among the observed rows, the builder reports 13 `source-backed`
-alignments and 14 `partial` alignments, with no row left as a raw evidence
-gap.
+After the observed calibration rebuild, `story_order.json` has 53 e0m0 rows:
+45 in the observed prefix and 8 still using the recovered static evidence
+directly. Among the observed rows, the builder reports 15 `source-backed`
+alignments, 27 `partial` alignments, and 3 raw evidence gaps
+(`radio_e0m0_9d5`, `radio_e0m0_10`, `radio_e0m0_21`).
+
+The best next recovery path is a per-script action/control-flow walk for
+`indie_dg002/8700050001`. Simple byte order gives
+`cutscene_4 -> cutscene_5 -> radio_13 -> radio_14 -> radio_15 -> radio_16 ->
+radio_17 -> radio_20 -> ... -> radio_22 -> radio_23`, while the observed tail
+is `radio_13 -> radio_14 -> radio_16 -> radio_22 -> radio_23 -> radio_17 ->
+radio_15 -> cutscene_4 -> radio_20 -> cutscene_5`. Since all of those rows are
+real actionList roots in the same manual trigger-volume script, the missing
+ordering signal is probably branch predicates, local event headers, or
+state/property gates inside `8700050001`, not another plain story-string
+reference.
 
 Important action-record conclusions:
 
@@ -910,19 +929,21 @@ WebUI cutscene bundle was missing the FMV's dialogue. Findings:
   (`cutscene_e0m0_3_01..04`: date slate, depth readout, hash placeholder,
   "北极点 远征尽头") stay in `cutscene_e0m0_3.json`, while
   `webui/data/lang/CN/conv/video_cs_video_e0m0_3.json` carries the 4 mp4
-  refs only. The standalone summary reads "timeline-bound to cutscene
-  `cutscene_e0m0_3`; kept standalone in WebUI".
-- The two `cs_video_e0m0_3_01/02` TextTable rows are NOT pulled into the
-  video bundle. They are name-only matches; the FMV's actual subtitles —
-  if any — would have to come from an `I18NSubtitleAudioBean` payload (data
-  fields are empty in the export) or a SubtitleTrack inside the FMV
-  playable (none found in the relevant containers). See
+  refs and explicitly lists `cs_video_e0m0_3_01/02` as name-matched
+  `videoTextCandidates`. The standalone summary reads "timeline-bound to
+  cutscene `cutscene_e0m0_3`; kept standalone in WebUI" and warns that the
+  candidate rows are not tied by a decoded subtitle track.
+- The two `cs_video_e0m0_3_01/02` TextTable rows are still NOT promoted to
+  playable video lines. They are name-only matches; the FMV's actual
+  subtitles — if any — would have to come from an `I18NSubtitleAudioBean`
+  payload (data fields are empty in the export) or a SubtitleTrack inside the
+  FMV playable (none found in the relevant containers). See
   [[feedback-video-attachment-rules]] for the rule.
 - Code touchpoints (`scripts/story_builder/language_bundle.py`):
   `entry_kind_by_key` precomputed inside `attach_narrative_videos_to_outputs`
   classifies the resolved key; cutscene-bound refs skip `resolved_videos`;
-  `emit_standalone_video_outputs` writes `lines: []` and no longer scans
-  TextTable for cs_video rows.
+  `emit_standalone_video_outputs` writes `lines: []` and surfaces matching
+  `cs_video_*` TextTable rows only under `videoTextCandidates`.
 - Source-data placement of `cutscene_e0m0_3` before observed calibration is
   unchanged: boss intro transition (`phase=8.0`, evidence `levelseq-alias`,
   source `indie_dg002/8700020028.json @0x33`) with q#11 spatial candidates
@@ -1137,8 +1158,50 @@ Findings:
 
 Conclusion: the exporter is losing managed-reference detail for
 `I18NSubtitleAudioBean`, but the missing detail here points to localized audio
-timeline refs, not subtitle text refs. Keep `cs_video_e0m0_3_01/02` unbound
-unless a different runtime source proves they are used.
+timeline refs, not subtitle text refs. Keep `cs_video_e0m0_3_01/02` unbound as
+subtitle evidence unless a different runtime source proves they are used; the
+WebUI may still surface them as explicit name-matched video-text candidates.
+
+## 2026-05-19 cutscene text/video alignment review
+
+Latest review outcome:
+
+- `cutscene_e0m0_3`: the cutscene bundle is timeline-bound to the FMV/audio
+  cluster, but its own `cutscene_e0m0_3_01..04` TextTable rows are title-card
+  or slate text. They remain in the cutscene bundle with an explicit warning:
+  no decoded subtitle track ties those rows to the FMV timeline.
+- `video_cs_video_e0m0_3`: `cs_video_e0m0_3_01/02` now appear as
+  `videoTextCandidates` with the text "不要忘记我们的约定....." and
+  "我在北方等你". They are not promoted to `lines` because the raw FMV audit
+  still found no subtitle-track/text-id binding.
+- `cutscene_e0m0_2`: CN playback aligns better to the untagged
+  `f/m_cutscene_e0m0_2_Others` subtitle tracks than to the
+  `*_AU_CHI_ENV_CHI` tracks. The WebUI CN scene now uses that observed track
+  family, including the leading-zero `cutscene_e0m0_02_03..07` and
+  `cutscene_e0m0_02_10` rows. The summary exposes both text groups so the
+  mixed family is visible instead of silently flattened.
+
+## 2026-05-20 e0m0 video/cutscene timeline alignment
+
+`cutscene_e0m0_3` now carries the bound `cs_video_e0m0_3` FMV refs directly in
+its generated WebUI payload (`narrativeVideos` and `cutscene.videoRefs`) while
+`video_cs_video_e0m0_3` remains as a standalone media/search row. This is a
+targeted exception for the confirmed e0m0_3 timelinePlayable binding, not a
+general rule that filename-matched videos should merge into cutscenes.
+
+Recovered timing is:
+
+- `f_cs_video_e0m0_3`: bound to `cutscene_e0m0_3`, start `0.0`, duration
+  `59.75`.
+- `m_cs_video_e0m0_3`: bound to `cutscene_e0m0_3`, start `0.0`, duration
+  about `59.75`.
+
+Story order now records `video_cs_video_e0m0_3` as `timelineAlignedWith:
+cutscene_e0m0_3`, with `videoBindingClips`, `timelineStart`, and
+`timelineDuration`. The video row's adjacency to `cutscene_e0m0_3` is therefore
+source-backed by AnimeStudio timelinePlayable data. The broader late placement
+of the `cutscene_e0m0_3` cluster in e0m0 is still only partial/static evidence,
+because no decoded edge yet proves the exact post-`radio_e0m0_12` trigger.
 
 ## 2026-05-19 LevelScript trigger/property opcode refinement
 

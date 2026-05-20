@@ -794,6 +794,17 @@ row also carries an `observedEvidenceAlignmentStatus`: `source-backed`,
 order when reporting evidence coverage; use them to find the next
 activation/control-flow clues that the static recovery is still missing.
 
+For the current e0m0 hint set, 45 observed rows are calibrated:
+15 `source-backed`, 27 `partial`, and 3 `gap`. The added reading popup
+`text_e0m0_1` is source-backed by `ShowUIReadingPopPanel` in
+`8700020018`; the added tail has real support as two source clusters:
+`8700050001` q#11 boss/final-area trigger-volume rows, and
+`23900030000` hub-key scene-chain rows for `cutscene_e0m0_6 -> 7 -> 8`.
+The exact boss-cluster radio/cutscene interleave, plus
+`radio_e0m0_9d5`, `radio_e0m0_10`, and `radio_e0m0_21`, still needs local
+branch/event-header/activation decoding; raw script offset order is not
+enough.
+
 Remaining limits: this is trigger/action evidence, not a total mission
 timeline by itself. Runtime ordering among simultaneously active trigger
 headers still depends on quest state, trigger volumes, properties, battle

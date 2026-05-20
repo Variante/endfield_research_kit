@@ -3,6 +3,9 @@ setlocal
 
 if /I "%~1"=="--help" goto :help
 if /I "%~1"=="-h" goto :help
+if /I "%~1"=="/?" goto :help
+if /I "%~1"=="/h" goto :help
+if /I "%~1"=="help" goto :help
 
 set "BUILD_UPDATES_ARGS="
 set "SKIP_ASSET_UPDATES=1"
@@ -11,6 +14,9 @@ set "SKIP_ASSET_UPDATES=1"
 if "%~1"=="" goto :parsed_args
 if /I "%~1"=="--help" goto :help
 if /I "%~1"=="-h" goto :help
+if /I "%~1"=="/?" goto :help
+if /I "%~1"=="/h" goto :help
+if /I "%~1"=="help" goto :help
 if /I "%~1"=="--init-build" (
   set "BUILD_UPDATES_ARGS=%BUILD_UPDATES_ARGS% --baseline-only"
   shift
@@ -48,11 +54,16 @@ exit /b 0
 :help
 echo Usage: build_updates.bat [--init-build] [--include-asset-updates] [build_updates.py options]
 echo.
-echo Builds webui\data\updates\latest.json from old/new exported game-data trees.
+echo Builds webui\data\updates\latest.json from previous/current exported
+echo game-data trees. By default it compares export_122 to export_full and skips
+echo exported asset diffs so stale heavy outputs do not appear as story updates.
 echo.
 echo   --init-build             Alias for build_updates.py --baseline-only.
 echo   --include-asset-updates  Also diff exported image/model/video assets.
-echo                            By default the wrapper passes --skip-asset-updates.
+echo   --skip-asset-updates     Explicitly keep the wrapper default.
+echo.
+echo Useful after replacing the saved previous export:
+echo   build_updates.bat --refresh-previous-export-baseline
 echo.
 python .\scripts\build_updates.py --help
 if errorlevel 1 (

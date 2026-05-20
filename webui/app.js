@@ -609,7 +609,22 @@ function storyOrderDetailForEntry(entry) {
   return positions.get(key) || null;
 }
 
+function storyOrderAttachedDetailForEntry(entry) {
+  const index = STATE.storyOrderIndex;
+  if (!(index instanceof Map) || !index.size) return null;
+  const missionId = String(entry && entry.m || "");
+  const attachedKey = String(entry && entry.attachTo || "");
+  if (!missionId || !attachedKey) return null;
+  const positions = index.get(missionId);
+  if (!positions) return null;
+  return positions.get(attachedKey) || null;
+}
+
 function storyOrderPositionForEntry(entry) {
+  const attachedDetail = storyOrderAttachedDetailForEntry(entry);
+  const attachedPos = attachedDetail && Number(attachedDetail.position);
+  if (Number.isFinite(attachedPos)) return attachedPos + 0.05;
+
   const detail = storyOrderDetailForEntry(entry);
   const pos = detail && Number(detail.position);
   return Number.isFinite(pos) ? pos : null;
@@ -1762,10 +1777,12 @@ function renderWikiVideoItem(asset) {
     const video = document.createElement("video");
     video.className = "wiki-video-player";
     video.src = src;
-    video.controls = true;
     video.preload = "metadata";
     video.setAttribute("playsinline", "");
-    item.appendChild(video);
+    const player = window.WebUI && window.WebUI.createMediaPlayer
+      ? window.WebUI.createMediaPlayer(video, { className: "wiki-video-control" })
+      : video;
+    item.appendChild(player);
   } else {
     const link = document.createElement("a");
     link.className = "wiki-video-file";
@@ -4212,7 +4229,8 @@ function renderCutsceneInfoPanel(conv, timeline = null, missionFlow = null) {
     box.appendChild(row);
   }
 
-  // Audio events
+  // Audio event names. Playable recovered files are rendered at the end of the
+  // conversation so they do not interrupt the cutscene metadata/read flow.
   if (cs.audioEvents && cs.audioEvents.length) {
     const row = document.createElement("div");
     row.className = "cs-pill-row";
@@ -4332,6 +4350,108 @@ function renderCutsceneInfoPanel(conv, timeline = null, missionFlow = null) {
   return box;
 }
 
+function renderCutsceneAudioBlock(conv) {
+  const audioFiles = conv && conv.cutscene && Array.isArray(conv.cutscene.audioFiles)
+    ? conv.cutscene.audioFiles
+    : [];
+  const playable = selectGenderedAudioFiles(audioFiles.filter((file) => file && file.src));
+  if (!playable.length) return null;
+
+  const box = document.createElement("div");
+  box.className = "summary-box cutscene-audio-block";
+
+  const label = document.createElement("div");
+  label.className = "summary-label";
+  label.textContent = "Recovered audio";
+  box.appendChild(label);
+
+  for (const file of playable) {
+    const row = document.createElement("div");
+    row.className = "cutscene-audio-row";
+
+    const title = document.createElement("div");
+    title.className = "cutscene-audio-title";
+    const eventId = String(file.id || file.eventId || "");
+    const mediaId = file.mediaId !== undefined && file.mediaId !== null ? `media ${file.mediaId}` : "";
+    const gender = audioFileGenderSuffix(file);
+    title.textContent = [eventId, mediaId, gender ? gender.toUpperCase() : ""].filter(Boolean).join(" | ");
+    row.appendChild(title);
+
+    const audioNode = createAudioControl(file.src, eventId);
+    if (audioNode) {
+      audioNode.classList.add("cs-audio-control");
+      row.appendChild(audioNode);
+    }
+
+    const detailParts = [];
+    if (file.bank) detailParts.push(String(file.bank));
+    if (file.source) detailParts.push(String(file.source));
+    if (file.format) detailParts.push(String(file.format).toUpperCase());
+    if (file.bytes) detailParts.push(`${Number(file.bytes).toLocaleString()} bytes`);
+    if (detailParts.length) {
+      const details = document.createElement("div");
+      details.className = "cutscene-audio-detail";
+      details.textContent = detailParts.join(" | ");
+      row.appendChild(details);
+    }
+
+    box.appendChild(row);
+  }
+
+  return box;
+}
+
+function audioFileStem(file) {
+  const value = String(file && (file.rel || file.src) || "");
+  const clean = value.split("?")[0].split("#")[0].replace(/\\/g, "/");
+  const name = clean.split("/").pop() || "";
+  return name.replace(/\.[^.]+$/, "").toLowerCase();
+}
+
+function audioEventStem(file) {
+  return String(file && (file.eventId || file.id) || "").trim().toLowerCase();
+}
+
+function audioFileGenderSuffix(file) {
+  const match = (audioEventStem(file) || audioFileStem(file)).match(/(?:^|_)([fm])$/);
+  return match ? match[1] : "";
+}
+
+function audioFileGenderBase(file) {
+  const eventStem = audioEventStem(file);
+  if (eventStem) return eventStem.replace(/_([fm])$/, "");
+  return audioFileStem(file).replace(/_([fm])$/, "");
+}
+
+function selectGenderedAudioFiles(files) {
+  const active = resolveGenderVariant();
+  const passthrough = [];
+  const groups = new Map();
+
+  for (const file of files || []) {
+    const gender = audioFileGenderSuffix(file);
+    if (!gender) {
+      passthrough.push(file);
+      continue;
+    }
+    const key = [
+      audioFileGenderBase(file),
+      String(file.bank || ""),
+      String(file.source || ""),
+    ].join("|");
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(file);
+  }
+
+  const selected = [];
+  for (const group of groups.values()) {
+    const preferred = group.find((file) => audioFileGenderSuffix(file) === active);
+    selected.push(preferred || group[0]);
+  }
+
+  return [...passthrough, ...selected];
+}
+
 function renderSourceLinksBlock(conv) {
   const links = Array.isArray(conv && conv.sourceLinks)
     ? conv.sourceLinks.filter((link) => link && typeof link === "object")
@@ -4373,7 +4493,7 @@ function renderSourceLinksBlock(conv) {
 
 function summaryLabelForConv(conv) {
   return conv && (
-    ["wiki", "mail", "prts", "responsive"].includes(conv.kind)
+    ["wiki", "mail", "prts", "responsive", "text"].includes(conv.kind)
     || String(conv.kind || "").startsWith("table_")
   )
     ? uiText("metadata")
@@ -4988,6 +5108,8 @@ function renderConv(conv) {
       ts.textContent = formatTimelineSeconds(ln.ts);
       body.appendChild(ts);
     }
+    const audioBeforeText = conv.kind === "cutscene";
+    if (audioBeforeText) appendLineAudio(body, ln);
     if (ln.text) {
       const text = document.createElement("div");
       text.className = "text";
@@ -4995,6 +5117,7 @@ function renderConv(conv) {
       body.appendChild(text);
       appendDebugTrace(body, ln._debug, "line");
     }
+    if (!audioBeforeText) appendLineAudio(body, ln);
     appendLineMedia(body, ln);
     appendLineId(body, ln);
     if (ln.id && uncoveredLineIdSet.has(ln.id)) {
@@ -5644,6 +5767,9 @@ function renderConv(conv) {
       pendingVideoIdx += 1;
     }
   };
+  if (videoTimelineRows.length && videoTimelineRows[0].start <= 0) {
+    flushVideoRowsBefore(0);
+  }
 
   for (const ln of conv.lines) {
     if (typeof ln.ts === "number" && Number.isFinite(ln.ts)) {
@@ -5723,6 +5849,8 @@ function renderConv(conv) {
       ts.textContent = formatTimelineSeconds(ln.ts);
       body.appendChild(ts);
     }
+    const audioBeforeText = conv.kind === "cutscene";
+    if (audioBeforeText) appendLineAudio(body, ln);
     if (ln.text) {
       const t = document.createElement("div");
       t.className = "text";
@@ -5739,6 +5867,7 @@ function renderConv(conv) {
       body.appendChild(t);
       appendDebugTrace(body, ln._debug, "line");
     }
+    if (!audioBeforeText) appendLineAudio(body, ln);
     appendLineMedia(body, ln);
     if (ln.options && ln.options.length && !snsBranchGroup) {
       const opts = document.createElement("div");
@@ -5886,6 +6015,9 @@ function renderConv(conv) {
     for (const grp of remainingOrphans) block.appendChild(renderOptGroup(grp));
     frag.appendChild(block);
   }
+
+  const cutsceneAudioBlock = renderCutsceneAudioBlock(conv);
+  if (cutsceneAudioBlock) frag.appendChild(cutsceneAudioBlock);
 
   wrap.replaceChildren(frag);
   $("#right").scrollTop = 0;
@@ -7115,6 +7247,7 @@ function buildFlowConversationKeyMap() {
     if (!key) continue;
     if (!map.has(key)) map.set(key, key);
     if (key.startsWith("misc_")) noteAlias(key.slice(5), key);
+    if (key.startsWith("text_")) noteAlias(`rp_${key}`, key);
     if (key.startsWith("env_envTalk_")) noteAlias("dlg_" + key.slice(12), key);
   }
 
@@ -7140,6 +7273,7 @@ function createFlowSceneChip(rawKey, flowKeyMap, currentKey) {
     raw.startsWith("remotecomm_") ||
     raw.startsWith("radio_") ||
     raw.startsWith("black_") ||
+    raw.startsWith("text_") ||
     raw.startsWith("cutscene_") ||
     /^dlg_.+_(OpenUI|NewSeries)$/.test(raw);
   const resolvedKey = isUiNode ? "" : resolveFlowConversationKey(raw, flowKeyMap);
@@ -7178,6 +7312,40 @@ function formatTimelineSeconds(value) {
   const minutes = Math.floor(seconds / 60);
   const remaining = seconds - minutes * 60;
   return `${minutes}:${remaining.toFixed(1).padStart(4, "0")}`;
+}
+
+function createAudioControl(src, label = "") {
+  if (!src) return null;
+  const wrap = document.createElement("div");
+  wrap.className = "line-audio";
+  if (label) {
+    const caption = document.createElement("span");
+    caption.className = "line-audio-label";
+    caption.textContent = label;
+    wrap.appendChild(caption);
+  }
+  const audio = document.createElement("audio");
+  audio.preload = "none";
+  audio.src = src;
+  if (label) audio.title = label;
+  const player = window.WebUI && window.WebUI.createMediaPlayer
+    ? window.WebUI.createMediaPlayer(audio)
+    : audio;
+  wrap.appendChild(player);
+  return wrap;
+}
+
+function appendLineAudio(parent, line) {
+  if (!line) return;
+  const variant = line.audioVariants && typeof line.audioVariants === "object"
+    ? line.audioVariants[resolveGenderVariant()]
+    : null;
+  const src = (variant && variant.src) || line.audioSrc || "";
+  if (!src) return;
+  const variantId = variant && variant.id ? String(variant.id) : "";
+  const label = variantId || line.audio || line.voice || "";
+  const node = createAudioControl(src, label);
+  if (node) parent.appendChild(node);
 }
 
 function exportedAssetHref(relPath) {
@@ -7708,7 +7876,7 @@ function renderDisplayedTextHtml(text, q) {
 }
 
 function isDocumentStyleKind(kind) {
-  return kind === "wiki" || kind === "mail" || kind === "prts" || String(kind || "").startsWith("table_");
+  return kind === "wiki" || kind === "mail" || kind === "prts" || kind === "text" || String(kind || "").startsWith("table_");
 }
 
 function normalizeDocumentDisplayText(text) {

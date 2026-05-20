@@ -160,7 +160,7 @@ def story_content_suffix(key: str) -> str:
     value = safe_key(key)
     if value.startswith("misc_"):
         value = value[5:]
-    for prefix in ("dlg_", "radio_", "black_", "remotecomm_", "sns_", "cutscene_"):
+    for prefix in ("dlg_", "radio_", "black_", "remotecomm_", "sns_", "cutscene_", "text_"):
         if value.startswith(prefix):
             return value[len(prefix):]
     return value
@@ -393,6 +393,9 @@ def collect_reading_prts_links(keys: list[str]) -> dict[str, dict[str, Any]]:
         allow_row_suffix = False
         if normalized_key.startswith("radio_"):
             candidates.add(f"radio_{suffix}")
+        elif normalized_key.startswith("text_"):
+            candidates.add(normalized_key)
+            allow_row_suffix = True
         elif normalized_key.startswith(("dlg_", "black_")):
             candidates.add(f"text_{suffix}")
             allow_row_suffix = True

@@ -3,9 +3,9 @@
 
 The primary package keeps the story/reference browser text data, code, and
 emoji image files. A companion assets package contains the larger exported
-image/video files that the story renderer can display from inline ``<image...>``
-tags or inferred wiki-entry media. OBJ/FBX files, Blender bundles, and the
-asset-browser data page are intentionally left out.
+image/video/audio files that the story renderer can display or play. OBJ/FBX
+files, Blender bundles, and the asset-browser data page are intentionally left
+out.
 """
 from __future__ import annotations
 
@@ -47,6 +47,8 @@ TEXT_EXTENSIONS = {
     ".yml",
     ".yaml",
 }
+
+AUDIO_EXTENSIONS = {".wav", ".wem"}
 
 IMAGE_TOKEN_RE = re.compile(
     r"<image\b(?!\s*=)[^>]*>[\s\S]*?</image>"
@@ -122,9 +124,9 @@ Run from this extracted directory:
 Then open the printed localhost URL.
 
 This package includes the story/reference text data, WebUI code, and emoji
-images. Larger story images and videos are in the companion assets zip. Extract
-that zip into the same directory after this one when you want inline/wiki media
-too.
+images. Larger story images, videos, and decoded story audio are in the
+companion assets zip. Extract that zip into the same directory after this one
+when you want inline/wiki media and audio too.
 
 The 3D asset browser, OBJ/FBX payloads, and Blender bundle downloads are
 intentionally excluded.
@@ -136,8 +138,9 @@ Extract this zip into the same directory as the matching story package, after
 the story package has been extracted.
 
 It contains larger exported image and video files used by inline/wiki media in
-the WebUI, plus the full media indexes that enable them. Emoji images, WebUI
-code, and story/reference text data are in the main story package.
+the WebUI, plus decoded story audio files and the full media/audio indexes that
+enable them. Emoji images, WebUI code, and story/reference text data are in the
+main story package.
 """
 
 
@@ -163,6 +166,7 @@ class PackagePlan:
     filtered_video_payload: dict
     exported_images: list[ExportedImage]
     exported_videos: list[ExportedImage]
+    audio_files: list[Path]
     image_refs: int
     video_refs: int
 
@@ -261,6 +265,15 @@ def iter_webui_text_files(webui_root: Path) -> Iterable[Path]:
         if "__pycache__" in path.parts:
             continue
         if path.suffix.lower() in TEXT_EXTENSIONS:
+            yield path
+
+
+def iter_webui_audio_files(webui_root: Path) -> Iterable[Path]:
+    audio_root = webui_root / "data" / "audio"
+    if not audio_root.exists():
+        return
+    for path in sorted(audio_root.rglob("*")):
+        if path.is_file() and path.suffix.lower() in AUDIO_EXTENSIONS:
             yield path
 
 
@@ -1049,6 +1062,7 @@ def plan_package(args: argparse.Namespace) -> PackagePlan:
         resolve_exported_image(project_root, export_root, filtered_video_payload, rel)
         for rel in sorted(str(entry.get("r") or "") for entry in selected_videos)
     ]
+    audio_files = list(iter_webui_audio_files(webui_root))
     counts = story_media_payload.get("counts") if isinstance(story_media_payload.get("counts"), dict) else {}
 
     return PackagePlan(
@@ -1056,6 +1070,7 @@ def plan_package(args: argparse.Namespace) -> PackagePlan:
         filtered_video_payload=filtered_video_payload,
         exported_images=exported_images,
         exported_videos=exported_videos,
+        audio_files=audio_files,
         image_refs=int(counts.get("imageIds") or len(selected_images)),
         video_refs=int(counts.get("videoRefs") or len(selected_videos)),
     )
@@ -1114,6 +1129,7 @@ def create_package(args: argparse.Namespace) -> int:
     print(f"Resolved image files: {len(existing_images):,} ({len(emoji_images):,} emoji, {len(asset_images):,} asset)")
     print(f"Wiki video refs: {plan.video_refs:,}")
     print(f"Resolved video files: {len(existing_videos):,}")
+    print(f"Decoded audio files: {len(plan.audio_files):,}")
     if missing_images:
         preview = ", ".join(image.rel for image in missing_images[:10])
         suffix = "..." if len(missing_images) > 10 else ""
@@ -1186,6 +1202,8 @@ def create_package(args: argparse.Namespace) -> int:
             zip_write_file(zipf, assets_written, image.source_path, image.archive_path)
         for video in existing_videos:
             zip_write_file(zipf, assets_written, video.source_path, video.archive_path)
+        for audio_path in plan.audio_files:
+            zip_write_file(zipf, assets_written, audio_path, webui_arcname(webui_root, audio_path))
 
     size_mb = output.stat().st_size / (1024 * 1024)
     assets_size_mb = assets_output.stat().st_size / (1024 * 1024)

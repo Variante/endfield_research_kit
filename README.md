@@ -68,6 +68,8 @@ image proportions with bounded hover/modal previews.
 - `scripts/story_builder/build.py --languages CN --default-language CN`
 
 It intentionally skips Updates diffing plus 2D/3D asset and animation decoding.
+When decoded audio already exists under `webui/data/audio/<LANG>/`, the story
+builder relinks playable audio automatically after rebuilding that language.
 To refresh the Updates tab after `export_full/` is current, run:
 
 ```bat
@@ -80,6 +82,20 @@ image/model/animation exports, run:
 ```bat
 .\export_assets.bat
 ```
+
+To decode CN audio and attach playable audio controls to matching Story lines
+and recoverable cutscene audio events, run:
+
+```bat
+.\export_audio.bat
+```
+
+Use `.\export_audio.bat --skip-decode` to rebuild only the WebUI audio index
+and story links from existing decoded files; normal story builds now run that
+relink step automatically for languages with decoded audio. The script links
+`AudioDialog` voice rows and Wwise HIRC event media such as cutscene SFX/VO
+when the event graph reaches decoded media. Use `--language EN`, `--language
+JP`, or `--language KR` after building those WebUI language folders.
 
 For an initial Updates build where there is no useful update history yet:
 
@@ -114,8 +130,9 @@ or:
 
 Packaging writes two zips by default: a smaller story zip with the WebUI,
 story/reference text data, and emoji images, plus a companion assets zip with
-larger story images and videos. Extract the story zip first, then extract the
-assets zip into the same directory when those media files are needed.
+larger story images, videos, and decoded story audio. Extract the story zip
+first, then extract the assets zip into the same directory when those media
+files are needed.
 
 ## Update Tracking
 

@@ -548,6 +548,7 @@ const KIND_LABELS = {
     black: { name: "\u9ed1\u5c4f\u5b57\u5e55", cls: "badge-black" },
     remotecomm: { name: "\u8fdc\u7a0b\u901a\u8bdd", cls: "badge-remotecomm" },
     radio: { name: "\u8bed\u97f3\u901a\u8baf", cls: "badge-radio" },
+    text: { name: "\u5f39\u51fa\u6587\u672c", cls: "badge-text" },
     reading: { name: "\u5f55\u97f3", cls: "badge-reading" },
     mail: { name: "\u90ae\u4ef6", cls: "badge-mail" },
     prts: { name: "\u6863\u6848\u5e93", cls: "badge-prts" },
@@ -564,6 +565,7 @@ const KIND_LABELS = {
     black: { name: "Black Screen", cls: "badge-black" },
     remotecomm: { name: "Remote Comm", cls: "badge-remotecomm" },
     radio: { name: "Radio", cls: "badge-radio" },
+    text: { name: "Popup Text", cls: "badge-text" },
     reading: { name: "Recording", cls: "badge-reading" },
     mail: { name: "Mail", cls: "badge-mail" },
     prts: { name: "Archive", cls: "badge-prts" },
@@ -1866,6 +1868,7 @@ function entryDataTypes(entry) {
   };
 
   add(entryDataType(entry), true);
+  add(entryOriginalEnvTalkDataType(entry));
   add(entryPrtsDataType(entry));
   if (String(entry.d || "").trim() === "sns") {
     const storyMissionId = entryStoryMissionId(entry);
@@ -1874,6 +1877,15 @@ function entryDataTypes(entry) {
 
   entry._dataTypesNormalized = out;
   return out;
+}
+
+function entryOriginalEnvTalkDataType(entry) {
+  if (!entry || String(entry.d || "").trim() !== "env") return "";
+  if (!String(entry.k || "").startsWith("env_envTalk_")) return "";
+  if (!pairedSimActorId(entry)) return "";
+
+  const rawType = String(entry.t || "").trim();
+  return foldedEntryTypeKey(rawType || "worldtext", entry);
 }
 
 function entryMediaTypeFilterKeys(entry) {

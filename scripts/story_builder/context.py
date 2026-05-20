@@ -107,8 +107,11 @@ from .mission_recovery import (
     write_json as write_mission_timeline_recovery_json,
 )
 from scene_order_gap_shared import (
+    analyze_scene_order_disorder as shared_analyze_scene_order_disorder,
+    build_scene_placement_index_from_timelines as shared_build_scene_placement_index_from_timelines,
     build_runtime_registry_debug as shared_build_runtime_registry_debug,
     build_scene_order_disorder_warning as shared_build_scene_order_disorder_warning,
+    collect_scene_order_gap_rows_from_payloads as shared_collect_scene_order_gap_rows_from_payloads,
     load_dialog_id_registry as shared_load_dialog_id_registry,
 )
 
