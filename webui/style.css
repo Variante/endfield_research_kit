@@ -1513,6 +1513,21 @@ a.opt-target-chip { cursor: pointer; }
   min-width: 76px;
   text-transform: uppercase;
 }
+.mission-timeline-objectives {
+  align-items: baseline;
+}
+.mission-timeline-objective-text {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 2px 7px;
+  border: 1px solid rgba(109, 213, 140, 0.16);
+  border-radius: 4px;
+  color: #dce8f2;
+  background: rgba(109, 213, 140, 0.08);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
 .mission-timeline-chip-warn {
   color: var(--warn);
   background: rgba(232, 185, 79, 0.10);

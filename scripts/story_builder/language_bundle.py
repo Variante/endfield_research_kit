@@ -837,6 +837,52 @@ def build_language_bundle(
         }
 
 
+    def localized_objective_instruction(key: object) -> dict | None:
+        text_key = str(key or "").strip()
+        if not text_key:
+            return None
+        return {
+            "key": text_key,
+            "text": named_text(text_key),
+        }
+
+    def objective_instruction_keys(anchor: dict) -> list[str]:
+        keys: list[str] = []
+        if anchor.get("descriptionKey"):
+            keys.append(str(anchor.get("descriptionKey") or ""))
+        keys.extend(str(key) for key in (anchor.get("multipleDescriptionKeys") or []))
+        return _unique_preserve(key for key in keys if key)
+
+    def localize_mission_flow(flow: dict | None) -> dict | None:
+        if not isinstance(flow, dict):
+            return flow
+        localized = copy.deepcopy(flow)
+        for quest in localized.get("quests") or []:
+            if not isinstance(quest, dict):
+                continue
+            quest_instructions: list[dict] = []
+            for anchor in quest.get("objectiveAnchors") or []:
+                if not isinstance(anchor, dict):
+                    continue
+                instructions = [
+                    entry
+                    for key in objective_instruction_keys(anchor)
+                    if (entry := localized_objective_instruction(key))
+                ]
+                if not instructions:
+                    continue
+                anchor["objectiveInstructions"] = instructions
+                index = anchor.get("index")
+                for entry in instructions:
+                    row = dict(entry)
+                    if index not in (None, ""):
+                        row["objectiveIndex"] = index
+                    quest_instructions.append(row)
+            if quest_instructions:
+                quest["objectiveInstructions"] = quest_instructions
+        return localized
+
+
     npc_templates_by_template_id: dict[str, list[str]] = defaultdict(list)
     for template_row_id, row in npc_templates.items():
         template_id = str(row.get("templateId") or "")
@@ -5159,9 +5205,7 @@ def build_language_bundle(
             " ".join(variant["name"] for variant in (cutscene.get("variants") or [])),
             " ".join(cutscene.get("keepCameraPaths") or []),
         ] if part)
-        line_preview = next((line.get("text") or "" for line in lines if line.get("sub")), "")
-        if not line_preview:
-            line_preview = next((line.get("text") or "" for line in lines if line.get("text")), "")
+        line_preview = next((line.get("text") or "" for line in lines if line.get("text")), "")
         entry = {
             "k": cutscene_key,
             "d": "cutscene",
@@ -9100,6 +9144,15 @@ def build_language_bundle(
         def video_has_authoritative_story_binding(ref: dict) -> bool:
             return bool(ref.get("authoritativeKeys"))
 
+        # Index entry kind for each WebUI key. The video distribution rules read
+        # this so cutscene-bound FMVs stay out of the cutscene bundle while
+        # dlg-bound FMVs still embed inline.
+        entry_kind_by_key: dict[str, str] = {
+            str(entry.get("k") or ""): str(entry.get("d") or "")
+            for entry in index_entries
+            if entry.get("k")
+        }
+
         def standalone_video_key(ref: dict) -> str:
             stem = str(ref.get("baseStem") or ref.get("stem") or ref.get("name") or "").strip()
             stem = re.sub(r"\.[^.]+$", "", stem, flags=re.IGNORECASE)
@@ -9158,12 +9211,20 @@ def build_language_bundle(
 
         for ref in narrative_video_assets:
             resolved_key = resolve_video_key(ref)
-            if resolved_key and video_has_authoritative_story_binding(ref):
+            has_authoritative = bool(resolved_key) and video_has_authoritative_story_binding(ref)
+            resolved_kind = entry_kind_by_key.get(resolved_key, "") if has_authoritative else ""
+            # Rule: a video is always emitted as a standalone `video_*` bundle.
+            # When the FMV is bound to a dialog (dlg/remotecomm) it ALSO embeds
+            # inline so the dlg keeps its FMV preview. Cutscene-bound FMVs only
+            # go standalone — the cutscene bundle never carries the video.
+            standalone_ref = dict(ref)
+            standalone_ref["_resolvedKey"] = resolved_key
+            standalone_ref["_resolvedKind"] = resolved_kind
+            if has_authoritative and resolved_kind in {"dlg", "remotecomm"}:
                 resolved_ref = dict(ref)
                 resolved_ref["resolvedKey"] = resolved_key
                 resolved_videos[resolved_key].append(resolved_ref)
-                continue
-            standalone_videos[standalone_video_key(ref)].append(dict(ref))
+            standalone_videos[standalone_video_key(ref)].append(standalone_ref)
             if not resolved_key:
                 unresolved_videos.append(ref)
 
@@ -9223,6 +9284,40 @@ def build_language_bundle(
                 })
             return rows
 
+        def standalone_binding_summary(refs: list[dict]) -> tuple[str, str]:
+            for ref in refs:
+                binding = ref.get("binding") if isinstance(ref.get("binding"), dict) else {}
+                if not binding or binding.get("isHint"):
+                    continue
+                scene = str(binding.get("scene") or "")
+                if not scene:
+                    continue
+                resolved_kind = str(ref.get("_resolvedKind") or "")
+                resolved_key = str(ref.get("_resolvedKey") or "")
+                if resolved_kind == "cutscene":
+                    label, target = "cutscene", resolved_key or scene
+                elif resolved_kind == "dlg":
+                    label, target = "dialog", resolved_key or scene
+                elif resolved_kind == "remotecomm":
+                    label, target = "remotecomm", resolved_key or scene
+                elif scene.startswith("cutscene_"):
+                    label, target = "cutscene", scene
+                elif scene.startswith("dlg_"):
+                    label, target = "dialog", scene
+                elif scene.startswith("remotecomm_"):
+                    label, target = "remotecomm", scene
+                else:
+                    label, target = "scene", scene
+                attached_note = "" if resolved_kind == "cutscene" or not resolved_kind else " (also embedded inline)"
+                return (
+                    f"Attachment status: timeline-bound to {label} `{target}`{attached_note}; kept standalone in WebUI",
+                    "standaloneVideoBoundButKeptSeparate",
+                )
+            return (
+                "Attachment status: no non-name binding found for a dialog or cutscene",
+                "standaloneVideoNoAuthoritativeStoryBinding",
+            )
+
         def emit_standalone_video_outputs() -> list[dict]:
             entries: list[dict] = []
             for key, raw_refs in sorted(standalone_videos.items()):
@@ -9237,19 +9332,33 @@ def build_language_bundle(
                 names = _unique_preserve(str(ref.get("name") or "") for ref in refs if ref.get("name"))
                 source_counts = Counter(str(ref.get("source") or "") for ref in refs)
                 format_counts = Counter(str(ref.get("format") or "") for ref in refs)
+                attachment_text, attachment_reason = standalone_binding_summary(refs)
+                # `title` is the asset baseStem (e.g. cs_video_e0m0_3); the game
+                # ships no localized title for FMVs. Keep it as a search hint
+                # and as the lead summary label, but don't expose it as a
+                # `title` field — that would mislead the WebUI into treating
+                # the stem as a human-readable name. cutscene/dlg/radio bundles
+                # also omit the field.
+                #
+                # We do NOT pull `cs_video_<scene>_NN` TextTable rows into the
+                # standalone video bundle. Those rows share a name with the FMV
+                # but the game's FMV subtitle pipeline doesn't reference them
+                # by id, and no timeline subtitle track inside the FMV's
+                # playable carries those keys either. Surfacing them here would
+                # be name-only inference, not evidence-backed.
+                summary_rows = [
+                    {"text": f"Standalone narrative video: {title}"},
+                    {"text": f"Mission: {mission}"},
+                    {"text": f"Files: {len(refs)} exported variant(s)"},
+                    {"text": attachment_text},
+                ]
                 payload = {
                     "key": key,
                     "kind": "video",
                     "mission": mission,
                     "scene": scene,
-                    "title": title,
                     "lines": [],
-                    "summary": [
-                        {"text": f"Standalone narrative video: {title}"},
-                        {"text": f"Mission: {mission}"},
-                        {"text": f"Files: {len(refs)} exported variant(s)"},
-                        {"text": "Attachment status: no non-name binding found for a dialog or cutscene"},
-                    ],
+                    "summary": summary_rows,
                     "narrativeVideos": compact_refs,
                     "_debug": {
                         "title": mission_name_trace(mission),
@@ -9259,7 +9368,7 @@ def build_language_bundle(
                                 "count": len(refs),
                                 "shown": len(compact_refs),
                                 "omitted": omitted,
-                                "reason": "standaloneVideoNoAuthoritativeStoryBinding",
+                                "reason": attachment_reason,
                             },
                         },
                     },
@@ -9274,7 +9383,6 @@ def build_language_bundle(
                     "s": scene,
                     "t": type_ if type_ != "?" else "other",
                     "a": act,
-                    "title": title,
                     "c": [],
                     "n": 0,
                     "p": preview(", ".join(names) or title),
@@ -10764,31 +10872,32 @@ def build_language_bundle(
     mission_scene_graphs: dict[str, dict] = {}
     for mission in present_index_missions:
         flow = load_mission_flow(mission)
+        localized_flow = localize_mission_flow(flow)
         graph_flow = mission_graph_flow(mission, flow)
         scene_graph = build_mission_scene_graph(mission, graph_flow)
-        if not flow and not scene_graph:
+        if not localized_flow and not scene_graph:
             continue
-        payload = {"quests": (flow or {}).get("quests") or []}
-        if flow:
+        payload = {"quests": (localized_flow or {}).get("quests") or []}
+        if localized_flow:
             referenced: set[str] = set()
-            for q in flow["quests"]:
+            for q in localized_flow["quests"]:
                 referenced.update(q.get("dialogs") or [])
                 referenced.update(q.get("cutscenes") or [])
                 referenced.update(q.get("remotecomms") or [])
                 referenced.update(q.get("radios") or [])
             available = scene_keys_by_mission.get(mission, set())
-            for q in flow["quests"]:
+            for q in localized_flow["quests"]:
                 referenced.update(quest_area_scene_refs(q, available))
                 referenced.update(quest_leveldata_scene_refs(q, available))
             unlinked = sorted(available - referenced)
-            if flow.get("level"):
-                payload["level"] = flow["level"]
+            if localized_flow.get("level"):
+                payload["level"] = localized_flow["level"]
             if unlinked:
                 payload["unlinked"] = unlinked
-            map_pins = build_mission_map_pins(flow)
+            map_pins = build_mission_map_pins(localized_flow)
             if map_pins:
                 payload["mapPins"] = map_pins
-            scene_pins = build_mission_scene_pins(flow, available)
+            scene_pins = build_mission_scene_pins(localized_flow, available)
             if scene_pins:
                 payload["scenePins"] = scene_pins
         if scene_graph:
