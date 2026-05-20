@@ -24,8 +24,16 @@ def build_scene_order_gap_summary(rows: list[dict], language: str) -> dict:
     return shared_build_scene_order_gap_summary(rows, language)
 
 
-def write_scene_order_gap_reports(root: Path, reports_dir: Path, language: str, conv_dir: Path) -> dict:
-    rows = collect_scene_order_gap_rows(root, conv_dir)
+def write_scene_order_gap_reports(
+    root: Path,
+    reports_dir: Path,
+    language: str,
+    conv_dir: Path,
+    *,
+    rows: list[dict] | None = None,
+) -> dict:
+    if rows is None:
+        rows = collect_scene_order_gap_rows(root, conv_dir)
     summary = build_scene_order_gap_summary(rows, language)
 
     reports_dir.mkdir(parents=True, exist_ok=True)

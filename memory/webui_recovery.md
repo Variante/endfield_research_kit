@@ -235,3 +235,15 @@ After a refresh, check:
 - Assets tab loads counts and can preview images/videos where supported.
 - Package dry-run reports expected story media and excludes 3D/model payloads
   by default.
+
+## 2026-05-20 narrative video attachment policy
+
+- Story builder now embeds every resolved narrative-video mapping into its
+  resolved conversation, replacing the old dialog plus one-cutscene exception.
+  This
+  covers cutscene, remotecomm, and any other resolved story file; non-name
+  evidence such as `timelinePlayable` supplies authored inline timing when
+  available.
+- Standalone `video_*` rows are still emitted for direct browsing, but they
+  carry `attachTo` for the resolved story key. Story sort uses that attachment
+  so the standalone video row stays beside the file where the video is inserted.

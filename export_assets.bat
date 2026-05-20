@@ -3,6 +3,9 @@ setlocal
 
 if /I "%~1"=="--help" goto :help
 if /I "%~1"=="-h" goto :help
+if /I "%~1"=="/?" goto :help
+if /I "%~1"=="/h" goto :help
+if /I "%~1"=="help" goto :help
 
 set "EXPORT_ARGS="
 set "SKIP_EXPORT_FULL=0"
@@ -11,6 +14,9 @@ set "SKIP_EXPORT_FULL=0"
 if "%~1"=="" goto :parsed_args
 if /I "%~1"=="--help" goto :help
 if /I "%~1"=="-h" goto :help
+if /I "%~1"=="/?" goto :help
+if /I "%~1"=="/h" goto :help
+if /I "%~1"=="help" goto :help
 if /I "%~1"=="--skip-export-full" (
   set "SKIP_EXPORT_FULL=1"
   shift
@@ -44,8 +50,9 @@ exit /b 0
 :help
 echo Usage: export_assets.bat [--skip-export-full] [--game-root Endfield_Data] [--animestudio-jobs N] [export_full_from_game.py options]
 echo.
-echo Runs the heavier image/model/animation asset decode and rebuilds WebUI asset indexes.
-echo Story/reference data is handled by export.bat.
+echo Runs the heavier AnimeStudio image/model/animation decode and rebuilds
+echo WebUI Assets tab indexes plus the compact Story media lookup.
+echo Story/reference data is handled by export.bat; audio is handled by export_audio.bat.
 echo.
 echo   --skip-export-full    Reuse existing decoded assets and only rebuild asset indexes.
 echo   --game-root PATH      Use a non-default installed Endfield_Data path.

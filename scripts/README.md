@@ -12,6 +12,7 @@ From the repo root:
 .\export.bat
 .\build_updates.bat
 .\export_assets.bat
+.\export_audio.bat
 .\package_webui.bat
 ```
 
@@ -26,6 +27,9 @@ From the repo root:
 
 Use `.\export.bat --skip-export-full` to rebuild WebUI data from an existing
 `export_full/` while still running the freshness guard before the builders.
+The story builder also runs a relink-only audio pass for any selected language
+that already has decoded files under `webui/data/audio/<LANG>/`, so Story
+audio controls survive normal rebuilds.
 
 `build_updates.bat` writes `webui/data/updates/latest.json` from the saved
 previous export and current `export_full/`. Use `.\build_updates.bat
@@ -36,6 +40,17 @@ heavy assets when those changes should appear in Updates.
 `export_assets.bat` runs the heavier image/model/animation AnimeStudio decode
 and then `scripts/build_assets.py` for the Assets tab indexes and compact
 Story media lookup.
+
+`export_audio.bat` runs `scripts/build_audio.py` for decoded audio. By default
+it extracts CN voice/general/initial/audit WAVs with `fluffy-dumper` and writes
+`webui/data/audio/CN/`. It also builds `webui/data/audio/CN/index.json`, adds
+playable `audioSrc` links to generated CN conversation JSON when a line's
+`audio` id matches a decoded file, parses Wwise bank HIRC metadata from
+exported `*banks.pck` files, and links cutscene audio events such as
+`au_sfx_*`/`au_vo_*` when the event graph reaches decoded media. Use
+`--skip-decode` to rebuild only the index and WebUI links from existing decoded
+files. A normal `scripts/story_builder/build.py` run performs that same
+skip-decode relink automatically when decoded audio is already present.
 
 `package_webui.bat` runs `scripts/package_webui.py` and creates split
 shareable zips. The main story zip contains `serve.py`, `webui/`, generated
@@ -102,13 +117,23 @@ Expected active inputs and outputs:
 - `story_builder/build.py`: builds CN story/reference data by default,
   with optional extra languages. The builder reads from `..\export_full\`, stamps dialog convs
   with DialogIdTable runtime registry evidence, links narrative
-  Cutscene/RemoteComm video files to matching story entries, and writes
-  generated WebUI data plus durable reports. The static frontend currently
+  Cutscene/RemoteComm video files to matching story entries, promotes
+  mission-shaped ReadingPopUp/RichContent `text_*` rows into story text
+  conversations, and writes generated WebUI data plus durable reports.
+  The static frontend currently
   treats SNS emoji ids such as `sns_emoji_*` as inline emoji, while non-emoji
   SNS media such as `sns_image_*` and `sns_sticker_*` render as normal images.
+  The command entry stays small: `build_args.py` owns CLI flags,
+  `timeline_orders.py` owns the pre-build Timeline recovery check,
+  `build_pipeline.py` owns bundle orchestration and manifest writing, and
+  `audio_relink.py` owns the post-build decoded-audio relink pass.
 - `build_assets.py`: builds the WebUI asset index, video index, story media
   index, and optional demo bundle zips from active WebUI export roots. It is
   run by `..\export_assets.bat`, not the story-only `..\export.bat`.
+- `build_audio.py`: decodes language audio via `fluffy-dumper`, indexes files
+  under `webui/data/audio/<LANG>/`, parses Wwise bank event-to-media links, and
+  post-processes generated conversation JSON so dialog/cutscene lines and
+  recoverable cutscene audio events can render native browser audio controls.
 - `asset_builder/`: shared asset-browser indexing, story-media selection, and
   demo bundle helpers used by `build_assets.py` and the Updates builder.
 - `package_webui.py`: packages split shareable WebUI zips from
@@ -181,8 +206,10 @@ These are kept because the WebUI story builders import or use them:
   `webui/data/lang/<LANG>/narrative_video_evidence.json` so a WebUI video can
   be traced to the exact `BeyondFMVPlayableAsset` / Timeline source instead of
   relying on filename matching. Narrative videos that only match by name are
-  emitted as standalone `video` story files grouped by mission, while stronger
-  bindings remain attached to the proven dialog or cutscene.
+  emitted as standalone `video` story files grouped by mission, while resolved
+  mappings attach to the dialog, cutscene, remotecomm, or other story file and
+  keep the standalone row adjacent in Story sort. Timeline / playable evidence
+  supplies authored inline placement when available.
 - `story_builder/` also scans narrative video folders under
   `Data/Video/PC/Narrative/Cutscene` and `RemoteComm`, attaches matching
   `narrativeVideos` to dialog/cutscene/remotecomm conv JSON, and writes

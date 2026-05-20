@@ -1481,15 +1481,11 @@ def classify_option_position_failure(conv: dict, analysis: dict) -> dict:
     }
 
 
-def build_scene_order_disorder_warning(
-    conv: dict, *, dialog_id_registry: dict | None = None
+def _build_scene_order_disorder_warning_from_analysis(
+    conv: dict,
+    line_order_analysis: dict,
+    option_layout_analysis: dict,
 ) -> dict | None:
-    line_order_analysis = analyze_line_order(
-        conv, dialog_id_registry=dialog_id_registry
-    )
-    option_layout_analysis = analyze_option_layout(
-        conv, dialog_id_registry=dialog_id_registry
-    )
     conv_key = str(conv.get("key") or "")
     accepts_fallback_line_order = conv_key.startswith((
         "misc_sim",
@@ -1541,6 +1537,35 @@ def build_scene_order_disorder_warning(
             "evidence": option_layout_analysis["evidence"],
         },
     }
+
+
+def analyze_scene_order_disorder(
+    conv: dict, *, dialog_id_registry: dict | None = None
+) -> dict:
+    """Return line/order analyses plus the warning payload, computed once."""
+    line_order_analysis = analyze_line_order(
+        conv, dialog_id_registry=dialog_id_registry
+    )
+    option_layout_analysis = analyze_option_layout(
+        conv, dialog_id_registry=dialog_id_registry
+    )
+    return {
+        "lineOrder": line_order_analysis,
+        "optionLayout": option_layout_analysis,
+        "warning": _build_scene_order_disorder_warning_from_analysis(
+            conv,
+            line_order_analysis,
+            option_layout_analysis,
+        ),
+    }
+
+
+def build_scene_order_disorder_warning(
+    conv: dict, *, dialog_id_registry: dict | None = None
+) -> dict | None:
+    return analyze_scene_order_disorder(
+        conv, dialog_id_registry=dialog_id_registry
+    )["warning"]
 
 
 _PLACEMENT_COUNT_FIELDS = {
@@ -1615,6 +1640,60 @@ def _merge_scene_placement_row(existing: dict, incoming: dict) -> dict:
     }
 
 
+def _add_scene_placement_rows(
+    out: dict[str, dict],
+    scene_placement: dict,
+    *,
+    mission: str,
+    mission_file: str | Path | None = None,
+) -> None:
+    if not isinstance(scene_placement, dict):
+        return
+    for scene_key, placement in scene_placement.items():
+        if not isinstance(placement, dict):
+            continue
+        key = runtime_dialog_scene_key(scene_key)
+        row = dict(placement)
+        row.setdefault("sceneKey", key)
+        if mission:
+            row["missions"] = [mission]
+        if mission_file:
+            row["missionFiles"] = [str(mission_file).replace("\\", "/")]
+        if key in out:
+            out[key] = _merge_scene_placement_row(out[key], row)
+        else:
+            out[key] = row
+
+
+def build_scene_placement_index_from_timelines(
+    mission_timelines: dict[str, dict] | list[dict],
+    *,
+    mission_files: dict[str, str | Path] | None = None,
+) -> dict[str, dict]:
+    """Build the scene placement lookup from in-memory mission timelines."""
+    out: dict[str, dict] = {}
+    if isinstance(mission_timelines, dict):
+        iterable = mission_timelines.items()
+    else:
+        iterable = (
+            (str(row.get("mission") or ""), row)
+            for row in mission_timelines
+            if isinstance(row, dict)
+        )
+    mission_files = mission_files or {}
+    for mission, timeline in iterable:
+        if not isinstance(timeline, dict):
+            continue
+        mission = str(mission or timeline.get("mission") or "")
+        _add_scene_placement_rows(
+            out,
+            timeline.get("scenePlacement") or {},
+            mission=mission,
+            mission_file=mission_files.get(mission),
+        )
+    return out
+
+
 def _load_scene_placement_index(root: Path, conv_dir: Path) -> dict[str, dict]:
     """Load per-scene mission placement signals emitted by the Story builder."""
     mission_dir = conv_dir.parent / "mission"
@@ -1633,22 +1712,16 @@ def _load_scene_placement_index(root: Path, conv_dir: Path) -> dict[str, dict]:
         if not isinstance(scene_placement, dict):
             continue
         mission = str(payload.get("mission") or timeline.get("mission") or path.stem)
-        for scene_key, placement in scene_placement.items():
-            if not isinstance(placement, dict):
-                continue
-            key = runtime_dialog_scene_key(scene_key)
-            row = dict(placement)
-            row.setdefault("sceneKey", key)
-            row["missions"] = [mission]
-            try:
-                mission_file = path.relative_to(root)
-            except ValueError:
-                mission_file = path
-            row["missionFiles"] = [str(mission_file).replace("\\", "/")]
-            if key in out:
-                out[key] = _merge_scene_placement_row(out[key], row)
-            else:
-                out[key] = row
+        try:
+            mission_file = path.relative_to(root)
+        except ValueError:
+            mission_file = path
+        _add_scene_placement_rows(
+            out,
+            scene_placement,
+            mission=mission,
+            mission_file=mission_file,
+        )
     return out
 
 
@@ -1691,87 +1764,121 @@ def _placement_has_timeline(placement: dict | None) -> bool:
     return bool(int(placement.get("timelineEvidenceCount") or 0))
 
 
-def collect_scene_order_gap_rows(root: Path, conv_dir: Path) -> list[dict]:
-    dialog_id_registry = load_dialog_id_registry()
-    scene_placement_index = _load_scene_placement_index(root, conv_dir)
+def build_scene_order_gap_row(
+    root: Path,
+    path: Path,
+    conv: dict,
+    *,
+    scene_placement_index: dict[str, dict] | None = None,
+    dialog_id_registry: dict | None = None,
+    analyses: dict | None = None,
+) -> dict | None:
+    analyses = analyses or analyze_scene_order_disorder(
+        conv, dialog_id_registry=dialog_id_registry
+    )
+    line_order_analysis = analyses.get("lineOrder") or analyze_line_order(
+        conv, dialog_id_registry=dialog_id_registry
+    )
+    option_layout_analysis = analyses.get("optionLayout") or analyze_option_layout(
+        conv, dialog_id_registry=dialog_id_registry
+    )
+    line_order_pattern = classify_line_order_failure(line_order_analysis)
+    option_position_pattern = classify_option_position_failure(conv, option_layout_analysis)
+    inferred_options = option_layout_analysis["status"] == "inferred"
+    inferred_responses = inferred_option_response_warning(conv) is not None
+    if line_order_analysis["status"] == "direct" and not inferred_options and not inferred_responses:
+        return None
+    scene_key = runtime_dialog_scene_key(conv.get("key") or path.stem)
+    scene_placement = (scene_placement_index or {}).get(scene_key) or {}
+    option_groups = [
+        group
+        for group in (conv.get("optionGroups") or [])
+        if isinstance(group, dict)
+    ]
+    try:
+        rel_path = path.relative_to(root)
+    except ValueError:
+        rel_path = path
+    return {
+        "key": conv.get("key") or path.stem,
+        "mission": conv.get("mission") or "",
+        "kind": conv.get("kind") or "",
+        "title": ((conv.get("_debug") or {}).get("title") or {}).get("value") or "",
+        "lineOrderStatus": line_order_analysis["status"],
+        "lineOrderReasonCode": line_order_analysis["reasonCode"],
+        "lineOrderReason": line_order_analysis["reason"],
+        "lineOrderDetail": line_order_analysis["detail"],
+        "lineOrderEvidence": line_order_analysis["evidence"],
+        "lineOrderAnalysis": line_order_analysis,
+        "lineOrderPatternCode": line_order_pattern["code"],
+        "lineOrderPattern": line_order_pattern,
+        "scenePlacement": scene_placement,
+        "scenePlacementEvidenceKinds": scene_placement.get("evidenceKinds") or [],
+        "scenePlacementHasStoryRef": _placement_has_story_ref(scene_placement),
+        "scenePlacementHasSourceEdge": _placement_has_source_edge(scene_placement),
+        "scenePlacementHasSourceSequence": _placement_has_source_sequence(scene_placement),
+        "scenePlacementHasStoryCallContext": _placement_has_story_call_context(scene_placement),
+        "scenePlacementHasHashTerminal": _placement_has_hash_terminal(scene_placement),
+        "scenePlacementHasTimeline": _placement_has_timeline(scene_placement),
+        "inferredOptionLayout": inferred_options,
+        "inferredOptionResponse": inferred_responses,
+        "optionLayoutStatus": option_layout_analysis["status"],
+        "optionLayoutReason": option_layout_analysis["reasonCode"],
+        "optionLayoutSummary": option_layout_analysis["reason"],
+        "optionLayoutDetail": option_layout_analysis["detail"],
+        "optionLayoutEvidence": option_layout_analysis["evidence"],
+        "optionLayoutAnalysis": option_layout_analysis,
+        "optionPositionPatternCode": option_position_pattern["code"],
+        "optionPositionPattern": option_position_pattern,
+        "warningCodes": [
+            warning.get("code")
+            for warning in (conv.get("warnings") or [])
+            if isinstance(warning, dict) and warning.get("code")
+        ],
+        "lineCount": len(conv.get("lines") or []),
+        "meaningfulLineCount": _count_meaningful_lines(conv),
+        "optionGroupCount": len(option_groups),
+        "optionCount": sum(
+            len(group.get("options") or [])
+            for group in option_groups
+        ),
+        "meaningfulOptionCount": _count_meaningful_options(conv),
+        "hasMeaningfulLines": has_meaningful_lines(conv),
+        "hasMeaningfulOptions": has_meaningful_options(conv),
+        "path": str(rel_path).replace("\\", "/"),
+    }
+
+
+def collect_scene_order_gap_rows_from_payloads(
+    root: Path,
+    payloads: list[tuple[Path, dict, dict | None]] | list[tuple[Path, dict]],
+    *,
+    scene_placement_index: dict[str, dict] | None = None,
+    dialog_id_registry: dict | None = None,
+) -> list[dict]:
+    if dialog_id_registry is None:
+        dialog_id_registry = load_dialog_id_registry()
     rows: list[dict] = []
-    for path in sorted(conv_dir.glob("dlg_*.json")):
-        try:
-            conv = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+    for item in payloads:
+        path = item[0]
+        conv = item[1]
+        analyses = item[2] if len(item) > 2 else None
+        if not isinstance(conv, dict) or not path.stem.startswith("dlg_"):
             continue
-
-        meaningful_lines = has_meaningful_lines(conv)
-        meaningful_options = has_meaningful_options(conv)
-        line_order_analysis = analyze_line_order(
-            conv, dialog_id_registry=dialog_id_registry
+        row = build_scene_order_gap_row(
+            root,
+            path,
+            conv,
+            scene_placement_index=scene_placement_index,
+            dialog_id_registry=dialog_id_registry,
+            analyses=analyses,
         )
-        option_layout_analysis = analyze_option_layout(
-            conv, dialog_id_registry=dialog_id_registry
-        )
-        line_order_pattern = classify_line_order_failure(line_order_analysis)
-        option_position_pattern = classify_option_position_failure(conv, option_layout_analysis)
-        inferred_options = option_layout_analysis["status"] == "inferred"
-        inferred_responses = inferred_option_response_warning(conv) is not None
-        if line_order_analysis["status"] == "direct" and not inferred_options and not inferred_responses:
-            continue
-        scene_key = runtime_dialog_scene_key(conv.get("key") or path.stem)
-        scene_placement = scene_placement_index.get(scene_key) or {}
+        if row is not None:
+            rows.append(row)
+    return sort_scene_order_gap_rows(rows)
 
-        option_groups = [
-            group
-            for group in (conv.get("optionGroups") or [])
-            if isinstance(group, dict)
-        ]
-        rows.append({
-            "key": conv.get("key") or path.stem,
-            "mission": conv.get("mission") or "",
-            "kind": conv.get("kind") or "",
-            "title": ((conv.get("_debug") or {}).get("title") or {}).get("value") or "",
-            "lineOrderStatus": line_order_analysis["status"],
-            "lineOrderReasonCode": line_order_analysis["reasonCode"],
-            "lineOrderReason": line_order_analysis["reason"],
-            "lineOrderDetail": line_order_analysis["detail"],
-            "lineOrderEvidence": line_order_analysis["evidence"],
-            "lineOrderAnalysis": line_order_analysis,
-            "lineOrderPatternCode": line_order_pattern["code"],
-            "lineOrderPattern": line_order_pattern,
-            "scenePlacement": scene_placement,
-            "scenePlacementEvidenceKinds": scene_placement.get("evidenceKinds") or [],
-            "scenePlacementHasStoryRef": _placement_has_story_ref(scene_placement),
-            "scenePlacementHasSourceEdge": _placement_has_source_edge(scene_placement),
-            "scenePlacementHasSourceSequence": _placement_has_source_sequence(scene_placement),
-            "scenePlacementHasStoryCallContext": _placement_has_story_call_context(scene_placement),
-            "scenePlacementHasHashTerminal": _placement_has_hash_terminal(scene_placement),
-            "scenePlacementHasTimeline": _placement_has_timeline(scene_placement),
-            "inferredOptionLayout": inferred_options,
-            "inferredOptionResponse": inferred_responses,
-            "optionLayoutStatus": option_layout_analysis["status"],
-            "optionLayoutReason": option_layout_analysis["reasonCode"],
-            "optionLayoutSummary": option_layout_analysis["reason"],
-            "optionLayoutDetail": option_layout_analysis["detail"],
-            "optionLayoutEvidence": option_layout_analysis["evidence"],
-            "optionLayoutAnalysis": option_layout_analysis,
-            "optionPositionPatternCode": option_position_pattern["code"],
-            "optionPositionPattern": option_position_pattern,
-            "warningCodes": [
-                warning.get("code")
-                for warning in (conv.get("warnings") or [])
-                if isinstance(warning, dict) and warning.get("code")
-            ],
-            "lineCount": len(conv.get("lines") or []),
-            "meaningfulLineCount": _count_meaningful_lines(conv),
-            "optionGroupCount": len(option_groups),
-            "optionCount": sum(
-                len(group.get("options") or [])
-                for group in option_groups
-            ),
-            "meaningfulOptionCount": _count_meaningful_options(conv),
-            "hasMeaningfulLines": meaningful_lines,
-            "hasMeaningfulOptions": meaningful_options,
-            "path": str(path.relative_to(root)).replace("\\", "/"),
-        })
 
+def sort_scene_order_gap_rows(rows: list[dict]) -> list[dict]:
     rows.sort(
         key=lambda row: (
             0 if row["lineOrderStatus"] == "missing" else 1,
@@ -1782,6 +1889,24 @@ def collect_scene_order_gap_rows(root: Path, conv_dir: Path) -> list[dict]:
         )
     )
     return rows
+
+
+def collect_scene_order_gap_rows(root: Path, conv_dir: Path) -> list[dict]:
+    dialog_id_registry = load_dialog_id_registry()
+    scene_placement_index = _load_scene_placement_index(root, conv_dir)
+    payloads: list[tuple[Path, dict]] = []
+    for path in sorted(conv_dir.glob("dlg_*.json")):
+        try:
+            conv = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        payloads.append((path, conv))
+    return collect_scene_order_gap_rows_from_payloads(
+        root,
+        payloads,
+        scene_placement_index=scene_placement_index,
+        dialog_id_registry=dialog_id_registry,
+    )
 
 
 def build_scene_order_gap_summary(rows: list[dict], language: str) -> dict:

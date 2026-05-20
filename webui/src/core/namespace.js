@@ -1,0 +1,3 @@
+(() => {
+  window.WebUI = window.WebUI || {};
+})();

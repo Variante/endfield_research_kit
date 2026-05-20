@@ -18,6 +18,7 @@ Move observations, conclusions, older exploration notes, and status snapshots to
 .\build_updates.bat
 .\build_updates.bat --init-build
 .\export_assets.bat
+.\export_audio.bat
 python serve.py
 python serve.py 9000
 ```
@@ -41,6 +42,13 @@ passes `--skip-asset-updates` by default so stale decoded asset outputs do not
 appear in story-only refreshes.
 Use `export_assets.bat` for the heavier AnimeStudio image/model/animation
 decode plus WebUI Assets tab indexes and compact Story media lookup.
+Use `export_audio.bat` when decoded Story audio should be available in the
+WebUI. It runs `scripts/build_audio.py`, which uses `fluffy-dumper` for
+language audio extraction, writes `webui/data/audio/<LANG>/`, parses Wwise bank
+event-to-media links, and post-processes generated conversation JSON with
+playable `audioSrc` links. Once decoded audio exists, direct
+`scripts/story_builder/build.py` runs relink it automatically with a
+skip-decode audio pass; pass `--skip-audio-link` only for a story-only rebuild.
 
 Useful direct commands:
 
@@ -54,6 +62,7 @@ python scripts\story_builder\source_links.py
 python scripts\story_builder\build.py --languages CN --default-language CN
 python scripts\story_builder\build.py --languages CN EN JP --default-language CN
 python scripts\build_assets.py
+python scripts\build_audio.py
 python scripts\package_webui.py
 ```
 
@@ -180,6 +189,7 @@ WebUI:
 - `scripts/story_builder/source_links.py`
 - `scripts/story_builder/build.py`
 - `scripts/build_assets.py`
+- `scripts/build_audio.py`
 - `scripts/package_webui.py`
 - supporting files in `scripts/` and `scripts/asset_builder/`
 

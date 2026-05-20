@@ -121,6 +121,7 @@
     exportFullHref,
     formatNumber,
     formatSignedNumber,
+    enhanceMediaPlayers,
     normalizeUiLocale,
     rebuildSelect,
   } = window.WebUI;
@@ -544,12 +545,13 @@
     if (!rel || entry.status === "deleted" || (kind !== "image" && kind !== "video")) return "";
     const href = updateAssetHref(rel);
     const media = kind === "video"
-      ? `<video class="updates-media-video" src="${escapeHtml(href)}" controls preload="metadata" playsinline></video>`
-      : `<img class="updates-media-image" src="${escapeHtml(href)}" alt="${escapeHtml(rel)}" loading="lazy">`;
+      ? `<video class="updates-media-video" src="${escapeHtml(href)}" preload="metadata" playsinline></video>`
+      : `<a class="updates-media-link" href="${escapeHtml(href)}" target="_blank" rel="noopener"><img class="updates-media-image" src="${escapeHtml(href)}" alt="${escapeHtml(rel)}" loading="lazy"></a>`;
     return (
       `<section class="updates-detail-panel updates-media-preview">` +
         `<h2>${escapeHtml(updateText("mediaPreview"))}</h2>` +
-        `<a class="updates-media-link" href="${escapeHtml(href)}" target="_blank" rel="noopener">${media}</a>` +
+        media +
+        `<a class="updates-media-open" href="${escapeHtml(href)}" target="_blank" rel="noopener">${escapeHtml(rel)}</a>` +
       `</section>`
     );
   }
@@ -656,6 +658,8 @@
       mediaPreviewHtml(entry),
       textDiffHtml(entry),
     ].filter(Boolean).join("");
+    const extra = up$("#updates-detail-extra");
+    if (extra) enhanceMediaPlayers(extra);
   }
 
   function refreshUpdates() {
