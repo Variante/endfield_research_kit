@@ -37,6 +37,19 @@ function entryTreeDataTypes(entry) {
   return entryDataTypes(entry).filter((dataType) => !entryShouldHideArchiveDuplicateStoryType(entry, dataType));
 }
 
+function entryTreeDataTypesForSort(entry, sortMode) {
+  const types = entryTreeDataTypes(entry);
+  if ((sortMode || "story") !== "story") return types;
+  if (typeof storyOrderDetailForEntry !== "function" || !storyOrderDetailForEntry(entry)) return types;
+  const missionId = typeof storyOrderMissionIdForEntry === "function"
+    ? storyOrderMissionIdForEntry(entry)
+    : entryTreeMissionId(entry);
+  const storyType = typeof storyMissionTypeFromId === "function"
+    ? storyMissionTypeFromId(missionId)
+    : "";
+  return storyType ? [storyType] : types;
+}
+
 function entryShouldHideArchiveDuplicateStoryType(entry, dataType) {
   if (!entry || !dataType || typeof entryHasReadingArchiveMissionDuplicate !== "function") return false;
   if (!entryHasReadingArchiveMissionDuplicate(entry)) return false;
@@ -916,11 +929,11 @@ function applyFilters() {
 
 function rebuildTree({ resetScroll = true } = {}) {
   // Group by data type and then mission. Kind (dlg/sns/misc) is not a tree
-  // level, so story and chat from the same mission stay together. Items inside
-  // each mission are sorted by kind first, then by displayed name/key.
+  // level, so story and chat from the same mission stay together.
   const tree = {};
+  const sortMode = STATE.sortMode || "story";
   for (const e of STATE.filtered) {
-    for (const dataType of entryTreeDataTypes(e)) {
+    for (const dataType of entryTreeDataTypesForSort(e, sortMode)) {
       (tree[dataType] ??= {});
       const group = treeGroupInfo(e, dataType);
       const bucket = (tree[dataType][group.key] ??= { ...group, items: [] });
@@ -931,7 +944,6 @@ function rebuildTree({ resetScroll = true } = {}) {
     tree[dataType] = collapseSingletonSourceGroups(tree[dataType]);
   }
 
-  const sortMode = STATE.sortMode || "story";
   const makeBucketSorter = () => makeItemSorter(sortMode);
   const autoExpand = !!STATE.filters.q;
 
@@ -1081,12 +1093,6 @@ function entryIsReadingPopup(entry) {
   return String(entry && entry.d || "") === "text"
     && typeof entryHasTag === "function"
     && entryHasTag(entry, "readingPopup");
-}
-
-function entryIsStandaloneEnvTalk(entry) {
-  const key = String(entry && entry.k || "");
-  if (key.startsWith("env_envTalk_") || key.startsWith("env_greetEnvTalk_")) return true;
-  return String(entry && entry.d || "") === "env" && typeof entryHasTag === "function" && entryHasTag(entry, "envTalk");
 }
 
 function missionSort(a, b) {

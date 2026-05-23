@@ -1,0 +1,11 @@
+{
+  "_note": "Story builder narrative video overrides. suppressInline keeps matching videos as standalone video_* rows and prevents inline attachment to the target story key.",
+  "suppressInline": {
+    "cutscene_e1m3_1": {
+      "stems": [
+        "cs_video_e1m3_1"
+      ],
+      "note": "Filename match is a false attachment for this black-screen cutscene."
+    }
+  }
+}

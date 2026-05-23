@@ -21,7 +21,7 @@ python serve.py
 3. rebuilds `export_full/recovered/dialog_id_table_index.json`;
 4. rebuilds narrative video/source-link evidence;
 5. builds CN Story and Reference data;
-6. refreshes recovered Story file order; and
+6. leaves the OCR-managed Story order override untouched; and
 7. relinks decoded CN audio from `export_full/structured/Audio/CN/`.
 
 Use `--export-from-game` only when refreshing `export_full/` from the installed
@@ -251,6 +251,10 @@ After a refresh, check:
 - Standalone `video_*` rows are still emitted for direct browsing, but they
   carry `attachTo` for the resolved story key. Story sort uses that attachment
   so the standalone video row stays beside the file where the video is inserted.
+- Manual suppressions in `webui/overrides/narrative_videos.json` keep known
+  false inline attachments standalone-only. `cutscene_e1m3_1` is suppressed
+  for `cs_video_e1m3_1` because the filename match should not attach that video
+  to the black-screen cutscene.
 
 ## 2026-05-23 archive duplicate links
 

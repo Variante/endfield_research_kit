@@ -10,10 +10,9 @@ This is a conservative promotion pipeline:
 
 The active order file is ``webui/overrides/story_order.json``. Each
 ``missions.<mission>.order`` value is a complete ordered list of the mission's
-Story file keys. The OCR pass seeds from that active file when available, falls
-back to ``webui/data/assets/story_order.json``, and moves observed keys into
-the observed order while preserving unobserved mission files in their current
-relative order.
+Story file keys. The OCR pass seeds only from that active file and moves
+observed keys into the observed order while preserving unobserved mission files
+in their current relative order.
 """
 from __future__ import annotations
 
@@ -48,7 +47,6 @@ from common import (  # noqa: E402
 )
 
 CONV_ROOT = ROOT / "webui" / "data" / "lang" / "CN" / "conv"
-STORY_ORDER_PATH = ROOT / "webui" / "data" / "assets" / "story_order.json"
 ACTIVE_STORY_ORDER_PATH = ROOT / "webui" / "overrides" / "story_order.json"
 MISSIONS_PATH = ROOT / "webui" / "data" / "lang" / "CN" / "missions.json"
 OCR_REPORT_DIR = REPORTS_DIR / "gameplay_video_ocr"
@@ -59,9 +57,54 @@ OCR_SCRIPT_PATH = ROOT / "scripts" / "story_recovery" / "build_gameplay_video_oc
 MIN_OCR_TOOL_VERSION = 5
 DEFAULT_THRESHOLD_SWEEP = (0.98, 0.95, 0.90, 0.86, 0.80, 0.75, 0.70, 0.65, 0.60, 0.50)
 LINE_LIKE_SOURCES = {"line", "summary"}
+MAP_DIALOG_COMPANION_SOURCE = "map-dialog-companion"
 DEFAULT_RANSAC_TOLERANCE = 3.5
 ARCHIVE_KINDS = {"prts"}
 ARCHIVE_KEY_PREFIXES = ("nar_",)
+COMPANION_STOP_BIGRAMS = {
+    "一个",
+    "一些",
+    "不会",
+    "不是",
+    "不能",
+    "不要",
+    "他们",
+    "你们",
+    "我们",
+    "但是",
+    "到了",
+    "前面",
+    "后面",
+    "因为",
+    "大家",
+    "如果",
+    "已经",
+    "时候",
+    "是什么",
+    "是不是",
+    "有人",
+    "没有",
+    "的事",
+    "的是",
+    "的人",
+    "的地",
+    "的记",
+    "的纸",
+    "看见",
+    "看到",
+    "自己",
+    "虽然",
+    "裂地",
+    "这里",
+    "这个",
+    "这些",
+    "这边",
+    "那个",
+    "那些",
+    "还是",
+    "遇到",
+    "里面",
+}
 
 BR_TAG_RE = re.compile(r"<\s*br\s*/?\s*>", re.IGNORECASE)
 TAG_RE = re.compile(r"<[^>]+>")
@@ -78,10 +121,25 @@ class CorpusLine:
     actual_mission: str
     link_reason: str
     kind: str
+    scene: int | None
     line_id: str
     source: str
     text: str
     norm: str
+
+
+@dataclass(frozen=True)
+class StoryTextRecord:
+    key: str
+    mission: str
+    kind: str
+    scene: int | None
+    first_line_id: str
+    first_text: str
+    title_norm: str
+    norm: str
+    grams: set[str]
+    title_grams: set[str]
 
 
 @dataclass(frozen=True)
@@ -123,6 +181,23 @@ def useful_norm(norm: str, *, min_chars: int) -> bool:
     if cjk >= 2:
         return True
     return alpha >= max(4, min_chars)
+
+
+def int_or_none(value: Any) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def companion_grams(norm: str) -> set[str]:
+    if len(norm) < 2:
+        return set()
+    return {
+        norm[index : index + 2]
+        for index in range(len(norm) - 1)
+        if norm[index : index + 2] not in COMPANION_STOP_BIGRAMS
+    }
 
 
 def mission_title_loose_norm(norm: str) -> str:
@@ -330,6 +405,10 @@ def load_corpus(
     min_chars: int,
 ) -> list[CorpusLine]:
     story_orders = story_orders_by_mission(story_order)
+    story_mission_by_key: dict[str, str] = {}
+    for mission_id, order in story_orders.items():
+        for key in order:
+            story_mission_by_key.setdefault(key, mission_id)
     allowed_keys = {key for order in story_orders.values() for key in order}
     out: list[CorpusLine] = []
     for path in sorted(conv_root.glob("*.json")):
@@ -340,7 +419,8 @@ def load_corpus(
         archive_entry = is_archive_story_entry(key, payload)
         if allowed_keys and key not in allowed_keys and not key.startswith("dlg_map") and not archive_entry:
             continue
-        mission = safe_key(payload.get("mission"))
+        native_mission = safe_key(payload.get("mission"))
+        mission = story_mission_by_key.get(key) or native_mission
         if not mission:
             for mission_id, order in story_orders.items():
                 if key in order:
@@ -349,6 +429,7 @@ def load_corpus(
         if not mission:
             continue
         kind = story_kind(key, payload)
+        scene = int_or_none(payload.get("scene"))
         for line_id, source, text in iter_text_rows(payload):
             norm = normalize_text(text)
             if not useful_norm(norm, min_chars=min_chars):
@@ -356,9 +437,10 @@ def load_corpus(
             out.append(CorpusLine(
                 key=key,
                 mission=mission,
-                actual_mission=mission,
-                link_reason="native",
+                actual_mission=native_mission or mission,
+                link_reason="native" if mission == (native_mission or mission) else "story-order",
                 kind=kind,
+                scene=scene,
                 line_id=line_id,
                 source=source,
                 text=text,
@@ -414,6 +496,7 @@ def retarget_corpus_line(line: CorpusLine, mission: str, reason: str) -> CorpusL
         actual_mission=line.actual_mission,
         link_reason=reason,
         kind=line.kind,
+        scene=line.scene,
         line_id=line.line_id,
         source=line.source,
         text=line.text,
@@ -470,6 +553,201 @@ def corpus_for_video_mission(
                 "rows": count,
             })
     return out, related_rows
+
+
+def build_story_text_records(corpus: list[CorpusLine]) -> list[StoryTextRecord]:
+    rows: dict[str, dict[str, Any]] = {}
+    norms_by_key: dict[str, list[str]] = defaultdict(list)
+    title_norms_by_key: dict[str, list[str]] = defaultdict(list)
+    for line in corpus:
+        key = safe_key(line.key)
+        if not key:
+            continue
+        row = rows.get(key)
+        if row is None:
+            row = {
+                "mission": line.actual_mission or line.mission,
+                "kind": line.kind,
+                "scene": line.scene,
+                "first_line_id": "",
+                "first_text": "",
+            }
+            rows[key] = row
+        norms_by_key[key].append(line.norm)
+        if line.source == "title":
+            title_norms_by_key[key].append(line.norm)
+        if line.source in LINE_LIKE_SOURCES and not row["first_line_id"]:
+            row["first_line_id"] = line.line_id
+            row["first_text"] = line.text
+        elif not row["first_text"]:
+            row["first_line_id"] = line.line_id
+            row["first_text"] = line.text
+
+    records: list[StoryTextRecord] = []
+    for key, row in rows.items():
+        norm = "".join(norms_by_key.get(key) or [])
+        title_norm = "".join(title_norms_by_key.get(key) or [])
+        records.append(StoryTextRecord(
+            key=key,
+            mission=safe_key(row.get("mission")),
+            kind=safe_key(row.get("kind")),
+            scene=row.get("scene") if isinstance(row.get("scene"), int) else None,
+            first_line_id=safe_key(row.get("first_line_id")),
+            first_text=safe_key(row.get("first_text")),
+            title_norm=title_norm,
+            norm=norm,
+            grams=companion_grams(norm),
+            title_grams=companion_grams(title_norm),
+        ))
+    return records
+
+
+def build_map_dialog_companion_index(corpus: list[CorpusLine]) -> dict[str, list[dict[str, Any]]]:
+    records = build_story_text_records(corpus)
+    records_by_mission: dict[str, list[StoryTextRecord]] = defaultdict(list)
+    for record in records:
+        if record.mission:
+            records_by_mission[record.mission].append(record)
+
+    companion_index: dict[str, list[dict[str, Any]]] = {}
+    for mission, mission_records in records_by_mission.items():
+        dialogs = [
+            record
+            for record in mission_records
+            if record.key.startswith("dlg_map") and record.grams
+        ]
+        archives = [
+            record
+            for record in mission_records
+            if record.grams
+            and (
+                safe_key(record.kind) in ARCHIVE_KINDS
+                or any(record.key.startswith(prefix) for prefix in ARCHIVE_KEY_PREFIXES)
+            )
+        ]
+        if not dialogs or not archives:
+            continue
+
+        gram_doc_counts: Counter[str] = Counter()
+        for record in mission_records:
+            gram_doc_counts.update(record.grams)
+        rare_limit = max(3, int(len(mission_records) * 0.2))
+        rare_grams = {
+            gram
+            for gram, count in gram_doc_counts.items()
+            if count <= rare_limit and gram not in COMPANION_STOP_BIGRAMS
+        }
+
+        for archive in archives:
+            companions: list[dict[str, Any]] = []
+            for dialog in dialogs:
+                if dialog.key == archive.key:
+                    continue
+                same_scene = archive.scene is not None and archive.scene == dialog.scene
+                shared = sorted((archive.grams & dialog.grams & rare_grams) - COMPANION_STOP_BIGRAMS)
+                title_shared = sorted((archive.title_grams & dialog.grams & rare_grams) - COMPANION_STOP_BIGRAMS)
+                if not same_scene and (len(shared) < 2 or not title_shared):
+                    continue
+                reason = "same-scene" if same_scene else "archive-title-overlap"
+                if same_scene and title_shared:
+                    reason = f"{reason}+title-overlap"
+                companions.append({
+                    "key": dialog.key,
+                    "mission": mission,
+                    "kind": dialog.kind,
+                    "scene": dialog.scene,
+                    "lineId": dialog.first_line_id,
+                    "text": dialog.first_text,
+                    "reason": reason,
+                    "sharedGrams": shared[:8],
+                    "titleSharedGrams": title_shared[:8],
+                })
+            if companions:
+                deduped: dict[str, dict[str, Any]] = {}
+                for companion in sorted(
+                    companions,
+                    key=lambda row: (
+                        row.get("scene") is None,
+                        int(row.get("scene") or 1_000_000),
+                        safe_key(row.get("key")),
+                    ),
+                ):
+                    deduped.setdefault(safe_key(companion.get("key")), companion)
+                companion_index[archive.key] = list(deduped.values())
+    return companion_index
+
+
+def shifted_companion_segment(segment: dict[str, Any], offset_seconds: float) -> dict[str, Any]:
+    shifted = dict(segment)
+    start_seconds = float_value(shifted.get("startTimeSeconds"))
+    end_seconds = float_value(shifted.get("endTimeSeconds"), start_seconds)
+    shifted_start = max(0.0, start_seconds + offset_seconds)
+    shifted_end = max(shifted_start, end_seconds + offset_seconds)
+    shifted["startTimeSeconds"] = round(shifted_start, 4)
+    shifted["endTimeSeconds"] = round(shifted_end, 4)
+    shifted["companionTimeOffsetSeconds"] = round(offset_seconds, 4)
+    return shifted
+
+
+def build_map_dialog_companion_matches(
+    matches: list[dict[str, Any]],
+    companion_index: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    if not companion_index:
+        return []
+    accepted_real_keys = {
+        safe_key(match.get("best", {}).get("key"))
+        for match in matches
+        if match.get("accepted") and not match.get("synthetic")
+    }
+    out: list[dict[str, Any]] = []
+    seen_pairs: set[tuple[str, str]] = set()
+    for match in matches:
+        if not match.get("accepted"):
+            continue
+        best = match.get("best") if isinstance(match.get("best"), dict) else {}
+        archive_key = safe_key(best.get("key"))
+        companions = companion_index.get(archive_key) or []
+        if not archive_key or not companions:
+            continue
+        segment = match.get("segment") if isinstance(match.get("segment"), dict) else {}
+        for companion_index_value, companion in enumerate(companions):
+            companion_key = safe_key(companion.get("key"))
+            if not companion_key or companion_key in accepted_real_keys:
+                continue
+            pair = (archive_key, companion_key)
+            if pair in seen_pairs:
+                continue
+            seen_pairs.add(pair)
+            offset_seconds = -0.05 + companion_index_value * 0.001
+            companion_segment = shifted_companion_segment(segment, offset_seconds)
+            companion_segment["companionOf"] = archive_key
+            companion_segment["companionReason"] = safe_key(companion.get("reason"))
+            companion_best = {
+                "score": min(0.995, float_value(best.get("score"), 0.995)),
+                "fragment": safe_key(segment.get("text")),
+                "key": companion_key,
+                "mission": safe_key(best.get("mission")),
+                "actualMission": safe_key(companion.get("mission")),
+                "linkReason": "archive-context-map-dialog",
+                "kind": safe_key(companion.get("kind")) or "dlg",
+                "lineId": safe_key(companion.get("lineId")),
+                "source": MAP_DIALOG_COMPANION_SOURCE,
+                "text": safe_key(companion.get("text")),
+                "companionOf": archive_key,
+                "companionReason": safe_key(companion.get("reason")),
+                "sharedGrams": companion.get("sharedGrams") or [],
+                "titleSharedGrams": companion.get("titleSharedGrams") or [],
+            }
+            out.append({
+                "segment": companion_segment,
+                "best": companion_best,
+                "margin": 0.995,
+                "top": [companion_best],
+                "accepted": True,
+                "synthetic": True,
+            })
+    return out
 
 
 def build_gram_index(corpus: list[CorpusLine]) -> dict[str, list[int]]:
@@ -630,6 +908,8 @@ def source_quality(source: Any) -> int:
     source_key = safe_key(source)
     if source_key in LINE_LIKE_SOURCES:
         return 2
+    if source_key == MAP_DIALOG_COMPANION_SOURCE:
+        return 1
     if source_key == "option":
         return 1
     return 0
@@ -1053,7 +1333,7 @@ def clean_order_list(values: Any) -> list[str]:
 
 
 def story_orders_by_mission(payload: Any) -> dict[str, list[str]]:
-    """Read the full-list story-order format, plus generated order payloads."""
+    """Read the OCR-managed full-list story-order format."""
     missions = payload.get("missions") if isinstance(payload, dict) else None
     if not isinstance(missions, dict):
         return {}
@@ -1086,42 +1366,9 @@ def story_order_locked_missions(payload: Any) -> set[str]:
     return out
 
 
-def merge_stored_order_with_base(stored_order: list[str], base_order: list[str]) -> list[str]:
-    out: list[str] = []
-    seen: set[str] = set()
-    for key in stored_order:
-        if key and key not in seen:
-            out.append(key)
-            seen.add(key)
-    for key in base_order:
-        if key and key not in seen:
-            out.append(key)
-            seen.add(key)
-    return out
-
-
-def current_story_orders(
-    story_order: dict[str, Any],
-    active_story_order: dict[str, Any],
-) -> tuple[dict[str, list[str]], set[str]]:
-    base_orders = story_orders_by_mission(story_order)
+def current_story_orders(active_story_order: dict[str, Any]) -> tuple[dict[str, list[str]], set[str]]:
     stored_orders = story_orders_by_mission(active_story_order)
-    locked_missions = story_order_locked_missions(active_story_order)
-    out: dict[str, list[str]] = {}
-
-    for mission, base_order in base_orders.items():
-        stored_order = stored_orders.get(mission)
-        if mission in locked_missions and stored_order is not None:
-            out[mission] = list(stored_order)
-        else:
-            out[mission] = merge_stored_order_with_base(stored_order or [], base_order)
-    for mission, stored_order in stored_orders.items():
-        if mission not in out:
-            if mission in locked_missions:
-                out[mission] = list(stored_order)
-            else:
-                out[mission] = merge_stored_order_with_base(stored_order, [])
-    return out, set(stored_orders)
+    return {mission: list(order) for mission, order in stored_orders.items()}, set(stored_orders)
 
 
 def story_order_storage_payload(
@@ -1169,7 +1416,7 @@ def story_order_storage_payload(
             "Editable Story file order. Each missions.<mission>.order array is "
             "the complete ordered list of story file keys for that mission. "
             "Set missions.<mission>.locked to true to preserve that mission's "
-            "order across builder and OCR writes; the WebUI can toggle it per mission."
+            "order across OCR and browser writes; the WebUI can toggle it per mission."
         ),
         "missions": missions,
     }
@@ -1391,7 +1638,7 @@ def build_proposed_story_order(
     min_sequence_keys: int,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     base_orders = story_orders_by_mission(story_order)
-    next_orders, active_missions = current_story_orders(story_order, active_story_order)
+    next_orders, active_missions = current_story_orders(active_story_order)
     locked_missions = story_order_locked_missions(active_story_order)
     proposal_rows: list[dict[str, Any]] = []
 
@@ -1512,6 +1759,7 @@ def write_match_markdown(payload: dict[str, Any]) -> None:
         f"- OCR reports used: `{payload['summary']['ocrReportsUsed']}`",
         f"- Corpus lines: `{payload['summary']['corpusLines']}`",
         f"- Accepted segment matches: `{payload['summary']['acceptedMatches']}`",
+        f"- Map-dialog companion matches: `{payload['summary'].get('mapDialogCompanionMatches', 0)}`",
         f"- Indexed gap inferences: `{payload['summary'].get('indexedInferences', 0)}`",
         f"- Linked map-dialog entries: `{payload['summary'].get('linkedEntries', 0)}`",
         f"- RANSAC models: `{payload['summary'].get('ransacModels', 0)}`",
@@ -1588,8 +1836,8 @@ def write_match_markdown(payload: dict[str, Any]) -> None:
             "",
             "## Videos",
             "",
-            "| video | target mission | report | accepted | matched missions | observed sequences |",
-            "|---|---|---|---:|---|---:|",
+            "| video | target mission | report | accepted | companions | matched missions | observed sequences |",
+            "|---|---|---|---:|---:|---|---:|",
         ])
         for video in payload["videos"]:
             seq_count = sum(len(seq) for seq in (video.get("observedSequences") or {}).values())
@@ -1606,6 +1854,7 @@ def write_match_markdown(payload: dict[str, Any]) -> None:
                 f"| `{md_escape(target_label)}` "
                 f"| `{md_escape(video.get('report'))}` "
                 f"| {video.get('acceptedMatches', 0)} "
+                f"| {video.get('mapDialogCompanionMatches', 0)} "
                 f"| `{md_escape(', '.join(video.get('missions') or []))}` "
                 f"| {seq_count} |"
             )
@@ -1778,10 +2027,7 @@ def main() -> int:
     if args.run_ocr:
         run_ocr(args)
 
-    story_order = read_json(STORY_ORDER_PATH, {})
     active_story_order, active_story_order_warning = read_active_story_order(ACTIVE_STORY_ORDER_PATH)
-    if not isinstance(story_order, dict):
-        raise SystemExit(f"missing or invalid {STORY_ORDER_PATH}")
     if active_story_order_warning:
         print(
             f"WARNING: {active_story_order_warning}; "
@@ -1789,10 +2035,14 @@ def main() -> int:
         )
         if args.apply:
             raise SystemExit("refusing --apply until the active story-order JSON is valid")
+    story_order = active_story_order
 
     print(f"Loading Story corpus from {rel_path(CONV_ROOT)}...")
     corpus = load_corpus(conv_root=CONV_ROOT, story_order=story_order, min_chars=args.min_chars)
     print(f"Loaded {len(corpus)} searchable Story text row(s).")
+    map_dialog_companion_index = build_map_dialog_companion_index(corpus)
+    map_dialog_companion_count = sum(len(rows) for rows in map_dialog_companion_index.values())
+    print(f"Prepared {map_dialog_companion_count} archive-to-map-dialog companion matcher(s).")
     base_story_orders = story_orders_by_mission(story_order)
     related_missions_by_mission = related_corpus_missions_for_story_mission(story_order)
     mission_title_candidates = load_mission_title_candidates(MISSIONS_PATH, story_order)
@@ -1832,6 +2082,7 @@ def main() -> int:
     all_matches_for_stats: list[dict[str, Any]] = []
     total_matches = 0
     total_accepted = 0
+    total_map_dialog_companion_matches = 0
     video_mission_stats: Counter[str] = Counter()
     for report in ocr_reports:
         matches: list[dict[str, Any]] = []
@@ -1856,6 +2107,7 @@ def main() -> int:
                 "relatedCorpus": [],
                 "acceptedMatches": 0,
                 "matchedSegments": 0,
+                "mapDialogCompanionMatches": 0,
                 "missions": [],
                 "observedSequences": {},
                 "sequenceDiagnostics": {},
@@ -1881,6 +2133,7 @@ def main() -> int:
                 "relatedCorpus": [],
                 "acceptedMatches": 0,
                 "matchedSegments": 0,
+                "mapDialogCompanionMatches": 0,
                 "missions": [],
                 "observedSequences": {},
                 "sequenceDiagnostics": {},
@@ -1933,6 +2186,14 @@ def main() -> int:
                 f"{time.monotonic() - match_started:.1f}s"
             )
 
+        map_dialog_companion_matches = build_map_dialog_companion_matches(matches, map_dialog_companion_index)
+        if map_dialog_companion_matches:
+            matches.extend(map_dialog_companion_matches)
+            all_matches_for_stats.extend(map_dialog_companion_matches)
+            total_matches += len(map_dialog_companion_matches)
+            total_accepted += len(map_dialog_companion_matches)
+            total_map_dialog_companion_matches += len(map_dialog_companion_matches)
+
         accepted_missions = Counter(
             safe_key(match.get("best", {}).get("mission"))
             for match in matches
@@ -1957,6 +2218,7 @@ def main() -> int:
         print(
             f"[{video_name}] matched={len(matches)} accepted="
             f"{sum(1 for match in matches if match.get('accepted'))} "
+            f"companions={len(map_dialog_companion_matches)} "
             f"target={target_mission} "
             f"missions={','.join(mission for mission, _count in accepted_missions.most_common()) or '-'}"
         )
@@ -1970,6 +2232,7 @@ def main() -> int:
             "relatedCorpus": related_corpus_rows,
             "acceptedMatches": sum(1 for match in matches if match.get("accepted")),
             "matchedSegments": len(matches),
+            "mapDialogCompanionMatches": len(map_dialog_companion_matches),
             "missions": [mission for mission, _count in accepted_missions.most_common()],
             "observedSequences": observed_sequences,
             "sequenceDiagnostics": sequence_diagnostics,
@@ -1982,7 +2245,7 @@ def main() -> int:
         video_summaries=videos,
         min_sequence_keys=args.min_sequence_keys,
     )
-    current_orders, active_order_missions = current_story_orders(story_order, active_story_order)
+    current_orders, active_order_missions = current_story_orders(active_story_order)
     locked_order_missions = story_order_locked_missions(active_story_order)
     skipped_locked_mission_count = sum(1 for row in proposal_rows if row.get("skipReason") == "locked")
     changed_mission_count = sum(1 for row in proposal_rows if row.get("changed"))
@@ -2002,7 +2265,8 @@ def main() -> int:
         f"seededMissions={len(current_orders)}, "
         f"changedMissions={changed_mission_count}, "
         f"changedKeys={changed_key_count}, "
-        f"insertedKeys={inserted_key_count}"
+        f"insertedKeys={inserted_key_count}, "
+        f"mapDialogCompanions={total_map_dialog_companion_matches}"
     )
     write_report_json(PROPOSED_STORY_ORDER_PATH, proposed)
 
@@ -2016,6 +2280,7 @@ def main() -> int:
             "ocrReportsUsed": len(ocr_reports),
             "matchedSegments": total_matches,
             "acceptedMatches": total_accepted,
+            "mapDialogCompanionMatches": total_map_dialog_companion_matches,
             "indexedInferences": sum(len(row.get("indexedInferences") or []) for row in proposal_rows),
             "linkedEntries": sum(len(row.get("linkedEntries") or []) for row in proposal_rows),
             "ransacModels": sum(1 for row in sequence_diagnostics if row.get("ransacModel")),

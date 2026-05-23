@@ -24,7 +24,6 @@ From the repo root:
 - `scripts/story_builder/video_bindings.py`
 - `scripts/story_builder/source_links.py`
 - `scripts/story_builder/build.py --languages CN --default-language CN`
-- `scripts/story_recovery/build_story_order.py`
 - `scripts/build_audio.py --skip-decode`
 
 Pass `--export-from-game` when you explicitly want to refresh `export_full/`
@@ -203,7 +202,9 @@ These are kept because the WebUI story builders import or use them:
   emitted as standalone `video` story files grouped by mission, while resolved
   mappings attach to the dialog, cutscene, remotecomm, or other story file and
   keep the standalone row adjacent in Story sort. Timeline / playable evidence
-  supplies authored inline placement when available.
+  supplies authored inline placement when available. Manual suppressions in
+  `webui/overrides/narrative_videos.json` keep known false attachments as
+  standalone-only video rows.
 - `story_builder/` also scans narrative video folders under
   `Data/Video/PC/Narrative/Cutscene` and `RemoteComm`, attaches matching
   `narrativeVideos` to dialog/cutscene/remotecomm conv JSON, and writes
@@ -282,7 +283,8 @@ scan:
   runs on a memory-constrained machine.
 - `story_recovery/build_gameplay_video_story_order.py`: full OCR-to-order
   promotion pipeline. It can run the OCR sampler first with `--run-ocr`, then
-  matches completed OCR segments against generated CN Story text, writes
+  matches completed OCR segments against current CN Story text and the
+  OCR-managed order in `webui/overrides/story_order.json`, writes
   `reports/gameplay_video_ocr/story_order_ocr_matches.json` / `.md`, and emits
   a proposed full-list story order at
   `reports/gameplay_video_ocr/story_order_ocr_proposed_story_order.json`.
@@ -296,18 +298,6 @@ scan:
   exposes only the practical OCR controls:
   `--frame-step`, `--ocr-crop`, `--ocr-limit`, `--ocr-limit-frames`,
   `--ocr-low-memory`, `--easyocr-cpu`, and `--force-ocr`.
-- `story_recovery/build_levelscript_control_audit.py`: audits a mission's
-  higher LevelScript control layer from MissionRuntime, LevelData script
-  ownership, decoded LevelScript story/levelseq records, cross-script numeric
-  references, decoded map-position proximity candidates, and IL2CPP metadata
-  facts. It writes
-  `reports/mission_order/<mission>_levelscript_control_audit.json` / `.md`.
-  Cross-script rows include the raw little-endian target id, record header,
-  payload relation, decoded script-pointer payload/flag bytes where available,
-  and byte window so weak links can be checked directly against the exported
-  LevelScriptData bytes.
-  Use it before promoting inferred file-order links into `story_order.json`;
-  direct ordering still requires decoded start/end/action opcodes.
 - `story_recovery/build_levelscript_opcode_shape_audit.py`: scans all
   decoded `LevelScriptData` action records and groups opcode/kind pairs by
   payload shape, actionMap role, strings, property keys, trigger slots,
@@ -442,48 +432,6 @@ scan:
   rows targeting `actionList`, `123` duplicate-local-id ambiguous action
   targets, `0` missing positive targets, `1,647` event chains with named play
   actions, and `1,791` chains with scene-like text.
-- `story_recovery/build_story_order.py`: builds
-  `webui/data/assets/story_order.json` from original/decodeable game data:
-  MissionRuntime quest/property anchors, decoded LevelScript play records,
-  levelseq payloads, resolved `lt:p` LevelTimeline markers from LevelData to
-  LevelScript UID records, secondary LevelData level refs, weak
-  authored ordinal-name hints, and weaker suffix fallbacks. Entries also carry
-  LevelData file/offset, neighboring script diagnostics, and verified
-  LevelScriptData binary tail fields where available. Source-backed entries
-  also carry compact incoming/outgoing cross-script reference diagnostics plus
-  decoded script-pointer flag bytes where available, map-position proximity
-  diagnostics from decoded LevelScript vectors matched against quest pins, and
-  compact mission timeline scene-edge diagnostics. For the few rows where a
-  decoded `0x0bed/0x00` terminal-branch walk reaches concrete play/story
-  actions that also match a MissionRuntime property check, entries carry
-  `terminalBranchEvidence` diagnostics and can use that direct bridge before
-  falling back to generic property evidence. Entries can also carry
-  `headerEventEvidence` diagnostics when a decoded `headerList`
-  `ActionHeader.nextId` edge reaches the concrete play/story record through an
-  `actionList` chain; this identifies the trigger/event path but does not
-  promote runtime chronology by itself.
-  Direct same-script scene file-order edges are applied as stable local
-  ordering constraints. Nonzero `0x0bed/0x00` terminal-branch path edges can
-  also break local ties when both scenes are reached through the same unique
-  terminal branch membership; branch-root `0` and multi-branch reachability
-  remain diagnostics only. Map-position proximity and other diagnostics remain
-  visible in WebUI tooltips and are not standalone ordering proof; a narrow
-  exception lets coherent direct same-script spatial candidates override weak
-  content suffixes for raw-ordered source-script clusters. Another
-  constrained exception corrects numeric levelseq over-anchoring when an
-  incoming cross-file scene edge and the predecessor script's spatial
-  candidate agree. Same-script `levelscriptSceneChain` edges can also keep
-  weak suffix-only scene groups together without moving stronger quest,
-  property, levelseq, or spatial anchors. Standalone video rows with explicit
-  AnimeStudio `timelinePlayable` bindings inherit adjacency from their bound
-  story key, while filename-only video matches remain ordinary fallbacks.
-  The editable final scene order lives in `webui/overrides/story_order.json`.
-  Each `missions.<mission>.order` array is the complete ordered list of Story
-  file keys for that mission. The builder refreshes this full-list file by
-  default, OCR recovery updates the same lists, and the WebUI can save row
-  moves from `按剧情排序` mode. Set `missions.<mission>.locked: true` to freeze a
-  mission order against build_story and OCR recovery; the WebUI can toggle the
-  flag per mission for manual edits.
 - `story_recovery/build_option_playable_semantics_audit.py`: audits remaining
   `inferredOptionResponse` groups against decoded
   `DialogOptionPlayableAsset` fields such as `logicId`, `trunkId`,
