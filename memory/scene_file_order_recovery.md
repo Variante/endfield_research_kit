@@ -56,6 +56,14 @@ For focused e0m0 LevelScript ordering work, including the current
 `lt:p` / `lt:mp` LevelTimeline marker plan, start with
 `memory/e0m0_file_order_from_binary_scripts.md`.
 
+For the static-data ceiling reached after adding spatial / trigger-volume /
+suffix-proximity rules to `build_story_order.py` (e0m0 baseline 22.7% → 5.1%
+inversions, runtime-gated boss-cluster intra-order is the wall), see
+[scene_order_static_frontier.md](scene_order_static_frontier.md). Read that
+before re-attempting LevelScript property-setter decoding or AnimeStudio
+Timeline cross-cutscene ordering — both paths are already confirmed dead
+ends in the current export.
+
 `e0m0` is partially confirmed. The first four-entry quest sequence and the
 `cutscene_e0m0_6 -> cutscene_e0m0_7 -> cutscene_e0m0_8` UID chain are strong.
 Most long radio/cutscene clusters remain weak LevelScript file-offset order,
@@ -783,18 +791,19 @@ AnimeStudio `timelinePlayable` video bindings remain standalone WebUI rows but
 inherit adjacency from their bound story key; the only current example is
 `video_cs_video_e0m0_3` after `cutscene_e0m0_3`.
 
-Gameplay-observed calibration is now a separate, labelled layer. The only
-current hint file is `scripts/story_recovery/manual_observed_order_hints.json`
-for e0m0. Rows moved by this layer use
-`observed-gameplay-calibration`, `observed-aligned:*`, or
-`observed-compatible:*` evidence labels and preserve their previous
-decoded/static evidence in `recovered*BeforeObserved` fields. Each observed
-row also carries an `observedEvidenceAlignmentStatus`: `source-backed`,
-`partial`, or `gap`. Do not count those observed hints as firm original-data
-order when reporting evidence coverage; use them to find the next
+Gameplay-observed e0m0 calibration is archived in
+`memory/e0m0_observed_order_calibration.json`. It is not an active builder
+override. To force a WebUI final-order fix, edit
+`webui/overrides/story_order.json`. Use
+`missions.<mission>.after`, where each anchor key stays fixed and the array
+lists scene keys moved after that anchor. Rows moved by that file use
+`manual-scene-order` and preserve their previous decoded/static evidence in
+`recovered*BeforeManual` fields. The browser applies the override at load time,
+so edits only need a browser refresh. Do not count manual overrides as firm
+original-data order when reporting evidence coverage; use them to find the next
 activation/control-flow clues that the static recovery is still missing.
 
-For the current e0m0 hint set, 45 observed rows are calibrated:
+For the archived e0m0 hint set, 45 observed rows are calibrated:
 15 `source-backed`, 27 `partial`, and 3 `gap`. The added reading popup
 `text_e0m0_1` is source-backed by `ShowUIReadingPopPanel` in
 `8700020018`; the added tail has real support as two source clusters:

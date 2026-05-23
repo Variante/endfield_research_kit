@@ -19,7 +19,11 @@ For every mission with a `MissionRuntimeAsset/<mission>.json` plus meta:
 4. Scripts are emitted in quest-DAG order. Within a script, play
    payloads are walked in on-disk byte order.
 
-Output: `webui/data/assets/story_order.json`
+Outputs:
+
+- `webui/data/assets/story_order.json` with recovered order evidence.
+- `webui/overrides/story_order.json` with direct editable per-mission
+  file order lists.
 """
 from __future__ import annotations
 import argparse
@@ -55,7 +59,18 @@ LEVELDATA_ROOT = DATA_ROOT / "LevelData"
 WEBUI_CONV_ROOT = ROOT / "webui" / "data" / "lang" / "CN" / "conv"
 WEBUI_MISSION_ROOT = ROOT / "webui" / "data" / "lang" / "CN" / "mission"
 OUTPUT_PATH = ROOT / "webui" / "data" / "assets" / "story_order.json"
-OBSERVED_ORDER_HINTS_PATH = ROOT / "scripts" / "story_recovery" / "manual_observed_order_hints.json"
+EDITABLE_ORDER_PATH = ROOT / "webui" / "overrides" / "story_order.json"
+ANIME_TEXTASSET_ROOT = (
+    ROOT / "export_full" / "recovered" / "AnimeStudio-cli"
+    / "StreamingAssets" / "convert_by_type" / "TextAsset"
+)
+ANIME_MONOBEHAVIOUR_ROOT = (
+    ROOT / "export_full" / "recovered" / "AnimeStudio-cli"
+    / "StreamingAssets" / "json_by_type" / "MonoBehaviour"
+)
+_CUTSCENE_TRACK_KIND_RE = re.compile(
+    r"_(Actor|Audio|Effect|Others|Light)(?:_AU_([A-Z0-9_]+?))?_p[0-9A-Fa-f]+\.json$"
+)
 
 MISSION_ID_RE = re.compile(r"^[a-z][a-z0-9]*m[0-9]+(?:d[0-9]+)?$")
 
@@ -266,141 +281,177 @@ def bound_video_timeline_for_conv_key(conv_key: str, mission_id: str) -> dict | 
     return None
 
 
-def load_observed_order_hint(mission_id: str) -> dict:
-    """Load human-observed gameplay order hints for calibration-only missions."""
-    if not OBSERVED_ORDER_HINTS_PATH.is_file():
-        return {}
-    try:
-        payload = json.loads(OBSERVED_ORDER_HINTS_PATH.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {}
-    hint = payload.get(mission_id)
-    return hint if isinstance(hint, dict) else {}
+@lru_cache(maxsize=None)
+def cutscene_blackscreen_metadata(canonical_key: str) -> dict | None:
+    """Return the AnimeStudio black-screen / pre-fade metadata for a cutscene.
 
+    Reads the recovered TextAsset payload (e.g. `f_<key>_p*.txt`) and pulls
+    the small flag set used by the cutscene-preamble-black attachment rule:
 
-def apply_observed_order_hint(
-    mission_id: str,
-    ordered: list[str],
-    entry_details: list[dict],
-) -> tuple[list[str], list[dict]]:
-    """Apply partial gameplay-observed order while keeping recovered evidence.
+    - `useBlackScreen`           — cutscene plays under a black-screen overlay
+    - `beforeCutsceneUseFadeIn`  — fades from black INTO the cutscene
+    - `beforeCutsceneUseFadeOut` — fades the previous screen TO black first
+    - `beforeCutsceneFadeOutDuration` / `beforeCutsceneFadeInDuration`
+    - `beforeCutsceneMaskType`   — non-zero indicates an overlay mask
 
-    These hints are intentionally labelled as calibration evidence, not firm
-    original-data recovery. They let us compare the static-data recovery surface
-    against a real playthrough without losing the previous inferred evidence.
+    Returns None if no TextAsset was extracted or none of the fields exist.
+    The f_ and m_ variants are gender-only mirrors, so we read the first
+    available variant.
     """
-    hint = load_observed_order_hint(mission_id)
-    hint_order = [
-        str(key or "")
-        for key in hint.get("order") or []
-        if str(key or "")
-    ]
-    if len(hint_order) < 2:
-        return ordered, entry_details
-
-    present_order_keys = set(ordered)
-    seen_hint: set[str] = set()
-    observed_keys: list[str] = []
-    for key in hint_order:
-        if key in seen_hint or key not in present_order_keys:
-            continue
-        seen_hint.add(key)
-        observed_keys.append(key)
-    if len(observed_keys) < 2:
-        return ordered, entry_details
-
-    details_by_key = {
-        str(entry.get("key") or ""): entry
-        for entry in entry_details
-        if entry.get("key")
-    }
-    source = str(hint.get("source") or "observed-gameplay")
-    note = str(hint.get("note") or "Gameplay-observed order calibration.")
-    alignments = hint.get("evidenceAlignments")
-    alignments_by_key = alignments if isinstance(alignments, dict) else {}
-    for index, key in enumerate(observed_keys):
-        entry = details_by_key.get(key)
-        if not entry:
-            continue
-        recovered_evidence = entry.get("evidence") or ""
-        recovered_rank = entry.get("rank")
-        entry.setdefault("recoveredEvidenceBeforeObserved", entry.get("evidence") or "")
-        entry.setdefault("recoveredPhaseBeforeObserved", entry.get("phase"))
-        entry.setdefault("recoveredRankBeforeObserved", entry.get("rank"))
-        entry["observedOrderIndex"] = index
-        entry["observedOrderSource"] = source
-        entry["observedOrderNote"] = note
-
-        alignment = alignments_by_key.get(key)
-        if isinstance(alignment, dict):
-            status = str(alignment.get("status") or "partial")
-            evidence = str(alignment.get("evidence") or "observed-gameplay-calibration")
-            entry["observedEvidenceAlignmentStatus"] = status
-            entry["observedEvidenceAlignment"] = str(alignment.get("kind") or evidence)
-            alignment_note = str(alignment.get("note") or "")
-            if alignment_note:
-                entry["observedEvidenceAlignmentNote"] = alignment_note
-            source_refs = [
-                str(value)
-                for value in alignment.get("sourceRefs") or []
-                if str(value)
-            ]
-            if source_refs:
-                entry["observedEvidenceAlignmentSourceRefs"] = source_refs[:6]
+    canonical_key = str(canonical_key or "")
+    if not canonical_key or not ANIME_TEXTASSET_ROOT.is_dir():
+        return None
+    for prefix in ("f_", "m_", ""):
+        candidates = sorted(ANIME_TEXTASSET_ROOT.glob(f"{prefix}{canonical_key}_p*.txt"))
+        for path in candidates:
             try:
-                entry["rank"] = int(alignment.get("rank"))
-            except (TypeError, ValueError):
-                entry["rank"] = 6
-            entry["evidence"] = evidence
-            entry["observedEvidenceGap"] = status in {"gap", "unresolved"}
-            continue
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            keys = (
+                "useBlackScreen",
+                "beforeCutsceneUseFadeIn",
+                "beforeCutsceneUseFadeOut",
+                "beforeCutsceneFadeInDuration",
+                "beforeCutsceneFadeOutDuration",
+                "beforeCutsceneMaskType",
+            )
+            extracted: dict[str, object] = {}
+            for key in keys:
+                if key in payload:
+                    extracted[key] = payload[key]
+            if extracted:
+                extracted["sourceFile"] = repo_rel(path)
+                return extracted
+    return None
 
-        try:
-            old_rank = int(recovered_rank)
-        except (TypeError, ValueError):
-            old_rank = 99
-        if recovered_evidence and old_rank <= 2:
-            entry["observedEvidenceAlignmentStatus"] = "source-backed"
-            entry["observedEvidenceAlignment"] = recovered_evidence
-            entry["observedEvidenceAlignmentNote"] = (
-                "The observed row keeps direct decoded source evidence; the "
-                "calibration changes relative placement, not the row identity."
-            )
-            entry["evidence"] = f"observed-compatible:{recovered_evidence}"
-            entry["rank"] = 4
-            entry["observedEvidenceGap"] = False
-        elif recovered_evidence and recovered_evidence != "webui-conv-fallback":
-            entry["observedEvidenceAlignmentStatus"] = "partial"
-            entry["observedEvidenceAlignment"] = recovered_evidence
-            entry["observedEvidenceAlignmentNote"] = (
-                "The observed row has decoded/static evidence, but that "
-                "evidence does not by itself prove the observed relative order."
-            )
-            entry["evidence"] = "observed-gameplay-calibration"
-            entry["rank"] = 6
-            entry["observedEvidenceGap"] = False
-        else:
-            entry["observedEvidenceAlignmentStatus"] = "gap"
-            entry["observedEvidenceAlignment"] = "unresolved-static-source"
-            entry["observedEvidenceAlignmentNote"] = (
-                "No decoded MissionRuntime, LevelData, or LevelScript order "
-                "source currently explains this observed placement."
-            )
-            entry["evidence"] = "observed-gameplay-calibration"
-            entry["rank"] = 6
-            entry["observedEvidenceGap"] = True
 
-    observed_set = set(observed_keys)
-    new_order = [
-        *observed_keys,
-        *[key for key in ordered if key not in observed_set],
-    ]
-    new_details = [
-        details_by_key[key]
-        for key in new_order
-        if key in details_by_key
-    ]
-    return new_order, new_details
+@lru_cache(maxsize=None)
+def cutscene_track_inventory(canonical_key: str) -> dict | None:
+    """Return the AnimeStudio track inventory for a cutscene.
+
+    Surfaces "what's recovered for this cutscene" so the WebUI can show
+    inline track chips (Actor, Audio, Effect, Subtitle/Others, FMV). Light
+    tracks are intentionally excluded — they're dense and lighting-only,
+    not narratively useful.
+
+    The shape:
+      {
+        "actorTrackCount":   int (max across f_/m_ variants),
+        "audioTrackCount":   int,
+        "effectTrackCount":  int,
+        "subtitleTrackCount":int (the "Others" track family),
+        "subtitleLocales":   [str, ...]   # e.g. ["CN","EN","JP","KO"]
+        "audioEvents":       [str, ...]   # `au_music_*`, `au_vo_*`, `au_sfx_*`
+        "animClipCount":     int,
+      }
+
+    None if no AnimeStudio asset was extracted for this cutscene.
+    """
+    canonical_key = str(canonical_key or "")
+    if not canonical_key:
+        return None
+    if not canonical_key.startswith("cutscene_"):
+        return None
+
+    audio_events: list[str] = []
+    anim_clip_count = 0
+    if ANIME_TEXTASSET_ROOT.is_dir():
+        for prefix in ("f_", "m_", ""):
+            candidates = sorted(ANIME_TEXTASSET_ROOT.glob(f"{prefix}{canonical_key}_p*.txt"))
+            for path in candidates:
+                try:
+                    payload = json.loads(path.read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError):
+                    continue
+                events = payload.get("audioEvents")
+                if isinstance(events, list):
+                    audio_events = [str(value) for value in events if value]
+                clips = payload.get("animClipData")
+                if isinstance(clips, dict):
+                    anim_clip_count = len(clips)
+                break
+            if audio_events or anim_clip_count:
+                break
+
+    track_counts = {"Actor": 0, "Audio": 0, "Effect": 0, "Others": 0}
+    locales: set[str] = set()
+    if ANIME_MONOBEHAVIOUR_ROOT.is_dir():
+        for path in ANIME_MONOBEHAVIOUR_ROOT.glob(f"*{canonical_key}_*_p*.json"):
+            match = _CUTSCENE_TRACK_KIND_RE.search(path.name)
+            if not match:
+                continue
+            kind = match.group(1)
+            if kind == "Light":
+                continue
+            if kind not in track_counts:
+                continue
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            count = len(payload.get("m_Tracks") or [])
+            if count > track_counts[kind]:
+                track_counts[kind] = count
+            locale = match.group(2)
+            if locale:
+                locales.add(locale.rstrip("_"))
+
+    if not (audio_events or anim_clip_count or any(track_counts.values()) or locales):
+        return None
+
+    return {
+        "actorTrackCount": track_counts["Actor"],
+        "audioTrackCount": track_counts["Audio"],
+        "effectTrackCount": track_counts["Effect"],
+        "subtitleTrackCount": track_counts["Others"],
+        "subtitleLocales": sorted(locales),
+        "audioEvents": audio_events[:12],
+        "animClipCount": anim_clip_count,
+    }
+
+
+def _annotate_cutscene_fmv(inventory: dict | None, cutscene_key: str) -> dict | None:
+    """Augment a track inventory with FMV presence via filename convention.
+
+    A bound FMV exists when the conv directory carries a sibling
+    `video_cs_video_<core>.json` for the cutscene, where `<core>` strips the
+    `cutscene_` prefix. Cheap to check; matches every observed case in the
+    current export.
+    """
+    if not inventory:
+        return inventory
+    if not cutscene_key.startswith("cutscene_"):
+        return inventory
+    core = cutscene_key[len("cutscene_"):]
+    video_key = f"video_cs_video_{core}"
+    if (WEBUI_CONV_ROOT / f"{video_key}.json").is_file():
+        inventory = {
+            **inventory,
+            "fmvBound": True,
+            "fmvVideoKey": video_key,
+        }
+    else:
+        inventory = {**inventory, "fmvBound": False}
+    return inventory
+
+
+def cutscene_has_black_preamble(canonical_key: str) -> bool:
+    """True when the cutscene authors a black-screen pre-fade window.
+
+    This is the slot where a TextTable-only `black_<mission>_<N>` card is
+    rendered as an overlay by gameplay code. The detection threshold is
+    intentionally narrow: we require both `useBlackScreen` AND a pre-fade
+    flag, so cutscenes that only fade *out* to black after themselves don't
+    falsely claim ownership of the mission's opening card.
+    """
+    metadata = cutscene_blackscreen_metadata(canonical_key) or {}
+    if not metadata.get("useBlackScreen"):
+        return False
+    return bool(
+        metadata.get("beforeCutsceneUseFadeIn")
+        or metadata.get("beforeCutsceneUseFadeOut")
+    )
 
 
 def quest_topo_order(quest_dic: dict) -> list[str]:
@@ -964,6 +1015,32 @@ def load_scene_placement_evidence(mission_id: str) -> dict[str, dict]:
     return out
 
 
+def load_scene_graph_primary_entry(mission_id: str) -> str:
+    """Return a medium/high-confidence scene-graph primary entry key."""
+    path = WEBUI_MISSION_ROOT / f"{mission_id}.json"
+    if not path.is_file():
+        return ""
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ""
+    scene_graph = ((payload.get("flow") or {}).get("sceneGraph") or {})
+    primary = str(scene_graph.get("primaryEntryKey") or "")
+    if not primary:
+        return ""
+    entry_nodes = scene_graph.get("entryNodes") or []
+    if not isinstance(entry_nodes, list):
+        return ""
+    for node in entry_nodes:
+        if not isinstance(node, dict):
+            continue
+        if str(node.get("key") or "") != primary:
+            continue
+        confidence = str(node.get("confidence") or "")
+        return primary if confidence in {"medium", "high"} else ""
+    return ""
+
+
 def scene_placement_source_occurrences(
     placement: dict,
     files_by_stem: dict[str, dict],
@@ -1050,6 +1127,7 @@ def apply_scene_file_order_constraints(
     events: list[dict],
     scene_placement_by_key: dict[str, dict],
     terminal_branch_evidence_by_event: dict[tuple[str, str], list[dict]] | None = None,
+    header_event_evidence_by_event: dict[tuple[str, str], list[dict]] | None = None,
 ) -> list[dict]:
     """Stably reorder local ties to satisfy direct same-script binary edges."""
     if len(events) < 2:
@@ -1173,6 +1251,55 @@ def apply_scene_file_order_constraints(
                 continue
             edges[source_key].add(target_key)
             incoming_count[target_key] += 1
+
+    # headerList event chains: `ActionHeader.nextId` walks the actionList in
+    # runtime firing order, so adjacent visits to distinct scenes inside one
+    # (stem, headerOffset) chain are a directed scene→scene edge. The edge is
+    # added only when both endpoints share the same constraint phase+rank so
+    # this remains a same-bucket tie-break, never a cross-quest move.
+    header_chains: dict[tuple[str, int], list[tuple[int, str]]] = defaultdict(list)
+    seen_chain_visit: set[tuple[str, int, int, str]] = set()
+    for (chain_key, chain_stem), rows in (header_event_evidence_by_event or {}).items():
+        if chain_key not in event_by_key:
+            continue
+        event = event_by_key[chain_key]
+        event_stem = str(event.get("fileStem") or "")
+        if event_stem != chain_stem:
+            continue
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            if str(row.get("sourceScript") or "") != chain_stem:
+                continue
+            visit = row.get("visitOrder")
+            header_offset = row.get("headerOffset")
+            if not isinstance(visit, int) or not isinstance(header_offset, int):
+                continue
+            dedupe = (chain_stem, header_offset, visit, chain_key)
+            if dedupe in seen_chain_visit:
+                continue
+            seen_chain_visit.add(dedupe)
+            header_chains[(chain_stem, header_offset)].append((visit, chain_key))
+
+    for items in header_chains.values():
+        items.sort()
+        # Collapse same-key runs so back-to-back visits of one scene don't
+        # generate self-edges.
+        prev_key: str | None = None
+        for _visit, key in items:
+            if prev_key is not None and prev_key != key:
+                source_event = event_by_key.get(prev_key)
+                target_event = event_by_key.get(key)
+                if (
+                    source_event is not None
+                    and target_event is not None
+                    and source_event.get("_constraintPhase") == target_event.get("_constraintPhase")
+                    and source_event.get("_constraintRank") == target_event.get("_constraintRank")
+                    and key not in edges[prev_key]
+                ):
+                    edges[prev_key].add(key)
+                    incoming_count[key] += 1
+            prev_key = key
 
     if not any(edges.values()):
         return events
@@ -1299,6 +1426,33 @@ def levelscript_binary_refs(files_by_stem: dict[str, dict]) -> dict[str, dict]:
         summary = decode_levelscript_binary_file(ROOT / rel_file, source_script)
         if not summary:
             continue
+        start_shape_positions: list[dict[str, float]] = []
+        for shape in summary.get("startShapeListShapes") or []:
+            position = (shape or {}).get("position") or {}
+            if all(isinstance(position.get(axis), (int, float)) for axis in ("x", "y", "z")):
+                start_shape_positions.append({
+                    "x": float(position["x"]),
+                    "y": float(position["y"]),
+                    "z": float(position["z"]),
+                    "type": str(shape.get("type") or ""),
+                    "radius": float(shape.get("radius") or 0.0),
+                    "kind": "startShape",
+                })
+        trigger_volumes_details = summary.get("triggerVolumesDetails") or {}
+        for volume in trigger_volumes_details.get("volumes") or []:
+            shape_list = (volume or {}).get("shapeList") or {}
+            for shape in shape_list.get("shapes") or []:
+                position = (shape or {}).get("position") or {}
+                if all(isinstance(position.get(axis), (int, float)) for axis in ("x", "y", "z")):
+                    start_shape_positions.append({
+                        "x": float(position["x"]),
+                        "y": float(position["y"]),
+                        "z": float(position["z"]),
+                        "type": str(shape.get("shapeType") or ""),
+                        "radius": float(shape.get("radius") or 0.0),
+                        "kind": "triggerVolume",
+                        "slotId": volume.get("slotId"),
+                    })
         out[stem] = {
             "binaryMemberCount": summary.get("serializedMemberCount"),
             "binaryExpectedMemberCount": summary.get("expectedMemberCount"),
@@ -1307,6 +1461,7 @@ def levelscript_binary_refs(files_by_stem: dict[str, dict]) -> dict[str, dict]:
             "binaryScriptIdOccurrenceCount": summary.get("scriptIdOccurrenceCount"),
             "binaryStartShapeList": summary.get("startShapeListStatus") or "",
             "binaryStartShapeListCount": summary.get("startShapeListCount"),
+            "binaryStartShapePositions": start_shape_positions,
             "binaryStartType": summary.get("startTypeName") or "",
             "binaryStartTypeRaw": summary.get("startTypeRaw"),
             "binaryTaskMap": summary.get("taskMapStatus") or "",
@@ -1981,6 +2136,7 @@ def build_mission_order(mission_id: str) -> dict | None:
     timeline_hints = load_timeline_event_hints(mission_id, quest_idx)
     spatial_candidates_by_key = load_spatial_candidates(mission_id)
     scene_placement_by_key = load_scene_placement_evidence(mission_id)
+    scene_graph_primary_entry = load_scene_graph_primary_entry(mission_id)
 
     # Some late gameplay clusters have coherent source-script spatial evidence,
     # while filename/content suffixes place the whole script much too early
@@ -2019,6 +2175,77 @@ def build_mission_order(mission_id: str) -> dict | None:
         if quest_ids:
             evidence += f":{quest_ids[0]}"
         script_spatial_raw_order_phase[stem] = (spatial_phase, evidence)
+
+    # Per-stem firm-start-shape → nearest quest pin. The trigger volume
+    # position decoded from the LevelScript binary is the location where the
+    # player must stand for the script to activate; pairing it with the
+    # mission's quest pins gives a quest anchor for scenes whose only
+    # spatial evidence is the start-shape (no decoded float candidate). This
+    # complements direct-spatial-quest by reusing already-decoded summary
+    # data instead of scanning the binary again. The threshold is wider
+    # than direct-spatial-quest (≤40 m XZ) because start-shape BOX volumes
+    # can sit at the edge of a quest's mission-area pin.
+    start_shape_quest_anchor: dict[str, tuple[str, float, float]] = {}
+    mission_pins: list[tuple[str, float, float]] = []
+    try:
+        mission_payload = json.loads(
+            (WEBUI_MISSION_ROOT / f"{mission_id}.json").read_text(encoding="utf-8")
+        )
+    except (OSError, json.JSONDecodeError):
+        mission_payload = {}
+    for pin in ((mission_payload.get("flow") or {}).get("mapPins") or []):
+        position = (pin or {}).get("position") or {}
+        if not all(isinstance(position.get(axis), (int, float)) for axis in ("x", "z")):
+            continue
+        for quest_id in pin.get("questIds") or []:
+            quest_text = str(quest_id or "")
+            if quest_text in quest_idx:
+                mission_pins.append((quest_text, float(position["x"]), float(position["z"])))
+    if mission_pins:
+        for stem, refs in binary_refs_by_stem.items():
+            # Accept either a firm startShapeList ("starts when player enters
+            # this box/sphere") or a decoded triggerVolumes list ("script
+            # activates when player enters one of these slots"). Both shapes
+            # provide a per-script position from the binary that can anchor
+            # the script's scenes to a quest pin even when its raw-float
+            # spatial scan didn't find a match.
+            has_start_shape = refs.get("binaryStartShapeList") == "present"
+            has_trigger_volumes = bool(refs.get("binaryTriggerVolumesCount") or 0)
+            if not (has_start_shape or has_trigger_volumes):
+                continue
+            shape_positions = refs.get("binaryStartShapePositions") or []
+            if not shape_positions:
+                continue
+            best: tuple[str, float, float, float] | None = None
+            for shape in shape_positions:
+                sx = float(shape.get("x") or 0.0)
+                sz = float(shape.get("z") or 0.0)
+                for quest_id, px, pz in mission_pins:
+                    dist = ((sx - px) ** 2 + (sz - pz) ** 2) ** 0.5
+                    if best is None or dist < best[3]:
+                        best = (quest_id, sx, sz, dist)
+            if best is None:
+                continue
+            quest_id, _sx, _sz, dist = best
+            if dist > 40.0:
+                continue
+            # If the second-best pin sits at a different quest much farther
+            # away, the binding is unambiguous. Otherwise compare; we tolerate
+            # ties because mission_pins can list the same quest multiple times.
+            runner_dist = float("inf")
+            for quest_other, px, pz in mission_pins:
+                if quest_other == quest_id:
+                    continue
+                for shape in shape_positions:
+                    sx = float(shape.get("x") or 0.0)
+                    sz = float(shape.get("z") or 0.0)
+                    other_dist = ((sx - px) ** 2 + (sz - pz) ** 2) ** 0.5
+                    if other_dist < runner_dist:
+                        runner_dist = other_dist
+            if runner_dist < dist * 1.2:
+                # Too close to another quest pin — leave as diagnostic only.
+                continue
+            start_shape_quest_anchor[stem] = (quest_id, dist, runner_dist)
 
     def crossfile_spatial_phase_for_event(event: dict) -> tuple[float, str] | None:
         """Use predecessor-script spatial support to correct weak late suffixes.
@@ -2270,6 +2497,73 @@ def build_mission_order(mission_id: str) -> dict | None:
             _, quest_id = quest_hits[0]
             return (float(quest_idx[quest_id]), 1, f"quest-record-string:{quest_id}")
 
+        # Per-scene spatial dominance: when this scene's decoded LevelScript
+        # vector candidates point at one quest within a tight distance and the
+        # next-closest candidate is at a clearly different quest pin, treat
+        # the spatial match as a per-scene location → quest binding instead of
+        # a chunk-level diagnostic. Scenes that carry an ordinal-name hint
+        # (`1stZipline`, `2ndZipline`, ...) are deferred to the existing
+        # ordinal-anchor pass so multi-stage named sequences keep their
+        # authored ordering relative to a first occurrence.
+        if not ordinal_name_hint(str(event.get("key") or "")):
+            stem_script_id = str(stem or "").rsplit("/", 1)[-1]
+            candidates_for_key = [
+                candidate
+                for candidate in spatial_candidates_by_key.get(key) or []
+                if str(candidate.get("questId") or "") in quest_idx
+                and isinstance(candidate.get("distanceXZ"), (int, float))
+                and str(candidate.get("scriptId") or "") == stem_script_id
+            ]
+            if candidates_for_key:
+                candidates_for_key.sort(key=lambda c: float(c.get("distanceXZ") or 0.0))
+                quest_ids_in_candidates = {
+                    str(candidate.get("questId") or "")
+                    for candidate in candidates_for_key
+                }
+                best = candidates_for_key[0]
+                best_dist = float(best.get("distanceXZ") or 0.0)
+                quest_id = str(best.get("questId") or "")
+                # If every same-script spatial candidate for this scene names
+                # the same quest pin, the spatial signal is unambiguous even
+                # for larger arena distances (e.g. boss-area cutscenes can sit
+                # 10–15m from the pin and still belong to the boss quest).
+                unique_quest_match = len(quest_ids_in_candidates) == 1
+                # Otherwise require a tight ≤5m best with a clearly farther
+                # runner-up at a different quest, so weak ambiguous matches
+                # stay as diagnostics.
+                runner_up = next(
+                    (
+                        candidate
+                        for candidate in candidates_for_key[1:]
+                        if str(candidate.get("questId") or "") != quest_id
+                    ),
+                    None,
+                )
+                runner_dist = float((runner_up or {}).get("distanceXZ") or 1e9)
+                tight_dominant_match = best_dist <= 5.0 and (
+                    runner_up is None or runner_dist >= 2.0 * best_dist
+                )
+                if unique_quest_match or tight_dominant_match:
+                    return (
+                        float(quest_idx[quest_id]),
+                        2,
+                        f"direct-spatial-quest:{quest_id}",
+                    )
+
+        # Per-stem firm-start-shape / trigger-volume anchor: scripts whose
+        # decoded activation shape sits near a single quest's mission-area
+        # pin. One step weaker than direct-spatial-quest (rank 3 vs 2) so
+        # that a per-scene float-candidate match still wins when both fire
+        # at the same quest — start-shape positions describe where the
+        # script activates, not where the scene plays.
+        if stem in start_shape_quest_anchor:
+            anchor_quest, _anchor_dist, _runner = start_shape_quest_anchor[stem]
+            return (
+                float(quest_idx[anchor_quest]),
+                3,
+                f"start-shape-quest-pin:{anchor_quest}",
+            )
+
         leveltimeline_phase = leveltimeline_marker_phase_for_event(event)
         if leveltimeline_phase is not None:
             return leveltimeline_phase
@@ -2386,14 +2680,28 @@ def build_mission_order(mission_id: str) -> dict | None:
         return (phase, rank, sid_int, int(event.get("offset") or 0), content_n, str(event.get("key") or ""))
 
     def event_choice_key(event: dict):
-        phase, rank, _reason = event_phase(event)
+        phase, rank, reason = event_phase(event)
         stem = str(event.get("fileStem") or "")
         try:
             sid_int = int(stem)
         except ValueError:
             sid_int = 0
         fallback_bucket = 1 if rank >= 12 else 0
-        return (fallback_bucket, phase, rank, sid_int, int(event.get("offset") or 0), str(event.get("key") or ""))
+        # Prefer the occurrence whose stem actually carries the per-scene
+        # direct-spatial-quest binding over a sibling occurrence that fell
+        # back to a weaker (levelseq-alias / content-suffix) evidence. The
+        # spatial anchor binds the scene to a specific quest pin, so picking
+        # the unanchored sibling drops information.
+        spatial_bucket = 0 if str(reason or "").startswith("direct-spatial-quest:") else 1
+        return (
+            fallback_bucket,
+            spatial_bucket,
+            phase,
+            rank,
+            sid_int,
+            int(event.get("offset") or 0),
+            str(event.get("key") or ""),
+        )
 
     def apply_scene_chain_overrides() -> None:
         """Keep recovered scene chains together when all inputs are unanchored."""
@@ -2587,6 +2895,38 @@ def build_mission_order(mission_id: str) -> dict | None:
             })
             if chunk_ids:
                 evidence += f":{chunk_ids[0]}"
+
+            # If every event in the component lives on a non-primary mapId
+            # (e.g. e0m0's hub-level `indie_dg004/23900030000`) and no quest
+            # was anchored to any of these scenes, the authored numeric
+            # suffix is meaningless — the chunk belongs to a hub/return-leg
+            # interaction that runs after the main mission flow. Push the
+            # base phase past the last quest so it lands at the mission tail
+            # instead of misaligning to a same-numbered main-level beat.
+            component_level_ids = {
+                str((files_by_stem.get(str(event.get("fileStem") or "")) or {}).get("levelId") or "")
+                for key in component
+                for event in events_by_key.get(key, [])
+            }
+            component_level_ids.discard("")
+            component_has_quest_anchor = any(
+                (scene_placement_by_key.get(key) or {}).get("questIds")
+                for key in component
+            )
+            if (
+                component_level_ids
+                and level_id
+                and level_id not in component_level_ids
+                and not component_has_quest_anchor
+            ):
+                if scene_graph_primary_entry and scene_graph_primary_entry in component:
+                    base_phase = -0.5
+                    evidence = "graph-primary-entry-chain"
+                else:
+                    base_phase = float(len(quest_order)) + 0.5
+                    evidence = "cross-level-orphan-chunk-tail"
+                if chunk_ids:
+                    evidence += f":{chunk_ids[0]}"
             for index, key in enumerate(ordered_keys):
                 event = selected_by_key[key]
                 event["overridePhase"] = round(base_phase + (index * 0.01), 3)
@@ -2613,7 +2953,9 @@ def build_mission_order(mission_id: str) -> dict | None:
         sorted_events,
         scene_placement_by_key,
         terminal_branch_evidence_by_event,
+        header_event_evidence_by_event,
     )
+
 
     for event in sorted_events:
         key = str(event.get("key") or "")
@@ -2685,57 +3027,183 @@ def build_mission_order(mission_id: str) -> dict | None:
                 key,
                 str(event.get("fileStem") or ""),
             ),
+            **(
+                {"trackInventory": _annotate_cutscene_fmv(
+                    cutscene_track_inventory(key),
+                    key,
+                )}
+                if key.startswith("cutscene_") and cutscene_track_inventory(key)
+                else {}
+            ),
         })
 
     # Append WebUI entries the binary scan never named. Explicit timeline-bound
     # standalone videos stay distinct, but inherit adjacency from their bound
     # story key instead of drifting to the end as generic fallbacks.
+    def _suffix_prefix(scene_key: str) -> str:
+        # `radio_e0m0_9d5` -> `radio_e0m0`; `cutscene_e0m0_1` -> `cutscene_e0m0`.
+        # This groups conv-only orphans with their same-family neighbours so a
+        # designer-authored suffix can interpolate against placed peers.
+        idx = scene_key.rfind("_")
+        return scene_key[:idx] if idx > 0 else scene_key
+
+    deferred_orphans: list[str] = []
     for stem in conv_keys:
-        if stem not in seen:
-            video_binding = bound_video_timeline_for_conv_key(stem, mission_id)
-            bound_scene = str((video_binding or {}).get("scene") or "")
-            if bound_scene and bound_scene in seen and bound_scene in ordered:
-                insert_at = ordered.index(bound_scene) + 1
-                while insert_at < len(ordered) and str(ordered[insert_at]).startswith("video_"):
-                    insert_at += 1
-                bound_entry = next(
-                    (entry for entry in entry_details if entry.get("key") == bound_scene),
-                    {},
-                )
-                bound_rank = bound_entry.get("rank")
-                rank = int(bound_rank) + 1 if isinstance(bound_rank, int) else 98
-                ordered.insert(insert_at, stem)
-                seen.add(stem)
-                entry_details.insert(insert_at, {
-                    "key": stem,
-                    "phase": bound_entry.get("phase"),
-                    "rank": rank,
-                    "evidence": f"timeline-video-binding:{bound_scene}",
-                    "videoBindingScene": bound_scene,
-                    "timelineAlignedWith": bound_scene,
-                    **(
-                        {"videoBindingClips": video_binding.get("clips")}
-                        if isinstance(video_binding.get("clips"), list) and video_binding.get("clips")
-                        else {}
-                    ),
-                    **(
-                        {"timelineStart": video_binding.get("timelineStart")}
-                        if isinstance(video_binding.get("timelineStart"), (int, float))
-                        else {}
-                    ),
-                    **(
-                        {"timelineDuration": video_binding.get("timelineDuration")}
-                        if isinstance(video_binding.get("timelineDuration"), (int, float))
-                        else {}
-                    ),
-                    "videoBindingNote": (
-                        "Standalone video entry with explicit AnimeStudio "
-                        "timelinePlayable binding to this story key; aligned "
-                        "to the bound story timeline and kept as its own WebUI "
-                        "media/search row."
-                    ),
-                })
+        if stem in seen:
+            continue
+        video_binding = bound_video_timeline_for_conv_key(stem, mission_id)
+        bound_scene = str((video_binding or {}).get("scene") or "")
+        if bound_scene and bound_scene in seen and bound_scene in ordered:
+            insert_at = ordered.index(bound_scene) + 1
+            while insert_at < len(ordered) and str(ordered[insert_at]).startswith("video_"):
+                insert_at += 1
+            bound_entry = next(
+                (entry for entry in entry_details if entry.get("key") == bound_scene),
+                {},
+            )
+            bound_rank = bound_entry.get("rank")
+            rank = int(bound_rank) + 1 if isinstance(bound_rank, int) else 98
+            ordered.insert(insert_at, stem)
+            seen.add(stem)
+            entry_details.insert(insert_at, {
+                "key": stem,
+                "phase": bound_entry.get("phase"),
+                "rank": rank,
+                "evidence": f"timeline-video-binding:{bound_scene}",
+                "videoBindingScene": bound_scene,
+                "timelineAlignedWith": bound_scene,
+                **(
+                    {"videoBindingClips": video_binding.get("clips")}
+                    if isinstance(video_binding.get("clips"), list) and video_binding.get("clips")
+                    else {}
+                ),
+                **(
+                    {"timelineStart": video_binding.get("timelineStart")}
+                    if isinstance(video_binding.get("timelineStart"), (int, float))
+                    else {}
+                ),
+                **(
+                    {"timelineDuration": video_binding.get("timelineDuration")}
+                    if isinstance(video_binding.get("timelineDuration"), (int, float))
+                    else {}
+                ),
+                "videoBindingNote": (
+                    "Standalone video entry with explicit AnimeStudio "
+                    "timelinePlayable binding to this story key; aligned "
+                    "to the bound story timeline and kept as its own WebUI "
+                    "media/search row."
+                ),
+            })
+            continue
+        deferred_orphans.append(stem)
+
+    # `black_<mission>_<N>` conv keys are TextTable-only scene-setting cards
+    # rendered on the black-screen overlay window that cutscenes with
+    # `useBlackScreen` + `beforeCutsceneUseFadeIn` carry in their AnimeStudio
+    # metadata. The binding (which card → which cutscene) lives in compiled
+    # CutsceneManager code, so we approximate it from authored metadata: take
+    # the earliest placed cutscene in the mission that carries a black-screen
+    # preamble, insert the card immediately before it. This matches the
+    # canonical opening "X days later, Location Y" card pattern that every
+    # such black card we've inspected follows.
+    black_orphans = [
+        stem for stem in deferred_orphans
+        if stem.startswith(f"black_{mission_id}_")
+    ]
+    if black_orphans:
+        # Map cutscene scene-key → list of source script stems that play it,
+        # plus their decoded LevelScript startType. Preferring a player-entry
+        # activation matches the "opening time-skip card on area entry"
+        # pattern; Manual scripts are typically fired by gameplay-code custom
+        # events in the middle of a mission, not at its threshold.
+        # `script_events` is keyed by source stem, not by scene key, so we
+        # have to walk every event and accumulate by `event["key"]`.
+        cutscene_entry_kind: dict[str, str] = {}
+        for stem_id, occurrences in script_events.items():
+            stem_start_type = str(
+                (binary_refs_by_stem.get(stem_id) or {}).get("binaryStartType")
+                or ""
+            )
+            kind = "entryShape" if stem_start_type == "ByEnterStartShape" else stem_start_type
+            if not kind:
                 continue
+            for event in occurrences:
+                event_key = str(event.get("key") or "")
+                if not event_key:
+                    continue
+                current = cutscene_entry_kind.get(event_key)
+                # entryShape beats any Manual/other kind; otherwise first
+                # non-empty wins.
+                if current == "entryShape":
+                    continue
+                if kind == "entryShape" or not current:
+                    cutscene_entry_kind[event_key] = kind
+
+        def _black_target_candidates() -> list[tuple[int, str]]:
+            candidates: list[tuple[int, str]] = []
+            for placed_idx, placed_key in enumerate(ordered):
+                placed_key_s = str(placed_key)
+                if not placed_key_s.startswith(f"cutscene_{mission_id}_"):
+                    continue
+                if not cutscene_has_black_preamble(placed_key_s):
+                    continue
+                candidates.append((placed_idx, placed_key_s))
+            return candidates
+
+        # Sort black cards by content number so multi-card missions interleave
+        # by their authored numeric suffix; for missions with one card (the
+        # common case) the order is trivial.
+        black_orphans.sort(key=lambda key: (parse_content_number(key), key))
+        for stem in black_orphans:
+            candidates = _black_target_candidates()
+            if not candidates:
+                continue
+            entry_shape_candidates = [
+                item for item in candidates
+                if cutscene_entry_kind.get(item[1]) == "entryShape"
+            ]
+            target_idx, target_key = (entry_shape_candidates or candidates)[0]
+            ordered.insert(target_idx, stem)
+            seen.add(stem)
+            entry_details.insert(target_idx, {
+                "key": stem,
+                "phase": None,
+                "rank": 8,
+                "evidence": f"cutscene-preamble-black:{target_key}",
+                "blackPreambleAttachKind": (
+                    "player-entry-shape" if entry_shape_candidates else "earliest-placed"
+                ),
+                "blackPreambleNote": (
+                    "TextTable-only scene-setting card attached to the mission "
+                    "cutscene that owns a black-screen pre-fade window in its "
+                    "AnimeStudio metadata. When several cutscenes qualify we "
+                    "prefer the one whose source LevelScript activates via "
+                    "`ByEnterStartShape` — the player-entry threshold is the "
+                    "canonical place a time-skip overlay card is shown. The "
+                    "actual binding lives in compiled CutsceneManager code; "
+                    "the static evidence is the target cutscene's pre-fade "
+                    "flags plus the player-entry activation pattern."
+                ),
+            })
+        # Remove handled orphans from the suffix-proximity pass.
+        deferred_orphans = [stem for stem in deferred_orphans if stem not in seen]
+
+    # Source-graph-orphan conv keys (no LevelScript hit, no video binding) get
+    # placed by their designer-authored suffix number relative to already-placed
+    # same-family peers. The suffix is a weak signal — it disagrees with play
+    # order in some missions (see e1m1 / scene_file_order_recovery.md) — so the
+    # rank stays below every source-backed evidence kind. This is still a
+    # measurable improvement over appending at the very end.
+    def _orphan_inventory_fields(scene_key: str) -> dict:
+        if not scene_key.startswith("cutscene_"):
+            return {}
+        inv = _annotate_cutscene_fmv(cutscene_track_inventory(scene_key), scene_key)
+        return {"trackInventory": inv} if inv else {}
+
+    deferred_orphans.sort(key=lambda key: (parse_content_number(key), key))
+    for stem in deferred_orphans:
+        n = parse_content_number(stem)
+        if n == float("inf"):
             ordered.append(stem)
             seen.add(stem)
             entry_details.append({
@@ -2743,13 +3211,57 @@ def build_mission_order(mission_id: str) -> dict | None:
                 "phase": None,
                 "rank": 99,
                 "evidence": "webui-conv-fallback",
+                **_orphan_inventory_fields(stem),
             })
+            continue
+        prefix = _suffix_prefix(stem)
+        smaller_idx: int | None = None
+        smaller_n = float("-inf")
+        larger_idx: int | None = None
+        larger_n = float("inf")
+        for placed_idx, placed_key in enumerate(ordered):
+            if _suffix_prefix(placed_key) != prefix:
+                continue
+            placed_n = parse_content_number(placed_key)
+            if placed_n == float("inf"):
+                continue
+            if placed_n <= n and placed_n >= smaller_n:
+                smaller_n = placed_n
+                smaller_idx = placed_idx
+            if placed_n > n and placed_n < larger_n:
+                larger_n = placed_n
+                larger_idx = placed_idx
+        if smaller_idx is not None:
+            insert_at = smaller_idx + 1
+            while insert_at < len(ordered) and str(ordered[insert_at]).startswith("video_"):
+                insert_at += 1
+            evidence = f"content-suffix-proximity:after:{ordered[smaller_idx]}"
+        elif larger_idx is not None:
+            insert_at = larger_idx
+            evidence = f"content-suffix-proximity:before:{ordered[larger_idx]}"
+        else:
+            ordered.append(stem)
+            seen.add(stem)
+            entry_details.append({
+                "key": stem,
+                "phase": None,
+                "rank": 99,
+                "evidence": "webui-conv-fallback",
+                **_orphan_inventory_fields(stem),
+            })
+            continue
+        ordered.insert(insert_at, stem)
+        seen.add(stem)
+        entry_details.insert(insert_at, {
+            "key": stem,
+            "phase": None,
+            "rank": 90,
+            "evidence": evidence,
+            **_orphan_inventory_fields(stem),
+        })
 
     # Unbound `video_cs_video_*` entries are video-table rows, not aliases for
     # `cutscene_*` story keys. Filename similarity is not an order signal.
-
-    # Manual observed-order hints are calibration notes only. The generated
-    # WebUI order should use the same source-recovery rules for every mission.
 
     if not ordered:
         return None
@@ -2769,9 +3281,146 @@ def all_mission_ids() -> list[str]:
     return sorted(out)
 
 
+def ordered_strings(values: object) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    if not isinstance(values, list):
+        return out
+    for value in values:
+        key = str(value or "").strip()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(key)
+    return out
+
+
+def read_editable_order_payload(path: Path, *, strict: bool = False) -> dict:
+    if not path.is_file():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError) as exc:
+        if strict:
+            raise ValueError(f"could not read editable story order {path}: {exc}") from exc
+        return {}
+    if not isinstance(payload, dict):
+        if strict:
+            raise ValueError(f"editable story order {path} must contain a JSON object")
+        return {}
+    return payload
+
+
+def editable_missions(payload: dict) -> dict:
+    missions = payload.get("missions") if isinstance(payload, dict) else {}
+    return missions if isinstance(missions, dict) else {}
+
+
+def editable_mission_locked(raw_mission: object) -> bool:
+    return isinstance(raw_mission, dict) and raw_mission.get("locked") is True
+
+
+def editable_order_from_mission(raw_mission: object) -> list[str]:
+    if isinstance(raw_mission, dict):
+        return ordered_strings(raw_mission.get("order"))
+    return []
+
+
+def editable_mission_payload(
+    *,
+    order: list[str],
+    generated_mission: dict | None = None,
+    existing_mission: dict | None = None,
+    locked: bool = False,
+) -> dict:
+    out: dict[str, object] = {"order": order}
+    if locked:
+        out["locked"] = True
+
+    level = ""
+    if existing_mission:
+        level = str(existing_mission.get("level") or "").strip()
+    if not level and generated_mission:
+        level = str(generated_mission.get("level") or "").strip()
+    if level:
+        out["level"] = level
+
+    levels: list[str] = []
+    if existing_mission:
+        levels = ordered_strings(existing_mission.get("levels"))
+    if not levels and generated_mission:
+        levels = ordered_strings(generated_mission.get("levels"))
+    if levels:
+        out["levels"] = levels
+    return out
+
+
+def build_editable_order_payload(
+    missions_payload: dict[str, dict],
+    existing_payload: dict | None = None,
+    *,
+    preserve_unmentioned: bool = False,
+) -> dict:
+    """Return the direct-edit story order contract.
+
+    Each mission owns the full file order the browser/OCR/UI can edit in place.
+    """
+    existing = editable_missions(existing_payload or {})
+    missions: dict[str, dict] = {}
+    for mission_id in sorted(missions_payload):
+        mission = missions_payload[mission_id]
+        mission_key = str(mission_id)
+        existing_mission = existing.get(mission_key)
+        if editable_mission_locked(existing_mission):
+            missions[mission_key] = existing_mission
+            continue
+        order = ordered_strings(mission.get("order") if isinstance(mission, dict) else None)
+        if not order:
+            continue
+        missions[mission_key] = editable_mission_payload(
+            order=order,
+            generated_mission=mission,
+            existing_mission=existing_mission if isinstance(existing_mission, dict) else None,
+        )
+
+    for mission_id in sorted(existing):
+        mission_key = str(mission_id)
+        if mission_key in missions:
+            continue
+        existing_mission = existing.get(mission_key)
+        if not editable_mission_locked(existing_mission) and not preserve_unmentioned:
+            continue
+        if isinstance(existing_mission, dict):
+            missions[mission_key] = existing_mission
+
+    return {
+        "_note": (
+            "Editable Story file order. Each missions.<mission>.order array is "
+            "the complete ordered list of story file keys for that mission. "
+            "Set missions.<mission>.locked to true to preserve that mission's "
+            "order across builder and OCR writes; the WebUI can toggle it per mission."
+        ),
+        "missions": missions,
+    }
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description="Emit per-mission story order for the WebUI.")
     parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
+    parser.add_argument(
+        "--editable-output",
+        type=Path,
+        default=EDITABLE_ORDER_PATH,
+        help=(
+            "direct editable story order output "
+            f"(default: {EDITABLE_ORDER_PATH.relative_to(ROOT).as_posix()})"
+        ),
+    )
+    parser.add_argument(
+        "--no-editable-output",
+        action="store_true",
+        help="only write the evidence-rich generated story_order.json asset",
+    )
     parser.add_argument("--missions", nargs="*")
     args = parser.parse_args()
 
@@ -2813,7 +3462,10 @@ def main() -> int:
             "groups together, while same-script file-order edges can be checked "
             "without opening the full mission bundle. Scene-edge-only keys can "
             "receive synthetic source occurrences when the WebUI conversation "
-            "exists but no direct string-hit event names it. Direct same-script "
+            "exists but no direct string-hit event names it. A medium/high-confidence "
+            "scene-graph primary entry can lift its source-backed cross-level "
+            "orphan chain before the first quest instead of sending it to the "
+            "tail. Direct same-script "
             "file-order and nonzero terminal-branch path edges are applied as "
             "stable local ordering constraints. A "
             "constrained cross-file rule may also "
@@ -2823,9 +3475,9 @@ def main() -> int:
             "timelinePlayable video bindings inherit adjacency from their bound "
             "story keys and can carry clip start/duration metadata. Matching "
             "video names alone are not coupled to cutscene story keys. "
-            "Manual gameplay-observed calibration hints are kept out of this "
-            "generated order so every mission uses the same source-recovery "
-            "rules. When a story key appears in multiple scripts, the earliest non-fallback "
+            "The editable Story file-order contract is exported separately "
+            "as full per-mission order lists under webui/overrides/story_order.json. "
+            "When a story key appears in multiple scripts, the earliest non-fallback "
             "occurrence is chosen before final sorting. Filename/content "
             "suffixes are only weak fallbacks."
         ),
@@ -2837,8 +3489,26 @@ def main() -> int:
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+    if not args.no_editable_output:
+        try:
+            existing_editable_payload = read_editable_order_payload(args.editable_output, strict=True)
+        except ValueError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        editable_payload = build_editable_order_payload(
+            missions_payload,
+            existing_editable_payload,
+            preserve_unmentioned=bool(args.missions),
+        )
+        args.editable_output.parent.mkdir(parents=True, exist_ok=True)
+        args.editable_output.write_text(
+            json.dumps(editable_payload, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
     total = sum(len(m["order"]) for m in missions_payload.values())
     print(f"Wrote {args.output} - {len(missions_payload)} missions, {total} ordered entries")
+    if not args.no_editable_output:
+        print(f"Wrote {args.editable_output} - {len(missions_payload)} editable mission order lists")
     return 0
 
 

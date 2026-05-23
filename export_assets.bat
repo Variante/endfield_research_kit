@@ -8,7 +8,7 @@ if /I "%~1"=="/h" goto :help
 if /I "%~1"=="help" goto :help
 
 set "EXPORT_ARGS="
-set "SKIP_EXPORT_FULL=0"
+set "EXPORT_FROM_GAME=0"
 
 :parse_args
 if "%~1"=="" goto :parsed_args
@@ -17,8 +17,8 @@ if /I "%~1"=="-h" goto :help
 if /I "%~1"=="/?" goto :help
 if /I "%~1"=="/h" goto :help
 if /I "%~1"=="help" goto :help
-if /I "%~1"=="--skip-export-full" (
-  set "SKIP_EXPORT_FULL=1"
+if /I "%~1"=="--export-from-game" (
+  set "EXPORT_FROM_GAME=1"
   shift
   goto :parse_args
 )
@@ -28,16 +28,17 @@ goto :parse_args
 
 :parsed_args
 rem Asset export/build pipeline:
-rem - skip structured story data
-rem - export AnimeStudio image/model/animation conversions and full asset metadata
+rem - rebuild indexes from existing decoded assets by default
+rem - export from the installed game only when explicitly requested
+rem - skip structured story data and AnimeStudio by default
 rem - build the WebUI Assets tab indexes and compact story media lookup
-if "%SKIP_EXPORT_FULL%"=="1" goto :skip_export_full
+if "%EXPORT_FROM_GAME%"=="0" goto :skip_export_full
 python .\scripts\export_full_from_game.py --skip-structured --animestudio-scope assets --animestudio-stages convert_by_type json_by_type %EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 goto :after_export_full
 
 :skip_export_full
-echo [export_assets.bat] Skipping scripts\export_full_from_game.py; rebuilding asset indexes from existing decoded assets.
+echo [export_assets.bat] Reusing existing decoded assets; pass --export-from-game to refresh from installed game data.
 
 :after_export_full
 
@@ -48,21 +49,16 @@ endlocal
 exit /b 0
 
 :help
-echo Usage: export_assets.bat [--skip-export-full] [--game-root Endfield_Data] [--animestudio-jobs N] [export_full_from_game.py options]
+echo Usage: export_assets.bat [--export-from-game] [export_full_from_game.py options]
 echo.
-echo Runs the heavier AnimeStudio image/model/animation decode and rebuilds
-echo WebUI Assets tab indexes plus the compact Story media lookup.
-echo Story/reference data is handled by export.bat; audio is handled by export_audio.bat.
+echo Rebuilds WebUI Assets tab indexes plus the compact Story media lookup.
+echo The heavier AnimeStudio image/model/animation decode is opt-in.
+echo Story/reference data is handled by export.bat; audio can be refreshed with scripts\build_audio.py.
 echo.
-echo   --skip-export-full    Reuse existing decoded assets and only rebuild asset indexes.
-echo   --game-root PATH      Use a non-default installed Endfield_Data path.
-echo   --animestudio-jobs N  Maximum parallel AnimeStudio CLI processes for per-type export.
+echo   --export-from-game    Run AnimeStudio image/model/animation conversion and JSON export.
 echo.
-python .\scripts\export_full_from_game.py --help
-if errorlevel 1 (
-  set "ERR=%errorlevel%"
-  endlocal
-  exit /b %ERR%
-)
+echo Other arguments are passed to scripts\export_full_from_game.py when
+echo --export-from-game is present.
+echo.
 endlocal
 exit /b 0

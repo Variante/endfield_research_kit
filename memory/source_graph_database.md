@@ -51,22 +51,9 @@ Core files:
 - `map_level_index.json`
 - `semantic_update_summary.json`
 
-Follow-up report tools write richer reports under `reports/source_graph/`:
-
-```bat
-python tools\endfield_voice_audio_linker.py
-python tools\endfield_story_branch_resolver.py
-python tools\endfield_map_level_indexer.py
-python tools\endfield_semantic_update_classifier.py
-```
-
-Focused examples:
-
-```bat
-python tools\endfield_voice_audio_linker.py --story dlg_e1m5_4 --limit 10
-python tools\endfield_story_branch_resolver.py --story dlg_a1m10_1 --limit 1
-python tools\endfield_map_level_indexer.py --level map01_fc001 --limit 8
-```
+The old standalone follow-up tools have been retired into
+`tools/endfield_source_graph.py`; the graph builder writes those follow-up
+indexes directly unless `--skip-followups` is passed.
 
 ## Graph Shape
 

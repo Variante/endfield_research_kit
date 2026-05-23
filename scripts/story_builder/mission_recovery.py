@@ -599,87 +599,6 @@ def build_quest_edges(quests: list[dict], source_path: Path) -> tuple[list[dict]
     return edges, unresolved
 
 
-def build_quest_tree(quests: list[dict], edges: list[dict]) -> dict:
-    """Build an explicit prevQuestIdList tree without inventing chronology."""
-    quest_ids = {quest["questId"] for quest in quests if quest.get("questId")}
-    quest_order = [quest["questId"] for quest in quests if quest.get("questId")]
-    children_by_parent: dict[str, list[str]] = defaultdict(list)
-    edge_source_by_pair: dict[tuple[str, str], dict] = {}
-    for edge in edges:
-        if edge.get("kind") != "questPrev":
-            continue
-        parent = edge.get("from") or ""
-        child = edge.get("to") or ""
-        if parent not in quest_ids or child not in quest_ids:
-            continue
-        children_by_parent[parent].append(child)
-        if edge.get("source"):
-            edge_source_by_pair[(parent, child)] = edge["source"]
-
-    for parent, children in children_by_parent.items():
-        children_by_parent[parent] = sorted(unique_preserve(children), key=natural_key)
-
-    root_ids = [
-        quest["questId"]
-        for quest in quests
-        if quest.get("questId") and not quest.get("prevQuestIds")
-    ]
-    roots_seen = set(root_ids)
-    root_ids = [quest_id for quest_id in quest_order if quest_id in roots_seen]
-    expanded: set[str] = set()
-    loops: list[dict] = []
-    loop_keys: set[tuple[str, ...]] = set()
-
-    def walk(quest_id: str, path: list[str]) -> dict:
-        if quest_id in path:
-            loop_start = path.index(quest_id)
-            loop_path = path[loop_start:] + [quest_id]
-            loop_key = tuple(loop_path)
-            source = edge_source_by_pair.get((path[-1], quest_id)) if path else None
-            if loop_key not in loop_keys:
-                loop_keys.add(loop_key)
-                row = {
-                    "from": path[-1] if path else "",
-                    "to": quest_id,
-                    "questIds": loop_path,
-                    "source": source,
-                }
-                loops.append({key: value for key, value in row.items() if value})
-            node = {
-                "questId": quest_id,
-                "loop": True,
-                "loopPath": loop_path,
-            }
-            if source:
-                node["source"] = source
-            return node
-
-        node: dict[str, Any] = {"questId": quest_id}
-        children = children_by_parent.get(quest_id) or []
-        if quest_id in expanded:
-            node["reused"] = True
-            return node
-        expanded.add(quest_id)
-        if children:
-            node["children"] = [walk(child, [*path, quest_id]) for child in children]
-        return node
-
-    root_nodes = [walk(root_id, []) for root_id in root_ids]
-    unrooted_ids = [quest_id for quest_id in quest_order if quest_id not in expanded]
-    unrooted_nodes = [walk(quest_id, []) for quest_id in unrooted_ids]
-
-    return {
-        "source": "MissionRuntimeAsset.questDic[*].prevQuestIdList",
-        "rootSource": "quests with empty prevQuestIdList",
-        "rootQuestIds": root_ids,
-        "roots": root_nodes,
-        "unrootedQuestIds": unrooted_ids,
-        "unrootedRoots": unrooted_nodes,
-        "loops": loops,
-        "note": "Unrooted roots are coverage anchors for components without an explicit empty-prevQuestIdList entry; they are not promoted to chronology.",
-    }
-
-
 def build_branch_points(edges: list[dict], quests_by_id: dict[str, dict]) -> list[dict]:
     succ: dict[str, list[str]] = defaultdict(list)
     for edge in edges:
@@ -1417,153 +1336,6 @@ def mission_id_matches_target_prefix(mission_id: str) -> bool:
     return False
 
 
-def build_scene_chunks(
-    scene_placement: dict[str, dict],
-    source_backed_scene_edges: list[dict],
-    source_backed_scene_sequences: list[dict] | None,
-    scene_timeline_evidence: dict[str, list[dict]] | None,
-) -> tuple[list[dict], dict[str, str]]:
-    """Group placed scenes into connected components by source-backed evidence.
-
-    Edges (undirected, for connected-component grouping):
-
-    - `sourceBackedSceneEdge` / decoded edge.kind: any (from, to) pair in
-      `source_backed_scene_edges` (UID chains, quest-attach, DialogTree, etc.).
-    - `levelscriptSceneChain` (sequence): consecutive pairs inside any
-      `source_backed_scene_sequences[*].sceneKeys` chain.
-    - `timelineShare`: scene keys that share a Timeline asset id
-      (`scene_timeline_evidence[scene][*].timeline` or `sourceKey`).
-
-    Chunks are numbered `c1`, `c2`, ... by natural order of each component's
-    lexicographically-first scene key, so IDs are stable across reruns when the
-    membership is stable. Isolated scenes (no joining edges) get their own
-    singleton chunk.
-
-    Returns (chunks, chunk_by_scene_key).
-    """
-    nodes: set[str] = {
-        str(scene_key)
-        for scene_key in (scene_placement or {}).keys()
-        if str(scene_key)
-    }
-    if not nodes:
-        return [], {}
-
-    parent: dict[str, str] = {n: n for n in nodes}
-
-    def find(node: str) -> str:
-        while parent[node] != node:
-            parent[node] = parent[parent[node]]
-            node = parent[node]
-        return node
-
-    def union(a: str, b: str) -> None:
-        if a == b:
-            return
-        root_a, root_b = find(a), find(b)
-        if root_a == root_b:
-            return
-        if natural_key(root_a) <= natural_key(root_b):
-            parent[root_b] = root_a
-        else:
-            parent[root_a] = root_b
-
-    edge_records: list[tuple[str, str, str]] = []
-
-    for edge in source_backed_scene_edges or []:
-        if not isinstance(edge, dict):
-            continue
-        from_key = str(edge.get("from") or "").strip()
-        to_key = str(edge.get("to") or "").strip()
-        if not (from_key and to_key) or from_key == to_key:
-            continue
-        if from_key not in nodes or to_key not in nodes:
-            continue
-        kind = str(edge.get("kind") or "sourceBackedSceneEdge")
-        edge_records.append((from_key, to_key, kind))
-
-    for sequence in source_backed_scene_sequences or []:
-        if not isinstance(sequence, dict):
-            continue
-        sequence_kind = str(sequence.get("kind") or "levelscriptSceneChain")
-        scene_keys = [
-            str(scene_key).strip()
-            for scene_key in (sequence.get("sceneKeys") or [])
-            if str(scene_key or "").strip()
-        ]
-        for a, b in zip(scene_keys, scene_keys[1:]):
-            if a == b or a not in nodes or b not in nodes:
-                continue
-            edge_records.append((a, b, sequence_kind))
-
-    if scene_timeline_evidence:
-        timeline_to_scenes: dict[str, list[str]] = defaultdict(list)
-        for scene_key, entries in scene_timeline_evidence.items():
-            if scene_key not in nodes:
-                continue
-            for entry in entries or []:
-                if not isinstance(entry, dict):
-                    continue
-                timeline_id = str(
-                    entry.get("timeline") or entry.get("sourceKey") or ""
-                ).strip()
-                if not timeline_id:
-                    continue
-                timeline_to_scenes[timeline_id].append(scene_key)
-        for timeline_id, scene_keys in timeline_to_scenes.items():
-            unique_scene_keys = list(dict.fromkeys(scene_keys))
-            if len(unique_scene_keys) < 2:
-                continue
-            anchor = unique_scene_keys[0]
-            for other in unique_scene_keys[1:]:
-                edge_records.append((anchor, other, "timelineShare"))
-
-    for a, b, _kind in edge_records:
-        union(a, b)
-
-    component_members: dict[str, list[str]] = defaultdict(list)
-    for node in nodes:
-        component_members[find(node)].append(node)
-
-    chunk_edge_kinds: dict[str, set[str]] = defaultdict(set)
-    chunk_internal_edge_count: dict[str, int] = defaultdict(int)
-    for a, _b, kind in edge_records:
-        root = find(a)
-        chunk_edge_kinds[root].add(kind)
-        chunk_internal_edge_count[root] += 1
-
-    sorted_roots = sorted(component_members.keys(), key=natural_key)
-    chunks: list[dict] = []
-    chunk_by_scene_key: dict[str, str] = {}
-    for index, root in enumerate(sorted_roots, start=1):
-        chunk_id = f"c{index}"
-        members = sorted(component_members[root], key=natural_key)
-        edge_kinds_set = chunk_edge_kinds.get(root, set())
-        edge_kinds = sorted(edge_kinds_set)
-        scene_kinds = sorted(
-            {kind for kind in (story_scene_kind(scene_key) for scene_key in members) if kind}
-        )
-        if edge_kinds_set & STRONG_ORDER_EDGE_KINDS:
-            strength = "strong"
-        elif edge_kinds_set:
-            strength = "weak"
-        else:
-            strength = "unanchored"
-        chunks.append({
-            "id": chunk_id,
-            "sceneKeys": members,
-            "sceneCount": len(members),
-            "sceneKinds": scene_kinds,
-            "edgeKinds": edge_kinds,
-            "internalEdgeCount": chunk_internal_edge_count.get(root, 0),
-            "strength": strength,
-            "isolated": len(members) == 1 and not edge_kinds_set,
-        })
-        for scene_key in members:
-            chunk_by_scene_key[scene_key] = chunk_id
-    return chunks, chunk_by_scene_key
-
-
 def levelscript_source_sort_key(source_file: str) -> tuple:
     map_id, script_id = levelscript_path_components(source_file)
     script_num = int(script_id) if str(script_id).isdigit() else 10**18
@@ -1942,406 +1714,6 @@ def unique_dicts(rows: list[dict], key_fields: tuple[str, ...]) -> list[dict]:
     return out
 
 
-def alpha_suffix(index: int) -> str:
-    value = max(0, index)
-    chars: list[str] = []
-    while True:
-        value, remainder = divmod(value, 26)
-        chars.append(chr(ord("a") + remainder))
-        if value == 0:
-            break
-        value -= 1
-    return "".join(reversed(chars))
-
-
-def compact_spatial_candidate(item: dict, scene_key: str = "") -> dict:
-    compact = {
-        key: item.get(key)
-        for key in (
-            "questId",
-            "flowIndex",
-            "questOrder",
-            "source",
-            "strength",
-            "mapId",
-            "levelId",
-            "scriptId",
-            "distanceXZ",
-            "distance3d",
-            "yDelta",
-            "offset",
-        )
-        if item.get(key) not in (None, "", [], {})
-    }
-    if scene_key:
-        compact["sceneKey"] = scene_key
-    if item.get("position"):
-        compact["position"] = item.get("position")
-    pin = item.get("pin") if isinstance(item.get("pin"), dict) else {}
-    if pin:
-        compact["pin"] = {
-            key: pin.get(key)
-            for key in ("label", "missionAreaId", "npcProxyId", "jumpId", "trackingType", "subDataParentId", "levelDataParentId", "position")
-            if pin.get(key) not in (None, "", [], {})
-        }
-    if item.get("file"):
-        compact["file"] = item.get("file")
-    return compact
-
-
-def spatial_candidate_sort_key(item: dict) -> tuple:
-    return (
-        float(item.get("distanceXZ", 10**9)),
-        float(item.get("yDelta", 10**9)),
-        item.get("questOrder") if isinstance(item.get("questOrder"), (int, float)) else 10**9,
-        natural_key(str(item.get("questId") or "")),
-        natural_key(str(item.get("scriptId") or "")),
-        natural_key(str(item.get("sceneKey") or "")),
-    )
-
-
-def best_scene_spatial_candidate(row: dict) -> dict | None:
-    candidates = [
-        item for item in row.get("spatialQuestCandidates") or []
-        if isinstance(item, dict) and item.get("questId")
-    ]
-    if not candidates:
-        return None
-    return sorted(candidates, key=spatial_candidate_sort_key)[0]
-
-
-def source_script_from_spatial_candidate(candidate: dict) -> dict:
-    map_id = str(candidate.get("mapId") or candidate.get("levelId") or "").strip()
-    script_id = str(candidate.get("scriptId") or "").strip()
-    if not (map_id and script_id):
-        return {}
-    row: dict[str, Any] = {
-        "levelId": map_id,
-        "mapId": map_id,
-        "scriptId": script_id,
-    }
-    if candidate.get("file"):
-        row["file"] = candidate.get("file")
-    if script_id.isdigit():
-        row["scriptOrder"] = int(script_id)
-    return row
-
-
-def build_scene_subchunks(chunk: dict, scene_placement: dict[str, dict]) -> list[dict]:
-    """Split a weak, unattached chunk into contiguous diagnostic scene runs.
-
-    Subchunks are for inspection only. They do not write quest attachments,
-    affect chunk strength, or create inter-chunk order edges.
-    """
-    scene_keys = [
-        str(scene_key or "").strip()
-        for scene_key in chunk.get("sceneKeys") or []
-        if str(scene_key or "").strip()
-    ]
-    if len(scene_keys) < 3:
-        return []
-    if chunk.get("questIds"):
-        return []
-    if not chunk.get("spatialQuestCandidates"):
-        return []
-
-    rows: list[dict] = []
-    for scene_key in scene_keys:
-        placement = scene_placement.get(scene_key) or {}
-        best = best_scene_spatial_candidate(placement)
-        label = str(best.get("questId") or "").strip() if best else ""
-        rows.append({
-            "sceneKey": scene_key,
-            "label": label,
-        })
-
-    labels = {row["label"] for row in rows if row["label"]}
-    if len(labels) < 2:
-        return []
-
-    previous_label = ""
-    for row in rows:
-        if row["label"]:
-            previous_label = row["label"]
-            row["filledLabel"] = row["label"]
-        elif previous_label:
-            row["filledLabel"] = previous_label
-
-    next_label = ""
-    for row in reversed(rows):
-        if row.get("filledLabel"):
-            next_label = row["filledLabel"]
-        elif next_label:
-            row["filledLabel"] = next_label
-        else:
-            row["filledLabel"] = "unknown"
-
-    groups: list[dict] = []
-    for row in rows:
-        label = row.get("filledLabel") or "unknown"
-        if not groups or groups[-1]["label"] != label:
-            groups.append({"label": label, "sceneKeys": []})
-        groups[-1]["sceneKeys"].append(row["sceneKey"])
-    if len(groups) < 2:
-        return []
-
-    subchunks: list[dict] = []
-    for index, group in enumerate(groups):
-        group_scene_keys = group["sceneKeys"]
-        label = group["label"]
-        spatial_candidates: list[dict] = []
-        source_scripts: list[dict] = []
-        evidence_kinds: list[str] = []
-        for scene_key in group_scene_keys:
-            placement = scene_placement.get(scene_key) or {}
-            for kind in placement.get("evidenceKinds") or []:
-                unique_append(evidence_kinds, kind)
-            for candidate in placement.get("spatialQuestCandidates") or []:
-                if not isinstance(candidate, dict):
-                    continue
-                if label != "unknown" and str(candidate.get("questId") or "") != label:
-                    continue
-                compact = compact_spatial_candidate(candidate, scene_key)
-                if compact:
-                    spatial_candidates.append(compact)
-                    script = source_script_from_spatial_candidate(compact)
-                    if script:
-                        source_scripts.append(script)
-        spatial_candidates = unique_dicts(
-            sorted(spatial_candidates, key=spatial_candidate_sort_key),
-            ("questId", "mapId", "scriptId", "offset"),
-        )
-        source_scripts = unique_dicts(
-            sorted(source_scripts, key=lambda item: (
-                natural_key(str(item.get("mapId") or item.get("levelId") or "")),
-                item.get("scriptOrder") if isinstance(item.get("scriptOrder"), int) else 10**18,
-                natural_key(str(item.get("scriptId") or "")),
-            )),
-            ("mapId", "scriptId", "file"),
-        )
-        subchunk: dict[str, Any] = {
-            "id": f"{chunk.get('id')}{alpha_suffix(index)}",
-            "parentChunkId": chunk.get("id"),
-            "basis": "levelscriptSpatialProximityRun",
-            "strength": "weak",
-            "sceneKeys": group_scene_keys,
-            "sceneCount": len(group_scene_keys),
-            "note": "Diagnostic subchunk only; spatial/source runs do not promote chronology.",
-        }
-        if evidence_kinds:
-            subchunk["evidenceKinds"] = sorted(evidence_kinds)
-        if spatial_candidates:
-            subchunk["spatialQuestCandidates"] = spatial_candidates[:12]
-            best = spatial_candidates[0]
-            subchunk["questOrderHint"] = {
-                key: value
-                for key, value in {
-                    "kind": "levelscriptSpatialProximity",
-                    "strength": "weak",
-                    "questId": best.get("questId"),
-                    "flowIndex": best.get("flowIndex"),
-                    "questOrder": best.get("questOrder"),
-                    "mapId": best.get("mapId"),
-                    "scriptId": best.get("scriptId"),
-                    "distanceXZ": best.get("distanceXZ"),
-                    "distance3d": best.get("distance3d"),
-                    "note": "Weak display hint only; subchunks are not quest attachments.",
-                }.items()
-                if value not in (None, "", [], {})
-            }
-        if source_scripts:
-            subchunk["sourceScriptCount"] = len(source_scripts)
-            subchunk["sourceScripts"] = source_scripts[:8]
-        subchunks.append(subchunk)
-
-    return subchunks
-
-
-def enrich_scene_chunks(
-    chunks: list[dict],
-    scene_placement: dict[str, dict],
-    mission_flow: dict | None = None,
-) -> list[dict]:
-    """Add diagnostic quest/source metadata to scene chunks.
-
-    These fields are for analyst display and weak source-file tie-breaks. They
-    do not change the chunk strength or promote LevelScript filename/order
-    hints into authoritative quest chronology.
-    """
-    quest_flow_index_by_id: dict[str, Any] = {}
-    quest_order_by_id: dict[str, int] = {}
-    if isinstance(mission_flow, dict):
-        for index, quest in enumerate(mission_flow.get("quests") or []):
-            if not isinstance(quest, dict):
-                continue
-            quest_id = str(quest.get("id") or "").strip()
-            if quest_id:
-                quest_flow_index_by_id[quest_id] = quest.get("flowIndex", index)
-                quest_order_by_id[quest_id] = index
-
-    enriched: list[dict] = []
-    for chunk in chunks or []:
-        quest_ids: list[str] = []
-        evidence_kinds: list[str] = []
-        timelines: list[str] = []
-        level_ids: list[str] = []
-        source_files: list[str] = []
-        quest_attach_sources: list[dict] = []
-        spatial_candidates: list[dict] = []
-        for scene_key in chunk.get("sceneKeys") or []:
-            row = scene_placement.get(scene_key) or {}
-            for quest_id in row.get("questIds") or []:
-                unique_append(quest_ids, quest_id)
-            for kind in row.get("evidenceKinds") or []:
-                unique_append(evidence_kinds, kind)
-            for timeline in row.get("timelines") or []:
-                unique_append(timelines, timeline)
-            for item in row.get("questAttachSources") or []:
-                if isinstance(item, dict):
-                    compact = {
-                        key: item.get(key)
-                        for key in ("questId", "source", "mapId", "scriptId", "key", "variantMission", "npcProxyId", "dialogId")
-                        if item.get(key) not in (None, "", [], {})
-                    }
-                    if compact:
-                        quest_attach_sources.append(compact)
-            for item in row.get("spatialQuestCandidates") or []:
-                if not isinstance(item, dict):
-                    continue
-                compact = compact_spatial_candidate(item, scene_key)
-                if compact:
-                    spatial_candidates.append(compact)
-            for source_file in scene_placement_source_files(row):
-                append_source_file(source_files, source_file)
-            for edge in [
-                *list(row.get("incomingEdges") or []),
-                *list(row.get("outgoingEdges") or []),
-            ]:
-                if isinstance(edge, dict):
-                    for level_id in edge.get("levelIds") or []:
-                        unique_append(level_ids, level_id)
-
-        source_files = sorted(source_files, key=levelscript_source_sort_key)
-        source_scripts = [
-            script_ref_from_levelscript_source(source_file)
-            for source_file in source_files
-        ]
-        source_scripts = [
-            item for item in source_scripts if item
-        ]
-        source_scripts = unique_dicts(source_scripts, ("mapId", "scriptId", "file"))
-        for item in source_scripts:
-            unique_append(level_ids, item.get("levelId"))
-
-        row = dict(chunk)
-        if quest_ids:
-            row["questIds"] = sorted(quest_ids, key=natural_key)
-        if quest_attach_sources:
-            row["questAttachSources"] = unique_dicts(
-                quest_attach_sources,
-                ("questId", "source", "mapId", "scriptId", "key", "variantMission", "npcProxyId", "dialogId"),
-            )[:12]
-        if spatial_candidates:
-            spatial_candidates = unique_dicts(
-                sorted(
-                    spatial_candidates,
-                    key=lambda item: (
-                        float(item.get("distanceXZ", 10**9)),
-                        float(item.get("yDelta", 10**9)),
-                        natural_key(str(item.get("questId") or "")),
-                        natural_key(str(item.get("scriptId") or "")),
-                        natural_key(str(item.get("sceneKey") or "")),
-                    ),
-                ),
-                ("questId", "mapId", "scriptId", "offset"),
-            )
-            row["spatialQuestCandidates"] = spatial_candidates[:16]
-        if evidence_kinds:
-            row["evidenceKinds"] = sorted(evidence_kinds)
-        if timelines:
-            row["timelines"] = sorted(timelines, key=natural_key)[:12]
-        if level_ids:
-            row["levelIds"] = sorted(level_ids, key=natural_key)
-        if source_files:
-            row["sourceFileCount"] = len(source_files)
-            row["sourceFiles"] = source_files[:16]
-        if source_scripts:
-            row["sourceScriptCount"] = len(source_scripts)
-            row["sourceScripts"] = source_scripts[:16]
-            first_script = source_scripts[0]
-            last_script = source_scripts[-1]
-            row["sourceFileOrderHint"] = {
-                "kind": "levelscriptSourceFile",
-                "strength": "weak",
-                "levelId": first_script.get("levelId"),
-                "mapId": first_script.get("mapId"),
-                "scriptId": first_script.get("scriptId"),
-                "scriptOrder": first_script.get("scriptOrder"),
-                "file": first_script.get("file"),
-                "note": "Diagnostic fallback only; LevelScript filename/source order is not promoted to quest chronology.",
-            }
-            if first_script != last_script:
-                row["sourceFileOrderSpan"] = {
-                    "first": first_script,
-                    "last": last_script,
-                }
-        quest_order_hint = None
-        attached_order_candidates = [
-            (
-                quest_order_by_id.get(str(quest_id), 10**9),
-                quest_flow_index_by_id.get(str(quest_id), 10**9),
-                str(quest_id),
-            )
-            for quest_id in quest_ids
-        ]
-        attached_order_candidates = [
-            item for item in attached_order_candidates if item[0] != 10**9 or item[1] != 10**9
-        ]
-        if attached_order_candidates:
-            quest_order, flow_index, quest_id = sorted(
-                attached_order_candidates,
-                key=lambda item: (
-                    item[0] if isinstance(item[0], (int, float)) else 10**9,
-                    item[1] if isinstance(item[1], (int, float)) else 10**9,
-                    natural_key(item[2]),
-                ),
-            )[0]
-            quest_order_hint = {
-                "kind": "questAttachment",
-                "strength": "quest",
-                "questId": quest_id,
-                "flowIndex": flow_index,
-                "questOrder": quest_order,
-                "note": "Display hint from recovered quest attachment; chunkOrder still uses explicit quest-DAG edges.",
-            }
-        elif spatial_candidates:
-            best_spatial = spatial_candidates[0]
-            quest_order_hint = {
-                "kind": "levelscriptSpatialProximity",
-                "strength": "weak",
-                "questId": best_spatial.get("questId"),
-                "flowIndex": best_spatial.get("flowIndex"),
-                "questOrder": best_spatial.get("questOrder"),
-                "mapId": best_spatial.get("mapId"),
-                "scriptId": best_spatial.get("scriptId"),
-                "distanceXZ": best_spatial.get("distanceXZ"),
-                "distance3d": best_spatial.get("distance3d"),
-                "note": "Weak display hint only; LevelScript vector proximity is not promoted to quest chronology.",
-            }
-        if quest_order_hint:
-            row["questOrderHint"] = {
-                key: value
-                for key, value in quest_order_hint.items()
-                if value not in (None, "", [], {})
-            }
-        subchunks = build_scene_subchunks(row, scene_placement)
-        if subchunks:
-            row["subchunks"] = subchunks
-            row["subchunkCount"] = len(subchunks)
-        enriched.append(row)
-    return enriched
-
-
 def compact_position(value: Any) -> dict | None:
     pos = vector3(value)
     if pos is None:
@@ -2488,48 +1860,26 @@ def compact_flow_script_refs(flow_quest: dict) -> list[dict]:
     return unique_dicts(refs, ("type", "mapId", "scriptId", "key"))
 
 
-def build_scene_subchunk_lookup(chunks: list[dict]) -> dict[str, str]:
-    """Return scene_key -> diagnostic subchunk id for weak chunk splits."""
-    lookup: dict[str, str] = {}
-    for chunk in chunks or []:
-        for subchunk in chunk.get("subchunks") or []:
-            if not isinstance(subchunk, dict):
-                continue
-            subchunk_id = str(subchunk.get("id") or "").strip()
-            if not subchunk_id:
-                continue
-            for scene_key in subchunk.get("sceneKeys") or []:
-                scene_key_str = str(scene_key or "").strip()
-                if scene_key_str:
-                    lookup.setdefault(scene_key_str, subchunk_id)
-    return lookup
-
-
 def build_quest_spatial_track(
     mission_flow: dict | None,
     scene_placement: dict[str, dict],
-    subchunk_by_scene: dict[str, str] | None = None,
 ) -> list[dict]:
     """Build quest-local map/resource diagnostics for visual placement.
 
-    The output intentionally stays separate from ``chunkOrder``: pins,
-    resource lists, and condition metadata help a human compare scene chunks
-    with the quest route, but they are not treated as proof by themselves.
+    Pins, resource lists, condition metadata, and weak spatial matches help a
+    human compare placed scenes with the quest route, but they are not treated
+    as proof by themselves.
     """
     if not isinstance(mission_flow, dict):
         return []
-    chunks_by_quest: dict[str, set[str]] = defaultdict(set)
     scenes_by_quest: dict[str, set[str]] = defaultdict(set)
     spatial_by_quest: dict[str, list[dict]] = defaultdict(list)
     for scene_key, placement in scene_placement.items():
-        chunk_id = str(placement.get("chunkId") or "").strip()
         for quest_id in placement.get("questIds") or []:
             quest_id = str(quest_id or "").strip()
             if not quest_id:
                 continue
             scenes_by_quest[quest_id].add(scene_key)
-            if chunk_id:
-                chunks_by_quest[quest_id].add(chunk_id)
         for candidate in placement.get("spatialQuestCandidates") or []:
             if not isinstance(candidate, dict):
                 continue
@@ -2550,11 +1900,6 @@ def build_quest_spatial_track(
                 if candidate.get(key) not in (None, "", [], {})
             }
             match["sceneKey"] = scene_key
-            if chunk_id:
-                match["chunkId"] = chunk_id
-            subchunk_id = (subchunk_by_scene or {}).get(scene_key)
-            if subchunk_id:
-                match["subchunkId"] = subchunk_id
             if candidate.get("position"):
                 match["position"] = candidate.get("position")
             pin = candidate.get("pin") if isinstance(candidate.get("pin"), dict) else {}
@@ -2607,8 +1952,6 @@ def build_quest_spatial_track(
             ][:8],
             "note": "Map/resource metadata is a diagnostic placement hint, not standalone chronology evidence.",
         }
-        if chunks_by_quest.get(quest_id):
-            row["attachedChunkIds"] = sorted(chunks_by_quest[quest_id], key=natural_key)
         if scenes_by_quest.get(quest_id):
             row["attachedSceneKeys"] = sorted(scenes_by_quest[quest_id], key=natural_key)[:16]
         if spatial_by_quest.get(quest_id):
@@ -2617,12 +1960,11 @@ def build_quest_spatial_track(
                     spatial_by_quest[quest_id],
                     key=lambda item: (
                         float(item.get("distanceXZ", 10**9)),
-                        natural_key(str(item.get("chunkId") or "")),
                         natural_key(str(item.get("sceneKey") or "")),
                         natural_key(str(item.get("scriptId") or "")),
                     ),
                 ),
-                ("sceneKey", "chunkId", "mapId", "scriptId", "offset"),
+                ("sceneKey", "mapId", "scriptId", "offset"),
             )[:16]
         resources = compact_flow_resources(quest)
         if resources:
@@ -2677,357 +2019,6 @@ def build_quest_spatial_track(
             or key in {"questId", "flowIndex", "questOrder"}
         })
     return rows
-
-
-def attach_source_hints_to_quest_tree(
-    quest_tree: dict,
-    quest_spatial_track: list[dict],
-) -> dict:
-    """Mirror quest-local source/spatial diagnostics onto quest-tree nodes.
-
-    These hints are display diagnostics only. They deliberately do not alter
-    quest attachments, scene placement, or chunk-order evidence.
-    """
-    hints_by_quest: dict[str, list[dict]] = defaultdict(list)
-    for row in quest_spatial_track or []:
-        if not isinstance(row, dict):
-            continue
-        quest_id = str(row.get("questId") or "").strip()
-        if not quest_id:
-            continue
-        for script in row.get("scriptRefs") or []:
-            if not isinstance(script, dict):
-                continue
-            hint = {
-                "kind": "scriptCondition",
-                "strength": "quest",
-                "mapId": script.get("mapId") or script.get("levelId"),
-                "levelId": script.get("levelId") or script.get("mapId"),
-                "scriptId": script.get("scriptId"),
-                "key": script.get("key"),
-                "type": script.get("type"),
-            }
-            hint = {
-                key: value
-                for key, value in hint.items()
-                if value not in (None, "", [], {})
-            }
-            if hint.get("mapId") or hint.get("scriptId") or hint.get("key"):
-                hints_by_quest[quest_id].append(hint)
-        for match in row.get("spatialSourceMatches") or []:
-            if not isinstance(match, dict):
-                continue
-            hint = {
-                "kind": "levelscriptSpatialProximity",
-                "strength": "weak",
-                "sceneKey": match.get("sceneKey"),
-                "chunkId": match.get("chunkId"),
-                "subchunkId": match.get("subchunkId"),
-                "mapId": match.get("mapId") or match.get("levelId"),
-                "levelId": match.get("levelId") or match.get("mapId"),
-                "scriptId": match.get("scriptId"),
-                "distanceXZ": match.get("distanceXZ"),
-                "distance3d": match.get("distance3d"),
-                "yDelta": match.get("yDelta"),
-                "offset": match.get("offset"),
-            }
-            hint = {
-                key: value
-                for key, value in hint.items()
-                if value not in (None, "", [], {})
-            }
-            if hint.get("sceneKey") or hint.get("scriptId"):
-                hints_by_quest[quest_id].append(hint)
-
-    for quest_id, hints in list(hints_by_quest.items()):
-        hints_by_quest[quest_id] = unique_dicts(
-            sorted(
-                hints,
-                key=lambda item: (
-                    0 if item.get("kind") == "scriptCondition" else 1,
-                    float(item.get("distanceXZ", 10**9)),
-                    natural_key(str(item.get("subchunkId") or "")),
-                    natural_key(str(item.get("chunkId") or "")),
-                    natural_key(str(item.get("sceneKey") or "")),
-                    natural_key(str(item.get("scriptId") or "")),
-                    str(item.get("key") or ""),
-                ),
-            ),
-            ("kind", "sceneKey", "chunkId", "subchunkId", "mapId", "scriptId", "key", "offset"),
-        )
-
-    hinted_quest_ids: set[str] = set()
-
-    def walk(node: dict) -> None:
-        if not isinstance(node, dict):
-            return
-        quest_id = str(node.get("questId") or "").strip()
-        hints = hints_by_quest.get(quest_id) or []
-        if hints:
-            node["sourceScriptHintCount"] = len(hints)
-            node["sourceScriptHints"] = hints[:16]
-            hinted_quest_ids.add(quest_id)
-        for child in node.get("children") or []:
-            walk(child)
-
-    for root in quest_tree.get("roots") or []:
-        walk(root)
-    for root in quest_tree.get("unrootedRoots") or []:
-        walk(root)
-
-    total_hints = sum(len(hints) for hints in hints_by_quest.values())
-    quest_tree["sourceScriptHintSummary"] = {
-        "questCount": len(hinted_quest_ids),
-        "hintCount": total_hints,
-    }
-    return quest_tree
-
-
-def attach_chunks_to_quest_tree(
-    quest_tree: dict,
-    chunks: list[dict],
-    scene_placement: dict[str, dict],
-    chunk_order: dict | None = None,
-) -> dict:
-    """Annotate every quest-tree node with the chunks attached to its quest.
-
-    A chunk attaches to a quest when at least one of the chunk's scenes lists
-    that quest in ``scenePlacement[<sceneKey>].questIds``. The ordering of
-    chunks within a quest follows the chunk-order topological order when
-    available (Phase 2 quest-DAG resolver), otherwise natural order.
-
-    Also returns the set of chunks not attached to any quest as
-    ``unattachedToQuestChunkIds`` on the returned tree dict.
-    """
-    chunks_by_quest: dict[str, set[str]] = defaultdict(set)
-    quests_by_chunk: dict[str, set[str]] = defaultdict(set)
-    for chunk in chunks or []:
-        chunk_id = str(chunk.get("id") or "")
-        if not chunk_id:
-            continue
-        for scene_key in chunk.get("sceneKeys") or []:
-            for quest_id in (scene_placement.get(scene_key) or {}).get("questIds") or []:
-                quest_id_str = str(quest_id or "").strip()
-                if quest_id_str:
-                    chunks_by_quest[quest_id_str].add(chunk_id)
-                    quests_by_chunk[chunk_id].add(quest_id_str)
-
-    chunk_order_index: dict[str, int] = {}
-    for index, edge in enumerate((chunk_order or {}).get("edges") or []):
-        chunk_order_index.setdefault(str(edge.get("from") or ""), index)
-        chunk_order_index.setdefault(str(edge.get("to") or ""), index + 0.5)
-
-    def sort_chunk_ids(chunk_ids: list[str]) -> list[str]:
-        return sorted(
-            chunk_ids,
-            key=lambda cid: (
-                chunk_order_index.get(cid, float("inf")),
-                natural_key(cid),
-            ),
-        )
-
-    def walk(node: dict) -> None:
-        if not isinstance(node, dict):
-            return
-        quest_id = str(node.get("questId") or "")
-        attached = sorted(chunks_by_quest.get(quest_id, set()), key=natural_key)
-        if attached:
-            node["attachedChunkIds"] = sort_chunk_ids(attached)
-        for child in node.get("children") or []:
-            walk(child)
-
-    for root in quest_tree.get("roots") or []:
-        walk(root)
-    for root in quest_tree.get("unrootedRoots") or []:
-        walk(root)
-
-    attached_chunk_ids = set(quests_by_chunk.keys())
-    all_chunk_ids = [str(chunk.get("id") or "") for chunk in chunks or [] if chunk.get("id")]
-    unattached = [cid for cid in all_chunk_ids if cid not in attached_chunk_ids]
-    quest_tree["unattachedToQuestChunkIds"] = sort_chunk_ids(unattached)
-    quest_tree["chunkAttachmentSummary"] = {
-        "attachedChunkCount": len(attached_chunk_ids),
-        "unattachedChunkCount": len(unattached),
-        "questsWithChunkCount": len(chunks_by_quest),
-    }
-    return quest_tree
-
-
-def _quest_descendants(quest_edges: list[dict]) -> dict[str, set[str]]:
-    """Return quest_id -> set of quest_ids reachable as later quests in the DAG.
-
-    Quest edges use kind='questPrev' with from=predecessor, to=successor — the
-    same direction as chronology. Reachability is exclusive of the source
-    quest itself; cycles (very rare but they exist) terminate via the visited
-    set.
-    """
-    succ: dict[str, set[str]] = defaultdict(set)
-    nodes: set[str] = set()
-    for edge in quest_edges or []:
-        if not isinstance(edge, dict):
-            continue
-        if edge.get("kind") != "questPrev":
-            continue
-        from_id = str(edge.get("from") or "").strip()
-        to_id = str(edge.get("to") or "").strip()
-        if not from_id or not to_id:
-            continue
-        succ[from_id].add(to_id)
-        nodes.add(from_id)
-        nodes.add(to_id)
-
-    descendants: dict[str, set[str]] = {}
-
-    def visit(start: str) -> set[str]:
-        if start in descendants:
-            return descendants[start]
-        seen: set[str] = set()
-        stack = [start]
-        while stack:
-            current = stack.pop()
-            for child in succ.get(current, ()):
-                if child in seen or child == start:
-                    continue
-                seen.add(child)
-                stack.append(child)
-        descendants[start] = seen
-        return seen
-
-    for node in nodes:
-        visit(node)
-    return descendants
-
-
-def build_chunk_order(
-    chunks: list[dict],
-    scene_placement: dict[str, dict],
-    quest_edges: list[dict],
-) -> dict:
-    """Recover directed cross-chunk order from quest-DAG attachments.
-
-    Scene-to-quest attachments come from `scenePlacement[<sceneKey>].questIds`,
-    which is populated by `build_scene_placement_index` from
-    MissionRuntimeAsset quest `storyRefs` and client-action `storyRefs`. A
-    chunk's `attachedQuests` is the union of its scenes' quest attachments.
-
-    Emit X → Y when:
-
-    1. Both X and Y have non-empty quest attachments.
-    2. Their quest sets are disjoint.
-    3. Every quest qY in Y is a strict descendant of every quest qX in X in
-       the quest DAG (built from `questEdges` of kind ``questPrev``).
-
-    After collecting all such pairs, run transitive reduction so the output
-    is minimal (X→Y is dropped when there exists Z with X→Z and Z→Y in the
-    edge set).
-
-    Pairs that share a quest go under ``parallel`` (co-quest, not orderable
-    by this signal). Pairs with disjoint quests but no provable ordering go
-    under ``incomparable`` — typical of quest branches or scenes attached to
-    different branches of a fork.
-
-    Returns a dict with keys:
-        edges: list of {from, to, kind, fromQuests, toQuests, transitiveOnly}
-        parallel: list of [chunkA, chunkB]  # share ≥ 1 quest
-        incomparable: list of [chunkA, chunkB]  # disjoint, no order
-        unattachedChunkIds: list of chunk ids with no quest attachments
-        attachedQuestsByChunk: dict chunkId -> sorted quest_id list
-    """
-    descendants = _quest_descendants(quest_edges)
-    chunk_quests: dict[str, set[str]] = {}
-    for chunk in chunks:
-        chunk_id = str(chunk.get("id") or "")
-        attached: set[str] = set()
-        for scene_key in chunk.get("sceneKeys") or []:
-            for quest_id in (scene_placement.get(scene_key) or {}).get("questIds") or []:
-                quest_id_str = str(quest_id or "").strip()
-                if quest_id_str:
-                    attached.add(quest_id_str)
-        chunk_quests[chunk_id] = attached
-
-    attached_ids = [cid for cid, quests in chunk_quests.items() if quests]
-    unattached_ids = [cid for cid, quests in chunk_quests.items() if not quests]
-
-    parallel_pairs: list[tuple[str, str]] = []
-    incomparable_pairs: list[tuple[str, str]] = []
-    raw_edges: dict[tuple[str, str], dict] = {}
-
-    def chunk_descendants(quests: set[str]) -> set[str]:
-        result: set[str] = set()
-        for q in quests:
-            result |= descendants.get(q, set())
-        return result
-
-    for i, chunk_a in enumerate(attached_ids):
-        quests_a = chunk_quests[chunk_a]
-        desc_a = chunk_descendants(quests_a)
-        for chunk_b in attached_ids[i + 1 :]:
-            quests_b = chunk_quests[chunk_b]
-            if quests_a & quests_b:
-                parallel_pairs.append((chunk_a, chunk_b))
-                continue
-            desc_b = chunk_descendants(quests_b)
-            # X strictly precedes Y when every quest in Y is reachable from
-            # every quest in X via questPrev edges.
-            a_precedes_b = all(quest in desc_a for quest in quests_b)
-            b_precedes_a = all(quest in desc_b for quest in quests_a)
-            if a_precedes_b and not b_precedes_a:
-                raw_edges[(chunk_a, chunk_b)] = {
-                    "from": chunk_a,
-                    "to": chunk_b,
-                    "kind": "questDag",
-                    "fromQuests": sorted(quests_a, key=natural_key),
-                    "toQuests": sorted(quests_b, key=natural_key),
-                }
-            elif b_precedes_a and not a_precedes_b:
-                raw_edges[(chunk_b, chunk_a)] = {
-                    "from": chunk_b,
-                    "to": chunk_a,
-                    "kind": "questDag",
-                    "fromQuests": sorted(quests_b, key=natural_key),
-                    "toQuests": sorted(quests_a, key=natural_key),
-                }
-            else:
-                incomparable_pairs.append((chunk_a, chunk_b))
-
-    # Transitive reduction. We only know edges between attached chunks, all
-    # marked as questDag. Drop X→Y when X→Z and Z→Y are both present.
-    successors_by_chunk: dict[str, set[str]] = defaultdict(set)
-    for (src, dst) in raw_edges:
-        successors_by_chunk[src].add(dst)
-    transitive_to_drop: set[tuple[str, str]] = set()
-    for (src, dst) in raw_edges:
-        for mid in successors_by_chunk[src]:
-            if mid == dst:
-                continue
-            if dst in successors_by_chunk[mid]:
-                transitive_to_drop.add((src, dst))
-                break
-
-    final_edges: list[dict] = []
-    for key, edge in raw_edges.items():
-        if key in transitive_to_drop:
-            continue
-        final_edges.append(edge)
-    final_edges.sort(key=lambda item: (natural_key(item["from"]), natural_key(item["to"])))
-
-    parallel_pairs = [tuple(sorted(pair, key=natural_key)) for pair in parallel_pairs]
-    incomparable_pairs = [tuple(sorted(pair, key=natural_key)) for pair in incomparable_pairs]
-    parallel_pairs = sorted(set(parallel_pairs))
-    incomparable_pairs = sorted(set(incomparable_pairs))
-
-    return {
-        "edges": final_edges,
-        "parallel": [list(pair) for pair in parallel_pairs],
-        "incomparable": [list(pair) for pair in incomparable_pairs],
-        "unattachedChunkIds": sorted(unattached_ids, key=natural_key),
-        "attachedQuestsByChunk": {
-            cid: sorted(quests, key=natural_key)
-            for cid, quests in chunk_quests.items()
-            if quests
-        },
-        "evidencePolicy": "questDag-only; chunks with no MissionRuntime storyRefs are unattached",
-    }
 
 
 def source_backed_story_call_contexts_from_scene_graph(
@@ -3343,56 +2334,6 @@ def load_source_backed_story_call_contexts(mission_id: str, generated_mission_di
     )
 
 
-def load_variant_quest_edges(host_mra_path: Path, mission_flow: dict | None) -> list[dict]:
-    """Load questPrev edges from the host mission's variant MissionRuntime peers.
-
-    When a mission borrows another mission's quest graph (recorded in
-    ``flow.sceneGraphVariantMissions``), this helper reads each variant's MRA
-    file and emits its ``prevQuestIdList`` edges in the same format as
-    build_quest_edges. The host's chunk-order resolver can then order chunks
-    that attach to variant quests.
-    """
-    if not isinstance(mission_flow, dict):
-        return []
-    variant_missions = [
-        str(value).strip()
-        for value in mission_flow.get("sceneGraphVariantMissions") or []
-        if str(value or "").strip()
-    ]
-    if not variant_missions:
-        return []
-    mra_dir = host_mra_path.parent
-    edges: list[dict] = []
-    for variant_mission_id in variant_missions:
-        variant_path = mra_dir / f"{variant_mission_id}.json"
-        if not variant_path.exists():
-            continue
-        try:
-            variant_raw = load_json(variant_path)
-        except (OSError, json.JSONDecodeError):
-            continue
-        quest_dic = variant_raw.get("questDic") or {}
-        if not isinstance(quest_dic, dict):
-            continue
-        for quest_id, raw_quest in quest_dic.items():
-            if not isinstance(raw_quest, dict):
-                continue
-            for prev in raw_quest.get("prevQuestIdList") or []:
-                if not isinstance(prev, str) or not prev:
-                    continue
-                edges.append({
-                    "from": prev,
-                    "to": quest_id,
-                    "kind": "questPrev",
-                    "source": source_ref(
-                        variant_path,
-                        f"questDic.{quest_id}.prevQuestIdList",
-                    ),
-                    "variantMission": variant_mission_id,
-                })
-    return edges
-
-
 def load_mission_flow(mission_id: str, generated_mission_dir: Path | None) -> dict | None:
     """Load the WebUI builder's per-mission flow payload, if available."""
     if not generated_mission_dir:
@@ -3486,8 +2427,8 @@ def attach_npc_proxy_dialog_quests(
 
     The WebUI builder collects ``flow.quests[*].proxyDialogs[*]`` records
     that bind an NPC proxy to a dialog scene key for a given quest. The
-    attached scene gets the quest id so chunk-order recovery and the task
-    tree can use the relationship.
+    attached scene gets the quest id so scene placement and the quest map
+    track can use the relationship.
     """
     attached: list[dict] = []
     if not isinstance(mission_flow, dict):
@@ -3612,10 +2553,9 @@ def attach_script_condition_quests(
     "scoped" attach policy that avoids letting shared LevelScripts pull a
     scene into multiple missions' quest hierarchies.
 
-    Each attachment is recorded both on the placement row's ``questIds`` (so
-    Phase 2 chunk-order recovery sees it) and on its ``questAttachSources``
-    diagnostic for traceability. Returns the list of attached records for
-    auditing.
+    Each attachment is recorded both on the placement row's ``questIds`` and
+    on its ``questAttachSources`` diagnostic for traceability. Returns the
+    list of attached records for auditing.
     """
     attached: list[dict] = []
     if not conditions or not story_keys_map:
@@ -3783,27 +2723,7 @@ def recover_mission(
         scene_placement,
         mission_flow,
     )
-    # When variant missions contribute quest attachments, pull their quest
-    # prev-edges in too so build_chunk_order can order cross-mission chunks.
-    variant_quest_edges = load_variant_quest_edges(path, mission_flow)
-    extended_quest_edges = quest_edges + variant_quest_edges
-    chunks, chunk_by_scene_key = build_scene_chunks(
-        scene_placement,
-        scene_edges,
-        scene_sequences,
-        timeline_evidence,
-    )
-    for scene_key, chunk_id in chunk_by_scene_key.items():
-        placement_row = scene_placement.get(scene_key)
-        if placement_row is not None:
-            placement_row["chunkId"] = chunk_id
-    chunks = enrich_scene_chunks(chunks, scene_placement, mission_flow)
-    subchunk_by_scene = build_scene_subchunk_lookup(chunks)
-    chunk_order = build_chunk_order(chunks, scene_placement, extended_quest_edges)
-    quest_spatial_track = build_quest_spatial_track(mission_flow, scene_placement, subchunk_by_scene)
-    quest_tree = build_quest_tree(quests, quest_edges)
-    attach_chunks_to_quest_tree(quest_tree, chunks, scene_placement, chunk_order)
-    attach_source_hints_to_quest_tree(quest_tree, quest_spatial_track)
+    quest_spatial_track = build_quest_spatial_track(mission_flow, scene_placement)
     payload = {
         "mission": mission_id,
         "metadata": metadata,
@@ -3812,7 +2732,6 @@ def recover_mission(
         "entryQuestIds": entry_quests,
         "quests": quests,
         "questEdges": quest_edges,
-        "questTree": quest_tree,
         "branchPoints": build_branch_points(quest_edges, quests_by_id),
         "sourceBackedSceneEdges": scene_edges,
         "sourceBackedSceneSequences": scene_sequences,
@@ -3821,8 +2740,6 @@ def recover_mission(
         "referencedScenes": referenced_scenes,
         "sceneTimelineEvidence": timeline_evidence,
         "scenePlacement": scene_placement,
-        "chunks": chunks,
-        "chunkOrder": chunk_order,
         "questSpatialTrack": quest_spatial_track,
         "scriptConditionAttachments": script_condition_attachments,
         "variantMissionRuntimeAttachments": variant_mr_attachments,
@@ -4005,8 +2922,6 @@ def summarize(
     missions_with_scene_sequences = 0
     missions_with_story_call_contexts = 0
     missions_with_hash_terminals = 0
-    missions_with_quest_loops = 0
-    quest_loop_count = 0
     scene_edge_counter: Counter = Counter()
     scene_sequence_total = 0
     story_call_context_total = 0
@@ -4014,22 +2929,6 @@ def summarize(
     hash_terminal_catalog = build_hash_terminal_catalog(recovered)
     scene_placement_counter: Counter = Counter()
     scene_placement_total = 0
-    chunk_total = 0
-    chunk_singleton_total = 0
-    chunk_isolated_total = 0
-    chunk_size_max = 0
-    chunk_edge_kind_counter: Counter = Counter()
-    chunk_strength_counter: Counter = Counter()
-    chunk_with_subchunks_total = 0
-    subchunk_total = 0
-    missions_with_chunks = 0
-    missions_with_multichunk = 0
-    chunk_order_edge_total = 0
-    chunk_order_parallel_total = 0
-    chunk_order_incomparable_total = 0
-    missions_with_chunk_order = 0
-    missions_fully_ordered_attached = 0
-    missions_partially_ordered_attached = 0
     missions_with_levelscript_spatial = 0
     levelscript_spatial_match_total = 0
     for mission in recovered:
@@ -4048,10 +2947,6 @@ def summarize(
         if mission.get("sourceBackedHashTerminals"):
             missions_with_hash_terminals += 1
             hash_terminal_total += len(mission.get("sourceBackedHashTerminals") or [])
-        loops = ((mission.get("questTree") or {}).get("loops") or [])
-        if loops:
-            missions_with_quest_loops += 1
-            quest_loop_count += len(loops)
         for edge in mission.get("sourceBackedSceneEdges") or []:
             scene_edge_counter[edge.get("kind") or "edge"] += 1
         scene_placement_total += len(mission.get("scenePlacement") or {})
@@ -4062,40 +2957,6 @@ def summarize(
         if spatial_matches:
             missions_with_levelscript_spatial += 1
             levelscript_spatial_match_total += len(spatial_matches)
-        mission_chunks = mission.get("chunks") or []
-        if mission_chunks:
-            missions_with_chunks += 1
-            chunk_total += len(mission_chunks)
-            multichunk = [chunk for chunk in mission_chunks if chunk.get("sceneCount", 0) >= 2]
-            if len(multichunk) >= 2 or (len(multichunk) >= 1 and len(mission_chunks) > 1):
-                missions_with_multichunk += 1
-            for chunk in mission_chunks:
-                size = int(chunk.get("sceneCount") or 0)
-                if size > chunk_size_max:
-                    chunk_size_max = size
-                if size <= 1:
-                    chunk_singleton_total += 1
-                if chunk.get("isolated"):
-                    chunk_isolated_total += 1
-                chunk_strength_counter[str(chunk.get("strength") or "unanchored")] += 1
-                subchunks = chunk.get("subchunks") or []
-                if subchunks:
-                    chunk_with_subchunks_total += 1
-                    subchunk_total += len(subchunks)
-                for kind in chunk.get("edgeKinds") or []:
-                    chunk_edge_kind_counter[kind] += 1
-        chunk_order = mission.get("chunkOrder") or {}
-        edges = chunk_order.get("edges") or []
-        attached_chunks = chunk_order.get("attachedQuestsByChunk") or {}
-        if edges:
-            chunk_order_edge_total += len(edges)
-            missions_with_chunk_order += 1
-        chunk_order_parallel_total += len(chunk_order.get("parallel") or [])
-        chunk_order_incomparable_total += len(chunk_order.get("incomparable") or [])
-        if attached_chunks and not (chunk_order.get("incomparable") or []) and not (chunk_order.get("parallel") or []):
-            missions_fully_ordered_attached += 1
-        elif edges:
-            missions_partially_ordered_attached += 1
         for item in mission.get("unresolved") or []:
             unresolved_counter[item.get("kind") or "unknown"] += 1
         for quest in mission.get("quests") or []:
@@ -4112,8 +2973,6 @@ def summarize(
         "missionCount": len(recovered),
         "questCount": sum(len(mission.get("quests") or []) for mission in recovered),
         "missionWithBranchPoints": missions_with_branches,
-        "missionsWithQuestTreeLoops": missions_with_quest_loops,
-        "questTreeLoops": quest_loop_count,
         "missionsWithDialogTimelineEvidence": missions_with_timeline,
         "missionsWithSourceBackedSceneEdges": missions_with_scene_edges,
         "missionsWithSourceBackedSceneSequences": missions_with_scene_sequences,
@@ -4126,22 +2985,6 @@ def summarize(
         "sourceBackedHashTerminalExceptionCount": hash_terminal_catalog.get("exceptionCount", 0),
         "hashTerminalCatalog": hash_terminal_catalog,
         "scenePlacementEntries": scene_placement_total,
-        "missionsWithChunks": missions_with_chunks,
-        "missionsWithMultiChunkLayout": missions_with_multichunk,
-        "chunkCount": chunk_total,
-        "chunkSingletonCount": chunk_singleton_total,
-        "chunkIsolatedCount": chunk_isolated_total,
-        "chunkMaxSceneCount": chunk_size_max,
-        "chunkEdgeKindCounts": dict(chunk_edge_kind_counter.most_common()),
-        "chunkStrengthCounts": dict(chunk_strength_counter.most_common()),
-        "chunksWithSubchunks": chunk_with_subchunks_total,
-        "subchunkCount": subchunk_total,
-        "missionsWithChunkOrder": missions_with_chunk_order,
-        "missionsFullyOrderedByQuestAttach": missions_fully_ordered_attached,
-        "missionsPartiallyOrderedByQuestAttach": missions_partially_ordered_attached,
-        "chunkOrderEdges": chunk_order_edge_total,
-        "chunkOrderParallelPairs": chunk_order_parallel_total,
-        "chunkOrderIncomparablePairs": chunk_order_incomparable_total,
         "missionsWithLevelscriptSpatialProximity": missions_with_levelscript_spatial,
         "levelscriptSpatialProximityMatches": levelscript_spatial_match_total,
         "timelineEvidence": timeline_meta,
@@ -4166,7 +3009,6 @@ def render_markdown(payload: dict) -> str:
         f"- missions: `{summary['missionCount']}`",
         f"- quests: `{summary['questCount']}`",
         f"- missions with branch points: `{summary['missionWithBranchPoints']}`",
-        f"- missions with quest-tree loops: `{summary.get('missionsWithQuestTreeLoops', 0)}`",
         f"- missions with dialog timeline evidence: `{summary['missionsWithDialogTimelineEvidence']}`",
         f"- missions with source-backed scene edges: `{summary['missionsWithSourceBackedSceneEdges']}`",
         f"- missions with source-backed scene sequences: `{summary.get('missionsWithSourceBackedSceneSequences', 0)}`",
@@ -4178,18 +3020,6 @@ def render_markdown(payload: dict) -> str:
         f"- unique source-backed terminal hashes: `{summary.get('sourceBackedHashTerminalUniqueHashes', 0)}`",
         f"- hash-terminal pattern exceptions: `{summary.get('sourceBackedHashTerminalExceptionCount', 0)}`",
         f"- scene placement entries: `{summary.get('scenePlacementEntries', 0)}`",
-        f"- missions with chunks: `{summary.get('missionsWithChunks', 0)}`",
-        f"- missions with multi-chunk layout: `{summary.get('missionsWithMultiChunkLayout', 0)}`",
-        f"- chunks total: `{summary.get('chunkCount', 0)}` "
-        f"(singletons `{summary.get('chunkSingletonCount', 0)}`, "
-        f"isolated `{summary.get('chunkIsolatedCount', 0)}`, "
-        f"max scenes/chunk `{summary.get('chunkMaxSceneCount', 0)}`)",
-        f"- diagnostic subchunks: `{summary.get('subchunkCount', 0)}` "
-        f"inside `{summary.get('chunksWithSubchunks', 0)}` weak chunks",
-        f"- chunk-order edges (questDag): `{summary.get('chunkOrderEdges', 0)}` "
-        f"across `{summary.get('missionsWithChunkOrder', 0)}` missions; "
-        f"parallel pairs `{summary.get('chunkOrderParallelPairs', 0)}`, "
-        f"incomparable pairs `{summary.get('chunkOrderIncomparablePairs', 0)}`",
         f"- LevelScript spatial proximity matches (weak): "
         f"`{summary.get('levelscriptSpatialProximityMatches', 0)}` "
         f"across `{summary.get('missionsWithLevelscriptSpatialProximity', 0)}` missions",

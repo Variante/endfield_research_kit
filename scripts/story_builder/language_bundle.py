@@ -24,41 +24,11 @@ _FMV_CLIP_BY_KEY_REPORT_PATH = (
     / "reports" / "playable_director" / "fmv_clip_by_webui_key.json"
 )
 
-_MANUAL_OPTION_OVERRIDES_PATH = (
-    _RadioContPath(__file__).resolve().parent / "manual_option_overrides.json"
-)
-
-
-@_radio_cont_lru_cache(maxsize=2)
-def _load_manual_option_overrides(path_str: str) -> dict:
-    path = _RadioContPath(path_str)
-    if not path.is_file():
-        return {}
-    try:
-        data = _radio_cont_json.loads(path.read_text(encoding="utf-8-sig"))
-    except (_radio_cont_json.JSONDecodeError, OSError) as exc:
-        print(f"[story] warning: failed to read manual option overrides {path}: {exc}")
-        return {}
-    if not isinstance(data, dict):
-        print(f"[story] warning: manual option overrides must be a JSON object: {path}")
-        return {}
-    scenes = data.get("scenes")
-    return scenes if isinstance(scenes, dict) else {}
-
-
 def _manual_option_group_override(conv_key: str, group_id: int) -> dict:
-    scenes = _load_manual_option_overrides(str(_MANUAL_OPTION_OVERRIDES_PATH))
-    key = str(conv_key or "")
-    scene = scenes.get(key)
-    if not isinstance(scene, dict) and key.startswith("dlg_"):
-        scene = scenes.get(f"misc_{key}")
-    if not isinstance(scene, dict):
-        return {}
-    groups = scene.get("groups")
-    if not isinstance(groups, dict):
-        return {}
-    group = groups.get(str(group_id))
-    return group if isinstance(group, dict) else {}
+    # Runtime WebUI overrides now live in webui/overrides/options.json
+    # and are applied by webui/app.js so users can edit them without rebuilding
+    # generated conversation JSON.
+    return {}
 
 
 @_radio_cont_lru_cache(maxsize=2)
@@ -4724,6 +4694,50 @@ def build_language_bundle(
             entry["x"] = search_text
         index_entries.append(entry)
 
+    remotecomm_video_owner_by_stem: dict[str, str] = {}
+    remotecomm_expected_video_stems_by_key: dict[str, list[str]] = {}
+    remotecomm_video_timeline_by_key: dict[str, list[dict]] = {}
+    remotecomm_available_video_stems = {
+        str(ref.get("baseStem") or ref.get("stem") or "").strip().lower()
+        for ref in narrative_video_assets
+        if ref.get("kind") == "remotecomm" and (ref.get("baseStem") or ref.get("stem"))
+    }
+    audio_dialog_duration_by_stem: dict[str, dict] = {}
+    for audio_row in audio_dialog.values():
+        if not isinstance(audio_row, dict):
+            continue
+        audio_path = str(audio_row.get("path") or "").replace("\\", "/")
+        if not audio_path:
+            continue
+        audio_stem = re.sub(r"\.[^.]+$", "", audio_path.rsplit("/", 1)[-1], flags=re.IGNORECASE).lower()
+        if audio_stem:
+            audio_dialog_duration_by_stem[audio_stem] = audio_row
+
+    def remotecomm_video_stem_from_middle_id(middle_id: object) -> str:
+        value = str(middle_id or "").strip().replace("\\", "/")
+        if not value:
+            return ""
+        stem = value.rsplit("/", 1)[-1].lower()
+        if stem in remotecomm_available_video_stems:
+            return stem
+        return ""
+
+    def remotecomm_voice_duration(voice_id: object) -> float | None:
+        row = audio_dialog_duration_by_stem.get(str(voice_id or "").strip().lower())
+        if not row:
+            return None
+        duration_keys: list[str] = []
+        if language_code and language_code != "CN":
+            duration_keys.append(f"wavDuration{language_code}")
+        duration_keys.append("wavDuration")
+        if language_code:
+            duration_keys.append(f"wavDuration{language_code}")
+        for key in _unique_preserve(duration_keys):
+            value = row.get(key)
+            if isinstance(value, (int, float)) and value >= 0:
+                return float(value)
+        return None
+
     remote_rows: list[dict] = []
     for remote_id, remote_entry in remote_common.items():
         m = REMOTECOMM_RE.match(remote_id)
@@ -4734,7 +4748,25 @@ def build_language_bundle(
         type_, act = parse_mission(mission)
         lines = []
         actors: set[str] = set()
+        audio_events: list[str] = []
+        expected_video_stems: list[str] = []
+        line_video_timing: list[dict] = []
+        elapsed_time: float | None = 0.0
         prev_text = ""
+
+        def add_audio_event(value: object) -> None:
+            event_id = str(value or "").strip()
+            if not event_id:
+                return
+            if event_id not in audio_events:
+                audio_events.append(event_id)
+
+        def add_expected_video_stem(video_stem: str) -> None:
+            if not video_stem:
+                return
+            if video_stem not in expected_video_stems:
+                expected_video_stems.append(video_stem)
+            remotecomm_video_owner_by_stem.setdefault(video_stem, remote_id)
 
         for item in sorted(
             remote_entry.get("remoteCommSingleDataList", []) or [],
@@ -4745,6 +4777,34 @@ def build_language_bundle(
             actor = t(item.get("actorName", {}).get("id"))
             text = t(item.get("remoteCommText", {}).get("id"))
             hint = t(item.get("hint", {}).get("id"))
+            audio_id = str(item.get("audioId") or "").strip()
+            music_id = str(item.get("musicId") or "").strip()
+            voice_id = str(item.get("voiceId") or "").strip()
+            video_stem = remotecomm_video_stem_from_middle_id(actor_id)
+            add_expected_video_stem(video_stem)
+            add_audio_event(audio_id)
+            add_audio_event(music_id)
+            voice_duration = remotecomm_voice_duration(voice_id)
+            line_start = elapsed_time
+            line_duration = (voice_duration + 1.0) if voice_duration is not None else None
+            line_end = (
+                line_start + line_duration
+                if line_start is not None and line_duration is not None
+                else None
+            )
+            line_video_timing.append({
+                "lineId": str(item.get("singleId") or remote_id),
+                "index": item.get("index"),
+                "middleId": actor_id,
+                "videoStem": video_stem,
+                "audioEvent": audio_id,
+                "voiceId": voice_id,
+                "voiceDuration": voice_duration,
+                "lineStart": line_start,
+                "lineEnd": line_end,
+                "isVideoLoop": bool(item.get("isVideoLoop")),
+            })
+            elapsed_time = line_end
             if actor_id:
                 actors.add(actor_id)
             lines.append({
@@ -4754,8 +4814,8 @@ def build_language_bundle(
                 "actor": actor,
                 "text": text,
                 "hint": hint,
-                "audio": item.get("audioId") or "",
-                "voice": item.get("voiceId") or "",
+                "audio": audio_id,
+                "voice": voice_id,
                 "_debug": {
                     **source_ref(
                         "RemoteCommonTable.remoteCommSingleDataList",
@@ -4801,6 +4861,58 @@ def build_language_bundle(
             })
             if not prev_text and text:
                 prev_text = text
+        add_audio_event(remote_entry.get("startAudioEvent"))
+        add_audio_event(remote_entry.get("endAudioEvent"))
+        if expected_video_stems:
+            remotecomm_expected_video_stems_by_key[remote_id] = expected_video_stems
+
+        video_segments: list[dict] = []
+        current_segment: dict | None = None
+        for timing in line_video_timing:
+            video_stem = str(timing.get("videoStem") or "")
+            if not video_stem:
+                if current_segment is not None:
+                    video_segments.append(current_segment)
+                    current_segment = None
+                continue
+            if current_segment is None or current_segment.get("videoStem") != video_stem:
+                if current_segment is not None:
+                    video_segments.append(current_segment)
+                current_segment = {
+                    "videoStem": video_stem,
+                    "middleId": str(timing.get("middleId") or ""),
+                    "startLine": str(timing.get("lineId") or ""),
+                    "endLine": str(timing.get("lineId") or ""),
+                    "startIndex": timing.get("index"),
+                    "endIndex": timing.get("index"),
+                    "startTime": timing.get("lineStart"),
+                    "endTime": timing.get("lineEnd"),
+                    "lineIds": [],
+                    "audioEvents": [],
+                    "isVideoLoop": bool(timing.get("isVideoLoop")),
+                    "timingBasis": "RemoteComm auto advance uses voice wavDuration + 1s per line",
+                }
+            current_segment["endLine"] = str(timing.get("lineId") or "")
+            current_segment["endIndex"] = timing.get("index")
+            current_segment["endTime"] = timing.get("lineEnd")
+            current_segment["lineIds"].append(str(timing.get("lineId") or ""))
+            if timing.get("audioEvent") and timing.get("audioEvent") not in current_segment["audioEvents"]:
+                current_segment["audioEvents"].append(str(timing["audioEvent"]))
+            if timing.get("lineStart") is not None and current_segment.get("startTime") is None:
+                current_segment["startTime"] = timing.get("lineStart")
+            if timing.get("lineEnd") is not None:
+                current_segment["endTime"] = timing.get("lineEnd")
+        if current_segment is not None:
+            video_segments.append(current_segment)
+        for segment in video_segments:
+            if isinstance(segment.get("startTime"), (int, float)):
+                segment["startTime"] = round(float(segment["startTime"]), 6)
+            if isinstance(segment.get("endTime"), (int, float)):
+                segment["endTime"] = round(float(segment["endTime"]), 6)
+            if isinstance(segment.get("startTime"), (int, float)) and isinstance(segment.get("endTime"), (int, float)):
+                segment["duration"] = round(float(segment["endTime"]) - float(segment["startTime"]), 6)
+        if video_segments:
+            remotecomm_video_timeline_by_key[remote_id] = video_segments
 
         remote_rows.append({
             "key": remote_id,
@@ -4810,6 +4922,9 @@ def build_language_bundle(
             "act": act,
             "actors": sorted(actors),
             "lines": lines,
+            "audioEvents": audio_events,
+            "expectedVideoStems": expected_video_stems,
+            "videoTimeline": video_segments,
             "preview": prev_text,
             "source": remote_entry,
         })
@@ -4835,11 +4950,41 @@ def build_language_bundle(
                 "source": source_ref(
                     "RemoteCommonTable",
                     remote["key"],
-                    pick_fields(remote["source"], "autoPlay", "endAudioEvent", "remoteCommSingleDataList"),
+                    pick_fields(remote["source"], "autoPlay", "startAudioEvent", "endAudioEvent", "remoteCommSingleDataList"),
                 ),
                 "title": mission_name_trace(remote["mission"]),
             },
         }
+        if remote["audioEvents"]:
+            payload["audioEvents"] = list(remote["audioEvents"])
+            payload["_debug"]["audioEvents"] = {
+                "source": {
+                    "table": "RemoteCommonTable",
+                    "rowId": remote["key"],
+                    "fields": ["startAudioEvent", "endAudioEvent", "remoteCommSingleDataList.audioId", "remoteCommSingleDataList.musicId"],
+                    "values": list(remote["audioEvents"]),
+                },
+            }
+        if remote["expectedVideoStems"]:
+            payload["_debug"]["remotecommVideos"] = {
+                "source": {
+                    "table": "RemoteCommonTable.remoteCommSingleDataList",
+                    "rowId": remote["key"],
+                    "evidence": "middleId video lookup: Narrative/RemoteComm/{middleId}",
+                    "expectedVideoStems": list(remote["expectedVideoStems"]),
+                },
+            }
+        if remote["videoTimeline"]:
+            payload["remotecommVideoTimeline"] = list(remote["videoTimeline"])
+            payload["_debug"].setdefault("remotecommVideos", {
+                "source": {
+                    "table": "RemoteCommonTable.remoteCommSingleDataList",
+                    "rowId": remote["key"],
+                    "evidence": "middleId video lookup: Narrative/RemoteComm/{middleId}",
+                    "expectedVideoStems": list(remote["expectedVideoStems"]),
+                },
+            })
+            payload["_debug"]["remotecommVideos"]["source"]["timeline"] = list(remote["videoTimeline"])
         write_conv_payload(remote["key"], payload)
         remotecomm_out_keys.add(remote["key"])
 
@@ -5395,10 +5540,178 @@ def build_language_bundle(
             },
         )
 
+    def story_source_backed_cutscene_keys() -> set[str]:
+        backed: set[str] = set()
+        for raw_key in story_source_links:
+            key = str(raw_key or "").strip()
+            if not key:
+                continue
+            candidates = [key]
+            if key.endswith("_start"):
+                candidates.append(key.removesuffix("_start"))
+            for candidate in candidates:
+                canonical = _canonical_cutscene_key(candidate)
+                if canonical:
+                    backed.add(canonical)
+        return backed
+
+    def narrative_video_backed_cutscene_keys() -> set[str]:
+        """Return cutscene keys whose text-only file has video evidence.
+
+        Dialog-bound FMVs often carry names such as `cs_video_dlg_e0m2_5`.
+        Those should attach to the dialog, not promote a sibling
+        `cutscene_e0m2_5` TextTable group. Keep a text-only cutscene only when
+        the video does not already resolve to a previously written story key.
+        """
+        existing_story_keys = {
+            str(entry.get("k") or "")
+            for entry in index_entries
+            if entry.get("k")
+        }
+        backed: set[str] = set()
+        for ref in narrative_video_assets:
+            if ref.get("kind") != "cutscene":
+                continue
+            authoritative_keys = [
+                str(candidate or "").strip()
+                for candidate in (ref.get("authoritativeKeys") or [])
+                if str(candidate or "").strip()
+            ]
+            if authoritative_keys:
+                if any(candidate in existing_story_keys for candidate in authoritative_keys):
+                    continue
+                candidates = authoritative_keys
+            else:
+                candidates = [
+                    str(candidate or "").strip()
+                    for candidate in (ref.get("keyCandidates") or [])
+                    if str(candidate or "").strip()
+                ]
+            for candidate in candidates:
+                canonical = _canonical_cutscene_key(candidate)
+                if canonical:
+                    backed.add(canonical)
+        return backed
+
+    def cutscene_text_fingerprint(lines: list[dict]) -> tuple[str, ...]:
+        return tuple(
+            text
+            for line in lines
+            if isinstance(line, dict)
+            for text in [cutscene_pair_normalize(str(line.get("text") or ""))]
+            if text
+        )
+
+    def cutscene_text_similarity(left: tuple[str, ...], right: tuple[str, ...]) -> float:
+        if not left or not right:
+            return 0.0
+        if left == right:
+            return 1.0
+        return SequenceMatcher(None, "\n".join(left), "\n".join(right)).ratio()
+
+    def find_suppressed_cutscene_duplicate(
+        cutscene_key: str,
+        lines: list[dict],
+        kept_lines_by_key: dict[str, list[dict]],
+    ) -> dict:
+        fingerprint = cutscene_text_fingerprint(lines)
+        if not fingerprint:
+            return {}
+        mission, _scene = _infer_cutscene_mission_and_scene(cutscene_key, known_cutscene_missions)
+        best: tuple[float, str, int] = (0.0, "", 0)
+        for target_key, target_lines in kept_lines_by_key.items():
+            if target_key == cutscene_key:
+                continue
+            target_mission, _target_scene = _infer_cutscene_mission_and_scene(target_key, known_cutscene_missions)
+            if mission and target_mission and mission != target_mission:
+                continue
+            target_fingerprint = cutscene_text_fingerprint(target_lines)
+            score = cutscene_text_similarity(fingerprint, target_fingerprint)
+            if score > best[0]:
+                best = (score, target_key, len(target_fingerprint))
+        if best[0] < 0.98:
+            return {}
+        return {
+            "key": best[1],
+            "similarity": round(best[0], 4),
+            "lineCount": best[2],
+        }
+
+    def write_suppressed_cutscene_text_report(rows: list[dict]) -> dict:
+        report = {
+            "generated": int(time.time()),
+            "language": language_code,
+            "summary": {
+                "textOnlyCandidates": len(rows),
+                "emittedTextOnlyCandidates": sum(1 for row in rows if row.get("emitted")),
+                "suppressedTextOnlyCutscenes": sum(1 for row in rows if not row.get("emitted")),
+                "duplicateTextGroups": sum(1 for row in rows if row.get("duplicateOf")),
+            },
+            "rows": rows,
+        }
+        if not rows:
+            return report
+        REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+        report_json = REPORTS_DIR / f"cutscene_text_candidates_{language_code}.json"
+        write_json(report_json, report, indent=2, compact=False)
+        report["report"] = {
+            "json": repo_rel(report_json),
+        }
+        return report
+
     cutscene_assets = _load_cutscene_assets()
     cutscene_text_by_key = cutscene_text_lines(set(cutscene_assets), _load_cutscene_subtitle_tracks())
+    source_backed_cutscene_keys = story_source_backed_cutscene_keys()
+    video_backed_cutscene_keys = narrative_video_backed_cutscene_keys()
+    retained_text_only_cutscene_keys = source_backed_cutscene_keys | video_backed_cutscene_keys
+    unconfirmed_text_by_key: dict[str, list[dict]] = {
+        cutscene_key: lines
+        for cutscene_key, lines in cutscene_text_by_key.items()
+        if cutscene_key not in cutscene_assets
+        and cutscene_key not in retained_text_only_cutscene_keys
+    }
+    suppressed_text_by_key: dict[str, list[dict]] = {}
+
+    suppressed_duplicate_groups_by_target: dict[str, list[dict]] = defaultdict(list)
+    kept_cutscene_lines = {
+        key: lines
+        for key, lines in cutscene_text_by_key.items()
+        if key in cutscene_assets or key in retained_text_only_cutscene_keys
+    }
+    suppressed_report_rows: list[dict] = []
+    for cutscene_key, lines in sorted(unconfirmed_text_by_key.items()):
+        duplicate_of = find_suppressed_cutscene_duplicate(cutscene_key, lines, kept_cutscene_lines)
+        row = {
+            "key": cutscene_key,
+            "lineCount": len(lines),
+            "lineIds": [
+                str(line.get("id") or "")
+                for line in lines
+                if isinstance(line, dict) and line.get("id")
+            ],
+            "reason": "textOnlyWithoutAssetSourceOrVideo",
+            "emitted": True,
+        }
+        if duplicate_of:
+            suppressed_text_by_key[cutscene_key] = cutscene_text_by_key.pop(cutscene_key)
+            row["emitted"] = False
+            row["duplicateOf"] = duplicate_of
+            suppressed_duplicate_groups_by_target[duplicate_of["key"]].append({
+                "key": cutscene_key,
+                "lineCount": len(lines),
+                "similarity": duplicate_of["similarity"],
+            })
+        suppressed_report_rows.append(row)
+    write_suppressed_cutscene_text_report(suppressed_report_rows)
+
     for cutscene_key in cutscene_text_by_key:
-        ensure_cutscene_asset(cutscene_key)
+        cutscene = ensure_cutscene_asset(cutscene_key)
+        if cutscene_key in unconfirmed_text_by_key and cutscene_key not in suppressed_text_by_key:
+            cutscene["textOnlyUnconfirmed"] = True
+    for target_key, groups in suppressed_duplicate_groups_by_target.items():
+        if target_key in cutscene_assets:
+            existing = cutscene_assets[target_key].setdefault("suppressedTextOnlyGroups", [])
+            existing.extend(groups)
     timeline_bound_cutscene_video_keys: set[str] = set()
     for ref in narrative_video_assets:
         if ref.get("kind") != "cutscene":
@@ -5444,6 +5757,18 @@ def build_language_bundle(
             summary_rows.append({"text": f"Components: {component_summary}"})
         if cutscene.get("variants"):
             summary_rows.append({"text": f"Files: {len(cutscene['variants'])} exported asset(s)"})
+        if cutscene.get("suppressedTextOnlyGroups"):
+            names = ", ".join(
+                str(group.get("key") or "")
+                for group in (cutscene.get("suppressedTextOnlyGroups") or [])[:8]
+                if group.get("key")
+            )
+            if names:
+                summary_rows.append({"text": f"Suppressed duplicate text groups: {names}"})
+        if cutscene.get("textOnlyUnconfirmed"):
+            summary_rows.append({
+                "text": "Text-only candidate: no matching AnimeStudio cutscene asset, source link, or narrative video was found.",
+            })
         if cutscene.get("actorLabels"):
             summary_rows.append({
                 "text": "Actors: " + ", ".join(cutscene["actorLabels"]),
@@ -5498,6 +5823,8 @@ def build_language_bundle(
                 "useBlackScreen": bool(cutscene.get("useBlackScreen")),
                 "isTransition": bool(cutscene.get("isTransition")),
                 "hasSubtitleTrack": bool(cutscene.get("hasSubtitleTrack")),
+                "suppressedTextOnlyGroups": cutscene.get("suppressedTextOnlyGroups") or [],
+                "textOnlyUnconfirmed": bool(cutscene.get("textOnlyUnconfirmed")),
             },
             "_debug": {
                 "title": mission_name_trace(mission),
@@ -5526,6 +5853,10 @@ def build_language_bundle(
             component_summary,
             " ".join(variant["name"] for variant in (cutscene.get("variants") or [])),
             " ".join(cutscene.get("keepCameraPaths") or []),
+            " ".join(
+                str(group.get("key") or "")
+                for group in (cutscene.get("suppressedTextOnlyGroups") or [])
+            ),
         ] if part)
         line_preview = next((line.get("text") or "" for line in lines if line.get("text")), "")
         entry = {
@@ -5543,7 +5874,11 @@ def build_language_bundle(
                 (", ".join(cutscene.get("levels") or []) if cutscene.get("levels") else ""),
                 (", ".join(cutscene.get("actorLabels")[:3]) if cutscene.get("actorLabels") else ""),
             ) if part)),
-            "tags": ["cutscene", *(["cutsceneText"] if lines else [])],
+            "tags": [
+                "cutscene",
+                *(["cutsceneText"] if lines else []),
+                *(["cutsceneTextCandidate"] if cutscene.get("textOnlyUnconfirmed") else []),
+            ],
         }
         if search_text:
             entry["x"] = search_text
@@ -9440,6 +9775,11 @@ def build_language_bundle(
         def resolve_video_key(ref: dict) -> str:
             authoritative_keys = list(ref.get("authoritativeKeys") or [])
             candidate_list = list(ref.get("keyCandidates") or [])
+            if str(ref.get("kind") or "") == "remotecomm":
+                for candidate in candidate_list:
+                    owner_key = remotecomm_video_owner_by_stem.get(str(candidate or "").lower())
+                    if owner_key in available_keys:
+                        return owner_key
             if authoritative_keys:
                 for candidate in authoritative_keys:
                     candidate = str(candidate or "")
@@ -9448,15 +9788,14 @@ def build_language_bundle(
                 return ""
             for candidate in candidate_list:
                 candidate = str(candidate or "")
+                if candidate.startswith(("dlg_", "misc_dlg_")):
+                    continue
                 if candidate in available_keys:
                     return candidate
-                if candidate.startswith("dlg_"):
-                    misc_key = f"misc_{candidate}"
-                    if misc_key in available_keys:
-                        return misc_key
-                    match = re.match(r"^(dlg_.+_\d+)d\d+$", candidate)
-                    if match and match.group(1) in available_keys:
-                        return match.group(1)
+            for candidate in candidate_list:
+                owner_key = remotecomm_video_owner_by_stem.get(str(candidate or "").lower())
+                if owner_key in available_keys:
+                    return owner_key
             return ""
 
         resolved_videos: dict[str, list[dict]] = defaultdict(list)
@@ -9476,6 +9815,77 @@ def build_language_bundle(
             stem = re.sub(r"\.[^.]+$", "", stem, flags=re.IGNORECASE)
             stem = re.sub(r"[^A-Za-z0-9_]+", "_", stem).strip("_").lower()
             return f"video_{stem or 'unknown'}"
+
+        def natural_name_key(value: object) -> tuple:
+            return tuple(
+                (1, int(part)) if part.isdigit() else (0, part.lower())
+                for part in re.split(r"(\d+)", str(value or ""))
+            )
+
+        def video_ref_sort_name(ref: dict) -> str:
+            return str(ref.get("name") or ref.get("baseStem") or ref.get("stem") or "").strip()
+
+        def video_ref_base_name(ref: dict) -> str:
+            return str(ref.get("baseStem") or ref.get("stem") or ref.get("name") or "").strip()
+
+        def video_ref_stem(ref: dict) -> str:
+            stem = video_ref_base_name(ref)
+            stem = re.sub(r"\.[^.]+$", "", stem, flags=re.IGNORECASE)
+            return stem.lower()
+
+        def narrative_video_name_sort_key(ref: dict) -> tuple:
+            return (
+                natural_name_key(video_ref_sort_name(ref)),
+                natural_name_key(video_ref_base_name(ref)),
+                narrative_video_sort_key(ref),
+            )
+
+        def timeline_clip_start(ref: dict) -> float | None:
+            binding = ref.get("binding") if isinstance(ref.get("binding"), dict) else {}
+            starts: list[float] = []
+            for clip in binding.get("clips") or []:
+                if not isinstance(clip, dict):
+                    continue
+                start = clip.get("start")
+                if isinstance(start, (int, float)):
+                    starts.append(float(start))
+            return min(starts) if starts else None
+
+        def remotecomm_timeline_order(key: str) -> dict[str, tuple]:
+            order: dict[str, tuple] = {}
+            for index, segment in enumerate(remotecomm_video_timeline_by_key.get(key) or []):
+                stem = str(segment.get("videoStem") or "").strip().lower()
+                if not stem or stem in order:
+                    continue
+                start = segment.get("startTime")
+                start_key = float(start) if isinstance(start, (int, float)) else float(index)
+                order[stem] = (index, start_key)
+            return order
+
+        def sort_refs_for_story_file(key: str, refs: list[dict]) -> list[dict]:
+            remote_order = remotecomm_timeline_order(key)
+            clip_timeline_present = any(timeline_clip_start(ref) is not None for ref in refs)
+            if remote_order or clip_timeline_present:
+                return sorted(
+                    refs,
+                    key=lambda ref: (
+                        0,
+                        remote_order[video_ref_stem(ref)],
+                        narrative_video_name_sort_key(ref),
+                    )
+                    if video_ref_stem(ref) in remote_order
+                    else (
+                        1,
+                        timeline_clip_start(ref),
+                        narrative_video_name_sort_key(ref),
+                    )
+                    if timeline_clip_start(ref) is not None
+                    else (
+                        2,
+                        narrative_video_name_sort_key(ref),
+                    ),
+                )
+            return sorted(refs, key=narrative_video_name_sort_key)
 
         def strip_video_gender_prefix(stem: str) -> tuple[str, str]:
             match = re.match(r"^(?P<gender>f|m|fm)_(?P<rest>cs_video_.+)$", stem or "", flags=re.IGNORECASE)
@@ -9700,7 +10110,7 @@ def build_language_bundle(
         def emit_standalone_video_outputs() -> list[dict]:
             entries: list[dict] = []
             for key, raw_refs in sorted(standalone_videos.items()):
-                refs = sorted(raw_refs, key=narrative_video_sort_key)
+                refs = sorted(raw_refs, key=narrative_video_name_sort_key)
                 if not refs:
                     continue
                 compact_refs = [compact_narrative_video_ref(ref) for ref in refs[:16]]
@@ -9824,7 +10234,7 @@ def build_language_bundle(
         attached_refs = 0
         for entry in index_entries:
             key = str(entry.get("k") or "")
-            refs = sorted(resolved_videos.get(key) or [], key=narrative_video_sort_key)
+            refs = sort_refs_for_story_file(key, resolved_videos.get(key) or [])
             if not refs:
                 continue
             attached_refs += len(refs)
@@ -9852,49 +10262,14 @@ def build_language_bundle(
                         payload["cutscene"]["videoRefs"] = compact_refs
                     clip_starts: list[float] = []
                     if str(entry.get("d") or "") in ("cutscene", "remotecomm"):
-                        clip_durations: list[float] = []
                         for ref in refs:
                             binding = ref.get("binding") if isinstance(ref.get("binding"), dict) else {}
                             for clip in binding.get("clips") or []:
                                 if not isinstance(clip, dict):
                                     continue
                                 start = clip.get("start")
-                                duration = clip.get("duration")
                                 if isinstance(start, (int, float)):
                                     clip_starts.append(float(start))
-                                if isinstance(duration, (int, float)):
-                                    clip_durations.append(float(duration))
-                        video_names = _unique_preserve(
-                            str(ref.get("baseStem") or ref.get("stem") or ref.get("name") or "")
-                            for ref in refs
-                            if ref.get("baseStem") or ref.get("stem") or ref.get("name")
-                        )
-                        timing_parts = []
-                        if clip_starts:
-                            timing_parts.append(f"start={min(clip_starts):.2f}s")
-                        if clip_durations:
-                            timing_parts.append(f"duration={max(clip_durations):.2f}s")
-                        timing = f" ({', '.join(timing_parts)})" if timing_parts else ""
-                        summary_label = "Timeline-aligned video" if clip_starts else "Attached narrative video"
-                        summary = [
-                            row for row in (payload.get("summary") or [])
-                            if not (
-                                isinstance(row, dict)
-                                and (
-                                    str(row.get("text") or "").startswith("Timeline-aligned video:")
-                                    or str(row.get("text") or "").startswith("Attached narrative video:")
-                                )
-                            )
-                        ]
-                        summary.append({
-                            "text": (
-                                f"{summary_label}: "
-                                + (", ".join(video_names[:4]) or "narrative video")
-                                + timing
-                                + "; also kept as standalone video row."
-                            ),
-                        })
-                        payload["summary"] = summary
                     debug = payload.setdefault("_debug", {})
                     debug["narrativeVideos"] = {
                         "source": {
@@ -9932,6 +10307,34 @@ def build_language_bundle(
                             "videoCount": len(unplaced_video_stems),
                         })
                         payload["warnings"] = existing_warnings
+                    expected_remotecomm_video_stems = remotecomm_expected_video_stems_by_key.get(key, [])
+                    if expected_remotecomm_video_stems and str(entry.get("d") or "") == "remotecomm":
+                        present_video_stems = {
+                            str(ref.get("baseStem") or ref.get("stem") or "").strip().lower()
+                            for ref in refs
+                            if ref.get("baseStem") or ref.get("stem")
+                        }
+                        missing_video_stems = [
+                            stem for stem in expected_remotecomm_video_stems
+                            if stem.lower() not in present_video_stems
+                        ]
+                        existing_warnings = [
+                            warning for warning in (payload.get("warnings") or [])
+                            if isinstance(warning, dict)
+                            and warning.get("code") != "remotecommNarrativeVideoMissing"
+                        ]
+                        if missing_video_stems:
+                            existing_warnings.append({
+                                "code": "remotecommNarrativeVideoMissing",
+                                "status": "missing",
+                                "videoStems": missing_video_stems,
+                                "videoCount": len(missing_video_stems),
+                                "evidence": "RemoteCommonTable middleId video lookup",
+                            })
+                        if existing_warnings:
+                            payload["warnings"] = existing_warnings
+                        else:
+                            payload.pop("warnings", None)
                     write_json(conv_path, payload)
                     remember_written(conv_path, written_conv_paths)
 
