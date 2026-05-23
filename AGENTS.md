@@ -34,7 +34,9 @@ story/reference data by default. It does not export from installed game data by
 default. Pass `--export-from-game` only when the user explicitly asks to refresh
 `export_full/`, run the story export tools, and decode CN audio. `export.bat`
 always finishes by running the audio builder so generated CN conversations have
-playable `audioSrc` links when decoded audio is available.
+playable `audioSrc` links when decoded audio is available. It does not refresh
+`webui/overrides/story_order.json`; Story order is maintained by the OCR
+workflow.
 Use `build_updates.bat` for the standalone Updates feed comparison. Use
 `build_updates.bat --init-build` for first-time/baseline-only builds where the
 Updates feed should be baselined instead of reporting changes. The wrapper

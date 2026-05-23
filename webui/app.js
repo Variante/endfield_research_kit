@@ -582,31 +582,20 @@ function loadStoryOrderPayload() {
     const payload = { missions: {} };
     STATE.storyOrderPayload = payload;
     STATE.storyOrderIndex = new Map();
+    STATE.storyOrderGroupingOverrides = new Map();
     STATE.storyOrderPromise = Promise.resolve(payload);
     return STATE.storyOrderPromise;
   }
-  STATE.storyOrderPromise = Promise.all([
-    fetchJson("data/assets/story_order.json")
-      .then(async (res) => {
-        if (!res.ok) return { missions: {} };
-        const payload = await res.json();
-        if (!payload || !payload.missions || typeof payload.missions !== "object") {
-          return { missions: {} };
-        }
-        return payload;
-      })
-      .catch((error) => {
-        console.warn("Unable to load story_order.json", error);
-        return { missions: {} };
-      }),
-    loadStoryOrderOverridePayload(),
-  ])
-    .then(([payload, overrides]) => {
-      applyStoryOrderOverrides(payload, overrides);
-      STATE.storyOrderPayload = payload;
-      STATE.storyOrderIndex = buildStoryOrderIndex(payload);
-      STATE.storyOrderGroupingOverrides = buildStoryOrderGroupingOverrides(payload);
-      return payload;
+  STATE.storyOrderPromise = loadStoryOrderOverridePayload()
+    .then((payload) => {
+      const storyOrderPayload = payload && typeof payload === "object" ? payload : { missions: {} };
+      if (!storyOrderPayload.missions || typeof storyOrderPayload.missions !== "object") {
+        storyOrderPayload.missions = {};
+      }
+      STATE.storyOrderPayload = storyOrderPayload;
+      STATE.storyOrderIndex = buildStoryOrderIndex(storyOrderPayload);
+      STATE.storyOrderGroupingOverrides = buildStoryOrderGroupingOverrides(storyOrderPayload);
+      return storyOrderPayload;
     });
   return STATE.storyOrderPromise;
 }
@@ -625,51 +614,6 @@ function overrideKeyList(values) {
   return out;
 }
 
-function applyStoryOrderOverrides(payload, overrides) {
-  const missions = payload && payload.missions;
-  const overrideMissions = overrides && overrides.missions;
-  if (!missions || typeof missions !== "object" || !overrideMissions || typeof overrideMissions !== "object") return payload;
-
-  for (const [missionId, rawOverride] of Object.entries(overrideMissions)) {
-    const overrideOrder = Array.isArray(rawOverride)
-      ? overrideKeyList(rawOverride)
-      : overrideKeyList(rawOverride && rawOverride.order);
-    if (!overrideOrder.length) continue;
-    const locked = !!(rawOverride && typeof rawOverride === "object" && rawOverride.locked === true);
-
-    const mission = (missions[missionId] ??= { level: "", levels: [], order: [], entries: [] });
-    const baseOrder = Array.isArray(mission.order) ? overrideKeyList(mission.order) : [];
-    const listed = new Set(overrideOrder);
-    const nextOrder = [
-      ...overrideOrder,
-      ...baseOrder.filter((key) => key && !listed.has(key)),
-    ];
-    if (!nextOrder.length) continue;
-
-    if (!Array.isArray(mission.entries)) mission.entries = [];
-    const details = new Map();
-    for (const entry of mission.entries) {
-      const key = String(entry && entry.key || "");
-      if (key && !details.has(key)) details.set(key, entry);
-    }
-    for (const key of nextOrder) {
-      if (details.has(key)) continue;
-      const detail = { key };
-      mission.entries.push(detail);
-      details.set(key, detail);
-    }
-    mission.order = nextOrder;
-    if (locked) {
-      mission.locked = true;
-      if (typeof rawOverride.level === "string") mission.level = rawOverride.level;
-      if (Array.isArray(rawOverride.levels)) mission.levels = overrideKeyList(rawOverride.levels);
-    } else {
-      delete mission.locked;
-    }
-  }
-  return payload;
-}
-
 function storyOrderMissionLocked(missionId) {
   const missionKey = String(missionId || "");
   const mission = STATE.storyOrderPayload
@@ -681,7 +625,7 @@ function storyOrderMissionLocked(missionId) {
 function buildFullStoryOrderPayload() {
   const payload = {
     _schema: "storyOrder.fullOrder.v1",
-    _note: "Full per-mission Story file order. Each missions.<mission>.order list is editable in the WebUI. locked:true preserves that mission from builder/OCR updates; the WebUI can toggle it per mission.",
+    _note: "Full per-mission Story file order. Each missions.<mission>.order list is editable in the WebUI. locked:true preserves that mission from OCR/browser updates; the WebUI can toggle it per mission.",
     missions: {},
   };
   const missions = STATE.storyOrderPayload && STATE.storyOrderPayload.missions;
@@ -920,22 +864,7 @@ function storyOrderDetailForEntry(entry) {
   return positions.get(key) || null;
 }
 
-function storyOrderAttachedDetailForEntry(entry) {
-  const index = STATE.storyOrderIndex;
-  if (!(index instanceof Map) || !index.size) return null;
-  const missionId = storyOrderMissionIdForEntry(entry);
-  const attachedKey = String(entry && entry.attachTo || "");
-  if (!missionId || !attachedKey) return null;
-  const positions = index.get(missionId);
-  if (!positions) return null;
-  return positions.get(attachedKey) || null;
-}
-
 function storyOrderPositionForEntry(entry) {
-  const attachedDetail = storyOrderAttachedDetailForEntry(entry);
-  const attachedPos = attachedDetail && Number(attachedDetail.position);
-  if (Number.isFinite(attachedPos)) return attachedPos + 0.05;
-
   const detail = storyOrderDetailForEntry(entry);
   const pos = detail && Number(detail.position);
   return Number.isFinite(pos) ? pos : null;

@@ -66,12 +66,13 @@ existing `export_full/`. It runs:
 - `scripts/story_builder/video_bindings.py`
 - `scripts/story_builder/source_links.py`
 - `scripts/story_builder/build.py --languages CN --default-language CN`
-- `scripts/story_recovery/build_story_order.py`
 - `scripts/build_audio.py --skip-decode`
 
 It intentionally skips installed-game export, Updates diffing, fluffy-dumper
 structured export, AnimeStudio story extraction, and 2D/3D asset/animation
-decoding by default. Pass `--export-from-game` when you explicitly want to
+decoding by default. It also leaves the editable Story sort order in
+`webui/overrides/story_order.json` alone; that file is maintained by the OCR
+story-order workflow. Pass `--export-from-game` when you explicitly want to
 refresh `export_full/` from installed game data, run the story export tools,
 decode CN audio, and finish by linking playable `audioSrc` values into the
 generated CN conversations. Without `--export-from-game`, the final audio pass

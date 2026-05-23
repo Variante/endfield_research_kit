@@ -155,7 +155,7 @@ def _load_mission_levelscript_dialogs(mission_id: str, level_ids: list[str]) -> 
 # a bare mission id; both come from the master controller. `show_guide`
 # bundles a guide-group id and text id pair.
 #
-# Re-exported from `scripts/story_recovery/build_story_order.py`; see
+# Kept here as shared Story builder recovery metadata; see
 # `memory/e0m0_file_order_from_binary_scripts.md` for the evidence walk.
 LEVELSCRIPT_OPCODE_TABLE: dict[tuple[int, int], str] = {
     (0x0347, 0x0d): "play_levelseq",

@@ -46,7 +46,7 @@ rem - rebuild from existing export_full by default
 rem - export from the installed game only when explicitly requested
 rem - skip raw_vfs, source inventory, structured data, and AnimeStudio by default
 rem - build only CN story/reference data by default
-rem - build recovered story file order for the WebUI Story sort
+rem - preserve OCR-managed Story sort order under webui\overrides
 rem - finally rebuild/link CN audio, decoding first only for --export-from-game
 rem - skip image/model/animation asset decoding; use export_assets.bat --export-from-game for that
 if "%EXPORT_FROM_GAME%"=="0" goto :skip_export_full
@@ -74,9 +74,6 @@ if errorlevel 1 exit /b %errorlevel%
 python .\scripts\story_builder\build.py --languages CN --default-language CN
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\story_recovery\build_story_order.py
-if errorlevel 1 exit /b %errorlevel%
-
 if "%EXPORT_FROM_GAME%"=="1" goto :decode_audio
 python .\scripts\build_audio.py --skip-decode %AUDIO_ARGS%
 if errorlevel 1 exit /b %errorlevel%
@@ -96,7 +93,7 @@ echo Usage: export.bat [--export-from-game] [export_full_from_game.py options]
 echo.
 echo Runs the story/reference WebUI refresh from existing export_full by default,
 echo verifies export freshness, rebuilds source-link evidence, builds CN data,
-echo refreshes Story sort order, and links decoded Story audio.
+echo preserves OCR-managed Story sort order, and links decoded Story audio.
 echo Reading installed game data and tool-based extraction are opt-in.
 echo.
 echo   --export-from-game    Refresh export_full and decode audio from installed game data.

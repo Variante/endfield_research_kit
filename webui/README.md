@@ -62,7 +62,10 @@ heavyweight recovery work in the Python builders.
   `video` story files grouped by mission. Videos that resolve to dialog,
   cutscene, remotecomm, or another story file also attach to that file;
   standalone video rows sort beside the attached file. Timeline / playable
-  evidence supplies authored inline placement when available.
+  evidence supplies authored inline placement when available. False inline
+  attachments can be suppressed in `webui/overrides/narrative_videos.json`;
+  those videos stay available as standalone `video_*` rows after the Story
+  builder is rerun.
 - `Reference`: raw localized rows from `data/lang/<code>/reference/`, with
   source/table filters and on-demand table loading.
 - `Updates`: latest change summary from `data/updates/latest.json`, generated
@@ -91,36 +94,13 @@ heavyweight recovery work in the Python builders.
   bank metadata links the event to decoded media. Story rebuilds run a
   skip-decode audio relink automatically for languages with decoded audio
   already present.
-- `data/assets/story_order.json`: recovered mission entry order from
-  original/decodeable game data. Strong rows carry MissionRuntime/property,
-  LevelScript record, or levelseq evidence; weaker rows are kept as
-  fallbacks and marked in the UI tooltip. Entries can also expose decoded
-  LevelData file/offset and neighboring script ids as grouping diagnostics;
-  those fields are not treated as playback-order proof. When a source
-  LevelScript is known, entries also show raw binary LevelScriptData checks
-  such as serialized member count, verified scriptId offset, and decoded
-  top-level startType where the tail layout is currently understood. Compact
-  incoming/outgoing cross-script references are shown as control diagnostics
-  only, not as ordering edges. When the binary record is a decoded
-  script-pointer payload, the compact ref label also shows the raw flag byte;
-  the flag is diagnostic until the action opcode is named. Map-position
-  diagnostics from decoded LevelScript vectors matched against quest pins are
-  also exposed for source-backed rows; these support spatial/quest vicinity
-  and are not standalone chronological proof. A narrow builder rule can use
-  coherent direct same-script candidates to override weak suffix fallback for a
-  raw-ordered source-script cluster, and another constrained rule can correct
-  numeric levelseq over-anchoring when an incoming cross-file edge and
-  predecessor-script spatial candidate agree. Compact
-  mission timeline scene edges are exposed beside entries so same-script
-  file-order evidence can be checked from the Story tooltip; direct same-script
-  edges are also applied as local ordering constraints. The editable final
-  order lives in `webui/overrides/story_order.json`; each
-  `missions.<mission>.order` array is the complete file order for that mission.
-  `scripts/story_recovery/build_story_order.py` refreshes this file from
-  recovered game-data order, the OCR recovery pipeline updates the same full
-  lists, and `missions.<mission>.locked: true` freezes a mission order so the
-  builder and OCR recovery cannot change it. The Story sidebar can save row
-  moves from `按剧情排序` mode and can toggle each mission's lock flag.
+- `overrides/story_order.json`: OCR-managed Story sort order. Each
+  `missions.<mission>.order` array is the complete file order for that
+  mission, and the WebUI treats this override as the only order source in
+  `按剧情排序` mode. `export.bat` leaves the file untouched. The OCR recovery
+  pipeline updates it when applied, and the Story sidebar can save row moves or
+  toggle a mission lock. `missions.<mission>.locked: true` freezes a mission so
+  OCR recovery and browser-side save logic preserve the saved list exactly.
 - `data/lang/<code>/reference/`: Reference tables; persistent rows may share
   streaming payloads or use small overlay files for changed rows.
 - `data/assets/story_media.json`: compact Story inline image/video lookup using
