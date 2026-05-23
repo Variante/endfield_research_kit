@@ -63,7 +63,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help=(
             "Do not relink existing decoded WebUI audio after building story data. "
             "By default, build.py runs build_audio.py --skip-decode for languages "
-            "that already have decoded audio under webui/data/audio/."
+            "that already have decoded audio under export_full/structured/Audio/."
         ),
     )
     return parser.parse_args(argv)

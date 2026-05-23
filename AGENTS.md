@@ -14,11 +14,10 @@ Move observations, conclusions, older exploration notes, and status snapshots to
 
 ```bat
 .\export.bat
-.\export.bat --skip-export-full
+.\export.bat --export-from-game
 .\build_updates.bat
 .\build_updates.bat --init-build
 .\export_assets.bat
-.\export_audio.bat
 python serve.py
 python serve.py 9000
 ```
@@ -28,27 +27,27 @@ Before starting a WebUI server, check whether the default
 server instead of starting another `serve.py` process on `8765` or a custom
 port, unless the user explicitly asks for a second server.
 
-`export.bat` is the canonical story/reference WebUI refresh. It exports only
-story data needed by the browser, skips raw VFS, source inventory, and heavy
-2D/3D/animation asset conversion, and builds CN story/reference data by
-default. It also verifies that `export_full/` matches the current installed
-`Endfield_Data` fingerprints before the long WebUI builders run.
-Use `--skip-export-full` for WebUI rebuilds that should reuse the existing
-`export_full/`; the wrapper still verifies freshness before long builders run.
+`export.bat` is the canonical story/reference WebUI rebuild from an existing
+`export_full/`. It verifies that `export_full/` matches the current installed
+`Endfield_Data` fingerprints before the long WebUI builders run, then builds CN
+story/reference data by default. It does not export from installed game data by
+default. Pass `--export-from-game` only when the user explicitly asks to refresh
+`export_full/`, run the story export tools, and decode CN audio. `export.bat`
+always finishes by running the audio builder so generated CN conversations have
+playable `audioSrc` links when decoded audio is available.
 Use `build_updates.bat` for the standalone Updates feed comparison. Use
 `build_updates.bat --init-build` for first-time/baseline-only builds where the
 Updates feed should be baselined instead of reporting changes. The wrapper
 passes `--skip-asset-updates` by default so stale decoded asset outputs do not
 appear in story-only refreshes.
-Use `export_assets.bat` for the heavier AnimeStudio image/model/animation
-decode plus WebUI Assets tab indexes and compact Story media lookup.
-Use `export_audio.bat` when decoded Story audio should be available in the
-WebUI. It runs `scripts/build_audio.py`, which uses `fluffy-dumper` for
-language audio extraction, writes `webui/data/audio/<LANG>/`, parses Wwise bank
-event-to-media links, and post-processes generated conversation JSON with
-playable `audioSrc` links. Once decoded audio exists, direct
-`scripts/story_builder/build.py` runs relink it automatically with a
-skip-decode audio pass; pass `--skip-audio-link` only for a story-only rebuild.
+Use `export_assets.bat` for WebUI Assets tab indexes and compact Story media
+lookup from existing decoded assets. Pass `--export-from-game` only when the
+user explicitly asks to run the heavier AnimeStudio image/model/animation
+decode from installed game data first.
+Use direct `scripts/build_audio.py` runs for non-CN languages or audio-only
+maintenance. The audio builder writes `export_full/structured/Audio/<LANG>/`,
+parses Wwise bank event-to-media links, and post-processes generated
+conversation JSON with playable `audioSrc` links.
 
 Useful direct commands:
 
@@ -108,7 +107,7 @@ of these workflows, open the matching `SKILL.md` before acting:
   graph-backed follow-up reports.
 - `.codex/skills/endfield-option-overrides/`: editing and validating
   WebUI-only manual option recovery overrides in
-  `scripts/story_builder/manual_option_overrides.json`.
+  `webui/overrides/options.json`.
 
 The current checkout does not ship separate `endfield-story-recovery` or
 `endfield-character-recovery-lab` skill folders. For those workflows, use the

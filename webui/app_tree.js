@@ -34,7 +34,17 @@ function entryTreeDataType(entry) {
 function entryTreeDataTypes(entry) {
   if (!entry) return [DEFAULT_DATA_TYPE_KEY];
   if (aiBarkSimActorId(entry)) return ["sim"];
-  return entryDataTypes(entry);
+  return entryDataTypes(entry).filter((dataType) => !entryShouldHideArchiveDuplicateStoryType(entry, dataType));
+}
+
+function entryShouldHideArchiveDuplicateStoryType(entry, dataType) {
+  if (!entry || !dataType || typeof entryHasReadingArchiveMissionDuplicate !== "function") return false;
+  if (!entryHasReadingArchiveMissionDuplicate(entry)) return false;
+  if (String(dataType || "").startsWith("prtscat:")) return false;
+  const missionType = typeof storyMissionTypeFromId === "function"
+    ? storyMissionTypeFromId(entryTreeMissionId(entry))
+    : "";
+  return !!missionType && dataType === missionType;
 }
 
 function entryMatchesTreeDataTypeFilters(entry, filters) {
@@ -284,6 +294,7 @@ function syncClearFiltersControl() {
   const button = $("#clear-filters");
   if (!button) return;
   button.disabled = !hasActiveStoryFilters();
+  syncStoryOrderEditor();
 }
 
 function syncFilterSectionActiveCounts() {
@@ -471,12 +482,250 @@ function normalizeStorySortMode(mode) {
 function syncStorySortControl() {
   const sortSelect = $("#sort");
   if (sortSelect) sortSelect.value = normalizeStorySortMode(STATE.sortMode);
+  syncStoryOrderEditor();
 }
 
 function setStorySortMode(mode, { resetScroll = true } = {}) {
   STATE.sortMode = normalizeStorySortMode(mode);
   syncStorySortControl();
   rebuildTree({ resetScroll });
+}
+
+function storyOrderEditingEnabled() {
+  return (STATE.sortMode || "story") === "story"
+    && !hasActiveStoryFilters();
+}
+
+function syncStoryOrderEditor() {
+  const row = $("#story-order-editor-row");
+  if (!row) return;
+  const inStorySort = (STATE.sortMode || "story") === "story";
+  row.hidden = !inStorySort;
+
+  const status = $("#story-order-save-status");
+  if (status && inStorySort && hasActiveStoryFilters()) {
+    status.className = "story-order-save-status";
+    status.textContent = uiText("storyOrderEditFiltered");
+  } else if (
+    status
+    && !status.classList.contains("is-saving")
+    && !status.classList.contains("is-saved")
+    && !status.classList.contains("is-error")
+  ) {
+    status.textContent = "";
+    status.className = "story-order-save-status";
+  }
+}
+
+function storyOrderMoveInfo(entry) {
+  if (!entry || typeof storyOrderMissionIdForEntry !== "function") return null;
+  const missionId = storyOrderMissionIdForEntry(entry);
+  if (!missionId) return null;
+  const mission = STATE.storyOrderPayload
+    && STATE.storyOrderPayload.missions
+    && STATE.storyOrderPayload.missions[missionId];
+  let order = typeof overrideKeyList === "function"
+    ? overrideKeyList(mission && mission.order)
+    : [];
+  if (!order.length) order = storyOrderMissionBaselineOrder(missionId);
+  const key = String(entry.k || "");
+  const index = order.indexOf(key);
+  if (!order.length || index < 0) return null;
+  return { missionId, order, index };
+}
+
+function storyOrderEntryEditable(entry) {
+  if (!storyOrderEditingEnabled()) return null;
+  const info = storyOrderMoveInfo(entry);
+  if (!info) return null;
+  const isLocked = typeof storyOrderMissionLocked === "function"
+    && storyOrderMissionLocked(info.missionId);
+  if (isLocked) return null;
+  return info;
+}
+
+function reorderStoryOrderEntry(missionId, fromKey, toKey, placeAfter) {
+  if (!storyOrderEditingEnabled()) return false;
+  const mission = STATE.storyOrderPayload
+    && STATE.storyOrderPayload.missions
+    && STATE.storyOrderPayload.missions[missionId];
+  let order = typeof overrideKeyList === "function"
+    ? overrideKeyList(mission && mission.order)
+    : [];
+  if (!order.length) order = storyOrderMissionBaselineOrder(missionId);
+  if (!order.length) return false;
+  if (typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionId)) return false;
+  const fromIndex = order.indexOf(String(fromKey));
+  const toIndex = order.indexOf(String(toKey));
+  if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return false;
+
+  const nextOrder = order.slice();
+  const [moved] = nextOrder.splice(fromIndex, 1);
+  let insertAt = nextOrder.indexOf(String(toKey));
+  if (insertAt < 0) return false;
+  if (placeAfter) insertAt += 1;
+  nextOrder.splice(insertAt, 0, moved);
+
+  if (typeof setStoryOrderMissionOrder !== "function" || !setStoryOrderMissionOrder(missionId, nextOrder)) {
+    return false;
+  }
+  if (typeof scheduleStoryOrderSave === "function") scheduleStoryOrderSave();
+
+  const wrap = $("#list-wrap");
+  const prevScroll = wrap ? wrap.scrollTop : 0;
+  rebuildTree({ resetScroll: false });
+  if (wrap) wrap.scrollTop = prevScroll;
+  renderList();
+  return true;
+}
+
+function storyOrderMissionIdForGroup(groupKey) {
+  const missionId = String(groupKey || "");
+  if (!missionId || missionId.includes(":")) return "";
+  if (typeof storyMissionTypeFromId === "function" && storyMissionTypeFromId(missionId)) {
+    return missionId;
+  }
+  const mission = STATE.storyOrderPayload
+    && STATE.storyOrderPayload.missions
+    && STATE.storyOrderPayload.missions[missionId];
+  return mission && Array.isArray(mission.order) && mission.order.length ? missionId : "";
+}
+
+// Reorder operations target the current displayed list of a mission. When the
+// override has no entry for this mission yet, the editor seeds one from the
+// currently rendered order so freshly-typed missions (e/a/gm/c/sm/m/f/...)
+// can still be rearranged.
+function storyOrderMissionBaselineOrder(missionId) {
+  const target = String(missionId || "");
+  if (!target) return [];
+  const source = (STATE.filtered && STATE.filtered.length)
+    ? STATE.filtered
+    : (STATE.entries || []);
+  const seen = new Set();
+  const items = [];
+  for (const entry of source) {
+    if (!entry) continue;
+    const mid = typeof storyOrderMissionIdForEntry === "function"
+      ? storyOrderMissionIdForEntry(entry)
+      : String(entry.m || "");
+    if (String(mid) !== target) continue;
+    const key = String(entry.k || "");
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    items.push(entry);
+  }
+  items.sort((a, b) => {
+    const ap = typeof storyOrderPositionForEntry === "function" ? storyOrderPositionForEntry(a) : null;
+    const bp = typeof storyOrderPositionForEntry === "function" ? storyOrderPositionForEntry(b) : null;
+    const hasA = Number.isFinite(ap);
+    const hasB = Number.isFinite(bp);
+    if (hasA && hasB && ap !== bp) return ap - bp;
+    if (hasA !== hasB) return hasA ? -1 : 1;
+    return String(a.k).localeCompare(String(b.k), undefined, { numeric: true });
+  });
+  return items.map((e) => String(e.k));
+}
+
+function storyOrderMissionLockControl(row) {
+  if ((STATE.sortMode || "story") !== "story") return "";
+  const missionId = String(row && row.storyOrderMissionId || "");
+  if (!missionId) return "";
+  const locked = typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionId);
+  const stateKey = locked ? "storyOrderMissionLocked" : "storyOrderMissionEditable";
+  const titleKey = locked ? "storyOrderUnlockMissionTitle" : "storyOrderLockMissionTitle";
+  const label = escapeHtml(uiText(stateKey));
+  const title = escapeHtml(uiText(titleKey));
+  const icon = locked
+    ? `<svg class="story-order-pin-icon" viewBox="0 0 14 14" aria-hidden="true"><path d="M4 6 V4.5 a3 3 0 0 1 6 0 V6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><rect x="3" y="6" width="8" height="6" rx="1.2" fill="currentColor"/></svg>`
+    : `<svg class="story-order-pin-icon" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 10 L9 3 L11 5 L4 12 Z" fill="currentColor"/><path d="M8.5 3.5 L10.5 5.5" stroke="rgba(0,0,0,0.35)" stroke-width="0.8"/></svg>`;
+  return (
+    `<button class="story-order-mission-lock-button${locked ? " is-locked" : " is-editable"}" ` +
+      `type="button" data-mission-id="${escapeHtml(missionId)}" ` +
+      `aria-pressed="${locked ? "true" : "false"}" title="${title}">${icon}<span class="story-order-mission-lock-label">${label}</span></button>`
+  );
+}
+
+function toggleStoryOrderMissionLock(missionId) {
+  const missionKey = String(missionId || "");
+  if (!missionKey || typeof setStoryOrderMissionLocked !== "function") return false;
+  const nextLocked = !(typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionKey));
+  if (!setStoryOrderMissionLocked(missionKey, nextLocked)) return false;
+  if (typeof scheduleStoryOrderSave === "function") scheduleStoryOrderSave();
+
+  const wrap = $("#list-wrap");
+  const prevScroll = wrap ? wrap.scrollTop : 0;
+  rebuildTree({ resetScroll: false });
+  if (wrap) wrap.scrollTop = prevScroll;
+  renderList();
+  return true;
+}
+
+function clearStoryOrderDropIndicators(listEl) {
+  if (!listEl) return;
+  listEl.querySelectorAll(".story-order-drop-before, .story-order-drop-after").forEach((el) => {
+    el.classList.remove("story-order-drop-before", "story-order-drop-after");
+  });
+}
+
+function bindStoryOrderDragEvents(listEl) {
+  if (!listEl) return;
+
+  listEl.addEventListener("dragstart", (ev) => {
+    const row = ev.target.closest(".row.item.story-order-draggable");
+    if (!row) return;
+    STATE.storyOrderDragKey = row.dataset.key || "";
+    STATE.storyOrderDragMissionId = row.dataset.storyOrderMissionId || "";
+    if (ev.dataTransfer) {
+      ev.dataTransfer.effectAllowed = "move";
+      try { ev.dataTransfer.setData("text/plain", STATE.storyOrderDragKey); } catch (_) {}
+    }
+    row.classList.add("story-order-dragging");
+  });
+
+  listEl.addEventListener("dragover", (ev) => {
+    if (!STATE.storyOrderDragKey) return;
+    const target = ev.target.closest(".row.item.story-order-draggable");
+    if (!target) return;
+    if (target.dataset.storyOrderMissionId !== STATE.storyOrderDragMissionId) return;
+    if (target.dataset.key === STATE.storyOrderDragKey) return;
+    ev.preventDefault();
+    if (ev.dataTransfer) ev.dataTransfer.dropEffect = "move";
+    const rect = target.getBoundingClientRect();
+    const after = ev.clientY > rect.top + rect.height / 2;
+    clearStoryOrderDropIndicators(listEl);
+    target.classList.add(after ? "story-order-drop-after" : "story-order-drop-before");
+  });
+
+  listEl.addEventListener("dragleave", (ev) => {
+    const target = ev.target.closest(".row.item.story-order-draggable");
+    if (!target) return;
+    if (ev.relatedTarget && target.contains(ev.relatedTarget)) return;
+    target.classList.remove("story-order-drop-before", "story-order-drop-after");
+  });
+
+  listEl.addEventListener("drop", (ev) => {
+    if (!STATE.storyOrderDragKey) return;
+    const target = ev.target.closest(".row.item.story-order-draggable");
+    if (!target) return;
+    if (target.dataset.storyOrderMissionId !== STATE.storyOrderDragMissionId) return;
+    if (target.dataset.key === STATE.storyOrderDragKey) return;
+    ev.preventDefault();
+    const rect = target.getBoundingClientRect();
+    const after = ev.clientY > rect.top + rect.height / 2;
+    const fromKey = STATE.storyOrderDragKey;
+    const missionId = STATE.storyOrderDragMissionId;
+    clearStoryOrderDropIndicators(listEl);
+    STATE.storyOrderDragKey = "";
+    STATE.storyOrderDragMissionId = "";
+    reorderStoryOrderEntry(missionId, fromKey, target.dataset.key, after);
+  });
+
+  listEl.addEventListener("dragend", () => {
+    STATE.storyOrderDragKey = "";
+    STATE.storyOrderDragMissionId = "";
+    clearStoryOrderDropIndicators(listEl);
+    listEl.querySelectorAll(".story-order-dragging").forEach((el) => el.classList.remove("story-order-dragging"));
+  });
 }
 
 function bindEvents() {
@@ -527,8 +776,17 @@ function bindEvents() {
   $("#list-wrap").addEventListener("scroll", renderList);
   window.addEventListener("resize", renderList);
 
+  bindStoryOrderDragEvents($("#list"));
+
   // Delegated click on the tree (groups + items).
   $("#list").addEventListener("click", (ev) => {
+    const missionLockButton = ev.target.closest(".story-order-mission-lock-button");
+    if (missionLockButton) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      toggleStoryOrderMissionLock(missionLockButton.dataset.missionId);
+      return;
+    }
     const row = ev.target.closest(".row");
     if (!row) return;
     if (row.classList.contains("group")) {
@@ -679,10 +937,11 @@ function rebuildTree({ resetScroll = true } = {}) {
 
   const rows = [];
   let offset = 0;
-  const pushGroup = (level, path, label, count, mono, raw = "") => {
+  const pushGroup = (level, path, label, count, mono, raw = "", extra = {}) => {
     const expanded = autoExpand || STATE.expanded.has(path);
     rows.push({
       type: "group", level, path, label, count, mono, raw,
+      ...extra,
       top: offset, h: ROW_GROUP_H, expanded,
     });
     offset += ROW_GROUP_H;
@@ -710,7 +969,8 @@ function rebuildTree({ resetScroll = true } = {}) {
       const items = bucket.items;
       const sortItems = makeBucketSorter(items);
       items.sort(sortItems);
-      if (!pushGroup(1, mPath, bucket.label, items.length, bucket.mono, bucket.raw)) continue;
+      const storyOrderMissionId = storyOrderMissionIdForGroup(m);
+      if (!pushGroup(1, mPath, bucket.label, items.length, bucket.mono, bucket.raw, { storyOrderMissionId })) continue;
 
       const cutsceneFamilies = new Map();
       for (const it of items) {
@@ -791,13 +1051,17 @@ function makeItemSorter(mode) {
     case "lines-desc": return (a, b) => (lineCount(b) - lineCount(a)) || naturalCompare(a, b);
     case "lines-asc":  return (a, b) => (lineCount(a) - lineCount(b)) || naturalCompare(a, b);
     case "key":        return (a, b) => String(a && a.k || "").localeCompare(String(b && b.k || ""), undefined, { numeric: true });
-    case "story":      return makeStorySorter(naturalCompare);
+    case "story":      return makeStorySorter();
     // natural: kind first, then the displayed scene name/key.
     default:           return naturalCompare;
   }
 }
 
-function makeStorySorter(naturalCompare) {
+// Story sort mode: trust story_order.json only. No env-talk segregation,
+// no kind-rank, no display-name fallback. Items with a recovered position
+// come first in that order; items without one fall back to key compare for
+// stability only.
+function makeStorySorter() {
   return (a, b) => {
     const ap = typeof storyOrderPositionForEntry === "function" ? storyOrderPositionForEntry(a) : null;
     const bp = typeof storyOrderPositionForEntry === "function" ? storyOrderPositionForEntry(b) : null;
@@ -805,8 +1069,24 @@ function makeStorySorter(naturalCompare) {
     const hasB = Number.isFinite(bp);
     if (hasA && hasB && ap !== bp) return ap - bp;
     if (hasA !== hasB) return hasA ? -1 : 1;
-    return naturalCompare(a, b);
+    return String(a && a.k || "").localeCompare(
+      String(b && b.k || ""),
+      undefined,
+      { numeric: true },
+    );
   };
+}
+
+function entryIsReadingPopup(entry) {
+  return String(entry && entry.d || "") === "text"
+    && typeof entryHasTag === "function"
+    && entryHasTag(entry, "readingPopup");
+}
+
+function entryIsStandaloneEnvTalk(entry) {
+  const key = String(entry && entry.k || "");
+  if (key.startsWith("env_envTalk_") || key.startsWith("env_greetEnvTalk_")) return true;
+  return String(entry && entry.d || "") === "env" && typeof entryHasTag === "function" && entryHasTag(entry, "envTalk");
 }
 
 function missionSort(a, b) {

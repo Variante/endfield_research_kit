@@ -64,14 +64,17 @@ static-data recovery in important places, especially the opening three
 cutscenes, the zipline/radio interleave, and `video_cs_video_e0m0_3` after
 `radio_e0m0_12`.
 
-`scripts/story_recovery/manual_observed_order_hints.json` now records that
-partial order. `build_story_order.py` applies it as a calibration layer for
-the listed e0m0 rows, but keeps the previous static-data result in
-`recoveredEvidenceBeforeObserved`, `recoveredPhaseBeforeObserved`, and
-`recoveredRankBeforeObserved`. This is for the WebUI and for follow-up
-investigation; it is not counted as firm original-data proof.
+`memory/e0m0_observed_order_calibration.json` now archives that partial order.
+It is no longer an active builder config. For WebUI final-order fixes, use
+`webui/overrides/story_order.json`; each
+`missions.<mission>.after` anchor stays fixed and its listed scene keys move
+after it. Moved rows keep the previous static-data result in
+`recoveredEvidenceBeforeManual`,
+`recoveredPhaseBeforeManual`, and `recoveredRankBeforeManual`. This is for the
+WebUI and for follow-up investigation; it is not counted as firm original-data
+proof.
 
-The calibration now also carries per-row evidence alignment:
+The archived calibration also carries per-row evidence alignment:
 
 - `source-backed`: the row already had direct decoded evidence compatible with
   the observed entry, such as LevelTimeline markers, levelseq anchors,

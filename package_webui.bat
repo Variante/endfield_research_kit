@@ -16,8 +16,8 @@ exit /b 0
 :help
 echo Usage: package_webui.bat [package_webui.py options]
 echo.
-echo Creates split shareable WebUI zips: a smaller story/code/emoji package and
-echo a companion assets package for larger story images, videos, and decoded audio.
+echo Creates split shareable WebUI zips: a story/code/emoji/audio package and
+echo a companion assets package for larger story images and videos.
 echo.
 echo Common options:
 echo   -o, --output PATH        Primary story zip path.

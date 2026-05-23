@@ -21,12 +21,18 @@
     return ["streamingassets", "persistent"].includes(source.split("-")[0].toLowerCase());
   }
 
+  function defaultSourceRoot(source) {
+    const match = String(source || "").match(/^(.+)-structured$/i);
+    if (!match) return "";
+    return `structured/${match[1]}`;
+  }
+
   function exportFullHref(relPath, sourceRoots = {}, exportRoot = "export_full") {
     const normalizedRel = normalizeRelPath(relPath);
     if (!normalizedRel) return "/export_full/";
 
     const [source, ...rest] = normalizedRel.split("/").filter(Boolean);
-    const sourceRoot = sourceRoots && sourceRoots[source];
+    const sourceRoot = (sourceRoots && sourceRoots[source]) || defaultSourceRoot(source);
     let exportFullRel = normalizedRel;
 
     if (sourceRoot) {

@@ -16,15 +16,19 @@ python serve.py
 
 `export.bat` currently:
 
-1. exports browser-needed game data with `scripts/export_full_from_game.py`;
+1. reuses the existing `export_full/` by default;
 2. verifies `export_full/` freshness against the installed game data;
 3. rebuilds `export_full/recovered/dialog_id_table_index.json`;
-4. rebuilds story source links;
-5. builds CN Story and Reference data.
+4. rebuilds narrative video/source-link evidence;
+5. builds CN Story and Reference data;
+6. refreshes recovered Story file order; and
+7. relinks decoded CN audio from `export_full/structured/Audio/CN/`.
 
-Use `--skip-export-full` when rebuilding from an existing fresh `export_full/`.
-Run `.\build_updates.bat` separately for the Updates feed and
-`.\export_assets.bat` separately for asset indexes and heavy media exports.
+Use `--export-from-game` only when refreshing `export_full/` from the installed
+game data and decoding CN audio before the final relink pass. Run
+`.\build_updates.bat` separately for the Updates feed and `.\export_assets.bat`
+separately for asset indexes. Pass `.\export_assets.bat --export-from-game`
+when the heavier image/model/animation export should run first.
 
 The game does not need to be running. If it is open, close it before export so
 files are not locked.
@@ -175,7 +179,7 @@ table format or encryption changed and needs a targeted offline decoder.
 Most game updates need only:
 
 ```bat
-.\export.bat
+.\export.bat --export-from-game
 ```
 
 Then, if `global-metadata.dat` exists, refresh the IL2CPP metadata canary:
@@ -247,3 +251,10 @@ After a refresh, check:
 - Standalone `video_*` rows are still emitted for direct browsing, but they
   carry `attachTo` for the resolved story key. Story sort uses that attachment
   so the standalone video row stays beside the file where the video is inserted.
+
+## 2026-05-23 archive duplicate links
+
+- `radio_e1m1_2d7` and `nar_media_map01_128_1` have the same localized audio
+  transcript. Keep `radio_e1m1_2d7` as the mission `e1m1` row; keep
+  `nar_media_map01_128_1` available only from Archive/media grouping and from
+  the bidirectional file-page link.

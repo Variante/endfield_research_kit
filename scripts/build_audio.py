@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Decode story audio and link playable files into generated WebUI data."""
+"""Decode story audio into export_full and link playable files into WebUI data."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import time
 from collections import defaultdict, deque
@@ -18,7 +19,7 @@ DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
 DEFAULT_FLUFFY = ROOT / "tools" / "fluffy-dumper-src" / "target" / "release" / "fluffy-dumper.exe"
 DEFAULT_EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_WEBUI_ROOT = ROOT / "webui"
-DEFAULT_AUDIO_ROOT = DEFAULT_WEBUI_ROOT / "data" / "audio"
+DEFAULT_AUDIO_ROOT = DEFAULT_EXPORT_ROOT / "structured" / "Audio"
 
 LANGUAGES = {
     "CN": {
@@ -257,8 +258,16 @@ def audio_rel_for_dialog_path(language_info: dict[str, str], dialog_path: str, e
     return normalize_posix(Path("voice") / language_info["dumper"] / path.lower())
 
 
-def webui_audio_href(language: str, relative_audio_path: str) -> str:
-    return normalize_posix(Path("data") / "audio" / language / relative_audio_path)
+def served_audio_href(audio_root: Path, webui_root: Path, language: str, relative_audio_path: str) -> str:
+    audio_path = audio_root / language / Path(*PurePosixPath(relative_audio_path).parts)
+    if audio_path.is_relative_to(webui_root):
+        return normalize_posix(audio_path.relative_to(webui_root))
+    if audio_path.is_relative_to(ROOT):
+        return "/" + normalize_posix(audio_path.relative_to(ROOT))
+    raise SystemExit(
+        "Audio root must be under the WebUI root or project root so generated "
+        f"audioSrc links are servable: {audio_root}"
+    )
 
 
 def iter_audio_files(language_root: Path) -> list[Path]:
@@ -280,7 +289,12 @@ def has_decoded_audio(language_root: Path) -> bool:
     return False
 
 
-def collect_audio_files(language_root: Path, language: str) -> dict[str, dict[str, Any]]:
+def collect_audio_files(
+    audio_root: Path,
+    webui_root: Path,
+    language_root: Path,
+    language: str,
+) -> dict[str, dict[str, Any]]:
     by_id: dict[str, dict[str, Any]] = {}
     for path in iter_audio_files(language_root):
         rel = normalize_posix(path.relative_to(language_root))
@@ -289,7 +303,7 @@ def collect_audio_files(language_root: Path, language: str) -> dict[str, dict[st
         entry = {
             "id": audio_id,
             "rel": rel,
-            "src": webui_audio_href(language, rel),
+            "src": served_audio_href(audio_root, webui_root, language, rel),
             "format": path.suffix.lower().lstrip("."),
             "bytes": stat.st_size,
         }
@@ -299,6 +313,8 @@ def collect_audio_files(language_root: Path, language: str) -> dict[str, dict[st
 
 def build_dialog_audio_index(
     audio_dialog_path: Path,
+    audio_root: Path,
+    webui_root: Path,
     language_root: Path,
     language: str,
     language_info: dict[str, str],
@@ -328,7 +344,7 @@ def build_dialog_audio_index(
         out[audio_id] = {
             "id": audio_id,
             "rel": rel,
-            "src": webui_audio_href(language, rel),
+            "src": served_audio_href(audio_root, webui_root, language, rel),
             "format": file_path.suffix.lower().lstrip("."),
             "bytes": file_path.stat().st_size,
             "audioDialogKey": int(row_key) if str(row_key).lstrip("-").isdigit() else row_key,
@@ -347,6 +363,10 @@ def collect_audio_event_names(conv_dir: Path, export_root: Path) -> set[str]:
         payload = load_json(conv_path, {})
         if not isinstance(payload, dict):
             continue
+        for value in payload.get("audioEvents") or []:
+            text = str(value or "").strip()
+            if text:
+                names.add(text)
         cutscene = payload.get("cutscene")
         if isinstance(cutscene, dict):
             for value in cutscene.get("audioEvents") or []:
@@ -474,12 +494,14 @@ def collect_fmv_cutscene_audio_events(export_root: Path, language_info: dict[str
         gender = None
         if base.startswith("f_cs_video_") or base.startswith("m_cs_video_"):
             gender = base[0]
-            scene = base[len("f_cs_video_") :]
+            story_key = story_key_from_fmv_id(base)
         elif base.startswith("cs_video_"):
-            scene = base[len("cs_video_") :]
+            story_key = story_key_from_fmv_id(base)
         else:
             continue
-        cutscene_key = f"cutscene_{scene}"
+        if not story_key.startswith("cutscene_"):
+            continue
+        cutscene_key = story_key
         info = containers.setdefault(container, {"cutscene": cutscene_key, "events": []})
         if gender:
             info["gender"] = gender
@@ -524,6 +546,38 @@ def timeline_audio_container_for(container: str) -> str:
     return ""
 
 
+def strip_fmv_gender_prefix(value: str) -> str:
+    match = re.match(r"^(?:f|m|fm)_(cs_video_.+)$", str(value or ""), flags=re.IGNORECASE)
+    return match.group(1) if match else str(value or "")
+
+
+def story_key_from_fmv_id(fmv_id: str, scene: str = "", fallback_hint: str = "") -> str:
+    base = strip_fmv_gender_prefix(str(fmv_id or "").strip())
+    if base.startswith("cs_video_dlg_"):
+        return f"dlg_{base[len('cs_video_dlg_'):]}"
+    if base.startswith("cs_video_remotecomm_"):
+        return f"remotecomm_{base[len('cs_video_remotecomm_'):]}"
+    if base.startswith("cs_video_cutscene_"):
+        return f"cutscene_{base[len('cs_video_cutscene_'):]}"
+    if base.startswith("cs_video_"):
+        return f"cutscene_{base[len('cs_video_'):]}"
+
+    for candidate in (fallback_hint, scene):
+        value = str(candidate or "").strip()
+        if value.startswith(("dlg_", "cutscene_", "remotecomm_")):
+            return value
+    scene_value = str(scene or "").strip()
+    return f"cutscene_{scene_value}" if scene_value else ""
+
+
+def story_key_from_video_binding(binding: dict[str, Any]) -> str:
+    return story_key_from_fmv_id(
+        str(binding.get("baseFmvId") or binding.get("fmvId") or ""),
+        str(binding.get("scene") or ""),
+        str(binding.get("fallbackSceneHint") or ""),
+    )
+
+
 def collect_video_binding_audio_containers(export_root: Path) -> dict[str, str]:
     path = export_root / "recovered" / "video_bindings.json"
     payload = load_json(path, {})
@@ -535,16 +589,15 @@ def collect_video_binding_audio_containers(export_root: Path) -> dict[str, str]:
     for binding in bindings.values():
         if not isinstance(binding, dict):
             continue
-        scene = str(binding.get("scene") or "").strip()
-        if not scene:
+        story_key = story_key_from_video_binding(binding)
+        if not story_key.startswith("cutscene_"):
             continue
-        cutscene_key = f"cutscene_{scene}"
         for source in binding.get("sources") or []:
             if not isinstance(source, dict):
                 continue
             container = timeline_audio_container_for(str(source.get("container") or ""))
             if container:
-                out[container] = cutscene_key
+                out[container] = story_key
     return out
 
 
@@ -802,17 +855,19 @@ def _event_name_set(values: Any) -> set[str]:
     }
 
 
-def _webui_src_exists(webui_root: Path, src: str) -> bool:
-    src = str(src or "").strip()
-    if not src:
+def _audio_entry_file_exists(language_root: Path, entry: dict[str, Any]) -> bool:
+    rel = str(entry.get("rel") or "").strip()
+    if not rel:
         return False
-    return (webui_root / Path(*PurePosixPath(src).parts)).is_file()
+    return (language_root / Path(*PurePosixPath(rel).parts)).is_file()
 
 
 def load_cached_event_audio_index(
     language_root: Path,
     event_names: set[str],
+    audio_root: Path,
     webui_root: Path,
+    language: str,
 ) -> tuple[dict[str, list[dict[str, Any]]], list[dict[str, Any]]] | None:
     """Reuse event-to-media links from the last audio index when complete."""
     payload = load_json(language_root / "index.json", {})
@@ -832,9 +887,11 @@ def load_cached_event_audio_index(
         if not isinstance(entry, dict):
             continue
         event_key = str(entry.get("eventId") or entry.get("id") or "").strip().lower()
-        if event_key not in wanted_names or not _webui_src_exists(webui_root, str(entry.get("src") or "")):
+        if event_key not in wanted_names or not _audio_entry_file_exists(language_root, entry):
             continue
-        event_audio_by_id[event_key].append(entry)
+        cached = dict(entry)
+        cached["src"] = served_audio_href(audio_root, webui_root, language, str(cached.get("rel") or ""))
+        event_audio_by_id[event_key].append(cached)
 
     event_evidence = [
         entry
@@ -874,8 +931,15 @@ def run_fluffy_dumper(args: argparse.Namespace, language_info: dict[str, str], l
     subprocess.run(command, cwd=ROOT, check=True)
 
 
-def line_audio_id(line: dict[str, Any]) -> str:
-    return str(line.get("audio") or line.get("voice") or "").strip().lower()
+def line_audio_ids(line: dict[str, Any]) -> list[str]:
+    ids: list[str] = []
+    seen: set[str] = set()
+    for field in ("voice", "audio"):
+        audio_id = str(line.get(field) or "").strip().lower()
+        if audio_id and audio_id not in seen:
+            seen.add(audio_id)
+            ids.append(audio_id)
+    return ids
 
 
 def attach_audio_to_line(line: dict[str, Any], audio_entry: dict[str, Any]) -> bool:
@@ -953,6 +1017,45 @@ def collect_cutscene_audio_events_by_line_signature(conv_dir: Path) -> dict[tupl
     return by_signature
 
 
+def linked_audio_files_for_events(
+    event_ids: list[Any],
+    audio_by_id: dict[str, dict[str, Any]],
+    event_audio_by_id: dict[str, list[dict[str, Any]]],
+    stats: dict[str, int],
+    event_stat_key: str,
+    linked_stat_key: str,
+) -> list[dict[str, Any]]:
+    linked_events: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for event_id in event_ids or []:
+        event_key = str(event_id or "").strip().lower()
+        if not event_key:
+            continue
+        stats[event_stat_key] += 1
+        entries = event_audio_by_id.get(event_key) or []
+        if not entries:
+            direct = audio_by_id.get(event_key)
+            entries = [direct] if direct else []
+        for entry in entries:
+            if not entry:
+                continue
+            linked_key = f"{event_key}:{entry.get('mediaId') or entry.get('rel') or entry.get('src')}"
+            if linked_key in seen:
+                continue
+            seen.add(linked_key)
+            linked_events.append({
+                "id": event_id,
+                "src": entry.get("src"),
+                "format": entry.get("format"),
+                "bytes": entry.get("bytes"),
+                "mediaId": entry.get("mediaId"),
+                "bank": entry.get("bank"),
+                "source": entry.get("source"),
+            })
+            stats[linked_stat_key] += 1
+    return linked_events
+
+
 def link_conversation_audio(
     conv_dir: Path,
     audio_by_id: dict[str, dict[str, Any]],
@@ -966,6 +1069,8 @@ def link_conversation_audio(
         "conversationFilesChanged": 0,
         "lineAudioRefs": 0,
         "lineAudioLinked": 0,
+        "conversationAudioEvents": 0,
+        "conversationAudioEventsLinked": 0,
         "cutsceneAudioEvents": 0,
         "cutsceneAudioEventsLinked": 0,
         "cutsceneAudioEventsInherited": 0,
@@ -981,25 +1086,44 @@ def link_conversation_audio(
         for line in payload.get("lines") or []:
             if not isinstance(line, dict):
                 continue
-            audio_id = line_audio_id(line)
-            if not audio_id:
+            audio_ids = line_audio_ids(line)
+            if not audio_ids:
                 continue
             stats["lineAudioRefs"] += 1
-            entry = audio_by_id.get(audio_id)
-            if entry:
-                if attach_audio_to_line(line, entry):
-                    changed = True
-                stats["lineAudioLinked"] += 1
-                continue
-            variants = {
-                gender: audio_by_id.get(f"{audio_id}_{gender}")
-                for gender in ("f", "m")
-            }
-            variants = {gender: variant for gender, variant in variants.items() if variant}
-            if variants:
-                if attach_audio_variants_to_line(line, variants):
-                    changed = True
-                stats["lineAudioLinked"] += 1
+            for audio_id in audio_ids:
+                entry = audio_by_id.get(audio_id)
+                if entry:
+                    if attach_audio_to_line(line, entry):
+                        changed = True
+                    stats["lineAudioLinked"] += 1
+                    break
+                variants = {
+                    gender: audio_by_id.get(f"{audio_id}_{gender}")
+                    for gender in ("f", "m")
+                }
+                variants = {gender: variant for gender, variant in variants.items() if variant}
+                if variants:
+                    if attach_audio_variants_to_line(line, variants):
+                        changed = True
+                    stats["lineAudioLinked"] += 1
+                    break
+
+        root_audio_events = payload.get("audioEvents") if isinstance(payload.get("audioEvents"), list) else []
+        if root_audio_events:
+            linked_root_events = linked_audio_files_for_events(
+                root_audio_events,
+                audio_by_id,
+                event_audio_by_id,
+                stats,
+                "conversationAudioEvents",
+                "conversationAudioEventsLinked",
+            )
+            if linked_root_events and payload.get("audioFiles") != linked_root_events:
+                payload["audioFiles"] = linked_root_events
+                changed = True
+            elif not linked_root_events and payload.get("audioFiles"):
+                payload.pop("audioFiles", None)
+                changed = True
 
         cutscene = payload.get("cutscene")
         if isinstance(cutscene, dict):
@@ -1024,36 +1148,19 @@ def link_conversation_audio(
                 if cutscene.get("audioEvents") != merged_events:
                     cutscene["audioEvents"] = merged_events
                     changed = True
-            linked_events: list[dict[str, Any]] = []
-            seen: set[str] = set()
-            for event_id in cutscene.get("audioEvents") or []:
-                event_key = str(event_id or "").strip().lower()
-                if not event_key:
-                    continue
-                stats["cutsceneAudioEvents"] += 1
-                entries = event_audio_by_id.get(event_key) or []
-                if not entries:
-                    direct = audio_by_id.get(event_key)
-                    entries = [direct] if direct else []
-                for entry in entries:
-                    if not entry:
-                        continue
-                    linked_key = f"{event_key}:{entry.get('mediaId') or entry.get('rel') or entry.get('src')}"
-                    if linked_key in seen:
-                        continue
-                    seen.add(linked_key)
-                    linked_events.append({
-                        "id": event_id,
-                        "src": entry.get("src"),
-                        "format": entry.get("format"),
-                        "bytes": entry.get("bytes"),
-                        "mediaId": entry.get("mediaId"),
-                        "bank": entry.get("bank"),
-                        "source": entry.get("source"),
-                    })
-                    stats["cutsceneAudioEventsLinked"] += 1
+            linked_events = linked_audio_files_for_events(
+                cutscene.get("audioEvents") or [],
+                audio_by_id,
+                event_audio_by_id,
+                stats,
+                "cutsceneAudioEvents",
+                "cutsceneAudioEventsLinked",
+            )
             if linked_events and cutscene.get("audioFiles") != linked_events:
                 cutscene["audioFiles"] = linked_events
+                changed = True
+            elif not linked_events and cutscene.get("audioFiles"):
+                cutscene.pop("audioFiles", None)
                 changed = True
 
         if changed:
@@ -1064,9 +1171,15 @@ def link_conversation_audio(
 
 
 def build_audio(args: argparse.Namespace) -> int:
+    args.export_root = args.export_root.resolve()
+    args.webui_root = args.webui_root.resolve()
+    args.audio_root = args.audio_root.resolve()
     language = args.language.upper()
     language_info = LANGUAGES[language]
     language_root = args.audio_root / language
+    if args.skip_decode and not has_decoded_audio(language_root):
+        print(f"Audio build [{language}]: skipped (no decoded audio files at {language_root})")
+        return 0
     if not args.skip_decode:
         language_root.mkdir(parents=True, exist_ok=True)
 
@@ -1074,9 +1187,11 @@ def build_audio(args: argparse.Namespace) -> int:
     run_fluffy_dumper(args, language_info, language_root)
 
     audio_dialog_path = find_audio_dialog_table(args.export_root)
-    generic_audio = collect_audio_files(language_root, language)
+    generic_audio = collect_audio_files(args.audio_root, args.webui_root, language_root, language)
     dialog_audio = build_dialog_audio_index(
         audio_dialog_path,
+        args.audio_root,
+        args.webui_root,
         language_root,
         language,
         language_info,
@@ -1097,7 +1212,13 @@ def build_audio(args: argparse.Namespace) -> int:
     for events in cutscene_audio_events.values():
         event_names.update(str(event or "").strip() for event in events if str(event or "").strip())
     cached_event_index = (
-        load_cached_event_audio_index(language_root, event_names, args.webui_root)
+        load_cached_event_audio_index(
+            language_root,
+            event_names,
+            args.audio_root,
+            args.webui_root,
+            language,
+        )
         if args.skip_decode
         else None
     )
@@ -1149,6 +1270,7 @@ def build_audio(args: argparse.Namespace) -> int:
         f" {len(dialog_audio):,} AudioDialog matches,"
         f" {len(event_entries):,} event media links,"
         f" {link_stats['lineAudioLinked']:,}/{link_stats['lineAudioRefs']:,} line refs linked,"
+        f" {link_stats['conversationAudioEventsLinked']:,}/{link_stats['conversationAudioEvents']:,} conversation event refs linked,"
         f" {link_stats['cutsceneAudioEventsLinked']:,}/{link_stats['cutsceneAudioEvents']:,} cutscene event refs linked,"
         f" {link_stats['conversationFilesChanged']:,} conv files updated"
         f" in {elapsed:.1f}s"
@@ -1161,19 +1283,26 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--language", choices=sorted(LANGUAGES), default="CN")
     parser.add_argument("--format", choices=("wav", "wem"), default="wav")
     parser.add_argument("--block", choices=("all", "voice", "audio", "initial-audio", "audit-audio"), default="all")
-    parser.add_argument("--skip-decode", action="store_true", help="Only rebuild the WebUI audio index and story links.")
+    parser.add_argument("--skip-decode", action="store_true", help="Only rebuild the audio index and story links.")
     parser.add_argument("--fluffy", type=Path, default=DEFAULT_FLUFFY)
     parser.add_argument("--game-root", type=Path, default=DEFAULT_GAME_ROOT)
     parser.add_argument("--streaming-assets", type=Path, default=None)
     parser.add_argument("--fallback-assets", type=Path, default=None)
     parser.add_argument("--export-root", type=Path, default=DEFAULT_EXPORT_ROOT)
     parser.add_argument("--webui-root", type=Path, default=DEFAULT_WEBUI_ROOT)
-    parser.add_argument("--audio-root", type=Path, default=DEFAULT_AUDIO_ROOT)
+    parser.add_argument(
+        "--audio-root",
+        type=Path,
+        default=None,
+        help="Decoded audio root containing per-language folders. Default: <export-root>/structured/Audio.",
+    )
     args = parser.parse_args(argv)
     if args.streaming_assets is None:
         args.streaming_assets = args.game_root / "StreamingAssets"
     if args.fallback_assets is None:
         args.fallback_assets = args.game_root / "Persistent"
+    if args.audio_root is None:
+        args.audio_root = args.export_root / "structured" / "Audio"
     return args
 
 

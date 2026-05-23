@@ -10,26 +10,27 @@ From the repo root:
 
 ```bat
 .\export.bat
+.\export.bat --export-from-game
 .\build_updates.bat
 .\export_assets.bat
-.\export_audio.bat
 .\package_webui.bat
 ```
 
-`export.bat` is the normal story/reference WebUI refresh path. It runs:
+`export.bat` is the normal story/reference WebUI rebuild path from an existing
+`export_full/`. It runs:
 
-- `scripts/export_full_from_game.py --animestudio-scope story --animestudio-stages maps json_by_type`
 - `scripts/verify_export_freshness.py`
 - `scripts/story_builder/dialog_registry.py --quiet`
 - `scripts/story_builder/video_bindings.py`
 - `scripts/story_builder/source_links.py`
 - `scripts/story_builder/build.py --languages CN --default-language CN`
+- `scripts/story_recovery/build_story_order.py`
+- `scripts/build_audio.py --skip-decode`
 
-Use `.\export.bat --skip-export-full` to rebuild WebUI data from an existing
-`export_full/` while still running the freshness guard before the builders.
-The story builder also runs a relink-only audio pass for any selected language
-that already has decoded files under `webui/data/audio/<LANG>/`, so Story
-audio controls survive normal rebuilds.
+Pass `--export-from-game` when you explicitly want to refresh `export_full/`
+from installed game data before rebuilding; in that mode `export.bat` also
+decodes CN audio before the final link pass. The final audio pass always runs,
+so Story audio controls are linked after generated conversations are rebuilt.
 
 `build_updates.bat` writes `webui/data/updates/latest.json` from the saved
 previous export and current `export_full/`. Use `.\build_updates.bat
@@ -37,25 +38,22 @@ previous export and current `export_full/`. Use `.\build_updates.bat
 asset-level diffs by default; pass `--include-asset-updates` after refreshing
 heavy assets when those changes should appear in Updates.
 
-`export_assets.bat` runs the heavier image/model/animation AnimeStudio decode
-and then `scripts/build_assets.py` for the Assets tab indexes and compact
-Story media lookup.
+`export_assets.bat` runs `scripts/build_assets.py` for the Assets tab indexes
+and compact Story media lookup. Pass `--export-from-game` to run the heavier
+image/model/animation AnimeStudio decode first.
 
-`export_audio.bat` runs `scripts/build_audio.py` for decoded audio. By default
-it extracts CN voice/general/initial/audit WAVs with `fluffy-dumper` and writes
-`webui/data/audio/CN/`. It also builds `webui/data/audio/CN/index.json`, adds
-playable `audioSrc` links to generated CN conversation JSON when a line's
-`audio` id matches a decoded file, parses Wwise bank HIRC metadata from
-exported `*banks.pck` files, and links cutscene audio events such as
-`au_sfx_*`/`au_vo_*` when the event graph reaches decoded media. Use
-`--skip-decode` to rebuild only the index and WebUI links from existing decoded
-files. A normal `scripts/story_builder/build.py` run performs that same
-skip-decode relink automatically when decoded audio is already present.
+`scripts/build_audio.py` can still be run directly for non-CN languages or
+audio-only maintenance. It indexes files under
+`export_full/structured/Audio/<LANG>/`, adds playable `audioSrc` links to
+generated conversation JSON when a line's `audio` id matches a decoded file,
+parses Wwise bank HIRC metadata from exported `*banks.pck` files, and links
+cutscene audio events such as `au_sfx_*`/`au_vo_*` when the event graph reaches
+decoded media.
 
 `package_webui.bat` runs `scripts/package_webui.py` and creates split
 shareable zips. The main story zip contains `serve.py`, `webui/`, generated
-story/reference text data, WebUI code, and emoji images. The companion assets
-zip contains the larger displayed image/video media resolved from
+story/reference text data, WebUI code, emoji images, and decoded story audio.
+The companion assets zip contains the larger displayed image/video media resolved from
 `export_full/`; extract the story zip first, then extract the assets zip into
 the same directory when media is wanted. Packaging excludes 3D/model payloads
 and does not include
@@ -83,11 +81,12 @@ Expected active inputs and outputs:
   previews, and experiment output that has not become part of a maintained
   workflow.
 - `../tmp/`: disposable intermediate output and temporary files.
-- `../tools/`: tracked lightweight helper scripts plus ignored local
-  vendor/tool caches. If a workflow needs reusable helper data such as
-  AnimeStudio DummyDlls, place it here or pass it explicitly rather than
-  relying on `scratch/` or `tmp/`. New promoted tools need intentional
-  tracking and documentation because this directory is ignored by default.
+- `../tools/`: the tracked source-graph helper, tracked IL2CPP diagnostics
+  used by optional recovery audits, and ignored local vendor/tool caches. If a
+  workflow needs reusable helper data such as AnimeStudio DummyDlls, place it
+  here or pass it explicitly rather than relying on `scratch/` or `tmp`. New
+  promoted tools need intentional tracking and documentation because this
+  directory is ignored by default.
 
 ## WebUI
 
@@ -131,16 +130,17 @@ Expected active inputs and outputs:
   index, and optional demo bundle zips from active WebUI export roots. It is
   run by `..\export_assets.bat`, not the story-only `..\export.bat`.
 - `build_audio.py`: decodes language audio via `fluffy-dumper`, indexes files
-  under `webui/data/audio/<LANG>/`, parses Wwise bank event-to-media links, and
-  post-processes generated conversation JSON so dialog/cutscene lines and
-  recoverable cutscene audio events can render native browser audio controls.
+  under `export_full/structured/Audio/<LANG>/`, parses Wwise bank
+  event-to-media links, and post-processes generated conversation JSON so
+  dialog/cutscene lines and recoverable cutscene audio events can render native
+  browser audio controls.
 - `asset_builder/`: shared asset-browser indexing, story-media selection, and
   demo bundle helpers used by `build_assets.py` and the Updates builder.
 - `package_webui.py`: packages split shareable WebUI zips from
   `serve.py`, `..\webui\`, and displayed media files under `..\export_full\`.
-  The primary zip is story/code/emoji only, including the full
-  `envEmoji_common_*` prefab layer sprite set; the companion assets zip carries
-  larger images and videos.
+  The primary zip is story/code/emoji/audio, including the full
+  `envEmoji_common_*` prefab layer sprite set and decoded story audio; the
+  companion assets zip carries larger images and videos.
 - `common.py`: small shared constants and JSON/path helpers for the
   WebUI builders.
 - `recover_envemoji_prefabs.py`: regenerates the `envEmoji_common_*` prefab
@@ -155,12 +155,6 @@ Expected active inputs and outputs:
   so stale files from older naming contracts are removed by a forced refresh of
   the affected stage/type. AnimeStudio-derived WebUI inputs that do not carry
   the PathID suffix are ignored.
-- `animestudio/rename_exports_to_path_id.py`: dry-run-first migration helper
-  for existing AnimeStudio CLI outputs from the older plain-name convention.
-  It reads the AnimeStudio map JSON files and renames only files with an
-  unambiguous PathID match; use a fresh asset export for a fully authoritative
-  rebuild.
-
 ## WebUI Story Helpers
 
 These are kept because the WebUI story builders import or use them:
@@ -214,13 +208,12 @@ These are kept because the WebUI story builders import or use them:
   `Data/Video/PC/Narrative/Cutscene` and `RemoteComm`, attaches matching
   `narrativeVideos` to dialog/cutscene/remotecomm conv JSON, and writes
   `reports/narrative_videos_<LANG>.json` / `.md`.
-- `story_builder/manual_option_overrides.json` is a WebUI-only manual override
-  file for known option recovery gaps. It can pin an option group's displayed
-  placement with `layout.after` or `layout.position: "pre"`, and can map
-  inferred option replies with `responses.<optionId>.branchLines`. Overrides
-  only apply to matching generated groups that already hit the option-layout or
-  inferred-response recovery path; they do not promote new automatic evidence.
-  Overridden rows are tagged in the Story view.
+- `webui/overrides/options.json` is a runtime WebUI-only manual
+  override file for known option recovery gaps. It can pin option groups with
+  `positions.after.<lineId>: ["<group>"]` or `positions.pre`, and can map
+  inferred option replies with `responses.<optionId>: ["<lineId>"]`. Edit it
+  and refresh the browser; no Story rebuild is needed. Overrides do not promote
+  new automatic evidence, and overridden rows are tagged in the Story view.
 
 ## Story Recovery Tools
 
@@ -247,6 +240,62 @@ scan:
   `.md`, including ordered/unknown totals, remaining inferred responses,
   non-runtime option-layout rows, uncovered line warnings, and top unknown
   missions.
+- `story_recovery/build_gameplay_video_ocr_audit.py`: lower-level OCR worker
+  used by the full gameplay video story-order pipeline. It samples final
+  gameplay videos from `videos/`, crops a raised lower-half band of every 45th
+  frame by default so the bottom UID/latency strip is excluded, scales crops to
+  75%, prefilters near-blank/repeated subtitle crops, and runs EasyOCR to
+  produce observed subtitle/UI text evidence. It writes
+  per-video reports plus an aggregate index under
+  `reports/gameplay_video_ocr/`. The runner skips `.lock`, `.m4s`, zero-byte,
+  and other partial downloads, and it skips already completed videos when a
+  complete per-video OCR report already exists for the same source file. Use
+  `--frame-step 45` for the current default cadence, `--dry-run` to inspect
+  pending videos, `--limit-frames` for smoke tests, and `--force` only when
+  intentionally reprocessing completed videos. Decoded sampled-frame JPEGs are
+  kept by default under `tmp/gameplay_video_ocr/frames/`; reruns reuse existing
+  frame files and append only missing sampled frames. Pass `--discard-frames`
+  only for a disposable run. The default OCR language is
+  Simplified Chinese plus English (`chi_sim+eng`, mapped to EasyOCR
+  `ch_sim+en`), and model weights live under `tools/easyocr/`. OCR output
+  is filtered before it becomes a segment: UID/latency overlays are stripped,
+  Chinese-rich spans are extracted from mixed junk lines, short lines are
+  dropped unless they look like short Chinese speaker names, and mostly-symbol
+  lines are rejected. The default recognition and line filters are
+  intentionally permissive so short subtitle fragments, speaker names, and
+  lower-confidence EasyOCR boxes are kept for matching. Mostly-black sampled
+  frames bypass the normal subtitle crop and are replaced in the decoded-frame
+  cache by a near-full-frame OCR crop that keeps the top 93% by default, leaving
+  only the bottom UID strip out. The script logs OCR configuration, report
+  output location, pending/skip reasons, pending video order, ffprobe metadata,
+  black-frame scan stats, frame extraction status, EasyOCR image groups,
+  per-batch OCR timing, kept/filtered frame counts, dark-frame near-full crop
+  counts, the full filtered per-frame timeline in each per-video markdown
+  report, per-video elapsed/remaining/ETA lines, an overall video progress bar,
+  and a live status index at
+  `reports/gameplay_video_ocr/gameplay_video_ocr_index.md`. It orchestrates
+  external `ffmpeg`/`ffprobe` plus EasyOCR/PyTorch. ffmpeg tries CUDA/NVDEC
+  decode automatically when the local ffmpeg build supports it, with CPU
+  fallback if hardware decode fails. EasyOCR uses CUDA when available unless
+  `--easyocr-cpu` is passed. Use `--low-memory` on this worker, or
+  `--ocr-low-memory` on the full pipeline, to cap EasyOCR batches at 8 for long
+  runs on a memory-constrained machine.
+- `story_recovery/build_gameplay_video_story_order.py`: full OCR-to-order
+  promotion pipeline. It can run the OCR sampler first with `--run-ocr`, then
+  matches completed OCR segments against generated CN Story text, writes
+  `reports/gameplay_video_ocr/story_order_ocr_matches.json` / `.md`, and emits
+  a proposed full-list story order at
+  `reports/gameplay_video_ocr/story_order_ocr_proposed_story_order.json`.
+  Pass `--apply` only after reviewing the report; it writes the same full-list
+  format to `webui/overrides/story_order.json`, while preserving any mission
+  marked with `locked: true`. Smoke OCR reports made with `--limit-frames` are
+  ignored unless `--include-smoke` is passed. The matcher logs corpus/index
+  loading, OCR report scan skip/load counts, report match order, and per-video
+  OCR-segment matching progress. It ignores stale OCR reports from older filter
+  versions unless `--include-stale-ocr` is passed. The wrapper intentionally
+  exposes only the practical OCR controls:
+  `--frame-step`, `--ocr-crop`, `--ocr-limit`, `--ocr-limit-frames`,
+  `--ocr-low-memory`, `--easyocr-cpu`, and `--force-ocr`.
 - `story_recovery/build_levelscript_control_audit.py`: audits a mission's
   higher LevelScript control layer from MissionRuntime, LevelData script
   ownership, decoded LevelScript story/levelseq records, cross-script numeric
@@ -428,15 +477,13 @@ scan:
   property, levelseq, or spatial anchors. Standalone video rows with explicit
   AnimeStudio `timelinePlayable` bindings inherit adjacency from their bound
   story key, while filename-only video matches remain ordinary fallbacks.
-  Mission-specific gameplay-observed calibration hints live in
-  `story_recovery/manual_observed_order_hints.json`; these are WebUI recovery
-  aids, not original-data proof, and generated rows keep the previous recovered
-  evidence in `recovered*BeforeObserved` fields. Hints may also carry
-  `evidenceAlignments`; those mark rows as `source-backed`, `partial`, or
-  `gap` against the observation and can replace the generic observed badge
-  with a more specific `observed-aligned:*` or `observed-compatible:*`
-  evidence label. This is run by `export.bat` after the CN story bundle is
-  built so the WebUI can sort mission entries by recovered file/play order.
+  The editable final scene order lives in `webui/overrides/story_order.json`.
+  Each `missions.<mission>.order` array is the complete ordered list of Story
+  file keys for that mission. The builder refreshes this full-list file by
+  default, OCR recovery updates the same lists, and the WebUI can save row
+  moves from `按剧情排序` mode. Set `missions.<mission>.locked: true` to freeze a
+  mission order against build_story and OCR recovery; the WebUI can toggle the
+  flag per mission for manual edits.
 - `story_recovery/build_option_playable_semantics_audit.py`: audits remaining
   `inferredOptionResponse` groups against decoded
   `DialogOptionPlayableAsset` fields such as `logicId`, `trunkId`,
