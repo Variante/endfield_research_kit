@@ -67,8 +67,10 @@ Story:
   AnimeStudio/Timeline data, `dialog_id_table_index.json`, and
   `story_source_links.json`.
 - Conversation JSON is lazy-loaded from `webui/data/lang/<code>/conv/`.
-- Recovery uncertainty should stay visible through warnings, issue filters,
-  and source/debug blocks.
+- Recovery uncertainty should stay visible through warnings. Detailed issue
+  filters, source/debug blocks, mission timeline evidence, cutscene debug
+  panels, and manual order-edit controls are available from the Story
+  `Show debug info` toggle.
 - Timeline-inferred option responses are promoted only when source evidence
   binds each option index to a distinct candidate response. The known
   source-backed strict `trunkClipOptionIndex` case is `dlg_c28m3_10` group 1;
@@ -240,6 +242,26 @@ After a refresh, check:
 - Package dry-run reports expected story media and excludes 3D/model payloads
   by default.
 
+## 2026-05-24 Story browsing/debug split
+
+- The Story view now defaults to a quieter browsing surface. The `Show debug
+  info` toggle exposes recovery issue/method filters, line-order evidence,
+  source/debug panels, mission timeline recovery, cutscene debug detail, and
+  manual Story order editing controls.
+- Resetting Story filters returns to Story sort and clears chips/search without
+  collapsing already-expanded mission groups.
+- The WebUI chrome moved to a light neutral palette with muted teal and orange
+  accents; kind/category badges remain softly color-coded for scanning.
+- The gameplay video story-order matcher now combines OCR segments with
+  decoded Story audio-template matches. Audio fingerprints are cached under
+  `tmp/gameplay_video_ocr/audio/`; `au_music*` templates are ignored by default,
+  and locked missions are used as threshold controls before applying proposed
+  order changes.
+- `scripts/download_bilibili_video.py` is the maintained optional intake helper
+  for public Bilibili gameplay sources. It writes complete muxed `.mp4` files
+  into `videos/`; the OCR worker continues to skip partial `.m4s` and `.lock`
+  files.
+
 ## 2026-05-20 narrative video attachment policy
 
 - Story builder now embeds every resolved narrative-video mapping into its
@@ -251,7 +273,9 @@ After a refresh, check:
 - Standalone `video_*` rows are still emitted for direct browsing, but they
   carry `attachTo` for the resolved story key. Story sort uses that attachment
   so the standalone video row stays beside the file where the video is inserted.
-- Manual suppressions in `webui/overrides/narrative_videos.json` keep known
+- Manual rules in `webui/overrides/narrative_videos.json` cover both known
+  filename mismatches and false attachments. `attachInline` manually embeds a
+  matching video stem into a target story key; `suppressInline` keeps known
   false inline attachments standalone-only. `cutscene_e1m3_1` is suppressed
   for `cs_video_e1m3_1` because the filename match should not attach that video
   to the black-screen cutscene.

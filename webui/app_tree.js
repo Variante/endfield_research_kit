@@ -303,13 +303,6 @@ function hasActiveStoryFilters() {
   );
 }
 
-function syncClearFiltersControl() {
-  const button = $("#clear-filters");
-  if (!button) return;
-  button.disabled = !hasActiveStoryFilters();
-  syncStoryOrderEditor();
-}
-
 function syncFilterSectionActiveCounts() {
   for (const section of $$(".filter-section[data-filter-section]")) {
     const count = filterSectionActiveCount(section.dataset.filterSection || "");
@@ -334,12 +327,13 @@ function syncFilterSectionActiveCounts() {
   }
 }
 
-function clearStoryFilters() {
-  STATE.filters = createDefaultFilters();
-  const searchInput = $("#q");
-  if (searchInput) searchInput.value = "";
-  $$(".chip.on").forEach((chip) => chip.classList.remove("on"));
-  applyFilters();
+function preserveCurrentTreeExpansion() {
+  if (!Array.isArray(STATE.rows)) return;
+  for (const row of STATE.rows) {
+    if (row && row.type === "group" && row.expanded && row.path) {
+      STATE.expanded.add(row.path);
+    }
+  }
 }
 
 function buildKindChips() {
@@ -514,20 +508,6 @@ function syncStoryOrderEditor() {
   if (!row) return;
   const inStorySort = (STATE.sortMode || "story") === "story";
   row.hidden = !inStorySort;
-
-  const status = $("#story-order-save-status");
-  if (status && inStorySort && hasActiveStoryFilters()) {
-    status.className = "story-order-save-status";
-    status.textContent = uiText("storyOrderEditFiltered");
-  } else if (
-    status
-    && !status.classList.contains("is-saving")
-    && !status.classList.contains("is-saved")
-    && !status.classList.contains("is-error")
-  ) {
-    status.textContent = "";
-    status.className = "story-order-save-status";
-  }
 }
 
 function storyOrderMoveInfo(entry) {
@@ -770,22 +750,14 @@ function bindEvents() {
   }
   $("#reset").addEventListener("click", () => {
     clearTimeout(qTimer);
+    preserveCurrentTreeExpansion();
     STATE.filters = createDefaultFilters();
     STATE.sortMode = "story";
-    STATE.expanded.clear();
     $("#q").value = "";
     syncStorySortControl();
     $$(".chip.on").forEach((c) => c.classList.remove("on"));
     applyFilters();
   });
-  const clearFiltersButton = $("#clear-filters");
-  if (clearFiltersButton) {
-    clearFiltersButton.addEventListener("click", () => {
-      clearTimeout(qTimer);
-      clearStoryFilters();
-    });
-  }
-
   $("#list-wrap").addEventListener("scroll", renderList);
   window.addEventListener("resize", renderList);
 
@@ -821,11 +793,25 @@ function bindEvents() {
       renderConv(STATE.convCache.get(STATE.selectedKey));
     }
   });
+  const showDebug = $("#show-debug");
+  if (showDebug) {
+    showDebug.addEventListener("click", () => {
+      const next = showDebug.getAttribute("aria-pressed") !== "true";
+      showDebug.setAttribute("aria-pressed", next ? "true" : "false");
+      STATE.showDebug = next;
+      document.body.classList.toggle("show-debug", next);
+      if (STATE.selectedKey && STATE.convCache.has(STATE.selectedKey)) {
+        renderConv(STATE.convCache.get(STATE.selectedKey));
+      }
+    });
+  }
   $("#inline-tag-mode").addEventListener("change", (ev) => {
     setInlineTagDisplayMode(ev.target.checked ? "raw" : "rendered");
   });
-  $("#gender-variant").addEventListener("change", (ev) => {
-    setGenderVariant(ev.target.checked ? "f" : "m");
+  $("#gender-variant").addEventListener("click", () => {
+    const btn = $("#gender-variant");
+    const isF = btn.getAttribute("aria-pressed") === "true";
+    setGenderVariant(isF ? "m" : "f");
   });
   $("#reveal-current").addEventListener("click", () => {
     const entry = getSelectedEntry();
@@ -866,7 +852,7 @@ function bindEvents() {
 // ---------- filtering + tree build ----------
 function applyFilters() {
   syncFilterSectionActiveCounts();
-  syncClearFiltersControl();
+  syncStoryOrderEditor();
   const f = STATE.filters;
   let out = STATE.entries;
 

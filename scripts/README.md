@@ -74,6 +74,10 @@ Expected active inputs and outputs:
 - `../reports/`: durable generated reports and summaries written by exporters
   or builders. These are outputs, not package inputs, and should not contain
   agent investigation conclusions.
+- `../videos/`: local gameplay video inputs used by the optional OCR/audio
+  story-order recovery tools. Completed `.mp4` files are inputs to
+  `story_recovery/build_gameplay_video_ocr_audit.py`; downloader `.m4s` parts
+  and `.lock` files are ignored as incomplete work.
 - `../memory/`: observations, conclusions, older exploration notes, status
   snapshots, and archived scripts.
 - `../scratch/`: disposable probes, temporary prototypes, logs, generated
@@ -140,6 +144,12 @@ Expected active inputs and outputs:
   The primary zip is story/code/emoji/audio, including the full
   `envEmoji_common_*` prefab layer sprite set and decoded story audio; the
   companion assets zip carries larger images and videos.
+- `download_bilibili_video.py`: optional gameplay-video intake helper for the
+  OCR/audio story-order workflow. It downloads Bilibili pages into the flat
+  `..\videos\` folder using browser-exported cookies, resumable `.m4s` parts,
+  per-file `.lock` guards, and `ffmpeg` stream muxing. It intentionally uses
+  the external `requests` package and is not part of the stdlib-only export
+  path or any normal `export.bat` run.
 - `common.py`: small shared constants and JSON/path helpers for the
   WebUI builders.
 - `recover_envemoji_prefabs.py`: regenerates the `envEmoji_common_*` prefab
@@ -202,9 +212,10 @@ These are kept because the WebUI story builders import or use them:
   emitted as standalone `video` story files grouped by mission, while resolved
   mappings attach to the dialog, cutscene, remotecomm, or other story file and
   keep the standalone row adjacent in Story sort. Timeline / playable evidence
-  supplies authored inline placement when available. Manual suppressions in
-  `webui/overrides/narrative_videos.json` keep known false attachments as
-  standalone-only video rows.
+  supplies authored inline placement when available. Manual attach and
+  suppression rules in `webui/overrides/narrative_videos.json` cover known
+  filename mismatches and known false attachments while keeping standalone
+  video rows.
 - `story_builder/` also scans narrative video folders under
   `Data/Video/PC/Narrative/Cutscene` and `RemoteComm`, attaches matching
   `narrativeVideos` to dialog/cutscene/remotecomm conv JSON, and writes
@@ -218,9 +229,10 @@ These are kept because the WebUI story builders import or use them:
 
 ## Story Recovery Tools
 
-These scripts are not part of `export.bat`; they live under
+These tools are not part of `export.bat`. Most live under
 `scripts/story_recovery/` so the root export/package commands stay easy to
-scan:
+scan; the root-level Bilibili downloader is listed here because it feeds the
+gameplay-video OCR/audio workflow.
 
 - `story_recovery/build_runtime_jump_option_route_audit.py`: audits remaining
   live `inferredOptionResponse` warning groups against nearby Runtime Jump
@@ -241,6 +253,16 @@ scan:
   `.md`, including ordered/unknown totals, remaining inferred responses,
   non-runtime option-layout rows, uncovered line warnings, and top unknown
   missions.
+- `download_bilibili_video.py`: optional downloader for collecting gameplay
+  videos before OCR. It accepts BVIDs directly or from `--bvid-file`, defaults
+  to the repo-local cookie export at
+  `cookies/www.bilibili.com.cookies.json`, writes flat `.mp4` outputs under
+  `videos/`, prefers AVC for local playback, adopts matching legacy nested
+  video files unless `--no-adopt-existing` is passed, and skips completed files
+  unless `--overwrite` is used. Use `--dry-run` to inspect planned filenames
+  without downloading. It requires network access, `requests`, valid Bilibili
+  cookies, and `ffmpeg`; keep partial `.m4s` and `.lock` files out of the OCR
+  corpus until the muxed `.mp4` is complete.
 - `story_recovery/build_gameplay_video_ocr_audit.py`: lower-level OCR worker
   used by the full gameplay video story-order pipeline. It samples final
   gameplay videos from `videos/`, crops a raised lower-half band of every 45th
@@ -281,10 +303,24 @@ scan:
   `--easyocr-cpu` is passed. Use `--low-memory` on this worker, or
   `--ocr-low-memory` on the full pipeline, to cap EasyOCR batches at 8 for long
   runs on a memory-constrained machine.
-- `story_recovery/build_gameplay_video_story_order.py`: full OCR-to-order
+- `story_recovery/build_gameplay_video_story_order.py`: full OCR/audio-to-order
   promotion pipeline. It can run the OCR sampler first with `--run-ocr`, then
-  matches completed OCR segments against current CN Story text and the
-  OCR-managed order in `webui/overrides/story_order.json`, writes
+  matches completed OCR segments against current CN Story text and matches
+  decoded Story audio templates against each gameplay video's audio track.
+  Audio matching uses ffmpeg to build cached mono speech-band RMS/delta
+  fingerprints under `tmp/gameplay_video_ocr/audio/`. A sparse landmark
+  prefilter keeps the expensive normalized correlation pass to the strongest
+  candidate offsets instead of scanning every video window for every template.
+  `au_music*` templates are skipped by default so gameplay BGM is treated as
+  background, and accepted audio-template hits are preferred over OCR spans
+  when both place the same Story key. Pass `--disable-audio-match` for an
+  OCR-only run or `--audio-include-music` only when music-event matching is
+  intentional. The
+  matcher reads the OCR-managed order in `webui/overrides/story_order.json`,
+  uses missions marked `locked: true` as controls for an OCR threshold sweep,
+  then rebuilds final observed sequences with the selected effective threshold.
+  The terminal output and markdown report include locked-order mismatch counts
+  per mission. It writes
   `reports/gameplay_video_ocr/story_order_ocr_matches.json` / `.md`, and emits
   a proposed full-list story order at
   `reports/gameplay_video_ocr/story_order_ocr_proposed_story_order.json`.

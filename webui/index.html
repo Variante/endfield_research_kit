@@ -4,15 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>&#32456;&#26411;&#22320;&#23545;&#35805;&#27983;&#35272;&#22120; / Endfield Story Browser</title>
-<link rel="stylesheet" href="style.css?v=20260520-cutscene-audio-first">
+<link rel="stylesheet" href="style.css?v=20260524-toast-prominent">
 </head>
 <body data-active-view="story">
 <div id="shell">
   <header id="topbar">
-    <div class="topbar-copy">
-      <div id="shell-title" class="topbar-title">&#32456;&#26411;&#22320;&#27983;&#35272;&#22120;&#22871;&#20214;</div>
-      <div id="shell-subtitle" class="topbar-subtitle">&#23545;&#35805;&#27983;&#35272;&#22120; + &#23548;&#20986;&#36164;&#28304;&#27983;&#35272;&#22120;</div>
-    </div>
     <div class="topbar-actions">
       <label class="topbar-control" for="ui-language">
         <span id="ui-language-label">&#30028;&#38754;</span>
@@ -40,6 +36,8 @@
             <div class="sidebar-header-actions">
               <button id="filter-toggle" class="panel-toggle" type="button" aria-controls="filter-panel" aria-expanded="true">&#38544;&#34255;&#31579;&#36873;</button>
               <button id="reset" type="button">&#37325;&#32622;&#31579;&#36873;</button>
+              <button id="show-debug" class="header-toggle-button" type="button" aria-pressed="false"><span id="show-debug-label">&#26174;&#31034;&#35843;&#35797;&#20449;&#24687;</span></button>
+              <button id="gender-variant" class="header-toggle-button" type="button" aria-pressed="true"><span id="gender-variant-label">Gender: F</span></button>
             </div>
           </header>
 
@@ -70,35 +68,32 @@
                 <div id="story-order-editor-row" class="filter-control-row story-order-editor-row" hidden>
                   <span id="story-order-save-status" class="story-order-save-status" role="status" aria-live="polite"></span>
                 </div>
-                <div class="filter-actions-row">
-                  <button id="clear-filters" class="clear-filters-button" type="button">&#28165;&#31354;&#31579;&#36873;</button>
-                </div>
               </div>
             </section>
 
-            <section class="filter-section" data-filter-section="kind">
-              <button class="filter-section-toggle" type="button" aria-expanded="true" aria-controls="filter-section-kind-body">
+            <section class="filter-section is-collapsed" data-filter-section="kind" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="filter-section-kind-body">
                 <span id="kind-label">&#31867;&#22411;</span>
               </button>
-              <div id="filter-section-kind-body" class="filter-section-body">
+              <div id="filter-section-kind-body" class="filter-section-body" hidden>
                 <div id="kind-filter" class="chips" data-multi="1"></div>
               </div>
             </section>
 
-            <section class="filter-section" data-filter-section="type">
-              <button class="filter-section-toggle" type="button" aria-expanded="true" aria-controls="filter-section-type-body">
+            <section class="filter-section is-collapsed" data-filter-section="type" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="filter-section-type-body">
                 <span id="type-label">&#21095;&#24773;&#32447;</span>
               </button>
-              <div id="filter-section-type-body" class="filter-section-body">
+              <div id="filter-section-type-body" class="filter-section-body" hidden>
                 <div id="type-filter" class="chips" data-multi="1"></div>
               </div>
             </section>
 
-            <section class="filter-section" data-filter-section="media">
-              <button class="filter-section-toggle" type="button" aria-expanded="true" aria-controls="filter-section-media-body">
+            <section class="filter-section is-collapsed" data-filter-section="media" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="filter-section-media-body">
                 <span id="media-label">&#23186;&#20307;</span>
               </button>
-              <div id="filter-section-media-body" class="filter-section-body">
+              <div id="filter-section-media-body" class="filter-section-body" hidden>
                 <div id="media-filter" class="chips" data-multi="1"></div>
               </div>
             </section>
@@ -148,7 +143,6 @@
               <label><input type="checkbox" id="show-empty"> <span id="show-empty-label">&#26174;&#31034;&#31354;&#30333;&#23545;&#35805;&#34892;</span></label>
               <label><input type="checkbox" id="show-raw"> <span id="show-raw-label">&#26174;&#31034;&#21407;&#22987; JSON / &#25991;&#26412;&#26469;&#28304;</span></label>
               <label><input type="checkbox" id="inline-tag-mode"> <span id="inline-tag-mode-label">&#26174;&#31034;&#26631;&#31614;&#21407;&#25991;</span></label>
-              <label><input type="checkbox" id="gender-variant" checked> <span id="gender-variant-label">Gender: F</span></label>
             </div>
             <div id="conv-lines"></div>
           </div>
@@ -393,9 +387,9 @@
 <script src="src/core/locale.js?v=20260520-webui-framework"></script>
 <script src="src/core/paths.js?v=20260520-webui-framework"></script>
 <script src="src/ui/media_player.js?v=20260520-webui-framework"></script>
-<script src="app_labels.js?v=20260523-manual-archive-duplicates"></script>
-<script src="app_tree.js?v=20260523-manual-archive-duplicates"></script>
-<script src="app.js?v=20260523-manual-archive-duplicates"></script>
+<script src="app_labels.js?v=20260524-reset-filter"></script>
+<script src="app_tree.js?v=20260524-reset-expansion"></script>
+<script src="app.js?v=20260524-reset-filter"></script>
 <script src="assets.js?v=20260512-basic-filter-section"></script>
 <script src="src/features/reference/index.js?v=20260520-webui-framework"></script>
 <script src="src/features/updates/index.js?v=20260520-webui-framework"></script>

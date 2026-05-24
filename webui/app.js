@@ -81,6 +81,7 @@ const STATE = {
   sortMode: "story",
   showEmpty: false,
   showRaw: false,
+  showDebug: false,
   filtersCollapsed: false,
   filterSectionsCollapsed: new Set(),
   indexRequestToken: 0,
@@ -2506,8 +2507,6 @@ function resolveInitialLanguage() {
 function applyUiStrings() {
   document.documentElement.lang = STATE.uiLocale === "zh" ? "zh-CN" : "en";
 
-  $("#shell-title").textContent = uiText("suiteTitle");
-  $("#shell-subtitle").textContent = uiText("suiteSubtitle");
   $("#story-tab").textContent = uiText("storyTab");
   $("#assets-tab").textContent = uiText("assetsTab");
   $("#ui-language-label").textContent = uiText("uiLanguage");
@@ -2538,8 +2537,6 @@ function applyUiStrings() {
   if (searchLabel) searchLabel.textContent = uiText("searchFilter");
   $("#sort-label").textContent = uiText("sort");
   $("#reset").textContent = uiText("reset");
-  const clearFiltersButton = $("#clear-filters");
-  if (clearFiltersButton) clearFiltersButton.textContent = uiText("clearFilters");
   const sortStory = $("#sort-story");
   if (sortStory) sortStory.textContent = uiText("sortStory");
   const sortNatural = $("#sort-natural");
@@ -2557,6 +2554,8 @@ function applyUiStrings() {
   $("#reveal-current").textContent = uiText("revealCurrent");
   $("#show-empty-label").textContent = uiText("showEmpty");
   $("#show-raw-label").textContent = uiText("showRaw");
+  const showDebugLabel = $("#show-debug-label");
+  if (showDebugLabel) showDebugLabel.textContent = uiText("showDebug");
   const inlineTagMode = $("#inline-tag-mode");
   if (inlineTagMode) {
     $("#inline-tag-mode-label").textContent = uiText("inlineTagMode");
@@ -2942,14 +2941,12 @@ function renderItem(row) {
 
   const kindCls = meta.cls;
   const kindNm = meta.name;
-  const actorTxt = e.c.slice(0, 3).map(actorDisplay).join(" / ")
-                 + (e.c.length > 3 ? `+${e.c.length - 3}` : "");
 
   div.innerHTML =
     `<div class="item-line1">` +
       `<span class="badge ${kindCls}">${escapeHtml(kindNm)}</span>` +
       `<span class="item-key">${highlightTextFragment(displayEntryTitle(e), STATE.filters.q)}</span>` +
-      `<span class="item-meta">${e.n} ${uiText("lineUnit")}${actorTxt ? " | " + escapeHtml(actorTxt) : ""}</span>` +
+      `<span class="item-meta">${e.n} ${uiText("lineUnit")}</span>` +
       dragHandle +
     `</div>` +
     `<div class="item-preview">${highlightTextFragment(e.p || uiText("emptyPreview"), STATE.filters.q)}</div>`;
@@ -5262,7 +5259,7 @@ function renderConv(conv) {
   showConvPane();
   $("#conv-title").textContent = displayConvTitle(conv);
   const lineOrderWrap = $("#conv-line-order");
-  const lineOrderBlock = renderLineOrderRecovery(conv);
+  const lineOrderBlock = STATE.showDebug ? renderLineOrderRecovery(conv) : null;
   lineOrderWrap.replaceChildren();
   lineOrderWrap.hidden = !lineOrderBlock;
   if (lineOrderBlock) lineOrderWrap.appendChild(lineOrderBlock);
@@ -5437,11 +5434,13 @@ function renderConv(conv) {
   const missionContextBlock = renderMissionContext(missionExtras);
   if (missionContextBlock) frag.appendChild(missionContextBlock);
   const missionTimelineRecovery = getMissionTimelineRecovery(conv.mission);
-  const missionTimelineBlock = renderMissionTimelineRecovery(
-    missionTimelineRecovery,
-    conv
-  );
-  if (missionTimelineBlock) frag.appendChild(missionTimelineBlock);
+  if (STATE.showDebug) {
+    const missionTimelineBlock = renderMissionTimelineRecovery(
+      missionTimelineRecovery,
+      conv
+    );
+    if (missionTimelineBlock) frag.appendChild(missionTimelineBlock);
+  }
 
   const hintBlock = renderConversationHints(conv);
   if (hintBlock) frag.appendChild(hintBlock);
@@ -5449,8 +5448,10 @@ function renderConv(conv) {
   const archiveLinksBlock = renderArchiveLinksBlock(entry, conv);
   if (archiveLinksBlock) frag.appendChild(archiveLinksBlock);
 
-  const sourceLinksBlock = renderSourceLinksBlock(conv);
-  if (sourceLinksBlock) frag.appendChild(sourceLinksBlock);
+  if (STATE.showDebug) {
+    const sourceLinksBlock = renderSourceLinksBlock(conv);
+    if (sourceLinksBlock) frag.appendChild(sourceLinksBlock);
+  }
 
   const narrativeVideoBlock = renderNarrativeVideosBlock(conv);
   if (narrativeVideoBlock) frag.appendChild(narrativeVideoBlock);
@@ -5464,8 +5465,10 @@ function renderConv(conv) {
   // Cutscenes get a dedicated structured info panel; all other kinds use the
   // generic summary text block.
   if (conv.kind === "cutscene") {
-    const csPanel = renderCutsceneInfoPanel(conv, missionTimelineRecovery);
-    if (csPanel) frag.appendChild(csPanel);
+    if (STATE.showDebug) {
+      const csPanel = renderCutsceneInfoPanel(conv, missionTimelineRecovery);
+      if (csPanel) frag.appendChild(csPanel);
+    }
     if (recoveredAudioBlock) frag.appendChild(recoveredAudioBlock);
   } else if (conv.summary && conv.summary.length) {
     const box = document.createElement("div");
@@ -7610,8 +7613,8 @@ function resolveStoredGenderVariant() {
 
 function syncGenderVariantControl() {
   const active = resolveGenderVariant();
-  const checkbox = $("#gender-variant");
-  if (checkbox) checkbox.checked = active === "f";
+  const btn = $("#gender-variant");
+  if (btn) btn.setAttribute("aria-pressed", active === "f" ? "true" : "false");
   const label = $("#gender-variant-label");
   if (label) label.textContent = uiText("genderVariant").replace("{gender}", active.toUpperCase());
   applyGenderVariantBodyClass(active);

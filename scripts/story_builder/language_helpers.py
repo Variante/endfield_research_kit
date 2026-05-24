@@ -732,6 +732,9 @@ def compact_narrative_video_ref(ref: dict) -> dict:
         compact["_debug"]["source"]["binding"] = binding
     if ref.get("authoritativeKeys"):
         compact["_debug"]["source"]["authoritativeKeys"] = list(ref["authoritativeKeys"])
+    attachment_override = ref.get("attachmentOverride")
+    if isinstance(attachment_override, dict):
+        compact["_debug"]["source"]["attachmentOverride"] = attachment_override
     return compact
 
 def narrative_video_sort_key(ref: dict) -> tuple:

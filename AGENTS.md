@@ -64,6 +64,7 @@ python scripts\story_builder\build.py --languages CN --default-language CN
 python scripts\story_builder\build.py --languages CN EN JP --default-language CN
 python scripts\build_assets.py
 python scripts\build_audio.py
+python scripts\download_bilibili_video.py --dry-run
 python scripts\package_webui.py
 ```
 
@@ -203,6 +204,10 @@ Story reconstruction helpers used by WebUI builders:
 Story recovery audit/refresh tools, not run by `export.bat`:
 
 - `scripts/story_recovery/`
+- `scripts/download_bilibili_video.py` is an optional gameplay-video intake
+  helper for the OCR/audio story-order workflow. It requires `requests`,
+  `ffmpeg`, and browser-exported Bilibili cookies, writes complete `.mp4` files
+  under `videos/`, and is not part of the stdlib-only export path.
 
 Unity character recovery lab:
 
