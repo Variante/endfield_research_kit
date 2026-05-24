@@ -20,6 +20,7 @@ DEFAULT_FLUFFY = ROOT / "tools" / "fluffy-dumper-src" / "target" / "release" / "
 DEFAULT_EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_WEBUI_ROOT = ROOT / "webui"
 DEFAULT_AUDIO_ROOT = DEFAULT_EXPORT_ROOT / "structured" / "Audio"
+NARRATIVE_VIDEO_OVERRIDES_NAME = "narrative_videos.json"
 
 LANGUAGES = {
     "CN": {
@@ -66,6 +67,66 @@ def load_json(path: Path, fallback: Any) -> Any:
         return fallback
     with path.open("r", encoding="utf-8") as handle:
         return json.load(handle)
+
+
+def normalize_video_override_stem(value: object) -> str:
+    text = str(value or "").strip().replace("\\", "/")
+    if not text:
+        return ""
+    text = text.rsplit("/", 1)[-1]
+    return re.sub(r"\.[^.]+$", "", text, flags=re.IGNORECASE).lower()
+
+
+def load_narrative_video_attach_overrides(webui_root: Path) -> dict[str, str]:
+    """Return `{video_stem: target_story_key}` for manual inline video attachments."""
+    path = webui_root / "overrides" / NARRATIVE_VIDEO_OVERRIDES_NAME
+    payload = load_json(path, {})
+    if not isinstance(payload, dict):
+        return {}
+
+    raw_rules = payload.get("attachInline") or payload.get("attachTo")
+    out: dict[str, str] = {}
+
+    def add_rule(target_key: object, raw_rule: object) -> None:
+        key = str(target_key or "").strip()
+        if not key:
+            return
+        raw_stems: object = []
+        if isinstance(raw_rule, dict):
+            raw_stems = (
+                raw_rule.get("stems")
+                or raw_rule.get("videoStems")
+                or raw_rule.get("stem")
+                or raw_rule.get("videoStem")
+                or []
+            )
+        elif isinstance(raw_rule, list):
+            raw_stems = raw_rule
+        elif raw_rule:
+            raw_stems = [raw_rule]
+        if isinstance(raw_stems, (str, int, float)):
+            raw_stems = [raw_stems]
+        for raw_stem in raw_stems or []:
+            stem = normalize_video_override_stem(raw_stem)
+            if stem:
+                out[stem] = key
+
+    if isinstance(raw_rules, dict):
+        for target_key, raw_rule in raw_rules.items():
+            add_rule(target_key, raw_rule)
+    elif isinstance(raw_rules, list):
+        for raw_rule in raw_rules:
+            if not isinstance(raw_rule, dict):
+                continue
+            target_key = (
+                raw_rule.get("targetKey")
+                or raw_rule.get("key")
+                or raw_rule.get("resolvedKey")
+                or raw_rule.get("attachTo")
+            )
+            add_rule(target_key, raw_rule)
+
+    return out
 
 
 def find_audio_dialog_table(export_root: Path) -> Path:
@@ -460,11 +521,16 @@ def iter_asset_map_objects(path: Path) -> Any:
                     continue
 
 
-def collect_fmv_cutscene_audio_events(export_root: Path, language_info: dict[str, Any]) -> dict[str, list[str]]:
+def collect_fmv_cutscene_audio_events(
+    export_root: Path,
+    language_info: dict[str, Any],
+    fmv_attach_overrides: dict[str, str] | None = None,
+) -> dict[str, list[str]]:
     """Recover FMV cutscene audio events from language-specific subtitle playables."""
     suffix = str(language_info.get("fmvSuffix") or "").lower()
     if not suffix:
         return {}
+    fmv_attach_overrides = fmv_attach_overrides or {}
     asset_map = (
         export_root
         / "recovered"
@@ -494,9 +560,11 @@ def collect_fmv_cutscene_audio_events(export_root: Path, language_info: dict[str
         gender = None
         if base.startswith("f_cs_video_") or base.startswith("m_cs_video_"):
             gender = base[0]
-            story_key = story_key_from_fmv_id(base)
+            video_stem = strip_fmv_gender_prefix(base).lower()
+            story_key = fmv_attach_overrides.get(video_stem) or story_key_from_fmv_id(base)
         elif base.startswith("cs_video_"):
-            story_key = story_key_from_fmv_id(base)
+            video_stem = base.lower()
+            story_key = fmv_attach_overrides.get(video_stem) or story_key_from_fmv_id(base)
         else:
             continue
         if not story_key.startswith("cutscene_"):
@@ -1203,7 +1271,12 @@ def build_audio(args: argparse.Namespace) -> int:
     if not conv_dir.exists():
         raise SystemExit(f"Conversation directory not found: {conv_dir}")
     event_names = collect_audio_event_names(conv_dir, args.export_root)
-    cutscene_audio_events = collect_fmv_cutscene_audio_events(args.export_root, language_info)
+    fmv_attach_overrides = load_narrative_video_attach_overrides(args.webui_root)
+    cutscene_audio_events = collect_fmv_cutscene_audio_events(
+        args.export_root,
+        language_info,
+        fmv_attach_overrides,
+    )
     merge_event_map(
         cutscene_audio_events,
         collect_timeline_cutscene_audio_events(args.export_root),

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Match gameplay-video OCR text to Story entries and update story order lists.
+"""Match gameplay-video OCR/audio evidence to Story entries and update story order lists.
 
 This is a conservative promotion pipeline:
 
 1. Optionally run the OCR sampler.
 2. Match completed OCR segments against known WebUI Story text.
-3. Collapse timestamped matches into observed per-mission scene sequences.
-4. Apply those sequences to the full per-mission story-order list format.
+3. Match decoded Story audio templates against gameplay-video audio.
+4. Collapse timestamped matches into observed per-mission scene sequences.
+5. Apply those sequences to the full per-mission story-order list format.
 
 The active order file is ``webui/overrides/story_order.json``. Each
 ``missions.<mission>.order`` value is a complete ordered list of the mission's
@@ -17,14 +18,19 @@ in their current relative order.
 from __future__ import annotations
 
 import argparse
+from array import array
+import hashlib
 import html
 import json
+import math
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
 import unicodedata
+import wave
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from difflib import SequenceMatcher
@@ -54,11 +60,16 @@ MATCH_REPORT_PATH = OCR_REPORT_DIR / "story_order_ocr_matches.json"
 MATCH_MD_PATH = OCR_REPORT_DIR / "story_order_ocr_matches.md"
 PROPOSED_STORY_ORDER_PATH = OCR_REPORT_DIR / "story_order_ocr_proposed_story_order.json"
 OCR_SCRIPT_PATH = ROOT / "scripts" / "story_recovery" / "build_gameplay_video_ocr_audit.py"
-MIN_OCR_TOOL_VERSION = 5
+AUDIO_CACHE_ROOT = ROOT / "tmp" / "gameplay_video_ocr" / "audio"
+MIN_OCR_TOOL_VERSION = 6
 DEFAULT_THRESHOLD_SWEEP = (0.98, 0.95, 0.90, 0.86, 0.80, 0.75, 0.70, 0.65, 0.60, 0.50)
 LINE_LIKE_SOURCES = {"line", "summary"}
 MAP_DIALOG_COMPANION_SOURCE = "map-dialog-companion"
+AUDIO_TEMPLATE_SOURCE = "audio-template"
 DEFAULT_RANSAC_TOLERANCE = 3.5
+DEFAULT_AUDIO_SAMPLE_RATE = 8000
+DEFAULT_AUDIO_FRAME_SECONDS = 0.10
+DEFAULT_AUDIO_FILTER = "highpass=f=180,lowpass=f=3600"
 ARCHIVE_KINDS = {"prts"}
 ARCHIVE_KEY_PREFIXES = ("nar_",)
 COMPANION_STOP_BIGRAMS = {
@@ -112,6 +123,7 @@ ASCII_WORD_RE = re.compile(r"^[a-z0-9_:\-.]+$")
 STORY_KIND_RE = re.compile(r"^(?:misc_)?([a-z]+)")
 INDEXED_SUFFIX_RE = re.compile(r"^(\d+)(?:d(\d+))?(?:_(\d+))?$")
 NATURAL_SORT_RE = re.compile(r"\d+|\D+")
+AUDIO_CACHE_SAFE_RE = re.compile(r"[^A-Za-z0-9_.-]+")
 
 
 @dataclass(frozen=True)
@@ -157,6 +169,55 @@ class MissionTitleCandidate:
     title: str
     norm: str
     loose_norm: str
+
+
+@dataclass(frozen=True)
+class AudioStoryTemplate:
+    key: str
+    mission: str
+    actual_mission: str
+    link_reason: str
+    kind: str
+    scene: int | None
+    line_id: str
+    source: str
+    text: str
+    audio_id: str
+    audio_src: str
+    audio_path: Path
+    duration_seconds: float | None
+
+
+@dataclass
+class AudioFingerprint:
+    energy: list[float]
+    delta: list[float]
+    frame_seconds: float
+    duration_seconds: float
+    source: str
+
+
+@dataclass
+class AudioWindowHit:
+    start_index: int
+    score: float
+    energy_score: float
+    delta_score: float
+
+
+@dataclass
+class AudioSearchIndex:
+    fingerprint: AudioFingerprint
+    energy_prefix: list[float]
+    energy_sq_prefix: list[float]
+    delta_prefix: list[float]
+    delta_sq_prefix: list[float]
+
+
+@dataclass(frozen=True)
+class AudioLandmark:
+    offset: int
+    value: float
 
 
 def normalize_text(value: Any) -> str:
@@ -555,6 +616,946 @@ def corpus_for_video_mission(
     return out, related_rows
 
 
+def seconds_to_clock(seconds: float | None) -> str:
+    if seconds is None or not math.isfinite(seconds):
+        return ""
+    total_ms = max(0, int(round(seconds * 1000)))
+    ms = total_ms % 1000
+    total_seconds = total_ms // 1000
+    sec = total_seconds % 60
+    total_minutes = total_seconds // 60
+    minute = total_minutes % 60
+    hour = total_minutes // 60
+    return f"{hour:02d}:{minute:02d}:{sec:02d}.{ms:03d}"
+
+
+def resolve_story_audio_path(src: Any) -> Path | None:
+    text = safe_key(src).replace("\\", "/")
+    if not text:
+        return None
+    if text.startswith("/"):
+        return ROOT / text.lstrip("/")
+    path = Path(text)
+    if path.is_absolute():
+        return path
+    return ROOT / path
+
+
+def resolve_video_source_path(source: dict[str, Any]) -> Path | None:
+    for field in ("path", "name"):
+        text = safe_key(source.get(field))
+        if not text:
+            continue
+        path = Path(text)
+        candidates = [path]
+        if not path.is_absolute():
+            candidates = [ROOT / path, ROOT / "videos" / text]
+        for candidate in candidates:
+            if candidate.is_file():
+                return candidate
+    return None
+
+
+def audio_duration_hint(entry: dict[str, Any] | None, fallback: Any = None) -> float | None:
+    if isinstance(entry, dict):
+        for value in (
+            entry.get("duration"),
+            entry.get("durationSeconds"),
+            (entry.get("meta") or {}).get("duration") if isinstance(entry.get("meta"), dict) else None,
+            (entry.get("audioMeta") or {}).get("duration") if isinstance(entry.get("audioMeta"), dict) else None,
+        ):
+            duration = float_value(value, -1.0)
+            if duration > 0:
+                return duration
+    duration = float_value(fallback, -1.0)
+    return duration if duration > 0 else None
+
+
+def wav_duration_seconds(path: Path) -> float | None:
+    try:
+        with wave.open(str(path), "rb") as handle:
+            rate = handle.getframerate()
+            frames = handle.getnframes()
+            if rate > 0 and frames >= 0:
+                return frames / rate
+    except (OSError, EOFError, wave.Error):
+        return None
+    return None
+
+
+def story_audio_id(raw_id: Any, path: Path | None) -> str:
+    audio_id = safe_key(raw_id)
+    if audio_id:
+        return audio_id
+    return path.stem if path else ""
+
+
+def should_skip_audio_template(audio_id: str, *, include_music: bool) -> bool:
+    if include_music:
+        return False
+    return audio_id.lower().startswith("au_music")
+
+
+def load_audio_templates(
+    *,
+    conv_root: Path,
+    story_order: dict[str, Any],
+    min_duration: float,
+    max_duration: float,
+    include_music: bool,
+) -> list[AudioStoryTemplate]:
+    story_orders = story_orders_by_mission(story_order)
+    story_mission_by_key: dict[str, str] = {}
+    for mission_id, order in story_orders.items():
+        for key in order:
+            story_mission_by_key.setdefault(key, mission_id)
+    allowed_keys = {key for order in story_orders.values() for key in order}
+
+    templates: list[AudioStoryTemplate] = []
+    seen: set[tuple[str, str, str, str]] = set()
+
+    def add_template(
+        *,
+        payload: dict[str, Any],
+        key: str,
+        mission: str,
+        native_mission: str,
+        kind: str,
+        scene: int | None,
+        line_id: str,
+        source: str,
+        text: str,
+        entry: dict[str, Any],
+        fallback_duration: Any = None,
+    ) -> None:
+        src = safe_key(entry.get("src"))
+        path = resolve_story_audio_path(src)
+        if path is None or not path.is_file():
+            return
+        audio_id = story_audio_id(entry.get("id") or payload.get("audio") or payload.get("voice"), path)
+        if should_skip_audio_template(audio_id, include_music=include_music):
+            return
+        duration = audio_duration_hint(entry, fallback=fallback_duration)
+        if duration is None and path.suffix.lower() == ".wav":
+            duration = wav_duration_seconds(path)
+        if duration is not None:
+            if duration < min_duration or duration > max_duration:
+                return
+        dedupe_key = (key, line_id, audio_id, str(path).lower())
+        if dedupe_key in seen:
+            return
+        seen.add(dedupe_key)
+        templates.append(AudioStoryTemplate(
+            key=key,
+            mission=mission,
+            actual_mission=native_mission or mission,
+            link_reason="native" if mission == (native_mission or mission) else "story-order",
+            kind=kind,
+            scene=scene,
+            line_id=line_id,
+            source=source,
+            text=text,
+            audio_id=audio_id,
+            audio_src=src,
+            audio_path=path,
+            duration_seconds=duration,
+        ))
+
+    for path in sorted(conv_root.glob("*.json")):
+        key = path.stem
+        payload = read_json(path, {})
+        if not isinstance(payload, dict):
+            continue
+        archive_entry = is_archive_story_entry(key, payload)
+        if allowed_keys and key not in allowed_keys and not key.startswith("dlg_map") and not archive_entry:
+            continue
+        native_mission = safe_key(payload.get("mission"))
+        mission = story_mission_by_key.get(key) or native_mission
+        if not mission:
+            continue
+        kind = story_kind(key, payload)
+        scene = int_or_none(payload.get("scene"))
+        title = safe_key(payload.get("title"))
+
+        for line in payload.get("lines") or []:
+            if not isinstance(line, dict):
+                continue
+            line_id = safe_key(line.get("id"))
+            text = safe_key(line.get("text"))
+            if line.get("audioSrc"):
+                entry = {
+                    "id": line.get("audio") or line.get("voice"),
+                    "src": line.get("audioSrc"),
+                    "audioMeta": line.get("audioMeta") if isinstance(line.get("audioMeta"), dict) else {},
+                }
+                add_template(
+                    payload=line,
+                    key=key,
+                    mission=mission,
+                    native_mission=native_mission,
+                    kind=kind,
+                    scene=scene,
+                    line_id=line_id,
+                    source="audio-line",
+                    text=text,
+                    entry=entry,
+                    fallback_duration=line.get("dur"),
+                )
+            variants = line.get("audioVariants")
+            if isinstance(variants, dict):
+                for gender, variant in variants.items():
+                    if not isinstance(variant, dict):
+                        continue
+                    add_template(
+                        payload=line,
+                        key=key,
+                        mission=mission,
+                        native_mission=native_mission,
+                        kind=kind,
+                        scene=scene,
+                        line_id=line_id,
+                        source=f"audio-line-{safe_key(gender) or 'variant'}",
+                        text=text,
+                        entry=variant,
+                        fallback_duration=(variant.get("meta") or {}).get("duration")
+                        if isinstance(variant.get("meta"), dict) else line.get("dur"),
+                    )
+
+        for source, entries in (
+            ("audio-cutscene", payload.get("audioFiles")),
+            ("audio-cutscene", (payload.get("cutscene") or {}).get("audioFiles")
+             if isinstance(payload.get("cutscene"), dict) else None),
+        ):
+            if not isinstance(entries, list):
+                continue
+            for index, entry in enumerate(entries):
+                if not isinstance(entry, dict):
+                    continue
+                add_template(
+                    payload=payload,
+                    key=key,
+                    mission=mission,
+                    native_mission=native_mission,
+                    kind=kind,
+                    scene=scene,
+                    line_id=f"{source}:{index}",
+                    source=source,
+                    text=title or key,
+                    entry=entry,
+                )
+    return templates
+
+
+def retarget_audio_template(template: AudioStoryTemplate, mission: str, reason: str) -> AudioStoryTemplate:
+    if template.mission == mission and template.link_reason == "native":
+        return template
+    return AudioStoryTemplate(
+        key=template.key,
+        mission=mission,
+        actual_mission=template.actual_mission,
+        link_reason=reason,
+        kind=template.kind,
+        scene=template.scene,
+        line_id=template.line_id,
+        source=template.source,
+        text=template.text,
+        audio_id=template.audio_id,
+        audio_src=template.audio_src,
+        audio_path=template.audio_path,
+        duration_seconds=template.duration_seconds,
+    )
+
+
+def audio_templates_for_video_mission(
+    target_mission: str,
+    *,
+    audio_templates_by_mission: dict[str, list[AudioStoryTemplate]],
+    related_missions_by_mission: dict[str, list[dict[str, str]]],
+) -> tuple[list[AudioStoryTemplate], list[dict[str, Any]]]:
+    out: list[AudioStoryTemplate] = []
+    related_rows: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str, str]] = set()
+
+    def add_templates(
+        templates: list[AudioStoryTemplate],
+        *,
+        as_mission: str,
+        reason: str,
+        supplemental_only_map_dialogs: bool = False,
+    ) -> int:
+        added = 0
+        for template in templates:
+            if supplemental_only_map_dialogs and not (
+                template.key.startswith("dlg_map") or template.key.startswith(ARCHIVE_KEY_PREFIXES)
+            ):
+                continue
+            dedupe_key = (template.key, template.line_id, template.audio_id, reason)
+            if dedupe_key in seen:
+                continue
+            seen.add(dedupe_key)
+            out.append(retarget_audio_template(template, as_mission, reason))
+            added += 1
+        return added
+
+    add_templates(
+        audio_templates_by_mission.get(target_mission) or [],
+        as_mission=target_mission,
+        reason="native",
+    )
+    for related in related_missions_by_mission.get(target_mission) or []:
+        related_mission = safe_key(related.get("mission"))
+        if not related_mission:
+            continue
+        reason = safe_key(related.get("reason")) or "related-mission"
+        count = add_templates(
+            audio_templates_by_mission.get(related_mission) or [],
+            as_mission=target_mission,
+            reason=reason,
+            supplemental_only_map_dialogs=True,
+        )
+        if count:
+            related_rows.append({"mission": related_mission, "reason": reason, "templates": count})
+    return out, related_rows
+
+
+def resolve_audio_executable(explicit: str | None = None) -> str | None:
+    if explicit:
+        path = Path(explicit)
+        if path.is_file():
+            return str(path)
+        return explicit
+    return shutil.which("ffmpeg")
+
+
+def audio_source_fingerprint(path: Path) -> dict[str, Any]:
+    try:
+        stat = path.stat()
+    except OSError:
+        return {"path": str(path), "missing": True}
+    return {
+        "path": rel_path(path) if path.is_relative_to(ROOT) else str(path),
+        "size": stat.st_size,
+        "mtimeNs": stat.st_mtime_ns,
+    }
+
+
+def audio_cache_path(path: Path, *, prefix: str, params: dict[str, Any]) -> Path:
+    source = str(path.resolve()).lower()
+    digest = hashlib.sha1(
+        json.dumps({"source": source, "params": params}, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()[:16]
+    stem = AUDIO_CACHE_SAFE_RE.sub("_", path.stem).strip("._")[:96] or "audio"
+    return AUDIO_CACHE_ROOT / prefix / f"{stem}_{digest}.json"
+
+
+def write_audio_cache(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    write_text_if_changed(path, text)
+
+
+def decode_audio_pcm(
+    path: Path,
+    *,
+    ffmpeg: str,
+    sample_rate: int,
+    audio_filter: str,
+) -> bytes:
+    command = [
+        ffmpeg,
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        str(path),
+        "-vn",
+        "-map",
+        "0:a:0",
+        "-ac",
+        "1",
+        "-ar",
+        str(sample_rate),
+    ]
+    if safe_key(audio_filter):
+        command.extend(["-af", audio_filter])
+    command.extend(["-f", "s16le", "-"])
+    proc = subprocess.run(
+        command,
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if proc.returncode != 0:
+        detail = proc.stderr.decode("utf-8", errors="replace").strip()
+        raise RuntimeError(detail or f"ffmpeg audio decode failed for {path}")
+    return proc.stdout
+
+
+def pcm16le_to_fingerprint(
+    pcm: bytes,
+    *,
+    sample_rate: int,
+    frame_seconds: float,
+    source: str,
+) -> AudioFingerprint:
+    if len(pcm) < 2:
+        return AudioFingerprint([], [], frame_seconds, 0.0, source)
+    if len(pcm) % 2:
+        pcm = pcm[:-1]
+    samples = array("h")
+    samples.frombytes(pcm)
+    if sys.byteorder != "little":
+        samples.byteswap()
+    frame_samples = max(1, int(round(sample_rate * frame_seconds)))
+    min_tail = max(64, frame_samples // 2)
+    energy: list[float] = []
+    sample_count = len(samples)
+    for start in range(0, sample_count, frame_samples):
+        end = min(sample_count, start + frame_samples)
+        count = end - start
+        if count < min_tail:
+            continue
+        total = 0.0
+        for index in range(start, end):
+            value = samples[index]
+            total += value * value
+        rms = math.sqrt(total / count) / 32768.0 if count else 0.0
+        # The ffmpeg prefilter keeps the speech band; log RMS plus first
+        # differences gives a compact fingerprint that is less sensitive to
+        # steady BGM than raw waveform correlation.
+        energy.append(round(math.log1p(rms * 64.0), 6))
+    delta = [0.0]
+    for left, right in zip(energy, energy[1:]):
+        delta.append(round(right - left, 6))
+    if not energy:
+        delta = []
+    return AudioFingerprint(
+        energy=energy,
+        delta=delta,
+        frame_seconds=frame_seconds,
+        duration_seconds=sample_count / sample_rate if sample_rate > 0 else 0.0,
+        source=source,
+    )
+
+
+def load_audio_fingerprint(
+    path: Path,
+    *,
+    ffmpeg: str,
+    sample_rate: int,
+    frame_seconds: float,
+    audio_filter: str,
+    cache_prefix: str,
+    memory_cache: dict[tuple[str, int, float, str], AudioFingerprint] | None = None,
+) -> AudioFingerprint:
+    cache_key = (str(path.resolve()).lower(), sample_rate, frame_seconds, audio_filter)
+    if memory_cache is not None and cache_key in memory_cache:
+        return memory_cache[cache_key]
+    params = {
+        "schema": "audioFingerprint.v1",
+        "sampleRate": sample_rate,
+        "frameSeconds": frame_seconds,
+        "ffmpegFilter": audio_filter,
+    }
+    fingerprint = audio_source_fingerprint(path)
+    cache_path = audio_cache_path(path, prefix=cache_prefix, params=params)
+    cached = read_json(cache_path, {})
+    if (
+        isinstance(cached, dict)
+        and cached.get("params") == params
+        and cached.get("sourceFingerprint") == fingerprint
+    ):
+        raw = cached.get("fingerprint") if isinstance(cached.get("fingerprint"), dict) else {}
+        energy = raw.get("energy") if isinstance(raw.get("energy"), list) else []
+        delta = raw.get("delta") if isinstance(raw.get("delta"), list) else []
+        fp = AudioFingerprint(
+            energy=[float_value(value) for value in energy],
+            delta=[float_value(value) for value in delta],
+            frame_seconds=float_value(raw.get("frameSeconds"), frame_seconds),
+            duration_seconds=float_value(raw.get("durationSeconds")),
+            source=safe_key(raw.get("source")),
+        )
+        if memory_cache is not None:
+            memory_cache[cache_key] = fp
+        return fp
+
+    pcm = decode_audio_pcm(path, ffmpeg=ffmpeg, sample_rate=sample_rate, audio_filter=audio_filter)
+    fp = pcm16le_to_fingerprint(
+        pcm,
+        sample_rate=sample_rate,
+        frame_seconds=frame_seconds,
+        source=rel_path(path) if path.is_relative_to(ROOT) else str(path),
+    )
+    write_audio_cache(cache_path, {
+        "params": params,
+        "sourceFingerprint": fingerprint,
+        "fingerprint": {
+            "source": fp.source,
+            "durationSeconds": round(fp.duration_seconds, 4),
+            "frameSeconds": fp.frame_seconds,
+            "energy": fp.energy,
+            "delta": fp.delta,
+        },
+    })
+    if memory_cache is not None:
+        memory_cache[cache_key] = fp
+    return fp
+
+
+def prefix_sums(values: list[float]) -> tuple[list[float], list[float]]:
+    sums = [0.0]
+    squares = [0.0]
+    total = 0.0
+    square_total = 0.0
+    for value in values:
+        total += value
+        square_total += value * value
+        sums.append(total)
+        squares.append(square_total)
+    return sums, squares
+
+
+def build_audio_search_index(fingerprint: AudioFingerprint) -> AudioSearchIndex:
+    energy_prefix, energy_sq_prefix = prefix_sums(fingerprint.energy)
+    delta_prefix, delta_sq_prefix = prefix_sums(fingerprint.delta)
+    return AudioSearchIndex(
+        fingerprint=fingerprint,
+        energy_prefix=energy_prefix,
+        energy_sq_prefix=energy_sq_prefix,
+        delta_prefix=delta_prefix,
+        delta_sq_prefix=delta_sq_prefix,
+    )
+
+
+def normalize_template_series(values: list[float]) -> list[float]:
+    if len(values) < 3:
+        return []
+    mean = sum(values) / len(values)
+    centered = [value - mean for value in values]
+    norm = math.sqrt(sum(value * value for value in centered))
+    if norm <= 1e-8:
+        return []
+    return [value / norm for value in centered]
+
+
+def window_norm(prefix: list[float], square_prefix: list[float], start: int, length: int) -> float:
+    end = start + length
+    total = prefix[end] - prefix[start]
+    square_total = square_prefix[end] - square_prefix[start]
+    centered = max(0.0, square_total - (total * total / length))
+    return math.sqrt(centered)
+
+
+def normalized_window_score(
+    template: list[float],
+    values: list[float],
+    prefix: list[float],
+    square_prefix: list[float],
+    start: int,
+) -> float | None:
+    length = len(template)
+    norm = window_norm(prefix, square_prefix, start, length)
+    if norm <= 1e-8:
+        return None
+    dot = 0.0
+    for offset, template_value in enumerate(template):
+        dot += template_value * values[start + offset]
+    return max(-1.0, min(1.0, dot / norm))
+
+
+def audio_window_score(
+    search: AudioSearchIndex,
+    *,
+    start: int,
+    energy_template: list[float],
+    delta_template: list[float],
+) -> AudioWindowHit | None:
+    energy_score = normalized_window_score(
+        energy_template,
+        search.fingerprint.energy,
+        search.energy_prefix,
+        search.energy_sq_prefix,
+        start,
+    ) if energy_template else None
+    delta_score = normalized_window_score(
+        delta_template,
+        search.fingerprint.delta,
+        search.delta_prefix,
+        search.delta_sq_prefix,
+        start,
+    ) if delta_template else None
+    if energy_score is None and delta_score is None:
+        return None
+    if energy_score is None:
+        score = float(delta_score)
+        energy_value = 0.0
+        delta_value = float(delta_score)
+    elif delta_score is None:
+        score = float(energy_score)
+        energy_value = float(energy_score)
+        delta_value = 0.0
+    else:
+        energy_value = float(energy_score)
+        delta_value = float(delta_score)
+        score = 0.62 * energy_value + 0.38 * delta_value
+    return AudioWindowHit(
+        start_index=start,
+        score=max(-1.0, min(1.0, score)),
+        energy_score=energy_value,
+        delta_score=delta_value,
+    )
+
+
+def template_landmarks(values: list[float], limit: int) -> list[AudioLandmark]:
+    if limit <= 0 or not values:
+        return []
+    ranked = sorted(
+        enumerate(values),
+        key=lambda item: (-abs(item[1]), item[0]),
+    )
+    return [AudioLandmark(offset=index, value=value) for index, value in ranked[:limit]]
+
+
+def landmark_score(
+    values: list[float],
+    prefix: list[float],
+    square_prefix: list[float],
+    *,
+    start: int,
+    length: int,
+    landmarks: list[AudioLandmark],
+) -> float | None:
+    if not landmarks:
+        return None
+    end = start + length
+    if start < 0 or end > len(values):
+        return None
+    window_total = prefix[end] - prefix[start]
+    mean = window_total / length
+    dot = 0.0
+    template_square = 0.0
+    window_square = 0.0
+    for landmark in landmarks:
+        centered = values[start + landmark.offset] - mean
+        dot += landmark.value * centered
+        template_square += landmark.value * landmark.value
+        window_square += centered * centered
+    if template_square <= 1e-10 or window_square <= 1e-10:
+        return None
+    return max(-1.0, min(1.0, dot / math.sqrt(template_square * window_square)))
+
+
+def audio_landmark_candidate_starts(
+    search: AudioSearchIndex,
+    *,
+    length: int,
+    energy_template: list[float],
+    delta_template: list[float],
+    search_step: int,
+    max_candidates: int,
+    landmarks_per_series: int,
+    neighbor_steps: int,
+) -> tuple[list[int], int]:
+    step = max(1, search_step)
+    max_start = len(search.fingerprint.energy) - length
+    if max_start < 0:
+        return [], 0
+    starts = list(range(0, max_start + 1, step))
+    if max_candidates <= 0 or len(starts) <= max_candidates:
+        return starts, len(starts)
+
+    energy_landmarks = template_landmarks(energy_template, landmarks_per_series)
+    delta_landmarks = template_landmarks(delta_template, landmarks_per_series)
+    if not energy_landmarks and not delta_landmarks:
+        return starts, len(starts)
+
+    scored: list[tuple[float, int]] = []
+    for start in starts:
+        energy_score = landmark_score(
+            search.fingerprint.energy,
+            search.energy_prefix,
+            search.energy_sq_prefix,
+            start=start,
+            length=length,
+            landmarks=energy_landmarks,
+        ) if energy_landmarks else None
+        delta_score = landmark_score(
+            search.fingerprint.delta,
+            search.delta_prefix,
+            search.delta_sq_prefix,
+            start=start,
+            length=length,
+            landmarks=delta_landmarks,
+        ) if delta_landmarks else None
+        if energy_score is None and delta_score is None:
+            continue
+        if energy_score is None:
+            score = float(delta_score)
+        elif delta_score is None:
+            score = float(energy_score)
+        else:
+            score = 0.62 * float(energy_score) + 0.38 * float(delta_score)
+        scored.append((score, start))
+
+    if not scored:
+        return starts, len(starts)
+
+    scored.sort(key=lambda row: (-row[0], row[1]))
+    selected: set[int] = set()
+    for _score, start in scored[:max_candidates]:
+        for offset in range(-neighbor_steps, neighbor_steps + 1):
+            candidate = start + (offset * step)
+            if 0 <= candidate <= max_start:
+                selected.add(candidate)
+    if not selected:
+        return starts, len(starts)
+    return sorted(selected), len(starts)
+
+
+def add_separated_audio_hit(hits: list[AudioWindowHit], hit: AudioWindowHit, *, separation: int) -> None:
+    remaining: list[AudioWindowHit] = []
+    for old in hits:
+        if abs(old.start_index - hit.start_index) < separation:
+            if old.score >= hit.score:
+                return
+            continue
+        remaining.append(old)
+    remaining.append(hit)
+    remaining.sort(key=lambda row: (-row.score, row.start_index))
+    del remaining[8:]
+    hits[:] = remaining
+
+
+def match_audio_template(
+    search: AudioSearchIndex,
+    template_fingerprint: AudioFingerprint,
+    *,
+    search_step: int,
+    second_gap_seconds: float,
+    prefilter_candidates: int,
+    prefilter_landmarks: int,
+    prefilter_neighbor_steps: int,
+) -> tuple[AudioWindowHit | None, AudioWindowHit | None, dict[str, int]]:
+    length = len(template_fingerprint.energy)
+    if length < 3 or len(search.fingerprint.energy) < length:
+        return None, None, {"windowsScanned": 0, "candidateWindowsScanned": 0, "prefilterInputWindows": 0}
+    energy_template = normalize_template_series(template_fingerprint.energy)
+    delta_template = normalize_template_series(template_fingerprint.delta)
+    if not energy_template and not delta_template:
+        return None, None, {"windowsScanned": 0, "candidateWindowsScanned": 0, "prefilterInputWindows": 0}
+    separation = max(length, int(round(second_gap_seconds / search.fingerprint.frame_seconds)))
+    hits: list[AudioWindowHit] = []
+    candidate_starts, prefilter_input_windows = audio_landmark_candidate_starts(
+        search,
+        length=length,
+        energy_template=energy_template,
+        delta_template=delta_template,
+        search_step=search_step,
+        max_candidates=prefilter_candidates,
+        landmarks_per_series=prefilter_landmarks,
+        neighbor_steps=prefilter_neighbor_steps,
+    )
+    scanned = 0
+    for start in candidate_starts:
+        hit = audio_window_score(
+            search,
+            start=start,
+            energy_template=energy_template,
+            delta_template=delta_template,
+        )
+        scanned += 1
+        if hit is not None:
+            add_separated_audio_hit(hits, hit, separation=separation)
+    best = hits[0] if hits else None
+    second = hits[1] if len(hits) > 1 else None
+    return best, second, {
+        "windowsScanned": scanned,
+        "candidateWindowsScanned": len(candidate_starts),
+        "prefilterInputWindows": prefilter_input_windows,
+    }
+
+
+def audio_match_row(
+    *,
+    template: AudioStoryTemplate,
+    template_fingerprint: AudioFingerprint,
+    hit: AudioWindowHit,
+    second: AudioWindowHit | None,
+    min_score: float,
+    min_margin: float,
+) -> dict[str, Any] | None:
+    score = max(0.0, hit.score)
+    second_score = max(0.0, second.score) if second else 0.0
+    margin = score - second_score if second else score
+    if score < min_score or margin < min_margin:
+        return None
+    start_seconds = hit.start_index * template_fingerprint.frame_seconds
+    duration = len(template_fingerprint.energy) * template_fingerprint.frame_seconds
+    end_seconds = start_seconds + duration
+    return {
+        "segment": {
+            "startTime": seconds_to_clock(start_seconds),
+            "startTimeSeconds": round(start_seconds, 4),
+            "endTime": seconds_to_clock(end_seconds),
+            "endTimeSeconds": round(end_seconds, 4),
+            "sampleCount": len(template_fingerprint.energy),
+            "text": template.text,
+            "audioDurationSeconds": round(template_fingerprint.duration_seconds, 4),
+        },
+        "best": {
+            "score": round(score, 4),
+            "mission": template.mission,
+            "actualMission": template.actual_mission,
+            "linkReason": template.link_reason,
+            "key": template.key,
+            "lineId": template.line_id,
+            "source": AUDIO_TEMPLATE_SOURCE,
+            "audioSource": template.source,
+            "text": template.text,
+            "audioId": template.audio_id,
+            "audioSrc": template.audio_src,
+            "audioPath": rel_path(template.audio_path) if template.audio_path.is_relative_to(ROOT) else str(template.audio_path),
+        },
+        "margin": round(margin, 4),
+        "top": [
+            {
+                "startTime": seconds_to_clock(hit.start_index * template_fingerprint.frame_seconds),
+                "startTimeSeconds": round(hit.start_index * template_fingerprint.frame_seconds, 4),
+                "score": round(max(0.0, hit.score), 4),
+                "energyScore": round(hit.energy_score, 4),
+                "deltaScore": round(hit.delta_score, 4),
+            },
+            *([
+                {
+                    "startTime": seconds_to_clock(second.start_index * template_fingerprint.frame_seconds),
+                    "startTimeSeconds": round(second.start_index * template_fingerprint.frame_seconds, 4),
+                    "score": round(max(0.0, second.score), 4),
+                    "energyScore": round(second.energy_score, 4),
+                    "deltaScore": round(second.delta_score, 4),
+                }
+            ] if second else []),
+        ],
+        "accepted": True,
+        "synthetic": True,
+        "evidence": "audio-template",
+        "audioThresholds": {
+            "minScore": min_score,
+            "minMargin": min_margin,
+        },
+    }
+
+
+def build_audio_template_matches(
+    *,
+    video_path: Path,
+    templates: list[AudioStoryTemplate],
+    ffmpeg: str,
+    args: argparse.Namespace,
+    memory_cache: dict[tuple[str, int, float, str], AudioFingerprint],
+    label: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    stats: Counter[str] = Counter()
+    stats["candidateTemplates"] = len(templates)
+    if not templates:
+        return [], dict(stats)
+    started = time.monotonic()
+    try:
+        video_fingerprint = load_audio_fingerprint(
+            video_path,
+            ffmpeg=ffmpeg,
+            sample_rate=args.audio_sample_rate,
+            frame_seconds=args.audio_frame_seconds,
+            audio_filter=args.audio_ffmpeg_filter,
+            cache_prefix="videos",
+            memory_cache=memory_cache,
+        )
+    except RuntimeError as error:
+        stats["videoDecodeErrors"] += 1
+        stats["error"] = str(error)[:500]
+        return [], dict(stats)
+    if not video_fingerprint.energy:
+        stats["emptyVideoFingerprint"] += 1
+        return [], dict(stats)
+    search = build_audio_search_index(video_fingerprint)
+    matches: list[dict[str, Any]] = []
+    for index, template in enumerate(templates):
+        try:
+            template_fingerprint = load_audio_fingerprint(
+                template.audio_path,
+                ffmpeg=ffmpeg,
+                sample_rate=args.audio_sample_rate,
+                frame_seconds=args.audio_frame_seconds,
+                audio_filter=args.audio_ffmpeg_filter,
+                cache_prefix="templates",
+                memory_cache=memory_cache,
+            )
+        except RuntimeError:
+            stats["templateDecodeErrors"] += 1
+            continue
+        duration = template_fingerprint.duration_seconds
+        if duration < args.audio_min_duration:
+            stats["skipTooShort"] += 1
+            continue
+        if duration > args.audio_max_duration:
+            stats["skipTooLong"] += 1
+            continue
+        best, second, scan_stats = match_audio_template(
+            search,
+            template_fingerprint,
+            search_step=args.audio_search_step,
+            second_gap_seconds=args.audio_second_gap,
+            prefilter_candidates=args.audio_prefilter_candidates,
+            prefilter_landmarks=args.audio_prefilter_landmarks,
+            prefilter_neighbor_steps=args.audio_prefilter_neighbor_steps,
+        )
+        stats["windowsScanned"] += int(scan_stats.get("windowsScanned") or 0)
+        stats["candidateWindowsScanned"] += int(scan_stats.get("candidateWindowsScanned") or 0)
+        stats["prefilterInputWindows"] += int(scan_stats.get("prefilterInputWindows") or 0)
+        stats["templatesScanned"] += 1
+        if best is None:
+            stats["skipNoUsableFingerprint"] += 1
+            continue
+        row = audio_match_row(
+            template=template,
+            template_fingerprint=template_fingerprint,
+            hit=best,
+            second=second,
+            min_score=args.audio_min_score,
+            min_margin=args.audio_min_margin,
+        )
+        if row is None:
+            stats["rejected"] += 1
+            if not args.no_progress:
+                progress_bar(
+                    f"[{label}] audio",
+                    index + 1,
+                    len(templates),
+                    started=started,
+                    force=(index + 1 == len(templates)),
+                )
+            continue
+        matches.append(row)
+        stats["accepted"] += 1
+        if not args.no_progress:
+            progress_bar(
+                f"[{label}] audio",
+                index + 1,
+                len(templates),
+                started=started,
+                force=(index + 1 == len(templates)),
+            )
+
+    if args.audio_max_matches_per_video > 0 and len(matches) > args.audio_max_matches_per_video:
+        matches = sorted(
+            matches,
+            key=lambda row: (-float_value(row.get("best", {}).get("score")), match_start_seconds(row)),
+        )[: args.audio_max_matches_per_video]
+        stats["capped"] = len(matches)
+    matches.sort(key=match_start_seconds)
+    stats["elapsedSeconds"] = round(time.monotonic() - started, 3)
+    return matches, dict(stats)
+
+
 def build_story_text_records(corpus: list[CorpusLine]) -> list[StoryTextRecord]:
     rows: dict[str, dict[str, Any]] = {}
     norms_by_key: dict[str, list[str]] = defaultdict(list)
@@ -897,6 +1898,30 @@ def is_accept(match: dict[str, Any], *, min_score: float, min_margin: float) -> 
     return score >= min_score and margin >= min_margin
 
 
+def is_audio_template_match(match: dict[str, Any]) -> bool:
+    best = match.get("best") if isinstance(match.get("best"), dict) else {}
+    return safe_key(best.get("source")) == AUDIO_TEMPLATE_SOURCE or safe_key(match.get("evidence")) == "audio-template"
+
+
+def copy_matches_for_threshold(
+    *,
+    ocr_matches: list[dict[str, Any]],
+    audio_matches: list[dict[str, Any]],
+    min_score: float,
+    min_margin: float,
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for match in ocr_matches:
+        row = dict(match)
+        row["accepted"] = is_accept(row, min_score=min_score, min_margin=min_margin)
+        out.append(row)
+    for match in audio_matches:
+        row = dict(match)
+        row["accepted"] = bool(row.get("accepted"))
+        out.append(row)
+    return out
+
+
 def float_value(value: Any, default: float = 0.0) -> float:
     try:
         return float(value)
@@ -906,6 +1931,8 @@ def float_value(value: Any, default: float = 0.0) -> float:
 
 def source_quality(source: Any) -> int:
     source_key = safe_key(source)
+    if source_key == AUDIO_TEMPLATE_SOURCE or source_key.startswith("audio-"):
+        return 3
     if source_key in LINE_LIKE_SOURCES:
         return 2
     if source_key == MAP_DIALOG_COMPANION_SOURCE:
@@ -946,6 +1973,8 @@ def add_match_to_span(span: dict[str, Any], row: dict[str, Any]) -> None:
     span["_scoreTotal"] = float_value(span.get("_scoreTotal")) + score
     if source in LINE_LIKE_SOURCES:
         span["lineLikeMatches"] = int(span.get("lineLikeMatches") or 0) + 1
+    elif source == AUDIO_TEMPLATE_SOURCE or source.startswith("audio-"):
+        span["audioMatches"] = int(span.get("audioMatches") or 0) + 1
     elif source == "option":
         span["optionMatches"] = int(span.get("optionMatches") or 0) + 1
 
@@ -980,6 +2009,7 @@ def make_observation_span(row: dict[str, Any]) -> dict[str, Any]:
         "text": "",
         "matchCount": 0,
         "lineLikeMatches": 0,
+        "audioMatches": 0,
         "optionMatches": 0,
         "sourceCounts": {},
         "missionLinks": {},
@@ -1044,7 +2074,8 @@ def fit_time_order_ransac(
         point = span_ransac_point(span, positions)
         if point is None:
             continue
-        if int(span.get("lineLikeMatches") or 0) <= 0 and int(span.get("matchCount") or 0) < 2:
+        strong_matches = int(span.get("lineLikeMatches") or 0) + int(span.get("audioMatches") or 0)
+        if strong_matches <= 0 and int(span.get("matchCount") or 0) < 2:
             continue
         points.append((point[0], point[1], safe_key(span.get("key"))))
     if len(points) < 2:
@@ -1119,6 +2150,7 @@ def summarize_span(span: dict[str, Any]) -> dict[str, Any]:
         "missionLinks": span.get("missionLinks"),
         "matchCount": span.get("matchCount"),
         "lineLikeMatches": span.get("lineLikeMatches"),
+        "audioMatches": span.get("audioMatches"),
         "optionMatches": span.get("optionMatches"),
     }
     if span.get("ransacResidual") is not None:
@@ -1155,14 +2187,16 @@ def choose_representative_spans(
             selected.append(choice)
             continue
 
+        audio_like = [span for span in choices if int(span.get("audioMatches") or 0) > 0]
         line_like = [span for span in choices if int(span.get("lineLikeMatches") or 0) > 0]
-        candidate_choices = line_like or choices
+        candidate_choices = audio_like or line_like or choices
 
-        def sort_key(span: dict[str, Any]) -> tuple[float, int, int, float, float]:
+        def sort_key(span: dict[str, Any]) -> tuple[float, int, int, int, float, float]:
             residual = span.get("ransacResidual")
             residual_value = float_value(residual, 1_000_000.0) if model else 0.0
             return (
                 residual_value,
+                -int(span.get("audioMatches") or 0),
                 -int(span.get("lineLikeMatches") or 0),
                 -int(span.get("matchCount") or 0),
                 -float_value(span.get("maxScore")),
@@ -1174,7 +2208,9 @@ def choose_representative_spans(
         adjusted += 1 if chosen_index != 0 else 0
         ignored += len(choices) - 1
         choice = dict(chosen)
-        if line_like and len(line_like) != len(choices):
+        if audio_like and len(audio_like) != len(choices):
+            reason = "audio-evidence-over-ocr"
+        elif line_like and len(line_like) != len(choices):
             reason = "line-evidence-over-option"
         elif model:
             reason = "ransac"
@@ -1237,7 +2273,10 @@ def build_threshold_sweep(
         accepted = [
             match
             for match in matches
-            if is_accept(match, min_score=threshold, min_margin=min_margin)
+            if (
+                bool(match.get("accepted")) if is_audio_template_match(match)
+                else is_accept(match, min_score=threshold, min_margin=min_margin)
+            )
         ]
         story_keys = {
             safe_key(match.get("best", {}).get("key"))
@@ -1272,6 +2311,7 @@ def load_ocr_reports(
     *,
     include_smoke: bool,
     min_tool_version: int,
+    require_archive_box_ocr: bool,
 ) -> tuple[list[dict[str, Any]], Counter[str]]:
     reports: list[dict[str, Any]] = []
     stats: Counter[str] = Counter()
@@ -1290,6 +2330,9 @@ def load_ocr_reports(
             tool_version = 0
         if min_tool_version and tool_version < min_tool_version:
             stats["skip_stale_tool_version"] += 1
+            continue
+        if require_archive_box_ocr and params.get("archiveBoxOcr") is not True:
+            stats["skip_stale_archive_box_ocr"] += 1
             continue
         if params.get("limitFrames") is not None and not include_smoke:
             stats["skip_smoke"] += 1
@@ -1316,6 +2359,289 @@ def collapse_observed_sequence(
         ransac_tolerance=ransac_tolerance,
     )
     return selected, diagnostics
+
+
+def observed_sequences_from_matches(
+    matches: list[dict[str, Any]],
+    *,
+    base_story_orders: dict[str, list[str]],
+    min_video_matches: int,
+    min_sequence_keys: int,
+    use_ransac: bool,
+    ransac_tolerance: float,
+) -> tuple[Counter[str], dict[str, list[dict[str, Any]]], dict[str, dict[str, Any]]]:
+    accepted_missions = Counter(
+        safe_key(match.get("best", {}).get("mission"))
+        for match in matches
+        if match.get("accepted") and safe_key(match.get("best", {}).get("mission"))
+    )
+    observed_sequences: dict[str, list[dict[str, Any]]] = {}
+    sequence_diagnostics: dict[str, dict[str, Any]] = {}
+    for mission, count in accepted_missions.items():
+        if count < min_video_matches:
+            continue
+        sequence, diagnostics = collapse_observed_sequence(
+            matches,
+            mission,
+            current_order=base_story_orders.get(mission) or [],
+            use_ransac=use_ransac,
+            ransac_tolerance=ransac_tolerance,
+        )
+        if len(sequence) >= min_sequence_keys:
+            observed_sequences[mission] = sequence
+            sequence_diagnostics[mission] = diagnostics
+    return accepted_missions, observed_sequences, sequence_diagnostics
+
+
+def finalize_video_match_record(
+    record: dict[str, Any],
+    *,
+    min_score: float,
+    min_margin: float,
+    map_dialog_companion_index: dict[str, list[dict[str, Any]]],
+    base_story_orders: dict[str, list[str]],
+    min_video_matches: int,
+    min_sequence_keys: int,
+    use_ransac: bool,
+    ransac_tolerance: float,
+    update_video: bool,
+) -> dict[str, Any]:
+    ocr_matches = copy_matches_for_threshold(
+        ocr_matches=record.get("ocrMatches") or [],
+        audio_matches=[],
+        min_score=min_score,
+        min_margin=min_margin,
+    )
+    audio_matches = [
+        {**match, "accepted": bool(match.get("accepted"))}
+        for match in (record.get("audioMatches") or [])
+    ]
+    map_dialog_companion_matches = build_map_dialog_companion_matches(ocr_matches, map_dialog_companion_index)
+    matches = ocr_matches + map_dialog_companion_matches + audio_matches
+    accepted_missions, observed_sequences, sequence_diagnostics = observed_sequences_from_matches(
+        matches,
+        base_story_orders=base_story_orders,
+        min_video_matches=min_video_matches,
+        min_sequence_keys=min_sequence_keys,
+        use_ransac=use_ransac,
+        ransac_tolerance=ransac_tolerance,
+    )
+    accepted_count = sum(1 for match in matches if match.get("accepted"))
+    result = {
+        "matches": matches,
+        "matchedSegments": len(matches),
+        "acceptedMatches": accepted_count,
+        "mapDialogCompanionMatches": len(map_dialog_companion_matches),
+        "audioTemplateMatches": len(audio_matches),
+        "missions": [mission for mission, _count in accepted_missions.most_common()],
+        "observedSequences": observed_sequences,
+        "sequenceDiagnostics": sequence_diagnostics,
+    }
+    if update_video and isinstance(record.get("video"), dict):
+        video = record["video"]
+        video.update({
+            "acceptedMatches": accepted_count,
+            "matchedSegments": len(matches),
+            "mapDialogCompanionMatches": len(map_dialog_companion_matches),
+            "audioTemplateMatches": len(audio_matches),
+            "missions": result["missions"],
+            "observedSequences": observed_sequences,
+            "sequenceDiagnostics": sequence_diagnostics,
+            "matches": sorted(matches, key=match_start_seconds)[:200],
+        })
+    return result
+
+
+def locked_sequence_mismatch_details(
+    sequence: list[dict[str, Any]],
+    locked_order: list[str],
+    *,
+    video: str,
+    mission: str,
+) -> dict[str, Any]:
+    positions = {key: index for index, key in enumerate(locked_order)}
+    checked: list[tuple[str, int, dict[str, Any]]] = []
+    missing_keys: list[str] = []
+    for item in sequence:
+        key = safe_key(item.get("key"))
+        if not key:
+            continue
+        position = positions.get(key)
+        if position is None:
+            missing_keys.append(key)
+            continue
+        checked.append((key, position, item))
+
+    adjacent: list[dict[str, Any]] = []
+    for left, right in zip(checked, checked[1:]):
+        left_key, left_position, left_item = left
+        right_key, right_position, right_item = right
+        if right_position < left_position:
+            adjacent.append({
+                "video": video,
+                "mission": mission,
+                "prevKey": left_key,
+                "prevOrderIndex": left_position,
+                "prevTime": left_item.get("firstTime"),
+                "key": right_key,
+                "orderIndex": right_position,
+                "time": right_item.get("firstTime"),
+            })
+
+    inversions = 0
+    for left_index, (_left_key, left_position, _left_item) in enumerate(checked):
+        for _right_key, right_position, _right_item in checked[left_index + 1:]:
+            if right_position < left_position:
+                inversions += 1
+
+    return {
+        "checkedKeys": len(checked),
+        "missingKeys": len(missing_keys),
+        "mismatches": len(adjacent),
+        "inversions": inversions,
+        "samples": adjacent[:8],
+    }
+
+
+def validate_locked_order_sequences(
+    videos: list[dict[str, Any]],
+    *,
+    locked_orders: dict[str, list[str]],
+) -> dict[str, Any]:
+    by_mission: dict[str, dict[str, Any]] = {}
+    for video in videos:
+        video_name = safe_key(video.get("video"))
+        sequences = video.get("observedSequences") if isinstance(video.get("observedSequences"), dict) else {}
+        for mission, sequence in sequences.items():
+            mission_key = safe_key(mission)
+            locked_order = locked_orders.get(mission_key)
+            if not locked_order or not isinstance(sequence, list):
+                continue
+            row = by_mission.setdefault(mission_key, {
+                "mission": mission_key,
+                "videos": [],
+                "observedKeys": 0,
+                "checkedKeys": 0,
+                "missingKeys": 0,
+                "mismatches": 0,
+                "inversions": 0,
+                "samples": [],
+            })
+            details = locked_sequence_mismatch_details(
+                sequence,
+                locked_order,
+                video=video_name,
+                mission=mission_key,
+            )
+            row["videos"].append(video_name)
+            row["observedKeys"] += len(sequence)
+            row["checkedKeys"] += int(details["checkedKeys"])
+            row["missingKeys"] += int(details["missingKeys"])
+            row["mismatches"] += int(details["mismatches"])
+            row["inversions"] += int(details["inversions"])
+            row["samples"].extend(details["samples"])
+            del row["samples"][8:]
+
+    rows = sorted(
+        by_mission.values(),
+        key=lambda row: (-int(row.get("mismatches") or 0), -int(row.get("inversions") or 0), row["mission"]),
+    )
+    for row in rows:
+        row["videos"] = sorted(set(row.get("videos") or []))
+        checked = int(row.get("checkedKeys") or 0)
+        mismatches = int(row.get("mismatches") or 0)
+        row["mismatchRate"] = round(mismatches / checked, 6) if checked else 0.0
+    return {
+        "summary": {
+            "lockedMissionsWithEvidence": len(rows),
+            "checkedKeys": sum(int(row.get("checkedKeys") or 0) for row in rows),
+            "missingKeys": sum(int(row.get("missingKeys") or 0) for row in rows),
+            "mismatches": sum(int(row.get("mismatches") or 0) for row in rows),
+            "inversions": sum(int(row.get("inversions") or 0) for row in rows),
+        },
+        "missions": rows,
+    }
+
+
+def build_locked_threshold_sweep(
+    records: list[dict[str, Any]],
+    *,
+    locked_orders: dict[str, list[str]],
+    map_dialog_companion_index: dict[str, list[dict[str, Any]]],
+    base_story_orders: dict[str, list[str]],
+    min_margin: float,
+    current_min_score: float,
+    min_video_matches: int,
+    min_sequence_keys: int,
+    use_ransac: bool,
+    ransac_tolerance: float,
+) -> list[dict[str, Any]]:
+    if not locked_orders or not records:
+        return []
+    thresholds = sorted({round(value, 4) for value in (*DEFAULT_THRESHOLD_SWEEP, current_min_score)}, reverse=True)
+    rows: list[dict[str, Any]] = []
+    for threshold in thresholds:
+        videos: list[dict[str, Any]] = []
+        accepted = 0
+        matched = 0
+        for record in records:
+            result = finalize_video_match_record(
+                record,
+                min_score=threshold,
+                min_margin=min_margin,
+                map_dialog_companion_index=map_dialog_companion_index,
+                base_story_orders=base_story_orders,
+                min_video_matches=min_video_matches,
+                min_sequence_keys=min_sequence_keys,
+                use_ransac=use_ransac,
+                ransac_tolerance=ransac_tolerance,
+                update_video=False,
+            )
+            matched += int(result.get("matchedSegments") or 0)
+            accepted += int(result.get("acceptedMatches") or 0)
+            videos.append({"video": safe_key(record.get("videoName")), "observedSequences": result["observedSequences"]})
+        validation = validate_locked_order_sequences(videos, locked_orders=locked_orders)
+        summary = validation["summary"]
+        checked = int(summary.get("checkedKeys") or 0)
+        mismatches = int(summary.get("mismatches") or 0)
+        rows.append({
+            "minScore": threshold,
+            "matchedSegments": matched,
+            "acceptedMatches": accepted,
+            "lockedMissionsWithEvidence": summary.get("lockedMissionsWithEvidence", 0),
+            "checkedKeys": checked,
+            "missingKeys": summary.get("missingKeys", 0),
+            "mismatches": mismatches,
+            "inversions": summary.get("inversions", 0),
+            "mismatchRate": round(mismatches / checked, 6) if checked else 0.0,
+        })
+    return rows
+
+
+def choose_locked_threshold(rows: list[dict[str, Any]], current_min_score: float) -> dict[str, Any]:
+    usable = [row for row in rows if int(row.get("checkedKeys") or 0) > 0]
+    if not usable:
+        return {"minScore": current_min_score, "reason": "no-locked-evidence"}
+    max_checked = max(int(row.get("checkedKeys") or 0) for row in usable)
+    coverage_floor = max(1, int(math.ceil(max_checked * 0.80)))
+    covered = [row for row in usable if int(row.get("checkedKeys") or 0) >= coverage_floor]
+    best = min(
+        covered or usable,
+        key=lambda row: (
+            int(row.get("mismatches") or 0),
+            float_value(row.get("mismatchRate")),
+            -int(row.get("checkedKeys") or 0),
+            float_value(row.get("minScore")),
+        ),
+    )
+    return {
+        "minScore": float_value(best.get("minScore"), current_min_score),
+        "reason": "locked-order-sweep",
+        "coverageFloor": coverage_floor,
+        "maxCheckedKeys": max_checked,
+        "mismatches": int(best.get("mismatches") or 0),
+        "checkedKeys": int(best.get("checkedKeys") or 0),
+    }
 
 
 def clean_order_list(values: Any) -> list[str]:
@@ -1754,17 +3080,21 @@ def write_match_markdown(payload: dict[str, Any]) -> None:
     histogram = payload.get("scoreHistogram") or []
     max_histogram_count = max((int(row.get("segments") or 0) for row in histogram), default=0)
     lines = [
-        "# Gameplay Video OCR Story-Order Matching",
+        "# Gameplay Video OCR/Audio Story-Order Matching",
         "",
         f"- OCR reports used: `{payload['summary']['ocrReportsUsed']}`",
         f"- Corpus lines: `{payload['summary']['corpusLines']}`",
         f"- Accepted segment matches: `{payload['summary']['acceptedMatches']}`",
         f"- Map-dialog companion matches: `{payload['summary'].get('mapDialogCompanionMatches', 0)}`",
+        f"- Audio templates: `{payload['summary'].get('audioTemplates', 0)}`",
+        f"- Audio template matches: `{payload['summary'].get('audioTemplateMatches', 0)}`",
         f"- Indexed gap inferences: `{payload['summary'].get('indexedInferences', 0)}`",
         f"- Linked map-dialog entries: `{payload['summary'].get('linkedEntries', 0)}`",
         f"- RANSAC models: `{payload['summary'].get('ransacModels', 0)}`",
         f"- RANSAC adjusted repeated keys: `{payload['summary'].get('ransacAdjustedKeys', 0)}`",
         f"- Ignored repeated spans: `{payload['summary'].get('ignoredRepeatedSpans', 0)}`",
+        f"- Effective OCR min score: `{payload.get('thresholds', {}).get('effectiveMinScore', payload.get('thresholds', {}).get('minScore'))}`",
+        f"- Locked-order mismatches: `{(payload['summary'].get('lockedValidation') or {}).get('mismatches', 0)}`",
         f"- Video mission title matches: `{payload['summary'].get('videoMissionMatches', {})}`",
         f"- Proposed story order: `{payload['outputs']['proposedStoryOrder']}`",
         "",
@@ -1774,6 +3104,47 @@ def write_match_markdown(payload: dict[str, Any]) -> None:
             f"> Warning: {md_escape(payload['summary']['activeOrderWarning'])}",
             "",
         ])
+    if payload.get("lockedThresholdSweep"):
+        choice = payload["summary"].get("lockedThresholdChoice") or {}
+        lines.extend([
+            "## Locked Threshold Calibration",
+            "",
+            f"- Selected min score: `{choice.get('minScore')}`",
+            f"- Reason: `{md_escape(choice.get('reason'))}`",
+            "",
+            "| min score | accepted | locked checked | mismatches | inversions | mismatch rate |",
+            "|---:|---:|---:|---:|---:|---:|",
+        ])
+        for row in payload["lockedThresholdSweep"]:
+            lines.append(
+                f"| {float(row.get('minScore') or 0):.2f} "
+                f"| {int(row.get('acceptedMatches') or 0)} "
+                f"| {int(row.get('checkedKeys') or 0)} "
+                f"| {int(row.get('mismatches') or 0)} "
+                f"| {int(row.get('inversions') or 0)} "
+                f"| {float(row.get('mismatchRate') or 0):.4f} |"
+            )
+    locked_validation = payload.get("lockedValidation") if isinstance(payload.get("lockedValidation"), dict) else {}
+    locked_rows = locked_validation.get("missions") if isinstance(locked_validation.get("missions"), list) else []
+    if locked_rows:
+        lines.extend([
+            "",
+            "## Locked Mismatches",
+            "",
+            "| mission | videos | observed | checked | missing | mismatches | inversions | mismatch rate |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|",
+        ])
+        for row in locked_rows:
+            lines.append(
+                f"| `{md_escape(row.get('mission'))}` "
+                f"| {len(row.get('videos') or [])} "
+                f"| {int(row.get('observedKeys') or 0)} "
+                f"| {int(row.get('checkedKeys') or 0)} "
+                f"| {int(row.get('missingKeys') or 0)} "
+                f"| {int(row.get('mismatches') or 0)} "
+                f"| {int(row.get('inversions') or 0)} "
+                f"| {float(row.get('mismatchRate') or 0):.4f} |"
+            )
     if payload.get("thresholdSweep"):
         lines.extend([
             "## Threshold Sweep",
@@ -1836,8 +3207,8 @@ def write_match_markdown(payload: dict[str, Any]) -> None:
             "",
             "## Videos",
             "",
-            "| video | target mission | report | accepted | companions | matched missions | observed sequences |",
-            "|---|---|---|---:|---:|---|---:|",
+            "| video | target mission | report | accepted | companions | audio | matched missions | observed sequences |",
+            "|---|---|---|---:|---:|---:|---|---:|",
         ])
         for video in payload["videos"]:
             seq_count = sum(len(seq) for seq in (video.get("observedSequences") or {}).values())
@@ -1855,6 +3226,7 @@ def write_match_markdown(payload: dict[str, Any]) -> None:
                 f"| `{md_escape(video.get('report'))}` "
                 f"| {video.get('acceptedMatches', 0)} "
                 f"| {video.get('mapDialogCompanionMatches', 0)} "
+                f"| {video.get('audioTemplateMatches', 0)} "
                 f"| `{md_escape(', '.join(video.get('missions') or []))}` "
                 f"| {seq_count} |"
             )
@@ -2010,6 +3382,23 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_RANSAC_TOLERANCE,
         help="Story-order index residual tolerated by the timeline RANSAC model",
     )
+    parser.add_argument("--disable-audio-match", action="store_true", help="Do not add decoded-audio template evidence")
+    parser.add_argument("--audio-ffmpeg", default=None, help=argparse.SUPPRESS)
+    parser.add_argument("--audio-ffmpeg-filter", default=DEFAULT_AUDIO_FILTER, help=argparse.SUPPRESS)
+    parser.add_argument("--audio-sample-rate", type=int, default=DEFAULT_AUDIO_SAMPLE_RATE, help=argparse.SUPPRESS)
+    parser.add_argument("--audio-frame-seconds", type=float, default=DEFAULT_AUDIO_FRAME_SECONDS, help=argparse.SUPPRESS)
+    parser.add_argument("--audio-search-step", type=int, default=2, help=argparse.SUPPRESS)
+    parser.add_argument("--audio-prefilter-candidates", type=int, default=128, help=argparse.SUPPRESS)
+    parser.add_argument("--audio-prefilter-landmarks", type=int, default=8, help=argparse.SUPPRESS)
+    parser.add_argument("--audio-prefilter-neighbor-steps", type=int, default=1, help=argparse.SUPPRESS)
+    parser.add_argument("--audio-second-gap", type=float, default=8.0, help=argparse.SUPPRESS)
+    parser.add_argument("--audio-min-duration", type=float, default=0.8, help=argparse.SUPPRESS)
+    parser.add_argument("--audio-max-duration", type=float, default=18.0, help=argparse.SUPPRESS)
+    parser.add_argument("--audio-min-score", type=float, default=0.62, help=argparse.SUPPRESS)
+    parser.add_argument("--audio-min-margin", type=float, default=0.08, help=argparse.SUPPRESS)
+    parser.add_argument("--audio-max-matches-per-video", type=int, default=0, help=argparse.SUPPRESS)
+    parser.add_argument("--audio-include-music", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--disable-locked-threshold", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--no-progress", action="store_true", help="Disable terminal progress bars")
     parser.add_argument("--apply", action="store_true", help="write proposed full story order to webui/overrides/story_order.json")
     args = parser.parse_args()
@@ -2019,6 +3408,30 @@ def parse_args() -> argparse.Namespace:
         parser.error("--prefilter-max-duplicate-skip must be non-negative")
     if args.ransac_tolerance <= 0:
         parser.error("--ransac-tolerance must be greater than zero")
+    if args.audio_sample_rate <= 0:
+        parser.error("--audio-sample-rate must be greater than zero")
+    if args.audio_frame_seconds <= 0:
+        parser.error("--audio-frame-seconds must be greater than zero")
+    if args.audio_search_step <= 0:
+        parser.error("--audio-search-step must be greater than zero")
+    if args.audio_prefilter_candidates < 0:
+        parser.error("--audio-prefilter-candidates must be non-negative")
+    if args.audio_prefilter_landmarks < 0:
+        parser.error("--audio-prefilter-landmarks must be non-negative")
+    if args.audio_prefilter_neighbor_steps < 0:
+        parser.error("--audio-prefilter-neighbor-steps must be non-negative")
+    if args.audio_second_gap < 0:
+        parser.error("--audio-second-gap must be non-negative")
+    if args.audio_min_duration <= 0:
+        parser.error("--audio-min-duration must be greater than zero")
+    if args.audio_max_duration < args.audio_min_duration:
+        parser.error("--audio-max-duration must be >= --audio-min-duration")
+    if not (0 <= args.audio_min_score <= 1):
+        parser.error("--audio-min-score must be between 0 and 1")
+    if args.audio_min_margin < 0:
+        parser.error("--audio-min-margin must be non-negative")
+    if args.audio_max_matches_per_video < 0:
+        parser.error("--audio-max-matches-per-video must be non-negative")
     return args
 
 
@@ -2051,21 +3464,54 @@ def main() -> int:
     for line in corpus:
         corpus_by_mission[line.mission].append(line)
     gram_index_by_mission: dict[str, dict[str, list[int]]] = {}
+    audio_match_enabled = not args.disable_audio_match
+    audio_ffmpeg = resolve_audio_executable(args.audio_ffmpeg) if audio_match_enabled else None
+    audio_templates_by_mission: dict[str, list[AudioStoryTemplate]] = defaultdict(list)
+    audio_template_count = 0
+    audio_fingerprint_cache: dict[tuple[str, int, float, str], AudioFingerprint] = {}
+    if audio_match_enabled and not audio_ffmpeg:
+        print("Audio template matching disabled: ffmpeg was not found on PATH.")
+        audio_match_enabled = False
+    if audio_match_enabled and audio_ffmpeg:
+        print(
+            "Loading decoded Story audio templates "
+            f"(duration {args.audio_min_duration:g}-{args.audio_max_duration:g}s, "
+            f"music={'included' if args.audio_include_music else 'skipped'})..."
+        )
+        audio_templates = load_audio_templates(
+            conv_root=CONV_ROOT,
+            story_order=story_order,
+            min_duration=args.audio_min_duration,
+            max_duration=args.audio_max_duration,
+            include_music=args.audio_include_music,
+        )
+        for template in audio_templates:
+            audio_templates_by_mission[template.mission].append(template)
+        audio_template_count = len(audio_templates)
+        print(
+            f"Prepared {audio_template_count} audio template(s) across "
+            f"{len(audio_templates_by_mission)} mission bucket(s)."
+        )
     min_ocr_tool_version = 0 if args.include_stale_ocr else MIN_OCR_TOOL_VERSION
     ocr_reports, ocr_load_stats = load_ocr_reports(
         OCR_REPORT_DIR,
         include_smoke=args.include_smoke,
         min_tool_version=min_ocr_tool_version,
+        require_archive_box_ocr=not args.include_stale_ocr and not args.disable_archive_box_ocr,
     )
     if ocr_load_stats:
         print(
             "OCR report scan: "
             + ", ".join(f"{key}={value}" for key, value in sorted(ocr_load_stats.items()))
         )
+    if args.include_stale_ocr:
+        stale_note = ", including stale OCR"
+    else:
+        archive_note = "" if args.disable_archive_box_ocr else ", archive-box OCR enabled"
+        stale_note = f", toolVersion >= {MIN_OCR_TOOL_VERSION}{archive_note} only"
     print(
         f"Loaded {len(ocr_reports)} completed OCR report(s) from {rel_path(OCR_REPORT_DIR)} "
-        f"({'including' if args.include_smoke else 'excluding'} smoke reports"
-        f"{', including stale OCR' if args.include_stale_ocr else f', toolVersion >= {MIN_OCR_TOOL_VERSION} only'})."
+        f"({'including' if args.include_smoke else 'excluding'} smoke reports{stale_note})."
     )
     if ocr_reports:
         print("OCR reports to match:")
@@ -2083,7 +3529,9 @@ def main() -> int:
     total_matches = 0
     total_accepted = 0
     total_map_dialog_companion_matches = 0
+    total_audio_template_matches = 0
     video_mission_stats: Counter[str] = Counter()
+    video_match_records: list[dict[str, Any]] = []
     for report in ocr_reports:
         matches: list[dict[str, Any]] = []
         source = report.get("source") if isinstance(report.get("source"), dict) else {}
@@ -2105,9 +3553,12 @@ def main() -> int:
                 "targetMissionMatch": status,
                 "missionTitleCandidates": mission_match.get("candidates") or [],
                 "relatedCorpus": [],
+                "relatedAudio": [],
                 "acceptedMatches": 0,
                 "matchedSegments": 0,
                 "mapDialogCompanionMatches": 0,
+                "audioTemplateMatches": 0,
+                "audioMatchStats": {},
                 "missions": [],
                 "observedSequences": {},
                 "sequenceDiagnostics": {},
@@ -2131,9 +3582,12 @@ def main() -> int:
                 "targetMissionMatch": target_match_kind,
                 "missionTitleCandidates": mission_match.get("candidates") or [],
                 "relatedCorpus": [],
+                "relatedAudio": [],
                 "acceptedMatches": 0,
                 "matchedSegments": 0,
                 "mapDialogCompanionMatches": 0,
+                "audioTemplateMatches": 0,
+                "audioMatchStats": {},
                 "missions": [],
                 "observedSequences": {},
                 "sequenceDiagnostics": {},
@@ -2186,6 +3640,7 @@ def main() -> int:
                 f"{time.monotonic() - match_started:.1f}s"
             )
 
+        ocr_matches = list(matches)
         map_dialog_companion_matches = build_map_dialog_companion_matches(matches, map_dialog_companion_index)
         if map_dialog_companion_matches:
             matches.extend(map_dialog_companion_matches)
@@ -2193,6 +3648,43 @@ def main() -> int:
             total_matches += len(map_dialog_companion_matches)
             total_accepted += len(map_dialog_companion_matches)
             total_map_dialog_companion_matches += len(map_dialog_companion_matches)
+
+        audio_matches: list[dict[str, Any]] = []
+        audio_match_stats: dict[str, Any] = {}
+        related_audio_rows: list[dict[str, Any]] = []
+        if audio_match_enabled and audio_ffmpeg:
+            video_audio_templates, related_audio_rows = audio_templates_for_video_mission(
+                target_mission,
+                audio_templates_by_mission=audio_templates_by_mission,
+                related_missions_by_mission=related_missions_by_mission,
+            )
+            video_path = resolve_video_source_path(source)
+            if not video_path:
+                audio_match_stats = {
+                    "candidateTemplates": len(video_audio_templates),
+                    "skipReason": "missing-video-file",
+                }
+            elif video_audio_templates:
+                print(
+                    f"[{video_name}] audio matching {len(video_audio_templates)} template(s) "
+                    f"against {rel_path(video_path)}..."
+                )
+                audio_matches, audio_match_stats = build_audio_template_matches(
+                    video_path=video_path,
+                    templates=video_audio_templates,
+                    ffmpeg=audio_ffmpeg,
+                    args=args,
+                    memory_cache=audio_fingerprint_cache,
+                    label=video_name,
+                )
+                if audio_matches:
+                    matches.extend(audio_matches)
+                    all_matches_for_stats.extend(audio_matches)
+                    total_matches += len(audio_matches)
+                    total_accepted += len(audio_matches)
+                    total_audio_template_matches += len(audio_matches)
+            else:
+                audio_match_stats = {"candidateTemplates": 0, "skipReason": "no-mission-audio-templates"}
 
         accepted_missions = Counter(
             safe_key(match.get("best", {}).get("mission"))
@@ -2219,10 +3711,11 @@ def main() -> int:
             f"[{video_name}] matched={len(matches)} accepted="
             f"{sum(1 for match in matches if match.get('accepted'))} "
             f"companions={len(map_dialog_companion_matches)} "
+            f"audio={len(audio_matches)} "
             f"target={target_mission} "
             f"missions={','.join(mission for mission, _count in accepted_missions.most_common()) or '-'}"
         )
-        videos.append({
+        video_summary = {
             "video": safe_key(source.get("name")) or safe_key(source.get("path")),
             "report": report.get("_reportPath"),
             "targetMission": target_mission,
@@ -2230,23 +3723,93 @@ def main() -> int:
             "targetMissionMatch": target_match_kind,
             "missionTitleCandidates": mission_match.get("candidates") or [],
             "relatedCorpus": related_corpus_rows,
+            "relatedAudio": related_audio_rows,
             "acceptedMatches": sum(1 for match in matches if match.get("accepted")),
             "matchedSegments": len(matches),
             "mapDialogCompanionMatches": len(map_dialog_companion_matches),
+            "audioTemplateMatches": len(audio_matches),
+            "audioMatchStats": audio_match_stats,
             "missions": [mission for mission, _count in accepted_missions.most_common()],
             "observedSequences": observed_sequences,
             "sequenceDiagnostics": sequence_diagnostics,
-            "matches": matches[:200],
+            "matches": sorted(matches, key=match_start_seconds)[:200],
+        }
+        videos.append(video_summary)
+        video_match_records.append({
+            "video": video_summary,
+            "videoName": video_summary["video"],
+            "ocrMatches": ocr_matches,
+            "audioMatches": audio_matches,
         })
 
+    current_orders, active_order_missions = current_story_orders(active_story_order)
+    locked_order_missions = story_order_locked_missions(active_story_order)
+    locked_orders = {
+        mission: current_orders.get(mission) or []
+        for mission in locked_order_missions
+        if current_orders.get(mission)
+    }
+    locked_threshold_sweep = build_locked_threshold_sweep(
+        video_match_records,
+        locked_orders=locked_orders,
+        map_dialog_companion_index=map_dialog_companion_index,
+        base_story_orders=base_story_orders,
+        min_margin=args.min_margin,
+        current_min_score=args.min_score,
+        min_video_matches=args.min_video_matches,
+        min_sequence_keys=args.min_sequence_keys,
+        use_ransac=not args.no_ransac,
+        ransac_tolerance=args.ransac_tolerance,
+    )
+    locked_threshold_choice = choose_locked_threshold(locked_threshold_sweep, args.min_score)
+    effective_min_score = args.min_score
+    if locked_threshold_sweep and not args.disable_locked_threshold:
+        effective_min_score = float_value(locked_threshold_choice.get("minScore"), args.min_score)
+        if abs(effective_min_score - args.min_score) > 1e-9:
+            print(
+                "Locked-order threshold calibration: "
+                f"minScore {args.min_score:g} -> {effective_min_score:g} "
+                f"(checked={locked_threshold_choice.get('checkedKeys', 0)}, "
+                f"mismatches={locked_threshold_choice.get('mismatches', 0)})"
+            )
+    else:
+        locked_threshold_choice = {
+            **locked_threshold_choice,
+            "disabled": bool(args.disable_locked_threshold),
+        }
+
+    all_matches_for_stats = []
+    total_matches = 0
+    total_accepted = 0
+    total_map_dialog_companion_matches = 0
+    total_audio_template_matches = 0
+    for record in video_match_records:
+        result = finalize_video_match_record(
+            record,
+            min_score=effective_min_score,
+            min_margin=args.min_margin,
+            map_dialog_companion_index=map_dialog_companion_index,
+            base_story_orders=base_story_orders,
+            min_video_matches=args.min_video_matches,
+            min_sequence_keys=args.min_sequence_keys,
+            use_ransac=not args.no_ransac,
+            ransac_tolerance=args.ransac_tolerance,
+            update_video=True,
+        )
+        final_matches = result.get("matches") or []
+        all_matches_for_stats.extend(final_matches)
+        total_matches += int(result.get("matchedSegments") or 0)
+        total_accepted += int(result.get("acceptedMatches") or 0)
+        total_map_dialog_companion_matches += int(result.get("mapDialogCompanionMatches") or 0)
+        total_audio_template_matches += int(result.get("audioTemplateMatches") or 0)
+
+    locked_validation = validate_locked_order_sequences(videos, locked_orders=locked_orders)
     proposed, proposal_rows = build_proposed_story_order(
         active_story_order=active_story_order,
         story_order=story_order,
         video_summaries=videos,
         min_sequence_keys=args.min_sequence_keys,
     )
-    current_orders, active_order_missions = current_story_orders(active_story_order)
-    locked_order_missions = story_order_locked_missions(active_story_order)
     skipped_locked_mission_count = sum(1 for row in proposal_rows if row.get("skipReason") == "locked")
     changed_mission_count = sum(1 for row in proposal_rows if row.get("changed"))
     inserted_key_count = sum(len(row.get("insertedKeys") or []) for row in proposal_rows)
@@ -2266,7 +3829,8 @@ def main() -> int:
         f"changedMissions={changed_mission_count}, "
         f"changedKeys={changed_key_count}, "
         f"insertedKeys={inserted_key_count}, "
-        f"mapDialogCompanions={total_map_dialog_companion_matches}"
+        f"mapDialogCompanions={total_map_dialog_companion_matches}, "
+        f"audioTemplateMatches={total_audio_template_matches}"
     )
     write_report_json(PROPOSED_STORY_ORDER_PATH, proposed)
 
@@ -2274,13 +3838,15 @@ def main() -> int:
         write_report_json(ACTIVE_STORY_ORDER_PATH, proposed)
 
     payload = {
-        "schema": "gameplayVideoStoryOrderMatch.v1",
+        "schema": "gameplayVideoStoryOrderMatch.v2",
         "summary": {
             "corpusLines": len(corpus),
+            "audioTemplates": audio_template_count,
             "ocrReportsUsed": len(ocr_reports),
             "matchedSegments": total_matches,
             "acceptedMatches": total_accepted,
             "mapDialogCompanionMatches": total_map_dialog_companion_matches,
+            "audioTemplateMatches": total_audio_template_matches,
             "indexedInferences": sum(len(row.get("indexedInferences") or []) for row in proposal_rows),
             "linkedEntries": sum(len(row.get("linkedEntries") or []) for row in proposal_rows),
             "ransacModels": sum(1 for row in sequence_diagnostics if row.get("ransacModel")),
@@ -2295,16 +3861,34 @@ def main() -> int:
             "changedOrderKeys": changed_key_count,
             "insertedOrderKeys": inserted_key_count,
             "videoMissionMatches": dict(sorted(video_mission_stats.items())),
+            "lockedValidation": locked_validation.get("summary") or {},
+            "lockedThresholdChoice": locked_threshold_choice,
             "activeOrderWarning": active_story_order_warning,
             "applied": bool(args.apply),
         },
         "thresholds": {
             "minChars": args.min_chars,
             "minScore": args.min_score,
+            "effectiveMinScore": effective_min_score,
             "minMargin": args.min_margin,
             "minVideoMatches": args.min_video_matches,
             "minSequenceKeys": args.min_sequence_keys,
             "ransacTolerance": None if args.no_ransac else args.ransac_tolerance,
+            "audioMatch": None if not audio_match_enabled else {
+                "sampleRate": args.audio_sample_rate,
+                "frameSeconds": args.audio_frame_seconds,
+                "ffmpegFilter": args.audio_ffmpeg_filter,
+                "searchStep": args.audio_search_step,
+                "prefilterCandidates": args.audio_prefilter_candidates,
+                "prefilterLandmarks": args.audio_prefilter_landmarks,
+                "prefilterNeighborSteps": args.audio_prefilter_neighbor_steps,
+                "secondGapSeconds": args.audio_second_gap,
+                "minDuration": args.audio_min_duration,
+                "maxDuration": args.audio_max_duration,
+                "minScore": args.audio_min_score,
+                "minMargin": args.audio_min_margin,
+                "includeMusic": bool(args.audio_include_music),
+            },
         },
         "outputs": {
             "proposedStoryOrder": rel_path(PROPOSED_STORY_ORDER_PATH),
@@ -2313,8 +3897,10 @@ def main() -> int:
         "thresholdSweep": build_threshold_sweep(
             all_matches_for_stats,
             min_margin=args.min_margin,
-            current_min_score=args.min_score,
+            current_min_score=effective_min_score,
         ),
+        "lockedThresholdSweep": locked_threshold_sweep,
+        "lockedValidation": locked_validation,
         "scoreHistogram": build_score_histogram(all_matches_for_stats),
         "proposals": proposal_rows,
         "videos": videos,
@@ -2322,12 +3908,24 @@ def main() -> int:
     write_report_json(MATCH_REPORT_PATH, payload)
     write_match_markdown(payload)
 
-    print(f"Matched {total_accepted}/{total_matches} segment(s) from {len(ocr_reports)} OCR report(s).")
+    print(f"Matched {total_accepted}/{total_matches} OCR/audio segment(s) from {len(ocr_reports)} OCR report(s).")
     print(f"Wrote {rel_path(MATCH_REPORT_PATH)}")
     print(f"Review matching summary at {rel_path(MATCH_MD_PATH)}")
     print(f"Wrote {rel_path(PROPOSED_STORY_ORDER_PATH)}")
     if args.apply:
         print(f"Applied to {rel_path(ACTIVE_STORY_ORDER_PATH)}")
+    locked_rows = locked_validation.get("missions") or []
+    if locked_rows:
+        print("Locked-order mismatch validation:")
+        for row in locked_rows:
+            print(
+                f"  {row['mission']}: mismatches={row.get('mismatches', 0)}, "
+                f"inversions={row.get('inversions', 0)}, "
+                f"checked={row.get('checkedKeys', 0)}, "
+                f"missing={row.get('missingKeys', 0)}"
+            )
+    else:
+        print("Locked-order mismatch validation: no locked mission evidence in matched videos")
     return 0
 
 

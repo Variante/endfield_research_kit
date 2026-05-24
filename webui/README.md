@@ -18,13 +18,19 @@ heavyweight recovery work in the Python builders.
 
 ## Current Scope
 
-- `Story`: language switch, search, foldable media/recovery issue/method
-  filters, a Storyline filter for mission/story buckets, Media chips for
-  entries with videos, non-emoji images, SNS stickers, or emoji, recovered
-  game-data story-order sorting with compact evidence badges in mission lists,
-  conversation detail, summaries,
+- `Story`: language switch, search, foldable filters, a Storyline filter for
+  mission/story buckets, Media chips for entries with videos, non-emoji images,
+  SNS stickers, or emoji, recovered game-data story-order sorting with compact
+  evidence badges in mission lists, conversation detail, summaries,
   option groups, line-order notes, raw source traces, and inline media
-  rendering for SNS/content images. Narrative video blocks show the best
+  rendering for SNS/content images. Recovery issue/method filters, raw
+  source/debug blocks, mission timeline evidence, cutscene debug panels, and
+  manual order-edit controls are gated behind the `Show debug info` toggle so
+  normal browsing stays compact. Resetting filters returns to Story sort while
+  preserving expanded mission groups, and gender variant selection is a header
+  toggle. The current chrome uses a light neutral palette with muted teal and
+  orange accents while keeping category badges softly color-coded. Narrative
+  video blocks show the best
   playable active-gender/source variant for each distinct video, without
   counting hidden duplicate format/source variants as extra videos. Story
   search includes option ids as well as line ids/text. Option
@@ -62,10 +68,10 @@ heavyweight recovery work in the Python builders.
   `video` story files grouped by mission. Videos that resolve to dialog,
   cutscene, remotecomm, or another story file also attach to that file;
   standalone video rows sort beside the attached file. Timeline / playable
-  evidence supplies authored inline placement when available. False inline
-  attachments can be suppressed in `webui/overrides/narrative_videos.json`;
-  those videos stay available as standalone `video_*` rows after the Story
-  builder is rerun.
+  evidence supplies authored inline placement when available. Manual
+  attachments and false-attachment suppressions live in
+  `webui/overrides/narrative_videos.json`; videos stay available as standalone
+  `video_*` rows after the Story builder is rerun.
 - `Reference`: raw localized rows from `data/lang/<code>/reference/`, with
   source/table filters and on-demand table loading.
 - `Updates`: latest change summary from `data/updates/latest.json`, generated
@@ -132,7 +138,9 @@ heavyweight recovery work in the Python builders.
 
 - no runtime graph atlas or binding explorer in the frontend
 - no mission-flow dashboard
-- no frontend-side recovery debugging surface
+- no broad frontend-side recovery workbench; the existing `Show debug info`
+  toggle only exposes generated evidence/debug blocks needed to audit the
+  current Story view
 
 If one of those views becomes useful again, rebuild it intentionally instead of
 letting the browser grow around recovery experiments.

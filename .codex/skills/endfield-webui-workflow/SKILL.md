@@ -69,6 +69,7 @@ python scripts\story_recovery\build_timeline_option_flow_audit.py --language CN
 python scripts\story_recovery\build_timeline_binding_audit.py --language CN --only-interesting
 python tools\endfield-il2cpp\catalog_option_flow_metadata.py --cache-metadata
 python tools\endfield-il2cpp\map_body_targets_to_gameassembly.py
+python scripts\download_bilibili_video.py --dry-run
 ```
 
 `build_option_playable_semantics_audit.py` checks remaining inferred option
@@ -112,6 +113,12 @@ option-flow fields and method-body targets. Current useful targets include
 `TryTriggerTrunkBindingOption`, `SetDialogOption`, `OnJumpForward`,
 `DialogOptionBehaviour.InitDialogOptions`, `DialogTrunkBehaviour.InitDialogTrunk`,
 and DialogTree `GetNextIndex` / `SelectIndex` methods.
+
+`download_bilibili_video.py` is the optional intake helper for gameplay-video
+OCR/audio story-order work. It writes flat `.mp4` files under `videos/` from
+Bilibili BVIDs, uses browser-exported cookies, resumable parts, lock files,
+and `ffmpeg`, and requires the external `requests` package. It is not part of
+the stdlib-only export path.
 
 ## Frontend File Map
 
@@ -160,8 +167,9 @@ Rules:
 - Set `missions.<mission>.locked` to `true` to freeze that mission order;
   OCR recovery and browser-side merge/save logic must preserve the saved order
   exactly.
-- The Story sidebar can save row moves from `按剧情排序` mode through `serve.py`.
+- The Story sidebar can save row moves from Story sort mode through `serve.py`.
   Mission-group lock/unlock buttons can toggle `locked` from the WebUI.
+  These editing controls are visible behind `Show debug info`.
 - Rows do not show a manual scene-order tag; the editable file is the order.
 
 Option overrides live in `webui/overrides/options.json`. Option
@@ -194,13 +202,20 @@ For option overrides, `positions.after` moves option groups after a line anchor,
 directly to branch line ids. Moved/overridden option groups keep the visible
 manual override tag.
 
-Narrative video inline-attachment suppressions live in
-`webui/overrides/narrative_videos.json`. Use `suppressInline` when a video
-should remain as a standalone `video_*` row but must not attach to a resolved
-story key:
+Narrative video inline-attachment overrides live in
+`webui/overrides/narrative_videos.json`. Use `attachInline` when a filename
+stem is known to belong to a different story key, and use `suppressInline`
+when a video should remain as a standalone `video_*` row but must not attach to
+a resolved story key:
 
 ```json
 {
+  "attachInline": {
+    "cutscene_example_2": {
+      "stems": ["cs_video_other_name_1"],
+      "note": "Short factual reason."
+    }
+  },
   "suppressInline": {
     "cutscene_example_1": {
       "stems": ["cs_video_example_1"],
@@ -256,6 +271,11 @@ Useful built-in fixture conversations already generated in the CN data:
 - `test_sns_emojicomment`
 - `test_sns_sticker`
 - `sns_topic_map02_lv005_12002`
+
+When auditing Story frontend changes, also check that `Show debug info` toggles
+line-order evidence, source/debug blocks, mission timeline recovery, cutscene
+debug panels, recovery filters, and Story order editing controls without
+breaking normal browsing.
 
 ## Scope Notes
 

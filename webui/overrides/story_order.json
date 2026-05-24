@@ -1,6 +1,6 @@
 {
   "_schema": "storyOrder.fullOrder.v1",
-  "_note": "Editable Story file order. Each missions.<mission>.order array is the complete ordered list of story file keys for that mission. Set missions.<mission>.locked to true to preserve that mission's order across OCR and browser writes; the WebUI can toggle it per mission.",
+  "_note": "Full per-mission Story file order. Each missions.<mission>.order list is editable in the WebUI. locked:true preserves that mission from OCR/browser updates; the WebUI can toggle it per mission.",
   "missions": {
     "a1m2": {
       "order": [
@@ -1821,6 +1821,7 @@
         "sns_e1m9_1",
         "video_cs_video_e1m9_1"
       ],
+      "locked": true,
       "level": "map01_lv001",
       "levels": [
         "map01_lv001"
@@ -1828,6 +1829,7 @@
     },
     "e1m10": {
       "order": [
+        "sns_e1m10_1",
         "radio_e1m10_0d2",
         "misc_dlg_e1m10_0d5",
         "dlg_e1m10_1",
@@ -1841,12 +1843,12 @@
         "dlg_e1m10_5",
         "dlg_e1m10_6",
         "cutscene_e1m10_2",
+        "video_cs_video_e1m10_2",
         "dlg_e1m10_7",
         "cutscene_e1m10_1",
-        "misc_dlg_e1m10_2d7CBT3",
-        "sns_e1m10_1",
-        "video_cs_video_e1m10_2"
+        "misc_dlg_e1m10_2d7CBT3"
       ],
+      "locked": true,
       "level": "base01_lv001",
       "levels": [
         "base01_lv001",
@@ -1855,19 +1857,21 @@
     },
     "e2m1": {
       "order": [
+        "sns_e2m1_1",
         "dlg_e2m1_1",
         "cutscene_e2m1_1",
+        "video_cs_video_e1m9_1",
         "dlg_e2m1_2",
         "remotecomm_e2m1_1",
         "misc_dlg_e2m1_2d5",
         "dlg_e2m1_3",
+        "radio_e2m1_1",
         "env_envTalk_e2m1_1",
         "env_envTalk_e2m1_2",
         "env_envTalk_e2m1_3",
-        "env_envTalk_e2m1_4",
-        "radio_e2m1_1",
-        "sns_e2m1_1"
+        "env_envTalk_e2m1_4"
       ],
+      "locked": true,
       "level": "map01_lv001",
       "levels": [
         "map01_lv001"
@@ -1876,26 +1880,30 @@
     "e2m2": {
       "order": [
         "radio_e2m2_1",
+        "dlg_map01_lv001_env_25",
+        "dlg_map01_lv001_env_26",
+        "dlg_map01_lv001_env_27",
         "radio_e2m2_2d5",
         "radio_e2m2_2d7",
         "dlg_e2m2_1",
+        "misc_dlg_e2m2_1d5",
         "dlg_e2m2_2",
-        "radio_e2m2_3",
+        "radio_e2m3_3",
         "radio_e2m2_6",
-        "dlg_map01_lv005_58",
+        "radio_e2m2_3",
         "nar_media_map01_108_1",
         "dlg_e2m2_3",
         "misc_dlg_e2m2_3d5",
         "dlg_e2m2_7",
+        "radio_e2m2_7",
         "radio_e2m2_8",
         "dlg_e2m2_4",
         "dlg_e2m2_5",
         "remotecomm_e2m2_1",
         "misc_dlg_e2m2_4d5",
-        "misc_dlg_e2m2_6d5",
-        "radio_e2m2_7",
-        "misc_dlg_e2m2_1d5"
+        "misc_dlg_e2m2_6d5"
       ],
+      "locked": true,
       "level": "map01_lv005",
       "levels": [
         "map01_lv005"
@@ -1903,21 +1911,22 @@
     },
     "e2m3": {
       "order": [
+        "radio_e2m3_1",
+        "radio_e2m3_2",
         "dlg_e2m3_1",
         "radio_e2m3_3",
         "radio_e2m3_3d5",
-        "radio_e2m3_13",
-        "radio_e2m3_14",
-        "dlg_e2m3_3",
-        "radio_e2m3_1",
-        "radio_e2m3_2",
         "radio_e2m3_4",
         "radio_e2m3_5",
         "radio_e2m3_6",
+        "radio_e2m3_14",
         "radio_e2m3_15",
         "radio_e2m3_18",
-        "radio_e2m3_19"
+        "radio_e2m3_19",
+        "radio_e2m3_13",
+        "dlg_e2m3_3"
       ],
+      "locked": true,
       "level": "map01_lv005",
       "levels": [
         "map01_lv005"
@@ -1928,41 +1937,42 @@
         "dlg_e2m4_1",
         "radio_e2m4_1",
         "dlg_e2m4_2",
+        "radio_e2m4_3",
+        "radio_e2m4_5",
         "radio_e2m4_5d5",
         "radio_e2m4_5d7",
         "radio_e2m4_6",
         "dlg_e2m4_3",
-        "radio_e2m4_5",
         "radio_e2m4_8",
+        "radio_e2m4_10",
         "radio_e2m4_11d5",
         "radio_e2m4_12",
         "radio_e2m4_13",
         "dlg_e2m4_5",
         "radio_e2m4_16",
-        "dlg_map01_lv005_62",
         "radio_e2m4_16d5",
+        "dlg_map01_lv005_62",
         "radio_e2m4_17",
+        "radio_e2m4_18",
+        "radio_e2m4_18d5",
         "dlg_e2m4_7",
         "remotecomm_e2m4_1",
         "dlg_e2m4_9",
         "dlg_e2m4_10",
-        "radio_e2m4_18d5",
         "radio_e2m4_20",
         "radio_e2m4_21",
         "dlg_e2m4_12",
         "radio_e2m4_2",
-        "radio_e2m4_3",
         "radio_e2m4_4",
         "dlg_e2m4_4",
-        "radio_e2m4_10",
         "radio_e2m4_11",
         "radio_e2m4_14",
         "radio_e2m4_15",
-        "radio_e2m4_18",
         "radio_e2m4_19",
         "dlg_e2m4_11",
         "radio_e2m4_22"
       ],
+      "locked": true,
       "level": "map01_lv005",
       "levels": [
         "map01_lv005"
@@ -1970,24 +1980,26 @@
     },
     "e2m5": {
       "order": [
-        "radio_e2m5_4",
-        "radio_e2m5_5",
-        "radio_e2m5_3",
-        "dlg_map01_lv005_61",
-        "dlg_map01_lv005_68",
-        "nar_paper_map01_92_1",
         "radio_e2m5_2",
         "radio_e2m5_2d5",
-        "dlg_map01_lv005_57",
+        "nar_paper_map01_92_1",
+        "dlg_map01_lv005_61",
+        "dlg_map01_lv005_68",
         "nar_paper_map01_94_1",
         "dlg_map01_lv005_66",
-        "dlg_e2m5_1",
-        "radio_e2m5_1",
+        "radio_e2m5_4",
+        "radio_e2m5_3",
         "radio_e2m5_3d5",
+        "dlg_e2m5_1",
+        "radio_e2m5_5",
         "radio_e2m5_5d5",
         "radio_e2m5_5d7",
         "radio_e2m5_6d3",
+        "radio_e2m5_7",
         "radio_e2m5_8",
+        "radio_e2m5_9",
+        "radio_e2m5_1",
+        "nar_paper_map01_96_1",
         "dlg_e2m5_2",
         "radio_e2m5_16",
         "dlg_map01_lv005_71",
@@ -1995,8 +2007,8 @@
         "misc_dlg_e2m5_2d7",
         "misc_dlg_e2m5_2d8",
         "misc_dlg_e2m5_2d9",
-        "radio_e2m5_10",
         "radio_e2m5_18d7",
+        "radio_e2m5_10",
         "misc_dlg_e2m5_3d5",
         "misc_dlg_e2m5_3d7",
         "dlg_e2m5_3",
@@ -2005,11 +2017,9 @@
         "dlg_e2m5_4",
         "cutscene_e2m5_1",
         "radio_e2m5_24",
-        "cutscene_e2m5_3",
         "nar_digital_map01_98_1",
-        "radio_e2m5_7",
-        "radio_e2m5_9",
         "cutscene_e2m5_2",
+        "cutscene_e2m5_3",
         "radio_e2m5_27",
         "radio_e2m5_29",
         "dlg_e2m5_5",
@@ -2018,6 +2028,7 @@
         "env_envTalk_e2m5_2",
         "env_envTalk_e2m5_3"
       ],
+      "locked": true,
       "level": "map01_lv005",
       "levels": [
         "map01_lv005"
@@ -2029,12 +2040,13 @@
         "radio_e2m5d5_2",
         "dlg_e2m5d5_1",
         "misc_dlg_e2m5d5_1d5",
+        "misc_dlg_e2m5d5_1d7",
         "dlg_e2m5d5_2",
-        "radio_e2m5d5_5",
         "radio_e2m5d5_3",
         "radio_e2m5d5_4",
-        "misc_dlg_e2m5d5_1d7"
+        "radio_e2m5d5_5"
       ],
+      "locked": true,
       "level": "map01_lv005",
       "levels": [
         "map01_lv005"
@@ -2049,20 +2061,21 @@
         "radio_e2m6_2",
         "radio_e2m6_3",
         "radio_e2m6_4",
+        "radio_e2m6_5",
         "dlg_e2m6_5",
+        "radio_e2m6_4d5",
         "radio_e2m6_1d5",
         "radio_e2m6_3d7",
         "cutscene_e2m6_1",
         "dlg_e2m6_7",
-        "radio_e2m6_4d5",
         "radio_e2m6_7d2",
         "radio_e2m6_7d4",
+        "dlg_e2m6_17",
         "dlg_e2m6_9",
         "cutscene_e2m6_designer_anchorperish_001",
         "cutscene_e2m6_designer_anchorperish_002",
         "cutscene_e2m6_2",
         "cutscene_e2m6_designer_anchorperish_002Part2",
-        "radio_e2m6_5",
         "cutscene_e2m6_designer_anchorperish_003",
         "cutscene_e2m6_designer_anchorperish_003Part2",
         "dlg_e2m6_4",
@@ -2082,7 +2095,6 @@
         "radio_e2m6_8d5",
         "dlg_e2m6_15",
         "dlg_e2m6_16",
-        "dlg_e2m6_17",
         "dlg_e2m6_18",
         "dlg_e2m6_19",
         "dlg_e2m6_20",
@@ -2146,15 +2158,16 @@
     "e2m8": {
       "order": [
         "radio_e2m8_1",
-        "radio_e2m8_1d5",
         "dlg_e2m8_1",
+        "radio_e2m8_1d5",
         "cutscene_e2m8_1",
         "dlg_e2m8_4",
-        "dlg_e2m8_5",
-        "radio_e2m8_2",
         "radio_e2m8_3",
         "radio_e2m8_4",
+        "dlg_e2m8_5",
+        "nar_media_map01_45_2",
         "radio_e2m8_5",
+        "radio_e2m8_2",
         "video_cs_video_e2m8_2",
         "env_envTalk_e2m8_903"
       ],
@@ -3419,9 +3432,9 @@
         "dlg_e10m1_15",
         "radio_e10m1_7",
         "dlg_e10m1_11",
-        "dlg_map02_lv002_9",
+        "dlg_e10m1_12",
         "dlg_map02_lv002_env_12006",
-        "dlg_e10m1_12"
+        "dlg_map02_lv002_9"
       ],
       "level": "map02_lv002",
       "levels": [

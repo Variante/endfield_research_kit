@@ -58,6 +58,12 @@ as `sns_emoji_*` as regular inline emoji with no popup/modal preview, while
 non-emoji SNS media such as `sns_image_*` and `sns_sticker_*` render at normal
 image proportions with bounded hover/modal previews.
 
+The Story sidebar keeps routine browsing quiet by default: recovery issue
+filters, source/debug blocks, mission timeline evidence, cutscene debug panels,
+and manual order-edit controls are available from the `Show debug info` toggle.
+The reset button returns filters to the Story sort while preserving expanded
+mission groups.
+
 `export.bat` is the normal story/reference browser-data rebuild from an
 existing `export_full/`. It runs:
 
@@ -275,6 +281,12 @@ local. Standalone downloaders, report experiments, and other non-WebUI helpers
 should stay in `scratch/`, `tmp/`, or ignored local `tools/` entries unless
 they are deliberately promoted with docs.
 
+The maintained gameplay-video OCR workflow can use
+`scripts/download_bilibili_video.py` as an optional intake helper for public
+Bilibili sources. It writes flat `.mp4` files under `videos/` for the Story
+order OCR/audio matcher and requires `requests`, `ffmpeg`, and a
+browser-exported cookie JSON.
+
 Use `scripts/README.md` for the maintained script map. Keep new throwaway
 experiments in `scratch/`, and promote reusable shared helpers only with
 matching docs and intentional tracking.
@@ -286,6 +298,8 @@ matching docs and intentional tracking.
 - `unity_endfield_graph_shader_lab/`: Unity character recovery lab project.
 - `export_full/`: generated data exported from the installed client.
 - `reports/`: durable WebUI/export summaries.
+- `videos/`: local gameplay captures used by optional Story order OCR/audio
+  recovery tools.
 - `scratch/`: disposable local outputs.
 - `memory/`: durable notes, conclusions, and recovery snapshots.
 

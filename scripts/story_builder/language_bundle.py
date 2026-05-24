@@ -40,20 +40,23 @@ def _normalize_video_override_stem(value: object) -> str:
 
 
 @_radio_cont_lru_cache(maxsize=2)
-def _load_narrative_video_overrides(path_str: str) -> dict[str, list[dict]]:
+def _load_narrative_video_overrides(path_str: str) -> dict[str, dict[str, list[dict]]]:
     path = _RadioContPath(path_str)
     if not path.is_file():
-        return {}
+        return {"suppressInline": {}, "attachInline": {}}
     try:
         payload = _radio_cont_json.loads(path.read_text(encoding="utf-8"))
     except (OSError, _radio_cont_json.JSONDecodeError):
-        return {}
+        return {"suppressInline": {}, "attachInline": {}}
     if not isinstance(payload, dict):
-        return {}
+        return {"suppressInline": {}, "attachInline": {}}
 
-    out: dict[str, list[dict]] = {}
+    out: dict[str, dict[str, list[dict]]] = {
+        "suppressInline": {},
+        "attachInline": {},
+    }
 
-    def add_rule(target_key: object, raw_rule: object) -> None:
+    def add_rule(bucket: dict[str, list[dict]], target_key: object, raw_rule: object) -> None:
         key = str(target_key or "").strip()
         if not key:
             return
@@ -79,27 +82,32 @@ def _load_narrative_video_overrides(path_str: str) -> dict[str, list[dict]]:
             for normalized in (_normalize_video_override_stem(value) for value in (raw_stems or []))
             if normalized
         })
-        out.setdefault(key, []).append({
+        bucket.setdefault(key, []).append({
             "targetKey": key,
             "stems": stems,
             "note": note,
             "source": path,
         })
 
-    suppress_inline = payload.get("suppressInline")
-    if isinstance(suppress_inline, dict):
-        for target_key, raw_rule in suppress_inline.items():
-            add_rule(target_key, raw_rule)
-    elif isinstance(suppress_inline, list):
-        for raw_rule in suppress_inline:
-            if not isinstance(raw_rule, dict):
-                continue
-            target_key = (
-                raw_rule.get("targetKey")
-                or raw_rule.get("key")
-                or raw_rule.get("resolvedKey")
-            )
-            add_rule(target_key, raw_rule)
+    def add_rules(bucket_name: str, raw_rules: object) -> None:
+        bucket = out[bucket_name]
+        if isinstance(raw_rules, dict):
+            for target_key, raw_rule in raw_rules.items():
+                add_rule(bucket, target_key, raw_rule)
+        elif isinstance(raw_rules, list):
+            for raw_rule in raw_rules:
+                if not isinstance(raw_rule, dict):
+                    continue
+                target_key = (
+                    raw_rule.get("targetKey")
+                    or raw_rule.get("key")
+                    or raw_rule.get("resolvedKey")
+                    or raw_rule.get("attachTo")
+                )
+                add_rule(bucket, target_key, raw_rule)
+
+    add_rules("suppressInline", payload.get("suppressInline"))
+    add_rules("attachInline", payload.get("attachInline") or payload.get("attachTo"))
     return out
 
 
@@ -183,6 +191,8 @@ def build_language_bundle(
     story_source_links = load_story_source_links()
     narrative_video_assets = _load_narrative_video_assets()
     narrative_video_overrides = _load_narrative_video_overrides(str(_NARRATIVE_VIDEO_OVERRIDES_PATH))
+    narrative_video_suppress_overrides = narrative_video_overrides.get("suppressInline") or {}
+    narrative_video_attach_overrides = narrative_video_overrides.get("attachInline") or {}
     fmv_clips_by_key = _load_fmv_clips_by_webui_key(str(_FMV_CLIP_BY_KEY_REPORT_PATH))
     written_conv_paths: set[str] = set()
     written_reference_paths: set[str] = set()
@@ -9849,6 +9859,7 @@ def build_language_bundle(
             f"- Timeline-backed evidence rows: `{summary.get('authoritativeEvidenceRows', 0)}`",
             f"- Standalone video files: `{summary.get('standaloneVideoKeys', 0)}`",
             f"- Standalone video refs: `{summary.get('standaloneVideoRefs', 0)}`",
+            f"- Manual inline attach refs: `{summary.get('manualAttachedInlineVideos', 0)}`",
             f"- Suppressed inline video refs: `{summary.get('suppressedInlineVideos', 0)}`",
             f"- Unresolved video refs: `{summary.get('unresolvedVideos', 0)}`",
             "",
@@ -9871,6 +9882,12 @@ def build_language_bundle(
             candidates = ", ".join(f"`{candidate}`" for candidate in (row.get("keyCandidates") or [])[:4])
             lines.append(f"- `{row.get('name')}` ({row.get('kind')}) -> {candidates}")
         if not report.get("unresolved"):
+            lines.append("- None")
+        lines.extend(["", "## Manual Inline Attachments", ""])
+        for row in (report.get("manualAttachedInline") or [])[:120]:
+            note = f" ({row.get('note')})" if row.get("note") else ""
+            lines.append(f"- `{row.get('name')}` -> `{row.get('targetKey')}`{note}")
+        if not report.get("manualAttachedInline"):
             lines.append("- None")
         lines.extend(["", "## Suppressed Inline Attachments", ""])
         for row in (report.get("suppressedInline") or [])[:120]:
@@ -9916,10 +9933,16 @@ def build_language_bundle(
                     return owner_key
             return ""
 
-        def attachment_override_for(resolved_key: str, ref: dict) -> dict:
-            if not resolved_key:
+        def video_override_for(
+            rules_by_key: dict[str, list[dict]],
+            target_key: str,
+            ref: dict,
+            *,
+            require_stem: bool = False,
+        ) -> dict:
+            if not target_key:
                 return {}
-            rules = narrative_video_overrides.get(resolved_key) or []
+            rules = rules_by_key.get(target_key) or []
             if not rules:
                 return {}
             ref_stems = {
@@ -9933,20 +9956,40 @@ def build_language_bundle(
             }
             for rule in rules:
                 rule_stems = set(rule.get("stems") or [])
+                if require_stem and not rule_stems:
+                    continue
                 if rule_stems and not (rule_stems & ref_stems):
                     continue
                 return {
                     "source": repo_rel(rule.get("source") or _NARRATIVE_VIDEO_OVERRIDES_PATH),
-                    "targetKey": resolved_key,
+                    "targetKey": target_key,
                     "stems": sorted(rule_stems),
                     "note": str(rule.get("note") or ""),
                 }
+            return {}
+
+        def suppression_override_for(resolved_key: str, ref: dict) -> dict:
+            return video_override_for(narrative_video_suppress_overrides, resolved_key, ref)
+
+        def manual_attachment_override_for(ref: dict) -> dict:
+            for target_key in sorted(narrative_video_attach_overrides):
+                if target_key not in available_keys:
+                    continue
+                override = video_override_for(
+                    narrative_video_attach_overrides,
+                    target_key,
+                    ref,
+                    require_stem=True,
+                )
+                if override:
+                    return override
             return {}
 
         resolved_videos: dict[str, list[dict]] = defaultdict(list)
         standalone_videos: dict[str, list[dict]] = defaultdict(list)
         unresolved_videos: list[dict] = []
         suppressed_inline_videos: list[dict] = []
+        manual_attached_inline_videos: list[dict] = []
 
         # Index entry kind for each WebUI key. Authoritative bindings are used
         # both for inline placement and for keeping standalone video rows near
@@ -10033,6 +10076,19 @@ def build_language_bundle(
                 )
             return sorted(refs, key=narrative_video_name_sort_key)
 
+        def note_attached_video_in_summary(payload: dict) -> None:
+            summary = payload.get("summary")
+            if not isinstance(summary, list):
+                return
+            stale_note = "Text-only candidate: no matching AnimeStudio cutscene asset, source link, or narrative video was found."
+            refreshed_note = (
+                "Text-only candidate: no matching AnimeStudio cutscene asset or source link was found; "
+                "narrative video is attached separately."
+            )
+            for row in summary:
+                if isinstance(row, dict) and row.get("text") == stale_note:
+                    row["text"] = refreshed_note
+
         def strip_video_gender_prefix(stem: str) -> tuple[str, str]:
             match = re.match(r"^(?P<gender>f|m|fm)_(?P<rest>cs_video_.+)$", stem or "", flags=re.IGNORECASE)
             if not match:
@@ -10040,6 +10096,13 @@ def build_language_bundle(
             return match.group("gender").lower(), match.group("rest")
 
         def video_scene_hint(refs: list[dict]) -> str:
+            for ref in refs:
+                override = ref.get("_videoAttachmentAttachOverride")
+                if not isinstance(override, dict):
+                    continue
+                target = str(override.get("targetKey") or ref.get("_resolvedKey") or "").strip()
+                if target:
+                    return strip_video_scene_prefix(target)
             for ref in refs:
                 binding = ref.get("binding") if isinstance(ref.get("binding"), dict) else {}
                 scene = str(binding.get("scene") or "").strip()
@@ -10121,11 +10184,16 @@ def build_language_bundle(
 
         for ref in narrative_video_assets:
             original_resolved_key = resolve_video_key(ref)
-            override = attachment_override_for(original_resolved_key, ref)
-            resolved_key = "" if override else original_resolved_key
+            suppress_override = suppression_override_for(original_resolved_key, ref)
+            attach_override = {} if suppress_override else manual_attachment_override_for(ref)
+            resolved_key = (
+                ""
+                if suppress_override
+                else str(attach_override.get("targetKey") or original_resolved_key or "")
+            )
             resolved_kind = (
-                entry_kind_by_key.get(original_resolved_key, "")
-                if original_resolved_key
+                entry_kind_by_key.get(resolved_key, "")
+                if resolved_key
                 else ""
             )
             # Rule: a video is always emitted as a standalone `video_*` bundle.
@@ -10134,17 +10202,23 @@ def build_language_bundle(
             standalone_ref = dict(ref)
             standalone_ref["_resolvedKey"] = resolved_key
             standalone_ref["_resolvedKind"] = resolved_kind
-            if override:
+            if suppress_override:
                 standalone_ref["_suppressedResolvedKey"] = original_resolved_key
-                standalone_ref["_videoAttachmentOverride"] = override
+                standalone_ref["_videoAttachmentOverride"] = suppress_override
+            if attach_override:
+                standalone_ref["_videoAttachmentAttachOverride"] = attach_override
             should_embed_inline = bool(resolved_key)
             if should_embed_inline:
                 resolved_ref = dict(ref)
                 resolved_ref["resolvedKey"] = resolved_key
+                if attach_override:
+                    resolved_ref["attachmentOverride"] = attach_override
                 resolved_videos[resolved_key].append(resolved_ref)
             standalone_videos[standalone_video_key(ref)].append(standalone_ref)
-            if override:
+            if suppress_override:
                 suppressed_inline_videos.append(standalone_ref)
+            elif attach_override:
+                manual_attached_inline_videos.append(standalone_ref)
             elif not resolved_key:
                 unresolved_videos.append(ref)
 
@@ -10214,6 +10288,23 @@ def build_language_bundle(
                 return (
                     f"Attachment status: manual override suppresses inline attachment{target_note}; kept standalone in WebUI",
                     "standaloneVideoManualOverrideSuppressedInline",
+                )
+            for ref in refs:
+                override = ref.get("_videoAttachmentAttachOverride")
+                if not isinstance(override, dict):
+                    continue
+                target = str(override.get("targetKey") or ref.get("_resolvedKey") or "")
+                if not target:
+                    continue
+                resolved_kind = str(ref.get("_resolvedKind") or "")
+                label = {
+                    "cutscene": "cutscene",
+                    "dlg": "dialog",
+                    "remotecomm": "remotecomm",
+                }.get(resolved_kind, "story file")
+                return (
+                    f"Attachment status: manual override attaches inline to {label} `{target}`; kept standalone in WebUI",
+                    "standaloneVideoManualOverrideAttachedInline",
                 )
             for ref in refs:
                 binding = ref.get("binding") if isinstance(ref.get("binding"), dict) else {}
@@ -10423,6 +10514,7 @@ def build_language_bundle(
                     payload = None
                 if isinstance(payload, dict):
                     payload["narrativeVideos"] = compact_refs
+                    note_attached_video_in_summary(payload)
                     if omitted:
                         payload["narrativeVideosOmitted"] = omitted
                     if isinstance(payload.get("cutscene"), dict):
@@ -10544,6 +10636,7 @@ def build_language_bundle(
                 "scannedVideos": len(narrative_video_assets),
                 "attachedKeys": len(attached_rows),
                 "attachedVideos": attached_refs,
+                "manualAttachedInlineVideos": len(manual_attached_inline_videos),
                 "suppressedInlineVideos": len(suppressed_inline_videos),
                 "authoritativeEvidenceRows": len(authoritative_evidence),
                 "standaloneVideoKeys": len(standalone_entries),
@@ -10566,6 +10659,16 @@ def build_language_bundle(
                 for entry in standalone_entries[:500]
             ],
             "unresolved": unresolved_rows[:500],
+            "manualAttachedInline": [
+                {
+                    "name": str(ref.get("name") or ""),
+                    "targetKey": str((ref.get("_videoAttachmentAttachOverride") or {}).get("targetKey") or ""),
+                    "stems": list((ref.get("_videoAttachmentAttachOverride") or {}).get("stems") or []),
+                    "note": str((ref.get("_videoAttachmentAttachOverride") or {}).get("note") or ""),
+                    "source": str((ref.get("_videoAttachmentAttachOverride") or {}).get("source") or ""),
+                }
+                for ref in manual_attached_inline_videos[:500]
+            ],
             "suppressedInline": [
                 {
                     "name": str(ref.get("name") or ""),
