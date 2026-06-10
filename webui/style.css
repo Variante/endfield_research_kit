@@ -3398,18 +3398,21 @@ body.is-resizing-pane * {
 .updates-diff-line {
   min-height: 1.45em;
   padding: 0 10px;
+  border-left: 3px solid transparent;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
 .updates-diff-add {
-  background: rgba(var(--fg-rgb), 0.12);
-  color: var(--text);
+  background: rgba(42, 157, 88, 0.14);
+  border-left-color: #2a9d58;
+  color: #17683a;
 }
 
 .updates-diff-del {
-  background: rgba(var(--fg-rgb), 0.12);
-  color: var(--text);
+  background: rgba(214, 63, 63, 0.14);
+  border-left-color: #d63f3f;
+  color: #9d2323;
 }
 
 .updates-diff-hunk,

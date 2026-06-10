@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Build the WebUI game-data update feed.
+"""Build the WebUI update feed.
 
-This builder compares two exported game-data trees, such as ``export_122/`` and
+This builder compares WebUI-facing exported text JSON and exported assets
+between two exported game-data trees, such as ``export_122/`` and
 ``export_full/``, and writes the resulting diff for the WebUI Updates tab. The
 previous export is cached as the scanner baseline, then the current export is
-scanned against that baseline.
+scanned against that baseline using the same focused roots.
 
 Run from the repo root:
     python scripts/build_updates.py
@@ -22,6 +23,7 @@ import subprocess
 import sys
 import time
 from collections import Counter
+from contextlib import closing
 from pathlib import Path
 from typing import Any
 
@@ -55,13 +57,35 @@ DEFAULT_REPORT_MD = REPORTS_DIR / "game-data-change-summary.md"
 TRACKER = ROOT / "scripts" / "track_export_changes.py"
 SCHEMA_VERSION = 1
 ASSET_STATE_SCHEMA_VERSION = 1
+EXPORT_BASELINE_CONFIG_SCHEMA_VERSION = 2
 STATUS_ORDER = {"added": 0, "modified": 1, "deleted": 2}
 ASSET_HASH_CHUNK_SIZE = 1024 * 1024
+ASSET_DEFAULT_FINGERPRINT_MODE = "size"
+ASSET_HASH_FINGERPRINT_MODE = "content_hash"
 DECODED_IMPACT_SAMPLE_LIMIT = 200
+PRUNE_SAMPLE_LIMIT = 200
 IGNORED_GAME_PATH_PREFIXES = (
     # CrashSight writes local crash/telemetry state under the game install.
     # These files churn between runs but are not installed content updates.
     "plugins/x86_64/wesight/crashsight_data/",
+)
+WEBUI_TEXT_JSON_RELATIVE_PATHS = (
+    "structured/StreamingAssets/Table",
+    "structured/Persistent/Table",
+    "structured/StreamingAssets/Data/Json/MissionRuntimeAsset",
+    "structured/Persistent/Data/Json/MissionRuntimeAsset",
+    "structured/StreamingAssets/Data/Json/LevelData",
+    "structured/StreamingAssets/Data/Json/LevelScriptData",
+    "structured/StreamingAssets/Data/Json/LevelScriptTemplateData",
+    "structured/StreamingAssets/Data/Json/GameplayConfig/DialogIdTable.json",
+    "structured/StreamingAssets/Data/Json/GameplayConfig/MissionAreaTable.json",
+    "structured/StreamingAssets/Data/Json/GameplayConfig/NpcProxyTable.json",
+    "structured/StreamingAssets/Data/Json/GameplayConfig/NpcProxyExDataTable.json",
+    "structured/StreamingAssets/Data/Json/GameplayConfig/AtmosphericNpcClusterDataTable.json",
+    "recovered/dialog_id_table_index.json",
+    "recovered/story_source_links.json",
+    "recovered/video_bindings.json",
+    "recovered/AnimeStudio-cli/timeline_line_orders.json",
 )
 
 CHK_DECODE_DIR = SCRIPT_DIR / "chk_decode"
@@ -77,7 +101,10 @@ except Exception:  # pragma: no cover - update feed should still build without o
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Build webui/data/updates/latest.json from exported game-data folder diffs.",
+        description=(
+            "Build webui/data/updates/latest.json from focused exported text "
+            "JSON and asset diffs."
+        ),
     )
     parser.add_argument(
         "--game-root",
@@ -153,8 +180,48 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         dest="skip_asset_updates",
         action="store_true",
         help=(
-            "Skip the exported image/model/video asset diff. Useful for initial "
-            "WebUI builds where only a game-data baseline/feed is needed."
+            "Skip the exported image/model/video asset diff. By default Updates "
+            "tracks assets plus WebUI-facing text JSON."
+        ),
+    )
+    parser.add_argument(
+        "--include-asset-updates",
+        dest="skip_asset_updates",
+        action="store_false",
+        help="Compatibility flag; asset updates are included by default.",
+    )
+    parser.set_defaults(skip_asset_updates=False)
+    parser.add_argument(
+        "--full-export-scan",
+        action="store_true",
+        help=(
+            "Use the older broad export-folder scan instead of the focused "
+            "WebUI text JSON scan."
+        ),
+    )
+    parser.add_argument(
+        "--hash-asset-updates",
+        action="store_true",
+        help=(
+            "Hash exported asset contents when comparing assets. Slower, but "
+            "detects same-size binary modifications."
+        ),
+    )
+    parser.add_argument(
+        "--prune-previous-export-untracked",
+        action="store_true",
+        help=(
+            "After a successful focused comparison, delete files from the "
+            "previous export root that are outside the tracked text JSON roots "
+            "and tracked asset files."
+        ),
+    )
+    parser.add_argument(
+        "--dry-run-prune-previous-export-untracked",
+        action="store_true",
+        help=(
+            "Report which previous-export files would be deleted by "
+            "--prune-previous-export-untracked without deleting them."
         ),
     )
     parser.add_argument(
@@ -178,7 +245,7 @@ def tracker_has_baseline(state_dir: Path) -> bool:
     if not db_path.exists():
         return False
     try:
-        with sqlite3.connect(db_path) as conn:
+        with closing(sqlite3.connect(db_path)) as conn:
             row = conn.execute(
                 "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'files'"
             ).fetchone()
@@ -230,24 +297,45 @@ def export_baseline_config_path(state_dir: Path) -> Path:
     return export_baseline_state_dir(state_dir) / "baseline.json"
 
 
-def export_baseline_config_matches(state_dir: Path, previous_export_root: Path) -> bool:
+def normalized_relative_paths(paths: list[str] | tuple[str, ...]) -> list[str]:
+    out: list[str] = []
+    for path in paths:
+        normalized = normalize_posix(path)
+        if normalized:
+            out.append(normalized)
+    return out
+
+
+def export_baseline_config_matches(
+    state_dir: Path,
+    previous_export_root: Path,
+    *,
+    include_relative_paths: list[str],
+) -> bool:
     config = read_json(export_baseline_config_path(state_dir), default={})
     if not isinstance(config, dict):
         return False
     return (
-        int(config.get("schemaVersion") or 0) == 1
+        int(config.get("schemaVersion") or 0) == EXPORT_BASELINE_CONFIG_SCHEMA_VERSION
         and normalize_posix(str(config.get("previousExportRoot") or ""))
         == normalize_posix(str(previous_export_root))
+        and list(config.get("includeRelativePaths") or []) == normalized_relative_paths(include_relative_paths)
     )
 
 
-def write_export_baseline_config(state_dir: Path, previous_export_root: Path) -> None:
+def write_export_baseline_config(
+    state_dir: Path,
+    previous_export_root: Path,
+    *,
+    include_relative_paths: list[str],
+) -> None:
     write_json(
         export_baseline_config_path(state_dir),
         {
-            "schemaVersion": 1,
+            "schemaVersion": EXPORT_BASELINE_CONFIG_SCHEMA_VERSION,
             "source": "previous_export_root",
             "previousExportRoot": str(previous_export_root),
+            "includeRelativePaths": normalized_relative_paths(include_relative_paths),
             "generated": int(time.time()),
             "generatedAt": dt.datetime.now(dt.timezone.utc).astimezone().isoformat(),
         },
@@ -304,12 +392,12 @@ def is_ignored_game_update_path(path: str) -> bool:
     return any(lower.startswith(prefix) for prefix in IGNORED_GAME_PATH_PREFIXES)
 
 
-def normalized_entry(status: str, raw: dict[str, Any]) -> dict[str, Any]:
+def normalized_entry(status: str, raw: dict[str, Any], *, domain: str = "game") -> dict[str, Any]:
     path = normalize_posix(str(raw.get("path") or ""))
     extension = str(raw.get("extension") or "")
     entry: dict[str, Any] = {
         "status": status,
-        "domain": "game",
+        "domain": domain,
         "category": classify_game_data_path(path),
         "path": path,
         "extension": extension,
@@ -488,6 +576,7 @@ def filtered_game_entries(
     samples: dict[str, Any],
     *,
     suppress_changes: bool,
+    domain: str = "game",
 ) -> tuple[list[dict[str, Any]], Counter[str]]:
     entries: list[dict[str, Any]] = []
     ignored_counts: Counter[str] = Counter()
@@ -500,7 +589,7 @@ def filtered_game_entries(
             if is_ignored_game_update_path(str(raw_entry.get("path") or "")):
                 ignored_counts[status] += 1
                 continue
-            entries.append(normalized_entry(status, raw_entry))
+            entries.append(normalized_entry(status, raw_entry, domain=domain))
     return entries, ignored_counts
 
 
@@ -525,6 +614,8 @@ def hash_file(path: Path) -> str:
 def build_asset_snapshot(
     export_root: Path,
     prior_assets: dict[str, dict[str, Any]] | None = None,
+    *,
+    hash_contents: bool = False,
 ) -> dict[str, dict[str, Any]]:
     assets: dict[str, dict[str, Any]] = {}
     prior_assets = prior_assets or {}
@@ -549,22 +640,33 @@ def build_asset_snapshot(
                 if rel_requires_path_id_export_name(rel_path) and not path_id_export_base_stem(path.stem):
                     continue
                 stat = path.stat()
+                export_rel = path.relative_to(export_root).as_posix()
                 old_asset = prior_assets.get(rel_path) or {}
-                digest = str(old_asset.get("digest") or "")
-                if (
-                    not digest
-                    or int(old_asset.get("size") or -1) != stat.st_size
-                    or int(old_asset.get("mtime_ns") or -1) != stat.st_mtime_ns
-                ):
+                fingerprint_mode = ASSET_HASH_FINGERPRINT_MODE if hash_contents else ASSET_DEFAULT_FINGERPRINT_MODE
+                if hash_contents:
+                    old_mode = str(old_asset.get("fingerprintMode") or ASSET_HASH_FINGERPRINT_MODE)
+                    digest = str(old_asset.get("digest") or "")
+                    if (
+                        old_mode != ASSET_HASH_FINGERPRINT_MODE
+                        or not digest
+                        or int(old_asset.get("size") or -1) != stat.st_size
+                        or int(old_asset.get("mtime_ns") or -1) != stat.st_mtime_ns
+                    ):
+                        digest = hash_file(path)
+                else:
+                    digest = f"size:{stat.st_size}"
+                if not digest:
                     digest = hash_file(path)
                 assets[rel_path] = {
                     "kind": kind,
                     "source": source,
                     "path": rel_path,
+                    "export_rel": export_rel,
                     "extension": suffix,
                     "size": stat.st_size,
                     "mtime_ns": stat.st_mtime_ns,
                     "digest": digest,
+                    "fingerprintMode": fingerprint_mode,
                 }
     return assets
 
@@ -576,10 +678,15 @@ def asset_source_roots_payload(export_root: Path) -> dict[str, str]:
     return roots
 
 
-def load_asset_state(path: Path) -> dict[str, dict[str, Any]]:
+def load_asset_state(path: Path, *, export_root: Path | None = None) -> dict[str, dict[str, Any]]:
     payload = read_json(path, default={})
     if int(payload.get("schemaVersion") or 0) != ASSET_STATE_SCHEMA_VERSION:
         return {}
+    if export_root is not None:
+        state_root = normalize_posix(str(payload.get("sourceRoot") or ""))
+        expected_root = normalize_posix(str(export_root))
+        if state_root and state_root.lower() != expected_root.lower():
+            return {}
     assets = payload.get("assets")
     return assets if isinstance(assets, dict) else {}
 
@@ -594,6 +701,139 @@ def write_asset_state(path: Path, assets: dict[str, dict[str, Any]], *, export_r
         "assets": assets,
     }
     write_json(path, payload)
+
+
+def asset_export_rel_paths(assets: dict[str, dict[str, Any]]) -> set[str]:
+    paths: set[str] = set()
+    for asset in assets.values():
+        if not isinstance(asset, dict):
+            continue
+        rel_path = normalize_posix(str(asset.get("export_rel") or ""))
+        if rel_path:
+            paths.add(rel_path)
+    return paths
+
+
+def iter_existing_relative_files(root: Path) -> list[str]:
+    out: list[str] = []
+    if not root.exists():
+        return out
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames.sort()
+        filenames.sort()
+        base_dir = Path(dirpath)
+        for filename in filenames:
+            path = base_dir / filename
+            if path.is_file():
+                out.append(path.relative_to(root).as_posix())
+    return out
+
+
+def collect_existing_relative_files(root: Path, relative_paths: list[str]) -> set[str]:
+    out: set[str] = set()
+    for rel_path in normalized_relative_paths(relative_paths):
+        path = root / rel_path
+        if path.is_file():
+            out.add(normalize_posix(rel_path))
+            continue
+        if not path.is_dir():
+            continue
+        for dirpath, dirnames, filenames in os.walk(path):
+            dirnames.sort()
+            filenames.sort()
+            base_dir = Path(dirpath)
+            for filename in filenames:
+                file_path = base_dir / filename
+                if file_path.is_file():
+                    out.add(file_path.relative_to(root).as_posix())
+    return out
+
+
+def assert_safe_previous_export_prune(previous_export_root: Path, current_export_root: Path) -> None:
+    previous_resolved = previous_export_root.resolve()
+    current_resolved = current_export_root.resolve()
+    repo_root = ROOT.resolve()
+    if previous_resolved == current_resolved:
+        raise SystemExit(
+            "--prune-previous-export-untracked refuses to delete from the current export root. "
+            "Pass a distinct --previous-export-root."
+        )
+    if previous_resolved == repo_root:
+        raise SystemExit("--prune-previous-export-untracked refuses to delete from the repository root.")
+    if not previous_resolved.exists() or not previous_resolved.is_dir():
+        raise SystemExit(f"Previous export root is not a directory: {previous_export_root}")
+    if not ((previous_resolved / "structured").exists() or (previous_resolved / "recovered").exists()):
+        raise SystemExit(
+            "--prune-previous-export-untracked expected an export tree with "
+            f"'structured' or 'recovered': {previous_export_root}"
+        )
+
+
+def remove_empty_dirs(root: Path) -> int:
+    removed = 0
+    for dirpath, dirnames, filenames in os.walk(root, topdown=False):
+        path = Path(dirpath)
+        if path == root:
+            continue
+        try:
+            path.rmdir()
+        except OSError:
+            continue
+        removed += 1
+    return removed
+
+
+def prune_previous_export_untracked(
+    *,
+    previous_export_root: Path,
+    current_export_root: Path,
+    include_relative_paths: list[str],
+    tracked_asset_paths: set[str],
+    dry_run: bool,
+) -> dict[str, Any]:
+    if not include_relative_paths:
+        raise SystemExit(
+            "--prune-previous-export-untracked is only supported for the focused "
+            "WebUI text JSON scan, not --full-export-scan."
+        )
+    assert_safe_previous_export_prune(previous_export_root, current_export_root)
+
+    previous_resolved = previous_export_root.resolve()
+    text_paths = collect_existing_relative_files(previous_resolved, include_relative_paths)
+    asset_paths = {normalize_posix(path) for path in tracked_asset_paths if normalize_posix(path)}
+    keep_paths = text_paths | asset_paths
+    all_paths = set(iter_existing_relative_files(previous_resolved))
+    delete_paths = sorted(path for path in all_paths if path not in keep_paths)
+
+    deleted_files = 0
+    bytes_deleted = 0
+    for rel_path in delete_paths:
+        path = previous_resolved / rel_path
+        try:
+            resolved = path.resolve()
+            resolved.relative_to(previous_resolved)
+            size = resolved.stat().st_size
+        except (OSError, ValueError):
+            continue
+        bytes_deleted += int(size)
+        if not dry_run:
+            resolved.unlink()
+        deleted_files += 1
+
+    empty_dirs_deleted = 0 if dry_run else remove_empty_dirs(previous_resolved)
+    return {
+        "enabled": True,
+        "dryRun": dry_run,
+        "previousExportRoot": str(previous_export_root),
+        "trackedTextFiles": len(text_paths),
+        "trackedAssetFiles": len(asset_paths),
+        "keptFiles": len(all_paths & keep_paths),
+        "deletedFiles": deleted_files,
+        "bytesDeleted": bytes_deleted,
+        "emptyDirsDeleted": empty_dirs_deleted,
+        "sampleLimit": PRUNE_SAMPLE_LIMIT,
+        "sample": delete_paths[:PRUNE_SAMPLE_LIMIT],
+    }
 
 
 def asset_update_entry(status: str, asset: dict[str, Any], old_asset: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -689,6 +929,8 @@ def find_latest_changed_history(
     state_dir: Path,
     game_root: Path,
     sample_limit: int,
+    scan_scope: str,
+    include_relative_paths: list[str],
 ) -> tuple[dict[str, Any], Path] | None:
     history_dir = state_dir / "history"
     if not history_dir.exists():
@@ -708,6 +950,8 @@ def find_latest_changed_history(
             baseline_initialized=False,
             baseline_only=False,
             sample_limit=sample_limit,
+            scan_scope=scan_scope,
+            include_relative_paths=include_relative_paths,
         )
         if total_game_changes(candidate) > 0:
             return raw_payload, path
@@ -748,6 +992,8 @@ def restore_zero_change_feed(
     game_root: Path,
     export_root: Path,
     sample_limit: int,
+    scan_scope: str,
+    include_relative_paths: list[str],
 ) -> tuple[dict[str, Any], str] | None:
     existing_payload = read_json(out_path, default={})
     if isinstance(existing_payload, dict) and total_reported_changes(existing_payload) > 0:
@@ -767,6 +1013,8 @@ def restore_zero_change_feed(
         state_dir=state_dir,
         game_root=game_root,
         sample_limit=sample_limit,
+        scan_scope=scan_scope,
+        include_relative_paths=include_relative_paths,
     )
     if latest_history is None:
         return None
@@ -778,6 +1026,8 @@ def restore_zero_change_feed(
         baseline_initialized=False,
         baseline_only=False,
         sample_limit=sample_limit,
+        scan_scope=scan_scope,
+        include_relative_paths=include_relative_paths,
     )
     attach_asset_updates(
         restored_payload,
@@ -785,6 +1035,7 @@ def restore_zero_change_feed(
         state_dir=state_dir,
         sample_limit=sample_limit,
         skip_asset_updates=True,
+        hash_asset_updates=False,
     )
     restored_payload["restoredAfterZeroChangeScan"] = {
         "source": "tracker_history",
@@ -811,13 +1062,20 @@ def build_update_payload(
     baseline_initialized: bool,
     baseline_only: bool,
     sample_limit: int,
+    scan_scope: str,
+    include_relative_paths: list[str],
 ) -> dict[str, Any]:
     changes = raw_payload.get("changes") or {}
     samples = raw_payload.get("samples") or {}
     now = dt.datetime.now(dt.timezone.utc).astimezone()
     suppress_changes = baseline_initialized or baseline_only
 
-    entries, ignored_counts = filtered_game_entries(samples, suppress_changes=suppress_changes)
+    entry_domain = "text" if scan_scope == "webui_text_json" else "game"
+    entries, ignored_counts = filtered_game_entries(
+        samples,
+        suppress_changes=suppress_changes,
+        domain=entry_domain,
+    )
 
     entries.sort(key=lambda entry: (STATUS_ORDER.get(str(entry.get("status")), 99), str(entry.get("path", "")).lower()))
 
@@ -840,12 +1098,17 @@ def build_update_payload(
     }
 
     game_totals = dict(totals)
-    source = "export_folder_diff" if previous_game_root is not None else "original_game_data"
+    if scan_scope == "webui_text_json":
+        source = "webui_text_json_export_diff"
+    else:
+        source = "export_folder_diff" if previous_game_root is not None else "original_game_data"
     tracker_payload = {
         "startedAt": raw_payload.get("started_at"),
         "finishedAt": raw_payload.get("finished_at"),
         "durationSeconds": raw_payload.get("duration_seconds"),
         "scannedFiles": raw_payload.get("scanned_files"),
+        "scanScope": scan_scope,
+        "includeRelativePaths": normalized_relative_paths(include_relative_paths),
         "metadataOnlyUpdates": 0 if suppress_changes else int(changes.get("metadata_only_updates") or 0),
         "reusedMetadataMatches": int(changes.get("reused_metadata_matches") or 0),
         "sampleLimit": sample_limit,
@@ -878,6 +1141,7 @@ def build_update_payload(
         "baselineInitialized": baseline_initialized,
         "baselineOnly": baseline_only,
         "gameTotals": game_totals,
+        "textTotals": game_totals if entry_domain == "text" else zero_totals(),
         "totals": totals,
         "tracker": tracker_payload,
         "breakdown": {
@@ -900,9 +1164,10 @@ def attach_asset_updates(
     state_dir: Path,
     sample_limit: int,
     skip_asset_updates: bool = False,
-) -> None:
+    hash_asset_updates: bool = False,
+) -> set[str]:
     asset_state_path = state_dir / "asset-state.json"
-    old_assets = load_asset_state(asset_state_path)
+    old_assets = load_asset_state(asset_state_path, export_root=export_root)
     asset_scan_available = export_root.exists()
     asset_source_roots = asset_source_roots_payload(export_root)
     previous_asset_source_roots = (
@@ -933,7 +1198,7 @@ def attach_asset_updates(
             "truncated": {"added": 0, "modified": 0, "deleted": 0},
             "breakdown": {"byKind": {}, "byExtension": {}},
         }
-        return
+        return set()
 
     if previous_export_root is not None:
         previous_asset_scan_available = previous_export_root.exists()
@@ -960,13 +1225,25 @@ def attach_asset_updates(
                 "truncated": {"added": 0, "modified": 0, "deleted": 0},
                 "breakdown": {"byKind": {}, "byExtension": {}},
             }
-            return
+            return set()
 
-        old_assets = build_asset_snapshot(previous_export_root)
-        new_assets = build_asset_snapshot(export_root)
+        previous_asset_state_path = state_dir / "asset-state-previous-export.json"
+        current_asset_state_path = state_dir / "asset-state-current-export.json"
+        old_assets = build_asset_snapshot(
+            previous_export_root,
+            load_asset_state(previous_asset_state_path, export_root=previous_export_root),
+            hash_contents=hash_asset_updates,
+        )
+        new_assets = build_asset_snapshot(
+            export_root,
+            load_asset_state(current_asset_state_path, export_root=export_root),
+            hash_contents=hash_asset_updates,
+        )
         diff = build_asset_diff(old_assets, new_assets, sample_limit=sample_limit)
         asset_totals = diff["totals"]
         asset_entries = diff["entries"]
+        write_asset_state(previous_asset_state_path, old_assets, export_root=previous_export_root)
+        write_asset_state(current_asset_state_path, new_assets, export_root=export_root)
 
         payload["assetTotals"] = asset_totals
         payload["totals"] = combine_totals(payload.get("gameTotals") or zero_totals(), asset_totals)
@@ -976,10 +1253,11 @@ def attach_asset_updates(
             "previousSourceRoot": str(previous_export_root),
             "sourceRoots": asset_source_roots,
             "previousSourceRoots": previous_asset_source_roots,
-            "statePath": str(asset_state_path),
+            "statePath": str(current_asset_state_path),
+            "previousStatePath": str(previous_asset_state_path),
             "available": True,
             "previousAvailable": True,
-            "stateUpdated": False,
+            "stateUpdated": True,
             "baselineInitialized": False,
             "reported": bool(asset_entries),
             "reportedOnlyWhenGameDataChanges": False,
@@ -987,6 +1265,7 @@ def attach_asset_updates(
             "scannedAssets": len(new_assets),
             "previousScannedAssets": len(old_assets),
             "sampleLimit": sample_limit,
+            "fingerprintMode": ASSET_HASH_FINGERPRINT_MODE if hash_asset_updates else ASSET_DEFAULT_FINGERPRINT_MODE,
             "totals": asset_totals,
             "truncated": diff["truncated"],
             "breakdown": diff["breakdown"],
@@ -997,7 +1276,7 @@ def attach_asset_updates(
             STATUS_ORDER.get(str(entry.get("status")), 99),
             str(entry.get("path", "")).lower(),
         ))
-        return
+        return asset_export_rel_paths(old_assets)
 
     if not asset_scan_available:
         payload["assetTotals"] = zero_totals()
@@ -1017,9 +1296,9 @@ def attach_asset_updates(
             "truncated": {"added": 0, "modified": 0, "deleted": 0},
             "breakdown": {"byKind": {}, "byExtension": {}},
         }
-        return
+        return set()
 
-    new_assets = build_asset_snapshot(export_root, old_assets)
+    new_assets = build_asset_snapshot(export_root, old_assets, hash_contents=hash_asset_updates)
     asset_baseline_initialized = not old_assets
     game_changed = int((payload.get("gameTotals") or {}).get("changed") or 0) > 0
     game_baseline_initialized = bool(payload.get("baselineInitialized"))
@@ -1051,6 +1330,7 @@ def attach_asset_updates(
         "reportedOnlyWhenGameDataChanges": True,
         "scannedAssets": len(new_assets),
         "sampleLimit": sample_limit,
+        "fingerprintMode": ASSET_HASH_FINGERPRINT_MODE if hash_asset_updates else ASSET_DEFAULT_FINGERPRINT_MODE,
         "totals": asset_totals,
         "truncated": asset_truncated,
         "breakdown": asset_breakdown,
@@ -1061,6 +1341,7 @@ def attach_asset_updates(
         STATUS_ORDER.get(str(entry.get("status")), 99),
         str(entry.get("path", "")).lower(),
     ))
+    return set()
 
 
 def run_tracker(
@@ -1072,6 +1353,7 @@ def run_tracker(
     sample_limit: int,
     top_line_limit: int,
     write_history: bool,
+    include_relative_paths: list[str],
 ) -> None:
     command = [
         sys.executable,
@@ -1089,6 +1371,8 @@ def run_tracker(
         "--top-line-limit",
         str(top_line_limit),
     ]
+    for rel_path in normalized_relative_paths(include_relative_paths):
+        command.extend(["--include-relative-path", rel_path])
     if write_history:
         command.extend(["--history-dir", str(state_dir / "history")])
     else:
@@ -1103,12 +1387,17 @@ def prepare_export_diff_tracker_state(
     sample_limit: int,
     top_line_limit: int,
     refresh_previous_baseline: bool,
+    include_relative_paths: list[str],
 ) -> tuple[Path, bool]:
     previous_state_dir = export_baseline_state_dir(state_dir)
     compare_state_dir = export_compare_state_dir(state_dir)
     previous_baseline_ready = (
         tracker_has_baseline(previous_state_dir)
-        and export_baseline_config_matches(state_dir, previous_export_root)
+        and export_baseline_config_matches(
+            state_dir,
+            previous_export_root,
+            include_relative_paths=include_relative_paths,
+        )
     )
     rebuilt_previous_baseline = False
 
@@ -1123,8 +1412,13 @@ def prepare_export_diff_tracker_state(
             sample_limit=sample_limit,
             top_line_limit=top_line_limit,
             write_history=False,
+            include_relative_paths=include_relative_paths,
         )
-        write_export_baseline_config(state_dir, previous_export_root)
+        write_export_baseline_config(
+            state_dir,
+            previous_export_root,
+            include_relative_paths=include_relative_paths,
+        )
         rebuilt_previous_baseline = True
 
     if compare_state_dir.exists():
@@ -1152,6 +1446,15 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit(f"Current export root is not a directory: {export_root}")
 
     previous_baseline_rebuilt = False
+    scan_scope = "full_export" if args.full_export_scan else "webui_text_json"
+    include_relative_paths = [] if args.full_export_scan else list(WEBUI_TEXT_JSON_RELATIVE_PATHS)
+    prune_requested = bool(args.prune_previous_export_untracked or args.dry_run_prune_previous_export_untracked)
+    if prune_requested:
+        if args.baseline_only:
+            raise SystemExit("--prune-previous-export-untracked is not valid with --baseline-only.")
+        if args.full_export_scan:
+            raise SystemExit("--prune-previous-export-untracked is not valid with --full-export-scan.")
+        assert_safe_previous_export_prune(previous_export_root, export_root)
     if args.baseline_only:
         raw_payload = empty_tracker_payload()
     else:
@@ -1168,6 +1471,7 @@ def main(argv: list[str] | None = None) -> int:
             sample_limit=args.sample_limit,
             top_line_limit=args.top_line_limit,
             refresh_previous_baseline=bool(args.refresh_previous_export_baseline),
+            include_relative_paths=include_relative_paths,
         )
         run_tracker(
             game_root=export_root,
@@ -1177,6 +1481,7 @@ def main(argv: list[str] | None = None) -> int:
             sample_limit=args.sample_limit,
             top_line_limit=args.top_line_limit,
             write_history=bool(not args.no_history),
+            include_relative_paths=include_relative_paths,
         )
         raw_payload = json.loads(report_json.read_text(encoding="utf-8"))
 
@@ -1187,15 +1492,29 @@ def main(argv: list[str] | None = None) -> int:
         baseline_initialized=bool(args.baseline_only),
         baseline_only=args.baseline_only,
         sample_limit=args.sample_limit,
+        scan_scope=scan_scope,
+        include_relative_paths=include_relative_paths,
     )
-    attach_asset_updates(
+    tracked_asset_paths = attach_asset_updates(
         webui_payload,
         export_root=export_root,
         previous_export_root=previous_export_root,
         state_dir=state_dir,
         sample_limit=args.sample_limit,
         skip_asset_updates=bool(args.skip_asset_updates or args.baseline_only),
+        hash_asset_updates=bool(args.hash_asset_updates),
     )
+
+    prune_result: dict[str, Any] | None = None
+    if prune_requested:
+        prune_result = prune_previous_export_untracked(
+            previous_export_root=previous_export_root,
+            current_export_root=export_root,
+            include_relative_paths=include_relative_paths,
+            tracked_asset_paths=tracked_asset_paths,
+            dry_run=bool(args.dry_run_prune_previous_export_untracked),
+        )
+        webui_payload["previousExportPrune"] = prune_result
 
     attach_decoded_impacts(webui_payload, game_root=game_root if game_root.exists() else export_root)
     write_json(out_path, webui_payload, indent=2, compact=False)
@@ -1213,10 +1532,13 @@ def main(argv: list[str] | None = None) -> int:
             f" deleted={int(suppressed.get('deleted') or 0)}"
         )
     else:
+        label = "Full export diff" if args.full_export_scan else "WebUI text JSON diff"
+        scope_note = "" if args.full_export_scan else f"; scan_roots={len(include_relative_paths)}"
         print(
-            "[build_updates] Export diff:"
+            f"[build_updates] {label}:"
             f" previous={previous_export_root}, current={export_root};"
             f" added={totals['added']}, modified={totals['modified']}, deleted={totals['deleted']}"
+            f"{scope_note}"
         )
     if previous_baseline_rebuilt:
         print(f"[build_updates] Cached previous-export baseline rebuilt from {previous_export_root}")
@@ -1229,6 +1551,13 @@ def main(argv: list[str] | None = None) -> int:
             f" added={int(asset_totals.get('added') or 0)},"
             f" modified={int(asset_totals.get('modified') or 0)},"
             f" deleted={int(asset_totals.get('deleted') or 0)}"
+        )
+    if prune_result:
+        verb = "would delete" if prune_result.get("dryRun") else "deleted"
+        print(
+            f"[build_updates] Previous export prune: {verb} "
+            f"{int(prune_result.get('deletedFiles') or 0)} file(s), "
+            f"{int(prune_result.get('bytesDeleted') or 0)} byte(s)"
         )
     print(f"[build_updates] WebUI feed: {out_path}")
     return 0

@@ -13,7 +13,7 @@ heavyweight recovery work in the Python builders.
 - `app_tree.js`: story filters, grouping, sorting, and sidebar tree rows.
 - `app.js`: story data loading and conversation rendering.
 - `src/features/reference/`: raw localized table/reference browser.
-- `src/features/updates/`: original game-data update browser.
+- `src/features/updates/`: focused exported text JSON and asset update browser.
 - `assets.js`: exported asset browser and preview panel.
 
 ## Current Scope
@@ -75,8 +75,8 @@ heavyweight recovery work in the Python builders.
 - `Reference`: raw localized rows from `data/lang/<code>/reference/`, with
   source/table filters and on-demand table loading.
 - `Updates`: latest change summary from `data/updates/latest.json`, generated
-  by tracking the installed `Endfield_Data` tree and derived exported
-  image/model/video asset diffs, never generated WebUI files.
+  by comparing WebUI-facing exported text JSON and exported image/model/video
+  assets between saved/current export roots, never generated WebUI files.
 - `Assets`: exported file search, metadata, raw links, related files, and
   previews where the browser supports them.
 

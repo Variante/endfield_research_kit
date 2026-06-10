@@ -8,7 +8,7 @@ if /I "%~1"=="/h" goto :help
 if /I "%~1"=="help" goto :help
 
 set "BUILD_UPDATES_ARGS="
-set "SKIP_ASSET_UPDATES=1"
+set "SKIP_ASSET_UPDATES=0"
 
 :parse_args
 if "%~1"=="" goto :parsed_args
@@ -38,9 +38,9 @@ goto :parse_args
 
 :parsed_args
 rem Updates pipeline:
-rem - compare the saved previous export with the current export_full tree
+rem - compare WebUI-facing text JSON in the saved previous/current exports
+rem - compare exported image/model/video assets by default
 rem - write webui/data/updates/latest.json for the Updates tab
-rem - skip exported asset diffs by default; opt in after refreshing heavy assets
 if "%SKIP_ASSET_UPDATES%"=="1" (
   set "BUILD_UPDATES_ARGS=%BUILD_UPDATES_ARGS% --skip-asset-updates"
 )
@@ -52,15 +52,20 @@ endlocal
 exit /b 0
 
 :help
-echo Usage: build_updates.bat [--init-build] [--include-asset-updates] [build_updates.py options]
+echo Usage: build_updates.bat [--init-build] [--skip-asset-updates] [build_updates.py options]
 echo.
-echo Builds webui\data\updates\latest.json from previous/current exported
-echo game-data trees. By default it compares export_122 to export_full and skips
-echo exported asset diffs so stale heavy outputs do not appear as story updates.
+echo Builds webui\data\updates\latest.json from previous/current exported trees.
+echo By default it compares export_122 to export_full for WebUI-facing text JSON
+echo plus exported image/model/video assets.
 echo.
 echo   --init-build             Alias for build_updates.py --baseline-only.
-echo   --include-asset-updates  Also diff exported image/model/video assets.
-echo   --skip-asset-updates     Explicitly keep the wrapper default.
+echo   --include-asset-updates  Compatibility flag; assets are included by default.
+echo   --skip-asset-updates     Compare only WebUI-facing text JSON.
+echo   --hash-asset-updates     Hash asset contents; slower, catches same-size changes.
+echo   --prune-previous-export-untracked
+echo                            Delete old export files outside tracked update scope.
+echo   --dry-run-prune-previous-export-untracked
+echo                            Report prune deletions without deleting files.
 echo.
 echo Useful after replacing the saved previous export:
 echo   build_updates.bat --refresh-previous-export-baseline

@@ -434,7 +434,7 @@
       return;
     }
     if (view === "updates") {
-      const updatesTitle = ($("#updates-title") && $("#updates-title").textContent) || "Endfield Game Data Updates";
+      const updatesTitle = ($("#updates-title") && $("#updates-title").textContent) || "Endfield WebUI Content Updates";
       document.title = updatesTitle;
       return;
     }
