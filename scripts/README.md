@@ -33,9 +33,11 @@ so Story audio controls are linked after generated conversations are rebuilt.
 
 `build_updates.bat` writes `webui/data/updates/latest.json` from the saved
 previous export and current `export_full/`. Use `.\build_updates.bat
---init-build` for initial or baseline-only update feeds. The wrapper skips
-asset-level diffs by default; pass `--include-asset-updates` after refreshing
-heavy assets when those changes should appear in Updates.
+--init-build` for initial or baseline-only update feeds. By default it compares
+the exported text JSON that feeds Story/Reference plus exported image/model/video
+assets using fast size fingerprints; pass `--hash-asset-updates` for slower
+same-size binary modification detection, or `--skip-asset-updates` for a
+text-only feed.
 
 `export_assets.bat` runs `scripts/build_assets.py` for the Assets tab indexes
 and compact Story media lookup. Pass `--export-from-game` to run the heavier
@@ -69,8 +71,8 @@ Expected active inputs and outputs:
   `webui/data/`.
 - `../export_full/`: generated export data used by Story, Reference, Assets,
   and package media resolution.
-- `../.game-data-tracker/`: persistent state for original installed game-data
-  update tracking.
+- `../.game-data-tracker/`: persistent state for exported WebUI text JSON and
+  asset update tracking.
 - `../reports/`: durable generated reports and summaries written by exporters
   or builders. These are outputs, not package inputs, and should not contain
   agent investigation conclusions.
@@ -106,16 +108,24 @@ Expected active inputs and outputs:
   `export_full/` data.
 - `track_export_changes.py`: generic file-tree scanner used by the WebUI
   Updates builder.
-- `build_updates.py`: writes `webui/data/updates/latest.json` by comparing a
-  previous exported game-data tree, default `..\export_122\`, with the current
-  `..\export_full\`. Scanner cache lives under `..\.game-data-tracker\`;
+- `build_updates.py`: writes `webui/data/updates/latest.json` by comparing
+  WebUI-facing text JSON roots and exported asset roots in a previous exported
+  game-data tree, default `..\export_122\`, with the current `..\export_full\`.
+  Scanner cache lives under `..\.game-data-tracker\`;
   generated summary reports live under `..\reports\`, and non-empty feed
   snapshots are written as `..\.game-data-tracker\history\update-feed-*.json`.
   The root `..\build_updates.bat` wrapper runs this standalone update step.
   Pass `--previous-export-root PATH` to compare a different saved export,
   `--refresh-previous-export-baseline` after replacing that saved export,
   `--baseline-only` to write an empty feed, or `--skip-asset-updates` to skip
-  only the exported image/model/video asset diff.
+  the exported image/model/video asset diff. Asset modifications use fast size
+  fingerprints by default; pass `--hash-asset-updates` for slower content-hash
+  detection of same-size binary changes. Pass `--full-export-scan` only for an
+  intentional all-files audit of the export roots. Pass
+  `--dry-run-prune-previous-export-untracked` to preview old files outside the
+  focused tracked text/assets surfaces, and
+  `--prune-previous-export-untracked` to delete those untracked files from the
+  previous export root after confirming the preview.
 - `story_builder/build.py`: builds CN story/reference data by default,
   with optional extra languages. The builder reads from `..\export_full\`, stamps dialog convs
   with DialogIdTable runtime registry evidence, links narrative

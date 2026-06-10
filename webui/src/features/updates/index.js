@@ -2,10 +2,11 @@
   const UPDATE_TEXTS = {
     zh: {
       tab: "\u66f4\u65b0",
-      title: "\u6e38\u620f\u6570\u636e\u66f4\u65b0",
+      title: "WebUI \u5185\u5bb9\u66f4\u65b0",
       countLabel: "\u9879\u53d8\u5316",
       search: "\u641c\u7d22\u8def\u5f84 / \u6269\u5c55\u540d",
       gameFile: "\u6e38\u620f\u6587\u4ef6",
+      textJson: "\u6587\u672c JSON",
       exportedAsset: "\u5bfc\u51fa\u8d44\u6e90",
       domain: "\u8303\u56f4",
       assetKind: "\u8d44\u6e90\u7c7b\u578b",
@@ -40,8 +41,8 @@
       total: "\u603b\u8ba1",
       empty: "\u4ece\u5de6\u4fa7\u9009\u62e9\u4e00\u9879\u53d8\u5316",
       noFeed: "\u5c1a\u672a\u6784\u5efa\u66f4\u65b0\u6458\u8981",
-      baselineReady: "\u5df2\u5efa\u7acb\u57fa\u7ebf\uff1b\u540e\u7eed\u6e38\u620f\u6570\u636e\u66f4\u65b0\u4f1a\u663e\u793a\u5728\u8fd9\u91cc\u3002",
-      noChanges: "\u672a\u68c0\u6d4b\u5230\u6e38\u620f\u6570\u636e\u53d8\u5316",
+      baselineReady: "\u5df2\u5efa\u7acb\u57fa\u7ebf\uff1b\u540e\u7eed\u6587\u672c JSON \u6216\u8d44\u6e90\u53d8\u5316\u4f1a\u663e\u793a\u5728\u8fd9\u91cc\u3002",
+      noChanges: "\u672a\u68c0\u6d4b\u5230\u8ffd\u8e2a\u7684\u6587\u672c JSON \u6216\u8d44\u6e90\u53d8\u5316",
       loadError: "\u52a0\u8f7d\u5931\u8d25: ",
       sourceRoot: "\u6e90\u76ee\u5f55",
       generatedAt: "\u751f\u6210\u65f6\u95f4",
@@ -58,10 +59,11 @@
     },
     en: {
       tab: "Updates",
-      title: "Game Data Updates",
+      title: "WebUI Content Updates",
       countLabel: "changes",
       search: "Search path / extension",
       gameFile: "Game file",
+      textJson: "Text JSON",
       exportedAsset: "Exported asset",
       domain: "Domain",
       assetKind: "Asset kind",
@@ -96,8 +98,8 @@
       total: "Total",
       empty: "Select a changed item",
       noFeed: "No update summary has been built yet",
-      baselineReady: "Baseline is ready. Future game data updates will appear here.",
-      noChanges: "No game data changes detected",
+      baselineReady: "Baseline is ready. Future text JSON or asset changes will appear here.",
+      noChanges: "No tracked text JSON or asset changes detected",
       loadError: "Load failed: ",
       sourceRoot: "Source root",
       generatedAt: "Generated",
@@ -165,6 +167,12 @@
     if (value === "asset_model") return `${updateText("exportedAsset")} / model`;
     if (value === "asset_video") return `${updateText("exportedAsset")} / video`;
     return value.replace(/_/g, " ");
+  }
+
+  function domainLabel(entry) {
+    if (entry && entry.domain === "asset") return updateText("exportedAsset");
+    if (entry && entry.domain === "text") return updateText("textJson");
+    return updateText("gameFile");
   }
 
   function formatBytes(bytes) {
@@ -381,19 +389,22 @@
     const assets = payload.assets || {};
     const decodedImpacts = payload.decodedImpacts || {};
     const gameTotals = payload.gameTotals || {};
+    const textTotals = payload.textTotals || (payload.source === "webui_text_json_export_diff" ? gameTotals : null);
     const assetTotals = payload.assetTotals || {};
     const meta = [];
     if (payload.generatedAt) meta.push(`${updateText("generatedAt")}: ${payload.generatedAt}`);
     if (tracker.scannedFiles !== undefined && tracker.scannedFiles !== null) {
       meta.push(`${updateText("scannedFiles")}: ${formatNumber(tracker.scannedFiles)}`);
     }
-    if (gameTotals.changed !== undefined) {
+    if (textTotals && textTotals.changed !== undefined) {
+      meta.push(`${updateText("textJson")}: ${formatNumber(textTotals.changed || 0)}`);
+    } else if (gameTotals.changed !== undefined) {
       meta.push(`${updateText("gameFile")}: ${formatNumber(gameTotals.changed || 0)}`);
     }
     if (assets.scannedAssets !== undefined && assets.scannedAssets !== null) {
       meta.push(`${updateText("assetSummary")}: ${formatNumber(assetTotals.changed || 0)} / ${formatNumber(assets.scannedAssets)}`);
     }
-    if (decodedImpacts.decodedFileMentions !== undefined && decodedImpacts.decodedFileMentions !== null) {
+    if (Number(decodedImpacts.decodedFileMentions || 0) > 0) {
       const impactTags = Object.entries(decodedImpacts.byTag || {})
         .slice(0, 4)
         .map(([tag, count]) => `${tag} ${formatNumber(count)}`)
@@ -434,7 +445,7 @@
         : entry.line_delta !== undefined
           ? formatSignedNumber(entry.line_delta)
           : "";
-      const domainLabel = entry.domain === "asset" ? updateText("exportedAsset") : updateText("gameFile");
+      const rowDomainLabel = domainLabel(entry);
       const decoded = entry.decodedImpact || {};
       const decodedCount = Number(decoded.count || 0);
       const decodedTags = Object.keys(decoded.tags || {}).slice(0, 3);
@@ -444,11 +455,11 @@
       row.innerHTML =
         `<div class="updates-row-main">` +
           `<span class="updates-status-pill updates-status-${escapeHtml(entry.status || "unknown")}">${escapeHtml(statusLabel(entry.status))}</span>` +
-          `<span class="updates-domain-pill">${escapeHtml(domainLabel)}</span>` +
+          `<span class="updates-domain-pill">${escapeHtml(rowDomainLabel)}</span>` +
           `<span class="updates-row-path">${escapeHtml(entry.path || "")}</span>` +
         `</div>` +
         `<div class="updates-row-meta">${escapeHtml([
-          domainLabel,
+          rowDomainLabel,
           categoryLabel(entry.category),
           normalizeExtension(entry.extension),
           delta,
@@ -631,14 +642,14 @@
     up$("#updates-detail-title").textContent = entry.path || "";
     up$("#updates-detail-meta").textContent = [
       statusLabel(entry.status),
-      entry.domain === "asset" ? updateText("exportedAsset") : updateText("gameFile"),
+      domainLabel(entry),
       categoryLabel(entry.category),
       normalizeExtension(entry.extension),
     ].filter(Boolean).join(" | ");
 
     const facts = [
       factRow(updateText("path"), entry.path, { mono: true }),
-      factRow(updateText("domain"), entry.domain === "asset" ? updateText("exportedAsset") : updateText("gameFile")),
+      factRow(updateText("domain"), domainLabel(entry)),
       factRow(updateText("status"), statusLabel(entry.status)),
       factRow(updateText("category"), categoryLabel(entry.category)),
       factRow(updateText("assetKind"), entry.asset_kind),

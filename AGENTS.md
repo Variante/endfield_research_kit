@@ -39,9 +39,9 @@ playable `audioSrc` links when decoded audio is available. It does not refresh
 workflow.
 Use `build_updates.bat` for the standalone Updates feed comparison. Use
 `build_updates.bat --init-build` for first-time/baseline-only builds where the
-Updates feed should be baselined instead of reporting changes. The wrapper
-passes `--skip-asset-updates` by default so stale decoded asset outputs do not
-appear in story-only refreshes.
+Updates feed should be baselined instead of reporting changes. By default it
+tracks WebUI-facing exported text JSON plus exported image/model/video assets;
+pass `--skip-asset-updates` only for a text-only update feed.
 Use `export_assets.bat` for WebUI Assets tab indexes and compact Story media
 lookup from existing decoded assets. Pass `--export-from-game` only when the
 user explicitly asks to run the heavier AnimeStudio image/model/animation
@@ -127,7 +127,10 @@ disposable experiments in `scratch/` or `tmp/`.
 ## Update Tracking Rule
 
 The WebUI Updates tab must report only exported game-data changes between a
-saved previous export and the current export.
+saved previous export and the current export. By default it tracks the
+exported JSON roots that feed Story/Reference display plus exported
+image/model/video assets. Use `--full-export-scan` only for a broad audit of
+all files under the two export roots.
 
 `scripts/build_updates.py` compares:
 
@@ -139,15 +142,19 @@ export_full
 by default. Pass `--previous-export-root PATH` for a different saved previous
 export. Scanner cache and feed history live under `.game-data-tracker/`; the
 cached baseline is built from the previous export folder, then `export_full/`
-is scanned against it. Do not point this comparison at `webui/`, `reports/`,
-`memory/`, or `scratch/`. WebUI edits and generated output outside the export
-roots must not appear as game-data updates.
+is scanned against it using the same focused roots. Do not point this
+comparison at `webui/`, `reports/`, `memory/`, or `scratch/`. WebUI edits and
+generated output outside the export roots must not appear as game-data updates.
 
-The builder may scan exported assets in the same two export folders to add
-image/model/video asset-level entries to the Updates page. The standalone
-`build_updates.bat` wrapper passes `--skip-asset-updates` by default; include
-asset updates only after the asset workflow refreshes heavy outputs
-intentionally.
+The builder scans exported assets in the same two export folders by default to
+add image/model/video asset-level entries to the Updates page. Asset
+modifications use fast size fingerprints by default; pass
+`--hash-asset-updates` only when same-size binary modifications must be
+detected. Use `--skip-asset-updates` only when asset entries should be omitted.
+Use `--dry-run-prune-previous-export-untracked` to preview old export files
+outside the focused Updates scope, and `--prune-previous-export-untracked` only
+when intentionally deleting those untracked files from the previous export
+folder. This pruning must never target `export_full/` or the repo root.
 
 Use `--baseline-only` only when an empty feed is intentional. Use
 `--refresh-previous-export-baseline` after replacing the saved previous export

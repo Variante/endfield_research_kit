@@ -148,7 +148,8 @@ The Updates tab is built by:
 .\build_updates.bat
 ```
 
-It compares two exported game-data trees. By default the previous tree is:
+It compares the WebUI-facing exported text JSON and exported image/model/video
+assets in two exported game-data trees. By default the previous tree is:
 
 ```text
 export_122
@@ -164,14 +165,30 @@ Use `--previous-export-root PATH` when comparing against a different saved
 export. The builder does not scan `webui/`, `memory/`, or other generated repo
 files, so WebUI edits do not appear as upstream data changes. Scanner cache and
 feed history live in `.game-data-tracker/`; the cached baseline is built from
-the previous export folder, then `export_full/` is scanned against it.
+the previous export folder, then `export_full/` is scanned against it with the
+same focused roots. Use `--full-export-scan` only when a broad all-files export
+audit is intentional.
 
-The same builder can also diff exported image/model/video assets between the
-same two export trees and add those asset-level changes to the Updates page.
-The wrapper passes `--skip-asset-updates` by default so stale heavy asset
-outputs do not affect story/reference refreshes. Run
-`.\build_updates.bat --include-asset-updates` after refreshing heavy assets when
-asset-level changes should be included.
+Asset changes are included by default using fast size fingerprints. Pass
+`--hash-asset-updates` when same-size binary asset modifications must be
+detected, or `--skip-asset-updates` when the feed should only compare
+WebUI-facing text JSON.
+
+To shrink the saved previous export after confirming the focused Updates scope,
+preview the old files that are outside the tracked text/assets surfaces:
+
+```bat
+.\build_updates.bat --dry-run-prune-previous-export-untracked
+```
+
+Then delete those untracked files from the previous export root intentionally:
+
+```bat
+.\build_updates.bat --prune-previous-export-untracked
+```
+
+The prune flag refuses to run when the previous export root is the current
+`export_full/` or the repository root.
 
 Non-empty feed snapshots are kept in `.game-data-tracker/history/` as
 `update-feed-*.json`.
@@ -182,9 +199,11 @@ Write an empty baseline feed for a first-time or baseline-only build:
 .\build_updates.bat --init-build
 ```
 
-If you still want game-data changes but not the exported asset diff, use
-the default `.\build_updates.bat` wrapper. The direct Python script also accepts
-`--skip-asset-updates`.
+If you want text JSON changes but not the exported asset diff, use:
+
+```bat
+.\build_updates.bat --skip-asset-updates
+```
 
 Rebuild the cached scanner baseline after replacing the previous export folder:
 

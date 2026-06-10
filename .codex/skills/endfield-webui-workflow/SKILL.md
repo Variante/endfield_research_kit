@@ -40,10 +40,16 @@ It skips installed-game export, fluffy-dumper structured export, and AnimeStudio
 story extraction by default. Pass `--export-from-game` only when installed game
 data should be refreshed, the story export tools should run, and CN audio
 should be decoded before the final link pass.
-Use `build_updates.bat` as the standalone Updates feed comparison. It skips
-asset-level update entries by default; pass `--include-asset-updates` only
-after refreshing heavy assets. Use `export_assets.bat` for Assets tab indexes;
-pass `--export-from-game` to run the heavier image/model/animation decode.
+Use `build_updates.bat` as the standalone Updates feed comparison. It tracks
+WebUI-facing exported text JSON plus exported image/model/video assets by
+default. Asset modifications use fast size fingerprints; pass
+`--hash-asset-updates` when same-size binary modifications must be detected, or
+`--skip-asset-updates` for a text-only feed. Preview previous-export pruning
+with `--dry-run-prune-previous-export-untracked`; use
+`--prune-previous-export-untracked` only when intentionally deleting old export
+files outside the focused tracked scope. Use `export_assets.bat` for Assets tab
+indexes; pass `--export-from-game` to run the heavier image/model/animation
+decode.
 
 When running `python scripts\story_builder\build.py` directly, use a
 longer timeout. The default CN lean build currently takes about 3 minutes on
@@ -281,6 +287,7 @@ breaking normal browsing.
 
 - Keep root docs focused on active workflow, not investigation conclusions.
 - Put durable conclusions in `memory/`, not `reports/`.
-- Do not point Updates tracking at `webui/` or other generated repo folders.
+- Do not point Updates tracking at `webui/` or other generated repo folders;
+  compare saved/current export roots instead.
 - Treat ignored local vendor/tool caches under `tools/` as optional workflow
   dependencies; the tracked helper set is intentionally small.

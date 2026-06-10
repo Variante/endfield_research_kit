@@ -347,6 +347,15 @@ def parse_args() -> argparse.Namespace:
         help="Relative path under the export root to exclude from tracking.",
     )
     parser.add_argument(
+        "--include-relative-path",
+        action="append",
+        default=[],
+        help=(
+            "Relative file or directory under the export root to scan. May be "
+            "repeated; when omitted, the whole root is scanned."
+        ),
+    )
+    parser.add_argument(
         "--no-history",
         action="store_true",
         help="Do not write timestamped history files.",
@@ -360,6 +369,10 @@ def display_extension(extension: str) -> str:
 
 def normalize_relative_path(path: str) -> str:
     return path.replace("\\", "/")
+
+
+def normalize_cli_relative_path(path: str) -> str:
+    return normalize_relative_path(path.strip().strip("/"))
 
 
 def try_relative_to(path: Path, root: Path) -> str | None:
@@ -427,14 +440,64 @@ def should_ignore_path(rel_path: str, ignored_exact_paths: set[str], ignored_dir
     return any(rel_path.startswith(prefix) for prefix in ignored_dir_prefixes)
 
 
+def build_include_roots(root: Path, include_relative_paths: Iterable[str]) -> list[Path]:
+    roots: list[Path] = []
+    seen: set[str] = set()
+    root_resolved = root.resolve()
+    for raw_path in include_relative_paths:
+        rel_path = normalize_cli_relative_path(str(raw_path or ""))
+        candidate = root if not rel_path or rel_path == "." else root / rel_path
+        try:
+            resolved = candidate.resolve()
+            resolved.relative_to(root_resolved)
+        except ValueError:
+            print(
+                f"[track_export_changes] Ignoring include path outside root: {raw_path}",
+                file=sys.stderr,
+            )
+            continue
+        key = str(resolved).lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        roots.append(resolved)
+    return roots or [root]
+
+
+def file_scan_entry(root: Path, path: Path) -> tuple[str, str, int, int, str] | None:
+    try:
+        stat_result = path.stat()
+    except FileNotFoundError:
+        return None
+    if not path.is_file():
+        return None
+    rel_path = normalize_relative_path(str(path.relative_to(root)))
+    extension = path.suffix.lower()
+    return rel_path, str(path), stat_result.st_size, stat_result.st_mtime_ns, extension
+
+
 def iter_export_files(
     root: Path,
     ignored_exact_paths: set[str],
     ignored_dir_prefixes: tuple[str, ...],
+    include_relative_paths: Iterable[str] = (),
 ) -> Iterable[tuple[str, str, int, int, str]]:
-    stack = [root]
+    yielded_paths: set[str] = set()
+    stack = list(reversed(build_include_roots(root, include_relative_paths)))
     while stack:
         current = stack.pop()
+        if current.is_file():
+            scan_entry = file_scan_entry(root, current)
+            if scan_entry is None:
+                continue
+            rel_path = scan_entry[0]
+            if should_ignore_path(rel_path, ignored_exact_paths, ignored_dir_prefixes):
+                continue
+            if rel_path in yielded_paths:
+                continue
+            yielded_paths.add(rel_path)
+            yield scan_entry
+            continue
         try:
             with os.scandir(current) as entries:
                 ordered_entries = sorted(entries, key=lambda entry: entry.name)
@@ -452,6 +515,9 @@ def iter_export_files(
                 continue
             if should_ignore_path(rel_path, ignored_exact_paths, ignored_dir_prefixes):
                 continue
+            if rel_path in yielded_paths:
+                continue
+            yielded_paths.add(rel_path)
             stat_result = entry.stat(follow_symlinks=False)
             extension = full_path.suffix.lower()
             yield rel_path, str(full_path), stat_result.st_size, stat_result.st_mtime_ns, extension
@@ -776,7 +842,7 @@ def build_ignore_rules(namespace: argparse.Namespace, root: Path) -> tuple[set[s
         ignored_dir_prefixes.add(f"{rel_path}/")
 
     for raw_path in namespace.ignore_relative_path:
-        rel_path = normalize_relative_path(raw_path.strip().strip("/"))
+        rel_path = normalize_cli_relative_path(raw_path)
         if not rel_path:
             continue
         ignored_exact_paths.add(rel_path)
@@ -827,6 +893,7 @@ def main() -> int:
                     root,
                     ignored_exact_paths,
                     ignored_dir_prefixes,
+                    namespace.include_relative_path,
                 ):
                     accumulator.note_scan()
                     old_row = read_old_row(select_cursor, rel_path)
@@ -898,6 +965,16 @@ def main() -> int:
 
     finished_at = dt.datetime.now(dt.timezone.utc).astimezone()
     payload = accumulator.to_dict(started_at, finished_at)
+    include_paths = [
+        normalize_cli_relative_path(path)
+        for path in namespace.include_relative_path
+        if normalize_cli_relative_path(path)
+    ]
+    if include_paths:
+        payload["scan_scope"] = {
+            "mode": "include_relative_paths",
+            "include_relative_paths": include_paths,
+        }
     summary_md_path, summary_json_path = build_report_paths(namespace, finished_at)
     write_reports(
         payload=payload,
