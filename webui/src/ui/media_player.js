@@ -276,8 +276,11 @@
       const mid = pxH / 2;
       const minH = Math.max(1, Math.floor(dpr));
       const maxH = pxH - minH * 2;
-      const playedColor = "#9bd3ff";
-      const baseColor = "rgba(255, 255, 255, 0.28)";
+      const styles = window.getComputedStyle(waveformCanvas);
+      const fgRgb = (styles.getPropertyValue("--fg-rgb").trim() || "48, 56, 65");
+      const accentRgb = (styles.getPropertyValue("--accent-rgb").trim() || "255, 87, 34");
+      const playedColor = `rgba(${accentRgb}, 0.95)`;
+      const baseColor = `rgba(${fgRgb}, 0.38)`;
       for (let i = 0; i < bars; i++) {
         const peak = peaks[i] || 0;
         const h = Math.max(minH, peak * maxH);

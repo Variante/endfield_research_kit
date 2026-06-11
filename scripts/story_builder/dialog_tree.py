@@ -1275,6 +1275,133 @@ def collect_option_position_anchors(conv_key: str) -> list[dict]:
     return out
 
 
+def _dialog_timeline_entry_identity(entry: dict) -> tuple:
+    return (
+        str(entry.get("sourceKey") or ""),
+        str(entry.get("timeline") or ""),
+        str(entry.get("file") or ""),
+        tuple(str(line_id) for line_id in (entry.get("lineIds") or [])),
+    )
+
+
+def _dialog_tree_cinematic_anchor_entries(tree_file: dict | None, timeline_entries: list[dict]) -> list[dict]:
+    if not tree_file or not timeline_entries:
+        return []
+    anchors = [
+        anchor
+        for anchor in (tree_file.get("cinematicTimelineAnchors") or [])
+        if isinstance(anchor, dict) and anchor.get("timeline")
+    ]
+    if not anchors:
+        return []
+
+    timeline_by_name: dict[str, list[dict]] = defaultdict(list)
+    for entry in timeline_entries:
+        for name in (
+            str(entry.get("timeline") or ""),
+            str(entry.get("sourceKey") or ""),
+        ):
+            if name and entry not in timeline_by_name[name]:
+                timeline_by_name[name].append(entry)
+
+    ordered: list[dict] = []
+    seen: set[tuple] = set()
+    for anchor in anchors:
+        timeline_name = str(anchor.get("timeline") or "")
+        for entry in timeline_by_name.get(timeline_name, []):
+            identity = _dialog_timeline_entry_identity(entry)
+            if identity in seen:
+                continue
+            seen.add(identity)
+            ordered.append(entry)
+    return ordered
+
+
+def _cinematic_timeline_line_sequence(
+    conv_key: str,
+    available_set: set[str],
+    timeline_entries: list[dict],
+    tree_file: dict | None,
+) -> tuple[list[str], list[dict], list[dict]] | None:
+    if not conv_key or not available_set or not tree_file:
+        return None
+    if tree_file.get("lineIds") and not tree_file.get("cinematicOnly"):
+        return None
+    ordered_entries = _dialog_tree_cinematic_anchor_entries(tree_file, timeline_entries)
+    if len(ordered_entries) < 2:
+        return None
+
+    matched_by_entry: list[list[str]] = [
+        [
+            str(line_id)
+            for line_id in (entry.get("lineIds") or [])
+            if str(line_id) in available_set
+        ]
+        for entry in ordered_entries
+    ]
+    if not any(matched_by_entry):
+        return None
+
+    future_line_sets: list[set[str]] = [set() for _entry in ordered_entries]
+    future: set[str] = set()
+    for idx in range(len(ordered_entries) - 1, -1, -1):
+        future_line_sets[idx] = set(future)
+        future.update(matched_by_entry[idx])
+
+    ordered: list[str] = []
+    seen_line_ids: set[str] = set()
+    sources: list[dict] = []
+    anchor_debug: list[dict] = []
+    anchors = [
+        anchor
+        for anchor in (tree_file.get("cinematicTimelineAnchors") or [])
+        if isinstance(anchor, dict) and anchor.get("timeline")
+    ]
+
+    for idx, entry in enumerate(ordered_entries):
+        matched = matched_by_entry[idx]
+        if idx < len(ordered_entries) - 1:
+            candidate_added = [
+                line_id
+                for line_id in matched
+                if line_id not in future_line_sets[idx]
+            ]
+        else:
+            candidate_added = list(matched)
+        added = [line_id for line_id in candidate_added if line_id not in seen_line_ids]
+        if added:
+            seen_line_ids.update(added)
+            ordered.extend(added)
+            timeline_name = str(entry.get("timeline") or entry.get("sourceKey") or "")
+            source = {
+                "kind": "dialogTimeline",
+                "sourceKey": entry.get("sourceKey") or timeline_name or conv_key,
+                "timeline": timeline_name,
+                "file": entry.get("file") or "",
+                "coverage": len(matched),
+                "matchedLineIds": matched,
+                "addedLineIds": added,
+            }
+            sources.append(source)
+            anchor = next(
+                (
+                    anchor
+                    for anchor in anchors
+                    if str(anchor.get("timeline") or "") == timeline_name
+                ),
+                {},
+            )
+            anchor_debug.append({
+                "timeline": timeline_name,
+                "nodeId": str(anchor.get("nodeId") or ""),
+                "addedLineIds": added,
+            })
+
+    if not ordered:
+        return None
+    return ordered, sources, anchor_debug
+
+
 def collect_line_timings(conv_key: str) -> dict[str, dict]:
     """Return {line_id: {start, duration, timeline}} for lines in this conv
     that have recovered Unity Timeline timestamps.
@@ -1282,7 +1409,29 @@ def collect_line_timings(conv_key: str) -> dict[str, dict]:
     if not conv_key:
         return {}
     out: dict[str, dict] = {}
-    for entry in load_dialog_timeline_line_orders(conv_key):
+    timeline_entries = load_dialog_timeline_line_orders(conv_key)
+    line_owner: dict[str, str] = {}
+    timeline_line_ids = {
+        str(line_id)
+        for entry in timeline_entries
+        for line_id in (entry.get("lineIds") or [])
+        if str(line_id).startswith(f"{conv_key}_")
+    }
+    if sequence := _cinematic_timeline_line_sequence(
+        conv_key,
+        timeline_line_ids,
+        timeline_entries,
+        _load_dialog_tree_file(conv_key),
+    ):
+        _ordered, sources, _anchors = sequence
+        for source in sources:
+            owner = str(source.get("timeline") or source.get("sourceKey") or "")
+            if not owner:
+                continue
+            for line_id in source.get("addedLineIds") or []:
+                line_owner[str(line_id)] = owner
+
+    for entry in timeline_entries:
         timeline = str(entry.get("timeline") or entry.get("sourceKey") or "")
         for record in entry.get("lineTimings") or []:
             line_id = str(record.get("id") or "")
@@ -1294,6 +1443,10 @@ def collect_line_timings(conv_key: str) -> dict[str, dict]:
                 "duration": record.get("duration"),
                 "timeline": timeline,
             }
+            if line_owner:
+                if line_owner.get(line_id) == timeline:
+                    out[line_id] = new_record
+                continue
             if existing is None or (
                 # Prefer the entry whose timeline this line ID actually belongs to.
                 str(existing.get("timeline") or "").lower() != timeline.lower()
@@ -2589,6 +2742,23 @@ def resolve_scene_line_order(conv_key: str, original_line_ids: list[str]) -> tup
 
     if cinematic_stitch := resolve_cinematic_timeline_stitch():
         return cinematic_stitch
+
+    if cinematic_sequence := _cinematic_timeline_line_sequence(
+        conv_key,
+        available_set,
+        timeline_entries,
+        tree_file,
+    ):
+        ordered, sources, anchor_debug = cinematic_sequence
+        if set(ordered) == available_set and len(ordered) == len(available_set):
+            return ordered, {
+                "mode": "dialogTreeCinematicTimeline",
+                "originalLineIds": available_line_ids,
+                "orderedLineIds": ordered,
+                "sources": sources,
+                "stitch": "dialogTreeCinematicAnchorSequence",
+                "cinematicTimelineAnchors": anchor_debug,
+            }
 
     for fragment in load_dialog_tree_fragments(conv_key):
         add_candidate(

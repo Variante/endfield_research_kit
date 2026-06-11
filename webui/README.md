@@ -70,8 +70,9 @@ heavyweight recovery work in the Python builders.
   standalone video rows sort beside the attached file. Timeline / playable
   evidence supplies authored inline placement when available. Manual
   attachments and false-attachment suppressions live in
-  `webui/overrides/narrative_videos.json`; videos stay available as standalone
-  `video_*` rows after the Story builder is rerun.
+  `webui/overrides/narrative_videos.json`; attach rules can set `audioFrom`
+  to copy source cutscene audio events during audio relink. Videos stay
+  available as standalone `video_*` rows after the Story builder is rerun.
 - `Reference`: raw localized rows from `data/lang/<code>/reference/`, with
   source/table filters and on-demand table loading.
 - `Updates`: latest change summary from `data/updates/latest.json`, generated

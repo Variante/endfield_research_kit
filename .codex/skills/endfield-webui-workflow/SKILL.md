@@ -212,13 +212,15 @@ Narrative video inline-attachment overrides live in
 `webui/overrides/narrative_videos.json`. Use `attachInline` when a filename
 stem is known to belong to a different story key, and use `suppressInline`
 when a video should remain as a standalone `video_*` row but must not attach to
-a resolved story key:
+a resolved story key. Add `audioFrom` to an `attachInline` rule when the target
+cutscene should inherit audio events from another cutscene during audio relink:
 
 ```json
 {
   "attachInline": {
     "cutscene_example_2": {
       "stems": ["cs_video_other_name_1"],
+      "audioFrom": ["cutscene_example_1"],
       "note": "Short factual reason."
     }
   },

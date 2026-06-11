@@ -275,10 +275,11 @@ After a refresh, check:
   so the standalone video row stays beside the file where the video is inserted.
 - Manual rules in `webui/overrides/narrative_videos.json` cover both known
   filename mismatches and false attachments. `attachInline` manually embeds a
-  matching video stem into a target story key; `suppressInline` keeps known
-  false inline attachments standalone-only. `cutscene_e1m3_1` is suppressed
-  for `cs_video_e1m3_1` because the filename match should not attach that video
-  to the black-screen cutscene.
+  matching video stem into a target story key, and can set `audioFrom` to copy
+  source cutscene audio events into that target during audio relink.
+  `suppressInline` keeps known false inline attachments standalone-only.
+  `cutscene_e1m3_1` is suppressed for `cs_video_e1m3_1` because the filename
+  match should not attach that video to the black-screen cutscene.
 
 ## 2026-05-23 archive duplicate links
 

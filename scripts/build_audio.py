@@ -129,6 +129,73 @@ def load_narrative_video_attach_overrides(webui_root: Path) -> dict[str, str]:
     return out
 
 
+def _normalize_story_key(value: object) -> str:
+    return str(value or "").strip()
+
+
+def _listish_values(value: object) -> list[object]:
+    if isinstance(value, (str, int, float)):
+        return [value]
+    if isinstance(value, list):
+        return value
+    return []
+
+
+def load_narrative_video_audio_source_overrides(webui_root: Path) -> dict[str, list[str]]:
+    """Return `{target_story_key: [source_cutscene_key]}` audio inheritance rules."""
+    path = webui_root / "overrides" / NARRATIVE_VIDEO_OVERRIDES_NAME
+    payload = load_json(path, {})
+    if not isinstance(payload, dict):
+        return {}
+
+    raw_rules = payload.get("attachInline") or payload.get("attachTo")
+    out: dict[str, list[str]] = {}
+
+    def add_rule(target_key: object, raw_rule: object) -> None:
+        key = _normalize_story_key(target_key)
+        if not key or not isinstance(raw_rule, dict):
+            return
+        raw_sources = (
+            raw_rule.get("audioFrom")
+            or raw_rule.get("audioSourceKeys")
+            or raw_rule.get("audioSources")
+            or raw_rule.get("audioSourceKey")
+            or raw_rule.get("inheritAudioFrom")
+            or raw_rule.get("copyAudioFrom")
+            or []
+        )
+        normalized_sources: list[str] = []
+        seen = {
+            source.lower()
+            for source in out.get(key, [])
+        }
+        for raw_source in _listish_values(raw_sources):
+            source = _normalize_story_key(raw_source)
+            source_key = source.lower()
+            if source and source_key not in seen:
+                seen.add(source_key)
+                normalized_sources.append(source)
+        if normalized_sources:
+            out.setdefault(key, []).extend(normalized_sources)
+
+    if isinstance(raw_rules, dict):
+        for target_key, raw_rule in raw_rules.items():
+            add_rule(target_key, raw_rule)
+    elif isinstance(raw_rules, list):
+        for raw_rule in raw_rules:
+            if not isinstance(raw_rule, dict):
+                continue
+            target_key = (
+                raw_rule.get("targetKey")
+                or raw_rule.get("key")
+                or raw_rule.get("resolvedKey")
+                or raw_rule.get("attachTo")
+            )
+            add_rule(target_key, raw_rule)
+
+    return out
+
+
 def find_audio_dialog_table(export_root: Path) -> Path:
     candidates = [
         export_root / "structured" / "StreamingAssets" / "Table" / "AudioDialog.json",
@@ -913,6 +980,60 @@ def merge_event_map(target: dict[str, list[str]], *sources: dict[str, list[str]]
     return target
 
 
+def collect_existing_cutscene_audio_events(conv_dir: Path) -> dict[str, list[str]]:
+    out: dict[str, list[str]] = {}
+    for conv_path in sorted(conv_dir.glob("*.json")):
+        payload = load_json(conv_path, {})
+        if not isinstance(payload, dict):
+            continue
+        cutscene = payload.get("cutscene")
+        if not isinstance(cutscene, dict):
+            continue
+        key = str(payload.get("key") or conv_path.stem).strip()
+        if not key:
+            continue
+        events: list[str] = []
+        seen: set[str] = set()
+        for raw_event in cutscene.get("audioEvents") or []:
+            event = str(raw_event or "").strip()
+            event_key = event.lower()
+            if event and event_key not in seen:
+                seen.add(event_key)
+                events.append(event)
+        if events:
+            out[key] = events
+    return out
+
+
+def apply_cutscene_audio_source_overrides(
+    cutscene_audio_events: dict[str, list[str]],
+    conv_dir: Path,
+    audio_source_overrides: dict[str, list[str]],
+) -> dict[str, list[str]]:
+    if not audio_source_overrides:
+        return cutscene_audio_events
+
+    source_events_by_key = collect_existing_cutscene_audio_events(conv_dir)
+    merge_event_map(source_events_by_key, cutscene_audio_events)
+    source_events_by_lower_key = {
+        key.lower(): events
+        for key, events in source_events_by_key.items()
+    }
+
+    override_events: dict[str, list[str]] = {}
+    for target_key, source_keys in audio_source_overrides.items():
+        target = str(target_key or "").strip()
+        if not target:
+            continue
+        for source_key in source_keys:
+            source = str(source_key or "").strip().lower()
+            events = source_events_by_lower_key.get(source) or []
+            if events:
+                override_events.setdefault(target, []).extend(events)
+
+    return merge_event_map(cutscene_audio_events, override_events)
+
+
 def _event_name_set(values: Any) -> set[str]:
     if not isinstance(values, list):
         return set()
@@ -1272,6 +1393,7 @@ def build_audio(args: argparse.Namespace) -> int:
         raise SystemExit(f"Conversation directory not found: {conv_dir}")
     event_names = collect_audio_event_names(conv_dir, args.export_root)
     fmv_attach_overrides = load_narrative_video_attach_overrides(args.webui_root)
+    audio_source_overrides = load_narrative_video_audio_source_overrides(args.webui_root)
     cutscene_audio_events = collect_fmv_cutscene_audio_events(
         args.export_root,
         language_info,
@@ -1281,6 +1403,11 @@ def build_audio(args: argparse.Namespace) -> int:
         cutscene_audio_events,
         collect_timeline_cutscene_audio_events(args.export_root),
         collect_levelseq_cutscene_audio_events(args.export_root),
+    )
+    apply_cutscene_audio_source_overrides(
+        cutscene_audio_events,
+        conv_dir,
+        audio_source_overrides,
     )
     for events in cutscene_audio_events.values():
         event_names.update(str(event or "").strip() for event in events if str(event or "").strip())
