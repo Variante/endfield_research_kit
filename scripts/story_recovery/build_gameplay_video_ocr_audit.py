@@ -13,7 +13,7 @@ prefer:
 Direct OCR-only runs are still useful for diagnostics:
 
     python scripts/story_recovery/build_gameplay_video_ocr_audit.py
-    python scripts/story_recovery/build_gameplay_video_ocr_audit.py --frame-step 45
+    python scripts/story_recovery/build_gameplay_video_ocr_audit.py --frame-step 10
     python scripts/story_recovery/build_gameplay_video_ocr_audit.py --dry-run
 """
 from __future__ import annotations
@@ -32,7 +32,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from fractions import Fraction
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 ROOT = Path(__file__).resolve().parents[2]
 for path in (ROOT / "scripts",):
@@ -54,16 +54,22 @@ VIDEO_ROOT = ROOT / "videos"
 REPORT_DIR = REPORTS_DIR / "gameplay_video_ocr"
 TMP_ROOT = ROOT / "tmp" / "gameplay_video_ocr"
 FRAME_CACHE_ROOT = TMP_ROOT / "frames"
+OCR_DICTIONARY_CACHE_PATH = TMP_ROOT / "ocr_dictionary_allowlist.json"
 INDEX_PATH = REPORT_DIR / "gameplay_video_ocr_index.json"
 INDEX_MD_PATH = REPORT_DIR / "gameplay_video_ocr_index.md"
 DEFAULT_EASYOCR_MODEL_DIR = ROOT / "tools" / "easyocr"
+DEFAULT_OCR_DICTIONARY_CONV_ROOT = ROOT / "webui" / "data" / "lang" / "CN" / "conv"
 DARK_SCREEN_ROI_TOP = 0.10
 DARK_SCREEN_ROI_BOTTOM = 0.97
 DARK_SCREEN_CACHE_SUBDIR = "dark_roi_10_97"
 ARCHIVE_BOX_CACHE_SUBDIR = "archive_box_full"
-ARCHIVE_BOX_PANEL_CACHE_SUBDIR = "archive_box_panel"
+ARCHIVE_BOX_PANEL_CACHE_SUBDIR = "archive_box_dark_roi_panel"
+ARCHIVE_BOX_CROP_MODE = "fixed-dark-roi"
+SNS_INTERFACE_CACHE_SUBDIR = "sns_interface_full"
+SNS_INTERFACE_PANEL_CACHE_SUBDIR = "sns_interface_dark_roi_panel"
+SNS_INTERFACE_CROP_MODE = "fixed-dark-roi"
 
-TOOL_VERSION = 6
+TOOL_VERSION = 18
 VIDEO_EXTENSIONS = {".mp4"}
 NON_CONTENT_PARAM_KEYS = {
     "easyocrGpu",
@@ -71,13 +77,7 @@ NON_CONTENT_PARAM_KEYS = {
     "easyocrFrameBatchSize",
     "easyocrBatchSize",
     "ffmpegHwaccel",
-    "framePrefilter",
     "keepFrames",
-    "prefilterDuplicateThreshold",
-    "prefilterBlankStddev",
-    "prefilterBlankBrightRatio",
-    "prefilterBrightThreshold",
-    "prefilterFocusHeight",
 }
 PARTIAL_SUFFIXES = (
     ".lock",
@@ -99,6 +99,28 @@ LATENCY_RE = re.compile(r"\b[0-9]{1,4}\s*ms\b", re.I)
 ASCII_WORD_RE = re.compile(r"[A-Za-z]{2,}")
 CJK_SPAN_RE = re.compile(r"[\u3400-\u9fff0-9，。！？、；：“”‘’（）《》…—\-\.!? ]+")
 BLACKFRAME_RE = re.compile(r"\bframe:(?P<sample>[0-9]+)\s+pblack:(?P<pblack>[0-9]+)")
+OCR_DICTIONARY_TEXT_KEYS = {
+    "actor",
+    "aid",
+    "body",
+    "hint",
+    "label",
+    "name",
+    "preview",
+    "speaker",
+    "subtitle",
+    "summary",
+    "text",
+    "title",
+}
+COMMON_OCR_ALLOWLIST_CHARS = (
+    " "
+    "0123456789"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    ".,!?;:()[]{}<>+-=*/_%#&@'\""
+    "，。！？；：、（）【】《》“”‘’…·"
+    "—"
+)
 
 
 def utc_now() -> str:
@@ -256,8 +278,6 @@ def symbol_ratio(text: str) -> float:
 
 
 def is_short_cjk_name_like(text: str, args: argparse.Namespace) -> bool:
-    if args.drop_short_cjk_names:
-        return False
     compact = "".join(ch for ch in text if not ch.isspace())
     cjk = cjk_count(compact)
     if cjk < args.min_cjk_chars or cjk > 4:
@@ -434,6 +454,131 @@ def run_ffmpeg_extract(args: list[str], *, fallback_args: list[str] | None, labe
     return fallback_proc
 
 
+def iter_ocr_dictionary_strings(value: Any) -> Iterable[str]:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            key_text = safe_key(key)
+            if isinstance(child, str) and key_text in OCR_DICTIONARY_TEXT_KEYS:
+                yield child
+            elif isinstance(child, (dict, list)):
+                yield from iter_ocr_dictionary_strings(child)
+        return
+    if isinstance(value, list):
+        for child in value:
+            if isinstance(child, (dict, list)):
+                yield from iter_ocr_dictionary_strings(child)
+
+
+def ocr_dictionary_source_fingerprint(source_root: Path) -> dict[str, Any]:
+    file_count = 0
+    total_size = 0
+    max_mtime_ns = 0
+    if source_root.is_dir():
+        for path in source_root.glob("*.json"):
+            try:
+                stat = path.stat()
+            except OSError:
+                continue
+            file_count += 1
+            total_size += int(stat.st_size)
+            max_mtime_ns = max(max_mtime_ns, int(stat.st_mtime_ns))
+    return {
+        "source": rel_path(source_root),
+        "fileCount": file_count,
+        "totalSize": total_size,
+        "maxMtimeNs": max_mtime_ns,
+    }
+
+
+def build_ocr_dictionary_allowlist(args: argparse.Namespace) -> dict[str, Any]:
+    if args.disable_ocr_dictionary:
+        return {
+            "enabled": False,
+            "source": "",
+            "charCount": 0,
+            "hash": "",
+            "allowlist": None,
+        }
+
+    source_root = args.ocr_dictionary_conv_root
+    source_fingerprint = ocr_dictionary_source_fingerprint(source_root)
+    extra_chars = safe_key(args.ocr_dictionary_extra_chars)
+    extra_hash = hashlib.sha1(extra_chars.encode("utf-8")).hexdigest()[:12] if extra_chars else ""
+    cached = read_json(OCR_DICTIONARY_CACHE_PATH, {})
+    cached_allowlist = cached.get("allowlist") if isinstance(cached, dict) else None
+    if (
+        isinstance(cached, dict)
+        and cached.get("sourceFingerprint") == source_fingerprint
+        and cached.get("extraCharsHash") == extra_hash
+        and isinstance(cached_allowlist, str)
+        and cached_allowlist
+    ):
+        allowlist = cached_allowlist
+        return {
+            "enabled": True,
+            "source": source_fingerprint["source"],
+            "files": int(cached.get("files") or source_fingerprint["fileCount"]),
+            "strings": int(cached.get("strings") or 0),
+            "charCount": len(allowlist),
+            "hash": safe_key(cached.get("hash")),
+            "allowlist": allowlist,
+            "cacheHit": True,
+        }
+
+    chars = set(COMMON_OCR_ALLOWLIST_CHARS)
+    file_count = 0
+    string_count = 0
+    if source_root.is_dir():
+        for path in sorted(source_root.glob("*.json")):
+            payload = read_json(path, {})
+            if not isinstance(payload, dict):
+                continue
+            file_count += 1
+            for text in iter_ocr_dictionary_strings(payload):
+                clean = safe_key(text)
+                if not clean:
+                    continue
+                string_count += 1
+                chars.update(clean)
+    if extra_chars:
+        chars.update(extra_chars)
+    if string_count == 0 and not extra_chars:
+        return {
+            "enabled": False,
+            "source": rel_path(source_root),
+            "files": file_count,
+            "strings": string_count,
+            "charCount": 0,
+            "hash": "",
+            "allowlist": None,
+        }
+
+    allowlist = "".join(sorted(ch for ch in chars if ch not in "\r\n"))
+    allowlist_hash = hashlib.sha1(allowlist.encode("utf-8")).hexdigest()[:12] if allowlist else ""
+    payload = {
+        "schema": "gameplayVideoOcrDictionary.v1",
+        "generatedAt": utc_now(),
+        "sourceFingerprint": source_fingerprint,
+        "extraCharsHash": extra_hash,
+        "files": file_count,
+        "strings": string_count,
+        "charCount": len(allowlist),
+        "hash": allowlist_hash,
+        "allowlist": allowlist,
+    }
+    write_report_json(OCR_DICTIONARY_CACHE_PATH, payload)
+    return {
+        "enabled": bool(allowlist),
+        "source": rel_path(source_root),
+        "files": file_count,
+        "strings": string_count,
+        "charCount": len(allowlist),
+        "hash": allowlist_hash,
+        "allowlist": allowlist or None,
+        "cacheHit": False,
+    }
+
+
 def params_signature(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "toolVersion": TOOL_VERSION,
@@ -448,6 +593,11 @@ def params_signature(args: argparse.Namespace) -> dict[str, Any]:
         "easyocrFrameBatchSize": args.easyocr_frame_batch_size,
         "easyocrBatchSize": args.easyocr_batch_size,
         "easyocrMinConfidence": args.easyocr_min_confidence,
+        "easyocrParagraph": True,
+        "ocrDictionary": bool(getattr(args, "easyocr_allowlist", None)),
+        "ocrDictionarySource": getattr(args, "ocr_dictionary_source", ""),
+        "ocrDictionaryCharCount": getattr(args, "ocr_dictionary_char_count", 0),
+        "ocrDictionaryHash": getattr(args, "ocr_dictionary_hash", ""),
         "minTextLength": args.min_text_length,
         "minNormalizedChars": args.min_normalized_chars,
         "minCjkChars": args.min_cjk_chars,
@@ -457,7 +607,6 @@ def params_signature(args: argparse.Namespace) -> dict[str, Any]:
         "keepOverlayText": bool(args.keep_overlay_text),
         "keepMixedOcrLines": bool(args.keep_mixed_ocr_lines),
         "keepEnglishOnly": bool(args.keep_english_only),
-        "keepShortCjkNames": not bool(args.drop_short_cjk_names),
         "darkFullscreenOcr": not bool(args.disable_dark_fullscreen_ocr),
         "darkFrameThreshold": args.dark_frame_threshold,
         "darkPixelThreshold": args.dark_pixel_threshold,
@@ -472,13 +621,22 @@ def params_signature(args: argparse.Namespace) -> dict[str, Any]:
         "archiveBoxMinFillRatio": args.archive_box_min_fill_ratio,
         "archiveBoxCropPadding": args.archive_box_crop_padding,
         "archiveBoxScale": args.archive_box_scale,
-        "framePrefilter": not bool(args.disable_frame_prefilter),
-        "prefilterDuplicateThreshold": args.prefilter_duplicate_threshold,
-        "prefilterMaxDuplicateSkip": args.prefilter_max_duplicate_skip,
-        "prefilterBlankStddev": args.prefilter_blank_stddev,
-        "prefilterBlankBrightRatio": args.prefilter_blank_bright_ratio,
-        "prefilterBrightThreshold": args.prefilter_bright_threshold,
-        "prefilterFocusHeight": args.prefilter_focus_height,
+        "archiveBoxCropMode": ARCHIVE_BOX_CROP_MODE,
+        "archiveBoxRoiTop": DARK_SCREEN_ROI_TOP,
+        "archiveBoxRoiBottom": DARK_SCREEN_ROI_BOTTOM,
+        "snsInterfaceOcr": not bool(args.disable_sns_interface_ocr),
+        "snsInterfaceLightThreshold": args.sns_interface_light_threshold,
+        "snsInterfaceMinRowBrightRatio": args.sns_interface_min_row_bright_ratio,
+        "snsInterfaceMinBandWidthRatio": args.sns_interface_min_band_width_ratio,
+        "snsInterfaceMaxBandWidthRatio": args.sns_interface_max_band_width_ratio,
+        "snsInterfaceMinBandHeightRatio": args.sns_interface_min_band_height_ratio,
+        "snsInterfaceMaxBandHeightRatio": args.sns_interface_max_band_height_ratio,
+        "snsInterfaceMinBandY0Ratio": args.sns_interface_min_band_y0_ratio,
+        "snsInterfaceMaxBandY0Ratio": args.sns_interface_max_band_y0_ratio,
+        "snsInterfaceScale": args.archive_box_scale,
+        "snsInterfaceCropMode": SNS_INTERFACE_CROP_MODE,
+        "snsInterfaceRoiTop": DARK_SCREEN_ROI_TOP,
+        "snsInterfaceRoiBottom": DARK_SCREEN_ROI_BOTTOM,
         "limitFrames": args.limit_frames,
         "includeEmpty": bool(args.include_empty),
         "keepFrames": bool(args.keep_frames),
@@ -544,10 +702,9 @@ def existing_report_state(path: Path, fingerprint: dict[str, Any], params: dict[
     return (f"retry:{status}", safe_key(payload.get("error")))
 
 
-def discover_videos(video_root: Path, filters: list[str]) -> list[Path]:
+def discover_videos(video_root: Path) -> list[Path]:
     if not video_root.is_dir():
         return []
-    filters_lower = [item.lower() for item in filters]
     out: list[Path] = []
     for path in sorted(video_root.iterdir(), key=lambda item: item.name.lower()):
         if not path.is_file():
@@ -561,8 +718,6 @@ def discover_videos(video_root: Path, filters: list[str]) -> list[Path]:
             continue
         if (path.parent / f"{path.name}.lock").exists():
             continue
-        if filters_lower and not any(item in name_lower for item in filters_lower):
-            continue
         out.append(path)
     return out
 
@@ -575,6 +730,8 @@ def build_sample_select(frame_step: int, limit_frames: int | None = None) -> str
 
 
 def build_crop_filter(crop: str) -> str | None:
+    if crop == "subtitle":
+        return "crop=iw*0.87:ih*0.47:iw*0.13:ih*0.50"
     if crop == "lower-half":
         return "crop=iw*0.74:ih/2:iw*0.13:ih*0.47"
     if crop == "lower-third":
@@ -593,7 +750,7 @@ def build_scale_filter(scale: float) -> str | None:
 def frame_cache_params(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "schema": "gameplayVideoFrameCache.v1",
-        "cropProfile": "raised-bottom-hud-strip-dark-near-full-v3",
+        "cropProfile": "subtitle-options-50-97w13-100-fullres-dark-near-full-v7",
         "frameStep": args.frame_step,
         "crop": args.crop,
         "scale": args.scale,
@@ -666,12 +823,28 @@ def archive_box_panel_dir(frame_dir: Path, scale: float) -> Path:
     return frame_dir / f"{ARCHIVE_BOX_PANEL_CACHE_SUBDIR}_{archive_box_cache_suffix(scale)}"
 
 
+def sns_interface_full_dir(frame_dir: Path, scale: float) -> Path:
+    return frame_dir / f"{SNS_INTERFACE_CACHE_SUBDIR}_{archive_box_cache_suffix(scale)}"
+
+
+def sns_interface_panel_dir(frame_dir: Path, scale: float) -> Path:
+    return frame_dir / f"{SNS_INTERFACE_PANEL_CACHE_SUBDIR}_{archive_box_cache_suffix(scale)}"
+
+
 def cached_archive_full_frame_path(frame_dir: Path, sample_index: int, scale: float) -> Path:
     return archive_box_full_dir(frame_dir, scale) / f"frame_{sample_index + 1:08d}.jpg"
 
 
 def cached_archive_panel_frame_path(frame_dir: Path, sample_index: int, scale: float) -> Path:
     return archive_box_panel_dir(frame_dir, scale) / f"frame_{sample_index + 1:08d}.jpg"
+
+
+def cached_sns_interface_full_frame_path(frame_dir: Path, sample_index: int, scale: float) -> Path:
+    return sns_interface_full_dir(frame_dir, scale) / f"frame_{sample_index + 1:08d}.jpg"
+
+
+def cached_sns_interface_panel_frame_path(frame_dir: Path, sample_index: int, scale: float) -> Path:
+    return sns_interface_panel_dir(frame_dir, scale) / f"frame_{sample_index + 1:08d}.jpg"
 
 
 def contiguous_cached_frame_count(frame_dir: Path, *, limit_frames: int | None = None) -> int:
@@ -1091,6 +1264,90 @@ def extract_archive_fullscreen_frames(
     return sorted(archive_dir.glob("frame_*.jpg"))
 
 
+def extract_sns_interface_fullscreen_frames(
+    video_path: Path,
+    frame_dir: Path,
+    *,
+    ffmpeg: str,
+    ffmpeg_hwaccel: str,
+    frame_step: int,
+    scale: float,
+    sample_indices: list[int],
+    cache_enabled: bool,
+) -> list[Path]:
+    if not sample_indices:
+        return []
+    sample_indices = sorted(set(sample_indices))
+    sns_dir = sns_interface_full_dir(frame_dir, scale)
+    sns_dir.mkdir(parents=True, exist_ok=True)
+    cached_paths = [
+        cached_sns_interface_full_frame_path(frame_dir, sample_index, scale)
+        for sample_index in sample_indices
+    ]
+    if cache_enabled and cached_paths and all(path.is_file() for path in cached_paths):
+        print(
+            f"[{video_path.name}] SNS-interface cache hit: using {len(cached_paths)} full-frame crop(s) "
+            f"from {rel_path(sns_dir)}"
+        )
+        return cached_paths
+
+    output_dir = sns_dir / f"_extract_{time.time_ns()}" if cache_enabled else sns_dir
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_pattern = output_dir / "frame_%08d.jpg"
+
+    def build_args(hwaccel: str) -> list[str]:
+        return [
+            ffmpeg,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            *ffmpeg_hwaccel_args(hwaccel),
+            "-i",
+            str(video_path),
+            "-vf",
+            build_exact_sample_filter(sample_indices, frame_step, scale),
+            "-vsync",
+            "0",
+            "-q:v",
+            "4",
+            "-frames:v",
+            str(len(sample_indices)),
+            str(output_pattern),
+        ]
+
+    args = build_args(ffmpeg_hwaccel)
+    fallback_args = build_args("none") if ffmpeg_hwaccel == "cuda" else None
+    run_ffmpeg_extract(args, fallback_args=fallback_args, label=f"[{video_path.name}]")
+    decoded_paths = sorted(output_dir.glob("frame_*.jpg"))
+    if cache_enabled:
+        missing_count = 0
+        for sample_index, decoded_path in zip(sample_indices, decoded_paths):
+            destination = cached_sns_interface_full_frame_path(frame_dir, sample_index, scale)
+            if destination.exists():
+                try:
+                    decoded_path.unlink()
+                except OSError:
+                    pass
+                continue
+            shutil.move(str(decoded_path), str(destination))
+            missing_count += 1
+        try:
+            shutil.rmtree(output_dir)
+        except OSError:
+            pass
+        final_paths = [
+            cached_sns_interface_full_frame_path(frame_dir, sample_index, scale)
+            for sample_index in sample_indices
+        ]
+        print(
+            f"[{video_path.name}] SNS-interface cache updated: decoded {missing_count} new full-frame crop(s), "
+            f"cached total={sum(1 for path in final_paths if path.is_file())}"
+        )
+        return [path for path in final_paths if path.is_file()]
+    return sorted(sns_dir.glob("frame_*.jpg"))
+
+
 def archive_box_features(path: Path, args: argparse.Namespace) -> dict[str, Any]:
     from PIL import Image, ImageStat
 
@@ -1195,6 +1452,123 @@ def detect_archive_box_samples(
     return sample_indices, features_by_sample, stats
 
 
+def sns_interface_features(path: Path, args: argparse.Namespace) -> dict[str, Any]:
+    from PIL import Image
+
+    resampling = getattr(getattr(Image, "Resampling", Image), "BILINEAR")
+    with Image.open(path) as image:
+        gray = image.convert("L")
+        width, height = gray.size
+        probe_width = 240
+        probe_height = max(1, int(round(probe_width * height / max(1, width))))
+        small = gray.resize((probe_width, probe_height), resampling)
+        data = list(small.getdata())
+
+    total = probe_width * probe_height
+    bright_count = sum(1 for pixel in data if pixel >= args.sns_interface_light_threshold)
+    bright_ratio = bright_count / total if total else 0.0
+    bands: list[list[tuple[int, list[int]]]] = []
+    current: list[tuple[int, list[int]]] = []
+    for y in range(probe_height):
+        bright_x = [
+            x
+            for x in range(probe_width)
+            if data[y * probe_width + x] >= args.sns_interface_light_threshold
+        ]
+        row_ratio = len(bright_x) / probe_width if probe_width else 0.0
+        if row_ratio >= args.sns_interface_min_row_bright_ratio:
+            current.append((y, bright_x))
+        elif current:
+            bands.append(current)
+            current = []
+    if current:
+        bands.append(current)
+
+    best_band: dict[str, Any] | None = None
+    for band in bands:
+        ys = [y for y, _xs in band]
+        xs = [x for _y, row_xs in band for x in row_xs]
+        if not ys or not xs:
+            continue
+        x0, x1 = min(xs), max(xs) + 1
+        y0, y1 = min(ys), max(ys) + 1
+        width_ratio = (x1 - x0) / probe_width if probe_width else 0.0
+        height_ratio = (y1 - y0) / probe_height if probe_height else 0.0
+        y0_ratio = y0 / probe_height if probe_height else 0.0
+        y1_ratio = y1 / probe_height if probe_height else 0.0
+        row_max = max((len(row_xs) / probe_width for _y, row_xs in band), default=0.0)
+        detected = (
+            width_ratio >= args.sns_interface_min_band_width_ratio
+            and width_ratio <= args.sns_interface_max_band_width_ratio
+            and height_ratio >= args.sns_interface_min_band_height_ratio
+            and height_ratio <= args.sns_interface_max_band_height_ratio
+            and y0_ratio >= args.sns_interface_min_band_y0_ratio
+            and y0_ratio <= args.sns_interface_max_band_y0_ratio
+        )
+        row = {
+            "detected": bool(detected),
+            "score": round(width_ratio * height_ratio, 5),
+            "widthRatio": round(width_ratio, 4),
+            "heightRatio": round(height_ratio, 4),
+            "y0Ratio": round(y0_ratio, 4),
+            "y1Ratio": round(y1_ratio, 4),
+            "rowBrightMaxRatio": round(row_max, 4),
+            "bbox": {
+                "x0": round(x0 / probe_width, 4),
+                "y0": round(y0_ratio, 4),
+                "x1": round(x1 / probe_width, 4),
+                "y1": round(y1_ratio, 4),
+            },
+        }
+        if best_band is None or (row["detected"], row["score"]) > (
+            best_band.get("detected"),
+            best_band.get("score"),
+        ):
+            best_band = row
+
+    return {
+        "detected": bool(best_band and best_band.get("detected")),
+        "brightRatio": round(bright_ratio, 4),
+        "threshold": args.sns_interface_light_threshold,
+        "bestBand": best_band,
+    }
+
+
+def detect_sns_interface_samples(
+    frame_paths: list[Path],
+    args: argparse.Namespace,
+    *,
+    label: str,
+) -> tuple[list[int], dict[int, dict[str, Any]], dict[str, int]]:
+    stats = {
+        "snsInterfaceScannedFrames": 0,
+        "snsInterfaceDetectedFrames": 0,
+        "snsInterfaceDetectionErrors": 0,
+    }
+    if args.disable_sns_interface_ocr:
+        return [], {}, stats
+
+    sample_indices: list[int] = []
+    features_by_sample: dict[int, dict[str, Any]] = {}
+    for sample_index, image_path in enumerate(frame_paths):
+        stats["snsInterfaceScannedFrames"] += 1
+        try:
+            features = sns_interface_features(image_path, args)
+        except Exception:
+            stats["snsInterfaceDetectionErrors"] += 1
+            continue
+        if not features.get("detected"):
+            continue
+        sample_indices.append(sample_index)
+        features_by_sample[sample_index] = features
+    stats["snsInterfaceDetectedFrames"] = len(sample_indices)
+    print(
+        f"{label} SNS-interface detector: detected={stats['snsInterfaceDetectedFrames']}/"
+        f"{stats['snsInterfaceScannedFrames']} errors={stats['snsInterfaceDetectionErrors']}"
+    )
+    return sample_indices, features_by_sample, stats
+
+
 def crop_archive_panel_frames(
     frame_dir: Path,
     full_frame_paths: list[Path],
@@ -1221,6 +1595,9 @@ def crop_archive_panel_frames(
             "sampleIndex": sample_index,
             "sourceImage": rel_path(full_path),
             "cropped": False,
+            "cropMode": ARCHIVE_BOX_CROP_MODE,
+            "roiTop": DARK_SCREEN_ROI_TOP,
+            "roiBottom": DARK_SCREEN_ROI_BOTTOM,
         }
         if cache_enabled and panel_path.is_file():
             metadata["image"] = rel_path(panel_path)
@@ -1229,35 +1606,95 @@ def crop_archive_panel_frames(
             out.append((sample_index, panel_path, metadata))
             continue
         try:
-            features = archive_box_features(full_path, args)
-            metadata["features"] = features
-            bbox = features.get("bbox") if isinstance(features.get("bbox"), dict) else None
-            if bbox:
-                with Image.open(full_path) as image:
-                    gray = image.convert("L")
-                    width, height = gray.size
-                    pad_x = int(round(width * args.archive_box_crop_padding))
-                    pad_y = int(round(height * args.archive_box_crop_padding))
-                    x0 = max(0, int(math.floor(float(bbox.get("x0") or 0) * width)) - pad_x)
-                    y0 = max(0, int(math.floor(float(bbox.get("y0") or 0) * height)) - pad_y)
-                    x1 = min(width, int(math.ceil(float(bbox.get("x1") or 1) * width)) + pad_x)
-                    y1 = min(height, int(math.ceil(float(bbox.get("y1") or 1) * height)) + pad_y)
-                    if x1 - x0 >= 32 and y1 - y0 >= 32:
-                        crop = gray.crop((x0, y0, x1, y1))
-                        crop.save(panel_path, quality=4)
-                        metadata.update({
-                            "image": rel_path(panel_path),
-                            "cropped": True,
-                            "cropBox": {"x0": x0, "y0": y0, "x1": x1, "y1": y1},
-                        })
-                        stats["archiveBoxPanelCropFrames"] += 1
-                        out.append((sample_index, panel_path, metadata))
-                        continue
+            with Image.open(full_path) as image:
+                gray = image.convert("L")
+                width, height = gray.size
+                x0 = 0
+                y0 = max(0, min(height - 1, int(math.floor(height * DARK_SCREEN_ROI_TOP))))
+                x1 = width
+                y1 = max(y0 + 1, min(height, int(math.ceil(height * DARK_SCREEN_ROI_BOTTOM))))
+                if x1 - x0 >= 32 and y1 - y0 >= 32:
+                    crop = gray.crop((x0, y0, x1, y1))
+                    crop.save(panel_path, quality=4)
+                    metadata.update({
+                        "image": rel_path(panel_path),
+                        "cropped": True,
+                        "cropBox": {"x0": x0, "y0": y0, "x1": x1, "y1": y1},
+                    })
+                    stats["archiveBoxPanelCropFrames"] += 1
+                    out.append((sample_index, panel_path, metadata))
+                    continue
             stats["archiveBoxPanelFallbackFrames"] += 1
             metadata["image"] = rel_path(full_path)
             out.append((sample_index, full_path, metadata))
         except Exception as exc:
             stats["archiveBoxPanelCropErrors"] += 1
+            metadata["error"] = str(exc)
+            metadata["image"] = rel_path(full_path)
+            out.append((sample_index, full_path, metadata))
+    return out, stats
+
+
+def crop_sns_interface_panel_frames(
+    frame_dir: Path,
+    full_frame_paths: list[Path],
+    sample_indices: list[int],
+    args: argparse.Namespace,
+    *,
+    cache_enabled: bool,
+) -> tuple[list[tuple[int, Path, dict[str, Any]]], dict[str, int]]:
+    from PIL import Image
+
+    stats = {
+        "snsInterfacePanelFrames": 0,
+        "snsInterfacePanelCropFrames": 0,
+        "snsInterfacePanelFallbackFrames": 0,
+        "snsInterfacePanelCropErrors": 0,
+    }
+    panel_dir = sns_interface_panel_dir(frame_dir, args.archive_box_scale)
+    panel_dir.mkdir(parents=True, exist_ok=True)
+    out: list[tuple[int, Path, dict[str, Any]]] = []
+    for sample_index, full_path in zip(sample_indices, full_frame_paths):
+        stats["snsInterfacePanelFrames"] += 1
+        panel_path = cached_sns_interface_panel_frame_path(frame_dir, sample_index, args.archive_box_scale)
+        metadata: dict[str, Any] = {
+            "sampleIndex": sample_index,
+            "sourceImage": rel_path(full_path),
+            "cropped": False,
+            "cropMode": SNS_INTERFACE_CROP_MODE,
+            "roiTop": DARK_SCREEN_ROI_TOP,
+            "roiBottom": DARK_SCREEN_ROI_BOTTOM,
+        }
+        if cache_enabled and panel_path.is_file():
+            metadata["image"] = rel_path(panel_path)
+            metadata["cached"] = True
+            stats["snsInterfacePanelCropFrames"] += 1
+            out.append((sample_index, panel_path, metadata))
+            continue
+        try:
+            with Image.open(full_path) as image:
+                gray = image.convert("L")
+                width, height = gray.size
+                x0 = 0
+                y0 = max(0, min(height - 1, int(math.floor(height * DARK_SCREEN_ROI_TOP))))
+                x1 = width
+                y1 = max(y0 + 1, min(height, int(math.ceil(height * DARK_SCREEN_ROI_BOTTOM))))
+                if x1 - x0 >= 32 and y1 - y0 >= 32:
+                    crop = gray.crop((x0, y0, x1, y1))
+                    crop.save(panel_path, quality=4)
+                    metadata.update({
+                        "image": rel_path(panel_path),
+                        "cropped": True,
+                        "cropBox": {"x0": x0, "y0": y0, "x1": x1, "y1": y1},
+                    })
+                    stats["snsInterfacePanelCropFrames"] += 1
+                    out.append((sample_index, panel_path, metadata))
+                    continue
+            stats["snsInterfacePanelFallbackFrames"] += 1
+            metadata["image"] = rel_path(full_path)
+            out.append((sample_index, full_path, metadata))
+        except Exception as exc:
+            stats["snsInterfacePanelCropErrors"] += 1
             metadata["error"] = str(exc)
             metadata["image"] = rel_path(full_path)
             out.append((sample_index, full_path, metadata))
@@ -1358,124 +1795,6 @@ def image_size(path: Path) -> tuple[int, int]:
         return image.size
 
 
-def frame_prefilter_features(
-    path: Path,
-    *,
-    dark_frame: bool,
-    args: argparse.Namespace,
-) -> dict[str, Any]:
-    from PIL import Image, ImageStat
-
-    resampling = getattr(getattr(Image, "Resampling", Image), "BILINEAR")
-    with Image.open(path) as image:
-        gray = image.convert("L")
-        width, height = gray.size
-        if not dark_frame and args.prefilter_focus_height < 1:
-            top = max(0, min(height - 1, int(height * (1 - args.prefilter_focus_height))))
-            gray = gray.crop((0, top, width, height))
-        small = gray.resize((64, 16), resampling)
-        stat = ImageStat.Stat(small)
-        bright = small.point(lambda pixel: 255 if pixel >= args.prefilter_bright_threshold else 0)
-        bright_stat = ImageStat.Stat(bright)
-    return {
-        "mask": bright,
-        "stddev": float(stat.stddev[0] if stat.stddev else 0),
-        "brightRatio": float((bright_stat.sum[0] if bright_stat.sum else 0) / (255 * 64 * 16)),
-    }
-
-
-def mask_diff_ratio(left: Any, right: Any) -> float:
-    from PIL import ImageChops, ImageStat
-
-    diff = ImageChops.difference(left, right)
-    stat = ImageStat.Stat(diff)
-    total = diff.size[0] * diff.size[1]
-    return float((stat.sum[0] if stat.sum else 0) / (255 * total)) if total else 1.0
-
-
-def select_ocr_indexed_pairs(
-    indexed_paths: list[tuple[int, Path]],
-    dark_sample_index_set: set[int],
-    args: argparse.Namespace,
-    *,
-    label: str,
-) -> tuple[list[tuple[int, Path]], dict[str, int]]:
-    stats = {
-        "ocrCandidateFrames": len(indexed_paths),
-        "prefilterSkippedBlankFrames": 0,
-        "prefilterSkippedDuplicateFrames": 0,
-        "prefilterForcedDuplicateFrames": 0,
-        "prefilterErrors": 0,
-    }
-    if args.disable_frame_prefilter or args.include_empty:
-        return list(indexed_paths), stats
-
-    selected: list[tuple[int, Path]] = []
-    previous_mask: Any | None = None
-    duplicate_skip_run = 0
-    for sample_index, image_path in indexed_paths:
-        try:
-            features = frame_prefilter_features(
-                image_path,
-                dark_frame=sample_index in dark_sample_index_set,
-                args=args,
-            )
-        except Exception:
-            stats["prefilterErrors"] += 1
-            selected.append((sample_index, image_path))
-            previous_mask = None
-            duplicate_skip_run = 0
-            continue
-
-        is_blank = (
-            features["stddev"] <= args.prefilter_blank_stddev
-            and features["brightRatio"] <= args.prefilter_blank_bright_ratio
-        )
-        if is_blank:
-            stats["prefilterSkippedBlankFrames"] += 1
-            previous_mask = None
-            duplicate_skip_run = 0
-            continue
-
-        if previous_mask is not None:
-            diff_ratio = mask_diff_ratio(previous_mask, features["mask"])
-            if diff_ratio <= args.prefilter_duplicate_threshold:
-                if duplicate_skip_run < args.prefilter_max_duplicate_skip:
-                    stats["prefilterSkippedDuplicateFrames"] += 1
-                    duplicate_skip_run += 1
-                    continue
-                stats["prefilterForcedDuplicateFrames"] += 1
-
-        selected.append((sample_index, image_path))
-        previous_mask = features["mask"]
-        duplicate_skip_run = 0
-
-    stats["ocrCandidateFrames"] = len(selected)
-    print(
-        f"{label} prefilter: OCR candidates={stats['ocrCandidateFrames']}/{len(indexed_paths)} "
-        f"blank_skip={stats['prefilterSkippedBlankFrames']} "
-        f"duplicate_skip={stats['prefilterSkippedDuplicateFrames']} "
-        f"forced_duplicate={stats['prefilterForcedDuplicateFrames']} "
-        f"errors={stats['prefilterErrors']}"
-    )
-    return selected, stats
-
-
-def select_ocr_frame_pairs(
-    frame_paths: list[Path],
-    dark_sample_index_set: set[int],
-    args: argparse.Namespace,
-    *,
-    label: str,
-) -> tuple[list[tuple[int, Path]], dict[str, int]]:
-    return select_ocr_indexed_pairs(
-        list(enumerate(frame_paths)),
-        dark_sample_index_set,
-        args,
-        label=label,
-    )
-
-
 def run_easyocr_batch(
     reader: Any,
     image_paths: list[Path],
@@ -1520,7 +1839,8 @@ def run_easyocr_batch(
             rows_by_image = reader.readtext_batched(
                 [str(path) for path in chunk_paths],
                 detail=1,
-                paragraph=False,
+                paragraph=True,
+                allowlist=getattr(args, "easyocr_allowlist", None),
                 batch_size=args.easyocr_batch_size,
                 workers=0,
             )
@@ -1650,7 +1970,14 @@ def write_video_markdown(report_path: Path, payload: dict[str, Any]) -> None:
             f"- Dark-frame ROI: `{dark_roi or params.get('darkCropHeight')}`",
             f"- Archive-box OCR: `{str(params.get('archiveBoxOcr', False)).lower()}`",
             f"- Archive-box re-extract scale: `{params.get('archiveBoxScale', '')}`",
+            f"- Archive-box crop mode: `{md_escape(params.get('archiveBoxCropMode') or '')}`",
+            f"- SNS-interface OCR: `{str(params.get('snsInterfaceOcr', False)).lower()}`",
+            f"- SNS-interface crop mode: `{md_escape(params.get('snsInterfaceCropMode') or '')}`",
+            f"- OCR dictionary: `{str(params.get('ocrDictionary', False)).lower()}`",
+            f"- OCR dictionary chars: `{params.get('ocrDictionaryCharCount', 0)}`",
+            f"- OCR dictionary hash: `{md_escape(params.get('ocrDictionaryHash') or '')}`",
             f"- OCR language: `{md_escape(params.get('ocrLang'))}`",
+            f"- EasyOCR paragraph: `{str(params.get('easyocrParagraph', False)).lower()}`",
         ])
     stats = payload.get("stats") if isinstance(payload.get("stats"), dict) else {}
     if stats:
@@ -1658,12 +1985,12 @@ def write_video_markdown(report_path: Path, payload: dict[str, Any]) -> None:
             f"- Sampled frames: `{stats.get('sampledFrames', 0)}`",
             f"- Dark near-full OCR frames: `{stats.get('darkFullscreenFrames', 0)}`",
             f"- Archive-box detected frames: `{stats.get('archiveBoxDetectedFrames', 0)}`",
-            f"- Archive-box OCR candidate frames: `{stats.get('archiveBoxOcrCandidateFrames', 0)}`",
+            f"- Archive-box OCR frames: `{stats.get('archiveBoxOcrFrames', 0)}`",
             f"- Archive-box kept text frames: `{stats.get('archiveBoxNonEmptyFrames', 0)}`",
-            f"- OCR candidate frames: `{stats.get('ocrCandidateFrames', stats.get('sampledFrames', 0))}`",
-            f"- Prefilter skipped blank frames: `{stats.get('prefilterSkippedBlankFrames', 0)}`",
-            f"- Prefilter skipped duplicate frames: `{stats.get('prefilterSkippedDuplicateFrames', 0)}`",
-            f"- Prefilter forced duplicate-looking frames: `{stats.get('prefilterForcedDuplicateFrames', 0)}`",
+            f"- SNS-interface detected frames: `{stats.get('snsInterfaceDetectedFrames', 0)}`",
+            f"- SNS-interface OCR frames: `{stats.get('snsInterfaceOcrFrames', 0)}`",
+            f"- SNS-interface kept text frames: `{stats.get('snsInterfaceNonEmptyFrames', 0)}`",
+            f"- OCR frames: `{stats.get('ocrFrames', stats.get('sampledFrames', 0))}`",
             f"- Raw OCR frames with text: `{stats.get('rawTextFrames', stats.get('nonEmptyFrames', 0))}`",
             f"- Kept OCR frames with text: `{stats.get('nonEmptyFrames', 0)}`",
             f"- Filtered OCR frames: `{stats.get('filteredFrames', 0)}`",
@@ -1860,17 +2187,12 @@ def process_video(
         ocr_started = time.monotonic()
         if easyocr_reader is None:
             raise RuntimeError("EasyOCR reader was not initialized")
-        ocr_frame_pairs, prefilter_stats = select_ocr_frame_pairs(
-            frame_paths,
-            dark_sample_index_set,
-            args,
-            label=f"[{path.name}]",
-        )
+        ocr_frame_pairs = list(enumerate(frame_paths))
         ocr_frame_paths = [image_path for _sample_index, image_path in ocr_frame_pairs]
-        if frame_paths:
+        if ocr_frame_paths:
             print(
                 f"[{path.name}] running EasyOCR "
-                f"({'GPU' if not args.easyocr_cpu else 'CPU'}) on {len(ocr_frame_paths)}/{len(frame_paths)} frame(s) "
+                f"({'GPU' if not args.easyocr_cpu else 'CPU'}) on {len(ocr_frame_paths)} primary OCR crop(s) "
                 f"(frame_batch={args.easyocr_frame_batch_size}, recognizer_batch={args.easyocr_batch_size})..."
             )
         frame_texts = run_easyocr_batch(
@@ -1890,21 +2212,34 @@ def process_video(
             "archiveBoxPanelCropFrames": 0,
             "archiveBoxPanelFallbackFrames": 0,
             "archiveBoxPanelCropErrors": 0,
-            "archiveBoxOcrCandidateFrames": 0,
-            "archiveBoxPrefilterSkippedBlankFrames": 0,
-            "archiveBoxPrefilterSkippedDuplicateFrames": 0,
-            "archiveBoxPrefilterForcedDuplicateFrames": 0,
-            "archiveBoxPrefilterErrors": 0,
+            "archiveBoxOcrFrames": 0,
             "archiveBoxRawTextFrames": 0,
             "archiveBoxNonEmptyFrames": 0,
             "archiveBoxFilteredFrames": 0,
         }
+        sns_stats = {
+            "snsInterfaceScannedFrames": 0,
+            "snsInterfaceDetectedFrames": 0,
+            "snsInterfaceDetectionErrors": 0,
+            "snsInterfaceSkippedArchiveFrames": 0,
+            "snsInterfaceFullFrames": 0,
+            "snsInterfacePanelFrames": 0,
+            "snsInterfacePanelCropFrames": 0,
+            "snsInterfacePanelFallbackFrames": 0,
+            "snsInterfacePanelCropErrors": 0,
+            "snsInterfaceOcrFrames": 0,
+            "snsInterfaceRawTextFrames": 0,
+            "snsInterfaceNonEmptyFrames": 0,
+            "snsInterfaceFilteredFrames": 0,
+        }
+        archive_sample_index_set: set[int] = set()
         if not args.disable_archive_box_ocr:
             archive_sample_indices, first_pass_box_features, archive_detect_stats = detect_archive_box_samples(
                 frame_paths,
                 args,
                 label=f"[{path.name}]",
             )
+            archive_sample_index_set = set(archive_sample_indices)
             archive_stats.update(archive_detect_stats)
             if archive_sample_indices:
                 archive_full_paths = extract_archive_fullscreen_frames(
@@ -1936,19 +2271,11 @@ def process_video(
                     sample_index: metadata
                     for sample_index, _panel_path, metadata in archive_panel_rows
                 }
-                archive_pairs, archive_prefilter_stats = select_ocr_indexed_pairs(
-                    [(sample_index, panel_path) for sample_index, panel_path, _metadata in archive_panel_rows],
-                    set(),
-                    args,
-                    label=f"[{path.name}] archive-box",
-                )
-                archive_stats.update({
-                    "archiveBoxOcrCandidateFrames": archive_prefilter_stats.get("ocrCandidateFrames", 0),
-                    "archiveBoxPrefilterSkippedBlankFrames": archive_prefilter_stats.get("prefilterSkippedBlankFrames", 0),
-                    "archiveBoxPrefilterSkippedDuplicateFrames": archive_prefilter_stats.get("prefilterSkippedDuplicateFrames", 0),
-                    "archiveBoxPrefilterForcedDuplicateFrames": archive_prefilter_stats.get("prefilterForcedDuplicateFrames", 0),
-                    "archiveBoxPrefilterErrors": archive_prefilter_stats.get("prefilterErrors", 0),
-                })
+                archive_pairs = [
+                    (sample_index, panel_path)
+                    for sample_index, panel_path, _metadata in archive_panel_rows
+                ]
+                archive_stats["archiveBoxOcrFrames"] = len(archive_pairs)
                 archive_frame_texts = run_easyocr_batch(
                     easyocr_reader,
                     [image_path for _sample_index, image_path in archive_pairs],
@@ -1987,6 +2314,93 @@ def process_video(
                     archive_stats["archiveBoxRawTextFrames"] - archive_stats["archiveBoxNonEmptyFrames"],
                 )
 
+        if not args.disable_sns_interface_ocr:
+            sns_sample_indices, sns_features, sns_detect_stats = detect_sns_interface_samples(
+                frame_paths,
+                args,
+                label=f"[{path.name}]",
+            )
+            sns_stats.update(sns_detect_stats)
+            if archive_sample_index_set:
+                before_count = len(sns_sample_indices)
+                sns_sample_indices = [
+                    sample_index
+                    for sample_index in sns_sample_indices
+                    if sample_index not in archive_sample_index_set
+                ]
+                sns_stats["snsInterfaceSkippedArchiveFrames"] = before_count - len(sns_sample_indices)
+            if sns_sample_indices:
+                sns_full_paths = extract_sns_interface_fullscreen_frames(
+                    path,
+                    frame_dir,
+                    ffmpeg=ffmpeg,
+                    ffmpeg_hwaccel=args.ffmpeg_hwaccel,
+                    frame_step=args.frame_step,
+                    scale=args.archive_box_scale,
+                    sample_indices=sns_sample_indices,
+                    cache_enabled=cache_enabled,
+                )
+                sns_stats["snsInterfaceFullFrames"] = len(sns_full_paths)
+                if len(sns_full_paths) != len(sns_sample_indices):
+                    print(
+                        f"[{path.name}] warning: expected {len(sns_sample_indices)} SNS full-frame crop(s), "
+                        f"got {len(sns_full_paths)}",
+                        file=sys.stderr,
+                    )
+                sns_panel_rows, sns_panel_stats = crop_sns_interface_panel_frames(
+                    frame_dir,
+                    sns_full_paths,
+                    sns_sample_indices,
+                    args,
+                    cache_enabled=cache_enabled,
+                )
+                sns_stats.update(sns_panel_stats)
+                sns_panel_meta_by_sample = {
+                    sample_index: metadata
+                    for sample_index, _panel_path, metadata in sns_panel_rows
+                }
+                sns_pairs = [
+                    (sample_index, panel_path)
+                    for sample_index, panel_path, _metadata in sns_panel_rows
+                ]
+                sns_stats["snsInterfaceOcrFrames"] = len(sns_pairs)
+                sns_frame_texts = run_easyocr_batch(
+                    easyocr_reader,
+                    [image_path for _sample_index, image_path in sns_pairs],
+                    args,
+                    label=f"[{path.name}] SNS-interface",
+                    started=ocr_started,
+                )
+                for (sample_index, image_path), raw_text in zip(sns_pairs, sns_frame_texts):
+                    original_frame = sample_index * args.frame_step
+                    seconds = observation_time(original_frame, fps)
+                    raw_normalized = normalize_ocr_text(raw_text)
+                    if raw_normalized:
+                        sns_stats["snsInterfaceRawTextFrames"] += 1
+                    text = normalize_ocr_text(raw_text, args)
+                    if text or args.include_empty:
+                        sns_stats["snsInterfaceNonEmptyFrames"] += 1
+                        observations.append({
+                            "sampleIndex": sample_index,
+                            "frame": original_frame,
+                            "timeSeconds": round(seconds, 3) if seconds is not None else None,
+                            "time": seconds_to_clock(seconds),
+                            "text": text,
+                            "rawText": raw_normalized,
+                            "ocrCrop": "sns-interface",
+                            "ocrPass": "sns-interface",
+                            "blackPercent": black_percent_by_sample.get(sample_index),
+                            "image": rel_path(image_path) if args.keep_frames else None,
+                            "snsInterface": {
+                                "detector": sns_features.get(sample_index),
+                                "fullFrame": sns_panel_meta_by_sample.get(sample_index) or {},
+                            },
+                        })
+                sns_stats["snsInterfaceFilteredFrames"] = max(
+                    0,
+                    sns_stats["snsInterfaceRawTextFrames"] - sns_stats["snsInterfaceNonEmptyFrames"],
+                )
+
         for (sample_index, image_path), raw_text in zip(ocr_frame_pairs, frame_texts):
             original_frame = sample_index * args.frame_step
             seconds = observation_time(original_frame, fps)
@@ -1995,40 +2409,61 @@ def process_video(
                 raw_nonempty_frames += 1
             text = normalize_ocr_text(raw_text, args)
             if text or args.include_empty:
-                observations.append({
+                base_crop = "dark-fullscreen" if sample_index in dark_sample_index_set else args.crop
+                observation = {
                     "sampleIndex": sample_index,
                     "frame": original_frame,
                     "timeSeconds": round(seconds, 3) if seconds is not None else None,
                     "time": seconds_to_clock(seconds),
                     "text": text,
                     "rawText": raw_normalized,
-                    "ocrCrop": "dark-fullscreen" if sample_index in dark_sample_index_set else args.crop,
+                    "ocrCrop": base_crop,
                     "ocrPass": "primary",
                     "blackPercent": black_percent_by_sample.get(sample_index),
                     "image": rel_path(image_path) if args.keep_frames else None,
+                }
+                observations.append({
+                    **observation,
                 })
             if not args.keep_frames:
                 try:
                     image_path.unlink()
                 except OSError:
                     pass
+
+        def observation_pass_order(obs: dict[str, Any]) -> int:
+            ocr_pass = safe_key(obs.get("ocrPass"))
+            if ocr_pass == "primary":
+                return 0
+            if ocr_pass == "sns-interface":
+                return 1
+            if ocr_pass == "archive-box":
+                return 2
+            return 2
+
         observations.sort(key=lambda obs: (
             int(obs.get("sampleIndex") if obs.get("sampleIndex") is not None else -1),
-            1 if safe_key(obs.get("ocrPass")) == "archive-box" else 0,
+            observation_pass_order(obs),
             safe_key(obs.get("text")),
         ))
         segments = collapse_segments([obs for obs in observations if safe_key(obs.get("text"))])
         primary_kept_frames = sum(
             1
             for obs in observations
-            if safe_key(obs.get("text")) and safe_key(obs.get("ocrPass")) != "archive-box"
+            if safe_key(obs.get("text")) and safe_key(obs.get("ocrPass")) == "primary"
         )
         kept_frames = sum(1 for obs in observations if safe_key(obs.get("text")))
-        raw_text_frames_total = raw_nonempty_frames + archive_stats["archiveBoxRawTextFrames"]
+        raw_text_frames_total = (
+            raw_nonempty_frames
+            + archive_stats["archiveBoxRawTextFrames"]
+            + sns_stats["snsInterfaceRawTextFrames"]
+        )
         filtered_frames = max(0, raw_text_frames_total - kept_frames)
         print(
             f"[{path.name}] OCR filter: primary_raw_text={raw_nonempty_frames}, "
-            f"primary_kept={primary_kept_frames}, archive_kept={archive_stats['archiveBoxNonEmptyFrames']}, "
+            f"primary_kept={primary_kept_frames}, "
+            f"sns_kept={sns_stats['snsInterfaceNonEmptyFrames']}, "
+            f"archive_kept={archive_stats['archiveBoxNonEmptyFrames']}, "
             f"kept={kept_frames}, filtered={filtered_frames}, "
             f"observations={len(observations)}, segments={len(segments)}"
         )
@@ -2039,9 +2474,10 @@ def process_video(
             "frameCache": frame_cache_stats,
             "stats": {
                 "sampledFrames": len(frame_paths),
+                "ocrFrames": len(ocr_frame_paths),
                 "darkFullscreenFrames": dark_replacement_count,
-                **prefilter_stats,
                 **archive_stats,
+                **sns_stats,
                 "primaryRawTextFrames": raw_nonempty_frames,
                 "primaryNonEmptyFrames": primary_kept_frames,
                 "rawTextFrames": raw_text_frames_total,
@@ -2055,7 +2491,7 @@ def process_video(
         })
         print(
             f"[{path.name}] complete: sampled={len(frame_paths)} "
-            f"ocr_candidates={prefilter_stats.get('ocrCandidateFrames', len(frame_paths))} "
+            f"ocr_frames={len(ocr_frame_paths)} "
             f"raw_text_frames={payload['stats']['rawTextFrames']} "
             f"kept_text_frames={payload['stats']['nonEmptyFrames']} "
             f"filtered={payload['stats']['filteredFrames']} "
@@ -2107,6 +2543,7 @@ def write_blocked_video_report(
         "parameters": params,
         "stats": {
             "sampledFrames": 0,
+            "ocrFrames": 0,
             "darkFullscreenFrames": 0,
             "rawTextFrames": 0,
             "nonEmptyFrames": 0,
@@ -2151,8 +2588,8 @@ def write_index(entries: list[dict[str, Any]], params: dict[str, Any], *, dry_ru
         f"- Video root: `{payload['videoRoot']}`",
         f"- Dry run: `{str(dry_run).lower()}`",
         "",
-        "| status | part | missions | video | sampled | ocr | blank skip | duplicate skip | dark full | raw text | kept text | filtered | segments | report |",
-        "|---|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",
+        "| status | part | missions | video | sampled | ocr | dark full | raw text | kept text | filtered | segments | report |",
+        "|---|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for entry in entries:
         stats = entry.get("stats") if isinstance(entry.get("stats"), dict) else {}
@@ -2164,9 +2601,7 @@ def write_index(entries: list[dict[str, Any]], params: dict[str, Any], *, dry_ru
             f"| `{md_escape(', '.join(entry.get('missions') or []))}` "
             f"| `{md_escape(entry.get('name'))}` "
             f"| {stats.get('sampledFrames', 0)} "
-            f"| {stats.get('ocrCandidateFrames', stats.get('sampledFrames', 0))} "
-            f"| {stats.get('prefilterSkippedBlankFrames', 0)} "
-            f"| {stats.get('prefilterSkippedDuplicateFrames', 0)} "
+            f"| {stats.get('ocrFrames', stats.get('sampledFrames', 0))} "
             f"| {stats.get('darkFullscreenFrames', 0)} "
             f"| {stats.get('rawTextFrames', stats.get('nonEmptyFrames', 0))} "
             f"| {stats.get('nonEmptyFrames', 0)} "
@@ -2215,16 +2650,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     advanced = argparse.SUPPRESS
     parser.add_argument("--video-root", type=Path, default=VIDEO_ROOT, help="Directory containing final video files")
-    parser.add_argument("--video", action="append", default=[], help="Only process filenames containing this text")
-    parser.add_argument("--frame-step", type=int, default=45, help="OCR every Nth source frame")
-    parser.add_argument("--crop", choices=["lower-half", "lower-third", "full"], default="lower-half")
+    parser.add_argument("--frame-step", type=int, default=10, help="OCR every Nth source frame")
+    parser.add_argument("--crop", choices=["subtitle", "lower-half", "lower-third", "full"], default="subtitle")
     parser.add_argument(
         "--scale",
         type=float,
-        default=0.75,
+        default=1.0,
         help=advanced,
     )
-    parser.add_argument("--ocr-lang", default="chi_sim+eng", help=advanced)
+    parser.add_argument("--ocr-lang", default="chi_sim", help=advanced)
     parser.add_argument("--easyocr-cpu", action="store_true", help="Run EasyOCR on CPU instead of CUDA")
     parser.add_argument(
         "--easyocr-model-dir",
@@ -2233,21 +2667,22 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help=advanced,
     )
     parser.add_argument("--easyocr-no-download", action="store_true", help=advanced)
-    parser.add_argument("--easyocr-frame-batch-size", type=int, default=32, help=advanced)
+    parser.add_argument("--easyocr-frame-batch-size", type=int, default=8, help=advanced)
     parser.add_argument("--easyocr-batch-size", type=int, default=32, help=advanced)
-    parser.add_argument("--easyocr-cleanup-interval", type=int, default=1, help=advanced)
+    parser.add_argument("--easyocr-cleanup-interval", type=int, default=0, help=advanced)
     parser.add_argument("--easyocr-min-confidence", type=float, default=0.15, help=advanced)
-    parser.add_argument("--low-memory", action="store_true", help="Cap EasyOCR frame and recognizer batches at 8 and clean up after every batch")
-    parser.add_argument("--min-text-length", type=int, default=4, help=advanced)
+    parser.add_argument("--disable-ocr-dictionary", action="store_true", help=advanced)
+    parser.add_argument("--ocr-dictionary-conv-root", type=Path, default=DEFAULT_OCR_DICTIONARY_CONV_ROOT, help=advanced)
+    parser.add_argument("--ocr-dictionary-extra-chars", default="", help=advanced)
+    parser.add_argument("--min-text-length", type=int, default=2, help=advanced)
     parser.add_argument("--min-normalized-chars", type=int, default=2, help=advanced)
-    parser.add_argument("--min-cjk-chars", type=int, default=2, help=advanced)
-    parser.add_argument("--min-ascii-letters", type=int, default=6, help=advanced)
+    parser.add_argument("--min-cjk-chars", type=int, default=1, help=advanced)
+    parser.add_argument("--min-ascii-letters", type=int, default=2, help=advanced)
     parser.add_argument("--min-ascii-words", type=int, default=2, help=advanced)
     parser.add_argument("--max-symbol-ratio", type=float, default=0.7, help=advanced)
     parser.add_argument("--keep-overlay-text", action="store_true", help=advanced)
     parser.add_argument("--keep-mixed-ocr-lines", action="store_true", help=advanced)
     parser.add_argument("--keep-english-only", action="store_true", help=advanced)
-    parser.add_argument("--drop-short-cjk-names", action="store_true", help=advanced)
     parser.add_argument("--disable-dark-fullscreen-ocr", action="store_true", help=advanced)
     parser.add_argument("--dark-frame-threshold", type=float, default=85.0, help=advanced)
     parser.add_argument("--dark-pixel-threshold", type=int, default=32, help=advanced)
@@ -2260,14 +2695,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--archive-box-min-fill-ratio", type=float, default=0.45, help=advanced)
     parser.add_argument("--archive-box-crop-padding", type=float, default=0.025, help=advanced)
     parser.add_argument("--archive-box-scale", type=float, default=1.0, help=advanced)
-    parser.add_argument("--disable-frame-prefilter", action="store_true", help=advanced)
-    parser.add_argument("--prefilter-duplicate-threshold", type=float, default=0.012, help=advanced)
-    parser.add_argument("--prefilter-max-duplicate-skip", type=int, default=5, help=advanced)
-    parser.add_argument("--prefilter-blank-stddev", type=float, default=2.5, help=advanced)
-    parser.add_argument("--prefilter-blank-bright-ratio", type=float, default=0.002, help=advanced)
-    parser.add_argument("--prefilter-bright-threshold", type=int, default=185, help=advanced)
-    parser.add_argument("--prefilter-focus-height", type=float, default=0.72, help=advanced)
-    parser.add_argument("--fast", action="store_true", help=advanced)
+    parser.add_argument("--disable-sns-interface-ocr", action="store_true", help=advanced)
+    parser.add_argument("--sns-interface-light-threshold", type=int, default=200, help=advanced)
+    parser.add_argument("--sns-interface-min-row-bright-ratio", type=float, default=0.12, help=advanced)
+    parser.add_argument("--sns-interface-min-band-width-ratio", type=float, default=0.22, help=advanced)
+    parser.add_argument("--sns-interface-max-band-width-ratio", type=float, default=0.48, help=advanced)
+    parser.add_argument("--sns-interface-min-band-height-ratio", type=float, default=0.045, help=advanced)
+    parser.add_argument("--sns-interface-max-band-height-ratio", type=float, default=0.14, help=advanced)
+    parser.add_argument("--sns-interface-min-band-y0-ratio", type=float, default=0.25, help=advanced)
+    parser.add_argument("--sns-interface-max-band-y0-ratio", type=float, default=0.80, help=advanced)
     parser.add_argument("--limit", type=int, default=None, help="Limit number of videos to process")
     parser.add_argument("--limit-frames", type=int, default=None, help="Limit sampled frames per video for smoke tests")
     parser.add_argument("--include-empty", action="store_true", help=advanced)
@@ -2297,14 +2733,6 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--easyocr-batch-size must be greater than zero")
     if args.easyocr_cleanup_interval < 0:
         parser.error("--easyocr-cleanup-interval must be non-negative")
-    if args.low_memory:
-        args.easyocr_frame_batch_size = min(args.easyocr_frame_batch_size, 8)
-        args.easyocr_batch_size = min(args.easyocr_batch_size, 8)
-        args.easyocr_cleanup_interval = 1
-    if args.fast:
-        args.frame_step = max(args.frame_step, 60)
-        args.scale = min(args.scale, 0.75)
-        args.easyocr_cleanup_interval = max(1, args.easyocr_cleanup_interval)
     if not (0 <= args.easyocr_min_confidence <= 1):
         parser.error("--easyocr-min-confidence must be between 0 and 1")
     if args.min_text_length < 0:
@@ -2325,6 +2753,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--dark-pixel-threshold must be between 0 and 255")
     if not (0 <= args.archive_box_light_threshold <= 255):
         parser.error("--archive-box-light-threshold must be between 0 and 255")
+    if not (0 <= args.sns_interface_light_threshold <= 255):
+        parser.error("--sns-interface-light-threshold must be between 0 and 255")
     for option_name in (
         "archive_box_min_bright_ratio",
         "archive_box_min_area_ratio",
@@ -2332,23 +2762,23 @@ def main(argv: list[str] | None = None) -> int:
         "archive_box_min_height_ratio",
         "archive_box_min_fill_ratio",
         "archive_box_crop_padding",
+        "sns_interface_min_row_bright_ratio",
+        "sns_interface_min_band_width_ratio",
+        "sns_interface_max_band_width_ratio",
+        "sns_interface_min_band_height_ratio",
+        "sns_interface_max_band_height_ratio",
+        "sns_interface_min_band_y0_ratio",
+        "sns_interface_max_band_y0_ratio",
     ):
         value = float(getattr(args, option_name))
         if not (0 <= value <= 1):
             parser.error(f"--{option_name.replace('_', '-')} must be between 0 and 1")
-    if not (0 <= args.prefilter_duplicate_threshold <= 1):
-        parser.error("--prefilter-duplicate-threshold must be between 0 and 1")
-    if args.prefilter_max_duplicate_skip < 0:
-        parser.error("--prefilter-max-duplicate-skip must be non-negative")
-    if args.prefilter_blank_stddev < 0:
-        parser.error("--prefilter-blank-stddev must be non-negative")
-    if not (0 <= args.prefilter_blank_bright_ratio <= 1):
-        parser.error("--prefilter-blank-bright-ratio must be between 0 and 1")
-    if not (0 <= args.prefilter_bright_threshold <= 255):
-        parser.error("--prefilter-bright-threshold must be between 0 and 255")
-    if not (0.1 <= args.prefilter_focus_height <= 1):
-        parser.error("--prefilter-focus-height must be between 0.1 and 1")
-
+    if args.sns_interface_min_band_width_ratio > args.sns_interface_max_band_width_ratio:
+        parser.error("--sns-interface-min-band-width-ratio must be <= --sns-interface-max-band-width-ratio")
+    if args.sns_interface_min_band_height_ratio > args.sns_interface_max_band_height_ratio:
+        parser.error("--sns-interface-min-band-height-ratio must be <= --sns-interface-max-band-height-ratio")
+    if args.sns_interface_min_band_y0_ratio > args.sns_interface_max_band_y0_ratio:
+        parser.error("--sns-interface-min-band-y0-ratio must be <= --sns-interface-max-band-y0-ratio")
     global VIDEO_ROOT
     VIDEO_ROOT = args.video_root
     ffmpeg = resolve_executable("ffmpeg", args.ffmpeg)
@@ -2365,6 +2795,11 @@ def main(argv: list[str] | None = None) -> int:
         print("ffmpeg decode acceleration: CUDA/NVDEC requested with CPU fallback")
     else:
         print("ffmpeg decode acceleration: CPU")
+    ocr_dictionary = build_ocr_dictionary_allowlist(args)
+    args.easyocr_allowlist = ocr_dictionary.get("allowlist")
+    args.ocr_dictionary_source = ocr_dictionary.get("source") or ""
+    args.ocr_dictionary_char_count = int(ocr_dictionary.get("charCount") or 0)
+    args.ocr_dictionary_hash = safe_key(ocr_dictionary.get("hash"))
     params = params_signature(args)
 
     print(
@@ -2373,26 +2808,34 @@ def main(argv: list[str] | None = None) -> int:
         f"scale={args.scale}, easyocr_gpu={not args.easyocr_cpu}, "
         f"ffmpeg_hwaccel={args.ffmpeg_hwaccel}, "
         f"frame_batch={args.easyocr_frame_batch_size}, recognizer_batch={args.easyocr_batch_size}, "
-        f"cleanup_interval={args.easyocr_cleanup_interval}, low_memory={args.low_memory}, "
-        f"fast_profile={args.frame_step >= 60 and args.scale <= 0.75}, "
+        f"cleanup_interval={args.easyocr_cleanup_interval}, paragraph=True, "
         f"dark_fullscreen={not args.disable_dark_fullscreen_ocr}, "
         f"archive_box_ocr={not args.disable_archive_box_ocr}, "
         f"archive_box_scale={args.archive_box_scale}, "
-        f"frame_prefilter={not args.disable_frame_prefilter}, "
-        f"prefilter_max_duplicate_skip={args.prefilter_max_duplicate_skip}, "
+        f"ocr_dictionary={bool(args.easyocr_allowlist)}, "
+        f"ocr_dictionary_chars={args.ocr_dictionary_char_count}, "
+        f"ocr_dictionary_hash={args.ocr_dictionary_hash or '-'}, "
         f"frame_cache={args.keep_frames}"
     )
+    if args.easyocr_allowlist:
+        print(
+            "OCR dictionary allowlist: "
+            f"{args.ocr_dictionary_char_count} char(s) from {args.ocr_dictionary_source} "
+            f"({ocr_dictionary.get('files', 0)} files, {ocr_dictionary.get('strings', 0)} strings, "
+            f"cache_hit={str(bool(ocr_dictionary.get('cacheHit'))).lower()})"
+        )
+    else:
+        print("OCR dictionary allowlist: disabled")
     print(f"OCR reports will be written under {rel_path(REPORT_DIR)}")
     refreshed_markdown = refresh_existing_video_markdown_reports()
     if refreshed_markdown:
         print(f"Refreshed {refreshed_markdown} existing per-video OCR markdown report(s)")
 
-    videos = discover_videos(VIDEO_ROOT, args.video)
+    videos = discover_videos(VIDEO_ROOT)
     if args.limit is not None:
         videos = videos[: args.limit]
     print(
-        f"Scanning {rel_path(VIDEO_ROOT)} for final .mp4 videos"
-        f"{' matching ' + ', '.join(args.video) if args.video else ''}..."
+        f"Scanning {rel_path(VIDEO_ROOT)} for final .mp4 videos..."
     )
 
     entries: list[dict[str, Any]] = []

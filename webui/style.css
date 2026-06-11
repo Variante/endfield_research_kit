@@ -439,7 +439,8 @@ html, body {
   font-size: 11px;
   flex-shrink: 0;
 }
-.story-order-mission-lock-button {
+.story-order-mission-lock-button,
+.story-order-mission-move-unused-button {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
@@ -457,10 +458,22 @@ html, body {
   cursor: pointer;
   transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
 }
-.story-order-mission-lock-button .story-order-pin-icon {
+.story-order-mission-lock-button .story-order-pin-icon,
+.story-order-mission-move-unused-button .story-order-pin-icon {
   width: 12px;
   height: 12px;
   flex: 0 0 auto;
+}
+.story-order-mission-move-unused-button:not(:disabled):hover,
+.story-order-mission-move-unused-button:not(:disabled):focus-visible {
+  border-color: var(--border);
+  background: rgba(var(--fg-rgb), 0.16);
+  color: var(--text);
+  outline: none;
+}
+.story-order-mission-move-unused-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 .story-order-mission-lock-button.is-editable {
   border-color: var(--border);
@@ -2419,7 +2432,6 @@ mark { background: rgba(var(--fg-rgb), 0.08); color: var(--text); padding: 0 2px
 .rich-tag {
   color: var(--accent);
   font-weight: 600;
-  border-bottom: 1px dotted var(--accent);
 }
 
 .rich-strike {
@@ -4262,11 +4274,92 @@ body:not(.show-debug) .filter-section[data-filter-section="recovery-method"] {
 /* Hide mission-order editing controls unless the debug toggle is on */
 body:not(.show-debug) #story-order-editor-row,
 body:not(.show-debug) .story-order-mission-lock-button,
+body:not(.show-debug) .story-order-mission-move-unused-button,
 body:not(.show-debug) .story-order-drag-handle,
-body:not(.show-debug) .story-order-save-status {
+body:not(.show-debug) .story-order-save-status,
+body:not(.show-debug) .story-order-unused-toggle,
+body:not(.show-debug) .story-order-remove-from-mission {
   display: none !important;
 }
 
+/* "Possibly unused" badge — informational, always visible */
+.story-order-unused-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #8a6a00;
+  background: rgba(245, 196, 0, 0.18);
+  border: 1px solid rgba(184, 134, 0, 0.45);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.row.item.story-order-possibly-unused .item-key,
+.row.item.story-order-possibly-unused .item-preview {
+  opacity: 0.55;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+.row.item.story-order-possibly-unused.selected .item-key,
+.row.item.story-order-possibly-unused.selected .item-preview {
+  opacity: 0.8;
+}
+
+/* Debug toggle — small inline checkbox-style button */
+.story-order-unused-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.story-order-unused-toggle:hover,
+.story-order-unused-toggle:focus-visible {
+  color: #8a6a00;
+  border-color: rgba(184, 134, 0, 0.6);
+  background: rgba(245, 196, 0, 0.1);
+  outline: none;
+}
+.story-order-unused-toggle.is-on {
+  color: #8a6a00;
+  border-color: rgba(184, 134, 0, 0.6);
+  background: rgba(245, 196, 0, 0.18);
+}
+.story-order-unused-toggle-mark {
+  display: inline-block;
+  width: 10px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Remove-from-mission button — for entries whose key lacks the mission code */
+.story-order-remove-from-mission {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #b03030;
+  background: rgba(220, 60, 60, 0.08);
+  border: 1px solid rgba(176, 48, 48, 0.45);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.story-order-remove-from-mission:hover,
+.story-order-remove-from-mission:focus-visible {
+  background: rgba(220, 60, 60, 0.2);
+  outline: none;
+}
 /* Sidebar header toggle buttons (Show debug, Gender) — match #reset chrome,
    filled state when aria-pressed="true" */
 .header-toggle-button {

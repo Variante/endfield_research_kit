@@ -58,10 +58,21 @@ const UI_TEXTS = {
     storyOrderMissionEditable: "\u53ef\u7f16\u8f91",
     storyOrderLockMissionTitle: "\u53ef\u7f16\u8f91\u2014\u2014\u70b9\u51fb\u9501\u5b9a\u8be5\u4efb\u52a1\u7684\u987a\u5e8f\uff0c\u7981\u6b62\u624b\u52a8\u8c03\u6574",
     storyOrderUnlockMissionTitle: "\u5df2\u9501\u5b9a\u2014\u2014\u70b9\u51fb\u89e3\u9501\u4ee5\u62d6\u52a8\u8c03\u6574\u987a\u5e8f",
+    storyOrderMoveUnusedToEnd: "\u672a\u4f7f\u7528\u7f6e\u5e95",
+    storyOrderMoveUnusedToEndTitle: "\u5c06\u8be5\u4efb\u52a1\u6240\u6709\u6807\u8bb0\u4e3a\u201c\u53ef\u80fd\u672a\u4f7f\u7528\u201d\u7684\u6587\u4ef6\u79fb\u5230\u672b\u5c3e",
+    storyOrderMoveUnusedToEndNone: "\u8be5\u4efb\u52a1\u6ca1\u6709\u6807\u8bb0\u4e3a\u201c\u53ef\u80fd\u672a\u4f7f\u7528\u201d\u7684\u6587\u4ef6",
     storyOrderDragHandle: "\u62d6\u52a8\u8c03\u6574\u987a\u5e8f",
     storyOrderSaveSaving: "\u4fdd\u5b58\u4e2d",
     storyOrderSaveSaved: "\u5df2\u4fdd\u5b58",
     storyOrderSaveFailed: "\u4fdd\u5b58\u5931\u8d25",
+    storyOrderPossiblyUnusedBadge: "\u53ef\u80fd\u672a\u4f7f\u7528",
+    storyOrderPossiblyUnusedTitle: "\u53ef\u80fd\u672a\u5728\u6700\u7ec8\u7248\u672c\u4e2d\u4f7f\u7528",
+    storyOrderUnusedMark: "\u6807\u8bb0\u4e3a\u672a\u4f7f\u7528",
+    storyOrderUnusedClear: "\u53d6\u6d88\u672a\u4f7f\u7528\u6807\u8bb0",
+    storyOrderUnusedMarkTitle: "\u6807\u8bb0\u4e3a\u53ef\u80fd\u672a\u5728\u6210\u54c1\u4e2d\u4f7f\u7528",
+    storyOrderUnusedClearTitle: "\u6e05\u9664\u201c\u53ef\u80fd\u672a\u4f7f\u7528\u201d\u6807\u8bb0",
+    storyOrderRemoveFromMission: "\u4ece\u8be5\u4efb\u52a1\u79fb\u9664",
+    storyOrderRemoveFromMissionTitle: "\u6587\u4ef6\u540d\u4e0d\u5305\u542b\u4efb\u52a1\u4ee3\u7801 {mission}\u2014\u2014\u70b9\u51fb\u4ece\u8be5\u4efb\u52a1\u987a\u5e8f\u4e2d\u79fb\u9664",
     reset: "\u91cd\u7f6e\u7b5b\u9009",
     listUnit: "\u6761",
     lineUnit: "\u884c",
@@ -324,10 +335,21 @@ const UI_TEXTS = {
     storyOrderMissionEditable: "Editable",
     storyOrderLockMissionTitle: "Editable — click to lock this mission and disable manual reordering",
     storyOrderUnlockMissionTitle: "Locked — click to unlock so you can drag rows to reorder",
+    storyOrderMoveUnusedToEnd: "unused → end",
+    storyOrderMoveUnusedToEndTitle: "Move every \"possibly unused\" entry in this mission to the bottom of its order",
+    storyOrderMoveUnusedToEndNone: "No entries are marked \"possibly unused\" in this mission",
     storyOrderDragHandle: "Drag to reorder",
     storyOrderSaveSaving: "Saving",
     storyOrderSaveSaved: "Saved",
     storyOrderSaveFailed: "Save failed",
+    storyOrderPossiblyUnusedBadge: "possibly unused",
+    storyOrderPossiblyUnusedTitle: "Marked as possibly not used in the final game",
+    storyOrderUnusedMark: "mark unused",
+    storyOrderUnusedClear: "unused",
+    storyOrderUnusedMarkTitle: "Mark this entry as possibly not used in the final game",
+    storyOrderUnusedClearTitle: "Clear the \"possibly unused\" flag",
+    storyOrderRemoveFromMission: "remove from mission",
+    storyOrderRemoveFromMissionTitle: "Filename does not contain mission code {mission} — click to remove it from this mission's order",
     reset: "Reset filters",
     listUnit: "items",
     lineUnit: "lines",
@@ -1754,10 +1776,14 @@ function storyMissionTypeFromId(mid) {
   return MISSION_STORY_TYPE_KEYS.has(missionType) ? missionType : "";
 }
 
-function entryStoryMissionId(entry) {
+function entryFoldStoryMissionId(entry, ignoreStoryMission = false) {
   if (!entry) return "";
-  const missionId = String(entry.storyMission || entry.m || "").trim().toLowerCase();
+  const missionId = String((ignoreStoryMission ? entry.m : (entry.storyMission || entry.m)) || "").trim().toLowerCase();
   return storyMissionTypeFromId(missionId) ? missionId : "";
+}
+
+function entryStoryMissionId(entry) {
+  return entryFoldStoryMissionId(entry);
 }
 
 function entryWikiCollectionGroup(entry) {
@@ -1768,13 +1794,13 @@ function entrySnsChatTableGroup(entry) {
   return String(entry && entry.m || "").trim().toLowerCase() === "snschattable";
 }
 
-function foldedEntryTypeKey(typeKey, entry) {
+function foldedEntryTypeKey(typeKey, entry, { ignoreStoryMission = false } = {}) {
   const normalized = String(typeKey || "").trim().toLowerCase();
   const family = normalized.startsWith("tablefamily:") ? normalized.slice("tablefamily:".length) : normalized;
   if (!normalized || normalized === "?") return DEFAULT_DATA_TYPE_KEY;
-  const storyMissionId = entryStoryMissionId(entry);
+  const storyMissionId = entryFoldStoryMissionId(entry, ignoreStoryMission);
   if (storyMissionId) return storyMissionTypeFromId(storyMissionId);
-  if (isMissionlessCutscene(entry)) return "worldtext";
+  if (isMissionlessCutscene(entry, ignoreStoryMission)) return "worldtext";
   if (entryWikiCollectionGroup(entry)) return "other";
   if (entrySnsChatTableGroup(entry)) return "other";
   if (entryTaskLike(entry)) return "other";
@@ -1784,9 +1810,9 @@ function foldedEntryTypeKey(typeKey, entry) {
   return typeKey;
 }
 
-function isMissionlessCutscene(entry) {
+function isMissionlessCutscene(entry, ignoreStoryMission = false) {
   if (!entry || String(entry.d || "") !== "cutscene") return false;
-  return !entryStoryMissionId(entry);
+  return !entryFoldStoryMissionId(entry, ignoreStoryMission);
 }
 
 function entryTaskLike(entry) {
@@ -1797,13 +1823,13 @@ function entryTaskLike(entry) {
   return /(?:^|[_:-])task(?:[_:-]|$)|tasktable/.test(text);
 }
 
-function entryDataType(entry) {
+function entryDataType(entry, { ignoreStoryMission = false } = {}) {
   if (!entry) return DEFAULT_DATA_TYPE_KEY;
   const entryKey = String(entry.k || "");
   const rawDataKind = String(entry.d || "").trim();
   const rawType = String(entry.t || "").trim();
   const normalizedType = rawType.toLowerCase();
-  const fold = (typeKey) => foldedEntryTypeKey(typeKey, entry);
+  const fold = (typeKey) => foldedEntryTypeKey(typeKey, entry, { ignoreStoryMission });
 
   if (entryKey.startsWith("misc_sr_") || String(entry.m || "").startsWith("sr_")) return fold("tablefamily:spaceship");
   if (rawDataKind === "sns") return "topic";
@@ -1848,6 +1874,41 @@ function entryDataType(entry) {
   return fold(rawType || DEFAULT_DATA_TYPE_KEY);
 }
 
+function entryMissionLinkedNativeDataTypes(entry) {
+  if (!entry || !entryStoryMissionId(entry)) return [];
+  if (!entryKeepsNativeGroupWhenMissionLinked(entry)) return [];
+
+  const out = [];
+  const seen = new Set();
+  const add = (typeKey) => {
+    const key = String(typeKey || "").trim();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    out.push(key);
+  };
+  add(entryDataType(entry, { ignoreStoryMission: true }));
+  add(entryOriginalEnvTalkDataType(entry, { ignoreStoryMission: true }));
+  add(entryPrtsDataType(entry));
+  return out;
+}
+
+function entryKeepsNativeGroupWhenMissionLinked(entry) {
+  if (!entry || !entryStoryMissionId(entry)) return false;
+  if (isPrtsArchiveEntry(entry)) return true;
+  if (entryHasTag(entry, "wiki") || entryHasTag(entry, "archive")) return true;
+  if (entryHasTag(entry, "envTalk")) return true;
+  return String(entry.k || "").startsWith("env_envTalk_");
+}
+
+function entryUsesMissionLinkedNativeDataType(entry, dataType) {
+  const key = String(dataType || "").trim();
+  if (!key) return false;
+  const storyMissionId = entryStoryMissionId(entry);
+  const storyType = storyMissionId ? storyMissionTypeFromId(storyMissionId) : "";
+  if (storyType && key === storyType) return false;
+  return entryMissionLinkedNativeDataTypes(entry).includes(key);
+}
+
 function entryDataTypes(entry) {
   if (!entry) return [DEFAULT_DATA_TYPE_KEY];
   if (Array.isArray(entry._dataTypesNormalized)) return entry._dataTypesNormalized;
@@ -1866,6 +1927,7 @@ function entryDataTypes(entry) {
   add(entryDataType(entry), true);
   add(entryOriginalEnvTalkDataType(entry));
   add(entryPrtsDataType(entry));
+  for (const dataType of entryMissionLinkedNativeDataTypes(entry)) add(dataType);
   if (String(entry.d || "").trim() === "sns") {
     const storyMissionId = entryStoryMissionId(entry);
     if (storyMissionId) add(storyMissionTypeFromId(storyMissionId));
@@ -1875,13 +1937,13 @@ function entryDataTypes(entry) {
   return out;
 }
 
-function entryOriginalEnvTalkDataType(entry) {
+function entryOriginalEnvTalkDataType(entry, { ignoreStoryMission = false } = {}) {
   if (!entry || String(entry.d || "").trim() !== "env") return "";
   if (!String(entry.k || "").startsWith("env_envTalk_")) return "";
   if (!pairedSimActorId(entry)) return "";
 
   const rawType = String(entry.t || "").trim();
-  return foldedEntryTypeKey(rawType || "worldtext", entry);
+  return foldedEntryTypeKey(rawType || "worldtext", entry, { ignoreStoryMission });
 }
 
 function entryMediaTypeFilterKeys(entry) {

@@ -23,12 +23,17 @@ from typing import Iterable
 import requests
 
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_BVIDS = ("BV1JdzMBsEUc", "BV1GczqBREHJ")
 DEFAULT_COOKIE_FILE = ROOT / "cookies" / "www.bilibili.com.cookies.json"
 DEFAULT_OUTPUT_DIR = ROOT / "videos"
 DEFAULT_CONCURRENCY = 8
 DEFAULT_STALE_LOCK_MINUTES = 30
+DEFAULT_DURATION_TOLERANCE_SECONDS = 2.0
 
 VIEW_API = "https://api.bilibili.com/x/web-interface/view"
 PLAYURL_API = "https://api.bilibili.com/x/player/playurl"
@@ -77,6 +82,12 @@ class StreamChoice:
     codecs: str = ""
     width: int | None = None
     height: int | None = None
+
+
+@dataclass(frozen=True)
+class CheckFailure:
+    status: str
+    plan: PagePlan
 
 
 def load_cookie_export(path: Path) -> list[dict]:
@@ -202,10 +213,18 @@ def fetch_video_info(session: requests.Session, bvid: str) -> dict:
     return info
 
 
-def choose_video_stream(streams: list[dict], prefer_codec: str) -> StreamChoice | None:
+def choose_video_stream(streams: list[dict], prefer_codec: str, quality: int) -> StreamChoice | None:
     candidates = [item for item in streams if item.get("baseUrl") or item.get("base_url")]
     if not candidates:
         return None
+
+    quality_matches = [
+        item
+        for item in candidates
+        if int_value(item.get("id")) is not None and int_value(item.get("id")) <= quality
+    ]
+    if quality_matches:
+        candidates = quality_matches
 
     if prefer_codec != "any":
         codec_prefix = "avc1" if prefer_codec == "avc" else "hev1"
@@ -260,7 +279,7 @@ def fetch_playurl(session: requests.Session, plan: PagePlan, quality: int, prefe
 
     dash = data.get("dash")
     if isinstance(dash, dict):
-        video_choice = choose_video_stream(dash.get("video") or [], prefer_codec)
+        video_choice = choose_video_stream(dash.get("video") or [], prefer_codec, quality)
         audio_choice = choose_audio_stream(dash.get("audio") or [])
         if video_choice is None:
             raise DownloadError(f"no DASH video stream found for {plan.filename}")
@@ -295,45 +314,72 @@ def download_stream(
     referer: str,
     lock_path: Path | None = None,
     chunk_size: int = 1024 * 1024,
+    max_attempts: int = 6,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    downloaded = path.stat().st_size if path.exists() else 0
+    last_error: BaseException | None = None
 
-    headers = {**MEDIA_HEADERS, "Referer": referer}
-    if downloaded:
-        headers["Range"] = f"bytes={downloaded}-"
+    for attempt in range(1, max_attempts + 1):
+        downloaded = path.stat().st_size if path.exists() else 0
+        headers = {**MEDIA_HEADERS, "Referer": referer}
+        if downloaded:
+            headers["Range"] = f"bytes={downloaded}-"
 
-    with session.get(url, headers=headers, stream=True, timeout=(30, 60)) as response:
-        if downloaded and response.status_code == 416:
-            total = content_range_total(response)
-            if total is not None and downloaded == total:
-                print(f"    -> {path.name} already complete ({downloaded} bytes)")
+        try:
+            with session.get(url, headers=headers, stream=True, timeout=(30, 60)) as response:
+                if downloaded and response.status_code == 416:
+                    total = content_range_total(response)
+                    if total is not None and downloaded == total:
+                        print(f"    -> {path.name} already complete ({downloaded} bytes)")
+                        return
+                    raise DownloadError(f"resume failed with HTTP 416 for incomplete part: {path}")
+                if downloaded and response.status_code == 200:
+                    print(f"    -> {path.name} restarting; server ignored Range for {downloaded} bytes")
+                    downloaded = 0
+                elif response.status_code not in (200, 206):
+                    raise DownloadError(f"media download failed with HTTP {response.status_code}: {url}")
+
+                mode = "ab" if downloaded and response.status_code == 206 else "wb"
+                remote_total = content_range_total(response)
+                content_length = response.headers.get("Content-Length")
+                if remote_total is None and content_length and content_length.isdigit():
+                    remote_total = downloaded + int(content_length)
+                total_text = f" ({remote_total} bytes)" if remote_total is not None else ""
+                resume_text = f" resume from {downloaded} bytes" if downloaded else ""
+                print(f"    -> {path.name}{resume_text}{total_text}")
+
+                last_touch = 0.0
+                with path.open(mode) as f:
+                    for chunk in response.iter_content(chunk_size=chunk_size):
+                        if chunk:
+                            f.write(chunk)
+                            now = time.monotonic()
+                            if now - last_touch >= 10:
+                                touch_lock(lock_path)
+                                last_touch = now
+
+            if remote_total is None:
                 return
-            raise DownloadError(f"resume failed with HTTP 416 for incomplete part: {path}")
-        if downloaded and response.status_code == 200:
-            print(f"    -> {path.name} restarting; server ignored Range for {downloaded} bytes")
-            downloaded = 0
-        elif response.status_code not in (200, 206):
-            raise DownloadError(f"media download failed with HTTP {response.status_code}: {url}")
 
-        mode = "ab" if downloaded and response.status_code == 206 else "wb"
-        remote_total = content_range_total(response)
-        content_length = response.headers.get("Content-Length")
-        if remote_total is None and content_length and content_length.isdigit():
-            remote_total = downloaded + int(content_length)
-        total_text = f" ({remote_total} bytes)" if remote_total is not None else ""
-        resume_text = f" resume from {downloaded} bytes" if downloaded else ""
-        print(f"    -> {path.name}{resume_text}{total_text}")
+            actual = path.stat().st_size
+            if actual == remote_total:
+                return
+            if actual > remote_total:
+                raise DownloadError(
+                    f"media part {path.name} is larger than expected: downloaded {actual} bytes, expected {remote_total}"
+                )
+            last_error = DownloadError(
+                f"incomplete media part {path.name}: downloaded {actual} bytes, expected {remote_total}"
+            )
+        except requests.RequestException as exc:
+            last_error = exc
 
-        last_touch = 0.0
-        with path.open(mode) as f:
-            for chunk in response.iter_content(chunk_size=chunk_size):
-                if chunk:
-                    f.write(chunk)
-                    now = time.monotonic()
-                    if now - last_touch >= 10:
-                        touch_lock(lock_path)
-                        last_touch = now
+        if attempt < max_attempts:
+            print(f"    -> retry {path.name} after interrupted stream (attempt {attempt + 1}/{max_attempts})")
+            touch_lock(lock_path)
+            time.sleep(min(10, attempt * 2))
+
+    raise DownloadError(f"failed to download complete media part {path.name}: {last_error}")
 
 
 def mux_with_ffmpeg(video_path: Path, audio_path: Path | None, final_path: Path) -> None:
@@ -356,6 +402,192 @@ def mux_with_ffmpeg(video_path: Path, audio_path: Path | None, final_path: Path)
 
     subprocess.run(command, check=True)
     os.replace(tmp_final, final_path)
+
+
+def probe_media(path: Path) -> dict:
+    ffprobe = shutil.which("ffprobe")
+    if not ffprobe:
+        raise DownloadError("ffprobe was not found on PATH")
+
+    command = [
+        ffprobe,
+        "-v",
+        "error",
+        "-show_format",
+        "-show_streams",
+        "-print_format",
+        "json",
+        str(path),
+    ]
+    try:
+        completed = subprocess.run(
+            command,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except subprocess.CalledProcessError as exc:
+        detail = (exc.stderr or "").strip() or str(exc)
+        raise DownloadError(f"ffprobe failed for {path}: {detail}") from exc
+
+    try:
+        return json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise DownloadError(f"ffprobe returned invalid JSON for {path}") from exc
+
+
+def codec_matches(expected: str, actual: str) -> bool:
+    expected = expected.lower()
+    actual = actual.lower()
+    if not expected:
+        return True
+    if expected.startswith("avc1"):
+        return actual == "h264"
+    if expected.startswith(("hev1", "hvc1")):
+        return actual == "hevc"
+    if expected.startswith("av01"):
+        return actual == "av1"
+    if expected.startswith("mp4a"):
+        return actual == "aac"
+    return True
+
+
+def format_seconds(value: float | None) -> str:
+    if value is None:
+        return "?s"
+    return f"{value:.1f}s"
+
+
+def stream_duration(stream: dict, fallback: float | None) -> float | None:
+    duration = float_value(stream.get("duration"))
+    if duration is not None:
+        return duration
+    tags = stream.get("tags") if isinstance(stream.get("tags"), dict) else {}
+    duration = float_value(tags.get("DURATION") or tags.get("duration"))
+    return duration if duration is not None else fallback
+
+
+def stream_summary(stream: dict, duration: float | None) -> str:
+    codec = stream.get("codec_name") or "unknown"
+    if stream.get("codec_type") == "video":
+        width = stream.get("width") or "?"
+        height = stream.get("height") or "?"
+        return f"{codec} {width}x{height} {format_seconds(duration)}"
+    return f"{codec} {format_seconds(duration)}"
+
+
+def validate_media_tracks(
+    plan: PagePlan,
+    probe: dict,
+    *,
+    video_choice: StreamChoice,
+    audio_choice: StreamChoice | None,
+    duration_tolerance: float,
+    strict_codec: bool,
+) -> list[str]:
+    problems: list[str] = []
+    streams = probe.get("streams") if isinstance(probe.get("streams"), list) else []
+    format_info = probe.get("format") if isinstance(probe.get("format"), dict) else {}
+    format_duration = float_value(format_info.get("duration"))
+    video_streams = [stream for stream in streams if stream.get("codec_type") == "video"]
+    audio_streams = [stream for stream in streams if stream.get("codec_type") == "audio"]
+
+    if len(video_streams) != 1:
+        problems.append(f"expected 1 video track, found {len(video_streams)}")
+    if audio_choice is not None and len(audio_streams) != 1:
+        problems.append(f"expected 1 audio track, found {len(audio_streams)}")
+    elif audio_choice is None and len(audio_streams) > 1:
+        problems.append(f"expected at most 1 audio track, found {len(audio_streams)}")
+
+    video_duration: float | None = None
+    if video_streams:
+        video = video_streams[0]
+        video_duration = stream_duration(video, format_duration)
+        actual_width = int_value(video.get("width"))
+        actual_height = int_value(video.get("height"))
+        if actual_width is None or actual_height is None:
+            problems.append("video dimensions are missing")
+        if strict_codec and not codec_matches(video_choice.codecs, str(video.get("codec_name") or "")):
+            problems.append(
+                f"video codec {video.get('codec_name') or 'unknown'} != metadata {video_choice.codecs}"
+            )
+        if plan.duration_seconds is not None and video_duration is not None:
+            delta = abs(video_duration - plan.duration_seconds)
+            if delta > duration_tolerance:
+                problems.append(
+                    f"video duration {format_seconds(video_duration)} != metadata "
+                    f"{format_seconds(plan.duration_seconds)} (delta {delta:.1f}s)"
+                )
+
+    if audio_streams:
+        audio = audio_streams[0]
+        audio_duration = stream_duration(audio, format_duration)
+        if (
+            strict_codec
+            and audio_choice is not None
+            and not codec_matches(audio_choice.codecs, str(audio.get("codec_name") or ""))
+        ):
+            problems.append(
+                f"audio codec {audio.get('codec_name') or 'unknown'} != metadata {audio_choice.codecs}"
+            )
+        if plan.duration_seconds is not None and audio_duration is not None:
+            delta = abs(audio_duration - plan.duration_seconds)
+            if delta > duration_tolerance:
+                problems.append(
+                    f"audio duration {format_seconds(audio_duration)} != metadata "
+                    f"{format_seconds(plan.duration_seconds)} (delta {delta:.1f}s)"
+                )
+        if video_duration is not None and audio_duration is not None:
+            delta = abs(video_duration - audio_duration)
+            if delta > duration_tolerance:
+                problems.append(
+                    f"audio/video duration mismatch: video {format_seconds(video_duration)}, "
+                    f"audio {format_seconds(audio_duration)} (delta {delta:.1f}s)"
+                )
+
+    return problems
+
+
+def validate_final_media(
+    plan: PagePlan,
+    *,
+    video_choice: StreamChoice,
+    audio_choice: StreamChoice | None,
+    duration_tolerance: float = DEFAULT_DURATION_TOLERANCE_SECONDS,
+    strict_codec: bool = False,
+) -> None:
+    probe = probe_media(plan.target)
+    problems = validate_media_tracks(
+        plan,
+        probe,
+        video_choice=video_choice,
+        audio_choice=audio_choice,
+        duration_tolerance=duration_tolerance,
+        strict_codec=strict_codec,
+    )
+    if problems:
+        detail = "; ".join(problems)
+        raise DownloadError(f"muxed file failed validation for {plan.filename}: {detail}")
+
+
+def validate_downloaded_media(
+    plan: PagePlan,
+    *,
+    video_choice: StreamChoice,
+    audio_choice: StreamChoice | None,
+) -> None:
+    try:
+        validate_final_media(plan, video_choice=video_choice, audio_choice=audio_choice)
+    except DownloadError:
+        cleanup_parts(
+            plan.target,
+            plan.target.with_suffix(plan.target.suffix + ".video.m4s"),
+            plan.target.with_suffix(plan.target.suffix + ".audio.m4s"),
+        )
+        raise
 
 
 def cleanup_parts(*paths: Path) -> None:
@@ -447,10 +679,12 @@ def download_page(
             download_stream(session, audio_choice.url, audio_part, referer=referer, lock_path=lock_path)
             touch_lock(lock_path)
             mux_with_ffmpeg(video_part, audio_part, plan.target)
+            validate_downloaded_media(plan, video_choice=video_choice, audio_choice=audio_choice)
             cleanup_parts(video_part, audio_part)
         else:
             touch_lock(lock_path)
             mux_with_ffmpeg(video_part, None, plan.target)
+            validate_downloaded_media(plan, video_choice=video_choice, audio_choice=None)
             cleanup_parts(video_part)
     finally:
         if lock_path.exists():
@@ -552,6 +786,108 @@ def download_plans(
     return stats
 
 
+def media_track_summary(probe: dict) -> str:
+    streams = probe.get("streams") if isinstance(probe.get("streams"), list) else []
+    format_info = probe.get("format") if isinstance(probe.get("format"), dict) else {}
+    format_duration = float_value(format_info.get("duration"))
+    parts = []
+    for stream_type in ("video", "audio"):
+        matches = [stream for stream in streams if stream.get("codec_type") == stream_type]
+        if matches:
+            parts.append(f"{stream_type}={stream_summary(matches[0], stream_duration(matches[0], format_duration))}")
+        else:
+            parts.append(f"{stream_type}=missing")
+    return ", ".join(parts)
+
+
+def incomplete_parts(plan: PagePlan) -> list[Path]:
+    candidates = [
+        plan.target.with_suffix(plan.target.suffix + ".lock"),
+        plan.target.with_suffix(plan.target.suffix + ".video.m4s"),
+        plan.target.with_suffix(plan.target.suffix + ".audio.m4s"),
+    ]
+    return [path for path in candidates if path.exists()]
+
+
+def check_existing_page(
+    session: requests.Session,
+    plan: PagePlan,
+    *,
+    quality: int,
+    prefer_codec: str,
+    duration_tolerance: float,
+    strict_codec: bool,
+) -> str:
+    if not plan.target.exists():
+        parts = incomplete_parts(plan)
+        if parts:
+            names = ", ".join(path.name for path in parts)
+            print(f"  incomplete {plan.filename}: {names}")
+            return "incomplete"
+        print(f"  missing {plan.filename}")
+        return "missing"
+
+    video_choice, audio_choice = fetch_playurl(session, plan, quality, prefer_codec)
+    probe = probe_media(plan.target)
+    problems = validate_media_tracks(
+        plan,
+        probe,
+        video_choice=video_choice,
+        audio_choice=audio_choice,
+        duration_tolerance=duration_tolerance,
+        strict_codec=strict_codec,
+    )
+    if problems:
+        print(f"  mismatch {plan.filename} ({media_track_summary(probe)})")
+        for problem in problems:
+            print(f"    - {problem}")
+        return "failed"
+
+    print(f"  ok {plan.filename} ({media_track_summary(probe)})")
+    return "ok"
+
+
+def check_existing_plans(
+    session: requests.Session,
+    plans: list[PagePlan],
+    *,
+    quality: int,
+    prefer_codec: str,
+    duration_tolerance: float,
+    strict_codec: bool,
+) -> tuple[dict[str, int], list[CheckFailure]]:
+    stats = {"ok": 0, "missing": 0, "incomplete": 0, "failed": 0}
+    failures = []
+    for plan in plans:
+        try:
+            result = check_existing_page(
+                session,
+                plan,
+                quality=quality,
+                prefer_codec=prefer_codec,
+                duration_tolerance=duration_tolerance,
+                strict_codec=strict_codec,
+            )
+            stats[result] += 1
+            if result != "ok":
+                failures.append(CheckFailure(result, plan))
+        except (requests.RequestException, subprocess.CalledProcessError, OSError, DownloadError) as exc:
+            print(f"  failed {plan.filename}: {exc}")
+            stats["failed"] += 1
+            failures.append(CheckFailure("failed", plan))
+    return stats, failures
+
+
+def print_failed_pages(failures: list[CheckFailure]) -> None:
+    if not failures:
+        print("failed videos: none")
+        return
+
+    print("failed videos:")
+    for failure in failures:
+        print(f"  [{failure.status}] {failure.plan.filename}")
+
+
 def read_bvid_file(path: Path) -> list[str]:
     values = []
     with path.open("r", encoding="utf-8") as f:
@@ -570,6 +906,19 @@ def unique_ordered(values: Iterable[str]) -> list[str]:
             seen.add(value)
             result.append(value)
     return result
+
+
+def local_bvids(output_dir: Path) -> list[str]:
+    if not output_dir.exists():
+        return []
+    bvids = []
+    for candidate in sorted(output_dir.glob("*")):
+        if not candidate.is_file():
+            continue
+        match = LOCAL_BVID_RE.search(candidate.name)
+        if match:
+            bvids.append(match.group(1))
+    return unique_ordered(bvids)
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -641,53 +990,133 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         action="store_true",
         help="Fetch metadata and print planned output paths without downloading media.",
     )
+    parser.add_argument(
+        "--check-existing",
+        action="store_true",
+        help=(
+            "Validate existing local mp4 files against Bilibili metadata with ffprobe, "
+            "without downloading media. With no BVIDs, checks BVIDs found in the output folder."
+        ),
+    )
+    parser.add_argument(
+        "--retry-failed",
+        action="store_true",
+        help=(
+            "After checking existing files, print failed/missing/incomplete videos and "
+            "re-download only those pages. Implies --check-existing."
+        ),
+    )
+    parser.add_argument(
+        "--duration-tolerance",
+        type=float,
+        default=DEFAULT_DURATION_TOLERANCE_SECONDS,
+        help=(
+            "Allowed seconds of drift when checking media track durations. "
+            f"Default: {DEFAULT_DURATION_TOLERANCE_SECONDS}."
+        ),
+    )
+    parser.add_argument(
+        "--strict-codec",
+        action="store_true",
+        help="When checking existing files, require the local codec to match the currently selected Bilibili stream.",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv or sys.argv[1:])
+    if args.retry_failed:
+        args.check_existing = True
 
+    output_dir = args.output_dir.resolve()
     bvids = list(args.bvids)
     if args.bvid_file:
         bvids.extend(read_bvid_file(args.bvid_file))
+    if args.check_existing and not bvids:
+        bvids = local_bvids(output_dir)
     if not bvids:
         bvids = list(DEFAULT_BVIDS)
     bvids = unique_ordered(bvids)
 
     cookie_file = args.cookies.resolve()
-    output_dir = args.output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     concurrency = max(1, args.concurrency)
     stale_lock_seconds = max(0, args.stale_lock_minutes) * 60
 
     session = make_session(cookie_file)
-    stats = {"planned": 0, "downloaded": 0, "skipped": 0, "adopted": 0, "failed": 0}
+    if args.check_existing:
+        stats = {"ok": 0, "missing": 0, "incomplete": 0, "failed": 0}
+        failures: list[CheckFailure] = []
+    else:
+        stats = {"planned": 0, "downloaded": 0, "skipped": 0, "adopted": 0, "failed": 0}
 
     for bvid in bvids:
         print(f"{bvid}")
         info = fetch_video_info(session, bvid)
         plans = build_page_plans(info, output_dir)
         print(f"  {info.get('title', '')} ({len(plans)} page(s))")
-        bvid_stats = download_plans(
-            session,
-            cookie_file,
-            plans,
-            output_dir=output_dir,
-            quality=args.quality,
-            prefer_codec=args.prefer_codec,
-            overwrite=args.overwrite,
-            dry_run=args.dry_run,
-            adopt_existing=not args.no_adopt_existing,
-            concurrency=concurrency,
-            stale_lock_seconds=stale_lock_seconds,
-        )
+        if args.check_existing:
+            bvid_stats, bvid_failures = check_existing_plans(
+                session,
+                plans,
+                quality=args.quality,
+                prefer_codec=args.prefer_codec,
+                duration_tolerance=max(0.0, args.duration_tolerance),
+                strict_codec=args.strict_codec,
+            )
+            failures.extend(bvid_failures)
+        else:
+            bvid_stats = download_plans(
+                session,
+                cookie_file,
+                plans,
+                output_dir=output_dir,
+                quality=args.quality,
+                prefer_codec=args.prefer_codec,
+                overwrite=args.overwrite,
+                dry_run=args.dry_run,
+                adopt_existing=not args.no_adopt_existing,
+                concurrency=concurrency,
+                stale_lock_seconds=stale_lock_seconds,
+            )
         for key, value in bvid_stats.items():
             stats[key] += value
+
+    if args.check_existing:
+        print_failed_pages(failures)
+        if args.retry_failed and failures:
+            retry_plans = [failure.plan for failure in failures]
+            print(f"retrying {len(retry_plans)} failed video(s)")
+            retry_stats = download_plans(
+                session,
+                cookie_file,
+                retry_plans,
+                output_dir=output_dir,
+                quality=args.quality,
+                prefer_codec=args.prefer_codec,
+                overwrite=True,
+                dry_run=args.dry_run,
+                adopt_existing=False,
+                concurrency=concurrency,
+                stale_lock_seconds=stale_lock_seconds,
+            )
+            print(
+                "retry done: "
+                + ", ".join(f"{key}={value}" for key, value in retry_stats.items() if value)
+            )
+            if not args.dry_run and not retry_stats["failed"]:
+                stats["failed"] = 0
+                stats["missing"] = 0
+                stats["incomplete"] = 0
+            elif retry_stats["failed"]:
+                stats["failed"] = retry_stats["failed"]
 
     print(
         "done: "
         + ", ".join(f"{key}={value}" for key, value in stats.items() if value)
     )
+    if args.check_existing:
+        return 1 if stats["failed"] or stats["missing"] or stats["incomplete"] else 0
     return 1 if stats["failed"] else 0
 
 

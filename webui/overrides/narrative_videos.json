@@ -1,11 +1,32 @@
 {
-  "_note": "Story builder narrative video overrides. attachInline manually embeds matching videos into a target story key; suppressInline keeps matching videos as standalone video_* rows and prevents inline attachment to the target story key.",
+  "_note": "Story builder narrative video overrides. attachInline manually embeds matching videos into a target story key; optional audioFrom entries also copy source cutscene audio events into that target during audio relink. suppressInline keeps matching videos as standalone video_* rows and prevents inline attachment to the target story key.",
   "attachInline": {
+    "cutscene_e1m1_6": {
+      "stems": [
+        "cs_video_e1m1_1"
+      ],
+      "audioFrom": [
+        "cutscene_e1m1_2"
+      ],
+      "note": "Filename stem is e1m1_1, but this FMV and the cutscene_e1m1_2 audio events belong with the e1m1_6 cutscene."
+    },
     "cutscene_e2m1_1": {
       "stems": [
         "cs_video_e1m9_1"
       ],
       "note": "Filename stem is e1m9, but this FMV belongs with the e2m1 opening cutscene."
+    },
+    "cutscene_e3m4_1": {
+      "stems": [
+        "cs_video_e3m5_4"
+      ],
+      "note": "Filename stem is e3m5_4, but this FMV belongs with the e3m4_1 cutscene."
+    },
+    "cutscene_e3m5_2": {
+      "stems": [
+        "cs_video_e3m5_3"
+      ],
+      "note": "Filename stem is e3m5_3, but this FMV belongs with the e3m5_2 cutscene."
     }
   },
   "suppressInline": {

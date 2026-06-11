@@ -47,7 +47,18 @@ function entryTreeDataTypesForSort(entry, sortMode) {
   const storyType = typeof storyMissionTypeFromId === "function"
     ? storyMissionTypeFromId(missionId)
     : "";
-  return storyType ? [storyType] : types;
+  if (!storyType) return types;
+  const out = [storyType];
+  for (const dataType of types) {
+    if (
+      dataType !== storyType
+      && typeof entryUsesMissionLinkedNativeDataType === "function"
+      && entryUsesMissionLinkedNativeDataType(entry, dataType)
+    ) {
+      out.push(dataType);
+    }
+  }
+  return out;
 }
 
 function entryShouldHideArchiveDuplicateStoryType(entry, dataType) {
@@ -151,6 +162,8 @@ function entryTreeMissionId(entry) {
 
 function treeGroupInfo(entry, dataTypeOverride = "") {
   const dataType = dataTypeOverride || entryTreeDataType(entry);
+  const useNativeMissionGroup = typeof entryUsesMissionLinkedNativeDataType === "function"
+    && entryUsesMissionLinkedNativeDataType(entry, dataType);
   if (dataType === "topic") {
     const topicGroup = topicTreeGroupInfo(entry);
     if (topicGroup) return topicGroup;
@@ -166,7 +179,7 @@ function treeGroupInfo(entry, dataTypeOverride = "") {
     if (archiveResearchGroup) return archiveResearchGroup;
   }
 
-  const storyMissionId = entryStoryMissionId(entry);
+  const storyMissionId = useNativeMissionGroup ? "" : entryStoryMissionId(entry);
   const missionId = storyMissionId || String(entry && entry.m || "");
   const missionName = missionDisplay(missionId, dataType);
   if (entryHasSourceTag(entry) && !storyMissionId) {
@@ -638,11 +651,107 @@ function storyOrderMissionLockControl(row) {
   );
 }
 
+function storyOrderMissionMoveUnusedControl(row) {
+  if ((STATE.sortMode || "story") !== "story") return "";
+  const missionId = String(row && row.storyOrderMissionId || "");
+  if (!missionId) return "";
+  const unusedSet = typeof storyOrderMissionPossiblyUnused === "function"
+    ? storyOrderMissionPossiblyUnused(missionId)
+    : new Set();
+  const count = unusedSet ? unusedSet.size : 0;
+  const titleKey = count ? "storyOrderMoveUnusedToEndTitle" : "storyOrderMoveUnusedToEndNone";
+  const label = escapeHtml(uiText("storyOrderMoveUnusedToEnd"));
+  const title = escapeHtml(uiText(titleKey));
+  const disabled = count ? "" : " disabled";
+  return (
+    `<button class="story-order-mission-move-unused-button" type="button" ` +
+      `data-mission-id="${escapeHtml(missionId)}" title="${title}"${disabled}>` +
+      `<svg class="story-order-pin-icon" viewBox="0 0 14 14" aria-hidden="true">` +
+        `<path d="M7 2 V10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>` +
+        `<path d="M4 7 L7 10 L10 7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>` +
+        `<path d="M3 12 H11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>` +
+      `</svg>` +
+      `<span class="story-order-mission-lock-label">${label}${count ? ` (${count})` : ""}</span>` +
+    `</button>`
+  );
+}
+
+function moveStoryOrderMissionUnusedToEnd(missionId) {
+  const missionKey = String(missionId || "");
+  if (!missionKey) return false;
+  if (typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionKey)) return false;
+  const mission = STATE.storyOrderPayload
+    && STATE.storyOrderPayload.missions
+    && STATE.storyOrderPayload.missions[missionKey];
+  let order = typeof overrideKeyList === "function"
+    ? overrideKeyList(mission && mission.order)
+    : [];
+  if (!order.length) order = storyOrderMissionBaselineOrder(missionKey);
+  if (!order.length) return false;
+  const unusedSet = typeof storyOrderMissionPossiblyUnused === "function"
+    ? storyOrderMissionPossiblyUnused(missionKey)
+    : new Set();
+  if (!unusedSet || !unusedSet.size) return false;
+
+  const kept = [];
+  const moved = [];
+  for (const key of order) {
+    if (unusedSet.has(String(key))) moved.push(key);
+    else kept.push(key);
+  }
+  if (!moved.length || !kept.length) return false;
+  const nextOrder = kept.concat(moved);
+  if (nextOrder.every((k, i) => k === order[i])) return false;
+
+  if (typeof setStoryOrderMissionOrder !== "function" || !setStoryOrderMissionOrder(missionKey, nextOrder)) {
+    return false;
+  }
+  if (typeof scheduleStoryOrderSave === "function") scheduleStoryOrderSave();
+
+  const wrap = $("#list-wrap");
+  const prevScroll = wrap ? wrap.scrollTop : 0;
+  rebuildTree({ resetScroll: false });
+  if (wrap) wrap.scrollTop = prevScroll;
+  renderList();
+  return true;
+}
+
 function toggleStoryOrderMissionLock(missionId) {
   const missionKey = String(missionId || "");
   if (!missionKey || typeof setStoryOrderMissionLocked !== "function") return false;
   const nextLocked = !(typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionKey));
   if (!setStoryOrderMissionLocked(missionKey, nextLocked)) return false;
+  if (typeof scheduleStoryOrderSave === "function") scheduleStoryOrderSave();
+
+  const wrap = $("#list-wrap");
+  const prevScroll = wrap ? wrap.scrollTop : 0;
+  rebuildTree({ resetScroll: false });
+  if (wrap) wrap.scrollTop = prevScroll;
+  renderList();
+  return true;
+}
+
+function toggleStoryOrderEntryPossiblyUnused(missionId, entryKey) {
+  const missionKey = String(missionId || "");
+  const key = String(entryKey || "");
+  if (!missionKey || !key || typeof setStoryOrderEntryPossiblyUnused !== "function") return false;
+  const next = !(typeof storyOrderEntryPossiblyUnused === "function" && storyOrderEntryPossiblyUnused(missionKey, key));
+  if (!setStoryOrderEntryPossiblyUnused(missionKey, key, next)) return false;
+  if (typeof scheduleStoryOrderSave === "function") scheduleStoryOrderSave();
+
+  const wrap = $("#list-wrap");
+  const prevScroll = wrap ? wrap.scrollTop : 0;
+  rebuildTree({ resetScroll: false });
+  if (wrap) wrap.scrollTop = prevScroll;
+  renderList();
+  return true;
+}
+
+function removeStoryOrderEntryFromMissionAndSave(missionId, entryKey) {
+  const missionKey = String(missionId || "");
+  const key = String(entryKey || "");
+  if (!missionKey || !key || typeof removeStoryOrderEntryFromMission !== "function") return false;
+  if (!removeStoryOrderEntryFromMission(missionKey, key)) return false;
   if (typeof scheduleStoryOrderSave === "function") scheduleStoryOrderSave();
 
   const wrap = $("#list-wrap");
@@ -770,6 +879,28 @@ function bindEvents() {
       ev.preventDefault();
       ev.stopPropagation();
       toggleStoryOrderMissionLock(missionLockButton.dataset.missionId);
+      return;
+    }
+    const missionMoveUnusedButton = ev.target.closest(".story-order-mission-move-unused-button");
+    if (missionMoveUnusedButton) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (missionMoveUnusedButton.disabled) return;
+      moveStoryOrderMissionUnusedToEnd(missionMoveUnusedButton.dataset.missionId);
+      return;
+    }
+    const unusedToggle = ev.target.closest(".story-order-unused-toggle");
+    if (unusedToggle) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      toggleStoryOrderEntryPossiblyUnused(unusedToggle.dataset.missionId, unusedToggle.dataset.entryKey);
+      return;
+    }
+    const removeButton = ev.target.closest(".story-order-remove-from-mission");
+    if (removeButton) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      removeStoryOrderEntryFromMissionAndSave(removeButton.dataset.missionId, removeButton.dataset.entryKey);
       return;
     }
     const row = ev.target.closest(".row");

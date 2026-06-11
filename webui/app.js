@@ -623,6 +623,82 @@ function storyOrderMissionLocked(missionId) {
   return !!(mission && mission.locked === true);
 }
 
+function storyOrderMissionPossiblyUnused(missionId) {
+  const missionKey = String(missionId || "");
+  const mission = STATE.storyOrderPayload
+    && STATE.storyOrderPayload.missions
+    && STATE.storyOrderPayload.missions[missionKey];
+  const list = mission && Array.isArray(mission.possiblyUnused) ? mission.possiblyUnused : [];
+  return new Set(list.map((k) => String(k || "")).filter(Boolean));
+}
+
+function storyOrderEntryPossiblyUnused(missionId, key) {
+  return storyOrderMissionPossiblyUnused(missionId).has(String(key || ""));
+}
+
+function setStoryOrderEntryPossiblyUnused(missionId, key, flag) {
+  const missionKey = String(missionId || "");
+  const entryKey = String(key || "");
+  if (!missionKey || !entryKey) return false;
+  const missions = STATE.storyOrderPayload && STATE.storyOrderPayload.missions;
+  if (!missions || typeof missions !== "object") return false;
+  let mission = missions[missionKey];
+  if (!mission || typeof mission !== "object" || !Array.isArray(mission.order) || !mission.order.length) {
+    const baseline = typeof storyOrderMissionBaselineOrder === "function"
+      ? storyOrderMissionBaselineOrder(missionKey)
+      : [];
+    if (!baseline.length) return false;
+    mission = missions[missionKey] = {
+      level: "",
+      levels: [],
+      order: baseline.slice(),
+      entries: baseline.map((k) => ({ key: k })),
+    };
+    STATE.storyOrderIndex = buildStoryOrderIndex(STATE.storyOrderPayload);
+    STATE.storyOrderGroupingOverrides = buildStoryOrderGroupingOverrides(STATE.storyOrderPayload);
+  }
+  const current = Array.isArray(mission.possiblyUnused)
+    ? mission.possiblyUnused.map((k) => String(k || "")).filter(Boolean)
+    : [];
+  const set = new Set(current);
+  if (flag) set.add(entryKey); else set.delete(entryKey);
+  if (set.size) mission.possiblyUnused = mission.order.filter((k) => set.has(String(k)));
+  else delete mission.possiblyUnused;
+  STATE.storyOrderOverridePayload = buildFullStoryOrderPayload();
+  return true;
+}
+
+function storyOrderEntryHasMissionCode(missionId, key) {
+  const mid = String(missionId || "").toLowerCase();
+  const k = String(key || "").toLowerCase();
+  if (!mid || !k) return true;
+  return k.includes(mid);
+}
+
+function removeStoryOrderEntryFromMission(missionId, key) {
+  const missionKey = String(missionId || "");
+  const entryKey = String(key || "");
+  if (!missionKey || !entryKey) return false;
+  const missions = STATE.storyOrderPayload && STATE.storyOrderPayload.missions;
+  const mission = missions && missions[missionKey];
+  if (!mission || !Array.isArray(mission.order)) return false;
+  const nextOrder = mission.order.filter((k) => String(k) !== entryKey);
+  if (nextOrder.length === mission.order.length) return false;
+  mission.order = nextOrder;
+  if (Array.isArray(mission.entries)) {
+    mission.entries = mission.entries.filter((e) => String(e && e.key || "") !== entryKey);
+  }
+  if (Array.isArray(mission.possiblyUnused)) {
+    const filtered = mission.possiblyUnused.filter((k) => String(k) !== entryKey);
+    if (filtered.length) mission.possiblyUnused = filtered;
+    else delete mission.possiblyUnused;
+  }
+  STATE.storyOrderOverridePayload = buildFullStoryOrderPayload();
+  STATE.storyOrderIndex = buildStoryOrderIndex(STATE.storyOrderPayload);
+  STATE.storyOrderGroupingOverrides = buildStoryOrderGroupingOverrides(STATE.storyOrderPayload);
+  return true;
+}
+
 function buildFullStoryOrderPayload() {
   const payload = {
     _schema: "storyOrder.fullOrder.v1",
@@ -640,6 +716,10 @@ function buildFullStoryOrderPayload() {
       if (level) out.level = level;
       const levels = overrideKeyList(mission && mission.levels);
       if (levels.length) out.levels = levels;
+      const possiblyUnused = mission && Array.isArray(mission.possiblyUnused)
+        ? overrideKeyList(mission.possiblyUnused).filter((k) => order.includes(k))
+        : [];
+      if (possiblyUnused.length) out.possiblyUnused = possiblyUnused;
       payload.missions[missionId] = out;
     }
   }
@@ -656,6 +736,9 @@ function buildFullStoryOrderPayload() {
     if (mission.locked === true) orderedMission.locked = true;
     if (mission.level) orderedMission.level = mission.level;
     if (Array.isArray(mission.levels) && mission.levels.length) orderedMission.levels = mission.levels;
+    if (Array.isArray(mission.possiblyUnused) && mission.possiblyUnused.length) {
+      orderedMission.possiblyUnused = orderedMission.order.filter((k) => mission.possiblyUnused.includes(k));
+    }
     sortedMissions[missionId] = orderedMission;
   }
   payload.missions = sortedMissions;
@@ -2905,7 +2988,8 @@ function renderGroup(row) {
       (row.raw ? `<span class="sub mono" title="${escapeHtml(row.raw)}">${escapeHtml(row.raw)}</span>` : "") +
     `</span>` +
     `<span class="group-count">${row.count}</span>` +
-    storyOrderMissionLockControl(row);
+    storyOrderMissionLockControl(row) +
+    storyOrderMissionMoveUnusedControl(row);
   return div;
 }
 
@@ -2939,6 +3023,46 @@ function renderItem(row) {
       `</span>`;
   }
 
+  const missionIdForEntry = typeof storyOrderMissionIdForEntry === "function"
+    ? storyOrderMissionIdForEntry(e)
+    : "";
+  const inStorySort = (STATE.sortMode || "story") === "story";
+  let possiblyUnused = false;
+  let possiblyUnusedBadge = "";
+  let possiblyUnusedToggle = "";
+  let removeFromMissionButton = "";
+  if (missionIdForEntry && inStorySort) {
+    possiblyUnused = typeof storyOrderEntryPossiblyUnused === "function"
+      && storyOrderEntryPossiblyUnused(missionIdForEntry, e.k);
+    if (possiblyUnused) {
+      div.classList.add("story-order-possibly-unused");
+      const badgeTitle = escapeHtml(uiText("storyOrderPossiblyUnusedTitle"));
+      const badgeLabel = escapeHtml(uiText("storyOrderPossiblyUnusedBadge"));
+      possiblyUnusedBadge = `<span class="story-order-unused-badge" title="${badgeTitle}">${badgeLabel}</span>`;
+    }
+    const toggleLabel = escapeHtml(uiText(possiblyUnused ? "storyOrderUnusedClear" : "storyOrderUnusedMark"));
+    const toggleTitle = escapeHtml(uiText(possiblyUnused ? "storyOrderUnusedClearTitle" : "storyOrderUnusedMarkTitle"));
+    possiblyUnusedToggle =
+      `<button class="story-order-unused-toggle${possiblyUnused ? " is-on" : ""}" type="button" ` +
+        `data-mission-id="${escapeHtml(missionIdForEntry)}" data-entry-key="${escapeHtml(e.k)}" ` +
+        `aria-pressed="${possiblyUnused ? "true" : "false"}" title="${toggleTitle}">` +
+        `<span class="story-order-unused-toggle-mark" aria-hidden="true">${possiblyUnused ? "✓" : ""}</span>` +
+        `<span class="story-order-unused-toggle-label">${toggleLabel}</span>` +
+      `</button>`;
+    const hasCode = typeof storyOrderEntryHasMissionCode === "function"
+      ? storyOrderEntryHasMissionCode(missionIdForEntry, e.k)
+      : true;
+    if (!hasCode) {
+      div.classList.add("story-order-foreign-key");
+      const removeLabel = escapeHtml(uiText("storyOrderRemoveFromMission"));
+      const removeTitle = escapeHtml(uiText("storyOrderRemoveFromMissionTitle").replace("{mission}", missionIdForEntry));
+      removeFromMissionButton =
+        `<button class="story-order-remove-from-mission" type="button" ` +
+          `data-mission-id="${escapeHtml(missionIdForEntry)}" data-entry-key="${escapeHtml(e.k)}" ` +
+          `title="${removeTitle}">✕ ${removeLabel}</button>`;
+    }
+  }
+
   const kindCls = meta.cls;
   const kindNm = meta.name;
 
@@ -2946,7 +3070,10 @@ function renderItem(row) {
     `<div class="item-line1">` +
       `<span class="badge ${kindCls}">${escapeHtml(kindNm)}</span>` +
       `<span class="item-key">${highlightTextFragment(displayEntryTitle(e), STATE.filters.q)}</span>` +
+      possiblyUnusedBadge +
       `<span class="item-meta">${e.n} ${uiText("lineUnit")}</span>` +
+      possiblyUnusedToggle +
+      removeFromMissionButton +
       dragHandle +
     `</div>` +
     `<div class="item-preview">${highlightTextFragment(e.p || uiText("emptyPreview"), STATE.filters.q)}</div>`;
@@ -7755,6 +7882,9 @@ function renderHighlightedRichTextHtml(text, q) {
       parts.push(renderInlineImageTagHtml(extractInlineImageIdFromTag(rawToken), q, rawToken));
     } else if (match[2] !== undefined) {
       parts.push(`<span class="rich-strike">${renderHighlightedRichTextHtml(match[2] || "", q)}</span>`);
+    } else if (/^<@nar\.mark\b/i.test(rawToken)) {
+      const inner = match[1] || "";
+      parts.push(highlightTextFragment("■".repeat([...inner].length), q));
     } else {
       parts.push(`<span class="rich-tag">${highlightTextFragment(match[1] || "", q)}</span>`);
     }
