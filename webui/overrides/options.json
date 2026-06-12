@@ -25,6 +25,22 @@
     }
   },
   "scenes": {
+    "dlg_a1m7_2": {
+      "positions": {
+        "after": {
+          "dlg_a1m7_2_002": [
+            "2"
+          ]
+        },
+        "pre": [
+          "1"
+        ]
+      },
+      "notes": {
+        "1": "First storybook question appears before Carly starts describing the exchanged books.",
+        "2": "Second follow-up prompt belongs after Carly explains learning to draw the new storybook."
+      }
+    },
     "dlg_c13m2_20": {
       "responses": {
         "option_dlg_c13m2_20_1_001": [

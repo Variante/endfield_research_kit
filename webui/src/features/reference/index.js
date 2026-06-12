@@ -50,6 +50,7 @@
     contentScanKey: "",
     contentScanToken: 0,
     loadingIndex: null,
+    sourceFilters: new Set(),
   };
 
   const ref$ = $;
@@ -179,7 +180,6 @@
       ["#reference-title", "title"],
       ["#reference-count-label", "countLabel"],
       ["#reference-source-label", "source"],
-      ["#reference-source-all", "all"],
       ["#reference-empty", "empty"],
       ["#reference-list-unit", "tables"],
     ];
@@ -204,7 +204,7 @@
         REF_STATE.index = payload || {};
         REF_STATE.tables = Array.isArray(payload && payload.tables) ? payload.tables : [];
         REF_STATE.loadingIndex = null;
-        buildSourceSelect();
+        buildSourceChips();
         renderReferenceList();
         return REF_STATE.index;
       })
@@ -250,28 +250,33 @@
     }
   }
 
-  function buildSourceSelect() {
-    const select = ref$("#reference-source");
-    if (!select) return;
-    const current = select.value;
-    select.replaceChildren();
-    const all = document.createElement("option");
-    all.id = "reference-source-all";
-    all.value = "";
-    all.textContent = refText("all");
-    select.appendChild(all);
+  function buildSourceChips() {
+    const wrap = ref$("#reference-source-filter");
+    if (!wrap) return;
+    wrap.replaceChildren();
     const sources = new Map();
     for (const table of REF_STATE.tables) {
       sources.set(table.source || "", table.sourceLabel || table.source || "");
     }
+    const available = new Set([...sources.keys()].filter(Boolean));
+    for (const value of [...REF_STATE.sourceFilters]) {
+      if (!available.has(value)) REF_STATE.sourceFilters.delete(value);
+    }
     for (const [source, label] of [...sources.entries()].sort((a, b) => a[1].localeCompare(b[1]))) {
       if (!source) continue;
-      const option = document.createElement("option");
-      option.value = source;
-      option.textContent = label || source;
-      select.appendChild(option);
+      const chip = document.createElement("span");
+      chip.className = "chip reference-filter-chip";
+      chip.dataset.value = source;
+      chip.textContent = label || source;
+      chip.classList.toggle("on", REF_STATE.sourceFilters.has(source));
+      chip.addEventListener("click", () => {
+        if (REF_STATE.sourceFilters.has(source)) REF_STATE.sourceFilters.delete(source);
+        else REF_STATE.sourceFilters.add(source);
+        renderReferenceList();
+        renderReferenceRows();
+      });
+      wrap.appendChild(chip);
     }
-    select.value = [...select.options].some((option) => option.value === current) ? current : "";
   }
 
   function referenceQuery() {
@@ -279,30 +284,34 @@
     return String(q && q.value || "").trim().toLowerCase();
   }
 
-  function sourceFilter() {
-    const source = ref$("#reference-source");
-    return String(source && source.value || "");
+  function sourceFilters() {
+    return REF_STATE.sourceFilters;
   }
 
-  function tableMatches(table, q, source) {
-    if (source && table.source !== source) return false;
+  function sourceFilterKey(sources = sourceFilters()) {
+    return [...sources].sort().join(",");
+  }
+
+  function tableMatches(table, q, sources, sourceKey) {
+    if (sources.size && !sources.has(table.source)) return false;
     if (!q) return true;
-    return tableMetadataMatches(table, q) || tableContentMatches(table, q, source);
+    return tableMetadataMatches(table, q) || tableContentMatches(table, q, sourceKey);
   }
 
-  function scheduleReferenceContentScan(q, source) {
+  function scheduleReferenceContentScan(q, sources, sourceKey) {
     if (!q || !REF_STATE.tables.length) return;
 
-    const key = referenceSearchKey(q, source);
+    const key = referenceSearchKey(q, sourceKey);
     if (REF_STATE.contentScansDone.has(key) || REF_STATE.contentScanKey === key) return;
+    const scanSources = new Set(sources);
 
     clearTimeout(REF_STATE.contentScanTimer);
     REF_STATE.contentScanTimer = setTimeout(() => {
-      scanReferenceContent(q, source, key);
+      scanReferenceContent(q, scanSources, key);
     }, 180);
   }
 
-  async function scanReferenceContent(q, source, key) {
+  async function scanReferenceContent(q, sources, key) {
     const token = REF_STATE.contentScanToken + 1;
     REF_STATE.contentScanToken = token;
     REF_STATE.contentScanKey = key;
@@ -310,7 +319,7 @@
     const matches = REF_STATE.contentMatches.get(key) || new Set();
     REF_STATE.contentMatches.set(key, matches);
 
-    const tables = REF_STATE.tables.filter((table) => !source || table.source === source);
+    const tables = REF_STATE.tables.filter((table) => !sources.size || sources.has(table.source));
     let cursor = 0;
     let renderQueued = false;
 
@@ -319,7 +328,7 @@
       renderQueued = true;
       setTimeout(() => {
         renderQueued = false;
-        if (REF_STATE.contentScanKey === key && referenceSearchKey(referenceQuery(), sourceFilter()) === key) {
+        if (REF_STATE.contentScanKey === key && referenceSearchKey(referenceQuery(), sourceFilterKey()) === key) {
           renderReferenceList();
         }
       }, 0);
@@ -352,16 +361,17 @@
 
   function filteredTables() {
     const q = referenceQuery();
-    const source = sourceFilter();
-    scheduleReferenceContentScan(q, source);
-    return REF_STATE.tables.filter((table) => tableMatches(table, q, source));
+    const sources = sourceFilters();
+    const sourceKey = sourceFilterKey(sources);
+    scheduleReferenceContentScan(q, sources, sourceKey);
+    return REF_STATE.tables.filter((table) => tableMatches(table, q, sources, sourceKey));
   }
 
   function renderReferenceList() {
     const list = ref$("#reference-list");
     if (!list) return;
     const q = referenceQuery();
-    const source = sourceFilter();
+    const sourceKey = sourceFilterKey();
     const rows = filteredTables();
     list.replaceChildren();
     ref$("#reference-count").textContent = String(REF_STATE.tables.length || 0);
@@ -371,7 +381,7 @@
     for (const table of rows) {
       const contentOnlyMatch = q
         && !tableMetadataMatches(table, q)
-        && tableContentMatches(table, q, source);
+        && tableContentMatches(table, q, sourceKey);
       const button = document.createElement("button");
       button.type = "button";
       button.className = "reference-table-row";
@@ -484,7 +494,7 @@
 
   function refreshReference() {
     applyReferenceStrings();
-    buildSourceSelect();
+    buildSourceChips();
     renderReferenceList();
     renderReferenceRows();
   }
@@ -501,8 +511,6 @@
       renderReferenceList();
       renderReferenceRows();
     });
-    const source = ref$("#reference-source");
-    if (source) source.addEventListener("change", renderReferenceList);
     document.querySelectorAll(".view-tab").forEach((button) => {
       button.addEventListener("click", () => {
         if (button.dataset.view === "reference") setTimeout(maybeLoadReference, 0);

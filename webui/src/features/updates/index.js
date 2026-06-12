@@ -14,6 +14,20 @@
       openAsset: "\u5728\u8d44\u6e90\u9875\u6253\u5f00",
       assetSummary: "\u8d44\u6e90\u53d8\u5316",
       mediaPreview: "\u9884\u89c8",
+      mediaComparison: "\u5a92\u4f53\u5bf9\u6bd4",
+      previousAsset: "\u65e7\u7248\u672c",
+      currentAsset: "\u65b0\u7248\u672c",
+      assetFile: "\u8d44\u6e90\u6587\u4ef6",
+      oldAssetPath: "\u539f\u5bfc\u51fa\u6587\u4ef6",
+      newAssetPath: "\u65b0\u5bfc\u51fa\u6587\u4ef6",
+      openFile: "\u6253\u5f00\u6587\u4ef6",
+      loadingObjPreview: "\u6b63\u5728\u52a0\u8f7d OBJ \u9884\u89c8...",
+      objPreviewUnavailable: "\u65e0\u6cd5\u9884\u89c8\u6b64 OBJ \u6587\u4ef6\u3002",
+      objPreviewReady: "{vertices} \u9876\u70b9 / {faces} \u9762",
+      visualDiff: "\u5dee\u5f02\u9ad8\u4eae",
+      diffLoading: "\u6b63\u5728\u751f\u6210\u5dee\u5f02\u9884\u89c8...",
+      diffUnavailable: "\u65e0\u6cd5\u751f\u6210\u5dee\u5f02\u9884\u89c8\u3002",
+      diffChanged: "\u7ea6 {percent} \u50cf\u7d20\u53d8\u5316",
       textDiff: "\u6587\u672c\u5dee\u5f02",
       decodedImpact: "\u89e3\u7801\u5f71\u54cd",
       displayImpact: "WebUI \u5f71\u54cd",
@@ -71,6 +85,20 @@
       openAsset: "Open in Assets",
       assetSummary: "Asset changes",
       mediaPreview: "Preview",
+      mediaComparison: "Media comparison",
+      previousAsset: "Old version",
+      currentAsset: "New version",
+      assetFile: "Asset file",
+      oldAssetPath: "Old export file",
+      newAssetPath: "New export file",
+      openFile: "Open file",
+      loadingObjPreview: "Loading OBJ preview...",
+      objPreviewUnavailable: "Unable to preview this OBJ file.",
+      objPreviewReady: "{vertices} vertices / {faces} faces",
+      visualDiff: "Diff highlight",
+      diffLoading: "Building diff preview...",
+      diffUnavailable: "Unable to build diff preview.",
+      diffChanged: "About {percent} pixels changed",
       textDiff: "Text diff",
       decodedImpact: "Decoded impact",
       displayImpact: "WebUI impact",
@@ -125,7 +153,6 @@
     formatSignedNumber,
     enhanceMediaPlayers,
     normalizeUiLocale,
-    rebuildSelect,
   } = window.WebUI;
   const STATUS_ORDER = { added: 0, modified: 1, deleted: 2 };
   const UPDATE_STATE = {
@@ -137,6 +164,12 @@
     filtered: [],
     selectedPath: "",
     selectedEntry: null,
+    filters: {
+      statuses: new Set(),
+      categories: new Set(),
+      extensions: new Set(),
+    },
+    modelCache: new Map(),
   };
 
   const up$ = $;
@@ -190,19 +223,25 @@
     return `${sign}${value.toFixed(decimals)} ${units[unit]}`;
   }
 
-  function statusFilter() {
-    const node = up$("#updates-status");
-    return String(node && node.value || "");
+  function countBy(items, keyFn) {
+    const counts = {};
+    for (const item of items || []) {
+      const key = keyFn(item);
+      counts[key] = (counts[key] || 0) + 1;
+    }
+    return counts;
   }
 
-  function categoryFilter() {
-    const node = up$("#updates-category");
-    return String(node && node.value || "");
+  function statusFilters() {
+    return UPDATE_STATE.filters.statuses;
   }
 
-  function extensionFilter() {
-    const node = up$("#updates-extension");
-    return String(node && node.value || "");
+  function categoryFilters() {
+    return UPDATE_STATE.filters.categories;
+  }
+
+  function extensionFilters() {
+    return UPDATE_STATE.filters.extensions;
   }
 
   function updateQuery() {
@@ -224,6 +263,10 @@
       entry.domain,
       entry.asset_kind,
       entry.asset_rel,
+      entry.old_asset_rel,
+      entry.new_asset_rel,
+      entry.old_asset_export_rel,
+      entry.new_asset_export_rel,
       normalizeExtension(entry.extension),
       Object.keys(decoded.tags || {}).join(" "),
       Object.keys(decoded.byExtension || {}).join(" "),
@@ -232,13 +275,13 @@
   }
 
   function matchesFilters(entry) {
-    const status = statusFilter();
-    const category = categoryFilter();
-    const extension = extensionFilter();
+    const statuses = statusFilters();
+    const categories = categoryFilters();
+    const extensions = extensionFilters();
     const q = updateQuery();
-    if (status && entry.status !== status) return false;
-    if (category && entry.category !== category) return false;
-    if (extension && normalizeExtension(entry.extension) !== extension) return false;
+    if (statuses.size && !statuses.has(entry.status)) return false;
+    if (categories.size && !categories.has(entry.category)) return false;
+    if (extensions.size && !extensions.has(normalizeExtension(entry.extension))) return false;
     if (q && !entrySearchText(entry).includes(q)) return false;
     return true;
   }
@@ -267,12 +310,6 @@
       ["#updates-category-label", "category"],
       ["#updates-extension-label", "extension"],
       ["#updates-sort-label", "sort"],
-      ["#updates-status-all", "all"],
-      ["#updates-status-added", "added"],
-      ["#updates-status-modified", "modified"],
-      ["#updates-status-deleted", "deleted"],
-      ["#updates-category-all", "all"],
-      ["#updates-extension-all", "all"],
       ["#updates-sort-path", "sortPath"],
       ["#updates-sort-status", "sortStatus"],
       ["#updates-sort-size-delta", "sortSizeDelta"],
@@ -355,10 +392,57 @@
 
   function populateUpdateFilters() {
     const entries = UPDATE_STATE.entries;
+    const statusCounts = countBy(entries, (entry) => String(entry.status || ""));
+    buildUpdateFilterChips(
+      "#updates-status-filter",
+      ["added", "modified", "deleted"].filter((status) => statusCounts[status]),
+      statusLabel,
+      UPDATE_STATE.filters.statuses,
+      statusCounts,
+    );
+
     const categories = Array.from(new Set(entries.map((entry) => String(entry.category || "other")))).sort();
     const extensions = Array.from(new Set(entries.map((entry) => normalizeExtension(entry.extension)))).sort();
-    rebuildSelect(up$("#updates-category"), categories, categoryLabel);
-    rebuildSelect(up$("#updates-extension"), extensions, (value) => value);
+    buildUpdateFilterChips(
+      "#updates-category-filter",
+      categories,
+      categoryLabel,
+      UPDATE_STATE.filters.categories,
+      countBy(entries, (entry) => String(entry.category || "other")),
+    );
+    buildUpdateFilterChips(
+      "#updates-extension-filter",
+      extensions,
+      (value) => value,
+      UPDATE_STATE.filters.extensions,
+      countBy(entries, (entry) => normalizeExtension(entry.extension)),
+    );
+  }
+
+  function buildUpdateFilterChips(selector, values, labeler, activeSet, counts = {}) {
+    const wrap = up$(selector);
+    if (!wrap) return;
+    const available = new Set(values);
+    for (const value of [...activeSet]) {
+      if (!available.has(value)) activeSet.delete(value);
+    }
+
+    const fragment = document.createDocumentFragment();
+    for (const value of values) {
+      const count = Number(counts[value] || 0);
+      const chip = document.createElement("span");
+      chip.className = "chip updates-filter-chip";
+      chip.dataset.value = value;
+      chip.textContent = `${labeler ? labeler(value) : value}${count ? ` (${formatNumber(count)})` : ""}`;
+      chip.classList.toggle("on", activeSet.has(value));
+      chip.addEventListener("click", () => {
+        if (activeSet.has(value)) activeSet.delete(value);
+        else activeSet.add(value);
+        applyUpdateFilters();
+      });
+      fragment.appendChild(chip);
+    }
+    wrap.replaceChildren(fragment);
   }
 
   function applyUpdateFilters() {
@@ -516,6 +600,63 @@
     );
   }
 
+  function normalizeExportRouteRel(value) {
+    return String(value || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+  }
+
+  function defaultExportSourceRoot(source) {
+    const match = String(source || "").match(/^(.+)-structured$/i);
+    return match ? `structured/${match[1]}` : "";
+  }
+
+  function exportRouteHref(rel, sourceRoots = {}, exportRoot = "", routeRoot = "export_full") {
+    const normalizedRel = normalizeExportRouteRel(rel);
+    const normalizedRoute = normalizeExportRouteRel(routeRoot) || "export_full";
+    if (!normalizedRel) return "";
+
+    const [source, ...rest] = normalizedRel.split("/").filter(Boolean);
+    const sourceRoot = (sourceRoots && sourceRoots[source]) || defaultExportSourceRoot(source);
+    let exportRel = normalizedRel;
+    if (sourceRoot) {
+      let normalizedRoot = normalizeExportRouteRel(sourceRoot);
+      const rootPrefix = normalizeExportRouteRel(exportRoot);
+      if (rootPrefix && normalizedRoot.startsWith(`${rootPrefix}/`)) {
+        normalizedRoot = normalizedRoot.slice(rootPrefix.length + 1);
+      } else if (normalizedRoot === rootPrefix) {
+        normalizedRoot = "";
+      }
+      exportRel = [normalizedRoot, rest.join("/")].filter(Boolean).join("/");
+    }
+
+    return `/${normalizedRoute}/${exportRel.split("/").map(encodeURIComponent).join("/")}`;
+  }
+
+  function currentAssetHref(entry) {
+    const payload = UPDATE_STATE.payload || {};
+    const assets = payload.assets || {};
+    if (entry && entry.new_asset_export_rel) {
+      return exportRouteHref(entry.new_asset_export_rel, {}, assets.sourceRoot || "export_full", "export_full");
+    }
+    const rel = entry && (entry.new_asset_rel || entry.asset_rel);
+    return rel ? updateAssetHref(rel) : "";
+  }
+
+  function previousAssetHref(entry) {
+    const payload = UPDATE_STATE.payload || {};
+    const assets = payload.assets || {};
+    if (entry && entry.old_asset_export_rel) {
+      return exportRouteHref(entry.old_asset_export_rel, {}, assets.previousSourceRoot || "export_122", "export_previous");
+    }
+    const rel = entry && entry.old_asset_rel;
+    if (!rel) return "";
+    return exportRouteHref(
+      rel,
+      { ...fallbackAssetSourceRoots(), ...(assets.previousSourceRoots || {}) },
+      assets.previousSourceRoot || "export_122",
+      "export_previous",
+    );
+  }
+
   function factLinkRow(label, href, text) {
     if (!href || !text) return "";
     return (
@@ -550,21 +691,620 @@
     );
   }
 
-  function mediaPreviewHtml(entry) {
-    const rel = entry && entry.asset_rel;
+  function changedAssetMediaKind(entry) {
     const kind = String(entry && entry.asset_kind || "");
-    if (!rel || entry.status === "deleted" || (kind !== "image" && kind !== "video")) return "";
-    const href = updateAssetHref(rel);
-    const media = kind === "video"
-      ? `<video class="updates-media-video" src="${escapeHtml(href)}" preload="metadata" playsinline></video>`
-      : `<a class="updates-media-link" href="${escapeHtml(href)}" target="_blank" rel="noopener"><img class="updates-media-image" src="${escapeHtml(href)}" alt="${escapeHtml(rel)}" loading="lazy"></a>`;
+    return ["image", "video", "model"].includes(kind) ? kind : "";
+  }
+
+  function filenameFromRel(rel) {
+    const parts = String(rel || "").split("/");
+    return parts[parts.length - 1] || rel || "";
+  }
+
+  function extensionFromRel(rel) {
+    const filename = filenameFromRel(rel);
+    const dot = filename.lastIndexOf(".");
+    return dot >= 0 ? filename.slice(dot + 1).toUpperCase() : "MODEL";
+  }
+
+  function isObjRel(rel) {
+    return /\.obj$/i.test(filenameFromRel(rel));
+  }
+
+  function assetMediaItems(entry) {
+    const kind = changedAssetMediaKind(entry);
+    if (!kind || !entry || entry.domain !== "asset") return [];
+    if (entry.status === "modified") {
+      return [
+        {
+          label: updateText("previousAsset"),
+          href: previousAssetHref(entry),
+          rel: entry.old_asset_export_rel || entry.old_asset_rel || entry.asset_rel,
+          kind,
+          size: entry.old_size,
+        },
+        {
+          label: updateText("currentAsset"),
+          href: currentAssetHref(entry),
+          rel: entry.new_asset_export_rel || entry.new_asset_rel || entry.asset_rel,
+          kind,
+          size: entry.new_size,
+        },
+      ].filter((item) => item.href && item.rel);
+    }
+    if (entry.status === "deleted") {
+      return [{
+        label: updateText("previousAsset"),
+        href: previousAssetHref(entry),
+        rel: entry.old_asset_export_rel || entry.old_asset_rel || entry.asset_rel,
+        kind,
+        size: entry.old_size,
+      }].filter((item) => item.href && item.rel);
+    }
+    return [{
+      label: updateText("currentAsset"),
+      href: currentAssetHref(entry),
+      rel: entry.new_asset_export_rel || entry.new_asset_rel || entry.asset_rel,
+      kind,
+      size: entry.new_size,
+    }].filter((item) => item.href && item.rel);
+  }
+
+  function mediaItemHtml(item) {
+    const href = String(item && item.href || "");
+    const rel = String(item && item.rel || "");
+    const kind = String(item && item.kind || "");
+    if (!href || !rel) return "";
+    const size = formatBytes(item.size);
+    let media = "";
+    if (kind === "video") {
+      media = `<video class="updates-media-video" src="${escapeHtml(href)}" preload="metadata" playsinline data-update-sync-video="1"></video>`;
+    } else if (kind === "image") {
+      media = (
+        `<a class="updates-media-link" href="${escapeHtml(href)}" target="_blank" rel="noopener">` +
+          `<img class="updates-media-image" src="${escapeHtml(href)}" alt="${escapeHtml(rel)}" loading="lazy">` +
+        `</a>`
+      );
+    } else if (isObjRel(rel)) {
+      media = (
+        `<div class="updates-model-preview">` +
+          `<canvas class="updates-model-canvas" data-model-src="${escapeHtml(href)}" role="img" aria-label="${escapeHtml(rel)}"></canvas>` +
+          `<div class="updates-model-note">${escapeHtml(updateText("loadingObjPreview"))}</div>` +
+        `</div>`
+      );
+    } else {
+      media = (
+        `<a class="updates-model-file" href="${escapeHtml(href)}" target="_blank" rel="noopener">` +
+          `<span class="updates-model-file-kind">${escapeHtml(extensionFromRel(rel))}</span>` +
+          `<span class="updates-model-file-name">${escapeHtml(filenameFromRel(rel))}</span>` +
+          `<span class="updates-model-file-caption">${escapeHtml(updateText("assetFile"))}</span>` +
+        `</a>`
+      );
+    }
+    return (
+      `<div class="updates-media-item">` +
+        `<div class="updates-media-label">` +
+          `<span>${escapeHtml(item.label || "")}</span>` +
+          (size ? `<span>${escapeHtml(size)}</span>` : "") +
+        `</div>` +
+        media +
+        `<a class="updates-media-open" href="${escapeHtml(href)}" target="_blank" rel="noopener">` +
+          `${escapeHtml(updateText("openFile"))}: ${escapeHtml(rel)}` +
+        `</a>` +
+      `</div>`
+    );
+  }
+
+  function mediaPreviewHtml(entry) {
+    const items = assetMediaItems(entry);
+    if (!items.length) return "";
     return (
       `<section class="updates-detail-panel updates-media-preview">` +
-        `<h2>${escapeHtml(updateText("mediaPreview"))}</h2>` +
-        media +
-        `<a class="updates-media-open" href="${escapeHtml(href)}" target="_blank" rel="noopener">${escapeHtml(rel)}</a>` +
+        `<h2>${escapeHtml(updateText(items.length > 1 ? "mediaComparison" : "mediaPreview"))}</h2>` +
+        `<div class="updates-media-comparison${items.length > 1 ? " is-comparison" : ""}">` +
+          items.map(mediaItemHtml).join("") +
+        `</div>` +
       `</section>`
     );
+  }
+
+  function diffMediaItems(entry) {
+    const items = assetMediaItems(entry);
+    if (!entry || entry.status !== "modified" || items.length < 2) return [];
+    const kind = String(entry.asset_kind || "");
+    if (kind !== "image" && kind !== "video") return [];
+    const oldItem = items.find((item) => item.label === updateText("previousAsset")) || items[0];
+    const newItem = items.find((item) => item.label === updateText("currentAsset")) || items[1];
+    if (!oldItem || !newItem || !oldItem.href || !newItem.href) return [];
+    return [oldItem, newItem];
+  }
+
+  function mediaDiffHtml(entry) {
+    const [oldItem, newItem] = diffMediaItems(entry);
+    if (!oldItem || !newItem) return "";
+    const kind = String(entry.asset_kind || "");
+    const canvasAttrs = [
+      `class="updates-media-diff-canvas"`,
+      `data-diff-kind="${escapeHtml(kind)}"`,
+      `data-old-src="${escapeHtml(oldItem.href)}"`,
+      `data-new-src="${escapeHtml(newItem.href)}"`,
+    ].join(" ");
+    const hiddenVideos = kind === "video"
+      ? (
+        `<video class="updates-diff-source-video" src="${escapeHtml(oldItem.href)}" preload="auto" playsinline muted data-media-player="diff-source" data-update-sync-video="1" data-diff-role="old"></video>` +
+        `<video class="updates-diff-source-video" src="${escapeHtml(newItem.href)}" preload="auto" playsinline muted data-media-player="diff-source" data-update-sync-video="1" data-diff-role="new"></video>`
+      )
+      : "";
+    return (
+      `<section class="updates-detail-panel updates-media-diff">` +
+        `<h2>${escapeHtml(updateText("visualDiff"))}</h2>` +
+        `<div class="updates-media-diff-stage updates-${escapeHtml(kind)}-diff">` +
+          `<canvas ${canvasAttrs} role="img" aria-label="${escapeHtml(updateText("visualDiff"))}"></canvas>` +
+          hiddenVideos +
+        `</div>` +
+        `<div class="updates-detail-note updates-media-diff-note">${escapeHtml(updateText("diffLoading"))}</div>` +
+      `</section>`
+    );
+  }
+
+  function diffCanvasSize(oldWidth, oldHeight, newWidth, newHeight, maxEdge = 960) {
+    const sourceWidth = Math.max(Number(oldWidth) || 0, Number(newWidth) || 0, 1);
+    const sourceHeight = Math.max(Number(oldHeight) || 0, Number(newHeight) || 0, 1);
+    const scale = Math.min(1, maxEdge / Math.max(sourceWidth, sourceHeight));
+    return {
+      width: Math.max(1, Math.round(sourceWidth * scale)),
+      height: Math.max(1, Math.round(sourceHeight * scale)),
+    };
+  }
+
+  function drawSourceFrame(source, width, height) {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return null;
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(source, 0, 0, width, height);
+    return ctx.getImageData(0, 0, width, height);
+  }
+
+  function drawMediaDiff(canvas, oldSource, newSource, oldWidth, oldHeight, newWidth, newHeight) {
+    if (!canvas || !oldSource || !newSource) return null;
+    const { width, height } = diffCanvasSize(oldWidth, oldHeight, newWidth, newHeight);
+    const oldFrame = drawSourceFrame(oldSource, width, height);
+    const newFrame = drawSourceFrame(newSource, width, height);
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!oldFrame || !newFrame || !ctx) return null;
+
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.aspectRatio = `${width} / ${height}`;
+
+    const out = ctx.createImageData(width, height);
+    const oldData = oldFrame.data;
+    const newData = newFrame.data;
+    const outData = out.data;
+    let changed = 0;
+    for (let i = 0; i < newData.length; i += 4) {
+      const dr = Math.abs(newData[i] - oldData[i]);
+      const dg = Math.abs(newData[i + 1] - oldData[i + 1]);
+      const db = Math.abs(newData[i + 2] - oldData[i + 2]);
+      const da = Math.abs(newData[i + 3] - oldData[i + 3]);
+      const delta = dr + dg + db + da;
+      const base = Math.round((newData[i] * 0.2126 + newData[i + 1] * 0.7152 + newData[i + 2] * 0.0722) * 0.62 + 34);
+      if (delta > 42) {
+        changed += 1;
+        const heat = Math.min(255, 96 + delta * 0.55);
+        outData[i] = heat;
+        outData[i + 1] = Math.max(0, base - delta * 0.14);
+        outData[i + 2] = Math.max(0, base - delta * 0.18);
+        outData[i + 3] = 255;
+      } else {
+        outData[i] = base;
+        outData[i + 1] = base;
+        outData[i + 2] = base;
+        outData[i + 3] = Math.max(newData[i + 3], 220);
+      }
+    }
+    ctx.putImageData(out, 0, 0);
+    return {
+      changed,
+      total: width * height,
+      percent: width * height ? changed / (width * height) * 100 : 0,
+    };
+  }
+
+  function setDiffNote(section, text, isError = false) {
+    const note = section && section.querySelector(".updates-media-diff-note");
+    if (!note) return;
+    note.textContent = text || "";
+    note.classList.toggle("is-error", Boolean(isError));
+  }
+
+  function diffCompleteText(result) {
+    if (!result) return "";
+    const percent = result.percent >= 0.1 ? result.percent.toFixed(1) : result.percent.toFixed(2);
+    return updateText("diffChanged", { percent: `${percent}%` });
+  }
+
+  function loadDiffImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.addEventListener("load", () => resolve(img), { once: true });
+      img.addEventListener("error", () => reject(new Error("image load failed")), { once: true });
+      img.src = src;
+    });
+  }
+
+  async function initImageDiff(section, canvas) {
+    try {
+      const [oldImg, newImg] = await Promise.all([
+        loadDiffImage(canvas.dataset.oldSrc || ""),
+        loadDiffImage(canvas.dataset.newSrc || ""),
+      ]);
+      if (!canvas.isConnected) return;
+      const result = drawMediaDiff(
+        canvas,
+        oldImg,
+        newImg,
+        oldImg.naturalWidth,
+        oldImg.naturalHeight,
+        newImg.naturalWidth,
+        newImg.naturalHeight,
+      );
+      setDiffNote(section, diffCompleteText(result));
+    } catch (error) {
+      setDiffNote(section, updateText("diffUnavailable"), true);
+    }
+  }
+
+  function videoFrameReady(video) {
+    return video && video.readyState >= 2 && Number(video.videoWidth || 0) > 0 && Number(video.videoHeight || 0) > 0;
+  }
+
+  function initVideoDiff(section, canvas) {
+    const oldVideo = section.querySelector("video[data-diff-role='old']");
+    const newVideo = section.querySelector("video[data-diff-role='new']");
+    if (!oldVideo || !newVideo) {
+      setDiffNote(section, updateText("diffUnavailable"), true);
+      return;
+    }
+
+    let frameQueued = false;
+    const render = () => {
+      frameQueued = false;
+      if (!canvas.isConnected) return;
+      if (!videoFrameReady(oldVideo) || !videoFrameReady(newVideo)) {
+        if (!oldVideo.error && !newVideo.error) setDiffNote(section, updateText("diffLoading"));
+        return;
+      }
+      try {
+        const result = drawMediaDiff(
+          canvas,
+          oldVideo,
+          newVideo,
+          oldVideo.videoWidth,
+          oldVideo.videoHeight,
+          newVideo.videoWidth,
+          newVideo.videoHeight,
+        );
+        setDiffNote(section, diffCompleteText(result));
+      } catch (error) {
+        setDiffNote(section, updateText("diffUnavailable"), true);
+      }
+      if (!oldVideo.paused || !newVideo.paused) queueFrame();
+    };
+    const queueFrame = () => {
+      if (frameQueued || !canvas.isConnected) return;
+      frameQueued = true;
+      requestAnimationFrame(render);
+    };
+    for (const video of [oldVideo, newVideo]) {
+      video.addEventListener("loadeddata", queueFrame);
+      video.addEventListener("loadedmetadata", queueFrame);
+      video.addEventListener("play", queueFrame);
+      video.addEventListener("timeupdate", queueFrame);
+      video.addEventListener("seeked", queueFrame);
+      video.addEventListener("error", () => setDiffNote(section, updateText("diffUnavailable"), true), { once: true });
+    }
+    queueFrame();
+  }
+
+  function initMediaDiffModules(root) {
+    if (!root) return;
+    root.querySelectorAll(".updates-media-diff-canvas").forEach((canvas) => {
+      const section = canvas.closest(".updates-media-diff");
+      if (canvas.dataset.diffInitialized === "1") return;
+      canvas.dataset.diffInitialized = "1";
+      if (canvas.dataset.diffKind === "image") initImageDiff(section, canvas);
+      else if (canvas.dataset.diffKind === "video") initVideoDiff(section, canvas);
+    });
+  }
+
+  function safeVideoTime(video, targetTime) {
+    const duration = Number(video.duration);
+    if (Number.isFinite(duration) && duration > 0) {
+      return Math.min(Math.max(0, targetTime), Math.max(0, duration - 0.04));
+    }
+    return Math.max(0, targetTime);
+  }
+
+  function seekVideoNear(video, targetTime) {
+    if (!video || Number.isNaN(Number(targetTime))) return;
+    const nextTime = safeVideoTime(video, Number(targetTime));
+    if (Math.abs(Number(video.currentTime || 0) - nextTime) < 0.18) return;
+    try {
+      video.currentTime = nextTime;
+    } catch (error) {
+      // Some media cannot seek until metadata is available; the next user event will retry.
+    }
+  }
+
+  function setupUpdatesVideoSync(root) {
+    if (!root) return;
+    const videos = Array.from(root.querySelectorAll("video[data-update-sync-video='1']"));
+    if (videos.length < 2) return;
+    let syncing = false;
+    const releaseSync = () => {
+      window.setTimeout(() => {
+        syncing = false;
+      }, 80);
+    };
+    const syncGroup = (target, { play = false, pause = false, time = true, rate = true } = {}) => {
+      if (!target || syncing) return;
+      syncing = true;
+      const currentTime = Number(target.currentTime || 0);
+      const playbackRate = Number(target.playbackRate || 1);
+      for (const video of videos) {
+        if (video === target) continue;
+        if (rate && Number.isFinite(playbackRate)) video.playbackRate = playbackRate;
+        if (time) seekVideoNear(video, currentTime);
+        if (pause && !video.paused) video.pause();
+      }
+      if (play) {
+        const playCalls = videos.map((video) => {
+          if (video === target || !video.paused) return null;
+          return video.play().catch(() => {});
+        });
+        Promise.all(playCalls.filter(Boolean)).finally(releaseSync);
+      } else {
+        releaseSync();
+      }
+    };
+    for (const video of videos) {
+      if (video.dataset.updateSyncBound === "1") continue;
+      video.dataset.updateSyncBound = "1";
+      video.addEventListener("play", () => syncGroup(video, { play: true }));
+      video.addEventListener("pause", () => {
+        if (!video.ended) syncGroup(video, { pause: true, time: false, rate: false });
+      });
+      video.addEventListener("seeking", () => syncGroup(video, { time: true, rate: false }));
+      video.addEventListener("ratechange", () => syncGroup(video, { time: false, rate: true }));
+      video.addEventListener("loadedmetadata", () => {
+        const playing = videos.find((candidate) => candidate !== video && !candidate.paused);
+        if (playing) syncGroup(playing, { play: true });
+      });
+    }
+  }
+
+  async function loadObjPreviewModel(src) {
+    let model = UPDATE_STATE.modelCache.get(src);
+    if (model) return model;
+    const res = await fetch(src);
+    if (!res.ok) throw new Error(`OBJ HTTP ${res.status}`);
+    model = parseObjPreviewModel(await res.text());
+    UPDATE_STATE.modelCache.set(src, model);
+    return model;
+  }
+
+  function parseObjPreviewModel(text) {
+    const vertices = [];
+    const triangles = [];
+    let faceCount = 0;
+    let objectCount = 0;
+    let minX = Number.POSITIVE_INFINITY;
+    let minY = Number.POSITIVE_INFINITY;
+    let minZ = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let maxY = Number.NEGATIVE_INFINITY;
+    let maxZ = Number.NEGATIVE_INFINITY;
+
+    for (const rawLine of String(text || "").split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith("#")) continue;
+      if (line.startsWith("v ")) {
+        const parts = line.split(/\s+/);
+        const x = Number(parts[1]);
+        const y = Number(parts[2]);
+        const z = Number(parts[3]);
+        if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue;
+        vertices.push([x, y, z]);
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        minZ = Math.min(minZ, z);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+        maxZ = Math.max(maxZ, z);
+      } else if (line.startsWith("f ")) {
+        faceCount += 1;
+        const indices = line.split(/\s+/).slice(1).map((token) => {
+          const raw = Number(String(token || "").split("/")[0]);
+          if (!Number.isInteger(raw) || raw === 0) return -1;
+          return raw > 0 ? raw - 1 : vertices.length + raw;
+        }).filter((index) => index >= 0 && index < vertices.length);
+        for (let index = 1; index + 1 < indices.length && triangles.length < 28000; index += 1) {
+          const a = indices[0];
+          const b = indices[index];
+          const c = indices[index + 1];
+          if (a !== b && b !== c && a !== c) triangles.push([a, b, c]);
+        }
+      } else if (line.startsWith("o ") || line.startsWith("g ")) {
+        objectCount += 1;
+      }
+    }
+
+    const spanX = maxX - minX;
+    const spanY = maxY - minY;
+    const spanZ = maxZ - minZ;
+    const maxSpan = Math.max(spanX || 1, spanY || 1, spanZ || 1);
+    const pointLimit = 14000;
+    const pointStep = vertices.length > pointLimit ? Math.ceil(vertices.length / pointLimit) : 1;
+    const points = [];
+    for (let index = 0; index < vertices.length; index += pointStep) {
+      points.push(vertices[index]);
+    }
+
+    return {
+      vertices,
+      triangles,
+      points,
+      vertexCount: vertices.length,
+      faceCount,
+      objectCount,
+      center: [
+        Number.isFinite(minX) ? (minX + maxX) * 0.5 : 0,
+        Number.isFinite(minY) ? (minY + maxY) * 0.5 : 0,
+        Number.isFinite(minZ) ? (minZ + maxZ) * 0.5 : 0,
+      ],
+      scale: 2 / maxSpan,
+    };
+  }
+
+  function projectObjPoint(point, model, width, height) {
+    const rx = -0.42;
+    const ry = 0.72;
+    const cosX = Math.cos(rx);
+    const sinX = Math.sin(rx);
+    const cosY = Math.cos(ry);
+    const sinY = Math.sin(ry);
+    let x = (point[0] - model.center[0]) * model.scale;
+    let y = (point[1] - model.center[1]) * model.scale;
+    let z = (point[2] - model.center[2]) * model.scale;
+
+    const xz = x * cosY - z * sinY;
+    const zz = x * sinY + z * cosY;
+    x = xz;
+    z = zz;
+
+    const yz = y * cosX - z * sinX;
+    z = y * sinX + z * cosX;
+    y = yz;
+
+    const cameraZ = 3.5;
+    const perspective = cameraZ / Math.max(0.35, cameraZ - z);
+    const visualScale = Math.min(width, height) * 0.38;
+    return {
+      x,
+      y,
+      z,
+      sx: width * 0.5 + x * perspective * visualScale,
+      sy: height * 0.52 - y * perspective * visualScale,
+      depth: z,
+      radius: Math.max(0.75, perspective * 1.45),
+    };
+  }
+
+  function drawObjBackdrop(ctx, width, height) {
+    ctx.fillStyle = "#0b1015";
+    ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = "rgba(118, 171, 174, 0.12)";
+    ctx.lineWidth = 1;
+    const step = Math.max(44, Math.round(width / 9));
+    for (let x = step; x < width; x += step) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+    for (let y = step; y < height; y += step) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+  }
+
+  function renderObjPreviewCanvas(canvas, model) {
+    if (!canvas || !model) return;
+    const width = Math.max(260, Math.round(canvas.clientWidth || canvas.parentElement?.clientWidth || 640));
+    const height = Math.max(220, Math.round(canvas.clientHeight || 360));
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawObjBackdrop(ctx, width, height);
+
+    const projectedVertices = model.vertices.map((point) => projectObjPoint(point, model, width, height));
+    if (model.triangles.length && model.triangles.length <= 16000) {
+      const faces = [];
+      for (const triangle of model.triangles) {
+        const a = projectedVertices[triangle[0]];
+        const b = projectedVertices[triangle[1]];
+        const c = projectedVertices[triangle[2]];
+        if (!a || !b || !c) continue;
+        const area = Math.abs((b.sx - a.sx) * (c.sy - a.sy) - (b.sy - a.sy) * (c.sx - a.sx));
+        if (area < 0.1) continue;
+        faces.push({ a, b, c, z: (a.depth + b.depth + c.depth) / 3 });
+      }
+      faces.sort((a, b) => a.z - b.z);
+      for (const face of faces) {
+        const depth = Math.max(0, Math.min(1, (face.z + 1.5) / 3));
+        ctx.fillStyle = `rgba(${Math.round(60 + depth * 64)}, ${Math.round(120 + depth * 72)}, ${Math.round(140 + depth * 70)}, 0.78)`;
+        ctx.strokeStyle = "rgba(230, 244, 246, 0.16)";
+        ctx.beginPath();
+        ctx.moveTo(face.a.sx, face.a.sy);
+        ctx.lineTo(face.b.sx, face.b.sy);
+        ctx.lineTo(face.c.sx, face.c.sy);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+      return;
+    }
+
+    const projectedPoints = model.points
+      .map((point) => projectObjPoint(point, model, width, height))
+      .sort((a, b) => a.depth - b.depth);
+    for (const point of projectedPoints) {
+      const depth = Math.max(0, Math.min(1, (point.depth + 1.5) / 3));
+      ctx.fillStyle = `rgba(118, 171, 174, ${0.24 + depth * 0.6})`;
+      ctx.beginPath();
+      ctx.arc(point.sx, point.sy, point.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function setObjPreviewNote(canvas, text, isError = false) {
+    const note = canvas?.closest(".updates-model-preview")?.querySelector(".updates-model-note");
+    if (!note) return;
+    note.textContent = text;
+    note.classList.toggle("is-error", Boolean(isError));
+  }
+
+  function initObjPreviewModules(root) {
+    if (!root) return;
+    root.querySelectorAll(".updates-model-canvas[data-model-src]").forEach((canvas) => {
+      if (canvas.dataset.modelInitialized === "1") return;
+      canvas.dataset.modelInitialized = "1";
+      const src = canvas.dataset.modelSrc || "";
+      setObjPreviewNote(canvas, updateText("loadingObjPreview"));
+      loadObjPreviewModel(src)
+        .then((model) => {
+          if (!canvas.isConnected) return;
+          renderObjPreviewCanvas(canvas, model);
+          setObjPreviewNote(canvas, updateText("objPreviewReady", {
+            vertices: formatNumber(model.vertexCount),
+            faces: formatNumber(model.faceCount),
+          }));
+        })
+        .catch(() => {
+          if (!canvas.isConnected) return;
+          setObjPreviewNote(canvas, updateText("objPreviewUnavailable"), true);
+        });
+    });
   }
 
   function decodedFileHref(path) {
@@ -654,6 +1394,8 @@
       factRow(updateText("category"), categoryLabel(entry.category)),
       factRow(updateText("assetKind"), entry.asset_kind),
       factRow(updateText("assetPath"), entry.asset_rel, { mono: true }),
+      factRow(updateText("oldAssetPath"), entry.old_asset_export_rel, { mono: true }),
+      factRow(updateText("newAssetPath"), entry.new_asset_export_rel, { mono: true }),
       entry.asset_rel ? factLinkRow(updateText("openAsset"), assetUrl(entry.asset_rel), entry.asset_rel) : "",
       factRow(updateText("extension"), normalizeExtension(entry.extension)),
       factRow(updateText("oldSize"), formatBytes(entry.old_size)),
@@ -667,10 +1409,16 @@
     ensureDetailExtra().innerHTML = [
       decodedImpactHtml(entry),
       mediaPreviewHtml(entry),
+      mediaDiffHtml(entry),
       textDiffHtml(entry),
     ].filter(Boolean).join("");
     const extra = up$("#updates-detail-extra");
-    if (extra) enhanceMediaPlayers(extra);
+    if (extra) {
+      enhanceMediaPlayers(extra);
+      setupUpdatesVideoSync(extra);
+      initMediaDiffModules(extra);
+      initObjPreviewModules(extra);
+    }
   }
 
   function refreshUpdates() {
@@ -686,7 +1434,7 @@
   }
 
   function bindUpdateEvents() {
-    for (const sel of ["#updates-q", "#updates-status", "#updates-category", "#updates-extension", "#updates-sort"]) {
+    for (const sel of ["#updates-q", "#updates-sort"]) {
       const node = up$(sel);
       if (node) node.addEventListener(sel === "#updates-q" ? "input" : "change", applyUpdateFilters);
     }

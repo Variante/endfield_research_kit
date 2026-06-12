@@ -147,6 +147,10 @@ Expected active inputs and outputs:
   event-to-media links, and post-processes generated conversation JSON so
   dialog/cutscene lines and recoverable cutscene audio events can render native
   browser audio controls.
+- `find_duplicate_dialog_lines.py`: scans generated
+  `webui/data/lang/<LANG>/conv/*.json` files for exact repeated spoken line
+  text across different missions, reporting the speaker, mission, scene, and
+  line ids. It defaults to `dlg` conversations and can emit text, JSON, or CSV.
 - `asset_builder/`: shared asset-browser indexing, story-media selection, and
   demo bundle helpers used by `build_assets.py` and the Updates builder.
 - `package_webui.py`: packages split shareable WebUI zips from

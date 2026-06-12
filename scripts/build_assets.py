@@ -75,6 +75,8 @@ def load_existing_index_stats(asset_index_path: Path, video_index_path: Path) ->
         "assets": int(asset_counts.get("total") or 0),
         "images": int(asset_counts.get("image") or 0),
         "models": int(asset_counts.get("model") or 0),
+        "videos": int(asset_counts.get("video") or 0),
+        "json": int(asset_counts.get("json") or 0),
         "previewModels": sum(1 for entry in (asset_payload.get("entries") or []) if isinstance(entry, dict) and entry.get("p")),
         "indexBytes": asset_index_path.stat().st_size,
     }
@@ -113,6 +115,7 @@ def main(argv: list[str] | None = None) -> None:
             f"(source root: {asset_stats['sourceRoot']}; "
             f"{asset_stats['assets']} source assets indexed; "
             f"{asset_stats['images']} images; {asset_stats['models']} models; "
+            f"{asset_stats.get('videos', 0)} videos; {asset_stats.get('json', 0)} JSON files; "
             f"{asset_stats['previewModels']} reviewable non-OBJ models)"
         ),
     )

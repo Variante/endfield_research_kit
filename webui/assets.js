@@ -2,6 +2,7 @@
   const ASSET_GROUP_ROW_H = 28;
   const ASSET_ITEM_ROW_H = 70;
   const ASSET_OVERSCAN_PX = 240;
+  const JSON_PREVIEW_CHAR_LIMIT = 250000;
   const FILTER_PANEL_STORAGE_KEY = "asset_browser_filters_collapsed";
   const UI_LOCALE_STORAGE_KEY = "webui_ui_locale";
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
@@ -34,7 +35,6 @@
       searchPlaceholder: "\u641c\u7d22\u8def\u5f84 / \u540d\u79f0 / \u6587\u4ef6\u5939 / \u5206\u7ec4",
       type: "\u7c7b\u578b",
       source: "\u6765\u6e90",
-      allSources: "\u5168\u90e8\u6765\u6e90",
       sort: "\u6392\u5e8f",
       sortPath: "\u8def\u5f84 (A-Z)",
       sortSizeDesc: "\u6587\u4ef6\u5927\u5c0f\u4ece\u5927\u5230\u5c0f",
@@ -42,7 +42,7 @@
       sortName: "\u6587\u4ef6\u540d (A-Z)",
       reset: "\u91cd\u7f6e\u7b5b\u9009",
       listUnit: "\u6761\u76ee",
-      empty: "\u4ece\u5de6\u4fa7\u9009\u62e9\u4e00\u5f20\u56fe\u7247\u6216\u6a21\u578b\u6587\u4ef6\u3002",
+      empty: "\u4ece\u5de6\u4fa7\u9009\u62e9\u4e00\u4e2a\u5bfc\u51fa\u8d44\u6e90\u3002",
       openRawFile: "\u6253\u5f00\u539f\u59cb\u6587\u4ef6",
       downloadCurrentFile: "\u4e0b\u8f7d\u5f53\u524d\u6587\u4ef6",
       downloadBundle: "\u4e00\u952e\u4e0b\u8f7d\u6574\u5305",
@@ -60,6 +60,8 @@
       modelStats: "\u6a21\u578b\u7edf\u8ba1",
       images: "\u56fe\u7247",
       models: "\u6a21\u578b",
+      videos: "\u89c6\u9891",
+      jsonFiles: "JSON \u6587\u4ef6",
       rootFolder: "(\u6839\u76ee\u5f55)",
       none: "(\u65e0)",
       unresolved: "\u672a\u89e3\u6790",
@@ -88,6 +90,14 @@
       imagePreviewUnavailable: "\u65e0\u6cd5\u9884\u89c8\u8fd9\u5f20\u56fe\u7247\u3002",
       rawLinkAvailable: "\u4e0a\u65b9\u4ecd\u53ef\u6253\u5f00\u539f\u59cb\u6587\u4ef6\u3002",
       imagePixels: "{width} x {height} \u50cf\u7d20",
+      loadingVideoPreview: "\u6b63\u5728\u52a0\u8f7d\u89c6\u9891\u9884\u89c8...",
+      videoPreviewUnavailable: "\u65e0\u6cd5\u9884\u89c8\u8fd9\u4e2a\u89c6\u9891\u3002",
+      videoDuration: "\u65f6\u957f {duration}",
+      loadingJsonPreview: "\u6b63\u5728\u52a0\u8f7d JSON \u9884\u89c8...",
+      jsonPreviewUnavailable: "\u65e0\u6cd5\u9884\u89c8\u8fd9\u4e2a JSON \u6587\u4ef6\u3002",
+      jsonPreviewLoaded: "{size} / \u5df2\u683c\u5f0f\u5316 JSON",
+      jsonPreviewTruncated: "{size} / \u5df2\u683c\u5f0f\u5316 JSON / \u4ec5\u663e\u793a\u524d {limit}",
+      filePreviewUnavailable: "\u6b64\u6587\u4ef6\u6ca1\u6709\u53ef\u7528\u7684\u9875\u5185\u9884\u89c8\u3002",
       loadingObjPreview: "\u6b63\u5728\u52a0\u8f7d OBJ \u9884\u89c8...",
       loadingFbxSummary: "\u6b63\u5728\u8bfb\u53d6 FBX \u7ed3\u6784...",
       noModelFile: "\u6ca1\u6709\u53ef\u7528\u7684\u6a21\u578b\u6587\u4ef6\u3002",
@@ -120,7 +130,6 @@
       searchPlaceholder: "Search path / name / folder / group",
       type: "Type",
       source: "Source",
-      allSources: "All sources",
       sort: "Sort",
       sortPath: "Path (A-Z)",
       sortSizeDesc: "File size (high to low)",
@@ -128,7 +137,7 @@
       sortName: "File name (A-Z)",
       reset: "Reset filters",
       listUnit: "items",
-      empty: "Choose an image or model file from the left.",
+      empty: "Choose an exported asset from the left.",
       openRawFile: "Open raw file",
       downloadCurrentFile: "Download current file",
       downloadBundle: "Download bundle",
@@ -146,6 +155,8 @@
       modelStats: "Model stats",
       images: "Images",
       models: "Models",
+      videos: "Videos",
+      jsonFiles: "JSON files",
       rootFolder: "(root)",
       none: "(none)",
       unresolved: "unresolved",
@@ -174,6 +185,14 @@
       imagePreviewUnavailable: "Unable to preview this image.",
       rawLinkAvailable: "The raw file link is still available above.",
       imagePixels: "{width} x {height} pixels",
+      loadingVideoPreview: "Loading video preview...",
+      videoPreviewUnavailable: "Unable to preview this video.",
+      videoDuration: "Duration {duration}",
+      loadingJsonPreview: "Loading JSON preview...",
+      jsonPreviewUnavailable: "Unable to preview this JSON file.",
+      jsonPreviewLoaded: "{size} / formatted JSON",
+      jsonPreviewTruncated: "{size} / formatted JSON / showing first {limit}",
+      filePreviewUnavailable: "No in-page preview is available for this file.",
       loadingObjPreview: "Loading OBJ preview...",
       loadingFbxSummary: "Reading FBX structure...",
       noModelFile: "No model file is available.",
@@ -303,7 +322,7 @@
     return {
       q: "",
       types: new Set(),
-      source: "",
+      sources: new Set(),
       sort: "path",
     };
   }
@@ -338,7 +357,23 @@
   }
 
   function assetKindLabel(kind) {
-    return kind === "image" ? assetUiText("images") : assetUiText("models");
+    if (kind === "image") return assetUiText("images");
+    if (kind === "model") return assetUiText("models");
+    if (kind === "video") return assetUiText("videos");
+    if (kind === "json") return assetUiText("jsonFiles");
+    return assetTypeLabel(kind);
+  }
+
+  function assetBadgeClass(kind) {
+    if (kind === "image") return "asset-badge-image";
+    if (kind === "model") return "asset-badge-model";
+    if (kind === "video") return "asset-badge-video";
+    if (kind === "json") return "asset-badge-json";
+    return "asset-badge-file";
+  }
+
+  function supportsAssetVariants(kind) {
+    return kind === "image" || kind === "model";
   }
 
   function assetTypeLabel(type) {
@@ -352,7 +387,6 @@
     $("#asset-q").placeholder = assetUiText("searchPlaceholder");
     $("#asset-type-label").textContent = assetUiText("type");
     $("#asset-source-label").textContent = assetUiText("source");
-    $("#asset-source-all-option").textContent = assetUiText("allSources");
     $("#asset-sort-label").textContent = assetUiText("sort");
     $("#asset-sort-path").textContent = assetUiText("sortPath");
     $("#asset-sort-size-desc").textContent = assetUiText("sortSizeDesc");
@@ -382,7 +416,7 @@
 
     if (!refresh || !ASSET_STATE.loaded) return;
     buildTypeChips();
-    buildSourceSelect();
+    buildSourceChips();
     applyAssetFilters();
     if (ASSET_STATE.selectedEntry) renderSelectedAsset();
   }
@@ -498,11 +532,6 @@
       }, 120);
     });
 
-    $("#asset-source").addEventListener("change", (ev) => {
-      ASSET_STATE.filters.source = ev.target.value;
-      applyAssetFilters();
-    });
-
     $("#asset-sort").addEventListener("change", (ev) => {
       ASSET_STATE.filters.sort = ev.target.value;
       applyAssetFilters();
@@ -511,7 +540,6 @@
     $("#asset-reset").addEventListener("click", () => {
       ASSET_STATE.filters = createDefaultFilters();
       $("#asset-q").value = "";
-      $("#asset-source").value = "";
       $("#asset-sort").value = "path";
       $$(".asset-filter-chip.on").forEach((chip) => chip.classList.remove("on"));
       applyAssetFilters();
@@ -577,7 +605,7 @@
         ASSET_STATE.loaded = true;
         $("#asset-count").textContent = ASSET_STATE.entries.length.toLocaleString();
         buildTypeChips();
-        buildSourceSelect();
+        buildSourceChips();
         seedAssetExpansions();
         applyAssetFilters();
         applyInitialAssetSelection();
@@ -644,7 +672,8 @@
 
   function hydrateEntries(entries) {
     const hydrated = entries.map((raw) => {
-      const kind = raw.k === "model" ? "model" : "image";
+      const rawKind = String(raw.k || "");
+      const kind = ["image", "model", "video", "json"].includes(rawKind) ? rawKind : "image";
       const rel = String(raw.r || "");
       const parts = rel.split("/").filter(Boolean);
       const name = parts[parts.length - 1] || rel;
@@ -659,7 +688,7 @@
       const groupInfo = deriveAssetGroupInfo(kind, stem);
       const textureVariant = kind === "image" ? inferTextureVariantStem(stem, ext) : null;
       const variantScope = kind === "model" || textureVariant ? source : dir;
-      const lodMatch = stem.match(/(?:^|[_-])lod(\d+)$/i);
+      const lodMatch = kind === "model" ? stem.match(/(?:^|[_-])lod(\d+)$/i) : null;
       const lod = lodMatch ? Number(lodMatch[1]) : null;
       return {
         kind,
@@ -690,6 +719,7 @@
 
     const stemsByScope = new Map();
     for (const entry of hydrated) {
+      if (!supportsAssetVariants(entry.kind)) continue;
       const scopeKey = `${entry.kind}::${entry.variantScope || entry.dir}`.toLowerCase();
       let scope = stemsByScope.get(scopeKey);
       if (!scope) {
@@ -703,6 +733,7 @@
     const suffixedEntries = new Map();
     const suffixedFamilyVariants = new Map();
     for (const entry of hydrated) {
+      if (!supportsAssetVariants(entry.kind)) continue;
       const scopeKey = `${entry.kind}::${entry.variantScope || entry.dir}`.toLowerCase();
       const suffixFamily = inferGroupedFamily(entry);
       if (!suffixFamily) continue;
@@ -716,6 +747,7 @@
     }
 
     for (const entry of hydrated) {
+      if (!supportsAssetVariants(entry.kind)) continue;
       const scopeKey = `${entry.kind}::${entry.variantScope || entry.dir}`.toLowerCase();
       if (entry.lod !== null) {
         groupedFamilies.add(`${scopeKey}::${entry.family}`.toLowerCase());
@@ -745,15 +777,15 @@
       const lodFamilyKey = `${scopeKey}::${entry.family}`.toLowerCase();
       const suffixFamilyKey = suffixed ? `${scopeKey}::${suffixed.parentStem}`.toLowerCase() : "";
 
-      if (entry.lod !== null && groupedFamilies.has(lodFamilyKey)) {
+      if (supportsAssetVariants(entry.kind) && entry.lod !== null && groupedFamilies.has(lodFamilyKey)) {
         entry.family = entry.family;
         entry.grouped = true;
         entry.variantLabel = `LOD ${entry.lod}`;
-      } else if (suffixed && groupedFamilies.has(suffixFamilyKey)) {
+      } else if (supportsAssetVariants(entry.kind) && suffixed && groupedFamilies.has(suffixFamilyKey)) {
         entry.family = suffixed.parentStem;
         entry.grouped = true;
         entry.variantLabel = suffixed.suffixLabel;
-      } else if (groupedFamilies.has(ownFamilyKey)) {
+      } else if (supportsAssetVariants(entry.kind) && groupedFamilies.has(ownFamilyKey)) {
         entry.family = entry.stem;
         entry.grouped = true;
         entry.variantLabel = entry.name;
@@ -792,7 +824,8 @@
   function collapseDuplicateAssetEntries(entries) {
     const buckets = new Map();
     for (const entry of entries) {
-      const key = `${entry.kind}::${entry.ext}::${entry.source}::${entry.stem}`.toLowerCase();
+      const identity = supportsAssetVariants(entry.kind) ? entry.stem : entry.rel;
+      const key = `${entry.kind}::${entry.ext}::${entry.source}::${identity}`.toLowerCase();
       let bucket = buckets.get(key);
       if (!bucket) {
         bucket = [];
@@ -942,22 +975,27 @@
       const chip = document.createElement("span");
       chip.className = "chip asset-filter-chip";
       chip.dataset.value = type;
+      if (ASSET_STATE.filters.types.has(type)) chip.classList.add("on");
       chip.textContent = `${assetTypeLabel(type)} (${count})`;
       chip.addEventListener("click", () => toggleFilterSet(ASSET_STATE.filters.types, type, chip));
       wrap.appendChild(chip);
     }
   }
 
-  function buildSourceSelect() {
+  function buildSourceChips() {
     const counts = countBy(ASSET_STATE.entries, (entry) => entry.source);
-    const select = $("#asset-source");
-    select.length = 1;
+    const wrap = $("#asset-source-filter");
+    if (!wrap) return;
+    wrap.innerHTML = "";
     const names = Object.keys(counts).sort((a, b) => counts[b] - counts[a] || naturalCompare(a, b));
     for (const name of names) {
-      const option = document.createElement("option");
-      option.value = name;
-      option.textContent = `${name} (${counts[name]})`;
-      select.appendChild(option);
+      const chip = document.createElement("span");
+      chip.className = "chip asset-filter-chip asset-source-chip";
+      chip.dataset.value = name;
+      if (ASSET_STATE.filters.sources.has(name)) chip.classList.add("on");
+      chip.textContent = `${name || assetUiText("rootFolder")} (${counts[name]})`;
+      chip.addEventListener("click", () => toggleFilterSet(ASSET_STATE.filters.sources, name, chip));
+      wrap.appendChild(chip);
     }
   }
 
@@ -982,7 +1020,7 @@
 
     ASSET_STATE.filtered = ASSET_STATE.entries.filter((entry) => {
       if (q && !entry.searchText.includes(q)) return false;
-      if (filters.source && entry.source !== filters.source) return false;
+      if (filters.sources.size && !filters.sources.has(entry.source)) return false;
       if (filters.types.size && !filters.types.has(entry.ext || entry.kind)) return false;
       return true;
     });
@@ -1182,7 +1220,7 @@
     line1.className = "asset-row-line1";
 
     const badge = document.createElement("span");
-    badge.className = `asset-badge ${entry.kind === "image" ? "asset-badge-image" : "asset-badge-model"}`;
+    badge.className = `asset-badge ${assetBadgeClass(entry.kind)}`;
     badge.textContent = assetTypeLabel(entry.ext || entry.kind);
     line1.appendChild(badge);
 
@@ -1366,11 +1404,19 @@
     renderRelated(entry);
     renderVariants(entry);
     renderRelations(entry);
+    ASSET_STATE.detailToken += 1;
+    resetAssetPreviewSurface();
 
     if (entry.kind === "image") {
       renderImagePreview(activeVariant || entry);
-    } else {
+    } else if (entry.kind === "model") {
       renderModelPreview(entry);
+    } else if (entry.kind === "video") {
+      renderVideoPreview(activeVariant || entry);
+    } else if (entry.kind === "json") {
+      renderJsonPreview(activeVariant || entry);
+    } else {
+      renderFilePreview(activeVariant || entry);
     }
   }
 
@@ -1782,6 +1828,47 @@
     return link;
   }
 
+  function resetAssetPreviewSurface() {
+    const img = $("#asset-preview-image");
+    const video = $("#asset-preview-video");
+    const text = $("#asset-preview-text");
+    const canvas = $("#asset-model-canvas");
+    const placeholder = $("#asset-preview-placeholder");
+    const note = $("#asset-preview-note");
+    const modelWrap = $("#asset-model-stats-wrap");
+
+    ASSET_STATE.viewer.model = null;
+    if (img) {
+      img.onload = null;
+      img.onerror = null;
+      img.removeAttribute("src");
+      img.hidden = true;
+    }
+    if (video) {
+      video.onloadedmetadata = null;
+      video.onerror = null;
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+      video.hidden = true;
+    }
+    if (text) {
+      text.textContent = "";
+      text.hidden = true;
+    }
+    if (canvas) canvas.hidden = true;
+    if (placeholder) {
+      placeholder.hidden = true;
+      placeholder.textContent = assetUiText("previewPlaceholder");
+    }
+    if (note) {
+      note.hidden = true;
+      note.textContent = "";
+    }
+    if (modelWrap) modelWrap.hidden = true;
+    $("#asset-model-stats").replaceChildren();
+  }
+
   function renderImagePreview(entry) {
     const img = $("#asset-preview-image");
     const canvas = $("#asset-model-canvas");
@@ -1813,6 +1900,91 @@
     };
     img.src = assetHref(entry.rel);
     img.alt = entry.name;
+  }
+
+  function renderVideoPreview(entry) {
+    const video = $("#asset-preview-video");
+    const placeholder = $("#asset-preview-placeholder");
+    const note = $("#asset-preview-note");
+    if (!video) {
+      renderFilePreview(entry);
+      return;
+    }
+
+    video.hidden = false;
+    placeholder.hidden = true;
+    note.hidden = false;
+    note.textContent = assetUiText("loadingVideoPreview");
+
+    video.onloadedmetadata = () => {
+      note.textContent = Number.isFinite(video.duration)
+        ? assetUiText("videoDuration", { duration: formatDuration(video.duration) })
+        : formatBytes(entry.size);
+    };
+    video.onerror = () => {
+      video.hidden = true;
+      placeholder.hidden = false;
+      placeholder.textContent = assetUiText("videoPreviewUnavailable");
+      note.textContent = assetUiText("rawLinkAvailable");
+    };
+    video.src = assetHref(entry.rel);
+    video.load();
+  }
+
+  async function renderJsonPreview(entry) {
+    const text = $("#asset-preview-text");
+    const placeholder = $("#asset-preview-placeholder");
+    const note = $("#asset-preview-note");
+    if (!text) {
+      renderFilePreview(entry);
+      return;
+    }
+
+    const token = ++ASSET_STATE.detailToken;
+    text.hidden = true;
+    placeholder.hidden = false;
+    placeholder.textContent = assetUiText("loadingJsonPreview");
+    note.hidden = false;
+    note.textContent = formatBytes(entry.size);
+
+    try {
+      const res = await fetch(assetHref(entry.rel));
+      if (!res.ok) throw new Error(`JSON HTTP ${res.status}`);
+      const raw = await res.text();
+      let formatted = raw;
+      try {
+        formatted = JSON.stringify(JSON.parse(raw), null, 2);
+      } catch (_error) {
+        formatted = raw;
+      }
+
+      const truncated = formatted.length > JSON_PREVIEW_CHAR_LIMIT;
+      if (truncated) formatted = formatted.slice(0, JSON_PREVIEW_CHAR_LIMIT);
+      if (token !== ASSET_STATE.detailToken) return;
+
+      placeholder.hidden = true;
+      text.hidden = false;
+      text.textContent = formatted;
+      note.textContent = assetUiText(truncated ? "jsonPreviewTruncated" : "jsonPreviewLoaded", {
+        size: formatBytes(entry.size),
+        limit: JSON_PREVIEW_CHAR_LIMIT.toLocaleString(),
+      });
+    } catch (error) {
+      if (token !== ASSET_STATE.detailToken) return;
+      text.hidden = true;
+      placeholder.hidden = false;
+      placeholder.textContent = assetUiText("jsonPreviewUnavailable");
+      note.textContent = String(error);
+    }
+  }
+
+  function renderFilePreview(entry) {
+    const placeholder = $("#asset-preview-placeholder");
+    const note = $("#asset-preview-note");
+    placeholder.hidden = false;
+    placeholder.textContent = assetUiText("filePreviewUnavailable");
+    note.hidden = false;
+    note.textContent = entry?.rel ? assetUiText("rawLinkAvailable") : "";
   }
 
   async function loadObjModel(rel) {
@@ -2517,6 +2689,15 @@
     }
     const digits = value >= 100 || unitIndex === 0 ? 0 : value >= 10 ? 1 : 2;
     return `${value.toFixed(digits)} ${units[unitIndex]}`;
+  }
+
+  function formatDuration(seconds) {
+    const total = Math.max(0, Math.round(Number(seconds) || 0));
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    if (h) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    return `${m}:${String(s).padStart(2, "0")}`;
   }
 
   function clamp(value, min, max) {
