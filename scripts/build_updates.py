@@ -2,7 +2,7 @@
 """Build the WebUI update feed.
 
 This builder compares WebUI-facing exported text JSON and exported assets
-between two exported game-data trees, such as ``export_122/`` and
+between two exported game-data trees, such as ``export_1d2/`` and
 ``export_full/``, and writes the resulting diff for the WebUI Updates tab. The
 previous export is cached as the scanner baseline, then the current export is
 scanned against that baseline using the same focused roots.
@@ -50,7 +50,7 @@ from source_paths import resolve_asset_source_roots
 DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
 DEFAULT_STATE_DIR = ROOT / ".game-data-tracker"
 DEFAULT_EXPORT_ROOT = EXPORT_ROOT
-DEFAULT_PREVIOUS_EXPORT_ROOT = ROOT / "export_122"
+DEFAULT_PREVIOUS_EXPORT_ROOT = ROOT / "export_1d2"
 DEFAULT_OUT = OUT_DIR / "updates" / "latest.json"
 DEFAULT_REPORT_JSON = REPORTS_DIR / "game-data-change-summary.json"
 DEFAULT_REPORT_MD = REPORTS_DIR / "game-data-change-summary.md"
@@ -62,6 +62,10 @@ STATUS_ORDER = {"added": 0, "modified": 1, "deleted": 2}
 ASSET_HASH_CHUNK_SIZE = 1024 * 1024
 ASSET_DEFAULT_FINGERPRINT_MODE = "size"
 ASSET_HASH_FINGERPRINT_MODE = "content_hash"
+AUDIO_EXTENSIONS = {
+    ".wav",
+    ".wem",
+}
 DECODED_IMPACT_SAMPLE_LIMIT = 200
 PRUNE_SAMPLE_LIMIT = 200
 IGNORED_GAME_PATH_PREFIXES = (
@@ -103,7 +107,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Build webui/data/updates/latest.json from focused exported text "
-            "JSON and asset diffs."
+            "JSON and media asset diffs."
         ),
     )
     parser.add_argument(
@@ -133,7 +137,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         dest="previous_export_root",
         type=Path,
         default=DEFAULT_PREVIOUS_EXPORT_ROOT,
-        help="Previous exported game-data tree to compare against, usually export_122/.",
+        help="Previous exported game-data tree to compare against, usually export_1d2/.",
     )
     parser.add_argument(
         "--refresh-previous-export-baseline",
@@ -180,8 +184,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         dest="skip_asset_updates",
         action="store_true",
         help=(
-            "Skip the exported image/model/video asset diff. By default Updates "
-            "tracks assets plus WebUI-facing text JSON."
+            "Skip the exported image/model/video/audio asset diff. By default "
+            "Updates tracks media assets plus WebUI-facing text JSON."
         ),
     )
     parser.add_argument(
@@ -228,8 +232,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--baseline-only",
         action="store_true",
         help=(
-            "Suppress reported changes and skip exported asset diffing. Use for "
-            "initial WebUI data builds."
+            "Suppress reported changes and skip exported media asset diffing. "
+            "Use for initial WebUI data builds."
         ),
     )
     parser.add_argument(
@@ -595,9 +599,19 @@ def filtered_game_entries(
 
 def asset_kind_for_suffix(suffix: str) -> str:
     lower = suffix.lower()
+    if lower in AUDIO_EXTENSIONS:
+        return "audio"
     if lower in VIDEO_EXTENSIONS:
         return "video"
     return ASSET_KIND_BY_EXT.get(lower, "")
+
+
+def resolve_update_asset_source_roots(export_root: Path) -> list[tuple[str, Path]]:
+    roots = list(resolve_asset_source_roots(export_root))
+    audio_root = export_root / "structured" / "Audio"
+    if audio_root.exists():
+        roots.append(("Audio", audio_root))
+    return roots
 
 
 def hash_file(path: Path) -> str:
@@ -622,7 +636,7 @@ def build_asset_snapshot(
     if not export_root.exists():
         return assets
 
-    for source, source_root in resolve_asset_source_roots(export_root):
+    for source, source_root in resolve_update_asset_source_roots(export_root):
         if not source_root.exists():
             continue
         for dirpath, dirnames, filenames in os.walk(source_root):
@@ -673,7 +687,7 @@ def build_asset_snapshot(
 
 def asset_source_roots_payload(export_root: Path) -> dict[str, str]:
     roots: dict[str, str] = {}
-    for source, source_root in resolve_asset_source_roots(export_root):
+    for source, source_root in resolve_update_asset_source_roots(export_root):
         roots[source] = normalize_posix(str(source_root))
     return roots
 

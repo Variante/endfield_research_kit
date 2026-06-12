@@ -11,6 +11,7 @@ From the repo root:
 ```bat
 .\export.bat
 .\export.bat --export-from-game
+.\export.bat --export-from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
 .\build_updates.bat
 .\export_assets.bat
 .\package_webui.bat
@@ -30,18 +31,38 @@ Pass `--export-from-game` when you explicitly want to refresh `export_full/`
 from installed game data before rebuilding; in that mode `export.bat` also
 decodes CN audio before the final link pass. The final audio pass always runs,
 so Story audio controls are linked after generated conversations are rebuilt.
+Pass `--game-root PATH` when the installed game is not under the default
+`D:\Program Files\Endfield Game\Endfield_Data`. The path must be the installed
+`Endfield_Data` directory. For repeated runs, set `ENDFIELD_GAME_ROOT` before
+launching the wrapper; an explicit `--game-root` argument takes precedence.
+Fresh clones must initialize and build the AnimeStudio submodule before this
+installed-game refresh path can run:
+
+```bat
+git submodule update --init tools/AnimeStudio
+.\scripts\animestudio\setup_dotnet9.bat
+.\scripts\animestudio\rebuild.bat -Target CLI
+```
+
+The exporter expects
+`tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe`.
 
 `build_updates.bat` writes `webui/data/updates/latest.json` from the saved
 previous export and current `export_full/`. Use `.\build_updates.bat
 --init-build` for initial or baseline-only update feeds. By default it compares
 the exported text JSON that feeds Story/Reference plus exported image/model/video
-assets using fast size fingerprints; pass `--hash-asset-updates` for slower
-same-size binary modification detection, or `--skip-asset-updates` for a
-text-only feed.
+assets and decoded audio using fast size fingerprints; pass
+`--hash-asset-updates` for slower same-size binary modification detection, or
+`--skip-asset-updates` for a text-only feed. Pass `--previous-export-root PATH`
+and `--export-root PATH` to change the compared export trees. Most runs do not
+need `--game-root`; pass it only for optional decoded-impact mapping from a
+non-default installed `Endfield_Data` root. It does not choose the export trees.
 
 `export_assets.bat` runs `scripts/build_assets.py` for the Assets tab indexes
 and compact Story media lookup. Pass `--export-from-game` to run the heavier
-image/model/animation AnimeStudio decode first.
+image/model/animation AnimeStudio decode first. It accepts the same
+`--game-root PATH` argument and `ENDFIELD_GAME_ROOT` fallback when refreshing
+decoded assets from a non-default install root.
 
 `scripts/build_audio.py` can still be run directly for non-CN languages or
 audio-only maintenance. It indexes files under
@@ -111,18 +132,21 @@ Expected active inputs and outputs:
   Updates builder.
 - `build_updates.py`: writes `webui/data/updates/latest.json` by comparing
   WebUI-facing text JSON roots and exported asset roots in a previous exported
-  game-data tree, default `..\export_122\`, with the current `..\export_full\`.
+  game-data tree, default `..\export_1d2\`, with the current `..\export_full\`.
   Scanner cache lives under `..\.game-data-tracker\`;
   generated summary reports live under `..\reports\`, and non-empty feed
   snapshots are written as `..\.game-data-tracker\history\update-feed-*.json`.
   The root `..\build_updates.bat` wrapper runs this standalone update step.
   Pass `--previous-export-root PATH` to compare a different saved export,
-  `--refresh-previous-export-baseline` after replacing that saved export,
-  `--baseline-only` to write an empty feed, or `--skip-asset-updates` to skip
-  the exported image/model/video asset diff. Asset modifications use fast size
-  fingerprints by default; pass `--hash-asset-updates` for slower content-hash
-  detection of same-size binary changes. Pass `--full-export-scan` only for an
-  intentional all-files audit of the export roots. Pass
+  `--export-root PATH` to compare a different current export,
+  `--game-root PATH` only for optional decoded-impact mapping,
+  `--refresh-previous-export-baseline` after replacing the saved previous
+  export, `--baseline-only` to write an empty feed, or `--skip-asset-updates`
+  to skip the exported image/model/video/audio asset diff. Asset modifications
+  use fast size fingerprints by default; pass `--hash-asset-updates` for slower
+  content-hash detection of same-size binary changes. Pass
+  `--full-export-scan` only for an intentional all-files audit of the export
+  roots. Pass
   `--dry-run-prune-previous-export-untracked` to preview old files outside the
   focused tracked text/assets surfaces, and
   `--prune-previous-export-untracked` to delete those untracked files from the
