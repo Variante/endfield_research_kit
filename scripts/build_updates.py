@@ -838,6 +838,10 @@ def prune_previous_export_untracked(
 
 def asset_update_entry(status: str, asset: dict[str, Any], old_asset: dict[str, Any] | None = None) -> dict[str, Any]:
     rel_path = normalize_posix(str(asset.get("path") or (old_asset or {}).get("path") or ""))
+    old_rel_path = normalize_posix(str((old_asset or {}).get("path") or ""))
+    new_rel_path = normalize_posix(str(asset.get("path") or ""))
+    old_export_rel = normalize_posix(str((old_asset or {}).get("export_rel") or ""))
+    new_export_rel = normalize_posix(str(asset.get("export_rel") or ""))
     extension = str(asset.get("extension") or (old_asset or {}).get("extension") or "")
     kind = str(asset.get("kind") or (old_asset or {}).get("kind") or "asset")
     entry: dict[str, Any] = {
@@ -849,6 +853,14 @@ def asset_update_entry(status: str, asset: dict[str, Any], old_asset: dict[str, 
         "asset_kind": kind,
         "extension": extension,
     }
+    if old_rel_path:
+        entry["old_asset_rel"] = old_rel_path
+    if new_rel_path:
+        entry["new_asset_rel"] = new_rel_path
+    if old_export_rel:
+        entry["old_asset_export_rel"] = old_export_rel
+    if new_export_rel:
+        entry["new_asset_export_rel"] = new_export_rel
     old_size = None if status == "added" else (old_asset or {}).get("size")
     new_size = None if status == "deleted" else asset.get("size")
     if old_size is not None:

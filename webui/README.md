@@ -78,8 +78,9 @@ heavyweight recovery work in the Python builders.
 - `Updates`: latest change summary from `data/updates/latest.json`, generated
   by comparing WebUI-facing exported text JSON and exported image/model/video
   assets between saved/current export roots, never generated WebUI files.
-- `Assets`: exported file search, metadata, raw links, related files, and
-  previews where the browser supports them.
+- `Assets`: exported image/model/video/JSON file search, source tag filters,
+  metadata, raw links, related files, and previews where the browser supports
+  them.
 
 ## Data Layout
 

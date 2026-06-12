@@ -45,6 +45,19 @@ VIDEO_EXTENSIONS = {
     ".ogv",
     ".usm",
 }
+JSON_EXTENSIONS = {
+    ".json",
+}
+BROWSER_JSON_TYPE_DIRS = {
+    "AnimatorController",
+    "AnimatorOverrideController",
+    "AvatarMask",
+    "Material",
+    "MonoScript",
+    "PlayableDirector",
+    "PreloadData",
+    "TextAsset",
+}
 ASSET_SINGLE_PREFIX_RE = re.compile(r"^[A-Za-z]_")
 ASSET_LOD_SUFFIX_RE = re.compile(r"(?:[_-])lod\d+$", re.IGNORECASE)
 
@@ -135,6 +148,31 @@ def _label_text(labels: dict[str, str], fallback: Path) -> str:
     return ", ".join(f"{source}:{label}" for source, label in labels.items()) or str(fallback)
 
 
+def _browser_asset_kind_for_suffix(
+    suffix: str,
+    *,
+    include_regular_assets: bool = True,
+    include_media: bool = True,
+    include_json: bool = True,
+) -> str:
+    if include_regular_assets and suffix in ASSET_KIND_BY_EXT:
+        return ASSET_KIND_BY_EXT[suffix]
+    if include_media and suffix in VIDEO_EXTENSIONS:
+        return "video"
+    if include_json and suffix in JSON_EXTENSIONS:
+        return "json"
+    return ""
+
+
+def _should_index_browser_json(path: Path, source_root: Path) -> bool:
+    if path.suffix.lower() not in JSON_EXTENSIONS:
+        return False
+    rel_parts = path.relative_to(source_root).parts
+    if not rel_parts:
+        return False
+    return rel_parts[0] in BROWSER_JSON_TYPE_DIRS
+
+
 def scan_exported_media_assets(
     *,
     root: Path,
@@ -159,6 +197,64 @@ def scan_exported_media_assets(
         for source, path in [*asset_roots, *material_roots]
     }
 
+    def add_asset_file(
+        *,
+        source: str,
+        source_root: Path,
+        path: Path,
+        include_regular_assets: bool = True,
+        include_media: bool = True,
+        include_json: bool = True,
+    ) -> None:
+        suffix = path.suffix.lower()
+        kind = _browser_asset_kind_for_suffix(
+            suffix,
+            include_regular_assets=include_regular_assets,
+            include_media=include_media,
+            include_json=include_json,
+        )
+        if not kind:
+            return
+
+        rel_suffix = path.relative_to(source_root).as_posix()
+        asset_rel = f"{source}/{rel_suffix}" if rel_suffix else source
+        logical = _logical_export_stem(asset_rel, path.stem)
+        if logical is None:
+            return
+        stem, path_id = logical
+        size = path.stat().st_size
+        entry = {
+            "k": kind,
+            "r": asset_rel,
+            "s": size,
+        }
+        if path_id:
+            entry["pid"] = path_id
+        asset_entries.append(entry)
+
+        if kind == "image":
+            image_rels_by_stem[stem.lower()].append(asset_rel)
+        elif kind == "model":
+            model_base = _normalize_model_base(stem)
+            source_family = _asset_source_family(source).lower()
+            entry["_mb"] = model_base
+            model_rels_by_source_base[(source_family, model_base)].append(asset_rel)
+            model_rels_by_base[model_base].append(asset_rel)
+            if suffix == ".obj":
+                obj_rels_by_source_base[(source_family, model_base)].append(asset_rel)
+                obj_rels_by_base[model_base].append(asset_rel)
+        elif kind == "video":
+            video_entries.append({
+                "k": "video",
+                "r": asset_rel,
+                "s": size,
+            })
+            video_counts["total"] += 1
+            video_counts["video"] += 1
+
+        counts["total"] += 1
+        counts[kind] += 1
+
     print(f"\nScanning exported media assets from {_label_text(media_root_labels, export_root)}...")
     for source, source_root in asset_roots:
         for dirpath, dirnames, filenames in os.walk(source_root):
@@ -166,50 +262,30 @@ def scan_exported_media_assets(
             filenames.sort()
             base_dir = Path(dirpath)
             for filename in filenames:
+                add_asset_file(
+                    source=source,
+                    source_root=source_root,
+                    path=base_dir / filename,
+                    include_json=False,
+                )
+
+    for source, source_root in material_roots:
+        for dirpath, dirnames, filenames in os.walk(source_root):
+            dirnames.sort()
+            filenames.sort()
+            base_dir = Path(dirpath)
+            for filename in filenames:
                 path = base_dir / filename
-                suffix = path.suffix.lower()
-                rel_suffix = path.relative_to(source_root).as_posix()
-                asset_rel = f"{source}/{rel_suffix}" if rel_suffix else source
-                size = path.stat().st_size
-
-                kind = ASSET_KIND_BY_EXT.get(suffix)
-                if kind:
-                    logical = _logical_export_stem(asset_rel, path.stem)
-                    if logical is None:
-                        continue
-                    stem, path_id = logical
-                    entry = {
-                        "k": kind,
-                        "r": asset_rel,
-                        "s": size,
-                    }
-                    if path_id:
-                        entry["pid"] = path_id
-                    asset_entries.append(entry)
-                    if kind == "image":
-                        image_rels_by_stem[stem.lower()].append(asset_rel)
-                    elif kind == "model":
-                        model_base = _normalize_model_base(stem)
-                        source_family = _asset_source_family(source).lower()
-                        entry["_mb"] = model_base
-                        model_rels_by_source_base[(source_family, model_base)].append(asset_rel)
-                        model_rels_by_base[model_base].append(asset_rel)
-                        if suffix == ".obj":
-                            obj_rels_by_source_base[(source_family, model_base)].append(asset_rel)
-                            obj_rels_by_base[model_base].append(asset_rel)
-                    counts["total"] += 1
-                    counts[kind] += 1
-
-                if suffix in VIDEO_EXTENSIONS:
-                    if rel_requires_path_id_export_name(asset_rel) and not path_id_export_base_stem(path.stem):
-                        continue
-                    video_entries.append({
-                        "k": "video",
-                        "r": asset_rel,
-                        "s": size,
-                    })
-                    video_counts["total"] += 1
-                    video_counts["video"] += 1
+                if not _should_index_browser_json(path, source_root):
+                    continue
+                add_asset_file(
+                    source=source,
+                    source_root=source_root,
+                    path=path,
+                    include_regular_assets=False,
+                    include_media=False,
+                    include_json=True,
+                )
 
     relations: dict[str, dict] = {}
     material_count = 0
@@ -334,6 +410,8 @@ def _asset_payload(scan: dict[str, Any], *, root: Path, export_root: Path) -> di
             "total": counts["total"],
             "image": counts["image"],
             "model": counts["model"],
+            "video": counts["video"],
+            "json": counts["json"],
         },
         "entries": scan["assetEntries"],
         "relations": scan["relations"],
@@ -363,6 +441,8 @@ def _asset_stats(scan: dict[str, Any], out_path: Path, export_root: Path) -> dic
         "assets": counts["total"],
         "images": counts["image"],
         "models": counts["model"],
+        "videos": counts["video"],
+        "json": counts["json"],
         "materials": scan["materials"],
         "previewModels": scan["previewModels"],
         "indexBytes": out_path.stat().st_size,
@@ -386,7 +466,7 @@ def build_asset_index(
     root: Path,
     export_root: Path,
 ) -> dict:
-    """Scan exported image/model files into a lightweight search index."""
+    """Scan exported browser-visible assets into a lightweight search index."""
     scan = scan_exported_media_assets(
         root=root,
         export_root=export_root,
@@ -399,6 +479,7 @@ def build_asset_index(
         out_path,
         (
             f"({counts['total']} assets; {counts['image']} images; {counts['model']} models; "
+            f"{counts['video']} videos; {counts['json']} JSON files; "
             f"{scan['materials']} materials; {scan['textureLinks']} texture links; "
             f"{scan['previewModels']} model preview proxies)"
         ),
@@ -448,7 +529,8 @@ def build_asset_indexes(
         asset_out_path,
         (
             f"({asset_counts['total']} assets; {asset_counts['image']} images; "
-            f"{asset_counts['model']} models; {scan['materials']} materials; "
+            f"{asset_counts['model']} models; {asset_counts['video']} videos; "
+            f"{asset_counts['json']} JSON files; {scan['materials']} materials; "
             f"{scan['textureLinks']} texture links; {scan['previewModels']} model preview proxies)"
         ),
     )

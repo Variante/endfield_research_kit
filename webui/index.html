@@ -20,8 +20,8 @@
       <nav id="view-tabs" aria-label="Primary views">
         <button id="story-tab" class="view-tab is-active" type="button" data-view="story">&#21095;&#24773;</button>
         <button id="reference-tab" class="view-tab" type="button" data-view="reference">&#21442;&#32771;</button>
-        <button id="updates-tab" class="view-tab" type="button" data-view="updates">&#26356;&#26032;</button>
         <button id="assets-tab" class="view-tab" type="button" data-view="assets">&#36164;&#28304;</button>
+        <button id="updates-tab" class="view-tab" type="button" data-view="updates">&#26356;&#26032;</button>
       </nav>
     </div>
   </header>
@@ -36,8 +36,8 @@
             <div class="sidebar-header-actions">
               <button id="filter-toggle" class="panel-toggle" type="button" aria-controls="filter-panel" aria-expanded="true">&#38544;&#34255;&#31579;&#36873;</button>
               <button id="reset" type="button">&#37325;&#32622;&#31579;&#36873;</button>
-              <button id="show-debug" class="header-toggle-button" type="button" aria-pressed="false"><span id="show-debug-label">&#26174;&#31034;&#35843;&#35797;&#20449;&#24687;</span></button>
               <button id="gender-variant" class="header-toggle-button" type="button" aria-pressed="true"><span id="gender-variant-label">Gender: F</span></button>
+              <button id="show-debug" class="header-toggle-button" type="button" aria-pressed="false"><span id="show-debug-label">&#26174;&#31034;&#35843;&#35797;&#20449;&#24687;</span></button>
             </div>
           </header>
 
@@ -161,10 +161,8 @@
           <div class="filters">
             <input id="reference-q" type="search" placeholder="&#25628;&#32034;&#34920; / ID / &#25991;&#26412;">
             <div class="filter-row">
-              <label id="reference-source-label" for="reference-source">&#26469;&#28304;</label>
-              <select id="reference-source">
-                <option id="reference-source-all" value="">&#20840;&#37096;</option>
-              </select>
+              <label id="reference-source-label" for="reference-source-filter">&#26469;&#28304;</label>
+              <div id="reference-source-filter" class="chips" data-multi="1"></div>
             </div>
           </div>
 
@@ -196,25 +194,16 @@
           <div class="filters">
             <input id="updates-q" type="search" placeholder="&#25628;&#32034;&#36335;&#24452; / &#25193;&#23637;&#21517;">
             <div class="filter-row">
-              <label id="updates-status-label" for="updates-status">&#29366;&#24577;</label>
-              <select id="updates-status">
-                <option id="updates-status-all" value="">&#20840;&#37096;</option>
-                <option id="updates-status-added" value="added">Added</option>
-                <option id="updates-status-modified" value="modified">Modified</option>
-                <option id="updates-status-deleted" value="deleted">Deleted</option>
-              </select>
+              <label id="updates-status-label" for="updates-status-filter">&#29366;&#24577;</label>
+              <div id="updates-status-filter" class="chips" data-multi="1"></div>
             </div>
             <div class="filter-row">
-              <label id="updates-category-label" for="updates-category">&#20998;&#31867;</label>
-              <select id="updates-category">
-                <option id="updates-category-all" value="">&#20840;&#37096;</option>
-              </select>
+              <label id="updates-category-label" for="updates-category-filter">&#20998;&#31867;</label>
+              <div id="updates-category-filter" class="chips" data-multi="1"></div>
             </div>
             <div class="filter-row">
-              <label id="updates-extension-label" for="updates-extension">&#25193;&#23637;&#21517;</label>
-              <select id="updates-extension">
-                <option id="updates-extension-all" value="">&#20840;&#37096;</option>
-              </select>
+              <label id="updates-extension-label" for="updates-extension-filter">&#25193;&#23637;&#21517;</label>
+              <div id="updates-extension-filter" class="chips" data-multi="1"></div>
             </div>
             <div class="filter-row">
               <label id="updates-sort-label" for="updates-sort">&#25490;&#24207;</label>
@@ -286,10 +275,8 @@
             </div>
 
             <div class="filter-row">
-              <label id="asset-source-label" for="asset-source">&#26469;&#28304;</label>
-              <select id="asset-source">
-                <option id="asset-source-all-option" value="">&#20840;&#37096;&#26469;&#28304;</option>
-              </select>
+              <label id="asset-source-label" for="asset-source-filter">&#26469;&#28304;</label>
+              <div id="asset-source-filter" class="chips" data-multi="1"></div>
             </div>
 
             <div class="filter-row">
@@ -333,6 +320,8 @@
                 <div id="asset-preview-stage">
                   <div id="asset-preview-placeholder">&#39044;&#35272;&#20250;&#26174;&#31034;&#22312;&#36825;&#37324;&#12290;</div>
                   <img id="asset-preview-image" alt="" hidden>
+                  <video id="asset-preview-video" controls preload="metadata" hidden></video>
+                  <pre id="asset-preview-text" hidden></pre>
                   <canvas id="asset-model-canvas" hidden></canvas>
                 </div>
                 <div id="asset-preview-note" class="asset-preview-note" hidden></div>
