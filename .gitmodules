@@ -1,0 +1,3 @@
+[submodule "tools/AnimeStudio"]
+	path = tools/AnimeStudio
+	url = https://github.com/Variante/AnimeStudio.git

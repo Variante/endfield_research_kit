@@ -40,8 +40,9 @@ workflow.
 Use `build_updates.bat` for the standalone Updates feed comparison. Use
 `build_updates.bat --init-build` for first-time/baseline-only builds where the
 Updates feed should be baselined instead of reporting changes. By default it
-tracks WebUI-facing exported text JSON plus exported image/model/video assets;
-pass `--skip-asset-updates` only for a text-only update feed.
+tracks WebUI-facing exported text JSON plus exported image/model/video assets
+and decoded audio; pass `--skip-asset-updates` only for a text-only update
+feed.
 Use `export_assets.bat` for WebUI Assets tab indexes and compact Story media
 lookup from existing decoded assets. Pass `--export-from-game` only when the
 user explicitly asks to run the heavier AnimeStudio image/model/animation
@@ -129,13 +130,13 @@ disposable experiments in `scratch/` or `tmp/`.
 The WebUI Updates tab must report only exported game-data changes between a
 saved previous export and the current export. By default it tracks the
 exported JSON roots that feed Story/Reference display plus exported
-image/model/video assets. Use `--full-export-scan` only for a broad audit of
-all files under the two export roots.
+image/model/video assets plus decoded audio. Use `--full-export-scan` only for
+a broad audit of all files under the two export roots.
 
 `scripts/build_updates.py` compares:
 
 ```text
-export_122
+export_1d2
 export_full
 ```
 
@@ -147,7 +148,7 @@ comparison at `webui/`, `reports/`, `memory/`, or `scratch/`. WebUI edits and
 generated output outside the export roots must not appear as game-data updates.
 
 The builder scans exported assets in the same two export folders by default to
-add image/model/video asset-level entries to the Updates page. Asset
+add image/model/video/audio asset-level entries to the Updates page. Asset
 modifications use fast size fingerprints by default; pass
 `--hash-asset-updates` only when same-size binary modifications must be
 detected. Use `--skip-asset-updates` only when asset entries should be omitted.

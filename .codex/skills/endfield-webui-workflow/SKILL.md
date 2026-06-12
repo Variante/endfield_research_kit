@@ -41,8 +41,8 @@ story extraction by default. Pass `--export-from-game` only when installed game
 data should be refreshed, the story export tools should run, and CN audio
 should be decoded before the final link pass.
 Use `build_updates.bat` as the standalone Updates feed comparison. It tracks
-WebUI-facing exported text JSON plus exported image/model/video assets by
-default. Asset modifications use fast size fingerprints; pass
+WebUI-facing exported text JSON plus exported image/model/video assets and
+decoded audio by default. Asset modifications use fast size fingerprints; pass
 `--hash-asset-updates` when same-size binary modifications must be detected, or
 `--skip-asset-updates` for a text-only feed. Preview previous-export pruning
 with `--dry-run-prune-previous-export-untracked`; use

@@ -199,6 +199,7 @@
     if (value === "asset_image") return `${updateText("exportedAsset")} / image`;
     if (value === "asset_model") return `${updateText("exportedAsset")} / model`;
     if (value === "asset_video") return `${updateText("exportedAsset")} / video`;
+    if (value === "asset_audio") return `${updateText("exportedAsset")} / audio`;
     return value.replace(/_/g, " ");
   }
 
@@ -694,7 +695,7 @@
 
   function changedAssetMediaKind(entry) {
     const kind = String(entry && entry.asset_kind || "");
-    return ["image", "video", "model"].includes(kind) ? kind : "";
+    return ["image", "video", "audio", "model"].includes(kind) ? kind : "";
   }
 
   function filenameFromRel(rel) {
@@ -760,6 +761,8 @@
     let media = "";
     if (kind === "video") {
       media = `<video class="updates-media-video" src="${escapeHtml(href)}" preload="metadata" playsinline data-update-sync-video="1"></video>`;
+    } else if (kind === "audio") {
+      media = `<audio class="updates-media-audio" src="${escapeHtml(href)}" preload="metadata"></audio>`;
     } else if (kind === "image") {
       media = (
         `<a class="updates-media-link" href="${escapeHtml(href)}" target="_blank" rel="noopener">` +

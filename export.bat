@@ -11,6 +11,7 @@ set "EXPORT_ARGS="
 set "VERIFY_EXPORT_ARGS="
 set "AUDIO_ARGS="
 set "EXPORT_FROM_GAME=0"
+set "GAME_ROOT_SPECIFIED=0"
 
 :parse_args
 if "%~1"=="" goto :parsed_args
@@ -29,10 +30,20 @@ if /I "%~1"=="--game-root" (
     echo Missing value for --game-root.
     exit /b 2
   )
+  set "GAME_ROOT_SPECIFIED=1"
   set "EXPORT_ARGS=%EXPORT_ARGS% "%~1" "%~2""
   set "VERIFY_EXPORT_ARGS=%VERIFY_EXPORT_ARGS% "%~1" "%~2""
   set "AUDIO_ARGS=%AUDIO_ARGS% "%~1" "%~2""
   shift
+  shift
+  goto :parse_args
+)
+set "ARG=%~1"
+if /I "%ARG:~0,12%"=="--game-root=" (
+  set "GAME_ROOT_SPECIFIED=1"
+  set "EXPORT_ARGS=%EXPORT_ARGS% "%~1""
+  set "VERIFY_EXPORT_ARGS=%VERIFY_EXPORT_ARGS% "%~1""
+  set "AUDIO_ARGS=%AUDIO_ARGS% "%~1""
   shift
   goto :parse_args
 )
@@ -41,6 +52,12 @@ shift
 goto :parse_args
 
 :parsed_args
+if "%GAME_ROOT_SPECIFIED%"=="0" if not "%ENDFIELD_GAME_ROOT%"=="" (
+  set "EXPORT_ARGS=%EXPORT_ARGS% "--game-root" "%ENDFIELD_GAME_ROOT%""
+  set "VERIFY_EXPORT_ARGS=%VERIFY_EXPORT_ARGS% "--game-root" "%ENDFIELD_GAME_ROOT%""
+  set "AUDIO_ARGS=%AUDIO_ARGS% "--game-root" "%ENDFIELD_GAME_ROOT%""
+)
+
 rem WebUI export/build pipeline:
 rem - rebuild from existing export_full by default
 rem - export from the installed game only when explicitly requested
@@ -89,7 +106,7 @@ endlocal
 exit /b 0
 
 :help
-echo Usage: export.bat [--export-from-game] [export_full_from_game.py options]
+echo Usage: export.bat [--export-from-game] [--game-root PATH] [export_full_from_game.py options]
 echo.
 echo Runs the story/reference WebUI refresh from existing export_full by default,
 echo verifies export freshness, rebuilds source-link evidence, builds CN data,
@@ -97,9 +114,17 @@ echo preserves OCR-managed Story sort order, and links decoded Story audio.
 echo Reading installed game data and tool-based extraction are opt-in.
 echo.
 echo   --export-from-game    Refresh export_full and decode audio from installed game data.
+echo   --game-root PATH      Installed Endfield_Data directory used for export,
+echo                         freshness verification, and audio decoding/linking.
 echo.
-echo Other arguments are passed to scripts\export_full_from_game.py when
-echo --export-from-game is present, or to the freshness verifier where relevant.
+echo If Endfield is installed somewhere else, pass --game-root or set
+echo ENDFIELD_GAME_ROOT. The command-line --game-root value takes precedence.
+echo Example:
+echo   export.bat --export-from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
+echo.
+echo Other arguments are passed to scripts\export_full_from_game.py only when
+echo --export-from-game is present. The wrapper also forwards --game-root to
+echo the freshness verifier and audio builder.
 echo.
 echo Companion wrappers:
 echo   build_updates.bat     Build the Updates tab feed.
