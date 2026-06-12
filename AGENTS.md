@@ -13,6 +13,7 @@ Move observations, conclusions, older exploration notes, and status snapshots to
 ## Commands
 
 ```bat
+.\setup_first_time.bat
 .\export.bat
 .\export.bat --export-from-game
 .\build_updates.bat
@@ -26,6 +27,13 @@ Before starting a WebUI server, check whether the default
 `http://127.0.0.1:8765/` server is already running. Reuse the existing default
 server instead of starting another `serve.py` process on `8765` or a custom
 port, unless the user explicitly asks for a second server.
+
+`setup_first_time.bat` is the user-facing all-in-one first-time setup path. It
+initializes `tools/AnimeStudio`, builds the AnimeStudio CLI, downloads/builds
+the patched local `fluffy-dumper`, runs `export.bat --export-from-game`, runs
+`export_assets.bat --export-from-game`, creates the initial Updates baseline,
+then starts or reuses the default WebUI server. Pass `--no-serve` when setup
+should finish without starting `serve.py`.
 
 `export.bat` is the canonical story/reference WebUI rebuild from an existing
 `export_full/`. It verifies that `export_full/` matches the current installed

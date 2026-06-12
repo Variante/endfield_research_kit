@@ -9,6 +9,7 @@ Unity character recovery tools live under
 From the repo root:
 
 ```bat
+.\setup_first_time.bat --game-root "E:\Games\Endfield Game\Endfield_Data"
 .\export.bat
 .\export.bat --export-from-game
 .\export.bat --export-from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
@@ -16,6 +17,12 @@ From the repo root:
 .\export_assets.bat
 .\package_webui.bat
 ```
+
+For a fresh checkout, prefer the root `setup_first_time.bat` wrapper. It
+initializes and builds the required external tools, runs the installed-game
+Story/Reference/audio export, runs the Assets tab media export, creates the
+initial Updates baseline, and starts or reuses the default WebUI server. Pass
+`--no-serve` if the setup should stop after the build/export steps.
 
 `export.bat` is the normal story/reference WebUI rebuild path from an existing
 `export_full/`. It runs:

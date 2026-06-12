@@ -21,6 +21,7 @@ This is the first skill to open for requests such as:
 From the repo root:
 
 ```bat
+.\setup_first_time.bat
 .\export.bat
 .\export.bat --export-from-game
 .\build_updates.bat
@@ -30,6 +31,12 @@ python serve.py
 python serve.py 9000
 python scripts\package_webui.py
 ```
+
+Use `setup_first_time.bat` as the user-facing all-in-one first-time setup path
+from an installed game client. It initializes/builds AnimeStudio, downloads and
+builds the patched local `fluffy-dumper`, runs the installed-game Story export,
+runs the Assets export, creates the initial Updates baseline, then starts or
+reuses the default WebUI server unless `--no-serve` is passed.
 
 Use `export.bat` as the default story/reference rebuild path from an existing
 `export_full/`. It verifies export freshness, rebuilds DialogIdTable and story
