@@ -23,30 +23,68 @@ belong under `memory/` so the repo root stays focused.
 
 ## First-Time Setup
 
-This section is the path for a fresh checkout that needs to build WebUI data
-from an installed Endfield client. All commands are run from the repository
-root in `cmd.exe` or PowerShell.
-
-1. Clone the repository with submodules:
+For a fresh checkout, install Git, Python 3, Rust/Cargo, and a legally obtained
+Endfield client first. Then clone the project:
 
 ```bat
-git clone --recurse-submodules https://github.com/Variante/endfield_research_kit.git
+git clone https://github.com/Variante/endfield_research_kit.git
 cd endfield_research_kit
 ```
 
-If you already cloned without submodules, initialize AnimeStudio now:
+Run the all-in-one setup script from the repository root. If Endfield is in the
+default location, use:
+
+```bat
+.\setup_first_time.bat
+```
+
+If your installed game is somewhere else, pass the installed `Endfield_Data`
+folder:
+
+```bat
+.\setup_first_time.bat --game-root "E:\Games\Endfield Game\Endfield_Data"
+```
+
+The script initializes the AnimeStudio submodule, builds AnimeStudio, downloads
+and builds the patched `fluffy-dumper`, exports Story/Reference/audio data,
+exports Assets tab media, creates the first Updates baseline, and starts or
+reuses the WebUI server at `http://127.0.0.1:8765/`.
+
+Keep that terminal window open while browsing the WebUI. To build everything
+without starting the server, add `--no-serve`:
+
+```bat
+.\setup_first_time.bat --game-root "E:\Games\Endfield Game\Endfield_Data" --no-serve
+```
+
+Useful setup options:
+
+- `--skip-assets`: build Story/Reference/audio first and skip the heavier
+  Assets tab media export.
+- `--refresh-fluffy-src`: download and overlay the hosted patched
+  `fluffy-dumper` source before building it.
+- `--help`: show the script help and examples.
+
+<details>
+<summary>What the setup script does</summary>
+
+The setup script is just the first-time workflow below bundled into one command.
+These details are useful when troubleshooting a failed step or when you want to
+understand what is being built.
+
+1. It can initialize the AnimeStudio submodule.
 
 ```bat
 git submodule update --init tools/AnimeStudio
 ```
 
-2. Make sure Python 3 is on `PATH`:
+2. It verifies Python 3 is on `PATH`.
 
 ```bat
 python --version
 ```
 
-3. Point the tools at your installed `Endfield_Data` folder.
+3. It chooses the installed `Endfield_Data` folder.
 
 The default path is:
 
@@ -54,10 +92,12 @@ The default path is:
 D:\Program Files\Endfield Game\Endfield_Data
 ```
 
-If your install is somewhere else, set `ENDFIELD_GAME_ROOT` once in the shell
-before running export commands.
+If your install is somewhere else, the setup script accepts
+`--game-root "...\Endfield_Data"`. The export wrappers also accept
+`--game-root`, and command-line `--game-root` takes precedence over
+`ENDFIELD_GAME_ROOT`.
 
-In `cmd.exe`:
+In `cmd.exe`, an environment fallback looks like:
 
 ```bat
 set "ENDFIELD_GAME_ROOT=E:\Games\Endfield Game\Endfield_Data"
@@ -69,16 +109,10 @@ In PowerShell:
 $env:ENDFIELD_GAME_ROOT = "E:\Games\Endfield Game\Endfield_Data"
 ```
 
-You can also pass `--game-root "...\Endfield_Data"` directly to `export.bat`,
-`export_assets.bat`, `build_updates.bat`, or `verify_export_freshness.py`.
-Command-line `--game-root` takes precedence over `ENDFIELD_GAME_ROOT`.
-
-4. Build the AnimeStudio CLI submodule.
+4. It builds the AnimeStudio CLI submodule.
 
 The installed-game export path uses the AnimeStudio fork at
-`tools\AnimeStudio`. Build its CLI before first-time exports, before
-`.\export.bat --export-from-game`, and before
-`.\export_assets.bat --export-from-game`:
+`tools\AnimeStudio`. The setup script runs:
 
 ```bat
 .\scripts\animestudio\setup_dotnet9.bat
@@ -97,7 +131,8 @@ After the first restore, this faster rebuild is usually enough:
 .\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
 ```
 
-5. Make sure `fluffy-dumper.exe` is available for the full story/audio export.
+5. It makes sure `fluffy-dumper.exe` is available for the full story/audio
+export.
 
 `.\export.bat --export-from-game` uses `fluffy-dumper` for structured data and
 CN audio decoding. The wrapper expects:
@@ -106,16 +141,10 @@ CN audio decoding. The wrapper expects:
 tools\fluffy-dumper-src\target\release\fluffy-dumper.exe
 ```
 
-This tool is a local vendor checkout, not a tracked submodule here. Download
-this project's patched source zip and build it locally.
+This tool is a local vendor checkout, not a tracked submodule here. The setup
+script downloads this project's patched source zip and builds it locally.
 
-Install Rust, then verify Cargo is on `PATH`:
-
-```bat
-cargo --version
-```
-
-Download and unpack the patched source zip:
+The manual commands are:
 
 ```powershell
 New-Item -ItemType Directory -Force tools | Out-Null
@@ -124,15 +153,8 @@ New-Item -ItemType Directory -Force tools\fluffy-dumper-src | Out-Null
 Expand-Archive -Force fluffy-dumper.zip tools\fluffy-dumper-src
 ```
 
-Build the executable:
-
 ```bat
 cargo build --release --manifest-path tools\fluffy-dumper-src\Cargo.toml
-```
-
-Verify the expected executable exists:
-
-```bat
 .\tools\fluffy-dumper-src\target\release\fluffy-dumper.exe --help
 ```
 
@@ -144,13 +166,7 @@ root.
 `export_assets.bat --export-from-game` does not need `fluffy-dumper` because it
 passes `--skip-structured`.
 
-6. Run the first full Story/Reference export from the installed game:
-
-```bat
-.\export.bat --export-from-game
-```
-
-If you did not set `ENDFIELD_GAME_ROOT`, pass the install path directly:
+6. It runs the first full Story/Reference export from the installed game.
 
 ```bat
 .\export.bat --export-from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
@@ -160,22 +176,20 @@ This creates or refreshes `export_full/`, runs the story AnimeStudio export,
 decodes CN audio, builds CN Story/Reference data, and links playable
 `audioSrc` values into the generated conversations.
 
-7. Build the Assets tab data when you want images, models, videos, and compact
-Story media lookup:
+7. It builds the Assets tab data when images, models, videos, and compact Story
+media lookup are needed.
 
 ```bat
-.\export_assets.bat --export-from-game
+.\export_assets.bat --export-from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
 ```
 
-Use the same `--game-root "...\Endfield_Data"` argument here if needed.
-
-8. Create an initial Updates baseline after the first export:
+8. It creates an initial Updates baseline after the first export.
 
 ```bat
 .\build_updates.bat --init-build
 ```
 
-9. Serve the WebUI:
+9. It starts or reuses the default WebUI server.
 
 ```bat
 python serve.py
@@ -186,6 +200,8 @@ Then open `http://127.0.0.1:8765/`.
 The local server sends no-store headers, and the Story browser revalidates
 generated JSON when loading or reselecting conversations, so a browser reload
 after a rebuild should show refreshed data without changing ports.
+
+</details>
 
 ## Routine Commands
 
