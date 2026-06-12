@@ -16,12 +16,14 @@ exit /b 0
 :help
 echo Usage: package_webui.bat [package_webui.py options]
 echo.
-echo Creates split shareable WebUI zips: a story/code/emoji/audio package and
-echo a companion assets package for larger story images and videos.
+echo Creates split shareable WebUI zips: a story/code/emoji package,
+echo a companion assets package for larger story images/videos, and
+echo a standalone audio package.
 echo.
 echo Common options:
 echo   -o, --output PATH        Primary story zip path.
 echo   --assets-output PATH     Companion assets zip path.
+echo   --audio-output PATH      Standalone audio zip path.
 echo   --include-asset-browser  Keep the asset-browser UI files in the package.
 echo   --dry-run                Print the package plan without writing zips.
 echo.

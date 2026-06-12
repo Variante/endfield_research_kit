@@ -12102,6 +12102,83 @@ def build_language_bundle(
             mission_data_files[mission] = rel_file
             mission_data_bytes += out_path.stat().st_size
 
+    def emit_webui_secret_notice() -> None:
+        if language_code != "CN":
+            return
+
+        out_key = "black_webui_secret_notice"
+        title = "角落里的开源声明"
+        mission = "webui_secret"
+        lines = [
+            {
+                "id": f"{out_key}_001",
+                "text": "你在角落里发现了一段系统日志。",
+            },
+            {
+                "id": f"{out_key}_002",
+                "text": (
+                    "本 WebUI 的代码免费、开源，项目地址："
+                    "Variante/endfield_research_kit"
+                    "（https://github.com/Variante/endfield_research_kit）。"
+                    "任何人都不应在任何地方、通过任何渠道，"
+                    "以付费方式获得本 WebUI 或其代码。"
+                ),
+            },
+            {
+                "id": f"{out_key}_003",
+                "text": (
+                    "页面中展示的文本、图片、音频、视频、模型等内容，"
+                    "均由《明日方舟：终末地》的游戏数据解包与整理而来；"
+                    "相关内容的版权及其他权利归鹰角网络及相关权利方所有。"
+                    "本项目仅用于研究、整理与浏览，不代表官方立场。"
+                ),
+            },
+        ]
+        payload = {
+            "key": out_key,
+            "kind": "black",
+            "mission": mission,
+            "scene": "notice",
+            "title": title,
+            "lines": lines,
+            "_debug": {
+                "source": {
+                    "table": "WebUI synthetic notice",
+                    "rowId": out_key,
+                    "note": (
+                        "Manual WebUI-only open-source and copyright notice "
+                        "requested by the maintainer."
+                    ),
+                },
+            },
+        }
+        write_conv_payload(out_key, payload)
+
+        index_entries[:] = [entry for entry in index_entries if entry.get("k") != out_key]
+        index_entries.append({
+            "k": out_key,
+            "d": "black",
+            "m": mission,
+            "s": 0,
+            "t": "other",
+            "a": 0,
+            "title": title,
+            "c": [],
+            "n": len(lines),
+            "p": preview(lines[0]["text"]),
+            "tags": ["other", "webui"],
+            "x": merge_search_text(
+                merge_search_text(title, indexed_line_haystack(lines, "text")),
+                (
+                    "版权声明 开源声明 免费 开源 付费 Variante "
+                    "endfield_research_kit GitHub 鹰角网络 Hypergryph "
+                    "明日方舟 终末地 WebUI"
+                ),
+            ),
+        })
+
+    emit_webui_secret_notice()
+
     generated = int(time.time())
     search_entries: list[dict] = []
     for entry in index_entries:

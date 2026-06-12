@@ -134,11 +134,11 @@ or:
 .\package_webui.bat
 ```
 
-Packaging writes two zips by default: a story zip with the WebUI,
-story/reference text data, emoji images, and decoded story audio, plus a
-companion assets zip with larger story images and videos. Extract the story zip
-first, then extract the assets zip into the same directory when those media
-files are needed.
+Packaging writes three zips by default: a story zip with the WebUI,
+story/reference text data, and emoji images; a companion assets zip with larger
+story images and videos; and a standalone audio zip with decoded story audio.
+Extract the story zip first, then extract the assets and audio zips into the
+same directory when those media or audio files are needed.
 
 ## Update Tracking
 

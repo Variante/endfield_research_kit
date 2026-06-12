@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """Build split WebUI zips without the 3D asset browser payload.
 
-The primary package keeps the story/reference browser text data, code, emoji
-image files, and decoded story audio. A companion assets package contains the
-larger exported image/video/audio files that the story renderer can display or
-play. OBJ/FBX
-files, Blender bundles, and the asset-browser data page are intentionally left
-out.
+The primary package keeps the story/reference browser text data, code, and
+emoji image files. A companion assets package contains the larger exported
+image/video files that the story renderer can display, and a standalone audio
+package contains decoded story audio files. OBJ/FBX files, Blender bundles, and
+the asset-browser data page are intentionally left out.
 """
 from __future__ import annotations
 
@@ -34,6 +33,7 @@ from common import (
 WEBUI_ROOT = PROJECT_ROOT / "webui"
 ZIP_NAME_PREFIX = "endfield-story-exported"
 ASSETS_ZIP_NAME_PREFIX = "endfield-story-exported-assets"
+AUDIO_ZIP_NAME_PREFIX = "endfield-story-exported-audio"
 
 TEXT_EXTENSIONS = {
     ".css",
@@ -125,12 +125,38 @@ Run from this extracted directory:
 Then open the printed localhost URL.
 
 This package includes the story/reference text data, WebUI code, emoji images,
-and decoded story audio. Larger story images and videos are in the companion
-assets zip. Extract that zip into the same directory after this one when you
-want inline/wiki media too.
+and the compact media indexes. Larger story images and videos are in the
+companion assets zip. Decoded story audio is in the standalone audio zip.
+Extract those zips into the same directory after this one when you want
+inline/wiki media or playable audio too.
 
 The 3D asset browser, OBJ/FBX payloads, and Blender bundle downloads are
 intentionally excluded.
+"""
+
+CHINESE_QUICKSTART_README = """Endfield WebUI 使用说明
+
+1. 先解压主包 endfield-story-exported-*.zip。
+2. 如果你还需要图片和视频，再把 endfield-story-exported-assets-*.zip 解压到同一个文件夹里；提示覆盖或合并时请选择允许。
+3. 如果你还需要语音，再把 endfield-story-exported-audio-*.zip 也解压到同一个文件夹里；提示覆盖或合并时同样请选择允许。
+4. 电脑需要安装 Python 3。
+5. 在解压后的文件夹里打开命令行，运行：
+
+   python serve.py
+
+6. 命令行会显示一个本地网址，通常是：
+
+   http://127.0.0.1:8765/
+
+   用浏览器打开这个网址即可使用 WebUI。
+
+如果 8765 端口被占用，可以改用：
+
+   python serve.py 9000
+
+然后打开命令行显示的新网址。
+
+不要直接双击 webui/index.html；请用 serve.py 启动，否则部分数据、图片、视频或语音可能无法正常加载。
 """
 
 ASSETS_PACKAGE_README = """Endfield WebUI story assets package
@@ -139,9 +165,20 @@ Extract this zip into the same directory as the matching story package, after
 the story package has been extracted.
 
 It contains larger exported image and video files used by inline/wiki media in
-the WebUI, plus decoded story audio files and the full media/audio indexes that
-enable them. Emoji images, WebUI code, story/reference text data, and decoded
-story audio are in the main story package.
+the WebUI, plus the full media indexes that enable them. Decoded story audio is
+in the standalone audio package. Emoji images, WebUI code, and story/reference
+text data are in the main story package.
+"""
+
+AUDIO_PACKAGE_README = """Endfield WebUI story audio package
+
+Extract this zip into the same directory as the matching story package, after
+the story package has been extracted.
+
+It contains decoded story audio files and audio indexes used by WebUI dialog and
+cutscene audio controls. Larger image/video media is in the companion assets
+package. Emoji images, WebUI code, and story/reference text data are in the
+main story package.
 """
 
 
@@ -176,8 +213,8 @@ class PackagePlan:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Create split WebUI zips: a story/code/emoji/audio zip and a "
-            "companion larger-media assets zip."
+            "Create split WebUI zips: a story/code/emoji zip and a "
+            "companion larger-media assets zip plus a standalone audio zip."
         ),
     )
     parser.add_argument(
@@ -197,6 +234,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help=(
             "Companion assets zip path to write. Default: the primary output "
             "name with -assets appended before .zip."
+        ),
+    )
+    parser.add_argument(
+        "--audio-output",
+        type=Path,
+        default=None,
+        help=(
+            "Standalone audio zip path to write. Default: the primary output "
+            "name with -audio appended before .zip."
         ),
     )
     parser.add_argument(
@@ -228,7 +274,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Print the package plan without writing the zip.",
+        help="Print the package plan without writing zips.",
     )
     return parser.parse_args(argv)
 
@@ -243,12 +289,25 @@ def default_assets_output_path(project_root: Path) -> Path:
     return project_root / f"{ASSETS_ZIP_NAME_PREFIX}-{datestamp}.zip"
 
 
+def default_audio_output_path(project_root: Path) -> Path:
+    datestamp = datetime.now().strftime("%Y%m%d")
+    return project_root / f"{AUDIO_ZIP_NAME_PREFIX}-{datestamp}.zip"
+
+
 def companion_assets_output_path(output: Path, project_root: Path) -> Path:
     if output == default_output_path(project_root):
         return default_assets_output_path(project_root)
     if output.suffix.lower() == ".zip":
         return output.with_name(f"{output.stem}-assets{output.suffix}")
     return output.with_name(f"{output.name}-assets.zip")
+
+
+def companion_audio_output_path(output: Path, project_root: Path) -> Path:
+    if output == default_output_path(project_root):
+        return default_audio_output_path(project_root)
+    if output.suffix.lower() == ".zip":
+        return output.with_name(f"{output.stem}-audio{output.suffix}")
+    return output.with_name(f"{output.name}-audio.zip")
 
 
 def posix_to_path(value: str) -> Path:
@@ -1112,13 +1171,19 @@ def create_package(args: argparse.Namespace) -> int:
     export_root = args.export_root.resolve()
     output = (args.output or default_output_path(project_root)).resolve()
     assets_output = (args.assets_output or companion_assets_output_path(output, project_root)).resolve()
+    audio_output = (args.audio_output or companion_audio_output_path(output, project_root)).resolve()
 
     if not webui_root.exists():
         raise SystemExit(f"WebUI root not found: {webui_root}")
     if not (project_root / "serve.py").exists():
         raise SystemExit(f"serve.py not found under project root: {project_root}")
-    if output == assets_output:
-        raise SystemExit("Primary story zip and companion assets zip must use different paths.")
+    package_outputs = {
+        "primary story zip": output,
+        "companion assets zip": assets_output,
+        "standalone audio zip": audio_output,
+    }
+    if len(set(package_outputs.values())) != len(package_outputs):
+        raise SystemExit("Primary story zip, companion assets zip, and standalone audio zip must use different paths.")
 
     plan = plan_package(args)
     missing_images = [image for image in plan.exported_images if not image.source_path.exists()]
@@ -1153,7 +1218,8 @@ def create_package(args: argparse.Namespace) -> int:
     print(f"Export root: {export_root}")
     print(f"Story zip: {output}")
     print(f"Assets zip: {assets_output}")
-    generated_text_count = 5 if args.include_asset_browser else 6
+    print(f"Audio zip: {audio_output}")
+    generated_text_count = 6 if args.include_asset_browser else 7
     print(f"Text files: {len(copied_text_files) + generated_text_count:,}")
     print(f"Story image IDs: {plan.image_refs:,}")
     print(f"Resolved image files: {len(existing_images):,} ({len(emoji_images):,} emoji, {len(asset_images):,} asset)")
@@ -1175,14 +1241,18 @@ def create_package(args: argparse.Namespace) -> int:
 
     output.parent.mkdir(parents=True, exist_ok=True)
     assets_output.parent.mkdir(parents=True, exist_ok=True)
+    audio_output.parent.mkdir(parents=True, exist_ok=True)
     if output.exists():
         output.unlink()
     if assets_output.exists():
         assets_output.unlink()
+    if audio_output.exists():
+        audio_output.unlink()
 
     written: set[str] = set()
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
         zip_write_file(zipf, written, project_root / "serve.py", "serve.py")
+        zip_writestr(zipf, written, "README.txt", CHINESE_QUICKSTART_README)
         zip_writestr(zipf, written, "README-webui-package.txt", PACKAGE_README)
 
         for path in copied_text_files:
@@ -1220,13 +1290,10 @@ def create_package(args: argparse.Namespace) -> int:
 
         for image in emoji_images:
             zip_write_file(zipf, written, image.source_path, image.archive_path)
-        for audio_path in plan.audio_files:
-            zip_write_file(zipf, written, audio_path.source_path, audio_path.archive_path)
-        for audio_index in plan.audio_indexes:
-            zip_write_file(zipf, written, audio_index.source_path, audio_index.archive_path)
 
     assets_written: set[str] = set()
     with zipfile.ZipFile(assets_output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
+        zip_writestr(zipf, assets_written, "README.txt", CHINESE_QUICKSTART_README)
         zip_writestr(zipf, assets_written, "README-webui-assets-package.txt", ASSETS_PACKAGE_README)
         asset_index_json = json.dumps(plan.filtered_asset_payload, ensure_ascii=False, separators=(",", ":"))
         zip_writestr(zipf, assets_written, "webui/data/assets/index.json", asset_index_json)
@@ -1236,15 +1303,22 @@ def create_package(args: argparse.Namespace) -> int:
             zip_write_file(zipf, assets_written, image.source_path, image.archive_path)
         for video in existing_videos:
             zip_write_file(zipf, assets_written, video.source_path, video.archive_path)
+
+    audio_written: set[str] = set()
+    with zipfile.ZipFile(audio_output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
+        zip_writestr(zipf, audio_written, "README.txt", CHINESE_QUICKSTART_README)
+        zip_writestr(zipf, audio_written, "README-webui-audio-package.txt", AUDIO_PACKAGE_README)
         for audio_path in plan.audio_files:
-            zip_write_file(zipf, assets_written, audio_path.source_path, audio_path.archive_path)
+            zip_write_file(zipf, audio_written, audio_path.source_path, audio_path.archive_path)
         for audio_index in plan.audio_indexes:
-            zip_write_file(zipf, assets_written, audio_index.source_path, audio_index.archive_path)
+            zip_write_file(zipf, audio_written, audio_index.source_path, audio_index.archive_path)
 
     size_mb = output.stat().st_size / (1024 * 1024)
     assets_size_mb = assets_output.stat().st_size / (1024 * 1024)
+    audio_size_mb = audio_output.stat().st_size / (1024 * 1024)
     print(f"Wrote story zip: {output} ({size_mb:.1f} MiB)")
     print(f"Wrote assets zip: {assets_output} ({assets_size_mb:.1f} MiB)")
+    print(f"Wrote audio zip: {audio_output} ({audio_size_mb:.1f} MiB)")
     return 0
 
 
