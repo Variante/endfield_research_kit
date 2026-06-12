@@ -438,6 +438,7 @@
       chip.addEventListener("click", () => {
         if (activeSet.has(value)) activeSet.delete(value);
         else activeSet.add(value);
+        chip.classList.toggle("on", activeSet.has(value));
         applyUpdateFilters();
       });
       fragment.appendChild(chip);

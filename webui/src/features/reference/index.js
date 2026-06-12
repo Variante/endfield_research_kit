@@ -272,6 +272,7 @@
       chip.addEventListener("click", () => {
         if (REF_STATE.sourceFilters.has(source)) REF_STATE.sourceFilters.delete(source);
         else REF_STATE.sourceFilters.add(source);
+        chip.classList.toggle("on", REF_STATE.sourceFilters.has(source));
         renderReferenceList();
         renderReferenceRows();
       });

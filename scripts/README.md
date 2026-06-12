@@ -53,11 +53,12 @@ decoded media.
 
 `package_webui.bat` runs `scripts/package_webui.py` and creates split
 shareable zips. The main story zip contains `serve.py`, `webui/`, generated
-story/reference text data, WebUI code, emoji images, and decoded story audio.
-The companion assets zip contains the larger displayed image/video media resolved from
-`export_full/`; extract the story zip first, then extract the assets zip into
-the same directory when media is wanted. Packaging excludes 3D/model payloads
-and does not include
+story/reference text data, WebUI code, and emoji images. The companion assets
+zip contains larger displayed image/video media resolved from `export_full/`,
+and the standalone audio zip contains decoded story audio from `export_full/`.
+Extract the story zip first, then extract the assets and audio zips into the
+same directory when media or audio is wanted. Packaging excludes 3D/model
+payloads and does not include
 `scratch/`, `reports/`, or `tmp/`.
 
 ## Folder Contract
@@ -155,9 +156,10 @@ Expected active inputs and outputs:
   demo bundle helpers used by `build_assets.py` and the Updates builder.
 - `package_webui.py`: packages split shareable WebUI zips from
   `serve.py`, `..\webui\`, and displayed media files under `..\export_full\`.
-  The primary zip is story/code/emoji/audio, including the full
-  `envEmoji_common_*` prefab layer sprite set and decoded story audio; the
-  companion assets zip carries larger images and videos.
+  The primary zip is story/code/emoji, including the full
+  `envEmoji_common_*` prefab layer sprite set; the companion assets zip carries
+  larger images and videos; the standalone audio zip carries decoded story
+  audio.
 - `download_bilibili_video.py`: optional gameplay-video intake helper for the
   OCR/audio story-order workflow. It downloads Bilibili pages into the flat
   `..\videos\` folder using browser-exported cookies, resumable `.m4s` parts,
