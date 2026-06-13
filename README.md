@@ -148,7 +148,11 @@ The manual commands are:
 
 ```powershell
 New-Item -ItemType Directory -Force tools | Out-Null
-Invoke-WebRequest -Uri https://sanmatani.me/fluffy-dumper.zip -OutFile fluffy-dumper.zip
+$fluffyUrl = 'https://drive.google.com/file/d/1WqShlYyM_QpEqzM_myRkdpTGifYOuVHg/view?usp=sharing'
+if ($fluffyUrl -match 'drive\.google\.com/file/d/([^/]+)/') {
+  $fluffyUrl = 'https://drive.google.com/uc?export=download&id=' + $Matches[1]
+}
+Invoke-WebRequest -Uri $fluffyUrl -OutFile fluffy-dumper.zip
 New-Item -ItemType Directory -Force tools\fluffy-dumper-src | Out-Null
 Expand-Archive -Force fluffy-dumper.zip tools\fluffy-dumper-src
 ```
