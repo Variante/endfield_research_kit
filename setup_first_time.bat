@@ -2,7 +2,7 @@
 setlocal EnableExtensions
 
 set "DEFAULT_GAME_ROOT=D:\Program Files\Endfield Game\Endfield_Data"
-set "FLUFFY_URL=https://sanmatani.me/fluffy-dumper.zip"
+set "FLUFFY_URL=https://drive.google.com/file/d/1WqShlYyM_QpEqzM_myRkdpTGifYOuVHg/view?usp=sharing"
 
 if /I "%~1"=="--help" goto :help
 if /I "%~1"=="-h" goto :help
@@ -127,7 +127,7 @@ if exist "%FLUFFY_SRC%\Cargo.toml" (
 
 :download_fluffy
 echo [setup] Downloading %FLUFFY_URL%
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; New-Item -ItemType Directory -Force -Path '%CD%\tools' | Out-Null; Invoke-WebRequest -Uri '%FLUFFY_URL%' -OutFile '%FLUFFY_ZIP%'; New-Item -ItemType Directory -Force -Path '%FLUFFY_SRC%' | Out-Null; Expand-Archive -Force -LiteralPath '%FLUFFY_ZIP%' -DestinationPath '%FLUFFY_SRC%'"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $url='%FLUFFY_URL%'; if ($url -match 'drive\.google\.com/file/d/([^/]+)/') { $url = 'https://drive.google.com/uc?export=download&id=' + $Matches[1] }; New-Item -ItemType Directory -Force -Path '%CD%\tools' | Out-Null; Invoke-WebRequest -Uri $url -OutFile '%FLUFFY_ZIP%'; New-Item -ItemType Directory -Force -Path '%FLUFFY_SRC%' | Out-Null; Expand-Archive -Force -LiteralPath '%FLUFFY_ZIP%' -DestinationPath '%FLUFFY_SRC%'"
 if errorlevel 1 goto :failed
 if not exist "%FLUFFY_SRC%\Cargo.toml" (
   echo [setup] The fluffy-dumper source zip did not unpack to:
