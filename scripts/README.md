@@ -71,6 +71,22 @@ image/model/animation AnimeStudio decode first. It accepts the same
 `--game-root PATH` argument and `ENDFIELD_GAME_ROOT` fallback when refreshing
 decoded assets from a non-default install root.
 
+Both installed-game wrappers pass `--animestudio-jobs N` through to
+`export_full_from_game.py`. Keep the default `1` for low-RAM or first-time
+runs. On the current 64 GiB workstation, `--animestudio-jobs 2` is the best
+tested value: it improved the Story JSON slice by about 21%, while a full asset
+refresh peaked at about 27 GiB observed process-tree working set. Do not use
+`3` workers on this machine unless there is much more free RAM available; the
+`AnimationClip` and `Texture2D` workers dominate both memory and wall time.
+
+`export_full_from_game.py` writes detailed stage logs and summaries under
+`../reports/`. Nonzero AnimeStudio subprocesses now make the wrapper return
+nonzero after the summary is written, so `export.bat` and `export_assets.bat`
+stop on partial type-sliced failure. Metadata-only MonoBehaviour JSON is a
+bounded fallback for objects with impossible schema fields. Per-asset
+`Export ... error` log entries are skipped converted assets and should be
+reviewed separately from wrapper-level failures.
+
 `scripts/build_audio.py` can still be run directly for non-CN languages or
 audio-only maintenance. It indexes files under
 `export_full/structured/Audio/<LANG>/`, adds playable `audioSrc` links to

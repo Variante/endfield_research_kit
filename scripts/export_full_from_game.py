@@ -24,7 +24,7 @@ ANIMESTUDIO_STAGES = ("maps", "convert_by_type", "json_by_type")
 ANIMESTUDIO_SCOPES = ("story", "assets", "all")
 ANIMESTUDIO_GAME = "ArknightsEndfield"
 ANIMESTUDIO_LOGGER_FLAGS = ("Warning", "Error")
-ANIMESTUDIO_DEFAULT_JOBS = 4
+ANIMESTUDIO_DEFAULT_JOBS = 1
 ANIMESTUDIO_MANIFEST_SCHEMA_VERSION = 2
 ANIMESTUDIO_MANIFEST_MAP_ITEM = "__maps__"
 ANIMESTUDIO_MANIFEST_MAP_LABEL = "maps"
@@ -508,8 +508,8 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=ANIMESTUDIO_DEFAULT_JOBS,
         help=(
-            "Maximum parallel AnimeStudio CLI processes for per-type export "
-            f"(default: {ANIMESTUDIO_DEFAULT_JOBS}; use 1 for serial execution)."
+            "Maximum parallel AnimeStudio CLI processes for per-type export. "
+            f"The default {ANIMESTUDIO_DEFAULT_JOBS} runs one type at a time to limit peak memory."
         ),
     )
     parser.add_argument(
@@ -1012,7 +1012,7 @@ def write_animestudio_parallel_log_index(
     stderr_log = reports_dir / f"{source}_animestudio_{stage}.stderr.log"
 
     lines = [
-        f"Parallel AnimeStudio stage: {source} {stage}",
+        f"Type-sliced AnimeStudio stage: {source} {stage}",
         f"processes: {len(results)}",
         "",
         "returncode\tstdout_log\tstderr_log\tcommand",
@@ -1026,7 +1026,7 @@ def write_animestudio_parallel_log_index(
 
     failed = [result for result in results if result.returncode != 0]
     err_lines = [
-        f"Parallel AnimeStudio stage failures: {source} {stage}",
+        f"Type-sliced AnimeStudio stage failures: {source} {stage}",
         f"failed_processes: {len(failed)}",
     ]
     for result in failed:
@@ -1058,7 +1058,7 @@ def run_animestudio_stage_plan(
         plan["failed_items"] = []
         return []
 
-    if stage == "maps" or jobs <= 1 or len(runnable_items) <= 1:
+    if stage == "maps" or len(runnable_items) <= 1:
         clear_animestudio_stage_outputs(output_root, source, stage, runnable_items)
         result = run_animestudio_stage(
             source=source,
@@ -1542,6 +1542,7 @@ def main() -> int:
     )
     manifest_txt = unresolved_dir / "manifest_reference_missing.txt"
     manifest_txt.write_text("\n".join(manifest_lines) if manifest_lines else "", encoding="utf-8")
+    command_failures = [item for item in command_results if item.returncode != 0]
 
     summary = {
         "game_root": str(game_root),
@@ -1558,6 +1559,8 @@ def main() -> int:
         "animestudio": animestudio_summary,
         "failed_to_decode_txt": str(failed_txt),
         "manifest_reference_missing_txt": str(manifest_txt),
+        "command_failure_count": len(command_failures),
+        "command_failures": [asdict(item) for item in command_failures],
     }
     log(f"writing json summary to {reports_dir / 'export_full_summary.json'}")
     write_json(reports_dir / "export_full_summary.json", summary)
@@ -1698,11 +1701,19 @@ def main() -> int:
     log(
         "finished full export: "
         f"commands={len(summary['commands'])} "
+        f"command_failures={len(command_failures)} "
         f"failed_entries={sum(1 for line in failed_lines if line and not line.startswith('['))} "
         f"manifest_entries={sum(1 for line in manifest_lines if line and not line.startswith('['))}"
     )
 
     print(json.dumps(summary, indent=2, ensure_ascii=False))
+    if command_failures:
+        for failure in command_failures:
+            log(
+                f"command failed: {failure.name} "
+                f"returncode={failure.returncode} stderr={failure.stderr_log}"
+            )
+        return 1
     return 0
 
 

@@ -187,6 +187,22 @@ media lookup are needed.
 .\export_assets.bat --export-from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
 ```
 
+Installed-game AnimeStudio refreshes accept `--animestudio-jobs N` through both
+wrappers. The default is `1` to keep peak RAM low. On the current 64 GiB test
+machine, `--animestudio-jobs 2` was the best measured setting: the Story JSON
+slice was about 21% faster than one worker and the full asset refresh peaked at
+about 27 GiB observed process-tree working set. Avoid `3` workers unless the
+machine has substantially more free RAM, because `AnimationClip` and
+`Texture2D` are long, high-memory workers.
+
+After an installed-game refresh, check `reports/export_full_summary.md` for
+stage return codes and log issues. A nonzero AnimeStudio subprocess now makes
+the wrapper fail. Metadata-only MonoBehaviour JSON means the guarded reader
+found impossible schema fields and preserved object metadata instead of
+allocating huge buffers. Per-asset `Export ... error` entries mean individual
+converted assets were skipped even though the broader type pass may have
+completed.
+
 8. It creates an initial Updates baseline after the first export.
 
 ```bat
