@@ -589,6 +589,7 @@
       Persistent: "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type",
       "Persistent-maps": "export_full/recovered/AnimeStudio-cli/Persistent/maps",
       "Persistent-structured": "export_full/structured/Persistent",
+      Audio: "export_full/structured/Audio",
     };
   }
 
@@ -607,6 +608,7 @@
   }
 
   function defaultExportSourceRoot(source) {
+    if (String(source || "").toLowerCase() === "audio") return "structured/Audio";
     const match = String(source || "").match(/^(.+)-structured$/i);
     return match ? `structured/${match[1]}` : "";
   }

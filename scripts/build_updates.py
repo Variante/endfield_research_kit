@@ -66,6 +66,8 @@ AUDIO_EXTENSIONS = {
     ".wav",
     ".wem",
 }
+AUDIO_EXPORT_RELATIVE_ROOT = "structured/Audio"
+AUDIO_SOURCE_LABEL = "Audio"
 DECODED_IMPACT_SAMPLE_LIMIT = 200
 PRUNE_SAMPLE_LIMIT = 200
 IGNORED_GAME_PATH_PREFIXES = (
@@ -608,9 +610,9 @@ def asset_kind_for_suffix(suffix: str) -> str:
 
 def resolve_update_asset_source_roots(export_root: Path) -> list[tuple[str, Path]]:
     roots = list(resolve_asset_source_roots(export_root))
-    audio_root = export_root / "structured" / "Audio"
+    audio_root = export_root / AUDIO_EXPORT_RELATIVE_ROOT
     if audio_root.exists():
-        roots.append(("Audio", audio_root))
+        roots.append((AUDIO_SOURCE_LABEL, audio_root))
     return roots
 
 
@@ -630,6 +632,7 @@ def build_asset_snapshot(
     prior_assets: dict[str, dict[str, Any]] | None = None,
     *,
     hash_contents: bool = False,
+    preserve_missing_audio_prior_assets: bool = False,
 ) -> dict[str, dict[str, Any]]:
     assets: dict[str, dict[str, Any]] = {}
     prior_assets = prior_assets or {}
@@ -682,6 +685,17 @@ def build_asset_snapshot(
                     "digest": digest,
                     "fingerprintMode": fingerprint_mode,
                 }
+    if preserve_missing_audio_prior_assets:
+        for rel_path, old_asset in prior_assets.items():
+            if rel_path in assets or not isinstance(old_asset, dict):
+                continue
+            old_kind = str(old_asset.get("kind") or "")
+            old_export_rel = normalize_posix(str(old_asset.get("export_rel") or ""))
+            if old_kind != "audio" and not old_export_rel.startswith(f"{AUDIO_EXPORT_RELATIVE_ROOT}/"):
+                continue
+            preserved = dict(old_asset)
+            preserved["missing_on_disk"] = True
+            assets[rel_path] = preserved
     return assets
 
 
@@ -763,6 +777,88 @@ def collect_existing_relative_files(root: Path, relative_paths: list[str]) -> se
     return out
 
 
+def collect_existing_audio_relative_files(root: Path) -> set[str]:
+    """Return decoded audio files that prune must keep in a previous export."""
+    audio_root = root / AUDIO_EXPORT_RELATIVE_ROOT
+    out: set[str] = set()
+    if not audio_root.exists() or not audio_root.is_dir():
+        return out
+    for dirpath, dirnames, filenames in os.walk(audio_root):
+        dirnames.sort()
+        filenames.sort()
+        base_dir = Path(dirpath)
+        for filename in filenames:
+            file_path = base_dir / filename
+            if not file_path.is_file() or file_path.suffix.lower() not in AUDIO_EXTENSIONS:
+                continue
+            out.add(file_path.relative_to(root).as_posix())
+    return out
+
+
+def audio_duplicate_key(rel_path: str) -> tuple[str, str, str] | None:
+    normalized = normalize_posix(rel_path)
+    parts = normalized.split("/")
+    lower_parts = [part.lower() for part in parts]
+    if len(parts) < 4 or lower_parts[0:2] != ["structured", "audio"]:
+        return None
+    suffix = Path(normalized).suffix.lower()
+    if suffix not in AUDIO_EXTENSIONS:
+        return None
+    language = parts[2].lower()
+    audio_id = Path(normalized).stem.lower()
+    return language, audio_id, suffix
+
+
+def audio_duplicate_rank(rel_path: str) -> tuple[int, int, str]:
+    parts = normalize_posix(rel_path).split("/")
+    audio_parts = parts[3:] if len(parts) > 3 else []
+    bucket = audio_parts[0].lower() if audio_parts else ""
+    if bucket == "voice":
+        priority = 0
+    elif bucket == "unmapped":
+        priority = 2
+    else:
+        priority = 1
+    return priority, len(audio_parts), normalize_posix(rel_path).lower()
+
+
+def collect_duplicate_audio_relative_files(root: Path) -> set[str]:
+    """Return duplicate decoded audio files hidden by another file with the same id."""
+    audio_paths = sorted(collect_existing_audio_relative_files(root))
+    by_key: dict[tuple[str, str, str], list[str]] = {}
+    for rel_path in audio_paths:
+        key = audio_duplicate_key(rel_path)
+        if key is None:
+            continue
+        by_key.setdefault(key, []).append(rel_path)
+
+    duplicates: set[str] = set()
+    for paths in by_key.values():
+        if len(paths) <= 1:
+            continue
+        keep = min(paths, key=audio_duplicate_rank)
+        duplicates.update(path for path in paths if path != keep)
+    return duplicates
+
+
+def collect_unchanged_current_audio_relative_files(previous_root: Path, current_root: Path) -> set[str]:
+    """Return previous decoded audio files that current export already carries unchanged."""
+    unchanged: set[str] = set()
+    for rel_path in collect_existing_audio_relative_files(previous_root):
+        previous_path = previous_root / rel_path
+        current_path = current_root / rel_path
+        try:
+            if (
+                current_path.is_file()
+                and current_path.suffix.lower() in AUDIO_EXTENSIONS
+                and current_path.stat().st_size == previous_path.stat().st_size
+            ):
+                unchanged.add(rel_path)
+        except OSError:
+            continue
+    return unchanged
+
+
 def assert_safe_previous_export_prune(previous_export_root: Path, current_export_root: Path) -> None:
     previous_resolved = previous_export_root.resolve()
     current_resolved = current_export_root.resolve()
@@ -815,9 +911,19 @@ def prune_previous_export_untracked(
     previous_resolved = previous_export_root.resolve()
     text_paths = collect_existing_relative_files(previous_resolved, include_relative_paths)
     asset_paths = {normalize_posix(path) for path in tracked_asset_paths if normalize_posix(path)}
-    keep_paths = text_paths | asset_paths
+    audio_paths = collect_existing_audio_relative_files(previous_resolved)
+    duplicate_audio_paths = collect_duplicate_audio_relative_files(previous_resolved)
+    unchanged_audio_paths = collect_unchanged_current_audio_relative_files(previous_resolved, current_export_root.resolve())
+    keep_paths = text_paths | asset_paths | audio_paths
     all_paths = set(iter_existing_relative_files(previous_resolved))
-    delete_paths = sorted(path for path in all_paths if path not in keep_paths)
+    delete_path_set = {
+        path
+        for path in all_paths
+        if path not in keep_paths or path in duplicate_audio_paths or path in unchanged_audio_paths
+    }
+    delete_paths = sorted(
+        delete_path_set
+    )
 
     deleted_files = 0
     bytes_deleted = 0
@@ -841,7 +947,10 @@ def prune_previous_export_untracked(
         "previousExportRoot": str(previous_export_root),
         "trackedTextFiles": len(text_paths),
         "trackedAssetFiles": len(asset_paths),
-        "keptFiles": len(all_paths & keep_paths),
+        "trackedAudioFiles": len(audio_paths),
+        "duplicateAudioFiles": len(duplicate_audio_paths),
+        "unchangedAudioFiles": len(unchanged_audio_paths),
+        "keptFiles": len(all_paths - delete_path_set),
         "deletedFiles": deleted_files,
         "bytesDeleted": bytes_deleted,
         "emptyDirsDeleted": empty_dirs_deleted,
@@ -886,6 +995,21 @@ def asset_update_entry(status: str, asset: dict[str, Any], old_asset: dict[str, 
     return entry
 
 
+def asset_is_modified(old_asset: dict[str, Any], new_asset: dict[str, Any]) -> bool:
+    if old_asset.get("digest") == new_asset.get("digest"):
+        return False
+    if (
+        old_asset.get("missing_on_disk")
+        and str(old_asset.get("kind") or "") == "audio"
+        and str(new_asset.get("kind") or "") == "audio"
+        and old_asset.get("size") is not None
+        and new_asset.get("size") is not None
+        and int(old_asset.get("size") or -1) == int(new_asset.get("size") or -2)
+    ):
+        return False
+    return True
+
+
 def build_asset_diff(
     old_assets: dict[str, dict[str, Any]],
     new_assets: dict[str, dict[str, Any]],
@@ -907,7 +1031,7 @@ def build_asset_diff(
     for rel_path in sorted(old_paths & new_paths):
         old_asset = old_assets[rel_path]
         new_asset = new_assets[rel_path]
-        if old_asset.get("digest") != new_asset.get("digest"):
+        if asset_is_modified(old_asset, new_asset):
             modified.append(asset_update_entry("modified", new_asset, old_asset))
 
     totals = {
@@ -1259,6 +1383,7 @@ def attach_asset_updates(
             previous_export_root,
             load_asset_state(previous_asset_state_path, export_root=previous_export_root),
             hash_contents=hash_asset_updates,
+            preserve_missing_audio_prior_assets=True,
         )
         new_assets = build_asset_snapshot(
             export_root,
@@ -1585,6 +1710,13 @@ def main(argv: list[str] | None = None) -> int:
             f"{int(prune_result.get('deletedFiles') or 0)} file(s), "
             f"{int(prune_result.get('bytesDeleted') or 0)} byte(s)"
         )
+        duplicate_audio = int(prune_result.get("duplicateAudioFiles") or 0)
+        unchanged_audio = int(prune_result.get("unchangedAudioFiles") or 0)
+        if duplicate_audio or unchanged_audio:
+            print(
+                "[build_updates] Previous export audio prune:"
+                f" duplicate={duplicate_audio}, unchanged-current-copy={unchanged_audio}"
+            )
     print(f"[build_updates] WebUI feed: {out_path}")
     return 0
 

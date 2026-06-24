@@ -181,7 +181,13 @@ Expected active inputs and outputs:
   `--dry-run-prune-previous-export-untracked` to preview old files outside the
   focused tracked text/assets surfaces, and
   `--prune-previous-export-untracked` to delete those untracked files from the
-  previous export root after confirming the preview.
+  previous export root after confirming the preview. The prune step also scans
+  `structured/Audio/` in the previous export and removes duplicate decoded
+  audio copies, preferring mapped `voice/` files over `unmapped/` copies with
+  the same audio id and extension. It also removes previous-export audio files
+  that still exist unchanged in the current `..\export_full\structured\Audio\`;
+  the cached asset baseline keeps later comparisons from treating those pruned
+  files as newly added.
 - `story_builder/build.py`: builds CN story/reference data by default,
   with optional extra languages. The builder reads from `..\export_full\`, stamps dialog convs
   with DialogIdTable runtime registry evidence, links narrative
