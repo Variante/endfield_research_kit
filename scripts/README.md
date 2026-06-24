@@ -20,7 +20,7 @@ From the repo root:
 
 For a fresh checkout, prefer the root `setup_first_time.bat` wrapper. It
 initializes and builds the required external tools, runs the installed-game
-Story/Reference/audio export, runs the Assets tab media export, creates the
+Story/Reference export, runs the Assets tab media and CN audio export, creates the
 initial Updates baseline, and starts or reuses the default WebUI server. Pass
 `--no-serve` if the setup should stop after the build/export steps.
 
@@ -31,13 +31,11 @@ initial Updates baseline, and starts or reuses the default WebUI server. Pass
 - `scripts/story_builder/dialog_registry.py --quiet`
 - `scripts/story_builder/video_bindings.py`
 - `scripts/story_builder/source_links.py`
-- `scripts/story_builder/build.py --languages CN --default-language CN`
-- `scripts/build_audio.py --skip-decode`
+- `scripts/story_builder/build.py --languages CN --default-language CN --skip-audio-link`
 
 Pass `--export-from-game` when you explicitly want to refresh `export_full/`
-from installed game data before rebuilding; in that mode `export.bat` also
-decodes CN audio before the final link pass. The final audio pass always runs,
-so Story audio controls are linked after generated conversations are rebuilt.
+from installed game data before rebuilding Story/Reference data. Audio relinking
+is handled by `export_assets.bat` after generated conversations are rebuilt.
 Pass `--game-root PATH` when the installed game is not under the default
 `D:\Program Files\Endfield Game\Endfield_Data`. The path must be the installed
 `Endfield_Data` directory. For repeated runs, set `ENDFIELD_GAME_ROOT` before
@@ -66,10 +64,12 @@ need `--game-root`; pass it only for optional decoded-impact mapping from a
 non-default installed `Endfield_Data` root. It does not choose the export trees.
 
 `export_assets.bat` runs `scripts/build_assets.py` for the Assets tab indexes
-and compact Story media lookup. Pass `--export-from-game` to run the heavier
-image/model/animation AnimeStudio decode first. It accepts the same
-`--game-root PATH` argument and `ENDFIELD_GAME_ROOT` fallback when refreshing
-decoded assets from a non-default install root.
+and compact Story media lookup, then runs `scripts/build_audio.py --skip-decode`
+to relink existing decoded CN audio into generated conversations. Pass
+`--export-from-game` to run the heavier image/model/animation AnimeStudio decode
+and CN audio decode first. It accepts the same `--game-root PATH` argument and
+`ENDFIELD_GAME_ROOT` fallback when refreshing decoded assets/audio from a
+non-default install root.
 
 Both installed-game wrappers pass `--animestudio-jobs N` through to
 `export_full_from_game.py`. Keep the default `1` for low-RAM or first-time
