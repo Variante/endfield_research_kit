@@ -60,6 +60,112 @@ BROWSER_JSON_TYPE_DIRS = {
 }
 ASSET_SINGLE_PREFIX_RE = re.compile(r"^[A-Za-z]_")
 ASSET_LOD_SUFFIX_RE = re.compile(r"(?:[_-])lod\d+$", re.IGNORECASE)
+MATERIAL_TEXTURE_SUFFIXES = (
+    "_basemap",
+    "_bumpmap",
+    "_normalmap",
+    "_emissionmap",
+    "_metallicglossmap",
+    "_maskmap",
+    "_occlusionmap",
+    "_detailmap",
+    "_specglossmap",
+)
+IMAGE_CATEGORY_PREFIXES: tuple[tuple[tuple[str, ...], str], ...] = (
+    (("pic_",), "character"),
+    (("icon_round",), "icon_round"),
+    (("icon_",), "icon"),
+    (("item_topic",), "item_topic"),
+    (("item_potential",), "item_potential"),
+    (("item_",), "item"),
+    (("business_card",), "business_card"),
+    (("sns_",), "sns"),
+    (("bg_", "background", "activity_bg"), "background"),
+    (("logo",), "logo"),
+    (("loading",), "loading"),
+    (("tutorial",), "tutorial"),
+    (("cg_",), "cg"),
+    (("splash",), "splash"),
+    (("chr_",), "chr_thumb"),
+    (("title",), "title"),
+    (("tips",), "tips"),
+    (("achv_", "achievement_", "achievement-"), "achievement"),
+    (("wpn_", "weapon_", "weapon-"), "weapon"),
+    (("activity_",), "activity"),
+    (("prts_",), "prts"),
+    (("dung", "slu__dung"), "dungeon"),
+    (("slu__map",), "map"),
+    (("slu__ld",), "level"),
+    (("slu__",), "snapshot"),
+    (("dlg_",), "dialog"),
+    (("gacha",), "gacha"),
+    (("image_", "img_", "img-"), "image"),
+    (("deco_", "deco-", "line_", "line-"), "decoration"),
+    (("btn_", "btn-"), "button"),
+    (("common_", "common-"), "common_ui"),
+    (("uisprite",), "ui_sprite"),
+    (("emoji_", "emoji-"), "emoji"),
+    (("guide_", "guide-"), "guide"),
+    (("tech_", "tech-"), "tech"),
+    (("eny_", "eny-", "enemy_", "enemy-"), "enemy"),
+    (("wiki_", "wiki-"), "wiki"),
+    (("shop_", "shop-", "monthlypass"), "shop"),
+    (("map_", "map-"), "map"),
+    (("collection_", "collection-"), "collection"),
+    (("document_", "document-"), "document"),
+    (("seasonal_", "seasonal-"), "seasonal"),
+    (("textfactorycommonui",), "factory_ui"),
+    (("dwr_", "dwr-"), "dwr"),
+    (("facskill_", "facskill-"), "factory_skill"),
+    (("aibark_", "aibark-"), "aibark"),
+    (("reception_", "reception-"), "reception"),
+    (("racing_", "racing-"), "racing"),
+    (("remotecomm_", "remotecomm-"), "remotecomm"),
+    (("potential_", "potential-"), "item_potential"),
+    (("boss_", "boss-"), "boss"),
+    (("snapshot_", "snapshot-"), "snapshot"),
+    (("poster_", "poster-"), "poster"),
+    (("adventure_", "adventure-"), "adventure"),
+    (("mail_", "mail-"), "mail"),
+    (("chapter_", "chapter-"), "chapter"),
+    (("cover_", "cover-"), "cover"),
+    (("reading_", "reading-"), "reading"),
+    (("text_", "text-"), "text"),
+    (("ui_", "ui-"), "ui"),
+    (("prgs_", "prgs-"), "progress"),
+    (("decal_", "decal-"), "decal"),
+)
+
+
+def classify_image_name(name: str) -> str:
+    if not name:
+        return "other"
+    lower = name.lower()
+    for prefixes, category in IMAGE_CATEGORY_PREFIXES:
+        if lower.startswith(prefixes):
+            return category
+    if lower.startswith("map02") or lower.startswith("map03"):
+        return "map"
+    return "other"
+
+
+def is_material_like_texture_name(name: str) -> bool:
+    if not name:
+        return False
+    lower = name.lower()
+    if len(lower) > 2 and lower[0] == "t" and lower[1] == "_":
+        return True
+    if lower.startswith("terrain"):
+        return True
+    if len(lower) >= 2 and lower[1] == "_" and lower[0] in {"h", "m", "l"}:
+        return True
+    if lower.startswith("layer"):
+        return True
+    if lower.startswith("mask"):
+        return True
+    if lower.startswith("splatindexmap") or lower.startswith("etchlist"):
+        return True
+    return lower.endswith(MATERIAL_TEXTURE_SUFFIXES)
 
 
 def _strip_asset_prefix(name: str) -> str:
@@ -183,6 +289,8 @@ def scan_exported_media_assets(
     video_entries: list[dict] = []
     counts = defaultdict(int)
     video_counts = defaultdict(int)
+    image_category_counts = defaultdict(int)
+    material_like_image_count = 0
     image_rels_by_stem: dict[str, list[str]] = defaultdict(list)
     model_rels_by_source_base: dict[tuple[str, str], list[str]] = defaultdict(list)
     model_rels_by_base: dict[str, list[str]] = defaultdict(list)
@@ -206,6 +314,7 @@ def scan_exported_media_assets(
         include_media: bool = True,
         include_json: bool = True,
     ) -> None:
+        nonlocal material_like_image_count
         suffix = path.suffix.lower()
         kind = _browser_asset_kind_for_suffix(
             suffix,
@@ -230,6 +339,14 @@ def scan_exported_media_assets(
         }
         if path_id:
             entry["pid"] = path_id
+        if kind == "image":
+            image_category = classify_image_name(stem)
+            image_category_counts[image_category] += 1
+            if image_category != "other":
+                entry["ic"] = image_category
+            if is_material_like_texture_name(stem):
+                entry["mt"] = 1
+                material_like_image_count += 1
         asset_entries.append(entry)
 
         if kind == "image":
@@ -397,6 +514,8 @@ def scan_exported_media_assets(
         "materials": material_count,
         "textureLinks": texture_link_count,
         "previewModels": preview_proxy_count,
+        "imageCategories": dict(sorted(image_category_counts.items())),
+        "materialLikeImages": material_like_image_count,
     }
 
 
@@ -415,6 +534,8 @@ def _asset_payload(scan: dict[str, Any], *, root: Path, export_root: Path) -> di
         },
         "entries": scan["assetEntries"],
         "relations": scan["relations"],
+        "imageCategories": scan["imageCategories"],
+        "materialLikeImages": scan["materialLikeImages"],
     }
 
 
@@ -444,6 +565,8 @@ def _asset_stats(scan: dict[str, Any], out_path: Path, export_root: Path) -> dic
         "videos": counts["video"],
         "json": counts["json"],
         "materials": scan["materials"],
+        "imageCategories": scan["imageCategories"],
+        "materialLikeImages": scan["materialLikeImages"],
         "previewModels": scan["previewModels"],
         "indexBytes": out_path.stat().st_size,
     }
@@ -480,6 +603,8 @@ def build_asset_index(
         (
             f"({counts['total']} assets; {counts['image']} images; {counts['model']} models; "
             f"{counts['video']} videos; {counts['json']} JSON files; "
+            f"{scan['materialLikeImages']} material-like images; "
+            f"{len(scan['imageCategories'])} image categories; "
             f"{scan['materials']} materials; {scan['textureLinks']} texture links; "
             f"{scan['previewModels']} model preview proxies)"
         ),
@@ -530,7 +655,10 @@ def build_asset_indexes(
         (
             f"({asset_counts['total']} assets; {asset_counts['image']} images; "
             f"{asset_counts['model']} models; {asset_counts['video']} videos; "
-            f"{asset_counts['json']} JSON files; {scan['materials']} materials; "
+            f"{asset_counts['json']} JSON files; "
+            f"{scan['materialLikeImages']} material-like images; "
+            f"{len(scan['imageCategories'])} image categories; "
+            f"{scan['materials']} materials; "
             f"{scan['textureLinks']} texture links; {scan['previewModels']} model preview proxies)"
         ),
     )

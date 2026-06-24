@@ -1090,9 +1090,19 @@ def _infer_cutscene_mission_and_scene(
     rest = canonical_key[len(prefix):] if canonical_key.startswith(prefix) else canonical_key
     mission = ""
     for candidate in known_missions:
-        pattern = rf"(^|_){re.escape(candidate)}($|_)"
-        if re.search(pattern, rest):
-            mission = candidate
+        start = 0
+        while True:
+            idx = rest.find(candidate, start)
+            if idx < 0:
+                break
+            end = idx + len(candidate)
+            before_ok = idx == 0 or rest[idx - 1] == "_"
+            after_ok = end == len(rest) or rest[end] == "_"
+            if before_ok and after_ok:
+                mission = candidate
+                break
+            start = idx + 1
+        if mission:
             break
 
     if mission:

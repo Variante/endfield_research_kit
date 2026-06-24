@@ -1601,6 +1601,22 @@ def spatial_candidate_key(candidate: dict) -> tuple:
     )
 
 
+def spatial_candidate_sort_key(candidate: dict) -> tuple:
+    return (
+        float(candidate.get("distanceXZ", 10**9)),
+        float(candidate.get("yDelta", 10**9)),
+        float(candidate.get("distance3d", 10**9)),
+        natural_key(str(candidate.get("questId") or "")),
+        candidate.get("questOrder") if isinstance(candidate.get("questOrder"), (int, float)) else 10**9,
+        candidate.get("flowIndex") if isinstance(candidate.get("flowIndex"), (int, float)) else 10**9,
+        natural_key(str(candidate.get("mapId") or "")),
+        natural_key(str(candidate.get("levelId") or "")),
+        natural_key(str(candidate.get("scriptId") or "")),
+        int(candidate.get("offset") or 10**9),
+        natural_key(str(candidate.get("file") or "")),
+    )
+
+
 def attach_levelscript_spatial_proximity(
     scene_placement: dict[str, dict],
     mission_flow: dict | None,
@@ -1618,7 +1634,7 @@ def attach_levelscript_spatial_proximity(
         pins_by_map[str(pin.get("mapId") or "")].append(pin)
 
     attached: list[dict] = []
-    for scene_key, row in scene_placement.items():
+    for scene_key, row in sorted(scene_placement.items(), key=lambda item: natural_key(item[0])):
         source_files = sorted(
             scene_placement_source_files(row),
             key=levelscript_source_sort_key,
@@ -1640,14 +1656,7 @@ def attach_levelscript_spatial_proximity(
                 scene_candidates.append(candidate)
         if not scene_candidates:
             continue
-        scene_candidates.sort(
-            key=lambda item: (
-                float(item.get("distanceXZ", 10**9)),
-                float(item.get("yDelta", 10**9)),
-                natural_key(str(item.get("questId") or "")),
-                natural_key(str(item.get("scriptId") or "")),
-            )
-        )
+        scene_candidates.sort(key=spatial_candidate_sort_key)
         row["spatialQuestCandidates"] = scene_candidates[:12]
         evidence_kinds = row.setdefault("evidenceKinds", [])
         if "levelscriptSpatialProximity" not in evidence_kinds:
@@ -1661,8 +1670,7 @@ def attach_levelscript_spatial_proximity(
         attached,
         key=lambda item: (
             natural_key(str(item.get("sceneKey") or "")),
-            float(item.get("distanceXZ", 10**9)),
-            natural_key(str(item.get("questId") or "")),
+            *spatial_candidate_sort_key(item),
         ),
     )
 
@@ -1874,7 +1882,7 @@ def build_quest_spatial_track(
         return []
     scenes_by_quest: dict[str, set[str]] = defaultdict(set)
     spatial_by_quest: dict[str, list[dict]] = defaultdict(list)
-    for scene_key, placement in scene_placement.items():
+    for scene_key, placement in sorted(scene_placement.items(), key=lambda item: natural_key(item[0])):
         for quest_id in placement.get("questIds") or []:
             quest_id = str(quest_id or "").strip()
             if not quest_id:
@@ -1960,8 +1968,13 @@ def build_quest_spatial_track(
                     spatial_by_quest[quest_id],
                     key=lambda item: (
                         float(item.get("distanceXZ", 10**9)),
+                        float(item.get("yDelta", 10**9)),
+                        float(item.get("distance3d", 10**9)),
                         natural_key(str(item.get("sceneKey") or "")),
+                        natural_key(str(item.get("mapId") or "")),
+                        natural_key(str(item.get("levelId") or "")),
                         natural_key(str(item.get("scriptId") or "")),
+                        int(item.get("offset") or 10**9),
                     ),
                 ),
                 ("sceneKey", "mapId", "scriptId", "offset"),
@@ -2573,7 +2586,7 @@ def attach_script_condition_quests(
         story_keys = story_keys_map.get((map_id, script_id)) or set()
         if not story_keys:
             continue
-        for scene_key in story_keys:
+        for scene_key in sorted(story_keys, key=natural_key):
             row = scene_placement.get(scene_key)
             if row is None:
                 continue
@@ -2600,7 +2613,15 @@ def attach_script_condition_quests(
             })
             if "scriptConditionQuestAttach" not in (row.get("evidenceKinds") or []):
                 row.setdefault("evidenceKinds", []).append("scriptConditionQuestAttach")
-    return attached
+    return sorted(
+        attached,
+        key=lambda item: (
+            natural_key(str(item.get("sceneKey") or "")),
+            natural_key(str(item.get("questId") or "")),
+            natural_key(str(item.get("mapId") or "")),
+            natural_key(str(item.get("scriptId") or "")),
+        ),
+    )
 
 
 def recover_mission(
