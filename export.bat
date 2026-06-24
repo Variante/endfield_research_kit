@@ -88,7 +88,7 @@ if errorlevel 1 exit /b %errorlevel%
 python .\scripts\story_builder\source_links.py
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\story_builder\build.py --languages CN --default-language CN
+python .\scripts\story_builder\build.py --languages CN --default-language CN --skip-audio-link
 if errorlevel 1 exit /b %errorlevel%
 
 if "%EXPORT_FROM_GAME%"=="1" goto :decode_audio
@@ -119,6 +119,9 @@ echo                         freshness verification, and audio decoding/linking.
 echo   --animestudio-jobs N  Passed through when --export-from-game is present.
 echo                         Default is 1 for lower peak AnimeStudio memory.
 echo                         On the 64 GB test machine, 2 was the best tested value.
+echo   --animestudio-dummy-dlls PATH
+echo                         DummyDll directory for AnimeStudio MonoBehaviour schema recovery.
+echo                         Can also be set with ANIMESTUDIO_DUMMY_DLLS.
 echo.
 echo If Endfield is installed somewhere else, pass --game-root or set
 echo ENDFIELD_GAME_ROOT. The command-line --game-root value takes precedence.

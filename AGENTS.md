@@ -120,6 +120,10 @@ of these workflows, open the matching `SKILL.md` before acting:
 - `.codex/skills/endfield-option-overrides/`: editing and validating
   WebUI-only manual option recovery overrides in
   `webui/overrides/options.json`.
+- `.codex/skills/animestudio-workflow/`: building, running, patching, and
+  debugging the local `tools/AnimeStudio` exporter and its WebUI wrappers.
+- `.codex/skills/fluffy-dumper-workflow/`: building, running, patching, and
+  debugging the local patched `tools/fluffy-dumper-src` Rust workspace.
 
 The current checkout does not ship separate `endfield-story-recovery` or
 `endfield-character-recovery-lab` skill folders. For those workflows, use the

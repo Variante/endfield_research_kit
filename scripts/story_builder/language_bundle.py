@@ -198,6 +198,7 @@ def build_language_bundle(
     written_reference_paths: set[str] = set()
     written_mission_paths: set[str] = set()
     conv_media_tags_by_key: dict[str, set[str]] = defaultdict(set)
+    conv_hint_search_text_by_key: dict[str, str] = {}
     scene_order_analysis_by_payload_id: dict[int, dict] = {}
     scene_order_gap_sources: dict[str, tuple[Path, dict, dict | None]] = {}
 
@@ -353,6 +354,11 @@ def build_language_bundle(
     def write_conv_payload(out_key: str, payload: dict) -> Path:
         path = conv_dir / f"{out_key}.json"
         write_json(path, payload)
+        hint_text = line_haystack(payload.get("lines") or [], "hint")
+        if hint_text:
+            conv_hint_search_text_by_key[out_key] = hint_text
+        else:
+            conv_hint_search_text_by_key.pop(out_key, None)
         if path.stem.startswith("dlg_"):
             scene_order_gap_sources[written_path_key(path)] = (
                 path,
@@ -9631,14 +9637,7 @@ def build_language_bundle(
         key = str(entry.get("k") or "")
         if not key:
             return
-        conv_path = conv_dir / f"{key}.json"
-        if not conv_path.exists():
-            return
-        try:
-            payload = json.loads(conv_path.read_text(encoding="utf-8"))
-        except Exception:
-            return
-        hint_text = line_haystack(payload.get("lines") or [], "hint")
+        hint_text = conv_hint_search_text_by_key.get(key, "")
         if hint_text:
             entry["x"] = merge_search_text(entry.get("x", ""), hint_text)
             if not entry["x"]:

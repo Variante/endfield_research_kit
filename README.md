@@ -195,6 +195,18 @@ about 27 GiB observed process-tree working set. Avoid `3` workers unless the
 machine has substantially more free RAM, because `AnimationClip` and
 `Texture2D` are long, high-memory workers.
 
+For better story MonoBehaviour decoding, pass a usable IL2CPP DummyDll folder
+through the wrappers:
+
+```bat
+.\export.bat --export-from-game --animestudio-dummy-dlls "D:\path\to\DummyDll"
+```
+
+The explicit flag takes precedence over the `ANIMESTUDIO_DUMMY_DLLS`
+environment variable. If neither is set, the wrapper only passes
+AnimeStudio's `--dummy_dlls` option when it finds a directory containing `.dll`
+files under the known game/tool locations such as `tools\DummyDll`.
+
 After an installed-game refresh, check `reports/export_full_summary.md` for
 stage return codes and log issues. A nonzero AnimeStudio subprocess now makes
 the wrapper fail. Metadata-only MonoBehaviour JSON means the guarded reader

@@ -34,6 +34,7 @@
       countLabel: "\u9879\u8d44\u6e90",
       searchPlaceholder: "\u641c\u7d22\u8def\u5f84 / \u540d\u79f0 / \u6587\u4ef6\u5939 / \u5206\u7ec4",
       type: "\u7c7b\u578b",
+      category: "\u5206\u7c7b",
       source: "\u6765\u6e90",
       sort: "\u6392\u5e8f",
       sortPath: "\u8def\u5f84 (A-Z)",
@@ -78,9 +79,14 @@
       factSelectedRawFile: "\u5f53\u524d\u539f\u59cb\u6587\u4ef6",
       factLodSet: "\u7ec4\u5185\u6587\u4ef6",
       factRelativePath: "\u76f8\u5bf9\u8def\u5f84",
+      factImageCategory: "\u56fe\u7247\u5206\u7c7b",
+      factTextureRole: "\u8d34\u56fe\u89d2\u8272",
       factLod: "LOD",
       factFamily: "\u7cfb\u5217",
       factPreviewProxy: "\u5ba1\u9605\u4ee3\u7406",
+      categoryOther: "\u5176\u4ed6",
+      textureRoleMaterial: "\u6750\u8d28 / \u5f15\u64ce\u8d34\u56fe",
+      textureRoleRegular: "\u5e38\u89c4\u56fe\u7247",
       materialJson: "{name}.json",
       relationTextureResolved: "{slots} / {name}",
       relationTextureUnresolved: "{slots} / {name} / \u672a\u89e3\u6790",
@@ -129,6 +135,7 @@
       countLabel: "assets",
       searchPlaceholder: "Search path / name / folder / group",
       type: "Type",
+      category: "Category",
       source: "Source",
       sort: "Sort",
       sortPath: "Path (A-Z)",
@@ -173,9 +180,14 @@
       factSelectedRawFile: "Selected raw file",
       factLodSet: "Files in group",
       factRelativePath: "Relative path",
+      factImageCategory: "Image category",
+      factTextureRole: "Texture role",
       factLod: "LOD",
       factFamily: "Family",
       factPreviewProxy: "Review proxy",
+      categoryOther: "Other",
+      textureRoleMaterial: "Material / engine texture",
+      textureRoleRegular: "Regular image",
       materialJson: "{name}.json",
       relationTextureResolved: "{slots} / {name}",
       relationTextureUnresolved: "{slots} / {name} / unresolved",
@@ -322,6 +334,7 @@
     return {
       q: "",
       types: new Set(),
+      categories: new Set(),
       sources: new Set(),
       sort: "path",
     };
@@ -386,6 +399,7 @@
     $("#asset-filter-toggle").textContent = assetUiText(ASSET_STATE.filtersCollapsed ? "showFilters" : "hideFilters");
     $("#asset-q").placeholder = assetUiText("searchPlaceholder");
     $("#asset-type-label").textContent = assetUiText("type");
+    $("#asset-category-label").textContent = assetUiText("category");
     $("#asset-source-label").textContent = assetUiText("source");
     $("#asset-sort-label").textContent = assetUiText("sort");
     $("#asset-sort-path").textContent = assetUiText("sortPath");
@@ -416,6 +430,7 @@
 
     if (!refresh || !ASSET_STATE.loaded) return;
     buildTypeChips();
+    buildCategoryChips();
     buildSourceChips();
     applyAssetFilters();
     if (ASSET_STATE.selectedEntry) renderSelectedAsset();
@@ -605,6 +620,7 @@
         ASSET_STATE.loaded = true;
         $("#asset-count").textContent = ASSET_STATE.entries.length.toLocaleString();
         buildTypeChips();
+        buildCategoryChips();
         buildSourceChips();
         seedAssetExpansions();
         applyAssetFilters();
@@ -670,6 +686,45 @@
     ASSET_STATE.bundleIdsByAssetRel = bundleIdsByAssetRel;
   }
 
+  function normalizeImageCategory(value) {
+    const category = String(value || "").trim().toLowerCase();
+    return category || "other";
+  }
+
+  function assetCategoryLabel(category) {
+    const value = normalizeImageCategory(category);
+    if (value === "other") return assetUiText("categoryOther");
+    if (value === "material-like") return assetUiText("textureRoleMaterial");
+    return value
+      .replace(/_/g, " ")
+      .replace(/\b[a-z]/g, (char) => char.toUpperCase());
+  }
+
+  function chooseImageCategory(entries) {
+    const counts = countBy(entries || [], (entry) => normalizeImageCategory(entry && entry.imageCategory));
+    const categories = Object.keys(counts);
+    if (!categories.length) return "other";
+    categories.sort((a, b) => {
+      if (a === "other" && b !== "other") return 1;
+      if (b === "other" && a !== "other") return -1;
+      return (counts[b] - counts[a]) || naturalCompare(a, b);
+    });
+    return categories[0] || "other";
+  }
+
+  function assetCategoryValues(entry) {
+    if (!entry || entry.kind !== "image") return [];
+    const values = [normalizeImageCategory(entry.imageCategory)];
+    if (entry.materialLike) values.push("material-like");
+    return values;
+  }
+
+  function formatImageCategoryMeta(entry) {
+    if (!entry || entry.kind !== "image") return "";
+    const values = assetCategoryValues(entry).map(assetCategoryLabel);
+    return values.join(" / ");
+  }
+
   function hydrateEntries(entries) {
     const hydrated = entries.map((raw) => {
       const rawKind = String(raw.k || "");
@@ -690,6 +745,8 @@
       const variantScope = kind === "model" || textureVariant ? source : dir;
       const lodMatch = kind === "model" ? stem.match(/(?:^|[_-])lod(\d+)$/i) : null;
       const lod = lodMatch ? Number(lodMatch[1]) : null;
+      const imageCategory = kind === "image" ? normalizeImageCategory(raw.ic) : "";
+      const materialLike = kind === "image" && !!raw.mt;
       return {
         kind,
         rel,
@@ -708,6 +765,8 @@
         groupLabel: groupInfo.label,
         groupRaw: groupInfo.raw,
         lod,
+        imageCategory,
+        materialLike,
         previewRel: String(raw.p || ""),
         searchText: "",
         variantLabel: "",
@@ -812,6 +871,8 @@
         entry.pathId,
         entry.family,
         entry.variantLabel,
+        entry.imageCategory,
+        entry.materialLike ? "material material-like texture engine" : "",
         entry.ext,
         entry.kind,
       ].join(" ").toLowerCase();
@@ -886,6 +947,8 @@
           groupLabel: entry.groupLabel,
           groupRaw: entry.groupRaw,
           lod: null,
+          imageCategory: "other",
+          materialLike: false,
           variantCount: 0,
           duplicateCount: 0,
           variantSummary: "",
@@ -902,6 +965,8 @@
       group.variants.sort(compareVariants);
       group.rel = group.variants[0].rel;
       group.size = group.variants.reduce((sum, variant) => sum + variant.size, 0);
+      group.imageCategory = group.kind === "image" ? chooseImageCategory(group.variants) : "";
+      group.materialLike = group.kind === "image" && group.variants.some((variant) => variant.materialLike);
       group.variantCount = group.variants.length;
       group.rawRels = group.variants.flatMap((variant) => variant.rawRels || [variant.rel]);
       group.duplicateCount = group.rawRels.length;
@@ -914,6 +979,8 @@
         group.groupLabel,
         group.groupRaw,
         group.family,
+        group.imageCategory,
+        group.materialLike ? "material material-like texture engine" : "",
         ...group.variants.map((variant) => variant.searchText),
       ].join(" ").toLowerCase();
       groupedEntries.push(group);
@@ -982,6 +1049,37 @@
     }
   }
 
+  function buildCategoryChips() {
+    const counts = {};
+    for (const entry of ASSET_STATE.entries) {
+      for (const category of assetCategoryValues(entry)) {
+        counts[category] = (counts[category] || 0) + 1;
+      }
+    }
+
+    const wrap = $("#asset-category-filter");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    const names = Object.keys(counts).sort((a, b) => {
+      if (a === "material-like" && b !== "material-like") return -1;
+      if (b === "material-like" && a !== "material-like") return 1;
+      if (a === "other" && b !== "other") return 1;
+      if (b === "other" && a !== "other") return -1;
+      return (counts[b] - counts[a]) || naturalCompare(a, b);
+    });
+    for (const name of names) {
+      const count = counts[name] || 0;
+      if (!count) continue;
+      const chip = document.createElement("span");
+      chip.className = "chip asset-filter-chip asset-category-chip";
+      chip.dataset.value = name;
+      if (ASSET_STATE.filters.categories.has(name)) chip.classList.add("on");
+      chip.textContent = `${assetCategoryLabel(name)} (${count})`;
+      chip.addEventListener("click", () => toggleFilterSet(ASSET_STATE.filters.categories, name, chip));
+      wrap.appendChild(chip);
+    }
+  }
+
   function buildSourceChips() {
     const counts = countBy(ASSET_STATE.entries, (entry) => entry.source);
     const wrap = $("#asset-source-filter");
@@ -1022,6 +1120,10 @@
       if (q && !entry.searchText.includes(q)) return false;
       if (filters.sources.size && !filters.sources.has(entry.source)) return false;
       if (filters.types.size && !filters.types.has(entry.ext || entry.kind)) return false;
+      if (filters.categories.size) {
+        const categories = assetCategoryValues(entry);
+        if (!categories.some((category) => filters.categories.has(category))) return false;
+      }
       return true;
     });
 
@@ -1247,6 +1349,7 @@
     if (Array.isArray(entry.variants)) {
       extra.textContent = [
         entry.source,
+        formatImageCategoryMeta(entry),
         assetUiText("variantsCount", { count: entry.variantCount }),
         hasHiddenDuplicateFiles(entry) ? assetUiText("copiesCount", { count: entry.duplicateCount }) : "",
       ]
@@ -1255,6 +1358,7 @@
     } else {
       extra.textContent = [
         entry.source,
+        formatImageCategoryMeta(entry),
         hasHiddenDuplicateFiles(entry) ? assetUiText("copiesCount", { count: entry.duplicateCount }) : "",
         entry.lod === null ? "" : `LOD ${entry.lod}`,
       ]
@@ -1503,6 +1607,16 @@
       [assetUiText("factFolder"), entry.groupLabel || entry.groupRaw || (entry.groupKey === "(root)" ? assetUiText("rootFolder") : entry.groupKey)],
       [assetUiText("factSize"), formatBytes(entry.size)],
     ];
+    const activeFile = activeVariant || entry;
+    if (entry.kind === "image") {
+      facts.push([assetUiText("factImageCategory"), assetCategoryLabel(activeFile.imageCategory || entry.imageCategory)]);
+      facts.push([
+        assetUiText("factTextureRole"),
+        (activeFile.materialLike || entry.materialLike)
+          ? assetUiText("textureRoleMaterial")
+          : assetUiText("textureRoleRegular"),
+      ]);
+    }
     if (hasHiddenDuplicateFiles(entry)) {
       facts.push([assetUiText("factCopies"), String(entry.duplicateCount)]);
     }

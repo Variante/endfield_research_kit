@@ -4,6 +4,7 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -25,6 +26,7 @@ ANIMESTUDIO_SCOPES = ("story", "assets", "all")
 ANIMESTUDIO_GAME = "ArknightsEndfield"
 ANIMESTUDIO_LOGGER_FLAGS = ("Warning", "Error")
 ANIMESTUDIO_DEFAULT_JOBS = 1
+ANIMESTUDIO_DUMMY_DLL_ENV = "ANIMESTUDIO_DUMMY_DLLS"
 ANIMESTUDIO_MANIFEST_SCHEMA_VERSION = 2
 ANIMESTUDIO_MANIFEST_MAP_ITEM = "__maps__"
 ANIMESTUDIO_MANIFEST_MAP_LABEL = "maps"
@@ -468,7 +470,10 @@ def parse_args() -> argparse.Namespace:
         "--animestudio-dummy-dlls",
         type=Path,
         default=None,
-        help="Optional DummyDll directory passed to AnimeStudio for MonoBehaviour schema recovery",
+        help=(
+            "Optional DummyDll directory passed to AnimeStudio for MonoBehaviour schema recovery. "
+            f"Overrides {ANIMESTUDIO_DUMMY_DLL_ENV}."
+        ),
     )
     parser.add_argument(
         "--sources",
@@ -588,28 +593,46 @@ def looks_like_dummy_dll_dir(path: Path) -> bool:
     return path.exists() and path.is_dir() and any(path.glob("*.dll"))
 
 
-def resolve_animestudio_dummy_dlls(explicit: Path | None, game_root: Path) -> Path | None:
-    candidates: list[Path] = []
+def normalize_dummy_dll_path(path: Path | str) -> Path:
+    text = str(path).strip()
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in {"'", '"'}:
+        text = text[1:-1]
+    return Path(text).expanduser()
+
+
+def validate_dummy_dll_dir(path: Path | str, source: str) -> Path:
+    candidate = normalize_dummy_dll_path(path)
+    if not looks_like_dummy_dll_dir(candidate):
+        raise SystemExit(
+            f"AnimeStudio DummyDll directory from {source} was not found or contains no .dll files: {candidate}"
+        )
+    return candidate.resolve()
+
+
+def resolve_animestudio_dummy_dlls(explicit: Path | None, game_root: Path) -> tuple[Path | None, str | None]:
     if explicit is not None:
-        candidates.append(explicit)
-    candidates.extend(
-        [
-            game_root / "DummyDll",
-            game_root.parent / "DummyDll",
-            ROOT / "tools" / "DummyDll",
-            ROOT / "tools" / "dummy_dlls",
-        ]
+        return validate_dummy_dll_dir(explicit, "--animestudio-dummy-dlls"), "--animestudio-dummy-dlls"
+
+    env_value = os.environ.get(ANIMESTUDIO_DUMMY_DLL_ENV, "").strip()
+    if env_value:
+        return validate_dummy_dll_dir(env_value, ANIMESTUDIO_DUMMY_DLL_ENV), ANIMESTUDIO_DUMMY_DLL_ENV
+
+    candidates = (
+        (game_root / "DummyDll", "game root DummyDll"),
+        (game_root.parent / "DummyDll", "game install DummyDll"),
+        (ROOT / "tools" / "DummyDll", "tools/DummyDll"),
+        (ROOT / "tools" / "dummy_dlls", "tools/dummy_dlls"),
     )
 
     seen: set[str] = set()
-    for candidate in candidates:
+    for candidate, source in candidates:
         key = str(candidate).lower()
         if key in seen:
             continue
         seen.add(key)
         if looks_like_dummy_dll_dir(candidate):
-            return candidate.resolve()
-    return None
+            return candidate.resolve(), source
+    return None, None
 
 
 def run_logged_command(
@@ -1301,10 +1324,14 @@ def main() -> int:
         raise SystemExit(f"fluffy-dumper not found: {fluffy}")
     if not animestudio.exists() and not args.skip_animestudio:
         raise SystemExit(f"AnimeStudio CLI not found: {animestudio}")
-    if args.animestudio_dummy_dlls is not None and not looks_like_dummy_dll_dir(args.animestudio_dummy_dlls):
-        raise SystemExit(f"AnimeStudio DummyDll directory not found or empty: {args.animestudio_dummy_dlls}")
-
-    animestudio_dummy_dlls = resolve_animestudio_dummy_dlls(args.animestudio_dummy_dlls, game_root)
+    if args.skip_animestudio:
+        animestudio_dummy_dlls = None
+        animestudio_dummy_dll_source = None
+    else:
+        animestudio_dummy_dlls, animestudio_dummy_dll_source = resolve_animestudio_dummy_dlls(
+            args.animestudio_dummy_dlls,
+            game_root,
+        )
 
     ensure_dir(output_root)
     log("starting full export")
@@ -1321,7 +1348,10 @@ def main() -> int:
     log(f"  animestudio stages: {', '.join(selected_animestudio_stages)}")
     log(f"  animestudio jobs: {animestudio_jobs}")
     log(f"  animestudio refresh selectors: {', '.join(refresh_selectors) if refresh_selectors else 'none'}")
-    log(f"  animestudio dummy dlls: {animestudio_dummy_dlls if animestudio_dummy_dlls else 'not configured'}")
+    if animestudio_dummy_dlls:
+        log(f"  animestudio dummy dlls: {animestudio_dummy_dlls} ({animestudio_dummy_dll_source})")
+    else:
+        log("  animestudio dummy dlls: not configured")
     log("  source inventory: disabled")
     log(f"  report-only mode: {'enabled' if args.report_only else 'disabled'}")
     previous_summary_path = reports_root / "export_full_summary.json"
@@ -1359,6 +1389,7 @@ def main() -> int:
         "exe": str(animestudio),
         "exe_signature": animestudio_cli_signature,
         "dummy_dlls": str(animestudio_dummy_dlls) if animestudio_dummy_dlls else None,
+        "dummy_dlls_source": animestudio_dummy_dll_source,
         "dummy_dll_signature": animestudio_dummy_dll_signature,
         "game": ANIMESTUDIO_GAME,
         "scope": args.animestudio_scope,
@@ -1619,6 +1650,13 @@ def main() -> int:
         md_lines.append(f"- Scope: `{args.animestudio_scope}`")
         md_lines.append(f"- Selected stages: `{', '.join(selected_animestudio_stages)}`")
         md_lines.append(f"- Parallel jobs: `{animestudio_jobs}`")
+        md_lines.append(
+            f"- DummyDlls: `{animestudio_dummy_dlls}`"
+            if animestudio_dummy_dlls
+            else "- DummyDlls: `not configured`"
+        )
+        if animestudio_dummy_dll_source:
+            md_lines.append(f"- DummyDll source: `{animestudio_dummy_dll_source}`")
         md_lines.append(f"- Cache manifest: `{animestudio_summary.get('type_manifest_path')}`")
         md_lines.append(
             "- Refresh selectors: "

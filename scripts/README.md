@@ -79,6 +79,14 @@ refresh peaked at about 27 GiB observed process-tree working set. Do not use
 `3` workers on this machine unless there is much more free RAM available; the
 `AnimationClip` and `Texture2D` workers dominate both memory and wall time.
 
+Both wrappers also pass `--animestudio-dummy-dlls PATH` through when
+`--export-from-game` is present. Use this for IL2CPP DummyDll folders that
+improve AnimeStudio MonoBehaviour schema recovery during Story JSON export.
+If the flag is omitted, `export_full_from_game.py` checks
+`ANIMESTUDIO_DUMMY_DLLS`, then known local locations such as `tools\DummyDll`;
+it only adds AnimeStudio's `--dummy_dlls` option when the selected directory
+exists and contains `.dll` files.
+
 `export_full_from_game.py` writes detailed stage logs and summaries under
 `../reports/`. Nonzero AnimeStudio subprocesses now make the wrapper return
 nonzero after the summary is written, so `export.bat` and `export_assets.bat`
@@ -287,6 +295,12 @@ These are kept because the WebUI story builders import or use them:
   `Data/Video/PC/Narrative/Cutscene` and `RemoteComm`, attaches matching
   `narrativeVideos` to dialog/cutscene/remotecomm conv JSON, and writes
   `reports/narrative_videos_<LANG>.json` / `.md`.
+- `story_recovery/build_narrative_video_override_audit.py` validates
+  `webui/overrides/narrative_videos.json` against the generated Story video
+  report, `narrative_video_evidence.json`, video indexes, and conv payloads.
+  It reports missing override stems/targets, missing `audioFrom` source keys,
+  stale attach/suppress rules, filename-only attachment candidates, and
+  unresolved video candidate keys.
 - `webui/overrides/options.json` is a runtime WebUI-only manual
   override file for known option recovery gaps. It can pin option groups with
   `positions.after.<lineId>: ["<group>"]` or `positions.pre`, and can map
