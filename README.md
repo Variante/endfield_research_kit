@@ -379,6 +379,12 @@ Then delete those untracked files from the previous export root intentionally:
 
 The prune flag refuses to run when the previous export root is the current
 `export_full/` or the repository root.
+It also prunes duplicate decoded audio copies inside the previous export's
+`structured/Audio/` tree, preferring mapped `voice/` files over `unmapped/`
+copies with the same audio id and extension. Previous-export audio files that
+also exist unchanged in the current `export_full/structured/Audio/` are pruned
+too; the cached asset baseline keeps future update comparisons from treating
+those pruned files as newly added.
 
 Non-empty feed snapshots are kept in `.game-data-tracker/history/` as
 `update-feed-*.json`.
@@ -469,6 +475,12 @@ workflow. In this checkout, Unity recovery helpers are project-local under
 The normal reuse path uses the WebUI scripts and an existing `export_full/`.
 Installed-game refreshes also use the tracked AnimeStudio submodule and a local
 `fluffy-dumper` executable.
+
+Future export work may be able to use
+[EIHRTeam/EndfieldStudio](https://github.com/EIHRTeam/EndfieldStudio) as a
+replacement for the current patched `fluffy-dumper` plus AnimeStudio pipeline,
+once its coverage matches the Story/Reference, Assets, and audio surfaces this
+workspace depends on.
 
 The tracked tool surface is intentionally small:
 

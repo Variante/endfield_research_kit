@@ -40,6 +40,7 @@ goto :parse_args
 rem Updates pipeline:
 rem - compare WebUI-facing text JSON in the saved previous/current exports
 rem - compare exported image/model/video/audio assets by default
+rem - keep tracked decoded audio changes and prune duplicate/unchanged audio copies in the saved previous export
 rem - write webui/data/updates/latest.json for the Updates tab
 if "%SKIP_ASSET_UPDATES%"=="1" (
   set "BUILD_UPDATES_ARGS=%BUILD_UPDATES_ARGS% --skip-asset-updates"
@@ -65,7 +66,9 @@ echo   --game-root PATH         Installed Endfield_Data directory used only for
 echo                            optional decoded-impact mapping.
 echo   --hash-asset-updates     Hash asset contents; slower, catches same-size changes.
 echo   --prune-previous-export-untracked
-echo                            Delete old export files outside tracked update scope.
+echo                            Delete old export files outside tracked text/assets/audio
+echo                            scope, plus duplicate or unchanged-current
+echo                            decoded audio copies.
 echo   --dry-run-prune-previous-export-untracked
 echo                            Report prune deletions without deleting files.
 echo.
