@@ -195,6 +195,9 @@ Expected active inputs and outputs:
   event-to-media links, and post-processes generated conversation JSON so
   dialog/cutscene lines and recoverable cutscene audio events can render native
   browser audio controls.
+- `hash_export_pngs.py`: hashes every `.png` file under `..\export_full\` with
+  parallel readers and writes `path,hash` CSV rows to
+  `..\reports\export_full_png_hashes.csv` by default.
 - `find_duplicate_dialog_lines.py`: scans generated
   `webui/data/lang/<LANG>/conv/*.json` files for exact repeated spoken line
   text across different missions, reporting the speaker, mission, scene, and
