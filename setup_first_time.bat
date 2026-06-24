@@ -149,16 +149,16 @@ call :check_fluffy_help audio
 if errorlevel 1 goto :failed
 
 echo.
-echo [setup 5/7] Exporting Story, Reference, and CN audio from the installed game...
+echo [setup 5/7] Exporting Story and Reference data from the installed game...
 call .\export.bat --export-from-game --game-root "%GAME_ROOT%"
 if errorlevel 1 goto :failed
 
 if "%SKIP_ASSETS%"=="1" (
   echo.
-  echo [setup 6/7] Skipping asset export because --skip-assets was passed.
+  echo [setup 6/7] Skipping asset and CN audio export because --skip-assets was passed.
 ) else (
   echo.
-  echo [setup 6/7] Exporting Assets tab media from the installed game...
+  echo [setup 6/7] Exporting Assets tab media and CN audio from the installed game...
   call .\export_assets.bat --export-from-game --game-root "%GAME_ROOT%"
   if errorlevel 1 goto :failed
 )
@@ -247,7 +247,7 @@ echo   --game-root PATH        Installed Endfield_Data folder. Defaults to
 echo                           ENDFIELD_GAME_ROOT, then:
 echo                           %DEFAULT_GAME_ROOT%
 echo   --no-serve             Build everything, but do not start the WebUI server.
-echo   --skip-assets          Skip the heavier Assets tab media export.
+echo   --skip-assets          Skip the heavier Assets tab media and CN audio export.
 echo   --refresh-fluffy-src   Download and overlay the patched fluffy-dumper source.
 echo   --help                 Show this help text.
 echo.

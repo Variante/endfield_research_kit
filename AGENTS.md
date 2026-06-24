@@ -40,21 +40,21 @@ should finish without starting `serve.py`.
 `Endfield_Data` fingerprints before the long WebUI builders run, then builds CN
 story/reference data by default. It does not export from installed game data by
 default. Pass `--export-from-game` only when the user explicitly asks to refresh
-`export_full/`, run the story export tools, and decode CN audio. `export.bat`
-always finishes by running the audio builder so generated CN conversations have
-playable `audioSrc` links when decoded audio is available. It does not refresh
-`webui/overrides/story_order.json`; Story order is maintained by the OCR
-workflow.
+`export_full/` and run the story export tools. Audio relinking is handled by
+`export_assets.bat` after generated conversations are rebuilt. `export.bat`
+does not refresh `webui/overrides/story_order.json`; Story order is maintained
+by the OCR workflow.
 Use `build_updates.bat` for the standalone Updates feed comparison. Use
 `build_updates.bat --init-build` for first-time/baseline-only builds where the
 Updates feed should be baselined instead of reporting changes. By default it
 tracks WebUI-facing exported text JSON plus exported image/model/video assets
 and decoded audio; pass `--skip-asset-updates` only for a text-only update
 feed.
-Use `export_assets.bat` for WebUI Assets tab indexes and compact Story media
-lookup from existing decoded assets. Pass `--export-from-game` only when the
-user explicitly asks to run the heavier AnimeStudio image/model/animation
-decode from installed game data first.
+Use `export_assets.bat` for WebUI Assets tab indexes, compact Story media
+lookup, and CN audio relinking from existing decoded assets. Pass
+`--export-from-game` only when the user explicitly asks to run the heavier
+AnimeStudio image/model/animation decode and CN audio decode from installed game
+data first.
 Use direct `scripts/build_audio.py` runs for non-CN languages or audio-only
 maintenance. The audio builder writes `export_full/structured/Audio/<LANG>/`,
 parses Wwise bank event-to-media links, and post-processes generated

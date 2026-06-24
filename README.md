@@ -46,9 +46,9 @@ folder:
 ```
 
 The script initializes the AnimeStudio submodule, builds AnimeStudio, downloads
-and builds the patched `fluffy-dumper`, exports Story/Reference/audio data,
-exports Assets tab media, creates the first Updates baseline, and starts or
-reuses the WebUI server at `http://127.0.0.1:8765/`.
+and builds the patched `fluffy-dumper`, exports Story/Reference data, exports
+Assets tab media and CN audio, creates the first Updates baseline, and starts
+or reuses the WebUI server at `http://127.0.0.1:8765/`.
 
 Keep that terminal window open while browsing the WebUI. To build everything
 without starting the server, add `--no-serve`:
@@ -59,8 +59,8 @@ without starting the server, add `--no-serve`:
 
 Useful setup options:
 
-- `--skip-assets`: build Story/Reference/audio first and skip the heavier
-  Assets tab media export.
+- `--skip-assets`: build Story/Reference first and skip the heavier Assets tab
+  media and CN audio export.
 - `--refresh-fluffy-src`: download and overlay the hosted patched
   `fluffy-dumper` source before building it.
 - `--help`: show the script help and examples.
@@ -131,11 +131,12 @@ After the first restore, this faster rebuild is usually enough:
 .\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
 ```
 
-5. It makes sure `fluffy-dumper.exe` is available for the full story/audio
-export.
+5. It makes sure `fluffy-dumper.exe` is available for structured story data
+and CN audio export.
 
-`.\export.bat --export-from-game` uses `fluffy-dumper` for structured data and
-CN audio decoding. The wrapper expects:
+`.\export.bat --export-from-game` uses `fluffy-dumper` for structured data.
+`.\export_assets.bat --export-from-game` uses it for CN audio decoding. The
+wrappers expect:
 
 ```text
 tools\fluffy-dumper-src\target\release\fluffy-dumper.exe
@@ -167,8 +168,9 @@ The help text for both `dump` and `audio` should include
 export wrappers when one exported source root needs chunks from another source
 root.
 
-`export_assets.bat --export-from-game` does not need `fluffy-dumper` because it
-passes `--skip-structured`.
+`export_assets.bat --export-from-game` does not use `fluffy-dumper` for
+structured data because it passes `--skip-structured`; its audio step still uses
+the patched `fluffy-dumper audio` command.
 
 6. It runs the first full Story/Reference export from the installed game.
 
@@ -177,11 +179,10 @@ passes `--skip-structured`.
 ```
 
 This creates or refreshes `export_full/`, runs the story AnimeStudio export,
-decodes CN audio, builds CN Story/Reference data, and links playable
-`audioSrc` values into the generated conversations.
+and builds CN Story/Reference data.
 
-7. It builds the Assets tab data when images, models, videos, and compact Story
-media lookup are needed.
+7. It builds the Assets tab data and CN audio when images, models, videos,
+compact Story media lookup, and playable audio links are needed.
 
 ```bat
 .\export_assets.bat --export-from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
@@ -249,8 +250,9 @@ python serve.py
 
 Use `.\export.bat --export-from-game` again after the installed game updates,
 after `scripts\verify_export_freshness.py` reports stale source roots, or when
-you intentionally want to refresh `export_full/` and decode CN audio from the
-installed client.
+you intentionally want to refresh `export_full/` and Story export data from the
+installed client. Run `.\export_assets.bat --export-from-game` when you also
+want to refresh decoded media and CN audio from the installed client.
 
 `export.bat` without `--export-from-game` rebuilds Story/Reference browser data
 from an existing `export_full/`. It runs:
@@ -259,15 +261,18 @@ from an existing `export_full/`. It runs:
 - `scripts/story_builder/dialog_registry.py --quiet`
 - `scripts/story_builder/video_bindings.py`
 - `scripts/story_builder/source_links.py`
-- `scripts/story_builder/build.py --languages CN --default-language CN`
-- `scripts/build_audio.py --skip-decode`
+- `scripts/story_builder/build.py --languages CN --default-language CN --skip-audio-link`
 
 It intentionally skips installed-game export, Updates diffing, fluffy-dumper
-structured export, AnimeStudio story extraction, and 2D/3D asset/animation
-decoding by default. It also leaves the editable Story sort order in
-`webui/overrides/story_order.json` alone; that file is maintained by the OCR
-story-order workflow. Without `--export-from-game`, the final audio pass reuses
-existing decoded files under `export_full/structured/Audio/CN/`.
+structured export, AnimeStudio story extraction, 2D/3D asset/animation
+decoding, and audio relinking by default. It also leaves the editable Story sort
+order in `webui/overrides/story_order.json` alone; that file is maintained by
+the OCR story-order workflow.
+
+`export_assets.bat` rebuilds the Assets tab index and compact Story media
+lookup, then runs `scripts/build_audio.py --skip-decode` to relink existing CN
+audio under `export_full/structured/Audio/CN/`. With `--export-from-game`, it
+refreshes decoded media and decodes CN audio before the relink pass.
 
 Run `python scripts\build_audio.py --language EN --skip-decode` after building
 other WebUI language folders if those languages already have decoded audio.

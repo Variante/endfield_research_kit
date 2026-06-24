@@ -41,12 +41,11 @@ reuses the default WebUI server unless `--no-serve` is passed.
 Use `export.bat` as the default story/reference rebuild path from an existing
 `export_full/`. It verifies export freshness, rebuilds DialogIdTable and story
 source-link evidence, rebuilds CN story/reference data, leaves the
-OCR-managed Story order override untouched, and finishes by linking decoded CN
-audio by default.
+OCR-managed Story order override untouched, and leaves decoded CN audio relinking
+to `export_assets.bat`.
 It skips installed-game export, fluffy-dumper structured export, and AnimeStudio
 story extraction by default. Pass `--export-from-game` only when installed game
-data should be refreshed, the story export tools should run, and CN audio
-should be decoded before the final link pass.
+data should be refreshed and the story export tools should run.
 Use `build_updates.bat` as the standalone Updates feed comparison. It tracks
 WebUI-facing exported text JSON plus exported image/model/video assets and
 decoded audio by default. Asset modifications use fast size fingerprints; pass
@@ -55,8 +54,8 @@ decoded audio by default. Asset modifications use fast size fingerprints; pass
 with `--dry-run-prune-previous-export-untracked`; use
 `--prune-previous-export-untracked` only when intentionally deleting old export
 files outside the focused tracked scope. Use `export_assets.bat` for Assets tab
-indexes; pass `--export-from-game` to run the heavier image/model/animation
-decode.
+indexes and CN audio relinking; pass `--export-from-game` to run the heavier
+image/model/animation decode and CN audio decode.
 
 When running `python scripts\story_builder\build.py` directly, use a
 longer timeout. The default CN lean build currently takes about 3 minutes on
