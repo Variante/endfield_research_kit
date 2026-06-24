@@ -116,6 +116,9 @@ echo.
 echo   --export-from-game    Refresh export_full and decode audio from installed game data.
 echo   --game-root PATH      Installed Endfield_Data directory used for export,
 echo                         freshness verification, and audio decoding/linking.
+echo   --animestudio-jobs N  Passed through when --export-from-game is present.
+echo                         Default is 1 for lower peak AnimeStudio memory.
+echo                         On the 64 GB test machine, 2 was the best tested value.
 echo.
 echo If Endfield is installed somewhere else, pass --game-root or set
 echo ENDFIELD_GAME_ROOT. The command-line --game-root value takes precedence.

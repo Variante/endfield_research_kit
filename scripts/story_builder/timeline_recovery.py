@@ -7,7 +7,7 @@ build:
 2. Select dialog Timeline asset folders in a general way (`dlgtl_*`, `f_dlgtl_*`,
    and `m_dlgtl_*` under gameplay/dialog/timeline).
 3. Prefer the full AnimeStudio MonoBehaviour JSON export when it already
-   contains the needed Timeline tracks.
+   contains the needed Timeline tracks and is small enough to scan cheaply.
 4. Fall back to filtered AnimeStudio CLI `--filter_data` exports for focused
    diagnostics or when the full export has no recoverable Timeline tracks.
 
@@ -96,6 +96,7 @@ class TimelineRecoveryConfig:
     min_lines: int = 1
     copy_to_webui: Path | None = None
     prefer_full_monobehaviour: bool = True
+    full_monobehaviour_scan_limit: int = 200_000
 
 
 def recovery_root(export_root: Path = EXPORT_ROOT) -> Path:
@@ -136,10 +137,17 @@ def resolve_cli(cli: Path | None = None) -> Path:
 
     cli_root = ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin"
     candidates = [
+        cli_root / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe",
+        cli_root / "Debug" / "net9.0-windows" / "AnimeStudio.CLI.exe",
         *sorted((cli_root / "Release").glob("*/AnimeStudio.CLI.exe")),
         *sorted((cli_root / "Debug").glob("*/AnimeStudio.CLI.exe")),
     ]
+    seen: set[Path] = set()
     for candidate in candidates:
+        resolved = candidate.resolve() if candidate.exists() else candidate
+        if resolved in seen:
+            continue
+        seen.add(resolved)
         if candidate.exists():
             return candidate
     raise FileNotFoundError(
@@ -1714,6 +1722,25 @@ def discover_full_monobehaviour_dirs(export_root: Path) -> list[Path]:
     return [path for path in candidates if path.is_dir()]
 
 
+def monobehaviour_dir_exceeds_scan_limit(mono_dir: Path, limit: int) -> bool:
+    if limit <= 0:
+        return False
+    count = 0
+    try:
+        with os.scandir(mono_dir) as entries:
+            for entry in entries:
+                if not entry.is_file():
+                    continue
+                if not entry.name.lower().endswith(".json"):
+                    continue
+                count += 1
+                if count > limit:
+                    return True
+    except OSError as exc:
+        log(f"skip full MonoBehaviour size check for {rel_path(mono_dir)}: {exc}")
+    return False
+
+
 def load_targeted_full_monobehaviour_records(
     mono_dir: Path,
     timeline_stems: set[str],
@@ -2101,8 +2128,31 @@ def recover_timeline_line_orders(config: TimelineRecoveryConfig | None = None) -
 
     if config.dry_run:
         log("dry run requested; skipped full MonoBehaviour parse")
+    elif not config.prefer_full_monobehaviour:
+        log("filtered timeline extraction requested; skipped full MonoBehaviour parse")
+        parse_summary.append({
+            "source": "fullMonoBehaviour",
+            "timelineCount": 0,
+            "skippedReason": "filtered-extraction",
+        })
     else:
         for mono_dir in discover_full_monobehaviour_dirs(export_root):
+            if monobehaviour_dir_exceeds_scan_limit(
+                mono_dir,
+                config.full_monobehaviour_scan_limit,
+            ):
+                log(
+                    f"{rel_path(mono_dir)}: skipped full MonoBehaviour parse; "
+                    f"more than {config.full_monobehaviour_scan_limit} JSON files"
+                )
+                parse_summary.append({
+                    "monoDir": rel_path(mono_dir),
+                    "timelineCount": 0,
+                    "source": "fullMonoBehaviour",
+                    "skippedReason": "scan-limit",
+                    "scanLimit": config.full_monobehaviour_scan_limit,
+                })
+                continue
             parsed = parse_full_monobehaviour_dir(mono_dir, target_timeline_stems, timeline_filter)
             parsed = [entry for entry in parsed if len(entry.get("lineIds") or []) >= config.min_lines]
             log(f"{rel_path(mono_dir)}: {len(parsed)} timeline(s) with dialog clips from full MonoBehaviour")
@@ -2255,6 +2305,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--dry-run", action="store_true", help="Write filter_data and summaries, but do not run the CLI or parse output.")
     parser.add_argument("--limit-chks", type=int, default=0, help="Optional smoke-test limit for number of chk files.")
     parser.add_argument("--min-lines", type=int, default=1, help="Only emit parsed timelines with at least this many recovered lines.")
+    parser.add_argument(
+        "--full-monobehaviour-scan-limit",
+        type=int,
+        default=TimelineRecoveryConfig.full_monobehaviour_scan_limit,
+        help=(
+            "Skip full json_by_type/MonoBehaviour parsing when a source folder has "
+            "more JSON files than this; use 0 to disable the limit."
+        ),
+    )
     parser.add_argument("--copy-to-webui", action="store_true", help="Also write webui/data/timeline_line_orders.json.")
     return parser.parse_args(argv)
 
@@ -2288,6 +2347,7 @@ def main(argv: list[str] | None = None) -> int:
         min_lines=args.min_lines,
         copy_to_webui=copy_to_webui,
         prefer_full_monobehaviour=not args.extract_timeline_assets,
+        full_monobehaviour_scan_limit=args.full_monobehaviour_scan_limit,
     )
     recover_timeline_line_orders(config)
     return 0
