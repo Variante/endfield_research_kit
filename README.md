@@ -17,11 +17,9 @@ The project is built around reproducible local exports:
   WebUI reports game-data changes without treating local WebUI edits as
   upstream changes.
 
-## Screenshots
-
 <p>
   <img src="res/story_screenshot.png" alt="Story browser with mission list, reconstructed dialog, filters, and debug controls" width="49%">
-  <img src="res/story_screenshot2.png" alt="Story browser showing recovered dialog detail with media and evidence panels" width="49%">
+  <img src="res/story_screenshot2.png" alt="Story browser showing recovered dialog detail with media and evidence panels" width="48.2%">
 </p>
 
 This repository is for research and study purposes only. It is intended for
@@ -46,8 +44,8 @@ git clone https://github.com/Variante/endfield_research_kit.git
 cd endfield_research_kit
 ```
 
-Run the all-in-one setup script from the repository root. Pass the installed `Endfield_Data`
-folder:
+Run the all-in-one setup script from the repository root. Pass the installed
+`Endfield_Data` folder:
 
 ```bat
 .\setup_first_time.bat --game-root "E:\Games\Endfield Game\Endfield_Data"
@@ -57,6 +55,11 @@ The script initializes the AnimeStudio submodule, builds AnimeStudio, verifies
 AnimeStudio's integrated VFS/audio commands, exports Story/Text Tables data,
 exports Assets tab media and CN audio, creates the first Updates baseline, and
 starts or reuses the WebUI server at `http://127.0.0.1:8765/`.
+
+The local `tools/AnimeStudio` fork includes custom Endfield VFS/export work
+informed by [fluffy-dumper](https://git.nekolab.app/fluffield/fluffy-dumper)
+and [EIHRTeam/EndfieldStudio](https://github.com/EIHRTeam/EndfieldStudio).
+Many thanks to those projects and their maintainers for the groundwork.
 
 Keep that terminal window open while browsing the WebUI. To build everything
 without starting the server, add `--no-serve`:
