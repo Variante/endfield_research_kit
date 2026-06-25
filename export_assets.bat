@@ -4,10 +4,36 @@ setlocal
 set "EXPORT_ARGS="
 set "AUDIO_ARGS="
 set "EXPORT_FROM_GAME=0"
+set "ASSET_MODE=full"
 
 :parse_args
 if "%~1"=="" goto :parsed_args
 if /I "%~1"=="--help" goto :help
+if /I "%~1"=="--full-assets" (
+  set "ASSET_MODE=full"
+  shift
+  goto :parse_args
+)
+if /I "%~1"=="--webui-assets" (
+  set "ASSET_MODE=webui"
+  shift
+  goto :parse_args
+)
+if /I "%~1"=="--debug-assets" (
+  set "ASSET_MODE=debug"
+  shift
+  goto :parse_args
+)
+if /I "%~1"=="--animestudio-asset-mode" (
+  if "%~2"=="" (
+    echo Missing value for --animestudio-asset-mode.
+    exit /b 2
+  )
+  set "ASSET_MODE=%~2"
+  shift
+  shift
+  goto :parse_args
+)
 if /I "%~1"=="--export-from-game" (
   set "EXPORT_FROM_GAME=1"
   shift
@@ -29,14 +55,17 @@ shift
 goto :parse_args
 
 :parsed_args
+call :validate_asset_mode "%ASSET_MODE%"
+if errorlevel 1 exit /b 2
+
 rem Asset export/build pipeline:
 rem - rebuild indexes from existing decoded assets by default
 rem - export from the installed game only when explicitly requested
 rem - skip structured story data and AnimeStudio by default
-rem - build the WebUI Assets tab indexes and compact story media lookup
+rem - build selected asset indexes and compact story media lookup
 rem - rebuild/link CN audio, decoding first only for --export-from-game
 if "%EXPORT_FROM_GAME%"=="0" goto :skip_export_full
-python .\scripts\export_full_from_game.py --skip-structured --animestudio-scope assets --animestudio-stages convert_by_type json_by_type %EXPORT_ARGS%
+python .\scripts\export_full_from_game.py --skip-structured --animestudio-scope assets --animestudio-asset-mode "%ASSET_MODE%" --animestudio-stages maps convert_by_type json_by_type %EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 goto :after_export_full
 
@@ -45,7 +74,9 @@ echo [export_assets.bat] Reusing existing decoded assets; pass --export-from-gam
 
 :after_export_full
 
-python .\scripts\build_assets.py
+set "BUILD_ASSET_MODE=%ASSET_MODE%"
+if /I "%ASSET_MODE%"=="debug" set "BUILD_ASSET_MODE=full"
+python .\scripts\build_assets.py --mode "%BUILD_ASSET_MODE%"
 if errorlevel 1 exit /b %errorlevel%
 
 if "%EXPORT_FROM_GAME%"=="1" goto :decode_audio
@@ -62,22 +93,40 @@ if errorlevel 1 exit /b %errorlevel%
 endlocal
 exit /b 0
 
+:validate_asset_mode
+if /I "%~1"=="webui" exit /b 0
+if /I "%~1"=="full" exit /b 0
+if /I "%~1"=="debug" exit /b 0
+echo Invalid asset mode: "%~1"
+echo Expected webui, full, or debug.
+exit /b 2
+
 :help
 echo Usage: export_assets.bat [--export-from-game] [--game-root PATH] [export_full_from_game.py options]
 echo.
-echo Rebuilds WebUI Assets tab indexes plus the compact Story media lookup,
-echo then relinks decoded CN Story audio. The heavier AnimeStudio
-echo image/model/animation decode and CN audio decode are opt-in.
+echo Rebuilds WebUI asset indexes plus the compact Story media lookup,
+echo then relinks decoded CN Story audio. AnimeStudio full
+echo WebUI-facing image/model decode is the default for installed-game refreshes.
 echo Story/reference data is handled by export.bat.
 echo.
-echo   --export-from-game    Run AnimeStudio image/model/animation conversion,
-echo                         JSON export, and CN audio decode.
+echo   --export-from-game    Run AnimeStudio asset conversion and CN audio decode.
+echo                         Defaults to full WebUI-facing image/model export.
+echo   --full-assets         Use the default WebUI-facing image/model export and
+echo                         full Assets browser index.
+echo   --webui-assets        Use lean WebUI-focused Texture2D media mode.
+echo   --debug-assets        Export exhaustive AnimeStudio conversion/JSON diagnostics,
+echo                         then build the full Assets browser index.
 echo   --game-root PATH      Installed Endfield_Data directory used when
 echo                         --export-from-game refreshes decoded assets/audio,
 echo                         and for audio linking.
+echo   --animestudio-asset-mode webui^|full^|debug
+echo                         Lower-level equivalent of --webui-assets/--full-assets/--debug-assets.
 echo   --animestudio-jobs N  Passed through when --export-from-game is present.
-echo                         Default is 1 for lower peak AnimeStudio memory.
-echo                         On the 64 GB test machine, 2 was the best tested value.
+echo                         Default is 4 for parallel shard/type export.
+echo                         Lower this value if peak AnimeStudio memory is too high.
+echo   --animestudio-shards N
+echo                         Passed through when --export-from-game is present.
+echo                         Default is 16 shards with 4 concurrent workers.
 echo   --animestudio-dummy-dlls PATH
 echo                         DummyDll directory for AnimeStudio MonoBehaviour schema recovery.
 echo                         Can also be set with ANIMESTUDIO_DUMMY_DLLS.

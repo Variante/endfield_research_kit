@@ -10,6 +10,7 @@ before rebuilding story/assets.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -62,22 +63,50 @@ def source_fingerprint_drift(source: str, current: dict[str, Any], exported: dic
     }
 
 
-def output_dir_status(path: Path) -> dict[str, Any]:
+def directory_has_file(path: Path) -> bool:
+    pending = [path]
+    while pending:
+        current = pending.pop()
+        try:
+            with os.scandir(current) as entries:
+                for entry in entries:
+                    try:
+                        if entry.is_file():
+                            return True
+                        if entry.is_dir():
+                            pending.append(Path(entry.path))
+                    except OSError:
+                        continue
+        except OSError:
+            continue
+    return False
+
+
+def output_dir_status(path: Path, *, exact_count: bool = False) -> dict[str, Any]:
     exists = path.exists()
+    file_count = 0
+    file_count_exact = True
+    if exists:
+        if exact_count:
+            file_count = sum(1 for item in path.rglob("*") if item.is_file())
+        else:
+            file_count = 1 if directory_has_file(path) else 0
+            file_count_exact = False
     return {
         "path": slash(path),
         "exists": exists,
-        "fileCount": sum(1 for item in path.rglob("*") if item.is_file()) if exists else 0,
+        "fileCount": file_count,
+        "fileCountExact": file_count_exact,
     }
 
 
-def required_output_status(output_root: Path, sources: tuple[str, ...]) -> list[dict[str, Any]]:
+def required_output_status(output_root: Path, sources: tuple[str, ...], *, exact_counts: bool = False) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for source in sources:
         rows.append({
             "source": source,
             "kind": "structured",
-            **output_dir_status(structured_output_dir(output_root, source)),
+            **output_dir_status(structured_output_dir(output_root, source), exact_count=exact_counts),
         })
         for parts in REQUIRED_ANIMESTUDIO_DIRS:
             path = animestudio_stage_dir(output_root, source, parts[0])
@@ -86,7 +115,7 @@ def required_output_status(output_root: Path, sources: tuple[str, ...]) -> list[
             rows.append({
                 "source": source,
                 "kind": "animestudio/" + "/".join(parts),
-                **output_dir_status(path),
+                **output_dir_status(path, exact_count=exact_counts),
             })
     return rows
 
@@ -126,6 +155,7 @@ def build_report(
     output_root: Path,
     summary_path: Path,
     sources: tuple[str, ...] | None,
+    exact_output_counts: bool = False,
 ) -> dict[str, Any]:
     summary = read_json(summary_path, {})
     if not isinstance(summary, dict) or not summary:
@@ -146,7 +176,7 @@ def build_report(
         source_fingerprint_drift(source, current_source_sizes[source], exported_source_sizes.get(source) or {})
         for source in selected_sources
     ]
-    output_rows = required_output_status(output_root, selected_sources)
+    output_rows = required_output_status(output_root, selected_sources, exact_counts=exact_output_counts)
     layout = top_level_source_audit(game_root, selected_sources)
     missing_outputs = [
         row for row in output_rows
@@ -211,6 +241,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--sources", nargs="+", choices=SOURCES)
     parser.add_argument("--json-out", type=Path, help="Optional path to write the verification report JSON.")
     parser.add_argument("--warn-only", action="store_true", help="Print stale status but exit 0.")
+    parser.add_argument(
+        "--full-output-counts",
+        action="store_true",
+        help="Count every file in required export output dirs instead of using the fast non-empty check.",
+    )
     return parser.parse_args(argv)
 
 
@@ -229,6 +264,7 @@ def main(argv: list[str] | None = None) -> int:
         output_root=output_root,
         summary_path=summary_path,
         sources=tuple(args.sources) if args.sources else None,
+        exact_output_counts=args.full_output_counts,
     )
     if args.json_out:
         args.json_out.parent.mkdir(parents=True, exist_ok=True)
@@ -236,7 +272,7 @@ def main(argv: list[str] | None = None) -> int:
     print_report(report)
     if report.get("fresh") or args.warn_only:
         return 0
-    print("[verify_export_freshness] rerun .\\export.bat before building WebUI data", file=sys.stderr)
+    print("[verify_export_freshness] rerun .\\export.bat --export-from-game before building WebUI data", file=sys.stderr)
     return 1
 
 

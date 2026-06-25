@@ -119,6 +119,15 @@ def main():
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args()
 
+    if not args.input.is_file():
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text("{}\n", encoding="utf-8")
+        if not args.quiet:
+            print(f"Input missing: {args.input}")
+            print(f"Output: {args.output}")
+            print("DialogIdTable registry skipped; wrote empty registry.")
+        return
+
     raw = args.input.read_bytes()
     index = build_index(raw)
 

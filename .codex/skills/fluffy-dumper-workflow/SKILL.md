@@ -31,10 +31,13 @@ Check the installed CLI surface:
 .\tools\fluffy-dumper-src\target\release\fluffy-dumper.exe --help
 .\tools\fluffy-dumper-src\target\release\fluffy-dumper.exe dump --help
 .\tools\fluffy-dumper-src\target\release\fluffy-dumper.exe audio --help
+.\tools\fluffy-dumper-src\target\release\fluffy-dumper.exe vfs-index --help
 .\tools\fluffy-dumper-src\target\release\fluffy-dumper.exe list
 ```
 
-The `dump` and `audio` help must include `--fallback-assets`. The WebUI wrappers rely on that local patch when a source root references chunks from another source root.
+The `dump`, `audio`, and `vfs-index` help must include `--fallback-assets`.
+The WebUI wrappers rely on that local patch when a source root references chunks
+from another source root.
 
 ## Wrapper Usage
 
@@ -57,7 +60,10 @@ The normal CN audio path is included at the end of `export.bat`; direct audio ma
 python scripts\build_audio.py
 ```
 
-`export_assets.bat --export-from-game` passes `--skip-structured`, so it does not need `fluffy-dumper`.
+`export_assets.bat --export-from-game` passes `--skip-structured`, so it does
+not run the full structured dump. It still uses `fluffy-dumper vfs-index` for a
+lightweight bundle metadata snapshot before AnimeStudio asset export, and
+`fluffy-dumper audio` for CN audio decode.
 
 ## Direct CLI Shape
 
@@ -77,6 +83,12 @@ Decode audio:
 
 ```bat
 .\tools\fluffy-dumper-src\target\release\fluffy-dumper.exe audio -s path\to\StreamingAssets -o export_full\structured\Audio\CN -l chinese -f wav -b all
+```
+
+Index VFS metadata without extracting files:
+
+```bat
+.\tools\fluffy-dumper-src\target\release\fluffy-dumper.exe vfs-index -s path\to\StreamingAssets -o export_full\recovered\AnimeStudio-cli\StreamingAssets\vfs_index\bundle_vfs_index.json -b bundle
 ```
 
 ## Diagnostics

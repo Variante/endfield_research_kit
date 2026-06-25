@@ -79,6 +79,7 @@ html, body {
   gap: 12px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  margin-left: auto;
 }
 
 .topbar-control {
@@ -332,6 +333,11 @@ html, body {
 .filter-row {
   display: flex; align-items: center; gap: 8px;
   margin-bottom: 6px; font-size: 12px;
+}
+.filters > input[type=search] + .filter-row,
+.filters > .filter-row + .filter-row {
+  padding-top: 9px;
+  border-top: 1px solid var(--text);
 }
 .filter-row label { color: var(--muted); width: 56px; flex-shrink: 0; }
 .filter-row select {
@@ -1978,8 +1984,12 @@ a.opt-target-chip { cursor: pointer; }
 .mission-timeline-box {
   /* inherits --accent left border from .summary-box */
 }
+.timeline-action-box {
+  /* inherits --accent left border from .summary-box */
+}
 .mission-timeline-box .binding-chip,
-.mission-timeline-box .flow-dlg-ref {
+.mission-timeline-box .flow-dlg-ref,
+.timeline-action-box .flow-dlg-ref {
   max-width: 100%;
   white-space: normal;
   overflow-wrap: anywhere;
@@ -1987,15 +1997,53 @@ a.opt-target-chip { cursor: pointer; }
 .mission-timeline-stats,
 .mission-timeline-tags,
 .mission-timeline-line,
-.mission-timeline-edge {
+.mission-timeline-edge,
+.timeline-action-stats,
+.timeline-action-line,
+.timeline-action-line-chips {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   min-width: 0;
 }
-.mission-timeline-stats {
+.mission-timeline-stats,
+.timeline-action-stats {
   margin-bottom: 10px;
+}
+.timeline-action-line {
+  margin-top: 6px;
+}
+.timeline-action-line-chips {
+  margin-top: 6px;
+}
+.timeline-action-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 20px;
+  padding: 2px 7px;
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
+  border-radius: 4px;
+  background: rgba(var(--accent-rgb), 0.08);
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.timeline-action-chip.is-authored {
+  border-color: var(--border);
+  background: rgba(var(--accent-rgb), 0.14);
+}
+.timeline-action-chip.is-fallback {
+  color: var(--warn);
+  border-color: var(--border);
+  background: rgba(var(--fg-rgb), 0.12);
+}
+.timeline-action-chip.is-missing {
+  color: var(--danger);
+  border-color: rgba(var(--danger-rgb), 0.3);
+  background: rgba(var(--danger-rgb), 0.08);
 }
 .mission-timeline-details {
   margin-top: 10px;
@@ -3986,7 +4034,8 @@ body.is-resizing-pane * {
 
   .topbar-actions {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-end;
+    margin-left: 0;
   }
 
   #view-tabs {

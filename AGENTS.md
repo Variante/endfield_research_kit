@@ -52,9 +52,10 @@ and decoded audio; pass `--skip-asset-updates` only for a text-only update
 feed.
 Use `export_assets.bat` for WebUI Assets tab indexes, compact Story media
 lookup, and CN audio relinking from existing decoded assets. Pass
-`--export-from-game` only when the user explicitly asks to run the heavier
-AnimeStudio image/model/animation decode and CN audio decode from installed game
-data first.
+`--export-from-game` only when the user explicitly asks to run the default full
+AnimeStudio image/model decode, `Material` JSON, and CN audio decode from
+installed game data first. Pass `--webui-assets` for the lean WebUI-referenced
+Texture2D mode, or `--debug-assets` for exhaustive AnimeStudio diagnostics.
 Use direct `scripts/build_audio.py` runs for non-CN languages or audio-only
 maintenance. The audio builder writes `export_full/structured/Audio/<LANG>/`,
 parses Wwise bank event-to-media links, and post-processes generated
@@ -68,6 +69,7 @@ python scripts\build_updates.py --baseline-only
 python scripts\build_updates.py --skip-asset-updates
 python scripts\build_updates.py --refresh-previous-export-baseline
 python scripts\verify_export_freshness.py
+python scripts\story_builder\refresh_evidence.py
 python scripts\story_builder\source_links.py
 python scripts\story_builder\build.py --languages CN --default-language CN
 python scripts\story_builder\build.py --languages CN EN JP --default-language CN
@@ -164,10 +166,11 @@ add image/model/video/audio asset-level entries to the Updates page. Asset
 modifications use fast size fingerprints by default; pass
 `--hash-asset-updates` only when same-size binary modifications must be
 detected. Use `--skip-asset-updates` only when asset entries should be omitted.
-Use `--dry-run-prune-previous-export-untracked` to preview old export files
-outside the focused Updates scope, and `--prune-previous-export-untracked` only
-when intentionally deleting those untracked files from the previous export
-folder. This pruning must never target `export_full/` or the repo root.
+Use `--dry-run-prune-previous-export-untracked` to preview previous-export
+files that exist byte-identically at the same relative paths in the current
+export, and `--prune-previous-export-untracked` only when intentionally
+deleting those old duplicate copies from the previous export folder. This
+pruning must never target `export_full/` or the repo root.
 
 Use `--baseline-only` only when an empty feed is intentional. Use
 `--refresh-previous-export-baseline` after replacing the saved previous export
@@ -207,9 +210,11 @@ WebUI:
 - `scripts/story_builder/dialog_registry.py`
 - `scripts/story_builder/video_bindings.py`
 - `scripts/verify_export_freshness.py`
+- `scripts/story_builder/refresh_evidence.py`
 - `scripts/build_updates.py`
 - `scripts/story_builder/source_links.py`
 - `scripts/story_builder/build.py`
+- `scripts/story_builder/timeline_action_evidence.py`
 - `scripts/build_assets.py`
 - `scripts/build_audio.py`
 - `scripts/package_webui.py`
@@ -218,6 +223,7 @@ WebUI:
 Story reconstruction helpers used by WebUI builders:
 
 - `scripts/story_builder/timeline_recovery.py`
+- `scripts/story_builder/timeline_action_evidence.py`
 - `scripts/story_builder/mission_recovery.py`
 - `scripts/scene_order_gap_shared.py`
 
