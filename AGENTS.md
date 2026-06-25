@@ -5,7 +5,6 @@ Agent notes for this repo. User-facing usage belongs in `README.md`.
 Keep root-level docs and workflow guidance focused on:
 
 - the static WebUI in `webui/`
-- the Unity character recovery lab in `unity_endfield_graph_shader_lab/`
 
 Move observations, conclusions, older exploration notes, and status snapshots to
 `memory/`. Do not use `reports/` for investigation conclusions.
@@ -29,16 +28,16 @@ server instead of starting another `serve.py` process on `8765` or a custom
 port, unless the user explicitly asks for a second server.
 
 `setup_first_time.bat` is the user-facing all-in-one first-time setup path. It
-initializes `tools/AnimeStudio`, builds the AnimeStudio CLI, downloads/builds
-the patched local `fluffy-dumper`, runs `export.bat --export-from-game`, runs
-`export_assets.bat --export-from-game`, creates the initial Updates baseline,
+initializes `tools/AnimeStudio`, builds the AnimeStudio CLI, verifies the
+integrated AnimeStudio VFS/audio commands, runs `export.bat --export-from-game`,
+runs `export_assets.bat --export-from-game`, creates the initial Updates baseline,
 then starts or reuses the default WebUI server. Pass `--no-serve` when setup
 should finish without starting `serve.py`.
 
-`export.bat` is the canonical story/reference WebUI rebuild from an existing
+`export.bat` is the canonical Story/Text Tables WebUI rebuild from an existing
 `export_full/`. It verifies that `export_full/` matches the current installed
 `Endfield_Data` fingerprints before the long WebUI builders run, then builds CN
-story/reference data by default. It does not export from installed game data by
+Story/Text Tables data by default. It does not export from installed game data by
 default. Pass `--export-from-game` only when the user explicitly asks to refresh
 `export_full/` and run the story export tools. Audio relinking is handled by
 `export_assets.bat` after generated conversations are rebuilt. `export.bat`
@@ -96,6 +95,86 @@ cd unity_endfield_graph_shader_lab
 The Python tooling is intended to stay stdlib-only unless a task explicitly
 requires otherwise.
 
+## WebUI Technical Notes
+
+Keep detailed browser/export mechanics here, in project skills, or in
+`scripts/README.md`; keep the root `README.md` short and user-facing.
+
+Browser behavior:
+
+- Story/Text Tables inline media treats `sns_emoji_*` as regular inline emoji
+  with no popup/modal preview.
+- Non-emoji SNS media such as `sns_image_*` and `sns_sticker_*` render at
+  normal image proportions with bounded hover/modal previews.
+- Story recovery issue filters, source/debug blocks, mission timeline evidence,
+  cutscene debug panels, and manual order-edit controls are behind
+  `Show debug info`.
+- The Story reset button returns filters to Story sort while preserving
+  expanded mission groups.
+
+Export freshness:
+
+- `export.bat` runs `scripts/verify_export_freshness.py` before rebuilding
+  from an existing `export_full/`.
+- Run `python scripts\verify_export_freshness.py` directly when checking the
+  guard, and pass `--game-root "...\Endfield_Data"` for non-default installs.
+- If freshness reports stale source roots, rerun
+  `.\export.bat --export-from-game` before Story or asset builders read
+  `export_full/`.
+
+Setup and export internals:
+
+- The expected AnimeStudio CLI path is
+  `tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe`.
+- The AnimeStudio CLI provides the WebUI VFS commands `dump`, `audio`, `vfs-index`,
+  and `list`; `dump`, `audio`, and `vfs-index` help should include
+  `--fallback-assets <FALLBACK_ASSETS>`.
+- `export_assets.bat --export-from-game` passes `--skip-structured`, writes a
+  lightweight VFS metadata index, runs WebUI-facing image/model/Material
+  export, and decodes CN audio before relinking.
+- `tools\DummyDll` is the preferred repo-local IL2CPP DummyDll root when
+  optional script-schema recovery is wanted. Wrapper flags or
+  `ANIMESTUDIO_DUMMY_DLLS` can supply it, but missing or stale DummyDll paths
+  must warn and continue without failing normal exports.
+- `--animestudio-mono-behaviour-type-tree-priority script-first` is for
+  targeted MonoBehaviour schema experiments; the default is `serialized-first`.
+  Script-first must fall back cleanly when no usable DummyDlls are available.
+- After installed-game refreshes, check `reports/export_full_summary.md` for
+  stage return codes and AnimeStudio export errors.
+
+Browser data inputs and outputs:
+
+- Active inputs include `export_full/structured/StreamingAssets/Table/*.json`,
+  recovered AnimeStudio text/metadata under `export_full/recovered/`,
+  exported image/model/material outputs under
+  `export_full/recovered/AnimeStudio-cli/<source>/`, and generated data under
+  `webui/data/`.
+- Generated browser outputs include `webui/data/manifest.json`,
+  `webui/data/lang/<code>/index.json`, `conv/*.json`, `mission/*.json`,
+  `reference/**`, `webui/data/assets/index.json`, and
+  `webui/data/updates/latest.json`.
+- The current `export.bat` skips raw VFS output and source inventory because
+  the browser does not need them.
+
+Tool pointers:
+
+- `tools/AnimeStudio/` is the tracked AnimeStudio fork submodule used by
+  installed-game Story and asset export paths.
+- `tools/endfield_source_graph.py` builds/query local SQLite evidence across
+  generated WebUI story/text-table data, selected tables, audio, videos,
+  assets, material links, and optional AnimeStudio asset maps.
+- `tools/endfield-il2cpp/` contains offline IL2CPP metadata diagnostics. It is
+  not part of normal export, Updates, packaging, or serving flows.
+- Optional local vendor/tool caches may live under ignored `tools/`; keep their
+  generated outputs local.
+
+Script notes:
+
+- `scripts/README.md` lists the maintained script map and workflow contracts.
+- New one-off exploration scripts should start in `scratch/` or `tmp/`.
+- Durable conclusions belong in `memory/`; reusable helpers should move into
+  maintained workflow code only with matching docs and intentional tracking.
+
 ## Current Guidance Locations
 
 Older `memory/` exploration archives have been retired into the active docs.
@@ -124,8 +203,6 @@ of these workflows, open the matching `SKILL.md` before acting:
   `webui/overrides/options.json`.
 - `.codex/skills/animestudio-workflow/`: building, running, patching, and
   debugging the local `tools/AnimeStudio` exporter and its WebUI wrappers.
-- `.codex/skills/fluffy-dumper-workflow/`: building, running, patching, and
-  debugging the local patched `tools/fluffy-dumper-src` Rust workspace.
 
 The current checkout does not ship separate `endfield-story-recovery` or
 `endfield-character-recovery-lab` skill folders. For those workflows, use the
@@ -143,7 +220,7 @@ disposable experiments in `scratch/` or `tmp/`.
 
 The WebUI Updates tab must report only exported game-data changes between a
 saved previous export and the current export. By default it tracks the
-exported JSON roots that feed Story/Reference display plus exported
+exported JSON roots that feed Story/Text Tables display plus exported
 image/model/video assets plus decoded audio. Use `--full-export-scan` only for
 a broad audit of all files under the two export roots.
 
@@ -180,7 +257,7 @@ folder so the cached scanner baseline is rebuilt.
 
 - Prefer the layout rooted at `serve.py`, `export.bat`, `webui/`,
   `scripts/`, and `unity_endfield_graph_shader_lab/`.
-- Keep `README.md` focused on active WebUI and Unity character recovery usage.
+- Keep `README.md` focused on active WebUI user-facing usage.
 - Keep observations, conclusions, investigation notes, and status snapshots in
   `memory/`.
 - Keep `reports/` for durable generated reports only, not agent conclusions or

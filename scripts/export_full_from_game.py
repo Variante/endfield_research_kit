@@ -28,7 +28,6 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
 DEFAULT_OUTPUT = ROOT / "export_full"
 DEFAULT_REPORTS = ROOT / "reports"
-DEFAULT_FLUFFY = ROOT / "tools" / "fluffy-dumper-src" / "target" / "release" / "fluffy-dumper.exe"
 DEFAULT_ANIMESTUDIO = ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
 DEFAULT_STRUCTURED_DUMPER = DEFAULT_ANIMESTUDIO
 SOURCES = ("StreamingAssets", "Persistent")
@@ -1159,12 +1158,16 @@ def parse_args() -> argparse.Namespace:
         help="Output root for the full export",
     )
     parser.add_argument(
-        "--fluffy",
         "--structured-dumper",
-        dest="fluffy",
+        dest="structured_dumper",
         type=Path,
         default=DEFAULT_STRUCTURED_DUMPER,
-        help="Path to AnimeStudio CLI, or a legacy fluffy-dumper executable, for VFS structured exports",
+        help="Path to AnimeStudio CLI for VFS structured exports",
+    )
+    parser.add_argument(
+        "--fluffy",
+        dest="structured_dumper",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--animestudio",
@@ -2548,7 +2551,7 @@ def main() -> int:
     report_run_id = current_report_run_id()
     reports_dir = ensure_dir(reports_root / report_run_id)
     legacy_reports_dir = output_root / "reports"
-    structured_dumper = args.fluffy.resolve()
+    structured_dumper = args.structured_dumper.resolve()
     animestudio = args.animestudio.resolve()
     selected_sources = ordered_unique(args.sources)
     selected_animestudio_stages = ordered_unique(args.animestudio_stages)

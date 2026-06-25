@@ -1,7 +1,7 @@
 """Decode every .chk file under <game>/Endfield_Data/Persistent/VFS.
 
-Mirrors the logic in fluffy-dumper (Rust crate `vfs`) so we can iterate
-on failures quickly without rebuilding the Rust tool.
+Mirrors the integrated AnimeStudio VFS loader logic so we can iterate
+on failures quickly without rebuilding the CLI.
 
 Outputs:
   - <out_dir>/files/...                : extracted files (path taken from .blc)
@@ -27,7 +27,7 @@ from typing import Any
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 
-# --- keys (mirrors fluffy-dumper/src/keys.rs) ---------------------------------
+# --- keys (mirrors integrated AnimeStudio VFS keys) ---------------------------
 
 CHACHA_KEY_B64 = "6VsxesT4KFadI6hr8nHctT6Eb6dckk1nHbqOOPTKUuE="
 CHACHA_KEY = base64.b64decode(CHACHA_KEY_B64)

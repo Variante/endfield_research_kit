@@ -24,7 +24,7 @@ opcode records. Sources used (all under `export_full/structured/`):
 - The USM/VFS side is identity evidence only. The original video block gives
   chunk indices, hashes, and CRI header strings such as
   `c:\Beyond_Video\MultiPlatform\PC\Narrative\Cutscene\v0d8\m_cs_video_e0m0_3.usm`,
-  but no mission/order/quest placement. `fluffy-dumper` also demuxes USM to
+  but no mission/order/quest placement. AnimeStudio's integrated VFS video path also demuxes USM to
   MP4 without preserving any extra placement metadata.
 - `cutscene_e0m0_3` should not be placed first from text alone. Its
   `TextTable[cutscene_e0m0_3_01]` row contains a `00:00:00` title-card/slate

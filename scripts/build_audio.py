@@ -16,7 +16,6 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
-DEFAULT_FLUFFY = ROOT / "tools" / "fluffy-dumper-src" / "target" / "release" / "fluffy-dumper.exe"
 DEFAULT_ANIMESTUDIO = ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
 DEFAULT_AUDIO_DUMPER = DEFAULT_ANIMESTUDIO
 DEFAULT_EXPORT_ROOT = ROOT / "export_full"
@@ -1096,13 +1095,13 @@ def load_cached_event_audio_index(
 def run_audio_dumper(args: argparse.Namespace, language_info: dict[str, str], language_root: Path) -> None:
     if args.skip_decode:
         return
-    if not args.fluffy.exists():
-        raise SystemExit(f"audio dumper not found: {args.fluffy}")
+    if not args.audio_dumper.exists():
+        raise SystemExit(f"audio dumper not found: {args.audio_dumper}")
     if not args.streaming_assets.exists():
         raise SystemExit(f"StreamingAssets not found: {args.streaming_assets}")
 
     command = [
-        str(args.fluffy),
+        str(args.audio_dumper),
         "audio",
         "--streaming-assets",
         str(args.streaming_assets),
@@ -1486,7 +1485,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--format", choices=("wav", "wem"), default="wav")
     parser.add_argument("--block", choices=("all", "voice", "audio", "initial-audio", "audit-audio"), default="all")
     parser.add_argument("--skip-decode", action="store_true", help="Only rebuild the audio index and story links.")
-    parser.add_argument("--fluffy", "--audio-dumper", dest="fluffy", type=Path, default=DEFAULT_AUDIO_DUMPER, help="Path to AnimeStudio CLI, or a legacy fluffy-dumper executable, for audio extraction.")
+    parser.add_argument(
+        "--audio-dumper",
+        type=Path,
+        default=DEFAULT_AUDIO_DUMPER,
+        help="Path to AnimeStudio CLI for audio extraction.",
+    )
+    parser.add_argument("--fluffy", dest="audio_dumper", help=argparse.SUPPRESS)
     parser.add_argument("--game-root", type=Path, default=DEFAULT_GAME_ROOT)
     parser.add_argument("--streaming-assets", type=Path, default=None)
     parser.add_argument("--fallback-assets", type=Path, default=None)

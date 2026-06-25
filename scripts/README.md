@@ -18,11 +18,11 @@ From the repo root:
 
 For a fresh checkout, prefer the root `setup_first_time.bat` wrapper. It
 initializes and builds the required external tools, runs the installed-game
-Story/Reference export, runs the Assets tab media and CN audio export, creates the
+Story/Text Tables export, runs the Assets tab media and CN audio export, creates the
 initial Updates baseline, and starts or reuses the default WebUI server. Pass
 `--no-serve` if the setup should stop after the build/export steps.
 
-`export.bat` is the normal story/reference WebUI rebuild path from an existing
+`export.bat` is the normal Story/Text Tables WebUI rebuild path from an existing
 `export_full/`. It runs:
 
 - `scripts/verify_export_freshness.py`
@@ -37,7 +37,7 @@ bindings, and story source-link refresh in parallel before the Story builder
 loads those generated files.
 
 Pass `--export-from-game` when you explicitly want to refresh `export_full/`
-from installed game data before rebuilding Story/Reference data. Audio relinking
+from installed game data before rebuilding Story/Text Tables data. Audio relinking
 is handled by `export_assets.bat` after generated conversations are rebuilt.
 Pass `--game-root PATH` when the installed game is not under the default
 `D:\Program Files\Endfield Game\Endfield_Data`. The path must be the installed
@@ -58,7 +58,7 @@ The exporter expects
 `build_updates.bat` writes `webui/data/updates/latest.json` from the saved
 previous export and current `export_full/`. Use `.\build_updates.bat
 --init-build` for initial or baseline-only update feeds. By default it compares
-the exported text JSON that feeds Story/Reference plus exported image/model/video
+the exported text JSON that feeds Story and Text Tables plus exported image/model/video
 assets and decoded audio using fast size fingerprints; pass
 `--hash-asset-updates` for slower same-size binary modification detection, or
 `--skip-asset-updates` for a text-only feed. Pass `--previous-export-root PATH`
@@ -70,7 +70,7 @@ non-default installed `Endfield_Data` root. It does not choose the export trees.
 indexes, then runs `scripts/build_audio.py --skip-decode` to relink existing
 decoded CN audio into generated conversations. Pass `--export-from-game` to run
 the full WebUI-facing AnimeStudio image/model export plus `Material` JSON after
-first writing a lightweight `fluffy-dumper vfs-index` bundle metadata snapshot,
+first writing a lightweight AnimeStudio `vfs-index` bundle metadata snapshot,
 and decode CN audio first. Pass `--webui-assets` when only WebUI-referenced
 Texture2D media is needed, or `--debug-assets` for exhaustive AnimeStudio
 conversion/JSON diagnostics. It accepts the same `--game-root PATH` argument and
@@ -85,13 +85,14 @@ the Story JSON slice by about 21%, while the old full asset refresh peaked at
 about 27 GiB observed process-tree working set. Full-mode `AnimationClip` and
 `Texture2D` workers dominate both memory and wall time.
 
-Both wrappers also pass `--animestudio-dummy-dlls PATH` through when
-`--export-from-game` is present. Use this for IL2CPP DummyDll folders that
-improve AnimeStudio MonoBehaviour schema recovery during Story JSON export.
-If the flag is omitted, `export_full_from_game.py` checks
+Both wrappers can pass `--animestudio-dummy-dlls PATH` through when
+`--export-from-game` is present. Use this only for optional IL2CPP DummyDll
+folders that improve AnimeStudio MonoBehaviour schema recovery during Story JSON
+export. If the flag is omitted, `export_full_from_game.py` checks
 `ANIMESTUDIO_DUMMY_DLLS`, then known local locations such as `tools\DummyDll`;
 it only adds AnimeStudio's `--dummy_dlls` option when the selected directory
-exists and contains `.dll` files.
+exists and contains `.dll` files. Missing or stale DummyDll paths warn and
+continue without DummyDlls instead of failing the export.
 
 For targeted MonoBehaviour recovery experiments, pass
 `--animestudio-mono-behaviour-type-tree-priority script-first` to make
@@ -100,9 +101,9 @@ serialized TypeTree. The default `serialized-first` preserves the normal export
 order and only uses script-derived trees as a fallback after serialized decode
 failure. Script-first only improves body decoding when the relevant external
 `MonoScript` bundle is loaded and the DummyDll set contains a usable script
-type with real field nodes. If the script type is absent or only resolves to a
-base-only tree, AnimeStudio records the script-derived status and keeps the
-serialized/partial decode result.
+type with real field nodes. Without DummyDlls, or when the script type is absent
+or only resolves to a base-only tree, AnimeStudio records the script-derived
+status when applicable and keeps the serialized/partial decode result.
 
 When MonoBehaviour TypeTree decoding fails inside a managed-reference registry,
 AnimeStudio now emits partial JSON instead of collapsing to metadata-only JSON
@@ -144,7 +145,7 @@ decoded media.
 
 `package_webui.bat` runs `scripts/package_webui.py` and creates split
 shareable zips. The main story zip contains `serve.py`, `webui/`, generated
-story/reference text data, WebUI code, and emoji images. The companion assets
+story and text-table data, WebUI code, and emoji images. The companion assets
 zip contains larger displayed image/video media resolved from `export_full/`,
 and the standalone audio zip contains decoded story audio from `export_full/`.
 Extract the story zip first, then extract the assets and audio zips into the
@@ -161,7 +162,7 @@ Expected active inputs and outputs:
 
 - `../webui/`: static browser app plus generated WebUI data under
   `webui/data/`.
-- `../export_full/`: generated export data used by Story, Reference, Assets,
+- `../export_full/`: generated export data used by Story, Text Tables, Assets,
   and package media resolution.
 - `../.game-data-tracker/`: persistent state for exported WebUI text JSON and
   asset update tracking.
@@ -222,7 +223,7 @@ Expected active inputs and outputs:
   export, and `--prune-previous-export-untracked` to delete those old duplicate
   copies after confirming the preview. Cached tracker and asset baselines keep
   later comparisons from treating those pruned files as newly added.
-- `story_builder/build.py`: builds CN story/reference data by default,
+- `story_builder/build.py`: builds CN Story/Text Tables data by default,
   with optional extra languages. The builder reads from `..\export_full\`, stamps dialog convs
   with DialogIdTable runtime registry evidence, links narrative
   Cutscene/RemoteComm video files to matching story entries, promotes
@@ -240,7 +241,7 @@ Expected active inputs and outputs:
   default, or the broad Assets browser index and optional demo bundle zips with
   `--mode full`. It is run by `..\export_assets.bat`, not the story-only
   `..\export.bat`.
-- `build_audio.py`: decodes language audio via `fluffy-dumper`, indexes files
+- `build_audio.py`: decodes language audio via AnimeStudio CLI, indexes files
   under `export_full/structured/Audio/<LANG>/`, parses Wwise bank
   event-to-media links, and post-processes generated conversation JSON so
   dialog/cutscene lines and recoverable cutscene audio events can render native
