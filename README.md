@@ -18,10 +18,10 @@ The project is built around reproducible local exports:
   upstream changes.
 
 <p>
-  <img src="res/story_screenshot.png" alt="Story browser with mission list, reconstructed dialog, filters, and debug controls" height="160">
-  <img src="res/story_screenshot2.png" alt="Story browser showing recovered dialog detail with media and evidence panels" height="160">
-  <img src="res/story_screenshot3.png" alt="Text Tables browser with searchable localized table rows" height="160">
-  <img src="res/story_screenshot4.png" alt="Additional Endfield Research Kit WebUI screenshot" height="160">
+  <img src="res/story_screenshot.png" alt="Story browser with mission list, reconstructed dialog, filters, and debug controls" height="150">
+  <img src="res/story_screenshot2.png" alt="Story browser showing recovered dialog detail with media and evidence panels" height="150">
+  <img src="res/story_screenshot3.png" alt="Text Tables browser with searchable localized table rows" height="150">
+  <img src="res/story_screenshot4.png" alt="Asset browser showing exported OBJ models" height="150">
 </p>
 
 ## Disclaimer
@@ -85,9 +85,8 @@ with the base setup, then run the optional asset pass later with
 `--webui-assets` or `--animestudio-jobs 1`.
 
 Keep plenty of free disk space for `export_full/`, decoded audio, reports, and
-optional packages. Around 100 GB free is a practical starting point for normal
-use; plan closer to 325 GB if you want debug-level asset diagnostics and broad
-media outputs.
+optional packages. Around 325 GB free is a practical starting point if you want 
+debug-level asset diagnostics and broad media outputs.
 
 Keep that terminal window open while browsing the WebUI. To build everything
 without starting the server, add `--no-serve`:
