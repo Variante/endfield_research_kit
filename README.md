@@ -18,8 +18,9 @@ The project is built around reproducible local exports:
   upstream changes.
 
 <p>
-  <img src="res/story_screenshot.png" alt="Story browser with mission list, reconstructed dialog, filters, and debug controls" width="49%">
-  <img src="res/story_screenshot2.png" alt="Story browser showing recovered dialog detail with media and evidence panels" width="48.2%">
+  <img src="res/story_screenshot.png" alt="Story browser with mission list, reconstructed dialog, filters, and debug controls" height="220">
+  <img src="res/story_screenshot2.png" alt="Story browser showing recovered dialog detail with media and evidence panels" height="220">
+  <img src="res/story_screenshot3.png" alt="Text Tables browser with searchable localized table rows" height="220">
 </p>
 
 This repository is for research and study purposes only. It is intended for
