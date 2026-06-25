@@ -1463,7 +1463,7 @@ class SourceGraphBuilder:
     def ingest_reference_tables(self) -> None:
         ref_root = WEBUI_DATA / "lang" / self.language / "reference"
         index = read_json(ref_root / "index.json", {})
-        dataset = self.add_node("dataset", f"reference_{self.language}", name=f"Reference {self.language}", path=slash(ref_root))
+        dataset = self.add_node("dataset", f"reference_{self.language}", name=f"Text Tables {self.language}", path=slash(ref_root))
         for table in index.get("tables") or []:
             table_name = safe_key(table.get("table"))
             table_key = f"{table.get('source')}:{table_name.removesuffix('.json')}"
