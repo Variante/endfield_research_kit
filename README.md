@@ -18,9 +18,10 @@ The project is built around reproducible local exports:
   upstream changes.
 
 <p>
-  <img src="res/story_screenshot.png" alt="Story browser with mission list, reconstructed dialog, filters, and debug controls" height="220">
-  <img src="res/story_screenshot2.png" alt="Story browser showing recovered dialog detail with media and evidence panels" height="220">
-  <img src="res/story_screenshot3.png" alt="Text Tables browser with searchable localized table rows" height="220">
+  <img src="res/story_screenshot.png" alt="Story browser with mission list, reconstructed dialog, filters, and debug controls" height="160">
+  <img src="res/story_screenshot2.png" alt="Story browser showing recovered dialog detail with media and evidence panels" height="160">
+  <img src="res/story_screenshot3.png" alt="Text Tables browser with searchable localized table rows" height="160">
+  <img src="res/story_screenshot4.png" alt="Additional Endfield Research Kit WebUI screenshot" height="160">
 </p>
 
 This repository is for research and study purposes only. It is intended for
@@ -54,13 +55,24 @@ Run the all-in-one setup script from the repository root. Pass the installed
 
 The script initializes the AnimeStudio submodule, builds AnimeStudio, verifies
 AnimeStudio's integrated VFS/audio commands, exports Story/Text Tables data,
-exports Assets tab media and CN audio, creates the first Updates baseline, and
-starts or reuses the WebUI server at `http://127.0.0.1:8765/`.
+exports Assets tab media and CN audio into repo-local output folders, creates
+the first Updates baseline, and starts or reuses the WebUI server at
+`http://127.0.0.1:8765/`.
 
 The local `tools/AnimeStudio` fork includes custom Endfield VFS/export work
 informed by [fluffy-dumper](https://git.nekolab.app/fluffield/fluffy-dumper)
 and [EIHRTeam/EndfieldStudio](https://github.com/EIHRTeam/EndfieldStudio).
 Many thanks to those projects and their maintainers for the groundwork.
+
+First-time setup is intentionally heavy. The Story/Text Tables rebuild is much
+faster once `export_full/` exists, but the installed-game export plus full
+Assets tab media and CN audio refresh can take several hours. The full asset
+path has been observed around 27 GiB of process-tree RAM on a 64 GiB workstation;
+use `--skip-assets` for a lighter first pass on lower-RAM systems, then run
+`export_assets.bat --export-from-game --animestudio-jobs 1` later when you are
+ready for the media/audio pass. Keep generous free disk space for `export_full/`,
+decoded audio, reports, and optional packages; 100 GB free is a sensible
+starting point, and debug/full media workflows can need more.
 
 Keep that terminal window open while browsing the WebUI. To build everything
 without starting the server, add `--no-serve`:
