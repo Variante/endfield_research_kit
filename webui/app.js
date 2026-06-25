@@ -416,6 +416,27 @@ function persistUiLocaleSelection(locale) {
   storageSet(UI_LOCALE_STORAGE_KEY, locale);
 }
 
+function nextUiLocale(locale = STATE.uiLocale) {
+  return normalizeUiLocale(locale) === "zh" ? "en" : "zh";
+}
+
+function syncUiLanguageSwitch() {
+  const button = $("#ui-language");
+  if (!button) return;
+  const locale = normalizeUiLocale(STATE.uiLocale) || "en";
+  const nextLocale = nextUiLocale(locale);
+  button.value = locale;
+  button.dataset.locale = locale;
+  button.dataset.nextLocale = nextLocale;
+  button.setAttribute("aria-checked", locale === "en" ? "true" : "false");
+  button.setAttribute("aria-label", "\u5207\u6362\u754c\u9762\u8bed\u8a00 / Switch UI language");
+  button.title = "\u5207\u6362\u754c\u9762\u8bed\u8a00 / Switch UI language";
+  const zhLabel = button.querySelector('[data-locale-label="zh"]');
+  const enLabel = button.querySelector('[data-locale-label="en"]');
+  if (zhLabel) zhLabel.textContent = "\u4e2d\u6587";
+  if (enLabel) enLabel.textContent = "EN";
+}
+
 function resolveInitialUiLocale(languageCode) {
   const params = new URLSearchParams(window.location.search);
   const fromQuery = normalizeUiLocale(params.get("ui") || params.get("uiLang"));
@@ -437,9 +458,6 @@ function applyUiLocaleSideEffects() {
 function setUiLocale(locale, { persist = true, refresh = true } = {}) {
   const nextLocale = normalizeUiLocale(locale) || resolveUiLocale(STATE.languageInfo);
   STATE.uiLocale = nextLocale || "en";
-
-  const select = $("#ui-language");
-  if (select) select.value = STATE.uiLocale;
   if (persist) persistUiLocaleSelection(STATE.uiLocale);
 
   applyUiStrings();
@@ -2596,14 +2614,7 @@ function applyUiStrings() {
   $("#story-tab").textContent = uiText("storyTab");
   $("#assets-tab").textContent = uiText("assetsTab");
   $("#ui-language-label").textContent = uiText("uiLanguage");
-
-  const uiLanguageSelect = $("#ui-language");
-  if (uiLanguageSelect) {
-    const zhOption = uiLanguageSelect.querySelector('option[value="zh"]');
-    const enOption = uiLanguageSelect.querySelector('option[value="en"]');
-    if (zhOption) zhOption.textContent = uiText("uiLanguageChinese");
-    if (enOption) enOption.textContent = uiText("uiLanguageEnglish");
-  }
+  syncUiLanguageSwitch();
 
   if (!document.body.dataset.activeView || document.body.dataset.activeView === "story") {
     document.title = uiText("pageTitle");
@@ -2635,6 +2646,10 @@ function applyUiStrings() {
   if (sortKey) sortKey.textContent = uiText("sortKey");
   const sortSelect = $("#sort");
   if (sortSelect) sortSelect.value = STATE.sortMode || "story";
+  const storyTodoTag = $("#story-todo-tag");
+  if (storyTodoTag) storyTodoTag.textContent = uiText("storyTodoTag");
+  const storyTodoText = $("#story-todo-text");
+  if (storyTodoText) storyTodoText.textContent = uiText("storyTodoText");
   $("#list-meta-label").textContent = uiText("listUnit");
   $("#conv-empty").textContent = uiText("emptyConversation");
   $("#reveal-current").textContent = uiText("revealCurrent");

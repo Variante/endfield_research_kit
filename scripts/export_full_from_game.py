@@ -1190,7 +1190,7 @@ def parse_args() -> argparse.Namespace:
         default="serialized-first",
         help=(
             "MonoBehaviour TypeTree priority for AnimeStudio JSON export. "
-            "`script-first` requires usable DummyDlls and is intended for targeted recovery tests."
+            "`script-first` tries DummyDll script schemas when available and otherwise falls back."
         ),
     )
     parser.add_argument(
@@ -1388,23 +1388,28 @@ def normalize_dummy_dll_path(path: Path | str) -> Path:
     return Path(text).expanduser()
 
 
-def validate_dummy_dll_dir(path: Path | str, source: str) -> Path:
+def validate_dummy_dll_dir(path: Path | str, source: str) -> Path | None:
     candidate = normalize_dummy_dll_path(path)
     if not looks_like_dummy_dll_dir(candidate):
-        raise SystemExit(
-            f"AnimeStudio DummyDll directory from {source} was not found or contains no .dll files: {candidate}"
+        log(
+            "  warning: AnimeStudio DummyDll directory from "
+            f"{source} was not found or contains no .dll files: {candidate}; "
+            "continuing without that DummyDll path"
         )
+        return None
     return candidate.resolve()
 
 
 def resolve_animestudio_dummy_dlls(explicit: Path | None, game_root: Path) -> tuple[Path | None, str | None]:
     if explicit is not None:
-        return validate_dummy_dll_dir(explicit, "--animestudio-dummy-dlls"), "--animestudio-dummy-dlls"
+        resolved = validate_dummy_dll_dir(explicit, "--animestudio-dummy-dlls")
+        return (resolved, "--animestudio-dummy-dlls") if resolved is not None else (None, None)
 
     env_value = os.environ.get(ANIMESTUDIO_DUMMY_DLL_ENV, "").strip()
     if env_value:
-        return validate_dummy_dll_dir(env_value, ANIMESTUDIO_DUMMY_DLL_ENV), ANIMESTUDIO_DUMMY_DLL_ENV
-
+        resolved = validate_dummy_dll_dir(env_value, ANIMESTUDIO_DUMMY_DLL_ENV)
+        if resolved is not None:
+            return resolved, ANIMESTUDIO_DUMMY_DLL_ENV
     candidates = (
         (game_root / "DummyDll", "game root DummyDll"),
         (game_root.parent / "DummyDll", "game install DummyDll"),
@@ -2618,6 +2623,8 @@ def main() -> int:
         log(f"  animestudio dummy dlls: {animestudio_dummy_dlls} ({animestudio_dummy_dll_source})")
     else:
         log("  animestudio dummy dlls: not configured")
+        if animestudio_mono_behaviour_type_tree_priority == "ScriptFirst":
+            log("  warning: script-first requested without DummyDlls; AnimeStudio will use serialized fallback behavior")
     log("  source inventory: disabled")
     log(f"  report-only mode: {'enabled' if args.report_only else 'disabled'}")
     previous_summary_path = reports_root / "export_full_summary.json"

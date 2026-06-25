@@ -34,13 +34,14 @@
         <span id="language-label">&#35821;&#35328;</span>
         <select id="language"></select>
       </label>
-      <label class="topbar-control" for="ui-language">
+      <div class="topbar-control ui-language-control" aria-labelledby="ui-language-label">
         <span id="ui-language-label">&#30028;&#38754;</span>
-        <select id="ui-language">
-          <option value="zh">&#20013;&#25991;</option>
-          <option value="en">English</option>
-        </select>
-      </label>
+        <button id="ui-language" class="ui-language-switch" type="button" role="switch" aria-checked="false" data-locale="zh" value="zh" aria-label="&#20999;&#25442;&#30028;&#38754;&#35821;&#35328; / Switch UI language" title="&#20999;&#25442;&#30028;&#38754;&#35821;&#35328; / Switch UI language">
+          <span class="ui-language-option ui-language-option-zh" data-locale-label="zh">&#20013;&#25991;</span>
+          <span class="ui-language-track" aria-hidden="true"><span class="ui-language-thumb"></span></span>
+          <span class="ui-language-option ui-language-option-en" data-locale-label="en">EN</span>
+        </button>
+      </div>
     </div>
   </header>
   <div id="views">
@@ -59,8 +60,8 @@
           </header>
 
           <div id="story-todo-note" class="todo-note" role="note">
-            <span class="todo-note-tag">TODO</span>
-            <span class="todo-note-text">&#24453;&#21150;&#65306;&#24674;&#22797;&#21516;&#19968;&#20219;&#21153;&#20869;&#30340;&#22330;&#26223;&#39034;&#24207;&#65288;Recover scene orders within a mission&#65289;</span>
+            <span id="story-todo-tag" class="todo-note-tag">TODO</span>
+            <span id="story-todo-text" class="todo-note-text">&#24453;&#21150;&#65306;&#24674;&#22797;&#21516;&#19968;&#20219;&#21153;&#20869;&#30340;&#22330;&#26223;&#39034;&#24207;&#65288;Recover scene orders within a mission&#65289;</span>
           </div>
 
           <div id="filter-panel" class="filters">

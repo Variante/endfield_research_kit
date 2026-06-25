@@ -835,8 +835,8 @@ function bindEvents() {
   $("#language").addEventListener("change", (ev) => {
     switchLanguage(ev.target.value);
   });
-  $("#ui-language").addEventListener("change", (ev) => {
-    setUiLocale(ev.target.value);
+  $("#ui-language").addEventListener("click", (ev) => {
+    setUiLocale(ev.currentTarget.dataset.nextLocale || "en");
   });
   $("#filter-toggle").addEventListener("click", () => {
     setFiltersCollapsed(!STATE.filtersCollapsed);
