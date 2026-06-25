@@ -35,7 +35,7 @@ python scripts\package_webui.py
 Use `setup_first_time.bat` as the user-facing all-in-one first-time setup path
 from an installed game client. It initializes/builds AnimeStudio, verifies the
 integrated AnimeStudio VFS/audio commands, runs the installed-game Story export,
-runs the Assets export, creates the initial Updates baseline, then starts or
+prints optional Assets/media and Updates follow-up commands, then starts or
 reuses the default WebUI server unless `--no-serve` is passed.
 
 Use `export.bat` as the default Story/Text Tables rebuild path from an existing

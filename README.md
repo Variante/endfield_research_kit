@@ -54,25 +54,32 @@ Run the all-in-one setup script from the repository root. Pass the installed
 ```
 
 The script initializes the AnimeStudio submodule, builds AnimeStudio, verifies
-AnimeStudio's integrated VFS/audio commands, exports Story/Text Tables data,
-exports Assets tab media and CN audio into repo-local output folders, creates
-the first Updates baseline, and starts or reuses the WebUI server at
-`http://127.0.0.1:8765/`.
+AnimeStudio's integrated VFS/audio commands, exports Story/Text Tables data
+into `export_full/` and `webui/data/`, then starts or reuses the WebUI server
+at `http://127.0.0.1:8765/`.
+
+It intentionally skips the heavier optional passes. Run `export_assets.bat`
+later when you want Assets tab media and playable CN audio, and run
+`build_updates.bat --init-build` when you want to initialize the Updates tab
+baseline.
 
 The local `tools/AnimeStudio` fork includes custom Endfield VFS/export work
 informed by [fluffy-dumper](https://git.nekolab.app/fluffield/fluffy-dumper)
 and [EIHRTeam/EndfieldStudio](https://github.com/EIHRTeam/EndfieldStudio).
 Many thanks to those projects and their maintainers for the groundwork.
 
-First-time setup is intentionally heavy. The Story/Text Tables rebuild is much
-faster once `export_full/` exists, but the installed-game export plus full
-Assets tab media and CN audio refresh can take several hours. The full asset
-path has been observed around 27 GiB of process-tree RAM on a 64 GiB workstation;
-use `--skip-assets` for a lighter first pass on lower-RAM systems, then run
-`export_assets.bat --export-from-game --animestudio-jobs 1` later when you are
-ready for the media/audio pass. Keep generous free disk space for `export_full/`,
-decoded audio, reports, and optional packages; 100 GB free is a sensible
-starting point, and debug/full media workflows can need more.
+First-time setup still does real work. Building AnimeStudio and exporting
+Story/Text Tables can take a while; the optional installed-game asset/media and
+CN audio refresh can take several hours. The full asset path has been observed
+around 27 GiB of process-tree RAM on a 64 GiB workstation, so 64 GiB system RAM
+is the comfortable target for full media refreshes. On lower-RAM systems, start
+with the base setup, then run the optional asset pass later with
+`--webui-assets` or `--animestudio-jobs 1`.
+
+Keep plenty of free disk space for `export_full/`, decoded audio, reports, and
+optional packages. Around 100 GB free is a practical starting point for normal
+use; plan closer to 325 GB if you want debug-level asset diagnostics and broad
+media outputs.
 
 Keep that terminal window open while browsing the WebUI. To build everything
 without starting the server, add `--no-serve`:
@@ -83,8 +90,7 @@ without starting the server, add `--no-serve`:
 
 Useful setup options:
 
-- `--skip-assets`: build Story/Text Tables first and skip the heavier Assets tab
-  media and CN audio export.
+- `--no-serve`: build Story/Text Tables without starting the WebUI server.
 - `--help`: show the script help and examples.
 
 For troubleshooting and implementation details behind the wrappers, see
@@ -102,16 +108,38 @@ the faster rebuild commands:
 python serve.py
 ```
 
-Use `.\export.bat --export-from-game` again after the installed game updates,
-after `scripts\verify_export_freshness.py` reports stale source roots, or when
-you intentionally want to refresh `export_full/` from the installed client. Run
-`.\export_assets.bat --export-from-game` when you also want to refresh decoded
-media and CN audio from the installed client.
+Plain `export.bat` rebuilds Story/Text Tables browser data from the existing
+`export_full/` and verifies freshness first. Use `export.bat --export-from-game`
+after the installed game updates, after `scripts\verify_export_freshness.py`
+reports stale source roots, or whenever you intentionally want to refresh
+`export_full/` from the installed client.
 
-Plain `.\export.bat` rebuilds Story/Text Tables browser data from an existing
-`export_full/` and verifies freshness first. `export_assets.bat` rebuilds the
-Assets tab index, compact Story media lookup, and CN audio links. For command
-internals and direct script entry points, see `scripts/README.md`.
+`export_assets.bat` without `--export-from-game` reuses existing decoded assets,
+rebuilds the Assets tab index and compact Story media lookup, then relinks
+existing CN audio. Pass `--export-from-game` when you want to refresh media or
+audio from the installed client.
+
+Installed-game asset refreshes have three modes:
+
+- `--full-assets`: default; exports the WebUI-facing image/model set plus
+  `Material` JSON, builds the full Assets browser index, and decodes CN audio.
+- `--webui-assets`: lean mode for WebUI-referenced `Texture2D` media when you
+  want a faster media refresh with less output.
+- `--debug-assets`: exhaustive AnimeStudio conversion/JSON diagnostics, then a
+  full Assets browser index from whatever browser-visible files were exported.
+
+AnimeStudio refreshes also accept worker and shard controls:
+
+```bat
+.\export_assets.bat --export-from-game --full-assets --animestudio-jobs 2 --animestudio-shards 16
+```
+
+`--animestudio-jobs` is the number of concurrent AnimeStudio worker processes;
+the default is `4`, but use `1` or `2` when RAM is tight. `--animestudio-shards`
+is the number of deterministic asset slices, defaulting to `16`; it tunes
+per-process asset batch size and does not by itself increase concurrency.
+`export.bat --export-from-game` accepts `--animestudio-jobs` for Story export
+work too.
 
 CN is rebuilt by default. To build more languages after the rebuild:
 
@@ -137,27 +165,54 @@ story images and videos; and a standalone audio zip with decoded story audio.
 Extract the story zip first, then extract the assets and audio zips into the
 same directory when those media or audio files are needed.
 
-## Update Tracking
+## Game Update Tracking
 
-Build the Updates tab with:
+The Updates tab needs two game-data exports: a saved previous export and the
+current export. That comparison lets the WebUI show what changed in the game
+while ignoring local WebUI edits, regenerated reports, scratch files, and other
+research workspace noise.
 
-```bat
-.\build_updates.bat
-```
-
-By default this compares the saved previous export in `export_1d2/` against
-the current export in `export_full/`, then writes
-`webui/data/updates/latest.json`. Use `--previous-export-root PATH` or
-`--export-root PATH` when comparing different export trees.
-
-Write an empty first-time baseline with:
+For a first-time export, there is no older game export to compare against yet.
+After `setup_first_time.bat` finishes, optionally initialize an empty baseline:
 
 ```bat
 .\build_updates.bat --init-build
 ```
 
-More specific update-tracking flags, pruning safeguards, and scanner-cache
-details are documented in `AGENTS.md` and `scripts/README.md`.
+When the game updates:
+
+1. Save the old `export_full/` before refreshing it. The default comparison
+   expects the previous export at `export_1d2/`, but you can use any folder if
+   you pass `--previous-export-root` later.
+2. Refresh the current export from the installed client:
+
+```bat
+.\export.bat --export-from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
+```
+
+3. If you also want media/audio changes in the Updates tab, refresh assets too:
+
+```bat
+.\export_assets.bat --export-from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
+```
+
+4. Build the Updates feed:
+
+```bat
+.\build_updates.bat
+```
+
+By default `build_updates.bat` compares `export_1d2/` against `export_full/` and
+writes `webui/data/updates/latest.json`. To compare different folders:
+
+```bat
+.\build_updates.bat --previous-export-root "D:\Endfield\old_export" --export-root "D:\Endfield\current_export"
+```
+
+Do not point update tracking at `webui/`, `reports/`, `memory/`, or `scratch/`.
+It is meant to compare exported game-data roots only. More specific flags,
+pruning safeguards, and scanner-cache details are documented in `AGENTS.md` and
+`scripts/README.md`.
 
 ## Active Layout
 

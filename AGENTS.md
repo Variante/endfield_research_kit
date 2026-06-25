@@ -30,9 +30,10 @@ port, unless the user explicitly asks for a second server.
 `setup_first_time.bat` is the user-facing all-in-one first-time setup path. It
 initializes `tools/AnimeStudio`, builds the AnimeStudio CLI, verifies the
 integrated AnimeStudio VFS/audio commands, runs `export.bat --export-from-game`,
-runs `export_assets.bat --export-from-game`, creates the initial Updates baseline,
-then starts or reuses the default WebUI server. Pass `--no-serve` when setup
-should finish without starting `serve.py`.
+prints optional `export_assets.bat --export-from-game` and
+`build_updates.bat --init-build` follow-up commands, then starts or reuses the
+default WebUI server. Pass `--no-serve` when setup should finish without
+starting `serve.py`.
 
 `export.bat` is the canonical Story/Text Tables WebUI rebuild from an existing
 `export_full/`. It verifies that `export_full/` matches the current installed

@@ -11,7 +11,6 @@ if /I "%~1"=="help" goto :help
 
 set "GAME_ROOT="
 set "SERVE_WEBUI=1"
-set "SKIP_ASSETS=0"
 
 :parse_args
 if "%~1"=="" goto :parsed_args
@@ -51,7 +50,7 @@ if /I "%ARG%"=="--no-serve" (
   goto :parse_args
 )
 if /I "%ARG%"=="--skip-assets" (
-  set "SKIP_ASSETS=1"
+  echo [setup] --skip-assets is no longer needed; setup now skips optional assets and Updates by default.
   shift
   goto :parse_args
 )
@@ -78,7 +77,7 @@ if not exist "%GAME_ROOT%\" (
 )
 
 echo.
-echo [setup 1/7] Checking required commands...
+echo [setup 1/6] Checking required commands...
 call :require_command git "Install Git, then rerun this script."
 if errorlevel 1 goto :failed
 call :require_command python "Install Python 3 and make sure python is on PATH."
@@ -89,12 +88,12 @@ python --version
 if errorlevel 1 goto :failed
 
 echo.
-echo [setup 2/7] Initializing the AnimeStudio submodule...
+echo [setup 2/6] Initializing the AnimeStudio submodule...
 git submodule update --init tools/AnimeStudio
 if errorlevel 1 goto :failed
 
 echo.
-echo [setup 3/7] Building the AnimeStudio CLI...
+echo [setup 3/6] Building the AnimeStudio CLI...
 call .\scripts\animestudio\setup_dotnet9.bat
 if errorlevel 1 goto :failed
 call .\scripts\animestudio\rebuild.bat -Target CLI
@@ -106,7 +105,7 @@ if not exist "%ANIMESTUDIO_EXE%" (
 )
 
 echo.
-echo [setup 4/7] Verifying AnimeStudio VFS commands...
+echo [setup 4/6] Verifying AnimeStudio VFS commands...
 call :check_animestudio_vfs_help dump
 if errorlevel 1 goto :failed
 call :check_animestudio_vfs_help audio
@@ -117,24 +116,18 @@ call :check_animestudio_vfs_help list
 if errorlevel 1 goto :failed
 
 echo.
-echo [setup 5/7] Exporting Story and Reference data from the installed game...
+echo [setup 5/6] Exporting Story and Text Tables data from the installed game...
 call .\export.bat --export-from-game --game-root "%GAME_ROOT%"
 if errorlevel 1 goto :failed
 
-if "%SKIP_ASSETS%"=="1" (
-  echo.
-  echo [setup 6/7] Skipping asset and CN audio export because --skip-assets was passed.
-) else (
-  echo.
-  echo [setup 6/7] Exporting Assets tab media and CN audio from the installed game...
-  call .\export_assets.bat --export-from-game --game-root "%GAME_ROOT%"
-  if errorlevel 1 goto :failed
-)
-
 echo.
-echo [setup 7/7] Creating the initial Updates baseline...
-call .\build_updates.bat --init-build
-if errorlevel 1 goto :failed
+echo [setup 6/6] Optional follow-up steps for a fuller WebUI experience...
+echo [setup] Asset media and CN audio export is optional and can take several hours.
+echo [setup] Run this later when you want Assets tab media and playable CN audio:
+echo [setup]   .\export_assets.bat --export-from-game --game-root "%GAME_ROOT%"
+echo [setup] Updates tracking is optional until you want the Updates tab baseline/feed.
+echo [setup] Initialize a first-time empty baseline with:
+echo [setup]   .\build_updates.bat --init-build
 
 echo.
 echo [setup] First-time setup finished.
@@ -200,7 +193,7 @@ popd
 exit /b 1
 
 :help
-echo Usage: setup_first_time.bat [--game-root PATH] [--no-serve] [--skip-assets]
+echo Usage: setup_first_time.bat [--game-root PATH] [--no-serve]
 echo.
 echo Runs the full first-time WebUI setup from an installed Endfield client:
 echo   1. check Git, Python, and PowerShell
@@ -208,16 +201,14 @@ echo   2. initialize tools\AnimeStudio
 echo   3. build the AnimeStudio CLI
 echo   4. verify AnimeStudio VFS/audio commands
 echo   5. run export.bat --export-from-game
-echo   6. run export_assets.bat --export-from-game
-echo   7. run build_updates.bat --init-build
-echo   8. start python serve.py, unless a default server is already running
+echo   6. print optional export_assets/build_updates follow-up commands
+echo   7. start python serve.py, unless a default server is already running
 echo.
 echo Options:
 echo   --game-root PATH        Installed Endfield_Data folder. Defaults to
 echo                           ENDFIELD_GAME_ROOT, then:
 echo                           %DEFAULT_GAME_ROOT%
-echo   --no-serve             Build everything, but do not start the WebUI server.
-echo   --skip-assets          Skip the heavier Assets tab media and CN audio export.
+echo   --no-serve             Build Story/Text Tables, but do not start the WebUI server.
 echo   --help                 Show this help text.
 echo.
 echo Examples:

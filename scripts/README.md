@@ -18,9 +18,9 @@ From the repo root:
 
 For a fresh checkout, prefer the root `setup_first_time.bat` wrapper. It
 initializes and builds the required external tools, runs the installed-game
-Story/Text Tables export, runs the Assets tab media and CN audio export, creates the
-initial Updates baseline, and starts or reuses the default WebUI server. Pass
-`--no-serve` if the setup should stop after the build/export steps.
+Story/Text Tables export, prints optional Assets/media and Updates follow-up
+commands, and starts or reuses the default WebUI server. Pass `--no-serve` if
+the setup should stop after the build/export steps.
 
 `export.bat` is the normal Story/Text Tables WebUI rebuild path from an existing
 `export_full/`. It runs:
