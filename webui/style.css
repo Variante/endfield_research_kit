@@ -42,13 +42,73 @@ html, body {
 #topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 16px;
+  gap: 20px;
+  padding: 10px 20px;
   border-bottom: 1px solid var(--border);
-  background:
-    linear-gradient(180deg, rgba(var(--accent-rgb), 0.08), rgba(var(--accent-rgb), 0)),
-    var(--bg-2);
+  background: var(--bg-3);
+  backdrop-filter: saturate(1.1);
+}
+
+/* ------- Brand / logo slot ------- */
+#brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--accent), #ff8a5c);
+  color: var(--on-accent);
+  box-shadow: 0 2px 6px rgba(var(--accent-rgb), 0.28);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+/* If a logo <img> is dropped in, let it fill the slot cleanly. */
+.brand-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.brand-logo-mark {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+}
+
+.brand-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.brand-subtitle {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 .topbar-copy {
@@ -69,8 +129,44 @@ html, body {
 
 #view-tabs {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   flex-wrap: wrap;
+  padding: 3px;
+  border-radius: 10px;
+  background: rgba(var(--fg-rgb), 0.05);
+}
+
+/* ------- Story-page TODO note (story view sidebar only) ------- */
+.todo-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  background: rgba(var(--accent-rgb), 0.05);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.todo-note-tag {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.todo-note-text {
+  min-width: 0;
 }
 
 .topbar-actions {
@@ -4027,9 +4123,14 @@ body.is-resizing-pane * {
   }
 
   #topbar {
-    padding: 12px;
+    padding: 10px 12px;
     align-items: stretch;
     flex-direction: column;
+    gap: 12px;
+  }
+
+  #brand {
+    justify-content: flex-start;
   }
 
   .topbar-actions {
@@ -4288,24 +4389,27 @@ html, body, #topbar, #left, #asset-left, #reference-left, #updates-app aside,
   letter-spacing: 0.06em;
 }
 
-/* Sharper view tabs — drop the giant pill, use a subtle squared chip */
+/* Modern segmented-control tabs — borderless chips inside the #view-tabs rail */
 .view-tab {
-  border-radius: 4px;
-  letter-spacing: 0.08em;
+  padding: 7px 16px;
+  border-radius: 7px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   background: transparent;
-  border-color: var(--border);
+  border: 1px solid transparent;
   color: var(--muted);
+  font-weight: 600;
 }
 .view-tab:hover {
-  background: rgba(var(--accent-rgb), 0.10);
-  border-color: var(--border);
+  background: rgba(var(--fg-rgb), 0.06);
+  border-color: transparent;
   color: var(--text);
 }
 .view-tab.is-active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
+  background: var(--bg-3);
+  border-color: var(--border);
+  color: var(--accent);
+  box-shadow: 0 1px 3px rgba(var(--fg-rgb), 0.10);
 }
 
 /* Themed scrollbars (WebKit + Firefox) */

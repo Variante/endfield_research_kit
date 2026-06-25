@@ -3,15 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>&#32456;&#26411;&#22320;&#23545;&#35805;&#27983;&#35272;&#22120; / Endfield Story Browser</title>
-<link rel="stylesheet" href="style.css?v=20260625-topbar-language">
+<title>&#32456;&#26411;&#22320;&#30740;&#31350;&#24037;&#20855; / Endfield Research Kit</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260625-erk">
+<link rel="stylesheet" href="style.css?v=20260625-research-kit">
 </head>
 <body data-active-view="story">
 <div id="shell">
   <header id="topbar">
+    <a id="brand" href="#" aria-label="Endfield Research Kit">
+      <span id="brand-logo" class="brand-logo" aria-hidden="true">
+        <!-- Logo slot: drop an <img> here, or restyle .brand-logo. -->
+        <span class="brand-logo-mark">ERK</span>
+      </span>
+      <span class="brand-copy">
+        <span id="brand-title" class="brand-title">&#32456;&#26411;&#22320;&#30740;&#31350;&#24037;&#20855;</span>
+        <span id="brand-subtitle" class="brand-subtitle">&#21095;&#24773; &#183; &#34920;&#26684; &#183; &#36164;&#28304; &#183; &#26356;&#26032;</span>
+      </span>
+    </a>
     <nav id="view-tabs" aria-label="Primary views">
       <button id="story-tab" class="view-tab is-active" type="button" data-view="story">&#21095;&#24773;</button>
-      <button id="reference-tab" class="view-tab" type="button" data-view="reference">&#21442;&#32771;</button>
+      <button id="reference-tab" class="view-tab" type="button" data-view="reference">&#34920;&#26684;</button>
       <button id="assets-tab" class="view-tab" type="button" data-view="assets">&#36164;&#28304;</button>
       <button id="updates-tab" class="view-tab" type="button" data-view="updates">&#26356;&#26032;</button>
     </nav>
@@ -43,6 +54,11 @@
               <button id="show-debug" class="header-toggle-button" type="button" aria-pressed="false"><span id="show-debug-label">&#26174;&#31034;&#35843;&#35797;&#20449;&#24687;</span></button>
             </div>
           </header>
+
+          <div id="story-todo-note" class="todo-note" role="note">
+            <span class="todo-note-tag">TODO</span>
+            <span class="todo-note-text">&#24453;&#21150;&#65306;&#24674;&#22797;&#21516;&#19968;&#20219;&#21153;&#20869;&#30340;&#22330;&#26223;&#39034;&#24207;&#65288;Recover scene orders within a mission&#65289;</span>
+          </div>
 
           <div id="filter-panel" class="filters">
             <section class="filter-section filter-section-basic" data-filter-section="basic" data-fixed-open="1">
@@ -153,7 +169,7 @@
       <div id="reference-app">
         <aside id="reference-left">
           <header>
-            <h1 id="reference-title">&#25991;&#26412;&#21442;&#32771;</h1>
+            <h1 id="reference-title">&#25991;&#26412;&#34920;&#26684;</h1>
             <div id="reference-stats"><span id="reference-count">?</span> <span id="reference-count-label">&#24352;&#34920;</span></div>
           </header>
 
@@ -380,11 +396,11 @@
 <script src="src/core/locale.js?v=20260520-webui-framework"></script>
 <script src="src/core/paths.js?v=20260520-webui-framework"></script>
 <script src="src/ui/media_player.js?v=20260520-webui-framework"></script>
-<script src="app_labels.js?v=20260524-reset-filter"></script>
+<script src="app_labels.js?v=20260625-text-tables"></script>
 <script src="app_tree.js?v=20260524-reset-expansion"></script>
-<script src="app.js?v=20260524-reset-filter"></script>
-<script src="assets.js?v=20260512-basic-filter-section"></script>
-<script src="src/features/reference/index.js?v=20260612-chip-toggle-fix"></script>
-<script src="src/features/updates/index.js?v=20260612-chip-toggle-fix"></script>
+<script src="app.js?v=20260625-research-kit"></script>
+<script src="assets.js?v=20260625-research-kit"></script>
+<script src="src/features/reference/index.js?v=20260625-text-tables"></script>
+<script src="src/features/updates/index.js?v=20260625-research-kit"></script>
 </body>
 </html>
