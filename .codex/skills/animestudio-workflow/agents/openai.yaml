@@ -1,0 +1,3 @@
+interface:
+  display_name: "AnimeStudio Workflow"
+  short_description: "Build, run, patch, and debug the local Endfield AnimeStudio exporter."

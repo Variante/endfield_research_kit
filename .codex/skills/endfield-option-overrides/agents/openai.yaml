@@ -1,0 +1,4 @@
+interface:
+  display_name: "Endfield Option Overrides"
+  short_description: "Edit WebUI option recovery overrides safely."
+  default_prompt: "Use the Endfield option override workflow to add, update, or validate a WebUI-only manual option placement or response override."
