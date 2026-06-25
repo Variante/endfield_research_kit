@@ -56,11 +56,36 @@ Important options:
 --export_type       Convert, Raw, Dump, or JSON.
 --key               XOR byte for MiHoYoBinData.
 --ai_file           Resource index JSON for GI-style container recovery.
---dummy_dlls        DummyDll folder for MonoBehaviour script schema recovery.
+--dummy_dlls        Optional DummyDll folder for MonoBehaviour script schema recovery.
 --filter_data       JSON list of source, offset, name, pathID, and type items.
 ```
 
 `--types` replaces the default App.config parse/export surface. It does not layer on top of defaults. If GameObject or Animator export is selected, the CLI also parses dependencies such as Texture2D, Material, Animator, or GameObject as needed.
+
+## Integrated VFS Commands
+
+The CLI also exposes the Endfield VFS subcommands used by the WebUI pipeline:
+
+```bat
+AnimeStudio.CLI.exe dump --streaming-assets path\to\StreamingAssets --output export_full\structured\StreamingAssets
+AnimeStudio.CLI.exe dump --streaming-assets path\to\Persistent --output export_full\structured\Persistent --fallback-assets path\to\StreamingAssets
+AnimeStudio.CLI.exe audio --streaming-assets path\to\StreamingAssets --output export_full\structured\Audio\CN --language chinese --format wav --block all
+AnimeStudio.CLI.exe vfs-index --streaming-assets path\to\StreamingAssets --output export_full\recovered\AnimeStudio-cli\StreamingAssets\vfs_index\bundle_vfs_index.json --block-type bundle
+AnimeStudio.CLI.exe list
+```
+
+`dump`, `audio`, and `vfs-index` accept `--fallback-assets`; `list` prints the
+known dumpable VFS block types. The WebUI wrappers default to this same
+AnimeStudio executable:
+
+```text
+scripts\export_full_from_game.py  DEFAULT_STRUCTURED_DUMPER = DEFAULT_ANIMESTUDIO
+scripts\build_audio.py            DEFAULT_AUDIO_DUMPER = DEFAULT_ANIMESTUDIO
+```
+
+`export_assets.bat --export-from-game` writes the lightweight bundle VFS index
+through `vfs-index`, then decodes CN audio through `audio` before relinking
+browser conversations.
 
 ## Wrapper Integration
 
@@ -70,16 +95,17 @@ Important options:
 python .\scripts\export_full_from_game.py --animestudio-scope story --animestudio-stages maps json_by_type
 ```
 
-Pass a usable DummyDll folder to the story JSON export with:
+Pass an optional usable DummyDll folder to the story JSON export with:
 
 ```bat
 .\export.bat --export-from-game --animestudio-dummy-dlls path\to\DummyDll
 ```
 
-The wrapper validates explicit DummyDll paths, then falls back to
+The wrapper checks explicit DummyDll paths, then falls back to
 `ANIMESTUDIO_DUMMY_DLLS`, then known local locations such as `tools\DummyDll`.
 It only forwards AnimeStudio.CLI `--dummy_dlls` when the selected directory
-exists and contains `.dll` files.
+exists and contains `.dll` files. Missing or stale DummyDll paths warn and
+continue without DummyDlls instead of failing the export.
 
 `export_assets.bat --export-from-game` defaults to the full asset mode:
 
@@ -220,7 +246,7 @@ High-level flow in `Program.Run`:
 
 If both decode paths fail but raw object data exists, the exporter writes metadata-only JSON with `$animestudio`, `type`, `name`, `pathId`, raw-data SHA-256, raw length, and decode error. This is intentional: the object was found and preserved for linking, but the script payload was not decoded into fields.
 
-Use `--dummy_dlls` when script field recovery matters. Without usable DummyDlls, TypeTree fallback may still work for built-in or serialized objects, but script-specific MonoBehaviour payloads can become metadata-only.
+Use `--dummy_dlls` only when script field recovery matters. Without usable DummyDlls, serialized TypeTree fallback may still work for built-in or serialized objects, and script-specific MonoBehaviour payloads may fall back to partial or metadata-only output.
 
 ## Export Error Logs
 

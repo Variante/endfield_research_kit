@@ -1,13 +1,13 @@
 ---
 name: animestudio-workflow
-description: Use when working on the local tools/AnimeStudio exporter for Endfield, including compiling AnimeStudio.CLI, calling it directly or through export.bat and export_assets.bat, debugging MonoBehaviour and Export error logs, inspecting code structure, and reducing per-worker memory use.
+description: Use when working on the local tools/AnimeStudio exporter for Endfield, including compiling AnimeStudio.CLI, calling it directly or through export.bat and export_assets.bat, using integrated VFS dump/audio/index commands, debugging MonoBehaviour and Export error logs, inspecting code structure, and reducing per-worker memory use.
 ---
 
 # Animestudio Workflow
 
 ## When To Use
 
-Use this skill for AnimeStudio or Anime Studio tasks in this repo: building the CLI, changing `tools/AnimeStudio`, running installed-game Unity asset exports, explaining CLI arguments, investigating object parser failures, or tuning `--animestudio-jobs`.
+Use this skill for AnimeStudio or Anime Studio tasks in this repo: building the CLI, changing `tools/AnimeStudio`, running installed-game Unity asset exports, running integrated VFS structured/audio/index commands, explaining CLI arguments, investigating object parser failures, or tuning `--animestudio-jobs`.
 
 If the task is about the whole WebUI export flow, also use `endfield-webui-workflow`. For implementation details, read `references/animestudio.md` before changing code or diagnosing logs.
 
@@ -51,6 +51,9 @@ Both pass AnimeStudio options through to `scripts\export_full_from_game.py`. Kee
 
 The default is now `4` so balanced shards/types run in parallel. Lower
 `--animestudio-jobs` when peak memory is too high.
+`export.bat --export-from-game` also uses AnimeStudio as the default structured
+data dumper. `export_assets.bat --export-from-game` uses AnimeStudio for the
+lightweight `vfs-index` snapshot and CN audio decode before relinking.
 Asset conversion uses more shards than workers by default: `--animestudio-shards 16`
 with `--animestudio-jobs 4`; adjust `--animestudio-shards` separately to tune
 per-process asset slice size.
@@ -58,6 +61,21 @@ per-process asset slice size.
 image/model asset export plus `Material` JSON; add `--webui-assets` when only
 WebUI-referenced Texture2D media is needed, or `--debug-assets` for exhaustive
 conversion/JSON diagnostics.
+
+## Integrated VFS Commands
+
+AnimeStudio.CLI now owns the Endfield VFS paths used by the WebUI wrappers:
+
+```bat
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe dump --help
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe audio --help
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe vfs-index --help
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe list --help
+```
+
+`dump`, `audio`, and `vfs-index` must expose `--fallback-assets`. Use direct
+subcommand calls for parity probes or targeted extraction; use the parent
+wrappers for normal WebUI exports.
 
 ## Direct CLI Shape
 
@@ -73,7 +91,7 @@ Common direct options:
 --map_op Both --map_type JSON
 --export_type JSON --types MonoBehaviour:Both
 --export_type Convert --types Texture2D:Both
---dummy_dlls path\to\DummyDll
+--dummy_dlls path\to\DummyDll  (optional)
 --filter_data export_full\recovered\AnimeStudio-cli\timeline_targets.json
 ```
 

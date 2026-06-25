@@ -1,18 +1,18 @@
 ---
 name: endfield-webui-workflow
-description: "Use this skill for the static WebUI workflow: refresh/export, local serving, packaging, Updates tab checks, asset/index refresh, and Story/Reference frontend behavior such as inline SNS image rendering."
+description: "Use this skill for the static WebUI workflow: refresh/export, local serving, packaging, Updates tab checks, asset/index refresh, and Story/Text Tables frontend behavior such as inline SNS image rendering."
 ---
 
 # Endfield WebUI Workflow
 
 Use this skill when the task is about the static browser under `webui/`, the
 export/build/package flow that feeds it, or frontend behavior visible in the
-Story, Reference, Updates, or Assets tabs.
+Story, Text Tables, Updates, or Assets tabs.
 
 This is the first skill to open for requests such as:
 
 - refresh the WebUI from local game data
-- debug Story/Reference/Updates/Assets browser behavior
+- debug Story/Text Tables/Updates/Assets browser behavior
 - verify packaging or local serving
 - adjust inline image rendering, SNS media presentation, or preview behavior
 
@@ -33,19 +33,18 @@ python scripts\package_webui.py
 ```
 
 Use `setup_first_time.bat` as the user-facing all-in-one first-time setup path
-from an installed game client. It initializes/builds AnimeStudio, downloads and
-builds the patched local `fluffy-dumper`, runs the installed-game Story export,
+from an installed game client. It initializes/builds AnimeStudio, verifies the
+integrated AnimeStudio VFS/audio commands, runs the installed-game Story export,
 runs the Assets export, creates the initial Updates baseline, then starts or
 reuses the default WebUI server unless `--no-serve` is passed.
 
-Use `export.bat` as the default story/reference rebuild path from an existing
+Use `export.bat` as the default Story/Text Tables rebuild path from an existing
 `export_full/`. It verifies export freshness with a fast required-output
 presence check, refreshes DialogIdTable, narrative video binding, and story
-source-link evidence in parallel, rebuilds CN story/reference data, leaves the
+source-link evidence in parallel, rebuilds CN Story/Text Tables data, leaves the
 OCR-managed Story order override untouched, and leaves decoded CN audio relinking
 to `export_assets.bat`.
-It skips installed-game export, fluffy-dumper structured export, and AnimeStudio
-story extraction by default. Pass `--export-from-game` only when installed game
+It skips installed-game export and AnimeStudio story extraction by default. Pass `--export-from-game` only when installed game
 data should be refreshed and the story export tools should run.
 Use `build_updates.bat` as the standalone Updates feed comparison. It tracks
 WebUI-facing exported text JSON plus exported image/model/video assets and
@@ -139,10 +138,10 @@ the stdlib-only export path.
 
 - `webui/index.html`: shell and tab containers
 - `webui/style.css`: shared layout and inline media presentation
-- `webui/app.js`: story/reference data loading and conversation rendering
+- `webui/app.js`: story/text-table data loading and conversation rendering
 - `webui/app_tree.js`: filters, grouping, and sidebar tree rows
 - `webui/app_labels.js`: labels and shared Story formatting helpers
-- `webui/reference.js`: raw table/reference browser
+- `webui/reference.js`: raw text-table browser
 - `webui/updates.js`: installed-game update feed
 - `webui/assets.js`: exported asset browser
 
@@ -248,7 +247,7 @@ after editing them.
 
 ## Inline Image Rules
 
-Current Story/Reference inline image behavior:
+Current Story/Text Tables inline image behavior:
 
 - SNS emoji images such as `sns_emoji_*` are treated as regular inline emoji.
   They render inline, do not open the modal preview, and do not show a hover

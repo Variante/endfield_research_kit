@@ -12,7 +12,7 @@ heavyweight recovery work in the Python builders.
 - `app_labels.js`: UI text, labels, and shared story formatting helpers.
 - `app_tree.js`: story filters, grouping, sorting, and sidebar tree rows.
 - `app.js`: story data loading and conversation rendering.
-- `src/features/reference/`: raw localized table/reference browser.
+- `src/features/reference/`: raw localized text-table browser.
 - `src/features/updates/`: focused exported text JSON and asset update browser.
 - `assets.js`: exported asset browser and preview panel.
 
@@ -75,7 +75,7 @@ heavyweight recovery work in the Python builders.
   `webui/overrides/narrative_videos.json`; attach rules can set `audioFrom`
   to copy source cutscene audio events during audio relink. Videos stay
   available as standalone `video_*` rows after the Story builder is rerun.
-- `Reference`: raw localized rows from `data/lang/<code>/reference/`, with
+- `Text Tables`: raw localized rows from `data/lang/<code>/reference/`, with
   source/table filters and on-demand table loading.
 - `Updates`: latest change summary from `data/updates/latest.json`, generated
   by comparing WebUI-facing exported text JSON and exported image/model/video
@@ -117,7 +117,7 @@ heavyweight recovery work in the Python builders.
   pipeline updates it when applied, and the Story sidebar can save row moves or
   toggle a mission lock. `missions.<mission>.locked: true` freezes a mission so
   OCR recovery and browser-side save logic preserve the saved list exactly.
-- `data/lang/<code>/reference/`: Reference tables; persistent rows may share
+- `data/lang/<code>/reference/`: Text table payloads; persistent rows may share
   streaming payloads or use small overlay files for changed rows.
 - `data/assets/story_media.json`: compact Story inline image/video lookup using
   the same `entries` shape as the full asset indexes. The full
