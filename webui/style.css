@@ -105,10 +105,32 @@ html, body {
 .brand-subtitle {
   font-size: 10px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.04em;
   color: var(--muted);
   white-space: nowrap;
+}
+
+/* GitHub link in the subtitle slot */
+.brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.brand-link-icon {
+  flex: 0 0 auto;
+  opacity: 0.85;
+}
+
+.brand-link:hover {
+  color: var(--accent);
+}
+
+.brand-link:hover span {
+  text-decoration: underline;
 }
 
 .topbar-copy {

@@ -2592,8 +2592,6 @@ function applyUiStrings() {
 
   const brandTitle = $("#brand-title");
   if (brandTitle) brandTitle.textContent = uiText("suiteTitle");
-  const brandSubtitle = $("#brand-subtitle");
-  if (brandSubtitle) brandSubtitle.textContent = uiText("suiteSubtitle");
 
   $("#story-tab").textContent = uiText("storyTab");
   $("#assets-tab").textContent = uiText("assetsTab");
