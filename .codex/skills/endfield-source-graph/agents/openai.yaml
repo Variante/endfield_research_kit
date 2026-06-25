@@ -1,0 +1,4 @@
+interface:
+  display_name: "Endfield Source Graph"
+  short_description: "Quickly query the repo's Endfield source graph."
+  default_prompt: "Use $endfield-source-graph to look up this story, option, asset, actor, audio id, or table reference."

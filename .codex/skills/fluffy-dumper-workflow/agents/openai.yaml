@@ -1,0 +1,3 @@
+interface:
+  display_name: "Fluffy Dumper Workflow"
+  short_description: "Build, run, patch, and debug the local Endfield fluffy-dumper workspace."
