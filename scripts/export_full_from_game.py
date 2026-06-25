@@ -30,6 +30,7 @@ DEFAULT_OUTPUT = ROOT / "export_full"
 DEFAULT_REPORTS = ROOT / "reports"
 DEFAULT_FLUFFY = ROOT / "tools" / "fluffy-dumper-src" / "target" / "release" / "fluffy-dumper.exe"
 DEFAULT_ANIMESTUDIO = ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
+DEFAULT_STRUCTURED_DUMPER = DEFAULT_ANIMESTUDIO
 SOURCES = ("StreamingAssets", "Persistent")
 ANIMESTUDIO_STAGES = ("maps", "convert_by_type", "json_by_type")
 ANIMESTUDIO_SCOPES = ("story", "assets", "all")
@@ -1159,9 +1160,11 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--fluffy",
+        "--structured-dumper",
+        dest="fluffy",
         type=Path,
-        default=DEFAULT_FLUFFY,
-        help="Path to fluffy-dumper executable",
+        default=DEFAULT_STRUCTURED_DUMPER,
+        help="Path to AnimeStudio CLI, or a legacy fluffy-dumper executable, for VFS structured exports",
     )
     parser.add_argument(
         "--animestudio",
@@ -1257,12 +1260,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--skip-structured",
         action="store_true",
-        help="Skip fluffy-dumper structured exports",
+        help="Skip VFS structured exports",
     )
     parser.add_argument(
         "--skip-vfs-index",
         action="store_true",
-        help="Skip the lightweight fluffy-dumper VFS metadata index used by asset exports",
+        help="Skip the lightweight VFS metadata index used by asset exports",
     )
     parser.add_argument(
         "--skip-animestudio",
@@ -2545,7 +2548,7 @@ def main() -> int:
     report_run_id = current_report_run_id()
     reports_dir = ensure_dir(reports_root / report_run_id)
     legacy_reports_dir = output_root / "reports"
-    fluffy = args.fluffy.resolve()
+    structured_dumper = args.fluffy.resolve()
     animestudio = args.animestudio.resolve()
     selected_sources = ordered_unique(args.sources)
     selected_animestudio_stages = ordered_unique(args.animestudio_stages)
@@ -2564,8 +2567,8 @@ def main() -> int:
 
     if not game_root.exists():
         raise SystemExit(f"Game root not found: {game_root}")
-    if not fluffy.exists() and (not args.skip_structured or vfs_index_enabled):
-        raise SystemExit(f"fluffy-dumper not found: {fluffy}")
+    if not structured_dumper.exists() and (not args.skip_structured or vfs_index_enabled):
+        raise SystemExit(f"structured dumper not found: {structured_dumper}")
     if not animestudio.exists() and not args.skip_animestudio:
         raise SystemExit(f"AnimeStudio CLI not found: {animestudio}")
     if args.skip_animestudio:
@@ -2681,7 +2684,7 @@ def main() -> int:
         if vfs_index_enabled and not args.report_only:
             log(f"  vfs index path: {current_vfs_index_path}")
             cmd = [
-                str(fluffy),
+                str(structured_dumper),
                 "vfs-index",
                 "-s",
                 str(source_root),
@@ -2712,7 +2715,7 @@ def main() -> int:
         if not args.skip_structured and not args.report_only:
             structured_out = structured_output_dir(output_root, source)
             log(f"  structured output dir: {structured_out}")
-            cmd = [str(fluffy), "dump", "-s", str(source_root), "-o", str(structured_out)]
+            cmd = [str(structured_dumper), "dump", "-s", str(source_root), "-o", str(structured_out)]
             if source == "Persistent":
                 fallback_root = game_root / "StreamingAssets"
                 if fallback_root.exists():

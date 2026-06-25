@@ -17,6 +17,8 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
 DEFAULT_FLUFFY = ROOT / "tools" / "fluffy-dumper-src" / "target" / "release" / "fluffy-dumper.exe"
+DEFAULT_ANIMESTUDIO = ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
+DEFAULT_AUDIO_DUMPER = DEFAULT_ANIMESTUDIO
 DEFAULT_EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_WEBUI_ROOT = ROOT / "webui"
 DEFAULT_AUDIO_ROOT = DEFAULT_EXPORT_ROOT / "structured" / "Audio"
@@ -1091,11 +1093,11 @@ def load_cached_event_audio_index(
     return dict(event_audio_by_id), event_evidence
 
 
-def run_fluffy_dumper(args: argparse.Namespace, language_info: dict[str, str], language_root: Path) -> None:
+def run_audio_dumper(args: argparse.Namespace, language_info: dict[str, str], language_root: Path) -> None:
     if args.skip_decode:
         return
     if not args.fluffy.exists():
-        raise SystemExit(f"fluffy-dumper not found: {args.fluffy}")
+        raise SystemExit(f"audio dumper not found: {args.fluffy}")
     if not args.streaming_assets.exists():
         raise SystemExit(f"StreamingAssets not found: {args.streaming_assets}")
 
@@ -1373,7 +1375,7 @@ def build_audio(args: argparse.Namespace) -> int:
         language_root.mkdir(parents=True, exist_ok=True)
 
     started = time.time()
-    run_fluffy_dumper(args, language_info, language_root)
+    run_audio_dumper(args, language_info, language_root)
 
     audio_dialog_path = find_audio_dialog_table(args.export_root)
     generic_audio = collect_audio_files(args.audio_root, args.webui_root, language_root, language)
@@ -1484,7 +1486,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--format", choices=("wav", "wem"), default="wav")
     parser.add_argument("--block", choices=("all", "voice", "audio", "initial-audio", "audit-audio"), default="all")
     parser.add_argument("--skip-decode", action="store_true", help="Only rebuild the audio index and story links.")
-    parser.add_argument("--fluffy", type=Path, default=DEFAULT_FLUFFY)
+    parser.add_argument("--fluffy", "--audio-dumper", dest="fluffy", type=Path, default=DEFAULT_AUDIO_DUMPER, help="Path to AnimeStudio CLI, or a legacy fluffy-dumper executable, for audio extraction.")
     parser.add_argument("--game-root", type=Path, default=DEFAULT_GAME_ROOT)
     parser.add_argument("--streaming-assets", type=Path, default=None)
     parser.add_argument("--fallback-assets", type=Path, default=None)
