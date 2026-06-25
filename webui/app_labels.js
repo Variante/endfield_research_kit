@@ -3,7 +3,6 @@
 const UI_TEXTS = {
   zh: {
     suiteTitle: "\u7ec8\u672b\u5730\u7814\u7a76\u5de5\u5177",
-    suiteSubtitle: "\u5267\u60c5 \u00b7 \u8868\u683c \u00b7 \u8d44\u6e90 \u00b7 \u66f4\u65b0",
     storyTab: "\u5267\u60c5",
     assetsTab: "\u8d44\u6e90",
     uiLanguage: "\u754c\u9762",
@@ -298,7 +297,6 @@ const UI_TEXTS = {
   },
   en: {
     suiteTitle: "Endfield Research Kit",
-    suiteSubtitle: "Story · Tables · Assets · Updates",
     storyTab: "Story",
     assetsTab: "Assets",
     uiLanguage: "UI",
