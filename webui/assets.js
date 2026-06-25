@@ -30,7 +30,7 @@
     zh: {
       showFilters: "\u663e\u793a\u7b5b\u9009",
       hideFilters: "\u9690\u85cf\u7b5b\u9009",
-      title: "\u5bfc\u51fa\u8d44\u6e90\u6d4f\u89c8\u5668",
+      title: "\u5bfc\u51fa\u8d44\u6e90",
       countLabel: "\u9879\u8d44\u6e90",
       searchPlaceholder: "\u641c\u7d22\u8def\u5f84 / \u540d\u79f0 / \u6587\u4ef6\u5939 / \u5206\u7ec4",
       type: "\u7c7b\u578b",
@@ -131,7 +131,7 @@
     en: {
       showFilters: "Show filters",
       hideFilters: "Hide filters",
-      title: "Exported Asset Browser",
+      title: "Exported Assets",
       countLabel: "assets",
       searchPlaceholder: "Search path / name / folder / group",
       type: "Type",

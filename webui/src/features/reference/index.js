@@ -1,8 +1,8 @@
 (() => {
   const REF_TEXTS = {
     zh: {
-      tab: "\u53c2\u8003",
-      title: "\u6587\u672c\u53c2\u8003",
+      tab: "\u8868\u683c",
+      title: "\u6587\u672c\u8868\u683c",
       countLabel: "\u5f20\u8868",
       search: "\u641c\u7d22\u8868 / ID / \u6587\u672c",
       source: "\u6765\u6e90",
@@ -18,8 +18,8 @@
       contentMatch: "\u5185\u5bb9\u5339\u914d",
     },
     en: {
-      tab: "Reference",
-      title: "Text Reference",
+      tab: "Tables",
+      title: "Text Tables",
       countLabel: "tables",
       search: "Search table / ID / text",
       source: "Source",
