@@ -24,14 +24,22 @@ The project is built around reproducible local exports:
   <img src="res/story_screenshot4.png" alt="Additional Endfield Research Kit WebUI screenshot" height="160">
 </p>
 
+## Disclaimer
+
 This repository is for research and study purposes only. It is intended for
 local inspection of data from a legally obtained installation, with generated
 outputs kept narrow and reproducible. Do not use it to redistribute proprietary
 game content or bypass the rights of the original creators.
 
-Most notes, recovery logic, and generated outputs here were produced with LLM
-assistance, so treat them as working research artifacts rather than authoritative
-facts. Expect mistakes and verify conclusions against the original data.
+Most notes, recovery logic, generated outputs, and documentation in this
+workspace were produced with LLM assistance. Treat them as working research
+artifacts, not authoritative facts. Expect mistakes, inspect the source data,
+and verify important conclusions yourself.
+
+The exported tables, story files, audio, videos, images, and update diffs can
+include unreleased or not-yet-seen game content. Browsing them may spoil story,
+characters, maps, events, mechanics, or other discoveries. If you care about a
+blind playthrough, be careful about what you export and open.
 
 Older exploration notes, demo status snapshots, and one-off recovery utilities
 belong under `memory/` so the repo root stays focused.
