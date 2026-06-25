@@ -49,7 +49,15 @@ Both pass AnimeStudio options through to `scripts\export_full_from_game.py`. Kee
 .\export_assets.bat --export-from-game --animestudio-jobs 2
 ```
 
-The default is `1` for lower peak memory. On the current 64 GiB workstation, `2` was the best measured setting; avoid `3` unless there is substantially more free RAM.
+The default is now `4` so balanced shards/types run in parallel. Lower
+`--animestudio-jobs` when peak memory is too high.
+Asset conversion uses more shards than workers by default: `--animestudio-shards 16`
+with `--animestudio-jobs 4`; adjust `--animestudio-shards` separately to tune
+per-process asset slice size.
+`export_assets.bat --export-from-game` now defaults to the full WebUI-facing
+image/model asset export plus `Material` JSON; add `--webui-assets` when only
+WebUI-referenced Texture2D media is needed, or `--debug-assets` for exhaustive
+conversion/JSON diagnostics.
 
 ## Direct CLI Shape
 

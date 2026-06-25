@@ -81,11 +81,32 @@ The wrapper validates explicit DummyDll paths, then falls back to
 It only forwards AnimeStudio.CLI `--dummy_dlls` when the selected directory
 exists and contains `.dll` files.
 
-`export_assets.bat --export-from-game` calls:
+`export_assets.bat --export-from-game` defaults to the full asset mode:
 
 ```bat
-python .\scripts\export_full_from_game.py --skip-structured --animestudio-scope assets --animestudio-stages convert_by_type json_by_type
+python .\scripts\export_full_from_game.py --skip-structured --animestudio-scope assets --animestudio-asset-mode full --animestudio-stages maps convert_by_type json_by_type
 ```
+
+Full asset mode uses the MessagePack asset map for per-type stages when safe:
+each type worker loads only source bundles that contain that type, and
+AnimeStudio indexes matched map/filter rows once so it can jump to selected
+Endfield block offsets without re-scanning the full filter list for every file.
+It exports the WebUI-facing image/model conversion set plus `Material` JSON for
+model/material/texture relations. Animator conversion stays on the broad path
+because FBX export may need related GameObject, Mesh, Material, and Texture2D
+dependencies.
+
+Pass `--webui-assets` to `export_assets.bat` or `--animestudio-asset-mode webui`
+for the lean WebUI-focused mode. That mode exports only WebUI-referenced
+`Texture2D` media. It writes a generated name-filter file from current Story/Wiki
+media references, builds JSON plus MessagePack AnimeStudio maps, then loads the
+MessagePack map with `--map_op AssetMap,Load` so matching map rows seed bundle
+offset filtering.
+
+Pass `--debug-assets` to `export_assets.bat` or `--animestudio-asset-mode debug`
+for the exhaustive diagnostic mode. That mode restores the old broad conversion
+set plus the full asset JSON set, then builds the normal full Assets browser
+index from whatever files are browser-visible.
 
 The Python wrapper uses:
 
@@ -94,8 +115,14 @@ scripts\export_full_from_game.py
 DEFAULT_ANIMESTUDIO = tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe
 ANIMESTUDIO_GAME = ArknightsEndfield
 ANIMESTUDIO_LOGGER_FLAGS = Warning, Error
-ANIMESTUDIO_DEFAULT_JOBS = 1
+ANIMESTUDIO_DEFAULT_JOBS = 4
+ANIMESTUDIO_DEFAULT_SHARDS = 16
 ```
+
+`--animestudio-jobs` controls concurrent AnimeStudio processes. `--animestudio-shards`
+controls how many filter-data slices each deterministic asset type is split into.
+The default runs 4 worker processes against 16 balanced shards so multiple shards
+can export in parallel; lower jobs when peak memory is too high.
 
 Stage outputs:
 
@@ -115,7 +142,22 @@ MonoBehaviour:Both
 PlayableDirector:Both
 ```
 
-Asset conversion types:
+Full-mode asset conversion types:
+
+```text
+Texture2D:Both
+Mesh:Both
+Sprite:Both
+Animator:Both
+```
+
+Full-mode asset JSON types:
+
+```text
+Material:Both
+```
+
+Debug-mode asset conversion types:
 
 ```text
 Texture2D:Both
@@ -128,7 +170,10 @@ Animator:Both
 AnimationClip:Both
 ```
 
-Asset JSON types add Material, AssetBundle, IndexObject, AnimatorController, AnimatorOverrideController, MonoScript, PlayerSettings, PlayableDirector, ResourceManager, SpriteAtlas, NapAssetBundleIndexAsset, PreloadData, and AvatarMask.
+Debug-mode asset JSON types add TextAsset, MonoBehaviour, Material, AssetBundle,
+IndexObject, AnimatorController, AnimatorOverrideController, MonoScript,
+PlayerSettings, PlayableDirector, ResourceManager, SpriteAtlas,
+NapAssetBundleIndexAsset, PreloadData, and AvatarMask.
 
 ## Code Structure
 
@@ -225,14 +270,14 @@ For parser or exporter edits:
 
 ```bat
 .\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
-.\export.bat --export-from-game --animestudio-jobs 1 --animestudio-refresh-types StreamingAssets:json_by_type:MonoBehaviour
+.\export.bat --export-from-game --animestudio-jobs 4 --animestudio-refresh-types StreamingAssets:json_by_type:MonoBehaviour
 ```
 
 For asset conversion edits:
 
 ```bat
 .\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
-.\export_assets.bat --export-from-game --animestudio-jobs 1 --animestudio-refresh-types StreamingAssets:convert_by_type:Texture2D
+.\export_assets.bat --export-from-game --animestudio-jobs 4 --animestudio-refresh-types StreamingAssets:convert_by_type:Texture2D
 ```
 
-Use `--animestudio-jobs 2` only after the one-worker targeted run is clean.
+Lower `--animestudio-jobs` if the targeted run exceeds available memory.

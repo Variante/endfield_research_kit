@@ -38,9 +38,7 @@ def source_roots_for_entries(
     return {key: roots[key] for key in sorted(roots)}
 
 
-def write_story_media_index(asset_index_path: Path, video_index_path: Path) -> dict:
-    asset_payload = load_asset_index(asset_index_path)
-    video_payload = load_asset_index(video_index_path)
+def build_story_media_payload(asset_payload: dict, video_payload: dict) -> dict:
     webui_root = OUT_DIR.parent
 
     inline_image_ids = collect_inline_image_ids(webui_root)
@@ -97,11 +95,27 @@ def write_story_media_index(asset_index_path: Path, video_index_path: Path) -> d
         },
         "entries": entries,
     }
-    write_json(story_media_path, payload)
+    return payload
+
+
+def story_media_stats(payload: dict, story_media_path: Path) -> dict:
+    counts = payload.get("counts") or {}
     return {
-        "imageIds": len(inline_image_ids | wiki_image_ids),
-        "videoRefs": len(video_refs),
-        "images": len(images),
-        "videos": len(videos),
+        "imageIds": int(counts.get("imageIds") or 0),
+        "videoRefs": int(counts.get("videoRefs") or 0),
+        "images": int(counts.get("image") or 0),
+        "videos": int(counts.get("video") or 0),
         "indexBytes": story_media_path.stat().st_size,
     }
+
+
+def write_story_media_payload(payload: dict) -> dict:
+    story_media_path = ASSET_DIR / "story_media.json"
+    write_json(story_media_path, payload)
+    return story_media_stats(payload, story_media_path)
+
+
+def write_story_media_index(asset_index_path: Path, video_index_path: Path) -> dict:
+    asset_payload = load_asset_index(asset_index_path)
+    video_payload = load_asset_index(video_index_path)
+    return write_story_media_payload(build_story_media_payload(asset_payload, video_payload))

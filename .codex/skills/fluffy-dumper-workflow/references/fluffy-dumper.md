@@ -41,6 +41,7 @@ Commands:
 ```text
 dump
 audio
+vfs-index
 list
 help
 ```
@@ -79,6 +80,19 @@ Audio options:
 
 `list` prints the dumpable VFS block types known by the local binary.
 
+`vfs-index`:
+
+```bat
+fluffy-dumper.exe vfs-index --streaming-assets path\to\StreamingAssets --output output.json --block-type bundle
+```
+
+Options mirror `dump`: `--streaming-assets`, optional `--fallback-assets`,
+`--output`, and `--block-type`. The command reads/decrypts only VFS block
+metadata and writes JSON with block/chunk diagnostics plus a flat top-level
+`files` array. Rows include the VFS file name, chunk file, chunk source
+(`primary`, `fallback`, or `missing`), offsets, lengths, hashes, encryption
+flag, and tags. It does not extract file bytes and does not parse Unity objects.
+
 ## Wrapper Integration
 
 Structured data in `scripts\export_full_from_game.py`:
@@ -105,7 +119,19 @@ fluffy-dumper.exe audio --streaming-assets <root> --output export_full\structure
 
 `build_audio.py` can pass `--fallback-assets` when configured and post-processes generated conversation JSON with playable `audioSrc` links.
 
-`export_assets.bat --export-from-game` calls `scripts\export_full_from_game.py --skip-structured`, so it bypasses this tool.
+`export_assets.bat --export-from-game` calls
+`scripts\export_full_from_game.py --skip-structured`, so it bypasses the full
+structured dump. For asset refreshes it still runs:
+
+```bat
+fluffy-dumper.exe vfs-index -s Endfield_Data\StreamingAssets -o export_full\recovered\AnimeStudio-cli\StreamingAssets\vfs_index\bundle_vfs_index.json -b bundle
+fluffy-dumper.exe vfs-index -s Endfield_Data\Persistent -o export_full\recovered\AnimeStudio-cli\Persistent\vfs_index\bundle_vfs_index.json -b bundle --fallback-assets Endfield_Data\StreamingAssets
+```
+
+This gives the AnimeStudio/WebUI pipeline a cheap source/chunk inventory. It is
+not a replacement for AnimeStudio's asset map because VFS metadata does not
+contain Unity `PathID`, `ClassIDType`, object names, containers, or dependency
+relationships.
 
 ## Workspace Crates
 
@@ -143,6 +169,7 @@ vfs\src\types.rs
 ```text
 Commands::Dump  -> dumper::run_dump
 Commands::Audio -> audio::run_audio_dump
+Commands::VfsIndex -> indexer::run_vfs_index
 Commands::List  -> BlockType::all_dumpable
 ```
 

@@ -8,12 +8,14 @@ from .build_args import parse_args
 from .bundle_support import discover_languages, language_info, normalize_language_selection
 from .context import DEFAULT_LANGUAGE, LANG_DIR, OUT_DIR, write_json
 from .language_bundle import build_language_bundle
+from .timeline_action_evidence import build_timeline_action_evidence_for_build
 from .timeline_orders import recover_timeline_orders_for_build
 
 
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
     recover_timeline_orders_for_build(args.timeline_recovery, args.force_timeline_recovery)
+    build_timeline_action_evidence_for_build()
 
     available_languages = discover_languages()
     if not available_languages:

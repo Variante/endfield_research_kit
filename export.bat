@@ -36,7 +36,7 @@ rem - skip raw_vfs, source inventory, structured data, and AnimeStudio by defaul
 rem - build only CN story/reference data by default
 rem - preserve OCR-managed Story sort order under webui\overrides
 rem - leave decoded CN audio relinking to export_assets.bat
-rem - skip image/model/animation asset decoding; use export_assets.bat --export-from-game for that
+rem - skip image/model asset decoding; use export_assets.bat --export-from-game for that
 if "%EXPORT_FROM_GAME%"=="0" goto :skip_export_full
 python .\scripts\export_full_from_game.py --animestudio-scope story --animestudio-stages maps json_by_type %EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
@@ -50,13 +50,7 @@ echo [export.bat] Reusing existing export_full; pass --export-from-game to refre
 python .\scripts\verify_export_freshness.py %VERIFY_EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\story_builder\dialog_registry.py --quiet
-if errorlevel 1 exit /b %errorlevel%
-
-python .\scripts\story_builder\video_bindings.py
-if errorlevel 1 exit /b %errorlevel%
-
-python .\scripts\story_builder\source_links.py
+python .\scripts\story_builder\refresh_evidence.py
 if errorlevel 1 exit /b %errorlevel%
 
 python .\scripts\story_builder\build.py --languages CN --default-language CN --skip-audio-link
@@ -78,8 +72,8 @@ echo   --export-from-game    Refresh export_full from installed game data.
 echo   --game-root PATH      Installed Endfield_Data directory used for export,
 echo                         and freshness verification.
 echo   --animestudio-jobs N  Passed through when --export-from-game is present.
-echo                         Default is 1 for lower peak AnimeStudio memory.
-echo                         On the 64 GB test machine, 2 was the best tested value.
+echo                         Default is 4 for parallel shard/type export.
+echo                         Lower this value if peak AnimeStudio memory is too high.
 echo   --animestudio-dummy-dlls PATH
 echo                         DummyDll directory for AnimeStudio MonoBehaviour schema recovery.
 echo                         Can also be set with ANIMESTUDIO_DUMMY_DLLS.

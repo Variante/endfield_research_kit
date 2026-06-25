@@ -4,12 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>&#32456;&#26411;&#22320;&#23545;&#35805;&#27983;&#35272;&#22120; / Endfield Story Browser</title>
-<link rel="stylesheet" href="style.css?v=20260524-toast-prominent">
+<link rel="stylesheet" href="style.css?v=20260625-topbar-language">
 </head>
 <body data-active-view="story">
 <div id="shell">
   <header id="topbar">
+    <nav id="view-tabs" aria-label="Primary views">
+      <button id="story-tab" class="view-tab is-active" type="button" data-view="story">&#21095;&#24773;</button>
+      <button id="reference-tab" class="view-tab" type="button" data-view="reference">&#21442;&#32771;</button>
+      <button id="assets-tab" class="view-tab" type="button" data-view="assets">&#36164;&#28304;</button>
+      <button id="updates-tab" class="view-tab" type="button" data-view="updates">&#26356;&#26032;</button>
+    </nav>
     <div class="topbar-actions">
+      <label class="topbar-control" for="language">
+        <span id="language-label">&#35821;&#35328;</span>
+        <select id="language"></select>
+      </label>
       <label class="topbar-control" for="ui-language">
         <span id="ui-language-label">&#30028;&#38754;</span>
         <select id="ui-language">
@@ -17,15 +27,8 @@
           <option value="en">English</option>
         </select>
       </label>
-      <nav id="view-tabs" aria-label="Primary views">
-        <button id="story-tab" class="view-tab is-active" type="button" data-view="story">&#21095;&#24773;</button>
-        <button id="reference-tab" class="view-tab" type="button" data-view="reference">&#21442;&#32771;</button>
-        <button id="assets-tab" class="view-tab" type="button" data-view="assets">&#36164;&#28304;</button>
-        <button id="updates-tab" class="view-tab" type="button" data-view="updates">&#26356;&#26032;</button>
-      </nav>
     </div>
   </header>
-
   <div id="views">
     <section id="story-view" class="page-view is-active" data-view="story">
       <div id="app">
@@ -47,10 +50,6 @@
                 <span id="basic-filter-label">&#22522;&#30784;&#31579;&#36873;</span>
               </div>
               <div id="filter-section-basic-body" class="filter-section-body filter-section-body-stack">
-                <div class="filter-control-row">
-                  <label id="language-label" for="language">&#35821;&#35328;</label>
-                  <select id="language"></select>
-                </div>
                 <div class="filter-control-row">
                   <label id="search-label" for="q">&#25628;&#32034;</label>
                   <input id="q" type="search" placeholder="&#25628;&#32034; ID / &#20219;&#21153; / &#35282;&#33394; / &#25991;&#26412;" autofocus>

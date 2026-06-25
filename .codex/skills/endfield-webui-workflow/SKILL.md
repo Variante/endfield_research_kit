@@ -39,8 +39,9 @@ runs the Assets export, creates the initial Updates baseline, then starts or
 reuses the default WebUI server unless `--no-serve` is passed.
 
 Use `export.bat` as the default story/reference rebuild path from an existing
-`export_full/`. It verifies export freshness, rebuilds DialogIdTable and story
-source-link evidence, rebuilds CN story/reference data, leaves the
+`export_full/`. It verifies export freshness with a fast required-output
+presence check, refreshes DialogIdTable, narrative video binding, and story
+source-link evidence in parallel, rebuilds CN story/reference data, leaves the
 OCR-managed Story order override untouched, and leaves decoded CN audio relinking
 to `export_assets.bat`.
 It skips installed-game export, fluffy-dumper structured export, and AnimeStudio
@@ -54,8 +55,10 @@ decoded audio by default. Asset modifications use fast size fingerprints; pass
 with `--dry-run-prune-previous-export-untracked`; use
 `--prune-previous-export-untracked` only when intentionally deleting old export
 files outside the focused tracked scope. Use `export_assets.bat` for Assets tab
-indexes and CN audio relinking; pass `--export-from-game` to run the heavier
-image/model/animation decode and CN audio decode.
+indexes and CN audio relinking; pass `--export-from-game` to run the full
+WebUI-facing image/model asset export plus `Material` JSON and decode CN audio.
+Pass `--webui-assets` when only WebUI-referenced Texture2D media is needed, or
+`--debug-assets` for exhaustive AnimeStudio conversion/JSON diagnostics.
 
 When running `python scripts\story_builder\build.py` directly, use a
 longer timeout. The default CN lean build currently takes about 3 minutes on

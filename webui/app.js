@@ -5184,6 +5184,178 @@ function renderLineOrderRecovery(conv) {
   return strip;
 }
 
+function timelineActionStatusText(status) {
+  const raw = String(status || "");
+  if (raw === "agrees") return uiText("timelineActionsStatusAgrees");
+  if (raw === "partialAgree") return uiText("timelineActionsStatusPartial");
+  if (raw === "conflict") return uiText("timelineActionsStatusConflict");
+  if (raw === "missingTimeline") return uiText("timelineActionsStatusMissingTimeline");
+  if (raw === "missingAction") return uiText("timelineActionsStatusMissingAction");
+  return raw || uiText("timelineActionsStatusMissing");
+}
+
+function timelineActionStatusTone(status) {
+  const raw = String(status || "");
+  if (raw === "agrees") return "authored";
+  if (raw === "partialAgree") return "fallback";
+  if (raw === "conflict") return "missing";
+  return "";
+}
+
+function createTimelineActionChip(text, { title = "", status = "" } = {}) {
+  const chip = document.createElement("span");
+  chip.className = "timeline-action-chip";
+  const tone = timelineActionStatusTone(status);
+  if (tone) chip.classList.add(`is-${tone}`);
+  chip.textContent = text;
+  if (title) chip.title = title;
+  return chip;
+}
+
+function timelineActionCountRows(counts, limit = 8) {
+  if (!counts || typeof counts !== "object") return [];
+  return Object.entries(counts)
+    .map(([key, value]) => [String(key || ""), Number(value) || 0])
+    .filter(([key, value]) => key && value > 0)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit);
+}
+
+function timelineActionCompactLabel(action) {
+  const kind = String(action && (action.kind || action.class) || "").trim();
+  const rawLabel = String(action && action.label || "").trim();
+  let label = rawLabel;
+  if (label.includes("/")) {
+    const parts = label.split("/").filter(Boolean);
+    label = parts.slice(-2).join("/");
+  }
+  return label ? `${kind || "action"}: ${label}` : (kind || "action");
+}
+
+function timelineActionTitle(action) {
+  if (!action || typeof action !== "object") return "";
+  const parts = [];
+  if (action.class) parts.push(String(action.class));
+  if (action.layout) parts.push(String(action.layout));
+  if (action.label) parts.push(String(action.label));
+  const t0 = Number(action.time0);
+  const t1 = Number(action.time1);
+  if (Number.isFinite(t0) || Number.isFinite(t1)) {
+    parts.push(`t=${Number.isFinite(t0) ? t0.toFixed(3) : "?"}/${Number.isFinite(t1) ? t1.toFixed(3) : "?"}`);
+  }
+  if (action.actionCode !== undefined) parts.push(`code=${action.actionCode}`);
+  return parts.join(" | ");
+}
+
+function appendTimelineActionChips(container, actions, { limit = 10 } = {}) {
+  const actionList = Array.isArray(actions) ? actions.filter(Boolean) : [];
+  for (const action of actionList.slice(0, limit)) {
+    container.appendChild(createTimelineActionChip(
+      timelineActionCompactLabel(action),
+      { title: timelineActionTitle(action) }
+    ));
+  }
+  if (actionList.length > limit) {
+    container.appendChild(createTimelineActionChip(`+${actionList.length - limit}`));
+  }
+}
+
+function appendTimelineActionCountLine(container, label, counts) {
+  const rows = timelineActionCountRows(counts);
+  if (!rows.length) return;
+  const line = document.createElement("div");
+  line.className = "timeline-action-line";
+  const labelNode = document.createElement("span");
+  labelNode.className = "mission-timeline-line-label";
+  labelNode.textContent = label;
+  line.appendChild(labelNode);
+  for (const [key, count] of rows) {
+    line.appendChild(createTimelineActionChip(`${key} ${count}`));
+  }
+  container.appendChild(line);
+}
+
+function renderTimelineActionEvidence(conv) {
+  const debug = conv && conv._debug && conv._debug.timelineActions;
+  if (!debug || typeof debug !== "object") return null;
+
+  const box = document.createElement("div");
+  box.className = "summary-box timeline-action-box";
+  const label = document.createElement("div");
+  label.className = "summary-label";
+  label.textContent = uiText("timelineActions");
+  box.appendChild(label);
+
+  const stats = document.createElement("div");
+  stats.className = "timeline-action-stats";
+  stats.appendChild(createTimelineActionChip(
+    `${uiText("timelineActionsStatus")}: ${timelineActionStatusText(debug.status)}`,
+    { status: debug.status }
+  ));
+  const timelineStatus = String(debug.timelineStatus || "");
+  if (timelineStatus && timelineStatus !== String(debug.status || "")) {
+    stats.appendChild(createTimelineActionChip(
+      `${uiText("timelineActionsTimelineStatus")}: ${timelineActionStatusText(timelineStatus)}`,
+      { status: timelineStatus }
+    ));
+  }
+  stats.appendChild(createTimelineActionChip(`${uiText("timelineActionsFlows")} ${Number(debug.flowCount) || 0}`));
+  stats.appendChild(createTimelineActionChip(`${uiText("timelineActionsLines")} ${Number(debug.lineCount) || 0}`));
+  stats.appendChild(createTimelineActionChip(`${uiText("timelineActionsLinked")} ${Number(debug.linkedActionCount) || 0}`));
+  stats.appendChild(createTimelineActionChip(`${uiText("timelineActionsDecoded")} ${Number(debug.decodedActionCount) || 0}`));
+  const unparsed = Number(debug.unparsedActionCount) || 0;
+  if (unparsed) {
+    stats.appendChild(createTimelineActionChip(`${uiText("timelineActionsUnparsed")} ${unparsed}`, { status: "partialAgree" }));
+  }
+  box.appendChild(stats);
+
+  appendTimelineActionCountLine(box, uiText("timelineActionsKinds"), debug.actionKindCounts);
+  appendTimelineActionCountLine(box, uiText("timelineActionsLayouts"), debug.layoutCounts);
+
+  const lineRows = Array.isArray(debug.lineActions) ? debug.lineActions.filter(Boolean) : [];
+  if (lineRows.length) {
+    const details = document.createElement("details");
+    details.className = "mission-timeline-details timeline-action-details";
+    const summary = document.createElement("summary");
+    summary.textContent = uiText("timelineActionsLineDetails");
+    details.appendChild(summary);
+    for (const rowData of lineRows.slice(0, 16)) {
+      const row = document.createElement("div");
+      row.className = "timeline-action-line";
+      const lineId = document.createElement("span");
+      lineId.className = "flow-dlg-ref";
+      lineId.textContent = rowData.lineId || "?";
+      row.appendChild(lineId);
+      appendTimelineActionChips(row, rowData.actions, { limit: 8 });
+      const omitted = Number(rowData.omittedActions) || 0;
+      if (omitted) row.appendChild(createTimelineActionChip(`+${omitted}`));
+      details.appendChild(row);
+    }
+    if (lineRows.length > 16) {
+      const more = document.createElement("div");
+      more.className = "mission-timeline-more";
+      more.textContent = uiText("timelineActionsMore").replace("{count}", String(lineRows.length - 16));
+      details.appendChild(more);
+    }
+    box.appendChild(details);
+  }
+
+  appendDebugTrace(box, debug, "timeline actions");
+  return box;
+}
+
+function appendTimelineActionLineChips(container, line) {
+  const debug = line && line._debug && line._debug.timelineActions;
+  const actions = debug && Array.isArray(debug.actions) ? debug.actions : [];
+  if (!actions.length) return;
+  const wrap = document.createElement("div");
+  wrap.className = "timeline-action-line-chips";
+  appendTimelineActionChips(wrap, actions, { limit: 6 });
+  const omitted = Number(debug.omittedActions) || 0;
+  if (omitted) wrap.appendChild(createTimelineActionChip(`+${omitted}`));
+  container.appendChild(wrap);
+}
+
 function conversationHintRows(conv) {
   const rows = [];
   const seen = new Set();
@@ -5578,6 +5750,8 @@ function renderConv(conv) {
   if (STATE.showDebug) {
     const sourceLinksBlock = renderSourceLinksBlock(conv);
     if (sourceLinksBlock) frag.appendChild(sourceLinksBlock);
+    const timelineActionBlock = renderTimelineActionEvidence(conv);
+    if (timelineActionBlock) frag.appendChild(timelineActionBlock);
   }
 
   const narrativeVideoBlock = renderNarrativeVideosBlock(conv);
@@ -5797,6 +5971,7 @@ function renderConv(conv) {
     if (!audioBeforeText) appendLineAudio(body, ln);
     appendLineMedia(body, ln);
     appendLineId(body, ln);
+    if (STATE.showDebug) appendTimelineActionLineChips(body, ln);
     if (ln.id && uncoveredLineIdSet.has(ln.id)) {
       appendUncoveredLineBadge(body);
     }
@@ -6560,6 +6735,7 @@ function renderConv(conv) {
       body.appendChild(opts);
     }
     appendLineId(body, ln);
+    if (STATE.showDebug) appendTimelineActionLineChips(body, ln);
     if (ln.id && uncoveredLineIdSet.has(ln.id)) {
       appendUncoveredLineBadge(body);
     }

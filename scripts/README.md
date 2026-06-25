@@ -1,8 +1,6 @@
 # Scripts
 
 Active scripts in this directory support the WebUI export/package workflow.
-Unity character recovery tools live under
-`../unity_endfield_graph_shader_lab/tools`.
 
 ## Active Wrappers
 
@@ -28,10 +26,15 @@ initial Updates baseline, and starts or reuses the default WebUI server. Pass
 `export_full/`. It runs:
 
 - `scripts/verify_export_freshness.py`
-- `scripts/story_builder/dialog_registry.py --quiet`
-- `scripts/story_builder/video_bindings.py`
-- `scripts/story_builder/source_links.py`
+- `scripts/story_builder/refresh_evidence.py`
 - `scripts/story_builder/build.py --languages CN --default-language CN --skip-audio-link`
+
+The freshness verifier uses a fast non-empty check for required generated output
+folders by default; pass `--full-output-counts` directly to
+`verify_export_freshness.py` only when exact file counts are needed for an
+audit. `refresh_evidence.py` runs the DialogIdTable registry, narrative video
+bindings, and story source-link refresh in parallel before the Story builder
+loads those generated files.
 
 Pass `--export-from-game` when you explicitly want to refresh `export_full/`
 from installed game data before rebuilding Story/Reference data. Audio relinking
@@ -63,21 +66,24 @@ and `--export-root PATH` to change the compared export trees. Most runs do not
 need `--game-root`; pass it only for optional decoded-impact mapping from a
 non-default installed `Endfield_Data` root. It does not choose the export trees.
 
-`export_assets.bat` runs `scripts/build_assets.py` for the Assets tab indexes
-and compact Story media lookup, then runs `scripts/build_audio.py --skip-decode`
-to relink existing decoded CN audio into generated conversations. Pass
-`--export-from-game` to run the heavier image/model/animation AnimeStudio decode
-and CN audio decode first. It accepts the same `--game-root PATH` argument and
+`export_assets.bat` runs `scripts/build_assets.py` for the compact WebUI media
+indexes, then runs `scripts/build_audio.py --skip-decode` to relink existing
+decoded CN audio into generated conversations. Pass `--export-from-game` to run
+the full WebUI-facing AnimeStudio image/model export plus `Material` JSON after
+first writing a lightweight `fluffy-dumper vfs-index` bundle metadata snapshot,
+and decode CN audio first. Pass `--webui-assets` when only WebUI-referenced
+Texture2D media is needed, or `--debug-assets` for exhaustive AnimeStudio
+conversion/JSON diagnostics. It accepts the same `--game-root PATH` argument and
 `ENDFIELD_GAME_ROOT` fallback when refreshing decoded assets/audio from a
 non-default install root.
 
 Both installed-game wrappers pass `--animestudio-jobs N` through to
-`export_full_from_game.py`. Keep the default `1` for low-RAM or first-time
-runs. On the current 64 GiB workstation, `--animestudio-jobs 2` is the best
-tested value: it improved the Story JSON slice by about 21%, while a full asset
-refresh peaked at about 27 GiB observed process-tree working set. Do not use
-`3` workers on this machine unless there is much more free RAM available; the
-`AnimationClip` and `Texture2D` workers dominate both memory and wall time.
+`export_full_from_game.py`. The default is now `4` so balanced asset shards and
+per-type exports run in parallel; use `1` or `2` for low-RAM or first-time runs.
+Earlier testing on the 64 GiB workstation found `--animestudio-jobs 2` improved
+the Story JSON slice by about 21%, while the old full asset refresh peaked at
+about 27 GiB observed process-tree working set. Full-mode `AnimationClip` and
+`Texture2D` workers dominate both memory and wall time.
 
 Both wrappers also pass `--animestudio-dummy-dlls PATH` through when
 `--export-from-game` is present. Use this for IL2CPP DummyDll folders that
@@ -86,6 +92,39 @@ If the flag is omitted, `export_full_from_game.py` checks
 `ANIMESTUDIO_DUMMY_DLLS`, then known local locations such as `tools\DummyDll`;
 it only adds AnimeStudio's `--dummy_dlls` option when the selected directory
 exists and contains `.dll` files.
+
+For targeted MonoBehaviour recovery experiments, pass
+`--animestudio-mono-behaviour-type-tree-priority script-first` to make
+AnimeStudio try a DummyDll script-derived TypeTree before the embedded
+serialized TypeTree. The default `serialized-first` preserves the normal export
+order and only uses script-derived trees as a fallback after serialized decode
+failure. Script-first only improves body decoding when the relevant external
+`MonoScript` bundle is loaded and the DummyDll set contains a usable script
+type with real field nodes. If the script type is absent or only resolves to a
+base-only tree, AnimeStudio records the script-derived status and keeps the
+serialized/partial decode result.
+
+When MonoBehaviour TypeTree decoding fails inside a managed-reference registry,
+AnimeStudio now emits partial JSON instead of collapsing to metadata-only JSON
+when safe fields were already read. The partial output keeps decoded fields such
+as `m_Name` and `actionsData`, then recovers
+`$animestudio.recoveredManagedReferences.RefIds` headers (`rid`, managed type,
+raw payload offset, raw payload length, and validated inferred
+`DialogMainFlowData` `leadRid`/`linkedRids` when that layout matches exactly) so
+downstream tools can still join decoded `rid` references to their runtime
+managed types. It also names validated string fields for common dialog action
+payloads, including `lineId`, `animationPath`, `facialMorphPath`, and
+`poseControlNames`, records inferred transform-like fields for validated
+`DialogTeleportEntityActionData` payloads, names small validated empty-tail and
+flag/index-like dialog actions, records validated motion/camera/post-process
+scalar blocks for action payloads such as `DialogMoveToActData`,
+`DialogLookAtActData`, `DialogTurnToActData`, `DialogCamDOFActionData`,
+`DialogMaskActionData`, `DialogCamPPActionData`, and the common
+`DialogCamActData` layout, and records a conservative `inferredActionTimingPrefix`
+for dialog action payloads (`value0Seconds`, `value1Seconds`, and `actionCode`).
+Still-unparsed payloads may include
+`heuristicStringHints` and `heuristicRidLinks`; those fields are advisory
+clues, not a typed managed-reference schema decode.
 
 `export_full_from_game.py` writes detailed stage logs and summaries under
 `../reports/`. Nonzero AnimeStudio subprocesses now make the wrapper return
@@ -178,16 +217,11 @@ Expected active inputs and outputs:
   content-hash detection of same-size binary changes. Pass
   `--full-export-scan` only for an intentional all-files audit of the export
   roots. Pass
-  `--dry-run-prune-previous-export-untracked` to preview old files outside the
-  focused tracked text/assets surfaces, and
-  `--prune-previous-export-untracked` to delete those untracked files from the
-  previous export root after confirming the preview. The prune step also scans
-  `structured/Audio/` in the previous export and removes duplicate decoded
-  audio copies, preferring mapped `voice/` files over `unmapped/` copies with
-  the same audio id and extension. It also removes previous-export audio files
-  that still exist unchanged in the current `..\export_full\structured\Audio\`;
-  the cached asset baseline keeps later comparisons from treating those pruned
-  files as newly added.
+  `--dry-run-prune-previous-export-untracked` to preview previous-export files
+  that already exist byte-identically at the same relative paths in the current
+  export, and `--prune-previous-export-untracked` to delete those old duplicate
+  copies after confirming the preview. Cached tracker and asset baselines keep
+  later comparisons from treating those pruned files as newly added.
 - `story_builder/build.py`: builds CN story/reference data by default,
   with optional extra languages. The builder reads from `..\export_full\`, stamps dialog convs
   with DialogIdTable runtime registry evidence, links narrative
@@ -199,11 +233,13 @@ Expected active inputs and outputs:
   SNS media such as `sns_image_*` and `sns_sticker_*` render as normal images.
   The command entry stays small: `build_args.py` owns CLI flags,
   `timeline_orders.py` owns the pre-build Timeline recovery check,
-  `build_pipeline.py` owns bundle orchestration and manifest writing, and
+  `timeline_action_evidence.py` owns the pre-build managed-reference action
+  evidence pass, `build_pipeline.py` owns bundle orchestration and manifest writing, and
   `audio_relink.py` owns the post-build decoded-audio relink pass.
-- `build_assets.py`: builds the WebUI asset index, video index, story media
-  index, and optional demo bundle zips from active WebUI export roots. It is
-  run by `..\export_assets.bat`, not the story-only `..\export.bat`.
+- `build_assets.py`: builds the compact WebUI Story/Wiki media index by
+  default, or the broad Assets browser index and optional demo bundle zips with
+  `--mode full`. It is run by `..\export_assets.bat`, not the story-only
+  `..\export.bat`.
 - `build_audio.py`: decodes language audio via `fluffy-dumper`, indexes files
   under `export_full/structured/Audio/<LANG>/`, parses Wwise bank
   event-to-media links, and post-processes generated conversation JSON so
@@ -256,6 +292,16 @@ These are kept because the WebUI story builders import or use them:
   `--extract-timeline-assets` to force the old extraction path. Backs the
   `dialogTimeline` recovery mode, which corresponds to the runtime path
   `Beyond.Gameplay.Core.DialogTimelineManager.PlayDialogTimeline`.
+- `story_builder/timeline_action_evidence.py`: scans AnimeStudio
+  MonoBehaviour JSON for recovered managed-reference action payloads, follows
+  `DialogMainFlowData` RID links to trunk line actions, compares the recovered
+  action-flow line sequence against `timeline_line_orders.json`, and writes
+  `export_full/recovered/AnimeStudio-cli/timeline_action_evidence.json`.
+  The Story builder attaches compact results under
+  `conv._debug.timelineActions` for WebUI `Show debug info`; it is evidence
+  only and does not reorder Story rows by itself. Rich output requires a
+  refreshed AnimeStudio Story JSON export that includes
+  `$animestudio.recoveredManagedReferences.RefIds`.
 - `story_builder/mission_recovery.py`: reconstructs mission-level quest/scene
   ordering evidence from `MissionRuntimeAsset`.
 - `story_builder/dialog_registry.py`: extracts
@@ -652,13 +698,6 @@ class anywhere in the runtime. Every dialog scene -- including the "letter"
 and "consent form" content -- goes through `DialogTrunkBehaviour
 ._TryInitDialogText`, with `DialogTimelineManager` and `DialogTreeController`
 overlaid when applicable.
-
-## Unity Character Recovery Lab
-
-No active Unity character recovery scripts are present directly under this
-`scripts/` directory in the current checkout. Unity recovery helpers should
-live inside `../unity_endfield_graph_shader_lab/` unless they are promoted into
-a shared WebUI/export workflow.
 
 ## Archived
 

@@ -1,13 +1,8 @@
 # Endfield Research Kit
 
-Endfield Research Kit is a local research workspace maintained around two active
-surfaces:
-
-- `webui/`: a static browser for story, reference text, exported assets, and
-  source-data update diffs.
-- `unity_endfield_graph_shader_lab/`: the Unity 2022.3 Endfield Character
-  Recovery Lab for recovered character shaders, render checks, meshes, and
-  animation playback.
+Endfield Research Kit is a local research workspace maintained around the
+`webui/` static browser for story, reference text, exported assets, and
+source-data update diffs.
 
 This repository is for research and study purposes only. It is intended for
 local inspection of data from a legally obtained installation, with generated
@@ -135,8 +130,8 @@ After the first restore, this faster rebuild is usually enough:
 and CN audio export.
 
 `.\export.bat --export-from-game` uses `fluffy-dumper` for structured data.
-`.\export_assets.bat --export-from-game` uses it for CN audio decoding. The
-wrappers expect:
+`.\export_assets.bat --export-from-game` uses it for a lightweight VFS bundle
+metadata index and CN audio decoding. The wrappers expect:
 
 ```text
 tools\fluffy-dumper-src\target\release\fluffy-dumper.exe
@@ -168,9 +163,10 @@ The help text for both `dump` and `audio` should include
 export wrappers when one exported source root needs chunks from another source
 root.
 
-`export_assets.bat --export-from-game` does not use `fluffy-dumper` for
-structured data because it passes `--skip-structured`; its audio step still uses
-the patched `fluffy-dumper audio` command.
+`export_assets.bat --export-from-game` does not run the full structured dump
+because it passes `--skip-structured`; it still runs `fluffy-dumper vfs-index`
+to cache VFS file/chunk metadata for asset exports, and its audio step uses the
+patched `fluffy-dumper audio` command.
 
 6. It runs the first full Story/Reference export from the installed game.
 
@@ -181,7 +177,7 @@ the patched `fluffy-dumper audio` command.
 This creates or refreshes `export_full/`, runs the story AnimeStudio export,
 and builds CN Story/Reference data.
 
-7. It builds the Assets tab data and CN audio when images, models, videos,
+7. It builds full Assets tab data and CN audio when images, models, videos,
 compact Story media lookup, and playable audio links are needed.
 
 ```bat
@@ -189,24 +185,93 @@ compact Story media lookup, and playable audio links are needed.
 ```
 
 Installed-game AnimeStudio refreshes accept `--animestudio-jobs N` through both
-wrappers. The default is `1` to keep peak RAM low. On the current 64 GiB test
-machine, `--animestudio-jobs 2` was the best measured setting: the Story JSON
-slice was about 21% faster than one worker and the full asset refresh peaked at
-about 27 GiB observed process-tree working set. Avoid `3` workers unless the
-machine has substantially more free RAM, because `AnimationClip` and
-`Texture2D` are long, high-memory workers.
+wrappers. The default is now `4` so balanced asset shards and per-type exports
+run in parallel; lower it to `1` or `2` if peak AnimeStudio memory is too high.
+Earlier testing on the 64 GiB machine found `--animestudio-jobs 2` made the Story
+JSON slice about 21% faster than one worker and the old full asset refresh peaked
+at about 27 GiB observed process-tree working set. The default
+`export_assets.bat --export-from-game` path runs the full WebUI-facing
+image/model asset export, `Material` JSON, and full Assets browser index. Pass
+`--webui-assets` when only WebUI-referenced Texture2D media is needed, or
+`--debug-assets` for exhaustive AnimeStudio conversion/JSON diagnostics.
 
-For better story MonoBehaviour decoding, pass a usable IL2CPP DummyDll folder
-through the wrappers:
+For better story MonoBehaviour decoding, give AnimeStudio a usable IL2CPP
+DummyDll folder. The preferred repo-local root is `tools\DummyDll`; when that
+directory contains `.dll` files, the wrappers auto-detect it and pass
+AnimeStudio's `--dummy_dlls` option.
+
+To reproduce the current local DummyDll root from an installed Endfield build,
+generate stub assemblies from `GameAssembly.dll` and
+`Endfield_Data\il2cpp_data\Metadata\global-metadata.dat`, then copy the
+resulting DLLs into `tools\DummyDll`:
+
+```powershell
+git clone --depth 1 --branch 2022.0.7 https://github.com/SamboyCoding/Cpp2IL.git tools\Cpp2IL-src-2022.0.7
+dotnet build tools\Cpp2IL-src-2022.0.7\Cpp2IL\Cpp2IL.csproj -c Release
+
+# The current local Endfield build needs manual MetadataRegistration.
+# Replace this value after a game update if Cpp2IL reports a different one.
+"18c439d80`n" | tools\Cpp2IL-src-2022.0.7\Cpp2IL\bin\Release\net6.0\Cpp2IL.exe --game-path "D:\Program Files\Endfield Game" --exe-name Endfield --output-root tools\Cpp2IL-endfield-dummy --skip-analysis --skip-metadata-txts --suppress-attributes
+
+New-Item -ItemType Directory -Force tools\DummyDll | Out-Null
+Copy-Item tools\Cpp2IL-endfield-dummy\*.dll tools\DummyDll\
+```
+
+If stock Cpp2IL aborts on the current metadata before saving assemblies, use a
+local patched Cpp2IL build or another IL2CPP dumper that can still emit stub
+DLLs. The local patched path used here suppresses Cpp2IL-injected attributes,
+skips malformed image/type rows instead of aborting, and skips attribute
+restoration when `--suppress-attributes` is set. The generated `tools\DummyDll`
+folder is a local tool cache and should be refreshed after game updates.
+
+You can also pass a one-off DummyDll folder through the wrappers:
 
 ```bat
 .\export.bat --export-from-game --animestudio-dummy-dlls "D:\path\to\DummyDll"
 ```
 
 The explicit flag takes precedence over the `ANIMESTUDIO_DUMMY_DLLS`
-environment variable. If neither is set, the wrapper only passes
-AnimeStudio's `--dummy_dlls` option when it finds a directory containing `.dll`
-files under the known game/tool locations such as `tools\DummyDll`.
+environment variable. If neither is set, the wrapper tries known local
+locations, including `tools\DummyDll`, and otherwise leaves AnimeStudio's
+`--dummy_dlls` option unset.
+
+For targeted MonoBehaviour schema experiments, add
+`--animestudio-mono-behaviour-type-tree-priority script-first` to try the
+DummyDll script-derived TypeTree before Unity's embedded serialized TypeTree.
+The default is `serialized-first`. Script-first helps only when AnimeStudio can
+also load the external `MonoScript` dependency for the MonoBehaviour and the
+DummyDll set contains a usable script type with real field nodes; otherwise the
+output records the unresolved or unusable script-derived status and falls back
+to the serialized TypeTree.
+
+AnimeStudio now keeps partial MonoBehaviour JSON when a serialized TypeTree
+fails partway through a managed-reference field. Instead of writing only
+metadata, it preserves successfully decoded fields such as `m_Name`,
+`actionsData`, and `$animestudio.recoveredManagedReferences.RefIds` headers with
+each managed reference `rid`, type name, payload offset, payload length, and
+validated inferred `DialogMainFlowData` `leadRid`/`linkedRids` when that layout
+matches exactly. It also names validated string fields for common dialog
+actions, including `lineId`, `animationPath`, `facialMorphPath`, and
+`poseControlNames`, records inferred transform-like fields for validated
+`DialogTeleportEntityActionData` payloads, names small validated empty-tail and
+flag/index-like dialog actions, records validated motion/camera/post-process
+scalar blocks for action payloads such as `DialogMoveToActData`,
+`DialogLookAtActData`, `DialogTurnToActData`, `DialogCamDOFActionData`,
+`DialogMaskActionData`, `DialogCamPPActionData`, and the common
+`DialogCamActData` layout, and records a conservative `inferredActionTimingPrefix`
+for dialog action payloads (`value0Seconds`, `value1Seconds`, and `actionCode`).
+Still-unparsed payloads may include
+`heuristicStringHints` and `heuristicRidLinks`; those fields are intentionally
+advisory clues, not a full managed-reference schema decode.
+The Story builder turns decoded dialog action flows into
+`timeline_action_evidence.json` and shows compact line-order/action evidence in
+the WebUI when `Show debug info` is enabled.
+DummyDlls add extra value on top of that when `m_Script` resolves: the JSON
+records the script class/namespace/assembly and whether a script-derived
+TypeTree was usable. Some Endfield timeline classes, for example
+`Beyond.Gameplay.DialogSlateTimelineData`, are not present in the current Cpp2IL
+DummyDll set, so those objects still rely on the embedded serialized TypeTree
+plus partial managed-reference recovery.
 
 After an installed-game refresh, check `reports/export_full_summary.md` for
 stage return codes and log issues. A nonzero AnimeStudio subprocess now makes
@@ -258,10 +323,14 @@ want to refresh decoded media and CN audio from the installed client.
 from an existing `export_full/`. It runs:
 
 - `scripts/verify_export_freshness.py`
-- `scripts/story_builder/dialog_registry.py --quiet`
-- `scripts/story_builder/video_bindings.py`
-- `scripts/story_builder/source_links.py`
+- `scripts/story_builder/refresh_evidence.py`
 - `scripts/story_builder/build.py --languages CN --default-language CN --skip-audio-link`
+
+The evidence refresh step runs the DialogIdTable registry, narrative video
+bindings, and story source-link refresh in parallel. The freshness verifier uses
+a fast non-empty check for required generated output folders; run
+`python scripts\verify_export_freshness.py --full-output-counts` only when an
+exact audit count is needed.
 
 It intentionally skips installed-game export, Updates diffing, fluffy-dumper
 structured export, AnimeStudio story extraction, 2D/3D asset/animation
@@ -364,27 +433,25 @@ fingerprints. Pass
 detected, or `--skip-asset-updates` when the feed should only compare
 WebUI-facing text JSON.
 
-To shrink the saved previous export after confirming the focused Updates scope,
-preview the old files that are outside the tracked text/assets surfaces:
+To shrink the saved previous export after confirming the Updates comparison,
+preview old files that already exist byte-identically in the current export:
 
 ```bat
 .\build_updates.bat --dry-run-prune-previous-export-untracked
 ```
 
-Then delete those untracked files from the previous export root intentionally:
+Then delete those old duplicate copies from the previous export root
+intentionally:
 
 ```bat
 .\build_updates.bat --prune-previous-export-untracked
 ```
 
 The prune flag refuses to run when the previous export root is the current
-`export_full/` or the repository root.
-It also prunes duplicate decoded audio copies inside the previous export's
-`structured/Audio/` tree, preferring mapped `voice/` files over `unmapped/`
-copies with the same audio id and extension. Previous-export audio files that
-also exist unchanged in the current `export_full/structured/Audio/` are pruned
-too; the cached asset baseline keeps future update comparisons from treating
-those pruned files as newly added.
+`export_full/` or the repository root. It deletes only previous-export files
+that exist byte-identically at the same relative path in the current
+`export_full/`; cached tracker and asset baselines keep future update
+comparisons from treating those pruned files as newly added.
 
 Non-empty feed snapshots are kept in `.game-data-tracker/history/` as
 `update-feed-*.json`.
@@ -454,22 +521,6 @@ Generated WebUI outputs include:
 
 Asset indexing scans only the active WebUI export roots.
 
-## Unity Character Recovery Lab
-
-The Unity project lives in `unity_endfield_graph_shader_lab/`.
-
-Common commands:
-
-```bat
-cd unity_endfield_graph_shader_lab
-.\open_character_recovery_lab.bat
-.\build_all_character_recovery.bat
-```
-
-See `unity_endfield_graph_shader_lab/README.md` for the full character recovery
-workflow. In this checkout, Unity recovery helpers are project-local under
-`unity_endfield_graph_shader_lab/` rather than active files under `scripts/`.
-
 ## Tool Pointers
 
 The normal reuse path uses the WebUI scripts and an existing `export_full/`.
@@ -524,7 +575,6 @@ matching docs and intentional tracking.
 - `scripts/`: WebUI builders, packaging tools, and export helpers.
 - `tools/AnimeStudio/`: tracked AnimeStudio fork submodule used for
   installed-game story and asset exports.
-- `unity_endfield_graph_shader_lab/`: Unity character recovery lab project.
 - `export_full/`: generated data exported from the installed client.
 - `reports/`: durable WebUI/export summaries.
 - `videos/`: local gameplay captures used by optional Story order OCR/audio
