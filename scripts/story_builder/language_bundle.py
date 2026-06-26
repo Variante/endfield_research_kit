@@ -31,6 +31,32 @@ _NARRATIVE_VIDEO_OVERRIDES_PATH = (
     / "webui" / "overrides" / "narrative_videos.json"
 )
 
+_STORY_ORDER_OVERRIDES_PATH = (
+    _RadioContPath(__file__).resolve().parents[2]
+    / "webui" / "overrides" / "story_order.json"
+)
+
+
+@_radio_cont_lru_cache(maxsize=2)
+def _load_story_order_overrides(path_str: str) -> dict[str, list[str]]:
+    """Load {missionId: [orderedSceneKey, ...]} from the story-order override.
+
+    Used only to widen the additive sceneOrderInfo candidate set so it matches
+    the order-compare report's keyInfo coverage (override-only scene keys).
+    """
+    path = _RadioContPath(path_str)
+    if not path.is_file():
+        return {}
+    payload = _radio_cont_json.loads(path.read_text(encoding="utf-8"))
+    missions = payload.get("missions") if isinstance(payload, dict) else {}
+    out: dict[str, list[str]] = {}
+    if isinstance(missions, dict):
+        for mission_id, row in missions.items():
+            order = (row or {}).get("order") if isinstance(row, dict) else None
+            if isinstance(order, list):
+                out[str(mission_id)] = [str(key) for key in order if key]
+    return out
+
 
 def _normalize_video_override_stem(value: object) -> str:
     text = str(value or "").strip().replace("\\", "/")
@@ -403,6 +429,7 @@ def build_language_bundle(
             f"Persistent/{i18n_table_name}",
         ),
     }
+    default_text_source = "persistent" if i18n_by_source.get("persistent") else "streaming"
 
     def apply_i18n_hotfixes() -> dict[str, dict[str, int]]:
         hotfix_type = I18N_HOTFIX_LANGUAGE_TYPES.get(language_code)
@@ -454,33 +481,66 @@ def build_language_bundle(
         )
         print(f"  applied {I18N_HOTFIX_TABLE}: {summary}")
 
-    text_table = load("TextTable.json")
-    dialogs = load("DialogTextTable.json")
-    sns = load("SNSDialogTable.json")
-    sns_chats = load("SNSChatTable.json")
-    sns_opts = load("SNSDialogOptionTable.json")
-    sns_topics = load("SNSDialogTopicTable.json")
-    dlg_opts = load("DialogOptionTable.json")
-    summaries = load("DialogSummaryTable.json")
-    mission_extra_info = load("MissionExtraInfoTable.json")
-    dungeons = load("DungeonTable.json")
-    skill_patches = load("SkillPatchTable.json")
-    char_growth = load("CharGrowthTable.json")
-    game_mechanics = load("GameMechanicTable.json")
-    loading_tips = load("LoadingTipsTable.json")
-    error_codes = load("ErrorCodeTable.json")
-    achievements = load("AchievementTable.json")
-    achievement_types = load("AchievementTypeTable.json")
-    mail_senders = load("MailSenderTable.json")
-    mail_templates = load("MailTemplateTable.json")
-    character_rows = load("CharacterTable.json")
-    item_rows = load("ItemTable.json")
-    weapon_basic = load("WeaponBasicTable.json")
-    enemy_display_info = load("EnemyDisplayInfoTable.json")
-    enemy_template_display = load("EnemyTemplateDisplayInfoTable.json")
-    enemy_ability_desc = load("EnemyAbilityDescTable.json")
-    npc_rows = load("NpcTable.json")
-    npc_templates = load("NpcTemplateGroupTable.json")
+    def load_effective_table(name: str) -> dict:
+        streaming_payload = load(name)
+        persistent_payload = load_optional_table_json(
+            PERSISTENT_TABLE_DIR,
+            name,
+            f"Persistent/{name}",
+        )
+        if not persistent_payload:
+            return streaming_payload
+        if not streaming_payload:
+            print(f"  using Persistent/{name}: {len(persistent_payload)} row(s)")
+            return persistent_payload
+
+        streaming_keys = set(streaming_payload)
+        persistent_keys = set(persistent_payload)
+        only_persistent = len(persistent_keys - streaming_keys)
+        only_streaming = len(streaming_keys - persistent_keys)
+        if len(persistent_payload) >= int(len(streaming_payload) * 0.8):
+            if only_persistent or only_streaming:
+                print(
+                    f"  using Persistent/{name}: +{only_persistent} row(s), "
+                    f"-{only_streaming} row(s) versus StreamingAssets"
+                )
+            return persistent_payload
+
+        merged = dict(streaming_payload)
+        merged.update(persistent_payload)
+        print(
+            f"  merged Persistent/{name}: {only_persistent} added/updated row(s), "
+            f"{len(merged)} effective row(s)"
+        )
+        return merged
+
+    text_table = load_effective_table("TextTable.json")
+    dialogs = load_effective_table("DialogTextTable.json")
+    sns = load_effective_table("SNSDialogTable.json")
+    sns_chats = load_effective_table("SNSChatTable.json")
+    sns_opts = load_effective_table("SNSDialogOptionTable.json")
+    sns_topics = load_effective_table("SNSDialogTopicTable.json")
+    dlg_opts = load_effective_table("DialogOptionTable.json")
+    summaries = load_effective_table("DialogSummaryTable.json")
+    mission_extra_info = load_effective_table("MissionExtraInfoTable.json")
+    dungeons = load_effective_table("DungeonTable.json")
+    skill_patches = load_effective_table("SkillPatchTable.json")
+    char_growth = load_effective_table("CharGrowthTable.json")
+    game_mechanics = load_effective_table("GameMechanicTable.json")
+    loading_tips = load_effective_table("LoadingTipsTable.json")
+    error_codes = load_effective_table("ErrorCodeTable.json")
+    achievements = load_effective_table("AchievementTable.json")
+    achievement_types = load_effective_table("AchievementTypeTable.json")
+    mail_senders = load_effective_table("MailSenderTable.json")
+    mail_templates = load_effective_table("MailTemplateTable.json")
+    character_rows = load_effective_table("CharacterTable.json")
+    item_rows = load_effective_table("ItemTable.json")
+    weapon_basic = load_effective_table("WeaponBasicTable.json")
+    enemy_display_info = load_effective_table("EnemyDisplayInfoTable.json")
+    enemy_template_display = load_effective_table("EnemyTemplateDisplayInfoTable.json")
+    enemy_ability_desc = load_effective_table("EnemyAbilityDescTable.json")
+    npc_rows = load_effective_table("NpcTable.json")
+    npc_templates = load_effective_table("NpcTemplateGroupTable.json")
     npc_proxy_rows = load_json_path(NPC_PROXY_TABLE_PATH, "NpcProxyTable.json").get("dataTable") or {}
     npc_proxy_ex = _load_npc_proxy_ex()
     npc_proxy_info = npc_proxy_ex.get("proxyInfoData") or {}
@@ -488,14 +548,14 @@ def build_language_bundle(
     atmos_cluster_rows = load_json_path(
         ATMOS_CLUSTER_TABLE_PATH, "AtmosphericNpcClusterDataTable.json"
     ).get("dataTable") or {}
-    radios = load("RadioTable.json")
-    remote_common = load("RemoteCommonTable.json")
-    env_talks = load("EnvTalkTable.json")
-    ai_bark_text = load("AIBarkText.json")
-    audio_dialog = load("AudioDialog.json")
-    responsive_dialog = load("ResponsiveDialog.json")
-    rich_content = load("RichContentTable.json")
-    reading_popups = load("ReadingPopUpTable.json")
+    radios = load_effective_table("RadioTable.json")
+    remote_common = load_effective_table("RemoteCommonTable.json")
+    env_talks = load_effective_table("EnvTalkTable.json")
+    ai_bark_text = load_effective_table("AIBarkText.json")
+    audio_dialog = load_effective_table("AudioDialog.json")
+    responsive_dialog = load_effective_table("ResponsiveDialog.json")
+    rich_content = load_effective_table("RichContentTable.json")
+    reading_popups = load_effective_table("ReadingPopUpTable.json")
     rich_content_persistent = load_optional_table_json(
         PERSISTENT_TABLE_DIR,
         "RichContentTable.json",
@@ -506,26 +566,27 @@ def build_language_bundle(
         "ReadingPopUpTable.json",
         "Persistent/ReadingPopUpTable.json",
     )
-    prts_all_items = load("PrtsAllItem.json")
-    prts_first_lv = load("PrtsFirstLv.json")
-    prts_page = load("PrtsPage.json")
-    prts_notes = load("PrtsNote.json")
-    prts_categories = load("PrtsCategory.json")
-    prts_investigate_categories = load("PrtsInvestigateCategory.json")
-    wiki_categories = load("WikiCategoryTable.json")
-    wiki_groups = load("WikiGroupTable.json")
-    wiki_entry_data = load("WikiEntryDataTable.json")
-    wiki_tutorial_pages = load("WikiTutorialPageTable.json")
-    wiki_tutorial_pages_by_entry = load("WikiTutorialPageByEntryTable.json")
-    wiki_craft_jump = load("WikiCraftJumpTable.json")
-    wiki_default_craft = load("WikiDefaultCraftTable.json")
+    prts_all_items = load_effective_table("PrtsAllItem.json")
+    prts_first_lv = load_effective_table("PrtsFirstLv.json")
+    prts_page = load_effective_table("PrtsPage.json")
+    prts_notes = load_effective_table("PrtsNote.json")
+    prts_categories = load_effective_table("PrtsCategory.json")
+    prts_investigate_categories = load_effective_table("PrtsInvestigateCategory.json")
+    wiki_categories = load_effective_table("WikiCategoryTable.json")
+    wiki_groups = load_effective_table("WikiGroupTable.json")
+    wiki_entry_data = load_effective_table("WikiEntryDataTable.json")
+    wiki_tutorial_pages = load_effective_table("WikiTutorialPageTable.json")
+    wiki_tutorial_pages_by_entry = load_effective_table("WikiTutorialPageByEntryTable.json")
+    wiki_craft_jump = load_effective_table("WikiCraftJumpTable.json")
+    wiki_default_craft = load_effective_table("WikiDefaultCraftTable.json")
 
 
-    def t(id_value, preferred_source: str = "streaming") -> str:
+    def t(id_value, preferred_source: str | None = None) -> str:
         s = norm_id(id_value)
         if not s:
             return ""
-        lookup_order = [preferred_source]
+        primary_source = preferred_source or default_text_source
+        lookup_order = [primary_source]
         for source_name in ("streaming", "persistent"):
             if source_name not in lookup_order:
                 lookup_order.append(source_name)
@@ -549,11 +610,12 @@ def build_language_bundle(
         field: str,
         raw_value,
         *,
-        preferred_source: str = "streaming",
+        preferred_source: str | None = None,
         transform: str = "",
     ) -> dict:
         i18n_id = norm_id(raw_value.get("id") if isinstance(raw_value, dict) else raw_value)
-        resolved = t(i18n_id, preferred_source=preferred_source)
+        primary_source = preferred_source or default_text_source
+        resolved = t(i18n_id, preferred_source=primary_source)
         trace = {
             "table": table,
             "rowId": row_id,
@@ -562,8 +624,8 @@ def build_language_bundle(
             "lookup": [],
             "text": resolved,
         }
-        if preferred_source != "streaming":
-            trace["preferredSource"] = preferred_source
+        if primary_source != "streaming":
+            trace["preferredSource"] = primary_source
         if i18n_id:
             trace["lookup"].append({
                 "from": f"{table}[{row_id}].{field}",
@@ -12133,6 +12195,7 @@ def build_language_bundle(
         | set(mission_flows_payload)
         | set(mission_timelines_by_mission)
     )
+    story_order_overrides = _load_story_order_overrides(str(_STORY_ORDER_OVERRIDES_PATH))
     if mission_data_missions:
         mission_dir.mkdir(parents=True, exist_ok=True)
         used_mission_filenames: set[str] = set()
@@ -12145,7 +12208,21 @@ def build_language_bundle(
             if mission in mission_flows_payload:
                 payload["flow"] = mission_flows_payload[mission]
             if mission in mission_timelines_by_mission:
-                payload["timelineRecovery"] = mission_timelines_by_mission[mission]
+                timeline_recovery = mission_timelines_by_mission[mission]
+                # Additive: per-scene static order confidence + phase, reusing the
+                # resolution that yields the order-compare report's keyInfo.
+                timeline_recovery["sceneOrderInfo"] = build_mission_scene_order_info(
+                    mission_flows_payload.get(mission),
+                    timeline_recovery.get("questSpatialTrack"),
+                    timeline_recovery.get("quests"),
+                    timeline_recovery.get("scenePlacement"),
+                    build_mission_scene_order_candidate_kinds(
+                        index_entries,
+                        mission,
+                        story_order_overrides.get(mission),
+                    ),
+                )
+                payload["timelineRecovery"] = timeline_recovery
             out_path = write_mission_payload(rel_file, payload)
             mission_data_files[mission] = rel_file
             mission_data_bytes += out_path.stat().st_size

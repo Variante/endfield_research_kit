@@ -138,6 +138,9 @@ echo                         Default is 16 shards with 4 concurrent workers.
 echo   --animestudio-type-job-mode auto^|parallel^|merged
 echo                         Controls non-sharded AnimeStudio type jobs.
 echo                         auto merges JSON type jobs and keeps asset conversion sharded.
+echo   --animestudio-stage-merge-mode auto^|never^|aggressive
+echo                         Controls guarded Convert+JSON same-process orchestration.
+echo                         aggressive requires CLI secondary-export flag support.
 echo   --animestudio-dummy-dlls PATH
 echo                         DummyDll directory for AnimeStudio MonoBehaviour schema recovery.
 echo                         Can also be set with ANIMESTUDIO_DUMMY_DLLS.

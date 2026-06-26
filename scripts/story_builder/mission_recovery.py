@@ -2034,6 +2034,189 @@ def build_quest_spatial_track(
     return rows
 
 
+# Scene kinds the WebUI treats as orderable story scenes. Mirrors
+# ORDER_INCLUDE_KINDS in
+# scratch/main_story_order_compare/recover_main_story_order_compare.py.
+SCENE_ORDER_INCLUDE_KINDS = frozenset({
+    "black",
+    "cutscene",
+    "dlg",
+    "env",
+    "radio",
+    "remotecomm",
+    "sns",
+    "text",
+    "video",
+})
+
+
+def scene_order_infer_kind(key: str, kind_hint: str = "") -> str:
+    """Classify a scene key for sceneOrderInfo.
+
+    Mirrors ``infer_kind`` in the scratch order-compare report: an explicit
+    index ``d`` hint wins, otherwise the kind is read from the key prefix.
+    """
+    if kind_hint:
+        return str(kind_hint)
+    key = str(key or "")
+    if key.startswith("misc_dlg_") or key.startswith("dlg_"):
+        return "dlg"
+    if key.startswith("env_"):
+        return "env"
+    return key.split("_", 1)[0] if "_" in key else "unknown"
+
+
+def _scene_order_walk_values(node: Any) -> list[str]:
+    out: list[str] = []
+    if isinstance(node, dict):
+        for value in node.values():
+            out.extend(_scene_order_walk_values(value))
+    elif isinstance(node, list):
+        for value in node:
+            out.extend(_scene_order_walk_values(value))
+    elif isinstance(node, str):
+        out.append(node)
+    return out
+
+
+def build_scene_order_candidate_kinds(
+    index_entries: list[dict] | None,
+    mission_id: str,
+    override_keys: list[str] | None = None,
+) -> dict[str, str]:
+    """Build the {sceneKey: indexKindHint} candidate set for one mission.
+
+    Mirrors the candidate-key selection in the scratch order-compare report:
+    index entries whose inferred kind is an orderable story kind, plus every
+    story-order override key (kept unfiltered), minus hash terminals.
+    """
+    mission_id = str(mission_id or "")
+    candidate_kinds: dict[str, str] = {}
+    for entry in index_entries or []:
+        if not isinstance(entry, dict) or str(entry.get("m") or "") != mission_id:
+            continue
+        key = str(entry.get("k") or "")
+        if not key or key.startswith("#"):
+            continue
+        hint = str(entry.get("d") or "")
+        if scene_order_infer_kind(key, hint) in SCENE_ORDER_INCLUDE_KINDS:
+            candidate_kinds[key] = hint
+    for key in override_keys or []:
+        key = str(key or "")
+        if key and not key.startswith("#"):
+            candidate_kinds.setdefault(key, "")
+    return candidate_kinds
+
+
+def build_scene_order_info(
+    mission_flow: dict | None,
+    quest_spatial_track: list[dict] | None,
+    quests: list[dict] | None,
+    scene_placement: dict[str, dict] | None,
+    candidate_kinds: dict[str, str],
+) -> dict[str, dict]:
+    """Resolve additive per-scene static order CONFIDENCE + PHASE for the WebUI.
+
+    Ports the per-key resolution from
+    scratch/main_story_order_compare/recover_main_story_order_compare.py so the
+    maintained builder emits the same questOrder / orderSource / confidence /
+    evidenceKinds the scratch report's ``keyInfo`` carries. This is STATIC
+    recovery only: confidence never folds in any OCR-derived signal. It adds no
+    new ordering heuristic and does not change any existing field or sort.
+    """
+    flow = mission_flow if isinstance(mission_flow, dict) else {}
+    quest_spatial_track = quest_spatial_track or []
+    quests = quests or []
+    scene_placement = scene_placement if isinstance(scene_placement, dict) else {}
+    candidate_kinds = candidate_kinds or {}
+    candidate_keys = {
+        str(key)
+        for key in candidate_kinds
+        if str(key) and not str(key).startswith("#")
+    }
+
+    quest_order_by_id: dict[str, int] = {}
+    flow_index_by_order: dict[int, Any] = {}
+    for row in quest_spatial_track:
+        if not isinstance(row, dict):
+            continue
+        quest_order = row.get("questOrder")
+        quest_id = str(row.get("questId") or "")
+        if quest_id and isinstance(quest_order, int):
+            quest_order_by_id.setdefault(quest_id, int(quest_order))
+        if isinstance(quest_order, int):
+            flow_index_by_order.setdefault(int(quest_order), row.get("flowIndex"))
+    for index, row in enumerate(quests):
+        if not isinstance(row, dict):
+            continue
+        quest_id = str(row.get("questId") or "")
+        if quest_id:
+            quest_order_by_id.setdefault(quest_id, index)
+
+    flow_attach: dict[str, list[int]] = defaultdict(list)
+    for index, quest in enumerate(flow.get("quests") or []):
+        if not isinstance(quest, dict):
+            continue
+        values = set(_scene_order_walk_values(quest))
+        for key in candidate_keys:
+            if key in values:
+                flow_attach[key].append(index)
+
+    quest_spatial_attach: dict[str, list[int]] = defaultdict(list)
+    for row in quest_spatial_track:
+        if not isinstance(row, dict) or not isinstance(row.get("questOrder"), int):
+            continue
+        quest_order = int(row["questOrder"])
+        row_keys: set[str] = set()
+        for key in row.get("attachedSceneKeys") or []:
+            row_keys.add(str(key))
+        for resource in row.get("resources") or []:
+            if isinstance(resource, dict) and resource.get("key"):
+                row_keys.add(str(resource["key"]))
+        for match in row.get("spatialSourceMatches") or []:
+            if isinstance(match, dict) and match.get("sceneKey"):
+                row_keys.add(str(match["sceneKey"]))
+        for key in candidate_keys & row_keys:
+            quest_spatial_attach[key].append(quest_order)
+
+    out: dict[str, dict] = {}
+    for key in sorted(candidate_keys, key=natural_key):
+        placement = scene_placement.get(key) if isinstance(scene_placement.get(key), dict) else {}
+        candidates: list[tuple[int, int, str]] = []
+        for order in flow_attach.get(key) or []:
+            candidates.append((int(order), 0, "flowQuestAttachment"))
+        for quest_id in placement.get("questIds") or []:
+            if quest_id in quest_order_by_id:
+                candidates.append((quest_order_by_id[quest_id], 1, "scenePlacementQuest"))
+        for order in quest_spatial_attach.get(key) or []:
+            candidates.append((int(order), 2, "questSpatialTrack"))
+        for spatial in placement.get("spatialQuestCandidates") or []:
+            if isinstance(spatial, dict) and isinstance(spatial.get("questOrder"), int):
+                candidates.append((int(spatial["questOrder"]), 3, "levelscriptSpatialProximity"))
+
+        if candidates:
+            quest_order, source_priority, source = sorted(candidates)[0]
+        else:
+            quest_order, source_priority, source = 999999, 9, "numericFallback"
+        evidence_kinds = sorted(str(value) for value in (placement.get("evidenceKinds") or []))
+        if source_priority <= 1 or any(kind.startswith("sourceBacked") for kind in evidence_kinds):
+            confidence = "source-backed"
+        elif source_priority <= 3:
+            confidence = "weak"
+        else:
+            confidence = "fallback"
+        resolved_order = quest_order if quest_order != 999999 else None
+        out[key] = {
+            "questOrder": resolved_order,
+            "flowIndex": flow_index_by_order.get(quest_order) if resolved_order is not None else None,
+            "orderSource": source,
+            "confidence": confidence,
+            "kind": scene_order_infer_kind(key, candidate_kinds.get(key, "")),
+            "evidenceKinds": evidence_kinds,
+        }
+    return out
+
+
 def source_backed_story_call_contexts_from_scene_graph(
     scene_graph: dict | None,
     source: dict | None = None,
