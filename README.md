@@ -115,21 +115,27 @@ the faster rebuild commands:
 
 ```bat
 .\export.bat
+.\export.bat --with-assets
 .\export_assets.bat
 .\build_updates.bat
 python serve.py
 ```
 
 Plain `export.bat` rebuilds Story/Text Tables browser data from the existing
-`export_full/` and verifies freshness first. Use `export.bat --export-from-game`
-after the installed game updates, after `scripts\verify_export_freshness.py`
-reports stale source roots, or whenever you intentionally want to refresh
-`export_full/` from the installed client.
+`export_full/` and verifies freshness first. Use `export.bat --with-assets`
+when you want Story plus asset indexes and CN audio relinking in one local
+rebuild. Use `export.bat --export-from-game` after the installed game updates,
+after `scripts\verify_export_freshness.py` reports stale source roots, or
+whenever you intentionally want to refresh `export_full/` from the installed
+client. Add `--with-assets` when media or audio should refresh too; that path
+runs one combined AnimeStudio Story+asset export instead of running
+`export.bat` and `export_assets.bat` separately.
 
-`export_assets.bat` without `--export-from-game` reuses existing decoded assets,
-rebuilds the Assets tab index and compact Story media lookup, then relinks
-existing CN audio. Pass `--export-from-game` when you want to refresh media or
-audio from the installed client.
+`export_assets.bat` without `--export-from-game` remains the asset/audio-only
+path. It reuses existing decoded assets, rebuilds the Assets tab index and
+compact Story media lookup, then relinks existing CN audio. Pass
+`--export-from-game` when you want to refresh only media or audio from the
+installed client after Story is already current.
 
 Installed-game asset refreshes have three modes:
 
@@ -143,15 +149,20 @@ Installed-game asset refreshes have three modes:
 AnimeStudio refreshes also accept worker and shard controls:
 
 ```bat
-.\export_assets.bat --export-from-game --full-assets --animestudio-jobs 2 --animestudio-shards 16
+.\export.bat --export-from-game --with-assets --full-assets --animestudio-jobs 2 --animestudio-shards 16
 ```
 
 `--animestudio-jobs` is the number of concurrent AnimeStudio worker processes;
 the default is `4`, but use `1` or `2` when RAM is tight. `--animestudio-shards`
 is the number of deterministic asset slices, defaulting to `16`; it tunes
 per-process asset batch size and does not by itself increase concurrency.
-`export.bat --export-from-game` accepts `--animestudio-jobs` for Story export
-work too.
+Non-sharded JSON type jobs are merged by default with
+`--animestudio-type-job-mode auto`, so AnimeStudio can load matching bundles once
+for multiple JSON types. Pass `--animestudio-type-job-mode parallel` to restore
+the older one-process-per-type behavior. `export.bat --export-from-game`
+accepts `--animestudio-jobs` for Story export work too, and
+`export.bat --export-from-game --with-assets` accepts the same asset mode,
+worker, shard, and type-job controls as `export_assets.bat --export-from-game`.
 
 CN is rebuilt by default. To build more languages after the rebuild:
 
@@ -201,6 +212,9 @@ When the game updates:
 ```bat
 .\export.bat --export-from-game
 ```
+
+Use `.\export.bat --export-from-game --with-assets` instead when refreshed media
+and CN audio should be part of the same installed-game pass.
 
 3. Build the Updates feed:
 

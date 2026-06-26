@@ -56,7 +56,9 @@ data dumper. `export_assets.bat --export-from-game` uses AnimeStudio for the
 lightweight `vfs-index` snapshot and CN audio decode before relinking.
 Asset conversion uses more shards than workers by default: `--animestudio-shards 16`
 with `--animestudio-jobs 4`; adjust `--animestudio-shards` separately to tune
-per-process asset slice size.
+per-process asset slice size. Non-sharded JSON type jobs use
+`--animestudio-type-job-mode auto` by default, merging them into one AnimeStudio
+process; pass `parallel` only when comparing against the older per-type path.
 `export_assets.bat --export-from-game` now defaults to the full WebUI-facing
 image/model asset export plus `Material` JSON; add `--webui-assets` when only
 WebUI-referenced Texture2D media is needed, or `--debug-assets` for exhaustive

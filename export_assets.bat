@@ -113,7 +113,9 @@ echo.
 echo Rebuilds WebUI asset indexes plus the compact Story media lookup,
 echo then relinks decoded CN Story audio. AnimeStudio full
 echo WebUI-facing image/model decode is the default for installed-game refreshes.
-echo Story/reference data is handled by export.bat.
+echo Story/reference data is handled by export.bat. When Story and assets both
+echo need an installed-game refresh, use export.bat --export-from-game --with-assets
+echo to run one combined AnimeStudio Story+asset export.
 echo.
 echo   --export-from-game    Run AnimeStudio asset conversion and CN audio decode.
 echo                         Defaults to full WebUI-facing image/model export.
@@ -133,6 +135,9 @@ echo                         Lower this value if peak AnimeStudio memory is too 
 echo   --animestudio-shards N
 echo                         Passed through when --export-from-game is present.
 echo                         Default is 16 shards with 4 concurrent workers.
+echo   --animestudio-type-job-mode auto^|parallel^|merged
+echo                         Controls non-sharded AnimeStudio type jobs.
+echo                         auto merges JSON type jobs and keeps asset conversion sharded.
 echo   --animestudio-dummy-dlls PATH
 echo                         DummyDll directory for AnimeStudio MonoBehaviour schema recovery.
 echo                         Can also be set with ANIMESTUDIO_DUMMY_DLLS.
