@@ -7,20 +7,27 @@ Active scripts in this directory support the WebUI export/package workflow.
 From the repo root:
 
 ```bat
-.\setup_first_time.bat --game-root "E:\Games\Endfield Game\Endfield_Data"
+notepad endfield_paths.bat
+.\setup_first_time.bat
 .\export.bat
 .\export.bat --export-from-game
-.\export.bat --export-from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
 .\build_updates.bat
 .\export_assets.bat
 .\package_webui.bat
 ```
 
-For a fresh checkout, prefer the root `setup_first_time.bat` wrapper. It
-initializes and builds the required external tools, runs the installed-game
-Story/Text Tables export, prints optional Assets/media and Updates follow-up
-commands, and starts or reuses the default WebUI server. Pass `--no-serve` if
-the setup should stop after the build/export steps.
+For a fresh checkout, edit `endfield_paths.bat` first, then prefer the root
+`setup_first_time.bat` wrapper. It initializes and builds the required external
+tools, runs the installed-game Story/Text Tables export, prints optional
+Assets/media and Updates follow-up commands, and starts or reuses the default
+WebUI server. Pass `--no-serve` if the setup should stop after the build/export
+steps.
+
+The root wrappers load `endfield_paths.bat` before parsing arguments. It sets
+`ENDFIELD_GAME_ROOT`, `ENDFIELD_PREVIOUS_EXPORT_ROOT`, and
+`ENDFIELD_EXPORT_ROOT` for repeated local runs. Explicit flags such as
+`--game-root`, `--previous-export-root`, and `--export-root` still take
+precedence for one-off commands.
 
 `export.bat` is the normal Story/Text Tables WebUI rebuild path from an existing
 `export_full/`. It runs:
@@ -39,10 +46,10 @@ loads those generated files.
 Pass `--export-from-game` when you explicitly want to refresh `export_full/`
 from installed game data before rebuilding Story/Text Tables data. Audio relinking
 is handled by `export_assets.bat` after generated conversations are rebuilt.
-Pass `--game-root PATH` when the installed game is not under the default
-`D:\Program Files\Endfield Game\Endfield_Data`. The path must be the installed
-`Endfield_Data` directory. For repeated runs, set `ENDFIELD_GAME_ROOT` before
-launching the wrapper; an explicit `--game-root` argument takes precedence.
+Set `ENDFIELD_GAME_ROOT` in `endfield_paths.bat` when the installed game is not
+under the default `D:\Program Files\Endfield Game\Endfield_Data`. The path must
+be the installed `Endfield_Data` directory. For one-off runs, pass
+`--game-root PATH`; an explicit argument takes precedence over the config file.
 Fresh clones must initialize and build the AnimeStudio submodule before this
 installed-game refresh path can run:
 
@@ -61,10 +68,13 @@ previous export and current `export_full/`. Use `.\build_updates.bat
 the exported text JSON that feeds Story and Text Tables plus exported image/model/video
 assets and decoded audio using fast size fingerprints; pass
 `--hash-asset-updates` for slower same-size binary modification detection, or
-`--skip-asset-updates` for a text-only feed. Pass `--previous-export-root PATH`
-and `--export-root PATH` to change the compared export trees. Most runs do not
-need `--game-root`; pass it only for optional decoded-impact mapping from a
-non-default installed `Endfield_Data` root. It does not choose the export trees.
+`--skip-asset-updates` for a text-only feed. The wrapper reads
+`ENDFIELD_PREVIOUS_EXPORT_ROOT` and `ENDFIELD_EXPORT_ROOT` from
+`endfield_paths.bat`; pass `--previous-export-root PATH` and
+`--export-root PATH` only for one-off comparisons. Most runs do not need
+`--game-root`; pass it only for optional decoded-impact mapping from a
+non-default installed
+`Endfield_Data` root. It does not choose the export trees.
 
 `export_assets.bat` runs `scripts/build_assets.py` for the compact WebUI media
 indexes, then runs `scripts/build_audio.py --skip-decode` to relink existing
@@ -73,9 +83,9 @@ the full WebUI-facing AnimeStudio image/model export plus `Material` JSON after
 first writing a lightweight AnimeStudio `vfs-index` bundle metadata snapshot,
 and decode CN audio first. Pass `--webui-assets` when only WebUI-referenced
 Texture2D media is needed, or `--debug-assets` for exhaustive AnimeStudio
-conversion/JSON diagnostics. It accepts the same `--game-root PATH` argument and
-`ENDFIELD_GAME_ROOT` fallback when refreshing decoded assets/audio from a
-non-default install root.
+conversion/JSON diagnostics. It accepts the same `endfield_paths.bat`
+`ENDFIELD_GAME_ROOT` fallback and `--game-root PATH` override when refreshing
+decoded assets/audio from a non-default install root.
 
 Both installed-game wrappers pass `--animestudio-jobs N` through to
 `export_full_from_game.py`. The default is now `4` so balanced asset shards and
