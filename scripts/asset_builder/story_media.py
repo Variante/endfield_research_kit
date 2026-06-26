@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from common import ASSET_DIR, OUT_DIR, write_json
-from package_webui import (
+from pack_webui import (
     build_inline_image_lookup,
     build_video_lookup,
     collect_inline_image_ids,

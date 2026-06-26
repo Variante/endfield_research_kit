@@ -136,9 +136,9 @@ intentionally excluded.
 
 CHINESE_QUICKSTART_README = """Endfield WebUI 使用说明
 
-1. 先解压主包 endfield-story-exported-*.zip。
-2. 如果你还需要图片和视频，再把 endfield-story-exported-assets-*.zip 解压到同一个文件夹里；提示覆盖或合并时请选择允许。
-3. 如果你还需要语音，再把 endfield-story-exported-audio-*.zip 也解压到同一个文件夹里；提示覆盖或合并时同样请选择允许。
+1. 先解压主包 *-endfield-story-exported.zip。
+2. 如果你还需要图片和视频，再把 *-endfield-story-exported-assets.zip 解压到同一个文件夹里；提示覆盖或合并时请选择允许。
+3. 如果你还需要语音，再把 *-endfield-story-exported-audio.zip 也解压到同一个文件夹里；提示覆盖或合并时同样请选择允许。
 4. 电脑需要安装 Python 3。
 5. 在解压后的文件夹里打开命令行，运行：
 
@@ -224,7 +224,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help=(
             "Primary story zip path to write. Default: "
-            f"{ZIP_NAME_PREFIX}-YYYYMMDD.zip, where YYYYMMDD is today's local date."
+            f"YYYYMMDD-{ZIP_NAME_PREFIX}.zip, where YYYYMMDD is today's local date."
         ),
     )
     parser.add_argument(
@@ -281,17 +281,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def default_output_path(project_root: Path) -> Path:
     datestamp = datetime.now().strftime("%Y%m%d")
-    return project_root / f"{ZIP_NAME_PREFIX}-{datestamp}.zip"
+    return project_root / f"{datestamp}-{ZIP_NAME_PREFIX}.zip"
 
 
 def default_assets_output_path(project_root: Path) -> Path:
     datestamp = datetime.now().strftime("%Y%m%d")
-    return project_root / f"{ASSETS_ZIP_NAME_PREFIX}-{datestamp}.zip"
+    return project_root / f"{datestamp}-{ASSETS_ZIP_NAME_PREFIX}.zip"
 
 
 def default_audio_output_path(project_root: Path) -> Path:
     datestamp = datetime.now().strftime("%Y%m%d")
-    return project_root / f"{AUDIO_ZIP_NAME_PREFIX}-{datestamp}.zip"
+    return project_root / f"{datestamp}-{AUDIO_ZIP_NAME_PREFIX}.zip"
 
 
 def companion_assets_output_path(output: Path, project_root: Path) -> Path:

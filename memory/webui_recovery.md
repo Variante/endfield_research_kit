@@ -109,7 +109,7 @@ Serving and packaging:
   port such as `python serve.py 9000`.
 - Before starting a default server, check whether `127.0.0.1:8765` is already
   running and reuse it.
-- Package with `python scripts\package_webui.py` or `.\package_webui.bat`.
+- Package with `python scripts\pack_webui.py` or `.\pack_webui.bat`.
 - Package inputs are `serve.py`, `webui/`, and selected media from
   `export_full/`. `reports/`, `scratch/`, and `tmp/` are not package inputs.
 
