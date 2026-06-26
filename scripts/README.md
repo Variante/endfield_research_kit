@@ -10,6 +10,7 @@ From the repo root:
 notepad endfield_paths.bat
 .\setup_first_time.bat
 .\export.bat
+.\export.bat --with-assets
 .\export.bat --export-from-game
 .\build_updates.bat
 .\export_assets.bat
@@ -44,8 +45,11 @@ bindings, and story source-link refresh in parallel before the Story builder
 loads those generated files.
 
 Pass `--export-from-game` when you explicitly want to refresh `export_full/`
-from installed game data before rebuilding Story/Text Tables data. Audio relinking
-is handled by `export_assets.bat` after generated conversations are rebuilt.
+from installed game data before rebuilding Story/Text Tables data. Pass
+`--with-assets` to also run the asset index builder and CN audio relinker after
+Story is rebuilt. When `--export-from-game` and `--with-assets` are combined,
+the wrapper runs one AnimeStudio Story+asset export so the source scan, maps
+stage, and VFS index work are not repeated by a second wrapper invocation.
 Set `ENDFIELD_GAME_ROOT` in `endfield_paths.bat` when the installed game is not
 under the default `D:\Program Files\Endfield Game\Endfield_Data`. The path must
 be the installed `Endfield_Data` directory. For one-off runs, pass
@@ -83,17 +87,24 @@ the full WebUI-facing AnimeStudio image/model export plus `Material` JSON after
 first writing a lightweight AnimeStudio `vfs-index` bundle metadata snapshot,
 and decode CN audio first. Pass `--webui-assets` when only WebUI-referenced
 Texture2D media is needed, or `--debug-assets` for exhaustive AnimeStudio
-conversion/JSON diagnostics. It accepts the same `endfield_paths.bat`
+conversion/JSON diagnostics. When Story also needs an installed-game refresh,
+prefer `export.bat --export-from-game --with-assets` so one exporter invocation
+covers Story and assets. It accepts the same `endfield_paths.bat`
 `ENDFIELD_GAME_ROOT` fallback and `--game-root PATH` override when refreshing
 decoded assets/audio from a non-default install root.
 
 Both installed-game wrappers pass `--animestudio-jobs N` through to
 `export_full_from_game.py`. The default is now `4` so balanced asset shards and
 per-type exports run in parallel; use `1` or `2` for low-RAM or first-time runs.
-Earlier testing on the 64 GiB workstation found `--animestudio-jobs 2` improved
-the Story JSON slice by about 21%, while the old full asset refresh peaked at
-about 27 GiB observed process-tree working set. Full-mode `AnimationClip` and
-`Texture2D` workers dominate both memory and wall time.
+Non-sharded JSON type exports use `--animestudio-type-job-mode auto` by default,
+which merges matching JSON types into one AnimeStudio process instead of loading
+the same source files once per type. Pass `--animestudio-type-job-mode parallel`
+for the older one-process-per-type behavior, or `merged` to combine every
+non-sharded type set. Earlier testing on the 64 GiB workstation found
+`--animestudio-jobs 2` improved the pre-merge Story JSON slice by about 21%,
+while the old full asset refresh peaked at about 27 GiB observed process-tree
+working set. Full-mode `AnimationClip` and `Texture2D` workers dominate both
+memory and wall time.
 
 Both wrappers can pass `--animestudio-dummy-dlls PATH` through when
 `--export-from-game` is present. Use this only for optional IL2CPP DummyDll
@@ -200,8 +211,9 @@ Expected active inputs and outputs:
 
 - `export_full_from_game.py`: export data from the installed Endfield client.
   The normal WebUI wrapper is `..\export.bat`, which skips raw VFS, source
-  inventory, and heavy 2D/3D/animation asset conversion. `..\export_assets.bat`
-  runs those heavier asset passes separately. Summaries are written under
+  inventory, and heavy 2D/3D/animation asset conversion unless `--with-assets`
+  is passed. `..\export_assets.bat` runs those heavier asset passes separately.
+  Summaries are written under
   `..\reports\`, but the workflow does not require `reports`, `scratch`, or
   `tmp` as active inputs.
 - `verify_export_freshness.py`: compares the latest export summary with
@@ -249,8 +261,8 @@ Expected active inputs and outputs:
   `audio_relink.py` owns the post-build decoded-audio relink pass.
 - `build_assets.py`: builds the compact WebUI Story/Wiki media index by
   default, or the broad Assets browser index and optional demo bundle zips with
-  `--mode full`. It is run by `..\export_assets.bat`, not the story-only
-  `..\export.bat`.
+  `--mode full`. It is run by `..\export_assets.bat` and by
+  `..\export.bat --with-assets`, not the story-only `..\export.bat`.
 - `build_audio.py`: decodes language audio via AnimeStudio CLI, indexes files
   under `export_full/structured/Audio/<LANG>/`, parses Wwise bank
   event-to-media links, and post-processes generated conversation JSON so

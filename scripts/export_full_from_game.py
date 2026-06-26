@@ -873,15 +873,20 @@ def animestudio_stage_options_for_scope(scope: str, asset_mode: str = "webui") -
     if scope == "story":
         json_types = ANIMESTUDIO_STORY_JSON_TYPES
         convert_types: tuple[str, ...] = ()
-    elif asset_mode == "webui":
-        json_types = ANIMESTUDIO_WEBUI_JSON_TYPES
-        convert_types = ANIMESTUDIO_WEBUI_CONVERT_TYPES
-    elif asset_mode == "debug":
-        json_types = ANIMESTUDIO_DEBUG_JSON_TYPES
-        convert_types = ANIMESTUDIO_DEBUG_CONVERT_TYPES
     else:
-        json_types = ANIMESTUDIO_FULL_JSON_TYPES
-        convert_types = ANIMESTUDIO_FULL_CONVERT_TYPES
+        if asset_mode == "webui":
+            asset_json_types = ANIMESTUDIO_WEBUI_JSON_TYPES
+            convert_types = ANIMESTUDIO_WEBUI_CONVERT_TYPES
+        elif asset_mode == "debug":
+            asset_json_types = ANIMESTUDIO_DEBUG_JSON_TYPES
+            convert_types = ANIMESTUDIO_DEBUG_CONVERT_TYPES
+        else:
+            asset_json_types = ANIMESTUDIO_FULL_JSON_TYPES
+            convert_types = ANIMESTUDIO_FULL_CONVERT_TYPES
+        if scope == "all":
+            json_types = ordered_unique(ANIMESTUDIO_STORY_JSON_TYPES + asset_json_types)
+        else:
+            json_types = asset_json_types
     return {
         "maps": {"map_op": "Both", "map_type": "JSON,MessagePack"},
         "convert_by_type": {
@@ -1213,7 +1218,8 @@ def parse_args() -> argparse.Namespace:
         default="all",
         help=(
             "`story` exports only maps plus TextAsset/MonoBehaviour/PlayableDirector JSON. "
-            "`assets`/`all` use --animestudio-asset-mode to choose WebUI-focused, full, or debug assets."
+            "`assets` uses --animestudio-asset-mode to choose WebUI-focused, full, or debug assets. "
+            "`all` combines story JSON with the selected asset mode."
         ),
     )
     parser.add_argument(
@@ -1253,6 +1259,17 @@ def parse_args() -> argparse.Namespace:
             f"The default {ANIMESTUDIO_DEFAULT_SHARDS} keeps per-process asset slices small while "
             f"--animestudio-jobs defaults to {ANIMESTUDIO_DEFAULT_JOBS}. "
             "Use 0 to shard by --animestudio-jobs."
+        ),
+    )
+    parser.add_argument(
+        "--animestudio-type-job-mode",
+        choices=("auto", "parallel", "merged"),
+        default="auto",
+        help=(
+            "How to run non-sharded AnimeStudio type jobs. `auto` merges json_by_type "
+            "types into one AnimeStudio process and keeps convert_by_type on the existing "
+            "sharded/parallel path. `parallel` preserves the old one-process-per-type behavior. "
+            "`merged` combines every non-sharded type set."
         ),
     )
     parser.add_argument(
@@ -2221,6 +2238,16 @@ def run_animestudio_asset_shard_work(
     )
 
 
+def should_merge_animestudio_type_jobs(stage: str, normal_items: list[dict[str, Any]], mode: str) -> bool:
+    if stage == "maps" or len(normal_items) <= 1:
+        return False
+    if mode == "parallel":
+        return False
+    if mode == "merged":
+        return True
+    return stage == "json_by_type"
+
+
 def run_animestudio_stage_plan(
     source: str,
     input_root: Path,
@@ -2231,6 +2258,7 @@ def run_animestudio_stage_plan(
     stage: str,
     plan: dict[str, Any],
     jobs: int,
+    type_job_mode: str,
 ) -> list[CommandResult]:
     options = plan["options"]
     run_item_names = set(plan.get("run_items", []))
@@ -2280,11 +2308,19 @@ def run_animestudio_stage_plan(
     else:
         normal_items = list(runnable_items)
 
-    if normal_items and (stage == "maps" or len(normal_items) <= 1):
+    merge_normal_items = should_merge_animestudio_type_jobs(stage, normal_items, type_job_mode)
+
+    if normal_items and (stage == "maps" or len(normal_items) <= 1 or merge_normal_items):
         clear_animestudio_stage_outputs(output_root, source, stage, normal_items)
         command_name = None
         if stage != "maps" and all_results:
-            command_name = f"{source}_animestudio_{stage}_{animestudio_log_suffix(normal_items[0]['item_name'])}"
+            item_suffix = "merged" if len(normal_items) > 1 else normal_items[0]["item_name"]
+            command_name = f"{source}_animestudio_{stage}_{animestudio_log_suffix(item_suffix)}"
+        if merge_normal_items:
+            log(
+                f"  animestudio stage {stage} for {source}: merging {len(normal_items)} type jobs "
+                f"({', '.join(item['item_name'] for item in normal_items)})"
+            )
         normal_type_specs = (
             plan.get("type_specs_to_run", ())
             if stage == "maps"
@@ -2606,6 +2642,7 @@ def main() -> int:
     log(f"  animestudio scope: {args.animestudio_scope}")
     log(f"  animestudio asset mode: {args.animestudio_asset_mode}")
     log(f"  animestudio stages: {', '.join(selected_animestudio_stages)}")
+    log(f"  animestudio type job mode: {args.animestudio_type_job_mode}")
     log(f"  animestudio jobs: {animestudio_jobs}")
     log(
         "  animestudio asset shards: "
@@ -2672,6 +2709,7 @@ def main() -> int:
         "webui_texture_name_filter_signature": webui_texture_name_filter_signature,
         "mono_behaviour_type_tree_priority": animestudio_mono_behaviour_type_tree_priority,
         "jobs": animestudio_jobs,
+        "type_job_mode": args.animestudio_type_job_mode,
         "asset_shards": args.animestudio_shards,
         "asset_cache_enabled": not args.no_animestudio_asset_cache,
         "type_manifest_path": str(animestudio_manifest_file),
@@ -2834,6 +2872,7 @@ def main() -> int:
                         stage=stage,
                         plan=plan,
                         jobs=animestudio_jobs,
+                        type_job_mode=args.animestudio_type_job_mode,
                     )
                     command_results.extend(stage_results)
                     for result in stage_results:
@@ -3003,6 +3042,7 @@ def main() -> int:
         md_lines.append(f"- Scope: `{args.animestudio_scope}`")
         md_lines.append(f"- Asset mode: `{args.animestudio_asset_mode}`")
         md_lines.append(f"- Selected stages: `{', '.join(selected_animestudio_stages)}`")
+        md_lines.append(f"- Type job mode: `{args.animestudio_type_job_mode}`")
         md_lines.append(f"- Parallel jobs: `{animestudio_jobs}`")
         md_lines.append(
             "- Asset shards: "

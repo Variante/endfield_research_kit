@@ -149,6 +149,10 @@ ANIMESTUDIO_DEFAULT_SHARDS = 16
 controls how many filter-data slices each deterministic asset type is split into.
 The default runs 4 worker processes against 16 balanced shards so multiple shards
 can export in parallel; lower jobs when peak memory is too high.
+`--animestudio-type-job-mode auto` merges non-sharded JSON types into one
+AnimeStudio process so TextAsset/MonoBehaviour/PlayableDirector/Material can
+share a scan/load pass. Use `parallel` for the old one-process-per-type behavior
+or `merged` to combine every non-sharded type set.
 
 Stage outputs:
 
@@ -232,13 +236,13 @@ High-level flow in `Program.Run`:
 1. Resolve game with `GameManager.GetGame`.
 2. Configure UnityCN key, logger flags, Unity version, and TypeFlags.
 3. Load optional DummyDlls and optional filter data.
-4. Scan input files.
+4. Lazily scan input files only when a map-build/no-map path needs it; `AssetMap,Load` uses matching map entries directly.
 5. Build or load maps when `--map_op` asks for it.
-6. For each file, load assets, build `AssetItem` data, export, then clear per-file state.
+6. For each selected file, load assets, build `AssetItem` data, export, then clear per-file state.
 
 `Studio.BuildAssetData` collects exportable assets from loaded serialized files. `Studio.ExportAssets` dispatches to `Exporter` by `ExportType` and `ClassIDType`.
 
-`AssetsManager.Clear` closes readers, clears asset lists and caches, and triggers compacting GC only when the process is above the configured threshold. Per-type processes in the wrapper are the main RAM isolation boundary.
+When callers have already merged and filtered split files, they use `AssetsManager.LoadPreparedFiles` to avoid repeating `MergeSplitAssets` / `ProcessingSplitFiles` for every selected file. `AssetsManager.Clear` closes readers, clears asset lists and caches, and triggers compacting GC only when the process is above the configured threshold. Per-type processes in the wrapper are the main RAM isolation boundary.
 
 ## MonoBehaviour Handling
 
