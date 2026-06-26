@@ -195,7 +195,12 @@
     if (REF_STATE.index) return REF_STATE.index;
     if (REF_STATE.loadingIndex) return REF_STATE.loadingIndex;
 
-    REF_STATE.loadingIndex = fetch(referenceDataPath("index.json"))
+    window.WebUI.showLoader("reference");
+    REF_STATE.loadingIndex = window.WebUI.fetchWithProgress(referenceDataPath("index.json"), {
+      // Downloading is only part of the work; reserve the last 10% for parsing
+      // and rendering so the bar does not sit at 100% while the page is busy.
+      onProgress: (ratio) => window.WebUI.updateLoader("reference", ratio == null ? null : ratio * 0.9),
+    })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -206,10 +211,13 @@
         REF_STATE.loadingIndex = null;
         buildSourceChips();
         renderReferenceList();
+        window.WebUI.updateLoader("reference", 1);
+        window.WebUI.hideLoader("reference");
         return REF_STATE.index;
       })
       .catch((error) => {
         REF_STATE.loadingIndex = null;
+        window.WebUI.hideLoader("reference");
         showReferenceError(error);
         return null;
       });

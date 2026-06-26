@@ -194,7 +194,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     do_POST = do_PUT
 
     def end_headers(self) -> None:
-        self.send_header("Cache-Control", "no-store, max-age=0")
+        # "no-cache" (revalidate), not "no-store" (never cache): the browser
+        # keeps the copy and sends If-Modified-Since, so unchanged files come
+        # back as a tiny 304 instead of re-downloading (the asset index alone is
+        # ~32 MB). Freshness is preserved because SimpleHTTPRequestHandler emits
+        # Last-Modified and answers conditional requests; a rebuild bumps mtime
+        # and yields a 200 with new content.
+        self.send_header("Cache-Control", "no-cache")
         self.send_header("Accept-Ranges", "bytes")
         super().end_headers()
 
