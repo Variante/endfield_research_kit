@@ -488,11 +488,14 @@ function cacheBustedPath(path, token = WEBUI_DATA_CACHE_TAG) {
   return `${path}${sep}v=${encodeURIComponent(token)}`;
 }
 
-function fetchJson(path, { fresh = false } = {}) {
+function fetchJson(path, { fresh = false, onProgress = null } = {}) {
   const token = fresh ? `${WEBUI_DATA_CACHE_TAG}-${Date.now()}` : WEBUI_DATA_CACHE_TAG;
-  return fetch(cacheBustedPath(path, token), {
-    cache: fresh ? "no-store" : "no-cache",
-  });
+  const url = cacheBustedPath(path, token);
+  const init = { cache: fresh ? "no-store" : "no-cache" };
+  if (onProgress && window.WebUI && window.WebUI.fetchWithProgress) {
+    return window.WebUI.fetchWithProgress(url, { ...init, onProgress });
+  }
+  return fetch(url, init);
 }
 
 async function loadLanguageSidecar(index, key, languageCode) {
@@ -2764,18 +2767,25 @@ async function switchLanguage(languageCode, { preserveSelection = true } = {}) {
   persistLanguageSelection(info.code);
   $("#language").value = info.code;
   applyUiStrings();
+  window.WebUI.showLoader("story");
 
   try {
-    const res = await fetchJson(dataPath("index.json", info.code), { fresh: true });
+    const res = await fetchJson(dataPath("index.json", info.code), {
+      fresh: true,
+      // Map the index download (the dominant payload) onto the first half of the bar.
+      onProgress: (ratio) => window.WebUI.updateLoader("story", ratio == null ? null : ratio * 0.5),
+    });
     if (!res.ok) throw new Error(`index.json HTTP ${res.status}`);
     const index = await res.json();
     if (token !== STATE.indexRequestToken) return;
 
+    window.WebUI.updateLoader("story", 0.6);
     const [actorsPayload, missionsPayload] = await Promise.all([
       loadLanguageSidecar(index, "actors", info.code),
       loadLanguageSidecar(index, "missions", info.code),
     ]);
     if (token !== STATE.indexRequestToken) return;
+    window.WebUI.updateLoader("story", 0.8);
 
     STATE.index = index;
     STATE.actorNames = normalizeActorNames(actorsPayload.actorNames || {});
@@ -2794,6 +2804,9 @@ async function switchLanguage(languageCode, { preserveSelection = true } = {}) {
     STATE.rawStoryTypes = computeRawStoryTypes(STATE.entries);
     await ensureArchiveMetadataIndex(info.code, token);
     if (token !== STATE.indexRequestToken) return;
+    window.WebUI.updateLoader("story", 0.95);
+    // Let 95% paint before the chip-building + filtering render blocks.
+    await window.WebUI.nextPaint();
     STATE.prtsCategoryLabels = computePrtsCategoryLabels(STATE.entries);
     STATE.selectedKey = previousKey && STATE.entries.some((entry) => entry.k === previousKey)
       ? previousKey
@@ -2810,6 +2823,9 @@ async function switchLanguage(languageCode, { preserveSelection = true } = {}) {
       detail: { language: info.code },
     }));
 
+    window.WebUI.updateLoader("story", 1);
+    window.WebUI.hideLoader("story");
+
     if (STATE.selectedKey) {
       await loadConv(STATE.selectedKey);
     } else {
@@ -2817,6 +2833,7 @@ async function switchLanguage(languageCode, { preserveSelection = true } = {}) {
     }
   } catch (error) {
     if (token !== STATE.indexRequestToken) return;
+    window.WebUI.hideLoader("story");
     showFatalError(error);
   }
 }

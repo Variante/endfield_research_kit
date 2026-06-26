@@ -594,15 +594,29 @@
     if (ASSET_STATE.loaded) return Promise.resolve();
     if (ASSET_STATE.loadPromise) return ASSET_STATE.loadPromise;
 
+    window.WebUI.showLoader("assets");
     ASSET_STATE.loadPromise = Promise.all([
-      fetch("data/assets/index.json")
+      window.WebUI.fetchWithProgress("data/assets/index.json", {
+        // Downloading is only ~a third of the wall-clock cost (parse + hydrate +
+        // chips + render dominate), so the download drives just the first 45% of
+        // the bar; the rest advances through those phases below.
+        onProgress: (ratio) => window.WebUI.updateLoader("assets", ratio == null ? null : ratio * 0.45),
+      })
         .then((res) => {
           if (!res.ok) throw new Error(`assets/index.json HTTP ${res.status}`);
+          // Streaming the body drives the bar to ~45%; the JSON.parse inside
+          // json() then blocks briefly (~100ms) with the bar held there.
           return res.json();
         }),
       loadAssetBundleIndex(),
     ])
-      .then(([payload]) => {
+      // Staged so the bar advances through the heavy main-thread phases instead
+      // of freezing. nextPaint() lets each value render before the next blocking
+      // step runs, so the percentage tracks the actual work.
+      .then(async ([payload]) => {
+        window.WebUI.updateLoader("assets", 0.5);
+        await window.WebUI.nextPaint();
+
         const hydrated = hydrateEntries(payload.entries || []);
         ASSET_STATE.entries = hydrated.entries;
         ASSET_STATE.entryByRel = hydrated.entryByRel;
@@ -619,14 +633,23 @@
           : {};
         ASSET_STATE.loaded = true;
         $("#asset-count").textContent = ASSET_STATE.entries.length.toLocaleString();
+        window.WebUI.updateLoader("assets", 0.7);
+        await window.WebUI.nextPaint();
+
         buildTypeChips();
         buildCategoryChips();
         buildSourceChips();
         seedAssetExpansions();
+        window.WebUI.updateLoader("assets", 0.85);
+        await window.WebUI.nextPaint();
+
         applyAssetFilters();
         applyInitialAssetSelection();
+        window.WebUI.updateLoader("assets", 1);
+        window.WebUI.hideLoader("assets");
       })
       .catch((error) => {
+        window.WebUI.hideLoader("assets");
         $("#asset-empty").textContent = assetUiText("assetIndexError", { error: String(error) });
         throw error;
       });

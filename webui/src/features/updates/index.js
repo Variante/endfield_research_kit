@@ -346,7 +346,11 @@
     if (UPDATE_STATE.loaded) return UPDATE_STATE.payload;
     if (UPDATE_STATE.loading) return UPDATE_STATE.loading;
 
-    UPDATE_STATE.loading = fetch("data/updates/latest.json")
+    window.WebUI.showLoader("updates");
+    UPDATE_STATE.loading = window.WebUI.fetchWithProgress("data/updates/latest.json", {
+      // Reserve the last 10% for parsing and rendering after the download ends.
+      onProgress: (ratio) => window.WebUI.updateLoader("updates", ratio == null ? null : ratio * 0.9),
+    })
       .then((res) => {
         if (res.status === 404) {
           return {
@@ -365,6 +369,8 @@
         UPDATE_STATE.entries = Array.isArray(payload && payload.entries) ? payload.entries : [];
         populateUpdateFilters();
         applyUpdateFilters();
+        window.WebUI.updateLoader("updates", 1);
+        window.WebUI.hideLoader("updates");
         return UPDATE_STATE.payload;
       })
       .catch((error) => {
@@ -373,6 +379,7 @@
         UPDATE_STATE.payload = null;
         UPDATE_STATE.entries = [];
         populateUpdateFilters();
+        window.WebUI.hideLoader("updates");
         showUpdatesError(error);
         return null;
       });

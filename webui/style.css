@@ -320,6 +320,84 @@ html, body {
 .page-view {
   height: 100%;
   min-height: 0;
+  position: relative;
+}
+
+/* ------- Per-view loading overlay ------- */
+.view-loader {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(1px);
+  opacity: 1;
+  transition: opacity 240ms ease;
+}
+.view-loader[hidden] { display: none; }
+.view-loader.is-hiding { opacity: 0; }
+
+.view-loader-card {
+  width: min(360px, 78%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px 26px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-2);
+  box-shadow: 0 12px 32px rgba(48, 56, 65, 0.16);
+}
+
+.view-loader-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.view-loader-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+  overflow: hidden;
+}
+
+.view-loader-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: var(--accent);
+  /* No width transition: progress updates arrive frequently and drive the
+     motion themselves. A transition would make the bar visibly lag behind the
+     percentage text, so the two would disagree mid-load. */
+}
+
+.view-loader-track.is-indeterminate .view-loader-fill {
+  width: 40%;
+  transition: none;
+  animation: view-loader-indeterminate 1.1s ease-in-out infinite;
+}
+
+.view-loader-pct {
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  min-height: 1em;
+}
+
+@keyframes view-loader-indeterminate {
+  0%   { transform: translateX(-110%); }
+  100% { transform: translateX(285%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view-loader { transition: none; }
+  .view-loader-track.is-indeterminate .view-loader-fill {
+    animation-duration: 2.2s;
+  }
 }
 
 #app { display: flex; height: 100%; min-height: 0; }
