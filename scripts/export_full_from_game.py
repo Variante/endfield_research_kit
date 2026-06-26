@@ -13,7 +13,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from package_webui import (
+from pack_webui import (
     ENV_EMOJI_FALLBACK_LAYER_STEMS,
     ENV_EMOJI_PREFAB_LAYER_STEMS,
     collect_inline_image_ids,
@@ -3117,15 +3117,25 @@ def main() -> int:
     latest_summary_md = reports_root / "export_full_summary.md"
     latest_summary_md.write_text("\n".join(md_lines), encoding="utf-8")
     log(f"updating latest markdown summary at {latest_summary_md}")
+    failed_entry_count = sum(1 for line in failed_lines if line and not line.startswith("["))
+    manifest_entry_count = sum(1 for line in manifest_lines if line and not line.startswith("["))
     log(
         "finished full export: "
         f"commands={len(summary['commands'])} "
         f"command_failures={len(command_failures)} "
-        f"failed_entries={sum(1 for line in failed_lines if line and not line.startswith('['))} "
-        f"manifest_entries={sum(1 for line in manifest_lines if line and not line.startswith('['))}"
+        f"failed_entries={failed_entry_count} "
+        f"manifest_entries={manifest_entry_count}"
     )
 
-    print(json.dumps(summary, indent=2, ensure_ascii=False))
+    brief_summary = {
+        "summary_json": str(reports_root / "export_full_summary.json"),
+        "summary_md": str(latest_summary_md),
+        "commands": len(summary["commands"]),
+        "command_failures": len(command_failures),
+        "failed_entries": failed_entry_count,
+        "manifest_entries": manifest_entry_count,
+    }
+    print(json.dumps(brief_summary, indent=2, ensure_ascii=False))
     if command_failures:
         for failure in command_failures:
             log(
