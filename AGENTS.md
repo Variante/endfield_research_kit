@@ -82,7 +82,7 @@ python scripts\story_builder\build.py --languages CN EN JP --default-language CN
 python scripts\build_assets.py
 python scripts\build_audio.py
 python scripts\download_bilibili_video.py --dry-run
-python scripts\package_webui.py
+python scripts\pack_webui.py
 ```
 
 `scripts/story_builder/build.py` currently takes about 3 minutes for the
@@ -305,7 +305,7 @@ WebUI:
 - `scripts/story_builder/timeline_action_evidence.py`
 - `scripts/build_assets.py`
 - `scripts/build_audio.py`
-- `scripts/package_webui.py`
+- `scripts/pack_webui.py`
 - supporting files in `scripts/` and `scripts/asset_builder/`
 
 Story reconstruction helpers used by WebUI builders:

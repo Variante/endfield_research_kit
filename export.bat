@@ -95,7 +95,7 @@ echo.
 echo Companion wrappers:
 echo   build_updates.bat     Build the Updates tab feed.
 echo   export_assets.bat     Rebuild asset indexes/audio; pass --export-from-game to decode them.
-echo   package_webui.bat     Create split shareable WebUI zips.
+echo   pack_webui.bat     Create split shareable WebUI zips.
 echo.
 endlocal
 exit /b 0

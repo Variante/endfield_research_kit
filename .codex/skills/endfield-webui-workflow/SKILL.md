@@ -30,7 +30,7 @@ notepad endfield_paths.bat
 .\export_assets.bat
 python serve.py
 python serve.py 9000
-python scripts\package_webui.py
+python scripts\pack_webui.py
 ```
 
 Use `setup_first_time.bat` as the user-facing all-in-one first-time setup path

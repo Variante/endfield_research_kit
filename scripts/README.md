@@ -13,7 +13,7 @@ notepad endfield_paths.bat
 .\export.bat --export-from-game
 .\build_updates.bat
 .\export_assets.bat
-.\package_webui.bat
+.\pack_webui.bat
 ```
 
 For a fresh checkout, edit `endfield_paths.bat` first, then prefer the root
@@ -153,7 +153,7 @@ parses Wwise bank HIRC metadata from exported `*banks.pck` files, and links
 cutscene audio events such as `au_sfx_*`/`au_vo_*` when the event graph reaches
 decoded media.
 
-`package_webui.bat` runs `scripts/package_webui.py` and creates split
+`pack_webui.bat` runs `scripts/pack_webui.py` and creates split
 shareable zips. The main story zip contains `serve.py`, `webui/`, generated
 story and text-table data, WebUI code, and emoji images. The companion assets
 zip contains larger displayed image/video media resolved from `export_full/`,
@@ -265,7 +265,7 @@ Expected active inputs and outputs:
   line ids. It defaults to `dlg` conversations and can emit text, JSON, or CSV.
 - `asset_builder/`: shared asset-browser indexing, story-media selection, and
   demo bundle helpers used by `build_assets.py` and the Updates builder.
-- `package_webui.py`: packages split shareable WebUI zips from
+- `pack_webui.py`: packages split shareable WebUI zips from
   `serve.py`, `..\webui\`, and displayed media files under `..\export_full\`.
   The primary zip is story/code/emoji, including the full
   `envEmoji_common_*` prefab layer sprite set; the companion assets zip carries

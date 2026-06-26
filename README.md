@@ -162,13 +162,13 @@ python scripts\story_builder\build.py --languages CN EN JP --default-language CN
 Package a shareable browser build with:
 
 ```bat
-.\package_webui.bat
+.\pack_webui.bat
 ```
 
 or:
 
 ```bat
-python scripts\package_webui.py
+python scripts\pack_webui.py
 ```
 
 Packaging writes three zips by default: a story zip with the WebUI,
