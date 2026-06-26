@@ -21,6 +21,7 @@ This is the first skill to open for requests such as:
 From the repo root:
 
 ```bat
+notepad endfield_paths.bat
 .\setup_first_time.bat
 .\export.bat
 .\export.bat --export-from-game
@@ -33,10 +34,11 @@ python scripts\package_webui.py
 ```
 
 Use `setup_first_time.bat` as the user-facing all-in-one first-time setup path
-from an installed game client. It initializes/builds AnimeStudio, verifies the
-integrated AnimeStudio VFS/audio commands, runs the installed-game Story export,
-prints optional Assets/media and Updates follow-up commands, then starts or
-reuses the default WebUI server unless `--no-serve` is passed.
+from an installed game client. Edit `endfield_paths.bat` first for repeated
+local paths. The setup initializes/builds AnimeStudio, verifies the integrated
+AnimeStudio VFS/audio commands, runs the installed-game Story export, prints
+optional Assets/media and Updates follow-up commands, then starts or reuses the
+default WebUI server unless `--no-serve` is passed.
 
 Use `export.bat` as the default Story/Text Tables rebuild path from an existing
 `export_full/`. It verifies export freshness with a fast required-output
@@ -46,9 +48,10 @@ OCR-managed Story order override untouched, and leaves decoded CN audio relinkin
 to `export_assets.bat`.
 It skips installed-game export and AnimeStudio story extraction by default. Pass `--export-from-game` only when installed game
 data should be refreshed and the story export tools should run.
-Use `build_updates.bat` as the standalone Updates feed comparison. It tracks
+Use `build_updates.bat` as the standalone Updates feed comparison. It reads
+previous/current export roots from `endfield_paths.bat` by default and tracks
 WebUI-facing exported text JSON plus exported image/model/video assets and
-decoded audio by default. Asset modifications use fast size fingerprints; pass
+decoded audio. Asset modifications use fast size fingerprints; pass
 `--hash-asset-updates` when same-size binary modifications must be detected, or
 `--skip-asset-updates` for a text-only feed. Preview previous-export pruning
 with `--dry-run-prune-previous-export-untracked`; use

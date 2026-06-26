@@ -3,6 +3,9 @@ setlocal EnableExtensions
 
 set "DEFAULT_GAME_ROOT=D:\Program Files\Endfield Game\Endfield_Data"
 
+if exist "%~dp0endfield_paths.bat" call "%~dp0endfield_paths.bat"
+if errorlevel 1 exit /b %errorlevel%
+
 if /I "%~1"=="--help" goto :help
 if /I "%~1"=="-h" goto :help
 if /I "%~1"=="/?" goto :help
@@ -71,7 +74,7 @@ set "ANIMESTUDIO_EXE=%CD%\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-w
 echo [setup] Endfield_Data: "%GAME_ROOT%"
 if not exist "%GAME_ROOT%\" (
   echo [setup] Endfield_Data was not found.
-  echo [setup] Pass --game-root "...\Endfield_Data" or set ENDFIELD_GAME_ROOT.
+  echo [setup] Edit endfield_paths.bat, pass --game-root "...\Endfield_Data", or set ENDFIELD_GAME_ROOT.
   popd
   exit /b 1
 )
@@ -124,7 +127,7 @@ echo.
 echo [setup 6/6] Optional follow-up steps for a fuller WebUI experience...
 echo [setup] Asset media and CN audio export is optional and can take several hours.
 echo [setup] Run this later when you want Assets tab media and playable CN audio:
-echo [setup]   .\export_assets.bat --export-from-game --game-root "%GAME_ROOT%"
+echo [setup]   .\export_assets.bat --export-from-game
 echo [setup] Updates tracking is optional until you want the Updates tab baseline/feed.
 echo [setup] Initialize a first-time empty baseline with:
 echo [setup]   .\build_updates.bat --init-build
@@ -206,12 +209,13 @@ echo   7. start python serve.py, unless a default server is already running
 echo.
 echo Options:
 echo   --game-root PATH        Installed Endfield_Data folder. Defaults to
-echo                           ENDFIELD_GAME_ROOT, then:
+echo                           endfield_paths.bat / ENDFIELD_GAME_ROOT, then:
 echo                           %DEFAULT_GAME_ROOT%
 echo   --no-serve             Build Story/Text Tables, but do not start the WebUI server.
 echo   --help                 Show this help text.
 echo.
 echo Examples:
+echo   notepad endfield_paths.bat
 echo   setup_first_time.bat
 echo   setup_first_time.bat --game-root "E:\Games\Endfield Game\Endfield_Data"
 echo   setup_first_time.bat --game-root "E:\Games\Endfield Game\Endfield_Data" --no-serve

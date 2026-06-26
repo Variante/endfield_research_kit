@@ -27,6 +27,11 @@ Before starting a WebUI server, check whether the default
 server instead of starting another `serve.py` process on `8765` or a custom
 port, unless the user explicitly asks for a second server.
 
+Root wrapper scripts load `endfield_paths.bat` before parsing arguments. That
+file sets the repeated local defaults for `ENDFIELD_GAME_ROOT`,
+`ENDFIELD_PREVIOUS_EXPORT_ROOT`, and `ENDFIELD_EXPORT_ROOT`; explicit path
+flags still override it for one-off commands.
+
 `setup_first_time.bat` is the user-facing all-in-one first-time setup path. It
 initializes `tools/AnimeStudio`, builds the AnimeStudio CLI, verifies the
 integrated AnimeStudio VFS/audio commands, runs `export.bat --export-from-game`,
@@ -46,10 +51,11 @@ does not refresh `webui/overrides/story_order.json`; Story order is maintained
 by the OCR workflow.
 Use `build_updates.bat` for the standalone Updates feed comparison. Use
 `build_updates.bat --init-build` for first-time/baseline-only builds where the
-Updates feed should be baselined instead of reporting changes. By default it
-tracks WebUI-facing exported text JSON plus exported image/model/video assets
-and decoded audio; pass `--skip-asset-updates` only for a text-only update
-feed.
+Updates feed should be baselined instead of reporting changes. It reads the
+previous/current export roots from `endfield_paths.bat` by default, tracks
+WebUI-facing exported text JSON plus exported image/model/video assets and
+decoded audio, and accepts explicit root flags for one-off comparisons. Pass
+`--skip-asset-updates` only for a text-only update feed.
 Use `export_assets.bat` for WebUI Assets tab indexes, compact Story media
 lookup, and CN audio relinking from existing decoded assets. Pass
 `--export-from-game` only when the user explicitly asks to run the default full
@@ -225,16 +231,20 @@ exported JSON roots that feed Story/Text Tables display plus exported
 image/model/video assets plus decoded audio. Use `--full-export-scan` only for
 a broad audit of all files under the two export roots.
 
-`scripts/build_updates.py` compares:
+`build_updates.bat` reads the saved previous export and current export roots
+from `endfield_paths.bat` (`ENDFIELD_PREVIOUS_EXPORT_ROOT` and
+`ENDFIELD_EXPORT_ROOT`). The underlying `scripts/build_updates.py` defaults to
+comparing:
 
 ```text
 export_1d2
 export_full
 ```
 
-by default. Pass `--previous-export-root PATH` for a different saved previous
-export. Scanner cache and feed history live under `.game-data-tracker/`; the
-cached baseline is built from the previous export folder, then `export_full/`
+when no wrapper config or explicit flags are supplied. Pass
+`--previous-export-root PATH` for a one-off different saved previous export.
+Scanner cache and feed history live under `.game-data-tracker/`; the cached
+baseline is built from the previous export folder, then the current export root
 is scanned against it using the same focused roots. Do not point this
 comparison at `webui/`, `reports/`, `memory/`, or `scratch/`. WebUI edits and
 generated output outside the export roots must not appear as game-data updates.

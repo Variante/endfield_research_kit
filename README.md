@@ -1,6 +1,6 @@
 # Endfield Research Kit
 
-Endfield Research Kit turns a local, legally obtained Endfield install into an
+Endfield Research Kit turns a local Windows version Endfield install into an
 offline research browser. Its main surface is a static `webui/` app for
 browsing recovered story text, raw text tables, exported media/assets, playable
 audio/video, and focused update diffs between game-data exports.
@@ -54,12 +54,16 @@ git clone https://github.com/Variante/endfield_research_kit.git
 cd endfield_research_kit
 ```
 
-Run the all-in-one setup script from the repository root. Pass the installed
-`Endfield_Data` folder:
+Edit the repo-root path config once, then run the all-in-one setup script from
+the repository root:
 
 ```bat
-.\setup_first_time.bat --game-root "E:\Games\Endfield Game\Endfield_Data"
+notepad endfield_paths.bat
+.\setup_first_time.bat
 ```
+
+Set `ENDFIELD_GAME_ROOT` to the installed `Endfield_Data` folder. The same file
+also stores the saved previous export folder used by Updates tracking.
 
 The script initializes the AnimeStudio submodule, builds AnimeStudio, verifies
 AnimeStudio's integrated VFS/audio commands, exports Story/Text Tables data
@@ -85,18 +89,19 @@ with the base setup, then run the optional asset pass later with
 `--webui-assets` or `--animestudio-jobs 1`.
 
 Keep plenty of free disk space for `export_full/`, decoded audio, reports, and
-optional packages. Around 325 GB free is a practical starting point if you want 
+optional packages. Around 325 GB free is a practical starting point if you want
 debug-level asset diagnostics and broad media outputs.
 
 Keep that terminal window open while browsing the WebUI. To build everything
 without starting the server, add `--no-serve`:
 
 ```bat
-.\setup_first_time.bat --game-root "E:\Games\Endfield Game\Endfield_Data" --no-serve
+.\setup_first_time.bat --no-serve
 ```
 
 Useful setup options:
 
+- `--game-root PATH`: one-off override for `ENDFIELD_GAME_ROOT` in `endfield_paths.bat`.
 - `--no-serve`: build Story/Text Tables without starting the WebUI server.
 - `--help`: show the script help and examples.
 
@@ -188,37 +193,35 @@ After `setup_first_time.bat` finishes, optionally initialize an empty baseline:
 
 When the game updates:
 
-1. Save the old `export_full/` before refreshing it. The default comparison
-   expects the previous export at `export_1d2/`, but you can use any folder if
-   you pass `--previous-export-root` later.
+1. Rename the old `export_full/` to the folder configured as
+   `ENDFIELD_PREVIOUS_EXPORT_ROOT` in `endfield_paths.bat`.
+
 2. Refresh the current export from the installed client:
 
 ```bat
-.\export.bat --export-from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
+.\export.bat --export-from-game
 ```
 
-3. If you also want media/audio changes in the Updates tab, refresh assets too:
-
-```bat
-.\export_assets.bat --export-from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
-```
-
-4. Build the Updates feed:
+3. Build the Updates feed:
 
 ```bat
 .\build_updates.bat
 ```
 
-By default `build_updates.bat` compares `export_1d2/` against `export_full/` and
-writes `webui/data/updates/latest.json`. To compare different folders:
+If the saved previous export keeps accumulating files that also exist unchanged
+in the refreshed export, `build_updates.bat` can help prune those old duplicate
+copies. Preview the cleanup first, then run the prune only when the target is
+the saved previous export you intend to trim:
 
 ```bat
-.\build_updates.bat --previous-export-root "D:\Endfield\old_export" --export-root "D:\Endfield\current_export"
+.\build_updates.bat --dry-run-prune-previous-export-untracked
+.\build_updates.bat --prune-previous-export-untracked
 ```
 
 Do not point update tracking at `webui/`, `reports/`, `memory/`, or `scratch/`.
-It is meant to compare exported game-data roots only. More specific flags,
-pruning safeguards, and scanner-cache details are documented in `AGENTS.md` and
+It is meant to compare exported game-data roots only. One-off path flags still
+override `endfield_paths.bat` when needed. More specific flags, pruning
+safeguards, and scanner-cache details are documented in `AGENTS.md` and
 `scripts/README.md`.
 
 ## Active Layout

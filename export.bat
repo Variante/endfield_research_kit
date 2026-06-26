@@ -5,6 +5,11 @@ set "EXPORT_ARGS="
 set "VERIFY_EXPORT_ARGS="
 set "EXPORT_FROM_GAME=0"
 
+if exist "%~dp0endfield_paths.bat" call "%~dp0endfield_paths.bat"
+if errorlevel 1 exit /b %errorlevel%
+if defined ENDFIELD_GAME_ROOT set "EXPORT_ARGS=%EXPORT_ARGS% --game-root "%ENDFIELD_GAME_ROOT%""
+if defined ENDFIELD_GAME_ROOT set "VERIFY_EXPORT_ARGS=%VERIFY_EXPORT_ARGS% --game-root "%ENDFIELD_GAME_ROOT%""
+
 :parse_args
 if "%~1"=="" goto :parsed_args
 if /I "%~1"=="--help" goto :help
@@ -79,6 +84,7 @@ echo                         DummyDll directory for AnimeStudio MonoBehaviour sc
 echo                         Can also be set with ANIMESTUDIO_DUMMY_DLLS.
 echo.
 echo If Endfield is installed somewhere else, pass --game-root.
+echo For repeated runs, edit endfield_paths.bat instead.
 echo Example:
 echo   export.bat --export-from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
 echo.
