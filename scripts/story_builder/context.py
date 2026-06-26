@@ -94,6 +94,8 @@ from .timeline_recovery import (
 )
 from .mission_recovery import (
     EVIDENCE_POLICY as MISSION_TIMELINE_EVIDENCE_POLICY,
+    build_scene_order_candidate_kinds as build_mission_scene_order_candidate_kinds,
+    build_scene_order_info as build_mission_scene_order_info,
     build_script_condition_ownership as build_mission_script_condition_ownership,
     canonical_cutscene_key as mission_canonical_cutscene_key,
     load_timeline_index as load_mission_timeline_index,

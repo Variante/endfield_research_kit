@@ -958,6 +958,47 @@ function storyOrderMissionIdForEntry(entry) {
   return storyMissionId || String(entry && entry.m || "");
 }
 
+// Per-scene static-recovery order confidence/phase, emitted by the builder into
+// the focused mission's timelineRecovery.sceneOrderInfo. Only available once the
+// mission's JSON is cached (i.e. when the mission is focused for editing). This is
+// STATIC recovery confidence only; it carries no OCR signal.
+function sceneOrderInfoForEntry(entry) {
+  const missionId = storyOrderMissionIdForEntry(entry);
+  if (!missionId) return null;
+  const tr = typeof getMissionTimelineRecovery === "function"
+    ? getMissionTimelineRecovery(missionId)
+    : null;
+  const info = tr && tr.sceneOrderInfo;
+  if (!info || typeof info !== "object") return null;
+  return info[String(entry && entry.k || "")] || null;
+}
+
+const SCENE_ORDER_CONF_LABEL = {
+  "source-backed": "storyOrderConfStrong",
+  "weak": "storyOrderConfWeak",
+  "fallback": "storyOrderConfGuess",
+};
+
+// In story-sort + debug, lazily load the JSON of missions whose rows are visible
+// so their per-scene order confidence/phase can render without selecting a row.
+// Guarded so each mission is fetched at most once and only a real fetch re-renders.
+function ensureVisibleMissionOrderData(rows) {
+  if ((STATE.sortMode || "story") !== "story" || !STATE.showDebug) return;
+  if (!(STATE.missionCache instanceof Map)) return;
+  if (!(STATE.storyOrderDataRequested instanceof Set)) STATE.storyOrderDataRequested = new Set();
+  const pending = [];
+  for (const row of rows) {
+    if (!row || row.type === "group" || !row.entry) continue;
+    const mid = storyOrderMissionIdForEntry(row.entry);
+    if (!mid || STATE.missionCache.has(mid) || STATE.storyOrderDataRequested.has(mid)) continue;
+    STATE.storyOrderDataRequested.add(mid);
+    pending.push(mid);
+  }
+  for (const mid of pending) {
+    Promise.resolve(ensureMissionData(mid)).then(() => { renderList(); }).catch(() => {});
+  }
+}
+
 function storyOrderDetailForEntry(entry) {
   const index = STATE.storyOrderIndex;
   if (!(index instanceof Map) || !index.size) return null;
@@ -2764,6 +2805,7 @@ async function switchLanguage(languageCode, { preserveSelection = true } = {}) {
   STATE.languageInfo = info;
   STATE.convCache.clear();
   STATE.missionCache.clear();
+  if (STATE.storyOrderDataRequested instanceof Set) STATE.storyOrderDataRequested.clear();
   persistLanguageSelection(info.code);
   $("#language").value = info.code;
   applyUiStrings();
@@ -2994,12 +3036,15 @@ function renderList() {
 
   let i = findFirstVisible(startTop);
   const frag = document.createDocumentFragment();
+  const visible = [];
 
   while (i < total && STATE.rows[i].top < endTop) {
+    visible.push(STATE.rows[i]);
     frag.appendChild(renderRow(STATE.rows[i]));
     i++;
   }
   list.replaceChildren(frag);
+  ensureVisibleMissionOrderData(visible);
 }
 
 function renderRow(row) {
@@ -3098,13 +3143,40 @@ function renderItem(row) {
     }
   }
 
+  // Static-recovery order confidence + phase (override-editing aid, debug-gated).
+  let confidenceBadge = "";
+  let phaseChip = "";
+  if (inStorySort && STATE.showDebug) {
+    const soi = sceneOrderInfoForEntry(e);
+    if (soi) {
+      const conf = String(soi.confidence || "");
+      if (conf) div.classList.add("story-order-conf-" + conf);
+      if (conf === "fallback" || conf === "weak") div.classList.add("story-order-uncertain");
+      const confLabel = escapeHtml(uiText(SCENE_ORDER_CONF_LABEL[conf] || "") || conf);
+      const confTitle = escapeHtml(
+        [uiText("storyOrderConfTitle"), conf, soi.orderSource ? `(${soi.orderSource})` : ""]
+          .filter(Boolean).join(" "));
+      confidenceBadge =
+        `<span class="story-order-conf-badge conf-${escapeHtml(conf || "unknown")}" title="${confTitle}">` +
+          `${confLabel}</span>`;
+      if (soi.questOrder !== null && soi.questOrder !== undefined) {
+        const phaseTitle = escapeHtml(uiText("storyOrderPhaseTitle"));
+        phaseChip =
+          `<span class="story-order-phase-chip" title="${phaseTitle}">` +
+            `${escapeHtml(uiText("storyOrderPhasePrefix"))}${escapeHtml(String(soi.questOrder))}</span>`;
+      }
+    }
+  }
+
   const kindCls = meta.cls;
   const kindNm = meta.name;
 
   div.innerHTML =
     `<div class="item-line1">` +
       `<span class="badge ${kindCls}">${escapeHtml(kindNm)}</span>` +
+      phaseChip +
       `<span class="item-key">${highlightTextFragment(displayEntryTitle(e), STATE.filters.q)}</span>` +
+      confidenceBadge +
       possiblyUnusedBadge +
       `<span class="item-meta">${e.n} ${uiText("lineUnit")}</span>` +
       possiblyUnusedToggle +
