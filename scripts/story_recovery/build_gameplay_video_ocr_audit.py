@@ -2854,7 +2854,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default="server",
         help="PP-OCRv5 model variant (server = most accurate)",
     )
-    parser.add_argument("--paddleocr-frame-batch-size", type=int, default=8, help=advanced)
+    parser.add_argument("--paddleocr-frame-batch-size", type=int, default=40, help=advanced)
     parser.add_argument("--paddleocr-min-confidence", type=float, default=0.5, help=advanced)
     parser.add_argument(
         "--paddle-cuda-bin",

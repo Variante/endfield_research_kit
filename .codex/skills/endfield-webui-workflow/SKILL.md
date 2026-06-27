@@ -56,8 +56,9 @@ Use `build_updates.bat` as the standalone Updates feed comparison. It reads
 previous/current export roots from `endfield_paths.bat` by default and tracks
 WebUI-facing exported text JSON plus exported image/model/video assets and
 decoded audio. Asset modifications use fast size fingerprints; pass
-`--hash-asset-updates` when same-size binary modifications must be detected, or
-`--skip-asset-updates` for a text-only feed. Preview previous-export pruning
+`--hash-asset-updates` when same-size binary modifications must be detected,
+`--skip-audio-updates` to omit decoded audio while keeping other asset entries,
+or `--skip-asset-updates` for a text-only feed. Preview previous-export pruning
 with `--dry-run-prune-previous-export-untracked`; use
 `--prune-previous-export-untracked` only when intentionally deleting old export
 files outside the focused tracked scope. Use `export_assets.bat` for Assets tab

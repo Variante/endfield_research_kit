@@ -52,6 +52,30 @@ LANGUAGES = {
 
 AUDIO_EXTENSIONS = {".wav", ".wem"}
 EVENT_PREFIXES = ("au_sfx_", "au_vo_", "au_music_", "au_cue_", "au_amb_", "au_ui_")
+SHARED_AUDIO_BLOCKS = ("audio", "initial-audio", "audit-audio")
+LANGUAGE_AUDIO_BLOCKS = ("voice",)
+SHARED_AUDIO_STORAGE = "shared"
+SHARED_AUDIO_LANGUAGE = "CN"
+SPLIT_AUDIO_BLOCKS = (*SHARED_AUDIO_BLOCKS, *LANGUAGE_AUDIO_BLOCKS)
+SHARED_AUDIO_BLOCK_LABELS = {
+    "audio": "Audio",
+    "initial-audio": "InitAudio",
+    "audit-audio": "AuditAudio",
+}
+AUDIO_META_KEYS = (
+    "audioDialogKey",
+    "audioDialogPath",
+    "speakerChannel",
+    "voType",
+    "duration",
+    "format",
+    "bytes",
+    "audioScope",
+    "sourceBlock",
+    "sourceBlockLabel",
+    "sourceLanguage",
+    "storageRoot",
+)
 
 
 def normalize_posix(value: str | Path) -> str:
@@ -387,8 +411,18 @@ def audio_rel_for_dialog_path(language_info: dict[str, str], dialog_path: str, e
     return normalize_posix(Path("voice") / language_info["dumper"] / path.lower())
 
 
-def served_audio_href(audio_root: Path, webui_root: Path, language: str, relative_audio_path: str) -> str:
-    audio_path = audio_root / language / Path(*PurePosixPath(relative_audio_path).parts)
+def storage_root_for_block(block: str, language: str) -> str:
+    if block in SHARED_AUDIO_BLOCKS:
+        return SHARED_AUDIO_STORAGE
+    return language
+
+
+def audio_file_path(audio_root: Path, storage_root: str, relative_audio_path: str) -> Path:
+    return audio_root / storage_root / Path(*PurePosixPath(relative_audio_path).parts)
+
+
+def served_audio_href(audio_root: Path, webui_root: Path, storage_root: str, relative_audio_path: str) -> str:
+    audio_path = audio_file_path(audio_root, storage_root, relative_audio_path)
     if audio_path.is_relative_to(webui_root):
         return normalize_posix(audio_path.relative_to(webui_root))
     if audio_path.is_relative_to(ROOT):
@@ -397,6 +431,179 @@ def served_audio_href(audio_root: Path, webui_root: Path, language: str, relativ
         "Audio root must be under the WebUI root or project root so generated "
         f"audioSrc links are servable: {audio_root}"
     )
+
+
+def entry_storage_root(entry: dict[str, Any], language: str) -> str:
+    storage = str(entry.get("storageRoot") or "").strip()
+    if storage:
+        return storage
+    if str(entry.get("audioScope") or "").strip().lower() == "shared":
+        return SHARED_AUDIO_STORAGE
+    return language
+
+
+def entry_audio_path(audio_root: Path, language: str, entry: dict[str, Any]) -> Path:
+    rel = str(entry.get("rel") or "").strip()
+    if not rel:
+        return Path()
+    return audio_file_path(audio_root, entry_storage_root(entry, language), rel)
+
+
+def has_decoded_audio_in_roots(*roots: Path) -> bool:
+    return any(has_decoded_audio(root) for root in roots)
+
+def selected_audio_blocks(block_mode: str) -> tuple[str, ...]:
+    if block_mode == "all":
+        return SPLIT_AUDIO_BLOCKS
+    return (block_mode,)
+
+
+def source_scope_for_block(block: str) -> str:
+    if block in SHARED_AUDIO_BLOCKS:
+        return "shared"
+    if block in LANGUAGE_AUDIO_BLOCKS:
+        return "language"
+    return "unknown"
+
+
+def source_label_for_block(block: str, language_info: dict[str, str]) -> str:
+    if block in SHARED_AUDIO_BLOCK_LABELS:
+        return SHARED_AUDIO_BLOCK_LABELS[block]
+    if block == "voice":
+        return f"Audio{language_info['label']}"
+    return block
+
+
+def audio_source_metadata(block: str, language: str, language_info: dict[str, str]) -> dict[str, str]:
+    metadata = {
+        "audioScope": source_scope_for_block(block),
+        "sourceBlock": block,
+        "sourceBlockLabel": source_label_for_block(block, language_info),
+    }
+    if metadata["audioScope"] == "language":
+        metadata["sourceLanguage"] = language
+    return metadata
+
+
+def legacy_audio_source_metadata(rel: str, language: str, language_info: dict[str, str]) -> dict[str, str]:
+    normalized = normalize_posix(rel).lower()
+    voice_prefix = normalize_posix(Path("voice") / language_info["dumper"]).lower() + "/"
+    unmapped_prefix = normalize_posix(Path("unmapped") / language_info["dumper"]).lower() + "/"
+    if normalized.startswith(voice_prefix):
+        return audio_source_metadata("voice", language, language_info)
+    if normalized.startswith(unmapped_prefix):
+        return {
+            "audioScope": "unknown",
+            "sourceBlock": "legacy-all",
+            "sourceBlockLabel": "LegacyAllAudio",
+        }
+    return {
+        "audioScope": "unknown",
+        "sourceBlock": "unknown",
+        "sourceBlockLabel": "Unknown",
+    }
+
+
+def clean_source_metadata(value: Any) -> dict[str, str]:
+    if not isinstance(value, dict):
+        return {}
+    out: dict[str, str] = {}
+    for key in ("audioScope", "sourceBlock", "sourceBlockLabel", "sourceLanguage", "storageRoot"):
+        text = str(value.get(key) or "").strip()
+        if text:
+            out[key] = text
+    return out
+
+
+def existing_shared_audio_metadata() -> dict[str, str]:
+    return {
+        "audioScope": "shared",
+        "sourceBlock": "shared-existing",
+        "sourceBlockLabel": "SharedAudio",
+        "storageRoot": SHARED_AUDIO_STORAGE,
+    }
+
+
+def prior_source_metadata_by_rel(language_root: Path, language: str) -> dict[tuple[str, str], dict[str, str]]:
+    payload = load_json(language_root / "index.json", {})
+    if not isinstance(payload, dict):
+        return {}
+    out: dict[tuple[str, str], dict[str, str]] = {}
+    for collection_name in ("entries", "events"):
+        for entry in payload.get(collection_name) or []:
+            if not isinstance(entry, dict):
+                continue
+            rel = normalize_posix(str(entry.get("rel") or "").strip())
+            if not rel:
+                continue
+            storage_root = entry_storage_root(entry, language)
+            key = (storage_root, rel)
+            if key in out:
+                continue
+            metadata = clean_source_metadata(entry)
+            if metadata:
+                metadata.setdefault("storageRoot", storage_root)
+                out[key] = metadata
+    return out
+
+def source_metadata_for_rel(
+    storage_root: str,
+    rel: str,
+    language: str,
+    language_info: dict[str, str],
+    decoded_source_by_rel: dict[tuple[str, str], dict[str, str]],
+    prior_source_by_rel: dict[tuple[str, str], dict[str, str]],
+) -> dict[str, str]:
+    normalized = normalize_posix(rel)
+    key = (storage_root, normalized)
+    metadata = (
+        clean_source_metadata(decoded_source_by_rel.get(key))
+        or clean_source_metadata(prior_source_by_rel.get(key))
+    )
+    if metadata:
+        metadata.setdefault("storageRoot", storage_root)
+        return metadata
+    if storage_root == SHARED_AUDIO_STORAGE:
+        return existing_shared_audio_metadata()
+    metadata = legacy_audio_source_metadata(normalized, language, language_info)
+    metadata.setdefault("storageRoot", storage_root)
+    return metadata
+
+def summarize_audio_sources(entries: list[dict[str, Any]]) -> dict[str, Any]:
+    by_scope: dict[str, int] = defaultdict(int)
+    by_block: dict[str, int] = defaultdict(int)
+    for entry in entries:
+        scope = str(entry.get("audioScope") or "unknown")
+        block = str(entry.get("sourceBlock") or "unknown")
+        by_scope[scope] += 1
+        by_block[block] += 1
+    return {
+        "byScope": dict(sorted(by_scope.items())),
+        "bySourceBlock": dict(sorted(by_block.items())),
+    }
+
+
+def backfill_event_source_metadata(
+    event_entries: list[dict[str, Any]],
+    audio_by_id: dict[str, dict[str, Any]],
+    audio_by_rel: dict[tuple[str, str], dict[str, Any]],
+    language: str,
+) -> None:
+    for entry in event_entries:
+        if clean_source_metadata(entry):
+            continue
+        source_entry = None
+        media_id = entry.get("mediaId")
+        if media_id is not None:
+            source_entry = audio_by_id.get(str(media_id).lower())
+        if source_entry is None:
+            rel = normalize_posix(str(entry.get("rel") or "").strip())
+            storage_root = entry_storage_root(entry, language)
+            source_entry = audio_by_rel.get((storage_root, rel)) or audio_by_rel.get((SHARED_AUDIO_STORAGE, rel))
+        metadata = clean_source_metadata(source_entry)
+        if not metadata:
+            continue
+        entry.update(metadata)
 
 
 def iter_audio_files(language_root: Path) -> list[Path]:
@@ -421,24 +628,38 @@ def has_decoded_audio(language_root: Path) -> bool:
 def collect_audio_files(
     audio_root: Path,
     webui_root: Path,
-    language_root: Path,
+    source_root: Path,
+    storage_root: str,
     language: str,
+    language_info: dict[str, str],
+    decoded_source_by_rel: dict[tuple[str, str], dict[str, str]] | None = None,
+    prior_source_by_rel: dict[tuple[str, str], dict[str, str]] | None = None,
 ) -> dict[str, dict[str, Any]]:
+    decoded_source_by_rel = decoded_source_by_rel or {}
+    prior_source_by_rel = prior_source_by_rel or {}
     by_id: dict[str, dict[str, Any]] = {}
-    for path in iter_audio_files(language_root):
-        rel = normalize_posix(path.relative_to(language_root))
+    for path in iter_audio_files(source_root):
+        rel = normalize_posix(path.relative_to(source_root))
         audio_id = path.stem.lower()
         stat = path.stat()
         entry = {
             "id": audio_id,
             "rel": rel,
-            "src": served_audio_href(audio_root, webui_root, language, rel),
+            "storageRoot": storage_root,
+            "src": served_audio_href(audio_root, webui_root, storage_root, rel),
             "format": path.suffix.lower().lstrip("."),
             "bytes": stat.st_size,
+            **source_metadata_for_rel(
+                storage_root,
+                rel,
+                language,
+                language_info,
+                decoded_source_by_rel,
+                prior_source_by_rel,
+            ),
         }
         by_id.setdefault(audio_id, entry)
     return by_id
-
 
 def build_dialog_audio_index(
     audio_dialog_path: Path,
@@ -473,6 +694,7 @@ def build_dialog_audio_index(
         out[audio_id] = {
             "id": audio_id,
             "rel": rel,
+            "storageRoot": language,
             "src": served_audio_href(audio_root, webui_root, language, rel),
             "format": file_path.suffix.lower().lstrip("."),
             "bytes": file_path.stat().st_size,
@@ -481,6 +703,7 @@ def build_dialog_audio_index(
             "speakerChannel": str(row.get("speakerChannel") or ""),
             "voType": row.get("voType"),
             "duration": duration if isinstance(duration, (int, float)) else None,
+            **audio_source_metadata("voice", language, language_info),
         }
     return out
 
@@ -1045,12 +1268,9 @@ def _event_name_set(values: Any) -> set[str]:
     }
 
 
-def _audio_entry_file_exists(language_root: Path, entry: dict[str, Any]) -> bool:
-    rel = str(entry.get("rel") or "").strip()
-    if not rel:
-        return False
-    return (language_root / Path(*PurePosixPath(rel).parts)).is_file()
-
+def _audio_entry_file_exists(audio_root: Path, language: str, entry: dict[str, Any]) -> bool:
+    path = entry_audio_path(audio_root, language, entry)
+    return bool(str(path)) and path.is_file()
 
 def load_cached_event_audio_index(
     language_root: Path,
@@ -1077,10 +1297,11 @@ def load_cached_event_audio_index(
         if not isinstance(entry, dict):
             continue
         event_key = str(entry.get("eventId") or entry.get("id") or "").strip().lower()
-        if event_key not in wanted_names or not _audio_entry_file_exists(language_root, entry):
+        if event_key not in wanted_names or not _audio_entry_file_exists(audio_root, language, entry):
             continue
         cached = dict(entry)
-        cached["src"] = served_audio_href(audio_root, webui_root, language, str(cached.get("rel") or ""))
+        cached.setdefault("storageRoot", entry_storage_root(cached, language))
+        cached["src"] = served_audio_href(audio_root, webui_root, cached["storageRoot"], str(cached.get("rel") or ""))
         event_audio_by_id[event_key].append(cached)
 
     event_evidence = [
@@ -1092,27 +1313,32 @@ def load_cached_event_audio_index(
     return dict(event_audio_by_id), event_evidence
 
 
-def run_audio_dumper(args: argparse.Namespace, language_info: dict[str, str], language_root: Path) -> None:
-    if args.skip_decode:
-        return
-    if not args.audio_dumper.exists():
-        raise SystemExit(f"audio dumper not found: {args.audio_dumper}")
-    if not args.streaming_assets.exists():
-        raise SystemExit(f"StreamingAssets not found: {args.streaming_assets}")
+def snapshot_audio_file_stats(source_root: Path) -> dict[str, tuple[int, int]]:
+    return {
+        normalize_posix(path.relative_to(source_root)): (path.stat().st_size, path.stat().st_mtime_ns)
+        for path in iter_audio_files(source_root)
+    }
 
+
+def run_audio_dumper_block(
+    args: argparse.Namespace,
+    language_info: dict[str, str],
+    output_root: Path,
+    block: str,
+) -> None:
     command = [
         str(args.audio_dumper),
         "audio",
         "--streaming-assets",
         str(args.streaming_assets),
         "--output",
-        str(language_root),
+        str(output_root),
         "--language",
         language_info["dumper"],
         "--format",
         args.format,
         "--block",
-        args.block,
+        block,
     ]
     if args.fallback_assets and args.fallback_assets.exists():
         command.extend(["--fallback-assets", str(args.fallback_assets)])
@@ -1120,6 +1346,43 @@ def run_audio_dumper(args: argparse.Namespace, language_info: dict[str, str], la
     print("Running:", " ".join(f'"{part}"' if " " in part else part for part in command))
     subprocess.run(command, cwd=ROOT, check=True)
 
+
+def run_audio_dumper(
+    args: argparse.Namespace,
+    language: str,
+    language_info: dict[str, str],
+) -> dict[tuple[str, str], dict[str, str]]:
+    if args.skip_decode:
+        return {}
+    if not args.audio_dumper.exists():
+        raise SystemExit(f"audio dumper not found: {args.audio_dumper}")
+    if not args.streaming_assets.exists():
+        raise SystemExit(f"StreamingAssets not found: {args.streaming_assets}")
+
+    shared_language_info = LANGUAGES[SHARED_AUDIO_LANGUAGE]
+    source_by_rel: dict[tuple[str, str], dict[str, str]] = {}
+    for block in selected_audio_blocks(args.block):
+        storage_root = storage_root_for_block(block, language)
+        output_root = args.audio_root / storage_root
+        output_root.mkdir(parents=True, exist_ok=True)
+        dumper_language_info = shared_language_info if block in SHARED_AUDIO_BLOCKS else language_info
+        before = snapshot_audio_file_stats(output_root)
+        run_audio_dumper_block(args, dumper_language_info, output_root, block)
+        after = snapshot_audio_file_stats(output_root)
+        metadata = audio_source_metadata(block, language, language_info)
+        metadata["storageRoot"] = storage_root
+        changed = 0
+        for rel, stat in after.items():
+            if before.get(rel) == stat:
+                continue
+            source_by_rel[(storage_root, rel)] = metadata
+            changed += 1
+        print(
+            f"Audio source map: {changed:,} files tagged as "
+            f"{metadata['audioScope']} from {metadata['sourceBlockLabel']} "
+            f"under {storage_root}"
+        )
+    return source_by_rel
 
 def line_audio_ids(line: dict[str, Any]) -> list[str]:
     ids: list[str] = []
@@ -1140,7 +1403,7 @@ def attach_audio_to_line(line: dict[str, Any], audio_entry: dict[str, Any]) -> b
         changed = True
     meta = {
         key: audio_entry.get(key)
-        for key in ("audioDialogKey", "audioDialogPath", "speakerChannel", "voType", "duration", "format", "bytes")
+        for key in AUDIO_META_KEYS
         if audio_entry.get(key) not in (None, "")
     }
     if meta and line.get("audioMeta") != meta:
@@ -1158,7 +1421,7 @@ def attach_audio_variants_to_line(line: dict[str, Any], variants: dict[str, dict
             continue
         meta = {
             key: entry.get(key)
-            for key in ("audioDialogKey", "audioDialogPath", "speakerChannel", "voType", "duration", "format", "bytes")
+            for key in AUDIO_META_KEYS
             if entry.get(key) not in (None, "")
         }
         payload[gender] = {
@@ -1240,6 +1503,10 @@ def linked_audio_files_for_events(
                 "bytes": entry.get("bytes"),
                 "mediaId": entry.get("mediaId"),
                 "bank": entry.get("bank"),
+                "audioScope": entry.get("audioScope"),
+                "sourceBlock": entry.get("sourceBlock"),
+                "sourceBlockLabel": entry.get("sourceBlockLabel"),
+                "sourceLanguage": entry.get("sourceLanguage"),
                 "source": entry.get("source"),
             })
             stats[linked_stat_key] += 1
@@ -1366,18 +1633,43 @@ def build_audio(args: argparse.Namespace) -> int:
     args.audio_root = args.audio_root.resolve()
     language = args.language.upper()
     language_info = LANGUAGES[language]
+    shared_root = args.audio_root / SHARED_AUDIO_STORAGE
     language_root = args.audio_root / language
-    if args.skip_decode and not has_decoded_audio(language_root):
-        print(f"Audio build [{language}]: skipped (no decoded audio files at {language_root})")
+    if args.skip_decode and not has_decoded_audio_in_roots(shared_root, language_root):
+        print(
+            f"Audio build [{language}]: skipped "
+            f"(no decoded audio files at {shared_root} or {language_root})"
+        )
         return 0
-    if not args.skip_decode:
-        language_root.mkdir(parents=True, exist_ok=True)
+    language_root.mkdir(parents=True, exist_ok=True)
 
     started = time.time()
-    run_audio_dumper(args, language_info, language_root)
+    prior_source_by_rel = prior_source_metadata_by_rel(language_root, language)
+    decoded_source_by_rel = run_audio_dumper(args, language, language_info)
 
     audio_dialog_path = find_audio_dialog_table(args.export_root)
-    generic_audio = collect_audio_files(args.audio_root, args.webui_root, language_root, language)
+    shared_audio = collect_audio_files(
+        args.audio_root,
+        args.webui_root,
+        shared_root,
+        SHARED_AUDIO_STORAGE,
+        language,
+        language_info,
+        decoded_source_by_rel,
+        prior_source_by_rel,
+    )
+    language_audio = collect_audio_files(
+        args.audio_root,
+        args.webui_root,
+        language_root,
+        language,
+        language,
+        language_info,
+        decoded_source_by_rel,
+        prior_source_by_rel,
+    )
+    generic_audio = {**shared_audio, **language_audio}
+    source_summary = summarize_audio_sources(list(generic_audio.values()))
     dialog_audio = build_dialog_audio_index(
         audio_dialog_path,
         args.audio_root,
@@ -1433,6 +1725,12 @@ def build_audio(args: argparse.Namespace) -> int:
         for entries in event_audio_by_id.values()
         for entry in entries
     ]
+    audio_by_rel = {
+        (entry_storage_root(entry, language), normalize_posix(str(entry.get("rel") or ""))): entry
+        for entry in generic_audio.values()
+        if entry.get("rel")
+    }
+    backfill_event_source_metadata(event_entries, audio_by_id, audio_by_rel, language)
     audio_by_id.update({
         str(entry.get("eventId") or entry.get("id") or "").lower(): entry
         for entry in event_entries
@@ -1446,11 +1744,16 @@ def build_audio(args: argparse.Namespace) -> int:
         "dumperLanguage": language_info["dumper"],
         "format": args.format,
         "block": args.block,
+        "decodeBlocks": list(selected_audio_blocks(args.block)),
+        "sourceSummary": source_summary,
         "audioDialogTable": normalize_posix(audio_dialog_path.relative_to(ROOT))
         if audio_dialog_path.is_relative_to(ROOT)
         else str(audio_dialog_path),
         "counts": {
             "files": len(generic_audio),
+            "sharedFiles": int(source_summary.get("byScope", {}).get("shared", 0)),
+            "languageFiles": int(source_summary.get("byScope", {}).get("language", 0)),
+            "unknownSourceFiles": int(source_summary.get("byScope", {}).get("unknown", 0)),
             "dialogAudio": len(dialog_audio),
             "eventNames": len(event_names),
             "eventAudio": len(event_entries),
@@ -1465,9 +1768,13 @@ def build_audio(args: argparse.Namespace) -> int:
     json_dump(language_root / "index.json", index_payload)
 
     elapsed = time.time() - started
+    scope_counts = source_summary.get("byScope", {})
     print(
         "Audio index:"
         f" {len(generic_audio):,} files,"
+        f" {int(scope_counts.get('shared', 0)):,} shared/"
+        f"{int(scope_counts.get('language', 0)):,} language/"
+        f"{int(scope_counts.get('unknown', 0)):,} unknown-source,"
         f" {len(dialog_audio):,} AudioDialog matches,"
         f" {len(event_entries):,} event media links,"
         f" {link_stats['lineAudioLinked']:,}/{link_stats['lineAudioRefs']:,} line refs linked,"
@@ -1501,7 +1808,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--audio-root",
         type=Path,
         default=None,
-        help="Decoded audio root containing per-language folders. Default: <export-root>/structured/Audio.",
+        help="Decoded audio root containing shared and per-language folders. Default: <export-root>/structured/Audio.",
     )
     args = parser.parse_args(argv)
     if args.streaming_assets is None:
