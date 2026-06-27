@@ -74,6 +74,8 @@ const STATE = {
   storyOrderSaveStatusTimer: null,
   storyOrderIndex: new Map(),
   storyOrderGroupingOverrides: new Map(),
+  storyOrderOcrPayload: null,
+  storyOrderOcrPromise: null,
   optionOverridePayload: null,
   optionOverridePromise: null,
   expanded: new Set(),   // group paths the user opened
@@ -622,6 +624,42 @@ function loadStoryOrderPayload() {
   return STATE.storyOrderPromise;
 }
 
+
+function normalizeStoryOrderReferencePayload(payload) {
+  const out = payload && typeof payload === "object" ? payload : { missions: {} };
+  if (!out.missions || typeof out.missions !== "object") out.missions = {};
+  return out;
+}
+
+function loadStoryOrderOcrPayload() {
+  if (STATE.storyOrderOcrPayload) return Promise.resolve(STATE.storyOrderOcrPayload);
+  if (STATE.storyOrderOcrPromise) return STATE.storyOrderOcrPromise;
+  STATE.storyOrderOcrPromise = fetchJson("data/story_order_ocr.json", { fresh: true })
+    .then(async (res) => {
+      if (!res.ok) return { missions: {}, _missing: true };
+      const payload = await res.json();
+      return normalizeStoryOrderReferencePayload(payload);
+    })
+    .catch((error) => {
+      console.warn("Unable to load data/story_order_ocr.json", error);
+      return { missions: {}, _missing: true, _error: String(error && error.message || error) };
+    })
+    .then((payload) => {
+      STATE.storyOrderOcrPayload = normalizeStoryOrderReferencePayload(payload);
+      STATE.storyOrderOcrPromise = null;
+      return STATE.storyOrderOcrPayload;
+    });
+  return STATE.storyOrderOcrPromise;
+}
+
+function ensureStoryOrderOcrPayloadForDebug() {
+  if (!STATE.showDebug || STATE.storyOrderOcrPayload || STATE.storyOrderOcrPromise) return;
+  void loadStoryOrderOcrPayload().then(() => {
+    const cached = STATE.selectedKey ? STATE.convCache.get(STATE.selectedKey) : null;
+    if (STATE.showDebug && cached) renderConv(cached);
+  }).catch(() => {});
+}
+
 function overrideKeyList(values) {
   const list = typeof values === "string" ? [values] : values;
   if (!Array.isArray(list)) return [];
@@ -978,6 +1016,219 @@ const SCENE_ORDER_CONF_LABEL = {
   "weak": "storyOrderConfWeak",
   "fallback": "storyOrderConfGuess",
 };
+
+// Keys of a mission whose recovered order is low-confidence (need human review),
+// in the mission's current order. Empty when the mission JSON isn't cached yet.
+function storyOrderMissionUncertainKeys(missionId) {
+  if (!missionId) return [];
+  const tr = typeof getMissionTimelineRecovery === "function"
+    ? getMissionTimelineRecovery(missionId) : null;
+  const info = tr && tr.sceneOrderInfo;
+  if (!info || typeof info !== "object") return [];
+  const mission = STATE.storyOrderPayload && STATE.storyOrderPayload.missions
+    && STATE.storyOrderPayload.missions[missionId];
+  const order = (mission && Array.isArray(mission.order) && mission.order.length)
+    ? mission.order : Object.keys(info);
+  const out = [];
+  for (const raw of order) {
+    const k = String(raw || "");
+    const conf = info[k] && info[k].confidence;
+    if (conf === "fallback" || conf === "weak") out.push(k);
+  }
+  return out;
+}
+
+// Select + scroll to the next uncertain row in a mission (cycles past the current
+// selection). Lets the human work through only the rows that need confirmation.
+function jumpToNextUncertainRow(missionId) {
+  const keys = storyOrderMissionUncertainKeys(missionId);
+  if (!keys.length) return false;
+  let target = keys[0];
+  if (STATE.selectedKey) {
+    const idx = keys.indexOf(STATE.selectedKey);
+    if (idx >= 0 && idx + 1 < keys.length) target = keys[idx + 1];
+  }
+  const entry = Array.isArray(STATE.entries)
+    ? STATE.entries.find((en) => en && en.k === target) : null;
+  if (!entry) return false;
+  if (typeof loadConv === "function") loadConv(target);
+  if (typeof revealEntryInTree === "function") revealEntryInTree(entry);
+  return true;
+}
+
+
+function storyOrderMissionOrderFromPayload(payload, missionId) {
+  const missionKey = String(missionId || "");
+  const mission = payload && payload.missions && payload.missions[missionKey];
+  return overrideKeyList(mission && mission.order);
+}
+
+function storyOrderMissionCurrentOrder(missionId) {
+  const missionKey = String(missionId || "");
+  const mission = STATE.storyOrderPayload
+    && STATE.storyOrderPayload.missions
+    && STATE.storyOrderPayload.missions[missionKey];
+  const order = overrideKeyList(mission && mission.order);
+  if (order.length) return order;
+  return typeof storyOrderMissionBaselineOrder === "function"
+    ? storyOrderMissionBaselineOrder(missionKey)
+    : [];
+}
+
+function storyOrderAppendMissing(out, seen, values) {
+  for (const value of values || []) {
+    const key = String(value || "").trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(key);
+  }
+}
+
+function completeStoryOrderSourceOrder(missionId, primaryOrder) {
+  const missionKey = String(missionId || "");
+  const out = [];
+  const seen = new Set();
+  storyOrderAppendMissing(out, seen, overrideKeyList(primaryOrder));
+  storyOrderAppendMissing(out, seen, storyOrderMissionCurrentOrder(missionKey));
+  if (typeof storyOrderMissionBaselineOrder === "function") {
+    storyOrderAppendMissing(out, seen, storyOrderMissionBaselineOrder(missionKey));
+  }
+  for (const entry of STATE.entries || []) {
+    const mid = typeof storyOrderMissionIdForEntry === "function"
+      ? storyOrderMissionIdForEntry(entry)
+      : String(entry && entry.m || "");
+    if (String(mid) === missionKey) storyOrderAppendMissing(out, seen, [entry && entry.k]);
+  }
+  return out;
+}
+
+function storyOrderSourceRank(value, fallback = Number.POSITIVE_INFINITY) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function storyOrderMissionStaticRecoveredOrder(missionId) {
+  const missionKey = String(missionId || "");
+  const tr = typeof getMissionTimelineRecovery === "function"
+    ? getMissionTimelineRecovery(missionKey) : null;
+  const info = tr && tr.sceneOrderInfo;
+  if (!info || typeof info !== "object") return [];
+  const baseOrder = storyOrderMissionCurrentOrder(missionKey);
+  const baseIndex = new Map(baseOrder.map((key, index) => [String(key), index]));
+  const confidenceRank = { "source-backed": 0, "weak": 1, "fallback": 2 };
+  const keys = Object.keys(info).filter(Boolean);
+  keys.sort((a, b) => {
+    const ai = info[a] || {};
+    const bi = info[b] || {};
+    const aq = storyOrderSourceRank(ai.questOrder);
+    const bq = storyOrderSourceRank(bi.questOrder);
+    if (aq !== bq) return aq - bq;
+    const af = storyOrderSourceRank(ai.flowIndex);
+    const bf = storyOrderSourceRank(bi.flowIndex);
+    if (af !== bf) return af - bf;
+    const ac = confidenceRank[ai.confidence] ?? 9;
+    const bc = confidenceRank[bi.confidence] ?? 9;
+    if (ac !== bc) return ac - bc;
+    const ab = baseIndex.has(a) ? baseIndex.get(a) : Number.POSITIVE_INFINITY;
+    const bb = baseIndex.has(b) ? baseIndex.get(b) : Number.POSITIVE_INFINITY;
+    if (ab !== bb) return ab - bb;
+    return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
+  });
+  return completeStoryOrderSourceOrder(missionKey, keys);
+}
+
+function storyOrderSameOrder(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+  return a.every((key, index) => String(key) === String(b[index]));
+}
+
+function storyOrderOrderDiffStats(baseOrder, candidateOrder) {
+  const base = overrideKeyList(baseOrder);
+  const candidate = overrideKeyList(candidateOrder);
+  const candidatePos = new Map(candidate.map((key, index) => [key, index]));
+  const baseSet = new Set(base);
+  let same = 0;
+  let moved = 0;
+  let missing = 0;
+  for (let index = 0; index < base.length; index += 1) {
+    const key = base[index];
+    if (!candidatePos.has(key)) missing += 1;
+    else if (candidatePos.get(key) === index) same += 1;
+    else moved += 1;
+  }
+  let added = 0;
+  for (const key of candidate) if (!baseSet.has(key)) added += 1;
+  return { same, moved, missing, added, total: candidate.length };
+}
+
+function storyOrderFormatCount(count) {
+  return (uiText("storyOrderCompareCount") || "{count} entries").replace("{count}", String(count));
+}
+
+function storyOrderFormatDiff(stats) {
+  if (!stats.moved && !stats.missing && !stats.added) return uiText("storyOrderCompareIdentical");
+  return (uiText("storyOrderCompareDiff") || "{moved} moved / {missing} missing / {added} added")
+    .replace("{moved}", String(stats.moved))
+    .replace("{missing}", String(stats.missing))
+    .replace("{added}", String(stats.added));
+}
+
+function appendStoryOrderComparePreview(parent, order, currentKey) {
+  const limit = 24;
+  const list = overrideKeyList(order);
+  for (const key of list.slice(0, limit)) {
+    const chip = document.createElement(key === currentKey ? "span" : "button");
+    chip.className = "story-order-compare-chip" + (key === currentKey ? " current" : "");
+    chip.textContent = key;
+    chip.title = key;
+    if (key !== currentKey) {
+      chip.type = "button";
+      chip.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        loadConv(key);
+      });
+    }
+    parent.appendChild(chip);
+  }
+  if (list.length > limit) {
+    const more = document.createElement("span");
+    more.className = "story-order-compare-more";
+    more.textContent = (uiText("storyOrderCompareMore") || "+{count}")
+      .replace("{count}", String(list.length - limit));
+    parent.appendChild(more);
+  }
+}
+
+function storyOrderAdoptMissionOrder(missionId, source) {
+  const missionKey = String(missionId || "");
+  if (!missionKey) return false;
+  if (typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionKey)) return false;
+  let sourceOrder = [];
+  if (source === "ocr") {
+    sourceOrder = completeStoryOrderSourceOrder(
+      missionKey,
+      storyOrderMissionOrderFromPayload(STATE.storyOrderOcrPayload, missionKey),
+    );
+  } else if (source === "static") {
+    sourceOrder = storyOrderMissionStaticRecoveredOrder(missionKey);
+  }
+  if (!sourceOrder.length) return false;
+  const currentOrder = storyOrderMissionCurrentOrder(missionKey);
+  if (storyOrderSameOrder(currentOrder, sourceOrder)) return false;
+  if (typeof setStoryOrderMissionOrder !== "function" || !setStoryOrderMissionOrder(missionKey, sourceOrder)) {
+    return false;
+  }
+  if (typeof scheduleStoryOrderSave === "function") scheduleStoryOrderSave();
+  const wrap = $("#list-wrap");
+  const prevScroll = wrap ? wrap.scrollTop : 0;
+  rebuildTree({ resetScroll: false });
+  if (wrap) wrap.scrollTop = prevScroll;
+  renderList();
+  const cached = STATE.selectedKey ? STATE.convCache.get(STATE.selectedKey) : null;
+  if (cached) renderConv(cached);
+  return true;
+}
 
 // In story-sort + debug, lazily load the JSON of missions whose rows are visible
 // so their per-scene order confidence/phase can render without selecting a row.
@@ -3068,6 +3319,8 @@ function renderGroup(row) {
       (row.raw ? `<span class="sub mono" title="${escapeHtml(row.raw)}">${escapeHtml(row.raw)}</span>` : "") +
     `</span>` +
     `<span class="group-count">${row.count}</span>` +
+    storyOrderMissionVerifiedControl(row) +
+    storyOrderMissionReviewControl(row) +
     storyOrderMissionLockControl(row) +
     storyOrderMissionMoveUnusedControl(row);
   return div;
@@ -7487,6 +7740,113 @@ function renderMissionTimelineQuestSpatialTrack(track, flowKeyMap, currentKey) {
   return details;
 }
 
+
+function renderStoryOrderCompareSourceRow({ missionId, source, label, order, currentOrder, statusText, canAdopt, disabledTitle, currentKey }) {
+  const row = document.createElement("div");
+  row.className = `story-order-compare-row is-${source}`;
+  const head = document.createElement("div");
+  head.className = "story-order-compare-row-head";
+  const title = document.createElement("span");
+  title.className = "story-order-compare-source";
+  title.textContent = label;
+  head.appendChild(title);
+  const meta = document.createElement("span");
+  meta.className = "story-order-compare-meta";
+  const cleanOrder = overrideKeyList(order);
+  if (statusText) {
+    meta.textContent = statusText;
+  } else if (source === "current") {
+    meta.textContent = storyOrderFormatCount(cleanOrder.length);
+  } else {
+    meta.textContent = `${storyOrderFormatCount(cleanOrder.length)} / ${storyOrderFormatDiff(storyOrderOrderDiffStats(currentOrder, cleanOrder))}`;
+  }
+  head.appendChild(meta);
+  if (source !== "current") {
+    const button = document.createElement("button");
+    button.className = "story-order-compare-adopt-button";
+    button.type = "button";
+    button.dataset.missionId = missionId;
+    button.dataset.source = source;
+    button.textContent = uiText("storyOrderCompareAdopt");
+    button.disabled = !canAdopt;
+    if (!canAdopt) button.title = disabledTitle || statusText || uiText("storyOrderCompareIdentical");
+    head.appendChild(button);
+  }
+  row.appendChild(head);
+  const preview = document.createElement("div");
+  preview.className = "story-order-compare-preview";
+  if (cleanOrder.length) appendStoryOrderComparePreview(preview, cleanOrder, currentKey);
+  row.appendChild(preview);
+  return row;
+}
+
+function renderStoryOrderComparisonPanel(missionId, currentKey) {
+  const missionKey = String(missionId || "");
+  if (!missionKey) return null;
+  ensureStoryOrderOcrPayloadForDebug();
+  const currentOrder = storyOrderMissionCurrentOrder(missionKey);
+  const staticOrder = storyOrderMissionStaticRecoveredOrder(missionKey);
+  const ocrPayload = STATE.storyOrderOcrPayload;
+  const rawOcrOrder = storyOrderMissionOrderFromPayload(ocrPayload, missionKey);
+  const ocrOrder = rawOcrOrder.length ? completeStoryOrderSourceOrder(missionKey, rawOcrOrder) : [];
+  if (!currentOrder.length && !staticOrder.length && !ocrOrder.length && !STATE.storyOrderOcrPromise && !(ocrPayload && ocrPayload._missing)) {
+    return null;
+  }
+
+  const locked = typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionKey);
+  const panel = document.createElement("div");
+  panel.className = "story-order-compare-panel";
+  const heading = document.createElement("div");
+  heading.className = "story-order-compare-heading";
+  heading.textContent = uiText("storyOrderCompareTitle");
+  panel.appendChild(heading);
+
+  const staticStatus = staticOrder.length ? "" : uiText("storyOrderCompareMissing");
+  const ocrStatus = STATE.storyOrderOcrPromise
+    ? uiText("storyOrderCompareLoading")
+    : ((ocrPayload && ocrPayload._missing) || !ocrOrder.length ? uiText("storyOrderCompareMissing") : "");
+  const rows = [
+    {
+      missionId: missionKey,
+      source: "current",
+      label: uiText("storyOrderCompareCurrent"),
+      order: currentOrder,
+      currentOrder,
+      currentKey,
+    },
+    {
+      missionId: missionKey,
+      source: "static",
+      label: uiText("storyOrderCompareRecovered"),
+      order: staticOrder,
+      currentOrder,
+      statusText: staticStatus,
+      canAdopt: !locked && staticOrder.length && !storyOrderSameOrder(currentOrder, staticOrder),
+      disabledTitle: locked ? uiText("storyOrderCompareLocked") : "",
+      currentKey,
+    },
+    {
+      missionId: missionKey,
+      source: "ocr",
+      label: uiText("storyOrderCompareOcr"),
+      order: ocrOrder,
+      currentOrder,
+      statusText: ocrStatus,
+      canAdopt: !locked && ocrOrder.length && !storyOrderSameOrder(currentOrder, ocrOrder),
+      disabledTitle: locked ? uiText("storyOrderCompareLocked") : "",
+      currentKey,
+    },
+  ];
+  if (locked) {
+    const lockedNote = document.createElement("div");
+    lockedNote.className = "story-order-compare-locked";
+    lockedNote.textContent = uiText("storyOrderCompareLocked");
+    panel.appendChild(lockedNote);
+  }
+  for (const row of rows) panel.appendChild(renderStoryOrderCompareSourceRow(row));
+  return panel;
+}
+
 function renderMissionTimelineRecovery(timeline, conv) {
   if (!timeline || !missionTimelineArray(timeline.quests).length) return null;
   const box = document.createElement("div");
@@ -7509,6 +7869,8 @@ function renderMissionTimelineRecovery(timeline, conv) {
 
   const flowKeyMap = buildFlowConversationKeyMap();
   const currentKey = conv && conv.key ? conv.key : "";
+  const orderCompareBlock = renderStoryOrderComparisonPanel(conv && conv.mission, currentKey);
+  if (orderCompareBlock) box.appendChild(orderCompareBlock);
   const spatialBlock = renderMissionTimelineQuestSpatialTrack(
     timeline.questSpatialTrack,
     flowKeyMap,

@@ -23,6 +23,7 @@ import gc
 import hashlib
 import json
 import math
+import os
 import re
 import shutil
 import subprocess
@@ -76,6 +77,8 @@ NON_CONTENT_PARAM_KEYS = {
     "easyocrModelDir",
     "easyocrFrameBatchSize",
     "easyocrBatchSize",
+    "paddleocrGpu",
+    "paddleocrFrameBatchSize",
     "ffmpegHwaccel",
     "keepFrames",
 }
@@ -580,9 +583,9 @@ def build_ocr_dictionary_allowlist(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def params_signature(args: argparse.Namespace) -> dict[str, Any]:
-    return {
+    signature: dict[str, Any] = {
         "toolVersion": TOOL_VERSION,
-        "ocrEngine": "easyocr",
+        "ocrEngine": args.ocr_engine,
         "ffmpegHwaccel": args.ffmpeg_hwaccel,
         "frameStep": args.frame_step,
         "crop": args.crop,
@@ -641,6 +644,14 @@ def params_signature(args: argparse.Namespace) -> dict[str, Any]:
         "includeEmpty": bool(args.include_empty),
         "keepFrames": bool(args.keep_frames),
     }
+    # Append PaddleOCR-only keys solely for paddleocr runs so existing EasyOCR
+    # report signatures stay byte-identical (and remain reusable).
+    if args.ocr_engine == "paddleocr":
+        signature["paddleocrVariant"] = args.paddleocr_variant
+        signature["paddleocrMinConfidence"] = args.paddleocr_min_confidence
+        signature["paddleocrFrameBatchSize"] = args.paddleocr_frame_batch_size
+        signature["paddleocrGpu"] = paddle_use_gpu(args)
+    return signature
 
 
 def same_fingerprint(a: dict[str, Any], b: dict[str, Any]) -> bool:
@@ -1865,6 +1876,179 @@ def run_easyocr_batch(
     return out
 
 
+# --- PaddleOCR (PP-OCRv5) engine -------------------------------------------
+# PP-OCRv5 is markedly more accurate on Chinese subtitle text than EasyOCR and,
+# on a CUDA build, far faster. The locally built CUDA wheel links the *system*
+# CUDA/cuDNN, so their DLL directories must be discoverable before `import
+# paddle`; ensure_paddle_dll_dirs() handles that on Windows.
+
+_PADDLE_DLL_DIRS_ADDED = False
+
+
+def ensure_paddle_dll_dirs(args: argparse.Namespace) -> None:
+    global _PADDLE_DLL_DIRS_ADDED
+    if _PADDLE_DLL_DIRS_ADDED or os.name != "nt":
+        return
+    _PADDLE_DLL_DIRS_ADDED = True
+    # Preferred path: import torch first. torch ships the CUDA 12.8 + cuDNN 9
+    # runtime DLLs this paddle wheel was built against; loading them into the
+    # process lets paddle reuse them. Pointing the loader at the *system* CUDA
+    # dirs instead shadows torch's own DLLs and breaks torch (WinError 127),
+    # and paddleocr imports torch transitively (via modelscope).
+    try:
+        import torch  # type: ignore[import-not-found]  # noqa: F401
+
+        return
+    except Exception:  # noqa: BLE001 - fall back to system CUDA dirs below
+        pass
+    for dir_path in (args.paddle_cuda_bin, args.paddle_cudnn_bin):
+        if dir_path and Path(dir_path).is_dir():
+            try:
+                os.add_dll_directory(str(dir_path))
+            except (OSError, AttributeError):
+                pass
+
+
+def paddle_use_gpu(args: argparse.Namespace) -> bool:
+    # --easyocr-cpu doubles as the shared "force CPU" switch across engines.
+    return not args.easyocr_cpu
+
+
+def verify_paddleocr_dependency(args: argparse.Namespace) -> tuple[bool, str]:
+    ensure_paddle_dll_dirs(args)
+    try:
+        import paddle  # type: ignore[import-not-found]
+        import paddleocr  # type: ignore[import-not-found]
+    except Exception as exc:  # noqa: BLE001 - ImportError or DLL-load OSError
+        return False, (
+            f"paddleocr/paddle not importable ({exc}); install paddleocr and a "
+            "CUDA paddlepaddle-gpu build"
+        )
+    if not paddle_use_gpu(args):
+        return True, f"paddleocr {paddleocr.__version__}; CPU"
+    try:
+        if not paddle.is_compiled_with_cuda() or paddle.device.cuda.device_count() < 1:
+            return False, (
+                "paddlepaddle is not a CUDA build or no GPU is visible; "
+                "pass --easyocr-cpu to force CPU"
+            )
+        name = paddle.device.cuda.get_device_name(0)
+    except Exception as exc:  # noqa: BLE001 - surface any CUDA init failure
+        return False, f"paddle CUDA check failed: {exc}"
+    return True, f"paddleocr {paddleocr.__version__}; GPU={name}"
+
+
+def paddleocr_model_names(variant: str) -> tuple[str, str]:
+    if variant == "mobile":
+        return "PP-OCRv5_mobile_det", "PP-OCRv5_mobile_rec"
+    return "PP-OCRv5_server_det", "PP-OCRv5_server_rec"
+
+
+def create_paddleocr_reader(args: argparse.Namespace) -> Any:
+    ensure_paddle_dll_dirs(args)
+    from paddleocr import PaddleOCR  # type: ignore[import-not-found]
+
+    det_name, rec_name = paddleocr_model_names(args.paddleocr_variant)
+    use_gpu = paddle_use_gpu(args)
+    kwargs: dict[str, Any] = {
+        "text_detection_model_name": det_name,
+        "text_recognition_model_name": rec_name,
+        "use_doc_orientation_classify": False,
+        "use_doc_unwarping": False,
+        "use_textline_orientation": False,
+        "device": "gpu" if use_gpu else "cpu",
+    }
+    if not use_gpu:
+        # The CPU oneDNN path crashes on PP-OCRv5 models
+        # (ConvertPirAttribute2RuntimeAttribute); disable mkldnn on CPU.
+        kwargs["enable_mkldnn"] = False
+    return PaddleOCR(**kwargs)
+
+
+def paddleocr_result_to_text(result: Any, min_confidence: float) -> str:
+    texts = result.get("rec_texts") or []
+    scores = result.get("rec_scores") or []
+    kept: list[str] = []
+    for index, raw_text in enumerate(texts):
+        text = str(raw_text or "").strip()
+        if not text:
+            continue
+        score = 1.0
+        if index < len(scores):
+            try:
+                score = float(scores[index])
+            except (TypeError, ValueError):
+                score = 1.0
+        if score >= min_confidence:
+            kept.append(text)
+    return "\n".join(kept)
+
+
+def run_paddleocr_batch(
+    reader: Any,
+    image_paths: list[Path],
+    args: argparse.Namespace,
+    *,
+    label: str,
+    started: float,
+) -> list[str]:
+    if not image_paths:
+        return []
+    out = [""] * len(image_paths)
+    batch = max(1, args.paddleocr_frame_batch_size)
+    total = len(image_paths)
+    completed = 0
+    print(
+        f"{label} PaddleOCR ({'GPU' if paddle_use_gpu(args) else 'CPU'}, "
+        f"{args.paddleocr_variant}) on {total} crop(s), batch={batch}"
+    )
+    for start_index in range(0, total, batch):
+        chunk = image_paths[start_index : start_index + batch]
+        results = reader.predict([str(path) for path in chunk])
+        for offset, result in enumerate(results):
+            out[start_index + offset] = paddleocr_result_to_text(
+                result, args.paddleocr_min_confidence
+            )
+        completed += len(chunk)
+        if not args.no_progress:
+            progress_bar(
+                f"{label} OCR",
+                completed,
+                total,
+                started=started,
+                force=(completed == total),
+            )
+    return out
+
+
+# --- Engine dispatch --------------------------------------------------------
+
+
+def verify_ocr_dependency(args: argparse.Namespace) -> tuple[bool, str]:
+    if args.ocr_engine == "paddleocr":
+        return verify_paddleocr_dependency(args)
+    return verify_easyocr_dependency(gpu=not args.easyocr_cpu)
+
+
+def create_ocr_reader(args: argparse.Namespace) -> Any:
+    if args.ocr_engine == "paddleocr":
+        return create_paddleocr_reader(args)
+    return create_easyocr_reader(args)
+
+
+def run_ocr_batch(
+    reader: Any,
+    image_paths: list[Path],
+    args: argparse.Namespace,
+    *,
+    label: str,
+    started: float,
+) -> list[str]:
+    if args.ocr_engine == "paddleocr":
+        return run_paddleocr_batch(reader, image_paths, args, label=label, started=started)
+    return run_easyocr_batch(reader, image_paths, args, label=label, started=started)
+
+
 def observation_time(frame_index: int, fps: float | None) -> float | None:
     if not fps:
         return None
@@ -2066,7 +2250,7 @@ def process_video(
     args: argparse.Namespace,
     ffmpeg: str,
     ffprobe: str,
-    easyocr_reader: Any | None,
+    ocr_reader: Any | None,
     params: dict[str, Any],
 ) -> dict[str, Any]:
     fingerprint = video_fingerprint(path)
@@ -2185,18 +2369,17 @@ def process_video(
         )
         fps = meta.get("fps") if isinstance(meta.get("fps"), (int, float)) else None
         ocr_started = time.monotonic()
-        if easyocr_reader is None:
-            raise RuntimeError("EasyOCR reader was not initialized")
+        if ocr_reader is None:
+            raise RuntimeError("OCR reader was not initialized")
         ocr_frame_pairs = list(enumerate(frame_paths))
         ocr_frame_paths = [image_path for _sample_index, image_path in ocr_frame_pairs]
         if ocr_frame_paths:
             print(
-                f"[{path.name}] running EasyOCR "
-                f"({'GPU' if not args.easyocr_cpu else 'CPU'}) on {len(ocr_frame_paths)} primary OCR crop(s) "
-                f"(frame_batch={args.easyocr_frame_batch_size}, recognizer_batch={args.easyocr_batch_size})..."
+                f"[{path.name}] running {args.ocr_engine} "
+                f"({'GPU' if not args.easyocr_cpu else 'CPU'}) on {len(ocr_frame_paths)} primary OCR crop(s)..."
             )
-        frame_texts = run_easyocr_batch(
-            easyocr_reader,
+        frame_texts = run_ocr_batch(
+            ocr_reader,
             ocr_frame_paths,
             args,
             label=f"[{path.name}]",
@@ -2276,8 +2459,8 @@ def process_video(
                     for sample_index, panel_path, _metadata in archive_panel_rows
                 ]
                 archive_stats["archiveBoxOcrFrames"] = len(archive_pairs)
-                archive_frame_texts = run_easyocr_batch(
-                    easyocr_reader,
+                archive_frame_texts = run_ocr_batch(
+                    ocr_reader,
                     [image_path for _sample_index, image_path in archive_pairs],
                     args,
                     label=f"[{path.name}] archive-box",
@@ -2364,8 +2547,8 @@ def process_video(
                     for sample_index, panel_path, _metadata in sns_panel_rows
                 ]
                 sns_stats["snsInterfaceOcrFrames"] = len(sns_pairs)
-                sns_frame_texts = run_easyocr_batch(
-                    easyocr_reader,
+                sns_frame_texts = run_ocr_batch(
+                    ocr_reader,
                     [image_path for _sample_index, image_path in sns_pairs],
                     args,
                     label=f"[{path.name}] SNS-interface",
@@ -2659,7 +2842,33 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help=advanced,
     )
     parser.add_argument("--ocr-lang", default="chi_sim", help=advanced)
-    parser.add_argument("--easyocr-cpu", action="store_true", help="Run EasyOCR on CPU instead of CUDA")
+    parser.add_argument(
+        "--ocr-engine",
+        choices=["paddleocr", "easyocr"],
+        default="paddleocr",
+        help="OCR engine (default: paddleocr / PP-OCRv5; easyocr is the legacy fallback)",
+    )
+    parser.add_argument(
+        "--paddleocr-variant",
+        choices=["server", "mobile"],
+        default="server",
+        help="PP-OCRv5 model variant (server = most accurate)",
+    )
+    parser.add_argument("--paddleocr-frame-batch-size", type=int, default=8, help=advanced)
+    parser.add_argument("--paddleocr-min-confidence", type=float, default=0.5, help=advanced)
+    parser.add_argument(
+        "--paddle-cuda-bin",
+        type=Path,
+        default=Path(r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\bin"),
+        help=advanced,
+    )
+    parser.add_argument(
+        "--paddle-cudnn-bin",
+        type=Path,
+        default=Path(r"C:\Program Files\NVIDIA\CUDNN\v9.10\bin\12.9"),
+        help=advanced,
+    )
+    parser.add_argument("--easyocr-cpu", action="store_true", help="Run OCR on CPU instead of CUDA")
     parser.add_argument(
         "--easyocr-model-dir",
         type=Path,
@@ -2735,6 +2944,10 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--easyocr-cleanup-interval must be non-negative")
     if not (0 <= args.easyocr_min_confidence <= 1):
         parser.error("--easyocr-min-confidence must be between 0 and 1")
+    if args.paddleocr_frame_batch_size <= 0:
+        parser.error("--paddleocr-frame-batch-size must be greater than zero")
+    if not (0 <= args.paddleocr_min_confidence <= 1):
+        parser.error("--paddleocr-min-confidence must be between 0 and 1")
     if args.min_text_length < 0:
         parser.error("--min-text-length must be non-negative")
     if args.min_normalized_chars < 0:
@@ -2893,7 +3106,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"OCR reports live under {rel_path(REPORT_DIR)}")
         return 0
 
-    ok, detail = verify_easyocr_dependency(gpu=not args.easyocr_cpu)
+    ok, detail = verify_ocr_dependency(args)
     if not ok:
         for path, _fingerprint, _report_path in pending:
             entries.append(write_blocked_video_report(path, params=params, error=detail))
@@ -2902,14 +3115,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Wrote {rel_path(INDEX_PATH)}", file=sys.stderr)
         print(f"OCR reports live under {rel_path(REPORT_DIR)}", file=sys.stderr)
         return 2
-    print(f"Using OCR engine: {detail}")
-    easyocr_reader = None
+    print(f"Using OCR engine ({args.ocr_engine}): {detail}")
+    ocr_reader = None
     if pending:
-        print(
-            "Loading EasyOCR reader "
-            f"({'GPU' if not args.easyocr_cpu else 'CPU'}; languages={','.join(easyocr_languages(args.ocr_lang))})..."
-        )
-        easyocr_reader = create_easyocr_reader(args)
+        print(f"Loading {args.ocr_engine} reader ({'GPU' if not args.easyocr_cpu else 'CPU'})...")
+        ocr_reader = create_ocr_reader(args)
 
     start = time.monotonic()
     video_durations: list[float] = []
@@ -2926,7 +3136,7 @@ def main(argv: list[str] | None = None) -> int:
             args=args,
             ffmpeg=ffmpeg,
             ffprobe=ffprobe,
-            easyocr_reader=easyocr_reader,
+            ocr_reader=ocr_reader,
             params=params,
         )
         video_elapsed = time.monotonic() - video_started
