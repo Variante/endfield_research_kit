@@ -71,8 +71,9 @@ previous export and current `export_full/`. Use `.\build_updates.bat
 --init-build` for initial or baseline-only update feeds. By default it compares
 the exported text JSON that feeds Story and Text Tables plus exported image/model/video
 assets and decoded audio using fast size fingerprints; pass
-`--hash-asset-updates` for slower same-size binary modification detection, or
-`--skip-asset-updates` for a text-only feed. The wrapper reads
+`--hash-asset-updates` for slower same-size binary modification detection,
+`--skip-audio-updates` to omit decoded audio while keeping other asset entries,
+or `--skip-asset-updates` for a text-only feed. The wrapper reads
 `ENDFIELD_PREVIOUS_EXPORT_ROOT` and `ENDFIELD_EXPORT_ROOT` from
 `endfield_paths.bat`; pass `--previous-export-root PATH` and
 `--export-root PATH` only for one-off comparisons. Most runs do not need
@@ -157,7 +158,8 @@ bounded fallback for objects with impossible schema fields. Per-asset
 reviewed separately from wrapper-level failures.
 
 `scripts/build_audio.py` can still be run directly for non-CN languages or
-audio-only maintenance. It indexes files under
+audio-only maintenance. It indexes shared files under
+`export_full/structured/Audio/shared/` plus language voice files under
 `export_full/structured/Audio/<LANG>/`, adds playable `audioSrc` links to
 generated conversation JSON when a line's `audio` id matches a decoded file,
 parses Wwise bank HIRC metadata from exported `*banks.pck` files, and links
@@ -234,9 +236,11 @@ Expected active inputs and outputs:
   `--export-root PATH` to compare a different current export,
   `--game-root PATH` only for optional decoded-impact mapping,
   `--refresh-previous-export-baseline` after replacing the saved previous
-  export, `--baseline-only` to write an empty feed, or `--skip-asset-updates`
-  to skip the exported image/model/video/audio asset diff. Asset modifications
-  use fast size fingerprints by default; pass `--hash-asset-updates` for slower
+  export, `--baseline-only` to write an empty feed, `--skip-audio-updates` to
+  omit decoded audio while keeping image/model/video asset entries, or
+  `--skip-asset-updates` to skip the full exported asset diff. Asset
+  modifications use fast size fingerprints by default; pass
+  `--hash-asset-updates` for slower
   content-hash detection of same-size binary changes. Pass
   `--full-export-scan` only for an intentional all-files audit of the export
   roots. Pass
@@ -263,8 +267,9 @@ Expected active inputs and outputs:
   default, or the broad Assets browser index and optional demo bundle zips with
   `--mode full`. It is run by `..\export_assets.bat` and by
   `..\export.bat --with-assets`, not the story-only `..\export.bat`.
-- `build_audio.py`: decodes language audio via AnimeStudio CLI, indexes files
-  under `export_full/structured/Audio/<LANG>/`, parses Wwise bank
+- `build_audio.py`: decodes audio via AnimeStudio CLI, stores shared
+  SFX/music once under `export_full/structured/Audio/shared/`, indexes
+  language voice files under `export_full/structured/Audio/<LANG>/`, parses Wwise bank
   event-to-media links, and post-processes generated conversation JSON so
   dialog/cutscene lines and recoverable cutscene audio events can render native
   browser audio controls.
@@ -473,7 +478,9 @@ gameplay-video OCR/audio workflow.
   switch) is passed. The PaddleOCR GPU path uses a locally built
   `paddlepaddle-gpu` wheel with Blackwell `sm_120` support; it imports `torch`
   first so paddle reuses torch's bundled CUDA 12.8 / cuDNN 9 runtime DLLs (see
-  `memory/` notes / `scratch/paddle_build/`).
+  `memory/` notes / `scratch/paddle_build/`). The PP-OCRv5 server default
+  `--paddleocr-frame-batch-size 40` was benchmarked on cached P10 gameplay
+  crops on an RTX 5080; batch 56 was effectively tied, while 64+ regressed.
 - `story_recovery/build_gameplay_video_story_order.py`: full OCR/audio-to-order
   promotion pipeline. It can run the OCR sampler first with `--run-ocr`, then
   matches completed OCR segments against current CN Story text rows, summaries,
@@ -523,8 +530,8 @@ gameplay-video OCR/audio workflow.
   versions unless `--include-stale-ocr` is passed. The wrapper intentionally
   exposes only the practical OCR controls:
   `--ocr-engine` (default `paddleocr`), `--frame-step`, `--ocr-crop`,
-  `--ocr-limit`, `--ocr-limit-frames`, `--easyocr-cpu`,
-  `--disable-ocr-dictionary`, and `--force-ocr`.
+  `--ocr-limit`, `--ocr-limit-frames`, `--paddleocr-frame-batch-size`,
+  `--easyocr-cpu`, `--disable-ocr-dictionary`, and `--force-ocr`.
 - `story_recovery/build_webui_ocr_order.py`: distills
   `reports/gameplay_video_ocr/story_order_ocr_proposed_story_order.json` into
   the small WebUI-served reference `webui/data/story_order_ocr.json`. Run it

@@ -58,7 +58,8 @@ Updates feed should be baselined instead of reporting changes. It reads the
 previous/current export roots from `endfield_paths.bat` by default, tracks
 WebUI-facing exported text JSON plus exported image/model/video assets and
 decoded audio, and accepts explicit root flags for one-off comparisons. Pass
-`--skip-asset-updates` only for a text-only update feed.
+`--skip-audio-updates` to omit decoded audio while keeping other asset entries.
+Pass `--skip-asset-updates` only for a text-only update feed.
 Use `export_assets.bat` for WebUI Assets tab indexes, compact Story media
 lookup, and CN audio relinking from existing decoded assets when Story is
 already current. Pass `--export-from-game` only when the user explicitly asks to
@@ -68,8 +69,9 @@ audio decode from installed game data first. Prefer
 installed-game refresh. Pass `--webui-assets` for the lean WebUI-referenced
 Texture2D mode, or `--debug-assets` for exhaustive AnimeStudio diagnostics.
 Use direct `scripts/build_audio.py` runs for non-CN languages or audio-only
-maintenance. The audio builder writes `export_full/structured/Audio/<LANG>/`,
-parses Wwise bank event-to-media links, and post-processes generated
+maintenance. The audio builder writes shared SFX/music once under
+`export_full/structured/Audio/shared/` and language voice under
+`export_full/structured/Audio/<LANG>/`, parses Wwise bank event-to-media links, and post-processes generated
 conversation JSON with playable `audioSrc` links. The default exporter mode is
 `--animestudio-type-job-mode auto`: it merges non-sharded JSON type jobs inside
 one AnimeStudio process while keeping map-filtered asset conversion sharded;
@@ -81,6 +83,7 @@ Useful direct commands:
 python scripts\build_updates.py
 python scripts\build_updates.py --baseline-only
 python scripts\build_updates.py --skip-asset-updates
+python scripts\build_updates.py --skip-audio-updates
 python scripts\build_updates.py --refresh-previous-export-baseline
 python scripts\verify_export_freshness.py
 python scripts\story_builder\refresh_evidence.py
@@ -263,7 +266,9 @@ The builder scans exported assets in the same two export folders by default to
 add image/model/video/audio asset-level entries to the Updates page. Asset
 modifications use fast size fingerprints by default; pass
 `--hash-asset-updates` only when same-size binary modifications must be
-detected. Use `--skip-asset-updates` only when asset entries should be omitted.
+detected. Use `--skip-audio-updates` when decoded audio entries should be
+omitted while image/model/video entries remain enabled. Use
+`--skip-asset-updates` only when all asset entries should be omitted.
 Use `--dry-run-prune-previous-export-untracked` to preview previous-export
 files that exist byte-identically at the same relative paths in the current
 export, and `--prune-previous-export-untracked` only when intentionally

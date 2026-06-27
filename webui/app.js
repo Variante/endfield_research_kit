@@ -7769,7 +7769,15 @@ function renderStoryOrderCompareSourceRow({ missionId, source, label, order, cur
     button.dataset.source = source;
     button.textContent = uiText("storyOrderCompareAdopt");
     button.disabled = !canAdopt;
-    if (!canAdopt) button.title = disabledTitle || statusText || uiText("storyOrderCompareIdentical");
+    if (!canAdopt) {
+      button.title = disabledTitle || statusText || uiText("storyOrderCompareIdentical");
+    } else {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        storyOrderAdoptMissionOrder(missionId, source);
+      });
+    }
     head.appendChild(button);
   }
   row.appendChild(head);

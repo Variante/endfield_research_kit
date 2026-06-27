@@ -214,6 +214,22 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--skip-audio-updates",
+        dest="skip_audio_updates",
+        action="store_true",
+        help=(
+            "Skip decoded audio assets in the exported asset diff while still "
+            "comparing images, models, and videos."
+        ),
+    )
+    parser.add_argument(
+        "--include-audio-updates",
+        dest="skip_audio_updates",
+        action="store_false",
+        help="Compatibility flag; decoded audio assets are included by default.",
+    )
+    parser.set_defaults(skip_audio_updates=False)
+    parser.add_argument(
         "--prune-previous-export-untracked",
         action="store_true",
         help=(
@@ -608,12 +624,24 @@ def asset_kind_for_suffix(suffix: str) -> str:
     return ASSET_KIND_BY_EXT.get(lower, "")
 
 
-def resolve_update_asset_source_roots(export_root: Path) -> list[tuple[str, Path]]:
+def resolve_update_asset_source_roots(
+    export_root: Path,
+    *,
+    include_audio: bool = True,
+) -> list[tuple[str, Path]]:
     roots = list(resolve_asset_source_roots(export_root))
     audio_root = export_root / AUDIO_EXPORT_RELATIVE_ROOT
-    if audio_root.exists():
+    if include_audio and audio_root.exists():
         roots.append((AUDIO_SOURCE_LABEL, audio_root))
     return roots
+
+
+def asset_is_audio(asset: dict[str, Any]) -> bool:
+    if str(asset.get("kind") or "") == "audio":
+        return True
+    if str(asset.get("source") or "") == AUDIO_SOURCE_LABEL:
+        return True
+    return str(asset.get("path") or "").startswith(f"{AUDIO_SOURCE_LABEL}/")
 
 
 def hash_file(path: Path) -> str:
@@ -633,13 +661,14 @@ def build_asset_snapshot(
     *,
     hash_contents: bool = False,
     preserve_missing_prior_assets: bool = False,
+    include_audio: bool = True,
 ) -> dict[str, dict[str, Any]]:
     assets: dict[str, dict[str, Any]] = {}
     prior_assets = prior_assets or {}
     if not export_root.exists():
         return assets
 
-    for source, source_root in resolve_update_asset_source_roots(export_root):
+    for source, source_root in resolve_update_asset_source_roots(export_root, include_audio=include_audio):
         if not source_root.exists():
             continue
         for dirpath, dirnames, filenames in os.walk(source_root):
@@ -689,15 +718,17 @@ def build_asset_snapshot(
         for rel_path, old_asset in prior_assets.items():
             if rel_path in assets or not isinstance(old_asset, dict):
                 continue
+            if not include_audio and asset_is_audio(old_asset):
+                continue
             preserved = dict(old_asset)
             preserved["missing_on_disk"] = True
             assets[rel_path] = preserved
     return assets
 
 
-def asset_source_roots_payload(export_root: Path) -> dict[str, str]:
+def asset_source_roots_payload(export_root: Path, *, include_audio: bool = True) -> dict[str, str]:
     roots: dict[str, str] = {}
-    for source, source_root in resolve_update_asset_source_roots(export_root):
+    for source, source_root in resolve_update_asset_source_roots(export_root, include_audio=include_audio):
         roots[source] = normalize_posix(str(source_root))
     return roots
 
@@ -1209,13 +1240,17 @@ def attach_asset_updates(
     sample_limit: int,
     skip_asset_updates: bool = False,
     hash_asset_updates: bool = False,
+    skip_audio_updates: bool = False,
 ) -> None:
+    include_audio_updates = not skip_audio_updates
     asset_state_path = state_dir / "asset-state.json"
     old_assets = load_asset_state(asset_state_path, export_root=export_root)
     asset_scan_available = export_root.exists()
-    asset_source_roots = asset_source_roots_payload(export_root)
+    asset_source_roots = asset_source_roots_payload(export_root, include_audio=include_audio_updates)
     previous_asset_source_roots = (
-        asset_source_roots_payload(previous_export_root) if previous_export_root is not None else {}
+        asset_source_roots_payload(previous_export_root, include_audio=include_audio_updates)
+        if previous_export_root is not None
+        else {}
     )
     if skip_asset_updates:
         payload["assetTotals"] = zero_totals()
@@ -1278,11 +1313,13 @@ def attach_asset_updates(
             load_asset_state(previous_asset_state_path, export_root=previous_export_root),
             hash_contents=hash_asset_updates,
             preserve_missing_prior_assets=True,
+            include_audio=include_audio_updates,
         )
         new_assets = build_asset_snapshot(
             export_root,
             load_asset_state(current_asset_state_path, export_root=export_root),
             hash_contents=hash_asset_updates,
+            include_audio=include_audio_updates,
         )
         diff = build_asset_diff(old_assets, new_assets, sample_limit=sample_limit)
         asset_totals = diff["totals"]
@@ -1343,7 +1380,12 @@ def attach_asset_updates(
         }
         return
 
-    new_assets = build_asset_snapshot(export_root, old_assets, hash_contents=hash_asset_updates)
+    new_assets = build_asset_snapshot(
+        export_root,
+        old_assets,
+        hash_contents=hash_asset_updates,
+        include_audio=include_audio_updates,
+    )
     asset_baseline_initialized = not old_assets
     game_changed = int((payload.get("gameTotals") or {}).get("changed") or 0) > 0
     game_baseline_initialized = bool(payload.get("baselineInitialized"))
@@ -1546,6 +1588,7 @@ def main(argv: list[str] | None = None) -> int:
         sample_limit=args.sample_limit,
         skip_asset_updates=bool(args.skip_asset_updates or args.baseline_only),
         hash_asset_updates=bool(args.hash_asset_updates),
+        skip_audio_updates=bool(args.skip_audio_updates),
     )
 
     prune_result: dict[str, Any] | None = None
@@ -1587,6 +1630,8 @@ def main(argv: list[str] | None = None) -> int:
     if (webui_payload.get("assets") or {}).get("skipped"):
         print("[build_updates] Asset changes: skipped (--skip-asset-updates)")
     else:
+        if args.skip_audio_updates:
+            print("[build_updates] Audio asset changes: skipped (--skip-audio-updates)")
         print(
             "[build_updates] Asset changes:"
             f" added={int(asset_totals.get('added') or 0)},"

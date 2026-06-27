@@ -9,6 +9,7 @@ if /I "%~1"=="help" goto :help
 
 set "BUILD_UPDATES_ARGS="
 set "SKIP_ASSET_UPDATES=0"
+set "SKIP_AUDIO_UPDATES=0"
 
 if exist "%~dp0endfield_paths.bat" call "%~dp0endfield_paths.bat"
 if errorlevel 1 exit /b %errorlevel%
@@ -38,6 +39,16 @@ if /I "%~1"=="--skip-asset-updates" (
   shift
   goto :parse_args
 )
+if /I "%~1"=="--include-audio-updates" (
+  set "SKIP_AUDIO_UPDATES=0"
+  shift
+  goto :parse_args
+)
+if /I "%~1"=="--skip-audio-updates" (
+  set "SKIP_AUDIO_UPDATES=1"
+  shift
+  goto :parse_args
+)
 set "BUILD_UPDATES_ARGS=%BUILD_UPDATES_ARGS% "%~1""
 shift
 goto :parse_args
@@ -46,10 +57,14 @@ goto :parse_args
 rem Updates pipeline:
 rem - compare WebUI-facing text JSON in the saved previous/current exports
 rem - compare exported image/model/video/audio assets by default
+rem - optionally skip decoded audio asset comparison while keeping other assets
 rem - optionally prune previous-export files copied unchanged into the current export
 rem - write webui/data/updates/latest.json for the Updates tab
 if "%SKIP_ASSET_UPDATES%"=="1" (
   set "BUILD_UPDATES_ARGS=%BUILD_UPDATES_ARGS% --skip-asset-updates"
+)
+if "%SKIP_AUDIO_UPDATES%"=="1" (
+  set "BUILD_UPDATES_ARGS=%BUILD_UPDATES_ARGS% --skip-audio-updates"
 )
 
 python .\scripts\build_updates.py %BUILD_UPDATES_ARGS%
@@ -59,7 +74,7 @@ endlocal
 exit /b 0
 
 :help
-echo Usage: build_updates.bat [--init-build] [--skip-asset-updates] [build_updates.py options]
+echo Usage: build_updates.bat [--init-build] [--skip-asset-updates] [--skip-audio-updates] [build_updates.py options]
 echo.
 echo Builds webui\data\updates\latest.json from previous/current exported trees.
 echo By default it compares the roots from endfield_paths.bat
@@ -69,6 +84,8 @@ echo.
 echo   --init-build             Alias for build_updates.py --baseline-only.
 echo   --include-asset-updates  Compatibility flag; assets are included by default.
 echo   --skip-asset-updates     Compare only WebUI-facing text JSON.
+echo   --include-audio-updates  Compatibility flag; audio is included by default.
+echo   --skip-audio-updates     Compare text plus image/model/video assets, skipping audio.
 echo   --game-root PATH         Installed Endfield_Data directory used only for
 echo                            optional decoded-impact mapping.
 echo   --hash-asset-updates     Hash asset contents; slower, catches same-size changes.

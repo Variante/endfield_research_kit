@@ -2863,6 +2863,8 @@ def run_ocr(args: argparse.Namespace) -> None:
         str(OCR_SCRIPT_PATH),
         "--ocr-engine",
         args.ocr_engine,
+        "--paddleocr-frame-batch-size",
+        str(args.paddleocr_frame_batch_size),
         "--frame-step",
         str(args.frame_step),
         "--crop",
@@ -2905,6 +2907,12 @@ def parse_args() -> argparse.Namespace:
         choices=["paddleocr", "easyocr"],
         default="paddleocr",
         help="OCR engine for --run-ocr (default: paddleocr / PP-OCRv5)",
+    )
+    parser.add_argument(
+        "--paddleocr-frame-batch-size",
+        type=int,
+        default=40,
+        help="PaddleOCR frame batch size for --run-ocr (default: 40, tuned for PP-OCRv5 server on RTX 5080)",
     )
     parser.add_argument("--force-ocr", action="store_true")
     parser.add_argument("--ocr-limit", type=int, default=None)
