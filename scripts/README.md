@@ -423,10 +423,15 @@ gameplay-video OCR/audio workflow.
   used by the full gameplay video story-order pipeline. It samples final
   gameplay videos from `videos/`, crops the subtitle/options band of every 10th
   frame by default (`13%-100%` width, `50%-97%` height) at source resolution,
-  and runs EasyOCR on that crop. EasyOCR uses a Story-derived character
-  dictionary by default, built from CN conversation text, speaker labels,
-  summaries, and options; pass
-  `--disable-ocr-dictionary` for unconstrained recognition. It writes
+  and runs OCR on that crop. The default engine is **PaddleOCR PP-OCRv5**
+  (`--ocr-engine paddleocr`, `server` variant), which is markedly more accurate
+  on Chinese subtitle text and, on a CUDA build, far faster (~0.13 s/frame on an
+  RTX 5080) than the legacy **EasyOCR** engine (`--ocr-engine easyocr`). EasyOCR
+  uses a Story-derived character dictionary by default, built from CN
+  conversation text, speaker labels, summaries, and options; pass
+  `--disable-ocr-dictionary` for unconstrained recognition (the dictionary
+  allowlist applies to EasyOCR only — PaddleOCR's recognizer has a fixed
+  dictionary and relies on downstream Story matching to filter). It writes
   per-video reports plus an aggregate index under
   `reports/gameplay_video_ocr/`. The runner skips `.lock`, `.m4s`, zero-byte,
   and other partial downloads, and it skips already completed videos when a
@@ -436,16 +441,17 @@ gameplay-video OCR/audio workflow.
   intentionally reprocessing completed videos. Decoded sampled-frame JPEGs are
   kept by default under `tmp/gameplay_video_ocr/frames/`; reruns reuse existing
   frame files and append only missing sampled frames. Pass `--discard-frames`
-  only for a disposable run. The default OCR language is
-  Simplified Chinese (`chi_sim`, mapped to EasyOCR `ch_sim`), and model weights
-  live under `tools/easyocr/`. The Simplified Chinese recognizer still supports
-  ASCII letters, digits, and common punctuation. OCR output
+  only for a disposable run. The default OCR language is Simplified Chinese
+  (`chi_sim`; for EasyOCR mapped to `ch_sim`). PP-OCRv5 weights are cached under
+  `~/.paddlex/official_models/`; EasyOCR weights live under `tools/easyocr/`.
+  Both recognizers also support ASCII letters, digits, and common punctuation.
+  OCR output
   is filtered before it becomes a segment: UID/latency overlays are stripped,
   Chinese-rich spans are extracted from mixed junk lines, short lines are
   dropped unless they look like short Chinese speaker names, and mostly-symbol
   lines are rejected. The default recognition and line filters are
   intentionally permissive so short subtitle fragments, speaker names, and
-  lower-confidence EasyOCR boxes are kept for matching. Mostly-black sampled
+  lower-confidence OCR boxes are kept for matching. Mostly-black sampled
   frames bypass the normal subtitle crop and are replaced in the decoded-frame
   cache by a near-full-frame OCR crop (`10%-97%` height) that avoids the top
   HUD and bottom UID strip. Archive-box frames and detected SNS interface
@@ -460,10 +466,14 @@ gameplay-video OCR/audio workflow.
   report, per-video elapsed/remaining/ETA lines, an overall video progress bar,
   and a live status index at
   `reports/gameplay_video_ocr/gameplay_video_ocr_index.md`. It orchestrates
-  external `ffmpeg`/`ffprobe` plus EasyOCR/PyTorch. ffmpeg tries CUDA/NVDEC
-  decode automatically when the local ffmpeg build supports it, with CPU
-  fallback if hardware decode fails. EasyOCR uses CUDA when available unless
-  `--easyocr-cpu` is passed.
+  external `ffmpeg`/`ffprobe` plus the OCR engine (PaddleOCR/Paddle on CUDA, or
+  EasyOCR/PyTorch). ffmpeg tries CUDA/NVDEC decode automatically when the local
+  ffmpeg build supports it, with CPU fallback if hardware decode fails. Both OCR
+  engines use CUDA when available unless `--easyocr-cpu` (the shared force-CPU
+  switch) is passed. The PaddleOCR GPU path uses a locally built
+  `paddlepaddle-gpu` wheel with Blackwell `sm_120` support; it imports `torch`
+  first so paddle reuses torch's bundled CUDA 12.8 / cuDNN 9 runtime DLLs (see
+  `memory/` notes / `scratch/paddle_build/`).
 - `story_recovery/build_gameplay_video_story_order.py`: full OCR/audio-to-order
   promotion pipeline. It can run the OCR sampler first with `--run-ocr`, then
   matches completed OCR segments against current CN Story text rows, summaries,
@@ -497,7 +507,14 @@ gameplay-video OCR/audio workflow.
   `reports/gameplay_video_ocr/story_order_ocr_matches.json` / `.md`, and emits
   a proposed full-list story order at
   `reports/gameplay_video_ocr/story_order_ocr_proposed_story_order.json`.
-  Pass `--apply` only after reviewing the report; it writes the same full-list
+  It also writes a WebUI debug reference at
+  `webui/data/story_order_ocr.json` via `build_webui_ocr_order.py`, so debug
+  mode can compare the OCR order with static recovery and the current override.
+  A prepare-only all-video OCR/order refresh is
+  `python scripts\story_recovery\build_gameplay_video_story_order.py --run-ocr`;
+  omit `--apply` to leave `webui/overrides/story_order.json` untouched while
+  refreshing the standalone reports/reference. Pass `--apply` only after
+  reviewing the report; it writes the same full-list
   format to `webui/overrides/story_order.json`, while preserving any mission
   marked with `locked: true`. Smoke OCR reports made with `--limit-frames` are
   ignored unless `--include-smoke` is passed. The matcher logs corpus/index
@@ -505,8 +522,14 @@ gameplay-video OCR/audio workflow.
   OCR-segment matching progress. It ignores stale OCR reports from older filter
   versions unless `--include-stale-ocr` is passed. The wrapper intentionally
   exposes only the practical OCR controls:
-  `--frame-step`, `--ocr-crop`, `--ocr-limit`, `--ocr-limit-frames`,
-  `--easyocr-cpu`, `--disable-ocr-dictionary`, and `--force-ocr`.
+  `--ocr-engine` (default `paddleocr`), `--frame-step`, `--ocr-crop`,
+  `--ocr-limit`, `--ocr-limit-frames`, `--easyocr-cpu`,
+  `--disable-ocr-dictionary`, and `--force-ocr`.
+- `story_recovery/build_webui_ocr_order.py`: distills
+  `reports/gameplay_video_ocr/story_order_ocr_proposed_story_order.json` into
+  the small WebUI-served reference `webui/data/story_order_ocr.json`. Run it
+  directly when the proposed OCR order already exists and only the debug compare
+  reference needs to be refreshed.
 - `story_recovery/show_gameplay_video_order_comparison.py`: focused review
   helper for selected OCR reports. It defaults to current P10 OCR outputs,
   reruns the text-only Story matcher for those reports, and writes a

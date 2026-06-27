@@ -676,6 +676,43 @@ function storyOrderMissionMoveUnusedControl(row) {
   );
 }
 
+// #2 — flag missions whose order is NOT human-verified (not locked). Non-locked
+// overrides may be OCR/auto-seeded; per project policy OCR is untrusted, so these
+// need a human pass. Locked missions are treated as verified and show no badge.
+function storyOrderMissionVerifiedControl(row) {
+  if ((STATE.sortMode || "story") !== "story") return "";
+  const missionId = String(row && row.storyOrderMissionId || "");
+  if (!missionId) return "";
+  const mission = STATE.storyOrderPayload && STATE.storyOrderPayload.missions
+    && STATE.storyOrderPayload.missions[missionId];
+  if (!mission || !Array.isArray(mission.order) || !mission.order.length) return "";
+  const locked = typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionId);
+  if (locked) return "";
+  const label = escapeHtml(uiText("storyOrderUnverifiedBadge"));
+  const title = escapeHtml(uiText("storyOrderUnverifiedTitle"));
+  return `<span class="story-order-unverified-badge" title="${title}">${label}</span>`;
+}
+
+// #1 — jump to the next low-confidence row needing review. Count reflects the
+// mission's fallback/weak rows; only shown once the mission JSON is cached (debug).
+function storyOrderMissionReviewControl(row) {
+  if ((STATE.sortMode || "story") !== "story" || !STATE.showDebug) return "";
+  const missionId = String(row && row.storyOrderMissionId || "");
+  if (!missionId) return "";
+  const keys = typeof storyOrderMissionUncertainKeys === "function"
+    ? storyOrderMissionUncertainKeys(missionId) : [];
+  if (!keys.length) return "";
+  const label = escapeHtml(uiText("storyOrderReviewJump"));
+  const title = escapeHtml(uiText("storyOrderReviewJumpTitle"));
+  return (
+    `<button class="story-order-mission-review-button" type="button" ` +
+      `data-mission-id="${escapeHtml(missionId)}" title="${title}">` +
+      `<span class="story-order-review-mark" aria-hidden="true">!</span>` +
+      `<span class="story-order-mission-lock-label">${label} (${keys.length})</span>` +
+    `</button>`
+  );
+}
+
 function moveStoryOrderMissionUnusedToEnd(missionId) {
   const missionKey = String(missionId || "");
   if (!missionKey) return false;
@@ -889,6 +926,15 @@ function bindEvents() {
       moveStoryOrderMissionUnusedToEnd(missionMoveUnusedButton.dataset.missionId);
       return;
     }
+    const missionReviewButton = ev.target.closest(".story-order-mission-review-button");
+    if (missionReviewButton) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (typeof jumpToNextUncertainRow === "function") {
+        jumpToNextUncertainRow(missionReviewButton.dataset.missionId);
+      }
+      return;
+    }
     const unusedToggle = ev.target.closest(".story-order-unused-toggle");
     if (unusedToggle) {
       ev.preventDefault();
@@ -951,6 +997,16 @@ function bindEvents() {
   });
 
   $("#conv-lines").addEventListener("click", (ev) => {
+    const clickTarget = ev.target && ev.target.closest ? ev.target : null;
+    const storyOrderAdoptButton = clickTarget ? clickTarget.closest(".story-order-compare-adopt-button") : null;
+    if (storyOrderAdoptButton) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (!storyOrderAdoptButton.disabled && typeof storyOrderAdoptMissionOrder === "function") {
+        storyOrderAdoptMissionOrder(storyOrderAdoptButton.dataset.missionId, storyOrderAdoptButton.dataset.source);
+      }
+      return;
+    }
     if (handleInlineImageModalActivate(ev.target)) {
       ev.preventDefault();
       ev.stopPropagation();

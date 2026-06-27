@@ -2309,6 +2309,100 @@ a.opt-target-chip { cursor: pointer; }
   border-color: rgba(var(--danger-rgb), 0.3);
   background: rgba(var(--danger-rgb), 0.08);
 }
+
+.story-order-compare-panel {
+  margin: 10px 0 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: rgba(var(--fg-rgb), 0.035);
+}
+.story-order-compare-heading {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.story-order-compare-locked {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.story-order-compare-row {
+  display: grid;
+  gap: 5px;
+  padding: 7px 0;
+  border-top: 1px dotted var(--border);
+}
+.story-order-compare-row:first-of-type {
+  border-top: 0;
+}
+.story-order-compare-row-head,
+.story-order-compare-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.story-order-compare-source {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+.story-order-compare-meta,
+.story-order-compare-more {
+  color: var(--muted);
+  font-size: 11px;
+}
+.story-order-compare-adopt-button {
+  margin-left: auto;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  background: rgba(var(--accent-rgb), 0.1);
+  font-size: 11px;
+  cursor: pointer;
+}
+.story-order-compare-adopt-button:hover:not(:disabled) {
+  background: rgba(var(--accent-rgb), 0.18);
+}
+.story-order-compare-adopt-button:disabled {
+  color: var(--muted);
+  background: rgba(var(--fg-rgb), 0.035);
+  cursor: default;
+  opacity: 0.75;
+}
+.story-order-compare-chip {
+  display: inline-flex;
+  max-width: 180px;
+  min-height: 20px;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  background: rgba(var(--fg-rgb), 0.055);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+button.story-order-compare-chip {
+  cursor: pointer;
+}
+button.story-order-compare-chip:hover {
+  background: rgba(var(--accent-rgb), 0.14);
+}
+.story-order-compare-chip.current {
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
 .mission-timeline-details {
   margin-top: 10px;
 }
@@ -4862,6 +4956,50 @@ body:not(.show-debug) .story-order-remove-from-mission {
 /* Rows whose recovered order is uncertain — flag for human review */
 .row.item.story-order-uncertain {
   box-shadow: inset 3px 0 0 rgba(220, 150, 0, 0.7);
+}
+/* #2 — unverified (not human-locked) mission order badge */
+.story-order-unverified-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #6a6a6a;
+  background: rgba(120, 120, 120, 0.14);
+  border: 1px solid rgba(120, 120, 120, 0.4);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+/* #1 — jump-to-next-uncertain control in the mission group header */
+.story-order-mission-review-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 10px;
+  line-height: 1.5;
+  cursor: pointer;
+  color: #9a3a00;
+  background: rgba(230, 150, 0, 0.16);
+  border: 1px solid rgba(200, 130, 0, 0.5);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.story-order-mission-review-button:hover {
+  background: rgba(230, 150, 0, 0.28);
+}
+.story-order-mission-review-button .story-order-review-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(210, 130, 0, 0.95);
+  border-radius: 50%;
 }
 
 /* Debug toggle — small inline checkbox-style button */
