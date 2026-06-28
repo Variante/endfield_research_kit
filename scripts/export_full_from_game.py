@@ -1133,6 +1133,110 @@ def write_animestudio_asset_status_manifest(
     return status["summary"]
 
 
+def write_animestudio_report_only_asset_statuses(
+    output_root: Path,
+    source: str,
+    stage: str,
+    plan: dict[str, Any],
+) -> list[dict[str, Any]]:
+    options = plan.get("options") or {}
+    if stage != "convert_by_type" or options.get("export_type") != "Convert":
+        return []
+    if not options.get("asset_map_filter"):
+        return []
+    map_name = options.get("map_name")
+    if not map_name:
+        return []
+    map_json = normalize_asset_map_path(map_name)
+    if not map_json.exists():
+        log(f"  animestudio report-only status {stage} for {source}: missing JSON map {map_json}")
+        return []
+
+    started = time.time()
+    map_entries_cache = plan.setdefault("_asset_map_entries_cache", {})
+    map_entries_key = str(map_json)
+    map_entries = map_entries_cache.get(map_entries_key)
+    if map_entries is None:
+        map_entries = load_animestudio_asset_map_entries(map_json)
+        map_entries_cache[map_entries_key] = map_entries
+
+    written: list[dict[str, Any]] = []
+    for item in plan.get("items", []):
+        type_spec = item.get("type_spec")
+        if type_spec is None:
+            continue
+        type_name = animestudio_type_name(type_spec)
+        if not animestudio_asset_cache_supported(stage, options, type_name):
+            continue
+        if not animestudio_map_filter_is_safe((type_spec,)):
+            continue
+        matched_entries = dedupe_asset_entries(
+            filter_animestudio_asset_map_entries(
+                map_path=map_json,
+                type_name=type_name,
+                names=options.get("names"),
+                containers=options.get("containers"),
+                entries=map_entries,
+            )
+        )
+        missing_outputs_allowed = type_name in ANIMESTUDIO_ALLOW_MISSING_CONVERT_OUTPUT_TYPES
+        status_summary = write_animestudio_asset_status_manifest(
+            output_root=output_root,
+            source=source,
+            stage=stage,
+            type_name=type_name,
+            entries=matched_entries,
+            missing_outputs_allowed=missing_outputs_allowed,
+        )
+        asset_info = {
+            "enabled": False,
+            "report_only": True,
+            "cache_path": None,
+            "map_json": str(map_json),
+            "type": type_name,
+            "output_extension": animestudio_convert_output_extension(type_name),
+            "matched_entry_count": len(matched_entries),
+            "cached_entry_count": 0,
+            "pending_entry_count": 0,
+            "shard_count": 0,
+            "prepare_seconds": round(time.time() - started, 3),
+            "export_error_count": 0,
+        }
+        for key in (
+            "manifest_path",
+            "output_entry_count",
+            "unique_output_path_count",
+            "output_unique_path_count",
+            "actual_output_file_count",
+            "missing_output_count",
+            "missing_unique_output_count",
+            "allowed_missing_output_count",
+            "duplicate_output_path_group_count",
+            "duplicate_output_entry_count",
+            "cross_ab_output_collision_group_count",
+            "cross_ab_output_collision_entry_count",
+            "source_group_count",
+            "clean_source_group_count",
+            "dirty_source_group_count",
+            "unmapped_export_error_count",
+        ):
+            asset_info[key] = status_summary.get(key)
+        plan.setdefault("asset_caches", []).append(asset_info)
+        plan.setdefault("item_file_counts", {})[type_name] = int(status_summary.get("actual_output_file_count") or 0)
+        written.append(asset_info)
+        log(
+            f"  animestudio report-only status {stage}:{type_name} for {source}: "
+            f"matched={asset_info['matched_entry_count']} "
+            f"outputs={asset_info['output_entry_count']} "
+            f"missing={asset_info['missing_output_count']} "
+            f"manifest={asset_info['manifest_path']}"
+        )
+
+    if written:
+        plan["asset_cache"] = written[-1]
+    return written
+
+
 def animestudio_type_name(type_spec: str | None) -> str:
     if not type_spec:
         return ANIMESTUDIO_MANIFEST_MAP_LABEL
@@ -3801,6 +3905,12 @@ def main() -> int:
             else:
                 for stage in selected_animestudio_stages:
                     plan = animestudio_stage_plans[stage]
+                    write_animestudio_report_only_asset_statuses(
+                        output_root=output_root,
+                        source=source,
+                        stage=stage,
+                        plan=plan,
+                    )
                     if plan["run_items"]:
                         log(
                             f"  animestudio report-only {stage} for {source}: "

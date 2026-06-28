@@ -159,3 +159,34 @@ The two enemy samples now have no heuristic or unparsed managed-reference
 records. Remaining semantic gaps are intentionally marked `$partial`:
 `AbilitySystemData` in both samples and the longer 840-byte
 `AbilitySystemForEnemyPartData` variant in `data_eny_0077_agshield`.
+
+## AbilitySystem Skill Bundle Follow-up
+
+A fifth pass improved the remaining enemy `AbilitySystemData` semantic tail
+without changing the generic managed-reference recovery/classification path:
+
+- `ModeData` now decodes the metadata-backed tail fields after `animBoolName`:
+  `overrideStateClip`, optional raw `overrideClipMapping`, `overrideAnimCfg`,
+  `animCfgPath`, `overrideModelKey`, `modelKey`, `mountPointDefIndex`,
+  `overrideCmdMapping`, and the observed four-word raw `cmdMapping` block.
+- `SkillDataBundle` is decoded through `comboSkillSpecialNodeName`. This
+  exposes the enemy skill/passive string lists while deliberately leaving
+  `defaultCmdMapping` and later `AbilitySystemData` sections in
+  `remainingRawWords`.
+- The UI, blackboard, baked-mesh point/path, extra-shape, skill-camera,
+  effect, health, preload, and max-potential-effect sections remain unknown.
+  They are still preserved as structured raw words plus string hints; no data is
+  dropped to suppress partial status.
+
+Verification after this pass:
+
+| Sample | Refs | Decoded | Inferred | Heuristic/unparsed | Partial | AbilitySystem remaining words |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `data_eny_0077_agshield` | 50 | 50 | 35 | 0 | 2 | 5132 |
+| `data_eny_0115_nefarcore` | 19 | 19 | 9 | 0 | 1 | 554 |
+
+Compared to the prior `AbilitySystemData` pass, agshield's remaining raw tail
+shrinks from 5365 to 5132 words, and nefarcore's from 583 to 554 words. The
+partial counts are unchanged because `AbilitySystemData` is still intentionally
+partial, and agshield still has the one long 840-byte
+`AbilitySystemForEnemyPartData` variant with a raw numeric payload.
