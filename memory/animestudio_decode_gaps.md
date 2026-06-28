@@ -93,10 +93,11 @@ attribute handling still needs a resolver mapping or fallback behavior.
 
 ## Lower-Priority Warnings
 
-Asset map builds still report unknown class IDs such as
+Asset map builds previously reported unknown class IDs such as
 `Unknown ClassIDType 1186182244 for object with PathID -653593890721436740`.
-These did not cause stage failures and should be treated as unsupported Unity
-class metadata unless a downstream workflow needs those objects.
+A 2026-06-28 source-context probe identified this object as Endfield
+`HGCorrectiveBoneData` with a type-tree root of `HGCorrectiveBoneData Base`, so
+AnimeStudio now names the class ID and no longer logs it as unknown.
 
 ## Follow-Up Candidates
 
@@ -110,3 +111,31 @@ class metadata unless a downstream workflow needs those objects.
 - For MonoBehaviour payload recovery, try a usable Endfield DummyDll set or
   script-derived TypeTrees; otherwise keep metadata-only JSON as the bounded
   and expected fallback.
+
+### 2026-06-28 `HGCorrectiveBoneData` Classification
+
+A temporary enriched `ObjectReader` warning mapped class ID `1186182244`
+(`0x46B3B464`) to:
+
+```text
+source=D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\71FC2E71A9F249B382BF8DAED3BCEE65.chk
+file=CAB-32950fb339e559152169c6fc3665f434
+PathID=-653593890721436740
+bundleOffset=0x0177F536
+byteStart=0x00001F90
+byteSize=0x00001564
+typeID=0
+typeTreeRoot=HGCorrectiveBoneData Base
+```
+
+`ClassIDType.HGCorrectiveBoneData = 1186182244` was added to AnimeStudio.
+The object remains handled by the generic type-tree fallback unless a later
+workflow needs a dedicated exporter for corrective-bone data.
+
+Verification command:
+
+```bat
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\71FC2E71A9F249B382BF8DAED3BCEE65.chk" "D:\fluffy-dump\tmp\unknown_classid_named_verify" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types TextAsset:Both --names "^__no_match__$"
+```
+
+Result: exit code 0 and no warning output.
