@@ -936,3 +936,16 @@ records are exactly `DialogCamActDataLongScalarBlock` length `560`. The remainin
 current dialog unparsed action payloads are the singleton length-`588` and
 length-`644` `DialogCamActData` variants plus one singleton length-`220`
 `DialogEmotionActData`.
+
+## 2026-06-28 Dialog Singleton Sample Search
+
+A read-only subagent search looked for additional independent samples for the remaining odd dialog action payload lengths. It found no new unique objects beyond the existing 11-dialog temporary probes.
+
+Evidence summary:
+
+- The current `export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json` contains exactly 11 strict `dlg_*_timeline` MonoBehaviour rows, matching `tools/animestudio-dummydll-gain-test/dialog_timelines_11_filter_data.json`.
+- `DialogCamActData` length `588`: one unique object, `dlg_e2m4_7_timeline`, PathID `-2965055753730031689`, rid `1024`, ref offset `6432`, length `588`, source offset `1130676656` in `68B3B9B8EB82E88FBFE6A313E6B18FB6.chk`.
+- `DialogCamActData` length `644`: one unique object, `dlg_e2m2_1_timeline`, PathID `-2434682336205472648`, rid `4297684264117342187`, ref offset `36600`, length `644`, source offset `1557302705` in the same chk.
+- `DialogEmotionActData` length `220`: one unique object, `dlg_e2m5_2_timeline`, PathID `2544947724258404700`, rid `1011`, ref offset `2892`, length `220`, source offset `1132350533` in the same chk.
+
+Conclusion: keep `DialogCamActData` lengths `588`/`644` and `DialogEmotionActData` length `220` as singleton evidence only. They are not safe to promote to decoded layouts without broader dialog/timeline candidates or additional independent samples.
