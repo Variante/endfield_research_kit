@@ -104,3 +104,30 @@ Remaining unparsed classes are now limited to:
 - `EnemyTemplateData`
 - `AbilitySystemData`
 - `AbilitySystemForEnemyPartData`
+
+## Template And Enemy-Part Ability Follow-up
+
+A follow-up pass decoded two more enemy managed-reference families:
+
+- `EnemyTemplateData`: model key, variable word-aligned attributes block,
+  post-model key, rank/sub-rank flags, and animation config path. The raw order
+  is not the same as the first IL2CPP field listing: the attributes block sits
+  between `modelKey` and the post-model/rank/path tail in observed payloads.
+- `AbilitySystemForEnemyPartData`: word-aligned numeric payload. Seven observed
+  agshield records have a validated 20-word scalar tail matching the metadata
+  fields after `partAttributes`; one 840-byte record is preserved as an explicit
+  `$partial` raw numeric payload because its longer tail does not satisfy the
+  same bool/enum/float constraints.
+
+Verification after this pass:
+
+| Sample | Refs | Decoded | Inferred | Heuristic/unparsed | Partial |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `data_eny_0077_agshield` | 50 | 49 | 34 | 1 | 1 |
+| `data_eny_0115_nefarcore` | 19 | 18 | 8 | 1 | 0 |
+| `data_facemorph_avatar_antal` regression | 243 | 243 | 243 | 0 | 0 |
+
+The only remaining unparsed class in these two enemy samples is
+`AbilitySystemData`. The partial agshield part-ability record is no longer a
+warning/error, but it is still intentionally marked partial until the longer
+variant's nested attribute layout is understood.
