@@ -100,4 +100,82 @@ Result: wrote a tmp Sprite status manifest with `clean_source_group_count=1`, `d
 - No broad Sprite refresh was run; the fix was verified with one targeted Sprite. Atlas-backed Sprites should be better covered by `SpriteAtlas:Parse`, but external atlas/texture dependencies in different bundle offsets may still need dependency-map loading.
 - Texture2D silent no-output cases are still treated as unexpected missing outputs except for already allowed Mesh behavior. That is intentional until unsupported Texture2D formats are classified more narrowly.
 - Per-AB manifests can map missing outputs and output filename collisions to source ABs, but existing warning/error logs still cannot be mapped exactly to ABs without C# log enrichment that includes source path, offset, PathID, and type.
-- `--report-only` does not backfill the new manifests because it skips asset stage finalizers; run the relevant convert stage to generate them.
+- Superseded by the follow-up below: `--report-only` previously did not backfill the new manifests because it skipped asset stage finalizers.
+
+## 2026-06-28 Report-Only Status Backfill Follow-Up
+
+Added a wrapper-only report-only status backfill in `scripts/export_full_from_game.py`. In
+`--report-only` mode, map-filtered `convert_by_type` plans now load the existing JSON asset map,
+apply the same name/container filters, and write per-source/type status manifests without invoking
+AnimeStudio conversion. This fills the previous gap where status manifests existed only after a
+conversion stage finalizer ran.
+
+Verification commands:
+
+```bat
+python -m py_compile scripts\export_full_from_game.py
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode full --animestudio-stages convert_by_type --sources Persistent --report-only
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode full --animestudio-stages convert_by_type --sources StreamingAssets --report-only
+```
+
+Report-only status results from existing maps/outputs:
+
+- `Persistent Texture2D`: matched 5,960, outputs 5,954, missing 6, dirty source groups 89.
+- `StreamingAssets Texture2D`: matched 126,496, outputs 126,402, missing 94, dirty source groups 341.
+- `Persistent Sprite`: matched 5,603, outputs 0, missing 5,603.
+- `StreamingAssets Sprite`: matched 20,917, outputs 0, missing 20,917.
+
+The Sprite report-only totals reproduce the prior 26,520 missing-output count exactly, proving the
+current broad export tree is still stale for Sprite; it does not contradict the targeted wrapper
+fix. The status manifests are now written under:
+
+```text
+export_full/recovered/AnimeStudio-cli/Persistent/asset_status/convert_by_type_Texture2D.json
+export_full/recovered/AnimeStudio-cli/Persistent/asset_status/convert_by_type_Sprite.json
+export_full/recovered/AnimeStudio-cli/StreamingAssets/asset_status/convert_by_type_Texture2D.json
+export_full/recovered/AnimeStudio-cli/StreamingAssets/asset_status/convert_by_type_Sprite.json
+```
+
+Concrete targeted probes:
+
+```bat
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" "D:\fluffy-dump\tmp\animestudio_gap_probe\sprite_plain_20260628_044950" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type Convert --filter_data "D:\fluffy-dump\tmp\animestudio_gap_probe\Sprite_bg_square_fullrect_filter.json" --types Sprite:Both
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" "D:\fluffy-dump\tmp\animestudio_gap_probe\sprite_with_deps_20260628_044950" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type Convert --filter_data "D:\fluffy-dump\tmp\animestudio_gap_probe\Sprite_bg_square_fullrect_filter.json" --types Sprite:Both Texture2D:Parse SpriteAtlas:Parse
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" "D:\fluffy-dump\tmp\animestudio_gap_probe\texture_font_20260628_044950" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type Convert --filter_data "D:\fluffy-dump\tmp\animestudio_gap_probe\Texture2D_Font_Texture_filter.json" --types Texture2D:Both
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" "D:\fluffy-dump\tmp\animestudio_gap_probe\texture_existing_20260628_044950" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type Convert --filter_data "D:\fluffy-dump\tmp\animestudio_gap_probe\Texture2D_existing_filter.json" --types Texture2D:Both
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" "D:\fluffy-dump\tmp\animestudio_gap_probe\texture_nonfont_missing_20260628_044950" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type Convert --filter_data "D:\fluffy-dump\tmp\animestudio_gap_probe\Texture2D_nonfont_missing_filter.json" --types Texture2D:Both
+```
+
+Probe samples and outcomes:
+
+- `Sprite bg_square_fullrect`, pathID `-1508810544388176411`, container
+  `assets/beyond/initialassets/prefabs/login/loginrootpanel.prefab`: plain `Sprite:Both` returned 0
+  and wrote no file; `Sprite:Both Texture2D:Parse SpriteAtlas:Parse` returned 0 and wrote
+  `tmp/animestudio_gap_probe/sprite_with_deps_20260628_044950/Sprite/bg_square_fullrect_pEB0FA0CDCC6105E5.png`.
+  Classification: dependency gap, not a Sprite parse failure.
+- `Texture2D Font Texture`, pathID `-6603019454663767376`, container
+  `assets/beyond/initialassets/ui/fonts/novecentowidebold.otf`: `Texture2D:Both` returned 0 and
+  wrote no file. Classification: silent no-output placeholder/unsupported zero-size font texture,
+  not a process failure.
+- Positive control `Texture2D T_default_mro_MRO`, pathID `-1246962829539794806`, container
+  `packages/com.hg.render-pipelines/runtime/renderpipelineresources/material/defaulthgmaterial.mat`:
+  same `Texture2D:Both` command shape returned 0 and wrote
+  `tmp/animestudio_gap_probe/texture_existing_20260628_044950/Texture2D/T_default_mro_MRO_pEEB1E5E9C92A208A.png`.
+- Non-Font missing-status sample `Texture2D 74618664eecd07dc`, pathID `-598241958808313765`, container
+  `assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/facskill_hub_mine_spd_20.png`:
+  same `Texture2D:Both` command shape returned 0 and wrote
+  `tmp/animestudio_gap_probe/texture_nonfont_missing_20260628_044950/Texture2D/facskill_hub_mine_spd_20_pF7B29E1BAB7F205B.png`.
+  Classification: output identity/name mismatch artifact; the map entry name was the hash-like
+  `74618664eecd07dc`, while the exported file used the parsed texture name.
+
+Narrow next command for Sprite broad refresh, if acceptable later:
+
+```bat
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode full --animestudio-stages convert_by_type --sources StreamingAssets Persistent --animestudio-jobs 4 --animestudio-shards 16
+```
+
+This will rerun all full-mode conversion types because the current wrapper does not expose a
+single-type convert selector. A narrower future wrapper improvement would be a type selector for
+`convert_by_type`, but the report-only status backfill is enough to certify that today's 26,520
+Sprite misses are stale broad output state plus known parse dependencies.
+

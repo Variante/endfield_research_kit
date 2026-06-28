@@ -38,6 +38,44 @@ Together with the earlier targeted AnimationClip repros and shard 04 /
 Persistent shard 01 replays, the known AnimationClip export-error signatures
 are now understood as stale in the old full report.
 
+## ManagedReferences Null Registry Classification
+
+The top stale `MonoBehaviour#N` family was sampled with the login prefab bundle:
+
+```bat
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\0CE8FA57\D937E67494E3B4C19C00B4CD263ED388.chk" "D:\fluffy-dump\tmp\mb_anonymous_loginroot_bundle_null_registry_fix" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls "D:\fluffy-dump\tools\DummyDll"
+```
+
+Before the classifier fix, the current exporter wrote 3,835 MonoBehaviour JSON
+files for that bundle, with 140 `UIButton` files carrying
+`serializedTypeTreeError` and `$heuristic` only because the final
+`ManagedReferencesRegistry` encoded one null RID at EOF:
+
+```text
+version=2, count=1, rid=-2, empty class/ns/asm, dataLength=0
+```
+
+After the fix:
+
+- The same bundle still writes 3,835 MonoBehaviour JSON files.
+- The 140 `UIButton` files have no problem markers.
+- Their `references` registry is marked `$decoded`, with
+  `managedReferencesRegistryFullyDecoded: true`.
+- The original TypeTree EOF is not preserved as an export error when the
+  recovered registry contains only decoded data.
+
+Regression samples keep real unknowns visible:
+
+- `data_facemorph_avatar_antal`: `managedReferencesRegistryFullyDecoded: true`,
+  no serialized TypeTree error.
+- `data_eny_0077_agshield`: `managedReferencesRegistryFullyDecoded: false`,
+  keeps the serialized TypeTree error and 2 semantic `$partial` payloads.
+- `data_eny_0115_nefarcore`: `managedReferencesRegistryFullyDecoded: false`,
+  keeps the serialized TypeTree error and 1 semantic `$partial` payload.
+
+This removes a large false-positive bucket without hiding real incomplete
+managed-reference payloads.
+
 ## Current Highest-Value Work
 
 1. Refresh or sample `MonoBehaviour` managed-reference recovery by family. The
