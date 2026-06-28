@@ -67,7 +67,9 @@ registries stayed partial.
 - still emits the old partial warning and `partialTypeTreeDecode` metadata when
   recovery fails;
 - accepts negative empty-type managed-reference entries as null/sentinel
-  registry records and emits their data as `{ "$null": true, "$inferred": true }`.
+  registry records and emits their data as `{ "$null": true, "$inferred": true }`;
+- lowers the managed-reference minimum header size from 24 to 20 bytes so
+  zero-length null/sentinel entries are valid when scanning for later entries.
 
 ## Targeted Verification
 
@@ -77,8 +79,7 @@ Rebuild:
 .\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
 ```
 
-Result: build succeeded. The final rebuild reported 14 existing warnings in
-non-CLI projects and 0 errors.
+Result: build succeeded with 0 warnings and 0 errors on the final rebuild.
 
 Persistent positive-RID sample:
 
