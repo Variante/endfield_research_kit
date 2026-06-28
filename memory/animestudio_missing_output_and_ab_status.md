@@ -277,3 +277,34 @@ Sampled classification from current manifests:
 Exporter behavior check: `ExportMesh()` silently returns `false` for `m_VertexCount <= 0`, missing/empty `m_Vertices`, or output path setup failure. It does not currently log vertex counts or reason details.
 
 Next concrete improvement: mirror the Texture2D diagnostics for Mesh. Add structured `[Warning] Mesh no output ...` logs with reason, source identity, vertex count, vertex buffer length, submesh/index counts where available; then allow only fresh matched `zero_vertex_count`/`missing_vertex_buffer` rows and leave unmatched Mesh misses suspicious.
+
+## 2026-06-28 Structured Mesh No-Output Diagnostics
+
+Implemented structured Mesh no-output logging in AnimeStudio.CLI for direct OBJ conversion. `ExportMesh()` now emits `[Warning] Mesh no output ...` before returning `false` for:
+
+- `zero_vertex_count` when `m_VertexCount <= 0`.
+- `missing_vertex_buffer` when `m_VertexCount > 0` but `m_Vertices == null`.
+- `empty_vertex_buffer` when `m_VertexCount > 0` but `m_Vertices.Length == 0`.
+- `output_path_unavailable` if output path reservation fails.
+
+The warning includes `PathID`, `SourceFile`, `SourceOriginalPath`, `SourceOffset`, `Container`, `VertexCount`, `VerticesLength`, `SubMeshCount`, `IndexCount`, and object byte size.
+
+Wrapper status handling changed from a global Mesh allow-list to log-backed classification. Missing Mesh OBJ outputs are accepted only when every missing output matches a fresh structured warning with `reason=zero_vertex_count`. Suspicious Mesh reasons such as missing/empty vertex buffers, export errors, or unmatched missing outputs remain dirty. The wrapper also keeps full no-output warning records for matching; samples remain capped for report readability.
+
+Verification commands:
+
+```bat
+python -m py_compile scripts\export_full_from_game.py
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode full --animestudio-asset-types Mesh --animestudio-stages convert_by_type --sources Persistent --animestudio-jobs 4 --animestudio-shards 8
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode full --animestudio-asset-types Mesh --animestudio-stages convert_by_type --sources StreamingAssets --animestudio-jobs 4 --animestudio-shards 16
+```
+
+Results:
+
+- `Persistent Mesh`: matched `491`, output entries `483`, missing outputs `8`, allowed zero-vertex no-output `8`, suspicious missing outputs `0`, Mesh suspicious warnings `0`, name-mismatch outputs `0`.
+- `StreamingAssets Mesh`: matched `59,287`, output entries `53,173`, missing outputs `6,114`, allowed zero-vertex no-output `6,114`, suspicious missing outputs `0`, Mesh suspicious warnings `0`, name-mismatch outputs `30`.
+
+Important intermediate finding: the first StreamingAssets rerun emitted all `6,114` Mesh no-output warnings, but the wrapper initially matched only `20` because matching used capped report samples. Keeping full warning records fixed classification without suppressing anything.
+
+Current interpretation: direct Mesh OBJ missing outputs are now understood for the current export set. They are zero-vertex collision/proxy meshes, not parser failures. The previous global Mesh allowance has been removed; future Mesh missing outputs must be proven by fresh structured logs.
