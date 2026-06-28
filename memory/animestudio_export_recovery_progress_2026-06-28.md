@@ -160,3 +160,26 @@ output: tmp/texture2d_filter_identity_repro/after2/Texture2D/facskill_hub_mine_s
 ```
 
 The command exited 0 with no warning/error output and produced a 1,839-byte PNG.
+### MonoBehaviour Face-Morph Managed References
+
+A MonoBehaviour pass decoded the high-volume face-morph managed-reference
+families: `SkeletalMorphMappingData`, `SkeletalMorphShaderPropMappingData`,
+`SkMorphShaderParamFloat`, and `SkMorphShaderParamVector4`.
+
+Verification outputs:
+
+```text
+D:\fluffy-dump\tmp\mb_skeletal_all_facemorph_streaming_after2\MonoBehaviour\
+D:\fluffy-dump\tmp\mb_skeletal_all_facemorph_persistent_after\MonoBehaviour\
+```
+
+Results:
+
+| Source | Files | Managed refs | Decoded | Heuristic/unparsed |
+| --- | ---: | ---: | ---: | ---: |
+| StreamingAssets | 62 | 15,147 | 15,147 | 0 |
+| Persistent | 1 | 271 | 271 | 0 |
+
+The same probe confirms the enemy component family remains separate: the
+`data_eny_0077_agshield` sample still has 50 heuristic refs and apparent false
+managed-reference headers such as `FootBar.HeadBar`.
