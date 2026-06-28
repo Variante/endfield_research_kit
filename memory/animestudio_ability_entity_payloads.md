@@ -64,9 +64,12 @@ Final JSON marker counts:
 
 The two remaining Persistent heuristic records have empty type names and negative
 RIDs with non-zero data lengths. They are likely managed-reference segmentation
-false positives, not known ability-entity classes. They should be handled by
-hardening null-sentinel/header-chain validation rather than by adding an
-ability-entity class decoder.
+false positives, not known ability-entity classes. A quick null-sentinel
+constraint experiment rejected those false islands, but it also caused the current
+parser to fail the whole Camille registry recovery and emit the original partial
+TypeTree warning. That change was not kept. The next fix should be a real
+backtracking/header-chain scorer that can reject false null sentinels while still
+choosing an alternate valid chain, not a local one-pass null-sentinel guard.
 
 ## Remaining Work
 
