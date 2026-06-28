@@ -126,3 +126,59 @@ Result: exit code 0, no warning output. The target
   it preserves type, RID, offsets, lengths, string hints, RID links, and known
   dialog layouts, but it is not a full field-accurate deserializer for every
   managed-reference class.
+
+## 2026-06-28 DialogOption Recheck
+
+No `Exporter.cs` change was made in this pass. The current CLI already recovers
+the reproduced `DialogOptionPlayableAsset` registries that older generated JSON
+left as `ReferencedObjectData` EOF partial decodes.
+
+Huygens StreamingAssets sample:
+
+```bat
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\79C9C13CFD1A1A38E3C8279B47406BCD.chk" "tmp\animestudio_dialog_option_only_current" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names "^DialogOptionPlayableAsset"
+```
+
+Result: exit code 0 in 25.6 seconds. The filtered run produced 45
+`DialogOptionPlayableAsset*.json` files. All showed
+`managedReferencesRegistryRecovered: true` and
+`managedReferencesRegistryFullyDecoded: true`; none contained `$heuristic`,
+`$unparsed`, or `$partial` markers. The recovered `conditionData.rid = -2`
+entries are represented as a one-entry registry with an empty type and
+`data.$null = true`.
+
+Broader same-block dialog-name check:
+
+```bat
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\79C9C13CFD1A1A38E3C8279B47406BCD.chk" "tmp\animestudio_dialog_named_current" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names "^Dialog"
+```
+
+Result: exit code 0 in 16.2 seconds. The run produced 3,554 JSON files and no
+literal `$heuristic`, `$unparsed`, `$partial`, or `$partialDecoded` markers.
+
+The older generated file
+`export_full/recovered/AnimeStudio-cli/Persistent/json_by_type/MonoBehaviour/DialogOptionPlayableAsset(Clone)(Clone)_p107218516523097B.json`
+still contains stale `partialTypeTreeDecode` metadata:
+
+```text
+EndOfStreamException: No bytes remain while reading data:ReferencedObjectData
+```
+
+Re-running the current CLI against that Persistent source block:
+
+```bat
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\Persistent\VFS\7064D8E2\3267B09A76643181B4083C1E60B678D1.chk" "tmp\animestudio_dialog_option_persistent_current" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names "^DialogOptionPlayableAsset"
+```
+
+Result: exit code 0 in 9.6 seconds. The run produced 46 option files, all with
+`managedReferencesRegistryRecovered: true` and
+`managedReferencesRegistryFullyDecoded: true`. The matching current output
+`DialogOptionPlayableAsset(Clone)(Clone)_p107218516523097B.json` contains the
+top-level recovered `references` registry and no `partialTypeTreeDecode`.
+
+A broad, aborted all-MonoBehaviour probe on the Huygens block produced 59,735
+parseable JSON files before being stopped. A structured scan found 35 remaining
+`$heuristic`/`$unparsed` payload records across 15 heuristic registries, but
+none were dialog managed-reference classes. The sampled remaining types were
+animation event handlers such as `PostAudioHandler`, `FootStepHandler`, and
+`WeaponVisibleHandler` under `Beyond.Gameplay.View.Animation`.
