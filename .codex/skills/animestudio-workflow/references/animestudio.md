@@ -67,15 +67,18 @@ Important options:
 The CLI also exposes the Endfield VFS subcommands used by the WebUI pipeline:
 
 ```bat
-AnimeStudio.CLI.exe dump --streaming-assets path\to\StreamingAssets --output export_full\structured\StreamingAssets
-AnimeStudio.CLI.exe dump --streaming-assets path\to\Persistent --output export_full\structured\Persistent --fallback-assets path\to\StreamingAssets
+AnimeStudio.CLI.exe dump --streaming-assets path\to\StreamingAssets --output export_full\structured\StreamingAssets --block-type table --block-type json-data
+AnimeStudio.CLI.exe dump --streaming-assets path\to\Persistent --output export_full\structured\Persistent --fallback-assets path\to\StreamingAssets --block-type table --block-type json-data
 AnimeStudio.CLI.exe audio --streaming-assets path\to\StreamingAssets --output export_full\structured\Audio\CN --language chinese --format wav --block all
+AnimeStudio.CLI.exe stream --streaming-assets path\to\StreamingAssets --block-type audio --file-regex banks\.pck
 AnimeStudio.CLI.exe vfs-index --streaming-assets path\to\StreamingAssets --output export_full\recovered\AnimeStudio-cli\StreamingAssets\vfs_index\bundle_vfs_index.json --block-type bundle
 AnimeStudio.CLI.exe list
 ```
 
-`dump`, `audio`, and `vfs-index` accept `--fallback-assets`; `list` prints the
-known dumpable VFS block types. The WebUI wrappers default to this same
+`dump`, `audio`, `stream`, and `vfs-index` accept `--fallback-assets`; `dump`,
+`stream`, and `vfs-index` accept repeated `--block-type` flags plus repeated
+`--file-regex` filters. `stream` writes matching file payloads as JSONL base64.
+`list` prints the known dumpable VFS block types. The WebUI wrappers default to this same
 AnimeStudio executable:
 
 ```text
@@ -94,6 +97,16 @@ browser conversations.
 ```bat
 python .\scripts\export_full_from_game.py --animestudio-scope story --animestudio-stages maps json_by_type
 ```
+
+Its structured VFS dump defaults to `--structured-dump-mode webui`, which dumps
+only `table`, `json-data`, and video blocks. This skips raw asset bundles
+(`Bundle`, `InitBundle`, and `BundleManifest`), audio PCK/media files, world
+streaming, dynamic streaming, irradiance volumes, extend-data bins, patch bytes,
+and Lua. `build_audio.py` streams Wwise bank metadata directly from VFS when
+relinking audio events.
+`--structured-dump-mode full` keeps the same production skip rules; pass
+`--structured-dump-mode debug` for the old broad dump when diagnosing VFS
+coverage.
 
 Pass an optional usable DummyDll folder to the story JSON export with:
 
@@ -141,14 +154,16 @@ scripts\export_full_from_game.py
 DEFAULT_ANIMESTUDIO = tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe
 ANIMESTUDIO_GAME = ArknightsEndfield
 ANIMESTUDIO_LOGGER_FLAGS = Warning, Error
-ANIMESTUDIO_DEFAULT_JOBS = 4
+ANIMESTUDIO_DEFAULT_JOBS = 8
 ANIMESTUDIO_DEFAULT_SHARDS = 16
 ```
 
-`--animestudio-jobs` controls concurrent AnimeStudio processes. `--animestudio-shards`
-controls how many filter-data slices each deterministic asset type is split into.
-The default runs 4 worker processes against 16 balanced shards so multiple shards
-can export in parallel; lower jobs when peak memory is too high.
+`--animestudio-jobs` controls the shared pool of concurrent AnimeStudio
+processes for each source. `--animestudio-shards` controls how many filter-data
+slices each deterministic asset type is split into. The default runs 8 workers
+against 16 balanced shards; shards and other type requests are queued through the
+same pool so one type does not monopolize the export. Lower jobs when peak memory
+is too high.
 `--animestudio-type-job-mode auto` merges non-sharded JSON types into one
 AnimeStudio process so TextAsset/MonoBehaviour/PlayableDirector/Material can
 share a scan/load pass. Use `parallel` for the old one-process-per-type behavior

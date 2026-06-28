@@ -95,8 +95,10 @@ covers Story and assets. It accepts the same `endfield_paths.bat`
 decoded assets/audio from a non-default install root.
 
 Both installed-game wrappers pass `--animestudio-jobs N` through to
-`export_full_from_game.py`. The default is now `4` so balanced asset shards and
-per-type exports run in parallel; use `1` or `2` for low-RAM or first-time runs.
+`export_full_from_game.py`. The default is now `8`; AnimeStudio subprocess
+tasks for a source go through a shared worker pool, and asset shards are queued
+round-robin by type so one large type does not monopolize workers. Use a lower
+value such as `1`, `2`, or `4` for low-RAM or first-time runs.
 Non-sharded JSON type exports use `--animestudio-type-job-mode auto` by default,
 which merges matching JSON types into one AnimeStudio process instead of loading
 the same source files once per type. Pass `--animestudio-type-job-mode parallel`
@@ -162,9 +164,9 @@ audio-only maintenance. It indexes shared files under
 `export_full/structured/Audio/shared/` plus language voice files under
 `export_full/structured/Audio/<LANG>/`, adds playable `audioSrc` links to
 generated conversation JSON when a line's `audio` id matches a decoded file,
-parses Wwise bank HIRC metadata from exported `*banks.pck` files, and links
-cutscene audio events such as `au_sfx_*`/`au_vo_*` when the event graph reaches
-decoded media.
+streams Wwise bank HIRC metadata from VFS `*banks.pck` payloads via AnimeStudio
+`stream`, and links cutscene audio events such as `au_sfx_*`/`au_vo_*` when
+the event graph reaches decoded media.
 
 `pack_webui.bat` runs `scripts/pack_webui.py` and creates split
 shareable zips. The main story zip contains `serve.py`, `webui/`, generated
@@ -213,11 +215,16 @@ Expected active inputs and outputs:
 
 - `export_full_from_game.py`: export data from the installed Endfield client.
   The normal WebUI wrapper is `..\export.bat`, which skips raw VFS, source
-  inventory, and heavy 2D/3D/animation asset conversion unless `--with-assets`
-  is passed. `..\export_assets.bat` runs those heavier asset passes separately.
-  Summaries are written under
-  `..\reports\`, but the workflow does not require `reports`, `scratch`, or
-  `tmp` as active inputs.
+  inventory, raw asset bundles, audio PCK/media files, world-streaming bytes,
+  irradiance volumes, extend-data bins, patch bytes, Lua, and heavy
+  2D/3D/animation asset conversion unless `--with-assets` is passed. The
+  structured dump defaults to `--structured-dump-mode webui`, and
+  `scripts\build_audio.py` streams Wwise bank metadata directly from VFS for
+  event relinking. `--structured-dump-mode full` keeps the same production skip
+  rules, and `--structured-dump-mode debug` is the broad VFS diagnostic mode.
+  `..\export_assets.bat` runs those heavier asset passes separately. Summaries
+  are written under `..\reports\`, but the workflow does not require `reports`,
+  `scratch`, or `tmp` as active inputs.
 - `verify_export_freshness.py`: compares the latest export summary with
   the current installed `Endfield_Data` source fingerprints and verifies the
   WebUI-required export folders are present. `export.bat` runs it immediately
@@ -267,6 +274,15 @@ Expected active inputs and outputs:
   default, or the broad Assets browser index and optional demo bundle zips with
   `--mode full`. It is run by `..\export_assets.bat` and by
   `..\export.bat --with-assets`, not the story-only `..\export.bat`.
+- `build_data_index.py`: builds the local-only Data tab index from
+  `export_full/structured/StreamingAssets/Data` by default. It writes
+  lazy-loaded shards under `webui/data/game_data/`, splits JSON entries by
+  prefix, parses real text JSON, identifies known MemoryPack binary `.json`
+  families with IL2CPP-recovered top-level field names, decodes stable
+  `LipSync` and `LevelScriptData` preview facts, skips `.pck` audio packages
+  and exported video files, and classifies `.bytes`, `.ab`, and `.bin` files by
+  signature/header without copying the raw Data tree. The Assets tab owns video
+  browsing and previews.
 - `build_audio.py`: decodes audio via AnimeStudio CLI, stores shared
   SFX/music once under `export_full/structured/Audio/shared/`, indexes
   language voice files under `export_full/structured/Audio/<LANG>/`, parses Wwise bank
@@ -435,7 +451,7 @@ gameplay-video OCR/audio workflow.
   uses a Story-derived character dictionary by default, built from CN
   conversation text, speaker labels, summaries, and options; pass
   `--disable-ocr-dictionary` for unconstrained recognition (the dictionary
-  allowlist applies to EasyOCR only — PaddleOCR's recognizer has a fixed
+  allowlist applies to EasyOCR only - PaddleOCR's recognizer has a fixed
   dictionary and relies on downstream Story matching to filter). It writes
   per-video reports plus an aggregate index under
   `reports/gameplay_video_ocr/`. The runner skips `.lock`, `.m4s`, zero-byte,

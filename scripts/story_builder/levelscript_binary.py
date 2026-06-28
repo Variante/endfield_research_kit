@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import struct
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -1107,6 +1108,270 @@ def decode_script_pointer_payload(
 
 def _is_printable_ascii(blob: bytes) -> bool:
     return all(0x20 <= byte <= 0x7E for byte in blob)
+
+
+LEVELSCRIPT_HEX_UID_RE = re.compile(rb"[0-9a-f]{8}")
+
+
+def _extract_levelscript_tagged_ascii_strings(
+    data: bytes,
+    tag: int = 0x04,
+    *,
+    max_len: int = 120,
+) -> list[dict[str, Any]]:
+    hits: list[dict[str, Any]] = []
+    end = len(data) - 5
+    i = 0
+    while i < end:
+        if data[i] != tag:
+            i += 1
+            continue
+        size = struct.unpack_from("<I", data, i + 1)[0]
+        if size <= 0 or size > max_len or i + 5 + size > len(data):
+            i += 1
+            continue
+        raw = data[i + 5 : i + 5 + size]
+        if not _is_printable_ascii(raw):
+            i += 1
+            continue
+        try:
+            text = raw.decode("ascii")
+        except UnicodeDecodeError:
+            i += 1
+            continue
+        hits.append({"offset": i, "text": text})
+        i += 5 + size
+    return hits
+
+
+def _extract_levelscript_plain_ascii_strings(
+    data: bytes,
+    *,
+    min_len: int = 3,
+    max_len: int = 120,
+    tagged_offsets: set[int] | None = None,
+) -> list[dict[str, Any]]:
+    hits: list[dict[str, Any]] = []
+    tagged_offsets = tagged_offsets or set()
+    end = len(data) - 4
+    i = 0
+    while i < end:
+        size = struct.unpack_from("<I", data, i)[0]
+        if size < min_len or size > max_len or i + 4 + size > len(data):
+            i += 1
+            continue
+        if i > 0 and data[i - 1] == 0x04 and (i - 1) in tagged_offsets:
+            i += 4 + size
+            continue
+        raw = data[i + 4 : i + 4 + size]
+        if not _is_printable_ascii(raw):
+            i += 1
+            continue
+        try:
+            text = raw.decode("ascii")
+        except UnicodeDecodeError:
+            i += 1
+            continue
+        hits.append({"offset": i, "payloadOffset": i + 4, "text": text})
+        i += 4 + size
+    return hits
+
+
+def _decode_levelscript_uid_record(data: bytes, uid_off: int, uid: str) -> dict[str, Any] | None:
+    if uid_off >= 14:
+        start = uid_off - 14
+        if start + 32 <= len(data):
+            if (
+                data[start] == 0xFA
+                and data[start + 4] == 0
+                and data[start + 9] == 0
+                and _u32(data, start + 10) == 8
+            ):
+                local_id = _u32(data, start + 5)
+                if isinstance(local_id, int) and local_id <= 0x1000:
+                    return {
+                        "start": start,
+                        "layout": "fa",
+                        "code": struct.unpack_from("<H", data, start + 1)[0],
+                        "kind": data[start + 3],
+                        "localId": local_id,
+                        "uid": uid,
+                        "nextId": _i32(data, start + 28),
+                        "payloadStart": start + 32,
+                        "strings": [],
+                        "plainStrings": [],
+                    }
+
+    if uid_off >= 12:
+        start = uid_off - 12
+        if start + 30 <= len(data):
+            code = struct.unpack_from("<H", data, start)[0]
+            kind = data[start + 2]
+            local_id = _u32(data, start + 3)
+            if (
+                isinstance(local_id, int)
+                and code <= 0x1FFF
+                and kind <= 0x10
+                and local_id <= 0x1000
+                and data[start + 7] == 0
+                and _u32(data, start + 8) == 8
+            ):
+                return {
+                    "start": start,
+                    "layout": "plain",
+                    "code": code,
+                    "kind": kind,
+                    "localId": local_id,
+                    "uid": uid,
+                    "nextId": _i32(data, start + 26),
+                    "payloadStart": start + 30,
+                    "strings": [],
+                    "plainStrings": [],
+                }
+
+    return None
+
+
+def extract_levelscript_uid_records(
+    data: bytes,
+    tagged_strings: list[dict[str, Any]] | None = None,
+    plain_strings: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    seen_starts: set[int] = set()
+    tagged_strings = sorted(tagged_strings or [], key=lambda hit: int(hit.get("offset") or 0))
+    plain_strings = sorted(plain_strings or [], key=lambda hit: int(hit.get("offset") or 0))
+
+    for match in LEVELSCRIPT_HEX_UID_RE.finditer(data):
+        uid_off = match.start()
+        uid = match.group().decode("ascii")
+        record = _decode_levelscript_uid_record(data, uid_off, uid)
+        if record is None or int(record["start"]) in seen_starts:
+            continue
+        seen_starts.add(int(record["start"]))
+        records.append(record)
+
+    records.sort(key=_record_start)
+    if not records:
+        return records
+
+    tagged_index = 0
+    plain_index = 0
+    for index, record in enumerate(records):
+        next_start = _record_start(records[index + 1]) if index + 1 < len(records) else len(data)
+        payload_start = int(record.get("payloadStart") or 0)
+        while tagged_index < len(tagged_strings) and int(tagged_strings[tagged_index].get("offset") or 0) < payload_start:
+            tagged_index += 1
+        scan_index = tagged_index
+        while scan_index < len(tagged_strings) and int(tagged_strings[scan_index].get("offset") or 0) < next_start:
+            record["strings"].append(tagged_strings[scan_index])
+            scan_index += 1
+        while plain_index < len(plain_strings) and int(plain_strings[plain_index].get("offset") or 0) < payload_start:
+            plain_index += 1
+        scan_index = plain_index
+        while scan_index < len(plain_strings) and int(plain_strings[scan_index].get("offset") or 0) < next_start:
+            record["plainStrings"].append(plain_strings[scan_index])
+            scan_index += 1
+
+    return records
+
+
+def decode_levelscript_action_map_details(
+    data: bytes,
+    *,
+    sample_record_limit: int = 8,
+    max_hint_records: int = 128,
+) -> dict[str, Any]:
+    tagged_strings = _extract_levelscript_tagged_ascii_strings(data)
+    plain_strings = _extract_levelscript_plain_ascii_strings(
+        data,
+        tagged_offsets={int(hit.get("offset") or 0) for hit in tagged_strings},
+    )
+    records = extract_levelscript_uid_records(data, tagged_strings, plain_strings)
+    action_map, memberships = levelscript_action_map_membership(data, records)
+    list_status_counts: Counter[str] = Counter()
+    for row in action_map.get("serializedLists") or []:
+        name = str(row.get("name") or "")
+        status = str(row.get("status") or "")
+        if name or status:
+            list_status_counts[f"{name}:{status}"] += 1
+
+    membership_counts: Counter[str] = Counter()
+    for label in memberships.values():
+        label_text = str(label or "")
+        if not label_text:
+            continue
+        list_name = label_text.split("#", 1)[0]
+        if label_text.endswith(" root"):
+            membership_counts[f"{list_name}:root"] += 1
+        elif label_text.endswith(" linked"):
+            membership_counts[f"{list_name}:linked"] += 1
+        else:
+            membership_counts[list_name] += 1
+
+    record_code_counts: Counter[str] = Counter()
+    hint_counts: Counter[str] = Counter()
+    sample_rows: list[dict[str, Any]] = []
+    for index, record in enumerate(records):
+        code = record.get("code")
+        kind = record.get("kind")
+        if isinstance(code, int) and isinstance(kind, int):
+            record_code_counts[f"0x{code:04x}:0x{kind:02x}"] += 1
+        next_start = _record_start(records[index + 1]) if index + 1 < len(records) else len(data)
+        detail: dict[str, Any] = {}
+        if index < max_hint_records:
+            detail = decode_levelscript_record_payload(
+                data,
+                record,
+                next_start=next_start,
+                action_map_role=memberships.get(_record_start(record)),
+            )
+            label = (
+                detail.get("label")
+                or (detail.get("actionHeader") or {}).get("payloadShape")
+                or detail.get("payloadShape")
+                or ""
+            )
+            if label:
+                hint_counts[str(label)] += 1
+        if len(sample_rows) < sample_record_limit:
+            sample: dict[str, Any] = {
+                "offset": _offset_hex(_record_start(record)),
+                "layout": record.get("layout"),
+                "role": memberships.get(_record_start(record)) or "",
+                "code": f"0x{code:04x}" if isinstance(code, int) else "",
+                "kind": f"0x{kind:02x}" if isinstance(kind, int) else "",
+                "localId": record.get("localId"),
+                "nextId": record.get("nextId"),
+                "uid": record.get("uid"),
+                "strings": [str(hit.get("text") or "") for hit in (record.get("strings") or [])[:4]],
+                "plainStrings": [str(hit.get("text") or "") for hit in (record.get("plainStrings") or [])[:4]],
+            }
+            label = (
+                detail.get("label")
+                or (detail.get("actionHeader") or {}).get("payloadShape")
+                or detail.get("payloadShape")
+                or ""
+            )
+            if label:
+                sample["payloadHint"] = label
+            sample_rows.append(_drop_empty(sample))
+
+    return _drop_empty(
+        {
+            "actionMap": action_map,
+            "uidRecordCount": len(records),
+            "membershipCount": len(memberships),
+            "taggedStringCount": len(tagged_strings),
+            "plainStringCount": len(plain_strings),
+            "listStatusCounts": dict(list_status_counts.most_common(12)),
+            "membershipCounts": dict(membership_counts.most_common(12)),
+            "recordCodeCounts": dict(record_code_counts.most_common(24)),
+            "recordHintCounts": dict(hint_counts.most_common(24)),
+            "recordHintSampledCount": min(len(records), max_hint_records),
+            "sampleRecords": sample_rows,
+        }
+    )
 
 
 def _payload_sentinel_size(data: bytes, offset: int) -> int:

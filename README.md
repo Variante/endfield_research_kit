@@ -153,7 +153,7 @@ AnimeStudio refreshes also accept worker and shard controls:
 ```
 
 `--animestudio-jobs` is the number of concurrent AnimeStudio worker processes;
-the default is `4`, but use `1` or `2` when RAM is tight. `--animestudio-shards`
+the default is `8`, but use `1`, `2`, or `4` when RAM is tight. `--animestudio-shards`
 is the number of deterministic asset slices, defaulting to `16`; it tunes
 per-process asset batch size and does not by itself increase concurrency.
 Non-sharded JSON type jobs are merged by default with
@@ -163,6 +163,8 @@ the older one-process-per-type behavior. `export.bat --export-from-game`
 accepts `--animestudio-jobs` for Story export work too, and
 `export.bat --export-from-game --with-assets` accepts the same asset mode,
 worker, shard, and type-job controls as `export_assets.bat --export-from-game`.
+Every `export.bat` run also writes a wall-time and process-tree RAM benchmark
+under `reports/export_benchmarks/` and updates `reports/export_benchmark_latest.md`.
 
 CN is rebuilt by default. To build more languages after the rebuild:
 

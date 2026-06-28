@@ -49,11 +49,18 @@
     return `/export_full/${exportFullRel.split("/").map(encodeURIComponent).join("/")}`;
   }
 
+  function exportDataHref(relPath) {
+    const normalizedRel = normalizeRelPath(relPath);
+    if (!normalizedRel) return "/export_data/";
+    return `/export_data/${normalizedRel.split("/").map(encodeURIComponent).join("/")}`;
+  }
+
   Object.assign(WebUI, {
     normalizeRelPath,
     splitPathIdExportStem,
     pathIdExportBaseStem,
     relRequiresPathIdExportName,
     exportFullHref,
+    exportDataHref,
   });
 })();

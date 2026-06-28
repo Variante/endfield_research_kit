@@ -51,7 +51,9 @@ rebuild asset indexes and relink/decode CN audio after generated conversations
 are rebuilt. Combining `--export-from-game --with-assets` runs one AnimeStudio
 Story+asset export instead of separate Story and asset exporter invocations.
 `export.bat` does not refresh `webui/overrides/story_order.json`; Story order is
-maintained by the OCR workflow.
+maintained by the OCR workflow. Every `export.bat` run writes a wall-time and
+process-tree RAM benchmark under `reports/export_benchmarks/` and updates
+`reports/export_benchmark_latest.md/json`.
 Use `build_updates.bat` for the standalone Updates feed comparison. Use
 `build_updates.bat --init-build` for first-time/baseline-only builds where the
 Updates feed should be baselined instead of reporting changes. It reads the
@@ -144,9 +146,18 @@ Setup and export internals:
 
 - The expected AnimeStudio CLI path is
   `tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe`.
-- The AnimeStudio CLI provides the WebUI VFS commands `dump`, `audio`, `vfs-index`,
-  and `list`; `dump`, `audio`, and `vfs-index` help should include
-  `--fallback-assets <FALLBACK_ASSETS>`.
+- The AnimeStudio CLI provides the WebUI VFS commands `dump`, `audio`, `stream`,
+  `vfs-index`, and `list`; `dump`, `audio`, `stream`, and `vfs-index` help should include
+  `--fallback-assets <FALLBACK_ASSETS>`. `dump`, `stream`, and `vfs-index` accept repeated
+  `--block-type` flags plus repeated `--file-regex` filters; `stream` exposes the
+  same targeted VFS filtering for JSONL byte streaming.
+- Installed-game Story exports use `--structured-dump-mode webui` by default:
+  they dump only WebUI-consumed VFS blocks (`table`, `json-data`, and video)
+  and skip raw asset bundles, audio PCK/media files, world-streaming bytes,
+  irradiance volumes, extend-data bins, patch bytes, and Lua. `build_audio.py`
+  streams Wwise bank metadata directly from VFS when relinking audio events.
+  `--structured-dump-mode full` keeps the same production skip rules; use
+  `--structured-dump-mode debug` only for broad VFS diagnostics.
 - `export_assets.bat --export-from-game` passes `--skip-structured`, writes a
   lightweight VFS metadata index, runs WebUI-facing image/model/Material
   export, and decodes CN audio before relinking.

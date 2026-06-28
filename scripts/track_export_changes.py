@@ -88,6 +88,8 @@ class ChangeEntry:
     extension: str
     old_size: int | None = None
     new_size: int | None = None
+    old_digest: str | None = None
+    new_digest: str | None = None
     old_line_count: int | None = None
     new_line_count: int | None = None
     text_diff: list[str] | None = None
@@ -99,6 +101,8 @@ class ChangeEntry:
             "extension": self.extension,
             "old_size": self.old_size,
             "new_size": self.new_size,
+            "old_digest": self.old_digest,
+            "new_digest": self.new_digest,
             "old_line_count": self.old_line_count,
             "new_line_count": self.new_line_count,
         }
@@ -653,10 +657,10 @@ def read_old_row(select_cursor: sqlite3.Cursor, rel_path: str) -> tuple[int, int
     )
 
 
-def find_deleted_rows(conn: sqlite3.Connection) -> Iterable[tuple[str, int, int | None, str, str | None]]:
+def find_deleted_rows(conn: sqlite3.Connection) -> Iterable[tuple[str, int, str, int | None, str, str | None]]:
     return conn.execute(
         """
-        SELECT files.path, files.size, files.line_count, files.extension, files.text_content
+        SELECT files.path, files.size, files.digest, files.line_count, files.extension, files.text_content
         FROM files
         LEFT JOIN files_scan ON files.path = files_scan.path
         WHERE files_scan.path IS NULL
@@ -949,7 +953,7 @@ def main() -> int:
                 batch_insert_rows(conn, unchanged_rows)
                 process_pending_batch(pending_batch, conn, accumulator, executor)
 
-                for rel_path, old_size, old_line_count, extension, old_text_content in find_deleted_rows(conn):
+                for rel_path, old_size, old_digest, old_line_count, extension, old_text_content in find_deleted_rows(conn):
                     accumulator.record_deleted(
                         rel_path,
                         extension,

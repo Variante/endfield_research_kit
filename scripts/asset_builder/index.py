@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import base64
+import binascii
 import json
+import hashlib
 import os
 import re
 import time
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -48,6 +51,13 @@ VIDEO_EXTENSIONS = {
 JSON_EXTENSIONS = {
     ".json",
 }
+JSON_SCRIPT_SEARCH_CHAR_LIMIT = 6000
+JSON_SCRIPT_SCAN_PREFIX_BYTES = 8192
+JSON_SCRIPT_SEARCH_MAX_FILE_BYTES = 5_000_000
+ASSET_HASH_HEADER_BYTES = 4096
+ASSET_HASH_CHUNK_SIZE = 1024 * 1024
+BASE64_TEXT_RE = re.compile(r"^[A-Za-z0-9+/]+={0,2}$")
+
 BROWSER_JSON_TYPE_DIRS = {
     "AnimatorController",
     "AnimatorOverrideController",
@@ -137,15 +147,32 @@ IMAGE_CATEGORY_PREFIXES: tuple[tuple[tuple[str, ...], str], ...] = (
 )
 
 
+def _image_category_name_candidates(name: str) -> list[str]:
+    lower = (name or "").lower()
+    candidates = [lower] if lower else []
+    stripped = _strip_asset_prefix(lower)
+    if stripped and stripped != lower:
+        candidates.append(stripped)
+    return candidates
+
+
+def _has_name_token(name: str, token: str) -> bool:
+    return bool(re.search(rf"(?:^|[_-]){re.escape(token)}(?:$|[_-])", name))
+
+
 def classify_image_name(name: str) -> str:
     if not name:
         return "other"
-    lower = name.lower()
-    for prefixes, category in IMAGE_CATEGORY_PREFIXES:
-        if lower.startswith(prefixes):
-            return category
-    if lower.startswith("map02") or lower.startswith("map03"):
-        return "map"
+    for lower in _image_category_name_candidates(name):
+        for prefixes, category in IMAGE_CATEGORY_PREFIXES:
+            if lower.startswith(prefixes):
+                return category
+        if _has_name_token(lower, "boss"):
+            return "boss"
+        if _has_name_token(lower, "enemy"):
+            return "enemy"
+        if lower.startswith("map02") or lower.startswith("map03"):
+            return "map"
     return "other"
 
 
@@ -278,6 +305,139 @@ def _should_index_browser_json(path: Path, source_root: Path) -> bool:
         return False
     return rel_parts[0] in BROWSER_JSON_TYPE_DIRS
 
+def _looks_like_base64_text(value: str) -> bool:
+    compact = re.sub(r"\s+", "", value or "")
+    return len(compact) >= 8 and len(compact) % 4 != 1 and bool(BASE64_TEXT_RE.fullmatch(compact))
+
+
+def _is_mostly_readable_text(value: str) -> bool:
+    if not value:
+        return False
+    checked = 0
+    bad = 0
+    for ch in value[:4096]:
+        checked += 1
+        code = ord(ch)
+        if code == 0xFFFD or (code < 32 and ch not in "\n\r\t"):
+            bad += 1
+    return checked > 0 and bad / checked <= 0.04
+
+
+def _normalize_decoded_script_text(value: str) -> str:
+    cleaned = (value or "").replace("\x00", "").strip()
+    if not cleaned or not _is_mostly_readable_text(cleaned):
+        return ""
+    return cleaned[:JSON_SCRIPT_SEARCH_CHAR_LIMIT]
+
+
+def _decode_script_value(value: Any) -> str:
+    if isinstance(value, str):
+        if _looks_like_base64_text(value):
+            compact = re.sub(r"\s+", "", value)
+            remainder = len(compact) % 4
+            if remainder:
+                compact += "=" * (4 - remainder)
+            try:
+                raw = base64.b64decode(compact, validate=True)
+                return _normalize_decoded_script_text(raw.decode("utf-8", errors="replace"))
+            except (binascii.Error, UnicodeError, ValueError):
+                return ""
+        return _normalize_decoded_script_text(value)
+
+    if isinstance(value, list) and value and all(isinstance(item, int) and 0 <= item <= 255 for item in value):
+        return _normalize_decoded_script_text(bytes(value).decode("utf-8", errors="replace"))
+
+    return ""
+
+
+def _iter_m_script_values(value: Any):
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key == "m_Script":
+                yield item
+            else:
+                yield from _iter_m_script_values(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from _iter_m_script_values(item)
+
+
+def _decoded_m_script_search_text(path: Path) -> str:
+    try:
+        if path.stat().st_size > JSON_SCRIPT_SEARCH_MAX_FILE_BYTES:
+            return ""
+        with path.open("r", encoding="utf-8", errors="ignore") as f:
+            prefix = f.read(JSON_SCRIPT_SCAN_PREFIX_BYTES)
+            if "m_Script" not in prefix:
+                return ""
+            f.seek(0)
+            payload = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return ""
+
+    chunks: list[str] = []
+    total = 0
+    for value in _iter_m_script_values(payload):
+        decoded = _decode_script_value(value)
+        if not decoded:
+            continue
+        chunks.append(decoded)
+        total += len(decoded)
+        if total >= JSON_SCRIPT_SEARCH_CHAR_LIMIT:
+            break
+
+    if not chunks:
+        return ""
+    compact = re.sub(r"\s+", " ", " ".join(chunks)).strip()
+    return compact[:JSON_SCRIPT_SEARCH_CHAR_LIMIT]
+
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(ASSET_HASH_CHUNK_SIZE), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _header_signature(path: Path) -> str:
+    try:
+        with path.open("rb") as fh:
+            return fh.read(ASSET_HASH_HEADER_BYTES).hex()
+    except OSError:
+        return ""
+
+
+def _add_duplicate_candidate_hashes(entries: list[dict], paths_by_rel: dict[str, Path]) -> None:
+    coarse_counts: Counter[tuple[str, str, int]] = Counter()
+    for entry in entries:
+        rel = str(entry.get("r") or "")
+        key = (str(entry.get("k") or ""), Path(rel).suffix.lower(), int(entry.get("s") or 0))
+        coarse_counts[key] += 1
+
+    header_counts: Counter[tuple[str, str, int, str]] = Counter()
+    header_keys: dict[str, tuple[str, str, int, str]] = {}
+    for entry in entries:
+        rel = str(entry.get("r") or "")
+        coarse_key = (str(entry.get("k") or ""), Path(rel).suffix.lower(), int(entry.get("s") or 0))
+        if coarse_counts[coarse_key] <= 1:
+            continue
+        path = paths_by_rel.get(rel)
+        if not path:
+            continue
+        key = (*coarse_key, _header_signature(path))
+        header_keys[rel] = key
+        header_counts[key] += 1
+
+    for entry in entries:
+        rel = str(entry.get("r") or "")
+        key = header_keys.get(rel)
+        if not key or header_counts[key] <= 1:
+            continue
+        path = paths_by_rel.get(rel)
+        if path:
+            entry["h"] = _file_sha256(path)
 
 def scan_exported_media_assets(
     *,
@@ -296,6 +456,7 @@ def scan_exported_media_assets(
     model_rels_by_base: dict[str, list[str]] = defaultdict(list)
     obj_rels_by_source_base: dict[tuple[str, str], list[str]] = defaultdict(list)
     obj_rels_by_base: dict[str, list[str]] = defaultdict(list)
+    asset_paths_by_rel: dict[str, Path] = {}
 
     asset_roots = resolve_asset_source_roots(export_root)
     material_roots = resolve_material_source_roots(export_root)
@@ -347,7 +508,12 @@ def scan_exported_media_assets(
             if is_material_like_texture_name(stem):
                 entry["mt"] = 1
                 material_like_image_count += 1
+        elif kind == "json":
+            script_search = _decoded_m_script_search_text(path)
+            if script_search:
+                entry["sx"] = script_search
         asset_entries.append(entry)
+        asset_paths_by_rel[asset_rel] = path
 
         if kind == "image":
             image_rels_by_stem[stem.lower()].append(asset_rel)
@@ -361,11 +527,12 @@ def scan_exported_media_assets(
                 obj_rels_by_source_base[(source_family, model_base)].append(asset_rel)
                 obj_rels_by_base[model_base].append(asset_rel)
         elif kind == "video":
-            video_entries.append({
+            video_entry = {
                 "k": "video",
                 "r": asset_rel,
                 "s": size,
-            })
+            }
+            video_entries.append(video_entry)
             video_counts["total"] += 1
             video_counts["video"] += 1
 
@@ -502,6 +669,9 @@ def scan_exported_media_assets(
                             "name": Path(model_rel).stem,
                             "rel": model_rel,
                         })
+
+    _add_duplicate_candidate_hashes(asset_entries, asset_paths_by_rel)
+    _add_duplicate_candidate_hashes(video_entries, asset_paths_by_rel)
 
     return {
         "assetEntries": asset_entries,

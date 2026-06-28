@@ -431,6 +431,8 @@ def normalized_entry(status: str, raw: dict[str, Any], *, domain: str = "game") 
         "old_line_count",
         "new_line_count",
         "line_delta",
+        "old_digest",
+        "new_digest",
     ):
         if raw.get(key) is not None:
             entry[key] = raw[key]
@@ -886,6 +888,14 @@ def prune_previous_export_untracked(
     }
 
 
+def asset_content_digest(asset: dict[str, Any] | None) -> str:
+    if not isinstance(asset, dict):
+        return ""
+    if str(asset.get("fingerprintMode") or "") != ASSET_HASH_FINGERPRINT_MODE:
+        return ""
+    digest = str(asset.get("digest") or "")
+    return "" if not digest or digest.startswith("size:") else digest
+
 def asset_update_entry(status: str, asset: dict[str, Any], old_asset: dict[str, Any] | None = None) -> dict[str, Any]:
     rel_path = normalize_posix(str(asset.get("path") or (old_asset or {}).get("path") or ""))
     old_rel_path = normalize_posix(str((old_asset or {}).get("path") or ""))
@@ -919,6 +929,12 @@ def asset_update_entry(status: str, asset: dict[str, Any], old_asset: dict[str, 
         entry["new_size"] = new_size
     if old_size is not None and new_size is not None:
         entry["size_delta"] = int(new_size) - int(old_size)
+    old_digest = asset_content_digest(old_asset if status != "added" else None)
+    new_digest = asset_content_digest(asset if status != "deleted" else None)
+    if old_digest:
+        entry["old_digest"] = old_digest
+    if new_digest:
+        entry["new_digest"] = new_digest
     return entry
 
 

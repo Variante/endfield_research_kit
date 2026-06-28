@@ -3,10 +3,45 @@
   const ASSET_ITEM_ROW_H = 70;
   const ASSET_OVERSCAN_PX = 240;
   const JSON_PREVIEW_CHAR_LIMIT = 250000;
+  const SCRIPT_DECODE_CHAR_LIMIT = 500000;
+  const SCRIPT_SEARCH_CHAR_LIMIT = 20000;
+  const DEFAULT_PREVIEW_BACKGROUND = "#0b1015";
+  const PREVIEW_BG_STORAGE_KEY = "asset_browser_preview_background";
   const FILTER_PANEL_STORAGE_KEY = "asset_browser_filters_collapsed";
   const UI_LOCALE_STORAGE_KEY = "webui_ui_locale";
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
   const SHARED_ASSET_NAME_PREFIXES = new Set(["S", "T", "P", "M"]);
+  const MODEL_PREFIX_RE = /^([A-Z])_(.+)$/;
+  const MODEL_UNPATTERNED_OBJ_GROUP = Object.freeze({
+    key: "__obj_unpatterned__",
+    label: "Unpatterned OBJ",
+    raw: "Numeric or nonstandard OBJ names",
+  });
+  const MODEL_CATEGORY_LABELS = Object.freeze({
+    "model-unpatterned-obj": "Unpatterned OBJ",
+    "model-boss": "Model Boss",
+    "model-monster": "Model Monster",
+    "model-npc": "Model NPC",
+    "model-character": "Model Character",
+    "model-weapon": "Model Weapon",
+    "model-fx": "Model FX",
+    "model-factory": "Model Factory",
+    "model-building": "Model Building",
+    "model-environment": "Model Environment",
+    "model-ui": "Model UI",
+  });
+  const MODEL_SEMANTIC_CATEGORY_RULES = Object.freeze([
+    { category: "model-boss", tokens: ["boss"] },
+    { category: "model-monster", tokens: ["monster", "enemy", "eny"] },
+    { category: "model-npc", tokens: ["npc"] },
+    { category: "model-character", tokens: ["actor", "char", "character"] },
+    { category: "model-weapon", tokens: ["wpn", "weapon"] },
+    { category: "model-fx", tokens: ["fx", "vfx", "lightning", "smoke"] },
+    { category: "model-factory", tokens: ["fac", "factory", "grid", "belt", "miner", "pump", "powerpole", "electricwire"] },
+    { category: "model-building", tokens: ["build", "building", "module"] },
+    { category: "model-environment", tokens: ["hlod0", "hlod1", "hlod2", "hlod3", "mod", "imod", "prop", "iprop", "cprop", "tree", "bush", "rock", "grass", "water", "terrain"] },
+    { category: "model-ui", tokens: ["ui"] },
+  ]);
   const KNOWN_TEXTURE_SUFFIXES = new Set([
     "A", "AO", "B", "BC", "C", "D", "DA", "DIFF", "DIFFUSE", "DISP",
     "E", "EM", "EMI", "EMISSIVE", "G", "GL", "GLOSS", "H", "HM", "ID",
@@ -32,6 +67,7 @@
       hideFilters: "\u9690\u85cf\u7b5b\u9009",
       title: "\u5bfc\u51fa\u8d44\u6e90",
       countLabel: "\u9879\u8d44\u6e90",
+      basicFilters: "\u57fa\u7840\u7b5b\u9009",
       searchPlaceholder: "\u641c\u7d22\u8def\u5f84 / \u540d\u79f0 / \u6587\u4ef6\u5939 / \u5206\u7ec4",
       type: "\u7c7b\u578b",
       category: "\u5206\u7c7b",
@@ -51,6 +87,9 @@
       copiedPath: "\u5df2\u590d\u5236\u8def\u5f84",
       copyFailed: "\u590d\u5236\u5931\u8d25",
       preview: "\u9884\u89c8",
+      previewBackground: "\u80cc\u666f",
+      previewBackgroundCustom: "\u81ea\u5b9a\u4e49\u80cc\u666f\u8272",
+      previewBackgroundPreset: "\u80cc\u666f\u8272 {color}",
       previewPlaceholder: "\u9884\u89c8\u4f1a\u663e\u793a\u5728\u8fd9\u91cc\u3002",
       inspector: "\u8d44\u6e90\u68c0\u67e5\u5668",
       relatedFiles: "\u76f8\u5173\u6587\u4ef6",
@@ -75,11 +114,14 @@
       factFolder: "\u5206\u7ec4",
       factSize: "\u5927\u5c0f",
       factCopies: "\u526f\u672c",
+      factHash: "\u54c8\u5e0c",
+      factSameHashFiles: "\u76f8\u540c\u54c8\u5e0c\u6587\u4ef6",
       factLodVariants: "\u53d8\u4f53",
       factSelectedRawFile: "\u5f53\u524d\u539f\u59cb\u6587\u4ef6",
       factLodSet: "\u7ec4\u5185\u6587\u4ef6",
       factRelativePath: "\u76f8\u5bf9\u8def\u5f84",
       factImageCategory: "\u56fe\u7247\u5206\u7c7b",
+      factModelTags: "\u6a21\u578b\u6807\u7b7e",
       factTextureRole: "\u8d34\u56fe\u89d2\u8272",
       factLod: "LOD",
       factFamily: "\u7cfb\u5217",
@@ -103,6 +145,7 @@
       jsonPreviewUnavailable: "\u65e0\u6cd5\u9884\u89c8\u8fd9\u4e2a JSON \u6587\u4ef6\u3002",
       jsonPreviewLoaded: "{size} / \u5df2\u683c\u5f0f\u5316 JSON",
       jsonPreviewTruncated: "{size} / \u5df2\u683c\u5f0f\u5316 JSON / \u4ec5\u663e\u793a\u524d {limit}",
+      jsonScriptOriginal: "\u663e\u793a\u539f\u59cb m_Script",
       filePreviewUnavailable: "\u6b64\u6587\u4ef6\u6ca1\u6709\u53ef\u7528\u7684\u9875\u5185\u9884\u89c8\u3002",
       loadingObjPreview: "\u6b63\u5728\u52a0\u8f7d OBJ \u9884\u89c8...",
       loadingFbxSummary: "\u6b63\u5728\u8bfb\u53d6 FBX \u7ed3\u6784...",
@@ -133,6 +176,7 @@
       hideFilters: "Hide filters",
       title: "Exported Assets",
       countLabel: "assets",
+      basicFilters: "Basic filters",
       searchPlaceholder: "Search path / name / folder / group",
       type: "Type",
       category: "Category",
@@ -152,6 +196,9 @@
       copiedPath: "Copied path",
       copyFailed: "Copy failed",
       preview: "Preview",
+      previewBackground: "Background",
+      previewBackgroundCustom: "Custom background color",
+      previewBackgroundPreset: "Background {color}",
       previewPlaceholder: "Preview will appear here.",
       inspector: "Inspector",
       relatedFiles: "Related files",
@@ -176,11 +223,14 @@
       factFolder: "Group",
       factSize: "Size",
       factCopies: "Copies",
+      factHash: "Hash",
+      factSameHashFiles: "Same-hash files",
       factLodVariants: "Variants",
       factSelectedRawFile: "Selected raw file",
       factLodSet: "Files in group",
       factRelativePath: "Relative path",
       factImageCategory: "Image category",
+      factModelTags: "Model tags",
       factTextureRole: "Texture role",
       factLod: "LOD",
       factFamily: "Family",
@@ -204,6 +254,7 @@
       jsonPreviewUnavailable: "Unable to preview this JSON file.",
       jsonPreviewLoaded: "{size} / formatted JSON",
       jsonPreviewTruncated: "{size} / formatted JSON / showing first {limit}",
+      jsonScriptOriginal: "Show original m_Script",
       filePreviewUnavailable: "No in-page preview is available for this file.",
       loadingObjPreview: "Loading OBJ preview...",
       loadingFbxSummary: "Reading FBX structure...",
@@ -253,7 +304,8 @@
     selectedEntry: null,
     selectedVariantRel: null,
     initialAssetHandled: false,
-    filtersCollapsed: false,
+    previewBackground: DEFAULT_PREVIEW_BACKGROUND,
+    showOriginalMScript: false,
     qTimer: null,
     detailToken: 0,
     imageObjectUrl: "",
@@ -344,15 +396,85 @@
     return window.matchMedia(MOBILE_LAYOUT_QUERY).matches;
   }
 
-  function resolveInitialFiltersCollapsed() {
-    const stored = storageGet(FILTER_PANEL_STORAGE_KEY);
-    if (stored === "1") return true;
-    if (stored === "0") return false;
-    return isMobileLayout();
+  let assetPanel = null;
+
+  function ensureAssetPanelToggle() {
+    if (assetPanel) return assetPanel;
+    assetPanel = window.WebUI.filters.createPanelToggle({
+      panel: "#asset-filter-panel",
+      toggle: "#asset-filter-toggle",
+      left: "#asset-left",
+      storageKey: FILTER_PANEL_STORAGE_KEY,
+      isMobile: isMobileLayout,
+      labels: (collapsed) => assetUiText(collapsed ? "showFilters" : "hideFilters"),
+      onChange: () => renderAssetList(),
+    });
+    return assetPanel;
   }
 
-  function persistFiltersCollapsed(collapsed) {
-    storageSet(FILTER_PANEL_STORAGE_KEY, collapsed ? "1" : "0");
+  function normalizePreviewBackground(value) {
+    const color = String(value || "").trim().toLowerCase();
+    if (/^#[0-9a-f]{6}$/.test(color)) return color;
+    if (/^#[0-9a-f]{3}$/.test(color)) {
+      return `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`;
+    }
+    return DEFAULT_PREVIEW_BACKGROUND;
+  }
+
+  function resolveInitialPreviewBackground() {
+    return normalizePreviewBackground(storageGet(PREVIEW_BG_STORAGE_KEY) || DEFAULT_PREVIEW_BACKGROUND);
+  }
+
+  function setPreviewBackground(value, { persist = true } = {}) {
+    ASSET_STATE.previewBackground = normalizePreviewBackground(value);
+    if (persist) storageSet(PREVIEW_BG_STORAGE_KEY, ASSET_STATE.previewBackground);
+    syncPreviewBackgroundControls();
+    queueModelRender();
+  }
+
+  function previewBackgroundRgb() {
+    const color = normalizePreviewBackground(ASSET_STATE.previewBackground);
+    return {
+      r: Number.parseInt(color.slice(1, 3), 16),
+      g: Number.parseInt(color.slice(3, 5), 16),
+      b: Number.parseInt(color.slice(5, 7), 16),
+    };
+  }
+
+  function previewBackgroundLuminance() {
+    const { r, g, b } = previewBackgroundRgb();
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  }
+
+  function selectedAssetSupportsPreviewBackground(entry = ASSET_STATE.selectedEntry) {
+    if (!entry) return false;
+    const activeFile = getActiveAssetFile(entry);
+    if (entry.kind === "image") return activeFile?.ext === "png";
+    if (entry.kind !== "model") return false;
+    const activeModel = getActiveModelFile(entry);
+    const reviewModel = resolveReviewModelFile(activeModel);
+    return activeModel?.ext === "obj" || reviewModel?.ext === "obj";
+  }
+
+  function syncPreviewBackgroundControls(entry = ASSET_STATE.selectedEntry) {
+    const controls = $("#asset-preview-bg-controls");
+    const input = $("#asset-preview-bg-color");
+    const stage = $("#asset-preview-stage");
+    if (!controls || !input || !stage) return;
+
+    const color = normalizePreviewBackground(ASSET_STATE.previewBackground);
+    const enabled = selectedAssetSupportsPreviewBackground(entry);
+    controls.hidden = !enabled;
+    stage.classList.toggle("has-preview-bg", enabled);
+    stage.style.setProperty("--asset-preview-bg-color", color);
+    if (input.value.toLowerCase() !== color) input.value = color;
+
+    $$(".asset-preview-bg-swatch").forEach((button) => {
+      const swatchColor = normalizePreviewBackground(button.dataset.color || "");
+      button.classList.toggle("is-active", swatchColor === color);
+      button.title = assetUiText("previewBackgroundPreset", { color: swatchColor });
+      button.setAttribute("aria-label", assetUiText("previewBackgroundPreset", { color: swatchColor }));
+    });
   }
 
   function resolveInitialUiLocale() {
@@ -396,7 +518,8 @@
   function applyAssetUiStrings() {
     $("#asset-app-title").textContent = assetUiText("title");
     $("#asset-count-label").textContent = assetUiText("countLabel");
-    $("#asset-filter-toggle").textContent = assetUiText(ASSET_STATE.filtersCollapsed ? "showFilters" : "hideFilters");
+    $("#asset-basic-filter-label").textContent = assetUiText("basicFilters");
+    if (assetPanel) assetPanel.sync();
     $("#asset-q").placeholder = assetUiText("searchPlaceholder");
     $("#asset-type-label").textContent = assetUiText("type");
     $("#asset-category-label").textContent = assetUiText("category");
@@ -414,6 +537,11 @@
     $("#asset-download-bundle").textContent = assetUiText("downloadBundle");
     $("#asset-copy-path").textContent = assetUiText("copyRelativePath");
     $("#asset-preview-label").textContent = assetUiText("preview");
+    $("#asset-preview-bg-label").textContent = assetUiText("previewBackground");
+    $("#asset-preview-bg-color").title = assetUiText("previewBackgroundCustom");
+    $("#asset-preview-bg-color").setAttribute("aria-label", assetUiText("previewBackgroundCustom"));
+    syncPreviewBackgroundControls();
+    $("#asset-json-script-original-label").textContent = assetUiText("jsonScriptOriginal");
     $("#asset-preview-placeholder").textContent = assetUiText("previewPlaceholder");
     $("#asset-inspector-label").textContent = assetUiText("inspector");
     $("#asset-related-label").textContent = assetUiText("relatedFiles");
@@ -436,28 +564,9 @@
     if (ASSET_STATE.selectedEntry) renderSelectedAsset();
   }
 
-  function setFiltersCollapsed(collapsed, { persist = true } = {}) {
-    ASSET_STATE.filtersCollapsed = !!collapsed;
-    if (persist) persistFiltersCollapsed(ASSET_STATE.filtersCollapsed);
-    syncFilterPanel();
-    renderAssetList();
-  }
-
-  function syncFilterPanel() {
-    const panel = $("#asset-filter-panel");
-    const toggle = $("#asset-filter-toggle");
-    const left = $("#asset-left");
-    if (!panel || !toggle || !left) return;
-
-    panel.hidden = ASSET_STATE.filtersCollapsed;
-    left.classList.toggle("filters-collapsed", ASSET_STATE.filtersCollapsed);
-    toggle.setAttribute("aria-expanded", String(!ASSET_STATE.filtersCollapsed));
-    toggle.textContent = assetUiText(ASSET_STATE.filtersCollapsed ? "showFilters" : "hideFilters");
-  }
-
   function resolveViewFromHash() {
     const hash = (window.location.hash || "").replace(/^#/, "").toLowerCase();
-    if (hash === "assets" || hash === "reference" || hash === "updates") return hash;
+    if (hash === "assets" || hash === "reference" || hash === "updates" || hash === "game-data") return hash;
     return "story";
   }
 
@@ -465,8 +574,9 @@
     const nextHash =
       view === "assets" ? "#assets"
         : view === "reference" ? "#reference"
-          : view === "updates" ? "#updates"
-            : "#story";
+          : view === "game-data" ? "#game-data"
+            : view === "updates" ? "#updates"
+              : "#story";
     if (window.location.hash === nextHash) return;
     const url = `${window.location.pathname}${window.location.search}${nextHash}`;
     history.replaceState(null, "", url);
@@ -487,12 +597,17 @@
       document.title = updatesTitle;
       return;
     }
+    if (view === "game-data") {
+      const dataTitle = ($("#game-data-title") && $("#game-data-title").textContent) || "Endfield Game Data";
+      document.title = dataTitle;
+      return;
+    }
     const storyTitle = ($("#app-title") && $("#app-title").textContent) || "Endfield Story Browser";
     document.title = storyTitle;
   }
 
   function setActiveView(view, { updateHash = true } = {}) {
-    ASSET_STATE.activeView = view === "assets" || view === "reference" || view === "updates" ? view : "story";
+    ASSET_STATE.activeView = view === "assets" || view === "reference" || view === "updates" || view === "game-data" ? view : "story";
     document.body.dataset.activeView = ASSET_STATE.activeView;
 
     $$(".view-tab").forEach((button) => {
@@ -534,10 +649,6 @@
   }
 
   function bindAssetEvents() {
-    $("#asset-filter-toggle").addEventListener("click", () => {
-      setFiltersCollapsed(!ASSET_STATE.filtersCollapsed);
-    });
-
     $("#asset-q").addEventListener("input", (ev) => {
       clearTimeout(ASSET_STATE.qTimer);
       const value = ev.target.value;
@@ -560,6 +671,19 @@
       applyAssetFilters();
     });
 
+    $("#asset-preview-bg-color").addEventListener("input", (ev) => {
+      setPreviewBackground(ev.target.value);
+    });
+
+    $("#asset-preview-bg-presets").addEventListener("click", (ev) => {
+      const button = ev.target.closest(".asset-preview-bg-swatch");
+      if (!button) return;
+      setPreviewBackground(button.dataset.color || DEFAULT_PREVIEW_BACKGROUND);
+    });
+    $("#asset-json-script-original").addEventListener("change", (ev) => {
+      ASSET_STATE.showOriginalMScript = !!ev.target.checked;
+      if (ASSET_STATE.selectedEntry?.kind === "json") renderSelectedAsset();
+    });
     $("#asset-list-wrap").addEventListener("scroll", renderAssetList);
     window.addEventListener("resize", () => {
       renderAssetList();
@@ -718,9 +842,84 @@
     const value = normalizeImageCategory(category);
     if (value === "other") return assetUiText("categoryOther");
     if (value === "material-like") return assetUiText("textureRoleMaterial");
+    const prefixMatch = value.match(/^model-prefix-([a-z])$/);
+    if (prefixMatch) return `Model Prefix ${prefixMatch[1].toUpperCase()}`;
+    if (MODEL_CATEGORY_LABELS[value]) return MODEL_CATEGORY_LABELS[value];
     return value
-      .replace(/_/g, " ")
+      .replace(/[_-]/g, " ")
       .replace(/\b[a-z]/g, (char) => char.toUpperCase());
+  }
+
+  function isObjModel(kind, ext) {
+    return kind === "model" && String(ext || "").toLowerCase() === "obj";
+  }
+
+  function modelBaseStem(stem = "") {
+    return assetGroupStem("model", stem).trim();
+  }
+
+  function modelPrefixMatch(stem = "") {
+    return modelBaseStem(stem).match(MODEL_PREFIX_RE);
+  }
+
+  function modelStemWithoutPrefix(stem = "") {
+    const base = modelBaseStem(stem);
+    const match = base.match(MODEL_PREFIX_RE);
+    return match ? String(match[2] || "").trim() : base;
+  }
+
+  function isUnpatternedObjStem(stem = "") {
+    const base = modelBaseStem(stem);
+    return !base || /^\d+$/.test(base) || !MODEL_PREFIX_RE.test(base);
+  }
+
+  function deriveModelGroupInfo(kind = "", stem = "", ext = "") {
+    if (!isObjModel(kind, ext)) return null;
+    if (isUnpatternedObjStem(stem)) return { ...MODEL_UNPATTERNED_OBJ_GROUP };
+    const groupStem = modelStemWithoutPrefix(stem);
+    if (!groupStem) return { ...MODEL_UNPATTERNED_OBJ_GROUP };
+    const originalStem = modelBaseStem(stem);
+    return {
+      key: groupStem.toLowerCase(),
+      label: groupStem,
+      raw: originalStem && originalStem !== groupStem ? originalStem : "",
+    };
+  }
+
+  function classifyModelSemanticCategory(stem = "") {
+    const normalized = modelStemWithoutPrefix(stem).toLowerCase();
+    const tokens = new Set(normalized.split(/[^a-z0-9]+/).filter(Boolean));
+    for (const rule of MODEL_SEMANTIC_CATEGORY_RULES) {
+      if (rule.tokens.some((token) => tokens.has(token))) return rule.category;
+    }
+    return "";
+  }
+
+  function deriveModelCategories(kind = "", stem = "", ext = "") {
+    if (!isObjModel(kind, ext)) return [];
+    const categories = [];
+    const match = modelPrefixMatch(stem);
+    categories.push(match && !isUnpatternedObjStem(stem) ? `model-prefix-${match[1].toLowerCase()}` : "model-unpatterned-obj");
+    const semantic = classifyModelSemanticCategory(stem);
+    if (semantic && !categories.includes(semantic)) categories.push(semantic);
+    return categories;
+  }
+
+  function chooseModelCategories(entries) {
+    const counts = {};
+    for (const entry of entries || []) {
+      for (const category of entry?.modelCategories || []) {
+        counts[category] = (counts[category] || 0) + 1;
+      }
+    }
+    const categories = Object.keys(counts);
+    categories.sort((a, b) => {
+      const aPrefix = a.startsWith("model-prefix-") || a === "model-unpatterned-obj";
+      const bPrefix = b.startsWith("model-prefix-") || b === "model-unpatterned-obj";
+      if (aPrefix !== bPrefix) return aPrefix ? -1 : 1;
+      return (counts[b] - counts[a]) || naturalCompare(a, b);
+    });
+    return categories;
   }
 
   function chooseImageCategory(entries) {
@@ -736,14 +935,19 @@
   }
 
   function assetCategoryValues(entry) {
-    if (!entry || entry.kind !== "image") return [];
-    const values = [normalizeImageCategory(entry.imageCategory)];
-    if (entry.materialLike) values.push("material-like");
-    return values;
+    if (!entry) return [];
+    if (entry.kind === "image") {
+      const values = [normalizeImageCategory(entry.imageCategory)];
+      if (entry.materialLike) values.push("material-like");
+      return values;
+    }
+    if (entry.kind === "model") {
+      return Array.isArray(entry.modelCategories) ? entry.modelCategories.filter(Boolean) : [];
+    }
+    return [];
   }
 
-  function formatImageCategoryMeta(entry) {
-    if (!entry || entry.kind !== "image") return "";
+  function formatAssetCategoryMeta(entry) {
     const values = assetCategoryValues(entry).map(assetCategoryLabel);
     return values.join(" / ");
   }
@@ -763,13 +967,14 @@
       const stemInfo = exportedAssetStemInfo(rel, name);
       if (!stemInfo || !stemInfo.stem) return null;
       const stem = stemInfo.stem;
-      const groupInfo = deriveAssetGroupInfo(kind, stem);
+      const groupInfo = deriveAssetGroupInfo(kind, stem, ext);
       const textureVariant = kind === "image" ? inferTextureVariantStem(stem, ext) : null;
       const variantScope = kind === "model" || textureVariant ? source : dir;
       const lodMatch = kind === "model" ? stem.match(/(?:^|[_-])lod(\d+)$/i) : null;
       const lod = lodMatch ? Number(lodMatch[1]) : null;
       const imageCategory = kind === "image" ? normalizeImageCategory(raw.ic) : "";
       const materialLike = kind === "image" && !!raw.mt;
+      const modelCategories = kind === "model" ? deriveModelCategories(kind, stem, ext) : [];
       return {
         kind,
         rel,
@@ -782,6 +987,7 @@
         stem,
         rawStem: stemInfo.rawStem,
         pathId: stemInfo.pathId || String(raw.pid || ""),
+        contentHash: String(raw.h || raw.hash || raw.sha256 || ""),
         family: stripAssetLodSuffix(stem),
         familyKey: `${source}::${groupInfo.key}`.toLowerCase(),
         groupKey: groupInfo.key,
@@ -790,7 +996,9 @@
         lod,
         imageCategory,
         materialLike,
+        modelCategories,
         previewRel: String(raw.p || ""),
+        decodedScriptSearchText: String(raw.sx || ""),
         searchText: "",
         variantLabel: "",
         grouped: false,
@@ -877,7 +1085,7 @@
         entry.variantLabel = entry.name;
       }
 
-      const familyGroupInfo = deriveAssetGroupInfo(entry.kind, entry.family);
+      const familyGroupInfo = deriveAssetGroupInfo(entry.kind, entry.family, entry.ext);
       entry.groupKey = familyGroupInfo.key;
       entry.groupLabel = familyGroupInfo.label;
       entry.groupRaw = familyGroupInfo.raw;
@@ -892,10 +1100,13 @@
         entry.groupRaw,
         entry.rawStem,
         entry.pathId,
+        entry.contentHash,
         entry.family,
         entry.variantLabel,
         entry.imageCategory,
+        ...(entry.modelCategories || []),
         entry.materialLike ? "material material-like texture engine" : "",
+        entry.decodedScriptSearchText,
         entry.ext,
         entry.kind,
       ].join(" ").toLowerCase();
@@ -905,11 +1116,49 @@
     return groupAssetEntries(collapseDuplicateAssetEntries(hydrated), rawEntryByRel);
   }
 
+  function assetContentHash(entry) {
+    return String(entry && (entry.contentHash || entry.hash || "") || "").trim();
+  }
+
+  function assetSameHashRels(entry) {
+    if (!assetContentHash(entry)) return [];
+    if (Array.isArray(entry && entry.sameHashFiles) && entry.sameHashFiles.length) {
+      return entry.sameHashFiles.map((item) => item.rel || item).filter(Boolean);
+    }
+    return (entry && entry.rawRels || [entry && entry.rel]).filter(Boolean);
+  }
+
+  function formatAssetRelSummary(rels, limit = 32) {
+    const values = Array.from(new Set((rels || []).filter(Boolean)));
+    if (values.length <= limit) return values.join(", ");
+    return `${values.slice(0, limit).join(", ")} ... +${values.length - limit}`;
+  }
+  function pathIdVariantLabel(entry, index = 0) {
+    const pathLabel = entry?.pathId ? `p${entry.pathId}` : (entry?.name || `File ${index + 1}`);
+    const baseLabel = entry?.variantLabel && entry.variantLabel !== entry.name ? entry.variantLabel : "";
+    return baseLabel ? `${baseLabel} / ${pathLabel}` : pathLabel;
+  }
+
+  function rawFileVariant(entry, index = 0) {
+    const variant = {
+      ...entry,
+      duplicateCount: 1,
+      rawRels: [entry.rel],
+      sameHashFiles: assetContentHash(entry) ? [{ rel: entry.rel, hash: assetContentHash(entry) }] : undefined,
+      variantLabel: pathIdVariantLabel(entry, index),
+    };
+    delete variant.variants;
+    return variant;
+  }
+
   function collapseDuplicateAssetEntries(entries) {
     const buckets = new Map();
     for (const entry of entries) {
+      const hash = assetContentHash(entry);
       const identity = supportsAssetVariants(entry.kind) ? entry.stem : entry.rel;
-      const key = `${entry.kind}::${entry.ext}::${entry.source}::${identity}`.toLowerCase();
+      const key = supportsAssetVariants(entry.kind)
+        ? `${entry.kind}::${entry.ext}::${entry.source}::${entry.stem}`.toLowerCase()
+        : (hash ? `hash::${hash}` : `${entry.kind}::${entry.ext}::${entry.source}::${identity}`.toLowerCase());
       let bucket = buckets.get(key);
       if (!bucket) {
         bucket = [];
@@ -921,13 +1170,32 @@
     const deduped = [];
     for (const bucket of buckets.values()) {
       bucket.sort((a, b) => compareAssets(a, b, "path"));
-      const primary = bucket[0];
+      const primary = { ...bucket[0] };
       primary.duplicateCount = bucket.length;
       primary.rawRels = bucket.map((entry) => entry.rel);
+      if (assetContentHash(primary)) {
+        primary.sameHashFiles = bucket.flatMap((entry) => (entry.rawRels || [entry.rel]).map((rel) => ({ rel, hash: assetContentHash(entry) })));
+      }
       if (bucket.length > 1) {
+        primary.variants = bucket.map(rawFileVariant);
+        const variantsByHash = new Map();
+        for (const variant of primary.variants) {
+          const variantHash = assetContentHash(variant);
+          if (!variantHash) continue;
+          if (!variantsByHash.has(variantHash)) variantsByHash.set(variantHash, []);
+          variantsByHash.get(variantHash).push(variant);
+        }
+        for (const [variantHash, variants] of variantsByHash.entries()) {
+          if (variants.length <= 1) continue;
+          const sameHashFiles = variants.map((variant) => ({ rel: variant.rel, hash: variantHash }));
+          for (const variant of variants) variant.sameHashFiles = sameHashFiles;
+        }
+        primary.variantCount = primary.variants.length;
+        primary.variantSummary = summarizeVariantLabels(primary.variants);
         primary.searchText = [
           primary.searchText,
-          ...bucket.slice(1).flatMap((entry) => [entry.rel, entry.dir]),
+          ...bucket.slice(1).flatMap((entry) => [entry.rel, entry.dir, entry.pathId, entry.name]),
+          ...primary.variants.map((variant) => variant.variantLabel),
         ].join(" ").toLowerCase();
       }
       deduped.push(primary);
@@ -972,8 +1240,10 @@
           lod: null,
           imageCategory: "other",
           materialLike: false,
+          modelCategories: [],
           variantCount: 0,
           duplicateCount: 0,
+          contentHash: "",
           variantSummary: "",
           searchText: "",
           rawRels: [],
@@ -981,7 +1251,21 @@
         };
         assetGroups.set(key, group);
       }
-      group.variants.push(entry);
+      if (Array.isArray(entry.variants) && entry.variants.length) {
+        for (const variant of entry.variants) {
+          group.variants.push({
+            ...variant,
+            grouped: true,
+            family: entry.family,
+            familyKey: entry.familyKey,
+            groupKey: entry.groupKey,
+            groupLabel: entry.groupLabel,
+            groupRaw: entry.groupRaw,
+          });
+        }
+      } else {
+        group.variants.push(entry);
+      }
     }
 
     for (const group of assetGroups.values()) {
@@ -990,6 +1274,7 @@
       group.size = group.variants.reduce((sum, variant) => sum + variant.size, 0);
       group.imageCategory = group.kind === "image" ? chooseImageCategory(group.variants) : "";
       group.materialLike = group.kind === "image" && group.variants.some((variant) => variant.materialLike);
+      group.modelCategories = group.kind === "model" ? chooseModelCategories(group.variants) : [];
       group.variantCount = group.variants.length;
       group.rawRels = group.variants.flatMap((variant) => variant.rawRels || [variant.rel]);
       group.duplicateCount = group.rawRels.length;
@@ -1003,6 +1288,7 @@
         group.groupRaw,
         group.family,
         group.imageCategory,
+        ...(group.modelCategories || []),
         group.materialLike ? "material material-like texture engine" : "",
         ...group.variants.map((variant) => variant.searchText),
       ].join(" ").toLowerCase();
@@ -1041,7 +1327,10 @@
     return Number(entry.duplicateCount || visibleCount) > visibleCount;
   }
 
-  function deriveAssetGroupInfo(kind = "", stem = "") {
+  function deriveAssetGroupInfo(kind = "", stem = "", ext = "") {
+    const modelGroup = deriveModelGroupInfo(kind, stem, ext);
+    if (modelGroup) return modelGroup;
+
     const originalStem = assetGroupStem(kind, stem).trim();
     const groupStem = stripSharedAssetPrefix(originalStem);
     if (!groupStem) {
@@ -1056,20 +1345,16 @@
 
   function buildTypeChips() {
     const counts = countBy(ASSET_STATE.entries, (entry) => entry.ext || entry.kind);
-    const wrap = $("#asset-type-filter");
-    wrap.innerHTML = "";
-    const types = Object.keys(counts).sort((a, b) => counts[b] - counts[a] || naturalCompare(a, b));
-    for (const type of types) {
-      const count = counts[type] || 0;
-      if (!count) continue;
-      const chip = document.createElement("span");
-      chip.className = "chip asset-filter-chip";
-      chip.dataset.value = type;
-      if (ASSET_STATE.filters.types.has(type)) chip.classList.add("on");
-      chip.textContent = `${assetTypeLabel(type)} (${count})`;
-      chip.addEventListener("click", () => toggleFilterSet(ASSET_STATE.filters.types, type, chip));
-      wrap.appendChild(chip);
-    }
+    const items = Object.keys(counts)
+      .filter((type) => counts[type])
+      .sort((a, b) => counts[b] - counts[a] || naturalCompare(a, b))
+      .map((type) => ({ value: type, label: assetTypeLabel(type), count: counts[type] }));
+    window.WebUI.filters.buildChips("#asset-type-filter", items, {
+      active: ASSET_STATE.filters.types,
+      className: "asset-filter-chip",
+      prune: false,
+      onToggle: () => applyAssetFilters(),
+    });
   }
 
   function buildCategoryChips() {
@@ -1079,45 +1364,35 @@
         counts[category] = (counts[category] || 0) + 1;
       }
     }
-
-    const wrap = $("#asset-category-filter");
-    if (!wrap) return;
-    wrap.innerHTML = "";
-    const names = Object.keys(counts).sort((a, b) => {
-      if (a === "material-like" && b !== "material-like") return -1;
-      if (b === "material-like" && a !== "material-like") return 1;
-      if (a === "other" && b !== "other") return 1;
-      if (b === "other" && a !== "other") return -1;
-      return (counts[b] - counts[a]) || naturalCompare(a, b);
+    const items = Object.keys(counts)
+      .filter((name) => counts[name])
+      .sort((a, b) => {
+        if (a === "material-like" && b !== "material-like") return -1;
+        if (b === "material-like" && a !== "material-like") return 1;
+        if (a === "other" && b !== "other") return 1;
+        if (b === "other" && a !== "other") return -1;
+        return (counts[b] - counts[a]) || naturalCompare(a, b);
+      })
+      .map((name) => ({ value: name, label: assetCategoryLabel(name), count: counts[name] }));
+    window.WebUI.filters.buildChips("#asset-category-filter", items, {
+      active: ASSET_STATE.filters.categories,
+      className: "asset-filter-chip asset-category-chip",
+      prune: false,
+      onToggle: () => applyAssetFilters(),
     });
-    for (const name of names) {
-      const count = counts[name] || 0;
-      if (!count) continue;
-      const chip = document.createElement("span");
-      chip.className = "chip asset-filter-chip asset-category-chip";
-      chip.dataset.value = name;
-      if (ASSET_STATE.filters.categories.has(name)) chip.classList.add("on");
-      chip.textContent = `${assetCategoryLabel(name)} (${count})`;
-      chip.addEventListener("click", () => toggleFilterSet(ASSET_STATE.filters.categories, name, chip));
-      wrap.appendChild(chip);
-    }
   }
 
   function buildSourceChips() {
     const counts = countBy(ASSET_STATE.entries, (entry) => entry.source);
-    const wrap = $("#asset-source-filter");
-    if (!wrap) return;
-    wrap.innerHTML = "";
-    const names = Object.keys(counts).sort((a, b) => counts[b] - counts[a] || naturalCompare(a, b));
-    for (const name of names) {
-      const chip = document.createElement("span");
-      chip.className = "chip asset-filter-chip asset-source-chip";
-      chip.dataset.value = name;
-      if (ASSET_STATE.filters.sources.has(name)) chip.classList.add("on");
-      chip.textContent = `${name || assetUiText("rootFolder")} (${counts[name]})`;
-      chip.addEventListener("click", () => toggleFilterSet(ASSET_STATE.filters.sources, name, chip));
-      wrap.appendChild(chip);
-    }
+    const items = Object.keys(counts)
+      .sort((a, b) => counts[b] - counts[a] || naturalCompare(a, b))
+      .map((name) => ({ value: name, label: name || assetUiText("rootFolder"), count: counts[name] }));
+    window.WebUI.filters.buildChips("#asset-source-filter", items, {
+      active: ASSET_STATE.filters.sources,
+      className: "asset-filter-chip asset-source-chip",
+      prune: false,
+      onToggle: () => applyAssetFilters(),
+    });
   }
 
   function seedAssetExpansions() {
@@ -1128,14 +1403,18 @@
     }
   }
 
-  function toggleFilterSet(set, value, el) {
-    if (set.has(value)) set.delete(value);
-    else set.add(value);
-    el.classList.toggle("on");
-    applyAssetFilters();
+  function syncFilterSectionActiveCounts() {
+    window.WebUI.setFilterSectionActiveCounts?.({
+      "asset-basic": ASSET_STATE.filters.q ? 1 : 0,
+      "asset-type": ASSET_STATE.filters.types.size,
+      "asset-category": ASSET_STATE.filters.categories.size,
+      "asset-source": ASSET_STATE.filters.sources.size,
+      "asset-sort-section": ASSET_STATE.filters.sort === "path" ? 0 : 1,
+    });
   }
 
   function applyAssetFilters() {
+    syncFilterSectionActiveCounts();
     const filters = ASSET_STATE.filters;
     const q = filters.q;
 
@@ -1230,9 +1509,10 @@
       return expanded;
     };
 
-    const pushItem = (entry) => {
+    const pushItem = (entry, level = 2) => {
       rows.push({
         type: "item",
+        level,
         entry,
         top: offset,
         h: ASSET_ITEM_ROW_H,
@@ -1248,10 +1528,17 @@
       const groups = Object.keys(tree[source]).sort(naturalCompare);
       for (const groupKey of groups) {
         const group = tree[source][groupKey];
+        if (group.items.length <= 1) {
+          for (const entry of group.items) {
+            pushItem(entry, 1);
+          }
+          continue;
+        }
+
         const groupPath = `${source}/${groupKey}`;
         if (!pushGroup(1, groupPath, group.label, group.items.length, group.raw)) continue;
         for (const entry of group.items) {
-          pushItem(entry);
+          pushItem(entry, 2);
         }
       }
     }
@@ -1339,7 +1626,7 @@
     div.dataset.rel = entry.rel;
     div.style.top = `${row.top}px`;
     div.style.height = `${row.h}px`;
-    div.style.paddingLeft = `${8 + 2 * 14}px`;
+    div.style.paddingLeft = `${8 + (row.level ?? 2) * 14}px`;
 
     const line1 = document.createElement("div");
     line1.className = "asset-row-line1";
@@ -1372,7 +1659,7 @@
     if (Array.isArray(entry.variants)) {
       extra.textContent = [
         entry.source,
-        formatImageCategoryMeta(entry),
+        formatAssetCategoryMeta(entry),
         assetUiText("variantsCount", { count: entry.variantCount }),
         hasHiddenDuplicateFiles(entry) ? assetUiText("copiesCount", { count: entry.duplicateCount }) : "",
       ]
@@ -1381,7 +1668,7 @@
     } else {
       extra.textContent = [
         entry.source,
-        formatImageCategoryMeta(entry),
+        formatAssetCategoryMeta(entry),
         hasHiddenDuplicateFiles(entry) ? assetUiText("copiesCount", { count: entry.duplicateCount }) : "",
         entry.lod === null ? "" : `LOD ${entry.lod}`,
       ]
@@ -1533,6 +1820,7 @@
     renderRelations(entry);
     ASSET_STATE.detailToken += 1;
     resetAssetPreviewSurface();
+    syncPreviewBackgroundControls(entry);
 
     if (entry.kind === "image") {
       renderImagePreview(activeVariant || entry);
@@ -1639,10 +1927,19 @@
           ? assetUiText("textureRoleMaterial")
           : assetUiText("textureRoleRegular"),
       ]);
+    } else if (entry.kind === "model") {
+      const modelCategories = assetCategoryValues(activeFile).length ? assetCategoryValues(activeFile) : assetCategoryValues(entry);
+      if (modelCategories.length) {
+        facts.push([assetUiText("factModelTags"), modelCategories.map(assetCategoryLabel).join(" / ")]);
+      }
     }
     if (hasHiddenDuplicateFiles(entry)) {
       facts.push([assetUiText("factCopies"), String(entry.duplicateCount)]);
     }
+    const activeHash = assetContentHash(activeFile);
+    const sameHashRels = assetSameHashRels(activeFile);
+    if (activeHash) facts.push([assetUiText("factHash"), activeHash]);
+    if (sameHashRels.length > 1) facts.push([assetUiText("factSameHashFiles"), formatAssetRelSummary(sameHashRels)]);
     if (isVariantGroup(entry)) {
       facts.push([assetUiText("factLodVariants"), String(entry.variantCount)]);
       facts.push([assetUiText("factSelectedRawFile"), activeVariant ? activeVariant.rel : entry.rel]);
@@ -1973,6 +2270,10 @@
     const placeholder = $("#asset-preview-placeholder");
     const note = $("#asset-preview-note");
     const modelWrap = $("#asset-model-stats-wrap");
+    const bgControls = $("#asset-preview-bg-controls");
+    const jsonScriptControls = $("#asset-json-script-controls");
+    const jsonScriptOriginal = $("#asset-json-script-original");
+    const stage = $("#asset-preview-stage");
 
     ASSET_STATE.viewer.model = null;
     if (img) {
@@ -1994,6 +2295,10 @@
       text.hidden = true;
     }
     if (canvas) canvas.hidden = true;
+    if (bgControls) bgControls.hidden = true;
+    if (jsonScriptControls) jsonScriptControls.hidden = true;
+    if (jsonScriptOriginal) jsonScriptOriginal.checked = ASSET_STATE.showOriginalMScript;
+    if (stage) stage.classList.remove("has-preview-bg");
     if (placeholder) {
       placeholder.hidden = true;
       placeholder.textContent = assetUiText("previewPlaceholder");
@@ -2068,6 +2373,151 @@
     video.load();
   }
 
+  function decodeJsonPreviewPayload(raw, { showOriginalScript = false } = {}) {
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (_error) {
+      return { formatted: raw, decodedSearchText: "", hasDecodedScript: false };
+    }
+
+    const decodedTexts = [];
+    const enhanced = cloneJsonWithDecodedScripts(parsed, decodedTexts, { showOriginalScript });
+    return {
+      formatted: JSON.stringify(enhanced, null, 2),
+      decodedSearchText: decodedTexts.join("\n"),
+      hasDecodedScript: decodedTexts.length > 0,
+    };
+  }
+
+  function cloneJsonWithDecodedScripts(value, decodedTexts, options = {}) {
+    if (Array.isArray(value)) {
+      return value.map((item) => cloneJsonWithDecodedScripts(item, decodedTexts, options));
+    }
+    if (!value || typeof value !== "object") return value;
+
+    const out = {};
+    for (const [key, child] of Object.entries(value)) {
+      if (key === "m_Script") {
+        const decoded = decodeMScriptValue(child);
+        if (decoded) {
+          decodedTexts.push(decoded.search);
+          out[key] = options.showOriginalScript
+            ? cloneJsonWithDecodedScripts(child, decodedTexts, options)
+            : decoded.display;
+          continue;
+        }
+      }
+      out[key] = cloneJsonWithDecodedScripts(child, decodedTexts, options);
+    }
+    return out;
+  }
+
+  function decodeMScriptValue(value) {
+    let text = "";
+    if (typeof value === "string") {
+      const base64Candidate = looksLikeBase64Text(value);
+      text = base64Candidate ? decodeBase64Utf8(value) : normalizeDecodedScriptText(value);
+    } else if (isByteArray(value)) {
+      text = decodeBytesToText(Uint8Array.from(value));
+    }
+
+    if (!text) return null;
+    return {
+      display: parseDecodedScriptDisplay(text),
+      search: text,
+    };
+  }
+
+  function looksLikeBase64Text(value) {
+    const compact = String(value || "").replace(/\s+/g, "");
+    return compact.length >= 8 && compact.length % 4 !== 1 && /^[A-Za-z0-9+/]+={0,2}$/.test(compact);
+  }
+
+  function decodeBase64Utf8(value) {
+    let compact = String(value || "").replace(/\s+/g, "");
+    if (!looksLikeBase64Text(compact)) return "";
+    const remainder = compact.length % 4;
+    if (remainder) compact += "=".repeat(4 - remainder);
+
+    try {
+      const binary = atob(compact);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+      return decodeBytesToText(bytes);
+    } catch (_error) {
+      return "";
+    }
+  }
+
+  function isByteArray(value) {
+    return Array.isArray(value) && value.length > 0 && value.every((item) => {
+      return Number.isInteger(item) && item >= 0 && item <= 255;
+    });
+  }
+
+  function decodeBytesToText(bytes) {
+    let text = "";
+    try {
+      text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    } catch (_error) {
+      text = new TextDecoder("utf-8").decode(bytes);
+    }
+    return normalizeDecodedScriptText(text);
+  }
+
+  function normalizeDecodedScriptText(text) {
+    const cleaned = String(text || "").replace(/\u0000/g, "").trim();
+    if (!cleaned || !isMostlyReadableText(cleaned)) return "";
+    if (cleaned.length <= SCRIPT_DECODE_CHAR_LIMIT) return cleaned;
+    return `${cleaned.slice(0, SCRIPT_DECODE_CHAR_LIMIT)}\n[decoded m_Script truncated]`;
+  }
+
+  function isMostlyReadableText(text) {
+    let checked = 0;
+    let bad = 0;
+    for (const char of String(text || "")) {
+      const code = char.charCodeAt(0);
+      checked += 1;
+      if (code === 0xfffd || (code < 32 && char !== "\n" && char !== "\r" && char !== "\t")) {
+        bad += 1;
+      }
+      if (checked >= 4096) break;
+    }
+    return checked > 0 && bad / checked <= 0.04;
+  }
+
+  function parseDecodedScriptDisplay(text) {
+    const trimmed = String(text || "").trim();
+    if (!trimmed || !/^[\[{]/.test(trimmed)) return text;
+    try {
+      return JSON.parse(trimmed);
+    } catch (_error) {
+      return text;
+    }
+  }
+
+  function appendDecodedScriptSearchText(entry, decodedSearchText) {
+    const normalized = String(decodedSearchText || "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, SCRIPT_SEARCH_CHAR_LIMIT);
+    if (!normalized) return;
+
+    const targets = new Set([entry, getActiveAssetFile(entry)]);
+    for (const target of targets) {
+      if (!target) continue;
+      if (target.decodedScriptSearchText === normalized) continue;
+      target.decodedScriptSearchText = normalized;
+      if (!String(target.searchText || "").includes(normalized)) {
+        target.searchText = `${target.searchText || ""} ${normalized}`.toLowerCase();
+      }
+    }
+  }
+
   async function renderJsonPreview(entry) {
     const text = $("#asset-preview-text");
     const placeholder = $("#asset-preview-placeholder");
@@ -2088,20 +2538,24 @@
       const res = await fetch(assetHref(entry.rel));
       if (!res.ok) throw new Error(`JSON HTTP ${res.status}`);
       const raw = await res.text();
-      let formatted = raw;
-      try {
-        formatted = JSON.stringify(JSON.parse(raw), null, 2);
-      } catch (_error) {
-        formatted = raw;
-      }
+      const previewPayload = decodeJsonPreviewPayload(raw, {
+        showOriginalScript: ASSET_STATE.showOriginalMScript,
+      });
+      let formatted = previewPayload.formatted;
 
       const truncated = formatted.length > JSON_PREVIEW_CHAR_LIMIT;
       if (truncated) formatted = formatted.slice(0, JSON_PREVIEW_CHAR_LIMIT);
       if (token !== ASSET_STATE.detailToken) return;
 
+      const scriptControls = $("#asset-json-script-controls");
+      const scriptOriginal = $("#asset-json-script-original");
+      if (scriptControls) scriptControls.hidden = !previewPayload.hasDecodedScript;
+      if (scriptOriginal) scriptOriginal.checked = ASSET_STATE.showOriginalMScript;
+
       placeholder.hidden = true;
       text.hidden = false;
       text.textContent = formatted;
+      appendDecodedScriptSearchText(entry, previewPayload.decodedSearchText);
       note.textContent = assetUiText(truncated ? "jsonPreviewTruncated" : "jsonPreviewLoaded", {
         size: formatBytes(entry.size),
         limit: JSON_PREVIEW_CHAR_LIMIT.toLocaleString(),
@@ -2468,10 +2922,15 @@
   }
 
   function drawModelBackdrop(ctx, width, height) {
-    ctx.fillStyle = "#0b1015";
+    const background = normalizePreviewBackground(ASSET_STATE.previewBackground);
+    const luminance = previewBackgroundLuminance();
+    const gridRgb = luminance > 0.58 ? "20, 32, 42" : "108, 182, 255";
+    const axisRgb = luminance > 0.58 ? "188, 94, 52" : "240, 163, 107";
+
+    ctx.fillStyle = background;
     ctx.fillRect(0, 0, width, height);
 
-    ctx.strokeStyle = "rgba(108, 182, 255, 0.08)";
+    ctx.strokeStyle = `rgba(${gridRgb}, 0.12)`;
     ctx.lineWidth = 1;
     const step = Math.max(42, Math.round(width / 10));
     for (let x = step; x < width; x += step) {
@@ -2487,7 +2946,7 @@
       ctx.stroke();
     }
 
-    ctx.strokeStyle = "rgba(240, 163, 107, 0.22)";
+    ctx.strokeStyle = `rgba(${axisRgb}, 0.28)`;
     ctx.beginPath();
     ctx.moveTo(width * 0.5, 0);
     ctx.lineTo(width * 0.5, height);
@@ -2497,7 +2956,6 @@
     ctx.lineTo(width, height * 0.5);
     ctx.stroke();
   }
-
   function parseObj(text) {
     const vertices = [];
     const triangles = [];
@@ -2869,13 +3327,14 @@
   }
 
   function init() {
+    ASSET_STATE.previewBackground = resolveInitialPreviewBackground();
     setAssetUiLocale(resolveInitialUiLocale(), { refresh: false });
     bindViewTabs();
     bindAssetEvents();
     window.addEventListener("webui:ui-locale-changed", (event) => {
       setAssetUiLocale(event.detail && event.detail.locale);
     });
-    setFiltersCollapsed(resolveInitialFiltersCollapsed(), { persist: false });
+    ensureAssetPanelToggle();
     setActiveView(resolveViewFromHash(), { updateHash: false });
   }
 
