@@ -345,3 +345,52 @@ A read-only residual scan found:
 - `Animator` is the next high-value target. It has no asset-status manifest, no current output-quality accounting, and a large map/output gap: `StreamingAssets Animator` has about `57,025` map entries vs `11,526` FBX files, and `Persistent Animator` has about `5,423` map entries vs `1,594` FBX files. Logs from the last full debug run showed no Animator export errors, so the gap likely comes from name/group collapse, GameObject/dependency export behavior, or shallow/empty FBX output rather than ordinary per-asset export exceptions.
 
 Next concrete improvement: add or prototype Animator status accounting that can explain whether each Animator map entry resolves to a meaningful FBX, a duplicate/name-collapsed FBX, or an unsupported/no-mesh FBX export path.
+
+## 2026-06-28 Animator FBX No-Mesh Diagnostics
+
+Animator was the next large apparent gap after Texture2D, Sprite, Mesh, and Material accounting. Before instrumentation, the existing broad debug export looked superficially successful but suspicious:
+
+- `StreamingAssets`: 57,025 Animator map entries, 11,738 unique sanitized Animator/GameObject names, and 11,526 `.fbx` files.
+- `Persistent`: 5,423 Animator map entries, 1,606 unique sanitized names, and 1,594 `.fbx` files.
+- All existing Animator `.fbx` files were tiny binary FBX containers: `StreamingAssets` ranged from 10,416 to 10,624 bytes, and `Persistent` ranged from 10,416 to 10,576 bytes.
+- Probes of representative files found normal `Kaydara FBX Binary` headers but no `Geometry`, `Vertices`, `PolygonVertexIndex`, `Deformer`, or `Animation` markers.
+
+Root cause found in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- `TryExportFile()` names normal single-file exports as `<name>_p<PathID>.<ext>`.
+- `ExportAnimator()` used `TryExportFolder()`, which names only by `Animator.Name`/linked `GameObject.Name` and loses the per-asset PathID in the final FBX identity.
+- `ExportAnimator()` did not check `ModelConverter.MeshList.Count`, so no-mesh Animator conversions produced boilerplate FBX files and returned success.
+- `Studio.ExportAssets()` logs hard `Export ... error` entries only for exceptions; converters returning `false` are counted as skipped assets.
+
+Implemented diagnostics:
+
+- `ExportAnimator()` now deletes any stale target `.fbx`, logs `[Warning] Animator no output ...` when `ModelConverter.MeshList.Count == 0`, deletes the empty export folder, and returns `false` instead of emitting a boilerplate FBX.
+- The structured warning includes reason, Animator name/PathID, source file/original path, source bundle offset, container, linked GameObject name/PathID, GameObject pointer PathID, Avatar/Controller PathIDs, transform hierarchy flag, mesh/material/texture/animation counts, and intended FBX path.
+- `scripts/export_full_from_game.py` parses these warnings, merges them across AnimeStudio runs, writes `animator_no_output_count`, `animator_no_mesh_count`, and `animator_suspicious_no_output_count` into JSON summaries, and surfaces the counts/samples in markdown summaries.
+
+Verification:
+
+```bat
+python -m py_compile scripts\export_full_from_game.py
+dotnet build tools\AnimeStudio\AnimeStudio.CLI\AnimeStudio.CLI.csproj -c Release
+```
+
+Both passed. The AnimeStudio build retained only pre-existing warnings.
+
+Focused Animator reruns:
+
+```bat
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode full --animestudio-asset-types Animator --animestudio-stages convert_by_type --sources Persistent --animestudio-jobs 4 --animestudio-shards 8
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode full --animestudio-asset-types Animator --animestudio-stages convert_by_type --sources StreamingAssets --animestudio-jobs 4 --animestudio-shards 16
+```
+
+Results:
+
+| Source | Report run | Return code | Animator warnings | `animator_no_output` | `animator_no_mesh` | Suspicious Animator no-output | Export errors | Remaining Animator `.fbx` files |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Persistent | `reports/20260628_194518` | 0 | 5,423 | 5,423 | 5,423 | 0 | 0 | 0 |
+| StreamingAssets | `reports/20260628_194720` | 0 | 57,025 | 57,025 | 57,025 | 0 | 0 | 0 |
+
+Current classification: the old Animator FBX outputs were valid FBX containers but not useful model/animation recovery. Under the current `Animator:Both` export surface, all Animator map rows are now explicitly understood as `no_mesh` no-output conversions, not silent successful model exports.
+
+Remaining technical question: this does not yet prove that every original Animator-linked GameObject truly lacks mesh data. The current explicit Animator type slice may still under-parse some renderer, mesh, transform, controller, or clip dependencies. The next useful experiment is a narrow Animator dependency probe that adds parse-only `Transform`, `MeshRenderer`, `SkinnedMeshRenderer`, `MeshFilter`, `Mesh`, `Avatar`, `AnimatorController`, and `AnimationClip` where supported, then compares `MeshCount` and `AnimationCount` against the fresh no-mesh baseline.
