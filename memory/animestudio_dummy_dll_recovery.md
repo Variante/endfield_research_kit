@@ -896,3 +896,43 @@ to `$partialDecoded=522`, `$heuristic=10`, `$unparsed=6`. The 10 new decoded
 records are exactly `DialogAnimActDataShortScalarBlock` length `240`; the
 remaining current unparsed action payloads are the longer `DialogCamActData`
 variants (`560`, `588`, `644`) and one length-`220` `DialogEmotionActData`.
+
+## 2026-06-28 Long DialogCamActData Scalar Recovery
+
+A follow-up pass targeted the largest remaining current dialog camera family from
+`tmp\dialog_timelines_11_shortanim_20260628`: three `DialogCamActData` payloads
+with length `560` and action code `51`. The local DummyDll set still does not
+provide a usable `Beyond.Gameplay.DialogCamActData` field schema, and the
+single length-`588` and length-`644` variants did not have enough independent
+samples, so only the length-`560` family was promoted.
+
+The promoted payloads came from:
+
+| File | Rid | Length |
+| --- | ---: | ---: |
+| `dlg_e2m2_1_timeline_pDE364550918DFC78.json` | `4297684264117342074` | 560 |
+| `dlg_e2m2_1_timeline_pDE364550918DFC78.json` | `4297684264117342162` | 560 |
+| `dlg_e2m2_3d5_timeline_pF1CAF5E8DE51D46E.json` | `1047` | 560 |
+
+The layout is recorded as `DialogCamActDataLongScalarBlock` with
+`$partialDecoded` and `$inferred`. Guards validate the first-12-byte dialog
+action timing prefix, action code `51`, repeated Unity serialized marker groups
+such as `2,2,4`, fixed `-1.0f` and `0.5f` sentinel slots, zero-filled blocks,
+and finite camera/scalar float slots. It intentionally does not parse or rename
+fields beyond generic selector/scalar groups.
+
+Verification command:
+
+```bat
+cd /d D:\fluffy-dump\tools\animestudio-dummydll-gain-test
+.\..\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" "D:\fluffy-dump\tmp\dialog_timelines_11_longcam_20260628" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls "D:\fluffy-dump\tools\DummyDll" --mono_behaviour_type_tree_priority ScriptFirst --filter_data "D:\fluffy-dump\tools\animestudio-dummydll-gain-test\dialog_timelines_11_filter_data.json" --names "^dlg_(chen_1|npc_0005_1|e1m1_1|e2m2_1|e2m2_3d5|e2m4_11|e2m4_7|e2m5_2|e2m5_4|e3m1_1|sm1l1m7_1)_timeline$" --map_op "CABMap,Load" --map_name endfield_streamingassets_full_current
+```
+
+Result: exit code 0, 11 JSON files, no `.warning.txt` or `.error.txt` sidecars.
+Marker counts moved from the prior short-animation checkpoint
+`$partialDecoded=522`, `$heuristic=10`, `$unparsed=6` to
+`$partialDecoded=525`, `$heuristic=6`, `$unparsed=3`. The three new decoded
+records are exactly `DialogCamActDataLongScalarBlock` length `560`. The remaining
+current dialog unparsed action payloads are the singleton length-`588` and
+length-`644` `DialogCamActData` variants plus one singleton length-`220`
+`DialogEmotionActData`.
