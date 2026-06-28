@@ -230,3 +230,19 @@ part-animator records.
 Remaining enemy gap: `EnemyTemplateData`, `AbilitySystemData`,
 `AbilitySystemForEnemyPartData`, `EnemyPartsControllerComponentData`, and
 `NavMeshObstacleComponentData` still need real nested schema recovery.
+
+### MonoBehaviour Enemy Wrapper Payload Decoders
+
+A follow-up pass decoded `EnemyPartsControllerComponentData` and
+`NavMeshObstacleComponentData` as bounded wrapper records with typed RID links.
+
+Verification:
+
+| Sample | Refs | Decoded | Inferred | Heuristic/unparsed |
+| --- | ---: | ---: | ---: | ---: |
+| `data_eny_0077_agshield` | 50 | 40 | 25 | 10 |
+| `data_eny_0115_nefarcore` | 19 | 17 | 7 | 2 |
+| `data_facemorph_avatar_antal` regression | 243 | 243 | 243 | 0 |
+
+Remaining enemy gap: `EnemyTemplateData`, `AbilitySystemData`, and
+`AbilitySystemForEnemyPartData` still need real nested schema recovery.
