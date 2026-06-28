@@ -179,3 +179,50 @@ single-type convert selector. A narrower future wrapper improvement would be a t
 `convert_by_type`, but the report-only status backfill is enough to certify that today's 26,520
 Sprite misses are stale broad output state plus known parse dependencies.
 
+
+## 2026-06-28 Texture2D No-Output Diagnostics
+
+Implemented structured AnimeStudio diagnostics for `Texture2D` conversions that return no image:
+
+- `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs` logs `[Warning] Texture2D no output ...` when `ConvertToImage(true)` returns null.
+- Reasons are narrowly classified as `zero_size_texture`, `empty_image_payload`, or `decode_failed`.
+- The warning includes `PathID`, source file/original path, source bundle offset, container, dimensions, texture format, image payload size, stream size/offset, and stream path.
+- `scripts/export_full_from_game.py` parses these warnings, including UTF-8 and UTF-16LE logs, and records `texture2d_no_output_count`, `texture2d_no_payload_count`, `texture2d_decode_failed_count`, `classified_no_payload_missing_output_count`, and `suspicious_missing_output_count` in asset status manifests.
+- No global `Texture2D` missing-output allow-list was added. A missing Texture2D output is allowed only when a fresh no-payload warning matches the missing record by source leaf, source offset, and PathID. Negative Unity PathIDs are valid and are accepted by the matcher.
+
+Verification commands/results:
+
+```bat
+python -m py_compile scripts\export_full_from_game.py
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Both passed; the AnimeStudio build retained only pre-existing project warnings.
+
+Zero-size font probe:
+
+```bat
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\texture2d_no_output_font_probe_20260628 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type Convert --names tmp\animestudio_missing_probe_20260628\texture_missing_names.txt --filter_data tmp\animestudio_missing_probe_20260628\texture_missing_filter.json --types Texture2D:Both
+```
+
+Result: exit `0`, no PNG, one structured warning:
+
+```text
+reason=zero_size_texture name="Font Texture" PathID=-6603019454663767376 SourceOffset=7661199 Width=0 Height=0 Format=RGBA32 ImageSize=0 StreamSize=0
+```
+
+Positive Texture2D probe:
+
+```bat
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\texture2d_positive_probe_20260628 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type Convert --names tmp\animestudio_missing_probe_20260628\texture_existing_names.txt --filter_data tmp\animestudio_missing_probe_20260628\texture_existing_filter.json --types Texture2D:Both
+```
+
+Result: exit `0`, wrote `tmp/texture2d_positive_probe_20260628/Texture2D/T_default_mro_MRO_pEEB1E5E9C92A208A.png`, and produced zero Texture2D no-output warnings.
+
+Focused parser/status checks showed:
+
+- The font probe warning parses as `texture2d_no_output_count=1`, `texture2d_no_payload_count=1`, `texture2d_decode_failed_count=0`.
+- The matching missing output is classified as `allowed_missing_output`, with `classified_no_payload_missing_output_count=1` and `suspicious_missing_output_count=0`.
+- A synthetic `reason=decode_failed` warning remains `dirty_missing_output`, with `texture2d_decode_failed_count=1` and `suspicious_missing_output_count=1`.
+
+Current interpretation: zero-size `Font Texture` rows are understood non-extractable placeholders when confirmed by fresh conversion logs. Report-only manifests from stale outputs still cannot infer this without log evidence, so they should stay suspicious until a real conversion stage emits the structured warning.
