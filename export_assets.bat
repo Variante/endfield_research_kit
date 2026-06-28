@@ -130,11 +130,11 @@ echo                         and for audio linking.
 echo   --animestudio-asset-mode webui^|full^|debug
 echo                         Lower-level equivalent of --webui-assets/--full-assets/--debug-assets.
 echo   --animestudio-jobs N  Passed through when --export-from-game is present.
-echo                         Default is 4 for parallel shard/type export.
+echo                         Default is 8 shared workers for pooled AnimeStudio calls.
 echo                         Lower this value if peak AnimeStudio memory is too high.
 echo   --animestudio-shards N
 echo                         Passed through when --export-from-game is present.
-echo                         Default is 16 shards with 4 concurrent workers.
+echo                         Default is 16 shards consumed by the shared worker pool.
 echo   --animestudio-type-job-mode auto^|parallel^|merged
 echo                         Controls non-sharded AnimeStudio type jobs.
 echo                         auto merges JSON type jobs and keeps asset conversion sharded.

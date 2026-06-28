@@ -1,10 +1,17 @@
 (() => {
+  const FILTER_PANEL_STORAGE_KEY = "updates_filters_collapsed";
+  const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
+
   const UPDATE_TEXTS = {
     zh: {
       tab: "\u66f4\u65b0",
       title: "\u6570\u636e\u66f4\u65b0",
       countLabel: "\u9879\u53d8\u5316",
       search: "\u641c\u7d22\u8def\u5f84 / \u6269\u5c55\u540d",
+      showFilters: "\u663e\u793a\u7b5b\u9009",
+      hideFilters: "\u9690\u85cf\u7b5b\u9009",
+      reset: "\u91cd\u7f6e\u7b5b\u9009",
+      basicFilters: "\u57fa\u7840\u7b5b\u9009",
       gameFile: "\u6e38\u620f\u6587\u4ef6",
       textJson: "\u6587\u672c JSON",
       exportedAsset: "\u5bfc\u51fa\u8d44\u6e90",
@@ -38,6 +45,8 @@
       decodedTruncated: "\u53e6\u6709 {count} \u4e2a\u89e3\u7801\u6587\u4ef6\u672a\u5728\u6b64\u5217\u51fa\u3002",
       decodedNote: "\u8bf4\u660e",
       decodedConfidence: "\u5339\u914d\u65b9\u5f0f",
+      hash: "\u54c8\u5e0c",
+      sameHashFiles: "\u76f8\u540c\u54c8\u5e0c\u6587\u4ef6",
       diffTruncated: "\u5dee\u5f02\u8fc7\u957f\uff0c\u5df2\u622a\u65ad\u663e\u793a\u3002",
       status: "\u72b6\u6001",
       category: "\u5206\u7c7b",
@@ -76,6 +85,10 @@
       title: "Data Updates",
       countLabel: "changes",
       search: "Search path / extension",
+      showFilters: "Show filters",
+      hideFilters: "Hide filters",
+      reset: "Reset filters",
+      basicFilters: "Basic filters",
       gameFile: "Game file",
       textJson: "Text JSON",
       exportedAsset: "Exported asset",
@@ -109,6 +122,8 @@
       decodedTruncated: "{count} decoded files are not listed here.",
       decodedNote: "Note",
       decodedConfidence: "Mapping",
+      hash: "Hash",
+      sameHashFiles: "Same-hash files",
       diffTruncated: "Diff is long, so only the first lines are shown.",
       status: "Status",
       category: "Category",
@@ -153,6 +168,8 @@
     formatSignedNumber,
     enhanceMediaPlayers,
     normalizeUiLocale,
+    storageGet,
+    storageSet,
   } = window.WebUI;
   const STATUS_ORDER = { added: 0, modified: 1, deleted: 2 };
   const UPDATE_STATE = {
@@ -173,6 +190,29 @@
   };
 
   const up$ = $;
+
+  function isMobileLayout() {
+    return !!(window.matchMedia && window.matchMedia(MOBILE_LAYOUT_QUERY).matches);
+  }
+
+  let updatesPanel = null;
+
+  function ensureUpdatesPanelToggle() {
+    if (updatesPanel) return updatesPanel;
+    updatesPanel = window.WebUI.filters.createPanelToggle({
+      panel: "#updates-filter-panel",
+      toggle: "#updates-filter-toggle",
+      left: "#updates-left",
+      storageKey: FILTER_PANEL_STORAGE_KEY,
+      isMobile: isMobileLayout,
+      labels: (collapsed) => updateText(collapsed ? "showFilters" : "hideFilters"),
+    });
+    return updatesPanel;
+  }
+
+  function syncFilterPanel() {
+    updatesPanel?.sync();
+  }
 
   function resolveInitialUiLocale() {
     const fromWindow = normalizeUiLocale(window.WEBUI_UI_LOCALE);
@@ -275,6 +315,62 @@
     ].join(" ").toLowerCase();
   }
 
+  function updateEntryHash(entry) {
+    const value = String(entry && (entry.new_digest || entry.old_digest || entry.hash || "") || "").trim();
+    return value && !value.startsWith("size:") ? value : "";
+  }
+
+  function updateFileRecord(entry) {
+    return {
+      path: String(entry && entry.path || ""),
+      status: String(entry && entry.status || ""),
+      domain: String(entry && entry.domain || ""),
+      category: String(entry && entry.category || ""),
+      assetRel: String(entry && (entry.asset_rel || entry.new_asset_rel || entry.old_asset_rel) || ""),
+    };
+  }
+
+  function updateSameHashFiles(entry) {
+    if (Array.isArray(entry && entry.sameHashFiles) && entry.sameHashFiles.length) return entry.sameHashFiles;
+    const file = updateFileRecord(entry || {});
+    return file.path ? [file] : [];
+  }
+
+  function sameHashFileCount(entry) {
+    return updateSameHashFiles(entry).length;
+  }
+
+  function sameHashFileSummary(entry, limit = 24) {
+    const files = updateSameHashFiles(entry).map((file) => file.path || file.assetRel).filter(Boolean);
+    if (files.length <= limit) return files.join(", ");
+    return `${files.slice(0, limit).join(", ")} ... +${formatNumber(files.length - limit)}`;
+  }
+
+  function aggregateUpdateEntriesByHash(entries) {
+    const out = [];
+    const byHash = new Map();
+    for (const entry of entries || []) {
+      const hash = updateEntryHash(entry);
+      if (!hash) {
+        out.push(entry);
+        continue;
+      }
+      const key = `${entry.status || ""}::${hash}`;
+      const file = updateFileRecord(entry);
+      const existing = byHash.get(key);
+      if (!existing) {
+        const copy = { ...entry, sameHashFiles: file.path ? [file] : [], fileCount: file.path ? 1 : 0 };
+        byHash.set(key, copy);
+        out.push(copy);
+        continue;
+      }
+      if (file.path && !existing.sameHashFiles.some((item) => item.path === file.path)) {
+        existing.sameHashFiles.push(file);
+        existing.fileCount = existing.sameHashFiles.length;
+      }
+    }
+    return out;
+  }
   function matchesFilters(entry) {
     const statuses = statusFilters();
     const categories = categoryFilters();
@@ -307,6 +403,7 @@
       ["#updates-tab", "tab"],
       ["#updates-title", "title"],
       ["#updates-count-label", "countLabel"],
+      ["#updates-basic-filter-label", "basicFilters"],
       ["#updates-status-label", "status"],
       ["#updates-category-label", "category"],
       ["#updates-extension-label", "extension"],
@@ -327,6 +424,9 @@
     }
     const q = up$("#updates-q");
     if (q) q.placeholder = updateText("search");
+    const reset = up$("#updates-reset");
+    if (reset) reset.textContent = updateText("reset");
+    syncFilterPanel();
     if (!UPDATE_STATE.selectedEntry) {
       const empty = up$("#updates-empty");
       if (empty) empty.textContent = emptyText();
@@ -366,7 +466,7 @@
         UPDATE_STATE.loaded = true;
         UPDATE_STATE.loading = null;
         UPDATE_STATE.payload = payload || {};
-        UPDATE_STATE.entries = Array.isArray(payload && payload.entries) ? payload.entries : [];
+        UPDATE_STATE.entries = aggregateUpdateEntriesByHash(Array.isArray(payload && payload.entries) ? payload.entries : []);
         populateUpdateFilters();
         applyUpdateFilters();
         window.WebUI.updateLoader("updates", 1);
@@ -428,33 +528,39 @@
   }
 
   function buildUpdateFilterChips(selector, values, labeler, activeSet, counts = {}) {
-    const wrap = up$(selector);
-    if (!wrap) return;
-    const available = new Set(values);
-    for (const value of [...activeSet]) {
-      if (!available.has(value)) activeSet.delete(value);
-    }
+    window.WebUI.filters.buildChips(selector, values, {
+      active: activeSet,
+      className: "updates-filter-chip",
+      label: labeler ? (value) => labeler(value) : undefined,
+      count: counts,
+      onToggle: () => applyUpdateFilters(),
+    });
+  }
 
-    const fragment = document.createDocumentFragment();
-    for (const value of values) {
-      const count = Number(counts[value] || 0);
-      const chip = document.createElement("span");
-      chip.className = "chip updates-filter-chip";
-      chip.dataset.value = value;
-      chip.textContent = `${labeler ? labeler(value) : value}${count ? ` (${formatNumber(count)})` : ""}`;
-      chip.classList.toggle("on", activeSet.has(value));
-      chip.addEventListener("click", () => {
-        if (activeSet.has(value)) activeSet.delete(value);
-        else activeSet.add(value);
-        chip.classList.toggle("on", activeSet.has(value));
-        applyUpdateFilters();
-      });
-      fragment.appendChild(chip);
-    }
-    wrap.replaceChildren(fragment);
+  function syncFilterSectionActiveCounts() {
+    window.WebUI.setFilterSectionActiveCounts?.({
+      "updates-basic": updateQuery() ? 1 : 0,
+      "updates-status": UPDATE_STATE.filters.statuses.size,
+      "updates-category": UPDATE_STATE.filters.categories.size,
+      "updates-extension": UPDATE_STATE.filters.extensions.size,
+      "updates-sort-section": sortMode() === "path" ? 0 : 1,
+    });
+  }
+
+  function resetUpdateFilters() {
+    const q = up$("#updates-q");
+    if (q) q.value = "";
+    const sort = up$("#updates-sort");
+    if (sort) sort.value = "path";
+    UPDATE_STATE.filters.statuses.clear();
+    UPDATE_STATE.filters.categories.clear();
+    UPDATE_STATE.filters.extensions.clear();
+    populateUpdateFilters();
+    applyUpdateFilters();
   }
 
   function applyUpdateFilters() {
+    syncFilterSectionActiveCounts();
     UPDATE_STATE.filtered = UPDATE_STATE.entries.filter(matchesFilters).sort(compareEntries);
     if (
       UPDATE_STATE.selectedEntry
@@ -1447,6 +1553,8 @@
   }
 
   function bindUpdateEvents() {
+    const reset = up$("#updates-reset");
+    if (reset) reset.addEventListener("click", resetUpdateFilters);
     for (const sel of ["#updates-q", "#updates-sort"]) {
       const node = up$(sel);
       if (node) node.addEventListener(sel === "#updates-q" ? "input" : "change", applyUpdateFilters);
@@ -1468,6 +1576,7 @@
 
   function initUpdates() {
     UPDATE_STATE.uiLocale = resolveInitialUiLocale();
+    ensureUpdatesPanelToggle();
     applyUpdateStrings();
     bindUpdateEvents();
     renderUpdateSummary();

@@ -49,13 +49,15 @@ Both pass AnimeStudio options through to `scripts\export_full_from_game.py`. Kee
 .\export_assets.bat --export-from-game --animestudio-jobs 2
 ```
 
-The default is now `4` so balanced shards/types run in parallel. Lower
+The default is now `8`; AnimeStudio subprocess tasks for each source share
+that worker pool, and asset shards are queued round-robin by type. Lower
 `--animestudio-jobs` when peak memory is too high.
 `export.bat --export-from-game` also uses AnimeStudio as the default structured
 data dumper. `export_assets.bat --export-from-game` uses AnimeStudio for the
 lightweight `vfs-index` snapshot and CN audio decode before relinking.
 Asset conversion uses more shards than workers by default: `--animestudio-shards 16`
-with `--animestudio-jobs 4`; adjust `--animestudio-shards` separately to tune
+with `--animestudio-jobs 8`; the shared pool consumes those shards alongside
+other AnimeStudio type requests. Adjust `--animestudio-shards` separately to tune
 per-process asset slice size. Non-sharded JSON type jobs use
 `--animestudio-type-job-mode auto` by default, merging them into one AnimeStudio
 process; pass `parallel` only when comparing against the older per-type path.
@@ -71,11 +73,12 @@ AnimeStudio.CLI now owns the Endfield VFS paths used by the WebUI wrappers:
 ```bat
 .\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe dump --help
 .\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe audio --help
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe stream --help
 .\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe vfs-index --help
 .\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe list --help
 ```
 
-`dump`, `audio`, and `vfs-index` must expose `--fallback-assets`. Use direct
+`dump`, `audio`, `stream`, and `vfs-index` must expose `--fallback-assets`. Use direct
 subcommand calls for parity probes or targeted extraction; use the parent
 wrappers for normal WebUI exports.
 

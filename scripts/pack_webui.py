@@ -325,7 +325,10 @@ def iter_webui_text_files(webui_root: Path) -> Iterable[Path]:
             continue
         if "__pycache__" in path.parts:
             continue
-        if path.relative_to(webui_root).as_posix().startswith("data/audio/"):
+        rel = path.relative_to(webui_root).as_posix()
+        if rel.startswith("data/audio/"):
+            continue
+        if rel.startswith("data/game_data/"):
             continue
         if path.suffix.lower() in TEXT_EXTENSIONS:
             yield path

@@ -21,6 +21,10 @@ const FILTER_PANEL_STORAGE_KEY = "webui_filters_collapsed";
 const FILTER_SECTION_STORAGE_KEY = "webui_filter_sections_collapsed_v2";
 const STORY_SPLITTER_STORAGE_KEY = "webui_story_splitter_width";
 const ASSET_SPLITTER_STORAGE_KEY = "webui_asset_splitter_width";
+const REFERENCE_SPLITTER_STORAGE_KEY = "webui_reference_splitter_width";
+const GAME_DATA_SPLITTER_STORAGE_KEY = "webui_game_data_splitter_width";
+const UPDATES_SPLITTER_STORAGE_KEY = "webui_updates_splitter_width";
+const FILTER_SPLITTER_STORAGE_PREFIX = "webui_filter_splitter_height_";
 const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
 const WEBUI_DATA_CACHE_TAG = "20260518-scene-map-order-evidence";
 const STORY_ORDER_JSON_ENABLED = true;
@@ -84,7 +88,6 @@ const STATE = {
   showEmpty: false,
   showRaw: false,
   showDebug: false,
-  filtersCollapsed: false,
   filterSectionsCollapsed: new Set(),
   indexRequestToken: 0,
   inlineImageLookupLoaded: false,
@@ -140,10 +143,6 @@ function parseCssPixels(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function clampNumber(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
 function initPaneSplitters() {
   setupPaneSplitter({
     container: "#app",
@@ -157,6 +156,30 @@ function initPaneSplitters() {
     splitter: "#asset-splitter",
     storageKey: ASSET_SPLITTER_STORAGE_KEY,
   });
+  setupPaneSplitter({
+    container: "#reference-app",
+    pane: "#reference-left",
+    splitter: "#reference-splitter",
+    storageKey: REFERENCE_SPLITTER_STORAGE_KEY,
+  });
+  setupPaneSplitter({
+    container: "#game-data-app",
+    pane: "#game-data-left",
+    splitter: "#game-data-splitter",
+    storageKey: GAME_DATA_SPLITTER_STORAGE_KEY,
+  });
+  setupPaneSplitter({
+    container: "#updates-app",
+    pane: "#updates-left",
+    splitter: "#updates-splitter",
+    storageKey: UPDATES_SPLITTER_STORAGE_KEY,
+  });
+
+  setupFilterSplitter({ pane: "#left", panel: "#filter-panel", splitter: "#filter-splitter", list: "#list-wrap", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}story` });
+  setupFilterSplitter({ pane: "#asset-left", panel: "#asset-filter-panel", splitter: "#asset-filter-splitter", list: "#asset-list-wrap", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}assets` });
+  setupFilterSplitter({ pane: "#reference-left", panel: "#reference-filter-panel", splitter: "#reference-filter-splitter", list: "#reference-list", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}reference` });
+  setupFilterSplitter({ pane: "#game-data-left", panel: "#game-data-filter-panel", splitter: "#game-data-filter-splitter", list: "#game-data-list", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}game_data` });
+  setupFilterSplitter({ pane: "#updates-left", panel: "#updates-filter-panel", splitter: "#updates-filter-splitter", list: "#updates-list", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}updates` });
 }
 
 function setupPaneSplitter({ container, pane, splitter, storageKey, minRightWidth = 0 }) {
@@ -165,34 +188,10 @@ function setupPaneSplitter({ container, pane, splitter, storageKey, minRightWidt
   const handle = $(splitter);
   if (!shell || !sidebar || !handle) return;
 
-  let activePointerId = null;
-  let startX = 0;
-  let startWidth = 0;
+  const { readStoredNumber } = window.WebUI.splitterUtils;
   let wasMobile = isMobileLayout();
-  let resizeQueued = false;
 
-  const queueLayoutResize = () => {
-    if (resizeQueued) return;
-    resizeQueued = true;
-    requestAnimationFrame(() => {
-      resizeQueued = false;
-      window.dispatchEvent(new Event("resize"));
-    });
-  };
-
-  const readStoredWidth = () => {
-    if (!storageKey) return null;
-    const raw = storageGet(storageKey);
-    const width = Number.parseFloat(raw || "");
-    return Number.isFinite(width) ? width : null;
-  };
-
-  const writeStoredWidth = (width) => {
-    if (!storageKey) return;
-    storageSet(storageKey, String(Math.round(width)));
-  };
-
-  const currentBounds = () => {
+  const bounds = () => {
     const paneStyles = window.getComputedStyle(sidebar);
     const handleStyles = window.getComputedStyle(handle);
     const minWidth = parseCssPixels(paneStyles.minWidth, 240);
@@ -203,127 +202,188 @@ function setupPaneSplitter({ container, pane, splitter, storageKey, minRightWidt
     const maxWidth = Number.isFinite(cssMaxWidth)
       ? Math.max(minWidth, Math.min(cssMaxWidth, maxByViewport))
       : maxByViewport;
-    return {
-      minWidth,
-      maxWidth,
-    };
+    return { min: minWidth, max: maxWidth };
   };
 
-  const applyWidth = (width, { persist = true, dispatchResize = true } = {}) => {
-    if (isMobileLayout()) {
-      sidebar.style.removeProperty("width");
-      handle.removeAttribute("aria-valuenow");
-      handle.removeAttribute("aria-valuemin");
-      handle.removeAttribute("aria-valuemax");
-      if (dispatchResize) queueLayoutResize();
-      return;
-    }
-
-    const bounds = currentBounds();
-    const nextWidth = clampNumber(width, bounds.minWidth, bounds.maxWidth);
-    sidebar.style.width = `${Math.round(nextWidth)}px`;
-    handle.setAttribute("aria-valuemin", String(Math.round(bounds.minWidth)));
-    handle.setAttribute("aria-valuemax", String(Math.round(bounds.maxWidth)));
-    handle.setAttribute("aria-valuenow", String(Math.round(nextWidth)));
-    if (persist) writeStoredWidth(nextWidth);
-    if (dispatchResize) queueLayoutResize();
-  };
-
-  const syncWidth = () => {
-    const mobile = isMobileLayout();
-    if (mobile) {
-      wasMobile = true;
-      applyWidth(sidebar.getBoundingClientRect().width, { persist: false, dispatchResize: false });
-      return;
-    }
-
-    if (shell.getBoundingClientRect().width < 48) {
-      return;
-    }
-
-    let targetWidth = parseCssPixels(sidebar.style.width, sidebar.getBoundingClientRect().width);
-    if (wasMobile || !sidebar.style.width) {
-      const stored = readStoredWidth();
-      if (stored !== null) targetWidth = stored;
-    }
-    wasMobile = false;
-    applyWidth(targetWidth, { persist: false, dispatchResize: false });
-  };
-
-  const stopDragging = () => {
-    if (activePointerId === null) return;
-    const pointerId = activePointerId;
-    activePointerId = null;
-    handle.classList.remove("is-dragging");
-    document.body.classList.remove("is-resizing-pane");
-    try {
-      handle.releasePointerCapture(pointerId);
-    } catch (_error) {
-      // Ignore capture cleanup failures.
-    }
-    window.removeEventListener("pointermove", onPointerMove);
-    window.removeEventListener("pointerup", onPointerUp);
-    window.removeEventListener("pointercancel", onPointerUp);
-    writeStoredWidth(parseCssPixels(sidebar.style.width, sidebar.getBoundingClientRect().width));
-  };
-
-  const onPointerMove = (event) => {
-    if (event.pointerId !== activePointerId) return;
-    applyWidth(startWidth + (event.clientX - startX), { persist: false });
-  };
-
-  const onPointerUp = (event) => {
-    if (activePointerId !== null && event.pointerId !== activePointerId) return;
-    stopDragging();
-  };
-
-  handle.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0 || isMobileLayout()) return;
-    event.preventDefault();
-    activePointerId = event.pointerId;
-    startX = event.clientX;
-    startWidth = sidebar.getBoundingClientRect().width;
-    handle.classList.add("is-dragging");
-    document.body.classList.add("is-resizing-pane");
-    handle.setPointerCapture?.(event.pointerId);
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-    window.addEventListener("pointercancel", onPointerUp);
+  return window.WebUI.setupSplitter({
+    handle,
+    storageKey,
+    bodyDragClass: "is-resizing-pane",
+    client: (event) => event.clientX,
+    keys: { decrease: ["ArrowLeft"], increase: ["ArrowRight"] },
+    enabled: () => !isMobileLayout(),
+    bounds,
+    read: () => parseCssPixels(sidebar.style.width, sidebar.getBoundingClientRect().width),
+    write: (width) => { sidebar.style.width = `${Math.round(width)}px`; },
+    clear: () => { sidebar.style.removeProperty("width"); },
+    sync: (ctrl) => {
+      if (isMobileLayout()) {
+        wasMobile = true;
+        ctrl.clear({ commit: false });
+        return;
+      }
+      if (shell.getBoundingClientRect().width < 48) return;
+      let targetWidth = parseCssPixels(sidebar.style.width, sidebar.getBoundingClientRect().width);
+      if (wasMobile || !sidebar.style.width) {
+        const stored = readStoredNumber(storageKey);
+        if (stored !== null) targetWidth = stored;
+      }
+      wasMobile = false;
+      ctrl.set(targetWidth, { persist: false, commit: false });
+    },
   });
-
-  handle.addEventListener("keydown", (event) => {
-    if (isMobileLayout()) return;
-    const bounds = currentBounds();
-    const currentWidth = parseCssPixels(sidebar.style.width, sidebar.getBoundingClientRect().width);
-    const step = event.shiftKey ? 48 : 16;
-    if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      applyWidth(currentWidth - step);
-    } else if (event.key === "ArrowRight") {
-      event.preventDefault();
-      applyWidth(currentWidth + step);
-    } else if (event.key === "Home") {
-      event.preventDefault();
-      applyWidth(bounds.minWidth);
-    } else if (event.key === "End") {
-      event.preventDefault();
-      applyWidth(bounds.maxWidth);
-    }
-  });
-
-  window.addEventListener("resize", syncWidth);
-  syncWidth();
 }
 
-function persistFiltersCollapsed(collapsed) {
-  storageSet(FILTER_PANEL_STORAGE_KEY, collapsed ? "1" : "0");
+function setupFilterSplitter({ pane, panel, splitter, list, storageKey, minPanelHeight = 56, minListHeight = 160 }) {
+  const sidebar = $(pane);
+  const filterPanel = $(panel);
+  const handle = $(splitter);
+  const listPane = $(list);
+  if (!sidebar || !filterPanel || !handle || !listPane) return;
+
+  const { readStoredNumber } = window.WebUI.splitterUtils;
+  let wasMobile = isMobileLayout();
+
+  // Measure the panel's content height with the inline override removed, then restore it.
+  const measureNaturalPanelHeight = () => {
+    const previousHeight = filterPanel.style.height;
+    const wasResized = filterPanel.classList.contains("is-filter-resized");
+    filterPanel.style.removeProperty("height");
+    filterPanel.classList.remove("is-filter-resized");
+    const naturalHeight = Math.ceil(filterPanel.getBoundingClientRect().height);
+    if (previousHeight) filterPanel.style.height = previousHeight;
+    else filterPanel.style.removeProperty("height");
+    filterPanel.classList.toggle("is-filter-resized", wasResized);
+    return Math.max(minPanelHeight, naturalHeight);
+  };
+
+  const bounds = () => {
+    const sidebarHeight = sidebar.getBoundingClientRect().height;
+    let fixedHeight = 0;
+    for (const child of sidebar.children) {
+      if (child === filterPanel || child === listPane) continue;
+      fixedHeight += child.getBoundingClientRect().height;
+    }
+    const availableHeight = Math.max(minPanelHeight, sidebarHeight - fixedHeight - minListHeight);
+    const naturalHeight = measureNaturalPanelHeight();
+    const maxHeight = Math.max(minPanelHeight, Math.min(availableHeight, naturalHeight));
+    return { min: minPanelHeight, max: maxHeight };
+  };
+
+  const enabled = () => !isMobileLayout() && !filterPanel.hidden;
+
+  const ctrl = window.WebUI.setupSplitter({
+    handle,
+    storageKey,
+    bodyDragClass: "is-resizing-filter",
+    client: (event) => event.clientY,
+    keys: { decrease: ["ArrowUp"], increase: ["ArrowDown"] },
+    enabled,
+    bounds,
+    read: () => filterPanel.getBoundingClientRect().height,
+    write: (height) => {
+      filterPanel.style.height = `${Math.round(height)}px`;
+      filterPanel.classList.add("is-filter-resized");
+    },
+    clear: () => {
+      filterPanel.style.removeProperty("height");
+      filterPanel.classList.remove("is-filter-resized");
+    },
+    sync: (ctrl) => {
+      if (isMobileLayout() || filterPanel.hidden) {
+        wasMobile = isMobileLayout();
+        ctrl.clear({ commit: false });
+        return;
+      }
+      if (sidebar.getBoundingClientRect().height < 48) return;
+      const stored = readStoredNumber(storageKey);
+      if (stored !== null) {
+        wasMobile = false;
+        ctrl.set(stored, { persist: false, commit: false });
+        return;
+      }
+      if (wasMobile) ctrl.clear({ commit: false });
+      wasMobile = false;
+      ctrl.syncAria();
+    },
+  });
+
+  if (window.MutationObserver && ctrl) {
+    const observer = new MutationObserver(ctrl.requestSync);
+    observer.observe(filterPanel, { attributes: true, attributeFilter: ["hidden"] });
+    observer.observe(filterPanel, { childList: true, subtree: true, characterData: true });
+  }
+
+  return ctrl;
 }
 
-function resolveInitialFiltersCollapsed() {
-  const stored = storageGet(FILTER_PANEL_STORAGE_KEY);
-  if (stored === "1") return true;
-  if (stored === "0") return false;
-  return isMobileLayout();
+let filterLayoutSyncQueued = false;
+
+function requestFilterLayoutSync() {
+  if (filterLayoutSyncQueued) return;
+  filterLayoutSyncQueued = true;
+  requestAnimationFrame(() => {
+    filterLayoutSyncQueued = false;
+    window.dispatchEvent(new Event("resize"));
+  });
+}
+
+function ensureFilterSectionActiveBadge(title) {
+  let badge = title.querySelector(".filter-section-active-count");
+  if (badge) return badge;
+
+  badge = document.createElement("span");
+  badge.className = "filter-section-active-count";
+  badge.hidden = true;
+  const label = title.querySelector("[data-filter-section-label], span[id$='-label']");
+  if (label && label.nextSibling) title.insertBefore(badge, label.nextSibling);
+  else if (label) title.appendChild(badge);
+  else title.insertBefore(badge, title.firstChild);
+  return badge;
+}
+
+function setFilterSectionActiveCount(key, count) {
+  const section = $$(".filter-section[data-filter-section]")
+    .find((candidate) => candidate.dataset.filterSection === key);
+  if (!section) return;
+
+  const title = section.querySelector(".filter-section-toggle, .filter-section-title");
+  if (!title) return;
+
+  const activeCount = Math.max(0, Number(count) || 0);
+  const badge = ensureFilterSectionActiveBadge(title);
+  badge.textContent = activeCount ? `(${activeCount})` : "";
+  badge.hidden = !activeCount;
+  badge.setAttribute("aria-label", activeCount ? `${activeCount} active filters` : "");
+  section.classList.toggle("has-active-filters", !!activeCount);
+  requestFilterLayoutSync();
+}
+
+function setFilterSectionActiveCounts(counts) {
+  const entries = counts instanceof Map ? counts.entries() : Object.entries(counts || {});
+  for (const [key, count] of entries) {
+    setFilterSectionActiveCount(key, count);
+  }
+}
+
+window.WebUI.requestFilterLayoutSync = requestFilterLayoutSync;
+window.WebUI.setFilterSectionActiveCount = setFilterSectionActiveCount;
+window.WebUI.setFilterSectionActiveCounts = setFilterSectionActiveCounts;
+
+let storyPanel = null;
+
+function ensureStoryPanelToggle() {
+  if (storyPanel) return storyPanel;
+  storyPanel = window.WebUI.filters.createPanelToggle({
+    panel: "#filter-panel",
+    toggle: "#filter-toggle",
+    left: "#left",
+    storageKey: FILTER_PANEL_STORAGE_KEY,
+    isMobile: isMobileLayout,
+    labels: (collapsed) => uiText(collapsed ? "showFilters" : "hideFilters"),
+    onChange: () => requestAnimationFrame(renderList),
+  });
+  return storyPanel;
 }
 
 function availableFilterSectionKeys() {
@@ -381,12 +441,14 @@ function setFilterSectionCollapsed(key, collapsed, { persist = true } = {}) {
   if (section && section.dataset.fixedOpen === "1") {
     STATE.filterSectionsCollapsed.delete(key);
     syncFilterSection(section);
+    requestFilterLayoutSync();
     if (persist) persistFilterSectionsCollapsed();
     return;
   }
   if (collapsed) STATE.filterSectionsCollapsed.add(key);
   else STATE.filterSectionsCollapsed.delete(key);
   syncFilterSection(section);
+  requestFilterLayoutSync();
   if (persist) persistFilterSectionsCollapsed();
   requestAnimationFrame(renderList);
 }
@@ -402,6 +464,7 @@ function initFilterSections() {
     });
   }
   syncFilterSections();
+  requestFilterLayoutSync();
 }
 
 
@@ -2231,6 +2294,11 @@ function isSnsInlineImageStem(stem) {
   return normalized.includes("sns") || normalized.includes("emoji");
 }
 
+function isInlineEmojiFamilyId(value) {
+  const normalized = normalizeInlineImageId(value);
+  return normalized.includes("emoji") || normalized.includes("emoiji");
+}
+
 function ensureInlineImageAssetLookup() {
   if (STATE.inlineImageLookupLoaded) return Promise.resolve();
   if (STATE.inlineImageLookupPromise) return STATE.inlineImageLookupPromise;
@@ -2402,17 +2470,24 @@ function resolveInlineImageAssetCandidates(imageId) {
   if (!numberKey) return matches;
 
   const padded2 = numberKey.padStart(2, "0");
-  const preferredStems = [
-    `deco_sns_tweet_decorate_${padded2}`,
-    `bg_sns_tweet_decorate_${padded2}`,
-    `sns_sticker_${padded2}`,
+  const emojiPreferredStems = [
     `emoji_02_${numberKey.padStart(3, "0")}`,
     `emoji_01_${numberKey.padStart(3, "0")}`,
   ];
+  const preferredStems = isInlineEmojiFamilyId(normalized)
+    ? emojiPreferredStems
+    : [
+      `deco_sns_tweet_decorate_${padded2}`,
+      `bg_sns_tweet_decorate_${padded2}`,
+      `sns_sticker_${padded2}`,
+      ...emojiPreferredStems,
+    ];
   for (const stem of preferredStems) {
     const match = STATE.inlineImageAssetByStem.get(stem);
     add(match);
   }
+
+  if (isInlineEmojiFamilyId(normalized)) return matches;
 
   add(STATE.inlineImageAssetByNumber.get(numberKey));
   return matches;
@@ -2966,22 +3041,7 @@ function applyUiStrings() {
 
 
 function syncFilterPanel() {
-  const panel = $("#filter-panel");
-  const toggle = $("#filter-toggle");
-  const left = $("#left");
-  if (!panel || !toggle || !left) return;
-
-  panel.hidden = STATE.filtersCollapsed;
-  left.classList.toggle("filters-collapsed", STATE.filtersCollapsed);
-  toggle.setAttribute("aria-expanded", String(!STATE.filtersCollapsed));
-  toggle.textContent = uiText(STATE.filtersCollapsed ? "showFilters" : "hideFilters");
-}
-
-function setFiltersCollapsed(collapsed, { persist = true } = {}) {
-  STATE.filtersCollapsed = !!collapsed;
-  if (persist) persistFiltersCollapsed(STATE.filtersCollapsed);
-  syncFilterPanel();
-  requestAnimationFrame(renderList);
+  storyPanel?.sync();
 }
 
 function buildLanguageSelect() {
@@ -3139,7 +3199,7 @@ async function init() {
     buildLanguageSelect();
     bindEvents();
     initFilterSections();
-    setFiltersCollapsed(resolveInitialFiltersCollapsed(), { persist: false });
+    ensureStoryPanelToggle();
 
     const initialLanguage = resolveInitialLanguage();
     setUiLocale(resolveInitialUiLocale(initialLanguage), { persist: false, refresh: false });
@@ -8068,8 +8128,7 @@ function isInlineEmojiImageId(imageId, asset = null) {
   const rel = String(asset && asset.rel ? asset.rel : "").toLowerCase();
   const stem = String(asset && asset.stem ? asset.stem : "").toLowerCase();
   return (
-    normalized.includes("emoji")
-    || normalized.includes("emoiji")
+    isInlineEmojiFamilyId(normalized)
     || stem.includes("emoji")
     || stem.includes("emoiji")
     || rel.includes("emoji")

@@ -224,21 +224,33 @@
         "map02_lv002"
       ]
     },
+    "a1m8d3": {
+      "order": [
+        "sns_a1m8d3_1",
+        "black_a1m8d3_1",
+        "black_a1m8d3_2",
+        "dlg_a1m8d3_1",
+        "dlg_a1m8d3_2",
+        "dlg_a1m8d3_4",
+        "radio_a1m8d3_1",
+        "radio_a1m8d3_2"
+      ]
+    },
     "a1m9": {
       "order": [
         "dlg_a1m9_1",
-        "dlg_a1m9_2",
         "dlg_a1m9_3",
+        "radio_a1m9_1",
+        "dlg_a1m9_2",
         "dlg_a1m9_4",
         "dlg_a1m9_5",
-        "radio_a1m9_1",
         "radio_a1m9_2",
-        "radio_a1m9_3",
         "dlg_a1m9_6",
+        "radio_a1m9_3",
         "dlg_a1m9_7",
-        "dlg_a1m9_8",
         "black_a1m9_1",
         "black_a1m9_2",
+        "dlg_a1m9_8",
         "env_envTalk_a1m9_1",
         "env_envTalk_a1m9_2",
         "env_envTalk_a1m9_3",
@@ -252,6 +264,7 @@
         "text_a1m9_6",
         "text_a1m9_7"
       ],
+      "locked": true,
       "level": "map02_lv002",
       "levels": [
         "map02_lv002"
@@ -273,6 +286,16 @@
       "levels": [
         "base01_lv001"
       ]
+    },
+    "a1m14": {
+      "order": [
+        "sns_a1m14_1",
+        "dlg_a1m14_1",
+        "dlg_a1m14_3",
+        "dlg_a1m14_2",
+        "env_envTalk_a1m14_1"
+      ],
+      "locked": true
     },
     "c1m1": {
       "order": [
@@ -1649,7 +1672,6 @@
         "cutscene_e0m0_12",
         "cutscene_e0m0_11111"
       ],
-      "locked": true,
       "level": "indie_dg002",
       "levels": [
         "indie_dg002",
@@ -4224,7 +4246,8 @@
         "sns_f1m4d1_2",
         "sns_f1m4d1_3",
         "sns_f1m4d1_4",
-        "text_f1m4d1_1"
+        "text_f1m4d1_1",
+        "nar_002_settlement"
       ],
       "level": "map01_lv002",
       "levels": [
@@ -4821,21 +4844,21 @@
     },
     "gm01m1": {
       "order": [
+        "dlg_gm01m1_1",
+        "dlg_gm01m1_3",
         "radio_gm01m1_1",
         "radio_gm01m1_2",
-        "dlg_gm01m1_1",
-        "dlg_gm01m1_2",
-        "radio_gm01m1_4",
-        "dlg_gm01m1_3",
-        "radio_gm01m1_5",
-        "dlg_gm01m1_4",
-        "dlg_gm01m1_5",
-        "radio_gm01m1_3",
         "black_gm01m1_1",
         "black_gm01m1_2",
         "black_gm01m1_3",
         "env_envTalk_gm01m1_1",
-        "env_envTalk_gm01m1_2"
+        "env_envTalk_gm01m1_2",
+        "radio_gm01m1_4",
+        "radio_gm01m1_5",
+        "dlg_gm01m1_4",
+        "radio_gm01m1_3",
+        "dlg_gm01m1_5",
+        "dlg_gm01m1_2"
       ],
       "level": "map01_lv001",
       "levels": [

@@ -2,7 +2,6 @@
 setlocal
 
 set "EXPORT_ARGS="
-set "VERIFY_EXPORT_ARGS="
 set "AUDIO_ARGS="
 set "EXPORT_FROM_GAME=0"
 set "WITH_ASSETS=0"
@@ -11,9 +10,16 @@ set "ASSET_MODE=full"
 if exist "%~dp0endfield_paths.bat" call "%~dp0endfield_paths.bat"
 if errorlevel 1 exit /b %errorlevel%
 if defined ENDFIELD_GAME_ROOT set "EXPORT_ARGS=%EXPORT_ARGS% --game-root "%ENDFIELD_GAME_ROOT%""
-if defined ENDFIELD_GAME_ROOT set "VERIFY_EXPORT_ARGS=%VERIFY_EXPORT_ARGS% --game-root "%ENDFIELD_GAME_ROOT%""
 if defined ENDFIELD_GAME_ROOT set "AUDIO_ARGS=%AUDIO_ARGS% --game-root "%ENDFIELD_GAME_ROOT%""
 if defined ENDFIELD_EXPORT_ROOT set "AUDIO_ARGS=%AUDIO_ARGS% --export-root "%ENDFIELD_EXPORT_ROOT%""
+
+if not defined ENDFIELD_EXPORT_BENCHMARK_ACTIVE (
+  if /I not "%~1"=="--help" (
+    set "ENDFIELD_EXPORT_BENCHMARK_ACTIVE=1"
+    python .\scripts\benchmark_export.py --label export -- "%~f0" %*
+    exit /b %errorlevel%
+  )
+)
 
 :parse_args
 if "%~1"=="" goto :parsed_args
@@ -63,7 +69,6 @@ if /I "%~1"=="--game-root" (
     exit /b 2
   )
   set "EXPORT_ARGS=%EXPORT_ARGS% "%~1" "%~2""
-  set "VERIFY_EXPORT_ARGS=%VERIFY_EXPORT_ARGS% "%~1" "%~2""
   set "AUDIO_ARGS=%AUDIO_ARGS% "%~1" "%~2""
   shift
   shift
@@ -105,9 +110,6 @@ if "%WITH_ASSETS%"=="1" (
 
 :after_export_full
 
-python .\scripts\verify_export_freshness.py %VERIFY_EXPORT_ARGS%
-if errorlevel 1 exit /b %errorlevel%
-
 python .\scripts\story_builder\refresh_evidence.py
 if errorlevel 1 exit /b %errorlevel%
 
@@ -146,7 +148,7 @@ exit /b 2
 echo Usage: export.bat [--export-from-game] [--with-assets] [--game-root PATH] [export_full_from_game.py options]
 echo.
 echo Runs the Story/Reference WebUI refresh from existing export_full by default,
-echo verifies export freshness, rebuilds source-link evidence, builds CN data,
+echo rebuilds source-link evidence, builds CN data,
 echo and preserves OCR-managed Story sort order. Use --with-assets to also
 echo rebuild Assets tab data and relink CN audio in the same command.
 echo Reading installed game data and tool-based extraction are opt-in.
@@ -161,16 +163,16 @@ echo                         image/model export and full Assets browser index.
 echo   --webui-assets        With --with-assets, use lean WebUI-focused Texture2D media mode.
 echo   --debug-assets        With --with-assets, export exhaustive AnimeStudio diagnostics,
 echo                         then build the full Assets browser index.
-echo   --game-root PATH      Installed Endfield_Data directory used for export,
-echo                         freshness verification, and audio linking.
+echo   --game-root PATH      Installed Endfield_Data directory used for export
+echo                         and audio linking.
 echo   --animestudio-asset-mode webui^|full^|debug
 echo                         Lower-level equivalent of --webui-assets/--full-assets/--debug-assets.
 echo   --animestudio-jobs N  Passed through when --export-from-game is present.
-echo                         Default is 4 for parallel shard/type export.
+echo                         Default is 8 shared workers for pooled AnimeStudio calls.
 echo                         Lower this value if peak AnimeStudio memory is too high.
 echo   --animestudio-shards N
 echo                         Passed through for combined asset exports.
-echo                         Default is 16 shards with 4 concurrent workers.
+echo                         Default is 16 shards consumed by the shared worker pool.
 echo   --animestudio-type-job-mode auto^|parallel^|merged
 echo                         Controls non-sharded AnimeStudio type jobs.
 echo                         auto merges JSON type jobs and keeps asset conversion sharded.
@@ -189,7 +191,9 @@ echo   export.bat --export-from-game --with-assets --webui-assets
 echo.
 echo Other arguments are passed to scripts\export_full_from_game.py only when
 echo --export-from-game is present. The wrapper also forwards --game-root to
-echo the freshness verifier and audio linker.
+echo the audio linker.
+echo Every export.bat run writes a benchmark report under reports\export_benchmarks
+echo and updates reports\export_benchmark_latest.md/json.
 echo.
 echo Companion wrappers:
 echo   build_updates.bat     Build the Updates tab feed.

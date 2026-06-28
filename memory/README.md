@@ -13,6 +13,9 @@ experiments belong under `scratch/` or `tmp/`.
 - `webui_recovery.md`: static WebUI recovery pipeline, page data contracts,
   DialogIdTable registry behavior, update tracking, packaging, serving, and
   export benchmark notes.
+- `character_unity_export_workflow.md`: character recovery path for exporting
+  Endfield model, texture, material, animation, shader-reference, and static
+  prop resources into the Unity viewer project.
 - `story_runtime_extraction_audit.md`: current runtime/AnimeStudio/IL2CPP
   evidence for story recovery, option-response gaps, envEmoji prefab parsing,
   and follow-up decoder priorities.

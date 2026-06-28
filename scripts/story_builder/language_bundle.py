@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json as _radio_cont_json
+import hashlib as _reference_hashlib
 import re as _radio_cont_re
 from functools import lru_cache as _radio_cont_lru_cache
 from pathlib import Path as _RadioContPath
@@ -8254,15 +8255,36 @@ def build_language_bundle(
         return collection_table_cache[cache_key]
 
 
+    def resolve_reference_raw_i18n(raw_value, *, preferred_source: str = "streaming"):
+        if isinstance(raw_value, dict):
+            is_i18n_text = "id" in raw_value and "text" in raw_value
+            resolved_text = t(raw_value.get("id"), preferred_source=preferred_source) if is_i18n_text else ""
+            out = {}
+            for key, value in raw_value.items():
+                if is_i18n_text and key == "text" and resolved_text:
+                    out[key] = resolved_text
+                else:
+                    out[key] = resolve_reference_raw_i18n(value, preferred_source=preferred_source)
+            return out
+        if isinstance(raw_value, list):
+            return [resolve_reference_raw_i18n(value, preferred_source=preferred_source) for value in raw_value]
+        return raw_value
+
+
     def write_raw_reference_bundle() -> dict:
         reference_dir.mkdir(parents=True, exist_ok=True)
         generated = int(time.time())
         table_index: list[dict] = []
         base_reference_rows: dict[str, list[dict]] = {}
         base_reference_files: dict[str, str] = {}
+        base_reference_hashes: dict[str, str] = {}
         total_rows = 0
         total_texts = 0
         total_bytes = 0
+
+        def reference_payload_hash(payload: dict) -> str:
+            text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+            return _reference_hashlib.sha256(text.encode("utf-8")).hexdigest()
 
         for table_source, table_dir in (
             ("streaming", STREAMING_TABLE_DIR),
@@ -8282,6 +8304,7 @@ def build_language_bundle(
                     continue
 
                 row_payloads: list[dict] = []
+                raw_rows: dict[str, object] = {}
                 table_texts = 0
                 for row_index, (row_id, row) in enumerate(
                     sorted(payload.items(), key=lambda item: str(item[0])),
@@ -8320,6 +8343,10 @@ def build_language_bundle(
                         "texts": texts,
                     }
                     row_payloads.append(row_payload)
+                    raw_rows[row_key] = resolve_reference_raw_i18n(
+                        row,
+                        preferred_source=table_source,
+                    )
 
                 if not row_payloads:
                     continue
@@ -8332,6 +8359,7 @@ def build_language_bundle(
                     "table": table_name,
                     "label": collection_display_name(table_path.stem),
                     "rows": row_payloads,
+                    "rawRows": raw_rows,
                 }
                 storage = "full"
                 base_file = ""
@@ -8341,6 +8369,7 @@ def build_language_bundle(
                 if table_source == "persistent" and table_name in base_reference_rows:
                     base_rows = base_reference_rows.get(table_name) or []
                     base_file = base_reference_files.get(table_name) or ""
+                    base_hash = base_reference_hashes.get(table_name) or ""
                     base_by_id = {str(row.get("id") or ""): row for row in base_rows}
                     current_by_id = {str(row.get("id") or ""): row for row in row_payloads}
                     removed_ids = sorted(row_id for row_id in base_by_id if row_id not in current_by_id)
@@ -8348,12 +8377,18 @@ def build_language_bundle(
                         row for row in row_payloads
                         if base_by_id.get(str(row.get("id") or "")) != row
                     ]
+                    changed_raw_rows = {
+                        str(row.get("id") or ""): raw_rows.get(str(row.get("id") or ""))
+                        for row in changed_rows
+                        if str(row.get("id") or "") in raw_rows
+                    }
                     overlay_rows = len(changed_rows)
                     removed_rows = len(removed_ids)
                     if not changed_rows and not removed_ids and base_file:
                         rel_file = base_file
                         storage = "shared"
                         file_bytes = 0
+                        content_hash = base_hash
                     else:
                         rel_file = f"overlays/{table_source}/{table_path.stem}.json"
                         out_payload = {
@@ -8366,16 +8401,20 @@ def build_language_bundle(
                             "rowOrder": [str(row.get("id") or "") for row in row_payloads],
                             "removedRows": removed_ids,
                             "rows": changed_rows,
+                            "rawRows": changed_raw_rows,
                         }
+                        content_hash = reference_payload_hash(out_payload)
                         out_path = write_reference_payload(rel_file, out_payload)
                         file_bytes = out_path.stat().st_size
                         storage = "overlay"
                 else:
+                    content_hash = reference_payload_hash(out_payload)
                     out_path = write_reference_payload(rel_file, out_payload)
                     file_bytes = out_path.stat().st_size
                     if table_source == "streaming":
                         base_reference_rows[table_name] = row_payloads
                         base_reference_files[table_name] = rel_file
+                        base_reference_hashes[table_name] = content_hash
 
                 total_bytes += file_bytes
                 total_rows += len(row_payloads)
@@ -8390,6 +8429,7 @@ def build_language_bundle(
                     "texts": table_texts,
                     "bytes": file_bytes,
                     "storage": storage,
+                    "hash": content_hash,
                 }
                 if base_file:
                     table_row["baseFile"] = base_file

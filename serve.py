@@ -5,7 +5,8 @@ Usage:
     python serve.py 9000   # custom port
 
 Serves the `webui` app at `/`, raw current exported assets at
-`/export_full/...`, and saved previous-export assets at `/export_previous/...`.
+`/export_full/...`, raw StreamingAssets/Data files at `/export_data/...`, and
+saved previous-export assets at `/export_previous/...`.
 """
 from __future__ import annotations
 
@@ -23,8 +24,18 @@ DEFAULT_PORT = 8765
 PROJECT_ROOT = Path(__file__).parent
 WEBUI_ROOT = PROJECT_ROOT / "webui"
 EXPORT_FULL_ROOT = PROJECT_ROOT / "export_full"
+DATA_EXPORT_ROOT_ENV = "WEBUI_DATA_EXPORT_ROOT"
+DEFAULT_DATA_EXPORT_ROOT = EXPORT_FULL_ROOT / "structured" / "StreamingAssets" / "Data"
 STORY_ORDER_OVERRIDE_PATH = WEBUI_ROOT / "overrides" / "story_order.json"
 MAX_WRITE_BYTES = 5 * 1024 * 1024
+
+
+def resolve_data_export_root() -> Path:
+    env_root = os.environ.get(DATA_EXPORT_ROOT_ENV)
+    if env_root:
+        root = Path(env_root)
+        return root if root.is_absolute() else PROJECT_ROOT / root
+    return DEFAULT_DATA_EXPORT_ROOT
 
 
 def resolve_previous_export_root() -> Path:
@@ -48,6 +59,7 @@ def resolve_previous_export_root() -> Path:
 
 
 PREVIOUS_EXPORT_ROOT = resolve_previous_export_root()
+DATA_EXPORT_ROOT = resolve_data_export_root()
 
 
 ERROR_PAGE_TEMPLATE = """<!doctype html>
@@ -209,15 +221,19 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         root = WEBUI_ROOT
         export_full = request_path.startswith("/export_full/") or request_path == "/export_full"
         export_previous = request_path.startswith("/export_previous/") or request_path == "/export_previous"
+        export_data = request_path.startswith("/export_data/") or request_path == "/export_data"
 
         if export_full:
             root = EXPORT_FULL_ROOT
             request_path = "/" + request_path.removeprefix("/export_full").lstrip("/")
+        elif export_data:
+            root = DATA_EXPORT_ROOT
+            request_path = "/" + request_path.removeprefix("/export_data").lstrip("/")
         elif export_previous:
             root = PREVIOUS_EXPORT_ROOT
             request_path = "/" + request_path.removeprefix("/export_previous").lstrip("/")
 
-        if not export_full and not export_previous and request_path in ("", "/"):
+        if not export_full and not export_previous and not export_data and request_path in ("", "/"):
             request_path = "/index.html"
 
         self.directory = str(root)
@@ -334,7 +350,7 @@ def main(argv: list[str] | None = None) -> None:
 
     with http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler) as httpd:
         url = f"http://127.0.0.1:{port}/"
-        print(f"Serving {WEBUI_ROOT}, {EXPORT_FULL_ROOT}, and {PREVIOUS_EXPORT_ROOT} at {url}")
+        print(f"Serving {WEBUI_ROOT}, {EXPORT_FULL_ROOT}, {DATA_EXPORT_ROOT}, and {PREVIOUS_EXPORT_ROOT} at {url}")
         print("Press Ctrl-C to stop.")
         if os.environ.get("WEBUI_NO_BROWSER", "").lower() not in {"1", "true", "yes"}:
             webbrowser.open(url)

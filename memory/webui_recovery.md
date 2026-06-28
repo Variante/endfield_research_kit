@@ -119,7 +119,9 @@ Serving and packaging:
 ## Inline Media Rules
 
 - `sns_emoji_*` assets render as inline emoji. They do not open hover popovers
-  or the full-screen modal.
+  or the full-screen modal. Their resolver only uses exact or emoji-family
+  sprite matches; missing emoji sprites stay unresolved instead of falling back
+  to numbered sticker or SNS decoration assets.
 - `envEmoji_common_*` rows render line-level `emoji` fields using recovered
   Unity prefab aliases, RectTransform layer data, and enter animation curves in
   `story_media.json`.

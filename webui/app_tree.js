@@ -317,7 +317,7 @@ function hasActiveStoryFilters() {
 }
 
 function syncFilterSectionActiveCounts() {
-  for (const section of $$(".filter-section[data-filter-section]")) {
+  for (const section of $$("#filter-panel .filter-section[data-filter-section]")) {
     const count = filterSectionActiveCount(section.dataset.filterSection || "");
     const title = section.querySelector(".filter-section-toggle, .filter-section-title");
     if (!title) continue;
@@ -350,9 +350,6 @@ function preserveCurrentTreeExpansion() {
 }
 
 function buildKindChips() {
-  const wrap = $("#kind-filter");
-  wrap.innerHTML = "";
-
   const kindCounts = countBy(STATE.entries, (e) => entryGroupedKindKey(e));
   const kindKeys = Object.keys(kindCounts)
     .filter((k) => !shouldSuppressKindChip(k))
@@ -361,20 +358,23 @@ function buildKindChips() {
       const bName = kindMeta(b).name || formatStructuredLabel(b);
       return aName.localeCompare(bName, undefined, { numeric: true });
     });
-  const availableTokens = new Set(kindKeys.map(kindFilterToken));
-  pruneFilterSet(STATE.filters.kinds, availableTokens);
-  for (const k of kindKeys) {
-    const n = kindCounts[k] || 0;
-    if (!n) continue;
-    const meta = kindMeta(k);
-    const chip = document.createElement("span");
-    chip.className = `chip kind-chip ${meta.cls || ""}`;
-    chip.dataset.value = kindFilterToken(k);
-    if (STATE.filters.kinds.has(kindFilterToken(k))) chip.classList.add("on");
-    chip.textContent = `${meta.name} (${n})`;
-    chip.addEventListener("click", () => toggleSet(STATE.filters.kinds, kindFilterToken(k), chip));
-    wrap.appendChild(chip);
-  }
+  pruneFilterSet(STATE.filters.kinds, new Set(kindKeys.map(kindFilterToken)));
+  const items = kindKeys
+    .filter((k) => kindCounts[k])
+    .map((k) => {
+      const meta = kindMeta(k);
+      return {
+        value: kindFilterToken(k),
+        label: meta.name,
+        count: kindCounts[k],
+        className: `kind-chip ${meta.cls || ""}`.trim(),
+      };
+    });
+  window.WebUI.filters.buildChips("#kind-filter", items, {
+    active: STATE.filters.kinds,
+    prune: false,
+    onToggle: () => applyFilters(),
+  });
 }
 
 function buildDataTypeChips() {
@@ -384,112 +384,80 @@ function buildDataTypeChips() {
       counts[dataType] = (counts[dataType] || 0) + 1;
     }
   }
-  const wrap = $("#type-filter");
-  wrap.innerHTML = "";
   const dataTypeKeys = Object.keys(counts)
     .filter(Boolean)
     .sort((a, b) => compareDataTypeKeys(a, b, counts));
   pruneFilterSet(STATE.filters.dataTypes, new Set(dataTypeKeys));
-  for (const dataType of dataTypeKeys) {
-    const n = counts[dataType] || 0;
-    if (!n) continue;
-    const chip = document.createElement("span");
-    chip.className = "chip";
-    chip.dataset.value = dataType;
-    if (STATE.filters.dataTypes.has(dataType)) chip.classList.add("on");
-    chip.textContent = `${dataTypeLabel(dataType)} (${n})`;
-    chip.addEventListener("click", () => toggleSet(STATE.filters.dataTypes, dataType, chip));
-    wrap.appendChild(chip);
-  }
+  const items = dataTypeKeys
+    .filter((dataType) => counts[dataType])
+    .map((dataType) => ({ value: dataType, label: dataTypeLabel(dataType), count: counts[dataType] }));
+  window.WebUI.filters.buildChips("#type-filter", items, {
+    active: STATE.filters.dataTypes,
+    prune: false,
+    onToggle: () => applyFilters(),
+  });
 }
 
 function buildMediaChips() {
-  const wrap = $("#media-filter");
-  if (!wrap) return;
-
   const counts = {};
   for (const entry of STATE.entries) {
     for (const mediaKey of entryMediaTypeFilterKeys(entry)) {
       counts[mediaKey] = (counts[mediaKey] || 0) + 1;
     }
   }
-  wrap.innerHTML = "";
   const mediaKeys = MEDIA_TYPE_FILTER_KEYS.filter((key) => counts[key]);
   pruneFilterSet(STATE.filters.media, new Set(mediaKeys));
-  for (const mediaKey of mediaKeys) {
-    const n = counts[mediaKey] || 0;
-    if (!n) continue;
-    const chip = document.createElement("span");
-    chip.className = "chip media-chip";
-    chip.dataset.value = mediaKey;
-    if (STATE.filters.media.has(mediaKey)) chip.classList.add("on");
-    chip.textContent = `${mediaTypeFilterLabel(mediaKey)} (${n})`;
-    chip.addEventListener("click", () => toggleSet(STATE.filters.media, mediaKey, chip));
-    wrap.appendChild(chip);
-  }
+  const items = mediaKeys.map((mediaKey) => ({
+    value: mediaKey,
+    label: mediaTypeFilterLabel(mediaKey),
+    count: counts[mediaKey],
+  }));
+  window.WebUI.filters.buildChips("#media-filter", items, {
+    active: STATE.filters.media,
+    className: "media-chip",
+    prune: false,
+    onToggle: () => applyFilters(),
+  });
 }
 
 function buildStoryIssueChips() {
-  const wrap = $("#story-issue-filter");
-  if (!wrap) return;
-
-  wrap.innerHTML = "";
   const counts = {};
   for (const entry of STATE.entries) {
     for (const code of new Set(entryStoryIssues(entry))) {
       counts[code] = (counts[code] || 0) + 1;
     }
   }
-
   const issueKeys = STORY_ISSUE_ORDER.filter((code) => counts[code]);
   pruneFilterSet(STATE.filters.issues, new Set(issueKeys));
-  for (const code of issueKeys) {
-    const n = counts[code] || 0;
-    if (!n) continue;
-    const chip = document.createElement("span");
-    chip.className = "chip";
-    chip.dataset.value = code;
-    if (STATE.filters.issues.has(code)) chip.classList.add("on");
-    chip.textContent = `${storyIssueLabel(code)} (${n})`;
-    chip.addEventListener("click", () => toggleSet(STATE.filters.issues, code, chip));
-    wrap.appendChild(chip);
-  }
+  const items = issueKeys.map((code) => ({ value: code, label: storyIssueLabel(code), count: counts[code] }));
+  window.WebUI.filters.buildChips("#story-issue-filter", items, {
+    active: STATE.filters.issues,
+    prune: false,
+    onToggle: () => applyFilters(),
+  });
 }
 
 function buildRecoveryMethodChips() {
-  const wrap = $("#recovery-method-filter");
-  if (!wrap) return;
-
-  wrap.innerHTML = "";
   const counts = {};
   for (const entry of STATE.entries) {
     for (const method of new Set(entryRecoveryMethods(entry))) {
       counts[method] = (counts[method] || 0) + 1;
     }
   }
-
   const methodKeys = Object.keys(counts)
     .filter(Boolean)
     .sort((a, b) => compareRecoveryMethodKeys(a, b, counts));
   pruneFilterSet(STATE.filters.recoveryMethods, new Set(methodKeys));
-  for (const method of methodKeys) {
-    const n = counts[method] || 0;
-    if (!n) continue;
-    const chip = document.createElement("span");
-    chip.className = "chip";
-    chip.dataset.value = method;
-    if (STATE.filters.recoveryMethods.has(method)) chip.classList.add("on");
-    chip.textContent = `${recoveryMethodLabel(method)} (${n})`;
-    chip.addEventListener("click", () => toggleSet(STATE.filters.recoveryMethods, method, chip));
-    wrap.appendChild(chip);
-  }
-}
-
-function toggleSet(set, value, el) {
-  if (set.has(value)) set.delete(value);
-  else set.add(value);
-  el.classList.toggle("on");
-  applyFilters();
+  const items = methodKeys.map((method) => ({
+    value: method,
+    label: recoveryMethodLabel(method),
+    count: counts[method],
+  }));
+  window.WebUI.filters.buildChips("#recovery-method-filter", items, {
+    active: STATE.filters.recoveryMethods,
+    prune: false,
+    onToggle: () => applyFilters(),
+  });
 }
 
 const STORY_SORT_MODES = new Set(["natural", "story", "lines-desc", "lines-asc", "key"]);
@@ -874,9 +842,6 @@ function bindEvents() {
   });
   $("#ui-language").addEventListener("click", (ev) => {
     setUiLocale(ev.currentTarget.dataset.nextLocale || "en");
-  });
-  $("#filter-toggle").addEventListener("click", () => {
-    setFiltersCollapsed(!STATE.filtersCollapsed);
   });
   $("#q").addEventListener("input", (ev) => {
     clearTimeout(qTimer);
