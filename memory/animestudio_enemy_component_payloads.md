@@ -78,3 +78,29 @@ Remaining unparsed enemy classes after this pass:
 These are deliberately left as heuristic/unparsed because their nested
 RID/list payloads need more schema evidence. Raw-dumping the whole payload would
 hide the remaining unknowns rather than resolve them.
+
+## Wrapper Decoder Follow-up
+
+A follow-up pass decoded two nested wrapper families that were left open in the
+first component pass:
+
+- `EnemyPartsControllerComponentData`: `partsData[]` entries with part name,
+  unknown aligned name, unknown mode, six bounded float words, and typed RID
+  links to the root/ability/animator component records for each part.
+- `NavMeshObstacleComponentData`: `configList[]` entries with unknown aligned
+  name, visible config name, ten bounded float words, and typed RID links to
+  capsule/box obstacle shape records.
+
+Verification after this wrapper pass:
+
+| Sample | Refs | Decoded | Inferred | Heuristic/unparsed |
+| --- | ---: | ---: | ---: | ---: |
+| `data_eny_0077_agshield` | 50 | 40 | 25 | 10 |
+| `data_eny_0115_nefarcore` | 19 | 17 | 7 | 2 |
+| `data_facemorph_avatar_antal` regression | 243 | 243 | 243 | 0 |
+
+Remaining unparsed classes are now limited to:
+
+- `EnemyTemplateData`
+- `AbilitySystemData`
+- `AbilitySystemForEnemyPartData`
