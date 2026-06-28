@@ -183,3 +183,27 @@ Results:
 The same probe confirms the enemy component family remains separate: the
 `data_eny_0077_agshield` sample still has 50 heuristic refs and apparent false
 managed-reference headers such as `FootBar.HeadBar`.
+
+### MonoBehaviour Enemy Managed-Reference Segmentation
+
+The enemy component family had a boundary-recovery bug before any payload
+decoder could be trusted. The old scanner accepted loose `rid + class/ns/asm`
+triples and could mistake socket, bone, lock-point, and skill-name arrays for
+managed-reference headers.
+
+`tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs` now runs a strong-header chain
+pass before the loose fallback. Strong headers are positive non-null RIDs that
+either resolve through loaded DummyDll metadata or look like runtime
+namespace/assembly pairs such as `Beyond.Gameplay.Core` / `Gameplay.Beyond`.
+
+Verification:
+
+| Sample | Refs | Non-Gameplay refs | Result |
+| --- | ---: | ---: | --- |
+| `data_eny_0077_agshield` | 50 | 0 | bogus `FootBar.HeadBar` and skill-name islands gone |
+| `data_eny_0115_nefarcore` | 19 | 0 | bogus `HP`/`FootBar`/`VBHit` headers gone |
+| `data_facemorph_avatar_antal` regression | 243 | 0 | 243 decoded, 0 heuristic/unparsed |
+
+Remaining enemy gap: the true `Gameplay.Beyond` component records are now
+segmented correctly, but their payload schemas are still `$unparsed` /
+`$heuristic`.
