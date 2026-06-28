@@ -246,3 +246,21 @@ Verification:
 
 Remaining enemy gap: `EnemyTemplateData`, `AbilitySystemData`, and
 `AbilitySystemForEnemyPartData` still need real nested schema recovery.
+
+### MonoBehaviour Enemy Template And Part-Ability Payloads
+
+A third enemy payload pass decoded `EnemyTemplateData` and
+`AbilitySystemForEnemyPartData` in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`.
+
+Verification:
+
+| Sample | Refs | Decoded | Heuristic/unparsed | Partial |
+| --- | ---: | ---: | ---: | ---: |
+| `data_eny_0077_agshield` | 50 | 49 | 1 | 1 |
+| `data_eny_0115_nefarcore` | 19 | 18 | 1 | 0 |
+| `data_facemorph_avatar_antal` regression | 243 | 243 | 0 | 0 |
+
+Remaining enemy gap: `AbilitySystemData`. One longer
+`AbilitySystemForEnemyPartData` payload is decoded as a word-aligned partial
+numeric layout because the 20-word scalar tail used by the seven shorter records
+would mislabel its extra bytes.
