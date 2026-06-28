@@ -858,3 +858,41 @@ family benefits:
 
 Keep this broad command last: it is expensive, and script-first is still most
 valuable for classes that exist in the current DummyDll set.
+
+## 2026-06-28 Short DialogAnimActData Scalar Recovery
+
+A fresh current 11-dialog-timeline probe after the subtitle/camera checkpoint
+still had 16 unparsed managed-reference action payloads and no warning/error
+sidecars:
+
+| Class | Length | Count | Action code | Status before this pass |
+| --- | ---: | ---: | ---: | --- |
+| `DialogAnimActData` | 240 | 10 | 54 | `$heuristic` / `$unparsed` |
+| `DialogCamActData` | 560 | 3 | 51 | `$heuristic` / `$unparsed` |
+| `DialogCamActData` | 588 | 1 | 51 | `$heuristic` / `$unparsed` |
+| `DialogCamActData` | 644 | 1 | 51 | `$heuristic` / `$unparsed` |
+| `DialogEmotionActData` | 220 | 1 | 122 | `$heuristic` / `$unparsed` |
+
+The 10 short `DialogAnimActData` records all came from
+`dlg_npc_0005_1_timeline`, but they have a stable 240-byte scalar layout. They
+share the normal first-12-byte dialog action timing prefix, action code `54`, no
+aligned non-empty strings, fixed zero/constant regions, selector-like integers
+at relative offsets `28` and `236`, an opaque variable int at `72`, and bounded
+finite scalar slots including relative `112`. Because local `tools/DummyDll`
+still does not contain a usable `Beyond.Gameplay.DialogAnimActData` schema, the
+exporter records this as `DialogAnimActDataShortScalarBlock` with
+`$partialDecoded` and `$inferred` rather than claiming a full script layout.
+
+Verification command:
+
+```bat
+cd /d D:\fluffy-dump\tools\animestudio-dummydll-gain-test
+.\..\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" "D:\fluffy-dump\tmp\dialog_timelines_11_shortanim_20260628" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls "D:\fluffy-dump\tools\DummyDll" --mono_behaviour_type_tree_priority ScriptFirst --filter_data "D:\fluffy-dump\tools\animestudio-dummydll-gain-test\dialog_timelines_11_filter_data.json" --names "^dlg_(chen_1|npc_0005_1|e1m1_1|e2m2_1|e2m2_3d5|e2m4_11|e2m4_7|e2m5_2|e2m5_4|e3m1_1|sm1l1m7_1)_timeline$" --map_op "CABMap,Load" --map_name endfield_streamingassets_full_current
+```
+
+Result: exit code 0, 11 JSON files, no `.warning.txt` or `.error.txt` sidecars.
+Marker counts moved from `$partialDecoded=512`, `$heuristic=21`, `$unparsed=16`
+to `$partialDecoded=522`, `$heuristic=10`, `$unparsed=6`. The 10 new decoded
+records are exactly `DialogAnimActDataShortScalarBlock` length `240`; the
+remaining current unparsed action payloads are the longer `DialogCamActData`
+variants (`560`, `588`, `644`) and one length-`220` `DialogEmotionActData`.
