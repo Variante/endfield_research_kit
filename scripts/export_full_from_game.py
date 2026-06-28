@@ -625,6 +625,83 @@ def predict_animestudio_convert_output_path(
     return animestudio_stage_dir(output_root, source, stage) / type_name / f"{file_name}_p{path_id}{extension}"
 
 
+def animestudio_output_path_id_suffix(path: Path) -> str | None:
+    try:
+        suffix = path.stem.rsplit("_p", 1)[1]
+    except IndexError:
+        return None
+    if len(suffix) != 16:
+        return None
+    try:
+        int(suffix, 16)
+    except ValueError:
+        return None
+    return suffix.upper()
+
+
+def build_animestudio_output_path_id_index(
+    output_root: Path,
+    source: str,
+    stage: str,
+    type_name: str,
+) -> dict[str, list[Path]]:
+    type_dir = animestudio_stage_dir(output_root, source, stage) / type_name
+    extension = animestudio_convert_output_extension(type_name)
+    if extension is None or not type_dir.is_dir():
+        return {}
+    index: dict[str, list[Path]] = {}
+    for path in type_dir.iterdir():
+        if not path.is_file() or path.suffix.lower() != extension.lower():
+            continue
+        path_id_suffix = animestudio_output_path_id_suffix(path)
+        if path_id_suffix is not None:
+            index.setdefault(path_id_suffix, []).append(path)
+    return index
+
+
+def resolve_animestudio_convert_output_path(
+    output_root: Path,
+    source: str,
+    stage: str,
+    entry: dict[str, Any],
+    output_path_id_index: dict[str, list[Path]],
+) -> dict[str, Any]:
+    predicted_path = predict_animestudio_convert_output_path(output_root, source, stage, entry)
+    if predicted_path is None:
+        return {
+            "output_path": None,
+            "predicted_output_path": None,
+            "output_exists": False,
+            "output_name_mismatch": False,
+            "path_id_output_candidate_count": 0,
+        }
+    if predicted_path.is_file():
+        return {
+            "output_path": predicted_path,
+            "predicted_output_path": predicted_path,
+            "output_exists": True,
+            "output_name_mismatch": False,
+            "path_id_output_candidate_count": 1,
+        }
+    path_id = format_animestudio_path_id(entry.get("PathID") or 0)
+    candidates = sorted(output_path_id_index.get(path_id, []))
+    if len(candidates) == 1:
+        return {
+            "output_path": candidates[0],
+            "predicted_output_path": predicted_path,
+            "output_exists": True,
+            "output_name_mismatch": candidates[0] != predicted_path,
+            "path_id_output_candidate_count": 1,
+        }
+    return {
+        "output_path": predicted_path,
+        "predicted_output_path": predicted_path,
+        "output_exists": False,
+        "output_name_mismatch": False,
+        "path_id_output_candidate_count": len(candidates),
+    }
+
+
 def asset_entry_identity(entry: dict[str, Any]) -> dict[str, Any]:
     return {
         "name": entry.get("Name"),
@@ -1021,7 +1098,7 @@ def texture2d_record_matches_no_payload_log(
 
 def asset_output_record_sample(record: dict[str, Any]) -> dict[str, Any]:
     entry = record["entry"]
-    return {
+    sample = {
         "name": entry.get("Name"),
         "path_id": entry.get("PathID"),
         "type": entry.get("Type"),
@@ -1030,6 +1107,14 @@ def asset_output_record_sample(record: dict[str, Any]) -> dict[str, Any]:
         "output_path": str(record["output_path"]) if record.get("output_path") is not None else None,
         "output_exists": bool(record.get("output_exists")),
     }
+    predicted_output_path = record.get("predicted_output_path")
+    if record.get("output_name_mismatch") and predicted_output_path is not None:
+        sample["predicted_output_path"] = str(predicted_output_path)
+        sample["output_name_mismatch"] = True
+    candidate_count = int(record.get("path_id_output_candidate_count") or 0)
+    if candidate_count > 1:
+        sample["path_id_output_candidate_count"] = candidate_count
+    return sample
 
 
 def build_animestudio_asset_output_status(
@@ -1046,11 +1131,19 @@ def build_animestudio_asset_output_status(
     records_by_output_path: dict[str, list[dict[str, Any]]] = {}
     records_by_ab: dict[str, list[dict[str, Any]]] = {}
     ab_identities: dict[str, dict[str, Any]] = {}
+    output_path_id_index = build_animestudio_output_path_id_index(output_root, source, stage, type_name)
 
     for entry in entries:
-        output_path = predict_animestudio_convert_output_path(output_root, source, stage, entry)
+        resolved_output = resolve_animestudio_convert_output_path(
+            output_root,
+            source,
+            stage,
+            entry,
+            output_path_id_index,
+        )
+        output_path = resolved_output["output_path"]
         output_key = os.path.normcase(os.path.abspath(output_path)) if output_path is not None else ""
-        output_exists = output_path.is_file() if output_path is not None else False
+        output_exists = bool(resolved_output["output_exists"])
         ab_key = asset_entry_ab_key(entry)
         record = {
             "entry": entry,
@@ -1058,6 +1151,9 @@ def build_animestudio_asset_output_status(
             "output_path": output_path,
             "output_key": output_key,
             "output_exists": output_exists,
+            "predicted_output_path": resolved_output.get("predicted_output_path"),
+            "output_name_mismatch": bool(resolved_output.get("output_name_mismatch")),
+            "path_id_output_candidate_count": int(resolved_output.get("path_id_output_candidate_count") or 0),
         }
         output_records.append(record)
         records_by_ab.setdefault(ab_key, []).append(record)
@@ -1075,6 +1171,7 @@ def build_animestudio_asset_output_status(
     }
     missing_records = [record for record in output_records if not record["output_exists"]]
     missing_output_keys = {record["output_key"] for record in missing_records if record["output_key"]}
+    name_mismatch_records = [record for record in output_records if record.get("output_name_mismatch")]
     texture2d_no_output_count = int((log_issues or {}).get("texture2d_no_output_count") or 0)
     texture2d_no_payload_count = int((log_issues or {}).get("texture2d_no_payload_count") or 0)
     texture2d_decode_failed_count = int((log_issues or {}).get("texture2d_decode_failed_count") or 0)
@@ -1181,6 +1278,8 @@ def build_animestudio_asset_output_status(
             1 for records in records_by_output_path.values() if any(record["output_exists"] for record in records)
         ),
         "actual_output_file_count": actual_output_file_count,
+        "name_mismatch_output_count": len(name_mismatch_records),
+        "name_mismatch_output_samples": [asset_output_record_sample(record) for record in name_mismatch_records[:20]],
         "missing_output_count": len(missing_records),
         "missing_unique_output_count": len(missing_output_keys),
         "allowed_missing_output_count": allowed_missing_output_count,
@@ -1339,6 +1438,57 @@ def animestudio_type_name(type_spec: str | None) -> str:
     if not type_spec:
         return ANIMESTUDIO_MANIFEST_MAP_LABEL
     return str(type_spec).split(":", 1)[0]
+
+
+def animestudio_known_asset_type_names() -> set[str]:
+    specs = (
+        ANIMESTUDIO_FULL_CONVERT_TYPES
+        + ANIMESTUDIO_DEBUG_CONVERT_TYPES
+        + ANIMESTUDIO_WEBUI_CONVERT_TYPES
+        + ANIMESTUDIO_FULL_JSON_TYPES
+        + ANIMESTUDIO_DEBUG_JSON_TYPES
+        + ANIMESTUDIO_WEBUI_JSON_TYPES
+    )
+    return {animestudio_type_name(spec).lower() for spec in specs}
+
+
+def normalize_animestudio_asset_type_filter(values: tuple[str, ...] | list[str]) -> set[str]:
+    selected = {
+        animestudio_type_name(value).lower()
+        for value in values
+        if str(value or "").strip()
+    }
+    known = animestudio_known_asset_type_names()
+    unknown = sorted(selected - known)
+    if unknown:
+        known_text = ", ".join(sorted(known))
+        raise SystemExit(
+            f"Unknown --animestudio-asset-types value(s): {', '.join(unknown)}. "
+            f"Known asset type names: {known_text}"
+        )
+    return selected
+
+
+def apply_animestudio_asset_type_filter(
+    stage_options: dict[str, dict[str, Any]],
+    selected_types: set[str],
+) -> None:
+    if not selected_types:
+        return
+    for stage in ("convert_by_type", "json_by_type"):
+        options = stage_options.get(stage)
+        if not options:
+            continue
+        filtered_types = tuple(
+            type_spec
+            for type_spec in options.get("types", ())
+            if animestudio_type_name(type_spec).lower() in selected_types
+        )
+        options["types"] = filtered_types
+        options["asset_type_filter"] = sorted(selected_types)
+        if not filtered_types:
+            options["asset_map_filter"] = False
+            options["webui_asset_filter"] = False
 
 
 def animestudio_log_suffix(item_name: str) -> str:
@@ -1689,6 +1839,16 @@ def parse_args() -> argparse.Namespace:
         help=(
             "`webui` exports only WebUI-referenced Texture2D media by loading the AnimeStudio asset map "
             "with generated name filters. `full` exports WebUI-facing image/model assets plus Material JSON. `debug` exports the exhaustive conversion and JSON diagnostic sets."
+        ),
+    )
+    parser.add_argument(
+        "--animestudio-asset-types",
+        nargs="+",
+        default=(),
+        help=(
+            "Limit asset-scope AnimeStudio convert/json stages to one or more Unity asset type names, "
+            "for example Sprite, Texture2D, Mesh, Animator, Material, Shader, or AnimationClip. "
+            "Maps still run when selected."
         ),
     )
     parser.add_argument(
@@ -2891,6 +3051,7 @@ def begin_animestudio_asset_shard_work(
         "unique_output_path_count",
         "output_unique_path_count",
         "actual_output_file_count",
+        "name_mismatch_output_count",
         "missing_unique_output_count",
         "allowed_missing_output_count",
         "suspicious_missing_output_count",
@@ -2981,6 +3142,7 @@ def finalize_animestudio_asset_shard_work(
         "unique_output_path_count",
         "output_unique_path_count",
         "actual_output_file_count",
+        "name_mismatch_output_count",
         "missing_unique_output_count",
         "allowed_missing_output_count",
         "suspicious_missing_output_count",
@@ -3695,6 +3857,10 @@ def main() -> int:
     selected_animestudio_stages = ordered_unique(args.animestudio_stages)
     structured_dump_plan = structured_dump_steps(args.structured_dump_mode)
     animestudio_stage_options = animestudio_stage_options_for_scope(args.animestudio_scope, args.animestudio_asset_mode)
+    animestudio_asset_type_filter = normalize_animestudio_asset_type_filter(tuple(args.animestudio_asset_types))
+    if animestudio_asset_type_filter and args.animestudio_scope == "story":
+        raise SystemExit("--animestudio-asset-types applies only to asset or all AnimeStudio scopes")
+    apply_animestudio_asset_type_filter(animestudio_stage_options, animestudio_asset_type_filter)
     vfs_index_enabled = not args.skip_vfs_index and not args.skip_animestudio and args.animestudio_scope != "story"
     webui_texture_name_filter: Path | None = None
     webui_texture_name_filter_signature: dict[str, Any] | None = None
@@ -3759,6 +3925,10 @@ def main() -> int:
     log(f"  animestudio export: {'disabled' if args.skip_animestudio else 'enabled'}")
     log(f"  animestudio scope: {args.animestudio_scope}")
     log(f"  animestudio asset mode: {args.animestudio_asset_mode}")
+    log(
+        "  animestudio asset type filter: "
+        f"{', '.join(sorted(animestudio_asset_type_filter)) if animestudio_asset_type_filter else 'none'}"
+    )
     log(f"  animestudio stages: {', '.join(selected_animestudio_stages)}")
     log(f"  animestudio type job mode: {args.animestudio_type_job_mode}")
     log(
@@ -3831,6 +4001,7 @@ def main() -> int:
         "game": ANIMESTUDIO_GAME,
         "scope": args.animestudio_scope,
         "asset_mode": args.animestudio_asset_mode,
+        "asset_type_filter": sorted(animestudio_asset_type_filter),
         "webui_texture_name_filter": str(webui_texture_name_filter) if webui_texture_name_filter else None,
         "webui_texture_name_filter_signature": webui_texture_name_filter_signature,
         "mono_behaviour_type_tree_priority": animestudio_mono_behaviour_type_tree_priority,
@@ -4289,6 +4460,10 @@ def main() -> int:
         md_lines.append(f"- Game: `{ANIMESTUDIO_GAME}`")
         md_lines.append(f"- Scope: `{args.animestudio_scope}`")
         md_lines.append(f"- Asset mode: `{args.animestudio_asset_mode}`")
+        md_lines.append(
+            "- Asset type filter: "
+            f"`{', '.join(sorted(animestudio_asset_type_filter)) if animestudio_asset_type_filter else 'none'}`"
+        )
         md_lines.append(f"- Selected stages: `{', '.join(selected_animestudio_stages)}`")
         md_lines.append(f"- Type job mode: `{args.animestudio_type_job_mode}`")
         stage_merge_feature = animestudio_summary.get("stage_merge_feature") or {}
