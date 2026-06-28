@@ -226,3 +226,31 @@ Regression checks after the patch:
   `Persistent\VFS\7064D8E2\3267B09A76643181B4083C1E60B678D1.chk`: exit 0,
   1 JSON file, 6 decoded refs, 5 expected partial shells, and the known 2
   empty-type heuristic/unparsed header islands.
+
+## 2026-06-28 I18N Subtitle and Camera Track Recovery
+
+The current `7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk` samples had two
+remaining warning-heavy managed-reference classes in the Story/config block:
+
+| Class | Records | Payload lengths | Decoded layout |
+| --- | ---: | --- | --- |
+| `Beyond.Gameplay.I18NSubtitleAudioBean` | 87 | 20, 68, 84 | `defaultPlayable` PPtr plus `audioLangKey2SubtitleTrack` dictionary serialized as int keys and PPtr values |
+| `Beyond.Gameplay.CameraTrackData` | 2 | 56 | UTF-8 `modeDesc`, UTF-8 `camResName`, bool32 `useTarget`, int32 `mountPoint` |
+
+IL2CPP metadata confirms the I18N fields as `defaultPlayable` and
+`audioLangKey2SubtitleTrack`, and the camera fields as `modeDesc`,
+`camResName`, `useTarget`, and `mountPoint`. The camera descriptions contain
+Chinese text, so the exporter needed an aligned strict UTF-8 string reader
+instead of the older ASCII-only helper.
+
+Targeted verification command:
+
+```bat
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" "D:\fluffy-dump\tmp\mb_i18n_camera_decoded_20260628" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names "^(I18N_CutsceneSubtitleConfig|CameraModeConfig)$"
+```
+
+Result: exit code 0, two JSON files, no `.warning.txt` or `.error.txt` sidecars,
+87/87 `I18NSubtitleAudioBean` records decoded, and 2/2 `CameraTrackData`
+records decoded. The decoded camera records resolve to `无target轨迹测试` /
+`DollyTrackMode1` / `useTarget=false` / `mountPoint=0` and `有target轨迹测试` /
+`DollyTrackMode2` / `useTarget=true` / `mountPoint=80`.
