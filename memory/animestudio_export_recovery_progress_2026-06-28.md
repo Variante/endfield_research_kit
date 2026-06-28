@@ -110,6 +110,36 @@ Remaining shader gap: DXBC containers are extracted, but HLSL decompilation
 needs the native decompiler dependency; Vulkan snippets are identified as
 SMOL-V-like but the current SMOL-V decoder still fails on Endfield samples.
 
+### SMOL-V Shader Decoder
+
+The Vulkan/SMOL-V half of the shader gap is now resolved for the existing
+shader shard set. `tools/AnimeStudio/AnimeStudio.Utility/Smolv/` was updated to
+match upstream SMOL-V encoding version 1 behavior: mask the SMOL-V encoding byte
+out of the SPIR-V version word, add opcodes 331-366, use version-specific opcode
+table bounds, port compact `MemberDecorate` decoding, and bound reads by the
+advertised snippet size.
+
+Verification:
+
+```text
+D:\fluffy-dump\tmp\animestudio_shader_smolv_full_audit_20260628_020333\summary.json
+```
+
+Results from replaying all existing Shader shards after the SMOL-V decoder
+patch:
+
+| Metric | Count |
+| --- | ---: |
+| Shader shards | 9 |
+| Shader outputs | 443 |
+| SMOL-V snippets | 59,686 |
+| DXBC snippets | 56,878 |
+| SMOL-V disassembly errors | 0 |
+| bad dictionary key errors | 0 |
+| nonzero exits | 0 |
+
+Remaining shader gap: DXBC containers are extracted, but HLSL decompilation
+still needs a reliable native/out-of-process decompiler path.
 ### Texture2D Filter Data Identity
 
 The Texture2D decoder was not the cause of the parseable missing-output rows.
