@@ -131,3 +131,31 @@ The only remaining unparsed class in these two enemy samples is
 `AbilitySystemData`. The partial agshield part-ability record is no longer a
 warning/error, but it is still intentionally marked partial until the longer
 variant's nested attribute layout is understood.
+
+## AbilitySystemData Follow-up
+
+A fourth pass added a partial structured decoder for `AbilitySystemData`:
+
+- `shapeData` is decoded as `detectedRadius` and `detectedHeight` from the
+  `BasicShapeData` metadata.
+- `modeConfig.modes` is decoded as counted `ModeData` records through the
+  verified fields ending at `animBoolName`; each mode keeps its compact tail as
+  explicit raw words because the later conditional fields are not yet fully
+  semantic.
+- The remaining payload is preserved as a large word-aligned raw tail with
+  string hints. This removes heuristic/unparsed warnings while keeping the
+  still-unknown `SkillDataBundle`, UI, blackboard, baked-mesh, effect, and
+  preload sections visible for later schema work.
+
+Verification after this pass:
+
+| Sample | Refs | Decoded | Inferred | Heuristic/unparsed | Partial |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `data_eny_0077_agshield` | 50 | 50 | 35 | 0 | 2 |
+| `data_eny_0115_nefarcore` | 19 | 19 | 9 | 0 | 1 |
+| `data_facemorph_avatar_antal` regression | 243 | 243 | 243 | 0 | 0 |
+
+The two enemy samples now have no heuristic or unparsed managed-reference
+records. Remaining semantic gaps are intentionally marked `$partial`:
+`AbilitySystemData` in both samples and the longer 840-byte
+`AbilitySystemForEnemyPartData` variant in `data_eny_0077_agshield`.

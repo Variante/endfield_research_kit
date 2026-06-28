@@ -264,3 +264,23 @@ Remaining enemy gap: `AbilitySystemData`. One longer
 `AbilitySystemForEnemyPartData` payload is decoded as a word-aligned partial
 numeric layout because the 20-word scalar tail used by the seven shorter records
 would mislabel its extra bytes.
+
+### MonoBehaviour Enemy AbilitySystemData Payloads
+
+A fourth enemy payload pass decoded the front structure of `AbilitySystemData`:
+`BasicShapeData`, counted `ModeConfig.modes`, and known `ModeData` fields through
+`animBoolName`. The remaining large payload tail is preserved as word-aligned raw
+words plus string hints because the compact `SkillDataBundle`, UI, baked-mesh,
+effect, and preload sections still need deeper schema recovery.
+
+Verification:
+
+| Sample | Refs | Decoded | Heuristic/unparsed | Partial |
+| --- | ---: | ---: | ---: | ---: |
+| `data_eny_0077_agshield` | 50 | 50 | 0 | 2 |
+| `data_eny_0115_nefarcore` | 19 | 19 | 0 | 1 |
+| `data_facemorph_avatar_antal` regression | 243 | 243 | 0 | 0 |
+
+Enemy managed-reference warning gap for these samples is closed. The remaining
+work is semantic: reducing `$partial` raw tails in `AbilitySystemData` and the
+one longer `AbilitySystemForEnemyPartData` variant.
