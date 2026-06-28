@@ -90,11 +90,8 @@ ANIMESTUDIO_CONVERT_PARSE_DEPENDENCIES = {
     # Parse these dependencies while keeping Sprite as the only export target.
     "Sprite": ("Texture2D:Parse", "SpriteAtlas:Parse"),
 }
-ANIMESTUDIO_ALLOW_MISSING_CONVERT_OUTPUT_TYPES = frozenset({
-    # Some Mesh assets are accepted by AnimeStudio without producing an OBJ.
-    # Cache those no-output successes so future runs do not retry them forever.
-    "Mesh",
-})
+# Missing convert outputs must be explained by structured exporter warnings.
+ANIMESTUDIO_ALLOW_MISSING_CONVERT_OUTPUT_TYPES = frozenset()
 ANIMESTUDIO_MAX_SAFE_FILE_NAME_LENGTH = 120
 ANIMESTUDIO_RESERVED_FILE_NAMES = frozenset(
     {
@@ -185,16 +182,18 @@ ANIMESTUDIO_ASSET_MAP_FILTER_UNSAFE_TYPES = frozenset({
 FAILED_EXTRACT_RE = re.compile(r"Failed to extract (?P<file>.+?): (?P<reason>.+)")
 WARNING_FAIL_RE = re.compile(r"Warning:\s+(?P<count>\d+)\s+files failed")
 ANIMESTUDIO_LOG_LINE_RE = re.compile(r"^\[(?P<level>Error|Warning)\]\s*(?P<message>.*)$")
-ANIMESTUDIO_EXPORT_ERROR_RE = re.compile(r"^\[Error\]\s+Export\s+(?P<asset>.+?)\s+error\s*$")
+ANIMESTUDIO_EXPORT_ERROR_RE = re.compile(r"^\[Error\]\s+Export\s+(?P<asset>.+?)\s+error(?:\s+.*)?$")
 ANIMESTUDIO_METADATA_ONLY_JSON_RE = re.compile(
     r"^\[Warning\]\s+Exporting MonoBehaviour (?P<asset>.+?) as metadata-only JSON after (?P<exception>[^:]+): (?P<reason>.+)$"
 )
 ANIMESTUDIO_TEXTURE2D_NO_OUTPUT_RE = re.compile(r"^\[Warning\]\s+Texture2D no output (?P<fields>.*)$")
+ANIMESTUDIO_MESH_NO_OUTPUT_RE = re.compile(r"^\[Warning\]\s+Mesh no output (?P<fields>.*)$")
 ANIMESTUDIO_ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 ANIMESTUDIO_LOG_KEY_VALUE_RE = re.compile(
     r'(?P<key>[A-Za-z][A-Za-z0-9_]*)=(?:"(?P<quoted>(?:\\.|[^"\\])*)"|(?P<bare>\S*))'
 )
 ANIMESTUDIO_TEXTURE2D_NO_PAYLOAD_REASONS = frozenset({"zero_size_texture", "empty_image_payload"})
+ANIMESTUDIO_MESH_EXPECTED_NO_OUTPUT_REASONS = frozenset({"zero_vertex_count"})
 ANIMESTUDIO_STORY_HINT_RE = re.compile(
     r"(dlg|dlgtl|dialog|timeline|cutscene|option|trunk|playable)",
     re.IGNORECASE,
@@ -1060,7 +1059,7 @@ def normalized_source_leaf(value: Any) -> str:
 def texture2d_no_payload_log_indexes(log_issues: dict[str, Any] | None) -> tuple[set[tuple[int, int, str]], set[tuple[int, int]]]:
     exact_keys: set[tuple[int, int, str]] = set()
     fallback_keys: set[tuple[int, int]] = set()
-    for sample in (log_issues or {}).get("texture2d_no_output_samples") or []:
+    for sample in (log_issues or {}).get("texture2d_no_output_records") or (log_issues or {}).get("texture2d_no_output_samples") or []:
         if sample.get("reason") not in ANIMESTUDIO_TEXTURE2D_NO_PAYLOAD_REASONS:
             continue
         path_id = parse_log_int(sample.get("PathID"))
@@ -1081,6 +1080,45 @@ def texture2d_no_payload_log_indexes(log_issues: dict[str, Any] | None) -> tuple
 
 
 def texture2d_record_matches_no_payload_log(
+    record: dict[str, Any],
+    exact_keys: set[tuple[int, int, str]],
+    fallback_keys: set[tuple[int, int]],
+) -> bool:
+    entry = record["entry"]
+    path_id = parse_log_int(entry.get("PathID"))
+    source_offset = normalized_asset_offset(entry.get("Offset"))
+    if path_id is None or source_offset < 0:
+        return False
+    source_leaf = normalized_source_leaf(entry.get("Source"))
+    if source_leaf and (path_id, source_offset, source_leaf) in exact_keys:
+        return True
+    return (path_id, source_offset) in fallback_keys
+
+
+def mesh_expected_no_output_log_indexes(log_issues: dict[str, Any] | None) -> tuple[set[tuple[int, int, str]], set[tuple[int, int]]]:
+    exact_keys: set[tuple[int, int, str]] = set()
+    fallback_keys: set[tuple[int, int]] = set()
+    for sample in (log_issues or {}).get("mesh_no_output_records") or (log_issues or {}).get("mesh_no_output_samples") or []:
+        if sample.get("reason") not in ANIMESTUDIO_MESH_EXPECTED_NO_OUTPUT_REASONS:
+            continue
+        path_id = parse_log_int(sample.get("PathID"))
+        source_offset = parse_log_int(sample.get("SourceOffset"))
+        if path_id is None or source_offset is None or source_offset < 0:
+            continue
+        source_names = {
+            normalized_source_leaf(sample.get("SourceOriginalPath")),
+            normalized_source_leaf(sample.get("SourceFile")),
+        }
+        source_names.discard("")
+        if source_names:
+            for source_name in source_names:
+                exact_keys.add((path_id, source_offset, source_name))
+        else:
+            fallback_keys.add((path_id, source_offset))
+    return exact_keys, fallback_keys
+
+
+def mesh_record_matches_expected_no_output_log(
     record: dict[str, Any],
     exact_keys: set[tuple[int, int, str]],
     fallback_keys: set[tuple[int, int]],
@@ -1176,6 +1214,10 @@ def build_animestudio_asset_output_status(
     texture2d_no_payload_count = int((log_issues or {}).get("texture2d_no_payload_count") or 0)
     texture2d_decode_failed_count = int((log_issues or {}).get("texture2d_decode_failed_count") or 0)
     texture2d_no_output_samples = list((log_issues or {}).get("texture2d_no_output_samples") or [])[:ANIMESTUDIO_LOG_SAMPLE_LIMIT]
+    mesh_no_output_count = int((log_issues or {}).get("mesh_no_output_count") or 0)
+    mesh_expected_no_output_count = int((log_issues or {}).get("mesh_expected_no_output_count") or 0)
+    mesh_suspicious_no_output_count = int((log_issues or {}).get("mesh_suspicious_no_output_count") or 0)
+    mesh_no_output_samples = list((log_issues or {}).get("mesh_no_output_samples") or [])[:ANIMESTUDIO_LOG_SAMPLE_LIMIT]
     texture2d_no_payload_record_ids: set[int] = set()
     if type_name == "Texture2D" and missing_records and texture2d_no_payload_count:
         exact_log_keys, fallback_log_keys = texture2d_no_payload_log_indexes(log_issues)
@@ -1184,13 +1226,30 @@ def build_animestudio_asset_output_status(
             for record in missing_records
             if texture2d_record_matches_no_payload_log(record, exact_log_keys, fallback_log_keys)
         }
+    mesh_expected_no_output_record_ids: set[int] = set()
+    if type_name == "Mesh" and missing_records and mesh_expected_no_output_count:
+        exact_log_keys, fallback_log_keys = mesh_expected_no_output_log_indexes(log_issues)
+        mesh_expected_no_output_record_ids = {
+            id(record)
+            for record in missing_records
+            if mesh_record_matches_expected_no_output_log(record, exact_log_keys, fallback_log_keys)
+        }
     classified_no_payload_missing_output_count = 0
     if type_name == "Texture2D":
         classified_no_payload_missing_output_count = len(texture2d_no_payload_record_ids)
-    allowed_missing_output_count = len(missing_records) if missing_outputs_allowed else classified_no_payload_missing_output_count
+    classified_mesh_expected_missing_output_count = 0
+    if type_name == "Mesh":
+        classified_mesh_expected_missing_output_count = len(mesh_expected_no_output_record_ids)
+    allowed_missing_output_count = (
+        len(missing_records)
+        if missing_outputs_allowed
+        else classified_no_payload_missing_output_count + classified_mesh_expected_missing_output_count
+    )
     suspicious_missing_output_count = max(0, len(missing_records) - allowed_missing_output_count)
     if type_name == "Texture2D" and texture2d_decode_failed_count:
         suspicious_missing_output_count = max(suspicious_missing_output_count, texture2d_decode_failed_count)
+    if type_name == "Mesh" and mesh_suspicious_no_output_count:
+        suspicious_missing_output_count = max(suspicious_missing_output_count, mesh_suspicious_no_output_count)
     output_path_collision_samples: list[dict[str, Any]] = []
     for output_key in sorted(cross_ab_output_keys)[:20]:
         records = records_by_output_path[output_key]
@@ -1226,6 +1285,12 @@ def build_animestudio_asset_output_status(
                 1
                 for record in records
                 if not record["output_exists"] and id(record) in texture2d_no_payload_record_ids
+            )
+        elif type_name == "Mesh":
+            allowed_missing_entry_count = sum(
+                1
+                for record in records
+                if not record["output_exists"] and id(record) in mesh_expected_no_output_record_ids
             )
         suspicious_missing_entry_count = missing_entry_count - allowed_missing_entry_count
         if suspicious_missing_entry_count:
@@ -1285,10 +1350,15 @@ def build_animestudio_asset_output_status(
         "allowed_missing_output_count": allowed_missing_output_count,
         "suspicious_missing_output_count": suspicious_missing_output_count,
         "classified_no_payload_missing_output_count": classified_no_payload_missing_output_count,
+        "classified_mesh_expected_missing_output_count": classified_mesh_expected_missing_output_count,
         "texture2d_no_output_count": texture2d_no_output_count,
         "texture2d_no_payload_count": texture2d_no_payload_count,
         "texture2d_decode_failed_count": texture2d_decode_failed_count,
         "texture2d_no_output_samples": texture2d_no_output_samples,
+        "mesh_no_output_count": mesh_no_output_count,
+        "mesh_expected_no_output_count": mesh_expected_no_output_count,
+        "mesh_suspicious_no_output_count": mesh_suspicious_no_output_count,
+        "mesh_no_output_samples": mesh_no_output_samples,
         "duplicate_output_path_group_count": len(duplicate_output_keys),
         "duplicate_output_entry_count": sum(len(records_by_output_path[key]) - 1 for key in duplicate_output_keys),
         "cross_ab_output_collision_group_count": len(cross_ab_output_keys),
@@ -2358,11 +2428,17 @@ def summarize_animestudio_log_issues(stdout_log: str | Path | None, stderr_log: 
         "texture2d_no_output_count": 0,
         "texture2d_no_payload_count": 0,
         "texture2d_decode_failed_count": 0,
+        "mesh_no_output_count": 0,
+        "mesh_expected_no_output_count": 0,
+        "mesh_suspicious_no_output_count": 0,
         "samples": [],
         "export_error_samples": [],
         "story_like_export_error_samples": [],
         "metadata_only_json_samples": [],
         "texture2d_no_output_samples": [],
+        "texture2d_no_output_records": [],
+        "mesh_no_output_samples": [],
+        "mesh_no_output_records": [],
         "missing_logs": [],
     }
 
@@ -2433,7 +2509,39 @@ def summarize_animestudio_log_issues(stdout_log: str | Path | None, stderr_log: 
                     ):
                         if field in fields:
                             sample[field] = fields[field]
+                    summary["texture2d_no_output_records"].append(sample)
                     add_sample("texture2d_no_output_samples", sample)
+                mesh_no_output_match = ANIMESTUDIO_MESH_NO_OUTPUT_RE.match(text)
+                if mesh_no_output_match:
+                    fields = parse_animestudio_log_fields(mesh_no_output_match.group("fields"))
+                    reason = fields.get("reason", "")
+                    summary["mesh_no_output_count"] += 1
+                    if reason in ANIMESTUDIO_MESH_EXPECTED_NO_OUTPUT_REASONS:
+                        summary["mesh_expected_no_output_count"] += 1
+                    else:
+                        summary["mesh_suspicious_no_output_count"] += 1
+                    sample = {
+                        "stream": stream_name,
+                        "line": line_number,
+                        "reason": reason,
+                    }
+                    for field in (
+                        "name",
+                        "PathID",
+                        "SourceFile",
+                        "SourceOriginalPath",
+                        "SourceOffset",
+                        "Container",
+                        "VertexCount",
+                        "VerticesLength",
+                        "SubMeshCount",
+                        "IndexCount",
+                        "ByteSize",
+                    ):
+                        if field in fields:
+                            sample[field] = fields[field]
+                    summary["mesh_no_output_records"].append(sample)
+                    add_sample("mesh_no_output_samples", sample)
 
                 if "Exception" in text:
                     summary["exception_count"] += 1
@@ -2494,6 +2602,12 @@ def summarize_animestudio_log_issues(stdout_log: str | Path | None, stderr_log: 
         summary.pop("metadata_only_json_samples", None)
     if not summary["texture2d_no_output_samples"]:
         summary.pop("texture2d_no_output_samples", None)
+    if not summary["texture2d_no_output_records"]:
+        summary.pop("texture2d_no_output_records", None)
+    if not summary["mesh_no_output_samples"]:
+        summary.pop("mesh_no_output_samples", None)
+    if not summary["mesh_no_output_records"]:
+        summary.pop("mesh_no_output_records", None)
     return summary
 
 
@@ -2509,11 +2623,17 @@ def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]
         "texture2d_no_output_count": 0,
         "texture2d_no_payload_count": 0,
         "texture2d_decode_failed_count": 0,
+        "mesh_no_output_count": 0,
+        "mesh_expected_no_output_count": 0,
+        "mesh_suspicious_no_output_count": 0,
         "samples": [],
         "export_error_samples": [],
         "story_like_export_error_samples": [],
         "metadata_only_json_samples": [],
         "texture2d_no_output_samples": [],
+        "texture2d_no_output_records": [],
+        "mesh_no_output_samples": [],
+        "mesh_no_output_records": [],
         "missing_logs": [],
     }
     sample_keys = (
@@ -2522,6 +2642,7 @@ def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]
         "story_like_export_error_samples",
         "metadata_only_json_samples",
         "texture2d_no_output_samples",
+        "mesh_no_output_samples",
     )
     count_keys = (
         "error_count",
@@ -2534,6 +2655,9 @@ def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]
         "texture2d_no_output_count",
         "texture2d_no_payload_count",
         "texture2d_decode_failed_count",
+        "mesh_no_output_count",
+        "mesh_expected_no_output_count",
+        "mesh_suspicious_no_output_count",
     )
     for result in results:
         issues = summarize_animestudio_log_issues(result.stdout_log, result.stderr_log)
@@ -2547,9 +2671,15 @@ def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]
                 enriched = dict(sample)
                 enriched.setdefault("command", result.name)
                 target.append(enriched)
+        for key in ("texture2d_no_output_records", "mesh_no_output_records"):
+            target = merged.setdefault(key, [])
+            for sample in issues.get(key) or []:
+                enriched = dict(sample)
+                enriched.setdefault("command", result.name)
+                target.append(enriched)
         merged["missing_logs"].extend(issues.get("missing_logs") or [])
 
-    for key in sample_keys + ("missing_logs",):
+    for key in sample_keys + ("texture2d_no_output_records", "mesh_no_output_records", "missing_logs"):
         if not merged.get(key):
             merged.pop(key, None)
     return merged
@@ -3056,6 +3186,10 @@ def begin_animestudio_asset_shard_work(
         "allowed_missing_output_count",
         "suspicious_missing_output_count",
         "classified_no_payload_missing_output_count",
+        "classified_mesh_expected_missing_output_count",
+        "mesh_no_output_count",
+        "mesh_expected_no_output_count",
+        "mesh_suspicious_no_output_count",
         "texture2d_no_output_count",
         "texture2d_no_payload_count",
         "texture2d_decode_failed_count",
@@ -3147,9 +3281,13 @@ def finalize_animestudio_asset_shard_work(
         "allowed_missing_output_count",
         "suspicious_missing_output_count",
         "classified_no_payload_missing_output_count",
+        "classified_mesh_expected_missing_output_count",
         "texture2d_no_output_count",
         "texture2d_no_payload_count",
         "texture2d_decode_failed_count",
+        "mesh_no_output_count",
+        "mesh_expected_no_output_count",
+        "mesh_suspicious_no_output_count",
         "duplicate_output_path_group_count",
         "duplicate_output_entry_count",
         "cross_ab_output_collision_group_count",
@@ -3163,6 +3301,10 @@ def finalize_animestudio_asset_shard_work(
     missing_output_count = int(status_summary.get("missing_output_count") or 0)
     suspicious_missing_output_count = int(status_summary.get("suspicious_missing_output_count") or 0)
     texture2d_decode_failed_count = int(status_summary.get("texture2d_decode_failed_count") or 0)
+    mesh_suspicious_no_output_count = int(status_summary.get("mesh_suspicious_no_output_count") or 0)
+    classified_mesh_expected_missing_output_count = int(
+        status_summary.get("classified_mesh_expected_missing_output_count") or 0
+    )
     all_shards_returned_cleanly = (
         bool(ordered_results)
         and len(ordered_results) == len(shards)
@@ -3181,28 +3323,49 @@ def finalize_animestudio_asset_shard_work(
         and export_error_count == 0
         and all_shards_returned_cleanly
     )
-    if not missing_outputs_allowed and not texture2d_missing_outputs_explained:
+    mesh_missing_outputs_explained = (
+        type_name == "Mesh"
+        and missing_output_count > 0
+        and suspicious_missing_output_count == 0
+        and mesh_suspicious_no_output_count == 0
+        and classified_mesh_expected_missing_output_count == missing_output_count
+        and export_error_count == 0
+        and all_shards_returned_cleanly
+    )
+    if not missing_outputs_allowed and not texture2d_missing_outputs_explained and not mesh_missing_outputs_explained:
         asset_info["allowed_missing_output_count"] = 0
     all_succeeded = (
         all_shards_returned_cleanly
-        and (missing_output_count == 0 or missing_outputs_allowed or texture2d_missing_outputs_explained)
+        and (
+            missing_output_count == 0
+            or missing_outputs_allowed
+            or texture2d_missing_outputs_explained
+            or mesh_missing_outputs_explained
+        )
         and export_error_count == 0
         and texture2d_decode_failed_count == 0
+        and mesh_suspicious_no_output_count == 0
     )
     if missing_output_count and missing_outputs_allowed:
         log(
             f"  animestudio asset shards {stage}:{type_name} for {source}: "
-            f"allowed {missing_output_count} no-output Mesh entries"
+            f"allowed {missing_output_count} no-output {type_name} entries"
         )
     elif missing_output_count and texture2d_missing_outputs_explained:
         log(
             f"  animestudio asset shards {stage}:{type_name} for {source}: "
             f"allowed {asset_info.get('allowed_missing_output_count') or missing_output_count} no-payload Texture2D entries"
         )
+    elif missing_output_count and mesh_missing_outputs_explained:
+        log(
+            f"  animestudio asset shards {stage}:{type_name} for {source}: "
+            f"allowed {classified_mesh_expected_missing_output_count} zero-vertex Mesh no-output entries"
+        )
     if not all_succeeded and (
         suspicious_missing_output_count
         or export_error_count
         or texture2d_decode_failed_count
+        or mesh_suspicious_no_output_count
         or len(ordered_results) != len(shards)
     ):
         log(
@@ -3211,6 +3374,7 @@ def finalize_animestudio_asset_shard_work(
             f"suspicious_missing_outputs={suspicious_missing_output_count} "
             f"export_errors={export_error_count} "
             f"texture2d_decode_failed={texture2d_decode_failed_count} "
+            f"mesh_suspicious_no_output={mesh_suspicious_no_output_count} "
             f"completed_shards={len(ordered_results)}/{len(shards)}"
         )
     return (
