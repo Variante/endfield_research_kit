@@ -188,12 +188,14 @@ ANIMESTUDIO_METADATA_ONLY_JSON_RE = re.compile(
 )
 ANIMESTUDIO_TEXTURE2D_NO_OUTPUT_RE = re.compile(r"^\[Warning\]\s+Texture2D no output (?P<fields>.*)$")
 ANIMESTUDIO_MESH_NO_OUTPUT_RE = re.compile(r"^\[Warning\]\s+Mesh no output (?P<fields>.*)$")
+ANIMESTUDIO_ANIMATOR_NO_OUTPUT_RE = re.compile(r"^\[Warning\]\s+Animator no output (?P<fields>.*)$")
 ANIMESTUDIO_ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 ANIMESTUDIO_LOG_KEY_VALUE_RE = re.compile(
     r'(?P<key>[A-Za-z][A-Za-z0-9_]*)=(?:"(?P<quoted>(?:\\.|[^"\\])*)"|(?P<bare>\S*))'
 )
 ANIMESTUDIO_TEXTURE2D_NO_PAYLOAD_REASONS = frozenset({"zero_size_texture", "empty_image_payload"})
 ANIMESTUDIO_MESH_EXPECTED_NO_OUTPUT_REASONS = frozenset({"zero_vertex_count"})
+ANIMESTUDIO_ANIMATOR_EXPECTED_NO_OUTPUT_REASONS = frozenset({"no_mesh"})
 ANIMESTUDIO_STORY_HINT_RE = re.compile(
     r"(dlg|dlgtl|dialog|timeline|cutscene|option|trunk|playable)",
     re.IGNORECASE,
@@ -1218,6 +1220,10 @@ def build_animestudio_asset_output_status(
     mesh_expected_no_output_count = int((log_issues or {}).get("mesh_expected_no_output_count") or 0)
     mesh_suspicious_no_output_count = int((log_issues or {}).get("mesh_suspicious_no_output_count") or 0)
     mesh_no_output_samples = list((log_issues or {}).get("mesh_no_output_samples") or [])[:ANIMESTUDIO_LOG_SAMPLE_LIMIT]
+    animator_no_output_count = int((log_issues or {}).get("animator_no_output_count") or 0)
+    animator_no_mesh_count = int((log_issues or {}).get("animator_no_mesh_count") or 0)
+    animator_suspicious_no_output_count = int((log_issues or {}).get("animator_suspicious_no_output_count") or 0)
+    animator_no_output_samples = list((log_issues or {}).get("animator_no_output_samples") or [])[:ANIMESTUDIO_LOG_SAMPLE_LIMIT]
     texture2d_no_payload_record_ids: set[int] = set()
     if type_name == "Texture2D" and missing_records and texture2d_no_payload_count:
         exact_log_keys, fallback_log_keys = texture2d_no_payload_log_indexes(log_issues)
@@ -1359,6 +1365,10 @@ def build_animestudio_asset_output_status(
         "mesh_expected_no_output_count": mesh_expected_no_output_count,
         "mesh_suspicious_no_output_count": mesh_suspicious_no_output_count,
         "mesh_no_output_samples": mesh_no_output_samples,
+        "animator_no_output_count": animator_no_output_count,
+        "animator_no_mesh_count": animator_no_mesh_count,
+        "animator_suspicious_no_output_count": animator_suspicious_no_output_count,
+        "animator_no_output_samples": animator_no_output_samples,
         "duplicate_output_path_group_count": len(duplicate_output_keys),
         "duplicate_output_entry_count": sum(len(records_by_output_path[key]) - 1 for key in duplicate_output_keys),
         "cross_ab_output_collision_group_count": len(cross_ab_output_keys),
@@ -2431,6 +2441,9 @@ def summarize_animestudio_log_issues(stdout_log: str | Path | None, stderr_log: 
         "mesh_no_output_count": 0,
         "mesh_expected_no_output_count": 0,
         "mesh_suspicious_no_output_count": 0,
+        "animator_no_output_count": 0,
+        "animator_no_mesh_count": 0,
+        "animator_suspicious_no_output_count": 0,
         "samples": [],
         "export_error_samples": [],
         "story_like_export_error_samples": [],
@@ -2439,6 +2452,8 @@ def summarize_animestudio_log_issues(stdout_log: str | Path | None, stderr_log: 
         "texture2d_no_output_records": [],
         "mesh_no_output_samples": [],
         "mesh_no_output_records": [],
+        "animator_no_output_samples": [],
+        "animator_no_output_records": [],
         "missing_logs": [],
     }
 
@@ -2542,6 +2557,43 @@ def summarize_animestudio_log_issues(stdout_log: str | Path | None, stderr_log: 
                             sample[field] = fields[field]
                     summary["mesh_no_output_records"].append(sample)
                     add_sample("mesh_no_output_samples", sample)
+                animator_no_output_match = ANIMESTUDIO_ANIMATOR_NO_OUTPUT_RE.match(text)
+                if animator_no_output_match:
+                    fields = parse_animestudio_log_fields(animator_no_output_match.group("fields"))
+                    reason = fields.get("reason", "")
+                    summary["animator_no_output_count"] += 1
+                    if reason in ANIMESTUDIO_ANIMATOR_EXPECTED_NO_OUTPUT_REASONS:
+                        summary["animator_no_mesh_count"] += 1
+                    else:
+                        summary["animator_suspicious_no_output_count"] += 1
+                    sample = {
+                        "stream": stream_name,
+                        "line": line_number,
+                        "reason": reason,
+                    }
+                    for field in (
+                        "name",
+                        "PathID",
+                        "SourceFile",
+                        "SourceOriginalPath",
+                        "SourceOffset",
+                        "Container",
+                        "GameObjectName",
+                        "GameObjectPathID",
+                        "GameObjectPointerPathID",
+                        "AvatarPathID",
+                        "ControllerPathID",
+                        "HasTransformHierarchy",
+                        "MeshCount",
+                        "MaterialCount",
+                        "TextureCount",
+                        "AnimationCount",
+                        "ExportPath",
+                    ):
+                        if field in fields:
+                            sample[field] = fields[field]
+                    summary["animator_no_output_records"].append(sample)
+                    add_sample("animator_no_output_samples", sample)
 
                 if "Exception" in text:
                     summary["exception_count"] += 1
@@ -2608,6 +2660,10 @@ def summarize_animestudio_log_issues(stdout_log: str | Path | None, stderr_log: 
         summary.pop("mesh_no_output_samples", None)
     if not summary["mesh_no_output_records"]:
         summary.pop("mesh_no_output_records", None)
+    if not summary["animator_no_output_samples"]:
+        summary.pop("animator_no_output_samples", None)
+    if not summary["animator_no_output_records"]:
+        summary.pop("animator_no_output_records", None)
     return summary
 
 
@@ -2626,6 +2682,9 @@ def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]
         "mesh_no_output_count": 0,
         "mesh_expected_no_output_count": 0,
         "mesh_suspicious_no_output_count": 0,
+        "animator_no_output_count": 0,
+        "animator_no_mesh_count": 0,
+        "animator_suspicious_no_output_count": 0,
         "samples": [],
         "export_error_samples": [],
         "story_like_export_error_samples": [],
@@ -2634,6 +2693,8 @@ def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]
         "texture2d_no_output_records": [],
         "mesh_no_output_samples": [],
         "mesh_no_output_records": [],
+        "animator_no_output_samples": [],
+        "animator_no_output_records": [],
         "missing_logs": [],
     }
     sample_keys = (
@@ -2643,6 +2704,7 @@ def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]
         "metadata_only_json_samples",
         "texture2d_no_output_samples",
         "mesh_no_output_samples",
+        "animator_no_output_samples",
     )
     count_keys = (
         "error_count",
@@ -2658,6 +2720,9 @@ def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]
         "mesh_no_output_count",
         "mesh_expected_no_output_count",
         "mesh_suspicious_no_output_count",
+        "animator_no_output_count",
+        "animator_no_mesh_count",
+        "animator_suspicious_no_output_count",
     )
     for result in results:
         issues = summarize_animestudio_log_issues(result.stdout_log, result.stderr_log)
@@ -2671,7 +2736,7 @@ def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]
                 enriched = dict(sample)
                 enriched.setdefault("command", result.name)
                 target.append(enriched)
-        for key in ("texture2d_no_output_records", "mesh_no_output_records"):
+        for key in ("texture2d_no_output_records", "mesh_no_output_records", "animator_no_output_records"):
             target = merged.setdefault(key, [])
             for sample in issues.get(key) or []:
                 enriched = dict(sample)
@@ -2679,7 +2744,7 @@ def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]
                 target.append(enriched)
         merged["missing_logs"].extend(issues.get("missing_logs") or [])
 
-    for key in sample_keys + ("texture2d_no_output_records", "mesh_no_output_records", "missing_logs"):
+    for key in sample_keys + ("texture2d_no_output_records", "mesh_no_output_records", "animator_no_output_records", "missing_logs"):
         if not merged.get(key):
             merged.pop(key, None)
     return merged
@@ -3190,6 +3255,9 @@ def begin_animestudio_asset_shard_work(
         "mesh_no_output_count",
         "mesh_expected_no_output_count",
         "mesh_suspicious_no_output_count",
+        "animator_no_output_count",
+        "animator_no_mesh_count",
+        "animator_suspicious_no_output_count",
         "texture2d_no_output_count",
         "texture2d_no_payload_count",
         "texture2d_decode_failed_count",
@@ -3288,6 +3356,9 @@ def finalize_animestudio_asset_shard_work(
         "mesh_no_output_count",
         "mesh_expected_no_output_count",
         "mesh_suspicious_no_output_count",
+        "animator_no_output_count",
+        "animator_no_mesh_count",
+        "animator_suspicious_no_output_count",
         "duplicate_output_path_group_count",
         "duplicate_output_entry_count",
         "cross_ab_output_collision_group_count",
@@ -4727,7 +4798,9 @@ def main() -> int:
                         f"eof=`{issues.get('end_of_stream_count', 0)}`, "
                         f"export_errors=`{issues.get('export_error_count', 0)}`, "
                         f"story_like_export_errors=`{issues.get('story_like_export_error_count', 0)}`, "
-                        f"metadata_only_json=`{issues.get('metadata_only_json_count', 0)}`"
+                        f"metadata_only_json=`{issues.get('metadata_only_json_count', 0)}`, "
+                        f"animator_no_output=`{issues.get('animator_no_output_count', 0)}`, "
+                        f"animator_no_mesh=`{issues.get('animator_no_mesh_count', 0)}`"
                     )
                     samples = issues.get("story_like_export_error_samples") or issues.get("export_error_samples") or []
                     for sample in samples[:3]:
@@ -4742,6 +4815,13 @@ def main() -> int:
                                 "    metadata-only sample: "
                                 f"`{sample.get('asset')}`"
                                 + (f" - {sample.get('exception')}" if sample.get("exception") else "")
+                            )
+                    if not samples:
+                        for sample in (issues.get("animator_no_output_samples") or [])[:3]:
+                            md_lines.append(
+                                "    animator no-output sample: "
+                                f"`{sample.get('name')}`"
+                                + (f" - {sample.get('reason')}" if sample.get("reason") else "")
                             )
 
     md_lines.extend(
