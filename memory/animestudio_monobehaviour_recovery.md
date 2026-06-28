@@ -182,3 +182,47 @@ parseable JSON files before being stopped. A structured scan found 35 remaining
 none were dialog managed-reference classes. The sampled remaining types were
 animation event handlers such as `PostAudioHandler`, `FootStepHandler`, and
 `WeaponVisibleHandler` under `Beyond.Gameplay.View.Animation`.
+
+## 2026-06-28 Animation Event Handler Recovery
+
+The Huygens broad MonoBehaviour probe showed a small live family of
+`Beyond.Gameplay.View.Animation` managed-reference records that were still
+marked `$heuristic`/`$unparsed`. All observed payloads were exactly four bytes:
+
+| Class | Records | Payload |
+| --- | ---: | --- |
+| `PostAudioHandler` | 15 | `0x3f000000` = `0.5f` |
+| `FootStepHandler` | 15 | `0x3f000000` = `0.5f` |
+| `WeaponVisibleHandler` | 4 | `0x00000000` = `0.0f` |
+| `CharPerformHandler` | 1 | `0x3f000000` = `0.5f` |
+
+IL2CPP metadata shows these classes inherit
+`Beyond.Gameplay.View.Animation.FastAnimationEventHandler`, whose serialized
+base field is `_weightThreshold`. The derived classes above only contributed
+static or runtime-only own fields in the observed managed-reference payloads, so
+the AnimeStudio exporter now decodes the four-byte payload as inherited
+`_weightThreshold`.
+
+Targeted verification command:
+
+```bat
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\79C9C13CFD1A1A38E3C8279B47406BCD.chk" "D:\fluffy-dump\tmp\mb_animation_handler_patched2" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names "^(MonoBehaviour#243627|MonoBehaviour#246215|MonoBehaviour#246373|MonoBehaviour#28850|MonoBehaviour#46108|MonoBehaviour#46684|MonoBehaviour#47000|MonoBehaviour#47544|MonoBehaviour#47906|MonoBehaviour#47920|MonoBehaviour#48344|MonoBehaviour#48930|MonoBehaviour#49100|MonoBehaviour#49322|MonoBehaviour#49396)$"
+```
+
+Result: exit code 0, 15 JSON files, zero `$heuristic`, `$unparsed`, or
+`$partial` marker files. Decoded animation-handler records: 15
+`PostAudioHandler`, 15 `FootStepHandler`, 4 `WeaponVisibleHandler`, and 1
+`CharPerformHandler`.
+
+Regression checks after the patch:
+
+- `DialogOptionPlayableAsset` on
+  `StreamingAssets\VFS\7064D8E2\79C9C13CFD1A1A38E3C8279B47406BCD.chk`: exit 0,
+  45 JSON files, zero marker files.
+- Streaming ability-entity samples on
+  `StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk`: exit 0,
+  2 JSON files, 10 decoded refs, 6 expected partial shells, zero unparsed refs.
+- Persistent Camille ability-entity sample on
+  `Persistent\VFS\7064D8E2\3267B09A76643181B4083C1E60B678D1.chk`: exit 0,
+  1 JSON file, 6 decoded refs, 5 expected partial shells, and the known 2
+  empty-type heuristic/unparsed header islands.
