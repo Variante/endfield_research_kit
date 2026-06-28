@@ -130,3 +130,34 @@ filtering. The next fix should be in export selection/accounting: use
 `filter_data` identity (`Source`, `Offset`, `PathID`, `Type`) to select assets,
 or avoid treating asset-map `Name` as the output filename when it diverges from
 `Texture2D.m_Name`.
+## Follow-up Fix
+
+Implemented after this investigation:
+
+- `tools/AnimeStudio/AnimeStudio.CLI/Studio.cs` now treats `filter_data`
+  identity as authoritative during final asset selection. A loaded asset whose
+  source, bundle offset, PathID, and type match `filter_data` is kept even if
+  the `--names` regex was built from a divergent asset-map display name.
+- Ordinary name/container/type filters still apply when no `filter_data`
+  identity matches.
+
+Verification used a representative row from the
+`asset_map_name_mismatch_parseable` class:
+
+```text
+map Name: 74618664eecd07dc
+actual Texture2D.m_Name: facskill_hub_mine_spd_20
+PathID: -598241958808313765
+format: BC7
+```
+
+Running the CLI with the original wrong map-name `--names` file plus the
+one-row `filter_data` now exports:
+
+```text
+tmp/texture2d_filter_identity_repro/after/Texture2D/facskill_hub_mine_spd_20_pF7B29E1BAB7F205B.png
+```
+
+This addresses the parseable missing-output class without changing Texture2D
+decoding. The zero-size `Font Texture` placeholders remain correctly
+non-extractable because they contain no pixel payload.
