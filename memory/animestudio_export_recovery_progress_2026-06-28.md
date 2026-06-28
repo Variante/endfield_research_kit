@@ -207,3 +207,26 @@ Verification:
 Remaining enemy gap: the true `Gameplay.Beyond` component records are now
 segmented correctly, but their payload schemas are still `$unparsed` /
 `$heuristic`.
+
+### MonoBehaviour Enemy Component Payload Decoders
+
+After the segmentation fix, a second pass decoded the small and bounded enemy
+component payloads in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`.
+
+Verification:
+
+| Sample | Refs | Decoded | Inferred | Heuristic/unparsed |
+| --- | ---: | ---: | ---: | ---: |
+| `data_eny_0077_agshield` | 50 | 38 | 23 | 12 |
+| `data_eny_0115_nefarcore` | 19 | 17 | 7 | 2 |
+| `data_facemorph_avatar_antal` regression | 243 | 243 | 243 | 0 |
+
+Newly decoded families include `ModelComponentData`, `EnemyAIComponentData`,
+`EnemyControllerData`, `ControlledStateComponentData`, obstacle capsule/box
+records, zero-length no-op components, and inferred fixed/raw layouts for
+`EnemyRootComponentData`, movement, RVO, mesh adjust, pivot, part-root, and
+part-animator records.
+
+Remaining enemy gap: `EnemyTemplateData`, `AbilitySystemData`,
+`AbilitySystemForEnemyPartData`, `EnemyPartsControllerComponentData`, and
+`NavMeshObstacleComponentData` still need real nested schema recovery.
