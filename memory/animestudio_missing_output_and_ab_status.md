@@ -226,3 +226,54 @@ Focused parser/status checks showed:
 - A synthetic `reason=decode_failed` warning remains `dirty_missing_output`, with `texture2d_decode_failed_count=1` and `suspicious_missing_output_count=1`.
 
 Current interpretation: zero-size `Font Texture` rows are understood non-extractable placeholders when confirmed by fresh conversion logs. Report-only manifests from stale outputs still cannot infer this without log evidence, so they should stay suspicious until a real conversion stage emits the structured warning.
+
+## 2026-06-28 Focused Sprite Refresh and Name-Mismatch Status
+
+Added a focused wrapper selector:
+
+```bat
+python scripts\export_full_from_game.py --animestudio-asset-types Sprite --animestudio-stages convert_by_type --animestudio-scope assets --animestudio-asset-mode full
+```
+
+`--animestudio-asset-types` filters the already-defined AnimeStudio asset convert/json type sets after scope/mode expansion. This allows one type, such as `Sprite`, to be refreshed without rerunning `Texture2D`, `Mesh`, and `Animator`.
+
+Status accounting also now resolves valid outputs written under the parsed Unity object name when the asset-map display name differs. If the predicted output path is absent but exactly one output file with the same `_p<PathID>` suffix exists in the type output directory, the status manifest treats the row as exported and records it as `name_mismatch_output_count` instead of `missing_output_count`.
+
+Verification:
+
+```bat
+python -m py_compile scripts\export_full_from_game.py
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode full --animestudio-asset-types Sprite --animestudio-stages convert_by_type --sources StreamingAssets --report-only
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode full --animestudio-asset-types Sprite --animestudio-stages convert_by_type --sources StreamingAssets --animestudio-jobs 4 --animestudio-shards 16
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode full --animestudio-asset-types Sprite Texture2D --animestudio-stages convert_by_type --sources StreamingAssets --report-only
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode full --animestudio-asset-types Sprite --animestudio-stages convert_by_type --sources Persistent --animestudio-jobs 4 --animestudio-shards 8
+```
+
+Results after the focused Sprite conversion with `Texture2D:Parse` and `SpriteAtlas:Parse` dependencies:
+
+- `StreamingAssets Sprite`: matched `20,917`, output entries `20,917`, actual output files `20,648`, name-mismatch outputs `9`, missing outputs `0`, export errors `0`. Status counts: `9,499` clean groups and `245` output-collision groups.
+- `Persistent Sprite`: matched `5,603`, output entries `5,603`, actual output files `5,520`, name-mismatch outputs `0`, missing outputs `0`, export errors `0`. Status counts: `864` clean groups and `83` output-collision groups.
+
+The previous 26,520 Sprite missing-output report was stale output state from the old no-dependency Sprite run, not a Sprite decoder failure. The current verified remaining Sprite caveat is only output collision/name accounting, not missing image export.
+
+Representative StreamingAssets name-mismatch rows now accounted as exported:
+
+- map name `74618664eecd07dc`, PathID `-6901809565594673061`, expected hash-like filename, actual output `facskill_hub_mine_spd_20_pA037D8C47756205B.png`.
+- map name `104b9b795a3b894e`, PathID `4024518188806317189`, actual output `bg_sign_char_yvonne_tc_01_p37D9F5F84BE62485.png`.
+- map name `5be9c7874cba72f7`, PathID `-5792198476739221886`, actual output `icon_skill_deepfin_01_line_pAF9DFA2C7D666682.png`.
+
+## 2026-06-28 Mesh Allowance Audit
+
+A read-only subagent audit found the current global Mesh no-output allowance is too coarse. It is probably justified for many collision/proxy meshes, but the status data does not prove the missing rows are zero-vertex or missing-vertex-buffer meshes.
+
+Sampled classification from current manifests:
+
+- Total missing Mesh rows across current manifests: `6,152`.
+- Sampled missing rows present in manifests: `6,097`.
+- Collision/proxy by name/container: `6,062`, e.g. `_COL1_UM01`, `_UCX`, `_col1_...fbx`.
+- LOD/proxy/baked/HLOD but not explicitly collision-named: `26`.
+- Not clearly advertised as collision/proxy: `9`, including `T_npc_gentleman_backpack_common_c_01_E/D` rows.
+
+Exporter behavior check: `ExportMesh()` silently returns `false` for `m_VertexCount <= 0`, missing/empty `m_Vertices`, or output path setup failure. It does not currently log vertex counts or reason details.
+
+Next concrete improvement: mirror the Texture2D diagnostics for Mesh. Add structured `[Warning] Mesh no output ...` logs with reason, source identity, vertex count, vertex buffer length, submesh/index counts where available; then allow only fresh matched `zero_vertex_count`/`missing_vertex_buffer` rows and leave unmatched Mesh misses suspicious.
