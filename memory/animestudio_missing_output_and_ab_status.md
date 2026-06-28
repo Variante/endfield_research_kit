@@ -308,3 +308,40 @@ Results:
 Important intermediate finding: the first StreamingAssets rerun emitted all `6,114` Mesh no-output warnings, but the wrapper initially matched only `20` because matching used capped report samples. Keeping full warning records fixed classification without suppressing anything.
 
 Current interpretation: direct Mesh OBJ missing outputs are now understood for the current export set. They are zero-vertex collision/proxy meshes, not parser failures. The previous global Mesh allowance has been removed; future Mesh missing outputs must be proven by fresh structured logs.
+
+## 2026-06-28 Focused Texture2D Refresh
+
+Reran focused Texture2D conversion after the structured Texture2D no-output diagnostics were in place. The previous `StreamingAssets Texture2D` status with `94` suspicious missing outputs and the old `Persistent Texture2D` status with missing newer summary fields were stale/report-only state, not current decoder evidence.
+
+Verification commands:
+
+```bat
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode full --animestudio-asset-types Texture2D --animestudio-stages convert_by_type --sources Persistent --animestudio-jobs 4 --animestudio-shards 8
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode full --animestudio-asset-types Texture2D --animestudio-stages convert_by_type --sources StreamingAssets --animestudio-jobs 4 --animestudio-shards 16
+```
+
+Fresh report runs:
+
+- `reports/20260628_142702/` for `Persistent` Texture2D.
+- `reports/20260628_143746/` for `StreamingAssets` Texture2D.
+
+Results:
+
+- `Persistent Texture2D`: matched `5,960`, output entries `5,954`, actual output files `5,871`, missing outputs `6`, allowed no-payload missing outputs `6`, suspicious missing outputs `0`, decode-failed warnings `0`. Status counts: `1,083` clean groups, `6` allowed-missing groups, `83` collision groups.
+- `StreamingAssets Texture2D`: matched `126,496`, output entries `126,490`, actual output files `126,220`, missing outputs `6`, allowed no-payload missing outputs `6`, suspicious missing outputs `0`, decode-failed warnings `0`, name-mismatch outputs `88`. Status counts: `103,969` clean groups, `6` allowed-missing groups, `247` collision groups.
+
+The remaining missing Texture2D outputs are understood: all are `Font Texture` placeholders with `reason=zero_size_texture`, `Width=0`, `Height=0`, `ImageSize=0`, and `StreamSize=0`. There are no fresh Texture2D `decode_failed` warnings and no Texture2D export errors.
+
+Current interpretation: direct Texture2D PNG missing outputs are now understood for the current export set. The remaining non-clean Texture2D groups are output collisions/name accounting, not missing image decode. Future Texture2D missing outputs should continue to require fresh structured no-output warnings.
+
+## 2026-06-28 Residual Asset Target Scan
+
+After the Sprite, Mesh, and Texture2D focused refreshes, current `asset_status` manifests exist for `Texture2D`, `Sprite`, and `Mesh` only. None of those current manifests has suspicious missing output.
+
+A read-only residual scan found:
+
+- `Material` JSON is effectively healthy. The map/output count gap is duplicate PathID/name collapse around `Sprites-Default`, not missing JSON decode: `StreamingAssets Material` has `48,497` map entries and `48,490` JSON files; `Persistent Material` has `1,550` map entries and `1,548` JSON files.
+- `Shader` and `AnimationClip` still have old debug-mode export errors (`ShaderConverter` huge aligned-string reads; `AnimationClip` unknown light attributes), but these are lower-priority debug-mode converter paths.
+- `Animator` is the next high-value target. It has no asset-status manifest, no current output-quality accounting, and a large map/output gap: `StreamingAssets Animator` has about `57,025` map entries vs `11,526` FBX files, and `Persistent Animator` has about `5,423` map entries vs `1,594` FBX files. Logs from the last full debug run showed no Animator export errors, so the gap likely comes from name/group collapse, GameObject/dependency export behavior, or shallow/empty FBX output rather than ordinary per-asset export exceptions.
+
+Next concrete improvement: add or prototype Animator status accounting that can explain whether each Animator map entry resolves to a meaningful FBX, a duplicate/name-collapsed FBX, or an unsupported/no-mesh FBX export path.
