@@ -2118,3 +2118,110 @@ Largest remaining guide `$unparsed` classes after this pass:
 | `CorrectPlayerPosTeleport` | 21 | Action payload not yet mapped. |
 
 Current classification: the guide/tutorial managed-reference bucket has moved from broad high-count unknown action/condition layouts to a long tail of smaller action/condition classes. The remaining markers still look like serialized managed-reference schema recovery work, not encryption or missing VFS extraction.
+
+## 2026-06-29 Thirteenth Fresh StreamingAssets Guide-Tail Batch
+
+Follow-up after the twelfth guide action/condition batch. Two read-only subagents independently validated the next high-count guide action and condition buckets from `tmp\guide_actions_conditions_probe_allguide_after2` using strict payload consumption and IL2CPP field names where available. No subagent edited files.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added guide action decoders for:
+  - `ToggleGeneralAbilityHide`
+  - `SelectQuickMenuSystem`
+  - `BuildingPosHintHide`
+  - `FacBlockOtherHubUnloaderInteract`
+  - `ToggleAbandonDropValid`
+  - `FocusTechTreeNode`
+  - `CorrectPlayerPosTeleport`
+  - `BuildingPosHintShow`
+  - `ScrollToBuildListTargetItem`
+  - `ForceEnableControllerNavi`
+  - `SetMainHudCanAutoStopExpand`
+- Added guide condition decoders for:
+  - `OnInteractOptionShow`
+  - `OnQuickMenuSystemHover`
+  - `CheckIsInFacMainRegion`
+  - `CheckHasInteractOption`
+  - `CheckCurrentLevel`
+  - `OnOpenFacUnloaderPanel`
+  - `OnFacCurMachineCacheAddItem`
+  - `OnFacQuickBarAddItem`
+  - `OnUIScrollListGraduallyShowFinished`
+  - `CheckIsInFacLinkingMode`
+  - `OnGeneralAbilityHover`
+  - `CheckActivityCompletedOrNull`
+  - `CheckUnlockTech`
+  - `CheckPlayerInMap`
+  - `CheckBuildingStateInArea`
+- Kept enum-like fields numeric where value-to-name mappings are not proven, including `closeSelectAbilityType`, `worldDir`, `abilityType`, `facStateType`, and `targetFacLinkingModeType`.
+- Left runtime/static IL2CPP fields unread when no serialized payload bytes exist, including `BuildingPosHintShow.m_handle`, `CheckHasInteractOption.s_activeConditions`, `OnUIScrollListGraduallyShowFinished.s_inited`, and `CheckUnlockTech.m_facTechId`.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\guide_tail_probe_allguide_after4 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names "^guide_"
+```
+
+Final build result: success with `0` warnings and `0` errors. The guide-only probe emitted 1,621 MonoBehaviour JSON files with exit code 0. Log grep for `Warning`, `Error`, `metadata-only JSON`, partial-TypeTree warnings, `Export ... error`, and `Unknown ClassID` returned no matches.
+
+Guide-only before/after from `tmp\guide_actions_conditions_probe_allguide_after2` to `tmp\guide_tail_probe_allguide_after4`:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Guide JSON files | 1,621 | 1,621 |
+| Guide `$unparsed` managed refs | 928 | 386 |
+| Decoded guide managed refs | 7,664 | 8,206 |
+
+Resolved `$unparsed` payloads in this pass: 542.
+
+Resolved classes:
+
+| Class | Resolved refs |
+| --- | ---: |
+| `ToggleGeneralAbilityHide` | 28 |
+| `OnInteractOptionShow` | 28 |
+| `SelectQuickMenuSystem` | 27 |
+| `OnQuickMenuSystemHover` | 27 |
+| `BuildingPosHintHide` | 27 |
+| `FacBlockOtherHubUnloaderInteract` | 27 |
+| `ToggleAbandonDropValid` | 27 |
+| `FocusTechTreeNode` | 26 |
+| `CheckIsInFacMainRegion` | 25 |
+| `CheckHasInteractOption` | 24 |
+| `CheckCurrentLevel` | 22 |
+| `OnOpenFacUnloaderPanel` | 21 |
+| `CorrectPlayerPosTeleport` | 21 |
+| `OnFacCurMachineCacheAddItem` | 20 |
+| `BuildingPosHintShow` | 20 |
+| `CheckActivityCompletedOrNull` | 20 |
+| `OnFacQuickBarAddItem` | 19 |
+| `OnUIScrollListGraduallyShowFinished` | 18 |
+| `CheckIsInFacLinkingMode` | 17 |
+| `ScrollToBuildListTargetItem` | 17 |
+| `OnGeneralAbilityHover` | 16 |
+| `CheckUnlockTech` | 16 |
+| `CheckBuildingStateInArea` | 15 |
+| `ForceEnableControllerNavi` | 14 |
+| `CheckPlayerInMap` | 10 |
+| `SetMainHudCanAutoStopExpand` | 10 |
+
+Largest remaining guide `$unparsed` classes after this pass:
+
+| Class | Remaining refs | Current blocker |
+| --- | ---: | --- |
+| `OnDungeonCommonEntryPanelOpen` | 13 | Condition payload not yet mapped. |
+| `OnFacConveyorOperated` | 12 | Condition payload not yet mapped. |
+| `EquipProduceScrollToItem` | 12 | Action payload not yet mapped. |
+| `BlendToCameraTransform` | 11 | Action payload not yet mapped. |
+| `FacToggleCanDeactiveQuickBar` | 11 | Action payload not yet mapped. |
+| `CheckAdventureLevel` | 10 | Condition payload has comparer/progress fields; exact leading field still needs validation. |
+| `FacOverrideCullingSetting` | 9 | Action payload not yet mapped. |
+| `ClickUI` | 9 | Action payload not yet mapped. |
+| `EnterFacBeltBuildMode` | 9 | Action payload likely fieldless or static-only, but needs strict validation. |
+| `OnCharInfoModelInitFinish` | 9 | Condition payload not yet mapped. |
+| `CheckIsSquadInFight` | 9 | Condition payload not yet mapped. |
+| `CheckPlayerOnGround` | 9 | Condition payload not yet mapped. |
+| `SelectMapMark` | 9 | Action payload not yet mapped. |
+
+Current classification: the guide/tutorial managed-reference bucket is now a small long tail. The fresh probe has no exporter warnings/errors, and the remaining guide `$unparsed` entries still look like ordinary managed-reference layout recovery, not encryption, missing VFS extraction, or multi-layer AB encryption.
