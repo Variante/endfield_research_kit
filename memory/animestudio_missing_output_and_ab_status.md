@@ -3205,3 +3205,51 @@ Structured diagnostic coverage for the targeted files:
 | `Beyond.Gameplay.Core.CreateBuffAction/Data` | 5 | 5 | 5 | 0 |
 
 Current classification: this is real progress toward understanding, not warning suppression. The bytes are structured enough to expose TargetSettings offsets and RID links in exported JSON, including non-null selector references. They are still not fully understood because several selector-data fields and suffix words are unnamed. The next safe target is either (a) prove the selector-data suffix fields from IL2CPP/MemoryPack metadata or (b) isolate and decode `CreateBuffAction/Data` list/tail bytes with the same diagnostic-first approach.
+
+## 2026-06-29 Thirty-Third Fresh StreamingAssets CreateBuffAction Structured Diagnostic Batch
+
+Follow-up after the TargetSettings structured diagnostic batch. Work focused on the last raw-only class in the current target/buff cluster: `Beyond.Gameplay.Core.CreateBuffAction/Data`.
+
+Evidence used:
+
+- Local byte extraction over the five current `CreateBuffAction/Data` payloads in `tmp/targetsettings_structured_after_20260629`.
+- Existing IL2CPP field-order evidence for `CreateBuffAction/Data`: inherited `AbilityActionData`, `buffs`, `count: BlackboardDouble`, `targetSettings: TargetSettings`, `buffSource`, `contextKey`, and unresolved tail fields including `inheritSkillIdList` and `buffIconDurationSourceSetting`.
+- Current `TargetSettings` structured diagnostics from the previous batch.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added `CreateBuffAction/Data` to the existing `diagnosticStructuredLayout` path only.
+- Kept `$unparsed` and `$heuristic` intact. This still does not claim a full decode.
+- The structured diagnostic now parses the stable leading section:
+  - inherited `AbilityActionData` prefix;
+  - candidate `buffs` list: count-prefixed aligned buff-id string list followed by four reserved zero words;
+  - `countCandidate` as the same `BlackboardDouble` layout used by previously decoded float comparisons;
+  - `targetSettings` through the partial TargetSettings diagnostic parser;
+  - `buffSourceCandidate` and `contextKeyCandidate`.
+- The remaining nine post-context words are preserved as `tailWords` because `inheritSkillIdList`, the boolean tail, and `buffIconDurationSourceSetting` are not semantically proven enough for a full decoder.
+
+Validation details:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\createbuff_structured_after_20260629\68B3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_1_68B3B9B8.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\71FC2E71A9F249B382BF8DAED3BCEE65.chk" tmp\createbuff_structured_after_20260629\71FC --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_2_71FC2E71.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk" tmp\createbuff_structured_after_20260629\FBAD --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_3_FBAD673F.txt
+```
+
+The rebuild succeeded with 0 errors and 14 unchanged warnings from existing AnimeStudio projects. The targeted exports covered 30 JSON outputs, exited with code 0, emitted no console warning/error output, and parsed with 0 JSON failures.
+
+Structured diagnostic coverage for the targeted files now covers the full current target/buff cluster:
+
+| Class | Entries | Still `$unparsed` | Full raw trace | Structured diagnostic |
+| --- | ---: | ---: | ---: | ---: |
+| `Beyond.Gameplay.Core.CreateBuffAction/Data` | 5 | 5 | 5 | 5 |
+| `Beyond.Gameplay.Core.ModifyDynamicBlackboard/Data` | 2 | 2 | 2 | 2 |
+| `Beyond.Gameplay.Core.StoreBuffCount/Data` | 1 | 1 | 1 | 1 |
+| `Beyond.Gameplay.Core.Conditions.CheckBuffStackNum/Data` | 5 | 5 | 5 | 5 |
+| `Beyond.Gameplay.Core.Conditions.CheckBuffStackNumByTag/Data` | 5 | 5 | 5 | 5 |
+| `Beyond.Gameplay.Core.Conditions.CheckMainCharacterCondition/Data` | 7 | 7 | 7 | 7 |
+| `Beyond.Gameplay.Core.Conditions.CheckObjectTypeMatch/Data` | 22 | 22 | 22 | 22 |
+| `Beyond.Gameplay.Core.Conditions.CheckTargetsEqual/Data` | 6 | 6 | 6 | 6 |
+
+Current classification: this is still diagnostic progress, not warning suppression. We now have structured evidence for all 53 current target/buff entries while preserving the fact that all 53 are not fully understood. The next evidence needed is semantic proof for `CreateBuffAction` tail words and `TargetSettings` selector/suffix fields, or a broader scan that finds more variants for these same classes.
