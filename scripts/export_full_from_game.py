@@ -1411,11 +1411,16 @@ def build_animestudio_asset_output_status(
     }
     missing_records = [record for record in output_records if not record["output_exists"]]
     missing_output_keys = {record["output_key"] for record in missing_records if record["output_key"]}
+    marker_output_records = [record for record in output_records if record.get("output_is_marker")]
     name_mismatch_records = [record for record in output_records if record.get("output_name_mismatch")]
+    alternate_name_records = [
+        record for record in name_mismatch_records
+        if not record.get("output_is_marker")
+    ]
     alternate_name_reason_counts: dict[str, int] = {}
     alternate_name_source_hint_counts: dict[str, int] = {}
     alternate_name_case_normalized_count = 0
-    for record in name_mismatch_records:
+    for record in alternate_name_records:
         details = asset_output_name_mismatch_details(record)
         reason = str(details.get("name_mismatch_reason") or "unknown")
         source_hint = str(details.get("name_source_hint") or "unknown")
@@ -1586,14 +1591,15 @@ def build_animestudio_asset_output_status(
             1 for records in records_by_output_path.values() if any(record["output_exists"] for record in records)
         ),
         "actual_output_file_count": actual_output_file_count,
-        "marker_output_count": sum(1 for record in output_records if record.get("output_is_marker")),
+        "marker_output_count": len(marker_output_records),
+        "marker_output_samples": [asset_output_record_sample(record) for record in marker_output_records[:20]],
         "name_mismatch_output_count": len(name_mismatch_records),
         "name_mismatch_output_samples": [asset_output_record_sample(record) for record in name_mismatch_records[:20]],
-        "alternate_name_output_count": len(name_mismatch_records),
+        "alternate_name_output_count": len(alternate_name_records),
         "alternate_name_reason_counts": dict(sorted(alternate_name_reason_counts.items())),
         "alternate_name_source_hint_counts": dict(sorted(alternate_name_source_hint_counts.items())),
         "alternate_name_case_normalized_count": alternate_name_case_normalized_count,
-        "alternate_name_output_samples": [asset_output_record_sample(record) for record in name_mismatch_records[:20]],
+        "alternate_name_output_samples": [asset_output_record_sample(record) for record in alternate_name_records[:20]],
         "missing_output_count": len(missing_records),
         "missing_unique_output_count": len(missing_output_keys),
         "allowed_missing_output_count": allowed_missing_output_count,
