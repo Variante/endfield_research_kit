@@ -2403,3 +2403,112 @@ Resolved classes:
 | `CheckGachaWeaponTopCount` | 1 |
 
 Current classification: the targeted guide/tutorial managed-reference bucket is structurally decoded in fresh installed `StreamingAssets`: zero guide `$unparsed` managed refs, no guide probe warning/error log matches, and no indication that the remaining guide issues were encryption or missing VFS extraction. This does not prove every non-guide exported file type is fully understood; it closes the guide managed-reference bucket for the current installed data.
+
+## 2026-06-29 Sixteenth Fresh StreamingAssets Empty-Payload Component Batch
+
+Follow-up after the guide-tail cleanup. Two read-only subagents split the next unresolved non-guide MonoBehaviour surface:
+
+- Inventory subagent: parsed the broad fresh audit marker lists and confirmed the largest non-guide buckets are managed-reference schema/layout gaps, not missing VFS chunks or repeated encryption.
+- Decoder-candidate subagent: identified projectile/component classes and the safer exact zero-payload component group. It also noted that projectile/component full decoding should not be claimed until nested collider/effect/audio/list sections are proven.
+
+A complete non-guide marker scan over `tmp\fresh_json_audit_20260629_streaming\MonoBehaviour` was run with guide files excluded because `tmp\guide_tail_probe_allguide_after6` proves guide refs are now zero:
+
+```bat
+rg -l --fixed-strings "$unparsed" --glob "!guide_*.json" tmp\fresh_json_audit_20260629_streaming\MonoBehaviour > tmp\fresh_audit_unparsed_nonguide_files.txt
+rg -l --fixed-strings "decodeError" --glob "!guide_*.json" tmp\fresh_json_audit_20260629_streaming\MonoBehaviour > tmp\fresh_audit_decodeerror_nonguide_files.txt
+```
+
+Current non-guide marker inventory from those complete scans:
+
+| Metric | Count |
+| --- | ---: |
+| Non-guide `$unparsed` files | 609 |
+| Non-guide `decodeError` files | 788 |
+| Union marker files parsed | 788 |
+| `ReadAlignedString` decode-error shapes | 733 |
+| Negative string-length decode-error shapes | 51 |
+| No-bytes decode-error shapes | 4 |
+
+Largest remaining non-guide `$unparsed` classes before this batch:
+
+| Class | Refs | Files |
+| --- | ---: | ---: |
+| `Beyond.Gameplay.ProjectileTemplateData` | 300 | 300 |
+| `Beyond.Gameplay.Core.ProjectileRootComponentData` | 300 | 300 |
+| `Beyond.Gameplay.Core.ProjectileComponentData` | 300 | 300 |
+| `Beyond.Gameplay.PlaySingleSound` | 189 | 95 |
+| `Beyond.Gameplay.PlaySoundByParticleCount` | 169 | 85 |
+| `Beyond.Gameplay.WikiModelSpawnData` | 129 | 1 |
+| `Beyond.Gameplay.WeaponDecoEffectData` | 73 | 1 |
+| `Beyond.Gameplay.WeaponData` | 45 | 28 |
+| `Beyond.Gameplay.StaticWeaponData` | 41 | 15 |
+| `Beyond.Gameplay.View.Animation.CharacterPivotComponentData` | 39 | 30 |
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added explicit decoded empty managed-reference records for observed zero-length payload classes where the serialized type identity is the entire payload:
+  - `Beyond.Gameplay.View.LookAtComponentData`
+  - `Beyond.Gameplay.Core.CharacterControllerData`
+  - `Beyond.Gameplay.Core.CharacterAudioComponentData`
+  - `Beyond.Gameplay.Core.CharacterBlowOffComponentData`
+  - `Beyond.Gameplay.Core.StateTransitionComponentData`
+  - `Beyond.Gameplay.Core.RemoteFactoryMineComponentData`
+  - `Beyond.Gameplay.Core.Selector/CharacterTeamFinder/Data`
+  - `Beyond.Gameplay.Core.Selector/MainCharacterValidator/Data`
+  - `Beyond.Gameplay.DynamicBattleShapeComponentData`
+  - `Beyond.Gameplay.CustomAbilityComponentData`
+  - `Beyond.Gameplay.InteractiveEvent.InteractiveInstigatorControlComponentData`
+  - `Beyond.Gameplay.InteractiveEvent.DetachFromInstigator`
+  - `Beyond.Gameplay.InteractiveEvent.ClearInstigator`
+  - `Beyond.Gameplay.InteractiveEvent.SetInstigator`
+  - `Beyond.Gameplay.InteractiveEvent.AddThrowCameraControl`
+  - `Beyond.Gameplay.InteractiveEvent.ThrowByForceAndDir`
+  - `Beyond.Gameplay.InteractiveEvent.TriggerPickUpAction`
+- The decoders are guarded by `length == 0`; non-empty payloads still fall through to the existing marker path.
+- The emitted JSON includes `layoutNote` explaining that zero serialized payload length makes type identity the complete exported data for that managed-reference entry.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\empty_payload_all_validation_after\chunk1 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\empty_payload_all_validation_filters\names_1.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\71FC2E71A9F249B382BF8DAED3BCEE65.chk" tmp\empty_payload_all_validation_after\chunk2 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\empty_payload_all_validation_filters\names_2.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk" tmp\empty_payload_all_validation_after\chunk3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\empty_payload_all_validation_filters\names_3.txt
+```
+
+Build result: success with `0` errors and the existing 14 project warnings. The three targeted exports covered 38 JSON files across 3 source chunks, exited with code 0, and emitted no warning/error output.
+
+Targeted before/after across those 38 files:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| `$unparsed` refs | 860 | 588 |
+| decoded refs | 312 | 584 |
+| partial refs | 45 | 45 |
+| `decodeError` refs | 0 | 0 |
+
+Resolved `$unparsed` refs in this batch: 272.
+
+Resolved classes:
+
+| Class | Resolved refs |
+| --- | ---: |
+| `Beyond.Gameplay.View.LookAtComponentData` | 29 |
+| `Beyond.Gameplay.Core.CharacterControllerData` | 28 |
+| `Beyond.Gameplay.InteractiveEvent.InteractiveInstigatorControlComponentData` | 28 |
+| `Beyond.Gameplay.Core.CharacterAudioComponentData` | 28 |
+| `Beyond.Gameplay.Core.CharacterBlowOffComponentData` | 28 |
+| `Beyond.Gameplay.Core.StateTransitionComponentData` | 28 |
+| `Beyond.Gameplay.DynamicBattleShapeComponentData` | 28 |
+| `Beyond.Gameplay.CustomAbilityComponentData` | 28 |
+| `Beyond.Gameplay.InteractiveEvent.DetachFromInstigator` | 11 |
+| `Beyond.Gameplay.InteractiveEvent.ClearInstigator` | 11 |
+| `Beyond.Gameplay.InteractiveEvent.SetInstigator` | 6 |
+| `Beyond.Gameplay.InteractiveEvent.AddThrowCameraControl` | 5 |
+| `Beyond.Gameplay.InteractiveEvent.ThrowByForceAndDir` | 5 |
+| `Beyond.Gameplay.Core.RemoteFactoryMineComponentData` | 3 |
+| `Beyond.Gameplay.InteractiveEvent.TriggerPickUpAction` | 2 |
+| `Beyond.Gameplay.Core.Selector/CharacterTeamFinder/Data` | 2 |
+| `Beyond.Gameplay.Core.Selector/MainCharacterValidator/Data` | 2 |
+
+Top remaining unresolved classes in the validated files after this batch are `WeaponData`, `StaticWeaponData`, `WeaponDataWrapper`, character template/root/view/AI component data, `ObservedComponentData`, `CharHurtAnimComponentData`, `CharacterPivotComponentData`, and `WaterSensorComponentData`. Full non-guide next buckets remain projectile managed references, sound action payloads, and character/weapon component schemas. Current classification: this batch reduces false unresolved markers for zero-byte managed-reference entries only; the remaining non-guide work is schema/layout recovery, not missing AB/VFS extraction or multi-layer encryption.
