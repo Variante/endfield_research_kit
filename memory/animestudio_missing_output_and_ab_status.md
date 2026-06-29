@@ -2512,3 +2512,50 @@ Resolved classes:
 | `Beyond.Gameplay.Core.Selector/MainCharacterValidator/Data` | 2 |
 
 Top remaining unresolved classes in the validated files after this batch are `WeaponData`, `StaticWeaponData`, `WeaponDataWrapper`, character template/root/view/AI component data, `ObservedComponentData`, `CharHurtAnimComponentData`, `CharacterPivotComponentData`, and `WaterSensorComponentData`. Full non-guide next buckets remain projectile managed references, sound action payloads, and character/weapon component schemas. Current classification: this batch reduces false unresolved markers for zero-byte managed-reference entries only; the remaining non-guide work is schema/layout recovery, not missing AB/VFS extraction or multi-layer encryption.
+
+## 2026-06-29 Seventeenth Fresh StreamingAssets Projectile-Root Batch
+
+Follow-up after the empty-payload component batch. Work focused on the largest remaining non-guide projectile managed-reference family from `tmp\fresh_audit_unparsed_nonguide_files.txt`.
+
+A read-only subagent independently audited `Beyond.Gameplay.Core.ProjectileRootComponentData` and confirmed:
+
+- Marker list checked: 609 non-guide `$unparsed` files, 0 JSON parse errors.
+- Unresolved `ProjectileRootComponentData` occurrences: 300 in 300 files, exactly one per file.
+- Every target payload has `dataLength == 32`.
+- The raw int32 vector has one unique value across all 300 entries: eight zero words.
+- Installed IL2CPP metadata has one matching type `Beyond.Gameplay.Core.ProjectileRootComponentData` in `Gameplay.Beyond.dll`, metadata version 29, `field_count = 0`, no own fields, and only a parameterless `.ctor` method.
+
+Local verification produced the same byte-shape result:
+
+```text
+count 300, files 300, lengths {32: 300}, exceptions 0
+```
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added a guarded decoder for `Gameplay.Beyond / Beyond.Gameplay.Core / ProjectileRootComponentData`.
+- The decoder requires `length == 32` and consumes exactly eight int32 words.
+- Every word must be zero; any nonzero word throws and falls back to the existing marker path.
+- Output is marked decoded with `reservedZeroWords` and a `layoutNote` explaining that current installed data serializes the fieldless component as a 32-byte reserved-zero payload.
+- This is not a generic empty-class rule and does not affect `ProjectileTemplateData` or `ProjectileComponentData`.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\projectile_root_validation_after\chunk1 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\projectile_root_validation_filters\names_1.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\71FC2E71A9F249B382BF8DAED3BCEE65.chk" tmp\projectile_root_validation_after\chunk2 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\projectile_root_validation_filters\names_2.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk" tmp\projectile_root_validation_after\chunk3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\projectile_root_validation_filters\names_3.txt
+```
+
+Build result: success with `0` errors and the existing 14 project warnings. The three targeted exports covered all 300 projectile files across three source chunks, exited with code 0, and emitted no warning/error output.
+
+Projectile family before/after in the targeted validation set:
+
+| Class | Before `$unparsed` | After `$unparsed` | After decoded |
+| --- | ---: | ---: | ---: |
+| `Beyond.Gameplay.ProjectileTemplateData` | 300 | 300 | 0 |
+| `Beyond.Gameplay.Core.ProjectileRootComponentData` | 300 | 0 | 300 |
+| `Beyond.Gameplay.Core.ProjectileComponentData` | 300 | 300 | 0 |
+
+Resolved `$unparsed` refs in this batch: 300. No invalid reserved-zero payloads were found. Current classification: `ProjectileRootComponentData` is now understood as a fieldless component with a reserved-zero serialized payload in current installed data. Remaining projectile work is still substantial: `ProjectileTemplateData` and `ProjectileComponentData` remain marked because their non-empty nested strings, RID links, collider/effect/audio/list sections, and movement data need full schema proof before decoding.
