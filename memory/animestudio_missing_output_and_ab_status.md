@@ -3029,3 +3029,39 @@ Before/after for the targeted files:
 | `Beyond.Gameplay.View.CharacterAnimationComponentData` | 28 | 0 | 28 |
 
 Resolved `$unparsed` refs attributable to this batch: 28 refs. Current classification: these are normal serialized managed-reference payloads backed by local IL2CPP metadata plus byte-proven path data, not missing VFS/AB bytes and not encryption. The same character validation files still have unresolved `CharacterTemplateData`, `CharacterRootComponentData`, and condition/action payloads.
+
+## 2026-06-29 Twenty-Ninth Fresh StreamingAssets Character Template Batch
+
+Follow-up after the character animation batch. Work focused on `Beyond.Gameplay.CharacterTemplateData` in the same current character validation files.
+
+Evidence used:
+
+- A read-only subagent audited 28 current `CharacterTemplateData` payloads across the three character chunks and confirmed the byte layout.
+- Local IL2CPP metadata supports the inherited `GameDataWithId` / `BaseTemplateData` / `EntityTemplateData` field order plus `CharacterTemplateData.animConfigPath` and `BodyTypeDef` fields.
+- The current corpus uses exactly 26 component RID links per character template. Two records carry an optional born `GameplayTag`; the rest serialize the absent-tag flag only.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added strict `CharacterTemplateData` decoding under the general gameplay managed-reference decoder.
+- Added a strict zero-padding `GameplayTag` reader for the optional born tag path used by this layout.
+- Guards require exact `Gameplay.Beyond / Beyond.Gameplay / CharacterTemplateData`, word-aligned payload length, `chr_` id prefix, strict aligned UTF-8 strings with zero padding, bool32 flags, bounded lifecycle/fade floats, exactly 26 component RID links, an `Assets/*.asset` animation config path, and `EnsureComplete()`.
+- `bodyType` and `CustomId` are preserved as raw hash-style int32 values because their enum/domain is not yet identified.
+
+Validation details:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\character_template_validation_after_20260629\68B3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_1_68B3B9B8.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\71FC2E71A9F249B382BF8DAED3BCEE65.chk" tmp\character_template_validation_after_20260629\71FC --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_2_71FC2E71.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk" tmp\character_template_validation_after_20260629\FBAD --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_3_FBAD673F.txt
+```
+
+The targeted exports covered 30 JSON outputs, exited with code 0, emitted no console warning/error output, and parsed with 0 JSON failures in follow-up counting. The rebuild succeeded with 0 errors; it reported 14 warnings from unchanged AnimeStudio library files outside this decoder patch.
+
+Before/after for the targeted files:
+
+| Class | Baseline `$unparsed` | Final `$unparsed` | Final decoded |
+| --- | ---: | ---: | ---: |
+| `Beyond.Gameplay.CharacterTemplateData` | 28 | 0 | 28 |
+
+Resolved `$unparsed` refs attributable to this batch: 28 refs. Current classification: these are normal serialized managed-reference payloads backed by local IL2CPP metadata plus byte-proven current corpus invariants, not missing VFS/AB bytes and not encryption. The same character validation files still have unresolved `CharacterRootComponentData` and condition/action payloads.
