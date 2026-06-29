@@ -3511,3 +3511,62 @@ Remaining raw `$unparsed` refs in the same validation slice after this pass:
 | `Beyond.Gameplay.Core.StoreBuffCount/Data` | 1 |
 
 Current classification: these 10 regular/by-tag buff-stack condition payloads are normal serialized managed-reference payloads backed by local IL2CPP metadata, not missing VFS/AB bytes and not encryption. They remain `$partial` only because their embedded TargetSettings objects still preserve unresolved selector/suffix fields. `CheckBuffStackNumAdvanced/Data` remains intentionally unresolved until its `BuffFindSettings` variants are traced under the actual `Beyond.Gameplay.Core` namespace and byte-proven.
+
+## 2026-06-29 Thirty-Eighth Fresh StreamingAssets Action Blackboard Batch
+
+Follow-up after the regular buff-stack condition batch. Work focused on the safest remaining Core action payloads in the current character validation slice: `Beyond.Gameplay.Core.ModifyDynamicBlackboard/Data` and `Beyond.Gameplay.Core.StoreBuffCount/Data`.
+
+Evidence used:
+
+- The latest focused validation output before this pass still had 2 raw `$unparsed` `ModifyDynamicBlackboard/Data` refs, both 164 bytes, and 1 raw `$unparsed` `StoreBuffCount/Data` ref at 184 bytes.
+- Local IL2CPP metadata names the direct fields after inherited `AbilityActionData`:
+  - `ModifyDynamicBlackboard/Data`: `key`, `operation`, `directValue`, `value`, `calculationTarget`, and `calculateType`.
+  - `StoreBuffCount/Data`: `useCurrentBuff`, `buffOwners`, `buffId`, and `blackboardKey`.
+- Existing structured diagnostics already consumed all three payloads to `reader.EnsureComplete()` with the same byte order.
+- A parallel verification subagent independently confirmed both classes are safe guarded partial-decoder candidates. `StoreBuffCount/Data` has only one observed sample, but its field order, bounded strings, bool32 value, TargetSettings boundary, and complete payload consumption are byte-proven.
+- A separate Advanced buff-stack subagent confirmed `CheckBuffStackNumAdvanced/Data` should stay diagnostic-only for now: it is under `Beyond.Gameplay.Core`, while the current full-trace predicate only whitelists the Advanced class under `Beyond.Gameplay.Core.Conditions`, and its `BuffFindSettings` variants still need direct tracing.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added a guarded partial decoder for `Beyond.Gameplay.Core.ModifyDynamicBlackboard/Data`.
+- Added a guarded partial decoder for `Beyond.Gameplay.Core.StoreBuffCount/Data`.
+- Both decoders consume the inherited `AbilityActionData` prefix and every metadata-backed direct field.
+- Embedded `calculationTarget` and `buffOwners` remain partial TargetSettings diagnostic objects because selector-data RID slots and suffix word semantics are still not fully named.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Final rebuild result after both decoder branches: 0 warnings and 0 errors.
+
+Targeted validation output: `tmp\action_blackboard_decode_after_20260629` from the same three character chunks used by the prior condition batches.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 28 |
+| JSON parse failures | 0 |
+| `ModifyDynamicBlackboard/Data` refs | 2 |
+| Decoded `ModifyDynamicBlackboard/Data` refs | 2 |
+| Remaining `$unparsed` `ModifyDynamicBlackboard/Data` refs | 0 |
+| `StoreBuffCount/Data` refs | 1 |
+| Decoded `StoreBuffCount/Data` refs | 1 |
+| Remaining `$unparsed` `StoreBuffCount/Data` refs | 0 |
+
+Decoded sample facts:
+
+| Class | Observed fields |
+| --- | --- |
+| `ModifyDynamicBlackboard/Data` | `key = EntityBB_combo_type`, `operation = Assign`, `directValue = true`, BlackboardDouble values `0.0` and `1.0`, partial 100-byte `calculationTarget`, `calculateType = HpRatio` |
+| `StoreBuffCount/Data` | `useCurrentBuff = false`, partial 108-byte `buffOwners`, `buffId = buff_physical_no_guard`, `blackboardKey = EntityBB_noguard_count` |
+
+Remaining raw `$unparsed` refs in the same validation slice after this pass:
+
+| Class | Remaining `$unparsed` |
+| --- | ---: |
+| `Beyond.Gameplay.Core.CheckBuffStackNumAdvanced/Data` | 7 |
+| `Beyond.Gameplay.Core.CreateBuffAction/Data` | 5 |
+| `Beyond.Gameplay.Core.AbilitySystemData` | 2 |
+
+Current classification: these 3 action/blackboard payloads are normal serialized managed-reference action payloads backed by local IL2CPP metadata, not missing VFS/AB bytes and not encryption. They remain `$partial` only because their embedded TargetSettings objects still preserve unresolved selector/suffix fields. The next useful non-decoding improvement is a diagnostic-only Core-namespace full trace for `CheckBuffStackNumAdvanced/Data` so its `BuffFindSettings` variants can be byte-proven before semantic promotion.
