@@ -1805,3 +1805,76 @@ Resolved classes:
 | `EnemyBornBehavior/EnemyBornBehaviorData` | 1 |
 
 Current classification: for this focused 221-case MonoBehaviour warning set, AnimeStudio now emits decoded JSON without `$unparsed` managed-reference payloads and without warning/error log lines. This does not prove every asset type in the full installed game export is fully understood; it closes the remaining AI managed-reference layouts from this warning report.
+
+## 2026-06-29 Ninth Fresh StreamingAssets Guide-Condition Batch
+
+Follow-up after the focused 221-case cleanup. A contained fresh StreamingAssets JSON audit was run outside `export_full`:
+
+```bat
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\fresh_json_audit_20260629_streaming --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types TextAsset:Both MonoBehaviour:Both PlayableDirector:Both Material:Both --dummy_dlls tools\DummyDll
+```
+
+Fresh audit results:
+
+| Type | JSON files |
+| --- | ---: |
+| `Material` | 48,490 |
+| `MonoBehaviour` | 963,849 |
+| `PlayableDirector` | 9,856 |
+| `TextAsset` | 6,757 |
+| Total | 1,028,952 |
+
+The fresh audit log had no warning/error lines, no metadata-only JSON warnings, no partial-TypeTree warnings, no `Export ... error` lines, and no `Unknown ClassIDType` lines. A byte-level marker scan found remaining MonoBehaviour fallback markers: `$unparsed` in 1,758 files / 11,268 occurrences and `decodeError` in 1,937 files / 1,937 occurrences. This is a broader population than the earlier 221-case filter.
+
+Subagent findings:
+
+- The old `Unknown ClassIDType 1186182244` warning is stale; current code names it `HGCorrectiveBoneData`, and current reports do not contain that warning.
+- The `CCS_*` and `data_abilityentity_*` `decodeError` bucket is not encryption. Script-first DummyDll probing did not improve it. The failures are managed-reference TypeTree overreads where numeric/float payload bytes are interpreted as aligned-string lengths; heuristic managed-reference recovery is preserving the payload.
+- Current non-MonoBehaviour conversion buckets show no missing outputs or export errors in current status manifests; remaining notable conversion coverage questions are Animator no-mesh markers and deduplicated shared-output references.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added `TryDecodeGuideManagedReferenceData` before the generic Core/AI managed-reference decoders.
+- Decoded proven guide/tutorial condition layouts:
+  - `Beyond.Gameplay.InMainHud`
+  - `Beyond.Gameplay.CombineCondition`
+  - `Beyond.Gameplay.CheckMissionState`
+  - `Beyond.Gameplay.CheckGuideGroupComplete`
+  - `Beyond.Gameplay.Conditions.OnPlayerActionTriggerOnly`
+  - `Beyond.Gameplay.Conditions.OnUIPanelOpen`
+  - base-only `OnCastUltimateSkill` and `OnCastNormalSkill`
+- Added strict helpers for the observed guide condition prefix, string/int/bool parameter wrappers, and bounded aligned ASCII parameter strings. Unknown inherited words remain explicitly named `unknown*` rather than guessed.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\guide_condition_probe_names_after1 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names "^(guide_battle_enemy_interrupt_ct|guide_blackbox_1_powerpole_ct|guide_activity_snapshot_formation_1_ct|guide_blackbox_1_complete_ct|guide_blackbox_1_furance_ct)$"
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\guide_condition_probe_allguide_after1 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names "^guide_"
+```
+
+Build result: success with `0` warnings and `0` errors. Both validation logs had no warning/error lines.
+
+Guide-only before/after from the fresh audit baseline and the new guide probe:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Guide JSON files | 1,623 | 1,621 |
+| Guide `$unparsed` refs | 8,595 | 5,864 |
+| Guide `$unparsed` classes | 348 | 299 |
+| Decoded guide refs in probe | 1 | 2,728 |
+
+Decoded target refs in the guide-only probe:
+
+| Class | Decoded refs |
+| --- | ---: |
+| `CombineCondition` | 628 |
+| `InMainHud` | 500 |
+| `OnPlayerActionTriggerOnly` | 416 |
+| `CheckGuideGroupComplete` | 392 |
+| `OnUIPanelOpen` | 389 |
+| `CheckMissionState` | 385 |
+| `OnCastUltimateSkill` | 9 |
+| `OnCastNormalSkill` | 9 |
+
+Remaining guide bucket after this pass is dominated by action layouts, especially camera/factory/HUD guide actions such as `BlendToCameraTransformWithoutBack`, `BlendOutFromCamera`, `GuideUnFreezeWorld`, `RecoverMainHud`, `GuideFreezeWorld`, `FinishEffect`, `FacLockBuildPos`, and `SetFacTopView`. Their shared action prefix is visible, but only tails with proven semantics should be promoted in later passes.
