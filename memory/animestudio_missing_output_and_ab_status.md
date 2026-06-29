@@ -3316,3 +3316,72 @@ Remaining unresolved in the same validation slice after this pass:
 | `Beyond.Gameplay.Core.StoreBuffCount/Data` | 1 |
 
 Current classification: `CharacterRootComponentData` is a normal serialized managed-reference payload, not missing VFS/AB bytes and not encryption. The main semantic gap is the exact meaning of `unknown0` and the tail list blocks, so the decoder is intentionally marked inferred and preserves raw tail words. The remaining blockers in this character slice are now the TargetSettings-based Core action/condition payloads plus `AbilitySystemData`.
+
+## 2026-06-29 Thirty-Fifth Fresh StreamingAssets CheckHp And CheckTagMatch Batch
+
+Follow-up after the CharacterRootComponentData batch. Work focused on the small remaining Core condition payloads that were not yet decoded in the current 30-file character validation slice: `Beyond.Gameplay.Core.Conditions.CheckHp/Data` and `Beyond.Gameplay.Core.Conditions.CheckTagMatch/Data`.
+
+Evidence used:
+
+- Current validation output `tmp\characterroot_decode_after_20260629` had two unresolved `CheckHp/Data` refs and two unresolved `CheckTagMatch/Data` refs, all in the 68B3 chunk.
+- A read-only byte-layout audit confirmed the fallback hints covered the full payload word range for these four entries, but recommended adding full payload diagnostics before promotion.
+- A narrow IL2CPP metadata query with `tools\endfield-il2cpp\catalog_option_flow_metadata.py --type-regex "CheckHp|CheckTagMatch" --include-all-members` confirmed:
+  - `CheckHp/Data`: `hpOwner: TargetSettings`, `compare: Beyond.CompareType`, `isRatio: bool`, `value: BlackboardDouble`.
+  - `CheckTagMatch/Data`: `checkTarget: TargetSettings`, `query: GameplayTagQuery`.
+  - MemoryPack setter order matches those fields.
+- A diagnostic-only pass first emitted `diagnosticFullPayloadHex`, `diagnosticRawWordTrace`, and `diagnosticStructuredLayout` for all four entries under `tmp\checkhp_checktag_trace_after_20260629`; all four remained `$unparsed` in that evidence pass.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added full diagnostic tracing for future unresolved `CheckHp/Data` and `CheckTagMatch/Data` fallback cases.
+- Added structured diagnostics for both classes under the existing TargetSettings diagnostic path.
+- Added guarded partial decoders for both classes:
+  - inherited `AbilityActionData` prefix;
+  - `hpOwner` / `checkTarget` via the existing partial `TargetSettings` diagnostic reader;
+  - `CheckHp` `compare`, `isRatio`, and `BlackboardDouble value`;
+  - `CheckTagMatch` `GameplayTagQuery` with bounded tag list.
+- The decoded objects are explicitly marked `$partial` because `TargetSettings` selector-data and suffix semantics remain unresolved. This is not warning suppression: the payload is consumed completely, while unresolved sub-layout semantics stay visible inside the decoded object.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Final rebuild result: 0 warnings, 0 errors.
+
+Targeted validation output: `tmp\checkhp_checktag_decode_after_20260629`.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 30 |
+| JSON parse failures | 0 |
+| `CheckHp/Data` refs | 2 |
+| Decoded `CheckHp/Data` refs | 2 |
+| `CheckTagMatch/Data` refs | 2 |
+| Decoded `CheckTagMatch/Data` refs | 2 |
+| Remaining `$unparsed` refs in slice | 62 |
+
+Decoded sample facts:
+
+| Class | Observed fields |
+| --- | --- |
+| `CheckHp/Data` | `hpOwner` partial TargetSettings length 108, `compare = LT`, `isRatio = true`, `value = 0.6` or `0.4`, empty blackboard key |
+| `CheckTagMatch/Data` | partial TargetSettings length 100 or 108, query type `HasAny`, tag paths `Skill/Character/Common/SpellStatus/Conduct`, `Skill/Character/Common/SpellInflict/PulseInflict`, and `Skill/Character/Common/SpellStatus/Frozen` |
+
+Remaining unresolved in the same validation slice after this pass:
+
+| Class | Remaining `$unparsed` |
+| --- | ---: |
+| `Beyond.Gameplay.Core.Conditions.CheckObjectTypeMatch/Data` | 22 |
+| `Beyond.Gameplay.Core.Conditions.CheckMainCharacterCondition/Data` | 7 |
+| `Beyond.Gameplay.Core.CheckBuffStackNumAdvanced/Data` | 7 |
+| `Beyond.Gameplay.Core.Conditions.CheckTargetsEqual/Data` | 6 |
+| `Beyond.Gameplay.Core.Conditions.CheckBuffStackNum/Data` | 5 |
+| `Beyond.Gameplay.Core.Conditions.CheckBuffStackNumByTag/Data` | 5 |
+| `Beyond.Gameplay.Core.CreateBuffAction/Data` | 5 |
+| `Beyond.Gameplay.Core.AbilitySystemData` | 2 |
+| `Beyond.Gameplay.Core.ModifyDynamicBlackboard/Data` | 2 |
+| `Beyond.Gameplay.Core.StoreBuffCount/Data` | 1 |
+
+Current classification: `CheckHp/Data` and `CheckTagMatch/Data` are normal serialized managed-reference payloads backed by local IL2CPP/MemoryPack metadata, not missing AB/VFS bytes and not encryption. They remain partial only because their TargetSettings subobject still contains unresolved selector/suffix semantics.
