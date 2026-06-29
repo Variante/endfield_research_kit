@@ -1712,3 +1712,43 @@ Remaining blockers after this pass:
 | One-off graph/custom classes | 1 each | `CharacterFollowGraph`, `CharacterBattleGraph`, `EnemyPatrolGraph`, `EnemyBornBehavior`, `NPCCommonAnimalRandomPlayMontageBehavior`, and `FinishGlobalBuffAction/Data` still need exact custom container or inherited-prefix proof. |
 
 Current classification: repeated encryption and missing VFS extraction are not implicated in the remaining set. The unresolved payloads are now mostly AI graph/reference-list containers plus a few custom inherited data classes.
+
+## 2026-06-29 Seventh One-Off ManagedReference Batch
+
+Follow-up pass after `tmp\monobehaviour_decoder_221_after_small_ai6_graphlite`. This pass targeted the remaining non-graph one-off payloads that had enough metadata and byte-layout evidence to decode without weakening warning semantics.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- `NPCCommonAnimalRandomPlayMontageBehavior/NPCCommonAnimalRandomPlayMontageBehaviorData`: `baseInterval`, counted `PlayTimedMontageInfo` entries (`playMontageTag`, `overrideMontageStartState`, `montageStartState`, `limitMaxDuration`, `duration`), and `playInterval`.
+- `FinishGlobalBuffAction/Data`: inherited ability-action prefix (`isEnable`, `priorityLevel`, `priorityOffset`, `serverActionIndex`), `finishParent`, counted `globalBuffIds`, `finishAll`, `finishCount` as a `BlackboardDouble`-shaped value (`useBlackboardKey`, scalar value, `blackboardKey`), and `isFinishedEarly`.
+- Core gameplay decoder routing now accepts nested `Beyond.Gameplay.Core.*` namespaces so `Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction/Data` reaches the Core decoder.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\monobehaviour_decoder_221_after_small_ai7_finishfix --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --filter_data tmp\monobehaviour_warning_221_after_slash\filter.json
+```
+
+Build result: success with the existing project warnings and `0` errors. The targeted export emitted 15,014 JSON files with exit code 0 and no warning/error lines.
+
+221-case before/after this pass:
+
+| Metric | Before this pass | After this pass |
+| --- | ---: | ---: |
+| JSON files emitted | 15,014 | 15,014 |
+| `$unparsed` refs | 156 | 154 |
+| `$unparsed` classes | 9 | 7 |
+
+Resolved `$unparsed` payloads in this pass: 2.
+
+Remaining blockers after this pass:
+
+| Class | Remaining `$unparsed` refs | Current blocker |
+| --- | ---: | --- |
+| `EnemyBattleGraph/EnemyBattleGraphData` | 118 | Fixed prefix is mapped, but `enemySR` tail grouping, rid links, sentinel rid values, and exact semantics are not proven. |
+| `EnemySettlementBattleGraph/EnemySettlementBattleGraphData` | 24 | Fixed prefix is mapped, but `enemySR` tail/list semantics and `exAction` type are not proven. |
+| `EnemyDefendBattleGraph/EnemyDefendBattleGraphData` | 8 | Structurally stable 44-byte payload, but `searchMode` enum/type proof and canonical empty `enemySR` semantics are still pending. |
+| One-off graph/custom classes | 1 each | `CharacterFollowGraph`, `CharacterBattleGraph`, `EnemyPatrolGraph`, and `EnemyBornBehavior` still need exact graph/reference-list or born-action semantics before full decode. |
+
+Current classification: the simple scalar/string/tag/list one-offs are exhausted for this 221-case set. Remaining work is concentrated in graph/reference-list semantics and the custom enemy-born action structure.
