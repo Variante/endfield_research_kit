@@ -1067,3 +1067,37 @@ Top remaining unresolved classes:
 | `UILevelMapCrane/CraneSpritePath` | 48 | Looks like a single aligned string path; low-risk next decoder after metadata confirmation. |
 
 Current classification: this batch decodes 157 previously heuristic nested managed-reference payloads using raw byte evidence plus IL2CPP field metadata. It does not mark `EnemyBattleGraphData` fully understood yet because the variable `enemySR` tail is still not proven across all length variants.
+
+## 2026-06-29 UILevelMapCrane ManagedReference Decoder
+
+Follow-up small decoder pass while broader IL2CPP metadata investigation continues. The remaining `Beyond.UI.UILevelMapCrane/CraneSpritePath` refs were low-risk because all 48 heuristic payloads were 12 bytes and decoded as exactly one aligned string:
+
+| Value | Count |
+| --- | ---: |
+| `crane_1` | 16 |
+| `crane_2` | 16 |
+| `crane_3` | 16 |
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Full decoder for `UI.Gameplay.Beyond` / `Beyond.UI` / `UILevelMapCrane/CraneSpritePath`.
+- Output field: `spritePath`.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\monobehaviour_decoder_221_after_ui_crane --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --filter_data tmp\monobehaviour_warning_221_after_slash\filter.json
+```
+
+The probe emitted 15,014 JSON files with exit code 0 and no warning/error lines.
+
+| Metric | Before UI decoder | After UI decoder |
+| --- | ---: | ---: |
+| Recovered registries | 549 | 549 |
+| Fully decoded recovered registries | 333 | 341 |
+| Heuristic recovered registries | 216 | 208 |
+| Decoded nested refs | 157 | 205 |
+| `$unparsed` refs | 708 | 660 |
+
+Current classification: `UILevelMapCrane/CraneSpritePath` is now fully decoded for the 221-case corpus. Remaining high-count unresolved classes are still `EnemyBattleGraphData`, `LuaReference/RefExtraInfo`, and `ModelViewStateControllerBase/AnimationParamChangePack`.
