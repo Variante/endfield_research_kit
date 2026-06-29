@@ -1878,3 +1878,79 @@ Decoded target refs in the guide-only probe:
 | `OnCastNormalSkill` | 9 |
 
 Remaining guide bucket after this pass is dominated by action layouts, especially camera/factory/HUD guide actions such as `BlendToCameraTransformWithoutBack`, `BlendOutFromCamera`, `GuideUnFreezeWorld`, `RecoverMainHud`, `GuideFreezeWorld`, `FinishEffect`, `FacLockBuildPos`, and `SetFacTopView`. Their shared action prefix is visible, but only tails with proven semantics should be promoted in later passes.
+
+## 2026-06-29 Tenth Fresh StreamingAssets Guide-Action Batch
+
+Follow-up after the ninth guide-condition batch. This pass targeted only guide/tutorial managed-reference actions with both IL2CPP field evidence and stable byte layouts. Camera blends, tracking-point actions, and multi-field factory actions were left untouched unless their tail shape was proven.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Extended `TryDecodeGuideManagedReferenceData` to route `Beyond.Gameplay.Actions` payloads.
+- Added a strict 36-byte guide action base decoder: action index/hash, action id, three inherited raw words, mode/group word, and bool32 enabled flag.
+- Decoded fixed one-raw-word actions: `RecoverMainHud` and `ExitFacBuildMode`.
+- Decoded one-bool guide actions: `DisableHudFade`, `FacLockBuildPos`, `FacSetEnableConfirmBuild`, `FacSetEnableExitBuildMode`, `SetEnablePlayerMove`, `SetEnablePlayerMoveCamera`, `SetFacMode`, `SetFacTopView`, `SetGeneralAbilityReleaseClose`, `ToggleClearScreen`, `ToggleGeneralAbilityClick`, `ToggleGeneralAbilityLoneClick`, and `ToggleQuickMenuReleaseClose`.
+- Decoded one-float guide action: `SetAtbValue`.
+- Decoded string-tail guide actions: `GuideFreezeWorld`, `GuideUnFreezeWorld`, and `FinishEffect`.
+- Kept wrapper/tail words as `unknown*` or raw hash words when metadata does not prove a semantic name.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\guide_action_probe_allguide_after1 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names "^guide_"
+```
+
+Final build result: success with `0` warnings and `0` errors. The guide-only probe emitted 1,621 MonoBehaviour JSON files with exit code 0. Log grep for `Warning`, `Error`, `metadata-only JSON`, partial-TypeTree warnings, `Export ... error`, and `Unknown ClassIDType` returned no matches.
+
+Guide-only before/after from `tmp\guide_condition_probe_allguide_after1` to `tmp\guide_action_probe_allguide_after1`:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Guide JSON files | 1,621 | 1,621 |
+| Guide `$unparsed` managed refs | 5,864 | 3,951 |
+| Decoded guide managed refs | 2,728 | 4,641 |
+
+Resolved `$unparsed` payloads in this pass: 1,913.
+
+Decoded action refs in the guide-only probe:
+
+| Class | Decoded refs |
+| --- | ---: |
+| `GuideUnFreezeWorld` | 208 |
+| `RecoverMainHud` | 200 |
+| `GuideFreezeWorld` | 187 |
+| `FinishEffect` | 152 |
+| `FacLockBuildPos` | 142 |
+| `SetFacTopView` | 138 |
+| `ExitFacBuildMode` | 129 |
+| `FacSetEnableConfirmBuild` | 111 |
+| `SetEnablePlayerMove` | 107 |
+| `SetFacMode` | 106 |
+| `SetEnablePlayerMoveCamera` | 105 |
+| `ToggleQuickMenuReleaseClose` | 79 |
+| `FacSetEnableExitBuildMode` | 72 |
+| `SetGeneralAbilityReleaseClose` | 45 |
+| `ToggleGeneralAbilityLoneClick` | 42 |
+| `ToggleGeneralAbilityClick` | 41 |
+| `ToggleClearScreen` | 40 |
+| `DisableHudFade` | 6 |
+| `SetAtbValue` | 3 |
+
+Largest remaining guide `$unparsed` classes after this pass:
+
+| Class | Remaining refs | Current blocker |
+| --- | ---: | --- |
+| `BlendToCameraTransformWithoutBack` | 468 | Large 248-byte camera payload; IL2CPP names are known but exact vector/rotation/FOV tail grouping still needs validation. |
+| `BlendOutFromCamera` | 319 | 104-byte camera payload with blend/style/black-screen/runtime fields; exact field order still needs validation. |
+| `RemoveTrackingPoint` | 316 | Tracking-point list/key layout not yet mapped. |
+| `FacHighlightBuilding` | 256 | String plus bool factory action is visible but variable string lengths need a guarded decoder pass. |
+| `CheckScriptTaskStateEqual` | 249 | Condition wrapper and script-task state field names/order need proof. |
+| `AddTrackingPoint` | 175 | Tracking-point list/key layout not yet mapped. |
+| `FacGuideHintEnable` | 167 | String plus bool factory action is visible but variable string lengths need a guarded decoder pass. |
+| `OnBuildingPanelOpen` | 127 | Condition payload not yet mapped. |
+| `OnUIPanelClose` | 124 | Condition payload not yet mapped. |
+| `PlayerHasItemInItemBag` | 94 | Item condition payload not yet mapped. |
+
+Current classification: guide action decoding is improving the broad fresh-audit marker count without introducing AnimeStudio warnings. The remaining guide payloads are mostly larger camera/tracking/factory actions and additional item/quest/UI conditions, not signs of encryption or missing AB/VFS extraction.
+
+Parallel component/projectile audit result reserved for the next batch: `ProjectileRootComponentData`, `WeaponData`, `StaticWeaponData`, `ObservedComponentData`, `CharacterAIComponentData`, and the 120-byte default `CharacterPivotComponentData` have stable minimal layouts. Larger `CharacterPivotComponentData` payloads need a real `AnimationCurve` decoder, and `ProjectileTemplateData` should be handled as a guarded partial parser because 77 long entries exceeded the current audit hint cap.
