@@ -994,3 +994,76 @@ Fresh report-only run: `reports/20260629_023642`, command failures `0`.
 | Persistent | aggregate | 261,685 | 33 | 33,836,474,684 | 0 |
 
 Current classification: lightweight VFS metadata coverage now includes the `InitBundle` block that asset maps already reference. The structured `.ab` files remain classified as raw VFSFile slices before the legacy `VFSFile` decrypt/decompress transform, not as missing UnityFS bundle data.
+
+## 2026-06-29 Nested ManagedReference Payload Decoders
+
+Follow-up on the 221 managed-reference registry recoveries after slash-class support. Subagents checked both raw sidecars and IL2CPP metadata. The slash class names are Unity's serialized nested-type form:
+
+```text
+Unity registry: Beyond.Gameplay.AI NpcRabbitGraph/NpcRabbitGraphData Gameplay.Beyond
+IL2CPP type:    Beyond.Gameplay.AI.NpcRabbitGraph+NpcRabbitGraphData
+```
+
+The exact field lists came from `Endfield_Data/il2cpp_data/Metadata/global-metadata.dat` and matched raw sidecar byte layouts. `tools/DummyDll` was not sufficient for these exact nested definitions.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Full decoder for `Beyond.Gameplay.WeaponWallDisplayConfig/WeaponDisplayConfig`.
+  - Layout is `weaponAppearEffectName[3]` followed by `weaponDisappearEffectName[3]`.
+- Full decoders for the raw-proven AI nested managed-reference payloads:
+  - `EnemyAttackBuildingGraph/EnemyAttackBuildingGraphDatta`
+  - `NPCCoilbstEscapeBehavior/NPCCoilbstEscapeBehaviorData`
+  - `NpcHideBehavior/NpcHideBehaviorData`
+  - `NpcRandomWalkBehavior/NpcRandomWalkBehaviorData`
+  - `NpcRabbitGraph/NpcRabbitGraphData`
+  - `NpcBornBehavior/NpcBornBehaviorData`
+- Remaining heuristic payloads now include bounded `heuristicRawWordHints` so future schema work can compare raw words directly from JSON instead of reopening raw sidecars.
+
+Validation used an isolated CLI build because an unrelated `scripts/build_audio.py --language CN` process was holding the normal release `AnimeStudio.dll`:
+
+```bat
+dotnet build tools\AnimeStudio\AnimeStudio.CLI\AnimeStudio.CLI.csproj -c Release -f net9.0-windows --no-restore -p:OutDir=D:\fluffy-dump\tmp\animestudio_cli_probe_build\
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\monobehaviour_decoder_probe_20260629_weapon_ai_nomap --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --filter_data tmp\monobehaviour_warning_probe_after_slash_20260629_022702\filter.json
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\monobehaviour_decoder_221_after_weapon_ai --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --filter_data tmp\monobehaviour_warning_221_after_slash\filter.json
+```
+
+Small-probe result:
+
+- `WeaponWallDisplayConfig`: `managedReferencesRegistryFullyDecoded=true`, all 5 refs decoded with appear/disappear effect-name arrays.
+- `BB_npc_coilbst_base`: `managedReferencesRegistryFullyDecoded=true`, all 5 NPC behavior/graph refs decoded.
+- `BB_eny_0107_wgshoal2_hdg20`: `EnemyAttackBuildingGraphDatta` decoded; `EnemyBattleGraphData` remains heuristic with string/raw-word hints.
+
+221-case before/after:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Exported JSONs | 15,014 | 15,014 |
+| CLI warning/error lines | 0 | 0 |
+| Recovered registries | 549 | 549 |
+| Fully decoded recovered registries | 328 | 333 |
+| Heuristic recovered registries | 221 | 216 |
+| Decoded nested refs | 0 | 157 |
+| `$unparsed` refs | 865 | 708 |
+
+Resolved `$unparsed` classes in the 221-case probe:
+
+| Class | Count resolved |
+| --- | ---: |
+| `EnemyAttackBuildingGraph/EnemyAttackBuildingGraphDatta` | 104 |
+| `WeaponWallDisplayConfig/WeaponDisplayConfig` | 5 |
+| `NPCCoilbstEscapeBehavior/NPCCoilbstEscapeBehaviorData` | 5 |
+| `NpcHideBehavior/NpcHideBehaviorData` | 11 |
+| `NpcRandomWalkBehavior/NpcRandomWalkBehaviorData` | 13 |
+| `NpcRabbitGraph/NpcRabbitGraphData` | 7 |
+| `NpcBornBehavior/NpcBornBehaviorData` | 12 |
+
+Top remaining unresolved classes:
+
+| Class | Remaining `$unparsed` refs | Known gap |
+| --- | ---: | --- |
+| `EnemyBattleGraph/EnemyBattleGraphData` | 118 | Base fields are known, but longer `enemySR` tails need raw-sidecar proof before claiming full decode. |
+| `LuaReference/RefExtraInfo` | 58 | Looks like compact arrays of PPtr-like words; needs IL2CPP field type expansion. |
+| `ModelViewStateControllerBase/AnimationParamChangePack` | 54 | String + enum/scalar tail is visible; field names need metadata confirmation. |
+| `UILevelMapCrane/CraneSpritePath` | 48 | Looks like a single aligned string path; low-risk next decoder after metadata confirmation. |
+
+Current classification: this batch decodes 157 previously heuristic nested managed-reference payloads using raw byte evidence plus IL2CPP field metadata. It does not mark `EnemyBattleGraphData` fully understood yet because the variable `enemySR` tail is still not proven across all length variants.
