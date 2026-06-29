@@ -1233,3 +1233,69 @@ Top remaining unresolved classes after this pass:
 | `EnemyCastSkillResponse/EnemyCastSkillResponseData` | 23 | Looks simple from raw bytes but still needs metadata-backed field names. |
 
 Current classification: these 91 payloads are now schema-decoded from metadata-backed field names and raw byte layouts. Remaining high-count entries are schema-completion work, not parser-warning suppression.
+
+## 2026-06-29 Additional AI ManagedReference Decoders
+
+Follow-up decoder pass after the view animation and battle stimulus work. This pass targeted remaining AI behavior/response payloads where IL2CPP field names and the raw 221-case payload layouts agreed.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- `Beyond.Gameplay.AI.EnemyCastSkillResponse/EnemyCastSkillResponseData`
+  - Fields: `baseInterval`, `skillId`, `skillTarget`, `interruptSkill`.
+  - `skillTarget` enum names emitted: `None`, `Source`, `Self`, `Target`, `MainChar`.
+- `Beyond.Gameplay.AI.EnemyCheckBuffStackNum/EnemyCheckBuffStackNumData`
+  - Fields: `buffId`, `compareType`, `layerCount`.
+  - `compareType` is preserved as numeric+hex because the concrete enum names are not resolved yet.
+- `Beyond.Gameplay.AI.NpcFindMainCharBehavior/NpcFindMainCharBehaviorData`
+  - Fields: `baseInterval`, `radius`, `angle`, `height`.
+- `Beyond.Gameplay.AI.NpcFocusBehavior/NpcFocusBehaviorData`
+  - Fields: `baseInterval`, `focusBehavior`.
+  - `focusBehavior` is preserved as numeric+hex because the concrete enum names are not resolved yet.
+- `Beyond.Gameplay.AI.CharacterFocusBehavior/CharacterFocusBehaviorData`
+  - Fields: `baseInterval`, `focusBehavior`, `focusTarget`, `autoLock`, `focusInDis`, `focusOutDis`, `focusDuration`, `duration`.
+  - `focusTarget` enum names emitted: `MainChar`, `MainCamera`.
+- `Beyond.Gameplay.AI.EnemySimpleAttackBehavior/EnemySimpleAttackBehaviorData`
+  - Fields: `baseInterval`, `skillId`, `skillRange`.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\monobehaviour_decoder_221_after_ai_small --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --filter_data tmp\monobehaviour_warning_221_after_slash\filter.json
+```
+
+Build result: success with `0` errors and the existing project warnings. The targeted export emitted 15,014 JSON files with exit code 0 and no warning/error lines.
+
+221-case before/after this pass:
+
+| Metric | Before this pass | After this pass |
+| --- | ---: | ---: |
+| Recovered registries | 549 | 549 |
+| Fully decoded recovered registries | 352 | 352 |
+| Heuristic recovered registries | 197 | 197 |
+| Decoded nested refs | 296 | 370 |
+| `$unparsed` refs | 569 | 495 |
+
+Resolved `$unparsed` classes in this pass:
+
+| Class | Count resolved |
+| --- | ---: |
+| `EnemyCastSkillResponse/EnemyCastSkillResponseData` | 23 |
+| `EnemyCheckBuffStackNum/EnemyCheckBuffStackNumData` | 8 |
+| `NpcFindMainCharBehavior/NpcFindMainCharBehaviorData` | 9 |
+| `NpcFocusBehavior/NpcFocusBehaviorData` | 15 |
+| `CharacterFocusBehavior/CharacterFocusBehaviorData` | 11 |
+| `EnemySimpleAttackBehavior/EnemySimpleAttackBehaviorData` | 8 |
+
+Top remaining unresolved classes after this pass:
+
+| Class | Remaining `$unparsed` refs | Current blocker |
+| --- | ---: | --- |
+| `EnemyBattleGraph/EnemyBattleGraphData` | 118 | `canvasGraph`, `entityMode`, and `enemySR` tail type are still not fully resolved. |
+| `LuaReference/RefExtraInfo` | 58 | `customUIStyles` element types are known by field name but not concrete enough for full semantic decode. |
+| `EnemySettlementBattleBehavior/EnemySettlementBattleBehaviorData` | 24 | `skillData` container type still needs exact layout validation. |
+| `EnemySettlementBattleGraph/EnemySettlementBattleGraphData` | 24 | Graph fields and `enemySR` tail still need exact layout validation. |
+| `NpcSingleSwitchGraph/NpcSingleSwitchGraphData` | 9 | `behavior` type index unresolved. |
+| `EnemyDefendBattleGraph/EnemyDefendBattleGraphData` | 8 | Graph fields and `enemySR` tail still need exact layout validation. |
+
+Current classification: this pass decodes 74 additional managed-reference payloads without suppressing warnings. Remaining work is concentrated in graph/tail containers and Lua custom UI style references.
