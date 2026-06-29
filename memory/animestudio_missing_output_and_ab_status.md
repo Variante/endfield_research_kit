@@ -1,4 +1,4 @@
-﻿# AnimeStudio Texture2D/Sprite Missing Output And AB Status
+# AnimeStudio Texture2D/Sprite Missing Output And AB Status
 
 Date: 2026-06-28
 
@@ -3253,3 +3253,66 @@ Structured diagnostic coverage for the targeted files now covers the full curren
 | `Beyond.Gameplay.Core.Conditions.CheckTargetsEqual/Data` | 6 | 6 | 6 | 6 |
 
 Current classification: this is still diagnostic progress, not warning suppression. We now have structured evidence for all 53 current target/buff entries while preserving the fact that all 53 are not fully understood. The next evidence needed is semantic proof for `CreateBuffAction` tail words and `TargetSettings` selector/suffix fields, or a broader scan that finds more variants for these same classes.
+
+## 2026-06-29 Thirty-Fourth Fresh StreamingAssets CharacterRootComponentData Batch
+
+Follow-up after the TargetSettings/CreateBuffAction diagnostic batch. Work focused on the largest remaining non-TargetSettings bucket in the current 30-file character validation slice: `Beyond.Gameplay.Core.CharacterRootComponentData`.
+
+Evidence used:
+
+- Current validation inventory showed 28 unresolved `CharacterRootComponentData` refs across 28 character files, with payload lengths from 640 to 1800 bytes.
+- A first diagnostic-only patch added full raw payload hex/word traces for unresolved `CharacterRootComponentData` without changing `$unparsed` status.
+- Targeted `--map_op All` exports over the same three StreamingAssets chunks (`68B3...`, `71FC...`, `FBAD...`) produced 30 MonoBehaviour JSON files with 0 JSON parse failures and 28/28 CharacterRoot full-payload traces.
+- Raw-byte analysis proved the shared prefix: `locatorIds` count/list, matching `locatorNames` count/list, then an `unknown0` int32, then root transform records using the same string + seven-float shape already used by the existing `EnemyRootComponentData` decoder.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added an inferred `CharacterRootComponentData` decoder beside the existing `EnemyRootComponentData` decoder.
+- The decoder reads locator IDs, locator names, `unknown0`, up to 16 transform records, and preserves the remaining word-aligned tail as `trailingWords` instead of assigning unproven semantic names.
+- The unresolved fallback diagnostic remains available for future `CharacterRootComponentData` variants that fail the inferred parser.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 warnings, 0 errors.
+
+Targeted validation output: `tmp\characterroot_decode_after_20260629`.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 30 |
+| JSON parse failures | 0 |
+| `CharacterRootComponentData` refs | 28 |
+| Decoded `CharacterRootComponentData` refs | 28 |
+| Remaining `$unparsed` refs in slice | 66 |
+
+Observed decoded shape:
+
+| Field/shape | Current evidence |
+| --- | --- |
+| locator IDs/names | 28/28 payloads, counts match exactly |
+| `unknown0` | 27 payloads = `0`, Zhuangfy outlier = `1` |
+| transform records | 27 payloads contain 6 records; Zhuangfy contains 0 in the first block |
+| trailing words | preserved for every payload; 15 payloads have four zero words, several contain regular string-list-like blocks, Zhuangfy has a 308-word secondary/raw tail |
+
+Remaining unresolved in the same validation slice after this pass:
+
+| Class | Remaining `$unparsed` |
+| --- | ---: |
+| `Beyond.Gameplay.Core.Conditions.CheckObjectTypeMatch/Data` | 22 |
+| `Beyond.Gameplay.Core.Conditions.CheckMainCharacterCondition/Data` | 7 |
+| `Beyond.Gameplay.Core.CheckBuffStackNumAdvanced/Data` | 7 |
+| `Beyond.Gameplay.Core.Conditions.CheckTargetsEqual/Data` | 6 |
+| `Beyond.Gameplay.Core.Conditions.CheckBuffStackNum/Data` | 5 |
+| `Beyond.Gameplay.Core.Conditions.CheckBuffStackNumByTag/Data` | 5 |
+| `Beyond.Gameplay.Core.CreateBuffAction/Data` | 5 |
+| `Beyond.Gameplay.Core.Conditions.CheckTagMatch/Data` | 2 |
+| `Beyond.Gameplay.Core.Conditions.CheckHp/Data` | 2 |
+| `Beyond.Gameplay.Core.AbilitySystemData` | 2 |
+| `Beyond.Gameplay.Core.ModifyDynamicBlackboard/Data` | 2 |
+| `Beyond.Gameplay.Core.StoreBuffCount/Data` | 1 |
+
+Current classification: `CharacterRootComponentData` is a normal serialized managed-reference payload, not missing VFS/AB bytes and not encryption. The main semantic gap is the exact meaning of `unknown0` and the tail list blocks, so the decoder is intentionally marked inferred and preserves raw tail words. The remaining blockers in this character slice are now the TargetSettings-based Core action/condition payloads plus `AbilitySystemData`.
