@@ -645,3 +645,39 @@ Texture2D verification:
 Current classification: zero-vertex Meshes and zero-size `Font Texture` objects are now preserved as explicit metadata outputs rather than missing files. This improves understanding instead of suppressing warnings: generic malformed Mesh/Texture2D cases still remain visible, while the proven empty placeholder cases now have durable output artifacts.
 
 Remaining non-error report noise after this pass is identity accounting, not decode failure: `name_mismatch_output_count` and `uncertain_output_collision` groups for shared assets and Texture2D raw-hash collisions still need a separate status-model patch.
+
+## 2026-06-28 Output Collision Status Split
+
+Follow-up on the remaining identity-accounting noise after Mesh and Texture2D marker recovery.
+
+Implemented in `scripts/export_full_from_game.py`:
+
+- Output-path reuse is now classified instead of treated as one broad collision bucket.
+- Same output path with identical `Type`, `PathID`, `Name`, and map `Hash` across multiple AB groups is reported as `shared_output_reference`.
+- Same output path with identical `Type`, `PathID`, and `Name` but differing map `Hash` is reported as `raw_hash_output_collision`.
+- Same output path with differing identity fields is reported as `identity_output_collision`.
+- Same-output duplicates within one AB group remain `uncertain_duplicate_output_path`.
+- `reports/export_full_summary.md` now prints `cross_ab_paths`, `shared_refs`, `raw_hash_collisions`, `identity_collisions`, and `uncertain_collisions` separately.
+
+Verification command:
+
+```bat
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode debug --animestudio-asset-types Texture2D Sprite Shader AnimationClip Mesh --animestudio-stages convert_by_type --sources Persistent StreamingAssets --report-only
+```
+
+Fresh report run: `reports/20260628_232303`.
+
+| Source | Type | Matched entries | Output entries | Missing outputs | Shared refs | Raw-hash collisions | Identity collisions | Dirty groups |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Persistent | AnimationClip | 7,984 | 7,984 | 0 | 0 | 0 | 0 | 0 |
+| Persistent | Mesh | 491 | 491 | 0 | 0 | 0 | 0 | 0 |
+| Persistent | Shader | 222 | 222 | 0 | 3 | 0 | 0 | 0 |
+| Persistent | Sprite | 5,603 | 5,603 | 0 | 3 | 0 | 0 | 0 |
+| Persistent | Texture2D | 5,960 | 5,960 | 0 | 0 | 3 | 0 | 83 |
+| StreamingAssets | AnimationClip | 117,849 | 117,849 | 0 | 0 | 0 | 0 | 0 |
+| StreamingAssets | Mesh | 59,287 | 59,287 | 0 | 0 | 0 | 0 | 0 |
+| StreamingAssets | Shader | 271 | 271 | 0 | 3 | 0 | 0 | 0 |
+| StreamingAssets | Sprite | 20,917 | 20,917 | 0 | 5 | 0 | 0 | 0 |
+| StreamingAssets | Texture2D | 126,496 | 126,496 | 0 | 0 | 6 | 0 | 247 |
+
+Current classification: all five manifest-covered conversion types have complete outputs and zero export errors in the latest report-only manifests. Shader and Sprite output-path reuse is now understood as shared references, not dirty export status. The only remaining dirty status is Texture2D raw-hash-only reuse: identical output name and PathID, but differing map `Hash` across source containers. That is not evidence of missing VFS bytes or failed decryption, but the hash field semantics are not fully understood yet, so it remains visible rather than being downgraded to clean.
