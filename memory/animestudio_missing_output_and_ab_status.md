@@ -1299,3 +1299,109 @@ Top remaining unresolved classes after this pass:
 | `EnemyDefendBattleGraph/EnemyDefendBattleGraphData` | 8 | Graph fields and `enemySR` tail still need exact layout validation. |
 
 Current classification: this pass decodes 74 additional managed-reference payloads without suppressing warnings. Remaining work is concentrated in graph/tail containers and Lua custom UI style references.
+
+## 2026-06-29 Small ManagedReference Decoder Batch
+
+Follow-up pass using two parallel read-only investigations: one metadata-oriented and one raw-layout-oriented. This batch only promoted classes where IL2CPP/DummyDll field evidence and the 221-case raw payload shapes agreed.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- `Beyond.Lua.LuaReference/RefExtraInfo`
+  - Decodes `customUIStyles` as a counted list of `CustomUIStyleInfo` entries.
+  - Each entry has `style` and `component` Unity PPtrs.
+- `Beyond.Gameplay.BattleMusicConfig/PotentialEnemyRangeConfig/Circle`
+  - Field: `radius`.
+- `Beyond.Gameplay.BattleMusicConfig/PotentialEnemyRangeConfig/Sector`
+  - Fields: `radius`, `angle`.
+- `Beyond.Gameplay.InteractiveBehitPerformSetting/FightBehitBase`
+  - Fields: `cameraShake`, `stopFrame`, `entityAnim`.
+  - Enum names emitted from `EFightBehit`: `Base`, `Normal`, `HighLevel`.
+- `Beyond.Gameplay.AI.EnemyResetPoiseResponse/EnemyResetPoiseResponseData`
+  - Field: `baseInterval`.
+- `Beyond.Gameplay.AI.EnemyCastSkillInRangeBehavior/EnemyCastSkillInRangeBehaviorData`
+  - Field: `baseInterval`.
+- `Beyond.Gameplay.AI.EnemyCheckCanInterruptCurSkill/EnemyCheckCanInterruptCurSkillData`
+  - Confirmed empty payload.
+- `Beyond.Gameplay.AI.EnemyFindTargetlBehavior/EnemyFindTargetlBehaviorData`
+  - Fields: `baseInterval`, `forgetTime`.
+- `Beyond.Gameplay.AI.EnemyHpChangeStimulus/EnemyHpChangeStimulusData`
+  - Fields: `checkType`, `hpPct`.
+  - `checkType` names emitted from `Beyond.CompareType`: `LT`, `LE`, `GT`, `GE`, `Equals`.
+- `Beyond.Gameplay.AI.EnemyCheckHP/EnemyCheckHPData`
+  - Fields: `targetType`, `checkType`, `hpPct`.
+  - Target enum names: `Self`, `Source`.
+- `Beyond.Gameplay.AI.EnemyCheckInZeroPoise/EnemyCheckInZeroPoiseData`
+  - Field: `invert`.
+- `Beyond.Gameplay.AI.EnemySinglePatrolBehavior/EnemySinglePatrolBehaviorData`
+  - Fields: `baseInterval`, `enterRestart`, `moveMode`, `reachDis`, `reachRunDis`, `entityModeId`, `entityRunModeId`.
+  - `moveMode` names emitted: `NavMesh`, `World`, `TowerDefence`.
+- `Beyond.Gameplay.AI.EnemySettlementBattleBehavior/EnemySettlementBattleBehaviorData`
+  - Fields: `baseInterval`, `skillData`.
+  - `skillData` decodes a target-type key list and matching `skillId`/`skillRange` entries.
+- `Beyond.Gameplay.AI.NpcSpaceShipBehavior/NpcSpaceShipBehaviorData`
+  - Fields: `baseInterval`, `canvasGraph`, `greetVirtualTag`, `greetCD`.
+- `Beyond.Gameplay.AI.CharacterSingleSwitchGraph/CharacterSingleSwitchGraphData`
+- `Beyond.Gameplay.AI.EnemySingleSwitchGraph/EnemySingleSwitchGraphData`
+- `Beyond.Gameplay.AI.NpcSingleSwitchGraph/NpcSingleSwitchGraphData`
+  - Fields: `baseInterval`, `behavior` gameplay tag.
+- `Beyond.Gameplay.AI.CharacterCheckBehavior/CharacterCheckBehaviorData`
+  - Fields: `checkBehaviorType`, `charBehaviorTags`.
+  - `charBehaviorTags` is a counted list of `invert` plus behavior gameplay tag.
+- `Beyond.Gameplay.AI.EnemyCheckGameplayTag/EnemyCheckGameplayTagData`
+  - Fields: `targetType`, `checkTagType`, `tagInfo`.
+  - `tagInfo` is a counted list of `invert` plus gameplay tag.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\monobehaviour_decoder_221_after_small_batch --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --filter_data tmp\monobehaviour_warning_221_after_slash\filter.json
+```
+
+Build result: success with `0` errors and existing project warnings. The targeted export emitted 15,014 JSON files with exit code 0 and no warning/error lines.
+
+221-case before/after this pass:
+
+| Metric | Before this pass | After this pass |
+| --- | ---: | ---: |
+| Recovered registries | 549 | 549 |
+| Fully decoded recovered registries | 352 | 371 |
+| Not fully decoded recovered registries | 197 | 178 |
+| `$unparsed` refs | 495 | 325 |
+| `$unparsed` classes | 145 | 126 |
+
+Resolved `$unparsed` classes in this pass:
+
+| Class | Count resolved |
+| --- | ---: |
+| `LuaReference/RefExtraInfo` | 58 |
+| `EnemySettlementBattleBehavior/EnemySettlementBattleBehaviorData` | 24 |
+| `NpcSingleSwitchGraph/NpcSingleSwitchGraphData` | 9 |
+| `InteractiveBehitPerformSetting/FightBehitBase` | 8 |
+| `EnemyResetPoiseResponse/EnemyResetPoiseResponseData` | 7 |
+| `EnemySinglePatrolBehavior/EnemySinglePatrolBehaviorData` | 7 |
+| `EnemyFindTargetlBehavior/EnemyFindTargetlBehaviorData` | 7 |
+| `NpcSpaceShipBehavior/NpcSpaceShipBehaviorData` | 6 |
+| `CharacterSingleSwitchGraph/CharacterSingleSwitchGraphData` | 5 |
+| `CharacterCheckBehavior/CharacterCheckBehaviorData` | 5 |
+| `EnemyHpChangeStimulus/EnemyHpChangeStimulusData` | 5 |
+| `EnemyCheckGameplayTag/EnemyCheckGameplayTagData` | 5 |
+| `EnemyCastSkillInRangeBehavior/EnemyCastSkillInRangeBehaviorData` | 5 |
+| `EnemyCheckInZeroPoise/EnemyCheckInZeroPoiseData` | 4 |
+| `EnemyCheckCanInterruptCurSkill/EnemyCheckCanInterruptCurSkillData` | 4 |
+| `EnemyCheckHP/EnemyCheckHPData` | 4 |
+| `BattleMusicConfig/PotentialEnemyRangeConfig/Sector` | 3 |
+| `EnemySingleSwitchGraph/EnemySingleSwitchGraphData` | 3 |
+| `BattleMusicConfig/PotentialEnemyRangeConfig/Circle` | 1 |
+
+Top remaining unresolved classes after this pass:
+
+| Class | Remaining `$unparsed` refs | Current blocker |
+| --- | ---: | --- |
+| `EnemyBattleGraph/EnemyBattleGraphData` | 118 | Fixed prefix is understood, but optional tail groups include variable rid links and sentinel rid values; list boundaries and semantics are not proven. |
+| `EnemySettlementBattleGraph/EnemySettlementBattleGraphData` | 24 | Prefix fields are understood, but the optional tail starts after the fixed graph fields and needs list/rid semantics before full decode. |
+| `EnemyDefendBattleGraph/EnemyDefendBattleGraphData` | 8 | Raw layout is structurally stable, but field names for several scalar/tail words are still not reliable enough to mark fully decoded. |
+| `NpcCommonAnimalGraph/NpcCommonAnimalGraphData` | 5 | Multi-tag graph payload; needs exact metadata-to-byte layout validation. |
+| `NpcIdleBehavior/NpcIdleBehaviorData` | 4 | Small payload, likely base interval only, but not yet metadata-confirmed in this pass. |
+
+Current classification: this pass decodes 170 additional managed-reference payloads without suppressing warnings. The highest remaining risk is graph tail reconstruction, not encrypted or missing bundle data.
