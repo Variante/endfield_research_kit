@@ -1752,3 +1752,56 @@ Remaining blockers after this pass:
 | One-off graph/custom classes | 1 each | `CharacterFollowGraph`, `CharacterBattleGraph`, `EnemyPatrolGraph`, and `EnemyBornBehavior` still need exact graph/reference-list or born-action semantics before full decode. |
 
 Current classification: the simple scalar/string/tag/list one-offs are exhausted for this 221-case set. Remaining work is concentrated in graph/reference-list semantics and the custom enemy-born action structure.
+
+## 2026-06-29 Eighth AI Graph Decoder Completion Batch
+
+Follow-up pass after `tmp\monobehaviour_decoder_221_after_small_ai7_finishfix`. Three read-only subagents returned exact byte-layout evidence for the remaining character graph, enemy patrol/born, and enemy battle/settlement/defend graph payloads. No subagent edited files.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- `CharacterFollowGraph/CharacterFollowGraphData`: `baseCheckInterval`, `randomCheckInterval`, and `CharacterSR` as an inferred object with an unresolved leading scalar preserved as `unknownFloat0`, plus counted `srData` entries of `finishCount`, `stimulusCfg`, `stimulusConditionCfg`, and `responseCfg` RID links.
+- `CharacterBattleGraph/CharacterBattleGraphData`: the same `CharacterSR` object layout.
+- `EnemyPatrolGraph/EnemyPatrolGraphData`: `baseInterval`, `singlePatrol`, `groupPatrol`, and counted `enemySR` entries using the same managed-reference RID-link record shape.
+- `EnemyBornBehavior/EnemyBornBehaviorData`: `baseInterval` and nested `bornBehaviorData` with aligned string, int32 mode, bool32, and float fields for enter/exit animation and interrupt data.
+- `EnemyBattleGraph/EnemyBattleGraphData`: fixed prefix (`baseInterval`, `canvasGraph`, `entityMode`, `soundName`, `alertRange`, wait/common-behavior fields, `enterConfrontDis`) plus counted `enemySR`.
+- `EnemyDefendBattleGraph/EnemyDefendBattleGraphData`: fixed prefix (`baseInterval`, `canvasGraph`, common-behavior/search fields, `searchMode`, `onHitTimeout`) plus counted `enemySR`.
+- `EnemySettlementBattleGraph/EnemySettlementBattleGraphData`: fixed prefix (`baseInterval`, `canvasGraph`, battle/patrol tags, search/sight/leave fields, `exAction`) plus counted `enemySR`.
+
+Known conservative choices:
+
+- `CharacterSR.unknownFloat0` remains intentionally unnamed; metadata proves the container and `srData` shape, but not that scalar's field name.
+- `entityMode`, `searchMode`, `exAction`, and enemy-born enter/exit modes are emitted as raw int32/hash-style values, not guessed enum names.
+- Negative managed-reference RID sentinels are preserved through the existing RID-link output instead of being converted into fake references.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\monobehaviour_decoder_221_after_graph_all1 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --filter_data tmp\monobehaviour_warning_221_after_slash\filter.json
+```
+
+Build result: success with the existing project warnings and `0` errors. The targeted export emitted 15,014 JSON files with exit code 0. Log grep for `Warning`, `Error`, `metadata-only JSON`, and `Export ... error` returned no matches.
+
+221-case before/after this pass:
+
+| Metric | Before this pass | After this pass |
+| --- | ---: | ---: |
+| JSON files emitted | 15,014 | 15,014 |
+| `$unparsed` refs | 154 | 0 |
+| `$unparsed` classes | 7 | 0 |
+
+Resolved `$unparsed` payloads in this pass: 154.
+
+Resolved classes:
+
+| Class | Resolved `$unparsed` refs |
+| --- | ---: |
+| `EnemyBattleGraph/EnemyBattleGraphData` | 118 |
+| `EnemySettlementBattleGraph/EnemySettlementBattleGraphData` | 24 |
+| `EnemyDefendBattleGraph/EnemyDefendBattleGraphData` | 8 |
+| `CharacterFollowGraph/CharacterFollowGraphData` | 1 |
+| `CharacterBattleGraph/CharacterBattleGraphData` | 1 |
+| `EnemyPatrolGraph/EnemyPatrolGraphData` | 1 |
+| `EnemyBornBehavior/EnemyBornBehaviorData` | 1 |
+
+Current classification: for this focused 221-case MonoBehaviour warning set, AnimeStudio now emits decoded JSON without `$unparsed` managed-reference payloads and without warning/error log lines. This does not prove every asset type in the full installed game export is fully understood; it closes the remaining AI managed-reference layouts from this warning report.
