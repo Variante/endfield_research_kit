@@ -1603,3 +1603,69 @@ Largest remaining blockers after this pass:
 | Remaining single-count graph/list classes | 1 each | Most contain rid lists, PQS/custom data, `npcSR`, `enemySR`, or other custom containers that need separate semantics before full decode. |
 
 Current classification: this pass resolves low-count scalar/string/tag payloads and leaves remaining work concentrated in graph/reference-list containers. Two read-only subagents were left investigating `EnemyCheckTag` and enemy graph tails during this pass; their conclusions should be folded into the next batch when available.
+
+## 2026-06-29 Fifth Low-Count AI ManagedReference Batch
+
+Follow-up pass after `tmp\monobehaviour_decoder_221_after_small_ai4_moregraphs`. This pass targeted simple one-off AI behavior payloads with metadata-backed scalar/string/tag layouts and a small base-interval-only group. It deliberately left enemy battle graph tails, `EnemyCheckTag`, remaining custom graph/list containers, Core ability actions, and `WeaponAnimatorMono/StateActionEntry` unresolved until their list/reference semantics are proven.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Character AI payloads:
+  - `CharacterPickupBehavior/CharacterPickupBehaviorData`: `baseInterval`, `skillId`, `pickupTag`, counted `pickupInteractId`, movement radii/timeouts, and emoji strings.
+  - `CharacterRepatriateBehavior/CharacterRepatriateBehaviorData`: `baseInterval`, `performId`, `duration`.
+  - `CharacterSeatBehavior/CharacterSeatBehaviorData`: `baseInterval`, stop/walk distances, `performId`, `delay`.
+  - `CharacterSettlementBattleBehavior/CharacterSettlementBattleBehaviorData`: `baseInterval`, dodge distance/angle/cooldown.
+  - Base-interval-only: `CharacterPlungingAttackBehavior`, `CharacterSummonTeamBehavior`, `CharacterHealTargetBehavior`.
+- Enemy AI payloads:
+  - `EnemyDogEscapeBehavior/EnemyDogEscapeBehaviorData`: skill/timing/escape distance fields.
+  - `EnemyDogGraph/EnemyDogGraphData`: single/group patrol, random-walk, and escape gameplay tags.
+  - `EnemyEnvConfrontBehavior/EnemyEnvConfrontBehaviorData`: idle-break min/max timing.
+  - `EnemyLeaveBattleGraph/EnemyLeaveBattleGraphData`: leave/teleport gameplay tags.
+  - `EnemyMoveToValidPosBehavior/EnemyMoveToValidPosBehaviorData`: radius, stop distance, timeout.
+  - `EnemyRandomWalkBehavior/EnemyRandomWalkBehaviorData`: entity mode id, radius/angle, idle-time and distance vectors, try count.
+  - `EnemyScriptedMoveGraph/EnemyScriptedMoveGraphData`: enemy/main-character in/out radius/count thresholds.
+  - `EnemySetBlackboardResponse/EnemySetBlackboardResponseData`: key/global/value union fields.
+  - `EnemyVigilanceBehavior/EnemyVigilanceBehaviorData`: extra wait time.
+  - Base-interval-only: `EnemyEnvConfrontResponse`, `EnemyIdleBehavior`, `EnemyLeaveBattleTeleportBehavior`, `EnemyMainCharExceedRange`, `EnemyMoveToOuterRadius`, `EnemyTargetInProximity`.
+- NPC AI payloads:
+  - `NPCCoilbstSitBehavior/NPCCoilbstSitBehaviorData`: sit/end montage tags, intervals, counted random montage tags, root-motion height.
+  - `NPCCommonAnimalEscapeBehavior/NPCCommonAnimalEscapeBehaviorData`: movement style, timing/range fields, play-montage flag, escape montage tag.
+  - `NPCCommonAnimalLoopMontageBehavior/NPCCommonAnimalLoopMontageBehaviorData`: loop montage tag and duration.
+  - `NPCEnvConfrontBehavior/NPCEnvConfrontBehaviorData`: animation tag, rotation flag, random delay, idle-break timings.
+  - `NPCLotusFrogEscapeBehavior/NPCLotusFrogEscapeBehaviorData`: duration, escape montage tag, backward correction.
+  - `NPCPlayanimationBehavior/NPCPlayanimationBehaviorData`: animation tag.
+  - `NPCPlayanimationHideBehavior/NPCPlayanimationHideBehaviorData`: animation tag and fade time.
+  - `NPCResetToBornBehavior/NPCResetToBornBehaviorData`: disappear/appear animation tags.
+- Shared helper:
+  - `ReadPayloadGameplayTagList` for counted gameplay-tag arrays.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\monobehaviour_decoder_221_after_small_ai5_morelow --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --filter_data tmp\monobehaviour_warning_221_after_slash\filter.json
+```
+
+Build result: success with the existing project warnings and `0` errors. The targeted export emitted 15,014 JSON files with exit code 0 and no warning/error lines.
+
+221-case before/after this pass:
+
+| Metric | Before this pass | After this pass |
+| --- | ---: | ---: |
+| JSON files emitted | 15,014 | 15,014 |
+| `$unparsed` refs | 193 | 163 |
+| `$unparsed` classes | 44 | 14 |
+
+Resolved `$unparsed` payloads in this pass: 30.
+
+Remaining blockers after this pass:
+
+| Class | Remaining `$unparsed` refs | Current blocker |
+| --- | ---: | --- |
+| `EnemyBattleGraph/EnemyBattleGraphData` | 118 | Fixed prefix is mapped, but `enemySR` tail grouping, rid links, sentinel rid values, and exact semantics are not proven. |
+| `EnemySettlementBattleGraph/EnemySettlementBattleGraphData` | 24 | Fixed prefix is mapped, but `enemySR` tail/list semantics and `exAction` type are not proven. |
+| `EnemyDefendBattleGraph/EnemyDefendBattleGraphData` | 8 | Structurally stable 44-byte payload, but `searchMode` enum/type proof and canonical empty `enemySR` semantics are still pending. |
+| `EnemyCheckTag/EnemyCheckTagData` | 3 | `tagInfo` remains a compact numeric/list payload rather than the normal gameplay-tag path+hash layout. |
+| One-off graph/list/custom classes | 1 each | `CharacterFollowGraph`, `CharacterBattleGraph`, `CharacterFarmingBehavior`, `EnemyPatrolGraph`, `EnemyBornBehavior`, `NPCCommonAnimalRandomPlayMontageBehavior`, `NpcDailyGraph`, `ShowSquadTipsAction/Data`, `FinishGlobalBuffAction/Data`, and `WeaponAnimatorMono/StateActionEntry` need separate layout proof before full decode. |
+
+Current classification: this pass removes the straightforward low-risk one-off behavior payloads. The unresolved set is now dominated by AI graph/reference-list/custom-container semantics, not missing AB extraction, raw VFS coverage, or repeated encryption.
