@@ -537,3 +537,44 @@ Current `HGRP/CharacterNPR` evidence:
 - Both logs throw `System.OutOfMemoryException` at `StringBuilder.ToString()` inside `ShaderConverter.ConvertSerializedSubShader`.
 
 Current classification: the remaining Shader blocker is not VFS decode, bundle encryption, or the old Endfield shader subprogram schema gap. It is an exporter scalability/output construction problem for one very large shader. The next useful patch should preserve parsed subprogram metadata and bytecode hashes without constructing an unbounded single decompiled text string.
+
+## 2026-06-28 CharacterNPR Shader Export Recovery
+
+Follow-up on the `HGRP/CharacterNPR` Shader OOM from `reports/20260628_204551`.
+
+Implemented a bounded shader body writer in `tools/AnimeStudio/AnimeStudio.Utility/ShaderConverter.cs`:
+
+- Per-shader generated program text is capped at `32 MiB`.
+- Parsed bytecode identity comments, offsets, sizes, hashes, keywords, and pass/subprogram structure are still emitted.
+- Once the cap is reached, later large decompiled/source bodies are replaced with an explicit `AnimeStudio: omitted ... shader program text budget` comment instead of forcing one unbounded `StringBuilder`/decompiler output path.
+- SPIR-V and Endfield DXBC HLSL decompilation are skipped once the cap is exhausted, so the exporter avoids spending time and memory on text that cannot be appended.
+
+Focused verification:
+
+```bat
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" "D:\fluffy-dump\tmp\animestudio_shader_characternpr_probe\output" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type Convert --dummy_dlls "D:\fluffy-dump\tools\DummyDll" --names "D:\fluffy-dump\tmp\animestudio_shader_characternpr_probe\names.txt" --filter_data "D:\fluffy-dump\tmp\animestudio_shader_characternpr_probe\filter_data.json" --types Shader:Both
+```
+
+Probe result:
+
+- Exit code `0`.
+- Wrote `HGRP_CharacterNPR_p9371FF9C9E74391E.shader`.
+- Output size: `36,356,198` bytes.
+- The output includes parsed Endfield DXBC and SMOL-V snippet metadata plus budget comments for omitted decompiled bodies after the cap is reached.
+
+Full focused Shader refresh:
+
+```bat
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode debug --animestudio-asset-types Shader --animestudio-stages convert_by_type --sources Persistent StreamingAssets --animestudio-jobs 4 --animestudio-shards 16
+```
+
+Fresh report run: `reports/20260628_212932`.
+
+Results:
+
+| Source | Matched Shader entries | Missing outputs | Export errors |
+| --- | ---: | ---: | ---: |
+| Persistent | 222 | 0 | 0 |
+| StreamingAssets | 271 | 0 | 0 |
+
+Current classification: `HGRP/CharacterNPR` is understood enough to export reliably. The prior failure was not encryption, VFS decode, or shader bytecode schema loss; it was unbounded text generation for one exceptionally large shader. Remaining semantic limitation: after the 32 MiB cap, some decompiled/source bodies are intentionally omitted, but their parsed bytecode metadata and hashes remain in the `.shader` output for identity and follow-up analysis.
