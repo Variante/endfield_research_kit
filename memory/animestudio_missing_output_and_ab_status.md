@@ -1669,3 +1669,46 @@ Remaining blockers after this pass:
 | One-off graph/list/custom classes | 1 each | `CharacterFollowGraph`, `CharacterBattleGraph`, `CharacterFarmingBehavior`, `EnemyPatrolGraph`, `EnemyBornBehavior`, `NPCCommonAnimalRandomPlayMontageBehavior`, `NpcDailyGraph`, `ShowSquadTipsAction/Data`, `FinishGlobalBuffAction/Data`, and `WeaponAnimatorMono/StateActionEntry` need separate layout proof before full decode. |
 
 Current classification: this pass removes the straightforward low-risk one-off behavior payloads. The unresolved set is now dominated by AI graph/reference-list/custom-container semantics, not missing AB extraction, raw VFS coverage, or repeated encryption.
+
+## 2026-06-29 Sixth Graph-Lite ManagedReference Batch
+
+Follow-up pass after `tmp\monobehaviour_decoder_221_after_small_ai5_morelow`. Two read-only subagents returned evidence during this pass: one resolved `EnemyCheckTag` as a counted `EnemyCheckTagInfo` list whose `query` is `Beyond.Gameplay.PredefinedQuery`, and one confirmed exact byte layouts for several remaining one-count payloads. No subagent edited files.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- `EnemyCheckTag/EnemyCheckTagData`: `targetType`, `checkTagType`, and counted `tagInfo` entries of `invert` plus `PredefinedQuery` value. Known value `7` is labeled `InImmobilized`; other values remain numeric+hex until the enum is fully mapped.
+- `CharacterFarmingBehavior/CharacterFarmingBehaviorData`: scalar movement/farming thresholds plus `farmInfo` int-to-perform-id dictionary. The `farmInfo` key enum names are not proven, so keys are preserved as raw int/hex values.
+- `NpcDailyGraph/NpcDailyGraphData`: five behavior gameplay tags plus counted `npcSR.cfg` entries with RID-linked stimulus, condition-list, and response references.
+- `ShowSquadTipsAction/Data`: inherited ability-action prefix (`isEnable`, `priorityLevel`, `priorityOffset`, `serverActionIndex`) plus `textId`.
+- `WeaponAnimatorMono/StateActionEntry`: counted RID-linked `actionsOnEnter` and `actionsOnExit` lists.
+- Dispatch plumbing now passes the recovered managed-reference RID map into the AI and View decoders, and adds a small Core gameplay decoder path for ability-action data.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\monobehaviour_decoder_221_after_small_ai6_graphlite --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --filter_data tmp\monobehaviour_warning_221_after_slash\filter.json
+```
+
+Build result: success with the existing project warnings and `0` errors. The targeted export emitted 15,014 JSON files with exit code 0 and no warning/error lines.
+
+221-case before/after this pass:
+
+| Metric | Before this pass | After this pass |
+| --- | ---: | ---: |
+| JSON files emitted | 15,014 | 15,014 |
+| `$unparsed` refs | 163 | 156 |
+| `$unparsed` classes | 14 | 9 |
+
+Resolved `$unparsed` payloads in this pass: 7.
+
+Remaining blockers after this pass:
+
+| Class | Remaining `$unparsed` refs | Current blocker |
+| --- | ---: | --- |
+| `EnemyBattleGraph/EnemyBattleGraphData` | 118 | Fixed prefix is mapped, but `enemySR` tail grouping, rid links, sentinel rid values, and exact semantics are not proven. |
+| `EnemySettlementBattleGraph/EnemySettlementBattleGraphData` | 24 | Fixed prefix is mapped, but `enemySR` tail/list semantics and `exAction` type are not proven. |
+| `EnemyDefendBattleGraph/EnemyDefendBattleGraphData` | 8 | Structurally stable 44-byte payload, but `searchMode` enum/type proof and canonical empty `enemySR` semantics are still pending. |
+| One-off graph/custom classes | 1 each | `CharacterFollowGraph`, `CharacterBattleGraph`, `EnemyPatrolGraph`, `EnemyBornBehavior`, `NPCCommonAnimalRandomPlayMontageBehavior`, and `FinishGlobalBuffAction/Data` still need exact custom container or inherited-prefix proof. |
+
+Current classification: repeated encryption and missing VFS extraction are not implicated in the remaining set. The unresolved payloads are now mostly AI graph/reference-list containers plus a few custom inherited data classes.
