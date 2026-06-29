@@ -2818,3 +2818,44 @@ Targeted export marker status after this probe:
 | `Beyond.Gameplay.Core.ProjectileComponentData` | 300 | 0 |
 
 This is intentional: the raw-payload batch does not reduce warning counts by itself. It preserves the `ProjectileComponentData` unresolved markers while providing exact binary evidence for the next parser iteration. Current classification: the blocker is no longer missing bytes; it is an unproven long managed-reference schema requiring full-payload layout work.
+
+## 2026-06-29 Twenty-Fourth Fresh StreamingAssets Weapon-RID-Wrapper Batch
+
+Follow-up after the projectile-component raw-payload batch. Work focused on the small weapon RID-wrapper family from the stale non-guide audit.
+
+Evidence used:
+
+- `Beyond.Gameplay.View.WeaponComponentData`: 28 refs across 28 files in three chunks.
+- `Beyond.Gameplay.WeaponDataWrapper`: 29 refs across the same 28 files in three chunks.
+- Source chunk distribution for the target files: `68B3B9B8EB82E88FBFE6A313E6B18FB6.chk` has 25 files, `71FC2E71A9F249B382BF8DAED3BCEE65.chk` has 1 file, and `FBAD673F662CF3EACDDB14A65999F7EF.chk` has 2 files.
+- Payloads are exact `4 + 8*N` RID-list shapes. `WeaponComponentData` lengths are `12 x27` and `20 x1`; `WeaponDataWrapper` lengths range from 12 to 108 and match the observed RID count.
+- Local IL2CPP metadata exposes `WeaponComponentData.weaponCfg` and `WeaponDataWrapper.dataList` as the only fields for these classes.
+- RID hints show `WeaponComponentData.weaponCfg` links to one or two `WeaponDataWrapper` refs; `WeaponDataWrapper.dataList` links to `WeaponData` and sometimes `StaticWeaponData` refs.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added strict `Beyond.Gameplay.View.WeaponComponentData` decoding under the view managed-reference decoder.
+- Added strict `Beyond.Gameplay.WeaponDataWrapper` decoding under the general `Gameplay.Beyond` managed-reference decoder.
+- Both decoders use the existing `ReadPayloadRidLinkList` helper with max 16 entries and `EnsureComplete()`, so invalid counts, bad RID ranges, or extra trailing bytes fall back to the marker path.
+
+Validation details:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\weapon_wrapper_validation_after\68B3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\weapon_wrapper_validation_filters\names_1_68B3B9B8.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\71FC2E71A9F249B382BF8DAED3BCEE65.chk" tmp\weapon_wrapper_validation_after\71FC --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\weapon_wrapper_validation_filters\names_2_71FC2E71.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk" tmp\weapon_wrapper_validation_after\FBAD --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\weapon_wrapper_validation_filters\names_3_FBAD673F.txt
+```
+
+The targeted exports covered all 28 weapon-wrapper files, exited with code 0, and emitted no warning/error output. The build succeeded with the existing 14 AnimeStudio/Utility warnings and no errors.
+
+Before/after for the targeted files:
+
+| Class | Fresh audit `$unparsed` | Final `$unparsed` | Final decoded |
+| --- | ---: | ---: | ---: |
+| `Beyond.Gameplay.View.WeaponComponentData` | 28 | 0 | 28 |
+| `Beyond.Gameplay.WeaponDataWrapper` | 29 | 0 | 29 |
+| `Beyond.Gameplay.WeaponData` | 45 | 45 | 0 |
+| `Beyond.Gameplay.StaticWeaponData` | 41 | 41 | 0 |
+
+Resolved `$unparsed` refs attributable to this batch: 57 wrapper refs. Current classification: the wrapper classes are normal serialized managed-reference RID lists backed by local IL2CPP metadata, not missing VFS/AB bytes and not encryption. `WeaponData` and `StaticWeaponData` remain separate unresolved payloads and are under parallel read-only audit.
