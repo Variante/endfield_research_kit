@@ -3450,3 +3450,64 @@ Remaining unresolved in the same validation slice after this pass:
 | `Beyond.Gameplay.Core.StoreBuffCount/Data` | 1 |
 
 Current classification: these 35 condition payloads are normal serialized managed-reference payloads backed by local IL2CPP/MemoryPack metadata, not missing AB/VFS bytes and not encryption. They remain `$partial` only because their embedded TargetSettings objects still preserve unresolved selector/suffix fields.
+
+## 2026-06-29 Thirty-Seventh Fresh StreamingAssets Buff-Stack Condition Batch
+
+Follow-up after the simple TargetSettings-only condition batch. Work focused on the remaining regular buff-stack condition payloads in the current character validation slice: `Beyond.Gameplay.Core.Conditions.CheckBuffStackNum/Data` and `Beyond.Gameplay.Core.Conditions.CheckBuffStackNumByTag/Data`.
+
+Evidence used:
+
+- The latest focused validation output before this pass still had 10 raw `$unparsed` refs across these two classes: 5 `CheckBuffStackNum/Data` and 5 `CheckBuffStackNumByTag/Data`.
+- Local IL2CPP metadata from `global-metadata.dat` names the inherited `AbilityActionData` prefix and direct fields:
+  - `CheckBuffStackNum/Data`: `checkTarget: TargetSettings`, `buffId: BuffId`, `compareType: Beyond.CompareType`, `value: BlackboardDouble`.
+  - `CheckBuffStackNumByTag/Data`: `checkTarget: TargetSettings`, `tagQuery: GameplayTagQuery`, `buffStackNumType: BuffStackNumType`, `compareType: Beyond.CompareType`, `value: BlackboardDouble`.
+- Metadata and subagent review confirmed MemoryPack setter method order is not byte order for these classes; the defensible byte order is IL2CPP field order plus observed complete payload consumption.
+- Existing structured diagnostics already consumed both classes to `reader.EnsureComplete()` and showed stable values: `buff_physical_no_guard` for regular checks, GameplayTagQuery entries for by-tag checks, `compareType = GE`, and BlackboardDouble values with empty blackboard keys.
+- A parallel raw-layout subagent audit found `CheckBuffStackNumAdvanced/Data` still lacks a Core-namespace structured diagnostic in the current validation output; it has plausible `BuffFindSettings` shapes, but should not be semantically decoded until that union/list layout is traced directly.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Promoted `CheckBuffStackNum/Data` from diagnostic-only to a guarded partial decoder.
+- Promoted `CheckBuffStackNumByTag/Data` from diagnostic-only to a guarded partial decoder.
+- Both decoders consume the inherited `AbilityActionData` prefix and every metadata-backed direct field.
+- Both keep embedded `TargetSettings` as `$partial`, preserving unresolved selector/suffix fields instead of assigning unproven names.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 errors and the same 14 existing warnings from AnimeStudio projects.
+
+Targeted validation output: `tmp\buff_stack_conditions_decode_after_20260629` from the same three character chunks used by the prior condition batches.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 28 |
+| JSON parse failures | 0 |
+| `CheckBuffStackNum/Data` refs | 5 |
+| Decoded `CheckBuffStackNum/Data` refs | 5 |
+| Remaining `$unparsed` `CheckBuffStackNum/Data` refs | 0 |
+| `CheckBuffStackNumByTag/Data` refs | 5 |
+| Decoded `CheckBuffStackNumByTag/Data` refs | 5 |
+| Remaining `$unparsed` `CheckBuffStackNumByTag/Data` refs | 0 |
+
+Decoded sample facts:
+
+| Class | Observed fields |
+| --- | --- |
+| `CheckBuffStackNum/Data` | `checkTarget` partial TargetSettings, `buffId = buff_physical_no_guard`, `compareType = GE`, BlackboardDouble values including 1.0, 3.0, and 4.0 |
+| `CheckBuffStackNumByTag/Data` | `checkTarget` partial TargetSettings, GameplayTagQuery entries for `VulnerablePhysic`, `FractureStatus`, `CrystInflict`, `NaturalInflict`, and `SpellInflict`, `buffStackNumType = 0`, `compareType = GE`, BlackboardDouble values including 1.0 and 2.0 |
+
+Remaining raw `$unparsed` refs in the same validation slice after this pass:
+
+| Class | Remaining `$unparsed` |
+| --- | ---: |
+| `Beyond.Gameplay.Core.CheckBuffStackNumAdvanced/Data` | 7 |
+| `Beyond.Gameplay.Core.CreateBuffAction/Data` | 5 |
+| `Beyond.Gameplay.Core.AbilitySystemData` | 2 |
+| `Beyond.Gameplay.Core.ModifyDynamicBlackboard/Data` | 2 |
+| `Beyond.Gameplay.Core.StoreBuffCount/Data` | 1 |
+
+Current classification: these 10 regular/by-tag buff-stack condition payloads are normal serialized managed-reference payloads backed by local IL2CPP metadata, not missing VFS/AB bytes and not encryption. They remain `$partial` only because their embedded TargetSettings objects still preserve unresolved selector/suffix fields. `CheckBuffStackNumAdvanced/Data` remains intentionally unresolved until its `BuffFindSettings` variants are traced under the actual `Beyond.Gameplay.Core` namespace and byte-proven.
