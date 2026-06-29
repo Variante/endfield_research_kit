@@ -4,11 +4,21 @@ Source inspected: `export_full/structured/StreamingAssets/Data`.
 
 ## Summary
 
-- Total: 379,465 files, about 60.9 GB on disk.
-- `Json/`: 81,735 `.json` files, about 700 MB.
-- Only 3,025 `Json/` files are parseable text JSON.
-- The remaining 78,710 `Json/` files are binary config blobs with `.json`
-  names. They have stable binary signatures by subfolder, not UTF text.
+- Current moved root: `Audio/`, `Bundles/`, `DynamicStreaming/`,
+  `ExtendData/`, `IrradianceVolume/`, `Json/`, `Streaming/`, and `Video/`.
+- Full WebUI Data index: 379,465 files, 60,871,904,787 bytes
+  (about 58,052 MiB), split into 193 lazy-loaded groups.
+- Major file families: 258,422 `.ab` bundle payloads, 81,735 `.json`
+  config files, 38,824 `.bytes` streaming/irradiance payloads, 464 `.mp4`
+  videos, 16 `.pck` Wwise packages, three `.bin` ExtendData indexes, and one
+  `manifest.hgmmap` bundle map.
+- `Json/`: 3,025 parseable text JSON files plus 78,710 binary MemoryPack-like
+  config blobs with `.json` names.
+- Raw archive/media folders are indexed by header and path. The Data tab does
+  not unpack `.ab`, `.pck`, `.hgmmap`, or dense streaming payload bodies.
+- Because the current root is large, `webui/data/game_data/index.json` sets
+  `requiresGroupSelection: true`; the browser waits for a group selection
+  before loading entry shards.
 
 ## Text JSON
 
@@ -31,7 +41,7 @@ Binary `.json` families include:
 
 - `AnimationConfig/`: 12-member MemoryPack blobs beginning with `0C`; the Data index now keeps the recovered root field schema, verifies the trailing `useRotateDirection` / `useStateVariables` boolean bytes for all 106 files, and previews animation state names, facial morph paths, montage paths, actor animation refs, and cutscene refs while leaving nested montage/curve bodies opaque.
 - `AtmosphericNpcData/`: 1-member MemoryPack table blobs beginning with `01`; empty files are `01 00 00 00 00`, non-empty files expose verified row counts and 109-member NPC row boundaries, and the Data index previews row keys, AI configs, montage/facial paths, envTalk ids, templates, clusters, and levels while leaving the full row payload opaque.
-- `BuffData/`: 29-member MemoryPack-like blobs beginning with `1D`; the Data index verifies the filename-stem `id` string for every row, now reports exact length-prefixed id marker counts/offsets, and previews length-prefixed tags, parameters, and references. The current cached metadata does not include the full `BuffDataForMemoryPack` wrapper, so nested field-value bodies remain opaque.
+- `BuffData/`: 29-member MemoryPack-like blobs beginning with `1D`; the Data index verifies the filename-stem `id` string for every row, reports exact length-prefixed id marker counts/offsets, and exposes installed-IL2CPP setter parameter types for the top-level schema: 13 scalar/flag/id fields and 16 complex/list fields. Rows with one exact top-level id marker parse the post-id prefix for 2,190 entries, exposing `igniteEventAction` count, `ignoreCooldownWhenAdding`, `ignoreTagImmune`, raw `lifeType`, `maxTriggerCnt` BlackboardInt, `poiseModifier` count, and `shieldConfigs` count where the intervening list is empty. A validated compact `BuffStackingSettings` Id-branch tail now consumes exactly for 1,884 rows and exposes `stackingType`, `maxStackCnt`, `triggerInterval`, and final wait/time-dilation flags; the remaining prefix-only rows stay opaque at non-empty list/body branches. Samples still preview length-prefixed tags, parameters, and references while middle modifier/action/blackboard/list bodies remain structurally opaque.
 - `CharInteractPerformCfgs/`: 26-member MemoryPack blobs beginning with `1A`; the Data index now parses the exact `activeTags` GameplayTag list, `allowInheritPerform` boolean, and `bodyTypeActDataDict` count for all 159 files, then classifies body string previews into status tags, montage refs, actors, effects, perform refs, assets, CCS refs, and state/param strings while leaving the nested perform body opaque.
 - `LevelData/`: 42-member MemoryPack blobs beginning with `2A`; the Data index now verifies the parent scene-id string for all 783 files across 141 scene folders and previews level script refs, task markers, params, refs, and assets.
 - `LevelConfig/`: 15-member MemoryPack blobs beginning with `0F`; the Data index now verifies all 141 filename-stem ids, parses the default-state object, reads LevelData path counts, parses map ids and numeric transform/bounds tails, and leaves the middle path/grid payload opaque until nested evidence is mapped.
@@ -49,7 +59,7 @@ Binary `.json` families include:
 - `Interactive/InteractiveData/*.json`: 25-member inherited `InteractiveTemplateData` blobs now parse the root prefix (`name`, `factionIndex`, `objectType`, `bornTag`, and `componentList` count), the root/model/base-controller component prefix, optional zero-member `Core_SimpleAnimatorComponentData`, the first nonzero `BaseComponentData` payload tag, and a bounded component-list walk that continues through exact zero-member, TriggerObserver, one-property-map, CommonPerform, LogicController, Hittable, Audio, and ShowGuide payloads until the first unsupported mixed component. `Core_TriggerObserverComponentData` exposes a three-field property-map body with stable counts such as `[12, 0, 0]`, typed key/value previews for shape/radius/center/size and direction flags; 131 TriggerObserver component bodies are decoded across the 271 templates. Another 262 component bodies parse as one-member property maps, including newly exposed unnamed `0x0026` and `0x00eb` tags. The shared property-value grammar handles numeric tails plus string-tail value types `7` and `8`, exposing perform ids, effect ids, system ids, and related strings. `Core_InteractiveCommonPerformComponentData` parses as a dynamic property map plus counted `propertyDataList` rows and a final `syncGameplayLock` byte: 75 bodies decode, with row type counts `Bool:70`, `Int:21`, `Trigger:19`, and `Float:11`, and top names such as `LockedByGameplayLock`, `IsHit`, `state`, `Progress`, and `InTriggerVolume`. Parsed one-map families include `Core_PlayerInteractPerformComponentData`, `Core_KeepRelativeOffsetComponentData`, `Core_FactoryBuildingWrapperComponentData`, `Core_InteractCommonTwoStateComponentData`, `Core_InteractiveCommonMultiStateComponentData`, `Core_InteractiveWaterSwitchComponentData`, `Core_WaterProgressDriveCurveMovementComponentData`, `Core_WaterVolHeightMarkerComponentData`, `InteractiveStainComponentData`, `Core_HeightZeroMarkerComponentData`, `Core_InteractiveRunePointComponentData`, `Core_InteractiveManualMovePlatformComponentData`, `CraneContainerComponentData`, `Core_CanSetVisibleComponentData`, `ScannableTraceComponentData`, electric/navmesh/infrared/steam-blocker families, and additional still-unnamed all-pass union tags. `Core_InteractiveLogicControllerComponentData` parses exactly as a two-member body (`logicType` int plus a shared property map) for all 44 observed component bodies. `Core_InteractiveAudioData` parses exactly as a two-member body with an empty prefix count plus 13-member `InteractiveAudioComponentData` containing audio state/event rows, custom audio rows, and boolean audio/stencil flags for all 68 observed component bodies. `Core_ShowGuideComponentData` and `Core_ShowGuideWithConditionComponentData` parse as a property map followed by `Vector3 center`, `float radius`, one-byte `shape`, and `Vector3 size` for all 25 observed bodies. `Core_HittableComponentForIntData` parses as a 16-entry property map, fixed 80-byte `ColliderShapeData` blob, and trailing `enableExtraCheck` flag for all 14 observed component bodies. Mixed multi-member bodies such as click trigger, trigger zone, ability-system, dynamic-AI-nav, attack/step-on trigger, and a few named one-off components remain stop points with bounded string previews.
 - `Interactive/ModelViewStateControllerData/`: 7-member MemoryPack blobs beginning with `07`; the Data index now parses camera signal hashes, clip asset hash/name records, effect ids, emissive config hashes, model animator data counts, and verifies the tail `modelId` filename stem plus final `preTickAnimator` boolean for all 399 files while leaving the nested animator graph body opaque except for string previews.
 - `LipSync/`: many blobs beginning with `0F ...`.
-- `SkillData/`: 45-member MemoryPack-like blobs beginning with `2D`; the Data index verifies the filename-stem id string for every row, reports exact id marker counts/offsets, and now exposes cached IL2CPP setter parameter types for the top-level schema: 30 primitive/enum/string/vector-like fields and 15 complex/list fields. Samples still preview length-prefixed tags, params, refs, and asset paths while `ActionGroupData`, cast/buff/blackboard bodies, tag lists, and target-query settings remain structurally opaque.
+- `SkillData/`: 45-member MemoryPack-like blobs beginning with `2D`; the Data index verifies the filename-stem id string for every row, reports exact id marker counts/offsets, and exposes cached IL2CPP setter parameter types for the top-level schema: 30 primitive/enum/string/vector-like fields and 15 complex/list fields. For 2,025 strict unique-id rows it parses a post-`skillId` tail prefix through `smartTargetTagQuery`, exposing `skillName`, raw `skillSpecification`, `skillTags` count/branch and clean tag-path samples, raw `smartTargetBuffFindSettings`, `smartTargetBuffIds` count, raw `smartTargetSelectStrategy`, and raw `smartTargetTagQuery`; 53 repeated-id rows remain ambiguous and five dirty/wrapped post-id rows are rejected instead of treated as decoded text. A schema-backed `switchToBuffConfig` marker probe uses local IL2CPP MemoryPack setter evidence to locate the following five-member switch config for all 2,025 strict rows and reports `asSkillCast`, `buffsCount`, and pre-switch residuals. For the default 148-byte switch-config branch, 1,948 rows now parse exactly through the file end, exposing `switchToCenterBeforeCast`, `tagDuringAttach`, `toggleBuffsCount`, `uiRangeHintsCount`, and exact `UIRangeHintData`/`SkillHintShapeData` items where toggle buffs are empty; 76 rows stop cleanly at non-empty `toggleBuffsCount`, and one non-default switch body remains marker-only. `ActionGroupData`, cast/buff/blackboard bodies, non-default `TargetSettings`/`SequenceActionData` switch bodies, non-empty toggle lists, and most target-query semantics remain structurally opaque.
 - `NavMesh/*/LunaArea.json`: four one-member MemoryPack tables now parse as polygon area rows with row member count 6, area ids, center pairs, variable vec3 vertex lists, and two observed tail fields; all four files consume exactly.
 - `NavMesh/*/NavMeshStateContainer.json`: all six six-member MemoryPack roots now parse exactly; simple containers use observed `bounds36`, `ints16`, and `ints20` row layouts, while `map01` and `map02` additionally use grouped u64-id lists plus id-to-small-value-list rows.
 - `NonGeneratedConfigs/MatrixShockWaveBeatConfigTable.json`: two-member MemoryPack root now parses exactly as one root float list plus one section containing 10 hash-key rows, 12 nested point records, and final row floats; field names remain observed-only.
@@ -62,23 +72,34 @@ tab treats unresolved files as `binary-json`; decoded MemoryPack families are sh
 
 ## Other Data Folders
 
-- `Bundles/`: mostly `.ab` asset bundle payloads. They do not expose plain
-  `UnityFS` headers in this export, so the index classifies them by header only.
-- `Audio/`: `.pck` Wwise package/stream files.
-- `Video/`: `.mp4` files with normal `ftyp` headers. These are excluded from
-  the Data tab index because the Assets tab owns video browsing and previews.
-- `Streaming/` and `DynamicStreaming/`: `.bytes` files with FlatBuffer-like root
-  offsets and vtables. The Data index now performs bounded schema-less table
-  traversal for root fields, vector lengths, and embedded UTF-8 string samples;
-  semantic field names still require `.fbs` schema evidence.
-- `IrradianceVolume/`: `.bytes` irradiance volume/index/region payloads. The
-  Data index classifies index, dense volume, and region-style files separately
-  by path/header; index files expose UTF-16LE names, while region and volume
-  files remain numeric/dense previews.
-- `ExtendData/`: `.bin` index/support files including `StringPathHash`; current
-  previews expose header u32 values and string samples where present, but exact
-  offset/hash record widths are not proven yet.
+The current `export_full/structured/StreamingAssets/Data` root includes the raw
+installed-game Data families as well as extracted `Json/` and `Video/` folders.
+The WebUI index now includes all of these families and uses smaller group shards
+for very large raw groups.
+
+- `Bundles/`: 258,422 `.ab` asset bundle payloads plus
+  `Bundles/Windows/manifest.hgmmap`. Main bundles are sharded by the first hex
+  stem nibble (`Bundles/Windows/main/0` through `f`) to avoid one huge browser
+  payload. The sampled `.ab` headers do not start with plain `UnityFS`, but many
+  expose a `2021.3.3` Unity version marker, so the index reports them as
+  Endfield encoded AssetBundle payloads rather than decoded Unity bundles.
+- `Audio/`: 16 `.pck` Wwise bank/stream packages across Audit, Initial, Main,
+  and language folders. Their headers are encoded Endfield payloads rather than
+  plain `AKPK`, so the index records bank/stream subtype and header words only.
+- `Streaming/` and `DynamicStreaming/`: 38,561 `.bytes` files are recognized as
+  schema-less FlatBuffer-like payloads with root/vtable/vector summaries and
+  embedded string samples. Remaining `.bytes` files are kept as bounded binary
+  headers. Semantic field names still require `.fbs` schema evidence.
+- `IrradianceVolume/`: 263 `.bytes` files are classified separately as
+  irradiance index, region, or dense volume payloads by path/header.
+- `ExtendData/`: three `.bin` files. `InitStringPathHash.bin` aligns to 36,520
+  fixed 8-byte rows; `StringPathHash.bin` and `CompressData.bin` remain encoded
+  binary index payloads with header-word previews only.
+- `Video/`: 464 `.mp4` files with normal `ftyp` headers. The Data tab includes
+  lightweight MP4 brand summaries and browser video preview, while the Assets
+  tab remains the richer media browser.
 
 Generated WebUI indexes are local-only under `webui/data/game_data/` and are
-ignored by git. The Data tab splits JSON rows into prefix-oriented shards and
-excludes `.pck` audio package files plus exported videos.
+ignored by git. The Data tab splits JSON rows by directory, raw bundles by
+bundle shard, streaming/irradiance by map-like subfolder, and requires choosing
+a group before entries are loaded for this large root.

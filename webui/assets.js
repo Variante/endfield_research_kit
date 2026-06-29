@@ -934,12 +934,38 @@
     return categories[0] || "other";
   }
 
+  function isCharacterIllustrationImage(entry) {
+    if (!entry || normalizeImageCategory(entry.imageCategory) !== "character") return false;
+    return /^pic(?:[_-][a-z0-9]+)*[_-]chr(?:[_-]|$)/i.test(entry.stem || entry.rawStem || "");
+  }
+
+  function deriveImageExtraCategories(entry) {
+    const categories = [];
+    if (isCharacterIllustrationImage(entry)) categories.push("character-illustration");
+    return categories;
+  }
+
+  function chooseImageExtraCategories(entries) {
+    const values = new Set();
+    for (const entry of entries || []) {
+      for (const category of entry?.imageExtraCategories || deriveImageExtraCategories(entry)) {
+        const normalized = normalizeImageCategory(category);
+        if (normalized && normalized !== "other") values.add(normalized);
+      }
+    }
+    return Array.from(values).sort((a, b) => naturalCompare(assetCategoryLabel(a), assetCategoryLabel(b)) || naturalCompare(a, b));
+  }
+
   function assetCategoryValues(entry) {
     if (!entry) return [];
     if (entry.kind === "image") {
-      const values = [normalizeImageCategory(entry.imageCategory)];
-      if (entry.materialLike) values.push("material-like");
-      return values;
+      const values = new Set([normalizeImageCategory(entry.imageCategory)]);
+      for (const category of entry.imageExtraCategories || []) {
+        const normalized = normalizeImageCategory(category);
+        if (normalized && normalized !== "other") values.add(normalized);
+      }
+      if (entry.materialLike) values.add("material-like");
+      return Array.from(values);
     }
     if (entry.kind === "model") {
       return Array.isArray(entry.modelCategories) ? entry.modelCategories.filter(Boolean) : [];
@@ -973,6 +999,7 @@
       const lodMatch = kind === "model" ? stem.match(/(?:^|[_-])lod(\d+)$/i) : null;
       const lod = lodMatch ? Number(lodMatch[1]) : null;
       const imageCategory = kind === "image" ? normalizeImageCategory(raw.ic) : "";
+      const imageExtraCategories = kind === "image" ? deriveImageExtraCategories({ imageCategory, stem, rawStem: stemInfo.rawStem }) : [];
       const materialLike = kind === "image" && !!raw.mt;
       const modelCategories = kind === "model" ? deriveModelCategories(kind, stem, ext) : [];
       return {
@@ -995,6 +1022,7 @@
         groupRaw: groupInfo.raw,
         lod,
         imageCategory,
+        imageExtraCategories,
         materialLike,
         modelCategories,
         previewRel: String(raw.p || ""),
@@ -1104,6 +1132,7 @@
         entry.family,
         entry.variantLabel,
         entry.imageCategory,
+        ...(entry.imageExtraCategories || []),
         ...(entry.modelCategories || []),
         entry.materialLike ? "material material-like texture engine" : "",
         entry.decodedScriptSearchText,
@@ -1239,6 +1268,7 @@
           groupRaw: entry.groupRaw,
           lod: null,
           imageCategory: "other",
+          imageExtraCategories: [],
           materialLike: false,
           modelCategories: [],
           variantCount: 0,
@@ -1273,6 +1303,7 @@
       group.rel = group.variants[0].rel;
       group.size = group.variants.reduce((sum, variant) => sum + variant.size, 0);
       group.imageCategory = group.kind === "image" ? chooseImageCategory(group.variants) : "";
+      group.imageExtraCategories = group.kind === "image" ? chooseImageExtraCategories(group.variants) : [];
       group.materialLike = group.kind === "image" && group.variants.some((variant) => variant.materialLike);
       group.modelCategories = group.kind === "model" ? chooseModelCategories(group.variants) : [];
       group.variantCount = group.variants.length;
@@ -1288,6 +1319,7 @@
         group.groupRaw,
         group.family,
         group.imageCategory,
+        ...(group.imageExtraCategories || []),
         ...(group.modelCategories || []),
         group.materialLike ? "material material-like texture engine" : "",
         ...group.variants.map((variant) => variant.searchText),
@@ -1366,13 +1398,7 @@
     }
     const items = Object.keys(counts)
       .filter((name) => counts[name])
-      .sort((a, b) => {
-        if (a === "material-like" && b !== "material-like") return -1;
-        if (b === "material-like" && a !== "material-like") return 1;
-        if (a === "other" && b !== "other") return 1;
-        if (b === "other" && a !== "other") return -1;
-        return (counts[b] - counts[a]) || naturalCompare(a, b);
-      })
+      .sort((a, b) => naturalCompare(assetCategoryLabel(a), assetCategoryLabel(b)) || naturalCompare(a, b))
       .map((name) => ({ value: name, label: assetCategoryLabel(name), count: counts[name] }));
     window.WebUI.filters.buildChips("#asset-category-filter", items, {
       active: ASSET_STATE.filters.categories,
@@ -1920,7 +1946,7 @@
     ];
     const activeFile = activeVariant || entry;
     if (entry.kind === "image") {
-      facts.push([assetUiText("factImageCategory"), assetCategoryLabel(activeFile.imageCategory || entry.imageCategory)]);
+      facts.push([assetUiText("factImageCategory"), formatAssetCategoryMeta(activeFile || entry)]);
       facts.push([
         assetUiText("factTextureRole"),
         (activeFile.materialLike || entry.materialLike)

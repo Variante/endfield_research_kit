@@ -50,9 +50,10 @@ default. Pass `--export-from-game` only when the user explicitly asks to refresh
 rebuild asset indexes and relink/decode CN audio after generated conversations
 are rebuilt. Combining `--export-from-game --with-assets` runs one AnimeStudio
 Story+asset export instead of separate Story and asset exporter invocations.
-`export.bat` does not refresh `webui/overrides/story_order.json`; Story order is
-maintained by the OCR workflow. Every `export.bat` run writes a wall-time and
-process-tree RAM benchmark under `reports/export_benchmarks/` and updates
+`export.bat` does not refresh `webui/overrides/story_order.json`; active Story
+order is user-managed there, while OCR recovery writes proposed order references
+under `webui/data/story_order_ocr.json`. Every `export.bat` run writes a
+wall-time and process-tree RAM benchmark under `reports/export_benchmarks/` and updates
 `reports/export_benchmark_latest.md/json`.
 Use `build_updates.bat` for the standalone Updates feed comparison. Use
 `build_updates.bat --init-build` for first-time/baseline-only builds where the

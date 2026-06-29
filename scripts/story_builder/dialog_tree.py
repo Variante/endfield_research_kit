@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from .context import *
 from .anime_assets import *
@@ -2108,7 +2108,7 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
         # so both the scene-link and fragment loops read the correct values.
         # The original code built `option_summaries` inside the scene-link
         # loop and the fragment loop then read the stale final-iteration
-        # value — misclassifying most fragment groups.
+        # value 鈥?misclassifying most fragment groups.
         per_target_summaries: dict[str, list[dict]] = {}
         per_target_has_interesting: dict[str, bool] = {}
         per_target_is_pre: dict[str, bool] = {}
@@ -2141,7 +2141,7 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
             # Hub-loop detection: in hub-spoke trees (e.g. dlg_a1m3_10 feeding
             # a1m3_3/4/5), the option's backward predecessors include the last
             # trunk of each spoke scene via loop-return DialogTransitionNodes.
-            # That trunk is NOT a semantic "after" anchor — the option
+            # That trunk is NOT a semantic "after" anchor 鈥?the option
             # introduces the scene. Suppress it only when the backward trunk
             # is actually on one of this option group's own forward paths.
             group_after = backward_trunk
@@ -2912,12 +2912,41 @@ def resolve_scene_line_order(conv_key: str, original_line_ids: list[str]) -> tup
     ordered_line_ids: list[str] = []
     seen_line_ids: set[str] = set()
     contributing_sources: list[dict] = []
+    def insert_candidate_line_id(line_id: str, candidate_line_ids: list[str], candidate_index: int) -> bool:
+        if line_id in seen_line_ids:
+            return False
+        insert_at = len(ordered_line_ids)
+        previous_anchor = next(
+            (
+                candidate_line_ids[index]
+                for index in range(candidate_index - 1, -1, -1)
+                if candidate_line_ids[index] in seen_line_ids
+            ),
+            "",
+        )
+        next_anchor = next(
+            (
+                candidate_line_ids[index]
+                for index in range(candidate_index + 1, len(candidate_line_ids))
+                if candidate_line_ids[index] in seen_line_ids
+            ),
+            "",
+        )
+        if previous_anchor and next_anchor:
+            positions = {existing_id: idx for idx, existing_id in enumerate(ordered_line_ids)}
+            previous_index = positions.get(previous_anchor)
+            next_index = positions.get(next_anchor)
+            if previous_index is not None and next_index is not None and previous_index < next_index:
+                insert_at = previous_index + 1
+        seen_line_ids.add(line_id)
+        ordered_line_ids.insert(insert_at, line_id)
+        return True
+
     for candidate in candidates:
         added_line_ids: list[str] = []
-        for line_id in candidate["matchedLineIds"]:
-            if line_id not in seen_line_ids:
-                seen_line_ids.add(line_id)
-                ordered_line_ids.append(line_id)
+        candidate_line_ids = candidate["matchedLineIds"]
+        for candidate_index, line_id in enumerate(candidate_line_ids):
+            if insert_candidate_line_id(line_id, candidate_line_ids, candidate_index):
                 added_line_ids.append(line_id)
         if added_line_ids:
             contributing_sources.append({
@@ -3206,6 +3235,107 @@ def build_dialog_tree_fragment_payload(conv_key: str) -> list[dict]:
     return out
 
 
+def _line_ids_are_subsequence(subset: list[str], superset: list[str]) -> bool:
+    if not subset or len(subset) >= len(superset):
+        return False
+    pos = 0
+    for line_id in superset:
+        if line_id == subset[pos]:
+            pos += 1
+            if pos == len(subset):
+                return True
+    return False
+
+
+def _scene_link_option_dedupe_key(link: dict, option: dict) -> tuple:
+    path_line_ids = [str(line_id or "") for line_id in (option.get("pathLineIds") or []) if line_id]
+    first_line_id = str(option.get("firstLineId") or (path_line_ids[0] if path_line_ids else ""))
+    return (
+        str(link.get("after") or ""),
+        str(option.get("optionId") or ""),
+        first_line_id,
+        str(option.get("firstSceneKey") or ""),
+        bool(option.get("terminal")),
+        str(option.get("outcomeKind") or ""),
+        bool(option.get("loop")),
+        tuple(str(scene_key or "") for scene_key in (option.get("sceneKeys") or []) if scene_key),
+        tuple(str(scene_key or "") for scene_key in (option.get("submenuSceneKeys") or []) if scene_key),
+    )
+
+
+def _dedupe_overlapped_scene_link_paths(links: list[dict]) -> list[dict]:
+    """Drop lower-coverage duplicate option paths from overlapping source files.
+
+    DialogTree fragments can describe the same local option route from two
+    extracted files. When the option identity and anchor match, and one
+    pathLineIds sequence is a strict subsequence of another, the longer path has
+    strictly more row coverage and should be the rendered evidence.
+    """
+    if not links:
+        return links
+    options_by_key: dict[tuple, list[tuple[int, int, list[str]]]] = defaultdict(list)
+    for link_index, link in enumerate(links):
+        for option_index, option in enumerate(link.get("options") or []):
+            if not isinstance(option, dict):
+                continue
+            path_line_ids = [
+                str(line_id or "")
+                for line_id in (option.get("pathLineIds") or [])
+                if line_id
+            ]
+            if not path_line_ids:
+                continue
+            options_by_key[_scene_link_option_dedupe_key(link, option)].append(
+                (link_index, option_index, path_line_ids)
+            )
+    redundant: set[tuple[int, int]] = set()
+    exact_paths_seen: set[tuple[tuple, tuple[str, ...]]] = set()
+    for link_index, link in enumerate(links):
+        for option_index, option in enumerate(link.get("options") or []):
+            if not isinstance(option, dict):
+                continue
+            path_line_ids = tuple(
+                str(line_id or "")
+                for line_id in (option.get("pathLineIds") or [])
+                if line_id
+            )
+            if not path_line_ids:
+                continue
+            exact_key = (_scene_link_option_dedupe_key(link, option), path_line_ids)
+            if exact_key in exact_paths_seen:
+                redundant.add((link_index, option_index))
+            else:
+                exact_paths_seen.add(exact_key)
+    for entries in options_by_key.values():
+        if len(entries) < 2:
+            continue
+        for link_index, option_index, path_line_ids in entries:
+            if any(
+                _line_ids_are_subsequence(path_line_ids, other_path_line_ids)
+                for other_link_index, other_option_index, other_path_line_ids in entries
+                if (other_link_index, other_option_index) != (link_index, option_index)
+            ):
+                redundant.add((link_index, option_index))
+    if not redundant:
+        return links
+    out: list[dict] = []
+    for link_index, link in enumerate(links):
+        options = [
+            option
+            for option_index, option in enumerate(link.get("options") or [])
+            if (link_index, option_index) not in redundant
+        ]
+        if not options:
+            continue
+        if len(options) == len(link.get("options") or []):
+            out.append(link)
+            continue
+        updated = dict(link)
+        updated["options"] = options
+        out.append(updated)
+    return out
+
+
 def build_dialog_tree_scene_link_payload(conv_key: str) -> list[dict]:
     links = load_dialog_tree_scene_links(conv_key)
     out: list[dict] = []
@@ -3249,7 +3379,11 @@ def build_dialog_tree_scene_link_payload(conv_key: str) -> list[dict]:
                 "link": link.get("_debug") or {},
             },
         })
-    return out
+    return _dedupe_overlapped_scene_link_paths(out)
 
 
 __all__ = [name for name in globals() if not name.startswith("__")]
+
+
+
+

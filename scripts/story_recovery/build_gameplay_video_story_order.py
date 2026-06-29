@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
-"""Match gameplay-video OCR evidence to Story entries and update story order lists.
+"""Match gameplay-video OCR evidence to Story entries and write OCR-only order lists.
 
 This is a conservative promotion pipeline:
 
 1. Optionally run the OCR sampler.
 2. Match completed OCR segments against known WebUI Story text.
 3. Collapse timestamped matches into observed per-mission scene sequences.
-4. Merge those sequences into the full per-mission story-order list format.
+4. Write those observed sequences as a read-only OCR proposal.
 
-The active order file is ``webui/overrides/story_order.json``. Each
-``missions.<mission>.order`` value is a complete ordered list of the mission's
-Story file keys. The OCR pass seeds from that active file, preserves locked
-missions exactly, and keeps existing active mission keys in their current
-relative order unless it needs to insert a genuinely new linked key.
+The OCR pass intentionally does not seed, merge, calibrate, or lock against the
+active order override (``webui/overrides/story_order.json``). The generated
+reports and ``webui/data/story_order_ocr.json`` are OCR-only comparison
+evidence; users combine OCR, static recovery, and manual evidence separately.
 """
 from __future__ import annotations
 
@@ -28,6 +27,7 @@ import time
 import unicodedata
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
@@ -112,11 +112,18 @@ BR_TAG_RE = re.compile(r"<\s*br\s*/?\s*>", re.IGNORECASE)
 TAG_RE = re.compile(r"<[^>]+>")
 ASCII_WORD_RE = re.compile(r"^[a-z0-9_:\-.]+$")
 STORY_KIND_RE = re.compile(r"^(?:misc_)?([a-z]+)")
-INDEXED_SUFFIX_RE = re.compile(r"^(\d+)(?:d(\d+))?(?:_(\d+))?$")
 NATURAL_SORT_RE = re.compile(r"\d+|\D+")
 GAMEPLAY_VIDEO_PART_RE = re.compile(r"(?:^|_)P(\d+)(?:_|$)", re.IGNORECASE)
 GAMEPLAY_VIDEO_BVID_RE = re.compile(r"(BV[0-9A-Za-z]+)", re.IGNORECASE)
-VIDEO_GENDER_PREFIX_RE = re.compile(r"^(?:f|m|fm)_(.+)$", re.IGNORECASE)
+
+# These only choose which generated Story mission corpus a video is searched
+# against. They do not seed OCR result keys, order, locks, or inferred entries.
+VIDEO_SEARCH_SCOPE_OVERRIDES = {
+    ("bv1jdzmbseuc", 1): {"missionPrefix": "e0", "title": "e0*"},
+    ("bv1gczqbrehj", 15): {"mission": "c31m1", "title": "c31m1"},
+    ("bv1gczqbrehj", 16): {"mission": "c31m2", "title": "c31m2"},
+    ("bv1gczqbrehj", 17): {"mission": "c31m3", "title": "c31m3"},
+}
 
 
 @dataclass(frozen=True)
@@ -145,15 +152,6 @@ class StoryTextRecord:
     norm: str
     grams: set[str]
     title_grams: set[str]
-
-
-@dataclass(frozen=True)
-class IndexedStoryKey:
-    key: str
-    family: str
-    number: float
-    has_decimal: bool
-    order_index: int
 
 
 @dataclass(frozen=True)
@@ -239,19 +237,80 @@ def gameplay_video_series_key(video_name: Any) -> str:
     return stem.lower()
 
 
+def video_search_scope_override(
+    video_name: str,
+    candidates: list[MissionTitleCandidate],
+) -> dict[str, Any] | None:
+    part = gameplay_video_part_number(video_name)
+    if part is None:
+        return None
+    rule = VIDEO_SEARCH_SCOPE_OVERRIDES.get((gameplay_video_series_key(video_name), part))
+    if not rule:
+        return None
+
+    mission = safe_key(rule.get("mission"))
+    title = safe_key(rule.get("title")) or mission
+    if mission:
+        return {
+            "status": "matched",
+            "mission": mission,
+            "title": title,
+            "match": "video-scope-override",
+            "searchMissions": [mission],
+            "candidates": [{"mission": mission, "title": title, "match": "video-scope-override"}],
+        }
+
+    prefix = safe_key(rule.get("missionPrefix")).lower()
+    if not prefix:
+        return None
+    search_missions: list[str] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        candidate_mission = safe_key(candidate.mission)
+        if not candidate_mission or not candidate_mission.lower().startswith(prefix):
+            continue
+        if candidate_mission in seen:
+            continue
+        seen.add(candidate_mission)
+        search_missions.append(candidate_mission)
+    search_missions.sort(key=natural_sort_token)
+    label = title or f"{prefix}*"
+    return {
+        "status": "matched" if search_missions else "unmatched",
+        "mission": label,
+        "title": label,
+        "match": "video-scope-override-prefix",
+        "searchMissions": search_missions,
+        "candidates": [
+            {"mission": mission_key, "title": label, "match": "video-scope-override-prefix"}
+            for mission_key in search_missions[:8]
+        ],
+    }
+
+
 def load_mission_title_candidates(
     path: Path,
-    story_order: dict[str, Any],
+    story_order: dict[str, Any] | None = None,
 ) -> list[MissionTitleCandidate]:
     payload = read_json(path, {})
     names = payload.get("missionNames") if isinstance(payload, dict) else {}
     if not isinstance(names, dict):
         names = {}
-    story_orders = story_orders_by_mission(story_order)
+    story_orders = story_orders_by_mission(story_order or {})
+    if story_orders:
+        missions = sorted(story_orders, key=natural_sort_token)
+    else:
+        missions = sorted(
+            {safe_key(mission) for mission in names if safe_key(mission)},
+            key=natural_sort_token,
+        )
     out: list[MissionTitleCandidate] = []
     seen: set[tuple[str, str]] = set()
-    for mission in sorted(story_orders):
-        for title in mission_title_variants(names.get(mission)):
+    for mission in missions:
+        titles = mission_title_variants(names.get(mission))
+        if mission not in titles:
+            titles.append(mission)
+        for title in titles:
             norm = normalize_text(title)
             if len(norm) < 2:
                 continue
@@ -376,145 +435,6 @@ def is_archive_corpus_line(line: CorpusLine) -> bool:
     return any(line.key.startswith(prefix) for prefix in ARCHIVE_KEY_PREFIXES)
 
 
-def video_ref_base_stem(ref: dict[str, Any]) -> str:
-    for field in ("baseStem", "stem", "name"):
-        value = safe_key(ref.get(field))
-        if not value:
-            continue
-        stem = Path(value.replace("\\", "/")).stem
-        gender_match = VIDEO_GENDER_PREFIX_RE.match(stem)
-        if gender_match:
-            stem = gender_match.group(1)
-        if stem:
-            return stem
-    return ""
-
-
-def video_story_key_from_ref(ref: dict[str, Any]) -> str:
-    stem = video_ref_base_stem(ref)
-    if not stem:
-        return ""
-    return f"video_{stem}"
-
-
-def iter_narrative_video_refs(payload: dict[str, Any]) -> list[dict[str, Any]]:
-    refs: list[dict[str, Any]] = []
-    for ref in payload.get("narrativeVideos") or []:
-        if isinstance(ref, dict):
-            refs.append(ref)
-    cutscene = payload.get("cutscene")
-    if isinstance(cutscene, dict):
-        for ref in cutscene.get("videoRefs") or []:
-            if isinstance(ref, dict):
-                refs.append(ref)
-    return refs
-
-
-def video_ref_source_keys(ref: dict[str, Any]) -> list[str]:
-    source = ref.get("_debug", {}).get("source") if isinstance(ref.get("_debug"), dict) else None
-    if not isinstance(source, dict):
-        return []
-    out: list[str] = []
-    for field in ("resolvedKey",):
-        key = safe_key(source.get(field))
-        if key:
-            out.append(key)
-    for field in ("authoritativeKeys",):
-        for key in source.get(field) or []:
-            key = safe_key(key)
-            if key:
-                out.append(key)
-    return clean_order_list(out)
-
-
-def add_video_ref_link(
-    links: dict[str, list[str]],
-    *,
-    parent_key: str,
-    video_key: str,
-    payloads: dict[str, dict[str, Any]],
-) -> None:
-    parent_key = safe_key(parent_key)
-    video_key = safe_key(video_key)
-    if (
-        not parent_key
-        or not video_key
-        or parent_key == video_key
-        or video_key not in payloads
-        or parent_key not in payloads
-    ):
-        return
-    parent_mission = safe_key(payloads[parent_key].get("mission"))
-    video_mission = safe_key(payloads[video_key].get("mission"))
-    if parent_mission and video_mission and parent_mission != video_mission:
-        return
-    if video_key not in links[parent_key]:
-        links[parent_key].append(video_key)
-
-
-def load_video_reference_links(conv_root: Path = CONV_ROOT) -> dict[str, list[str]]:
-    payloads: dict[str, dict[str, Any]] = {}
-    for path in sorted(conv_root.glob("*.json")):
-        payload = read_json(path, {})
-        if not isinstance(payload, dict):
-            continue
-        key = safe_key(payload.get("key")) or path.stem
-        if key:
-            payloads[key] = payload
-
-    links: dict[str, list[str]] = defaultdict(list)
-    for parent_key, payload in payloads.items():
-        if parent_key.startswith("video_"):
-            continue
-        for ref in iter_narrative_video_refs(payload):
-            add_video_ref_link(
-                links,
-                parent_key=parent_key,
-                video_key=video_story_key_from_ref(ref),
-                payloads=payloads,
-            )
-
-    for video_key, payload in payloads.items():
-        if not video_key.startswith("video_"):
-            continue
-        for ref in iter_narrative_video_refs(payload):
-            for parent_key in video_ref_source_keys(ref):
-                add_video_ref_link(
-                    links,
-                    parent_key=parent_key,
-                    video_key=video_key,
-                    payloads=payloads,
-                )
-    return dict(links)
-
-
-def parse_indexed_story_key(key: str, mission: str, order_index: int) -> IndexedStoryKey | None:
-    key = safe_key(key)
-    mission = safe_key(mission)
-    marker = f"_{mission}_"
-    marker_index = key.find(marker)
-    if not key or not mission or marker_index < 0:
-        return None
-    suffix = key[marker_index + len(marker) :]
-    match = INDEXED_SUFFIX_RE.fullmatch(suffix)
-    if not match:
-        return None
-    number = float(int(match.group(1)))
-    decimal = match.group(2)
-    variant = match.group(3)
-    if decimal is not None:
-        number += int(decimal) / (10 ** len(decimal))
-    elif variant is not None:
-        number += int(variant) / 1000.0
-    return IndexedStoryKey(
-        key=key,
-        family=key[: marker_index + len(marker)],
-        number=number,
-        has_decimal=decimal is not None,
-        order_index=order_index,
-    )
-
-
 def iter_text_rows(
     payload: dict[str, Any],
     *,
@@ -550,13 +470,14 @@ def load_corpus(
     story_order: dict[str, Any],
     min_chars: int,
     include_titles: bool = False,
+    restrict_to_story_order: bool = True,
 ) -> list[CorpusLine]:
     story_orders = story_orders_by_mission(story_order)
     story_mission_by_key: dict[str, str] = {}
     for mission_id, order in story_orders.items():
         for key in order:
             story_mission_by_key.setdefault(key, mission_id)
-    allowed_keys = {key for order in story_orders.values() for key in order}
+    allowed_keys = {key for order in story_orders.values() for key in order} if restrict_to_story_order else set()
     out: list[CorpusLine] = []
     for path in sorted(conv_root.glob("*.json")):
         key = path.stem
@@ -564,10 +485,12 @@ def load_corpus(
         if not isinstance(payload, dict):
             continue
         archive_entry = is_archive_story_entry(key, payload)
-        if allowed_keys and key not in allowed_keys and not key.startswith("dlg_map") and not archive_entry:
+        if restrict_to_story_order and allowed_keys and key not in allowed_keys and not key.startswith("dlg_map") and not archive_entry:
             continue
         native_mission = safe_key(payload.get("mission"))
-        mission = story_mission_by_key.get(key) or native_mission
+        mission = story_mission_by_key.get(key) if restrict_to_story_order else ""
+        if not mission:
+            mission = native_mission
         if not mission:
             for mission_id, order in story_orders.items():
                 if key in order:
@@ -1614,7 +1537,10 @@ def build_video_search_contexts(
             "video": video_name,
             "part": part,
             "series": series,
-            "missionMatch": infer_video_mission(video_name, mission_title_candidates),
+            "missionMatch": (
+                video_search_scope_override(video_name, mission_title_candidates)
+                or infer_video_mission(video_name, mission_title_candidates)
+            ),
             "searchMissions": [],
         }
         contexts.append(context)
@@ -1625,15 +1551,21 @@ def build_video_search_contexts(
         search_missions: list[dict[str, Any]] = []
         seen: set[str] = set()
         mission_match = context.get("missionMatch") if isinstance(context.get("missionMatch"), dict) else {}
-        add_unique_search_mission(
-            search_missions,
-            seen,
-            mission=mission_match.get("mission") if isinstance(mission_match, dict) else "",
-            reason="target-video",
-            video=context.get("video"),
-            part=context.get("part"),
-            offset=0,
-        )
+        target_missions = (
+            mission_match.get("searchMissions")
+            if isinstance(mission_match.get("searchMissions"), list)
+            else [mission_match.get("mission")]
+        ) if isinstance(mission_match, dict) else []
+        for target_mission in target_missions:
+            add_unique_search_mission(
+                search_missions,
+                seen,
+                mission=target_mission,
+                reason="target-video",
+                video=context.get("video"),
+                part=context.get("part"),
+                offset=0,
+            )
         series = safe_key(context.get("series"))
         part = context.get("part") if isinstance(context.get("part"), int) else None
         if series and part is not None:
@@ -1644,15 +1576,21 @@ def build_video_search_contexts(
                         if isinstance(adjacent.get("missionMatch"), dict)
                         else {}
                     )
-                    add_unique_search_mission(
-                        search_missions,
-                        seen,
-                        mission=adjacent_match.get("mission") if isinstance(adjacent_match, dict) else "",
-                        reason="adjacent-video",
-                        video=adjacent.get("video"),
-                        part=adjacent.get("part") if isinstance(adjacent.get("part"), int) else None,
-                        offset=offset,
-                    )
+                    adjacent_missions = (
+                        adjacent_match.get("searchMissions")
+                        if isinstance(adjacent_match.get("searchMissions"), list)
+                        else [adjacent_match.get("mission")]
+                    ) if isinstance(adjacent_match, dict) else []
+                    for adjacent_mission in adjacent_missions:
+                        add_unique_search_mission(
+                            search_missions,
+                            seen,
+                            mission=adjacent_mission,
+                            reason="adjacent-video",
+                            video=adjacent.get("video"),
+                            part=adjacent.get("part") if isinstance(adjacent.get("part"), int) else None,
+                            offset=offset,
+                        )
         context["searchMissions"] = search_missions
     return contexts
 
@@ -1767,198 +1705,6 @@ def finalize_video_match_record(
     return result
 
 
-def locked_sequence_mismatch_details(
-    sequence: list[dict[str, Any]],
-    locked_order: list[str],
-    *,
-    video: str,
-    mission: str,
-) -> dict[str, Any]:
-    positions = {key: index for index, key in enumerate(locked_order)}
-    checked: list[tuple[str, int, dict[str, Any]]] = []
-    missing_keys: list[str] = []
-    for item in sequence:
-        key = safe_key(item.get("key"))
-        if not key:
-            continue
-        position = positions.get(key)
-        if position is None:
-            missing_keys.append(key)
-            continue
-        checked.append((key, position, item))
-
-    adjacent: list[dict[str, Any]] = []
-    for left, right in zip(checked, checked[1:]):
-        left_key, left_position, left_item = left
-        right_key, right_position, right_item = right
-        if right_position < left_position:
-            adjacent.append({
-                "video": video,
-                "mission": mission,
-                "prevKey": left_key,
-                "prevOrderIndex": left_position,
-                "prevTime": left_item.get("firstTime"),
-                "key": right_key,
-                "orderIndex": right_position,
-                "time": right_item.get("firstTime"),
-            })
-
-    inversions = 0
-    for left_index, (_left_key, left_position, _left_item) in enumerate(checked):
-        for _right_key, right_position, _right_item in checked[left_index + 1:]:
-            if right_position < left_position:
-                inversions += 1
-
-    return {
-        "checkedKeys": len(checked),
-        "missingKeys": len(missing_keys),
-        "mismatches": len(adjacent),
-        "inversions": inversions,
-        "samples": adjacent[:8],
-    }
-
-
-def validate_locked_order_sequences(
-    videos: list[dict[str, Any]],
-    *,
-    locked_orders: dict[str, list[str]],
-) -> dict[str, Any]:
-    by_mission: dict[str, dict[str, Any]] = {}
-    for video in videos:
-        video_name = safe_key(video.get("video"))
-        sequences = video.get("observedSequences") if isinstance(video.get("observedSequences"), dict) else {}
-        for mission, sequence in sequences.items():
-            mission_key = safe_key(mission)
-            locked_order = locked_orders.get(mission_key)
-            if not locked_order or not isinstance(sequence, list):
-                continue
-            row = by_mission.setdefault(mission_key, {
-                "mission": mission_key,
-                "videos": [],
-                "observedKeys": 0,
-                "checkedKeys": 0,
-                "missingKeys": 0,
-                "mismatches": 0,
-                "inversions": 0,
-                "samples": [],
-            })
-            details = locked_sequence_mismatch_details(
-                sequence,
-                locked_order,
-                video=video_name,
-                mission=mission_key,
-            )
-            row["videos"].append(video_name)
-            row["observedKeys"] += len(sequence)
-            row["checkedKeys"] += int(details["checkedKeys"])
-            row["missingKeys"] += int(details["missingKeys"])
-            row["mismatches"] += int(details["mismatches"])
-            row["inversions"] += int(details["inversions"])
-            row["samples"].extend(details["samples"])
-            del row["samples"][8:]
-
-    rows = sorted(
-        by_mission.values(),
-        key=lambda row: (-int(row.get("mismatches") or 0), -int(row.get("inversions") or 0), row["mission"]),
-    )
-    for row in rows:
-        row["videos"] = sorted(set(row.get("videos") or []))
-        checked = int(row.get("checkedKeys") or 0)
-        mismatches = int(row.get("mismatches") or 0)
-        row["mismatchRate"] = round(mismatches / checked, 6) if checked else 0.0
-    return {
-        "summary": {
-            "lockedMissionsWithEvidence": len(rows),
-            "checkedKeys": sum(int(row.get("checkedKeys") or 0) for row in rows),
-            "missingKeys": sum(int(row.get("missingKeys") or 0) for row in rows),
-            "mismatches": sum(int(row.get("mismatches") or 0) for row in rows),
-            "inversions": sum(int(row.get("inversions") or 0) for row in rows),
-        },
-        "missions": rows,
-    }
-
-
-def build_locked_threshold_sweep(
-    records: list[dict[str, Any]],
-    *,
-    locked_orders: dict[str, list[str]],
-    map_dialog_companion_index: dict[str, list[dict[str, Any]]],
-    base_story_orders: dict[str, list[str]],
-    min_margin: float,
-    current_min_score: float,
-    min_video_matches: int,
-    min_sequence_keys: int,
-    use_ransac: bool,
-    ransac_tolerance: float,
-) -> list[dict[str, Any]]:
-    if not locked_orders or not records:
-        return []
-    thresholds = sorted({round(value, 4) for value in (*DEFAULT_THRESHOLD_SWEEP, current_min_score)}, reverse=True)
-    rows: list[dict[str, Any]] = []
-    for threshold in thresholds:
-        videos: list[dict[str, Any]] = []
-        accepted = 0
-        matched = 0
-        for record in records:
-            result = finalize_video_match_record(
-                record,
-                min_score=threshold,
-                min_margin=min_margin,
-                map_dialog_companion_index=map_dialog_companion_index,
-                base_story_orders=base_story_orders,
-                min_video_matches=min_video_matches,
-                min_sequence_keys=min_sequence_keys,
-                use_ransac=use_ransac,
-                ransac_tolerance=ransac_tolerance,
-                update_video=False,
-            )
-            matched += int(result.get("matchedSegments") or 0)
-            accepted += int(result.get("acceptedMatches") or 0)
-            videos.append({"video": safe_key(record.get("videoName")), "observedSequences": result["observedSequences"]})
-        validation = validate_locked_order_sequences(videos, locked_orders=locked_orders)
-        summary = validation["summary"]
-        checked = int(summary.get("checkedKeys") or 0)
-        mismatches = int(summary.get("mismatches") or 0)
-        rows.append({
-            "minScore": threshold,
-            "matchedSegments": matched,
-            "acceptedMatches": accepted,
-            "lockedMissionsWithEvidence": summary.get("lockedMissionsWithEvidence", 0),
-            "checkedKeys": checked,
-            "missingKeys": summary.get("missingKeys", 0),
-            "mismatches": mismatches,
-            "inversions": summary.get("inversions", 0),
-            "mismatchRate": round(mismatches / checked, 6) if checked else 0.0,
-        })
-    return rows
-
-
-def choose_locked_threshold(rows: list[dict[str, Any]], current_min_score: float) -> dict[str, Any]:
-    usable = [row for row in rows if int(row.get("checkedKeys") or 0) > 0]
-    if not usable:
-        return {"minScore": current_min_score, "reason": "no-locked-evidence"}
-    max_checked = max(int(row.get("checkedKeys") or 0) for row in usable)
-    coverage_floor = max(1, int(math.ceil(max_checked * 0.80)))
-    covered = [row for row in usable if int(row.get("checkedKeys") or 0) >= coverage_floor]
-    best = min(
-        covered or usable,
-        key=lambda row: (
-            int(row.get("mismatches") or 0),
-            float_value(row.get("mismatchRate")),
-            -int(row.get("checkedKeys") or 0),
-            float_value(row.get("minScore")),
-        ),
-    )
-    return {
-        "minScore": float_value(best.get("minScore"), current_min_score),
-        "reason": "locked-order-sweep",
-        "coverageFloor": coverage_floor,
-        "maxCheckedKeys": max_checked,
-        "mismatches": int(best.get("mismatches") or 0),
-        "checkedKeys": int(best.get("checkedKeys") or 0),
-    }
-
-
 def clean_order_list(values: Any) -> list[str]:
     if not isinstance(values, list):
         return []
@@ -1973,67 +1719,8 @@ def clean_order_list(values: Any) -> list[str]:
     return out
 
 
-def is_envtalk_story_key(key: Any) -> bool:
-    value = safe_key(key).lower()
-    return value.startswith("env_envtalk") or "_envtalk_" in value
-
-
-def move_envtalk_keys_to_end(order: list[str]) -> list[str]:
-    clean = clean_order_list(order)
-    envtalk_keys = [key for key in clean if is_envtalk_story_key(key)]
-    if not envtalk_keys:
-        return clean
-    return [key for key in clean if not is_envtalk_story_key(key)] + envtalk_keys
-
-
-def attach_video_refs(
-    order: list[str],
-    *,
-    video_refs_by_key: dict[str, list[str]],
-) -> tuple[list[str], list[dict[str, Any]], set[str]]:
-    clean = clean_order_list(order)
-    if not clean or not video_refs_by_key:
-        return clean, [], set()
-
-    pending_by_parent: dict[str, list[str]] = defaultdict(list)
-    moving_videos: set[str] = set()
-    for key in clean:
-        for video_key in video_refs_by_key.get(key) or []:
-            if video_key == key or video_key in moving_videos:
-                continue
-            pending_by_parent[key].append(video_key)
-            moving_videos.add(video_key)
-    if not moving_videos:
-        return clean, [], set()
-
-    out: list[str] = []
-    appended: set[str] = set()
-    links: list[dict[str, Any]] = []
-    for key in clean:
-        if key in moving_videos:
-            continue
-        if key not in appended:
-            out.append(key)
-            appended.add(key)
-        for video_key in pending_by_parent.get(key) or []:
-            if video_key in appended:
-                continue
-            out.append(video_key)
-            appended.add(video_key)
-            links.append({
-                "key": video_key,
-                "afterKey": key,
-                "reason": "narrative-video-ref",
-            })
-    for key in clean:
-        if key not in appended:
-            out.append(key)
-            appended.add(key)
-    return out, links, moving_videos
-
-
 def story_orders_by_mission(payload: Any) -> dict[str, list[str]]:
-    """Read the OCR-managed full-list story-order format."""
+    """Read the full-list story-order format."""
     missions = payload.get("missions") if isinstance(payload, dict) else None
     if not isinstance(missions, dict):
         return {}
@@ -2066,291 +1753,6 @@ def story_order_locked_missions(payload: Any) -> set[str]:
     return out
 
 
-def current_story_orders(active_story_order: dict[str, Any]) -> tuple[dict[str, list[str]], set[str]]:
-    stored_orders = story_orders_by_mission(active_story_order)
-    return {mission: list(order) for mission, order in stored_orders.items()}, set(stored_orders)
-
-
-def story_order_storage_payload(
-    orders_by_mission: dict[str, list[str]],
-    story_order: dict[str, Any],
-    active_story_order: dict[str, Any],
-    *,
-    possibly_unused_by_mission: dict[str, list[str]] | None = None,
-) -> dict[str, Any]:
-    base_orders = story_orders_by_mission(story_order)
-    story_missions = story_order.get("missions") if isinstance(story_order, dict) else {}
-    active_missions = active_story_order.get("missions") if isinstance(active_story_order, dict) else {}
-    active_missions = active_missions if isinstance(active_missions, dict) else {}
-    possibly_unused_by_mission = possibly_unused_by_mission or {}
-    mission_positions = {mission: index for index, mission in enumerate(base_orders)}
-
-    def mission_token(mission: str) -> tuple[Any, ...]:
-        return (mission_positions.get(mission, len(mission_positions)), natural_sort_token(mission))
-
-    missions: dict[str, Any] = {}
-    for mission in sorted(orders_by_mission, key=mission_token):
-        order = orders_by_mission.get(mission)
-        if not order:
-            continue
-        raw_mission = story_missions.get(mission) if isinstance(story_missions, dict) else {}
-        active_mission = active_missions.get(mission)
-        locked = isinstance(active_mission, dict) and active_mission.get("locked") is True
-        if locked:
-            missions[mission] = active_mission
-            continue
-        out: dict[str, Any] = {"order": order}
-        if isinstance(raw_mission, dict):
-            level = safe_key(active_mission.get("level")) if isinstance(active_mission, dict) else ""
-            if not level:
-                level = safe_key(raw_mission.get("level"))
-            levels = clean_order_list(active_mission.get("levels")) if isinstance(active_mission, dict) else []
-            if not levels:
-                levels = clean_order_list(raw_mission.get("levels"))
-            if level:
-                out["level"] = level
-            if levels:
-                out["levels"] = levels
-        if mission in possibly_unused_by_mission:
-            possible_unused = clean_order_list(possibly_unused_by_mission.get(mission))
-        else:
-            possible_unused = (
-                clean_order_list(active_mission.get("possiblyUnused"))
-                if isinstance(active_mission, dict)
-                else []
-            )
-            if not possible_unused:
-                possible_unused = (
-                    clean_order_list(raw_mission.get("possiblyUnused"))
-                    if isinstance(raw_mission, dict)
-                    else []
-                )
-        possible_unused_set = set(possible_unused)
-        possible_unused = [
-            key for key in order
-            if key in possible_unused_set and not is_envtalk_story_key(key)
-        ]
-        if possible_unused:
-            out["possiblyUnused"] = possible_unused
-        missions[mission] = out
-
-    return {
-        "_schema": "storyOrder.fullOrder.v1",
-        "_note": (
-            "Editable Story file order. Each missions.<mission>.order array is "
-            "the complete ordered list of story file keys for that mission. "
-            "Set missions.<mission>.locked to true to preserve that mission's "
-            "order across OCR and browser writes; the WebUI can toggle it per mission."
-        ),
-        "missions": missions,
-    }
-
-
-def apply_observed_sequence_to_full_order(
-    current_order: list[str],
-    observed_keys: list[str],
-    *,
-    preserve_existing_order: bool = False,
-) -> list[str]:
-    sequence = clean_order_list(observed_keys)
-    if len(sequence) < 2:
-        return list(current_order)
-    if not current_order:
-        return sequence
-
-    if preserve_existing_order:
-        out = list(current_order)
-        positions = {key: index for index, key in enumerate(out)}
-
-        def refresh_positions() -> None:
-            positions.clear()
-            positions.update({key: index for index, key in enumerate(out)})
-
-        for sequence_index, key in enumerate(sequence):
-            if key in positions:
-                continue
-
-            previous_key = next(
-                (candidate for candidate in reversed(sequence[:sequence_index]) if candidate in positions),
-                "",
-            )
-            next_key = next(
-                (candidate for candidate in sequence[sequence_index + 1:] if candidate in positions),
-                "",
-            )
-            previous_position = positions.get(previous_key)
-            next_position = positions.get(next_key)
-            if (
-                previous_position is not None
-                and next_position is not None
-                and previous_position < next_position
-            ):
-                insert_at = next_position
-            elif previous_position is not None:
-                insert_at = previous_position + 1
-            elif next_position is not None:
-                insert_at = next_position
-            else:
-                insert_at = len(out)
-            out.insert(insert_at, key)
-            refresh_positions()
-        return out
-
-    moving = set(sequence)
-    current_positions = {key: index for index, key in enumerate(current_order)}
-    first_present_index: int | None = None
-    for key in sequence:
-        if key in current_positions:
-            first_present_index = current_positions[key]
-            break
-    remaining = [key for key in current_order if key not in moving]
-    if first_present_index is None:
-        insert_at = len(remaining)
-    else:
-        removed_before = sum(
-            1
-            for index, key in enumerate(current_order)
-            if index < first_present_index and key in moving
-        )
-        insert_at = max(0, first_present_index - removed_before)
-    return remaining[:insert_at] + sequence + remaining[insert_at:]
-
-
-def prepend_observed_sequence_to_full_order(
-    current_order: list[str],
-    observed_keys: list[str],
-) -> list[str]:
-    sequence = clean_order_list(observed_keys)
-    if not sequence:
-        return list(current_order)
-    moving = set(sequence)
-    remaining = [key for key in current_order if key not in moving]
-    return sequence + remaining
-
-
-def add_indexed_gap_keys(
-    *,
-    mission: str,
-    observed_keys: list[str],
-    current_order: list[str],
-) -> tuple[list[str], list[dict[str, Any]]]:
-    """Insert conservative unobserved indexed keys near observed siblings.
-
-    Example: if OCR sees ``radio_e1m3_1`` and later ``radio_e1m3_3``, then a
-    known key such as ``radio_e1m3_2`` has enough filename-index evidence to
-    sit between those two observed positions even if OCR missed its text. This
-    also handles decimal keys such as ``radio_e1m3_3d5``.
-
-    For radio tutorials, also allow the immediately preceding integer key when
-    OCR starts at ``radio_*_N`` after an observed non-radio scene. These are
-    often short instruction barks that happen during UI overlays.
-    """
-    if len(observed_keys) < 2 or not current_order:
-        return observed_keys, []
-
-    indexed_by_key: dict[str, IndexedStoryKey] = {}
-    all_candidates_by_family: dict[str, list[IndexedStoryKey]] = defaultdict(list)
-    observed_set = set(observed_keys)
-    current_positions = {key: index for index, key in enumerate(current_order)}
-    for order_index, key in enumerate(current_order):
-        indexed = parse_indexed_story_key(key, mission, order_index)
-        if not indexed:
-            continue
-        indexed_by_key[indexed.key] = indexed
-        if indexed.key not in observed_set:
-            all_candidates_by_family[indexed.family].append(indexed)
-
-    if not all_candidates_by_family:
-        return observed_keys, []
-
-    for candidates in all_candidates_by_family.values():
-        candidates.sort(key=lambda row: (row.number, row.order_index, row.key))
-
-    observed_by_family: dict[str, list[tuple[int, IndexedStoryKey]]] = defaultdict(list)
-    for sequence_index, key in enumerate(observed_keys):
-        indexed = indexed_by_key.get(key)
-        if indexed:
-            observed_by_family[indexed.family].append((sequence_index, indexed))
-
-    insert_before: dict[int, list[IndexedStoryKey]] = defaultdict(list)
-    inferred: list[dict[str, Any]] = []
-    used: set[str] = set()
-    for family, bounds in observed_by_family.items():
-        if len(bounds) < 2:
-            continue
-        for (left_index, left), (right_index, right) in zip(bounds, bounds[1:]):
-            if left.number >= right.number:
-                continue
-            between = [
-                candidate
-                for candidate in all_candidates_by_family.get(family, [])
-                if (
-                    left.number < candidate.number < right.number
-                    and left.order_index < candidate.order_index < right.order_index
-                    and candidate.key not in used
-                )
-            ]
-            if not between:
-                continue
-            for candidate in between:
-                used.add(candidate.key)
-                insert_before[right_index].append(candidate)
-                inferred.append({
-                    "key": candidate.key,
-                    "after": left.key,
-                    "before": right.key,
-                    "number": round(candidate.number, 6),
-                    "reason": "bracketed-index",
-                })
-
-    for family, bounds in observed_by_family.items():
-        family_kind = family.split("_", 1)[0]
-        if family_kind != "radio" or not bounds:
-            continue
-        first_index, first = bounds[0]
-        if first_index <= 0:
-            continue
-        previous_key = observed_keys[first_index - 1]
-        previous_position = current_positions.get(previous_key)
-        candidates = [
-            candidate
-            for candidate in all_candidates_by_family.get(family, [])
-            if (
-                not candidate.has_decimal
-                and candidate.key not in used
-                and candidate.order_index < first.order_index
-                and candidate.number < first.number
-                and first.number - candidate.number <= 1.000001
-                and (previous_position is None or candidate.order_index > previous_position)
-            )
-        ]
-        if not candidates:
-            continue
-        candidate = max(candidates, key=lambda row: (row.number, row.order_index, row.key))
-        used.add(candidate.key)
-        insert_before[first_index].append(candidate)
-        inferred.append({
-            "key": candidate.key,
-            "after": previous_key,
-            "before": first.key,
-            "number": round(candidate.number, 6),
-            "reason": "nearest-radio-predecessor",
-        })
-
-    if not insert_before:
-        return observed_keys, []
-
-    enriched: list[str] = []
-    for sequence_index, key in enumerate(observed_keys):
-        for candidate in sorted(
-            insert_before.get(sequence_index) or [],
-            key=lambda row: (row.number, row.order_index, row.key),
-        ):
-            enriched.append(candidate.key)
-        enriched.append(key)
-    return enriched, inferred
-
-
 def natural_sort_token(value: Any) -> tuple[tuple[int, Any], ...]:
     parts: list[tuple[int, Any]] = []
     for part in NATURAL_SORT_RE.findall(safe_key(value).lower()):
@@ -2361,82 +1763,32 @@ def natural_sort_token(value: Any) -> tuple[tuple[int, Any], ...]:
     return tuple(parts)
 
 
-def sort_indexed_key_runs(
-    *,
-    mission: str,
-    keys: list[str],
-    current_order: list[str],
-) -> list[str]:
-    if len(keys) < 2:
-        return keys
-
-    current_positions = {key: index for index, key in enumerate(current_order)}
-    fallback_start = len(current_order)
-
-    def indexed_key(key: str, sequence_index: int) -> IndexedStoryKey | None:
-        return parse_indexed_story_key(
-            key,
-            mission,
-            current_positions.get(key, fallback_start + sequence_index),
-        )
-
-    out: list[str] = []
-    run: list[tuple[str, IndexedStoryKey]] = []
-    run_family = ""
-
-    def flush_run() -> None:
-        nonlocal run, run_family
-        if len(run) > 1:
-            sorted_run = sorted(run, key=lambda row: (row[1].number, row[1].order_index, row[0]))
-            if all(key in current_positions for key, _indexed in run):
-                sorted_positions = [current_positions[key] for key, _indexed in sorted_run]
-                if sorted_positions == sorted(sorted_positions):
-                    run = sorted_run
-            else:
-                run = sorted_run
-        out.extend(key for key, _indexed in run)
-        run = []
-        run_family = ""
-
-    for sequence_index, key in enumerate(keys):
-        indexed = indexed_key(key, sequence_index)
-        if not indexed:
-            flush_run()
-            out.append(key)
-            continue
-        if run and indexed.family != run_family:
-            flush_run()
-        run.append((key, indexed))
-        run_family = indexed.family
-    flush_run()
-    return out
-
-
 def build_proposed_story_order(
     *,
-    active_story_order: dict[str, Any],
-    story_order: dict[str, Any],
     video_summaries: list[dict[str, Any]],
     min_sequence_keys: int,
-    recognized_first_only: bool,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    base_orders = story_orders_by_mission(story_order)
-    next_orders, active_missions = current_story_orders(active_story_order)
-    locked_missions = story_order_locked_missions(active_story_order)
+    """Build a proposal from accepted OCR-observed keys only.
+
+    This intentionally does not seed from, compare against, or preserve any
+    existing story-order override. It also avoids filename-index gap filling,
+    narrative-video attachment, locked-mission handling, and other non-OCR
+    additions.
+    """
     proposal_rows: list[dict[str, Any]] = []
-    possibly_unused_by_mission: dict[str, list[str]] = {}
-    video_refs_by_key = load_video_reference_links()
+    missions: dict[str, Any] = {}
 
     by_mission: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for video in video_summaries:
         for mission, sequence in (video.get("observedSequences") or {}).items():
             if sequence:
-                by_mission[mission].append({
+                by_mission[safe_key(mission)].append({
                     "video": video.get("video"),
                     "sequence": sequence,
                 })
 
-    for mission, rows in sorted(by_mission.items()):
+    for mission in sorted((key for key in by_mission if key), key=natural_sort_token):
+        rows = by_mission[mission]
         observed_keys: list[str] = []
         linked_entries_by_key: dict[str, dict[str, Any]] = {}
         for row in rows:
@@ -2450,11 +1802,10 @@ def build_proposed_story_order(
                     linked_entries_by_key.setdefault(key, {
                         "key": key,
                         "actualMission": actual_mission,
-                        "linkReason": link_reason or "related-mission",
+                        "linkReason": link_reason or "ocr-match",
                         "firstTime": item.get("firstTime"),
                     })
-        # Dedupe repeated observations across videos while preserving first
-        # observed position.
+
         deduped: list[str] = []
         seen: set[str] = set()
         for key in observed_keys:
@@ -2462,12 +1813,13 @@ def build_proposed_story_order(
                 continue
             seen.add(key)
             deduped.append(key)
-        current_order = next_orders.get(mission) or base_orders.get(mission) or []
+
+        videos = [row["video"] for row in rows]
         if len(deduped) < min_sequence_keys:
             proposal_rows.append({
                 "mission": mission,
-                "existingActiveOrder": mission in active_missions,
-                "locked": mission in locked_missions,
+                "existingActiveOrder": False,
+                "locked": False,
                 "observedKeys": deduped,
                 "detectedKeys": deduped,
                 "proposalKeys": [],
@@ -2476,137 +1828,49 @@ def build_proposed_story_order(
                 "indexedInferences": [],
                 "possiblyUnusedKeys": [],
                 "changed": False,
-                "skipReason": "insufficient-combined-evidence",
+                "included": False,
+                "skipReason": "insufficient-ocr-evidence",
                 "changedKeys": [],
                 "insertedKeys": [],
-                "orderLength": len(current_order),
-                "videos": [row["video"] for row in rows],
+                "orderLength": 0,
+                "videos": videos,
             })
             continue
-        if mission in locked_missions:
-            proposal_rows.append({
-                "mission": mission,
-                "existingActiveOrder": mission in active_missions,
-                "locked": True,
-                "observedKeys": deduped,
-                "detectedKeys": deduped,
-                "proposalKeys": [],
-                "linkedEntries": [],
-                "videoRefLinks": [],
-                "indexedInferences": [],
-                "possiblyUnusedKeys": [],
-                "changed": False,
-                "skipReason": "locked",
-                "changedKeys": [],
-                "insertedKeys": [],
-                "orderLength": len(current_order),
-                "videos": [row["video"] for row in rows],
-            })
-            continue
-        if recognized_first_only:
-            proposal_keys = deduped
-            indexed_inferences: list[dict[str, Any]] = []
-            updated_order = prepend_observed_sequence_to_full_order(current_order, proposal_keys)
-        else:
-            index_sorted = sort_indexed_key_runs(
-                mission=mission,
-                keys=deduped,
-                current_order=current_order,
-            )
 
-            proposal_keys, indexed_inferences = add_indexed_gap_keys(
-                mission=mission,
-                observed_keys=index_sorted,
-                current_order=current_order,
-            )
-            proposal_keys = sort_indexed_key_runs(
-                mission=mission,
-                keys=proposal_keys,
-                current_order=current_order,
-            )
-            updated_order = apply_observed_sequence_to_full_order(
-                current_order,
-                proposal_keys,
-                preserve_existing_order=mission in active_missions,
-            )
-        detected_keys = set(deduped)
-        updated_order, video_ref_links, video_detected_keys = attach_video_refs(
-            updated_order,
-            video_refs_by_key=video_refs_by_key,
-        )
-        detected_keys.update(video_detected_keys)
-        proposal_keys = clean_order_list(proposal_keys + [link["key"] for link in video_ref_links])
-        if mission not in active_missions:
-            updated_order = move_envtalk_keys_to_end(updated_order)
-        active_mission = (
-            active_story_order.get("missions", {}).get(mission)
-            if isinstance(active_story_order.get("missions"), dict)
-            else None
-        )
-        existing_possibly_unused = (
-            clean_order_list(active_mission.get("possiblyUnused"))
-            if isinstance(active_mission, dict)
-            else []
-        )
-        if mission in active_missions:
-            existing_unused = set(existing_possibly_unused)
-            possibly_unused_keys = [
-                key for key in updated_order
-                if key in existing_unused and not is_envtalk_story_key(key)
-            ]
-        else:
-            possibly_unused_keys = [
-                key for key in updated_order
-                if key not in detected_keys and not is_envtalk_story_key(key)
-            ]
-        possibly_unused_by_mission[mission] = possibly_unused_keys
-        before_positions = {key: index for index, key in enumerate(current_order)}
-        after_positions = {key: index for index, key in enumerate(updated_order)}
-        changed_keys = [
-            key
-            for key in proposal_keys
-            if before_positions.get(key) != after_positions.get(key)
-        ]
-        inserted_keys = [
-            key
-            for key in proposal_keys
-            if key not in before_positions and key in after_positions
-        ]
-        changed = updated_order != current_order
-        if changed:
-            next_orders[mission] = updated_order
-
+        missions[mission] = {"order": deduped}
         proposal_rows.append({
             "mission": mission,
-            "existingActiveOrder": mission in active_missions,
+            "existingActiveOrder": False,
             "locked": False,
             "observedKeys": deduped,
-            "detectedKeys": [
-                key for key in updated_order
-                if key in detected_keys and not is_envtalk_story_key(key)
-            ],
-            "proposalKeys": proposal_keys,
+            "detectedKeys": deduped,
+            "proposalKeys": deduped,
             "linkedEntries": [
                 linked_entries_by_key[key]
-                for key in proposal_keys
+                for key in deduped
                 if key in linked_entries_by_key
             ],
-            "videoRefLinks": video_ref_links,
-            "indexedInferences": indexed_inferences,
-            "possiblyUnusedKeys": possibly_unused_keys,
-            "changed": changed,
-            "changedKeys": changed_keys,
-            "insertedKeys": inserted_keys,
-            "orderLength": len(updated_order),
-            "videos": [row["video"] for row in rows],
+            "videoRefLinks": [],
+            "indexedInferences": [],
+            "possiblyUnusedKeys": [],
+            "changed": False,
+            "included": True,
+            "changedKeys": [],
+            "insertedKeys": [],
+            "orderLength": len(deduped),
+            "videos": videos,
         })
 
-    return story_order_storage_payload(
-        next_orders,
-        story_order,
-        active_story_order,
-        possibly_unused_by_mission=possibly_unused_by_mission,
-    ), proposal_rows
+    return {
+        "_schema": "storyOrder.ocrObserved.v1",
+        "_note": (
+            "OCR-observed per-mission Story file order. Each missions.<mission>.order "
+            "array contains only keys directly accepted from gameplay-video OCR text "
+            "matching. This file is not seeded from overrides/story_order.json and "
+            "does not include locked/manual/static/inferred order entries."
+        ),
+        "missions": missions,
+    }, proposal_rows
 
 
 def write_match_markdown(payload: dict[str, Any]) -> None:
@@ -2615,69 +1879,19 @@ def write_match_markdown(payload: dict[str, Any]) -> None:
     lines = [
         "# Gameplay Video OCR Story-Order Matching",
         "",
+        f"- Generated at: `{payload.get('generatedAt', '')}`",
         f"- OCR reports used: `{payload['summary']['ocrReportsUsed']}`",
         f"- Corpus lines: `{payload['summary']['corpusLines']}`",
-        f"- Accepted segment matches: `{payload['summary']['acceptedMatches']}`",
-        f"- Map-dialog companion matches: `{payload['summary'].get('mapDialogCompanionMatches', 0)}`",
-        f"- Indexed gap inferences: `{payload['summary'].get('indexedInferences', 0)}`",
-        f"- Linked map-dialog entries: `{payload['summary'].get('linkedEntries', 0)}`",
-        f"- Linked narrative videos: `{payload['summary'].get('videoRefLinks', 0)}`",
-        f"- Marked possibly unused keys: `{payload['summary'].get('markedPossiblyUnusedKeys', 0)}`",
-        f"- RANSAC models: `{payload['summary'].get('ransacModels', 0)}`",
-        f"- RANSAC adjusted repeated keys: `{payload['summary'].get('ransacAdjustedKeys', 0)}`",
+        f"- Accepted OCR segment matches: `{payload['summary']['acceptedMatches']}`",
+        f"- OCR proposal missions: `{payload['summary'].get('ocrProposalMissions', 0)}`",
+        f"- OCR proposal keys: `{payload['summary'].get('ocrProposalKeys', 0)}`",
         f"- Ignored repeated spans: `{payload['summary'].get('ignoredRepeatedSpans', 0)}`",
         f"- Effective OCR min score: `{payload.get('thresholds', {}).get('effectiveMinScore', payload.get('thresholds', {}).get('minScore'))}`",
-        f"- Locked-order mismatches: `{(payload['summary'].get('lockedValidation') or {}).get('mismatches', 0)}`",
         f"- Video mission title matches: `{payload['summary'].get('videoMissionMatches', {})}`",
         f"- Proposed story order: `{payload['outputs']['proposedStoryOrder']}`",
+        f"- WebUI OCR order: `{payload['outputs'].get('webuiOcrOrder', '')}`",
         "",
     ]
-    if payload["summary"].get("activeOrderWarning"):
-        lines.extend([
-            f"> Warning: {md_escape(payload['summary']['activeOrderWarning'])}",
-            "",
-        ])
-    if payload.get("lockedThresholdSweep"):
-        choice = payload["summary"].get("lockedThresholdChoice") or {}
-        lines.extend([
-            "## Locked Threshold Calibration",
-            "",
-            f"- Selected min score: `{choice.get('minScore')}`",
-            f"- Reason: `{md_escape(choice.get('reason'))}`",
-            "",
-            "| min score | accepted | locked checked | mismatches | inversions | mismatch rate |",
-            "|---:|---:|---:|---:|---:|---:|",
-        ])
-        for row in payload["lockedThresholdSweep"]:
-            lines.append(
-                f"| {float(row.get('minScore') or 0):.2f} "
-                f"| {int(row.get('acceptedMatches') or 0)} "
-                f"| {int(row.get('checkedKeys') or 0)} "
-                f"| {int(row.get('mismatches') or 0)} "
-                f"| {int(row.get('inversions') or 0)} "
-                f"| {float(row.get('mismatchRate') or 0):.4f} |"
-            )
-    locked_validation = payload.get("lockedValidation") if isinstance(payload.get("lockedValidation"), dict) else {}
-    locked_rows = locked_validation.get("missions") if isinstance(locked_validation.get("missions"), list) else []
-    if locked_rows:
-        lines.extend([
-            "",
-            "## Locked Mismatches",
-            "",
-            "| mission | videos | observed | checked | missing | mismatches | inversions | mismatch rate |",
-            "|---|---:|---:|---:|---:|---:|---:|---:|",
-        ])
-        for row in locked_rows:
-            lines.append(
-                f"| `{md_escape(row.get('mission'))}` "
-                f"| {len(row.get('videos') or [])} "
-                f"| {int(row.get('observedKeys') or 0)} "
-                f"| {int(row.get('checkedKeys') or 0)} "
-                f"| {int(row.get('missingKeys') or 0)} "
-                f"| {int(row.get('mismatches') or 0)} "
-                f"| {int(row.get('inversions') or 0)} "
-                f"| {float(row.get('mismatchRate') or 0):.4f} |"
-            )
     if payload.get("thresholdSweep"):
         lines.extend([
             "## Threshold Sweep",
@@ -2712,27 +1926,20 @@ def write_match_markdown(payload: dict[str, Any]) -> None:
     if payload.get("proposals"):
         lines.extend([
             "",
-            "## Proposals",
+            "## OCR Proposals",
             "",
-            "| mission | status | active | changed | observed | proposal | possibly unused | inferred/linked | moved/inserted | order size | videos |",
-            "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|",
+            "| mission | status | observed keys | proposal keys | linked OCR matches | order size | videos |",
+            "|---|---|---:|---:|---:|---:|---|",
         ])
         for row in payload["proposals"]:
-            indexed = len(row.get("indexedInferences") or [])
-            linked = len(row.get("linkedEntries") or []) + len(row.get("videoRefLinks") or [])
-            moved = len(row.get("changedKeys") or [])
-            inserted = len(row.get("insertedKeys") or [])
-            status = safe_key(row.get("skipReason")) or ("changed" if row.get("changed") else "unchanged")
+            status = safe_key(row.get("skipReason")) or ("included" if row.get("included") else "skipped")
+            linked = len(row.get("linkedEntries") or [])
             lines.append(
                 f"| `{md_escape(row.get('mission'))}` "
                 f"| `{md_escape(status)}` "
-                f"| `{str(bool(row.get('existingActiveOrder'))).lower()}` "
-                f"| `{str(bool(row.get('changed'))).lower()}` "
                 f"| {len(row.get('observedKeys') or [])} "
                 f"| {len(row.get('proposalKeys') or [])} "
-                f"| {len(row.get('possiblyUnusedKeys') or [])} "
-                f"| {indexed + linked} "
-                f"| {moved}/{inserted} "
+                f"| {linked} "
                 f"| {int(row.get('orderLength') or 0)} "
                 f"| `{md_escape(', '.join(row.get('videos') or []))}` |"
             )
@@ -2741,8 +1948,8 @@ def write_match_markdown(payload: dict[str, Any]) -> None:
             "",
             "## Videos",
             "",
-            "| video | target mission | search missions | report | accepted | companions | matched missions | observed sequences |",
-            "|---|---|---|---|---:|---:|---|---:|",
+            "| video | target mission | search missions | report | accepted | matched missions | observed sequences |",
+            "|---|---|---|---|---:|---|---:|",
         ])
         for video in payload["videos"]:
             seq_count = sum(len(seq) for seq in (video.get("observedSequences") or {}).values())
@@ -2765,7 +1972,6 @@ def write_match_markdown(payload: dict[str, Any]) -> None:
                 f"| `{md_escape(search_label)}` "
                 f"| `{md_escape(video.get('report'))}` "
                 f"| {video.get('acceptedMatches', 0)} "
-                f"| {video.get('mapDialogCompanionMatches', 0)} "
                 f"| `{md_escape(', '.join(video.get('missions') or []))}` "
                 f"| {seq_count} |"
             )
@@ -2929,16 +2135,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-video-matches", type=int, default=2)
     parser.add_argument("--min-sequence-keys", type=int, default=2)
     parser.add_argument("--include-title-matches", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--no-ransac", action="store_true", help="disable RANSAC-assisted selection of repeated OCR spans")
+    parser.add_argument("--no-ransac", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument(
         "--ransac-tolerance",
         type=float,
         default=DEFAULT_RANSAC_TOLERANCE,
-        help="Story-order index residual tolerated by the timeline RANSAC model",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument("--disable-locked-threshold", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--no-progress", action="store_true", help="Disable terminal progress bars")
-    parser.add_argument("--apply", action="store_true", help="write proposed full story order to webui/overrides/story_order.json")
     args = parser.parse_args()
     if args.frame_step <= 0:
         parser.error("--frame-step must be greater than zero")
@@ -2952,15 +2157,9 @@ def main() -> int:
     if args.run_ocr:
         run_ocr(args)
 
-    active_story_order, active_story_order_warning = read_active_story_order(ACTIVE_STORY_ORDER_PATH)
-    if active_story_order_warning:
-        print(
-            f"WARNING: {active_story_order_warning}; "
-            "treating active story order as empty for report generation."
-        )
-        if args.apply:
-            raise SystemExit("refusing --apply until the active story-order JSON is valid")
-    story_order = active_story_order
+    story_order: dict[str, Any] = {}
+    active_story_order_warning = ""
+    print("Active story-order override is not used for OCR matching or proposal generation.")
 
     print(f"Loading Story corpus from {rel_path(CONV_ROOT)}...")
     corpus = load_corpus(
@@ -2968,14 +2167,18 @@ def main() -> int:
         story_order=story_order,
         min_chars=args.min_chars,
         include_titles=args.include_title_matches,
+        restrict_to_story_order=False,
     )
-    print(f"Loaded {len(corpus)} searchable Story text row(s).")
-    map_dialog_companion_index = build_map_dialog_companion_index(corpus)
-    map_dialog_companion_count = sum(len(rows) for rows in map_dialog_companion_index.values())
-    print(f"Prepared {map_dialog_companion_count} archive-to-map-dialog companion matcher(s).")
-    base_story_orders = story_orders_by_mission(story_order)
-    related_missions_by_mission = related_corpus_missions_for_story_mission(story_order)
-    mission_title_candidates = load_mission_title_candidates(MISSIONS_PATH, story_order)
+    print(
+        f"Loaded {len(corpus)} searchable Story text row(s) "
+        "from generated native mission data; active story order is ignored."
+    )
+    map_dialog_companion_index: dict[str, list[dict[str, Any]]] = {}
+    map_dialog_companion_count = 0
+    print("Archive-to-map-dialog companion inference disabled for OCR-only matching.")
+    base_story_orders: dict[str, list[str]] = {}
+    related_missions_by_mission: dict[str, list[dict[str, str]]] = {}
+    mission_title_candidates = load_mission_title_candidates(MISSIONS_PATH)
     print(f"Loaded {len(mission_title_candidates)} mission title matcher(s) from {rel_path(MISSIONS_PATH)}.")
     corpus_by_mission: dict[str, list[CorpusLine]] = defaultdict(list)
     for line in corpus:
@@ -3020,7 +2223,8 @@ def main() -> int:
     total_map_dialog_companion_matches = 0
     video_mission_stats: Counter[str] = Counter()
     video_match_records: list[dict[str, Any]] = []
-    sequence_use_ransac = not args.no_ransac
+    # RANSAC uses existing story-order positions as a prior, so OCR-only mode keeps it off.
+    sequence_use_ransac = False
     for report, search_context in zip(ocr_reports, video_search_contexts):
         matches: list[dict[str, Any]] = []
         video_name = report_video_name(report)
@@ -3217,78 +2421,39 @@ def main() -> int:
             "ocrMatches": ocr_matches,
         })
 
-    current_orders, active_order_missions = current_story_orders(active_story_order)
-    locked_order_missions = story_order_locked_missions(active_story_order)
-    locked_orders = {
-        mission: current_orders.get(mission) or []
-        for mission in locked_order_missions
-        if current_orders.get(mission)
+    current_orders: dict[str, list[str]] = {}
+    active_order_missions: set[str] = set()
+    locked_order_missions: set[str] = set()
+    locked_threshold_sweep: list[dict[str, Any]] = []
+    locked_threshold_choice = {
+        "minScore": args.min_score,
+        "reason": "ocr-only-no-prior",
+        "disabled": True,
     }
-    locked_threshold_sweep = build_locked_threshold_sweep(
-        video_match_records,
-        locked_orders=locked_orders,
-        map_dialog_companion_index=map_dialog_companion_index,
-        base_story_orders=base_story_orders,
-        min_margin=args.min_margin,
-        current_min_score=args.min_score,
-        min_video_matches=args.min_video_matches,
-        min_sequence_keys=args.min_sequence_keys,
-        use_ransac=sequence_use_ransac,
-        ransac_tolerance=args.ransac_tolerance,
-    )
-    locked_threshold_choice = choose_locked_threshold(locked_threshold_sweep, args.min_score)
     effective_min_score = args.min_score
-    if locked_threshold_sweep and not args.disable_locked_threshold:
-        effective_min_score = float_value(locked_threshold_choice.get("minScore"), args.min_score)
-        if abs(effective_min_score - args.min_score) > 1e-9:
-            print(
-                "Locked-order threshold calibration: "
-                f"minScore {args.min_score:g} -> {effective_min_score:g} "
-                f"(checked={locked_threshold_choice.get('checkedKeys', 0)}, "
-                f"mismatches={locked_threshold_choice.get('mismatches', 0)})"
-            )
-    else:
-        locked_threshold_choice = {
-            **locked_threshold_choice,
-            "disabled": bool(args.disable_locked_threshold),
-        }
-
-    all_matches_for_stats = []
-    total_matches = 0
-    total_accepted = 0
-    total_map_dialog_companion_matches = 0
-    for record in video_match_records:
-        result = finalize_video_match_record(
-            record,
-            min_score=effective_min_score,
-            min_margin=args.min_margin,
-            map_dialog_companion_index=map_dialog_companion_index,
-            base_story_orders=base_story_orders,
-            min_video_matches=args.min_video_matches,
-            min_sequence_keys=args.min_sequence_keys,
-            use_ransac=sequence_use_ransac,
-            ransac_tolerance=args.ransac_tolerance,
-            update_video=True,
-        )
-        final_matches = result.get("matches") or []
-        all_matches_for_stats.extend(final_matches)
-        total_matches += int(result.get("matchedSegments") or 0)
-        total_accepted += int(result.get("acceptedMatches") or 0)
-        total_map_dialog_companion_matches += int(result.get("mapDialogCompanionMatches") or 0)
-
-    locked_validation = validate_locked_order_sequences(videos, locked_orders=locked_orders)
+    locked_validation = {
+        "summary": {
+            "lockedMissionsWithEvidence": 0,
+            "checkedKeys": 0,
+            "missingKeys": 0,
+            "mismatches": 0,
+            "inversions": 0,
+        },
+        "missions": [],
+    }
     proposed, proposal_rows = build_proposed_story_order(
-        active_story_order=active_story_order,
-        story_order=story_order,
         video_summaries=videos,
         min_sequence_keys=args.min_sequence_keys,
-        recognized_first_only=False,
     )
-    skipped_locked_mission_count = sum(1 for row in proposal_rows if row.get("skipReason") == "locked")
-    changed_mission_count = sum(1 for row in proposal_rows if row.get("changed"))
-    inserted_key_count = sum(len(row.get("insertedKeys") or []) for row in proposal_rows)
-    changed_key_count = sum(len(row.get("changedKeys") or []) for row in proposal_rows)
-    marked_possibly_unused_key_count = sum(len(row.get("possiblyUnusedKeys") or []) for row in proposal_rows)
+    skipped_locked_mission_count = 0
+    included_proposal_rows = [row for row in proposal_rows if row.get("included")]
+    changed_mission_count = 0
+    inserted_key_count = sum(len(row.get("proposalKeys") or []) for row in included_proposal_rows)
+    changed_key_count = 0
+    marked_possibly_unused_key_count = 0
+    insufficient_ocr_mission_count = sum(
+        1 for row in proposal_rows if row.get("skipReason") == "insufficient-ocr-evidence"
+    )
     sequence_diagnostics = [
         diagnostics
         for video in videos
@@ -3296,15 +2461,10 @@ def main() -> int:
         if isinstance(diagnostics, dict)
     ]
     print(
-        "OCR story-order update: "
-        f"activeMissions={len(active_order_missions)}, "
-        f"lockedMissions={len(locked_order_missions)}, "
-        f"skippedLockedMissions={skipped_locked_mission_count}, "
-        f"seededMissions={len(current_orders)}, "
-        f"changedMissions={changed_mission_count}, "
-        f"changedKeys={changed_key_count}, "
-        f"insertedKeys={inserted_key_count}, "
-        f"markedPossiblyUnusedKeys={marked_possibly_unused_key_count}, "
+        "OCR story-order proposal: "
+        f"ocrMissions={len(included_proposal_rows)}, "
+        f"insufficientOcrMissions={insufficient_ocr_mission_count}, "
+        f"ocrKeys={inserted_key_count}, "
         f"mapDialogCompanions={total_map_dialog_companion_matches}"
     )
     write_report_json(PROPOSED_STORY_ORDER_PATH, proposed)
@@ -3316,26 +2476,28 @@ def main() -> int:
     webui_ocr_path = build_webui_ocr_order(PROPOSED_STORY_ORDER_PATH)
     print(f"Wrote {rel_path(webui_ocr_path)} (WebUI OCR order reference)")
 
-    if args.apply:
-        write_report_json(ACTIVE_STORY_ORDER_PATH, proposed)
-
+    generated_at = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
     payload = {
         "schema": "gameplayVideoStoryOrderMatch.v2",
+        "generatedAt": generated_at,
         "summary": {
             "corpusLines": len(corpus),
             "ocrReportsUsed": len(ocr_reports),
             "matchedSegments": total_matches,
             "acceptedMatches": total_accepted,
             "mapDialogCompanionMatches": total_map_dialog_companion_matches,
-            "mapDialogCompanionEnabled": True,
-            "indexedInferences": sum(len(row.get("indexedInferences") or []) for row in proposal_rows),
+            "mapDialogCompanionEnabled": False,
+            "ocrProposalMissions": len(included_proposal_rows),
+            "ocrProposalKeys": inserted_key_count,
+            "insufficientOcrEvidenceMissions": insufficient_ocr_mission_count,
+            "indexedInferences": 0,
             "linkedEntries": sum(len(row.get("linkedEntries") or []) for row in proposal_rows),
-            "videoRefLinks": sum(len(row.get("videoRefLinks") or []) for row in proposal_rows),
+            "videoRefLinks": 0,
             "ransacModels": sum(1 for row in sequence_diagnostics if row.get("ransacModel")),
             "ransacAdjustedKeys": sum(int(row.get("adjustedRepeatedKeys") or 0) for row in sequence_diagnostics),
             "ignoredRepeatedSpans": sum(int(row.get("ignoredRepeatedSpans") or 0) for row in sequence_diagnostics),
-            "orderUpdateMode": "indexed-gap-inference",
-            "recognizedFirstOnly": False,
+            "orderUpdateMode": "ocr-match-only",
+            "recognizedFirstOnly": True,
             "videoScope": "all",
             "activeOrderMissions": len(active_order_missions),
             "lockedOrderMissions": len(locked_order_missions),
@@ -3350,7 +2512,7 @@ def main() -> int:
             "lockedValidation": locked_validation.get("summary") or {},
             "lockedThresholdChoice": locked_threshold_choice,
             "activeOrderWarning": active_story_order_warning,
-            "applied": bool(args.apply),
+            "applied": False,
         },
         "thresholds": {
             "minChars": args.min_chars,
@@ -3359,13 +2521,14 @@ def main() -> int:
             "minMargin": args.min_margin,
             "minVideoMatches": args.min_video_matches,
             "minSequenceKeys": args.min_sequence_keys,
-            "ransacEnabled": bool(sequence_use_ransac),
-            "ransacTolerance": args.ransac_tolerance if sequence_use_ransac else None,
+            "ransacEnabled": False,
+            "ransacTolerance": None,
             "includeTitleMatches": bool(args.include_title_matches),
         },
         "outputs": {
             "proposedStoryOrder": rel_path(PROPOSED_STORY_ORDER_PATH),
-            "activeStoryOrder": rel_path(ACTIVE_STORY_ORDER_PATH) if args.apply else "",
+            "webuiOcrOrder": rel_path(webui_ocr_path),
+            "activeStoryOrder": "",
         },
         "thresholdSweep": build_threshold_sweep(
             all_matches_for_stats,
@@ -3385,20 +2548,8 @@ def main() -> int:
     print(f"Wrote {rel_path(MATCH_REPORT_PATH)}")
     print(f"Review matching summary at {rel_path(MATCH_MD_PATH)}")
     print(f"Wrote {rel_path(PROPOSED_STORY_ORDER_PATH)}")
-    if args.apply:
-        print(f"Applied to {rel_path(ACTIVE_STORY_ORDER_PATH)}")
-    locked_rows = locked_validation.get("missions") or []
-    if locked_rows:
-        print("Locked-order mismatch validation:")
-        for row in locked_rows:
-            print(
-                f"  {row['mission']}: mismatches={row.get('mismatches', 0)}, "
-                f"inversions={row.get('inversions', 0)}, "
-                f"checked={row.get('checkedKeys', 0)}, "
-                f"missing={row.get('missingKeys', 0)}"
-            )
-    else:
-        print("Locked-order mismatch validation: no locked mission evidence in matched videos")
+    print(f"Active override left unchanged: {rel_path(ACTIVE_STORY_ORDER_PATH)}")
+    print("Locked-order mismatch validation skipped: OCR-only mode does not use active order priors")
     return 0
 
 

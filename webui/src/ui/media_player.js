@@ -93,9 +93,12 @@
     const isVideo = media.tagName && media.tagName.toLowerCase() === "video";
     const startTime = Number(media.currentTime) || 0;
     const fileName = deriveDownloadName(media) || (isVideo ? "video" : "audio");
-    const popup = window.open("", "_blank", "noopener,width=960,height=600,resizable=yes,scrollbars=no");
+    const popup = window.open("", "_blank", "width=960,height=600,resizable=yes,scrollbars=no");
     if (!popup) return;
-    const safeSrc = String(src).replace(/"/g, "&quot;");
+    try {
+      popup.opener = null;
+    } catch (_error) {}
+    const safeSrc = WebUI.escapeHtml(String(src));
     const safeName = WebUI.escapeHtml(fileName);
     const tag = isVideo
       ? `<video src="${safeSrc}" controls autoplay playsinline></video>`

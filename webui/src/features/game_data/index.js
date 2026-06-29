@@ -3,6 +3,7 @@
   const JSON_PREVIEW_CHAR_LIMIT = 260000;
   const HEADER_PREVIEW_BYTES = 4096;
   const FILTER_PANEL_STORAGE_KEY = "game_data_filters_collapsed";
+  const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "usm"]);
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
   const DATA_TEXTS = {
     zh: {
@@ -23,6 +24,7 @@
       sortSizeAsc: "\u6587\u4ef6\u5927\u5c0f\u4ece\u5c0f\u5230\u5927",
       listUnit: "\u6761",
       empty: "\u4ece\u5de6\u4fa7\u9009\u62e9\u4e00\u4e2a\u6570\u636e\u6587\u4ef6",
+      selectGroup: "\u8bf7\u5148\u4ece\u5de6\u4fa7\u9009\u62e9\u4e00\u4e2a\u6570\u636e\u5206\u7ec4",
       noIndex: "\u5c1a\u672a\u6784\u5efa\u6e38\u620f\u6570\u636e\u7d22\u5f15",
       loading: "\u52a0\u8f7d\u4e2d...",
       loadError: "\u52a0\u8f7d\u5931\u8d25: ",
@@ -41,6 +43,8 @@
       samples: "\u6837\u672c",
       preview: "\u9884\u89c8",
       jsonPreview: "JSON \u9884\u89c8",
+      videoPreview: "\u89c6\u9891\u9884\u89c8",
+      videoPreviewUnavailable: "\u65e0\u6cd5\u9884\u89c8\u8fd9\u4e2a\u89c6\u9891\u3002",
       binaryPreview: "\u4e8c\u8fdb\u5236\u6587\u4ef6\u5934",
       previewUnavailable: "\u6ca1\u6709\u53ef\u7528\u7684\u9875\u5185\u9884\u89c8",
       truncated: "\u9884\u89c8\u5df2\u622a\u65ad",
@@ -66,6 +70,7 @@
       sortSizeAsc: "File size (low to high)",
       listUnit: "items",
       empty: "Select a data file",
+      selectGroup: "Select a data group first",
       noIndex: "Game data index has not been built",
       loading: "Loading...",
       loadError: "Load failed: ",
@@ -84,6 +89,8 @@
       samples: "Samples",
       preview: "Preview",
       jsonPreview: "JSON preview",
+      videoPreview: "Video preview",
+      videoPreviewUnavailable: "Unable to preview this video.",
       binaryPreview: "Binary header",
       previewUnavailable: "No in-page preview is available",
       truncated: "Preview truncated",
@@ -186,15 +193,20 @@
 
   function limitedNamePrefix(value, maxParts) {
     const raw = String(value || "").trim() || "[root]";
-    if (raw === "[root]") return raw;
+    if (raw === "[root]" || raw.includes("/")) return raw;
     const parts = raw.split(/[_\-.]+/).filter(Boolean);
     if (parts.length <= maxParts) return raw;
     return parts.slice(0, maxParts).join("_");
   }
-
+  function structuredJsonPrefix(entry) {
+    const parts = String(entry && entry.p || "").split("/").filter(Boolean);
+    if (parts[0] === "Json" && parts.length >= 4) return parts.slice(1, -1).join("/");
+    return "";
+  }
   function entryPrefix(entry) {
     const raw = rawEntryPrefix(entry);
-    return activeGroupUsesPrefixes() ? limitedNamePrefix(raw, 2) : raw;
+    if (!activeGroupUsesPrefixes()) return raw;
+    return structuredJsonPrefix(entry) || limitedNamePrefix(raw, 2);
   }
 
   function compactJsonGroupId(groupId) {
@@ -372,7 +384,7 @@
     syncFilterPanel();
     if (!STATE.selected) {
       const empty = gd$("#game-data-empty");
-      if (empty) empty.textContent = STATE.index ? dataText("empty") : dataText("noIndex");
+      if (empty) empty.textContent = emptyDetailText();
     }
   }
 
@@ -417,9 +429,25 @@
   function activeGroupInfo(groupId = STATE.activeGroup) {
     return STATE.groups.find((group) => group.id === groupId) || null;
   }
+
+  function indexRequiresGroupSelection() {
+    if (!STATE.index) return false;
+    if (STATE.index.requiresGroupSelection) return true;
+    const count = Number(STATE.index.counts && STATE.index.counts.files || 0);
+    const limit = Number(STATE.index.autoLoadAllLimit || 120000);
+    return count > limit;
+  }
+
+  function emptyDetailText() {
+    if (!STATE.index) return dataText("noIndex");
+    if (indexRequiresGroupSelection() && !STATE.activeGroup) return dataText("selectGroup");
+    return dataText("empty");
+  }
+
   function activeGroupIds() {
     const active = String(STATE.activeGroup || "");
     if (active) return [active];
+    if (indexRequiresGroupSelection()) return [];
     return STATE.groups.map((group) => String(group.id || "")).filter(Boolean);
   }
 
@@ -774,7 +802,7 @@
     if (!entry) {
       detail.hidden = true;
       empty.hidden = false;
-      empty.textContent = STATE.index ? dataText("empty") : dataText("noIndex");
+      empty.textContent = emptyDetailText();
       return;
     }
 
@@ -790,7 +818,7 @@
       factRow(dataText("file"), entry.p, { mono: true }),
       fileCount > 1 ? factRow(dataText("duplicateFiles"), aggregatePathSummary(entry, 48), { mono: true }) : "",
       factRow(dataText("folder"), entry.d),
-      factRow(dataText("prefix"), entry.g),
+      factRow(dataText("prefix"), entryPrefix(entry)),
       factRow(dataText("size"), formatBytes(entry.s)),
       factRow(dataText("parser"), [entry.k, entry.q].filter(Boolean).join(" / ")),
       factRow(dataText("hash"), entryContentHash(entry), { mono: true }),
@@ -866,6 +894,27 @@
     }
   }
 
+  function isVideoEntry(entry) {
+    const ext = String(entry && entry.e || "").toLowerCase();
+    return VIDEO_EXTENSIONS.has(ext) || String(entry && entry.k || "").toLowerCase() === "video";
+  }
+
+  function renderVideoPreview(entry, wrap) {
+    wrap.innerHTML = `<div class="game-data-preview-label">${escapeHtml(dataText("videoPreview"))}</div>`;
+    const video = document.createElement("video");
+    video.className = "game-data-preview-video";
+    video.controls = true;
+    video.preload = "metadata";
+    video.src = exportDataHref(entry.p);
+    video.onerror = () => {
+      video.hidden = true;
+      const note = document.createElement("div");
+      note.className = "game-data-preview-note";
+      note.textContent = dataText("videoPreviewUnavailable");
+      wrap.appendChild(note);
+    };
+    wrap.appendChild(video);
+  }
 
   function renderPreview(entry) {
     const wrap = gd$("#game-data-preview");
@@ -873,6 +922,8 @@
     wrap.replaceChildren();
     if (entry.k === "text-json") {
       renderJsonPreview(entry, wrap);
+    } else if (isVideoEntry(entry)) {
+      renderVideoPreview(entry, wrap);
     } else {
       renderBinaryPreview(entry, wrap);
     }

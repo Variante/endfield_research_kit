@@ -368,6 +368,7 @@
     "c6m1": {
       "order": [
         "dlg_c6m1_1",
+        "misc_dlg_c6m1_1d5",
         "radio_c6m1_1",
         "radio_c6m1_2",
         "dlg_c6m1_3",
@@ -419,16 +420,14 @@
         "dlg_c6m1_31",
         "black_c6m1_4",
         "dlg_c6m1_32",
-        "nar_media_map01_45_1",
-        "nar_media_map01_45_2",
-        "dlg_c6m1_35",
-        "radio_c6m1_22",
-        "radio_c6m1_23",
+        "env_envTalk_c6m1_1",
         "dlg_c6m1_34",
+        "dlg_c6m1_35",
         "dlg_c6m1_36",
-        "misc_dlg_c6m1_1d5",
-        "env_envTalk_c6m1_1"
+        "radio_c6m1_22",
+        "radio_c6m1_23"
       ],
+      "locked": true,
       "level": "map01_lv007",
       "levels": [
         "map01_lv007",
@@ -436,15 +435,9 @@
         "map01_lv002",
         "map01_lv006"
       ],
-      "possiblyUnused": [
-        "nar_media_map01_45_1",
-        "nar_media_map01_45_2",
-        "dlg_c6m1_35",
+      "branches": [
         "radio_c6m1_22",
-        "radio_c6m1_23",
-        "dlg_c6m1_34",
-        "dlg_c6m1_36",
-        "misc_dlg_c6m1_1d5"
+        "radio_c6m1_23"
       ]
     },
     "c6m3": {
@@ -462,33 +455,27 @@
         "sns_c13m1_1",
         "dlg_c13m1_1",
         "dlg_c13m1_2",
+        "radio_c13m1_1",
         "dlg_c13m1_3",
         "dlg_c13m1_4",
+        "radio_c13m1_2",
         "dlg_c13m1_5",
         "dlg_c13m1_6",
+        "radio_c13m1_3",
         "dlg_c13m1_7",
         "dlg_c13m1_9",
-        "radio_c13m1_2",
-        "radio_c13m1_3",
-        "radio_c13m1_1",
-        "dlg_c13m1_8",
-        "dlg_c13m1_10",
         "env_envTalk_c13m1_2",
         "env_envTalk_c13m1_3",
-        "env_envTalk_c13m1_4"
+        "env_envTalk_c13m1_4",
+        "dlg_c13m1_8",
+        "dlg_c13m1_10"
       ],
+      "locked": true,
       "level": "map01_lv001",
       "levels": [
         "map01_lv001"
       ],
-      "possiblyUnused": [
-        "dlg_c13m1_2",
-        "dlg_c13m1_4",
-        "dlg_c13m1_6",
-        "dlg_c13m1_9",
-        "radio_c13m1_2",
-        "radio_c13m1_3",
-        "radio_c13m1_1",
+      "branches": [
         "dlg_c13m1_8",
         "dlg_c13m1_10"
       ]
@@ -611,13 +598,13 @@
         "env_envTalk_c13m3_8",
         "env_envTalk_c13m3_9"
       ],
+      "locked": true,
       "level": "map01_lv007",
       "levels": [
         "map01_lv007",
         "map01_lv001"
       ],
       "possiblyUnused": [
-        "dlg_c13m3_6",
         "radio_c13m3_5",
         "radio_c13m3_4",
         "radio_c13m3_3",
@@ -1672,6 +1659,7 @@
         "cutscene_e0m0_12",
         "cutscene_e0m0_11111"
       ],
+      "locked": true,
       "level": "indie_dg002",
       "levels": [
         "indie_dg002",
@@ -2339,8 +2327,8 @@
       "levels": [
         "map01_lv005"
       ],
-      "possiblyUnused": [
-        "dlg_e2m4_11"
+      "branches": [
+        "radio_e2m4_15"
       ]
     },
     "e2m5": {

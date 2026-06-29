@@ -480,8 +480,7 @@ function setStorySortMode(mode, { resetScroll = true } = {}) {
 }
 
 function storyOrderEditingEnabled() {
-  return (STATE.sortMode || "story") === "story"
-    && !hasActiveStoryFilters();
+  return STATE.showDebug && (STATE.sortMode || "story") === "story";
 }
 
 function syncStoryOrderEditor() {
@@ -565,16 +564,13 @@ function storyOrderMissionIdForGroup(groupKey) {
   return mission && Array.isArray(mission.order) && mission.order.length ? missionId : "";
 }
 
-// Reorder operations target the current displayed list of a mission. When the
-// override has no entry for this mission yet, the editor seeds one from the
-// currently rendered order so freshly-typed missions (e/a/gm/c/sm/m/f/...)
-// can still be rearranged.
+// Reorder operations target the full mission order. When the override has no
+// entry for this mission yet, seed from all loaded rows so filtered Story views
+// can be rearranged without dropping hidden files from the saved override.
 function storyOrderMissionBaselineOrder(missionId) {
   const target = String(missionId || "");
   if (!target) return [];
-  const source = (STATE.filtered && STATE.filtered.length)
-    ? STATE.filtered
-    : (STATE.entries || []);
+  const source = STATE.entries || [];
   const seen = new Set();
   const items = [];
   for (const entry of source) {
@@ -644,7 +640,7 @@ function storyOrderMissionMoveUnusedControl(row) {
   );
 }
 
-// #2 â€” flag missions whose order is NOT human-verified (not locked). Non-locked
+// #2 â€?flag missions whose order is NOT human-verified (not locked). Non-locked
 // overrides may be OCR/auto-seeded; per project policy OCR is untrusted, so these
 // need a human pass. Locked missions are treated as verified and show no badge.
 function storyOrderMissionVerifiedControl(row) {
@@ -661,7 +657,7 @@ function storyOrderMissionVerifiedControl(row) {
   return `<span class="story-order-unverified-badge" title="${title}">${label}</span>`;
 }
 
-// #1 â€” jump to the next low-confidence row needing review. Count reflects the
+// #1 â€?jump to the next low-confidence row needing review. Count reflects the
 // mission's fallback/weak rows; only shown once the mission JSON is cached (debug).
 function storyOrderMissionReviewControl(row) {
   if ((STATE.sortMode || "story") !== "story" || !STATE.showDebug) return "";
@@ -736,12 +732,25 @@ function toggleStoryOrderMissionLock(missionId) {
   return true;
 }
 
-function toggleStoryOrderEntryPossiblyUnused(missionId, entryKey) {
+function cycleStoryOrderEntryTagState(missionId, entryKey) {
   const missionKey = String(missionId || "");
   const key = String(entryKey || "");
-  if (!missionKey || !key || typeof setStoryOrderEntryPossiblyUnused !== "function") return false;
-  const next = !(typeof storyOrderEntryPossiblyUnused === "function" && storyOrderEntryPossiblyUnused(missionKey, key));
-  if (!setStoryOrderEntryPossiblyUnused(missionKey, key, next)) return false;
+  if (!missionKey || !key) return false;
+
+  if (typeof setStoryOrderEntryTagState !== "function") {
+    if (typeof setStoryOrderEntryPossiblyUnused !== "function") return false;
+    const next = !(typeof storyOrderEntryPossiblyUnused === "function" && storyOrderEntryPossiblyUnused(missionKey, key));
+    if (!setStoryOrderEntryPossiblyUnused(missionKey, key, next)) return false;
+  } else {
+    const current = typeof storyOrderEntryTagState === "function"
+      ? storyOrderEntryTagState(missionKey, key)
+      : "";
+    const next = typeof nextStoryOrderEntryTagState === "function"
+      ? nextStoryOrderEntryTagState(current)
+      : (current === "unused" ? "" : "unused");
+    if (!setStoryOrderEntryTagState(missionKey, key, next)) return false;
+  }
+
   if (typeof scheduleStoryOrderSave === "function") scheduleStoryOrderSave();
 
   const wrap = $("#list-wrap");
@@ -750,6 +759,10 @@ function toggleStoryOrderEntryPossiblyUnused(missionId, entryKey) {
   if (wrap) wrap.scrollTop = prevScroll;
   renderList();
   return true;
+}
+
+function toggleStoryOrderEntryPossiblyUnused(missionId, entryKey) {
+  return cycleStoryOrderEntryTagState(missionId, entryKey);
 }
 
 function removeStoryOrderEntryFromMissionAndSave(missionId, entryKey) {
@@ -945,6 +958,7 @@ function bindEvents() {
       if (STATE.selectedKey && STATE.convCache.has(STATE.selectedKey)) {
         renderConv(STATE.convCache.get(STATE.selectedKey));
       }
+      if (typeof renderList === "function") renderList();
     });
   }
   $("#inline-tag-mode").addEventListener("change", (ev) => {

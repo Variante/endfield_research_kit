@@ -1,11 +1,9 @@
-from __future__ import annotations
-
+﻿from __future__ import annotations
 import json as _radio_cont_json
 import hashlib as _reference_hashlib
 import re as _radio_cont_re
 from functools import lru_cache as _radio_cont_lru_cache
 from pathlib import Path as _RadioContPath
-
 from .context import *
 from .anime_assets import *
 from .scene_graph import *
@@ -16,39 +14,33 @@ from .bundle_support import *
 from .language_helpers import *
 from .timeline_action_evidence import build_conversation_action_debug
 
-
 _RADIO_CONTINUATION_REPORT_PATH = (
     _RadioContPath(__file__).resolve().parents[2]
     / "reports" / "mission_order" / "radio_continuation_CN.json"
 )
-
 _FMV_CLIP_BY_KEY_REPORT_PATH = (
     _RadioContPath(__file__).resolve().parents[2]
     / "reports" / "playable_director" / "fmv_clip_by_webui_key.json"
 )
-
 _NARRATIVE_VIDEO_OVERRIDES_PATH = (
     _RadioContPath(__file__).resolve().parents[2]
     / "webui" / "overrides" / "narrative_videos.json"
 )
-
 _STORY_ORDER_OVERRIDES_PATH = (
     _RadioContPath(__file__).resolve().parents[2]
     / "webui" / "overrides" / "story_order.json"
 )
 
-
 @_radio_cont_lru_cache(maxsize=2)
 def _load_story_order_overrides(path_str: str) -> dict[str, list[str]]:
     """Load {missionId: [orderedSceneKey, ...]} from the story-order override.
-
     Used only to widen the additive sceneOrderInfo candidate set so it matches
     the order-compare report's keyInfo coverage (override-only scene keys).
     """
     path = _RadioContPath(path_str)
     if not path.is_file():
         return {}
-    payload = _radio_cont_json.loads(path.read_text(encoding="utf-8"))
+    payload = _radio_cont_json.loads(path.read_text(encoding="utf-8-sig"))
     missions = payload.get("missions") if isinstance(payload, dict) else {}
     out: dict[str, list[str]] = {}
     if isinstance(missions, dict):
@@ -58,7 +50,6 @@ def _load_story_order_overrides(path_str: str) -> dict[str, list[str]]:
                 out[str(mission_id)] = [str(key) for key in order if key]
     return out
 
-
 def _normalize_video_override_stem(value: object) -> str:
     text = str(value or "").strip().replace("\\", "/")
     if not text:
@@ -66,24 +57,21 @@ def _normalize_video_override_stem(value: object) -> str:
     text = text.rsplit("/", 1)[-1]
     return _radio_cont_re.sub(r"\.[^.]+$", "", text, flags=_radio_cont_re.IGNORECASE).lower()
 
-
 @_radio_cont_lru_cache(maxsize=2)
 def _load_narrative_video_overrides(path_str: str) -> dict[str, dict[str, list[dict]]]:
     path = _RadioContPath(path_str)
     if not path.is_file():
         return {"suppressInline": {}, "attachInline": {}}
     try:
-        payload = _radio_cont_json.loads(path.read_text(encoding="utf-8"))
+        payload = _radio_cont_json.loads(path.read_text(encoding="utf-8-sig"))
     except (OSError, _radio_cont_json.JSONDecodeError):
         return {"suppressInline": {}, "attachInline": {}}
     if not isinstance(payload, dict):
         return {"suppressInline": {}, "attachInline": {}}
-
     out: dict[str, dict[str, list[dict]]] = {
         "suppressInline": {},
         "attachInline": {},
     }
-
     def add_rule(bucket: dict[str, list[dict]], target_key: object, raw_rule: object) -> None:
         key = str(target_key or "").strip()
         if not key:
@@ -116,7 +104,6 @@ def _load_narrative_video_overrides(path_str: str) -> dict[str, dict[str, list[d
             "note": note,
             "source": path,
         })
-
     def add_rules(bucket_name: str, raw_rules: object) -> None:
         bucket = out[bucket_name]
         if isinstance(raw_rules, dict):
@@ -133,11 +120,9 @@ def _load_narrative_video_overrides(path_str: str) -> dict[str, dict[str, list[d
                     or raw_rule.get("attachTo")
                 )
                 add_rule(bucket, target_key, raw_rule)
-
     add_rules("suppressInline", payload.get("suppressInline"))
     add_rules("attachInline", payload.get("attachInline") or payload.get("attachTo"))
     return out
-
 
 def _manual_option_group_override(conv_key: str, group_id: int) -> dict:
     # Runtime WebUI overrides now live in webui/overrides/options.json
@@ -145,13 +130,11 @@ def _manual_option_group_override(conv_key: str, group_id: int) -> dict:
     # generated conversation JSON.
     return {}
 
-
 @_radio_cont_lru_cache(maxsize=2)
 def _load_radio_continuation_candidates_by_mission(
     path_str: str,
 ) -> dict[str, list[dict]]:
     """Load the radio-continuation audit report keyed by mission id.
-
     Each value is a list of `(predecessor, radio, match, levelId, file)` dicts.
     Returns an empty dict when the report has not been generated yet, so the
     builder degrades to its prior behavior cleanly.
@@ -160,7 +143,7 @@ def _load_radio_continuation_candidates_by_mission(
     if not path.is_file():
         return {}
     try:
-        payload = _radio_cont_json.loads(path.read_text(encoding="utf-8"))
+        payload = _radio_cont_json.loads(path.read_text(encoding="utf-8-sig"))
     except (OSError, _radio_cont_json.JSONDecodeError):
         return {}
     out: dict[str, list[dict]] = {}
@@ -171,11 +154,9 @@ def _load_radio_continuation_candidates_by_mission(
         out.setdefault(mission, []).extend(result.get("candidates") or [])
     return out
 
-
 @_radio_cont_lru_cache(maxsize=2)
 def _load_fmv_clips_by_webui_key(path_str: str) -> dict[str, list[dict]]:
     """Load `reports/playable_director/fmv_clip_by_webui_key.json`.
-
     Returns `{webui_key: [{fmvId, clipStart, clipDuration, ...}, ...]}` or
     an empty dict when the report has not been generated yet. The builder
     surfaces these as per-conv `fmvClips` meta so the WebUI can display
@@ -186,12 +167,11 @@ def _load_fmv_clips_by_webui_key(path_str: str) -> dict[str, list[dict]]:
     if not path.is_file():
         return {}
     try:
-        payload = _radio_cont_json.loads(path.read_text(encoding="utf-8"))
+        payload = _radio_cont_json.loads(path.read_text(encoding="utf-8-sig"))
     except (OSError, _radio_cont_json.JSONDecodeError):
         return {}
     mappings = payload.get("mappings")
     return mappings if isinstance(mappings, dict) else {}
-
 
 def build_language_bundle(
     language_code: str,
@@ -229,14 +209,12 @@ def build_language_bundle(
     conv_hint_search_text_by_key: dict[str, str] = {}
     scene_order_analysis_by_payload_id: dict[int, dict] = {}
     scene_order_gap_sources: dict[str, tuple[Path, dict, dict | None]] = {}
-
     inline_image_tag_re = re.compile(
         r"<image\b(?!\s*=)[^>]*>[\s\S]*?</image>"
         r"|<image\s*=[^>]+>"
         r"|<image\b(?=[^>]*(?:src|source|path|name|id)\s*=)[^>]*>",
         flags=re.IGNORECASE,
     )
-
 
     def normalize_media_id(value: object) -> str:
         trimmed = clean_media_id_value(value).replace("\\", "/")
@@ -245,7 +223,6 @@ def build_language_bundle(
         without_prefix = re.sub(r"^SNS/Emoji/", "", trimmed, flags=re.IGNORECASE)
         last_segment = without_prefix.split("/")[-1] or without_prefix
         return re.sub(r"\.[^.]+$", "", last_segment, flags=re.IGNORECASE).lower()
-
     def inline_image_id_from_tag(raw_tag: str) -> str:
         raw = str(raw_tag or "").strip()
         if not raw:
@@ -268,7 +245,6 @@ def build_language_bundle(
             return clean_media_id_value(quoted_attr.group(2))
         loose_attr = re.search(r"\b(?:src|source|path|name|id)\s*=\s*([^>\s]+)", raw, flags=re.IGNORECASE)
         return clean_media_id_value(loose_attr.group(1)) if loose_attr else ""
-
     def image_ids_from_text(text: object) -> list[str]:
         source = str(text or "")
         if "<image" not in source.lower():
@@ -278,33 +254,38 @@ def build_language_bundle(
             for image_id in (inline_image_id_from_tag(match.group(0)) for match in inline_image_tag_re.finditer(source))
             if image_id
         ]
-
     def media_id_is_emoji(value: object) -> bool:
         normalized = normalize_media_id(value)
         return "emoji" in normalized or "emoiji" in normalized
-
     def media_id_is_sticker(value: object) -> bool:
         normalized = normalize_media_id(value)
         if not normalized or media_id_is_emoji(normalized):
             return False
         return normalized.startswith("sns_sticker_") or "sticker" in normalized
+    def media_id_looks_like_media(value: object) -> bool:
+        normalized = normalize_media_id(value)
+        if not normalized:
+            return False
+        if normalized.isdigit():
+            return False
+        mission_type, _mission_act = parse_mission(normalized)
+        if mission_type in MISSION_STORY_TYPES:
+            return False
+        return True
 
     def collect_payload_media_tags(payload: dict) -> set[str]:
         tags: set[str] = set()
-
         def add_media_id(value: object) -> None:
-            normalized = normalize_media_id(value)
-            if not normalized:
+            if not media_id_looks_like_media(value):
                 return
+            normalized = normalize_media_id(value)
             if media_id_is_emoji(normalized):
                 tags.add("mediaEmoji")
                 return
             tags.add("mediaSticker" if media_id_is_sticker(normalized) else "mediaImage")
-
         def add_text_images(value: object) -> None:
             for image_id in image_ids_from_text(value):
                 add_media_id(image_id)
-
         def source_from_debug(debug: object) -> dict:
             if not isinstance(debug, dict):
                 return {}
@@ -312,7 +293,6 @@ def build_language_bundle(
             if isinstance(source, dict) and isinstance(source.get("source"), dict):
                 return source["source"]
             return source if isinstance(source, dict) else {}
-
         def add_media_from_source(source: dict) -> None:
             if not isinstance(source, dict):
                 return
@@ -320,7 +300,6 @@ def build_language_bundle(
                 add_media_id(source.get(field))
             for image_id in source.get("contentParam") or []:
                 add_media_id(image_id)
-
             raw_content_params = source.get("contentParams")
             if not isinstance(raw_content_params, str) or not raw_content_params.strip():
                 return
@@ -328,7 +307,6 @@ def build_language_bundle(
                 content_params = json.loads(raw_content_params)
             except json.JSONDecodeError:
                 return
-
             def visit_content_param(node: object) -> None:
                 if isinstance(node, dict):
                     for key, value in node.items():
@@ -339,9 +317,7 @@ def build_language_bundle(
                 elif isinstance(node, list):
                     for item in node:
                         visit_content_param(item)
-
             visit_content_param(content_params)
-
         def visit_line(line: object) -> None:
             if not isinstance(line, dict):
                 return
@@ -361,7 +337,6 @@ def build_language_bundle(
                 add_media_id(option.get("image"))
                 add_media_id(option.get("emoji"))
                 add_media_from_source(source_from_debug(option.get("_debug")))
-
         for line in payload.get("lines") or []:
             visit_line(line)
         for row in payload.get("summary") or []:
@@ -374,11 +349,9 @@ def build_language_bundle(
             tags.add("mediaVideo")
         return tags
 
-
     def remember_written(path: Path, bucket: set[str]) -> Path:
         bucket.add(written_path_key(path))
         return path
-
     def write_conv_payload(out_key: str, payload: dict) -> Path:
         path = conv_dir / f"{out_key}.json"
         write_json(path, payload)
@@ -397,17 +370,14 @@ def build_language_bundle(
         if media_tags:
             conv_media_tags_by_key[out_key].update(media_tags)
         return remember_written(path, written_conv_paths)
-
     def write_reference_payload(rel_file: str, payload: dict) -> Path:
         path = reference_dir / rel_file
         write_json(path, payload)
         return remember_written(path, written_reference_paths)
-
     def write_mission_payload(rel_file: str, payload: dict) -> Path:
         path = out_dir / rel_file
         write_json(path, payload)
         return remember_written(path, written_mission_paths)
-
     def cleanup_stale_json(root: Path, written_paths: set[str]) -> None:
         if not root.exists():
             return
@@ -420,7 +390,6 @@ def build_language_bundle(
                     path.rmdir()
                 except OSError:
                     pass
-
     print(f"\n[{language_code}] Loading tables...")
     i18n_by_source = {
         "streaming": load(i18n_table_name),
@@ -431,13 +400,11 @@ def build_language_bundle(
         ),
     }
     default_text_source = "persistent" if i18n_by_source.get("persistent") else "streaming"
-
     def apply_i18n_hotfixes() -> dict[str, dict[str, int]]:
         hotfix_type = I18N_HOTFIX_LANGUAGE_TYPES.get(language_code)
         stats: dict[str, dict[str, int]] = {}
         if hotfix_type is None:
             return stats
-
         for source_name, table_dir in (
             ("streaming", STREAMING_TABLE_DIR),
             ("persistent", PERSISTENT_TABLE_DIR),
@@ -473,7 +440,6 @@ def build_language_bundle(
             if patched or added:
                 stats[source_name] = {"patched": patched, "added": added}
         return stats
-
     hotfix_stats = apply_i18n_hotfixes()
     if hotfix_stats:
         summary = ", ".join(
@@ -481,7 +447,6 @@ def build_language_bundle(
             for source, row in sorted(hotfix_stats.items())
         )
         print(f"  applied {I18N_HOTFIX_TABLE}: {summary}")
-
     def load_effective_table(name: str) -> dict:
         streaming_payload = load(name)
         persistent_payload = load_optional_table_json(
@@ -494,7 +459,6 @@ def build_language_bundle(
         if not streaming_payload:
             print(f"  using Persistent/{name}: {len(persistent_payload)} row(s)")
             return persistent_payload
-
         streaming_keys = set(streaming_payload)
         persistent_keys = set(persistent_payload)
         only_persistent = len(persistent_keys - streaming_keys)
@@ -506,7 +470,6 @@ def build_language_bundle(
                     f"-{only_streaming} row(s) versus StreamingAssets"
                 )
             return persistent_payload
-
         merged = dict(streaming_payload)
         merged.update(persistent_payload)
         print(
@@ -514,7 +477,6 @@ def build_language_bundle(
             f"{len(merged)} effective row(s)"
         )
         return merged
-
     text_table = load_effective_table("TextTable.json")
     dialogs = load_effective_table("DialogTextTable.json")
     sns = load_effective_table("SNSDialogTable.json")
@@ -581,7 +543,6 @@ def build_language_bundle(
     wiki_craft_jump = load_effective_table("WikiCraftJumpTable.json")
     wiki_default_craft = load_effective_table("WikiDefaultCraftTable.json")
 
-
     def t(id_value, preferred_source: str | None = None) -> str:
         s = norm_id(id_value)
         if not s:
@@ -597,14 +558,11 @@ def build_language_bundle(
                 return text
         return ""
 
-
     referenced_texttable_row_ids: set[str] = set()
-
     def remember_texttable_row_usage(row_id) -> None:
         row_key = str(row_id or "").strip()
         if row_key:
             referenced_texttable_row_ids.add(row_key)
-
     def text_trace(
         table: str,
         row_id: str,
@@ -639,7 +597,6 @@ def build_language_bundle(
         if transform:
             trace["transform"] = transform
         return trace
-
     def named_text_trace(table: str, row_id: str, field: str, raw_value) -> dict:
         trace = text_trace(table, row_id, field, raw_value)
         trace["braceText"] = brace_text(trace["text"])
@@ -650,16 +607,13 @@ def build_language_bundle(
             })
         return trace
 
-
     def rich_content_trace(row_id: str, field: str, raw_value) -> dict:
         return text_trace("RichContentTable", row_id, field, raw_value)
-
     def rich_content_title_text(content_id: str) -> str:
         row = rich_content.get(content_id)
         if not isinstance(row, dict):
             return ""
         return t((row.get("title") or {}).get("id"))
-
     def rich_content_lines(content_id: str) -> list[dict]:
         row = rich_content.get(content_id)
         if not isinstance(row, dict):
@@ -685,16 +639,14 @@ def build_language_bundle(
             })
         return out
 
-
     def sns_media_text_from_params(params) -> str:
         image_ids = [
             str(value or "").strip()
             for value in (params or [])
-            if str(value or "").strip()
+            if media_id_looks_like_media(value)
         ]
         if not image_ids:
             return ""
-
         if len(image_ids) == 2:
             by_gender: dict[str, str] = {}
             for image_id in image_ids:
@@ -708,9 +660,7 @@ def build_language_bundle(
                     f'{{M}}{inline_image_tag(by_gender["M"])}'
                     f'{{F}}{inline_image_tag(by_gender["F"])}'
                 )
-
         return " ".join(inline_image_tag(image_id) for image_id in image_ids)
-
     def sns_content_text(node: dict) -> str:
         text = t(node.get("content", {}).get("id"))
         if text:
@@ -718,7 +668,6 @@ def build_language_bundle(
         if node.get("contentType") == 2:
             return sns_media_text_from_params(node.get("contentParam"))
         return ""
-
     def sns_option_display_text(opt: dict) -> str:
         text = t(opt.get("optionDesc", {}).get("id"))
         if text:
@@ -727,8 +676,6 @@ def build_language_bundle(
         if res_path:
             return inline_image_tag(res_path)
         return ""
-
-
 
 
     mission_name_cache: dict[str, str] = {}
@@ -745,7 +692,6 @@ def build_language_bundle(
     for topic_ids in topic_base_index.values():
         topic_ids.sort(key=lambda key: [int(part) if part.isdigit() else part for part in re.split(r"(\d+)", key)])
 
-
     for dungeon_id, row in dungeons.items():
         scene_id = normalize_blackbox_id(str(row.get("sceneId") or ""))
         if not scene_id.startswith("blackbox_"):
@@ -761,7 +707,6 @@ def build_language_bundle(
         }
         blackbox_exact_titles[scene_id] = info
         blackbox_base_titles[re.sub(r"_\d+$", "", scene_id)].append(info)
-
     def mission_name(mission_id: str) -> str:
         """Resolve a mission id like `a1m6d3` to a localized display name."""
         if not mission_id:
@@ -799,7 +744,6 @@ def build_language_bundle(
                 return name
         mission_name_cache[mission_id] = ""
         return ""
-
     def mission_name_trace(mission_id: str) -> dict | None:
         if not mission_id:
             return None
@@ -870,7 +814,6 @@ def build_language_bundle(
                 ],
             },
         }
-
     def resolve_topic_id(topic_id: str) -> str:
         """Resolve base SNS topic ids like `topic_chr_0004_pelica` to a table row."""
         if not topic_id:
@@ -884,7 +827,6 @@ def build_language_bundle(
         resolved = matches[0] if matches else ""
         topic_id_cache[topic_id] = resolved
         return resolved
-
     def mission_chat_id(mission_id: str) -> str:
         if not mission_id.startswith("topic_"):
             return ""
@@ -895,7 +837,6 @@ def build_language_bundle(
             return chat_id
         prefixed = f"sns_{chat_id}"
         return prefixed if prefixed in sns_chats else ""
-
     def chat_name(chat_id: str) -> str:
         if not chat_id:
             return ""
@@ -908,7 +849,6 @@ def build_language_bundle(
         name = brace_text(t((row.get("name") or {}).get("id")))
         chat_name_cache[chat_id] = name
         return name
-
     def chat_name_trace(chat_id: str) -> dict | None:
         if not chat_id:
             return None
@@ -920,7 +860,6 @@ def build_language_bundle(
             "value": brace_text(t((row.get("name") or {}).get("id"))),
             "trace": named_text_trace("SNSChatTable", chat_id, "name", row.get("name")),
         }
-
     def chat_type(chat_id: str) -> int:
         if not chat_id:
             return 0
@@ -931,7 +870,6 @@ def build_language_bundle(
             return int(row.get("chatType") or 0)
         except (TypeError, ValueError):
             return 0
-
     def topic_name(topic_id: str) -> str:
         """Resolve an SNS topic id like `topic_chr_0004_pelica` to its localized title."""
         if not topic_id:
@@ -946,7 +884,6 @@ def build_language_bundle(
         name = brace_text(t(row.get("topicName", {}).get("id")))
         topic_name_cache[topic_id] = name
         return name
-
     def topic_name_trace(topic_id: str) -> dict | None:
         if not topic_id:
             return None
@@ -963,7 +900,6 @@ def build_language_bundle(
                 "SNSDialogTopicTable", resolved_topic_id, "topicName", row.get("topicName")
             ),
         }
-
     def named_text(name_key: str) -> str:
         if not name_key:
             return ""
@@ -972,7 +908,6 @@ def build_language_bundle(
             return ""
         remember_texttable_row_usage(name_key)
         return t(row.get("id"))
-
     def named_text_key_trace(name_key: str) -> dict | None:
         if not name_key:
             return None
@@ -985,7 +920,6 @@ def build_language_bundle(
             "trace": text_trace("TextTable", name_key, "id", row.get("id")),
         }
 
-
     def localized_objective_instruction(key: object) -> dict | None:
         text_key = str(key or "").strip()
         if not text_key:
@@ -994,14 +928,12 @@ def build_language_bundle(
             "key": text_key,
             "text": named_text(text_key),
         }
-
     def objective_instruction_keys(anchor: dict) -> list[str]:
         keys: list[str] = []
         if anchor.get("descriptionKey"):
             keys.append(str(anchor.get("descriptionKey") or ""))
         keys.extend(str(key) for key in (anchor.get("multipleDescriptionKeys") or []))
         return _unique_preserve(key for key in keys if key)
-
     def localize_mission_flow(flow: dict | None) -> dict | None:
         if not isinstance(flow, dict):
             return flow
@@ -1031,14 +963,12 @@ def build_language_bundle(
                 quest["objectiveInstructions"] = quest_instructions
         return localized
 
-
     npc_templates_by_template_id: dict[str, list[str]] = defaultdict(list)
     for template_row_id, row in npc_templates.items():
         template_id = str(row.get("templateId") or "")
         for candidate in {template_row_id, template_id, norm_template_id(template_id)}:
             if candidate:
                 npc_templates_by_template_id[candidate].append(template_row_id)
-
     npc_data_key_by_id: dict[str, str] = {}
     npc_data_keys_by_group: dict[str, list[str]] = defaultdict(list)
     for npc_row_id, row in npc_rows.items():
@@ -1057,7 +987,6 @@ def build_language_bundle(
         group_id = str(row.get("npcGroupId") or "").strip()
         if group_id and data_key not in npc_data_keys_by_group[group_id]:
             npc_data_keys_by_group[group_id].append(data_key)
-
     def npc_template_row_id_for_candidate(value: str) -> str:
         raw = str(value or "").strip()
         if not raw:
@@ -1070,10 +999,8 @@ def build_language_bundle(
             if template_row_ids:
                 return template_row_ids[0]
         return ""
-
     def resolve_npc_template_row(row_id: str, row: dict) -> tuple[str, dict | None]:
         candidates: list[str] = []
-
         def add_candidate(value: str) -> None:
             if not value or value in candidates:
                 return
@@ -1081,14 +1008,12 @@ def build_language_bundle(
             norm = norm_template_id(value)
             if norm and norm not in candidates:
                 candidates.append(norm)
-
         add_candidate(row_id)
         for key in ("npcId", "dataKey", "npcGroupId", "normalCfg"):
             value = str(row.get(key) or "")
             add_candidate(value)
             group_base = re.sub(r"_g\d+$", "", value)
             add_candidate(group_base)
-
         for candidate in candidates:
             if candidate in npc_templates:
                 return (candidate, npc_templates[candidate])
@@ -1096,22 +1021,18 @@ def build_language_bundle(
                 template_row_id = npc_templates_by_template_id[candidate][0]
                 return (template_row_id, npc_templates[template_row_id])
         return ("", None)
-
     env_npc_meta: dict[str, dict] = {}
     for npc_row_id, row in npc_rows.items():
         env_ids = row.get("envTalkIds") or []
         if not env_ids:
             continue
-
         template_row_id, template_row = resolve_npc_template_row(npc_row_id, row)
         template_name_key = str((template_row or {}).get("name") or "")
         template_title_key = str((template_row or {}).get("title") or "")
-
         direct_name = t((row.get("name") or {}).get("id")) if isinstance(row.get("name"), dict) else ""
         direct_title = t((row.get("title") or {}).get("id")) if isinstance(row.get("title"), dict) else ""
         name = direct_name or named_text(template_name_key)
         title = direct_title or named_text(template_title_key)
-
         meta = {
             "npcId": row.get("npcId") or npc_row_id,
             "npcGroupId": row.get("npcGroupId") or "",
@@ -1150,14 +1071,11 @@ def build_language_bundle(
                 meta["_debug"]["fields"]["templateName"] = named_text_key_trace(template_name_key)
             if template_title_key:
                 meta["_debug"]["fields"]["templateTitle"] = named_text_key_trace(template_title_key)
-
         for env_id in env_ids:
             env_npc_meta.setdefault(env_id, meta)
-
     env_story_binding_hints: dict[str, dict[str, set[str] | list[dict]]] = defaultdict(
         lambda: {"levels": set(), "proxies": set(), "sources": []}
     )
-
     def add_env_story_binding_hint(
         env_id: str,
         *,
@@ -1175,7 +1093,6 @@ def build_language_bundle(
             hints["proxies"].add(proxy_id)
         if source:
             hints["sources"].append(source)
-
     for row_id, row in npc_proxy_rows.items():
         if not isinstance(row, dict):
             continue
@@ -1193,7 +1110,6 @@ def build_language_bundle(
                     "levelId": level_id,
                 },
             )
-
     for row_id, row in atmos_cluster_rows.items():
         if not isinstance(row, dict):
             continue
@@ -1213,7 +1129,6 @@ def build_language_bundle(
                 "levelId": level_id,
             },
         )
-
     # ---------- Story dialog groups ----------
     groups: dict[str, list[tuple[int, str, dict]]] = defaultdict(list)
     misc: list[tuple[str, dict]] = []
@@ -1224,27 +1139,22 @@ def build_language_bundle(
             continue
         mission, scene, line = m.group(1), int(m.group(2)), int(m.group(3))
         groups[f"dlg__{mission}__{scene}"].append((line, dlg_id, entry))
-
     # Build actor display name table.
     # Each actorNameId may have multiple variant names across the game
-    # (alias, masked persona, "前缀{真名}", etc.). Keep all distinct ones,
-    # but drop the "？？？" / "???" placeholder used for unrevealed identities.
-    PLACEHOLDER_NAMES = {"？？？", "???"}
+    # (alias, masked persona, "鍓嶇紑{鐪熷悕}", etc.). Keep all distinct ones,
+    # but drop the "锛燂紵锛? / "???" placeholder used for unrevealed identities.
+    PLACEHOLDER_NAMES = {"锛燂紵锛?", "???"}
     actor_name_sets: dict[str, set[str]] = defaultdict(set)
-
     def add_actor_text(aid: str, name: str) -> None:
         if not aid or not name or name in PLACEHOLDER_NAMES:
             return
         actor_name_sets[aid].add(name)
-
     def add_actor_name(aid: str, name_id) -> None:
         if not aid:
             return
         add_actor_text(aid, t(name_id))
-
     def scoped_actor_base_candidates(actor_id: str) -> list[str]:
         """Return canonical actor-id candidates from map/base-scoped ids.
-
         EnvTalk actor ids sometimes encode the speaker as a scoped proxy such
         as `chen_map01_e2m5`. The prefix is still the real speaker id, while
         the suffix only tells us which map/mission proxy emitted the bark.
@@ -1257,44 +1167,35 @@ def build_language_bundle(
         if not raw:
             return []
         out: list[str] = []
-
         def add_candidate(value: str) -> None:
             value = str(value or "").strip()
             if value and value not in out:
                 out.append(value)
-
         add_candidate(raw)
         for marker in ("_map", "_base", "_dung", "_data_sub"):
             idx = raw.find(marker)
             if idx > 0:
                 add_candidate(raw[:idx])
-
         index = 0
         while index < len(out):
             current = out[index]
             index += 1
-
             if current.startswith("npc_tpl_"):
                 add_candidate(norm_template_id(current))
-
             data_key = npc_data_key_by_id.get(current)
             if data_key:
                 add_candidate(data_key)
             for data_key in npc_data_keys_by_group.get(current, []):
                 add_candidate(data_key)
-
             group_base = re.sub(r"_g\d+$", "", current)
             if group_base != current:
                 add_candidate(group_base)
-
             template_row_id = npc_template_row_id_for_candidate(current)
             if template_row_id:
                 add_candidate(template_row_id)
                 template_row = npc_templates.get(template_row_id) or {}
                 add_candidate(str(template_row.get("npcNameId") or ""))
-
         return out
-
     def npc_proxy_actor_candidates(proxy_id: str) -> list[str]:
         raw = str(proxy_id or "").strip()
         if not raw:
@@ -1310,7 +1211,6 @@ def build_language_bundle(
                 out.extend(scoped_actor_base_candidates(value))
         out.extend(scoped_actor_base_candidates(raw))
         return _unique_preserve(out)
-
     def add_actor_template_name(aid: str) -> None:
         if not aid:
             return
@@ -1324,23 +1224,19 @@ def build_language_bundle(
             add_actor_text(target_aid, named_text(str(row.get("title") or "")))
         if canonical_aid and actor_name_sets.get(canonical_aid):
             actor_name_sets[aid].update(actor_name_sets[canonical_aid])
-
     for entry in dialogs.values():
         add_actor_name(entry.get("actorNameId") or "", entry.get("actorName", {}).get("id"))
-
     for radio in radios.values():
         for item in radio.get("radioSingleDataList", []) or []:
             aid = item.get("actorNameId") or ""
             add_actor_name(aid, item.get("actorName", {}).get("id"))
             add_actor_name(aid, item.get("infoActorName", {}).get("id"))
-
     # Mail senders cover characters that only surface in inbox/SNS data, so
     # seed the canonical actor table from them before expanding SNS aliases.
     for sender_id, row in mail_senders.items():
         if not isinstance(row, dict):
             continue
         add_actor_name(sender_id, row.get("senderName", {}).get("id"))
-
     # SNS chat rows provide the visible display name for synthetic ids like
     # `sns_chat_daniel` and a small number of non-`sns_` chat owners that do
     # not correspond to a regular story actor id.
@@ -1348,7 +1244,6 @@ def build_language_bundle(
         if not isinstance(row, dict):
             continue
         add_actor_name(sns_id, row.get("name", {}).get("id"))
-
 
     # Reuse exported icon metadata instead of guessing SNS aliases from the raw
     # chat id alone. Mail sender data already maps icon asset -> canonical
@@ -1361,18 +1256,15 @@ def build_language_bundle(
         icon = icon_basename(str(row.get("senderIcon") or ""))
         if icon and sender_id:
             icon_to_actor_id.setdefault(icon, sender_id)
-
     for sns_id, row in sns_chats.items():
         if not sns_id.startswith("sns_") or not isinstance(row, dict):
             continue
         related: list[str] = []
-
         for icon_field in ("icon", "listIcon"):
             icon = icon_basename(str(row.get(icon_field) or ""))
             mapped = icon_to_actor_id.get(icon)
             if mapped and mapped not in related:
                 related.append(mapped)
-
         core = sns_id[len("sns_"):]
         if core.startswith("chr_"):
             parts = core.split("_")
@@ -1384,22 +1276,18 @@ def build_language_bundle(
                 related.append(npc_name)
         elif core and core not in related:
             related.append(core)
-
         if related:
             sns_related_ids[sns_id] = related
-
     for sns_id, related_ids in sns_related_ids.items():
         for related_id in related_ids:
             names = actor_name_sets.get(related_id)
             if names:
                 actor_name_sets[sns_id].update(names)
                 break
-
     # The generic player/admin id and the female presentation id should share
     # the same resolved display name in the browser data.
     if actor_name_sets.get("endminf"):
         actor_name_sets["endmin"].update(actor_name_sets["endminf"])
-
     npc_proxy_rows_by_proxy_id: dict[str, tuple[str, dict]] = {}
     env_talk_proxy_ids_by_env: dict[str, list[str]] = defaultdict(list)
     for row_id, row in npc_proxy_rows.items():
@@ -1416,20 +1304,16 @@ def build_language_bundle(
         ]
         if not env_ids:
             continue
-
         override_name_key = str(((row.get("overrideNpcNameId") or {}).get("key")) or "")
         if row.get("ifOverrideNpcName") and override_name_key:
             add_actor_text(proxy_id, named_text(override_name_key))
-
         for base_actor_id in npc_proxy_actor_candidates(proxy_id):
             add_actor_template_name(base_actor_id)
             if actor_name_sets.get(base_actor_id):
                 actor_name_sets[proxy_id].update(actor_name_sets[base_actor_id])
                 break
-
         for env_id in env_ids:
             env_talk_proxy_ids_by_env[env_id].append(proxy_id)
-
     for entry in env_talks.values():
         for item in entry.get("envTalkDataList", []) or []:
             scoped_actor_id = str(item.get("actorId") or "")
@@ -1438,20 +1322,16 @@ def build_language_bundle(
                 if actor_name_sets.get(base_actor_id):
                     actor_name_sets[scoped_actor_id].update(actor_name_sets[base_actor_id])
                     break
-
     actor_names: dict[str, list[str]] = {
         aid: sorted(names) for aid, names in actor_name_sets.items()
     }
-
     def speaker_display_name(speaker_id: str) -> str:
         """Best-effort display name for dialog/SNS speaker ids."""
         if not speaker_id:
             return ""
-
         candidates: list[str] = [speaker_id]
         if speaker_id.startswith("sns_"):
             candidates.append(speaker_id[len("sns_"):])
-
         core = candidates[-1]
         candidates.extend(npc_proxy_actor_candidates(core))
         if core.startswith("npc_"):
@@ -1463,7 +1343,6 @@ def build_language_bundle(
                 candidates.append(parts[-1])
         elif "_" in core:
             candidates.append(core.split("_")[-1])
-
         seen: set[str] = set()
         for candidate in candidates:
             if not candidate or candidate in seen:
@@ -1472,18 +1351,14 @@ def build_language_bundle(
             names = actor_names.get(candidate)
             if names:
                 return names[0]
-
         return ""
-
     def speaker_actor_id(speaker_id: str) -> str:
         """Resolve a speaker/channel id back to the browser's actor id when possible."""
         if not speaker_id:
             return ""
-
         candidates: list[str] = [speaker_id]
         if speaker_id.startswith("sns_"):
             candidates.append(speaker_id[len("sns_"):])
-
         core = candidates[-1]
         candidates.extend(npc_proxy_actor_candidates(core))
         if core.startswith("npc_"):
@@ -1495,7 +1370,6 @@ def build_language_bundle(
                 candidates.append(parts[2])
         elif "_" in core:
             candidates.append(core.split("_")[-1])
-
         seen: set[str] = set()
         for candidate in candidates:
             if not candidate or candidate in seen:
@@ -1505,11 +1379,8 @@ def build_language_bundle(
                 return candidate
         return ""
 
-
-
     def env_index_slot(env_id: str) -> tuple[str, str, str, list[str]]:
         """Return browser slot info for an env-talk entry.
-
         Most env talks are browsed with the open-world text bucket, while
         operator greeting lines (`greetEnvTalk*`) stay alongside other
         operator-interaction content.
@@ -1518,8 +1389,6 @@ def build_language_bundle(
             return ("misc", "greet", "sim", ["envTalk"])
         mission = env_group(env_id)
         return ("env", mission, "worldtext", ["envTalk"])
-
-
 
 
     def indexed_line_haystack(lines: list[dict], *fields: str) -> str:
@@ -1532,12 +1401,10 @@ def build_language_bundle(
             )
             if part
         )
-
     # ---------- SNS dialogs ----------
     sns_groups: dict[str, dict] = {}
     for sns_id, entry in sns.items():
         sns_groups[sns_id] = entry
-
     # ---------- Extras: summary / options + standalone radio ----------
     # Each attaches to a conversation out_key. Regular dialog scenes emit as
     # `dlg_<mission>_<scene>` (scene is int). Sub-scene dialogs like
@@ -1568,12 +1435,10 @@ def build_language_bundle(
     for remote_id in remote_common:
         if m := REMOTECOMM_RE.match(remote_id):
             known_missions.add(m.group(1))
-
     env_story_missions: dict[str, str] = {}
     for env_id in env_talks:
         if story_mission := env_story_mission(env_id, known_missions):
             env_story_missions[env_id] = story_mission
-
     mission_note_by_mission: dict[str, list[dict]] = defaultdict(list)
     for mission_id, row in mission_extra_info.items():
         text = t((row.get("extraInfoDesc") or {}).get("id"))
@@ -1600,12 +1465,9 @@ def build_language_bundle(
             },
         })
 
-
-
     mission_level_refs: dict[str, list[dict]] = defaultdict(list)
     mission_leveldata_host_refs: dict[str, list[dict]] = defaultdict(list)
     seen_leveldata_host_refs: set[tuple[str, str, str, str]] = set()
-
     def add_leveldata_host_ref(mission_id: str, ref_meta: dict, path: Path, relation: str) -> None:
         if mission_id not in known_missions:
             return
@@ -1623,7 +1485,6 @@ def build_language_bundle(
             "token": ref_meta["token"],
             "relation": relation,
         })
-
     if LEVELDATA_DIR.is_dir():
         for path in LEVELDATA_DIR.rglob("*.json"):
             ref_meta = parse_level_ref_name(path.name)
@@ -1654,7 +1515,6 @@ def build_language_bundle(
         refs.sort(key=lambda ref: (ref["hostType"], ref["levelId"], ref["kind"], ref["file"]))
     for refs in mission_leveldata_host_refs.values():
         refs.sort(key=lambda ref: (ref["hostType"], ref["levelId"], ref["relation"], ref["kind"], ref["file"]))
-
     def mission_context_text(mission_id: str) -> str:
         if not mission_id:
             return ""
@@ -1667,15 +1527,12 @@ def build_language_bundle(
                 parts.append(ref["levelId"])
         return " ".join(parts)
 
-
     extra_mission_names: dict[str, str] = {}
-
     def entry_tags(out_key: str, mission: str = "") -> list[str]:
         tags: list[str] = []
         if out_key in summary_by_key:
             tags.append("summary")
         return tags
-
     def attach_target(mission: str, scene: str, *, allow_sns: bool = False) -> str | None:
         """Pick the out_key that owns (mission, scene), or None if orphan."""
         if re.fullmatch(r"\d+", scene):
@@ -1690,7 +1547,6 @@ def build_language_bundle(
         if cand in misc_bucket_keys:
             return cand
         return None
-
     def dialog_scene_out_key(dialog_id: str) -> str | None:
         if dialog_id in sns_out_keys:
             return dialog_id
@@ -1710,7 +1566,6 @@ def build_language_bundle(
                     return attach_target(mission, scene)
             return None
         return attach_target(m.group(1), m.group(2))
-
     summary_by_key: dict[str, list[dict]] = defaultdict(list)
     summary_orphans = 0
     for sid, entry in summaries.items():
@@ -1735,7 +1590,6 @@ def build_language_bundle(
                 },
             },
         })
-
     options_by_key: dict[str, dict[int, list[dict]]] = defaultdict(lambda: defaultdict(list))
     dialog_option_text_by_id: dict[str, str] = {}
     dialog_option_signature_by_id: dict[str, tuple[str, str]] = {}
@@ -1793,7 +1647,6 @@ def build_language_bundle(
         key: [oid for _idx, oid in sorted(entries)]
         for key, entries in dialog_option_ids_by_scene_group.items()
     }
-
     radio_rows: list[dict] = []
     radio_orphans = 0
     radio_targets_seen: set[str] = set()
@@ -1876,7 +1729,6 @@ def build_language_bundle(
                 pick_fields(entry, "radioType"),
             ),
         })
-
     def pack_options(
         groups_map: dict[int, list[dict]],
         lines: list[dict] | None = None,
@@ -1884,12 +1736,11 @@ def build_language_bundle(
     ) -> dict:
         """Return option groups sorted by group number, each annotated with an
         `after` field naming the line id after which it should render.
-
         Primary signal (when available): the AnimeStudio DialogTree graph at
         `exported/AnimeStudio/main/TextAsset/<conv_key>.json`, which stores
-        the authoritative option→trunk wiring. Falls back to a gap heuristic:
-        DialogTextTable lines are numbered sparsely — slots are reserved for
-        player-response audio that isn't stored as dialog text — so a line
+        the authoritative option鈫抰runk wiring. Falls back to a gap heuristic:
+        DialogTextTable lines are numbered sparsely 鈥?slots are reserved for
+        player-response audio that isn't stored as dialog text 鈥?so a line
         sequence like `_001..006, _008..013, _016..025, _030..041` has three
         gaps where choices happen, and option groups `g=1`, `g=2`, `g=3`
         attach to those gaps in order.
@@ -2003,7 +1854,6 @@ def build_language_bundle(
                     elif anchor.get("position") == "pre":
                         timeline_authored_option_ids.add(opt_id)
                         timeline_pre.add(opt_id)
-
         line_idxs: list[tuple[int, str]] = []
         valid_line_ids: set[str] = set()
         if lines:
@@ -2015,21 +1865,20 @@ def build_language_bundle(
                 if m:
                     line_idxs.append((int(m.group(1)), lid))
         line_idxs.sort()
-
         # Fallback anchors when DialogTree/timeline data leaves option groups
         # unanchored. Four signals, in priority order:
-        #   1. sparse-gap boundaries — between two contiguous numbering runs,
+        #   1. sparse-gap boundaries 鈥?between two contiguous numbering runs,
         #      the player choice plays during the missing slot.
-        #   2. timeline option-clip positions — when this conv shares a Unity
+        #   2. timeline option-clip positions 鈥?when this conv shares a Unity
         #      Timeline with another scene (e.g. dlg_e2m6_11 + dlg_e2m6_19),
         #      the option clip's start time tells us which of THIS conv's
         #      lines plays just before the choice. We surface that even when
         #      the recorded `_optionId` belongs to the sibling scene.
-        #   3. exact group/line number — in contiguous table-only scenes,
+        #   3. exact group/line number 鈥?in contiguous table-only scenes,
         #      option group g=1 follows line _001 by key convention. This is
         #      promoted to a source-keyed anchor rather than a warning-only
         #      fallback because both sides carry the same authored group index.
-        #   4. dialog last line — for cinematic-finish patterns where one
+        #   4. dialog last line 鈥?for cinematic-finish patterns where one
         #      option clip drives end-of-arc finish-num branches.
         # All four write to optionGroups[].after; `inferredAnchorMode` in the
         # warning's groupDetails records which signal won.
@@ -2055,9 +1904,7 @@ def build_language_bundle(
                         gap_after_ids.append(prev_run[-1][1])
             fallback_after_ids.extend(gap_after_ids)
             last_line_fallback_id = line_idxs[-1][1]
-
         sibling_position_anchors = collect_option_position_anchors(conv_key) if conv_key else []
-
         group_option_ids_by_group: dict[int, list[str]] = {
             group_id: [
                 opt.get("id") or ""
@@ -2071,7 +1918,6 @@ def build_language_bundle(
             for group_opt_ids in group_option_ids_by_group.values()
             if group_opt_ids
         )
-
         def cinematic_finish_anchor(finish_group: dict, option_count: int) -> tuple[str, list[str]]:
             finish_nums = finish_group.get("finishNums") or []
             if not isinstance(finish_nums, list) or len(finish_nums) != option_count:
@@ -2112,12 +1958,10 @@ def build_language_bundle(
             if after_id in valid_line_ids:
                 return after_id, _unique_preserve(source_bits)
             return "", []
-
         # Cinematic finish-number branches describe timeline outcomes, not
         # explicit option UI placement. Keep them out of authored option
         # anchoring unless an extracted option clip/node names the current
         # option ids directly.
-
         def option_signature_sequence(option_ids: list[str]) -> list[tuple[str, str]]:
             signatures: list[tuple[str, str]] = []
             for opt_id in option_ids:
@@ -2126,7 +1970,6 @@ def build_language_bundle(
                     return []
                 signatures.append(signature)
             return signatures
-
         def option_signatures_compatible(left_ids: list[str], right_ids: list[str]) -> bool:
             if len(left_ids) != len(right_ids) or not left_ids:
                 return False
@@ -2144,14 +1987,12 @@ def build_language_bundle(
                 if SequenceMatcher(None, left_text, right_text).ratio() < 0.92:
                     return False
             return True
-
         def dialog_line_text_signature(line_id: str) -> str:
             row = dialogs.get(line_id)
             if not isinstance(row, dict):
                 return ""
             text_value = t((row.get("dialogText") or {}).get("id"))
             return _option_text_signature(text_value)
-
         def sibling_scene_text_branch_for_group(
             group_opt_ids: list[str],
             after_id: str,
@@ -2263,7 +2104,6 @@ def build_language_bundle(
                     "sources": source_bits,
                 }
             return {}
-
         def sibling_scene_template_branch_for_group(
             group_opt_ids: list[str],
             after_id: str,
@@ -2309,7 +2149,6 @@ def build_language_bundle(
                         compatible_positions += 1
                 if not icons_compatible or compatible_positions < max(2, len(group_opt_ids) - 1):
                     continue
-
                 sibling_tree = load_dialog_tree(sibling_scene) or {}
                 sibling_branches = sibling_tree.get("branches") or {}
                 sibling_after = sibling_tree.get("after") or {}
@@ -2340,7 +2179,6 @@ def build_language_bundle(
                 ]
                 if not local_after_candidates:
                     continue
-
                 branch_line_ids_by_option: dict[str, list[str]] = {}
                 sibling_line_ids_by_option: dict[str, list[str]] = {}
                 used_local_line_ids: set[str] = set()
@@ -2379,7 +2217,6 @@ def build_language_bundle(
                         missing_options.append((local_opt_id, sibling_opt_id, sibling_branch_line_ids))
                 if not branch_line_ids_by_option or len(missing_options) > 1:
                     continue
-
                 mapped_indices = [
                     local_line_ids.index(line_id)
                     for mapped_lines in branch_line_ids_by_option.values()
@@ -2448,7 +2285,6 @@ def build_language_bundle(
                     "sources": source_bits,
                 }
             return {}
-
         def source_bits_for_options(option_ids: list[str], source_map: dict[str, object]) -> list[str]:
             source_bits: list[str] = []
             for opt_id in option_ids:
@@ -2458,7 +2294,6 @@ def build_language_bundle(
                 elif raw_sources:
                     source_bits.append(str(raw_sources))
             return _unique_preserve(source_bits)
-
         def complete_foreign_option_group(
             group_key: tuple[str, int],
             raw_entries: list[tuple[int, str]],
@@ -2474,7 +2309,6 @@ def build_language_bundle(
             if not full_foreign_ids or foreign_ids != full_foreign_ids:
                 return []
             return foreign_ids
-
         foreign_after_groups: dict[tuple[str, int], list[tuple[int, str, str]]] = defaultdict(list)
         for foreign_opt_id, raw_after in tree_after.items():
             parts = _option_id_group_parts(foreign_opt_id)
@@ -2487,7 +2321,6 @@ def build_language_bundle(
             foreign_after_groups[(scene_key, foreign_group_id)].append(
                 (foreign_index, foreign_opt_id, candidate_after)
             )
-
         foreign_pre_groups: dict[tuple[str, int], list[tuple[int, str]]] = defaultdict(list)
         for foreign_opt_id in tree_pre:
             parts = _option_id_group_parts(foreign_opt_id)
@@ -2497,12 +2330,10 @@ def build_language_bundle(
             if scene_key == conv_key:
                 continue
             foreign_pre_groups[(scene_key, foreign_group_id)].append((foreign_index, foreign_opt_id))
-
         for group_id, group_opt_ids in group_option_ids_by_group.items():
             local_signature = option_signature_sequence(group_opt_ids)
             if not local_signature:
                 continue
-
             after_matches: list[tuple[str, list[str], list[str]]] = []
             for foreign_group_key, raw_entries in foreign_after_groups.items():
                 ordered_entries = sorted(raw_entries, key=lambda item: item[0])
@@ -2519,13 +2350,11 @@ def build_language_bundle(
                     continue
                 source_bits = source_bits_for_options(foreign_ids, tree_after_sources)
                 after_matches.append((next(iter(anchors)), foreign_ids, source_bits))
-
             # Exact text/icon aliases are useful investigation hints, but they
             # are not firm authored placement for the current option ids.
             # Only direct extracted references may anchor options.
             if len(after_matches) == 1:
                 continue
-
             pre_matches: list[tuple[list[str], list[str]]] = []
             for foreign_group_key, raw_entries in foreign_pre_groups.items():
                 foreign_ids = complete_foreign_option_group(foreign_group_key, raw_entries)
@@ -2535,10 +2364,8 @@ def build_language_bundle(
                     continue
                 source_bits = source_bits_for_options(foreign_ids, tree_pre_sources)
                 pre_matches.append((foreign_ids, source_bits))
-
             if len(pre_matches) == 1:
                 continue
-
         out: list[dict] = []
         authored_option_ids = (
             set(tree_after)
@@ -2558,7 +2385,6 @@ def build_language_bundle(
         group_details: list[dict] = []
         option_response_risks: list[dict] = []
         manual_option_response_overrides: list[dict] = []
-
         def preferred_timeline_option_row(opt_id: str) -> dict:
             rows = timeline_option_rows.get(opt_id) or []
             if not rows:
@@ -2572,7 +2398,6 @@ def build_language_bundle(
                     row.get("assetTrack") or "",
                 ),
             )
-
         def preferred_timeline_option_route(opt_id: str) -> dict:
             routes = timeline_option_routes.get(opt_id) or []
             if not routes:
@@ -2585,7 +2410,6 @@ def build_language_bundle(
                     str(route.get("source") or ""),
                 ),
             )
-
         def timeline_route_branch_for_group(group_opt_ids: list[str], after_id: str) -> dict:
             if len(group_opt_ids) < 2 or not after_id:
                 return {}
@@ -2596,7 +2420,7 @@ def build_language_bundle(
                 return {}
             routes = [preferred_timeline_option_route(opt_id) for opt_id in group_opt_ids]
             # A route is acceptable when either it lists per-option lines OR it
-            # flags `terminatesSlot` — the latter means the option's Runtime
+            # flags `terminatesSlot` 鈥?the latter means the option's Runtime
             # Jump skip range covers the whole post-anchor window so no in-slot
             # lines play.
             if not all(
@@ -2676,7 +2500,6 @@ def build_language_bundle(
             if terminating_option_ids:
                 payload["terminatingOptionIds"] = terminating_option_ids
             return payload
-
         def following_line_risk_for_group(group_opt_ids: list[str], after_id: str) -> dict:
             if len(group_opt_ids) < 2 or not after_id:
                 return {}
@@ -2754,7 +2577,6 @@ def build_language_bundle(
                 if has_nonzero:
                     return "strictNonzero"
                 return "other"
-
             if (
                 candidate_clip_indices
                 and len(candidate_clip_indices) == len(candidate_line_ids)
@@ -2908,7 +2730,6 @@ def build_language_bundle(
                 if branch_clip_indices_by_option:
                     risk["branchLineClipOptionIndexByOption"] = branch_clip_indices_by_option
             return risk
-
         def option_risk_line_ids(following_line_risk: dict, option_count: int) -> list[str]:
             option_ids = [
                 str(option_id)
@@ -2947,15 +2768,12 @@ def build_language_bundle(
             if common_line_id in valid_line_ids:
                 return [common_line_id for _ in range(option_count)]
             return []
-
         def all_option_response_risk_line_ids(following_line_risk: dict) -> list[str]:
             out: list[str] = []
-
             def push(line_id: object) -> None:
                 value = str(line_id or "")
                 if value and value in valid_line_ids and value not in out:
                     out.append(value)
-
             for line_id in following_line_risk.get("candidateLineIds") or []:
                 push(line_id)
             branch_lines_by_option = following_line_risk.get("branchLineIdsByOption")
@@ -2967,22 +2785,149 @@ def build_language_bundle(
                     else:
                         push(line_ids)
             return out
-
         sorted_group_ids = sorted(groups_map)
         sorted_group_index = {group_id: idx for idx, group_id in enumerate(sorted_group_ids)}
         local_ordered_line_ids = [line_id for _idx, line_id in line_idxs if line_id in valid_line_ids]
         local_line_order_index = {
             line_id: idx for idx, line_id in enumerate(local_ordered_line_ids)
         }
+        rendered_ordered_line_ids = [
+            str(line.get("id") or "")
+            for line in (lines or [])
+            if str(line.get("id") or "") in valid_line_ids
+        ]
+        rendered_line_order_index = {
+            line_id: idx for idx, line_id in enumerate(rendered_ordered_line_ids)
+        }
+        local_scene_link_options_by_after: dict[str, list[dict]] = defaultdict(list)
+        seen_local_scene_link_options: set[tuple[str, str, tuple[str, ...]]] = set()
+        for link in build_dialog_tree_scene_link_payload(conv_key) or []:
+            after_id = str(link.get("after") or "")
+            if after_id not in valid_line_ids:
+                continue
+            for option in link.get("options") or []:
+                if not isinstance(option, dict):
+                    continue
+                path_line_ids = tuple(
+                    str(line_id)
+                    for line_id in (option.get("pathLineIds") or [])
+                    if str(line_id or "") in valid_line_ids
+                )
+                if not path_line_ids:
+                    continue
+                option_id = str(option.get("optionId") or "")
+                identity = (after_id, option_id, path_line_ids)
+                if identity in seen_local_scene_link_options:
+                    continue
+                seen_local_scene_link_options.add(identity)
+                local_scene_link_options_by_after[after_id].append(option)
+        def option_has_visible_table_text(option_id: str) -> bool:
+            text_value, _icon_value = dialog_option_signature_by_id.get(option_id, ("", ""))
+            return bool(text_value)
+        def hidden_single_option_path_after(after_id: str) -> tuple[str, list[str]]:
+            options_after = [
+                option
+                for option in local_scene_link_options_by_after.get(after_id, [])
+                if _dialog_tree_option_prefix(str(option.get("optionId") or "")) == conv_key
+            ]
+            if len(options_after) != 1:
+                return "", []
+            option = options_after[0]
+            option_id = str(option.get("optionId") or "")
+            if not option_id or option_has_visible_table_text(option_id):
+                return "", []
+            path_line_ids = [
+                str(line_id)
+                for line_id in (option.get("pathLineIds") or [])
+                if str(line_id or "") in valid_line_ids
+            ]
+            return option_id, path_line_ids
+        def expand_transparent_single_option_branch(branch_lines: list[str]) -> list[str]:
+            expanded: list[str] = []
+            expanded_after_ids: set[str] = set()
+            def append_line(line_id: str) -> None:
+                if line_id in valid_line_ids and line_id not in expanded:
+                    expanded.append(line_id)
+            for line_id in branch_lines:
+                append_line(line_id)
+            while expanded:
+                after_id = expanded[-1]
+                if after_id in expanded_after_ids:
+                    break
+                expanded_after_ids.add(after_id)
+                _option_id, next_path = hidden_single_option_path_after(after_id)
+                if not next_path:
+                    break
+                first_next = next_path[0]
+                start_index = rendered_line_order_index.get(after_id)
+                end_index = rendered_line_order_index.get(first_next)
+                if start_index is not None and end_index is not None and start_index < end_index:
+                    for line_id in rendered_ordered_line_ids[start_index + 1:end_index]:
+                        append_line(line_id)
+                before_count = len(expanded)
+                for line_id in next_path:
+                    append_line(line_id)
+                if len(expanded) == before_count:
+                    break
+            return expanded
+        def normalize_group_branch_convergence(group: dict, opts: list[dict], group_opt_ids: list[str]) -> dict:
+            if len(opts) < 2 or len(group_opt_ids) != len(opts):
+                return {}
+            paths: list[list[str]] = []
+            for opt in opts:
+                branch_lines = [
+                    str(line_id)
+                    for line_id in (opt.get("branchLines") or [])
+                    if str(line_id or "") in valid_line_ids
+                ]
+                if not branch_lines:
+                    return {}
+                paths.append(branch_lines)
+            min_length = min(len(path) for path in paths)
+            suffix_length = 0
+            while suffix_length < min_length:
+                candidate = paths[0][len(paths[0]) - suffix_length - 1]
+                if not all(path[len(path) - suffix_length - 1] == candidate for path in paths):
+                    break
+                suffix_length += 1
+            if suffix_length <= 0:
+                return {}
+            if any(len(path) <= suffix_length for path in paths):
+                return {}
+            common_suffix = paths[0][len(paths[0]) - suffix_length:]
+            branch_line_ids_by_option: dict[str, list[str]] = {}
+            for opt, opt_id, path in zip(opts, group_opt_ids, paths):
+                branch_specific_lines = path[:len(path) - suffix_length]
+                if not branch_specific_lines:
+                    return {}
+                opt["branchLines"] = branch_specific_lines
+                branch_line_ids_by_option[opt_id] = branch_specific_lines
+                opt.setdefault("_debug", {})["branchConvergence"] = {
+                    "mode": "commonSuffix",
+                    "commonLineIds": common_suffix,
+                }
+            return {
+                "code": "dialogTreeBranchConvergence",
+                "reason": "commonBranchSuffix",
+                "detail": (
+                    "Authored same-scene branch paths share a trailing line sequence; "
+                    "branchLines are trimmed to branch-specific lines and rendered as "
+                    "converging at the shared continuation."
+                ),
+                "after": group.get("after") or "",
+                "optionIds": group_opt_ids,
+                "branchLineIdsByOption": branch_line_ids_by_option,
+                "commonContinuationLineId": common_suffix[0],
+                "commonContinuationLineIds": common_suffix,
+                "source": "dialogTree",
+            }
         trusted_group_after_cache: dict[int, tuple[str, dict]] = {}
         recovered_single_option_line_ids: set[str] = set()
-
         def previous_visible_line_id(line_id: str) -> str:
             idx = local_line_order_index.get(line_id)
             if idx is None or idx <= 0:
                 return ""
             return local_ordered_line_ids[idx - 1]
-
         def trusted_recovered_group_after(group_id: int) -> tuple[str, dict]:
             if group_id in trusted_group_after_cache:
                 return trusted_group_after_cache[group_id]
@@ -3027,7 +2972,6 @@ def build_language_bundle(
                         break
             trusted_group_after_cache[group_id] = result
             return result
-
         def single_option_span_before_recovered_anchor(
             group_id: int,
             group_opt_ids: list[str],
@@ -3082,7 +3026,6 @@ def build_language_bundle(
                 "source": next_risk.get("source") or "siblingSceneGraphText",
                 "sources": next_risk.get("sources") or [],
             }
-
         for order, g in enumerate(sorted(groups_map), start=1):
             opts = sorted(groups_map[g], key=lambda o: o["i"])
             group_opt_ids = group_option_ids_by_group.get(g, [])
@@ -3156,7 +3099,7 @@ def build_language_bundle(
                     if lid in valid_line_ids
                 ]
                 if branch_lines:
-                    opt["branchLines"] = branch_lines
+                    opt["branchLines"] = expand_transparent_single_option_branch(branch_lines)
             pre_option_ids = [opt_id for opt_id in group_opt_ids if opt_id in tree_pre]
             timeline_pre_option_ids = [opt_id for opt_id in group_opt_ids if opt_id in timeline_pre]
             text_alias_pre_option_ids = list(group_opt_ids) if g in text_alias_pre_by_group else []
@@ -3338,9 +3281,11 @@ def build_language_bundle(
                             "reason": "The corrected pre-scene option uses the only line span not covered by authored DialogTree branches.",
                             "lineIds": remaining_line_ids,
                         }
+            branch_convergence_risk = normalize_group_branch_convergence(group, opts, group_opt_ids)
             following_line_risk = (
                 timeline_route_branch
                 or sibling_text_branch
+                or branch_convergence_risk
                 or following_line_risk_for_group(group_opt_ids, group.get("after") or "")
             )
             original_following_line_risk = dict(following_line_risk) if following_line_risk else {}
@@ -3623,7 +3568,6 @@ def build_language_bundle(
             "groups": out,
             "warnings": warnings,
         }
-
     def attach_runtime_registry_debug(payload: dict) -> None:
         debug = payload.setdefault("_debug", {})
         if not isinstance(debug, dict):
@@ -3636,7 +3580,6 @@ def build_language_bundle(
             debug.pop("runtimeRegistry", None)
             return
         debug["runtimeRegistry"] = block
-
     def attach_scene_order_warning(payload: dict) -> None:
         analysis = shared_analyze_scene_order_disorder(
             payload, dialog_id_registry=dialog_id_registry
@@ -3652,7 +3595,6 @@ def build_language_bundle(
         ]
         payload["warnings"] = [warning, *existing_warnings]
 
-
     def build_duplicate_timestamp_warning(payload: dict) -> dict | None:
         buckets: dict[tuple[str, str], list[dict]] = defaultdict(list)
         for line in payload.get("lines") or []:
@@ -3665,7 +3607,6 @@ def build_language_bundle(
             timing_debug = debug.get("timelineTiming") if isinstance(debug, dict) else {}
             timeline = str(timing_debug.get("timeline") or "") if isinstance(timing_debug, dict) else ""
             buckets[(timeline, format_webui_timeline_seconds(ts))].append(line)
-
         groups: list[dict] = []
         for (timeline, label), lines_for_ts in sorted(
             buckets.items(),
@@ -3704,7 +3645,6 @@ def build_language_bundle(
             "groups": groups,
             "lineIds": line_ids,
         }
-
     def attach_duplicate_timestamp_warning(payload: dict) -> None:
         warning = build_duplicate_timestamp_warning(payload)
         existing_warnings = [
@@ -3720,6 +3660,66 @@ def build_language_bundle(
             return
         payload["warnings"] = [*existing_warnings, warning]
 
+    def build_timeline_timestamp_regression_warning(payload: dict) -> dict | None:
+        timed_lines: list[dict] = []
+        for idx, line in enumerate(payload.get("lines") or []):
+            if not isinstance(line, dict):
+                continue
+            ts = line.get("ts")
+            if not isinstance(ts, (int, float)):
+                continue
+            debug = line.get("_debug") if isinstance(line.get("_debug"), dict) else {}
+            timing_debug = debug.get("timelineTiming") if isinstance(debug, dict) else {}
+            timeline = str(timing_debug.get("timeline") or "") if isinstance(timing_debug, dict) else ""
+            timed_lines.append({
+                "index": idx,
+                "id": str(line.get("id") or ""),
+                "ts": float(ts),
+                "timeline": timeline,
+            })
+        regressions: list[dict] = []
+        for prev, cur in zip(timed_lines, timed_lines[1:]):
+            if cur["ts"] + 1e-6 >= prev["ts"]:
+                continue
+            regressions.append({
+                "prevLineId": prev["id"],
+                "prevTimestamp": format_webui_timeline_seconds(prev["ts"]),
+                "prevTimeline": prev["timeline"],
+                "lineId": cur["id"],
+                "timestamp": format_webui_timeline_seconds(cur["ts"]),
+                "timeline": cur["timeline"],
+            })
+        if not regressions:
+            return None
+        line_ids: list[str] = []
+        for row in regressions:
+            for line_id in (row.get("prevLineId"), row.get("lineId")):
+                if line_id and line_id not in line_ids:
+                    line_ids.append(line_id)
+        timelines = sorted({row["timeline"] for row in timed_lines if row.get("timeline")})
+        return {
+            "code": "timelineTimestampRegression",
+            "reason": "timelineTimestampsMoveBackward",
+            "detail": "recovered Timeline timestamps move backward in rendered line order; secondary timelines may be local stitch evidence rather than absolute scene time",
+            "lineIds": line_ids,
+            "regressions": regressions,
+            "timelines": timelines,
+        }
+
+    def attach_timeline_timestamp_regression_warning(payload: dict) -> None:
+        warning = build_timeline_timestamp_regression_warning(payload)
+        existing_warnings = [
+            existing
+            for existing in (payload.get("warnings") or [])
+            if isinstance(existing, dict) and existing.get("code") != "timelineTimestampRegression"
+        ]
+        if warning is None:
+            if existing_warnings:
+                payload["warnings"] = existing_warnings
+            else:
+                payload.pop("warnings", None)
+            return
+        payload["warnings"] = [*existing_warnings, warning]
     def attach_timeline_action_evidence(
         payload: dict,
         evidence_key: str,
@@ -3753,7 +3753,6 @@ def build_language_bundle(
             if not line_actions:
                 continue
             line.setdefault("_debug", {})["timelineActions"] = line_actions
-
     def extras_text(out_key: str) -> str:
         """Concatenate all extras text for an out_key so the index entry's
         search haystack covers summaries / dialog options."""
@@ -3769,8 +3768,6 @@ def build_language_bundle(
                     if o["text"]:
                         parts.append(o["text"])
         return " ".join(parts)
-
-
 
     def attach_submenu_targets(links: list[dict]) -> None:
         for link in links or []:
@@ -3816,7 +3813,6 @@ def build_language_bundle(
                     targets.append(target)
                 if targets:
                     opt["submenuTargets"] = targets
-
     def clone_dialog_option_for_hub(option_id: str, hub_index: int, target_scene_key: str = "") -> dict | None:
         option_id = str(option_id or "").strip()
         if not option_id:
@@ -3844,7 +3840,6 @@ def build_language_bundle(
             option.setdefault("_debug", {})["hubTargetSceneKey"] = target_scene_key
         return option
 
-
     def source_hub_option_groups(conv_key: str, valid_line_ids: set[str]) -> tuple[list[dict], list[dict]]:
         source = _load_dialog_tree_source(conv_key)
         if not source:
@@ -3857,7 +3852,6 @@ def build_language_bundle(
         ]
         if not raw_links:
             return [], []
-
         nodes_by_id = {
             str(node.get("id") or ""): node
             for node in ((source.get("lineGraph") or {}).get("nodes") or [])
@@ -3874,7 +3868,6 @@ def build_language_bundle(
             ]
             if source_node_id and conv_key in group_scene_keys and len(set(group_scene_keys)) > 1:
                 by_source_node[source_node_id].append(link)
-
         hub_groups: list[dict] = []
         hub_scene_links: list[dict] = []
         for source_node_id, links in sorted(by_source_node.items()):
@@ -3986,24 +3979,20 @@ def build_language_bundle(
                 },
             })
         return hub_groups, hub_scene_links
-
     def apply_source_hub_option_groups(payload: dict, scene_graph_links: list[dict]) -> list[dict]:
         def group_after_suffix(group: dict) -> int:
             match = re.search(r"_(\d+)$", str(group.get("after") or ""))
             return int(match.group(1)) if match else -1
-
         def link_source_node_id(link: dict) -> str:
             debug = link.get("_debug") if isinstance(link.get("_debug"), dict) else {}
             link_debug = debug.get("link") if isinstance(debug.get("link"), dict) else {}
             return str(link_debug.get("sourceOptionNodeId") or "")
-
         def link_option_ids(link: dict) -> set[str]:
             return {
                 str(option.get("optionId") or "")
                 for option in (link.get("options") or [])
                 if isinstance(option, dict) and str(option.get("optionId") or "")
             }
-
         conv_key = str(payload.get("key") or "")
         valid_line_ids = {
             str(line.get("id") or "")
@@ -4049,15 +4038,11 @@ def build_language_bundle(
                 scene_graph_links.append(hub_link)
         return scene_graph_links
 
-
-
     def dialog_recovery_methods(payload: dict) -> list[str]:
         methods: list[str] = []
-
         def add(method: str) -> None:
             if method and method not in methods:
                 methods.append(method)
-
         debug = payload.get("_debug") if isinstance(payload.get("_debug"), dict) else {}
         line_order = debug.get("lineOrder") if isinstance(debug.get("lineOrder"), dict) else {}
         line_order_mode = str(line_order.get("mode") or "")
@@ -4075,7 +4060,6 @@ def build_language_bundle(
             add(f"lineOrder:{line_order_mode}")
         elif len(payload.get("lines") or []) > 1:
             add("lineOrder:missing")
-
         option_groups = [
             group
             for group in (payload.get("optionGroups") or [])
@@ -4100,12 +4084,10 @@ def build_language_bundle(
                 add("optionLayout:fallback")
         elif option_groups:
             add("optionLayout:authored")
-
         if payload.get("sceneGraphLinks"):
             add("optionBranch:sceneGraph")
         if payload.get("graphFragments"):
             add("optionBranch:dialogTreeFragment")
-
         for group in option_groups:
             if group.get("continuationOptionIds"):
                 add("optionBranch:continuationOption")
@@ -4114,7 +4096,6 @@ def build_language_bundle(
             risk = group.get("optionBranchRisk") if isinstance(group.get("optionBranchRisk"), dict) else {}
             if not risk:
                 continue
-
             def add_option_branch_methods(branch_risk: dict) -> None:
                 if branch_risk.get("code") == "timelineRouteBranches":
                     add("optionBranch:runtimeJump")
@@ -4132,7 +4113,6 @@ def build_language_bundle(
                     add("optionBranch:commonContinuation")
                 if branch_risk.get("continuationOptionIds"):
                     add("optionBranch:continuationOption")
-
             overridden_risk = (
                 risk.get("overriddenRisk")
                 if isinstance(risk.get("overriddenRisk"), dict)
@@ -4141,20 +4121,16 @@ def build_language_bundle(
             if overridden_risk:
                 add_option_branch_methods(overridden_risk)
             add_option_branch_methods(risk)
-
         return methods
-
     print(
         f"Extras: summary={len(summary_by_key)} scenes ({summary_orphans} orphans), "
         f"options={len(options_by_key)} scenes ({option_orphans} orphans), "
         f"radioTargets={len(radio_targets_seen)} scenes, "
         f"radioStandalone={len(radio_rows)} conversations ({radio_orphans} orphans)"
     )
-
     index_entries: list[dict] = []
     story_env_entries_by_mission: dict[str, list[dict]] = defaultdict(list)
     scene_graph_links_by_key: dict[str, list[dict]] = {}
-
     # Emit dialog conversations
     print(f"Writing {len(groups)} dialog conversations...")
     for key, items in groups.items():
@@ -4162,7 +4138,6 @@ def build_language_bundle(
         _, mission, scene_str = key.split("__")
         scene = int(scene_str)
         type_, act = parse_mission(mission)
-
         lines = []
         actors: set[str] = set()
         for _line, dlg_id, e in items:
@@ -4203,7 +4178,6 @@ def build_language_bundle(
                     },
                 },
             })
-
         out_key = f"dlg_{mission}_{scene}"
         original_line_ids = [line.get("id") or "" for line in lines]
         ordered_line_ids, line_order_debug = resolve_scene_line_order(
@@ -4292,12 +4266,12 @@ def build_language_bundle(
         )
         attach_scene_order_warning(payload)
         attach_duplicate_timestamp_warning(payload)
+        attach_timeline_timestamp_regression_warning(payload)
         story_issue_codes = dialog_story_issue_codes(payload)
         recovery_methods = dialog_recovery_methods(payload)
         if fmv_clips_by_key.get(out_key):
             payload["fmvClips"] = fmv_clips_by_key[out_key]
         write_conv_payload(out_key, payload)
-
         entry = {
             "k": out_key,                # key
             "d": "dlg",                  # kind
@@ -4333,7 +4307,6 @@ def build_language_bundle(
         if not entry["x"]:
             entry.pop("x")
         index_entries.append(entry)
-
     # Emit SNS conversations
     print(f"Writing {len(sns_groups)} SNS conversations...")
     for sns_id, entry in sns_groups.items():
@@ -4345,7 +4318,6 @@ def build_language_bundle(
         if is_topic_chat:
             mission = f"topic_{chat_id}"
         type_, act = parse_mission(mission)
-
         # Reconstruct order by following nextContentId from -1's preContentId backwards,
         # then forwards from the first node whose preContentId == 0.
         cdata = entry.get("dialogContentData", {})
@@ -4367,14 +4339,12 @@ def build_language_bundle(
             ordered.append((cur, node))
             nxt = node.get("nextContentId")
             cur = str(nxt) if nxt not in (None, 0, -1) else None
-
         # Fallback: if traversal looks incomplete, append remaining numeric nodes by id.
         if len(ordered) < sum(1 for cid in cdata if cid not in ("-1",)):
             for cid in sorted((c for c in cdata if c not in ("-1",)), key=lambda x: int(x)):
                 if cid not in seen:
                     seen.add(cid)
                     ordered.append((cid, cdata[cid]))
-
         lines = []
         speakers: list[str] = []
         seen_speakers: set[str] = set()
@@ -4470,7 +4440,7 @@ def build_language_bundle(
                 image_ids = [
                     str(value or "").strip()
                     for value in (node.get("contentParam") or [])
-                    if str(value or "").strip()
+                    if media_id_looks_like_media(value)
                 ]
                 if image_ids:
                     line_entry["images"] = image_ids
@@ -4490,7 +4460,6 @@ def build_language_bundle(
             lines.append(line_entry)
             if not prev_text and text:
                 prev_text = text
-
         # Keep each SNS conversation keyed by its original table row id so
         # topic chats can share a chat-based mission bucket without colliding
         # in the index or overwriting each other's conv JSON files.
@@ -4503,7 +4472,6 @@ def build_language_bundle(
         chat_type_value = chat_type(chat_id)
         mission_title = mission_name(mission)
         topic_title = topic_name(title_topic_id)
-
         title_choices: list[tuple[str, dict | None]] = []
         if is_topic_chat:
             title_choices.extend([
@@ -4517,7 +4485,6 @@ def build_language_bundle(
             (chat_title, chat_title_trace),
             (sns_raw_title(out_key), {"source": sns_raw_title(out_key)}),
         ])
-
         display_title = ""
         display_title_debug: dict | None = None
         for title_value, title_debug in title_choices:
@@ -4528,10 +4495,8 @@ def build_language_bundle(
         if not display_title:
             display_title = sns_raw_title(out_key)
             display_title_debug = {"source": display_title}
-
         def is_admin_sns_speaker(speaker_id: str) -> bool:
             return (speaker_actor_id(speaker_id) or speaker_id).lower() in ADMIN_ACTOR_IDS
-
         primary_speaker = speakers[0] if speakers else ""
         if primary_speaker and is_admin_sns_speaker(primary_speaker):
             primary_speaker = speakers[1] if len(speakers) > 1 else ""
@@ -4546,7 +4511,6 @@ def build_language_bundle(
             [primary_speaker] + [speaker for speaker in speakers if speaker != primary_speaker]
             if primary_speaker else speakers
         )
-
         sns_payload = {
             "key": out_key,
             "kind": "sns",
@@ -4570,7 +4534,6 @@ def build_language_bundle(
             },
         }
         write_conv_payload(out_key, sns_payload)
-
         entry = {
             "k": out_key,
             "d": "sns",
@@ -4606,7 +4569,6 @@ def build_language_bundle(
         if not entry["x"]:
             entry.pop("x")
         index_entries.append(entry)
-
     # Emit radio conversations as standalone entries. Radio is no longer
     # embedded into dlg/sns/misc pages; the browser should navigate to the
     # explicit radio scene instead.
@@ -4636,7 +4598,6 @@ def build_language_bundle(
             }
         write_conv_payload(out_key, payload)
         radio_out_keys.add(out_key)
-
         entry = {
             "k": out_key,
             "d": "radio",
@@ -4655,9 +4616,7 @@ def build_language_bundle(
         if not entry["x"]:
             entry.pop("x")
         index_entries.append(entry)
-
     radio_row_lookup = {row["k"]: row for row in radio_rows}
-
     black_groups: dict[str, dict] = {}
     for text_id, text_entry in text_table.items():
         m = BLACK_RE.match(text_id)
@@ -4674,7 +4633,6 @@ def build_language_bundle(
             },
         )
         bucket["items"].append((int(line_str), text_id, text_entry))
-
     print(f"Writing {len(black_groups)} black-screen conversations...")
     for out_key, bucket in sorted(
         black_groups.items(),
@@ -4709,7 +4667,6 @@ def build_language_bundle(
             })
             if not prev_text and text:
                 prev_text = text
-
         payload = {
             "key": out_key,
             "kind": "black",
@@ -4722,7 +4679,6 @@ def build_language_bundle(
         }
         write_conv_payload(out_key, payload)
         black_out_keys.add(out_key)
-
         entry = {
             "k": out_key,
             "d": "black",
@@ -4740,18 +4696,15 @@ def build_language_bundle(
         if not entry["x"]:
             entry.pop("x")
         index_entries.append(entry)
-
     story_text_key_re = re.compile(
         r"^text_(?P<mission>(?:gm|sm|db|dm|[acefm])\d+(?:[a-z]\d+)*(?:d\d+)?)(?:_(?P<scene>.+))?$",
         re.IGNORECASE,
     )
-
     def story_text_key_parts(text_key: str) -> tuple[str, str] | None:
         match = story_text_key_re.match(str(text_key or ""))
         if not match:
             return None
         return match.group("mission"), match.group("scene") or "0"
-
     def reading_popup_story_content_key(row_id: str, row: dict | None) -> str:
         if not isinstance(row, dict):
             return ""
@@ -4763,7 +4716,6 @@ def build_language_bundle(
             if candidate.startswith("text_") and story_text_key_parts(candidate):
                 return candidate
         return ""
-
     def rich_content_story_row(content_key: str, preferred_source: str) -> tuple[str, dict]:
         sources = [preferred_source, "streaming", "persistent"]
         seen_sources: set[str] = set()
@@ -4776,7 +4728,6 @@ def build_language_bundle(
             if isinstance(row, dict):
                 return source_name, row
         return preferred_source or "streaming", {}
-
     popup_rows_by_content: dict[str, list[tuple[str, str, dict]]] = defaultdict(list)
     for source_name, popup_table in (
         ("streaming", reading_popups),
@@ -4789,7 +4740,6 @@ def build_language_bundle(
             if not content_key:
                 continue
             popup_rows_by_content[content_key].append((source_name, str(row_id), row))
-
     print(f"Writing {len(popup_rows_by_content)} reading-popup text conversations...")
     for content_key, popup_rows in sorted(popup_rows_by_content.items()):
         parts = story_text_key_parts(content_key)
@@ -4836,7 +4786,6 @@ def build_language_bundle(
             })
         if not lines and not title:
             continue
-
         popup_sources = [
             source_ref(
                 "ReadingPopUpTable",
@@ -4870,7 +4819,6 @@ def build_language_bundle(
                 "text": f"Reading popup source rows: {len(popup_rows)}",
             }]
         write_conv_payload(content_key, payload)
-
         entry = {
             "k": content_key,
             "d": "text",
@@ -4894,7 +4842,6 @@ def build_language_bundle(
         if search_text:
             entry["x"] = search_text
         index_entries.append(entry)
-
     remotecomm_video_owner_by_stem: dict[str, str] = {}
     remotecomm_expected_video_stems_by_key: dict[str, list[str]] = {}
     remotecomm_video_timeline_by_key: dict[str, list[dict]] = {}
@@ -4913,7 +4860,6 @@ def build_language_bundle(
         audio_stem = re.sub(r"\.[^.]+$", "", audio_path.rsplit("/", 1)[-1], flags=re.IGNORECASE).lower()
         if audio_stem:
             audio_dialog_duration_by_stem[audio_stem] = audio_row
-
     def remotecomm_video_stem_from_middle_id(middle_id: object) -> str:
         value = str(middle_id or "").strip().replace("\\", "/")
         if not value:
@@ -4922,7 +4868,6 @@ def build_language_bundle(
         if stem in remotecomm_available_video_stems:
             return stem
         return ""
-
     def remotecomm_voice_duration(voice_id: object) -> float | None:
         row = audio_dialog_duration_by_stem.get(str(voice_id or "").strip().lower())
         if not row:
@@ -4938,7 +4883,6 @@ def build_language_bundle(
             if isinstance(value, (int, float)) and value >= 0:
                 return float(value)
         return None
-
     remote_rows: list[dict] = []
     for remote_id, remote_entry in remote_common.items():
         m = REMOTECOMM_RE.match(remote_id)
@@ -4954,21 +4898,18 @@ def build_language_bundle(
         line_video_timing: list[dict] = []
         elapsed_time: float | None = 0.0
         prev_text = ""
-
         def add_audio_event(value: object) -> None:
             event_id = str(value or "").strip()
             if not event_id:
                 return
             if event_id not in audio_events:
                 audio_events.append(event_id)
-
         def add_expected_video_stem(video_stem: str) -> None:
             if not video_stem:
                 return
             if video_stem not in expected_video_stems:
                 expected_video_stems.append(video_stem)
             remotecomm_video_owner_by_stem.setdefault(video_stem, remote_id)
-
         for item in sorted(
             remote_entry.get("remoteCommSingleDataList", []) or [],
             key=lambda row: row.get("index", 0),
@@ -5066,7 +5007,6 @@ def build_language_bundle(
         add_audio_event(remote_entry.get("endAudioEvent"))
         if expected_video_stems:
             remotecomm_expected_video_stems_by_key[remote_id] = expected_video_stems
-
         video_segments: list[dict] = []
         current_segment: dict | None = None
         for timing in line_video_timing:
@@ -5114,7 +5054,6 @@ def build_language_bundle(
                 segment["duration"] = round(float(segment["endTime"]) - float(segment["startTime"]), 6)
         if video_segments:
             remotecomm_video_timeline_by_key[remote_id] = video_segments
-
         remote_rows.append({
             "key": remote_id,
             "mission": mission,
@@ -5129,7 +5068,6 @@ def build_language_bundle(
             "preview": prev_text,
             "source": remote_entry,
         })
-
     print(f"Writing {len(remote_rows)} remote communication conversations...")
     for remote in sorted(
         remote_rows,
@@ -5188,7 +5126,6 @@ def build_language_bundle(
             payload["_debug"]["remotecommVideos"]["source"]["timeline"] = list(remote["videoTimeline"])
         write_conv_payload(remote["key"], payload)
         remotecomm_out_keys.add(remote["key"])
-
         entry = {
             "k": remote["key"],
             "d": "remotecomm",
@@ -5206,7 +5143,6 @@ def build_language_bundle(
         if not entry["x"]:
             entry.pop("x")
         index_entries.append(entry)
-
     known_cutscene_missions = sorted(
         {
             path.stem
@@ -5221,15 +5157,12 @@ def build_language_bundle(
         key=lambda mission: (-len(mission), mission),
     )
 
-
     def split_cutscene_parent_key(key: str) -> str:
         match = re.match(r"^(cutscene_.+_\d+)_(\d+)$", str(key or ""))
         return match.group(1) if match else ""
-
     def split_cutscene_child_sort_key(key: str) -> tuple[int, str]:
         match = re.match(r"^cutscene_.+_\d+_(\d+)$", str(key or ""))
         return (int(match.group(1)) if match else 999999, str(key or ""))
-
     def resolve_cutscene_text_group(group: str, asset_keys: set[str], raw_groups: set[str]) -> str:
         if group in asset_keys:
             return group
@@ -5248,7 +5181,6 @@ def build_language_bundle(
             if rest and re.fullmatch(r"d\d+(?:_.*)?", rest):
                 return candidate
         return normalized
-
     def subtitle_locale_tokens(code: str) -> tuple[str, ...]:
         return {
             "CN": ("CHI", "CN"),
@@ -5259,11 +5191,9 @@ def build_language_bundle(
             "MX": ("MX", "ES"),
             "BR": ("BR", "PT"),
         }.get(str(code or "").upper(), (str(code or "").upper(),))
-
     def subtitle_track_language_score(track: dict) -> int:
         name = str(track.get("parentName") or "").upper()
         desired = subtitle_locale_tokens(language_code)
-
         def first_desired_index(tokens: list[str]) -> int | None:
             matches = [
                 desired.index(token)
@@ -5271,7 +5201,6 @@ def build_language_bundle(
                 if token in desired
             ]
             return min(matches) if matches else None
-
         env_tokens = re.findall(r"_ENV_([A-Z]+)", name)
         audio_tokens = re.findall(r"_AU_([A-Z]+)", name)
         if env_tokens:
@@ -5284,7 +5213,6 @@ def build_language_bundle(
             audio_index = first_desired_index(audio_tokens)
             return 20 + audio_index if audio_index is not None else 80
         return 50
-
     # The CN e0m0_2 playable has two Chinese-looking subtitle families. The
     # untagged F/M tracks match observed playback; the AU_CHI_ENV_CHI tracks are
     # a different localized/audio variant with incompatible mid-scene lines.
@@ -5296,7 +5224,6 @@ def build_language_bundle(
             },
         },
     }
-
     def subtitle_tracks_for_language(cutscene_key: str, tracks: list[dict]) -> list[dict]:
         parent_override = (
             cutscene_subtitle_parent_overrides
@@ -5322,7 +5249,6 @@ def build_language_bundle(
             track for score, track in scored
             if score == best_score
         ]
-
     def cutscene_text_lines(
         asset_keys: set[str],
         subtitle_tracks_by_key: dict[str, list[dict]],
@@ -5334,7 +5260,6 @@ def build_language_bundle(
                 split_asset_children_by_parent[parent_key].append(asset_key)
         for children in split_asset_children_by_parent.values():
             children.sort(key=split_cutscene_child_sort_key)
-
         raw_groups: set[str] = set()
         matched_rows: list[tuple[str, dict, re.Match[str]]] = []
         for row_id, text_entry in text_table.items():
@@ -5346,10 +5271,8 @@ def build_language_bundle(
                 continue
             raw_groups.add(match.group("group"))
             matched_rows.append((row_key, text_entry, match))
-
         grouped: dict[str, list[tuple[tuple[int, int, int, str, str], dict]]] = defaultdict(list)
         lines_by_row_id: dict[str, dict] = {}
-
         def build_cutscene_texttable_line(
             row_key: str,
             text_entry,
@@ -5389,16 +5312,13 @@ def build_language_bundle(
                 line["gender"] = gender
                 line["_debug"]["source"]["gender"] = gender
             return line
-
         def remember_cutscene_line_usage(line: dict) -> None:
             remember_texttable_row_usage(line.get("id"))
             for duplicate in line.get("mergedDuplicateRows") or []:
                 if isinstance(duplicate, dict):
                     remember_texttable_row_usage(duplicate.get("id"))
-
         def subtitle_start_key(value) -> float:
             return round(float(value), 6) if isinstance(value, (int, float)) else 0.0
-
         def subtitle_slot_key(ref: dict, timing_index: int) -> tuple[float, float, int]:
             duration = ref.get("duration")
             return (
@@ -5406,7 +5326,6 @@ def build_language_bundle(
                 round(float(duration), 6) if isinstance(duration, (int, float)) else 0.0,
                 timing_index,
             )
-
         def subtitle_clip_debug(track: dict, ref: dict) -> dict:
             debug = {
                 "source": "animeSubtitleTrack",
@@ -5428,7 +5347,6 @@ def build_language_bundle(
             if track.get("parentPathId") not in (None, ""):
                 debug["parentPathId"] = track["parentPathId"]
             return debug
-
         def line_matches_cutscene_key(line: dict, cutscene_key: str) -> bool:
             row_id = str(line.get("id") or "")
             if row_id.startswith(f"{cutscene_key}_"):
@@ -5440,14 +5358,11 @@ def build_language_bundle(
                 return True
             source = debug.get("source") if isinstance(debug.get("source"), dict) else {}
             return str(source.get("textGroup") or "") == cutscene_key
-
         def subtitle_gender_rank(gender: str) -> int:
             return {"": 0, "F": 1, "M": 2}.get(str(gender or "").upper(), 3)
-
         def line_has_explicit_gender_switch(line: dict) -> bool:
             text = str(line.get("text") or "")
             return "{F}" in text or "{M}" in text
-
         def normalize_subtitle_variant_text(text: object) -> str:
             source = str(text or "")
             source = re.sub(r"\{[FM]\}", "", source)
@@ -5456,7 +5371,6 @@ def build_language_bundle(
                 for ch in source
                 if not ch.isspace() and not unicodedata.category(ch).startswith("P")
             )
-
         def subtitle_candidate_rank(cutscene_key: str, candidate: dict) -> tuple[int, int, int, int, str]:
             line = candidate.get("line") if isinstance(candidate.get("line"), dict) else {}
             return (
@@ -5466,7 +5380,6 @@ def build_language_bundle(
                 int(candidate.get("clipIndex") or 0),
                 str(candidate.get("rowKey") or ""),
             )
-
         def subtitle_alternate_line_debug(candidate: dict) -> dict:
             line = candidate.get("line") if isinstance(candidate.get("line"), dict) else {}
             out = {
@@ -5480,7 +5393,6 @@ def build_language_bundle(
             if candidate.get("gender"):
                 out["assetGender"] = candidate.get("gender")
             return out
-
         def build_fallback_track_line(cutscene_key: str, row_key: str, ref: dict) -> dict:
             match = CUTSCENE_TEXT_ROW_RE.match(row_key)
             text_entry = text_table.get(row_key)
@@ -5523,7 +5435,6 @@ def build_language_bundle(
                     },
                 },
             }
-
         for row_key, text_entry, match in matched_rows:
             raw_group = match.group("group")
             cutscene_key = resolve_cutscene_text_group(raw_group, asset_keys, raw_groups)
@@ -5535,7 +5446,6 @@ def build_language_bundle(
             sub_order = int(sub[1:]) if sub else -1
             alias_order = 1 if raw_group != cutscene_key else 0
             grouped[cutscene_key].append(((line_num, sub_order, alias_order, gender, row_key), line))
-
         merged_by_key: dict[str, list[dict]] = {}
         for cutscene_key, subtitle_tracks in subtitle_tracks_by_key.items():
             subtitle_tracks = subtitle_tracks_for_language(cutscene_key, subtitle_tracks)
@@ -5556,7 +5466,6 @@ def build_language_bundle(
                     timing_counts[timing_key] += 1
                     slot_key = subtitle_slot_key(ref, timing_index)
                     track_debug = subtitle_clip_debug(track, ref)
-
                     line = copy.deepcopy(lines_by_row_id.get(row_key))
                     if line is None:
                         line = build_fallback_track_line(cutscene_key, row_key, ref)
@@ -5576,7 +5485,6 @@ def build_language_bundle(
                         "line": line,
                         "trackDebug": track_debug,
                     })
-
             ordered_lines: list[tuple[tuple[float, int, int, str], dict]] = []
             for slot_key, candidates in slot_candidates.items():
                 genders = {candidate["gender"] for candidate in candidates if candidate.get("gender")}
@@ -5625,7 +5533,6 @@ def build_language_bundle(
                         chosen_debug["subtitleAlternateLines"] = alternates
                     ordered_lines.append((chosen["sortKey"], chosen_line))
                     continue
-
                 by_row_key: dict[str, dict] = {}
                 for candidate in sorted(candidates, key=lambda c: (c["sortKey"], c["rowKey"])):
                     existing = by_row_key.get(candidate["rowKey"])
@@ -5673,7 +5580,6 @@ def build_language_bundle(
                         }
                         remember_cutscene_line_usage(line)
                 merged_by_key[cutscene_key] = subtitle_lines
-
         def lines_for_cutscene_key(cutscene_key: str) -> list[dict]:
             if cutscene_key in merged_by_key:
                 return merged_by_key[cutscene_key]
@@ -5682,7 +5588,6 @@ def build_language_bundle(
                 for _sort_key, line in grouped.get(cutscene_key, [])
                 if isinstance(line, dict)
             ]
-
         def matching_split_child_line(parent_key: str, parent_line: dict) -> dict | None:
             cid = str(parent_line.get("cid") or "")
             normalized_text = cutscene_pair_normalize(str(parent_line.get("text") or ""))
@@ -5696,7 +5601,6 @@ def build_language_bundle(
                     if child_text and child_text == normalized_text:
                         return child_line
             return None
-
         def attach_text_only_parent_duplicate(parent_key: str, parent_line: dict, child_line: dict) -> None:
             duplicate = {
                 "id": parent_line.get("id") or "",
@@ -5722,7 +5626,6 @@ def build_language_bundle(
             if parent_key and parent_key not in suppressed:
                 suppressed.append(parent_key)
             remember_cutscene_line_usage(child_line)
-
         def suppress_text_only_split_parent(cutscene_key: str, rows: list[tuple[tuple[int, int, int, str, str], dict]]) -> bool:
             if cutscene_key in asset_keys:
                 return False
@@ -5739,7 +5642,6 @@ def build_language_bundle(
             for parent_line, child_line in matches:
                 attach_text_only_parent_duplicate(cutscene_key, parent_line, child_line)
             return bool(matches)
-
         for cutscene_key, rows in grouped.items():
             if cutscene_key in merged_by_key:
                 continue
@@ -5750,7 +5652,6 @@ def build_language_bundle(
                 remember_cutscene_line_usage(line)
             merged_by_key[cutscene_key] = lines
         return merged_by_key
-
     def ensure_cutscene_asset(cutscene_key: str) -> dict:
         return cutscene_assets.setdefault(
             cutscene_key,
@@ -5771,7 +5672,6 @@ def build_language_bundle(
                 "textOnly": True,
             },
         )
-
     def story_source_backed_cutscene_keys() -> set[str]:
         backed: set[str] = set()
         for raw_key in story_source_links:
@@ -5786,10 +5686,8 @@ def build_language_bundle(
                 if canonical:
                     backed.add(canonical)
         return backed
-
     def narrative_video_backed_cutscene_keys() -> set[str]:
         """Return cutscene keys whose text-only file has video evidence.
-
         Dialog-bound FMVs often carry names such as `cs_video_dlg_e0m2_5`.
         Those should attach to the dialog, not promote a sibling
         `cutscene_e0m2_5` TextTable group. Keep a text-only cutscene only when
@@ -5824,7 +5722,6 @@ def build_language_bundle(
                 if canonical:
                     backed.add(canonical)
         return backed
-
     def cutscene_text_fingerprint(lines: list[dict]) -> tuple[str, ...]:
         return tuple(
             text
@@ -5833,14 +5730,12 @@ def build_language_bundle(
             for text in [cutscene_pair_normalize(str(line.get("text") or ""))]
             if text
         )
-
     def cutscene_text_similarity(left: tuple[str, ...], right: tuple[str, ...]) -> float:
         if not left or not right:
             return 0.0
         if left == right:
             return 1.0
         return SequenceMatcher(None, "\n".join(left), "\n".join(right)).ratio()
-
     def find_suppressed_cutscene_duplicate(
         cutscene_key: str,
         lines: list[dict],
@@ -5868,7 +5763,6 @@ def build_language_bundle(
             "similarity": round(best[0], 4),
             "lineCount": best[2],
         }
-
     def write_suppressed_cutscene_text_report(rows: list[dict]) -> dict:
         report = {
             "generated": int(time.time()),
@@ -5890,7 +5784,6 @@ def build_language_bundle(
             "json": repo_rel(report_json),
         }
         return report
-
     cutscene_assets = _load_cutscene_assets()
     cutscene_text_by_key = cutscene_text_lines(set(cutscene_assets), _load_cutscene_subtitle_tracks())
     source_backed_cutscene_keys = story_source_backed_cutscene_keys()
@@ -5903,7 +5796,6 @@ def build_language_bundle(
         and cutscene_key not in retained_text_only_cutscene_keys
     }
     suppressed_text_by_key: dict[str, list[dict]] = {}
-
     suppressed_duplicate_groups_by_target: dict[str, list[dict]] = defaultdict(list)
     kept_cutscene_lines = {
         key: lines
@@ -5935,7 +5827,6 @@ def build_language_bundle(
             })
         suppressed_report_rows.append(row)
     write_suppressed_cutscene_text_report(suppressed_report_rows)
-
     for cutscene_key in cutscene_text_by_key:
         cutscene = ensure_cutscene_asset(cutscene_key)
         if cutscene_key in unconfirmed_text_by_key and cutscene_key not in suppressed_text_by_key:
@@ -6031,7 +5922,6 @@ def build_language_bundle(
             summary_rows.append({"text": f"TextTable rows: {len(lines)} localized cutscene text row(s)"})
         if len(text_groups) > 1:
             summary_rows.append({"text": "Text groups: " + ", ".join(text_groups[:8])})
-
         payload = {
             "key": cutscene_key,
             "kind": "cutscene",
@@ -6070,7 +5960,6 @@ def build_language_bundle(
             payload["fmvClips"] = fmv_clips_by_key[cutscene_key]
         write_conv_payload(cutscene_key, payload)
         cutscene_out_keys.add(cutscene_key)
-
         search_text = " ".join(part for part in [
             cutscene_key,
             mission,
@@ -6118,7 +6007,6 @@ def build_language_bundle(
         if not entry["x"]:
             entry.pop("x")
         index_entries.append(entry)
-
     env_talk_speaker_hints_by_env: dict[str, list[dict]] = defaultdict(list)
     for env_id, proxy_ids in env_talk_proxy_ids_by_env.items():
         seen_hint_keys: set[tuple[str, str]] = set()
@@ -6133,13 +6021,11 @@ def build_language_bundle(
                 speaker_name = speaker_display_name(candidate)
                 if speaker_name:
                     break
-
             if not speaker_name and isinstance(proxy_row, dict):
                 override_name_key = str(((proxy_row.get("overrideNpcNameId") or {}).get("key")) or "")
                 if proxy_row.get("ifOverrideNpcName") and override_name_key:
                     speaker_name = named_text(override_name_key)
                     actor_id = actor_id or proxy_id
-
             if not speaker_name:
                 continue
             hint_key = (actor_id or proxy_id, speaker_name)
@@ -6170,7 +6056,6 @@ def build_language_bundle(
                     ),
                 },
             })
-
     # Emit environment conversations
     print(f"Writing {len(env_talks)} environment conversations...")
     for env_id in sorted(env_talks):
@@ -6247,7 +6132,6 @@ def build_language_bundle(
                 lines[-1]["_debug"]["speakerHint"] = speaker_hint
             if not prev_text and text:
                 prev_text = text
-
         out_key = f"env_{env_id}"
         kind, mission, mission_type, index_tags = env_index_slot(env_id)
         env_payload = {
@@ -6271,7 +6155,6 @@ def build_language_bundle(
             env_payload["npc"] = env_npc
             env_payload["_debug"]["npc"] = env_npc["_debug"]
         write_conv_payload(out_key, env_payload)
-
         index_entry = {
             "k": out_key,
             "d": kind,
@@ -6291,7 +6174,6 @@ def build_language_bundle(
         if not index_entry["x"]:
             index_entry.pop("x")
         index_entries.append(index_entry)
-
         if story_mission := env_story_missions.get(env_id):
             env_entry = {
                 "key": out_key,
@@ -6327,7 +6209,6 @@ def build_language_bundle(
                         }
                     }
             story_env_entries_by_mission[story_mission].append(env_entry)
-
     wiki_category_names: dict[str, str] = {}
     wiki_group_names: dict[str, str] = {}
     wiki_group_to_category: dict[str, str] = {}
@@ -6351,7 +6232,6 @@ def build_language_bundle(
             wiki_group_names[group_id] = group_name
             wiki_group_to_category[group_id] = category_id
             extra_mission_names.setdefault(group_id, group_name)
-
     def wiki_category_id(row_id: str, row: dict) -> str:
         group_id = str(row.get("groupId") or "")
         if group_id in wiki_group_to_category:
@@ -6374,9 +6254,7 @@ def build_language_bundle(
         if group_id.startswith("wiki_group_equip_") or group_id.startswith("suit_") or group_id.startswith("domain_"):
             return "wiki_type_equip"
         return "wiki_type_item"
-
     wiki_text_fingerprints: set[tuple[str, ...]] = set()
-
     print(f"Writing {len(wiki_entry_data)} wiki entries...")
     for row_id, row in sorted(
         wiki_entry_data.items(),
@@ -6396,7 +6274,6 @@ def build_language_bundle(
         mission_id = group_id or category_id
         if mission_id:
             extra_mission_names.setdefault(mission_id, group_name if group_id else category_name)
-
         row_desc = t((row.get("desc") or {}).get("id"))
         ref_item_id = str(row.get("refItemId") or "")
         ref_monster_id = str(row.get("refMonsterTemplateId") or "")
@@ -6410,12 +6287,10 @@ def build_language_bundle(
             if isinstance(enemy_display_info.get(ref_monster_id), dict)
             else {}
         )
-
         title = row_id
         lines: list[dict] = []
         summary_rows: list[dict] = []
         seen_texts: set[tuple[str, str]] = set()
-
         def add_line(line_id: str, text: str, *, hint: str = "", debug: dict | None = None) -> None:
             normalized = (text or "").strip()
             if not normalized:
@@ -6430,7 +6305,6 @@ def build_language_bundle(
             if debug:
                 line["_debug"] = debug
             lines.append(line)
-
         if category_id in {"wiki_type_item", "wiki_type_equip", "wiki_type_building", "wiki_type_weapon"}:
             title = brace_text(t((item_row.get("name") or {}).get("id"))) or title
             item_desc = t((item_row.get("desc") or {}).get("id"))
@@ -6555,7 +6429,6 @@ def build_language_bundle(
                 if media_bits:
                     summary_rows.append({"text": f"{page_title or page_id}: " + ", ".join(media_bits)})
             title = next((candidate for candidate in page_title_candidates if candidate), row_id)
-
         if row_desc:
             add_line(
                 f"{row_id}_wiki",
@@ -6568,7 +6441,6 @@ def build_language_bundle(
                     },
                 },
             )
-
         summary_rows.insert(0, {"text": f"Category: {category_name}"})
         if group_name and group_name != category_name:
             summary_rows.insert(1, {"text": f"Group: {group_name}"})
@@ -6578,11 +6450,9 @@ def build_language_bundle(
             summary_rows.append({"text": f"Ref item: {ref_item_id}"})
         if ref_monster_id:
             summary_rows.append({"text": f"Ref enemy: {ref_monster_id}"})
-
         wiki_fp = text_sequence_fingerprint(lines)
         if wiki_fp:
             wiki_text_fingerprints.add(wiki_fp)
-
         payload = {
             "key": row_id,
             "kind": "wiki",
@@ -6641,7 +6511,6 @@ def build_language_bundle(
         if search_text:
             entry["x"] = search_text
         index_entries.append(entry)
-
     operator_archive_rows = [row for row in character_rows.values() if isinstance(row, dict) and ((row.get("profileRecord") or []) or (row.get("profileVoice") or []))]
     print(f"Writing {len(operator_archive_rows)} operator archive pages...")
     for char_id, row in sorted(
@@ -6652,7 +6521,6 @@ def build_language_bundle(
         profile_voice = [item for item in (row.get("profileVoice") or []) if isinstance(item, dict)]
         if not profile_records and not profile_voice:
             continue
-
         actor_id = char_id.split("_", 2)[-1] if char_id.startswith("chr_") else char_id
         char_name = (
             brace_text(t((row.get("name") or {}).get("id")))
@@ -6661,7 +6529,6 @@ def build_language_bundle(
             or char_id
         )
         extra_mission_names[char_id] = char_name
-
         title = char_name
         summary_rows: list[dict] = []
         summary_rows.append({"text": f"Profile sections: {len(profile_records)}"})
@@ -6680,7 +6547,6 @@ def build_language_bundle(
             weapon_item_row = item_rows.get(default_weapon_id) if isinstance(item_rows.get(default_weapon_id), dict) else {}
             weapon_name = brace_text(t((weapon_item_row.get("name") or {}).get("id"))) or default_weapon_id
             summary_rows.append({"text": f"Default weapon: {weapon_name}"})
-
         lines: list[dict] = []
         for record in sorted(profile_records, key=lambda item: (int(item.get("recordIndex") or 0), str(item.get("id") or ""))):
             record_text = t((record.get("recordDesc") or {}).get("id"))
@@ -6730,7 +6596,6 @@ def build_language_bundle(
             })
         if not lines:
             continue
-
         out_key = f"wiki_{char_id}"
         payload = {
             "key": out_key,
@@ -6781,8 +6646,6 @@ def build_language_bundle(
             entry["x"] = search_text
         index_entries.append(entry)
 
-
-
     story_reference_only_tags = {
         "achievement",
         "enemyAbility",
@@ -6793,7 +6656,6 @@ def build_language_bundle(
         "snsChat",
         "tip",
     }
-
 
     def write_reference_page(
         out_key: str,
@@ -6869,7 +6731,6 @@ def build_language_bundle(
         if search_text:
             entry["x"] = search_text
         index_entries.append(entry)
-
     def character_page_title(char_id: str) -> str:
         row = character_rows.get(char_id) if isinstance(character_rows.get(char_id), dict) else {}
         actor_id = char_id.split("_", 2)[-1] if char_id.startswith("chr_") else char_id
@@ -6879,8 +6740,6 @@ def build_language_bundle(
             or speaker_display_name(char_id)
             or char_id
         )
-
-
 
     def collection_hint_from_path(path: str) -> str:
         tokens: list[str] = []
@@ -6898,7 +6757,6 @@ def build_language_bundle(
             if label:
                 tokens.append(label)
         return " / ".join(tokens[-2:])
-
 
     def collection_bucket(table_name: str, row_id: str, row: dict | None) -> str:
         if table_name == "CommonDeathTips.json":
@@ -6930,7 +6788,6 @@ def build_language_bundle(
                 if isinstance(value, int | float) and field in {"roomType", "pageType", "tagType"}:
                     return f"{field}_{int(value)}"
         return collection_bucket_from_key(row_id)
-
     def collection_reading_story_ref(
         table_name: str,
         row_id: str,
@@ -6938,7 +6795,6 @@ def build_language_bundle(
     ) -> tuple[str, int, str] | None:
         if table_name not in {"PrtsReading.json", "ReadingPopUpTable.json", "RichContentTable.json"}:
             return None
-
         candidates: list[str] = []
         if table_name == "PrtsReading.json" and isinstance(row, dict):
             items = row.get("list") or {}
@@ -6959,20 +6815,16 @@ def build_language_bundle(
             title_text = rich_content_title_text(str(row_id or ""))
             if title_text:
                 candidates.append(title_text)
-
         candidates.append(str(row_id or ""))
-
         return (
             collection_story_ref_from_identifiers(*candidates)
             or collection_map_ref_from_identifiers(*candidates)
         )
-
     collection_story_mission_pattern = re.compile(
         r"(?<![a-z0-9])((?:gm|sm|db|dm|[acefm])\d+(?:[a-z]\d+)*(?:d\d+)?)(?![a-z0-9])",
         re.IGNORECASE,
     )
     collection_map_pattern = re.compile(r"map\d+_lv\d+", re.IGNORECASE)
-
 
     def collection_story_ref_from_identifiers(*values: str) -> tuple[str, int, str] | None:
         for raw_value in values:
@@ -6990,7 +6842,6 @@ def build_language_bundle(
                 if type_key in MISSION_STORY_TYPES:
                     return (mission_id, collection_scene_suffix(value), type_key)
         return None
-
     def collection_map_ref_from_identifiers(*values: str) -> tuple[str, int, str] | None:
         for raw_value in values:
             value = str(raw_value or "").strip()
@@ -7000,7 +6851,6 @@ def build_language_bundle(
             if match := collection_map_pattern.findall(lowered):
                 return (match[-1], collection_scene_suffix(value), "map")
         return None
-
     def collection_story_ref_from_bucket(bucket: str) -> tuple[str, int, str] | None:
         candidates: set[str] = set()
         for match in collection_story_mission_pattern.finditer(str(bucket or "").lower()):
@@ -7010,21 +6860,16 @@ def build_language_bundle(
                 candidates.add(mission_id)
         if len(candidates) != 1:
             return None
-
         mission_id = next(iter(candidates))
         type_key, _act = parse_mission(mission_id)
         return (mission_id, 0, type_key)
-
     def collection_bucket_token(bucket: str) -> str:
         slug = collection_slug(bucket)
         checksum = sum((idx + 1) * ord(ch) for idx, ch in enumerate(str(bucket or ""))) % 104729
         return f"{slug}_{checksum:x}" if checksum else slug
 
 
-
-
     prts_archive_categories = ("collection", "digital", "document", "media", "paper", "report")
-
     def prts_archive_category_from_identifier(value) -> str:
         raw = re.sub(r"[^0-9A-Za-z]+", "_", str(value or "")).strip("_").lower()
         if not raw:
@@ -7037,7 +6882,6 @@ def build_language_bundle(
             if raw == category_key or raw.startswith(f"{category_key}_"):
                 return category_key
         return ""
-
     def prts_archive_category_from_collection_ids(collection_ids) -> str:
         counts: dict[str, int] = {}
         first_seen: dict[str, int] = {}
@@ -7053,7 +6897,6 @@ def build_language_bundle(
             counts,
             key=lambda category_key: (-counts[category_key], first_seen.get(category_key, 0), category_key),
         )
-
     def prts_archive_category_from_row(
         table_name: str,
         row_id: str,
@@ -7063,7 +6906,6 @@ def build_language_bundle(
             if isinstance(row, dict):
                 return prts_archive_category_from_identifier(row.get("categoryId"))
             return prts_archive_category_from_identifier(row_id)
-
         if isinstance(row, dict):
             for field in ("categoryId", "firstLvId", "id", "type"):
                 category_key = prts_archive_category_from_identifier(row.get(field))
@@ -7088,16 +6930,13 @@ def build_language_bundle(
                 category_key = prts_archive_category_from_collection_ids(collection_ids)
                 if category_key:
                     return category_key
-
         return prts_archive_category_from_identifier(row_id)
-
     def prts_category_display_name(category_key: str) -> str:
         row = prts_categories.get(category_key) if isinstance(prts_categories.get(category_key), dict) else {}
         return (
             brace_text(t((row.get("name") or {}).get("id")))
             or str(category_key or "").replace("_", " ").strip().title()
         )
-
     prts_note_metadata: dict[str, dict] = {}
     for research_id, research_row in sorted(prts_investigate_categories.items()):
         if not isinstance(research_row, dict):
@@ -7125,7 +6964,6 @@ def build_language_bundle(
                 meta.setdefault("index", int(list_row.get("index") or list_index))
                 if collection_ids and not meta.get("collectionIds"):
                     meta["collectionIds"] = list(collection_ids)
-
     prts_content_ids = {
         str((row or {}).get("contentId") or "")
         for row in prts_all_items.values()
@@ -7147,7 +6985,6 @@ def build_language_bundle(
             "title": research_name,
             "desc": research_desc,
         })
-
     def collection_tags(
         table_name: str,
         row_id: str,
@@ -7207,7 +7044,6 @@ def build_language_bundle(
             if tag not in deduped:
                 deduped.append(tag)
         return deduped
-
     def collect_reference_text_nodes(
         table_name: str,
         row_id: str,
@@ -7254,7 +7090,6 @@ def build_language_bundle(
                     out=out,
                 )
         return out
-
     def collection_row_title(
         table_name: str,
         row_id: str,
@@ -7281,7 +7116,6 @@ def build_language_bundle(
         if table_name == "TextTable.json":
             return row_id
         return row_id
-
     def collection_summary_rows(
         table_name: str,
         row_id: str,
@@ -7317,10 +7151,8 @@ def build_language_bundle(
                 if len(rows) >= 6:
                     break
         return rows
-
     def collect_exported_texttable_row_ids() -> set[str]:
         referenced = set(referenced_texttable_row_ids)
-
         def visit(value) -> None:
             if isinstance(value, dict):
                 if value.get("table") == "TextTable" and value.get("rowId"):
@@ -7332,7 +7164,6 @@ def build_language_bundle(
             if isinstance(value, list):
                 for nested in value:
                     visit(nested)
-
         for conv_path in sorted(written_conv_paths):
             if conv_path.stem.startswith("wiki_collection_texttable_"):
                 continue
@@ -7342,7 +7173,6 @@ def build_language_bundle(
                 continue
             visit(payload)
         return referenced
-
     def write_texttable_collection_pages(excluded_row_ids: set[str] | None = None) -> None:
         excluded = {str(row_id) for row_id in (excluded_row_ids or set()) if str(row_id or "").strip()}
         chunks_by_bucket: dict[str, list[tuple[str, dict]]] = defaultdict(list)
@@ -7355,7 +7185,6 @@ def build_language_bundle(
             if not text:
                 continue
             chunks_by_bucket[collection_bucket("TextTable.json", row_id, row)].append((row_id, row))
-
         total_pages = 0
         total_rows = 0
         chunk_size = 200
@@ -7416,7 +7245,6 @@ def build_language_bundle(
             f"Writing {total_pages} text-table collection pages for {total_rows} entries "
             f"({skipped_rows} referenced rows skipped)..."
         )
-
     print(f"Writing {len(skill_patches)} skill patch reference pages...")
     for skill_id, row in sorted(skill_patches.items()):
         if not isinstance(row, dict):
@@ -7511,7 +7339,6 @@ def build_language_bundle(
             tags=["wiki", "skillPatch", "table_skillpatchtable"],
             search_parts=[skill_id, title, tag_id],
         )
-
     print(f"Writing {len(char_growth)} character growth reference pages...")
     for char_id, row in sorted(char_growth.items()):
         if not isinstance(row, dict):
@@ -7623,7 +7450,6 @@ def build_language_bundle(
             search_parts=[char_id, title, str(row.get("profession") or ""), str(row.get("weaponType") or "")],
             actors=[char_id.split("_", 2)[-1]] if char_id.startswith("chr_") else [],
         )
-
     print(f"Writing {len(game_mechanics)} game mechanic reference pages...")
     for mechanic_id, row in sorted(game_mechanics.items()):
         if not isinstance(row, dict):
@@ -7673,7 +7499,6 @@ def build_language_bundle(
             tags=["wiki", "gameMechanic", game_category, "table_gamemechanictable"],
             search_parts=[mechanic_id, game_category, title, desc],
         )
-
     print(f"Writing {len(loading_tips)} loading-tip reference pages...")
     for tip_id, row in sorted(loading_tips.items()):
         if not isinstance(row, dict):
@@ -7723,7 +7548,6 @@ def build_language_bundle(
             tags=["wiki", "table_loadingtipstable"],
             search_parts=[tip_id, title, text, str(row.get("unlockMissionId") or "")],
         )
-
     print(f"Writing {len(error_codes)} error-code reference pages...")
     for code, row in sorted(error_codes.items(), key=lambda item: int(item[0]) if re.fullmatch(r"-?\d+", str(item[0])) else 0):
         if not isinstance(row, dict):
@@ -7750,7 +7574,6 @@ def build_language_bundle(
             tags=["wiki", "errorCode", "table_errorcodetable"],
             search_parts=[str(code), text],
         )
-
     achievement_group_names: dict[str, str] = {}
     achievement_group_category_ids: dict[str, str] = {}
     achievement_category_names: dict[str, str] = {}
@@ -7771,13 +7594,11 @@ def build_language_bundle(
             group_name = brace_text(t((group_row.get("groupName") or {}).get("id"))) or category_name
             achievement_group_names[group_id] = group_name
             achievement_group_category_ids[group_id] = category_id
-
     def achievement_group_meta(group_id: str) -> tuple[str, str, str]:
         category_id = achievement_group_category_ids.get(group_id, "")
         category_name = achievement_category_names.get(category_id, category_id)
         group_name = achievement_group_names.get(group_id) or category_name or group_id
         return group_name, category_id, category_name
-
     print(f"Writing {len(achievements)} achievement reference pages...")
     for achieve_id, row in sorted(
         achievements.items(),
@@ -7878,7 +7699,6 @@ def build_language_bundle(
             tags=["wiki", "achievement", group_id, "table_achievementtable"],
             search_parts=[achieve_id, group_id, group_name, category_id, category_name, title, desc],
         )
-
     print(f"Writing {len(sns_chats)} SNS chat reference pages...")
     for chat_id, row in sorted(sns_chats.items()):
         if not isinstance(row, dict):
@@ -7948,7 +7768,6 @@ def build_language_bundle(
             tags=["wiki", "snsChat", "table_snschattable"],
             search_parts=[chat_id, title, desc, tag_label, str(row.get("owner") or "")],
         )
-
     print(f"Writing {len(enemy_ability_desc)} enemy ability reference pages...")
     for ability_id, row in sorted(enemy_ability_desc.items()):
         if not isinstance(row, dict):
@@ -7982,7 +7801,6 @@ def build_language_bundle(
             tags=["wiki", "enemyAbility", "table_enemyabilitydesctable"],
             search_parts=[ability_id, title, desc],
         )
-
     training_death_tips = load_optional_table_json(
         STREAMING_TABLE_DIR,
         "TrainingDeathTips.json",
@@ -8010,14 +7828,12 @@ def build_language_bundle(
             info_row = training_type_info.get(row_id)
             tip_row = tip_row if isinstance(tip_row, dict) else {}
             info_row = info_row if isinstance(info_row, dict) else {}
-
             title = (
                 brace_text(t((info_row.get("progressBarLabel") or {}).get("id")))
                 or row_id
             )
             lines: list[dict] = []
             seen_texts: set[tuple[str, str, str]] = set()
-
             tip_contents = tip_row.get("tipContents") or []
             if isinstance(tip_contents, list):
                 for idx, tip_ref in enumerate(tip_contents, start=1):
@@ -8046,7 +7862,6 @@ def build_language_bundle(
                             },
                         } if text else None,
                     )
-
             label_text = brace_text(t((info_row.get("progressBarLabel") or {}).get("id")))
             if not lines and label_text:
                 append_reference_line(
@@ -8072,10 +7887,8 @@ def build_language_bundle(
                         },
                     },
                 )
-
             if not title and not lines:
                 continue
-
             summary_rows = [
                 {"text": "Table: TrainingDeathTips / TrainingTypeInfoTable"},
                 {"text": f"Row: {row_id}"},
@@ -8086,7 +7899,6 @@ def build_language_bundle(
                 summary_rows.append({"text": f"Priority: {info_row['priority']}"})
             if info_row.get("trainingThresholdFactor") is not None:
                 summary_rows.append({"text": f"Threshold Factor: {info_row['trainingThresholdFactor']}"})
-
             source_debug = source_ref(
                 "TrainingDeathTips",
                 row_id,
@@ -8134,7 +7946,6 @@ def build_language_bundle(
                 ],
                 debug_extra=debug_extra,
             )
-
     collection_omit_tables = {
         "AchievementTable.json",
         "AchievementTypeTable.json",
@@ -8236,11 +8047,9 @@ def build_language_bundle(
         for table_name, payload in collection_preloaded_tables.items()
     }
 
-
     def collection_is_redundant_support_table(table_name: str) -> bool:
         tokens = set(collection_table_name_tokens(table_name))
         return bool({"tag", "title", "label"} & tokens)
-
     def collection_table_payload(table_source: str, table_name: str) -> dict:
         cache_key = (table_source, table_name)
         if cache_key in collection_table_cache:
@@ -8253,7 +8062,6 @@ def build_language_bundle(
         )
         collection_table_cache[cache_key] = payload if isinstance(payload, dict) else {}
         return collection_table_cache[cache_key]
-
 
     def resolve_reference_raw_i18n(raw_value, *, preferred_source: str = "streaming"):
         if isinstance(raw_value, dict):
@@ -8270,7 +8078,6 @@ def build_language_bundle(
             return [resolve_reference_raw_i18n(value, preferred_source=preferred_source) for value in raw_value]
         return raw_value
 
-
     def write_raw_reference_bundle() -> dict:
         reference_dir.mkdir(parents=True, exist_ok=True)
         generated = int(time.time())
@@ -8281,11 +8088,9 @@ def build_language_bundle(
         total_rows = 0
         total_texts = 0
         total_bytes = 0
-
         def reference_payload_hash(payload: dict) -> str:
             text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
             return _reference_hashlib.sha256(text.encode("utf-8")).hexdigest()
-
         for table_source, table_dir in (
             ("streaming", STREAMING_TABLE_DIR),
             ("persistent", PERSISTENT_TABLE_DIR),
@@ -8294,7 +8099,6 @@ def build_language_bundle(
                 continue
             source_out_dir = reference_dir / table_source
             source_out_dir.mkdir(parents=True, exist_ok=True)
-
             for table_path in sorted(table_dir.glob("*.json")):
                 table_name = table_path.name
                 if table_name.startswith("I18nTextTable_") or table_name == I18N_HOTFIX_TABLE:
@@ -8302,7 +8106,6 @@ def build_language_bundle(
                 payload = collection_table_payload(table_source, table_name)
                 if not isinstance(payload, dict) or not payload:
                     continue
-
                 row_payloads: list[dict] = []
                 raw_rows: dict[str, object] = {}
                 table_texts = 0
@@ -8319,7 +8122,6 @@ def build_language_bundle(
                     )
                     if not text_nodes:
                         continue
-
                     texts = reference_row_texts(text_nodes)
                     table_texts += len(texts)
                     bucket = collection_bucket(
@@ -8347,10 +8149,8 @@ def build_language_bundle(
                         row,
                         preferred_source=table_source,
                     )
-
                 if not row_payloads:
                     continue
-
                 rel_file = f"{table_source}/{table_path.stem}.json"
                 out_payload = {
                     "generated": generated,
@@ -8365,7 +8165,6 @@ def build_language_bundle(
                 base_file = ""
                 overlay_rows = 0
                 removed_rows = 0
-
                 if table_source == "persistent" and table_name in base_reference_rows:
                     base_rows = base_reference_rows.get(table_name) or []
                     base_file = base_reference_files.get(table_name) or ""
@@ -8415,7 +8214,6 @@ def build_language_bundle(
                         base_reference_rows[table_name] = row_payloads
                         base_reference_files[table_name] = rel_file
                         base_reference_hashes[table_name] = content_hash
-
                 total_bytes += file_bytes
                 total_rows += len(row_payloads)
                 total_texts += table_texts
@@ -8438,7 +8236,6 @@ def build_language_bundle(
                 if removed_rows:
                     table_row["removedRows"] = removed_rows
                 table_index.append(table_row)
-
         table_index.sort(key=lambda row: (row["source"], row["label"], row["table"]))
         index_payload = {
             "generated": generated,
@@ -8452,19 +8249,15 @@ def build_language_bundle(
             },
         }
         write_reference_payload("index.json", index_payload)
-
         print(
             f"Raw reference bundle written: {len(table_index)} tables; "
             f"{total_rows} rows; {total_texts} localized text node(s)"
         )
         return index_payload["stats"]
-
     ai_bark_reference_cache: dict[str, dict[str, dict[str, str]]] = {}
-
     def collection_ai_bark_refs(table_source: str) -> dict[str, dict[str, str]]:
         if table_source in ai_bark_reference_cache:
             return ai_bark_reference_cache[table_source]
-
         refs: dict[str, dict[str, str]] = {}
         responsive_payload = collection_table_payload(table_source, "ResponsiveDialog.json")
         for set_id, top_row in sorted(responsive_payload.items(), key=lambda item: str(item[0])):
@@ -8497,7 +8290,6 @@ def build_language_bundle(
                             "setId": str(set_id),
                             "triggerKey": str(trigger_key),
                         }
-
         audio_payload = collection_table_payload(table_source, "AudioDialog.json")
         for row_id, audio_row in sorted(audio_payload.items(), key=lambda item: str(item[0])):
             if row_id in refs:
@@ -8515,10 +8307,8 @@ def build_language_bundle(
                 "source": "AudioDialog",
                 "audioPath": str(audio_row.get("path") or ""),
             }
-
         ai_bark_reference_cache[table_source] = refs
         return refs
-
     def rich_content_row_for_source(content_id: str, table_source: str) -> dict:
         content_key = str(content_id or "").strip()
         if not content_key:
@@ -8528,11 +8318,9 @@ def build_language_bundle(
         if not isinstance(row, dict) and table_source != "streaming":
             row = rich_content.get(content_key)
         return row if isinstance(row, dict) else {}
-
     def rich_content_title_text_for_source(content_id: str, table_source: str) -> str:
         row = rich_content_row_for_source(content_id, table_source)
         return t((row.get("title") or {}).get("id"), preferred_source=table_source) if row else ""
-
     def rich_content_lines_for_source(content_id: str, table_source: str) -> list[dict]:
         row = rich_content_row_for_source(content_id, table_source)
         if not row:
@@ -8566,7 +8354,6 @@ def build_language_bundle(
                 },
             })
         return out
-
     def reading_content_refs(table_name: str, row_id: str, row: dict | None, *, table_source: str) -> list[dict]:
         if not isinstance(row, dict):
             return []
@@ -8604,7 +8391,6 @@ def build_language_bundle(
                     "source": pick_fields(row, "bgType", "contentId", "iconType", "id", "title"),
                 })
         return refs
-
     def append_linked_reading_content_lines(
         table_name: str,
         row_id: str,
@@ -8635,7 +8421,6 @@ def build_language_bundle(
                 nodeId=ref.get("nodeId"),
                 tableSource=collection_source_label(table_source),
             )
-
             rich_title = rich_content_title_text_for_source(content_id, table_source)
             rich_lines = rich_content_lines_for_source(content_id, table_source)
             if rich_title and rich_title != label:
@@ -8665,7 +8450,6 @@ def build_language_bundle(
                     },
                 )
                 preview_text = preview_text or rich_title
-
             if rich_lines:
                 linked_refs.append({
                     "contentId": content_id,
@@ -8688,7 +8472,6 @@ def build_language_bundle(
                     if text:
                         preview_text = preview_text or text
                 continue
-
             radio_row = radio_row_lookup.get(content_id)
             if radio_row:
                 radio_lines = [line for line in (radio_row.get("lines") or []) if isinstance(line, dict)]
@@ -8714,9 +8497,7 @@ def build_language_bundle(
                     )
                     if text:
                         preview_text = preview_text or text
-
         return linked_refs, preview_text
-
     def write_generic_collection_pages(
         table_source: str,
         *,
@@ -8745,7 +8526,6 @@ def build_language_bundle(
             payload = collection_table_payload(table_source, table_name)
             if not isinstance(payload, dict) or not payload:
                 continue
-
             table_pages = 0
             table_label = collection_display_name(table_path.stem)
             streaming_payload = (
@@ -8771,7 +8551,6 @@ def build_language_bundle(
                     and text_sequence_fingerprint(text_nodes) in wiki_text_fingerprints
                 ):
                     continue
-
                 variant = False
                 if dedupe_against_streaming:
                     streaming_row = streaming_payload.get(row_key) if isinstance(streaming_payload, dict) else None
@@ -8785,7 +8564,6 @@ def build_language_bundle(
                         if collection_text_fingerprint(streaming_nodes) == collection_text_fingerprint(text_nodes):
                             continue
                         variant = bool(streaming_nodes)
-
                 bucket = collection_bucket(table_name, row_key, row if isinstance(row, dict) else None)
                 bucket_token = collection_bucket_token(bucket)
                 story_ref = collection_reading_story_ref(
@@ -8805,7 +8583,6 @@ def build_language_bundle(
                     )
                     forced_scene_value = collection_scene_value(row if isinstance(row, dict) else None, row_index)
                     forced_type_key = forced_kind
-
                 title = collection_row_title(
                     table_name,
                     row_key,
@@ -8853,7 +8630,6 @@ def build_language_bundle(
                 )
                 if not lines:
                     continue
-
                 out_key = (
                     f"wiki_collection_{collection_slug(table_source)}_"
                     f"{collection_slug(table_path.stem)}_{row_key}"
@@ -8915,31 +8691,25 @@ def build_language_bundle(
                 )
                 table_pages += 1
                 generic_collection_pages += 1
-
             if table_pages:
                 generic_collection_tables += 1
                 print(f"  collection {table_source} {table_name}: {table_pages} pages")
-
         return generic_collection_pages, generic_collection_tables
-
     if include_reference_in_story_index:
         generic_collection_pages, generic_collection_tables = write_generic_collection_pages("streaming")
         persistent_collection_pages, persistent_collection_tables = write_generic_collection_pages(
             "persistent",
             dedupe_against_streaming=True,
         )
-
         print(
             f"Generic collection pages written: {generic_collection_pages + persistent_collection_pages} "
             f"across {generic_collection_tables + persistent_collection_tables} tables"
         )
     else:
         print("Skipping generic table collection pages for lean story profile.")
-
     reference_stats: dict = {}
     if write_reference:
         reference_stats = write_raw_reference_bundle()
-
     print(f"Writing {len(mail_templates)} mail conversations...")
     for template_id, row in sorted(mail_templates.items()):
         if not isinstance(row, dict):
@@ -9028,7 +8798,6 @@ def build_language_bundle(
         if search_text:
             entry["x"] = search_text
         index_entries.append(entry)
-
     embedded_prts_notes_by_entry: dict[str, list[dict]] = defaultdict(list)
     embedded_prts_note_ids: set[str] = set()
     for note_id, note_meta in sorted(prts_note_metadata.items()):
@@ -9061,7 +8830,6 @@ def build_language_bundle(
             if not linked_key:
                 continue
             embedded_prts_notes_by_entry[linked_key].append(dict(embedded_note))
-
     def resolve_prts_payload(content_id: str) -> tuple[list[dict], list[dict], dict]:
         lines = rich_content_lines(content_id)
         summary_rows: list[dict] = []
@@ -9082,7 +8850,6 @@ def build_language_bundle(
             summary_rows.append({"text": f"Content ref: {content_id}"})
         return lines, summary_rows, debug_extra
 
-
     def prts_row_attachment_aliases(
         row_id: str,
         content_id: str,
@@ -9093,7 +8860,6 @@ def build_language_bundle(
         for value in (row_id, content_id, first_lv_id, first_lv_row.get("icon")):
             aliases.update(prts_attachment_aliases(str(value or "")))
         return aliases
-
     prts_attachment_story_refs: dict[str, tuple[str, int, str]] = {}
     for sns_id, sns_entry in sns_groups.items():
         match = SNS_RE.match(sns_id)
@@ -9125,7 +8891,6 @@ def build_language_bundle(
             for value in values:
                 for alias in prts_attachment_aliases(value):
                     prts_attachment_story_refs.setdefault(alias, story_ref)
-
     standalone_prts_note_count = sum(
         1
         for note_id, row in prts_notes.items()
@@ -9299,7 +9064,6 @@ def build_language_bundle(
         if search_text:
             entry["x"] = search_text
         index_entries.append(entry)
-
     for note_id, row in sorted(prts_notes.items()):
         if not isinstance(row, dict):
             continue
@@ -9370,8 +9134,6 @@ def build_language_bundle(
         index_entries.append(entry)
 
 
-
-
     responsive_refs = collection_ai_bark_refs("streaming")
     responsive_people: dict[str, dict] = {}
     for response_id, bark_row in sorted(ai_bark_text.items(), key=lambda item: str(item[0])):
@@ -9408,7 +9170,6 @@ def build_language_bundle(
             group["displayName"] = display_name
         if actor_id and not group.get("actorId"):
             group["actorId"] = actor_id
-
         if speaker_id:
             group["speakerIds"].add(speaker_id)
         if ref.get("setId"):
@@ -9418,14 +9179,12 @@ def build_language_bundle(
         if ref.get("audioPath"):
             group["audioPaths"].add(str(ref["audioPath"]))
         group["responseIds"].append(response_key)
-
         bark_text = t((bark_row.get("barkText") or {}).get("id"))
         normalized_text = re.sub(r"\s+", " ", str(bark_text or "")).strip()
         if not normalized_text:
             if ref.get("audioPath"):
                 group["audioOnlyResponseIds"].add(response_key)
             continue
-
         set_id = str(ref.get("setId") or "")
         set_sort = int(set_id) if set_id.lstrip("-").isdigit() else 10**9
         trigger_key = str(ref.get("triggerKey") or "")
@@ -9438,7 +9197,6 @@ def build_language_bundle(
             "audioPath": str(ref.get("audioPath") or ""),
             "source": str(ref.get("source") or ""),
         }
-
         line_info = group["linesByText"].get(normalized_text)
         if line_info is None:
             line_info = {
@@ -9466,7 +9224,6 @@ def build_language_bundle(
             line_info["responseIds"].append(response_key)
             line_info["sourceRefs"].append(source_payload)
             line_info["sortKey"] = min(line_info["sortKey"], (set_sort, trigger_key or "~", response_key))
-
     print(f"Writing {len(responsive_people)} responsive conversations...")
     for person_key, group in sorted(
         responsive_people.items(),
@@ -9477,7 +9234,6 @@ def build_language_bundle(
         mission_id = actor_id or person_key
         if display_name:
             extra_mission_names[mission_id] = display_name
-
         lines: list[dict] = []
         for line_info in sorted(group["linesByText"].values(), key=lambda item: item["sortKey"]):
             trigger_keys = sorted(line_info["triggerKeys"])
@@ -9515,7 +9271,6 @@ def build_language_bundle(
             if hint_bits:
                 line["hint"] = " | ".join(hint_bits)
             lines.append(line)
-
         duplicate_count = max(0, len(group["responseIds"]) - len(lines))
         summary_rows = [
             {"text": f"Speaker: {display_name}"},
@@ -9536,7 +9291,6 @@ def build_language_bundle(
         summary_rows.extend(
             responsive_summary_rows("Trigger keys", sorted(group["triggerKeys"]), chunk_size=8)
         )
-
         out_key = f"responsive_{person_key}"
         payload = {
             "key": out_key,
@@ -9591,7 +9345,6 @@ def build_language_bundle(
         if search_text:
             entry["x"] = search_text
         index_entries.append(entry)
-
     # Emit unmatched dialog ids (utility/spaceship/etc.) as a single bucket per prefix.
     if misc:
         misc_groups: dict[str, list[tuple[str, dict]]] = defaultdict(list)
@@ -9696,6 +9449,7 @@ def build_language_bundle(
                 [line.get("id") or "" for line in lines],
             )
             attach_scene_order_warning(payload)
+            attach_timeline_timestamp_regression_warning(payload)
             story_issue_codes = dialog_story_issue_codes(payload)
             recovery_methods = dialog_recovery_methods(payload)
             write_conv_payload(out_key, payload)
@@ -9732,8 +9486,6 @@ def build_language_bundle(
                 entry.pop("x")
             index_entries.append(entry)
 
-
-
     def mark_duplicate_sim_operator_entries() -> None:
         archive_text_by_actor: dict[str, str] = {}
         for entry in index_entries:
@@ -9757,7 +9509,6 @@ def build_language_bundle(
                 archive_text_by_actor.get(actor_id, ""),
                 *line_texts,
             ]).strip()
-
         for entry in index_entries:
             key = str(entry.get("k") or "")
             if not (key.startswith("misc_sim_") or key.startswith("env_greetEnvTalk_")):
@@ -9776,14 +9527,11 @@ def build_language_bundle(
             line_texts = normalized_duplicate_line_texts(payload)
             if line_texts and all(text in archive_blob for text in line_texts):
                 entry["omitSimDuplicate"] = True
-
     mark_duplicate_sim_operator_entries()
-
     for mission in {entry["m"] for entry in index_entries if entry.get("m")}:
         mission_name(mission)
     if include_reference_in_story_index:
         write_texttable_collection_pages(collect_exported_texttable_row_ids())
-
     def merge_conv_hint_search_text(entry: dict) -> None:
         key = str(entry.get("k") or "")
         if not key:
@@ -9793,11 +9541,8 @@ def build_language_bundle(
             entry["x"] = merge_search_text(entry.get("x", ""), hint_text)
             if not entry["x"]:
                 entry.pop("x", None)
-
     for entry in index_entries:
         merge_conv_hint_search_text(entry)
-
-
 
 
     def story_source_link_report_rows(keys: set[str]) -> list[dict]:
@@ -9821,7 +9566,6 @@ def build_language_bundle(
                 )[:8],
             })
         return rows
-
     def render_story_source_link_report_md(report: dict) -> str:
         summary = report.get("summary") or {}
         lines = [
@@ -9851,7 +9595,6 @@ def build_language_bundle(
             lines.append("- None")
         lines.append("")
         return "\n".join(lines)
-
     def attach_story_source_links_to_outputs() -> dict:
         if not story_source_links:
             return {}
@@ -9875,7 +9618,6 @@ def build_language_bundle(
                 if base_key in available_keys:
                     return base_key
             return ""
-
         resolved_source_links: dict[str, list[dict]] = defaultdict(list)
         unresolved_source_keys: set[str] = set()
         for source_key, links in story_source_links.items():
@@ -9888,7 +9630,6 @@ def build_language_bundle(
                 if source_key != resolved_key:
                     resolved_link["sourceKey"] = source_key
                 resolved_source_links[resolved_key].append(resolved_link)
-
         def unique_story_source_link_mission(links: list[dict]) -> str:
             missions: set[str] = set()
             for link in links:
@@ -9902,7 +9643,6 @@ def build_language_bundle(
                 if type_key in MISSION_STORY_TYPES:
                     missions.add(mission_id)
             return next(iter(missions)) if len(missions) == 1 else ""
-
         attached_keys: set[str] = set()
         attached_refs = 0
         for entry in index_entries:
@@ -9923,7 +9663,6 @@ def build_language_bundle(
             tags = entry.setdefault("tags", [])
             if "sourceLinked" not in tags:
                 tags.append("sourceLinked")
-
             conv_path = conv_dir / f"{key}.json"
             if not conv_path.exists():
                 continue
@@ -9946,10 +9685,8 @@ def build_language_bundle(
             }
             write_json(conv_path, payload)
             remember_written(conv_path, written_conv_paths)
-
         referenced_missing = unresolved_source_keys
         source_link_candidate_kinds = set(MISSION_SCENE_ENTRY_KINDS) | {"env", "misc"}
-
         story_entries_without_links = [
             {
                 "key": str(entry.get("k") or ""),
@@ -9989,11 +9726,7 @@ def build_language_bundle(
             "markdown": repo_rel(report_md),
         }
         return report
-
     story_source_link_report = attach_story_source_links_to_outputs()
-
-
-
 
 
     def render_narrative_video_report_md(report: dict) -> str:
@@ -10047,7 +9780,6 @@ def build_language_bundle(
             lines.append("- None")
         lines.append("")
         return "\n".join(lines)
-
     def attach_narrative_videos_to_outputs() -> dict:
         if not narrative_video_assets:
             return {}
@@ -10056,7 +9788,6 @@ def build_language_bundle(
             for entry in index_entries
             if entry.get("k")
         }
-
         def resolve_video_key(ref: dict) -> str:
             authoritative_keys = list(ref.get("authoritativeKeys") or [])
             candidate_list = list(ref.get("keyCandidates") or [])
@@ -10082,7 +9813,6 @@ def build_language_bundle(
                 if owner_key in available_keys:
                     return owner_key
             return ""
-
         def video_override_for(
             rules_by_key: dict[str, list[dict]],
             target_key: str,
@@ -10117,10 +9847,8 @@ def build_language_bundle(
                     "note": str(rule.get("note") or ""),
                 }
             return {}
-
         def suppression_override_for(resolved_key: str, ref: dict) -> dict:
             return video_override_for(narrative_video_suppress_overrides, resolved_key, ref)
-
         def manual_attachment_override_for(ref: dict) -> dict:
             for target_key in sorted(narrative_video_attach_overrides):
                 if target_key not in available_keys:
@@ -10134,13 +9862,11 @@ def build_language_bundle(
                 if override:
                     return override
             return {}
-
         resolved_videos: dict[str, list[dict]] = defaultdict(list)
         standalone_videos: dict[str, list[dict]] = defaultdict(list)
         unresolved_videos: list[dict] = []
         suppressed_inline_videos: list[dict] = []
         manual_attached_inline_videos: list[dict] = []
-
         # Index entry kind for each WebUI key. Authoritative bindings are used
         # both for inline placement and for keeping standalone video rows near
         # their bound story entry in Story sort.
@@ -10154,31 +9880,25 @@ def build_language_bundle(
             stem = re.sub(r"\.[^.]+$", "", stem, flags=re.IGNORECASE)
             stem = re.sub(r"[^A-Za-z0-9_]+", "_", stem).strip("_").lower()
             return f"video_{stem or 'unknown'}"
-
         def natural_name_key(value: object) -> tuple:
             return tuple(
                 (1, int(part)) if part.isdigit() else (0, part.lower())
                 for part in re.split(r"(\d+)", str(value or ""))
             )
-
         def video_ref_sort_name(ref: dict) -> str:
             return str(ref.get("name") or ref.get("baseStem") or ref.get("stem") or "").strip()
-
         def video_ref_base_name(ref: dict) -> str:
             return str(ref.get("baseStem") or ref.get("stem") or ref.get("name") or "").strip()
-
         def video_ref_stem(ref: dict) -> str:
             stem = video_ref_base_name(ref)
             stem = re.sub(r"\.[^.]+$", "", stem, flags=re.IGNORECASE)
             return stem.lower()
-
         def narrative_video_name_sort_key(ref: dict) -> tuple:
             return (
                 natural_name_key(video_ref_sort_name(ref)),
                 natural_name_key(video_ref_base_name(ref)),
                 narrative_video_sort_key(ref),
             )
-
         def timeline_clip_start(ref: dict) -> float | None:
             binding = ref.get("binding") if isinstance(ref.get("binding"), dict) else {}
             starts: list[float] = []
@@ -10189,7 +9909,6 @@ def build_language_bundle(
                 if isinstance(start, (int, float)):
                     starts.append(float(start))
             return min(starts) if starts else None
-
         def remotecomm_timeline_order(key: str) -> dict[str, tuple]:
             order: dict[str, tuple] = {}
             for index, segment in enumerate(remotecomm_video_timeline_by_key.get(key) or []):
@@ -10200,7 +9919,6 @@ def build_language_bundle(
                 start_key = float(start) if isinstance(start, (int, float)) else float(index)
                 order[stem] = (index, start_key)
             return order
-
         def sort_refs_for_story_file(key: str, refs: list[dict]) -> list[dict]:
             remote_order = remotecomm_timeline_order(key)
             clip_timeline_present = any(timeline_clip_start(ref) is not None for ref in refs)
@@ -10225,7 +9943,6 @@ def build_language_bundle(
                     ),
                 )
             return sorted(refs, key=narrative_video_name_sort_key)
-
         def note_attached_video_in_summary(payload: dict) -> None:
             summary = payload.get("summary")
             if not isinstance(summary, list):
@@ -10238,13 +9955,11 @@ def build_language_bundle(
             for row in summary:
                 if isinstance(row, dict) and row.get("text") == stale_note:
                     row["text"] = refreshed_note
-
         def strip_video_gender_prefix(stem: str) -> tuple[str, str]:
             match = re.match(r"^(?P<gender>f|m|fm)_(?P<rest>cs_video_.+)$", stem or "", flags=re.IGNORECASE)
             if not match:
                 return "", stem or ""
             return match.group("gender").lower(), match.group("rest")
-
         def video_scene_hint(refs: list[dict]) -> str:
             for ref in refs:
                 override = ref.get("_videoAttachmentAttachOverride")
@@ -10266,14 +9981,12 @@ def build_language_bundle(
                 if base:
                     return strip_video_scene_prefix(base)
             return ""
-
         def strip_video_scene_prefix(scene: str) -> str:
             value = str(scene or "")
             for prefix in ("dlg_", "cutscene_", "remotecomm_", "radio_", "black_"):
                 if value.startswith(prefix):
                     return value[len(prefix):]
             return value
-
         def video_mission_scene(refs: list[dict]) -> tuple[str, int]:
             scene_hint = video_scene_hint(refs)
             match = re.match(
@@ -10284,7 +9997,6 @@ def build_language_bundle(
             if not match:
                 return (scene_hint.split("_", 1)[0].lower() if scene_hint else "video", 0)
             return match.group("mission").lower(), int(match.group("scene") or 0)
-
         def video_title(refs: list[dict]) -> str:
             base_names = _unique_preserve(
                 str(ref.get("baseStem") or ref.get("stem") or "")
@@ -10295,7 +10007,6 @@ def build_language_bundle(
                 return base_names[0]
             names = _unique_preserve(str(ref.get("name") or "") for ref in refs if ref.get("name"))
             return names[0] if names else "Narrative video"
-
         def video_text_candidate_rows(video_stem: str) -> list[dict]:
             prefix = f"{video_stem}_"
             rows: list[tuple[tuple[int, int, str], dict]] = []
@@ -10331,7 +10042,6 @@ def build_language_bundle(
                     line["sub"] = sub
                 rows.append(((int(match.group("line")), sub_order, row_key), line))
             return [line for _sort_key, line in sorted(rows, key=lambda item: item[0])]
-
         for ref in narrative_video_assets:
             original_resolved_key = resolve_video_key(ref)
             suppress_override = suppression_override_for(original_resolved_key, ref)
@@ -10371,9 +10081,7 @@ def build_language_bundle(
                 manual_attached_inline_videos.append(standalone_ref)
             elif not resolved_key:
                 unresolved_videos.append(ref)
-
         authoritative_evidence: list[dict] = []
-
         def timeline_video_evidence_rows(key: str, refs: list[dict]) -> list[dict]:
             rows: list[dict] = []
             seen: set[tuple[str, str, str]] = set()
@@ -10427,7 +10135,6 @@ def build_language_bundle(
                     },
                 })
             return rows
-
         def standalone_binding_summary(refs: list[dict]) -> tuple[str, str]:
             for ref in refs:
                 override = ref.get("_videoAttachmentOverride")
@@ -10514,7 +10221,6 @@ def build_language_bundle(
                 "Attachment status: no non-name binding found for a dialog or cutscene",
                 "standaloneVideoNoAuthoritativeStoryBinding",
             )
-
         def emit_standalone_video_outputs() -> list[dict]:
             entries: list[dict] = []
             for key, raw_refs in sorted(standalone_videos.items()):
@@ -10542,7 +10248,7 @@ def build_language_bundle(
                 # `title` is the asset baseStem (e.g. cs_video_e0m0_3); the game
                 # ships no localized title for FMVs. Keep it as a search hint
                 # and as the lead summary label, but don't expose it as a
-                # `title` field — that would mislead the WebUI into treating
+                # `title` field 鈥?that would mislead the WebUI into treating
                 # the stem as a human-readable name. cutscene/dlg/radio bundles
                 # also omit the field.
                 #
@@ -10637,7 +10343,6 @@ def build_language_bundle(
                     entry.pop("x", None)
                 entries.append(entry)
             return entries
-
         attached_rows: list[dict] = []
         attached_refs = 0
         for entry in index_entries:
@@ -10655,7 +10360,6 @@ def build_language_bundle(
             if "narrativeVideo" not in tags:
                 tags.append("narrativeVideo")
             conv_media_tags_by_key[key].add("mediaVideo")
-
             conv_path = conv_dir / f"{key}.json"
             if conv_path.exists():
                 try:
@@ -10746,7 +10450,6 @@ def build_language_bundle(
                             payload.pop("warnings", None)
                     write_json(conv_path, payload)
                     remember_written(conv_path, written_conv_paths)
-
             source_counts = Counter(str(ref.get("source") or "") for ref in refs)
             attached_rows.append({
                 "key": key,
@@ -10764,12 +10467,10 @@ def build_language_bundle(
                     if ref.get("name")
                 )[:12],
             })
-
         standalone_entries = emit_standalone_video_outputs()
         for entry in standalone_entries:
             index_entries.append(entry)
             conv_media_tags_by_key[str(entry.get("k") or "")].add("mediaVideo")
-
         unresolved_rows = [
             {
                 "name": str(ref.get("name") or ""),
@@ -10864,14 +10565,11 @@ def build_language_bundle(
             "evidence": repo_rel(evidence_path),
         }
         return report
-
     narrative_video_report = attach_narrative_videos_to_outputs()
-
     def normalize_index_entry_defaults(entry: dict) -> None:
         type_key = str(entry.get("t") or "").strip()
         if not type_key or type_key in {"?", "x"}:
             entry["t"] = "other"
-
         raw_tags = list(entry.get("tags") or [])
         raw_tags.extend(sorted(conv_media_tags_by_key.get(str(entry.get("k") or ""), set())))
         tags = []
@@ -10880,10 +10578,8 @@ def build_language_bundle(
             if tag and tag not in tags:
                 tags.append(tag)
         entry["tags"] = tags or ["other"]
-
     for entry in index_entries:
         normalize_index_entry_defaults(entry)
-
     # Sort index by type, act, mission, scene
     index_entries.sort(key=lambda e: (e["d"], e["t"], e["a"], e["m"], e["s"]))
     mission_names = {
@@ -10895,7 +10591,6 @@ def build_language_bundle(
     for mission, name in sorted(extra_mission_names.items()):
         if mission in present_missions and name:
             mission_names.setdefault(mission, name)
-
     def env_entry_search_text(env_entry: dict) -> str:
         parts: list[str] = []
         if env_entry.get("id"):
@@ -10908,7 +10603,6 @@ def build_language_bundle(
             if value:
                 parts.append(str(value))
         return " ".join(part for part in parts if part)
-
     index_entry_by_key = {
         entry["k"]: entry
         for entry in index_entries
@@ -10923,13 +10617,11 @@ def build_language_bundle(
         }
         if not scene_targets:
             continue
-
         processed_chain_levels: set[str] = set()
         for ref in refs:
             level_id = ref.get("levelId") or ""
             if not level_id:
                 continue
-
             leveldata_path = ROOT / ref["file"]
             named_entries = _load_leveldata_named_entries(leveldata_path)
             if any(LT_BINDING_RE.match(entry["text"]) for entry in named_entries):
@@ -10968,7 +10660,6 @@ def build_language_bundle(
                                 },
                             },
                         })
-
             if level_id in processed_chain_levels:
                 continue
             processed_chain_levels.add(level_id)
@@ -10981,7 +10672,6 @@ def build_language_bundle(
                     {"groups": [], "chains": []},
                 )
                 scene_entry["chains"].extend(chains)
-
     for mission, scene_map in scene_bindings_by_mission.items():
         for scene_key, scene_entry in scene_map.items():
             scene_entry["groups"].sort(
@@ -10998,7 +10688,6 @@ def build_language_bundle(
                     (chain.get("steps") or [{}])[0].get("localId", 0),
                 )
             )
-
             index_entry = index_entry_by_key.get(scene_key)
             if not index_entry:
                 continue
@@ -11009,7 +10698,6 @@ def build_language_bundle(
             tags = index_entry.setdefault("tags", [])
             if "levelBinding" not in tags:
                 tags.append("levelBinding")
-
     scene_env_talks_by_mission: dict[str, dict[str, list[dict]]] = defaultdict(
         lambda: defaultdict(list)
     )
@@ -11021,7 +10709,6 @@ def build_language_bundle(
         }
         if not scene_targets:
             continue
-
         scene_tracking: dict[str, dict[str, set[str]]] = defaultdict(
             lambda: {"levels": set(), "proxies": set()}
         )
@@ -11034,7 +10721,6 @@ def build_language_bundle(
                         quest_targets.append(out_key)
                 if not quest_targets:
                     continue
-
                 quest_levels = {
                     hint["scene"]
                     for hint in (quest.get("tracking") or [])
@@ -11048,14 +10734,11 @@ def build_language_bundle(
                 for out_key in quest_targets:
                     scene_tracking[out_key]["levels"].update(quest_levels)
                     scene_tracking[out_key]["proxies"].update(quest_proxies)
-
         only_scene_target = next(iter(scene_targets)) if len(scene_targets) == 1 else ""
-
         for env_entry in env_entries:
             hints = env_entry.pop("_attachHints", None) or {}
             env_levels = set(hints.get("levels") or [])
             env_proxies = set(hints.get("proxies") or [])
-
             proxy_hits = {
                 out_key
                 for out_key, tracking in scene_tracking.items()
@@ -11066,7 +10749,6 @@ def build_language_bundle(
                 for out_key, tracking in scene_tracking.items()
                 if env_levels and env_levels & tracking["levels"]
             }
-
             target_key = ""
             binding_source: dict = {}
             if len(proxy_hits) == 1:
@@ -11095,16 +10777,12 @@ def build_language_bundle(
                     "mode": "onlySceneInMission",
                     "targetKey": target_key,
                 }
-
             if not target_key:
                 continue
-
             env_entry["_debug"]["sceneBinding"] = {"source": binding_source}
             scene_env_talks_by_mission[mission][target_key].append(env_entry)
-
             if env_index_entry := index_entry_by_key.get(env_entry.get("key") or ""):
                 env_index_entry["attachTo"] = target_key
-
             index_entry = index_entry_by_key.get(target_key)
             if not index_entry:
                 continue
@@ -11115,7 +10793,6 @@ def build_language_bundle(
             tags = index_entry.setdefault("tags", [])
             if "envTalk" not in tags:
                 tags.append("envTalk")
-
     mission_extras_payload: dict[str, dict] = {}
     for mission in sorted(
         set(scene_env_talks_by_mission)
@@ -11139,7 +10816,6 @@ def build_language_bundle(
                 for out_key in sorted(scene_env_talks_by_mission[mission])
             }
         mission_extras_payload[mission] = extra
-
     # Mission flow graphs from MissionRuntimeAsset. Story-gated dialog
     # ordering + choice-branches live here; pure-env ambient scenes do not.
     scene_keys_by_mission: dict[str, set[str]] = defaultdict(set)
@@ -11155,7 +10831,6 @@ def build_language_bundle(
         parent_mission = re.sub(r"d\d+$", "", stem)
         if parent_mission != stem and parent_mission in scene_keys_by_mission:
             mission_variant_ids_by_parent[parent_mission].append(stem)
-
     def resolve_scene_ref_out_key(raw_ref: str, available_scene_keys: set[str]) -> str:
         if not raw_ref:
             return ""
@@ -11174,7 +10849,6 @@ def build_language_bundle(
                 if canonical_cutscene in available_scene_keys:
                     return canonical_cutscene
         return ""
-
     def quest_area_scene_refs(quest: dict, available_scene_keys: set[str]) -> list[str]:
         refs: list[str] = []
         for raw_ref in _quest_area_story_refs(quest):
@@ -11182,7 +10856,6 @@ def build_language_bundle(
             if resolved and resolved not in refs:
                 refs.append(resolved)
         return refs
-
     def quest_leveldata_scene_refs(quest: dict, available_scene_keys: set[str]) -> list[str]:
         refs: list[str] = []
         for row in quest.get("levelDataStoryRefs") or []:
@@ -11191,7 +10864,6 @@ def build_language_bundle(
             if resolved and resolved not in refs:
                 refs.append(resolved)
         return refs
-
     def flow_has_available_scene_ref(flow: dict | None, available_scene_keys: set[str]) -> bool:
         if not flow or not available_scene_keys:
             return False
@@ -11213,10 +10885,8 @@ def build_language_bundle(
                 if resolve_scene_ref_out_key(raw_ref or "", available_scene_keys):
                     return True
         return False
-
     def mission_graph_flow(mission: str, flow: dict | None) -> dict | None:
         """Return the flow used only for scene-graph ordering.
-
         Some playable mission variants (`c16m4d5`, `e10m4d5`, etc.) carry
         MissionRuntime quest refs for parent story keys. The parent mission is
         where those story files live in the WebUI, so fold matching variant
@@ -11247,14 +10917,12 @@ def build_language_bundle(
         graph_flow["variantMissionIds"] = variant_missions
         return graph_flow
 
-
     def build_mission_scene_pins(
         flow: dict | None,
         available_scene_keys: set[str],
     ) -> dict[str, list[dict]]:
         if not flow or not available_scene_keys:
             return {}
-
         scene_rows: dict[str, dict[tuple, dict]] = defaultdict(dict)
         for quest in flow.get("quests") or []:
             # Prefer stronger authored/runtime scene refs for spatial pinning.
@@ -11286,7 +10954,6 @@ def build_language_bundle(
             if len(scene_refs) != 1:
                 continue
             scene_key = scene_refs[0]
-
             for pin in quest.get("pins") or []:
                 position = pin.get("position") or {}
                 key = (
@@ -11328,7 +10995,6 @@ def build_language_bundle(
                 flow_index = quest.get("flowIndex")
                 if flow_index is not None and flow_index not in row["flowIndices"]:
                     row["flowIndices"].append(flow_index)
-
         return {
             scene_key: sorted(
                 rows.values(),
@@ -11343,7 +11009,6 @@ def build_language_bundle(
             for scene_key, rows in sorted(scene_rows.items())
             if rows
         }
-
     def build_mission_scene_graph(mission: str, flow: dict | None) -> dict | None:
         available = scene_keys_by_mission.get(mission, set())
         ui_nodes: set[str] = set()
@@ -11381,7 +11046,6 @@ def build_language_bundle(
                 for key, value in row.items()
                 if value not in (None, "", [], {})
             }
-
         for scene_entry in (scene_bindings_by_mission.get(mission) or {}).values():
             for chain in scene_entry.get("chains") or []:
                 sequence: list[str] = []
@@ -11491,7 +11155,6 @@ def build_language_bundle(
         all_nodes = set(available) | ui_nodes | chain_nodes
         if not all_nodes:
             return None
-
         mission_entries = [entry for entry in index_entries if entry.get("m") == mission]
         scene_file_order = build_mission_scene_file_order(
             mission_entries,
@@ -11525,9 +11188,7 @@ def build_language_bundle(
             for entry in node_entries
             if entry.get("k")
         }
-
         edges_by_key: dict[tuple[str, str, str], dict] = {}
-
         def ensure_edge(src: str, dst: str, kind: str) -> dict | None:
             if not src or not dst or src == dst:
                 return None
@@ -11538,7 +11199,6 @@ def build_language_bundle(
                 edge = {"from": src, "to": dst, "kind": kind}
                 edges_by_key[(src, dst, kind)] = edge
             return edge
-
         for source_edge in scene_file_order.get("edges") or []:
             edge = ensure_edge(
                 source_edge.get("from") or "",
@@ -11552,7 +11212,6 @@ def build_language_bundle(
                 refs = edge.setdefault("questIds", [])
                 if quest_id and quest_id not in refs:
                     refs.append(quest_id)
-
         if flow:
             quest_by_id = {
                 quest.get("id") or "": quest
@@ -11566,7 +11225,6 @@ def build_language_bundle(
                 "flowIndices": [],
             })
             quest_leveldata_refs: dict[str, list[str]] = {}
-
             def gather_upstream_scene_refs(quest_id: str, seen: set[str] | None = None) -> list[str]:
                 if not quest_id:
                     return []
@@ -11584,9 +11242,7 @@ def build_language_bundle(
                         if scene_ref not in out:
                             out.append(scene_ref)
                 return out
-
             script_scene_ref_cache: dict[tuple[str, str], list[str]] = {}
-
             def normalized_script_ids(values) -> list[str]:
                 out: list[str] = []
                 for value in values or []:
@@ -11601,7 +11257,6 @@ def build_language_bundle(
                     if script_id_text and script_id_text not in out:
                         out.append(script_id_text)
                 return out
-
             def levelscript_scene_refs_for_script(level_id: str, script_id) -> list[str]:
                 if not level_id or script_id is None:
                     return []
@@ -11627,7 +11282,6 @@ def build_language_bundle(
                 refs = _unique_preserve([scene_ref for _, __, scene_ref in sorted(hits)])
                 script_scene_ref_cache[cache_key] = refs
                 return refs
-
             def quest_condition_script_scene_refs(quest: dict) -> list[str]:
                 refs: list[str] = []
                 default_scene_ids = list(quest.get("scenes") or [])
@@ -11646,7 +11300,6 @@ def build_language_bundle(
                                     if scene_ref not in refs:
                                         refs.append(scene_ref)
                 return refs
-
             def quest_field_scene_refs(quest: dict, field_name: str) -> list[str]:
                 refs: list[str] = []
                 for raw_ref in quest.get(field_name) or []:
@@ -11654,7 +11307,6 @@ def build_language_bundle(
                     if resolved and resolved not in refs:
                         refs.append(resolved)
                 return refs
-
             def add_leveldata_edge_meta(edge: dict, quest: dict, scene_refs: list[str]) -> None:
                 quest_id = quest.get("id") or ""
                 refs = edge.setdefault("questIds", [])
@@ -11686,7 +11338,6 @@ def build_language_bundle(
                         fields = edge.setdefault("fields", [])
                         if field and field not in fields:
                             fields.append(field)
-
             for quest in flow.get("quests") or []:
                 proxy_dialog_refs: list[str] = []
                 for proxy_ref in quest.get("proxyDialogs") or []:
@@ -11819,7 +11470,6 @@ def build_language_bundle(
                 "rootQuestIds": [],
                 "flowIndices": [],
             })
-
         for scene_key, links in scene_graph_links_by_key.items():
             if scene_key not in available:
                 continue
@@ -11850,7 +11500,6 @@ def build_language_bundle(
                                 edge.setdefault("sourceKeys", [])
                                 if source_key not in edge["sourceKeys"]:
                                     edge["sourceKeys"].append(source_key)
-
         for chain in chain_sequences:
             sequence = chain.get("sequence") or []
             for src, dst in zip(sequence, sequence[1:]):
@@ -11865,7 +11514,6 @@ def build_language_bundle(
                         refs = edge.setdefault("levelIds", [])
                         if level_id not in refs:
                             refs.append(level_id)
-
         chain_start_meta: dict[str, dict] = defaultdict(lambda: {
             "sourceFiles": [],
             "levelIds": [],
@@ -11898,11 +11546,10 @@ def build_language_bundle(
                     edge.setdefault("positions", [])
                     if pos not in edge["positions"]:
                         edge["positions"].append(pos)
-
         # Levelscript file-order edges (weak ordering hints).
         # File-order tokens within a single SerializeReference dump usually
         # track authored event flow even when the records aren't UID-linked,
-        # so we mine every level the mission actually touches — including
+        # so we mine every level the mission actually touches 鈥?including
         # levels that share a LevelData host file with another mission
         # (mission_level_refs misses these because it keys off filename).
         flow_level_ids: list[str] = []
@@ -11962,7 +11609,6 @@ def build_language_bundle(
                     stem_pair = [pair.get("fromStem"), pair.get("toStem")]
                     if stem_pair not in stems:
                         stems.append(stem_pair)
-
         # PRTS collection rows expose authored page order inside a single
         # reading/collection item. Treat that as weak ordering only, and only
         # when each ordered slot maps to exactly one story node.
@@ -12006,7 +11652,6 @@ def build_language_bundle(
                     edge.setdefault("positions", [])
                     if pos not in edge["positions"]:
                         edge["positions"].append(pos)
-
         # Radio-continuation edges (authored continueAfterDialog/Radio flags
         # combined with LevelScript file-offset adjacency, audited offline by
         # scripts/story_recovery/build_radio_continuation_audit.py). Silent
@@ -12041,7 +11686,6 @@ def build_language_bundle(
                 kinds = edge.setdefault("continuationKinds", [])
                 if match not in kinds:
                     kinds.append(match)
-
         graph_order_map = _refine_scene_graph_order(
             all_nodes,
             list(edges_by_key.values()),
@@ -12055,7 +11699,6 @@ def build_language_bundle(
             if k
         }
         mission_runtime_ordered_keys = set(mission_runtime_order_map)
-
         strong_order_edge_kinds = {
             "questSequence",
             "questPrev",
@@ -12088,14 +11731,12 @@ def build_language_bundle(
             for node_key in (edge.get("from") or "", edge.get("to") or ""):
                 if node_key:
                     target.add(node_key)
-
         def order_strength(node_key: str) -> str:
             if node_key in strong_ordered_keys:
                 return "strong"
             if node_key in weak_ordered_keys:
                 return "weak"
             return "unknown"
-
         nodes = [
             {
                 "key": node_key,
@@ -12160,7 +11801,6 @@ def build_language_bundle(
             }
         return payload
 
-
     mission_flows_payload: dict[str, dict] = {}
     mission_scene_graphs: dict[str, dict] = {}
     for mission in present_index_missions:
@@ -12199,7 +11839,6 @@ def build_language_bundle(
                 payload["sceneGraphVariantMissions"] = graph_flow["variantMissionIds"]
             mission_scene_graphs[mission] = scene_graph
         mission_flows_payload[mission] = payload
-
     mission_timeline_recovery_payload = build_mission_timeline_recovery_report(
         mission_scene_graphs,
         mission_flows=mission_flows_payload,
@@ -12226,7 +11865,6 @@ def build_language_bundle(
         "summary": mission_timeline_recovery_payload["summary"],
         "evidencePolicy": MISSION_TIMELINE_EVIDENCE_POLICY,
     }
-
 
     mission_data_files: dict[str, str] = {}
     mission_data_bytes = 0
@@ -12266,36 +11904,34 @@ def build_language_bundle(
             out_path = write_mission_payload(rel_file, payload)
             mission_data_files[mission] = rel_file
             mission_data_bytes += out_path.stat().st_size
-
     def emit_webui_secret_notice() -> None:
         if language_code != "CN":
             return
 
         out_key = "black_webui_secret_notice"
-        title = "角落里的开源声明"
+        title = "Open-source notice"
         mission = "webui_secret"
         lines = [
             {
                 "id": f"{out_key}_001",
-                "text": "你在角落里发现了一段系统日志。",
+                "text": "You found a small system notice in the corner.",
             },
             {
                 "id": f"{out_key}_002",
                 "text": (
-                    "本 WebUI 的代码免费、开源，项目地址："
-                    "Variante/endfield_research_kit"
-                    "（https://github.com/Variante/endfield_research_kit）。"
-                    "任何人都不应在任何地方、通过任何渠道，"
-                    "以付费方式获得本 WebUI 或其代码。"
+                    "This WebUI code is free and open source: "
+                    "Variante/endfield_research_kit "
+                    "(https://github.com/Variante/endfield_research_kit). "
+                    "No one should obtain this WebUI or its code through paid access."
                 ),
             },
             {
                 "id": f"{out_key}_003",
                 "text": (
-                    "页面中展示的文本、图片、音频、视频、模型等内容，"
-                    "均由《明日方舟：终末地》的游戏数据解包与整理而来；"
-                    "相关内容的版权及其他权利归鹰角网络及相关权利方所有。"
-                    "本项目仅用于研究、整理与浏览，不代表官方立场。"
+                    "Text, images, audio, video, models, and related content shown here "
+                    "come from unpacked and organized Endfield game data. Rights to game "
+                    "content belong to Hypergryph and the relevant rights holders. This "
+                    "project is for research, organization, and browsing only."
                 ),
             },
         ]
@@ -12334,16 +11970,11 @@ def build_language_bundle(
             "tags": ["other", "webui"],
             "x": merge_search_text(
                 merge_search_text(title, indexed_line_haystack(lines, "text")),
-                (
-                    "版权声明 开源声明 免费 开源 付费 Variante "
-                    "endfield_research_kit GitHub 鹰角网络 Hypergryph "
-                    "明日方舟 终末地 WebUI"
-                ),
+                "copyright open source free WebUI Variante endfield_research_kit GitHub Hypergryph Endfield",
             ),
         })
 
     emit_webui_secret_notice()
-
     generated = int(time.time())
     search_entries: list[dict] = []
     for entry in index_entries:
@@ -12353,7 +11984,6 @@ def build_language_bundle(
                 "k": str(entry.get("k") or ""),
                 "x": search_text,
             })
-
     write_json(out_dir / "actors.json", {
         "generated": generated,
         "language": language_code,
@@ -12369,7 +11999,6 @@ def build_language_bundle(
         "language": language_code,
         "entries": search_entries,
     })
-
     index_payload = {
         "generated": generated,
         "profile": profile,
@@ -12405,12 +12034,10 @@ def build_language_bundle(
         index_payload["missionExtras"] = mission_extras_payload
         index_payload["missionFlows"] = mission_flows_payload
     write_json(out_dir / "index.json", index_payload)
-
     cleanup_stale_json(conv_dir, written_conv_paths)
     cleanup_stale_json(mission_dir, written_mission_paths)
     if write_reference:
         cleanup_stale_json(reference_dir, written_reference_paths)
-
     total_size = sum(p.stat().st_size for p in conv_dir.glob("*.json"))
     conv_count = len(list(conv_dir.glob("*.json")))
     index_path = out_dir / "index.json"
@@ -12495,5 +12122,9 @@ def build_language_bundle(
         "narrativeVideoRefs": int((narrative_video_report.get("summary") or {}).get("attachedVideos", 0)),
     }
 
-
 __all__ = [name for name in globals() if not name.startswith("__")]
+
+
+
+
+
