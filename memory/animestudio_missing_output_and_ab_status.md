@@ -1954,3 +1954,65 @@ Largest remaining guide `$unparsed` classes after this pass:
 Current classification: guide action decoding is improving the broad fresh-audit marker count without introducing AnimeStudio warnings. The remaining guide payloads are mostly larger camera/tracking/factory actions and additional item/quest/UI conditions, not signs of encryption or missing AB/VFS extraction.
 
 Parallel component/projectile audit result reserved for the next batch: `ProjectileRootComponentData`, `WeaponData`, `StaticWeaponData`, `ObservedComponentData`, `CharacterAIComponentData`, and the 120-byte default `CharacterPivotComponentData` have stable minimal layouts. Larger `CharacterPivotComponentData` payloads need a real `AnimationCurve` decoder, and `ProjectileTemplateData` should be handled as a guarded partial parser because 77 long entries exceeded the current audit hint cap.
+
+## 2026-06-29 Eleventh Fresh StreamingAssets Guide-Camera Action Batch
+
+Follow-up after the tenth guide-action batch. Two read-only subagents independently validated the guide action base and camera/HUD layouts against the fresh audit and guide-only probes. No subagent edited files.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Refined guide action base semantics from an anonymous 36-byte prefix plus `trailingWord` into an action-chain record with `actionId`, 8-character action key, inherited raw words, `triggerActiveDuringRaw`, `validate`, and `nextId`.
+- Replaced simple action tail readers with typed guide parameter wrappers:
+  - `Param<T>` as `paramSource`, `path`, `value`, and `idRef`.
+  - `ParamOutput<T>` as `paramTarget` and `path`.
+- Re-decoded existing simple actions through those parameter wrappers, including the two path-backed `FacLockBuildPos` variants that the previous bool-only interpretation left unparsed.
+- Added camera action decoders proven by strict all-sample validation:
+  - `BlendToCameraTransformWithoutBack`
+  - `BlendOutFromCamera`
+  - `BlendIntoCameraNoReturn`
+- Kept runtime/nonserialized fields out of the JSON: camera `m_stage` fields, `m_handleId`, `m_targetPos`, `m_targetRot`, `m_targetFov`, and guide freeze runtime handles remain intentionally absent rather than guessed.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\guide_camera_probe_allguide_after1 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names "^guide_"
+```
+
+Build result: success with existing project compile warnings and `0` errors. The guide-only probe emitted 1,621 MonoBehaviour JSON files with exit code 0. Log grep for `Warning`, `Error`, `metadata-only JSON`, partial-TypeTree warnings, `Export ... error`, and `Unknown ClassIDType` returned no matches.
+
+Guide-only before/after from `tmp\guide_action_probe_allguide_after1` to `tmp\guide_camera_probe_allguide_after1`:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Guide JSON files | 1,621 | 1,621 |
+| Guide `$unparsed` managed refs | 3,951 | 3,148 |
+| Decoded guide managed refs | 4,641 | 5,444 |
+
+Resolved `$unparsed` payloads in this pass: 803.
+
+Resolved classes:
+
+| Class | Resolved refs |
+| --- | ---: |
+| `BlendToCameraTransformWithoutBack` | 468 |
+| `BlendOutFromCamera` | 319 |
+| `BlendIntoCameraNoReturn` | 14 |
+| `FacLockBuildPos` path-backed variants | 2 |
+
+Largest remaining guide `$unparsed` classes after this pass:
+
+| Class | Remaining refs | Current blocker |
+| --- | ---: | --- |
+| `RemoveTrackingPoint` | 316 | Tracking-point list/key layout not yet mapped. |
+| `FacHighlightBuilding` | 256 | Factory string+bool parameter layout needs strict validation. |
+| `CheckScriptTaskStateEqual` | 249 | Script-task condition wrapper and state fields need exact mapping. |
+| `AddTrackingPoint` | 175 | Tracking-point list/key layout not yet mapped. |
+| `FacGuideHintEnable` | 167 | Factory string+bool parameter layout needs strict validation. |
+| `OnBuildingPanelOpen` | 127 | Condition payload not yet mapped. |
+| `OnUIPanelClose` | 124 | Condition payload not yet mapped. |
+| `PlayerHasItemInItemBag` | 94 | Item condition payload not yet mapped. |
+| `CreateEffectAtPosition` | 89 | Effect action parameters need exact mapping. |
+| `CheckQuestState` | 78 | Quest condition payload not yet mapped. |
+
+Current classification: the largest camera-action guide bucket is now understood and structurally decoded. The remaining guide bucket is no longer dominated by camera data; it is concentrated in tracking-point actions, factory string/bool actions, and item/quest/UI conditions. This continues to look like managed-reference schema recovery work, not encryption or missing VFS extraction.
