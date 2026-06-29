@@ -1,4 +1,4 @@
-# AnimeStudio Texture2D/Sprite Missing Output And AB Status
+﻿# AnimeStudio Texture2D/Sprite Missing Output And AB Status
 
 Date: 2026-06-28
 
@@ -2614,3 +2614,48 @@ Resolved classes:
 | `Beyond.Gameplay.PlaySoundByParticleCount` | 169 | 0 | 169 |
 
 Resolved `$unparsed` refs in this batch: 358. Current classification: these were plain serialized managed-reference payloads, not missing AB/VFS bytes and not encryption. Remaining high-value next buckets are `Beyond.Gameplay.ProjectileTemplateData` (300 refs, small and metadata-backed), `Beyond.Gameplay.WikiModelSpawnData` (129 refs, TypeTree-backed), and `Beyond.Gameplay.WeaponDecoEffectData` (73 refs, structurally plausible but field names should stay conservative). `ProjectileComponentData` remains much larger and should not be claimed exact before a staged component-layout probe.
+
+## 2026-06-29 Nineteenth Fresh StreamingAssets Projectile-Template Batch
+
+Follow-up after the sound-action batch, focused on the non-guide projectile managed-reference family in `tmp\fresh_audit_unparsed_nonguide_files.txt`.
+
+Read-only subagent evidence plus local metadata checks agreed on this exact current installed-data shape:
+
+- `Beyond.Gameplay.ProjectileTemplateData`: 300 unresolved refs in 300 files.
+- Source chunks: `68B3B9B8EB82E88FBFE6A313E6B18FB6.chk` has 229 files, `71FC2E71A9F249B382BF8DAED3BCEE65.chk` has 23 files, and `FBAD673F662CF3EACDDB14A65999F7EF.chk` has 48 files.
+- Lengths range from 184 to 388 bytes. 223 payloads are fully covered by raw-word hints; the remaining 77 exceed the hint cap but match the same string/RID length formula.
+- Every payload has three component RID links: `ProjectileRootComponentData`, `AbilitySystemData`, and `ProjectileComponentData`.
+- Metadata-backed serialized field order is `GameDataWithId.id`, `BaseTemplateData.name/factionIndex`, `EntityTemplateData` scalar fields plus `componentList`, then `ProjectileTemplateData` emit/mount fields plus `SkillDataBundle`.
+- Current payloads serialize `EntityTemplateData.bornTag` as one int32 zero, not the two-word gameplay-tag string layout used by other classes.
+- `SkillDataBundle.comboSkillConditions` is observed only with count zero. `SkillDataBundle.defaultCmdMapping` is observed only as zero key count plus zero value count. The decoder rejects non-empty forms instead of inventing element schemas.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Passed `recoveredByRid` into the general `Gameplay.Beyond` managed-reference decoder so decoded component lists can expose linked RID type names.
+- Added strict `ProjectileTemplateData` decoding for namespace `Beyond.Gameplay`, class `ProjectileTemplateData`, and payloads at least 160 bytes.
+- Decoded the direct template fields, nested `baseTemplate`, nested `entityTemplate`, component RID list, and the observed `SkillDataBundle` fields.
+- Added strict empty-list helpers for `comboSkillConditions` and `defaultCmdMapping` key/value lists; any nonzero count falls back to the existing marker path.
+
+Validation details:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\projectile_template_validation_after3\68B3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\projectile_template_validation_filters\names_1_68B3B9B8.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\71FC2E71A9F249B382BF8DAED3BCEE65.chk" tmp\projectile_template_validation_after3\71FC --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\projectile_template_validation_filters\names_2_71FC2E71.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk" tmp\projectile_template_validation_after3\FBAD --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\projectile_template_validation_filters\names_3_FBAD673F.txt
+```
+
+Build result: success with `0` warnings and `0` errors. The three targeted exports covered all 300 projectile-template files, exited with code 0, and emitted no warning/error output.
+
+Projectile family in the final targeted validation set:
+
+| Class | Fresh audit `$unparsed` | Final `$unparsed` | Final decoded | Final partial |
+| --- | ---: | ---: | ---: | ---: |
+| `Beyond.Gameplay.ProjectileTemplateData` | 300 | 0 | 300 | 0 |
+| `Beyond.Gameplay.Core.ProjectileRootComponentData` | 300 | 0 | 300 | 0 |
+| `Beyond.Gameplay.Core.AbilitySystemData` | 0 | 0 | 300 | 300 |
+| `Beyond.Gameplay.Core.ProjectileComponentData` | 300 | 300 | 0 | 0 |
+
+Resolved `$unparsed` refs attributable to this batch: 300 `ProjectileTemplateData` refs. `ProjectileRootComponentData` is also decoded in the same validation output due to the previous projectile-root batch. Current classification: `ProjectileTemplateData` is now understood as a normal serialized managed-reference payload, not missing VFS/AB bytes and not encryption. The remaining projectile blocker is `ProjectileComponentData`; its collider/effect/audio/list/movement sections still need a staged schema proof before decoding.
+
+Next candidate from the parallel read-only audit: `Beyond.Gameplay.WikiModelSpawnData` has 129 unresolved refs in one file and a metadata-backed layout that accounts for all observed lengths. `WeaponDecoEffectData` is likely but should wait for raw-byte validation of the longest 800-byte payload before being claimed exact.
