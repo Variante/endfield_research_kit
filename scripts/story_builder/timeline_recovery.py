@@ -2165,15 +2165,30 @@ def recover_timeline_line_orders(config: TimelineRecoveryConfig | None = None) -
 
     full_entry_count = len(entries)
     focused_run = bool(config.target_report or config.timeline_list or config.timeline_regex or config.limit_chks > 0)
+    full_monobehaviour_incomplete = any(
+        item.get("skippedReason") == "scan-limit"
+        for item in parse_summary
+        if isinstance(item, dict)
+    )
     should_process_chks = not config.parse_only
     should_run_cli = should_process_chks and not config.dry_run
-    if config.prefer_full_monobehaviour and full_entry_count and not focused_run:
+    if (
+        config.prefer_full_monobehaviour
+        and full_entry_count
+        and not focused_run
+        and not full_monobehaviour_incomplete
+    ):
         should_process_chks = False
         should_run_cli = False
         extract_skipped_reason = "full-monobehaviour"
         log(
             f"full MonoBehaviour supplied {full_entry_count} timeline(s); "
             "skipping filtered timeline_extract export"
+        )
+    elif config.prefer_full_monobehaviour and full_entry_count and full_monobehaviour_incomplete:
+        log(
+            f"full MonoBehaviour supplied {full_entry_count} timeline(s), but one or more "
+            "MonoBehaviour roots were scan-limited; running filtered timeline_extract export"
         )
     elif config.parse_only:
         extract_skipped_reason = "parse-only"

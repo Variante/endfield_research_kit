@@ -53,6 +53,19 @@ LANGUAGES = {
 
 AUDIO_EXTENSIONS = {".wav", ".wem"}
 EVENT_PREFIXES = ("au_sfx_", "au_vo_", "au_music_", "au_cue_", "au_amb_", "au_ui_")
+WWISE_EVENT_CATEGORY_FOLDERS = {
+    "au_sfx": "sfx",
+    "au_vo": "voice_events",
+    "au_music": "music",
+    "au_cue": "cues",
+    "au_amb": "ambience",
+    "au_ui": "ui",
+}
+WWISE_EVENT_CATEGORY_BY_FOLDER = {
+    folder: category
+    for category, folder in WWISE_EVENT_CATEGORY_FOLDERS.items()
+}
+WWISE_UNKNOWN_FOLDER = "unknown"
 SHARED_AUDIO_BLOCKS = ("audio", "initial-audio", "audit-audio")
 EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio",
@@ -78,6 +91,7 @@ SHARED_AUDIO_BLOCK_LABELS = {
 AUDIO_META_KEYS = (
     "audioDialogKey",
     "audioDialogPath",
+    "audioDialogSource",
     "speakerChannel",
     "voType",
     "duration",
@@ -236,18 +250,45 @@ def load_narrative_video_audio_source_overrides(webui_root: Path) -> dict[str, l
     return out
 
 
-def find_audio_dialog_table(export_root: Path) -> Path:
+def find_audio_dialog_tables(export_root: Path) -> list[Path]:
     candidates = [
         export_root / "structured" / "StreamingAssets" / "Table" / "AudioDialog.json",
         export_root / "structured" / "Persistent" / "Table" / "AudioDialog.json",
     ]
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
+    paths = [candidate for candidate in candidates if candidate.exists()]
+    if paths:
+        return paths
     raise SystemExit(
         "AudioDialog.json not found under export_full/structured. "
         "Run export.bat first, or pass --export-root."
     )
+
+
+def display_path(path: Path) -> str:
+    return normalize_posix(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
+
+
+def same_resolved_path(left: Path, right: Path) -> bool:
+    try:
+        return left.resolve() == right.resolve()
+    except OSError:
+        return left.absolute() == right.absolute()
+
+
+def audio_vfs_sources(args: argparse.Namespace) -> list[tuple[str, Path, Path | None]]:
+    """Return primary plus overlay VFS roots.
+
+    Endfield installs can keep patch/update tables and PCKs under Persistent.
+    AnimeStudio's fallback path only resolves chunks named by the primary block
+    metadata, so we must also run Persistent as a primary source when present.
+    """
+    sources: list[tuple[str, Path, Path | None]] = []
+    primary = args.streaming_assets
+    fallback = args.fallback_assets if args.fallback_assets and args.fallback_assets.exists() else None
+    sources.append(("StreamingAssets", primary, fallback))
+    if fallback and primary.exists() and not same_resolved_path(primary, fallback):
+        sources.append(("Persistent", fallback, primary))
+    return sources
 
 
 def audio_id_from_path(path: str) -> str:
@@ -512,14 +553,100 @@ def strip_voice_batch_prefix(path: str) -> str:
     return VOICE_BATCH_PREFIX_REGEX.sub("", path, count=1)
 
 
+def story_voice_group_for_bucket(bucket: str) -> str:
+    normalized = str(bucket or "").strip().lower()
+    if normalized.startswith("episode_"):
+        return "main_episodes"
+    if normalized.startswith("hs_part"):
+        return "hongshan"
+    if normalized == "submission":
+        return "side_missions"
+    if normalized == "subchar":
+        return "character_stories"
+    if normalized == "subfac":
+        return "facility_base"
+    if normalized == "commonextra":
+        return "common_extras"
+    if normalized == "fragment":
+        return "fragments_archives"
+    return "other"
+
+
+def canonical_voice_rel(rel: str) -> str:
+    normalized = normalize_posix(rel).lower()
+    parts = PurePosixPath(normalized).parts
+    if not parts or parts[0] != "voice":
+        return normalized
+    if len(parts) == 1:
+        return normalized
+    section = parts[1]
+    if section in {"story", "characters", "enemies", "other"}:
+        return normalized
+    if section == "narrating":
+        bucket = parts[2] if len(parts) >= 3 else "unknown"
+        return normalize_posix(PurePosixPath("voice", "story", story_voice_group_for_bucket(bucket), *parts[2:]))
+    if section == "enemy":
+        return normalize_posix(PurePosixPath("voice", "enemies", *parts[2:]))
+    if section == "characters":
+        return normalized
+    return normalize_posix(PurePosixPath("voice", "other", *parts[1:]))
+
+
+def wwise_folder_for_event_category(event_category: Any) -> str:
+    category = str(event_category or "").strip().lower().rstrip("_")
+    return WWISE_EVENT_CATEGORY_FOLDERS.get(category, WWISE_UNKNOWN_FOLDER)
+
+
+def event_category_for_wwise_folder(folder: str) -> str:
+    return WWISE_EVENT_CATEGORY_BY_FOLDER.get(str(folder or "").strip().lower(), "")
+
+
+def audio_path_tags_for_rel(rel: str) -> dict[str, str]:
+    normalized = normalize_posix(rel).lower()
+    parts = PurePosixPath(normalized).parts
+    tags: dict[str, str] = {}
+    if not parts:
+        return tags
+    if parts[0] == "unmapped":
+        if len(parts) >= 3:
+            tags["sourceBank"] = parts[1]
+        if len(parts) >= 4 and parts[2] in WWISE_EVENT_CATEGORY_FOLDERS:
+            tags["eventCategory"] = parts[2]
+    elif parts[0] == "wwise" and len(parts) >= 2:
+        category = event_category_for_wwise_folder(parts[1])
+        if category:
+            tags["eventCategory"] = category
+    return tags
+
+
+def canonical_audio_rel(rel: str, event_category: Any = None) -> str:
+    normalized = normalize_posix(rel).lower()
+    parts = PurePosixPath(normalized).parts
+    if not parts:
+        return normalized
+    if parts[0] == "voice":
+        return canonical_voice_rel(normalized)
+    if parts[0] == "unmapped":
+        file_name = parts[-1] if len(parts) >= 2 else ""
+        path_category = parts[2] if len(parts) >= 4 and parts[2] in WWISE_EVENT_CATEGORY_FOLDERS else ""
+        category_folder = wwise_folder_for_event_category(event_category or path_category)
+        return normalize_posix(PurePosixPath("wwise", category_folder, file_name)) if file_name else normalize_posix(PurePosixPath("wwise", category_folder))
+    if parts[0] == "wwise":
+        if len(parts) == 1:
+            return normalized
+        folder = wwise_folder_for_event_category(event_category) if event_category else WWISE_EVENT_CATEGORY_FOLDERS.get(parts[1], parts[1])
+        return normalize_posix(PurePosixPath("wwise", folder, *parts[2:]))
+    return normalized
+
+
 def audio_rel_for_dialog_path(dialog_path: str, extension: str) -> str:
     # The language is encoded in the per-language output root, so the rel path drops
     # the language segment; the leading v1dN batch folder is merged away to match the
-    # decoded layout (voice/<characters|enemy|narrating>/...).
+    # decoded layout before the exporter folds it into the browser-facing voice tree.
     path = dialog_path.replace("\\", "/")
     if extension.lower() == ".wav":
         path = str(PurePosixPath(path).with_suffix(".wav"))
-    return normalize_posix(Path("voice") / strip_voice_batch_prefix(path.lower()))
+    return canonical_audio_rel(normalize_posix(Path("voice") / strip_voice_batch_prefix(path.lower())))
 
 
 def storage_root_for_block(block: str, language: str) -> str:
@@ -600,6 +727,8 @@ def legacy_audio_source_metadata(rel: str, language: str, language_info: dict[st
     normalized = normalize_posix(rel).lower()
     if normalized.startswith("voice/"):
         return audio_source_metadata("voice", language, language_info)
+    if normalized.startswith("wwise/"):
+        return audio_source_metadata("voice", language, language_info)
     if normalized.startswith("unmapped/"):
         return {
             "audioScope": "unknown",
@@ -617,7 +746,15 @@ def clean_source_metadata(value: Any) -> dict[str, str]:
     if not isinstance(value, dict):
         return {}
     out: dict[str, str] = {}
-    for key in ("audioScope", "sourceBlock", "sourceBlockLabel", "sourceLanguage", "storageRoot"):
+    for key in (
+        "audioScope",
+        "sourceBlock",
+        "sourceBlockLabel",
+        "sourceLanguage",
+        "storageRoot",
+        "sourceBank",
+        "eventCategory",
+    ):
         text = str(value.get(key) or "").strip()
         if text:
             out[key] = text
@@ -654,6 +791,33 @@ def prior_source_metadata_by_rel(language_root: Path, language: str) -> dict[tup
                 metadata.setdefault("storageRoot", storage_root)
                 out[key] = metadata
     return out
+
+
+def merge_source_metadata_by_rel(
+    target: dict[tuple[str, str], dict[str, str]],
+    updates: dict[tuple[str, str], dict[str, str]],
+) -> None:
+    for key, metadata in updates.items():
+        current = target.setdefault(key, {})
+        for meta_key, value in clean_source_metadata(metadata).items():
+            current.setdefault(meta_key, value)
+
+
+def canonicalized_source_metadata_by_rel(
+    source_by_rel: dict[tuple[str, str], dict[str, str]],
+) -> dict[tuple[str, str], dict[str, str]]:
+    out: dict[tuple[str, str], dict[str, str]] = {}
+    for (storage_root, rel), metadata in source_by_rel.items():
+        normalized = normalize_posix(rel)
+        enriched = clean_source_metadata(metadata)
+        enriched.setdefault("storageRoot", storage_root)
+        for key, value in audio_path_tags_for_rel(normalized).items():
+            enriched.setdefault(key, value)
+        canonical_rel = canonical_audio_rel(normalized, enriched.get("eventCategory"))
+        out[(storage_root, normalized)] = dict(enriched)
+        out.setdefault((storage_root, canonical_rel), dict(enriched))
+    return out
+
 
 def source_metadata_for_rel(
     storage_root: str,
@@ -699,7 +863,7 @@ def backfill_event_source_metadata(
     language: str,
 ) -> None:
     for entry in event_entries:
-        if clean_source_metadata(entry):
+        if any(str(entry.get(key) or "").strip() for key in ("audioScope", "sourceBlock", "sourceBlockLabel")):
             continue
         source_entry = None
         media_id = entry.get("mediaId")
@@ -751,6 +915,14 @@ def collect_audio_files(
         rel = normalize_posix(path.relative_to(source_root))
         audio_id = path.stem.lower()
         stat = path.stat()
+        metadata = source_metadata_for_rel(
+            storage_root,
+            rel,
+            language,
+            language_info,
+            decoded_source_by_rel,
+            prior_source_by_rel,
+        )
         entry = {
             "id": audio_id,
             "rel": rel,
@@ -758,23 +930,15 @@ def collect_audio_files(
             "src": served_audio_href(audio_root, webui_root, storage_root, rel),
             "format": path.suffix.lower().lstrip("."),
             "bytes": stat.st_size,
-            **source_metadata_for_rel(
-                storage_root,
-                rel,
-                language,
-                language_info,
-                decoded_source_by_rel,
-                prior_source_by_rel,
-            ),
+            **metadata,
         }
-        rel_parts = PurePosixPath(rel).parts
-        if len(rel_parts) >= 2 and rel_parts[0] == "unmapped":
-            entry["sourceBank"] = rel_parts[1]
+        for key, value in audio_path_tags_for_rel(rel).items():
+            entry.setdefault(key, value)
         by_id.setdefault(audio_id, entry)
     return by_id
 
 def build_dialog_audio_index(
-    audio_dialog_path: Path,
+    audio_dialog_paths: list[Path],
     audio_root: Path,
     webui_root: Path,
     language_root: Path,
@@ -782,41 +946,43 @@ def build_dialog_audio_index(
     language_info: dict[str, str],
     preferred_extension: str,
 ) -> dict[str, dict[str, Any]]:
-    rows = load_json(audio_dialog_path, {})
-    if not isinstance(rows, dict):
-        raise SystemExit(f"AudioDialog table has unexpected shape: {audio_dialog_path}")
-
     duration_field = language_info["durationField"]
     out: dict[str, dict[str, Any]] = {}
-    for row_key, row in rows.items():
-        if not isinstance(row, dict):
-            continue
-        dialog_path = str(row.get("path") or "")
-        if not dialog_path:
-            continue
-        audio_id = audio_id_from_path(dialog_path)
-        rel = audio_rel_for_dialog_path(dialog_path, preferred_extension)
-        file_path = language_root / Path(*PurePosixPath(rel).parts)
-        if not file_path.exists() and preferred_extension.lower() == ".wav":
-            rel = audio_rel_for_dialog_path(dialog_path, ".wem")
+    for audio_dialog_path in audio_dialog_paths:
+        rows = load_json(audio_dialog_path, {})
+        if not isinstance(rows, dict):
+            raise SystemExit(f"AudioDialog table has unexpected shape: {audio_dialog_path}")
+        source_path = display_path(audio_dialog_path)
+        for row_key, row in rows.items():
+            if not isinstance(row, dict):
+                continue
+            dialog_path = str(row.get("path") or "")
+            if not dialog_path:
+                continue
+            audio_id = audio_id_from_path(dialog_path)
+            rel = audio_rel_for_dialog_path(dialog_path, preferred_extension)
             file_path = language_root / Path(*PurePosixPath(rel).parts)
-        if not file_path.exists():
-            continue
-        duration = row.get(duration_field)
-        out[audio_id] = {
-            "id": audio_id,
-            "rel": rel,
-            "storageRoot": language,
-            "src": served_audio_href(audio_root, webui_root, language, rel),
-            "format": file_path.suffix.lower().lstrip("."),
-            "bytes": file_path.stat().st_size,
-            "audioDialogKey": int(row_key) if str(row_key).lstrip("-").isdigit() else row_key,
-            "audioDialogPath": dialog_path,
-            "speakerChannel": str(row.get("speakerChannel") or ""),
-            "voType": row.get("voType"),
-            "duration": duration if isinstance(duration, (int, float)) else None,
-            **audio_source_metadata("voice", language, language_info),
-        }
+            if not file_path.exists() and preferred_extension.lower() == ".wav":
+                rel = audio_rel_for_dialog_path(dialog_path, ".wem")
+                file_path = language_root / Path(*PurePosixPath(rel).parts)
+            if not file_path.exists():
+                continue
+            duration = row.get(duration_field)
+            out[audio_id] = {
+                "id": audio_id,
+                "rel": rel,
+                "storageRoot": language,
+                "src": served_audio_href(audio_root, webui_root, language, rel),
+                "format": file_path.suffix.lower().lstrip("."),
+                "bytes": file_path.stat().st_size,
+                "audioDialogKey": int(row_key) if str(row_key).lstrip("-").isdigit() else row_key,
+                "audioDialogPath": dialog_path,
+                "audioDialogSource": source_path,
+                "speakerChannel": str(row.get("speakerChannel") or ""),
+                "voType": row.get("voType"),
+                "duration": duration if isinstance(duration, (int, float)) else None,
+                **audio_source_metadata("voice", language, language_info),
+            }
     return out
 
 
@@ -1216,45 +1382,57 @@ def event_bank_payloads_from_export(export_root: Path) -> list[tuple[str, bytes]
 def event_bank_payloads_from_vfs(args: argparse.Namespace) -> list[tuple[str, bytes]]:
     if not args.audio_dumper.exists() or not args.streaming_assets.exists():
         return []
-    command = [
-        str(args.audio_dumper),
-        "stream",
-        "--streaming-assets",
-        str(args.streaming_assets),
-        "--file-regex",
-        EVENT_BANK_FILE_REGEX,
-    ]
-    for block_type in EVENT_BANK_VFS_BLOCK_TYPES:
-        command.extend(["--block-type", block_type])
-    if args.fallback_assets and args.fallback_assets.exists():
-        command.extend(["--fallback-assets", str(args.fallback_assets)])
-
-    try:
-        result = subprocess.run(command, cwd=ROOT, check=True, capture_output=True, text=True)
-    except (OSError, subprocess.CalledProcessError) as exc:
-        print(f"Audio events: VFS bank stream unavailable ({exc}); falling back to exported bank files")
-        return []
-
-    stderr_text = result.stderr.strip()
-    if stderr_text:
-        print(f"Audio events VFS stream: {stderr_text}")
 
     payloads: list[tuple[str, bytes]] = []
-    for line in result.stdout.splitlines():
-        line = line.strip()
-        if not line:
-            continue
+    seen_payloads: set[tuple[str, str, int, bytes, bytes]] = set()
+    stream_failed = False
+    for source_label, streaming_assets, fallback_assets in audio_vfs_sources(args):
+        command = [
+            str(args.audio_dumper),
+            "stream",
+            "--streaming-assets",
+            str(streaming_assets),
+            "--file-regex",
+            EVENT_BANK_FILE_REGEX,
+        ]
+        for block_type in EVENT_BANK_VFS_BLOCK_TYPES:
+            command.extend(["--block-type", block_type])
+        if fallback_assets and fallback_assets.exists():
+            command.extend(["--fallback-assets", str(fallback_assets)])
+
         try:
-            payload = json.loads(line)
-            block_type = str(payload.get("blockType") or "unknown")
-            file_name = normalize_posix(str(payload.get("fileName") or "unknown.pck"))
-            raw_data = base64.b64decode(str(payload.get("dataBase64") or ""))
-        except (ValueError, TypeError):
+            result = subprocess.run(command, cwd=ROOT, check=True, capture_output=True, text=True)
+        except (OSError, subprocess.CalledProcessError) as exc:
+            print(f"Audio events: VFS bank stream unavailable for {source_label} ({exc})")
+            stream_failed = True
             continue
-        if raw_data:
-            payloads.append((f"vfs/{block_type}/{file_name}", raw_data))
+
+        stderr_text = result.stderr.strip()
+        if stderr_text:
+            print(f"Audio events VFS stream [{source_label}]: {stderr_text}")
+
+        for line in result.stdout.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                payload = json.loads(line)
+                block_type = str(payload.get("blockType") or "unknown")
+                file_name = normalize_posix(str(payload.get("fileName") or "unknown.pck"))
+                raw_data = base64.b64decode(str(payload.get("dataBase64") or ""))
+            except (ValueError, TypeError):
+                continue
+            if not raw_data:
+                continue
+            payload_key = (block_type, file_name, len(raw_data), raw_data[:16], raw_data[-16:])
+            if payload_key in seen_payloads:
+                continue
+            seen_payloads.add(payload_key)
+            payloads.append((f"vfs/{source_label}/{block_type}/{file_name}", raw_data))
     if payloads:
         print(f"Audio events: streamed {len(payloads):,} bank PCK file(s) from VFS")
+    elif stream_failed:
+        print("Audio events: VFS bank stream unavailable; falling back to exported bank files")
     return payloads
 
 
@@ -1473,12 +1651,23 @@ def load_cached_event_audio_index(
         if not isinstance(entry, dict):
             continue
         event_key = str(entry.get("eventId") or entry.get("id") or "").strip().lower()
-        if event_key not in wanted_names or not _audio_entry_file_exists(audio_root, language, entry):
+        if event_key not in wanted_names:
             continue
         cached = dict(entry)
         cached.setdefault("storageRoot", entry_storage_root(cached, language))
+        rel = normalize_posix(str(cached.get("rel") or ""))
+        if rel:
+            cached["rel"] = canonical_audio_rel(
+                rel,
+                cached.get("eventCategory") or event_audio_category(event_key),
+            )
+        if not _audio_entry_file_exists(audio_root, language, cached):
+            continue
         cached["src"] = served_audio_href(audio_root, webui_root, cached["storageRoot"], str(cached.get("rel") or ""))
         event_audio_by_id[event_key].append(cached)
+
+    if not any(event_audio_by_id.values()):
+        return None
 
     event_evidence = [
         entry
@@ -1501,12 +1690,15 @@ def run_audio_dumper_block(
     language_info: dict[str, str],
     output_root: Path,
     block: str,
+    source_label: str,
+    streaming_assets: Path,
+    fallback_assets: Path | None,
 ) -> None:
     command = [
         str(args.audio_dumper),
         "audio",
         "--streaming-assets",
-        str(args.streaming_assets),
+        str(streaming_assets),
         "--output",
         str(output_root),
         "--language",
@@ -1516,10 +1708,10 @@ def run_audio_dumper_block(
         "--block",
         block,
     ]
-    if args.fallback_assets and args.fallback_assets.exists():
-        command.extend(["--fallback-assets", str(args.fallback_assets)])
+    if fallback_assets and fallback_assets.exists():
+        command.extend(["--fallback-assets", str(fallback_assets)])
 
-    print("Running:", " ".join(f'"{part}"' if " " in part else part for part in command))
+    print(f"Running [{source_label}]:", " ".join(f'"{part}"' if " " in part else part for part in command))
     subprocess.run(command, cwd=ROOT, check=True)
 
 
@@ -1542,22 +1734,31 @@ def run_audio_dumper(
         output_root = args.audio_root / storage_root
         output_root.mkdir(parents=True, exist_ok=True)
         dumper_language_info = shared_language_info if block in SHARED_AUDIO_BLOCKS else language_info
-        before = snapshot_audio_file_stats(output_root)
-        run_audio_dumper_block(args, dumper_language_info, output_root, block)
-        after = snapshot_audio_file_stats(output_root)
-        metadata = audio_source_metadata(block, language, language_info)
-        metadata["storageRoot"] = storage_root
-        changed = 0
-        for rel, stat in after.items():
-            if before.get(rel) == stat:
-                continue
-            source_by_rel[(storage_root, rel)] = metadata
-            changed += 1
-        print(
-            f"Audio source map: {changed:,} files tagged as "
-            f"{metadata['audioScope']} from {metadata['sourceBlockLabel']} "
-            f"under {storage_root}"
-        )
+        for source_label, streaming_assets, fallback_assets in audio_vfs_sources(args):
+            before = snapshot_audio_file_stats(output_root)
+            run_audio_dumper_block(
+                args,
+                dumper_language_info,
+                output_root,
+                block,
+                source_label,
+                streaming_assets,
+                fallback_assets,
+            )
+            after = snapshot_audio_file_stats(output_root)
+            metadata = audio_source_metadata(block, language, language_info)
+            metadata["storageRoot"] = storage_root
+            changed = 0
+            for rel, stat in after.items():
+                if before.get(rel) == stat:
+                    continue
+                source_by_rel[(storage_root, rel)] = metadata
+                changed += 1
+            print(
+                f"Audio source map [{source_label}]: {changed:,} files tagged as "
+                f"{metadata['audioScope']} from {metadata['sourceBlockLabel']} "
+                f"under {storage_root}"
+            )
     return source_by_rel
 
 def line_audio_ids(line: dict[str, Any]) -> list[str]:
@@ -1803,11 +2004,10 @@ def link_conversation_audio(
     return stats
 
 
-# --- Unmapped audio grouping -------------------------------------------------
-# Unmapped media carry only a raw Wwise id. We give them a "detailed grouping"
-# along two dimensions: the source bank (100% coverage, structural) as the top
-# folder, then a Wwise event category (au_sfx/au_vo/...) subfolder for the small
-# fraction reachable from a known event. Result: unmapped/<bank>[/<category>]/<id>.
+# --- Wwise audio grouping ----------------------------------------------------
+# Raw Wwise media start as hashed files. We keep source-bank provenance in
+# metadata, but the exported browser-facing folders group by useful category:
+# wwise/<sfx|voice_events|music|ambience|ui|cues|unknown>/<id>.
 
 UNMAPPED_BANK_PRIORITY = ("main", "initial", "audit", "external", "hotfix")
 UNMAPPED_SCOPE_PCK_PARENTS = {
@@ -1891,23 +2091,70 @@ def flat_unmapped_files(folder: Path) -> list[Path]:
     ]
 
 
+def prune_empty_audio_dirs(root: Path) -> int:
+    if not root.exists():
+        return 0
+    removed = 0
+    dirs = [path for path in root.rglob("*") if path.is_dir()]
+    for folder in sorted(dirs, key=lambda item: len(item.parts), reverse=True):
+        try:
+            folder.rmdir()
+            removed += 1
+        except OSError:
+            continue
+    return removed
+
+
+def canonicalize_audio_layout(audio_root: Path, storage: str) -> dict[str, int]:
+    """Move legacy decoded audio files into the browser-facing folder layout."""
+    storage_root = audio_root / storage
+    if not storage_root.exists():
+        return {}
+    counts: dict[str, int] = defaultdict(int)
+    for path in iter_audio_files(storage_root):
+        rel = normalize_posix(path.relative_to(storage_root))
+        canonical_rel = canonical_audio_rel(rel)
+        if canonical_rel == rel:
+            continue
+        dest = audio_file_path(audio_root, storage, canonical_rel)
+        if same_resolved_path(path, dest):
+            continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        if dest.exists():
+            counts["replaced"] += 1
+        else:
+            counts["moved"] += 1
+        path.replace(dest)
+    removed_dirs = prune_empty_audio_dirs(storage_root)
+    if removed_dirs:
+        counts["removedDirs"] = removed_dirs
+    return dict(counts)
+
+
 def regroup_unmapped_by_bank(
     audio_root: Path,
     storage: str,
     export_root: Path,
     dry_run: bool = False,
-) -> dict[str, int]:
-    """Move flat unmapped/<id> files into unmapped/<bank>/<id>. Move-only, idempotent."""
+) -> tuple[dict[str, int], dict[tuple[str, str], dict[str, str]]]:
+    """Tag flat unmapped/<id> media with source-bank provenance before canonicalizing paths."""
     folder = audio_root / storage / "unmapped"
     flat = flat_unmapped_files(folder)
     if not flat:
-        return {}
+        return {}, {}
     scope_parents = UNMAPPED_SCOPE_PCK_PARENTS.get(storage, ())
     bank_map = build_media_bank_map(export_root, scope_parents) if scope_parents else {}
     counts: dict[str, int] = defaultdict(int)
+    metadata_by_rel: dict[tuple[str, str], dict[str, str]] = {}
+    storage_root = audio_root / storage
     for path in flat:
         bank = bank_map.get(path.stem) or "unknown"
         dest = folder / bank / path.name
+        old_rel = normalize_posix(path.relative_to(storage_root))
+        new_rel = normalize_posix(dest.relative_to(storage_root))
+        metadata = {"storageRoot": storage, "sourceBank": bank}
+        metadata_by_rel[(storage, old_rel)] = metadata
+        metadata_by_rel[(storage, new_rel)] = metadata
         counts[bank] += 1
         if dry_run or dest == path:
             continue
@@ -1915,7 +2162,7 @@ def regroup_unmapped_by_bank(
             continue
         dest.parent.mkdir(parents=True, exist_ok=True)
         path.rename(dest)
-    return dict(counts)
+    return dict(counts), metadata_by_rel
 
 
 def regroup_unmapped_by_category(
@@ -1925,7 +2172,7 @@ def regroup_unmapped_by_category(
     event_entries: list[dict[str, Any]],
     language: str,
 ) -> int:
-    """Move event-resolved unmapped media into unmapped/<bank>/<category>/<id> and tag entries."""
+    """Move event-resolved Wwise media into wwise/<category>/<id> and tag entries."""
     media_category: dict[str, str] = {}
     entries_by_media: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for entry in event_entries:
@@ -1951,13 +2198,17 @@ def regroup_unmapped_by_category(
             continue
         rel = normalize_posix(str(ref.get("rel") or ""))
         parts = PurePosixPath(rel).parts
-        if not parts or parts[0] != "unmapped":
+        if not parts:
             continue
-        if len(parts) == 4 and parts[2] == category:
-            bank, new_rel, needs_move = parts[1], rel, False
-        elif len(parts) == 3:
-            bank = parts[1]
-            new_rel = normalize_posix(PurePosixPath("unmapped") / bank / category / parts[2])
+
+        bank = str(ref.get("sourceBank") or "")
+        if parts[0] == "wwise" and len(parts) >= 3:
+            new_rel = canonical_audio_rel(rel, category)
+            needs_move = new_rel != rel
+        elif parts[0] == "unmapped" and len(parts) >= 3:
+            bank = bank or parts[1]
+            file_name = parts[-1]
+            new_rel = normalize_posix(PurePosixPath("wwise", wwise_folder_for_event_category(category), file_name))
             needs_move = True
         else:
             continue
@@ -1966,18 +2217,19 @@ def regroup_unmapped_by_category(
         if needs_move:
             src_path = audio_file_path(audio_root, storage, rel)
             dst_path = audio_file_path(audio_root, storage, new_rel)
-            if not dst_path.exists():
-                if not src_path.exists():
-                    continue
-                dst_path.parent.mkdir(parents=True, exist_ok=True)
-                src_path.rename(dst_path)
+            if not src_path.exists():
+                continue
+            dst_path.parent.mkdir(parents=True, exist_ok=True)
+            if not same_resolved_path(src_path, dst_path):
+                src_path.replace(dst_path)
                 moved += 1
         new_src = served_audio_href(audio_root, webui_root, storage, new_rel)
         for entry in targets:
             entry["rel"] = new_rel
             entry["src"] = new_src
             entry["eventCategory"] = category
-            entry["sourceBank"] = bank
+            if bank:
+                entry["sourceBank"] = bank
     return moved
 
 
@@ -2002,12 +2254,26 @@ def build_audio(args: argparse.Namespace) -> int:
     decoded_source_by_rel = run_audio_dumper(args, language, language_info)
 
     for regroup_storage in (SHARED_AUDIO_STORAGE, language):
-        bank_counts = regroup_unmapped_by_bank(args.audio_root, regroup_storage, args.export_root)
+        bank_counts, bank_metadata = regroup_unmapped_by_bank(args.audio_root, regroup_storage, args.export_root)
+        merge_source_metadata_by_rel(decoded_source_by_rel, bank_metadata)
         if bank_counts:
             summary = ", ".join(f"{bank}:{count:,}" for bank, count in sorted(bank_counts.items()))
-            print(f"Unmapped regroup [{regroup_storage}]: {summary} by source bank")
+            print(f"Audio source-bank tagging [{regroup_storage}]: {summary}")
 
-    audio_dialog_path = find_audio_dialog_table(args.export_root)
+    prior_source_by_rel = canonicalized_source_metadata_by_rel(prior_source_by_rel)
+    decoded_source_by_rel = canonicalized_source_metadata_by_rel(decoded_source_by_rel)
+    for layout_storage in (SHARED_AUDIO_STORAGE, language):
+        layout_counts = canonicalize_audio_layout(args.audio_root, layout_storage)
+        moved = int(layout_counts.get("moved", 0))
+        replaced = int(layout_counts.get("replaced", 0))
+        removed_dirs = int(layout_counts.get("removedDirs", 0))
+        if moved or replaced or removed_dirs:
+            print(
+                f"Audio layout [{layout_storage}]: {moved:,} moved, "
+                f"{replaced:,} replaced, {removed_dirs:,} old empty folders removed"
+            )
+
+    audio_dialog_paths = find_audio_dialog_tables(args.export_root)
     shared_audio = collect_audio_files(
         args.audio_root,
         args.webui_root,
@@ -2031,7 +2297,7 @@ def build_audio(args: argparse.Namespace) -> int:
     generic_audio = {**shared_audio, **language_audio}
     source_summary = summarize_audio_sources(list(generic_audio.values()))
     dialog_audio = build_dialog_audio_index(
-        audio_dialog_path,
+        audio_dialog_paths,
         args.audio_root,
         args.webui_root,
         language_root,
@@ -2100,7 +2366,7 @@ def build_audio(args: argparse.Namespace) -> int:
         args.audio_root, args.webui_root, audio_by_id, event_entries, language
     )
     if category_moved:
-        print(f"Unmapped regroup [{language}]: {category_moved:,} files filed under event-category subfolders")
+        print(f"Audio layout [{language}]: {category_moved:,} Wwise files filed under event-category folders")
     link_stats = link_conversation_audio(conv_dir, audio_by_id, event_audio_by_id, cutscene_audio_events)
 
     index_payload = {
@@ -2111,9 +2377,8 @@ def build_audio(args: argparse.Namespace) -> int:
         "block": args.block,
         "decodeBlocks": list(selected_audio_blocks(args.block)),
         "sourceSummary": source_summary,
-        "audioDialogTable": normalize_posix(audio_dialog_path.relative_to(ROOT))
-        if audio_dialog_path.is_relative_to(ROOT)
-        else str(audio_dialog_path),
+        "audioDialogTable": display_path(audio_dialog_paths[0]),
+        "audioDialogTables": [display_path(path) for path in audio_dialog_paths],
         "counts": {
             "files": len(generic_audio),
             "sharedFiles": int(source_summary.get("byScope", {}).get("shared", 0)),

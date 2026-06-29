@@ -127,7 +127,8 @@ Serving and packaging:
   `story_media.json`.
 - Non-emoji SNS media such as `sns_image_*`, `sns_sticker_*`,
   `deco_sns_tweet_decorate_*`, `bg_sns_tweet_decorate_*`, and related
-  `cg_image_*` assets keep normal image proportions.
+  `cg_image_*` assets keep normal image proportions. Exact non-emoji SNS media
+  does not borrow numbered sticker, decoration, or emoji fallbacks.
 - When a line has both an inline `<image=...>` token and matching line-level
   `image`/`images` metadata, the inline token owns the visible display and the
   media strip dedupes it.

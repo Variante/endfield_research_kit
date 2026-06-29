@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Build the OCR-derived per-mission Story order reference for the WebUI.
 
-The gameplay-video OCR pipeline (`build_gameplay_video_story_order.py`) writes a
-full proposed order to
+The gameplay-video OCR pipeline (`build_gameplay_video_story_order.py`) writes an
+OCR-observed proposal to
 `reports/gameplay_video_ocr/story_order_ocr_proposed_story_order.json`. The WebUI
 can only fetch files under `webui/`, so this script distills that proposal into a
 small, standalone, read-only reference the WebUI loads in debug mode to compare
@@ -28,15 +28,15 @@ WEBUI_OCR_ORDER_PATH = ROOT / "webui" / "data" / "story_order_ocr.json"
 
 SCHEMA = "webuiStoryOrderOcr.v1"
 NOTE = (
-    "OCR-derived per-mission Story order, distilled from "
-    "story_order_ocr_proposed_story_order.json. Read-only reference used by the "
-    "WebUI debug mode to compare OCR order against static recovery and the "
-    "editable override (overrides/story_order.json)."
+    "OCR-observed per-mission Story order, distilled from "
+    "story_order_ocr_proposed_story_order.json. The source proposal contains "
+    "only accepted gameplay-video OCR text matches and is not seeded from "
+    "overrides/story_order.json."
 )
 
 
 def distill(proposed: dict) -> dict:
-    """Trim a full proposed-order payload down to per-mission order lists."""
+    """Trim an OCR-observed proposal down to per-mission order lists."""
     missions_in = proposed.get("missions")
     if not isinstance(missions_in, dict):
         raise ValueError("proposed order payload has no 'missions' object")
@@ -50,10 +50,7 @@ def distill(proposed: dict) -> dict:
         clean = [str(key) for key in order if isinstance(key, str) and key.strip()]
         if not clean:
             continue
-        entry: dict[str, object] = {"order": clean}
-        if mission.get("locked") is True:
-            entry["locked"] = True
-        missions_out[str(mission_id)] = entry
+        missions_out[str(mission_id)] = {"order": clean}
     return {
         "_schema": SCHEMA,
         "_note": NOTE,

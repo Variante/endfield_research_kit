@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from .context import *
 from .anime_assets import *
@@ -320,6 +320,11 @@ def dialog_story_issue_codes(payload: dict) -> list[str]:
         for item in (payload.get("warnings") or [])
     ):
         codes.append("duplicateTimestamps")
+    if any(
+        isinstance(item, dict) and item.get("code") == "timelineTimestampRegression"
+        for item in (payload.get("warnings") or [])
+    ):
+        codes.append("timelineTimestampRegression")
     if any(
         isinstance(item, dict) and item.get("code") == "inferredOptionResponse"
         for item in (payload.get("warnings") or [])
@@ -907,3 +912,6 @@ def safe_mission_data_filename(mission_id: str, used_names: set[str]) -> str:
         index += 1
 
 __all__ = [name for name in globals() if not name.startswith("__")]
+
+
+

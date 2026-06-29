@@ -302,17 +302,21 @@ def match_selected_reports(args: argparse.Namespace) -> dict[str, Any]:
     print(f"Loading Story corpus from {rel_path(matcher.CONV_ROOT)}...")
     corpus = matcher.load_corpus(
         conv_root=matcher.CONV_ROOT,
-        story_order=active_story_order,
+        story_order={},
         min_chars=args.min_chars,
         include_titles=args.include_title_matches,
+        restrict_to_story_order=False,
     )
-    print(f"Loaded {len(corpus)} searchable Story text row(s).")
+    print(
+        f"Loaded {len(corpus)} searchable Story text row(s) "
+        "from generated native mission data; active story order is comparison-only."
+    )
     corpus_by_mission: dict[str, list[matcher.CorpusLine]] = defaultdict(list)
     for line in corpus:
         corpus_by_mission[line.mission].append(line)
 
-    related_missions_by_mission = matcher.related_corpus_missions_for_story_mission(active_story_order)
-    mission_title_candidates = matcher.load_mission_title_candidates(matcher.MISSIONS_PATH, active_story_order)
+    related_missions_by_mission: dict[str, list[dict[str, str]]] = {}
+    mission_title_candidates = matcher.load_mission_title_candidates(matcher.MISSIONS_PATH)
     search_contexts = matcher.build_video_search_contexts(all_reports, mission_title_candidates)
     context_by_report = {id(report): context for report, context in zip(all_reports, search_contexts)}
     companion_index = matcher.build_map_dialog_companion_index(corpus) if args.include_companions else {}
@@ -378,10 +382,10 @@ def match_selected_reports(args: argparse.Namespace) -> dict[str, Any]:
         matches = ocr_matches + companion_matches
         accepted_missions, observed_sequences, sequence_diagnostics = matcher.observed_sequences_from_matches(
             matches,
-            base_story_orders=story_orders,
+            base_story_orders={},
             min_video_matches=args.min_video_matches,
             min_sequence_keys=args.min_sequence_keys,
-            use_ransac=not args.no_ransac,
+            use_ransac=False,
             ransac_tolerance=args.ransac_tolerance,
             keep_partial_sequences=True,
         )
@@ -441,8 +445,8 @@ def match_selected_reports(args: argparse.Namespace) -> dict[str, Any]:
             "minChars": args.min_chars,
             "minVideoMatches": args.min_video_matches,
             "minSequenceKeys": args.min_sequence_keys,
-            "ransacEnabled": not args.no_ransac,
-            "ransacTolerance": args.ransac_tolerance,
+            "ransacEnabled": False,
+            "ransacTolerance": None,
         },
         "loadStats": dict(sorted(load_stats.items())),
         "summary": {

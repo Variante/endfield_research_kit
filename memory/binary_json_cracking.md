@@ -2701,3 +2701,316 @@ Adjusted next parser plan:
 1. For SkillData, recover or implement formatter-specific skippers for `ActionGroupData`, `CastData`, `BuffInputBase`, `GameplayTagList`, and list/dictionary wrappers before assigning actual values to top-level fields.
 2. For BuffData, reacquire full IL2CPP metadata or regenerate a broader metadata cache that includes `Beyond_Gameplay_Core_BuffDataForMemoryPack` before attempting typed field-value decoding.
 3. Keep exact marker counts as evidence only: repeated SkillData id markers often appear in nested action bodies, not necessarily as multiple top-level fields.
+
+## 2026-06-28 BuffData Metadata Type-Hint Pass
+
+`Json/BuffData/*.json` now exposes top-level IL2CPP setter parameter types in the Data index. This replaces the previous "field names and markers only" BuffData state with a conservative typed-schema preview.
+
+Evidence and method:
+
+1. Rechecked public web searches for `Beyond_Gameplay_Core_BuffDataForMemoryPack`, `Beyond.Gameplay.Core.BuffData MemoryPack`, `BuffDataForMemoryPack Endfield`, and `Arknights Endfield BuffData MemoryPack`. No public schema/source surfaced, so the pass stayed local.
+2. The moved data is back under `export_full/structured/StreamingAssets/Data`. The current root has `Json/` and `Video/`; the Json rebuild covers 81,735 files, while `Data/Video` contains 464 MP4 files totaling 5,217,460,601 bytes.
+3. Queried the installed `global-metadata.dat` with `tools/endfield-il2cpp/catalog_option_flow_metadata.py` using a focused BuffData type regex. The generated local artifacts are `tmp/buffdata_metadata.json` and `tmp/buffdata_metadata.md`.
+4. Recovered `Beyond_Gameplay_Core_BuffDataForMemoryPack` setter parameter types for all 29 serialized fields. The useful top-level scalar/flag/id fields are `id`, `addingCooldown`, `duration`, `finishOnRepatriate`, `hasAddingCooldown`, `hasIcon`, `ignoreCooldownWhenAdding`, `ignoreTagImmune`, `lifeType`, `maxTriggerCnt`, `triggerInterval`, `useTimeDilationDt`, and `waitFirstTriggerInterval`.
+5. Promoted only top-level type hints and scalar-vs-complex grouping into `scripts/build_data_index.py`. The parser still does not assign concrete field values because `GameplayTagList`, `BlackboardDouble`, `BlackboardInt`, modifier lists, action lists, shield configs, and dictionaries need exact nested skippers first.
+6. Regenerated `python scripts\build_data_index.py --groups Json`. The existing WebUI server returned HTTP 200 for `data/game_data/index.json` and `data/game_data/groups/Json_BuffData.json`.
+7. Checked `Data/Video` as the only non-Json folder in the moved root. It is MP4 media, and `webui/data/assets/videos.json` already has 942 video entries, so the Data tab continues to exclude videos instead of duplicating large media rows.
+
+Observed output after regeneration:
+
+- `webui/data/game_data/index.json` reports 30 Json groups, 81,735 files, 700,046,680 bytes, 78,710 `memorypack-json` entries, and 3,025 `text-json` entries.
+- `Json_BuffData.json` contains 2,291 rows. The first sampled row reports `field types recovered (13 scalar/flag/id, 16 complex/list)`, `typedFields=13/29`, and `schemaTypes=id:String,duration:BlackboardDouble,lifeType:LifeType,triggerInterval:BlackboardDouble,maxTriggerCnt:BlackboardInt,applyTags:GameplayTagList`.
+- `Json_SkillData.json` still contains 2,083 rows and reports `field types recovered (30 primitive/enum/string/vector, 15 complex/list)` with `typedFields=30/45`.
+
+Adjusted next parser plan:
+
+1. Decode reusable MemoryPack wrapper bodies next: `BlackboardDouble`, `BlackboardInt`, `GameplayTagList`, list wrappers, and simple dictionaries. These will unlock both BuffData and SkillData more safely than byte-guessing action payloads.
+2. Treat modifier/action/shield/timeline lists as opaque until their item formatter types are recovered from metadata or validated with exact byte boundaries.
+3. Keep `Data/Video` on the Assets/video path unless a separate media metadata page is requested; it is already indexed and previewed elsewhere.
+
+## 2026-06-28 BuffData Post-ID Prefix Pass
+
+`Json/BuffData/*.json` now exposes a validated post-id scalar prefix in the Data index. This is the first promoted BuffData field-value decode beyond id/string/type hints.
+
+Evidence and method:
+
+1. Rechecked public web searches for `Beyond.Blackboard BlackboardParamBase MemoryPack`, `Beyond.Gameplay.Core.GameplayTagList MemoryPack`, `Beyond_Gameplay_Core_GameplayTagListForMemoryPack`, and `BuffStackingSettings Arknights Endfield`. No usable public schema/source surfaced.
+2. Used local IL2CPP metadata to confirm `BlackboardParamBase` carries `useBlackboardKey`, `value`, and `blackboardKey`, and that generated wrappers serialize the Blackboard base fields as `blackboardKey`, `useBlackboardKey`, then `value`.
+3. Byte-indexed BuffData samples validated `BlackboardInt` after the top-level `id` field as a 3-member nested wrapper: member count `3`, MemoryPack UTF-8 `blackboardKey`, one-byte `useBlackboardKey`, and signed i32 `value`.
+4. Probed the BuffData start prefix (`abilityEventAction`, `addingCooldown`, `applyTags`) but did not promote it: only 1,174 rows followed the simple zero-action shape. Another 516 rows had nonzero ability action counts, and many rows diverged before `addingCooldown`, so this remains blocked on action-list skippers.
+5. Anchored the safer parser after the exact filename-stem id marker. For unique-id rows it reads `igniteEventAction` count, `ignoreCooldownWhenAdding`, `ignoreTagImmune`, one-byte raw `lifeType`, `maxTriggerCnt` BlackboardInt, `poiseModifier` count, and, when `poiseModifier` is empty, `shieldConfigs` count. It stops before `stackingSettings`, which byte evidence shows is not a one-byte enum.
+6. Full-corpus validation before promotion: `through-shield-count` 2,184 rows, `through-poise-count` 6 rows, repeated id marker skips `2:63`, `3:29`, `4:4`, `6:1`, `7:1`, and three unique-id rows failed bool validation. Parsed value distributions include `lifeTypeRaw` `1:1212`, `0:978`; `ignoreTagImmune` `0:2138`, `1:52`; and `maxTriggerCnt` top values `-1:968`, `1:796`, `0:367`, `999:20`.
+7. Promoted `decode_buff_post_id_prefix` in `scripts/build_data_index.py`, regenerated `python scripts\build_data_index.py --groups Json`, and smoke-tested the existing WebUI server. `data/game_data/index.json` and `data/game_data/groups/Json_BuffData.json` both returned HTTP 200.
+
+Observed output after regeneration:
+
+- `Json_BuffData.json` still contains 2,291 rows.
+- 2,190 compact summaries now include `post-id prefix parsed` and `postId=...` samples.
+- First sampled row now reports `postId=lifeType:1,maxTriggerCnt:0,ignoreTagImmune:0,poise:0,shield:0`.
+- Compact sample distributions from generated output match the probe: `lifeType` `1:1212`, `0:978`; `maxTriggerCnt` starts with `-1:968`, `1:796`, `0:367`, `999:20`.
+
+Adjusted next parser plan:
+
+1. Do not parse BuffData from the file start until `abilityEventAction` list bodies have exact skippers; the current initial-prefix probe proved the zero-action shortcut is not corpus-wide.
+2. Decode `stackingSettings` next if metadata exposes its exact MemoryPack wrapper; otherwise continue with reusable wrappers (`BlackboardDouble`, `GameplayTag`, small list/dictionary counts) only where a validated anchor avoids the unknown middle body.
+3. Keep repeated-id BuffData rows marked ambiguous for post-id parsing until the true top-level id occurrence can be distinguished from nested action references.
+
+## 2026-06-28 BuffData Exact Tail Pass
+
+`Json/BuffData/*.json` now has a second promoted value-decode step: rows in the compact post-id tail branch parse through the file end, including a validated `BuffStackingSettings` subset and the final timer fields.
+
+Evidence and method:
+
+1. Rechecked public web searches for `Beyond.Gameplay.Core.BuffStackingSettings`, `BuffStackingSettings Endfield`, `Beyond_Gameplay_Core_BuffStackingSettingsForMemoryPack`, and `BuffStackingSettings MemoryPack`. No public schema/source surfaced.
+2. Extracted local IL2CPP metadata from `tmp/buff_wrappers_metadata.json` / `tmp/buffdata_metadata.json`. Runtime `BuffStackingSettings` has 12 non-static serialized fields plus static `TIMELINE_AVAILABLE_STACKING_TYPE`; generated setters expose `identifierType`, `isNeedStackEffect`, `maxStackCnt`, `maxStackCntKey`, `negatePriority`, `priority`, `priorityKey`, `stackEffects`, `stackingKey`, `stackingType`, `useMaxStackCntKey`, and `usePriorityKey`.
+3. Method-body lookup did not produce a useful stacking formatter body target, so the promotion used local metadata plus exact byte handoff validation.
+4. The exact branch is a compact `identifierType=Id` layout, not a full stacking-key branch parser: member count `12`, one-byte `identifierType`, `isNeedStackEffect`, i32 `maxStackCnt`, empty/non-empty `maxStackCntKey`, `negatePriority`, f32 `priority`, `priorityKey`, `stackEffects` count, one-byte `stackingType`, `useMaxStackCntKey`, and `usePriorityKey`. Rows needing `stackingKey` or non-empty list bodies remain opaque.
+5. The handoff after the compact stacking block validates `tagsAfterTriggerExtendBuffAction` as a nested GameplayTag record, `timelineActions` as a u32 count, `triggerInterval` as the float-backed Blackboard wrapper (`memberCount=3`, `blackboardKey`, `useBlackboardKey`, f32 value), and final `useTimeDilationDt` / `waitFirstTriggerInterval` bools.
+6. Full-corpus prototype result before promotion: 1,884 rows consumed exactly through the file end. Other rows were left unpromoted because of repeated id markers, non-empty `poiseModifier` / `shieldConfigs`, nonzero/complex tail bodies, or divergent action/list layouts.
+7. Promoted the exact branch in `scripts/build_data_index.py`, regenerated `python scripts\build_data_index.py --groups Json`, and smoke-tested the existing WebUI server. `data/game_data/index.json`, `data/game_data/groups/Json_BuffData.json`, and `data/game_data/groups/Video.json` returned HTTP 200.
+
+Observed output after regeneration:
+
+- `webui/data/game_data/index.json` now reports 31 groups, 82,199 files, and kinds `memorypack-json:78710`, `text-json:3025`, `video:464`.
+- `Json_BuffData.json` contains 2,291 rows: 1,884 summaries say `post-id tail parsed`, 306 say `post-id prefix parsed`, and 101 remain marker/error/opaque cases without a post-id sample.
+- First sampled row now shows `postId=life:1,maxTrig:0,stack:0,maxStack:0,trig:-1.0,wait:1`.
+- `Video.json` contains 464 MP4 entries with `ftyp`/brand summaries; this is lightweight media indexing, not a replacement for the richer Assets video browser.
+
+Adjusted next parser plan:
+
+1. For BuffData, do not broaden the compact stacking branch until a row with `identifierType=StackingKey` or non-empty `stackEffects` can be byte-validated with an exact handoff.
+2. The next high-value BuffData work is still the middle body: `abilityEventAction`, modifier lists, `blackboard`, and shield/poise branches. These need item formatter skippers before they should be promoted.
+3. Since Video is now indexed, future non-Json work should target data-bearing formats, not MP4 payload contents, unless the requested surface is media metadata.
+
+## 2026-06-28 Raw Data Tree Index Pass
+
+The moved `export_full/structured/StreamingAssets/Data` root now contains both
+extracted `Json/`/`Video/` folders and raw installed-game Data folders. The WebUI
+Data page has been broadened to index the full tree instead of only the
+previous JSON/video subset.
+
+Methods tried and findings:
+
+1. Rechecked public web searches for `hgmmap`, `manifest.hgmmap`,
+   `InitStringPathHash`, and `ArknightsEndfield hgmmap`. No usable public
+   format documentation surfaced, so raw archive support stayed header-level.
+2. Re-ran the BuffData tail branch hypothesis from the previous pass. A global
+   `stackingKey`-after-`stackEffects` layout plus counted `GameplayTagList`
+   failed corpus validation: it reduced exact tail coverage to zero for the
+   1,884 already-valid compact rows. Byte comparison showed the format is
+   branchy: the promoted compact branch has no `stackingKey`, while some
+   remaining rows probably use a stacking-key branch or non-empty list bodies.
+   This was not promoted.
+3. Inventoried the current root: 379,465 files, 60,871,904,787 bytes, with
+   kinds `asset-bundle:258422`, `memorypack-json:78710`, `flatbuffer-bytes:38561`,
+   `text-json:3025`, `video:464`, `irradiance-volume:263`, `wwise-pck:16`,
+   `binary-index:3`, and `hgmmap:1`.
+4. Updated `scripts/build_data_index.py` to include PCK files, classify raw
+   `.ab`, `.pck`, `.hgmmap`, `.bin`, world-streaming `.bytes`, and video files,
+   and shard huge non-JSON groups. `Bundles/Windows/main` is split by first hex
+   filename nibble; streaming/irradiance/video groups split by path.
+5. Optimized the full index pass after a 15-minute timeout: the builder now
+   reads each file header once, reuses stat/header data during entry generation,
+   and uses a 1 KiB indexing header. The browser binary preview still fetches
+   its own header range from the raw file.
+6. Updated the Data frontend to honor `requiresGroupSelection` for large roots,
+   so opening the tab loads only `index.json` and waits for a group choice
+   instead of fetching every shard. The generated index now sets this flag
+   because the file count exceeds the 120,000 auto-load limit.
+7. Full rebuild completed in 726 seconds: 193 groups, 379,465 files, about
+   58,052 MiB. HTTP smoke tests returned 200 for `data/game_data/index.json`,
+   `groups/Audio_PCK.json`, and `groups/Bundles_Windows_main_0.json`.
+
+Adjusted next parser plan:
+
+1. Do not promote the failed BuffData stacking-key/count-list hypothesis until a
+   branch-selective parser can consume representative rows exactly without
+   regressing the compact branch.
+2. For raw Data, treat `.ab`, `.pck`, and `.hgmmap` as encoded/archive payloads
+   in the generic Data page. Deeper unpacking should use AnimeStudio or a
+   dedicated extractor path rather than ad hoc browser indexing.
+3. The next high-value non-JSON parser work is schema evidence for
+   `Streaming/` FlatBuffer-like `.bytes` files or exact row layouts for
+   `ExtendData/*StringPathHash.bin`; both need local schema/code evidence before
+   naming fields.
+
+## 2026-06-28 SkillData Post-ID Tail Prefix Pass
+
+`Json/SkillData/*.json` now exposes the first validated field-value decode after
+the exact `skillId` marker. This pass stays anchored after the top-level id
+because the file starts with complex `actionGroupData`, which still lacks safe
+item skippers.
+
+Evidence and method:
+
+1. Rechecked public web searches for `Beyond.Gameplay.Core.SkillDataForMemoryPack`,
+   `SkillDataForMemoryPack Arknights Endfield`, `Beyond.Gameplay.Core.SkillData
+   MemoryPack`, and `Arknights Endfield SkillData MemoryPack`. No public schema
+   or source surfaced, so the promotion used local metadata plus corpus byte
+   validation.
+2. Inspected SkillData bytes after the verified `skillId` marker. The stable
+   prefix is `skillName` as a MemoryPack UTF-8 string, `skillSpecification` as
+   little-endian i32, then `skillTags`, `smartTargetBuffFindSettings`,
+   `smartTargetBuffIds`, `smartTargetSelectStrategy`, and `smartTargetTagQuery`.
+3. Two bad prototypes were rejected before promotion: treating all smart-target
+   enum-like fields as i32 produced implausible values such as `512` and
+   `65536`, while treating `skillSpecification` as u8 made `skillTags` look like
+   a huge `16777216` count. The validated layout is mixed: `skillSpecification`
+   is i32, while the later smart-target enum-like fields in this branch are
+   one byte each.
+4. `skillTags` has two observed branches. The common branch is a direct u32
+   count with a compact empty/default tag record. The 23 dash/normal/combo rows
+   use a one-member wrapper byte before the real u32 count and contain clean tag
+   paths such as `Skill/Character/chr_0004_pelica/DashAttack`.
+5. Full-corpus validation before promotion: 2,030 unique-id rows parsed through
+   `smartTargetTagQuery` with zero parse errors; 53 rows remain ambiguous because
+   the exact skill id appears more than once. Parsed distributions include
+   `skillSpecification` raw values `0,1,2,3,4,5,6,7,8,9,10,11,100`,
+   `smartTargetBuffFindSettings` raw `0:2007` and `3:23`,
+   `smartTargetSelectStrategy` raw `0:2030`, and `smartTargetTagQuery` raw
+   `0:2011`, `1:16`, `3:3`.
+6. Promoted the parser in `scripts/build_data_index.py`, filtering compact
+   samples to clean printable tag paths so two control-byte nested payloads do
+   not display as valid tag text. The parsed structure still records the raw tag
+   record in `decoded.postIdTailPrefix`.
+7. Regenerated `python scripts\build_data_index.py --groups Json`. The full
+   Data index remains 379,465 files / 193 groups, and `requiresGroupSelection`
+   is true after fixing selected-group rebuilds to compute that flag from
+   aggregate preserved group counts. HTTP smoke tests returned 200 for
+   `data/game_data/index.json` and `data/game_data/groups/Json_SkillData.json`.
+
+Observed output after regeneration:
+
+- `Json_SkillData.json` contains 2,083 rows.
+- 2,030 summaries now say `post-id tail prefix parsed`; each compact sample has
+  `postId=spec:<raw>,tags:<count>,find:<raw>,buffIds:<count>,select:<raw>,query:<raw>`.
+- 23 rows show `tagMode:wrap` plus a clean `Skill/...` tag path sample.
+- 53 repeated-id rows stay marker-ambiguous and do not get post-id tail values.
+
+Adjusted next parser plan:
+
+1. Do not parse SkillData from the file start until `ActionGroupData` and
+   related action/cast/buff item bodies have exact skippers.
+2. The next SkillData boundary is `switchToBuffConfig`; promote it only after
+   identifying its member count/layout and proving handoff to `switchToCenterBeforeCast`.
+3. For broader binary JSON coverage, reusable wrappers remain the best leverage:
+   exact `GameplayTagList` variants, small string/id lists, and enum-width rules
+   can now be shared between SkillData and BuffData instead of guessed per file.
+
+## 2026-06-28 SkillData Switch Tail Probe Pass
+
+This pass corrected the previous SkillData post-id coverage and added a bounded
+`switchToBuffConfig` tail probe instead of promoting an unsafe full nested decode.
+
+Evidence and method:
+
+1. Rechecked public web searches for `SwitchToBuffConfig`,
+   `Beyond.Gameplay.Core.SwitchToBuffConfig`,
+   `Beyond_Gameplay_Core_SwitchToBuffConfigForMemoryPack`,
+   `smartTargetTagQuery`, and related SkillData names. No public Endfield schema
+   or source surfaced. The stable schema evidence came from the installed
+   `global-metadata.dat` parsed by `tools/endfield-il2cpp/catalog_option_flow_metadata.py`.
+2. Local IL2CPP metadata confirms generated MemoryPack wrapper setters for
+   `Beyond_Gameplay_Core_SkillDataForMemoryPack`, including the post-id order
+   through `smartTargetTagQuery`, and confirms `SwitchToBuffConfig` generated
+   fields in alphabetical setter order: `asSkillCast`, `buffs`, `buffSource`,
+   `condition`, and `targets`.
+3. A key false-positive was found in the previous parser: accepting any decoded
+   256-byte string let binary payloads masquerade as `skillTags` or
+   `smartTargetBuffIds`. Tight clean-string validation now rejects tag/id strings
+   containing control or replacement characters, while still allowing empty
+   default tag/id entries.
+4. Re-ran the enum-width hypotheses. Treating the smart-target fields as i32
+   still misaligns common rows (`512`, `65536`, and larger implausible values),
+   while the observed generated branch validates as one-byte
+   `smartTargetBuffFindSettings`, counted string/id list, one-byte
+   `smartTargetSelectStrategy`, and one-byte `smartTargetTagQuery`.
+5. After strict validation, SkillData coverage is now 2,025 parsed unique-id rows,
+   53 repeated-id rows left ambiguous, and five rows deliberately rejected as
+   parse errors rather than false positives:
+   `chr_0022_bounda_ultimate_skill`, `chr_0024_deepfin_normal_skill`,
+   `chr_0028_wulfa_ultimate_skill`, `chr_0030_zhuangfy_combo_skill`, and
+   `chr_0030_zhuangfy_combo_skill_ult`.
+6. Every one of the 2,025 strict parsed rows has a plausible `SwitchToBuffConfig`
+   marker within the next 96 bytes: member count `5`, boolean `asSkillCast`, and
+   a bounded `buffs` list count. The common branch has a 12-byte pre-switch
+   residual and `buffsCount=0`; 23 dash rows have a 28-byte pre-switch residual;
+   one Ardelia row has a 63-byte residual containing a clean
+   `Skill/Character/Common/SpellStatus/Corrupt` tag string. Some character rows
+   continue with non-empty switch/tail payloads, so the promoted parser records
+   the marker, counts, byte lengths, hex prefixes, and string hits instead of
+   claiming a complete handoff to `switchToCenterBeforeCast`.
+7. Rebuilt `python scripts\build_data_index.py --groups Json`. The generated
+   index remains 379,465 files / 193 groups / `requiresGroupSelection: true`.
+   `Json_SkillData.json` now has 2,025 rows with `post-id tail prefix parsed`
+   and `switchRel`, `switchBuffs`, and `tail` compact samples. HTTP smoke tests
+   returned 200 for both `data/game_data/index.json` and
+   `data/game_data/groups/Json_SkillData.json`.
+
+Adjusted next parser plan:
+
+1. The next SkillData step is to decode `SwitchToBuffConfig` nested bodies by
+   writing exact skippers for `TargetSettings`, `SequenceActionData`, and
+   `List<BuffInputBase>` union items. The current marker probe is intentionally
+   not a full nested decode.
+2. Revisit the five strict parse-error rows only after `smartTargetBuffIds` item
+   variants are understood; three appear to use a wrapped/non-string id item
+   shape, while two Zhuangfy rows use a different `skillTags` body shape.
+3. The same clean-string validation should be reused for future MemoryPack list
+   parsers so binary payloads cannot pass as text just because Python can decode
+   them with replacement characters.
+
+## 2026-06-28 SkillData Post-Switch Tail Exact Pass
+
+This pass extends the previous `switchToBuffConfig` marker probe into a validated
+post-switch tail decode for the default switch-config branch.
+
+Evidence and method:
+
+1. Rechecked public searches for `Beyond.Gameplay.Core.TargetSettings`,
+   `Beyond.Gameplay.Core.SequenceActionData`, `TargetSettingsForMemoryPack`, and
+   `SequenceActionDataForMemoryPack`. No public Endfield schema surfaced, so the
+   promoted parser uses local IL2CPP metadata plus byte-level corpus validation.
+2. Local metadata shows `SwitchToBuffConfig` generated order as `asSkillCast`,
+   `buffs`, `buffSource`, `condition`, and `targets`. The representative switch
+   tail starts with member count `05`, `asSkillCast=1`, empty `buffs`, then a
+   `TargetSettings` block beginning with member count `0D`. The following
+   `SequenceActionData` marker is `03`, matching its generated three-member
+   body.
+3. The common/default `SwitchToBuffConfig` branch has a stable 148-byte boundary
+   from the switch marker. Immediately after that boundary, the bytes validate
+   as `switchToCenterBeforeCast` bool, `tagDuringAttach` GameplayTagList,
+   `toggleBuffs` count, and `uiRangeHints` count/body.
+4. The first UI range prototype used one-byte enums and failed with consistent
+   six-byte residues. Re-parsing `SkillHintShape` and `FactionType` as i32
+   produced exact file-end handoffs. `UIRangeHintData` validates as a 3-member
+   item (`selectAll`, `shapeData`, `targetFaction`) and `SkillHintShapeData` as
+   a 21-member item with f32/string/bool/vector2 fields in generated setter
+   order.
+5. Full-corpus validation after promotion: among the 2,025 strict parsed
+   SkillData rows, 1,948 parse exactly through the file end after the default
+   switch-config branch, 76 parse cleanly through `toggleBuffsCount` and stop
+   because the toggle list body is still opaque, and one row
+   (`chr_0026_lastrite_normal_skill`) has a non-default switch body that does
+   not satisfy the 148-byte default boundary.
+6. Exact tail rows include 1,823 rows with `uiRangeHintsCount=0`, 122 rows with
+   one UI range hint, and three rows with two UI range hints. Observed UI hint
+   item lengths are 75, 81, and 86 bytes; shape raws include `Point`, `Circle`,
+   `Sector`, and `Arrow`, with radius/angle key strings such as `radius` and
+   `angle` on the keyed rows. Two exact rows carry non-empty `tagDuringAttach`
+   lists while keeping empty toggle/UI bodies.
+7. Rebuilt `python scripts\build_data_index.py --groups Json`. The generated
+   full Data index remains 379,465 files, 193 groups, and
+   `requiresGroupSelection: true`; `Json_SkillData.json` is served at HTTP 200
+   from the existing local WebUI server.
+
+Adjusted next parser plan:
+
+1. Decode `toggleBuffs` next via `ToggleBuffData` and `BuffInputBase` list item
+   skippers; the 76 stopped rows now have a clean `toggleBuffsCount` boundary.
+2. Decode the one non-default `SwitchToBuffConfig` body by adding skippers for
+   non-empty `buffs`, `TargetSettings`, and `SequenceActionData` bodies instead
+   of assuming the 148-byte default branch.
+3. Keep `ActionGroupData`, cast data, blackboard, and early SkillData fields out
+   of field-value decoding until their item/list wrappers have exact handoffs.
+

@@ -793,6 +793,37 @@ def is_sns_inline_image_stem(stem: str) -> bool:
     return "sns" in normalized or "emoji" in normalized
 
 
+def is_standalone_sns_media_id(value: str) -> bool:
+    normalized = normalize_inline_image_id(value)
+    return normalized.startswith(
+        (
+            "sns_image_",
+            "sns_sticker_",
+            "cg_image_",
+            "deco_sns_tweet_decorate_",
+            "bg_sns_tweet_decorate_",
+        )
+    )
+
+
+def sns_image_fallback_asset_stems(value: str) -> tuple[str, ...]:
+    normalized = normalize_inline_image_id(value)
+    if not normalized.startswith("sns_image_"):
+        return ()
+
+    suffix = normalized[len("sns_image_") :]
+    match = re.match(r"^(.+)_(\d+)_([mf])$", suffix)
+    if not match:
+        return ()
+
+    base, index, gender = match.groups()
+    return (
+        f"reading_{base}_photo_{gender}",
+        f"read_{base}_{index}_{gender}",
+        f"reading_{base}_{index}_{gender}",
+    )
+
+
 def media_lookup_stem(rel: str) -> tuple[str, str] | None:
     name = normalize_posix(rel).split("/")[-1] or rel
     stem = re.sub(r"\.[^.]+$", "", name, flags=re.IGNORECASE).lower()
@@ -936,6 +967,15 @@ def resolve_inline_image_assets(
     if normalized.startswith("sns_image_"):
         sns_suffix = normalized[len("sns_image_") :]
         add(by_stem.get(f"cg_image_{sns_suffix}"))
+        if not matches:
+            for stem in sns_image_fallback_asset_stems(normalized):
+                candidate = by_stem.get(stem)
+                if candidate:
+                    add(candidate)
+                    break
+
+    if matches and is_standalone_sns_media_id(normalized):
+        return list(matches.values())
 
     number_key = inline_image_number_key(normalized)
     if number_key:

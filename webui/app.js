@@ -1,4 +1,4 @@
-// Endfield conversation browser - single-file vanilla JS.
+﻿// Endfield conversation browser - single-file vanilla JS.
 // Loads data/manifest.json and language sidecars, then lazy-loads conversations.
 // Left pane is a 3-level tree (kind / story-line / mission) with a
 // virtualized scroll that supports mixed row heights.
@@ -28,6 +28,9 @@ const FILTER_SPLITTER_STORAGE_PREFIX = "webui_filter_splitter_height_";
 const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
 const WEBUI_DATA_CACHE_TAG = "20260518-scene-map-order-evidence";
 const STORY_ORDER_JSON_ENABLED = true;
+const STORY_ORDER_ENTRY_TAG_DEFAULT = "";
+const STORY_ORDER_ENTRY_TAG_BRANCH = "branch";
+const STORY_ORDER_ENTRY_TAG_UNUSED = "unused";
 const MANUAL_READING_ARCHIVE_DUPLICATE_GROUPS = [
   {
     mission: "e1m1",
@@ -80,6 +83,9 @@ const STATE = {
   storyOrderGroupingOverrides: new Map(),
   storyOrderOcrPayload: null,
   storyOrderOcrPromise: null,
+  storyOrderBuilderDrafts: new Map(),
+  storyOrderBuilderSelections: new Map(),
+  storyOrderCompareSortSource: "",
   optionOverridePayload: null,
   optionOverridePromise: null,
   expanded: new Set(),   // group paths the user opened
@@ -718,8 +724,10 @@ function loadStoryOrderOcrPayload() {
 function ensureStoryOrderOcrPayloadForDebug() {
   if (!STATE.showDebug || STATE.storyOrderOcrPayload || STATE.storyOrderOcrPromise) return;
   void loadStoryOrderOcrPayload().then(() => {
+    if (!STATE.showDebug) return;
+    if (typeof renderList === "function") renderList();
     const cached = STATE.selectedKey ? STATE.convCache.get(STATE.selectedKey) : null;
-    if (STATE.showDebug && cached) renderConv(cached);
+    if (cached) renderConv(cached);
   }).catch(() => {});
 }
 
@@ -737,39 +745,29 @@ function overrideKeyList(values) {
   return out;
 }
 
-function storyOrderMissionLocked(missionId) {
+function storyOrderMissionForId(missionId) {
   const missionKey = String(missionId || "");
-  const mission = STATE.storyOrderPayload
+  return STATE.storyOrderPayload
     && STATE.storyOrderPayload.missions
     && STATE.storyOrderPayload.missions[missionKey];
+}
+
+function storyOrderMissionLocked(missionId) {
+  const mission = storyOrderMissionForId(missionId);
   return !!(mission && mission.locked === true);
 }
 
-function storyOrderMissionPossiblyUnused(missionId) {
+function ensureStoryOrderMissionForEdit(missionId) {
   const missionKey = String(missionId || "");
-  const mission = STATE.storyOrderPayload
-    && STATE.storyOrderPayload.missions
-    && STATE.storyOrderPayload.missions[missionKey];
-  const list = mission && Array.isArray(mission.possiblyUnused) ? mission.possiblyUnused : [];
-  return new Set(list.map((k) => String(k || "")).filter(Boolean));
-}
-
-function storyOrderEntryPossiblyUnused(missionId, key) {
-  return storyOrderMissionPossiblyUnused(missionId).has(String(key || ""));
-}
-
-function setStoryOrderEntryPossiblyUnused(missionId, key, flag) {
-  const missionKey = String(missionId || "");
-  const entryKey = String(key || "");
-  if (!missionKey || !entryKey) return false;
+  if (!missionKey) return null;
   const missions = STATE.storyOrderPayload && STATE.storyOrderPayload.missions;
-  if (!missions || typeof missions !== "object") return false;
+  if (!missions || typeof missions !== "object") return null;
   let mission = missions[missionKey];
   if (!mission || typeof mission !== "object" || !Array.isArray(mission.order) || !mission.order.length) {
     const baseline = typeof storyOrderMissionBaselineOrder === "function"
       ? storyOrderMissionBaselineOrder(missionKey)
       : [];
-    if (!baseline.length) return false;
+    if (!baseline.length) return null;
     mission = missions[missionKey] = {
       level: "",
       levels: [],
@@ -779,15 +777,95 @@ function setStoryOrderEntryPossiblyUnused(missionId, key, flag) {
     STATE.storyOrderIndex = buildStoryOrderIndex(STATE.storyOrderPayload);
     STATE.storyOrderGroupingOverrides = buildStoryOrderGroupingOverrides(STATE.storyOrderPayload);
   }
-  const current = Array.isArray(mission.possiblyUnused)
-    ? mission.possiblyUnused.map((k) => String(k || "")).filter(Boolean)
-    : [];
-  const set = new Set(current);
-  if (flag) set.add(entryKey); else set.delete(entryKey);
-  if (set.size) mission.possiblyUnused = mission.order.filter((k) => set.has(String(k)));
-  else delete mission.possiblyUnused;
+  return mission;
+}
+
+function storyOrderMissionTagSet(missionId, field) {
+  const mission = storyOrderMissionForId(missionId);
+  const list = mission && Array.isArray(mission[field]) ? mission[field] : [];
+  return new Set(overrideKeyList(list));
+}
+
+function storyOrderOrderedTagValues(order, values, excludeSet = null) {
+  const tagSet = values instanceof Set ? values : new Set(overrideKeyList(values));
+  const excluded = excludeSet instanceof Set ? excludeSet : new Set();
+  return overrideKeyList(order).filter((key) => tagSet.has(key) && !excluded.has(key));
+}
+
+function storyOrderOrderedMissionTagList(mission, field, order, excludeSet = null) {
+  const values = mission && Array.isArray(mission[field]) ? mission[field] : [];
+  return storyOrderOrderedTagValues(order, values, excludeSet);
+}
+
+function applyStoryOrderMissionTagSet(mission, field, values, excludeSet = null) {
+  const next = storyOrderOrderedTagValues(mission && mission.order, values, excludeSet);
+  if (next.length) mission[field] = next;
+  else delete mission[field];
+}
+
+function storyOrderMissionPossiblyUnused(missionId) {
+  return storyOrderMissionTagSet(missionId, "possiblyUnused");
+}
+
+function storyOrderMissionBranches(missionId) {
+  return storyOrderMissionTagSet(missionId, "branches");
+}
+
+function normalizeStoryOrderEntryTagState(state) {
+  const raw = String(state || "");
+  if (raw === STORY_ORDER_ENTRY_TAG_BRANCH) return STORY_ORDER_ENTRY_TAG_BRANCH;
+  if (raw === STORY_ORDER_ENTRY_TAG_UNUSED) return STORY_ORDER_ENTRY_TAG_UNUSED;
+  return STORY_ORDER_ENTRY_TAG_DEFAULT;
+}
+
+function storyOrderEntryTagState(missionId, key) {
+  const entryKey = String(key || "");
+  if (!entryKey) return STORY_ORDER_ENTRY_TAG_DEFAULT;
+  if (storyOrderMissionPossiblyUnused(missionId).has(entryKey)) return STORY_ORDER_ENTRY_TAG_UNUSED;
+  if (storyOrderMissionBranches(missionId).has(entryKey)) return STORY_ORDER_ENTRY_TAG_BRANCH;
+  return STORY_ORDER_ENTRY_TAG_DEFAULT;
+}
+
+function storyOrderEntryPossiblyUnused(missionId, key) {
+  return storyOrderEntryTagState(missionId, key) === STORY_ORDER_ENTRY_TAG_UNUSED;
+}
+
+function storyOrderEntryBranch(missionId, key) {
+  return storyOrderEntryTagState(missionId, key) === STORY_ORDER_ENTRY_TAG_BRANCH;
+}
+
+function nextStoryOrderEntryTagState(state) {
+  const current = normalizeStoryOrderEntryTagState(state);
+  if (current === STORY_ORDER_ENTRY_TAG_DEFAULT) return STORY_ORDER_ENTRY_TAG_BRANCH;
+  if (current === STORY_ORDER_ENTRY_TAG_BRANCH) return STORY_ORDER_ENTRY_TAG_UNUSED;
+  return STORY_ORDER_ENTRY_TAG_DEFAULT;
+}
+
+function setStoryOrderEntryTagState(missionId, key, state) {
+  const missionKey = String(missionId || "");
+  const entryKey = String(key || "");
+  if (!missionKey || !entryKey) return false;
+  const mission = ensureStoryOrderMissionForEdit(missionKey);
+  if (!mission) return false;
+
+  const nextState = normalizeStoryOrderEntryTagState(state);
+  const branches = storyOrderMissionBranches(missionKey);
+  const possiblyUnused = storyOrderMissionPossiblyUnused(missionKey);
+  branches.delete(entryKey);
+  possiblyUnused.delete(entryKey);
+  if (nextState === STORY_ORDER_ENTRY_TAG_BRANCH) branches.add(entryKey);
+  if (nextState === STORY_ORDER_ENTRY_TAG_UNUSED) possiblyUnused.add(entryKey);
+
+  applyStoryOrderMissionTagSet(mission, "branches", branches);
+  applyStoryOrderMissionTagSet(mission, "possiblyUnused", possiblyUnused);
   STATE.storyOrderOverridePayload = buildFullStoryOrderPayload();
   return true;
+}
+
+function setStoryOrderEntryPossiblyUnused(missionId, key, flag) {
+  if (flag) return setStoryOrderEntryTagState(missionId, key, STORY_ORDER_ENTRY_TAG_UNUSED);
+  if (!storyOrderEntryPossiblyUnused(missionId, key)) return true;
+  return setStoryOrderEntryTagState(missionId, key, STORY_ORDER_ENTRY_TAG_DEFAULT);
 }
 
 function storyOrderEntryHasMissionCode(missionId, key) {
@@ -815,6 +893,11 @@ function removeStoryOrderEntryFromMission(missionId, key) {
     if (filtered.length) mission.possiblyUnused = filtered;
     else delete mission.possiblyUnused;
   }
+  if (Array.isArray(mission.branches)) {
+    const filtered = mission.branches.filter((k) => String(k) !== entryKey);
+    if (filtered.length) mission.branches = filtered;
+    else delete mission.branches;
+  }
   STATE.storyOrderOverridePayload = buildFullStoryOrderPayload();
   STATE.storyOrderIndex = buildStoryOrderIndex(STATE.storyOrderPayload);
   STATE.storyOrderGroupingOverrides = buildStoryOrderGroupingOverrides(STATE.storyOrderPayload);
@@ -838,9 +921,9 @@ function buildFullStoryOrderPayload() {
       if (level) out.level = level;
       const levels = overrideKeyList(mission && mission.levels);
       if (levels.length) out.levels = levels;
-      const possiblyUnused = mission && Array.isArray(mission.possiblyUnused)
-        ? overrideKeyList(mission.possiblyUnused).filter((k) => order.includes(k))
-        : [];
+      const possiblyUnused = storyOrderOrderedMissionTagList(mission, "possiblyUnused", order);
+      const branches = storyOrderOrderedMissionTagList(mission, "branches", order, new Set(possiblyUnused));
+      if (branches.length) out.branches = branches;
       if (possiblyUnused.length) out.possiblyUnused = possiblyUnused;
       payload.missions[missionId] = out;
     }
@@ -858,9 +941,10 @@ function buildFullStoryOrderPayload() {
     if (mission.locked === true) orderedMission.locked = true;
     if (mission.level) orderedMission.level = mission.level;
     if (Array.isArray(mission.levels) && mission.levels.length) orderedMission.levels = mission.levels;
-    if (Array.isArray(mission.possiblyUnused) && mission.possiblyUnused.length) {
-      orderedMission.possiblyUnused = orderedMission.order.filter((k) => mission.possiblyUnused.includes(k));
-    }
+    const sortedPossiblyUnused = storyOrderOrderedMissionTagList(mission, "possiblyUnused", orderedMission.order);
+    const sortedBranches = storyOrderOrderedMissionTagList(mission, "branches", orderedMission.order, new Set(sortedPossiblyUnused));
+    if (sortedBranches.length) orderedMission.branches = sortedBranches;
+    if (sortedPossiblyUnused.length) orderedMission.possiblyUnused = sortedPossiblyUnused;
     sortedMissions[missionId] = orderedMission;
   }
   payload.missions = sortedMissions;
@@ -1126,6 +1210,18 @@ function storyOrderMissionOrderFromPayload(payload, missionId) {
   return overrideKeyList(mission && mission.order);
 }
 
+function storyOrderOcrRankForEntry(entry) {
+  if (!STATE.showDebug || (STATE.sortMode || "story") !== "story") return null;
+  const payload = STATE.storyOrderOcrPayload;
+  if (!payload) return null;
+  const missionId = typeof storyOrderMissionIdForEntry === "function"
+    ? storyOrderMissionIdForEntry(entry)
+    : String(entry && entry.m || "");
+  const order = storyOrderMissionOrderFromPayload(payload, missionId);
+  const index = order.indexOf(String(entry && entry.k || ""));
+  return index >= 0 ? index + 1 : null;
+}
+
 function storyOrderMissionCurrentOrder(missionId) {
   const missionKey = String(missionId || "");
   const mission = STATE.storyOrderPayload
@@ -1170,7 +1266,7 @@ function storyOrderSourceRank(value, fallback = Number.POSITIVE_INFINITY) {
   return Number.isFinite(n) ? n : fallback;
 }
 
-function storyOrderMissionStaticRecoveredOrder(missionId) {
+function storyOrderMissionStaticRecoveredSourceOrder(missionId) {
   const missionKey = String(missionId || "");
   const tr = typeof getMissionTimelineRecovery === "function"
     ? getMissionTimelineRecovery(missionKey) : null;
@@ -1197,100 +1293,7 @@ function storyOrderMissionStaticRecoveredOrder(missionId) {
     if (ab !== bb) return ab - bb;
     return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
   });
-  return completeStoryOrderSourceOrder(missionKey, keys);
-}
-
-function storyOrderSameOrder(a, b) {
-  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
-  return a.every((key, index) => String(key) === String(b[index]));
-}
-
-function storyOrderOrderDiffStats(baseOrder, candidateOrder) {
-  const base = overrideKeyList(baseOrder);
-  const candidate = overrideKeyList(candidateOrder);
-  const candidatePos = new Map(candidate.map((key, index) => [key, index]));
-  const baseSet = new Set(base);
-  let same = 0;
-  let moved = 0;
-  let missing = 0;
-  for (let index = 0; index < base.length; index += 1) {
-    const key = base[index];
-    if (!candidatePos.has(key)) missing += 1;
-    else if (candidatePos.get(key) === index) same += 1;
-    else moved += 1;
-  }
-  let added = 0;
-  for (const key of candidate) if (!baseSet.has(key)) added += 1;
-  return { same, moved, missing, added, total: candidate.length };
-}
-
-function storyOrderFormatCount(count) {
-  return (uiText("storyOrderCompareCount") || "{count} entries").replace("{count}", String(count));
-}
-
-function storyOrderFormatDiff(stats) {
-  if (!stats.moved && !stats.missing && !stats.added) return uiText("storyOrderCompareIdentical");
-  return (uiText("storyOrderCompareDiff") || "{moved} moved / {missing} missing / {added} added")
-    .replace("{moved}", String(stats.moved))
-    .replace("{missing}", String(stats.missing))
-    .replace("{added}", String(stats.added));
-}
-
-function appendStoryOrderComparePreview(parent, order, currentKey) {
-  const limit = 24;
-  const list = overrideKeyList(order);
-  for (const key of list.slice(0, limit)) {
-    const chip = document.createElement(key === currentKey ? "span" : "button");
-    chip.className = "story-order-compare-chip" + (key === currentKey ? " current" : "");
-    chip.textContent = key;
-    chip.title = key;
-    if (key !== currentKey) {
-      chip.type = "button";
-      chip.addEventListener("click", (ev) => {
-        ev.preventDefault();
-        ev.stopPropagation();
-        loadConv(key);
-      });
-    }
-    parent.appendChild(chip);
-  }
-  if (list.length > limit) {
-    const more = document.createElement("span");
-    more.className = "story-order-compare-more";
-    more.textContent = (uiText("storyOrderCompareMore") || "+{count}")
-      .replace("{count}", String(list.length - limit));
-    parent.appendChild(more);
-  }
-}
-
-function storyOrderAdoptMissionOrder(missionId, source) {
-  const missionKey = String(missionId || "");
-  if (!missionKey) return false;
-  if (typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionKey)) return false;
-  let sourceOrder = [];
-  if (source === "ocr") {
-    sourceOrder = completeStoryOrderSourceOrder(
-      missionKey,
-      storyOrderMissionOrderFromPayload(STATE.storyOrderOcrPayload, missionKey),
-    );
-  } else if (source === "static") {
-    sourceOrder = storyOrderMissionStaticRecoveredOrder(missionKey);
-  }
-  if (!sourceOrder.length) return false;
-  const currentOrder = storyOrderMissionCurrentOrder(missionKey);
-  if (storyOrderSameOrder(currentOrder, sourceOrder)) return false;
-  if (typeof setStoryOrderMissionOrder !== "function" || !setStoryOrderMissionOrder(missionKey, sourceOrder)) {
-    return false;
-  }
-  if (typeof scheduleStoryOrderSave === "function") scheduleStoryOrderSave();
-  const wrap = $("#list-wrap");
-  const prevScroll = wrap ? wrap.scrollTop : 0;
-  rebuildTree({ resetScroll: false });
-  if (wrap) wrap.scrollTop = prevScroll;
-  renderList();
-  const cached = STATE.selectedKey ? STATE.convCache.get(STATE.selectedKey) : null;
-  if (cached) renderConv(cached);
-  return true;
+  return keys;
 }
 
 // In story-sort + debug, lazily load the JSON of missions whose rows are visible
@@ -2062,7 +2065,7 @@ function storyMediaLookupStem(rel) {
 // envEmoji prefab layer data is reconstructed from the original Unity prefabs at
 // `Assets/Beyond/DynamicAssets/Gameplay/UI/Prefabs/Emoji/emoji_*.prefab` by
 // scripts/recover_envemoji_prefabs.py (Image color + RectTransform fields), then
-// uniformly scaled so each prefab fits the 100×150 stage.
+// uniformly scaled so each prefab fits the 100脳150 stage.
 const ENV_EMOJI_PREFAB_ALIASES = {
   envemoji_common_adaptationwork: "emoji_adaptationwork",
   envemoji_common_dislike: "emoji_newdislike",
@@ -2464,7 +2467,18 @@ function resolveInlineImageAssetCandidates(imageId) {
   if (normalized.startsWith("sns_image_")) {
     const cgImage = STATE.inlineImageAssetByStem.get(`cg_image_${normalized.slice("sns_image_".length)}`);
     add(cgImage);
+    if (!matches.length) {
+      for (const stem of snsImageFallbackAssetStems(normalized)) {
+        const candidate = STATE.inlineImageAssetByStem.get(stem);
+        if (candidate) {
+          add(candidate);
+          break;
+        }
+      }
+    }
   }
+
+  if (matches.length && isStandaloneSnsMediaId(normalized)) return matches;
 
   const numberKey = inlineImageNumberKey(normalized);
   if (!numberKey) return matches;
@@ -3345,6 +3359,10 @@ function renderList() {
   const startTop = Math.max(0, scrollTop - OVERSCAN_PX);
   const endTop = scrollTop + viewH + OVERSCAN_PX;
 
+  if ((STATE.sortMode || "story") === "story" && STATE.showDebug) {
+    ensureStoryOrderOcrPayloadForDebug();
+  }
+
   let i = findFirstVisible(startTop);
   const frag = document.createDocumentFragment();
   const visible = [];
@@ -3380,7 +3398,6 @@ function renderGroup(row) {
     `</span>` +
     `<span class="group-count">${row.count}</span>` +
     storyOrderMissionVerifiedControl(row) +
-    storyOrderMissionReviewControl(row) +
     storyOrderMissionLockControl(row) +
     storyOrderMissionMoveUnusedControl(row);
   return div;
@@ -3420,26 +3437,47 @@ function renderItem(row) {
     ? storyOrderMissionIdForEntry(e)
     : "";
   const inStorySort = (STATE.sortMode || "story") === "story";
-  let possiblyUnused = false;
-  let possiblyUnusedBadge = "";
-  let possiblyUnusedToggle = "";
+  let storyOrderTagState = STORY_ORDER_ENTRY_TAG_DEFAULT;
+  let storyOrderTagBadge = "";
+  let storyOrderTagToggle = "";
   let removeFromMissionButton = "";
   if (missionIdForEntry && inStorySort) {
-    possiblyUnused = typeof storyOrderEntryPossiblyUnused === "function"
-      && storyOrderEntryPossiblyUnused(missionIdForEntry, e.k);
-    if (possiblyUnused) {
+    storyOrderTagState = typeof storyOrderEntryTagState === "function"
+      ? storyOrderEntryTagState(missionIdForEntry, e.k)
+      : (typeof storyOrderEntryPossiblyUnused === "function" && storyOrderEntryPossiblyUnused(missionIdForEntry, e.k)
+        ? STORY_ORDER_ENTRY_TAG_UNUSED
+        : STORY_ORDER_ENTRY_TAG_DEFAULT);
+    const tagIsBranch = storyOrderTagState === STORY_ORDER_ENTRY_TAG_BRANCH;
+    const tagIsUnused = storyOrderTagState === STORY_ORDER_ENTRY_TAG_UNUSED;
+    if (tagIsBranch) {
+      div.classList.add("story-order-branch");
+      const badgeTitle = escapeHtml(uiText("storyOrderBranchTitle"));
+      const badgeLabel = escapeHtml(uiText("storyOrderBranchBadge"));
+      storyOrderTagBadge = `<span class="story-order-branch-badge" title="${badgeTitle}">${badgeLabel}</span>`;
+    } else if (tagIsUnused) {
       div.classList.add("story-order-possibly-unused");
       const badgeTitle = escapeHtml(uiText("storyOrderPossiblyUnusedTitle"));
       const badgeLabel = escapeHtml(uiText("storyOrderPossiblyUnusedBadge"));
-      possiblyUnusedBadge = `<span class="story-order-unused-badge" title="${badgeTitle}">${badgeLabel}</span>`;
+      storyOrderTagBadge = `<span class="story-order-unused-badge" title="${badgeTitle}">${badgeLabel}</span>`;
     }
-    const toggleLabel = escapeHtml(uiText(possiblyUnused ? "storyOrderUnusedClear" : "storyOrderUnusedMark"));
-    const toggleTitle = escapeHtml(uiText(possiblyUnused ? "storyOrderUnusedClearTitle" : "storyOrderUnusedMarkTitle"));
-    possiblyUnusedToggle =
-      `<button class="story-order-unused-toggle${possiblyUnused ? " is-on" : ""}" type="button" ` +
+    const labelKey = tagIsUnused
+      ? "storyOrderTagClear"
+      : (tagIsBranch ? "storyOrderTagMarkUnused" : "storyOrderTagMarkBranch");
+    const titleKey = tagIsUnused
+      ? "storyOrderTagClearTitle"
+      : (tagIsBranch ? "storyOrderTagMarkUnusedTitle" : "storyOrderTagMarkBranchTitle");
+    const toggleLabel = escapeHtml(uiText(labelKey));
+    const toggleTitle = escapeHtml(uiText(titleKey));
+    const toggleClasses = ["story-order-unused-toggle", "story-order-tag-toggle"];
+    if (tagIsBranch) toggleClasses.push("is-branch");
+    if (tagIsUnused) toggleClasses.push("is-unused", "is-on");
+    const toggleMark = tagIsUnused ? "&#10003;" : (tagIsBranch ? "&#9679;" : "");
+    const ariaPressed = tagIsUnused ? "true" : (tagIsBranch ? "mixed" : "false");
+    storyOrderTagToggle =
+      `<button class="${toggleClasses.join(" ")}" type="button" ` +
         `data-mission-id="${escapeHtml(missionIdForEntry)}" data-entry-key="${escapeHtml(e.k)}" ` +
-        `aria-pressed="${possiblyUnused ? "true" : "false"}" title="${toggleTitle}">` +
-        `<span class="story-order-unused-toggle-mark" aria-hidden="true">${possiblyUnused ? "✓" : ""}</span>` +
+        `aria-pressed="${ariaPressed}" title="${toggleTitle}">` +
+        `<span class="story-order-unused-toggle-mark" aria-hidden="true">${toggleMark}</span>` +
         `<span class="story-order-unused-toggle-label">${toggleLabel}</span>` +
       `</button>`;
     const hasCode = typeof storyOrderEntryHasMissionCode === "function"
@@ -3452,32 +3490,27 @@ function renderItem(row) {
       removeFromMissionButton =
         `<button class="story-order-remove-from-mission" type="button" ` +
           `data-mission-id="${escapeHtml(missionIdForEntry)}" data-entry-key="${escapeHtml(e.k)}" ` +
-          `title="${removeTitle}">✕ ${removeLabel}</button>`;
+          `title="${removeTitle}">&#10005; ${removeLabel}</button>`;
     }
   }
 
-  // Static-recovery order confidence + phase (override-editing aid, debug-gated).
-  let confidenceBadge = "";
+  // Static-recovery phase remains debug-gated; confidence/review text tags are hidden.
   let phaseChip = "";
+  let ocrRankChip = "";
   if (inStorySort && STATE.showDebug) {
     const soi = sceneOrderInfoForEntry(e);
-    if (soi) {
-      const conf = String(soi.confidence || "");
-      if (conf) div.classList.add("story-order-conf-" + conf);
-      if (conf === "fallback" || conf === "weak") div.classList.add("story-order-uncertain");
-      const confLabel = escapeHtml(uiText(SCENE_ORDER_CONF_LABEL[conf] || "") || conf);
-      const confTitle = escapeHtml(
-        [uiText("storyOrderConfTitle"), conf, soi.orderSource ? `(${soi.orderSource})` : ""]
-          .filter(Boolean).join(" "));
-      confidenceBadge =
-        `<span class="story-order-conf-badge conf-${escapeHtml(conf || "unknown")}" title="${confTitle}">` +
-          `${confLabel}</span>`;
-      if (soi.questOrder !== null && soi.questOrder !== undefined) {
-        const phaseTitle = escapeHtml(uiText("storyOrderPhaseTitle"));
-        phaseChip =
-          `<span class="story-order-phase-chip" title="${phaseTitle}">` +
-            `${escapeHtml(uiText("storyOrderPhasePrefix"))}${escapeHtml(String(soi.questOrder))}</span>`;
-      }
+    if (soi && soi.questOrder !== null && soi.questOrder !== undefined) {
+      const phaseTitle = escapeHtml(uiText("storyOrderPhaseTitle"));
+      phaseChip =
+        `<span class="story-order-phase-chip" title="${phaseTitle}">` +
+          `${escapeHtml(uiText("storyOrderPhasePrefix"))}${escapeHtml(String(soi.questOrder))}</span>`;
+    }
+    const ocrRank = storyOrderOcrRankForEntry(e);
+    if (Number.isFinite(ocrRank)) {
+      const ocrTitle = escapeHtml(uiText("storyOrderOcrRankTitle"));
+      ocrRankChip =
+        `<span class="story-order-ocr-rank-chip" title="${ocrTitle}">` +
+          `${escapeHtml(uiText("storyOrderCompareOcr"))} #${escapeHtml(String(ocrRank))}</span>`;
     }
   }
 
@@ -3488,11 +3521,11 @@ function renderItem(row) {
     `<div class="item-line1">` +
       `<span class="badge ${kindCls}">${escapeHtml(kindNm)}</span>` +
       phaseChip +
+      ocrRankChip +
       `<span class="item-key">${highlightTextFragment(displayEntryTitle(e), STATE.filters.q)}</span>` +
-      confidenceBadge +
-      possiblyUnusedBadge +
+      storyOrderTagBadge +
       `<span class="item-meta">${e.n} ${uiText("lineUnit")}</span>` +
-      possiblyUnusedToggle +
+      storyOrderTagToggle +
       removeFromMissionButton +
       dragHandle +
     `</div>` +
@@ -3511,7 +3544,7 @@ function storyOrderPreambleChip(detail) {
     kind ? `Attachment kind: ${kind}` : "",
     "The target cutscene's AnimeStudio metadata declares a useBlackScreen + pre-fade window; this row is rendered as an overlay during that window.",
   ].filter(Boolean).join("\n");
-  const label = `↳ preamble: ${target || "cutscene"}`;
+  const label = `锟?preamble: ${target || "cutscene"}`;
   return `<span class="story-order-flag is-preamble" title="${escapeHtml(title)}">${escapeHtml(label)}</span>`;
 }
 
@@ -3528,7 +3561,7 @@ function cutsceneTrackInventoryChips(detail) {
   }
   pushTrack("Actor", inv.actorTrackCount, inv.animClipCount ? `Anim clip count: ${inv.animClipCount}` : "");
   pushTrack("Audio", inv.audioTrackCount, Array.isArray(inv.audioEvents) && inv.audioEvents.length
-    ? `Audio events: ${inv.audioEvents.slice(0, 4).join(", ")}${inv.audioEvents.length > 4 ? ", …" : ""}`
+    ? `Audio events: ${inv.audioEvents.slice(0, 4).join(", ")}${inv.audioEvents.length > 4 ? ", ..." : ""}`
     : "");
   pushTrack("Effect", inv.effectTrackCount, "");
   if (Number(inv.subtitleTrackCount) > 0) {
@@ -4668,7 +4701,23 @@ function renderConvWarning(warning) {
       detailSections.push(section);
     }
   }
-  if (warning.code === "duplicateTimestamps") {
+  if (warning.code === "timelineTimestampRegression") {
+    title = uiText("warningTimelineTimestampRegressionTitle");
+    body = uiText("warningTimelineTimestampRegressionBody");
+    detailSections = [];
+    const regressions = Array.isArray(warning.regressions) ? warning.regressions : [];
+    for (const row of regressions) {
+      const lineIds = normalizeLineOrderIdList([row && row.prevLineId, row && row.lineId]);
+      if (!lineIds.length) continue;
+      const section = document.createElement("section");
+      section.className = "conv-warning-section";
+      const from = row && row.prevTimestamp ? String(row.prevTimestamp) : "";
+      const to = row && row.timestamp ? String(row.timestamp) : "";
+      appendWarningDetail(section, "conv-warning-section-summary", `${from} -> ${to}`);
+      appendLineIdTagList(section, uiText("warningTimelineTimestampRegressionLines"), lineIds);
+      detailSections.push(section);
+    }
+  }  if (warning.code === "duplicateTimestamps") {
     title = uiText("warningDuplicateTimestampsTitle");
     body = uiText("warningDuplicateTimestampsBody");
     detailSections = [];
@@ -5497,7 +5546,7 @@ function renderSourceLinksBlock(conv) {
     if (link.file) bits.push(String(link.file));
     if (link.path) bits.push(String(link.path));
     if (link.raw) bits.push(String(link.raw));
-    row.textContent = bits.join(" · ");
+    row.textContent = bits.join(" 路 ");
     box.appendChild(row);
     appendDebugTrace(row, link._debug, "source link");
   }
@@ -6447,9 +6496,14 @@ function renderConv(conv) {
     const push = (lineId) => {
       if (lineId && lineIdSet.has(lineId) && !out.includes(lineId)) out.push(lineId);
     };
-    for (const lineId of normalizeLineOrderIdList(opt && opt.branchLines)) push(lineId);
+    const explicitBranchLines = normalizeLineOrderIdList(opt && opt.branchLines);
+    const riskCode = String(grp && grp.optionBranchRisk && grp.optionBranchRisk.code || "");
+    const branchLinesAreConverged = explicitBranchLines.length && riskCode === "dialogTreeBranchConvergence";
+    for (const lineId of explicitBranchLines) push(lineId);
     for (const lineId of optionRiskMappedLineIds(grp, opt)) push(lineId);
-    for (const lineId of optionPathLineIds(opt)) push(lineId);
+    if (!branchLinesAreConverged) {
+      for (const lineId of optionPathLineIds(opt)) push(lineId);
+    }
     optionCandidateLineIdsByOption.set(opt, out);
     return out;
   };
@@ -7801,120 +7855,726 @@ function renderMissionTimelineQuestSpatialTrack(track, flowKeyMap, currentKey) {
 }
 
 
-function renderStoryOrderCompareSourceRow({ missionId, source, label, order, currentOrder, statusText, canAdopt, disabledTitle, currentKey }) {
-  const row = document.createElement("div");
-  row.className = `story-order-compare-row is-${source}`;
-  const head = document.createElement("div");
-  head.className = "story-order-compare-row-head";
-  const title = document.createElement("span");
-  title.className = "story-order-compare-source";
-  title.textContent = label;
-  head.appendChild(title);
-  const meta = document.createElement("span");
-  meta.className = "story-order-compare-meta";
-  const cleanOrder = overrideKeyList(order);
-  if (statusText) {
-    meta.textContent = statusText;
-  } else if (source === "current") {
-    meta.textContent = storyOrderFormatCount(cleanOrder.length);
-  } else {
-    meta.textContent = `${storyOrderFormatCount(cleanOrder.length)} / ${storyOrderFormatDiff(storyOrderOrderDiffStats(currentOrder, cleanOrder))}`;
+function storyOrderSourcePositionMap(order) {
+  const map = new Map();
+  overrideKeyList(order).forEach((key, index) => map.set(key, index));
+  return map;
+}
+
+function storyOrderEntryInfoForKey(key) {
+  const entryKey = String(key || "");
+  const entry = STATE.entryByKey instanceof Map ? STATE.entryByKey.get(entryKey) : null;
+  return {
+    key: entryKey,
+    entry,
+    title: entry ? displayEntryTitle(entry) : entryKey,
+    preview: entry && entry.p ? String(entry.p) : "",
+    lines: entry && Number.isFinite(Number(entry.n)) ? Number(entry.n) : null,
+  };
+}
+
+function storyOrderOpenKey(key) {
+  const entryKey = String(key || "");
+  if (!entryKey) return false;
+  const entry = STATE.entryByKey instanceof Map ? STATE.entryByKey.get(entryKey) : null;
+  if (!entry) return false;
+  if (typeof loadConv === "function") loadConv(entryKey);
+  if (typeof revealEntryInTree === "function") revealEntryInTree(entry);
+  return true;
+}
+
+function storyOrderComparisonSources(missionKey) {
+  const missionId = String(missionKey || "");
+  const sources = [];
+  const staticSourceOrder = storyOrderMissionStaticRecoveredSourceOrder(missionId);
+  const ocrSourceOrder = storyOrderMissionOrderFromPayload(STATE.storyOrderOcrPayload, missionId);
+
+  function addSource(source, label, nativeOrder) {
+    const primary = overrideKeyList(nativeOrder);
+    if (!primary.length) return;
+    sources.push({
+      source,
+      label,
+      nativeOrder: primary,
+      order: primary,
+      nativeIndex: storyOrderSourcePositionMap(primary),
+      orderIndex: storyOrderSourcePositionMap(primary),
+    });
   }
-  head.appendChild(meta);
-  if (source !== "current") {
+
+  addSource("ocr", uiText("storyOrderCompareOcr"), ocrSourceOrder);
+  addSource("static", uiText("storyOrderCompareRecovered"), staticSourceOrder);
+  return sources;
+}
+
+function storyOrderDefaultSortSource(sources) {
+  const preferred = String(STATE.storyOrderCompareSortSource || "");
+  if (preferred && sources.some((source) => source.source === preferred)) return preferred;
+  for (const sourceName of ["ocr", "static"]) {
+    if (sources.some((source) => source.source === sourceName)) return sourceName;
+  }
+  return sources[0] ? sources[0].source : "";
+}
+
+function storyOrderBuilderInitialSource(sources) {
+  for (const sourceName of ["ocr", "static"]) {
+    const source = sources.find((row) => row.source === sourceName);
+    if (source && source.order.length) return source;
+  }
+  return sources[0] || null;
+}
+
+function storyOrderBuilderInitialOrder(missionKey, sources) {
+  const saved = storyOrderMissionOrderFromPayload(STATE.storyOrderPayload, missionKey);
+  if (saved.length) return saved;
+  const source = storyOrderBuilderInitialSource(sources);
+  return source ? source.order : [];
+}
+
+function storyOrderBuilderSeedSignature(missionKey) {
+  return storyOrderMissionOrderFromPayload(STATE.storyOrderPayload, missionKey).join("\u0001");
+}
+
+function storyOrderBuilderInitialSignature(missionKey, sources) {
+  const source = storyOrderBuilderInitialSource(sources);
+  const sourceOrder = source ? overrideKeyList(source.order) : [];
+  return [
+    storyOrderBuilderSeedSignature(missionKey),
+    source ? source.source : "",
+    sourceOrder.join("\u0001"),
+  ].join("\u0002");
+}
+
+function storyOrderBuilderDraft(missionKey, sources) {
+  if (!(STATE.storyOrderBuilderDrafts instanceof Map)) STATE.storyOrderBuilderDrafts = new Map();
+  if (!(STATE.storyOrderBuilderSelections instanceof Map)) STATE.storyOrderBuilderSelections = new Map();
+  const missionId = String(missionKey || "");
+  const seedSignature = storyOrderBuilderSeedSignature(missionId);
+  const initialSignature = storyOrderBuilderInitialSignature(missionId, sources);
+  let draft = STATE.storyOrderBuilderDrafts.get(missionId);
+  if (!draft || draft.seedSignature !== seedSignature || (draft.autoSeeded !== false && draft.initialSignature !== initialSignature)) {
+    draft = {
+      seedSignature,
+      initialSignature,
+      autoSeeded: true,
+      order: overrideKeyList(storyOrderBuilderInitialOrder(missionId, sources)),
+    };
+    STATE.storyOrderBuilderDrafts.set(missionId, draft);
+    STATE.storyOrderBuilderSelections.delete(missionId);
+  }
+  return draft;
+}
+
+function storyOrderSetBuilderDraft(missionKey, order, autoSeeded = false, sources = []) {
+  if (!(STATE.storyOrderBuilderDrafts instanceof Map)) STATE.storyOrderBuilderDrafts = new Map();
+  if (!(STATE.storyOrderBuilderSelections instanceof Map)) STATE.storyOrderBuilderSelections = new Map();
+  const missionId = String(missionKey || "");
+  const draft = {
+    seedSignature: storyOrderBuilderSeedSignature(missionId),
+    initialSignature: storyOrderBuilderInitialSignature(missionId, sources),
+    autoSeeded,
+    order: overrideKeyList(order),
+  };
+  STATE.storyOrderBuilderDrafts.set(missionId, draft);
+  storyOrderFilterBuilderSelection(missionId, draft.order);
+  return draft;
+}
+
+function storyOrderBuilderSelectionSet(missionKey) {
+  if (!(STATE.storyOrderBuilderSelections instanceof Map)) STATE.storyOrderBuilderSelections = new Map();
+  const missionId = String(missionKey || "");
+  const current = STATE.storyOrderBuilderSelections.get(missionId);
+  if (current instanceof Set) return current;
+  const created = new Set();
+  STATE.storyOrderBuilderSelections.set(missionId, created);
+  return created;
+}
+
+function storyOrderFilterBuilderSelection(missionKey, order) {
+  if (!(STATE.storyOrderBuilderSelections instanceof Map)) STATE.storyOrderBuilderSelections = new Map();
+  const missionId = String(missionKey || "");
+  const current = STATE.storyOrderBuilderSelections.get(missionId);
+  if (!(current instanceof Set) || !current.size) return new Set();
+  const valid = new Set(overrideKeyList(order));
+  const next = new Set([...current].filter((key) => valid.has(key)));
+  if (next.size) STATE.storyOrderBuilderSelections.set(missionId, next);
+  else STATE.storyOrderBuilderSelections.delete(missionId);
+  return next;
+}
+
+function storyOrderBuilderSelectedKeys(missionKey, draft = null) {
+  const missionId = String(missionKey || "");
+  const order = overrideKeyList(draft && draft.order);
+  if (!order.length) return [];
+  const selected = storyOrderFilterBuilderSelection(missionId, order);
+  if (!selected.size) return [];
+  return order.filter((key) => selected.has(key));
+}
+
+function storyOrderSetBuilderSelection(missionKey, keys) {
+  if (!(STATE.storyOrderBuilderSelections instanceof Map)) STATE.storyOrderBuilderSelections = new Map();
+  const missionId = String(missionKey || "");
+  const rawKeys = keys instanceof Set ? [...keys] : keys;
+  const next = new Set(overrideKeyList(rawKeys));
+  if (next.size) STATE.storyOrderBuilderSelections.set(missionId, next);
+  else STATE.storyOrderBuilderSelections.delete(missionId);
+  return next;
+}
+
+function storyOrderToggleBuilderSelection(missionKey, key, checked) {
+  const entryKey = String(key || "");
+  if (!entryKey) return;
+  const selected = new Set(storyOrderBuilderSelectionSet(missionKey));
+  if (checked) selected.add(entryKey); else selected.delete(entryKey);
+  storyOrderSetBuilderSelection(missionKey, selected);
+  storyOrderRefreshCurrentDetail();
+}
+
+function storyOrderBuilderSelectAll(missionKey) {
+  const draft = storyOrderBuilderDraft(missionKey, storyOrderComparisonSources(missionKey));
+  storyOrderSetBuilderSelection(missionKey, draft.order);
+  storyOrderRefreshCurrentDetail();
+}
+
+function storyOrderBuilderClearSelection(missionKey) {
+  storyOrderSetBuilderSelection(missionKey, []);
+  storyOrderRefreshCurrentDetail();
+}
+
+function storyOrderBuilderMoveSelectedToEdge(missionKey, edge) {
+  const draft = storyOrderBuilderDraft(missionKey, storyOrderComparisonSources(missionKey));
+  const selected = storyOrderBuilderSelectedKeys(missionKey, draft);
+  if (!selected.length) return false;
+  const moving = new Set(selected);
+  const rest = draft.order.filter((key) => !moving.has(key));
+  const next = edge === "bottom" ? rest.concat(selected) : selected.concat(rest);
+  storyOrderSetBuilderDraft(missionKey, next);
+  storyOrderSetBuilderSelection(missionKey, selected);
+  storyOrderRefreshCurrentDetail();
+  return true;
+}
+
+function storyOrderBuilderMoveSelectedBy(missionKey, offset) {
+  const delta = Number(offset) || 0;
+  if (!delta) return false;
+  const draft = storyOrderBuilderDraft(missionKey, storyOrderComparisonSources(missionKey));
+  const selected = storyOrderBuilderSelectedKeys(missionKey, draft);
+  if (!selected.length) return false;
+  const selectedSet = new Set(selected);
+  const next = draft.order.slice();
+  let changed = false;
+  if (delta < 0) {
+    for (let i = 1; i < next.length; i += 1) {
+      if (!selectedSet.has(next[i]) || selectedSet.has(next[i - 1])) continue;
+      const tmp = next[i - 1];
+      next[i - 1] = next[i];
+      next[i] = tmp;
+      changed = true;
+    }
+  } else {
+    for (let i = next.length - 2; i >= 0; i -= 1) {
+      if (!selectedSet.has(next[i]) || selectedSet.has(next[i + 1])) continue;
+      const tmp = next[i + 1];
+      next[i + 1] = next[i];
+      next[i] = tmp;
+      changed = true;
+    }
+  }
+  if (!changed) return false;
+  storyOrderSetBuilderDraft(missionKey, next);
+  storyOrderSetBuilderSelection(missionKey, selected);
+  storyOrderRefreshCurrentDetail();
+  return true;
+}
+
+function storyOrderBuilderMoveSelectedBefore(missionKey, beforeKey) {
+  const targetKey = String(beforeKey || "");
+  const draft = storyOrderBuilderDraft(missionKey, storyOrderComparisonSources(missionKey));
+  const selected = storyOrderBuilderSelectedKeys(missionKey, draft);
+  if (!selected.length) return false;
+  const moving = new Set(selected);
+  if (targetKey && moving.has(targetKey)) return false;
+  const rest = draft.order.filter((key) => !moving.has(key));
+  let index = targetKey ? rest.indexOf(targetKey) : rest.length;
+  if (index < 0) index = rest.length;
+  const next = rest.slice(0, index).concat(selected, rest.slice(index));
+  storyOrderSetBuilderDraft(missionKey, next);
+  storyOrderSetBuilderSelection(missionKey, selected);
+  storyOrderRefreshCurrentDetail();
+  return true;
+}
+
+function storyOrderBuilderRemoveSelected(missionKey) {
+  const draft = storyOrderBuilderDraft(missionKey, storyOrderComparisonSources(missionKey));
+  const selected = storyOrderBuilderSelectedKeys(missionKey, draft);
+  if (!selected.length) return false;
+  const moving = new Set(selected);
+  storyOrderSetBuilderDraft(missionKey, draft.order.filter((key) => !moving.has(key)));
+  storyOrderSetBuilderSelection(missionKey, []);
+  storyOrderRefreshCurrentDetail();
+  return true;
+}
+
+function storyOrderRefreshCurrentDetail() {
+  const cached = STATE.selectedKey ? STATE.convCache.get(STATE.selectedKey) : null;
+  if (cached) renderConv(cached);
+}
+
+function storyOrderBuilderUseSource(missionKey, source) {
+  if (!source || !source.order.length) return;
+  storyOrderSetBuilderDraft(missionKey, source.order);
+  storyOrderSetBuilderSelection(missionKey, []);
+  storyOrderRefreshCurrentDetail();
+}
+
+function storyOrderBuilderAppendSource(missionKey, source) {
+  if (!source || !source.order.length) return;
+  const draft = storyOrderBuilderDraft(missionKey, storyOrderComparisonSources(missionKey));
+  const out = draft.order.slice();
+  const seen = new Set(out);
+  for (const key of source.order) {
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(key);
+  }
+  storyOrderSetBuilderDraft(missionKey, out);
+  storyOrderRefreshCurrentDetail();
+}
+
+function storyOrderBuilderAddKey(missionKey, key) {
+  const entryKey = String(key || "");
+  if (!entryKey) return;
+  const draft = storyOrderBuilderDraft(missionKey, storyOrderComparisonSources(missionKey));
+  if (draft.order.includes(entryKey)) return;
+  storyOrderSetBuilderDraft(missionKey, draft.order.concat(entryKey));
+  storyOrderRefreshCurrentDetail();
+}
+
+function storyOrderBuilderRemoveKey(missionKey, key) {
+  const entryKey = String(key || "");
+  if (!entryKey) return;
+  const draft = storyOrderBuilderDraft(missionKey, storyOrderComparisonSources(missionKey));
+  storyOrderSetBuilderDraft(missionKey, draft.order.filter((candidate) => candidate !== entryKey));
+  storyOrderRefreshCurrentDetail();
+}
+
+function storyOrderBuilderMoveKey(missionKey, key, offset) {
+  const entryKey = String(key || "");
+  const delta = Number(offset) || 0;
+  if (!entryKey || !delta) return;
+  const draft = storyOrderBuilderDraft(missionKey, storyOrderComparisonSources(missionKey));
+  const order = draft.order.slice();
+  const index = order.indexOf(entryKey);
+  if (index < 0) return;
+  const nextIndex = Math.max(0, Math.min(order.length - 1, index + delta));
+  if (nextIndex === index) return;
+  const [item] = order.splice(index, 1);
+  order.splice(nextIndex, 0, item);
+  storyOrderSetBuilderDraft(missionKey, order);
+  storyOrderRefreshCurrentDetail();
+}
+
+function storyOrderBuilderCommit(missionKey) {
+  const missionId = String(missionKey || "");
+  const draft = storyOrderBuilderDraft(missionId, storyOrderComparisonSources(missionId));
+  const order = overrideKeyList(draft.order);
+  if (!missionId || !order.length) return false;
+  if (typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionId)) return false;
+  if (typeof setStoryOrderMissionOrder !== "function" || !setStoryOrderMissionOrder(missionId, order)) return false;
+  storyOrderSetBuilderDraft(missionId, order);
+  if (typeof scheduleStoryOrderSave === "function") scheduleStoryOrderSave();
+  const wrap = $("#list-wrap");
+  const prevScroll = wrap ? wrap.scrollTop : 0;
+  if (typeof rebuildTree === "function") rebuildTree({ resetScroll: false });
+  if (wrap) wrap.scrollTop = prevScroll;
+  if (typeof renderList === "function") renderList();
+  storyOrderRefreshCurrentDetail();
+  return true;
+}
+
+function storyOrderUnionKeys(sources, draftOrder) {
+  const out = [];
+  const seen = new Set();
+  function add(values) {
+    for (const key of overrideKeyList(values)) {
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(key);
+    }
+  }
+  for (const source of sources) add(source.order);
+  add(draftOrder);
+  return out;
+}
+
+function renderStoryOrderSourceTabs(sources, activeSort) {
+  const tabs = document.createElement("div");
+  tabs.className = "story-order-source-tabs";
+  for (const source of sources) {
     const button = document.createElement("button");
-    button.className = "story-order-compare-adopt-button";
     button.type = "button";
-    button.dataset.missionId = missionId;
-    button.dataset.source = source;
-    button.textContent = uiText("storyOrderCompareAdopt");
-    button.disabled = !canAdopt;
-    if (!canAdopt) {
-      button.title = disabledTitle || statusText || uiText("storyOrderCompareIdentical");
-    } else {
-      button.addEventListener("click", (event) => {
+    button.className = "story-order-source-tab" + (source.source === activeSort ? " is-active" : "");
+    button.textContent = `${source.label} ${source.nativeOrder.length}`;
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      STATE.storyOrderCompareSortSource = source.source;
+      storyOrderRefreshCurrentDetail();
+    });
+    tabs.appendChild(button);
+  }
+  return tabs;
+}
+
+function renderStoryOrderSourceActions(missionKey, sources) {
+  const actions = document.createElement("div");
+  actions.className = "story-order-builder-source-actions";
+  for (const source of sources) {
+    const group = document.createElement("span");
+    group.className = `story-order-builder-source-action is-${source.source}`;
+    const use = document.createElement("button");
+    use.type = "button";
+    use.textContent = (uiText("storyOrderBuilderUseSource") || "Use {source}").replace("{source}", source.label);
+    use.addEventListener("click", (event) => {
+      event.preventDefault();
+      storyOrderBuilderUseSource(missionKey, source);
+    });
+    const append = document.createElement("button");
+    append.type = "button";
+    append.textContent = (uiText("storyOrderBuilderAppendSource") || "+ {source}").replace("{source}", source.label);
+    append.addEventListener("click", (event) => {
+      event.preventDefault();
+      storyOrderBuilderAppendSource(missionKey, source);
+    });
+    group.appendChild(use);
+    group.appendChild(append);
+    actions.appendChild(group);
+  }
+  return actions;
+}
+
+function renderStoryOrderMatrix(missionKey, sources, draft, activeSort, currentKey) {
+  const activeSource = sources.find((source) => source.source === activeSort) || sources[0];
+  const draftIndex = storyOrderSourcePositionMap(draft.order);
+  const selectedSet = storyOrderBuilderSelectionSet(missionKey);
+  const keys = storyOrderUnionKeys(sources, draft.order);
+  keys.sort((a, b) => {
+    const ai = activeSource && activeSource.orderIndex.has(a) ? activeSource.orderIndex.get(a) : Number.POSITIVE_INFINITY;
+    const bi = activeSource && activeSource.orderIndex.has(b) ? activeSource.orderIndex.get(b) : Number.POSITIVE_INFINITY;
+    if (ai !== bi) return ai - bi;
+    const ad = draftIndex.has(a) ? draftIndex.get(a) : Number.POSITIVE_INFINITY;
+    const bd = draftIndex.has(b) ? draftIndex.get(b) : Number.POSITIVE_INFINITY;
+    if (ad !== bd) return ad - bd;
+    return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
+  });
+
+  const wrap = document.createElement("div");
+  wrap.className = "story-order-matrix-wrap";
+  const table = document.createElement("table");
+  table.className = "story-order-matrix";
+  const thead = document.createElement("thead");
+  const head = document.createElement("tr");
+  const itemHead = document.createElement("th");
+  itemHead.textContent = uiText("storyOrderMatrixItem") || "Item";
+  head.appendChild(itemHead);
+  for (const source of sources) {
+    const th = document.createElement("th");
+    th.textContent = source.label;
+    head.appendChild(th);
+  }
+  const draftHead = document.createElement("th");
+  draftHead.textContent = uiText("storyOrderBuilderTitle") || "Override draft";
+  head.appendChild(draftHead);
+  const actionHead = document.createElement("th");
+  actionHead.textContent = "";
+  head.appendChild(actionHead);
+  thead.appendChild(head);
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+  for (const key of keys) {
+    const info = storyOrderEntryInfoForKey(key);
+    const tr = document.createElement("tr");
+    if (key === currentKey) tr.classList.add("is-current");
+    if (draftIndex.has(key)) tr.classList.add("is-in-draft");
+    if (selectedSet.has(key)) tr.classList.add("is-selected");
+    const item = document.createElement("td");
+    item.className = "story-order-matrix-item";
+    const keyButton = document.createElement("button");
+    keyButton.type = "button";
+    keyButton.className = "story-order-key-button";
+    keyButton.textContent = info.key;
+    keyButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      storyOrderOpenKey(info.key);
+    });
+    const title = document.createElement("span");
+    title.className = "story-order-key-title";
+    title.textContent = info.title && info.title !== info.key ? info.title : "";
+    item.appendChild(keyButton);
+    if (title.textContent) item.appendChild(title);
+    tr.appendChild(item);
+
+    for (const source of sources) {
+      const td = document.createElement("td");
+      td.className = `story-order-position-cell is-${source.source}`;
+      if (source.nativeIndex.has(key)) {
+        td.textContent = `#${source.nativeIndex.get(key) + 1}`;
+      } else {
+        td.textContent = "-";
+        td.classList.add("is-missing");
+      }
+      tr.appendChild(td);
+    }
+
+    const draftCell = document.createElement("td");
+    draftCell.className = "story-order-position-cell is-draft";
+    draftCell.textContent = draftIndex.has(key) ? `#${draftIndex.get(key) + 1}` : "-";
+    if (!draftIndex.has(key)) draftCell.classList.add("is-missing");
+    tr.appendChild(draftCell);
+
+    const action = document.createElement("td");
+    action.className = "story-order-matrix-action";
+    const actionButton = document.createElement("button");
+    actionButton.type = "button";
+    if (draftIndex.has(key)) {
+      actionButton.textContent = uiText("storyOrderBuilderRemove") || "Remove";
+      actionButton.addEventListener("click", (event) => {
         event.preventDefault();
-        event.stopPropagation();
-        storyOrderAdoptMissionOrder(missionId, source);
+        storyOrderBuilderRemoveKey(missionKey, key);
+      });
+    } else {
+      actionButton.textContent = uiText("storyOrderBuilderAdd") || "Add";
+      actionButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        storyOrderBuilderAddKey(missionKey, key);
       });
     }
-    head.appendChild(button);
+    action.appendChild(actionButton);
+    tr.appendChild(action);
+    tbody.appendChild(tr);
   }
-  row.appendChild(head);
-  const preview = document.createElement("div");
-  preview.className = "story-order-compare-preview";
-  if (cleanOrder.length) appendStoryOrderComparePreview(preview, cleanOrder, currentKey);
-  row.appendChild(preview);
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  return wrap;
+}
+
+function renderStoryOrderDraftBulkActions(missionKey, draft) {
+  const selectedKeys = storyOrderBuilderSelectedKeys(missionKey, draft);
+  const selectedCount = selectedKeys.length;
+  const row = document.createElement("div");
+  row.className = "story-order-draft-bulk-actions";
+
+  const count = document.createElement("span");
+  count.className = "story-order-draft-selection-count";
+  count.textContent = (uiText("storyOrderBuilderSelectedCount") || "{count} selected").replace("{count}", String(selectedCount));
+  row.appendChild(count);
+
+  function addButton(labelKey, fallback, handler, disabled = false, className = "") {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = uiText(labelKey) || fallback;
+    if (className) button.className = className;
+    button.disabled = !!disabled;
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      handler();
+    });
+    row.appendChild(button);
+    return button;
+  }
+
+  addButton("storyOrderBuilderSelectAll", "Select all", () => storyOrderBuilderSelectAll(missionKey), !draft.order.length);
+  addButton("storyOrderBuilderClearSelection", "Clear", () => storyOrderBuilderClearSelection(missionKey), !selectedCount);
+  addButton("storyOrderBuilderMoveTop", "Top", () => storyOrderBuilderMoveSelectedToEdge(missionKey, "top"), !selectedCount);
+  addButton("storyOrderBuilderMoveUp", "Up", () => storyOrderBuilderMoveSelectedBy(missionKey, -1), !selectedCount);
+  addButton("storyOrderBuilderMoveDown", "Down", () => storyOrderBuilderMoveSelectedBy(missionKey, 1), !selectedCount);
+  addButton("storyOrderBuilderMoveBottom", "Bottom", () => storyOrderBuilderMoveSelectedToEdge(missionKey, "bottom"), !selectedCount);
+  addButton("storyOrderBuilderRemoveSelected", "Remove selected", () => storyOrderBuilderRemoveSelected(missionKey), !selectedCount, "is-danger");
   return row;
+}
+
+function renderStoryOrderDraftList(missionKey, draft, currentKey) {
+  const list = document.createElement("div");
+  list.className = "story-order-draft-list";
+  const selectedSet = storyOrderBuilderSelectionSet(missionKey);
+  const selectedCount = storyOrderBuilderSelectedKeys(missionKey, draft).length;
+  draft.order.forEach((key, index) => {
+    const info = storyOrderEntryInfoForKey(key);
+    const selected = selectedSet.has(key);
+    const row = document.createElement("div");
+    row.className = "story-order-draft-row" + (key === currentKey ? " is-current" : "") + (selected ? " is-selected" : "");
+
+    const selectWrap = document.createElement("label");
+    selectWrap.className = "story-order-draft-select-wrap";
+    const select = document.createElement("input");
+    select.type = "checkbox";
+    select.className = "story-order-draft-select";
+    select.checked = selected;
+    select.title = uiText("storyOrderBuilderSelect") || "Select";
+    select.setAttribute("aria-label", `${uiText("storyOrderBuilderSelect") || "Select"} ${info.key}`);
+    select.addEventListener("change", (event) => {
+      storyOrderToggleBuilderSelection(missionKey, key, event.currentTarget.checked);
+    });
+    selectWrap.appendChild(select);
+
+    const pos = document.createElement("span");
+    pos.className = "story-order-draft-pos";
+    pos.textContent = `#${index + 1}`;
+    const main = document.createElement("button");
+    main.type = "button";
+    main.className = "story-order-draft-main";
+    main.addEventListener("click", (event) => {
+      event.preventDefault();
+      storyOrderOpenKey(key);
+    });
+    const keyNode = document.createElement("span");
+    keyNode.className = "story-order-key-button";
+    keyNode.textContent = info.key;
+    const title = document.createElement("span");
+    title.className = "story-order-key-title";
+    title.textContent = info.title && info.title !== info.key ? info.title : "";
+    main.appendChild(keyNode);
+    if (title.textContent) main.appendChild(title);
+    const controls = document.createElement("span");
+    controls.className = "story-order-draft-controls";
+    const here = document.createElement("button");
+    here.type = "button";
+    here.textContent = uiText("storyOrderBuilderMoveHere") || "Here";
+    here.disabled = !selectedCount || selected;
+    here.addEventListener("click", (event) => {
+      event.preventDefault();
+      storyOrderBuilderMoveSelectedBefore(missionKey, key);
+    });
+    const up = document.createElement("button");
+    up.type = "button";
+    up.textContent = "^";
+    up.title = uiText("storyOrderBuilderMoveUp") || "Move up";
+    up.disabled = index === 0;
+    up.addEventListener("click", (event) => {
+      event.preventDefault();
+      storyOrderBuilderMoveKey(missionKey, key, -1);
+    });
+    const down = document.createElement("button");
+    down.type = "button";
+    down.textContent = "v";
+    down.title = uiText("storyOrderBuilderMoveDown") || "Move down";
+    down.disabled = index + 1 >= draft.order.length;
+    down.addEventListener("click", (event) => {
+      event.preventDefault();
+      storyOrderBuilderMoveKey(missionKey, key, 1);
+    });
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "x";
+    remove.title = uiText("storyOrderBuilderRemove") || "Remove";
+    remove.addEventListener("click", (event) => {
+      event.preventDefault();
+      storyOrderBuilderRemoveKey(missionKey, key);
+    });
+    controls.appendChild(here);
+    controls.appendChild(up);
+    controls.appendChild(down);
+    controls.appendChild(remove);
+    row.appendChild(selectWrap);
+    row.appendChild(pos);
+    row.appendChild(main);
+    row.appendChild(controls);
+    list.appendChild(row);
+  });
+  if (!draft.order.length) {
+    const empty = document.createElement("div");
+    empty.className = "story-order-draft-empty";
+    empty.textContent = uiText("storyOrderBuilderEmpty") || "No draft items";
+    list.appendChild(empty);
+  }
+  return list;
+}
+
+function renderStoryOrderBuilder(missionKey, sources, draft, locked, currentKey) {
+  const box = document.createElement("div");
+  box.className = "story-order-builder";
+  const head = document.createElement("div");
+  head.className = "story-order-builder-head";
+  const title = document.createElement("div");
+  title.className = "story-order-builder-title";
+  title.textContent = `${uiText("storyOrderBuilderTitle") || "Override draft"} ${draft.order.length}`;
+  head.appendChild(title);
+  const buttons = document.createElement("div");
+  buttons.className = "story-order-builder-buttons";
+  const reset = document.createElement("button");
+  reset.type = "button";
+  reset.textContent = uiText("storyOrderBuilderReset") || "Reset";
+  reset.addEventListener("click", (event) => {
+    event.preventDefault();
+    storyOrderSetBuilderDraft(missionKey, storyOrderBuilderInitialOrder(missionKey, sources), false, sources);
+    storyOrderRefreshCurrentDetail();
+  });
+  const clear = document.createElement("button");
+  clear.type = "button";
+  clear.textContent = uiText("storyOrderBuilderClear") || "Clear";
+  clear.addEventListener("click", (event) => {
+    event.preventDefault();
+    storyOrderSetBuilderDraft(missionKey, []);
+    storyOrderRefreshCurrentDetail();
+  });
+  const save = document.createElement("button");
+  save.type = "button";
+  save.className = "is-primary";
+  save.textContent = uiText("storyOrderBuilderSave") || "Save override";
+  save.disabled = locked || !draft.order.length;
+  save.addEventListener("click", (event) => {
+    event.preventDefault();
+    storyOrderBuilderCommit(missionKey);
+  });
+  buttons.appendChild(reset);
+  buttons.appendChild(clear);
+  buttons.appendChild(save);
+  head.appendChild(buttons);
+  box.appendChild(head);
+  if (locked) {
+    const lockedNote = document.createElement("div");
+    lockedNote.className = "story-order-compare-locked";
+    lockedNote.textContent = uiText("storyOrderCompareLocked");
+    box.appendChild(lockedNote);
+  }
+  box.appendChild(renderStoryOrderSourceActions(missionKey, sources));
+  box.appendChild(renderStoryOrderDraftBulkActions(missionKey, draft));
+  box.appendChild(renderStoryOrderDraftList(missionKey, draft, currentKey));
+  return box;
 }
 
 function renderStoryOrderComparisonPanel(missionId, currentKey) {
   const missionKey = String(missionId || "");
   if (!missionKey) return null;
   ensureStoryOrderOcrPayloadForDebug();
-  const currentOrder = storyOrderMissionCurrentOrder(missionKey);
-  const staticOrder = storyOrderMissionStaticRecoveredOrder(missionKey);
-  const ocrPayload = STATE.storyOrderOcrPayload;
-  const rawOcrOrder = storyOrderMissionOrderFromPayload(ocrPayload, missionKey);
-  const ocrOrder = rawOcrOrder.length ? completeStoryOrderSourceOrder(missionKey, rawOcrOrder) : [];
-  if (!currentOrder.length && !staticOrder.length && !ocrOrder.length && !STATE.storyOrderOcrPromise && !(ocrPayload && ocrPayload._missing)) {
-    return null;
-  }
-
+  const sources = storyOrderComparisonSources(missionKey);
+  if (!sources.length) return null;
+  const activeSort = storyOrderDefaultSortSource(sources);
+  const draft = storyOrderBuilderDraft(missionKey, sources);
   const locked = typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionKey);
+
   const panel = document.createElement("div");
   panel.className = "story-order-compare-panel";
   const heading = document.createElement("div");
   heading.className = "story-order-compare-heading";
   heading.textContent = uiText("storyOrderCompareTitle");
   panel.appendChild(heading);
+  panel.appendChild(renderStoryOrderSourceTabs(sources, activeSort));
 
-  const staticStatus = staticOrder.length ? "" : uiText("storyOrderCompareMissing");
-  const ocrStatus = STATE.storyOrderOcrPromise
-    ? uiText("storyOrderCompareLoading")
-    : ((ocrPayload && ocrPayload._missing) || !ocrOrder.length ? uiText("storyOrderCompareMissing") : "");
-  const rows = [
-    {
-      missionId: missionKey,
-      source: "current",
-      label: uiText("storyOrderCompareCurrent"),
-      order: currentOrder,
-      currentOrder,
-      currentKey,
-    },
-    {
-      missionId: missionKey,
-      source: "static",
-      label: uiText("storyOrderCompareRecovered"),
-      order: staticOrder,
-      currentOrder,
-      statusText: staticStatus,
-      canAdopt: !locked && staticOrder.length && !storyOrderSameOrder(currentOrder, staticOrder),
-      disabledTitle: locked ? uiText("storyOrderCompareLocked") : "",
-      currentKey,
-    },
-    {
-      missionId: missionKey,
-      source: "ocr",
-      label: uiText("storyOrderCompareOcr"),
-      order: ocrOrder,
-      currentOrder,
-      statusText: ocrStatus,
-      canAdopt: !locked && ocrOrder.length && !storyOrderSameOrder(currentOrder, ocrOrder),
-      disabledTitle: locked ? uiText("storyOrderCompareLocked") : "",
-      currentKey,
-    },
-  ];
-  if (locked) {
-    const lockedNote = document.createElement("div");
-    lockedNote.className = "story-order-compare-locked";
-    lockedNote.textContent = uiText("storyOrderCompareLocked");
-    panel.appendChild(lockedNote);
-  }
-  for (const row of rows) panel.appendChild(renderStoryOrderCompareSourceRow(row));
+  const workbench = document.createElement("div");
+  workbench.className = "story-order-workbench";
+  const matrixBox = document.createElement("div");
+  matrixBox.className = "story-order-matrix-panel";
+  const matrixTitle = document.createElement("div");
+  matrixTitle.className = "story-order-builder-title";
+  matrixTitle.textContent = uiText("storyOrderMatrixTitle") || "All source items";
+  matrixBox.appendChild(matrixTitle);
+  matrixBox.appendChild(renderStoryOrderMatrix(missionKey, sources, draft, activeSort, currentKey));
+  workbench.appendChild(matrixBox);
+  workbench.appendChild(renderStoryOrderBuilder(missionKey, sources, draft, locked, currentKey));
+  panel.appendChild(workbench);
   return panel;
 }
-
 function renderMissionTimelineRecovery(timeline, conv) {
   if (!timeline || !missionTimelineArray(timeline.quests).length) return null;
   const box = document.createElement("div");
@@ -7937,8 +8597,6 @@ function renderMissionTimelineRecovery(timeline, conv) {
 
   const flowKeyMap = buildFlowConversationKeyMap();
   const currentKey = conv && conv.key ? conv.key : "";
-  const orderCompareBlock = renderStoryOrderComparisonPanel(conv && conv.mission, currentKey);
-  if (orderCompareBlock) box.appendChild(orderCompareBlock);
   const spatialBlock = renderMissionTimelineQuestSpatialTrack(
     timeline.questSpatialTrack,
     flowKeyMap,
@@ -8156,6 +8814,33 @@ function isInlineSnsMediaImageId(rawId, normalized, asset = null) {
   );
 }
 
+function isStandaloneSnsMediaId(value) {
+  const normalized = normalizeInlineImageId(value);
+  return (
+    normalized.startsWith("sns_image_")
+    || normalized.startsWith("sns_sticker_")
+    || normalized.startsWith("cg_image_")
+    || normalized.startsWith("deco_sns_tweet_decorate_")
+    || normalized.startsWith("bg_sns_tweet_decorate_")
+  );
+}
+
+function snsImageFallbackAssetStems(value) {
+  const normalized = normalizeInlineImageId(value);
+  if (!normalized.startsWith("sns_image_")) return [];
+
+  const suffix = normalized.slice("sns_image_".length);
+  const match = suffix.match(/^(.+)_(\d+)_([mf])$/);
+  if (!match) return [];
+
+  const [, base, index, gender] = match;
+  return [
+    `reading_${base}_photo_${gender}`,
+    `read_${base}_${index}_${gender}`,
+    `reading_${base}_${index}_${gender}`,
+  ];
+}
+
 function isInlineContentImageId(rawId, normalized, asset = null) {
   const raw = cleanInlineImageIdValue(rawId).replace(/\\/g, "/").toLowerCase();
   const stem = normalizeInlineImageId(normalized || rawId);
@@ -8304,6 +8989,41 @@ function createEnvEmojiPrefabNode(prefabKey, mediaId) {
   return node;
 }
 
+function createLineMediaImageNode(mediaId, asset) {
+  const normalized = normalizeInlineImageId(mediaId);
+  if (!normalized || !asset) return null;
+  const src = exportedAssetHref(asset.rel);
+  const name = asset.name || asset.rel || normalized;
+  const node = document.createElement("span");
+  node.className = "line-media-image inline-image-tag has-preview";
+  node.dataset.inlineImageId = normalized;
+  node.dataset.inlineImageSrc = src;
+  node.dataset.inlineImageName = name;
+  node.tabIndex = 0;
+  node.setAttribute("role", "button");
+  node.title = name;
+
+  if (isInlineSnsMediaImageId(mediaId, normalized, asset)) node.classList.add("is-sns-image");
+  if (isInlineContentImageId(mediaId, normalized, asset)) node.classList.add("is-content-image");
+
+  const img = document.createElement("img");
+  img.className = "inline-image-thumb";
+  img.src = src;
+  img.alt = normalized;
+  img.loading = "lazy";
+  node.appendChild(img);
+
+  const popover = document.createElement("span");
+  popover.className = "inline-image-popover";
+  const preview = document.createElement("img");
+  preview.src = src;
+  preview.alt = normalized;
+  preview.loading = "lazy";
+  popover.appendChild(preview);
+  node.appendChild(popover);
+  return node;
+}
+
 function createLineMediaNode(mediaId) {
   const normalized = normalizeInlineImageId(mediaId);
   if (!normalized) return null;
@@ -8318,6 +9038,18 @@ function createLineMediaNode(mediaId) {
     node.classList.add("missing");
     node.textContent = normalized;
     return node;
+  }
+
+  const primary = assets[0];
+  if (
+    primary
+    && !isInlineEmojiImageId(normalized, primary)
+    && (
+      isInlineSnsMediaImageId(mediaId, normalized, primary)
+      || isInlineContentImageId(mediaId, normalized, primary)
+    )
+  ) {
+    return createLineMediaImageNode(mediaId, primary);
   }
 
   node.classList.add(assets.length > 1 ? "is-layered" : "has-preview");
@@ -8596,7 +9328,7 @@ function renderHighlightedRichTextHtml(text, q) {
       parts.push(`<span class="rich-strike">${renderHighlightedRichTextHtml(match[2] || "", q)}</span>`);
     } else if (/^<@nar\.mark\b/i.test(rawToken)) {
       const inner = match[1] || "";
-      parts.push(highlightTextFragment("■".repeat([...inner].length), q));
+      parts.push(highlightTextFragment("#".repeat([...inner].length), q));
     } else {
       parts.push(`<span class="rich-tag">${highlightTextFragment(match[1] || "", q)}</span>`);
     }
@@ -8845,3 +9577,4 @@ function countBy(arr, fn) {
 
 installInlineTagDisplayModeGlobal();
 init();
+

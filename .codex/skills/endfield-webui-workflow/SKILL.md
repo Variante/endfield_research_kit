@@ -45,7 +45,7 @@ Use `export.bat` as the default Story/Text Tables rebuild path from an existing
 `export_full/`. It verifies export freshness with a fast required-output
 presence check, refreshes DialogIdTable, narrative video binding, and story
 source-link evidence in parallel, rebuilds CN Story/Text Tables data, leaves the
-OCR-managed Story order override untouched, and leaves decoded CN audio relinking
+user-managed Story order override untouched, and leaves decoded CN audio relinking
 to `export_assets.bat` unless `--with-assets` is passed.
 It skips installed-game export and AnimeStudio story extraction by default. Pass `--export-from-game` only when installed game
 data should be refreshed and the story export tools should run. Pass
@@ -186,14 +186,16 @@ complete ordered file-key list:
 Rules:
 
 - `missions.<mission>.order` is the complete Story file order for that mission.
-- `export.bat` does not regenerate this file; OCR recovery is the source of
-  truth for Story sort updates.
-- The old generated scene-order evidence asset is retired; the OCR override is
-  the only maintained Story order source.
-- Gameplay OCR recovery updates the same full mission lists when applied.
+- `export.bat` does not regenerate this file; active Story sort is user-managed
+  in this override.
+- The old generated scene-order evidence asset is retired; the active override
+  is the maintained Story order source, while OCR proposals are comparison
+  evidence in `webui/data/story_order_ocr.json`.
+- Gameplay OCR recovery writes proposed full mission lists for review, not to
+  this override.
 - Set `missions.<mission>.locked` to `true` to freeze that mission order;
-  OCR recovery and browser-side merge/save logic must preserve the saved order
-  exactly.
+  OCR proposal generation and browser-side merge/save logic must preserve the
+  saved order exactly.
 - The Story sidebar can save row moves from Story sort mode through `serve.py`.
   Mission-group lock/unlock buttons can toggle `locked` from the WebUI.
   These editing controls are visible behind `Show debug info`.

@@ -277,12 +277,13 @@ Expected active inputs and outputs:
 - `build_data_index.py`: builds the local-only Data tab index from
   `export_full/structured/StreamingAssets/Data` by default. It writes
   lazy-loaded shards under `webui/data/game_data/`, splits JSON entries by
-  prefix, parses real text JSON, identifies known MemoryPack binary `.json`
-  families with IL2CPP-recovered top-level field names, decodes stable
-  `LipSync` and `LevelScriptData` preview facts, skips `.pck` audio packages
-  and exported video files, and classifies `.bytes`, `.ab`, and `.bin` files by
-  signature/header without copying the raw Data tree. The Assets tab owns video
-  browsing and previews.
+  clear directory structure before falling back to filename prefixes, parses
+  real text JSON, identifies known MemoryPack binary `.json` families with
+  IL2CPP-recovered top-level field names, decodes stable `LipSync` and
+  `LevelScriptData` preview facts, skips `.pck` audio packages, includes Data
+  video/media files as raw records, and classifies `.bytes`, `.ab`, and `.bin`
+  files by signature/header without copying the raw Data tree. The Assets tab
+  owns richer asset browsing and previews.
 - `build_audio.py`: decodes audio via AnimeStudio CLI, stores shared
   SFX/music once under `export_full/structured/Audio/shared/`, indexes
   language voice files under `export_full/structured/Audio/<LANG>/`, parses Wwise bank
@@ -513,7 +514,8 @@ gameplay-video OCR/audio workflow.
   when both place the same Story key. Pass `--disable-audio-match` for an
   OCR-only run or `--audio-include-music` only when music-event matching is
   intentional. The
-  matcher reads the OCR-managed order in `webui/overrides/story_order.json`,
+  matcher reads the current user-managed order in
+  `webui/overrides/story_order.json`,
   uses missions marked `locked: true` as controls for an OCR threshold sweep,
   then rebuilds final observed sequences with the selected effective threshold.
   Each gameplay video's search scope includes its inferred mission plus the
@@ -526,20 +528,21 @@ gameplay-video OCR/audio workflow.
   original gameplay BVIDs. Synthetic archive-to-map-dialog companion matches
   are disabled by default because they are not direct gameplay observations.
   The terminal output and markdown report include locked-order mismatch counts
-  per mission. It writes
-  `reports/gameplay_video_ocr/story_order_ocr_matches.json` / `.md`, and emits
+  per mission. Each matching run refreshes both
+  `reports/gameplay_video_ocr/story_order_ocr_matches.json` and `.md` with a
+  shared generated timestamp. It emits
   a proposed full-list story order at
   `reports/gameplay_video_ocr/story_order_ocr_proposed_story_order.json`.
   It also writes a WebUI debug reference at
   `webui/data/story_order_ocr.json` via `build_webui_ocr_order.py`, so debug
   mode can compare the OCR order with static recovery and the current override.
-  A prepare-only all-video OCR/order refresh is
+  A full all-video OCR/order refresh is
   `python scripts\story_recovery\build_gameplay_video_story_order.py --run-ocr`;
-  omit `--apply` to leave `webui/overrides/story_order.json` untouched while
-  refreshing the standalone reports/reference. Pass `--apply` only after
-  reviewing the report; it writes the same full-list
-  format to `webui/overrides/story_order.json`, while preserving any mission
-  marked with `locked: true`. Smoke OCR reports made with `--limit-frames` are
+  it always leaves `webui/overrides/story_order.json` untouched while refreshing
+  the standalone reports and WebUI OCR reference. Users review OCR, static
+  recovery, and manual evidence before saving the final active order through the
+  WebUI or by editing the override. Mission locks are preserved in the proposed
+  OCR output. Smoke OCR reports made with `--limit-frames` are
   ignored unless `--include-smoke` is passed. The matcher logs corpus/index
   loading, OCR report scan skip/load counts, report match order, and per-video
   OCR-segment matching progress. It ignores stale OCR reports from older filter
