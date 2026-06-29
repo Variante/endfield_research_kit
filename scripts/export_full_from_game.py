@@ -1222,6 +1222,35 @@ def asset_output_record_sample(record: dict[str, Any]) -> dict[str, Any]:
     return sample
 
 
+def asset_output_collision_identity(record: dict[str, Any], *, include_hash: bool) -> tuple[str, Any, str, str]:
+    entry = record["entry"]
+    parsed_path_id = parse_log_int(entry.get("PathID"))
+    path_id: Any = parsed_path_id if parsed_path_id is not None else str(entry.get("PathID") or "")
+    digest = str(entry.get("Hash") or "").casefold() if include_hash else ""
+    return (
+        str(entry.get("Type") or ""),
+        path_id,
+        str(entry.get("Name") or ""),
+        digest,
+    )
+
+
+def classify_output_path_collision(records: list[dict[str, Any]]) -> str:
+    source_group_count = len({record["ab_key"] for record in records})
+    if source_group_count <= 1:
+        return "duplicate_output_path"
+    identities = {asset_output_collision_identity(record, include_hash=True) for record in records}
+    if len(identities) == 1:
+        return "shared_output_reference"
+    identities_without_hash = {
+        asset_output_collision_identity(record, include_hash=False)
+        for record in records
+    }
+    if len(identities_without_hash) == 1:
+        return "raw_hash_output_collision"
+    return "identity_output_collision"
+
+
 def build_animestudio_asset_output_status(
     output_root: Path,
     source: str,
@@ -1274,6 +1303,32 @@ def build_animestudio_asset_output_status(
         output_key
         for output_key, records in records_by_output_path.items()
         if len({record["ab_key"] for record in records}) > 1
+    }
+    output_collision_kind_by_key = {
+        output_key: classify_output_path_collision(records)
+        for output_key, records in records_by_output_path.items()
+        if len(records) > 1
+    }
+    shared_output_reference_keys = {
+        output_key
+        for output_key, kind in output_collision_kind_by_key.items()
+        if kind == "shared_output_reference"
+    }
+    raw_hash_output_collision_keys = {
+        output_key
+        for output_key, kind in output_collision_kind_by_key.items()
+        if kind == "raw_hash_output_collision"
+    }
+    identity_output_collision_keys = {
+        output_key
+        for output_key, kind in output_collision_kind_by_key.items()
+        if kind == "identity_output_collision"
+    }
+    uncertain_output_collision_keys = raw_hash_output_collision_keys | identity_output_collision_keys
+    uncertain_duplicate_output_keys = {
+        output_key
+        for output_key, kind in output_collision_kind_by_key.items()
+        if kind == "duplicate_output_path"
     }
     missing_records = [record for record in output_records if not record["output_exists"]]
     missing_output_keys = {record["output_key"] for record in missing_records if record["output_key"]}
@@ -1329,6 +1384,7 @@ def build_animestudio_asset_output_status(
         output_path_collision_samples.append(
             {
                 "output_path": str(output_path) if output_path is not None else None,
+                "collision_kind": output_collision_kind_by_key.get(output_key),
                 "entry_count": len(records),
                 "source_group_count": len({record["ab_key"] for record in records}),
                 "samples": [asset_output_record_sample(record) for record in records[:5]],
@@ -1348,7 +1404,22 @@ def build_animestudio_asset_output_status(
         output_entry_count = sum(1 for record in records if record["output_exists"])
         missing_entry_count = entry_count - output_entry_count
         duplicate_entry_count = sum(1 for record in records if record["output_key"] in duplicate_output_keys)
-        collision_entry_count = sum(1 for record in records if record["output_key"] in cross_ab_output_keys)
+        uncertain_duplicate_entry_count = sum(
+            1 for record in records if record["output_key"] in uncertain_duplicate_output_keys
+        )
+        cross_ab_collision_entry_count = sum(1 for record in records if record["output_key"] in cross_ab_output_keys)
+        shared_reference_entry_count = sum(
+            1 for record in records if record["output_key"] in shared_output_reference_keys
+        )
+        raw_hash_collision_entry_count = sum(
+            1 for record in records if record["output_key"] in raw_hash_output_collision_keys
+        )
+        identity_collision_entry_count = sum(
+            1 for record in records if record["output_key"] in identity_output_collision_keys
+        )
+        uncertain_collision_entry_count = sum(
+            1 for record in records if record["output_key"] in uncertain_output_collision_keys
+        )
         allowed_missing_entry_count = 0
         if missing_outputs_allowed:
             allowed_missing_entry_count = missing_entry_count
@@ -1369,9 +1440,9 @@ def build_animestudio_asset_output_status(
             status = "dirty_missing_output"
         elif missing_entry_count:
             status = "allowed_missing_output"
-        elif collision_entry_count:
+        elif uncertain_collision_entry_count:
             status = "uncertain_output_collision"
-        elif duplicate_entry_count:
+        elif uncertain_duplicate_entry_count:
             status = "uncertain_duplicate_output_path"
         else:
             status = "clean_outputs"
@@ -1387,12 +1458,22 @@ def build_animestudio_asset_output_status(
                 "allowed_missing_entry_count": allowed_missing_entry_count,
                 "suspicious_missing_entry_count": suspicious_missing_entry_count,
                 "duplicate_output_entry_count": duplicate_entry_count,
-                "cross_ab_output_collision_entry_count": collision_entry_count,
+                "uncertain_duplicate_output_entry_count": uncertain_duplicate_entry_count,
+                "cross_ab_output_collision_entry_count": cross_ab_collision_entry_count,
+                "shared_output_reference_entry_count": shared_reference_entry_count,
+                "raw_hash_output_collision_entry_count": raw_hash_collision_entry_count,
+                "identity_output_collision_entry_count": identity_collision_entry_count,
+                "uncertain_output_collision_entry_count": uncertain_collision_entry_count,
                 "missing_output_samples": [asset_output_record_sample(record) for record in records if not record["output_exists"]][:5],
                 "output_collision_samples": [
                     asset_output_record_sample(record)
                     for record in records
-                    if record["output_key"] in cross_ab_output_keys
+                    if record["output_key"] in uncertain_output_collision_keys
+                ][:5],
+                "shared_output_reference_samples": [
+                    asset_output_record_sample(record)
+                    for record in records
+                    if record["output_key"] in shared_output_reference_keys
                 ][:5],
             }
         )
@@ -1438,8 +1519,33 @@ def build_animestudio_asset_output_status(
         "animator_no_output_samples": animator_no_output_samples,
         "duplicate_output_path_group_count": len(duplicate_output_keys),
         "duplicate_output_entry_count": sum(len(records_by_output_path[key]) - 1 for key in duplicate_output_keys),
+        "uncertain_duplicate_output_path_group_count": len(uncertain_duplicate_output_keys),
+        "uncertain_duplicate_output_entry_count": sum(
+            len(records_by_output_path[key])
+            for key in uncertain_duplicate_output_keys
+        ),
         "cross_ab_output_collision_group_count": len(cross_ab_output_keys),
         "cross_ab_output_collision_entry_count": sum(len(records_by_output_path[key]) for key in cross_ab_output_keys),
+        "shared_output_reference_group_count": len(shared_output_reference_keys),
+        "shared_output_reference_entry_count": sum(
+            len(records_by_output_path[key])
+            for key in shared_output_reference_keys
+        ),
+        "raw_hash_output_collision_group_count": len(raw_hash_output_collision_keys),
+        "raw_hash_output_collision_entry_count": sum(
+            len(records_by_output_path[key])
+            for key in raw_hash_output_collision_keys
+        ),
+        "identity_output_collision_group_count": len(identity_output_collision_keys),
+        "identity_output_collision_entry_count": sum(
+            len(records_by_output_path[key])
+            for key in identity_output_collision_keys
+        ),
+        "uncertain_output_collision_group_count": len(uncertain_output_collision_keys),
+        "uncertain_output_collision_entry_count": sum(
+            len(records_by_output_path[key])
+            for key in uncertain_output_collision_keys
+        ),
         "unmapped_export_error_count": export_error_count,
     }
     return {
@@ -1558,8 +1664,18 @@ def write_animestudio_report_only_asset_statuses(
             "allowed_missing_output_count",
             "duplicate_output_path_group_count",
             "duplicate_output_entry_count",
+            "uncertain_duplicate_output_path_group_count",
+            "uncertain_duplicate_output_entry_count",
             "cross_ab_output_collision_group_count",
             "cross_ab_output_collision_entry_count",
+            "shared_output_reference_group_count",
+            "shared_output_reference_entry_count",
+            "raw_hash_output_collision_group_count",
+            "raw_hash_output_collision_entry_count",
+            "identity_output_collision_group_count",
+            "identity_output_collision_entry_count",
+            "uncertain_output_collision_group_count",
+            "uncertain_output_collision_entry_count",
             "source_group_count",
             "clean_source_group_count",
             "dirty_source_group_count",
@@ -3332,8 +3448,18 @@ def begin_animestudio_asset_shard_work(
         "texture2d_decode_failed_count",
         "duplicate_output_path_group_count",
         "duplicate_output_entry_count",
+        "uncertain_duplicate_output_path_group_count",
+        "uncertain_duplicate_output_entry_count",
         "cross_ab_output_collision_group_count",
         "cross_ab_output_collision_entry_count",
+        "shared_output_reference_group_count",
+        "shared_output_reference_entry_count",
+        "raw_hash_output_collision_group_count",
+        "raw_hash_output_collision_entry_count",
+        "identity_output_collision_group_count",
+        "identity_output_collision_entry_count",
+        "uncertain_output_collision_group_count",
+        "uncertain_output_collision_entry_count",
         "source_group_count",
         "clean_source_group_count",
         "dirty_source_group_count",
@@ -3431,8 +3557,18 @@ def finalize_animestudio_asset_shard_work(
         "animator_suspicious_no_output_count",
         "duplicate_output_path_group_count",
         "duplicate_output_entry_count",
+        "uncertain_duplicate_output_path_group_count",
+        "uncertain_duplicate_output_entry_count",
         "cross_ab_output_collision_group_count",
         "cross_ab_output_collision_entry_count",
+        "shared_output_reference_group_count",
+        "shared_output_reference_entry_count",
+        "raw_hash_output_collision_group_count",
+        "raw_hash_output_collision_entry_count",
+        "identity_output_collision_group_count",
+        "identity_output_collision_entry_count",
+        "uncertain_output_collision_group_count",
+        "uncertain_output_collision_entry_count",
         "source_group_count",
         "clean_source_group_count",
         "dirty_source_group_count",
@@ -4843,7 +4979,11 @@ def main() -> int:
                         f"missing_outputs=`{asset_cache.get('missing_output_count', 0)}`, "
                         f"missing_unique=`{asset_cache.get('missing_unique_output_count', 0)}`, "
                         f"allowed_missing=`{asset_cache.get('allowed_missing_output_count', 0)}`, "
-                        f"collisions=`{asset_cache.get('cross_ab_output_collision_group_count', 0)}`, "
+                        f"cross_ab_paths=`{asset_cache.get('cross_ab_output_collision_group_count', 0)}`, "
+                        f"shared_refs=`{asset_cache.get('shared_output_reference_group_count', 0)}`, "
+                        f"raw_hash_collisions=`{asset_cache.get('raw_hash_output_collision_group_count', 0)}`, "
+                        f"identity_collisions=`{asset_cache.get('identity_output_collision_group_count', 0)}`, "
+                        f"uncertain_collisions=`{asset_cache.get('uncertain_output_collision_group_count', asset_cache.get('cross_ab_output_collision_group_count', 0))}`, "
                         f"dirty_abs=`{asset_cache.get('dirty_source_group_count', 0)}`, "
                         f"export_errors=`{asset_cache.get('export_error_count', 0)}`, "
                         f"prepare_seconds=`{asset_cache.get('prepare_seconds')}`, "
