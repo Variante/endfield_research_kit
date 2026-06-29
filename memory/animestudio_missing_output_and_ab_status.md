@@ -2953,3 +2953,44 @@ Before/after for the targeted files:
 | `Beyond.Gameplay.PhaseForbidParams` | 22 | 0 | 22 |
 
 Resolved `$unparsed` refs attributable to this batch: 311 refs. Current classification: these are normal serialized managed-reference payloads backed by local IL2CPP metadata, not missing VFS/AB bytes and not encryption. The targeted character files still have unresolved `CharacterTemplateData`, `CharacterRootComponentData`, `CharacterAnimationComponentData`, and several condition/action payloads.
+
+## 2026-06-29 Twenty-Seventh Fresh StreamingAssets Compact AI And Forbid Batch
+
+Follow-up after the small-component batch. Work focused on the remaining unresolved compact AI target filters and forbid-parameter payloads in the three current AI config validation files.
+
+Evidence used:
+
+- Current post-decoder validation under `tmp\component_validation_after_pivot_20260629\ai_compact_68B3\` still had 29 `$unparsed` refs in compact AI/forbid classes.
+- Local IL2CPP metadata in `tmp\component_observed_metadata.json` exposed field names for `LongTimeNoIdentity`, `TargetDistance`, `EnemyRankType`, `EnemySubRankType`, `TargetInsideMaxSlotRange`, `ResilienceEmpty`, `GeneralAbilityForbidParams`, and `ForbidParamsWithRadioReason`.
+- `GeneralAbilityForbidUseParams` declares no new fields but observed payloads match inherited `GeneralAbilityForbidParams` base fields: `forbidStyle` plus aligned `toastTextId`.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added strict forbid-param decoding for `GeneralAbilityForbidParams`, derived `GeneralAbilityForbidUseParams`, and `ForbidParamsWithRadioReason`.
+- Added strict compact AI decoding for `LongTimeNoIdentity`, `ResilienceEmpty`, `TargetDistance`, `EnemyRankType`, `EnemySubRankType`, and `TargetInsideMaxSlotRange`.
+- Guards use exact class identity, exact fixed lengths for fixed payloads, bounded forbid-style values, strict bool32/float/string readers, enum guard for `TargetDistance.disType`, and `EnsureComplete()`.
+
+Validation details:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\compact_ai_forbid_validation_after_20260629 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names tmp\next_decoder_validation_filters_20260629\ai_compact\names_1_68B3B9B8.txt
+```
+
+The targeted export covered 3 JSON outputs, exited with code 0, emitted an empty warning/error log, and parsed with 0 JSON failures. The rebuild succeeded with 0 errors; it reported 14 warnings from unchanged AnimeStudio library files outside this decoder patch.
+
+Before/after for the targeted AI config files:
+
+| Class | Baseline `$unparsed` | Final `$unparsed` | Final decoded |
+| --- | ---: | ---: | ---: |
+| `Beyond.Gameplay.GeneralAbilityForbidUseParams` | 6 | 0 | 6 |
+| `Beyond.Gameplay.ForbidParamsWithRadioReason` | 2 | 0 | 2 |
+| `Beyond.Gameplay.GeneralAbilityForbidParams` | 2 | 0 | 2 |
+| `Beyond.Gameplay.AI.LongTimeNoIdentity` | 6 | 0 | 6 |
+| `Beyond.Gameplay.AI.TargetDistance` | 2 | 0 | 2 |
+| `Beyond.Gameplay.AI.EnemySubRankType` | 4 | 0 | 4 |
+| `Beyond.Gameplay.AI.EnemyRankType` | 2 | 0 | 2 |
+| `Beyond.Gameplay.AI.TargetInsideMaxSlotRange` | 4 | 0 | 4 |
+| `Beyond.Gameplay.AI.ResilienceEmpty` | 1 | 0 | 1 |
+
+Resolved `$unparsed` refs attributable to this batch: 29 refs. Current classification: these are normal serialized managed-reference payloads backed by local IL2CPP metadata and observed payload bytes, not missing VFS/AB bytes and not encryption. After this batch, the targeted AI config validation files have no remaining `$unparsed` managed-reference refs.
