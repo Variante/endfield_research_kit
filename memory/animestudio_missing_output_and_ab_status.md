@@ -464,3 +464,76 @@ export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationC
 ```
 
 This file still has three `unknown_CustomType39_*` attributes. That is no longer an export failure, but it is still a semantic gap and should be investigated separately instead of silently suppressing it.
+
+## 2026-06-28 AnimationClip ParticleSystemForceField Recovery
+
+Follow-up on the remaining `unknown_CustomType39_*` attributes from `P_agtrinit_skill232_summon_02_ready_p7C8609B936A31E0C.anim`.
+
+Evidence:
+
+- The three unknown curves had `classID: 330`, `customType: 39`, and attributes `1865675821`, `2217896801`, and `1185939899`.
+- `tools/AnimeStudio/AnimeStudio/ClassIDType.cs` maps class ID `330` to `ParticleSystemForceField`.
+- Local TypeTree evidence in `tools/TypeTree/Common/6000.1.0f1.json` and `tools/TypeTree/2/3.0.0/info.json` shows `ParticleSystemForceFieldParameters` fields under `m_Parameters`, including `m_StartRange`, `m_EndRange`, and `m_GravityFocus`.
+- The same CRC path used by `CustomCurveResolver` matches:
+  - `m_Parameters.m_EndRange` -> `1865675821` / `0x6F33F42D`
+  - `m_Parameters.m_GravityFocus` -> `2217896801` / `0x84326B61`
+  - `m_Parameters.m_StartRange` -> `1185939899` / `0x46B001BB`
+
+Implemented semantic recovery in AnimeStudio:
+
+- Added `ParticleSystemForceField = 39` to `BindingCustomType`.
+- Added a `CustomCurveResolver` case that maps only the three evidence-backed `ParticleSystemForceField` parameter fields above.
+- Generic fallback remains for any other unknown `ParticleSystemForceField` attribute.
+
+Focused verification command:
+
+```bat
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" "D:\fluffy-dump\tmp\animestudio_animationclip_forcefield_probe\output" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type Convert --dummy_dlls "D:\fluffy-dump\tools\DummyDll" --names "D:\fluffy-dump\tmp\animestudio_animationclip_forcefield_probe\names.txt" --filter_data "D:\fluffy-dump\tmp\animestudio_animationclip_forcefield_probe\filter_data.json" --types AnimationClip:Both
+```
+
+Probe result:
+
+- `attribute: m_Parameters.m_EndRange` at line `629`.
+- `attribute: m_Parameters.m_GravityFocus` at line `656`.
+- `attribute: m_Parameters.m_StartRange` at line `2223`.
+- No `unknown_CustomType39_*` remained in the focused output.
+
+Then the main export tree was refreshed in-place for that exact AnimationClip row:
+
+```bat
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" "D:\fluffy-dump\export_full\recovered\AnimeStudio-cli\StreamingAssets\convert_by_type" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type Convert --dummy_dlls "D:\fluffy-dump\tools\DummyDll" --names "D:\fluffy-dump\tmp\animestudio_animationclip_forcefield_probe\names.txt" --filter_data "D:\fluffy-dump\tmp\animestudio_animationclip_forcefield_probe\filter_data.json" --types AnimationClip:Both
+```
+
+Current classification: the former `CustomType39` AnimationClip gap is a `ParticleSystemForceField` binding, not encryption and not malformed AnimationClip data. The remaining unresolved part in this specific clip is path recovery (`path_1620762661` still has no resolved GameObject path), but the animated field names are now understood.
+
+## 2026-06-28 Current Shader Refresh Status
+
+A full focused Shader refresh with the current AnimeStudio binary replaced the stale `reports/20260627_215637` Shader failure picture:
+
+```bat
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode debug --animestudio-asset-types Shader --animestudio-stages convert_by_type --sources Persistent StreamingAssets --animestudio-jobs 4 --animestudio-shards 16
+```
+
+Fresh report run: `reports/20260628_204551`.
+
+Results:
+
+| Source | Matched Shader entries | Missing outputs | Export errors | Current blocker |
+| --- | ---: | ---: | ---: | --- |
+| Persistent | 222 | 1 | 1 | `Shader:HGRP/CharacterNPR` |
+| StreamingAssets | 271 | 1 | 1 | `Shader:HGRP/CharacterNPR` |
+
+Interpretation:
+
+- The old broad class of `ReadAlignedString requests ...` Shader failures is no longer the current blocker.
+- Focused probes for `Mobile/Particles/Additive` and `HGRP/WaterForwardRendering` both wrote `.shader` files with parsed Endfield DXBC/SMOL-V snippets and no `AnimeStudio shader bytecode unavailable` fallback marker.
+- The distinct old `HGRP/WaterForwardRendering` negative `ReadBytes` case is now parsed/exported as real snippet output.
+- The only current Shader export failure is `HGRP/CharacterNPR`, mirrored in both roots with the same PathID `-7822190029627442914`.
+
+Current `HGRP/CharacterNPR` evidence:
+
+- `Persistent`: source `D:\Program Files\Endfield Game\Endfield_Data\Persistent\VFS\0CE8FA57\FCF21734CEDE10386D06530C787F510D.chk`, expected output `HGRP_CharacterNPR_p9371FF9C9E74391E.shader`.
+- `StreamingAssets`: source `D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\0CE8FA57\D937E67494E3B4C19C00B4CD263ED388.chk`, expected output `HGRP_CharacterNPR_p9371FF9C9E74391E.shader`.
+- Both logs throw `System.OutOfMemoryException` at `StringBuilder.ToString()` inside `ShaderConverter.ConvertSerializedSubShader`.
+
+Current classification: the remaining Shader blocker is not VFS decode, bundle encryption, or the old Endfield shader subprogram schema gap. It is an exporter scalability/output construction problem for one very large shader. The next useful patch should preserve parsed subprogram metadata and bytecode hashes without constructing an unbounded single decompiled text string.
