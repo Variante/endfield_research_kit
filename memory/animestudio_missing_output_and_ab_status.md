@@ -1172,3 +1172,64 @@ Current decision: hold a full `RefExtraInfo` decoder. Raw JSON shows a very regu
 Implementation note: the current exporter output field is `spritePath`, chosen from the raw-value role and class name before metadata confirmation. If stricter metadata naming is preferred later, rename to `stateSpritePath` or include both while preserving compatibility.
 
 Current classification: after the latest decoder work, the remaining high-count managed-reference gaps are not blocked by slash-name parsing anymore. They are schema-completion tasks: expand unresolved IL2CPP type indices, then add targeted decoders only where field names and byte layout agree.
+
+## 2026-06-29 View Animation And Battle Stimulus ManagedReference Decoders
+
+Follow-up decoder pass from the 221-case managed-reference corpus after `UILevelMapCrane/CraneSpritePath` was resolved.
+
+Evidence used:
+
+- IL2CPP metadata from `Endfield_Data/il2cpp_data/Metadata/global-metadata.dat` via `tools/endfield-il2cpp/catalog_option_flow_metadata.py`.
+- Current probe JSON from `tmp/monobehaviour_decoder_221_after_ui_crane/MonoBehaviour` using `heuristicRawWordHints`, `heuristicStringHints`, and `heuristicRidLinks`.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- `Beyond.Gameplay.View.ModelViewStateControllerBase/AnimationParamChangePack`
+  - Fields: `useNewMVSC`, `paramName`, `paramType`, `boolValue`, `floatValue`, `intValue`.
+  - `paramType` names are emitted for the observed enum values: `Float`, `Int`, `Bool`, `Trigger`.
+- `Beyond.Gameplay.View.ModelViewStateControllerBase/AnimationPackSetState`
+  - Fields: `stateName`, `layer`, `normalizedTime`.
+- `Beyond.Gameplay.AI.EnemyBattleEventStimulus/EnemyBattleEventStimulusData`
+  - Fields: `eventType`, `buffId`, `filterDamageDecorate`, `checkType`, `damageDecorateMask`.
+  - `eventType` is preserved as numeric+hex because the enum/id type is not fully resolved yet.
+  - `checkType` names are emitted for the nested enum: `Exact`, `HasAny`, `HasAll`, `ExceptAny`, `ExceptAll`.
+  - `damageDecorateMask` is decoded as a 64-bit numeric+hex value, matching the raw payload length and `DamageDecorateMask` metadata.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\monobehaviour_decoder_221_after_view_event --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --filter_data tmp\monobehaviour_warning_221_after_slash\filter.json
+```
+
+Build result: success with `0` errors. The build reported existing project warnings and transient copy-retry warnings from a short-lived `AnimeStudio.CLI` process, but completed successfully. The targeted export emitted 15,014 JSON files with exit code 0 and no warning/error lines.
+
+221-case before/after this pass:
+
+| Metric | Before this pass | After this pass |
+| --- | ---: | ---: |
+| Recovered registries | 549 | 549 |
+| Fully decoded recovered registries | 341 | 352 |
+| Heuristic recovered registries | 208 | 197 |
+| Decoded nested refs | 205 | 296 |
+| `$unparsed` refs | 660 | 569 |
+
+Resolved `$unparsed` classes in this pass:
+
+| Class | Count resolved |
+| --- | ---: |
+| `ModelViewStateControllerBase/AnimationParamChangePack` | 54 |
+| `ModelViewStateControllerBase/AnimationPackSetState` | 10 |
+| `EnemyBattleEventStimulus/EnemyBattleEventStimulusData` | 27 |
+
+Top remaining unresolved classes after this pass:
+
+| Class | Remaining `$unparsed` refs | Current blocker |
+| --- | ---: | --- |
+| `EnemyBattleGraph/EnemyBattleGraphData` | 118 | `canvasGraph`, `entityMode`, and `enemySR` tail type are still not fully resolved. |
+| `LuaReference/RefExtraInfo` | 58 | `customUIStyles` container and `CustomUIStyleInfo` member types are not fully expanded. |
+| `EnemySettlementBattleBehavior/EnemySettlementBattleBehaviorData` | 24 | Exact nested data field list still needs metadata capture. |
+| `EnemySettlementBattleGraph/EnemySettlementBattleGraphData` | 24 | Exact nested data field list still needs metadata capture. |
+| `EnemyCastSkillResponse/EnemyCastSkillResponseData` | 23 | Looks simple from raw bytes but still needs metadata-backed field names. |
+
+Current classification: these 91 payloads are now schema-decoded from metadata-backed field names and raw byte layouts. Remaining high-count entries are schema-completion work, not parser-warning suppression.
