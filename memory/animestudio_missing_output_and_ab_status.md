@@ -2994,3 +2994,38 @@ Before/after for the targeted AI config files:
 | `Beyond.Gameplay.AI.ResilienceEmpty` | 1 | 0 | 1 |
 
 Resolved `$unparsed` refs attributable to this batch: 29 refs. Current classification: these are normal serialized managed-reference payloads backed by local IL2CPP metadata and observed payload bytes, not missing VFS/AB bytes and not encryption. After this batch, the targeted AI config validation files have no remaining `$unparsed` managed-reference refs.
+
+## 2026-06-29 Twenty-Eighth Fresh StreamingAssets Character Animation Batch
+
+Follow-up after the compact AI/forbid batch. Work focused on `Beyond.Gameplay.View.CharacterAnimationComponentData` in the current character validation files.
+
+Evidence used:
+
+- A read-only subagent audited 28 current `CharacterAnimationComponentData` payloads across the three character chunks and confirmed the byte layout.
+- Local IL2CPP metadata exposes `_minPivotAngle`, `_relaxTriggerTime`, `_idleTriggerTime`, `_idleAnimCount`, `_fightIdleTimeout`, `_memberFightIdleTimeout`, and `_footStepCfgId`.
+- The leading `animationConfigPath` string is not named by the direct IL2CPP fields, but is byte-proven in the current corpus and guarded as `Data/Json/AnimationConfig/*.json`.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added strict `CharacterAnimationComponentData` decoding under the view managed-reference decoder.
+- Added a reusable aligned UTF-8 string reader that verifies zero padding bytes after aligned strings.
+- Guards require exact `Gameplay.Beyond / Beyond.Gameplay.View / CharacterAnimationComponentData`, word-aligned payload length, bounded path string, finite/ranged floats, bounded non-negative idle animation count, bounded footstep config string, and `EnsureComplete()`.
+
+Validation details:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\character_animation_validation_after_20260629\pivot_68B3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_1_68B3B9B8.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\71FC2E71A9F249B382BF8DAED3BCEE65.chk" tmp\character_animation_validation_after_20260629\pivot_71FC --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_2_71FC2E71.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk" tmp\character_animation_validation_after_20260629\pivot_FBAD --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_3_FBAD673F.txt
+```
+
+The targeted exports covered 30 JSON outputs, exited with code 0, emitted empty warning/error logs, and parsed with 0 JSON failures. The rebuild succeeded with 0 errors; it reported 14 warnings from unchanged AnimeStudio library files outside this decoder patch.
+
+Before/after for the targeted files:
+
+| Class | Baseline `$unparsed` | Final `$unparsed` | Final decoded |
+| --- | ---: | ---: | ---: |
+| `Beyond.Gameplay.View.CharacterAnimationComponentData` | 28 | 0 | 28 |
+
+Resolved `$unparsed` refs attributable to this batch: 28 refs. Current classification: these are normal serialized managed-reference payloads backed by local IL2CPP metadata plus byte-proven path data, not missing VFS/AB bytes and not encryption. The same character validation files still have unresolved `CharacterTemplateData`, `CharacterRootComponentData`, and condition/action payloads.
