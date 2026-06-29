@@ -853,3 +853,35 @@ Fresh runs:
 | Persistent | 5,423 | 5,423 | 5,423 | 0 | 0 |
 
 The focused run logs contain no `[Warning]`, `[Error]`, `Exception`, `Animator no output`, or `Export ... error` matches. Current classification: Endfield Animator assets in the current dataset are understood as no-mesh Animator records, and are now preserved as explicit metadata markers rather than missing FBX files or suppressed warnings.
+
+## 2026-06-29 Marker vs Alternate-Name Report Split
+
+Follow-up on the combined six-type report after Animator marker recovery.
+
+The first combined status pass with Animator included showed `name_mismatch_output_count` and `alternate_name_output_count` both increasing by every marker file because marker suffixes intentionally differ from the primary output suffix (`.png` -> `.png.empty.json`, `.fbx` -> `.fbx.empty.json`). This was technically visible but misleading: marker outputs are already first-class evidence through `marker_output_count` and should not imply a Unity-name prediction ambiguity.
+
+Implemented in `scripts/export_full_from_game.py`:
+
+- `marker_output_count` remains unchanged and now has `marker_output_samples`.
+- `name_mismatch_output_count` remains compatibility-compatible and still includes marker suffix differences.
+- `alternate_name_output_count`, reason counts, source-hint counts, case-normalized counts, and alternate-name samples now exclude marker outputs and represent only non-marker alternate filenames.
+
+Verification:
+
+```bat
+python -m py_compile scripts\export_full_from_game.py
+python scripts\export_full_from_game.py --report-only --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode debug --animestudio-stages convert_by_type --animestudio-asset-types Texture2D Sprite Shader AnimationClip Mesh Animator --sources Persistent StreamingAssets --animestudio-jobs 2
+```
+
+Fresh report run: `reports/20260629_012423`.
+
+Key results:
+
+| Source | Type | Markers | Name mismatches | Alternate names |
+| --- | --- | ---: | ---: | ---: |
+| Persistent | Texture2D | 6 | 6 | 0 |
+| Persistent | Animator | 5,423 | 5,423 | 0 |
+| StreamingAssets | Texture2D | 6 | 94 | 88 |
+| StreamingAssets | Animator | 57,025 | 57,025 | 0 |
+
+Current classification: marker outputs remain visible, but marker suffixes are no longer mixed into the alternate-output-name taxonomy. The actual non-marker alternate-name cases remain Texture2D/Sprite/Mesh/AnimationClip import/runtime-name differences, not missing export data.
