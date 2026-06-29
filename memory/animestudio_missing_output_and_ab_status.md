@@ -2774,3 +2774,47 @@ Before/after for the targeted file:
 | `Beyond.Gameplay.WeaponDecoEffectData` | 73 | 0 | 73 |
 
 Resolved `$unparsed` refs attributable to this batch: 73 `WeaponDecoEffectData` refs. Current classification: these are normal serialized managed-reference payloads backed by local IL2CPP metadata, not missing VFS/AB bytes and not encryption. `ProjectileComponentData` remains intentionally unresolved until complete raw payload extraction proves its long tail layout.
+
+## 2026-06-29 Twenty-Third Fresh StreamingAssets Projectile-Component Raw-Payload Batch
+
+Follow-up after the weapon-deco decoder batch. Work focused on the largest still-unresolved managed-reference family, `Beyond.Gameplay.Core.ProjectileComponentData`.
+
+Read-only subagent conclusion:
+
+- A full strict `ProjectileComponentData` decoder is not yet defensible from the old fresh-audit JSON alone.
+- The existing heuristic JSON capped raw-word hints at 64 dwords, while `ProjectileComponentData` payloads are 1452-3784 bytes long.
+- The prefix and several movement/effect landmarks are plausible, but the long tail is not fully proven. Returning `$decoded` now would suppress warnings on an unproven schema.
+- The exporter already has a safer path for exact bytes: raw JSON sidecars can be enabled with `ANIMESTUDIO_EXPORT_JSON_RAW=1`, and recovered managed-reference entries already carry `dataOffset` and `dataLength`.
+
+Probe run:
+
+```bat
+set ANIMESTUDIO_EXPORT_JSON_RAW=1
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\projectile_component_raw_probe\68B3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\projectile_template_validation_filters\names_1_68B3B9B8.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\71FC2E71A9F249B382BF8DAED3BCEE65.chk" tmp\projectile_component_raw_probe\71FC --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\projectile_template_validation_filters\names_2_71FC2E71.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk" tmp\projectile_component_raw_probe\FBAD --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\projectile_template_validation_filters\names_3_FBAD673F.txt
+```
+
+The three targeted exports covered all 300 projectile files, exited with code 0, and emitted no warning/error output. Raw sidecars were written next to the probe JSON files under `tmp\projectile_component_raw_probe\`.
+
+Extraction output:
+
+- Manifest: `tmp\projectile_component_payload_slices\manifest.jsonl`
+- Summary: `tmp\projectile_component_payload_slices\summary.json`
+- Payload binaries: `tmp\projectile_component_payload_slices\payloads\*.bin`
+- Extracted payload count: 300
+- Sidecar/hash/offset errors: 0
+- Chunk distribution: `68B3B9B8EB82E88FBFE6A313E6B18FB6.chk` has 229 payloads, `71FC2E71A9F249B382BF8DAED3BCEE65.chk` has 23 payloads, and `FBAD673F662CF3EACDDB14A65999F7EF.chk` has 48 payloads.
+
+The extraction verified each JSON sidecar SHA-256 against `$animestudio.rawDataSha256`, then sliced each `ProjectileComponentData` payload using `dataOffset` and `dataLength`, and wrote a per-payload SHA-256 into the JSONL manifest.
+
+Targeted export marker status after this probe:
+
+| Class | Final `$unparsed` | Final decoded |
+| --- | ---: | ---: |
+| `Beyond.Gameplay.ProjectileTemplateData` | 0 | 300 |
+| `Beyond.Gameplay.Core.ProjectileRootComponentData` | 0 | 300 |
+| `Beyond.Gameplay.Core.AbilitySystemData` | 0 | 300 |
+| `Beyond.Gameplay.Core.ProjectileComponentData` | 300 | 0 |
+
+This is intentional: the raw-payload batch does not reduce warning counts by itself. It preserves the `ProjectileComponentData` unresolved markers while providing exact binary evidence for the next parser iteration. Current classification: the blocker is no longer missing bytes; it is an unproven long managed-reference schema requiring full-payload layout work.
