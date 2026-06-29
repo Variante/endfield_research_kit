@@ -3385,3 +3385,68 @@ Remaining unresolved in the same validation slice after this pass:
 | `Beyond.Gameplay.Core.StoreBuffCount/Data` | 1 |
 
 Current classification: `CheckHp/Data` and `CheckTagMatch/Data` are normal serialized managed-reference payloads backed by local IL2CPP/MemoryPack metadata, not missing AB/VFS bytes and not encryption. They remain partial only because their TargetSettings subobject still contains unresolved selector/suffix semantics.
+
+## 2026-06-29 Thirty-Sixth Fresh StreamingAssets TargetSettings-Only Condition Batch
+
+Follow-up after the CheckHp/CheckTagMatch batch. Work focused on the TargetSettings-only parent condition payloads in the current 30-file character validation slice: `CheckMainCharacterCondition/Data`, `CheckObjectTypeMatch/Data`, and `CheckTargetsEqual/Data`.
+
+Evidence used:
+
+- The current validation output `tmp\checkhp_checktag_decode_after_20260629` still had 35 unresolved refs across these three classes: 22 `CheckObjectTypeMatch/Data`, 7 `CheckMainCharacterCondition/Data`, and 6 `CheckTargetsEqual/Data`.
+- Existing fallback diagnostics already emitted full payload hex, raw word traces, and complete `diagnosticStructuredLayout` for these classes.
+- A narrow IL2CPP metadata query with `tools\endfield-il2cpp\catalog_option_flow_metadata.py --type-regex "CheckObjectTypeMatch|CheckMainCharacterCondition|CheckTargetsEqual" --include-all-members` confirmed:
+  - `CheckMainCharacterCondition/Data`: `checkTarget: TargetSettings`.
+  - `CheckObjectTypeMatch/Data`: `target: TargetSettings`, `objectTypeMask: ObjectType`.
+  - `CheckTargetsEqual/Data`: `firstTargetSettings: TargetSettings`, `secondTargetSettings: TargetSettings`.
+  - MemoryPack setter order matches those fields.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added guarded partial decoders for all three classes.
+- Each decoder consumes the inherited `AbilityActionData` prefix and the metadata-backed class-local fields completely.
+- Each embedded TargetSettings object is still emitted via the existing partial TargetSettings diagnostic reader, preserving unresolved selector-data and suffix semantics instead of pretending those subfields are fully named.
+- `CheckObjectTypeMatch/Data` now uses the metadata field name `target` for the TargetSettings object and preserves `objectTypeMask` as a raw hash-style int32 value.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 errors and the same 14 existing warnings from AnimeStudio projects.
+
+Targeted validation output: `tmp\target_simple_conditions_decode_after_20260629`.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 30 |
+| JSON parse failures | 0 |
+| `CheckObjectTypeMatch/Data` refs | 22 |
+| Decoded `CheckObjectTypeMatch/Data` refs | 22 |
+| `CheckMainCharacterCondition/Data` refs | 7 |
+| Decoded `CheckMainCharacterCondition/Data` refs | 7 |
+| `CheckTargetsEqual/Data` refs | 6 |
+| Decoded `CheckTargetsEqual/Data` refs | 6 |
+| Remaining `$unparsed` refs in slice | 27 |
+
+Decoded sample facts:
+
+| Class | Observed fields |
+| --- | --- |
+| `CheckObjectTypeMatch/Data` | partial TargetSettings length 100 or 108, `objectTypeMask = 0x10` in sampled entries |
+| `CheckMainCharacterCondition/Data` | one partial TargetSettings object named `checkTarget` |
+| `CheckTargetsEqual/Data` | two partial TargetSettings objects named `firstTargetSettings` and `secondTargetSettings`, length 100 or 108 in observed samples |
+
+Remaining unresolved in the same validation slice after this pass:
+
+| Class | Remaining `$unparsed` |
+| --- | ---: |
+| `Beyond.Gameplay.Core.CheckBuffStackNumAdvanced/Data` | 7 |
+| `Beyond.Gameplay.Core.Conditions.CheckBuffStackNum/Data` | 5 |
+| `Beyond.Gameplay.Core.Conditions.CheckBuffStackNumByTag/Data` | 5 |
+| `Beyond.Gameplay.Core.CreateBuffAction/Data` | 5 |
+| `Beyond.Gameplay.Core.AbilitySystemData` | 2 |
+| `Beyond.Gameplay.Core.ModifyDynamicBlackboard/Data` | 2 |
+| `Beyond.Gameplay.Core.StoreBuffCount/Data` | 1 |
+
+Current classification: these 35 condition payloads are normal serialized managed-reference payloads backed by local IL2CPP/MemoryPack metadata, not missing AB/VFS bytes and not encryption. They remain `$partial` only because their embedded TargetSettings objects still preserve unresolved selector/suffix fields.
