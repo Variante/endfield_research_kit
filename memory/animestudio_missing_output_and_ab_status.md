@@ -2697,4 +2697,41 @@ Before/after for the targeted file:
 | `Beyond.Gameplay.WikiModelSpawnData` | 129 | 0 | 129 |
 | `Beyond.Gameplay.WikiWeaponData` | 5 | 5 | 0 |
 
-Resolved `$unparsed` refs attributable to this batch: 129 `WikiModelSpawnData` refs. Current classification: these were normal serialized managed-reference payloads with TypeTree/IL2CPP-backed fields, not missing VFS/AB bytes and not encryption. Remaining Wiki work is `WikiWeaponData`; the parallel audits are also looking at `ProjectileComponentData` and raw validation for `WeaponDecoEffectData`.
+Resolved `$unparsed` refs attributable to this batch: 129 `WikiModelSpawnData` refs. Current classification: these were normal serialized managed-reference payloads with TypeTree/IL2CPP-backed fields, not missing VFS/AB bytes and not encryption. Remaining Wiki work is `WikiWeaponData`; the parallel audits are also looking at `ProjectileComponentData` and raw validation for WeaponDecoEffectData.
+
+## 2026-06-29 Twenty-First Fresh StreamingAssets Wiki-Weapon Batch
+
+Follow-up after the Wiki model spawn batch. Work focused on the five remaining unresolved `Beyond.Gameplay.WikiWeaponData` managed references in `WikiModelConfig`.
+
+Evidence used:
+
+- The same fresh audit file, `tmp\fresh_json_audit_20260629_streaming\MonoBehaviour\WikiModelConfig_p9149561BFAD103BF.json`, contains 5 `Beyond.Gameplay.WikiWeaponData` refs.
+- Payload lengths are `48 x4` and `92 x1`; no string hints are present.
+- Local IL2CPP metadata exposes exactly one `WikiWeaponData` field: `spawnDataList`.
+- The serialized word layout is `spawnDataList.count` followed by nested `WikiModelSpawnData` records. Four payloads have count 1 (`4 + 44` bytes); one payload has count 2 (`4 + 44 + 44` bytes).
+- The nested spawn records reuse the Wiki model spawn layout proven in the previous batch. In the current five weapon payloads, nested `effects` lists are empty.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Refactored Wiki model spawn field reading into `ReadWikiModelSpawnData` so top-level `WikiModelSpawnData` and nested weapon entries share the same strict layout.
+- Added strict `WikiWeaponData` decoding under the existing `Gameplay.Beyond` managed-reference decoder.
+- Added `ReadWikiModelSpawnDataList` with a non-negative count, maximum 16 entries, and a minimum 44-byte per-entry remaining-size guard.
+- Kept existing string, bool32, finite-float, and complete-payload guards for nested spawn/effect records.
+
+Validation details:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\wiki_weapon_validation_after\68B3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\wiki_model_spawn_validation_filters\names.txt
+```
+
+The targeted export covered `WikiModelConfig`, exited with code 0, and emitted no warning/error output. The build succeeded with the existing 14 AnimeStudio/Utility warnings and no errors.
+
+Before/after for the targeted file:
+
+| Class | Fresh audit `$unparsed` | Final `$unparsed` | Final decoded |
+| --- | ---: | ---: | ---: |
+| `Beyond.Gameplay.WikiModelSpawnData` | 129 | 0 | 129 |
+| `Beyond.Gameplay.WikiWeaponData` | 5 | 0 | 5 |
+
+Resolved `$unparsed` refs attributable to this batch: 5 `WikiWeaponData` refs. Combined with the previous batch, `WikiModelConfig` now has zero unresolved managed-reference markers in the targeted validation output. Current classification: `WikiWeaponData` is a normal serialized managed-reference payload containing nested `WikiModelSpawnData` records, not missing VFS/AB bytes and not encryption.
