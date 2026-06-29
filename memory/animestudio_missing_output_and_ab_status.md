@@ -2659,3 +2659,42 @@ Projectile family in the final targeted validation set:
 Resolved `$unparsed` refs attributable to this batch: 300 `ProjectileTemplateData` refs. `ProjectileRootComponentData` is also decoded in the same validation output due to the previous projectile-root batch. Current classification: `ProjectileTemplateData` is now understood as a normal serialized managed-reference payload, not missing VFS/AB bytes and not encryption. The remaining projectile blocker is `ProjectileComponentData`; its collider/effect/audio/list/movement sections still need a staged schema proof before decoding.
 
 Next candidate from the parallel read-only audit: `Beyond.Gameplay.WikiModelSpawnData` has 129 unresolved refs in one file and a metadata-backed layout that accounts for all observed lengths. `WeaponDecoEffectData` is likely but should wait for raw-byte validation of the longest 800-byte payload before being claimed exact.
+
+## 2026-06-29 Twentieth Fresh StreamingAssets Wiki-Model Batch
+
+Follow-up after the projectile-template batch. Work focused on the unresolved `Beyond.Gameplay.WikiModelSpawnData` managed references in `tmp\fresh_json_audit_20260629_streaming\MonoBehaviour\WikiModelConfig_p9149561BFAD103BF.json`.
+
+Evidence used:
+
+- The fresh audit file contains 129 `Beyond.Gameplay.WikiModelSpawnData` refs and 5 separate unresolved `Beyond.Gameplay.WikiWeaponData` refs.
+- All 129 Wiki model spawn refs come from `StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk` in `WikiModelConfig`.
+- Payload length distribution: `44 x106`, `124 x2`, `128 x9`, `136 x2`, `140 x5`, `144 x1`, `152 x3`, `512 x1`.
+- Effect-count distribution from raw word hints: `0 x106`, `1 x22`, `5 x1`.
+- Local IL2CPP metadata and the serialized TypeTree agree on `WikiModelSpawnData` fields: `position`, `rotation`, `scale`, `cameraDistance`, `effects`.
+- Local IL2CPP metadata and the serialized TypeTree agree on `WikiModelEffectData` fields: `name`, `mountPoint`, `followScale`, `followRotation`, `offset`, `rotation`, `scale`.
+- The longest 512-byte payload decodes into five plausible effect records such as `P_palesent_standby_head` / `Ring_Bone` and ring effects mounted to `Bip001_*` bones.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added strict `WikiModelSpawnData` decoding under the existing `Gameplay.Beyond` managed-reference decoder.
+- Decoded `position`, `rotation`, `scale`, `cameraDistance`, and `effects`.
+- Added `ReadWikiModelEffectList` and `ReadWikiModelEffectData` helpers.
+- Effect-list guard requires a non-negative count, at most 16 entries, and enough remaining bytes for the minimum 52-byte effect shape before reading variable-length strings. Existing reader guards still reject invalid ASCII strings, bad bool32 values, NaN/Infinity floats, and incomplete payloads.
+
+Validation details:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\wiki_model_spawn_validation_after\68B3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\wiki_model_spawn_validation_filters\names.txt
+```
+
+The targeted export covered `WikiModelConfig`, exited with code 0, and emitted no warning/error output. The build succeeded; the first build in this batch showed the existing 14 AnimeStudio/Utility warnings and no errors.
+
+Before/after for the targeted file:
+
+| Class | Fresh audit `$unparsed` | Final `$unparsed` | Final decoded |
+| --- | ---: | ---: | ---: |
+| `Beyond.Gameplay.WikiModelSpawnData` | 129 | 0 | 129 |
+| `Beyond.Gameplay.WikiWeaponData` | 5 | 5 | 0 |
+
+Resolved `$unparsed` refs attributable to this batch: 129 `WikiModelSpawnData` refs. Current classification: these were normal serialized managed-reference payloads with TypeTree/IL2CPP-backed fields, not missing VFS/AB bytes and not encryption. Remaining Wiki work is `WikiWeaponData`; the parallel audits are also looking at `ProjectileComponentData` and raw validation for `WeaponDecoEffectData`.
