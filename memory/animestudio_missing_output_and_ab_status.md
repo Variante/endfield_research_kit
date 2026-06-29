@@ -2225,3 +2225,86 @@ Largest remaining guide `$unparsed` classes after this pass:
 | `SelectMapMark` | 9 | Action payload not yet mapped. |
 
 Current classification: the guide/tutorial managed-reference bucket is now a small long tail. The fresh probe has no exporter warnings/errors, and the remaining guide `$unparsed` entries still look like ordinary managed-reference layout recovery, not encryption, missing VFS extraction, or multi-layer AB encryption.
+
+## 2026-06-29 Fourteenth Fresh StreamingAssets Guide-Tail Batch
+
+Follow-up after the thirteenth guide-tail batch. Two read-only subagents validated the next guide action and condition long-tail buckets from `tmp\guide_tail_probe_allguide_after4` with strict payload replay and IL2CPP field names where available. No subagent edited files.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added guide action decoders/classifiers for `EquipProduceScrollToItem`, `BlendToCameraTransform`, `FacToggleCanDeactiveQuickBar`, `FacOverrideCullingSetting`, `ClickUI`, `EnterFacBeltBuildMode`, `SelectMapMark`, `FacMainHudCloseMobileBox`, `HideItemTips`, `ToggleSideMenuItemForceValid`, `FacMainHudRightStopFocus`, `SelectAdventureBookTab`, `UIScrollRectScrollTo`, `FacOpenBuildingPanel`, `FacHighlightBuildingInArea`, `Split`, `BlackScreenFadeOut`, `ToggleItemTipsAutoClose`, `FacSetEnableExitFactoryMode`, `ClearFacPin`, `ZoomToFullTechTree`, `CharInfoSwitchChar`, `CharInfoWeaponScrollToTop`, and `ExitCharInfoTalentExpandNode`.
+- Added guide condition decoders/classifiers for `OnDungeonCommonEntryPanelOpen`, `OnFacConveyorOperated`, `CheckAdventureLevel`, `OnCharInfoModelInitFinish`, `CheckIsSquadInFight`, `CheckPlayerOnGround`, `CheckIsInFacTopView`, `CheckSelectGeneralAbility`, `CheckIsItemInQuickBar`, `CheckInWeaponUpgradePanel`, `OnSTTAllOpenProgressFinished`, `CheckBuildingConnectedSpecify`, `CheckIsOpenDomainMain`, `CheckMapMissionTrackingState`, `OnUILevelMapEnterLevel`, `OnCastComboSkill`, `CheckBlackboxComplete`, `OnOpenFacHubPanelWithoutNotify`, `OnOtherPlayerSocialBuildingPanelOpen`, `CheckIsPhaseCharInfoDefaultChar`, `OnMainHudActionFinished`, `CheckSimulationTrainingHandCardCount`, `CheckSpaceshipRoomLevel`, `CheckInCharInfoUpgradePanel`, `OnNormalFriendPanelOpen`, `OnEnterMainHud`, `OnFacReachFastTravel`, `OnComboSkillReady`, `OnMixPoolSelectFinish`, `OnGeneralAbilityUse`, `OnLiquidInteractInDumpMode`, and `OnFacPendingSlotChanged`.
+- Added small helpers for the guide two-int condition wrapper and raw int32 guide lists. `Split._idList` is preserved as raw/hash-like int32 values because only list structure is proven.
+- Kept enum-like and id-like fields numeric/raw where labels are not proven, including `blendStyle`, `_type`, `comparer`, `progressToCompare`, `conveyorType`, `completeState`, `roomType`, and guide wrapper ids.
+- Left runtime/static IL2CPP fields unread when no serialized payload bytes exist, such as `BlendToCameraTransform.m_stage/m_usedBlackScreen/m_handleId`, `CheckAdventureLevel.BLOCK_DESC_FORMATTER`, and spaceship/runtime cache fields.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\guide_tail_probe_allguide_after5 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names "^guide_"
+```
+
+Build result: success with `0` errors. The first non-incremental build after editing emitted the existing AnimeStudio project warnings, not new compile errors. The guide-only probe emitted 1,621 MonoBehaviour JSON files with exit code 0. Log grep for `Warning`, `Error`, `metadata-only JSON`, partial-TypeTree warnings, `Export ... error`, and `Unknown ClassID` returned no matches.
+
+Guide-only before/after from `tmp\guide_tail_probe_allguide_after4` to `tmp\guide_tail_probe_allguide_after5`:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Guide JSON files | 1,621 | 1,621 |
+| Guide `$unparsed` managed refs | 386 | 62 |
+| Decoded guide managed refs | 8,206 | 8,530 |
+
+Resolved `$unparsed` payloads in this pass: 324.
+
+Largest resolved classes:
+
+| Class | Resolved refs |
+| --- | ---: |
+| `OnDungeonCommonEntryPanelOpen` | 13 |
+| `OnFacConveyorOperated` | 12 |
+| `EquipProduceScrollToItem` | 12 |
+| `BlendToCameraTransform` | 11 |
+| `FacToggleCanDeactiveQuickBar` | 11 |
+| `CheckAdventureLevel` | 10 |
+| `OnCharInfoModelInitFinish` | 9 |
+| `CheckPlayerOnGround` | 9 |
+| `CheckIsSquadInFight` | 9 |
+| `SelectMapMark` | 9 |
+| `FacOverrideCullingSetting` | 9 |
+| `EnterFacBeltBuildMode` | 9 |
+| `ClickUI` | 9 |
+| `HideItemTips` | 8 |
+| `FacMainHudCloseMobileBox` | 8 |
+| `UIScrollRectScrollTo` | 7 |
+| `ToggleSideMenuItemForceValid` | 7 |
+| `SelectAdventureBookTab` | 7 |
+| `FacMainHudRightStopFocus` | 7 |
+
+Remaining guide `$unparsed` classes after this pass:
+
+| Class | Remaining refs |
+| --- | ---: |
+| `CheckRepairBuilding` | 3 |
+| `FacBuildingProducingCountInScene` | 3 |
+| `OnGetItem` | 3 |
+| `HasItemCount` | 3 |
+| `OnTechTreeNodeUnlock` | 3 |
+| `CheckWorldLevel` | 3 |
+| `CheckItemBagCanPutInServer` | 3 |
+| `CheckWireLinkAvailable` | 3 |
+| `CheckPlayerPin` | 3 |
+| `CheckCharInMainTeam` | 3 |
+| `CheckIsWeaponEquipped` | 3 |
+| `FocusTechTreeLayer` | 3 |
+| `FocusTechTreeCategory` | 3 |
+| `NaviToMixPoolTargetItem` | 2 |
+| `SetEnablePlayerAction` | 2 |
+| `ShowLimitedGuide` | 2 |
+| `CheckUnlockTechLayer` | 2 |
+| `UIScrollListScrollTo` | 2 |
+| `CheckSpaceshipRoomStationCount` | 2 |
+| `CheckDomainShopChannelLevel` | 2 |
+| Nine additional classes | 1 each |
+
+Current classification: the guide/tutorial managed-reference bucket is now reduced to 62 refs spread across tiny classes. The fresh probe still has no export warnings/errors, and the remaining entries continue to look like ordinary managed-reference layout recovery rather than encryption, missing VFS extraction, or multi-layer AB encryption.
