@@ -3124,3 +3124,42 @@ Explicitly left unresolved because full layouts are not yet proven:
 | `Beyond.Gameplay.Core.StoreBuffCount/Data` | 1 | target/tail blocks are not byte-proven yet |
 
 A separate read-only audit confirmed no strict full decoder is defensible yet for `CreateBuffAction/Data`, `ModifyDynamicBlackboard/Data`, or `StoreBuffCount/Data`. Local IL2CPP metadata names their direct fields, but the shared `TargetSettings` and selector-data sublayouts are still ambiguous around `rid=-2` sentinels and counted/list slots. The next useful probe is a raw full-payload hex/offset trace for these 8 unique payloads, not a decoded export path.
+
+## 2026-06-29 Thirty-First Fresh StreamingAssets TargetSettings Diagnostic Trace Batch
+
+Follow-up after the core action/condition batch. Work focused on evidence collection for the unresolved `TargetSettings` and buff-action layouts instead of promoting unsafe decoders.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added diagnostic-only full raw payload traces for the unresolved target/buff managed-reference families.
+- The diagnostic path only runs on the still-unparsed fallback path and keeps `$unparsed` / `$heuristic` set, so no payload is treated as understood by this batch.
+- Each selected entry now carries `diagnosticFullPayloadHex` plus a complete `diagnosticRawWordTrace` with relative/absolute offsets, int32/hex values, finite float interpretations, and printable ASCII word hints.
+- The trace deliberately removes the prior 64-word heuristic cap for these families, including the 280-byte `CheckBuffStackNumByTag/Data` case.
+
+Validation details:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\targetsettings_trace_after_20260629\68B3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_1_68B3B9B8.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\71FC2E71A9F249B382BF8DAED3BCEE65.chk" tmp\targetsettings_trace_after_20260629\71FC --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_2_71FC2E71.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk" tmp\targetsettings_trace_after_20260629\FBAD --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_3_FBAD673F.txt
+```
+
+The targeted exports covered 30 JSON outputs, exited with code 0, emitted no console warning/error output, and parsed with 0 JSON failures. The final rebuild after source cleanup reported 0 warnings and 0 errors.
+
+Diagnostic coverage for the targeted files:
+
+| Class | Entries | Unique payloads | Payload lengths | Still `$unparsed` | Missing diagnostic trace |
+| --- | ---: | ---: | --- | ---: | ---: |
+| `Beyond.Gameplay.Core.CreateBuffAction/Data` | 5 | 5 | 244, 268 | 5 | 0 |
+| `Beyond.Gameplay.Core.ModifyDynamicBlackboard/Data` | 2 | 2 | 164 | 2 | 0 |
+| `Beyond.Gameplay.Core.StoreBuffCount/Data` | 1 | 1 | 184 | 1 | 0 |
+| `Beyond.Gameplay.Core.Conditions.CheckBuffStackNum/Data` | 5 | 5 | 168 | 5 | 0 |
+| `Beyond.Gameplay.Core.Conditions.CheckBuffStackNumByTag/Data` | 5 | 5 | 196, 208, 212, 280 | 5 | 0 |
+| `Beyond.Gameplay.Core.Conditions.CheckMainCharacterCondition/Data` | 7 | 4 | 116, 124 | 7 | 0 |
+| `Beyond.Gameplay.Core.Conditions.CheckObjectTypeMatch/Data` | 22 | 10 | 120, 128 | 22 | 0 |
+| `Beyond.Gameplay.Core.Conditions.CheckTargetsEqual/Data` | 6 | 6 | 224, 232 | 6 | 0 |
+
+Compact trace summary was written to `tmp/targetsettings_trace_after_20260629/targetsettings_trace_compact_summary.txt` for local follow-up. The dominant repeated structure is a shared target selector block with optional aligned strings such as `trigger` / `target`, three `rid=-2` sentinel slots, and long zero-padded regions. `CheckTargetsEqual/Data` appears to contain two target selector blocks; buff-count and buff-action classes append buff/tag/blackboard fields after the same target selector pattern.
+
+Current classification: these bytes are present in the exported AB/MonoBehaviour payloads and are not evidence of missing VFS bytes or encryption. They remain not fully understood because the shared `TargetSettings` / selector-data sublayout and the meaning of its null/sentinel/list slots are not yet byte-proven. The next safe implementation step is a candidate `TargetSettings` parser that can parse into a clearly named diagnostic object and preserve unknown slots, but it should not mark these families fully decoded until the selector-data layout is proven against more current payloads.
