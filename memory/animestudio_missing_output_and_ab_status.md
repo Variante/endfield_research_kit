@@ -578,3 +578,70 @@ Results:
 | StreamingAssets | 271 | 0 | 0 |
 
 Current classification: `HGRP/CharacterNPR` is understood enough to export reliably. The prior failure was not encryption, VFS decode, or shader bytecode schema loss; it was unbounded text generation for one exceptionally large shader. Remaining semantic limitation: after the 32 MiB cap, some decompiled/source bodies are intentionally omitted, but their parsed bytecode metadata and hashes remain in the `.shader` output for identity and follow-up analysis.
+
+## 2026-06-28 Empty Mesh and Font Texture Marker Recovery
+
+Follow-up on the remaining classified missing outputs in the current asset-status manifests after Shader and AnimationClip recovery.
+
+### Zero-Vertex Mesh
+
+Before this change, Mesh conversion had no hard export errors, but the wrapper still reported classified missing outputs because AnimeStudio parsed zero-vertex Unity Mesh objects and returned `false` before writing `.obj` files:
+
+- `Persistent`: `491` matched Mesh entries, `8` allowed missing outputs.
+- `StreamingAssets`: `59,287` matched Mesh entries, `6,114` allowed missing outputs.
+
+The sampled objects are parsed Unity Mesh records with `VertexCount=0`, `VerticesLength=0`, and `IndexCount=0`, often collision/import placeholder names such as `_COL1_UM01`, `_UBX`, `_UCX`, or `Collider`. These are not VFS decode failures, not encryption, and not malformed Mesh payloads.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- `ExportMesh` now writes a comment-only `.obj` marker for `m_VertexCount <= 0` instead of logging `Mesh no output` and returning `false`.
+- The marker preserves reason, name, PathID, source file, source offset, vertex/submesh/index counts, and byte size.
+- Nonzero-vertex Mesh failures such as missing/empty vertex buffers still log as warnings and fail normally.
+
+Focused probe:
+
+```bat
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" "D:\fluffy-dump\tmp\animestudio_mesh_empty_probe" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type Convert --dummy_dlls "D:\fluffy-dump\tools\DummyDll" --names "D:\fluffy-dump\tmp\animestudio_mesh_empty_probe\names.txt" --filter_data "D:\fluffy-dump\tmp\animestudio_mesh_empty_probe\filter_data.json" --types Mesh:Both
+```
+
+Probe result: `S_waterquad_Collider_pA66CEA02CDDFF64B.obj` was written with `# AnimeStudio empty Mesh` metadata and no warning output.
+
+Full focused Mesh refresh: `reports/20260628_214905`.
+
+| Source | Matched Mesh entries | Output entries | Missing outputs | Export errors |
+| --- | ---: | ---: | ---: | ---: |
+| Persistent | 491 | 491 | 0 | 0 |
+| StreamingAssets | 59,287 | 59,287 | 0 | 0 |
+
+### Font Texture Placeholders
+
+Before this change, each root had six classified Texture2D missing outputs. All six are `Font Texture` subobjects for font assets (`.ttf`/`.otf`) with `Width=0`, `Height=0`, `ImageSize=0`, `StreamSize=0`, and empty `StreamPath`. They are true empty Unity font-placeholder textures, not missing external texture streams and not decode failures.
+
+Implemented in AnimeStudio and the wrapper:
+
+- AnimeStudio now recognizes the exact zero-size `Font Texture` placeholder shape and writes `<name>_p<PathID>.png.empty.json` instead of logging a warning or synthesizing fake pixels.
+- The marker records reason `font_placeholder_zero_size_texture`, source identity, dimensions, format, image/stream sizes, and byte size.
+- `scripts/export_full_from_game.py` now treats Texture2D marker suffixes as valid output candidates by PathID, while generic `zero_size_texture` and `empty_image_payload` warnings are no longer blanket-allowed.
+
+Focused probe:
+
+```bat
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" "D:\fluffy-dump\tmp\animestudio_texture_font_placeholder_probe" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type Convert --dummy_dlls "D:\fluffy-dump\tools\DummyDll" --names "D:\fluffy-dump\tmp\animestudio_texture_font_placeholder_probe\names.txt" --filter_data "D:\fluffy-dump\tmp\animestudio_texture_font_placeholder_probe\filter_data.json" --types Texture2D:Both
+```
+
+Probe result: `Font Texture_pA45D5CCA4FC5CAB0.png.empty.json` was written with `font_placeholder_zero_size_texture` metadata and no warning output.
+
+Texture2D verification:
+
+- The full wrapper run `reports/20260628_221139` timed out before queueing shards 15 and 16, but all launched shard processes finished cleanly and logs contained no `Texture2D no output`, `Export Texture2D`, `[Error]`, `[Warning]`, or exception lines.
+- Shards 15 and 16 were then run directly with the existing generated filter files.
+- Report-only status was regenerated in `reports/20260628_231334`.
+
+| Source | Matched Texture2D entries | Output entries | Marker outputs | Missing outputs | Export errors |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Persistent | 5,960 | 5,960 | 6 | 0 | 0 |
+| StreamingAssets | 126,496 | 126,496 | 6 | 0 | 0 |
+
+Current classification: zero-vertex Meshes and zero-size `Font Texture` objects are now preserved as explicit metadata outputs rather than missing files. This improves understanding instead of suppressing warnings: generic malformed Mesh/Texture2D cases still remain visible, while the proven empty placeholder cases now have durable output artifacts.
+
+Remaining non-error report noise after this pass is identity accounting, not decode failure: `name_mismatch_output_count` and `uncertain_output_collision` groups for shared assets and Texture2D raw-hash collisions still need a separate status-model patch.
