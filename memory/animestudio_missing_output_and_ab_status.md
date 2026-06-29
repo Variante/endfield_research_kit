@@ -2308,3 +2308,98 @@ Remaining guide `$unparsed` classes after this pass:
 | Nine additional classes | 1 each |
 
 Current classification: the guide/tutorial managed-reference bucket is now reduced to 62 refs spread across tiny classes. The fresh probe still has no export warnings/errors, and the remaining entries continue to look like ordinary managed-reference layout recovery rather than encryption, missing VFS extraction, or multi-layer AB encryption.
+
+## 2026-06-29 Fifteenth Fresh StreamingAssets Guide-Tail Batch
+
+Follow-up after the fourteenth guide-tail batch. A read-only action subagent validated the last remaining guide action layouts from `tmp\guide_tail_probe_allguide_after5` with strict payload replay and IL2CPP field names. The condition/root-condition layouts were validated locally with the same strict replay method plus IL2CPP metadata names. A second condition subagent was closed before returning a final table, so it is not used as evidence for this batch.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added guide action decoders/classifiers for:
+  - `FocusTechTreeLayer`
+  - `FocusTechTreeCategory`
+  - `NaviToMixPoolTargetItem`
+  - `SetEnablePlayerAction`
+  - `ShowLimitedGuide`
+  - `UIScrollListScrollTo`
+- Added guide condition/root-condition decoders/classifiers for:
+  - `CheckRepairBuilding`
+  - `FacBuildingProducingCountInScene`
+  - `OnGetItem`
+  - `HasItemCount`
+  - `OnTechTreeNodeUnlock`
+  - `CheckWorldLevel`
+  - `CheckItemBagCanPutInServer`
+  - `CheckWireLinkAvailable`
+  - `CheckPlayerPin`
+  - `CheckCharInMainTeam`
+  - `CheckIsWeaponEquipped`
+  - `CheckUnlockTechLayer`
+  - `CheckSpaceshipRoomStationCount`
+  - `CheckDomainShopChannelLevel`
+  - `FacStatisticItemGenRate`
+  - `FacStatisticItemGen`
+  - `FacProducePowerReach`
+  - `FacProducingFormulaCountInScene`
+  - `CheckDomainShopPanelHasSoldOutGroup`
+  - `OnFacMainPinHintShow`
+  - `CheckGachaWeaponTopCount`
+  - `OnWeekRaidIntroCharFormationOpen`
+  - `CheckSpaceshipRoomBuiltById`
+- Kept wrapper/base ids, action masks, comparer/operator fields, room/tech/factory enum-like fields, and raw statistic wrappers numeric/raw where value-to-name mappings are not proven.
+- Left runtime/static IL2CPP fields unread when no serialized bytes exist, including action handles, cached formula/room fields, and static constants.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\guide_tail_probe_allguide_after6 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names "^guide_"
+```
+
+Build result: success with `0` errors. The build emitted the existing AnimeStudio project warnings, not new compile errors. The guide-only probe emitted 1,621 MonoBehaviour JSON files with exit code 0. Log grep for `Warning`, `Error`, `metadata-only JSON`, partial-TypeTree warnings, `Export ... error`, and `Unknown ClassID` returned no matches.
+
+Guide-only before/after from `tmp\guide_tail_probe_allguide_after5` to `tmp\guide_tail_probe_allguide_after6`:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Guide JSON files | 1,621 | 1,621 |
+| Guide `$unparsed` managed refs | 62 | 0 |
+| Decoded guide managed refs | 8,530 | 8,592 |
+
+Resolved `$unparsed` payloads in this pass: 62.
+
+Resolved classes:
+
+| Class | Resolved refs |
+| --- | ---: |
+| `HasItemCount` | 3 |
+| `FacBuildingProducingCountInScene` | 3 |
+| `OnTechTreeNodeUnlock` | 3 |
+| `OnGetItem` | 3 |
+| `CheckWireLinkAvailable` | 3 |
+| `CheckIsWeaponEquipped` | 3 |
+| `CheckWorldLevel` | 3 |
+| `CheckRepairBuilding` | 3 |
+| `CheckPlayerPin` | 3 |
+| `CheckItemBagCanPutInServer` | 3 |
+| `CheckCharInMainTeam` | 3 |
+| `FocusTechTreeLayer` | 3 |
+| `FocusTechTreeCategory` | 3 |
+| `CheckUnlockTechLayer` | 2 |
+| `CheckSpaceshipRoomStationCount` | 2 |
+| `CheckDomainShopChannelLevel` | 2 |
+| `UIScrollListScrollTo` | 2 |
+| `ShowLimitedGuide` | 2 |
+| `SetEnablePlayerAction` | 2 |
+| `NaviToMixPoolTargetItem` | 2 |
+| `FacStatisticItemGenRate` | 1 |
+| `FacStatisticItemGen` | 1 |
+| `FacProducingFormulaCountInScene` | 1 |
+| `FacProducePowerReach` | 1 |
+| `OnWeekRaidIntroCharFormationOpen` | 1 |
+| `OnFacMainPinHintShow` | 1 |
+| `CheckDomainShopPanelHasSoldOutGroup` | 1 |
+| `CheckSpaceshipRoomBuiltById` | 1 |
+| `CheckGachaWeaponTopCount` | 1 |
+
+Current classification: the targeted guide/tutorial managed-reference bucket is structurally decoded in fresh installed `StreamingAssets`: zero guide `$unparsed` managed refs, no guide probe warning/error log matches, and no indication that the remaining guide issues were encryption or missing VFS extraction. This does not prove every non-guide exported file type is fully understood; it closes the guide managed-reference bucket for the current installed data.
