@@ -1101,3 +1101,74 @@ The probe emitted 15,014 JSON files with exit code 0 and no warning/error lines.
 | `$unparsed` refs | 708 | 660 |
 
 Current classification: `UILevelMapCrane/CraneSpritePath` is now fully decoded for the 221-case corpus. Remaining high-count unresolved classes are still `EnemyBattleGraphData`, `LuaReference/RefExtraInfo`, and `ModelViewStateControllerBase/AnimationParamChangePack`.
+
+## 2026-06-29 Remaining ManagedReference Metadata Triage
+
+Follow-up after the UILevelMapCrane decoder. A metadata explorer queried `Endfield_Data/il2cpp_data/Metadata/global-metadata.dat` through the repo-local IL2CPP metadata parser. Metadata file properties reported by the explorer:
+
+| Field | Value |
+| --- | --- |
+| Version | 29 |
+| Size | 58,618,724 bytes |
+| SHA-256 | `cf822277f316021dabdce1f21249a01d016e411cea08daf7daa49973e54cc2df` |
+
+Confirmed mapping rule: Unity serialized managed-reference class names use slash-separated nested types, while IL2CPP metadata uses `+` nested names.
+
+| Unity registry class | IL2CPP type |
+| --- | --- |
+| `EnemyBattleGraph/EnemyBattleGraphData` | `Beyond.Gameplay.AI.EnemyBattleGraph+EnemyBattleGraphData` |
+| `LuaReference/RefExtraInfo` | `Beyond.Lua.LuaReference+RefExtraInfo` |
+| `UILevelMapCrane/CraneSpritePath` | `Beyond.UI.UILevelMapCrane+CraneSpritePath` |
+
+`EnemyBattleGraph/EnemyBattleGraphData` metadata field names:
+
+| Field | Current confidence |
+| --- | --- |
+| `canvasGraph` | Type index unresolved; do not full-decode yet. |
+| `entityMode` | Type index unresolved; do not assume enum/class yet. |
+| `soundName` | String, high confidence. |
+| `alertRange` | Float, high confidence. |
+| `setWaitTime` | Bool/UInt8, high confidence. |
+| `waitTime` | Float, high confidence. |
+| `useCommonBehavior` | Bool/UInt8, high confidence. |
+| `enterConfrontDis` | Float, high confidence. |
+| `enemySR` | Tail type unresolved; this is the main blocker. |
+
+Current decision: hold a full `EnemyBattleGraphData` decoder. A partial prefix decoder would be possible, especially for 68-byte baseline payloads, but it would still be partial/heuristic because `canvasGraph`, `entityMode`, and `enemySR` are not fully typed.
+
+`EnemyBattleEventStimulus/EnemyBattleEventStimulusData` metadata field names:
+
+| Field | Current confidence |
+| --- | --- |
+| `eventType` | Unresolved enum/id. |
+| `buffId` | String. |
+| `filterDamageDecorate` | Bool/UInt8. |
+| `checkType` | Nested enum; names observed: `Exact`, `HasAny`, `HasAll`, `ExceptAny`, `ExceptAll`. |
+| `damageDecorateMask` | Numeric mask; exact signedness unresolved. |
+
+Current decision: likely decodable with conservative enum/numeric wrappers, but not promoted yet because `eventType` and mask signedness still need type-index expansion.
+
+`LuaReference/RefExtraInfo` metadata field names:
+
+| Type | Field | Current confidence |
+| --- | --- | --- |
+| `LuaReference` | `refDict` | TypeTree shows keys `string`, values `PPtr<Component>`. |
+| `LuaReference` | `refExtraInfoDict` | TypeTree shows `SerializeReferenceDictionary<string, RefExtraInfo>`. |
+| `LuaReference` | `isRootRef` | Bool/UInt8. |
+| `LuaReference` | `subReferences` | TypeTree shows `PPtr<LuaReference>` vector. |
+| `LuaReference` | `m_table` | Unresolved and not visible in sampled serialized TypeTree. |
+| `RefExtraInfo` | `customUIStyles` | Container type unresolved. |
+| `CustomUIStyleInfo` | `style` | Type unresolved. |
+| `CustomUIStyleInfo` | `component` | Type unresolved. |
+
+Current decision: hold a full `RefExtraInfo` decoder. Raw JSON shows a very regular payload structure, but semantic field typing requires expanding the inner `customUIStyles` type.
+
+`UILevelMapCrane/CraneSpritePath` metadata field name confirmed:
+
+| Field | Type |
+| --- | --- |
+| `stateSpritePath` | String |
+
+Implementation note: the current exporter output field is `spritePath`, chosen from the raw-value role and class name before metadata confirmation. If stricter metadata naming is preferred later, rename to `stateSpritePath` or include both while preserving compatibility.
+
+Current classification: after the latest decoder work, the remaining high-count managed-reference gaps are not blocked by slash-name parsing anymore. They are schema-completion tasks: expand unresolved IL2CPP type indices, then add targeted decoders only where field names and byte layout agree.
