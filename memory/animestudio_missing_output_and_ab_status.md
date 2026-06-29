@@ -2859,3 +2859,44 @@ Before/after for the targeted files:
 | `Beyond.Gameplay.StaticWeaponData` | 41 | 41 | 0 |
 
 Resolved `$unparsed` refs attributable to this batch: 57 wrapper refs. Current classification: the wrapper classes are normal serialized managed-reference RID lists backed by local IL2CPP metadata, not missing VFS/AB bytes and not encryption. `WeaponData` and `StaticWeaponData` remain separate unresolved payloads and are under parallel read-only audit.
+
+## 2026-06-29 Twenty-Fifth Fresh StreamingAssets Weapon-Data Batch
+
+Follow-up after the weapon RID-wrapper batch. Work focused on the payload records linked by `WeaponDataWrapper.dataList`.
+
+Read-only audit conclusions:
+
+- `Beyond.Gameplay.WeaponData`: 45 refs across 28 files in three chunks. Payload lengths are `44 x41` and `52 x4`.
+- `WeaponData` shape is `weaponIndex:int32`, `vfxKey:aligned string`, `weaponScale:float32`, then `showWhenIdle`, `idleMountPoint`, `showWhenFight`, `fightMountPoint`, `overrideAnimation`, and `overrideController:PPtr`.
+- Local IL2CPP metadata exposes `WeaponDataBase.weaponIndex/vfxKey/weaponScale/<weaponPath>k__BackingField` plus the six `WeaponData` fields. The observed standalone payloads omit `weaponPath`; the decoder treats extra bytes as a mismatch.
+- `Beyond.Gameplay.StaticWeaponData`: 41 refs across 15 of the same 28 files in three chunks. Payload lengths are `88 x36`, `100 x1`, `104 x1`, `120 x1`, and `124 x2`.
+- `StaticWeaponData` shape is `weaponIndex:int32`, `vfxKey:aligned string`, `weaponScale:float32`, `_weaponPath:aligned string`, then the same visibility and override tail.
+- Local IL2CPP metadata exposes `StaticWeaponDataBase._weaponPath` plus the six `StaticWeaponData` fields.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added strict `Beyond.Gameplay.WeaponData` decoding under the general `Gameplay.Beyond` managed-reference decoder.
+- Added strict `Beyond.Gameplay.StaticWeaponData` decoding under the same decoder.
+- Both decoders require exact namespace/class identity, strict aligned ASCII strings, finite floats, bool32 fields, readable PPtrs, fixed tail byte counts after variable strings, and `EnsureComplete()`. Any mismatch falls back to the existing `$unparsed` marker path.
+
+Validation details:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\weapon_static_validation_after\68B3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names tmp\weapon_wrapper_validation_filters\names_1_68B3B9B8.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\71FC2E71A9F249B382BF8DAED3BCEE65.chk" tmp\weapon_static_validation_after\71FC --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names tmp\weapon_wrapper_validation_filters\names_2_71FC2E71.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk" tmp\weapon_static_validation_after\FBAD --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names tmp\weapon_wrapper_validation_filters\names_3_FBAD673F.txt
+```
+
+The targeted exports covered all 28 weapon files, exited with code 0, and emitted no warning/error output. The rebuild succeeded with 0 warnings and 0 errors.
+
+Before/after for the targeted files:
+
+| Class | Fresh audit `$unparsed` | Final `$unparsed` | Final decoded |
+| --- | ---: | ---: | ---: |
+| `Beyond.Gameplay.View.WeaponComponentData` | 28 | 0 | 28 |
+| `Beyond.Gameplay.WeaponDataWrapper` | 29 | 0 | 29 |
+| `Beyond.Gameplay.WeaponData` | 45 | 0 | 45 |
+| `Beyond.Gameplay.StaticWeaponData` | 41 | 0 | 41 |
+
+Resolved `$unparsed` refs attributable to this batch: 86 weapon data refs. Current classification: these are normal serialized managed-reference payloads backed by local IL2CPP metadata, not missing VFS/AB bytes and not encryption. The remaining unresolved refs in these 28 files are unrelated character/core/view component classes and condition payloads.
