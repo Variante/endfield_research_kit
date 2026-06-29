@@ -2397,8 +2397,18 @@ def vfs_index_dir(output_root: Path, source: str) -> Path:
     return output_root / "recovered" / "AnimeStudio-cli" / source / "vfs_index"
 
 
+VFS_INDEX_BLOCKS: tuple[tuple[str, str], ...] = (
+    ("bundle", "bundle"),
+    ("initial-bundle", "initial-bundle"),
+)
+
+
 def vfs_index_path(output_root: Path, source: str, block_name: str = "bundle") -> Path:
     return vfs_index_dir(output_root, source) / f"{block_name.lower()}_vfs_index.json"
+
+
+def vfs_index_command_name(source: str, block_name: str) -> str:
+    return f"{source}_vfs_index_{block_name.replace('-', '_')}"
 
 
 def summarize_vfs_index(path: Path, result: CommandResult | None = None) -> dict[str, Any]:
@@ -2430,6 +2440,50 @@ def summarize_vfs_index(path: Path, result: CommandResult | None = None) -> dict
                 "byte_count": index_summary.get("byteCount"),
             }
         )
+    return summary
+
+
+def summarize_vfs_indexes(
+    output_root: Path,
+    source: str,
+    command_results_by_name: dict[str, CommandResult] | None = None,
+) -> dict[str, Any]:
+    block_summaries: dict[str, dict[str, Any]] = {}
+    for block_name, _cli_block_name in VFS_INDEX_BLOCKS:
+        result = None
+        if command_results_by_name is not None:
+            result = command_results_by_name.get(vfs_index_command_name(source, block_name))
+        block_summaries[block_name] = summarize_vfs_index(vfs_index_path(output_root, source, block_name), result)
+
+    existing_blocks = {
+        block_name: info
+        for block_name, info in block_summaries.items()
+        if info.get("exists")
+    }
+    summary: dict[str, Any] = {
+        "exists": bool(existing_blocks),
+        "blocks": block_summaries,
+        "block_names": list(block_summaries),
+        "index_paths": [info.get("index_path") for info in existing_blocks.values()],
+    }
+    if "bundle" in block_summaries:
+        summary["index_path"] = block_summaries["bundle"].get("index_path")
+
+    for key in (
+        "block_count",
+        "missing_block_count",
+        "chunk_count",
+        "missing_chunk_count",
+        "file_count",
+        "byte_count",
+    ):
+        values = [
+            info.get(key)
+            for info in existing_blocks.values()
+            if isinstance(info.get(key), int)
+        ]
+        summary[key] = sum(values) if values else None
+
     return summary
 
 
@@ -4579,30 +4633,34 @@ def main() -> int:
         log(f"  source root: {source_root}")
         log(f"  source reports: {source_report_dir}")
 
-        current_vfs_index_path = vfs_index_path(output_root, source, "bundle")
+        current_vfs_index_paths = [
+            vfs_index_path(output_root, source, block_name)
+            for block_name, _cli_block_name in VFS_INDEX_BLOCKS
+        ]
         if vfs_index_enabled and not args.report_only:
-            log(f"  vfs index path: {current_vfs_index_path}")
-            cmd = [
-                str(structured_dumper),
-                "vfs-index",
-                "-s",
-                str(source_root),
-                "-o",
-                str(current_vfs_index_path),
-                "-b",
-                "bundle",
-            ]
-            if source == "Persistent":
-                fallback_root = game_root / "StreamingAssets"
-                if fallback_root.exists():
-                    cmd.extend(["--fallback-assets", str(fallback_root)])
-            result = run_logged_command(f"{source}_vfs_index_bundle", cmd, ROOT, source_report_dir)
-            command_results.append(result)
-            command_results_by_name[result.name] = result
+            for block_name, cli_block_name in VFS_INDEX_BLOCKS:
+                current_vfs_index_path = vfs_index_path(output_root, source, block_name)
+                log(f"  vfs {block_name} index path: {current_vfs_index_path}")
+                cmd = [
+                    str(structured_dumper),
+                    "vfs-index",
+                    "-s",
+                    str(source_root),
+                    "-o",
+                    str(current_vfs_index_path),
+                    "-b",
+                    cli_block_name,
+                ]
+                if source == "Persistent":
+                    fallback_root = game_root / "StreamingAssets"
+                    if fallback_root.exists():
+                        cmd.extend(["--fallback-assets", str(fallback_root)])
+                result = run_logged_command(vfs_index_command_name(source, block_name), cmd, ROOT, source_report_dir)
+                command_results.append(result)
+                command_results_by_name[result.name] = result
 
-        if vfs_index_enabled or current_vfs_index_path.exists():
-            current_vfs_index = command_results_by_name.get(f"{source}_vfs_index_bundle")
-            vfs_index_summary[source] = summarize_vfs_index(current_vfs_index_path, current_vfs_index)
+        if vfs_index_enabled or any(path.exists() for path in current_vfs_index_paths):
+            vfs_index_summary[source] = summarize_vfs_indexes(output_root, source, command_results_by_name)
             if vfs_index_summary[source].get("exists"):
                 log(
                     f"  vfs index summary {source}: "
@@ -4971,11 +5029,27 @@ def main() -> int:
                 f"chunks=`{info.get('chunk_count')}`, "
                 f"missing_chunks=`{info.get('missing_chunk_count')}`"
             )
-            md_lines.append(f"  index: `{info.get('index_path')}`")
-            if info.get("stdout_log"):
-                md_lines.append(f"  stdout: `{info.get('stdout_log')}`")
-            if info.get("stderr_log"):
-                md_lines.append(f"  stderr: `{info.get('stderr_log')}`")
+            block_infos = info.get("blocks") if isinstance(info, dict) else None
+            if isinstance(block_infos, dict):
+                for block_name in info.get("block_names", block_infos.keys()):
+                    block_info = block_infos.get(block_name, {})
+                    md_lines.append(
+                        f"  - `{block_name}`: exists=`{block_info.get('exists')}`, "
+                        f"files=`{block_info.get('file_count')}`, "
+                        f"chunks=`{block_info.get('chunk_count')}`, "
+                        f"missing_chunks=`{block_info.get('missing_chunk_count')}`"
+                    )
+                    md_lines.append(f"    index: `{block_info.get('index_path')}`")
+                    if block_info.get("stdout_log"):
+                        md_lines.append(f"    stdout: `{block_info.get('stdout_log')}`")
+                    if block_info.get("stderr_log"):
+                        md_lines.append(f"    stderr: `{block_info.get('stderr_log')}`")
+            else:
+                md_lines.append(f"  index: `{info.get('index_path')}`")
+                if info.get("stdout_log"):
+                    md_lines.append(f"  stdout: `{info.get('stdout_log')}`")
+                if info.get("stderr_log"):
+                    md_lines.append(f"  stderr: `{info.get('stderr_log')}`")
 
     md_lines.extend(["", "## Structured Export"])
     if args.skip_structured:

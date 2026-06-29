@@ -959,3 +959,38 @@ Byte evidence for `export_full/structured/StreamingAssets/Data/Bundles/Windows/m
 | Raw equality | structured file equals source chunk range byte-for-byte |
 
 Current gap: the wrapper currently builds a lightweight VFS index for `Bundle` only, while asset maps include `0CE8FA57` / `InitBundle` sources as well. Next durable VFS work should add an `InitBundle` index and, if needed, a small diagnostic mode around `VFSFile.ReadFiles` to log emitted inner-stream hashes and first bytes for raw-vs-post-transform comparison.
+
+## 2026-06-29 InitBundle VFS Index Coverage
+
+Follow-up on the structured `.ab` / VFSFile transform investigation. Asset maps reference both the normal bundle block (`7064D8E2` / `Bundle`) and initial bundle block (`0CE8FA57` / `InitBundle`), but the wrapper's lightweight VFS index previously summarized only `Bundle`.
+
+Implemented in `scripts/export_full_from_game.py`:
+
+- VFS index generation now covers both `bundle` and `initial-bundle` for each selected source.
+- Index files remain per block under `export_full/recovered/AnimeStudio-cli/<source>/vfs_index/`:
+  - `bundle_vfs_index.json`
+  - `initial-bundle_vfs_index.json`
+- The report summary keeps aggregate source-level counts for compatibility and adds a nested `blocks` map with per-block counts and paths.
+- Markdown reports now show both per-source aggregate VFS counts and per-block details.
+
+Validation commands:
+
+```bat
+python -m py_compile scripts\export_full_from_game.py
+AnimeStudio.CLI.exe vfs-index -s "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" -o export_full\recovered\AnimeStudio-cli\StreamingAssets\vfs_index\initial-bundle_vfs_index.json -b initial-bundle
+AnimeStudio.CLI.exe vfs-index -s "D:\Program Files\Endfield Game\Endfield_Data\Persistent" -o export_full\recovered\AnimeStudio-cli\Persistent\vfs_index\initial-bundle_vfs_index.json -b initial-bundle --fallback-assets "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets"
+python scripts\export_full_from_game.py --report-only --skip-structured --animestudio-scope assets --animestudio-stages maps --sources StreamingAssets Persistent --animestudio-jobs 2
+```
+
+Fresh report-only run: `reports/20260629_023642`, command failures `0`.
+
+| Source | Block | Files | Chunks | Bytes | Missing chunks |
+| --- | --- | ---: | ---: | ---: | ---: |
+| StreamingAssets | `bundle` | 257,434 | 31 | 33,313,467,140 | 0 |
+| StreamingAssets | `initial-bundle` | 988 | 1 | 237,016,785 | 0 |
+| StreamingAssets | aggregate | 258,422 | 32 | 33,550,483,925 | 0 |
+| Persistent | `bundle` | 260,697 | 32 | 33,599,451,919 | 0 |
+| Persistent | `initial-bundle` | 988 | 1 | 237,022,765 | 0 |
+| Persistent | aggregate | 261,685 | 33 | 33,836,474,684 | 0 |
+
+Current classification: lightweight VFS metadata coverage now includes the `InitBundle` block that asset maps already reference. The structured `.ab` files remain classified as raw VFSFile slices before the legacy `VFSFile` decrypt/decompress transform, not as missing UnityFS bundle data.
