@@ -3163,3 +3163,45 @@ Diagnostic coverage for the targeted files:
 Compact trace summary was written to `tmp/targetsettings_trace_after_20260629/targetsettings_trace_compact_summary.txt` for local follow-up. The dominant repeated structure is a shared target selector block with optional aligned strings such as `trigger` / `target`, three `rid=-2` sentinel slots, and long zero-padded regions. `CheckTargetsEqual/Data` appears to contain two target selector blocks; buff-count and buff-action classes append buff/tag/blackboard fields after the same target selector pattern.
 
 Current classification: these bytes are present in the exported AB/MonoBehaviour payloads and are not evidence of missing VFS bytes or encryption. They remain not fully understood because the shared `TargetSettings` / selector-data sublayout and the meaning of its null/sentinel/list slots are not yet byte-proven. The next safe implementation step is a candidate `TargetSettings` parser that can parse into a clearly named diagnostic object and preserve unknown slots, but it should not mark these families fully decoded until the selector-data layout is proven against more current payloads.
+
+## 2026-06-29 Thirty-Second Fresh StreamingAssets TargetSettings Structured Diagnostic Batch
+
+Follow-up after the full raw TargetSettings trace batch. Two read-only subagents audited the raw trace and local IL2CPP metadata. The shared conclusion was that `TargetSettings` byte boundaries are now clear for the observed 0x64/0x6c forms, but the selector-data count/flag, late RID slots, and eight-word suffix are not semantically named well enough to mark parent payloads fully decoded.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added `diagnosticStructuredLayout` only on the existing `$unparsed` fallback path for unresolved `TargetSettings` families.
+- Kept `$unparsed` and `$heuristic` intact. This batch deliberately does not reduce warning/error counts or claim full decode.
+- The structured diagnostic now parses:
+  - inherited `AbilityActionData` prefix;
+  - metadata-backed `TargetSettings` front fields through `selectorData`;
+  - selector RID links, including positive references such as `Selector/CharacterTeamFinder/Data` and `Selector/MainCharacterValidator/Data`;
+  - unresolved selector count/flag, late RID slots, and suffix words as raw/hash fields with layout notes;
+  - candidate fixed tails for `CheckBuffStackNum`, `CheckBuffStackNumByTag`, `ModifyDynamicBlackboard`, and `StoreBuffCount` where the current bytes are structurally proven but some generic/list semantics remain unresolved.
+- `CreateBuffAction/Data` remains raw-trace only because its `buffs` list body and post-target tail are not yet proven.
+
+Validation details:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\targetsettings_structured_after_20260629\68B3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_1_68B3B9B8.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\71FC2E71A9F249B382BF8DAED3BCEE65.chk" tmp\targetsettings_structured_after_20260629\71FC --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_2_71FC2E71.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk" tmp\targetsettings_structured_after_20260629\FBAD --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_3_FBAD673F.txt
+```
+
+The rebuild succeeded with 0 errors and 14 unchanged warnings from existing AnimeStudio projects. The targeted exports covered 30 JSON outputs, exited with code 0, emitted no console warning/error output, and parsed with 0 JSON failures.
+
+Structured diagnostic coverage for the targeted files:
+
+| Class | Entries | Still `$unparsed` | Full raw trace | Structured diagnostic |
+| --- | ---: | ---: | ---: | ---: |
+| `Beyond.Gameplay.Core.Conditions.CheckBuffStackNum/Data` | 5 | 5 | 5 | 5 |
+| `Beyond.Gameplay.Core.Conditions.CheckBuffStackNumByTag/Data` | 5 | 5 | 5 | 5 |
+| `Beyond.Gameplay.Core.Conditions.CheckMainCharacterCondition/Data` | 7 | 7 | 7 | 7 |
+| `Beyond.Gameplay.Core.Conditions.CheckObjectTypeMatch/Data` | 22 | 22 | 22 | 22 |
+| `Beyond.Gameplay.Core.Conditions.CheckTargetsEqual/Data` | 6 | 6 | 6 | 6 |
+| `Beyond.Gameplay.Core.ModifyDynamicBlackboard/Data` | 2 | 2 | 2 | 2 |
+| `Beyond.Gameplay.Core.StoreBuffCount/Data` | 1 | 1 | 1 | 1 |
+| `Beyond.Gameplay.Core.CreateBuffAction/Data` | 5 | 5 | 5 | 0 |
+
+Current classification: this is real progress toward understanding, not warning suppression. The bytes are structured enough to expose TargetSettings offsets and RID links in exported JSON, including non-null selector references. They are still not fully understood because several selector-data fields and suffix words are unnamed. The next safe target is either (a) prove the selector-data suffix fields from IL2CPP/MemoryPack metadata or (b) isolate and decode `CreateBuffAction/Data` list/tail bytes with the same diagnostic-first approach.
