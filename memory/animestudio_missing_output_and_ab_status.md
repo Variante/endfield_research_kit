@@ -394,3 +394,73 @@ Results:
 Current classification: the old Animator FBX outputs were valid FBX containers but not useful model/animation recovery. Under the current `Animator:Both` export surface, all Animator map rows are now explicitly understood as `no_mesh` no-output conversions, not silent successful model exports.
 
 Remaining technical question: this does not yet prove that every original Animator-linked GameObject truly lacks mesh data. The current explicit Animator type slice may still under-parse some renderer, mesh, transform, controller, or clip dependencies. The next useful experiment is a narrow Animator dependency probe that adds parse-only `Transform`, `MeshRenderer`, `SkinnedMeshRenderer`, `MeshFilter`, `Mesh`, `Avatar`, `AnimatorController`, and `AnimationClip` where supported, then compares `MeshCount` and `AnimationCount` against the fresh no-mesh baseline.
+## 2026-06-28 AnimationClip Light Attribute Recovery
+
+The last broad debug report, `reports/20260627_215637`, showed AnimationClip converter failures:
+
+- `StreamingAssets`: matched `117,849`, missing `67`, export errors `42`.
+- `Persistent`: matched `7,984`, missing `8`, export errors `8`.
+- Error signatures were mostly `Unknown attribute 44543834 for Light` (`46` cases) and `Unknown attribute 1127824095 for Light` (`3` cases), plus one unknown custom type `39` case.
+
+Current source already contained the earlier generic fallback from `fbbe855 Recover shader and animation export fallbacks`, so a fresh focused rerun was needed before changing parser behavior.
+
+Focused verification command:
+
+```bat
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode debug --animestudio-asset-types AnimationClip --animestudio-stages convert_by_type --sources Persistent StreamingAssets --animestudio-jobs 4 --animestudio-shards 16
+```
+
+Fresh report run: `reports/20260628_200522`.
+
+Results:
+
+| Source | Matched AnimationClip entries | Output entries | Missing outputs | Export errors | Warnings |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Persistent | 7,984 | 7,984 | 0 | 0 | 0 |
+| StreamingAssets | 117,849 | 117,849 | 0 | 0 | 0 |
+
+Interpretation: current AnimationClip conversion no longer has hard export errors for the Light/custom-type cases. However, the fresh `.anim` outputs still used generic fallback property names:
+
+- `unknown_Light_44543834`
+- `unknown_Light_1127824095`
+- `unknown_CustomType39_*`
+
+Implemented semantic recovery in `tools/AnimeStudio/AnimeStudio.Utility/YAML/CustomCurveResolver.cs`:
+
+- `44543834` now resolves through `CRC.CalculateDigestAscii("m_InnerSpotAngle")` to `m_InnerSpotAngle`.
+- `1127824095` now resolves through `CRC.CalculateDigestAscii("m_BounceIntensity")` to `m_BounceIntensity`.
+- Generic fallback remains for truly unknown attributes/custom types.
+
+Verification:
+
+```bat
+dotnet build tools\AnimeStudio\AnimeStudio.CLI\AnimeStudio.CLI.csproj -c Release
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" "D:\fluffy-dump\tmp\animestudio_animationclip_light_probe\output" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type Convert --dummy_dlls "D:\fluffy-dump\tools\DummyDll" --names "D:\fluffy-dump\tmp\animestudio_animationclip_light_probe\names.txt" --filter_data "D:\fluffy-dump\tmp\animestudio_animationclip_light_probe\filter_data.json" --types AnimationClip:Both
+```
+
+The two-row probe wrote:
+
+- `LightingDeco_dung01_rdg003_01_openidle_p893EF00E0114EDF4.anim` with `attribute: m_InnerSpotAngle`.
+- `P_wolfgd_ultskill_start_light_p3DEF450124FD0D8A.anim` with `attribute: m_BounceIntensity`.
+
+Then the main export tree was refreshed in-place for all affected Light clips using exact temporary filter data:
+
+- `StreamingAssets`: `41` affected AnimationClip entries.
+- `Persistent`: `8` affected AnimationClip entries.
+
+Post-refresh checks:
+
+```bat
+rg -n "unknown_Light_44543834|unknown_Light_1127824095" export_full\recovered\AnimeStudio-cli\StreamingAssets\convert_by_type\AnimationClip export_full\recovered\AnimeStudio-cli\Persistent\convert_by_type\AnimationClip -g "*.anim"
+rg -n "m_InnerSpotAngle|m_BounceIntensity" export_full\recovered\AnimeStudio-cli\StreamingAssets\convert_by_type\AnimationClip export_full\recovered\AnimeStudio-cli\Persistent\convert_by_type\AnimationClip -g "*.anim"
+```
+
+Result: no old `unknown_Light_*` names remain; all known Light property hashes now appear as `m_InnerSpotAngle` or `m_BounceIntensity` in the refreshed export tree.
+
+Remaining AnimationClip unknown:
+
+```text
+export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationClip/P_agtrinit_skill232_summon_02_ready_p7C8609B936A31E0C.anim
+```
+
+This file still has three `unknown_CustomType39_*` attributes. That is no longer an export failure, but it is still a semantic gap and should be investigated separately instead of silently suppressing it.
