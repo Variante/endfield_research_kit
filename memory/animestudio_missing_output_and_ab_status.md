@@ -681,3 +681,112 @@ Fresh report run: `reports/20260628_232303`.
 | StreamingAssets | Texture2D | 126,496 | 126,496 | 0 | 0 | 6 | 0 | 247 |
 
 Current classification: all five manifest-covered conversion types have complete outputs and zero export errors in the latest report-only manifests. Shader and Sprite output-path reuse is now understood as shared references, not dirty export status. The only remaining dirty status is Texture2D raw-hash-only reuse: identical output name and PathID, but differing map `Hash` across source containers. That is not evidence of missing VFS bytes or failed decryption, but the hash field semantics are not fully understood yet, so it remains visible rather than being downgraded to clean.
+
+## 2026-06-28 Texture2D Raw-Hash Collision Resolution
+
+Follow-up on the Texture2D `raw_hash_output_collision` bucket from `reports/20260628_232303`.
+
+### Hash Semantics
+
+AnimeStudio asset-map `Hash` is not an exported PNG hash and not a compressed/encrypted VFS-byte hash.
+
+Code audit:
+
+- `tools/AnimeStudio/AnimeStudio/AssetsHelper.cs` builds map entries by constructing a base `Object` and assigning `Hash = obj.GetHash()`.
+- `tools/AnimeStudio/AnimeStudio/Classes/Object.cs` implements the default `GetHash()` as `XXH64.DigestOf(GetRawData()).ToString("x")`.
+- `GetRawData()` reads the Unity serialized-file object byte slice from `byteStart` for `byteSize`.
+- For `Texture2D`, externally streamed texture bytes are not included in this default map hash; the raw serialized object records include stream metadata such as path, offset, and size. The image-hash override path exists but is not used by the asset-map builder.
+
+Implication: different map `Hash` values for the same `Type`, `PathID`, and `Name` mean distinct raw serialized object records, not necessarily distinct decoded image payloads. This points to duplicated/equivalent serialized records or container-specific metadata, not to failed decryption or parser loss by itself.
+
+### Data Audit
+
+Generated local reports:
+
+- `reports/texture2d_raw_hash_collision_audit.md`
+- `reports/texture2d_raw_hash_collision_audit.json`
+
+Current Texture2D raw-hash output groups:
+
+| Source | Output artifact | Entries | PNG size | PNG SHA-256 prefix |
+| --- | --- | ---: | ---: | --- |
+| Persistent | `Background_p59E0F9C8D2F90F4C.png` | 77 | 709 B | `5859518c3401ce69` |
+| Persistent | `UIMask_p968E5260DA470F4C.png` | 2 | 251 B | `5455f2d48fa4d0a1` |
+| Persistent | `UISprite_p39CC623422330F4C.png` | 7 | 761 B | `8c25472076094ec5` |
+| StreamingAssets | `Background_p59E0F9C8D2F90F4C.png` | 126 | 709 B | `5859518c3401ce69` |
+| StreamingAssets | `InputFieldBackground_pFF9E60FF3ED20F4C.png` | 2 | 813 B | `5c1e83125255a8f9` |
+| StreamingAssets | `Knob_pA35E39E3A5CB0F4C.png` | 8 | 1,931 B | `dbbe2200ace011eb` |
+| StreamingAssets | `T_wpn_sword_0009_01_D_p666E9D8C5CA0F2E9.png` | 2 | 1,405,471 B | `074e76c38fa6093a` |
+| StreamingAssets | `UIMask_p968E5260DA470F4C.png` | 15 | 251 B | `5455f2d48fa4d0a1` |
+| StreamingAssets | `UISprite_p39CC623422330F4C.png` | 123 | 761 B | `8c25472076094ec5` |
+
+All rows in these groups match real map entries. For every group, map `Type`, `PathID`, and `Name` are constant; the varying fields are `Hash`, `Container`, `Offset`, and, for StreamingAssets, sometimes `Source`.
+
+### Isolated Decode Verification
+
+Generated local reports:
+
+- `reports/texture2d_raw_hash_collision_isolated_verify.md`
+- `reports/texture2d_raw_hash_collision_isolated_verify.json`
+
+Verification method:
+
+1. For each of the 362 raw-hash collision map rows, write a one-entry `filter_data` file with that row's `Source`, `Offset`, `Name`, `PathID`, and `Type`.
+2. Run AnimeStudio.CLI with an impossible `--names` regex so normal name matching selects nothing and `filter_data` identity matching selects only the target object.
+3. Confirm exactly one target PNG is written.
+4. Compare the isolated PNG SHA-256 to the existing shared output artifact SHA-256.
+
+Summary:
+
+| Checked entries | Matched expected PNG SHA-256 | Mismatched or missing | Command failures | Elapsed |
+| ---: | ---: | ---: | ---: | ---: |
+| 362 | 362 | 0 | 0 | 194.648 s |
+
+Per output group:
+
+| Source | Output | Checked | Matched | Failures | Mismatches |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Persistent | `Background_p59E0F9C8D2F90F4C.png` | 77 | 77 | 0 | 0 |
+| Persistent | `UIMask_p968E5260DA470F4C.png` | 2 | 2 | 0 | 0 |
+| Persistent | `UISprite_p39CC623422330F4C.png` | 7 | 7 | 0 | 0 |
+| StreamingAssets | `Background_p59E0F9C8D2F90F4C.png` | 126 | 126 | 0 | 0 |
+| StreamingAssets | `InputFieldBackground_pFF9E60FF3ED20F4C.png` | 2 | 2 | 0 | 0 |
+| StreamingAssets | `Knob_pA35E39E3A5CB0F4C.png` | 8 | 8 | 0 | 0 |
+| StreamingAssets | `T_wpn_sword_0009_01_D_p666E9D8C5CA0F2E9.png` | 2 | 2 | 0 | 0 |
+| StreamingAssets | `UIMask_p968E5260DA470F4C.png` | 15 | 15 | 0 | 0 |
+| StreamingAssets | `UISprite_p39CC623422330F4C.png` | 123 | 123 | 0 | 0 |
+
+Current classification: the Texture2D raw-hash bucket is understood for the current export. It consists of distinct Unity serialized Texture2D records that decode to identical PNG bytes under the same AnimeStudio output filename. It is not missing VFS data, not evidence of double encryption, and not parser loss. The exporter overwrite behavior is harmless for this current dataset because isolated per-row exports produce byte-identical PNGs, but future raw-hash collisions should still remain report-visible until similarly verified.
+
+## 2026-06-28 Alternate Output Name Taxonomy
+
+Follow-up on `name_mismatch_output_count` after all outputs were present.
+
+Affected current status manifests:
+
+| Source | Type | Name mismatches | Marker outputs | Missing/suspicious |
+| --- | --- | ---: | ---: | --- |
+| StreamingAssets | AnimationClip | 25 | 0 | 0 / 0 |
+| StreamingAssets | Mesh | 36 | 0 | 0 / 0 |
+| StreamingAssets | Sprite | 9 | 0 | 0 / 0 |
+| StreamingAssets | Texture2D | 94 | 6 | 0 / 0 |
+| Persistent | Texture2D | 6 | 6 | 0 / 0 |
+
+Classified 170 alternate output-name cases:
+
+| Class | Count | Meaning |
+| --- | ---: | --- |
+| Marker suffix | 12 | Predicted primary `.png`, actual `.png.empty.json`; all are `Font Texture` empty texture markers. |
+| Container leaf / import name | 109 | Map `Name` is a hash, bundle path, or stale alternate name while AnimeStudio writes the container leaf or import asset name. |
+| Runtime asset name | 49 | AnimeStudio writes the parsed Unity object/runtime name rather than map `Name` or simple container leaf. |
+| Case/normalization subset | 88 | Actual name differs by capitalization/import normalization, such as `terrain_4_0_14_a` to `Terrain_4_0_14_A`. |
+
+Examples:
+
+- Marker suffix: `Font Texture`, container `assets/beyond/initialassets/ui/fonts/novecentowidebold.otf`; predicted `.png`, actual `.png.empty.json`.
+- Container leaf: Texture2D map `Name=74618664eecd07dc`, container `.../facskill_hub_mine_spd_20.png`, actual `facskill_hub_mine_spd_20_pF7B29E1BAB7F205B.png`.
+- Runtime asset name: Sprite map `Name=9df45a8f9df81019`, container `.../charformationpanel.prefab`, actual `icon_btn_contingency_p6A4D142CF2A6F849.png`.
+- Empty map name: Mesh map `Name=""`, container `.../s_fx_ui_skateboard_901.fbx`, actual `Mesh#24234_p0DE76DF9B6DE6B71.obj`.
+- AnimationClip runtime name: map `Name=3d86be51a7d2a8b6`, container `.../dlgtl_e6m3_10_sub_1_actor.playable`, actual `Recorded (1428)_pB2B38651C51CA788.anim`.
+
+Current classification: name mismatches are reporting/name-prediction limitations, not missing export data or parser loss. The wrapper resolves them by unique PathID output candidate, and all affected manifests report zero missing outputs, zero suspicious missing outputs, and zero export errors. A future wrapper improvement should rename this bucket to alternate output names and carry fields such as `actual_output_base`, `predicted_output_base`, `name_mismatch_reason`, `resolved_by_path_id`, and `name_source_hint`.
