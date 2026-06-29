@@ -2735,3 +2735,42 @@ Before/after for the targeted file:
 | `Beyond.Gameplay.WikiWeaponData` | 5 | 0 | 5 |
 
 Resolved `$unparsed` refs attributable to this batch: 5 `WikiWeaponData` refs. Combined with the previous batch, `WikiModelConfig` now has zero unresolved managed-reference markers in the targeted validation output. Current classification: `WikiWeaponData` is a normal serialized managed-reference payload containing nested `WikiModelSpawnData` records, not missing VFS/AB bytes and not encryption.
+
+## 2026-06-29 Twenty-Second Fresh StreamingAssets Weapon-Deco Batch
+
+Follow-up after the Wiki batches. Work focused on `Beyond.Gameplay.WeaponDecoEffectData` in `tmp\fresh_json_audit_20260629_streaming\MonoBehaviour\WeaponDecoEffectConfig_p684AA56161A3604F.json`.
+
+Evidence used:
+
+- The fresh audit file contains 73 `Beyond.Gameplay.WeaponDecoEffectData` refs, all unresolved before this batch.
+- All 73 refs come from `StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk` in `WeaponDecoEffectConfig`.
+- Payload length distribution: `128 x1`, `136 x1`, `144 x3`, `152 x26`, `160 x1`, `168 x8`, `176 x17`, `184 x3`, `188 x5`, `248 x1`, `272 x1`, `288 x1`, `496 x1`, `512 x1`, `528 x2`, `800 x1`.
+- Local IL2CPP metadata exposes `WeaponDecoEffectData.gemDeco` and `WeaponDecoEffectData.gemMaxDeco`.
+- Nested metadata exposes `DecoData.effects`, `DecoData.vfxMaterials`, and `EffectData.name`, `EffectData.mountPoint`, `EffectData.offset`.
+- The previous audit could fully parse 66 of 73 refs from preserved raw-word hints. The seven larger refs exceeded the 64-word hint cap, so this batch relied on live targeted export validation against original bytes.
+- The 800-byte `wpn_funnel_0003` payload validates as two six-effect deco lists: `gemDeco` contains `P_ui_wpn_funnel_0003_01_1_*` effects and `gemMaxDeco` contains `P_ui_wpn_funnel_0003_01_2_*` effects, mounted to `Bone_part_*` points.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added strict `WeaponDecoEffectData` decoding under the existing `Gameplay.Beyond` managed-reference decoder.
+- Decoded `gemDeco` and `gemMaxDeco` as `DecoData` records.
+- Added `ReadWeaponDecoData`, `ReadWeaponDecoEffectList`, and `ReadWeaponDecoEffectData` helpers.
+- Effect-list guards require non-negative counts, at most 32 entries, and enough remaining bytes for the minimum 20-byte effect shape before variable-length strings. `vfxMaterials` uses the existing bounded string-list reader with max 32 entries.
+- Existing reader guards reject invalid ASCII strings, NaN/Infinity floats, bad ranges, and incomplete payloads; any mismatch falls back to the marker path instead of suppressing errors.
+
+Validation details:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\weapon_deco_validation_after\68B3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\weapon_deco_validation_filters\names.txt
+```
+
+The targeted export covered `WeaponDecoEffectConfig`, exited with code 0, and emitted no warning/error output. The build succeeded with the existing 14 AnimeStudio/Utility warnings and no errors.
+
+Before/after for the targeted file:
+
+| Class | Fresh audit `$unparsed` | Final `$unparsed` | Final decoded |
+| --- | ---: | ---: | ---: |
+| `Beyond.Gameplay.WeaponDecoEffectData` | 73 | 0 | 73 |
+
+Resolved `$unparsed` refs attributable to this batch: 73 `WeaponDecoEffectData` refs. Current classification: these are normal serialized managed-reference payloads backed by local IL2CPP metadata, not missing VFS/AB bytes and not encryption. `ProjectileComponentData` remains intentionally unresolved until complete raw payload extraction proves its long tail layout.
