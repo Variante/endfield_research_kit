@@ -85,6 +85,9 @@ ANIMESTUDIO_CONVERT_OUTPUT_EXTENSIONS = {
     "Shader": ".shader",
     "AnimationClip": ".anim",
 }
+ANIMESTUDIO_CONVERT_OUTPUT_MARKER_SUFFIXES = {
+    "Texture2D": (f"{ANIMESTUDIO_TEXTURE_EXTENSION}.empty.json",),
+}
 ANIMESTUDIO_CONVERT_PARSE_DEPENDENCIES = {
     # Sprite.GetImage resolves a backing texture directly or through a SpriteAtlas.
     # Parse these dependencies while keeping Sprite as the only export target.
@@ -193,7 +196,7 @@ ANIMESTUDIO_ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 ANIMESTUDIO_LOG_KEY_VALUE_RE = re.compile(
     r'(?P<key>[A-Za-z][A-Za-z0-9_]*)=(?:"(?P<quoted>(?:\\.|[^"\\])*)"|(?P<bare>\S*))'
 )
-ANIMESTUDIO_TEXTURE2D_NO_PAYLOAD_REASONS = frozenset({"zero_size_texture", "empty_image_payload"})
+ANIMESTUDIO_TEXTURE2D_NO_PAYLOAD_REASONS = frozenset({"font_placeholder_zero_size_texture"})
 ANIMESTUDIO_MESH_EXPECTED_NO_OUTPUT_REASONS = frozenset({"zero_vertex_count"})
 ANIMESTUDIO_ANIMATOR_EXPECTED_NO_OUTPUT_REASONS = frozenset({"no_mesh"})
 ANIMESTUDIO_STORY_HINT_RE = re.compile(
@@ -583,6 +586,51 @@ def animestudio_convert_output_extension(type_name: str) -> str | None:
     return ANIMESTUDIO_CONVERT_OUTPUT_EXTENSIONS.get(type_name)
 
 
+def animestudio_convert_output_suffixes(type_name: str) -> tuple[str, ...]:
+    extension = animestudio_convert_output_extension(type_name)
+    if extension is None:
+        return ()
+    return (extension, *ANIMESTUDIO_CONVERT_OUTPUT_MARKER_SUFFIXES.get(type_name, ()))
+
+
+def animestudio_convert_output_marker_suffixes(type_name: str) -> tuple[str, ...]:
+    return ANIMESTUDIO_CONVERT_OUTPUT_MARKER_SUFFIXES.get(type_name, ())
+
+
+def animestudio_path_has_output_suffix(path: Path, type_name: str) -> bool:
+    name = path.name.casefold()
+    return any(name.endswith(suffix.casefold()) for suffix in animestudio_convert_output_suffixes(type_name))
+
+
+def animestudio_marker_output_path(primary_path: Path, marker_suffix: str) -> Path:
+    primary_suffix = "".join(primary_path.suffixes[-1:])
+    if primary_suffix and marker_suffix.casefold().startswith(primary_suffix.casefold()):
+        return primary_path.with_name(primary_path.name[: -len(primary_suffix)] + marker_suffix)
+    return primary_path.with_name(primary_path.name + marker_suffix)
+
+
+def animestudio_candidate_convert_output_paths(
+    output_root: Path,
+    source: str,
+    stage: str,
+    entry: dict[str, Any],
+) -> tuple[Path, ...]:
+    primary_path = predict_animestudio_convert_output_path(output_root, source, stage, entry)
+    if primary_path is None:
+        return ()
+    type_name = str(entry.get("Type") or "")
+    markers = tuple(
+        animestudio_marker_output_path(primary_path, marker_suffix)
+        for marker_suffix in animestudio_convert_output_marker_suffixes(type_name)
+    )
+    return (primary_path, *markers)
+
+
+def animestudio_is_marker_output_path(path: Path, type_name: str) -> bool:
+    name = path.name.casefold()
+    return any(name.endswith(suffix.casefold()) for suffix in animestudio_convert_output_marker_suffixes(type_name))
+
+
 def animestudio_convert_parse_dependencies(stage: str, export_type: str | None, type_spec: str | None) -> tuple[str, ...]:
     if stage != "convert_by_type" or export_type != "Convert" or type_spec is None:
         return ()
@@ -626,9 +674,16 @@ def predict_animestudio_convert_output_path(
     return animestudio_stage_dir(output_root, source, stage) / type_name / f"{file_name}_p{path_id}{extension}"
 
 
-def animestudio_output_path_id_suffix(path: Path) -> str | None:
+def animestudio_output_path_id_suffix(path: Path, type_name: str) -> str | None:
+    stem = path.name
+    for output_suffix in sorted(animestudio_convert_output_suffixes(type_name), key=len, reverse=True):
+        if stem.casefold().endswith(output_suffix.casefold()):
+            stem = stem[: -len(output_suffix)]
+            break
+    else:
+        return None
     try:
-        suffix = path.stem.rsplit("_p", 1)[1]
+        suffix = stem.rsplit("_p", 1)[1]
     except IndexError:
         return None
     if len(suffix) != 16:
@@ -647,14 +702,13 @@ def build_animestudio_output_path_id_index(
     type_name: str,
 ) -> dict[str, list[Path]]:
     type_dir = animestudio_stage_dir(output_root, source, stage) / type_name
-    extension = animestudio_convert_output_extension(type_name)
-    if extension is None or not type_dir.is_dir():
+    if not animestudio_convert_output_suffixes(type_name) or not type_dir.is_dir():
         return {}
     index: dict[str, list[Path]] = {}
     for path in type_dir.iterdir():
-        if not path.is_file() or path.suffix.lower() != extension.lower():
+        if not path.is_file() or not animestudio_path_has_output_suffix(path, type_name):
             continue
-        path_id_suffix = animestudio_output_path_id_suffix(path)
+        path_id_suffix = animestudio_output_path_id_suffix(path, type_name)
         if path_id_suffix is not None:
             index.setdefault(path_id_suffix, []).append(path)
     return index
@@ -675,6 +729,7 @@ def resolve_animestudio_convert_output_path(
             "output_exists": False,
             "output_name_mismatch": False,
             "path_id_output_candidate_count": 0,
+            "output_is_marker": False,
         }
     if predicted_path.is_file():
         return {
@@ -683,16 +738,19 @@ def resolve_animestudio_convert_output_path(
             "output_exists": True,
             "output_name_mismatch": False,
             "path_id_output_candidate_count": 1,
+            "output_is_marker": False,
         }
     path_id = format_animestudio_path_id(entry.get("PathID") or 0)
     candidates = sorted(output_path_id_index.get(path_id, []))
     if len(candidates) == 1:
+        output_is_marker = animestudio_is_marker_output_path(candidates[0], str(entry.get("Type") or ""))
         return {
             "output_path": candidates[0],
             "predicted_output_path": predicted_path,
             "output_exists": True,
             "output_name_mismatch": candidates[0] != predicted_path,
             "path_id_output_candidate_count": 1,
+            "output_is_marker": output_is_marker,
         }
     return {
         "output_path": predicted_path,
@@ -700,6 +758,7 @@ def resolve_animestudio_convert_output_path(
         "output_exists": False,
         "output_name_mismatch": False,
         "path_id_output_candidate_count": len(candidates),
+        "output_is_marker": False,
     }
 
 
@@ -976,7 +1035,7 @@ def prune_unmatched_animestudio_asset_outputs(
     expected = {
         os.path.normcase(os.path.abspath(path))
         for entry in entries
-        if (path := predict_animestudio_convert_output_path(output_root, source, stage, entry)) is not None
+        for path in animestudio_candidate_convert_output_paths(output_root, source, stage, entry)
     }
     removed = 0
     for path in type_dir.iterdir():
@@ -999,15 +1058,20 @@ def remove_animestudio_asset_outputs(
     entries: list[dict[str, Any]],
 ) -> int:
     removed = 0
+    seen: set[str] = set()
     for entry in entries:
-        path = predict_animestudio_convert_output_path(output_root, source, stage, entry)
-        if path is None or not path.is_file():
-            continue
-        try:
-            path.unlink()
-            removed += 1
-        except OSError as exc:
-            log(f"  warning: unable to remove stale AnimeStudio output {path}: {exc}")
+        for path in animestudio_candidate_convert_output_paths(output_root, source, stage, entry):
+            key = os.path.normcase(os.path.abspath(path))
+            if key in seen:
+                continue
+            seen.add(key)
+            if not path.is_file():
+                continue
+            try:
+                path.unlink()
+                removed += 1
+            except OSError as exc:
+                log(f"  warning: unable to remove stale AnimeStudio output {path}: {exc}")
     return removed
 
 
@@ -1020,8 +1084,7 @@ def count_existing_animestudio_asset_outputs(
     return sum(
         1
         for entry in entries
-        if (path := predict_animestudio_convert_output_path(output_root, source, stage, entry)) is not None
-        and path.is_file()
+        if any(path.is_file() for path in animestudio_candidate_convert_output_paths(output_root, source, stage, entry))
     )
 
 
@@ -1151,6 +1214,8 @@ def asset_output_record_sample(record: dict[str, Any]) -> dict[str, Any]:
     if record.get("output_name_mismatch") and predicted_output_path is not None:
         sample["predicted_output_path"] = str(predicted_output_path)
         sample["output_name_mismatch"] = True
+    if record.get("output_is_marker"):
+        sample["output_marker"] = True
     candidate_count = int(record.get("path_id_output_candidate_count") or 0)
     if candidate_count > 1:
         sample["path_id_output_candidate_count"] = candidate_count
@@ -1193,6 +1258,7 @@ def build_animestudio_asset_output_status(
             "output_exists": output_exists,
             "predicted_output_path": resolved_output.get("predicted_output_path"),
             "output_name_mismatch": bool(resolved_output.get("output_name_mismatch")),
+            "output_is_marker": bool(resolved_output.get("output_is_marker")),
             "path_id_output_candidate_count": int(resolved_output.get("path_id_output_candidate_count") or 0),
         }
         output_records.append(record)
@@ -1349,6 +1415,7 @@ def build_animestudio_asset_output_status(
             1 for records in records_by_output_path.values() if any(record["output_exists"] for record in records)
         ),
         "actual_output_file_count": actual_output_file_count,
+        "marker_output_count": sum(1 for record in output_records if record.get("output_is_marker")),
         "name_mismatch_output_count": len(name_mismatch_records),
         "name_mismatch_output_samples": [asset_output_record_sample(record) for record in name_mismatch_records[:20]],
         "missing_output_count": len(missing_records),
@@ -1485,6 +1552,7 @@ def write_animestudio_report_only_asset_statuses(
             "unique_output_path_count",
             "output_unique_path_count",
             "actual_output_file_count",
+            "marker_output_count",
             "missing_output_count",
             "missing_unique_output_count",
             "allowed_missing_output_count",
@@ -3246,6 +3314,7 @@ def begin_animestudio_asset_shard_work(
         "unique_output_path_count",
         "output_unique_path_count",
         "actual_output_file_count",
+        "marker_output_count",
         "name_mismatch_output_count",
         "missing_unique_output_count",
         "allowed_missing_output_count",
@@ -3344,6 +3413,7 @@ def finalize_animestudio_asset_shard_work(
         "unique_output_path_count",
         "output_unique_path_count",
         "actual_output_file_count",
+        "marker_output_count",
         "name_mismatch_output_count",
         "missing_unique_output_count",
         "allowed_missing_output_count",
