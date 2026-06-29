@@ -2559,3 +2559,58 @@ Projectile family before/after in the targeted validation set:
 | `Beyond.Gameplay.Core.ProjectileComponentData` | 300 | 300 | 0 |
 
 Resolved `$unparsed` refs in this batch: 300. No invalid reserved-zero payloads were found. Current classification: `ProjectileRootComponentData` is now understood as a fieldless component with a reserved-zero serialized payload in current installed data. Remaining projectile work is still substantial: `ProjectileTemplateData` and `ProjectileComponentData` remain marked because their non-empty nested strings, RID links, collider/effect/audio/list sections, and movement data need full schema proof before decoding.
+
+## 2026-06-29 Eighteenth Fresh StreamingAssets Sound-Action Batch
+
+Follow-up after the projectile-root managed-reference batch. Work focused on the unresolved non-guide sound action payloads in `tmp\fresh_audit_unparsed_nonguide_files.txt`.
+
+Read-only subagent evidence and local checks agreed on the current installed data shape:
+
+- `Beyond.Gameplay.PlaySingleSound`: 189 unresolved refs in 95 files, every payload `dataLength == 28`.
+- `Beyond.Gameplay.PlaySoundByParticleCount`: 169 unresolved refs in 85 files, payload lengths `60 x 168` and `44 x 1`.
+- All 179 containing JSON files come from `StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk`.
+- `PlaySingleSoundBase` has no direct unresolved payloads in this audit, but IL2CPP metadata exposes the serialized base fields used by `PlaySingleSound`: `soundSpawn`, `soundFinish`, `shouldTick`; `m_audioObj` is runtime-only in observed payloads.
+- Installed metadata for `PlaySingleSound` exposes direct fields `isOverrideTrackingObj` and `overridedTrackingObj`.
+- Installed metadata for `PlaySoundByParticleCount` exposes `soundName`, `particle`, `threshold`, and runtime-only `m_lastCount`.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Extended the general `Gameplay.Beyond` managed-reference decoder so non-empty, known sound payloads can decode before the existing zero-length known-empty fallback.
+- Added strict `PlaySingleSound` decoding:
+  - requires namespace `Beyond.Gameplay`, class `PlaySingleSound`, and `length == 28`
+  - reads `soundBase.soundSpawn`, `soundBase.soundFinish`, `soundBase.shouldTick`, `isOverrideTrackingObj`, and `overridedTrackingObj` PPtr
+  - bool fields use `ReadBool32`; the PPtr uses the existing `ReadPayloadPPtr`; any mismatch falls back to the existing marker path
+- Added strict `PlaySoundByParticleCount` decoding:
+  - requires namespace `Beyond.Gameplay`, class `PlaySoundByParticleCount`, and at least 20 bytes
+  - reads aligned ASCII `soundName`
+  - requires exactly 16 bytes after the string
+  - reads `particle` PPtr plus `threshold` int32
+  - any invalid string, remaining-length mismatch, or bad range falls back to the existing marker path
+
+Validation details:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk" tmp\sound_action_validation_after\chunk1_offsets --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\sound_action_validation_filters\never_match.txt --filter_data tmp\sound_action_validation_filters\filter_data_1_offsets.json
+```
+
+The exact filter exported 179 JSON files. The filter had to use `filter_data` with internal `.chk` offsets recovered from `export_full\recovered\AnimeStudio-cli\StreamingAssets\maps\endfield_streamingassets_assets.json`; name filtering alone cannot target these objects because the exported `MonoBehaviour#...` names are generated fallbacks while the asset map name is just `MonoBehaviour`.
+
+Build result: success. The final targeted export exited with code 0 and emitted no warning/error output.
+
+Before/after across the 179 targeted files:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| `$unparsed` refs | 358 | 0 |
+| decoded refs | 0 | 358 |
+| partial refs | 0 | 0 |
+
+Resolved classes:
+
+| Class | Before `$unparsed` | After `$unparsed` | After decoded |
+| --- | ---: | ---: | ---: |
+| `Beyond.Gameplay.PlaySingleSound` | 189 | 0 | 189 |
+| `Beyond.Gameplay.PlaySoundByParticleCount` | 169 | 0 | 169 |
+
+Resolved `$unparsed` refs in this batch: 358. Current classification: these were plain serialized managed-reference payloads, not missing AB/VFS bytes and not encryption. Remaining high-value next buckets are `Beyond.Gameplay.ProjectileTemplateData` (300 refs, small and metadata-backed), `Beyond.Gameplay.WikiModelSpawnData` (129 refs, TypeTree-backed), and `Beyond.Gameplay.WeaponDecoEffectData` (73 refs, structurally plausible but field names should stay conservative). `ProjectileComponentData` remains much larger and should not be claimed exact before a staged component-layout probe.
