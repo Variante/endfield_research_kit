@@ -88,6 +88,8 @@ ANIMESTUDIO_CONVERT_OUTPUT_EXTENSIONS = {
 ANIMESTUDIO_CONVERT_OUTPUT_MARKER_SUFFIXES = {
     "Texture2D": (f"{ANIMESTUDIO_TEXTURE_EXTENSION}.empty.json",),
 }
+ANIMESTUDIO_OUTPUT_BASE_RE = re.compile(r"^(?P<base>.+)_p[0-9A-Fa-f]{16}(?: \(\d+\))?(?:\..*)?$")
+ANIMESTUDIO_HEX_HASH_NAME_RE = re.compile(r"^[0-9a-fA-F]{8,}$")
 ANIMESTUDIO_CONVERT_PARSE_DEPENDENCIES = {
     # Sprite.GetImage resolves a backing texture directly or through a SpriteAtlas.
     # Parse these dependencies while keeping Sprite as the only export target.
@@ -576,6 +578,80 @@ def fix_animestudio_file_name(value: Any) -> str:
         prefix_length = max(16, ANIMESTUDIO_MAX_SAFE_FILE_NAME_LENGTH - len(digest) - 1)
         sanitized = f"{sanitized[:prefix_length].rstrip('. ')}_{digest}"
     return sanitized
+
+
+def normalized_container_leaf_stem(value: Any) -> str:
+    text = str(value or "").replace("\\", "/").rstrip("/")
+    if not text:
+        return ""
+    leaf = text.rsplit("/", 1)[-1]
+    return leaf.rsplit(".", 1)[0] if "." in leaf else leaf
+
+
+def animestudio_output_base_name(path: Any) -> str:
+    if path is None:
+        return ""
+    name = Path(str(path)).name
+    match = ANIMESTUDIO_OUTPUT_BASE_RE.match(name)
+    if match:
+        return match.group("base")
+    return Path(name).stem
+
+
+def animestudio_map_name_source_hint(value: Any) -> str:
+    name = str(value or "").strip()
+    if not name:
+        return "map_name_empty"
+    normalized = name.replace("\\", "/")
+    if "/" in normalized or normalized.casefold().endswith(".ab"):
+        return "map_name_bundle_path"
+    if ANIMESTUDIO_HEX_HASH_NAME_RE.fullmatch(name):
+        return "map_name_hex_hash"
+    return "map_name_other"
+
+
+def asset_output_name_mismatch_details(record: dict[str, Any]) -> dict[str, Any]:
+    entry = record["entry"]
+    actual_base = animestudio_output_base_name(record.get("output_path"))
+    predicted_base = animestudio_output_base_name(record.get("predicted_output_path"))
+    map_name = str(entry.get("Name") or "")
+    container_leaf = normalized_container_leaf_stem(entry.get("Container"))
+    fixed_container_leaf = fix_animestudio_file_name(container_leaf)
+    map_case_normalized = bool(
+        map_name
+        and actual_base
+        and actual_base.casefold() == map_name.casefold()
+        and actual_base != map_name
+    )
+    container_leaf_case_normalized = bool(
+        fixed_container_leaf
+        and actual_base
+        and actual_base.casefold() == fixed_container_leaf.casefold()
+        and actual_base != fixed_container_leaf
+    )
+    case_normalized = map_case_normalized or container_leaf_case_normalized
+    if record.get("output_is_marker"):
+        reason = "marker_suffix"
+    elif not map_name.strip():
+        reason = "empty_map_name"
+    elif map_case_normalized:
+        reason = "case_normalization"
+    elif actual_base and fixed_container_leaf and actual_base.casefold() == fixed_container_leaf.casefold():
+        reason = "container_leaf"
+    else:
+        reason = "runtime_asset_name"
+    return {
+        "actual_output_base": actual_base,
+        "predicted_output_base": predicted_base,
+        "map_name": map_name,
+        "container_leaf_stem": container_leaf,
+        "name_mismatch_reason": reason,
+        "name_source_hint": animestudio_map_name_source_hint(map_name),
+        "case_normalized": case_normalized,
+        "map_case_normalized": map_case_normalized,
+        "container_leaf_case_normalized": container_leaf_case_normalized,
+        "resolved_by_path_id": True,
+    }
 
 
 def format_animestudio_path_id(value: Any) -> str:
@@ -1214,6 +1290,7 @@ def asset_output_record_sample(record: dict[str, Any]) -> dict[str, Any]:
     if record.get("output_name_mismatch") and predicted_output_path is not None:
         sample["predicted_output_path"] = str(predicted_output_path)
         sample["output_name_mismatch"] = True
+        sample.update(asset_output_name_mismatch_details(record))
     if record.get("output_is_marker"):
         sample["output_marker"] = True
     candidate_count = int(record.get("path_id_output_candidate_count") or 0)
@@ -1333,6 +1410,17 @@ def build_animestudio_asset_output_status(
     missing_records = [record for record in output_records if not record["output_exists"]]
     missing_output_keys = {record["output_key"] for record in missing_records if record["output_key"]}
     name_mismatch_records = [record for record in output_records if record.get("output_name_mismatch")]
+    alternate_name_reason_counts: dict[str, int] = {}
+    alternate_name_source_hint_counts: dict[str, int] = {}
+    alternate_name_case_normalized_count = 0
+    for record in name_mismatch_records:
+        details = asset_output_name_mismatch_details(record)
+        reason = str(details.get("name_mismatch_reason") or "unknown")
+        source_hint = str(details.get("name_source_hint") or "unknown")
+        alternate_name_reason_counts[reason] = alternate_name_reason_counts.get(reason, 0) + 1
+        alternate_name_source_hint_counts[source_hint] = alternate_name_source_hint_counts.get(source_hint, 0) + 1
+        if details.get("case_normalized"):
+            alternate_name_case_normalized_count += 1
     texture2d_no_output_count = int((log_issues or {}).get("texture2d_no_output_count") or 0)
     texture2d_no_payload_count = int((log_issues or {}).get("texture2d_no_payload_count") or 0)
     texture2d_decode_failed_count = int((log_issues or {}).get("texture2d_decode_failed_count") or 0)
@@ -1499,6 +1587,11 @@ def build_animestudio_asset_output_status(
         "marker_output_count": sum(1 for record in output_records if record.get("output_is_marker")),
         "name_mismatch_output_count": len(name_mismatch_records),
         "name_mismatch_output_samples": [asset_output_record_sample(record) for record in name_mismatch_records[:20]],
+        "alternate_name_output_count": len(name_mismatch_records),
+        "alternate_name_reason_counts": dict(sorted(alternate_name_reason_counts.items())),
+        "alternate_name_source_hint_counts": dict(sorted(alternate_name_source_hint_counts.items())),
+        "alternate_name_case_normalized_count": alternate_name_case_normalized_count,
+        "alternate_name_output_samples": [asset_output_record_sample(record) for record in name_mismatch_records[:20]],
         "missing_output_count": len(missing_records),
         "missing_unique_output_count": len(missing_output_keys),
         "allowed_missing_output_count": allowed_missing_output_count,
@@ -1659,6 +1752,11 @@ def write_animestudio_report_only_asset_statuses(
             "output_unique_path_count",
             "actual_output_file_count",
             "marker_output_count",
+            "name_mismatch_output_count",
+            "alternate_name_output_count",
+            "alternate_name_reason_counts",
+            "alternate_name_source_hint_counts",
+            "alternate_name_case_normalized_count",
             "missing_output_count",
             "missing_unique_output_count",
             "allowed_missing_output_count",
@@ -3432,6 +3530,10 @@ def begin_animestudio_asset_shard_work(
         "actual_output_file_count",
         "marker_output_count",
         "name_mismatch_output_count",
+        "alternate_name_output_count",
+        "alternate_name_reason_counts",
+        "alternate_name_source_hint_counts",
+        "alternate_name_case_normalized_count",
         "missing_unique_output_count",
         "allowed_missing_output_count",
         "suspicious_missing_output_count",
@@ -3541,6 +3643,10 @@ def finalize_animestudio_asset_shard_work(
         "actual_output_file_count",
         "marker_output_count",
         "name_mismatch_output_count",
+        "alternate_name_output_count",
+        "alternate_name_reason_counts",
+        "alternate_name_source_hint_counts",
+        "alternate_name_case_normalized_count",
         "missing_unique_output_count",
         "allowed_missing_output_count",
         "suspicious_missing_output_count",
@@ -4979,6 +5085,7 @@ def main() -> int:
                         f"missing_outputs=`{asset_cache.get('missing_output_count', 0)}`, "
                         f"missing_unique=`{asset_cache.get('missing_unique_output_count', 0)}`, "
                         f"allowed_missing=`{asset_cache.get('allowed_missing_output_count', 0)}`, "
+                        f"alternate_names=`{asset_cache.get('alternate_name_output_count', asset_cache.get('name_mismatch_output_count', 0))}`, "
                         f"cross_ab_paths=`{asset_cache.get('cross_ab_output_collision_group_count', 0)}`, "
                         f"shared_refs=`{asset_cache.get('shared_output_reference_group_count', 0)}`, "
                         f"raw_hash_collisions=`{asset_cache.get('raw_hash_output_collision_group_count', 0)}`, "
