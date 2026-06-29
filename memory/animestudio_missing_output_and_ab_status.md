@@ -2016,3 +2016,105 @@ Largest remaining guide `$unparsed` classes after this pass:
 | `CheckQuestState` | 78 | Quest condition payload not yet mapped. |
 
 Current classification: the largest camera-action guide bucket is now understood and structurally decoded. The remaining guide bucket is no longer dominated by camera data; it is concentrated in tracking-point actions, factory string/bool actions, and item/quest/UI conditions. This continues to look like managed-reference schema recovery work, not encryption or missing VFS extraction.
+
+## 2026-06-29 Twelfth Fresh StreamingAssets Guide-Action-Condition Batch
+
+Follow-up after the eleventh guide-camera action batch. Two read-only subagents mapped the next high-count guide action and condition buckets from `tmp\guide_action_probe_allguide_after1` and the fresh StreamingAssets audit, using IL2CPP metadata names where available. No subagent edited files.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added guide action decoders for:
+  - `RemoveTrackingPoint`
+  - `FacHighlightBuilding`
+  - `AddTrackingPoint`
+  - `FacGuideHintEnable`
+  - `CreateEffectAtPosition`
+  - `FacSetInteractLockedState`
+  - `ToggleScrollRect`
+  - `FacConveyorInteractRangeRestrict`
+  - `ScrollToItemBagTargetItem`
+  - `FocusOnInteractOption`
+- Added guide condition decoders for:
+  - `CheckScriptTaskStateEqual`
+  - `OnBuildingPanelOpen`
+  - `OnUIPanelClose`
+  - `PlayerHasItemInItemBag`
+  - `CheckQuestState`
+  - `PlayerHasItem`
+  - `CheckIsInFactoryMode`
+  - `OnFacPrepareBuildingEnterArea`
+  - `OnFacPlaceBuilding`
+  - `DepotHasItem`
+  - `CheckActivityStageInTimeOffset`
+  - `CheckIsInGeneralAbilitySelectMode`
+  - `CheckCurrentMap`
+- Added guide parameter helpers for string, int64, float, vector3, and the `CheckScriptTaskStateEqual` task-key wrapper with its extra raw word.
+- Kept enum-like fields numeric where value-to-name mappings are not proven, including tracking style/type and guide condition comparers/operators.
+- Left runtime/cache-only IL2CPP fields unread when no serialized payload bytes exist, such as `CreateEffectAtPosition.m_instanceIdList` and several condition cache fields.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\guide_actions_conditions_probe_allguide_after2 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names "^guide_"
+```
+
+Final build result: success with `0` warnings and `0` errors. The guide-only probe emitted 1,621 MonoBehaviour JSON files with exit code 0. Log grep for `Warning`, `Error`, `metadata-only JSON`, partial-TypeTree warnings, `Export ... error`, and `Unknown ClassIDType` returned no matches.
+
+Guide-only before/after from `tmp\guide_camera_probe_allguide_after1` to `tmp\guide_actions_conditions_probe_allguide_after2`:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Guide JSON files | 1,621 | 1,621 |
+| Guide `$unparsed` managed refs | 3,148 | 928 |
+| Decoded guide managed refs | 5,444 | 7,664 |
+
+Resolved `$unparsed` payloads in this pass: 2,220.
+
+Resolved classes:
+
+| Class | Resolved refs |
+| --- | ---: |
+| `RemoveTrackingPoint` | 316 |
+| `FacHighlightBuilding` | 256 |
+| `CheckScriptTaskStateEqual` | 249 |
+| `AddTrackingPoint` | 175 |
+| `FacGuideHintEnable` | 167 |
+| `OnBuildingPanelOpen` | 127 |
+| `OnUIPanelClose` | 124 |
+| `PlayerHasItemInItemBag` | 94 |
+| `CreateEffectAtPosition` | 89 |
+| `CheckQuestState` | 78 |
+| `PlayerHasItem` | 77 |
+| `CheckIsInFactoryMode` | 71 |
+| `FacSetInteractLockedState` | 48 |
+| `ToggleScrollRect` | 42 |
+| `OnFacPrepareBuildingEnterArea` | 42 |
+| `OnFacPlaceBuilding` | 39 |
+| `FacConveyorInteractRangeRestrict` | 36 |
+| `DepotHasItem` | 34 |
+| `CheckActivityStageInTimeOffset` | 32 |
+| `ScrollToItemBagTargetItem` | 32 |
+| `CheckIsInGeneralAbilitySelectMode` | 32 |
+| `FocusOnInteractOption` | 30 |
+| `CheckCurrentMap` | 30 |
+
+Largest remaining guide `$unparsed` classes after this pass:
+
+| Class | Remaining refs | Current blocker |
+| --- | ---: | --- |
+| `OnInteractOptionShow` | 28 | Condition payload not yet mapped. |
+| `ToggleGeneralAbilityHide` | 28 | Action payload not yet mapped. |
+| `SelectQuickMenuSystem` | 27 | Action payload not yet mapped. |
+| `OnQuickMenuSystemHover` | 27 | Condition payload not yet mapped. |
+| `BuildingPosHintHide` | 27 | Action payload not yet mapped. |
+| `FacBlockOtherHubUnloaderInteract` | 27 | Action payload not yet mapped. |
+| `ToggleAbandonDropValid` | 27 | Action payload not yet mapped. |
+| `FocusTechTreeNode` | 26 | Action payload not yet mapped. |
+| `CheckIsInFacMainRegion` | 25 | Condition payload not yet mapped. |
+| `CheckHasInteractOption` | 24 | Condition payload not yet mapped. |
+| `CheckCurrentLevel` | 22 | Condition payload not yet mapped. |
+| `OnOpenFacUnloaderPanel` | 21 | Condition payload not yet mapped. |
+| `CorrectPlayerPosTeleport` | 21 | Action payload not yet mapped. |
+
+Current classification: the guide/tutorial managed-reference bucket has moved from broad high-count unknown action/condition layouts to a long tail of smaller action/condition classes. The remaining markers still look like serialized managed-reference schema recovery work, not encryption or missing VFS extraction.
