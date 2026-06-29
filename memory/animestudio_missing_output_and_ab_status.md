@@ -885,3 +885,77 @@ Key results:
 | StreamingAssets | Animator | 57,025 | 57,025 | 0 |
 
 Current classification: marker outputs remain visible, but marker suffixes are no longer mixed into the alternate-output-name taxonomy. The actual non-marker alternate-name cases remain Texture2D/Sprite/Mesh/AnimationClip import/runtime-name differences, not missing export data.
+
+## 2026-06-29 ManagedReference Slash-Class Recovery
+
+Follow-up on current `MonoBehaviour` JSON warnings after the June 29 Animator/report fixes. A fresh focused story JSON refresh was started with:
+
+```bat
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope story --animestudio-stages json_by_type --sources StreamingAssets Persistent --animestudio-jobs 2
+```
+
+The run timed out after 30 minutes while still in `StreamingAssets`, so `reports/export_full_summary.*` was not updated. The partial log under `reports/20260629_015041/StreamingAssets/StreamingAssets_animestudio_json_by_type.stdout.log` is still useful current evidence: it contained 221 `Partially decoded MonoBehaviour ... references:ManagedReferencesRegistry` warnings and no `Export ... error` lines.
+
+Representative warning objects:
+
+| Name | PathID | Source offset | Registry count | Recovery blocker |
+| --- | ---: | ---: | ---: | --- |
+| `BB_npc_coilbst_base` | `-9211232085422307876` | `222272963` | 5 | class names like `NPCCoilbstEscapeBehavior/NPCCoilbstEscapeBehaviorData` |
+| `BB_eny_0107_wgshoal2_hdg20` | `2513012069621001524` | `817626320` | 2 | class names like `EnemyBattleGraph/EnemyBattleGraphData` |
+| `WeaponWallDisplayConfig` | `-9197814539915967567` | `67312943` | 5 | class names like `WeaponWallDisplayConfig/WeaponDisplayConfig` |
+
+Raw sidecar probes showed valid `ManagedReferencesRegistry` bytes at the stopped offsets. The parser failure was `LooksLikeManagedReferenceClassName`, which rejected `/` even though Unity serializes these nested managed-reference class names as `Outer/Inner`. The namespace and assembly strings remained normal runtime values such as `Beyond.Gameplay.AI` and `Gameplay.Beyond`.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- `LooksLikeManagedReferenceClassName` now accepts `/` inside class names.
+- Namespace and assembly validation remains unchanged.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Build result: success, `0 Warning(s)`, `0 Error(s)`.
+
+Three-object raw repro after the fix wrote top-level `references` for all three samples, with `managedReferencesRegistryRecovered=true`, zero log warning/error lines, and heuristic `RefIds` entries preserving type, offset, length, string hints, and RID links where available.
+
+A broader targeted repro used the 221 warning PathIDs from `reports/20260629_015041` and the asset map to build `tmp/monobehaviour_warning_221_after_slash/filter.json`, then exported only those source offsets. Result:
+
+| Metric | Count |
+| --- | ---: |
+| Warning PathIDs covered by filter | 221 / 221 |
+| Exported JSONs from selected source offsets | 15,014 |
+| CLI warning/error lines | 0 |
+| JSONs with `partialTypeTreeDecode` / `partialTypeTreeError` | 0 |
+| `managedReferencesRegistryRecovered` JSONs | 549 |
+| Fully decoded recovered registries | 328 |
+| Heuristic recovered registries | 221 |
+
+Current classification: this warning class is understood as valid Unity managed-reference data using slash-separated nested class names. The exporter now recovers the registry instead of leaving partial MonoBehaviour JSON.
+
+## 2026-06-29 Structured AB vs AnimeStudio VFSFile Transform
+
+Follow-up on why many structured `.ab` files do not start with `UnityFS` even though AnimeStudio can parse their assets.
+
+Current finding: structured `.ab` files from the VFS dump are raw Endfield VFS file slices after VFS range extraction and optional per-file ChaCha20, but before AnimeStudio's legacy `VFSFile` transform. They are not expected to all start with `UnityFS` on disk.
+
+Relevant code paths:
+
+- Structured dump: `EndfieldVfsLoader.ExtractFile` copies the VFS range and only applies per-file ChaCha20 when the VFS entry has `UseEncrypt`; `EndfieldVfsCli.ProcessDumpFile` writes those bytes directly for bundle-like blocks.
+- Asset parse: `FileReader.CheckFileType` recognizes these opaque bytes with `VFSUtils.IsValidHeader`; `AssetsManager.LoadGameBlockFile` dispatches them to `VFSFile`; `VFSFile` then reads the VFS header, decrypts block metadata/data with `VFSAES`, decompresses LZ4 blocks, and emits inner streams for normal Unity parsing.
+
+Byte evidence for `export_full/structured/StreamingAssets/Data/Bundles/Windows/main/a53af5bd74e329b80f12a7f4.ab`:
+
+| Field | Value |
+| --- | --- |
+| Structured file length | `1626` |
+| First 16 bytes | `33 AE CC 8E CD 4C 02 C7 DD 0C 2C B2 F9 0C 2C B2` |
+| VFS block | `Bundle` |
+| Source chunk | `7064D8E2/68B3B9B8EB82E88FBFE6A313E6B18FB6.chk` |
+| Source offset/length | `0` / `1626` |
+| VFS encrypted flag | `false` |
+| Raw equality | structured file equals source chunk range byte-for-byte |
+
+Current gap: the wrapper currently builds a lightweight VFS index for `Bundle` only, while asset maps include `0CE8FA57` / `InitBundle` sources as well. Next durable VFS work should add an `InitBundle` index and, if needed, a small diagnostic mode around `VFSFile.ReadFiles` to log emitted inner-stream hashes and first bytes for raw-vs-post-transform comparison.
