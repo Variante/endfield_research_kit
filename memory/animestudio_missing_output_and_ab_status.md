@@ -3570,3 +3570,63 @@ Remaining raw `$unparsed` refs in the same validation slice after this pass:
 | `Beyond.Gameplay.Core.AbilitySystemData` | 2 |
 
 Current classification: these 3 action/blackboard payloads are normal serialized managed-reference action payloads backed by local IL2CPP metadata, not missing VFS/AB bytes and not encryption. They remain `$partial` only because their embedded TargetSettings objects still preserve unresolved selector/suffix fields. The next useful non-decoding improvement is a diagnostic-only Core-namespace full trace for `CheckBuffStackNumAdvanced/Data` so its `BuffFindSettings` variants can be byte-proven before semantic promotion.
+
+## 2026-06-29 Thirty-Ninth Fresh StreamingAssets Advanced Buff-Stack Diagnostic Batch
+
+Follow-up after the action blackboard batch. Work focused on `Beyond.Gameplay.Core.CheckBuffStackNumAdvanced/Data`, but intentionally as diagnostics only. The goal was to expose full payload evidence for the unresolved `BuffFindSettings` sublayout without converting the parent managed reference into a decoded success path.
+
+Evidence used:
+
+- The current focused validation slice still has 7 raw `$unparsed` `CheckBuffStackNumAdvanced/Data` refs with lengths 200, 240, and 252 bytes.
+- A subagent audit confirmed the previous full-trace whitelist was wrong for this class: it listed `CheckBuffStackNumAdvanced/Data` under `Beyond.Gameplay.Core.Conditions`, but the actual managed-reference namespace is `Beyond.Gameplay.Core`.
+- Local IL2CPP metadata names direct fields as `checkTarget`, `buffSettings`, `buffStackNumType`, `compareType`, `value`, and `limitSkillCastId`.
+- A separate byte-layout audit over all 7 payloads identified two observed `BuffFindSettings` candidate shapes:
+  - `checkType = Id`: bounded buff-id string list followed by an empty GameplayTagQuery.
+  - `checkType = Tag`: optional buff-id string list followed by a bounded GameplayTagQuery with one or two tag records.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Moved the full-payload trace whitelist for `CheckBuffStackNumAdvanced/Data` to the real `Beyond.Gameplay.Core` namespace.
+- Removed the stale `Beyond.Gameplay.Core.Conditions` whitelist entry for the Advanced class.
+- Added a diagnostic-only structured branch for `Beyond.Gameplay.Core.CheckBuffStackNumAdvanced/Data`.
+- Added `ReadDiagnosticBuffFindSettingsCandidate`, which emits a bounded candidate layout for `checkType`, `buffIdList`, and `tagQuery` while marking it `$partial`.
+- Did not add a `TryDecodeCoreActionConditionManagedReferenceData` success branch. The parent payload remains `$unparsed` by design.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 errors and the same 14 existing warnings from AnimeStudio projects.
+
+Targeted validation output: `tmp\advanced_buff_trace_after_20260629` from the same three character chunks used by the prior condition/action batches.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 28 |
+| JSON parse failures | 0 |
+| `CheckBuffStackNumAdvanced/Data` refs | 7 |
+| Refs still intentionally `$unparsed` | 7 |
+| Refs with `diagnosticFullPayloadHex` | 7 |
+| Refs with `diagnosticRawWordTrace` | 7 |
+| Refs with `diagnosticStructuredLayout` | 7 |
+
+Observed Advanced candidate variants:
+
+| Shape | Count | Observed data |
+| --- | ---: | --- |
+| `checkType = Id`, one buff id, empty tag query | 2 | `buff_chr_0023_antal_tageffect`, `compareType = GE`, value `1.0` |
+| `checkType = Id`, two buff ids, empty tag query | 2 | `buff_chr_0028_wulfa_combo_usetimer`, `buff_chr_0028_wulfa_combo_cannottrigger`, `compareType = LT`, value `1.0` |
+| `checkType = Tag`, no buff ids, two tags | 1 | `Skill/Character/Common/NoGuard`, `Skill/Character/Common/SpellInflict`, `compareType = Equals`, value `0.0` |
+| `checkType = Tag`, one buff id, one tag | 2 | `buff_chr_0030_zhuangfy_have_sword`, `Skill/Character/Common/SpellInflict/PulseInflict`, `compareType = GE`, value `1.0` |
+
+Remaining raw `$unparsed` refs in the same validation slice after this pass:
+
+| Class | Remaining `$unparsed` |
+| --- | ---: |
+| `Beyond.Gameplay.Core.CheckBuffStackNumAdvanced/Data` | 7 |
+| `Beyond.Gameplay.Core.CreateBuffAction/Data` | 5 |
+| `Beyond.Gameplay.Core.AbilitySystemData` | 2 |
+
+Current classification: the Advanced buff-stack payload bytes are now fully preserved and structurally inspectable, but the class is not considered semantically decoded yet. The new evidence strongly suggests a `BuffFindSettings` shape of `checkType + buff-id list + GameplayTagQuery`, followed by `buffStackNumType`, `compareType`, BlackboardDouble `value`, and `limitSkillCastId`, but the parent remains `$unparsed` until broader samples prove every `BuffFindSettings.CheckType` variant and the generic/list contract.
