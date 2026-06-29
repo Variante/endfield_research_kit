@@ -1405,3 +1405,77 @@ Top remaining unresolved classes after this pass:
 | `NpcIdleBehavior/NpcIdleBehaviorData` | 4 | Small payload, likely base interval only, but not yet metadata-confirmed in this pass. |
 
 Current classification: this pass decodes 170 additional managed-reference payloads without suppressing warnings. The highest remaining risk is graph tail reconstruction, not encrypted or missing bundle data.
+
+## 2026-06-29 Second Small AI ManagedReference Batch
+
+Follow-up pass after the small managed-reference decoder batch. This pass targeted the next tier of low-count AI payloads where local IL2CPP metadata and the 221-case raw payload shapes agreed. It deliberately did not promote graph-tail classes.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Base-interval-only payloads:
+  - `NpcIdleBehavior/NpcIdleBehaviorData`
+  - `NpcPatrolBehavior/NpcPatrolBehaviorData`
+  - `CharacterNormalFollowBehavior/CharacterNormalFollowBehaviorData`
+  - `CharacterDummyBehavior/CharacterDummyBehaviorData`
+  - `CharacterWaitToCloseToHealTargetResponse/CharacterWaitToCloseToHealTargetResponseData`
+  - `CharacterIdleSpBehavior/CharacterIdleSpBehaviorData`
+  - `CharacterCooperateGraph/CharacterCooperateGraphData`
+  - `CharacterTeleportBehavior/CharacterTeleportBehaviorData`
+  - `CharacterMainBehavior/CharacterMainBehaviorData`
+  - `EnemyImmobilizedBehavior/EnemyImmobilizedBehaviorData`
+  - `EnemyBattleIdleBehavior/EnemyBattleIdleBehaviorData`
+  - `EnemySimpleCastSequenceSkillBehavior/EnemySimpleCastSequenceSkillBehaviorData`
+  - `EnemyPauseBehavior/EnemyPauseBehaviorData`
+  - `EnemyCastSequenceSkillBehavior/EnemyCastSequenceSkillBehaviorData`
+  - `NpcIdleShowBehavior/NpcIdleShowBehaviorData`
+- Confirmed empty payloads:
+  - `CharacterCloseToHealTargetStimulus/CharacterCloseToHealTargetStimulusData`
+  - `CharacterHealTargetStimulus/CharacterHealTargetStimulusData`
+- Metadata-backed fields:
+  - `CharacterIdleBehavior/CharacterIdleBehaviorData`: `baseInterval`, `stopMove`.
+  - `NpcBirdIdleBehavior/NpcBirdIdleBehaviorData`: `baseInterval`, `searchRadius`.
+  - `CharacterCheckNeedDodgeAlert/CharacterCheckNeedDodgeAlertData`: `invert`.
+  - `CharacterStayOutOfViewBehavior/CharacterStayOutOfViewBehaviorData`: `baseInterval`, `mode`, `step`, `tryCount`, `dis`, `xRange`, `yRange`.
+  - `CharacterSwitchFollowStateResponse/CharacterSwitchFollowStateResponseData`: `baseInterval`, `state` numeric+hex.
+  - `EnemyLeaveBattleBehavior/EnemyLeaveBattleBehaviorData`: `baseInterval`, `animName`, `waitTime`.
+  - `EnemyGroupPatrolBehavior/EnemyGroupPatrolBehaviorData`: `baseInterval`, `clampRatio`.
+  - `EnemyCommonStimulus/EnemyCommonStimulusData`: `stimulusType` numeric+hex.
+  - `EnemyCheckAngleToSource/EnemyCheckAngleToSourceData`: `revert`, `angle`.
+  - `EnemyCheckAIMarker/EnemyCheckAIMarkerData`: `checkMarkerType`, counted `markerInfo` list.
+  - `EnemyFormationMoveBehavior/EnemyFormationMoveBehaviorData`: `baseInterval`, `timeout`, `soundName`, `delayEnd`.
+  - `EnemyConfrontMoveBehavior/EnemyConfrontMoveBehaviorData`: `baseInterval`, `timeout`.
+  - `CharacterWaitBehavior/CharacterWaitBehaviorData`: `baseInterval`, `exitDis`.
+  - `CharacterCastSkillBehavior/CharacterCastSkillBehaviorData`: `baseInterval`, `duration`.
+  - `CharacterIdleDodgeBehavior/CharacterIdleDodgeBehaviorData`: `baseInterval`, `duration`.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\monobehaviour_decoder_221_after_small_ai2 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --filter_data tmp\monobehaviour_warning_221_after_slash\filter.json
+```
+
+Build result: success with `0` errors and existing project warnings. The targeted export emitted 15,014 JSON files with exit code 0 and no warning/error lines.
+
+221-case before/after this pass:
+
+| Metric | Before this pass | After this pass |
+| --- | ---: | ---: |
+| Recovered registries | 549 | 549 |
+| Fully decoded recovered registries | 371 | 372 |
+| Not fully decoded recovered registries | 178 | 177 |
+| `$unparsed` refs | 325 | 262 |
+| `$unparsed` classes | 126 | 94 |
+
+This pass resolved 63 additional `$unparsed` managed-reference payloads. Largest remaining blockers after this pass:
+
+| Class | Remaining `$unparsed` refs | Current blocker |
+| --- | ---: | --- |
+| `EnemyBattleGraph/EnemyBattleGraphData` | 118 | Variable graph tail with rid links/sentinel rids; fixed prefix is not enough for full decode. |
+| `EnemySettlementBattleGraph/EnemySettlementBattleGraphData` | 24 | Fixed prefix is known, optional tail list semantics remain unresolved. |
+| `EnemyDefendBattleGraph/EnemyDefendBattleGraphData` | 8 | Structurally stable small graph payload, but several scalar/tail field names still need stronger evidence. |
+| `NpcCommonAnimalGraph/NpcCommonAnimalGraphData` | 5 | Multi-tag graph payload needs exact metadata-to-byte validation. |
+| `EnemyDodgeResponse/EnemyDodgeResponseData` | 3 | Multi-string response payload; metadata field order still needs confirmation. |
+| `EnemyCheckTag/EnemyCheckTagData` | 3 | Looks like counted/inverted tag data, but enum/container field names still need confirmation. |
+
+Current classification: this pass decodes low-risk AI behavior data and leaves the remaining hard problem concentrated in graph-tail/list reconstruction.
