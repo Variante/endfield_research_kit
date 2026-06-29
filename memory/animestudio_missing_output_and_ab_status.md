@@ -2900,3 +2900,56 @@ Before/after for the targeted files:
 | `Beyond.Gameplay.StaticWeaponData` | 41 | 0 | 41 |
 
 Resolved `$unparsed` refs attributable to this batch: 86 weapon data refs. Current classification: these are normal serialized managed-reference payloads backed by local IL2CPP metadata, not missing VFS/AB bytes and not encryption. The remaining unresolved refs in these 28 files are unrelated character/core/view component classes and condition payloads.
+
+## 2026-06-29 Twenty-Sixth Fresh StreamingAssets Small-Component And AI Batch
+
+Follow-up after the weapon-data decoder batch. Work focused on compact managed-reference payloads that had local IL2CPP metadata field names and exact targeted validation coverage.
+
+Evidence used:
+
+- Current baseline exports under `tmp\next_decoder_baseline_current_20260629\` confirmed the target classes were still unresolved before this batch.
+- Local metadata from `tmp\component_observed_metadata.json` identified fields for `CGData`, `CharacterAIComponentData`, `ObservedComponentData`, `CharHurtAnimComponentData`, `SkeletalMorphComponentData`, and `WaterSensorComponentData`.
+- Read-only subagents independently audited compact AI/phase-forbid payloads, `CGData` padding/enums, and `CharacterPivotComponentData` Unity curve payloads.
+- Generated targeted name filters live under `tmp\next_decoder_validation_filters_20260629\`.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added strict `CGData` decoding: UTF-8 `name`, `skipType`, and `noSafeZone`, with aligned string-padding, enum-range, and bool32 guards.
+- Added strict small component decoding for `CharacterAIComponentData.aiCfg`, `ObservedComponentData.checkTagList/shapeType/center/size/radius`, `CharHurtAnimComponentData` timing floats, `SkeletalMorphComponentData._avatarTag`, and the nine `WaterSensorComponentData` flags/timing fields.
+- Added strict `CharacterPivotComponentData` decoding for the IL2CPP field set, including six Unity `AnimationCurve<float>` payloads. This covers both the 120-byte empty-curve character records and the larger movement-setting records with non-empty keyframe curves.
+- Added strict compact AI decoding for `ForceSet`, `RandomAdd`, `TargetHasTags`, `HasAttackRangeType`, and `HasFinishToken`.
+- Added strict `PhaseForbidParams` decoding for `phaseForbidStyle` and aligned `toastTextId`.
+- Guards use exact class identity, exact fixed lengths where the current schema is fixed, bounded non-negative `ForceSet.count`, strict bool32/float/string readers, zero string-padding checks where needed, enum guards where ordinals are known, curve keyframe-count/tail guards, and `EnsureComplete()`.
+
+Validation details:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\component_validation_after_pivot_20260629\cgdata_68B3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names tmp\next_decoder_validation_filters_20260629\cgdata\names_1_68B3B9B8.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\component_validation_after_pivot_20260629\pivot_68B3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_1_68B3B9B8.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\71FC2E71A9F249B382BF8DAED3BCEE65.chk" tmp\component_validation_after_pivot_20260629\pivot_71FC --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_2_71FC2E71.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk" tmp\component_validation_after_pivot_20260629\pivot_FBAD --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_3_FBAD673F.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\component_validation_after_pivot_20260629\ai_compact_68B3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --names tmp\next_decoder_validation_filters_20260629\ai_compact\names_1_68B3B9B8.txt
+```
+
+The targeted exports covered 34 JSON outputs, exited with code 0, emitted empty warning/error logs, and parsed with 0 JSON failures. The final rebuild succeeded with 0 warnings and 0 errors.
+
+Before/after for the targeted files:
+
+| Class | Baseline `$unparsed` | Final `$unparsed` | Final decoded |
+| --- | ---: | ---: | ---: |
+| `Beyond.Gameplay.CGData` | 36 | 0 | 36 |
+| `Beyond.Gameplay.AI.CharacterAIComponentData` | 28 | 0 | 28 |
+| `Beyond.Gameplay.Core.ObservedComponentData` | 28 | 0 | 28 |
+| `Beyond.Gameplay.Core.CharHurtAnimComponentData` | 28 | 0 | 28 |
+| `Beyond.Gameplay.View.SkeletalMorphComponentData` | 28 | 0 | 28 |
+| `Beyond.Gameplay.Water.WaterSensorComponentData` | 28 | 0 | 28 |
+| `Beyond.Gameplay.View.Animation.CharacterPivotComponentData` | 39 | 0 | 39 |
+| `Beyond.Gameplay.AI.ForceSet` | 34 | 0 | 34 |
+| `Beyond.Gameplay.AI.RandomAdd` | 13 | 0 | 13 |
+| `Beyond.Gameplay.AI.TargetHasTags` | 11 | 0 | 11 |
+| `Beyond.Gameplay.AI.HasAttackRangeType` | 9 | 0 | 9 |
+| `Beyond.Gameplay.AI.HasFinishToken` | 7 | 0 | 7 |
+| `Beyond.Gameplay.PhaseForbidParams` | 22 | 0 | 22 |
+
+Resolved `$unparsed` refs attributable to this batch: 311 refs. Current classification: these are normal serialized managed-reference payloads backed by local IL2CPP metadata, not missing VFS/AB bytes and not encryption. The targeted character files still have unresolved `CharacterTemplateData`, `CharacterRootComponentData`, `CharacterAnimationComponentData`, and several condition/action payloads.
