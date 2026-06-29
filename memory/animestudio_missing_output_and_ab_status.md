@@ -790,3 +790,24 @@ Examples:
 - AnimationClip runtime name: map `Name=3d86be51a7d2a8b6`, container `.../dlgtl_e6m3_10_sub_1_actor.playable`, actual `Recorded (1428)_pB2B38651C51CA788.anim`.
 
 Current classification: name mismatches are reporting/name-prediction limitations, not missing export data or parser loss. The wrapper resolves them by unique PathID output candidate, and all affected manifests report zero missing outputs, zero suspicious missing outputs, and zero export errors. A future wrapper improvement should rename this bucket to alternate output names and carry fields such as `actual_output_base`, `predicted_output_base`, `name_mismatch_reason`, `resolved_by_path_id`, and `name_source_hint`.
+
+Implemented follow-up in `scripts/export_full_from_game.py`:
+
+- `name_mismatch_output_count` is preserved for compatibility.
+- New `alternate_name_output_count`, `alternate_name_reason_counts`, `alternate_name_source_hint_counts`, `alternate_name_case_normalized_count`, and `alternate_name_output_samples` fields are written to asset-status summaries.
+- Alternate-name samples now include `actual_output_base`, `predicted_output_base`, `map_name`, `container_leaf_stem`, `name_mismatch_reason`, `name_source_hint`, `case_normalized`, `map_case_normalized`, `container_leaf_case_normalized`, and `resolved_by_path_id`.
+- `reports/export_full_summary.md` asset-cache lines now include `alternate_names=...`.
+
+Verification run: `reports/20260628_234435`.
+
+Final alternate-name reason counts:
+
+| Source | Type | Count | Reason counts | Case-normalized subset |
+| --- | --- | ---: | --- | ---: |
+| Persistent | Texture2D | 6 | `marker_suffix=6` | 0 |
+| StreamingAssets | AnimationClip | 25 | `container_leaf=7`, `runtime_asset_name=18` | 3 |
+| StreamingAssets | Mesh | 36 | `container_leaf=15`, `empty_map_name=1`, `runtime_asset_name=20` | 15 |
+| StreamingAssets | Sprite | 9 | `container_leaf=8`, `runtime_asset_name=1` | 0 |
+| StreamingAssets | Texture2D | 94 | `container_leaf=79`, `marker_suffix=6`, `runtime_asset_name=9` | 70 |
+
+Current classification after implementation: alternate names are now a first-class report bucket rather than an unexplained warning-like counter. They remain visible, but no longer imply missing export data.
