@@ -1479,3 +1479,69 @@ This pass resolved 63 additional `$unparsed` managed-reference payloads. Largest
 | `EnemyCheckTag/EnemyCheckTagData` | 3 | Looks like counted/inverted tag data, but enum/container field names still need confirmation. |
 
 Current classification: this pass decodes low-risk AI behavior data and leaves the remaining hard problem concentrated in graph-tail/list reconstruction.
+
+## 2026-06-29 Third Small AI and NPC Graph ManagedReference Batch
+
+Follow-up pass after `tmp\monobehaviour_decoder_221_after_small_ai2`. Two read-only subagents split the remaining inventory: one checked low-count non-graph AI/view payloads, and one checked graph payloads. This pass only promoted layouts where the payload can be consumed completely with metadata-backed fields. It deliberately did not promote enemy battle graph prefix-only decoders, because `enemySR` tail semantics are still unresolved.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Low-count AI behavior/stimulus payloads:
+  - `EnemyDodgeResponse/EnemyDodgeResponseData`: `baseInterval`, `nearDis`, counted `nearSkill`, counted `farSkill`.
+  - `EnemyPlaySoundBehavior/EnemyPlaySoundBehaviorData`: `baseInterval`, `soundName`, `radius`, `loop`, `interval`.
+  - `NpcBirdFlyBehavior/NpcBirdFlyBehaviorData`: movement sampling floats/ints plus `flyStartAnim` gameplay tag.
+  - `NpcCommonStimulus/NpcCommonStimulusData`: `stimulusType` numeric+hex.
+  - `NpcCheckBehavior/NpcCheckBehaviorData`: `checkBehaviorType`, counted inverted gameplay-tag list.
+  - `NPCRabbitEscapeBehavior/NPCRabbitEscapeBehaviorData`: escape timing/range fields plus `escapeMontageTag`.
+  - `NpcSlugToRigBodyBehavior/NpcSlugToRigBodyBehaviorData`: rigidbody object/string, two vectors, montage tag.
+  - `NpcShrivelledBehavior/NpcShrivelledBehaviorData`: `shrivelledAnim`, `dropItemTag` gameplay tags.
+  - `CharacterPatrolBehavior/CharacterPatrolBehaviorData`: `baseInterval`, reach distances.
+  - `CharacterBattleActionStimulus/CharacterBattleActionStimulusData`: `eventType` numeric+hex.
+  - `CharacterCheckDodge/CharacterCheckDodgeData`: `dodgeProp` numeric+hex.
+  - `CharacterCommonStimulus/CharacterCommonStimulusData`: `stimulusType` numeric+hex.
+  - `CharacterDodgeResponse/CharacterDodgeResponseData`: `baseInterval`, `dodgeCD`.
+  - `CharacterCloseToHealTargetBehavior/CharacterCloseToHealTargetBehaviorData`: `baseInterval`, timeout, stop distance.
+  - `CharacterFarmingFollowBehavior/CharacterFarmingFollowBehaviorData`: `baseInterval`, `duration`.
+  - `CharacterNormalBattleBehavior/CharacterNormalBattleBehaviorData`: `baseInterval` plus seven metadata-backed floats.
+  - `CharacterSwitchBehaviorResponse/CharacterSwitchBehaviorResponseData`: `baseInterval`, `behavior` gameplay tag.
+  - `EnemyCheckStringParam/EnemyCheckStringParamData`: `stringValue`.
+- Trivial AI payloads:
+  - Base-interval only: `CharacterBattleJumpBehavior`, `CharacterForceTeleportBehavior`, `CharacterJumpResponse`, `CharacterSkillHoldBehavior` data classes.
+  - Empty: `CharacterJumpStimulus/CharacterJumpStimulusData`.
+- Fully consumed NPC graph payloads:
+  - `NpcCommonAnimalGraph/NpcCommonAnimalGraphData`: born/idle/escape/hide tags and escape/hide scalar fields.
+  - `NpcBirdGraph/NpcBirdGraphData`: born/idle/fly/hide tags.
+  - `NpcSnailGraph/NpcSnailGraphData`: shrivelled/free-walk tags.
+- View animation payload:
+  - `WeaponAnimatorMono/PlayFollowEffect`: `effectName`, `restartIfExist`, `mountPoint` numeric+hex.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\monobehaviour_decoder_221_after_small_ai3_fullnpc --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --filter_data tmp\monobehaviour_warning_221_after_slash\filter.json
+```
+
+Build result: success with `0` warnings and `0` errors after the final formatting cleanup. The targeted export emitted 15,014 JSON files with exit code 0 and no warning/error lines.
+
+221-case before/after this pass:
+
+| Metric | Before this pass | After this pass |
+| --- | ---: | ---: |
+| JSON files emitted | 15,014 | 15,014 |
+| `$unparsed` refs | 262 | 216 |
+| `$unparsed` classes | 94 | 67 |
+
+Resolved `$unparsed` payloads in this pass: 46.
+
+Largest remaining blockers after this pass:
+
+| Class | Remaining `$unparsed` refs | Current blocker |
+| --- | ---: | --- |
+| `EnemyBattleGraph/EnemyBattleGraphData` | 118 | Fixed prefix is mapped, but `enemySR` tail grouping, rid links, sentinel rid values, and exact semantics are not proven. |
+| `EnemySettlementBattleGraph/EnemySettlementBattleGraphData` | 24 | Fixed prefix is mapped, but `enemySR` tail/list semantics and `exAction` type are not proven. |
+| `EnemyDefendBattleGraph/EnemyDefendBattleGraphData` | 8 | Structurally stable 44-byte payload, but `searchMode` enum/type proof and canonical empty `enemySR` semantics are still pending. |
+| `EnemyCheckTag/EnemyCheckTagData` | 3 | `targetType` and `checkTagType` are clear, but `tagInfo` is not the normal gameplay-tag path+hash layout; leaving unresolved avoids a false full decode. |
+| Single-count character/AI behavior classes | 1 each | Several include PQS/custom/list structures or missing exact data-class metadata and need separate evidence. |
+
+Current classification: this pass resolves the next low-risk AI/view/NPC graph payloads without suppressing warning semantics. The remaining high-count problem is enemy battle graph tail reconstruction, not missing VFS extraction or repeated encryption.
