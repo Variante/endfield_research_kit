@@ -3065,3 +3065,62 @@ Before/after for the targeted files:
 | `Beyond.Gameplay.CharacterTemplateData` | 28 | 0 | 28 |
 
 Resolved `$unparsed` refs attributable to this batch: 28 refs. Current classification: these are normal serialized managed-reference payloads backed by local IL2CPP metadata plus byte-proven current corpus invariants, not missing VFS/AB bytes and not encryption. The same character validation files still have unresolved `CharacterRootComponentData` and condition/action payloads.
+
+## 2026-06-29 Thirtieth Fresh StreamingAssets Core Action And Condition Batch
+
+Follow-up after the character template batch. Work focused on the subagent-proven `Beyond.Gameplay.Core` action/condition payloads in the current character validation files, while deliberately leaving `TargetSettings`-based payloads unresolved.
+
+Evidence used:
+
+- Two read-only subagents audited the current character outputs and separated strict layouts from unsafe target/tail layouts.
+- `CheckDamageDecorateMask/Data` and `CheckBuffIdInContext/Data` have complete layouts after the inherited `AbilityActionData` prefix.
+- `CheckSpellInflictionType/Data`, `CheckPhysicalInflictionType/Data`, `CompareFloat/Data`, `IfElseAction/IfElseActionData`, `NotNextCheckAction/Data`, and `ReturnFalseAction/Data` have complete layouts in the current corpus.
+- Validation corrected one audit detail: `CompareFloat/Data` `BlackboardDouble` records serialize an aligned key string even when `useBlackboardKey` is false; the observed false branch carries an empty key string.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Passed recovered managed-reference RID metadata into the core gameplay decoder so `IfElseAction` sequence action RID links can be exported with target type information.
+- Added strict decoding for `CheckDamageDecorateMask/Data`, `CheckBuffIdInContext/Data`, `CheckSpellInflictionType/Data`, `CheckPhysicalInflictionType/Data`, `CompareFloat/Data`, `IfElseAction/IfElseActionData`, `NotNextCheckAction/Data`, and `ReturnFalseAction/Data`.
+- Added strict helpers for the inherited `AbilityActionData` prefix, zero-padded ASCII strings/lists, zero-padded gameplay tag lists and tag queries, `BlackboardDouble`, `SequenceActionData`, and bounded int32 masks.
+- Guards use exact namespace/class checks, exact fixed lengths where proven, word alignment for variable layouts, bounded counts, bool32 readers, enum/range guards, RID-link preservation, strict zero-padding checks, and `EnsureComplete()`.
+
+Validation details:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk" tmp\action_condition_validation_after_20260629_v2\68B3 --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_1_68B3B9B8.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\71FC2E71A9F249B382BF8DAED3BCEE65.chk" tmp\action_condition_validation_after_20260629_v2\71FC --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_2_71FC2E71.txt
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk" tmp\action_condition_validation_after_20260629_v2\FBAD --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type JSON --types MonoBehaviour:Both --dummy_dlls tools\DummyDll --names tmp\next_decoder_validation_filters_20260629\character_pivot\names_3_FBAD673F.txt
+```
+
+The final rebuild after the `CompareFloat` correction reported 0 warnings and 0 errors. The targeted exports covered 30 JSON outputs, exited with code 0, emitted no console warning/error output, and parsed with 0 JSON failures. Structural reference counting was used so heuristic RID-link mentions were not counted as actual managed-reference entries.
+
+Before/after for the targeted files:
+
+| Class | Baseline `$unparsed` | Final `$unparsed` | Final decoded |
+| --- | ---: | ---: | ---: |
+| `Beyond.Gameplay.Core.Conditions.CheckDamageDecorateMask/Data` | 12 | 0 | 12 |
+| `Beyond.Gameplay.Core.Conditions.CheckBuffIdInContext/Data` | 12 | 0 | 12 |
+| `Beyond.Gameplay.Core.Conditions.CheckSpellInflictionType/Data` | 5 | 0 | 5 |
+| `Beyond.Gameplay.Core.Conditions.CheckPhysicalInflictionType/Data` | 1 | 0 | 1 |
+| `Beyond.Gameplay.Core.CompareFloat/Data` | 3 | 0 | 3 |
+| `Beyond.Gameplay.Core.IfElseAction/IfElseActionData` | 3 | 0 | 3 |
+| `Beyond.Gameplay.Core.NotNextCheckAction/Data` | 2 | 0 | 2 |
+| `Beyond.Gameplay.Core.ReturnFalseAction/Data` | 1 | 0 | 1 |
+
+Resolved `$unparsed` refs attributable to this batch: 39 refs. Current classification: these are normal serialized managed-reference payloads backed by local IL2CPP metadata plus byte-proven current corpus invariants, not missing VFS/AB bytes and not encryption.
+
+Explicitly left unresolved because full layouts are not yet proven:
+
+| Class | Current `$unparsed` | Reason |
+| --- | ---: | --- |
+| `Beyond.Gameplay.Core.Conditions.CheckObjectTypeMatch/Data` | 22 | depends on unresolved `TargetSettings` layout |
+| `Beyond.Gameplay.Core.Conditions.CheckMainCharacterCondition/Data` | 7 | depends on unresolved `TargetSettings` layout |
+| `Beyond.Gameplay.Core.Conditions.CheckTargetsEqual/Data` | 6 | depends on unresolved `TargetSettings` layout |
+| `Beyond.Gameplay.Core.Conditions.CheckBuffStackNum/Data` | 5 | depends on unresolved `TargetSettings` layout |
+| `Beyond.Gameplay.Core.Conditions.CheckBuffStackNumByTag/Data` | 5 | depends on unresolved `TargetSettings` layout |
+| `Beyond.Gameplay.Core.CreateBuffAction/Data` | 5 | target/buff tail blocks are not byte-proven yet |
+| `Beyond.Gameplay.Core.ModifyDynamicBlackboard/Data` | 2 | target/tail blocks are not byte-proven yet |
+| `Beyond.Gameplay.Core.StoreBuffCount/Data` | 1 | target/tail blocks are not byte-proven yet |
+
+A separate read-only audit confirmed no strict full decoder is defensible yet for `CreateBuffAction/Data`, `ModifyDynamicBlackboard/Data`, or `StoreBuffCount/Data`. Local IL2CPP metadata names their direct fields, but the shared `TargetSettings` and selector-data sublayouts are still ambiguous around `rid=-2` sentinels and counted/list slots. The next useful probe is a raw full-payload hex/offset trace for these 8 unique payloads, not a decoded export path.
