@@ -1545,3 +1545,61 @@ Largest remaining blockers after this pass:
 | Single-count character/AI behavior classes | 1 each | Several include PQS/custom/list structures or missing exact data-class metadata and need separate evidence. |
 
 Current classification: this pass resolves the next low-risk AI/view/NPC graph payloads without suppressing warning semantics. The remaining high-count problem is enemy battle graph tail reconstruction, not missing VFS extraction or repeated encryption.
+
+## 2026-06-29 Fourth Low-Count AI ManagedReference Batch
+
+Follow-up pass after `tmp\monobehaviour_decoder_221_after_small_ai3_fullnpc`. This pass targeted one-off AI/NPC payloads whose local IL2CPP metadata fields and raw byte shapes matched exactly. Enemy graph tails, `EnemyCheckTag`, `NpcDailyGraph`, and `WeaponAnimatorMono/StateActionEntry` stayed unresolved because they require reference-list or custom-container semantics beyond simple full-byte consumption.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Character AI payloads:
+  - `CharacterAttackResourceBehavior/CharacterAttackResourceBehaviorData`: `baseInterval`, `attackPQS` PPtr, `timeout`.
+  - `CharacterBattleCommandBehavior/CharacterBattleCommandBehaviorData`: `baseInterval`, `safeAreaPQS` PPtr, `reactionDelay` Vector2.
+  - `CharacterBarkExploreBehavior/CharacterBarkExploreBehaviorData`: `baseInterval`, `gait` numeric+hex, two talk ids, call distances/timing.
+  - `CharacterCheckSpIdle/CharacterCheckSpIdleData`: `revert`.
+  - `CharacterFocusImportantBehavior/CharacterFocusImportantBehaviorData`: `baseInterval`, `walkDuration`, `exitRadius`, `returnWalkDuration`.
+  - `CharacterFarmGraph/CharacterFarmGraphData`: five gameplay tags.
+  - Base-interval-only: `CharacterCastSkillGraph/CharacterCastSkillGraphData`, `CharacterEvadeBehavior/CharacterEvadeBehaviorData`.
+- NPC AI payloads:
+  - `NpcBattleConfrontBehavior/NpcBattleConfrontBehaviorData`: `animTag`, `needRot`, `randomDelay`.
+  - `NpcCleanPackAnimalBehavior/NpcCleanPackAnimalBehaviorData`: `happyAnimTag`.
+  - `NpcFecesPackAnimalBehavior/NpcFecesPackAnimalBehaviorData`: perform ids and failed-toast string.
+  - `NpcLeaveBattleBehavior/NpcLeaveBattleBehaviorData`: `randomDelay`.
+  - `NpcSlugBehavior/NpcSlugBehaviorData`: lie/hit animation tags and duration.
+  - `NpcSlugLieBehavior/NpcSlugLieBehaviorData`: lie animation tag.
+  - `NpcSlugGraph/NpcSlugGraphData`: idle/patrol/idle-show/slug/slug-lie tags.
+  - `NpcSpaceShipGraph/NpcSpaceShipGraphData`: eight spaceship behavior tags.
+  - `NpcSpaceShipLeaveBehavior/NpcSpaceShipLeaveBehaviorData`: `greetVirtualTag`, `greetCD`.
+  - `NpcSpaceShipWaitBehavior/NpcSpaceShipWaitBehaviorData`: `waitTime` Vector2.
+  - Base-interval-only: `NpcAttractBehavior`, `NpcPassiveAttractBehavior`, `NpcBattleConfrontResponse`, `NpcEnvConfrontResponse`, and `NpcSettlementBehavior` data classes.
+
+Validation:
+
+```bat
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" tmp\monobehaviour_decoder_221_after_small_ai4_moregraphs --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --map_op None --export_type JSON --types MonoBehaviour:Both --filter_data tmp\monobehaviour_warning_221_after_slash\filter.json
+```
+
+Final build result after formatting cleanup: success with `0` warnings and `0` errors. The targeted export emitted 15,014 JSON files with exit code 0 and no warning/error lines.
+
+221-case before/after this pass:
+
+| Metric | Before this pass | After this pass |
+| --- | ---: | ---: |
+| JSON files emitted | 15,014 | 15,014 |
+| `$unparsed` refs | 216 | 193 |
+| `$unparsed` classes | 67 | 44 |
+
+Resolved `$unparsed` payloads in this pass: 23.
+
+Largest remaining blockers after this pass:
+
+| Class | Remaining `$unparsed` refs | Current blocker |
+| --- | ---: | --- |
+| `EnemyBattleGraph/EnemyBattleGraphData` | 118 | Fixed prefix is mapped, but `enemySR` tail grouping, rid links, sentinel rid values, and exact semantics are not proven. |
+| `EnemySettlementBattleGraph/EnemySettlementBattleGraphData` | 24 | Fixed prefix is mapped, but `enemySR` tail/list semantics and `exAction` type are not proven. |
+| `EnemyDefendBattleGraph/EnemyDefendBattleGraphData` | 8 | Structurally stable 44-byte payload, but `searchMode` enum/type proof and canonical empty `enemySR` semantics are still pending. |
+| `EnemyCheckTag/EnemyCheckTagData` | 3 | `tagInfo` is a compact numeric list, not the existing gameplay-tag path+hash layout; exact element type is still under investigation. |
+| Remaining single-count graph/list classes | 1 each | Most contain rid lists, PQS/custom data, `npcSR`, `enemySR`, or other custom containers that need separate semantics before full decode. |
+
+Current classification: this pass resolves low-count scalar/string/tag payloads and leaves remaining work concentrated in graph/reference-list containers. Two read-only subagents were left investigating `EnemyCheckTag` and enemy graph tails during this pass; their conclusions should be folded into the next batch when available.
