@@ -84,9 +84,11 @@ ANIMESTUDIO_CONVERT_OUTPUT_EXTENSIONS = {
     "Mesh": ".obj",
     "Shader": ".shader",
     "AnimationClip": ".anim",
+    "Animator": ".fbx",
 }
 ANIMESTUDIO_CONVERT_OUTPUT_MARKER_SUFFIXES = {
     "Texture2D": (f"{ANIMESTUDIO_TEXTURE_EXTENSION}.empty.json",),
+    "Animator": (".fbx.empty.json",),
 }
 ANIMESTUDIO_OUTPUT_BASE_RE = re.compile(r"^(?P<base>.+)_p[0-9A-Fa-f]{16}(?: \(\d+\))?(?:\..*)?$")
 ANIMESTUDIO_HEX_HASH_NAME_RE = re.compile(r"^[0-9a-fA-F]{8,}$")
@@ -1710,8 +1712,6 @@ def write_animestudio_report_only_asset_statuses(
             continue
         type_name = animestudio_type_name(type_spec)
         if not animestudio_asset_cache_supported(stage, options, type_name):
-            continue
-        if not animestudio_map_filter_is_safe((type_spec,)):
             continue
         matched_entries = dedupe_asset_entries(
             filter_animestudio_asset_map_entries(

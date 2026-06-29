@@ -811,3 +811,45 @@ Final alternate-name reason counts:
 | StreamingAssets | Texture2D | 94 | `container_leaf=79`, `marker_suffix=6`, `runtime_asset_name=9` | 70 |
 
 Current classification after implementation: alternate names are now a first-class report bucket rather than an unexplained warning-like counter. They remain visible, but no longer imply missing export data.
+
+## 2026-06-29 Animator No-Mesh Marker Recovery
+
+Follow-up on the remaining `Animator` convert gap. Prior logs showed parsed `Animator` objects returning no FBX with `reason=no_mesh`; this was not a VFS/decryption failure, but a Unity object whose resolved hierarchy contains no Mesh objects, so no geometry can be emitted.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- `ExportAnimator` now writes `<name>_p<PathID>.fbx.empty.json` for `no_mesh` Animator objects instead of logging `Animator no output` and returning `false`.
+- The marker preserves source file/original path, source offset, PathID, container, GameObject name and pointer PathID, Avatar/Controller PathIDs, transform hierarchy flag, mesh/material/texture/animation counts, and byte size.
+- Non-marker output-path failures still log `Animator no output` and fail normally.
+
+Implemented in `scripts/export_full_from_game.py`:
+
+- Animator convert outputs are now tracked as `.fbx` with marker suffix `.fbx.empty.json`.
+- Report-only asset status generation no longer skips map-filter-unsafe types. This does not change actual Animator export behavior; Animator still runs on the broad dependency-loading path, but status manifests can now be generated from the asset map plus existing outputs.
+
+Focused probe:
+
+```bat
+AnimeStudio.CLI.exe "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" "D:\fluffy-dump\tmp\animestudio_animator_empty_probe\out" --game ArknightsEndfield --logger_flags Warning Error --group_assets ByType --export_type Convert --dummy_dlls "D:\fluffy-dump\tools\DummyDll" --filter_data "D:\fluffy-dump\tmp\animestudio_animator_empty_probe\filter.json" --names "D:\fluffy-dump\tmp\animestudio_animator_empty_probe\names.txt" --types Animator:Both
+```
+
+Probe result: exit `0`, no warnings/errors, wrote `Animator/lattice_p0000000000000028.fbx.empty.json` with `reason=no_mesh`, `pathId=40`, `sourceOffset=8945913`, `gameObjectName=lattice`, and all mesh/material/texture/animation counts equal to `0`.
+
+Full focused Animator refresh:
+
+```bat
+python scripts\export_full_from_game.py --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode debug --animestudio-stages convert_by_type --animestudio-asset-types Animator --sources StreamingAssets Persistent --animestudio-jobs 2
+python scripts\export_full_from_game.py --report-only --skip-structured --skip-vfs-index --animestudio-scope assets --animestudio-asset-mode debug --animestudio-stages convert_by_type --animestudio-asset-types Animator --sources StreamingAssets Persistent --animestudio-jobs 2
+```
+
+Fresh runs:
+
+- Export run: `reports/20260629_010651`, both AnimeStudio commands returned `0`.
+- Report-only status run: `reports/20260629_011358`.
+
+| Source | Matched Animator entries | Output entries | Marker outputs | Missing outputs | Export errors |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| StreamingAssets | 57,025 | 57,025 | 57,025 | 0 | 0 |
+| Persistent | 5,423 | 5,423 | 5,423 | 0 | 0 |
+
+The focused run logs contain no `[Warning]`, `[Error]`, `Exception`, `Animator no output`, or `Export ... error` matches. Current classification: Endfield Animator assets in the current dataset are understood as no-mesh Animator records, and are now preserved as explicit metadata markers rather than missing FBX files or suppressed warnings.
