@@ -1951,3 +1951,23 @@ Validation:
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - Focused BuffData scan over all 2,291 files produced `263` single-item summaries, `68` ambiguous multi-item payloads, and zero hard tail parse statuses.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_action_items_single_validate_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData Typed Decoder Candidate Notes
+
+Subagent follow-up checked two single-item action families against recovered MemoryPack setter order and current BuffData bytes.
+
+`Core_SendBattleSignalToLevel_Data` looks safe for a fail-closed exact typed decoder:
+
+- Observed in 8 timeline payloads, all with `actionDataCount == 1` and exact single-item boundaries.
+- Union tag is `0x011f`, serialized member count is `6`.
+- Setter order is inherited `AbilityActionData` prefix fields, then `doubleValue`, then `signalId`.
+- Bytes match setter order, not runtime field display order: the runtime metadata lists `signalId, doubleValue`, but the formatter setter order is `doubleValue, signalId`.
+- Decoded examples include `radio_e0m0_15`, `BreakGround`, `Music_2`, `ReaperRecover`, and a nonzero numeric value `9999.0` for `ethillureborn`.
+
+`Core_PlaySoundAction_PlaySoundActionData` is safe only as a guarded partial decoder:
+
+- Observed in 10 timeline payloads, all with `actionDataCount == 1`.
+- Union tag is `0x00fc`, serialized member count is `22`.
+- Setter order parses top-level primitive/string fields cleanly.
+- `targetSettings` is the blocker. Existing diagnostics know the byte window, but `TargetSettings` / `SelectorData` suffix semantics are still partial.
+- Any decoder should preserve `targetSettingsRaw` or `targetSettingsPartial`, parse the stable post-target tail, require exact end, and keep the output marked partial until `TargetSettings` is proven.
