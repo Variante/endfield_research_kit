@@ -337,3 +337,57 @@ Remaining current focused gaps in `Persistent/data_eny` after this pass:
 - `EnemyPartsRootComponentData`: 15 refs still heuristic/unparsed.
 - `AbilitySystemForEnemyPartData`: 11 refs still partial.
 - `AbilitySystemData`: 5 refs still partial and 1 ref still heuristic/unparsed.
+
+## 2026-06-30 EnemyPartsRootComponentData Part-ID List Update
+
+Continued the current `Persistent/data_eny` focused bucket after FootRipple recovery.
+
+Focused validation baseline:
+
+```text
+tmp\data_eny_probe_after_footripple_20260630\current_persistent_3267
+```
+
+Post-patch validation:
+
+```text
+tmp\data_eny_probe_after_partids_20260630\current_persistent_3267
+```
+
+Root cause:
+
+- The remaining `Beyond.Gameplay.Core.EnemyPartsRootComponentData` misses were normal serialized schema variants, not encrypted payloads.
+- Existing decoded variants used fixed 8-word and 10-word inherited prefixes before `partName` and `partTags`.
+- The 15 missed refs share a count-driven middle section: six prefix words, a bool32/enabled word, an int32 count, then a compact list of part id/hash words before the aligned `partName` and normal `partTags` list.
+- Observed equivalent opaque prefix sizes were 14, 16, and 17 words; naming the count-driven section preserves more structure than adding only larger raw prefixes.
+
+Implementation:
+
+- Added an adaptive `EnemyPartsRootComponentData` fallback for the `prefixWords6PartIdList` layout.
+- Added guarded `ReadEnemyPartIdList` with count bounds and complete-consumption validation.
+- Left the existing 8-word and 10-word variants unchanged.
+
+Focused validation summary:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Files re-exported | 78 | 78 |
+| Managed refs decoded | 1,556 | 1,571 |
+| Managed refs partial | 16 | 16 |
+| Managed refs unparsed | 16 | 1 |
+| `EnemyPartsRootComponentData` decoded refs | 12 | 27 |
+| `EnemyPartsRootComponentData` unparsed refs | 15 | 0 |
+| New `prefixWords6PartIdList` refs | 0 | 15 |
+| Part-id words decoded in new variant | 0 | 122 |
+| Part tags decoded across enemy parts | 15 | 26 |
+
+Build and validation:
+
+- `scripts\animestudio\rebuild.bat -Target CLI -NoRestore` succeeded with 0 errors and 14 pre-existing warnings.
+- Focused AnimeStudio export of `D:\Program Files\Endfield Game\Endfield_Data\Persistent\VFS\7064D8E2\3267B09A76643181B4083C1E60B678D1.chk` with the 78-name `data_eny` filter succeeded with return code 0.
+
+Remaining current focused gaps in `Persistent/data_eny` after this pass:
+
+- `AbilitySystemForEnemyPartData`: 11 refs still decoded+partial.
+- `AbilitySystemData`: 5 refs still decoded+partial and 1 ref still unparsed+heuristic (`data_eny_0081_ruanyi`).
+- Subagent review found no strong nested/multiple encryption signal in these remaining parent failures; observed bytes are aligned strings, sane counts/floats, and recognizable schema sections.
