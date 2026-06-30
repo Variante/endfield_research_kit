@@ -716,3 +716,50 @@ Build and validation:
 Remaining caveat:
 
 - The nested `deadEffect` object still uses the existing diagnostic `EffectActionCfg` tail readers, so inner `BlackboardDouble` wrapper semantics remain partially inferred. This is semantic depth, not unread parent bytes or an export warning in the focused enemy bucket.
+
+## 2026-06-30 BB_eny Managed-Reference Revalidation
+
+Re-ranked the next current-looking MonoBehaviour bucket after closing the focused `Persistent/data_eny` top-level partials.
+
+Temporary broad index:
+
+```text
+tmp\decoded_index_mono_after_slbomb_baseline_20260630
+```
+
+The temporary index scans the existing `export_full/recovered/AnimeStudio-cli` outputs, so it still contains stale artifacts from before recent managed-reference recovery improvements. It ranked `BB_eny` as a coherent named bucket with stale partial TypeTree stops at final `references:ManagedReferencesRegistry`.
+
+Focused current revalidation:
+
+```text
+tmp\bb_eny_probe_current_all_20260630\persistent
+tmp\bb_eny_probe_current_all_20260630\streaming
+```
+
+Root cause:
+
+- The old `export_full` `BB_eny` partials are stale. Their top-level fields already decoded, then old TypeTree output stopped at the final `references` registry after reading graph RID links.
+- Current AnimeStudio managed-reference recovery can now recover these registries fully.
+- This is a registry recovery/update freshness issue, not encryption and not a current BB_eny parser gap.
+
+Focused validation summary:
+
+| Scope | Files | Top-level decoded | Top-level partial/unparsed/heuristic | Fully recovered registries |
+| --- | ---: | ---: | ---: | ---: |
+| Persistent `BB_eny*` | 231 | 231 | 0 | 154 |
+| StreamingAssets `BB_eny*` | 231 | 231 | 0 | 154 |
+
+Recovered managed-reference class coverage includes:
+
+- `EnemyBattleGraph/EnemyBattleGraphData`: 164 refs per source.
+- `EnemyAttackBuildingGraph/EnemyAttackBuildingGraphDatta`: 104 refs per source.
+- `EnemySettlementBattleBehavior/EnemySettlementBattleBehaviorData`: 52 refs per source.
+- `EnemyBattleEventStimulus/EnemyBattleEventStimulusData`: 27 refs per source.
+- `EnemySettlementBattleGraph/EnemySettlementBattleGraphData`: 24 refs per source.
+- `EnemyCastSkillResponse/EnemyCastSkillResponseData`: 23 refs per source.
+
+Follow-up:
+
+- Do not spend implementation time on `BB_eny` until a current full export proves a fresh failure.
+- The existing `export_full` decoded index should be refreshed before using it as an authoritative warning ranking.
+- If we need an immediate non-Mono target while Mono warnings are stale, `Json/SkillData` `toggleBuffs` remains the strongest next schema bucket.
