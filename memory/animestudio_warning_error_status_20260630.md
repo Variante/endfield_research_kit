@@ -2058,3 +2058,122 @@ Validation commands:
 - `python -m py_compile scripts\build_data_index.py`
 - Focused direct `decode_buff_memorypack` scan over both `structured/StreamingAssets/Data/Json/BuffData` and `structured/Persistent/Data/Json/BuffData`.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_send_signal_validate_20260630`
+
+## 2026-06-30 BuffData PlaySound Partial Decoder
+
+Added a guarded partial decoder for single-item `Core_PlaySoundAction_PlaySoundActionData` timeline action payloads.
+
+What changed:
+
+- Added parsing for wide union tag `0x00fc` / bytes `fa fc 00` with serialized member count `22`.
+- Decodes the inherited `AbilityActionData` prefix and top-level PlaySound fields in MemoryPack setter order.
+- Preserves `targetSettings` as `targetSettingsPartial` with offset, byte length, selector shape, stable prefix/tail diagnostics, string hits, and raw hex.
+- Decodes the fixed 26-byte time-dilation tail after the bounded `targetSettings` window.
+- Marks PlaySound items as `decodeStatus=partial`, not exact, because `TargetSettings` / `SelectorData` internals are still not semantically proven.
+- Renamed item decoder failure status to `typed-decoder-failed` for future exact or partial action decoders.
+
+Focused validation over current exported BuffData roots:
+
+| Root | BuffData files | Timeline rows | Timeline records | Emitted single-item summaries | Exact item decodes | Partial item decodes | Typed decoder failures |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `structured/StreamingAssets` | 2,291 | 79 | 338 | 263 | 8 | 10 | 0 |
+| `structured/Persistent` | 2,325 | 79 | 338 | 263 | 8 | 10 | 0 |
+
+Action item decode-status distribution in both roots:
+
+| Decode status | Count |
+| --- | ---: |
+| `opaque` | 245 |
+| `partial` | 10 |
+| `exact` | 8 |
+
+Decoded action item type distribution in both roots:
+
+| Action type | Count | Status |
+| --- | ---: | --- |
+| `Core_PlaySoundAction_PlaySoundActionData` | 10 | partial |
+| `Core_SendBattleSignalToLevel_Data` | 8 | exact |
+
+Observed PlaySound `soundEvent` values:
+
+| `soundEvent` | Count |
+| --- | ---: |
+| `au_chr_0016_laevat_combo_skill_b_hit` | 1 |
+| `au_chr_0016_laevat_combo_skill_b_bass` | 1 |
+| `au_chr_0026_lastrite_normal_extraattack` | 1 |
+| `au_chr_0028_wulfa_combo_skill_c_hint` | 1 |
+| `au_chr_0030_zhuangfy_combo_skill_b` | 1 |
+| `au_chr_0031_mifu_normalskill_3_buff` | 1 |
+| `au_buff_eny_0046_lbshamman_teleport_bomb` | 1 |
+| `au_eny_0077_agshield_shieldsurge_end` | 1 |
+| `au_eny_0079_nefarp2_lightningsword_cast` | 1 |
+| `au_eny_0095_ethillu_reborn` | 1 |
+
+Observed bounded `targetSettings` partial shapes:
+
+| Shape | Byte length | Count |
+| --- | ---: | ---: |
+| `default-selector` | 67 | 9 |
+| `selector-with-string` | 79 | 1 |
+
+The `selector-with-string` row is `buff_chr_0016_laevat_combo_skill_hit.json`; its target-settings string hit is `smart_target`.
+
+Observed top-level PlaySound variation:
+
+| Field / tuple | Distribution |
+| --- | --- |
+| `stopFadeDurationMs` | `100`: 6, `300`: 2, `500`: 2 |
+| `(stopOnEnd, useTempEmitter, followMountPoint)` | `(False, False, False)`: 6, `(True, False, False)`: 2, `(True, False, True)`: 1, `(True, True, False)`: 1 |
+| `timeDilationFadeInDurationMs` | `100`: 10 |
+| `timeDilationFadeOutDurationMs` | `500`: 10 |
+| `timeDilationPauseThreshold` | `0.7`: 10 |
+| `timeDilationSeekThreshold` | `0.4`: 10 |
+| `useTimeDilationPauseAndSeek` | `False`: 10 |
+| `useWeaponMountPoint` | `False`: 10 |
+| `weaponIndex` | `0`: 10 |
+
+Independent verifier notes:
+
+- A raw byte scan found 21 `fa fc 00 16` hits per root, but only 10 are independently bounded top-level timeline action items.
+- The 11 extra raw hits are embedded inside opaque or ambiguous parent payloads such as `IfElseAction`, `CompareFloat`, `CheckBuffStackNumAdvanced`, and `AuraAction`; they remain opaque until neighboring action parsers prove boundaries.
+- `structured/StreamingAssets` and `structured/Persistent` have the same 10 bounded PlaySound rows and identical target-settings windows.
+- Existing AnimeStudio diagnostics (`ReadDiagnosticTargetSettings` / `ReadDiagnosticSelectorData`) also treat `TargetSettings` and selector post-processor ownership as partial; this matches the Python parser status.
+
+Full WebUI Json validation after this change:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 143 |
+| `Json/BuffData` unresolved issue rows | 143 |
+| `Json/LevelScriptData` unresolved issue rows | 0 |
+
+Current strict issue field distribution remains row-level unchanged because broader timeline payload semantics are still partial:
+
+| Status | Count |
+| --- | ---: |
+| `decoded.postIdPrefix.timelineActionsBodyStatus=partial-timelineActions-opaque-actionData` | 79 |
+| `decoded.postIdPrefix.timelineActionsSemanticStatus=partial-inner-actionData-union-payloads-opaque` | 79 |
+| `decoded.postIdPrefix.stackingSettings.stackEffectsBodyStatus=opaque-effectActions` | 47 |
+| `decoded.postIdPrefix.stackingSettings.effectActionsSemanticStatus=partial-effectActions-unproven-field-order` | 47 |
+| `decoded.postIdPrefix.poiseModifierBodyStatus=opaque-poiseModifier` | 9 |
+| `decoded.postIdPrefix.poiseModifierSemanticStatus=partial-poiseModifier-opaque-processors` | 9 |
+| `decoded.postIdPrefix.shieldConfigsBodyStatus=opaque-shieldConfigs` | 4 |
+| `decoded.postIdPrefix.shieldConfigsSemanticStatus=partial-shieldConfigs-opaque-nested-fields` | 4 |
+| `decoded.postIdPrefix.igniteEventActionBodyStatus=opaque-igniteEventAction` | 4 |
+| `decoded.postIdPrefix.igniteEventActionSemanticStatus=partial-igniteEventAction-opaque-actionData` | 4 |
+| `decoded.postIdPrefix.igniteEventActionBodyStatus=opaque-igniteEventAction-nestedBlocks` | 4 |
+| `decoded.postIdPrefix.igniteEventActionSemanticStatus=partial-igniteEventAction-nestedBlocks-opaque-actionData` | 4 |
+| `decoded.postIdPrefix.poiseModifierBodyTailPreview.timelineActionsBodyStatus=partial-timelineActions-opaque-actionData` | 3 |
+
+Interpretation:
+
+- This reduces real action-level uncertainty for the 10 bounded PlaySound items without suppressing the row-level timeline warning.
+- `TargetSettings` internals, selector post-processor ownership, the compact post-selector tail split, and the meaning of the `tailU32` selector word remain unresolved.
+- The next useful work is either a true `TargetSettings` / `SelectorData` semantic parser or another exact/partial action decoder that can help prove boundaries for embedded multi-item payloads.
+
+Validation commands:
+
+- `python -m py_compile scripts\build_data_index.py`
+- Focused direct `decode_buff_memorypack` scan over both `structured/StreamingAssets/Data/Json/BuffData` and `structured/Persistent/Data/Json/BuffData`.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_play_sound_validate2_20260630`

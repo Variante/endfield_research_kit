@@ -2449,12 +2449,23 @@ def read_buff_timeline_first_union_tag(
 
 
 BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG = 0x011f
+BUFF_PLAY_SOUND_ACTION_TAG = 0x00fc
+BUFF_PLAY_SOUND_TIME_DILATION_TAIL_BYTES = 26
 
 
 def read_buff_i32_field(data: bytes, offset: int, field_name: str) -> tuple[int, int]:
     if offset + 4 > len(data):
         raise ValueError(f"{field_name}:truncated-i32")
     return struct.unpack_from("<i", data, offset)[0], offset + 4
+
+
+def read_buff_f32_field(data: bytes, offset: int, field_name: str) -> tuple[float, int]:
+    if offset + 4 > len(data):
+        raise ValueError(f"{field_name}:truncated-f32")
+    value = struct.unpack_from("<f", data, offset)[0]
+    if not math.isfinite(value):
+        raise ValueError(f"{field_name}:non-finite")
+    return value, offset + 4
 
 
 def read_buff_memorypack_utf8_string_strict(
@@ -2580,6 +2591,199 @@ def read_buff_ability_action_common_prefix_exact(
     }, offset
 
 
+def validate_buff_nonnegative_ms(value: int, field_name: str, *, max_value: int = 600_000) -> None:
+    if value < 0 or value > max_value:
+        raise ValueError(f"{field_name}:ms-out-of-range={value}")
+
+
+def read_buff_play_sound_target_settings_partial(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    if limit < offset:
+        raise ValueError(f"{field_name}:invalid-bounds")
+    raw = data[offset:limit]
+    byte_length = len(raw)
+    if byte_length not in (67, 79):
+        raise ValueError(f"{field_name}:unexpected-bytes={byte_length}")
+    stable_prefix = bytes.fromhex("0d 08 01 00 00 00 00 00 00 ff 00 00 00 00 ff 00")
+    if not raw.startswith(stable_prefix):
+        raise ValueError(f"{field_name}:unexpected-prefix={raw[:16].hex(' ')}")
+    string_hits = scan_length_prefixed_utf8_string_hits(
+        raw,
+        start=0,
+        max_scan_bytes=byte_length,
+        max_samples=4,
+        max_length=128,
+    )
+    tail_u32 = struct.unpack_from("<I", raw, byte_length - 4)[0]
+    if tail_u32 not in (1, 4):
+        raise ValueError(f"{field_name}:tail-u32={tail_u32}")
+    return {
+        "status": "partial",
+        "semanticStatus": "partial-target-settings-selector-data-opaque",
+        "offset": format_offset(offset),
+        "bytes": byte_length,
+        "shape": "selector-with-string" if string_hits else "default-selector",
+        "memberCountCandidate": raw[0],
+        "selectorHeaderRaw": raw[:16].hex(" "),
+        "tailU32": tail_u32,
+        "tailRaw": raw[-16:].hex(" "),
+        "stringHits": string_hits,
+        "rawHex": raw.hex(" "),
+    }, limit
+
+
+def decode_buff_play_sound_action(
+    data: bytes,
+    item_start: int,
+    item_end: int,
+    tag_width: int,
+    member_count: int,
+) -> dict[str, Any]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, item_end)
+    if tag != BUFF_PLAY_SOUND_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("playSound:tag-mismatch")
+    if tag_width != 3:
+        raise ValueError(f"playSound:tag-width={tag_width}")
+    if member_count != 22:
+        raise ValueError(f"playSound:member-count={member_count}")
+    if item_end - item_start <= BUFF_PLAY_SOUND_TIME_DILATION_TAIL_BYTES:
+        raise ValueError("playSound:truncated-tail")
+
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_exact(
+        data,
+        offset,
+        "playSound.prefix",
+    )
+    can_interrupt_time_ms, offset = read_buff_i32_field(data, offset, "playSound.canInterruptTimeMs")
+    intrpt_fade_duration_ms, offset = read_buff_i32_field(data, offset, "playSound.intrptFadeDurationMs")
+    jump_to_when_play_ms, offset = read_buff_i32_field(data, offset, "playSound.jumpToWhenPlayMs")
+    for field_name, value in (
+        ("playSound.canInterruptTimeMs", can_interrupt_time_ms),
+        ("playSound.intrptFadeDurationMs", intrpt_fade_duration_ms),
+        ("playSound.jumpToWhenPlayMs", jump_to_when_play_ms),
+    ):
+        validate_buff_nonnegative_ms(value, field_name)
+
+    sound_event, offset = read_buff_memorypack_utf8_string_strict(
+        data,
+        offset,
+        "playSound.soundEvent",
+        max_length=512,
+    )
+    if not sound_event or not sound_event.startswith("au_"):
+        raise ValueError(f"playSound.soundEvent:unexpected={sound_event or ''}")
+
+    stop_fade_duration_ms, offset = read_buff_i32_field(data, offset, "playSound.stopFadeDurationMs")
+    validate_buff_nonnegative_ms(stop_fade_duration_ms, "playSound.stopFadeDurationMs")
+    stop_on_end, offset = read_buff_bool_field(data, offset, "playSound.stopOnEnd")
+    use_temp_emitter, offset = read_buff_bool_field(data, offset, "playSound.useTempEmitter")
+    follow_mount_point, offset = read_buff_bool_field(data, offset, "playSound.followMountPoint")
+    mount_point, offset = read_buff_memorypack_utf8_string_strict(
+        data,
+        offset,
+        "playSound.mountPoint",
+        max_length=256,
+    )
+
+    tail_start = item_end - BUFF_PLAY_SOUND_TIME_DILATION_TAIL_BYTES
+    target_settings, offset = read_buff_play_sound_target_settings_partial(
+        data,
+        offset,
+        tail_start,
+        "playSound.targetSettings",
+    )
+
+    time_dilation_fade_in_duration_ms, offset = read_buff_i32_field(
+        data,
+        offset,
+        "playSound.timeDilationFadeInDurationMs",
+    )
+    validate_buff_nonnegative_ms(
+        time_dilation_fade_in_duration_ms,
+        "playSound.timeDilationFadeInDurationMs",
+    )
+    time_dilation_fade_out_duration_ms, offset = read_buff_i32_field(
+        data,
+        offset,
+        "playSound.timeDilationFadeOutDurationMs",
+    )
+    validate_buff_nonnegative_ms(
+        time_dilation_fade_out_duration_ms,
+        "playSound.timeDilationFadeOutDurationMs",
+    )
+    time_dilation_pause_threshold, offset = read_buff_f32_field(
+        data,
+        offset,
+        "playSound.timeDilationPauseThreshold",
+    )
+    time_dilation_seek_threshold, offset = read_buff_f32_field(
+        data,
+        offset,
+        "playSound.timeDilationSeekThreshold",
+    )
+    for field_name, value in (
+        ("playSound.timeDilationPauseThreshold", time_dilation_pause_threshold),
+        ("playSound.timeDilationSeekThreshold", time_dilation_seek_threshold),
+    ):
+        if value < 0 or value > 10:
+            raise ValueError(f"{field_name}:out-of-range={value}")
+    use_time_dilation_pause_and_seek, offset = read_buff_bool_field(
+        data,
+        offset,
+        "playSound.useTimeDilationPauseAndSeek",
+    )
+    use_weapon_mount_point, offset = read_buff_bool_field(
+        data,
+        offset,
+        "playSound.useWeaponMountPoint",
+    )
+    weapon_index, offset = read_buff_i32_field(data, offset, "playSound.weaponIndex")
+    if abs(weapon_index) > 1_000_000:
+        raise ValueError(f"playSound.weaponIndex:implausible={weapon_index}")
+    weapon_mount_point, offset = read_buff_memorypack_utf8_string_strict(
+        data,
+        offset,
+        "playSound.weaponMountPoint",
+        max_length=256,
+    )
+    if offset != item_end:
+        raise ValueError(f"playSound:tail-at={format_offset(offset)} end={format_offset(item_end)}")
+
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_PLAY_SOUND_ACTION_TAG],
+        "decodeStatus": "partial",
+        "semanticStatus": "partial-target-settings-selector-data-opaque",
+        "schemaSource": (
+            "MemoryPack formatter setter order: AbilityActionData prefix, PlaySound primitive fields, "
+            "targetSettings, and time-dilation tail; TargetSettings bytes are bounded but selector semantics remain partial"
+        ),
+        "byteLength": item_end - item_start,
+        "prefix": prefix,
+        "canInterruptTimeMs": can_interrupt_time_ms,
+        "intrptFadeDurationMs": intrpt_fade_duration_ms,
+        "jumpToWhenPlayMs": jump_to_when_play_ms,
+        "soundEvent": sound_event,
+        "stopFadeDurationMs": stop_fade_duration_ms,
+        "stopOnEnd": stop_on_end,
+        "useTempEmitter": use_temp_emitter,
+        "followMountPoint": follow_mount_point,
+        "mountPoint": mount_point or "",
+        "targetSettingsPartial": target_settings,
+        "timeDilationFadeInDurationMs": time_dilation_fade_in_duration_ms,
+        "timeDilationFadeOutDurationMs": time_dilation_fade_out_duration_ms,
+        "timeDilationPauseThreshold": round(time_dilation_pause_threshold, 6),
+        "timeDilationSeekThreshold": round(time_dilation_seek_threshold, 6),
+        "useTimeDilationPauseAndSeek": use_time_dilation_pause_and_seek,
+        "useWeaponMountPoint": use_weapon_mount_point,
+        "weaponIndex": weapon_index,
+        "weaponMountPoint": weapon_mount_point or "",
+    }
+
 def decode_buff_send_battle_signal_to_level_action(
     data: bytes,
     item_start: int,
@@ -2636,6 +2840,14 @@ def decode_buff_ability_action_item_exact(
 ) -> dict[str, Any] | None:
     if tag == BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG:
         return decode_buff_send_battle_signal_to_level_action(
+            data,
+            item_start,
+            item_end,
+            tag_width,
+            member_count,
+        )
+    if tag == BUFF_PLAY_SOUND_ACTION_TAG:
+        return decode_buff_play_sound_action(
             data,
             item_start,
             item_end,
@@ -2702,11 +2914,11 @@ def build_buff_ability_action_item_summary(
             member_count,
         )
     except (struct.error, UnicodeDecodeError, ValueError) as exc:
-        summary["decodeStatus"] = "exact-decoder-failed"
+        summary["decodeStatus"] = "typed-decoder-failed"
         summary["decodeError"] = str(exc)[:200]
     else:
         if decoded is not None:
-            summary["decodeStatus"] = "exact"
+            summary["decodeStatus"] = str(decoded.get("decodeStatus") or "exact")
             summary["decoded"] = decoded
     return summary
 
@@ -2908,6 +3120,12 @@ def decode_buff_timeline_actions_outer(
         for item in record["sequenceActionData"].get("actionDataItems") or []
         if item.get("decodeStatus") == "exact"
     )
+    decoded_action_item_type_counts = Counter(
+        (item.get("decoded") or {}).get("type") or "unknown"
+        for record in records
+        for item in record["sequenceActionData"].get("actionDataItems") or []
+        if item.get("decoded")
+    )
     return {
         "timelineActionsBodyStatus": "partial-timelineActions-opaque-actionData",
         "timelineActionsBodyShape": (
@@ -2925,6 +3143,7 @@ def decode_buff_timeline_actions_outer(
         "timelineActionSplitItemNameCounts": short_counter_dict(split_action_item_name_counts),
         "timelineActionItemDecodeStatusCounts": short_counter_dict(split_action_item_decode_counts),
         "timelineActionExactItemTypeCounts": short_counter_dict(exact_action_item_type_counts),
+        "timelineActionDecodedItemTypeCounts": short_counter_dict(decoded_action_item_type_counts),
         "timelineActionRecords": records,
     }
 
