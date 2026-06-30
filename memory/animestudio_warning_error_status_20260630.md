@@ -899,3 +899,50 @@ Validation:
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - Direct raw-byte sweep over `export_full/structured/StreamingAssets/Data/Json/SkillData/*.json` produced `2,075` parsed, `3` ambiguous, and `5` parse-error rows.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_skill_anchor_validate_20260630` completed and indexed 81,735 Json files, including all 2,083 `Json/SkillData` records.
+## 2026-06-30 SkillData Smart-Target Payload Recovery
+
+Closed the remaining `SkillData` post-id warning buckets by validating and exposing the non-simple smart-target/tag-query payloads before `SwitchToBuffConfig`.
+
+Root cause:
+
+- The remaining rows are not encrypted and do not need another VFS pass.
+- The old parser handled only the common simple path: `skillTags`, `smartTargetBuffFindSettings`, a simple string list for `smartTargetBuffIds`, `smartTargetSelectStrategy`, then one byte for `smartTargetTagQuery`.
+- The unresolved rows contain additional smart-target/tag-query bytes before `SwitchToBuffConfig`. Some include buff-id strings, and some include GameplayTag-like records using `memberCount + tagId + length-prefixed tag path`.
+- Local IL2CPP/formatter metadata confirms the relevant field names and order, while AnimeStudio's C# diagnostics already use related helpers for `BuffFindSettings` and `GameplayTagQuery` payloads.
+
+Implementation:
+
+- `decode_skill_switch_tail_probe` now scans farther for a validated `SwitchToBuffConfig` marker, but still accepts only candidates whose post-switch tail reaches exact EOF.
+- The pre-switch payload is preserved with prefix bytes, length-prefixed string hits, and GameplayTag-like record hits.
+- If simple smart-target parsing fails, `decode_skill_post_id_tail_prefix_at` returns `parsed-through-smartTargetPayload` only when the fallback payload hands off to a validated exact switch tail.
+- Ambiguous id-marker selection now prefers a unique full scalar parse over fallback payload candidates. This resolves `chr_0017_yvonne_ult_attack3_2` to the final full top-level marker instead of an earlier bridgeable payload candidate.
+
+Focused validation summary:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| `SkillData` files scanned | 2,083 | 2,083 |
+| Simple post-id smart-target parses | 2,075 | 2,077 |
+| Validated smart-target payload parses | 0 | 6 |
+| Ambiguous id-marker rows | 3 | 0 |
+| Post-id parse-error rows | 5 | 0 |
+| Exact post-switch tails | 2,075 | 2,083 |
+
+Validated smart-target payload rows:
+
+- `chr_0022_bounda_ultimate_skill.json`: 31-byte default/zero-heavy payload; exact switch handoff.
+- `chr_0024_deepfin_normal_skill.json`: buff id `buff_common_energy_shard_attached_cryst` and tag `Skill/Character/Common/SpellInflict/CrystInflict`.
+- `chr_0028_wulfa_ultimate_skill.json`: buff id `buff_chr_0028_wulfa_normal_bleed`.
+- `chr_0028_wulfa_combo_2_skill.json`: tag `Skill/Character/Common/SpellInflict`; this also resolves the last fallback-only ambiguous anchor.
+- `chr_0030_zhuangfy_combo_skill.json`: tags `Skill/Character/Common/SpellInflict/PulseInflict` and `Skill/Character/Common/SpellInflict`.
+- `chr_0030_zhuangfy_combo_skill_ult.json`: same two tag records as the combo row.
+
+Remaining caveat:
+
+- These rows are now byte-consumed through exact switch-tail validation and expose the semantic strings/tag records that caused the warnings. The generic `BuffFindSettings.buffIdList` and full `GameplayTagQuery` object boundaries are still marked as future deeper semantics rather than claimed as fully proven.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- Direct raw-byte sweep over all `export_full/structured/StreamingAssets/Data/Json/SkillData/*.json` produced `2,077` simple parses, `6` validated smart-target payload parses, `0` ambiguous rows, `0` parse errors, and `2,083` exact post-switch tails.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_skill_smarttarget_validate_20260630` completed and indexed 81,735 Json files, including all 2,083 `Json/SkillData` records.
