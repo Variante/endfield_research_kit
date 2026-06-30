@@ -98,3 +98,54 @@ Broad inventory notes from this pass:
 - Broad log review found the latest Texture2D asset run has 0 command failures, 0 warnings, 0 errors, 0 export errors, and 0 failed-to-decode entries.
 - The largest remaining scary-looking asset markers are expected empty Animator/Texture2D marker outputs, not current parser failures.
 - The old MonoBehaviour incomplete bucket is partly stale: multiple old no-recovery Persistent samples now recover fully when rerun with the current exporter.
+
+## 2026-06-30 Audio Managed-Reference Payload Update
+
+Implemented the next managed-reference recovery pass for `Beyond.Gameplay` audio/effect action payloads.
+
+Root cause:
+
+- The old export had two different failure shapes in this bucket:
+  - heuristic recovered registries in `StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk` where raw payload bytes were present but the TypeTree string reader failed;
+  - normal TypeTree-decoded registries where `references.RefIds[*].data` was `{}` even though raw MonoBehaviour bytes still contained the managed-reference payload.
+- Subagent IL2CPP checks confirmed `PlaySingleSound`, `PlaySound`, and `PlaySoundByParticleCount` field order from `global-metadata.dat` / `Gameplay.Beyond.dll` metadata. This is schema recovery, not VFS loss or encryption.
+- Wwise checks confirmed `PlaySound.soundName` and `PlaySoundByParticleCount.soundName` are valid event-name strings resolvable from banks. `PlaySingleSound.soundSpawn` / `soundFinish` are still game-side 32-bit hash/int fields, not directly proven Wwise event hashes in this pass.
+
+Implementation:
+
+- Added a raw-payload enrichment pass for TypeTree-decoded `references` registries that still have empty `data` for known audio managed-reference classes.
+- The enrichment first validates a raw registry by RID and type before merging decoded data.
+- Added a stricter per-header fallback for the null-sentinel edge case where a real `PlaySingleSound` entry has a zero-byte payload followed immediately by a negative blank sentinel entry.
+- Added decoders for:
+  - `Beyond.Gameplay.PlaySound`: aligned `soundName` plus `largeType` int32.
+  - `Beyond.Gameplay.PlaySingleSound`: 28-byte sound/override payload plus an explicit zero-byte serialized variant.
+  - `Beyond.Gameplay.PlaySoundByParticleCount`: aligned `soundName`, `particle` PPtr, `threshold` int32.
+
+Validation output:
+
+```text
+tmp\audio_managed_ref_probe_after3_20260630\persistent
+tmp\audio_managed_ref_probe_after3_20260630\streaming_fbad
+tmp\audio_managed_ref_edge_after3_20260630\mono137074
+```
+
+Validation summary:
+
+| Scope | Class | Refs | Decoded | Empty | `$unparsed`/`$heuristic`/`decodeError` |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Persistent sample | `PlaySingleSound` | 59 | 59 | 0 | 0 |
+| Persistent sample | `PlaySoundByParticleCount` | 12 | 12 | 0 | 0 |
+| `FBAD...chk` sample | `PlaySingleSound` | 204 | 204 | 0 | 0 |
+| `FBAD...chk` sample | `PlaySound` | 35 | 35 | 0 | 0 |
+| `FBAD...chk` sample | `PlaySoundByParticleCount` | 185 | 185 | 0 | 0 |
+| Combined focused probes | `PlaySingleSound` | 263 | 263 | 0 | 0 |
+| Combined focused probes | `PlaySound` | 35 | 35 | 0 | 0 |
+| Combined focused probes | `PlaySoundByParticleCount` | 197 | 197 | 0 | 0 |
+
+Build validation:
+
+- `scripts\animestudio\rebuild.bat -Target CLI -NoRestore` succeeded with 0 warnings and 0 errors after the final exporter edit.
+
+Follow-up:
+
+- `build_audio.py` currently gathers wanted Wwise events from Story/cutscene/table inputs, not arbitrary managed-reference `soundName` fields. A later audio-index pass should optionally ingest decoded managed-reference sound names so entries like `au_sfx_ls_dung02_dg002_e9m2_zipline06`, `au_amb_emitter_lightning`, and `au_amb_emitter_damagefire_largelorlong_01` can be linked into the decoded audio catalog.
