@@ -2331,6 +2331,44 @@ def read_buff_stacking_settings_compact_id_branch(
     if stack_effect_count > 256:
         raise ValueError(f"stackingSettings.stackEffectsCount:large-count={stack_effect_count}")
 
+    stack_effects_body_offset = offset
+    stack_effects_body_status = ""
+    stack_effects_body_bytes = 0
+    if stack_effect_count:
+        zero_action_end = offset + stack_effect_count * 5
+        zero_action_body = zero_action_end <= len(data)
+        probe = offset
+        for _ in range(stack_effect_count):
+            if not zero_action_body or data[probe] != 1:
+                zero_action_body = False
+                break
+            action_count = struct.unpack_from("<I", data, probe + 1)[0]
+            if action_count != 0:
+                zero_action_body = False
+                break
+            probe += 5
+        if zero_action_body:
+            offset = zero_action_end
+            stack_effects_body_status = "skipped-zero-action-items"
+            stack_effects_body_bytes = offset - stack_effects_body_offset
+        else:
+            return {
+                "memberCount": member_count,
+                "offset": format_offset(start),
+                "branch": "stack-effects-body",
+                "branchNote": "nonzero stackEffects body remains opaque until EffectActionCfg layout is skipped",
+                "identifierTypeRaw": identifier_type,
+                "maxStackCnt": max_stack_count,
+                "maxStackCntKey": max_stack_count_key or "",
+                "priority": round(priority, 6),
+                "priorityKey": priority_key or "",
+                "negatePriority": negate_priority,
+                "isNeedStackEffect": is_need_stack_effect,
+                "stackEffectsCount": stack_effect_count,
+                "stackEffectsBodyStatus": "unparsed-effectActions",
+                "stackEffectsBodyOffset": format_offset(stack_effects_body_offset),
+            }, stack_effects_body_offset
+
     stacking_key_offset = offset
     stacking_key, stacking_key_end, stacking_key_error = read_memorypack_utf8_string(
         data,
@@ -2374,6 +2412,10 @@ def read_buff_stacking_settings_compact_id_branch(
         "isNeedStackEffect": is_need_stack_effect,
         "stackEffectsCount": stack_effect_count,
     }
+    if stack_effects_body_status:
+        result["stackEffectsBodyStatus"] = stack_effects_body_status
+        result["stackEffectsBodyOffset"] = format_offset(stack_effects_body_offset)
+        result["stackEffectsBodyBytes"] = stack_effects_body_bytes
     if stacking_key:
         result["stackingKey"] = stacking_key
     return result, offset
@@ -2473,7 +2515,10 @@ def decode_buff_post_id_prefix_at(
                         data,
                         tail_offset,
                     )
-                    if stacking_settings.get("stackEffectsCount"):
+                    if (
+                        stacking_settings.get("stackEffectsCount")
+                        and stacking_settings.get("stackEffectsBodyStatus") != "skipped-zero-action-items"
+                    ):
                         result["status"] = "parsed-through-stackingSettings"
                         result["stackingSettings"] = stacking_settings
                         result["tailParseStatus"] = "unparsed-stackEffects"

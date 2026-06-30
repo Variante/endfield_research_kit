@@ -1268,3 +1268,58 @@ Validation:
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - Focused BuffData decode over all 2,291 rows produced `2,125` exact-tail rows, `49` `unparsed-timelineActions`, `82` `unparsed-stackEffects`, and `11` generic parse errors.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_apparent_timeline_validate_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData Zero-Action StackEffects Recovery
+
+Recovered the structurally trivial subset of `BuffStackingSettings.stackEffects`: rows where every `StackBuffEffectData` wrapper has `memberCount=1` and `effectActionsCount=0`.
+
+Root cause refined:
+
+- `stackEffects` is a list of `StackBuffEffectData`; IL2CPP metadata and raw bytes show each wrapper begins with one field, `effectActions`.
+- The zero-action body is exact and length-bounded: `01 00 00 00 00` repeated `stackEffectsCount` times.
+- The parser now skips only that exact zero-action body and records `stackEffectsBodyStatus=skipped-zero-action-items` plus body offset/byte count.
+- Nonzero `effectActions` bodies are still not decoded or skipped. They now report `stackEffectsBodyStatus=unparsed-effectActions` and remain visible as `unparsed-stackEffects`.
+
+Focused BuffData validation after this recovery:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| `BuffData` files scanned | 2,291 | 2,291 |
+| Parsed through exact tail | 2,125 | 2,147 |
+| Explicit `unparsed-stackEffects` rows | 82 | 46 |
+| Explicit `unparsed-timelineActions` rows | 49 | 63 |
+| `stackEffectsBodyStatus=skipped-zero-action-items` rows | 0 | 36 |
+| `stackEffectsBodyStatus=unparsed-effectActions` rows | 0 | 46 |
+
+Full Json strict issue validation after this recovery:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 146 |
+| `Json/BuffData` unresolved issue rows | 144 |
+| `Json/LevelScriptData` unresolved issue rows | 2 |
+
+Current strict unresolved status distribution:
+
+| Status | Count |
+| --- | ---: |
+| `unparsed-timelineActions` | 63 |
+| `unparsed-stackEffects` | 46 |
+| `ambiguous-id-marker` | 11 |
+| `parse-error` | 11 |
+| `unparsed-poiseModifier` | 6 |
+| `unparsed-shieldConfigs` | 4 |
+| `unparsed-igniteEventAction` | 3 |
+| `count-exceeds-remaining` | 2 |
+
+Remaining parser targets:
+
+- `stackEffects` nonzero `effectActions` bodies: 46 rows. The subagent found these can be structurally skipped, but they require a stronger `EffectActionCfg` body-boundary guard than the zero-action case.
+- True nonzero `timelineActions` bodies: 63 rows after zero-action stackEffects rows are allowed to reach the timeline field.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- Focused BuffData decode over all 2,291 rows produced `2,147` exact-tail rows, `63` `unparsed-timelineActions`, `46` `unparsed-stackEffects`, and `11` generic parse errors.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_zero_stackeffects_validate_20260630` completed and indexed 81,735 Json files.
