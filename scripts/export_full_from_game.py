@@ -1344,6 +1344,8 @@ def classify_output_path_collision(records: list[dict[str, Any]]) -> str:
         for record in records
     }
     if len(identities_without_hash) == 1:
+        if {str(record["entry"].get("Type") or "") for record in records} == {"Texture2D"}:
+            return "same_asset_id_output_reference"
         return "raw_hash_output_collision"
     return "identity_output_collision"
 
@@ -1410,6 +1412,11 @@ def build_animestudio_asset_output_status(
         output_key
         for output_key, kind in output_collision_kind_by_key.items()
         if kind == "shared_output_reference"
+    }
+    same_asset_id_output_reference_keys = {
+        output_key
+        for output_key, kind in output_collision_kind_by_key.items()
+        if kind == "same_asset_id_output_reference"
     }
     raw_hash_output_collision_keys = {
         output_key
@@ -1524,6 +1531,9 @@ def build_animestudio_asset_output_status(
         shared_reference_entry_count = sum(
             1 for record in records if record["output_key"] in shared_output_reference_keys
         )
+        same_asset_id_reference_entry_count = sum(
+            1 for record in records if record["output_key"] in same_asset_id_output_reference_keys
+        )
         raw_hash_collision_entry_count = sum(
             1 for record in records if record["output_key"] in raw_hash_output_collision_keys
         )
@@ -1574,6 +1584,7 @@ def build_animestudio_asset_output_status(
                 "uncertain_duplicate_output_entry_count": uncertain_duplicate_entry_count,
                 "cross_ab_output_collision_entry_count": cross_ab_collision_entry_count,
                 "shared_output_reference_entry_count": shared_reference_entry_count,
+                "same_asset_id_output_reference_entry_count": same_asset_id_reference_entry_count,
                 "raw_hash_output_collision_entry_count": raw_hash_collision_entry_count,
                 "identity_output_collision_entry_count": identity_collision_entry_count,
                 "uncertain_output_collision_entry_count": uncertain_collision_entry_count,
@@ -1587,6 +1598,11 @@ def build_animestudio_asset_output_status(
                     asset_output_record_sample(record)
                     for record in records
                     if record["output_key"] in shared_output_reference_keys
+                ][:5],
+                "same_asset_id_output_reference_samples": [
+                    asset_output_record_sample(record)
+                    for record in records
+                    if record["output_key"] in same_asset_id_output_reference_keys
                 ][:5],
             }
         )
@@ -1649,6 +1665,11 @@ def build_animestudio_asset_output_status(
         "shared_output_reference_entry_count": sum(
             len(records_by_output_path[key])
             for key in shared_output_reference_keys
+        ),
+        "same_asset_id_output_reference_group_count": len(same_asset_id_output_reference_keys),
+        "same_asset_id_output_reference_entry_count": sum(
+            len(records_by_output_path[key])
+            for key in same_asset_id_output_reference_keys
         ),
         "raw_hash_output_collision_group_count": len(raw_hash_output_collision_keys),
         "raw_hash_output_collision_entry_count": sum(
@@ -1805,6 +1826,8 @@ def write_animestudio_report_only_asset_statuses(
             "cross_ab_output_collision_entry_count",
             "shared_output_reference_group_count",
             "shared_output_reference_entry_count",
+            "same_asset_id_output_reference_group_count",
+            "same_asset_id_output_reference_entry_count",
             "raw_hash_output_collision_group_count",
             "raw_hash_output_collision_entry_count",
             "identity_output_collision_group_count",
@@ -3648,6 +3671,8 @@ def begin_animestudio_asset_shard_work(
         "cross_ab_output_collision_entry_count",
         "shared_output_reference_group_count",
         "shared_output_reference_entry_count",
+        "same_asset_id_output_reference_group_count",
+        "same_asset_id_output_reference_entry_count",
         "raw_hash_output_collision_group_count",
         "raw_hash_output_collision_entry_count",
         "identity_output_collision_group_count",
@@ -3761,6 +3786,8 @@ def finalize_animestudio_asset_shard_work(
         "cross_ab_output_collision_entry_count",
         "shared_output_reference_group_count",
         "shared_output_reference_entry_count",
+        "same_asset_id_output_reference_group_count",
+        "same_asset_id_output_reference_entry_count",
         "raw_hash_output_collision_group_count",
         "raw_hash_output_collision_entry_count",
         "identity_output_collision_group_count",
@@ -5208,6 +5235,7 @@ def main() -> int:
                         f"alternate_names=`{asset_cache.get('alternate_name_output_count', asset_cache.get('name_mismatch_output_count', 0))}`, "
                         f"cross_ab_paths=`{asset_cache.get('cross_ab_output_collision_group_count', 0)}`, "
                         f"shared_refs=`{asset_cache.get('shared_output_reference_group_count', 0)}`, "
+                        f"same_asset_refs=`{asset_cache.get('same_asset_id_output_reference_group_count', 0)}`, "
                         f"raw_hash_collisions=`{asset_cache.get('raw_hash_output_collision_group_count', 0)}`, "
                         f"identity_collisions=`{asset_cache.get('identity_output_collision_group_count', 0)}`, "
                         f"uncertain_collisions=`{asset_cache.get('uncertain_output_collision_group_count', asset_cache.get('cross_ab_output_collision_group_count', 0))}`, "
