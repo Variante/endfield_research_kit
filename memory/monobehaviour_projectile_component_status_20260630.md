@@ -253,3 +253,67 @@ Targeted validation output: `tmp\projectile_movemode_dict_status_after_20260630`
 | Data-level `decodeError` records | 0 |
 
 Current classification: the dictionary container is structurally decoded. The next real projectile work is still inside `MoveModeData` value internals and the parent effect/sound/scalar tail, not in the dictionary key/value boundary.
+
+## Tail MainEffect Finish And MoveModeData Suffix Follow-up
+
+The current pass promoted two parent tail fields after `moveModeDict` and added a guarded structured view for the nested `MoveModeData` suffix. It still keeps the projectile family partial.
+
+Evidence:
+
+- The focused Camille projectile slice still covers 10 `ProjectileComponentData` records and 25 nested `MoveModeData` records.
+- IL2CPP metadata places `mainEffectFinishType` and `mainEffectFinishDistance` immediately after `moveModeDict`.
+- Tail byte evidence matches that order: one enum word followed by the three-word `Beyond.Blackboard.BlackboardDouble` shape already used elsewhere in `ProjectileComponentData`.
+- `mainEffectFinishType` is `0` in all 10 focused samples.
+- The middle BlackboardDouble word for `mainEffectFinishDistance` is `0` in 9 samples and `1119092736` in 1 sample.
+- The remaining raw parent tail dropped by exactly four words per sample: `{128:1, 244:5, 245:2, 363:1, 494:1}` became `{124:1, 240:5, 241:2, 359:1, 490:1}`.
+- A parallel MoveModeData suffix probe found that the metadata fields `m_parabolaSpeedInfo`, `m_bezierSpeedInfo`, and `m_speedCurveInfo` do not have serialized bytes in the focused payloads.
+- The suffix boundary after `parabolaDef` is now byte-proven for `speed`, `speedCurve`, `useSpeedScaleWithDistance`, `speedScaleWithDistance`, `lockVelocityToXZ`, `groundedMove`, `limitAngularSpeed`, `angularSpeed`, `angularSpeedCurve`, `travelDuration`, `vertexYOffset`, `gravity`, and bounded BezierPoint records.
+- `speedCurve` has 2 keyframes in all 25 records, `speedScaleWithDistance` has 2 keyframes in 24 records and 4 keyframes in 1 record, and `angularSpeedCurve` has 2 keyframes in all 25 records.
+- `bezierMidPoint1` is a complete 21-word raw record in all 25 records. `bezierMidPoint2` is a complete 21-word raw record in 24 records and a truncated 7-word raw record in 1 record.
+
+Implementation:
+
+- `ReadProjectileComponentTailDiagnostic` now decodes `mainEffectFinishType` with `ReadPayloadEnum32Candidate`.
+- `ReadProjectileComponentTailDiagnostic` now decodes `mainEffectFinishDistance` with `ReadAbilitySystemBlackboardDouble`.
+- `ReadProjectileMoveModeDataDiagnostic` now adds `structuredSuffix` beside the original `remainingRawWords`.
+- The structured suffix decodes scalar, bool, and `AnimationCurve<float>` boundaries while preserving BezierPoint records as bounded raw records.
+- The original 115-word `remainingRawWords` suffix is still emitted for every `MoveModeData` record.
+- Parent `ProjectileComponentData`, its tail, every `MoveModeData`, every structured suffix, and BezierPoint raw records remain `$partial`.
+- No effect list, sound struct, final scalar, enum member name, or BezierPoint range-wrapper internals were promoted.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Latest rebuild result: 0 warnings and 0 errors.
+
+Targeted validation output: `tmp\projectile_tail_and_movemode_suffix_after_20260630` using the same 10-row `tmp\projectile_component_movemode_values_after_20260630\filter_data.json` file.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 10 |
+| `ProjectileComponentData` records | 10 |
+| `ProjectileComponentData` records marked `$decoded` | 10 |
+| `ProjectileComponentData` records still `$partial` | 10 |
+| Tails with `mainEffectFinishType` | 10 |
+| Tails with `mainEffectFinishDistance` | 10 |
+| `moveModeDict` dictionaries marked `$decoded` | 10 |
+| `MoveModeData` values | 25 |
+| `MoveModeData` values still `$partial` | 25 |
+| `MoveModeData` original raw suffix length 115 words | 25 |
+| Structured suffix decode status `decoded` | 25 |
+| `speedCurve` keyframes = 2 | 25 |
+| `speedScaleWithDistance` keyframes = 2 | 24 |
+| `speedScaleWithDistance` keyframes = 4 | 1 |
+| `angularSpeedCurve` keyframes = 2 | 25 |
+| `bezierMidPoint1` word count = 21 | 25 |
+| `bezierMidPoint2` full 21-word record | 24 |
+| `bezierMidPoint2` truncated 7 raw words | 1 |
+| Remaining parent tail raw word counts | `{124:1, 240:5, 241:2, 359:1, 490:1}` |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+
+Current classification: the parent projectile tail is decoded through `mainEffectFinishDistance`, and nested `MoveModeData` values now have a guarded structured suffix view. The remaining projectile parent-tail unknown starts at `mainEffects`; the nested value unknowns are BezierPoint internals and non-serialized speed-info metadata fields.
