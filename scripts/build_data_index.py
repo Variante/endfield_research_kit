@@ -2917,6 +2917,36 @@ def parse_buff_tail_after_shield_configs(
     return result
 
 
+def summarize_buff_opaque_body_diagnostics(
+    data: bytes,
+    offset: int,
+    body_end: int,
+    field_prefix: str,
+    *,
+    max_head_bytes: int = 96,
+    max_tail_bytes: int = 48,
+    max_string_hits: int = 12,
+) -> dict[str, Any]:
+    if body_end < offset or body_end > len(data):
+        raise ValueError(f"{field_prefix}:invalid-body-bounds")
+    body_len = body_end - offset
+    details: dict[str, Any] = {
+        f"{field_prefix}BodyMemberCountCandidate": data[offset] if body_len else None,
+        f"{field_prefix}BodyU32AtPlus1Candidate": read_u32_at(data, offset + 1) if body_len >= 5 else None,
+        f"{field_prefix}BodyHeadHex": data[offset:offset + min(body_len, max_head_bytes)].hex(" "),
+        f"{field_prefix}BodyTailHex": data[max(offset, body_end - min(body_len, max_tail_bytes)):body_end].hex(" "),
+    }
+    string_hits = scan_length_prefixed_utf8_string_hits(
+        data,
+        start=offset,
+        max_scan_bytes=body_len,
+        max_samples=max_string_hits,
+        max_length=160,
+    )
+    if string_hits:
+        details[f"{field_prefix}BodyStringHits"] = string_hits
+    return {key: value for key, value in details.items() if value not in (None, "")}
+
 def find_buff_shield_configs_body_end(
     data: bytes,
     offset: int,
@@ -2946,8 +2976,16 @@ def find_buff_shield_configs_body_end(
         raise ValueError(f"shieldConfigsBody:tail-anchor-candidates={len(candidates)}")
 
     body_end, parsed = candidates[0]
+    body_diagnostics = summarize_buff_opaque_body_diagnostics(
+        data,
+        offset,
+        body_end,
+        "shieldConfigs",
+    )
     return {
         "shieldConfigsBodyShape": "opaque ShieldConfig list; boundary selected by unique downstream stackingSettings/tail parse",
+        "shieldConfigsSemanticStatus": "partial-shieldConfigs-opaque-nested-fields",
+        **body_diagnostics,
         "shieldConfigsBodyTailPreview": {
             key: parsed.get(key)
             for key in ("timelineActionsCount", "timelineActionsBodyStatus", "timelineActionsBodyBytes")
@@ -3022,8 +3060,16 @@ def find_buff_poise_modifier_body_end(
         raise ValueError(f"poiseModifierBody:tail-anchor-candidates={len(candidates)}")
 
     body_end, parsed = candidates[0]
+    body_diagnostics = summarize_buff_opaque_body_diagnostics(
+        data,
+        offset,
+        body_end,
+        "poiseModifier",
+    )
     return {
         "poiseModifierBodyShape": "opaque PoiseModifier list; boundary selected by unique downstream shieldConfigs/tail parse",
+        "poiseModifierSemanticStatus": "partial-poiseModifier-opaque-processors",
+        **body_diagnostics,
         "poiseModifierBodyTailPreview": {
             key: parsed.get(key)
             for key in (
@@ -3141,19 +3187,30 @@ def validate_buff_ignite_nested_blocks(
             raise ValueError(f"igniteEventActionNestedBlocks[{index}]:tail-mismatch")
         tail_code = tail[7]
         tail_codes.append(tail_code)
-        block_summaries.append({
+        block_summary = {
             "index": index,
             "offset": format_offset(start),
             "bytes": block_end - start,
             "header": header_kind,
             "tailCode": tail_code,
-        })
+        }
+        string_hits = scan_length_prefixed_utf8_string_hits(
+            data,
+            start=start,
+            max_scan_bytes=block_end - start,
+            max_samples=8,
+            max_length=160,
+        )
+        if string_hits:
+            block_summary["stringHits"] = string_hits
+        block_summaries.append(block_summary)
     if set(tail_codes) != {2, 3, 4, 5}:
         raise ValueError(f"igniteEventActionNestedBlocks:tail-codes={tail_codes}")
 
     return {
         "igniteEventActionBodyStatus": "opaque-igniteEventAction-nestedBlocks",
         "igniteEventActionBodyEncoding": "energy-shard-nested-blocks",
+        "igniteEventActionSemanticStatus": "partial-igniteEventAction-nestedBlocks-opaque-actionData",
         "igniteEventActionNestedBlockCount": len(starts),
         "igniteEventActionNestedBlockTailCodes": tail_codes,
         "igniteEventActionNestedBlocks": block_summaries,
@@ -3191,7 +3248,17 @@ def find_buff_ignite_event_action_body_end(
             continue
         if buff_post_id_result_is_exact_tail(parsed):
             if body_count == ignite_count:
-                body_details: dict[str, Any] = {}
+                body_details: dict[str, Any] = {
+                    "igniteEventActionSemanticStatus": "partial-igniteEventAction-opaque-actionData",
+                    "igniteEventActionBodyLocalCount": body_count,
+                }
+                body_details.update(summarize_buff_opaque_body_diagnostics(
+                    data,
+                    offset,
+                    candidate_end,
+                    "igniteEventAction",
+                    max_string_hits=16,
+                ))
             else:
                 body_details = validate_buff_ignite_nested_blocks(
                     data,
@@ -3200,6 +3267,13 @@ def find_buff_ignite_event_action_body_end(
                     ignite_count,
                 )
                 body_details["igniteEventActionBodyLocalCount"] = body_count
+                body_details.update(summarize_buff_opaque_body_diagnostics(
+                    data,
+                    offset,
+                    candidate_end,
+                    "igniteEventAction",
+                    max_string_hits=16,
+                ))
             candidates.append((candidate_end, parsed, body_details))
             if len(candidates) > 1:
                 break
@@ -10317,6 +10391,10 @@ DECODER_ISSUE_STATUS_VALUES = {
     "count-exceeds-remaining",
     "opaque-effectactions",
     "partial-effectactions-unproven-field-order",
+    "partial-igniteeventaction-nestedblocks-opaque-actiondata",
+    "partial-igniteeventaction-opaque-actiondata",
+    "partial-poisemodifier-opaque-processors",
+    "partial-shieldconfigs-opaque-nested-fields",
     "opaque-igniteeventaction",
     "opaque-igniteeventaction-nestedblocks",
     "opaque-poisemodifier",
