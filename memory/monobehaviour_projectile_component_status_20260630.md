@@ -369,3 +369,56 @@ Targeted validation output: `tmp\projectile_bezierpoint_decode_after_20260630` u
 | Data-level `decodeError` records | 0 |
 
 Current classification: full BezierPoint records in the focused projectile suffix are decoded. The remaining nested projectile unknown is the single truncated `bezierMidPoint2` variant plus the non-serialized speed-info metadata fields; the remaining parent-tail unknown still starts at `mainEffects`.
+## Parent Tail End Suffix Follow-up
+
+The current pass adds a guarded end-relative structured view of the `ProjectileComponentData` parent tail after `mainEffectFinishDistance`. It does not assign the variable `P_fxbat_*` effect blocks to named effect-list fields yet.
+
+Evidence:
+
+- The focused Camille projectile slice still covers 10 `ProjectileComponentData` records.
+- The raw parent tail after `mainEffectFinishDistance` still has word counts `{124:1, 240:5, 241:2, 359:1, 490:1}`.
+- The final 116 words decode consistently as the current default alert/sound/scalar suffix.
+- The variable prefix before that suffix remains raw and has word counts `{8:1, 124:5, 125:2, 243:1, 374:1}`.
+- `showAlertEffect` is `false` in all 10 focused samples.
+- `alertEffect` is a bounded 106-word default effect record in all 10 focused samples and is still preserved raw.
+- `launchSound`, `loopSound`, `reachSound`, `hitSound`, `blockSound`, `finishedSound`, and `sizzleSound` are empty strings in all 10 focused samples.
+- `sizzleSoundTriggerDistance` is `0.0` and `ringProjectileSoundSmoothFactor` is `0.1` in all 10 focused samples.
+- The original `remainingRawWords` tail is still emitted unchanged for byte audit.
+
+Implementation:
+
+- `ReadProjectileComponentTailDiagnostic` now adds `structuredRemainingTail` before `remainingRawWords`.
+- `ReadProjectileComponentRemainingTailDiagnostic` decodes the stable end-relative suffix through current alert/sound/scalar fields using a local reader.
+- `ReadProjectileDefaultEffectRecordDiagnostic` bounds and preserves the current default `alertEffect` record as raw words.
+- The variable effect-list/finish prefix remains raw under `effectListAndFinishPrefixRawWords`.
+- `ProjectileComponentData`, `structuredRemainingTail`, and `alertEffect` remain `$partial`.
+- No named effect-list assignment, non-empty sound layout, or effect-record internals were promoted.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 errors and the same 14 existing AnimeStudio project warnings.
+
+Targeted validation output: `tmp\projectile_tail_suffix_decode_after_20260630` using the same 10-row `tmp\projectile_component_movemode_values_after_20260630\filter_data.json` file.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 10 |
+| `ProjectileComponentData` records | 10 |
+| Structured remaining tails | 10 |
+| Structured remaining tails decoded | 10 |
+| Parent raw tail word counts | `{124:1, 240:5, 241:2, 359:1, 490:1}` |
+| Raw effect/finish prefix word counts | `{8:1, 124:5, 125:2, 243:1, 374:1}` |
+| `showAlertEffect = false` | 10 |
+| `alertEffect` default records with 106 raw words | 10 |
+| Empty `launchSound` / `loopSound` / `reachSound` / `hitSound` / `blockSound` / `finishedSound` / `sizzleSound` | 10 each |
+| `sizzleSoundTriggerDistance = 0.0` | 10 |
+| `ringProjectileSoundSmoothFactor = 0.1` | 10 |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+
+Current classification: the parent projectile tail now has a structured view through the stable end-relative alert/sound/scalar suffix. The unresolved parent-tail work is still the variable effect-list/finish prefix and the internal/default effect-record layout.

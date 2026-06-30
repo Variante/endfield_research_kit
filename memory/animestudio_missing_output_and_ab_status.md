@@ -4154,3 +4154,51 @@ Targeted validation output: `tmp\abilitysystem_parent_promotion_after_20260630`.
 | Data-level `decodeError` records | 0 |
 
 Current classification: focused `AbilitySystemData` parent payloads are now correctly classified as byte-consumed. Remaining Ability/Target warnings are nested semantic partials, not missing VFS bytes, encryption, or unread parent AbilitySystemData tails.
+## 2026-06-30 Fiftieth Fresh StreamingAssets Projectile Parent Tail End Suffix Batch
+
+Follow-up after the AbilitySystemData parent status batch. Work focused on the stable end-relative suffix in `Beyond.Gameplay.Core.ProjectileComponentData` after `mainEffectFinishDistance`.
+
+Evidence used:
+
+- The current focused projectile slice still has no data-level `$unparsed`, `$heuristic`, or `decodeError` records.
+- Prior parallel projectile-tail analysis found that the variable `P_fxbat_*` effect blocks are real but not safely assignable to exact named effect-list fields yet.
+- The same analysis identified a stable end-relative suffix beginning at `showAlertEffect`, followed by a default alert effect record, seven current empty sound strings, and two scalar floats.
+- Validation confirmed the raw parent tail word-count distribution remains `{124:1, 240:5, 241:2, 359:1, 490:1}` after adding the structured view.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added `structuredRemainingTail` to `ReadProjectileComponentTailDiagnostic` while preserving the original `remainingRawWords`.
+- Added `ReadProjectileComponentRemainingTailDiagnostic` for a guarded local decode of the end-relative suffix.
+- Added `ReadProjectileDefaultEffectRecordDiagnostic` to bound and preserve the current default `alertEffect` record as raw words.
+- Kept the variable effect-list/finish prefix raw under `effectListAndFinishPrefixRawWords`.
+- Kept parent `ProjectileComponentData`, `structuredRemainingTail`, and `alertEffect` marked `$partial`.
+- Did not promote named effect-list assignment, non-empty sound layouts, or effect-record internals.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 errors and the same 14 existing AnimeStudio project warnings.
+
+Targeted validation output: `tmp\projectile_tail_suffix_decode_after_20260630` using the same 10-row projectile filter data from `tmp\projectile_component_movemode_values_after_20260630\filter_data.json`.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 10 |
+| `ProjectileComponentData` records | 10 |
+| Structured remaining tails | 10 |
+| Structured remaining tails decoded | 10 |
+| Parent raw tail word counts | `{124:1, 240:5, 241:2, 359:1, 490:1}` |
+| Raw effect/finish prefix word counts | `{8:1, 124:5, 125:2, 243:1, 374:1}` |
+| `showAlertEffect = false` | 10 |
+| `alertEffect` default records with 106 raw words | 10 |
+| Empty `launchSound` / `loopSound` / `reachSound` / `hitSound` / `blockSound` / `finishedSound` / `sizzleSound` | 10 each |
+| `sizzleSoundTriggerDistance = 0.0` | 10 |
+| `ringProjectileSoundSmoothFactor = 0.1` | 10 |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+
+Current classification: `ProjectileComponentData` now exposes the stable parent-tail alert/sound/scalar suffix while keeping the byte-level tail available. Remaining projectile parent-tail unknowns are the variable effect-list/finish prefix, exact effect-record internals, and non-empty sound layouts.
