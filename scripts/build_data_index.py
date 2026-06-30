@@ -2447,6 +2447,204 @@ def read_buff_timeline_first_union_tag(
     return data[offset], 1, data[offset:offset + 1].hex(" ")
 
 
+
+BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG = 0x011f
+
+
+def read_buff_i32_field(data: bytes, offset: int, field_name: str) -> tuple[int, int]:
+    if offset + 4 > len(data):
+        raise ValueError(f"{field_name}:truncated-i32")
+    return struct.unpack_from("<i", data, offset)[0], offset + 4
+
+
+def read_buff_memorypack_utf8_string_strict(
+    data: bytes,
+    offset: int,
+    field_name: str,
+    *,
+    max_length: int = 512,
+) -> tuple[str | None, int]:
+    if offset + 4 > len(data):
+        raise ValueError(f"{field_name}:truncated-length")
+    length = struct.unpack_from("<I", data, offset)[0]
+    offset += 4
+    if length == MEMORYPACK_NULL_COUNT:
+        return None, offset
+    if length > max_length or offset + length > len(data):
+        raise ValueError(f"{field_name}:invalid-length={length}")
+    raw = data[offset:offset + length]
+    try:
+        value = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"{field_name}:invalid-utf8") from exc
+    if any(ord(ch) < 32 for ch in value):
+        raise ValueError(f"{field_name}:control-char")
+    return value, offset + length
+
+
+def read_buff_blackboard_float_raw_field_exact(
+    data: bytes,
+    offset: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    if offset >= len(data):
+        raise ValueError(f"{field_name}:truncated-member-count")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 3:
+        raise ValueError(f"{field_name}:member-count={member_count}")
+    key, offset = read_buff_memorypack_utf8_string_strict(
+        data,
+        offset,
+        f"{field_name}.blackboardKey",
+        max_length=256,
+    )
+    use_blackboard_key, offset = read_buff_bool_field(data, offset, f"{field_name}.useBlackboardKey")
+    if offset + 4 > len(data):
+        raise ValueError(f"{field_name}.value:truncated-f32")
+    raw_u32 = struct.unpack_from("<I", data, offset)[0]
+    value = struct.unpack_from("<f", data, offset)[0]
+    offset += 4
+    if not math.isfinite(value):
+        raise ValueError(f"{field_name}.value:non-finite")
+    return {
+        "memberCount": member_count,
+        "offset": format_offset(start),
+        "blackboardKey": key or "",
+        "useBlackboardKey": use_blackboard_key,
+        "serializedValueType": "System.Single",
+        "rawValueU32": f"0x{raw_u32:08x}",
+        "value": round(value, 6),
+    }, offset
+
+
+def read_buff_blackboard_string_field_exact(
+    data: bytes,
+    offset: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    if offset >= len(data):
+        raise ValueError(f"{field_name}:truncated-member-count")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 3:
+        raise ValueError(f"{field_name}:member-count={member_count}")
+    key, offset = read_buff_memorypack_utf8_string_strict(
+        data,
+        offset,
+        f"{field_name}.blackboardKey",
+        max_length=256,
+    )
+    use_blackboard_key, offset = read_buff_bool_field(data, offset, f"{field_name}.useBlackboardKey")
+    value, offset = read_buff_memorypack_utf8_string_strict(
+        data,
+        offset,
+        f"{field_name}.value",
+        max_length=512,
+    )
+    return {
+        "memberCount": member_count,
+        "offset": format_offset(start),
+        "blackboardKey": key or "",
+        "useBlackboardKey": use_blackboard_key,
+        "value": value or "",
+    }, offset
+
+
+def read_buff_ability_action_common_prefix_exact(
+    data: bytes,
+    offset: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    is_enable, offset = read_buff_bool_field(data, offset, f"{field_name}.isEnable")
+    priority_level, offset = read_buff_i32_field(data, offset, f"{field_name}.priorityLevel")
+    priority_offset, offset = read_buff_i32_field(data, offset, f"{field_name}.priorityOffset")
+    server_action_index, offset = read_buff_i32_field(data, offset, f"{field_name}.serverActionIndex")
+    for name, value in (
+        ("priorityLevel", priority_level),
+        ("priorityOffset", priority_offset),
+        ("serverActionIndex", server_action_index),
+    ):
+        if abs(value) > 1_000_000:
+            raise ValueError(f"{field_name}.{name}:implausible={value}")
+    return {
+        "offset": format_offset(start),
+        "bytes": offset - start,
+        "isEnable": is_enable,
+        "priorityLevel": priority_level,
+        "priorityOffset": priority_offset,
+        "serverActionIndex": server_action_index,
+    }, offset
+
+
+def decode_buff_send_battle_signal_to_level_action(
+    data: bytes,
+    item_start: int,
+    item_end: int,
+    tag_width: int,
+    member_count: int,
+) -> dict[str, Any]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, item_end)
+    if tag != BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG or actual_tag_width != tag_width:
+        raise ValueError("sendBattleSignal:tag-mismatch")
+    if tag_width != 3:
+        raise ValueError(f"sendBattleSignal:tag-width={tag_width}")
+    if member_count != 6:
+        raise ValueError(f"sendBattleSignal:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_exact(
+        data,
+        offset,
+        "sendBattleSignal.prefix",
+    )
+    double_value, offset = read_buff_blackboard_float_raw_field_exact(
+        data,
+        offset,
+        "sendBattleSignal.doubleValue",
+    )
+    signal_id, offset = read_buff_blackboard_string_field_exact(
+        data,
+        offset,
+        "sendBattleSignal.signalId",
+    )
+    if offset != item_end:
+        raise ValueError(f"sendBattleSignal:tail-at={format_offset(offset)} end={format_offset(item_end)}")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG],
+        "decodeStatus": "exact",
+        "schemaSource": (
+            "MemoryPack formatter setter order: AbilityActionData prefix, doubleValue, signalId; "
+            "current BuffData bytes match setter order rather than runtime field display order"
+        ),
+        "byteLength": item_end - item_start,
+        "prefix": prefix,
+        "doubleValue": double_value,
+        "signalId": signal_id,
+    }
+
+
+def decode_buff_ability_action_item_exact(
+    data: bytes,
+    item_start: int,
+    item_end: int,
+    tag: int,
+    tag_width: int,
+    member_count: int,
+) -> dict[str, Any] | None:
+    if tag == BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG:
+        return decode_buff_send_battle_signal_to_level_action(
+            data,
+            item_start,
+            item_end,
+            tag_width,
+            member_count,
+        )
+    return None
+
+
 def read_buff_ability_action_item_header(
     data: bytes,
     offset: int,
@@ -2482,7 +2680,7 @@ def build_buff_ability_action_item_summary(
         max_samples=4,
         max_length=128,
     )
-    return {
+    summary: dict[str, Any] = {
         "index": index,
         "offset": format_offset(item_start),
         "bytes": item_bytes,
@@ -2491,8 +2689,26 @@ def build_buff_ability_action_item_summary(
         "tagBytes": tag_width,
         "memberCount": member_count,
         "bodyBytes": item_bytes - tag_width - 1,
+        "decodeStatus": "opaque",
         "stringHits": string_hits,
     }
+    try:
+        decoded = decode_buff_ability_action_item_exact(
+            data,
+            item_start,
+            item_end,
+            tag,
+            tag_width,
+            member_count,
+        )
+    except (struct.error, UnicodeDecodeError, ValueError) as exc:
+        summary["decodeStatus"] = "exact-decoder-failed"
+        summary["decodeError"] = str(exc)[:200]
+    else:
+        if decoded is not None:
+            summary["decodeStatus"] = "exact"
+            summary["decoded"] = decoded
+    return summary
 
 
 def split_buff_ability_action_items_opaque(
@@ -2522,6 +2738,7 @@ def split_buff_ability_action_items_opaque(
     if action_data_count > 1:
         return "ambiguous-union-tag-boundaries", []
     return "failed", []
+
 
 def short_counter_dict(counter: Counter[Any], limit: int = 16) -> dict[str, int]:
     return {str(key): value for key, value in counter.most_common(limit)}
@@ -2680,6 +2897,17 @@ def decode_buff_timeline_actions_outer(
         for record in records
         for item in record["sequenceActionData"].get("actionDataItems") or []
     )
+    split_action_item_decode_counts = Counter(
+        item.get("decodeStatus") or "unknown"
+        for record in records
+        for item in record["sequenceActionData"].get("actionDataItems") or []
+    )
+    exact_action_item_type_counts = Counter(
+        (item.get("decoded") or {}).get("type") or "unknown"
+        for record in records
+        for item in record["sequenceActionData"].get("actionDataItems") or []
+        if item.get("decodeStatus") == "exact"
+    )
     return {
         "timelineActionsBodyStatus": "partial-timelineActions-opaque-actionData",
         "timelineActionsBodyShape": (
@@ -2695,6 +2923,8 @@ def decode_buff_timeline_actions_outer(
         "timelineActionFirstActionNameCounts": short_counter_dict(first_action_name_counts),
         "timelineActionDataSplitCounts": short_counter_dict(action_data_split_counts),
         "timelineActionSplitItemNameCounts": short_counter_dict(split_action_item_name_counts),
+        "timelineActionItemDecodeStatusCounts": short_counter_dict(split_action_item_decode_counts),
+        "timelineActionExactItemTypeCounts": short_counter_dict(exact_action_item_type_counts),
         "timelineActionRecords": records,
     }
 

@@ -1971,3 +1971,90 @@ Subagent follow-up checked two single-item action families against recovered Mem
 - Setter order parses top-level primitive/string fields cleanly.
 - `targetSettings` is the blocker. Existing diagnostics know the byte window, but `TargetSettings` / `SelectorData` suffix semantics are still partial.
 - Any decoder should preserve `targetSettingsRaw` or `targetSettingsPartial`, parse the stable post-target tail, require exact end, and keep the output marked partial until `TargetSettings` is proven.
+
+## 2026-06-30 BuffData SendBattleSignal Exact Decoder
+
+Added a fail-closed exact decoder for single-item `Core_SendBattleSignalToLevel_Data` timeline action payloads.
+
+What changed:
+
+- Added exact parsing for wide union tag `0x011f` / bytes `fa 1f 01` with serialized member count `6`.
+- Decodes the inherited `AbilityActionData` prefix: `isEnable`, `priorityLevel`, `priorityOffset`, and `serverActionIndex`.
+- Decodes `doubleValue` as a member-count-3 blackboard float wrapper while preserving the raw serialized `u32` word.
+- Decodes `signalId` as a member-count-3 blackboard string wrapper.
+- Requires clean UTF-8 strings, valid bool bytes, finite float values, plausible prefix ints, and exact end-of-item consumption.
+- Leaves all other action item families opaque and marks any exact-decoder failure explicitly instead of suppressing it.
+
+Focused validation over current exported BuffData roots:
+
+| Root | BuffData files | Timeline rows | Timeline records | Emitted single-item summaries | Exact item decodes | Exact decoder failures |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `structured/StreamingAssets` | 2,291 | 79 | 338 | 263 | 8 | 0 |
+| `structured/Persistent` | 2,325 | 79 | 338 | 263 | 8 | 0 |
+
+Exact decode distribution emitted by the current parser:
+
+| Action type | Count |
+| --- | ---: |
+| `Core_SendBattleSignalToLevel_Data` | 8 |
+
+Decoded `signalId` values in emitted single-item payloads:
+
+| `signalId` | Count |
+| --- | ---: |
+| `Music_2` | 2 |
+| `radio_jump_plung` | 1 |
+| `radio_e0m0_15` | 1 |
+| `BreakGround` | 1 |
+| `Music_3` | 1 |
+| `ReaperRecover` | 1 |
+| `ethillureborn` | 1 |
+
+Decoded `doubleValue` values:
+
+| Value | Count |
+| --- | ---: |
+| `0.0` | 7 |
+| `9999.0` | 1 |
+
+Independent verifier note:
+
+- A raw/evidence pass over `structured/Persistent` found 9 timeline `Core_SendBattleSignalToLevel_Data` items in 8 BuffData rows.
+- The 9th item is `radio_plung_not_hit_boss` in `buff_eny_0078_nefarp1_player_plunge_end.json`, inside an `actionDataCount=2` payload where it is the last item.
+- The current parser deliberately emits exact typed data only for `actionDataCount == 1`; multi-item payloads remain `ambiguous-union-tag-boundaries` until neighboring item boundaries are proven by type-specific parsers.
+- The independent byte layout check found no target-layout deviations. All 9 target items consume exactly to their item end when the item cursor is known.
+
+Full WebUI Json validation after this change:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 143 |
+| `Json/BuffData` unresolved issue rows | 143 |
+| `Json/LevelScriptData` unresolved issue rows | 0 |
+
+Current strict issue field distribution remains row-level unchanged because broader timeline payload semantics are still partial:
+
+| Status | Count |
+| --- | ---: |
+| `decoded.postIdPrefix.timelineActionsBodyStatus=partial-timelineActions-opaque-actionData` | 79 |
+| `decoded.postIdPrefix.timelineActionsSemanticStatus=partial-inner-actionData-union-payloads-opaque` | 79 |
+| `decoded.postIdPrefix.stackingSettings.stackEffectsBodyStatus=opaque-effectActions` | 47 |
+| `decoded.postIdPrefix.stackingSettings.effectActionsSemanticStatus=partial-effectActions-unproven-field-order` | 47 |
+| `decoded.postIdPrefix.poiseModifierBodyStatus=opaque-poiseModifier` | 9 |
+| `decoded.postIdPrefix.poiseModifierSemanticStatus=partial-poiseModifier-opaque-processors` | 9 |
+| `decoded.postIdPrefix.shieldConfigsBodyStatus=opaque-shieldConfigs` | 4 |
+| `decoded.postIdPrefix.shieldConfigsSemanticStatus=partial-shieldConfigs-opaque-nested-fields` | 4 |
+| `decoded.postIdPrefix.igniteEventActionBodyStatus=opaque-igniteEventAction` | 4 |
+| `decoded.postIdPrefix.igniteEventActionSemanticStatus=partial-igniteEventAction-opaque-actionData` | 4 |
+| `decoded.postIdPrefix.igniteEventActionBodyStatus=opaque-igniteEventAction-nestedBlocks` | 4 |
+| `decoded.postIdPrefix.igniteEventActionSemanticStatus=partial-igniteEventAction-nestedBlocks-opaque-actionData` | 4 |
+| `decoded.postIdPrefix.poiseModifierBodyTailPreview.timelineActionsBodyStatus=partial-timelineActions-opaque-actionData` | 3 |
+
+Next best target from the parallel recommendation is `Core_PlaySoundAction_PlaySoundActionData` as a guarded partial decoder. It has 10 single-item actions with exact outer boundaries; the blocker is still `TargetSettings` / `SelectorData`, so a parser should preserve that window as raw or partial and keep the item marked partial until those semantics are proven.
+
+Validation commands:
+
+- `python -m py_compile scripts\build_data_index.py`
+- Focused direct `decode_buff_memorypack` scan over both `structured/StreamingAssets/Data/Json/BuffData` and `structured/Persistent/Data/Json/BuffData`.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_send_signal_validate_20260630`
