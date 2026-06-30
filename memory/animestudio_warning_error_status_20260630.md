@@ -24,6 +24,38 @@ ManagedReferencesRegistry bucket:
 
 ## Next Targets
 
-1. Promote the safe projectile `alertEffect` 24-word prefix parser while preserving the remaining 89 raw words.
-2. Add managed-reference recovery failure reasons before running another broad export, so the 1,707 no-recovery partials can be split into actionable buckets.
+1. Add managed-reference recovery failure reasons before running another broad export, so the 1,707 no-recovery partials can be split into actionable buckets.
+2. Continue projectile semantic recovery on effect-list assignment and the later 89-word `EffectActionCfg` tail.
 3. Rebuild the decoded index after instrumentation to update the global incomplete/error-marked file report.
+
+## 2026-06-30 AlertEffect Prefix Update
+
+- Implemented guarded projectile `alertEffect` prefix decoding in AnimeStudio.
+- Focused validation output: `tmp\projectile_alert_prefix_validation_after_20260630`.
+- 300/300 focused projectile `alertEffect` records decoded the 24-word post-name prefix and preserved the remaining 89 raw words.
+- The focused 300-projectile slice remains free of tracked `$unparsed`, `$heuristic`, and `decodeError` markers.
+
+## ManagedReferencesRegistry Instrumentation Plan
+
+The next best broad-data improvement is instrumentation, not another blind full export. The failed recovery branch should preserve current behavior and emit why `TryRecoverManagedReferences` returned false.
+
+Recommended failure reason buckets:
+
+- `rawDataMissing`
+- `registryStartOffsetOutOfRange`
+- `invalidRegistryVersion`
+- `invalidRegistryCount`
+- `registryCountLessThanExpectedRidCount`
+- `firstHeaderInvalid`
+- `duplicateHeaderRid`
+- `nextHeaderNotFound`
+- `remainingHeaderChainInvalid`
+- `entryDataRangeInvalid`
+- `duplicateRecoveredRid`
+- `missingExpectedRid`
+
+Implementation target:
+
+- Change `TryRecoverManagedReferences` and `TryParseManagedReferenceHeaders` to return a diagnostic object on failure while leaving success output unchanged.
+- In the partial TypeTree fallthrough, add `$animestudio.managedReferencesRegistryRecoveryAttempted = true` and `$animestudio.managedReferencesRegistryRecoveryFailure = {...}`.
+- Do not change `BuildManagedReferenceData` payload decoding in this instrumentation pass.

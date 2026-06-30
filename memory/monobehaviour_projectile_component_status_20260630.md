@@ -580,3 +580,51 @@ Current projectile status:
 
 - The focused 300-projectile slice has no tracked `$unparsed`, `$heuristic`, or `decodeError` markers and no raw/truncated Bezier midpoint statuses.
 - `ProjectileComponentData` still remains parent `$partial` because inner `EffectActionCfg`, effect-list assignment, and some non-serialized `MoveModeData` speed-info metadata remain deliberately diagnostic.
+
+## Projectile AlertEffect Prefix Recovery
+
+This pass promotes the byte-proven projectile `alertEffect` prefix while preserving the still-unproven tail of `Beyond.Gameplay.EffectActionCfg`.
+
+Root cause:
+
+- Previous projectile `alertEffect` handling decoded only `fxType` and `effectName`, then preserved all remaining words raw.
+- The 300-projectile focused slice consistently serializes a 24-word post-name prefix before the unknown `EffectActionCfg` tail.
+- This projectile variant omits metadata field `useScaleBB`, then serializes `scale`, `scaleBB`, `useLengthBB`, `lengthBB`, `releaseByAction`, `ignoreOwnerTimeScale`, `interruptTime`, `terrainPrefab`, and empty `effectPosData`.
+
+Implementation:
+
+- `ReadProjectileAlertEffectActionCfgDiagnostic` now decodes the 24-word prefix only when the post-name payload has the observed 113-word shape and the prefix leaves exactly 89 words.
+- The parser keeps `$partial` and preserves the remaining 89 words raw.
+- If a future row does not match the proven shape, it falls back to the prior raw-preserving behavior instead of force-fitting fields.
+
+Validation output:
+
+```text
+tmp\projectile_alert_prefix_validation_after_20260630
+```
+
+Validation summary:
+
+| Metric | Result |
+| --- | ---: |
+| Projectile template JSON files | 300 |
+| `ProjectileComponentData` references | 300 |
+| Decoded `ProjectileComponentData` layouts | 300 |
+| Structured tails | 300 |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+| `alertEffect` records | 300 |
+| `alertEffect` records with decoded 24-word prefix | 300 |
+| `alertEffect.remainingRawWordCount = 89` | 300 |
+| `alertEffect.effectName = ""` | 276 |
+| `alertEffect.effectName = P_skillalert_circle_01` | 13 |
+| `alertEffect.effectName = P_skillalert_circle_01_02` | 11 |
+| `BezierPoint` records still decoded | 571 |
+| Raw/truncated Bezier midpoint statuses | 0 |
+
+Current projectile status:
+
+- The focused 300-projectile slice still has no tracked `$unparsed`, `$heuristic`, or `decodeError` markers.
+- Projectile `alertEffect` now exposes the proven prefix fields and keeps only the unproven 89-word tail raw.
+- Remaining projectile semantic work is effect-list assignment and the later `EffectActionCfg` tail, not a whole-record decode failure.
