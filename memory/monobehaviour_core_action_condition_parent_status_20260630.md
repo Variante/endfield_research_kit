@@ -95,3 +95,45 @@ Next safe work is not another parent cleanup; it needs stronger byte evidence
 for either non-empty `SelectorData.postProcessorData`, non-default
 `TargetSettings` post-selector tails, `CreateBuffAction` post-context field
 boundaries, or `CheckBuffStackNumAdvanced` `BuffFindSettings` variants.
+
+## Additional Wrapper Parent Status Pass
+
+This follow-up extended the parent-status classification to four more small wrappers whose own serialized bytes are consumed, while keeping `CreateBuffAction/Data` and `CheckBuffStackNumAdvanced/Data` parent-partial with explicit reasons.
+
+Implemented in `AnimeStudio.CLI/Exporter.cs`:
+
+- Removed parent `$partial` from byte-consumed wrappers:
+  - `CheckHp/Data`
+  - `CheckTagMatch/Data`
+  - `ModifyDynamicBlackboard/Data`
+  - `StoreBuffCount/Data`
+- Added `observedPayloadStatus` to those four wrappers.
+- Kept `CreateBuffAction/Data` parent `$partial`, but added parent `observedPayloadStatus` and `partialReasons` naming unresolved `buffs`, `postContextTail`, and nested `TargetSettings` issues.
+- Kept `CheckBuffStackNumAdvanced/Data` parent `$partial`, but added parent `observedPayloadStatus` and `partialReasons` naming unresolved `BuffFindSettings`, unobserved `Environment` / `Context` variants, and nested `TargetSettings` issues.
+
+Validation output:
+
+```text
+tmp\core_wrapper_parent_reason_validation_after_20260630
+```
+
+Validation commands covered the focused `68B3` `data_chr_` rows plus the broader `FBAD` `data_chr_0028_wulfa` / `data_chr_0030_zhuangfy` advanced buff-stack rows.
+
+| Metric | Result |
+| --- | ---: |
+| JSON files parsed | 27 |
+| JSON parse errors | 0 |
+| Data-level `$unparsed` / `$heuristic` / `decodeError` flags | 0 |
+
+| Class | Count | Decoded | Parent `$partial` | `observedPayloadStatus` | Parent `partialReasons` |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `CheckHp/Data` | 2 | 2 | 0 | 2 | 0 |
+| `CheckTagMatch/Data` | 2 | 2 | 0 | 2 | 0 |
+| `ModifyDynamicBlackboard/Data` | 2 | 2 | 0 | 2 | 0 |
+| `StoreBuffCount/Data` | 1 | 1 | 0 | 1 | 0 |
+| `CreateBuffAction/Data` | 5 | 5 | 5 | 5 | 5 |
+| `CheckBuffStackNumAdvanced/Data` | 7 | 7 | 7 | 7 | 7 |
+
+Nested `TargetSettings` / `SelectorData` partial markers are still present under these wrappers; this pass only corrects parent-level classification.
+
+Current classification: all audited small condition/action wrapper parent byte streams are now either marked byte-consumed or carry explicit parent partial reasons. Remaining real work is nested `TargetSettings` / `SelectorData`, `CreateBuffAction` non-default post-context/list variants, and `CheckBuffStackNumAdvanced` `BuffFindSettings` variants.
