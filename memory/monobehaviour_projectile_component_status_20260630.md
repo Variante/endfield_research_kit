@@ -422,3 +422,45 @@ Targeted validation output: `tmp\projectile_tail_suffix_decode_after_20260630` u
 | Data-level `decodeError` records | 0 |
 
 Current classification: the parent projectile tail now has a structured view through the stable end-relative alert/sound/scalar suffix. The unresolved parent-tail work is still the variable effect-list/finish prefix and the internal/default effect-record layout.
+## AlertEffect Boundary Correction
+
+This pass supersedes the earlier `structuredRemainingTail` interpretation that split the end-relative suffix into `alertEffect`, seven sound strings, and two scalar floats.
+
+A 300-projectile raw payload audit showed that the bytes after `showAlertEffect` are better classified as one bounded `Beyond.Gameplay.EffectActionCfg` alert-effect variant that consumes through the observed tail end. The previously decoded sound/scalar fields are not byte-proven as a separate suffix in this corpus and are no longer emitted by the structured view.
+
+Evidence:
+
+- Raw payload slice count: 300 `ProjectileComponentData` payloads.
+- Alert-effect names observed:
+  - empty/default: 271 structured tails.
+  - `P_skillalert_circle_01`: 13 structured tails.
+  - `P_skillalert_circle_01_02`: 11 structured tails.
+- Suffix word counts, including `showAlertEffect`:
+  - default/empty: 116 words.
+  - `P_skillalert_circle_01`: 122 words.
+  - `P_skillalert_circle_01_02`: 123 words.
+- `alertEffect.fxType = 1` in every decoded structured tail.
+- The alert-effect parser now field-decodes only `fxType` and `effectName`, then preserves the remaining EffectActionCfg words raw.
+
+Validation output:
+
+```text
+tmp\projectile_alert_effect_validation_after_20260630
+```
+
+Validation summary:
+
+| Metric | Result |
+| --- | ---: |
+| ProjectileComponentData records | 300 |
+| Structured remaining tails | 295 |
+| Structured remaining tails decoded | 295 |
+| AlertEffect records | 295 |
+| AlertEffect records still `$partial` | 295 |
+| `alertEffect.serializedWordCount = 115` | 271 |
+| `alertEffect.serializedWordCount = 121` | 13 |
+| `alertEffect.serializedWordCount = 122` | 11 |
+| `alertEffect.remainingRawWordCount = 113` | 295 |
+| Separate decoded sound/scalar suffix fields emitted | 0 |
+
+Current classification: the projectile parent-tail end boundary is understood as `showAlertEffect` plus a bounded partial `EffectActionCfg` alert effect. The inner `EffectActionCfg` fields remain partial, and the projectile metadata sound fields are not byte-proven in this sample set.
