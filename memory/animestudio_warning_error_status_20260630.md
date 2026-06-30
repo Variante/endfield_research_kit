@@ -1604,3 +1604,59 @@ Validation:
 - Focused BuffData scan over all 2,291 files produced zero hard tail parse statuses.
 - Focused LevelScript scan produced `18` `wrapped-trigger-volume-map` rows and zero trigger-volume parser failures.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_tail_wrappers_validate_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData TimelineAction Outer Decode
+
+Decoded the outer `BuffData.timelineActions` record layout while keeping inner union action payloads marked as strict semantic warnings.
+
+What changed:
+
+- Added a fail-closed partial decoder for `BuffData.timelineActions` bodies after the existing unique tail-boundary finder identifies the body end.
+- Each outer record must parse exactly as `TimelineActionData`: member count `4`, `endFrame`, `SequenceActionData`, `startFrame`, and `ForceSyncAnimData`.
+- `SequenceActionData` must parse as member count `3`, an `actionDataCount`, opaque union action payload bytes, and two booleans.
+- `ForceSyncAnimData` must parse as member count `4`, `forceSync`, MemoryPack UTF-8 `montageName`, `playbackSpeed`, and `targetFrame`.
+- Inner `actionData` union payloads are not promoted to semantic fields yet. They are still reported with `partial-inner-actionData-union-payloads-opaque`.
+- The strict status changed from `opaque-timelineActions` to `partial-timelineActions-opaque-actionData` only when all outer records parse uniquely to the known body end.
+
+Focused BuffData validation:
+
+| Metric | Count |
+| --- | ---: |
+| `BuffData` files scanned | 2,291 |
+| Hard BuffData tail failures | 0 |
+| Actual rows with partial timeline outer decode | 79 |
+| Outer `TimelineActionData` records decoded | 338 |
+| Rows with partial inner action payload warning | 79 |
+
+Full Json strict issue validation after this recovery:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 143 |
+| `Json/BuffData` unresolved issue rows | 143 |
+| `Json/LevelScriptData` unresolved issue rows | 0 |
+
+Current strict issue field distribution:
+
+| Status | Count |
+| --- | ---: |
+| `partial-timelineActions-opaque-actionData` | 82 |
+| `partial-inner-actionData-union-payloads-opaque` | 79 |
+| `opaque-effectActions` | 47 |
+| `opaque-poiseModifier` | 9 |
+| `opaque-shieldConfigs` | 4 |
+| `opaque-igniteEventAction` | 4 |
+| `opaque-igniteEventAction-nestedBlocks` | 4 |
+
+Notes:
+
+- The `partial-timelineActions-opaque-actionData` issue count is `82` because three nested body-tail preview fields also contain the same status; the actual row count is `79`.
+- The first inner action union tags are now exposed for diagnostics, but the payloads remain opaque until the concrete union schemas are proven.
+- The parallel `effectActions` investigation found `47` rows with `134` bounded nested `EffectActionCfg` action records. Existing code already proves the member count, discriminator, marker, `P_*` effect name, fixed-body length, and terminal pad. The exact 15-field compact order is not proven, so `opaque-effectActions` remains a strict semantic warning rather than being renamed to decoded fields.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- Focused BuffData scan over all 2,291 files produced `79` partial timeline rows, `338` outer timeline records, and zero hard tail parse statuses.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_timeline_partial_validate_20260630` completed and indexed 81,735 Json files.
