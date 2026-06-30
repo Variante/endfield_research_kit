@@ -1052,6 +1052,14 @@ def _decode_trigger_volume_entry(data: bytes, offset: int) -> tuple[dict[str, An
     )
 
 
+
+TRIGGER_VOLUME_WRAPPER_PROLOGUE = bytes.fromhex(
+    "00 00 00 00 00 00 00 00 00 00 00 00 00 "
+    "ff ff ff ff ea 03 00 00 ff ff ff ff "
+    "01 00 00 00 00 00 00 00 00 00"
+)
+
+
 def _decode_trigger_volume_map(
     data: bytes,
     offset: int,
@@ -1066,6 +1074,28 @@ def _decode_trigger_volume_map(
         "status": status,
         "count": count,
     }
+    wrapper_end = offset + 4 + len(TRIGGER_VOLUME_WRAPPER_PROLOGUE)
+    if (
+        raw_count == 4
+        and wrapper_end + 4 <= len(data)
+        and data[offset + 4:wrapper_end] == TRIGGER_VOLUME_WRAPPER_PROLOGUE
+    ):
+        inner, inner_cursor = _decode_trigger_volume_map(data, wrapper_end, max_count=max_count)
+        if inner_cursor == len(data) and inner.get("status") == "present":
+            wrapped = dict(inner)
+            wrapped.update({
+                "offset": _offset_hex(offset),
+                "encoding": "wrapped-trigger-volume-map",
+                "wrapperOffset": _offset_hex(offset),
+                "wrapperBytes": 4 + len(TRIGGER_VOLUME_WRAPPER_PROLOGUE),
+                "wrapperOuterCount": raw_count,
+                "wrapperPrologueBytes": len(TRIGGER_VOLUME_WRAPPER_PROLOGUE),
+                "innerMapOffset": _offset_hex(wrapper_end),
+                "endOffset": _offset_hex(inner_cursor),
+            })
+            wrapped.setdefault("parseStatus", "decoded")
+            return _drop_empty(wrapped), inner_cursor
+
     if status != "present" or count is None or count == 0:
         out["endOffset"] = _offset_hex(cursor)
         return _drop_empty(out), cursor

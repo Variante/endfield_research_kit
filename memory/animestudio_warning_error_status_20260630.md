@@ -1544,3 +1544,63 @@ Validation:
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - Focused BuffData decode over all 2,291 rows produced `4` `opaque-igniteEventAction`, `7` `opaque-poiseModifier`, `4` `opaque-shieldConfigs`, `47` `opaque-effectActions`, and `66` `opaque-timelineActions` rows.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_small_lists_opaque_validate_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData Tail Wrappers and LevelScript Trigger Wrappers
+
+Resolved the remaining hard BuffData tail/parser stops and the two LevelScript trigger-volume count failures without suppressing strict semantic issue fields.
+
+What changed:
+
+- Added a guarded `tagsAfterTriggerExtendBuffAction` reader used only in the BuffData post-id tail parser.
+- Rejected false member-count-0 single-tag parses when the tag name is nonempty/control-byte data, then fell through to existing compact-empty parsing.
+- Added a guarded compact tag-list branch for the Zhuangfy tail variant: zero prefix byte, u32 tag count, then clean member-count-2 gameplay tags.
+- Added a nested-block `igniteEventAction` body recognizer for the four energy-shard rows where top-level `igniteEventActionCount=4` and the body contains four `03 01 00 00 00 03` opaque blocks.
+- Added a wrapped LevelScript trigger-volume map recognizer for exact outer count `4` plus a 35-byte fixed prologue, then a normal inner trigger-volume map that must decode exactly to EOF.
+- Ran a BuffData-focused IL2CPP metadata catalog for supporting runtime-name evidence: `reports/buff_runtime_metadata.md` and `reports/buff_runtime_metadata.json` were generated locally. The JSON is about 145 MB, so it is not intended for commit.
+
+Focused validation:
+
+| Metric | Count |
+| --- | ---: |
+| `BuffData` files scanned | 2,291 |
+| BuffData rows parsing through exact tail | 2,291 |
+| BuffData rows with hard `tailParseStatus` | 0 |
+| `compact-empty-payload` tag tails | 17 |
+| `member1-empty-payload` tag tails | 2 |
+| `compact-tag-list` tag tails | 1 |
+| `opaque-igniteEventAction-nestedBlocks` rows | 4 |
+| LevelScript wrapped trigger-volume maps | 18 |
+| LevelScript trigger-volume parser failures | 0 |
+
+Full Json strict issue validation after this recovery:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 143 |
+| `Json/BuffData` unresolved issue rows | 143 |
+| `Json/LevelScriptData` unresolved issue rows | 0 |
+
+Current strict issue field distribution:
+
+| Status | Count |
+| --- | ---: |
+| `opaque-timelineActions` | 82 |
+| `opaque-effectActions` | 47 |
+| `opaque-poiseModifier` | 9 |
+| `opaque-shieldConfigs` | 4 |
+| `opaque-igniteEventAction` | 4 |
+| `opaque-igniteEventAction-nestedBlocks` | 4 |
+
+Interpretation:
+
+- The remaining warnings are semantic opacity, not boundary failures. BuffData byte boundaries now return to an exact post-id tail for all rows in the current export.
+- LevelScript trigger volumes now distinguish direct maps from the wrapped trigger-volume-map encoding; the two previous `count-exceeds-remaining` rows are decoded zero-volume wrappers, and 16 sibling wrapper rows now have corrected slot ids instead of garbage direct-map interpretation.
+- `opaque-*` statuses remain strict `di` issues so the WebUI/report still marks the nested payloads as not fully understood.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py scripts\story_builder\levelscript_binary.py` succeeded.
+- Focused BuffData scan over all 2,291 files produced zero hard tail parse statuses.
+- Focused LevelScript scan produced `18` `wrapped-trigger-volume-map` rows and zero trigger-volume parser failures.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_tail_wrappers_validate_20260630` completed and indexed 81,735 Json files.

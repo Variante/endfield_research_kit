@@ -2454,6 +2454,71 @@ def read_buff_compact_empty_tag_field(
     }, end
 
 
+def buff_tag_name_has_control(value: str) -> bool:
+    return any(ord(ch) < 32 for ch in value)
+
+
+def read_buff_compact_tag_list_field(
+    data: bytes,
+    offset: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    if offset + 5 > len(data):
+        raise ValueError(f"{field_name}:truncated-compact-tag-list")
+    prefix_member_count = data[offset]
+    if prefix_member_count != 0:
+        raise ValueError(f"{field_name}:compact-list-prefix={prefix_member_count}")
+    count = struct.unpack_from("<I", data, offset + 1)[0]
+    if count <= 0 or count > 16:
+        raise ValueError(f"{field_name}:compact-list-count={count}")
+    offset += 5
+    tags: list[dict[str, Any]] = []
+    for index in range(count):
+        tag, offset = read_buff_gameplay_tag_field(data, offset, f"{field_name}[{index}]")
+        if tag.get("memberCount") != 2:
+            raise ValueError(f"{field_name}[{index}]:member-count={tag.get('memberCount')}")
+        tag_name = str(tag.get("tagName") or "")
+        if not is_clean_skill_tag_name(tag_name):
+            raise ValueError(f"{field_name}[{index}]:unclean-tag-name")
+        tags.append(tag)
+    return {
+        "memberCount": prefix_member_count,
+        "offset": format_offset(start),
+        "branch": "compact-tag-list",
+        "branchNote": "observed tagsAfterTriggerExtendBuffAction list uses a zero prefix byte followed by u32 tag count",
+        "count": count,
+        "tags": tags,
+    }, offset
+
+
+def read_buff_tags_after_trigger_field(
+    data: bytes,
+    offset: int,
+) -> tuple[dict[str, Any], int]:
+    field_name = "tagsAfterTriggerExtendBuffAction"
+    try:
+        tag, end = read_buff_gameplay_tag_field(data, offset, field_name)
+        tag_name = str(tag.get("tagName") or "")
+        if tag.get("memberCount") == 0 and tag_name:
+            raise ValueError(f"{field_name}:member0-nonempty-tag")
+        if buff_tag_name_has_control(tag_name):
+            raise ValueError(f"{field_name}:control-tag-name")
+        return tag, end
+    except (struct.error, UnicodeDecodeError, ValueError):
+        pass
+
+    try:
+        return read_buff_member1_empty_tag_field(data, offset, field_name)
+    except (struct.error, UnicodeDecodeError, ValueError):
+        pass
+
+    try:
+        return read_buff_compact_empty_tag_field(data, offset, field_name)
+    except (struct.error, UnicodeDecodeError, ValueError):
+        return read_buff_compact_tag_list_field(data, offset, field_name)
+
+
 def parse_buff_tail_after_shield_configs(
     data: bytes,
     tail_offset: int,
@@ -2478,38 +2543,24 @@ def parse_buff_tail_after_shield_configs(
             return result
 
         tag_field_offset = tail_offset
-        try:
-            tags_after_trigger, tail_offset = read_buff_gameplay_tag_field(
-                data,
-                tail_offset,
-                "tagsAfterTriggerExtendBuffAction",
+        tags_after_trigger, tail_offset = read_buff_tags_after_trigger_field(
+            data,
+            tag_field_offset,
+        )
+        if tags_after_trigger.get("branch") == "member1-empty-payload":
+            trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
+                read_buff_trigger_interval_bool_tail_exact(data, tail_offset)
             )
-        except (struct.error, UnicodeDecodeError, ValueError):
-            try:
-                tags_after_trigger, tail_offset = read_buff_member1_empty_tag_field(
-                    data,
-                    tag_field_offset,
-                    "tagsAfterTriggerExtendBuffAction",
-                )
-                trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
-                    read_buff_trigger_interval_bool_tail_exact(data, tail_offset)
-                )
-                result["status"] = "parsed-through-exact-tail"
-                result["stackingSettings"] = stacking_settings
-                result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
-                result["timelineActionsCount"] = 0
-                result["timelineActionsEncoding"] = "omitted-empty-count-after-member1-empty-tag"
-                result["triggerInterval"] = trigger_interval
-                result["useTimeDilationDt"] = use_time_dilation_dt
-                result["waitFirstTriggerInterval"] = wait_first_trigger_interval
-                result["endOffset"] = format_offset(tail_offset)
-                return result
-            except (struct.error, UnicodeDecodeError, ValueError):
-                tags_after_trigger, tail_offset = read_buff_compact_empty_tag_field(
-                    data,
-                    tag_field_offset,
-                    "tagsAfterTriggerExtendBuffAction",
-                )
+            result["status"] = "parsed-through-exact-tail"
+            result["stackingSettings"] = stacking_settings
+            result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
+            result["timelineActionsCount"] = 0
+            result["timelineActionsEncoding"] = "omitted-empty-count-after-member1-empty-tag"
+            result["triggerInterval"] = trigger_interval
+            result["useTimeDilationDt"] = use_time_dilation_dt
+            result["waitFirstTriggerInterval"] = wait_first_trigger_interval
+            result["endOffset"] = format_offset(tail_offset)
+            return result
 
         timeline_count_offset = tail_offset
         timeline_action_count, tail_offset = read_buff_u32_field(
@@ -2778,6 +2829,74 @@ def read_buff_post_ignite_suffix(
     return read_buff_shield_configs_and_tail(data, offset, result)
 
 
+BUFF_IGNITE_NESTED_BLOCK_START = b"\x03\x01\x00\x00\x00\x03"
+BUFF_IGNITE_NESTED_BLOCK_LONG_HEADER = b"\x03\x01\x00\x00\x00\x03\x02\x00\x00\x00\xfa\x44\x01\x08"
+BUFF_IGNITE_NESTED_BLOCK_SHORT_HEADER = b"\x03\x01\x00\x00\x00\x03\x01\x00\x00\x00\x82\x11\x01"
+BUFF_IGNITE_NESTED_BLOCK_TAIL_PREFIX = b"\x04\x00\x00\x00\x00\x00\x00"
+
+
+def validate_buff_ignite_nested_blocks(
+    data: bytes,
+    offset: int,
+    body_end: int,
+    ignite_count: int,
+) -> dict[str, Any]:
+    if ignite_count != 4:
+        raise ValueError(f"igniteEventActionNestedBlocks:unsupported-count={ignite_count}")
+    if body_end <= offset or body_end > len(data):
+        raise ValueError("igniteEventActionNestedBlocks:invalid-body-end")
+    if data[offset:offset + len(BUFF_IGNITE_NESTED_BLOCK_START)] != BUFF_IGNITE_NESTED_BLOCK_START:
+        raise ValueError("igniteEventActionNestedBlocks:missing-initial-block")
+
+    starts: list[int] = []
+    probe = offset
+    while probe < body_end:
+        found = data.find(BUFF_IGNITE_NESTED_BLOCK_START, probe, body_end)
+        if found < 0:
+            break
+        starts.append(found)
+        probe = found + 1
+    if len(starts) != ignite_count or starts[0] != offset:
+        raise ValueError(f"igniteEventActionNestedBlocks:block-start-count={len(starts)}")
+
+    tail_codes: list[int] = []
+    block_summaries: list[dict[str, Any]] = []
+    for index, start in enumerate(starts):
+        block_end = starts[index + 1] if index + 1 < len(starts) else body_end
+        if index < 3:
+            expected_header = BUFF_IGNITE_NESTED_BLOCK_LONG_HEADER
+            header_kind = "energy-shard-long"
+        else:
+            expected_header = BUFF_IGNITE_NESTED_BLOCK_SHORT_HEADER
+            header_kind = "energy-shard-short"
+        if data[start:start + len(expected_header)] != expected_header:
+            raise ValueError(f"igniteEventActionNestedBlocks[{index}]:header-mismatch")
+        if block_end - start < 11:
+            raise ValueError(f"igniteEventActionNestedBlocks[{index}]:truncated-tail")
+        tail = data[block_end - 11:block_end]
+        if tail[:7] != BUFF_IGNITE_NESTED_BLOCK_TAIL_PREFIX or tail[8:] != b"\x00\x00\x00":
+            raise ValueError(f"igniteEventActionNestedBlocks[{index}]:tail-mismatch")
+        tail_code = tail[7]
+        tail_codes.append(tail_code)
+        block_summaries.append({
+            "index": index,
+            "offset": format_offset(start),
+            "bytes": block_end - start,
+            "header": header_kind,
+            "tailCode": tail_code,
+        })
+    if set(tail_codes) != {2, 3, 4, 5}:
+        raise ValueError(f"igniteEventActionNestedBlocks:tail-codes={tail_codes}")
+
+    return {
+        "igniteEventActionBodyStatus": "opaque-igniteEventAction-nestedBlocks",
+        "igniteEventActionBodyEncoding": "energy-shard-nested-blocks",
+        "igniteEventActionNestedBlockCount": len(starts),
+        "igniteEventActionNestedBlockTailCodes": tail_codes,
+        "igniteEventActionNestedBlocks": block_summaries,
+    }
+
+
 def find_buff_ignite_event_action_body_end(
     data: bytes,
     offset: int,
@@ -2789,10 +2908,8 @@ def find_buff_ignite_event_action_body_end(
         raw = data[offset] if offset < len(data) else None
         raise ValueError(f"igniteEventActionBody:unsupported-prefix={raw}")
     body_count = read_u32_at(data, offset + 1)
-    if body_count != ignite_count:
-        raise ValueError(f"igniteEventActionBody:body-count={body_count}")
 
-    candidates: list[tuple[int, dict[str, Any]]] = []
+    candidates: list[tuple[int, dict[str, Any], dict[str, Any]]] = []
     scan_end = min(len(data), offset + BUFF_OPAQUE_IGNITE_EVENT_ACTION_BODY_MAX_BYTES)
     for candidate_end in range(offset + 5, scan_end):
         if candidate_end + 4 >= len(data):
@@ -2810,14 +2927,26 @@ def find_buff_ignite_event_action_body_end(
         except (struct.error, UnicodeDecodeError, ValueError):
             continue
         if buff_post_id_result_is_exact_tail(parsed):
-            candidates.append((candidate_end, parsed))
+            if body_count == ignite_count:
+                body_details: dict[str, Any] = {}
+            else:
+                body_details = validate_buff_ignite_nested_blocks(
+                    data,
+                    offset,
+                    candidate_end,
+                    ignite_count,
+                )
+                body_details["igniteEventActionBodyLocalCount"] = body_count
+            candidates.append((candidate_end, parsed, body_details))
             if len(candidates) > 1:
                 break
     if len(candidates) != 1:
+        if body_count != ignite_count:
+            raise ValueError(f"igniteEventActionBody:body-count={body_count}; tail-anchor-candidates={len(candidates)}")
         raise ValueError(f"igniteEventActionBody:tail-anchor-candidates={len(candidates)}")
 
-    body_end, parsed = candidates[0]
-    return {
+    body_end, parsed, body_details = candidates[0]
+    result = {
         "igniteEventActionBodyShape": "opaque IgniteEventAction list; boundary selected by unique downstream bool/maxTrigger/poise/tail parse",
         "igniteEventActionBodyTailPreview": {
             key: parsed.get(key)
@@ -2831,7 +2960,9 @@ def find_buff_ignite_event_action_body_end(
             )
             if parsed.get(key) not in (None, "")
         },
-    }, body_end
+    }
+    result.update(body_details)
+    return result, body_end
 
 
 def read_buff_stacking_settings_compact_id_branch(
@@ -9923,6 +10054,7 @@ DECODER_ISSUE_STATUS_VALUES = {
     "count-exceeds-remaining",
     "opaque-effectactions",
     "opaque-igniteeventaction",
+    "opaque-igniteeventaction-nestedblocks",
     "opaque-poisemodifier",
     "opaque-shieldconfigs",
     "opaque-timelineactions",
