@@ -3630,3 +3630,58 @@ Remaining raw `$unparsed` refs in the same validation slice after this pass:
 | `Beyond.Gameplay.Core.AbilitySystemData` | 2 |
 
 Current classification: the Advanced buff-stack payload bytes are now fully preserved and structurally inspectable, but the class is not considered semantically decoded yet. The new evidence strongly suggests a `BuffFindSettings` shape of `checkType + buff-id list + GameplayTagQuery`, followed by `buffStackNumType`, `compareType`, BlackboardDouble `value`, and `limitSkillCastId`, but the parent remains `$unparsed` until broader samples prove every `BuffFindSettings.CheckType` variant and the generic/list contract.
+
+## 2026-06-30 Fortieth Fresh StreamingAssets Advanced Buff-Stack Partial Decode Validation
+
+Follow-up after the diagnostic-only Advanced buff-stack batch. The current AnimeStudio exporter now has a guarded `TryDecodeCoreActionConditionManagedReferenceData` branch for `Beyond.Gameplay.Core.CheckBuffStackNumAdvanced/Data`, so this pass validated that branch against the same focused character slice instead of adding new parser code.
+
+Evidence used:
+
+- The prior diagnostic trace byte-proved all 7 observed Advanced payloads with lengths 200, 240, and 252 bytes.
+- Local IL2CPP metadata names the direct field order as `checkTarget`, `buffSettings`, `buffStackNumType`, `compareType`, `value`, and `limitSkillCastId`.
+- Guide-focused parallel subagents found no current guide `$unparsed` target in `tmp\current_cli_probe_topfamilies_20260630\guide`; guide is verification-only for now, so the unresolved non-guide Advanced buff-stack class stayed the active target.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 errors and the same 14 existing warnings from AnimeStudio projects.
+
+Targeted validation output: `tmp\advanced_buff_decode_after_20260630_try2` from the three current installed-game VFS chunks:
+
+```text
+D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\68B3B9B8EB82E88FBFE6A313E6B18FB6.chk
+D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\71FC2E71A9F249B382BF8DAED3BCEE65.chk
+D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets\VFS\7064D8E2\FBAD673F662CF3EACDDB14A65999F7EF.chk
+```
+
+The old `71FC2E714440BA2EC25896BA8E09F866.chk` and `FBAD673F42623B59F1A82C68E760FB0B.chk` paths were stale for the current install; the current files were located by prefix before rerunning those two chunks.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 30 |
+| JSON parse failures | 0 |
+| Decoded `CheckBuffStackNumAdvanced/Data` data records | 7 |
+| Advanced records marked `$partial` | 7 |
+| Advanced records still `$unparsed` | 0 |
+| Advanced records marked `$heuristic` | 0 |
+| Advanced records with `decodeError` | 0 |
+| Overall `$unparsed` records in this validation slice | 0 |
+
+Observed Advanced decoded variants:
+
+| Shape | Count | Observed data |
+| --- | ---: | --- |
+| `checkType = Id`, one buff id, empty tag query | 2 | `buff_chr_0023_antal_tageffect`, `compareType = GE`, value `1.0`, `limitSkillCastId = false` |
+| `checkType = Id`, two buff ids, empty tag query | 2 | `buff_chr_0028_wulfa_combo_usetimer`, `buff_chr_0028_wulfa_combo_cannottrigger`, `compareType = LT`, value `1.0`, `limitSkillCastId = false` |
+| `checkType = Tag`, no buff ids, two tags | 1 | `Skill/Character/Common/NoGuard`, `Skill/Character/Common/SpellInflict`, `compareType = Equals`, value `0.0`, `limitSkillCastId = false` |
+| `checkType = Tag`, one buff id, one tag | 2 | `buff_chr_0030_zhuangfy_have_sword`, `Skill/Character/Common/SpellInflict/PulseInflict`, `compareType = GE`, value `1.0`, `limitSkillCastId = false` |
+
+Residual diagnostics:
+
+- The validation slice still has object-level `managedReferencesRegistryRecovery` heuristic/decode-error notes on 28 character files. These are recovery diagnostics from the original TypeTree registry reader losing sync before the managed-reference recovery pass, not failed Advanced payload decodes.
+- `AbilitySystemData`, `SkillDataBundle`, `TargetSettings`, and `SelectorData` remain `$partial` where expected because selector suffix/post-processor semantics are still not fully named.
+
+Current classification: `CheckBuffStackNumAdvanced/Data` is no longer a raw `$unparsed` managed-reference payload in the focused validation slice. It is now byte-consumed and exported as a decoded `$partial` record with named direct fields. It is still not fully semantic because embedded `TargetSettings` and `BuffFindSettings` keep partial notes until unobserved selector/post-processor and `Environment`/`Context` `BuffFindSettings.CheckType` variants are proven.
