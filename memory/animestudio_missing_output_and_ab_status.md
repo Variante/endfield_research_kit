@@ -3746,3 +3746,44 @@ Representative generated metadata after the change:
 ```
 
 Current classification: these focused character registry diagnostics are not evidence of missing VFS bytes, encryption, or an unresolved managed-reference registry format. They are evidence that the serialized TypeTree path cannot decode arbitrary managed-reference payload schemas directly, after which AnimeStudio's recovery pass locates the registry and decodes payloads with local per-class parsers. Remaining work is semantic payload recovery, especially `AbilitySystemData`, `SkillDataBundle`, `TargetSettings`, `SelectorData`, and unobserved selector/post-processor variants.
+
+## 2026-06-30 Forty-Second Fresh StreamingAssets Selector Validator Count Naming Batch
+
+Follow-up after the managed-reference registry status clarification. Work focused on one small `SelectorData` semantic improvement recommended by a parallel TargetSettings/SelectorData subagent: the field previously emitted as `selectorCountOrFlag` is byte-proven as the `validatorData` list/count control in current samples.
+
+Evidence used:
+
+- Installed `global-metadata.dat` confirms `Beyond.Gameplay.Core.Selector+SelectorData` has fields `finderData`, `validatorData`, and `postProcessorData`.
+- The broader current focused output has 70 `SelectorData` blocks: 68 have count `0`, and 2 have count `1` followed by a linked `Selector/MainCharacterValidator/Data` RID.
+- The two non-null validator cases are both `CheckTargetsEqual/Data.secondTargetSettings` in `data_chr_0004_pelica` and `data_chr_0017_yvonne`.
+- Current bytes do not prove `postProcessorData` ownership because all observed late RID candidates are null, so this batch intentionally does not promote or rename the late RID slots.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Renamed the emitted `SelectorData` field from `selectorCountOrFlag` to `validatorDataCount`.
+- Renamed the internal local variable to match.
+- Updated the guard error from `unsupported selector count/flag` to `unsupported validatorData count`.
+- Kept `SelectorData` marked `$partial`; no post-processor or post-selector tail promotion was made.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 errors and the same 14 existing warnings from AnimeStudio projects.
+
+Targeted validation output: `tmp\selector_validator_count_after_20260630\68B3` using the 68B3 focused character chunk, which includes both observed `validatorDataCount` variants.
+
+| Metric | Result |
+| --- | ---: |
+| `SelectorData` blocks in validation slice | 54 |
+| `validatorDataCount = 0` | 52 |
+| `validatorDataCount = 1` | 2 |
+| Blocks with `validatorDataRid` | 2 |
+| Stale `selectorCountOrFlag` keys | 0 |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+
+Current classification: the selector validator count is now named according to installed metadata and observed byte behavior. `SelectorData` remains partial because `postProcessorData` and the post-selector `TargetSettings` tail still need non-null/non-trivial samples before further semantic promotion.
