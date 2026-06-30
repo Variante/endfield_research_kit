@@ -549,3 +549,58 @@ Remaining current focused gaps in `Persistent/data_eny` after this pass:
 - `AbilitySystemForEnemyPartData`: 11 refs still decoded+partial because the front prolog/`partAttributes` boundary is not fully decoded yet.
 - `AbilitySystemData`: 3 refs still decoded+partial (`data_eny_0077_agshield`, `data_eny_0090_wgabyss`, `data_eny_0092_slbomb`).
 - No refs in this focused bucket remain unparsed/heuristic.
+
+## 2026-06-30 AbilitySystemData Mode Clip Mapping Recovery
+
+Continued the same `Persistent/data_eny` focused bucket after the `data_eny_0080_reaper` recovery.
+
+Focused validation baseline:
+
+```text
+tmp\data_eny_probe_after_reaper_extrashapes_20260630\current_persistent_3267
+```
+
+Post-patch validation:
+
+```text
+tmp\data_eny_probe_after_agshield_modeclip_20260630\current_persistent_3267
+```
+
+Root cause:
+
+- `data_eny_0077_agshield` and `data_eny_0090_wgabyss` were not encrypted; both had real `modeConfig.modes` tail variants.
+- `modeConfig.modes.overrideClipMapping` was treated as empty-only. In these rows it is a non-empty `SerializeFieldDictionary<int, string>` that maps a state-clip hash to `Skill01Loop`.
+- Because the clip mapping was not consumed, `Skill01Loop` looked like a false next section/mode boundary. That left `agshield` at the start of `SkillDataBundle` and made `wgabyss` later parse `Settlement` bytes as a bool.
+- In the same override-state-clip variant, an empty `cmdMapping` serializes as two count words (`0, 0`) rather than the older four-word empty header used by already-decoded modes.
+
+Implementation:
+
+- Replaced the empty-only override-clip reader with a bounded `SerializeFieldDictionary<int, string>` parser.
+- Kept the legacy four-word `cmdMapping` path for existing modes, but added a scoped two-count empty dictionary path when the mode uses override-state-clip data.
+
+Focused validation summary:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Files re-exported | 78 | 78 |
+| Managed refs decoded | 1,574 | 1,576 |
+| Managed refs decoded+partial | 14 | 12 |
+| `AbilitySystemData` decoded refs | 75 | 77 |
+| `AbilitySystemData` decoded+partial refs | 3 | 1 |
+
+Notable records:
+
+- `data_eny_0077_agshield` now fully consumes `AbilitySystemData`, including `SkillDataBundle`, `uiData`, and later ability sections.
+- `data_eny_0090_wgabyss` now fully consumes `AbilitySystemData`; the previous diagnostic `invalid bool32 1953785171 in modeConfig.modes.isStrafing` was a false boundary caused by not decoding `overrideClipMapping`.
+- Per-reference status diff showed only these two `AbilitySystemData` refs changed from `$decoded+$partial` to `$decoded`.
+
+Build and validation:
+
+- `scripts\animestudio\rebuild.bat -Target CLI -NoRestore` succeeded with 14 pre-existing warnings and 0 errors.
+- The focused 78-name AnimeStudio export succeeded with return code 0.
+
+Remaining current focused gaps in `Persistent/data_eny` after this pass:
+
+- `AbilitySystemForEnemyPartData`: 11 refs still decoded+partial because the front prolog/`partAttributes` boundary is not fully decoded yet.
+- `AbilitySystemData`: 1 ref still decoded+partial (`data_eny_0092_slbomb`).
+- No refs in this focused bucket remain unparsed/heuristic.
