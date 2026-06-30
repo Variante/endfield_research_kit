@@ -754,6 +754,18 @@ def levelscript_action_map_membership(
     return action_map, memberships
 
 
+def _read_vector2(data: bytes, offset: int) -> tuple[dict[str, float] | None, int | None]:
+    if offset < 0 or offset + 8 > len(data):
+        return None, None
+    return (
+        {
+            "x": _round_float(_f32(data, offset)),
+            "y": _round_float(_f32(data, offset + 4)),
+        },
+        offset + 8,
+    )
+
+
 def _read_vector3(data: bytes, offset: int) -> tuple[dict[str, float] | None, int | None]:
     if offset < 0 or offset + 12 > len(data):
         return None, None
@@ -846,6 +858,41 @@ def _decode_levelscript_shape_list(
     return _drop_empty(out), cursor
 
 
+def _decode_vector2_list(
+    data: bytes,
+    offset: int,
+    *,
+    max_count: int = 128,
+) -> tuple[dict[str, Any], int | None]:
+    raw_count = _u32(data, offset)
+    status, count = _list_status(raw_count)
+    cursor = offset + 4
+    out: dict[str, Any] = {
+        "offset": _offset_hex(offset),
+        "status": status,
+        "count": count,
+    }
+    if status != "present" or count is None or count == 0:
+        out["endOffset"] = _offset_hex(cursor)
+        return _drop_empty(out), cursor
+    if count > max_count:
+        out["parseStatus"] = "count-too-large"
+        return _drop_empty(out), None
+
+    points: list[dict[str, float]] = []
+    for _ in range(count):
+        point, cursor = _read_vector2(data, cursor)
+        if point is None or cursor is None:
+            out["parseStatus"] = "truncated"
+            out["points"] = points
+            return _drop_empty(out), None
+        points.append(point)
+    out["parseStatus"] = "decoded"
+    out["points"] = points
+    out["endOffset"] = _offset_hex(cursor)
+    return _drop_empty(out), cursor
+
+
 def _decode_vector3_list(
     data: bytes,
     offset: int,
@@ -887,7 +934,7 @@ def _decode_trigger_volume_shape(data: bytes, offset: int) -> tuple[dict[str, An
         return None, None
     member_count = data[offset]
     cursor = offset + 1
-    poly_line_points, cursor = _decode_vector3_list(data, cursor)
+    poly_line_points, cursor = _decode_vector2_list(data, cursor)
     if cursor is None:
         return None, None
     position, cursor = _read_vector3(data, cursor)
@@ -1024,6 +1071,14 @@ def _decode_trigger_volume_map(
         return _drop_empty(out), cursor
     if count > max_count:
         out["parseStatus"] = "count-too-large"
+        return _drop_empty(out), None
+    min_entry_bytes = 25
+    minimum_bytes_required = count * min_entry_bytes
+    remaining_bytes = max(0, len(data) - cursor)
+    if minimum_bytes_required > remaining_bytes:
+        out["parseStatus"] = "count-exceeds-remaining"
+        out["remainingBytes"] = remaining_bytes
+        out["minimumBytesRequired"] = minimum_bytes_required
         return _drop_empty(out), None
 
     volumes: list[dict[str, Any]] = []

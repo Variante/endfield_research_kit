@@ -988,3 +988,69 @@ Validation:
 
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_status_fields_validate2_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData Anchors And LevelScript Trigger Volumes
+
+Reduced the current structured Json issue bucket without suppressing unresolved parser gaps.
+
+BuffData root cause and fix:
+
+- `BuffData` previously rejected every row with more than one exact id-string marker as `ambiguous-id-marker`.
+- A focused probe showed many of those extra markers are embedded buff references, while exactly one candidate anchor reaches the existing exact-tail parser.
+- `decode_buff_post_id_prefix` now probes every exact id marker and selects an anchor only when exactly one candidate parses through exact EOF. Rejected candidates remain recorded in `anchorSelection.candidateSummaries`.
+
+BuffData focused validation:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| `BuffData` files scanned | 2,291 | 2,291 |
+| Parsed through exact tail | 1,884 | 1,966 |
+| Ambiguous id-marker rows | 98 | 16 |
+| Structurally selected ambiguous anchors | 0 | 82 |
+| Tail parse-error rows | 296 | 296 |
+| Direct post-id parse-error rows | 3 | 3 |
+
+LevelScriptData root cause and fix:
+
+- 12 of the 14 trigger-volume `truncated` rows were not file truncation. `LevelScriptTriggerVolumeShapeData.polyLinePoints` is encoded as 8-byte Vector2 points, while the parser was consuming 12-byte Vector3 points.
+- `levelscript_binary.py` now decodes trigger-volume `polyLinePoints` as Vector2 lists.
+- The two remaining `indie_hdg009` rows have an impossible top-level trigger-volume map candidate: count `4`, but only `39` bytes remain where at least `100` bytes would be needed for four minimal entries. These now report `count-exceeds-remaining` and stay visible in strict issue counts.
+
+LevelScriptData focused validation:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Trigger-volume rows decoded | 1,894 | 1,906 |
+| Trigger-volume `truncated` rows | 14 | 0 |
+| Trigger-volume `count-exceeds-remaining` rows | 0 | 2 |
+
+Full Json strict issue validation after both fixes:
+
+| Metric | Before structured audit | After |
+| --- | ---: | ---: |
+| Json files indexed | 81,735 | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 411 | 317 |
+| `Json/BuffData` unresolved issue rows | 397 | 315 |
+| `Json/LevelScriptData` unresolved issue rows | 14 | 2 |
+| `Json/SkillData` unresolved issue rows | 0 | 0 |
+
+Current strict unresolved status distribution:
+
+| Status | Count |
+| --- | ---: |
+| `parse-error` | 299 |
+| `ambiguous-id-marker` | 16 |
+| `count-exceeds-remaining` | 2 |
+
+Remaining parser targets:
+
+- `BuffData` non-empty tail bodies: `stackingKey`, `stackEffects`, `timelineActions`, and non-empty `igniteEventAction` are real serialized payloads, not encryption.
+- `BuffData` 16 repeated-id rows still lack a unique exact-tail candidate.
+- `LevelScriptData` two `indie_hdg009` rows likely need tail-candidate scoring or a better top-level anchor; the raw selected trigger-volume offset is count-impossible.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py scripts\story_builder\levelscript_binary.py` succeeded.
+- Focused `BuffData` raw-byte sweep produced `1,966` exact-tail rows, `82` selected repeated-id anchors, `16` ambiguous rows, `296` tail parse errors, and `3` direct parse errors.
+- Focused `LevelScriptData` sweep produced `1,906` decoded trigger-volume maps and `2` `count-exceeds-remaining` rows.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_levelscript_validate_20260630` completed and indexed 81,735 Json files.
