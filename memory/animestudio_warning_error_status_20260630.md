@@ -1206,3 +1206,65 @@ Validation:
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - Focused BuffData decode over all 2,291 rows produced `1,981` exact-tail rows, `188` `unparsed-timelineActions`, `82` `unparsed-stackEffects`, and `11` generic parse errors.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_omitted_timeline_validate_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData Apparent Timeline Count Recovery
+
+Recovered the largest `timelineActions` false-positive bucket. These rows do not contain a serialized `timelineActions` list count at all; the parser was reading the start of `triggerInterval` as a nonzero count.
+
+Evidence:
+
+- The timelineActions subagent swept all 188 rows that previously reported `unparsed-timelineActions`.
+- 139 rows validate as implicit-empty `timelineActions`: the bytes at the supposed count offset start a complete `triggerInterval`, `useTimeDilationDt`, `waitFirstTriggerInterval`, EOF tail.
+- The common apparent count is `3`, produced by the `triggerInterval` member-count byte sequence `03 00 00 00`.
+- The remaining 49 rows are true nonzero timeline action bodies: 45 start with a `0x04` envelope and 4 start with a compact `0x03` sequence-action body. Those stay visible as opaque `unparsed-timelineActions` until we add a bounded body skipper.
+
+Parser behavior added:
+
+- After reading an apparent nonzero `timelineActionsCount`, the parser now retries the final scalar tail from the count offset.
+- It only accepts the alternate path when the scalar tail reaches exact EOF.
+- Accepted rows keep `timelineActionsCount=0` and record `timelineActionsEncoding=omitted-empty-count` plus `timelineActionsApparentCount` for auditability.
+
+Focused BuffData validation after this recovery:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| `BuffData` files scanned | 2,291 | 2,291 |
+| Parsed through exact tail | 1,981 | 2,125 |
+| Explicit `unparsed-timelineActions` rows | 188 | 49 |
+| Generic BuffData tail `parse-error` rows | 11 | 11 |
+| Ambiguous id-marker rows | 16 | 11 |
+| `timelineActionsEncoding=omitted-empty-count` rows | 14 | 158 |
+| Rows with `timelineActionsApparentCount=3` | 0 | 144 |
+
+Full Json strict issue validation after this recovery:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 168 |
+| `Json/BuffData` unresolved issue rows | 166 |
+| `Json/LevelScriptData` unresolved issue rows | 2 |
+
+Current strict unresolved status distribution:
+
+| Status | Count |
+| --- | ---: |
+| `unparsed-stackEffects` | 82 |
+| `unparsed-timelineActions` | 49 |
+| `ambiguous-id-marker` | 11 |
+| `parse-error` | 11 |
+| `unparsed-poiseModifier` | 6 |
+| `unparsed-shieldConfigs` | 4 |
+| `unparsed-igniteEventAction` | 3 |
+| `count-exceeds-remaining` | 2 |
+
+Remaining parser targets:
+
+- Add a guarded opaque skipper for the 49 true nonzero `timelineActions` bodies. The subagent evidence says all 49 can reach the scalar EOF tail with bounded scanning and two body patterns.
+- Add a guarded opaque skipper for `stackEffects`. The stackEffects subagent found all 82 can be skipped structurally; 67 then become exact-tail rows and 15 land on true timelineActions bodies.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- Focused BuffData decode over all 2,291 rows produced `2,125` exact-tail rows, `49` `unparsed-timelineActions`, `82` `unparsed-stackEffects`, and `11` generic parse errors.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_apparent_timeline_validate_20260630` completed and indexed 81,735 Json files.

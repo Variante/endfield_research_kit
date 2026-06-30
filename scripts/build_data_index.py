@@ -2532,13 +2532,29 @@ def decode_buff_post_id_prefix_at(
                         result["endOffset"] = format_offset(tail_offset)
                         return result
                     if timeline_action_count:
-                        result["status"] = "parsed-through-timelineActionsCount"
+                        try:
+                            trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
+                                read_buff_trigger_interval_bool_tail_exact(data, timeline_count_offset)
+                            )
+                        except (struct.error, UnicodeDecodeError, ValueError):
+                            result["status"] = "parsed-through-timelineActionsCount"
+                            result["stackingSettings"] = stacking_settings
+                            result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
+                            result["timelineActionsCount"] = timeline_action_count
+                            result["tailParseStatus"] = "unparsed-timelineActions"
+                            result["tailParseOffset"] = format_offset(tail_offset)
+                            result["tailParseError"] = f"timelineActionsCount={timeline_action_count}"
+                            result["endOffset"] = format_offset(tail_offset)
+                            return result
+                        result["status"] = "parsed-through-exact-tail"
                         result["stackingSettings"] = stacking_settings
                         result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
-                        result["timelineActionsCount"] = timeline_action_count
-                        result["tailParseStatus"] = "unparsed-timelineActions"
-                        result["tailParseOffset"] = format_offset(tail_offset)
-                        result["tailParseError"] = f"timelineActionsCount={timeline_action_count}"
+                        result["timelineActionsCount"] = 0
+                        result["timelineActionsEncoding"] = "omitted-empty-count"
+                        result["timelineActionsApparentCount"] = timeline_action_count
+                        result["triggerInterval"] = trigger_interval
+                        result["useTimeDilationDt"] = use_time_dilation_dt
+                        result["waitFirstTriggerInterval"] = wait_first_trigger_interval
                         result["endOffset"] = format_offset(tail_offset)
                         return result
                     trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
