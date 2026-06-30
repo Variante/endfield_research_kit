@@ -2423,6 +2423,417 @@ def skip_buff_stack_effects_effect_actions_body(
     }, offset
 
 
+
+BUFF_OPAQUE_IGNITE_EVENT_ACTION_BODY_MAX_BYTES = 64 * 1024
+BUFF_OPAQUE_POISE_MODIFIER_BODY_MAX_BYTES = 16 * 1024
+BUFF_OPAQUE_SHIELD_CONFIGS_BODY_MAX_BYTES = 16 * 1024
+
+
+def buff_post_id_result_is_exact_tail(result: dict[str, Any]) -> bool:
+    return result.get("status") == "parsed-through-exact-tail" and not result.get("tailParseStatus")
+
+
+def read_buff_compact_empty_tag_field(
+    data: bytes,
+    offset: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    end = offset + 5
+    if end > len(data):
+        raise ValueError(f"{field_name}:truncated-compact-empty-payload")
+    if data[offset:end] != b"\x00\x00\x00\x00\x00":
+        raw = data[offset] if offset < len(data) else None
+        raise ValueError(f"{field_name}:not-compact-empty-member-count={raw}")
+    return {
+        "memberCount": 0,
+        "offset": format_offset(offset),
+        "branch": "compact-empty-payload",
+        "branchNote": "observed empty tag payload uses five zero bytes before timelineActionsCount",
+        "tagId": 0,
+        "tagName": "",
+    }, end
+
+
+def parse_buff_tail_after_shield_configs(
+    data: bytes,
+    tail_offset: int,
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    try:
+        stacking_settings, tail_offset = read_buff_stacking_settings_compact_id_branch(
+            data,
+            tail_offset,
+        )
+        if (
+            stacking_settings.get("stackEffectsCount")
+            and stacking_settings.get("stackEffectsBodyStatus")
+            not in {"skipped-zero-action-items", "opaque-effectActions"}
+        ):
+            result["status"] = "parsed-through-stackingSettings"
+            result["stackingSettings"] = stacking_settings
+            result["tailParseStatus"] = "unparsed-stackEffects"
+            result["tailParseOffset"] = format_offset(tail_offset)
+            result["tailParseError"] = f"stackEffectsCount={stacking_settings.get('stackEffectsCount')}"
+            result["endOffset"] = format_offset(tail_offset)
+            return result
+
+        tag_field_offset = tail_offset
+        try:
+            tags_after_trigger, tail_offset = read_buff_gameplay_tag_field(
+                data,
+                tail_offset,
+                "tagsAfterTriggerExtendBuffAction",
+            )
+        except (struct.error, UnicodeDecodeError, ValueError):
+            try:
+                tags_after_trigger, tail_offset = read_buff_member1_empty_tag_field(
+                    data,
+                    tag_field_offset,
+                    "tagsAfterTriggerExtendBuffAction",
+                )
+                trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
+                    read_buff_trigger_interval_bool_tail_exact(data, tail_offset)
+                )
+                result["status"] = "parsed-through-exact-tail"
+                result["stackingSettings"] = stacking_settings
+                result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
+                result["timelineActionsCount"] = 0
+                result["timelineActionsEncoding"] = "omitted-empty-count-after-member1-empty-tag"
+                result["triggerInterval"] = trigger_interval
+                result["useTimeDilationDt"] = use_time_dilation_dt
+                result["waitFirstTriggerInterval"] = wait_first_trigger_interval
+                result["endOffset"] = format_offset(tail_offset)
+                return result
+            except (struct.error, UnicodeDecodeError, ValueError):
+                tags_after_trigger, tail_offset = read_buff_compact_empty_tag_field(
+                    data,
+                    tag_field_offset,
+                    "tagsAfterTriggerExtendBuffAction",
+                )
+
+        timeline_count_offset = tail_offset
+        timeline_action_count, tail_offset = read_buff_u32_field(
+            data,
+            tail_offset,
+            "timelineActionsCount",
+        )
+        if timeline_action_count > 256:
+            try:
+                trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
+                    read_buff_trigger_interval_bool_tail_exact(data, timeline_count_offset)
+                )
+            except (struct.error, UnicodeDecodeError, ValueError):
+                raise ValueError(f"timelineActionsCount:large-count={timeline_action_count}")
+            result["status"] = "parsed-through-exact-tail"
+            result["stackingSettings"] = stacking_settings
+            result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
+            result["timelineActionsCount"] = 0
+            result["timelineActionsEncoding"] = "omitted-empty-count"
+            result["triggerInterval"] = trigger_interval
+            result["useTimeDilationDt"] = use_time_dilation_dt
+            result["waitFirstTriggerInterval"] = wait_first_trigger_interval
+            result["endOffset"] = format_offset(tail_offset)
+            return result
+        if timeline_action_count:
+            try:
+                trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
+                    read_buff_trigger_interval_bool_tail_exact(data, timeline_count_offset)
+                )
+            except (struct.error, UnicodeDecodeError, ValueError):
+                try:
+                    timeline_body_end, timeline_body_pattern = find_buff_timeline_actions_body_end(
+                        data,
+                        tail_offset,
+                        timeline_action_count,
+                    )
+                    trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
+                        read_buff_trigger_interval_bool_tail_exact(data, timeline_body_end)
+                    )
+                except (struct.error, UnicodeDecodeError, ValueError):
+                    result["status"] = "parsed-through-timelineActionsCount"
+                    result["stackingSettings"] = stacking_settings
+                    result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
+                    result["timelineActionsCount"] = timeline_action_count
+                    result["tailParseStatus"] = "unparsed-timelineActions"
+                    result["tailParseOffset"] = format_offset(tail_offset)
+                    result["tailParseError"] = f"timelineActionsCount={timeline_action_count}"
+                    result["endOffset"] = format_offset(tail_offset)
+                    return result
+                result["status"] = "parsed-through-exact-tail"
+                result["stackingSettings"] = stacking_settings
+                result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
+                result["timelineActionsCount"] = timeline_action_count
+                result["timelineActionsBodyStatus"] = "opaque-timelineActions"
+                result["timelineActionsBodyOffset"] = format_offset(timeline_count_offset + 4)
+                result["timelineActionsBodyBytes"] = timeline_body_end - (timeline_count_offset + 4)
+                result["timelineActionsBodyPattern"] = f"0x{timeline_body_pattern:02x}"
+                result["triggerInterval"] = trigger_interval
+                result["useTimeDilationDt"] = use_time_dilation_dt
+                result["waitFirstTriggerInterval"] = wait_first_trigger_interval
+                result["endOffset"] = format_offset(tail_offset)
+                return result
+            result["status"] = "parsed-through-exact-tail"
+            result["stackingSettings"] = stacking_settings
+            result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
+            result["timelineActionsCount"] = 0
+            result["timelineActionsEncoding"] = "omitted-empty-count"
+            result["timelineActionsApparentCount"] = timeline_action_count
+            result["triggerInterval"] = trigger_interval
+            result["useTimeDilationDt"] = use_time_dilation_dt
+            result["waitFirstTriggerInterval"] = wait_first_trigger_interval
+            result["endOffset"] = format_offset(tail_offset)
+            return result
+
+        trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
+            read_buff_trigger_interval_bool_tail_exact(data, tail_offset)
+        )
+        result["status"] = "parsed-through-exact-tail"
+        result["stackingSettings"] = stacking_settings
+        result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
+        result["timelineActionsCount"] = timeline_action_count
+        result["triggerInterval"] = trigger_interval
+        result["useTimeDilationDt"] = use_time_dilation_dt
+        result["waitFirstTriggerInterval"] = wait_first_trigger_interval
+        result["endOffset"] = format_offset(tail_offset)
+    except (struct.error, UnicodeDecodeError, ValueError) as tail_exc:
+        result["tailParseStatus"] = "parse-error"
+        result["tailParseOffset"] = format_offset(tail_offset)
+        result["tailParseError"] = str(tail_exc)
+    result.setdefault("endOffset", format_offset(tail_offset))
+    return result
+
+
+def find_buff_shield_configs_body_end(
+    data: bytes,
+    offset: int,
+    shield_config_count: int,
+) -> tuple[dict[str, Any], int]:
+    if shield_config_count <= 0 or shield_config_count > 16:
+        raise ValueError(f"shieldConfigsCount:unsupported-body-count={shield_config_count}")
+    if offset >= len(data) or data[offset] != 9:
+        raw = data[offset] if offset < len(data) else None
+        raise ValueError(f"shieldConfigsBody:unsupported-member-count={raw}")
+
+    candidates: list[tuple[int, dict[str, Any]]] = []
+    scan_end = min(len(data), offset + BUFF_OPAQUE_SHIELD_CONFIGS_BODY_MAX_BYTES)
+    for candidate_end in range(offset + 1, scan_end):
+        if data[candidate_end] != 12:
+            continue
+        probe_result: dict[str, Any] = {
+            "status": "parsed-through-shieldConfigsCount",
+            "shieldConfigsCount": shield_config_count,
+        }
+        parsed = parse_buff_tail_after_shield_configs(data, candidate_end, probe_result)
+        if buff_post_id_result_is_exact_tail(parsed):
+            candidates.append((candidate_end, parsed))
+            if len(candidates) > 1:
+                break
+    if len(candidates) != 1:
+        raise ValueError(f"shieldConfigsBody:tail-anchor-candidates={len(candidates)}")
+
+    body_end, parsed = candidates[0]
+    return {
+        "shieldConfigsBodyShape": "opaque ShieldConfig list; boundary selected by unique downstream stackingSettings/tail parse",
+        "shieldConfigsBodyTailPreview": {
+            key: parsed.get(key)
+            for key in ("timelineActionsCount", "timelineActionsBodyStatus", "timelineActionsBodyBytes")
+            if parsed.get(key) not in (None, "")
+        },
+    }, body_end
+
+
+def read_buff_shield_configs_and_tail(
+    data: bytes,
+    offset: int,
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    shield_config_count, offset = read_buff_u32_field(data, offset, "shieldConfigsCount")
+    if shield_config_count > 256:
+        raise ValueError(f"shieldConfigsCount:large-count={shield_config_count}")
+    result["shieldConfigsCount"] = shield_config_count
+    result["status"] = "parsed-through-shieldConfigsCount"
+    if shield_config_count:
+        shield_body_offset = offset
+        try:
+            shield_body_details, offset = find_buff_shield_configs_body_end(
+                data,
+                offset,
+                shield_config_count,
+            )
+        except (struct.error, UnicodeDecodeError, ValueError) as exc:
+            result["tailParseStatus"] = "unparsed-shieldConfigs"
+            result["tailParseOffset"] = format_offset(offset)
+            result["tailParseError"] = f"shieldConfigsCount={shield_config_count}; {exc}"
+            result["endOffset"] = format_offset(offset)
+            return result
+        result["shieldConfigsBodyStatus"] = "opaque-shieldConfigs"
+        result["shieldConfigsBodyOffset"] = format_offset(shield_body_offset)
+        result["shieldConfigsBodyBytes"] = offset - shield_body_offset
+        result.update(shield_body_details)
+    return parse_buff_tail_after_shield_configs(data, offset, result)
+
+
+def find_buff_poise_modifier_body_end(
+    data: bytes,
+    offset: int,
+    poise_modifier_count: int,
+) -> tuple[dict[str, Any], int]:
+    if poise_modifier_count <= 0 or poise_modifier_count > 16:
+        raise ValueError(f"poiseModifierCount:unsupported-body-count={poise_modifier_count}")
+    if offset >= len(data) or data[offset] != 3:
+        raw = data[offset] if offset < len(data) else None
+        raise ValueError(f"poiseModifierBody:unsupported-prefix={raw}")
+
+    candidates: list[tuple[int, dict[str, Any]]] = []
+    scan_end = min(len(data), offset + BUFF_OPAQUE_POISE_MODIFIER_BODY_MAX_BYTES)
+    for candidate_end in range(offset + 1, scan_end):
+        shield_count = read_u32_at(data, candidate_end)
+        if shield_count is None or shield_count > 16:
+            continue
+        if shield_count == 0:
+            if candidate_end + 4 >= len(data) or data[candidate_end + 4] != 12:
+                continue
+        elif candidate_end + 4 >= len(data) or data[candidate_end + 4] != 9:
+            continue
+        probe_result: dict[str, Any] = {
+            "status": "parsed-through-poiseModifierCount",
+            "poiseModifierCount": poise_modifier_count,
+        }
+        parsed = read_buff_shield_configs_and_tail(data, candidate_end, probe_result)
+        if buff_post_id_result_is_exact_tail(parsed):
+            candidates.append((candidate_end, parsed))
+            if len(candidates) > 1:
+                break
+    if len(candidates) != 1:
+        raise ValueError(f"poiseModifierBody:tail-anchor-candidates={len(candidates)}")
+
+    body_end, parsed = candidates[0]
+    return {
+        "poiseModifierBodyShape": "opaque PoiseModifier list; boundary selected by unique downstream shieldConfigs/tail parse",
+        "poiseModifierBodyTailPreview": {
+            key: parsed.get(key)
+            for key in (
+                "shieldConfigsCount",
+                "shieldConfigsBodyStatus",
+                "timelineActionsCount",
+                "timelineActionsBodyStatus",
+            )
+            if parsed.get(key) not in (None, "")
+        },
+    }, body_end
+
+
+def read_buff_post_ignite_suffix(
+    data: bytes,
+    offset: int,
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    ignore_cooldown, offset = read_buff_bool_field(
+        data,
+        offset,
+        "ignoreCooldownWhenAdding",
+    )
+    ignore_tag_immune, offset = read_buff_bool_field(data, offset, "ignoreTagImmune")
+    if offset >= len(data):
+        raise ValueError("lifeType:truncated-u8")
+    life_type = data[offset]
+    offset += 1
+    max_trigger_count, offset = read_buff_blackboard_int_field(
+        data,
+        offset,
+        "maxTriggerCnt",
+    )
+    poise_modifier_count, offset = read_buff_u32_field(data, offset, "poiseModifierCount")
+    if poise_modifier_count > 256:
+        raise ValueError(f"poiseModifierCount:large-count={poise_modifier_count}")
+
+    result.update({
+        "status": "parsed-through-poiseModifierCount",
+        "ignoreCooldownWhenAdding": ignore_cooldown,
+        "ignoreTagImmune": ignore_tag_immune,
+        "lifeTypeRaw": life_type,
+        "maxTriggerCnt": max_trigger_count,
+        "poiseModifierCount": poise_modifier_count,
+    })
+    if poise_modifier_count:
+        poise_body_offset = offset
+        try:
+            poise_body_details, offset = find_buff_poise_modifier_body_end(
+                data,
+                offset,
+                poise_modifier_count,
+            )
+        except (struct.error, UnicodeDecodeError, ValueError) as exc:
+            result["stopReason"] = "poiseModifier list body not skipped"
+            result["tailParseStatus"] = "unparsed-poiseModifier"
+            result["tailParseOffset"] = format_offset(offset)
+            result["tailParseError"] = f"poiseModifierCount={poise_modifier_count}; {exc}"
+            result["endOffset"] = format_offset(offset)
+            return result
+        result["poiseModifierBodyStatus"] = "opaque-poiseModifier"
+        result["poiseModifierBodyOffset"] = format_offset(poise_body_offset)
+        result["poiseModifierBodyBytes"] = offset - poise_body_offset
+        result.update(poise_body_details)
+
+    return read_buff_shield_configs_and_tail(data, offset, result)
+
+
+def find_buff_ignite_event_action_body_end(
+    data: bytes,
+    offset: int,
+    ignite_count: int,
+) -> tuple[dict[str, Any], int]:
+    if ignite_count <= 0 or ignite_count > 16:
+        raise ValueError(f"igniteEventActionCount:unsupported-body-count={ignite_count}")
+    if offset + 5 > len(data) or data[offset] != 3:
+        raw = data[offset] if offset < len(data) else None
+        raise ValueError(f"igniteEventActionBody:unsupported-prefix={raw}")
+    body_count = read_u32_at(data, offset + 1)
+    if body_count != ignite_count:
+        raise ValueError(f"igniteEventActionBody:body-count={body_count}")
+
+    candidates: list[tuple[int, dict[str, Any]]] = []
+    scan_end = min(len(data), offset + BUFF_OPAQUE_IGNITE_EVENT_ACTION_BODY_MAX_BYTES)
+    for candidate_end in range(offset + 5, scan_end):
+        if candidate_end + 4 >= len(data):
+            break
+        if data[candidate_end] not in (0, 1) or data[candidate_end + 1] not in (0, 1):
+            continue
+        if data[candidate_end + 3] != 3:
+            continue
+        probe_result: dict[str, Any] = {
+            "status": "parsed-through-igniteEventActionCount",
+            "igniteEventActionCount": ignite_count,
+        }
+        try:
+            parsed = read_buff_post_ignite_suffix(data, candidate_end, probe_result)
+        except (struct.error, UnicodeDecodeError, ValueError):
+            continue
+        if buff_post_id_result_is_exact_tail(parsed):
+            candidates.append((candidate_end, parsed))
+            if len(candidates) > 1:
+                break
+    if len(candidates) != 1:
+        raise ValueError(f"igniteEventActionBody:tail-anchor-candidates={len(candidates)}")
+
+    body_end, parsed = candidates[0]
+    return {
+        "igniteEventActionBodyShape": "opaque IgniteEventAction list; boundary selected by unique downstream bool/maxTrigger/poise/tail parse",
+        "igniteEventActionBodyTailPreview": {
+            key: parsed.get(key)
+            for key in (
+                "poiseModifierCount",
+                "poiseModifierBodyStatus",
+                "shieldConfigsCount",
+                "shieldConfigsBodyStatus",
+                "timelineActionsCount",
+                "timelineActionsBodyStatus",
+            )
+            if parsed.get(key) not in (None, "")
+        },
+    }, body_end
+
+
 def read_buff_stacking_settings_compact_id_branch(
     data: bytes,
     offset: int,
@@ -2597,201 +3008,32 @@ def decode_buff_post_id_prefix_at(
         ignite_count, offset = read_buff_u32_field(data, offset, "igniteEventActionCount")
         if ignite_count > 256:
             raise ValueError(f"igniteEventActionCount:large-count={ignite_count}")
-        if ignite_count:
-            return {
-                "status": "parsed-through-igniteEventActionCount",
-                "source": "anchored after exact top-level id marker; stops before nonzero list bodies",
-                "idMarkerOffset": format_offset(id_marker_offset),
-                "offset": format_offset(start),
-                "igniteEventActionCount": ignite_count,
-                "tailParseStatus": "unparsed-igniteEventAction",
-                "tailParseOffset": format_offset(offset),
-                "tailParseError": f"igniteEventActionCount={ignite_count}",
-                "endOffset": format_offset(offset),
-            }
-        ignore_cooldown, offset = read_buff_bool_field(
-            data,
-            offset,
-            "ignoreCooldownWhenAdding",
-        )
-        ignore_tag_immune, offset = read_buff_bool_field(data, offset, "ignoreTagImmune")
-        if offset >= len(data):
-            raise ValueError("lifeType:truncated-u8")
-        life_type = data[offset]
-        offset += 1
-        max_trigger_count, offset = read_buff_blackboard_int_field(
-            data,
-            offset,
-            "maxTriggerCnt",
-        )
-        poise_modifier_count, offset = read_buff_u32_field(data, offset, "poiseModifierCount")
-        if poise_modifier_count > 256:
-            raise ValueError(f"poiseModifierCount:large-count={poise_modifier_count}")
-
         result: dict[str, Any] = {
-            "status": "parsed-through-poiseModifierCount",
-            "source": "anchored after exact top-level id marker; stops before nonzero list bodies",
+            "status": "parsed-through-igniteEventActionCount",
+            "source": "anchored after exact top-level id marker; bounded opaque list bodies resume downstream tail parsing",
             "idMarkerOffset": format_offset(id_marker_offset),
             "offset": format_offset(start),
             "igniteEventActionCount": ignite_count,
-            "ignoreCooldownWhenAdding": ignore_cooldown,
-            "ignoreTagImmune": ignore_tag_immune,
-            "lifeTypeRaw": life_type,
-            "maxTriggerCnt": max_trigger_count,
-            "poiseModifierCount": poise_modifier_count,
         }
-        if poise_modifier_count == 0:
-            shield_config_count, offset = read_buff_u32_field(data, offset, "shieldConfigsCount")
-            if shield_config_count > 256:
-                raise ValueError(f"shieldConfigsCount:large-count={shield_config_count}")
-            result["shieldConfigsCount"] = shield_config_count
-            result["status"] = "parsed-through-shieldConfigsCount"
-            if shield_config_count:
-                result["tailParseStatus"] = "unparsed-shieldConfigs"
+        if ignite_count:
+            ignite_body_offset = offset
+            try:
+                ignite_body_details, offset = find_buff_ignite_event_action_body_end(
+                    data,
+                    offset,
+                    ignite_count,
+                )
+            except (struct.error, UnicodeDecodeError, ValueError) as exc:
+                result["tailParseStatus"] = "unparsed-igniteEventAction"
                 result["tailParseOffset"] = format_offset(offset)
-                result["tailParseError"] = f"shieldConfigsCount={shield_config_count}"
+                result["tailParseError"] = f"igniteEventActionCount={ignite_count}; {exc}"
                 result["endOffset"] = format_offset(offset)
                 return result
-            if shield_config_count == 0:
-                tail_offset = offset
-                try:
-                    stacking_settings, tail_offset = read_buff_stacking_settings_compact_id_branch(
-                        data,
-                        tail_offset,
-                    )
-                    if (
-                        stacking_settings.get("stackEffectsCount")
-                        and stacking_settings.get("stackEffectsBodyStatus")
-                        not in {"skipped-zero-action-items", "opaque-effectActions"}
-                    ):
-                        result["status"] = "parsed-through-stackingSettings"
-                        result["stackingSettings"] = stacking_settings
-                        result["tailParseStatus"] = "unparsed-stackEffects"
-                        result["tailParseOffset"] = format_offset(tail_offset)
-                        result["tailParseError"] = f"stackEffectsCount={stacking_settings.get('stackEffectsCount')}"
-                        result["endOffset"] = format_offset(tail_offset)
-                        return result
-                    tag_field_offset = tail_offset
-                    try:
-                        tags_after_trigger, tail_offset = read_buff_gameplay_tag_field(
-                            data,
-                            tail_offset,
-                            "tagsAfterTriggerExtendBuffAction",
-                        )
-                    except (struct.error, UnicodeDecodeError, ValueError):
-                        tags_after_trigger, tail_offset = read_buff_member1_empty_tag_field(
-                            data,
-                            tag_field_offset,
-                            "tagsAfterTriggerExtendBuffAction",
-                        )
-                        trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
-                            read_buff_trigger_interval_bool_tail_exact(data, tail_offset)
-                        )
-                        result["status"] = "parsed-through-exact-tail"
-                        result["stackingSettings"] = stacking_settings
-                        result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
-                        result["timelineActionsCount"] = 0
-                        result["timelineActionsEncoding"] = "omitted-empty-count-after-member1-empty-tag"
-                        result["triggerInterval"] = trigger_interval
-                        result["useTimeDilationDt"] = use_time_dilation_dt
-                        result["waitFirstTriggerInterval"] = wait_first_trigger_interval
-                        result["endOffset"] = format_offset(tail_offset)
-                        return result
-
-                    timeline_count_offset = tail_offset
-                    timeline_action_count, tail_offset = read_buff_u32_field(
-                        data,
-                        tail_offset,
-                        "timelineActionsCount",
-                    )
-                    if timeline_action_count > 256:
-                        try:
-                            trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
-                                read_buff_trigger_interval_bool_tail_exact(data, timeline_count_offset)
-                            )
-                        except (struct.error, UnicodeDecodeError, ValueError):
-                            raise ValueError(f"timelineActionsCount:large-count={timeline_action_count}")
-                        result["status"] = "parsed-through-exact-tail"
-                        result["stackingSettings"] = stacking_settings
-                        result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
-                        result["timelineActionsCount"] = 0
-                        result["timelineActionsEncoding"] = "omitted-empty-count"
-                        result["triggerInterval"] = trigger_interval
-                        result["useTimeDilationDt"] = use_time_dilation_dt
-                        result["waitFirstTriggerInterval"] = wait_first_trigger_interval
-                        result["endOffset"] = format_offset(tail_offset)
-                        return result
-                    if timeline_action_count:
-                        try:
-                            trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
-                                read_buff_trigger_interval_bool_tail_exact(data, timeline_count_offset)
-                            )
-                        except (struct.error, UnicodeDecodeError, ValueError):
-                            try:
-                                timeline_body_end, timeline_body_pattern = find_buff_timeline_actions_body_end(
-                                    data,
-                                    tail_offset,
-                                    timeline_action_count,
-                                )
-                                trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
-                                    read_buff_trigger_interval_bool_tail_exact(data, timeline_body_end)
-                                )
-                            except (struct.error, UnicodeDecodeError, ValueError):
-                                result["status"] = "parsed-through-timelineActionsCount"
-                                result["stackingSettings"] = stacking_settings
-                                result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
-                                result["timelineActionsCount"] = timeline_action_count
-                                result["tailParseStatus"] = "unparsed-timelineActions"
-                                result["tailParseOffset"] = format_offset(tail_offset)
-                                result["tailParseError"] = f"timelineActionsCount={timeline_action_count}"
-                                result["endOffset"] = format_offset(tail_offset)
-                                return result
-                            result["status"] = "parsed-through-exact-tail"
-                            result["stackingSettings"] = stacking_settings
-                            result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
-                            result["timelineActionsCount"] = timeline_action_count
-                            result["timelineActionsBodyStatus"] = "opaque-timelineActions"
-                            result["timelineActionsBodyOffset"] = format_offset(timeline_count_offset + 4)
-                            result["timelineActionsBodyBytes"] = timeline_body_end - (timeline_count_offset + 4)
-                            result["timelineActionsBodyPattern"] = f"0x{timeline_body_pattern:02x}"
-                            result["triggerInterval"] = trigger_interval
-                            result["useTimeDilationDt"] = use_time_dilation_dt
-                            result["waitFirstTriggerInterval"] = wait_first_trigger_interval
-                            result["endOffset"] = format_offset(tail_offset)
-                            return result
-                        result["status"] = "parsed-through-exact-tail"
-                        result["stackingSettings"] = stacking_settings
-                        result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
-                        result["timelineActionsCount"] = 0
-                        result["timelineActionsEncoding"] = "omitted-empty-count"
-                        result["timelineActionsApparentCount"] = timeline_action_count
-                        result["triggerInterval"] = trigger_interval
-                        result["useTimeDilationDt"] = use_time_dilation_dt
-                        result["waitFirstTriggerInterval"] = wait_first_trigger_interval
-                        result["endOffset"] = format_offset(tail_offset)
-                        return result
-                    trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
-                        read_buff_trigger_interval_bool_tail_exact(data, tail_offset)
-                    )
-                    result["status"] = "parsed-through-exact-tail"
-                    result["stackingSettings"] = stacking_settings
-                    result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
-                    result["timelineActionsCount"] = timeline_action_count
-                    result["triggerInterval"] = trigger_interval
-                    result["useTimeDilationDt"] = use_time_dilation_dt
-                    result["waitFirstTriggerInterval"] = wait_first_trigger_interval
-                    result["endOffset"] = format_offset(tail_offset)
-                except (struct.error, UnicodeDecodeError, ValueError) as tail_exc:
-                    result["tailParseStatus"] = "parse-error"
-                    result["tailParseOffset"] = format_offset(tail_offset)
-                    result["tailParseError"] = str(tail_exc)
-        else:
-            result["stopReason"] = "poiseModifier list body not skipped"
-            result["tailParseStatus"] = "unparsed-poiseModifier"
-            result["tailParseOffset"] = format_offset(offset)
-            result["tailParseError"] = f"poiseModifierCount={poise_modifier_count}"
-        result.setdefault("endOffset", format_offset(offset))
-        return result
+            result["igniteEventActionBodyStatus"] = "opaque-igniteEventAction"
+            result["igniteEventActionBodyOffset"] = format_offset(ignite_body_offset)
+            result["igniteEventActionBodyBytes"] = offset - ignite_body_offset
+            result.update(ignite_body_details)
+        return read_buff_post_ignite_suffix(data, offset, result)
     except (struct.error, UnicodeDecodeError, ValueError) as exc:
         return {
             "status": "parse-error",
@@ -2799,7 +3041,6 @@ def decode_buff_post_id_prefix_at(
             "offset": format_offset(offset),
             "error": str(exc),
         }
-
 
 def decode_buff_post_id_prefix(
     data: bytes,
@@ -9681,6 +9922,9 @@ DECODER_ISSUE_STATUS_VALUES = {
     "ambiguous-id-marker",
     "count-exceeds-remaining",
     "opaque-effectactions",
+    "opaque-igniteeventaction",
+    "opaque-poisemodifier",
+    "opaque-shieldconfigs",
     "opaque-timelineactions",
     "unparsed-igniteeventaction",
     "unparsed-poisemodifier",
