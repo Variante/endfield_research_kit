@@ -3932,3 +3932,63 @@ Targeted validation output: `tmp\targetsettings_partial_reasons_after_20260630\6
 | Data-level `decodeError` records | 0 |
 
 Current classification: `TargetSettings` and `SelectorData` are byte-consumed and now explain why they remain partial. The safe next promotion requires stronger samples: a non-empty `postProcessorData`, a non-empty `targetContextKey`, or non-default direction/target variants that prove the compact tail field widths.
+
+## 2026-06-30 Forty-Sixth Fresh StreamingAssets Projectile MoveModeDict Container Promotion Batch
+
+Follow-up after the TargetSettings partial reason annotation batch. Work focused on the next non-TargetSettings partial cluster in the current focused outputs: `Dictionary<string, Beyond.Gameplay.Core.ProjectileComponentData/MoveModeData>` inside `ProjectileComponentData`.
+
+Evidence used:
+
+- Current focused inventory still has no data-level `$unparsed`, `$heuristic`, or `decodeError` records in the inspected slices.
+- The active projectile validation slice contains 10 `ProjectileComponentData` records and 10 `moveModeDict` dictionaries.
+- Every `moveModeDict` has matching `keyCount` and `valueCount`.
+- Key distribution is stable: `Default` appears 10 times, and `T1`, `T2`, and `T3` each appear 5 times.
+- Boundary evidence from the prior projectile batch still holds: 25 nested `MoveModeData` values, each exactly 124 int32 words / 496 bytes.
+- A parallel read-only projectile explorer independently recommended promoting only the dictionary container to decoded. It reported that each nested `MoveModeData` value still keeps 115 raw words after the metadata-backed prefix, and parent projectile tails still keep effect/sound/scalar raw words.
+- Local IL2CPP metadata confirms `MoveModeData` field order, but local DummyDll/Cpp2IL assemblies still do not expose the projectile data type through the Mono.Cecil probe. That means the value internals are not field-width proven enough for full semantic promotion.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Marked `Dictionary<string, Beyond.Gameplay.Core.ProjectileComponentData/MoveModeData>` as `$decoded` instead of `$partial`.
+- Added `observedPayloadStatus` and `nestedPartialReasons` to the dictionary container.
+- Added `observedPayloadStatus`, `partialReasons`, `decodedPrefixWordCount`, and `remainingRawWordCount` to each `MoveModeData` value.
+- Kept every `MoveModeData` value marked `$partial`.
+- Kept parent `ProjectileComponentData` marked `$partial`.
+- Did not promote raw `MoveModeData` tail words, did not emit enum member names, and did not decode effect/sound/scalar parent tail collections.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 warnings and 0 errors.
+
+Targeted validation output: `tmp\projectile_movemode_dict_status_after_20260630` using the 10-row projectile filter data from `tmp\projectile_component_movemode_values_after_20260630\filter_data.json`.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 10 |
+| `ProjectileComponentData` records | 10 |
+| `ProjectileComponentData` records still `$partial` | 10 |
+| `ProjectileComponentData` records marked `$decoded` | 10 |
+| `moveModeDict` dictionaries | 10 |
+| `moveModeDict` dictionaries marked `$decoded` | 10 |
+| `moveModeDict` dictionaries still `$partial` | 0 |
+| Dictionaries with matching key/value counts | 10 |
+| Key `Default` | 10 |
+| Key `T1` | 5 |
+| Key `T2` | 5 |
+| Key `T3` | 5 |
+| `MoveModeData` values | 25 |
+| `MoveModeData` values still `$partial` | 25 |
+| `MoveModeData` values marked `$decoded` | 0 |
+| `MoveModeData wordCount = 124` | 25 |
+| `MoveModeData length = 496` | 25 |
+| `decodedPrefixWordCount = 9` | 25 |
+| `remainingRawWordCount = 115` | 25 |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+
+Current classification: `moveModeDict` is now structurally decoded. Remaining projectile unknowns are inside nested `MoveModeData` value internals and the parent effect/sound/scalar tail, not the dictionary key/value boundary.

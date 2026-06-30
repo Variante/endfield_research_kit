@@ -200,3 +200,56 @@ Metadata caveats:
 
 Next pass should use the 300 projectile payload family to prove the tail
 collection boundaries before removing the `$partial` marker.
+
+## MoveModeDict Container Status Follow-up
+
+The current pass promoted only the `moveModeDict` dictionary container. The nested `MoveModeData` values remain partial.
+
+Evidence:
+
+- Current focused output still covers 10 `data_projectile_chr_0033_camille_*` MonoBehaviours.
+- `moveModeDict` appears 10 times.
+- Every dictionary has matching `keyCount` and `valueCount`.
+- Key distribution is unchanged: `Default` appears 10 times, and `T1`, `T2`, `T3` each appear 5 times.
+- The dictionary has no container-level raw remainder after keys and fixed-size values are consumed.
+- The nested values remain unresolved: 25 `MoveModeData` records, each `wordCount = 124`, `length = 496`, with `decodedPrefixWordCount = 9` and `remainingRawWordCount = 115`.
+- Parent `ProjectileComponentData` remains partial because effect, sound, and final scalar tail collections still remain raw after `moveModeDict`.
+
+Implementation:
+
+- `ReadProjectileMoveModeDictDiagnostic` now emits `$decoded` instead of `$partial` for the dictionary container.
+- It adds `observedPayloadStatus` and `nestedPartialReasons` to make clear that the dictionary itself is consumed while nested values and the enclosing parent tail still need semantic work.
+- `ReadProjectileMoveModeDataDiagnostic` still emits `$partial`; it now also emits `observedPayloadStatus`, `partialReasons`, `decodedPrefixWordCount`, and `remainingRawWordCount`.
+- No enum member names or raw tail fields were promoted.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 warnings and 0 errors.
+
+Targeted validation output: `tmp\projectile_movemode_dict_status_after_20260630` using the 10-row `tmp\projectile_component_movemode_values_after_20260630\filter_data.json` file.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 10 |
+| `ProjectileComponentData` records | 10 |
+| `ProjectileComponentData` records still `$partial` | 10 |
+| `moveModeDict` dictionaries | 10 |
+| `moveModeDict` dictionaries marked `$decoded` | 10 |
+| `moveModeDict` dictionaries still `$partial` | 0 |
+| Dictionaries with matching key/value counts | 10 |
+| `MoveModeData` values | 25 |
+| `MoveModeData` values still `$partial` | 25 |
+| `MoveModeData` values marked `$decoded` | 0 |
+| `MoveModeData wordCount = 124` | 25 |
+| `MoveModeData length = 496` | 25 |
+| `decodedPrefixWordCount = 9` | 25 |
+| `remainingRawWordCount = 115` | 25 |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+
+Current classification: the dictionary container is structurally decoded. The next real projectile work is still inside `MoveModeData` value internals and the parent effect/sound/scalar tail, not in the dictionary key/value boundary.
