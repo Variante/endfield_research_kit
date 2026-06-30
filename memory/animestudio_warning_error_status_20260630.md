@@ -1153,3 +1153,56 @@ Validation:
 
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_stackingkey_validate_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData Omitted Empty Timeline Count Recovery
+
+Recovered a smaller `BuffData` tail variant where the serialized tail omits the explicit empty `timelineActions` count and jumps directly from `tagsAfterTriggerExtendBuffAction` to `triggerInterval`.
+
+Root cause refined:
+
+- Many remaining generic `timelineActionsCount:large-count` errors were not real large list counts. The parser was reading the first four bytes of a `BlackboardDouble`/float field, for example `03 08 00 00 "duration"` or `03 08 00 00 "interval"`, as a little-endian timeline action count.
+- The new fallback accepts this only when `triggerInterval`, `useTimeDilationDt`, `waitFirstTriggerInterval`, and EOF all validate from the same offset. It records `timelineActionsEncoding=omitted-empty-count` and keeps `timelineActionsCount=0`.
+- One row uses a `tagsAfterTriggerExtendBuffAction` member-count-1 empty payload before the direct trigger tail. That branch is recorded as `member1-empty-payload` and is also accepted only when the full remaining tail validates to EOF.
+
+Focused BuffData validation:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| `BuffData` files scanned | 2,291 | 2,291 |
+| Parsed through exact tail | 1,966 | 1,981 |
+| Generic BuffData tail `parse-error` rows | 26 | 11 |
+| `timelineActionsEncoding=omitted-empty-count` rows | 0 | 14 |
+| `member1-empty-payload` tag rows | 0 | 1 |
+
+Full Json strict issue validation after this recovery:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 312 |
+| `Json/BuffData` unresolved issue rows | 310 |
+| `Json/LevelScriptData` unresolved issue rows | 2 |
+
+Current strict unresolved status distribution:
+
+| Status | Count |
+| --- | ---: |
+| `unparsed-timelineActions` | 188 |
+| `unparsed-stackEffects` | 82 |
+| `ambiguous-id-marker` | 16 |
+| `parse-error` | 11 |
+| `unparsed-poiseModifier` | 6 |
+| `unparsed-shieldConfigs` | 4 |
+| `unparsed-igniteEventAction` | 3 |
+| `count-exceeds-remaining` | 2 |
+
+Remaining parser targets:
+
+- The 11 remaining generic BuffData rows are mostly Ruanyi variants with embedded Skill paths and extra numeric blocks in the tag/timeline region, plus one Ethillu fake-dead variant. They should stay visible until the list-body shape is understood.
+- `timelineActions` and `stackEffects` remain the dominant unresolved bodies and are being investigated separately.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- Focused BuffData decode over all 2,291 rows produced `1,981` exact-tail rows, `188` `unparsed-timelineActions`, `82` `unparsed-stackEffects`, and `11` generic parse errors.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_omitted_timeline_validate_20260630` completed and indexed 81,735 Json files.
