@@ -2784,45 +2784,47 @@ def read_skill_buff_input_data(
     data: bytes,
     offset: int,
     index: int,
+    field_name: str = "toggleBuffs.buffs",
 ) -> tuple[dict[str, Any], int]:
+    item_name = f"{field_name}[{index}]"
     start = offset
     if offset >= len(data):
-        raise ValueError(f"toggleBuffs.buffs[{index}]:truncated-member-count")
+        raise ValueError(f"{item_name}:truncated-member-count")
     member_count = data[offset]
     offset += 1
     if member_count != 3:
-        raise ValueError(f"toggleBuffs.buffs[{index}]:member-count={member_count}")
+        raise ValueError(f"{item_name}:member-count={member_count}")
 
     assign_blackboard, offset = read_skill_bool_field(
         data,
         offset,
-        f"toggleBuffs.buffs[{index}].assignBlackboard",
+        f"{item_name}.assignBlackboard",
     )
     assign_items_count, offset = read_buff_u32_field(
         data,
         offset,
-        f"toggleBuffs.buffs[{index}].assignItemsCount",
+        f"{item_name}.assignItemsCount",
     )
     if assign_items_count > 32:
-        raise ValueError(f"toggleBuffs.buffs[{index}].assignItemsCount:large-count={assign_items_count}")
+        raise ValueError(f"{item_name}.assignItemsCount:large-count={assign_items_count}")
 
     assign_items: list[dict[str, Any]] = []
     for item_index in range(assign_items_count):
         assign_item, offset = read_skill_assign_pair_data(
             data,
             offset,
-            f"toggleBuffs.buffs[{index}].assignItems[{item_index}]",
+            f"{item_name}.assignItems[{item_index}]",
         )
         assign_items.append(assign_item)
 
     buff_id, offset = read_skill_clean_string_field(
         data,
         offset,
-        f"toggleBuffs.buffs[{index}].buffId",
+        f"{item_name}.buffId",
         max_length=256,
     )
     if not buff_id.startswith("buff_"):
-        raise ValueError(f"toggleBuffs.buffs[{index}].buffId:unexpected={buff_id!r}")
+        raise ValueError(f"{item_name}.buffId:unexpected={buff_id!r}")
 
     return {
         "offset": format_offset(start),
@@ -2920,12 +2922,102 @@ def read_skill_toggle_buff_data(
     }, offset
 
 
-def decode_skill_post_switch_tail_fields(data: bytes, switch_offset: int) -> dict[str, Any]:
-    switch_end = switch_offset + SKILL_DEFAULT_SWITCH_TO_BUFF_CONFIG_BYTE_LENGTH
+def read_skill_switch_to_buff_config_data(
+    data: bytes,
+    switch_offset: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    offset = switch_offset
+    if offset >= len(data):
+        raise ValueError("switchToBuffConfig:truncated-member-count")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 5:
+        raise ValueError(f"switchToBuffConfig:member-count={member_count}")
+    as_skill_cast, offset = read_skill_bool_field(data, offset, "switchToBuffConfig.asSkillCast")
+    buffs_count, offset = read_buff_u32_field(data, offset, "switchToBuffConfig.buffsCount")
+    if buffs_count > 256:
+        raise ValueError(f"switchToBuffConfig.buffsCount:large-count={buffs_count}")
+
+    buffs: list[dict[str, Any]] = []
+    for buff_index in range(buffs_count):
+        buff, offset = read_skill_buff_input_data(
+            data,
+            offset,
+            buff_index,
+            "switchToBuffConfig.buffs",
+        )
+        buffs.append(buff)
+
+    suffix_offset = offset
+    default_length = SKILL_DEFAULT_SWITCH_TO_BUFF_CONFIG_BYTE_LENGTH
+    default_end = switch_offset + default_length
+    post_switch_tail = decode_skill_post_switch_tail_at(data, default_end, default_length, "default-fixed")
+    body_end = default_end
+    boundary_status = "default-fixed"
+
+    if default_end < suffix_offset or post_switch_tail.get("status") != "parsed-through-exact-tail":
+        scan_start = max(suffix_offset, switch_offset + 6)
+        scan_end = min(len(data), suffix_offset + 4096)
+        found_tail: dict[str, Any] | None = None
+        found_end = -1
+        for candidate_end in range(scan_start, scan_end):
+            if data[candidate_end] not in (0, 1):
+                continue
+            candidate_length = candidate_end - switch_offset
+            candidate_tail = decode_skill_post_switch_tail_at(
+                data,
+                candidate_end,
+                candidate_length,
+                "validated-post-tail-scan",
+            )
+            if candidate_tail.get("status") == "parsed-through-exact-tail":
+                found_tail = candidate_tail
+                found_end = candidate_end
+                break
+        if found_tail is not None:
+            body_end = found_end
+            post_switch_tail = found_tail
+            boundary_status = "validated-post-tail-scan"
+        else:
+            body_end = max(default_end, suffix_offset)
+            boundary_status = "default-fixed-parse-error"
+
+    suffix_length = max(0, body_end - suffix_offset)
+    suffix_bytes = data[suffix_offset:body_end]
+    switch_config = {
+        "memberCount": member_count,
+        "asSkillCast": as_skill_cast,
+        "asSkillCastRaw": int(as_skill_cast),
+        "buffsCount": buffs_count,
+        "buffs": buffs[:8],
+        "fieldOrder": ["asSkillCast", "buffs", "buffSource", "condition", "targets"],
+        "defaultByteLength": default_length,
+        "bodyByteLength": max(0, body_end - switch_offset),
+        "boundaryStatus": boundary_status,
+        "remainingSwitchSuffixByteLength": suffix_length,
+        "remainingSwitchSuffixFieldOrder": ["buffSource", "condition", "targets"],
+        "remainingSwitchSuffixPrefixHex": suffix_bytes[:96].hex(" "),
+        "remainingSwitchSuffixStringHits": scan_length_prefixed_utf8_string_hits(
+            suffix_bytes,
+            max_samples=12,
+            max_length=120,
+        ),
+    }
+    if post_switch_tail.get("status") != "parsed-through-exact-tail":
+        switch_config["boundaryError"] = post_switch_tail.get("error")
+    return switch_config, post_switch_tail
+
+
+def decode_skill_post_switch_tail_at(
+    data: bytes,
+    switch_end: int,
+    switch_config_byte_length: int,
+    boundary_status: str,
+) -> dict[str, Any]:
     offset = switch_end
     try:
         if switch_end > len(data):
-            raise ValueError("default-switch-config-boundary:truncated")
+            raise ValueError("switch-config-boundary:truncated")
         switch_to_center, offset = read_skill_bool_field(
             data,
             offset,
@@ -2943,11 +3035,12 @@ def decode_skill_post_switch_tail_fields(data: bytes, switch_offset: int) -> dic
         result: dict[str, Any] = {
             "status": "parsed-through-toggleBuffsCount",
             "source": (
-                "default SwitchToBuffConfig boundary plus final SkillData tail fields; "
-                "UIRangeHintData branch validated by exact file-end handoff where toggleBuffs is empty"
+                "validated SwitchToBuffConfig boundary plus final SkillData tail fields; "
+                "UIRangeHintData and toggleBuffs branches require exact file-end handoff"
             ),
             "offset": format_offset(switch_end),
-            "switchToBuffConfigByteLength": SKILL_DEFAULT_SWITCH_TO_BUFF_CONFIG_BYTE_LENGTH,
+            "switchToBuffConfigByteLength": switch_config_byte_length,
+            "switchToBuffConfigBoundaryStatus": boundary_status,
             "switchToCenterBeforeCast": switch_to_center,
             "tagDuringAttach": tag_during_attach,
             "toggleBuffsCount": toggle_buffs_count,
@@ -2979,9 +3072,20 @@ def decode_skill_post_switch_tail_fields(data: bytes, switch_offset: int) -> dic
         return {
             "status": "parse-error",
             "offset": format_offset(offset),
-            "switchToBuffConfigByteLength": SKILL_DEFAULT_SWITCH_TO_BUFF_CONFIG_BYTE_LENGTH,
+            "switchToBuffConfigByteLength": switch_config_byte_length,
+            "switchToBuffConfigBoundaryStatus": boundary_status,
             "error": str(exc),
         }
+
+
+def decode_skill_post_switch_tail_fields(data: bytes, switch_offset: int) -> dict[str, Any]:
+    switch_end = switch_offset + SKILL_DEFAULT_SWITCH_TO_BUFF_CONFIG_BYTE_LENGTH
+    return decode_skill_post_switch_tail_at(
+        data,
+        switch_end,
+        SKILL_DEFAULT_SWITCH_TO_BUFF_CONFIG_BYTE_LENGTH,
+        "default-fixed",
+    )
 
 
 def decode_skill_switch_tail_probe(data: bytes, offset: int) -> dict[str, Any]:
@@ -3023,7 +3127,20 @@ def decode_skill_switch_tail_probe(data: bytes, offset: int) -> dict[str, Any]:
     pre_switch = tail[:marker_rel]
     switch_offset = offset + marker_rel
     switch_tail = tail[marker_rel:]
-    post_switch_tail = decode_skill_post_switch_tail_fields(data, switch_offset)
+    try:
+        switch_to_buff_config, post_switch_tail = read_skill_switch_to_buff_config_data(data, switch_offset)
+    except (struct.error, UnicodeDecodeError, ValueError) as exc:
+        switch_to_buff_config = {
+            "memberCount": 5,
+            "asSkillCast": bool(as_skill_cast),
+            "asSkillCastRaw": as_skill_cast,
+            "buffsCount": buffs_count,
+            "fieldOrder": ["asSkillCast", "buffs", "buffSource", "condition", "targets"],
+            "defaultByteLength": SKILL_DEFAULT_SWITCH_TO_BUFF_CONFIG_BYTE_LENGTH,
+            "boundaryStatus": "parse-error",
+            "boundaryError": str(exc),
+        }
+        post_switch_tail = decode_skill_post_switch_tail_fields(data, switch_offset)
     return {
         "status": "switch-marker-found",
         "source": (
@@ -3039,14 +3156,7 @@ def decode_skill_switch_tail_probe(data: bytes, offset: int) -> dict[str, Any]:
             max_samples=8,
             max_length=120,
         ),
-        "switchToBuffConfig": {
-            "memberCount": 5,
-            "asSkillCast": bool(as_skill_cast),
-            "asSkillCastRaw": as_skill_cast,
-            "buffsCount": buffs_count,
-            "fieldOrder": ["asSkillCast", "buffs", "buffSource", "condition", "targets"],
-            "defaultByteLength": SKILL_DEFAULT_SWITCH_TO_BUFF_CONFIG_BYTE_LENGTH,
-        },
+        "switchToBuffConfig": switch_to_buff_config,
         "postSwitchTail": post_switch_tail,
         "unparsedFromSwitchByteLength": len(switch_tail),
         "switchPrefixHex": switch_tail[:64].hex(" "),
