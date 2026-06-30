@@ -2723,6 +2723,9 @@ def read_skill_ui_range_hint_data(
     }, offset
 
 
+SKILL_POST_ID_PARSED_STATUSES = {"parsed-through-smartTargetTagQuery", "parsed-through-smartTargetPayload"}
+
+
 SKILL_COMPARE_TYPE_NAMES = {
     0: "LT",
     1: "LE",
@@ -2922,6 +2925,41 @@ def read_skill_toggle_buff_data(
     }, offset
 
 
+def scan_skill_tag_record_hits(
+    data: bytes,
+    start: int,
+    end: int,
+    *,
+    max_records: int = 12,
+) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    limit = max(start, min(end, len(data)) - 8)
+    for offset in range(max(start, 0), limit):
+        member_count = data[offset]
+        if member_count not in (1, 2, 3, 4):
+            continue
+        if offset + 9 > end:
+            continue
+        tag_id = struct.unpack_from("<I", data, offset + 1)[0]
+        tag_name, tag_end, error = read_memorypack_utf8_string(data, offset + 5, max_length=256)
+        if error:
+            continue
+        tag_name = tag_name or ""
+        if not tag_name.startswith("Skill/") or not is_clean_skill_tag_name(tag_name):
+            continue
+        records.append({
+            "offset": format_offset(offset),
+            "memberCount": member_count,
+            "tagId": tag_id,
+            "tagHash": f"0x{tag_id:08x}",
+            "tagName": tag_name,
+            "byteLength": tag_end - offset,
+        })
+        if len(records) >= max_records:
+            break
+    return records
+
+
 def read_skill_switch_to_buff_config_data(
     data: bytes,
     switch_offset: int,
@@ -3097,7 +3135,7 @@ def decode_skill_switch_tail_probe(data: bytes, offset: int) -> dict[str, Any]:
             "tailByteLength": 0,
         }
 
-    scan_limit = min(len(tail), 96)
+    scan_limit = min(len(tail), 512)
     marker_rel: int | None = None
     as_skill_cast = 0
     buffs_count = 0
@@ -3156,6 +3194,12 @@ def decode_skill_switch_tail_probe(data: bytes, offset: int) -> dict[str, Any]:
             max_samples=8,
             max_length=120,
         ),
+        "preSwitchTagRecords": scan_skill_tag_record_hits(
+            data,
+            offset,
+            switch_offset,
+            max_records=8,
+        ),
         "switchToBuffConfig": switch_to_buff_config,
         "postSwitchTail": post_switch_tail,
         "unparsedFromSwitchByteLength": len(switch_tail),
@@ -3175,10 +3219,18 @@ def decode_skill_post_id_tail_prefix_at(
 ) -> dict[str, Any]:
     start = id_marker_offset + 4 + len(id_value.encode("utf-8"))
     offset = start
+    skill_name = ""
+    skill_specification: int | None = None
+    skill_tags: dict[str, Any] | None = None
+    smart_target_buff_find_settings: int | None = None
+    smart_target_buff_ids: dict[str, Any] | None = None
+    smart_target_select_strategy: int | None = None
+    smart_target_tag_query: int | None = None
     try:
-        skill_name, offset, error = read_memorypack_utf8_string(data, offset, max_length=512)
+        skill_name_value, offset, error = read_memorypack_utf8_string(data, offset, max_length=512)
         if error:
             raise ValueError(f"skillName:{error}")
+        skill_name = skill_name_value or ""
         skill_specification, offset = read_skill_i32_field(data, offset, "skillSpecification")
         skill_tags, offset = read_skill_gameplay_tag_list_field(data, offset, "skillTags")
         smart_target_buff_find_settings, offset = read_skill_u8_field(
@@ -3209,7 +3261,7 @@ def decode_skill_post_id_tail_prefix_at(
             ),
             "idMarkerOffset": format_offset(id_marker_offset),
             "offset": format_offset(start),
-            "skillName": skill_name or "",
+            "skillName": skill_name,
             "skillSpecificationRaw": skill_specification,
             "skillTags": skill_tags,
             "smartTargetBuffFindSettingsRaw": smart_target_buff_find_settings,
@@ -3220,6 +3272,47 @@ def decode_skill_post_id_tail_prefix_at(
             "endOffset": format_offset(offset),
         }
     except (struct.error, UnicodeDecodeError, ValueError) as exc:
+        fallback_probe = decode_skill_switch_tail_probe(data, offset)
+        fallback_tail = fallback_probe.get("postSwitchTail") or {}
+        if (
+            fallback_probe.get("status") == "switch-marker-found"
+            and fallback_tail.get("status") == "parsed-through-exact-tail"
+            and fallback_tail.get("exactLength") is True
+        ):
+            payload_start = offset
+            payload_length = fallback_probe.get("preSwitchByteLength")
+            result: dict[str, Any] = {
+                "status": "parsed-through-smartTargetPayload",
+                "source": (
+                    "post-id scalar prefix hit a non-simple smart-target/tag-query payload; "
+                    "the payload is preserved with string/tag diagnostics and validated by exact SwitchToBuffConfig handoff"
+                ),
+                "idMarkerOffset": format_offset(id_marker_offset),
+                "offset": format_offset(start),
+                "skillName": skill_name,
+                "skillSpecificationRaw": skill_specification,
+                "skillTags": skill_tags,
+                "smartTargetBuffFindSettingsRaw": smart_target_buff_find_settings,
+                "smartTargetBuffIds": smart_target_buff_ids,
+                "smartTargetSelectStrategyRaw": smart_target_select_strategy,
+                "smartTargetTagQueryRaw": smart_target_tag_query,
+                "smartTargetParseError": str(exc),
+                "smartTargetPayload": {
+                    "status": "validated-by-switch-tail",
+                    "offset": format_offset(payload_start),
+                    "byteLength": payload_length,
+                    "stringHits": fallback_probe.get("preSwitchStringHits") or [],
+                    "tagRecords": fallback_probe.get("preSwitchTagRecords") or [],
+                    "prefixHex": fallback_probe.get("preSwitchPrefixHex"),
+                    "layoutNote": (
+                        "Payload bytes occur between the simple smart-target fields and SwitchToBuffConfig. "
+                        "Observed records use GameplayTag-like memberCount/tagId/string triples and/or buff-id strings."
+                    ),
+                },
+                "switchTailProbe": fallback_probe,
+                "endOffset": format_offset(payload_start),
+            }
+            return result
         return {
             "status": "parse-error",
             "idMarkerOffset": format_offset(id_marker_offset),
@@ -3229,7 +3322,7 @@ def decode_skill_post_id_tail_prefix_at(
 
 
 def is_skill_top_level_post_id_tail_candidate(candidate: dict[str, Any]) -> bool:
-    if candidate.get("status") != "parsed-through-smartTargetTagQuery":
+    if candidate.get("status") not in SKILL_POST_ID_PARSED_STATUSES:
         return False
     skill_tags = candidate.get("skillTags") or {}
     if skill_tags.get("count") != 1:
@@ -3278,7 +3371,13 @@ def decode_skill_post_id_tail_prefix(
     if id_marker_count == 1:
         return candidates[0]
 
-    selected = [candidate for candidate in candidates if is_skill_top_level_post_id_tail_candidate(candidate)]
+    structural_candidates = [candidate for candidate in candidates if is_skill_top_level_post_id_tail_candidate(candidate)]
+    simple_candidates = [
+        candidate
+        for candidate in structural_candidates
+        if candidate.get("status") == "parsed-through-smartTargetTagQuery"
+    ]
+    selected = simple_candidates if len(simple_candidates) == 1 else structural_candidates
     if len(selected) == 1:
         result = selected[0]
         result["source"] = (
@@ -3308,12 +3407,14 @@ def decode_skill_post_id_tail_prefix(
             "and post-switch tail reached exact EOF"
         ),
         "selectedCandidateCount": len(selected),
+        "structuralCandidateCount": len(structural_candidates),
+        "simpleCandidateCount": len(simple_candidates),
         "candidateSummaries": [summarize_skill_post_id_tail_candidate(candidate) for candidate in candidates[:12]],
     }
 
 
 def skill_post_id_tail_sample(prefix: dict[str, Any]) -> str:
-    if prefix.get("status") != "parsed-through-smartTargetTagQuery":
+    if prefix.get("status") not in SKILL_POST_ID_PARSED_STATUSES:
         return ""
     tags = prefix.get("skillTags") or {}
     smart_target_buff_ids = prefix.get("smartTargetBuffIds") or {}
@@ -3334,6 +3435,12 @@ def skill_post_id_tail_sample(prefix: dict[str, Any]) -> str:
     ]
     if clean_tags:
         parts.append("tag:" + clean_tags[0][:80])
+    smart_payload = prefix.get("smartTargetPayload") or {}
+    if smart_payload:
+        parts.append(f"smartPayload:{smart_payload.get('byteLength')}")
+        tag_records = smart_payload.get("tagRecords") or []
+        if tag_records:
+            parts.append(f"smartTags:{len(tag_records)}")
     parts.extend([
         f"find:{prefix.get('smartTargetBuffFindSettingsRaw')}",
         f"buffIds:{smart_target_buff_ids.get('count')}",
@@ -4757,7 +4864,7 @@ def decode_skill_memorypack(path: Path, data: bytes, size: int) -> dict[str, Any
             f"{len(complex_fields)} complex/list)"
             + (
                 "; post-id tail prefix parsed"
-                if post_id_tail.get("status") == "parsed-through-smartTargetTagQuery"
+                if post_id_tail.get("status") in SKILL_POST_ID_PARSED_STATUSES
                 else ""
             )
         ),
