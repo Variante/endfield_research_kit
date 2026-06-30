@@ -283,3 +283,57 @@ Ranked non-Mono buckets:
 6. Wwise `.pck`: known encoded AKPK/Wwise container. Existing audio tooling normalizes and decodes CN audio; remaining work is coverage accounting, not basic decryption.
 7. `IFixPatchOut` patch bytes: small compression/encryption-looking payloads outside normal WebUI consumption. Needs loader-code search and compression/decrypt probes.
 8. Shader bytecode internals: container mostly understood; remaining gaps are downstream decompiler/SMOL-V variants.
+
+## 2026-06-30 Enemy FootRippleComponentData Update
+
+Continued the current `Persistent/data_eny` focused bucket after the baked mesh point recovery.
+
+Focused validation baseline:
+
+```text
+tmp\data_eny_probe_after_parts_adaptive_20260630\current_persistent_3267
+```
+
+Post-patch validation:
+
+```text
+tmp\data_eny_probe_after_footripple_20260630\current_persistent_3267
+```
+
+Root cause:
+
+- The remaining `Beyond.Gameplay.View.FootRippleComponentData` payloads were normal schema data, not encryption.
+- IL2CPP metadata field order is:
+  - `entries`: `List<FootRippleEntry>`
+  - `footWeightThreshold`: float
+  - `speedToRippleIntervalCurve`: Unity `AnimationCurve<float>`
+- `FootRippleEntry` metadata field order is `mountPoint`, `footWeightCurveHash`, `rippleSize`.
+- The two focused payloads are fixed 128-byte records: 4 entries, one float threshold, and a 2-keyframe Unity animation curve.
+
+Implementation:
+
+- Added `FootRippleComponentData` managed-reference decoding.
+- Added guarded `ReadFootRippleEntryList` using the existing payload `AnimationCurve<float>` reader for `speedToRippleIntervalCurve`.
+
+Focused validation summary:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Files re-exported | 78 | 78 |
+| Managed refs decoded | 1,554 | 1,556 |
+| Managed refs partial | 16 | 16 |
+| Managed refs unparsed | 18 | 16 |
+| `FootRippleComponentData` decoded refs | 0 | 2 |
+| Foot ripple entries decoded | 0 | 8 |
+| Foot ripple curve keyframes decoded | 0 | 4 |
+
+Build validation:
+
+- `scripts\animestudio\rebuild.bat -Target CLI -NoRestore` succeeded with 0 errors after the exporter edit.
+- The build emitted 14 pre-existing warnings from other AnimeStudio projects; no new compiler errors were introduced.
+
+Remaining current focused gaps in `Persistent/data_eny` after this pass:
+
+- `EnemyPartsRootComponentData`: 15 refs still heuristic/unparsed.
+- `AbilitySystemForEnemyPartData`: 11 refs still partial.
+- `AbilitySystemData`: 5 refs still partial and 1 ref still heuristic/unparsed.
