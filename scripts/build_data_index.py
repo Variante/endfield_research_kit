@@ -2450,6 +2450,7 @@ def read_buff_timeline_first_union_tag(
 
 BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG = 0x011f
 BUFF_PLAY_SOUND_ACTION_TAG = 0x00fc
+BUFF_PATROL_TELEPORT_ACTION_TAG = 0x00ef
 BUFF_PLAY_SOUND_TIME_DILATION_TAIL_BYTES = 26
 
 
@@ -2635,6 +2636,52 @@ def read_buff_play_sound_target_settings_partial(
         "rawHex": raw.hex(" "),
     }, limit
 
+
+def decode_buff_patrol_teleport_action(
+    data: bytes,
+    item_start: int,
+    item_end: int,
+    tag_width: int,
+    member_count: int,
+) -> dict[str, Any]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, item_end)
+    if tag != BUFF_PATROL_TELEPORT_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("patrolTeleport:tag-mismatch")
+    if tag_width != 1:
+        raise ValueError(f"patrolTeleport:tag-width={tag_width}")
+    if member_count != 6:
+        raise ValueError(f"patrolTeleport:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_exact(
+        data,
+        offset,
+        "patrolTeleport.prefix",
+    )
+    save_to, offset = read_buff_memorypack_utf8_string_strict(
+        data,
+        offset,
+        "patrolTeleport.saveTo",
+        max_length=128,
+    )
+    if not save_to:
+        raise ValueError("patrolTeleport.saveTo:empty")
+    teleport_dis, offset = read_buff_f32_field(data, offset, "patrolTeleport.teleportDis")
+    if teleport_dis < 0 or teleport_dis > 100_000:
+        raise ValueError(f"patrolTeleport.teleportDis:out-of-range={teleport_dis}")
+    if offset != item_end:
+        raise ValueError(f"patrolTeleport:tail-at={format_offset(offset)} end={format_offset(item_end)}")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_PATROL_TELEPORT_ACTION_TAG],
+        "decodeStatus": "exact",
+        "schemaSource": (
+            "Runtime fields are teleportDis and saveTo; current MemoryPack bytes consume exactly as "
+            "AbilityActionData prefix, saveTo string, then teleportDis float"
+        ),
+        "byteLength": item_end - item_start,
+        "prefix": prefix,
+        "saveTo": save_to,
+        "teleportDis": round(teleport_dis, 6),
+    }
 
 def decode_buff_play_sound_action(
     data: bytes,
@@ -2848,6 +2895,14 @@ def decode_buff_ability_action_item_exact(
         )
     if tag == BUFF_PLAY_SOUND_ACTION_TAG:
         return decode_buff_play_sound_action(
+            data,
+            item_start,
+            item_end,
+            tag_width,
+            member_count,
+        )
+    if tag == BUFF_PATROL_TELEPORT_ACTION_TAG:
+        return decode_buff_patrol_teleport_action(
             data,
             item_start,
             item_end,
