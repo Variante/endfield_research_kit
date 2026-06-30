@@ -2721,6 +2721,27 @@ def decode_buff_post_id_prefix(
         }
         return result
 
+    structured_candidates = [
+        candidate for candidate in candidates
+        if str(candidate.get("status") or "").startswith("parsed-through")
+    ]
+    if len(structured_candidates) == 1 and all(
+        candidate is structured_candidates[0] or candidate.get("status") == "parse-error"
+        for candidate in candidates
+    ):
+        result = dict(structured_candidates[0])
+        result["anchorSelection"] = {
+            "status": "selected-from-ambiguous-id-markers",
+            "idMarkerCount": id_marker_count,
+            "selectedIdMarkerOffset": result.get("idMarkerOffset"),
+            "selectionCriteria": "unique BuffData id marker candidate reached a structured parser stop; all other candidates were hard parse errors",
+            "candidateSummaries": [
+                summarize_buff_post_id_prefix_candidate(candidate)
+                for candidate in candidates[:12]
+            ],
+        }
+        return result
+
     return {
         "status": "ambiguous-id-marker",
         "idMarkerCount": id_marker_count,

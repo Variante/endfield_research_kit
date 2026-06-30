@@ -1380,3 +1380,57 @@ Validation:
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - Focused BuffData decode over all 2,291 rows produced `2,212` exact-tail rows, `65` opaque timeline action bodies, `46` `unparsed-stackEffects`, and `11` generic parse errors.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_opaque_timeline_validate_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData Structured Ambiguous Anchor Selection
+
+Removed the remaining generic BuffData ambiguous-anchor bucket by selecting only when one candidate structurally parses and every other exact-id marker candidate is a hard parse error.
+
+Root cause refined:
+
+- The nine remaining `ambiguous-id-marker` rows no longer had competing plausible structured candidates.
+- In each row, exactly one id marker reached a known parser stop such as `unparsed-igniteEventAction`, `unparsed-poiseModifier`, or a tail `parse-error`; every other id marker failed immediately on scalar validation (`invalid-bool` or impossible count).
+- The parser now selects that unique structured candidate and keeps all rejected candidate summaries for auditability.
+- This does not reduce the strict unresolved count; it moves rows from a generic anchor bucket to the concrete unresolved body/parser bucket.
+
+Focused BuffData validation after this recovery:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| `BuffData` files scanned | 2,291 | 2,291 |
+| Ambiguous id-marker rows | 9 | 0 |
+| `unparsed-igniteEventAction` rows | 3 | 8 |
+| `unparsed-poiseModifier` rows | 6 | 9 |
+| Generic BuffData tail `parse-error` rows | 11 | 12 |
+| Structural ambiguous-anchor selections | 0 | 9 |
+
+Full Json strict issue validation after this recovery:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 146 |
+| `Json/BuffData` unresolved issue rows | 144 |
+| `Json/LevelScriptData` unresolved issue rows | 2 |
+
+Current strict unresolved status distribution:
+
+| Status | Count |
+| --- | ---: |
+| `opaque-timelineActions` | 65 |
+| `unparsed-stackEffects` | 46 |
+| `parse-error` | 12 |
+| `unparsed-poiseModifier` | 9 |
+| `unparsed-igniteEventAction` | 8 |
+| `unparsed-shieldConfigs` | 4 |
+| `count-exceeds-remaining` | 2 |
+
+Remaining parser targets:
+
+- The remaining BuffData rows are now all concrete parser/body gaps rather than anchor-selection gaps.
+- Next high-impact targets are nonzero `stackEffects.effectActions` and semantic timeline action decoding; smaller body targets are `igniteEventAction`, `poiseModifier`, and `shieldConfigs`.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- Focused BuffData decode over all 2,291 rows produced zero `ambiguous-id-marker` rows and 9 structural ambiguous-anchor selections.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_structured_anchor_validate_20260630` completed and indexed 81,735 Json files.
