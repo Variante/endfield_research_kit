@@ -124,9 +124,73 @@ Build and focused validation:
 - Targeted export:
   `tmp\projectile_component_movemode_after_20260630`.
 
+## MoveModeData Value Follow-up
+
+A byte-level pass over `tmp\projectile_component_movemode_after_20260630`
+proved the value boundary inside `moveModeDict`:
+
+- each `MoveModeData` value is exactly 124 int32 words, or 496 bytes;
+- one-key samples therefore consume 124 value words after the dictionary header;
+- four-key samples consume 496 value words after the dictionary header;
+- suffix strings for effect names start immediately after that boundary in 9 of
+  the 10 focused samples, and the remaining `attack4` sample has a plausible
+  zero/count/scalar suffix with no ASCII effect string;
+- the old raw tail minus the decoded dictionary header matches the current
+  `remainingRawWords` bytes exactly for all 10 samples.
+
+The exporter now emits keyed partial `MoveModeData` records under
+`moveModeDict.values`. Each record decodes the metadata-backed prefix through
+`parabolaDef` and preserves the remaining 115 words in that fixed-size value
+record as raw data.
+
+Focused validation after the change:
+
+- `.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore`
+- Result: succeeded with `0 Warning(s)` and `0 Error(s)`.
+- Targeted export:
+  `tmp\projectile_component_movemode_values_after_20260630`.
+- Exported JSON count: 10.
+- `moveModeDict` key distribution: five one-key rows and five four-key rows.
+- Decoded `MoveModeData` values: 25.
+- Value sizes: every value has `wordCount = 124` and `length = 496`.
+- Per-value raw remainder: every value preserves 115 raw words after the named
+  prefix.
+- `ProjectileComponentData` `$unparsed`, `$heuristic`, and `decodeError`: 0.
+
+Observed raw prefix values across the 25 value records:
+
+- `traceType`: value `0` in 1 record, value `1` in 1 record, value `2` in 23 records.
+- `moveType`: value `0` in 8 records, value `2` in 17 records.
+- `parabolaDef`: value `0` in 25 records.
+
+The JSON includes the IL2CPP enum type for those fields but intentionally does
+not attach enum member names yet.
+
+Metadata caveats:
+
+- `global-metadata.dat` confirms the `MoveModeData` field order and names the
+  enum types `ProjectileTraceType`, `ProjectileMoveType`, and
+  `ProjectileParabolaDef`, but the numeric enum constants need a separate
+  reliable proof before member names are emitted.
+- The metadata entry is
+  `Beyond.Gameplay.Core.ProjectileComponentData+MoveModeData`, type `10992`,
+  with `fieldStart = 47811` and `fieldCount = 22`.
+- The same metadata pass names the post-`parabolaDef` field order as
+  speed-info strings, `BlackboardDouble` scalar wrappers, `UnityEngine.AnimationCurve`
+  records, bool fields, and two `ProjectileComponentData+BezierPoint` records,
+  but the byte layouts for those nested structures still need validation.
+- The current metadata helper does not resolve several generic field type
+  indices to friendly names, so the speed-info, curve, and BezierPoint payloads
+  are still byte-validated raw words rather than decoded structures.
+- `tools\DummyDll` and `tools\Cpp2IL-endfield-patched-dlls4` do not expose the
+  projectile data types through the local Mono.Cecil probe, so they cannot
+  replace the byte evidence for this family.
+
 ## Remaining Unknowns
 
-- Exact serialization of `moveModeDict` values.
+- Exact internals of `MoveModeData` after `parabolaDef`: speed-info wrappers,
+  `FAnimationCurve` records, scalar bools, BlackboardDouble wrappers, and
+  BezierPoint records.
 - Exact effect-list item layouts for `mainEffects`, `launchEffects`,
   `reachEffects`, `hitEffects`, `blockEffects`, and `finishEffects`.
 - Exact projectile sound struct layout for `launchSound`, `loopSound`,
