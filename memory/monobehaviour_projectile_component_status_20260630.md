@@ -628,3 +628,51 @@ Current projectile status:
 - The focused 300-projectile slice still has no tracked `$unparsed`, `$heuristic`, or `decodeError` markers.
 - Projectile `alertEffect` now exposes the proven prefix fields and keeps only the unproven 89-word tail raw.
 - Remaining projectile semantic work is effect-list assignment and the later `EffectActionCfg` tail, not a whole-record decode failure.
+
+## Projectile AlertEffect Tail Split Recovery
+
+This pass resolves the raw-word ownership left by the previous `alertEffect` prefix promotion.
+
+Root cause:
+
+- The prior parser treated all 89 words after the proven 24-word `alertEffect` prefix as `EffectActionCfg.remainingRawWords`.
+- Cross-sample word accounting shows those 89 words are actually two regions:
+  - 80 words: the rest of the projectile `Beyond.Gameplay.EffectActionCfg` variant after `effectPosData`.
+  - 9 words: parent `ProjectileComponentData` sound metadata after `alertEffect`.
+- Keeping the final 9 words inside `alertEffect` incorrectly hid `launchSound`, `loopSound`, `reachSound`, `hitSound`, `blockSound`, `finishedSound`, `sizzleSound`, `sizzleSoundTriggerDistance`, and `ringProjectileSoundSmoothFactor`.
+
+Implementation:
+
+- `FindProjectileAlertEffectSuffix` now bounds `alertEffect` to `suffixWords - 1 - 9` words, then decodes a separate 9-word `postAlertEffectSoundTail`.
+- `ReadProjectileAlertEffectActionCfgDiagnostic` now expects the byte-proven 104-word post-name shape: 24 prefix words plus an 80-word `EffectActionCfg` tail.
+- `centerOffset` remains omitted because inserting it misaligns later bool/enum fields in the focused slice.
+- The record remains `$partial` because `BlackboardDouble` internals and sound hash semantics are still diagnostic.
+
+Validation output:
+
+```text
+tmp\projectile_alert_tail_validation_after_20260630
+```
+
+Validation summary:
+
+| Metric | Result |
+| --- | ---: |
+| Projectile template JSON files | 300 |
+| `alertEffect` records | 300 |
+| `alertEffect` records with decoded 80-word tail | 300 |
+| `alertEffect.remainingRawWordCount = 0` | 300 |
+| `postAlertEffectSoundTail` records | 300 |
+| `postAlertEffectSoundTail.serializedWordCount = 9` | 300 |
+| `ringProjectileSoundSmoothFactor = 0.1` | 300 |
+| `effectActionTail.weaponVfxIndex = -1` | 300 |
+| `effectActionTail.alertType = Decal` | 300 |
+| `effectActionTail.animateAlert = true` | 300 |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+
+Current projectile status:
+
+- The focused 300-projectile `alertEffect` slice no longer has raw tail words.
+- Remaining projectile work is now higher-level semantics: sound hash lookup/naming, `BlackboardDouble` internals, and the broader effect-list/finish prefix before `showAlertEffect`.

@@ -80,3 +80,21 @@ Current interpretation:
 - The instrumentation is compiled and success-path validated.
 - I did not find a real current-data failure case in the sampled Persistent set; the stale no-recovery artifacts appear to be recoverable under the current exporter and recent parser fixes.
 - The next broad export or decoded-index rebuild should bucket any remaining `references:ManagedReferencesRegistry` failures by `managedReferencesRegistryRecoveryFailure.reason` instead of leaving them as anonymous partial TypeTree stops.
+
+## 2026-06-30 Projectile AlertEffect Tail Update
+
+Implemented the next projectile parser promotion after the alertEffect prefix recovery.
+
+- Build validation: `scripts\animestudio\rebuild.bat -Target CLI -NoRestore` succeeded with 0 warnings and 0 errors after clearing one stale AnimeStudio.CLI probe process that was locking the output DLLs.
+- Focused validation output: `tmp\projectile_alert_tail_validation_after_20260630`.
+- 300/300 projectile `alertEffect` records now decode the 80-word post-prefix `EffectActionCfg` tail.
+- 300/300 records decode the separate 9-word parent `postAlertEffectSoundTail`.
+- `alertEffect.remainingRawWordCount` is now 0 for all 300 focused records.
+- The focused slice still has 0 tracked `$unparsed`, `$heuristic`, or `decodeError` markers.
+
+Broad inventory notes from this pass:
+
+- A temp decoded MonoBehaviour index was rebuilt at `tmp\decoded_index_mono_20260630`: 1,064,294 files, 15,094 groups.
+- Broad log review found the latest Texture2D asset run has 0 command failures, 0 warnings, 0 errors, 0 export errors, and 0 failed-to-decode entries.
+- The largest remaining scary-looking asset markers are expected empty Animator/Texture2D marker outputs, not current parser failures.
+- The old MonoBehaviour incomplete bucket is partly stale: multiple old no-recovery Persistent samples now recover fully when rerun with the current exporter.
