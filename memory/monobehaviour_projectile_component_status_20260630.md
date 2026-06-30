@@ -512,7 +512,71 @@ Validation summary:
 | `alertEffect.effectName = P_skillalert_circle_01` | 13 |
 | `alertEffect.effectName = P_skillalert_circle_01_02` | 11 |
 
-Remaining projectile diagnostic work:
+Remaining projectile diagnostic work at this stage:
 
-- `ProjectileComponentData` remains parent `$partial` because effect-list assignment, inner `EffectActionCfg`, and some `MoveModeData` internals are still intentionally raw/diagnostic.
-- The only marker left in the 300-projectile slice is nested `BezierPoint` `decodeError` diagnostics: 10 records.
+- `ProjectileComponentData` remained parent `$partial` because effect-list assignment, inner `EffectActionCfg`, and some `MoveModeData` internals were still intentionally raw/diagnostic.
+- The nested `BezierPoint` `decodeError` diagnostics listed here are resolved by the following terminal-prefix recovery pass.
+
+## Terminal BezierPoint Prefix Recovery
+
+This pass resolves the remaining nested `BezierPoint` `decodeError` diagnostics from the 300-projectile validation slice and removes the raw/truncated midpoint statuses introduced by fixed 21-word slicing.
+
+Root cause:
+
+- `MoveModeData` has fixed 124-word values, but `BezierPoint` internals are not fixed 21-word records when nested `BlackboardDouble` values carry dynamic keys or when the suffix ends before every metadata-listed Bezier field is serialized.
+- The previous reader cut `bezierMidPoint1`/`bezierMidPoint2` at fixed 21-word boundaries. That split dynamic strings such as `EntityBB_BezierAngle`, `EntityBB_YZRadiusRange`, and `EntityBB_curve_rate` across midpoint boundaries.
+- A few records serialize only a terminal prefix of the second midpoint, and one record ends with three zero padding words after a complete first midpoint.
+
+Implementation:
+
+- `ReadProjectileMoveModeDataSuffixDiagnostic` now attempts a metadata-order BezierPoint decode first, then a terminal-prefix BezierPoint decode.
+- Complete BezierPoint records still use strict `usePresetPoint`, `presetPointKey`, `xRatioRange`, `yzAngleRange`, `yzRadiusRange`, and optional `scaledYzRadius` field order from IL2CPP metadata.
+- Terminal-prefix records decode bounded `BlackboardDoubleRange` prefixes and mark partial terminal fields explicitly instead of emitting `decodeError` or raw midpoint records.
+- All-zero terminal leftovers are classified as omitted second-midpoint padding and preserved as padding words.
+
+Validation output:
+
+```text
+tmp\projectile_bezier_terminal_validation_after_20260630
+```
+
+Validation summary:
+
+| Metric | Result |
+| --- | ---: |
+| Projectile template JSON files | 300 |
+| `ProjectileComponentData` references | 300 |
+| Decoded `ProjectileComponentData` layouts | 300 |
+| Structured tails | 300 |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+| `BezierPoint` records | 571 |
+| Decoded `BezierPoint` records | 571 |
+| Full `BezierPoint` records | 524 |
+| Terminal-prefix `BezierPoint` records | 46 |
+| Terminal `BezierPoint` records with omitted `scaledYzRadius` | 1 |
+| Raw/truncated midpoint statuses | 0 |
+| Zero terminal padding cases | 1 |
+| Nested terminal raw blackboard-key note | 1 |
+
+Observed `BezierPoint.serializedWordCount` distribution:
+
+| Words | Count |
+| ---: | ---: |
+| 7 | 23 |
+| 11 | 1 |
+| 12 | 1 |
+| 14 | 16 |
+| 17 | 3 |
+| 19 | 1 |
+| 21 | 519 |
+| 23 | 2 |
+| 24 | 1 |
+| 31 | 3 |
+| 42 | 1 |
+
+Current projectile status:
+
+- The focused 300-projectile slice has no tracked `$unparsed`, `$heuristic`, or `decodeError` markers and no raw/truncated Bezier midpoint statuses.
+- `ProjectileComponentData` still remains parent `$partial` because inner `EffectActionCfg`, effect-list assignment, and some non-serialized `MoveModeData` speed-info metadata remain deliberately diagnostic.
