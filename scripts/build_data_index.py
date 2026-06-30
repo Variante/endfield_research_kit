@@ -2312,18 +2312,33 @@ def read_buff_stacking_settings_compact_id_branch(
     }, offset
 
 
-def decode_buff_post_id_prefix(
+def summarize_buff_post_id_prefix_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
+    summary: dict[str, Any] = {
+        "idMarkerOffset": candidate.get("idMarkerOffset"),
+        "status": candidate.get("status"),
+        "offset": candidate.get("offset"),
+        "endOffset": candidate.get("endOffset"),
+    }
+    for key in (
+        "tailParseStatus",
+        "tailParseOffset",
+        "error",
+        "tailParseError",
+        "igniteEventActionCount",
+        "poiseModifierCount",
+        "shieldConfigsCount",
+    ):
+        if key in candidate:
+            summary[key] = candidate.get(key)
+    return {key: value for key, value in summary.items() if value not in (None, "")}
+
+
+def decode_buff_post_id_prefix_at(
     data: bytes,
     id_value: str,
-    id_marker_count: int,
-    id_marker_offsets: list[int],
+    id_marker_offset: int,
 ) -> dict[str, Any]:
-    if not id_value or not id_marker_offsets:
-        return {"status": "missing-id-marker"}
-    if id_marker_count != 1:
-        return {"status": "ambiguous-id-marker", "idMarkerCount": id_marker_count}
-
-    start = id_marker_offsets[0] + 4 + len(id_value.encode("utf-8"))
+    start = id_marker_offset + 4 + len(id_value.encode("utf-8"))
     offset = start
     try:
         ignite_count, offset = read_buff_u32_field(data, offset, "igniteEventActionCount")
@@ -2351,6 +2366,7 @@ def decode_buff_post_id_prefix(
         result: dict[str, Any] = {
             "status": "parsed-through-poiseModifierCount",
             "source": "anchored after exact top-level id marker; stops before nonzero list bodies",
+            "idMarkerOffset": format_offset(id_marker_offset),
             "offset": format_offset(start),
             "igniteEventActionCount": ignite_count,
             "ignoreCooldownWhenAdding": ignore_cooldown,
@@ -2420,10 +2436,57 @@ def decode_buff_post_id_prefix(
     except (struct.error, UnicodeDecodeError, ValueError) as exc:
         return {
             "status": "parse-error",
+            "idMarkerOffset": format_offset(id_marker_offset),
             "offset": format_offset(offset),
             "error": str(exc),
         }
 
+
+def decode_buff_post_id_prefix(
+    data: bytes,
+    id_value: str,
+    id_marker_count: int,
+    id_marker_offsets: list[int],
+) -> dict[str, Any]:
+    if not id_value or not id_marker_offsets:
+        return {"status": "missing-id-marker"}
+
+    candidates = [
+        decode_buff_post_id_prefix_at(data, id_value, marker_offset)
+        for marker_offset in id_marker_offsets
+    ]
+    if id_marker_count == 1:
+        return candidates[0]
+
+    exact_candidates = [
+        candidate for candidate in candidates
+        if candidate.get("status") == "parsed-through-exact-tail"
+    ]
+    if len(exact_candidates) == 1:
+        result = dict(exact_candidates[0])
+        result["anchorSelection"] = {
+            "status": "selected-from-ambiguous-id-markers",
+            "idMarkerCount": id_marker_count,
+            "selectedIdMarkerOffset": result.get("idMarkerOffset"),
+            "selectionCriteria": "unique BuffData id marker candidate parsed through exact tail",
+            "candidateSummaries": [
+                summarize_buff_post_id_prefix_candidate(candidate)
+                for candidate in candidates[:12]
+            ],
+        }
+        return result
+
+    return {
+        "status": "ambiguous-id-marker",
+        "idMarkerCount": id_marker_count,
+        "candidateCount": len(candidates),
+        "idMarkerOffsets": [format_offset(offset) for offset in id_marker_offsets],
+        "selectionCriteria": "requires a unique BuffData candidate that parses through exact tail",
+        "candidateSummaries": [
+            summarize_buff_post_id_prefix_candidate(candidate)
+            for candidate in candidates[:12]
+        ],
+    }
 
 def buff_post_id_prefix_sample(prefix: dict[str, Any]) -> str:
     status = str(prefix.get("status") or "")
@@ -9236,6 +9299,7 @@ DECODER_STATUS_FIELD_LIMIT = 24
 DECODER_ISSUE_FIELD_LIMIT = 12
 DECODER_ISSUE_STATUS_VALUES = {
     "ambiguous-id-marker",
+    "count-exceeds-remaining",
     "empty-tail",
     "invalid-count",
     "missing-id-marker",
