@@ -1874,3 +1874,80 @@ Validation:
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - Focused BuffData scan over all 2,291 files produced `331` named first-action records and zero unknown first-action tags.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_timeline_tag_names_validate_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData Single AbilityActionData Item Diagnostics
+
+Added conservative item-level diagnostics inside `BuffData.timelineActions[*].SequenceActionData.actionData` for the cases where boundaries are independently proven.
+
+What changed:
+
+- Added a serialized member-count map for the observed `AbilityActionData` union tags in current BuffData timeline first actions.
+- Added an item summary helper that validates the recovered union tag, serialized member count, whole payload boundary, and bounded string hits.
+- Emits `actionDataItems` only when `actionDataCount == 1`, because the existing outer timeline parser already proves the whole action-data payload boundary.
+- Marks `actionDataCount == 0` as `empty`.
+- Marks every `actionDataCount > 1` payload as `ambiguous-union-tag-boundaries` and keeps the payload opaque. This follows the splitter audit: contiguous one-byte union tags make ordinary body bytes look like valid next tags unless type-specific body skippers exist.
+
+Focused BuffData validation:
+
+| Metric | Count |
+| --- | ---: |
+| `BuffData` files scanned | 2,291 |
+| Rows with parsed timeline outer records | 79 |
+| Outer `TimelineActionData` records | 338 |
+| `actionDataSplit=single-item` records | 263 |
+| `actionDataSplit=empty` records | 7 |
+| `actionDataSplit=ambiguous-union-tag-boundaries` records | 68 |
+| Emitted bounded `actionDataItems` | 263 |
+| Hard BuffData tail failures | 0 |
+
+Top single-item action names:
+
+| Recovered action item | Count |
+| --- | ---: |
+| `Core_EffectAction_EffectActionData` | 119 |
+| `Core_IfElseAction_IfElseActionData` | 19 |
+| `Core_TickIntervalAction_Data` | 12 |
+| `Core_PlaySoundAction_PlaySoundActionData` | 10 |
+| `Core_FindTargetAction_FindTargetActionData` | 10 |
+| `Core_SendBattleSignalToLevel_Data` | 8 |
+| `Core_SelfRotateAction_Data` | 7 |
+| `Core_CreateBuffAction_Data` | 7 |
+| `Core_LaunchProjectile_Data` | 7 |
+
+Full Json strict issue validation after this diagnostic addition:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 143 |
+| `Json/BuffData` unresolved issue rows | 143 |
+| `Json/LevelScriptData` unresolved issue rows | 0 |
+
+Current strict issue field distribution remains unchanged:
+
+| Status | Count |
+| --- | ---: |
+| `partial-timelineActions-opaque-actionData` | 82 |
+| `partial-inner-actionData-union-payloads-opaque` | 79 |
+| `opaque-effectActions` | 47 |
+| `partial-effectActions-unproven-field-order` | 47 |
+| `opaque-poiseModifier` | 9 |
+| `partial-poiseModifier-opaque-processors` | 9 |
+| `opaque-shieldConfigs` | 4 |
+| `partial-shieldConfigs-opaque-nested-fields` | 4 |
+| `opaque-igniteEventAction` | 4 |
+| `partial-igniteEventAction-opaque-actionData` | 4 |
+| `opaque-igniteEventAction-nestedBlocks` | 4 |
+| `partial-igniteEventAction-nestedBlocks-opaque-actionData` | 4 |
+
+Interpretation:
+
+- This is deliberately not a full inner splitter. Multi-item payloads remain opaque because recovered union tag ranges alone do not prove boundaries.
+- The emitted single-item summaries are safe because the existing outer parser already delimits the whole `actionData` blob and the item header validates against recovered tag names plus observed serialized member counts.
+- The next step is type-specific body skipping/parsing for selected actions such as `PlaySoundAction`, `SendBattleSignalToLevel`, `CreateBuffAction`, or `EffectAction`. Only after a type-specific parser returns exact item ends should multi-item payloads be split.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- Focused BuffData scan over all 2,291 files produced `263` single-item summaries, `68` ambiguous multi-item payloads, and zero hard tail parse statuses.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_action_items_single_validate_20260630` completed and indexed 81,735 Json files.
