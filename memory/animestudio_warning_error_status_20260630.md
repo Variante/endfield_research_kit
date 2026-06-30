@@ -1484,3 +1484,63 @@ Validation:
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - Focused BuffData decode over all 2,291 rows produced `46` `opaque-effectActions` rows, `124` bounded nested actions, and zero remaining `unparsed-stackEffects` rows.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_stackeffects_opaque_validate_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData Opaque Small List Body Boundaries
+
+Bounded additional small BuffData list bodies by requiring a unique downstream parse back into the known suffix/tail layout.
+
+What changed:
+
+- Added bounded opaque body recovery for selected `igniteEventAction`, `poiseModifier`, and `shieldConfigs` list bodies.
+- Each body skipper only accepts a unique downstream parse that reaches the existing exact tail parser; otherwise the row remains in the concrete `unparsed-*` or `parse-error` bucket.
+- The recovered list bodies are emitted as `opaque-igniteEventAction`, `opaque-poiseModifier`, and `opaque-shieldConfigs`, and those statuses remain strict `di` issue fields.
+- A broader attempt to reinterpret member-count-0 gameplay tags was tested and reverted because it regressed many normal BuffData rows; compact tag handling remains a separate target.
+
+Focused BuffData validation after this recovery:
+
+| Metric | Count |
+| --- | ---: |
+| `BuffData` files scanned | 2,291 |
+| `opaque-igniteEventAction` rows | 4 |
+| `opaque-poiseModifier` rows | 7 |
+| `opaque-shieldConfigs` rows | 4 |
+| `opaque-effectActions` rows | 47 |
+| `opaque-timelineActions` rows | 66 |
+| Remaining `unparsed-igniteEventAction` rows | 4 |
+| Remaining `unparsed-poiseModifier` rows | 2 |
+| Remaining BuffData `parse-error` rows | 12 |
+
+Full Json strict issue validation after this recovery:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 146 |
+| `Json/BuffData` unresolved issue rows | 144 |
+| `Json/LevelScriptData` unresolved issue rows | 2 |
+
+Current strict issue field distribution:
+
+| Status | Count |
+| --- | ---: |
+| `opaque-timelineActions` | 67 |
+| `opaque-effectActions` | 47 |
+| `parse-error` | 12 |
+| `opaque-poiseModifier` | 7 |
+| `opaque-shieldConfigs` | 4 |
+| `opaque-igniteEventAction` | 4 |
+| `unparsed-igniteEventAction` | 4 |
+| `unparsed-poiseModifier` | 2 |
+| `count-exceeds-remaining` | 2 |
+
+Remaining concrete parser targets:
+
+- Four `buff_common_energy_shard_attached_*` rows report `igniteEventActionCount=4` while the observed body-local sequence count is `1`; this likely needs a nested/event wrapper interpretation rather than the simple sequence-body skipper.
+- Two Ethillu poise rows still require compact empty tag handling after the poise boundary; a broad member-count-0 tag reinterpretation was unsafe.
+- Twelve BuffData parse errors remain, mostly Ruanyi timeline/tag tail variants, plus two LevelScript trigger-volume count rows.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- Focused BuffData decode over all 2,291 rows produced `4` `opaque-igniteEventAction`, `7` `opaque-poiseModifier`, `4` `opaque-shieldConfigs`, `47` `opaque-effectActions`, and `66` `opaque-timelineActions` rows.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_small_lists_opaque_validate_20260630` completed and indexed 81,735 Json files.
