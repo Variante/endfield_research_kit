@@ -1798,3 +1798,79 @@ Validation:
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - Focused BuffData scan over all 2,291 files produced zero hard tail parse statuses and the expected small-body status counts.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_small_body_diagnostics_validate_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData Timeline AbilityAction Tag Names
+
+Recovered exact first-action union names for `BuffData.timelineActions[*].SequenceActionData.actionData` without parsing the inner action payload bodies yet.
+
+What changed:
+
+- Regenerated the MemoryPack union formatter tag audit with the current `GameAssembly` `CodeRegistration` address `0x18C439740` after the older LevelScript default failed module parsing.
+- The recovered `Beyond_Gameplay_Core_AbilityAction_AbilityActionData` formatter table has `358` contiguous union tags, `0x0000..0x0165`, with no duplicate or missing tags.
+- Added a compact observed-tag map for current BuffData timeline first-action tags to `scripts/build_data_index.py`.
+- `timelineActionRecords[*].sequenceActionData` now includes `firstActionName` and the timeline summary includes `timelineActionFirstActionNameCounts` plus a `timelineActionUnionTagSource` note.
+- Inner `actionData` payload bytes remain opaque. The current parser still does not split multi-action payloads or promote type-specific action fields.
+
+Focused BuffData validation:
+
+| Metric | Count |
+| --- | ---: |
+| `BuffData` files scanned | 2,291 |
+| Rows with parsed timeline outer records | 79 |
+| Outer `TimelineActionData` records | 338 |
+| Nonempty first-action tags named | 331 |
+| First-action tags without recovered names | 0 |
+| Hard BuffData tail failures | 0 |
+
+Top recovered first-action names:
+
+| Recovered first action | Count |
+| --- | ---: |
+| `Core_EffectAction_EffectActionData` | 124 |
+| `Core_FindTargetAction_FindTargetActionData` | 25 |
+| `Core_IfElseAction_IfElseActionData` | 22 |
+| `Core_CompareFloat_Data` | 17 |
+| `Core_TickIntervalAction_Data` | 12 |
+| `Core_PlaySoundAction_PlaySoundActionData` | 10 |
+| `Core_CreateBuffAction_Data` | 10 |
+| `Core_SendBattleSignalToLevel_Data` | 8 |
+| `Core_LaunchProjectile_Data` | 8 |
+| `Core_SelfRotateAction_Data` | 7 |
+
+Full Json strict issue validation after this recovery:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 143 |
+| `Json/BuffData` unresolved issue rows | 143 |
+| `Json/LevelScriptData` unresolved issue rows | 0 |
+
+Current strict issue field distribution:
+
+| Status | Count |
+| --- | ---: |
+| `partial-timelineActions-opaque-actionData` | 82 |
+| `partial-inner-actionData-union-payloads-opaque` | 79 |
+| `opaque-effectActions` | 47 |
+| `partial-effectActions-unproven-field-order` | 47 |
+| `opaque-poiseModifier` | 9 |
+| `partial-poiseModifier-opaque-processors` | 9 |
+| `opaque-shieldConfigs` | 4 |
+| `partial-shieldConfigs-opaque-nested-fields` | 4 |
+| `opaque-igniteEventAction` | 4 |
+| `partial-igniteEventAction-opaque-actionData` | 4 |
+| `opaque-igniteEventAction-nestedBlocks` | 4 |
+| `partial-igniteEventAction-nestedBlocks-opaque-actionData` | 4 |
+
+Interpretation:
+
+- This is a real semantic improvement: the first union item in every nonempty timeline action-data blob now has an exact MemoryPack formatter type name.
+- The row count is unchanged because payload splitting and field decoding are still unresolved.
+- The next target is an exact inner `AbilityActionData` splitter. It must handle the MemoryPack union tag encoding rule (`0xfa` plus `u16le` wide tags) and should only decode type-specific fields after a parser can consume a single union item exactly.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- Focused BuffData scan over all 2,291 files produced `331` named first-action records and zero unknown first-action tags.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_timeline_tag_names_validate_20260630` completed and indexed 81,735 Json files.

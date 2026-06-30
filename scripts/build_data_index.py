@@ -2291,6 +2291,59 @@ def read_buff_member1_empty_tag_field(
     }, end
 
 
+BUFF_ABILITY_ACTION_TAG_SOURCE_NOTE = (
+    "AbilityActionData union tags recovered from MemoryPack.Beyond formatter cctors with "
+    "GameAssembly CodeRegistration 0x18C439740; table is contiguous 0x0000..0x0165. "
+    "This compact map includes tags observed as first actions in current BuffData timelineActions."
+)
+BUFF_ABILITY_ACTION_TAG_NAMES = {
+    0x0002: "Core_AbilityActions_FinishBuffAction_Data",
+    0x0008: "Core_AddDynamicCcsAction_AddDynamicCcsActionData",
+    0x000b: "Core_AddTagAction_Data",
+    0x0015: "Core_AuraAction_Data",
+    0x0019: "Core_BlowOffCharacterAction_Data",
+    0x0020: "Core_CameraImpulseAction_CameraImpulseActionData",
+    0x002a: "Core_ChannelingAction_Data",
+    0x002f: "Core_CharHurtAnimAction_Data",
+    0x0036: "Core_CheckBuffStackNumAdvanced_Data",
+    0x0047: "Core_CompareFloat_Data",
+    0x004f: "Core_Conditions_CheckBuffStackNum_Data",
+    0x007c: "Core_ContinuousFindTargetAction_Data",
+    0x007e: "Core_ConvertToTargetContext_Data",
+    0x0082: "Core_CreateBuffAction_Data",
+    0x0089: "Core_CustomRootMotionAction_Data",
+    0x008a: "Core_DamageAction_DamageActionData",
+    0x008b: "Core_DebugPrintAction_Data",
+    0x0091: "Core_EffectAction_EffectActionData",
+    0x009f: "Core_FindTargetAction_FindTargetActionData",
+    0x00a1: "Core_FinishBuffAdvanced_Data",
+    0x00a3: "Core_FinishOwnerAction_Data",
+    0x00ac: "Core_GetAITransDataAction_Data",
+    0x00b2: "Core_HitStopAction_Data",
+    0x00b4: "Core_IfElseAction_IfElseActionData",
+    0x00bf: "Core_InterruptAction_Data",
+    0x00c8: "Core_LaunchProjectile_Data",
+    0x00ca: "Core_LockCameraAimAction_LockCameraAimActionData",
+    0x00d1: "Core_ModifyDynamicBlackboard_Data",
+    0x00db: "Core_MoveToAction_Data",
+    0x00e9: "Core_OverrideCameraFollowAction_OverrideCameraFollowActionData",
+    0x00ef: "Core_PatrolTeleport_Data",
+    0x00f8: "Core_PlayAnimationAction_PlayAnimationActionData",
+    0x00fc: "Core_PlaySoundAction_PlaySoundActionData",
+    0x00fe: "Core_PullAction_Data",
+    0x0108: "Core_RecoverFromPoiseBreak_Data",
+    0x010a: "Core_RecoverPoiseAction_Data",
+    0x011e: "Core_SelfRotateAction_Data",
+    0x011f: "Core_SendBattleSignalToLevel_Data",
+    0x0133: "Core_ShowComboRingQte_Data",
+    0x0135: "Core_ShowHideActorAction_ShowHideActorData",
+    0x013d: "Core_SpawnAbilityEntity_Data",
+    0x013e: "Core_SpawnEnemyAction_Data",
+    0x0140: "Core_SpellInfliction_Data",
+    0x014d: "Core_TeleportAction_Data",
+    0x0152: "Core_TickIntervalAction_Data",
+    0x0154: "Core_TimeDilationAction_Data",
+}
 BUFF_OPAQUE_TIMELINE_ACTION_BODY_MAX_BYTES = 256 * 1024
 
 
@@ -2455,6 +2508,7 @@ def decode_buff_timeline_actions_outer(
                     "actionDataOffset": format_offset(action_payload_start),
                     "actionDataBytes": payload_len,
                     "firstActionTag": f"0x{first_tag:04x}" if first_tag is not None else "",
+                    "firstActionName": BUFF_ABILITY_ACTION_TAG_NAMES.get(first_tag, "") if first_tag is not None else "",
                     "firstActionTagBytes": first_tag_bytes,
                     "firstActionTagRaw": first_tag_raw,
                     "onlyExecuteWhenSourceIsMainChar": only_main_char,
@@ -2483,6 +2537,9 @@ def decode_buff_timeline_actions_outer(
     first_tag_counts = Counter(
         record["sequenceActionData"]["firstActionTag"] or "none" for record in records
     )
+    first_action_name_counts = Counter(
+        record["sequenceActionData"]["firstActionName"] or "unknown" for record in records
+    )
     return {
         "timelineActionsBodyStatus": "partial-timelineActions-opaque-actionData",
         "timelineActionsBodyShape": (
@@ -2492,8 +2549,10 @@ def decode_buff_timeline_actions_outer(
         ),
         "timelineActionsSemanticStatus": "partial-inner-actionData-union-payloads-opaque",
         "timelineActionRecordCount": len(records),
+        "timelineActionUnionTagSource": BUFF_ABILITY_ACTION_TAG_SOURCE_NOTE,
         "timelineActionDataCountCounts": short_counter_dict(action_data_count_counts),
         "timelineActionFirstTagCounts": short_counter_dict(first_tag_counts),
+        "timelineActionFirstActionNameCounts": short_counter_dict(first_action_name_counts),
         "timelineActionRecords": records,
     }
 
