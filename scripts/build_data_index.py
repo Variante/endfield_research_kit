@@ -2291,6 +2291,37 @@ def read_buff_member1_empty_tag_field(
     }, end
 
 
+BUFF_OPAQUE_TIMELINE_ACTION_BODY_MAX_BYTES = 256 * 1024
+
+
+def find_buff_timeline_actions_body_end(
+    data: bytes,
+    offset: int,
+    action_count: int,
+) -> tuple[int, int]:
+    if action_count <= 0 or action_count > 64:
+        raise ValueError(f"timelineActionsCount:unsupported-body-count={action_count}")
+    if offset >= len(data):
+        raise ValueError("timelineActionsBody:truncated")
+    body_pattern = data[offset]
+    if body_pattern not in (0x03, 0x04):
+        raise ValueError(f"timelineActionsBody:unsupported-pattern=0x{body_pattern:02x}")
+
+    candidates: list[int] = []
+    scan_end = min(len(data), offset + BUFF_OPAQUE_TIMELINE_ACTION_BODY_MAX_BYTES)
+    for candidate_end in range(offset + 1, scan_end):
+        try:
+            read_buff_trigger_interval_bool_tail_exact(data, candidate_end)
+        except (struct.error, UnicodeDecodeError, ValueError):
+            continue
+        candidates.append(candidate_end)
+        if len(candidates) > 1:
+            break
+    if len(candidates) != 1:
+        raise ValueError(f"timelineActionsBody:tail-anchor-candidates={len(candidates)}")
+    return candidates[0], body_pattern
+
+
 def read_buff_stacking_settings_compact_id_branch(
     data: bytes,
     offset: int,
@@ -2582,13 +2613,36 @@ def decode_buff_post_id_prefix_at(
                                 read_buff_trigger_interval_bool_tail_exact(data, timeline_count_offset)
                             )
                         except (struct.error, UnicodeDecodeError, ValueError):
-                            result["status"] = "parsed-through-timelineActionsCount"
+                            try:
+                                timeline_body_end, timeline_body_pattern = find_buff_timeline_actions_body_end(
+                                    data,
+                                    tail_offset,
+                                    timeline_action_count,
+                                )
+                                trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
+                                    read_buff_trigger_interval_bool_tail_exact(data, timeline_body_end)
+                                )
+                            except (struct.error, UnicodeDecodeError, ValueError):
+                                result["status"] = "parsed-through-timelineActionsCount"
+                                result["stackingSettings"] = stacking_settings
+                                result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
+                                result["timelineActionsCount"] = timeline_action_count
+                                result["tailParseStatus"] = "unparsed-timelineActions"
+                                result["tailParseOffset"] = format_offset(tail_offset)
+                                result["tailParseError"] = f"timelineActionsCount={timeline_action_count}"
+                                result["endOffset"] = format_offset(tail_offset)
+                                return result
+                            result["status"] = "parsed-through-exact-tail"
                             result["stackingSettings"] = stacking_settings
                             result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
                             result["timelineActionsCount"] = timeline_action_count
-                            result["tailParseStatus"] = "unparsed-timelineActions"
-                            result["tailParseOffset"] = format_offset(tail_offset)
-                            result["tailParseError"] = f"timelineActionsCount={timeline_action_count}"
+                            result["timelineActionsBodyStatus"] = "opaque-timelineActions"
+                            result["timelineActionsBodyOffset"] = format_offset(timeline_count_offset + 4)
+                            result["timelineActionsBodyBytes"] = timeline_body_end - (timeline_count_offset + 4)
+                            result["timelineActionsBodyPattern"] = f"0x{timeline_body_pattern:02x}"
+                            result["triggerInterval"] = trigger_interval
+                            result["useTimeDilationDt"] = use_time_dilation_dt
+                            result["waitFirstTriggerInterval"] = wait_first_trigger_interval
                             result["endOffset"] = format_offset(tail_offset)
                             return result
                         result["status"] = "parsed-through-exact-tail"
@@ -9491,6 +9545,7 @@ DECODER_ISSUE_FIELD_LIMIT = 12
 DECODER_ISSUE_STATUS_VALUES = {
     "ambiguous-id-marker",
     "count-exceeds-remaining",
+    "opaque-timelineactions",
     "unparsed-igniteeventaction",
     "unparsed-poisemodifier",
     "unparsed-shieldconfigs",

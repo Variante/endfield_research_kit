@@ -1323,3 +1323,60 @@ Validation:
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - Focused BuffData decode over all 2,291 rows produced `2,147` exact-tail rows, `63` `unparsed-timelineActions`, `46` `unparsed-stackEffects`, and `11` generic parse errors.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_zero_stackeffects_validate_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData Opaque TimelineActions Body Spans
+
+Recovered body boundaries for true nonzero `timelineActions` without claiming semantic action decoding.
+
+Root cause refined:
+
+- After removing false-positive timeline counts, the remaining true timeline action bodies all have a unique scalar-tail landing before `triggerInterval`, `useTimeDilationDt`, and `waitFirstTriggerInterval`.
+- The body starts with one of two observed patterns: `0x04` envelope rows and compact `0x03` sequence-action rows.
+- The parser now records `timelineActionsBodyStatus=opaque-timelineActions`, body offset, byte count, and pattern, then validates the final scalar tail to EOF.
+- `opaque-timelineActions` is intentionally included in strict decoder issue fields. We now know the body span and trailing fields, but not the nested timeline action semantics.
+
+Focused BuffData validation after this recovery:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| `BuffData` files scanned | 2,291 | 2,291 |
+| Parsed through exact tail | 2,147 | 2,212 |
+| Explicit `unparsed-timelineActions` rows | 63 | 0 |
+| `timelineActionsBodyStatus=opaque-timelineActions` rows | 0 | 65 |
+| Opaque body pattern `0x04` rows | 0 | 61 |
+| Opaque body pattern `0x03` rows | 0 | 4 |
+| Ambiguous id-marker rows | 11 | 9 |
+
+Full Json strict issue validation after this recovery:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 146 |
+| `Json/BuffData` unresolved issue rows | 144 |
+| `Json/LevelScriptData` unresolved issue rows | 2 |
+
+Current strict unresolved status distribution:
+
+| Status | Count |
+| --- | ---: |
+| `opaque-timelineActions` | 65 |
+| `unparsed-stackEffects` | 46 |
+| `parse-error` | 11 |
+| `ambiguous-id-marker` | 9 |
+| `unparsed-poiseModifier` | 6 |
+| `unparsed-shieldConfigs` | 4 |
+| `unparsed-igniteEventAction` | 3 |
+| `count-exceeds-remaining` | 2 |
+
+Remaining parser targets:
+
+- Semantically decode `timelineActions` nested action payloads instead of only bounding them.
+- Structurally skip or decode nonzero `stackEffects.effectActions` bodies.
+- Continue the smaller list-body buckets: `poiseModifier`, `shieldConfigs`, and `igniteEventAction`.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- Focused BuffData decode over all 2,291 rows produced `2,212` exact-tail rows, `65` opaque timeline action bodies, `46` `unparsed-stackEffects`, and `11` generic parse errors.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_opaque_timeline_validate_20260630` completed and indexed 81,735 Json files.
