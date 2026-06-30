@@ -2289,22 +2289,14 @@ def read_buff_stacking_settings_compact_id_branch(
         stacking_key_offset,
         max_length=256,
     )
+    branch = "compact-id"
+    branch_note = "validated rows use identifierType=Id; empty stackingKey branch consumes compact suffix bytes"
     if stacking_key_error is None and stacking_key and is_clean_skill_identifier_string(stacking_key):
-        return {
-            "memberCount": member_count,
-            "offset": format_offset(start),
-            "branch": "compact-stacking-key",
-            "branchNote": "non-empty stackingKey branch; stackEffects body remains opaque when non-empty",
-            "identifierTypeRaw": identifier_type,
-            "stackingKey": stacking_key,
-            "maxStackCnt": max_stack_count,
-            "maxStackCntKey": max_stack_count_key or "",
-            "priority": round(priority, 6),
-            "priorityKey": priority_key or "",
-            "negatePriority": negate_priority,
-            "isNeedStackEffect": is_need_stack_effect,
-            "stackEffectsCount": stack_effect_count,
-        }, stacking_key_end
+        offset = stacking_key_end
+        branch = "compact-stacking-key"
+        branch_note = "non-empty stackingKey branch consumes the common compact suffix bytes"
+    else:
+        stacking_key = ""
 
     stacking_type = data[offset]
     offset += 1
@@ -2317,11 +2309,11 @@ def read_buff_stacking_settings_compact_id_branch(
     )
     use_priority_key, offset = read_buff_bool_field(data, offset, "stackingSettings.usePriorityKey")
 
-    return {
+    result = {
         "memberCount": member_count,
         "offset": format_offset(start),
-        "branch": "compact-id",
-        "branchNote": "validated rows use identifierType=Id; empty stackingKey branch consumes compact suffix bytes",
+        "branch": branch,
+        "branchNote": branch_note,
         "identifierTypeRaw": identifier_type,
         "stackingTypeRaw": stacking_type,
         "maxStackCnt": max_stack_count,
@@ -2333,7 +2325,10 @@ def read_buff_stacking_settings_compact_id_branch(
         "negatePriority": negate_priority,
         "isNeedStackEffect": is_need_stack_effect,
         "stackEffectsCount": stack_effect_count,
-    }, offset
+    }
+    if stacking_key:
+        result["stackingKey"] = stacking_key
+    return result, offset
 
 
 def summarize_buff_post_id_prefix_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
@@ -2368,6 +2363,18 @@ def decode_buff_post_id_prefix_at(
         ignite_count, offset = read_buff_u32_field(data, offset, "igniteEventActionCount")
         if ignite_count > 256:
             raise ValueError(f"igniteEventActionCount:large-count={ignite_count}")
+        if ignite_count:
+            return {
+                "status": "parsed-through-igniteEventActionCount",
+                "source": "anchored after exact top-level id marker; stops before nonzero list bodies",
+                "idMarkerOffset": format_offset(id_marker_offset),
+                "offset": format_offset(start),
+                "igniteEventActionCount": ignite_count,
+                "tailParseStatus": "unparsed-igniteEventAction",
+                "tailParseOffset": format_offset(offset),
+                "tailParseError": f"igniteEventActionCount={ignite_count}",
+                "endOffset": format_offset(offset),
+            }
         ignore_cooldown, offset = read_buff_bool_field(
             data,
             offset,
@@ -2405,6 +2412,12 @@ def decode_buff_post_id_prefix_at(
                 raise ValueError(f"shieldConfigsCount:large-count={shield_config_count}")
             result["shieldConfigsCount"] = shield_config_count
             result["status"] = "parsed-through-shieldConfigsCount"
+            if shield_config_count:
+                result["tailParseStatus"] = "unparsed-shieldConfigs"
+                result["tailParseOffset"] = format_offset(offset)
+                result["tailParseError"] = f"shieldConfigsCount={shield_config_count}"
+                result["endOffset"] = format_offset(offset)
+                return result
             if shield_config_count == 0:
                 tail_offset = offset
                 try:
@@ -2473,6 +2486,9 @@ def decode_buff_post_id_prefix_at(
                     result["tailParseError"] = str(tail_exc)
         else:
             result["stopReason"] = "poiseModifier list body not skipped"
+            result["tailParseStatus"] = "unparsed-poiseModifier"
+            result["tailParseOffset"] = format_offset(offset)
+            result["tailParseError"] = f"poiseModifierCount={poise_modifier_count}"
         result.setdefault("endOffset", format_offset(offset))
         return result
     except (struct.error, UnicodeDecodeError, ValueError) as exc:
@@ -9342,6 +9358,9 @@ DECODER_ISSUE_FIELD_LIMIT = 12
 DECODER_ISSUE_STATUS_VALUES = {
     "ambiguous-id-marker",
     "count-exceeds-remaining",
+    "unparsed-igniteeventaction",
+    "unparsed-poisemodifier",
+    "unparsed-shieldconfigs",
     "unparsed-stackeffects",
     "unparsed-timelineactions",
     "empty-tail",
