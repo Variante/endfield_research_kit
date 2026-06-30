@@ -1097,3 +1097,59 @@ Validation:
 
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_tailclass_validate_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData List-Body And StackingKey Suffix Classification
+
+Promoted the remaining easy `BuffData` tail evidence from generic failures to explicit opaque-body stops.
+
+Root cause refined:
+
+- Nonzero `igniteEventAction`, `poiseModifier`, and `shieldConfigs` counts are real serialized list bodies. The parser now stops at those body offsets and reports `unparsed-igniteEventAction`, `unparsed-poiseModifier`, or `unparsed-shieldConfigs` instead of reading the first item byte as the next scalar field.
+- The non-empty `BuffStackingSettings.stackingKey` branch still carries the same compact suffix bytes as the empty-key branch: `stackingType`, `useMaxStackCntKey`, and `usePriorityKey`. Consuming only the string left the parser misaligned and produced misleading downstream tag/trigger errors.
+- After consuming that suffix, 143 rows that were generic tail parse errors now land on the real unresolved body: nonzero `timelineActions`.
+
+Full Json strict issue validation after the list-body and suffix fixes:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 327 |
+| `Json/BuffData` unresolved issue rows | 325 |
+| `Json/LevelScriptData` unresolved issue rows | 2 |
+
+Current strict unresolved status distribution:
+
+| Status | Count |
+| --- | ---: |
+| `unparsed-timelineActions` | 188 |
+| `unparsed-stackEffects` | 82 |
+| `parse-error` | 26 |
+| `ambiguous-id-marker` | 16 |
+| `unparsed-poiseModifier` | 6 |
+| `unparsed-shieldConfigs` | 4 |
+| `unparsed-igniteEventAction` | 3 |
+| `count-exceeds-remaining` | 2 |
+
+BuffData parser state:
+
+| Status | Count |
+| --- | ---: |
+| `parsed-through-exact-tail` | 1,966 |
+| `parsed-through-timelineActionsCount` | 188 |
+| `parsed-through-stackingSettings` | 82 |
+| `parsed-through-shieldConfigsCount` | 30 |
+| `ambiguous-id-marker` | 16 |
+| `parsed-through-poiseModifierCount` | 6 |
+| `parsed-through-igniteEventActionCount` | 3 |
+
+Remaining parser targets:
+
+- Decode or bounded-skip `timelineActions` and `stackEffects` list bodies. These now account for 270 of the 325 remaining BuffData strict rows.
+- Resolve the 26 remaining BuffData generic parse errors; raw-byte probes suggest at least some are GameplayTag/Blackboard field-shape variants rather than encryption.
+- Resolve 16 repeated-id BuffData rows where no unique exact-tail anchor exists yet.
+- Investigate the two `LevelScriptData` `count-exceeds-remaining` rows separately; their current trigger-volume candidate is count-impossible.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_stackingkey_validate_20260630` completed and indexed 81,735 Json files.
