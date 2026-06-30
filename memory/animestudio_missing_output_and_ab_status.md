@@ -4268,3 +4268,49 @@ Current classification: the five promoted wrapper parents are byte-consumed and
 no longer need parent partial markers. Remaining warnings are nested semantic
 uncertainty in `TargetSettings` and `SelectorData`, plus local unresolved fields
 in `CreateBuffAction/Data` and `CheckBuffStackNumAdvanced/Data`.
+## 2026-06-30 Fifty-Second Fresh StreamingAssets Projectile AlertEffect Boundary Correction Batch
+
+Follow-up after the core action/condition parent-status batch. This pass corrects the prior projectile `structuredRemainingTail` interpretation: the earlier split into `alertEffect`, seven sound strings, and two scalar floats is superseded by broader raw payload evidence.
+
+Evidence used:
+
+- A read-only projectile alert-effect probe checked 300 projectile JSON/raw payload slices.
+- `P_skillalert_circle_*` appears in 24 projectile payloads: `P_skillalert_circle_01` x13 and `P_skillalert_circle_01_02` x11.
+- The raw suffix shape is stable as `showAlertEffect` followed by one bounded `Beyond.Gameplay.EffectActionCfg` alert-effect variant that consumes through the observed tail end.
+- The previous separate sound/scalar suffix interpretation is not supported across the 300 raw payload slices.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Replaced the fixed default alert record plus decoded sound/scalar suffix with a guarded end-relative alert-effect suffix finder.
+- The structured tail now decodes `showAlertEffect` and a partial `alertEffect` object.
+- The `alertEffect` object field-decodes only `fxType` and `effectName`, then preserves the remaining EffectActionCfg words raw.
+- Removed emitted `launchSound`, `loopSound`, `reachSound`, `hitSound`, `blockSound`, `finishedSound`, `sizzleSound`, `sizzleSoundTriggerDistance`, and `ringProjectileSoundSmoothFactor` from the structured suffix view.
+- Kept `ProjectileComponentData`, `structuredRemainingTail`, and `alertEffect` marked `$partial`.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Final rebuild result after the correction: 0 warnings and 0 errors.
+
+Targeted validation output: `tmp\projectile_alert_effect_validation_after_20260630` using the three existing projectile filter chunks under `tmp\projectile_template_validation_filters`.
+
+| Metric | Result |
+| --- | ---: |
+| `ProjectileComponentData` records | 300 |
+| Structured remaining tails | 295 |
+| Structured remaining tails decoded | 295 |
+| `alertEffect` records | 295 |
+| `alertEffect` records still `$partial` | 295 |
+| `effectName = ""` | 271 |
+| `effectName = "P_skillalert_circle_01"` | 13 |
+| `effectName = "P_skillalert_circle_01_02"` | 11 |
+| Suffix words for empty/default alertEffect | 116 |
+| Suffix words for `P_skillalert_circle_01` | 122 |
+| Suffix words for `P_skillalert_circle_01_02` | 123 |
+| `alertEffect.remainingRawWordCount = 113` | 295 |
+| Separate decoded sound/scalar suffix fields emitted | 0 |
+
+Current classification: the projectile tail end boundary is now represented as `showAlertEffect` plus a bounded partial `EffectActionCfg` alertEffect. This fixes a wrong field split instead of suppressing the warning. Remaining projectile work is the inner EffectActionCfg layout, effect-list assignment before the alert suffix, and locating byte evidence for the metadata sound fields if they are serialized elsewhere or only under unobserved variants.
