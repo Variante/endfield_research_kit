@@ -659,3 +659,60 @@ Remaining current focused gap in `Persistent/data_eny` after this pass:
 
 - `AbilitySystemData`: 1 ref still decoded+partial (`data_eny_0092_slbomb`).
 - No `AbilitySystemForEnemyPartData`, `EnemyPartsRootComponentData`, or `FootRippleComponentData` refs in this focused bucket remain partial/unparsed/heuristic.
+
+## 2026-06-30 AbilitySystemData Slbomb DeadEffect Update
+
+Closed the last top-level partial in the focused `Persistent/data_eny` bucket after the enemy-part dynamic rule recovery.
+
+Focused validation baseline:
+
+```text
+tmp\data_eny_probe_after_partability_dynamicrules_20260630\current_persistent_3267
+```
+
+Post-patch validation:
+
+```text
+tmp\data_eny_probe_after_slbomb_20260630\current_persistent_3267
+```
+
+Root cause:
+
+- `data_eny_0092_slbomb` was not encrypted; the remaining 122 words after `skillCameraConfig` were normal post-camera `AbilitySystemData` fields.
+- The payload serializes `overrideDeadEffect` before `deadEffect`, unlike most focused rows that start directly with `deadEffect`.
+- The nested `deadEffect` payload uses the proven 104-word post-name `EffectActionCfg` body shape that omits `useScaleBB` and `centerOffset`.
+- The byte split is:
+  - word 0: `overrideDeadEffect`.
+  - words 1..114: `deadEffect`, including a 24-word no-`useScaleBB` prefix and the existing 80-word `EffectActionCfg` tail reader.
+  - words 115..121: parent suffix `effectScale`, hit-flash fields, `healthType`, empty `preloadAbilityEntities`, and empty `maxPotentialEffectBuffId`.
+
+Implementation:
+
+- Kept the existing no-`overrideDeadEffect` post-camera path unchanged for the majority layout.
+- Added a guarded `overrideDeadEffect` post-camera variant that requires complete consumption.
+- Reused the existing no-`useScaleBB` prefix and 80-word tail helpers rather than changing the global `EffectActionCfg` reader.
+
+Focused validation summary:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Files re-exported | 78 | 78 |
+| Managed refs decoded | 1,587 | 1,588 |
+| Managed refs decoded+partial | 1 | 0 |
+| `AbilitySystemData` decoded refs | 77 | 78 |
+| `AbilitySystemData` decoded+partial refs | 1 | 0 |
+| Focused top-level partial/unparsed/heuristic refs | 1 | 0 |
+
+Notable record:
+
+- `data_eny_0092_slbomb` now fully consumes `AbilitySystemData`: `overrideDeadEffect = false`, `deadEffect.effectName = P_fxbat_slbomb_dead_disappear`, `deadEffect.layoutVariant = omitUseScaleBBPostName104`, `effectScale = 1.0`, and `healthType = Normal`.
+
+Build and validation:
+
+- `scripts\animestudio\rebuild.bat -Target CLI -NoRestore` succeeded with 0 errors and 14 pre-existing warnings.
+- The focused 78-name AnimeStudio export succeeded with return code 0.
+- Focused status after this pass is `1588/1588` top-level managed references decoded, with no top-level `$partial`, `$unparsed`, or `$heuristic` refs in `Persistent/data_eny`.
+
+Remaining caveat:
+
+- The nested `deadEffect` object still uses the existing diagnostic `EffectActionCfg` tail readers, so inner `BlackboardDouble` wrapper semantics remain partially inferred. This is semantic depth, not unread parent bytes or an export warning in the focused enemy bucket.
