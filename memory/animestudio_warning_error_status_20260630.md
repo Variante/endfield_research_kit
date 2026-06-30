@@ -391,3 +391,58 @@ Remaining current focused gaps in `Persistent/data_eny` after this pass:
 - `AbilitySystemForEnemyPartData`: 11 refs still decoded+partial.
 - `AbilitySystemData`: 5 refs still decoded+partial and 1 ref still unparsed+heuristic (`data_eny_0081_ruanyi`).
 - Subagent review found no strong nested/multiple encryption signal in these remaining parent failures; observed bytes are aligned strings, sane counts/floats, and recognizable schema sections.
+
+## 2026-06-30 AbilitySystemData Mount-Point Enum Update
+
+Continued the same `Persistent/data_eny` focused bucket after the enemy part-id list recovery.
+
+Focused validation baseline:
+
+```text
+tmp\data_eny_probe_after_partids_20260630\current_persistent_3267
+```
+
+Post-patch validation:
+
+```text
+tmp\data_eny_probe_after_mountpoint_20260630\current_persistent_3267
+```
+
+Root cause:
+
+- `AbilitySystemData.BattleRootData.rootMountPoint` was decoded as a closed six-value enum.
+- Focused samples contain additional small int/hash values in the same field (`151`, `155`, and `52`), and later bytes remain normal aligned schema data.
+- Other AbilitySystem mount-point readers already preserve unknown values as hash/int objects, so this was a schema coverage gap rather than encryption.
+
+Implementation:
+
+- Changed `ReadAbilitySystemMountPoint` to preserve known values `0..5` by name and retain unknown values through the existing hash/int representation.
+
+Focused validation summary:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Files re-exported | 78 | 78 |
+| Managed refs decoded | 1,571 | 1,573 |
+| Managed refs partial | 16 | 15 |
+| Managed refs unparsed | 1 | 0 |
+| `AbilitySystemData` decoded refs | 72 | 74 |
+| `AbilitySystemData` decoded+partial refs | 5 | 4 |
+| `AbilitySystemData` unparsed refs | 1 | 0 |
+
+Notable records:
+
+- `data_eny_0061_palecore` now fully consumes `AbilitySystemData` with `rootMountPoint = 151`.
+- `data_eny_0081_ruanyi` now fully consumes `AbilitySystemData` with `rootMountPoint = 52`; this removes the last unparsed/heuristic ref in the focused enemy bucket.
+- `data_eny_0080_reaper` advances past `rootMountPoint = 155` but remains decoded+partial because a later tail still contains readable strings and raw words.
+
+Build and validation:
+
+- `scripts\animestudio\rebuild.bat -Target CLI -NoRestore` succeeded with 0 errors and the same 14 pre-existing warnings.
+- The focused 78-name AnimeStudio export succeeded with return code 0.
+
+Remaining current focused gaps in `Persistent/data_eny` after this pass:
+
+- `AbilitySystemForEnemyPartData`: 11 refs still decoded+partial.
+- `AbilitySystemData`: 4 refs still decoded+partial (`data_eny_0077_agshield`, `data_eny_0080_reaper`, `data_eny_0090_wgabyss`, `data_eny_0092_slbomb`).
+- No refs in this focused bucket remain unparsed/heuristic.
