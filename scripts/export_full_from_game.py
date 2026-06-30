@@ -1707,6 +1707,9 @@ def write_animestudio_report_only_asset_statuses(
     source: str,
     stage: str,
     plan: dict[str, Any],
+    *,
+    item_names: set[str] | None = None,
+    skip_existing_types: bool = False,
 ) -> list[dict[str, Any]]:
     options = plan.get("options") or {}
     if stage != "convert_by_type" or options.get("export_type") != "Convert":
@@ -1730,11 +1733,21 @@ def write_animestudio_report_only_asset_statuses(
         map_entries_cache[map_entries_key] = map_entries
 
     written: list[dict[str, Any]] = []
+    existing_types = {
+        str(asset_info.get("type") or "")
+        for asset_info in plan.get("asset_caches", [])
+        if isinstance(asset_info, dict)
+    }
     for item in plan.get("items", []):
+        item_name = str(item.get("item_name") or "")
+        if item_names is not None and item_name not in item_names:
+            continue
         type_spec = item.get("type_spec")
         if type_spec is None:
             continue
         type_name = animestudio_type_name(type_spec)
+        if skip_existing_types and type_name in existing_types:
+            continue
         if not animestudio_asset_cache_supported(stage, options, type_name):
             continue
         matched_entries = dedupe_asset_entries(
@@ -1805,6 +1818,7 @@ def write_animestudio_report_only_asset_statuses(
         ):
             asset_info[key] = status_summary.get(key)
         plan.setdefault("asset_caches", []).append(asset_info)
+        existing_types.add(type_name)
         plan.setdefault("item_file_counts", {})[type_name] = int(status_summary.get("actual_output_file_count") or 0)
         written.append(asset_info)
         log(
@@ -4844,9 +4858,17 @@ def main() -> int:
                         command_results_by_name[result.name] = result
 
                 def finish_animestudio_stage(stage: str) -> None:
-                    # The cross-run cache is gone, so there is no manifest to update
-                    # or persist here; just surface any failed items.
                     plan = animestudio_stage_plans[stage]
+                    succeeded_items = set(plan.get("succeeded_items", []))
+                    if succeeded_items:
+                        write_animestudio_report_only_asset_statuses(
+                            output_root=output_root,
+                            source=source,
+                            stage=stage,
+                            plan=plan,
+                            item_names=succeeded_items,
+                            skip_existing_types=True,
+                        )
                     failed_items = plan.get("failed_items", [])
                     if failed_items:
                         log(f"  animestudio stage {stage} for {source} failed items: {', '.join(failed_items)}")
