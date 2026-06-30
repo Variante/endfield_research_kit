@@ -3992,3 +3992,67 @@ Targeted validation output: `tmp\projectile_movemode_dict_status_after_20260630`
 | Data-level `decodeError` records | 0 |
 
 Current classification: `moveModeDict` is now structurally decoded. Remaining projectile unknowns are inside nested `MoveModeData` value internals and the parent effect/sound/scalar tail, not the dictionary key/value boundary.
+
+## 2026-06-30 Forty-Seventh Fresh StreamingAssets Projectile Tail And MoveModeData Suffix Batch
+
+Follow-up after the `moveModeDict` container promotion. Work focused on the first raw parent-tail fields after the dictionary and on the nested `MoveModeData` suffix after `parabolaDef`.
+
+Evidence used:
+
+- The focused projectile validation slice still has no data-level `$unparsed`, `$heuristic`, or `decodeError` records.
+- Local IL2CPP metadata places `mainEffectFinishType` and `mainEffectFinishDistance` immediately after `moveModeDict`.
+- Byte evidence over 10 projectile tails matched that field order: one enum word followed by the existing three-word `Beyond.Blackboard.BlackboardDouble` payload shape.
+- `mainEffectFinishType` was `0` in all 10 focused samples.
+- The `mainEffectFinishDistance` middle raw word was `0` in 9 samples and `1119092736` in 1 sample.
+- After decoding these four words, the raw parent-tail counts dropped from `{128:1, 244:5, 245:2, 363:1, 494:1}` to `{124:1, 240:5, 241:2, 359:1, 490:1}`.
+- A parallel MoveModeData suffix probe found 25 records with 15 unique 115-word suffix patterns. It identified dynamic curve boundaries and reported that `m_parabolaSpeedInfo`, `m_bezierSpeedInfo`, and `m_speedCurveInfo` appear non-serialized in current payloads.
+- The suffix after `parabolaDef` is now decoded through `gravity`, then keeps BezierPoint records as bounded raw structures because their range wrapper internals are not field-accurate yet.
+- `bezierMidPoint2` is a full 21-word raw record in 24 focused samples and a truncated 7-word raw record in 1 focused sample.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added `mainEffectFinishType` decoding to `ReadProjectileComponentTailDiagnostic` using `ReadPayloadEnum32Candidate`.
+- Added `mainEffectFinishDistance` decoding to `ReadProjectileComponentTailDiagnostic` using `ReadAbilitySystemBlackboardDouble`.
+- Added a guarded `structuredSuffix` view to each `MoveModeData` value.
+- The structured suffix decodes `speed`, `speedCurve`, `useSpeedScaleWithDistance`, `speedScaleWithDistance`, `lockVelocityToXZ`, `groundedMove`, `limitAngularSpeed`, `angularSpeed`, `angularSpeedCurve`, `travelDuration`, `vertexYOffset`, and `gravity`.
+- The structured suffix preserves BezierPoint records as bounded raw records with metadata field order and handles the observed truncated `bezierMidPoint2` case without desynchronizing the main reader.
+- The original 115-word `remainingRawWords` suffix is still emitted on every `MoveModeData` value for byte audit.
+- Kept parent `ProjectileComponentData`, the parent tail, all nested `MoveModeData` values, structured suffixes, and BezierPoint records marked `$partial`.
+- Did not promote effect-list payloads, projectile sound structs, final scalar fields, enum member names, or BezierPoint range-wrapper internals.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Latest rebuild result: 0 warnings and 0 errors.
+
+Targeted validation output: `tmp\projectile_tail_and_movemode_suffix_after_20260630` using the same 10-row projectile filter data from `tmp\projectile_component_movemode_values_after_20260630\filter_data.json`.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 10 |
+| `ProjectileComponentData` records | 10 |
+| `ProjectileComponentData` records marked `$decoded` | 10 |
+| `ProjectileComponentData` records still `$partial` | 10 |
+| Tails with `mainEffectFinishType` | 10 |
+| Tails with `mainEffectFinishDistance` | 10 |
+| `moveModeDict` dictionaries marked `$decoded` | 10 |
+| `MoveModeData` values | 25 |
+| `MoveModeData` values still `$partial` | 25 |
+| `MoveModeData` original raw suffix length 115 words | 25 |
+| Structured suffix decode status `decoded` | 25 |
+| `speedCurve` keyframes = 2 | 25 |
+| `speedScaleWithDistance` keyframes = 2 | 24 |
+| `speedScaleWithDistance` keyframes = 4 | 1 |
+| `angularSpeedCurve` keyframes = 2 | 25 |
+| `bezierMidPoint1` word count = 21 | 25 |
+| `bezierMidPoint2` full 21-word record | 24 |
+| `bezierMidPoint2` truncated 7 raw words | 1 |
+| Remaining parent tail raw word counts | `{124:1, 240:5, 241:2, 359:1, 490:1}` |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+
+Current classification: `ProjectileComponentData` is decoded through the parent tail `mainEffectFinishDistance` field. Nested `MoveModeData` values now expose a guarded structured suffix view but remain partial because BezierPoint internals and the non-serialized speed-info metadata fields are not fully understood. The remaining projectile parent-tail unknown starts at `mainEffects`.
