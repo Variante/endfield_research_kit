@@ -317,3 +317,55 @@ Targeted validation output: `tmp\projectile_tail_and_movemode_suffix_after_20260
 | Data-level `decodeError` records | 0 |
 
 Current classification: the parent projectile tail is decoded through `mainEffectFinishDistance`, and nested `MoveModeData` values now have a guarded structured suffix view. The remaining projectile parent-tail unknown starts at `mainEffects`; the nested value unknowns are BezierPoint internals and non-serialized speed-info metadata fields.
+
+## BezierPoint Full Record Decode Follow-up
+
+The current pass decoded the full 21-word `ProjectileComponentData/BezierPoint` records inside `MoveModeData.structuredSuffix` while preserving the observed truncated second point as raw bytes.
+
+Evidence:
+
+- The focused Camille projectile slice still covers 10 `ProjectileComponentData` records and 25 nested `MoveModeData` records.
+- Full BezierPoint records have a stable 21-word payload that matches IL2CPP field order: `usePresetPoint`, `presetPointKey`, `xRatioRange`, `yzAngleRange`, `yzRadiusRange`, and `scaledYzRadius`.
+- The full record shape is `bool32`, aligned ASCII string, three two-endpoint `BlackboardDouble` ranges, then `bool32`.
+- All 49 full BezierPoint records in the focused slice decode with `presetPointKey = ""` and `scaledYzRadius = true`.
+- The one short `bezierMidPoint2` case is still represented by the existing `truncated; 7 raw words preserved` path and is not forced through the full parser.
+- The original 115-word `MoveModeData.remainingRawWords` suffix is still emitted for every value.
+
+Implementation:
+
+- `ReadProjectileBezierPointRawRecord` now decodes full 21-word records into fields instead of preserving them as opaque raw words.
+- Added `ReadProjectileBlackboardDoubleRange` for the three BezierPoint range fields.
+- Kept decoded BezierPoint records marked `$inferred` because the local metadata dump still does not resolve the wrapper type name for the range fields.
+- Kept truncated BezierPoint records marked `$partial` and raw.
+- Kept `MoveModeData` and `structuredSuffix` marked `$partial` because one `bezierMidPoint2` remains truncated and parent projectile effect/sound tails are still unresolved.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Latest rebuild result: 0 errors and the same 14 existing AnimeStudio project warnings.
+
+Targeted validation output: `tmp\projectile_bezierpoint_decode_after_20260630` using the same 10-row `tmp\projectile_component_movemode_values_after_20260630\filter_data.json` file.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 10 |
+| `ProjectileComponentData` records | 10 |
+| `MoveModeData` values | 25 |
+| `MoveModeData` original raw suffix length 115 words | 25 |
+| Structured suffix decode status `decoded` | 25 |
+| Full BezierPoint records | 49 |
+| Full BezierPoint records marked `$decoded` | 49 |
+| Full BezierPoint records marked `$partial` | 0 |
+| Full BezierPoint `presetPointKey = ""` | 49 |
+| Full BezierPoint `scaledYzRadius = true` | 49 |
+| `bezierMidPoint2` full 21-word record | 24 |
+| `bezierMidPoint2` truncated 7 raw words | 1 |
+| Remaining parent tail raw word counts | `{124:1, 240:5, 241:2, 359:1, 490:1}` |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+
+Current classification: full BezierPoint records in the focused projectile suffix are decoded. The remaining nested projectile unknown is the single truncated `bezierMidPoint2` variant plus the non-serialized speed-info metadata fields; the remaining parent-tail unknown still starts at `mainEffects`.
