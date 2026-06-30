@@ -149,3 +149,44 @@ Build validation:
 Follow-up:
 
 - `build_audio.py` currently gathers wanted Wwise events from Story/cutscene/table inputs, not arbitrary managed-reference `soundName` fields. A later audio-index pass should optionally ingest decoded managed-reference sound names so entries like `au_sfx_ls_dung02_dg002_e9m2_zipline06`, `au_amb_emitter_lightning`, and `au_amb_emitter_damagefire_largelorlong_01` can be linked into the decoded audio catalog.
+
+## 2026-06-30 Guide Managed-Reference Revalidation
+
+Rechecked the largest stale MonoBehaviour warning bucket from `tmp\decoded_index_mono_20260630` against the current AnimeStudio exporter, then added one narrow raw-payload merge improvement for guide refs that TypeTree leaves as empty `{}` data.
+
+Old-index bucket:
+
+- `MonoBehaviour\StreamingAssets\guide_group`: 911 entries, 624 previously marked unparsed/heuristic.
+- `MonoBehaviour\StreamingAssets\guide_blackbox`: 355 entries, 315 previously marked unparsed/heuristic.
+- Dominant old classes included `CheckMissionState`, `CombineCondition`, `InMainHud`, `OnUIPanelOpen`, `CheckGuideGroupComplete`, `BlendOutFromCamera`, and `BlendToCameraTransformWithoutBack`.
+
+Subagent evidence:
+
+- Exported payloads are schema/string/RID recovery cases, not encrypted blobs.
+- IL2CPP `global-metadata.dat` field order confirms the common guide layouts: string/id fields, bool flags, float fields, Vector3-like fields, enum-like fields, and RID-linked subconditions.
+- Existing guide decoder coverage already handles the high-volume classes. The remaining implementation gap was the enrichment path for TypeTree-successful managed refs whose `data` remains `{}`; that path only admitted audio classes before this pass.
+
+Implementation:
+
+- Extended `IsKnownRawPayloadMergeCandidate` so empty managed-reference payloads in `Gameplay.Beyond` guide namespaces can be rechecked against the existing raw header-scan decoder.
+- Preserved guide-specific decode failures with `BuildKnownManagedReferenceDecodeFailureData` instead of silently falling back to generic heuristic output when a focused guide layout rejects a payload.
+- Unsupported guide classes are still left untouched unless the existing decoder returns fully decoded data.
+
+Current focused validation outputs after rebuild:
+
+```text
+tmp\guide_managed_ref_probe_after_merge_20260630\validate_68b3
+tmp\guide_managed_ref_probe_after_merge_20260630\validate_71fc
+tmp\guide_managed_ref_probe_after_merge_20260630\validate_fbad
+```
+
+Validation summary:
+
+| Scope | Files | Registry status | Managed-reference refs | Unresolved refs |
+| --- | ---: | --- | ---: | ---: |
+| Combined guide revalidation | 939 | 939 decoded | 8,857 decoded | 0 |
+
+Notes:
+
+- The focused guide revalidation did not contain current empty guide refs that exercised the new raw-payload merge branch; `rawPayloadDecoded` stayed absent in this sample.
+- The old guide bucket is stale under the current exporter. A full decoded-index rebuild should replace those old guide warnings before ranking the next unresolved bucket.
