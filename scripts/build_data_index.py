@@ -2243,6 +2243,54 @@ def read_buff_gameplay_tag_field(
     }, offset
 
 
+def read_buff_trigger_interval_bool_tail_exact(
+    data: bytes,
+    offset: int,
+) -> tuple[dict[str, Any], bool, bool, int]:
+    trigger_interval, offset = read_buff_blackboard_float_field(
+        data,
+        offset,
+        "triggerInterval",
+    )
+    use_time_dilation_dt, offset = read_buff_bool_field(
+        data,
+        offset,
+        "useTimeDilationDt",
+    )
+    wait_first_trigger_interval, offset = read_buff_bool_field(
+        data,
+        offset,
+        "waitFirstTriggerInterval",
+    )
+    if offset != len(data):
+        raise ValueError(f"tail-not-exact={format_offset(offset)}")
+    return trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, offset
+
+
+def read_buff_member1_empty_tag_field(
+    data: bytes,
+    offset: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    end = offset + 9
+    if end > len(data):
+        raise ValueError(f"{field_name}:truncated-member1-empty-payload")
+    member_count = data[offset]
+    if member_count != 1:
+        raise ValueError(f"{field_name}:member-count={member_count}")
+    if data[offset + 1:end] != b"\x00" * 8:
+        raise ValueError(f"{field_name}:member1-nonzero-empty-payload")
+    return {
+        "memberCount": member_count,
+        "offset": format_offset(start),
+        "branch": "member1-empty-payload",
+        "branchNote": "single observed member-count-1 tag payload carries two zero u32 values before triggerInterval",
+        "tagId": 0,
+        "tagName": "",
+    }, end
+
+
 def read_buff_stacking_settings_compact_id_branch(
     data: bytes,
     offset: int,
@@ -2433,18 +2481,56 @@ def decode_buff_post_id_prefix_at(
                         result["tailParseError"] = f"stackEffectsCount={stacking_settings.get('stackEffectsCount')}"
                         result["endOffset"] = format_offset(tail_offset)
                         return result
-                    tags_after_trigger, tail_offset = read_buff_gameplay_tag_field(
-                        data,
-                        tail_offset,
-                        "tagsAfterTriggerExtendBuffAction",
-                    )
+                    tag_field_offset = tail_offset
+                    try:
+                        tags_after_trigger, tail_offset = read_buff_gameplay_tag_field(
+                            data,
+                            tail_offset,
+                            "tagsAfterTriggerExtendBuffAction",
+                        )
+                    except (struct.error, UnicodeDecodeError, ValueError):
+                        tags_after_trigger, tail_offset = read_buff_member1_empty_tag_field(
+                            data,
+                            tag_field_offset,
+                            "tagsAfterTriggerExtendBuffAction",
+                        )
+                        trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
+                            read_buff_trigger_interval_bool_tail_exact(data, tail_offset)
+                        )
+                        result["status"] = "parsed-through-exact-tail"
+                        result["stackingSettings"] = stacking_settings
+                        result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
+                        result["timelineActionsCount"] = 0
+                        result["timelineActionsEncoding"] = "omitted-empty-count-after-member1-empty-tag"
+                        result["triggerInterval"] = trigger_interval
+                        result["useTimeDilationDt"] = use_time_dilation_dt
+                        result["waitFirstTriggerInterval"] = wait_first_trigger_interval
+                        result["endOffset"] = format_offset(tail_offset)
+                        return result
+
+                    timeline_count_offset = tail_offset
                     timeline_action_count, tail_offset = read_buff_u32_field(
                         data,
                         tail_offset,
                         "timelineActionsCount",
                     )
                     if timeline_action_count > 256:
-                        raise ValueError(f"timelineActionsCount:large-count={timeline_action_count}")
+                        try:
+                            trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
+                                read_buff_trigger_interval_bool_tail_exact(data, timeline_count_offset)
+                            )
+                        except (struct.error, UnicodeDecodeError, ValueError):
+                            raise ValueError(f"timelineActionsCount:large-count={timeline_action_count}")
+                        result["status"] = "parsed-through-exact-tail"
+                        result["stackingSettings"] = stacking_settings
+                        result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
+                        result["timelineActionsCount"] = 0
+                        result["timelineActionsEncoding"] = "omitted-empty-count"
+                        result["triggerInterval"] = trigger_interval
+                        result["useTimeDilationDt"] = use_time_dilation_dt
+                        result["waitFirstTriggerInterval"] = wait_first_trigger_interval
+                        result["endOffset"] = format_offset(tail_offset)
+                        return result
                     if timeline_action_count:
                         result["status"] = "parsed-through-timelineActionsCount"
                         result["stackingSettings"] = stacking_settings
@@ -2455,23 +2541,9 @@ def decode_buff_post_id_prefix_at(
                         result["tailParseError"] = f"timelineActionsCount={timeline_action_count}"
                         result["endOffset"] = format_offset(tail_offset)
                         return result
-                    trigger_interval, tail_offset = read_buff_blackboard_float_field(
-                        data,
-                        tail_offset,
-                        "triggerInterval",
+                    trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
+                        read_buff_trigger_interval_bool_tail_exact(data, tail_offset)
                     )
-                    use_time_dilation_dt, tail_offset = read_buff_bool_field(
-                        data,
-                        tail_offset,
-                        "useTimeDilationDt",
-                    )
-                    wait_first_trigger_interval, tail_offset = read_buff_bool_field(
-                        data,
-                        tail_offset,
-                        "waitFirstTriggerInterval",
-                    )
-                    if tail_offset != len(data):
-                        raise ValueError(f"tail-not-exact={format_offset(tail_offset)}")
                     result["status"] = "parsed-through-exact-tail"
                     result["stackingSettings"] = stacking_settings
                     result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
