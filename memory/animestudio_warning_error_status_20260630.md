@@ -1660,3 +1660,70 @@ Validation:
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - Focused BuffData scan over all 2,291 files produced `79` partial timeline rows, `338` outer timeline records, and zero hard tail parse statuses.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_timeline_partial_validate_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData Stack EffectAction Diagnostics
+
+Added stricter diagnostics for the already-bounded `BuffData.stackingSettings.stackEffects` `EffectActionCfg` bodies without renaming unknown compact fields as decoded gameplay fields.
+
+What changed:
+
+- Preserved `stackEffectsBodyStatus=opaque-effectActions` as a strict issue.
+- Added `effectActionsSemanticStatus=partial-effectActions-unproven-field-order` so the warning states exactly what remains unknown: the compact 15-member field order.
+- Emitted aggregate effect-name counts, selected normalized u32 field counts, the verified normalized f32 triplet at `0xbe`, and richer action samples.
+- The diagnostics are still fail-closed behind the existing guards: member count `15`, raw discriminator `1`, marker `74`, valid `P_*` effect name at offset `+37`, fixed 471-byte body plus name bytes, terminal u32 `4`, and final stackEffects pad.
+
+Focused BuffData validation:
+
+| Metric | Count |
+| --- | ---: |
+| `BuffData` files scanned | 2,291 |
+| Rows with bounded stack `EffectActionCfg` bodies | 47 |
+| Bounded nested `EffectActionCfg` actions | 134 |
+| Hard BuffData tail failures | 0 |
+| Rows with `partial-effectActions-unproven-field-order` | 47 |
+
+Observed aggregate diagnostics:
+
+| Diagnostic | Distribution |
+| --- | --- |
+| top effect names | `P_common_attack_up=57`, `P_common_char_souleffect_param_asset=11`, `P_yvonne_ultskill_buff=10`, `P_lifeng_debuff_03=8`, `P_yvonne_ultskill_buff_up_01=6` |
+| normalized u32 `0x1` | `1=134` |
+| normalized u32 `0x12` | `74=134` |
+| normalized u32 `0x13e` | `0xffffffff=134` |
+| normalized u32 `0x186` | `4=131`, `1=3` |
+| normalized u32 `0x1d3` | `4=134` |
+| normalized f32x3 `0xbe` | `1.0,1.0,1.0=134` |
+
+Full Json strict issue validation after this diagnostic addition:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 143 |
+| `Json/BuffData` unresolved issue rows | 143 |
+| `Json/LevelScriptData` unresolved issue rows | 0 |
+
+Current strict issue field distribution:
+
+| Status | Count |
+| --- | ---: |
+| `partial-timelineActions-opaque-actionData` | 82 |
+| `partial-inner-actionData-union-payloads-opaque` | 79 |
+| `opaque-effectActions` | 47 |
+| `partial-effectActions-unproven-field-order` | 47 |
+| `opaque-poiseModifier` | 9 |
+| `opaque-shieldConfigs` | 4 |
+| `opaque-igniteEventAction` | 4 |
+| `opaque-igniteEventAction-nestedBlocks` | 4 |
+
+Interpretation:
+
+- This does not reduce the unresolved row count because the `EffectActionCfg` compact field order is still not proven.
+- It does make the remaining warning narrower: the byte envelope, effect names, stable raw fields, vector candidate, and terminal shape are now exported for inspection.
+- A temporary run of `scripts/story_recovery/build_memorypack_union_tag_audit.py` failed in GameAssembly module address recovery, so this step used the local IL2CPP metadata parser and byte validation instead of cctor union-tag extraction.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- Focused BuffData scan over all 2,291 files produced `47` stack-effect rows, `134` nested actions, and zero hard tail parse statuses.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_effect_diagnostics_validate_20260630` completed and indexed 81,735 Json files.
