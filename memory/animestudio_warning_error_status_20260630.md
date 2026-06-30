@@ -190,3 +190,96 @@ Notes:
 
 - The focused guide revalidation did not contain current empty guide refs that exercised the new raw-payload merge branch; `rawPayloadDecoded` stayed absent in this sample.
 - The old guide bucket is stale under the current exporter. A full decoded-index rebuild should replace those old guide warnings before ranking the next unresolved bucket.
+
+## 2026-06-30 Persistent Enemy AbilitySystemData Update
+
+Rechecked the next largest current MonoBehaviour bucket with the current AnimeStudio exporter instead of trusting the stale decoded index.
+
+Focused source:
+
+```text
+D:\Program Files\Endfield Game\Endfield_Data\Persistent\VFS\7064D8E2\3267B09A76643181B4083C1E60B678D1.chk
+```
+
+Focused filter:
+
+```text
+tmp\data_eny_probe_20260630\names_persistent_3267.txt
+```
+
+Current pre-patch validation:
+
+```text
+tmp\data_eny_probe_20260630\current_persistent_3267
+```
+
+Post-patch validation:
+
+```text
+tmp\data_eny_probe_after_parts_adaptive_20260630\current_persistent_3267
+```
+
+Root cause:
+
+- The old `Persistent/data_eny` bucket is a real current parser gap, not only stale index noise.
+- `AbilitySystemData` was already decoding mode config, skill bundle, UI, buffs, and post-buff fields, then leaving a large raw tail of model/battle-shape bone paths and numeric point records.
+- IL2CPP `global-metadata.dat` confirms the missing fields after `entityBlackboard`:
+  - `bakedMeshPoints`: `SerializeFieldDictionary<string, AbilitySystemData.BakedMeshPointList>`
+  - `bakedMeshPointBonePathList`: string list
+  - `extraShapesData`: dictionary, empty in the focused samples
+- `AbilitySystemData.BakedMeshPoint` field order is `Vector3 battleShapePointOffset`, `int bonePathIndex`, `Vector3 meshPointOffset`.
+- `EnemyPartsRootComponentData` has two observed inherited-prefix variants. The previous decoder handled the 8-word prefix; this pass adds an adaptive 10-word prefix fallback without dropping the old variant.
+
+Implementation:
+
+- Added metadata-backed decoding for non-empty `AbilitySystemData.bakedMeshPoints` dictionaries.
+- Added decoding for `AbilitySystemData.bakedMeshPointBonePathList` string lists.
+- Added an adaptive `EnemyPartsRootComponentData` reader that tries both `prefixWords8` and `prefixWords10` layouts.
+
+Focused validation summary:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Files re-exported | 78 | 78 |
+| Managed refs decoded | 1,478 | 1,554 |
+| Managed refs partial | 87 | 16 |
+| Managed refs unparsed | 23 | 18 |
+| `AbilitySystemData` partial/unparsed refs | 78 | 6 |
+| `EnemyPartsRootComponentData` decoded refs | 8 | 12 |
+| Baked mesh dictionaries decoded | 0 | 73 |
+| Baked mesh dictionary keys | 0 | 137 |
+| Baked mesh point lists | 0 | 137 |
+| Baked mesh points | 0 | 6,775 |
+
+Build validation:
+
+- `scripts\animestudio\rebuild.bat -Target CLI -NoRestore` succeeded with 0 warnings and 0 errors after the final adaptive exporter edit.
+
+Remaining current focused gaps in this bucket:
+
+- `EnemyPartsRootComponentData`: 15 refs still heuristic/unparsed, likely additional prefix or tag-list variants.
+- `AbilitySystemForEnemyPartData`: 11 refs still partial because the scalar tail constraints do not match the current focused decoder.
+- `AbilitySystemData`: 5 refs still partial and 1 ref still heuristic/unparsed, mainly larger skill/mode variants such as `data_eny_0077_agshield` and `data_eny_0081_ruanyi`.
+- `FootRippleComponentData`: 2 refs still heuristic/unparsed; metadata says the payload contains `entries`, `footWeightThreshold`, and `speedToRippleIntervalCurve`.
+
+## 2026-06-30 Non-Mono Unresolved Format Ranking
+
+A read-only audit found wrapper-level unresolved files are currently empty:
+
+```text
+export_full\unresolved\failed_to_decode.txt: 0 entries
+export_full\unresolved\manifest_reference_missing.txt: 0 entries
+```
+
+The remaining non-Mono work is therefore mostly opaque-but-preserved data, not current AnimeStudio crashes.
+
+Ranked non-Mono buckets:
+
+1. MemoryPack-style binary `.json` gameplay configs: schema gaps, not encryption. Highest-value roots are `SkillData`, `BuffData`, `Interactive/InteractiveData`, and `LevelScriptData`.
+2. World streaming `.bytes`: FlatBuffer-like schema gap. Samples validate as structured FlatBuffer-style roots rather than encrypted blobs.
+3. `IrradianceVolume` `.bytes`: custom lighting binary format; index files expose readable labels while volume blobs look like dense numeric grids.
+4. `ExtendData` `.bin`: binary index/table gap. `StringPathHash.bin` and `CompressData.bin` should be cross-checked against VFS and bundle paths.
+5. Raw encoded `.ab` bundles and `manifest.hgmmap`: expected package/container layer. Compare raw structured bytes against bytes loaded through AnimeStudio before treating these as decode failures.
+6. Wwise `.pck`: known encoded AKPK/Wwise container. Existing audio tooling normalizes and decodes CN audio; remaining work is coverage accounting, not basic decryption.
+7. `IFixPatchOut` patch bytes: small compression/encryption-looking payloads outside normal WebUI consumption. Needs loader-code search and compression/decrypt probes.
+8. Shader bytecode internals: container mostly understood; remaining gaps are downstream decompiler/SMOL-V variants.
