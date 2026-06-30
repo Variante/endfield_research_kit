@@ -2282,6 +2282,30 @@ def read_buff_stacking_settings_compact_id_branch(
     stack_effect_count, offset = read_buff_u32_field(data, offset, "stackingSettings.stackEffectsCount")
     if stack_effect_count > 256:
         raise ValueError(f"stackingSettings.stackEffectsCount:large-count={stack_effect_count}")
+
+    stacking_key_offset = offset
+    stacking_key, stacking_key_end, stacking_key_error = read_memorypack_utf8_string(
+        data,
+        stacking_key_offset,
+        max_length=256,
+    )
+    if stacking_key_error is None and stacking_key and is_clean_skill_identifier_string(stacking_key):
+        return {
+            "memberCount": member_count,
+            "offset": format_offset(start),
+            "branch": "compact-stacking-key",
+            "branchNote": "non-empty stackingKey branch; stackEffects body remains opaque when non-empty",
+            "identifierTypeRaw": identifier_type,
+            "stackingKey": stacking_key,
+            "maxStackCnt": max_stack_count,
+            "maxStackCntKey": max_stack_count_key or "",
+            "priority": round(priority, 6),
+            "priorityKey": priority_key or "",
+            "negatePriority": negate_priority,
+            "isNeedStackEffect": is_need_stack_effect,
+            "stackEffectsCount": stack_effect_count,
+        }, stacking_key_end
+
     stacking_type = data[offset]
     offset += 1
     if stacking_type > 16:
@@ -2297,7 +2321,7 @@ def read_buff_stacking_settings_compact_id_branch(
         "memberCount": member_count,
         "offset": format_offset(start),
         "branch": "compact-id",
-        "branchNote": "validated rows use identifierType=Id; stackingKey branch remains opaque",
+        "branchNote": "validated rows use identifierType=Id; empty stackingKey branch consumes compact suffix bytes",
         "identifierTypeRaw": identifier_type,
         "stackingTypeRaw": stacking_type,
         "maxStackCnt": max_stack_count,
@@ -2388,6 +2412,14 @@ def decode_buff_post_id_prefix_at(
                         data,
                         tail_offset,
                     )
+                    if stacking_settings.get("stackEffectsCount"):
+                        result["status"] = "parsed-through-stackingSettings"
+                        result["stackingSettings"] = stacking_settings
+                        result["tailParseStatus"] = "unparsed-stackEffects"
+                        result["tailParseOffset"] = format_offset(tail_offset)
+                        result["tailParseError"] = f"stackEffectsCount={stacking_settings.get('stackEffectsCount')}"
+                        result["endOffset"] = format_offset(tail_offset)
+                        return result
                     tags_after_trigger, tail_offset = read_buff_gameplay_tag_field(
                         data,
                         tail_offset,
@@ -2400,6 +2432,16 @@ def decode_buff_post_id_prefix_at(
                     )
                     if timeline_action_count > 256:
                         raise ValueError(f"timelineActionsCount:large-count={timeline_action_count}")
+                    if timeline_action_count:
+                        result["status"] = "parsed-through-timelineActionsCount"
+                        result["stackingSettings"] = stacking_settings
+                        result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
+                        result["timelineActionsCount"] = timeline_action_count
+                        result["tailParseStatus"] = "unparsed-timelineActions"
+                        result["tailParseOffset"] = format_offset(tail_offset)
+                        result["tailParseError"] = f"timelineActionsCount={timeline_action_count}"
+                        result["endOffset"] = format_offset(tail_offset)
+                        return result
                     trigger_interval, tail_offset = read_buff_blackboard_float_field(
                         data,
                         tail_offset,
@@ -9300,6 +9342,8 @@ DECODER_ISSUE_FIELD_LIMIT = 12
 DECODER_ISSUE_STATUS_VALUES = {
     "ambiguous-id-marker",
     "count-exceeds-remaining",
+    "unparsed-stackeffects",
+    "unparsed-timelineactions",
     "empty-tail",
     "invalid-count",
     "missing-id-marker",

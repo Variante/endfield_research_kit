@@ -1054,3 +1054,46 @@ Validation:
 - Focused `BuffData` raw-byte sweep produced `1,966` exact-tail rows, `82` selected repeated-id anchors, `16` ambiguous rows, `296` tail parse errors, and `3` direct parse errors.
 - Focused `LevelScriptData` sweep produced `1,906` decoded trigger-volume maps and `2` `count-exceeds-remaining` rows.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_levelscript_validate_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData Tail Classification
+
+Improved the remaining `BuffData` tail bucket by separating proven non-empty serialized bodies from generic parser desyncs. This does not reduce the strict unresolved row count yet; it makes the remaining work more accurately scoped.
+
+Root cause refined:
+
+- Several rows have a valid `BuffStackingSettings` prefix followed by non-empty `stackEffects` or `timelineActions` lists. The old parser tried to continue through those list bodies as if they were scalar tail fields, which produced misleading `parse-error` messages such as `triggerInterval:member-count=0/4`.
+- Some rows contain a clean non-empty `stackingKey` string in the compact stacking-settings suffix. The parser now consumes that branch when the suffix bytes form a clean MemoryPack string.
+- A tested hypothesis that `tagsAfterTriggerExtendBuffAction` member-count `2` always carried one extra u32 did not hold across the corpus, so that branch was not promoted.
+
+Focused and full validation after classification:
+
+| Metric | Count |
+| --- | ---: |
+| `BuffData` files scanned | 2,291 |
+| Parsed through exact tail | 1,966 |
+| Explicit `unparsed-stackEffects` rows | 82 |
+| Explicit `unparsed-timelineActions` rows | 45 |
+| Remaining generic BuffData tail `parse-error` rows | 169 |
+| Remaining BuffData ambiguous id-marker rows | 16 |
+| Remaining direct BuffData post-id parse-error rows | 3 |
+
+Full Json strict issue validation remains at 317 rows, but the status distribution is now more informative:
+
+| Status | Count |
+| --- | ---: |
+| `parse-error` | 172 |
+| `unparsed-stackEffects` | 82 |
+| `unparsed-timelineActions` | 45 |
+| `ambiguous-id-marker` | 16 |
+| `count-exceeds-remaining` | 2 |
+
+Remaining parser targets:
+
+- Implement real decoders or bounded skippers for `BuffStackingSettings.stackEffects` and `BuffData.timelineActions` list bodies.
+- Decode or classify nonzero `igniteEventAction`, `poiseModifier`, and `shieldConfigs` bodies without reading their first item member count as a scalar field.
+- Revisit `tagsAfterTriggerExtendBuffAction` as a list-shaped GameplayTag payload; it is not always a single tag record.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_tailclass_validate_20260630` completed and indexed 81,735 Json files.
