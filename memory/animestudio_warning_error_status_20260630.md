@@ -446,3 +446,55 @@ Remaining current focused gaps in `Persistent/data_eny` after this pass:
 - `AbilitySystemForEnemyPartData`: 11 refs still decoded+partial.
 - `AbilitySystemData`: 4 refs still decoded+partial (`data_eny_0077_agshield`, `data_eny_0080_reaper`, `data_eny_0090_wgabyss`, `data_eny_0092_slbomb`).
 - No refs in this focused bucket remain unparsed/heuristic.
+## 2026-06-30 AbilitySystemForEnemyPartData Tail Structuring
+
+Continued the same `Persistent/data_eny` focused bucket after the AbilitySystemData mount-point recovery.
+
+Focused validation baseline:
+
+```text
+tmp\data_eny_probe_after_mountpoint_20260630\current_persistent_3267
+```
+
+Post-patch validation:
+
+```text
+tmp\data_eny_probe_after_partability_tail_20260630\current_persistent_3267
+```
+
+Root cause:
+
+- The remaining `AbilitySystemForEnemyPartData` partial refs are word-aligned numeric payloads, not encrypted blobs.
+- Existing decoded records are 828 bytes and validate a full 20-word scalar tail after `partAttributesRawWords`.
+- The 11 longer variants are 840 or 852 bytes. Treating their final 20 words as the full scalar tail overlaps unresolved `partAttributes`/front-scalar data, so the old bool checks rejected values like `0.1`, `0.45`, `50`, or `999`.
+- The final 18 words, from `useMainBodyHp` through `damageTransferType`, validate contiguously across all 11 longer variants.
+
+Implementation:
+
+- Kept the existing full 20-word scalar-tail path first for already understood records.
+- Added a `postAttributeScalarTail18` fallback that decodes only the proven final 18 scalar fields.
+- Preserved the ambiguous front bytes as `partAttributesAndScalarPrologRawWords` and kept `$partial` with explicit reasons instead of pretending the `defaultEnabled` / `asIndividualInExcludeTargetProcessor` / `partAttributes` boundary is solved.
+
+Focused validation summary:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Files re-exported | 78 | 78 |
+| Managed refs decoded | 1,573 | 1,573 |
+| Managed refs decoded+partial | 15 | 15 |
+| Managed refs unparsed | 0 | 0 |
+| `AbilitySystemForEnemyPartData` decoded refs | 16 | 16 |
+| `AbilitySystemForEnemyPartData` decoded+partial refs | 11 | 11 |
+| Opaque `AbilitySystemForEnemyPartData.rawWords` partials | 11 | 0 |
+| `postAttributeScalarTail18` structured partials | 0 | 11 |
+
+Build and validation:
+
+- `scripts\animestudio\rebuild.bat -Target CLI -NoRestore` succeeded with 0 warnings and 0 errors.
+- The focused 78-name AnimeStudio export succeeded with return code 0.
+
+Remaining current focused gaps in `Persistent/data_eny` after this pass:
+
+- `AbilitySystemForEnemyPartData`: 11 refs still decoded+partial because the front prolog/`partAttributes` boundary is not fully decoded yet, but their final scalar suffix is now structured.
+- `AbilitySystemData`: 4 refs still decoded+partial (`data_eny_0077_agshield`, `data_eny_0080_reaper`, `data_eny_0090_wgabyss`, `data_eny_0092_slbomb`).
+- No refs in this focused bucket remain unparsed/heuristic.
