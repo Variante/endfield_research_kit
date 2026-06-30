@@ -604,3 +604,58 @@ Remaining current focused gaps in `Persistent/data_eny` after this pass:
 - `AbilitySystemForEnemyPartData`: 11 refs still decoded+partial because the front prolog/`partAttributes` boundary is not fully decoded yet.
 - `AbilitySystemData`: 1 ref still decoded+partial (`data_eny_0092_slbomb`).
 - No refs in this focused bucket remain unparsed/heuristic.
+## 2026-06-30 AbilitySystemForEnemyPartData Dynamic Rule Update
+
+Continued the same `Persistent/data_eny` focused bucket after the AbilitySystemData mode clip mapping recovery.
+
+Focused validation baseline:
+
+```text
+tmp\data_eny_probe_after_agshield_modeclip_20260630\current_persistent_3267
+```
+
+Post-patch validation:
+
+```text
+tmp\data_eny_probe_after_partability_dynamicrules_20260630\current_persistent_3267
+```
+
+Root cause:
+
+- The 11 remaining `AbilitySystemForEnemyPartData` partial refs were not encrypted and were not malformed tails.
+- Word 188 is a small count, not `asIndividualInExcludeTargetProcessor`.
+- The current focused layout is a 187-word raw `partAttributes` prefix, `defaultEnabled`, a counted post-default record list, then the existing 18 scalar fields from `useMainBodyHp` through `damageTransferType`.
+- Observed counted records are 3-word triples: `kind:int32`, `flag:bool32`, `value:float32`.
+
+Implementation:
+
+- Added a guarded `partAttributesPostDefaultRules` parser that validates the count against payload length and decodes the 3-word records before reusing the existing 18-field scalar suffix reader.
+- Kept the previous 20-word scalar and 18-word partial fallback paths for future variants that do not match this layout.
+
+Focused validation summary:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Files re-exported | 78 | 78 |
+| Managed refs decoded | 1,576 | 1,587 |
+| Managed refs decoded+partial | 12 | 1 |
+| `AbilitySystemForEnemyPartData` decoded refs | 16 | 27 |
+| `AbilitySystemForEnemyPartData` decoded+partial refs | 11 | 0 |
+| `partAttributesPostDefaultRules` refs | 0 | 27 |
+
+Observed non-empty post-default records:
+
+- `data_eny_0077_agshield`: `(1, false, 0.1)`.
+- `data_eny_0080_reaper`: `(20, true, 0.0)`, `(1, false, 0.45)`.
+- `data_eny_0081_ruanyi`: `(1, false, 999.0)`, `(20, false, 999.0)` across seven parts.
+- `data_eny_0113_jzogre`: `(1, true, 50.0)`.
+
+Build and validation:
+
+- `scripts\animestudio\rebuild.bat -Target CLI -NoRestore` succeeded with 0 warnings and 0 errors.
+- The focused 78-name AnimeStudio export succeeded with return code 0.
+
+Remaining current focused gap in `Persistent/data_eny` after this pass:
+
+- `AbilitySystemData`: 1 ref still decoded+partial (`data_eny_0092_slbomb`).
+- No `AbilitySystemForEnemyPartData`, `EnemyPartsRootComponentData`, or `FootRippleComponentData` refs in this focused bucket remain partial/unparsed/heuristic.
