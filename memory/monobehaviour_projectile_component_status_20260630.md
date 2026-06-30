@@ -95,9 +95,38 @@ The remaining `$heuristic` and `decodeError` markers in those files belong to
 the managed-reference registry recovery wrapper, not to
 `ProjectileComponentData` itself.
 
+## MoveModeDict Header Follow-up
+
+The current export contains 10 `data_projectile_*` MonoBehaviours in the active
+same-bundle projectile set. A second pass decoded only the `moveModeDict`
+dictionary header and left the `MoveModeData` values plus subsequent
+effect/sound/scalar fields as raw words.
+
+Validated shape:
+
+- 5 payloads have one key: `Default`.
+- 5 payloads have four keys: `Default`, `T1`, `T2`, `T3`.
+- Every decoded `valueCount` matches `keyCount`.
+- `ProjectileComponentData` still has no `$unparsed`, `$heuristic`, or
+  `decodeError` marker across the 10 exported JSON files.
+- Remaining raw word counts after the dictionary header are `252`, `369`,
+  `487`, `618`, and `740`.
+
+This is promoted as a partial diagnostic only. A local full `MoveModeData`
+prototype failed at the speed-info fields, so the nested values are not yet
+safe to name. The available DummyDll reflection path is also not reliable for
+this family; field order comes from `global-metadata.dat` and byte evidence.
+
+Build and focused validation:
+
+- `.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore`
+- Result: succeeded with the existing project warnings and `0 Error(s)`.
+- Targeted export:
+  `tmp\projectile_component_movemode_after_20260630`.
+
 ## Remaining Unknowns
 
-- Exact serialization of `moveModeDict`.
+- Exact serialization of `moveModeDict` values.
 - Exact effect-list item layouts for `mainEffects`, `launchEffects`,
   `reachEffects`, `hitEffects`, `blockEffects`, and `finishEffects`.
 - Exact projectile sound struct layout for `launchSound`, `loopSound`,
