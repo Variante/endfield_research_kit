@@ -93,6 +93,24 @@ ANIMESTUDIO_CONVERT_OUTPUT_MARKER_SUFFIXES = {
 ANIMESTUDIO_OUTPUT_BASE_RE = re.compile(r"^(?P<base>.+)_p[0-9A-Fa-f]{16}(?: \(\d+\))?(?:\..*)?$")
 ANIMESTUDIO_HEX_HASH_NAME_RE = re.compile(r"^[0-9a-fA-F]{8,}$")
 ANIMESTUDIO_CONVERT_PARSE_DEPENDENCIES = {
+    # Animator FBX export starts from the linked GameObject hierarchy and only
+    # emits geometry when Transform, renderer, Mesh, Material/Texture, Avatar,
+    # controller, and clip dependencies are parsed alongside the Animator.
+    "Animator": (
+        "GameObject:Parse",
+        "Transform:Parse",
+        "RectTransform:Parse",
+        "MeshFilter:Parse",
+        "MeshRenderer:Parse",
+        "SkinnedMeshRenderer:Parse",
+        "Mesh:Parse",
+        "Texture2D:Parse",
+        "Material:Parse",
+        "Avatar:Parse",
+        "AnimatorController:Parse",
+        "AnimatorOverrideController:Parse",
+        "AnimationClip:Parse",
+    ),
     # Sprite.GetImage resolves a backing texture directly or through a SpriteAtlas.
     # Parse these dependencies while keeping Sprite as the only export target.
     "Sprite": ("Texture2D:Parse", "SpriteAtlas:Parse"),
