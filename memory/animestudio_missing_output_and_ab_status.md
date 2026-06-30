@@ -3832,3 +3832,46 @@ Targeted validation output: `tmp\ability_skillbundle_status_after_20260630\68B3`
 Remaining partial roots in the same validation slice are now better scoped: `AbilitySystemData` remains partial because of the unresolved `overrideDeadEffect` metadata variant and nested semantic diagnostics; `EffectActionCfg` remains partial because of raw BlackboardDouble wrapper semantics and unobserved metadata variants; `TargetSettings` and `SelectorData` remain partial because selector post-processor/post-selector tails still need non-null samples.
 
 Current classification: `SkillDataBundle` itself is byte-consumed and structurally decoded in the current AbilitySystemData samples. The unresolved work is in nested action/condition payload semantics and parent AbilitySystemData/EffectActionCfg variant semantics, not in unread SkillDataBundle tail bytes.
+
+## 2026-06-30 Forty-Fourth Fresh StreamingAssets EffectActionCfg Partial Reason Annotation Batch
+
+Follow-up after the SkillDataBundle root status batch. Work focused on making the remaining `EffectActionCfg` partial status explicit instead of implying there are unread bytes in the current fixed AbilitySystemData shape.
+
+Evidence used:
+
+- Current focused outputs contain 63 `Beyond.Gameplay.EffectActionCfg` records across the inspected registry, SkillDataBundle, and projectile slices.
+- All inspected `EffectActionCfg` rows use the same current fixed 107-word AbilitySystemData payload shape, and the focused character validation still reports `serializedWordCount = 107` for every row.
+- The raw AbilitySystemData `BlackboardDouble` wrappers are still not semantically proven. Across the focused slices, 1094 raw wrappers were observed; word 2 is always `0`, word 0 is split between `0` and `1`, and word 1 behaves like the only safe float candidate.
+- Managed-reference `BlackboardDouble` payloads already decode into `useBlackboardKey`, `value`, and `blackboardKey`, including keyed examples such as `EntityBB_noguard_count`. The fixed AbilitySystemData 3-word wrapper does not carry that string shape, and existing outer gates such as `useScaleBB` / `useLengthBB` mean word 0 should not be promoted to a named key-use flag yet.
+- IL2CPP metadata lists `centerOffset`, but observed AbilitySystemData rows omit it. The `overrideDeadEffect` metadata variant is also not proven by the focused samples.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added `observedPayloadStatus` to `EffectActionCfg` records: `fixed 107-word AbilitySystemData EffectActionCfg variant consumed by this reader`.
+- Added `partialReasons` naming the three current blockers: raw BlackboardDouble wrappers, omitted observed `centerOffset`, and unproven `overrideDeadEffect`.
+- Kept `EffectActionCfg` marked `$partial`.
+- Did not add `centerOffset`, did not add `overrideDeadEffect`, and did not promote the raw 3-word BlackboardDouble wrapper into `useBlackboardKey` / `value` / `blackboardKey`.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 errors and the same 14 existing warnings from AnimeStudio projects.
+
+Targeted validation output: `tmp\effect_actioncfg_partial_reasons_after_20260630\68B3` using the 68B3 focused character chunk.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 27 |
+| `EffectActionCfg` records | 25 |
+| `EffectActionCfg` records still `$partial` | 25 |
+| Records with `observedPayloadStatus` | 25 |
+| `serializedWordCount = 107` | 25 |
+| Records with all three `partialReasons` | 25 |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+
+Current classification: the current AbilitySystemData `EffectActionCfg` reader consumes the observed fixed 107-word row shape, but the output remains correctly partial because key substructures are still diagnostic rather than semantically decoded. This batch improves the exported explanation without reducing warning fidelity.
