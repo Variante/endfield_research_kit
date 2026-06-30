@@ -852,3 +852,50 @@ Integration validation:
 
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_skill_switch_validate_20260630` completed and indexed 81,735 Json files, including all 2,083 `Json/SkillData` records.
+## 2026-06-30 SkillData Ambiguous SkillId Anchor Recovery
+
+Resolved most `SkillData` rows where the exact length-prefixed file stem appeared more than once in the raw MemoryPack payload.
+
+Root cause:
+
+- The extra id markers are real exact string references, not encryption and not duplicate top-level `SkillData.skillId` fields.
+- They occur inside earlier nested action/config payloads before the top-level `skillId` field.
+- Some embedded markers can superficially parse because the surrounding payload is zero/default-heavy, so choosing the first or last marker is not a sound rule.
+- The reliable top-level anchor is the candidate marker whose following post-id prefix reaches a valid `SwitchToBuffConfig` marker and whose post-switch tail reaches exact EOF.
+
+Implementation:
+
+- `decode_skill_post_id_tail_prefix` now probes every recorded exact id marker for `SkillData`.
+- It accepts exactly one candidate only when the post-id prefix parses, `skillTags.count == 1`, `SwitchToBuffConfig` is found, and the validated post-switch tail reaches exact EOF.
+- Candidate summaries are retained on unresolved ambiguous rows so the remaining schema gaps are visible instead of hidden.
+- `SkillData` marker collection now keeps up to 64 offsets so high-repeat rows such as `chr_0017_yvonne_ult_attack3_2` include the true final top-level anchor.
+
+Focused validation summary:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| `SkillData` files scanned | 2,083 | 2,083 |
+| Parsed through post-id prefix and exact switch tail | 2,025 | 2,075 |
+| Ambiguous id-marker rows | 53 | 3 |
+| Ambiguous rows structurally selected | 0 | 50 |
+| Single-marker smart-target parse errors | 5 | 5 |
+
+Resolved examples:
+
+- `chr_0002_endminm_normal_skill.json`: embedded markers at `0x4791` and `0x47e3`; top-level marker selected at `0x4d6a`.
+- `chr_0017_yvonne_ult_attack3_2.json`: nine exact id-string markers; top-level marker selected only after collecting all offsets.
+- Weapon/skill rows such as `sk_wpn_claym_0011.json`, `sk_wpn_funnel_0017.json`, and `sk_wpn_sword_0015.json` now resolve by the same structural rule.
+
+Remaining ambiguous rows:
+
+- `chr_0006_wolfgd_normal_skill.json`
+- `chr_0017_yvonne_normal_skill.json`
+- `chr_0028_wulfa_combo_2_skill.json`
+
+These three have a likely top-level marker followed by non-empty smart-target/tag-query payloads. The current simple smart-target parser does not yet decode those nested branches, so they remain visible as schema work rather than being auto-selected from a weaker anchor.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- Direct raw-byte sweep over `export_full/structured/StreamingAssets/Data/Json/SkillData/*.json` produced `2,075` parsed, `3` ambiguous, and `5` parse-error rows.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_skill_anchor_validate_20260630` completed and indexed 81,735 Json files, including all 2,083 `Json/SkillData` records.

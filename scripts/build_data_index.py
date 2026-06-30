@@ -3168,18 +3168,12 @@ def decode_skill_switch_tail_probe(data: bytes, offset: int) -> dict[str, Any]:
     }
 
 
-def decode_skill_post_id_tail_prefix(
+def decode_skill_post_id_tail_prefix_at(
     data: bytes,
     id_value: str,
-    id_marker_count: int,
-    id_marker_offsets: list[int],
+    id_marker_offset: int,
 ) -> dict[str, Any]:
-    if not id_value or not id_marker_offsets:
-        return {"status": "missing-id-marker"}
-    if id_marker_count != 1:
-        return {"status": "ambiguous-id-marker", "idMarkerCount": id_marker_count}
-
-    start = id_marker_offsets[0] + 4 + len(id_value.encode("utf-8"))
+    start = id_marker_offset + 4 + len(id_value.encode("utf-8"))
     offset = start
     try:
         skill_name, offset, error = read_memorypack_utf8_string(data, offset, max_length=512)
@@ -3210,9 +3204,10 @@ def decode_skill_post_id_tail_prefix(
         return {
             "status": "parsed-through-smartTargetTagQuery",
             "source": (
-                "anchored after exact top-level skillId marker; parses clean post-id scalar/list prefix "
+                "anchored after candidate exact skillId marker; parses clean post-id scalar/list prefix "
                 "and probes the following SwitchToBuffConfig tail marker"
             ),
+            "idMarkerOffset": format_offset(id_marker_offset),
             "offset": format_offset(start),
             "skillName": skill_name or "",
             "skillSpecificationRaw": skill_specification,
@@ -3227,9 +3222,94 @@ def decode_skill_post_id_tail_prefix(
     except (struct.error, UnicodeDecodeError, ValueError) as exc:
         return {
             "status": "parse-error",
+            "idMarkerOffset": format_offset(id_marker_offset),
             "offset": format_offset(offset),
             "error": str(exc),
         }
+
+
+def is_skill_top_level_post_id_tail_candidate(candidate: dict[str, Any]) -> bool:
+    if candidate.get("status") != "parsed-through-smartTargetTagQuery":
+        return False
+    skill_tags = candidate.get("skillTags") or {}
+    if skill_tags.get("count") != 1:
+        return False
+    switch_tail = candidate.get("switchTailProbe") or {}
+    post_switch_tail = switch_tail.get("postSwitchTail") or {}
+    return (
+        switch_tail.get("status") == "switch-marker-found"
+        and post_switch_tail.get("status") == "parsed-through-exact-tail"
+        and post_switch_tail.get("exactLength") is True
+    )
+
+
+def summarize_skill_post_id_tail_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
+    skill_tags = candidate.get("skillTags") or {}
+    smart_target_buff_ids = candidate.get("smartTargetBuffIds") or {}
+    switch_tail = candidate.get("switchTailProbe") or {}
+    post_switch_tail = switch_tail.get("postSwitchTail") or {}
+    return {
+        "idMarkerOffset": candidate.get("idMarkerOffset"),
+        "status": candidate.get("status"),
+        "offset": candidate.get("offset"),
+        "error": candidate.get("error"),
+        "skillTagsCount": skill_tags.get("count"),
+        "smartTargetBuffIdsCount": smart_target_buff_ids.get("count"),
+        "smartTargetTagQueryRaw": candidate.get("smartTargetTagQueryRaw"),
+        "switchTailStatus": switch_tail.get("status"),
+        "postSwitchStatus": post_switch_tail.get("status"),
+        "postSwitchExactLength": post_switch_tail.get("exactLength"),
+    }
+
+
+def decode_skill_post_id_tail_prefix(
+    data: bytes,
+    id_value: str,
+    id_marker_count: int,
+    id_marker_offsets: list[int],
+) -> dict[str, Any]:
+    if not id_value or not id_marker_offsets:
+        return {"status": "missing-id-marker"}
+
+    candidates = [
+        decode_skill_post_id_tail_prefix_at(data, id_value, marker_offset)
+        for marker_offset in id_marker_offsets
+    ]
+    if id_marker_count == 1:
+        return candidates[0]
+
+    selected = [candidate for candidate in candidates if is_skill_top_level_post_id_tail_candidate(candidate)]
+    if len(selected) == 1:
+        result = selected[0]
+        result["source"] = (
+            "selected exact top-level skillId marker among multiple length-prefixed id references; "
+            "embedded id-string references were rejected by post-id and exact-tail structure"
+        )
+        result["anchorSelection"] = {
+            "status": "selected-from-ambiguous-id-markers",
+            "idMarkerCount": id_marker_count,
+            "candidateCount": len(candidates),
+            "selectedIdMarkerOffset": result.get("idMarkerOffset"),
+            "selectionCriteria": (
+                "post-id prefix parsed, skillTags.count == 1, SwitchToBuffConfig marker found, "
+                "and post-switch tail reached exact EOF"
+            ),
+            "candidateSummaries": [summarize_skill_post_id_tail_candidate(candidate) for candidate in candidates[:12]],
+        }
+        return result
+
+    return {
+        "status": "ambiguous-id-marker",
+        "idMarkerCount": id_marker_count,
+        "candidateCount": len(candidates),
+        "idMarkerOffsets": [format_offset(offset) for offset in id_marker_offsets],
+        "selectionCriteria": (
+            "post-id prefix parsed, skillTags.count == 1, SwitchToBuffConfig marker found, "
+            "and post-switch tail reached exact EOF"
+        ),
+        "selectedCandidateCount": len(selected),
+        "candidateSummaries": [summarize_skill_post_id_tail_candidate(candidate) for candidate in candidates[:12]],
+    }
 
 
 def skill_post_id_tail_sample(prefix: dict[str, Any]) -> str:
@@ -3241,6 +3321,10 @@ def skill_post_id_tail_sample(prefix: dict[str, Any]) -> str:
         f"spec:{prefix.get('skillSpecificationRaw')}",
         f"tags:{tags.get('count')}",
     ]
+    anchor_selection = prefix.get("anchorSelection") or {}
+    if anchor_selection.get("status") == "selected-from-ambiguous-id-markers":
+        parts.append("anchor:selected-from-ambiguous-id-markers")
+        parts.append(f"anchorOffset:{anchor_selection.get('selectedIdMarkerOffset')}")
     if tags.get("branch") == "one-member-wrapper":
         parts.append("tagMode:wrap")
     clean_tags = [
@@ -4602,7 +4686,7 @@ def decode_skill_memorypack(path: Path, data: bytes, size: int) -> dict[str, Any
     hits = scan_length_prefixed_utf8_string_hits(data, max_samples=320)
     strings = unique_strings([str(hit.get("value") or "") for hit in hits], 96)
     stem = path.stem
-    id_marker_count, id_marker_offsets = length_prefixed_utf8_string_marker_info(data, stem)
+    id_marker_count, id_marker_offsets = length_prefixed_utf8_string_marker_info(data, stem, max_offsets=64)
     id_verified = id_marker_count > 0
     id_value = stem if id_verified else next((value for value in strings if value.startswith(("chr_", "eny_", "abilityentity_"))), "")
     value_fields, complex_fields = skill_schema_field_groups(schema)
