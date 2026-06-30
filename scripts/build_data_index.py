@@ -2344,6 +2344,54 @@ BUFF_ABILITY_ACTION_TAG_NAMES = {
     0x0152: "Core_TickIntervalAction_Data",
     0x0154: "Core_TimeDilationAction_Data",
 }
+BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS = {
+    0x0002: 12,
+    0x0008: 49,
+    0x000b: 8,
+    0x0015: 23,
+    0x0019: 15,
+    0x0020: 12,
+    0x002a: 10,
+    0x002f: 15,
+    0x0036: 10,
+    0x0047: 7,
+    0x004f: 8,
+    0x007c: 19,
+    0x007e: 12,
+    0x0082: 17,
+    0x0089: 23,
+    0x008a: 11,
+    0x008b: 8,
+    0x0091: 15,
+    0x009f: 18,
+    0x00a1: 13,
+    0x00a3: 6,
+    0x00ac: 6,
+    0x00b2: 12,
+    0x00b4: 8,
+    0x00bf: 8,
+    0x00c8: 34,
+    0x00ca: 54,
+    0x00d1: 10,
+    0x00db: 42,
+    0x00e9: 12,
+    0x00ef: 6,
+    0x00f8: 12,
+    0x00fc: 22,
+    0x00fe: 17,
+    0x0108: 5,
+    0x010a: 11,
+    0x011e: 18,
+    0x011f: 6,
+    0x0133: 8,
+    0x0135: 10,
+    0x013d: 37,
+    0x013e: 15,
+    0x0140: 8,
+    0x014d: 13,
+    0x0152: 9,
+    0x0154: 16,
+}
 BUFF_OPAQUE_TIMELINE_ACTION_BODY_MAX_BYTES = 256 * 1024
 
 
@@ -2398,6 +2446,82 @@ def read_buff_timeline_first_union_tag(
         return struct.unpack_from("<H", data, offset + 1)[0], 3, data[offset:offset + 3].hex(" ")
     return data[offset], 1, data[offset:offset + 1].hex(" ")
 
+
+def read_buff_ability_action_item_header(
+    data: bytes,
+    offset: int,
+    limit: int,
+) -> tuple[int, int, int] | None:
+    tag, tag_width, _raw = read_buff_timeline_first_union_tag(data, offset, limit)
+    if tag is None or tag not in BUFF_ABILITY_ACTION_TAG_NAMES:
+        return None
+    member_count_offset = offset + tag_width
+    if member_count_offset >= limit:
+        return None
+    member_count = data[member_count_offset]
+    expected_member_count = BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS.get(tag)
+    if expected_member_count is None or member_count != expected_member_count:
+        return None
+    return tag, tag_width, member_count
+
+
+def build_buff_ability_action_item_summary(
+    data: bytes,
+    item_start: int,
+    item_end: int,
+    tag: int,
+    tag_width: int,
+    member_count: int,
+    index: int,
+) -> dict[str, Any]:
+    item_bytes = item_end - item_start
+    string_hits = scan_length_prefixed_utf8_string_hits(
+        data,
+        start=item_start,
+        max_scan_bytes=item_bytes,
+        max_samples=4,
+        max_length=128,
+    )
+    return {
+        "index": index,
+        "offset": format_offset(item_start),
+        "bytes": item_bytes,
+        "tag": f"0x{tag:04x}",
+        "name": BUFF_ABILITY_ACTION_TAG_NAMES.get(tag, ""),
+        "tagBytes": tag_width,
+        "memberCount": member_count,
+        "bodyBytes": item_bytes - tag_width - 1,
+        "stringHits": string_hits,
+    }
+
+
+def split_buff_ability_action_items_opaque(
+    data: bytes,
+    offset: int,
+    body_end: int,
+    action_data_count: int,
+) -> tuple[str, list[dict[str, Any]]]:
+    if action_data_count == 0:
+        return ("empty", []) if offset == body_end else ("failed", [])
+    if action_data_count == 1:
+        header = read_buff_ability_action_item_header(data, offset, body_end)
+        if header is None:
+            return "failed", []
+        tag, tag_width, member_count = header
+        return "single-item", [
+            build_buff_ability_action_item_summary(
+                data,
+                offset,
+                body_end,
+                tag,
+                tag_width,
+                member_count,
+                0,
+            )
+        ]
+    if action_data_count > 1:
+        return "ambiguous-union-tag-boundaries", []
+    return "failed", []
 
 def short_counter_dict(counter: Counter[Any], limit: int = 16) -> dict[str, int]:
     return {str(key): value for key, value in counter.most_common(limit)}
@@ -2494,6 +2618,12 @@ def decode_buff_timeline_actions_outer(
                 max_samples=6,
                 max_length=128,
             )
+            action_data_split, action_data_items = split_buff_ability_action_items_opaque(
+                data,
+                action_payload_start,
+                payload_end,
+                action_data_count,
+            )
             record = {
                 "index": record_index,
                 "offset": format_offset(record_start),
@@ -2511,6 +2641,8 @@ def decode_buff_timeline_actions_outer(
                     "firstActionName": BUFF_ABILITY_ACTION_TAG_NAMES.get(first_tag, "") if first_tag is not None else "",
                     "firstActionTagBytes": first_tag_bytes,
                     "firstActionTagRaw": first_tag_raw,
+                    "actionDataSplit": action_data_split,
+                    "actionDataItems": action_data_items,
                     "onlyExecuteWhenSourceIsMainChar": only_main_char,
                     "onlyExecuteWhenSourceIsGuard": only_guard,
                     "stringHits": string_hits,
@@ -2540,6 +2672,14 @@ def decode_buff_timeline_actions_outer(
     first_action_name_counts = Counter(
         record["sequenceActionData"]["firstActionName"] or "unknown" for record in records
     )
+    action_data_split_counts = Counter(
+        record["sequenceActionData"].get("actionDataSplit") or "unknown" for record in records
+    )
+    split_action_item_name_counts = Counter(
+        item.get("name") or "unknown"
+        for record in records
+        for item in record["sequenceActionData"].get("actionDataItems") or []
+    )
     return {
         "timelineActionsBodyStatus": "partial-timelineActions-opaque-actionData",
         "timelineActionsBodyShape": (
@@ -2553,6 +2693,8 @@ def decode_buff_timeline_actions_outer(
         "timelineActionDataCountCounts": short_counter_dict(action_data_count_counts),
         "timelineActionFirstTagCounts": short_counter_dict(first_tag_counts),
         "timelineActionFirstActionNameCounts": short_counter_dict(first_action_name_counts),
+        "timelineActionDataSplitCounts": short_counter_dict(action_data_split_counts),
+        "timelineActionSplitItemNameCounts": short_counter_dict(split_action_item_name_counts),
         "timelineActionRecords": records,
     }
 
