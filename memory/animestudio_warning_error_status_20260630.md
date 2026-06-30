@@ -1434,3 +1434,53 @@ Validation:
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - Focused BuffData decode over all 2,291 rows produced zero `ambiguous-id-marker` rows and 9 structural ambiguous-anchor selections.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_structured_anchor_validate_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData Opaque StackEffects Body Boundaries
+
+Bounded the remaining nonzero `stackEffects` rows without claiming semantic decode of the nested `EffectActionCfg` payloads.
+
+What changed:
+
+- Added a guarded `EffectActionCfg` body skipper for the observed nonzero `stackEffects` branch.
+- The skipper requires each `StackBuffEffectData` item to use member count `1`, each nested effect action to use member count `15`, discriminator `1`, marker `74`, a `P_*` effect name at offset `+37`, body length `471 + effectNameBytes`, terminal `04 00 00 00`, and a final stackEffects pad `00 00 00 00`.
+- Rows that satisfy the guard resume the existing `stackingSettings` suffix and tail parser.
+- The body is still emitted as `opaque-effectActions`, and that status remains a strict `di` issue.
+
+Focused BuffData validation:
+
+| Metric | Count |
+| --- | ---: |
+| `BuffData` files scanned | 2,291 |
+| Nonzero `stackEffects` rows bounded | 46 |
+| Opaque nested effect actions bounded | 124 |
+| Zero-action `stackEffects` rows still skipped | 36 |
+| `unparsed-stackEffects` rows remaining | 0 |
+| `opaque-effectActions` rows | 46 |
+| `opaque-timelineActions` rows | 65 |
+
+Full Json strict issue validation after this recovery:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 146 |
+| `Json/BuffData` unresolved issue rows | 144 |
+| `Json/LevelScriptData` unresolved issue rows | 2 |
+
+Current strict unresolved status distribution:
+
+| Status | Count |
+| --- | ---: |
+| `opaque-timelineActions` | 65 |
+| `opaque-effectActions` | 46 |
+| `parse-error` | 12 |
+| `unparsed-poiseModifier` | 9 |
+| `unparsed-igniteEventAction` | 8 |
+| `unparsed-shieldConfigs` | 4 |
+| `count-exceeds-remaining` | 2 |
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- Focused BuffData decode over all 2,291 rows produced `46` `opaque-effectActions` rows, `124` bounded nested actions, and zero remaining `unparsed-stackEffects` rows.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_stackeffects_opaque_validate_20260630` completed and indexed 81,735 Json files.
