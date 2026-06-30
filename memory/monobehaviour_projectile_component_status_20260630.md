@@ -464,3 +464,55 @@ Validation summary:
 | Separate decoded sound/scalar suffix fields emitted | 0 |
 
 Current classification: the projectile parent-tail end boundary is understood as `showAlertEffect` plus a bounded partial `EffectActionCfg` alert effect. The inner `EffectActionCfg` fields remain partial, and the projectile metadata sound fields are not byte-proven in this sample set.
+
+## Adaptive BlackboardDouble And MainEffect Finish Guard
+
+This pass resolves the five whole-record `ProjectileComponentData` decode misses from the 300-projectile validation slice.
+
+Root cause:
+
+- The projectile reader treated `Beyond.Blackboard.BlackboardDouble` as a fixed three-word wrapper.
+- Five payloads serialize dynamic blackboard-key strings in the opening `finishDuration`/`finishDistance` fields:
+  - `data_projectile_harddung_healball_02`
+  - `data_projectile_cc_level_healball_02`
+  - `data_projectile_chr_0030_zhuangfy_attack_sword_1`
+  - `data_projectile_chr_0030_zhuangfy_attack_sword_2`
+  - `data_projectile_chr_0030_zhuangfy_normal_skill_gene_sword`
+- Three Zhuangfy payloads also start `mainEffectFinishDistance` immediately after `moveModeDict`; the metadata-listed `mainEffectFinishType` word is omitted in those observed variants.
+
+Implementation:
+
+- `ReadAbilitySystemBlackboardDouble` now prefers the metadata-backed `bool32 useBlackboardKey`, `float32 value`, aligned `blackboardKey` shape and falls back to the previous raw three-word wrapper when that shape does not validate.
+- The reader preserves `valueFloatCandidate` in both shapes for existing summaries.
+- `ReadProjectileComponentTailDiagnostic` now guards `mainEffectFinishType`: it accepts enum values `0..2` (`Default`, `ByTargetPosition`, `ByMaxDistance`), otherwise tries the observed distance-only variant and marks `mainEffectFinishTypeSerialized = false`.
+- Failed focused `ProjectileComponentData` decodes now retain the known layout and `decodeError` instead of collapsing into an anonymous heuristic-only fallback.
+
+Validation output:
+
+```text
+tmp\projectile_blackboard_adaptive_validation_after_20260630
+```
+
+Validation summary:
+
+| Metric | Result |
+| --- | ---: |
+| Projectile template JSON files | 300 |
+| `ProjectileComponentData` references | 300 |
+| Decoded `ProjectileComponentData` layouts | 300 |
+| Structured tails | 300 |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+| `mainEffectFinishTypeSerialized = true` | 294 |
+| `mainEffectFinishTypeSerialized = false` | 6 |
+| `BlackboardDouble` `bool-float-key` records | 10,560 |
+| `BlackboardDouble` raw three-word fallback records | 48 |
+| `alertEffect.effectName = ""` | 276 |
+| `alertEffect.effectName = P_skillalert_circle_01` | 13 |
+| `alertEffect.effectName = P_skillalert_circle_01_02` | 11 |
+
+Remaining projectile diagnostic work:
+
+- `ProjectileComponentData` remains parent `$partial` because effect-list assignment, inner `EffectActionCfg`, and some `MoveModeData` internals are still intentionally raw/diagnostic.
+- The only marker left in the 300-projectile slice is nested `BezierPoint` `decodeError` diagnostics: 10 records.
