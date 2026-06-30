@@ -3787,3 +3787,48 @@ Targeted validation output: `tmp\selector_validator_count_after_20260630\68B3` u
 | Data-level `decodeError` records | 0 |
 
 Current classification: the selector validator count is now named according to installed metadata and observed byte behavior. `SelectorData` remains partial because `postProcessorData` and the post-selector `TargetSettings` tail still need non-null/non-trivial samples before further semantic promotion.
+
+## 2026-06-30 Forty-Third Fresh StreamingAssets SkillDataBundle Root Status Batch
+
+Follow-up after the Selector validator count naming batch. Work focused on reducing misleading `$partial` markers inside the current AbilitySystemData partial tree without hiding real unresolved semantics.
+
+Evidence used:
+
+- Current focused outputs have no data-level `$unparsed`, `$heuristic`, or `decodeError` records in the inspected slices.
+- Across `tmp\registry_status_after_20260630` and `tmp\projectile_component_movemode_values_after_20260630`, all 38 inspected `AbilitySystemData` records consume their payloads completely: `remainingRawWords = []` and `remainingStringHints = []`.
+- The AbilitySystemData-owned `SkillDataBundle` reader consumes through `defaultCmdMapping`; later fields are consumed by the parent `AbilitySystemData` reader, not left inside the bundle.
+- Existing projectile-specific `SkillDataBundle` output was already `$decoded`; the mismatch was only in the AbilitySystemData-owned reader.
+- A parallel `EffectActionCfg` probe found 53 `deadEffect` records are byte-consumed with `deadEffect.serializedWordCount = 107`, but should remain `$partial` because BlackboardDouble wrappers are still raw 3-word diagnostics and metadata variants such as `overrideDeadEffect` / `centerOffset` are not proven in current samples.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Marked the AbilitySystemData-owned `SkillDataBundle` root as `$decoded` instead of `$partial`.
+- Replaced the old misleading note `decoded through defaultCmdMapping; later AbilitySystemData fields remain in remainingRawWords` with a note that the bundle is consumed through `defaultCmdMapping`, nested combo conditions may still contain partial action/condition payloads, and later AbilitySystemData fields are handled by the parent reader.
+- Did not remove `$partial` from parent `AbilitySystemData`, `EffectActionCfg`, `TargetSettings`, `SelectorData`, or nested action/condition records.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 errors and the same 14 existing warnings from AnimeStudio projects.
+
+Targeted validation output: `tmp\ability_skillbundle_status_after_20260630\68B3` using the 68B3 focused character chunk.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 27 |
+| AbilitySystemData records | 25 |
+| AbilitySystemData records still `$partial` | 25 |
+| AbilitySystemData records with empty `remainingRawWords` and `remainingStringHints` | 25 |
+| SkillDataBundle records | 25 |
+| SkillDataBundle records marked `$decoded` | 25 |
+| SkillDataBundle records still `$partial` | 0 |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+
+Remaining partial roots in the same validation slice are now better scoped: `AbilitySystemData` remains partial because of the unresolved `overrideDeadEffect` metadata variant and nested semantic diagnostics; `EffectActionCfg` remains partial because of raw BlackboardDouble wrapper semantics and unobserved metadata variants; `TargetSettings` and `SelectorData` remain partial because selector post-processor/post-selector tails still need non-null samples.
+
+Current classification: `SkillDataBundle` itself is byte-consumed and structurally decoded in the current AbilitySystemData samples. The unresolved work is in nested action/condition payload semantics and parent AbilitySystemData/EffectActionCfg variant semantics, not in unread SkillDataBundle tail bytes.
