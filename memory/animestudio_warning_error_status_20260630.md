@@ -813,3 +813,42 @@ Remaining SkillData gap:
 
 - `chr_0026_lastrite_normal_skill.json` still fails after the default `SwitchToBuffConfig` byte boundary with `switchToCenterBeforeCast:byte=95`.
 - This is a different switch-body layout: its `switchToBuffConfig.buffsCount = 1` and the current fixed 148-byte default boundary is too short for the non-empty switch body. Treat it as the next SkillData target, not as encryption.
+
+## 2026-06-30 SkillData Non-Empty SwitchToBuffConfig Update
+
+Closed the remaining post-switch `SkillData` parse error caused by a non-empty `SwitchToBuffConfig.buffs` list.
+
+Root cause:
+
+- The affected file is not encrypted and does not need another VFS decode pass.
+- `chr_0026_lastrite_normal_skill.json` uses the same top-level `SkillData` tail schema, but its `SwitchToBuffConfig` body is larger than the 148-byte empty/default body used by the rest of the observed files.
+- The fixed 148-byte boundary landed inside the switch buff body, specifically inside the string payload around `atk_up`, so the old parser misread `0x5f` as `switchToCenterBeforeCast`.
+- The switch buff itself is a normal `BuffInput`: `assignBlackboard`, seven `AssignPair` values, and `buff_chr_0026_lastrite_normal_skill_inattack`.
+
+Focused validation summary:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| `SkillData` files scanned | 2,083 | 2,083 |
+| Post-switch exact tails | 2,024 | 2,025 |
+| Remaining post-switch parse errors | 1 | 0 |
+| Default fixed switch boundaries | 2,024 | 2,024 |
+| Dynamically validated switch boundaries | 0 | 1 |
+| Files with non-empty `SwitchToBuffConfig.buffs` | 0 parsed | 1 parsed |
+
+Observed `chr_0026_lastrite_normal_skill` switch body:
+
+- `switchToBuffConfig.buffsCount = 1`.
+- Dynamic switch body length is 624 bytes.
+- The parsed `BuffInput` starts at `0x337c`, has member count `3`, and has seven assign items: `atk_scale`, `duration`, `atb`, `atk_up`, `poise`, `potential_1`, and `usp`.
+- The post-switch tail starts at `0x35e6` and parses exactly through `toggleBuffsCount = 0` and `uiRangeHintsCount = 1`.
+
+Implementation note:
+
+- The parser now reads `SwitchToBuffConfig.buffs` and validates the switch-body boundary by requiring the following `switchToCenterBeforeCast`, `tagDuringAttach`, `toggleBuffs`, and `uiRangeHints` tail to reach exact EOF.
+- The remaining `SwitchToBuffConfig` suffix fields after `buffs` are still recorded as raw diagnostic bytes/string hits under the expected field names `buffSource`, `condition`, and `targets`. Their exact nested semantics are the next deeper target if we choose to decode TargetSettings/SequenceActionData internals.
+
+Integration validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_skill_switch_validate_20260630` completed and indexed 81,735 Json files, including all 2,083 `Json/SkillData` records.
