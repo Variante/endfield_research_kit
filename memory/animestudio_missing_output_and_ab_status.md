@@ -4314,3 +4314,40 @@ Targeted validation output: `tmp\projectile_alert_effect_validation_after_202606
 | Separate decoded sound/scalar suffix fields emitted | 0 |
 
 Current classification: the projectile tail end boundary is now represented as `showAlertEffect` plus a bounded partial `EffectActionCfg` alertEffect. This fixes a wrong field split instead of suppressing the warning. Remaining projectile work is the inner EffectActionCfg layout, effect-list assignment before the alert suffix, and locating byte evidence for the metadata sound fields if they are serialized elsewhere or only under unobserved variants.
+## 2026-06-30 Fifty-Third Fresh StreamingAssets Core Wrapper Parent Reason Batch
+
+Follow-up after the projectile alertEffect boundary correction. Work focused on remaining small action/condition wrappers in the same managed-reference family.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Removed parent `$partial` from byte-consumed `CheckHp/Data`, `CheckTagMatch/Data`, `ModifyDynamicBlackboard/Data`, and `StoreBuffCount/Data` success paths.
+- Added `observedPayloadStatus` for those four wrappers to clarify that nested `TargetSettings` carries its own partial marker.
+- Kept `CreateBuffAction/Data` and `CheckBuffStackNumAdvanced/Data` parent `$partial` markers.
+- Added parent `observedPayloadStatus` and `partialReasons` to `CreateBuffAction/Data` and `CheckBuffStackNumAdvanced/Data` so the remaining warnings point to concrete unresolved fields instead of a generic parent marker.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 errors and the same 14 existing AnimeStudio project warnings.
+
+Focused validation output: `tmp\core_wrapper_parent_reason_validation_after_20260630`.
+
+| Metric | Result |
+| --- | ---: |
+| JSON files parsed | 27 |
+| JSON parse errors | 0 |
+| Data-level `$unparsed` / `$heuristic` / `decodeError` flags | 0 |
+
+| Class | Count | Decoded | Parent `$partial` | `observedPayloadStatus` | Parent `partialReasons` |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `CheckHp/Data` | 2 | 2 | 0 | 2 | 0 |
+| `CheckTagMatch/Data` | 2 | 2 | 0 | 2 | 0 |
+| `ModifyDynamicBlackboard/Data` | 2 | 2 | 0 | 2 | 0 |
+| `StoreBuffCount/Data` | 1 | 1 | 0 | 1 | 0 |
+| `CreateBuffAction/Data` | 5 | 5 | 5 | 5 | 5 |
+| `CheckBuffStackNumAdvanced/Data` | 7 | 7 | 7 | 7 | 7 |
+
+Current classification: this does not suppress remaining warnings. It separates byte-consumed wrapper parents from genuinely unresolved parent cases. Remaining high-value parser work is nested `TargetSettings` / `SelectorData`, `CreateBuffAction` non-default list/post-context variants, `CheckBuffStackNumAdvanced` `BuffFindSettings` variants, and projectile effect-list assignment before the alertEffect suffix.
