@@ -4056,3 +4056,55 @@ Targeted validation output: `tmp\projectile_tail_and_movemode_suffix_after_20260
 | Data-level `decodeError` records | 0 |
 
 Current classification: `ProjectileComponentData` is decoded through the parent tail `mainEffectFinishDistance` field. Nested `MoveModeData` values now expose a guarded structured suffix view but remain partial because BezierPoint internals and the non-serialized speed-info metadata fields are not fully understood. The remaining projectile parent-tail unknown starts at `mainEffects`.
+
+## 2026-06-30 Forty-Eighth Fresh StreamingAssets Projectile BezierPoint Decode Batch
+
+Follow-up after the projectile tail and `MoveModeData` suffix batch. Work focused on the bounded BezierPoint records inside the nested `MoveModeData.structuredSuffix` diagnostic view.
+
+Evidence used:
+
+- The focused projectile validation slice still has no data-level `$unparsed`, `$heuristic`, or `decodeError` records.
+- IL2CPP metadata gives BezierPoint field order: `usePresetPoint`, `presetPointKey`, `xRatioRange`, `yzAngleRange`, `yzRadiusRange`, and `scaledYzRadius`.
+- The observed full BezierPoint payload is exactly 21 int32 words: one bool, one empty aligned string length word, three two-endpoint `BlackboardDouble` ranges, and one bool.
+- All 49 full BezierPoint records decode with `presetPointKey = ""` and `scaledYzRadius = true`.
+- The already-known short `bezierMidPoint2` case remains a guarded truncated path with 7 raw words preserved.
+- The original 115-word `MoveModeData.remainingRawWords` suffix is still emitted for audit.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Full 21-word BezierPoint records now decode into field-level output.
+- Added a small `ReadProjectileBlackboardDoubleRange` helper for the three BezierPoint range fields.
+- Full BezierPoint records are emitted as `$decoded` and `$inferred`.
+- Truncated BezierPoint records remain `$partial` and raw.
+- `MoveModeData` and `structuredSuffix` remain `$partial` because one `bezierMidPoint2` is truncated and the parent projectile effect/sound tail remains unresolved.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Latest rebuild result: 0 errors and the same 14 existing AnimeStudio project warnings.
+
+Targeted validation output: `tmp\projectile_bezierpoint_decode_after_20260630` using the same 10-row projectile filter data from `tmp\projectile_component_movemode_values_after_20260630\filter_data.json`.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 10 |
+| `ProjectileComponentData` records | 10 |
+| `MoveModeData` values | 25 |
+| `MoveModeData` original raw suffix length 115 words | 25 |
+| Structured suffix decode status `decoded` | 25 |
+| Full BezierPoint records | 49 |
+| Full BezierPoint records marked `$decoded` | 49 |
+| Full BezierPoint records marked `$partial` | 0 |
+| Full BezierPoint `presetPointKey = ""` | 49 |
+| Full BezierPoint `scaledYzRadius = true` | 49 |
+| `bezierMidPoint2` full 21-word record | 24 |
+| `bezierMidPoint2` truncated 7 raw words | 1 |
+| Remaining parent tail raw word counts | `{124:1, 240:5, 241:2, 359:1, 490:1}` |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+
+Current classification: full BezierPoint records in `MoveModeData` are now field-decoded for the focused projectile slice. The remaining projectile unknowns are the single truncated BezierPoint variant, non-serialized speed-info metadata fields, and the parent effect/sound/scalar tail beginning at `mainEffects`.
