@@ -498,3 +498,54 @@ Remaining current focused gaps in `Persistent/data_eny` after this pass:
 - `AbilitySystemForEnemyPartData`: 11 refs still decoded+partial because the front prolog/`partAttributes` boundary is not fully decoded yet, but their final scalar suffix is now structured.
 - `AbilitySystemData`: 4 refs still decoded+partial (`data_eny_0077_agshield`, `data_eny_0080_reaper`, `data_eny_0090_wgabyss`, `data_eny_0092_slbomb`).
 - No refs in this focused bucket remain unparsed/heuristic.
+## 2026-06-30 AbilitySystemData Reaper Extra Shape Recovery
+
+Continued the same `Persistent/data_eny` focused bucket after the enemy-part ability tail structuring.
+
+Focused validation baseline:
+
+```text
+tmp\data_eny_probe_after_partability_tail_20260630\current_persistent_3267
+```
+
+Post-patch validation:
+
+```text
+tmp\data_eny_probe_after_reaper_extrashapes_20260630\current_persistent_3267
+```
+
+Root cause:
+
+- `data_eny_0080_reaper` was not encrypted; the remaining tail was normal schema data after `defaultHitEffect`.
+- The entity-blackboard stage rolled back because `bakedMeshPoints` contains two explicit `0x7fc00000` NaN sentinel vectors, and the generic float reader rejects non-finite values.
+- The same tail also has a non-empty `extraShapesData` dictionary with two shape mount-point keys (`158`, `166`) and two `BasicShapeData` values `(4.0, 8.1)`, while the old reader only accepted empty dictionaries.
+
+Implementation:
+
+- Added a baked-mesh-point vector reader that preserves non-finite float32 values as raw `{ "$nonFinite", rawInt32, rawHex }` markers instead of rejecting the whole object.
+- Replaced the empty-only `extraShapesData` reader with a bounded `SerializeFieldDictionary<MountPoint, BasicShapeData>` parser.
+
+Focused validation summary:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Files re-exported | 78 | 78 |
+| Managed refs decoded | 1,573 | 1,574 |
+| Managed refs decoded+partial | 15 | 14 |
+| `AbilitySystemData` decoded refs | 74 | 75 |
+| `AbilitySystemData` decoded+partial refs | 4 | 3 |
+
+Notable record:
+
+- `data_eny_0080_reaper` now fully consumes `AbilitySystemData`, including `entityBlackboard`, `bakedMeshPoints`, `bakedMeshPointBonePathList`, `extraShapesData`, `skillCameraConfig`, and post-camera fields.
+
+Build and validation:
+
+- `scripts\animestudio\rebuild.bat -Target CLI -NoRestore` succeeded with 0 warnings and 0 errors.
+- The focused 78-name AnimeStudio export succeeded with return code 0.
+
+Remaining current focused gaps in `Persistent/data_eny` after this pass:
+
+- `AbilitySystemForEnemyPartData`: 11 refs still decoded+partial because the front prolog/`partAttributes` boundary is not fully decoded yet.
+- `AbilitySystemData`: 3 refs still decoded+partial (`data_eny_0077_agshield`, `data_eny_0090_wgabyss`, `data_eny_0092_slbomb`).
+- No refs in this focused bucket remain unparsed/heuristic.
