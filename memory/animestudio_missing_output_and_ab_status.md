@@ -3875,3 +3875,60 @@ Targeted validation output: `tmp\effect_actioncfg_partial_reasons_after_20260630
 | Data-level `decodeError` records | 0 |
 
 Current classification: the current AbilitySystemData `EffectActionCfg` reader consumes the observed fixed 107-word row shape, but the output remains correctly partial because key substructures are still diagnostic rather than semantically decoded. This batch improves the exported explanation without reducing warning fidelity.
+
+## 2026-06-30 Forty-Fifth Fresh StreamingAssets TargetSettings Partial Reason Annotation Batch
+
+Follow-up after the EffectActionCfg partial reason annotation batch. Work focused on the largest remaining semantic partial cluster in the current focused outputs: `Beyond.Gameplay.Core.TargetSettings` and nested `Selector/SelectorData` diagnostics.
+
+Evidence used:
+
+- Current focused partial inventory across recent validation slices showed no data-level `$unparsed`, `$heuristic`, or `decodeError` records. The dominant remaining semantic partials were `TargetSettings` and `SelectorData`.
+- The 68B3 focused validation slice contains 54 `TargetSettings` records and 54 nested `SelectorData` records.
+- Selector evidence is strong for the first two metadata fields: `validatorDataCount = 0` appears 52 times, `validatorDataCount = 1` appears 2 times, and the two non-zero validator slots link to `Selector/MainCharacterValidator/Data`.
+- `postProcessorData` is still not proven: all 54 focused `postProcessorData` late RID candidates are `(-2, -2)` in the current validation output, with no linked post-processor object.
+- The post-selector tail is byte-consumed but still compact and under-proven: all 54 records have an 8-word raw tail, with 53 instances of `(0,0,0,1,0,0,0,0)` and 1 instance of `(0,0,0,1,0,0,1,0)`.
+- Local IL2CPP metadata confirms `TargetSettings` field order through `Default` and confirms `SelectorData` fields `finderData`, `validatorData`, and `postProcessorData`, but it does not prove the exact serialized width split of the compact eight-word tail in observed Unity payloads.
+- A local Il2CppDumper v6.7.46 attempt against the installed `GameAssembly.dll` and `global-metadata.dat` found metadata v29 and code registration but failed auto processing before producing `dump.cs`; no field-offset dump was available from that route in this batch.
+- A parallel read-only TargetSettings explorer independently recommended no semantic promotion yet because samples do not prove non-empty `targetContextKey`, non-default direction variants, or post-processor ownership.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Added `observedPayloadStatus` and `partialReasons` to `TargetSettings` records.
+- Added `observedPayloadStatus` and `partialReasons` to `postProcessorDataCandidates`.
+- Added `observedPayloadStatus` and `partialReasons` to `postSelectorFields`.
+- Kept `TargetSettings`, `SelectorData`, `postProcessorDataCandidates`, and `postSelectorFields` marked `$partial`.
+- Did not promote the compact eight-word tail into named `enableAdvancedDirection`, `advancedDirection`, `selectorDirection`, `target`, `targetContextKey`, or `Default` values.
+- Did not promote either late RID candidate to `postProcessorData` until a linked non-empty sample proves the container shape.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 errors and the same 14 existing warnings from AnimeStudio projects.
+
+Targeted validation output: `tmp\targetsettings_partial_reasons_after_20260630\68B3` using the 68B3 focused character chunk.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 27 |
+| `TargetSettings` records | 54 |
+| `TargetSettings` records still `$partial` | 54 |
+| `TargetSettings` records with `observedPayloadStatus` | 54 |
+| `TargetSettings` records with 3 `partialReasons` | 54 |
+| `SelectorData` records | 54 |
+| `validatorDataCount = 0` | 52 |
+| `validatorDataCount = 1` | 2 |
+| `postProcessorDataCandidates` with `observedPayloadStatus` | 54 |
+| `postProcessorDataCandidates` with 2 `partialReasons` | 54 |
+| `postSelectorFields` with `observedPayloadStatus` | 54 |
+| `postSelectorFields` with 3 `partialReasons` | 54 |
+| Tail pattern `(0,0,0,1,0,0,0,0)` | 53 |
+| Tail pattern `(0,0,0,1,0,0,1,0)` | 1 |
+| Late RID pair `(-2,-2)` | 54 |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+
+Current classification: `TargetSettings` and `SelectorData` are byte-consumed and now explain why they remain partial. The safe next promotion requires stronger samples: a non-empty `postProcessorData`, a non-empty `targetContextKey`, or non-default direction/target variants that prove the compact tail field widths.
