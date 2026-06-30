@@ -4202,3 +4202,69 @@ Targeted validation output: `tmp\projectile_tail_suffix_decode_after_20260630` u
 | Data-level `decodeError` records | 0 |
 
 Current classification: `ProjectileComponentData` now exposes the stable parent-tail alert/sound/scalar suffix while keeping the byte-level tail available. Remaining projectile parent-tail unknowns are the variable effect-list/finish prefix, exact effect-record internals, and non-empty sound layouts.
+## 2026-06-30 Fifty-First Fresh StreamingAssets Core Action/Condition Parent Status Batch
+
+Follow-up after the projectile parent-tail suffix batch. Work focused on reducing
+misleading parent-level `$partial` markers on small action/condition wrappers
+whose own serialized bytes are consumed, while preserving nested
+`TargetSettings` / `SelectorData` partial diagnostics.
+
+Evidence used:
+
+- A read-only action/condition probe confirmed five wrapper classes are fully
+  byte-consumed at the parent level and only depend on nested `TargetSettings`
+  / `SelectorData` partials.
+- A parallel `TargetSettings` probe confirmed no safe nested promotion yet:
+  `postProcessorDataCandidates.lateRidA = -2` and `lateRidB = -2` in all 54
+  observed samples; post-selector raw tails are 53x `(0,0,0,1,0,0,0,0)` and 1x
+  `(0,0,0,1,0,0,1,0)`; no non-empty post-processor RID, non-empty
+  `targetContextKey`, or non-default direction/context variant was observed.
+- `CreateBuffAction/Data` and `CheckBuffStackNumAdvanced/Data` still have local
+  unresolved fields and remain parent-partial.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Removed unconditional parent `$partial` from the success path for:
+  `CheckObjectTypeMatch/Data`, `CheckMainCharacterCondition/Data`,
+  `CheckTargetsEqual/Data`, `CheckBuffStackNum/Data`, and
+  `CheckBuffStackNumByTag/Data`.
+- Added `observedPayloadStatus` to those five wrappers to state that all parent
+  bytes are consumed and nested objects carry their own partial markers.
+- Left nested `TargetSettings` and `SelectorData` `$partial` markers unchanged.
+- Left `CreateBuffAction/Data` and `CheckBuffStackNumAdvanced/Data` parent
+  `$partial` markers unchanged.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 errors and the same 14 existing AnimeStudio project warnings.
+
+Targeted validation output: `tmp\core_action_condition_parent_status_after_20260630`
+from `68B3B9B8EB82E88FBFE6A313E6B18FB6.chk`.
+
+| Class | Count | Decoded | Parent `$partial` | `observedPayloadStatus` |
+| --- | ---: | ---: | ---: | ---: |
+| `CheckObjectTypeMatch/Data` | 18 | 18 | 0 | 18 |
+| `CheckMainCharacterCondition/Data` | 6 | 6 | 0 | 6 |
+| `CheckTargetsEqual/Data` | 4 | 4 | 0 | 4 |
+| `CheckBuffStackNum/Data` | 3 | 3 | 0 | 3 |
+| `CheckBuffStackNumByTag/Data` | 4 | 4 | 0 | 4 |
+| `CreateBuffAction/Data` | 5 | 5 | 5 | 0 |
+| `CheckBuffStackNumAdvanced/Data` | 3 | 3 | 3 | 0 |
+
+Additional validation metrics:
+
+| Metric | Result |
+| --- | ---: |
+| JSON files parsed | 129,407 |
+| JSON parse errors | 0 |
+| Nested `TargetSettings` partials under the five promoted wrappers | 39 |
+| Nested `SelectorData` partials under the five promoted wrappers | 39 |
+
+Current classification: the five promoted wrapper parents are byte-consumed and
+no longer need parent partial markers. Remaining warnings are nested semantic
+uncertainty in `TargetSettings` and `SelectorData`, plus local unresolved fields
+in `CreateBuffAction/Data` and `CheckBuffStackNumAdvanced/Data`.
