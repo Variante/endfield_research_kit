@@ -9232,6 +9232,85 @@ def classify_binary(rel: str, path: Path, size: int, header: bytes) -> tuple[str
     return "binary", ext, f"Binary payload; header u32 {word_summary}"
 
 
+DECODER_STATUS_FIELD_LIMIT = 24
+DECODER_ISSUE_FIELD_LIMIT = 12
+DECODER_ISSUE_STATUS_VALUES = {
+    "ambiguous-id-marker",
+    "empty-tail",
+    "invalid-count",
+    "missing-id-marker",
+    "parse-error",
+    "switch-marker-not-found",
+    "truncated",
+}
+
+
+def collect_decoder_status_fields(
+    node: Any,
+    *,
+    path: str = "decoded",
+    limit: int = DECODER_STATUS_FIELD_LIMIT,
+) -> list[str]:
+    fields: list[str] = []
+
+    def visit(value: Any, current_path: str) -> None:
+        if len(fields) >= limit:
+            return
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if len(fields) >= limit:
+                    break
+                key_text = str(key)
+                item_path = f"{current_path}.{key_text}"
+                key_lower = key_text.lower()
+                if (
+                    key_lower == "status"
+                    or key_lower.endswith("status")
+                    or key_lower == "error"
+                    or key_lower.endswith("error")
+                ) and isinstance(item, (str, int, float, bool)):
+                    item_text = str(item)
+                    if item_text:
+                        fields.append(f"{item_path}={item_text}")
+                if isinstance(item, (dict, list)):
+                    visit(item, item_path)
+        elif isinstance(value, list):
+            for index, item in enumerate(value[:8]):
+                if len(fields) >= limit:
+                    break
+                if isinstance(item, (dict, list)):
+                    visit(item, f"{current_path}[{index}]")
+
+    visit(node, path)
+    return fields
+
+
+def decoder_issue_fields(status_fields: list[str]) -> list[str]:
+    issues: list[str] = []
+    for field in status_fields:
+        name, _sep, value = field.partition("=")
+        if ".candidateSummaries[" in name:
+            continue
+        value_lower = value.lower()
+        if value_lower in DECODER_ISSUE_STATUS_VALUES or "parse-error" in value_lower:
+            issues.append(field)
+        if len(issues) >= DECODER_ISSUE_FIELD_LIMIT:
+            break
+    return issues
+
+
+def add_decoder_status_fields(entry: dict[str, Any], decoded: dict[str, Any]) -> None:
+    decoded_payload = decoded.get("decoded")
+    if not isinstance(decoded_payload, dict):
+        return
+    status_fields = collect_decoder_status_fields(decoded_payload)
+    if status_fields:
+        entry["ds"] = status_fields
+    issue_fields = decoder_issue_fields(status_fields)
+    if issue_fields:
+        entry["di"] = issue_fields
+
+
 def compact_entry(
     rel: str,
     path: Path,
@@ -9293,6 +9372,7 @@ def compact_entry(
                 entry["a"] = decoded_binary["keys"]
             if decoded_binary.get("sample"):
                 entry["t"] = str(decoded_binary["sample"])[:STRING_SAMPLE_MAX_CHARS]
+            add_decoder_status_fields(entry, decoded_binary)
             return entry
 
     if path.suffix.lower() == ".bytes":
@@ -9309,6 +9389,7 @@ def compact_entry(
                 entry["a"] = decoded_flatbuffer["keys"]
             if decoded_flatbuffer.get("sample"):
                 entry["t"] = str(decoded_flatbuffer["sample"])[:STRING_SAMPLE_MAX_CHARS]
+            add_decoder_status_fields(entry, decoded_flatbuffer)
             return entry
 
     kind, subtype, summary = classify_binary(rel, path, size, header)

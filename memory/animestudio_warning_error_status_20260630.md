@@ -946,3 +946,45 @@ Validation:
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - Direct raw-byte sweep over all `export_full/structured/StreamingAssets/Data/Json/SkillData/*.json` produced `2,077` simple parses, `6` validated smart-target payload parses, `0` ambiguous rows, `0` parse errors, and `2,083` exact post-switch tails.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_skill_smarttarget_validate_20260630` completed and indexed 81,735 Json files, including all 2,083 `Json/SkillData` records.
+
+## 2026-06-30 Structured Json Decoder Status Audit
+
+Added compact decoder-status fields to the data index so warning/error reports can use parser status paths instead of grepping arbitrary sample text.
+
+Result after rebuilding the full Json index:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Json groups indexed | 30 |
+| Entries with decoder status fields (`ds`) | 72,900 |
+| Entries with unresolved decoder issue fields (`di`) | 411 |
+| `Json/BuffData` unresolved issue rows | 397 |
+| `Json/LevelScriptData` unresolved issue rows | 14 |
+| `Json/SkillData` unresolved issue rows | 0 |
+
+The previous broad keyword buckets are now classified as false positives rather than parser gaps:
+
+- `Json/LevelData`: 26 hits were the valid gameplay key/string `dont_log_error`.
+- `Json/Interactive`: 10 hits were the valid `dont_log_error` component property key with empty component parse errors.
+- `Json/NPC`: 2 hits were real content/action names containing `error`.
+- `Json/BuffData`: the earlier single `INVALID` sample was a valid payload string; its direct post-id tail parser reached exact EOF.
+- `Json/SkillData`: resolved ambiguous-anchor rows retain rejected candidate diagnostics, but those nested `candidateSummaries` are no longer counted as unresolved row issues.
+
+Current strict unresolved status distribution:
+
+| Status | Count |
+| --- | ---: |
+| `parse-error` | 299 |
+| `ambiguous-id-marker` | 98 |
+| `truncated` | 14 |
+
+Remaining active parser targets:
+
+- `Json/BuffData`: 397 rows still have top-level `decoded.postIdPrefix` issues, split between repeated-id anchor ambiguity and tail parse errors.
+- `Json/LevelScriptData`: 14 rows still report `decoded.triggerVolumesDetails.parseStatus=truncated`.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_status_fields_validate2_20260630` completed and indexed 81,735 Json files.
