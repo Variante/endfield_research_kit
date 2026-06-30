@@ -2177,3 +2177,82 @@ Validation commands:
 - `python -m py_compile scripts\build_data_index.py`
 - Focused direct `decode_buff_memorypack` scan over both `structured/StreamingAssets/Data/Json/BuffData` and `structured/Persistent/Data/Json/BuffData`.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_play_sound_validate2_20260630`
+
+## 2026-06-30 BuffData PatrolTeleport Exact Decoder
+
+Added a fail-closed exact decoder for the single bounded `Core_PatrolTeleport_Data` timeline action payload.
+
+What changed:
+
+- Added exact parsing for one-byte union tag `0x00ef` with serialized member count `6`.
+- Decodes the inherited `AbilityActionData` prefix.
+- Decodes `saveTo` as a bounded MemoryPack UTF-8 string and `teleportDis` as a finite nonnegative float.
+- Requires exact end-of-item consumption before emitting typed data.
+
+Focused validation over current exported BuffData roots:
+
+| Root | BuffData files | Timeline rows | Timeline records | Emitted single-item summaries | Exact item decodes | Partial item decodes | Typed decoder failures |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `structured/StreamingAssets` | 2,291 | 79 | 338 | 263 | 9 | 10 | 0 |
+| `structured/Persistent` | 2,325 | 79 | 338 | 263 | 9 | 10 | 0 |
+
+Action item decode-status distribution in both roots:
+
+| Decode status | Count |
+| --- | ---: |
+| `opaque` | 244 |
+| `partial` | 10 |
+| `exact` | 9 |
+
+Decoded action item type distribution in both roots:
+
+| Action type | Count | Status |
+| --- | ---: | --- |
+| `Core_PlaySoundAction_PlaySoundActionData` | 10 | partial |
+| `Core_SendBattleSignalToLevel_Data` | 8 | exact |
+| `Core_PatrolTeleport_Data` | 1 | exact |
+
+Decoded PatrolTeleport sample:
+
+| BuffData row | Timeline record | `saveTo` | `teleportDis` | `serverActionIndex` |
+| --- | ---: | --- | ---: | ---: |
+| `buff_eny_0046_lbshamman_teleport_main_bomb.json` | 0 | `tar` | 15.0 | 0 |
+
+Independent verifier notes:
+
+- `Core_PatrolTeleport_Data` is the smallest safe exact decoder among the swept small action families: no `TargetSettings`, no list bodies, no wide tag, one string plus one float after the common prefix.
+- `Core_PlayAnimationAction_PlayAnimationActionData` is the next exact target candidate: 2 single-item payloads, tag `0x00f8`, member count `12`, item bytes `52`, and observed samples `06reborn` / `Attack01` consume exactly.
+- `Core_ConvertToTargetContext_Data` has 4 bounded single-item payloads and a known MemoryPack setter order, but should be partial because it contains a bounded `TargetSettings` window whose semantics are still opaque.
+
+Full WebUI Json validation after this change:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 143 |
+| `Json/BuffData` unresolved issue rows | 143 |
+| `Json/LevelScriptData` unresolved issue rows | 0 |
+
+Current strict issue field distribution remains row-level unchanged because broader timeline payload semantics are still partial:
+
+| Status | Count |
+| --- | ---: |
+| `decoded.postIdPrefix.timelineActionsBodyStatus=partial-timelineActions-opaque-actionData` | 79 |
+| `decoded.postIdPrefix.timelineActionsSemanticStatus=partial-inner-actionData-union-payloads-opaque` | 79 |
+| `decoded.postIdPrefix.stackingSettings.stackEffectsBodyStatus=opaque-effectActions` | 47 |
+| `decoded.postIdPrefix.stackingSettings.effectActionsSemanticStatus=partial-effectActions-unproven-field-order` | 47 |
+| `decoded.postIdPrefix.poiseModifierBodyStatus=opaque-poiseModifier` | 9 |
+| `decoded.postIdPrefix.poiseModifierSemanticStatus=partial-poiseModifier-opaque-processors` | 9 |
+| `decoded.postIdPrefix.shieldConfigsBodyStatus=opaque-shieldConfigs` | 4 |
+| `decoded.postIdPrefix.shieldConfigsSemanticStatus=partial-shieldConfigs-opaque-nested-fields` | 4 |
+| `decoded.postIdPrefix.igniteEventActionBodyStatus=opaque-igniteEventAction` | 4 |
+| `decoded.postIdPrefix.igniteEventActionSemanticStatus=partial-igniteEventAction-opaque-actionData` | 4 |
+| `decoded.postIdPrefix.igniteEventActionBodyStatus=opaque-igniteEventAction-nestedBlocks` | 4 |
+| `decoded.postIdPrefix.igniteEventActionSemanticStatus=partial-igniteEventAction-nestedBlocks-opaque-actionData` | 4 |
+| `decoded.postIdPrefix.poiseModifierBodyTailPreview.timelineActionsBodyStatus=partial-timelineActions-opaque-actionData` | 3 |
+
+Validation commands:
+
+- `python -m py_compile scripts\build_data_index.py`
+- Focused direct `decode_buff_memorypack` scan over both `structured/StreamingAssets/Data/Json/BuffData` and `structured/Persistent/Data/Json/BuffData`.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_patrol_teleport_validate_20260630`
