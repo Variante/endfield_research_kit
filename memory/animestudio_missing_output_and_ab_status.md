@@ -3685,3 +3685,64 @@ Residual diagnostics:
 - `AbilitySystemData`, `SkillDataBundle`, `TargetSettings`, and `SelectorData` remain `$partial` where expected because selector suffix/post-processor semantics are still not fully named.
 
 Current classification: `CheckBuffStackNumAdvanced/Data` is no longer a raw `$unparsed` managed-reference payload in the focused validation slice. It is now byte-consumed and exported as a decoded `$partial` record with named direct fields. It is still not fully semantic because embedded `TargetSettings` and `BuffFindSettings` keep partial notes until unobserved selector/post-processor and `Environment`/`Context` `BuffFindSettings.CheckType` variants are proven.
+
+## 2026-06-30 Forty-First Fresh StreamingAssets Managed-Reference Registry Status Clarification
+
+Follow-up after the Advanced buff-stack partial decode validation. Work focused on the object-level `managedReferencesRegistryRecovery` diagnostics that still appeared scary in focused character outputs even when all recovered managed-reference payloads were decoded or partial-decoded.
+
+Evidence used:
+
+- A parallel registry-recovery subagent inspected `tmp\advanced_buff_decode_after_20260630_try2`, `Exporter.cs`, `TypeTreeHelper.cs`, `EndianBinaryReader.cs`, `ObjectReader.cs`, and `MonoBehaviour.cs`.
+- The subagent found the registry headers/counts are recovered correctly. The large `ReadAlignedString` lengths are serialized TypeTree fallback failures after Unity's TypeTree reaches `ReferencedObjectData` without a payload schema and begins reading managed-reference payload bytes as if they were registry header strings.
+- Example: `808661040 = 0x30333030`, bytes `30 30 33 30`, ASCII `0030` from `chr_0030_zhuangfy`; this is payload text misread as a string length, not an encrypted or missing registry block.
+- `expectedRidCount` in the old metadata was misleading: it was collected from the pre-registry partial TypeTree payload, often just `data.rid = 1`, not the actual registry entry count.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Split recovered registry status into `fullyDecoded`, `partialDecoded`, and `heuristic`.
+- A recovered registry with only `$partial` child payloads now reports `status = partialDecoded` and sets `references.$partial`, not `status = heuristic` and `references.$heuristic`.
+- Real weak-header, `$unparsed`, or `$heuristic` child payloads still keep `status = heuristic`.
+- Added `preRegistryRidCount` while keeping the old `expectedRidCount` for compatibility.
+- Added actual `registryCount`, `recoveredRidCount`, `registryStartOffset`, and `typeTreeFailureOffset` fields when available.
+- Moved the TypeTree fallback exception to `typeTreeDecodeError` for `partialDecoded` cases. `decodeError` remains reserved for genuinely heuristic recovered registries.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 warnings, 0 errors.
+
+Targeted validation output: `tmp\registry_status_after_20260630` from the same three current installed-game VFS chunks used by the Advanced buff-stack validation.
+
+| Metric | Result |
+| --- | ---: |
+| MonoBehaviour JSON files | 30 |
+| Registry recovery metadata blocks | 30 |
+| `partialDecoded` registries | 28 |
+| `fullyDecoded` registries | 2 |
+| `heuristic` registries | 0 |
+| Registry count mismatches | 0 |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+
+Representative generated metadata after the change:
+
+```json
+{
+  "field": "references",
+  "type": "ManagedReferencesRegistry",
+  "status": "partialDecoded",
+  "preRegistryRidCount": 1,
+  "expectedRidCount": 1,
+  "typeTreeDecodeError": "EndOfStreamException: ReadAlignedString requests 808661040 bytes at offset 0x11C24, but only 10964 bytes remain.",
+  "registryStartOffset": 64,
+  "typeTreeFailureOffset": 180,
+  "registryCount": 43,
+  "recoveredRidCount": 43
+}
+```
+
+Current classification: these focused character registry diagnostics are not evidence of missing VFS bytes, encryption, or an unresolved managed-reference registry format. They are evidence that the serialized TypeTree path cannot decode arbitrary managed-reference payload schemas directly, after which AnimeStudio's recovery pass locates the registry and decodes payloads with local per-class parsers. Remaining work is semantic payload recovery, especially `AbilitySystemData`, `SkillDataBundle`, `TargetSettings`, `SelectorData`, and unobserved selector/post-processor variants.
