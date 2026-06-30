@@ -4108,3 +4108,49 @@ Targeted validation output: `tmp\projectile_bezierpoint_decode_after_20260630` u
 | Data-level `decodeError` records | 0 |
 
 Current classification: full BezierPoint records in `MoveModeData` are now field-decoded for the focused projectile slice. The remaining projectile unknowns are the single truncated BezierPoint variant, non-serialized speed-info metadata fields, and the parent effect/sound/scalar tail beginning at `mainEffects`.
+## 2026-06-30 Forty-Ninth Fresh StreamingAssets AbilitySystemData Parent Status Batch
+
+Follow-up after the projectile BezierPoint batch. Work focused on reducing misleading parent-level `$partial` markers on `Beyond.Gameplay.Core.AbilitySystemData` when the staged reader has consumed all parent bytes.
+
+Evidence used:
+
+- A read-only EffectActionCfg/AbilitySystemData explorer confirmed that current focused outputs have byte-consumed `AbilitySystemData` parents with empty `remainingRawWords`, empty `remainingStringHints`, and no `remainingRidLinks`.
+- The same explorer recommended not promoting `EffectActionCfg`: the 107-word fixed variant is consumed, but BlackboardDouble wrappers, omitted `centerOffset`, and unproven `overrideDeadEffect` variants remain valid partial reasons.
+- A TargetSettings explorer independently found no safe `TargetSettings` / `SelectorData` promotion yet. The 232 partial count in the rolling inventory is repeated validation sightings, not 232 unique layouts.
+
+Implemented in `tools/AnimeStudio/AnimeStudio.CLI/Exporter.cs`:
+
+- Removed unconditional `$partial` from the `AbilitySystemData` success path.
+- Added parent-level remainder-sensitive status handling: parent `$partial` is set only when parent `remainingStringHints`, `remainingRidLinks`, or `remainingRawWords` are non-empty.
+- Added `observedPayloadStatus` for fully consumed parent rows to clarify that nested partial objects carry their own markers.
+- Left the diagnostic fallback, nested `EffectActionCfg`, `TargetSettings`, `SelectorData`, and action/condition partials unchanged.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 errors and the same 14 existing AnimeStudio project warnings.
+
+Targeted validation output: `tmp\abilitysystem_parent_promotion_after_20260630`. The initial by-source validation command exported many CAB folders, so validation counted the 27 known focused filenames from `tmp\effect_actioncfg_partial_reasons_after_20260630\68B3\MonoBehaviour` inside the new output.
+
+| Metric | Result |
+| --- | ---: |
+| Focused filenames wanted/found | 27 / 27 |
+| `AbilitySystemData` rows | 25 |
+| `AbilitySystemData` rows marked `$decoded` | 25 |
+| `AbilitySystemData` parent rows still `$partial` | 0 |
+| `AbilitySystemData` rows with observed parent status | 25 |
+| Empty parent `remainingRawWords` | 25 |
+| Empty parent `remainingStringHints` | 25 |
+| Empty parent `remainingRidLinks` | 25 |
+| `EffectActionCfg` rows still `$partial` | 25 |
+| `SkillDataBundle` rows marked `$decoded` | 25 |
+| `TargetSettings` rows still `$partial` | 54 |
+| `SelectorData` rows still `$partial` | 54 |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+
+Current classification: focused `AbilitySystemData` parent payloads are now correctly classified as byte-consumed. Remaining Ability/Target warnings are nested semantic partials, not missing VFS bytes, encryption, or unread parent AbilitySystemData tails.

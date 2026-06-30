@@ -164,3 +164,49 @@ correct field name and layout.
   this did not affect the focused post-camera tail because all relevant
   observed mount-like values inside the raw `deadEffect` block are preserved
   rather than interpreted.
+## Parent Partial Status Follow-up
+
+The current pass changes only the parent `AbilitySystemData` status after the staged reader consumes all parent bytes. It does not promote nested `EffectActionCfg`, `TargetSettings`, or action/condition diagnostics.
+
+Evidence:
+
+- The focused 68B3 validation set has 27 known MonoBehaviour JSON outputs and 25 `AbilitySystemData` rows.
+- All 25 `AbilitySystemData` rows are `$decoded` and have empty `remainingRawWords`, empty `remainingStringHints`, and no `remainingRidLinks`.
+- All 25 nested `deadEffect` / `EffectActionCfg` rows remain `$partial` with the same fixed 107-word variant status.
+- `SkillDataBundle` remains decoded in all 25 rows.
+- `TargetSettings` and `SelectorData` remain partial where they appear; a parallel TargetSettings probe found no safe non-empty post-processor or compact-tail promotion yet.
+
+Implementation:
+
+- The success path for `Beyond.Gameplay.Core.AbilitySystemData` no longer sets `$partial` unconditionally.
+- If parent-level remaining string hints, RID links, or raw words exist, the parent still becomes `$partial` and explains why.
+- If all parent-level remainders are empty, the parent emits `observedPayloadStatus` explaining that nested partial objects carry their own markers.
+- The diagnostic fallback remains `$partial`.
+
+Validation:
+
+```text
+.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+```
+
+Rebuild result: 0 errors and the same 14 existing AnimeStudio project warnings.
+
+Targeted validation output: `tmp\abilitysystem_parent_promotion_after_20260630`. The first broad run exported many CAB folders, so validation counted the 27 known focused filenames from `tmp\effect_actioncfg_partial_reasons_after_20260630\68B3\MonoBehaviour` inside that output.
+
+| Metric | Result |
+| --- | ---: |
+| Focused filenames wanted/found | 27 / 27 |
+| `AbilitySystemData` rows | 25 |
+| `AbilitySystemData` rows marked `$decoded` | 25 |
+| `AbilitySystemData` parent rows still `$partial` | 0 |
+| `AbilitySystemData` rows with observed parent status | 25 |
+| Empty parent `remainingRawWords` | 25 |
+| Empty parent `remainingStringHints` | 25 |
+| Empty parent `remainingRidLinks` | 25 |
+| `EffectActionCfg` rows still `$partial` | 25 |
+| `SkillDataBundle` rows marked `$decoded` | 25 |
+| Data-level `$unparsed` records | 0 |
+| Data-level `$heuristic` records | 0 |
+| Data-level `decodeError` records | 0 |
+
+Current classification: these focused `AbilitySystemData` parent payloads are byte-consumed by the staged reader. Remaining warnings are nested semantic partials, especially `EffectActionCfg`, `TargetSettings`, and `SelectorData`, rather than unread parent `AbilitySystemData` bytes.
