@@ -763,3 +763,53 @@ Follow-up:
 - Do not spend implementation time on `BB_eny` until a current full export proves a fresh failure.
 - The existing `export_full` decoded index should be refreshed before using it as an authoritative warning ranking.
 - If we need an immediate non-Mono target while Mono warnings are stale, `Json/SkillData` `toggleBuffs` remains the strongest next schema bucket.
+
+## 2026-06-30 SkillData ToggleBuffs Tail Recovery
+
+Closed the non-empty `SkillData.toggleBuffs` post-switch tail gap in the Data index decoder.
+
+Root cause:
+
+- The affected files were not encrypted and did not need VFS-level changes.
+- `SkillData` rows with non-empty `toggleBuffs` use regular MemoryPack list bodies after `switchToCenterBeforeCast` and `tagDuringAttach`.
+- IL2CPP MemoryPack formatter metadata shows `ToggleBuffData` serializes in formatter setter order `buffs`, then `conditions`, even though the runtime field token order lists `conditions`, then `buffs`.
+- Each observed `buffs` entry is a `BuffInput` with formatter order `assignBlackboard`, `assignItems`, `buffId`.
+- Each observed `assignItems` entry is `Beyond.Blackboard.AssignPair` in formatter order `directValueType`, `inputValueKey`, `numericValue`, `stringValue`, `targetKey`, `useDirectValue`.
+- Each observed `conditions` entry uses a compact compare/value shape: kind `1`, member count `2`, `compare`, then a `BlackboardDouble`-style key/use/value payload.
+
+Evidence and temporary probes:
+
+```text
+tmp\skilldata_togglebuff_metadata_20260630.json
+tmp\game_data_index_skill_toggle_validate_20260630
+```
+
+Focused validation summary:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| `SkillData` files scanned | 2,083 | 2,083 |
+| `postIdTailPrefix=parsed-through-smartTargetTagQuery` | 2,025 | 2,025 |
+| Post-switch exact tails | 1,948 | 2,024 |
+| Post-switch `parsed-through-toggleBuffsCount` stops | 76 | 0 |
+| Non-empty `toggleBuffs` files parsed exactly | 0 | 76 |
+| Remaining post-switch parse errors | 1 | 1 |
+
+Observed non-empty toggle coverage:
+
+- 75 files have `toggleBuffsCount = 1`.
+- 1 file has `toggleBuffsCount = 2` (`chr_0009_azrila_talent_0`).
+- 77 total `ToggleBuffData` items were parsed.
+- Every observed item has one `BuffInput` entry.
+- Conditions are optional: 53 items have no conditions and 24 have one compact compare/value condition.
+- Observed condition compare raw values are `0`, `1`, `2`, `3`, and `4`; observed blackboard keys include empty direct values, `hp_ratio`, and `hp_ratio_c`.
+
+Integration validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_skill_toggle_validate_20260630` completed and indexed 81,735 Json files: 78,710 MemoryPack Json records and 3,025 text Json records.
+
+Remaining SkillData gap:
+
+- `chr_0026_lastrite_normal_skill.json` still fails after the default `SwitchToBuffConfig` byte boundary with `switchToCenterBeforeCast:byte=95`.
+- This is a different switch-body layout: its `switchToBuffConfig.buffsCount = 1` and the current fixed 148-byte default boundary is too short for the non-empty switch body. Treat it as the next SkillData target, not as encryption.

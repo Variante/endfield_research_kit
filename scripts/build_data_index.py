@@ -2723,6 +2723,203 @@ def read_skill_ui_range_hint_data(
     }, offset
 
 
+SKILL_COMPARE_TYPE_NAMES = {
+    0: "LT",
+    1: "LE",
+    2: "GT",
+    3: "GE",
+    4: "Equals",
+}
+
+
+def read_skill_assign_pair_data(
+    data: bytes,
+    offset: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    if offset >= len(data):
+        raise ValueError(f"{field_name}:truncated-member-count")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 6:
+        raise ValueError(f"{field_name}:member-count={member_count}")
+
+    direct_value_type, offset = read_buff_u32_field(data, offset, f"{field_name}.directValueType")
+    input_value_key, offset = read_skill_clean_string_field(
+        data,
+        offset,
+        f"{field_name}.inputValueKey",
+        max_length=256,
+    )
+    numeric_value, offset = read_skill_f32_field(data, offset, f"{field_name}.numericValue")
+    string_value, offset = read_skill_clean_string_field(
+        data,
+        offset,
+        f"{field_name}.stringValue",
+        max_length=256,
+    )
+    target_key, offset = read_skill_clean_string_field(
+        data,
+        offset,
+        f"{field_name}.targetKey",
+        max_length=256,
+    )
+    use_direct_value, offset = read_skill_bool_field(data, offset, f"{field_name}.useDirectValue")
+
+    return {
+        "offset": format_offset(start),
+        "memberCount": member_count,
+        "directValueTypeRaw": direct_value_type,
+        "inputValueKey": input_value_key,
+        "numericValue": round(numeric_value, 6),
+        "stringValue": string_value,
+        "targetKey": target_key,
+        "useDirectValue": use_direct_value,
+        "byteLength": offset - start,
+    }, offset
+
+
+def read_skill_buff_input_data(
+    data: bytes,
+    offset: int,
+    index: int,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    if offset >= len(data):
+        raise ValueError(f"toggleBuffs.buffs[{index}]:truncated-member-count")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 3:
+        raise ValueError(f"toggleBuffs.buffs[{index}]:member-count={member_count}")
+
+    assign_blackboard, offset = read_skill_bool_field(
+        data,
+        offset,
+        f"toggleBuffs.buffs[{index}].assignBlackboard",
+    )
+    assign_items_count, offset = read_buff_u32_field(
+        data,
+        offset,
+        f"toggleBuffs.buffs[{index}].assignItemsCount",
+    )
+    if assign_items_count > 32:
+        raise ValueError(f"toggleBuffs.buffs[{index}].assignItemsCount:large-count={assign_items_count}")
+
+    assign_items: list[dict[str, Any]] = []
+    for item_index in range(assign_items_count):
+        assign_item, offset = read_skill_assign_pair_data(
+            data,
+            offset,
+            f"toggleBuffs.buffs[{index}].assignItems[{item_index}]",
+        )
+        assign_items.append(assign_item)
+
+    buff_id, offset = read_skill_clean_string_field(
+        data,
+        offset,
+        f"toggleBuffs.buffs[{index}].buffId",
+        max_length=256,
+    )
+    if not buff_id.startswith("buff_"):
+        raise ValueError(f"toggleBuffs.buffs[{index}].buffId:unexpected={buff_id!r}")
+
+    return {
+        "offset": format_offset(start),
+        "memberCount": member_count,
+        "assignBlackboard": assign_blackboard,
+        "assignItemsCount": assign_items_count,
+        "assignItems": assign_items[:8],
+        "buffId": buff_id,
+        "byteLength": offset - start,
+    }, offset
+
+
+def read_skill_toggle_condition_data(
+    data: bytes,
+    offset: int,
+    index: int,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    condition_kind, offset = read_skill_u8_field(
+        data,
+        offset,
+        f"toggleBuffs.conditions[{index}].kind",
+        max_value=16,
+    )
+    if condition_kind != 1:
+        raise ValueError(f"toggleBuffs.conditions[{index}].kind={condition_kind}")
+    member_count, offset = read_skill_u8_field(
+        data,
+        offset,
+        f"toggleBuffs.conditions[{index}].memberCount",
+        max_value=16,
+    )
+    if member_count != 2:
+        raise ValueError(f"toggleBuffs.conditions[{index}].member-count={member_count}")
+
+    compare_raw, offset = read_buff_u32_field(data, offset, f"toggleBuffs.conditions[{index}].compare")
+    if compare_raw > 16:
+        raise ValueError(f"toggleBuffs.conditions[{index}].compare:raw={compare_raw}")
+    value, offset = read_buff_blackboard_float_field(
+        data,
+        offset,
+        f"toggleBuffs.conditions[{index}].value",
+    )
+
+    return {
+        "offset": format_offset(start),
+        "kindRaw": condition_kind,
+        "kindName": "compareBlackboardValue",
+        "memberCount": member_count,
+        "compareRaw": compare_raw,
+        "compareName": SKILL_COMPARE_TYPE_NAMES.get(compare_raw, f"compare_{compare_raw}"),
+        "value": value,
+        "byteLength": offset - start,
+    }, offset
+
+
+def read_skill_toggle_buff_data(
+    data: bytes,
+    offset: int,
+    index: int,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    if offset >= len(data):
+        raise ValueError(f"toggleBuffs[{index}]:truncated-member-count")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 2:
+        raise ValueError(f"toggleBuffs[{index}]:member-count={member_count}")
+
+    buffs_count, offset = read_buff_u32_field(data, offset, f"toggleBuffs[{index}].buffsCount")
+    if buffs_count > 32:
+        raise ValueError(f"toggleBuffs[{index}].buffsCount:large-count={buffs_count}")
+    buffs: list[dict[str, Any]] = []
+    for buff_index in range(buffs_count):
+        buff, offset = read_skill_buff_input_data(data, offset, buff_index)
+        buffs.append(buff)
+
+    conditions_count, offset = read_buff_u32_field(data, offset, f"toggleBuffs[{index}].conditionsCount")
+    if conditions_count > 32:
+        raise ValueError(f"toggleBuffs[{index}].conditionsCount:large-count={conditions_count}")
+    conditions: list[dict[str, Any]] = []
+    for condition_index in range(conditions_count):
+        condition, offset = read_skill_toggle_condition_data(data, offset, condition_index)
+        conditions.append(condition)
+
+    return {
+        "offset": format_offset(start),
+        "memberCount": member_count,
+        "metadataFieldOrder": ["buffs", "conditions"],
+        "buffsCount": buffs_count,
+        "buffs": buffs[:8],
+        "conditionsCount": conditions_count,
+        "conditions": conditions[:8],
+        "byteLength": offset - start,
+    }, offset
+
+
 def decode_skill_post_switch_tail_fields(data: bytes, switch_offset: int) -> dict[str, Any]:
     switch_end = switch_offset + SKILL_DEFAULT_SWITCH_TO_BUFF_CONFIG_BYTE_LENGTH
     offset = switch_end
@@ -2756,9 +2953,12 @@ def decode_skill_post_switch_tail_fields(data: bytes, switch_offset: int) -> dic
             "toggleBuffsCount": toggle_buffs_count,
             "endOffset": format_offset(offset),
         }
-        if toggle_buffs_count != 0:
-            result["stopReason"] = "toggleBuffs list body not skipped"
-            return result
+        toggle_buffs: list[dict[str, Any]] = []
+        for index in range(toggle_buffs_count):
+            toggle_buff, offset = read_skill_toggle_buff_data(data, offset, index)
+            toggle_buffs.append(toggle_buff)
+        if toggle_buffs:
+            result["toggleBuffs"] = toggle_buffs[:8]
 
         ui_range_hints_count, offset = read_buff_u32_field(data, offset, "uiRangeHintsCount")
         if ui_range_hints_count > 32:
