@@ -2294,6 +2294,210 @@ def read_buff_member1_empty_tag_field(
 BUFF_OPAQUE_TIMELINE_ACTION_BODY_MAX_BYTES = 256 * 1024
 
 
+def read_buff_timeline_force_sync_anim_data(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    if offset >= limit:
+        raise ValueError(f"{field_name}:truncated-member-count")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 4:
+        raise ValueError(f"{field_name}:member-count={member_count}")
+    force_sync, offset = read_buff_bool_field(data, offset, f"{field_name}.forceSync")
+    montage_name, offset, error = read_memorypack_utf8_string(data, offset, max_length=512)
+    if error:
+        raise ValueError(f"{field_name}.montageName:{error}")
+    if offset + 8 > limit:
+        raise ValueError(f"{field_name}:truncated-tail")
+    playback_speed = struct.unpack_from("<f", data, offset)[0]
+    offset += 4
+    if not math.isfinite(playback_speed):
+        raise ValueError(f"{field_name}.playbackSpeed:non-finite")
+    target_frame = struct.unpack_from("<i", data, offset)[0]
+    offset += 4
+    if abs(target_frame) > 1_000_000:
+        raise ValueError(f"{field_name}.targetFrame:implausible={target_frame}")
+    return {
+        "memberCount": member_count,
+        "offset": format_offset(start),
+        "bytes": offset - start,
+        "forceSync": force_sync,
+        "montageName": montage_name or "",
+        "playbackSpeed": round(playback_speed, 6),
+        "targetFrame": target_frame,
+    }, offset
+
+
+def read_buff_timeline_first_union_tag(
+    data: bytes,
+    offset: int,
+    limit: int,
+) -> tuple[int | None, int, str]:
+    if offset >= limit:
+        return None, 0, ""
+    if data[offset] == MEMORYPACK_UNION_WIDE_TAG:
+        if offset + 3 > limit:
+            return None, 0, ""
+        return struct.unpack_from("<H", data, offset + 1)[0], 3, data[offset:offset + 3].hex(" ")
+    return data[offset], 1, data[offset:offset + 1].hex(" ")
+
+
+def short_counter_dict(counter: Counter[Any], limit: int = 16) -> dict[str, int]:
+    return {str(key): value for key, value in counter.most_common(limit)}
+
+
+def decode_buff_timeline_actions_outer(
+    data: bytes,
+    offset: int,
+    action_count: int,
+    body_end: int,
+) -> dict[str, Any]:
+    if action_count <= 0 or action_count > 64:
+        raise ValueError(f"timelineActionsCount:unsupported-body-count={action_count}")
+    if offset >= body_end or body_end > len(data):
+        raise ValueError("timelineActionsBody:invalid-bounds")
+
+    memo: dict[tuple[int, int], list[list[dict[str, Any]]]] = {}
+    max_candidates = 2
+
+    def parse_records(record_index: int, cursor: int) -> list[list[dict[str, Any]]]:
+        key = (record_index, cursor)
+        if key in memo:
+            return memo[key]
+        if record_index == action_count:
+            return [[]] if cursor == body_end else []
+        if cursor >= body_end or data[cursor] != 4:
+            return []
+
+        record_start = cursor
+        cursor += 1
+        if cursor + 4 > body_end:
+            return []
+        end_frame = struct.unpack_from("<i", data, cursor)[0]
+        cursor += 4
+        if abs(end_frame) > 1_000_000:
+            return []
+
+        sequence_start = cursor
+        if cursor >= body_end or data[cursor] != 3:
+            return []
+        cursor += 1
+        if cursor + 4 > body_end:
+            return []
+        action_data_count = struct.unpack_from("<I", data, cursor)[0]
+        cursor += 4
+        if action_data_count > 64:
+            return []
+        action_payload_start = cursor
+
+        # Two sequence bools, startFrame i32, then ForceSyncAnimData:
+        # memberCount, bool, MemoryPack string length, f32, i32.
+        min_after_action_payload = 20
+        max_payload_end = body_end - min_after_action_payload
+        results: list[list[dict[str, Any]]] = []
+        for payload_end in range(action_payload_start, max_payload_end + 1):
+            payload_len = payload_end - action_payload_start
+            if action_data_count == 0 and payload_len:
+                break
+            if action_data_count and payload_len <= 0:
+                continue
+            if data[payload_end] not in (0, 1) or data[payload_end + 1] not in (0, 1):
+                continue
+            only_main_char = bool(data[payload_end])
+            only_guard = bool(data[payload_end + 1])
+            start_frame_offset = payload_end + 2
+            start_frame = struct.unpack_from("<i", data, start_frame_offset)[0]
+            if abs(start_frame) > 1_000_000:
+                continue
+            force_sync_offset = start_frame_offset + 4
+            try:
+                force_sync, force_end = read_buff_timeline_force_sync_anim_data(
+                    data,
+                    force_sync_offset,
+                    body_end,
+                    f"timelineActions[{record_index}].forceSyncAnimData",
+                )
+            except (struct.error, UnicodeDecodeError, ValueError):
+                continue
+            if record_index + 1 < action_count and (force_end >= body_end or data[force_end] != 4):
+                continue
+            suffixes = parse_records(record_index + 1, force_end)
+            if not suffixes:
+                continue
+
+            first_tag, first_tag_bytes, first_tag_raw = read_buff_timeline_first_union_tag(
+                data,
+                action_payload_start,
+                payload_end,
+            )
+            string_hits = scan_length_prefixed_utf8_string_hits(
+                data,
+                start=action_payload_start,
+                max_scan_bytes=payload_len,
+                max_samples=6,
+                max_length=128,
+            )
+            record = {
+                "index": record_index,
+                "offset": format_offset(record_start),
+                "bytes": force_end - record_start,
+                "memberCount": 4,
+                "startFrame": start_frame,
+                "endFrame": end_frame,
+                "sequenceActionData": {
+                    "memberCount": 3,
+                    "offset": format_offset(sequence_start),
+                    "actionDataCount": action_data_count,
+                    "actionDataOffset": format_offset(action_payload_start),
+                    "actionDataBytes": payload_len,
+                    "firstActionTag": f"0x{first_tag:04x}" if first_tag is not None else "",
+                    "firstActionTagBytes": first_tag_bytes,
+                    "firstActionTagRaw": first_tag_raw,
+                    "onlyExecuteWhenSourceIsMainChar": only_main_char,
+                    "onlyExecuteWhenSourceIsGuard": only_guard,
+                    "stringHits": string_hits,
+                },
+                "forceSyncAnimData": force_sync,
+            }
+            for suffix in suffixes:
+                results.append([record, *suffix])
+                if len(results) >= max_candidates:
+                    memo[key] = results
+                    return results
+
+        memo[key] = results
+        return results
+
+    candidates = parse_records(0, offset)
+    if len(candidates) != 1:
+        raise ValueError(f"timelineActionsBody:outer-parse-candidates={len(candidates)}")
+
+    records = candidates[0]
+    action_data_count_counts = Counter(
+        record["sequenceActionData"]["actionDataCount"] for record in records
+    )
+    first_tag_counts = Counter(
+        record["sequenceActionData"]["firstActionTag"] or "none" for record in records
+    )
+    return {
+        "timelineActionsBodyStatus": "partial-timelineActions-opaque-actionData",
+        "timelineActionsBodyShape": (
+            "outer TimelineActionData list decoded as memberCount=4, endFrame, "
+            "SequenceActionData(memberCount=3, opaque union actionData payloads, two bools), "
+            "startFrame, and ForceSyncAnimData(memberCount=4)"
+        ),
+        "timelineActionsSemanticStatus": "partial-inner-actionData-union-payloads-opaque",
+        "timelineActionRecordCount": len(records),
+        "timelineActionDataCountCounts": short_counter_dict(action_data_count_counts),
+        "timelineActionFirstTagCounts": short_counter_dict(first_tag_counts),
+        "timelineActionRecords": records,
+    }
+
+
 def find_buff_timeline_actions_body_end(
     data: bytes,
     offset: int,
@@ -2614,7 +2818,16 @@ def parse_buff_tail_after_shield_configs(
                 result["stackingSettings"] = stacking_settings
                 result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
                 result["timelineActionsCount"] = timeline_action_count
-                result["timelineActionsBodyStatus"] = "opaque-timelineActions"
+                try:
+                    result.update(decode_buff_timeline_actions_outer(
+                        data,
+                        timeline_count_offset + 4,
+                        timeline_action_count,
+                        timeline_body_end,
+                    ))
+                except (struct.error, UnicodeDecodeError, ValueError) as timeline_exc:
+                    result["timelineActionsBodyStatus"] = "opaque-timelineActions"
+                    result["timelineActionsSemanticStatus"] = f"partial-decode-failed:{timeline_exc}"
                 result["timelineActionsBodyOffset"] = format_offset(timeline_count_offset + 4)
                 result["timelineActionsBodyBytes"] = timeline_body_end - (timeline_count_offset + 4)
                 result["timelineActionsBodyPattern"] = f"0x{timeline_body_pattern:02x}"
@@ -10058,6 +10271,8 @@ DECODER_ISSUE_STATUS_VALUES = {
     "opaque-poisemodifier",
     "opaque-shieldconfigs",
     "opaque-timelineactions",
+    "partial-inner-actiondata-union-payloads-opaque",
+    "partial-timelineactions-opaque-actiondata",
     "unparsed-igniteeventaction",
     "unparsed-poisemodifier",
     "unparsed-shieldconfigs",
