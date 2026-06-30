@@ -2530,6 +2530,9 @@ BUFF_OPAQUE_STACK_EFFECT_ACTION_MAX_ACTIONS = 16
 BUFF_OPAQUE_STACK_EFFECT_ACTION_FIXED_BYTES = 471
 BUFF_OPAQUE_STACK_EFFECT_ACTION_NAME_OFFSET = 37
 BUFF_OPAQUE_STACK_EFFECT_ACTION_NAME_MAX_BYTES = 256
+BUFF_STACK_EFFECT_ACTION_DIAGNOSTIC_U32_OFFSETS = (1, 18, 318, 390, 467)
+BUFF_STACK_EFFECT_ACTION_DIAGNOSTIC_F32X3_OFFSETS = (190,)
+BUFF_STACK_EFFECT_ACTION_DIAGNOSTIC_BLOCK_OFFSETS = (128, 202, 246)
 
 
 def skip_buff_stack_effects_effect_actions_body(
@@ -2540,6 +2543,13 @@ def skip_buff_stack_effects_effect_actions_body(
     total_action_count = 0
     action_counts: list[int] = []
     samples: list[dict[str, Any]] = []
+    effect_name_counts: Counter[str] = Counter()
+    diagnostic_u32_counts: dict[int, Counter[int]] = {
+        raw_offset: Counter() for raw_offset in BUFF_STACK_EFFECT_ACTION_DIAGNOSTIC_U32_OFFSETS
+    }
+    diagnostic_f32x3_counts: dict[int, Counter[str]] = {
+        raw_offset: Counter() for raw_offset in BUFF_STACK_EFFECT_ACTION_DIAGNOSTIC_F32X3_OFFSETS
+    }
 
     for item_index in range(stack_effect_count):
         if offset >= len(data):
@@ -2598,13 +2608,43 @@ def skip_buff_stack_effects_effect_actions_body(
                 )
             if data[action_end - 4:action_end] != b"\x04\x00\x00\x00":
                 raise ValueError(f"stackEffects[{item_index}].effectActions[{action_index}]:missing-terminal-u32")
-            if len(samples) < 8:
+            effect_name_counts[effect_name] += 1
+            diagnostic_u32: dict[str, int] = {}
+            for raw_offset in BUFF_STACK_EFFECT_ACTION_DIAGNOSTIC_U32_OFFSETS:
+                source_offset = action_start + raw_offset
+                if raw_offset >= BUFF_OPAQUE_STACK_EFFECT_ACTION_NAME_OFFSET + 4:
+                    source_offset += name_len
+                value = struct.unpack_from("<I", data, source_offset)[0]
+                diagnostic_u32_counts[raw_offset][value] += 1
+                diagnostic_u32[format_offset(raw_offset)] = value
+            diagnostic_f32x3: dict[str, list[float]] = {}
+            for raw_offset in BUFF_STACK_EFFECT_ACTION_DIAGNOSTIC_F32X3_OFFSETS:
+                source_offset = action_start + raw_offset
+                if raw_offset >= BUFF_OPAQUE_STACK_EFFECT_ACTION_NAME_OFFSET + 4:
+                    source_offset += name_len
+                values = struct.unpack_from("<fff", data, source_offset)
+                if all(math.isfinite(value) for value in values):
+                    rounded = [round(value, 6) for value in values]
+                    diagnostic_f32x3_counts[raw_offset][",".join(str(value) for value in rounded)] += 1
+                    diagnostic_f32x3[format_offset(raw_offset)] = rounded
+            diagnostic_blocks: dict[str, str] = {}
+            for raw_offset in BUFF_STACK_EFFECT_ACTION_DIAGNOSTIC_BLOCK_OFFSETS:
+                source_offset = action_start + raw_offset + name_len
+                diagnostic_blocks[format_offset(raw_offset)] = data[source_offset:source_offset + 16].hex(" ")
+            if len(samples) < 12:
                 samples.append({
                     "stackEffectIndex": item_index,
                     "actionIndex": action_index,
                     "offset": format_offset(action_start),
                     "bytes": action_end - action_start,
+                    "memberCount": member_count,
+                    "rawDiscriminator": discriminator,
+                    "marker": marker,
                     "effectName": effect_name,
+                    "effectNameLength": name_len,
+                    "normalizedU32Fields": diagnostic_u32,
+                    "scaleCandidateF32x3": diagnostic_f32x3,
+                    "blackboardVector3CandidatePrefixes": diagnostic_blocks,
                 })
             offset = action_end
 
@@ -2621,8 +2661,18 @@ def skip_buff_stack_effects_effect_actions_body(
             "marker=74, P_* effect name at +37, fixed 471-byte body plus name bytes, terminal u32=4"
         ),
         "stackEffectsBodyPadOffset": format_offset(pad_offset),
+        "effectActionsSemanticStatus": "partial-effectActions-unproven-field-order",
         "opaqueEffectActionCount": total_action_count,
         "effectActionsPerStackEffect": action_counts,
+        "effectActionNameCounts": short_counter_dict(effect_name_counts, limit=32),
+        "effectActionNormalizedU32Counts": {
+            format_offset(raw_offset): short_counter_dict(counter)
+            for raw_offset, counter in diagnostic_u32_counts.items()
+        },
+        "effectActionScaleCandidateCounts": {
+            format_offset(raw_offset): short_counter_dict(counter)
+            for raw_offset, counter in diagnostic_f32x3_counts.items()
+        },
         "opaqueEffectActionSamples": samples,
     }, offset
 
@@ -10266,6 +10316,7 @@ DECODER_ISSUE_STATUS_VALUES = {
     "ambiguous-id-marker",
     "count-exceeds-remaining",
     "opaque-effectactions",
+    "partial-effectactions-unproven-field-order",
     "opaque-igniteeventaction",
     "opaque-igniteeventaction-nestedblocks",
     "opaque-poisemodifier",
