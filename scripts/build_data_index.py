@@ -2322,6 +2322,107 @@ def find_buff_timeline_actions_body_end(
     return candidates[0], body_pattern
 
 
+BUFF_OPAQUE_STACK_EFFECT_ACTION_MAX_ACTIONS = 16
+BUFF_OPAQUE_STACK_EFFECT_ACTION_FIXED_BYTES = 471
+BUFF_OPAQUE_STACK_EFFECT_ACTION_NAME_OFFSET = 37
+BUFF_OPAQUE_STACK_EFFECT_ACTION_NAME_MAX_BYTES = 256
+
+
+def skip_buff_stack_effects_effect_actions_body(
+    data: bytes,
+    offset: int,
+    stack_effect_count: int,
+) -> tuple[dict[str, Any], int]:
+    total_action_count = 0
+    action_counts: list[int] = []
+    samples: list[dict[str, Any]] = []
+
+    for item_index in range(stack_effect_count):
+        if offset >= len(data):
+            raise ValueError(f"stackEffects[{item_index}]:truncated-member-count")
+        member_count = data[offset]
+        offset += 1
+        if member_count != 1:
+            raise ValueError(f"stackEffects[{item_index}]:member-count={member_count}")
+
+        action_count, offset = read_buff_u32_field(
+            data,
+            offset,
+            f"stackEffects[{item_index}].effectActionsCount",
+        )
+        if action_count <= 0 or action_count > BUFF_OPAQUE_STACK_EFFECT_ACTION_MAX_ACTIONS:
+            raise ValueError(f"stackEffects[{item_index}].effectActionsCount:unsupported-count={action_count}")
+        action_counts.append(action_count)
+        total_action_count += action_count
+
+        for action_index in range(action_count):
+            action_start = offset
+            if action_start + BUFF_OPAQUE_STACK_EFFECT_ACTION_FIXED_BYTES > len(data):
+                raise ValueError(f"stackEffects[{item_index}].effectActions[{action_index}]:truncated-body")
+            member_count = data[action_start]
+            if member_count != 15:
+                raise ValueError(
+                    f"stackEffects[{item_index}].effectActions[{action_index}]:member-count={member_count}"
+                )
+            discriminator = struct.unpack_from("<I", data, action_start + 1)[0]
+            if discriminator != 1:
+                raise ValueError(
+                    f"stackEffects[{item_index}].effectActions[{action_index}]:discriminator={discriminator}"
+                )
+            marker = struct.unpack_from("<I", data, action_start + 18)[0]
+            if marker != 74:
+                raise ValueError(f"stackEffects[{item_index}].effectActions[{action_index}]:marker={marker}")
+            name_len = struct.unpack_from("<I", data, action_start + BUFF_OPAQUE_STACK_EFFECT_ACTION_NAME_OFFSET)[0]
+            if name_len <= 0 or name_len > BUFF_OPAQUE_STACK_EFFECT_ACTION_NAME_MAX_BYTES:
+                raise ValueError(
+                    f"stackEffects[{item_index}].effectActions[{action_index}].effectName:invalid-length={name_len}"
+                )
+            name_start = action_start + BUFF_OPAQUE_STACK_EFFECT_ACTION_NAME_OFFSET + 4
+            name_end = name_start + name_len
+            action_end = action_start + BUFF_OPAQUE_STACK_EFFECT_ACTION_FIXED_BYTES + name_len
+            if action_end > len(data):
+                raise ValueError(f"stackEffects[{item_index}].effectActions[{action_index}]:truncated-named-body")
+            try:
+                effect_name = data[name_start:name_end].decode("utf-8")
+            except UnicodeDecodeError as exc:
+                raise ValueError(
+                    f"stackEffects[{item_index}].effectActions[{action_index}].effectName:invalid-utf8"
+                ) from exc
+            if not effect_name.startswith("P_"):
+                raise ValueError(
+                    f"stackEffects[{item_index}].effectActions[{action_index}].effectName:unexpected={effect_name[:24]}"
+                )
+            if data[action_end - 4:action_end] != b"\x04\x00\x00\x00":
+                raise ValueError(f"stackEffects[{item_index}].effectActions[{action_index}]:missing-terminal-u32")
+            if len(samples) < 8:
+                samples.append({
+                    "stackEffectIndex": item_index,
+                    "actionIndex": action_index,
+                    "offset": format_offset(action_start),
+                    "bytes": action_end - action_start,
+                    "effectName": effect_name,
+                })
+            offset = action_end
+
+    pad_offset = offset
+    if offset + 4 > len(data):
+        raise ValueError("stackEffects:truncated-terminal-pad")
+    if data[offset:offset + 4] != b"\x00\x00\x00\x00":
+        raise ValueError("stackEffects:missing-terminal-pad")
+    offset += 4
+
+    return {
+        "stackEffectsBodyShape": (
+            "opaque EffectActionCfg list; each action has memberCount=15, discriminator=1, "
+            "marker=74, P_* effect name at +37, fixed 471-byte body plus name bytes, terminal u32=4"
+        ),
+        "stackEffectsBodyPadOffset": format_offset(pad_offset),
+        "opaqueEffectActionCount": total_action_count,
+        "effectActionsPerStackEffect": action_counts,
+        "opaqueEffectActionSamples": samples,
+    }, offset
+
+
 def read_buff_stacking_settings_compact_id_branch(
     data: bytes,
     offset: int,
@@ -2365,6 +2466,7 @@ def read_buff_stacking_settings_compact_id_branch(
     stack_effects_body_offset = offset
     stack_effects_body_status = ""
     stack_effects_body_bytes = 0
+    stack_effects_body_details: dict[str, Any] = {}
     if stack_effect_count:
         zero_action_end = offset + stack_effect_count * 5
         zero_action_body = zero_action_end <= len(data)
@@ -2383,22 +2485,32 @@ def read_buff_stacking_settings_compact_id_branch(
             stack_effects_body_status = "skipped-zero-action-items"
             stack_effects_body_bytes = offset - stack_effects_body_offset
         else:
-            return {
-                "memberCount": member_count,
-                "offset": format_offset(start),
-                "branch": "stack-effects-body",
-                "branchNote": "nonzero stackEffects body remains opaque until EffectActionCfg layout is skipped",
-                "identifierTypeRaw": identifier_type,
-                "maxStackCnt": max_stack_count,
-                "maxStackCntKey": max_stack_count_key or "",
-                "priority": round(priority, 6),
-                "priorityKey": priority_key or "",
-                "negatePriority": negate_priority,
-                "isNeedStackEffect": is_need_stack_effect,
-                "stackEffectsCount": stack_effect_count,
-                "stackEffectsBodyStatus": "unparsed-effectActions",
-                "stackEffectsBodyOffset": format_offset(stack_effects_body_offset),
-            }, stack_effects_body_offset
+            try:
+                stack_effects_body_details, offset = skip_buff_stack_effects_effect_actions_body(
+                    data,
+                    offset,
+                    stack_effect_count,
+                )
+            except (struct.error, UnicodeDecodeError, ValueError) as exc:
+                return {
+                    "memberCount": member_count,
+                    "offset": format_offset(start),
+                    "branch": "stack-effects-body",
+                    "branchNote": "nonzero stackEffects body remains opaque until EffectActionCfg layout is skipped",
+                    "identifierTypeRaw": identifier_type,
+                    "maxStackCnt": max_stack_count,
+                    "maxStackCntKey": max_stack_count_key or "",
+                    "priority": round(priority, 6),
+                    "priorityKey": priority_key or "",
+                    "negatePriority": negate_priority,
+                    "isNeedStackEffect": is_need_stack_effect,
+                    "stackEffectsCount": stack_effect_count,
+                    "stackEffectsBodyStatus": "unparsed-effectActions",
+                    "stackEffectsBodyOffset": format_offset(stack_effects_body_offset),
+                    "stackEffectsBodyError": str(exc),
+                }, stack_effects_body_offset
+            stack_effects_body_status = "opaque-effectActions"
+            stack_effects_body_bytes = offset - stack_effects_body_offset
 
     stacking_key_offset = offset
     stacking_key, stacking_key_end, stacking_key_error = read_memorypack_utf8_string(
@@ -2447,6 +2559,7 @@ def read_buff_stacking_settings_compact_id_branch(
         result["stackEffectsBodyStatus"] = stack_effects_body_status
         result["stackEffectsBodyOffset"] = format_offset(stack_effects_body_offset)
         result["stackEffectsBodyBytes"] = stack_effects_body_bytes
+        result.update(stack_effects_body_details)
     if stacking_key:
         result["stackingKey"] = stacking_key
     return result, offset
@@ -2548,7 +2661,8 @@ def decode_buff_post_id_prefix_at(
                     )
                     if (
                         stacking_settings.get("stackEffectsCount")
-                        and stacking_settings.get("stackEffectsBodyStatus") != "skipped-zero-action-items"
+                        and stacking_settings.get("stackEffectsBodyStatus")
+                        not in {"skipped-zero-action-items", "opaque-effectActions"}
                     ):
                         result["status"] = "parsed-through-stackingSettings"
                         result["stackingSettings"] = stacking_settings
@@ -9566,6 +9680,7 @@ DECODER_ISSUE_FIELD_LIMIT = 12
 DECODER_ISSUE_STATUS_VALUES = {
     "ambiguous-id-marker",
     "count-exceeds-remaining",
+    "opaque-effectactions",
     "opaque-timelineactions",
     "unparsed-igniteeventaction",
     "unparsed-poisemodifier",
