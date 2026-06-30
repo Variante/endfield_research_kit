@@ -1727,3 +1727,74 @@ Validation:
 - `python -m py_compile scripts\build_data_index.py` succeeded.
 - Focused BuffData scan over all 2,291 files produced `47` stack-effect rows, `134` nested actions, and zero hard tail parse statuses.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_effect_diagnostics_validate_20260630` completed and indexed 81,735 Json files.
+
+## 2026-06-30 BuffData Small Body Diagnostics
+
+Added diagnostic summaries for the remaining small opaque BuffData body buckets while preserving their strict `opaque-*` warnings.
+
+What changed:
+
+- Added bounded raw diagnostics for `poiseModifier`, `shieldConfigs`, and `igniteEventAction` bodies after their existing unique downstream tail anchors prove body boundaries.
+- Emitted first-byte member-count candidates, raw u32-at-`+1` candidates, body head/tail hex previews, and bounded length-prefixed string hits.
+- Added string-hit summaries inside the four validated energy-shard nested ignite blocks.
+- Added semantic status fields that describe what remains opaque: `partial-poiseModifier-opaque-processors`, `partial-shieldConfigs-opaque-nested-fields`, `partial-igniteEventAction-opaque-actionData`, and `partial-igniteEventAction-nestedBlocks-opaque-actionData`.
+- Did not rename compact bytes to gameplay fields. The nested `SequenceActionData`, processor unions, shield calculation/EffectAction fields, and ignite action payloads remain unresolved.
+
+Focused BuffData validation:
+
+| Metric | Count |
+| --- | ---: |
+| `BuffData` files scanned | 2,291 |
+| Hard BuffData tail failures | 0 |
+| `opaque-poiseModifier` rows | 9 |
+| `opaque-shieldConfigs` rows | 4 |
+| `opaque-igniteEventAction` rows | 4 |
+| `opaque-igniteEventAction-nestedBlocks` rows | 4 |
+
+Observed small-body shape counts:
+
+| Body | Distribution |
+| --- | --- |
+| `poiseModifier` byte lengths | `45=5`, `16=2`, `162=1`, `532=1` |
+| `shieldConfigs` byte lengths | `366=1`, `394=1`, `395=1`, `415=1` |
+| `igniteEventAction` byte lengths | `1332=2`, `842=1`, `210=1`, `1327=1`, `1342=1`, `7560=1`, `1250=1` |
+| top shield strings | `FinalShield=2`, `P_fxgp_char_buff_shield_hit=2`, plus `shield_base`, `shield_def_rate`, `P_fxbat_mifu_skill_shield_hit` |
+| top ignite strings | `count=44`, `consumed_layer=12`, `remain=3`, plus buff/effect ids |
+
+Full Json strict issue validation after this diagnostic addition:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 143 |
+| `Json/BuffData` unresolved issue rows | 143 |
+| `Json/LevelScriptData` unresolved issue rows | 0 |
+
+Current strict issue field distribution:
+
+| Status | Count |
+| --- | ---: |
+| `partial-timelineActions-opaque-actionData` | 82 |
+| `partial-inner-actionData-union-payloads-opaque` | 79 |
+| `opaque-effectActions` | 47 |
+| `partial-effectActions-unproven-field-order` | 47 |
+| `opaque-poiseModifier` | 9 |
+| `partial-poiseModifier-opaque-processors` | 9 |
+| `opaque-shieldConfigs` | 4 |
+| `partial-shieldConfigs-opaque-nested-fields` | 4 |
+| `opaque-igniteEventAction` | 4 |
+| `partial-igniteEventAction-opaque-actionData` | 4 |
+| `opaque-igniteEventAction-nestedBlocks` | 4 |
+| `partial-igniteEventAction-nestedBlocks-opaque-actionData` | 4 |
+
+Interpretation:
+
+- This is intentionally diagnostic progress, not a semantic decode. It makes the remaining warnings inspectable without hiding them.
+- Local IL2CPP metadata confirms the relevant runtime types and MemoryPack wrapper setter names, but not enough formatter body evidence to prove compact byte order for these nested payloads.
+- The current safe next target remains the inner `SequenceActionData.actionData` union payloads shared by `timelineActions`, `poiseModifier`, and `igniteEventAction`.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` succeeded.
+- Focused BuffData scan over all 2,291 files produced zero hard tail parse statuses and the expected small-body status counts.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_small_body_diagnostics_validate_20260630` completed and indexed 81,735 Json files.
