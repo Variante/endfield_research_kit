@@ -59,3 +59,24 @@ Implementation target:
 - Change `TryRecoverManagedReferences` and `TryParseManagedReferenceHeaders` to return a diagnostic object on failure while leaving success output unchanged.
 - In the partial TypeTree fallthrough, add `$animestudio.managedReferencesRegistryRecoveryAttempted = true` and `$animestudio.managedReferencesRegistryRecoveryFailure = {...}`.
 - Do not change `BuildManagedReferenceData` payload decoding in this instrumentation pass.
+
+## 2026-06-30 ManagedReferencesRegistry Diagnostic Update
+
+Implemented failure diagnostics around `TryRecoverManagedReferences` without changing the recovered registry payload shape.
+
+Build validation:
+
+- `scripts\animestudio\rebuild.bat -Target CLI -NoRestore` succeeded with 0 warnings and 0 errors after the instrumentation edit.
+- `git -C tools\AnimeStudio diff --check` reports only Git's line-ending notice for `Exporter.cs`.
+
+Runtime validation:
+
+- Success probe: `tmp\managedrefs_failure_diag_probe_20260630` re-exported `CharacterDisplayConfig` and kept `managedReferencesRegistryRecovery.status = fullyDecoded` with 31/31 recovered references.
+- UI partial probe: re-exporting `PathID 191669547493041408` from `activityv1d0d1checkinsignpopup.prefab` now recovers fully: `managedReferencesRegistryRecovered = true`, `managedReferencesRegistryFullyDecoded = true`, registry count 1/1.
+- Candidate batch probe: `tmp\managedrefs_failure_batch_probe_20260630` re-exported 80 old no-recovery Persistent MonoBehaviours from `3267B09A76643181B4083C1E60B678D1.chk`; 80/80 now recover fully, 0 partial TypeTree outputs, 0 failure diagnostics.
+
+Current interpretation:
+
+- The instrumentation is compiled and success-path validated.
+- I did not find a real current-data failure case in the sampled Persistent set; the stale no-recovery artifacts appear to be recoverable under the current exporter and recent parser fixes.
+- The next broad export or decoded-index rebuild should bucket any remaining `references:ManagedReferencesRegistry` failures by `managedReferencesRegistryRecoveryFailure.reason` instead of leaving them as anonymous partial TypeTree stops.
