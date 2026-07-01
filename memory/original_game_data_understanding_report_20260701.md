@@ -641,6 +641,16 @@ now field-specific, for example `radio_a1m9_2`, `guide_group_connector_intro`,
 and `chr_0013_aglina_e1`. These are authored action-map references, not proof
 that those actions execute in a particular runtime chronology.
 
+2026-07-01 script task display-metadata progress: source graph now ingests the
+larger `Json/GameplayConfig/ScriptTaskExtraInfoTable.json` surface as well as
+the small wrapper group. A fast CN temp graph build verified 536 collapsed
+`level_script_task_extra` rows, 536 task UID nodes, 671 objective nodes, 1,052
+source definition edges, 536 links to `level_script`, 638 objective text edges,
+285 title text edges, and 7 single-description text edges. This connects task
+UI/tracking text such as `dungeon_train_train02_title` and
+`map01_lv007:2800200002:0174178d` to level scripts while avoiding claims about
+quest-task identity or runtime completion formulas.
+
 2026-07-01 source graph AIConfig progress: a fast CN rebuild to
 `tmp/source_graph_aiconfig.sqlite` verified exact enemy-template preload
 mappings from `Json_AIConfig.json` `EnemyTemplateDataSummary.json`. The pass
