@@ -146,7 +146,11 @@ structured-table ingestion adds exact-queryable `weapon`, `equipment`,
 `factory_tech_group`, `factory_tech_category`, `factory_tech_layer`,
 `factory_tech`, `factory_tech_condition`, `factory_building`,
 `factory_building_type`, `factory_renderer_template`,
-`factory_blueprint_machine_icon`, and `manual_craft_unlock` nodes. A fast CN
+`factory_blueprint_machine_icon`, `manual_craft_unlock`, `prts_page`,
+`prts_category`, `prts_first_level`, `prts_entry`, `rich_content`,
+`rich_content_line`, `reading_popup`, `reading_popup_icon`, `prts_reading`,
+`prts_reading_entry`, `prts_investigation`, `prts_investigation_group`, and
+`prts_note` nodes. A fast CN
 build with `--skip-asset-maps
 --skip-reference-rows
 --skip-followups` verified 72 weapon nodes, 220 equipment nodes, 30 character
@@ -200,6 +204,10 @@ python tools\endfield_source_graph.py query jump_activity_conditional_multistage
 python tools\endfield_source_graph.py query tech_jinlong_1_battle_cannon_2 --kind factory_tech
 python tools\endfield_source_graph.py query air_dancer_1 --kind factory_building
 python tools\endfield_source_graph.py query hdwk_item_drop_agfly_1_1 --kind manual_craft_unlock
+python tools\endfield_source_graph.py query nar_002_settlement --kind prts_entry
+python tools\endfield_source_graph.py query text_002_settelment --kind rich_content
+python tools\endfield_source_graph.py query rp_radio_c16m4_50 --kind reading_popup
+python tools\endfield_source_graph.py query research_001 --kind prts_investigation
 ```
 
 2026-07-01 character progression graph progress: generated Gameplay character
@@ -300,10 +308,37 @@ condition-to-level refs, 72 `machine_unlocked_by_tech`, 59
 default renderer template refs, 97 building renderer template refs, 113
 `renderer_template_for_machine`, 168 `manual_craft_material_unlocks_formula_item`,
 45 manual-craft upgrade item edges, 13 system jumps to exact factory techs, and
-1 system jump to a factory tech group. James scout identified PRTS Archive /
-Reading / RichContent bridge as the next compact graph slice: 414 PRTS archive
-entries, 586 rich-content rows, 576 reading popups, 21 PRTS reading roots, 12
-investigation roots, and 29 notes expected from local tables.
+1 system jump to a factory tech group. The scouted PRTS Archive / Reading /
+RichContent bridge has since landed below.
+
+2026-07-01 PRTS Archive/Reading/RichContent graph progress: source graph
+ingestion now promotes PRTS page/category/first-level/archive entries,
+RichContent roots and content lines, Reading popup rows/icons, PRTS reading
+roots/entries, investigations/groups/notes, and SystemJump PRTS detail targets.
+The corrected fast CN rebuild verified 829,057 total graph nodes and 1,279,042
+edges, including 3 `prts_page` nodes, 6 categories, 375 first-level nodes, 422
+PRTS entry nodes, 586 RichContent roots, 2,991 RichContent line nodes, 576
+reading popups, 14 referenced popup icon nodes with 6 authored icon-map
+definitions, 21 PRTS reading roots, 36 PRTS reading entries, 13 investigation
+nodes, 29 investigation groups, and 29 notes. Edge checks verified 414 canonical
+first-level-to-entry edges, 414 `defines_prts_entry` edges from `PrtsAllItem`,
+327 record, 64 document, and 23 multimedia subtype definitions, 105 PRTS
+entry-to-story targets, 391 entry-to-RichContent targets, 2,991 rich-content
+line edges, 2,986 RichContent root i18n refs, 2,986 line i18n refs, 247
+reading popup-to-story targets, 548 reading popup-to-RichContent targets, 576 popup icon-use edges, 36 PRTS reading
+entries, 2 reading-entry story targets, 28 reading-entry RichContent targets, 12
+authored investigations, 12 investigation-category rows, 47 direct investigation
+entry refs, 58 investigation-to-group refs, 94 group-to-entry refs, 58
+group-to-note refs, 25 system jumps to PRTS entries, and 5 system jumps to PRTS
+investigations. Investigation grouping counts intentionally preserve duplicate
+evidence from both `PrtsInvestigate.categoryDataList` and
+`PrtsInvestigateCategory.list`; direct `PrtsCategory` to `PrtsPage` edges are
+only emitted for exact key matches, so inferred page buckets remain out of graph
+scope. Lovelace scout identified NPC / Ambient Voice / Responsive Bark as the
+next bounded graph slice: `Npc*`, `AudioDialogChannel*`, `ResponsiveDialog`,
+`ResponsiveTriggers`, `AIBark`, and `AIBarkText`, while leaving SNS, radio,
+remote-common, cue, and full voice-extra tables for a larger narrative/audio
+pass.
 
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,

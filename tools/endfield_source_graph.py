@@ -200,6 +200,22 @@ FACTORY_TECH_TABLES = (
     "FactoryManualCraftFormulaUnlockTable.json",
     "FactoryManualCraftUpgradeTable.json",
 )
+PRTS_ARCHIVE_TABLES = (
+    "RichContentTable.json",
+    "PrtsPage.json",
+    "PrtsCategory.json",
+    "PrtsFirstLv.json",
+    "PrtsAllItem.json",
+    "PrtsRecord.json",
+    "PrtsDocument.json",
+    "PrtsMultimedia.json",
+    "ReadingPopUpIconTable.json",
+    "ReadingPopUpTable.json",
+    "PrtsReading.json",
+    "PrtsNote.json",
+    "PrtsInvestigate.json",
+    "PrtsInvestigateCategory.json",
+)
 ACTIVITY_ACHIEVEMENT_TABLES = (
     "SystemJumpTable.json",
     "ActivityTagTable.json",
@@ -521,6 +537,9 @@ class SourceGraphBuilder:
         values.append(node_id)
         self.db.execute(f"UPDATE nodes SET {', '.join(updates)} WHERE id = ?", values)
 
+    def node_exists(self, kind: str, key: Any) -> bool:
+        return self.db.execute("SELECT 1 FROM nodes WHERE id = ?", (self.node_id(kind, key),)).fetchone() is not None
+
     def add_alias(self, alias: Any, node_id: str, *, kind: str = "", source: str = "") -> None:
         alias_text = safe_key(alias)
         if not alias_text:
@@ -613,6 +632,8 @@ class SourceGraphBuilder:
             self.commit_step("spaceshipSemantics")
             self.ingest_factory_tech_semantics()
             self.commit_step("factoryTech")
+            self.ingest_prts_archive_semantics()
+            self.commit_step("prtsArchive")
             self.ingest_activity_achievement_semantics()
             self.commit_step("activityAchievement")
             self.ingest_timeline_line_orders()
@@ -4504,6 +4525,386 @@ class SourceGraphBuilder:
         elif table == "FactoryManualCraftUpgradeTable":
             self.add_manual_craft_upgrade_edges(table, row_key, row, row_node)
 
+    def ingest_prts_archive_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_prts_archive_semantics", path=slash(table_root))
+        for table_name in PRTS_ARCHIVE_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if payload is None:
+                continue
+            table_key = Path(table_name).stem
+            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/prts_archive")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            if not isinstance(payload, dict):
+                continue
+            for row_key, row in payload.items():
+                row_node = self.add_node(
+                    "table_row",
+                    f"{table_key}:{row_key}",
+                    name=str(row_key),
+                    source=table_key,
+                    data=compact_payload(row, depth=2),
+                )
+                self.add_edge(table_node, row_node, "has_row", source="structured/prts_archive")
+                self.add_prts_archive_row_edges(table_key, row_key, row, row_node)
+
+    def add_prts_page_node(self, page_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        page_key = safe_key(page_id)
+        if not page_key:
+            return ""
+        page_name = table_display_text(name) or page_key
+        node = self.add_node("prts_page", page_key, name=page_name, source=source, data=data)
+        self.add_alias(page_key, node, kind="prts_page_id", source=source)
+        if page_name != page_key:
+            self.add_alias(page_name, node, kind="prts_page_name", source=source)
+        return node
+
+    def add_prts_category_node(self, category_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        category_key = safe_key(category_id)
+        if not category_key:
+            return ""
+        category_name = table_display_text(name) or category_key
+        node = self.add_node("prts_category", category_key, name=category_name, source=source, data=data)
+        self.add_alias(category_key, node, kind="prts_category_id", source=source)
+        if category_name != category_key:
+            self.add_alias(category_name, node, kind="prts_category_name", source=source)
+        return node
+
+    def add_prts_first_level_node(self, first_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        first_key = safe_key(first_id)
+        if not first_key:
+            return ""
+        first_name = table_display_text(name) or first_key
+        node = self.add_node("prts_first_level", first_key, name=first_name, source=source, data=data)
+        self.add_alias(first_key, node, kind="prts_first_level_id", source=source)
+        if first_name != first_key:
+            self.add_alias(first_name, node, kind="prts_first_level_name", source=source)
+        return node
+
+    def add_prts_entry_node(self, entry_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        entry_key = safe_key(entry_id)
+        if not entry_key:
+            return ""
+        entry_name = table_display_text(name) or entry_key
+        node = self.add_node("prts_entry", entry_key, name=entry_name, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=entry_name, source=source, data=data)
+        self.add_alias(entry_key, node, kind="prts_entry_id", source=source)
+        if entry_name != entry_key:
+            self.add_alias(entry_name, node, kind="prts_entry_name", source=source)
+        return node
+
+    def add_rich_content_node(self, content_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        content_key = safe_key(content_id)
+        if not content_key:
+            return ""
+        content_name = table_display_text(name) or content_key
+        node = self.add_node("rich_content", content_key, name=content_name, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=content_name, source=source, data=data)
+        self.add_alias(content_key, node, kind="rich_content_id", source=source)
+        return node
+
+    def add_rich_content_line_node(self, line_id: Any, *, source: str = "", data: Any = None) -> str:
+        line_key = safe_key(line_id)
+        if not line_key:
+            return ""
+        node = self.add_node("rich_content_line", line_key, name=line_key, source=source, data=data)
+        self.add_alias(line_key, node, kind="rich_content_line_id", source=source)
+        return node
+
+    def add_reading_popup_node(self, popup_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        popup_key = safe_key(popup_id)
+        if not popup_key:
+            return ""
+        popup_name = table_display_text(name) or popup_key
+        node = self.add_node("reading_popup", popup_key, name=popup_name, source=source, data=data)
+        self.add_alias(popup_key, node, kind="reading_popup_id", source=source)
+        if popup_name != popup_key:
+            self.add_alias(popup_name, node, kind="reading_popup_name", source=source)
+        return node
+
+    def add_reading_popup_icon_node(self, icon_id: Any, *, source: str = "", data: Any = None) -> str:
+        icon_key = safe_key(icon_id)
+        if not icon_key:
+            return ""
+        node = self.add_node("reading_popup_icon", icon_key, name=icon_key, source=source, data=data)
+        self.add_alias(icon_key, node, kind="reading_popup_icon_id", source=source)
+        return node
+
+    def add_prts_reading_node(self, reading_id: Any, *, source: str = "", data: Any = None) -> str:
+        reading_key = safe_key(reading_id)
+        if not reading_key:
+            return ""
+        node = self.add_node("prts_reading", reading_key, name=reading_key, source=source, data=data)
+        self.add_alias(reading_key, node, kind="prts_reading_id", source=source)
+        return node
+
+    def add_prts_reading_entry_node(self, entry_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        entry_key = safe_key(entry_id)
+        if not entry_key:
+            return ""
+        entry_name = table_display_text(name) or entry_key
+        node = self.add_node("prts_reading_entry", entry_key, name=entry_name, source=source, data=data)
+        self.add_alias(entry_key, node, kind="prts_reading_entry_id", source=source)
+        if entry_name != entry_key:
+            self.add_alias(entry_name, node, kind="prts_reading_entry_name", source=source)
+        return node
+
+    def add_prts_investigation_node(self, investigation_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        investigation_key = safe_key(investigation_id)
+        if not investigation_key:
+            return ""
+        investigation_name = table_display_text(name) or investigation_key
+        node = self.add_node("prts_investigation", investigation_key, name=investigation_name, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=investigation_name, source=source, data=data)
+        self.add_alias(investigation_key, node, kind="prts_investigation_id", source=source)
+        if investigation_name != investigation_key:
+            self.add_alias(investigation_name, node, kind="prts_investigation_name", source=source)
+        return node
+
+    def add_prts_investigation_group_node(self, group_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        group_key = safe_key(group_id)
+        if not group_key:
+            return ""
+        group_name = table_display_text(name) or group_key
+        node = self.add_node("prts_investigation_group", group_key, name=group_name, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=group_name, source=source, data=data)
+        self.add_alias(group_key, node, kind="prts_investigation_group_id", source=source)
+        if group_name != group_key:
+            self.add_alias(group_name, node, kind="prts_investigation_group_name", source=source)
+        return node
+
+    def add_prts_note_node(self, note_id: Any, *, source: str = "", data: Any = None) -> str:
+        note_key = safe_key(note_id)
+        if not note_key:
+            return ""
+        node = self.add_node("prts_note", note_key, name=note_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=note_key, source=source, data=data)
+        self.add_alias(note_key, node, kind="prts_note_id", source=source)
+        return node
+
+    def add_prts_content_target_edges(self, owner_node: str, content_id: Any, *, source: str, evidence: str, story_edge: str, rich_edge: str) -> None:
+        content_key = safe_key(content_id)
+        if not content_key:
+            return
+        if self.node_exists("story", content_key):
+            story_node = self.node_id("story", content_key)
+            self.add_edge(owner_node, story_node, story_edge, source=source, evidence=evidence)
+        if self.node_exists("rich_content", content_key):
+            rich_node = self.add_rich_content_node(content_key, source=source)
+            self.add_edge(owner_node, rich_node, rich_edge, source=source, evidence=evidence)
+
+    def add_rich_content_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        content_id = safe_key(row_key)
+        content_list = row.get("contentList") if isinstance(row.get("contentList"), list) else []
+        content_node = self.add_rich_content_node(content_id, name=row.get("title"), source=table, data={"lineCount": len(content_list)})
+        if not content_node:
+            return
+        self.add_edge(row_node, content_node, "defines_rich_content", source=table)
+        self.add_i18n_text_edges(content_node, row.get("title"), source=table)
+        for index, item in enumerate(content_list):
+            if not isinstance(item, dict):
+                continue
+            line_node = self.add_rich_content_line_node(f"{content_id}:line:{index + 1}", source=table, data={"contentId": content_id, "index": index + 1, "content": table_text(item.get("content"))})
+            if not line_node:
+                continue
+            self.add_edge(content_node, line_node, "rich_content_has_line", source=table, evidence=f"contentList[{index}]")
+            for text_id in self.iter_i18n_text_ids(item.get("content")):
+                text_node = self.add_i18n_text_node(text_id, source=table)
+                if text_node:
+                    self.add_edge(line_node, text_node, "rich_content_line_uses_i18n_text", source=table, evidence=text_id)
+                    self.add_edge(content_node, text_node, "rich_content_uses_i18n_text", source=table, evidence=f"contentList[{index}]")
+
+    def add_prts_page_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        page_node = self.add_prts_page_node(row.get("pageType") or row_key, name=row.get("name"), source=table, data={"icon": row.get("icon")})
+        if page_node:
+            self.add_edge(row_node, page_node, "defines_prts_page", source=table)
+            self.add_alias(row.get("icon"), page_node, kind="asset_stem", source=table)
+            self.add_i18n_text_edges(page_node, row, source=table)
+
+    def add_prts_category_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        category_node = self.add_prts_category_node(row.get("categoryId") or row_key, name=row.get("name"), source=table, data={"order": row.get("order"), "tabIcon": row.get("tabIcon")})
+        if not category_node:
+            return
+        self.add_edge(row_node, category_node, "defines_prts_category", source=table)
+        page_key = row.get("categoryId") or row_key
+        if self.node_exists("prts_page", page_key):
+            self.add_edge(self.node_id("prts_page", page_key), category_node, "prts_page_has_category", source=table, evidence="categoryId")
+        self.add_alias(row.get("tabIcon"), category_node, kind="asset_stem", source=table)
+        self.add_i18n_text_edges(category_node, row, source=table)
+
+    def add_prts_first_level_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        first_id = safe_key(row.get("firstLvId") or row_key)
+        first_node = self.add_prts_first_level_node(first_id, name=row.get("name"), source=table, data={"categoryId": row.get("categoryId"), "order": row.get("order"), "icon": row.get("icon"), "itemCount": len(row.get("itemIds") or [])})
+        if not first_node:
+            return
+        self.add_edge(row_node, first_node, "defines_prts_first_level", source=table)
+        category_node = self.add_prts_category_node(row.get("categoryId"), source=table)
+        if category_node:
+            self.add_edge(category_node, first_node, "prts_category_has_first_level", source=table, evidence="categoryId")
+        for index, entry_id in enumerate(row.get("itemIds") or []):
+            entry_node = self.add_prts_entry_node(entry_id, source=table)
+            if entry_node:
+                self.add_edge(first_node, entry_node, "prts_first_level_has_entry", source=table, evidence=f"itemIds[{index}]")
+        self.add_alias(row.get("icon"), first_node, kind="asset_stem", source=table)
+        self.add_i18n_text_edges(first_node, row, source=table)
+
+    def add_prts_entry_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        entry_id = safe_key(row.get("id") or row_key)
+        canonical = table == "PrtsAllItem"
+        entry_node = self.add_prts_entry_node(
+            entry_id,
+            name=row.get("name") if canonical else None,
+            source=table,
+            data={"contentId": row.get("contentId"), "firstLvId": row.get("firstLvId"), "type": row.get("type"), "order": row.get("order"), "sourceTable": table} if canonical else None,
+        )
+        if not entry_node:
+            return
+        edge_kind = {
+            "PrtsRecord": "defines_prts_record_entry",
+            "PrtsDocument": "defines_prts_document_entry",
+            "PrtsMultimedia": "defines_prts_multimedia_entry",
+        }.get(table, "defines_prts_entry")
+        self.add_edge(row_node, entry_node, edge_kind, source=table)
+        if canonical:
+            self.add_prts_content_target_edges(entry_node, row.get("contentId"), source=table, evidence="contentId", story_edge="prts_entry_targets_story", rich_edge="prts_entry_targets_rich_content")
+            self.add_i18n_text_edges(entry_node, row, source=table)
+
+    def add_reading_popup_icon_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        icon_map = row.get("iconMap") if isinstance(row.get("iconMap"), dict) else {}
+        for icon_key, icon_row in icon_map.items():
+            if not isinstance(icon_row, dict):
+                continue
+            icon_node = self.add_reading_popup_icon_node(f"{row_key}:{icon_key}", source=table, data={"bgType": row_key, "iconType": icon_key, "icon": icon_row.get("icon")})
+            if icon_node:
+                self.add_edge(row_node, icon_node, "defines_reading_popup_icon", source=table, evidence=f"iconMap[{icon_key}]")
+                self.add_alias(icon_row.get("icon"), icon_node, kind="asset_stem", source=table)
+
+    def add_reading_popup_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        popup_id = safe_key(row.get("id") or row_key)
+        popup_node = self.add_reading_popup_node(popup_id, name=row.get("title"), source=table, data={"contentId": row.get("contentId"), "bgType": row.get("bgType"), "iconType": row.get("iconType")})
+        if not popup_node:
+            return
+        self.add_edge(row_node, popup_node, "defines_reading_popup", source=table)
+        icon_node = self.add_reading_popup_icon_node(f"{row.get('bgType')}:{row.get('iconType')}", source=table)
+        if icon_node:
+            self.add_edge(popup_node, icon_node, "reading_popup_uses_icon", source=table, evidence="bgType/iconType")
+        self.add_prts_content_target_edges(popup_node, row.get("contentId"), source=table, evidence="contentId", story_edge="reading_popup_targets_story", rich_edge="reading_popup_targets_rich_content")
+        self.add_i18n_text_edges(popup_node, row, source=table)
+
+    def add_prts_reading_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        reading_node = self.add_prts_reading_node(row_key, source=table, data={"entryCount": len(row.get("list") or {})})
+        if not reading_node:
+            return
+        self.add_edge(row_node, reading_node, "defines_prts_reading", source=table)
+        entry_map = row.get("list") if isinstance(row.get("list"), dict) else {}
+        for entry_key, entry in entry_map.items():
+            if not isinstance(entry, dict):
+                continue
+            entry_node = self.add_prts_reading_entry_node(entry.get("uniqId") or f"{row_key}:{entry_key}", name=entry.get("name"), source=table, data={"contentId": entry.get("contentId"), "order": entry.get("order"), "prtsId": entry.get("prtsId"), "rootId": row_key})
+            if not entry_node:
+                continue
+            self.add_edge(reading_node, entry_node, "prts_reading_has_entry", source=table, evidence=f"list[{entry_key}]")
+            prts_entry = self.add_prts_entry_node(entry.get("prtsId"), source=table)
+            if prts_entry:
+                self.add_edge(entry_node, prts_entry, "prts_reading_entry_refs_prts_entry", source=table, evidence="prtsId")
+            self.add_prts_content_target_edges(entry_node, entry.get("contentId"), source=table, evidence="contentId", story_edge="prts_reading_entry_targets_story", rich_edge="prts_reading_entry_targets_rich_content")
+            self.add_i18n_text_edges(entry_node, entry, source=table)
+
+    def add_prts_note_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        note_node = self.add_prts_note_node(row.get("id") or row_key, source=table, data={"desc": table_text(row.get("desc"))})
+        if note_node:
+            self.add_edge(row_node, note_node, "defines_prts_note", source=table)
+            self.add_i18n_text_edges(note_node, row, source=table)
+
+    def add_prts_investigation_group_edges(self, investigation_node: str, group: dict[str, Any], *, group_id: str, source: str, evidence_prefix: str) -> str:
+        group_node = self.add_prts_investigation_group_node(group_id, name=group.get("name"), source=source, data={"index": group.get("index"), "collectionCount": len(group.get("collectionIdList") or []), "noteCount": len(group.get("noteIdList") or [])})
+        if not group_node:
+            return ""
+        self.add_edge(investigation_node, group_node, "prts_investigation_has_group", source=source, evidence=evidence_prefix)
+        for index, entry_id in enumerate(group.get("collectionIdList") or []):
+            entry_node = self.add_prts_entry_node(entry_id, source=source)
+            if entry_node:
+                self.add_edge(group_node, entry_node, "prts_investigation_group_has_entry", source=source, evidence=f"{evidence_prefix}.collectionIdList[{index}]")
+        for index, note_id in enumerate(group.get("noteIdList") or []):
+            note_node = self.add_prts_note_node(note_id, source=source)
+            if note_node:
+                self.add_edge(group_node, note_node, "prts_investigation_group_has_note", source=source, evidence=f"{evidence_prefix}.noteIdList[{index}]")
+        self.add_i18n_text_edges(group_node, group, source=source)
+        return group_node
+
+    def add_prts_investigation_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        investigation_id = safe_key(row.get("id") or row_key)
+        investigation_node = self.add_prts_investigation_node(investigation_id, name=row.get("name"), source=table, data={"domainId": row.get("domainId"), "type": row.get("type"), "index": row.get("index"), "unlockPrts": row.get("unlockPrts"), "collectionCount": len(row.get("collectionIdList") or []), "groupCount": len(row.get("categoryDataList") or [])})
+        if not investigation_node:
+            return
+        self.add_edge(row_node, investigation_node, "defines_prts_investigation", source=table)
+        domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
+        if domain_node:
+            self.add_edge(investigation_node, domain_node, "prts_investigation_uses_domain", source=table, evidence="domainId")
+        unlock_entry = self.add_prts_entry_node(row.get("unlockPrts"), source=table)
+        if unlock_entry:
+            self.add_edge(investigation_node, unlock_entry, "prts_investigation_unlocks_entry", source=table, evidence="unlockPrts")
+        for index, entry_id in enumerate(row.get("collectionIdList") or []):
+            entry_node = self.add_prts_entry_node(entry_id, source=table)
+            if entry_node:
+                self.add_edge(investigation_node, entry_node, "prts_investigation_has_entry", source=table, evidence=f"collectionIdList[{index}]")
+        for index, item in enumerate(row.get("rewardItemList") or []):
+            if not isinstance(item, dict):
+                continue
+            item_node = self.add_item_node(item.get("id"), source=table)
+            if item_node:
+                self.add_edge(investigation_node, item_node, "prts_investigation_rewards_item", source=table, evidence=f"rewardItemList[{index}]", data={"count": item.get("count")})
+        for index, group in enumerate(row.get("categoryDataList") or []):
+            if isinstance(group, dict):
+                self.add_prts_investigation_group_edges(investigation_node, group, group_id=f"{investigation_id}:group:{group.get('index') or index + 1}", source=table, evidence_prefix=f"categoryDataList[{index}]")
+        self.add_i18n_text_edges(investigation_node, row, source=table)
+
+    def add_prts_investigation_category_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        investigation_id = safe_key(row.get("id") or row_key)
+        category_data = None if self.node_exists("prts_investigation", investigation_id) else {"groupCount": len(row.get("list") or [])}
+        investigation_node = self.add_prts_investigation_node(investigation_id, source=table, data=category_data)
+        if not investigation_node:
+            return
+        self.add_edge(row_node, investigation_node, "defines_prts_investigation_category", source=table)
+        for index, group in enumerate(row.get("list") or []):
+            if isinstance(group, dict):
+                self.add_prts_investigation_group_edges(investigation_node, group, group_id=f"{investigation_id}:group:{group.get('index') or index + 1}", source=table, evidence_prefix=f"list[{index}]")
+
+    def add_prts_archive_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if not isinstance(row, dict):
+            return
+        if table != "RichContentTable":
+            self.add_i18n_text_edges(row_node, row, source=table)
+        if table == "RichContentTable":
+            self.add_rich_content_edges(table, row_key, row, row_node)
+        elif table == "PrtsPage":
+            self.add_prts_page_edges(table, row_key, row, row_node)
+        elif table == "PrtsCategory":
+            self.add_prts_category_edges(table, row_key, row, row_node)
+        elif table == "PrtsFirstLv":
+            self.add_prts_first_level_edges(table, row_key, row, row_node)
+        elif table in {"PrtsAllItem", "PrtsRecord", "PrtsDocument", "PrtsMultimedia"}:
+            self.add_prts_entry_edges(table, row_key, row, row_node)
+        elif table == "ReadingPopUpIconTable":
+            self.add_reading_popup_icon_edges(table, row_key, row, row_node)
+        elif table == "ReadingPopUpTable":
+            self.add_reading_popup_edges(table, row_key, row, row_node)
+        elif table == "PrtsReading":
+            self.add_prts_reading_edges(table, row_key, row, row_node)
+        elif table == "PrtsNote":
+            self.add_prts_note_edges(table, row_key, row, row_node)
+        elif table == "PrtsInvestigate":
+            self.add_prts_investigation_edges(table, row_key, row, row_node)
+        elif table == "PrtsInvestigateCategory":
+            self.add_prts_investigation_category_edges(table, row_key, row, row_node)
+
     def ingest_activity_achievement_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_activity_achievement_semantics", path=slash(table_root))
@@ -4831,6 +5232,14 @@ class SourceGraphBuilder:
         achievement_node = self.add_achievement_node(args.get("achieveId") or args.get("achievementId"), source=source)
         if achievement_node:
             self.add_edge(jump_node, achievement_node, "system_jump_targets_achievement", source=source, evidence="phaseArgs.achievementId")
+        if phase_id == "PRTSStoryCollDetail":
+            entry_node = self.add_prts_entry_node(args.get("id"), source=source)
+            if entry_node:
+                self.add_edge(jump_node, entry_node, "system_jump_targets_prts_entry", source=source, evidence="phaseArgs.id")
+        if phase_id == "PRTSInvestigateDetail":
+            investigation_node = self.add_prts_investigation_node(args.get("id"), source=source)
+            if investigation_node:
+                self.add_edge(jump_node, investigation_node, "system_jump_targets_prts_investigation", source=source, evidence="phaseArgs.id")
 
     def add_system_jump_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         jump_id = safe_key(row.get("id") or row_key)
@@ -6422,6 +6831,19 @@ QUERY_KIND_PRIORITY = {
     "factory_renderer_template": 67,
     "factory_blueprint_machine_icon": 68,
     "manual_craft_unlock": 69,
+    "prts_page": 70,
+    "prts_category": 71,
+    "prts_first_level": 72,
+    "prts_entry": 73,
+    "rich_content": 74,
+    "rich_content_line": 75,
+    "reading_popup": 76,
+    "reading_popup_icon": 77,
+    "prts_reading": 78,
+    "prts_reading_entry": 79,
+    "prts_investigation": 80,
+    "prts_investigation_group": 81,
+    "prts_note": 82,
     "weapon": 10,
     "equipment": 11,
     "enemy": 12,
@@ -6556,6 +6978,19 @@ NODE_ID_PREFIXES = (
     "factory_renderer_template",
     "factory_blueprint_machine_icon",
     "manual_craft_unlock",
+    "prts_page",
+    "prts_category",
+    "prts_first_level",
+    "prts_entry",
+    "rich_content",
+    "rich_content_line",
+    "reading_popup",
+    "reading_popup_icon",
+    "prts_reading",
+    "prts_reading_entry",
+    "prts_investigation",
+    "prts_investigation_group",
+    "prts_note",
     "weapon",
     "equipment",
     "enemy",

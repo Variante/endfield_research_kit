@@ -720,8 +720,8 @@ runtime combat formula or modifier-order reconstruction.
 the generated Gameplay payload, a pre-Gameplay item/economy table pass, an early
 world/map table pass, a pre-Gameplay combat semantics pass, selected structured
 factory tables, Spaceship/base tables, Activity/Achievement/SystemJump tables,
-and factory tech-tree/unlock tables as evidence graph nodes and relationships. A
-fast CN verification build with `--skip-asset-maps --skip-reference-rows
+and factory tech-tree/unlock, PRTS Archive, Reading, and RichContent tables as
+evidence graph nodes and relationships. A fast CN verification build with `--skip-asset-maps --skip-reference-rows
 --skip-followups` produced 72 weapon nodes, 220 equipment nodes, 30 character
 nodes, 290 enemy nodes, 78 enemy template nodes, 98 enemy attribute-template
 nodes, 134 enemy ability nodes, 217 buff nodes, 6 map nodes, 208 level nodes,
@@ -753,8 +753,9 @@ separate visible Gameplay entries. Exact queries such as `chr_0017_yvonne`,
 `growcabin_plant_crylplant_1_1`, `envEmoji_common_adaptationwork`,
 `activity_weekly_task_1`, `week10_task1`, `achv_adv_tundra_box`,
 `jump_activity_conditional_multistage_1`, `tech_jinlong_1_battle_cannon_2`,
-`air_dancer_1`, and `hdwk_item_drop_agfly_1_1` now resolve to semantic nodes
-with source table rows and neighbors. This improves
+`air_dancer_1`, `hdwk_item_drop_agfly_1_1`, `nar_002_settlement`,
+`text_002_settelment`, `rp_radio_c16m4_50`, and `research_001` now resolve to
+semantic nodes with source table rows and neighbors. This improves
 cross-domain lookup; it still does not prove formulas beyond generated
 source-table evidence.
 
@@ -826,8 +827,30 @@ tech prerequisite edges, 128 tech unlock-item edges, 75 tech action refs, 72
 machine-to-tech links, 59 blueprint item links, 89 building item links, 82
 building map-mark refs, 97 building renderer-template refs, 168 manual-craft
 formula unlock links, 45 manual-craft upgrade links, 13 system jumps to exact
-factory techs, and 1 system jump to a factory tech group. James scout identified
-PRTS Archive / Reading / RichContent bridge as the next compact graph slice.
+factory techs, and 1 system jump to a factory tech group. The scouted PRTS
+Archive / Reading / RichContent bridge has since landed below.
+
+2026-07-01 source graph PRTS Archive/Reading/RichContent progress: PRTS
+page/category/first-level/archive entries, RichContent roots and content lines,
+Reading popup rows/icons, PRTS reading roots/entries, investigations/groups/notes,
+and SystemJump PRTS detail targets are now queryable. The corrected fast CN
+rebuild verified 422 PRTS entry nodes, 586 RichContent roots, 2,991 RichContent
+line nodes, 576 reading popups, 14 referenced popup icon nodes with 6 authored
+icon-map definitions, 21 PRTS reading roots, 36 PRTS reading entries, 13
+investigation nodes, 29 investigation groups, 29 notes, 414 canonical
+first-level-to-entry edges, 105 PRTS entry-to-story targets, 391
+entry-to-RichContent targets, 247 popup-to-story targets, 548 popup-to-RichContent
+targets, 2 reading-entry story targets, 28 reading-entry RichContent targets, 47
+direct investigation entry refs, 58 investigation-to-group refs, 94
+group-to-entry refs, 58 group-to-note refs, 25 system jumps to PRTS entries,
+and 5 system
+jumps to PRTS investigations. Investigation grouping intentionally keeps the two
+source evidence paths from `PrtsInvestigate.categoryDataList` and
+`PrtsInvestigateCategory.list`; inferred PRTS page buckets remain out of scope
+until backed by a table or UI binding. Lovelace scout identified NPC / Ambient
+Voice / Responsive Bark as the next bounded graph slice, leaving SNS, radio,
+remote-common, cue, and full voice-extra tables for a broader narrative/audio
+pass.
 
 2026-07-01 source graph item/economy progress: item, reward, reward-drop, and
 shop table semantics are now queryable before Gameplay ingestion. A fast source
