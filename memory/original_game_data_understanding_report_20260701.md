@@ -717,24 +717,29 @@ attributes, and raw attr modifiers. This is authored table semantics, not a full
 runtime combat formula or modifier-order reconstruction.
 
 2026-07-01 source graph progress: `tools/endfield_source_graph.py` now ingests
-the generated Gameplay payload, a pre-Gameplay item/economy table pass, and
-selected structured factory tables as evidence graph nodes and relationships. A
-fast CN verification build with `--skip-asset-maps --skip-reference-rows
---skip-followups` produced 72 weapon nodes, 220 equipment nodes, 30 character
-nodes, 290 enemy nodes, 78 enemy template nodes, 98 enemy attribute-template
-nodes, 134 enemy ability nodes, 83 buff nodes, 409 skill nodes, 526 talent
-nodes, 1,240 progression nodes, 2,425 item nodes, 93 item type nodes, 11 item
-showing-type nodes, 232 item obtain-way nodes, 5,722 reward nodes, 1,252
-reward-drop nodes, 19 shop groups, 28 shops, 687 shop goods, 6 shop goods tags,
-392 factory recipe nodes, 485 factory item descriptor nodes, 38 factory machine
-nodes, 20 factory craft group nodes, 22 factory showing-type nodes, 3,820
-required-item edges, 290 `uses_enemy_attribute_template` edges, 406
-`has_enemy_ability` edges, 194 `starts_with_buff` edges, 266 `drops_item` edges,
-and 6,716 `has_gameplay_asset` edges including 839 item-to-asset edges. The two
-hidden Endministrator rows remain as `CharacterTable` graph nodes but are no
-longer separate visible Gameplay entries. Exact queries such as
-`chr_0017_yvonne`, `wpn_pistol_0001`, `eny_0018_lbtough`, `item_gold`,
-`reward_payshop_wpn_claym_0003`, `domainshop_goods_map01_10001`, and
+the generated Gameplay payload, a pre-Gameplay item/economy table pass, a
+pre-Gameplay combat semantics pass, and selected structured factory tables as
+evidence graph nodes and relationships. A fast CN verification build with
+`--skip-asset-maps --skip-reference-rows --skip-followups` produced 72 weapon
+nodes, 220 equipment nodes, 30 character nodes, 290 enemy nodes, 78 enemy
+template nodes, 98 enemy attribute-template nodes, 134 enemy ability nodes, 217
+buff nodes, 497 skill nodes, 4,807 skill level nodes, 33 skill tag nodes, 405
+gameplay blackboard key nodes, 80 use-item effect nodes, 9 general ability
+nodes, 14 ability entity nodes, 19 global effect nodes, 54 global effect param
+nodes, 251 potential talent effect nodes, 526 talent nodes, 1,240 progression
+nodes, 2,425 item nodes, 93 item type nodes, 11 item showing-type nodes, 232
+item obtain-way nodes, 5,722 reward nodes, 1,252 reward-drop nodes, 19 shop
+groups, 28 shops, 687 shop goods, 6 shop goods tags, 392 factory recipe nodes,
+485 factory item descriptor nodes, 38 factory machine nodes, 20 factory craft
+group nodes, 22 factory showing-type nodes, 3,820 required-item edges, 290
+`uses_enemy_attribute_template` edges, 406 `has_enemy_ability` edges, 194
+`starts_with_buff` edges, 266 `drops_item` edges, and 6,716
+`has_gameplay_asset` edges including 839 item-to-asset edges. The two hidden
+Endministrator rows remain as `CharacterTable` graph nodes but are no longer
+separate visible Gameplay entries. Exact queries such as `chr_0017_yvonne`,
+`wpn_pistol_0001`, `eny_0018_lbtough`, `item_gold`,
+`reward_payshop_wpn_claym_0003`, `domainshop_goods_map01_10001`,
+`chr_0002_endminm_attack1`, `item_proc_bomb_1`, `atk_scale`, and
 `component_activity_xiranite_cmpt_1` now resolve to semantic nodes with source
 table rows and neighbors. This improves cross-domain lookup; it still does not
 prove formulas beyond generated source-table evidence.
@@ -748,6 +753,19 @@ item edges, 19 shop groups, 28 shops, 687 shop goods, 687 shop currency-price
 edges, 673 shop reward edges, and 214 shop goods tag edges. This recovers static
 economy relationships; runtime pricing conditions, refresh rules, random shop
 selection, and reward probability formulas remain future work.
+
+2026-07-01 source graph combat-semantics progress: buff configs, skill patch
+levels, use-item actions, general abilities, ability-entity stats, global
+effects, and potential talent effects are now queryable from authored tables. A
+fast source graph rebuild verified 479 skill patch rows, 4,807 skill level
+nodes, 14,838 skill-level blackboard value edges, 80 use-item effect nodes, 83
+use-item-to-buff edges, 1 use-item-to-skill edge, 202 use-item blackboard edges,
+9 general abilities, 14 ability entity stat nodes, 19 global effects, 54 global
+effect params, 251 potential talent effects, 57 talent buff edges, 30 talent
+attach-skill edges, 331 talent skill-blackboard modifier edges, 30 talent
+skill-param modifier edges, and 51 talent stat modifier edges. This recovers
+static combat parameter evidence; runtime skill execution order, buff stacking,
+and formula evaluation remain future work.
 
 2026-07-01 source graph factory progress: manual, machine, and hub factory
 recipes are now queryable from selected structured tables. The fast graph

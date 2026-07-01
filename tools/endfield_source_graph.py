@@ -97,6 +97,15 @@ ITEM_ECONOMY_TABLES = (
     "ShopTable.json",
     "ShopGroupTable.json",
 )
+COMBAT_SEMANTIC_TABLES = (
+    "BuffTable.json",
+    "SkillPatchTable.json",
+    "AbilityEntityAttrTable.json",
+    "GlobalEffectTable.json",
+    "GeneralAbilityTable.json",
+    "UseItemTable.json",
+    "PotentialTalentEffectTable.json",
+)
 
 
 def slash(path: Path) -> str:
@@ -456,6 +465,8 @@ class SourceGraphBuilder:
             self.commit_step("optionOverrides")
             self.ingest_item_economy()
             self.commit_step("itemEconomy")
+            self.ingest_combat_semantics()
+            self.commit_step("combatSemantics")
             if self.include_gameplay:
                 self.ingest_gameplay()
                 self.commit_step("gameplay")
@@ -2748,6 +2759,315 @@ class SourceGraphBuilder:
         elif table == "ShopGoodsTable":
             self.add_shop_goods_edges(table, row_key, row, row_node)
 
+    def ingest_combat_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_combat_semantics", path=slash(table_root))
+        for table_name in COMBAT_SEMANTIC_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if payload is None:
+                continue
+            table_key = Path(table_name).stem
+            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/combat_semantics")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            if not isinstance(payload, dict):
+                continue
+            for row_key, row in payload.items():
+                row_node = self.add_node(
+                    "table_row",
+                    f"{table_key}:{row_key}",
+                    name=str(row_key),
+                    source=table_key,
+                    data=compact_payload(row, depth=2),
+                )
+                self.add_edge(table_node, row_node, "has_row", source="structured/combat_semantics")
+                self.add_combat_semantic_row_edges(table_key, row_key, row, row_node)
+
+    def add_buff_ref_node(self, buff_id: Any, *, source: str = "", data: Any = None) -> str:
+        buff_key = safe_key(buff_id)
+        if not buff_key:
+            return ""
+        buff_node = self.add_node("buff", buff_key, name=buff_key, source=source, data=data)
+        self.add_alias(buff_key, buff_node, kind="buff_id", source=source)
+        return buff_node
+
+    def add_gameplay_skill_ref_node(self, skill_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        skill_key = safe_key(skill_id)
+        if not skill_key:
+            return ""
+        skill_name = table_display_text(name) or skill_key
+        skill_node = self.add_node("gameplay_skill", skill_key, name=skill_name, source=source, data=data)
+        self.add_alias(skill_key, skill_node, kind="gameplay_skill_id", source=source)
+        if skill_name != skill_key:
+            self.add_alias(skill_name, skill_node, kind="gameplay_skill_name", source=source)
+        return skill_node
+
+    def add_blackboard_key_node(self, key: Any, *, source: str = "") -> str:
+        key_text = safe_key(key)
+        if not key_text:
+            return ""
+        node = self.add_node("gameplay_blackboard_key", key_text, name=key_text, source=source)
+        self.add_alias(key_text, node, kind="gameplay_blackboard_key", source=source)
+        return node
+
+    def add_skill_tag_node(self, tag_id: Any, *, source: str = "") -> str:
+        tag_key = safe_key(tag_id)
+        if not tag_key:
+            return ""
+        tag_node = self.add_node("skill_tag", tag_key, name=tag_key, source=source)
+        self.add_alias(tag_key, tag_node, kind="skill_tag_id", source=source)
+        return tag_node
+
+    def add_blackboard_edges(self, owner_node: str, entries: Any, *, edge_kind: str, source: str, evidence_prefix: str, context: dict[str, Any] | None = None) -> None:
+        if not isinstance(entries, list):
+            return
+        for index, entry in enumerate(entries):
+            if not isinstance(entry, dict):
+                continue
+            key_node = self.add_blackboard_key_node(entry.get("key"), source=source)
+            if not key_node:
+                continue
+            data = {
+                "index": index,
+                "key": entry.get("key"),
+                "value": entry.get("value"),
+                "valueStr": entry.get("valueStr"),
+            }
+            if context:
+                data.update(context)
+            self.add_edge(owner_node, key_node, edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]", data=data)
+
+    def add_buff_table_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        buff_id = safe_key(row.get("buffId") or row_key)
+        if not buff_id:
+            return
+        buff_node = self.add_buff_ref_node(buff_id, source=table, data={"id": buff_id, "configPath": row.get("buffConfigPath")})
+        self.add_edge(row_node, buff_node, "defines_buff", source=table)
+        self.add_alias(row.get("buffConfigPath"), buff_node, kind="buff_config_path", source=table)
+
+    def add_skill_patch_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        bundles = row.get("SkillPatchDataBundle") or []
+        if not isinstance(bundles, list):
+            bundles = []
+        first_bundle = next((bundle for bundle in bundles if isinstance(bundle, dict)), {})
+        skill_id = safe_key(row_key or first_bundle.get("skillId"))
+        if not skill_id:
+            return
+        levels = [bundle.get("level") for bundle in bundles if isinstance(bundle, dict) and isinstance(bundle.get("level"), int)]
+        skill_node = self.add_gameplay_skill_ref_node(
+            skill_id,
+            name=first_bundle.get("skillName") if isinstance(first_bundle, dict) else None,
+            source=table,
+            data={
+                "id": skill_id,
+                "levelCount": len(bundles),
+                "maxLevel": max(levels) if levels else None,
+                "bundleCount": len(bundles),
+            },
+        )
+        self.add_edge(row_node, skill_node, "defines_skill_patch", source=table)
+        for index, bundle in enumerate(bundles):
+            if not isinstance(bundle, dict):
+                continue
+            bundle_skill_id = safe_key(bundle.get("skillId") or skill_id)
+            level = bundle.get("level")
+            level_key = f"{skill_id}:{index + 1}"
+            level_node = self.add_node(
+                "gameplay_skill_level",
+                level_key,
+                name=f"{bundle_skill_id} Lv{level or index + 1}",
+                source=table,
+                data={
+                    "skillId": bundle_skill_id,
+                    "level": level,
+                    "coolDown": bundle.get("coolDown"),
+                    "costType": bundle.get("costType"),
+                    "costValue": bundle.get("costValue"),
+                    "maxChargeTime": bundle.get("maxChargeTime"),
+                    "iconId": bundle.get("iconId"),
+                    "iconBgType": bundle.get("iconBgType"),
+                    "tagId": bundle.get("tagId"),
+                    "subDescList": bundle.get("subDescList"),
+                    "blackboardCount": len(bundle.get("blackboard") or []),
+                },
+            )
+            self.add_edge(row_node, level_node, "defines_skill_patch_level", source=table, evidence=str(index))
+            self.add_edge(skill_node, level_node, "has_skill_patch_level", source=table, evidence=str(level or index + 1))
+            self.add_alias(bundle.get("iconId"), level_node, kind="icon_id", source=table)
+            tag_node = self.add_skill_tag_node(bundle.get("tagId"), source=table)
+            if tag_node:
+                self.add_edge(level_node, tag_node, "skill_level_has_tag", source=table, evidence="tagId")
+            self.add_blackboard_edges(level_node, bundle.get("blackboard"), edge_kind="skill_level_uses_blackboard_key", source=table, evidence_prefix=f"levels[{index}].blackboard")
+
+    def add_use_item_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        item_id = safe_key(row.get("itemId") or row_key)
+        if not item_id:
+            return
+        effect_node = self.add_node(
+            "use_item_effect",
+            item_id,
+            name=item_id,
+            source=table,
+            data={
+                "itemId": item_id,
+                "duration": row.get("duration"),
+                "effectType": row.get("effectType"),
+                "isPersistentBuff": row.get("isPersistentBuff"),
+                "isValuableDepot": row.get("isValuableDepot"),
+                "stackingKey": row.get("stackingKey"),
+                "targetNumType": row.get("targetNumType"),
+                "uiType": row.get("uiType"),
+                "actionCount": len(row.get("useActions") or []),
+            },
+        )
+        self.add_edge(row_node, effect_node, "defines_use_item_effect", source=table)
+        item_node = self.add_item_node(item_id, source=table)
+        self.add_edge(item_node, effect_node, "item_has_use_effect", source=table, evidence="itemId")
+        self.add_alias(item_id, effect_node, kind="use_item_effect_id", source=table)
+        for action_index, action in enumerate(row.get("useActions") or []):
+            if not isinstance(action, dict):
+                continue
+            use_type = action.get("useType")
+            buff_data = action.get("buffBBData") if isinstance(action.get("buffBBData"), dict) else {}
+            buff_id = safe_key(buff_data.get("buffId"))
+            if buff_id:
+                buff_node = self.add_buff_ref_node(buff_id, source=table)
+                self.add_edge(effect_node, buff_node, "use_effect_applies_buff", source=table, evidence=f"useActions[{action_index}].buffBBData", data={"actionIndex": action_index, "useType": use_type, "blackboardCount": len(buff_data.get("blackboard") or [])})
+            self.add_blackboard_edges(effect_node, buff_data.get("blackboard"), edge_kind="use_effect_uses_blackboard_key", source=table, evidence_prefix=f"useActions[{action_index}].buffBBData.blackboard", context={"actionIndex": action_index, "useType": use_type, "target": "buff", "buffId": buff_id})
+            skill_data = action.get("skillBBData") if isinstance(action.get("skillBBData"), dict) else {}
+            skill_id = safe_key(skill_data.get("skillId") or Path(safe_key(skill_data.get("skillPath"))).stem)
+            if skill_id:
+                skill_node = self.add_gameplay_skill_ref_node(skill_id, source=table, data={"skillPath": skill_data.get("skillPath")})
+                self.add_edge(effect_node, skill_node, "use_effect_runs_skill", source=table, evidence=f"useActions[{action_index}].skillBBData", data={"actionIndex": action_index, "useType": use_type, "skillPath": skill_data.get("skillPath"), "blackboardCount": len(skill_data.get("blackboard") or [])})
+            self.add_blackboard_edges(effect_node, skill_data.get("blackboard"), edge_kind="use_effect_uses_blackboard_key", source=table, evidence_prefix=f"useActions[{action_index}].skillBBData.blackboard", context={"actionIndex": action_index, "useType": use_type, "target": "skill", "skillId": skill_id})
+
+    def add_general_ability_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        ability_id = safe_key(row.get("generalAbilityType") if "generalAbilityType" in row else row_key)
+        if not ability_id:
+            return
+        ability_node = self.add_node(
+            "general_ability",
+            ability_id,
+            name=table_display_text(row.get("name")) or ability_id,
+            source=table,
+            data={
+                "id": ability_id,
+                "gameVarName": row.get("gameVarName"),
+                "iconId": row.get("iconId"),
+                "intervalTime": row.get("intervalTime"),
+                "sortId": row.get("sortId"),
+                "unlockSystemType": row.get("unlockSystemType"),
+                "useItem": row.get("useItem"),
+                "banMapCount": len(row.get("banMap") or []),
+            },
+        )
+        self.add_edge(row_node, ability_node, "defines_general_ability", source=table)
+        self.add_alias(ability_id, ability_node, kind="general_ability_id", source=table)
+        self.add_alias(row.get("gameVarName"), ability_node, kind="game_var_name", source=table)
+        self.add_alias(row.get("iconId"), ability_node, kind="icon_id", source=table)
+        item_node = self.add_item_node(row.get("useItem"), source=table)
+        if item_node:
+            self.add_edge(ability_node, item_node, "general_ability_uses_item", source=table, evidence="useItem")
+        unlock_key = safe_key(row.get("unlockSystemType"))
+        if unlock_key:
+            unlock_node = self.add_node("gameplay_unlock", unlock_key, name=unlock_key, source=table)
+            self.add_edge(ability_node, unlock_node, "general_ability_unlock_system", source=table, evidence="unlockSystemType")
+            self.add_alias(unlock_key, unlock_node, kind="gameplay_unlock_id", source=table)
+        for index, level_id in enumerate(row.get("banMap") or []):
+            level_id = safe_key(level_id)
+            if not level_id:
+                continue
+            level_node = self.add_node("level", level_id, name=level_id, source=table)
+            self.add_edge(ability_node, level_node, "general_ability_banned_in_level", source=table, evidence=f"banMap[{index}]")
+
+    def add_ability_entity_attr_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        entity_id = safe_key(row.get("abilityEntityId") or row_key)
+        if not entity_id:
+            return
+        entity_node = self.add_node("ability_entity", entity_id, name=entity_id, source=table, data={"id": entity_id, "atk": row.get("atk"), "maxHp": row.get("maxHp")})
+        self.add_edge(row_node, entity_node, "defines_ability_entity_attr", source=table)
+        self.add_alias(entity_id, entity_node, kind="ability_entity_id", source=table)
+
+    def add_global_effect_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        effect_id = safe_key(row.get("effectId") or row_key)
+        if not effect_id:
+            return
+        effect_node = self.add_node("global_effect", effect_id, name=effect_id, source=table, data={"id": effect_id, "domainId": row.get("domainId"), "dpsCount": len(row.get("dps") or []), "extraArgCount": len(row.get("extraArgs") or [])})
+        self.add_edge(row_node, effect_node, "defines_global_effect", source=table)
+        self.add_alias(effect_id, effect_node, kind="global_effect_id", source=table)
+        domain_id = safe_key(row.get("domainId"))
+        if domain_id:
+            domain_node = self.add_node("gameplay_domain", domain_id, name=domain_id, source=table)
+            self.add_edge(effect_node, domain_node, "global_effect_domain", source=table, evidence="domainId")
+        for field in ("dps", "extraArgs"):
+            values = row.get(field) or []
+            if not isinstance(values, list):
+                continue
+            for index, value in enumerate(values):
+                param_node = self.add_node("global_effect_param", f"{effect_id}:{field}:{index}", name=f"{effect_id} {field} {index}", source=table, data=compact_payload(value, depth=2))
+                self.add_edge(effect_node, param_node, "global_effect_has_param", source=table, evidence=f"{field}[{index}]")
+
+    def add_potential_talent_effect_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        effect_id = safe_key(row.get("id") or row_key)
+        if not effect_id:
+            return
+        effect_node = self.add_node("potential_talent_effect", effect_id, name=effect_id, source=table, data={"id": effect_id, "description": table_text(row.get("desc")), "dataCount": len(row.get("dataList") or [])})
+        self.add_edge(row_node, effect_node, "defines_potential_talent_effect", source=table)
+        self.add_alias(effect_id, effect_node, kind="potential_talent_effect_id", source=table)
+        for index, entry in enumerate(row.get("dataList") or []):
+            if not isinstance(entry, dict):
+                continue
+            modify_type = entry.get("modifyType")
+            buff_data = entry.get("attachBuff") if isinstance(entry.get("attachBuff"), dict) else {}
+            buff_id = safe_key(buff_data.get("buffId"))
+            if buff_id:
+                buff_node = self.add_buff_ref_node(buff_id, source=table)
+                self.add_edge(effect_node, buff_node, "potential_talent_attaches_buff", source=table, evidence=f"dataList[{index}].attachBuff", data={"index": index, "modifyType": modify_type, "blackboardCount": len(buff_data.get("blackboard") or [])})
+            self.add_blackboard_edges(effect_node, buff_data.get("blackboard"), edge_kind="potential_talent_uses_blackboard_key", source=table, evidence_prefix=f"dataList[{index}].attachBuff.blackboard", context={"index": index, "modifyType": modify_type, "target": "buff", "buffId": buff_id})
+            attach_skill = entry.get("attachSkill") if isinstance(entry.get("attachSkill"), dict) else {}
+            attach_skill_id = safe_key(attach_skill.get("skillId") or Path(safe_key(attach_skill.get("skillPath"))).stem)
+            if attach_skill_id:
+                skill_node = self.add_gameplay_skill_ref_node(attach_skill_id, source=table, data={"skillPath": attach_skill.get("skillPath")})
+                self.add_edge(effect_node, skill_node, "potential_talent_attaches_skill", source=table, evidence=f"dataList[{index}].attachSkill", data={"index": index, "modifyType": modify_type, "skillPath": attach_skill.get("skillPath")})
+            skill_bb = entry.get("skillBbModifier") if isinstance(entry.get("skillBbModifier"), dict) else {}
+            skill_bb_id = safe_key(skill_bb.get("skillId"))
+            if skill_bb_id:
+                skill_node = self.add_gameplay_skill_ref_node(skill_bb_id, source=table)
+                self.add_edge(effect_node, skill_node, "potential_talent_modifies_skill_blackboard", source=table, evidence=f"dataList[{index}].skillBbModifier", data={"index": index, "modifyType": modify_type, "bbKey": skill_bb.get("bbKey"), "floatValue": skill_bb.get("floatValue"), "stringValue": skill_bb.get("stringValue")})
+                key_node = self.add_blackboard_key_node(skill_bb.get("bbKey"), source=table)
+                if key_node:
+                    self.add_edge(effect_node, key_node, "potential_talent_modifies_blackboard_key", source=table, evidence=f"dataList[{index}].skillBbModifier.bbKey", data={"index": index, "skillId": skill_bb_id, "floatValue": skill_bb.get("floatValue"), "stringValue": skill_bb.get("stringValue")})
+            skill_param = entry.get("skillParamModifier") if isinstance(entry.get("skillParamModifier"), dict) else {}
+            skill_param_id = safe_key(skill_param.get("skillId"))
+            if skill_param_id:
+                skill_node = self.add_gameplay_skill_ref_node(skill_param_id, source=table)
+                self.add_edge(effect_node, skill_node, "potential_talent_modifies_skill_param", source=table, evidence=f"dataList[{index}].skillParamModifier", data={"index": index, "modifyType": modify_type, "paramType": skill_param.get("paramType"), "paramValue": skill_param.get("paramValue")})
+            attr = entry.get("attrModifier") if isinstance(entry.get("attrModifier"), dict) else {}
+            if any(attr.get(key) not in (None, "", 0, 0.0) for key in ("attrType", "attrValue", "modifierType", "modifyAttributeType")):
+                attr_key = safe_key(attr.get("attrType"))
+                stat_node = self.add_node("gameplay_stat_property", attr_key, name=attr_key, source=table, data={"key": attr_key, "rawAttrType": attr.get("attrType")})
+                self.add_edge(effect_node, stat_node, "potential_talent_modifies_stat_property", source=table, evidence=f"dataList[{index}].attrModifier", data={"index": index, "modifyType": modify_type, "attrType": attr.get("attrType"), "attrValue": attr.get("attrValue"), "modifierType": attr.get("modifierType"), "modifyAttributeType": attr.get("modifyAttributeType")})
+                self.add_alias(attr_key, stat_node, kind="gameplay_stat_property_key", source=table)
+
+    def add_combat_semantic_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if not isinstance(row, dict):
+            return
+        if table == "BuffTable":
+            self.add_buff_table_edges(table, row_key, row, row_node)
+        elif table == "SkillPatchTable":
+            self.add_skill_patch_edges(table, row_key, row, row_node)
+        elif table == "UseItemTable":
+            self.add_use_item_edges(table, row_key, row, row_node)
+        elif table == "GeneralAbilityTable":
+            self.add_general_ability_edges(table, row_key, row, row_node)
+        elif table == "AbilityEntityAttrTable":
+            self.add_ability_entity_attr_edges(table, row_key, row, row_node)
+        elif table == "GlobalEffectTable":
+            self.add_global_effect_edges(table, row_key, row, row_node)
+        elif table == "PotentialTalentEffectTable":
+            self.add_potential_talent_effect_edges(table, row_key, row, row_node)
+
     def ingest_selected_structured_tables(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_tables_selected", path=slash(table_root))
@@ -3435,6 +3755,15 @@ QUERY_KIND_PRIORITY = {
     "enemy_tag": 17,
     "enemy_attribute_modifier": 18,
     "buff": 19,
+    "general_ability": 20,
+    "use_item_effect": 21,
+    "gameplay_skill_level": 22,
+    "skill_tag": 23,
+    "gameplay_blackboard_key": 24,
+    "ability_entity": 25,
+    "global_effect": 26,
+    "global_effect_param": 27,
+    "potential_talent_effect": 28,
     "factory_recipe": 20,
     "factory_item": 21,
     "factory_machine": 22,
@@ -3486,6 +3815,15 @@ NODE_ID_PREFIXES = (
     "enemy_tag",
     "enemy_attribute_modifier",
     "buff",
+    "general_ability",
+    "use_item_effect",
+    "gameplay_skill_level",
+    "skill_tag",
+    "gameplay_blackboard_key",
+    "ability_entity",
+    "global_effect",
+    "global_effect_param",
+    "potential_talent_effect",
     "factory_recipe",
     "factory_item",
     "factory_machine",
