@@ -312,6 +312,14 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_LevelGenForRuntime.json",
     "Json_UILevelMapLoadConfig.json",
 )
+GAMEPLAY_CONFIG_MAP_LEVEL_LOOKUP_PATHS = frozenset(
+    {
+        "Json/GameplayConfig/MapIdTable.json",
+        "Json/GameplayConfig/LevelBasicInfoTable.json",
+        "Json/GameplayConfig/LevelShortIdTable.json",
+        "Json/GameplayConfig/MapBriefInfoTable.json",
+    }
+)
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
     "AIConfigEnemyTemplateDataSummary",
@@ -326,6 +334,7 @@ DECODED_CONFIG_TARGET_TYPES = {
     "BuffData",
     "DialogIdTable",
     "GameplayConfigMissionAreaTable",
+    "GameplayConfigMapLevelLookups",
     "GameplayConfigWorldEntityRegistry",
     "GPUISystemConfigDamageText",
     "InteractiveTable",
@@ -2890,6 +2899,8 @@ class SourceGraphBuilder:
                     subtype = "AIConfigEnemyTemplateDataSummary"
                 if group_name == "Json_MapConfig.json":
                     subtype = "MapConfig"
+                if group_name == "Json_GameplayConfig.json" and safe_key(entry.get("dp")) in GAMEPLAY_CONFIG_MAP_LEVEL_LOOKUP_PATHS:
+                    subtype = "GameplayConfigMapLevelLookups"
                 if group_name == "Json_GameplayConfigScriptTaskExtraInfoTable.json":
                     subtype = "GameplayConfigScriptTaskExtraInfoTable"
                 if group_name == "Json_LevelMountPoint.json":
@@ -2924,6 +2935,8 @@ class SourceGraphBuilder:
             self.add_ai_config_enemy_template_summary_edges(file_node, entry)
         elif subtype == "MapConfig":
             self.add_map_config_edges(file_node, entry)
+        elif subtype == "GameplayConfigMapLevelLookups":
+            self.add_gameplay_config_map_level_lookup_edges(file_node, entry)
         elif subtype == "GameplayConfigScriptTaskExtraInfoTable":
             self.add_gameplay_script_task_extra_edges(file_node, entry)
         elif subtype == "LevelMountPoint":
@@ -4044,6 +4057,232 @@ class SourceGraphBuilder:
                 self.add_edge(config_node, state_node, "map_config_has_scene_state", source=source, evidence="sceneStateConditions")
                 state_nodes[state_name] = state_node
             self.add_map_config_condition_refs(state_node, condition_entry.get("condition"), source=source, evidence=f"sceneStateConditions[{condition_index}]", map_id=map_id)
+
+    def read_decoded_config_json_payload(self, entry: dict[str, Any]) -> Any:
+        raw_data = self.read_decoded_config_bytes(entry)
+        if not raw_data:
+            return None
+        try:
+            return json.loads(raw_data.decode("utf-8-sig"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return None
+
+    def gameplay_config_map_num_to_str(self, entry: dict[str, Any]) -> dict[str, str]:
+        map_id_path = self.decoded_config_raw_path(entry).with_name("MapIdTable.json")
+        payload = read_json(map_id_path, {})
+        if not isinstance(payload, dict):
+            return {}
+        mapping = payload.get("mapIdNumToStr")
+        if not isinstance(mapping, dict):
+            return {}
+        return {safe_key(num): safe_key(map_id) for num, map_id in mapping.items() if safe_key(num) and safe_key(map_id)}
+
+    def add_gameplay_map_id_table_edges(self, file_node: str, entry: dict[str, Any], payload: dict[str, Any], *, source: str, source_id: str) -> None:
+        map_ids = {safe_key(value) for value in payload.get("mapIds") or [] if safe_key(value)}
+        str_to_num = payload.get("mapIdStrToNum") if isinstance(payload.get("mapIdStrToNum"), dict) else {}
+        num_to_str = payload.get("mapIdNumToStr") if isinstance(payload.get("mapIdNumToStr"), dict) else {}
+        for map_id in str_to_num:
+            map_key = safe_key(map_id)
+            if map_key:
+                map_ids.add(map_key)
+        for map_id in num_to_str.values():
+            map_key = safe_key(map_id)
+            if map_key:
+                map_ids.add(map_key)
+        self.update_node_details(
+            file_node,
+            data=compact_payload({**self.decoded_config_entry_data(entry), "mapIdCount": len(map_ids), "numericIdCount": max(len(str_to_num), len(num_to_str))}, depth=3),
+        )
+        numeric_by_map = {safe_key(map_id): value for map_id, value in str_to_num.items() if safe_key(map_id)}
+        for num_id, map_id in num_to_str.items():
+            map_key = safe_key(map_id)
+            if map_key and map_key not in numeric_by_map:
+                numeric_by_map[map_key] = num_id
+        for map_id in sorted(map_ids):
+            map_node = self.add_map_node(map_id, source=source)
+            num_id = numeric_by_map.get(map_id)
+            num_key = safe_key(num_id)
+            if num_key:
+                self.add_alias(num_key, map_node, kind="map_numeric_id", source=source)
+            self.add_edge(
+                file_node,
+                map_node,
+                "gameplay_config_map_id_table_defines_map",
+                source=source,
+                evidence=safe_key(entry.get("dp")),
+                data={"source": source_id, "mapIdNum": num_id},
+            )
+
+    def add_gameplay_level_basic_info_edges(self, file_node: str, entry: dict[str, Any], payload: dict[str, Any], *, source: str, source_id: str) -> None:
+        rows = [(safe_key(key), value) for key, value in payload.items() if safe_key(key) and isinstance(value, dict)]
+        self.update_node_details(file_node, data=compact_payload({**self.decoded_config_entry_data(entry), "levelCount": len(rows)}, depth=3))
+        for row_key, row in sorted(rows, key=lambda item: item[0]):
+            level_id = safe_key(row.get("id") or row_key)
+            if not level_id:
+                continue
+            info_data = compact_payload(
+                {
+                    "id": level_id,
+                    "idNum": row.get("idNum"),
+                    "levelType": row.get("levelType"),
+                    "configPath": row.get("configPath"),
+                    "mapUI": row.get("mapUI"),
+                    "regionUI": row.get("regionUI"),
+                    "facArea": row.get("facArea"),
+                    "scope": row.get("scope"),
+                    "domainName": row.get("domainName"),
+                    "source": source_id,
+                },
+                depth=3,
+            )
+            info_node = self.add_node("level_basic_info", level_id, name=level_id, source=source, data=info_data)
+            level_node = self.add_level_node(level_id, source=source)
+            self.add_alias(level_id, info_node, kind="level_basic_info_id", source=source)
+            id_num = safe_key(row.get("idNum"))
+            if id_num:
+                self.add_alias(id_num, info_node, kind="level_basic_info_numeric_id", source=source)
+                self.add_alias(id_num, level_node, kind="level_numeric_id", source=source)
+            self.add_edge(file_node, info_node, "defines_level_basic_info", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id})
+            self.add_edge(info_node, level_node, "level_basic_info_for_level", source=source, evidence="id")
+            self.add_level_map_edge(level_node, level_id, source=source, evidence="LevelBasicInfoTable.id")
+            config_path = safe_key(row.get("configPath"))
+            if config_path:
+                config_node = self.add_node("level_config", level_id, name=level_id, source=source, path=config_path)
+                self.add_alias(config_path, config_node, kind="level_config_path", source=source)
+                self.add_edge(info_node, config_node, "level_basic_info_uses_level_config", source=source, evidence="configPath")
+            domain_name = safe_key(row.get("domainName"))
+            if domain_name:
+                domain_node = self.add_node("map_domain", domain_name, name=domain_name, source=source)
+                self.add_alias(domain_name, domain_node, kind="map_domain_name", source=source)
+                self.add_edge(info_node, domain_node, "level_basic_info_in_domain", source=source, evidence="domainName")
+            map_ui = safe_key(row.get("mapUI"))
+            if map_ui:
+                ui_node = self.add_node("ui_level_map_config", map_ui, name=map_ui, source=source)
+                self.add_alias(map_ui, ui_node, kind="ui_level_map_config_id", source=source)
+                self.add_edge(info_node, ui_node, "level_basic_info_has_map_ui", source=source, evidence="mapUI")
+            region_ui = safe_key(row.get("regionUI"))
+            if region_ui:
+                region_node = self.add_node("ui_map_region_info", region_ui, name=region_ui, source=source)
+                self.add_alias(region_ui, region_node, kind="ui_map_region_info_id", source=source)
+                self.add_edge(info_node, region_node, "level_basic_info_has_region_ui", source=source, evidence="regionUI")
+            fac_area = safe_key(row.get("facArea"))
+            if fac_area:
+                area_node = self.add_node("factory_area", fac_area, name=fac_area, source=source)
+                self.add_alias(fac_area, area_node, kind="factory_area_id", source=source)
+                self.add_edge(info_node, area_node, "level_basic_info_has_factory_area", source=source, evidence="facArea")
+
+    def add_gameplay_level_short_id_edges(self, file_node: str, entry: dict[str, Any], payload: dict[str, Any], *, source: str, source_id: str) -> None:
+        rows = [(safe_key(key), value) for key, value in payload.items() if safe_key(key) and isinstance(value, dict)]
+        short_count = sum(len(row.get("ids") or {}) for _, row in rows if isinstance(row.get("ids"), dict))
+        self.update_node_details(file_node, data=compact_payload({**self.decoded_config_entry_data(entry), "sceneCount": len(rows), "shortIdCount": short_count}, depth=3))
+        for scene_key, row in sorted(rows, key=lambda item: item[0]):
+            scene_name = safe_key(row.get("sceneName") or scene_key)
+            if not scene_name:
+                continue
+            scene_node = self.add_node("level_short_id_scene", scene_name, name=scene_name, source=source, data={"sceneName": scene_name, "shortIdCount": len(row.get("ids") or {}), "source": source_id})
+            self.add_alias(scene_name, scene_node, kind="level_short_id_scene", source=source)
+            self.add_edge(file_node, scene_node, "defines_level_short_id_scene", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id})
+            level_node = self.add_level_node(scene_name, source=source)
+            self.add_edge(scene_node, level_node, "level_short_id_scene_for_level", source=source, evidence="sceneName")
+            self.add_level_map_edge(level_node, scene_name, source=source, evidence="LevelShortIdTable.sceneName")
+            reverse_ids = row.get("reverseIds") if isinstance(row.get("reverseIds"), dict) else {}
+            ids = row.get("ids") if isinstance(row.get("ids"), dict) else {}
+            for short_raw, numeric_raw in sorted(ids.items(), key=lambda item: safe_key(item[0])):
+                short_id = safe_key(short_raw)
+                numeric_id = safe_key(numeric_raw)
+                if not short_id:
+                    continue
+                short_node_key = f"{scene_name}:{short_id}"
+                short_node = self.add_node(
+                    "level_short_id",
+                    short_node_key,
+                    name=short_id,
+                    source=source,
+                    data={"sceneName": scene_name, "shortId": short_id, "numericId": numeric_id, "reverseShortId": reverse_ids.get(str(numeric_raw)) or reverse_ids.get(numeric_id)},
+                )
+                self.add_alias(short_node_key, short_node, kind="level_short_id_key", source=source)
+                self.add_alias(f"{scene_name}:{numeric_id}", short_node, kind="level_short_numeric_id_key", source=source)
+                self.add_edge(scene_node, short_node, "level_short_id_scene_has_short_id", source=source, evidence="ids", data={"source": source_id, "numericId": numeric_id})
+
+    def add_gameplay_map_brief_info_edges(self, file_node: str, entry: dict[str, Any], payload: dict[str, Any], *, source: str, source_id: str) -> None:
+        map_table = payload.get("mapTable") if isinstance(payload.get("mapTable"), dict) else {}
+        num_to_str = self.gameplay_config_map_num_to_str(entry)
+        sublevel_count = 0
+        enemy_ref_count = 0
+        for row in map_table.values():
+            if not isinstance(row, dict):
+                continue
+            sub_table = row.get("subLevelTable") if isinstance(row.get("subLevelTable"), dict) else {}
+            sublevel_count += len(sub_table)
+            for sub_row in sub_table.values():
+                if isinstance(sub_row, dict):
+                    enemy_ref_count += len(sub_row.get("enemyIdSet") or [])
+        self.update_node_details(
+            file_node,
+            data=compact_payload({**self.decoded_config_entry_data(entry), "mapRowCount": len(map_table), "subLevelCount": sublevel_count, "enemyRefCount": enemy_ref_count}, depth=3),
+        )
+        for map_num_raw, row in sorted(map_table.items(), key=lambda item: safe_key(item[0])):
+            if not isinstance(row, dict):
+                continue
+            map_num = safe_key(map_num_raw)
+            map_id = num_to_str.get(map_num, "")
+            map_key = map_id or f"mapnum_{map_num}"
+            brief_node = self.add_node(
+                "map_brief_info",
+                map_key,
+                name=map_id or map_num,
+                source=source,
+                data={"mapId": map_id, "mapIdNum": map_num, "subLevelCount": len(row.get("subLevelTable") or {}), "source": source_id},
+            )
+            self.add_alias(map_key, brief_node, kind="map_brief_info_id", source=source)
+            self.add_alias(map_num, brief_node, kind="map_brief_numeric_map_id", source=source)
+            self.add_edge(file_node, brief_node, "defines_map_brief_info", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id})
+            map_node = self.add_map_node(map_id, source=source) if map_id else ""
+            if map_node:
+                self.add_alias(map_num, map_node, kind="map_numeric_id", source=source)
+                self.add_edge(brief_node, map_node, "map_brief_info_for_map", source=source, evidence="mapIdNumToStr", data={"mapIdNum": map_num})
+            sub_table = row.get("subLevelTable") if isinstance(row.get("subLevelTable"), dict) else {}
+            for sub_id_raw, sub_row in sorted(sub_table.items(), key=lambda item: safe_key(item[0])):
+                if not isinstance(sub_row, dict):
+                    continue
+                sub_id = safe_key(sub_id_raw)
+                if not sub_id:
+                    continue
+                parent_id = safe_key(sub_row.get("subDataParentId"))
+                sub_node_key = f"{map_key}:{sub_id}"
+                enemies = [safe_key(enemy_id) for enemy_id in (sub_row.get("enemyIdSet") or []) if safe_key(enemy_id)]
+                sub_node = self.add_node(
+                    "map_sublevel_brief",
+                    sub_node_key,
+                    name=sub_id,
+                    source=source,
+                    data={"mapId": map_id, "mapIdNum": map_num, "subLevelId": sub_id, "subDataParentId": parent_id, "enemyCount": len(enemies), "source": source_id},
+                )
+                self.add_alias(sub_node_key, sub_node, kind="map_sublevel_brief_id", source=source)
+                self.add_alias(f"{map_key}:{parent_id}", sub_node, kind="map_sublevel_parent_id", source=source)
+                self.add_edge(brief_node, sub_node, "map_brief_info_has_sublevel", source=source, evidence="subLevelTable", data={"subDataParentId": parent_id})
+                if map_node:
+                    self.add_edge(sub_node, map_node, "map_sublevel_brief_in_map", source=source, evidence="mapIdNum")
+                for enemy_index, enemy_id in enumerate(enemies):
+                    enemy_node = self.add_node("enemy", enemy_id, name=enemy_id, source=source)
+                    self.add_alias(enemy_id, enemy_node, kind="enemy_id", source=source)
+                    self.add_edge(sub_node, enemy_node, "map_sublevel_brief_has_enemy", source=source, evidence=f"enemyIdSet[{enemy_index}]", data={"mapId": map_id, "mapIdNum": map_num, "subLevelId": sub_id})
+
+    def add_gameplay_config_map_level_lookup_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        payload = self.read_decoded_config_json_payload(entry)
+        if not isinstance(payload, dict):
+            return
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        table_name = Path(safe_key(entry.get("dp"))).name
+        if table_name == "MapIdTable.json":
+            self.add_gameplay_map_id_table_edges(file_node, entry, payload, source=source, source_id=source_id)
+        elif table_name == "LevelBasicInfoTable.json":
+            self.add_gameplay_level_basic_info_edges(file_node, entry, payload, source=source, source_id=source_id)
+        elif table_name == "LevelShortIdTable.json":
+            self.add_gameplay_level_short_id_edges(file_node, entry, payload, source=source, source_id=source_id)
+        elif table_name == "MapBriefInfoTable.json":
+            self.add_gameplay_map_brief_info_edges(file_node, entry, payload, source=source, source_id=source_id)
 
     def script_task_extra_text_key(self, payload: Any) -> str:
         if isinstance(payload, dict):
@@ -12750,6 +12989,13 @@ QUERY_KIND_PRIORITY = {
     "ui_map_static_element": 139,
     "ui_map_static_element_type": 140,
     "ui_map_tier_name": 141,
+    "level_basic_info": 142,
+    "level_short_id_scene": 143,
+    "level_short_id": 144,
+    "map_brief_info": 145,
+    "map_sublevel_brief": 146,
+    "ui_map_region_info": 147,
+    "factory_area": 148,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -13051,6 +13297,13 @@ NODE_ID_PREFIXES = (
     "ui_map_static_element",
     "ui_map_static_element_type",
     "ui_map_tier_name",
+    "level_basic_info",
+    "level_short_id_scene",
+    "level_short_id",
+    "map_brief_info",
+    "map_sublevel_brief",
+    "ui_map_region_info",
+    "factory_area",
     "mission",
     "map",
     "level",
