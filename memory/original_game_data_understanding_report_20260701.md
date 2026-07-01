@@ -719,8 +719,8 @@ runtime combat formula or modifier-order reconstruction.
 2026-07-01 source graph progress: `tools/endfield_source_graph.py` now ingests
 the generated Gameplay payload, a pre-Gameplay item/economy table pass, an early
 world/map table pass, a pre-Gameplay combat semantics pass, selected structured
-factory tables, and Spaceship/base tables as evidence graph nodes and
-relationships. A fast CN
+factory tables, Spaceship/base tables, and Activity/Achievement/SystemJump
+tables as evidence graph nodes and relationships. A fast CN
 verification build with `--skip-asset-maps --skip-reference-rows
 --skip-followups` produced 72 weapon nodes, 220 equipment nodes, 30 character
 nodes, 290 enemy nodes, 78 enemy template nodes, 98 enemy attribute-template
@@ -750,8 +750,10 @@ separate visible Gameplay entries. Exact queries such as `chr_0017_yvonne`,
 `dung_aglina_chartrain01`, `attr_1`,
 `component_activity_xiranite_cmpt_1`, `aglina_base01_lv001`,
 `spaceship_skill_chr_0004_pelica_1_1`,
-`growcabin_plant_crylplant_1_1`, and `envEmoji_common_adaptationwork` now
-resolve to semantic nodes with source table rows and neighbors. This improves
+`growcabin_plant_crylplant_1_1`, `envEmoji_common_adaptationwork`,
+`activity_weekly_task_1`, `week10_task1`, `achv_adv_tundra_box`, and
+`jump_activity_conditional_multistage_1` now resolve to semantic nodes with
+source table rows and neighbors. This improves
 cross-domain lookup; it still does not prove formulas beyond generated
 source-table evidence.
 
@@ -792,8 +794,25 @@ attrs, 15 room levels, 6 empty rooms, 38 formulas, 7 clues, 1,704 EnvTalk nodes,
 516 I18n text ref nodes, 52 proxy-to-character edges, 234 behavior EnvTalk
 edges, 108 character skill refs, 140 skill-to-room-type refs, 31 room-level item
 costs, 23 formula unlocks, 68 formula item edges, 2,537 EnvTalk audio refs, and
-1,046 I18n text-use edges. Descartes scout identified Activity/Achievement plus
-SystemJump as the next compact graph slice.
+1,046 I18n text-use edges. The scouted Activity/Achievement plus SystemJump
+slice has since landed below.
+
+2026-07-01 source graph Activity/Achievement/SystemJump progress: root
+activities, activity tags, activity conditions, weekly and multistage tasks,
+activity stages, milestones, banners, push bubbles, achievement
+categories/groups, achievements, achievement levels, achievement conditions,
+achievement statistic rows, and authored system jumps are now queryable. The
+corrected fast CN rebuild verified 600 authored system-jump definitions, 64
+authored activity definitions, 23 activity tags, 300 activity conditions, 276
+activity tasks, 150 activity stages, 5 milestones, 18 banners, 34 push bubbles,
+8 achievement categories, 12 groups, 114 achievements, 156 achievement levels,
+200 achievement conditions, 3 achievement statistic rows, 63 activity-tag edges,
+276 activity-task edges, 350 activity-stage edges, 332 stage reward edges, 156
+achievement-level edges, 200 level-condition edges, 66 jump-to-activity edges,
+16 jump-to-factory-tech edges, and 50 jump-to-manual-craft-unlock edges. Averroes
+scout identified factory tech-tree/unlock bridge as the next compact graph
+slice, with expected local evidence around tech prerequisites, machine-to-tech
+links, blueprint/building links, renderer templates, and manual-craft unlocks.
 
 2026-07-01 source graph item/economy progress: item, reward, reward-drop, and
 shop table semantics are now queryable before Gameplay ingestion. A fast source
