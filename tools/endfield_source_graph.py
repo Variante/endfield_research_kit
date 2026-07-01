@@ -11,9 +11,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 import sqlite3
+import struct
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -267,6 +269,20 @@ DIALOG_SUPPORT_TABLES = (
     "DialogOptionTable.json",
     "DomainDepotDeliverTargetDialogTable.json",
 )
+DECODED_CONFIG_GROUP_FILES = (
+    "Json_GameplayConfig.json",
+    "Json_NonGeneratedConfigs.json",
+    "Json_Interactive.json",
+    "Json_GameplayConfigWorldEntityRegistry.json",
+)
+DECODED_CONFIG_TARGET_TYPES = {
+    "GameplayConfigWorldEntityRegistry",
+    "InteractiveTable",
+    "InteractiveTemplateData",
+    "ModelRadiusTable",
+    "ModelTable",
+}
+MEMORYPACK_NULL_COUNT = 0xFFFFFFFF
 ACTIVITY_ACHIEVEMENT_TABLES = (
     "SystemJumpTable.json",
     "ActivityTagTable.json",
@@ -373,6 +389,210 @@ def compact_payload(value: Any, *, depth: int = 2, list_limit: int = 12) -> Any:
     if isinstance(value, str):
         return compact_text(value, 500)
     return value
+
+
+def parse_summary_assignments(summary: Any) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for part in str(summary or "").split(";"):
+        if "=" not in part:
+            continue
+        key, value = part.strip().split("=", 1)
+        key = key.strip()
+        if key:
+            out[key] = value.strip()
+    return out
+
+
+def mp_read_u32(data: bytes, offset: int, field_name: str, *, max_count: int = 50_000) -> tuple[int, int]:
+    if offset + 4 > len(data):
+        raise ValueError(f"{field_name}:truncated-count")
+    count = struct.unpack_from("<I", data, offset)[0]
+    offset += 4
+    if count == MEMORYPACK_NULL_COUNT:
+        raise ValueError(f"{field_name}:null-count")
+    if count > max_count:
+        raise ValueError(f"{field_name}:invalid-count={count}")
+    return count, offset
+
+
+def mp_read_utf8_string(data: bytes, offset: int, field_name: str, *, max_length: int = 16_384) -> tuple[str | None, int]:
+    if offset + 4 > len(data):
+        raise ValueError(f"{field_name}:truncated-length")
+    length = struct.unpack_from("<I", data, offset)[0]
+    offset += 4
+    if length == MEMORYPACK_NULL_COUNT:
+        return None, offset
+    if length > max_length or offset + length > len(data):
+        raise ValueError(f"{field_name}:invalid-length={length}")
+    raw = data[offset:offset + length]
+    offset += length
+    return raw.decode("utf-8", "replace"), offset
+
+
+def mp_read_required_string(data: bytes, offset: int, field_name: str, *, max_length: int = 16_384) -> tuple[str, int]:
+    value, offset = mp_read_utf8_string(data, offset, field_name, max_length=max_length)
+    if value is None:
+        raise ValueError(f"{field_name}:null-string")
+    return value, offset
+
+
+def mp_read_i32(data: bytes, offset: int, field_name: str) -> tuple[int, int]:
+    if offset + 4 > len(data):
+        raise ValueError(f"{field_name}:truncated-i32")
+    return struct.unpack_from("<i", data, offset)[0], offset + 4
+
+
+def mp_read_u64(data: bytes, offset: int, field_name: str) -> tuple[int, int]:
+    if offset + 8 > len(data):
+        raise ValueError(f"{field_name}:truncated-u64")
+    return struct.unpack_from("<Q", data, offset)[0], offset + 8
+
+
+def mp_read_f32(data: bytes, offset: int, field_name: str) -> tuple[float, int]:
+    if offset + 4 > len(data):
+        raise ValueError(f"{field_name}:truncated-f32")
+    value = struct.unpack_from("<f", data, offset)[0]
+    if not math.isfinite(value):
+        raise ValueError(f"{field_name}:non-finite")
+    return value, offset + 4
+
+
+def mp_read_vec3(data: bytes, offset: int, field_name: str) -> tuple[list[float], int]:
+    values: list[float] = []
+    for axis in range(3):
+        value, offset = mp_read_f32(data, offset, f"{field_name}[{axis}]")
+        if abs(value) > 1_000_000:
+            raise ValueError(f"{field_name}[{axis}]:out-of-range")
+        values.append(round(value, 6))
+    return values, offset
+
+
+def extract_model_table_rows(data: bytes) -> dict[str, Any] | None:
+    if not data or data[0] != 2:
+        return None
+    try:
+        offset = 1
+        model_count, offset = mp_read_u32(data, offset, "modelDict", max_count=10_000)
+        rows: list[dict[str, Any]] = []
+        for index in range(model_count):
+            model_id, offset = mp_read_required_string(data, offset, f"modelDict[{index}].key", max_length=512)
+            if offset >= len(data):
+                raise ValueError(f"modelDict[{index}].memberCount:truncated")
+            member_count = data[offset]
+            offset += 1
+            if member_count != 6:
+                raise ValueError(f"modelDict[{index}].memberCount={member_count}")
+            alt_model_id, offset = mp_read_utf8_string(data, offset, f"modelDict[{index}].altModelId", max_length=512)
+            if offset >= len(data):
+                raise ValueError(f"modelDict[{index}].flag:truncated")
+            flag = data[offset]
+            offset += 1
+            duplicate_model_id, offset = mp_read_required_string(data, offset, f"modelDict[{index}].duplicateModelId", max_length=512)
+            prefab_path, offset = mp_read_required_string(data, offset, f"modelDict[{index}].prefabPath", max_length=2048)
+            scale, offset = mp_read_f32(data, offset, f"modelDict[{index}].scale")
+            tail_int, offset = mp_read_i32(data, offset, f"modelDict[{index}].tailInt")
+            rows.append({
+                "modelId": model_id,
+                "altModelId": alt_model_id,
+                "flag": flag,
+                "duplicateModelId": duplicate_model_id,
+                "prefabPath": prefab_path,
+                "scale": round(scale, 6),
+                "tailInt": tail_int,
+            })
+        layout_count = None
+        if offset + 4 <= len(data):
+            layout_count = struct.unpack_from("<I", data, offset)[0]
+        return {"modelCount": model_count, "layoutCountFromHeader": layout_count, "modelRows": rows}
+    except (ValueError, struct.error):
+        return None
+
+
+def extract_model_radius_rows(data: bytes) -> dict[str, Any] | None:
+    if not data or data[0] != 1:
+        return None
+    try:
+        offset = 1
+        entry_count, offset = mp_read_u32(data, offset, "ModelRadiusTable", max_count=50_000)
+        rows: list[dict[str, Any]] = []
+        for index in range(entry_count):
+            model_id, offset = mp_read_required_string(data, offset, f"ModelRadiusTable[{index}].key", max_length=512)
+            if offset >= len(data):
+                raise ValueError(f"ModelRadiusTable[{index}].memberCount:truncated")
+            member_count = data[offset]
+            offset += 1
+            if member_count != 4:
+                raise ValueError(f"ModelRadiusTable[{index}].memberCount={member_count}")
+            field0, offset = mp_read_i32(data, offset, f"ModelRadiusTable[{index}].field0")
+            if offset >= len(data):
+                raise ValueError(f"ModelRadiusTable[{index}].flagByte:truncated")
+            flag_byte = data[offset]
+            offset += 1
+            field2, offset = mp_read_i32(data, offset, f"ModelRadiusTable[{index}].field2")
+            radius, offset = mp_read_f32(data, offset, f"ModelRadiusTable[{index}].radius")
+            rows.append({"modelId": model_id, "field0": field0, "flagByte": flag_byte, "field2": field2, "radius": round(radius, 6)})
+        if offset != len(data):
+            raise ValueError("ModelRadiusTable:trailing-bytes")
+        return {"rowCount": entry_count, "rows": rows}
+    except (ValueError, struct.error):
+        return None
+
+
+def extract_interactive_table_rows(data: bytes) -> dict[str, Any] | None:
+    if not data or data[0] != 2:
+        return None
+    try:
+        offset = 1
+        core_count, offset = mp_read_u32(data, offset, "coreTemplatePathDict", max_count=10_000)
+        core_rows: list[dict[str, Any]] = []
+        for index in range(core_count):
+            template_id, offset = mp_read_required_string(data, offset, f"coreTemplatePathDict[{index}].key", max_length=512)
+            template_path, offset = mp_read_required_string(data, offset, f"coreTemplatePathDict[{index}].value", max_length=2048)
+            core_rows.append({"templateId": template_id, "templatePath": template_path})
+        interactive_count, offset = mp_read_u32(data, offset, "interactiveDataDict", max_count=50_000)
+        interactive_rows: list[dict[str, Any]] = []
+        for index in range(interactive_count):
+            object_id, offset = mp_read_required_string(data, offset, f"interactiveDataDict[{index}].key", max_length=512)
+            if offset >= len(data):
+                raise ValueError(f"interactiveDataDict[{index}].memberCount:truncated")
+            member_count = data[offset]
+            offset += 1
+            template_id, offset = mp_read_required_string(data, offset, f"interactiveDataDict[{index}].templateId", max_length=512)
+            interactive_rows.append({"objectId": object_id, "valueMemberCount": member_count, "templateId": template_id})
+        if offset != len(data):
+            raise ValueError("InteractiveTable:trailing-bytes")
+        return {"coreTemplateCount": core_count, "interactiveDataCount": interactive_count, "coreRows": core_rows, "interactiveRows": interactive_rows}
+    except (ValueError, struct.error):
+        return None
+
+
+def extract_world_entity_brief_rows(data: bytes) -> dict[str, Any] | None:
+    if not data or data[0] != 4:
+        return None
+    try:
+        offset = 1
+        empty_field_1, offset = mp_read_u32(data, offset, "emptyField1", max_count=1)
+        empty_field_2, offset = mp_read_u32(data, offset, "emptyField2", max_count=1)
+        if empty_field_1 or empty_field_2:
+            raise ValueError("WorldEntityRegistry:expected-empty-prefix")
+        brief_count, offset = mp_read_u32(data, offset, "worldEntityBriefInfos", max_count=20_000)
+        rows: list[dict[str, Any]] = []
+        for index in range(brief_count):
+            entity_id, offset = mp_read_u64(data, offset, f"worldEntityBriefInfos[{index}].key")
+            if offset >= len(data):
+                raise ValueError(f"worldEntityBriefInfos[{index}].memberCount:truncated")
+            member_count = data[offset]
+            offset += 1
+            if member_count != 4:
+                raise ValueError(f"worldEntityBriefInfos[{index}].memberCount={member_count}")
+            detail_id, offset = mp_read_utf8_string(data, offset, f"worldEntityBriefInfos[{index}].detailId", max_length=512)
+            entity_type, offset = mp_read_i32(data, offset, f"worldEntityBriefInfos[{index}].entityType")
+            position, offset = mp_read_vec3(data, offset, f"worldEntityBriefInfos[{index}].position")
+            rotation, offset = mp_read_vec3(data, offset, f"worldEntityBriefInfos[{index}].rotation")
+            rows.append({"entityId": str(entity_id), "detailId": detail_id, "entityType": entity_type, "position": position, "rotation": rotation})
+        return {"briefCount": brief_count, "briefRows": rows}
+    except (ValueError, struct.error):
+        return None
 
 
 def _unique_preserve(values: Iterable[Any]) -> list[Any]:
@@ -677,6 +897,8 @@ class SourceGraphBuilder:
             self.db.execute("INSERT INTO meta(key, value) VALUES (?, ?)", ("language", self.language))
             self.ingest_assets()
             self.commit_step("assets")
+            self.ingest_decoded_config_semantics()
+            self.commit_step("decodedConfigs")
             self.ingest_videos()
             self.commit_step("videos")
             self.ingest_webui_story()
@@ -1013,6 +1235,264 @@ class SourceGraphBuilder:
                     evidence=safe_key(texture_info.get("evidence")) if isinstance(texture_info, dict) else Path(texture_rel).stem,
                     data=texture_data,
                 )
+
+    def decoded_config_entry_data(self, entry: dict[str, Any]) -> dict[str, Any]:
+        return compact_payload(
+            {
+                "path": entry.get("p"),
+                "dataPath": entry.get("dp"),
+                "source": entry.get("source"),
+                "domain": entry.get("d"),
+                "group": entry.get("g"),
+                "kind": entry.get("k"),
+                "subtype": entry.get("q"),
+                "summary": entry.get("h"),
+                "rows": entry.get("r"),
+                "fields": entry.get("a"),
+                "sample": entry.get("t"),
+                "hash": entry.get("hash"),
+                "size": entry.get("s"),
+            },
+            depth=3,
+        )
+
+    def decoded_config_raw_path(self, entry: dict[str, Any]) -> Path:
+        rel = safe_key(entry.get("p"))
+        return EXPORT_ROOT / "structured" / Path(rel)
+
+    def read_decoded_config_bytes(self, entry: dict[str, Any]) -> bytes:
+        path = self.decoded_config_raw_path(entry)
+        try:
+            return path.read_bytes()
+        except OSError:
+            return b""
+
+    def add_model_asset_entity_edges(self, owner_node: str, tokens: Iterable[Any], *, edge_kind: str, source: str, evidence: str) -> None:
+        seen_entities: set[str] = set()
+        for token in tokens:
+            token_key = safe_key(token)
+            if not token_key:
+                continue
+            candidate_bases = _unique_preserve(
+                normalized_model_entity_base(value)
+                for value in (token_key, Path(token_key).stem)
+                if safe_key(value)
+            )
+            for base in candidate_bases:
+                if not base:
+                    continue
+                entity_nodes = list(self.asset_entities_by_base.get(base, []))
+                if not entity_nodes:
+                    for model_base, nodes in sorted(self.asset_entities_by_base.items()):
+                        if model_base.startswith(f"{base}_"):
+                            entity_nodes.extend(nodes)
+                for entity_node in entity_nodes:
+                    if entity_node in seen_entities:
+                        continue
+                    seen_entities.add(entity_node)
+                    self.add_edge(
+                        owner_node,
+                        entity_node,
+                        edge_kind,
+                        source=source,
+                        evidence=evidence,
+                        data={"token": token_key, "modelBase": node_key(entity_node)},
+                    )
+
+    def ingest_decoded_config_semantics(self) -> None:
+        group_root = WEBUI_DATA / "game_data" / "groups"
+        dataset = self.add_node("dataset", "webui_game_data_decoded_configs", name="WebUI decoded game-data configs", path=slash(group_root))
+        for group_name in DECODED_CONFIG_GROUP_FILES:
+            group_path = group_root / group_name
+            payload = read_json(group_path, {})
+            entries = payload.get("entries") if isinstance(payload, dict) else None
+            if not isinstance(entries, list):
+                continue
+            group_key = Path(group_name).stem
+            group_node = self.add_node(
+                "decoded_config_group",
+                group_key,
+                name=group_key,
+                source="webui/game_data",
+                path=slash(group_path),
+                data={"entryCount": len(entries), "group": payload.get("group") if isinstance(payload, dict) else group_key},
+            )
+            self.add_edge(dataset, group_node, "has_decoded_config_group", source="webui/game_data")
+            self.add_file(slash(group_path), kind="webui_game_data_group", source="webui/game_data", data={"entryCount": len(entries)})
+            for entry in entries:
+                if not isinstance(entry, dict):
+                    continue
+                subtype = safe_key(entry.get("q") or entry.get("g"))
+                if subtype not in DECODED_CONFIG_TARGET_TYPES:
+                    continue
+                self.add_decoded_config_entry(group_node, entry, subtype=subtype)
+
+    def add_decoded_config_entry(self, group_node: str, entry: dict[str, Any], *, subtype: str) -> None:
+        entry_path = safe_key(entry.get("p"))
+        if not entry_path:
+            return
+        file_node = self.add_node(
+            "decoded_config_file",
+            entry_path,
+            name=Path(entry_path).name,
+            source="webui/game_data",
+            path=entry_path,
+            data=self.decoded_config_entry_data(entry),
+        )
+        self.add_edge(group_node, file_node, "has_decoded_config_file", source="webui/game_data", evidence=subtype)
+        self.add_alias(entry.get("dp"), file_node, kind="decoded_config_path", source="webui/game_data")
+        self.add_alias(entry_path, file_node, kind="decoded_config_path", source="webui/game_data")
+        self.add_file(entry_path, kind="decoded_game_data", source=safe_key(entry.get("source")) or "webui/game_data", size=entry.get("s"), data={"subtype": subtype, "rows": entry.get("r"), "hash": entry.get("hash")})
+        family_node = self.add_node("decoded_config_family", subtype, name=subtype, source="webui/game_data")
+        self.add_edge(file_node, family_node, "decoded_as_config_family", source="webui/game_data", evidence=safe_key(entry.get("q")))
+        if subtype == "ModelTable":
+            self.add_model_table_config_edges(file_node, entry)
+        elif subtype == "ModelRadiusTable":
+            self.add_model_radius_config_edges(file_node, entry)
+        elif subtype == "InteractiveTable":
+            self.add_interactive_table_config_edges(file_node, entry)
+        elif subtype == "InteractiveTemplateData":
+            self.add_interactive_template_data_edges(file_node, entry)
+        elif subtype == "GameplayConfigWorldEntityRegistry":
+            self.add_world_entity_registry_edges(file_node, entry)
+
+    def add_model_table_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        config_key = safe_key(entry.get("p"))
+        config_node = self.add_node("model_config", config_key, name=Path(config_key).name, source="webui/game_data", path=config_key, data=self.decoded_config_entry_data(entry))
+        self.add_edge(file_node, config_node, "defines_model_config", source="webui/game_data")
+        decoded = extract_model_table_rows(self.read_decoded_config_bytes(entry))
+        if not decoded:
+            return
+        self.update_node_details(config_node, data={**self.decoded_config_entry_data(entry), "modelCountParsed": decoded.get("modelCount"), "layoutCountFromHeader": decoded.get("layoutCountFromHeader")})
+        for row in decoded.get("modelRows") or []:
+            model_id = safe_key(row.get("modelId"))
+            if not model_id:
+                continue
+            model_node = self.add_node("model_config_model", model_id, name=model_id, source="webui/game_data", data=compact_payload(row, depth=2))
+            self.add_edge(config_node, model_node, "model_config_has_model", source="webui/game_data", evidence=safe_key(entry.get("dp")), data=compact_payload(row, depth=1))
+            self.add_alias(model_id, model_node, kind="model_id", source="webui/game_data")
+            prefab_path = safe_key(row.get("prefabPath"))
+            if prefab_path:
+                self.add_alias(prefab_path, model_node, kind="prefab_path", source="webui/game_data")
+                self.add_alias(Path(prefab_path).stem, model_node, kind="model_name", source="webui/game_data")
+            self.add_model_asset_entity_edges(model_node, (model_id, prefab_path), edge_kind="model_config_asset_entity", source="webui/game_data", evidence="modelId/prefabPath")
+            radius_node = self.node_id("model_radius", model_id)
+            if self.node_exists("model_radius", model_id):
+                self.add_edge(model_node, radius_node, "model_config_has_radius", source="webui/game_data", evidence="modelId")
+
+    def add_model_radius_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        config_key = safe_key(entry.get("p"))
+        config_node = self.add_node("model_radius_config", config_key, name=Path(config_key).name, source="webui/game_data", path=config_key, data=self.decoded_config_entry_data(entry))
+        self.add_edge(file_node, config_node, "defines_model_radius_config", source="webui/game_data")
+        decoded = extract_model_radius_rows(self.read_decoded_config_bytes(entry))
+        if not decoded:
+            return
+        self.update_node_details(config_node, data={**self.decoded_config_entry_data(entry), "rowCountParsed": decoded.get("rowCount")})
+        for row in decoded.get("rows") or []:
+            model_id = safe_key(row.get("modelId"))
+            if not model_id:
+                continue
+            radius_node = self.add_node("model_radius", model_id, name=model_id, source="webui/game_data", data=compact_payload(row, depth=2))
+            self.add_edge(config_node, radius_node, "model_radius_config_has_model", source="webui/game_data", evidence=safe_key(entry.get("dp")), data=compact_payload(row, depth=1))
+            self.add_alias(model_id, radius_node, kind="model_id", source="webui/game_data")
+
+    def add_interactive_table_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        config_key = safe_key(entry.get("p"))
+        config_node = self.add_node("interactive_table_config", config_key, name=Path(config_key).name, source="webui/game_data", path=config_key, data=self.decoded_config_entry_data(entry))
+        self.add_edge(file_node, config_node, "defines_interactive_table_config", source="webui/game_data")
+        decoded = extract_interactive_table_rows(self.read_decoded_config_bytes(entry))
+        if not decoded:
+            return
+        self.update_node_details(config_node, data={**self.decoded_config_entry_data(entry), "coreTemplateCountParsed": decoded.get("coreTemplateCount"), "interactiveDataCountParsed": decoded.get("interactiveDataCount")})
+        for row in decoded.get("coreRows") or []:
+            template_id = safe_key(row.get("templateId"))
+            if not template_id:
+                continue
+            template_node = self.add_node("interactive_template", template_id, name=template_id, source="webui/game_data", data=compact_payload(row, depth=2))
+            self.add_edge(config_node, template_node, "interactive_table_has_core_template", source="webui/game_data", evidence=safe_key(entry.get("dp")), data=compact_payload(row, depth=1))
+            self.add_alias(template_id, template_node, kind="interactive_template_id", source="webui/game_data")
+            template_path = safe_key(row.get("templatePath"))
+            if template_path:
+                self.add_alias(template_path, template_node, kind="interactive_template_path", source="webui/game_data")
+        for row in decoded.get("interactiveRows") or []:
+            object_id = safe_key(row.get("objectId"))
+            template_id = safe_key(row.get("templateId"))
+            if not object_id:
+                continue
+            object_node = self.add_node("interactive_object", object_id, name=object_id, source="webui/game_data", data=compact_payload(row, depth=2))
+            self.add_edge(config_node, object_node, "interactive_table_has_object", source="webui/game_data", evidence=safe_key(entry.get("dp")), data=compact_payload(row, depth=1))
+            self.add_alias(object_id, object_node, kind="interactive_object_id", source="webui/game_data")
+            if template_id:
+                template_node = self.add_node("interactive_template", template_id, name=template_id, source="webui/game_data")
+                self.add_edge(object_node, template_node, "interactive_object_uses_template", source="webui/game_data", evidence="interactiveDataDict")
+
+    def add_interactive_template_data_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        fields = parse_summary_assignments(entry.get("t"))
+        template_id = safe_key(fields.get("name")) or Path(safe_key(entry.get("p"))).stem.removeprefix("data_")
+        if not template_id:
+            return
+        data_node = self.add_node(
+            "interactive_template_data",
+            f"{safe_key(entry.get('source'))}:{template_id}",
+            name=template_id,
+            source="webui/game_data",
+            path=safe_key(entry.get("p")),
+            data=compact_payload({**self.decoded_config_entry_data(entry), "decodedSummary": fields}, depth=3),
+        )
+        template_node = self.add_node("interactive_template", template_id, name=template_id, source="webui/game_data")
+        self.add_edge(file_node, data_node, "defines_interactive_template_data", source="webui/game_data", evidence=safe_key(entry.get("dp")))
+        self.add_edge(data_node, template_node, "interactive_template_data_for_template", source="webui/game_data", evidence="name")
+        self.add_alias(template_id, data_node, kind="interactive_template_id", source="webui/game_data")
+        object_type = safe_key(fields.get("objectType"))
+        if object_type and object_type != template_id:
+            object_node = self.add_node("interactive_object", object_type, name=object_type, source="webui/game_data")
+            self.add_edge(data_node, object_node, "interactive_template_object_type", source="webui/game_data", evidence="objectType")
+        model_component = safe_key(fields.get("modelComponent"))
+        if model_component:
+            model_node = self.add_node("model_config_model", model_component, name=model_component, source="webui/game_data")
+            self.add_edge(data_node, model_node, "interactive_template_uses_model", source="webui/game_data", evidence="modelComponent")
+            self.add_alias(model_component, model_node, kind="model_id", source="webui/game_data")
+            self.add_model_asset_entity_edges(data_node, (model_component,), edge_kind="interactive_template_asset_entity", source="webui/game_data", evidence="modelComponent")
+        for audio_id in LINE_AUDIO_RE.findall(str(entry.get("t") or "")):
+            self.add_audio_target_edge(data_node, audio_id, edge_kind="interactive_template_uses_audio", source="webui/game_data", evidence="summary")
+
+    def add_world_entity_registry_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        config_key = safe_key(entry.get("p"))
+        registry_node = self.add_node("world_entity_registry", config_key, name=Path(config_key).name, source="webui/game_data", path=config_key, data=self.decoded_config_entry_data(entry))
+        self.add_edge(file_node, registry_node, "defines_world_entity_registry", source="webui/game_data")
+        decoded = extract_world_entity_brief_rows(self.read_decoded_config_bytes(entry))
+        if not decoded:
+            return
+        self.update_node_details(registry_node, data={**self.decoded_config_entry_data(entry), "briefCountParsed": decoded.get("briefCount")})
+        for row in decoded.get("briefRows") or []:
+            entity_id = safe_key(row.get("entityId"))
+            if not entity_id:
+                continue
+            entity_node = self.add_node("world_entity", entity_id, name=entity_id, source="webui/game_data", data=compact_payload(row, depth=2))
+            self.add_edge(registry_node, entity_node, "world_entity_registry_has_entity", source="webui/game_data", evidence=safe_key(entry.get("dp")), data=compact_payload(row, depth=1))
+            self.add_alias(entity_id, entity_node, kind="world_entity_id", source="webui/game_data")
+            detail_id = safe_key(row.get("detailId"))
+            if not detail_id:
+                continue
+            linked_detail = False
+            for target_kind, edge_kind in (
+                ("enemy", "world_entity_uses_enemy"),
+                ("enemy_template", "world_entity_uses_enemy_template"),
+                ("npc", "world_entity_uses_npc"),
+                ("interactive_object", "world_entity_uses_interactive_detail"),
+            ):
+                if not self.node_exists(target_kind, detail_id):
+                    continue
+                self.add_edge(entity_node, self.node_id(target_kind, detail_id), edge_kind, source="webui/game_data", evidence="detailId")
+                linked_detail = True
+            if not linked_detail:
+                if detail_id.startswith("int_"):
+                    detail_node = self.add_node("interactive_object", detail_id, name=detail_id, source="webui/game_data")
+                    self.add_edge(entity_node, detail_node, "world_entity_uses_interactive_detail", source="webui/game_data", evidence="detailId")
+                else:
+                    detail_node = self.add_node("world_entity_detail", detail_id, name=detail_id, source="webui/game_data")
+                    self.add_edge(entity_node, detail_node, "world_entity_uses_detail", source="webui/game_data", evidence="detailId")
+            self.add_alias(detail_id, entity_node, kind="world_entity_detail_id", source="webui/game_data")
 
     def ingest_videos(self) -> None:
         path = WEBUI_DATA / "assets" / "videos.json"
@@ -8085,6 +8565,20 @@ QUERY_KIND_PRIORITY = {
     "dialog_summary": 38,
     "dialog_summary_map": 39,
     "domain_depot_deliver_target_dialog": 40,
+    "decoded_config_file": 41,
+    "decoded_config_family": 42,
+    "decoded_config_group": 43,
+    "model_config": 44,
+    "model_config_model": 45,
+    "model_radius": 46,
+    "model_radius_config": 47,
+    "interactive_table_config": 48,
+    "interactive_template": 49,
+    "interactive_object": 50,
+    "interactive_template_data": 51,
+    "world_entity_registry": 52,
+    "world_entity": 53,
+    "world_entity_detail": 54,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -8291,6 +8785,20 @@ NODE_ID_PREFIXES = (
     "dialog_summary",
     "dialog_summary_map",
     "domain_depot_deliver_target_dialog",
+    "decoded_config_file",
+    "decoded_config_family",
+    "decoded_config_group",
+    "model_config",
+    "model_config_model",
+    "model_radius",
+    "model_radius_config",
+    "interactive_table_config",
+    "interactive_template",
+    "interactive_object",
+    "interactive_template_data",
+    "world_entity_registry",
+    "world_entity",
+    "world_entity_detail",
     "mission",
     "map",
     "level",
