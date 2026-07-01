@@ -287,6 +287,7 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_SkillData.json",
     "Json_SpawnerConfig.json",
     "Json_Interactive.json",
+    "Json_InteractiveData.json",
     "Json_LevelConfig.json",
     "Json_LevelData.json",
     "Json_NPC.json",
@@ -303,6 +304,7 @@ DECODED_CONFIG_TARGET_TYPES = {
     "GameplayConfigWorldEntityRegistry",
     "InteractiveTable",
     "InteractiveTemplateData",
+    "InteractiveDataCollections",
     "LevelConfig",
     "LevelData",
     "LevelScriptData",
@@ -2648,6 +2650,8 @@ class SourceGraphBuilder:
                 if not isinstance(entry, dict):
                     continue
                 subtype = safe_key(entry.get("q") or entry.get("g"))
+                if group_name == "Json_InteractiveData.json" and safe_key(entry.get("dp")) == "Json/InteractiveData/Collections.json":
+                    subtype = "InteractiveDataCollections"
                 if subtype not in DECODED_CONFIG_TARGET_TYPES:
                     continue
                 self.add_decoded_config_entry(group_node, entry, subtype=subtype)
@@ -2696,6 +2700,8 @@ class SourceGraphBuilder:
             self.add_interactive_table_config_edges(file_node, entry)
         elif subtype == "InteractiveTemplateData":
             self.add_interactive_template_data_edges(file_node, entry)
+        elif subtype == "InteractiveDataCollections":
+            self.add_interactive_collection_edges(file_node, entry)
         elif subtype == "LevelConfig":
             self.add_level_config_edges(file_node, entry)
         elif subtype == "LevelData":
@@ -3443,6 +3449,46 @@ class SourceGraphBuilder:
             if template_id:
                 template_node = self.add_node("interactive_template", template_id, name=template_id, source="webui/game_data")
                 self.add_edge(object_node, template_node, "interactive_object_uses_template", source="webui/game_data", evidence="interactiveDataDict")
+
+    def add_interactive_collection_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        raw_data = self.read_decoded_config_bytes(entry)
+        if not raw_data:
+            return
+        try:
+            payload = json.loads(raw_data.decode("utf-8-sig"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return
+        if not isinstance(payload, dict):
+            return
+        source_id = safe_key(entry.get("source")) or "webui"
+        for collection_id, row in payload.items():
+            collection_key = safe_key(collection_id)
+            if not collection_key or not isinstance(row, dict):
+                continue
+            scene_id = safe_key(row.get("sceneId"))
+            total_cnt = row.get("totalCnt")
+            edge_data = compact_payload(
+                {
+                    "source": source_id,
+                    "sceneId": scene_id,
+                    "totalCntLength": len(total_cnt) if isinstance(total_cnt, list) else None,
+                    "totalCnt": total_cnt if isinstance(total_cnt, list) else None,
+                },
+                depth=2,
+            )
+            collection_node = self.add_node(
+                "interactive_collection",
+                collection_key,
+                name=collection_key,
+                source="webui/game_data",
+                data=compact_payload({"sceneId": scene_id, "totalCntLength": len(total_cnt) if isinstance(total_cnt, list) else None}, depth=2),
+            )
+            self.add_edge(file_node, collection_node, "defines_interactive_collection", source="webui/game_data", evidence=safe_key(entry.get("dp")), data=edge_data)
+            self.add_alias(collection_key, collection_node, kind="interactive_collection_id", source="webui/game_data")
+            if not scene_id:
+                continue
+            level_node = self.add_node("level", scene_id, name=scene_id, source="webui/game_data")
+            self.add_edge(collection_node, level_node, "interactive_collection_in_level", source="webui/game_data", evidence="sceneId", data={"source": source_id})
 
     def decode_interactive_template_payload(self, entry: dict[str, Any], raw_data: bytes | None = None) -> dict[str, Any] | None:
         data = raw_data if raw_data is not None else self.read_decoded_config_bytes(entry)
@@ -10998,12 +11044,13 @@ QUERY_KIND_PRIORITY = {
     "char_interact_perform_config": 92,
     "char_interact_asset_reference": 93,
     "char_interact_ccs_reference": 94,
-    "interactive_component": 95,
-    "interactive_component_type": 96,
-    "interactive_property_key": 97,
-    "interactive_logic_type": 98,
-    "interactive_trigger_shape": 99,
-    "interactive_guide_shape": 100,
+    "interactive_collection": 95,
+    "interactive_component": 96,
+    "interactive_component_type": 97,
+    "interactive_property_key": 98,
+    "interactive_logic_type": 99,
+    "interactive_trigger_shape": 100,
+    "interactive_guide_shape": 101,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -11258,6 +11305,7 @@ NODE_ID_PREFIXES = (
     "char_interact_perform_config",
     "char_interact_asset_reference",
     "char_interact_ccs_reference",
+    "interactive_collection",
     "interactive_component",
     "interactive_component_type",
     "interactive_property_key",
