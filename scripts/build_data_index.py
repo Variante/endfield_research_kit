@@ -2451,6 +2451,7 @@ def read_buff_timeline_first_union_tag(
 BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG = 0x011f
 BUFF_PLAY_SOUND_ACTION_TAG = 0x00fc
 BUFF_PATROL_TELEPORT_ACTION_TAG = 0x00ef
+BUFF_PLAY_ANIMATION_ACTION_TAG = 0x00f8
 BUFF_PLAY_SOUND_TIME_DILATION_TAIL_BYTES = 26
 
 
@@ -2636,6 +2637,75 @@ def read_buff_play_sound_target_settings_partial(
         "rawHex": raw.hex(" "),
     }, limit
 
+
+def decode_buff_play_animation_action(
+    data: bytes,
+    item_start: int,
+    item_end: int,
+    tag_width: int,
+    member_count: int,
+) -> dict[str, Any]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, item_end)
+    if tag != BUFF_PLAY_ANIMATION_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("playAnimation:tag-mismatch")
+    if tag_width != 1:
+        raise ValueError(f"playAnimation:tag-width={tag_width}")
+    if member_count != 12:
+        raise ValueError(f"playAnimation:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_exact(
+        data,
+        offset,
+        "playAnimation.prefix",
+    )
+    anim_name, offset = read_buff_memorypack_utf8_string_strict(
+        data,
+        offset,
+        "playAnimation.animName",
+        max_length=256,
+    )
+    if not anim_name:
+        raise ValueError("playAnimation.animName:empty")
+    blend_duration, offset = read_buff_f32_field(data, offset, "playAnimation.blendDuration")
+    blend_out, offset = read_buff_f32_field(data, offset, "playAnimation.blendOut")
+    blend_out_next_state_hash, offset = read_buff_i32_field(
+        data,
+        offset,
+        "playAnimation.blendOutNextStateHash",
+    )
+    duration, offset = read_buff_f32_field(data, offset, "playAnimation.duration")
+    exit_to_idle, offset = read_buff_bool_field(data, offset, "playAnimation.exitToIdle")
+    playback_speed, offset = read_buff_f32_field(data, offset, "playAnimation.playbackSpeed")
+    start_time, offset = read_buff_f32_field(data, offset, "playAnimation.startTime")
+    for field_name, value in (
+        ("playAnimation.blendDuration", blend_duration),
+        ("playAnimation.blendOut", blend_out),
+        ("playAnimation.duration", duration),
+        ("playAnimation.playbackSpeed", playback_speed),
+        ("playAnimation.startTime", start_time),
+    ):
+        if value < -10_000 or value > 100_000:
+            raise ValueError(f"{field_name}:out-of-range={value}")
+    if offset != item_end:
+        raise ValueError(f"playAnimation:tail-at={format_offset(offset)} end={format_offset(item_end)}")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_PLAY_ANIMATION_ACTION_TAG],
+        "decodeStatus": "exact",
+        "schemaSource": (
+            "MemoryPack setter order: AbilityActionData prefix, animName, blendDuration, blendOut, "
+            "blendOutNextStateHash, duration, exitToIdle, playbackSpeed, startTime"
+        ),
+        "byteLength": item_end - item_start,
+        "prefix": prefix,
+        "animName": anim_name,
+        "blendDuration": round(blend_duration, 6),
+        "blendOut": round(blend_out, 6),
+        "blendOutNextStateHash": blend_out_next_state_hash,
+        "duration": round(duration, 6),
+        "exitToIdle": exit_to_idle,
+        "playbackSpeed": round(playback_speed, 6),
+        "startTime": round(start_time, 6),
+    }
 
 def decode_buff_patrol_teleport_action(
     data: bytes,
@@ -2903,6 +2973,14 @@ def decode_buff_ability_action_item_exact(
         )
     if tag == BUFF_PATROL_TELEPORT_ACTION_TAG:
         return decode_buff_patrol_teleport_action(
+            data,
+            item_start,
+            item_end,
+            tag_width,
+            member_count,
+        )
+    if tag == BUFF_PLAY_ANIMATION_ACTION_TAG:
+        return decode_buff_play_animation_action(
             data,
             item_start,
             item_end,
