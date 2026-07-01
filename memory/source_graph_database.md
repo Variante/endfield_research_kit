@@ -108,15 +108,20 @@ level-to-map tables.
 ## Current Notes
 
 2026-07-01 Gameplay ingestion adds exact-queryable `weapon`, `equipment`,
-`character`, `gameplay_skill_group`, `gameplay_skill`,
-`gameplay_talent_group`, `gameplay_talent`, `gameplay_progression`, and `item`
-nodes from `webui/data/lang/<LANG>/gameplay/index.json`. A fast CN build with
+`character`, `enemy`, `enemy_template`, `enemy_attribute_template`,
+`enemy_display_type`, `enemy_ability`, `enemy_attribute_modifier`, `buff`,
+`gameplay_skill_group`, `gameplay_skill`, `gameplay_talent_group`,
+`gameplay_talent`, `gameplay_progression`, and `item` nodes from
+`webui/data/lang/<LANG>/gameplay/index.json`. A fast CN build with
 `--skip-asset-maps --skip-reference-rows --skip-followups` verified 72 weapon
-nodes, 220 equipment nodes, 30 character nodes, 409 skills, 526 talent nodes,
-950 progression nodes, 66 item nodes, and edges for source rows, default
-weapons, skill/talent membership, progression records, and required item costs.
-The generated WebUI payload deliberately exposes 320 visible Gameplay entries:
-72 weapons, 220 equipment records, and 28 visible character records. The two
+nodes, 220 equipment nodes, 30 character nodes, 290 enemy nodes, 78 enemy
+template nodes, 98 enemy attribute-template nodes, 5 enemy display-type nodes,
+134 enemy ability nodes, 70 enemy modifier nodes, 83 buff nodes, 409 skills, 526
+talent nodes, 1,240 progression nodes, 97 item nodes, and edges for source rows,
+default weapons, skill/talent membership, progression records, required item
+costs, enemy templates, enemy abilities, born buffs, and drops. The generated
+WebUI payload deliberately exposes 610 visible Gameplay entries: 72 weapons, 220
+equipment records, 28 visible character records, and 290 enemy records. The two
 hidden `chr_0002_endminm` / `chr_0003_endminf` Endministrator rows remain as
 `CharacterTable` graph nodes and are folded into `chr_9000_endmin` story wiki
 aliases for WebUI navigation. Example exact queries:
@@ -124,7 +129,19 @@ aliases for WebUI navigation. Example exact queries:
 ```bat
 python tools\endfield_source_graph.py query chr_0017_yvonne --kind character
 python tools\endfield_source_graph.py query wpn_pistol_0001 --kind weapon
+python tools\endfield_source_graph.py query eny_0018_lbtough --kind enemy
 ```
+
+2026-07-01 enemy semantic ingestion promotes authored `EnemyTable`,
+`EnemyAttributeTemplateTable`, enemy display, ability, drop, and born-buff data
+into Gameplay payload entries and graph edges. The CN payload verifies 290 enemy
+entries, 9,800 distinct enemy stat-template rows, 29,000 per-enemy stat row
+references, 406 ability references, and 194 born-buff references. The graph
+verified 290 `uses_enemy_attribute_template`, 290 `uses_enemy_template`, 406
+`has_enemy_ability`, 194 `starts_with_buff`, and 266 `drops_item` edges. Enemy
+stats are HP/ATK/DEF checkpoints from authored level-dependent attributes;
+combat scalars, resilience fields, independent attributes, and attr modifiers
+are exposed as source-table facts, not as a recovered runtime formula.
 
 The same build now links Gameplay entries to exported asset nodes by exact
 Gameplay ID, icon ID, or model-path stem containment in asset paths. The fast

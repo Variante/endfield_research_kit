@@ -4041,6 +4041,13 @@ body.is-resizing-filter * {
   color: rgb(55, 94, 171);
 }
 
+.gameplay-kind-badge[data-kind="enemy"],
+.gameplay-detail-tag[data-kind="enemy"] {
+  border-color: rgba(176, 72, 88, 0.34);
+  background: rgba(176, 72, 88, 0.14);
+  color: rgb(148, 58, 72);
+}
+
 .gameplay-detail-tag[data-kind] > span,
 .gameplay-detail-tag[data-kind] > b {
   color: inherit;

@@ -75,6 +75,27 @@ CHAR_BREAK_RE = re.compile(r"^charBreak(?P<level>\d+)$")
 EQUIP_BREAK_RE = re.compile(r"^equipBreakT(?P<tier>\d+)$")
 CURVE_SAMPLE_LEVELS = (1, 20, 40, 60, 70, 80, 90)
 CHARACTER_STAT_ATTR_TYPES = (1, 2, 3, 39, 40, 41, 42)
+ENEMY_STAT_ATTR_TYPES = (1, 2, 3)
+ENEMY_COMBAT_SCALAR_FIELDS = (
+    ("physicalDmgResistScalar", "Physical taken scalar"),
+    ("fireDmgResistScalar", "Fire taken scalar"),
+    ("pulseDmgResistScalar", "Pulse taken scalar"),
+    ("crystDmgResistScalar", "Cold taken scalar"),
+    ("naturalDmgResistScalar", "Natural taken scalar"),
+    ("attackValueAgainstTower", "Tower attack value"),
+)
+ENEMY_RESILIENCE_FIELDS = (
+    ("maxResilience", "Max resilience"),
+    ("initialSuperArmor", "Initial super armor"),
+    ("zeroPoiseSuperArmor", "Zero-poise super armor"),
+    ("superArmorWhenResilienceZero", "Super armor at zero resilience"),
+    ("breakingAttackedAtbObtain", "Break ATB gain when attacked"),
+    ("resilienceDecreaseWhenHurt", "Resilience decrease when hurt"),
+    ("resilienceRecover", "Resilience recovery"),
+    ("resilienceRecoverInterval", "Resilience recovery interval"),
+    ("resilienceFullRecoverTime", "Full recovery time"),
+    ("pushedBackCoefficient", "Pushed-back coefficient"),
+)
 STAT_ATTR_KEYS = {
     1: "hp",
     2: "atk",
@@ -109,6 +130,12 @@ STAT_ATTR_KEYS = {
     54: "natural_damage",
     60: "ether_damage_taken",
     61: "broken_unit_damage",
+    80: "physical_damage_taken_scalar",
+    81: "natural_damage_taken_scalar",
+    82: "cryst_damage_taken_scalar",
+    83: "pulse_damage_taken_scalar",
+    84: "fire_damage_taken_scalar",
+    85: "ether_damage_taken_scalar",
     87: "infliction",
 }
 STAT_ATTR_LABELS = {
@@ -145,6 +172,12 @@ STAT_ATTR_LABELS = {
     54: "Natural DMG",
     60: "Ether Taken",
     61: "Broken Target DMG",
+    80: "Physical Taken Scalar",
+    81: "Natural Taken Scalar",
+    82: "Cold Taken Scalar",
+    83: "Pulse Taken Scalar",
+    84: "Fire Taken Scalar",
+    85: "Ether Taken Scalar",
     87: "Infliction",
 }
 COMPOSITE_ATTR_KEYS = {
@@ -723,7 +756,7 @@ def int_value(value: Any) -> int | None:
 
 
 def attribute_values(row: dict[str, Any]) -> dict[int, Any]:
-    attr_node = row.get("Attribute") if isinstance(row.get("Attribute"), dict) else {}
+    attr_node = row.get("Attribute") if isinstance(row.get("Attribute"), dict) else row
     values: dict[int, Any] = {}
     for item in attr_node.get("attrs") or []:
         if not isinstance(item, dict):
@@ -789,6 +822,105 @@ def character_stat_curve_payload(char_row: dict[str, Any], attr_meta: dict[str, 
         "rows": display_rows,
         "checkpoints": sampled_curve_rows(display_rows, "level", max_level),
     }
+
+
+def enemy_stat_curve_payload(attr_row: dict[str, Any], attr_meta: dict[str, Any]) -> dict[str, Any]:
+    stat_rows = []
+    for index, row in enumerate(attr_row.get("levelDependentAttributes") or []):
+        if not isinstance(row, dict):
+            continue
+        values = attribute_values(row)
+        level = int_value(values.get(0))
+        if level is None:
+            level = index + 1
+        attrs = [
+            stat_attr_payload(attr_type, values[attr_type], attr_meta)
+            for attr_type in ENEMY_STAT_ATTR_TYPES
+            if attr_type in values
+        ]
+        if not attrs:
+            continue
+        stat_rows.append({"level": level, "attrs": attrs})
+    max_level = max((int(row["level"]) for row in stat_rows if row.get("level") is not None), default=None)
+    return {
+        "source": "EnemyAttributeTemplateTable.levelDependentAttributes",
+        "templateId": normalize_id(attr_row.get("templateId")),
+        "rowCount": len(stat_rows),
+        "maxLevel": max_level,
+        "checkpoints": sampled_curve_rows(stat_rows, "level", max_level),
+    }
+
+
+def enemy_attr_list_payload(node: Any, attr_meta: dict[str, Any]) -> list[dict[str, Any]]:
+    if not isinstance(node, dict):
+        return []
+    values = attribute_values(node)
+    return [stat_attr_payload(attr_type, values[attr_type], attr_meta) for attr_type in sorted(values)]
+
+
+def enemy_modifier_payload(items: Any, attr_meta: dict[str, Any]) -> list[dict[str, Any]]:
+    out = []
+    for item in items or []:
+        if not isinstance(item, dict):
+            continue
+        attr_type = int_value(item.get("attrType"))
+        attr = stat_attr_payload(attr_type if attr_type is not None else normalize_id(item.get("attrType")), item.get("attrValue"), attr_meta)
+        out.append({
+            "attrType": attr_type if attr_type is not None else normalize_id(item.get("attrType")),
+            "key": attr.get("key"),
+            "label": attr.get("label"),
+            "value": item.get("attrValue"),
+            "modifierType": item.get("modifierType"),
+            "modifyAttributeType": item.get("modifyAttributeType"),
+        })
+    return out
+
+
+def labeled_value_payload(row: dict[str, Any], fields: tuple[tuple[str, str], ...]) -> list[dict[str, Any]]:
+    return [
+        {"key": field, "label": label, "value": row.get(field)}
+        for field, label in fields
+        if row.get(field) not in (None, "")
+    ]
+
+
+def enemy_ability_payload(ids: Any, abilities: dict[str, Any], i18n: dict[str, Any], fallback_i18n: dict[str, Any]) -> list[dict[str, Any]]:
+    out = []
+    for raw_id in ids or []:
+        ability_id = normalize_id(raw_id)
+        if not ability_id:
+            continue
+        row = abilities.get(ability_id) or {}
+        if not isinstance(row, dict):
+            row = {}
+        out.append({
+            "id": ability_id,
+            "name": i18n_text(i18n, row.get("name"), fallback_i18n) or ability_id,
+            "description": clean_text(i18n_text(i18n, row.get("description"), fallback_i18n)),
+        })
+    return out
+
+
+def enemy_tag_payload(ids: Any, tags: dict[str, Any], i18n: dict[str, Any], fallback_i18n: dict[str, Any]) -> list[dict[str, Any]]:
+    out = []
+    for raw_id in ids or []:
+        tag_id = normalize_id(raw_id)
+        if not tag_id:
+            continue
+        row = tags.get(tag_id) or {}
+        label = i18n_text(i18n, row.get("tagText"), fallback_i18n) if isinstance(row, dict) else ""
+        out.append({"id": tag_id, "label": label or tag_id})
+    return out
+
+
+def enemy_drop_payload(ids: Any, item_table: dict[str, Any], i18n: dict[str, Any], fallback_i18n: dict[str, Any]) -> list[dict[str, Any]]:
+    out = []
+    for raw_id in ids or []:
+        item_id = normalize_id(raw_id)
+        if not item_id:
+            continue
+        out.append({"id": item_id, "name": item_name(item_table, item_id, i18n, fallback_i18n)})
+    return out
 
 
 def weapon_break_stage_for_level(level: int | None, break_rows: list[dict[str, Any]]) -> Any:
@@ -1565,6 +1697,112 @@ def character_sort_key(char_id: str, row: Any) -> tuple[int, str]:
     return 1_000_000, char_id
 
 
+def build_enemy_entries(
+    tables: dict[str, Any],
+    i18n: dict[str, Any],
+    fallback_i18n: dict[str, Any],
+) -> list[dict[str, Any]]:
+    enemies = tables.get("EnemyTable.json") or {}
+    attr_templates = tables.get("EnemyAttributeTemplateTable.json") or {}
+    display_infos = tables.get("EnemyDisplayInfoTable.json") or {}
+    template_display_infos = tables.get("EnemyTemplateDisplayInfoTable.json") or {}
+    display_types = tables.get("DisplayEnemyTypeTable.json") or {}
+    ability_descs = tables.get("EnemyAbilityDescTable.json") or {}
+    enemy_tags = tables.get("EnemyTagTable.json") or {}
+    drop_table = tables.get("WikiEnemyDropTable.json") or {}
+    item_table = tables.get("ItemTable.json") or {}
+    attr_meta = tables.get("AttributeMetaTable.json") or {}
+    entries = []
+    for enemy_id, row in sorted(enemies.items()):
+        if not isinstance(row, dict):
+            continue
+        template_id = normalize_id(row.get("templateId")) or enemy_id
+        attr_template_id = normalize_id(row.get("attrTemplateId")) or template_id
+        display = display_infos.get(enemy_id) if isinstance(display_infos.get(enemy_id), dict) else {}
+        template_display = template_display_infos.get(template_id) if isinstance(template_display_infos.get(template_id), dict) else {}
+        chosen_display = display or template_display
+        display_source = (
+            {"table": "EnemyDisplayInfoTable.json", "id": enemy_id}
+            if display
+            else ({"table": "EnemyTemplateDisplayInfoTable.json", "id": template_id} if template_display else {})
+        )
+        template_name = i18n_text(i18n, template_display.get("name"), fallback_i18n) or template_id
+        title = i18n_text(i18n, display.get("name"), fallback_i18n) or template_name or enemy_id
+        nickname = i18n_text(i18n, display.get("nickname"), fallback_i18n) or i18n_text(i18n, template_display.get("nickname"), fallback_i18n)
+        description = clean_text(i18n_text(i18n, display.get("description"), fallback_i18n) or i18n_text(i18n, template_display.get("description"), fallback_i18n))
+        display_type = chosen_display.get("displayType", template_display.get("displayType"))
+        display_type_label = row_label_lookup(display_types, display_type, i18n, fallback_i18n) or (f"Type {display_type}" if display_type not in (None, "") else "")
+        ability_ids = chosen_display.get("abilityDescIds") or template_display.get("abilityDescIds") or []
+        abilities = enemy_ability_payload(ability_ids, ability_descs, i18n, fallback_i18n)
+        tags = enemy_tag_payload(template_display.get("tags") or [], enemy_tags, i18n, fallback_i18n)
+        drop_row = drop_table.get(template_id) or drop_table.get(enemy_id) or {}
+        drops = enemy_drop_payload(drop_row.get("dropItemIds") if isinstance(drop_row, dict) else [], item_table, i18n, fallback_i18n)
+        attr_row = attr_templates.get(attr_template_id) if isinstance(attr_templates.get(attr_template_id), dict) else {}
+        stats = enemy_stat_curve_payload(attr_row, attr_meta)
+        independent_attrs = enemy_attr_list_payload(attr_row.get("levelIndependentAttributes"), attr_meta)
+        damage_scalars = labeled_value_payload(attr_row, ENEMY_COMBAT_SCALAR_FIELDS)
+        resilience = labeled_value_payload(attr_row, ENEMY_RESILIENCE_FIELDS)
+        born_buffs = [normalize_id(value) for value in row.get("bornBuffs") or [] if normalize_id(value)]
+        attr_modifiers = enemy_modifier_payload(row.get("attrModifiers") or [], attr_meta)
+        distribution_ids = [normalize_id(value) for value in template_display.get("distributionIds") or [] if normalize_id(value)]
+        model_id = normalize_id(row.get("modelId"))
+        ai_template_id = normalize_id(row.get("aiTemplateId"))
+        search = " ".join([
+            enemy_id,
+            template_id,
+            attr_template_id,
+            model_id,
+            ai_template_id,
+            title,
+            template_name,
+            nickname,
+            description,
+            display_type_label,
+            *(ability.get("name") or "" for ability in abilities),
+            *(ability.get("description") or "" for ability in abilities),
+            *(tag.get("label") or "" for tag in tags),
+            *distribution_ids,
+            *born_buffs,
+            *(drop.get("name") or drop.get("id") or "" for drop in drops),
+        ])
+        entries.append({
+            "id": enemy_id,
+            "kind": "enemy",
+            "title": title,
+            "subtitle": enemy_id,
+            "group": f"Enemy / {display_type_label or template_id}",
+            "templateId": template_id,
+            "templateName": template_name,
+            "attrTemplateId": attr_template_id,
+            "modelId": model_id,
+            "aiTemplateId": ai_template_id,
+            "displayType": display_type,
+            "displayTypeLabel": display_type_label,
+            "nickname": nickname,
+            "description": description,
+            "isDangerous": row.get("isDangerous"),
+            "showBigEffect": row.get("showBigEffect"),
+            "showBigHeadbar": row.get("showBigHeadbar"),
+            "autoLockCancelType": row.get("autoLockCancelType"),
+            "autoLockCancelTime": row.get("autoLockCancelTime"),
+            "serverDeathCheck": row.get("serverDeathCheck"),
+            "abilities": abilities,
+            "tags": tags,
+            "distributionIds": distribution_ids,
+            "dropItems": drops,
+            "bornBuffs": born_buffs,
+            "attrModifiers": attr_modifiers,
+            "independentAttributes": independent_attrs,
+            "damageScalars": damage_scalars,
+            "resilience": resilience,
+            "stats": stats,
+            "source": {"table": "EnemyTable.json", "id": enemy_id},
+            "displaySource": display_source,
+            "search": search.lower(),
+        })
+    return entries
+
+
 def build_character_entries(
     tables: dict[str, Any],
     i18n: dict[str, Any],
@@ -1775,17 +2013,31 @@ def build_language_payload(
         "PotentialTalentEffectTable.json",
         "SpaceshipCharSkillTable.json",
         "SpaceshipSkillTable.json",
+        "EnemyTable.json",
+        "EnemyAttributeTemplateTable.json",
+        "EnemyDisplayInfoTable.json",
+        "EnemyTemplateDisplayInfoTable.json",
+        "DisplayEnemyTypeTable.json",
+        "EnemyAbilityDescTable.json",
+        "EnemyTagTable.json",
+        "WikiEnemyDropTable.json",
         "TextTable.json",
     ]
     tables = {name: load_merged_table(table_roots, name, {}) for name in table_names}
     weapons = build_weapon_entries(tables, i18n, fallback_i18n)
     equipment = build_equipment_entries(tables, i18n, fallback_i18n)
     characters = build_character_entries(tables, i18n, fallback_i18n)
+    enemies = build_enemy_entries(tables, i18n, fallback_i18n)
     entries = sorted(
-        [*weapons, *equipment, *characters],
-        key=lambda item: ({"weapon": 0, "equipment": 1, "character": 2}.get(str(item.get("kind") or ""), 9), str(item.get("group") or ""), str(item.get("title") or "")),
+        [*weapons, *equipment, *characters, *enemies],
+        key=lambda item: ({"weapon": 0, "equipment": 1, "character": 2, "enemy": 3}.get(str(item.get("kind") or ""), 9), str(item.get("group") or ""), str(item.get("title") or "")),
     )
     story_wiki_link_count = apply_story_wiki_keys(entries, story_wiki_keys or set())
+    enemy_stat_templates = {
+        normalize_id(item.get("attrTemplateId")): (item.get("stats") or {}).get("rowCount") or 0
+        for item in enemies
+        if normalize_id(item.get("attrTemplateId"))
+    }
     return {
         "generated": int(time.time()),
         "language": language,
@@ -1797,6 +2049,7 @@ def build_language_payload(
             "weapons": len(weapons),
             "characters": len(characters),
             "equipment": len(equipment),
+            "enemies": len(enemies),
             "characterSkillGroups": sum(len(item.get("skillGroups") or []) for item in characters),
             "weaponSkills": sum(len(item.get("skills") or []) for item in weapons),
             "equipmentSuitEffects": sum(len(((item.get("suit") or {}).get("effects") or [])) for item in equipment),
@@ -1809,6 +2062,10 @@ def build_language_payload(
             "weaponStatRows": sum(len((item.get("stats") or {}).get("rows") or []) for item in weapons),
             "characterStatRows": sum(len((item.get("stats") or {}).get("rows") or []) for item in characters),
             "characterRawStatRows": sum(int((item.get("stats") or {}).get("rawRowCount") or 0) for item in characters),
+            "enemyStatRows": sum(int(value or 0) for value in enemy_stat_templates.values()),
+            "enemyEntryStatRows": sum(int((item.get("stats") or {}).get("rowCount") or 0) for item in enemies),
+            "enemyAbilities": sum(len(item.get("abilities") or []) for item in enemies),
+            "enemyBornBuffs": sum(len(item.get("bornBuffs") or []) for item in enemies),
             "weaponBreakthroughRows": sum(len((item.get("breakthrough") or {}).get("rows") or []) for item in weapons),
             "storyWikiLinks": story_wiki_link_count,
         },
@@ -1837,7 +2094,8 @@ def main(argv: list[str] | None = None) -> int:
     for code, path, counts in outputs:
         print(
             f"{code}: wrote {rel_path(path)} "
-            f"({counts['weapons']} weapons, {counts['equipment']} equipment, {counts['characters']} characters)"
+            f"({counts['weapons']} weapons, {counts['equipment']} equipment, "
+            f"{counts['characters']} characters, {counts['enemies']} enemies)"
         )
     return 0
 

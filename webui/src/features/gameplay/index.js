@@ -6,7 +6,7 @@
       tab: "\u5b9e\u6218",
       title: "\u5b9e\u6218\u6570\u636e",
       countLabel: "\u6761\u76ee",
-      search: "\u641c\u7d22\u6b66\u5668 / \u88c5\u5907 / \u89d2\u8272 / \u6280\u80fd / \u6570\u503c",
+      search: "\u641c\u7d22\u6b66\u5668 / \u88c5\u5907 / \u89d2\u8272 / \u654c\u4eba / \u6280\u80fd / \u6570\u503c",
       showFilters: "\u663e\u793a\u7b5b\u9009",
       hideFilters: "\u9690\u85cf\u7b5b\u9009",
       reset: "\u91cd\u7f6e\u7b5b\u9009",
@@ -27,6 +27,7 @@
       weapon: "\u6b66\u5668",
       character: "\u89d2\u8272",
       equipment: "\u88c5\u5907",
+      enemy: "\u654c\u4eba",
       storyWiki: "\u5267\u60c5 Wiki",
       openStoryWiki: "\u5728\u5267\u60c5\u9875\u6253\u5f00",
       id: "ID",
@@ -42,6 +43,9 @@
       description: "\u63cf\u8ff0",
       weaponSkills: "\u6b66\u5668\u63d0\u4f9b\u7684\u6280\u80fd / \u6548\u679c",
       characterSkills: "\u89d2\u8272\u6280\u80fd",
+      enemyAbilities: "\u654c\u4eba\u80fd\u529b",
+      enemyDetails: "\u654c\u4eba\u8be6\u60c5",
+      combatValues: "\u6218\u6597\u6570\u503c",
       talents: "\u5929\u8d4b / \u88ab\u52a8",
       level: "\u7b49\u7ea7",
       effect: "\u6548\u679c",
@@ -66,12 +70,28 @@
       selectedLevel: "\u663e\u793a\u7b49\u7ea7",
       weaponStats: "\u6b66\u5668\u5c5e\u6027",
       equipmentStats: "\u88c5\u5907\u5c5e\u6027",
+      enemyStats: "\u654c\u4eba\u5c5e\u6027",
       equipmentSuit: "\u5957\u88c5\u6548\u679c",
       equipmentFormula: "\u5236\u9020\u914d\u65b9",
       partType: "\u90e8\u4f4d",
       minWearLevel: "\u7a7f\u6234\u7b49\u7ea7",
       domain: "\u5730\u533a",
       suit: "\u5957\u88c5",
+      templateId: "\u6a21\u677f ID",
+      attrTemplateId: "\u5c5e\u6027\u6a21\u677f ID",
+      displayType: "\u663e\u793a\u7c7b\u578b",
+      modelId: "\u6a21\u578b ID",
+      aiTemplateId: "AI \u6a21\u677f",
+      nickname: "\u522b\u540d",
+      dangerous: "\u5371\u9669",
+      bornBuffs: "\u51fa\u751f Buff",
+      attrModifiers: "\u5c5e\u6027\u4fee\u6b63",
+      damageScalars: "\u4f24\u5bb3\u7cfb\u6570",
+      resilience: "\u97e7\u6027",
+      independentAttributes: "\u72ec\u7acb\u5c5e\u6027",
+      tags: "\u6807\u7b7e",
+      distribution: "\u5206\u5e03",
+      dropItems: "\u6389\u843d",
       formula: "\u914d\u65b9",
       pack: "\u5236\u9020\u5305",
       unlock: "\u89e3\u9501",
@@ -152,7 +172,7 @@
       tab: "Gameplay",
       title: "Gameplay Data",
       countLabel: "entries",
-      search: "Search weapon / equipment / character / skill / stat",
+      search: "Search weapon / equipment / character / enemy / skill / stat",
       showFilters: "Show filters",
       hideFilters: "Hide filters",
       reset: "Reset filters",
@@ -173,6 +193,7 @@
       weapon: "Weapon",
       character: "Character",
       equipment: "Equipment",
+      enemy: "Enemy",
       storyWiki: "Story wiki",
       openStoryWiki: "Open in Story",
       id: "ID",
@@ -188,6 +209,9 @@
       description: "Description",
       weaponSkills: "Weapon-provided skills / effects",
       characterSkills: "Character skills",
+      enemyAbilities: "Enemy abilities",
+      enemyDetails: "Enemy details",
+      combatValues: "Combat values",
       talents: "Talents / passives",
       level: "Level",
       effect: "Effect",
@@ -212,12 +236,28 @@
       selectedLevel: "Selected level",
       weaponStats: "Weapon stats",
       equipmentStats: "Equipment stats",
+      enemyStats: "Enemy stats",
       equipmentSuit: "Suit effects",
       equipmentFormula: "Crafting formula",
       partType: "Part",
       minWearLevel: "Wear level",
       domain: "Domain",
       suit: "Suit",
+      templateId: "Template ID",
+      attrTemplateId: "Attribute template ID",
+      displayType: "Display type",
+      modelId: "Model ID",
+      aiTemplateId: "AI template",
+      nickname: "Nickname",
+      dangerous: "Dangerous",
+      bornBuffs: "Born buffs",
+      attrModifiers: "Attribute modifiers",
+      damageScalars: "Damage scalars",
+      resilience: "Resilience",
+      independentAttributes: "Independent attrs",
+      tags: "Tags",
+      distribution: "Distribution",
+      dropItems: "Drops",
       formula: "Formula",
       pack: "Pack",
       unlock: "Unlock",
@@ -405,7 +445,11 @@
   }
 
   function kindLabel(kind) {
-    return kind === "weapon" ? text("weapon") : kind === "equipment" ? text("equipment") : kind === "character" ? text("character") : String(kind || "");
+    if (kind === "weapon") return text("weapon");
+    if (kind === "equipment") return text("equipment");
+    if (kind === "character") return text("character");
+    if (kind === "enemy") return text("enemy");
+    return String(kind || "");
   }
 
   function entrySubtitle(entry) {
@@ -419,6 +463,11 @@
     if (entry.kind === "character") {
       if (entry.professionLabel) parts.push(entry.professionLabel);
       if (entry.elementLabel) parts.push(entry.elementLabel);
+    }
+    if (entry.kind === "enemy") {
+      if (entry.displayTypeLabel) parts.push(entry.displayTypeLabel);
+      if (entry.templateName && entry.templateName !== entry.title) parts.push(entry.templateName);
+      if (entry.isDangerous) parts.push(text("dangerous"));
     }
     return parts.join(" / ");
   }
@@ -1102,6 +1151,79 @@
       ].join(""),
     };
   }
+  function renderEnemyAbilities(entry) {
+    const rows = (entry.abilities || []).map((ability) => {
+      if (!ability) return "";
+      return `<article class="gameplay-skill-card">
+        <header>
+          <div class="gameplay-skill-title">${escapeHtml(ability.name || ability.id || "")}</div>
+          <div class="gameplay-skill-meta">${escapeHtml(ability.id || "")}</div>
+        </header>
+        ${renderDescription(ability.description)}
+      </article>`;
+    }).filter(Boolean).join("");
+    return rows ? `<div class="gameplay-card-grid">${rows}</div>` : "";
+  }
+
+  function renderEnemyModifierRows(entry) {
+    const rows = (entry.attrModifiers || []).map((modifier) => {
+      if (!modifier) return null;
+      const label = [statAttrLabel(modifier), modifier.modifierType !== undefined ? `type ${formatValue(modifier.modifierType)}` : ""].filter(Boolean).join(" / ");
+      return { label, value: modifier.value };
+    }).filter(Boolean);
+    return renderChipPairs(rows);
+  }
+
+  function renderEnemyDetails(entry) {
+    const blocks = [];
+    const tags = renderChipPairs((entry.tags || []).map((tag) => ({ label: tag.label || tag.id, value: tag.id })));
+    if (tags) blocks.push(`<div class="gameplay-subheading">${escapeHtml(text("tags"))}</div>${tags}`);
+    const drops = renderMaterialChips(entry.dropItems || []);
+    if (drops) blocks.push(`<div class="gameplay-subheading">${escapeHtml(text("dropItems"))}</div>${drops}`);
+    const distributions = renderIdChips(entry.distributionIds || []);
+    if (distributions) blocks.push(`<div class="gameplay-subheading">${escapeHtml(text("distribution"))}</div>${distributions}`);
+    return blocks.join("");
+  }
+
+  function renderEnemyCombatValues(entry) {
+    const blocks = [];
+    const damage = renderChipPairs(entry.damageScalars || []);
+    if (damage) blocks.push(`<div class="gameplay-subheading">${escapeHtml(text("damageScalars"))}</div>${damage}`);
+    const resilience = renderChipPairs(entry.resilience || []);
+    if (resilience) blocks.push(`<div class="gameplay-subheading">${escapeHtml(text("resilience"))}</div>${resilience}`);
+    const independent = renderStatAttrs(entry.independentAttributes || []);
+    if (independent) blocks.push(`<div class="gameplay-subheading">${escapeHtml(text("independentAttributes"))}</div>${independent}`);
+    const modifiers = renderEnemyModifierRows(entry);
+    if (modifiers) blocks.push(`<div class="gameplay-subheading">${escapeHtml(text("attrModifiers"))}</div>${modifiers}`);
+    const bornBuffs = renderIdChips(entry.bornBuffs || []);
+    if (bornBuffs) blocks.push(`<div class="gameplay-subheading">${escapeHtml(text("bornBuffs"))}</div>${bornBuffs}`);
+    return blocks.join("");
+  }
+
+  function renderEnemyDetail(entry) {
+    const facts = [
+      fact(text("id"), entry.id, { mono: true }),
+      fact(text("templateId"), entry.templateId, { mono: true }),
+      fact(text("attrTemplateId"), entry.attrTemplateId, { mono: true }),
+      fact(text("displayType"), entry.displayTypeLabel || entry.displayType),
+      fact(text("nickname"), entry.nickname),
+      fact(text("modelId"), entry.modelId, { mono: true }),
+      fact(text("aiTemplateId"), entry.aiTemplateId, { mono: true }),
+      fact(text("dangerous"), entry.isDangerous ? text("dangerous") : ""),
+      fact(text("source"), `${entry.source && entry.source.table || ""} / ${entry.source && entry.source.id || ""}`, { mono: true }),
+    ].filter(Boolean);
+    return {
+      facts,
+      body: [
+        section(text("description"), renderDescription(entry.description)),
+        section(text("enemyStats"), renderStats(entry.stats)),
+        section(text("enemyAbilities"), renderEnemyAbilities(entry)),
+        section(text("combatValues"), renderEnemyCombatValues(entry)),
+        section(text("enemyDetails"), renderEnemyDetails(entry)),
+      ].join(""),
+    };
+  }
+
   function renderEquipmentFormula(entry) {
     const formula = entry.formula || {};
     if (!formula.formulaName && !(formula.costs || []).length) return "";
@@ -1160,7 +1282,7 @@
     if (empty) empty.hidden = true;
     detail.hidden = false;
     gp$("#gameplay-detail-title").textContent = entry.title || entry.id || "";
-    const rendered = entry.kind === "weapon" ? renderWeaponDetail(entry) : entry.kind === "equipment" ? renderEquipmentDetail(entry) : renderCharacterDetail(entry);
+    const rendered = entry.kind === "weapon" ? renderWeaponDetail(entry) : entry.kind === "equipment" ? renderEquipmentDetail(entry) : entry.kind === "enemy" ? renderEnemyDetail(entry) : renderCharacterDetail(entry);
     const detailTags = [
       fact(text("kind"), kindLabel(entry.kind), { kind: entry.kind }),
       ...(rendered.facts || []),
@@ -1334,7 +1456,7 @@
       }
       return true;
     }).sort((a, b) => {
-      const order = { weapon: 0, equipment: 1, character: 2 };
+      const order = { weapon: 0, equipment: 1, character: 2, enemy: 3 };
       const ak = order[a.kind] ?? 9;
       const bk = order[b.kind] ?? 9;
       if (ak !== bk) return ak - bk;
