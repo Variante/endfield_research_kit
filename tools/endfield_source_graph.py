@@ -1076,6 +1076,8 @@ class SourceGraphBuilder:
 
         for label in ("stats", "upgrade", "breakthrough", "levelCurve", "breakthroughs", "potentials", "formula", "suit"):
             self.add_gameplay_progression_node(node, entry_id, label, entry.get(label))
+        if kind == "character":
+            self.add_gameplay_character_semantics(node, entry_id, entry)
         if kind == "equipment":
             self.add_gameplay_equipment_semantics(node, entry_id, entry)
         if kind == "enemy":
@@ -1119,6 +1121,200 @@ class SourceGraphBuilder:
             for index, talent in enumerate(entry.get("talents") or []):
                 if isinstance(talent, dict):
                     self.add_gameplay_talent(node, f"{entry_id}:talents", talent, index)
+
+    def add_gameplay_character_semantics(self, character_node: str, character_id: str, entry: dict[str, Any]) -> None:
+        default_weapon_id = safe_key(entry.get("defaultWeaponId"))
+        if default_weapon_id:
+            weapon_node = self.add_node("weapon", default_weapon_id, name=entry.get("defaultWeaponName") or default_weapon_id, source="webui/gameplay")
+            self.add_edge(character_node, weapon_node, "uses_default_weapon", source="webui/gameplay", evidence="defaultWeaponId")
+            self.add_alias(default_weapon_id, weapon_node, kind="weapon_id", source="webui/gameplay")
+            self.add_alias(entry.get("defaultWeaponName"), weapon_node, kind="weapon_name", source="webui/gameplay")
+
+        for index, stage in enumerate(entry.get("breakStages") or []):
+            if not isinstance(stage, dict):
+                continue
+            stage_key = safe_key(stage.get("stage") if stage.get("stage") is not None else index)
+            if not stage_key:
+                continue
+            level_range = stage.get("levelRange") if isinstance(stage.get("levelRange"), list) else []
+            stage_node = self.add_node(
+                "character_break_stage",
+                f"{character_id}:break_stage:{stage_key}",
+                name=f"{character_id} break stage {stage_key}",
+                source="webui/gameplay",
+                data={
+                    "characterId": character_id,
+                    "stage": stage.get("stage"),
+                    "levelRange": level_range,
+                    "skillCaps": stage.get("skillCaps"),
+                    "breakStatus": stage.get("breakStatus"),
+                    "goldCost": stage.get("goldCost"),
+                    "availableExpItemCount": len(stage.get("availableExpItems") or []),
+                },
+            )
+            self.add_edge(character_node, stage_node, "has_character_break_stage", source="webui/gameplay", evidence=stage_key)
+            self.add_alias(f"{character_id}:break_stage:{stage_key}", stage_node, kind="character_break_stage_id", source="webui/gameplay")
+            for item_index, item in enumerate(stage.get("availableExpItems") or []):
+                if not isinstance(item, dict):
+                    continue
+                item_node = self.add_item_node(item.get("id"), name=item.get("name"), source="webui/gameplay")
+                if item_node:
+                    self.add_edge(stage_node, item_node, "break_stage_allows_exp_item", source="webui/gameplay", evidence=f"availableExpItems[{item_index}]")
+                    self.add_gameplay_item_asset_edges(item_node, safe_key(item.get("id")))
+
+        level_curve = entry.get("levelCurve") if isinstance(entry.get("levelCurve"), dict) else {}
+        for index, checkpoint in enumerate(level_curve.get("checkpoints") or []):
+            if not isinstance(checkpoint, dict):
+                continue
+            level_key = safe_key(checkpoint.get("level") if checkpoint.get("level") is not None else index)
+            if not level_key:
+                continue
+            checkpoint_node = self.add_node(
+                "character_level_checkpoint",
+                f"{character_id}:level:{level_key}",
+                name=f"{character_id} level {level_key}",
+                source="webui/gameplay",
+                data={
+                    "characterId": character_id,
+                    "level": checkpoint.get("level"),
+                    "exp": checkpoint.get("exp"),
+                    "gold": checkpoint.get("gold"),
+                    "table": level_curve.get("table"),
+                },
+            )
+            self.add_edge(character_node, checkpoint_node, "has_character_level_checkpoint", source="webui/gameplay", evidence=level_key)
+            self.add_alias(f"{character_id}:level:{level_key}", checkpoint_node, kind="character_level_checkpoint_id", source="webui/gameplay")
+            gold = checkpoint.get("gold")
+            if isinstance(gold, (int, float)) and gold > 0:
+                item_node = self.add_item_node("item_gold", name="item_gold", source="webui/gameplay")
+                self.add_edge(checkpoint_node, item_node, "level_checkpoint_gold_cost", source="webui/gameplay", evidence="gold", data={"count": gold})
+                self.add_gameplay_item_asset_edges(item_node, "item_gold")
+
+        stats = entry.get("stats") if isinstance(entry.get("stats"), dict) else {}
+        for index, row in enumerate(stats.get("rows") or []):
+            if not isinstance(row, dict):
+                continue
+            level_key = safe_key(row.get("level")) or str(index)
+            break_stage_key = safe_key(row.get("breakStage")) or "0"
+            stat_node = self.add_node(
+                "character_stat_checkpoint",
+                f"{character_id}:stat:{index}:{level_key}:{break_stage_key}",
+                name=f"{character_id} L{level_key} B{break_stage_key}",
+                source="webui/gameplay",
+                data={
+                    "characterId": character_id,
+                    "level": row.get("level"),
+                    "breakStage": row.get("breakStage"),
+                    "attrCount": len(row.get("attrs") or []),
+                    "source": stats.get("source"),
+                },
+            )
+            self.add_edge(character_node, stat_node, "has_character_stat_checkpoint", source="webui/gameplay", evidence=f"{level_key}:{break_stage_key}")
+            self.add_alias(f"{character_id}:stat:{level_key}:{break_stage_key}", stat_node, kind="character_stat_checkpoint_id", source="webui/gameplay")
+            for attr_index, attr in enumerate(row.get("attrs") or []):
+                if not isinstance(attr, dict):
+                    continue
+                attr_key = safe_key(attr.get("key") or f"attr_{attr.get('type')}")
+                if not attr_key:
+                    continue
+                property_node = self.add_node(
+                    "gameplay_stat_property",
+                    attr_key,
+                    name=attr.get("label") or attr_key,
+                    source="webui/gameplay",
+                    data={"key": attr_key, "type": attr.get("type"), "label": attr.get("label"), "iconName": attr.get("iconName")},
+                )
+                self.add_edge(stat_node, property_node, "stat_checkpoint_has_property", source="webui/gameplay", evidence=f"attrs[{attr_index}]", data={"value": attr.get("value"), "type": attr.get("type"), "key": attr_key})
+                self.add_alias(attr_key, property_node, kind="gameplay_stat_property_key", source="webui/gameplay")
+                self.add_alias(attr.get("label"), property_node, kind="gameplay_stat_property_name", source="webui/gameplay")
+
+        for index, breakthrough in enumerate(entry.get("breakthroughs") or []):
+            if not isinstance(breakthrough, dict):
+                continue
+            breakthrough_id = safe_key(breakthrough.get("id") or f"breakthrough_{index}")
+            if not breakthrough_id:
+                continue
+            breakthrough_node = self.add_node(
+                "character_breakthrough",
+                f"{character_id}:breakthrough:{breakthrough_id}",
+                name=breakthrough.get("name") or breakthrough.get("title") or breakthrough_id,
+                source="webui/gameplay",
+                data={
+                    "characterId": character_id,
+                    "id": breakthrough_id,
+                    "stage": breakthrough.get("stage"),
+                    "level": breakthrough.get("level"),
+                    "equipTierLimit": breakthrough.get("equipTierLimit"),
+                    "name": breakthrough.get("name") or breakthrough.get("title"),
+                    "description": compact_text(breakthrough.get("description"), 500),
+                },
+            )
+            self.add_edge(character_node, breakthrough_node, "has_character_breakthrough", source="webui/gameplay", evidence=breakthrough_id)
+            self.add_alias(breakthrough_id, breakthrough_node, kind="character_breakthrough_id", source="webui/gameplay")
+            self.add_alias(f"{character_id}:breakthrough:{safe_key(breakthrough.get('level'))}", breakthrough_node, kind="character_breakthrough_level", source="webui/gameplay")
+            source = breakthrough.get("source") if isinstance(breakthrough.get("source"), dict) else {"table": "CharBreakNodeTable.json", "id": breakthrough_id}
+            self.add_gameplay_source_edges(breakthrough_node, source)
+            stage_key = safe_key(breakthrough.get("stage"))
+            if stage_key:
+                stage_node = self.add_node("character_break_stage", f"{character_id}:break_stage:{stage_key}", name=f"{character_id} break stage {stage_key}", source="webui/gameplay")
+                self.add_edge(breakthrough_node, stage_node, "unlocks_character_break_stage", source="webui/gameplay", evidence="stage")
+            self.add_gameplay_required_items(breakthrough_node, breakthrough, evidence="characterBreakthrough")
+
+        potentials = entry.get("potentials") if isinstance(entry.get("potentials"), dict) else {}
+        first_item_node = self.add_item_node(potentials.get("firstItemId"), source="webui/gameplay")
+        if first_item_node:
+            self.add_edge(character_node, first_item_node, "uses_character_potential_item", source="webui/gameplay", evidence="firstItemId")
+            self.add_gameplay_item_asset_edges(first_item_node, safe_key(potentials.get("firstItemId")))
+        for index, potential in enumerate(potentials.get("levels") or []):
+            if not isinstance(potential, dict):
+                continue
+            level_key = safe_key(potential.get("level") if potential.get("level") is not None else index)
+            if not level_key:
+                continue
+            effect_id = safe_key(potential.get("potentialEffectId"))
+            potential_node = self.add_node(
+                "character_potential",
+                f"{character_id}:potential:{level_key}",
+                name=potential.get("name") or effect_id or f"potential {level_key}",
+                source="webui/gameplay",
+                data={
+                    "characterId": character_id,
+                    "level": potential.get("level"),
+                    "name": potential.get("name"),
+                    "potentialEffectId": effect_id,
+                    "description": compact_text(potential.get("description"), 500),
+                    "descriptionTemplate": compact_text(potential.get("descriptionTemplate"), 500),
+                    "blackboardCount": len(potential.get("blackboard") or []),
+                    "unlockPictureItemCount": len(potential.get("unlockCharPictureItemList") or []),
+                    "unlockCardTopicItem": potential.get("unlockCardTopicItem"),
+                },
+            )
+            self.add_edge(character_node, potential_node, "has_character_potential", source="webui/gameplay", evidence=level_key)
+            self.add_alias(f"{character_id}:potential:{level_key}", potential_node, kind="character_potential_id", source="webui/gameplay")
+            self.add_alias(potential.get("name"), potential_node, kind="character_potential_name", source="webui/gameplay")
+            if effect_id:
+                effect_node = self.add_node("potential_talent_effect", effect_id, name=effect_id, source="webui/gameplay")
+                self.add_edge(potential_node, effect_node, "uses_potential_talent_effect", source="webui/gameplay", evidence="potentialEffectId")
+                self.add_alias(effect_id, effect_node, kind="potential_talent_effect_id", source="webui/gameplay")
+            for bb_index, bb in enumerate(potential.get("blackboard") or []):
+                if not isinstance(bb, dict):
+                    continue
+                bb_key = safe_key(bb.get("key"))
+                if not bb_key:
+                    continue
+                bb_node = self.add_node("gameplay_blackboard_key", bb_key, name=bb_key, source="webui/gameplay")
+                self.add_edge(potential_node, bb_node, "character_potential_uses_blackboard_key", source="webui/gameplay", evidence=f"blackboard[{bb_index}]", data={"value": bb.get("value")})
+                self.add_alias(bb_key, bb_node, kind="gameplay_blackboard_key", source="webui/gameplay")
+            for item_index, item_id in enumerate(potential.get("unlockCharPictureItemList") or []):
+                item_node = self.add_item_node(item_id, source="webui/gameplay")
+                if item_node:
+                    self.add_edge(potential_node, item_node, "character_potential_unlocks_item", source="webui/gameplay", evidence=f"unlockCharPictureItemList[{item_index}]")
+                    self.add_gameplay_item_asset_edges(item_node, safe_key(item_id))
+            card_item_node = self.add_item_node(potential.get("unlockCardTopicItem"), source="webui/gameplay")
+            if card_item_node:
+                self.add_edge(potential_node, card_item_node, "character_potential_unlocks_item", source="webui/gameplay", evidence="unlockCardTopicItem")
+                self.add_gameplay_item_asset_edges(card_item_node, safe_key(potential.get("unlockCardTopicItem")))
+            self.add_gameplay_required_items(potential_node, potential, evidence="characterPotential")
 
     def add_gameplay_enemy_semantics(self, enemy_node: str, enemy_id: str, entry: dict[str, Any]) -> None:
         template_id = safe_key(entry.get("templateId"))
@@ -4050,6 +4246,11 @@ QUERY_KIND_PRIORITY = {
     "settlement_poi": 21,
     "shop_channel_poi": 22,
     "character": 9,
+    "character_break_stage": 10,
+    "character_level_checkpoint": 11,
+    "character_stat_checkpoint": 12,
+    "character_breakthrough": 13,
+    "character_potential": 14,
     "weapon": 10,
     "equipment": 11,
     "enemy": 12,
@@ -4124,6 +4325,11 @@ NODE_ID_PREFIXES = (
     "settlement_poi",
     "shop_channel_poi",
     "character",
+    "character_break_stage",
+    "character_level_checkpoint",
+    "character_stat_checkpoint",
+    "character_breakthrough",
+    "character_potential",
     "weapon",
     "equipment",
     "enemy",

@@ -744,9 +744,26 @@ separate visible Gameplay entries. Exact queries such as `chr_0017_yvonne`,
 `wpn_pistol_0001`, `eny_0018_lbtough`, `item_gold`,
 `reward_payshop_wpn_claym_0003`, `domainshop_goods_map01_10001`,
 `chr_0002_endminm_attack1`, `item_proc_bomb_1`, `atk_scale`, `map01`,
-`mark_arrow`, and `component_activity_xiranite_cmpt_1` now resolve to semantic
+`mark_arrow`, `chr_0017_yvonne:stat:90:4`, `chr_0017_yvonne:potential:1`,
+`chr_0017_yvonne:breakthrough:charBreak20`, and
+`component_activity_xiranite_cmpt_1` now resolve to semantic
 nodes with source table rows and neighbors. This improves cross-domain lookup;
 it still does not prove formulas beyond generated source-table evidence.
+
+2026-07-01 source graph character-progression progress: generated Gameplay
+character payloads now expose break-stage ranges, level EXP/gold checkpoints,
+visible stat checkpoints, breakthrough unlocks, potential levels, potential
+blackboard parameters, potential unlock items, and default weapons as first-class
+queryable graph facts. A fast rebuild on the current CN payload verified 140
+character break-stage nodes, 196 level-checkpoint nodes, 2,632 stat-checkpoint
+nodes, 18,424 stat-property value edges, 112 breakthrough nodes, 140 potential
+nodes, 794 potential blackboard edges, 101 potential unlock-item edges, and 28
+default-weapon edges. The current generated CN Gameplay payload used for this
+check reports 515 visible entries: 72 weapons, 220 equipment records, 28
+characters, 78 visible enemy entries, and 117 usable items, while retaining 290
+enemy variants as generated payload evidence. This improves exact lookup for
+character numerical progression; runtime formula evaluation and modifier order
+remain future work.
 
 2026-07-01 source graph item/economy progress: item, reward, reward-drop, and
 shop table semantics are now queryable before Gameplay ingestion. A fast source
