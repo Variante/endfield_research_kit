@@ -1037,6 +1037,29 @@ python tools\endfield_source_graph.py query base01_lv001:WeaponWall/Claymores/0 
 python tools\endfield_source_graph.py query WeaponWall --kind level_mount_type
 ```
 
+2026-07-01 LevelGenForRuntime graph progress: source graph ingestion now
+promotes static factory generation data from `Json_LevelGenForRuntime.json`.
+A fast CN rebuild to `tmp/source_graph_level_gen.sqlite` verified
+1,498,231 total nodes, 2,622,475 edges, and 2,018,261 aliases. New coverage
+includes 70 `level_gen_parent_data` nodes, 267 `level_gen_doodad_group`
+nodes from 534 Persistent/StreamingAssets definition edges, 1,967
+`level_gen_doodad_logic` nodes, 267 center links, 1,700 outer links, 56
+doodad map-mark links, 136 source-file factory-region definition edges
+collapsed to 68 runtime region refs, 202 `factory_mine` nodes from 404
+source-file definition edges, 202 region-to-mine links, 202 mine-to-doodad
+logic links, 4 mine proto nodes, and 202 mine-to-item output links. Mine
+outputs are `item_originium_ore` 84, `item_iron_ore` 73,
+`item_quartz_sand` 23, and `item_copper_ore` 22. This pass indexes
+static authored factory/doodad generation metadata and mine output refs; it
+does not prove runtime resource refresh formulas, gathering logic, factory
+simulation behavior, or map-mark visibility. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query 200060035 --kind level_gen_doodad_group
+python tools\endfield_source_graph.py query region_301:200060537 --kind factory_mine
+python tools\endfield_source_graph.py query item_originium_ore --kind item
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
