@@ -311,7 +311,9 @@ Expected active inputs and outputs:
   language voice files under `export_full/structured/Audio/<LANG>/`, parses Wwise bank
   event-to-media links, and post-processes generated conversation JSON so
   dialog/cutscene lines and recoverable cutscene audio events can render native
-  browser audio controls.
+  browser audio controls. It accepts scalar or list-valued audio path fields
+  (`audioPath`, `audioPaths`, `audioDialogPath`, `audioDialogPaths`) from Story
+  payloads and their `_debug.source` blocks.
 - `hash_export_pngs.py`: hashes every `.png` file under `..\export_full\` with
   parallel readers and writes `path,hash` CSV rows to
   `..\reports\export_full_png_hashes.csv` by default.
