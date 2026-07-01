@@ -377,7 +377,11 @@ for first/payload/stop components, trigger/guide shapes, and selected property
 maps. The InteractiveData collection pass adds 935 collection ids, 1,843
 Persistent/StreamingAssets source-file definition edges, and 935 collection-to-level
 links across 214 level ids while leaving the 21-element `totalCnt` arrays
-uninterpreted. It does not prove runtime formula usage, full SpawnerConfig tail semantics,
+uninterpreted. The `ModelViewStateControllerData` pass adds 399 model-view
+controller nodes, 798 source-file definition edges, 582 clip-ref nodes, 750
+animator-name nodes, 923 exact clip edges, 823 animator-body clip refs, 619
+exact effect-id edges, and 872 animator-body effect refs; the config-model to
+asset-entity join remains 0 for this family. It does not prove runtime formula usage, full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
 flow, montage clip playback semantics, full exported model/icon reconstruction,
@@ -433,6 +437,12 @@ Partial but useful current examples include:
   Collections JSON now contributes 935 collection ids and level links across 214
   level ids, while component execution/control flow, numeric enum meaning, and
   `totalCnt` counter semantics remain future work.
+- `ModelViewStateControllerData`: queryable model-view controller inventory
+  across 798 decoded source files and 399 model ids, including model links,
+  exact clip/effect refs, bounded animator-body clip/effect refs, animator-name
+  refs, and `preTickAnimator` payload evidence; animator state machines,
+  transitions, timing, camera/emissive hash meaning, and asset-entity joins
+  remain future work.
 - `LevelScriptTemplateData` and other partially previewed families have verified
   top-level ids/counts and meaningful previews.
 
