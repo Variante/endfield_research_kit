@@ -398,8 +398,11 @@ links, condition/tracking/action type nodes, and exact mission-area and
 narrative refs. The `AIConfig/EnemyTemplateDataSummary` pass adds 78
 enemy data asset path nodes from 156 Persistent/StreamingAssets source
 mappings, 156 file-to-template preload edges, and 78 deduplicated
-template-to-asset preload edges. These decoded-config passes do not prove
-runtime formula usage,
+template-to-asset preload edges. The `MapConfig` pass adds 139 map-config
+nodes, 197 unique numeric level-id edges with 31,992 grid-cell counts kept
+as payload data, 149 string level links, 99 scene states, 39 map variables,
+and exact quest/mission/map-variable condition refs. These decoded-config
+passes still do not prove runtime formula usage,
 full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
@@ -485,6 +488,11 @@ Partial but useful current examples include:
   mappings for 78 template ids to exact `EnemyData/*.asset` paths, with
   Persistent/StreamingAssets source-file evidence; these are preload path
   refs, not full AI behavior, behavior-tree, or renderable model bindings.
+- `MapConfig`: queryable map config nodes for 139 map ids, including
+  domain names, streaming map asset paths, unique numeric/string level links,
+  scene states, map variables, and quest/mission/map-variable condition
+  refs; grid placement, streaming behavior, state evaluation, and UI map
+  rendering remain future work.
 - `LevelScriptTemplateData` and other partially previewed families have verified
   top-level ids/counts and meaningful previews.
 
@@ -597,6 +605,18 @@ Persistent 78 and StreamingAssets 78, 78 deduplicated template-to-asset
 preload edges, and 78 path plus 78 stem aliases. This is static preload-path
 evidence only; it does not prove AI behavior trees, spawn behavior, renderable
 model binding, or asset presence in the lean asset index.
+
+2026-07-01 source graph MapConfig progress: a fast CN rebuild to
+`tmp/source_graph_mapconfig.sqlite` verified exact map config JSON from
+`Json_MapConfig.json`. The pass adds 139 `map_config` nodes, 270
+source-file definition edges, 139 config-to-map links, 48 domain nodes, 68
+streaming map asset path nodes, 197 unique numeric level-id edges, 149
+string level links, 99 scene-state nodes, 39 map variables, 4 condition
+types, 32 quest condition refs, 5 mission refs, and 9 map-variable refs.
+The original 31,992 `levelIds` grid entries are preserved as counts on
+config node payloads rather than emitted as per-cell edges. This is static
+authored map metadata, not proof of streaming behavior, condition evaluation,
+grid placement semantics, or UI map rendering.
 
 Useful support-table checks include:
 
