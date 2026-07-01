@@ -489,6 +489,14 @@ Audio evidence supports many inferred response groups:
 - Candidate speaker consistent: 13.
 - Candidates share anchor timeline asset: 20.
 
+2026-07-01 WebUI progress: ResponsiveDialog/AIBark fallback conversations now
+preserve matching `AudioDialog.path` evidence on generated line payloads as
+`audioPaths` and singleton `audioPath`. The audio relinker accepts those scalar
+or list-valued fields, including under `_debug.source`, so recovered bark lines
+can resolve to decoded audio without needing a separate explicit `audio` id.
+A CN rebuild found 959 responsive lines with `audioPaths`, all 959 linked to
+`audioSrc`, with no multi-path rows in the current export.
+
 That is useful supporting evidence, but it is not the same as full branch proof.
 The current representation is practical and mostly coherent, but not fully
 authoritative for every branch.
