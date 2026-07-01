@@ -977,6 +977,29 @@ python tools\endfield_source_graph.py query eny_0007_mimicw --kind enemy_templat
 python tools\endfield_source_graph.py query data_eny_0007_mimicw --kind enemy_data_asset
 ```
 
+2026-07-01 MapConfig graph progress: source graph ingestion now promotes
+exact map config JSON from `Json_MapConfig.json`. A fast CN rebuild to
+`tmp/source_graph_mapconfig.sqlite` verified 1,495,527 total nodes,
+2,617,649 edges, and 2,015,082 aliases. New coverage includes 139
+`map_config` nodes from 270 source-file definition edges split as
+Persistent 139 and StreamingAssets 131, 139 config-to-map links, 48
+`map_domain` nodes, 68 `map_streaming_asset` path nodes, 197 unique
+numeric `map_config_has_level_id` edges with the original 31,992 grid-cell
+level id counts preserved in config node data, 149 `levelStrIds` links, 99
+`map_scene_state` nodes, 39 `map_variable` nodes with 78 definition edges,
+4 condition-type nodes with 53 scene-condition type edges, 32 quest-task
+condition refs, 5 mission condition refs, and 9 map-variable condition
+refs. This pass models static authored map config metadata and condition
+references; it does not prove map streaming behavior, scene-state
+evaluation, grid placement semantics, or UI map rendering. Example exact
+queries:
+
+```bat
+python tools\endfield_source_graph.py query base01_lv001 --kind map_config
+python tools\endfield_source_graph.py query base01_lv001:default --kind map_scene_state
+python tools\endfield_source_graph.py query dung02_bdg002:Nefarp_human --kind map_variable
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,

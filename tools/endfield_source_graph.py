@@ -306,10 +306,12 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_LipSync.json",
     "Json_MissionRuntimeAsset.json",
     "Json_AIConfig.json",
+    "Json_MapConfig.json",
 )
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
     "AIConfigEnemyTemplateDataSummary",
+    "MapConfig",
     "BambooRaftTaskTable",
     "CharInteractPerformCfgs",
     "NpcAtmosphericDataTable",
@@ -2878,6 +2880,8 @@ class SourceGraphBuilder:
                     subtype = "MissionRuntimeAsset"
                 if group_name == "Json_AIConfig.json" and safe_key(entry.get("dp")) == "Json/AIConfig/EnemyTemplateDataSummary.json":
                     subtype = "AIConfigEnemyTemplateDataSummary"
+                if group_name == "Json_MapConfig.json":
+                    subtype = "MapConfig"
                 if subtype not in DECODED_CONFIG_TARGET_TYPES:
                     continue
                 self.add_decoded_config_entry(group_node, entry, subtype=subtype)
@@ -2902,6 +2906,8 @@ class SourceGraphBuilder:
         self.add_edge(file_node, family_node, "decoded_as_config_family", source="webui/game_data", evidence=safe_key(entry.get("q")))
         if subtype == "AIConfigEnemyTemplateDataSummary":
             self.add_ai_config_enemy_template_summary_edges(file_node, entry)
+        elif subtype == "MapConfig":
+            self.add_map_config_edges(file_node, entry)
         elif subtype == "AnimationConfig":
             self.add_animation_config_edges(file_node, entry)
         elif subtype == "NpcAtmosphericDataTable":
@@ -3849,6 +3855,171 @@ class SourceGraphBuilder:
             self.add_edge(file_node, template_node, "ai_config_preloads_enemy_template", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id, "index": index})
             if asset_node:
                 self.add_edge(template_node, asset_node, "enemy_template_preloads_data_asset", source=source, evidence="preloadEnemyTemplateId2Path", data={"source": source_id})
+
+    def map_config_condition_type_name(self, condition_type: Any) -> str:
+        type_key = safe_key(condition_type)
+        if not type_key:
+            return ""
+        return type_key.split(",", 1)[0].rsplit(".", 1)[-1] or type_key
+
+    def add_map_config_condition_type_node(self, condition_type: Any, *, source: str = "") -> str:
+        type_key = safe_key(condition_type)
+        type_name = self.map_config_condition_type_name(type_key)
+        if not type_name:
+            return ""
+        node = self.add_node("map_config_condition_type", type_name, name=type_name, source=source, data={"type": type_key})
+        self.add_alias(type_name, node, kind="map_config_condition_type", source=source)
+        self.add_alias(type_key, node, kind="map_config_condition_full_type", source=source)
+        return node
+
+    def add_map_variable_node(self, map_id: Any, var_name: Any = None, var_num: Any = None, *, source: str = "") -> str:
+        map_key = safe_key(map_id) or "unknown"
+        name_key = safe_key(var_name)
+        num_key = safe_key(var_num)
+        value_key = name_key or num_key
+        if not value_key:
+            return ""
+        node_key = f"{map_key}:{value_key}"
+        node = self.add_node("map_variable", node_key, name=value_key, source=source, data={"mapIdStr": map_key, "name": name_key, "numId": num_key})
+        self.add_alias(node_key, node, kind="map_variable_key", source=source)
+        if name_key:
+            self.add_alias(name_key, node, kind="map_variable_name", source=source)
+            self.add_alias(f"{map_key}:{name_key}", node, kind="map_variable_name", source=source)
+        if num_key:
+            self.add_alias(f"{map_key}:{num_key}", node, kind="map_variable_num_id", source=source)
+        return node
+
+    def add_map_config_condition_refs(self, owner_node: str, condition: Any, *, source: str, evidence: str, map_id: str) -> None:
+        if not isinstance(condition, dict):
+            return
+        condition_type = safe_key(condition.get("$type"))
+        type_node = self.add_map_config_condition_type_node(condition_type, source=source)
+        condition_data = compact_payload({
+            "conditionOperator": condition.get("conditionOperator"),
+            "reverse": condition.get("reverse"),
+            "compareOperator": condition.get("compareOperator"),
+            "compareTarget": condition.get("compareTarget"),
+        }, depth=2)
+        if type_node:
+            self.add_edge(owner_node, type_node, "map_scene_condition_type", source=source, evidence=evidence, data=condition_data)
+        quest_id = safe_key(condition.get("questId"))
+        if quest_id:
+            quest_node = self.add_quest_task_node(quest_id, source=source)
+            self.add_edge(owner_node, quest_node, "map_scene_condition_quest", source=source, evidence=evidence, data=condition_data)
+            mission_prefix = self.quest_task_mission_prefix(quest_id)
+            mission_node = self.add_mission_ref_node(mission_prefix, source=source)
+            if mission_node:
+                self.add_edge(quest_node, mission_node, "quest_task_in_mission", source=source, evidence="map_config_quest_prefix")
+        mission_id = safe_key(condition.get("missionId"))
+        if mission_id:
+            mission_node = self.add_mission_ref_node(mission_id, source=source)
+            if mission_node:
+                self.add_edge(owner_node, mission_node, "map_scene_condition_mission", source=source, evidence=evidence, data=condition_data)
+        map_var_name = safe_key(condition.get("mapVarName"))
+        if map_var_name:
+            var_map_id = safe_key(condition.get("belongMapId")) or map_id
+            var_node = self.add_map_variable_node(var_map_id, map_var_name, source=source)
+            if var_node:
+                self.add_edge(owner_node, var_node, "map_scene_condition_map_variable", source=source, evidence=evidence, data=condition_data)
+        for sub_index, sub_condition in enumerate(condition.get("subConditions") or []):
+            self.add_map_config_condition_refs(owner_node, sub_condition, source=source, evidence=f"{evidence}.subConditions[{sub_index}]", map_id=map_id)
+
+    def add_map_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        raw_data = self.read_decoded_config_bytes(entry)
+        if not raw_data:
+            return
+        try:
+            payload = json.loads(raw_data.decode("utf-8-sig"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return
+        if not isinstance(payload, dict):
+            return
+        map_id = safe_key(payload.get("mapIdStr")) or Path(safe_key(entry.get("dp"))).stem
+        if not map_id:
+            return
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        level_counts = Counter(safe_key(value) for value in (payload.get("levelIds") or []) if safe_key(value))
+        level_str_ids = sorted({safe_key(value) for value in (payload.get("levelStrIds") or []) if safe_key(value)})
+        scene_states = payload.get("sceneStates") if isinstance(payload.get("sceneStates"), dict) else {}
+        scene_conditions = payload.get("sceneStateConditions") if isinstance(payload.get("sceneStateConditions"), list) else []
+        map_vars_by_num = payload.get("mapVarNumId2Name") if isinstance(payload.get("mapVarNumId2Name"), dict) else {}
+        map_vars_by_name = payload.get("mapVarName2NumId") if isinstance(payload.get("mapVarName2NumId"), dict) else {}
+        config_data = compact_payload({
+            "mapIdStr": map_id,
+            "mapId": payload.get("mapId"),
+            "isSeamless": payload.get("isSeamless"),
+            "sideGridNum": payload.get("sideGridNum"),
+            "facSystemSkip": payload.get("facSystemSkip"),
+            "domainName": payload.get("domainName"),
+            "streamingMapConfigPath": payload.get("streamingMapConfigPath"),
+            "levelIdUniqueCount": len(level_counts),
+            "levelIdGridCellCount": sum(level_counts.values()),
+            "levelStrIdCount": len(level_str_ids),
+            "sceneStateCount": len(scene_states),
+            "sceneStateConditionCount": len(scene_conditions),
+            "mapVarCount": max(len(map_vars_by_num), len(map_vars_by_name)),
+            "levelIdCounts": dict(sorted(level_counts.items())),
+            "levelStrIds": level_str_ids,
+            "sceneStates": scene_states,
+        }, depth=4)
+        config_node = self.add_node("map_config", map_id, name=map_id, source=source, data=config_data)
+        self.add_alias(map_id, config_node, kind="map_config_id", source=source)
+        self.add_alias(payload.get("mapId"), config_node, kind="map_config_numeric_id", source=source)
+        self.add_edge(file_node, config_node, "defines_map_config", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id})
+        map_node = self.add_map_node(map_id, source=source, data={"mapId": payload.get("mapId")})
+        if map_node:
+            self.add_edge(config_node, map_node, "map_config_defines_map", source=source, evidence="mapIdStr")
+        domain_name = safe_key(payload.get("domainName"))
+        if domain_name:
+            domain_node = self.add_node("map_domain", domain_name, name=domain_name, source=source)
+            self.add_alias(domain_name, domain_node, kind="map_domain_name", source=source)
+            self.add_edge(config_node, domain_node, "map_config_in_domain", source=source, evidence="domainName")
+        streaming_path = safe_key(payload.get("streamingMapConfigPath"))
+        if streaming_path:
+            streaming_node = self.add_node("map_streaming_asset", streaming_path, name=Path(streaming_path).name, source=source, path=streaming_path)
+            self.add_alias(streaming_path, streaming_node, kind="map_streaming_asset_path", source=source)
+            self.add_edge(config_node, streaming_node, "map_config_uses_streaming_asset", source=source, evidence="streamingMapConfigPath")
+        for level_id, count in sorted(level_counts.items()):
+            level_node = self.add_level_node(level_id, source=source)
+            self.add_edge(config_node, level_node, "map_config_has_level_id", source=source, evidence="levelIds", data={"gridCellCount": count})
+            if map_node:
+                self.add_edge(level_node, map_node, "level_belongs_to_map", source=source, evidence="MapConfig.levelIds")
+        for level_id in level_str_ids:
+            level_node = self.add_level_node(level_id, source=source)
+            self.add_edge(config_node, level_node, "map_config_has_level_str_id", source=source, evidence="levelStrIds")
+            if map_node:
+                self.add_edge(level_node, map_node, "level_belongs_to_map", source=source, evidence="MapConfig.levelStrIds")
+        for num_id, var_name in sorted(map_vars_by_num.items(), key=lambda item: safe_key(item[0])):
+            var_node = self.add_map_variable_node(map_id, var_name, num_id, source=source)
+            if var_node:
+                self.add_edge(config_node, var_node, "map_config_defines_map_variable", source=source, evidence="mapVarNumId2Name")
+        for var_name, num_id in sorted(map_vars_by_name.items(), key=lambda item: safe_key(item[0])):
+            var_node = self.add_map_variable_node(map_id, var_name, num_id, source=source)
+            if var_node:
+                self.add_edge(config_node, var_node, "map_config_defines_map_variable", source=source, evidence="mapVarName2NumId")
+        state_nodes: dict[str, str] = {}
+        for state_name_raw, state_id in sorted(scene_states.items(), key=lambda item: safe_key(item[0])):
+            state_name = safe_key(state_name_raw)
+            if not state_name:
+                continue
+            state_node = self.add_node("map_scene_state", f"{map_id}:{state_name}", name=state_name, source=source, data={"mapIdStr": map_id, "stateName": state_name, "stateId": state_id})
+            self.add_alias(f"{map_id}:{state_name}", state_node, kind="map_scene_state_key", source=source)
+            self.add_alias(state_name, state_node, kind="map_scene_state_name", source=source)
+            self.add_edge(config_node, state_node, "map_config_has_scene_state", source=source, evidence="sceneStates", data={"stateId": state_id})
+            state_nodes[state_name] = state_node
+        for condition_index, condition_entry in enumerate(scene_conditions):
+            if not isinstance(condition_entry, dict):
+                continue
+            state_name = safe_key(condition_entry.get("stateName")) or f"condition_{condition_index}"
+            state_node = state_nodes.get(state_name)
+            if not state_node:
+                state_node = self.add_node("map_scene_state", f"{map_id}:{state_name}", name=state_name, source=source, data={"mapIdStr": map_id, "stateName": state_name})
+                self.add_alias(f"{map_id}:{state_name}", state_node, kind="map_scene_state_key", source=source)
+                self.add_alias(state_name, state_node, kind="map_scene_state_name", source=source)
+                self.add_edge(config_node, state_node, "map_config_has_scene_state", source=source, evidence="sceneStateConditions")
+                state_nodes[state_name] = state_node
+            self.add_map_config_condition_refs(state_node, condition_entry.get("condition"), source=source, evidence=f"sceneStateConditions[{condition_index}]", map_id=map_id)
 
     def mission_runtime_text_key(self, payload: Any) -> str:
         if isinstance(payload, dict):
@@ -12092,6 +12263,12 @@ QUERY_KIND_PRIORITY = {
     "mission_runtime_condition_type": 121,
     "mission_runtime_tracking_type": 122,
     "enemy_data_asset": 123,
+    "map_config": 124,
+    "map_scene_state": 125,
+    "map_variable": 126,
+    "map_domain": 127,
+    "map_streaming_asset": 128,
+    "map_config_condition_type": 129,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -12375,6 +12552,12 @@ NODE_ID_PREFIXES = (
     "mission_runtime_condition_type",
     "mission_runtime_tracking_type",
     "enemy_data_asset",
+    "map_config",
+    "map_scene_state",
+    "map_variable",
+    "map_domain",
+    "map_streaming_asset",
+    "map_config_condition_type",
     "mission",
     "map",
     "level",
