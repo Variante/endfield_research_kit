@@ -2449,15 +2449,25 @@ def read_buff_timeline_first_union_tag(
 
 
 BUFF_CONVERT_TO_TARGET_CONTEXT_ACTION_TAG = 0x007e
+BUFF_MODIFY_DYNAMIC_BLACKBOARD_ACTION_TAG = 0x00d1
 BUFF_DEBUG_PRINT_ACTION_TAG = 0x008b
+BUFF_EFFECT_ACTION_TAG = 0x0091
 BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG = 0x011f
 BUFF_PLAY_SOUND_ACTION_TAG = 0x00fc
 BUFF_PATROL_TELEPORT_ACTION_TAG = 0x00ef
 BUFF_PLAY_ANIMATION_ACTION_TAG = 0x00f8
 BUFF_PLAY_SOUND_TIME_DILATION_TAIL_BYTES = 26
-BUFF_TARGET_SETTINGS_ENVELOPE_BYTE_LENGTHS = (67, 79)
+BUFF_TARGET_SETTINGS_ENVELOPE_BASE_BYTES = 67
+BUFF_TARGET_SETTINGS_STRING_SLOT_OFFSET = 59
+BUFF_TARGET_SETTINGS_STRING_SLOT_MAX_BYTES = 128
 BUFF_CONVERT_TO_TARGET_CONTEXT_TARGET_SETTINGS_BYTES = 67
-
+BUFF_EFFECT_ACTION_CFG_MIN_BYTES = 256
+BUFF_MODIFY_DYNAMIC_BLACKBOARD_OPERATION_NAMES = {
+    0: "Assign",
+    1: "Add",
+    2: "Multiply",
+    3: "Divide",
+}
 
 def read_buff_i32_field(data: bytes, offset: int, field_name: str) -> tuple[int, int]:
     if offset + 4 > len(data):
@@ -2628,6 +2638,25 @@ def validate_buff_nonnegative_ms(value: int, field_name: str, *, max_value: int 
         raise ValueError(f"{field_name}:ms-out-of-range={value}")
 
 
+def buff_target_settings_envelope_limit(
+    data: bytes,
+    offset: int,
+    max_limit: int,
+    field_name: str,
+) -> int:
+    base_end = offset + BUFF_TARGET_SETTINGS_ENVELOPE_BASE_BYTES
+    string_length_offset = offset + BUFF_TARGET_SETTINGS_STRING_SLOT_OFFSET
+    if base_end > max_limit or string_length_offset + 4 > max_limit:
+        raise ValueError(f"{field_name}:truncated-envelope")
+    string_length = struct.unpack_from("<I", data, string_length_offset)[0]
+    if string_length > BUFF_TARGET_SETTINGS_STRING_SLOT_MAX_BYTES:
+        raise ValueError(f"{field_name}:string-slot-length={string_length}")
+    limit = base_end + string_length
+    if limit > max_limit:
+        raise ValueError(f"{field_name}:envelope-limit={format_offset(limit)} max={format_offset(max_limit)}")
+    return limit
+
+
 def read_buff_target_settings_partial(
     data: bytes,
     offset: int,
@@ -2638,13 +2667,28 @@ def read_buff_target_settings_partial(
 ) -> tuple[dict[str, Any], int]:
     if limit < offset:
         raise ValueError(f"{field_name}:invalid-bounds")
+    expected_limit = buff_target_settings_envelope_limit(data, offset, limit, field_name)
+    if expected_limit != limit:
+        raise ValueError(
+            f"{field_name}:unexpected-bytes={limit - offset} expected={expected_limit - offset}"
+        )
     raw = data[offset:limit]
     byte_length = len(raw)
-    if byte_length not in BUFF_TARGET_SETTINGS_ENVELOPE_BYTE_LENGTHS:
-        raise ValueError(f"{field_name}:unexpected-bytes={byte_length}")
     stable_prefix = bytes.fromhex("0d 08 01 00 00 00 00 00 00 ff 00 00 00 00 ff 00")
     if not raw.startswith(stable_prefix):
         raise ValueError(f"{field_name}:unexpected-prefix={raw[:16].hex(' ')}")
+    string_slot_offset = BUFF_TARGET_SETTINGS_STRING_SLOT_OFFSET
+    string_length = struct.unpack_from("<I", raw, string_slot_offset)[0]
+    string_start = string_slot_offset + 4
+    string_end = string_start + string_length
+    string_value = ""
+    if string_length:
+        try:
+            string_value = raw[string_start:string_end].decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise ValueError(f"{field_name}:string-slot-invalid-utf8") from exc
+        if any(ord(ch) < 32 for ch in string_value):
+            raise ValueError(f"{field_name}:string-slot-control-char")
     string_hits = scan_length_prefixed_utf8_string_hits(
         raw,
         start=0,
@@ -2660,9 +2704,12 @@ def read_buff_target_settings_partial(
         "semanticStatus": "partial-target-settings-envelope-opaque",
         "offset": format_offset(offset),
         "bytes": byte_length,
-        "shape": "string-slot" if string_hits else "no-string-slot",
+        "shape": "string-slot" if string_length else "no-string-slot",
         "memberCountCandidate": raw[0],
         "envelopeHeaderRaw": raw[:16].hex(" "),
+        "stringSlotOffset": format_offset(offset + string_slot_offset),
+        "stringSlotLength": string_length,
+        "stringSlotValue": string_value,
         "tailU32Candidate": tail_u32,
         "allowedTailU32Candidates": list(allowed_tail_u32s),
         "tailRaw": raw[-16:].hex(" "),
@@ -2670,6 +2717,234 @@ def read_buff_target_settings_partial(
         "rawHex": raw.hex(" "),
     }, limit
 
+
+def read_buff_effect_action_cfg_partial(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    if limit < offset:
+        raise ValueError(f"{field_name}:invalid-bounds")
+    byte_length = limit - offset
+    if byte_length < BUFF_EFFECT_ACTION_CFG_MIN_BYTES:
+        raise ValueError(f"{field_name}:unexpected-bytes={byte_length}")
+    member_count, _member_offset = read_buff_i32_field(data, offset, f"{field_name}.memberCountCandidate")
+    if member_count not in (74, 76):
+        raise ValueError(f"{field_name}.memberCountCandidate={member_count}")
+    raw = data[offset:limit]
+    string_hits = scan_length_prefixed_utf8_string_hits(
+        raw,
+        start=0,
+        max_scan_bytes=byte_length,
+        max_samples=8,
+        max_length=256,
+    )
+    return {
+        "status": "partial",
+        "semanticStatus": "partial-effect-action-cfg-fields-opaque",
+        "offset": format_offset(offset),
+        "bytes": byte_length,
+        "memberCountCandidate": member_count,
+        "memberCountOffset": format_offset(offset),
+        "schemaSource": (
+            "EffectActionCfg MemoryPack formatter exposes many fields; current decoder preserves the "
+            "bounded config blob and validates the next TargetSettings anchor instead of naming fields"
+        ),
+        "rawSha256": hashlib.sha256(raw).hexdigest(),
+        "prefixHex": raw[:48].hex(" "),
+        "tailHex": raw[-48:].hex(" "),
+        "stringHits": string_hits,
+    }, limit
+
+def decode_buff_modify_dynamic_blackboard_action(
+    data: bytes,
+    item_start: int,
+    item_end: int,
+    tag_width: int,
+    member_count: int,
+) -> dict[str, Any]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, item_end)
+    if tag != BUFF_MODIFY_DYNAMIC_BLACKBOARD_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("modifyDynamicBlackboard:tag-mismatch")
+    if tag_width != 1:
+        raise ValueError(f"modifyDynamicBlackboard:tag-width={tag_width}")
+    if member_count != 10:
+        raise ValueError(f"modifyDynamicBlackboard:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_exact(
+        data,
+        offset,
+        "modifyDynamicBlackboard.prefix",
+    )
+    calculate_type, offset = read_buff_i32_field(
+        data,
+        offset,
+        "modifyDynamicBlackboard.calculateType",
+    )
+    if abs(calculate_type) > 1_000:
+        raise ValueError(f"modifyDynamicBlackboard.calculateType={calculate_type}")
+    calculation_target_end = buff_target_settings_envelope_limit(
+        data,
+        offset,
+        item_end,
+        "modifyDynamicBlackboard.calculationTarget",
+    )
+    calculation_target, offset = read_buff_target_settings_partial(
+        data,
+        offset,
+        calculation_target_end,
+        "modifyDynamicBlackboard.calculationTarget",
+    )
+    direct_value, offset = read_buff_bool_field(data, offset, "modifyDynamicBlackboard.directValue")
+    key, offset = read_buff_memorypack_utf8_string_strict(
+        data,
+        offset,
+        "modifyDynamicBlackboard.key",
+        max_length=256,
+    )
+    if not key:
+        raise ValueError("modifyDynamicBlackboard.key:empty")
+    operation, offset = read_buff_i32_field(data, offset, "modifyDynamicBlackboard.operation")
+    if operation not in BUFF_MODIFY_DYNAMIC_BLACKBOARD_OPERATION_NAMES:
+        raise ValueError(f"modifyDynamicBlackboard.operation={operation}")
+    value, offset = read_buff_blackboard_float_raw_field_exact(
+        data,
+        offset,
+        "modifyDynamicBlackboard.value",
+    )
+    if offset != item_end:
+        raise ValueError(
+            f"modifyDynamicBlackboard:tail-at={format_offset(offset)} end={format_offset(item_end)}"
+        )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_MODIFY_DYNAMIC_BLACKBOARD_ACTION_TAG],
+        "decodeStatus": "partial",
+        "semanticStatus": "partial-calculation-target-settings-envelope-opaque",
+        "schemaSource": (
+            "MemoryPack setter order: AbilityActionData prefix, calculateType, calculationTarget, "
+            "directValue, key, operation, value; TargetSettings internals and calculateType enum remain partial"
+        ),
+        "byteLength": item_end - item_start,
+        "prefix": prefix,
+        "calculateType": calculate_type,
+        "calculationTargetEnvelopePartial": calculation_target,
+        "directValue": direct_value,
+        "key": key,
+        "operation": operation,
+        "operationName": BUFF_MODIFY_DYNAMIC_BLACKBOARD_OPERATION_NAMES[operation],
+        "value": value,
+    }
+
+def decode_buff_effect_action(
+    data: bytes,
+    item_start: int,
+    item_end: int,
+    tag_width: int,
+    member_count: int,
+) -> dict[str, Any] | None:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, item_end)
+    if tag != BUFF_EFFECT_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("effectAction:tag-mismatch")
+    if tag_width != 1:
+        raise ValueError(f"effectAction:tag-width={tag_width}")
+    if member_count != 15:
+        raise ValueError(f"effectAction:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_exact(
+        data,
+        offset,
+        "effectAction.prefix",
+    )
+    big_effect_name, offset = read_buff_memorypack_utf8_string_strict(
+        data,
+        offset,
+        "effectAction.bigEffectName",
+        max_length=512,
+    )
+    stable_prefix = bytes.fromhex("0d 08 01 00 00 00 00 00 00 ff 00 00 00 00 ff 00")
+    anchor_offsets: list[int] = []
+    search_offset = offset
+    while True:
+        found = data.find(stable_prefix, search_offset, item_end)
+        if found < 0:
+            break
+        anchor_offsets.append(found)
+        search_offset = found + 1
+    if len(anchor_offsets) != 2:
+        raise ValueError(f"effectAction.targetSettingsAnchorCount={len(anchor_offsets)}")
+    effect_source_start, target_settings_start = anchor_offsets
+    try:
+        effect_action_cfg, offset = read_buff_effect_action_cfg_partial(
+            data,
+            offset,
+            effect_source_start,
+            "effectAction.effectActionCfg",
+        )
+    except ValueError as exc:
+        if str(exc).startswith("effectAction.effectActionCfg.memberCountCandidate="):
+            return None
+        raise
+    effect_source_end = buff_target_settings_envelope_limit(
+        data,
+        offset,
+        target_settings_start,
+        "effectAction.effectSource",
+    )
+    effect_source, offset = read_buff_target_settings_partial(
+        data,
+        offset,
+        effect_source_end,
+        "effectAction.effectSource",
+    )
+    bool_fields: dict[str, bool] = {}
+    for field_name in (
+        "forceMainBody",
+        "isCreateWithSourceModelActive",
+        "isMainCharacterActive",
+        "isShowBigEffect",
+        "isTargetMainCharacterActive",
+        "playOnHittableObjects",
+    ):
+        bool_fields[field_name], offset = read_buff_bool_field(data, offset, f"effectAction.{field_name}")
+    save_effect_id_to_blackboard, offset = read_buff_memorypack_utf8_string_strict(
+        data,
+        offset,
+        "effectAction.saveEffectIdToBlackboard",
+        max_length=256,
+    )
+    if offset != target_settings_start:
+        raise ValueError(
+            f"effectAction.afterEffectSourceTail={format_offset(offset)} "
+            f"targetStart={format_offset(target_settings_start)}"
+        )
+    target_settings, offset = read_buff_target_settings_partial(
+        data,
+        offset,
+        item_end,
+        "effectAction.targetSettings",
+        allowed_tail_u32s=(0, 1, 2, 4),
+    )
+    if offset != item_end:
+        raise ValueError(f"effectAction:tail-at={format_offset(offset)} end={format_offset(item_end)}")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_EFFECT_ACTION_TAG],
+        "decodeStatus": "partial",
+        "semanticStatus": "partial-effect-action-cfg-and-target-settings-opaque",
+        "schemaSource": (
+            "MemoryPack setter order: AbilityActionData prefix, bigEffectName, effectActionCfg, "
+            "effectSource, six boolean flags, saveEffectIdToBlackboard, targetSettings; "
+            "EffectActionCfg and TargetSettings internals remain partial"
+        ),
+        "byteLength": item_end - item_start,
+        "prefix": prefix,
+        "bigEffectName": big_effect_name or "",
+        "effectActionCfgPartial": effect_action_cfg,
+        "effectSourceEnvelopePartial": effect_source,
+        **bool_fields,
+        "saveEffectIdToBlackboard": save_effect_id_to_blackboard or "",
+        "targetSettingsEnvelopePartial": target_settings,
+    }
 
 def decode_buff_convert_to_target_context_action(
     data: bytes,
@@ -3138,6 +3413,22 @@ def decode_buff_ability_action_item_exact(
     tag_width: int,
     member_count: int,
 ) -> dict[str, Any] | None:
+    if tag == BUFF_MODIFY_DYNAMIC_BLACKBOARD_ACTION_TAG:
+        return decode_buff_modify_dynamic_blackboard_action(
+            data,
+            item_start,
+            item_end,
+            tag_width,
+            member_count,
+        )
+    if tag == BUFF_EFFECT_ACTION_TAG:
+        return decode_buff_effect_action(
+            data,
+            item_start,
+            item_end,
+            tag_width,
+            member_count,
+        )
     if tag == BUFF_DEBUG_PRINT_ACTION_TAG:
         return decode_buff_debug_print_action(
             data,
