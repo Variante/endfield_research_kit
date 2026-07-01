@@ -241,7 +241,13 @@ audit verifies 74 manual response options: 26 manual first lines match inferred
 edges, 24 conflict with inferred first-line edges, and 24 are manual-only. The
 runtime-jump join finds 3 manual-supported rows overall and highlights
 `dlg_e6m1_10` plus `dlg_e6m4_14` as high-signal conflicts where nearby Runtime
-Jump evidence supports the manual first line over the old inferred edge.
+Jump evidence supports the manual first line over the old inferred edge. The
+audit now also joins Timeline option-flow writer evidence: 20 option-flow groups
+join, all 5 required IL2CPP writer/gate fact kinds are present, and 21 of 24
+manual-vs-inferred conflicts have strict option rows while candidate runtime
+`+0x18` fields remain all zero (`strictOptionRowsButAllZeroCandidateRuntimeField`).
+Those rows should stay diagnostic/manual-display fixes unless a stronger active
+runtime clip binding appears.
 
 2026-07-01 story query precedence annotations: `tools/endfield_source_graph.py
 story` now labels branch refs from `webui/option_override` as

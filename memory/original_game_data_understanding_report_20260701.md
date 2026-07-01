@@ -1038,13 +1038,17 @@ Success metric:
 - No contradictions between inferred first lines and nearby Runtime Jump Track
   evidence.
 
-2026-07-01 next story-proof target: manual option overrides are now graph-indexed
-and conflict-audited, so the next proof step is narrower: link the remaining
-manual-vs-inferred conflicts to concrete runtime writers such as
-`DialogTimelineManager.SelectIndex`, `SetDialogOption`, and active Runtime Jump
-clip windows. The current conflict audit separates WebUI-authoritative manual
-edges from diagnostic inferred edges, but most conflicts still lack nearby
-Runtime Jump proof.
+2026-07-01 story option-proof progress: manual option overrides are now
+graph-indexed, conflict-audited, and joined to Timeline option-flow writer/gate
+evidence. The conflict audit still verifies 74 manual response options: 26 match
+inference, 24 conflict, and 24 are manual-only. It now joins 20 Timeline
+option-flow groups, confirms all 5 required IL2CPP writer/gate fact kinds are
+present, and classifies 21 of 24 manual-vs-inferred conflicts as strict option
+rows whose candidate runtime `+0x18` fields are all zero. Nearby Runtime Jump
+proof still supports the manual first line for the high-signal `dlg_e6m1_10` and
+`dlg_e6m4_14` conflicts. The next proof step is no longer finding the `+0x18`
+writer; it is binding authored Timeline option rows to active runtime clips
+strongly enough to promote edges without relying on display-only overrides.
 
 ### 3. Move Global Story Order from Static Recovery Toward Observed Runtime
 
