@@ -305,9 +305,11 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_GPUISystemConfig.json",
     "Json_LipSync.json",
     "Json_MissionRuntimeAsset.json",
+    "Json_AIConfig.json",
 )
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
+    "AIConfigEnemyTemplateDataSummary",
     "BambooRaftTaskTable",
     "CharInteractPerformCfgs",
     "NpcAtmosphericDataTable",
@@ -2874,6 +2876,8 @@ class SourceGraphBuilder:
                     subtype = "InteractiveDataCollections"
                 if group_name == "Json_MissionRuntimeAsset.json":
                     subtype = "MissionRuntimeAsset"
+                if group_name == "Json_AIConfig.json" and safe_key(entry.get("dp")) == "Json/AIConfig/EnemyTemplateDataSummary.json":
+                    subtype = "AIConfigEnemyTemplateDataSummary"
                 if subtype not in DECODED_CONFIG_TARGET_TYPES:
                     continue
                 self.add_decoded_config_entry(group_node, entry, subtype=subtype)
@@ -2896,7 +2900,9 @@ class SourceGraphBuilder:
         self.add_file(entry_path, kind="decoded_game_data", source=safe_key(entry.get("source")) or "webui/game_data", size=entry.get("s"), data={"subtype": subtype, "rows": entry.get("r"), "hash": entry.get("hash")})
         family_node = self.add_node("decoded_config_family", subtype, name=subtype, source="webui/game_data")
         self.add_edge(file_node, family_node, "decoded_as_config_family", source="webui/game_data", evidence=safe_key(entry.get("q")))
-        if subtype == "AnimationConfig":
+        if subtype == "AIConfigEnemyTemplateDataSummary":
+            self.add_ai_config_enemy_template_summary_edges(file_node, entry)
+        elif subtype == "AnimationConfig":
             self.add_animation_config_edges(file_node, entry)
         elif subtype == "NpcAtmosphericDataTable":
             self.add_atmospheric_npc_data_edges(file_node, entry)
@@ -3806,6 +3812,43 @@ class SourceGraphBuilder:
                     option_node = self.add_node("option", option_id, name=option_id, source="DialogIdTable")
                     self.add_edge(scene_node, option_node, "dialog_registry_has_option", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
                     self.add_edge(option_node, story_node, "dialog_registry_option_for_story", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
+
+    def add_enemy_data_asset_node(self, asset_path: Any, *, source: str = "") -> str:
+        asset_key = safe_key(asset_path)
+        if not asset_key:
+            return ""
+        node = self.add_node("enemy_data_asset", asset_key, name=Path(asset_key).name, source=source, path=asset_key)
+        self.add_alias(asset_key, node, kind="enemy_data_asset_path", source=source)
+        self.add_alias(Path(asset_key).stem, node, kind="enemy_data_asset_stem", source=source)
+        return node
+
+    def add_ai_config_enemy_template_summary_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        raw_data = self.read_decoded_config_bytes(entry)
+        if not raw_data:
+            return
+        try:
+            payload = json.loads(raw_data.decode("utf-8-sig"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return
+        if not isinstance(payload, dict):
+            return
+        mapping = payload.get("preloadEnemyTemplateId2Path")
+        if not isinstance(mapping, dict):
+            return
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        self.update_node_details(file_node, data=compact_payload({**self.decoded_config_entry_data(entry), "enemyTemplateCount": len(mapping)}, depth=3))
+        for index, (template_id_raw, asset_path_raw) in enumerate(sorted(mapping.items())):
+            template_id = safe_key(template_id_raw)
+            asset_path = safe_key(asset_path_raw)
+            if not template_id or not asset_path:
+                continue
+            template_node = self.add_node("enemy_template", template_id, name=template_id, source=source)
+            self.add_alias(template_id, template_node, kind="enemy_template_id", source=source)
+            asset_node = self.add_enemy_data_asset_node(asset_path, source=source)
+            self.add_edge(file_node, template_node, "ai_config_preloads_enemy_template", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id, "index": index})
+            if asset_node:
+                self.add_edge(template_node, asset_node, "enemy_template_preloads_data_asset", source=source, evidence="preloadEnemyTemplateId2Path", data={"source": source_id})
 
     def mission_runtime_text_key(self, payload: Any) -> str:
         if isinstance(payload, dict):
@@ -12048,6 +12091,7 @@ QUERY_KIND_PRIORITY = {
     "mission_runtime_action_type": 120,
     "mission_runtime_condition_type": 121,
     "mission_runtime_tracking_type": 122,
+    "enemy_data_asset": 123,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -12330,6 +12374,7 @@ NODE_ID_PREFIXES = (
     "mission_runtime_action_type",
     "mission_runtime_condition_type",
     "mission_runtime_tracking_type",
+    "enemy_data_asset",
     "mission",
     "map",
     "level",

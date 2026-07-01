@@ -958,6 +958,25 @@ python tools\endfield_source_graph.py query ReachDestination --kind mission_runt
 python tools\endfield_source_graph.py query MissionAreaTrackingInfo --kind mission_runtime_tracking_type
 ```
 
+2026-07-01 AIConfig graph progress: source graph ingestion now promotes exact
+enemy-template preload mappings from `Json_AIConfig.json`
+`EnemyTemplateDataSummary.json`. A fast CN rebuild to
+`tmp/source_graph_aiconfig.sqlite` verified 1,494,436 total nodes, 2,615,445
+edges, and 2,013,635 aliases. New coverage includes 78 `enemy_data_asset`
+nodes, 156 `ai_config_preloads_enemy_template` file-to-template edges split
+as Persistent 78 and StreamingAssets 78, 78 deduplicated
+`enemy_template_preloads_data_asset` edges, 78 `enemy_data_asset_path`
+aliases, and 78 `enemy_data_asset_stem` aliases. The template-to-asset edge
+deduplicates identical Persistent/StreamingAssets mappings into one relation.
+This is preload-path evidence only; it does not prove AI behavior trees,
+spawn behavior, renderable model binding, or asset presence in the lean asset
+index. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query eny_0007_mimicw --kind enemy_template
+python tools\endfield_source_graph.py query data_eny_0007_mimicw --kind enemy_data_asset
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
