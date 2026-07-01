@@ -272,6 +272,7 @@ DIALOG_SUPPORT_TABLES = (
 DECODED_CONFIG_GROUP_FILES = (
     "Json_AnimationConfig.json",
     "Json_AtmosphericNpcData.json",
+    "Json_CharInteractPerformCfgs.json",
     "Json_BuffData.json",
     "Json_GameplayConfig.json",
     "Json_GameplayConfigMissionAreaTable.json",
@@ -289,6 +290,7 @@ DECODED_CONFIG_GROUP_FILES = (
 )
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
+    "CharInteractPerformCfgs",
     "NpcAtmosphericDataTable",
     "BuffData",
     "GameplayConfigMissionAreaTable",
@@ -1036,6 +1038,114 @@ def extract_animation_config_summary(entry: dict[str, Any], data: bytes) -> dict
         "useStateVariables": bool(data[-1]) if bool_tail_valid else None,
         "booleanTailVerified": bool_tail_valid,
         "stringHits": hits[:48],
+        "exactLength": False,
+    }
+
+CHAR_INTERACT_PERFORM_MEMBER_COUNT = 26
+CHAR_INTERACT_PERFORM_STRING_MAX_SAMPLES = 256
+
+
+def read_memorypack_tag_list_prefix(data: bytes, offset: int, *, max_items: int = 32) -> tuple[list[dict[str, Any]], int | None, int, str | None]:
+    if offset + 4 > len(data):
+        return [], None, offset, "truncated-count"
+    raw_count = struct.unpack_from("<I", data, offset)[0]
+    offset += 4
+    if raw_count == MEMORYPACK_NULL_COUNT:
+        return [], None, offset, None
+    if raw_count > max_items:
+        return [], raw_count, offset, f"large-count={raw_count}"
+    tags: list[dict[str, Any]] = []
+    for index in range(raw_count):
+        if offset + 5 > len(data):
+            return tags, raw_count, offset, "truncated-item"
+        member_count = data[offset]
+        offset += 1
+        hash_value = struct.unpack_from("<I", data, offset)[0]
+        offset += 4
+        try:
+            tag, offset = mp_read_utf8_string(data, offset, f"tag[{index}]", max_length=512)
+        except ValueError as exc:
+            return tags, raw_count, offset, str(exc)
+        tags.append({"index": index, "memberCount": member_count, "hash": f"0x{hash_value:08x}", "tag": safe_key(tag)})
+    return tags, raw_count, offset, None
+
+
+def char_interact_perform_id_from_entry(entry: dict[str, Any]) -> str:
+    return Path(safe_key(entry.get("p"))).stem
+
+
+def extract_char_interact_perform_summary(entry: dict[str, Any], data: bytes) -> dict[str, Any] | None:
+    if not data or data[0] != CHAR_INTERACT_PERFORM_MEMBER_COUNT:
+        return None
+    offset = 1
+    active_tags, active_tag_count, offset, err = read_memorypack_tag_list_prefix(data, offset, max_items=64)
+    if err or active_tag_count is None:
+        return None
+    if offset >= len(data) or data[offset] not in (0, 1):
+        return None
+    allow_inherit_perform = bool(data[offset])
+    offset += 1
+    if offset + 4 > len(data):
+        return None
+    body_type_act_data_count = struct.unpack_from("<I", data, offset)[0]
+    offset += 4
+    if body_type_act_data_count > 1024:
+        return None
+
+    hits = scan_length_prefixed_utf8_string_hits(
+        data,
+        start=offset,
+        max_samples=CHAR_INTERACT_PERFORM_STRING_MAX_SAMPLES,
+        min_length=2,
+        max_length=320,
+    )
+    strings = unique_limited_strings((hit.get("value") for hit in hits), 96)
+    active_tag_values = {safe_key(tag.get("tag")) for tag in active_tags}
+    non_prefix_strings = [value for value in strings if value not in active_tag_values]
+    status_tags = unique_limited_strings((value for value in strings if value.startswith("Status/")), 16)
+    montage_refs = unique_limited_strings((value for value in strings if value.startswith("Montage/")), 16)
+    actor_refs = unique_limited_strings((value for value in strings if value.startswith(("chr_", "npc_"))), 16)
+    effect_ids = unique_limited_strings((value for value in strings if value.startswith("P_")), 16)
+    perform_refs = unique_limited_strings((value for value in strings if value.startswith("CharIntPerform")), 16)
+    asset_refs = unique_limited_strings(
+        (
+            value
+            for value in strings
+            if value.startswith(("DynamicAssets/", "Designer/", "Attachment/", "Weapons/"))
+        ),
+        16,
+    )
+    ccs_refs = unique_limited_strings((value for value in strings if value.startswith(("Interact/", "LD/"))), 16)
+    state_or_param = unique_limited_strings(
+        (
+            value
+            for value in non_prefix_strings
+            if re.match(r"^[A-Za-z][A-Za-z0-9_]{2,48}$", value)
+            and not value.startswith(("CharIntPerform", "Status", "Montage", "DynamicAssets"))
+        ),
+        16,
+    )
+    return {
+        "performId": char_interact_perform_id_from_entry(entry),
+        "memberCount": CHAR_INTERACT_PERFORM_MEMBER_COUNT,
+        "activeTagCount": active_tag_count,
+        "activeTags": active_tags,
+        "allowInheritPerform": allow_inherit_perform,
+        "bodyTypeActDataDictCount": body_type_act_data_count,
+        "bodyTypeActDataDictOffset": mp_format_offset(offset),
+        "statusTags": status_tags,
+        "montageRefs": montage_refs,
+        "actorRefs": actor_refs,
+        "effectIds": effect_ids,
+        "performRefs": perform_refs,
+        "assetRefs": asset_refs,
+        "ccsRefs": ccs_refs,
+        "stateOrParamStrings": state_or_param,
+        "bodyStringSamples": non_prefix_strings[:32],
+        "stringHitCount": len(hits),
+        "stringScanLimit": CHAR_INTERACT_PERFORM_STRING_MAX_SAMPLES,
+        "stringHits": hits[:24],
+        "exactPrefixFields": ["activeTags", "allowInheritPerform", "bodyTypeActDataDictCount"],
         "exactLength": False,
     }
 
@@ -2557,6 +2667,8 @@ class SourceGraphBuilder:
             self.add_animation_config_edges(file_node, entry)
         elif subtype == "NpcAtmosphericDataTable":
             self.add_atmospheric_npc_data_edges(file_node, entry)
+        elif subtype == "CharInteractPerformCfgs":
+            self.add_char_interact_perform_edges(file_node, entry)
         elif subtype == "BuffData":
             self.add_buff_data_config_edges(file_node, entry)
         elif subtype == "SkillData":
@@ -2589,6 +2701,76 @@ class SourceGraphBuilder:
             self.add_world_entity_registry_edges(file_node, entry)
         elif subtype == "TeleportValidationDataTable":
             self.add_teleport_validation_config_edges(file_node, entry)
+
+    def add_char_interact_perform_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        decoded = extract_char_interact_perform_summary(entry, self.read_decoded_config_bytes(entry))
+        perform_id = safe_key(decoded.get("performId") if decoded else "")
+        if not decoded or not perform_id:
+            return
+        source = "webui/game_data"
+        config_data = compact_payload({**self.decoded_config_entry_data(entry), "decoded": decoded}, depth=3)
+        config_node = self.add_node(
+            "char_interact_perform_config",
+            perform_id,
+            name=perform_id,
+            source=source,
+            path=safe_key(entry.get("p")),
+            data=config_data,
+        )
+        self.update_node_details(config_node, name=perform_id, source=source, path=safe_key(entry.get("p")), data=config_data)
+        self.add_edge(file_node, config_node, "char_interact_data_defines_perform_config", source=source, evidence=safe_key(entry.get("dp")))
+        self.add_alias(perform_id, config_node, kind="char_interact_perform_id", source=source)
+        self.add_alias(entry.get("dp"), config_node, kind="char_interact_perform_path", source=source)
+        self.add_alias(entry.get("p"), config_node, kind="char_interact_perform_data_path", source=source)
+
+        for tag in decoded.get("activeTags") or []:
+            tag_value = safe_key(tag.get("tag") if isinstance(tag, dict) else tag)
+            if not tag_value:
+                continue
+            tag_node = self.add_gameplay_tag_node(tag_value, source=source)
+            self.add_edge(config_node, tag_node, "char_interact_has_active_tag", source=source, evidence=f"activeTags[{tag.get('index') if isinstance(tag, dict) else ''}]", data=compact_payload(tag, depth=1) if isinstance(tag, dict) else None)
+        for index, tag_value in enumerate(decoded.get("statusTags") or []):
+            tag_node = self.add_gameplay_tag_node(tag_value, source=source)
+            self.add_edge(config_node, tag_node, "char_interact_references_status_tag", source=source, evidence=f"statusTags[{index}]")
+        for index, montage_id in enumerate(decoded.get("montageRefs") or []):
+            montage_node = self.add_level_script_montage_node(montage_id, source=source)
+            self.add_edge(config_node, montage_node, "char_interact_references_montage", source=source, evidence=f"montageRefs[{index}]")
+        for index, actor_id in enumerate(decoded.get("actorRefs") or []):
+            actor_key = safe_key(actor_id)
+            if actor_key.startswith("chr_"):
+                actor_node = self.add_character_ref_node(actor_key, source=source)
+                self.add_edge(config_node, actor_node, "char_interact_references_character", source=source, evidence=f"actorRefs[{index}]")
+            elif actor_key.startswith("npc_"):
+                npc_node = self.add_npc_template_node(actor_key, source=source)
+                self.add_edge(config_node, npc_node, "char_interact_references_npc_template", source=source, evidence=f"actorRefs[{index}]")
+        for index, effect_id in enumerate(decoded.get("effectIds") or []):
+            effect_key = safe_key(effect_id)
+            if not effect_key:
+                continue
+            effect_node = self.add_node("gameplay_effect", effect_key, name=effect_key, source=source)
+            self.add_alias(effect_key, effect_node, kind="gameplay_effect_id", source=source)
+            self.add_edge(config_node, effect_node, "char_interact_references_effect", source=source, evidence=f"effectIds[{index}]")
+        for index, ref_id in enumerate(decoded.get("performRefs") or []):
+            ref_key = safe_key(ref_id)
+            if not ref_key:
+                continue
+            ref_node = self.add_node("char_interact_perform_config", ref_key, name=ref_key, source=source)
+            self.add_alias(ref_key, ref_node, kind="char_interact_perform_id", source=source)
+            self.add_edge(config_node, ref_node, "char_interact_references_perform_config", source=source, evidence=f"performRefs[{index}]")
+        for index, asset_path in enumerate(decoded.get("assetRefs") or []):
+            asset_key = safe_key(asset_path)
+            if not asset_key:
+                continue
+            asset_node = self.add_node("char_interact_asset_reference", asset_key, name=Path(asset_key).name, source=source, path=asset_key)
+            self.add_alias(asset_key, asset_node, kind="char_interact_asset_path", source=source)
+            self.add_edge(config_node, asset_node, "char_interact_references_asset_path", source=source, evidence=f"assetRefs[{index}]")
+        for index, ccs_path in enumerate(decoded.get("ccsRefs") or []):
+            ccs_key = safe_key(ccs_path)
+            if not ccs_key:
+                continue
+            ccs_node = self.add_node("char_interact_ccs_reference", ccs_key, name=Path(ccs_key).name, source=source, path=ccs_key)
+            self.add_alias(ccs_key, ccs_node, kind="char_interact_ccs_path", source=source)
+            self.add_edge(config_node, ccs_node, "char_interact_references_ccs", source=source, evidence=f"ccsRefs[{index}]")
 
     def add_ai_config_node(self, ai_config_id: Any, *, source: str = "") -> str:
         config_key = safe_key(ai_config_id)
@@ -10515,6 +10697,9 @@ QUERY_KIND_PRIORITY = {
     "animation_path_ref": 89,
     "ai_config": 90,
     "atmospheric_npc_cluster": 91,
+    "char_interact_perform_config": 92,
+    "char_interact_asset_reference": 93,
+    "char_interact_ccs_reference": 94,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -10766,6 +10951,9 @@ NODE_ID_PREFIXES = (
     "animation_path_ref",
     "ai_config",
     "atmospheric_npc_cluster",
+    "char_interact_perform_config",
+    "char_interact_asset_reference",
+    "char_interact_ccs_reference",
     "mission",
     "map",
     "level",

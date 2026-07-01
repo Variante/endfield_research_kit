@@ -729,6 +729,32 @@ python tools\endfield_source_graph.py query aiconf_npc_normal --kind ai_config
 python tools\endfield_source_graph.py query envTalk_map01_lv001_env_27 --kind env_talk
 ```
 
+2026-07-01 CharInteractPerformCfgs decoded-config progress: source graph
+ingestion now promotes high-confidence `CharInteractPerformCfgs` evidence from
+the WebUI Data index. A fast CN rebuild to `tmp/source_graph_charinteract.sqlite`
+verified 1,136,310 total nodes, 1,990,915 edges, and 1,593,441 aliases after
+noisy state/param strings were left payload-only. New coverage includes 318
+`char_interact_data_defines_perform_config` file edges collapsed to 159
+`char_interact_perform_config` nodes. Typed reference checks verified 83 exact
+active-tag edges and 54 scanned status-tag edges to 4 gameplay tags, 102 montage
+edges to 82 montage targets, 33 character edges to 7 characters, 4 NPC-template
+edges to 3 templates, 146 effect edges to 113 effect targets, 46 intra-family
+perform-config refs to 38 targets, 52 asset-path refs to 26 paths, and 13 CCS
+refs to 7 paths. This pass parses the strong MemoryPack prefix exactly
+(member-count 26, `activeTags`, `allowInheritPerform`, and
+`bodyTypeActDataDictCount`) and uses the existing capped body string scan for
+prefixed refs. It does not decode the body action dictionaries, timing, IK,
+interrupt rules, sub-perform entries, or runtime interaction state machine.
+`stateOrParamStrings` are retained in node payloads but intentionally not
+promoted to graph edges because they can duplicate actor/effect refs and contain
+incidental body strings. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query CharIntPerform_c28m3_Investigate --kind char_interact_perform_config
+python tools\endfield_source_graph.py query CharIntPerform_Camille_RelaxLoop --kind char_interact_perform_config
+python tools\endfield_source_graph.py query LD/CCS_LD_c28m3kanjiangjun --kind char_interact_ccs_reference
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
