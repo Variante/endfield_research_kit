@@ -860,6 +860,14 @@ and 8,581 `entity_uses_texture` edges. Queries such as
 resolve semantic renderable groups, and texture `used-by` queries now return
 entity-level consumers before the raw material/model details.
 
+2026-07-01 weapon-to-renderable progress: weapon Gameplay nodes now link to
+renderable `asset_entity` groups through exact `modelPath` stem matches. A fast
+graph rebuild verified 132 `has_gameplay_asset_entity` edges across 71 weapon
+sources and 132 renderable entity targets; `wpn_lance_0003` (`寻路者道标`) is the
+only weapon without a renderable entity candidate. The relationship makes
+queries like `used-by wpn_sword_0019_01 --kind asset_entity` surface the
+semantic weapon before lower-level material/model rows.
+
 The deeper semantic model is still incomplete:
 
 - Exported LOD model files are now grouped into renderable `asset_entity` nodes,

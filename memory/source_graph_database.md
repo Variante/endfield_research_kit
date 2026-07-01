@@ -180,6 +180,15 @@ edges. Entity aliases resolve bare bases such as `actor_aglina_body_01`; texture
 `used-by` queries now surface renderable entities such as
 `anm_com_machine+1_001_01` in addition to raw material/model rows.
 
+2026-07-01 weapon renderable bridge progress: Gameplay weapon nodes now link
+directly to renderable `asset_entity` nodes when the weapon `modelPath` stem
+matches an entity base or entity-base prefix. A fast CN graph rebuild verified
+132 `has_gameplay_asset_entity` edges across 71 weapon sources and 132
+renderable entity targets; the only weapon without a renderable entity candidate
+is `wpn_lance_0003` (`寻路者道标`). The query
+`python tools\endfield_source_graph.py used-by wpn_sword_0019_01 --kind asset_entity`
+now surfaces `weapon:wpn_sword_0019` before raw asset-detail rows.
+
 Use the quick build for normal story/option/map investigation. Use the full
 build only when Unity asset container, PathID, or exported asset relationship
 coverage matters.
