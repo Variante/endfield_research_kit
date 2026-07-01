@@ -103,33 +103,41 @@ High-value inputs:
 
 The pre-Gameplay item/economy pass currently includes item, item type, item
 showing type, reward, reward-drop, shop group, shop, shop goods, and shop goods
-tag tables. Selected structured tables also include audio, character, dialog
-summary, interactive mission, level/map, mission extra info, scene area,
-special level-to-map, and factory tables.
+tag tables. The pre-Gameplay combat semantics pass includes buff, skill patch,
+use-item, general ability, ability entity attribute, global effect, and
+potential talent effect tables. Selected structured tables also include audio,
+character, dialog summary, interactive mission, level/map, mission extra info,
+scene area, special level-to-map, and factory tables.
 
 ## Current Notes
 
-2026-07-01 Gameplay, item/economy, and selected structured-table ingestion adds
-exact-queryable `weapon`, `equipment`, `character`, `enemy`, `enemy_template`,
-`enemy_attribute_template`, `enemy_display_type`, `enemy_ability`,
-`enemy_attribute_modifier`, `buff`, `gameplay_skill_group`, `gameplay_skill`,
-`gameplay_talent_group`, `gameplay_talent`, `gameplay_progression`, `item`,
-`item_type`, `item_showing_type`, `item_obtain_way`, `reward`, `reward_drop`,
-`shop_group`, `shop`, `shop_goods`, `shop_goods_tag`, `factory_recipe`,
-`factory_item`, `factory_machine`, `factory_craft_group`, and
-`factory_craft_showing_type` nodes. A fast CN build with
-`--skip-asset-maps --skip-reference-rows --skip-followups` verified 72 weapon
-nodes, 220 equipment nodes, 30 character nodes, 290 enemy nodes, 78 enemy
+2026-07-01 Gameplay, item/economy, combat semantics, and selected
+structured-table ingestion adds exact-queryable `weapon`, `equipment`,
+`character`, `enemy`, `enemy_template`, `enemy_attribute_template`,
+`enemy_display_type`, `enemy_ability`, `enemy_attribute_modifier`, `buff`,
+`gameplay_skill_group`, `gameplay_skill`, `gameplay_skill_level`, `skill_tag`,
+`gameplay_blackboard_key`, `use_item_effect`, `general_ability`,
+`ability_entity`, `global_effect`, `global_effect_param`,
+`potential_talent_effect`, `gameplay_talent_group`, `gameplay_talent`,
+`gameplay_progression`, `item`, `item_type`, `item_showing_type`,
+`item_obtain_way`, `reward`, `reward_drop`, `shop_group`, `shop`, `shop_goods`,
+`shop_goods_tag`, `factory_recipe`, `factory_item`, `factory_machine`,
+`factory_craft_group`, and `factory_craft_showing_type` nodes. A fast CN build
+with `--skip-asset-maps --skip-reference-rows --skip-followups` verified 72
+weapon nodes, 220 equipment nodes, 30 character nodes, 290 enemy nodes, 78 enemy
 template nodes, 98 enemy attribute-template nodes, 5 enemy display-type nodes,
-134 enemy ability nodes, 70 enemy modifier nodes, 83 buff nodes, 409 skills, 526
-talent nodes, 1,240 progression nodes, 2,425 item nodes, 93 item type nodes, 11
-item showing-type nodes, 232 item obtain-way nodes, 5,722 reward nodes, 1,252
-reward-drop nodes, 19 shop groups, 28 shops, 687 shop goods, 6 shop goods tags,
-392 factory recipes, 485 factory item descriptors, 38 factory machines, 20
-factory craft groups, and 22 factory craft showing types. The generated WebUI
-payload deliberately exposes 610 visible Gameplay entries: 72 weapons, 220
-equipment records, 28 visible character records, and 290 enemy records. The two
-hidden
+134 enemy ability nodes, 70 enemy modifier nodes, 217 buff nodes, 497 skills,
+4,807 skill level nodes, 33 skill tag nodes, 405 gameplay blackboard key nodes,
+80 use-item effect nodes, 9 general ability nodes, 14 ability entity nodes, 19
+global effect nodes, 54 global effect param nodes, 251 potential talent effect
+nodes, 526 talent nodes, 1,240 progression nodes, 2,425 item nodes, 93 item type
+nodes, 11 item showing-type nodes, 232 item obtain-way nodes, 5,722 reward
+nodes, 1,252 reward-drop nodes, 19 shop groups, 28 shops, 687 shop goods, 6 shop
+goods tags, 392 factory recipes, 485 factory item descriptors, 38 factory
+machines, 20 factory craft groups, and 22 factory craft showing types. The
+generated WebUI payload deliberately exposes 610 visible Gameplay entries: 72
+weapons, 220 equipment records, 28 visible character records, and 290 enemies.
+The two hidden
 `chr_0002_endminm` / `chr_0003_endminf` Endministrator rows remain as
 `CharacterTable` graph nodes and are folded into `chr_9000_endmin` story wiki
 aliases for WebUI navigation. Example exact queries:
@@ -141,8 +149,33 @@ python tools\endfield_source_graph.py query eny_0018_lbtough --kind enemy
 python tools\endfield_source_graph.py query item_gold --kind item
 python tools\endfield_source_graph.py query reward_payshop_wpn_claym_0003 --kind reward
 python tools\endfield_source_graph.py query domainshop_goods_map01_10001 --kind shop_goods
+python tools\endfield_source_graph.py query chr_0002_endminm_attack1 --kind gameplay_skill
+python tools\endfield_source_graph.py query item_proc_bomb_1 --kind use_item_effect
+python tools\endfield_source_graph.py query atk_scale --kind gameplay_blackboard_key
 python tools\endfield_source_graph.py query component_activity_xiranite_cmpt_1 --kind factory_recipe
 ```
+
+2026-07-01 combat/buff/ability graph progress: a pre-Gameplay combat semantics
+pass now ingests `BuffTable`, `SkillPatchTable`, `UseItemTable`,
+`GeneralAbilityTable`, `AbilityEntityAttrTable`, `GlobalEffectTable`, and
+`PotentialTalentEffectTable`. The fast CN rebuild verified 80 `defines_buff`
+edges, 479 `defines_skill_patch` edges, 4,807 `defines_skill_patch_level` edges,
+4,807 `has_skill_patch_level` edges, 1,053 `skill_level_has_tag` edges, 14,838
+`skill_level_uses_blackboard_key` edges, 80 `defines_use_item_effect` edges, 80
+`item_has_use_effect` edges, 83 `use_effect_applies_buff` edges, 1
+`use_effect_runs_skill` edge, 202 `use_effect_uses_blackboard_key` edges, 9
+`defines_general_ability` edges, 2 `general_ability_uses_item` edges, 9
+`general_ability_unlock_system` edges, 2 `general_ability_banned_in_level`
+edges, 14 `defines_ability_entity_attr` edges, 19 `defines_global_effect` edges,
+54 `global_effect_has_param` edges, 251 `defines_potential_talent_effect` edges,
+57 `potential_talent_attaches_buff` edges, 30 `potential_talent_attaches_skill`
+edges, 331 `potential_talent_modifies_skill_blackboard` edges, 331
+`potential_talent_modifies_blackboard_key` edges, 30
+`potential_talent_modifies_skill_param` edges, 51
+`potential_talent_modifies_stat_property` edges, and 104
+`potential_talent_uses_blackboard_key` edges. Blackboard numeric values are
+stored as edge data for lookup; this pass indexes authored static parameters and
+does not execute skill, buff, or talent formulas.
 
 2026-07-01 item/economy graph progress: a pre-Gameplay pass now ingests
 `ItemTable`, `ItemTypeTable`, `ItemShowingTypeTable`, `RewardTable`,
