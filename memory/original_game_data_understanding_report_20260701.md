@@ -403,8 +403,10 @@ nodes, 197 unique numeric level-id edges with 31,992 grid-cell counts kept
 as payload data, 149 string level links, 99 scene states, 39 map variables,
 and exact quest/mission/map-variable condition refs. The
 `GameplayConfigScriptTaskExtraInfoTable` pass adds 4 level-script task
-extra nodes, one level link set, and 5 task title/objective text refs. These
-decoded-config passes still do not prove runtime formula usage,
+extra nodes, one level link set, and 5 task title/objective text refs. The
+`LevelMountPoint` pass adds 92 level-qualified mount leaves, 7 mount types,
+and exact position/rotation payloads for `base01_lv001` and `base01_lv003`.
+These decoded-config passes still do not prove runtime formula usage,
 full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
@@ -499,6 +501,10 @@ Partial but useful current examples include:
   metadata for four `map01_lv007` level-script tasks, including task title
   and objective text refs; runtime challenge execution and progress logic
   remain future work.
+- `LevelMountPoint`: queryable static mount leaves for `base01_lv001` and
+  `base01_lv003`, with mount type, tree path, position, and rotation
+  payloads; runtime attachment rules, cabin interaction behavior, and
+  display/spawn usage remain future work.
 - `LevelScriptTemplateData` and other partially previewed families have verified
   top-level ids/counts and meaningful previews.
 
@@ -631,6 +637,15 @@ grid placement semantics, or UI map rendering.
 links to `map01_lv007`, 1 task-title text link, and 4 objective text links.
 This is static display/tracking metadata, not proof of level-script
 execution, objective progress logic, or runtime challenge state.
+
+2026-07-01 source graph LevelMountPoint progress: a fast CN rebuild to
+`tmp/source_graph_level_mount_point.sqlite` verified exact static mount
+leaves from `Json_LevelMountPoint.json`. It adds 92 `level_mount_point`
+nodes, 184 source-file definition edges, 92 level links split across
+`base01_lv001` and `base01_lv003`, 7 mount-type nodes, and 92 type links.
+Each mount point keeps its level-qualified tree path plus position and
+rotation payloads. This is static authored transform data, not proof of
+runtime attachment rules, cabin interaction behavior, or display/spawn usage.
 
 Useful support-table checks include:
 

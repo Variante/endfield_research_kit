@@ -1018,6 +1018,25 @@ python tools\endfield_source_graph.py query map01_lv007:2800200002:0174178d --ki
 python tools\endfield_source_graph.py query task_energy_point --kind i18n_text
 ```
 
+2026-07-01 LevelMountPoint graph progress: source graph ingestion now
+promotes static mount-point leaves from `Json_LevelMountPoint.json`. A fast
+CN rebuild to `tmp/source_graph_level_mount_point.sqlite` verified
+1,495,652 total nodes, 2,618,076 edges, and 2,015,393 aliases. New coverage
+includes 92 `level_mount_point` nodes, 184 source-file definition edges split
+as Persistent 92 and StreamingAssets 92, 92 level links split as 46 each for
+`base01_lv001` and `base01_lv003`, 7 `level_mount_type` nodes, and 92
+type links. Type splits are WeaponWall 44, MedalWall 20, SpaceshipSummon
+10, CabinPos 8, CabinTeleport 6, CharacterWall 2, and SpaceshipScreen 2.
+Each mount point preserves its level-qualified tree path plus position and
+rotation payloads. This pass indexes static authored mount transforms; it
+does not prove runtime attachment rules, cabin interaction behavior, or
+display/spawn usage. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query base01_lv001:WeaponWall/Claymores/0 --kind level_mount_point
+python tools\endfield_source_graph.py query WeaponWall --kind level_mount_type
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
