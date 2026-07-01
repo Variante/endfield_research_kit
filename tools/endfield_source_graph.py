@@ -897,8 +897,6 @@ class SourceGraphBuilder:
             self.db.execute("INSERT INTO meta(key, value) VALUES (?, ?)", ("language", self.language))
             self.ingest_assets()
             self.commit_step("assets")
-            self.ingest_decoded_config_semantics()
-            self.commit_step("decodedConfigs")
             self.ingest_videos()
             self.commit_step("videos")
             self.ingest_webui_story()
@@ -916,6 +914,8 @@ class SourceGraphBuilder:
             if self.include_gameplay:
                 self.ingest_gameplay()
                 self.commit_step("gameplay")
+            self.ingest_decoded_config_semantics()
+            self.commit_step("decodedConfigs")
             self.ingest_character_support_semantics()
             self.commit_step("characterSupport")
             self.ingest_spaceship_semantics()
