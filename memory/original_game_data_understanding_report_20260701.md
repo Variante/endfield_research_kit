@@ -390,8 +390,10 @@ id refs across Persistent/StreamingAssets copies. The `BambooRaftTaskTable` pass
 adds exact graph evidence for 7 task-group hashes, 13 quest task ids, 26
 source-file task refs, and 13 mission-prefix links. The `damage_text` pass adds
 20 UI combat-text style rows, 10 animation refs, 58 UI node names, and 8
-filtered `ui_*` resources. These decoded-config passes do not prove runtime
-formula usage, full SpawnerConfig tail semantics,
+filtered `ui_*` resources. The `LipSync` pass adds 64,920 aggregate
+language/audio clip nodes from 129,732 source entries and links every clip to an
+audio stem. These decoded-config passes do not prove runtime formula usage,
+full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
 flow, montage clip playback semantics, full exported model/icon reconstruction,
@@ -464,6 +466,10 @@ Partial but useful current examples include:
   animation refs, UI node names, and filtered `ui_*` resource refs; numeric
   placeholders, text samples, prefab hierarchy, and runtime rendering behavior
   remain future work.
+- `LipSync`: queryable aggregate language/audio clip nodes across Chinese,
+  English, Japanese, and Korean, linked back to audio stems; per-record curve
+  nodes, phoneme/viseme meaning, and timing semantics remain intentionally out
+  of scope.
 - `LevelScriptTemplateData` and other partially previewed families have verified
   top-level ids/counts and meaningful previews.
 
@@ -544,6 +550,16 @@ row source-file definition edges, 22 animation refs, 143 node-name refs, and 23
 `ui_*` resource refs. Numeric placeholders and non-`ui_*` strings remain
 payload-only evidence; the graph does not infer UI prefab hierarchy or runtime
 rendering behavior.
+
+2026-07-01 source graph LipSync aggregate progress: a fast CN rebuild to
+`tmp/source_graph_lipsync.sqlite` verified aggregate clip evidence from the
+large `Json_LipSync.json` group. The pass adds 129,732 source-file definition
+edges collapsed to 64,920 `lipsync_clip` language/audio nodes, 4 language nodes,
+64,920 language edges, and 64,920 audio-stem links. Language splits are Chinese
+16,248, English 16,224, Japanese 16,223, and Korean 16,225 unique clips. Source
+entries sum to 43,043,103 curve records and unique clip nodes sum to 21,553,022
+records after source collapse; per-record curve nodes and phoneme/viseme timing
+semantics remain intentionally out of scope.
 
 Useful support-table checks include:
 

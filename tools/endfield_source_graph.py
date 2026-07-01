@@ -303,6 +303,7 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_NavMesh.json",
     "Json_GameplayConfigWorldEntityRegistry.json",
     "Json_GPUISystemConfig.json",
+    "Json_LipSync.json",
 )
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
@@ -324,6 +325,7 @@ DECODED_CONFIG_TARGET_TYPES = {
     "LevelData",
     "LevelScriptData",
     "LevelScriptTemplateData",
+    "LipSync",
     "ModelRadiusTable",
     "ModelTable",
     "NPCMontageJson",
@@ -2906,6 +2908,8 @@ class SourceGraphBuilder:
             self.add_bamboo_raft_task_table_edges(file_node, entry)
         elif subtype == "GPUISystemConfigDamageText":
             self.add_damage_text_config_edges(file_node, entry)
+        elif subtype == "LipSync":
+            self.add_lipsync_clip_edges(file_node, entry)
         elif subtype == "LunaArea":
             self.add_navmesh_luna_area_edges(file_node, entry)
         elif subtype == "NavMeshStateContainer":
@@ -3796,6 +3800,59 @@ class SourceGraphBuilder:
                     option_node = self.add_node("option", option_id, name=option_id, source="DialogIdTable")
                     self.add_edge(scene_node, option_node, "dialog_registry_has_option", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
                     self.add_edge(option_node, story_node, "dialog_registry_option_for_story", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
+
+    def lipsync_parts_from_entry(self, entry: dict[str, Any]) -> tuple[str, str]:
+        rel = safe_key(entry.get("dp") or entry.get("p"))
+        parts = [part for part in rel.replace("\\", "/").split("/") if part]
+        for index, part in enumerate(parts):
+            if part == "LipSync" and index + 2 < len(parts):
+                language = safe_key(parts[index + 1])
+                audio_id = Path(parts[-1]).stem
+                return language, safe_key(audio_id)
+        return "", ""
+
+    def add_lipsync_language_node(self, language: Any, *, source: str = "") -> str:
+        language_key = safe_key(language)
+        if not language_key:
+            return ""
+        node = self.add_node("lipsync_language", language_key, name=language_key, source=source)
+        self.add_alias(language_key, node, kind="lipsync_language", source=source)
+        return node
+
+    def add_lipsync_clip_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        language, audio_id = self.lipsync_parts_from_entry(entry)
+        if not language or not audio_id:
+            return
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        clip_key = f"{language}:{audio_id}"
+        clip_node = self.add_node(
+            "lipsync_clip",
+            clip_key,
+            name=clip_key,
+            source=source,
+            path=safe_key(entry.get("p")),
+            data=compact_payload(
+                {
+                    "language": language,
+                    "audioId": audio_id,
+                    "totalRecords": entry.get("r"),
+                    "size": entry.get("s"),
+                    "summary": entry.get("h"),
+                    "sample": entry.get("t"),
+                    "fieldCount": len(entry.get("a") or []),
+                    "decodedSummaryCount": len(entry.get("ds") or []),
+                },
+                depth=2,
+            ),
+        )
+        self.add_alias(clip_key, clip_node, kind="lipsync_clip_key", source=source)
+        self.add_alias(audio_id, clip_node, kind="lipsync_audio_id", source=source)
+        self.add_edge(file_node, clip_node, "defines_lipsync_clip", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id})
+        language_node = self.add_lipsync_language_node(language, source=source)
+        if language_node:
+            self.add_edge(clip_node, language_node, "lipsync_clip_language", source=source, evidence="path")
+        self.add_audio_target_edge(clip_node, audio_id, edge_kind="lipsync_for_audio", source=source, evidence="pathStem")
 
     def decode_damage_text_payload(self, entry: dict[str, Any], raw_data: bytes | None = None) -> dict[str, Any] | None:
         data = raw_data if raw_data is not None else self.read_decoded_config_bytes(entry)
@@ -11786,10 +11843,12 @@ QUERY_KIND_PRIORITY = {
     "damage_text_animation": 110,
     "damage_text_node_name": 111,
     "damage_text_ui_resource": 112,
-    "navmesh_area": 113,
-    "navmesh_area_id": 114,
-    "navmesh_state_container": 115,
-    "navmesh_state_record": 116,
+    "lipsync_clip": 113,
+    "lipsync_language": 114,
+    "navmesh_area": 115,
+    "navmesh_area_id": 116,
+    "navmesh_state_container": 117,
+    "navmesh_state_record": 118,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -12062,6 +12121,8 @@ NODE_ID_PREFIXES = (
     "damage_text_animation",
     "damage_text_node_name",
     "damage_text_ui_resource",
+    "lipsync_clip",
+    "lipsync_language",
     "navmesh_area",
     "navmesh_area_id",
     "navmesh_state_container",
