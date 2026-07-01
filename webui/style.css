@@ -4155,6 +4155,30 @@ body.is-resizing-filter * {
 }
 
 
+
+.gameplay-link-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gameplay-wiki-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 1px solid rgba(var(--fg-rgb), 0.14);
+  border-radius: 6px;
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.08);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.gameplay-wiki-link:hover {
+  background: rgba(var(--accent-rgb), 0.14);
+  text-decoration: none;
+}
 .gameplay-stat-pane {
   grid-template-columns: minmax(0, 1fr);
 }
@@ -6782,4 +6806,10 @@ body:not(.show-debug) .story-order-remove-from-mission {
   border-color: var(--accent);
   color: var(--on-accent);
   filter: brightness(0.95);
+}
+
+.conv-related-banner + .conv-related-banner {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(var(--fg-rgb), 0.1);
 }

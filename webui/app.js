@@ -1,4 +1,4 @@
-﻿// Endfield conversation browser - single-file vanilla JS.
+// Endfield conversation browser - single-file vanilla JS.
 // Loads data/manifest.json and language sidecars, then lazy-loads conversations.
 // Left pane is a 3-level tree (kind / story-line / mission) with a
 // virtualized scroll that supports mixed row heights.
@@ -23,8 +23,6 @@ const STORY_SPLITTER_STORAGE_KEY = "webui_story_splitter_width";
 const ASSET_SPLITTER_STORAGE_KEY = "webui_asset_splitter_width";
 const REFERENCE_SPLITTER_STORAGE_KEY = "webui_reference_splitter_width";
 const GAMEPLAY_SPLITTER_STORAGE_KEY = "webui_gameplay_splitter_width";
-const GAME_DATA_SPLITTER_STORAGE_KEY = "webui_game_data_splitter_width";
-const DECODED_SPLITTER_STORAGE_KEY = "webui_decoded_splitter_width";
 const UPDATES_SPLITTER_STORAGE_KEY = "webui_updates_splitter_width";
 const FILTER_SPLITTER_STORAGE_PREFIX = "webui_filter_splitter_height_";
 const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
@@ -177,18 +175,6 @@ function initPaneSplitters() {
     storageKey: GAMEPLAY_SPLITTER_STORAGE_KEY,
   });
   setupPaneSplitter({
-    container: "#game-data-app",
-    pane: "#game-data-left",
-    splitter: "#game-data-splitter",
-    storageKey: GAME_DATA_SPLITTER_STORAGE_KEY,
-  });
-  setupPaneSplitter({
-    container: "#decoded-app",
-    pane: "#decoded-left",
-    splitter: "#decoded-splitter",
-    storageKey: DECODED_SPLITTER_STORAGE_KEY,
-  });
-  setupPaneSplitter({
     container: "#updates-app",
     pane: "#updates-left",
     splitter: "#updates-splitter",
@@ -198,8 +184,6 @@ function initPaneSplitters() {
   setupFilterSplitter({ pane: "#left", panel: "#filter-panel", splitter: "#filter-splitter", list: "#list-wrap", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}story` });
   setupFilterSplitter({ pane: "#asset-left", panel: "#asset-filter-panel", splitter: "#asset-filter-splitter", list: "#asset-list-wrap", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}assets` });
   setupFilterSplitter({ pane: "#reference-left", panel: "#reference-filter-panel", splitter: "#reference-filter-splitter", list: "#reference-list", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}reference` });
-  setupFilterSplitter({ pane: "#game-data-left", panel: "#game-data-filter-panel", splitter: "#game-data-filter-splitter", list: "#game-data-list", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}game_data` });
-  setupFilterSplitter({ pane: "#decoded-left", panel: "#decoded-filter-panel", splitter: "#decoded-filter-splitter", list: "#decoded-list", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}decoded` });
   setupFilterSplitter({ pane: "#updates-left", panel: "#updates-filter-panel", splitter: "#updates-filter-splitter", list: "#updates-list", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}updates` });
 }
 
@@ -3004,6 +2988,11 @@ function resolveInitialLanguage() {
   return (STATE.manifest && STATE.manifest.defaultLanguage) || DEFAULT_LANGUAGE_INFO.code;
 }
 
+function resolveInitialStoryKey() {
+  const params = new URLSearchParams(window.location.search);
+  return String(params.get("story") || params.get("conv") || "").trim();
+}
+
 function applyUiStrings() {
   document.documentElement.lang = STATE.uiLocale === "zh" ? "zh-CN" : "en";
 
@@ -3136,9 +3125,9 @@ async function loadManifest() {
   return manifest;
 }
 
-async function switchLanguage(languageCode, { preserveSelection = true } = {}) {
+async function switchLanguage(languageCode, { preserveSelection = true, requestedSelection = "" } = {}) {
   const info = getLanguageInfo(languageCode);
-  const previousKey = preserveSelection ? STATE.selectedKey : null;
+  const previousKey = requestedSelection || (preserveSelection ? STATE.selectedKey : null);
   const token = ++STATE.indexRequestToken;
 
   STATE.language = info.code;
@@ -3231,12 +3220,13 @@ async function init() {
     ensureStoryPanelToggle();
 
     const initialLanguage = resolveInitialLanguage();
+    const initialStoryKey = resolveInitialStoryKey();
     setUiLocale(resolveInitialUiLocale(initialLanguage), { persist: false, refresh: false });
     const storyOrderPromise = loadStoryOrderPayload();
     void loadOptionOverridePayload();
     void ensureInlineImageAssetLookup();
     void ensureWikiVideoAssetLookup();
-    await switchLanguage(initialLanguage, { preserveSelection: false });
+    await switchLanguage(initialLanguage, { preserveSelection: false, requestedSelection: initialStoryKey });
     void storyOrderPromise.then(() => {
       if (applyStoryOrderGroupingOverridesToEntries(STATE.entries)) {
         STATE.readingArchiveLinksByKey = buildReadingArchiveLinkIndex(STATE.entries);
@@ -6037,6 +6027,47 @@ function renderArchiveLinksBlock(entry, conv) {
   return box;
 }
 
+function gameplayIdForWikiKey(key) {
+  const normalized = String(key || "").trim();
+  if (normalized.startsWith("wiki_chr_")) return `chr_${normalized.slice("wiki_chr_".length)}`;
+  if (normalized.startsWith("wiki_wpn_")) return `wpn_${normalized.slice("wiki_wpn_".length)}`;
+  if (normalized.startsWith("wiki_item_equip_")) return `item_equip_${normalized.slice("wiki_item_equip_".length)}`;
+  return "";
+}
+
+function gameplayHrefForWikiEntry(entry, conv) {
+  const gameplayId = gameplayIdForWikiKey((entry && entry.k) || (conv && conv.key) || "");
+  if (!gameplayId) return "";
+  const params = new URLSearchParams();
+  params.set("lang", STATE.language || "CN");
+  params.set("ui", STATE.uiLocale || "zh");
+  params.set("gameplay", gameplayId);
+  return `?${params.toString()}#gameplay`;
+}
+
+function renderGameplayLinkBanner(entry, conv) {
+  const href = gameplayHrefForWikiEntry(entry, conv);
+  if (!href) return null;
+  const banner = document.createElement("div");
+  banner.className = "conv-related-banner conv-gameplay-link-banner";
+  const heading = document.createElement("div");
+  heading.className = "conv-related-heading";
+  heading.textContent = uiText("gameplayLinkHeading") || "Gameplay Data";
+  banner.appendChild(heading);
+  const list = document.createElement("div");
+  list.className = "conv-related-list";
+  const wrap = document.createElement("span");
+  wrap.className = "conv-related-entry";
+  const link = document.createElement("a");
+  link.className = "conv-related-link";
+  link.href = href;
+  link.textContent = uiText("openGameplayData") || "Open in Gameplay";
+  wrap.appendChild(link);
+  list.appendChild(wrap);
+  banner.appendChild(list);
+  return banner;
+}
+
 function renderConv(conv) {
   if (!conv) return;
   showConvPane();
@@ -6147,6 +6178,8 @@ function renderConv(conv) {
   const relatedWrap = $("#conv-related");
   if (relatedWrap) {
     relatedWrap.replaceChildren();
+    const gameplayLinkBlock = renderGameplayLinkBanner(entry, conv);
+    if (gameplayLinkBlock) relatedWrap.appendChild(gameplayLinkBlock);
     const related = Array.isArray(conv.relatedScenes) ? conv.relatedScenes : [];
     if (related.length) {
       const banner = document.createElement("div");
@@ -6189,10 +6222,8 @@ function renderConv(conv) {
       banner.appendChild(detail);
       banner.appendChild(list);
       relatedWrap.appendChild(banner);
-      relatedWrap.hidden = false;
-    } else {
-      relatedWrap.hidden = true;
     }
+    relatedWrap.hidden = relatedWrap.childElementCount === 0;
   }
 
   const wrap = $("#conv-lines");
