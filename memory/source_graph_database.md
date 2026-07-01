@@ -135,8 +135,11 @@ structured-table ingestion adds exact-queryable `weapon`, `equipment`,
 `gameplay_talent`, `gameplay_progression`, `item`, `item_type`,
 `item_showing_type`, `item_obtain_way`, `reward`, `reward_drop`, `shop_group`,
 `shop`, `shop_goods`, `shop_goods_tag`, `factory_recipe`, `factory_item`,
-`factory_machine`, `factory_craft_group`, and `factory_craft_showing_type`
-nodes. A fast CN build with `--skip-asset-maps --skip-reference-rows
+`factory_machine`, `factory_craft_group`, `factory_craft_showing_type`,
+`spaceship_npc_proxy`, `spaceship_skill`, `spaceship_room_type`,
+`spaceship_room_attr`, `spaceship_room_level`, `spaceship_empty_room`,
+`spaceship_formula`, `spaceship_clue`, `env_talk`, and `i18n_text` nodes. A
+fast CN build with `--skip-asset-maps --skip-reference-rows
 --skip-followups` verified 72 weapon nodes, 220 equipment nodes, 30 character
 nodes, 290 enemy nodes, 78 enemy template nodes, 98 enemy attribute-template
 nodes, 5 enemy display-type nodes, 134 enemy ability nodes, 70 enemy modifier
@@ -177,6 +180,10 @@ python tools\endfield_source_graph.py query atk_scale --kind gameplay_blackboard
 python tools\endfield_source_graph.py query map01 --kind map
 python tools\endfield_source_graph.py query mark_arrow --kind map_mark_template
 python tools\endfield_source_graph.py query component_activity_xiranite_cmpt_1 --kind factory_recipe
+python tools\endfield_source_graph.py query aglina_base01_lv001 --kind spaceship_npc_proxy
+python tools\endfield_source_graph.py query spaceship_skill_chr_0004_pelica_1_1 --kind spaceship_skill
+python tools\endfield_source_graph.py query growcabin_plant_crylplant_1_1 --kind spaceship_formula
+python tools\endfield_source_graph.py query envEmoji_common_adaptationwork --kind env_talk
 ```
 
 2026-07-01 character progression graph progress: generated Gameplay character
@@ -216,10 +223,25 @@ attribute display entries, 9 composite attribute nodes, 1 attribute filter, and
 `tutorial_stage_has_step`, 22 `character_training_dungeon`, 86
 `attribute_show_includes_modifier`, 25 `composite_attribute_includes`, 21
 `attribute_filter_includes`, and 204 `interactive_attribute_sets_property`
-edges. A parallel scout identified Spaceship/base room semantics as the next
-compact graph slice: 52 NPC proxy-to-character edges, 108 character spaceship
-skill refs, 140 skill room-type refs, 234 EnvTalk refs, and 68 formula item
-refs are expected from local tables.
+edges. That scouted slice has since landed in the Spaceship/base graph pass
+below.
+
+2026-07-01 Spaceship/base graph progress: source graph ingestion now promotes
+Spaceship NPC proxies, behavior EnvTalk refs, base skills, room types, room attrs, room levels, empty rooms, growth/manufacture
+formulas, clue rows, EnvTalk rows,
+audio refs, item refs, and local I18n text references. A fast CN rebuild
+verified 52 `spaceship_npc_proxy` nodes, 140 `spaceship_skill` nodes, 8
+`spaceship_room_type` nodes, 18 room attrs, 15 room levels, 6 empty rooms, 38
+formulas, 7 clues, 1,704 EnvTalk nodes, and 516 I18n text ref nodes. Edge
+checks verified 52 `spaceship_proxy_for_character`, 234
+`spaceship_behavior_uses_env_talk`, 108 `character_has_spaceship_skill`, 140
+`spaceship_skill_applies_to_room_type`, 25 `spaceship_room_level_for_type`, 31
+room-level item costs, 23 room-level formula unlocks, 30 formula consumed-item
+edges, 38 produced-item edges, 15 material-to-seed and 15 seed-to-material
+reverse map edges, 2,537 `env_talk_uses_audio`, and 1,046 `uses_i18n_text`
+edges. Descartes scout identified Activity/Achievement plus SystemJump as the
+next compact graph slice: 64 activities, 260 weekly tasks, 114 achievements,
+156 achievement levels, and 600 system jumps expected.
 
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,

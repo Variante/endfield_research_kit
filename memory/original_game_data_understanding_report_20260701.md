@@ -718,8 +718,9 @@ runtime combat formula or modifier-order reconstruction.
 
 2026-07-01 source graph progress: `tools/endfield_source_graph.py` now ingests
 the generated Gameplay payload, a pre-Gameplay item/economy table pass, an early
-world/map table pass, a pre-Gameplay combat semantics pass, and selected
-structured factory tables as evidence graph nodes and relationships. A fast CN
+world/map table pass, a pre-Gameplay combat semantics pass, selected structured
+factory tables, and Spaceship/base tables as evidence graph nodes and
+relationships. A fast CN
 verification build with `--skip-asset-maps --skip-reference-rows
 --skip-followups` produced 72 weapon nodes, 220 equipment nodes, 30 character
 nodes, 290 enemy nodes, 78 enemy template nodes, 98 enemy attribute-template
@@ -746,10 +747,13 @@ separate visible Gameplay entries. Exact queries such as `chr_0017_yvonne`,
 `chr_0002_endminm_attack1`, `item_proc_bomb_1`, `atk_scale`, `map01`,
 `mark_arrow`, `chr_0017_yvonne:stat:90:4`, `chr_0017_yvonne:potential:1`,
 `chr_0017_yvonne:breakthrough:charBreak20`, `aglina_indie`,
-`dung_aglina_chartrain01`, `attr_1`, and
-`component_activity_xiranite_cmpt_1` now resolve to semantic
-nodes with source table rows and neighbors. This improves cross-domain lookup;
-it still does not prove formulas beyond generated source-table evidence.
+`dung_aglina_chartrain01`, `attr_1`,
+`component_activity_xiranite_cmpt_1`, `aglina_base01_lv001`,
+`spaceship_skill_chr_0004_pelica_1_1`,
+`growcabin_plant_crylplant_1_1`, and `envEmoji_common_adaptationwork` now
+resolve to semantic nodes with source table rows and neighbors. This improves
+cross-domain lookup; it still does not prove formulas beyond generated
+source-table evidence.
 
 2026-07-01 source graph character-progression progress: generated Gameplay
 character payloads now expose break-stage ranges, level EXP/gold checkpoints,
@@ -776,10 +780,20 @@ recommended-weapon edges, 174 recommended weapon-skill edges, 22 tutorial
 dungeons, 97 tutorial stages, 336 tutorial-step refs, 7 trial rows, 80 training
 recommendation rows, 94 attribute meta rows, 86 attribute show entries, 25
 composite-attribute member edges, 21 attribute-filter entries, and 51
-interactive attribute rows. A parallel scout identified Spaceship/base room
-semantics as the next compact graph slice, with expected local evidence around
-52 NPC proxy-to-character edges, 108 character spaceship skill refs, 140 skill
-room-type refs, 234 EnvTalk refs, and 68 formula item refs.
+interactive attribute rows. That scouted slice has since landed in the
+Spaceship/base graph pass below.
+
+2026-07-01 source graph Spaceship/base progress: Spaceship NPC proxies, behavior
+EnvTalk refs, base skills, room types, room attrs, room levels, empty rooms,
+growth/manufacture formulas, clue rows, EnvTalk rows, audio refs, item refs, and
+local I18n text references are now queryable. A fast CN rebuild verified 52
+spaceship NPC proxy nodes, 140 spaceship skill nodes, 8 room type nodes, 18 room
+attrs, 15 room levels, 6 empty rooms, 38 formulas, 7 clues, 1,704 EnvTalk nodes,
+516 I18n text ref nodes, 52 proxy-to-character edges, 234 behavior EnvTalk
+edges, 108 character skill refs, 140 skill-to-room-type refs, 31 room-level item
+costs, 23 formula unlocks, 68 formula item edges, 2,537 EnvTalk audio refs, and
+1,046 I18n text-use edges. Descartes scout identified Activity/Achievement plus
+SystemJump as the next compact graph slice.
 
 2026-07-01 source graph item/economy progress: item, reward, reward-drop, and
 shop table semantics are now queryable before Gameplay ingestion. A fast source

@@ -158,7 +158,31 @@ CHARACTER_SUPPORT_TABLES = (
     "ActivityCharacterGuideLineTable.json",
     "RecommendTraining.json",
 )
-
+SPACESHIP_SEMANTIC_TABLES = (
+    "EnvTalkTable.json",
+    "SpaceShipNpc2Char.json",
+    "SpaceShipFriendNpc2Char.json",
+    "SpaceshipRoomTypeTable.json",
+    "SpaceshipRoomAttrTypeTable.json",
+    "SpaceshipRoomLvTable.json",
+    "SpaceshipRoomLvHelperTable.json",
+    "SpaceshipGrowCabinSeedFormulaTable.json",
+    "SpaceshipGrowCabinFormulaTable.json",
+    "SpaceshipManufactureFormulaTable.json",
+    "SpaceshipGrowCabinMaterial2OutComeTable.json",
+    "SpaceshipGrowCabinOutCome2MaterialTable.json",
+    "SpaceshipClueDataTable.json",
+    "SpaceshipClueDataIndex2IdTable.json",
+    "SpaceshipSkillTable.json",
+    "SpaceShipCharBehaviourTable.json",
+    "SpaceshipCharSkillTable.json",
+    "SpaceshipControlCenterLvTable.json",
+    "SpaceshipManufacturingStationLvTable.json",
+    "SpaceshipGrowCabinLvTable.json",
+    "SpaceshipGuestRoomLvTable.json",
+    "SpaceshipGuestRoomClueLvTable.json",
+    "SpaceshipEmptyRoomTable.json",
+)
 
 def slash(path: Path) -> str:
     try:
@@ -528,6 +552,8 @@ class SourceGraphBuilder:
                 self.commit_step("gameplay")
             self.ingest_character_support_semantics()
             self.commit_step("characterSupport")
+            self.ingest_spaceship_semantics()
+            self.commit_step("spaceshipSemantics")
             self.ingest_timeline_line_orders()
             self.commit_step("timelineLineOrders")
             self.ingest_story_source_links()
@@ -3536,6 +3562,414 @@ class SourceGraphBuilder:
         elif table == "RecommendTraining":
             self.add_recommend_training_edges(table, row_key, row, row_node)
 
+    def ingest_spaceship_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_spaceship_semantics", path=slash(table_root))
+        for table_name in SPACESHIP_SEMANTIC_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if payload is None:
+                continue
+            table_key = Path(table_name).stem
+            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/spaceship")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            if not isinstance(payload, dict):
+                continue
+            for row_key, row in payload.items():
+                row_node = self.add_node(
+                    "table_row",
+                    f"{table_key}:{row_key}",
+                    name=str(row_key),
+                    source=table_key,
+                    data=compact_payload(row, depth=2),
+                )
+                self.add_edge(table_node, row_node, "has_row", source="structured/spaceship")
+                self.add_spaceship_row_edges(table_key, row_key, row, row_node)
+
+    def add_i18n_text_node(self, text_id: Any, *, source: str = "") -> str:
+        text_key = safe_key(text_id)
+        if not text_key or text_key == "0":
+            return ""
+        node = self.add_node("i18n_text", text_key, name=text_key, source=source)
+        self.add_alias(text_key, node, kind="i18n_text_id", source=source)
+        return node
+
+    def iter_i18n_text_ids(self, value: Any) -> Iterable[str]:
+        if isinstance(value, dict):
+            if "id" in value and "text" in value:
+                text_id = safe_key(value.get("id"))
+                if text_id and text_id != "0":
+                    yield text_id
+            for item in value.values():
+                yield from self.iter_i18n_text_ids(item)
+        elif isinstance(value, list):
+            for item in value:
+                yield from self.iter_i18n_text_ids(item)
+
+    def add_i18n_text_edges(self, owner_node: str, payload: Any, *, source: str) -> None:
+        seen: set[str] = set()
+        for text_id in self.iter_i18n_text_ids(payload):
+            if text_id in seen:
+                continue
+            seen.add(text_id)
+            text_node = self.add_i18n_text_node(text_id, source=source)
+            if text_node:
+                self.add_edge(owner_node, text_node, "uses_i18n_text", source=source, evidence=text_id)
+
+    def add_env_talk_node(self, talk_id: Any, *, source: str = "", data: Any = None) -> str:
+        talk_key = safe_key(talk_id)
+        if not talk_key:
+            return ""
+        node = self.add_node("env_talk", talk_key, name=talk_key, source=source, data=data)
+        self.add_alias(talk_key, node, kind="env_talk_id", source=source)
+        return node
+
+    def add_spaceship_proxy_node(self, proxy_id: Any, *, source: str = "", data: Any = None) -> str:
+        proxy_key = safe_key(proxy_id)
+        if not proxy_key:
+            return ""
+        node = self.add_node("spaceship_npc_proxy", proxy_key, name=proxy_key, source=source, data=data)
+        self.add_alias(proxy_key, node, kind="spaceship_proxy_id", source=source)
+        return node
+
+    def add_spaceship_skill_node(self, skill_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        skill_key = safe_key(skill_id)
+        if not skill_key:
+            return ""
+        skill_name = table_display_text(name) or skill_key
+        node = self.add_node("spaceship_skill", skill_key, name=skill_name, source=source, data=data)
+        self.add_alias(skill_key, node, kind="spaceship_skill_id", source=source)
+        if skill_name != skill_key:
+            self.add_alias(skill_name, node, kind="spaceship_skill_name", source=source)
+        return node
+
+    def add_spaceship_room_type_node(self, room_type: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        type_key = safe_key(room_type)
+        if not type_key:
+            return ""
+        type_name = table_display_text(name) or type_key
+        node = self.add_node("spaceship_room_type", type_key, name=type_name, source=source, data=data)
+        self.add_alias(type_key, node, kind="spaceship_room_type_id", source=source)
+        if type_name != type_key:
+            self.add_alias(type_name, node, kind="spaceship_room_type_name", source=source)
+        return node
+
+    def add_spaceship_room_attr_node(self, attr_type: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        attr_key = safe_key(attr_type)
+        if not attr_key:
+            return ""
+        attr_name = table_display_text(name) or attr_key
+        node = self.add_node("spaceship_room_attr", attr_key, name=attr_name, source=source, data=data)
+        self.add_alias(attr_key, node, kind="spaceship_room_attr_id", source=source)
+        if attr_name != attr_key:
+            self.add_alias(attr_name, node, kind="spaceship_room_attr_name", source=source)
+        return node
+
+    def add_spaceship_proxy_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        proxy_id = safe_key(row_key)
+        char_id = safe_key(row)
+        if not proxy_id or not char_id:
+            return
+        proxy_node = self.add_spaceship_proxy_node(proxy_id, source=table, data={"proxyId": proxy_id, "characterId": char_id})
+        char_node = self.add_character_ref_node(char_id, source=table)
+        self.add_edge(row_node, proxy_node, "defines_spaceship_npc_proxy", source=table)
+        self.add_edge(proxy_node, char_node, "spaceship_proxy_for_character", source=table, evidence="rowValue")
+        self.add_edge(char_node, proxy_node, "character_has_spaceship_proxy", source=table, evidence=proxy_id)
+
+    def add_spaceship_behavior_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        char_id = safe_key(row.get("charId") or row_key)
+        char_node = self.add_character_ref_node(char_id, source=table)
+        if not char_node:
+            return
+        self.add_edge(row_node, char_node, "defines_spaceship_character_behavior", source=table)
+        for field, edge_kind in (("proxyId", "character_uses_spaceship_proxy"), ("friendProxyId", "character_uses_friend_spaceship_proxy")):
+            proxy_node = self.add_spaceship_proxy_node(row.get(field), source=table)
+            if proxy_node:
+                self.add_edge(char_node, proxy_node, edge_kind, source=table, evidence=field)
+        talk_fields = (
+            "commonNegativeEnvTalk",
+            "commonNormalEnvTalk",
+            "commonPositiveEnvTalk",
+            "workNegativeEnvTalk",
+            "workPositiveEnvTalk",
+            "friendGreetEnvTalkId",
+            "greetEnvTalkIds1",
+            "greetEnvTalkIds2",
+            "greetEnvTalkIds3",
+        )
+        for field in talk_fields:
+            value = row.get(field)
+            values = value if isinstance(value, list) else [value]
+            for index, talk_id in enumerate(values):
+                talk_node = self.add_env_talk_node(talk_id, source=table)
+                if talk_node:
+                    evidence = f"{field}[{index}]" if isinstance(value, list) else field
+                    self.add_edge(char_node, talk_node, "spaceship_behavior_uses_env_talk", source=table, evidence=evidence)
+
+    def add_spaceship_char_skill_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        char_id = safe_key(row_key)
+        char_node = self.add_character_ref_node(char_id, source=table, data={"spaceshipMaxSkillCount": row.get("maxSkillCount")})
+        if not char_node:
+            return
+        self.add_edge(row_node, char_node, "defines_spaceship_character_skills", source=table)
+        for index, skill in enumerate(row.get("skillList") or []):
+            if not isinstance(skill, dict):
+                continue
+            skill_node = self.add_spaceship_skill_node(skill.get("skillId"), source=table, data={"skillIndex": skill.get("skillIndex"), "unlockHint": table_text(skill.get("unlockHint"))})
+            if skill_node:
+                self.add_edge(char_node, skill_node, "character_has_spaceship_skill", source=table, evidence=f"skillList[{index}]", data={"skillIndex": skill.get("skillIndex")})
+                self.add_i18n_text_edges(skill_node, skill.get("unlockHint"), source=table)
+
+    def add_spaceship_skill_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        skill_id = safe_key(row.get("id") or row_key)
+        if not skill_id:
+            return
+        skill_node = self.add_spaceship_skill_node(
+            skill_id,
+            name=row.get("name") or row.get("talentName"),
+            source=table,
+            data={
+                "id": skill_id,
+                "level": row.get("level"),
+                "effectType": row.get("effectType"),
+                "roomType": row.get("roomType"),
+                "icon": row.get("icon"),
+                "sortId": row.get("sortId"),
+                "parameterCount": len(row.get("parameters") or []),
+                "skillNamePostfix": row.get("skillNamePostfix"),
+            },
+        )
+        self.add_edge(row_node, skill_node, "defines_spaceship_skill", source=table)
+        self.add_alias(row.get("icon"), skill_node, kind="icon_id", source=table)
+        room_node = self.add_spaceship_room_type_node(row.get("roomType"), source=table)
+        if room_node:
+            self.add_edge(skill_node, room_node, "spaceship_skill_applies_to_room_type", source=table, evidence="roomType")
+        self.add_i18n_text_edges(skill_node, {"name": row.get("name"), "desc": row.get("desc"), "talentName": row.get("talentName")}, source=table)
+
+    def add_env_talk_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        talk_id = safe_key(row.get("envTalkId") or row_key)
+        if not talk_id:
+            return
+        data_list = row.get("envTalkDataList") if isinstance(row.get("envTalkDataList"), list) else []
+        talk_node = self.add_env_talk_node(talk_id, source=table, data={"id": talk_id, "envTalkCd": row.get("envTalkCd"), "lineCount": len(data_list)})
+        self.add_edge(row_node, talk_node, "defines_env_talk", source=table)
+        for index, item in enumerate(data_list):
+            if not isinstance(item, dict):
+                continue
+            audio_id = safe_key(item.get("audio"))
+            if audio_id:
+                audio_node = self.add_node("audio", audio_id, name=audio_id, source=table)
+                self.add_edge(talk_node, audio_node, "env_talk_uses_audio", source=table, evidence=f"envTalkDataList[{index}]")
+            actor_id = safe_key(item.get("actorId"))
+            if actor_id:
+                actor_node = self.add_node("actor", actor_id, name=actor_id, source=table)
+                self.add_edge(talk_node, actor_node, "env_talk_actor", source=table, evidence=f"envTalkDataList[{index}]")
+
+    def add_spaceship_room_level_node(self, level_id: Any, *, source: str = "", data: Any = None) -> str:
+        level_key = safe_key(level_id)
+        if not level_key:
+            return ""
+        node = self.add_node("spaceship_room_level", level_key, name=level_key, source=source, data=data)
+        self.add_alias(level_key, node, kind="spaceship_room_level_id", source=source)
+        return node
+
+    def add_spaceship_room_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        room_type = safe_key(row.get("type") if "type" in row else row_key)
+        room_node = self.add_spaceship_room_type_node(room_type, name=row.get("name"), source=table, data={"type": row.get("type"), "allowBuildType": row.get("allowBuildType"), "icon": row.get("icon"), "bg": row.get("bg"), "sortId": row.get("sortId"), "previewProductItemCount": len(row.get("previewProductItemIds") or [])})
+        if not room_node:
+            return
+        self.add_edge(row_node, room_node, "defines_spaceship_room_type", source=table)
+        for alias in (row.get("icon"), row.get("bg"), row.get("visitorIcon")):
+            self.add_alias(alias, room_node, kind="asset_stem", source=table)
+        for index, item_id in enumerate(row.get("previewProductItemIds") or []):
+            item_node = self.add_item_node(item_id, source=table)
+            if item_node:
+                self.add_edge(room_node, item_node, "room_type_previews_item", source=table, evidence=f"previewProductItemIds[{index}]")
+        self.add_i18n_text_edges(room_node, row, source=table)
+
+    def add_spaceship_room_attr_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        attr_type = safe_key(row.get("type") if "type" in row else row_key)
+        attr_node = self.add_spaceship_room_attr_node(attr_type, name=row.get("name"), source=table, data={"type": row.get("type"), "icon": row.get("icon"), "isPercent": row.get("isPercent"), "showRate": row.get("showRate"), "sortId": row.get("sortId")})
+        if not attr_node:
+            return
+        self.add_edge(row_node, attr_node, "defines_spaceship_room_attr", source=table)
+        self.add_alias(row.get("icon"), attr_node, kind="asset_stem", source=table)
+        self.add_i18n_text_edges(attr_node, row, source=table)
+
+    def add_spaceship_room_level_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        level_id = safe_key(row.get("id") or row_key)
+        if not level_id:
+            return
+        level_node = self.add_spaceship_room_level_node(level_id, source=table, data={"id": level_id, "conditionType": row.get("conditionType"), "conditionId": row.get("conditionId"), "progressToCompare": row.get("progressToCompare"), "upgradeDialogId": row.get("upgradeDialogId"), "costItemCount": len(row.get("costItems") or [])})
+        self.add_edge(row_node, level_node, "defines_spaceship_room_level", source=table)
+        for index, item in enumerate(row.get("costItems") or []):
+            if not isinstance(item, dict):
+                continue
+            item_node = self.add_item_node(item.get("id"), source=table)
+            if item_node:
+                self.add_edge(level_node, item_node, "spaceship_room_level_requires_item", source=table, evidence=f"costItems[{index}]", data={"count": item.get("count")})
+        dialog_id = safe_key(row.get("upgradeDialogId"))
+        if dialog_id:
+            story_node = self.add_node("story", dialog_id, name=dialog_id, source=table)
+            self.add_edge(level_node, story_node, "spaceship_room_level_upgrade_dialog", source=table, evidence="upgradeDialogId")
+        condition_id = safe_key(row.get("conditionId"))
+        if condition_id:
+            condition_node = self.add_spaceship_room_level_node(condition_id, source=table)
+            self.add_edge(level_node, condition_node, "spaceship_room_level_condition", source=table, evidence="conditionId")
+        self.add_i18n_text_edges(level_node, row, source=table)
+
+    def add_spaceship_room_level_helper_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        level_id = safe_key(row.get("id") or row_key)
+        level_node = self.add_spaceship_room_level_node(level_id, source=table, data={"id": level_id, "level": row.get("level"), "roomType": row.get("roomType")})
+        room_node = self.add_spaceship_room_type_node(row.get("roomType"), source=table)
+        if level_node:
+            self.add_edge(row_node, level_node, "defines_spaceship_room_level_helper", source=table)
+        if level_node and room_node:
+            self.add_edge(level_node, room_node, "spaceship_room_level_for_type", source=table, evidence="roomType", data={"level": row.get("level")})
+
+    def add_spaceship_specialized_room_level_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        level_id = safe_key(row.get("id") or row_key)
+        if not level_id:
+            return
+        level_node = self.add_spaceship_room_level_node(level_id, source=table, data=compact_payload(row, depth=2, list_limit=8))
+        self.add_edge(row_node, level_node, "defines_spaceship_room_level_detail", source=table)
+        room_node = self.add_spaceship_room_type_node(row.get("roomType"), source=table)
+        if room_node:
+            self.add_edge(level_node, room_node, "spaceship_room_level_for_type", source=table, evidence="roomType", data={"level": row.get("level")})
+        reward_node = self.add_reward_node(row.get("rewardId"), source=table)
+        if reward_node:
+            self.add_edge(level_node, reward_node, "spaceship_room_level_reward", source=table, evidence="rewardId")
+        for index, recipe_id in enumerate(row.get("unlockRecipe") or []):
+            formula_node = self.add_node("spaceship_formula", recipe_id, name=recipe_id, source=table)
+            self.add_edge(level_node, formula_node, "spaceship_room_level_unlocks_formula", source=table, evidence=f"unlockRecipe[{index}]")
+            self.add_alias(recipe_id, formula_node, kind="spaceship_formula_id", source=table)
+        unlock_room_type = safe_key(row.get("unlockRoomType"))
+        if unlock_room_type:
+            unlock_room_node = self.add_spaceship_room_type_node(unlock_room_type, source=table)
+            self.add_edge(level_node, unlock_room_node, "spaceship_room_level_unlocks_room_type", source=table, evidence="unlockRoomType")
+        self.add_i18n_text_edges(level_node, row, source=table)
+
+    def add_spaceship_empty_room_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        room_id = safe_key(row.get("id") or row_key)
+        room_node = self.add_node("spaceship_empty_room", room_id, name=table_display_text(row.get("name")) or room_id, source=table, data={"id": room_id, "roomType": row.get("roomType"), "areaType": row.get("areaType"), "sortId": row.get("sortId"), "demolitionDialogId": row.get("demolitionDialogId")})
+        self.add_edge(row_node, room_node, "defines_spaceship_empty_room", source=table)
+        self.add_alias(room_id, room_node, kind="spaceship_empty_room_id", source=table)
+        type_node = self.add_spaceship_room_type_node(row.get("roomType"), source=table)
+        if type_node:
+            self.add_edge(room_node, type_node, "spaceship_empty_room_has_type", source=table, evidence="roomType")
+        dialog_id = safe_key(row.get("demolitionDialogId"))
+        if dialog_id:
+            story_node = self.add_node("story", dialog_id, name=dialog_id, source=table)
+            self.add_edge(room_node, story_node, "spaceship_empty_room_demolition_dialog", source=table, evidence="demolitionDialogId")
+        self.add_i18n_text_edges(room_node, row, source=table)
+
+    def add_spaceship_formula_node(self, formula_id: Any, *, source: str = "", data: Any = None) -> str:
+        formula_key = safe_key(formula_id)
+        if not formula_key:
+            return ""
+        node = self.add_node("spaceship_formula", formula_key, name=formula_key, source=source, data=data)
+        self.add_alias(formula_key, node, kind="spaceship_formula_id", source=source)
+        return node
+
+    def add_spaceship_formula_item_edge(self, formula_node: str, item_id: Any, *, edge_kind: str, source: str, evidence: str, count: Any = None) -> None:
+        item_node = self.add_item_node(item_id, source=source)
+        if item_node:
+            self.add_edge(formula_node, item_node, edge_kind, source=source, evidence=evidence, data={"count": count} if count is not None else None)
+
+    def add_spaceship_grow_formula_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        formula_id = safe_key(row.get("id") or row_key)
+        formula_node = self.add_spaceship_formula_node(formula_id, source=table, data={"id": formula_id, "kind": "grow", "level": row.get("level"), "type": row.get("type"), "rarity": row.get("rarity"), "roomAttrType": row.get("roomAttrType"), "totalProgress": row.get("totalProgress"), "sortId": row.get("sortId"), "growingPostmodelId": row.get("growingPostmodelId"), "finishPostmodelId": row.get("finishPostmodelId")})
+        if not formula_node:
+            return
+        self.add_edge(row_node, formula_node, "defines_spaceship_formula", source=table)
+        self.add_spaceship_formula_item_edge(formula_node, row.get("seedItemId"), edge_kind="spaceship_formula_consumes_item", source=table, evidence="seedItemId", count=row.get("seedItemCount"))
+        self.add_spaceship_formula_item_edge(formula_node, row.get("outcomeItemId"), edge_kind="spaceship_formula_produces_item", source=table, evidence="outcomeItemId", count=row.get("outcomeItemCount"))
+        seed_formula_node = self.add_spaceship_formula_node(row.get("seedFormulaId"), source=table)
+        if seed_formula_node:
+            self.add_edge(formula_node, seed_formula_node, "spaceship_formula_uses_seed_formula", source=table, evidence="seedFormulaId")
+        attr_node = self.add_spaceship_room_attr_node(row.get("roomAttrType"), source=table)
+        if attr_node:
+            self.add_edge(formula_node, attr_node, "spaceship_formula_uses_room_attr", source=table, evidence="roomAttrType")
+
+    def add_spaceship_seed_formula_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        formula_id = safe_key(row.get("id") or row_key)
+        formula_node = self.add_spaceship_formula_node(formula_id, source=table, data={"id": formula_id, "kind": "seed", "level": row.get("level"), "type": row.get("type"), "rarity": row.get("rarity"), "sortId": row.get("sortId")})
+        if not formula_node:
+            return
+        self.add_edge(row_node, formula_node, "defines_spaceship_formula", source=table)
+        self.add_spaceship_formula_item_edge(formula_node, row.get("materialItemId"), edge_kind="spaceship_formula_consumes_item", source=table, evidence="materialItemId", count=row.get("materialItemCount"))
+        self.add_spaceship_formula_item_edge(formula_node, row.get("outcomeseedItemId"), edge_kind="spaceship_formula_produces_item", source=table, evidence="outcomeseedItemId", count=row.get("outcomeseedItemCount"))
+
+    def add_spaceship_manufacture_formula_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        formula_id = safe_key(row.get("id") or row_key)
+        formula_node = self.add_spaceship_formula_node(formula_id, source=table, data={"id": formula_id, "kind": "manufacture", "level": row.get("level"), "rarity": row.get("rarity"), "roomAttrType": row.get("roomAttrType"), "showingType": row.get("showingType"), "perCapacity": row.get("perCapacity"), "totalProgress": row.get("totalProgress"), "sortId": row.get("sortId")})
+        if not formula_node:
+            return
+        self.add_edge(row_node, formula_node, "defines_spaceship_formula", source=table)
+        self.add_spaceship_formula_item_edge(formula_node, row.get("outcomeItemId"), edge_kind="spaceship_formula_produces_item", source=table, evidence="outcomeItemId", count=row.get("perCapacity"))
+        attr_node = self.add_spaceship_room_attr_node(row.get("roomAttrType"), source=table)
+        if attr_node:
+            self.add_edge(formula_node, attr_node, "spaceship_formula_uses_room_attr", source=table, evidence="roomAttrType")
+
+    def add_spaceship_grow_reverse_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        source_item = self.add_item_node(row_key, source=table)
+        target_item_id = row.get("outcomeseedItemId") or row.get("materialItemId")
+        target_item = self.add_item_node(target_item_id, source=table)
+        if source_item and target_item:
+            edge_kind = "spaceship_material_maps_to_seed" if row.get("outcomeseedItemId") else "spaceship_seed_maps_to_material"
+            self.add_edge(source_item, target_item, edge_kind, source=table, evidence="rowValue")
+
+    def add_spaceship_clue_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        clue_id = safe_key(row.get("id") or row_key)
+        clue_node = self.add_node("spaceship_clue", clue_id, name=table_display_text(row.get("name")) or clue_id, source=table, data={"id": clue_id, "clueType": row.get("clueType"), "roomAttrType": row.get("roomAttrType"), "icon": row.get("icon"), "color": row.get("color")})
+        self.add_edge(row_node, clue_node, "defines_spaceship_clue", source=table)
+        self.add_alias(clue_id, clue_node, kind="spaceship_clue_id", source=table)
+        self.add_alias(row.get("icon"), clue_node, kind="asset_stem", source=table)
+        attr_node = self.add_spaceship_room_attr_node(row.get("roomAttrType"), source=table)
+        if attr_node:
+            self.add_edge(clue_node, attr_node, "spaceship_clue_uses_room_attr", source=table, evidence="roomAttrType")
+        self.add_i18n_text_edges(clue_node, row, source=table)
+
+    def add_spaceship_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table in {"SpaceShipNpc2Char", "SpaceShipFriendNpc2Char"}:
+            self.add_spaceship_proxy_edges(table, row_key, row, row_node)
+            return
+        if not isinstance(row, dict):
+            return
+        if table != "EnvTalkTable":
+            self.add_i18n_text_edges(row_node, row, source=table)
+        if table == "SpaceShipCharBehaviourTable":
+            self.add_spaceship_behavior_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipCharSkillTable":
+            self.add_spaceship_char_skill_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipSkillTable":
+            self.add_spaceship_skill_edges(table, row_key, row, row_node)
+        elif table == "EnvTalkTable":
+            self.add_env_talk_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipRoomTypeTable":
+            self.add_spaceship_room_type_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipRoomAttrTypeTable":
+            self.add_spaceship_room_attr_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipRoomLvTable":
+            self.add_spaceship_room_level_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipRoomLvHelperTable":
+            self.add_spaceship_room_level_helper_edges(table, row_key, row, row_node)
+        elif table in {"SpaceshipControlCenterLvTable", "SpaceshipManufacturingStationLvTable", "SpaceshipGrowCabinLvTable", "SpaceshipGuestRoomLvTable", "SpaceshipGuestRoomClueLvTable"}:
+            self.add_spaceship_specialized_room_level_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipEmptyRoomTable":
+            self.add_spaceship_empty_room_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipGrowCabinFormulaTable":
+            self.add_spaceship_grow_formula_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipGrowCabinSeedFormulaTable":
+            self.add_spaceship_seed_formula_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipManufactureFormulaTable":
+            self.add_spaceship_manufacture_formula_edges(table, row_key, row, row_node)
+        elif table in {"SpaceshipGrowCabinMaterial2OutComeTable", "SpaceshipGrowCabinOutCome2MaterialTable"}:
+            self.add_spaceship_grow_reverse_edges(table, row_key, row, row_node)
+        elif table in {"SpaceshipClueDataTable", "SpaceshipClueDataIndex2IdTable"}:
+            self.add_spaceship_clue_edges(table, row_key, row, row_node)
+
     def ingest_combat_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_combat_semantics", path=slash(table_root))
@@ -4823,6 +5257,16 @@ QUERY_KIND_PRIORITY = {
     "composite_attribute": 32,
     "attribute_filter": 33,
     "interactive_attribute": 34,
+    "spaceship_npc_proxy": 35,
+    "spaceship_skill": 36,
+    "spaceship_room_type": 37,
+    "spaceship_room_attr": 38,
+    "spaceship_room_level": 39,
+    "spaceship_empty_room": 40,
+    "spaceship_formula": 41,
+    "spaceship_clue": 42,
+    "env_talk": 43,
+    "i18n_text": 44,
     "weapon": 10,
     "equipment": 11,
     "enemy": 12,
@@ -4922,6 +5366,16 @@ NODE_ID_PREFIXES = (
     "composite_attribute",
     "attribute_filter",
     "interactive_attribute",
+    "spaceship_npc_proxy",
+    "spaceship_skill",
+    "spaceship_room_type",
+    "spaceship_room_attr",
+    "spaceship_room_level",
+    "spaceship_empty_room",
+    "spaceship_formula",
+    "spaceship_clue",
+    "env_talk",
+    "i18n_text",
     "weapon",
     "equipment",
     "enemy",
