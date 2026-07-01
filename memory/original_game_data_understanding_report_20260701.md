@@ -644,6 +644,16 @@ The runtime metadata reports expose a large amount of IL2CPP structure:
 The broader metadata and memory notes also recover concrete gameplay payload
 schemas. Focused examples include:
 
+2026-07-01 WebUI progress: `scripts/build_gameplay_data.py` now promotes a
+compact, inspectable subset of progression semantics into the Gameplay tab. It
+samples weapon upgrade curves with cumulative costs, weapon breakthrough
+materials and skill bounds, weapon talent bound templates, character level EXP
+checkpoints, global character break-stage caps, per-character breakthrough
+materials, and potential unlock effects/items. This improves practical access
+to numerical progression data, but it still stops short of full formula/runtime
+simulation; raw `CharacterTable.attributes` curves also need a separate cap rule
+because table rows extend past the current playable level cap.
+
 - `AbilitySystemData` field order and many serialized fields for 28 character
   rows, including skill bundles, command mappings, combo conditions, UI data,
   buff lists, blackboard entries, camera config, hit/effect settings, health

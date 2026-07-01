@@ -12,8 +12,8 @@ The project is built around reproducible local exports:
   story order, and recovery evidence from generated game-data JSON.
 - `Text Tables` exposes localized table rows and source data in a searchable
   browser.
-- `Gameplay` surfaces curated weapon, character, skill, talent, and numeric
-  table records from structured game-data tables.
+- `Gameplay` surfaces curated weapon, character, skill, talent, progression,
+  and numeric table records from structured game-data tables.
 - `Assets` indexes exported images, models, videos, materials, metadata, and
   related files.
 - `Data` and `Decoded` are local research tabs for decoded config JSON and
