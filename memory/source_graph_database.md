@@ -157,12 +157,16 @@ now includes `FactoryManualCraftTable`, `FactoryMachineCraftTable`,
 recipes queryable by recipe ID, item ID, machine ID, domain, and showing type;
 it does not yet simulate factory timing, power, logistics, or unlock rules.
 
-The same build now links Gameplay entries to exported asset nodes by exact
-Gameplay ID, icon ID, or model-path stem containment in asset paths. The fast
-CN verification build produced 5,877 `has_gameplay_asset` edges: 2,078 from
-weapons, 2,039 from characters, and 1,760 from equipment. Evidence values record
-the source field (`id`, `iconId`, or `modelPath`) so later audits can separate
-broad ID matches from icon/model-path matches.
+The same build now links Gameplay entries and Gameplay cost/drop item nodes to
+exported asset nodes by exact Gameplay ID, icon ID, model-path stem, or item-id
+containment in asset paths. The fast CN verification build produced 6,716
+`has_gameplay_asset` edges: 2,078 from weapons, 2,039 from characters, 1,760
+from equipment, and 839 from Gameplay item nodes. The item links cover 96 item
+nodes, split into 836 image edges and 3 `item_gold` drop-model edges;
+`item_charpotentialup_chr_9000_endmin` still has no exported asset-path match.
+Evidence values record the source field (`id`, `iconId`, `modelPath`, or
+`itemId`) so later audits can separate broad ID matches from
+icon/model-path/item matches.
 
 2026-07-01 equipment semantic ingestion promotes equipment formula, domain,
 suit, unlock, and stat-property details from compact Gameplay payload blobs to
