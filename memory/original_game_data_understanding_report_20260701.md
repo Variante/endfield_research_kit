@@ -383,7 +383,10 @@ uninterpreted. The `ModelViewStateControllerData` pass adds 399 model-view
 controller nodes, 798 source-file definition edges, 582 clip-ref nodes, 750
 animator-name nodes, 923 exact clip edges, 823 animator-body clip refs, 619
 exact effect-id edges, and 872 animator-body effect refs; the config-model to
-asset-entity join remains 0 for this family. It does not prove runtime formula usage, full SpawnerConfig tail semantics,
+asset-entity join remains 0 for this family. The `Json_NavMesh` pass adds exact
+MemoryPack graph evidence for 139 LunaArea polygon rows, 17 owner-qualified
+area ids, 6 NavMeshStateContainer owners, 569 state rows, and 57 bounds-to-area
+id refs across Persistent/StreamingAssets copies. These decoded-config passes do not prove runtime formula usage, full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
 flow, montage clip playback semantics, full exported model/icon reconstruction,
@@ -445,6 +448,10 @@ Partial but useful current examples include:
   refs, and `preTickAnimator` payload evidence; animator state machines,
   transitions, timing, camera/emissive hash meaning, and asset-entity joins
   remain future work.
+- `Json/NavMesh`: queryable LunaArea polygon rows and NavMeshStateContainer
+  rows for six owners, with owner-qualified area-id links and level/map owner
+  links; numeric bounds/list evidence is preserved without inferring navigation
+  behavior or walkability.
 - `LevelScriptTemplateData` and other partially previewed families have verified
   top-level ids/counts and meaningful previews.
 
@@ -497,6 +504,15 @@ registered line links, 4,131 registered option links, and matching line/option
 to-story edges. This proves runtime registration structure for scenes, trunks,
 lines, and options; it does not supersede generated WebUI line order,
 scene-graph option placement, or timeline route evidence.
+
+2026-07-01 source graph NavMesh progress: a fast CN rebuild to
+`tmp/source_graph_navmesh.sqlite` verified exact decoded NavMesh evidence from
+`Json_NavMesh.json`. The pass adds 139 `navmesh_area` polygon rows, 17
+owner-qualified `navmesh_area_id` nodes, 6 `navmesh_state_container` owners,
+569 `navmesh_state_record` rows, 278 area source-file definition edges, 1,138
+state-record source-file definition edges, and 57 bounds-to-area-id refs. This
+proves decoded geometry/state inventory by NavMesh owner; it does not infer
+walkability, pathfinding behavior, or numeric state/list semantics.
 
 Useful support-table checks include:
 

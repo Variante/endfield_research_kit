@@ -298,6 +298,7 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_NPC.json",
     "Json_LevelScriptData.json",
     "Json_LevelScriptTemplateData.json",
+    "Json_NavMesh.json",
     "Json_GameplayConfigWorldEntityRegistry.json",
 )
 DECODED_CONFIG_TARGET_TYPES = {
@@ -311,7 +312,9 @@ DECODED_CONFIG_TARGET_TYPES = {
     "InteractiveTable",
     "InteractiveTemplateData",
     "InteractiveDataCollections",
+    "LunaArea",
     "ModelViewStateControllerData",
+    "NavMeshStateContainer",
     "LevelConfig",
     "LevelData",
     "LevelScriptData",
@@ -513,6 +516,207 @@ def mp_read_f32(data: bytes, offset: int, field_name: str) -> tuple[float, int]:
     if not math.isfinite(value):
         raise ValueError(f"{field_name}:non-finite")
     return value, offset + 4
+
+
+NAVMESH_LUNA_AREA_ROW_MEMBER_COUNT = 6
+NAVMESH_STATE_CONTAINER_MEMBER_COUNT = 6
+NAVMESH_STATE_RECORD_KINDS = ("bounds36", "ints20", "ints16", "groupedU64Lists", "idValueLists")
+
+
+def decode_navmesh_luna_area_rows(data: bytes) -> dict[str, Any] | None:
+    if not data or data[0] != 1:
+        return None
+    try:
+        offset = 1
+        area_count, offset = mp_read_u32(data, offset, "LunaArea", max_count=10_000)
+        rows: list[dict[str, Any]] = []
+        total_vertices = 0
+        max_vertices = 0
+        for row_index in range(area_count):
+            if offset >= len(data):
+                raise ValueError("LunaArea.rowMemberCount:truncated")
+            row_member_count = data[offset]
+            offset += 1
+            if row_member_count != NAVMESH_LUNA_AREA_ROW_MEMBER_COUNT:
+                raise ValueError(f"LunaArea.rowMemberCount:{row_member_count}")
+            area_id, offset = mp_read_i32(data, offset, "LunaArea.areaId")
+            center: list[float] = []
+            for axis in range(2):
+                value, offset = mp_read_f32(data, offset, f"LunaArea.center[{axis}]")
+                center.append(round(value, 4))
+            vertex_count, offset = mp_read_u32(data, offset, "LunaArea.vertices", max_count=2_000)
+            vertices_preview: list[list[float]] = []
+            for _vertex_index in range(vertex_count):
+                vertex: list[float] = []
+                for axis in range(3):
+                    value, offset = mp_read_f32(data, offset, f"LunaArea.vertex[{axis}]")
+                    vertex.append(round(value, 4))
+                if len(vertices_preview) < 4:
+                    vertices_preview.append(vertex)
+            tail_u64, offset = mp_read_u64(data, offset, "LunaArea.tailU64")
+            if offset + 4 > len(data):
+                raise ValueError("LunaArea.tailU32:truncated")
+            tail_u32 = struct.unpack_from("<I", data, offset)[0]
+            offset += 4
+            total_vertices += vertex_count
+            max_vertices = max(max_vertices, vertex_count)
+            rows.append(
+                {
+                    "rowIndex": row_index,
+                    "areaId": area_id,
+                    "rowMemberCount": row_member_count,
+                    "center": center,
+                    "vertexCount": vertex_count,
+                    "verticesPreview": vertices_preview,
+                    "tailU64": tail_u64,
+                    "tailU32": tail_u32,
+                }
+            )
+        if offset != len(data):
+            raise ValueError("LunaArea:trailing-bytes")
+    except (ValueError, struct.error):
+        return None
+    return {
+        "areaCount": area_count,
+        "totalVertices": total_vertices,
+        "maxVertices": max_vertices,
+        "rows": rows,
+        "exactLength": True,
+    }
+
+
+def parse_navmesh_state_record_field(data: bytes, offset: int, count: int, record_kind: str) -> tuple[int, list[dict[str, Any]]] | None:
+    rows: list[dict[str, Any]] = []
+    try:
+        if record_kind == "bounds36":
+            row_size = 36
+            if offset + count * row_size > len(data):
+                return None
+            for row_index in range(count):
+                key = struct.unpack_from("<I", data, offset)[0]
+                offset += 4
+                area_id = struct.unpack_from("<i", data, offset)[0]
+                offset += 4
+                kind = struct.unpack_from("<i", data, offset)[0]
+                offset += 4
+                values = [round(struct.unpack_from("<f", data, offset + value_index * 4)[0], 4) for value_index in range(6)]
+                offset += 24
+                if not all(math.isfinite(value) and abs(value) < 100_000_000 for value in values):
+                    return None
+                rows.append({"rowIndex": row_index, "key": key, "areaId": area_id, "kind": kind, "boundsValues": values})
+            return offset, rows
+
+        if record_kind in {"ints16", "ints20"}:
+            int_count = 4 if record_kind == "ints16" else 5
+            row_size = int_count * 4
+            if offset + count * row_size > len(data):
+                return None
+            for row_index in range(count):
+                values = [struct.unpack_from("<i", data, offset + value_index * 4)[0] for value_index in range(int_count)]
+                offset += row_size
+                rows.append({"rowIndex": row_index, "values": values})
+            return offset, rows
+
+        if record_kind == "groupedU64Lists":
+            for row_index in range(count):
+                if offset + 12 > len(data):
+                    return None
+                key, field0, sublist_count = struct.unpack_from("<III", data, offset)
+                offset += 12
+                if key < 100_000_000 or field0 > 10 or sublist_count > 64:
+                    return None
+                lists: list[dict[str, Any]] = []
+                total_ids = 0
+                for _list_index in range(sublist_count):
+                    if offset + 8 > len(data):
+                        return None
+                    list_index, item_count = struct.unpack_from("<II", data, offset)
+                    offset += 8
+                    if list_index > 128 or item_count > 512 or offset + item_count * 8 > len(data):
+                        return None
+                    ids: list[int] = []
+                    for item_index in range(item_count):
+                        value = struct.unpack_from("<Q", data, offset + item_index * 8)[0]
+                        if value == 0 or value > 0xFFFFFFFF:
+                            return None
+                        if len(ids) < 8:
+                            ids.append(value)
+                    offset += item_count * 8
+                    total_ids += item_count
+                    if len(lists) < 8:
+                        lists.append({"index": list_index, "count": item_count, "idsPreview": ids})
+                rows.append(
+                    {
+                        "rowIndex": row_index,
+                        "key": key,
+                        "field0": field0,
+                        "sublistCount": sublist_count,
+                        "totalIds": total_ids,
+                        "lists": lists,
+                    }
+                )
+            return offset, rows
+
+        if record_kind == "idValueLists":
+            for row_index in range(count):
+                if offset + 12 > len(data):
+                    return None
+                key = struct.unpack_from("<Q", data, offset)[0]
+                offset += 8
+                value_count = struct.unpack_from("<I", data, offset)[0]
+                offset += 4
+                if key == 0 or key > 0xFFFFFFFF or value_count > 32 or offset + value_count * 4 > len(data):
+                    return None
+                values = [struct.unpack_from("<I", data, offset + value_index * 4)[0] for value_index in range(value_count)]
+                if any(value > 100_000 for value in values):
+                    return None
+                offset += value_count * 4
+                rows.append({"rowIndex": row_index, "key": key, "valueCount": value_count, "values": values[:12]})
+            return offset, rows
+    except struct.error:
+        return None
+    return None
+
+
+def find_navmesh_state_container_fields(data: bytes, offset: int, field_index: int, fields: list[dict[str, Any]]) -> list[dict[str, Any]] | None:
+    if field_index == NAVMESH_STATE_CONTAINER_MEMBER_COUNT:
+        return fields if offset == len(data) else None
+    if offset + 4 > len(data):
+        return None
+    count = struct.unpack_from("<I", data, offset)[0]
+    if count > 1_000:
+        return None
+    value_offset = offset + 4
+    if count == 0:
+        decoded = {"fieldIndex": field_index + 1, "recordKind": "empty", "count": 0, "rows": []}
+        return find_navmesh_state_container_fields(data, value_offset, field_index + 1, fields + [decoded])
+    for record_kind in NAVMESH_STATE_RECORD_KINDS:
+        parsed = parse_navmesh_state_record_field(data, value_offset, count, record_kind)
+        if not parsed:
+            continue
+        next_offset, rows = parsed
+        decoded = {"fieldIndex": field_index + 1, "recordKind": record_kind, "count": count, "rows": rows}
+        result = find_navmesh_state_container_fields(data, next_offset, field_index + 1, fields + [decoded])
+        if result is not None:
+            return result
+    return None
+
+
+def decode_navmesh_state_container_fields(data: bytes) -> dict[str, Any] | None:
+    if not data or data[0] != NAVMESH_STATE_CONTAINER_MEMBER_COUNT:
+        return None
+    fields = find_navmesh_state_container_fields(data, 1, 0, [])
+    if fields is None:
+        return None
+    total_rows = sum(int(field.get("count") or 0) for field in fields)
+    record_kind_counts = Counter(str(field.get("recordKind") or "") for field in fields)
+    return {
+        "fieldCount": len(fields),
+        "totalRows": total_rows,
+        "recordKindCounts": dict(sorted(record_kind_counts.items())),
+        "fields": fields,
+        "exactLength": True,
+    }
 
 
 BUFF_DATA_MEMBER_COUNT = 29
@@ -2693,6 +2897,10 @@ class SourceGraphBuilder:
             self.add_skill_data_config_edges(file_node, entry)
         elif subtype == "DialogIdTable":
             self.add_dialog_id_table_edges(file_node, entry)
+        elif subtype == "LunaArea":
+            self.add_navmesh_luna_area_edges(file_node, entry)
+        elif subtype == "NavMeshStateContainer":
+            self.add_navmesh_state_container_edges(file_node, entry)
         elif subtype == "GameplayConfigMissionAreaTable":
             self.add_mission_area_config_edges(file_node, entry)
         elif subtype == "ModelTable":
@@ -3579,6 +3787,122 @@ class SourceGraphBuilder:
                     option_node = self.add_node("option", option_id, name=option_id, source="DialogIdTable")
                     self.add_edge(scene_node, option_node, "dialog_registry_has_option", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
                     self.add_edge(option_node, story_node, "dialog_registry_option_for_story", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
+
+    def navmesh_owner_from_entry(self, entry: dict[str, Any]) -> str:
+        rel = safe_key(entry.get("dp") or entry.get("p"))
+        parts = [part for part in rel.replace("\\", "/").split("/") if part]
+        for index, part in enumerate(parts):
+            if part == "NavMesh" and index + 1 < len(parts):
+                return safe_key(parts[index + 1])
+        return ""
+
+    def add_navmesh_area_id_node(self, owner: Any, area_id: Any, *, source: str = "") -> str:
+        owner_key = safe_key(owner)
+        area_key = safe_key(area_id)
+        if not owner_key or not area_key:
+            return ""
+        key = f"{owner_key}:{area_key}"
+        node = self.add_node(
+            "navmesh_area_id",
+            key,
+            name=key,
+            source=source,
+            data={"owner": owner_key, "areaId": area_id},
+        )
+        self.add_alias(key, node, kind="navmesh_area_id", source=source)
+        return node
+
+    def add_navmesh_luna_area_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        raw_data = self.read_decoded_config_bytes(entry)
+        decoded = decode_navmesh_luna_area_rows(raw_data)
+        owner = self.navmesh_owner_from_entry(entry)
+        if not decoded or not owner:
+            return
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        self.update_node_details(
+            file_node,
+            data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": {key: value for key, value in decoded.items() if key != "rows"}}, depth=3),
+        )
+        level_node = self.add_level_node(owner, source=source)
+        self.add_level_map_edge(level_node, owner, source=source, evidence="navmesh_owner")
+        for row in decoded.get("rows") or []:
+            row_index = row.get("rowIndex")
+            area_id = row.get("areaId")
+            area_key = f"{owner}:row{int(row_index):04d}:area{safe_key(area_id)}"
+            area_node = self.add_node(
+                "navmesh_area",
+                area_key,
+                name=area_key,
+                source=source,
+                path=safe_key(entry.get("p")),
+                data=compact_payload({"owner": owner, **row}, depth=3),
+            )
+            self.add_alias(area_key, area_node, kind="navmesh_area_key", source=source)
+            self.add_edge(file_node, area_node, "defines_navmesh_area", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id, "rowIndex": row_index})
+            self.add_edge(area_node, level_node, "navmesh_area_in_level", source=source, evidence="navmesh_owner")
+            area_id_node = self.add_navmesh_area_id_node(owner, area_id, source=source)
+            if area_id_node:
+                self.add_edge(area_node, area_id_node, "navmesh_area_has_area_id", source=source, evidence="areaId")
+
+    def add_navmesh_state_container_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        raw_data = self.read_decoded_config_bytes(entry)
+        decoded = decode_navmesh_state_container_fields(raw_data)
+        owner = self.navmesh_owner_from_entry(entry)
+        if not decoded or not owner:
+            return
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        field_summaries = [
+            {"fieldIndex": field.get("fieldIndex"), "recordKind": field.get("recordKind"), "count": field.get("count")}
+            for field in decoded.get("fields") or []
+        ]
+        container_node = self.add_node(
+            "navmesh_state_container",
+            owner,
+            name=owner,
+            source=source,
+            path=safe_key(entry.get("p")),
+            data=compact_payload(
+                {
+                    **self.decoded_config_entry_data(entry),
+                    "owner": owner,
+                    "fieldCount": decoded.get("fieldCount"),
+                    "totalRows": decoded.get("totalRows"),
+                    "recordKindCounts": decoded.get("recordKindCounts"),
+                    "fields": field_summaries,
+                    "exactLength": decoded.get("exactLength"),
+                },
+                depth=3,
+            ),
+        )
+        self.add_alias(owner, container_node, kind="navmesh_state_container_owner", source=source)
+        self.add_edge(file_node, container_node, "defines_navmesh_state_container", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id})
+        level_node = self.add_level_node(owner, source=source)
+        self.add_edge(container_node, level_node, "navmesh_state_container_in_level", source=source, evidence="navmesh_owner")
+        self.add_level_map_edge(level_node, owner, source=source, evidence="navmesh_owner")
+
+        for field in decoded.get("fields") or []:
+            field_index = field.get("fieldIndex")
+            record_kind = safe_key(field.get("recordKind"))
+            for row in field.get("rows") or []:
+                row_index = row.get("rowIndex")
+                record_key = f"{owner}:f{int(field_index):02d}:r{int(row_index):04d}"
+                record_node = self.add_node(
+                    "navmesh_state_record",
+                    record_key,
+                    name=record_key,
+                    source=source,
+                    path=safe_key(entry.get("p")),
+                    data=compact_payload({"owner": owner, "fieldIndex": field_index, "recordKind": record_kind, **row}, depth=3),
+                )
+                self.add_alias(record_key, record_node, kind="navmesh_state_record_key", source=source)
+                self.add_edge(container_node, record_node, "navmesh_state_container_has_record", source=source, evidence=f"field{field_index}:{record_kind}")
+                self.add_edge(file_node, record_node, "defines_navmesh_state_record", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id, "fieldIndex": field_index, "rowIndex": row_index, "recordKind": record_kind})
+                if record_kind == "bounds36" and row.get("areaId") is not None:
+                    area_id_node = self.add_navmesh_area_id_node(owner, row.get("areaId"), source=source)
+                    if area_id_node:
+                        self.add_edge(record_node, area_id_node, "navmesh_state_record_references_area_id", source=source, evidence="areaId")
 
     def add_model_view_state_controller_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         raw_data = self.read_decoded_config_bytes(entry)
@@ -11260,6 +11584,10 @@ QUERY_KIND_PRIORITY = {
     "model_view_animator_name": 104,
     "dialog_id_table_config": 105,
     "dialog_registry_scene": 106,
+    "navmesh_area": 107,
+    "navmesh_area_id": 108,
+    "navmesh_state_container": 109,
+    "navmesh_state_record": 110,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -11526,6 +11854,10 @@ NODE_ID_PREFIXES = (
     "model_view_animator_name",
     "dialog_id_table_config",
     "dialog_registry_scene",
+    "navmesh_area",
+    "navmesh_area_id",
+    "navmesh_state_container",
+    "navmesh_state_record",
     "mission",
     "map",
     "level",
