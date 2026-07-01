@@ -957,6 +957,19 @@ python tools\endfield_source_graph.py query e8m2_q#10 --kind quest_task
 python tools\endfield_source_graph.py query ReachDestination --kind mission_runtime_condition_type
 python tools\endfield_source_graph.py query MissionAreaTrackingInfo --kind mission_runtime_tracking_type
 ```
+2026-07-01 MissionRuntimeAsset action-level graph progress: mission runtime
+action-map entries now become `mission_runtime_action` nodes instead of only
+asset-level action-type counts. A fast CN temp graph build to
+`tmp/source_graph_mission_runtime_actions.sqlite` verified 495 collapsed
+action nodes, 6 action-type nodes, 95 guide groups, 11 chapter-panel ids, 495
+`mission_runtime_has_action` edges, 495 `mission_runtime_action_type` edges,
+345 `mission_runtime_action_plays_radio` edges, 69 media-guide-group edges, 64
+guide-group edges, 69 guide text edges, 17 chapter-panel edges, and 7 static
+`_nextID` action links. Example queries now resolve direct evidence for
+`radio_a1m9_2`, `guide_group_connector_intro`, and `chr_0013_aglina_e1` through
+specific `actionList[...]` fields. This is static authored action-map evidence;
+it does not simulate action execution, condition evaluation, or mission
+chronology.
 
 2026-07-01 AIConfig graph progress: source graph ingestion now promotes exact
 enemy-template preload mappings from `Json_AIConfig.json`

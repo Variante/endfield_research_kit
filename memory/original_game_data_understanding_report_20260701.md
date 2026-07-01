@@ -631,6 +631,16 @@ static quest DAG and authored tracking evidence; it does not prove observed
 runtime chronology, condition evaluation, action execution, or exact
 player-visible mission order.
 
+2026-07-01 mission runtime action-level progress: action-map entries now get
+first-class `mission_runtime_action` nodes and field-level edges for direct
+action references. A fast CN temp graph build verified 495 collapsed action
+nodes, 495 `mission_runtime_has_action` edges, 345 radio-play edges, 69
+media-guide-group edges, 64 guide-group edges, 69 guide text edges, 17
+chapter-panel edges, and 7 static `_nextID` action links. The useful lookups are
+now field-specific, for example `radio_a1m9_2`, `guide_group_connector_intro`,
+and `chr_0013_aglina_e1`. These are authored action-map references, not proof
+that those actions execute in a particular runtime chronology.
+
 2026-07-01 source graph AIConfig progress: a fast CN rebuild to
 `tmp/source_graph_aiconfig.sqlite` verified exact enemy-template preload
 mappings from `Json_AIConfig.json` `EnemyTemplateDataSummary.json`. The pass

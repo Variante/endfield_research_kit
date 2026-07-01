@@ -5141,6 +5141,85 @@ class SourceGraphBuilder:
             self.add_alias(ref_key, ref_node, kind="story_key", source=source)
         self.add_edge(owner_node, ref_node, edge_kind, source=source, evidence=evidence)
 
+    def mission_runtime_const_value(self, value: Any) -> Any:
+        if isinstance(value, dict) and "constValue" in value:
+            return value.get("constValue")
+        return value
+
+    def add_mission_runtime_guide_group_node(self, guide_group_id: Any, *, source: str = "") -> str:
+        guide_key = safe_key(guide_group_id)
+        if not guide_key:
+            return ""
+        node = self.add_node("guide_group", guide_key, name=guide_key, source=source)
+        self.add_alias(guide_key, node, kind="guide_group_id", source=source)
+        return node
+
+    def add_mission_runtime_chapter_panel_node(self, chapter_id: Any, *, source: str = "") -> str:
+        chapter_key = safe_key(chapter_id)
+        if not chapter_key:
+            return ""
+        node = self.add_node("mission_runtime_chapter_panel", chapter_key, name=chapter_key, source=source)
+        self.add_alias(chapter_key, node, kind="mission_runtime_chapter_panel_id", source=source)
+        return node
+
+    def add_mission_runtime_action_node(self, asset_node: str, asset_key: str, action: dict[str, Any], action_index: int, *, source: str) -> str:
+        uid = safe_key(action.get("_uid"))
+        action_id = safe_key(action.get("_ID"))
+        action_key = f"{asset_key}:{uid or action_id or action_index}"
+        type_key = safe_key(action.get("$type"))
+        type_class = type_key.split(",", 1)[0]
+        short_type = type_class.rsplit(".", 1)[-1] if type_class else ""
+        action_node = self.add_node(
+            "mission_runtime_action",
+            action_key,
+            name=f"{asset_key} {short_type or 'action'} {uid or action_id or action_index}",
+            source=source,
+            data=compact_payload(
+                {
+                    "assetKey": asset_key,
+                    "index": action_index,
+                    "uid": uid,
+                    "id": action.get("_ID"),
+                    "type": type_key,
+                    "shortType": short_type,
+                    "nextID": self.mission_runtime_const_value(action.get("_nextID")),
+                    "scopeMask": action.get("scopeMask"),
+                },
+                depth=2,
+            ),
+        )
+        self.add_alias(action_key, action_node, kind="mission_runtime_action_key", source=source)
+        if uid:
+            self.add_alias(f"{asset_key}:{uid}", action_node, kind="mission_runtime_action_uid", source=source)
+        if action_id:
+            self.add_alias(f"{asset_key}:{action_id}", action_node, kind="mission_runtime_action_id", source=source)
+        self.add_edge(asset_node, action_node, "mission_runtime_has_action", source=source, evidence=f"actionList[{action_index}]", data={"uid": uid, "id": action.get("_ID"), "type": short_type or type_key})
+        type_node = self.add_mission_runtime_type_node("mission_runtime_action_type", type_key, source=source)
+        if type_node:
+            self.add_edge(action_node, type_node, "mission_runtime_action_type", source=source, evidence="$type", data={"uid": uid, "id": action.get("_ID")})
+        return action_node
+
+    def add_mission_runtime_action_reference_edges(self, action_node: str, action: dict[str, Any], *, source: str, evidence_prefix: str) -> None:
+        radio_id = self.mission_runtime_const_value(action.get("_radioId"))
+        if safe_key(radio_id):
+            self.add_mission_runtime_narrative_ref_edge(action_node, radio_id, edge_kind="mission_runtime_action_plays_radio", source=source, evidence=f"{evidence_prefix}._radioId")
+        text_id = self.mission_runtime_const_value(action.get("_textId"))
+        text_node = self.add_i18n_text_node(text_id, source=source)
+        if text_node:
+            self.add_edge(action_node, text_node, "mission_runtime_action_text", source=source, evidence=f"{evidence_prefix}._textId")
+        for field, edge_kind in (
+            ("_mediaGuideGroupId", "mission_runtime_action_media_guide_group"),
+            ("_groupId", "mission_runtime_action_guide_group"),
+        ):
+            guide_node = self.add_mission_runtime_guide_group_node(self.mission_runtime_const_value(action.get(field)), source=source)
+            if guide_node:
+                self.add_edge(action_node, guide_node, edge_kind, source=source, evidence=f"{evidence_prefix}.{field}")
+        chapter_node = self.add_mission_runtime_chapter_panel_node(self.mission_runtime_const_value(action.get("_chapterId")), source=source)
+        if chapter_node:
+            self.add_edge(action_node, chapter_node, "mission_runtime_action_shows_chapter_panel", source=source, evidence=f"{evidence_prefix}._chapterId", data={"chapterEffectType": self.mission_runtime_const_value(action.get("_chapterEffectType")), "isToBeContinue": self.mission_runtime_const_value(action.get("_isToBeContinue"))})
+        for ref_index, ref in enumerate(sorted(set(STORY_KEY_RE.findall("\n".join(self.iter_mission_runtime_strings(action)))))):
+            self.add_mission_runtime_narrative_ref_edge(action_node, ref, edge_kind="mission_runtime_action_references_narrative", source=source, evidence=f"{evidence_prefix}.storyRef[{ref_index}]")
+
     def add_mission_runtime_asset_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         raw_data = self.read_decoded_config_bytes(entry)
         if not raw_data:
@@ -5208,14 +5287,29 @@ class SourceGraphBuilder:
             if text_node:
                 self.add_edge(asset_node, text_node, edge_kind, source=source, evidence=field)
 
-        for action_index, action in enumerate(data_map.get("actionList") or []):
+        action_nodes_by_id: dict[str, str] = {}
+        runtime_actions = data_map.get("actionList") if isinstance(data_map.get("actionList"), list) else []
+        for action_index, action in enumerate(runtime_actions):
             if not isinstance(action, dict):
                 continue
-            type_node = self.add_mission_runtime_type_node("mission_runtime_action_type", action.get("$type"), source=source)
-            if type_node:
-                self.add_edge(asset_node, type_node, "mission_runtime_has_action_type", source=source, evidence=f"actionList[{action_index}]", data={"uid": action.get("_uid"), "id": action.get("_ID")})
+            action_node = self.add_mission_runtime_action_node(asset_node, asset_key, action, action_index, source=source)
+            action_id = safe_key(action.get("_ID"))
+            if action_node and action_id:
+                action_nodes_by_id[action_id] = action_node
+        for action_index, action in enumerate(runtime_actions):
+            if not isinstance(action, dict):
+                continue
+            action_id = safe_key(action.get("_ID"))
+            action_node = action_nodes_by_id.get(action_id) or self.node_id("mission_runtime_action", f"{asset_key}:{safe_key(action.get('_uid')) or action_id or action_index}")
+            if not action_node:
+                continue
+            self.add_mission_runtime_action_reference_edges(action_node, action, source=source, evidence_prefix=f"actionList[{action_index}]")
+            next_id = safe_key(self.mission_runtime_const_value(action.get("_nextID")))
+            next_node = action_nodes_by_id.get(next_id)
+            if next_node:
+                self.add_edge(action_node, next_node, "mission_runtime_action_next", source=source, evidence=f"actionList[{action_index}]._nextID")
         for ref_index, ref in enumerate(sorted(set(STORY_KEY_RE.findall("\n".join(self.iter_mission_runtime_strings(payload.get("actionMapRaw"))))))):
-            self.add_mission_runtime_narrative_ref_edge(asset_node, ref, edge_kind="mission_runtime_action_references_narrative", source=source, evidence=f"actionMapRaw[{ref_index}]")
+            self.add_mission_runtime_narrative_ref_edge(asset_node, ref, edge_kind="mission_runtime_action_map_references_narrative", source=source, evidence=f"actionMapRaw[{ref_index}]")
 
         for quest_index, (quest_key_raw, quest) in enumerate(quest_dic.items()):
             if not isinstance(quest, dict):
@@ -13485,7 +13579,10 @@ QUERY_KIND_PRIORITY = {
     "navmesh_state_container": 117,
     "navmesh_state_record": 118,
     "mission_runtime_asset": 119,
+    "mission_runtime_action": 119.1,
     "mission_runtime_action_type": 120,
+    "guide_group": 120.1,
+    "mission_runtime_chapter_panel": 120.2,
     "mission_runtime_condition_type": 121,
     "mission_runtime_tracking_type": 122,
     "enemy_data_asset": 123,
@@ -13808,7 +13905,10 @@ NODE_ID_PREFIXES = (
     "navmesh_state_container",
     "navmesh_state_record",
     "mission_runtime_asset",
+    "mission_runtime_action",
     "mission_runtime_action_type",
+    "guide_group",
+    "mission_runtime_chapter_panel",
     "mission_runtime_condition_type",
     "mission_runtime_tracking_type",
     "enemy_data_asset",
