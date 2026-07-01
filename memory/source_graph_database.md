@@ -773,8 +773,7 @@ property-key edges, 3,144 trigger-property edges, 242 perform-property edges,
 trigger-shape edges, and 50 guide-shape edges. This pass models exact decoded
 component inventory and selected component bodies; it does not prove runtime
 interaction control flow, component execution order, formula behavior, or the
-meaning of numeric logic/shape enums. `Json_InteractiveData` collection rows
-remain audited but not yet promoted beyond the existing template/table graph.
+meaning of numeric logic/shape enums. The separate collection pass below handles `Json_InteractiveData` collection ids; this component pass does not interpret collection counters.
 Example exact queries:
 
 ```bat
@@ -782,6 +781,23 @@ python tools\endfield_source_graph.py query Core_InteractiveRootComponentData --
 python tools\endfield_source_graph.py query destroy_self --kind interactive_property_key
 python tools\endfield_source_graph.py query 70 --kind interactive_logic_type
 python tools\endfield_source_graph.py query Category/Interactive/Model --kind gameplay_tag
+```
+
+2026-07-01 InteractiveData collection graph progress: source graph ingestion
+now includes `webui/data/game_data/groups/Json_InteractiveData.json` for the
+plain UTF-8 `Json/InteractiveData/Collections.json` files. A fast CN rebuild to
+`tmp/source_graph_interactive_collections.sqlite` verified 1,141,176 total
+nodes, 2,023,030 edges, and 1,594,876 aliases. New collection coverage includes
+935 unique `interactive_collection` nodes, 1,843 `defines_interactive_collection`
+source-file edges split as 935 Persistent and 908 StreamingAssets rows, 935
+`interactive_collection_in_level` links, 935 `interactive_collection_id`
+aliases, and 214 unique linked level ids. The graph preserves `sceneId` and the
+21-element `totalCnt` arrays as payload evidence on definition edges, but does
+not assign gameplay meaning to those counters. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query 100000000 --kind interactive_collection
+python tools\endfield_source_graph.py query map01_lv002 --kind level
 ```
 
 2026-07-01 world/map graph progress: an early world semantics pass now ingests

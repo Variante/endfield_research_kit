@@ -374,7 +374,10 @@ refs from a strong parsed prefix plus bounded body string evidence. The exact
 component-type nodes, 296 property-key nodes, 33 logic-type nodes, 574 category
 tag edges, 418 model edges, 488 raw-byte audio edges, and exact component links
 for first/payload/stop components, trigger/guide shapes, and selected property
-maps. It does not prove runtime formula usage, full SpawnerConfig tail semantics,
+maps. The InteractiveData collection pass adds 935 collection ids, 1,843
+Persistent/StreamingAssets source-file definition edges, and 935 collection-to-level
+links across 214 level ids while leaving the 21-element `totalCnt` arrays
+uninterpreted. It does not prove runtime formula usage, full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
 flow, montage clip playback semantics, full exported model/icon reconstruction,
@@ -426,8 +429,10 @@ Partial but useful current examples include:
   542 decoded source files and 271 template ids, including exact component
   nodes, component-type links, category tags, model ids, raw-byte audio refs,
   property keys, logic types, trigger shapes, guide shapes, trigger observers,
-  common perform data, hittable data, and selected property maps; component
-  execution/control flow and numeric enum meaning remain future work.
+  common perform data, hittable data, and selected property maps; the separate
+  Collections JSON now contributes 935 collection ids and level links across 214
+  level ids, while component execution/control flow, numeric enum meaning, and
+  `totalCnt` counter semantics remain future work.
 - `LevelScriptTemplateData` and other partially previewed families have verified
   top-level ids/counts and meaningful previews.
 
