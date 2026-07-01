@@ -336,10 +336,14 @@ born-buff blackboard values, fixed rotations, and prewarn timings. The bounded
 `BuffData` pass adds 4,616 file-to-buff definition edges collapsed to 2,325
 unique buff ids, 268 gameplay tag strings, 1,254 parameter strings, 779 linked
 buff ids, 703 effect keys, 145 audio keys, and 106 icon ids from guarded
-length-prefixed string evidence. It does not prove runtime formula usage, full
-SpawnerConfig tail semantics, BuffData timeline action execution, or exported
-model/effect/icon reconstruction; the lean asset-index entity join for these
-config model IDs is still empty.
+length-prefixed string evidence. The bounded `SkillData` pass adds 4,191
+file-to-skill definition edges collapsed to 2,108 unique skill ids, 833 linked
+buff ids, 311 gameplay tag strings, 3,323 parameter strings, 3,900 effect keys,
+3,156 audio keys, and 43 icon ids from the same guarded string evidence plus
+post-tail status samples. It does not prove runtime formula usage, full
+SpawnerConfig tail semantics, BuffData timeline action execution, SkillData
+target/action execution, or exported model/effect/icon reconstruction; the lean
+asset-index entity join for these config model IDs is still empty.
 
 Partial but useful current examples include:
 
@@ -347,8 +351,10 @@ Partial but useful current examples include:
   visible tags, parameters, linked buffs, audio, effects, and icons; top-level
   schema, id verification, and selected prefix/tail values remain evidence, not
   runtime formula proof.
-- `SkillData`: top-level schema, strict id rows, switch config, skill tags,
-  target/buff settings, and UI range hints for common branches.
+- `SkillData`: queryable skill definitions plus bounded string-reference edges
+  for visible tags, parameters, linked buffs, audio, effects, and icons; strict
+  id rows, switch-tail status, target/buff settings, and UI range hints remain
+  evidence, not runtime action or targeting proof.
 - `LevelScriptData`: all 3,658 files validate through a compact action-map
   helper, exposing script ids, action-map shape, UID records, list counts, and
   source hints while leaving full action payload semantics bounded.
@@ -1000,9 +1006,13 @@ modifier edges, 30 talent skill-param modifier edges, and 51 talent stat
 modifier edges. A later BuffData decoded-config graph pass verified 4,616
 BuffData files, 2,325 unique buff ids, 1,416 gameplay-tag string edges, 13,373
 parameter-string edges, 1,862 linked-buff string edges, 1,404 effect-key edges,
-273 audio-event edges, and 391 icon edges. This recovers static combat parameter
-and reference evidence; runtime skill execution order, buff stacking, BuffData
-timeline action behavior, and formula evaluation remain future work.
+273 audio-event edges, and 391 icon edges. A later SkillData decoded-config graph
+pass verified 4,191 SkillData files, 2,108 unique skill ids, 1,786 gameplay-tag
+string edges, 49,988 parameter-string edges, 3,000 linked-buff string edges,
+9,527 effect-key edges, 6,178 audio-event edges, and 188 icon edges. This
+recovers static combat parameter and reference evidence; runtime skill execution
+order, skill targeting, buff stacking, BuffData timeline action behavior, and
+formula evaluation remain future work.
 
 2026-07-01 source graph world/map progress: map, level, loading, scene-area,
 map-mark, track-map, scene collectable, factory-region, settlement POI, and shop
