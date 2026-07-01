@@ -832,6 +832,63 @@ def extract_level_script_template_entry_summary(entry: dict[str, Any]) -> dict[s
     }
 
 
+LEVEL_SCRIPT_MISSIONISH_RE = re.compile(r"^[cer]\d+m\d+(?:[A-Za-z0-9_#-]*)?$", re.IGNORECASE)
+LEVEL_SCRIPT_TEMPLATE_PATH_RE = re.compile(r"(?:^|/)LevelScriptTemplateData/(?P<name>[^/\\]+)\.json$", re.IGNORECASE)
+
+
+def level_script_ref_kind(value: Any, owner_id: str) -> str:
+    text = safe_key(value)
+    if not text or text == owner_id:
+        return ""
+    if STORY_KEY_RE.search(text) and STORY_KEY_RE.search(text).group(0) == text:
+        return "story"
+    if LEVEL_SCRIPT_MISSIONISH_RE.match(text):
+        return "mission"
+    if text.startswith(("au_", "radio_", "bark_")):
+        return "audio"
+    if text.startswith("P_") and len(text) > 2:
+        return "effect"
+    if text.startswith("buff_"):
+        return "buff"
+    if text.startswith("Montage/"):
+        return "montage"
+    if LEVEL_SCRIPT_TEMPLATE_PATH_RE.search(text):
+        return "template"
+    return ""
+
+
+def level_script_template_id_from_ref(value: str) -> str:
+    match = LEVEL_SCRIPT_TEMPLATE_PATH_RE.search(value)
+    if match:
+        return Path(match.group("name")).stem
+    return ""
+
+
+def extract_level_script_string_refs(entry: dict[str, Any], data: bytes, owner_id: str) -> dict[str, list[dict[str, Any]]]:
+    refs: dict[str, list[dict[str, Any]]] = {"story": [], "mission": [], "audio": [], "effect": [], "buff": [], "template": [], "montage": []}
+    if not data:
+        return refs
+    hits = scan_length_prefixed_utf8_string_hits(data, max_samples=512, max_length=320)
+    seen: set[tuple[str, str, int]] = set()
+    for index, hit in enumerate(hits):
+        value = safe_key(hit.get("value"))
+        kind = level_script_ref_kind(value, owner_id)
+        if not kind:
+            continue
+        offset = int(hit.get("offset") or 0)
+        key = (kind, value, offset)
+        if key in seen:
+            continue
+        seen.add(key)
+        refs[kind].append({
+            "index": index,
+            "offset": hit.get("offsetHex"),
+            "length": hit.get("length"),
+            "value": value,
+        })
+    return refs
+
+
 def extract_model_table_rows(data: bytes) -> dict[str, Any] | None:
     if not data or data[0] != 2:
         return None
@@ -1484,7 +1541,7 @@ class SourceGraphBuilder:
             self.node_counts[kind] += 1
         return node_id
 
-    def update_node_details(self, node_id: str, *, name: Any = None, source: Any = None, data: Any = None) -> None:
+    def update_node_details(self, node_id: str, *, name: Any = None, source: Any = None, path: Any = None, data: Any = None) -> None:
         updates: list[str] = []
         values: list[Any] = []
         if name is not None:
@@ -1493,6 +1550,9 @@ class SourceGraphBuilder:
         if source is not None:
             updates.append("source = ?")
             values.append(safe_key(source) or None)
+        if path is not None:
+            updates.append("path = ?")
+            values.append(safe_key(path) or None)
         if data is not None:
             updates.append("data = ?")
             values.append(dump_json(data))
@@ -2069,14 +2129,17 @@ class SourceGraphBuilder:
         script_id = safe_key(summary.get("scriptId"))
         if not script_id:
             return
+        refs = extract_level_script_string_refs(entry, self.read_decoded_config_bytes(entry), script_id)
+        summary["refCounts"] = {kind: len(values) for kind, values in refs.items()}
         script_node = self.add_node(
             "level_script",
             script_id,
             name=script_id,
             source="webui/game_data",
             path=safe_key(entry.get("p")),
-            data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": summary}, depth=3),
+            data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": summary, "refs": refs}, depth=3),
         )
+        self.update_node_details(script_node, name=script_id, source="webui/game_data", path=safe_key(entry.get("p")), data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": summary, "refs": refs}, depth=3))
         self.add_edge(file_node, script_node, "level_script_data_defines_script", source="webui/game_data", evidence=safe_key(entry.get("dp")))
         self.add_alias(script_id, script_node, kind="level_script_id", source="webui/game_data")
         self.add_alias(entry.get("dp"), script_node, kind="level_script_config_path", source="webui/game_data")
@@ -2091,20 +2154,24 @@ class SourceGraphBuilder:
             start_node = self.add_node("level_script_start_type", start_type, name=start_type, source="webui/game_data")
             self.add_alias(start_type, start_node, kind="level_script_start_type_id", source="webui/game_data")
             self.add_edge(script_node, start_node, "level_script_has_start_type", source="webui/game_data", evidence="startType")
+        self.add_level_script_reference_edges(script_node, refs, edge_prefix="level_script", source="webui/game_data")
 
     def add_level_script_template_data_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         summary = extract_level_script_template_entry_summary(entry)
         template_id = safe_key(summary.get("templateId"))
         if not template_id:
             return
+        refs = extract_level_script_string_refs(entry, self.read_decoded_config_bytes(entry), template_id)
+        summary["refCounts"] = {kind: len(values) for kind, values in refs.items()}
         template_node = self.add_node(
             "level_script_template",
             template_id,
             name=template_id,
             source="webui/game_data",
             path=safe_key(entry.get("p")),
-            data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": summary}, depth=3),
+            data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": summary, "refs": refs}, depth=3),
         )
+        self.update_node_details(template_node, name=template_id, source="webui/game_data", path=safe_key(entry.get("p")), data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": summary, "refs": refs}, depth=3))
         self.add_edge(file_node, template_node, "level_script_data_defines_template", source="webui/game_data", evidence=safe_key(entry.get("dp")))
         self.add_alias(template_id, template_node, kind="level_script_template_id", source="webui/game_data")
         self.add_alias(entry.get("dp"), template_node, kind="level_script_template_path", source="webui/game_data")
@@ -2114,6 +2181,55 @@ class SourceGraphBuilder:
             group_node = self.add_node("level_script_template_group", group_key, name=group_key, source="webui/game_data")
             self.add_alias(group_key, group_node, kind="level_script_template_group_id", source="webui/game_data")
             self.add_edge(group_node, template_node, "level_script_template_group_has_template", source="webui/game_data", evidence=group_key)
+        self.add_level_script_reference_edges(template_node, refs, edge_prefix="level_script_template", source="webui/game_data")
+
+    def add_level_script_montage_node(self, montage_id: Any, *, source: str = "") -> str:
+        montage_key = safe_key(montage_id)
+        if not montage_key:
+            return ""
+        montage_node = self.add_node("level_script_montage", montage_key, name=montage_key, source=source)
+        self.add_alias(montage_key, montage_node, kind="level_script_montage_id", source=source)
+        return montage_node
+
+    def add_level_script_reference_edges(self, owner_node: str, refs: dict[str, list[dict[str, Any]]], *, edge_prefix: str, source: str) -> None:
+        for ref_kind, values in refs.items():
+            if not isinstance(values, list):
+                continue
+            for ref in values:
+                if not isinstance(ref, dict):
+                    continue
+                value = safe_key(ref.get("value"))
+                if not value:
+                    continue
+                evidence = safe_key(ref.get("offset")) or f"strings[{ref.get('index')}]"
+                data = {"index": ref.get("index"), "offset": ref.get("offset"), "length": ref.get("length"), "value": value}
+                if ref_kind == "story":
+                    story_node = self.add_node("story", value, name=value, source=source)
+                    self.add_alias(value, story_node, kind="story_key", source=source)
+                    self.add_edge(owner_node, story_node, f"{edge_prefix}_references_story", source=source, evidence=evidence, data=data)
+                elif ref_kind == "mission":
+                    mission_node = self.add_mission_ref_node(value, source=source)
+                    self.add_edge(owner_node, mission_node, f"{edge_prefix}_references_mission", source=source, evidence=evidence, data=data)
+                elif ref_kind == "audio":
+                    self.add_audio_target_edge(owner_node, value, edge_kind=f"{edge_prefix}_references_audio", source=source, evidence=evidence)
+                elif ref_kind == "effect":
+                    effect_node = self.add_node("gameplay_effect", value, name=value, source=source)
+                    self.add_alias(value, effect_node, kind="gameplay_effect_id", source=source)
+                    self.add_edge(owner_node, effect_node, f"{edge_prefix}_references_effect", source=source, evidence=evidence, data=data)
+                elif ref_kind == "buff":
+                    buff_node = self.add_buff_ref_node(value, source=source)
+                    self.add_edge(owner_node, buff_node, f"{edge_prefix}_references_buff", source=source, evidence=evidence, data=data)
+                elif ref_kind == "template":
+                    template_id = level_script_template_id_from_ref(value)
+                    if not template_id:
+                        continue
+                    template_node = self.add_node("level_script_template", template_id, name=template_id, source=source, data={"referencedPath": value})
+                    self.add_alias(template_id, template_node, kind="level_script_template_id", source=source)
+                    self.add_alias(value, template_node, kind="level_script_template_path", source=source)
+                    self.add_edge(owner_node, template_node, f"{edge_prefix}_references_template", source=source, evidence=evidence, data=data)
+                elif ref_kind == "montage":
+                    montage_node = self.add_level_script_montage_node(value, source=source)
+                    self.add_edge(owner_node, montage_node, f"{edge_prefix}_references_montage", source=source, evidence=evidence, data=data)
 
     def add_buff_data_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         decoded = extract_buff_data_summary(entry, self.read_decoded_config_bytes(entry))
@@ -9625,6 +9741,7 @@ QUERY_KIND_PRIORITY = {
     "level_script_template": 71,
     "level_script_template_group": 72,
     "level_script_start_type": 73,
+    "level_script_montage": 74,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -9864,6 +9981,7 @@ NODE_ID_PREFIXES = (
     "level_script_template",
     "level_script_template_group",
     "level_script_start_type",
+    "level_script_montage",
     "mission",
     "map",
     "level",

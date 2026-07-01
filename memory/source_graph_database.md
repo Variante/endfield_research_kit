@@ -601,29 +601,39 @@ python tools\endfield_source_graph.py query P_actor_ikut_attack_01_start --kind 
 python tools\endfield_source_graph.py query icon_round_chr_0007_ikut --kind skill_icon
 ```
 
-2026-07-01 LevelScript inventory graph progress: source graph ingestion now
-promotes bounded `LevelScriptData` and `LevelScriptTemplateData` inventory
-evidence from the WebUI Data index. A fast CN rebuild to
-`tmp/source_graph_levelscript.sqlite` verified 1,089,315 total nodes, 1,871,231
-edges, and 1,517,337 aliases. New coverage includes 3,756 `level_script` nodes
-collapsed across 7,414 decoded script files, 35 `level_script_template` nodes
-collapsed across 70 template files, 20 template groups, and 3 start-type nodes.
-Edge checks verified 7,414 `level_script_data_defines_script` edges, 3,756
-`level_has_level_script` edges across 148 level folders, 3,756
+2026-07-01 LevelScript inventory/reference graph progress: source graph
+ingestion now promotes bounded `LevelScriptData` and `LevelScriptTemplateData`
+inventory plus high-signal string-reference evidence from the WebUI Data index.
+A fast CN rebuild to `tmp/source_graph_levelscript_refs.sqlite` verified
+1,090,873 total nodes, 1,880,295 edges, and 1,521,156 aliases. Inventory
+coverage includes 3,756 `level_script` nodes collapsed across 7,414 decoded
+script files, 35 `level_script_template` nodes collapsed across 70 template
+files, 20 template groups, 3 start-type nodes, and 120 `level_script_montage`
+nodes. Edge checks verified 7,414 `level_script_data_defines_script` edges,
+3,756 `level_has_level_script` edges across 148 level folders, 3,756
 `level_script_has_start_type` edges, 70 template definition edges, and 35
 template-group edges. Metadata totals preserved on script nodes include 84,326
 action-map records, 129,065 UID records, 84,326 action-list entries, 17,410
 getter-list entries, 21,917 header-list entries, 42,202 root action entries, and
 42,124 linked action entries. Template metadata preserves 1,751 action-map
-records. This pass makes script ids, level ownership, template ids, start types,
-and action-map/list counts queryable; it intentionally does not emit per-action
-nodes, action-body control-flow edges, target semantics, or formula behavior.
-Example exact queries:
+records. High-signal reference checks verified 4,416 script-to-story edges to
+3,135 distinct story keys, 722 script-to-mission-like edges to 393 distinct ids,
+1,403 script-to-audio edges to 683 distinct audio keys, 941 script-to-effect
+edges to 148 distinct effect keys, 873 script-to-buff edges to 157 distinct buff
+ids, 374 script-to-template edges to 27 distinct templates, and 228
+script-to-montage edges to 115 distinct montage ids. Template reference checks
+add 45 story, 10 audio, 16 effect, 5 buff, and 31 montage edges. This pass makes
+script ids, level ownership, template ids, start types, action-map/list counts,
+and high-signal story/audio/effect/buff/template/montage references queryable;
+it intentionally skips generic key strings and does not emit per-action nodes,
+action-body control-flow edges, target semantics, or formula behavior. Example
+exact queries:
 
 ```bat
 python tools\endfield_source_graph.py query 9900010001 --kind level_script
-python tools\endfield_source_graph.py query map02_lv002 --kind level
+python tools\endfield_source_graph.py query black_c27m1_1_001 --kind story
 python tools\endfield_source_graph.py query LST_EnergyPoint_Small_Graph --kind level_script_template
+python tools\endfield_source_graph.py query Montage/NPC/Generic/rabbit01/escaped --kind level_script_montage
 ```
 
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
