@@ -781,6 +781,20 @@ is `wpn_lance_0003` (`寻路者道标`). The query
 `python tools\endfield_source_graph.py used-by wpn_sword_0019_01 --kind asset_entity`
 now surfaces `weapon:wpn_sword_0019` before raw asset-detail rows.
 
+2026-07-01 gameplay effect asset-name match progress: source graph builds a
+final strict name-match bridge from `gameplay_effect` nodes to exported `asset`
+nodes whose asset stem matches `<effectKey>_p[0-9A-F]{16}` after stripping the
+exported PathID suffix. A fast CN graph build to
+`tmp/source_graph_effect_assets.sqlite` verified 1,090,873 nodes, 1,880,527
+edges, and 1,521,156 aliases, including 232
+`effect_name_matches_export_base_asset` edges from 223 gameplay-effect nodes to
+232 concrete asset nodes. The matched assets split into 225 `model` entries and
+7 `json` entries. Direct full-stem effect-to-asset alias matches remain zero,
+and loose prefix matches are intentionally excluded because they create
+collisions such as `P_agtrinit_skill13` vs `P_agtrinit_skill132_*`. These edges
+are filename/export-suffix evidence for browsing, not proof of runtime effect
+dependency.
+
 Use the quick build for normal story/option/map investigation. Use the full
 build only when Unity asset container, PathID, or exported asset relationship
 coverage matters.

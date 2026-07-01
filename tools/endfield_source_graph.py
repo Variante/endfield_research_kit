@@ -1696,6 +1696,8 @@ class SourceGraphBuilder:
             self.commit_step("dialogSupport")
             self.ingest_decoded_config_semantics()
             self.commit_step("decodedConfigs")
+            self.link_gameplay_effect_export_assets()
+            self.commit_step("effectAssetMatches")
             if self.include_reference_rows:
                 self.ingest_reference_tables()
                 self.commit_step("reference")
@@ -1986,6 +1988,61 @@ class SourceGraphBuilder:
                     source="webui/assets",
                     evidence=safe_key(texture_info.get("evidence")) if isinstance(texture_info, dict) else Path(texture_rel).stem,
                     data=texture_data,
+                )
+
+    def link_gameplay_effect_export_assets(self) -> None:
+        effect_rows = self.db.execute(
+            """
+            SELECT id, name
+            FROM nodes
+            WHERE kind = 'gameplay_effect'
+            """
+        ).fetchall()
+        effects_by_key: dict[str, list[str]] = defaultdict(list)
+        for effect_id, effect_name in effect_rows:
+            effect_key = safe_key(effect_name or node_key(effect_id)).lower()
+            if effect_key:
+                effects_by_key[effect_key].append(effect_id)
+        if not effects_by_key:
+            return
+
+        asset_rows = self.db.execute(
+            """
+            SELECT aliases.alias AS stem, aliases.node_id AS asset_id, nodes.path AS asset_path
+            FROM aliases
+            JOIN nodes ON nodes.id = aliases.node_id
+            WHERE aliases.kind = 'asset_stem'
+              AND nodes.kind = 'asset'
+              AND aliases.node_id LIKE 'asset:%'
+            """
+        ).fetchall()
+        seen_pairs: set[tuple[str, str]] = set()
+        for stem_value, asset_id, asset_path in asset_rows:
+            stem = safe_key(stem_value)
+            match = PATH_ID_EXPORT_STEM_RE.match(stem)
+            if not match:
+                continue
+            normalized_base = match.group("base").lower()
+            effect_nodes = effects_by_key.get(normalized_base)
+            if not effect_nodes:
+                continue
+            for effect_node in effect_nodes:
+                pair = (effect_node, asset_id)
+                if pair in seen_pairs:
+                    continue
+                seen_pairs.add(pair)
+                self.add_edge(
+                    effect_node,
+                    asset_id,
+                    "effect_name_matches_export_base_asset",
+                    source="webui/assets",
+                    evidence="asset_stem_pathid_suffix",
+                    data={
+                        "assetStem": stem,
+                        "normalizedBase": normalized_base,
+                        "pathIdSuffix": match.group("path_id").upper(),
+                        "assetPath": asset_path,
+                    },
                 )
 
     def decoded_config_entry_data(self, entry: dict[str, Any]) -> dict[str, Any]:
