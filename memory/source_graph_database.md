@@ -180,6 +180,20 @@ The graph also ingests WebUI recovery warnings. For example,
 `issues --code inferredOptionResponse` separates cases with only Timeline clip
 placement from cases with stronger route/skip evidence.
 
+2026-07-01 option override ingestion adds WebUI-only `option_override` nodes
+from `webui/overrides/options.json` without treating them as game-source proof.
+A fast CN graph build verified 43 `option_override` nodes and 587
+`webui/option_override` edges: 43 `has_option_override`, 43
+`defines_option_override`, 43 `overrides_option_group`, 74 `overrides_option`,
+19 `anchored_after_line`, 19 `manual_position_after`, 8
+`manual_position_pre`, 74 each of `option_first_line`, `option_path_story`, and
+`option_enters_story`, plus 116 `option_path_line` edges. Query examples:
+
+```bat
+python tools\endfield_source_graph.py query manual-option:dlg_c28m3_23:1 --kind option_override --limit 20
+python tools\endfield_source_graph.py query webui/overrides/options.json --kind file --limit 5
+```
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type

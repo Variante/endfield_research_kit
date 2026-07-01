@@ -23,6 +23,7 @@ from typing import Any, Iterable
 ROOT = Path(__file__).resolve().parents[1]
 EXPORT_ROOT = ROOT / "export_full"
 WEBUI_DATA = ROOT / "webui" / "data"
+WEBUI_OPTION_OVERRIDES = ROOT / "webui" / "overrides" / "options.json"
 UNITY_CHARACTER_ROOT = (
     ROOT
     / "unity_endfield_graph_shader_lab"
@@ -398,6 +399,8 @@ class SourceGraphBuilder:
             self.commit_step("videos")
             self.ingest_webui_story()
             self.commit_step("story")
+            self.ingest_option_overrides()
+            self.commit_step("optionOverrides")
             if self.include_gameplay:
                 self.ingest_gameplay()
                 self.commit_step("gameplay")
@@ -654,6 +657,121 @@ class SourceGraphBuilder:
             self.add_narrative_videos(conv, story_node)
             self.add_scene_graph_edges(conv, story_node)
             self.add_recovery_warnings(conv, story_node)
+
+    def ingest_option_overrides(self) -> None:
+        payload = read_json(WEBUI_OPTION_OVERRIDES, {})
+        scenes = payload.get("scenes") if isinstance(payload, dict) else {}
+        if not isinstance(scenes, dict) or not scenes:
+            return
+        file_rel = slash(WEBUI_OPTION_OVERRIDES)
+        file_node = self.add_file(
+            file_rel,
+            kind="option_override",
+            source="webui/option_override",
+            data={"sceneCount": len(scenes)},
+        )
+
+        def group_id_text(value: Any) -> str:
+            text = safe_key(value)
+            if not text:
+                return ""
+            try:
+                return str(int(text))
+            except ValueError:
+                return text
+
+        def override_key(story_key: str, group_id: str) -> str:
+            return f"{story_key}#optionGroup:{group_id}"
+
+        def note_for(scene_override: dict[str, Any], group_id: str) -> str:
+            notes = scene_override.get("notes") if isinstance(scene_override, dict) else {}
+            if not isinstance(notes, dict):
+                return ""
+            return safe_key(notes.get(group_id))
+
+        def response_group_id(story_key: str, option_id: str) -> str:
+            prefix = f"option_{story_key}_"
+            if option_id.startswith(prefix):
+                return group_id_text(option_id[len(prefix):].split("_", 1)[0])
+            match = re.search(r"_(\d+)_\d+$", option_id)
+            return group_id_text(match.group(1)) if match else ""
+
+        def ensure_override_node(story_key: str, group_id: str, scene_override: dict[str, Any]) -> str:
+            key = override_key(story_key, group_id)
+            note = note_for(scene_override, group_id)
+            node = self.add_node(
+                "option_override",
+                key,
+                name=key,
+                source="webui/option_override",
+                path=file_rel,
+                data={"story": story_key, "group": group_id, "note": note, "webuiOnly": True},
+            )
+            story_node = self.add_node("story", story_key, source="webui/option_override")
+            group_node = self.add_node("option_group", key, source="webui/option_override")
+            self.add_edge(story_node, node, "has_option_override", source="webui/option_override", evidence=group_id)
+            self.add_edge(file_node, node, "defines_option_override", source="webui/option_override", evidence=story_key)
+            self.add_edge(node, group_node, "overrides_option_group", source="webui/option_override", evidence=group_id)
+            self.add_alias(f"manual-option:{story_key}:{group_id}", node, kind="option_override", source="webui/option_override")
+            self.add_alias(f"option-override:{story_key}:{group_id}", node, kind="option_override", source="webui/option_override")
+            return node
+
+        for story_key_raw, scene_override in sorted(scenes.items()):
+            story_key = safe_key(story_key_raw)
+            if not story_key or not isinstance(scene_override, dict):
+                continue
+            positions = scene_override.get("positions") if isinstance(scene_override.get("positions"), dict) else {}
+            positions_after = positions.get("after") if isinstance(positions.get("after"), dict) else {}
+            positions_pre = positions.get("pre") if isinstance(positions.get("pre"), list) else []
+            responses = scene_override.get("responses") if isinstance(scene_override.get("responses"), dict) else {}
+            story_node = self.add_node("story", story_key, source="webui/option_override")
+
+            for group_raw in positions_pre:
+                group_id = group_id_text(group_raw)
+                if not group_id:
+                    continue
+                override_node = ensure_override_node(story_key, group_id, scene_override)
+                group_node = self.add_node("option_group", override_key(story_key, group_id), source="webui/option_override")
+                data = {"story": story_key, "group": group_id, "position": "pre", "note": note_for(scene_override, group_id), "webuiOnly": True}
+                self.add_edge(group_node, story_node, "manual_position_pre", source="webui/option_override", evidence=group_id, data=data)
+                self.add_edge(override_node, group_node, "manual_position_pre", source="webui/option_override", evidence=group_id, data=data)
+
+            for anchor_line, groups in sorted(positions_after.items()):
+                if not isinstance(groups, list):
+                    continue
+                anchor_id = safe_key(anchor_line)
+                if not anchor_id:
+                    continue
+                anchor_node = self.add_node("line", anchor_id, source="webui/option_override")
+                for group_raw in groups:
+                    group_id = group_id_text(group_raw)
+                    if not group_id:
+                        continue
+                    override_node = ensure_override_node(story_key, group_id, scene_override)
+                    group_node = self.add_node("option_group", override_key(story_key, group_id), source="webui/option_override")
+                    data = {"story": story_key, "group": group_id, "position": "after", "anchor": anchor_id, "note": note_for(scene_override, group_id), "webuiOnly": True}
+                    self.add_edge(group_node, anchor_node, "anchored_after_line", source="webui/option_override", evidence=group_id, data=data)
+                    self.add_edge(override_node, anchor_node, "manual_position_after", source="webui/option_override", evidence=group_id, data=data)
+
+            for option_id_raw, targets_raw in sorted(responses.items()):
+                option_id = safe_key(option_id_raw)
+                targets = [safe_key(target) for target in targets_raw or [] if safe_key(target)] if isinstance(targets_raw, list) else []
+                if not option_id or not targets:
+                    continue
+                group_id = response_group_id(story_key, option_id)
+                if not group_id:
+                    continue
+                override_node = ensure_override_node(story_key, group_id, scene_override)
+                option_node = self.add_node("option", option_id, source="webui/option_override")
+                self.add_edge(override_node, option_node, "overrides_option", source="webui/option_override", evidence=group_id)
+                data = {"story": story_key, "group": group_id, "targets": targets, "note": note_for(scene_override, group_id), "webuiOnly": True}
+                first_line_node = self.add_node("line", targets[0], source="webui/option_override")
+                self.add_edge(option_node, first_line_node, "option_first_line", source="webui/option_override", evidence=group_id, data=data)
+                for target in targets:
+                    target_node = self.add_node("line", target, source="webui/option_override")
+                    self.add_edge(option_node, target_node, "option_path_line", source="webui/option_override", evidence=group_id, data=data)
+                self.add_edge(option_node, story_node, "option_path_story", source="webui/option_override", evidence=group_id, data=data)
+                self.add_edge(option_node, story_node, "option_enters_story", source="webui/option_override", evidence=group_id, data=data)
 
     def ingest_gameplay(self) -> None:
         path = WEBUI_DATA / "lang" / self.language / "gameplay" / "index.json"
@@ -2467,36 +2585,38 @@ QUERY_KIND_PRIORITY = {
     "story": 0,
     "option_group": 1,
     "option": 2,
-    "line": 3,
-    "timeline": 4,
-    "timeline_option_route": 5,
-    "runtime_jump_clip": 6,
-    "mission": 7,
-    "character": 8,
-    "weapon": 9,
-    "equipment": 10,
-    "equipment_formula": 11,
-    "equipment_formula_pack": 12,
-    "equipment_suit": 13,
-    "gameplay_domain": 14,
-    "gameplay_property_curve": 15,
-    "gameplay_stat_property": 16,
-    "gameplay_unlock": 17,
-    "item": 18,
-    "gameplay_skill_group": 19,
-    "gameplay_skill": 20,
-    "gameplay_talent_group": 21,
-    "gameplay_talent": 22,
-    "gameplay_progression": 23,
-    "actor": 24,
-    "audio": 25,
-    "file": 26,
+    "option_override": 3,
+    "line": 4,
+    "timeline": 5,
+    "timeline_option_route": 6,
+    "runtime_jump_clip": 7,
+    "mission": 8,
+    "character": 9,
+    "weapon": 10,
+    "equipment": 11,
+    "equipment_formula": 12,
+    "equipment_formula_pack": 13,
+    "equipment_suit": 14,
+    "gameplay_domain": 15,
+    "gameplay_property_curve": 16,
+    "gameplay_stat_property": 17,
+    "gameplay_unlock": 18,
+    "item": 19,
+    "gameplay_skill_group": 20,
+    "gameplay_skill": 21,
+    "gameplay_talent_group": 22,
+    "gameplay_talent": 23,
+    "gameplay_progression": 24,
+    "actor": 25,
+    "audio": 26,
+    "file": 27,
 }
 
 NODE_ID_PREFIXES = (
     "story",
     "option_group",
     "option",
+    "option_override",
     "line",
     "mission",
     "character",
@@ -2524,6 +2644,7 @@ NODE_ID_PREFIXES = (
     "file",
     "table_row",
 )
+
 OPTION_BRANCH_EDGE_KINDS = (
     "option_anchor_after",
     "option_first_line",
