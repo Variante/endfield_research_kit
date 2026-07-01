@@ -392,7 +392,10 @@ source-file task refs, and 13 mission-prefix links. The `damage_text` pass adds
 20 UI combat-text style rows, 10 animation refs, 58 UI node names, and 8
 filtered `ui_*` resources. The `LipSync` pass adds 64,920 aggregate
 language/audio clip nodes from 129,732 source entries and links every clip to an
-audio stem. These decoded-config passes do not prove runtime formula usage,
+audio stem. The `MissionRuntimeAsset` pass adds 884 mission runtime/meta assets,
+3,984 quest-task links, 3,334 previous-quest dependencies, 3,155 objective text
+links, condition/tracking/action type nodes, and exact mission-area and
+narrative refs. These decoded-config passes do not prove runtime formula usage,
 full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
@@ -470,6 +473,10 @@ Partial but useful current examples include:
   English, Japanese, and Korean, linked back to audio stems; per-record curve
   nodes, phoneme/viseme meaning, and timing semantics remain intentionally out
   of scope.
+- `MissionRuntimeAsset`: queryable mission runtime/meta assets, quest task DAG
+  edges, previous-quest dependencies, objective text refs, condition/tracking
+  type refs, level/reward links, and narrative refs; this is static authored
+  mission evidence, not observed runtime chronology or condition evaluation.
 - `LevelScriptTemplateData` and other partially previewed families have verified
   top-level ids/counts and meaningful previews.
 
@@ -560,6 +567,19 @@ edges collapsed to 64,920 `lipsync_clip` language/audio nodes, 4 language nodes,
 entries sum to 43,043,103 curve records and unique clip nodes sum to 21,553,022
 records after source collapse; per-record curve nodes and phoneme/viseme timing
 semantics remain intentionally out of scope.
+
+2026-07-01 source graph MissionRuntimeAsset progress: a fast CN rebuild to
+`tmp/source_graph_mission_runtime.sqlite` verified static mission runtime JSON
+semantics from `Json_MissionRuntimeAsset.json`. The pass adds 884
+`mission_runtime_asset` nodes, 1,756 source-file definition edges, 884
+asset-to-mission links, 813 level links, 494 reward links, 331 mission-name text
+links, 324 mission-description text links, 3,984 mission quest links, 3,334
+previous-quest dependencies, 3,155 objective text links, 55 condition-type
+nodes, 7 tracking-type nodes, 6 action-type nodes, 1,134 mission-area tracking
+links, 345 action narrative refs, and 579 quest narrative refs. It is strong
+static quest DAG and authored tracking evidence; it does not prove observed
+runtime chronology, condition evaluation, action execution, or exact
+player-visible mission order.
 
 Useful support-table checks include:
 

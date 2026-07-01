@@ -304,6 +304,7 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_GameplayConfigWorldEntityRegistry.json",
     "Json_GPUISystemConfig.json",
     "Json_LipSync.json",
+    "Json_MissionRuntimeAsset.json",
 )
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
@@ -328,6 +329,7 @@ DECODED_CONFIG_TARGET_TYPES = {
     "LipSync",
     "ModelRadiusTable",
     "ModelTable",
+    "MissionRuntimeAsset",
     "NPCMontageJson",
     "SkillData",
     "SpawnerConfig",
@@ -2870,6 +2872,8 @@ class SourceGraphBuilder:
                 subtype = safe_key(entry.get("q") or entry.get("g"))
                 if group_name == "Json_InteractiveData.json" and safe_key(entry.get("dp")) == "Json/InteractiveData/Collections.json":
                     subtype = "InteractiveDataCollections"
+                if group_name == "Json_MissionRuntimeAsset.json":
+                    subtype = "MissionRuntimeAsset"
                 if subtype not in DECODED_CONFIG_TARGET_TYPES:
                     continue
                 self.add_decoded_config_entry(group_node, entry, subtype=subtype)
@@ -2910,6 +2914,8 @@ class SourceGraphBuilder:
             self.add_damage_text_config_edges(file_node, entry)
         elif subtype == "LipSync":
             self.add_lipsync_clip_edges(file_node, entry)
+        elif subtype == "MissionRuntimeAsset":
+            self.add_mission_runtime_asset_edges(file_node, entry)
         elif subtype == "LunaArea":
             self.add_navmesh_luna_area_edges(file_node, entry)
         elif subtype == "NavMeshStateContainer":
@@ -3800,6 +3806,195 @@ class SourceGraphBuilder:
                     option_node = self.add_node("option", option_id, name=option_id, source="DialogIdTable")
                     self.add_edge(scene_node, option_node, "dialog_registry_has_option", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
                     self.add_edge(option_node, story_node, "dialog_registry_option_for_story", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
+
+    def mission_runtime_text_key(self, payload: Any) -> str:
+        if isinstance(payload, dict):
+            key = safe_key(payload.get("key"))
+            if key and key not in {"\\", "0"}:
+                return key
+        return ""
+
+    def iter_mission_runtime_strings(self, value: Any) -> Iterable[str]:
+        if isinstance(value, dict):
+            for child in value.values():
+                yield from self.iter_mission_runtime_strings(child)
+        elif isinstance(value, list):
+            for child in value:
+                yield from self.iter_mission_runtime_strings(child)
+        elif isinstance(value, str):
+            yield value
+
+    def add_mission_runtime_type_node(self, kind: str, type_name: Any, *, source: str = "") -> str:
+        type_key = safe_key(type_name)
+        if not type_key:
+            return ""
+        type_class = type_key.split(",", 1)[0]
+        short_name = type_class.rsplit(".", 1)[-1]
+        node = self.add_node(kind, type_key, name=short_name or type_key, source=source)
+        self.add_alias(type_key, node, kind=f"{kind}_id", source=source)
+        if short_name and short_name != type_key:
+            self.add_alias(short_name, node, kind=f"{kind}_name", source=source)
+        return node
+
+    def add_mission_runtime_narrative_ref_edge(self, owner_node: str, ref_id: Any, *, edge_kind: str, source: str, evidence: str) -> None:
+        ref_key = safe_key(ref_id)
+        if not ref_key:
+            return
+        if ref_key.startswith("radio_"):
+            ref_node = self.add_node("radio", ref_key, name=ref_key, source=source)
+            self.add_alias(ref_key, ref_node, kind="radio_id", source=source)
+        elif ref_key.startswith("sns_"):
+            ref_node = self.add_node("sns_dialog", ref_key, name=ref_key, source=source)
+            self.add_alias(ref_key, ref_node, kind="sns_dialog_id", source=source)
+        elif ref_key.startswith("remotecomm_"):
+            ref_node = self.add_node("remote_common", ref_key, name=ref_key, source=source)
+            self.add_alias(ref_key, ref_node, kind="remote_common_id", source=source)
+        else:
+            ref_node = self.add_node("story", ref_key, name=ref_key, source=source)
+            self.add_alias(ref_key, ref_node, kind="story_key", source=source)
+        self.add_edge(owner_node, ref_node, edge_kind, source=source, evidence=evidence)
+
+    def add_mission_runtime_asset_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        raw_data = self.read_decoded_config_bytes(entry)
+        if not raw_data:
+            return
+        try:
+            payload = json.loads(raw_data.decode("utf-8-sig"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return
+        if not isinstance(payload, dict):
+            return
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        stem = Path(safe_key(entry.get("dp") or entry.get("p"))).stem
+        asset_kind = "meta" if stem.endswith("_meta") else "runtime"
+        mission_id = safe_key(payload.get("missionId")) or stem.removesuffix("_meta")
+        if not mission_id:
+            return
+        quest_dic = payload.get("questDic") if isinstance(payload.get("questDic"), dict) else {}
+        action_map = payload.get("actionMapRaw") if isinstance(payload.get("actionMapRaw"), dict) else {}
+        data_map = action_map.get("dataMap") if isinstance(action_map.get("dataMap"), dict) else {}
+        asset_key = f"{mission_id}:{asset_kind}"
+        asset_node = self.add_node(
+            "mission_runtime_asset",
+            asset_key,
+            name=asset_key,
+            source=source,
+            path=safe_key(entry.get("p")),
+            data=compact_payload(
+                {
+                    "missionId": mission_id,
+                    "assetKind": asset_kind,
+                    "missionType": payload.get("missionType"),
+                    "baseMissionImportance": payload.get("baseMissionImportance") or payload.get("missionImportance"),
+                    "overrideImportance": payload.get("overrideImportance"),
+                    "sortId": payload.get("sortId"),
+                    "questCount": len(quest_dic),
+                    "actionCount": len(data_map.get("actionList") or []),
+                    "getterCount": len(data_map.get("getterList") or []),
+                    "propertyCount": len(payload.get("properties") or []),
+                },
+                depth=3,
+            ),
+        )
+        self.add_alias(asset_key, asset_node, kind="mission_runtime_asset_key", source=source)
+        self.add_alias(mission_id, asset_node, kind="mission_runtime_mission_id", source=source)
+        self.add_edge(file_node, asset_node, "defines_mission_runtime_asset", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id, "assetKind": asset_kind})
+
+        mission_node = self.add_mission_ref_node(mission_id, source=source)
+        if mission_node:
+            self.add_edge(asset_node, mission_node, "mission_runtime_asset_for_mission", source=source, evidence="missionId")
+        level_id = safe_key(payload.get("levelId"))
+        accept_mode = payload.get("acceptMode") if isinstance(payload.get("acceptMode"), dict) else {}
+        if not level_id:
+            level_id = safe_key(accept_mode.get("levelId"))
+        if level_id:
+            level_node = self.add_level_node(level_id, source=source)
+            self.add_edge(asset_node, level_node, "mission_runtime_in_level", source=source, evidence="levelId")
+            self.add_level_map_edge(level_node, level_id, source=source, evidence="mission_runtime_levelId")
+        reward_node = self.add_reward_node(payload.get("rewardId"), source=source)
+        if reward_node:
+            self.add_edge(asset_node, reward_node, "mission_runtime_rewards", source=source, evidence="rewardId")
+        for field, edge_kind in (("missionName", "mission_runtime_name_text"), ("missionDescription", "mission_runtime_description_text")):
+            text_key = self.mission_runtime_text_key(payload.get(field))
+            text_node = self.add_i18n_text_node(text_key, source=source)
+            if text_node:
+                self.add_edge(asset_node, text_node, edge_kind, source=source, evidence=field)
+
+        for action_index, action in enumerate(data_map.get("actionList") or []):
+            if not isinstance(action, dict):
+                continue
+            type_node = self.add_mission_runtime_type_node("mission_runtime_action_type", action.get("$type"), source=source)
+            if type_node:
+                self.add_edge(asset_node, type_node, "mission_runtime_has_action_type", source=source, evidence=f"actionList[{action_index}]", data={"uid": action.get("_uid"), "id": action.get("_ID")})
+        for ref_index, ref in enumerate(sorted(set(STORY_KEY_RE.findall("\n".join(self.iter_mission_runtime_strings(payload.get("actionMapRaw"))))))):
+            self.add_mission_runtime_narrative_ref_edge(asset_node, ref, edge_kind="mission_runtime_action_references_narrative", source=source, evidence=f"actionMapRaw[{ref_index}]")
+
+        for quest_index, (quest_key_raw, quest) in enumerate(quest_dic.items()):
+            if not isinstance(quest, dict):
+                continue
+            quest_id = safe_key(quest.get("questId") or quest_key_raw)
+            if not quest_id:
+                continue
+            quest_node = self.add_quest_task_node(
+                quest_id,
+                source=source,
+                data=compact_payload(
+                    {
+                        "questId": quest_id,
+                        "missionId": mission_id,
+                        "questType": quest.get("questType"),
+                        "objectiveConditionNum": quest.get("objectiveConditionNum"),
+                        "showMode": quest.get("showMode"),
+                        "flowIndex": quest.get("flowIndex"),
+                        "objectiveCount": len(quest.get("objectiveList") or []),
+                        "prevQuestCount": len(quest.get("prevQuestIdList") or []),
+                    },
+                    depth=2,
+                ),
+            )
+            self.add_edge(asset_node, quest_node, "mission_runtime_has_quest", source=source, evidence=f"questDic[{quest_index}]", data={"source": source_id})
+            if mission_node:
+                self.add_edge(quest_node, mission_node, "quest_task_in_mission", source=source, evidence="missionRuntimeAsset")
+            quest_reward = self.add_reward_node(quest.get("rewardId"), source=source)
+            if quest_reward:
+                self.add_edge(quest_node, quest_reward, "quest_task_rewards", source=source, evidence="rewardId")
+            override_text = self.mission_runtime_text_key(quest.get("descriptionOverride"))
+            override_node = self.add_i18n_text_node(override_text, source=source)
+            if override_node:
+                self.add_edge(quest_node, override_node, "quest_description_override_text", source=source, evidence="descriptionOverride")
+            for prev_index, prev_quest_id in enumerate(quest.get("prevQuestIdList") or []):
+                prev_node = self.add_quest_task_node(prev_quest_id, source=source)
+                if prev_node:
+                    self.add_edge(quest_node, prev_node, "quest_task_depends_on_previous", source=source, evidence=f"prevQuestIdList[{prev_index}]")
+            for objective_index, objective in enumerate(quest.get("objectiveList") or []):
+                if not isinstance(objective, dict):
+                    continue
+                text_key = self.mission_runtime_text_key(objective.get("description"))
+                text_node = self.add_i18n_text_node(text_key, source=source)
+                if text_node:
+                    self.add_edge(quest_node, text_node, "quest_objective_text", source=source, evidence=f"objectiveList[{objective_index}].description")
+                condition = objective.get("condition") if isinstance(objective.get("condition"), dict) else {}
+                condition_node = self.add_mission_runtime_type_node("mission_runtime_condition_type", condition.get("$type"), source=source)
+                if condition_node:
+                    self.add_edge(quest_node, condition_node, "quest_objective_condition_type", source=source, evidence=f"objectiveList[{objective_index}].condition")
+                for tracking_index, tracking in enumerate(objective.get("trackingInfoList") or []):
+                    if not isinstance(tracking, dict):
+                        continue
+                    tracking_node = self.add_mission_runtime_type_node("mission_runtime_tracking_type", tracking.get("$type"), source=source)
+                    if tracking_node:
+                        self.add_edge(quest_node, tracking_node, "quest_tracking_type", source=source, evidence=f"objectiveList[{objective_index}].trackingInfoList[{tracking_index}]")
+                    scene_id = safe_key(tracking.get("sceneId"))
+                    if scene_id:
+                        scene_node = self.add_level_node(scene_id, source=source)
+                        self.add_edge(quest_node, scene_node, "quest_tracking_in_level", source=source, evidence="trackingInfo.sceneId")
+                    area_id = safe_key(tracking.get("missionAreaId"))
+                    if area_id:
+                        area_node = self.add_node("mission_area", area_id, name=area_id, source=source)
+                        self.add_alias(area_id, area_node, kind="mission_area_id", source=source)
+                        self.add_edge(quest_node, area_node, "quest_tracks_mission_area", source=source, evidence="trackingInfo.missionAreaId")
+            for ref_index, ref in enumerate(sorted(set(STORY_KEY_RE.findall("\n".join(self.iter_mission_runtime_strings(quest)))))):
+                self.add_mission_runtime_narrative_ref_edge(quest_node, ref, edge_kind="quest_references_narrative", source=source, evidence=f"questDic[{quest_index}].storyRef[{ref_index}]")
 
     def lipsync_parts_from_entry(self, entry: dict[str, Any]) -> tuple[str, str]:
         rel = safe_key(entry.get("dp") or entry.get("p"))
@@ -11849,6 +12044,10 @@ QUERY_KIND_PRIORITY = {
     "navmesh_area_id": 116,
     "navmesh_state_container": 117,
     "navmesh_state_record": 118,
+    "mission_runtime_asset": 119,
+    "mission_runtime_action_type": 120,
+    "mission_runtime_condition_type": 121,
+    "mission_runtime_tracking_type": 122,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -12127,6 +12326,10 @@ NODE_ID_PREFIXES = (
     "navmesh_area_id",
     "navmesh_state_container",
     "navmesh_state_record",
+    "mission_runtime_asset",
+    "mission_runtime_action_type",
+    "mission_runtime_condition_type",
+    "mission_runtime_tracking_type",
     "mission",
     "map",
     "level",
