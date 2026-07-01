@@ -1,8 +1,9 @@
 # Source Graph Database
 
 `tools/endfield_source_graph.py` builds a local SQLite relationship graph from
-recovered WebUI data, selected structured tables, exported assets, character
-recovery manifests, material links, and optional AnimeStudio asset maps.
+recovered WebUI story and Gameplay data, selected structured tables, exported
+assets, character recovery manifests, material links, and optional AnimeStudio
+asset maps.
 
 Generated graph files live under `reports/source_graph/`. They are research
 outputs, not exported source material, so they should not be written under
@@ -32,6 +33,7 @@ python tools\endfield_source_graph.py issues --code inferredOptionResponse --lim
 
 Useful flags:
 
+- `--skip-gameplay`: skip WebUI Gameplay entry/skill/talent/progression ingestion.
 - `--skip-asset-maps`: skip the expensive AnimeStudio asset-map pass.
 - `--skip-reference-rows`: skip WebUI reference row expansion.
 - `--skip-followups`: build only the graph and summary files.
@@ -66,14 +68,16 @@ Core SQLite tables:
 - `meta(key, value)`
 
 Node kinds include story entries, lines, options, actors, localized text,
-audio, videos, assets, materials, meshes, shaders, animations, map marks,
-structured table rows, reference rows, Unity asset containers, Unity assets,
-and Unity PathIDs.
+audio, videos, Gameplay weapons/equipment/characters/skills/talents/items and
+progression records, assets, materials, meshes, shaders, animations, map
+marks, structured table rows, reference rows, Unity asset containers, Unity
+assets, and Unity PathIDs.
 
 Edge kinds capture story membership, line ordering, actor names, localized
-text, option anchors, audio use, narrative video links, table ownership,
-exported files, character recovery manifest contents, asset-map container
-ownership, and exported asset matches.
+text, option anchors, audio use, narrative video links, Gameplay source-row,
+skill, talent, progression, default-weapon, and required-item relationships,
+table ownership, exported files, character recovery manifest contents, asset-map
+container ownership, and exported asset matches.
 
 ## Ingested Sources
 
@@ -85,6 +89,7 @@ High-value inputs:
 - `webui/data/lang/CN/conv/*.json`
 - `webui/data/lang/CN/mission/*.json`
 - `webui/data/lang/CN/reference/**`
+- `webui/data/lang/CN/gameplay/index.json`
 - `export_full/recovered/story_source_links.json`
 - `export_full/recovered/AnimeStudio-cli/timeline_line_orders.json`
 - actor material JSON under recovered AnimeStudio outputs
@@ -97,6 +102,20 @@ interactive mission, level/map, mission extra info, scene area, and special
 level-to-map tables.
 
 ## Current Notes
+
+2026-07-01 Gameplay ingestion adds exact-queryable `weapon`, `equipment`,
+`character`, `gameplay_skill_group`, `gameplay_skill`,
+`gameplay_talent_group`, `gameplay_talent`, `gameplay_progression`, and `item`
+nodes from `webui/data/lang/<LANG>/gameplay/index.json`. A fast CN build with
+`--skip-asset-maps --skip-reference-rows --skip-followups` verified 322
+Gameplay entries, 409 skills, 556 talent nodes, 958 progression nodes, 53 item
+nodes, and edges for source rows, default weapons, skill/talent membership,
+progression records, and required item costs. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query chr_0017_yvonne --kind character
+python tools\endfield_source_graph.py query wpn_pistol_0001 --kind weapon
+```
 
 Use the quick build for normal story/option/map investigation. Use the full
 build only when Unity asset container, PathID, or exported asset relationship

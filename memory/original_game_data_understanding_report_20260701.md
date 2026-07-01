@@ -665,6 +665,16 @@ extending to level 99 while the playable level curve caps at 90. This improves
 practical access to numerical progression data, but it still stops short of
 full formula/runtime simulation.
 
+2026-07-01 source graph progress: `tools/endfield_source_graph.py` now ingests
+the generated Gameplay payload as evidence graph nodes and relationships. A
+fast CN verification build with `--skip-asset-maps --skip-reference-rows --skip-followups` produced 322 Gameplay entry edges, 72 weapon nodes, 220
+equipment nodes, 30 character nodes, 409 skill nodes, 556 talent nodes, 958
+progression nodes, 53 item nodes, and 1,878 required-item edges. Exact queries
+such as `chr_0017_yvonne` and `wpn_pistol_0001` now resolve to Gameplay
+character/weapon nodes with source table row, default weapon, progression,
+skill, talent, and item-cost neighbors. This improves cross-domain lookup; it
+still does not prove formulas beyond the generated source-table evidence.
+
 - `AbilitySystemData` field order and many serialized fields for 28 character
   rows, including skill bundles, command mappings, combo conditions, UI data,
   buff lists, blackboard entries, camera config, hit/effect settings, health
