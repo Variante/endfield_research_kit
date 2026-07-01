@@ -1304,6 +1304,19 @@ edges. Entity aliases resolve bare bases such as `actor_aglina_body_01`; texture
 `used-by` queries now surface renderable entities such as
 `anm_com_machine+1_001_01` in addition to raw material/model rows.
 
+2026-07-01 postmodel asset entity bridge progress: asset ingestion now also
+groups exported model files whose normalized stem ends in `_postmodel` into
+`asset_entity` nodes, preserving the existing LOD grouping path. Decoded model
+references try exact normalized bases plus append-only `_postmodel` candidates,
+then the existing delimiter-boundary entity-prefix match. A fast CN temp graph
+build to `tmp/source_graph_asset_bridge.sqlite` verified 10,678
+`asset_entity` nodes, including 213 new postmodel entity groups, and recovered
+215 `model_config_asset_entity`, 82 `interactive_template_asset_entity`, and 86
+`model_view_state_controller_asset_entity` edges. Smoke queries verified direct
+links for `chr_0012_avywen_postmodel`, `int_collection_common`, and
+`int_base01_autodoor_1`. This is exact exported model/postmodel evidence; it
+intentionally does not remap names such as `abilityentity_*` to unrelated
+`actor_*`, `monster_*`, or loose substring asset families.
 2026-07-01 weapon renderable bridge progress: Gameplay weapon nodes now link
 directly to renderable `asset_entity` nodes when the weapon `modelPath` stem
 matches an entity base or entity-base prefix. A fast CN graph rebuild verified
