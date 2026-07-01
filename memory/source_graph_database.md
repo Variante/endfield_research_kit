@@ -577,6 +577,30 @@ python tools\endfield_source_graph.py query Skill/Character/Common/Affixes --kin
 python tools\endfield_source_graph.py query icon_battle_affix_slow --kind buff_icon
 ```
 
+2026-07-01 SkillData decoded-config progress: source graph ingestion now promotes
+bounded `SkillData` MemoryPack evidence from the WebUI Data index. A fast CN
+rebuild to `tmp/source_graph_skill.sqlite` verified 1,070,527 total nodes,
+1,841,215 edges, and 1,487,149 aliases. New coverage includes 4,191
+`skill_data_defines_skill` edges from decoded config files to 2,108 unique skill
+ids, plus 3,323 `skill_parameter` nodes and 43 `skill_icon` nodes. Edge checks
+verified 3,000 SkillData string references to 833 distinct buff ids, 1,786
+tag-string edges to 311 distinct gameplay tags, 49,988 parameter-string edges
+to 3,323 distinct parameter names, 9,527 effect-key edges to 3,900 distinct
+effect keys, 6,178 audio-event edges to 3,156 distinct audio keys, and 188 icon
+edges to 43 distinct icon ids. All 4,191 entries pass the 45-member SkillData
+guard; 4,179 carry `parsed-through-smartTargetTagQuery`, 12 carry
+`parsed-through-smartTargetPayload`, and all 4,191 switch-tail probes carry
+`parsed-through-exact-tail`. These edges are bounded length-prefixed string and
+post-tail sample evidence, not proof of target selection, action execution,
+skill formula behavior, or exported effect/icon asset binding. Example exact
+queries:
+
+```bat
+python tools\endfield_source_graph.py query abilityentity_0110_rytoken_boom_abilityrange --kind gameplay_skill
+python tools\endfield_source_graph.py query P_actor_ikut_attack_01_start --kind gameplay_effect
+python tools\endfield_source_graph.py query icon_round_chr_0007_ikut --kind skill_icon
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,

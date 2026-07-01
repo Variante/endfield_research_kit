@@ -275,6 +275,7 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_GameplayConfigMissionAreaTable.json",
     "Json_GameplayConfigSubGameInstanceDataTable.json",
     "Json_NonGeneratedConfigs.json",
+    "Json_SkillData.json",
     "Json_SpawnerConfig.json",
     "Json_Interactive.json",
     "Json_GameplayConfigWorldEntityRegistry.json",
@@ -287,6 +288,7 @@ DECODED_CONFIG_TARGET_TYPES = {
     "InteractiveTemplateData",
     "ModelRadiusTable",
     "ModelTable",
+    "SkillData",
     "SpawnerConfig",
     "SubGameInstanceDataTable",
     "TeleportValidationDataTable",
@@ -638,6 +640,114 @@ def extract_buff_data_summary(entry: dict[str, Any], data: bytes) -> dict[str, A
         "postIdStatus": next((safe_key(item).split("=", 1)[1] for item in entry.get("ds") or [] if safe_key(item).startswith("decoded.postIdPrefix.status=")), ""),
         "stringCountScanned": len(hits),
         "stringScanLimit": BUFF_DATA_STRING_MAX_SAMPLES,
+        "refCounts": {kind: len(values) for kind, values in refs.items()},
+        "refs": refs,
+    }
+
+
+SKILL_DATA_MEMBER_COUNT = 45
+SKILL_DATA_STRING_MAX_SAMPLES = 512
+SKILL_DATA_POST_ID_RE = re.compile(r"(?:^|; )postId=([^;]+)")
+
+
+def parse_skill_data_post_id_sample(sample: Any) -> dict[str, Any]:
+    text = safe_key(sample)
+    match = SKILL_DATA_POST_ID_RE.search(text)
+    if not match:
+        return {}
+    parsed: dict[str, Any] = {}
+    for item in match.group(1).split(","):
+        if ":" not in item:
+            continue
+        key, raw_value = item.split(":", 1)
+        key = key.strip()
+        raw_value = raw_value.strip()
+        if not key:
+            continue
+        try:
+            if raw_value.lower() in {"true", "false"}:
+                value: Any = raw_value.lower() == "true"
+            elif any(ch in raw_value for ch in ".eE"):
+                value = float(raw_value)
+            else:
+                value = int(raw_value)
+        except ValueError:
+            value = raw_value
+        parsed[key] = value
+    return parsed
+
+
+def skill_data_id_from_entry(entry: dict[str, Any]) -> str:
+    path_id = Path(safe_key(entry.get("p"))).stem
+    if path_id:
+        return path_id
+    sample = safe_key(entry.get("t"))
+    match = re.search(r"(?:^|; )id=([^;]+)", sample)
+    return safe_key(match.group(1)) if match else ""
+
+
+def is_skill_data_param_string(value: str) -> bool:
+    if not BUFF_DATA_PARAM_RE.match(value):
+        return False
+    if value.startswith(("buff_", "icon_", "au_", "P_")):
+        return False
+    return "/" not in value
+
+
+def skill_data_string_ref_kind(value: Any, skill_id: str) -> str:
+    text = safe_key(value)
+    if not text or text == skill_id:
+        return ""
+    if text.startswith("buff_"):
+        return "linked_buff"
+    if text.startswith("P_") and len(text) > 2:
+        return "effect"
+    if text.startswith(("au_", "radio_", "bark_")):
+        return "audio"
+    if text.startswith("icon_"):
+        return "icon"
+    if "/" in text and not text.startswith(("Assets/", "assets/")) and len(text) >= 3:
+        return "tag"
+    if is_skill_data_param_string(text):
+        return "param"
+    return ""
+
+
+def extract_skill_data_summary(entry: dict[str, Any], data: bytes) -> dict[str, Any] | None:
+    if not data or data[0] != SKILL_DATA_MEMBER_COUNT:
+        return None
+    skill_id = skill_data_id_from_entry(entry)
+    id_offsets = length_prefixed_utf8_marker_offsets(data, skill_id)
+    hits = scan_length_prefixed_utf8_string_hits(data, max_samples=SKILL_DATA_STRING_MAX_SAMPLES)
+    refs: dict[str, list[dict[str, Any]]] = {"linked_buff": [], "tag": [], "param": [], "effect": [], "audio": [], "icon": []}
+    seen: set[tuple[str, str, int]] = set()
+    for index, hit in enumerate(hits):
+        value = safe_key(hit.get("value"))
+        kind = skill_data_string_ref_kind(value, skill_id)
+        if not kind:
+            continue
+        offset = int(hit.get("offset") or 0)
+        key = (kind, value, offset)
+        if key in seen:
+            continue
+        seen.add(key)
+        refs[kind].append({
+            "index": index,
+            "offset": hit.get("offsetHex"),
+            "length": hit.get("length"),
+            "value": value,
+        })
+    return {
+        "skillId": skill_id,
+        "memberCount": SKILL_DATA_MEMBER_COUNT,
+        "idStringVerified": bool(id_offsets),
+        "idMarkerCount": len(id_offsets),
+        "idMarkerOffsets": [mp_format_offset(offset) for offset in id_offsets[:16]],
+        "postId": parse_skill_data_post_id_sample(entry.get("t")),
+        "postIdStatus": next((safe_key(item).split("=", 1)[1] for item in entry.get("ds") or [] if safe_key(item).startswith("decoded.postIdTailPrefix.status=")), ""),
+        "switchTailStatus": next((safe_key(item).split("=", 1)[1] for item in entry.get("ds") or [] if safe_key(item).startswith("decoded.postIdTailPrefix.switchTailProbe.postSwitchTail.status=")), ""),
+        "stringCountScanned": len(hits),
+        "stringScanLimit": SKILL_DATA_STRING_MAX_SAMPLES,
         "refCounts": {kind: len(values) for kind, values in refs.items()},
         "refs": refs,
     }
@@ -1860,6 +1970,8 @@ class SourceGraphBuilder:
         self.add_edge(file_node, family_node, "decoded_as_config_family", source="webui/game_data", evidence=safe_key(entry.get("q")))
         if subtype == "BuffData":
             self.add_buff_data_config_edges(file_node, entry)
+        elif subtype == "SkillData":
+            self.add_skill_data_config_edges(file_node, entry)
         elif subtype == "GameplayConfigMissionAreaTable":
             self.add_mission_area_config_edges(file_node, entry)
         elif subtype == "ModelTable":
@@ -1926,6 +2038,54 @@ class SourceGraphBuilder:
                 elif ref_kind == "icon":
                     target_node = self.add_buff_icon_node(value, source="webui/game_data")
                     self.add_edge(buff_node, target_node, "buff_data_references_icon", source="webui/game_data", evidence=evidence, data=data)
+
+    def add_skill_data_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        decoded = extract_skill_data_summary(entry, self.read_decoded_config_bytes(entry))
+        skill_id = safe_key(decoded.get("skillId") if decoded else "") or skill_data_id_from_entry(entry)
+        if not skill_id:
+            return
+        skill_node = self.add_gameplay_skill_ref_node(skill_id, source="webui/game_data")
+        self.update_node_details(
+            skill_node,
+            name=skill_id,
+            source="webui/game_data",
+            data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": decoded or {}}, depth=3),
+        )
+        self.add_edge(file_node, skill_node, "skill_data_defines_skill", source="webui/game_data", evidence=safe_key(entry.get("dp")))
+        self.add_alias(entry.get("dp"), skill_node, kind="skill_config_path", source="webui/game_data")
+        self.add_alias(entry.get("p"), skill_node, kind="skill_data_path", source="webui/game_data")
+        if not decoded:
+            return
+        refs = decoded.get("refs") if isinstance(decoded.get("refs"), dict) else {}
+        for ref_kind, values in refs.items():
+            if not isinstance(values, list):
+                continue
+            for ref in values:
+                if not isinstance(ref, dict):
+                    continue
+                value = safe_key(ref.get("value"))
+                if not value:
+                    continue
+                evidence = safe_key(ref.get("offset")) or f"strings[{ref.get('index')}]"
+                data = {"index": ref.get("index"), "offset": ref.get("offset"), "length": ref.get("length"), "value": value}
+                if ref_kind == "linked_buff":
+                    target_node = self.add_buff_ref_node(value, source="webui/game_data")
+                    self.add_edge(skill_node, target_node, "skill_data_references_buff", source="webui/game_data", evidence=evidence, data=data)
+                elif ref_kind == "tag":
+                    target_node = self.add_gameplay_tag_node(value, source="webui/game_data")
+                    self.add_edge(skill_node, target_node, "skill_data_has_tag_string", source="webui/game_data", evidence=evidence, data=data)
+                elif ref_kind == "param":
+                    target_node = self.add_skill_parameter_node(value, source="webui/game_data")
+                    self.add_edge(skill_node, target_node, "skill_data_has_param_string", source="webui/game_data", evidence=evidence, data=data)
+                elif ref_kind == "effect":
+                    target_node = self.add_node("gameplay_effect", value, name=value, source="webui/game_data")
+                    self.add_alias(value, target_node, kind="gameplay_effect_id", source="webui/game_data")
+                    self.add_edge(skill_node, target_node, "skill_data_references_effect", source="webui/game_data", evidence=evidence, data=data)
+                elif ref_kind == "audio":
+                    self.add_audio_target_edge(skill_node, value, edge_kind="skill_data_references_audio", source="webui/game_data", evidence=evidence)
+                elif ref_kind == "icon":
+                    target_node = self.add_skill_icon_node(value, source="webui/game_data")
+                    self.add_edge(skill_node, target_node, "skill_data_references_icon", source="webui/game_data", evidence=evidence, data=data)
 
     def add_spawner_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         decoded = extract_spawner_config_rows(self.read_decoded_config_bytes(entry))
@@ -8081,6 +8241,23 @@ class SourceGraphBuilder:
         self.add_alias(icon_key, icon_node, kind="icon_id", source=source)
         return icon_node
 
+    def add_skill_parameter_node(self, parameter_id: Any, *, source: str = "") -> str:
+        parameter_key = safe_key(parameter_id)
+        if not parameter_key:
+            return ""
+        parameter_node = self.add_node("skill_parameter", parameter_key, name=parameter_key, source=source)
+        self.add_alias(parameter_key, parameter_node, kind="skill_parameter_id", source=source)
+        return parameter_node
+
+    def add_skill_icon_node(self, icon_id: Any, *, source: str = "") -> str:
+        icon_key = safe_key(icon_id)
+        if not icon_key:
+            return ""
+        icon_node = self.add_node("skill_icon", icon_key, name=icon_key, source=source)
+        self.add_alias(icon_key, icon_node, kind="skill_icon_id", source=source)
+        self.add_alias(icon_key, icon_node, kind="icon_id", source=source)
+        return icon_node
+
     def add_blackboard_edges(self, owner_node: str, entries: Any, *, edge_kind: str, source: str, evidence_prefix: str, context: dict[str, Any] | None = None) -> None:
         if not isinstance(entries, list):
             return
@@ -9318,6 +9495,8 @@ QUERY_KIND_PRIORITY = {
     "gameplay_tag": 65,
     "buff_parameter": 66,
     "buff_icon": 67,
+    "skill_parameter": 68,
+    "skill_icon": 69,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -9551,6 +9730,8 @@ NODE_ID_PREFIXES = (
     "gameplay_tag",
     "buff_parameter",
     "buff_icon",
+    "skill_parameter",
+    "skill_icon",
     "mission",
     "map",
     "level",
