@@ -386,7 +386,9 @@ exact effect-id edges, and 872 animator-body effect refs; the config-model to
 asset-entity join remains 0 for this family. The `Json_NavMesh` pass adds exact
 MemoryPack graph evidence for 139 LunaArea polygon rows, 17 owner-qualified
 area ids, 6 NavMeshStateContainer owners, 569 state rows, and 57 bounds-to-area
-id refs across Persistent/StreamingAssets copies. These decoded-config passes do not prove runtime formula usage, full SpawnerConfig tail semantics,
+id refs across Persistent/StreamingAssets copies. The `BambooRaftTaskTable` pass
+adds exact graph evidence for 7 task-group hashes, 13 quest task ids, 26
+source-file task refs, and 13 mission-prefix links. These decoded-config passes do not prove runtime formula usage, full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
 flow, montage clip playback semantics, full exported model/icon reconstruction,
@@ -452,6 +454,9 @@ Partial but useful current examples include:
   rows for six owners, with owner-qualified area-id links and level/map owner
   links; numeric bounds/list evidence is preserved without inferring navigation
   behavior or walkability.
+- `BambooRaftTaskTable`: queryable bamboo-raft task-group hashes and 13 exact
+  quest task ids, with mission-prefix links such as `e8m2_q#10` to `e8m2`;
+  hash meaning, quest order, and task execution remain future work.
 - `LevelScriptTemplateData` and other partially previewed families have verified
   top-level ids/counts and meaningful previews.
 
@@ -513,6 +518,15 @@ owner-qualified `navmesh_area_id` nodes, 6 `navmesh_state_container` owners,
 state-record source-file definition edges, and 57 bounds-to-area-id refs. This
 proves decoded geometry/state inventory by NavMesh owner; it does not infer
 walkability, pathfinding behavior, or numeric state/list semantics.
+
+2026-07-01 source graph BambooRaftTaskTable progress: a fast CN rebuild to
+`tmp/source_graph_bamboo.sqlite` verified exact decoded task references from
+`Json/NonGeneratedConfigs/BambooRaftTaskTable.json`. The pass adds 7
+`bamboo_raft_task_group` hash nodes, 13 `quest_task` nodes, 14 group source-file
+definition edges, 26 task-ref source-file definition edges, 13 group-to-task
+edges, and 13 mission-prefix links across `e5m1`, `e6m1`, `e6m4`, `e8m2`,
+`sm2l1m1`, and `sm2l1m3`. It preserves hash/field payload evidence without
+inferring quest order or bamboo-raft gameplay mechanics.
 
 Useful support-table checks include:
 
