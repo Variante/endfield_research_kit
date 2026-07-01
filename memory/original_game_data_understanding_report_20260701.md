@@ -401,8 +401,10 @@ mappings, 156 file-to-template preload edges, and 78 deduplicated
 template-to-asset preload edges. The `MapConfig` pass adds 139 map-config
 nodes, 197 unique numeric level-id edges with 31,992 grid-cell counts kept
 as payload data, 149 string level links, 99 scene states, 39 map variables,
-and exact quest/mission/map-variable condition refs. These decoded-config
-passes still do not prove runtime formula usage,
+and exact quest/mission/map-variable condition refs. The
+`GameplayConfigScriptTaskExtraInfoTable` pass adds 4 level-script task
+extra nodes, one level link set, and 5 task title/objective text refs. These
+decoded-config passes still do not prove runtime formula usage,
 full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
@@ -493,6 +495,10 @@ Partial but useful current examples include:
   scene states, map variables, and quest/mission/map-variable condition
   refs; grid placement, streaming behavior, state evaluation, and UI map
   rendering remain future work.
+- `GameplayConfigScriptTaskExtraInfoTable`: queryable task-extra display
+  metadata for four `map01_lv007` level-script tasks, including task title
+  and objective text refs; runtime challenge execution and progress logic
+  remain future work.
 - `LevelScriptTemplateData` and other partially previewed families have verified
   top-level ids/counts and meaningful previews.
 
@@ -617,6 +623,14 @@ The original 31,992 `levelIds` grid entries are preserved as counts on
 config node payloads rather than emitted as per-cell edges. This is static
 authored map metadata, not proof of streaming behavior, condition evaluation,
 grid placement semantics, or UI map rendering.
+
+2026-07-01 source graph script-task extra progress: a fast CN rebuild to
+`tmp/source_graph_script_task_extra.sqlite` verified the small
+`GameplayConfigScriptTaskExtraInfoTable` pass. It adds 4
+`level_script_task_extra` nodes, 8 source-file definition edges, 4 level
+links to `map01_lv007`, 1 task-title text link, and 4 objective text links.
+This is static display/tracking metadata, not proof of level-script
+execution, objective progress logic, or runtime challenge state.
 
 Useful support-table checks include:
 

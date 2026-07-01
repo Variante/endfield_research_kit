@@ -1000,6 +1000,24 @@ python tools\endfield_source_graph.py query base01_lv001:default --kind map_scen
 python tools\endfield_source_graph.py query dung02_bdg002:Nefarp_human --kind map_variable
 ```
 
+2026-07-01 GameplayConfigScriptTaskExtraInfoTable graph progress: source
+graph ingestion now promotes the small `LevelScriptTaskExtraInfoTable` JSON
+from `Json_GameplayConfigScriptTaskExtraInfoTable.json`. A fast CN rebuild
+to `tmp/source_graph_script_task_extra.sqlite` verified 1,495,542 total
+nodes, 2,617,699 edges, and 2,015,102 aliases. New coverage includes 4
+`level_script_task_extra` nodes, 8 source-file definition edges split as
+Persistent 4 and StreamingAssets 4, 4 level links to `map01_lv007`, 1
+title text link, and 4 objective text links covering `task_race_obj_1`,
+`task_energy_point`, `task_energy_point_mini`, and
+`world_challenge_energy_point_desc`. This pass indexes static task display
+metadata and tracking text keys; it does not prove level-script execution,
+objective progress logic, or runtime challenge state. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query map01_lv007:2800200002:0174178d --kind level_script_task_extra
+python tools\endfield_source_graph.py query task_energy_point --kind i18n_text
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,

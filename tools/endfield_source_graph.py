@@ -307,11 +307,13 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_MissionRuntimeAsset.json",
     "Json_AIConfig.json",
     "Json_MapConfig.json",
+    "Json_GameplayConfigScriptTaskExtraInfoTable.json",
 )
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
     "AIConfigEnemyTemplateDataSummary",
     "MapConfig",
+    "GameplayConfigScriptTaskExtraInfoTable",
     "BambooRaftTaskTable",
     "CharInteractPerformCfgs",
     "NpcAtmosphericDataTable",
@@ -2882,6 +2884,8 @@ class SourceGraphBuilder:
                     subtype = "AIConfigEnemyTemplateDataSummary"
                 if group_name == "Json_MapConfig.json":
                     subtype = "MapConfig"
+                if group_name == "Json_GameplayConfigScriptTaskExtraInfoTable.json":
+                    subtype = "GameplayConfigScriptTaskExtraInfoTable"
                 if subtype not in DECODED_CONFIG_TARGET_TYPES:
                     continue
                 self.add_decoded_config_entry(group_node, entry, subtype=subtype)
@@ -2908,6 +2912,8 @@ class SourceGraphBuilder:
             self.add_ai_config_enemy_template_summary_edges(file_node, entry)
         elif subtype == "MapConfig":
             self.add_map_config_edges(file_node, entry)
+        elif subtype == "GameplayConfigScriptTaskExtraInfoTable":
+            self.add_gameplay_script_task_extra_edges(file_node, entry)
         elif subtype == "AnimationConfig":
             self.add_animation_config_edges(file_node, entry)
         elif subtype == "NpcAtmosphericDataTable":
@@ -4020,6 +4026,85 @@ class SourceGraphBuilder:
                 self.add_edge(config_node, state_node, "map_config_has_scene_state", source=source, evidence="sceneStateConditions")
                 state_nodes[state_name] = state_node
             self.add_map_config_condition_refs(state_node, condition_entry.get("condition"), source=source, evidence=f"sceneStateConditions[{condition_index}]", map_id=map_id)
+
+    def script_task_extra_text_key(self, payload: Any) -> str:
+        if isinstance(payload, dict):
+            key = safe_key(payload.get("key"))
+            if key and key not in {"\\", "0"}:
+                return key
+        return ""
+
+    def add_script_task_extra_text_edge(self, owner_node: str, payload: Any, *, edge_kind: str, source: str, evidence: str) -> None:
+        text_key = self.script_task_extra_text_key(payload)
+        if not text_key:
+            return
+        text_node = self.add_i18n_text_node(text_key, source=source)
+        if text_node:
+            self.add_edge(owner_node, text_node, edge_kind, source=source, evidence=evidence)
+
+    def add_gameplay_script_task_extra_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        raw_data = self.read_decoded_config_bytes(entry)
+        if not raw_data:
+            return
+        try:
+            payload = json.loads(raw_data.decode("utf-8-sig"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return
+        if not isinstance(payload, dict):
+            return
+        data_table = payload.get("dataTable")
+        if not isinstance(data_table, dict):
+            return
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        self.update_node_details(file_node, data=compact_payload({**self.decoded_config_entry_data(entry), "levelCount": len(data_table)}, depth=3))
+        for level_id_raw, task_map in sorted(data_table.items(), key=lambda item: safe_key(item[0])):
+            level_id = safe_key(level_id_raw)
+            if not level_id or not isinstance(task_map, dict):
+                continue
+            level_node = self.add_level_node(level_id, source=source)
+            for task_id_raw, extra_map in sorted(task_map.items(), key=lambda item: safe_key(item[0])):
+                task_id = safe_key(task_id_raw)
+                if not task_id or not isinstance(extra_map, dict):
+                    continue
+                for extra_key_raw, extra in sorted(extra_map.items(), key=lambda item: safe_key(item[0])):
+                    extra_key = safe_key(extra_key_raw)
+                    if not extra_key or not isinstance(extra, dict):
+                        continue
+                    node_key = f"{level_id}:{task_id}:{extra_key}"
+                    tracking = extra.get("trackingInfoDict") if isinstance(extra.get("trackingInfoDict"), dict) else {}
+                    extra_node = self.add_node(
+                        "level_script_task_extra",
+                        node_key,
+                        name=task_id,
+                        source=source,
+                        data=compact_payload({
+                            "levelId": level_id,
+                            "taskId": task_id,
+                            "extraKey": extra_key,
+                            "useSingleDescription": extra.get("useSingleDescription"),
+                            "singleDescriptionFormatProgress": extra.get("singleDescriptionFormatProgress"),
+                            "objectiveCount": extra.get("objectiveCount"),
+                            "trackingKeys": sorted(tracking.keys()),
+                        }, depth=3),
+                    )
+                    self.add_alias(node_key, extra_node, kind="level_script_task_extra_key", source=source)
+                    self.add_alias(task_id, extra_node, kind="level_script_task_extra_task_id", source=source)
+                    self.add_alias(f"{level_id}:{task_id}", extra_node, kind="level_script_task_extra_task_key", source=source)
+                    self.add_edge(file_node, extra_node, "defines_level_script_task_extra", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id})
+                    self.add_edge(extra_node, level_node, "level_script_task_extra_in_level", source=source, evidence="dataTable.levelId")
+                    self.add_script_task_extra_text_edge(extra_node, extra.get("taskTitle"), edge_kind="level_script_task_extra_title_text", source=source, evidence="taskTitle")
+                    self.add_script_task_extra_text_edge(extra_node, extra.get("singleDescription"), edge_kind="level_script_task_extra_single_description_text", source=source, evidence="singleDescription")
+                    for objective_key, objective in sorted(tracking.items(), key=lambda item: safe_key(item[0])):
+                        if not isinstance(objective, dict):
+                            continue
+                        self.add_script_task_extra_text_edge(
+                            extra_node,
+                            objective.get("description"),
+                            edge_kind="level_script_task_extra_objective_text",
+                            source=source,
+                            evidence=f"trackingInfoDict.{safe_key(objective_key)}.description",
+                        )
 
     def mission_runtime_text_key(self, payload: Any) -> str:
         if isinstance(payload, dict):
@@ -12269,6 +12354,7 @@ QUERY_KIND_PRIORITY = {
     "map_domain": 127,
     "map_streaming_asset": 128,
     "map_config_condition_type": 129,
+    "level_script_task_extra": 130,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -12558,6 +12644,7 @@ NODE_ID_PREFIXES = (
     "map_domain",
     "map_streaming_asset",
     "map_config_condition_type",
+    "level_script_task_extra",
     "mission",
     "map",
     "level",
