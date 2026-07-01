@@ -270,6 +270,7 @@ DIALOG_SUPPORT_TABLES = (
     "DomainDepotDeliverTargetDialogTable.json",
 )
 DECODED_CONFIG_GROUP_FILES = (
+    "Json_AnimationConfig.json",
     "Json_BuffData.json",
     "Json_GameplayConfig.json",
     "Json_GameplayConfigMissionAreaTable.json",
@@ -286,6 +287,7 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_GameplayConfigWorldEntityRegistry.json",
 )
 DECODED_CONFIG_TARGET_TYPES = {
+    "AnimationConfig",
     "BuffData",
     "GameplayConfigMissionAreaTable",
     "GameplayConfigWorldEntityRegistry",
@@ -972,6 +974,66 @@ def extract_level_data_summary(entry: dict[str, Any], data: bytes) -> dict[str, 
         "stringScanLimit": LEVEL_DATA_STRING_MAX_SAMPLES,
         "refCounts": {kind: len(values) for kind, values in refs.items()},
         "refs": refs,
+        "exactLength": False,
+    }
+
+ANIMATION_CONFIG_MEMBER_COUNT = 12
+ANIMATION_CONFIG_STRING_MAX_SAMPLES = 640
+
+
+def animation_config_id_from_entry(entry: dict[str, Any]) -> str:
+    return Path(safe_key(entry.get("p"))).stem
+
+
+def extract_animation_config_summary(entry: dict[str, Any], data: bytes) -> dict[str, Any] | None:
+    if not data or data[0] != ANIMATION_CONFIG_MEMBER_COUNT:
+        return None
+    config_id = animation_config_id_from_entry(entry)
+    hits = scan_length_prefixed_utf8_string_hits(data, max_samples=ANIMATION_CONFIG_STRING_MAX_SAMPLES, max_length=260)
+    strings: list[str] = []
+    seen_strings: set[str] = set()
+    for hit in hits:
+        value = safe_key(hit.get("value"))
+        if value and value not in seen_strings:
+            seen_strings.add(value)
+            strings.append(value)
+        if len(strings) >= 192:
+            break
+    facial_morphs = [value for value in strings if value.startswith("FacialMorph/")][:12]
+    montage_paths = [value for value in strings if value.startswith("Montage/")][:12]
+    actor_anims = [value for value in strings if value.startswith("A_actor_")][:12]
+    cutscene_refs = [value for value in strings if value.startswith("cutscene_") or re.match(r"^e\d+m\d+_", value)][:12]
+    other_paths = [
+        value
+        for value in strings
+        if "/" in value
+        and not value.startswith("FacialMorph/")
+        and not value.startswith("Montage/")
+    ][:12]
+    state_names = [
+        value
+        for value in strings
+        if "/" not in value
+        and not value.startswith("A_actor_")
+        and not value.startswith("cutscene_")
+        and not re.match(r"^e\d+m\d+_", value)
+    ][:24]
+    bool_tail_valid = len(data) >= 2 and data[-2] in (0, 1) and data[-1] in (0, 1)
+    return {
+        "configId": config_id,
+        "memberCount": ANIMATION_CONFIG_MEMBER_COUNT,
+        "sampledStringCount": len(strings),
+        "stringScanLimit": ANIMATION_CONFIG_STRING_MAX_SAMPLES,
+        "stateNames": state_names,
+        "facialMorphs": facial_morphs,
+        "montagePaths": montage_paths,
+        "actorAnimationRefs": actor_anims,
+        "cutsceneRefs": cutscene_refs,
+        "otherPaths": other_paths,
+        "useRotateDirection": bool(data[-2]) if bool_tail_valid else None,
+        "useStateVariables": bool(data[-1]) if bool_tail_valid else None,
+        "booleanTailVerified": bool_tail_valid,
+        "stringHits": hits[:48],
         "exactLength": False,
     }
 
@@ -2338,7 +2400,9 @@ class SourceGraphBuilder:
         self.add_file(entry_path, kind="decoded_game_data", source=safe_key(entry.get("source")) or "webui/game_data", size=entry.get("s"), data={"subtype": subtype, "rows": entry.get("r"), "hash": entry.get("hash")})
         family_node = self.add_node("decoded_config_family", subtype, name=subtype, source="webui/game_data")
         self.add_edge(file_node, family_node, "decoded_as_config_family", source="webui/game_data", evidence=safe_key(entry.get("q")))
-        if subtype == "BuffData":
+        if subtype == "AnimationConfig":
+            self.add_animation_config_edges(file_node, entry)
+        elif subtype == "BuffData":
             self.add_buff_data_config_edges(file_node, entry)
         elif subtype == "SkillData":
             self.add_skill_data_config_edges(file_node, entry)
@@ -2370,6 +2434,63 @@ class SourceGraphBuilder:
             self.add_world_entity_registry_edges(file_node, entry)
         elif subtype == "TeleportValidationDataTable":
             self.add_teleport_validation_config_edges(file_node, entry)
+
+    def add_animation_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        decoded = extract_animation_config_summary(entry, self.read_decoded_config_bytes(entry))
+        config_id = safe_key(decoded.get("configId") if decoded else "")
+        if not decoded or not config_id:
+            return
+        config_node = self.add_node(
+            "animation_config",
+            config_id,
+            name=config_id,
+            source="webui/game_data",
+            path=safe_key(entry.get("p")),
+            data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": decoded}, depth=3),
+        )
+        self.add_edge(file_node, config_node, "animation_config_data_defines_config", source="webui/game_data", evidence=safe_key(entry.get("dp")))
+        self.add_alias(config_id, config_node, kind="animation_config_id", source="webui/game_data")
+        self.add_alias(entry.get("dp"), config_node, kind="animation_config_path", source="webui/game_data")
+        self.add_alias(entry.get("p"), config_node, kind="animation_config_data_path", source="webui/game_data")
+
+        for index, value in enumerate(decoded.get("stateNames") or []):
+            state_key = safe_key(value)
+            if not state_key:
+                continue
+            state_node = self.add_node("animation_state", state_key, name=state_key, source="webui/game_data")
+            self.add_alias(state_key, state_node, kind="animation_state_name", source="webui/game_data")
+            self.add_edge(config_node, state_node, "animation_config_references_state", source="webui/game_data", evidence=f"stateNames[{index}]")
+        for index, value in enumerate(decoded.get("facialMorphs") or []):
+            morph_key = safe_key(value)
+            if not morph_key:
+                continue
+            morph_node = self.add_node("facial_morph", morph_key, name=Path(morph_key).name, source="webui/game_data", path=morph_key)
+            self.add_alias(morph_key, morph_node, kind="facial_morph_path", source="webui/game_data")
+            self.add_edge(config_node, morph_node, "animation_config_references_facial_morph", source="webui/game_data", evidence=f"facialMorphs[{index}]")
+        for index, value in enumerate(decoded.get("montagePaths") or []):
+            montage_node = self.add_level_script_montage_node(value, source="webui/game_data")
+            self.add_edge(config_node, montage_node, "animation_config_references_montage", source="webui/game_data", evidence=f"montagePaths[{index}]")
+        for index, value in enumerate(decoded.get("actorAnimationRefs") or []):
+            anim_key = safe_key(value)
+            if not anim_key:
+                continue
+            anim_node = self.add_node("actor_animation_ref", anim_key, name=anim_key, source="webui/game_data")
+            self.add_alias(anim_key, anim_node, kind="actor_animation_ref_id", source="webui/game_data")
+            self.add_edge(config_node, anim_node, "animation_config_references_actor_animation", source="webui/game_data", evidence=f"actorAnimationRefs[{index}]")
+        for index, value in enumerate(decoded.get("cutsceneRefs") or []):
+            cutscene_key = safe_key(value)
+            if not cutscene_key:
+                continue
+            cutscene_node = self.add_node("animation_cutscene_ref", cutscene_key, name=cutscene_key, source="webui/game_data")
+            self.add_alias(cutscene_key, cutscene_node, kind="animation_cutscene_ref_id", source="webui/game_data")
+            self.add_edge(config_node, cutscene_node, "animation_config_references_cutscene", source="webui/game_data", evidence=f"cutsceneRefs[{index}]")
+        for index, value in enumerate(decoded.get("otherPaths") or []):
+            path_key = safe_key(value)
+            if not path_key:
+                continue
+            path_node = self.add_node("animation_path_ref", path_key, name=Path(path_key).name, source="webui/game_data", path=path_key)
+            self.add_alias(path_key, path_node, kind="animation_path_ref", source="webui/game_data")
+            self.add_edge(config_node, path_node, "animation_config_references_path", source="webui/game_data", evidence=f"otherPaths[{index}]")
 
     def add_npc_montage_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         summary = extract_npc_montage_summary(entry)
@@ -10158,6 +10279,12 @@ QUERY_KIND_PRIORITY = {
     "npc_montage_category": 81,
     "npc_montage_body": 82,
     "npc_montage_action": 83,
+    "animation_config": 84,
+    "animation_state": 85,
+    "facial_morph": 86,
+    "actor_animation_ref": 87,
+    "animation_cutscene_ref": 88,
+    "animation_path_ref": 89,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,

@@ -355,7 +355,13 @@ buff ids, 347 montage ids, 19 asset paths, 4,635 task markers, and 13,370
 parameter strings. The NPCMontageJson pass adds 6,800 file-to-montage definition
 edges collapsed to 3,392 unique montage tags, plus 2 montage categories, 47
 bodies, 1,078 actions, and category/body/action edges for each defined montage
-tag. It does not prove runtime formula usage, full SpawnerConfig tail semantics,
+tag. The `AnimationConfig` pass adds 213 file-to-config definition edges
+collapsed to 107 config nodes, 584 states, 315 facial morph paths, 197 actor
+animation refs, 3 cutscene-like refs, 34 montage refs joined to existing
+montage nodes, and 1 generic skeleton/bone path ref from guarded MemoryPack
+string evidence; controller graphs, blend trees, clip bindings, animation
+curves, and runtime playback conditions remain outside this pass. It does not
+prove runtime formula usage, full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
 flow, montage clip playback semantics, full exported model/icon reconstruction,
@@ -388,14 +394,18 @@ Partial but useful current examples include:
   3,392 unique tags, including category, body, and action metadata joined onto
   the same montage nodes referenced by LevelScript and LevelData; animation clip
   payloads and playback rules remain future work.
+- `AnimationConfig`: queryable config definitions across 213 files and 107
+  unique configs, with bounded string-scan references to state names, facial
+  morph paths, montage paths, actor animation refs, cutscene-like ids, and one
+  skeleton/bone path; controller graphs, blend trees, clip bindings, animation
+  curves, and runtime playback conditions remain future work.
 - `Interactive/InteractiveData`: 25-member template roots and many component
   bodies parse far enough to expose names, component families, property maps,
   audio rows, guide geometry, trigger observers, hittable data, and interactive
   state properties.
-- `AnimationConfig`, `AtmosphericNpcData`, `CharInteractPerformCfgs`,
-  `LevelConfig`, `LevelData`, `LevelScriptTemplateData`, NPC montage rows,
-  and other families have verified top-level ids/counts and meaningful
-  previews.
+- `AtmosphericNpcData`, `CharInteractPerformCfgs`, `LevelScriptTemplateData`,
+  and other partially previewed families have verified top-level ids/counts and
+  meaningful previews.
 
 The remaining risk is nested semantics. A decoded field name or count proves
 structure; it does not automatically prove gameplay meaning, formula behavior,
