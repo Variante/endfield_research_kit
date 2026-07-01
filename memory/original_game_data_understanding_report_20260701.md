@@ -717,18 +717,31 @@ attributes, and raw attr modifiers. This is authored table semantics, not a full
 runtime combat formula or modifier-order reconstruction.
 
 2026-07-01 source graph progress: `tools/endfield_source_graph.py` now ingests
-the generated Gameplay payload as evidence graph nodes and relationships. A
-fast CN verification build with `--skip-asset-maps --skip-reference-rows --skip-followups` produced 72 weapon nodes, 220 equipment nodes, 30 character
+the generated Gameplay payload and selected structured factory tables as
+evidence graph nodes and relationships. A fast CN verification build with
+`--skip-asset-maps --skip-reference-rows --skip-followups` produced 72 weapon nodes, 220 equipment nodes, 30 character
 nodes, 290 enemy nodes, 78 enemy template nodes, 98 enemy attribute-template
 nodes, 134 enemy ability nodes, 83 buff nodes, 409 skill nodes, 526 talent
-nodes, 1,240 progression nodes, 97 item nodes, 3,820 required-item edges, 290
+nodes, 1,240 progression nodes, 593 item nodes, 392 factory recipe nodes, 485
+factory item descriptor nodes, 38 factory machine nodes, 20 factory craft group
+nodes, 22 factory showing-type nodes, 3,820 required-item edges, 290
 `uses_enemy_attribute_template` edges, 406 `has_enemy_ability` edges, 194
 `starts_with_buff` edges, and 266 `drops_item` edges. The two hidden
 Endministrator rows remain as `CharacterTable` graph nodes but are no longer
 separate visible Gameplay entries. Exact queries such as `chr_0017_yvonne`,
-`wpn_pistol_0001`, and `eny_0018_lbtough` now resolve to Gameplay nodes with
-source table rows and semantic neighbors. This improves cross-domain lookup; it
-still does not prove formulas beyond generated source-table evidence.
+`wpn_pistol_0001`, `eny_0018_lbtough`, and `component_activity_xiranite_cmpt_1`
+now resolve to semantic nodes with source table rows and neighbors. This
+improves cross-domain lookup; it still does not prove formulas beyond generated
+source-table evidence.
+
+2026-07-01 source graph factory progress: manual, machine, and hub factory
+recipes are now queryable from selected structured tables. The fast graph
+rebuild verified 392 `factory_recipe` nodes, 615 ingredient edges, 468 output
+edges, 76 formula-item unlock edges, 257 machine edges, 76 domain edges, 135
+showing-type edges, and 316 craft-group edges. Factory item descriptors add 485
+`factory_item` nodes and domain visibility/transfer edges. This recovers static
+factory recipe and item relationships; power, logistics, timing, and unlock
+runtime rules remain future work.
 
 2026-07-01 source graph equipment-semantic progress: equipment formula,
 domain, suit, unlock, and stat-property details are now queryable instead of

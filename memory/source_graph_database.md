@@ -107,22 +107,23 @@ level-to-map tables.
 
 ## Current Notes
 
-2026-07-01 Gameplay ingestion adds exact-queryable `weapon`, `equipment`,
-`character`, `enemy`, `enemy_template`, `enemy_attribute_template`,
-`enemy_display_type`, `enemy_ability`, `enemy_attribute_modifier`, `buff`,
-`gameplay_skill_group`, `gameplay_skill`, `gameplay_talent_group`,
-`gameplay_talent`, `gameplay_progression`, and `item` nodes from
-`webui/data/lang/<LANG>/gameplay/index.json`. A fast CN build with
+2026-07-01 Gameplay and selected structured-table ingestion adds exact-queryable
+`weapon`, `equipment`, `character`, `enemy`, `enemy_template`,
+`enemy_attribute_template`, `enemy_display_type`, `enemy_ability`,
+`enemy_attribute_modifier`, `buff`, `gameplay_skill_group`, `gameplay_skill`,
+`gameplay_talent_group`, `gameplay_talent`, `gameplay_progression`, `item`,
+`factory_recipe`, `factory_item`, `factory_machine`, `factory_craft_group`, and
+`factory_craft_showing_type` nodes. A fast CN build with
 `--skip-asset-maps --skip-reference-rows --skip-followups` verified 72 weapon
 nodes, 220 equipment nodes, 30 character nodes, 290 enemy nodes, 78 enemy
 template nodes, 98 enemy attribute-template nodes, 5 enemy display-type nodes,
 134 enemy ability nodes, 70 enemy modifier nodes, 83 buff nodes, 409 skills, 526
-talent nodes, 1,240 progression nodes, 97 item nodes, and edges for source rows,
-default weapons, skill/talent membership, progression records, required item
-costs, enemy templates, enemy abilities, born buffs, and drops. The generated
-WebUI payload deliberately exposes 610 visible Gameplay entries: 72 weapons, 220
-equipment records, 28 visible character records, and 290 enemy records. The two
-hidden `chr_0002_endminm` / `chr_0003_endminf` Endministrator rows remain as
+talent nodes, 1,240 progression nodes, 593 item nodes, 392 factory recipes, 485
+factory item descriptors, 38 factory machines, 20 factory craft groups, and 22
+factory craft showing types. The generated WebUI payload deliberately exposes
+610 visible Gameplay entries: 72 weapons, 220 equipment records, 28 visible
+character records, and 290 enemy records. The two hidden
+`chr_0002_endminm` / `chr_0003_endminf` Endministrator rows remain as
 `CharacterTable` graph nodes and are folded into `chr_9000_endmin` story wiki
 aliases for WebUI navigation. Example exact queries:
 
@@ -130,6 +131,7 @@ aliases for WebUI navigation. Example exact queries:
 python tools\endfield_source_graph.py query chr_0017_yvonne --kind character
 python tools\endfield_source_graph.py query wpn_pistol_0001 --kind weapon
 python tools\endfield_source_graph.py query eny_0018_lbtough --kind enemy
+python tools\endfield_source_graph.py query component_activity_xiranite_cmpt_1 --kind factory_recipe
 ```
 
 2026-07-01 enemy semantic ingestion promotes authored `EnemyTable`,
@@ -142,6 +144,18 @@ verified 290 `uses_enemy_attribute_template`, 290 `uses_enemy_template`, 406
 stats are HP/ATK/DEF checkpoints from authored level-dependent attributes;
 combat scalars, resilience fields, independent attributes, and attr modifiers
 are exposed as source-table facts, not as a recovered runtime formula.
+2026-07-01 factory recipe graph progress: selected structured-table ingestion
+now includes `FactoryManualCraftTable`, `FactoryMachineCraftTable`,
+`FactoryHubCraftTable`, `FactoryItemTable`, `FactoryMachineCrafterTable`, and
+`FactoryCraftShowingTypeTable`. A fast graph rebuild verified 392
+`factory_recipe` nodes, 615 `factory_consumes_item` edges, 468
+`factory_produces_item` edges, 76 `unlocked_by_factory_formula_item` edges, 257
+`crafted_by_machine` edges, 76 `factory_recipe_domain` edges, 135
+`has_factory_showing_type` edges, 316 `belongs_to_factory_craft_group` edges,
+485 `factory_item` descriptor nodes, 38 `factory_machine` nodes, and 22
+`factory_craft_showing_type` nodes. This makes manual, machine, and hub factory
+recipes queryable by recipe ID, item ID, machine ID, domain, and showing type;
+it does not yet simulate factory timing, power, logistics, or unlock rules.
 
 The same build now links Gameplay entries to exported asset nodes by exact
 Gameplay ID, icon ID, or model-path stem containment in asset paths. The fast

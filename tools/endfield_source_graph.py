@@ -72,6 +72,12 @@ SELECTED_STRUCTURED_TABLES = (
     "CharacterTable.json",
     "DialogSummaryMapTable.json",
     "DialogSummaryTable.json",
+    "FactoryCraftShowingTypeTable.json",
+    "FactoryHubCraftTable.json",
+    "FactoryItemTable.json",
+    "FactoryMachineCrafterTable.json",
+    "FactoryMachineCraftTable.json",
+    "FactoryManualCraftTable.json",
     "InteractiveMissionDataTable.json",
     "LevelDescTable.json",
     "MapIdTable.json",
@@ -106,6 +112,12 @@ def compact_text(value: Any, limit: int = 240) -> str:
     if len(text) > limit:
         return text[: limit - 3] + "..."
     return text
+
+
+def table_text(value: Any) -> str:
+    if isinstance(value, dict):
+        return compact_text(value.get("text") or value.get("id") or "")
+    return compact_text(value)
 
 
 def path_id_export_base_stem(value: Any) -> str:
@@ -2428,8 +2440,198 @@ class SourceGraphBuilder:
                 self.add_edge(table_node, row_node, "has_row", source="structured")
                 self.add_structured_row_edges(table_key, row_key, row, row_node)
 
+    def iter_factory_item_refs(self, values: Any) -> Iterable[tuple[int, int, dict[str, Any]]]:
+        if not isinstance(values, list):
+            return
+        for group_index, entry in enumerate(values):
+            if not isinstance(entry, dict):
+                continue
+            group = entry.get("group")
+            if isinstance(group, list):
+                for item_index, item in enumerate(group):
+                    if isinstance(item, dict) and safe_key(item.get("id")):
+                        yield group_index, item_index, item
+            elif safe_key(entry.get("id")):
+                yield group_index, 0, entry
+
+    def factory_recipe_type(self, table: str) -> str:
+        return {
+            "FactoryManualCraftTable": "manual",
+            "FactoryMachineCraftTable": "machine",
+            "FactoryHubCraftTable": "hub",
+        }.get(table, "factory")
+
+    def add_factory_item_aliases(self, item_node: str, item_id: str, *, source: str) -> None:
+        self.add_alias(item_id, item_node, kind="item_id", source=source)
+        self.add_alias(item_id.removeprefix("item_"), item_node, kind="item_alias", source=source)
+
+    def add_factory_item_edge(self, recipe_node: str, item: dict[str, Any], edge_kind: str, *, source: str, evidence: str, group_index: int, item_index: int) -> None:
+        item_id = safe_key(item.get("id"))
+        if not item_id:
+            return
+        item_node = self.add_node("item", item_id, name=item_id, source=source)
+        self.add_factory_item_aliases(item_node, item_id, source=source)
+        self.add_edge(
+            recipe_node,
+            item_node,
+            edge_kind,
+            source=source,
+            evidence=evidence,
+            data={
+                "count": item.get("count"),
+                "groupIndex": group_index,
+                "itemIndex": item_index,
+            },
+        )
+
+    def add_factory_recipe_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        recipe_id = safe_key(row.get("id") or row_key)
+        if not recipe_id:
+            return
+        recipe_type = self.factory_recipe_type(table)
+        recipe_node = self.add_node(
+            "factory_recipe",
+            recipe_id,
+            name=table_text(row.get("name") or row.get("formulaDesc")) or recipe_id,
+            source=table,
+            data={
+                "id": recipe_id,
+                "recipeType": recipe_type,
+                "rarity": row.get("rarity"),
+                "sortId": row.get("sortId"),
+                "defaultUnlock": row.get("defaultUnlock"),
+                "domainId": row.get("domainId"),
+                "machineId": row.get("machineId"),
+                "showingType": row.get("showingType"),
+                "formulaGroupId": row.get("formulaGroupId"),
+                "progressRound": row.get("progressRound"),
+                "totalProgress": row.get("totalProgress"),
+                "usableLevel": row.get("usableLevel"),
+                "signal": row.get("signal"),
+            },
+        )
+        self.add_edge(row_node, recipe_node, "defines_factory_recipe", source=table)
+        self.add_alias(recipe_id, recipe_node, kind="factory_recipe_id", source=table)
+        for group_index, item_index, item in self.iter_factory_item_refs(row.get("ingredients")):
+            self.add_factory_item_edge(recipe_node, item, "factory_consumes_item", source=table, evidence="ingredients", group_index=group_index, item_index=item_index)
+        for group_index, item_index, item in self.iter_factory_item_refs(row.get("outcomes")):
+            self.add_factory_item_edge(recipe_node, item, "factory_produces_item", source=table, evidence="outcomes", group_index=group_index, item_index=item_index)
+        formula_item_id = safe_key(row.get("itemId"))
+        if formula_item_id:
+            item_node = self.add_node("item", formula_item_id, name=formula_item_id, source=table)
+            self.add_factory_item_aliases(item_node, formula_item_id, source=table)
+            self.add_edge(recipe_node, item_node, "unlocked_by_factory_formula_item", source=table, evidence="itemId")
+        machine_id = safe_key(row.get("machineId"))
+        if machine_id:
+            machine_node = self.add_node("factory_machine", machine_id, name=machine_id, source=table)
+            self.add_edge(recipe_node, machine_node, "crafted_by_machine", source=table, evidence="machineId")
+            self.add_alias(machine_id, machine_node, kind="factory_machine_id", source=table)
+        domain_id = safe_key(row.get("domainId"))
+        if domain_id:
+            domain_node = self.add_node("gameplay_domain", domain_id, name=domain_id, source=table)
+            self.add_edge(recipe_node, domain_node, "factory_recipe_domain", source=table, evidence="domainId")
+            self.add_alias(domain_id, domain_node, kind="gameplay_domain_id", source=table)
+        showing_type = safe_key(row.get("showingType"))
+        if showing_type:
+            showing_node = self.add_node("factory_craft_showing_type", showing_type, name=showing_type, source=table)
+            self.add_edge(recipe_node, showing_node, "has_factory_showing_type", source=table, evidence="showingType")
+            self.add_alias(showing_type, showing_node, kind="factory_craft_showing_type_id", source=table)
+        formula_group_id = safe_key(row.get("formulaGroupId"))
+        if formula_group_id:
+            group_node = self.add_node("factory_craft_group", formula_group_id, name=formula_group_id, source=table)
+            self.add_edge(recipe_node, group_node, "belongs_to_factory_craft_group", source=table, evidence="formulaGroupId")
+            self.add_alias(formula_group_id, group_node, kind="factory_craft_group_id", source=table)
+        for group_id in row.get("belongingGroupIds") or []:
+            group_id = safe_key(group_id)
+            if not group_id:
+                continue
+            group_node = self.add_node("factory_craft_group", group_id, name=group_id, source=table)
+            self.add_edge(recipe_node, group_node, "belongs_to_factory_craft_group", source=table, evidence="belongingGroupIds")
+            self.add_alias(group_id, group_node, kind="factory_craft_group_id", source=table)
+
+    def add_factory_item_table_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        item_id = safe_key(row.get("id") or row_key)
+        if not item_id:
+            return
+        factory_item_node = self.add_node(
+            "factory_item",
+            item_id,
+            name=item_id,
+            source=table,
+            data={
+                "id": item_id,
+                "subType": row.get("subType"),
+                "value": row.get("value"),
+                "buildingBufferStackLimit": row.get("buildingBufferStackLimit"),
+                "showInUnloader": row.get("showInUnloader"),
+                "dischargeType": row.get("dischargeType"),
+                "itemState": row.get("itemState"),
+            },
+        )
+        item_node = self.add_node("item", item_id, name=item_id, source=table)
+        self.add_edge(row_node, factory_item_node, "defines_factory_item", source=table)
+        self.add_edge(factory_item_node, item_node, "describes_item", source=table)
+        self.add_alias(item_id, factory_item_node, kind="factory_item_id", source=table)
+        self.add_factory_item_aliases(item_node, item_id, source=table)
+        for field, edge_kind in (
+            ("showInHubDomainIds", "factory_item_shown_in_domain"),
+            ("losslessDomainIds", "factory_item_lossless_in_domain"),
+            ("transferDomainIds", "factory_item_transfers_in_domain"),
+        ):
+            for domain_id in row.get(field) or []:
+                domain_id = safe_key(domain_id)
+                if not domain_id:
+                    continue
+                domain_node = self.add_node("gameplay_domain", domain_id, name=domain_id, source=table)
+                self.add_edge(factory_item_node, domain_node, edge_kind, source=table, evidence=field)
+
+    def add_factory_machine_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        machine_id = safe_key(row_key)
+        if not machine_id:
+            return
+        machine_node = self.add_node(
+            "factory_machine",
+            machine_id,
+            name=machine_id,
+            source=table,
+            data={"modeCount": len(row.get("modeMap") or []), "defaultModes": row.get("modeUnlockDefaultMap")},
+        )
+        self.add_edge(row_node, machine_node, "defines_factory_machine", source=table)
+        self.add_alias(machine_id, machine_node, kind="factory_machine_id", source=table)
+        for mode in row.get("modeMap") or []:
+            if not isinstance(mode, dict):
+                continue
+            group_id = safe_key(mode.get("groupName"))
+            if not group_id:
+                continue
+            group_node = self.add_node("factory_craft_group", group_id, name=group_id, source=table)
+            self.add_edge(machine_node, group_node, "machine_supports_craft_group", source=table, evidence=safe_key(mode.get("modeName")))
+            self.add_alias(group_id, group_node, kind="factory_craft_group_id", source=table)
+
+    def add_factory_showing_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        showing_id = safe_key(row.get("type") or row_key)
+        if not showing_id:
+            return
+        showing_node = self.add_node(
+            "factory_craft_showing_type",
+            showing_id,
+            name=table_text(row.get("name")) or showing_id,
+            source=table,
+            data={"id": showing_id, "icon": row.get("icon"), "priority": row.get("priority")},
+        )
+        self.add_edge(row_node, showing_node, "defines_factory_showing_type", source=table)
+        self.add_alias(showing_id, showing_node, kind="factory_craft_showing_type_id", source=table)
+        self.add_alias(table_text(row.get("name")), showing_node, kind="factory_craft_showing_type_name", source=table)
     def add_structured_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
-        if table == "AudioDialog" and isinstance(row, dict):
+        if table in {"FactoryManualCraftTable", "FactoryMachineCraftTable", "FactoryHubCraftTable"} and isinstance(row, dict):
+            self.add_factory_recipe_edges(table, row_key, row, row_node)
+        elif table == "FactoryItemTable" and isinstance(row, dict):
+            self.add_factory_item_table_edges(table, row_key, row, row_node)
+        elif table == "FactoryMachineCrafterTable" and isinstance(row, dict):
+            self.add_factory_machine_edges(table, row_key, row, row_node)
+        elif table == "FactoryCraftShowingTypeTable" and isinstance(row, dict):
+            self.add_factory_showing_type_edges(table, row_key, row, row_node)
+        elif table == "AudioDialog" and isinstance(row, dict):
             path = safe_key(row.get("path"))
             audio_key = Path(path).stem if path else row_key
             audio_node = self.add_node(
@@ -2900,26 +3102,30 @@ QUERY_KIND_PRIORITY = {
     "enemy_tag": 17,
     "enemy_attribute_modifier": 18,
     "buff": 19,
-    "equipment_formula": 20,
-    "equipment_formula_pack": 21,
-    "equipment_suit": 22,
-    "gameplay_domain": 23,
-    "gameplay_property_curve": 24,
-    "gameplay_stat_property": 25,
-    "gameplay_unlock": 26,
-    "item": 27,
-    "gameplay_skill_group": 28,
-    "gameplay_skill": 29,
-    "gameplay_talent_group": 30,
-    "gameplay_talent": 31,
-    "gameplay_progression": 32,
-    "asset_entity": 33,
-    "asset": 34,
-    "actor": 35,
-    "audio": 36,
-    "file": 37,
+    "factory_recipe": 20,
+    "factory_item": 21,
+    "factory_machine": 22,
+    "factory_craft_group": 23,
+    "factory_craft_showing_type": 24,
+    "equipment_formula": 25,
+    "equipment_formula_pack": 26,
+    "equipment_suit": 27,
+    "gameplay_domain": 28,
+    "gameplay_property_curve": 29,
+    "gameplay_stat_property": 30,
+    "gameplay_unlock": 31,
+    "item": 32,
+    "gameplay_skill_group": 33,
+    "gameplay_skill": 34,
+    "gameplay_talent_group": 35,
+    "gameplay_talent": 36,
+    "gameplay_progression": 37,
+    "asset_entity": 38,
+    "asset": 39,
+    "actor": 40,
+    "audio": 41,
+    "file": 42,
 }
-
 NODE_ID_PREFIXES = (
     "story",
     "option_group",
@@ -2938,6 +3144,11 @@ NODE_ID_PREFIXES = (
     "enemy_tag",
     "enemy_attribute_modifier",
     "buff",
+    "factory_recipe",
+    "factory_item",
+    "factory_machine",
+    "factory_craft_group",
+    "factory_craft_showing_type",
     "equipment_formula",
     "equipment_formula_pack",
     "equipment_suit",
@@ -2959,10 +3170,7 @@ NODE_ID_PREFIXES = (
     "timeline",
     "timeline_option_route",
     "runtime_jump_clip",
-    "file",
-    "table_row",
 )
-
 OPTION_BRANCH_EDGE_KINDS = (
     "option_anchor_after",
     "option_first_line",
