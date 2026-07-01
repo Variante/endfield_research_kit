@@ -95,7 +95,7 @@ Current confidence by area:
 | Audio | High for story linkage, moderate for full semantics | Event/media links and line usage are strong; non-story semantic classification can improve. |
 | Video | Moderate | Narrative and FMV links are partially bound; some references and standalone files remain unresolved. |
 | Texture assets | High | Texture2D extraction and collision handling are verified by dedicated audits. |
-| Models/materials | Moderate | Broad asset indexes exist, but semantic entity-level reconstruction is incomplete. |
+| Models/materials | Moderate | Broad asset indexes and PathID-resolved material/texture relations exist, but semantic entity-level reconstruction is incomplete. |
 | Asset bundles | High at VFS layer, partial at per-AB clean-certification layer | Bundle entries are indexed without missing chunks, but older logs cannot certify every AB warning-free. |
 | MonoBehaviour/gameplay payloads | Moderate and improving | Large classes of managed-reference payloads are decoded or bounded; remaining incomplete files are concentrated in known schema gaps. |
 | Characters/animation | Deep for selected actors, partial game-wide | Wulfa/Zhuangfy/Mifu recovery is substantial; general game-wide animation reconstruction is not solved. |
@@ -128,36 +128,41 @@ basic access to packed files.
 
 The source graph is large enough to support cross-domain investigation:
 
-- Nodes: 666,982.
-- Edges: 507,277.
-- Aliases: 519,921.
-- Files: 290,040.
+- Nodes: 756,400.
+- Edges: 1,064,312.
+- Aliases: 1,184,043.
+- Files: 334,269.
 
 Selected node counts:
 
-- Assets: 254,597.
-- Audio: 34,542.
-- Lines: 38,232.
-- Stories: 9,354.
-- Options: 4,219.
-- Option groups: 2,722.
-- Missions: 649.
-- Actors: 1,604.
-- Videos: 928.
-- Table rows: 27,544.
+- Assets: 292,020.
+- Audio: 35,151.
+- Lines: 39,216.
+- Stories: 9,570.
+- Options: 4,376.
+- Option groups: 2,854.
+- Missions: 655.
+- Actors: 1,629.
+- Videos: 942.
+- Table rows: 29,162.
 
 Selected edge counts:
 
-- `indexes_asset`: 254,597.
-- `has_line`: 39,874.
-- `uses_audio`: 24,315.
-- `has_story`: 9,271.
-- `has_option`: 4,217.
-- `option_enters_story` / `option_first_line`: 2,449 each.
-- `option_path_line`: 6,284.
-- `has_narrative_video`: 316.
+- `indexes_asset`: 292,020.
+- `has_line`: 40,863.
+- `uses_audio`: 24,936.
+- `has_story`: 9,472.
+- `has_option`: 5,299.
+- `option_enters_story`: 3,039.
+- `option_first_line`: 3,037.
+- `option_path_line`: 7,168.
+- `has_narrative_video`: 320.
 - `source_references_story`: 933.
 - `has_story_source_link`: 861.
+- `uses_texture`: 229,557.
+- `uses_material`: 8,450.
+- `referenced_by_material`: 190,457.
+- `referenced_by_model`: 37,702.
 
 The graph is useful as an evidence index. It should not be mistaken for full
 runtime simulation.
@@ -404,18 +409,19 @@ Understanding is strong at file/index level.
 
 The WebUI asset index reports:
 
-- Total asset entries: 251,697.
-- Images: 132,003.
-- Models: 53,626.
+- Total asset entries: 292,020.
+- Images: 158,259.
+- Models: 64,987.
 - Videos: 942.
-- JSON: 65,126.
+- JSON: 67,832.
+- Relation records: 84,103.
+- Material JSON records with texture links: 48,470.
+- Resolved texture links: 190,457.
 
 This is enough to search and browse a broad slice of exported game assets. The
-source graph also indexes 254,597 asset nodes, which roughly matches the asset
-index scale.
-
-The limitation is semantic mapping. Many assets are known as exported files,
-path IDs, type buckets, or recovered paths. Fewer are known as fully explained
+source graph also indexes 292,020 asset nodes, which matches the active full
+asset index scale. The limitation is semantic mapping. Many assets are known as
+exported files, path IDs, type buckets, or recovered paths. Fewer are known as fully explained
 game concepts such as "this exact model is used by this mission prop in this
 runtime scene with this material variant and this animation state".
 
@@ -425,11 +431,11 @@ Understanding is strong for story-facing audio.
 
 The source graph includes:
 
-- Audio nodes: 34,542.
+- Audio nodes: 35,151.
 - `audio_path` edges: 25,245.
 - `defines_audio` edges: 25,245.
 - `speaker_channel` edges: 25,245.
-- `uses_audio` edges: 24,315.
+- `uses_audio` edges: 24,936.
 
 The WebUI build also post-processes generated conversation JSON with playable
 `audioSrc` links. This makes the story audio experience usable and gives a
@@ -791,32 +797,37 @@ Remaining limitations:
 
 Understanding is moderate.
 
-The asset index has 53,626 model entries and 65,126 JSON entries, and the
-source graph includes material, mesh, texture, shader, and asset relationships.
+The asset index has 64,987 model entries, 67,832 JSON entries, and 84,103
+relation records. The source graph includes material, mesh, texture, shader,
+and asset-index material/texture relationships.
 This supports browsing and targeted lookup.
 
 2026-07-01 source graph asset progress: Gameplay entries now get conservative
 asset neighbors when an exact gameplay ID, icon ID, or model-path stem appears
-inside an exported asset path. The fast CN source graph build verifies 3,652
-`has_gameplay_asset` edges: 1,675 weapon edges, 1,097 character edges, and 880
+inside an exported asset path. The fast CN source graph build verifies 5,991
+`has_gameplay_asset` edges: 2,078 weapon edges, 2,153 character edges, and 1,760
 equipment edges. This maps common weapon meshes/materials, character UI/portrait
 textures, and equipment icon textures to semantic Gameplay entries without
 using fuzzy localized-name matching.
 
-2026-07-01 next asset-semantics target: a read-only asset audit found that the
-current full asset index has 251,697 entries but no populated `relations`, while
-Material JSON texture slots carry many nonzero `m_PathID` references and no
-useful texture names. The next compact asset-catalog slice should resolve
-material texture references by PathID, populate asset-index relations, and let
-the source graph ingest those relations so asset queries can answer material and
-texture "used by" questions without scanning all Material JSON every build.
+2026-07-01 asset relation progress: the full asset index now resolves Material
+`m_Texture.m_PathID` references when Unity texture names are blank, so the
+current index no longer has an empty relation surface. The rebuilt index has
+84,103 relation records, including 56,789 entries with `textures`, 8,319 with
+`materials`, 27,314 with `referencedByMaterials`, and 5,657 with
+`referencedByModels`. A fast source graph rebuild verified 291,078 `asset_pid`
+aliases, 291,078 `asset_pathid` aliases, 229,557 `uses_texture` edges, 8,450
+`uses_material` edges, 190,457 `referenced_by_material` edges, and 37,702
+`referenced_by_model` edges. Asset queries can now follow many material and
+texture "used by" chains without scanning all Material JSON during graph use.
 
 The deeper semantic model is still incomplete:
 
 - Many model files are not yet mapped to gameplay entities or runtime prefab
   usage.
-- Material and texture dependency chains are not fully normalized for every
-  asset.
+- Material and texture dependency chains are now normalized for many
+  PathID-resolved Material JSON links, but runtime material variants, shader
+  behavior, and scene-specific swaps are not fully classified.
 - Scene/level placement is partially represented, but not complete enough for
   a full in-game object map.
 - Asset variants, LODs, effects, and runtime swaps require more classification.

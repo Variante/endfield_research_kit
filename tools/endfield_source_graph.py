@@ -433,20 +433,78 @@ class SourceGraphBuilder:
         path = WEBUI_DATA / "assets" / "index.json"
         payload = read_json(path, {})
         root_node = self.add_node("dataset", "webui_assets", name="WebUI asset index", path=slash(path))
+        asset_nodes_by_rel: dict[str, str] = {}
+
+        def asset_node_for_rel(rel_value: Any) -> str:
+            rel_text = safe_key(rel_value)
+            if not rel_text:
+                return ""
+            node = asset_nodes_by_rel.get(rel_text)
+            if node:
+                return node
+            return self.add_node(
+                "asset",
+                rel_text,
+                name=Path(rel_text).name,
+                source=rel_text.split("/", 1)[0],
+                path=rel_text,
+            )
+
+        def add_pid_aliases(pid_value: Any, node_id: str) -> None:
+            raw = safe_key(pid_value).upper()
+            if raw.startswith("PID:"):
+                raw = raw[4:]
+            if raw.startswith("0X"):
+                raw = raw[2:]
+            if not re.fullmatch(r"[0-9A-F]{1,16}", raw):
+                return
+            number = int(raw, 16)
+            pid = f"{number:016X}"
+            self.add_alias(f"pid:{pid}", node_id, kind="asset_pid", source="webui/assets")
+            signed_path_id = number - (1 << 64) if number & (1 << 63) else number
+            self.add_alias(f"pathid:{signed_path_id}", node_id, kind="asset_pathid", source="webui/assets")
+
+        def relation_data(item: dict[str, Any]) -> dict[str, Any]:
+            return {
+                key: item.get(key)
+                for key in ("slot", "name", "pid", "rel")
+                if item.get(key) not in (None, "")
+            }
+
+        def relation_evidence(item: dict[str, Any]) -> str:
+            slot = safe_key(item.get("slot"))
+            name = safe_key(item.get("name"))
+            pid = safe_key(item.get("pid"))
+            return " ".join(part for part in (slot, name or pid) if part)
+
         for entry in payload.get("entries") or []:
             rel = safe_key(entry.get("r"))
             if not rel:
                 continue
             kind = safe_key(entry.get("k")) or "asset"
             size = entry.get("s")
+            pid = safe_key(entry.get("pid")).upper()
+            data = {
+                key: value
+                for key, value in {
+                    "type": kind,
+                    "size": size,
+                    "preview": entry.get("p"),
+                    "pid": pid,
+                    "category": entry.get("ic"),
+                    "materialLike": bool(entry.get("mt")) if entry.get("mt") else None,
+                }.items()
+                if value not in (None, "")
+            }
             node = self.add_node(
                 "asset",
                 rel,
                 name=Path(rel).name,
                 source=rel.split("/", 1)[0],
                 path=rel,
-                data={"type": kind, "size": size, "preview": entry.get("p")},
+                data=data,
             )
+            asset_nodes_by_rel[rel] = node
             self.add_edge(root_node, node, "indexes_asset", source="webui/assets")
             self.add_file(rel, kind=kind, source=rel.split("/", 1)[0], size=size)
             stem = Path(rel).stem.lower()
@@ -455,9 +513,84 @@ class SourceGraphBuilder:
             self.asset_paths.append(rel)
             self.add_alias(stem, node, kind="asset_stem", source="webui/assets")
             self.add_alias(Path(rel).name.lower(), node, kind="asset_name", source="webui/assets")
+            if pid:
+                add_pid_aliases(pid, node)
             if entry.get("p"):
-                preview = self.add_node("asset", entry["p"], name=Path(entry["p"]).name, path=entry["p"])
+                preview = asset_node_for_rel(entry["p"])
                 self.add_edge(node, preview, "previewed_by", source="webui/assets")
+
+        relations = payload.get("relations") or {}
+        if isinstance(relations, dict):
+            for rel, relation in sorted(relations.items()):
+                if not isinstance(relation, dict):
+                    continue
+                src_node = asset_node_for_rel(rel)
+                if not src_node:
+                    continue
+
+                for item in relation.get("materials") or []:
+                    if not isinstance(item, dict):
+                        continue
+                    dst_rel = safe_key(item.get("rel"))
+                    if not dst_rel:
+                        continue
+                    dst_node = asset_node_for_rel(dst_rel)
+                    self.add_edge(
+                        src_node,
+                        dst_node,
+                        "uses_material",
+                        source="webui/assets",
+                        evidence=safe_key(item.get("name")) or Path(dst_rel).stem,
+                        data=relation_data(item),
+                    )
+
+                for item in relation.get("textures") or []:
+                    if not isinstance(item, dict):
+                        continue
+                    dst_rel = safe_key(item.get("rel"))
+                    if not dst_rel:
+                        continue
+                    dst_node = asset_node_for_rel(dst_rel)
+                    self.add_edge(
+                        src_node,
+                        dst_node,
+                        "uses_texture",
+                        source="webui/assets",
+                        evidence=relation_evidence(item),
+                        data=relation_data(item),
+                    )
+
+                for item in relation.get("referencedByMaterials") or []:
+                    if not isinstance(item, dict):
+                        continue
+                    dst_rel = safe_key(item.get("rel"))
+                    if not dst_rel:
+                        continue
+                    dst_node = asset_node_for_rel(dst_rel)
+                    self.add_edge(
+                        src_node,
+                        dst_node,
+                        "referenced_by_material",
+                        source="webui/assets",
+                        evidence=relation_evidence(item),
+                        data=relation_data(item),
+                    )
+
+                for item in relation.get("referencedByModels") or []:
+                    if not isinstance(item, dict):
+                        continue
+                    dst_rel = safe_key(item.get("rel"))
+                    if not dst_rel:
+                        continue
+                    dst_node = asset_node_for_rel(dst_rel)
+                    self.add_edge(
+                        src_node,
+                        dst_node,
+                        "referenced_by_model",
+                        source="webui/assets",
+                        evidence=safe_key(item.get("name")) or Path(dst_rel).stem,
+                        data=relation_data(item),
+                    )
 
     def ingest_videos(self) -> None:
         path = WEBUI_DATA / "assets" / "videos.json"

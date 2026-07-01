@@ -121,8 +121,8 @@ python tools\endfield_source_graph.py query wpn_pistol_0001 --kind weapon
 
 The same build now links Gameplay entries to exported asset nodes by exact
 Gameplay ID, icon ID, or model-path stem containment in asset paths. The fast
-CN verification build produced 3,652 `has_gameplay_asset` edges: 1,675 from
-weapons, 1,097 from characters, and 880 from equipment. Evidence values record
+CN verification build produced 5,991 `has_gameplay_asset` edges: 2,078 from
+weapons, 2,153 from characters, and 1,760 from equipment. Evidence values record
 the source field (`id`, `iconId`, or `modelPath`) so later audits can separate
 broad ID matches from icon/model-path matches.
 
@@ -149,6 +149,16 @@ verified 3,974 `requires_item` edges total, including 960 from `itemBundle`,
 504 from `items`, 192 from `goldCost`, and 776 total edges to `item_gold`.
 Numeric item counts at or below 0 are filtered, so the rebuilt graph has no
 zero-count required-item edges.
+
+2026-07-01 asset relation ingestion now preserves `pid:<hex>` and
+`pathid:<signed>` aliases for WebUI asset-index entries with exported PathIDs
+and ingests asset-index material/texture relation blocks. After rebuilding the
+full asset index, a fast CN graph build with
+`--skip-asset-maps --skip-reference-rows --skip-followups` verified 291,078
+`asset_pid` aliases, 291,078 `asset_pathid` aliases, 229,557 `uses_texture`
+edges, 8,450 `uses_material` edges, 190,457 `referenced_by_material` edges,
+and 37,702 `referenced_by_model` edges. The current full asset index has 84,103
+relation records and resolves blank-name Material texture slots by `m_PathID`.
 
 Use the quick build for normal story/option/map investigation. Use the full
 build only when Unity asset container, PathID, or exported asset relationship
