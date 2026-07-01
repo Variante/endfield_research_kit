@@ -117,6 +117,12 @@ info, special level-to-map, and factory tables.
 structured-table ingestion adds exact-queryable `weapon`, `equipment`,
 `character`, `character_break_stage`, `character_level_checkpoint`,
 `character_stat_checkpoint`, `character_breakthrough`, `character_potential`,
+`character_tag`, `character_tag_desc`, `character_profession`, `character_type`,
+`character_team`, `character_preset`, `weapon_skill_recommendation`, `dungeon`,
+`character_tutorial`, `character_tutorial_stage`, `character_tutorial_step`,
+`character_trial`, `character_guide`, `training_recommendation`,
+`attribute_meta`, `attribute_display_config`, `attribute_display_entry`,
+`composite_attribute`, `attribute_filter`, `interactive_attribute`,
 `enemy`, `enemy_template`, `enemy_attribute_template`,
 `enemy_display_type`, `enemy_ability`, `enemy_attribute_modifier`, `buff`,
 `map`, `level`, `level_loading`, `scene_area`, `map_mark`,
@@ -157,6 +163,9 @@ python tools\endfield_source_graph.py query chr_0017_yvonne --kind character
 python tools\endfield_source_graph.py query chr_0017_yvonne:stat:90:4 --kind character_stat_checkpoint
 python tools\endfield_source_graph.py query chr_0017_yvonne:potential:1 --kind character_potential
 python tools\endfield_source_graph.py query chr_0017_yvonne:breakthrough:charBreak20 --kind character_breakthrough
+python tools\endfield_source_graph.py query aglina_indie --kind character_preset
+python tools\endfield_source_graph.py query dung_aglina_chartrain01 --kind character_tutorial
+python tools\endfield_source_graph.py query attr_1 --kind attribute_meta
 python tools\endfield_source_graph.py query wpn_pistol_0001 --kind weapon
 python tools\endfield_source_graph.py query eny_0018_lbtough --kind enemy
 python tools\endfield_source_graph.py query item_gold --kind item
@@ -188,6 +197,29 @@ this check reports 515 visible entries: 72 weapons, 220 equipment records, 28
 characters, 78 visible enemy entries, and 117 usable items, while preserving 290
 `enemyVariants` as generated payload evidence. This makes authored character
 progression values queryable without simulating runtime formulas.
+
+2026-07-01 character support and attribute dictionary graph progress: source
+graph ingestion now promotes character tags/descriptions, professions, element
+types, presets, teams, weapon recommendations, weapon-skill recommendations,
+tutorials, trials, training thresholds, and shared attribute display metadata. A
+fast CN rebuild verified 75 `character_tag` nodes, 108 `character_tag_desc`
+nodes, 6 professions, 5 character types, 635 presets, 185 teams, 12 unique
+weapon-skill recommendation nodes, 29 dungeons, 22 tutorials, 97 tutorial
+stages, 336 tutorial steps, 7 trials, 6 character guide rows, 80 training
+recommendation rows, 94 attribute meta rows, 55 attribute display configs, 127
+attribute display entries, 9 composite attribute nodes, 1 attribute filter, and
+51 interactive attribute rows. Edge checks verified 274 `has_character_tag`,
+635 `preset_uses_character`, 635 `preset_uses_weapon`, 2,340
+`preset_uses_equipment`, 832 `team_includes_preset`, 8
+`team_requires_character`, 115 `character_recommends_weapon`, 174
+`character_recommends_weapon_skill`, 97 `tutorial_has_stage`, 336
+`tutorial_stage_has_step`, 22 `character_training_dungeon`, 86
+`attribute_show_includes_modifier`, 25 `composite_attribute_includes`, 21
+`attribute_filter_includes`, and 204 `interactive_attribute_sets_property`
+edges. A parallel scout identified Spaceship/base room semantics as the next
+compact graph slice: 52 NPC proxy-to-character edges, 108 character spaceship
+skill refs, 140 skill room-type refs, 234 EnvTalk refs, and 68 formula item
+refs are expected from local tables.
 
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,

@@ -745,7 +745,8 @@ separate visible Gameplay entries. Exact queries such as `chr_0017_yvonne`,
 `reward_payshop_wpn_claym_0003`, `domainshop_goods_map01_10001`,
 `chr_0002_endminm_attack1`, `item_proc_bomb_1`, `atk_scale`, `map01`,
 `mark_arrow`, `chr_0017_yvonne:stat:90:4`, `chr_0017_yvonne:potential:1`,
-`chr_0017_yvonne:breakthrough:charBreak20`, and
+`chr_0017_yvonne:breakthrough:charBreak20`, `aglina_indie`,
+`dung_aglina_chartrain01`, `attr_1`, and
 `component_activity_xiranite_cmpt_1` now resolve to semantic
 nodes with source table rows and neighbors. This improves cross-domain lookup;
 it still does not prove formulas beyond generated source-table evidence.
@@ -764,6 +765,21 @@ characters, 78 visible enemy entries, and 117 usable items, while retaining 290
 enemy variants as generated payload evidence. This improves exact lookup for
 character numerical progression; runtime formula evaluation and modifier order
 remain future work.
+
+2026-07-01 source graph character-support and attribute-dictionary progress:
+character tags, tag descriptions, professions, element types, presets, teams,
+weapon recommendations, weapon-skill recommendations, tutorials, trials,
+training thresholds, and shared attribute display metadata are now queryable. A
+fast rebuild verified 635 character presets, 2,340 preset-equipment edges, 832
+team preset-list edges, 274 character-tag edges, 108 tag-description nodes, 115
+recommended-weapon edges, 174 recommended weapon-skill edges, 22 tutorial
+dungeons, 97 tutorial stages, 336 tutorial-step refs, 7 trial rows, 80 training
+recommendation rows, 94 attribute meta rows, 86 attribute show entries, 25
+composite-attribute member edges, 21 attribute-filter entries, and 51
+interactive attribute rows. A parallel scout identified Spaceship/base room
+semantics as the next compact graph slice, with expected local evidence around
+52 NPC proxy-to-character edges, 108 character spaceship skill refs, 140 skill
+room-type refs, 234 EnvTalk refs, and 68 formula item refs.
 
 2026-07-01 source graph item/economy progress: item, reward, reward-drop, and
 shop table semantics are now queryable before Gameplay ingestion. A fast source
