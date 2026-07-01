@@ -253,6 +253,7 @@ class SourceGraphBuilder:
         self.asset_by_name: dict[str, list[str]] = defaultdict(list)
         self.asset_entities_by_base: dict[str, list[str]] = defaultdict(list)
         self.asset_paths: list[str] = []
+        self.gameplay_item_asset_cache: dict[str, list[str]] = {}
         self.alias_count = 0
 
     @property
@@ -1155,6 +1156,7 @@ class SourceGraphBuilder:
             self.add_edge(enemy_node, item_node, "drops_item", source="webui/gameplay", evidence="WikiEnemyDropTable")
             self.add_alias(item_id, item_node, kind="item_id", source="webui/gameplay")
             self.add_alias(item.get("name"), item_node, kind="item_name", source="webui/gameplay")
+            self.add_gameplay_item_asset_edges(item_node, item_id)
 
         for index, buff_id in enumerate(entry.get("bornBuffs") or []):
             buff_id = safe_key(buff_id)
@@ -1383,6 +1385,26 @@ class SourceGraphBuilder:
                     data={"token": token},
                 )
 
+    def add_gameplay_item_asset_edges(self, item_node: str, item_id: str) -> None:
+        item_key = safe_key(item_id)
+        if not item_key:
+            return
+        cache_key = item_key.lower()
+        matches = self.gameplay_item_asset_cache.get(cache_key)
+        if matches is None:
+            matches = [rel for rel in self.asset_paths if cache_key in rel.lower()]
+            self.gameplay_item_asset_cache[cache_key] = matches
+        for rel in matches:
+            asset_node = self.add_node("asset", rel, name=Path(rel).name, path=rel)
+            self.add_edge(
+                item_node,
+                asset_node,
+                "has_gameplay_asset",
+                source="webui/gameplay",
+                evidence="itemId",
+                data={"itemId": item_key, "token": item_key},
+            )
+
     def add_gameplay_source_edges(self, owner_node: str, source: Any, *, edge_kind: str = "defined_by_row") -> None:
         if not isinstance(source, dict):
             return
@@ -1541,6 +1563,7 @@ class SourceGraphBuilder:
         )
         self.add_edge(owner_node, item_node, "requires_item", source="webui/gameplay", evidence=evidence, data={"count": value})
         self.add_alias("item_gold", item_node, kind="item_id", source="webui/gameplay")
+        self.add_gameplay_item_asset_edges(item_node, "item_gold")
 
     def add_gameplay_item_edges(self, owner_node: str, items: Any, *, evidence: str) -> None:
         if not isinstance(items, list):
@@ -1564,6 +1587,7 @@ class SourceGraphBuilder:
             self.add_edge(owner_node, item_node, "requires_item", source="webui/gameplay", evidence=evidence, data={"count": count})
             self.add_alias(item_id, item_node, kind="item_id", source="webui/gameplay")
             self.add_alias(item.get("name"), item_node, kind="item_name", source="webui/gameplay")
+            self.add_gameplay_item_asset_edges(item_node, item_id)
 
     def add_story_node(self, story_key: str, data: dict[str, Any], *, path: str = "") -> str:
         summary = data.get("summary")

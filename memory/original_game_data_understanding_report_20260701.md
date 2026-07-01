@@ -726,7 +726,8 @@ nodes, 1,240 progression nodes, 593 item nodes, 392 factory recipe nodes, 485
 factory item descriptor nodes, 38 factory machine nodes, 20 factory craft group
 nodes, 22 factory showing-type nodes, 3,820 required-item edges, 290
 `uses_enemy_attribute_template` edges, 406 `has_enemy_ability` edges, 194
-`starts_with_buff` edges, and 266 `drops_item` edges. The two hidden
+`starts_with_buff` edges, 266 `drops_item` edges, and 6,716
+`has_gameplay_asset` edges including 839 item-to-asset edges. The two hidden
 Endministrator rows remain as `CharacterTable` graph nodes but are no longer
 separate visible Gameplay entries. Exact queries such as `chr_0017_yvonne`,
 `wpn_pistol_0001`, `eny_0018_lbtough`, and `component_activity_xiranite_cmpt_1`
@@ -857,13 +858,16 @@ relation records. The source graph includes material, mesh, texture, shader,
 and asset-index material/texture relationships.
 This supports browsing and targeted lookup.
 
-2026-07-01 source graph asset progress: Gameplay entries now get conservative
-asset neighbors when an exact gameplay ID, icon ID, or model-path stem appears
-inside an exported asset path. The fast CN source graph build verifies 5,877
-`has_gameplay_asset` edges: 2,078 weapon edges, 2,039 character edges, and 1,760
-equipment edges. This maps common weapon meshes/materials, character UI/portrait
-textures, and equipment icon textures to semantic Gameplay entries without
-using fuzzy localized-name matching.
+2026-07-01 source graph asset progress: Gameplay entries and Gameplay cost/drop
+item nodes now get conservative asset neighbors when an exact gameplay ID, icon
+ID, model-path stem, or item ID appears inside an exported asset path. The fast
+CN source graph build verifies 6,716 `has_gameplay_asset` edges: 2,078 weapon
+edges, 2,039 character edges, 1,760 equipment edges, and 839 Gameplay item edges
+across 96 item nodes. The item links split into 836 image edges and 3
+`item_gold` drop-model edges; `item_charpotentialup_chr_9000_endmin` remains
+unmatched. This maps common weapon meshes/materials, character UI/portrait
+textures, equipment icon textures, item icons, and drop models to semantic
+Gameplay nodes without using fuzzy localized-name matching.
 
 2026-07-01 asset relation progress: the full asset index now resolves Material
 `m_Texture.m_PathID` references when Unity texture names are blank, so the
