@@ -309,6 +309,7 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_MapConfig.json",
     "Json_GameplayConfigScriptTaskExtraInfoTable.json",
     "Json_LevelMountPoint.json",
+    "Json_LevelGenForRuntime.json",
 )
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
@@ -316,6 +317,7 @@ DECODED_CONFIG_TARGET_TYPES = {
     "MapConfig",
     "GameplayConfigScriptTaskExtraInfoTable",
     "LevelMountPoint",
+    "LevelGenForRuntime",
     "BambooRaftTaskTable",
     "CharInteractPerformCfgs",
     "NpcAtmosphericDataTable",
@@ -2890,6 +2892,8 @@ class SourceGraphBuilder:
                     subtype = "GameplayConfigScriptTaskExtraInfoTable"
                 if group_name == "Json_LevelMountPoint.json":
                     subtype = "LevelMountPoint"
+                if group_name == "Json_LevelGenForRuntime.json":
+                    subtype = "LevelGenForRuntime"
                 if subtype not in DECODED_CONFIG_TARGET_TYPES:
                     continue
                 self.add_decoded_config_entry(group_node, entry, subtype=subtype)
@@ -2920,6 +2924,8 @@ class SourceGraphBuilder:
             self.add_gameplay_script_task_extra_edges(file_node, entry)
         elif subtype == "LevelMountPoint":
             self.add_level_mount_point_edges(file_node, entry)
+        elif subtype == "LevelGenForRuntime":
+            self.add_level_gen_for_runtime_edges(file_node, entry)
         elif subtype == "AnimationConfig":
             self.add_animation_config_edges(file_node, entry)
         elif subtype == "NpcAtmosphericDataTable":
@@ -4186,6 +4192,171 @@ class SourceGraphBuilder:
                 if type_node:
                     self.add_edge(mount_node, type_node, "level_mount_point_type", source=source, evidence="subRootByType")
         self.update_node_details(file_node, data=compact_payload({**self.decoded_config_entry_data(entry), "levelId": level_id, "mountPointCount": mount_count, "mountTypeCount": len(sub_roots)}, depth=3))
+
+    def add_level_gen_parent_node(self, parent_id: Any, *, source: str = "") -> str:
+        parent_key = safe_key(parent_id)
+        if not parent_key:
+            return ""
+        node = self.add_node("level_gen_parent_data", parent_key, name=parent_key, source=source)
+        self.add_alias(parent_key, node, kind="level_gen_parent_data_id", source=source)
+        return node
+
+    def add_level_gen_doodad_logic_node(self, logic_id: Any, *, source: str = "") -> str:
+        logic_key = safe_key(logic_id)
+        if not logic_key:
+            return ""
+        node = self.add_node("level_gen_doodad_logic", logic_key, name=logic_key, source=source)
+        self.add_alias(logic_key, node, kind="level_gen_doodad_logic_id", source=source)
+        return node
+
+    def add_level_gen_mine_proto_node(self, proto_id: Any, *, source: str = "") -> str:
+        proto_key = safe_key(proto_id)
+        if not proto_key:
+            return ""
+        node = self.add_node("factory_mine_proto", proto_key, name=proto_key, source=source)
+        self.add_alias(proto_key, node, kind="factory_mine_proto_id", source=source)
+        return node
+
+    def add_level_gen_doodad_group_edges(self, file_node: str, entry: dict[str, Any], payload: dict[str, Any]) -> None:
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        group_count = 0
+        outer_count = 0
+        for parent_id_raw, groups in sorted(payload.items(), key=lambda item: safe_key(item[0])):
+            parent_id = safe_key(parent_id_raw)
+            if not parent_id or not isinstance(groups, list):
+                continue
+            parent_node = self.add_level_gen_parent_node(parent_id, source=source)
+            for group_index, group in enumerate(groups):
+                if not isinstance(group, dict):
+                    continue
+                group_id = safe_key(group.get("doodadGroupId"))
+                if not group_id:
+                    continue
+                group_count += 1
+                outer_ids = [safe_key(value) for value in (group.get("outerId") or []) if safe_key(value)]
+                outer_count += len(outer_ids)
+                group_node = self.add_node(
+                    "level_gen_doodad_group",
+                    group_id,
+                    name=group_id,
+                    source=source,
+                    data=compact_payload({
+                        "parentId": parent_id,
+                        "doodadGroupId": group_id,
+                        "centerId": group.get("centerId"),
+                        "mapMarkInstId": group.get("mapMarkInstId"),
+                        "upgradeSource": group.get("upgradeSource"),
+                        "doodadGroupType": group.get("doodadGroupType"),
+                        "outerCount": len(outer_ids),
+                        "factoryPosition": group.get("factoryPosition"),
+                        "upgradeSceneGrade": group.get("upgradeSceneGrade"),
+                        "refreshGroupUpperLimitLevel": group.get("refreshGroupUpperLimitLevel"),
+                        "refreshGroupNumLevel": group.get("refreshGroupNumLevel"),
+                        "outputSpeedPercentage": group.get("outputSpeedPercentage"),
+                    }, depth=4),
+                )
+                self.add_alias(group_id, group_node, kind="level_gen_doodad_group_id", source=source)
+                self.add_edge(file_node, group_node, "defines_level_gen_doodad_group", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id, "parentId": parent_id, "index": group_index})
+                if parent_node:
+                    self.add_edge(group_node, parent_node, "level_gen_doodad_group_parent", source=source, evidence="subDataParentId")
+                center_node = self.add_level_gen_doodad_logic_node(group.get("centerId"), source=source)
+                if center_node:
+                    self.add_edge(group_node, center_node, "level_gen_doodad_group_center", source=source, evidence="centerId")
+                for outer_index, outer_id in enumerate(outer_ids):
+                    outer_node = self.add_level_gen_doodad_logic_node(outer_id, source=source)
+                    if outer_node:
+                        self.add_edge(group_node, outer_node, "level_gen_doodad_group_outer", source=source, evidence=f"outerId[{outer_index}]", data={"index": outer_index})
+                mark_id = safe_key(group.get("mapMarkInstId"))
+                if mark_id:
+                    mark_node = self.add_node("map_mark", mark_id, name=mark_id, source=source)
+                    self.add_alias(mark_id, mark_node, kind="map_mark_id", source=source)
+                    self.add_edge(group_node, mark_node, "level_gen_doodad_group_map_mark", source=source, evidence="mapMarkInstId")
+        self.update_node_details(file_node, data=compact_payload({**self.decoded_config_entry_data(entry), "parentCount": len(payload), "doodadGroupCount": group_count, "outerIdCount": outer_count}, depth=3))
+
+    def add_level_gen_factory_region_edges(self, file_node: str, entry: dict[str, Any], payload: dict[str, Any]) -> None:
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        regions = payload.get("regions")
+        if not isinstance(regions, list):
+            return
+        mine_count = 0
+        for region_index, region in enumerate(regions):
+            if not isinstance(region, dict):
+                continue
+            region_id = safe_key(region.get("regionId"))
+            if not region_id:
+                continue
+            parent_id = safe_key(region.get("subDataParentId"))
+            scene_id = safe_key(region.get("sceneId"))
+            mines = region.get("mines") if isinstance(region.get("mines"), list) else []
+            region_node = self.add_node("factory_region", region_id, name=region_id, source=source, data=compact_payload({"subDataParentId": parent_id, "sceneId": scene_id, "mineCount": len(mines)}, depth=3))
+            self.add_alias(region_id, region_node, kind="factory_region_id", source=source)
+            self.add_edge(file_node, region_node, "defines_level_gen_factory_region", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id, "index": region_index})
+            parent_node = self.add_level_gen_parent_node(parent_id, source=source)
+            if parent_node:
+                self.add_edge(region_node, parent_node, "level_gen_factory_region_parent", source=source, evidence="subDataParentId")
+            level_node = self.add_level_node(scene_id, source=source)
+            if level_node:
+                self.add_edge(region_node, level_node, "level_gen_factory_region_in_level", source=source, evidence="sceneId")
+                self.add_edge(level_node, region_node, "level_has_factory_region", source=source, evidence="LevelGenForRuntime.sceneId")
+                self.add_level_map_edge(level_node, scene_id, source=source, evidence="level_gen_runtime_scene")
+            for mine_index, mine in enumerate(mines):
+                if not isinstance(mine, dict):
+                    continue
+                logic_id = safe_key(mine.get("logicMineDataId"))
+                if not logic_id:
+                    continue
+                mine_count += 1
+                mine_key = f"{region_id}:{logic_id}"
+                mine_node = self.add_node(
+                    "factory_mine",
+                    mine_key,
+                    name=logic_id,
+                    source=source,
+                    data=compact_payload({
+                        "regionId": region_id,
+                        "sceneId": scene_id,
+                        "subDataParentId": parent_id,
+                        "logicMineDataId": logic_id,
+                        "protoId": mine.get("protoId"),
+                        "itemId": mine.get("itemId"),
+                        "offset": mine.get("offset"),
+                        "mineHeight": mine.get("mineHeight"),
+                        "densityLevel": mine.get("densityLevel"),
+                        "trans": mine.get("trans"),
+                    }, depth=5),
+                )
+                self.add_alias(mine_key, mine_node, kind="factory_mine_key", source=source)
+                self.add_alias(logic_id, mine_node, kind="factory_mine_logic_id", source=source)
+                self.add_edge(file_node, mine_node, "defines_factory_mine", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id, "index": mine_index})
+                self.add_edge(region_node, mine_node, "factory_region_has_mine", source=source, evidence=f"mines[{mine_index}]")
+                logic_node = self.add_level_gen_doodad_logic_node(logic_id, source=source)
+                if logic_node:
+                    self.add_edge(mine_node, logic_node, "factory_mine_uses_doodad_logic", source=source, evidence="logicMineDataId")
+                proto_node = self.add_level_gen_mine_proto_node(mine.get("protoId"), source=source)
+                if proto_node:
+                    self.add_edge(mine_node, proto_node, "factory_mine_has_proto", source=source, evidence="protoId")
+                item_node = self.add_item_node(mine.get("itemId"), source=source)
+                if item_node:
+                    self.add_edge(mine_node, item_node, "factory_mine_produces_item", source=source, evidence="itemId")
+        self.update_node_details(file_node, data=compact_payload({**self.decoded_config_entry_data(entry), "regionCount": len(regions), "mineCount": mine_count}, depth=3))
+
+    def add_level_gen_for_runtime_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        raw_data = self.read_decoded_config_bytes(entry)
+        if not raw_data:
+            return
+        try:
+            payload = json.loads(raw_data.decode("utf-8-sig"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return
+        if not isinstance(payload, dict):
+            return
+        dp = safe_key(entry.get("dp"))
+        if dp.endswith("DoodadGroupTable.json"):
+            self.add_level_gen_doodad_group_edges(file_node, entry, payload)
+        elif dp.endswith("TotalFactoryRegions.json"):
+            self.add_level_gen_factory_region_edges(file_node, entry, payload)
 
     def mission_runtime_text_key(self, payload: Any) -> str:
         if isinstance(payload, dict):
@@ -12438,6 +12609,11 @@ QUERY_KIND_PRIORITY = {
     "level_script_task_extra": 130,
     "level_mount_point": 131,
     "level_mount_type": 132,
+    "level_gen_parent_data": 133,
+    "level_gen_doodad_group": 134,
+    "level_gen_doodad_logic": 135,
+    "factory_mine": 136,
+    "factory_mine_proto": 137,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -12730,6 +12906,11 @@ NODE_ID_PREFIXES = (
     "level_script_task_extra",
     "level_mount_point",
     "level_mount_type",
+    "level_gen_parent_data",
+    "level_gen_doodad_group",
+    "level_gen_doodad_logic",
+    "factory_mine",
+    "factory_mine_proto",
     "mission",
     "map",
     "level",
