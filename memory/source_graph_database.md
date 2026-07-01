@@ -800,6 +800,29 @@ python tools\endfield_source_graph.py query 100000000 --kind interactive_collect
 python tools\endfield_source_graph.py query map01_lv002 --kind level
 ```
 
+2026-07-01 ModelViewStateControllerData decoded-config progress: source graph
+ingestion now promotes the bounded `ModelViewStateControllerData` decoder from
+`Json_Interactive.json`. A fast CN rebuild to `tmp/source_graph_model_view.sqlite`
+verified 1,145,058 total nodes, 2,032,639 edges, and 1,598,757 aliases. New
+coverage includes 399 unique `model_view_state_controller` nodes, 798
+`defines_model_view_state_controller` source-file edges split evenly across
+Persistent and StreamingAssets, 399 model-id links to `model_config_model`, 582
+`model_view_clip_ref` nodes, 750 `model_view_animator_name` nodes, 923 exact
+clip-asset edges, 823 animator-body clip-ref edges, 619 exact effect-id edges,
+872 animator-body effect-ref edges, and 3,385 animator-name edges. The
+`model_view_state_controller_asset_entity` join currently verifies 0 edges,
+matching the known lean asset-index gap for decoded config model ids. This pass
+uses exact prefix fields and the verified model-id/preTick tail, plus the Data
+index's capped animator-body string scan; it does not decode animator state
+machines, transitions, clip timing, effect playback rules, or emissive/camera
+hash semantics. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query dyn_big_wheel_postmodel --kind model_view_state_controller
+python tools\endfield_source_graph.py query A_imod_map02_sfwaterwheel+1_005_01_open_01 --kind model_view_clip_ref
+python tools\endfield_source_graph.py query defaultlayer --kind model_view_animator_name
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,

@@ -27,7 +27,10 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
-from build_data_index import decode_interactive_template_memorypack
+from build_data_index import (
+    decode_interactive_template_memorypack,
+    decode_model_view_state_controller_memorypack,
+)
 EXPORT_ROOT = ROOT / "export_full"
 WEBUI_DATA = ROOT / "webui" / "data"
 WEBUI_OPTION_OVERRIDES = ROOT / "webui" / "overrides" / "options.json"
@@ -305,6 +308,7 @@ DECODED_CONFIG_TARGET_TYPES = {
     "InteractiveTable",
     "InteractiveTemplateData",
     "InteractiveDataCollections",
+    "ModelViewStateControllerData",
     "LevelConfig",
     "LevelData",
     "LevelScriptData",
@@ -2702,6 +2706,8 @@ class SourceGraphBuilder:
             self.add_interactive_template_data_edges(file_node, entry)
         elif subtype == "InteractiveDataCollections":
             self.add_interactive_collection_edges(file_node, entry)
+        elif subtype == "ModelViewStateControllerData":
+            self.add_model_view_state_controller_edges(file_node, entry)
         elif subtype == "LevelConfig":
             self.add_level_config_edges(file_node, entry)
         elif subtype == "LevelData":
@@ -3449,6 +3455,107 @@ class SourceGraphBuilder:
             if template_id:
                 template_node = self.add_node("interactive_template", template_id, name=template_id, source="webui/game_data")
                 self.add_edge(object_node, template_node, "interactive_object_uses_template", source="webui/game_data", evidence="interactiveDataDict")
+
+    def decode_model_view_state_controller_payload(self, entry: dict[str, Any], raw_data: bytes | None = None) -> dict[str, Any] | None:
+        data = raw_data if raw_data is not None else self.read_decoded_config_bytes(entry)
+        if not data:
+            return None
+        try:
+            decoded = decode_model_view_state_controller_memorypack(self.decoded_config_raw_path(entry), data, len(data))
+        except Exception:
+            return None
+        payload = decoded.get("decoded") if isinstance(decoded, dict) else None
+        return payload if isinstance(payload, dict) else None
+
+    def add_model_view_clip_ref_node(self, clip_name: Any, *, source: str = "") -> str:
+        key = safe_key(clip_name)
+        if not key:
+            return ""
+        node = self.add_node("model_view_clip_ref", key, name=key, source=source)
+        self.add_alias(key, node, kind="model_view_clip_ref_id", source=source)
+        return node
+
+    def add_model_view_animator_name_node(self, animator_name: Any, *, source: str = "") -> str:
+        key = safe_key(animator_name)
+        if not key:
+            return ""
+        node = self.add_node("model_view_animator_name", key, name=key, source=source)
+        self.add_alias(key, node, kind="model_view_animator_name", source=source)
+        return node
+
+    def add_model_view_state_controller_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        raw_data = self.read_decoded_config_bytes(entry)
+        decoded = self.decode_model_view_state_controller_payload(entry, raw_data)
+        fields = parse_summary_assignments(entry.get("t"))
+        model_id = safe_key((decoded or {}).get("modelId")) or safe_key(fields.get("modelId")) or Path(safe_key(entry.get("p"))).stem
+        if not model_id:
+            return
+        source_id = safe_key(entry.get("source")) or "webui"
+        controller_node = self.add_node(
+            "model_view_state_controller",
+            model_id,
+            name=model_id,
+            source="webui/game_data",
+            path=safe_key(entry.get("p")),
+            data=compact_payload(
+                {
+                    **self.decoded_config_entry_data(entry),
+                    "modelId": model_id,
+                    "clipAssetInfoCount": (decoded or {}).get("clipAssetInfoCount"),
+                    "effectIdCount": (decoded or {}).get("effectIdCount"),
+                    "emissiveConfigHashCount": (decoded or {}).get("emissiveConfigHashCount"),
+                    "modelAnimatorDatasCount": (decoded or {}).get("modelAnimatorDatasCount"),
+                    "preTickAnimator": (decoded or {}).get("preTickAnimator"),
+                    "exactLength": (decoded or {}).get("exactLength"),
+                },
+                depth=3,
+            ),
+        )
+        self.add_edge(file_node, controller_node, "defines_model_view_state_controller", source="webui/game_data", evidence=safe_key(entry.get("dp")), data={"source": source_id})
+        self.add_alias(model_id, controller_node, kind="model_view_state_controller_id", source="webui/game_data")
+        model_node = self.add_node("model_config_model", model_id, name=model_id, source="webui/game_data")
+        self.add_edge(controller_node, model_node, "model_view_state_controller_uses_model", source="webui/game_data", evidence="modelId")
+        self.add_alias(model_id, model_node, kind="model_id", source="webui/game_data")
+        self.add_model_asset_entity_edges(controller_node, (model_id,), edge_kind="model_view_state_controller_asset_entity", source="webui/game_data", evidence="modelId")
+
+        seen_clips: set[tuple[str, str]] = set()
+        for clip in (decoded or {}).get("clipAssetInfos") or []:
+            if not isinstance(clip, dict):
+                continue
+            clip_name = safe_key(clip.get("name"))
+            if not clip_name or ("clipAssetInfos", clip_name) in seen_clips:
+                continue
+            seen_clips.add(("clipAssetInfos", clip_name))
+            clip_node = self.add_model_view_clip_ref_node(clip_name, source="webui/game_data")
+            self.add_edge(controller_node, clip_node, "model_view_state_controller_has_clip_asset", source="webui/game_data", evidence="clipAssetInfos", data=compact_payload(clip, depth=1))
+        for index, clip_name in enumerate((decoded or {}).get("modelAnimatorDataClipRefs") or []):
+            clip_key = safe_key(clip_name)
+            if not clip_key or ("modelAnimatorDataClipRefs", clip_key) in seen_clips:
+                continue
+            seen_clips.add(("modelAnimatorDataClipRefs", clip_key))
+            clip_node = self.add_model_view_clip_ref_node(clip_key, source="webui/game_data")
+            self.add_edge(controller_node, clip_node, "model_view_state_controller_animator_references_clip", source="webui/game_data", evidence=f"modelAnimatorDataClipRefs[{index}]")
+
+        seen_effects: set[tuple[str, str]] = set()
+        for field, edge_kind in (
+            ("effectIds", "model_view_state_controller_references_effect"),
+            ("modelAnimatorDataEffectRefs", "model_view_state_controller_animator_references_effect"),
+        ):
+            for index, effect_id in enumerate((decoded or {}).get(field) or []):
+                effect_key = safe_key(effect_id)
+                if not effect_key or (field, effect_key) in seen_effects:
+                    continue
+                seen_effects.add((field, effect_key))
+                effect_node = self.add_node("gameplay_effect", effect_key, name=effect_key, source="webui/game_data")
+                self.add_alias(effect_key, effect_node, kind="gameplay_effect_id", source="webui/game_data")
+                self.add_edge(controller_node, effect_node, edge_kind, source="webui/game_data", evidence=f"{field}[{index}]")
+
+        for index, animator_name in enumerate((decoded or {}).get("animatorNames") or []):
+            animator_key = safe_key(animator_name)
+            if not animator_key:
+                continue
+            animator_node = self.add_model_view_animator_name_node(animator_key, source="webui/game_data")
+            self.add_edge(controller_node, animator_node, "model_view_state_controller_has_animator_name", source="webui/game_data", evidence=f"animatorNames[{index}]")
 
     def add_interactive_collection_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         raw_data = self.read_decoded_config_bytes(entry)
@@ -11051,6 +11158,9 @@ QUERY_KIND_PRIORITY = {
     "interactive_logic_type": 99,
     "interactive_trigger_shape": 100,
     "interactive_guide_shape": 101,
+    "model_view_state_controller": 102,
+    "model_view_clip_ref": 103,
+    "model_view_animator_name": 104,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -11312,6 +11422,9 @@ NODE_ID_PREFIXES = (
     "interactive_logic_type",
     "interactive_trigger_shape",
     "interactive_guide_shape",
+    "model_view_state_controller",
+    "model_view_clip_ref",
+    "model_view_animator_name",
     "mission",
     "map",
     "level",
