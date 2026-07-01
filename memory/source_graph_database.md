@@ -909,6 +909,27 @@ python tools\endfield_source_graph.py query element_fusion_in --kind damage_text
 python tools\endfield_source_graph.py query ui_bat_physical_airborne --kind damage_text_ui_resource
 ```
 
+2026-07-01 LipSync aggregate graph progress: source graph ingestion now includes
+`Json_LipSync.json` as aggregate clip evidence only. A fast CN rebuild to
+`tmp/source_graph_lipsync.sqlite` verified 1,481,831 total nodes, 2,579,643
+edges, and 1,998,807 aliases. New coverage includes 129,732
+`defines_lipsync_clip` source-file edges split as 64,920 Persistent and 64,812
+StreamingAssets entries, collapsed to 64,920 `lipsync_clip` language/audio
+nodes, 4 `lipsync_language` nodes, 64,920 `lipsync_clip_language` edges, 64,920
+`lipsync_for_audio` edges, 64,920 `lipsync_clip_key` aliases, and 64,920
+`lipsync_audio_id` aliases. Language splits are Chinese 16,248, English 16,224,
+Japanese 16,223, and Korean 16,225 unique clips. Source entries sum to
+43,043,103 curve records; unique clip nodes sum to 21,553,022 records after
+Persistent/StreamingAssets collapse. This pass deliberately avoids per-record
+curve nodes and does not infer phoneme/viseme semantics, curve timing, or audio
+playability beyond exact audio-stem links. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query Chinese:au_dlg_c13m1_1_001 --kind lipsync_clip
+python tools\endfield_source_graph.py query Chinese --kind lipsync_language
+python tools\endfield_source_graph.py query au_dlg_c13m1_1_001 --kind audio
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
