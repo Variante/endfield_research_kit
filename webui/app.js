@@ -185,6 +185,7 @@ function initPaneSplitters() {
   setupFilterSplitter({ pane: "#asset-left", panel: "#asset-filter-panel", splitter: "#asset-filter-splitter", list: "#asset-list-wrap", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}assets` });
   setupFilterSplitter({ pane: "#reference-left", panel: "#reference-filter-panel", splitter: "#reference-filter-splitter", list: "#reference-list", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}reference` });
   setupFilterSplitter({ pane: "#updates-left", panel: "#updates-filter-panel", splitter: "#updates-filter-splitter", list: "#updates-list", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}updates` });
+  setupFilterSplitter({ pane: "#gameplay-left", panel: "#gameplay-filter-panel", splitter: "#gameplay-filter-splitter", list: "#gameplay-list", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}gameplay` });
 }
 
 function setupPaneSplitter({ container, pane, splitter, storageKey, minRightWidth = 0 }) {
@@ -508,12 +509,15 @@ function syncUiLanguageSwitch() {
 }
 
 function resolveInitialUiLocale(languageCode) {
+  // The saved preference wins over any ?ui= in the URL, so a stale cross-page
+  // link (which embeds the locale at click time) can't override the user's
+  // remembered choice.
+  const stored = normalizeUiLocale(storageGet(UI_LOCALE_STORAGE_KEY));
+  if (stored) return stored;
+
   const params = new URLSearchParams(window.location.search);
   const fromQuery = normalizeUiLocale(params.get("ui") || params.get("uiLang"));
   if (fromQuery) return fromQuery;
-
-  const stored = normalizeUiLocale(storageGet(UI_LOCALE_STORAGE_KEY));
-  if (stored) return stored;
 
   return resolveUiLocale(getLanguageInfo(languageCode || STATE.language));
 }
@@ -3101,6 +3105,8 @@ function clearConversationPane() {
   $("#conv-warnings").hidden = true;
   $("#conv-related").replaceChildren();
   $("#conv-related").hidden = true;
+  $("#conv-gameplay-link").replaceChildren();
+  $("#conv-gameplay-link").hidden = true;
   $("#conv-meta").textContent = "";
   $("#conv-lines").replaceChildren();
   syncRevealCurrentButton();
@@ -3608,6 +3614,8 @@ async function loadConv(key, { force = false } = {}) {
   $("#conv-warnings").hidden = true;
   $("#conv-related").replaceChildren();
   $("#conv-related").hidden = true;
+  $("#conv-gameplay-link").replaceChildren();
+  $("#conv-gameplay-link").hidden = true;
   $("#conv-meta").textContent = uiText("loading");
   $("#conv-lines").innerHTML = "";
 
@@ -6031,7 +6039,9 @@ function gameplayIdForWikiKey(key) {
   const normalized = String(key || "").trim();
   if (normalized.startsWith("wiki_chr_")) return `chr_${normalized.slice("wiki_chr_".length)}`;
   if (normalized.startsWith("wiki_wpn_")) return `wpn_${normalized.slice("wiki_wpn_".length)}`;
+  if (normalized.startsWith("wiki_eny_")) return `eny_${normalized.slice("wiki_eny_".length)}`;
   if (normalized.startsWith("wiki_item_equip_")) return `item_equip_${normalized.slice("wiki_item_equip_".length)}`;
+  if (normalized.startsWith("wiki_item_")) return `item_${normalized.slice("wiki_item_".length)}`;
   return "";
 }
 
@@ -6045,27 +6055,28 @@ function gameplayHrefForWikiEntry(entry, conv) {
   return `?${params.toString()}#gameplay`;
 }
 
-function renderGameplayLinkBanner(entry, conv) {
+// Compact "Gameplay" link tag, styled identically to the gameplay page's
+// story-wiki tag so a linked item looks the same on both pages.
+function renderGameplayLinkTag(entry, conv) {
   const href = gameplayHrefForWikiEntry(entry, conv);
   if (!href) return null;
-  const banner = document.createElement("div");
-  banner.className = "conv-related-banner conv-gameplay-link-banner";
-  const heading = document.createElement("div");
-  heading.className = "conv-related-heading";
-  heading.textContent = uiText("gameplayLinkHeading") || "Gameplay Data";
-  banner.appendChild(heading);
-  const list = document.createElement("div");
-  list.className = "conv-related-list";
-  const wrap = document.createElement("span");
-  wrap.className = "conv-related-entry";
   const link = document.createElement("a");
-  link.className = "conv-related-link";
+  link.className = "gameplay-detail-tag gameplay-detail-wiki-link gameplay-wiki-link";
   link.href = href;
-  link.textContent = uiText("openGameplayData") || "Open in Gameplay";
-  wrap.appendChild(link);
-  list.appendChild(wrap);
-  banner.appendChild(list);
-  return banner;
+  const label = document.createElement("span");
+  label.textContent = uiText("gameplayLinkHeading") || "Gameplay Data";
+  link.append(label);
+  return link;
+}
+
+// Fill (or clear) the header's gameplay-link slot for the current conversation.
+function syncConvGameplayLink(entry, conv) {
+  const slot = $("#conv-gameplay-link");
+  if (!slot) return;
+  slot.replaceChildren();
+  const tag = renderGameplayLinkTag(entry, conv);
+  if (tag) slot.appendChild(tag);
+  slot.hidden = !tag;
 }
 
 function renderConv(conv) {
@@ -6165,6 +6176,7 @@ function renderConv(conv) {
     meta.push(`level_refs=${missionExtras.levelRefs.map(formatLevelRef).join(", ")}`);
   }
   $("#conv-meta").textContent = meta.join(" | ");
+  syncConvGameplayLink(entry, conv);
 
   const warningWrap = $("#conv-warnings");
   warningWrap.replaceChildren();
@@ -6178,8 +6190,6 @@ function renderConv(conv) {
   const relatedWrap = $("#conv-related");
   if (relatedWrap) {
     relatedWrap.replaceChildren();
-    const gameplayLinkBlock = renderGameplayLinkBanner(entry, conv);
-    if (gameplayLinkBlock) relatedWrap.appendChild(gameplayLinkBlock);
     const related = Array.isArray(conv.relatedScenes) ? conv.relatedScenes : [];
     if (related.length) {
       const banner = document.createElement("div");
@@ -8808,8 +8818,8 @@ function exportedAssetHref(relPath) {
 
 function highlightTextFragment(text, q) {
   let safe = escapeHtml(text || "");
-  if (q) {
-    const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig");
+  const re = window.WebUI.highlightRegex(q);
+  if (re) {
     safe = safe.replace(re, (m) => `<mark>${m}</mark>`);
   }
   return safe;

@@ -1,334 +1,31 @@
-(() => {
+﻿(() => {
   const FILTER_PANEL_STORAGE_KEY = "gameplay_filters_collapsed";
+  const COLLAPSED_KINDS_STORAGE_KEY = "gameplay_collapsed_kinds";
+  const LEVEL_FRACTION_STORAGE_KEY = "gameplay_level_fraction";
+  const GAMEPLAY_DATA_VERSION = "20260701-gp5";
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
-  const TEXTS = {
-    zh: {
-      tab: "\u5b9e\u6218",
-      title: "\u5b9e\u6218\u6570\u636e",
-      countLabel: "\u6761\u76ee",
-      search: "\u641c\u7d22\u6b66\u5668 / \u88c5\u5907 / \u89d2\u8272 / \u654c\u4eba / \u6280\u80fd / \u6570\u503c",
-      showFilters: "\u663e\u793a\u7b5b\u9009",
-      hideFilters: "\u9690\u85cf\u7b5b\u9009",
-      reset: "\u91cd\u7f6e\u7b5b\u9009",
-      basicFilters: "\u57fa\u7840\u7b5b\u9009",
-      kind: "\u7c7b\u578b",
-      group: "\u5206\u7ec4",
-      job: "\u804c\u4e1a",
-      characterPropertyFilter: "\u4e3b\u5c5e\u6027",
-      weaponTypeFilter: "\u6b66\u5668\u7c7b\u578b",
-      equipmentTypeFilter: "\u88c5\u5907\u7c7b\u578b",
-      rareLevel: "\u7a00\u6709\u5ea6",
-      listUnit: "\u6761",
-      empty: "\u4ece\u5de6\u4fa7\u9009\u62e9\u4e00\u6761\u5b9e\u6218\u6570\u636e",
-      noData: "\u5c1a\u672a\u6784\u5efa\u5b9e\u6218\u6570\u636e\u3002\u8fd0\u884c python scripts\\build_gameplay_data.py\u3002",
-      noResults: "\u6ca1\u6709\u5339\u914d\u7684\u6761\u76ee",
-      loading: "\u52a0\u8f7d\u5b9e\u6218\u6570\u636e...",
-      loadError: "\u52a0\u8f7d\u5931\u8d25: {message}",
-      weapon: "\u6b66\u5668",
-      character: "\u89d2\u8272",
-      equipment: "\u88c5\u5907",
-      enemy: "\u654c\u4eba",
-      storyWiki: "\u5267\u60c5 Wiki",
-      openStoryWiki: "\u5728\u5267\u60c5\u9875\u6253\u5f00",
-      id: "ID",
-      rarity: "\u7a00\u6709\u5ea6",
-      groupFact: "\u5206\u7ec4",
-      weaponType: "\u6b66\u5668\u7c7b\u578b",
-      maxLevel: "\u6700\u5927\u7b49\u7ea7",
-      modelPath: "\u6a21\u578b\u8def\u5f84",
-      baseAtkMax: "\u6ee1\u7ea7\u57fa\u7840\u653b\u51fb",
-      profession: "\u804c\u4e1a",
-      element: "\u5c5e\u6027",
-      defaultWeapon: "\u9ed8\u8ba4\u6b66\u5668",
-      description: "\u63cf\u8ff0",
-      weaponSkills: "\u6b66\u5668\u63d0\u4f9b\u7684\u6280\u80fd / \u6548\u679c",
-      characterSkills: "\u89d2\u8272\u6280\u80fd",
-      enemyAbilities: "\u654c\u4eba\u80fd\u529b",
-      enemyDetails: "\u654c\u4eba\u8be6\u60c5",
-      combatValues: "\u6218\u6597\u6570\u503c",
-      talents: "\u5929\u8d4b / \u88ab\u52a8",
-      level: "\u7b49\u7ea7",
-      effect: "\u6548\u679c",
-      values: "\u6570\u503c",
-      maxEffect: "\u6ee1\u7ea7\u6548\u679c",
-      source: "\u6765\u6e90",
-      fileName: "\u6587\u4ef6\u540d",
-      internalName: "\u5185\u90e8\u540d",
-      actionData: "\u52a8\u4f5c\u6570\u636e",
-      actionSkillIds: "\u52a8\u4f5c ID",
-      levelUpCosts: "\u5347\u7ea7\u6d88\u8017",
-      gold: "\u91d1\u5e01",
-      materials: "\u6750\u6599",
-      rank: "\u9636",
-      unlockHint: "\u89e3\u9501\u6761\u4ef6",
-      requiredItems: "\u9700\u6c42\u6750\u6599",
-      passiveSkill: "\u88ab\u52a8\u6280\u80fd",
-      factorySkill: "\u57fa\u5efa\u6280\u80fd",
-      equipmentBreak: "\u88c5\u5907\u7a81\u7834",
-      attributeNode: "\u5c5e\u6027\u8282\u70b9",
-      upgradeNodes: "\u7a81\u7834\u8282\u70b9",
-      selectedLevel: "\u663e\u793a\u7b49\u7ea7",
-      weaponStats: "\u6b66\u5668\u5c5e\u6027",
-      equipmentStats: "\u88c5\u5907\u5c5e\u6027",
-      enemyStats: "\u654c\u4eba\u5c5e\u6027",
-      equipmentSuit: "\u5957\u88c5\u6548\u679c",
-      equipmentFormula: "\u5236\u9020\u914d\u65b9",
-      partType: "\u90e8\u4f4d",
-      minWearLevel: "\u7a7f\u6234\u7b49\u7ea7",
-      domain: "\u5730\u533a",
-      suit: "\u5957\u88c5",
-      templateId: "\u6a21\u677f ID",
-      attrTemplateId: "\u5c5e\u6027\u6a21\u677f ID",
-      displayType: "\u663e\u793a\u7c7b\u578b",
-      modelId: "\u6a21\u578b ID",
-      aiTemplateId: "AI \u6a21\u677f",
-      nickname: "\u522b\u540d",
-      dangerous: "\u5371\u9669",
-      bornBuffs: "\u51fa\u751f Buff",
-      attrModifiers: "\u5c5e\u6027\u4fee\u6b63",
-      damageScalars: "\u4f24\u5bb3\u7cfb\u6570",
-      resilience: "\u97e7\u6027",
-      independentAttributes: "\u72ec\u7acb\u5c5e\u6027",
-      tags: "\u6807\u7b7e",
-      distribution: "\u5206\u5e03",
-      dropItems: "\u6389\u843d",
-      formula: "\u914d\u65b9",
-      pack: "\u5236\u9020\u5305",
-      unlock: "\u89e3\u9501",
-      equipCount: "\u4ef6\u6570",
-      displayAttrs: "\u5c55\u793a\u5c5e\u6027",
-      characterStats: "\u89d2\u8272\u5c5e\u6027",
-      statCheckpoints: "\u5c5e\u6027\u6570\u503c",
-      breakStage: "\u7a81\u7834\u9636\u6bb5",
-      stat_baseAtk: "\u57fa\u7840\u653b\u51fb",
-      stat_hp: "\u751f\u547d\u503c",
-      stat_atk: "\u653b\u51fb\u529b",
-      stat_def: "\u9632\u5fa1\u529b",
-      stat_str: "\u529b\u91cf",
-      stat_agi: "\u654f\u6377",
-      stat_wis: "\u667a\u8bc6",
-      stat_will: "\u610f\u5fd7",
-      stat_physical_damage_taken: "受到的物理伤害",
-      stat_fire_damage_taken: "受到的灼热伤害",
-      stat_pulse_damage_taken: "受到的电磁伤害",
-      stat_cryst_damage_taken: "受到的寒冷伤害",
-      stat_natural_damage_taken: "受到的自然伤害",
-      stat_ether_damage_taken: "受到的超域伤害",
-      stat_critical_rate: "暴击率",
-      stat_normal_attack_efficiency: "普通攻击效率",
-      stat_ultimate_skill_efficiency: "终结技充能效率",
-      stat_heal_taken: "受治疗效果",
-      stat_healing_taken_scalar: "受治疗倍率",
-      stat_fire_burst_damage: "灼热爆发伤害",
-      stat_pulse_burst_damage: "电磁爆发伤害",
-      stat_cryst_burst_damage: "寒冷爆发伤害",
-      stat_natural_burst_damage: "自然爆发伤害",
-      stat_ultimate_sp_gain: "终结技充能效率",
-      stat_broken_unit_damage: "失衡目标伤害",
-      stat_all_damage_taken_scalar: "受到的所有伤害",
-      stat_all_skill_damage: "所有技能伤害",
-      stat_cryst_pulse_damage: "寒冷和电磁伤害加成",
-      stat_spell_damage: "法术伤害",
-      stat_main_attr: "主能力",
-      stat_sub_attr: "副能力",
-      stat_fire_natural_damage: "灼热和自然伤害",
-      stat_heal_output: "\u6cbb\u7597\u6548\u679c",
-      stat_skill_damage: "\u6218\u6280\u4f24\u5bb3",
-      stat_combo_skill_damage: "\u8fde\u643a\u6280\u4f24\u5bb3",
-      stat_normal_attack_damage: "\u666e\u653b\u4f24\u5bb3",
-      stat_physical_damage: "\u7269\u7406\u4f24\u5bb3",
-      stat_fire_damage: "\u707c\u70ed\u4f24\u5bb3",
-      stat_pulse_damage: "\u7535\u78c1\u4f24\u5bb3",
-      stat_cryst_damage: "\u5bd2\u51b7\u4f24\u5bb3",
-      stat_natural_damage: "\u81ea\u7136\u4f24\u5bb3",
-      stat_infliction: "\u6e90\u77f3\u6280\u827a\u5f3a\u5ea6",
-      progression: "\u517b\u6210",
-      upgradeCurve: "\u5347\u7ea7\u66f2\u7ebf",
-      weaponBreakthroughs: "\u6b66\u5668\u7a81\u7834",
-      weaponTalentBounds: "\u6b66\u5668\u5929\u8d4b\u4e0a\u9650",
-      weaponStatCurve: "\u6b66\u5668\u5c5e\u6027\u66f2\u7ebf",
-      characterStatCurve: "\u89d2\u8272\u5c5e\u6027\u66f2\u7ebf",
-      rawMaxLevel: "\u539f\u59cb\u6700\u5927\u7b49\u7ea7",
-      extraRawRows: "\u8d85\u51fa\u53ef\u7528\u4e0a\u9650\u884c",
-      characterLevelCurve: "\u89d2\u8272\u7b49\u7ea7\u66f2\u7ebf",
-      characterBreakStages: "\u7a81\u7834\u9636\u6bb5",
-      characterBreakthroughs: "\u7a81\u7834\u6d88\u8017",
-      characterPotentials: "\u6f5c\u80fd",
-      stage: "\u9636\u6bb5",
-      levelRange: "\u7b49\u7ea7\u8303\u56f4",
-      baseAtk: "\u57fa\u7840\u653b\u51fb",
-      exp: "\u7ecf\u9a8c",
-      cumulativeExp: "\u7d2f\u8ba1\u7ecf\u9a8c",
-      cumulativeGold: "\u7d2f\u8ba1\u91d1\u5e01",
-      skillBounds: "\u6280\u80fd\u8303\u56f4",
-      skillCaps: "\u6280\u80fd\u4e0a\u9650",
-      breakStatus: "\u7a81\u7834\u72b6\u6001",
-      expItems: "\u7ecf\u9a8c\u6750\u6599",
-      potential: "\u6f5c\u80fd",
-      showLevel: "\u663e\u793a\u7b49\u7ea7",
-      generated: "\u751f\u6210\u65f6\u95f4",
-    },
-    en: {
-      tab: "Gameplay",
-      title: "Gameplay Data",
-      countLabel: "entries",
-      search: "Search weapon / equipment / character / enemy / skill / stat",
-      showFilters: "Show filters",
-      hideFilters: "Hide filters",
-      reset: "Reset filters",
-      basicFilters: "Basic filters",
-      kind: "Kind",
-      group: "Group",
-      job: "Job",
-      characterPropertyFilter: "Main property",
-      weaponTypeFilter: "Weapon type",
-      equipmentTypeFilter: "Equipment type",
-      rareLevel: "Rare level",
-      listUnit: "items",
-      empty: "Select a gameplay entry",
-      noData: "Gameplay data has not been built. Run python scripts\\build_gameplay_data.py.",
-      noResults: "No matching entries",
-      loading: "Loading gameplay data...",
-      loadError: "Load failed: {message}",
-      weapon: "Weapon",
-      character: "Character",
-      equipment: "Equipment",
-      enemy: "Enemy",
-      storyWiki: "Story wiki",
-      openStoryWiki: "Open in Story",
-      id: "ID",
-      rarity: "Rarity",
-      groupFact: "Group",
-      weaponType: "Weapon type",
-      maxLevel: "Max level",
-      modelPath: "Model path",
-      baseAtkMax: "Base ATK at max",
-      profession: "Profession",
-      element: "Element",
-      defaultWeapon: "Default weapon",
-      description: "Description",
-      weaponSkills: "Weapon-provided skills / effects",
-      characterSkills: "Character skills",
-      enemyAbilities: "Enemy abilities",
-      enemyDetails: "Enemy details",
-      combatValues: "Combat values",
-      talents: "Talents / passives",
-      level: "Level",
-      effect: "Effect",
-      values: "Values",
-      maxEffect: "Max effect",
-      source: "Source",
-      fileName: "File name",
-      internalName: "Internal name",
-      actionData: "Action data",
-      actionSkillIds: "Action IDs",
-      levelUpCosts: "Level-up costs",
-      gold: "Gold",
-      materials: "Materials",
-      rank: "Rank",
-      unlockHint: "Unlock",
-      requiredItems: "Required materials",
-      passiveSkill: "Passive skill",
-      factorySkill: "Factory skill",
-      equipmentBreak: "Equipment break",
-      attributeNode: "Attribute node",
-      upgradeNodes: "Upgrade nodes",
-      selectedLevel: "Selected level",
-      weaponStats: "Weapon stats",
-      equipmentStats: "Equipment stats",
-      enemyStats: "Enemy stats",
-      equipmentSuit: "Suit effects",
-      equipmentFormula: "Crafting formula",
-      partType: "Part",
-      minWearLevel: "Wear level",
-      domain: "Domain",
-      suit: "Suit",
-      templateId: "Template ID",
-      attrTemplateId: "Attribute template ID",
-      displayType: "Display type",
-      modelId: "Model ID",
-      aiTemplateId: "AI template",
-      nickname: "Nickname",
-      dangerous: "Dangerous",
-      bornBuffs: "Born buffs",
-      attrModifiers: "Attribute modifiers",
-      damageScalars: "Damage scalars",
-      resilience: "Resilience",
-      independentAttributes: "Independent attrs",
-      tags: "Tags",
-      distribution: "Distribution",
-      dropItems: "Drops",
-      formula: "Formula",
-      pack: "Pack",
-      unlock: "Unlock",
-      equipCount: "Pieces",
-      displayAttrs: "Display attrs",
-      characterStats: "Character stats",
-      statCheckpoints: "Stat values",
-      breakStage: "Break stage",
-      stat_baseAtk: "Base ATK",
-      stat_hp: "HP",
-      stat_atk: "ATK",
-      stat_def: "DEF",
-      stat_str: "STR",
-      stat_agi: "AGI",
-      stat_wis: "WIS",
-      stat_will: "WILL",
-      stat_physical_damage_taken: "Physical Taken",
-      stat_fire_damage_taken: "Fire Taken",
-      stat_pulse_damage_taken: "Pulse Taken",
-      stat_cryst_damage_taken: "Cold Taken",
-      stat_natural_damage_taken: "Natural Taken",
-      stat_ether_damage_taken: "Ether Taken",
-      stat_critical_rate: "Critical Rate",
-      stat_normal_attack_efficiency: "Normal ATK Efficiency",
-      stat_ultimate_skill_efficiency: "Ultimate Efficiency",
-      stat_heal_taken: "Heal Taken",
-      stat_healing_taken_scalar: "Healing Taken Scalar",
-      stat_fire_burst_damage: "Fire Burst DMG",
-      stat_pulse_burst_damage: "Pulse Burst DMG",
-      stat_cryst_burst_damage: "Cold Burst DMG",
-      stat_natural_burst_damage: "Natural Burst DMG",
-      stat_ultimate_sp_gain: "Ultimate SP Gain",
-      stat_broken_unit_damage: "Broken Target DMG",
-      stat_fire_natural_damage: "Fire / Natural DMG",
-      stat_heal_output: "Heal Output",
-      stat_skill_damage: "Skill DMG",
-      stat_combo_skill_damage: "Combo DMG",
-      stat_normal_attack_damage: "Normal ATK DMG",
-      stat_physical_damage: "Physical DMG",
-      stat_fire_damage: "Fire DMG",
-      stat_pulse_damage: "Pulse DMG",
-      stat_cryst_damage: "Cold DMG",
-      stat_natural_damage: "Natural DMG",
-      stat_infliction: "Infliction",
-      progression: "Progression",
-      upgradeCurve: "Upgrade curve",
-      weaponBreakthroughs: "Weapon breakthroughs",
-      weaponTalentBounds: "Weapon talent bounds",
-      weaponStatCurve: "Weapon stat curve",
-      characterStatCurve: "Character stat curve",
-      rawMaxLevel: "Raw max level",
-      extraRawRows: "Rows beyond playable cap",
-      characterLevelCurve: "Character level curve",
-      characterBreakStages: "Break stages",
-      characterBreakthroughs: "Breakthrough costs",
-      characterPotentials: "Potentials",
-      stage: "Stage",
-      levelRange: "Level range",
-      baseAtk: "Base ATK",
-      exp: "EXP",
-      cumulativeExp: "Cumulative EXP",
-      cumulativeGold: "Cumulative gold",
-      skillBounds: "Skill bounds",
-      skillCaps: "Skill caps",
-      breakStatus: "Break status",
-      expItems: "EXP items",
-      potential: "Potential",
-      showLevel: "Shown level",
-      generated: "Generated",
-    },
+  // Fixed display order for the data-type groups in the list.
+  const KIND_ORDER = ["character", "weapon", "equipment", "item", "enemy"];
+  // Enemy display types, ordered 领袖 > 头目 > 精英 > 进阶 > 普通 (by displayType id).
+  const ENEMY_TYPE_RANK = { "2": 0, "4": 1, "1": 2, "3": 3, "0": 4 };
+  // Reuse the story page's badge color sets for the kind filter chips, so each
+  // data type reads with the same palette as the story badges (badge-env, ...).
+  const KIND_CHIP_CLASS = {
+    weapon: "kind-chip badge-cutscene",
+    equipment: "kind-chip badge-radio",
+    character: "kind-chip badge-env",
+    enemy: "kind-chip badge-reading",
+    item: "kind-chip badge-mail",
   };
+  // Same palette as a plain badge chip for the list rows (story item style).
+  const KIND_BADGE_CLASS = {
+    weapon: "badge-cutscene",
+    equipment: "badge-radio",
+    character: "badge-env",
+    enemy: "badge-reading",
+    item: "badge-mail",
+  };
+  const TEXTS = window.WebUI.gameplayTexts;
 
   const {
     $,
@@ -337,8 +34,64 @@
     fetchWithProgress,
     formatNumber,
     normalizeUiLocale,
-    textIncludes,
+    parseQuery,
+    queryScore,
+    highlightRegex,
+    storageGet,
+    storageSet,
   } = window.WebUI;
+
+  // Escape a value and wrap any active search tokens in <mark>, matching the
+  // story page's search-term highlighting.
+  function highlightText(value) {
+    const safe = escapeHtml(value == null ? "" : String(value));
+    const re = highlightRegex(STATE.searchTokens || []);
+    return re ? safe.replace(re, (match) => `<mark>${match}</mark>`) : safe;
+  }
+
+  function loadCollapsedKinds() {
+    try {
+      const raw = storageGet(COLLAPSED_KINDS_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(parsed) ? parsed : []);
+    } catch (_) {
+      return new Set();
+    }
+  }
+
+  function persistCollapsedKinds() {
+    try {
+      storageSet(COLLAPSED_KINDS_STORAGE_KEY, JSON.stringify([...STATE.collapsedKinds]));
+    } catch (_) {}
+  }
+
+  // Level sliders remember the user's last position as a fraction (0..1) so the
+  // preference carries across entries with different level counts. Default 1 =
+  // max level.
+  function loadLevelFraction() {
+    const raw = Number(storageGet(LEVEL_FRACTION_STORAGE_KEY));
+    return Number.isFinite(raw) && raw >= 0 && raw <= 1 ? raw : 1;
+  }
+
+  function saveLevelFraction(fraction) {
+    const clamped = Math.max(0, Math.min(1, Number(fraction)));
+    if (!Number.isFinite(clamped)) return;
+    STATE.levelFraction = clamped;
+    try { storageSet(LEVEL_FRACTION_STORAGE_KEY, String(clamped)); } catch (_) {}
+  }
+
+  function sliderIndexForFraction(max) {
+    if (!(max > 0)) return 0;
+    return Math.max(0, Math.min(max, Math.round((STATE.levelFraction ?? 1) * max)));
+  }
+
+  function toggleKindGroup(kind) {
+    if (!kind) return;
+    if (STATE.collapsedKinds.has(kind)) STATE.collapsedKinds.delete(kind);
+    else STATE.collapsedKinds.add(kind);
+    persistCollapsedKinds();
+    renderList();
+  }
 
   const STATE = {
     uiLocale: "zh",
@@ -348,12 +101,16 @@
     filtered: [],
     selected: null,
     loading: null,
+    searchTokens: [],
+    collapsedKinds: new Set(),
+    levelFraction: 1,
     filters: {
       kinds: new Set(),
       jobs: new Set(),
       characterProperties: new Set(),
       weaponTypes: new Set(),
       equipmentTypes: new Set(),
+      enemyTypes: new Set(),
       rarities: new Set(),
     },
   };
@@ -394,7 +151,8 @@
   }
 
   function gameplayDataPath(language) {
-    return `data/lang/${encodeURIComponent(language)}/gameplay/index.json`;
+    // Cache-bust so a rebuilt index.json is picked up (bump on data changes).
+    return `data/lang/${encodeURIComponent(language)}/gameplay/index.json?v=${GAMEPLAY_DATA_VERSION}`;
   }
 
   function normalizeGameplaySelection(value) {
@@ -406,6 +164,7 @@
     if (decoded.includes(":")) decoded = decoded.split(":").pop();
     if (decoded.startsWith("wiki_chr_")) return `chr_${decoded.slice("wiki_chr_".length)}`;
     if (decoded.startsWith("wiki_wpn_")) return `wpn_${decoded.slice("wiki_wpn_".length)}`;
+    if (decoded.startsWith("wiki_eny_")) return `eny_${decoded.slice("wiki_eny_".length)}`;
     if (decoded.startsWith("wiki_item_")) return `item_${decoded.slice("wiki_item_".length)}`;
     if (decoded.startsWith("wiki_")) return decoded.slice("wiki_".length);
     return decoded;
@@ -449,6 +208,7 @@
     if (kind === "equipment") return text("equipment");
     if (kind === "character") return text("character");
     if (kind === "enemy") return text("enemy");
+    if (kind === "item") return text("item");
     return String(kind || "");
   }
 
@@ -468,6 +228,10 @@
       if (entry.displayTypeLabel) parts.push(entry.displayTypeLabel);
       if (entry.templateName && entry.templateName !== entry.title) parts.push(entry.templateName);
       if (entry.isDangerous) parts.push(text("dangerous"));
+    }
+    if (entry.kind === "item") {
+      if (entry.showingTypeLabel) parts.push(entry.showingTypeLabel);
+      if (entry.itemTypeLabel && entry.itemTypeLabel !== entry.showingTypeLabel) parts.push(entry.itemTypeLabel);
     }
     return parts.join(" / ");
   }
@@ -489,15 +253,6 @@
     });
   }
 
-  function renderDetailTags(tags, entry) {
-    const chips = dedupeDetailTags(tags).map((tag) => {
-      const kindAttr = tag.kind ? ` data-kind="${escapeHtml(tag.kind)}"` : "";
-      return `<span class="gameplay-detail-tag"${kindAttr}><span>${escapeHtml(tag.label || "")}</span><b${tag.mono ? ' class="mono"' : ""}>${escapeHtml(formatValue(tag.value))}</b></span>`;
-    });
-    const wiki = renderStoryWikiLink(entry);
-    if (wiki) chips.unshift(wiki);
-    return chips.join("");
-  }
   function section(title, body, opts = {}) {
     if (!body) return "";
     const open = opts.open === false ? "" : " open";
@@ -535,18 +290,12 @@
     return storyWikiHrefForKey(storyWikiKey(entry));
   }
 
-  function storyWikiLinkLabel(key, index, total) {
-    if (total <= 1) return text("openStoryWiki");
-    const suffix = String(key || "").replace(/^wiki_chr_\d+_/, "").replace(/^wiki_/, "");
-    return suffix || `${index + 1}`;
-  }
-
   function renderStoryWikiLink(entry) {
     const keys = storyWikiKeys(entry);
-    return keys.map((key, index) => {
+    return keys.map((key) => {
       const href = storyWikiHrefForKey(key);
       if (!href) return "";
-      return `<a class="gameplay-detail-tag gameplay-detail-wiki-link gameplay-wiki-link" href="${escapeHtml(href)}"><span>${escapeHtml(text("storyWiki"))}</span><b>${escapeHtml(storyWikiLinkLabel(key, index, keys.length))}</b></a>`;
+      return `<a class="gameplay-detail-tag gameplay-detail-wiki-link gameplay-wiki-link" href="${escapeHtml(href)}"><span>${escapeHtml(text("storyWiki"))}</span></a>`;
     }).filter(Boolean).join("");
   }
   function renderDescription(value) {
@@ -569,10 +318,14 @@
     return rows.length ? `<div class="gameplay-blackboard">${rows.join("")}</div>` : "";
   }
 
-  function renderIdChips(items) {
+  function renderIdChips(items, opts = {}) {
+    const highlight = opts.highlight;
     const rows = (items || [])
       .filter(Boolean)
-      .map((item) => `<span class="gameplay-value-chip"><b>${escapeHtml(text("id"))}</b>${escapeHtml(item)}</span>`);
+      .map((item) => {
+        const cls = highlight && highlight.has(item) ? " gameplay-diff" : "";
+        return `<span class="gameplay-value-chip${cls}"><b>${escapeHtml(text("id"))}</b>${escapeHtml(item)}</span>`;
+      });
     return rows.length ? `<div class="gameplay-blackboard">${rows.join("")}</div>` : "";
   }
 
@@ -617,10 +370,37 @@
     return `${text("level")} ${formatValue(level && level.level || "")}`.trim();
   }
 
+  // Numeric attribute-type -> canonical stat key (mirrors the exporter's
+  // STAT_ATTR_KEYS, plus 0 = level). Some data paths emit a bare "attr_<type>"
+  // even for types that do have a name, so we recover the name here.
+  const ATTR_TYPE_KEYS = {
+    0: "level", 1: "hp", 2: "atk", 3: "def",
+    4: "physical_damage_taken", 5: "fire_damage_taken", 6: "pulse_damage_taken", 7: "cryst_damage_taken",
+    9: "critical_rate", 17: "normal_attack_efficiency", 28: "ultimate_skill_efficiency",
+    29: "heal_output", 30: "heal_taken", 31: "healing_taken_scalar",
+    32: "skill_damage", 33: "combo_skill_damage", 34: "normal_attack_damage",
+    35: "fire_burst_damage", 36: "pulse_burst_damage", 37: "cryst_burst_damage", 38: "natural_burst_damage",
+    39: "str", 40: "agi", 41: "wis", 42: "will",
+    44: "ultimate_sp_gain", 48: "natural_damage_taken",
+    50: "physical_damage", 51: "fire_damage", 52: "pulse_damage", 53: "cryst_damage", 54: "natural_damage",
+    60: "ether_damage_taken", 61: "broken_unit_damage",
+    80: "physical_damage_taken_scalar", 81: "natural_damage_taken_scalar", 82: "cryst_damage_taken_scalar",
+    83: "pulse_damage_taken_scalar", 84: "fire_damage_taken_scalar", 85: "ether_damage_taken_scalar",
+    87: "infliction",
+  };
+
   function statAttrLabel(attr) {
-    const key = `stat_${attr && attr.key || ""}`;
-    const translated = text(key);
-    return translated === key ? (attr && (attr.label || attr.key) || "") : translated;
+    let key = String((attr && attr.key) || "");
+    const type = attr && attr.type;
+    const numeric = typeof type === "number" ? type : /^attr_(\d+)$/.test(key) ? Number(key.slice(5)) : null;
+    if (numeric != null && ATTR_TYPE_KEYS[numeric]) key = ATTR_TYPE_KEYS[numeric];
+    const translated = text(`stat_${key}`);
+    if (translated !== `stat_${key}`) return translated;
+    // Prefer an exporter-provided label, unless it is just the raw "attr_N" key.
+    const label = attr && attr.label;
+    if (label && !/^attr_\d+$/.test(String(label))) return String(label);
+    const unnamed = /^attr_(\d+)$/.exec(key);
+    return unnamed ? `Attr ${unnamed[1]}` : key;
   }
 
   function statLevelLabel(row) {
@@ -631,13 +411,129 @@
   }
 
 
-  function renderStatPane(row, active) {
+  // Sum a set of {gold, items} cost rows into one aggregate (item counts merged
+  // by id). Gold that the source carried as an item (characters) stays in items;
+  // gold carried separately (weapons) is returned as `gold`.
+  function aggregateCosts(rows) {
+    const byId = new Map();
+    let gold = 0;
+    for (const row of rows) {
+      if (!row) continue;
+      if (Number(row.gold) > 0) gold += Number(row.gold);
+      for (const item of row.items || []) {
+        if (!item) continue;
+        const id = String(item.id || item.name || "");
+        if (!id) continue;
+        const prev = byId.get(id) || { id: item.id, name: item.name, count: 0 };
+        prev.count += Number(item.count) || 0;
+        byId.set(id, prev);
+      }
+    }
+    return { gold, items: [...byId.values()] };
+  }
+
+  // Build a per-level cost lookup for weapon and character stat sliders. Every
+  // level shows the CUMULATIVE breakthrough materials for its stage plus the
+  // cumulative level-up exp/gold up to that level.
+  function statCostIndex(entry, kind) {
+    const perStage = new Map(); // stage -> { gold, items } for that stage's breakthrough
+    const levelUpItemsByStage = new Map();
+    const levelUpByLevel = new Map(); // exact per-level cumulative { exp, gold }
+    let checkpoints = [];
+    let breakLabel;
+    let perLevel = [];
+    if (kind === "weapon") {
+      for (const row of (entry.breakthrough && entry.breakthrough.rows) || []) {
+        perStage.set(Number(row.showLevel), { gold: row.goldCost, items: row.items || [] });
+      }
+      checkpoints = ((entry.upgrade && entry.upgrade.checkpoints) || []).map((cp) => ({
+        level: Number(cp.level), exp: cp.lvUpExpSum, gold: cp.lvUpGoldSum,
+      }));
+      perLevel = (entry.upgrade && entry.upgrade.perLevel) || [];
+      breakLabel = text("weaponBreakthroughs");
+    } else {
+      for (const stage of entry.breakStages || []) {
+        if ((stage.availableExpItems || []).length) levelUpItemsByStage.set(Number(stage.stage), stage.availableExpItems);
+      }
+      for (const bt of entry.breakthroughs || []) {
+        perStage.set(Number(bt.stage), { items: bt.requiredItem || [] });
+      }
+      checkpoints = ((entry.levelCurve && entry.levelCurve.checkpoints) || []).map((cp) => {
+        const hasCumulative = cp.expSum != null || cp.goldSum != null;
+        return { level: Number(cp.level), exp: hasCumulative ? cp.expSum : cp.exp, gold: hasCumulative ? cp.goldSum : cp.gold };
+      });
+      perLevel = (entry.levelCurve && entry.levelCurve.perLevel) || [];
+      breakLabel = text("characterBreakthroughs");
+    }
+    for (const row of perLevel) {
+      levelUpByLevel.set(Number(row.level), { exp: row.expSum, gold: row.goldSum, expItems: row.expItems || [] });
+    }
+    // Cumulative breakthrough cost for every stage: sum of all breakthroughs at
+    // stages 1..stage.
+    const maxStage = Math.max(0, ...perStage.keys());
+    const cumulativeBreakByStage = new Map();
+    for (let stage = 1; stage <= maxStage; stage += 1) {
+      const rows = [];
+      for (let s = 1; s <= stage; s += 1) {
+        if (perStage.has(s)) rows.push(perStage.get(s));
+      }
+      cumulativeBreakByStage.set(stage, aggregateCosts(rows));
+    }
+    checkpoints.sort((a, b) => a.level - b.level);
+    return { cumulativeBreakByStage, levelUpItemsByStage, levelUpByLevel, checkpoints, breakLabel };
+  }
+
+  // The cumulative level-up cost at `level` = the highest checkpoint at or below it.
+  function cumulativeLevelUpAt(checkpoints, level) {
+    let best = null;
+    for (const cp of checkpoints) {
+      if (cp.level <= level) best = cp;
+      else break;
+    }
+    return best;
+  }
+
+  function renderStatCost(row, costIndex) {
+    if (!costIndex || !row) return "";
+    const parts = [];
+    const stage = Number(row.breakStage);
+    // Cumulative breakthrough materials up to this level's stage.
+    const brk = stage >= 1 ? costIndex.cumulativeBreakByStage.get(stage) : null;
+    if (brk && ((brk.items || []).length || Number(brk.gold) > 0)) {
+      const chips = [
+        Number(brk.gold) > 0 ? renderChipPairs([{ label: text("gold"), value: brk.gold }]) : "",
+        renderMaterialChips(brk.items || []),
+      ].filter(Boolean).join("");
+      if (chips) parts.push(`<div class="gameplay-subheading">${escapeHtml(costIndex.breakLabel)}</div>${chips}`);
+    }
+    // Cumulative level-up cost up to this exact level (falls back to the nearest
+    // checkpoint when a per-level curve isn't available), plus the stage's EXP items.
+    const cp = costIndex.levelUpByLevel.get(Number(row.level)) || cumulativeLevelUpAt(costIndex.checkpoints, Number(row.level));
+    const cumulativeExpItems = cp && (cp.expItems || []).length ? cp.expItems : null;
+    let upPairs = cp && Number(cp.gold) > 0
+      ? [{ label: text("cumulativeGold"), value: cp.gold }]
+      : null;
+    if (cp && !cumulativeExpItems && Number(cp.exp) > 0) {
+      (upPairs || (upPairs = [])).unshift({ label: text("cumulativeExp"), value: cp.exp });
+    }
+    const expItems = costIndex.levelUpItemsByStage.get(stage);
+    const upChips = [
+      cumulativeExpItems ? renderMaterialChips(cumulativeExpItems) : "",
+      upPairs ? renderChipPairs(upPairs) : "",
+      expItems ? renderMaterialChips(expItems) : "",
+    ].filter(Boolean).join("");
+    if (upChips) parts.push(`<div class="gameplay-subheading">${escapeHtml(text("levelUpCosts"))}</div>${upChips}`);
+    return parts.length ? `<div class="gameplay-level-cost">${parts.join("")}</div>` : "";
+  }
+
+  function renderStatPane(row, active, costIndex) {
     return `<div class="gameplay-level-pane gameplay-stat-pane" data-level-label="${escapeHtml(statLevelLabel(row))}"${active ? "" : " hidden"}>
       <div class="gameplay-level-effect">${renderStatAttrs(row) || `<span class="muted">-</span>`}</div>
+      ${renderStatCost(row, costIndex)}
     </div>`;
   }
 
-  function renderStats(stats) {
+  function renderStats(stats, costIndex) {
     const rows = ((stats && (stats.rows || stats.checkpoints)) || []).filter((row) => row && (row.attrs || []).length);
     if (!rows.length) return "";
     const body = rows.length > 1
@@ -647,11 +543,11 @@
           <input class="gameplay-level-slider" type="range" min="0" max="${rows.length - 1}" step="1" value="0" aria-label="${escapeHtml(text("selectedLevel"))}">
           <output class="gameplay-level-slider-output">${escapeHtml(statLevelLabel(rows[0]))}</output>
         </div>
-        <div class="gameplay-level-panes">${rows.map((row, index) => renderStatPane(row, index === 0)).join("")}</div>
+        <div class="gameplay-level-panes">${rows.map((row, index) => renderStatPane(row, index === 0, costIndex)).join("")}</div>
       </div>`
       : `<div class="gameplay-level-table">${rows.map((row) => `<div class="gameplay-level-row gameplay-stat-row">
         <div class="gameplay-level-num">${escapeHtml(statLevelLabel(row))}</div>
-        <div class="gameplay-level-effect">${renderStatAttrs(row) || `<span class="muted">-</span>`}</div>
+        <div class="gameplay-level-effect">${renderStatAttrs(row) || `<span class="muted">-</span>`}${renderStatCost(row, costIndex)}</div>
         <div class="gameplay-level-values"></div>
       </div>`).join("")}</div>`;
     return `<article class="gameplay-skill-card gameplay-stat-card">
@@ -790,10 +686,14 @@
     return rows.length ? `<div class="gameplay-talent-table">${rows.join("")}</div>` : "";
   }
 
-  function renderChipPairs(pairs) {
+  function renderChipPairs(pairs, opts = {}) {
+    const diff = opts.diffLabels;
     const rows = (pairs || [])
       .filter((item) => item && item.value !== undefined && item.value !== null && item.value !== "")
-      .map((item) => `<span class="gameplay-value-chip"><b>${escapeHtml(item.label)}</b>${escapeHtml(formatValue(item.value))}</span>`);
+      .map((item) => {
+        const cls = diff && diff.has(String(item.label || "")) ? " gameplay-diff" : "";
+        return `<span class="gameplay-value-chip${cls}"><b>${escapeHtml(item.label)}</b>${escapeHtml(formatValue(item.value))}</span>`;
+      });
     return rows.length ? `<div class="gameplay-blackboard">${rows.join("")}</div>` : "";
   }
 
@@ -1043,7 +943,7 @@
     return {
       facts,
       body: [
-        section(text("weaponStats"), renderStats(entry.stats)),
+        section(text("weaponStats"), renderStats(entry.stats, statCostIndex(entry, "weapon"))),
         section(text("weaponSkills"), skills ? `<div class="gameplay-card-grid">${skills}</div>` : ""),
       ].join(""),
     };
@@ -1076,7 +976,7 @@
     return {
       facts,
       body: [
-        section(text("characterStats"), renderStats(entry.stats)),
+        section(text("characterStats"), renderStats(entry.stats, statCostIndex(entry, "character"))),
         section(text("characterSkills"), groups ? `<div class="gameplay-character-skill-grid">${groups}</div>` : ""),
         section(text("talents"), talentGroups || (talentCards ? `<div class="gameplay-card-grid">${talentCards}</div>` : "")),
         section(text("characterPotentials"), renderCharacterPotentials(entry)),
@@ -1165,13 +1065,59 @@
     return rows ? `<div class="gameplay-card-grid">${rows}</div>` : "";
   }
 
-  function renderEnemyModifierRows(entry) {
-    const rows = (entry.attrModifiers || []).map((modifier) => {
+  function enemyModifierPairs(source) {
+    return (source.attrModifiers || []).map((modifier) => {
       if (!modifier) return null;
       const label = [statAttrLabel(modifier), modifier.modifierType !== undefined ? `type ${formatValue(modifier.modifierType)}` : ""].filter(Boolean).join(" / ");
       return { label, value: modifier.value };
     }).filter(Boolean);
-    return renderChipPairs(rows);
+  }
+
+  function renderEnemyModifierRows(entry, diffLabels) {
+    return renderChipPairs(enemyModifierPairs(entry), { diffLabels });
+  }
+
+  function variantDetailPairs(variant) {
+    return [
+      { label: text("attrTemplateId"), value: variant.attrTemplateId },
+      { label: text("modelId"), value: variant.modelId },
+      { label: text("aiTemplateId"), value: variant.aiTemplateId },
+      { label: text("displayType"), value: variant.displayTypeLabel || variant.displayType },
+      { label: text("dangerous"), value: variant.isDangerous ? text("dangerous") : "" },
+    ];
+  }
+
+  // Labels whose value is not shared by every variant (differs, or is missing
+  // from some). Used to highlight what actually changes between enemy variants.
+  function variantDiffLabels(variants) {
+    const info = new Map();
+    variants.forEach((variant) => {
+      const pairs = [...variantDetailPairs(variant), ...enemyModifierPairs(variant)];
+      for (const pair of pairs) {
+        const label = String(pair.label || "");
+        if (!label || pair.value === undefined || pair.value === null || pair.value === "") continue;
+        if (!info.has(label)) info.set(label, { values: new Set(), present: 0 });
+        const rec = info.get(label);
+        rec.values.add(String(pair.value));
+        rec.present += 1;
+      }
+    });
+    const diff = new Set();
+    for (const [label, rec] of info) {
+      if (rec.values.size > 1 || rec.present !== variants.length) diff.add(label);
+    }
+    return diff;
+  }
+
+  // Born-buff ids not present on every variant.
+  function variantBuffDiff(variants) {
+    const counts = new Map();
+    for (const variant of variants) {
+      for (const buff of new Set(variant.bornBuffs || [])) counts.set(buff, (counts.get(buff) || 0) + 1);
+    }
+    const diff = new Set();
+    for (const [buff, count] of counts) if (count !== variants.length) diff.add(buff);
+    return diff;
   }
 
   function renderEnemyDetails(entry) {
@@ -1183,6 +1129,63 @@
     const distributions = renderIdChips(entry.distributionIds || []);
     if (distributions) blocks.push(`<div class="gameplay-subheading">${escapeHtml(text("distribution"))}</div>${distributions}`);
     return blocks.join("");
+  }
+
+  function variantPaneBody(variant, diffLabels, buffDiff) {
+    const details = renderChipPairs(variantDetailPairs(variant), { diffLabels });
+    const buffs = renderIdChips(variant.bornBuffs || [], { highlight: buffDiff });
+    const modifiers = renderEnemyModifierRows(variant, diffLabels);
+    const wiki = variant.storyWikiKey
+      ? `<a class="gameplay-detail-tag gameplay-detail-wiki-link gameplay-wiki-link" href="${escapeHtml(storyWikiHrefForKey(variant.storyWikiKey))}"><span>${escapeHtml(text("storyWiki"))}</span></a>`
+      : "";
+    return `<div class="gameplay-skill-meta">${escapeHtml([variant.id, variant.displayTypeLabel].filter(Boolean).join(" / "))}</div>
+      ${wiki ? `<div class="gameplay-variant-links">${wiki}</div>` : ""}
+      ${details}
+      ${buffs ? `<div class="gameplay-subheading">${escapeHtml(text("bornBuffs"))}</div>${buffs}` : ""}
+      ${modifiers ? `<div class="gameplay-subheading">${escapeHtml(text("attrModifiers"))}</div>${modifiers}` : ""}`;
+  }
+
+  function variantChipLabel(variant, index) {
+    return variant.name || variant.displayTypeLabel || variant.id || `#${index + 1}`;
+  }
+
+  function renderEnemyVariants(entry) {
+    const variants = (entry.variants || []).filter(Boolean);
+    if (!variants.length) return "";
+    // A single variant renders inline; multiple variants become a switcher so the
+    // user can flip between them (their modifiers / base numbers differ), with the
+    // differing fields highlighted.
+    if (variants.length === 1) {
+      const v = variants[0];
+      return `<article class="gameplay-skill-card gameplay-enemy-variant-card">
+        <header><div class="gameplay-skill-title">${escapeHtml(v.name || v.id || "")}</div></header>
+        ${variantPaneBody(v, null, null)}
+      </article>`;
+    }
+    const diffLabels = variantDiffLabels(variants);
+    const buffDiff = variantBuffDiff(variants);
+    const chips = variants.map((v, i) =>
+      `<button type="button" class="gameplay-variant-chip${i === 0 ? " is-active" : ""}" data-variant-index="${i}">${escapeHtml(variantChipLabel(v, i))}</button>`).join("");
+    const panes = variants.map((v, i) =>
+      `<div class="gameplay-variant-pane" data-variant-index="${i}"${i === 0 ? "" : " hidden"}>${variantPaneBody(v, diffLabels, buffDiff)}</div>`).join("");
+    return `<div class="gameplay-variant-switch" data-variant-card>
+      <div class="gameplay-variant-chips">${chips}</div>
+      <div class="gameplay-variant-panes">${panes}</div>
+    </div>`;
+  }
+
+  function bindVariantSwitches(root) {
+    root.querySelectorAll(".gameplay-variant-switch").forEach((card) => {
+      const chips = [...card.querySelectorAll(".gameplay-variant-chip")];
+      const panes = [...card.querySelectorAll(".gameplay-variant-pane")];
+      chips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const index = Number(chip.dataset.variantIndex || 0);
+          chips.forEach((c) => c.classList.toggle("is-active", Number(c.dataset.variantIndex) === index));
+          panes.forEach((p) => { p.hidden = Number(p.dataset.variantIndex) !== index; });
+        });
+      });
+    });
   }
 
   function renderEnemyCombatValues(entry) {
@@ -1206,6 +1209,7 @@
       fact(text("templateId"), entry.templateId, { mono: true }),
       fact(text("attrTemplateId"), entry.attrTemplateId, { mono: true }),
       fact(text("displayType"), entry.displayTypeLabel || entry.displayType),
+      fact(text("variantCount"), entry.variantCount || ((entry.variants || []).length || "")),
       fact(text("nickname"), entry.nickname),
       fact(text("modelId"), entry.modelId, { mono: true }),
       fact(text("aiTemplateId"), entry.aiTemplateId, { mono: true }),
@@ -1215,7 +1219,7 @@
     return {
       facts,
       body: [
-        section(text("description"), renderDescription(entry.description)),
+        section(text("enemyVariants"), renderEnemyVariants(entry)),
         section(text("enemyStats"), renderStats(entry.stats)),
         section(text("enemyAbilities"), renderEnemyAbilities(entry)),
         section(text("combatValues"), renderEnemyCombatValues(entry)),
@@ -1224,6 +1228,96 @@
     };
   }
 
+  function renderItemUse(entry) {
+    const use = entry.useData || {};
+    if (!use.description && !(use.actions || []).length) return "";
+    const details = renderChipPairs([
+      { label: text("duration"), value: use.duration },
+      { label: text("effectType"), value: use.effectType },
+      { label: text("uiType"), value: use.uiType },
+      { label: text("targetNumType"), value: use.targetNumType },
+      { label: text("persistentBuff"), value: use.isPersistentBuff ? "true" : "" },
+      { label: text("valuableDepot"), value: use.isValuableDepot ? "true" : "" },
+      { label: text("stackKey"), value: use.stackingKey },
+    ]);
+    return [renderDescription(use.description), details].filter(Boolean).join("");
+  }
+
+  function renderItemActions(entry) {
+    const rows = (((entry.useData || {}).actions) || []).map((action, index) => {
+      if (!action) return "";
+      const title = action.buffId || action.skillId || `${text("actionData")} ${index + 1}`;
+      const details = renderChipPairs([
+        { label: text("useType"), value: action.useType },
+        { label: text("buffId"), value: action.buffId },
+        { label: text("skillId"), value: action.skillId },
+        { label: text("skillPath"), value: action.skillPath },
+      ]);
+      const buffValues = renderBlackboard(action.buffBlackboard || []);
+      const skillValues = renderBlackboard(action.skillBlackboard || []);
+      return `<article class="gameplay-skill-card">
+        <header>
+          <div class="gameplay-skill-title">${escapeHtml(title)}</div>
+          <div class="gameplay-skill-meta">${escapeHtml(`${text("actionData")} ${index + 1}`)}</div>
+        </header>
+        ${details}
+        ${buffValues ? `<div class="gameplay-subheading">${escapeHtml(text("buffId"))}</div>${buffValues}` : ""}
+        ${skillValues ? `<div class="gameplay-subheading">${escapeHtml(text("skillId"))}</div>${skillValues}` : ""}
+      </article>`;
+    }).filter(Boolean).join("");
+    return rows ? `<div class="gameplay-card-grid">${rows}</div>` : "";
+  }
+
+  function renderItemRewardCards(entry) {
+    const chest = entry.chestData || {};
+    const blocks = [];
+    const chestDetails = renderChipPairs([
+      { label: text("chestType"), value: chest.type },
+      { label: text("selectedCount"), value: chest.selectedCount },
+    ]);
+    if (chestDetails) blocks.push(chestDetails);
+    const randomItems = renderMaterialChips(chest.randomItems || []);
+    if (randomItems) blocks.push(`<div class="gameplay-subheading">${escapeHtml(text("randomItems"))}</div>${randomItems}`);
+    const rewardCards = (chest.rewards || []).map((reward) => {
+      if (!reward) return "";
+      const fixed = renderMaterialChips(reward.items || []);
+      const probable = renderMaterialChips(reward.probableItems || []);
+      return `<article class="gameplay-skill-card">
+        <header>
+          <div class="gameplay-skill-title">${escapeHtml(reward.id || text("rewardId"))}</div>
+          <div class="gameplay-skill-meta">${escapeHtml(text("rewardId"))}</div>
+        </header>
+        ${fixed ? `<div class="gameplay-subheading">${escapeHtml(text("fixedRewards"))}</div>${fixed}` : ""}
+        ${probable ? `<div class="gameplay-subheading">${escapeHtml(text("probableRewards"))}</div>${probable}` : ""}
+      </article>`;
+    }).filter(Boolean).join("");
+    if (rewardCards) blocks.push(`<div class="gameplay-card-grid">${rewardCards}</div>`);
+    return blocks.join("");
+  }
+
+  function renderItemDetail(entry) {
+    const facts = [
+      fact(text("id"), entry.id, { mono: true }),
+      fact(text("rarity"), entry.rarity),
+      fact(text("itemType"), entry.itemTypeLabel || entry.itemType),
+      fact(text("showingType"), entry.showingTypeLabel || entry.showingType),
+      fact(text("useCategory"), entry.useCategory),
+      fact(text("iconId"), entry.iconId || entry.iconCompositeId, { mono: true }),
+      fact(text("maxStack"), entry.maxStackCount),
+      fact(text("backpackStack"), entry.maxBackpackStackCount),
+      fact(text("source"), `${entry.source && entry.source.table || ""} / ${entry.source && entry.source.id || ""}`, { mono: true }),
+    ].filter(Boolean);
+    const description = [renderDescription(entry.description), renderDescription(entry.decoDescription)].filter(Boolean).join("");
+    return {
+      facts,
+      body: [
+        section(text("description"), description),
+        section(text("itemUse"), renderItemUse(entry)),
+        section(text("itemActions"), renderItemActions(entry)),
+        section(text("itemRewards"), renderItemRewardCards(entry)),
+      ].join(""),
+    };
+  }
   function renderEquipmentFormula(entry) {
     const formula = entry.formula || {};
     if (!formula.formulaName && !(formula.costs || []).length) return "";
@@ -1257,6 +1351,8 @@
     const group = input.closest("[data-linked-level-group]");
     const sliders = group ? [...group.querySelectorAll(".gameplay-level-slider")] : [input];
     const requested = Number(input.value || 0);
+    const inputMax = Number(input.max || 0);
+    saveLevelFraction(inputMax > 0 ? requested / inputMax : 1);
     sliders.forEach((slider) => {
       const max = Number(slider.max || requested);
       slider.value = String(Math.max(0, Math.min(requested, max)));
@@ -1266,9 +1362,37 @@
 
   function bindLevelSliders(root) {
     root.querySelectorAll(".gameplay-level-slider").forEach((input) => {
+      // Default to the cached position (max level on first use).
+      input.value = String(sliderIndexForFraction(Number(input.max || 0)));
       input.addEventListener("input", () => syncLevelSlider(input));
       syncLevelCard(input);
     });
+  }
+
+  function syncLocateCurrentButton() {
+    const button = gp$("#gameplay-reveal-current");
+    if (button) button.disabled = !STATE.selected;
+  }
+
+  function revealSelectedInList() {
+    if (!STATE.selected) return false;
+    const list = gp$("#gameplay-list");
+    if (!list) return false;
+    // Expand the selected entry's group if the user had collapsed it.
+    if (STATE.collapsedKinds.has(STATE.selected.kind)) {
+      STATE.collapsedKinds.delete(STATE.selected.kind);
+      persistCollapsedKinds();
+      renderList();
+    }
+    const key = `${STATE.selected.kind}:${STATE.selected.id}`;
+    const row = [...list.querySelectorAll(".gameplay-row")].find((candidate) => candidate.dataset.key === key);
+    if (!row) return false;
+    row.scrollIntoView({ block: "center", behavior: "smooth" });
+    if (isMobileLayout()) {
+      const left = gp$("#gameplay-left");
+      if (left) left.scrollIntoView({ block: "start", behavior: "smooth" });
+    }
+    return true;
   }
 
   function renderDetail(entry) {
@@ -1277,19 +1401,35 @@
     if (!entry || !detail) {
       if (empty) empty.hidden = false;
       if (detail) detail.hidden = true;
+      syncLocateCurrentButton();
       return;
     }
     if (empty) empty.hidden = true;
     detail.hidden = false;
-    gp$("#gameplay-detail-title").textContent = entry.title || entry.id || "";
-    const rendered = entry.kind === "weapon" ? renderWeaponDetail(entry) : entry.kind === "equipment" ? renderEquipmentDetail(entry) : entry.kind === "enemy" ? renderEnemyDetail(entry) : renderCharacterDetail(entry);
-    const detailTags = [
+    const title = entry.title || entry.id || "";
+    gp$("#gameplay-detail-title").innerHTML = highlightText(title);
+    const rendered = entry.kind === "weapon" ? renderWeaponDetail(entry) : entry.kind === "equipment" ? renderEquipmentDetail(entry) : entry.kind === "enemy" ? renderEnemyDetail(entry) : entry.kind === "item" ? renderItemDetail(entry) : renderCharacterDetail(entry);
+    // The header already shows the title; drop any fact that merely repeats it
+    // (e.g. file/internal name equal to the title) to avoid duplicated info.
+    const detailTags = dedupeDetailTags([
       fact(text("kind"), kindLabel(entry.kind), { kind: entry.kind }),
       ...(rendered.facts || []),
-    ];
-    gp$("#gameplay-detail-meta").innerHTML = renderDetailTags(detailTags, entry);
+    ].filter((tag) => tag && String(tag.value) !== title));
+    // Facts render as a conv-meta-style "label=value | ..." text line.
+    gp$("#gameplay-detail-meta").textContent = detailTags
+      .map((tag) => `${tag.label}=${formatValue(tag.value)}`).join(" | ");
+    // The story-wiki link sits in its own slot, mirroring the story page's
+    // gameplay link under the header meta.
+    const wikiSlot = gp$("#gameplay-detail-wiki");
+    if (wikiSlot) {
+      const wiki = renderStoryWikiLink(entry);
+      wikiSlot.innerHTML = wiki;
+      wikiSlot.hidden = !wiki;
+    }
     gp$("#gameplay-detail-body").innerHTML = rendered.body || "";
     bindLevelSliders(detail);
+    bindVariantSwitches(detail);
+    syncLocateCurrentButton();
   }
 
   function renderListNote(message) {
@@ -1298,6 +1438,27 @@
     gp$("#gameplay-shown").textContent = "0";
     gp$("#gameplay-total").textContent = formatNumber(STATE.entries.length || 0);
     renderDetail(null);
+  }
+
+  function rowPathText(entry) {
+    if (entry.kind === "weapon") return entry.fileName || entry.id || "";
+    if (entry.kind === "enemy" || entry.kind === "item") return entry.fileName || entry.title || entry.id || "";
+    return entry.id || "";
+  }
+
+  // A single list row, copying the story file-list item style: a colored kind
+  // badge chip, then the readable name, with the subtitle below.
+  function renderRow(entry, selectedId) {
+    const key = `${entry.kind}:${entry.id}`;
+    const selected = key === selectedId ? " is-selected" : "";
+    const badgeClass = KIND_BADGE_CLASS[entry.kind] || "";
+    return `<button class="gameplay-row${selected}" type="button" data-key="${escapeHtml(key)}">
+      <div class="gameplay-row-line1">
+        <span class="badge ${badgeClass}">${escapeHtml(kindLabel(entry.kind))}</span>
+        <span class="gameplay-row-name">${highlightText(entry.title || entry.id || "")}</span>
+      </div>
+      <div class="gameplay-row-meta">${highlightText(entrySubtitle(entry) || rowPathText(entry) || "")}</div>
+    </button>`;
   }
 
   function renderList() {
@@ -1309,19 +1470,37 @@
       renderListNote(text(STATE.entries.length ? "noResults" : "noData"));
       return;
     }
+
     const selectedId = STATE.selected && `${STATE.selected.kind}:${STATE.selected.id}`;
-    list.innerHTML = STATE.filtered.map((entry) => {
-      const key = `${entry.kind}:${entry.id}`;
-      const selected = key === selectedId ? " is-selected" : "";
-      return `<button class="gameplay-row${selected}" type="button" data-key="${escapeHtml(key)}">
-        <div class="gameplay-row-head">
-          <span class="gameplay-kind-badge" data-kind="${escapeHtml(entry.kind || "")}">${escapeHtml(kindLabel(entry.kind))}</span>
-          <span class="gameplay-row-name">${escapeHtml(entry.title || entry.id || "")}</span>
-        </div>
-        <div class="gameplay-row-meta">${escapeHtml(entrySubtitle(entry) || entry.group || "")}</div>
-        <div class="gameplay-row-path">${escapeHtml(entry.kind === "weapon" ? (entry.fileName || entry.id || "") : (entry.id || ""))}</div>
-      </button>`;
+    // While searching, force every group open so matches are never hidden.
+    const searching = (STATE.searchTokens || []).length > 0;
+
+    // Bucket by data type (kind), preserving the sorted order within each group.
+    const buckets = new Map();
+    for (const entry of STATE.filtered) {
+      const kind = entry.kind || "other";
+      if (!buckets.has(kind)) buckets.set(kind, []);
+      buckets.get(kind).push(entry);
+    }
+    const kinds = [...buckets.keys()].sort((a, b) => kindRank(a) - kindRank(b) || a.localeCompare(b));
+
+    list.innerHTML = kinds.map((kind) => {
+      const entries = buckets.get(kind);
+      const collapsed = !searching && STATE.collapsedKinds.has(kind);
+      const body = collapsed ? "" : entries.map((entry) => renderRow(entry, selectedId)).join("");
+      return `<section class="gameplay-list-group${collapsed ? " is-collapsed" : ""}">
+        <button class="gameplay-list-group-header" type="button" data-group="${escapeHtml(kind)}" aria-expanded="${!collapsed}">
+          <span class="gameplay-group-twisty" aria-hidden="true"></span>
+          <span class="gameplay-kind-badge" data-kind="${escapeHtml(kind)}">${escapeHtml(kindLabel(kind))}</span>
+          <span class="gameplay-group-count">${formatNumber(entries.length)}</span>
+        </button>
+        <div class="gameplay-list-group-body"${collapsed ? " hidden" : ""}>${body}</div>
+      </section>`;
     }).join("");
+
+    list.querySelectorAll(".gameplay-list-group-header").forEach((header) => {
+      header.addEventListener("click", () => toggleKindGroup(header.dataset.group || ""));
+    });
     list.querySelectorAll(".gameplay-row").forEach((row) => {
       row.addEventListener("click", () => {
         const key = row.dataset.key || "";
@@ -1330,6 +1509,7 @@
         renderDetail(STATE.selected);
       });
     });
+
     if (!STATE.selected || !STATE.filtered.includes(STATE.selected)) {
       STATE.selected = STATE.filtered[0] || null;
     }
@@ -1391,14 +1571,39 @@
     return entry && (entry.showingTypeLabel || entry.partTypeLabel || entry.partType || "");
   }
 
+  function enemyTypeFilterKey(entry) {
+    if (!entry || entry.kind !== "enemy") return "";
+    return String(entry.displayType !== undefined && entry.displayType !== null && entry.displayType !== "" ? entry.displayType : (entry.displayTypeLabel || ""));
+  }
+
+  function enemyTypeFilterLabel(entry) {
+    return entry && (entry.displayTypeLabel || entry.displayType || "");
+  }
+
+  function listTypeLabel(entry) {
+    if (!entry) return "";
+    if (entry.kind === "enemy") return enemyTypeFilterLabel(entry);
+    if (entry.kind === "item") return entry.showingTypeLabel || entry.itemTypeLabel || "";
+    if (entry.kind === "weapon") return weaponTypeFilterLabel(entry);
+    if (entry.kind === "equipment") return equipmentTypeFilterLabel(entry);
+    if (entry.kind === "character") return characterPropertyFilterLabel(entry) || jobFilterLabel(entry);
+    return "";
+  }
+
+  function listGroupLabel(entry) {
+    return [kindLabel(entry && entry.kind), listTypeLabel(entry)].filter(Boolean).join(" / ");
+  }
+
   function typeFiltersMatch(entry) {
     const hasCharacterProperties = STATE.filters.characterProperties.size > 0;
     const hasWeaponTypes = STATE.filters.weaponTypes.size > 0;
     const hasEquipmentTypes = STATE.filters.equipmentTypes.size > 0;
-    if (!hasCharacterProperties && !hasWeaponTypes && !hasEquipmentTypes) return true;
+    const hasEnemyTypes = STATE.filters.enemyTypes.size > 0;
+    if (!hasCharacterProperties && !hasWeaponTypes && !hasEquipmentTypes && !hasEnemyTypes) return true;
     if (entry && entry.kind === "character") return hasCharacterProperties && STATE.filters.characterProperties.has(characterPropertyFilterKey(entry));
     if (entry && entry.kind === "weapon") return hasWeaponTypes && STATE.filters.weaponTypes.has(weaponTypeFilterKey(entry));
     if (entry && entry.kind === "equipment") return hasEquipmentTypes && STATE.filters.equipmentTypes.has(equipmentTypeFilterKey(entry));
+    if (entry && entry.kind === "enemy") return hasEnemyTypes && STATE.filters.enemyTypes.has(enemyTypeFilterKey(entry));
     return false;
   }
   function buildFilterChips() {
@@ -1407,16 +1612,19 @@
     const propertyCounts = countBy(STATE.entries, (entry) => characterPropertyFilterKey(entry));
     const weaponTypeCounts = countBy(STATE.entries, (entry) => weaponTypeFilterKey(entry));
     const equipmentTypeCounts = countBy(STATE.entries, (entry) => equipmentTypeFilterKey(entry));
+    const enemyTypeCounts = countBy(STATE.entries, (entry) => enemyTypeFilterKey(entry));
     const rarityCounts = countBy(STATE.entries, (entry) => rarityFilterKey(entry));
     const jobLabels = new Map(STATE.entries.map((entry) => [jobFilterKey(entry), jobFilterLabel(entry)]).filter(([value]) => value));
     const propertyLabels = new Map(STATE.entries.map((entry) => [characterPropertyFilterKey(entry), characterPropertyFilterLabel(entry)]).filter(([value]) => value));
     const weaponTypeLabels = new Map(STATE.entries.map((entry) => [weaponTypeFilterKey(entry), weaponTypeFilterLabel(entry)]).filter(([value]) => value));
     const equipmentTypeLabels = new Map(STATE.entries.map((entry) => [equipmentTypeFilterKey(entry), equipmentTypeFilterLabel(entry)]).filter(([value]) => value));
-    const kindItems = [...kindCounts.keys()].sort().map((value) => ({ value, label: kindLabel(value), count: kindCounts.get(value) }));
+    const enemyTypeLabels = new Map(STATE.entries.map((entry) => [enemyTypeFilterKey(entry), enemyTypeFilterLabel(entry)]).filter(([value]) => value));
+    const kindItems = [...kindCounts.keys()].sort((a, b) => kindRank(a) - kindRank(b) || a.localeCompare(b)).map((value) => ({ value, label: kindLabel(value), count: kindCounts.get(value), className: KIND_CHIP_CLASS[value] || "kind-chip" }));
     const jobItems = [...jobCounts.keys()].sort((a, b) => String(jobLabels.get(a) || a).localeCompare(String(jobLabels.get(b) || b))).map((value) => ({ value, label: jobLabels.get(value) || value, count: jobCounts.get(value) }));
     const propertyItems = [...propertyCounts.keys()].sort((a, b) => String(propertyLabels.get(a) || a).localeCompare(String(propertyLabels.get(b) || b))).map((value) => ({ value, label: propertyLabels.get(value) || value, count: propertyCounts.get(value) }));
     const weaponTypeItems = [...weaponTypeCounts.keys()].sort((a, b) => String(weaponTypeLabels.get(a) || a).localeCompare(String(weaponTypeLabels.get(b) || b))).map((value) => ({ value, label: weaponTypeLabels.get(value) || value, count: weaponTypeCounts.get(value) }));
     const equipmentTypeItems = [...equipmentTypeCounts.keys()].sort((a, b) => String(equipmentTypeLabels.get(a) || a).localeCompare(String(equipmentTypeLabels.get(b) || b))).map((value) => ({ value, label: equipmentTypeLabels.get(value) || value, count: equipmentTypeCounts.get(value) }));
+    const enemyTypeItems = [...enemyTypeCounts.keys()].sort((a, b) => ((ENEMY_TYPE_RANK[a] ?? 99) - (ENEMY_TYPE_RANK[b] ?? 99)) || String(enemyTypeLabels.get(a) || a).localeCompare(String(enemyTypeLabels.get(b) || b))).map((value) => ({ value, label: enemyTypeLabels.get(value) || value, count: enemyTypeCounts.get(value) }));
     const rarityItems = [...rarityCounts.keys()].sort((a, b) => Number(b) - Number(a)).map((value) => ({ value, label: rarityFilterLabel(value), count: rarityCounts.get(value) }));
     window.WebUI.filters.buildChips("#gameplay-kind-filter", kindItems, {
       active: STATE.filters.kinds,
@@ -1438,32 +1646,68 @@
       active: STATE.filters.equipmentTypes,
       onToggle: () => applyFilters(),
     });
+    window.WebUI.filters.buildChips("#gameplay-enemy-type-filter", enemyTypeItems, {
+      active: STATE.filters.enemyTypes,
+      onToggle: () => applyFilters(),
+    });
     window.WebUI.filters.buildChips("#gameplay-rarity-filter", rarityItems, {
       active: STATE.filters.rarities,
       onToggle: () => applyFilters(),
     });
   }
+  function kindRank(kind) {
+    const index = KIND_ORDER.indexOf(kind);
+    return index === -1 ? KIND_ORDER.length : index;
+  }
+
+  function enemyTypeRank(entry) {
+    return ENEMY_TYPE_RANK[enemyTypeFilterKey(entry)] ?? 99;
+  }
+
+  function compareGameplayEntries(a, b) {
+    const ak = kindRank(a.kind);
+    const bk = kindRank(b.kind);
+    if (ak !== bk) return ak - bk;
+    // Within enemies, order by display type (领袖 > 头目 > 精英 > 进阶 > 普通).
+    if (a.kind === "enemy" && b.kind === "enemy") {
+      const ae = enemyTypeRank(a);
+      const be = enemyTypeRank(b);
+      if (ae !== be) return ae - be;
+    }
+    const ag = listGroupLabel(a);
+    const bg = listGroupLabel(b);
+    if (ag !== bg) return ag.localeCompare(bg);
+    const ar = Number(a.rarity || 0);
+    const br = Number(b.rarity || 0);
+    if (ar !== br) return br - ar;
+    return String(a.title || a.id || "").localeCompare(String(b.title || b.id || ""));
+  }
+
   function applyFilters() {
-    const q = String((gp$("#gameplay-q") && gp$("#gameplay-q").value) || "").trim().toLowerCase();
+    const tokens = parseQuery(gp$("#gameplay-q") && gp$("#gameplay-q").value);
+    const scores = new Map();
+    STATE.searchTokens = tokens;
     STATE.filtered = STATE.entries.filter((entry) => {
       if (STATE.filters.kinds.size && !STATE.filters.kinds.has(entry.kind)) return false;
       if (STATE.filters.jobs.size && !STATE.filters.jobs.has(jobFilterKey(entry))) return false;
       if (STATE.filters.rarities.size && !STATE.filters.rarities.has(rarityFilterKey(entry))) return false;
       if (!typeFiltersMatch(entry)) return false;
-      if (q) {
-        const haystack = [entry.search, entry.title, entry.id, entry.group, entry.subtitle].join(" ");
-        if (!textIncludes(haystack, q)) return false;
+      if (tokens.length) {
+        const score = queryScore([entry.search, entry.title, entry.id, entry.group, entry.subtitle], tokens);
+        if (score <= 0) return false;
+        scores.set(entry, score);
       }
       return true;
-    }).sort((a, b) => {
-      const order = { weapon: 0, equipment: 1, character: 2, enemy: 3 };
-      const ak = order[a.kind] ?? 9;
-      const bk = order[b.kind] ?? 9;
-      if (ak !== bk) return ak - bk;
-      const ar = Number(a.rarity || 0);
-      const br = Number(b.rarity || 0);
-      if (ar !== br) return br - ar;
-      return String(a.title || a.id || "").localeCompare(String(b.title || b.id || ""));
+    });
+    // A multi-word query ranks entries by keyword-match count first; ties (and
+    // single-word / no query) fall back to the stable kind/type ordering.
+    const rankByScore = tokens.length > 1;
+    STATE.filtered.sort((a, b) => {
+      if (rankByScore) {
+        const delta = (scores.get(b) || 0) - (scores.get(a) || 0);
+        if (delta) return delta;
+      }
+      return compareGameplayEntries(a, b);
     });
     if (STATE.selected && !STATE.filtered.includes(STATE.selected)) STATE.selected = null;
     renderList();
@@ -1477,6 +1721,7 @@
     STATE.filters.characterProperties.clear();
     STATE.filters.weaponTypes.clear();
     STATE.filters.equipmentTypes.clear();
+    STATE.filters.enemyTypes.clear();
     STATE.filters.rarities.clear();
     buildFilterChips();
     applyFilters();
@@ -1493,8 +1738,10 @@
       ["#gameplay-character-property-label", "characterPropertyFilter"],
       ["#gameplay-weapon-type-label", "weaponTypeFilter"],
       ["#gameplay-equipment-type-label", "equipmentTypeFilter"],
+      ["#gameplay-enemy-type-label", "enemyTypeFilter"],
       ["#gameplay-rarity-label", "rareLevel"],
       ["#gameplay-reset", "reset"],
+      ["#gameplay-reveal-current", "locateCurrent"],
       ["#gameplay-list-meta-label", "listUnit"],
       ["#gameplay-empty", "empty"],
     ];
@@ -1551,6 +1798,7 @@
   function bindEvents() {
     gp$("#gameplay-q")?.addEventListener("input", () => applyFilters());
     gp$("#gameplay-reset")?.addEventListener("click", () => resetFilters());
+    gp$("#gameplay-reveal-current")?.addEventListener("click", () => revealSelectedInList());
     window.addEventListener("webui:view-changed", (event) => {
       if (event.detail && event.detail.view === "gameplay") loadGameplay();
     });
@@ -1569,6 +1817,8 @@
     if (!gp$("#gameplay-app")) return;
     STATE.uiLocale = resolveInitialUiLocale();
     STATE.language = currentLanguage();
+    STATE.collapsedKinds = loadCollapsedKinds();
+    STATE.levelFraction = loadLevelFraction();
     ensurePanelToggle();
     bindEvents();
     applyUiStrings();

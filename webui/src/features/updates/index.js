@@ -371,15 +371,14 @@
     }
     return out;
   }
-  function matchesFilters(entry) {
+  function matchesFilters(entry, tokens) {
     const statuses = statusFilters();
     const categories = categoryFilters();
     const extensions = extensionFilters();
-    const q = updateQuery();
     if (statuses.size && !statuses.has(entry.status)) return false;
     if (categories.size && !categories.has(entry.category)) return false;
     if (extensions.size && !extensions.has(normalizeExtension(entry.extension))) return false;
-    if (q && !entrySearchText(entry).includes(q)) return false;
+    if (tokens && tokens.length && !window.WebUI.queryMatches(entrySearchText(entry), tokens)) return false;
     return true;
   }
 
@@ -561,7 +560,19 @@
 
   function applyUpdateFilters() {
     syncFilterSectionActiveCounts();
-    UPDATE_STATE.filtered = UPDATE_STATE.entries.filter(matchesFilters).sort(compareEntries);
+    const tokens = window.WebUI.parseQuery(updateQuery());
+    const scores = new Map();
+    const filtered = UPDATE_STATE.entries.filter((entry) => {
+      if (!matchesFilters(entry, tokens)) return false;
+      if (tokens.length) scores.set(entry, window.WebUI.queryScore(entrySearchText(entry), tokens));
+      return true;
+    });
+    // A multi-word query ranks by keyword-match count first; single-word or no
+    // query keeps the user's chosen sort mode.
+    filtered.sort(tokens.length > 1
+      ? (a, b) => ((scores.get(b) || 0) - (scores.get(a) || 0)) || compareEntries(a, b)
+      : compareEntries);
+    UPDATE_STATE.filtered = filtered;
     if (
       UPDATE_STATE.selectedEntry
       && !UPDATE_STATE.filtered.some((entry) => entry.path === UPDATE_STATE.selectedEntry.path && entry.status === UPDATE_STATE.selectedEntry.status)
