@@ -404,6 +404,33 @@ do not map directly to generated `line` nodes; radio lines, remote lines, and
 matching `AudioVoiceExtraData` keys do map to generated line nodes where the
 WebUI story corpus has them.
 
+2026-07-01 audio config/support graph progress: source graph ingestion now
+promotes `TextVoIdTable`, `AudioVoTone`, `AudioSpeakerTypeWeights`,
+`AudioBattleBuildings`, `AudioCollection`, `AudioDrop`, `AudioFactory`,
+`AudioFactoryAnnouncement`, `AudioItemDragAndDrop`, `AudioItemTypeDragAndDrop`,
+and `AudioLevel`. The existing `AudioSequenceDialog` structured-table handler
+was corrected so each sequence row becomes a distinct `audio_sequence_dialog`
+node instead of collapsing under one `audio_sequence:sequence` node. A fast CN
+rebuild verified 942,880 total nodes and 1,538,834 edges, with 0 orphan edges
+from these audio support/config sources. New node counts include 180
+`text_voice_id`, 115 `audio_vo_tone`, 3 `audio_speaker_type_weight`, 2
+`audio_sequence_dialog_set`, 38 `audio_sequence_dialog`, 17
+`audio_battle_building`, 31 `audio_collection`, 72 `audio_drop`, 73
+`audio_factory`, 13 `audio_factory_announcement`, 571 `audio_item_drag_drop`,
+11 `audio_item_type_drag_drop`, and 103 `audio_level` nodes; the old
+`audio_sequence` kind is now 0. Edge checks verified 180 TextVoId line links,
+153 TextVoId audio links, 291 voice tone variant audio links, 100 sequence dialog
+links to `AudioDialog` rows/audio/line nodes, 38 sequence-response links, 80
+sequence speaker-actor links, 80 sequence speaker-character links, 17
+battle-building audio links to factory buildings and machines, 60
+factory-building SFX event refs, 240 factory SFX event refs, 571 item drag/drop
+links to item nodes, 457 item drag/drop links to factory items, 9 item-type
+drag/drop links, 146 item drag/drop event refs, 99 level audio profile links,
+and 105 level audio event refs. Values in SFX/config fields are modeled as
+`wwise_event` nodes unless they
+are explicit voice/audio IDs; the broad `DialogTextTable`/`DialogOptionTable`
+semantics remain deferred because they overlap story and option recovery.
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
