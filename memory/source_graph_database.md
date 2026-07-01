@@ -553,6 +553,30 @@ python tools\endfield_source_graph.py query eny_0018_lbtough_train --kind enemy
 python tools\endfield_source_graph.py query buff_common_undeadable --kind buff
 ```
 
+2026-07-01 BuffData decoded-config progress: source graph ingestion now promotes
+bounded `BuffData` MemoryPack evidence from the WebUI Data index. A fast CN
+rebuild to `tmp/source_graph_buff.sqlite` verified 1,050,017 total nodes,
+1,757,974 edges, and 1,462,945 aliases. New coverage includes 4,616
+`buff_data_defines_buff` edges from decoded config files to 2,325 unique buff
+ids, plus 268 `gameplay_tag` nodes, 1,254 `buff_parameter` nodes, and 106
+`buff_icon` nodes. Edge checks verified 1,862 BuffData string references to 779
+distinct buff ids, 1,416 tag-string edges to 268 distinct gameplay tags, 13,373
+parameter-string edges to 1,254 distinct parameter names, 1,404 effect-key edges
+to 703 distinct BuffData effect keys, 273 audio-event edges to 145 distinct
+audio keys, and 391 icon edges to 106 distinct icon ids. All 4,616 entries pass
+the 29-member BuffData guard and carry generated `parsed-through-exact-tail`
+post-id status; graph data preserves id-marker offsets, compact post-id sample
+values, string scan counts, and per-edge byte offsets. These edges are bounded
+length-prefixed string evidence, not proof of typed blackboard fields, timeline
+action execution, formula evaluation, or exported effect/icon asset binding.
+Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query buff_common_undeadable --kind buff
+python tools\endfield_source_graph.py query Skill/Character/Common/Affixes --kind gameplay_tag
+python tools\endfield_source_graph.py query icon_battle_affix_slow --kind buff_icon
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,

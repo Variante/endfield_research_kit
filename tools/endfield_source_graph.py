@@ -270,6 +270,7 @@ DIALOG_SUPPORT_TABLES = (
     "DomainDepotDeliverTargetDialogTable.json",
 )
 DECODED_CONFIG_GROUP_FILES = (
+    "Json_BuffData.json",
     "Json_GameplayConfig.json",
     "Json_GameplayConfigMissionAreaTable.json",
     "Json_GameplayConfigSubGameInstanceDataTable.json",
@@ -279,6 +280,7 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_GameplayConfigWorldEntityRegistry.json",
 )
 DECODED_CONFIG_TARGET_TYPES = {
+    "BuffData",
     "GameplayConfigMissionAreaTable",
     "GameplayConfigWorldEntityRegistry",
     "InteractiveTable",
@@ -477,6 +479,168 @@ def mp_read_f32(data: bytes, offset: int, field_name: str) -> tuple[float, int]:
     if not math.isfinite(value):
         raise ValueError(f"{field_name}:non-finite")
     return value, offset + 4
+
+
+BUFF_DATA_MEMBER_COUNT = 29
+BUFF_DATA_STRING_MAX_SAMPLES = 512
+BUFF_DATA_PARAM_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{1,48}$")
+BUFF_DATA_POST_ID_RE = re.compile(r"(?:^|; )postId=([^;]+)")
+
+
+def mp_format_offset(offset: int) -> str:
+    return f"0x{offset:x}"
+
+
+def scan_length_prefixed_utf8_string_hits(
+    data: bytes,
+    *,
+    start: int = 0,
+    max_scan_bytes: int | None = None,
+    max_samples: int = 128,
+    min_length: int = 2,
+    max_length: int = 160,
+) -> list[dict[str, Any]]:
+    end = len(data) if max_scan_bytes is None else min(len(data), start + max_scan_bytes)
+    hits: list[dict[str, Any]] = []
+    seen: set[tuple[int, str]] = set()
+    for pos in range(max(start, 0), max(start, end - 4)):
+        length = struct.unpack_from("<I", data, pos)[0]
+        if length < min_length or length > max_length or pos + 4 + length > end:
+            continue
+        raw = data[pos + 4:pos + 4 + length]
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        if any(ord(ch) < 32 for ch in text):
+            continue
+        if not any(ch.isalnum() for ch in text):
+            continue
+        key = (pos, text)
+        if key in seen:
+            continue
+        seen.add(key)
+        hits.append({"offset": pos, "offsetHex": mp_format_offset(pos), "length": length, "value": text})
+        if len(hits) >= max_samples:
+            break
+    return hits
+
+
+def length_prefixed_utf8_marker_offsets(data: bytes, value: str) -> list[int]:
+    if not value:
+        return []
+    raw = value.encode("utf-8")
+    marker = struct.pack("<I", len(raw)) + raw
+    offsets: list[int] = []
+    cursor = 0
+    while True:
+        pos = data.find(marker, cursor)
+        if pos < 0:
+            return offsets
+        offsets.append(pos)
+        cursor = pos + 1
+
+
+def is_buff_data_param_string(value: str) -> bool:
+    if not BUFF_DATA_PARAM_RE.match(value):
+        return False
+    if value.startswith(("buff_", "icon_", "au_", "P_")):
+        return False
+    return "/" not in value
+
+
+def parse_buff_data_post_id_sample(sample: Any) -> dict[str, Any]:
+    text = safe_key(sample)
+    match = BUFF_DATA_POST_ID_RE.search(text)
+    if not match:
+        return {}
+    parsed: dict[str, Any] = {}
+    for item in match.group(1).split(","):
+        if ":" not in item:
+            continue
+        key, raw_value = item.split(":", 1)
+        key = key.strip()
+        raw_value = raw_value.strip()
+        if not key:
+            continue
+        try:
+            if raw_value.lower() in {"true", "false"}:
+                value: Any = raw_value.lower() == "true"
+            elif any(ch in raw_value for ch in ".eE"):
+                value = float(raw_value)
+            else:
+                value = int(raw_value)
+        except ValueError:
+            value = raw_value
+        parsed[key] = value
+    return parsed
+
+
+def buff_data_id_from_entry(entry: dict[str, Any]) -> str:
+    path_id = Path(safe_key(entry.get("p"))).stem
+    if path_id:
+        return path_id
+    sample = safe_key(entry.get("t"))
+    match = re.search(r"(?:^|; )id=([^;]+)", sample)
+    return safe_key(match.group(1)) if match else ""
+
+
+def buff_data_string_ref_kind(value: Any, buff_id: str) -> str:
+    text = safe_key(value)
+    if not text or text == buff_id:
+        return ""
+    if text.startswith("buff_"):
+        return "linked_buff"
+    if text.startswith("P_") and len(text) > 2:
+        return "effect"
+    if text.startswith(("au_", "radio_", "bark_")):
+        return "audio"
+    if text.startswith("icon_"):
+        return "icon"
+    if "/" in text and not text.startswith(("Assets/", "assets/")) and len(text) >= 3:
+        return "tag"
+    if is_buff_data_param_string(text):
+        return "param"
+    return ""
+
+
+def extract_buff_data_summary(entry: dict[str, Any], data: bytes) -> dict[str, Any] | None:
+    if not data or data[0] != BUFF_DATA_MEMBER_COUNT:
+        return None
+    buff_id = buff_data_id_from_entry(entry)
+    id_offsets = length_prefixed_utf8_marker_offsets(data, buff_id)
+    hits = scan_length_prefixed_utf8_string_hits(data, max_samples=BUFF_DATA_STRING_MAX_SAMPLES)
+    refs: dict[str, list[dict[str, Any]]] = {"linked_buff": [], "tag": [], "param": [], "effect": [], "audio": [], "icon": []}
+    seen: set[tuple[str, str, int]] = set()
+    for index, hit in enumerate(hits):
+        value = safe_key(hit.get("value"))
+        kind = buff_data_string_ref_kind(value, buff_id)
+        if not kind:
+            continue
+        offset = int(hit.get("offset") or 0)
+        key = (kind, value, offset)
+        if key in seen:
+            continue
+        seen.add(key)
+        refs[kind].append({
+            "index": index,
+            "offset": hit.get("offsetHex"),
+            "length": hit.get("length"),
+            "value": value,
+        })
+    return {
+        "buffId": buff_id,
+        "memberCount": BUFF_DATA_MEMBER_COUNT,
+        "idStringVerified": bool(id_offsets),
+        "idMarkerCount": len(id_offsets),
+        "idMarkerOffsets": [mp_format_offset(offset) for offset in id_offsets[:16]],
+        "postId": parse_buff_data_post_id_sample(entry.get("t")),
+        "postIdStatus": next((safe_key(item).split("=", 1)[1] for item in entry.get("ds") or [] if safe_key(item).startswith("decoded.postIdPrefix.status=")), ""),
+        "stringCountScanned": len(hits),
+        "stringScanLimit": BUFF_DATA_STRING_MAX_SAMPLES,
+        "refCounts": {kind: len(values) for kind, values in refs.items()},
+        "refs": refs,
+    }
 
 
 def mp_read_vec3(data: bytes, offset: int, field_name: str) -> tuple[list[float], int]:
@@ -1694,7 +1858,9 @@ class SourceGraphBuilder:
         self.add_file(entry_path, kind="decoded_game_data", source=safe_key(entry.get("source")) or "webui/game_data", size=entry.get("s"), data={"subtype": subtype, "rows": entry.get("r"), "hash": entry.get("hash")})
         family_node = self.add_node("decoded_config_family", subtype, name=subtype, source="webui/game_data")
         self.add_edge(file_node, family_node, "decoded_as_config_family", source="webui/game_data", evidence=safe_key(entry.get("q")))
-        if subtype == "GameplayConfigMissionAreaTable":
+        if subtype == "BuffData":
+            self.add_buff_data_config_edges(file_node, entry)
+        elif subtype == "GameplayConfigMissionAreaTable":
             self.add_mission_area_config_edges(file_node, entry)
         elif subtype == "ModelTable":
             self.add_model_table_config_edges(file_node, entry)
@@ -1712,6 +1878,54 @@ class SourceGraphBuilder:
             self.add_world_entity_registry_edges(file_node, entry)
         elif subtype == "TeleportValidationDataTable":
             self.add_teleport_validation_config_edges(file_node, entry)
+
+    def add_buff_data_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        decoded = extract_buff_data_summary(entry, self.read_decoded_config_bytes(entry))
+        buff_id = safe_key(decoded.get("buffId") if decoded else "") or buff_data_id_from_entry(entry)
+        if not buff_id:
+            return
+        buff_node = self.add_buff_ref_node(buff_id, source="webui/game_data")
+        self.update_node_details(
+            buff_node,
+            name=buff_id,
+            source="webui/game_data",
+            data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": decoded or {}}, depth=3),
+        )
+        self.add_edge(file_node, buff_node, "buff_data_defines_buff", source="webui/game_data", evidence=safe_key(entry.get("dp")))
+        self.add_alias(entry.get("dp"), buff_node, kind="buff_config_path", source="webui/game_data")
+        self.add_alias(entry.get("p"), buff_node, kind="buff_data_path", source="webui/game_data")
+        if not decoded:
+            return
+        refs = decoded.get("refs") if isinstance(decoded.get("refs"), dict) else {}
+        for ref_kind, values in refs.items():
+            if not isinstance(values, list):
+                continue
+            for ref in values:
+                if not isinstance(ref, dict):
+                    continue
+                value = safe_key(ref.get("value"))
+                if not value:
+                    continue
+                evidence = safe_key(ref.get("offset")) or f"strings[{ref.get('index')}]"
+                data = {"index": ref.get("index"), "offset": ref.get("offset"), "length": ref.get("length"), "value": value}
+                if ref_kind == "linked_buff":
+                    target_node = self.add_buff_ref_node(value, source="webui/game_data")
+                    self.add_edge(buff_node, target_node, "buff_data_references_buff", source="webui/game_data", evidence=evidence, data=data)
+                elif ref_kind == "tag":
+                    target_node = self.add_gameplay_tag_node(value, source="webui/game_data")
+                    self.add_edge(buff_node, target_node, "buff_data_has_tag_string", source="webui/game_data", evidence=evidence, data=data)
+                elif ref_kind == "param":
+                    target_node = self.add_buff_parameter_node(value, source="webui/game_data")
+                    self.add_edge(buff_node, target_node, "buff_data_has_param_string", source="webui/game_data", evidence=evidence, data=data)
+                elif ref_kind == "effect":
+                    target_node = self.add_node("gameplay_effect", value, name=value, source="webui/game_data")
+                    self.add_alias(value, target_node, kind="gameplay_effect_id", source="webui/game_data")
+                    self.add_edge(buff_node, target_node, "buff_data_references_effect", source="webui/game_data", evidence=evidence, data=data)
+                elif ref_kind == "audio":
+                    self.add_audio_target_edge(buff_node, value, edge_kind="buff_data_references_audio", source="webui/game_data", evidence=evidence)
+                elif ref_kind == "icon":
+                    target_node = self.add_buff_icon_node(value, source="webui/game_data")
+                    self.add_edge(buff_node, target_node, "buff_data_references_icon", source="webui/game_data", evidence=evidence, data=data)
 
     def add_spawner_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         decoded = extract_spawner_config_rows(self.read_decoded_config_bytes(entry))
@@ -7842,6 +8056,31 @@ class SourceGraphBuilder:
         self.add_alias(tag_key, tag_node, kind="skill_tag_id", source=source)
         return tag_node
 
+    def add_gameplay_tag_node(self, tag_id: Any, *, source: str = "") -> str:
+        tag_key = safe_key(tag_id)
+        if not tag_key:
+            return ""
+        tag_node = self.add_node("gameplay_tag", tag_key, name=tag_key, source=source)
+        self.add_alias(tag_key, tag_node, kind="gameplay_tag_id", source=source)
+        return tag_node
+
+    def add_buff_parameter_node(self, parameter_id: Any, *, source: str = "") -> str:
+        parameter_key = safe_key(parameter_id)
+        if not parameter_key:
+            return ""
+        parameter_node = self.add_node("buff_parameter", parameter_key, name=parameter_key, source=source)
+        self.add_alias(parameter_key, parameter_node, kind="buff_parameter_id", source=source)
+        return parameter_node
+
+    def add_buff_icon_node(self, icon_id: Any, *, source: str = "") -> str:
+        icon_key = safe_key(icon_id)
+        if not icon_key:
+            return ""
+        icon_node = self.add_node("buff_icon", icon_key, name=icon_key, source=source)
+        self.add_alias(icon_key, icon_node, kind="buff_icon_id", source=source)
+        self.add_alias(icon_key, icon_node, kind="icon_id", source=source)
+        return icon_node
+
     def add_blackboard_edges(self, owner_node: str, entries: Any, *, edge_kind: str, source: str, evidence_prefix: str, context: dict[str, Any] | None = None) -> None:
         if not isinstance(entries, list):
             return
@@ -9076,6 +9315,9 @@ QUERY_KIND_PRIORITY = {
     "spawner_config": 62,
     "spawner_enemy_entry": 63,
     "gameplay_effect": 64,
+    "gameplay_tag": 65,
+    "buff_parameter": 66,
+    "buff_icon": 67,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -9306,6 +9548,9 @@ NODE_ID_PREFIXES = (
     "spawner_config",
     "spawner_enemy_entry",
     "gameplay_effect",
+    "gameplay_tag",
+    "buff_parameter",
+    "buff_icon",
     "mission",
     "map",
     "level",
