@@ -216,6 +216,7 @@ class SourceGraphBuilder:
         self.ingest_counts: Counter[str] = Counter()
         self.asset_by_stem: dict[str, list[str]] = defaultdict(list)
         self.asset_by_name: dict[str, list[str]] = defaultdict(list)
+        self.asset_paths: list[str] = []
         self.alias_count = 0
 
     @property
@@ -451,6 +452,7 @@ class SourceGraphBuilder:
             stem = Path(rel).stem.lower()
             self.asset_by_stem[stem].append(rel)
             self.asset_by_name[Path(rel).name.lower()].append(rel)
+            self.asset_paths.append(rel)
             self.add_alias(stem, node, kind="asset_stem", source="webui/assets")
             self.add_alias(Path(rel).name.lower(), node, kind="asset_name", source="webui/assets")
             if entry.get("p"):
@@ -585,6 +587,7 @@ class SourceGraphBuilder:
         ):
             self.add_alias(alias, node, kind=alias_kind, source="webui/gameplay")
         self.add_gameplay_source_edges(node, entry.get("source"))
+        self.add_gameplay_asset_edges(node, entry)
 
         default_weapon_id = safe_key(entry.get("defaultWeaponId"))
         if default_weapon_id:
@@ -632,6 +635,40 @@ class SourceGraphBuilder:
             for index, talent in enumerate(entry.get("talents") or []):
                 if isinstance(talent, dict):
                     self.add_gameplay_talent(node, f"{entry_id}:talents", talent, index)
+
+    def add_gameplay_asset_edges(self, owner_node: str, entry: dict[str, Any]) -> None:
+        tokens: list[tuple[str, str]] = []
+        entry_id = safe_key(entry.get("id"))
+        kind = safe_key(entry.get("kind"))
+        if kind in {"weapon", "character"} and entry_id:
+            tokens.append(("id", entry_id))
+        icon_id = safe_key(entry.get("iconId"))
+        if icon_id:
+            tokens.append(("iconId", icon_id))
+        model_path = safe_key(entry.get("modelPath"))
+        if model_path:
+            model_stem = Path(model_path).stem
+            if model_stem:
+                tokens.append(("modelPath", model_stem))
+
+        seen_tokens: set[str] = set()
+        for field, token in tokens:
+            token_lower = token.lower()
+            if not token_lower or token_lower in seen_tokens:
+                continue
+            seen_tokens.add(token_lower)
+            for rel in self.asset_paths:
+                if token_lower not in rel.lower():
+                    continue
+                asset_node = self.add_node("asset", rel, name=Path(rel).name, path=rel)
+                self.add_edge(
+                    owner_node,
+                    asset_node,
+                    "has_gameplay_asset",
+                    source="webui/gameplay",
+                    evidence=field,
+                    data={"token": token},
+                )
 
     def add_gameplay_source_edges(self, owner_node: str, source: Any, *, edge_kind: str = "defined_by_row") -> None:
         if not isinstance(source, dict):

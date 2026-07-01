@@ -768,6 +768,14 @@ The asset index has 53,626 model entries and 65,126 JSON entries, and the
 source graph includes material, mesh, texture, shader, and asset relationships.
 This supports browsing and targeted lookup.
 
+2026-07-01 source graph asset progress: Gameplay entries now get conservative
+asset neighbors when an exact gameplay ID, icon ID, or model-path stem appears
+inside an exported asset path. The fast CN source graph build verifies 3,652
+`has_gameplay_asset` edges: 1,675 weapon edges, 1,097 character edges, and 880
+equipment edges. This maps common weapon meshes/materials, character UI/portrait
+textures, and equipment icon textures to semantic Gameplay entries without
+using fuzzy localized-name matching.
+
 The deeper semantic model is still incomplete:
 
 - Many model files are not yet mapped to gameplay entities or runtime prefab

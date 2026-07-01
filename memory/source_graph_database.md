@@ -117,6 +117,13 @@ python tools\endfield_source_graph.py query chr_0017_yvonne --kind character
 python tools\endfield_source_graph.py query wpn_pistol_0001 --kind weapon
 ```
 
+The same build now links Gameplay entries to exported asset nodes by exact
+Gameplay ID, icon ID, or model-path stem containment in asset paths. The fast
+CN verification build produced 3,652 `has_gameplay_asset` edges: 1,675 from
+weapons, 1,097 from characters, and 880 from equipment. Evidence values record
+the source field (`id`, `iconId`, or `modelPath`) so later audits can separate
+broad ID matches from icon/model-path matches.
+
 Use the quick build for normal story/option/map investigation. Use the full
 build only when Unity asset container, PathID, or exported asset relationship
 coverage matters.
