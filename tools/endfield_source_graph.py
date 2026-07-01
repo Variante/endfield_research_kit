@@ -934,7 +934,7 @@ class SourceGraphBuilder:
         if not entry_id:
             return
         kind = safe_key(entry.get("kind")) or "entry"
-        node_kind = {"weapon": "weapon", "equipment": "equipment", "character": "character"}.get(kind, "gameplay_entry")
+        node_kind = {"weapon": "weapon", "equipment": "equipment", "character": "character", "enemy": "enemy"}.get(kind, "gameplay_entry")
         stats = entry.get("stats") if isinstance(entry.get("stats"), dict) else {}
         formula = entry.get("formula") if isinstance(entry.get("formula"), dict) else {}
         node = self.add_node(
@@ -961,6 +961,14 @@ class SourceGraphBuilder:
                 "domainId": entry.get("domainId"),
                 "domainName": entry.get("domainName"),
                 "suitId": entry.get("suitId"),
+                "templateId": entry.get("templateId"),
+                "templateName": entry.get("templateName"),
+                "attrTemplateId": entry.get("attrTemplateId"),
+                "modelId": entry.get("modelId"),
+                "aiTemplateId": entry.get("aiTemplateId"),
+                "displayType": entry.get("displayType"),
+                "displayTypeLabel": entry.get("displayTypeLabel"),
+                "isDangerous": entry.get("isDangerous"),
                 "formulaId": formula.get("formulaId"),
                 "formulaName": formula.get("formulaName") or formula.get("name"),
                 "source": entry.get("source"),
@@ -974,12 +982,18 @@ class SourceGraphBuilder:
             (entry.get("subtitle"), f"{node_kind}_alias"),
             (entry.get("internalName"), f"{node_kind}_alias"),
             (entry.get("engName"), f"{node_kind}_alias"),
+            (entry.get("nickname"), f"{node_kind}_alias"),
+            (entry.get("templateId"), f"{node_kind}_template_id"),
+            (entry.get("attrTemplateId"), f"{node_kind}_attr_template_id"),
+            (entry.get("modelId"), "model_id"),
+            (entry.get("aiTemplateId"), "ai_template_id"),
             (entry.get("fileName"), "model_name"),
             (entry.get("modelPath"), "model_path"),
             (entry.get("iconId"), "icon_id"),
         ):
             self.add_alias(alias, node, kind=alias_kind, source="webui/gameplay")
         self.add_gameplay_source_edges(node, entry.get("source"))
+        self.add_gameplay_source_edges(node, entry.get("displaySource"), edge_kind="displayed_by_row")
         self.add_gameplay_asset_edges(node, entry)
         self.add_gameplay_asset_entity_edges(node, entry)
 
@@ -992,6 +1006,8 @@ class SourceGraphBuilder:
             self.add_gameplay_progression_node(node, entry_id, label, entry.get(label))
         if kind == "equipment":
             self.add_gameplay_equipment_semantics(node, entry_id, entry)
+        if kind == "enemy":
+            self.add_gameplay_enemy_semantics(node, entry_id, entry)
 
         for index, skill in enumerate(entry.get("skills") or []):
             if isinstance(skill, dict):
@@ -1031,6 +1047,122 @@ class SourceGraphBuilder:
             for index, talent in enumerate(entry.get("talents") or []):
                 if isinstance(talent, dict):
                     self.add_gameplay_talent(node, f"{entry_id}:talents", talent, index)
+
+    def add_gameplay_enemy_semantics(self, enemy_node: str, enemy_id: str, entry: dict[str, Any]) -> None:
+        template_id = safe_key(entry.get("templateId"))
+        if template_id:
+            template_node = self.add_node(
+                "enemy_template",
+                template_id,
+                name=entry.get("templateName") or template_id,
+                source="webui/gameplay",
+                data={
+                    "id": template_id,
+                    "name": entry.get("templateName"),
+                    "displayType": entry.get("displayType"),
+                    "displayTypeLabel": entry.get("displayTypeLabel"),
+                    "distributionCount": len(entry.get("distributionIds") or []),
+                },
+            )
+            self.add_edge(enemy_node, template_node, "uses_enemy_template", source="webui/gameplay", evidence="templateId")
+            self.add_alias(template_id, template_node, kind="enemy_template_id", source="webui/gameplay")
+            self.add_alias(entry.get("templateName"), template_node, kind="enemy_template_name", source="webui/gameplay")
+            self.add_gameplay_source_edges(template_node, {"table": "EnemyTemplateTable.json", "id": template_id})
+            self.add_gameplay_source_edges(template_node, {"table": "EnemyTemplateDisplayInfoTable.json", "id": template_id}, edge_kind="displayed_by_row")
+
+        attr_template_id = safe_key(entry.get("attrTemplateId"))
+        if attr_template_id:
+            stats = entry.get("stats") if isinstance(entry.get("stats"), dict) else {}
+            attr_node = self.add_node(
+                "enemy_attribute_template",
+                attr_template_id,
+                name=attr_template_id,
+                source="webui/gameplay",
+                data={
+                    "id": attr_template_id,
+                    "stats": self.gameplay_progression_summary(stats),
+                    "independentAttributeCount": len(entry.get("independentAttributes") or []),
+                    "damageScalarCount": len(entry.get("damageScalars") or []),
+                    "resilienceFieldCount": len(entry.get("resilience") or []),
+                },
+            )
+            self.add_edge(enemy_node, attr_node, "uses_enemy_attribute_template", source="webui/gameplay", evidence="attrTemplateId")
+            self.add_alias(attr_template_id, attr_node, kind="enemy_attribute_template_id", source="webui/gameplay")
+            self.add_gameplay_source_edges(attr_node, {"table": "EnemyAttributeTemplateTable.json", "id": attr_template_id})
+
+        display_type = safe_key(entry.get("displayType"))
+        if display_type:
+            display_node = self.add_node(
+                "enemy_display_type",
+                display_type,
+                name=entry.get("displayTypeLabel") or display_type,
+                source="webui/gameplay",
+            )
+            self.add_edge(enemy_node, display_node, "has_enemy_display_type", source="webui/gameplay", evidence="displayType")
+            self.add_alias(display_type, display_node, kind="enemy_display_type_id", source="webui/gameplay")
+            self.add_alias(entry.get("displayTypeLabel"), display_node, kind="enemy_display_type_name", source="webui/gameplay")
+            self.add_gameplay_source_edges(display_node, {"table": "DisplayEnemyTypeTable.json", "id": display_type})
+
+        for index, ability in enumerate(entry.get("abilities") or []):
+            if not isinstance(ability, dict):
+                continue
+            ability_id = safe_key(ability.get("id"))
+            if not ability_id:
+                continue
+            ability_node = self.add_node(
+                "enemy_ability",
+                ability_id,
+                name=ability.get("name") or ability_id,
+                source="webui/gameplay",
+                data={"id": ability_id, "description": compact_text(ability.get("description"), 500)},
+            )
+            self.add_edge(enemy_node, ability_node, "has_enemy_ability", source="webui/gameplay", evidence=str(index))
+            self.add_alias(ability_id, ability_node, kind="enemy_ability_id", source="webui/gameplay")
+            self.add_alias(ability.get("name"), ability_node, kind="enemy_ability_name", source="webui/gameplay")
+            self.add_gameplay_source_edges(ability_node, {"table": "EnemyAbilityDescTable.json", "id": ability_id})
+
+        for tag in entry.get("tags") or []:
+            if not isinstance(tag, dict):
+                continue
+            tag_id = safe_key(tag.get("id"))
+            if not tag_id:
+                continue
+            tag_node = self.add_node("enemy_tag", tag_id, name=tag.get("label") or tag_id, source="webui/gameplay")
+            self.add_edge(enemy_node, tag_node, "has_enemy_tag", source="webui/gameplay", evidence=tag_id)
+            self.add_alias(tag_id, tag_node, kind="enemy_tag_id", source="webui/gameplay")
+            self.add_alias(tag.get("label"), tag_node, kind="enemy_tag_name", source="webui/gameplay")
+            self.add_gameplay_source_edges(tag_node, {"table": "EnemyTagTable.json", "id": tag_id})
+
+        for item in entry.get("dropItems") or []:
+            if not isinstance(item, dict):
+                continue
+            item_id = safe_key(item.get("id"))
+            if not item_id:
+                continue
+            item_node = self.add_node("item", item_id, name=item.get("name") or item_id, source="webui/gameplay")
+            self.add_edge(enemy_node, item_node, "drops_item", source="webui/gameplay", evidence="WikiEnemyDropTable")
+            self.add_alias(item_id, item_node, kind="item_id", source="webui/gameplay")
+            self.add_alias(item.get("name"), item_node, kind="item_name", source="webui/gameplay")
+
+        for index, buff_id in enumerate(entry.get("bornBuffs") or []):
+            buff_id = safe_key(buff_id)
+            if not buff_id:
+                continue
+            buff_node = self.add_node("buff", buff_id, name=buff_id, source="webui/gameplay")
+            self.add_edge(enemy_node, buff_node, "starts_with_buff", source="webui/gameplay", evidence=str(index))
+            self.add_alias(buff_id, buff_node, kind="buff_id", source="webui/gameplay")
+
+        for index, modifier in enumerate(entry.get("attrModifiers") or []):
+            if not isinstance(modifier, dict):
+                continue
+            modifier_node = self.add_node(
+                "enemy_attribute_modifier",
+                f"{enemy_id}:{index}",
+                name=f"{enemy_id} modifier {index + 1}",
+                source="webui/gameplay",
+                data=compact_payload(modifier, depth=2, list_limit=6),
+            )
+            self.add_edge(enemy_node, modifier_node, "has_enemy_attribute_modifier", source="webui/gameplay", evidence=str(index))
 
     def add_gameplay_equipment_semantics(self, equipment_node: str, equipment_id: str, entry: dict[str, Any]) -> None:
         domain = entry.get("domain") if isinstance(entry.get("domain"), dict) else {}
@@ -2760,24 +2892,32 @@ QUERY_KIND_PRIORITY = {
     "character": 9,
     "weapon": 10,
     "equipment": 11,
-    "equipment_formula": 12,
-    "equipment_formula_pack": 13,
-    "equipment_suit": 14,
-    "gameplay_domain": 15,
-    "gameplay_property_curve": 16,
-    "gameplay_stat_property": 17,
-    "gameplay_unlock": 18,
-    "item": 19,
-    "gameplay_skill_group": 20,
-    "gameplay_skill": 21,
-    "gameplay_talent_group": 22,
-    "gameplay_talent": 23,
-    "gameplay_progression": 24,
-    "asset_entity": 25,
-    "asset": 26,
-    "actor": 27,
-    "audio": 28,
-    "file": 29,
+    "enemy": 12,
+    "enemy_template": 13,
+    "enemy_attribute_template": 14,
+    "enemy_display_type": 15,
+    "enemy_ability": 16,
+    "enemy_tag": 17,
+    "enemy_attribute_modifier": 18,
+    "buff": 19,
+    "equipment_formula": 20,
+    "equipment_formula_pack": 21,
+    "equipment_suit": 22,
+    "gameplay_domain": 23,
+    "gameplay_property_curve": 24,
+    "gameplay_stat_property": 25,
+    "gameplay_unlock": 26,
+    "item": 27,
+    "gameplay_skill_group": 28,
+    "gameplay_skill": 29,
+    "gameplay_talent_group": 30,
+    "gameplay_talent": 31,
+    "gameplay_progression": 32,
+    "asset_entity": 33,
+    "asset": 34,
+    "actor": 35,
+    "audio": 36,
+    "file": 37,
 }
 
 NODE_ID_PREFIXES = (
@@ -2790,6 +2930,14 @@ NODE_ID_PREFIXES = (
     "character",
     "weapon",
     "equipment",
+    "enemy",
+    "enemy_template",
+    "enemy_attribute_template",
+    "enemy_display_type",
+    "enemy_ability",
+    "enemy_tag",
+    "enemy_attribute_modifier",
+    "buff",
     "equipment_formula",
     "equipment_formula_pack",
     "equipment_suit",

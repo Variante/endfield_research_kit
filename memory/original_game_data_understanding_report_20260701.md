@@ -705,18 +705,30 @@ fire/natural damage, and cold/pulse damage. These curves make equipment
 progression inspectable in the WebUI, while formula evaluation and exact runtime
 combat math remain outside the static payload.
 
+2026-07-01 WebUI enemy-table progress: the Gameplay builder now emits 290 enemy
+entries from merged `EnemyTable`, `EnemyAttributeTemplateTable`, display,
+ability, tag, and drop tables. The CN payload verifies 610 visible Gameplay
+entries total: 72 weapons, 220 equipment records, 28 visible character records,
+and 290 enemies. Enemy stat recovery contributes 9,800 distinct authored
+stat-template rows and 29,000 per-enemy stat references, with HP/ATK/DEF
+checkpoints exposed in the WebUI. It also exposes 406 ability references, 194
+born-buff references, drops, combat scalars, resilience fields, independent
+attributes, and raw attr modifiers. This is authored table semantics, not a full
+runtime combat formula or modifier-order reconstruction.
+
 2026-07-01 source graph progress: `tools/endfield_source_graph.py` now ingests
 the generated Gameplay payload as evidence graph nodes and relationships. A
 fast CN verification build with `--skip-asset-maps --skip-reference-rows --skip-followups` produced 72 weapon nodes, 220 equipment nodes, 30 character
-nodes, 409 skill nodes, 526 talent nodes, 950 progression nodes, 66 item nodes,
-and 3,820 required-item edges. The generated WebUI payload itself exposes 320
-visible entries: 72 weapons, 220 equipment records, and 28 visible character
-records. The two hidden Endministrator rows remain as `CharacterTable` graph
-nodes but are no longer separate visible Gameplay entries. Exact queries such as
-`chr_0017_yvonne` and `wpn_pistol_0001` now resolve to Gameplay character/weapon
-nodes with source table row, default weapon, progression, skill, talent, and
-item-cost neighbors. This improves cross-domain lookup; it still does not prove
-formulas beyond the generated source-table evidence.
+nodes, 290 enemy nodes, 78 enemy template nodes, 98 enemy attribute-template
+nodes, 134 enemy ability nodes, 83 buff nodes, 409 skill nodes, 526 talent
+nodes, 1,240 progression nodes, 97 item nodes, 3,820 required-item edges, 290
+`uses_enemy_attribute_template` edges, 406 `has_enemy_ability` edges, 194
+`starts_with_buff` edges, and 266 `drops_item` edges. The two hidden
+Endministrator rows remain as `CharacterTable` graph nodes but are no longer
+separate visible Gameplay entries. Exact queries such as `chr_0017_yvonne`,
+`wpn_pistol_0001`, and `eny_0018_lbtough` now resolve to Gameplay nodes with
+source table rows and semantic neighbors. This improves cross-domain lookup; it
+still does not prove formulas beyond generated source-table evidence.
 
 2026-07-01 source graph equipment-semantic progress: equipment formula,
 domain, suit, unlock, and stat-property details are now queryable instead of
