@@ -29,6 +29,7 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 from build_data_index import (
     decode_bamboo_raft_task_table_memorypack,
+    decode_damage_text_memorypack,
     decode_dialog_id_table_memorypack,
     decode_interactive_template_memorypack,
     decode_model_view_state_controller_memorypack,
@@ -301,6 +302,7 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_LevelScriptTemplateData.json",
     "Json_NavMesh.json",
     "Json_GameplayConfigWorldEntityRegistry.json",
+    "Json_GPUISystemConfig.json",
 )
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
@@ -311,6 +313,7 @@ DECODED_CONFIG_TARGET_TYPES = {
     "DialogIdTable",
     "GameplayConfigMissionAreaTable",
     "GameplayConfigWorldEntityRegistry",
+    "GPUISystemConfigDamageText",
     "InteractiveTable",
     "InteractiveTemplateData",
     "InteractiveDataCollections",
@@ -2901,6 +2904,8 @@ class SourceGraphBuilder:
             self.add_dialog_id_table_edges(file_node, entry)
         elif subtype == "BambooRaftTaskTable":
             self.add_bamboo_raft_task_table_edges(file_node, entry)
+        elif subtype == "GPUISystemConfigDamageText":
+            self.add_damage_text_config_edges(file_node, entry)
         elif subtype == "LunaArea":
             self.add_navmesh_luna_area_edges(file_node, entry)
         elif subtype == "NavMeshStateContainer":
@@ -3791,6 +3796,108 @@ class SourceGraphBuilder:
                     option_node = self.add_node("option", option_id, name=option_id, source="DialogIdTable")
                     self.add_edge(scene_node, option_node, "dialog_registry_has_option", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
                     self.add_edge(option_node, story_node, "dialog_registry_option_for_story", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
+
+    def decode_damage_text_payload(self, entry: dict[str, Any], raw_data: bytes | None = None) -> dict[str, Any] | None:
+        data = raw_data if raw_data is not None else self.read_decoded_config_bytes(entry)
+        if not data:
+            return None
+        try:
+            decoded = decode_damage_text_memorypack(safe_key(entry.get("dp")), data, len(data))
+        except Exception:
+            return None
+        payload = decoded.get("decoded") if isinstance(decoded, dict) else None
+        return payload if isinstance(payload, dict) else None
+
+    def add_damage_text_animation_node(self, animation_name: Any, *, source: str = "") -> str:
+        animation_key = safe_key(animation_name)
+        if not animation_key:
+            return ""
+        node = self.add_node("damage_text_animation", animation_key, name=animation_key, source=source)
+        self.add_alias(animation_key, node, kind="damage_text_animation_name", source=source)
+        return node
+
+    def add_damage_text_node_name_node(self, node_name: Any, *, source: str = "") -> str:
+        node_key = safe_key(node_name)
+        if not node_key:
+            return ""
+        node = self.add_node("damage_text_node_name", node_key, name=node_key, source=source)
+        self.add_alias(node_key, node, kind="damage_text_node_name", source=source)
+        return node
+
+    def add_damage_text_ui_resource_node(self, resource_id: Any, *, source: str = "") -> str:
+        resource_key = safe_key(resource_id)
+        if not resource_key or not resource_key.startswith("ui_"):
+            return ""
+        node = self.add_node("damage_text_ui_resource", resource_key, name=resource_key, source=source)
+        self.add_alias(resource_key, node, kind="damage_text_ui_resource", source=source)
+        return node
+
+    def add_damage_text_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        raw_data = self.read_decoded_config_bytes(entry)
+        decoded = self.decode_damage_text_payload(entry, raw_data)
+        if not decoded:
+            return
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        self.update_node_details(
+            file_node,
+            data=compact_payload(
+                {
+                    **self.decoded_config_entry_data(entry),
+                    "charset": decoded.get("charset"),
+                    "declaredRowCount": decoded.get("declaredRowCount"),
+                    "rowFlagCounts": decoded.get("rowFlagCounts"),
+                    "animationCountByRow": decoded.get("animationCountByRow"),
+                    "nodeCountPairs": decoded.get("nodeCountPairs"),
+                    "tailLengthCounts": decoded.get("tailLengthCounts"),
+                    "exactLength": decoded.get("exactLength"),
+                },
+                depth=3,
+            ),
+        )
+        for row in decoded.get("sampleRows") or []:
+            if not isinstance(row, dict):
+                continue
+            row_index = row.get("index")
+            if not isinstance(row_index, int):
+                continue
+            style_key = f"damage_text:row{row_index:03d}"
+            style_node = self.add_node(
+                "damage_text_style",
+                style_key,
+                name=style_key,
+                source=source,
+                data=compact_payload(
+                    {
+                        "rowIndex": row_index,
+                        "rowFlag": row.get("rowFlag"),
+                        "nodeMetaCount": row.get("nodeMetaCount"),
+                        "layoutCount": row.get("layoutCount"),
+                        "layoutTailLength": row.get("layoutTailLength"),
+                        "startOffset": row.get("startOffset"),
+                    },
+                    depth=2,
+                ),
+            )
+            self.add_alias(style_key, style_node, kind="damage_text_style_key", source=source)
+            self.add_edge(file_node, style_node, "defines_damage_text_style", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id, "rowIndex": row_index})
+
+            for animation_index, animation in enumerate(row.get("animationRefs") or []):
+                if not isinstance(animation, dict):
+                    continue
+                animation_node = self.add_damage_text_animation_node(animation.get("name"), source=source)
+                if animation_node:
+                    self.add_edge(style_node, animation_node, "damage_text_uses_animation", source=source, evidence=f"animationRefs[{animation_index}]", data=compact_payload(animation, depth=1))
+
+            for node_index, node_name in enumerate(row.get("nodeNames") or []):
+                node_name_node = self.add_damage_text_node_name_node(node_name, source=source)
+                if node_name_node:
+                    self.add_edge(style_node, node_name_node, "damage_text_has_node_name", source=source, evidence=f"nodeNames[{node_index}]")
+
+            for resource_index, resource_ref in enumerate(row.get("nodeResourceRefs") or []):
+                resource_node = self.add_damage_text_ui_resource_node(resource_ref, source=source)
+                if resource_node:
+                    self.add_edge(style_node, resource_node, "damage_text_uses_ui_resource", source=source, evidence=f"nodeResourceRefs[{resource_index}]")
 
     def decode_bamboo_raft_task_table_payload(self, entry: dict[str, Any], raw_data: bytes | None = None) -> dict[str, Any] | None:
         data = raw_data if raw_data is not None else self.read_decoded_config_bytes(entry)
@@ -11675,10 +11782,14 @@ QUERY_KIND_PRIORITY = {
     "dialog_registry_scene": 106,
     "bamboo_raft_task_group": 107,
     "quest_task": 108,
-    "navmesh_area": 109,
-    "navmesh_area_id": 110,
-    "navmesh_state_container": 111,
-    "navmesh_state_record": 112,
+    "damage_text_style": 109,
+    "damage_text_animation": 110,
+    "damage_text_node_name": 111,
+    "damage_text_ui_resource": 112,
+    "navmesh_area": 113,
+    "navmesh_area_id": 114,
+    "navmesh_state_container": 115,
+    "navmesh_state_record": 116,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -11947,6 +12058,10 @@ NODE_ID_PREFIXES = (
     "dialog_registry_scene",
     "bamboo_raft_task_group",
     "quest_task",
+    "damage_text_style",
+    "damage_text_animation",
+    "damage_text_node_name",
+    "damage_text_ui_resource",
     "navmesh_area",
     "navmesh_area_id",
     "navmesh_state_container",

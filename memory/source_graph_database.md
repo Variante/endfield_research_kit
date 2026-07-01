@@ -889,6 +889,26 @@ python tools\endfield_source_graph.py query e8m2_q#10 --kind quest_task
 python tools\endfield_source_graph.py query e8m2 --kind mission
 ```
 
+2026-07-01 GPUISystemConfig damage_text graph progress: source graph ingestion
+now promotes exact MemoryPack row, animation, node-name, and filtered UI
+resource evidence from `Json/GPUISystemConfig/damage_text.json`. A fast CN
+rebuild to `tmp/source_graph_damage_text.sqlite` verified 1,157,317 total
+nodes, 2,060,606 edges, and 1,609,499 aliases. New coverage includes 20
+`damage_text_style` row nodes, 40 `defines_damage_text_style` source-file edges
+split evenly across Persistent and StreamingAssets, 10 `damage_text_animation`
+nodes, 58 `damage_text_node_name` nodes, and 8 `damage_text_ui_resource` nodes.
+Edge checks verified 22 style-to-animation refs, 143 style-to-node-name refs,
+and 23 style-to-`ui_*` resource refs. Numeric placeholders, localized sample
+text, and non-`ui_*` resource strings remain payload evidence only; this pass
+does not infer UI prefab hierarchy, animation timing semantics, or runtime
+combat-text rendering rules. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query damage_text:row000 --kind damage_text_style
+python tools\endfield_source_graph.py query element_fusion_in --kind damage_text_animation
+python tools\endfield_source_graph.py query ui_bat_physical_airborne --kind damage_text_ui_resource
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
