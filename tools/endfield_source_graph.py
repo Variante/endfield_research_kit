@@ -551,6 +551,7 @@ class SourceGraphBuilder:
         kind = safe_key(entry.get("kind")) or "entry"
         node_kind = {"weapon": "weapon", "equipment": "equipment", "character": "character"}.get(kind, "gameplay_entry")
         stats = entry.get("stats") if isinstance(entry.get("stats"), dict) else {}
+        formula = entry.get("formula") if isinstance(entry.get("formula"), dict) else {}
         node = self.add_node(
             node_kind,
             entry_id,
@@ -570,6 +571,13 @@ class SourceGraphBuilder:
                 "professionLabel": entry.get("professionLabel"),
                 "partType": entry.get("partType"),
                 "partTypeLabel": entry.get("partTypeLabel"),
+                "showingType": entry.get("showingType"),
+                "showingTypeLabel": entry.get("showingTypeLabel"),
+                "domainId": entry.get("domainId"),
+                "domainName": entry.get("domainName"),
+                "suitId": entry.get("suitId"),
+                "formulaId": formula.get("formulaId"),
+                "formulaName": formula.get("formulaName") or formula.get("name"),
                 "source": entry.get("source"),
                 "stats": self.gameplay_progression_summary(stats),
             },
@@ -596,6 +604,8 @@ class SourceGraphBuilder:
 
         for label in ("stats", "upgrade", "breakthrough", "levelCurve", "breakthroughs", "potentials", "formula", "suit"):
             self.add_gameplay_progression_node(node, entry_id, label, entry.get(label))
+        if kind == "equipment":
+            self.add_gameplay_equipment_semantics(node, entry_id, entry)
 
         for index, skill in enumerate(entry.get("skills") or []):
             if isinstance(skill, dict):
@@ -635,6 +645,148 @@ class SourceGraphBuilder:
             for index, talent in enumerate(entry.get("talents") or []):
                 if isinstance(talent, dict):
                     self.add_gameplay_talent(node, f"{entry_id}:talents", talent, index)
+
+    def add_gameplay_equipment_semantics(self, equipment_node: str, equipment_id: str, entry: dict[str, Any]) -> None:
+        domain = entry.get("domain") if isinstance(entry.get("domain"), dict) else {}
+        domain_id = safe_key(entry.get("domainId") or domain.get("id"))
+        if domain_id:
+            domain_node = self.add_node(
+                "gameplay_domain",
+                domain_id,
+                name=entry.get("domainName") or domain.get("name") or domain_id,
+                source="webui/gameplay",
+                data={
+                    "id": domain_id,
+                    "name": entry.get("domainName") or domain.get("name"),
+                    "storageName": domain.get("storageName"),
+                    "equipmentCountEvidence": "edge_count",
+                },
+            )
+            self.add_edge(equipment_node, domain_node, "uses_gameplay_domain", source="webui/gameplay", evidence="domainId")
+            self.add_alias(domain_id, domain_node, kind="gameplay_domain_id", source="webui/gameplay")
+            self.add_alias(entry.get("domainName") or domain.get("name"), domain_node, kind="gameplay_domain_name", source="webui/gameplay")
+            self.add_gameplay_source_edges(domain_node, {"table": "DomainDataTable.json", "id": domain_id})
+
+        suit = entry.get("suit") if isinstance(entry.get("suit"), dict) else {}
+        suit_id = safe_key(entry.get("suitId") or suit.get("id"))
+        if suit_id:
+            suit_node = self.add_node(
+                "equipment_suit",
+                suit_id,
+                name=suit.get("name") or suit_id,
+                source="webui/gameplay",
+                data={
+                    "id": suit_id,
+                    "name": suit.get("name"),
+                    "effectCount": len(suit.get("effects") or []),
+                },
+            )
+            self.add_edge(equipment_node, suit_node, "has_equipment_suit", source="webui/gameplay", evidence="suitId")
+            self.add_alias(suit_id, suit_node, kind="equipment_suit_id", source="webui/gameplay")
+            self.add_alias(suit.get("name"), suit_node, kind="equipment_suit_name", source="webui/gameplay")
+            self.add_gameplay_source_edges(suit_node, {"table": "EquipSuitTable.json", "id": suit_id})
+
+        formula = entry.get("formula") if isinstance(entry.get("formula"), dict) else {}
+        formula_id = safe_key(formula.get("formulaId"))
+        if formula_id:
+            formula_node = self.add_node(
+                "equipment_formula",
+                formula_id,
+                name=formula.get("formulaName") or formula.get("name") or formula_id,
+                source="webui/gameplay",
+                data={
+                    "id": formula_id,
+                    "name": formula.get("formulaName") or formula.get("name"),
+                    "outcomeEquipId": formula.get("outcomeEquipId"),
+                    "outcomeEquipName": formula.get("outcomeEquipName"),
+                    "packId": formula.get("packId"),
+                    "packName": formula.get("packName"),
+                    "unlockType": formula.get("unlockType"),
+                    "unlockKey": formula.get("unlockKey"),
+                    "unlockName": formula.get("unlockName"),
+                    "costCount": len(formula.get("costs") or []),
+                },
+            )
+            self.add_edge(equipment_node, formula_node, "crafted_by_formula", source="webui/gameplay", evidence="formulaId")
+            self.add_edge(formula_node, equipment_node, "formula_outputs_equipment", source="webui/gameplay", evidence="outcomeEquipId")
+            self.add_alias(formula_id, formula_node, kind="equipment_formula_id", source="webui/gameplay")
+            self.add_alias(formula.get("formulaName") or formula.get("name"), formula_node, kind="equipment_formula_name", source="webui/gameplay")
+            self.add_alias(formula.get("outcomeEquipId"), formula_node, kind="equipment_formula_outcome_id", source="webui/gameplay")
+            self.add_gameplay_source_edges(formula_node, {"table": "EquipFormulaTable.json", "id": formula_id})
+            self.add_gameplay_required_items(formula_node, formula, evidence="equipmentFormula")
+
+            pack_id = safe_key(formula.get("packId"))
+            if pack_id:
+                pack_node = self.add_node(
+                    "equipment_formula_pack",
+                    pack_id,
+                    name=formula.get("packName") or pack_id,
+                    source="webui/gameplay",
+                    data={"id": pack_id, "name": formula.get("packName")},
+                )
+                self.add_edge(formula_node, pack_node, "belongs_to_formula_pack", source="webui/gameplay", evidence="packId")
+                self.add_alias(pack_id, pack_node, kind="equipment_formula_pack_id", source="webui/gameplay")
+                self.add_alias(formula.get("packName"), pack_node, kind="equipment_formula_pack_name", source="webui/gameplay")
+                self.add_gameplay_source_edges(pack_node, {"table": "EquipPackTable.json", "id": pack_id})
+
+            unlock_key = safe_key(formula.get("unlockKey"))
+            if unlock_key:
+                unlock_node = self.add_node(
+                    "gameplay_unlock",
+                    unlock_key,
+                    name=formula.get("unlockName") or unlock_key,
+                    source="webui/gameplay",
+                    data={
+                        "id": unlock_key,
+                        "name": formula.get("unlockName"),
+                        "unlockType": formula.get("unlockType"),
+                        "unlockValue": formula.get("unlockValue"),
+                    },
+                )
+                self.add_edge(formula_node, unlock_node, "unlocked_by", source="webui/gameplay", evidence="unlockKey")
+                self.add_alias(unlock_key, unlock_node, kind="gameplay_unlock_id", source="webui/gameplay")
+                self.add_alias(formula.get("unlockName"), unlock_node, kind="gameplay_unlock_name", source="webui/gameplay")
+
+        stats = entry.get("stats") if isinstance(entry.get("stats"), dict) else {}
+        for index, curve in enumerate(stats.get("propertyCurves") or []):
+            if isinstance(curve, dict):
+                self.add_gameplay_property_curve(equipment_node, equipment_id, curve, index)
+
+    def add_gameplay_property_curve(self, equipment_node: str, equipment_id: str, curve: dict[str, Any], index: int) -> str:
+        attr_index = safe_key(curve.get("attrIndex"))
+        key = safe_key(curve.get("key") or curve.get("compositeAttr") or attr_index or f"property_{index}")
+        curve_key = f"{equipment_id}:{attr_index or index}:{key}"
+        node = self.add_node(
+            "gameplay_property_curve",
+            curve_key,
+            name=curve.get("label") or key,
+            source="webui/gameplay",
+            data={
+                "equipmentId": equipment_id,
+                "attrIndex": curve.get("attrIndex"),
+                "key": curve.get("key"),
+                "label": curve.get("label"),
+                "iconName": curve.get("iconName"),
+                "compositeAttr": curve.get("compositeAttr"),
+                "rowCount": curve.get("rowCount"),
+                "maxLevel": curve.get("maxLevel"),
+            },
+        )
+        self.add_edge(equipment_node, node, "has_equipment_property_curve", source="webui/gameplay", evidence=attr_index or str(index))
+        self.add_alias(key, node, kind="gameplay_property_curve_key", source="webui/gameplay")
+        self.add_alias(curve.get("label"), node, kind="gameplay_property_curve_label", source="webui/gameplay")
+
+        stat_node = self.add_node(
+            "gameplay_stat_property",
+            key,
+            name=curve.get("label") or key,
+            source="webui/gameplay",
+            data={"key": key, "label": curve.get("label"), "iconName": curve.get("iconName"), "compositeAttr": curve.get("compositeAttr")},
+        )
+        self.add_edge(node, stat_node, "scales_stat_property", source="webui/gameplay", evidence=key)
+        self.add_alias(key, stat_node, kind="gameplay_stat_property_key", source="webui/gameplay")
+        self.add_alias(curve.get("label"), stat_node, kind="gameplay_stat_property_name", source="webui/gameplay")
+        return node
 
     def add_gameplay_asset_edges(self, owner_node: str, entry: dict[str, Any]) -> None:
         tokens: list[tuple[str, str]] = []
@@ -702,7 +854,7 @@ class SourceGraphBuilder:
                 )
                 if payload.get(key) not in (None, "", [], {})
             }
-            for key in ("rows", "checkpoints", "levels", "costs", "requiredItem", "displayAttrs"):
+            for key in ("rows", "checkpoints", "levels", "costs", "requiredItem", "displayAttrs", "propertyCurves"):
                 if isinstance(payload.get(key), list):
                     out[f"{key}Count"] = len(payload[key])
             return out
@@ -809,7 +961,7 @@ class SourceGraphBuilder:
         if isinstance(payload, dict):
             for key in ("costs", "requiredItem", "requiredItems"):
                 self.add_gameplay_item_edges(owner_node, payload.get(key), evidence=f"{evidence}.{key}")
-            for key in ("rows", "checkpoints", "levels", "potentials", "breakthroughs", "formula", "suit"):
+            for key in ("rows", "checkpoints", "levels", "potentials", "breakthroughs", "formula", "suit", "propertyCurves"):
                 self.add_gameplay_required_items(owner_node, payload.get(key), evidence=f"{evidence}.{key}", depth=depth - 1)
         elif isinstance(payload, list):
             for item in payload:
@@ -2172,15 +2324,22 @@ QUERY_KIND_PRIORITY = {
     "character": 8,
     "weapon": 9,
     "equipment": 10,
-    "item": 11,
-    "gameplay_skill_group": 12,
-    "gameplay_skill": 13,
-    "gameplay_talent_group": 14,
-    "gameplay_talent": 15,
-    "gameplay_progression": 16,
-    "actor": 17,
-    "audio": 18,
-    "file": 19,
+    "equipment_formula": 11,
+    "equipment_formula_pack": 12,
+    "equipment_suit": 13,
+    "gameplay_domain": 14,
+    "gameplay_property_curve": 15,
+    "gameplay_stat_property": 16,
+    "gameplay_unlock": 17,
+    "item": 18,
+    "gameplay_skill_group": 19,
+    "gameplay_skill": 20,
+    "gameplay_talent_group": 21,
+    "gameplay_talent": 22,
+    "gameplay_progression": 23,
+    "actor": 24,
+    "audio": 25,
+    "file": 26,
 }
 
 NODE_ID_PREFIXES = (
@@ -2192,6 +2351,13 @@ NODE_ID_PREFIXES = (
     "character",
     "weapon",
     "equipment",
+    "equipment_formula",
+    "equipment_formula_pack",
+    "equipment_suit",
+    "gameplay_domain",
+    "gameplay_property_curve",
+    "gameplay_stat_property",
+    "gameplay_unlock",
     "item",
     "gameplay_skill_group",
     "gameplay_skill",
@@ -2278,9 +2444,13 @@ def resolve_seed_node(conn: sqlite3.Connection, term: str, nodes: list[dict[str,
             WHEN 'character_id' THEN 2
             WHEN 'weapon_id' THEN 3
             WHEN 'equipment_id' THEN 4
-            WHEN 'item_id' THEN 5
-            WHEN 'gameplay_skill_id' THEN 6
-            ELSE 9
+            WHEN 'equipment_formula_id' THEN 5
+            WHEN 'equipment_suit_id' THEN 6
+            WHEN 'gameplay_domain_id' THEN 7
+            WHEN 'gameplay_stat_property_key' THEN 8
+            WHEN 'item_id' THEN 9
+            WHEN 'gameplay_skill_id' THEN 10
+            ELSE 19
           END,
           CASE nodes.kind
             WHEN 'story' THEN 0
@@ -2289,8 +2459,12 @@ def resolve_seed_node(conn: sqlite3.Connection, term: str, nodes: list[dict[str,
             WHEN 'character' THEN 3
             WHEN 'weapon' THEN 4
             WHEN 'equipment' THEN 5
-            WHEN 'item' THEN 6
-            ELSE 9
+            WHEN 'equipment_formula' THEN 6
+            WHEN 'equipment_suit' THEN 7
+            WHEN 'gameplay_domain' THEN 8
+            WHEN 'gameplay_stat_property' THEN 9
+            WHEN 'item' THEN 10
+            ELSE 19
           END
         LIMIT 1
         """,

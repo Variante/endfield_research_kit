@@ -68,15 +68,17 @@ Core SQLite tables:
 - `meta(key, value)`
 
 Node kinds include story entries, lines, options, actors, localized text,
-audio, videos, Gameplay weapons/equipment/characters/skills/talents/items and
-progression records, assets, materials, meshes, shaders, animations, map
-marks, structured table rows, reference rows, Unity asset containers, Unity
-assets, and Unity PathIDs.
+audio, videos, Gameplay weapons/equipment/characters/skills/talents/items,
+equipment formulas/packs/suits/domains/unlock keys/stat properties/property
+curves, progression records, assets, materials, meshes, shaders, animations,
+map marks, structured table rows, reference rows, Unity asset containers,
+Unity assets, and Unity PathIDs.
 
 Edge kinds capture story membership, line ordering, actor names, localized
 text, option anchors, audio use, narrative video links, Gameplay source-row,
-skill, talent, progression, default-weapon, and required-item relationships,
-table ownership, exported files, character recovery manifest contents, asset-map
+skill, talent, progression, default-weapon, equipment domain/suit/formula/stat
+property, formula-pack/unlock/output, and required-item relationships, table
+ownership, exported files, character recovery manifest contents, asset-map
 container ownership, and exported asset matches.
 
 ## Ingested Sources
@@ -123,6 +125,24 @@ CN verification build produced 3,652 `has_gameplay_asset` edges: 1,675 from
 weapons, 1,097 from characters, and 880 from equipment. Evidence values record
 the source field (`id`, `iconId`, or `modelPath`) so later audits can separate
 broad ID matches from icon/model-path matches.
+
+2026-07-01 equipment semantic ingestion promotes equipment formula, domain,
+suit, unlock, and stat-property details from compact Gameplay payload blobs to
+queryable graph nodes. A fast CN build with
+`--skip-asset-maps --skip-reference-rows --skip-followups` verified 220
+`equipment_formula` nodes, 27 formula packs, 22 suits, 2 gameplay domains, 22
+unlock keys, 618 equipment property curves, and 23 stat-property nodes. It also
+verified 220 `crafted_by_formula`, 220 `formula_outputs_equipment`, 220
+`belongs_to_formula_pack`, 129 `unlocked_by`, 220 `uses_gameplay_domain`, 182
+`has_equipment_suit`, 618 `has_equipment_property_curve`, and 618
+`scales_stat_property` edges. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query item_formu_t4_suit_atk02_hand_01 --kind equipment_formula
+python tools\endfield_source_graph.py query domain_2 --kind gameplay_domain
+python tools\endfield_source_graph.py query agi --kind gameplay_stat_property
+```
+
 
 Use the quick build for normal story/option/map investigation. Use the full
 build only when Unity asset container, PathID, or exported asset relationship

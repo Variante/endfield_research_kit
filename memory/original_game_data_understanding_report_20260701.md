@@ -683,6 +683,17 @@ character/weapon nodes with source table row, default weapon, progression,
 skill, talent, and item-cost neighbors. This improves cross-domain lookup; it
 still does not prove formulas beyond the generated source-table evidence.
 
+2026-07-01 source graph equipment-semantic progress: equipment formula,
+domain, suit, unlock, and stat-property details are now queryable instead of
+only compacted into progression blobs. A fast CN source graph rebuild verified
+220 `equipment_formula` nodes, 27 formula packs, 22 suits, 2 gameplay domains,
+22 unlock keys, 618 equipment property curves, 23 stat-property nodes, 220
+`crafted_by_formula` edges, 220 formula output edges, 220 domain edges, 182 suit
+edges, and 618 property-curve-to-stat edges. Formula queries now show output
+equipment, source `EquipFormulaTable` rows, formula packs, unlock keys, and
+material costs. This improves static equipment semantics, but it still does not
+simulate runtime crafting or combat formulas.
+
 2026-07-01 WebUI semantic-link progress: Gameplay entries now link to Story
 wiki pages only when the current Story index contains the matching `wiki_*`
 entry, and Story wiki pages link back to the relevant Gameplay entry through
@@ -939,6 +950,15 @@ Success metric:
 - Fewer inferred option responses.
 - No contradictions between inferred first lines and nearby Runtime Jump Track
   evidence.
+
+2026-07-01 next story-proof target: a read-only source graph audit found that
+manual option overrides are not yet indexed as first-class graph evidence. The
+current `webui/overrides/options.json` has 33 scenes, 23 placement groups, and
+74 response option mappings, while graph queries still expose some contradicted
+Runtime Jump cases as ordinary inferred branch evidence. The next small source
+graph/story-proof slice should ingest manual option layout/response overrides
+as explicit `manual_option_*` evidence and separate Runtime Jump contradictions
+from uncontradicted inference.
 
 ### 3. Move Global Story Order from Static Recovery Toward Observed Runtime
 
