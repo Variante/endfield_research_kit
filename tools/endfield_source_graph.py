@@ -63,7 +63,9 @@ STORY_KEY_RE = re.compile(
 )
 ASSET_ACTOR_RE = re.compile(r"(?:^|[/\\])(?:S|T|M|A|AC)_actor_([A-Za-z0-9]+)", re.IGNORECASE)
 LINE_AUDIO_RE = re.compile(r"\bau_[A-Za-z0-9_]{2,160}\b")
-
+PATH_ID_EXPORT_STEM_RE = re.compile(r"^(?P<base>.+)_p(?P<path_id>[0-9A-Fa-f]{16})$")
+ASSET_SINGLE_PREFIX_RE = re.compile(r"^[A-Za-z]_")
+ASSET_LOD_SUFFIX_RE = re.compile(r"(?:[_-])lod\d+$", re.IGNORECASE)
 SELECTED_STRUCTURED_TABLES = (
     "AudioDialog.json",
     "AudioSequenceDialog.json",
@@ -104,6 +106,26 @@ def compact_text(value: Any, limit: int = 240) -> str:
     if len(text) > limit:
         return text[: limit - 3] + "..."
     return text
+
+
+def path_id_export_base_stem(value: Any) -> str:
+    match = PATH_ID_EXPORT_STEM_RE.match(str(value or ""))
+    return match.group("base") if match else ""
+
+
+def normalized_model_entity_base(stem: str) -> str:
+    logical_stem = path_id_export_base_stem(stem) or stem
+    stripped = ASSET_SINGLE_PREFIX_RE.sub("", logical_stem, count=1)
+    return ASSET_LOD_SUFFIX_RE.sub("", stripped).lower()
+
+
+def lod_model_entity_base(rel: str) -> str:
+    stem = Path(rel).stem
+    logical_stem = path_id_export_base_stem(stem) or stem
+    stripped = ASSET_SINGLE_PREFIX_RE.sub("", logical_stem, count=1)
+    if not ASSET_LOD_SUFFIX_RE.search(stripped):
+        return ""
+    return normalized_model_entity_base(stem)
 
 
 def compact_payload(value: Any, *, depth: int = 2, list_limit: int = 12) -> Any:
@@ -437,6 +459,10 @@ class SourceGraphBuilder:
         payload = read_json(path, {})
         root_node = self.add_node("dataset", "webui_assets", name="WebUI asset index", path=slash(path))
         asset_nodes_by_rel: dict[str, str] = {}
+        asset_entity_key_by_model_rel: dict[str, tuple[str, str]] = {}
+        asset_entity_groups: dict[tuple[str, str], dict[str, Any]] = defaultdict(
+            lambda: {"source": "", "base": "", "models": {}, "materials": {}, "textures": {}}
+        )
 
         def asset_node_for_rel(rel_value: Any) -> str:
             rel_text = safe_key(rel_value)
@@ -518,6 +544,16 @@ class SourceGraphBuilder:
             self.add_alias(Path(rel).name.lower(), node, kind="asset_name", source="webui/assets")
             if pid:
                 add_pid_aliases(pid, node)
+            if kind == "model":
+                model_base = lod_model_entity_base(rel)
+                if model_base:
+                    source = rel.split("/", 1)[0]
+                    entity_key = (source, model_base)
+                    asset_entity_key_by_model_rel[rel] = entity_key
+                    group = asset_entity_groups[entity_key]
+                    group["source"] = source
+                    group["base"] = model_base
+                    group["models"][rel] = {"pid": pid} if pid else {}
             if entry.get("p"):
                 preview = asset_node_for_rel(entry["p"])
                 self.add_edge(node, preview, "previewed_by", source="webui/assets")
@@ -530,6 +566,8 @@ class SourceGraphBuilder:
                 src_node = asset_node_for_rel(rel)
                 if not src_node:
                     continue
+                entity_key = asset_entity_key_by_model_rel.get(rel)
+                entity_group = asset_entity_groups.get(entity_key) if entity_key else None
 
                 for item in relation.get("materials") or []:
                     if not isinstance(item, dict):
@@ -538,14 +576,21 @@ class SourceGraphBuilder:
                     if not dst_rel:
                         continue
                     dst_node = asset_node_for_rel(dst_rel)
+                    material_evidence = safe_key(item.get("name")) or Path(dst_rel).stem
+                    material_data = relation_data(item)
                     self.add_edge(
                         src_node,
                         dst_node,
                         "uses_material",
                         source="webui/assets",
-                        evidence=safe_key(item.get("name")) or Path(dst_rel).stem,
-                        data=relation_data(item),
+                        evidence=material_evidence,
+                        data=material_data,
                     )
+                    if entity_group is not None:
+                        entity_group["materials"].setdefault(
+                            dst_rel,
+                            {"evidence": material_evidence, "data": material_data},
+                        )
 
                 for item in relation.get("textures") or []:
                     if not isinstance(item, dict):
@@ -554,14 +599,21 @@ class SourceGraphBuilder:
                     if not dst_rel:
                         continue
                     dst_node = asset_node_for_rel(dst_rel)
+                    texture_evidence = relation_evidence(item)
+                    texture_data = relation_data(item)
                     self.add_edge(
                         src_node,
                         dst_node,
                         "uses_texture",
                         source="webui/assets",
-                        evidence=relation_evidence(item),
-                        data=relation_data(item),
+                        evidence=texture_evidence,
+                        data=texture_data,
                     )
+                    if entity_group is not None:
+                        entity_group["textures"].setdefault(
+                            dst_rel,
+                            {"evidence": texture_evidence, "data": texture_data},
+                        )
 
                 for item in relation.get("referencedByMaterials") or []:
                     if not isinstance(item, dict):
@@ -594,6 +646,86 @@ class SourceGraphBuilder:
                         evidence=safe_key(item.get("name")) or Path(dst_rel).stem,
                         data=relation_data(item),
                     )
+
+        relation_lookup = relations if isinstance(relations, dict) else {}
+        for (_source, _model_base), group in sorted(asset_entity_groups.items()):
+            source = safe_key(group.get("source"))
+            model_base = safe_key(group.get("base"))
+            if not source or not model_base:
+                continue
+            for material_rel, material_info in sorted(group["materials"].items()):
+                material_relation = relation_lookup.get(material_rel) or {}
+                if not isinstance(material_relation, dict):
+                    continue
+                for item in material_relation.get("textures") or []:
+                    if not isinstance(item, dict):
+                        continue
+                    dst_rel = safe_key(item.get("rel"))
+                    if not dst_rel:
+                        continue
+                    texture_data = relation_data(item)
+                    texture_data["viaMaterial"] = material_rel
+                    texture_evidence = relation_evidence(item) or Path(dst_rel).stem
+                    group["textures"].setdefault(
+                        dst_rel,
+                        {
+                            "evidence": texture_evidence,
+                            "data": texture_data,
+                        },
+                    )
+
+            entity_node = self.add_node(
+                "asset_entity",
+                f"{source}/{model_base}",
+                name=model_base,
+                source=source,
+                data={
+                    "source": source,
+                    "modelBase": model_base,
+                    "lodModelCount": len(group["models"]),
+                    "materialCount": len(group["materials"]),
+                    "textureCount": len(group["textures"]),
+                },
+            )
+            self.add_alias(model_base, entity_node, kind="asset_entity_id", source="webui/assets")
+            self.add_alias(f"{source}/{model_base}", entity_node, kind="asset_entity_id", source="webui/assets")
+            for model_rel, model_info in sorted(group["models"].items()):
+                model_node = asset_node_for_rel(model_rel)
+                model_data = {"rel": model_rel}
+                if isinstance(model_info, dict) and model_info.get("pid"):
+                    model_data["pid"] = model_info["pid"]
+                self.add_edge(
+                    entity_node,
+                    model_node,
+                    "entity_has_lod_model",
+                    source="webui/assets",
+                    evidence=Path(model_rel).stem,
+                    data=model_data,
+                )
+            for material_rel, material_info in sorted(group["materials"].items()):
+                material_node = asset_node_for_rel(material_rel)
+                material_data = dict(material_info.get("data") or {}) if isinstance(material_info, dict) else {}
+                material_data.setdefault("rel", material_rel)
+                self.add_edge(
+                    entity_node,
+                    material_node,
+                    "entity_uses_material",
+                    source="webui/assets",
+                    evidence=safe_key(material_info.get("evidence")) if isinstance(material_info, dict) else Path(material_rel).stem,
+                    data=material_data,
+                )
+            for texture_rel, texture_info in sorted(group["textures"].items()):
+                texture_node = asset_node_for_rel(texture_rel)
+                texture_data = dict(texture_info.get("data") or {}) if isinstance(texture_info, dict) else {}
+                texture_data.setdefault("rel", texture_rel)
+                self.add_edge(
+                    entity_node,
+                    texture_node,
+                    "entity_uses_texture",
+                    source="webui/assets",
+                    evidence=safe_key(texture_info.get("evidence")) if isinstance(texture_info, dict) else Path(texture_rel).stem,
+                    data=texture_data,
+                )
 
     def ingest_videos(self) -> None:
         path = WEBUI_DATA / "assets" / "videos.json"
@@ -2607,9 +2739,11 @@ QUERY_KIND_PRIORITY = {
     "gameplay_talent_group": 22,
     "gameplay_talent": 23,
     "gameplay_progression": 24,
-    "actor": 25,
-    "audio": 26,
-    "file": 27,
+    "asset_entity": 25,
+    "asset": 26,
+    "actor": 27,
+    "audio": 28,
+    "file": 29,
 }
 
 NODE_ID_PREFIXES = (
@@ -2635,6 +2769,8 @@ NODE_ID_PREFIXES = (
     "gameplay_talent_group",
     "gameplay_talent",
     "gameplay_progression",
+    "asset_entity",
+    "asset",
     "actor",
     "audio",
     "video",
@@ -2680,6 +2816,9 @@ ASSET_USED_BY_INCOMING_EDGE_KINDS = (
     "previewed_by",
     "uses_material",
     "uses_texture_pathid",
+    "entity_has_lod_model",
+    "entity_uses_material",
+    "entity_uses_texture",
 )
 ASSET_USED_BY_OUTGOING_EDGE_KINDS = (
     "referenced_by_material",
@@ -2690,6 +2829,9 @@ ASSET_USES_EDGE_KINDS = (
     "uses_material",
     "uses_texture",
     "uses_texture_pathid",
+    "entity_has_lod_model",
+    "entity_uses_material",
+    "entity_uses_texture",
 )
 
 def exact_node_candidates(term: str) -> list[str]:
@@ -2737,6 +2879,7 @@ def resolve_seed_node(conn: sqlite3.Connection, term: str, nodes: list[dict[str,
             WHEN 'gameplay_stat_property_key' THEN 8
             WHEN 'item_id' THEN 9
             WHEN 'gameplay_skill_id' THEN 10
+            WHEN 'asset_entity_id' THEN 11
             ELSE 19
           END,
           CASE nodes.kind
@@ -2751,6 +2894,8 @@ def resolve_seed_node(conn: sqlite3.Connection, term: str, nodes: list[dict[str,
             WHEN 'gameplay_domain' THEN 8
             WHEN 'gameplay_stat_property' THEN 9
             WHEN 'item' THEN 10
+            WHEN 'asset_entity' THEN 11
+            WHEN 'asset' THEN 12
             ELSE 19
           END
         LIMIT 1
@@ -2849,7 +2994,18 @@ def usage_node_ref(row: sqlite3.Row, side: str) -> dict[str, Any]:
     if row[f"{side}Path"]:
         ref["path"] = row[f"{side}Path"]
     if isinstance(data, dict):
-        for key in ("type", "size", "preview", "pid", "category", "materialLike"):
+        for key in (
+            "type",
+            "size",
+            "preview",
+            "pid",
+            "category",
+            "materialLike",
+            "modelBase",
+            "lodModelCount",
+            "materialCount",
+            "textureCount",
+        ):
             value = data.get(key)
             if value not in (None, "", [], {}):
                 ref[key] = value
@@ -2940,7 +3096,18 @@ def compact_node_ref(row: sqlite3.Row, edge_row: sqlite3.Row | None = None) -> d
     if row["path"]:
         ref["path"] = row["path"]
     if isinstance(data, dict):
-        for key in ("actor", "actorId", "audio", "text", "timestamp", "duration"):
+        for key in (
+            "actor",
+            "actorId",
+            "audio",
+            "text",
+            "timestamp",
+            "duration",
+            "modelBase",
+            "lodModelCount",
+            "materialCount",
+            "textureCount",
+        ):
             value = data.get(key)
             if value not in (None, "", [], {}):
                 ref[key] = value
