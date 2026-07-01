@@ -412,7 +412,10 @@ refs. The `UILevelMapLoadConfig` pass adds 17 UI map configs, 220 static map
 elements, 58 tier names, target-level refs, and UI text refs. The
 `GameplayConfig` map/level lookup pass adds 149 level-basic-info rows, 21
 short-id scenes, 86 short-id rows, 142 map-brief rows, 211 map-local sublevel
-rows, and 1,009 sublevel enemy refs from the decoded text JSON tables.
+rows, and 1,009 sublevel enemy refs from the decoded text JSON tables. The
+placed-map pass adds 1,993 map-mark nodes, 268 map regions, 46 mine-team nodes,
+and high-confidence mark-to-level, mark-to-region, teleport, reward, item,
+activity, minigame, and doodad logic refs.
 These decoded-config passes still do not prove runtime formula usage,
 full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
@@ -692,6 +695,17 @@ with 211 map-local sublevel nodes and 1,009 enemy refs. Numeric
 `MapBriefInfoTable` map ids only join to `map` nodes through `MapIdTable`, and
 sublevel ids are preserved as map-local subdata ids rather than inferred level
 ids. Placed map marks, map regions, and mine teams remain a separate pass.
+
+2026-07-01 source graph GameplayConfig placed-map progress: a fast CN rebuild
+to `tmp/source_graph_gameplay_map_placement.sqlite` verified decoded
+`LevelMapMark`, `MapRegionTable`, and `MinePointTeamTable` text JSON. The pass
+adds 1,993 unique map-mark nodes from 3,915 source rows, 268 map-region nodes,
+46 factory mine-team nodes, 1,877 region-derived level-to-mark links, 1,803
+mist-region links, 884 tier-region links, 79 teleport refs, 42 reward refs, 109
+item refs, 103 minigame refs, 300 mark core-doodad refs, and 150 mine-team
+doodad refs. Geometry remains payload-level, and the top-level numeric keys are
+not treated as map ids. This is static placed-map evidence, not proof of live
+visibility, activation, fog reveal, resource refresh, or runtime map rendering.
 
 Useful support-table checks include:
 
