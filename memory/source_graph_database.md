@@ -636,6 +636,35 @@ python tools\endfield_source_graph.py query LST_EnergyPoint_Small_Graph --kind l
 python tools\endfield_source_graph.py query Montage/NPC/Generic/rabbit01/escaped --kind level_script_montage
 ```
 
+2026-07-01 LevelConfig/LevelData graph progress: source graph ingestion now
+promotes bounded `LevelConfig` and `LevelData` evidence from the WebUI Data
+index. A fast CN rebuild to `tmp/source_graph_leveldata.sqlite` verified
+1,105,990 total nodes, 1,907,541 edges, and 1,540,158 aliases. New coverage
+includes 149 `level_config` nodes collapsed across 290 decoded config files, 810
+`level_data` nodes collapsed across 1,593 decoded data files, 68
+`level_scene_config` nodes, 17 `level_asset_reference` nodes, 4,354
+`level_task_marker` nodes, and 4,986 `level_data_param` nodes. Edge checks
+verified 290 `level_config_data_defines_config` edges, 149
+`level_config_defines_level` edges, 139 map-id edges, 149 default-scene-config
+edges, 1,593 `level_data_file_defines_level_data` edges, 810
+`level_has_level_data` edges, and bounded LevelData string-reference edges: 303
+level-script refs, 360 story refs, 511 mission-like refs, 26 audio refs, 103
+effect refs, 5 buff refs, 347 montage refs, 19 asset-path refs, 136 level refs,
+4,635 task-marker refs, and 13,370 parameter-string refs. LevelData string refs
+are unique per value per data file and capped by the 512-string scan window.
+LevelConfig-to-LevelData path edges are intentionally absent because the raw
+LevelConfig payload exposes the path count but not stable path strings in the
+current scanner. This pass makes level config/data inventory, level ownership,
+default scene config paths, script/story/mission/montage refs, and sampled task
+markers queryable without claiming object placement, spawn behavior, or
+LevelData control-flow semantics. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query map01_lv006 --kind level_config
+python tools\endfield_source_graph.py query map01_lv006_lv_data_sub_sm1l6m3 --kind level_data
+python tools\endfield_source_graph.py query radio_sm1l6m3_1d5_finished --kind story
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
