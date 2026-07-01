@@ -257,18 +257,47 @@ def _choose_preferred_rel(candidates: list[str], source: str) -> str:
     return min(candidates, key=affinity)
 
 
+def _normalize_path_id_hex(value: Any) -> str:
+    if value in (None, "", 0, "0"):
+        return ""
+    if isinstance(value, str):
+        raw = value.strip()
+        if not raw:
+            return ""
+        try:
+            number = int(raw, 16) if raw.lower().startswith("0x") else int(raw, 10)
+        except ValueError:
+            try:
+                number = int(raw, 16)
+            except ValueError:
+                return ""
+    else:
+        try:
+            number = int(value)
+        except (TypeError, ValueError):
+            return ""
+    if number == 0:
+        return ""
+    return f"{number & ((1 << 64) - 1):016X}"
+
+
 def _extract_material_texture_refs(material_payload: dict) -> list[dict]:
     tex_envs = ((material_payload.get("m_SavedProperties") or {}).get("m_TexEnvs") or {})
     out: list[dict] = []
     for slot, tex_env in sorted(tex_envs.items()):
         texture = (tex_env or {}).get("m_Texture") or {}
-        texture_name = str(texture.get("Name") or "").strip()
-        if not texture_name or texture.get("IsNull"):
+        if texture.get("IsNull"):
             continue
-        out.append({
-            "slot": slot,
-            "name": texture_name,
-        })
+        texture_name = str(texture.get("Name") or "").strip()
+        path_id = _normalize_path_id_hex(texture.get("m_PathID", texture.get("PathID")))
+        if not texture_name and not path_id:
+            continue
+        ref = {"slot": slot}
+        if texture_name:
+            ref["name"] = texture_name
+        if path_id:
+            ref["pid"] = path_id
+        out.append(ref)
     return out
 
 
@@ -452,6 +481,7 @@ def scan_exported_media_assets(
     image_category_counts = defaultdict(int)
     material_like_image_count = 0
     image_rels_by_stem: dict[str, list[str]] = defaultdict(list)
+    image_rels_by_pid: dict[str, list[str]] = defaultdict(list)
     model_rels_by_source_base: dict[tuple[str, str], list[str]] = defaultdict(list)
     model_rels_by_base: dict[str, list[str]] = defaultdict(list)
     obj_rels_by_source_base: dict[tuple[str, str], list[str]] = defaultdict(list)
@@ -517,6 +547,8 @@ def scan_exported_media_assets(
 
         if kind == "image":
             image_rels_by_stem[stem.lower()].append(asset_rel)
+            if path_id:
+                image_rels_by_pid[path_id.upper()].append(asset_rel)
         elif kind == "model":
             model_base = _normalize_model_base(stem)
             source_family = _asset_source_family(source).lower()
@@ -630,16 +662,29 @@ def scan_exported_media_assets(
 
             resolved_texture_refs: list[dict] = []
             for ref in texture_refs:
-                image_rel = _choose_preferred_rel(image_rels_by_stem.get(ref["name"].lower(), []), source)
+                texture_name = str(ref.get("name") or "").strip()
+                texture_pid = str(ref.get("pid") or "").strip().upper()
+                image_rel = ""
+                if texture_name:
+                    image_rel = _choose_preferred_rel(image_rels_by_stem.get(texture_name.lower(), []), source)
+                if not image_rel and texture_pid:
+                    image_rel = _choose_preferred_rel(image_rels_by_pid.get(texture_pid, []), source)
                 resolved_ref = {
                     "slot": ref["slot"],
-                    "name": ref["name"],
+                    "name": texture_name or f"pid:{texture_pid}",
                 }
+                if texture_pid:
+                    resolved_ref["pid"] = texture_pid
                 if image_rel:
                     resolved_ref["rel"] = image_rel
                 resolved_texture_refs.append(resolved_ref)
                 if image_rel:
                     texture_link_count += 1
+
+            material_relations = relations.setdefault(material_rel, {})
+            material_textures = material_relations.setdefault("textures", [])
+            for texture_ref in resolved_texture_refs:
+                _append_unique(material_textures, texture_ref)
 
             for model_rel in model_rels:
                 model_relations = relations.setdefault(model_rel, {})
