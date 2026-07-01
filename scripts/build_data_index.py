@@ -2448,11 +2448,15 @@ def read_buff_timeline_first_union_tag(
 
 
 
+BUFF_CONVERT_TO_TARGET_CONTEXT_ACTION_TAG = 0x007e
+BUFF_DEBUG_PRINT_ACTION_TAG = 0x008b
 BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG = 0x011f
 BUFF_PLAY_SOUND_ACTION_TAG = 0x00fc
 BUFF_PATROL_TELEPORT_ACTION_TAG = 0x00ef
 BUFF_PLAY_ANIMATION_ACTION_TAG = 0x00f8
 BUFF_PLAY_SOUND_TIME_DILATION_TAIL_BYTES = 26
+BUFF_TARGET_SETTINGS_ENVELOPE_BYTE_LENGTHS = (67, 79)
+BUFF_CONVERT_TO_TARGET_CONTEXT_TARGET_SETTINGS_BYTES = 67
 
 
 def read_buff_i32_field(data: bytes, offset: int, field_name: str) -> tuple[int, int]:
@@ -2532,6 +2536,32 @@ def read_buff_blackboard_float_raw_field_exact(
     }, offset
 
 
+def read_buff_blackboard_vector3_field_exact(
+    data: bytes,
+    offset: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    if offset >= len(data):
+        raise ValueError(f"{field_name}:truncated-member-count")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 3:
+        raise ValueError(f"{field_name}:member-count={member_count}")
+    x, offset = read_buff_blackboard_float_raw_field_exact(data, offset, f"{field_name}.x")
+    y, offset = read_buff_blackboard_float_raw_field_exact(data, offset, f"{field_name}.y")
+    z, offset = read_buff_blackboard_float_raw_field_exact(data, offset, f"{field_name}.z")
+    return {
+        "memberCount": member_count,
+        "offset": format_offset(start),
+        "bytes": offset - start,
+        "x": x,
+        "y": y,
+        "z": z,
+        "value": [x["value"], y["value"], z["value"]],
+    }, offset
+
+
 def read_buff_blackboard_string_field_exact(
     data: bytes,
     offset: int,
@@ -2598,17 +2628,19 @@ def validate_buff_nonnegative_ms(value: int, field_name: str, *, max_value: int 
         raise ValueError(f"{field_name}:ms-out-of-range={value}")
 
 
-def read_buff_play_sound_target_settings_partial(
+def read_buff_target_settings_partial(
     data: bytes,
     offset: int,
     limit: int,
     field_name: str,
+    *,
+    allowed_tail_u32s: tuple[int, ...] = (1, 4),
 ) -> tuple[dict[str, Any], int]:
     if limit < offset:
         raise ValueError(f"{field_name}:invalid-bounds")
     raw = data[offset:limit]
     byte_length = len(raw)
-    if byte_length not in (67, 79):
+    if byte_length not in BUFF_TARGET_SETTINGS_ENVELOPE_BYTE_LENGTHS:
         raise ValueError(f"{field_name}:unexpected-bytes={byte_length}")
     stable_prefix = bytes.fromhex("0d 08 01 00 00 00 00 00 00 ff 00 00 00 00 ff 00")
     if not raw.startswith(stable_prefix):
@@ -2621,21 +2653,172 @@ def read_buff_play_sound_target_settings_partial(
         max_length=128,
     )
     tail_u32 = struct.unpack_from("<I", raw, byte_length - 4)[0]
-    if tail_u32 not in (1, 4):
+    if tail_u32 not in allowed_tail_u32s:
         raise ValueError(f"{field_name}:tail-u32={tail_u32}")
     return {
         "status": "partial",
-        "semanticStatus": "partial-target-settings-selector-data-opaque",
+        "semanticStatus": "partial-target-settings-envelope-opaque",
         "offset": format_offset(offset),
         "bytes": byte_length,
-        "shape": "selector-with-string" if string_hits else "default-selector",
+        "shape": "string-slot" if string_hits else "no-string-slot",
         "memberCountCandidate": raw[0],
-        "selectorHeaderRaw": raw[:16].hex(" "),
-        "tailU32": tail_u32,
+        "envelopeHeaderRaw": raw[:16].hex(" "),
+        "tailU32Candidate": tail_u32,
+        "allowedTailU32Candidates": list(allowed_tail_u32s),
         "tailRaw": raw[-16:].hex(" "),
         "stringHits": string_hits,
         "rawHex": raw.hex(" "),
     }, limit
+
+
+def decode_buff_convert_to_target_context_action(
+    data: bytes,
+    item_start: int,
+    item_end: int,
+    tag_width: int,
+    member_count: int,
+) -> dict[str, Any]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, item_end)
+    if tag != BUFF_CONVERT_TO_TARGET_CONTEXT_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("convertToTargetContext:tag-mismatch")
+    if tag_width != 1:
+        raise ValueError(f"convertToTargetContext:tag-width={tag_width}")
+    if member_count != 12:
+        raise ValueError(f"convertToTargetContext:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_exact(
+        data,
+        offset,
+        "convertToTargetContext.prefix",
+    )
+    blackboard_vector3, offset = read_buff_blackboard_vector3_field_exact(
+        data,
+        offset,
+        "convertToTargetContext.blackboardVector3",
+    )
+    convert_from_end = offset + BUFF_CONVERT_TO_TARGET_CONTEXT_TARGET_SETTINGS_BYTES
+    convert_from, offset = read_buff_target_settings_partial(
+        data,
+        offset,
+        convert_from_end,
+        "convertToTargetContext.convertFrom",
+    )
+    exclude_target, offset = read_buff_i32_field(data, offset, "convertToTargetContext.excludeTarget")
+    operation_type, offset = read_buff_i32_field(data, offset, "convertToTargetContext.operationType")
+    target_group_key, offset = read_buff_memorypack_utf8_string_strict(
+        data,
+        offset,
+        "convertToTargetContext.targetGroupKey",
+        max_length=256,
+    )
+    if not target_group_key:
+        raise ValueError("convertToTargetContext.targetGroupKey:empty")
+    translate_operation, offset = read_buff_i32_field(
+        data,
+        offset,
+        "convertToTargetContext.translateOperation",
+    )
+    translation_deg, offset = read_buff_f32_field(data, offset, "convertToTargetContext.translationDeg")
+    translation_ref, offset = read_buff_i32_field(data, offset, "convertToTargetContext.translationRef")
+    for field_name, value in (
+        ("convertToTargetContext.excludeTarget", exclude_target),
+        ("convertToTargetContext.operationType", operation_type),
+        ("convertToTargetContext.translateOperation", translate_operation),
+        ("convertToTargetContext.translationRef", translation_ref),
+    ):
+        if abs(value) > 1_000_000:
+            raise ValueError(f"{field_name}:implausible={value}")
+    if translation_deg < -100_000 or translation_deg > 100_000:
+        raise ValueError(f"convertToTargetContext.translationDeg:out-of-range={translation_deg}")
+    if offset != item_end:
+        raise ValueError(
+            f"convertToTargetContext:tail-at={format_offset(offset)} end={format_offset(item_end)}"
+        )
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_CONVERT_TO_TARGET_CONTEXT_ACTION_TAG],
+        "decodeStatus": "partial",
+        "semanticStatus": "partial-convert-from-target-settings-envelope-opaque",
+        "schemaSource": (
+            "MemoryPack setter order: AbilityActionData prefix, blackboardVector3, convertFrom "
+            "TargetSettings, excludeTarget, operationType, targetGroupKey, translateOperation, "
+            "translationDeg, translationRef; TargetSettings targeting semantics remain partial"
+        ),
+        "byteLength": item_end - item_start,
+        "prefix": prefix,
+        "blackboardVector3": blackboard_vector3,
+        "convertFromTargetSettingsEnvelopePartial": convert_from,
+        "excludeTarget": exclude_target,
+        "operationType": operation_type,
+        "targetGroupKey": target_group_key,
+        "translateOperation": translate_operation,
+        "translationDeg": round(translation_deg, 6),
+        "translationRef": translation_ref,
+    }
+
+
+def decode_buff_debug_print_action(
+    data: bytes,
+    item_start: int,
+    item_end: int,
+    tag_width: int,
+    member_count: int,
+) -> dict[str, Any]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, item_end)
+    if tag != BUFF_DEBUG_PRINT_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("debugPrint:tag-mismatch")
+    if tag_width != 1:
+        raise ValueError(f"debugPrint:tag-width={tag_width}")
+    if member_count != 8:
+        raise ValueError(f"debugPrint:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_exact(
+        data,
+        offset,
+        "debugPrint.prefix",
+    )
+    bb_key, offset = read_buff_memorypack_utf8_string_strict(
+        data,
+        offset,
+        "debugPrint.bbKey",
+        max_length=256,
+    )
+    identifier, offset = read_buff_memorypack_utf8_string_strict(
+        data,
+        offset,
+        "debugPrint.identifier",
+        max_length=512,
+    )
+    if not identifier:
+        raise ValueError("debugPrint.identifier:empty")
+    log_type, offset = read_buff_i32_field(data, offset, "debugPrint.logType")
+    log_type_names = {0: "TargetSetting", 1: "BlackboardItem"}
+    if log_type not in log_type_names:
+        raise ValueError(f"debugPrint.logType={log_type}")
+    target_settings, offset = read_buff_target_settings_partial(
+        data,
+        offset,
+        item_end,
+        "debugPrint.target",
+        allowed_tail_u32s=(0, 1, 4),
+    )
+    if offset != item_end:
+        raise ValueError(f"debugPrint:tail-at={format_offset(offset)} end={format_offset(item_end)}")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_DEBUG_PRINT_ACTION_TAG],
+        "decodeStatus": "partial",
+        "semanticStatus": "partial-target-settings-envelope-opaque",
+        "schemaSource": (
+            "MemoryPack setter order: AbilityActionData prefix, bbKey, identifier, logType, target; "
+            "TargetSettings envelope bytes are bounded but targeting semantics and tail values remain partial"
+        ),
+        "byteLength": item_end - item_start,
+        "prefix": prefix,
+        "bbKey": bb_key or "",
+        "identifier": identifier,
+        "logType": log_type,
+        "logTypeName": log_type_names[log_type],
+        "targetSettingsEnvelopePartial": target_settings,
+    }
 
 
 def decode_buff_play_animation_action(
@@ -2808,7 +2991,7 @@ def decode_buff_play_sound_action(
     )
 
     tail_start = item_end - BUFF_PLAY_SOUND_TIME_DILATION_TAIL_BYTES
-    target_settings, offset = read_buff_play_sound_target_settings_partial(
+    target_settings, offset = read_buff_target_settings_partial(
         data,
         offset,
         tail_start,
@@ -2874,10 +3057,10 @@ def decode_buff_play_sound_action(
     return {
         "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_PLAY_SOUND_ACTION_TAG],
         "decodeStatus": "partial",
-        "semanticStatus": "partial-target-settings-selector-data-opaque",
+        "semanticStatus": "partial-target-settings-envelope-opaque",
         "schemaSource": (
             "MemoryPack formatter setter order: AbilityActionData prefix, PlaySound primitive fields, "
-            "targetSettings, and time-dilation tail; TargetSettings bytes are bounded but selector semantics remain partial"
+            "targetSettings, and time-dilation tail; TargetSettings bytes are bounded but targeting semantics remain partial"
         ),
         "byteLength": item_end - item_start,
         "prefix": prefix,
@@ -2890,7 +3073,7 @@ def decode_buff_play_sound_action(
         "useTempEmitter": use_temp_emitter,
         "followMountPoint": follow_mount_point,
         "mountPoint": mount_point or "",
-        "targetSettingsPartial": target_settings,
+        "targetSettingsEnvelopePartial": target_settings,
         "timeDilationFadeInDurationMs": time_dilation_fade_in_duration_ms,
         "timeDilationFadeOutDurationMs": time_dilation_fade_out_duration_ms,
         "timeDilationPauseThreshold": round(time_dilation_pause_threshold, 6),
@@ -2955,6 +3138,22 @@ def decode_buff_ability_action_item_exact(
     tag_width: int,
     member_count: int,
 ) -> dict[str, Any] | None:
+    if tag == BUFF_DEBUG_PRINT_ACTION_TAG:
+        return decode_buff_debug_print_action(
+            data,
+            item_start,
+            item_end,
+            tag_width,
+            member_count,
+        )
+    if tag == BUFF_CONVERT_TO_TARGET_CONTEXT_ACTION_TAG:
+        return decode_buff_convert_to_target_context_action(
+            data,
+            item_start,
+            item_end,
+            tag_width,
+            member_count,
+        )
     if tag == BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG:
         return decode_buff_send_battle_signal_to_level_action(
             data,

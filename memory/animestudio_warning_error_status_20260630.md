@@ -2337,3 +2337,104 @@ Validation commands:
 - `python -m py_compile scripts\build_data_index.py`
 - Focused direct `decode_buff_memorypack` scan over both `structured/StreamingAssets/Data/Json/BuffData` and `structured/Persistent/Data/Json/BuffData`.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_play_animation_validate_20260630`
+
+## 2026-06-30 BuffData ConvertToTargetContext and DebugPrint Partial Decoders
+
+Added fail-closed partial decoders for two more `AbilityActionData` timeline action families.
+
+What changed:
+
+- Added `Core_ConvertToTargetContext_Data` for one-byte union tag `0x007e`, member count `12`.
+- Convert decoder parses the inherited `AbilityActionData` prefix, a MemoryPack `BlackboardVector3`, the bounded `convertFrom` TargetSettings envelope, `excludeTarget`, `operationType`, `targetGroupKey`, `translateOperation`, `translationDeg`, and `translationRef`.
+- Added `Core_DebugPrintAction_Data` for one-byte union tag `0x008b`, member count `8`, but only when the existing timeline parser has already proven the payload is a single action item.
+- DebugPrint decoder parses the inherited prefix, `bbKey`, `identifier`, `logType`, and a bounded TargetSettings envelope. It allows observed DebugPrint-only TargetSettings tail candidates `0`, `1`, and `4`; the generic helper still defaults to `1` and `4` for PlaySound/Convert.
+- Renamed TargetSettings diagnostics from selector wording to envelope wording to avoid overclaiming semantics.
+
+Focused validation over current exported BuffData roots:
+
+| Root | BuffData files | Timeline rows | Timeline records | Emitted single-item summaries | Exact item decodes | Partial item decodes | Typed decoder failures |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `structured/StreamingAssets` | 2,291 | 79 | 338 | 263 | 11 | 16 | 0 |
+| `structured/Persistent` | 2,325 | 79 | 338 | 263 | 11 | 16 | 0 |
+
+Action item decode-status distribution in both roots:
+
+| Decode status | Count |
+| --- | ---: |
+| `opaque` | 236 |
+| `partial` | 16 |
+| `exact` | 11 |
+
+Decoded action item type distribution in both roots:
+
+| Action type | Count | Status |
+| --- | ---: | --- |
+| `Core_PlaySoundAction_PlaySoundActionData` | 10 | partial |
+| `Core_SendBattleSignalToLevel_Data` | 8 | exact |
+| `Core_ConvertToTargetContext_Data` | 4 | partial |
+| `Core_DebugPrintAction_Data` | 2 | partial |
+| `Core_PlayAnimationAction_PlayAnimationActionData` | 2 | exact |
+| `Core_PatrolTeleport_Data` | 1 | exact |
+
+Decoded ConvertToTargetContext samples all match the same current shape:
+
+| BuffData row | Timeline record | Frames | `serverActionIndex` | `targetGroupKey` | Vector | TargetSettings bytes/tail |
+| --- | ---: | --- | ---: | --- | --- | --- |
+| `buff_eny_0046_lbshamman_teleport_main.json` | 1 | `60..63` | 12 | `originpoint` | `[0,0,0]` | `67 / 4` |
+| `buff_eny_0046_lbshamman_teleport_main_hdg016.json` | 1 | `60..63` | 3 | `originpoint` | `[0,0,0]` | `67 / 4` |
+| `buff_eny_0046_lbshamman_teleport_main_hdg016_back.json` | 1 | `60..63` | 3 | `originpoint` | `[0,0,0]` | `67 / 4` |
+| `buff_eny_0046_lbshamman_teleport_main_hdg016_back_2.json` | 0 | `60..63` | 0 | `originpoint` | `[0,0,0]` | `67 / 4` |
+
+Decoded DebugPrint samples exposed by the maintained timeline parser:
+
+| BuffData row | Timeline record | Frames | `serverActionIndex` | `logTypeName` | `identifier` | TargetSettings bytes/tail |
+| --- | ---: | --- | ---: | --- | --- | --- |
+| `buff_chr_0028_wulfa_combo_2_qte_timerlistening.json` | 4 | `35..38` | 17 | `TargetSetting` | `QTE Failuer` | `67 / 4` |
+| `buff_chr_0028_wulfa_normal_bleed_crit_extra_damage.json` | 1 | `0..3` | 18 | `TargetSetting` | `Critical Extra Damage` | `67 / 4` |
+
+Independent DebugPrint sweep notes:
+
+- Raw scan found 38 valid `Core_DebugPrintAction_Data` payloads per root, byte-identical between `StreamingAssets` and `Persistent`.
+- Only 2 per root are currently exposed as proven single-item `actionData` by the maintained parser. The rest are inside multi-action or later opaque payload regions where parent item boundaries are not proven yet.
+- Runtime metadata lists DebugPrint fields as `logType`, `target`, `bbKey`, `identifier`, but the bytes match MemoryPack setter order: `bbKey`, `identifier`, `logType`, `target`.
+- DebugPrint TargetSettings envelopes include observed tails `0` and `4`; the two 79-byte string-slot variants carry `bro` and `tar` but are not currently exposed by the maintained single-item path.
+
+Full WebUI Json validation after this change:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 143 |
+| `Json/BuffData` unresolved issue rows | 143 |
+| `Json/LevelScriptData` unresolved issue rows | 0 |
+
+Current strict issue field distribution remains row-level unchanged because multi-item timeline actions and other nested BuffData sections remain partial:
+
+| Status | Count |
+| --- | ---: |
+| `decoded.postIdPrefix.timelineActionsBodyStatus=partial-timelineActions-opaque-actionData` | 79 |
+| `decoded.postIdPrefix.timelineActionsSemanticStatus=partial-inner-actionData-union-payloads-opaque` | 79 |
+| `decoded.postIdPrefix.stackingSettings.stackEffectsBodyStatus=opaque-effectActions` | 47 |
+| `decoded.postIdPrefix.stackingSettings.effectActionsSemanticStatus=partial-effectActions-unproven-field-order` | 47 |
+| `decoded.postIdPrefix.poiseModifierBodyStatus=opaque-poiseModifier` | 9 |
+| `decoded.postIdPrefix.poiseModifierSemanticStatus=partial-poiseModifier-opaque-processors` | 9 |
+| `decoded.postIdPrefix.shieldConfigsBodyStatus=opaque-shieldConfigs` | 4 |
+| `decoded.postIdPrefix.shieldConfigsSemanticStatus=partial-shieldConfigs-opaque-nested-fields` | 4 |
+| `decoded.postIdPrefix.igniteEventActionBodyStatus=opaque-igniteEventAction` | 4 |
+| `decoded.postIdPrefix.igniteEventActionSemanticStatus=partial-igniteEventAction-opaque-actionData` | 4 |
+| `decoded.postIdPrefix.igniteEventActionBodyStatus=opaque-igniteEventAction-nestedBlocks` | 4 |
+| `decoded.postIdPrefix.igniteEventActionSemanticStatus=partial-igniteEventAction-nestedBlocks-opaque-actionData` | 4 |
+| `decoded.postIdPrefix.poiseModifierBodyTailPreview.timelineActionsBodyStatus=partial-timelineActions-opaque-actionData` | 3 |
+
+Interpretation:
+
+- Single-item typed coverage improved from 21 decoded items to 27 decoded items per root.
+- Opaque single-item summaries dropped from 242 before this pair of decoders to 236.
+- This does not suppress any warnings. The remaining 143 warning rows are still visible because the broader nested BuffData structures are still not fully understood.
+- Next useful targets are multi-action boundary recovery for timeline `actionDataCount > 1`, or narrow partial decoders for `ModifyDynamicBlackboard`, `SelfRotate`, and `CreateBuff` once their nested TargetSettings/list boundaries are proven.
+
+Validation commands:
+
+- `python -m py_compile scripts\build_data_index.py`
+- Focused direct `decode_buff_memorypack` scan over both `structured/StreamingAssets/Data/Json/BuffData` and `structured/Persistent/Data/Json/BuffData`.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_convert_debug_validate_20260630`
