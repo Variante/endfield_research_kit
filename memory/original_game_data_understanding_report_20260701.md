@@ -317,9 +317,11 @@ interactive templates, 923 interactive objects, 542 interactive template-data
 nodes, and 893 world entities from the exact MemoryPack families above. This
 makes questions such as "which radius row belongs to this model id?", "which
 interactive object aliases this template?", and "which world entity uses this
-interactive detail?" answerable from SQLite. It does not prove runtime formula
-usage or exported model reconstruction; the lean asset-index entity join for
-these config model IDs is still empty.
+interactive detail or enemy?" answerable from SQLite. The corrected graph now
+links 66 world entity placements to exact Gameplay enemy nodes and 66 to enemy
+templates when `detailId` matches. It does not prove runtime formula usage or
+exported model reconstruction; the lean asset-index entity join for these
+config model IDs is still empty.
 
 Partial but useful current examples include:
 
