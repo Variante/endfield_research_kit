@@ -271,6 +271,7 @@ DIALOG_SUPPORT_TABLES = (
 )
 DECODED_CONFIG_GROUP_FILES = (
     "Json_AnimationConfig.json",
+    "Json_AtmosphericNpcData.json",
     "Json_BuffData.json",
     "Json_GameplayConfig.json",
     "Json_GameplayConfigMissionAreaTable.json",
@@ -288,6 +289,7 @@ DECODED_CONFIG_GROUP_FILES = (
 )
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
+    "NpcAtmosphericDataTable",
     "BuffData",
     "GameplayConfigMissionAreaTable",
     "GameplayConfigWorldEntityRegistry",
@@ -1035,6 +1037,157 @@ def extract_animation_config_summary(entry: dict[str, Any], data: bytes) -> dict
         "booleanTailVerified": bool_tail_valid,
         "stringHits": hits[:48],
         "exactLength": False,
+    }
+
+ATMOSPHERIC_NPC_TABLE_MEMBER_COUNT = 1
+ATMOSPHERIC_NPC_ROW_MEMBER_COUNT = 109
+ATMOSPHERIC_NPC_KEY_MAX_LENGTH = 120
+ATMOSPHERIC_NPC_ROW_STRING_LIMIT = 80
+
+
+def unique_limited_strings(values: Iterable[Any], limit: int) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        text = safe_key(value)
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        out.append(text)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def atmospheric_npc_key_is_plausible(value: str) -> bool:
+    text = safe_key(value)
+    if not text.startswith("npc_"):
+        return False
+    lowered = text.lower()
+    return "_atmospheric_" in lowered or "_enviromental_" in lowered or "_environmental_" in lowered
+
+
+def atmospheric_npc_row_key_positions(data: bytes) -> list[tuple[int, str]]:
+    positions: list[tuple[int, str]] = []
+    for pos in range(5, max(5, len(data) - 4)):
+        length = struct.unpack_from("<I", data, pos)[0]
+        text_start = pos + 4
+        text_end = text_start + length
+        if not (1 <= length <= ATMOSPHERIC_NPC_KEY_MAX_LENGTH and text_end < len(data)):
+            continue
+        if data[text_end] != ATMOSPHERIC_NPC_ROW_MEMBER_COUNT:
+            continue
+        try:
+            text = data[text_start:text_end].decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        if any(ord(ch) < 32 for ch in text) or not atmospheric_npc_key_is_plausible(text):
+            continue
+        positions.append((pos, text))
+    return positions
+
+
+def scan_atmospheric_npc_row_strings(data: bytes, start: int, end: int, *, limit: int = ATMOSPHERIC_NPC_ROW_STRING_LIMIT) -> list[str]:
+    strings: list[str] = []
+    scan_start = max(0, start)
+    scan_end = max(scan_start, min(len(data), end))
+    for pos in range(scan_start, max(scan_start, scan_end - 4)):
+        length = struct.unpack_from("<I", data, pos)[0]
+        if length <= 0 or length > 220 or pos + 4 + length > scan_end:
+            continue
+        try:
+            text = data[pos + 4:pos + 4 + length].decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        if any(ord(ch) < 32 for ch in text) or not any(ch.isalnum() for ch in text):
+            continue
+        if text not in strings:
+            strings.append(text)
+            if len(strings) >= limit:
+                break
+    return strings
+
+
+def atmospheric_level_id_like(value: str) -> bool:
+    text = safe_key(value)
+    if not text or text.startswith("npc_") or "_cluster_" in text:
+        return False
+    lowered = text.lower()
+    if "_atmospheric_" in lowered or "_enviromental_" in lowered or "_environmental_" in lowered:
+        return False
+    return bool(re.match(r"^(?:base|map|dung|indie|main|rgl)\d{0,2}(?:_|$)", text, re.IGNORECASE))
+
+
+def classify_atmospheric_npc_strings(strings: list[str], row_keys: set[str]) -> dict[str, list[str]]:
+    return {
+        "aiConfigs": unique_limited_strings((value for value in strings if value.startswith("aiconf_")), 12),
+        "montages": unique_limited_strings((value for value in strings if value.startswith("Montage/")), 12),
+        "facialAnims": unique_limited_strings((value for value in strings if value.startswith("FacialMorph/")), 12),
+        "envTalks": unique_limited_strings((value for value in strings if value.startswith("envTalk_")), 12),
+        "templateIds": unique_limited_strings(
+            (
+                value
+                for value in strings
+                if value.startswith("npc_")
+                and value not in row_keys
+                and not atmospheric_npc_key_is_plausible(value)
+            ),
+            12,
+        ),
+        "clusters": unique_limited_strings((value for value in strings if "_cluster_" in value), 12),
+        "levels": unique_limited_strings((value for value in strings if atmospheric_level_id_like(value)), 12),
+    }
+
+
+def first_atmospheric_value(values: list[str]) -> str:
+    return safe_key(values[0]) if values else ""
+
+
+def extract_atmospheric_npc_table_summary(entry: dict[str, Any], data: bytes) -> dict[str, Any] | None:
+    if not data or data[0] != ATMOSPHERIC_NPC_TABLE_MEMBER_COUNT or len(data) < 5:
+        return None
+    table_count = struct.unpack_from("<I", data, 1)[0]
+    if table_count > 100_000:
+        return None
+    positions = atmospheric_npc_row_key_positions(data)
+    row_boundaries_verified = len(positions) == table_count
+    if table_count == 0 and len(data) != 5:
+        row_boundaries_verified = False
+
+    rows: list[dict[str, Any]] = []
+    for index, (pos, key) in enumerate(positions):
+        key_length = struct.unpack_from("<I", data, pos)[0]
+        member_offset = pos + 4 + key_length
+        if member_offset >= len(data):
+            continue
+        next_offset = positions[index + 1][0] if index + 1 < len(positions) else len(data)
+        row_strings = scan_atmospheric_npc_row_strings(data, member_offset + 1, next_offset)
+        classified = classify_atmospheric_npc_strings(row_strings, {key})
+        rows.append({
+            "index": index,
+            "key": key,
+            "memberCount": data[member_offset],
+            "aiCfg": first_atmospheric_value(classified["aiConfigs"]),
+            "templateDataId": first_atmospheric_value(classified["templateIds"]),
+            "levelId": first_atmospheric_value(classified["levels"]),
+            "clusterId": first_atmospheric_value(classified["clusters"]),
+            "montages": classified["montages"],
+            "facialAnims": classified["facialAnims"],
+            "envTalks": classified["envTalks"],
+            "rowStartOffset": mp_format_offset(pos),
+            "rowEndOffset": mp_format_offset(next_offset),
+        })
+
+    return {
+        "tableId": safe_key(entry.get("g")) or Path(safe_key(entry.get("p"))).stem,
+        "memberCount": ATMOSPHERIC_NPC_TABLE_MEMBER_COUNT,
+        "tableRowCount": table_count,
+        "rowKeyCount": len(positions),
+        "rowBoundariesVerified": row_boundaries_verified,
+        "rowMemberCount": ATMOSPHERIC_NPC_ROW_MEMBER_COUNT,
+        "rowStringScanLimit": ATMOSPHERIC_NPC_ROW_STRING_LIMIT,
+        "rows": rows,
+        "exactLength": row_boundaries_verified,
     }
 
 def parse_npc_montage_tag(tag: Any) -> dict[str, str]:
@@ -2402,6 +2555,8 @@ class SourceGraphBuilder:
         self.add_edge(file_node, family_node, "decoded_as_config_family", source="webui/game_data", evidence=safe_key(entry.get("q")))
         if subtype == "AnimationConfig":
             self.add_animation_config_edges(file_node, entry)
+        elif subtype == "NpcAtmosphericDataTable":
+            self.add_atmospheric_npc_data_edges(file_node, entry)
         elif subtype == "BuffData":
             self.add_buff_data_config_edges(file_node, entry)
         elif subtype == "SkillData":
@@ -2434,6 +2589,79 @@ class SourceGraphBuilder:
             self.add_world_entity_registry_edges(file_node, entry)
         elif subtype == "TeleportValidationDataTable":
             self.add_teleport_validation_config_edges(file_node, entry)
+
+    def add_ai_config_node(self, ai_config_id: Any, *, source: str = "") -> str:
+        config_key = safe_key(ai_config_id)
+        if not config_key:
+            return ""
+        node = self.add_node("ai_config", config_key, name=config_key, source=source)
+        self.add_alias(config_key, node, kind="ai_config_id", source=source)
+        return node
+
+    def add_atmospheric_npc_cluster_node(self, cluster_id: Any, *, source: str = "") -> str:
+        cluster_key = safe_key(cluster_id)
+        if not cluster_key:
+            return ""
+        node = self.add_node("atmospheric_npc_cluster", cluster_key, name=cluster_key, source=source)
+        self.add_alias(cluster_key, node, kind="atmospheric_npc_cluster_id", source=source)
+        return node
+
+    def add_atmospheric_npc_data_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        decoded = extract_atmospheric_npc_table_summary(entry, self.read_decoded_config_bytes(entry))
+        if not decoded:
+            return
+        source = "webui/game_data"
+        table_path = safe_key(entry.get("p"))
+        table_data = {
+            "tableId": decoded.get("tableId"),
+            "tableRowCount": decoded.get("tableRowCount"),
+            "rowKeyCount": decoded.get("rowKeyCount"),
+            "rowBoundariesVerified": decoded.get("rowBoundariesVerified"),
+            "rowMemberCount": decoded.get("rowMemberCount"),
+        }
+        self.update_node_details(
+            file_node,
+            data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": table_data}, depth=3),
+        )
+        for row in decoded.get("rows") or []:
+            row_key = safe_key(row.get("key"))
+            if not row_key:
+                continue
+            row_data = compact_payload(row, depth=2)
+            npc_node = self.add_environmental_npc_node(row_key, source=source, data=row_data)
+            self.add_alias(row_key, npc_node, kind="atmospheric_npc_row_key", source=source)
+            self.add_edge(file_node, npc_node, "atmospheric_npc_table_has_row", source=source, evidence=table_path, data={"index": row.get("index"), "rowStartOffset": row.get("rowStartOffset"), "rowEndOffset": row.get("rowEndOffset"), "tableId": decoded.get("tableId")})
+
+            template_id = safe_key(row.get("templateDataId"))
+            if template_id:
+                template_node = self.add_npc_template_node(template_id, source=source)
+                self.add_edge(npc_node, template_node, "atmospheric_npc_uses_template", source=source, evidence="templateDataId")
+            level_id = safe_key(row.get("levelId"))
+            if level_id:
+                level_node = self.add_level_node(level_id, source=source)
+                self.add_edge(npc_node, level_node, "atmospheric_npc_in_level", source=source, evidence="levelId")
+                self.add_level_map_edge(level_node, level_id, source=source, evidence="atmospheric_npc_levelId")
+            ai_cfg = safe_key(row.get("aiCfg"))
+            if ai_cfg:
+                ai_node = self.add_ai_config_node(ai_cfg, source=source)
+                self.add_edge(npc_node, ai_node, "atmospheric_npc_uses_ai_config", source=source, evidence="aiCfg")
+            cluster_id = safe_key(row.get("clusterId"))
+            if cluster_id:
+                cluster_node = self.add_atmospheric_npc_cluster_node(cluster_id, source=source)
+                self.add_edge(npc_node, cluster_node, "atmospheric_npc_in_cluster", source=source, evidence="clusterId")
+            for index, montage_id in enumerate(row.get("montages") or []):
+                montage_node = self.add_level_script_montage_node(montage_id, source=source)
+                self.add_edge(npc_node, montage_node, "atmospheric_npc_uses_montage", source=source, evidence=f"montages[{index}]")
+            for index, morph_id in enumerate(row.get("facialAnims") or []):
+                morph_key = safe_key(morph_id)
+                if not morph_key:
+                    continue
+                morph_node = self.add_node("facial_morph", morph_key, name=Path(morph_key).name, source=source, path=morph_key)
+                self.add_alias(morph_key, morph_node, kind="facial_morph_path", source=source)
+                self.add_edge(npc_node, morph_node, "atmospheric_npc_uses_facial_morph", source=source, evidence=f"facialAnims[{index}]")
+            for index, talk_id in enumerate(row.get("envTalks") or []):
+                talk_node = self.add_env_talk_node(talk_id, source=source)
+                self.add_edge(npc_node, talk_node, "atmospheric_npc_uses_env_talk", source=source, evidence=f"envTalks[{index}]")
 
     def add_animation_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         decoded = extract_animation_config_summary(entry, self.read_decoded_config_bytes(entry))
@@ -10285,6 +10513,8 @@ QUERY_KIND_PRIORITY = {
     "actor_animation_ref": 87,
     "animation_cutscene_ref": 88,
     "animation_path_ref": 89,
+    "ai_config": 90,
+    "atmospheric_npc_cluster": 91,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -10525,6 +10755,17 @@ NODE_ID_PREFIXES = (
     "level_script_template_group",
     "level_script_start_type",
     "level_script_montage",
+    "npc_montage_category",
+    "npc_montage_body",
+    "npc_montage_action",
+    "animation_config",
+    "animation_state",
+    "facial_morph",
+    "actor_animation_ref",
+    "animation_cutscene_ref",
+    "animation_path_ref",
+    "ai_config",
+    "atmospheric_npc_cluster",
     "mission",
     "map",
     "level",

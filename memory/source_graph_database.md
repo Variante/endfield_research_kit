@@ -704,6 +704,31 @@ python tools\endfield_source_graph.py query anim_cfg_abilityEntity_chr_0030_zhua
 python tools\endfield_source_graph.py query A_actor_zhuangfy_battle_skill_ult_03 --kind actor_animation_ref
 ```
 
+2026-07-01 AtmosphericNpcData decoded-config progress: source graph ingestion
+now promotes bounded `NpcAtmosphericDataTable` row evidence from the WebUI Data
+index onto `environmental_npc` nodes. A fast CN rebuild to
+`tmp/source_graph_atmospheric.sqlite` verified 1,135,357 total nodes,
+1,989,414 edges, and 1,592,007 aliases. New row coverage includes 15,452
+`atmospheric_npc_table_has_row` file-occurrence edges collapsed to 7,760 unique
+`atmospheric_npc_row_key` aliases. Row reference checks verified 7,760
+`atmospheric_npc_uses_template` edges, 7,760 `atmospheric_npc_in_level` edges,
+7,577 `atmospheric_npc_uses_ai_config` edges to 19 `ai_config` nodes, 4,866
+`atmospheric_npc_uses_montage` edges, 2,427
+`atmospheric_npc_uses_facial_morph` edges, 994 `atmospheric_npc_in_cluster`
+edges to 412 `atmospheric_npc_cluster` nodes, and 615
+`atmospheric_npc_uses_env_talk` edges. This pass mirrors the Data index's
+row-key boundary scan and capped per-row string scan; it does not decode the
+full 109-member row payload, coordinates, placement volumes, schedules,
+behavior trees, or playback timing. `envTalk_*` links are modeled as `env_talk`
+references, not direct story-line proof unless resolved by other tables. Example
+exact queries:
+
+```bat
+python tools\endfield_source_graph.py query npc_boy_efstaff_a_01_map01_lv001_data_sub_npc_v1d0_atmospheric_001 --kind environmental_npc
+python tools\endfield_source_graph.py query aiconf_npc_normal --kind ai_config
+python tools\endfield_source_graph.py query envTalk_map01_lv001_env_27 --kind env_talk
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
