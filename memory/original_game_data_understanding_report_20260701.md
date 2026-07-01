@@ -521,6 +521,16 @@ response `option_first_line` / `option_path_line` edges that keep their
 `webuiOnly` marker in edge data. This improves auditability of display fixes,
 but it still does not upgrade manual overrides into original game-source proof.
 
+2026-07-01 option-branch audit progress:
+`scripts/story_recovery/build_option_override_branch_conflict_audit.py` now
+writes generated reports under `reports/source_graph/` that classify every
+manual response option as matching inferred first-line evidence, conflicting
+with it, or manual-only. The current audit verifies 74 manual response options:
+26 match inference, 24 conflict with inferred first lines, and 24 are
+manual-only. Runtime-jump evidence is still sparse, but the join highlights
+`dlg_e6m1_10` and `dlg_e6m4_14` as high-signal conflicts where nearby Runtime
+Jump evidence supports the manual first line over the old inferred edge.
+
 ### Mission Timeline and Global Story Order
 
 Understanding is moderate at structural level and weaker at exact runtime
@@ -1003,14 +1013,13 @@ Success metric:
 - No contradictions between inferred first lines and nearby Runtime Jump Track
   evidence.
 
-2026-07-01 next story-proof target: a read-only source graph audit found that
-manual option overrides are not yet indexed as first-class graph evidence. The
-current `webui/overrides/options.json` has 33 scenes, 23 placement groups, and
-74 response option mappings, while graph queries still expose some contradicted
-Runtime Jump cases as ordinary inferred branch evidence. The next small source
-graph/story-proof slice should ingest manual option layout/response overrides
-as explicit `manual_option_*` evidence and separate Runtime Jump contradictions
-from uncontradicted inference.
+2026-07-01 next story-proof target: manual option overrides are now graph-indexed
+and conflict-audited, so the next proof step is narrower: link the remaining
+manual-vs-inferred conflicts to concrete runtime writers such as
+`DialogTimelineManager.SelectIndex`, `SetDialogOption`, and active Runtime Jump
+clip windows. The current conflict audit separates WebUI-authoritative manual
+edges from diagnostic inferred edges, but most conflicts still lack nearby
+Runtime Jump proof.
 
 ### 3. Move Global Story Order from Static Recovery Toward Observed Runtime
 

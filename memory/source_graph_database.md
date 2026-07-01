@@ -208,6 +208,15 @@ python tools\endfield_source_graph.py query manual-option:dlg_c28m3_23:1 --kind 
 python tools\endfield_source_graph.py query webui/overrides/options.json --kind file --limit 5
 ```
 
+2026-07-01 option branch conflict audit adds
+`scripts/story_recovery/build_option_override_branch_conflict_audit.py`, which
+writes generated JSON/Markdown to `reports/source_graph/`. The current graph
+audit verifies 74 manual response options: 26 manual first lines match inferred
+edges, 24 conflict with inferred first-line edges, and 24 are manual-only. The
+runtime-jump join finds 3 manual-supported rows overall and highlights
+`dlg_e6m1_10` plus `dlg_e6m4_14` as high-signal conflicts where nearby Runtime
+Jump evidence supports the manual first line over the old inferred edge.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type
