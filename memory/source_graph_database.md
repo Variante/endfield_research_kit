@@ -449,6 +449,27 @@ emits the `audio:0` sentinel as an audio node or edge target. These nodes are
 supporting source-table evidence; they do not replace generated line order,
 option branch, or option route recovery.
 
+2026-07-01 DialogIdTable registry graph progress: source graph ingestion now
+promotes the exact `DialogIdTable` decoded-config entry plus the generated
+`export_full/recovered/dialog_id_table_index.json` runtime registry. A fast CN
+rebuild to `tmp/source_graph_dialog_registry.sqlite` verified 1,156,410 total
+nodes, 2,057,921 edges, and 1,608,598 aliases. New coverage includes 1
+`dialog_id_table_config` node, 2 `defines_dialog_id_table` source-file edges
+split across Persistent and StreamingAssets, 4,918 `dialog_registry_scene`
+nodes and aliases, 4,918 registry-to-story links, 3,589 registered line links,
+3,589 line-to-story links, 4,131 registered option links, and 4,131
+option-to-story links. Registry data confirms 1,156 scenes with line/trunk
+registration, 1,299 scenes with option registrations, and 541 multi-trunk
+registered scenes. These edges are runtime registration evidence from
+DialogIdTable; they do not replace generated WebUI line order, option placement,
+option branch, or timeline route evidence. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query DialogIdTable --kind dialog_id_table_config
+python tools\endfield_source_graph.py query dlg_e1m1_5 --kind dialog_registry_scene
+python tools\endfield_source_graph.py query option_dlg_e1m1_5_1_001 --kind option
+```
+
 2026-07-01 decoded Data/Json config graph progress: source graph ingestion now
 promotes exact WebUI Data-index MemoryPack decodes for `ModelTable`,
 `ModelRadiusTable`, `InteractiveTable`, `InteractiveTemplateData`, and

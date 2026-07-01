@@ -28,6 +28,7 @@ SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 from build_data_index import (
+    decode_dialog_id_table_memorypack,
     decode_interactive_template_memorypack,
     decode_model_view_state_controller_memorypack,
 )
@@ -48,6 +49,7 @@ DEFAULT_SUMMARY_JSON = GRAPH_DIR / "summary.json"
 DEFAULT_SUMMARY_MD = GRAPH_DIR / "summary.md"
 TIMELINE_LINE_ORDERS_REL = Path("recovered") / "AnimeStudio-cli" / "timeline_line_orders.json"
 TIMELINE_LINE_ORDERS_PATH = EXPORT_ROOT / TIMELINE_LINE_ORDERS_REL
+DIALOG_ID_TABLE_INDEX_PATH = EXPORT_ROOT / "recovered" / "dialog_id_table_index.json"
 
 ASSET_MAPS = {
     "StreamingAssets": (
@@ -303,6 +305,7 @@ DECODED_CONFIG_TARGET_TYPES = {
     "CharInteractPerformCfgs",
     "NpcAtmosphericDataTable",
     "BuffData",
+    "DialogIdTable",
     "GameplayConfigMissionAreaTable",
     "GameplayConfigWorldEntityRegistry",
     "InteractiveTable",
@@ -2688,6 +2691,8 @@ class SourceGraphBuilder:
             self.add_buff_data_config_edges(file_node, entry)
         elif subtype == "SkillData":
             self.add_skill_data_config_edges(file_node, entry)
+        elif subtype == "DialogIdTable":
+            self.add_dialog_id_table_edges(file_node, entry)
         elif subtype == "GameplayConfigMissionAreaTable":
             self.add_mission_area_config_edges(file_node, entry)
         elif subtype == "ModelTable":
@@ -3482,6 +3487,98 @@ class SourceGraphBuilder:
         node = self.add_node("model_view_animator_name", key, name=key, source=source)
         self.add_alias(key, node, kind="model_view_animator_name", source=source)
         return node
+
+    def decode_dialog_id_table_payload(self, entry: dict[str, Any], raw_data: bytes | None = None) -> dict[str, Any] | None:
+        data = raw_data if raw_data is not None else self.read_decoded_config_bytes(entry)
+        if not data:
+            return None
+        try:
+            decoded = decode_dialog_id_table_memorypack(safe_key(entry.get("dp")), data, len(data))
+        except Exception:
+            return None
+        payload = decoded.get("decoded") if isinstance(decoded, dict) else None
+        return payload if isinstance(payload, dict) else None
+
+    def add_dialog_id_table_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        raw_data = self.read_decoded_config_bytes(entry)
+        decoded = self.decode_dialog_id_table_payload(entry, raw_data)
+        source_id = safe_key(entry.get("source")) or "webui"
+        config_node = self.add_node(
+            "dialog_id_table_config",
+            "DialogIdTable",
+            name="DialogIdTable",
+            source="webui/game_data",
+            path=safe_key(entry.get("p")),
+            data=compact_payload(
+                {
+                    **self.decoded_config_entry_data(entry),
+                    "dialogBriefInfoCount": (decoded or {}).get("dialogBriefInfoCount"),
+                    "dialogBriefInfoParsedCount": (decoded or {}).get("dialogBriefInfoParsedCount"),
+                    "registrySummary": (decoded or {}).get("registrySummary"),
+                    "exactLength": (decoded or {}).get("exactLength"),
+                },
+                depth=3,
+            ),
+        )
+        self.add_edge(file_node, config_node, "defines_dialog_id_table", source="webui/game_data", evidence=safe_key(entry.get("dp")), data={"source": source_id})
+        self.add_alias("DialogIdTable", config_node, kind="decoded_config_family", source="webui/game_data")
+        if source_id != "StreamingAssets":
+            return
+        registry = read_json(DIALOG_ID_TABLE_INDEX_PATH, {})
+        if not isinstance(registry, dict):
+            return
+        self.add_file(slash(DIALOG_ID_TABLE_INDEX_PATH), kind="dialog_registry", source="DialogIdTable", data={"sceneCount": len(registry)})
+        for scene_key_raw, scene in registry.items():
+            scene_key = safe_key(scene_key_raw)
+            if not scene_key or not isinstance(scene, dict):
+                continue
+            scene_node = self.add_node(
+                "dialog_registry_scene",
+                scene_key,
+                name=scene_key,
+                source="DialogIdTable",
+                data=compact_payload(
+                    {
+                        "registered": scene.get("registered"),
+                        "hasRootKey": scene.get("hasRootKey"),
+                        "trunkCount": scene.get("trunkCount"),
+                        "trunkIndices": scene.get("trunkIndices"),
+                        "lineCount": scene.get("lineCount"),
+                        "optionGroupCount": scene.get("optionGroupCount"),
+                        "optionCount": scene.get("optionCount"),
+                    },
+                    depth=3,
+                ),
+            )
+            self.add_alias(scene_key, scene_node, kind="dialog_registry_scene_key", source="DialogIdTable")
+            self.add_edge(config_node, scene_node, "dialog_id_table_registers_scene", source="DialogIdTable", evidence="dialog_id_table_index.json")
+            story_node = self.add_node("story", scene_key, name=scene_key, source="DialogIdTable")
+            self.add_alias(scene_key, story_node, kind="story_key", source="DialogIdTable")
+            self.add_edge(scene_node, story_node, "dialog_registry_targets_story", source="DialogIdTable", evidence="sceneKey", data={"hasRootKey": scene.get("hasRootKey")})
+
+            lines_by_trunk = scene.get("linesByTrunk") if isinstance(scene.get("linesByTrunk"), dict) else {}
+            for trunk_key, line_ids in lines_by_trunk.items():
+                if not isinstance(line_ids, list):
+                    continue
+                for index, line_id_raw in enumerate(line_ids):
+                    line_id = safe_key(line_id_raw)
+                    if not line_id:
+                        continue
+                    line_node = self.add_node("line", line_id, name=line_id, source="DialogIdTable")
+                    self.add_edge(scene_node, line_node, "dialog_registry_has_line", source="DialogIdTable", evidence=safe_key(trunk_key), data={"trunk": trunk_key, "index": index})
+                    self.add_edge(line_node, story_node, "dialog_registry_line_for_story", source="DialogIdTable", evidence=safe_key(trunk_key), data={"trunk": trunk_key, "index": index})
+
+            options_by_group = scene.get("optionsByGroup") if isinstance(scene.get("optionsByGroup"), dict) else {}
+            for group_key, option_ids in options_by_group.items():
+                if not isinstance(option_ids, list):
+                    continue
+                for index, option_id_raw in enumerate(option_ids):
+                    option_id = safe_key(option_id_raw)
+                    if not option_id:
+                        continue
+                    option_node = self.add_node("option", option_id, name=option_id, source="DialogIdTable")
+                    self.add_edge(scene_node, option_node, "dialog_registry_has_option", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
+                    self.add_edge(option_node, story_node, "dialog_registry_option_for_story", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
 
     def add_model_view_state_controller_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         raw_data = self.read_decoded_config_bytes(entry)
@@ -11161,6 +11258,8 @@ QUERY_KIND_PRIORITY = {
     "model_view_state_controller": 102,
     "model_view_clip_ref": 103,
     "model_view_animator_name": 104,
+    "dialog_id_table_config": 105,
+    "dialog_registry_scene": 106,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -11425,6 +11524,8 @@ NODE_ID_PREFIXES = (
     "model_view_state_controller",
     "model_view_clip_ref",
     "model_view_animator_name",
+    "dialog_id_table_config",
+    "dialog_registry_scene",
     "mission",
     "map",
     "level",
