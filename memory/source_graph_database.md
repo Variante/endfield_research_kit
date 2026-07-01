@@ -970,6 +970,20 @@ guide-group edges, 69 guide text edges, 17 chapter-panel edges, and 7 static
 specific `actionList[...]` fields. This is static authored action-map evidence;
 it does not simulate action execution, condition evaluation, or mission
 chronology.
+2026-07-01 ScriptTaskExtraInfoTable display-metadata graph progress: the
+`GameplayConfigScriptTaskExtraInfoTable` handler now also ingests the larger
+`Json/GameplayConfig/ScriptTaskExtraInfoTable.json` entries in `Json_GameplayConfig.json`,
+not only the small wrapper group. A fast CN temp graph build to
+`tmp/source_graph_script_task_extra.sqlite` verified 536 collapsed
+`level_script_task_extra` rows, 536 `level_script_task_uid` nodes, 671
+`level_script_task_objective` nodes, 1,052 source definition edges, 536 links to
+levels, 536 links to `level_script` nodes, 638 objective text edges, 285 title
+text edges, 7 single-description text edges, 2 progress-display-mode nodes, and
+3 track-point-type nodes. Example queries now resolve
+`map01_lv007:2800200002:0174178d`, `dungeon_train_train02_title`, and
+`9900020001` to concrete task-display metadata. This is authored UI/tracking
+text metadata; it does not prove objective formulas, mission areas, quest-task
+identity, or runtime completion logic.
 
 2026-07-01 AIConfig graph progress: source graph ingestion now promotes exact
 enemy-template preload mappings from `Json_AIConfig.json`

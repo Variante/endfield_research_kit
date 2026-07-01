@@ -332,6 +332,11 @@ GAMEPLAY_CONFIG_WORLD_ENTITY_TEXT_PATHS = frozenset(
         "Json/GameplayConfig/WorldEntityRegistry.json",
     }
 )
+GAMEPLAY_CONFIG_SCRIPT_TASK_EXTRA_PATHS = frozenset(
+    {
+        "Json/GameplayConfig/ScriptTaskExtraInfoTable.json",
+    }
+)
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
     "AIConfigEnemyTemplateDataSummary",
@@ -2930,6 +2935,8 @@ class SourceGraphBuilder:
                     subtype = "GameplayConfigMapPlacement"
                 if group_name == "Json_GameplayConfig.json" and safe_key(entry.get("dp")) in GAMEPLAY_CONFIG_WORLD_ENTITY_TEXT_PATHS:
                     subtype = "GameplayConfigWorldEntityTextRegistry"
+                if group_name == "Json_GameplayConfig.json" and safe_key(entry.get("dp")) in GAMEPLAY_CONFIG_SCRIPT_TASK_EXTRA_PATHS:
+                    subtype = "GameplayConfigScriptTaskExtraInfoTable"
                 if group_name == "Json_GameplayConfigScriptTaskExtraInfoTable.json":
                     subtype = "GameplayConfigScriptTaskExtraInfoTable"
                 if group_name == "Json_LevelMountPoint.json":
@@ -4706,7 +4713,10 @@ class SourceGraphBuilder:
                             "extraKey": extra_key,
                             "useSingleDescription": extra.get("useSingleDescription"),
                             "singleDescriptionFormatProgress": extra.get("singleDescriptionFormatProgress"),
+                            "taskTitleConfigKey": extra.get("taskTitleConfigKey"),
+                            "taskTitleUseConfig": extra.get("taskTitleUseConfig"),
                             "objectiveCount": extra.get("objectiveCount"),
+                            "trackingCount": len(tracking),
                             "trackingKeys": sorted(tracking.keys()),
                         }, depth=3),
                     )
@@ -4715,18 +4725,59 @@ class SourceGraphBuilder:
                     self.add_alias(f"{level_id}:{task_id}", extra_node, kind="level_script_task_extra_task_key", source=source)
                     self.add_edge(file_node, extra_node, "defines_level_script_task_extra", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id})
                     self.add_edge(extra_node, level_node, "level_script_task_extra_in_level", source=source, evidence="dataTable.levelId")
+                    script_node = self.add_node("level_script", task_id, name=task_id, source=source)
+                    self.add_alias(task_id, script_node, kind="level_script_id", source=source)
+                    self.add_edge(extra_node, script_node, "level_script_task_extra_for_script", source=source, evidence="dataTable.scriptId")
+                    uid_node = self.add_node(
+                        "level_script_task_uid",
+                        node_key,
+                        name=extra_key,
+                        source=source,
+                        data={"levelId": level_id, "scriptId": task_id, "uid": extra_key},
+                    )
+                    self.add_alias(node_key, uid_node, kind="level_script_task_uid_key", source=source)
+                    self.add_alias(f"{task_id}:{extra_key}", uid_node, kind="level_script_task_uid", source=source)
+                    self.add_edge(extra_node, uid_node, "level_script_task_extra_has_uid", source=source, evidence="dataTable.uid")
+                    self.add_edge(uid_node, script_node, "level_script_task_uid_in_script", source=source, evidence="dataTable.scriptId")
                     self.add_script_task_extra_text_edge(extra_node, extra.get("taskTitle"), edge_kind="level_script_task_extra_title_text", source=source, evidence="taskTitle")
                     self.add_script_task_extra_text_edge(extra_node, extra.get("singleDescription"), edge_kind="level_script_task_extra_single_description_text", source=source, evidence="singleDescription")
                     for objective_key, objective in sorted(tracking.items(), key=lambda item: safe_key(item[0])):
-                        if not isinstance(objective, dict):
+                        objective_id = safe_key(objective_key)
+                        if not objective_id or not isinstance(objective, dict):
                             continue
+                        objective_node = self.add_node(
+                            "level_script_task_objective",
+                            f"{node_key}:{objective_id}",
+                            name=f"{task_id} {objective_id}",
+                            source=source,
+                            data=compact_payload({"levelId": level_id, "scriptId": task_id, "uid": extra_key, "objective": objective_id, "needFormatProgress": objective.get("needFormatProgress"), "progressDisplayMode": objective.get("progressDisplayMode"), "trackPointType": objective.get("trackPointType")}, depth=2),
+                        )
+                        self.add_alias(f"{node_key}:{objective_id}", objective_node, kind="level_script_task_objective_key", source=source)
+                        self.add_edge(extra_node, objective_node, "level_script_task_extra_has_objective", source=source, evidence=f"trackingInfoDict.{objective_id}")
+                        self.add_script_task_extra_text_edge(
+                            objective_node,
+                            objective.get("description"),
+                            edge_kind="level_script_task_objective_text",
+                            source=source,
+                            evidence=f"trackingInfoDict.{objective_id}.description",
+                        )
                         self.add_script_task_extra_text_edge(
                             extra_node,
                             objective.get("description"),
                             edge_kind="level_script_task_extra_objective_text",
                             source=source,
-                            evidence=f"trackingInfoDict.{safe_key(objective_key)}.description",
+                            evidence=f"trackingInfoDict.{objective_id}.description",
                         )
+                        display_mode = safe_key(objective.get("progressDisplayMode"))
+                        if display_mode:
+                            mode_node = self.add_node("level_script_task_progress_display_mode", display_mode, name=display_mode, source=source)
+                            self.add_alias(display_mode, mode_node, kind="level_script_task_progress_display_mode", source=source)
+                            self.add_edge(objective_node, mode_node, "level_script_task_objective_progress_display_mode", source=source, evidence=f"trackingInfoDict.{objective_id}.progressDisplayMode")
+                        track_point_type = safe_key(objective.get("trackPointType"))
+                        if track_point_type:
+                            type_node = self.add_node("level_script_task_track_point_type", track_point_type, name=track_point_type, source=source)
+                            self.add_alias(track_point_type, type_node, kind="level_script_task_track_point_type", source=source)
+                            self.add_edge(objective_node, type_node, "level_script_task_objective_track_point_type", source=source, evidence=f"trackingInfoDict.{objective_id}.trackPointType")
 
     def iter_level_mount_points(self, node: Any, path: list[str]) -> Iterable[tuple[list[str], dict[str, Any]]]:
         if not isinstance(node, dict):
@@ -13593,6 +13644,10 @@ QUERY_KIND_PRIORITY = {
     "map_streaming_asset": 128,
     "map_config_condition_type": 129,
     "level_script_task_extra": 130,
+    "level_script_task_uid": 130.1,
+    "level_script_task_objective": 130.2,
+    "level_script_task_progress_display_mode": 130.3,
+    "level_script_task_track_point_type": 130.4,
     "level_mount_point": 131,
     "level_mount_type": 132,
     "level_gen_parent_data": 133,
@@ -13919,6 +13974,10 @@ NODE_ID_PREFIXES = (
     "map_streaming_asset",
     "map_config_condition_type",
     "level_script_task_extra",
+    "level_script_task_uid",
+    "level_script_task_objective",
+    "level_script_task_progress_display_mode",
+    "level_script_task_track_point_type",
     "level_mount_point",
     "level_mount_type",
     "level_gen_parent_data",
