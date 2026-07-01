@@ -320,6 +320,13 @@ GAMEPLAY_CONFIG_MAP_LEVEL_LOOKUP_PATHS = frozenset(
         "Json/GameplayConfig/MapBriefInfoTable.json",
     }
 )
+GAMEPLAY_CONFIG_MAP_PLACEMENT_PATHS = frozenset(
+    {
+        "Json/GameplayConfig/LevelMapMark.json",
+        "Json/GameplayConfig/MapRegionTable.json",
+        "Json/GameplayConfig/MinePointTeamTable.json",
+    }
+)
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
     "AIConfigEnemyTemplateDataSummary",
@@ -335,6 +342,7 @@ DECODED_CONFIG_TARGET_TYPES = {
     "DialogIdTable",
     "GameplayConfigMissionAreaTable",
     "GameplayConfigMapLevelLookups",
+    "GameplayConfigMapPlacement",
     "GameplayConfigWorldEntityRegistry",
     "GPUISystemConfigDamageText",
     "InteractiveTable",
@@ -2901,6 +2909,8 @@ class SourceGraphBuilder:
                     subtype = "MapConfig"
                 if group_name == "Json_GameplayConfig.json" and safe_key(entry.get("dp")) in GAMEPLAY_CONFIG_MAP_LEVEL_LOOKUP_PATHS:
                     subtype = "GameplayConfigMapLevelLookups"
+                if group_name == "Json_GameplayConfig.json" and safe_key(entry.get("dp")) in GAMEPLAY_CONFIG_MAP_PLACEMENT_PATHS:
+                    subtype = "GameplayConfigMapPlacement"
                 if group_name == "Json_GameplayConfigScriptTaskExtraInfoTable.json":
                     subtype = "GameplayConfigScriptTaskExtraInfoTable"
                 if group_name == "Json_LevelMountPoint.json":
@@ -2937,6 +2947,8 @@ class SourceGraphBuilder:
             self.add_map_config_edges(file_node, entry)
         elif subtype == "GameplayConfigMapLevelLookups":
             self.add_gameplay_config_map_level_lookup_edges(file_node, entry)
+        elif subtype == "GameplayConfigMapPlacement":
+            self.add_gameplay_config_map_placement_edges(file_node, entry)
         elif subtype == "GameplayConfigScriptTaskExtraInfoTable":
             self.add_gameplay_script_task_extra_edges(file_node, entry)
         elif subtype == "LevelMountPoint":
@@ -4267,6 +4279,338 @@ class SourceGraphBuilder:
                     enemy_node = self.add_node("enemy", enemy_id, name=enemy_id, source=source)
                     self.add_alias(enemy_id, enemy_node, kind="enemy_id", source=source)
                     self.add_edge(sub_node, enemy_node, "map_sublevel_brief_has_enemy", source=source, evidence=f"enemyIdSet[{enemy_index}]", data={"mapId": map_id, "mapIdNum": map_num, "subLevelId": sub_id})
+
+    def iter_gameplay_config_grouped_rows(self, payload: Any) -> Iterable[tuple[str, int, dict[str, Any]]]:
+        if not isinstance(payload, dict):
+            return
+        for top_key_raw, values in sorted(payload.items(), key=lambda item: safe_key(item[0])):
+            top_key = safe_key(top_key_raw)
+            if not top_key or not isinstance(values, list):
+                continue
+            for index, row in enumerate(values):
+                if isinstance(row, dict):
+                    yield top_key, index, row
+
+    def runtime_type_leaf(self, type_name: Any) -> str:
+        type_key = safe_key(type_name)
+        if not type_key:
+            return ""
+        return type_key.split(",", 1)[0].rsplit(".", 1)[-1] or type_key
+
+    def add_map_region_node(self, region_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        region_key = safe_key(region_id)
+        if not region_key:
+            return ""
+        region_name = safe_key(name) or region_key
+        node = self.add_node("map_region", region_key, name=region_name, source=source, data=data)
+        self.add_alias(region_key, node, kind="map_region_id", source=source)
+        if region_name != region_key:
+            self.add_alias(region_name, node, kind="map_region_name", source=source)
+        return node
+
+    def add_map_mark_detail_type_node(self, type_name: Any, *, source: str = "") -> str:
+        type_key = safe_key(type_name)
+        type_leaf = self.runtime_type_leaf(type_key)
+        if not type_leaf:
+            return ""
+        node = self.add_node("map_mark_detail_type", type_leaf, name=type_leaf, source=source, data={"type": type_key})
+        self.add_alias(type_leaf, node, kind="map_mark_detail_type", source=source)
+        self.add_alias(type_key, node, kind="map_mark_detail_full_type", source=source)
+        return node
+
+    def add_map_mark_visibility_type_node(self, type_name: Any, *, source: str = "") -> str:
+        type_key = safe_key(type_name)
+        type_leaf = self.runtime_type_leaf(type_key)
+        if not type_leaf:
+            return ""
+        node = self.add_node("map_mark_visibility_type", type_leaf, name=type_leaf, source=source, data={"type": type_key})
+        self.add_alias(type_leaf, node, kind="map_mark_visibility_type", source=source)
+        self.add_alias(type_key, node, kind="map_mark_visibility_full_type", source=source)
+        return node
+
+    def add_map_mark_logic_ref_node(self, logic_id: Any, *, source: str = "") -> str:
+        logic_key = safe_key(logic_id)
+        if not logic_key:
+            return ""
+        node = self.add_node("map_mark_logic_ref", logic_key, name=logic_key, source=source)
+        self.add_alias(logic_key, node, kind="map_mark_logic_ref_id", source=source)
+        return node
+
+    def add_system_interactive_node(self, inst_id: Any, *, source: str = "") -> str:
+        inst_key = safe_key(inst_id)
+        if not inst_key:
+            return ""
+        node = self.add_node("system_interactive", inst_key, name=inst_key, source=source)
+        self.add_alias(inst_key, node, kind="system_interactive_id", source=source)
+        return node
+
+    def add_minigame_node(self, minigame_id: Any, *, source: str = "") -> str:
+        minigame_key = safe_key(minigame_id)
+        if not minigame_key:
+            return ""
+        node = self.add_node("minigame", minigame_key, name=minigame_key, source=source)
+        self.add_alias(minigame_key, node, kind="minigame_id", source=source)
+        return node
+
+    def add_sewage_treat_plant_node(self, plant_id: Any, *, source: str = "") -> str:
+        plant_key = safe_key(plant_id)
+        if not plant_key:
+            return ""
+        node = self.add_node("sewage_treat_plant", plant_key, name=plant_key, source=source)
+        self.add_alias(plant_key, node, kind="sewage_treat_plant_id", source=source)
+        return node
+
+    def gameplay_config_map_regions_by_id(self, entry: dict[str, Any]) -> dict[str, dict[str, Any]]:
+        region_path = self.decoded_config_raw_path(entry).with_name("MapRegionTable.json")
+        payload = read_json(region_path, {})
+        regions: dict[str, dict[str, Any]] = {}
+        for top_key, index, row in self.iter_gameplay_config_grouped_rows(payload):
+            region_id = safe_key(row.get("mapRegionId"))
+            if not region_id:
+                continue
+            region = dict(row)
+            region["_topKey"] = top_key
+            region["_index"] = index
+            regions[region_id] = region
+        return regions
+
+    def add_gameplay_map_region_table_edges(self, file_node: str, entry: dict[str, Any], payload: dict[str, Any], *, source: str, source_id: str) -> None:
+        rows = list(self.iter_gameplay_config_grouped_rows(payload))
+        region_ids = {safe_key(row.get("mapRegionId")) for _, _, row in rows if safe_key(row.get("mapRegionId"))}
+        shape_count = sum(len(row.get("shapeList") or []) for _, _, row in rows)
+        self.update_node_details(file_node, data=compact_payload({**self.decoded_config_entry_data(entry), "topKeyCount": len(payload), "regionCount": len(rows), "shapeCount": shape_count}, depth=3))
+        region_entries: list[tuple[str, str, int, dict[str, Any], str]] = []
+        for top_key, index, row in rows:
+            region_id = safe_key(row.get("mapRegionId"))
+            if not region_id:
+                continue
+            region_name = safe_key(row.get("mapRegionIdName")) or region_id
+            level_id = safe_key(row.get("levelId"))
+            tier_refs = [safe_key(value) for value in (row.get("tierMapRegionIds") or []) if safe_key(value)]
+            region_data = compact_payload({
+                "mapRegionId": region_id,
+                "mapRegionIdName": region_name,
+                "levelId": level_id,
+                "topKey": top_key,
+                "isMist": row.get("isMist"),
+                "mapRegionType": row.get("mapRegionType"),
+                "hideByMistId": row.get("hideByMistId"),
+                "tierIndex": row.get("tierIndex"),
+                "tierMapRegionIds": tier_refs,
+                "groupId": row.get("groupId"),
+                "priority": row.get("priority"),
+                "shapeCount": len(row.get("shapeList") or []),
+                "source": source_id,
+            }, depth=3)
+            region_node = self.add_map_region_node(region_id, name=region_name, source=source, data=region_data)
+            self.update_node_details(region_node, name=region_name, source=source, data=region_data)
+            self.add_alias(f"{top_key}:{region_id}", region_node, kind="map_region_top_key", source=source)
+            self.add_edge(file_node, region_node, "defines_map_region", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id, "topKey": top_key, "index": index})
+            if level_id:
+                level_node = self.add_level_node(level_id, source=source)
+                self.add_edge(level_node, region_node, "level_has_map_region", source=source, evidence="levelId", data={"source": source_id})
+                self.add_level_map_edge(level_node, level_id, source=source, evidence="MapRegionTable.levelId")
+            region_entries.append((region_id, region_node, index, row, top_key))
+        for region_id, region_node, _index, row, _top_key in region_entries:
+            for tier_index, tier_id in enumerate(row.get("tierMapRegionIds") or []):
+                tier_key = safe_key(tier_id)
+                if not tier_key:
+                    continue
+                tier_node = self.add_map_region_node(tier_key, source=source)
+                self.add_edge(region_node, tier_node, "map_region_has_tier_region", source=source, evidence=f"tierMapRegionIds[{tier_index}]", data={"source": source_id})
+            hide_id = safe_key(row.get("hideByMistId"))
+            if hide_id and hide_id in region_ids:
+                hide_node = self.add_map_region_node(hide_id, source=source)
+                self.add_edge(region_node, hide_node, "map_region_hidden_by_mist_region", source=source, evidence="hideByMistId", data={"source": source_id})
+            group_id = safe_key(row.get("groupId"))
+            if group_id and group_id in region_ids:
+                group_node = self.add_map_region_node(group_id, source=source)
+                self.add_edge(region_node, group_node, "map_region_group_region", source=source, evidence="groupId", data={"source": source_id})
+
+    def add_level_map_mark_reference_edges(self, mark_node: str, detail: Any, visibility: Any, *, source: str) -> None:
+        detail_map = detail if isinstance(detail, dict) else {}
+        visibility_map = visibility if isinstance(visibility, dict) else {}
+        detail_type_node = self.add_map_mark_detail_type_node(detail_map.get("$type"), source=source)
+        if detail_type_node:
+            self.add_edge(mark_node, detail_type_node, "map_mark_has_detail_type", source=source, evidence="detailedData.$type")
+        visibility_type_node = self.add_map_mark_visibility_type_node(visibility_map.get("$type"), source=source)
+        if visibility_type_node:
+            self.add_edge(mark_node, visibility_type_node, "map_mark_has_visibility_type", source=source, evidence="visibilityData.$type")
+        for field, payload in (("displayItemId", detail_map), ("pieceItemId", visibility_map)):
+            item_node = self.add_item_node(payload.get(field), source=source)
+            if item_node:
+                self.add_edge(mark_node, item_node, "map_mark_displays_item", source=source, evidence=f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}")
+        for field, payload in (("rewardId", detail_map), ("rewardId", visibility_map)):
+            reward_node = self.add_reward_node(payload.get(field), source=source)
+            if reward_node:
+                self.add_edge(mark_node, reward_node, "map_mark_rewards", source=source, evidence=f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}")
+        teleport_node = self.add_node("teleport_point", safe_key(detail_map.get("teleportValidationId")), name=safe_key(detail_map.get("teleportValidationId")), source=source) if safe_key(detail_map.get("teleportValidationId")) else ""
+        if teleport_node:
+            self.add_alias(detail_map.get("teleportValidationId"), teleport_node, kind="teleport_point_id", source=source)
+            self.add_edge(mark_node, teleport_node, "map_mark_teleport_validation", source=source, evidence="detailedData.teleportValidationId")
+        for field, payload in (("systemInstId", detail_map), ("systemInsId", visibility_map)):
+            system_node = self.add_system_interactive_node(payload.get(field), source=source)
+            if system_node:
+                self.add_edge(mark_node, system_node, "map_mark_system_instance", source=source, evidence=f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}")
+        for field, payload in (("logicIdGlobal", detail_map), ("entityLogicIdGlobal", visibility_map), ("intLogicIdGlobal", visibility_map), ("logicId", visibility_map)):
+            logic_node = self.add_map_mark_logic_ref_node(payload.get(field), source=source)
+            if logic_node:
+                self.add_edge(mark_node, logic_node, "map_mark_logic_ref", source=source, evidence=f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}")
+        for field, payload in (("activityId", detail_map), ("activityId", visibility_map)):
+            activity_node = self.add_activity_node(payload.get(field), source=source)
+            if activity_node:
+                self.add_edge(mark_node, activity_node, "map_mark_activity", source=source, evidence=f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}")
+        for field, payload in (("activityStageId", detail_map), ("activityStageId", visibility_map)):
+            stage_node = self.add_activity_stage_node(payload.get(field), source=source)
+            if stage_node:
+                self.add_edge(mark_node, stage_node, "map_mark_activity_stage", source=source, evidence=f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}")
+        for field, payload in (("settlementId", detail_map), ("settlementId", visibility_map)):
+            settlement_id = safe_key(payload.get(field))
+            if not settlement_id:
+                continue
+            settlement_node = self.add_node("settlement_poi", settlement_id, name=settlement_id, source=source)
+            self.add_alias(settlement_id, settlement_node, kind="settlement_poi_id", source=source)
+            self.add_edge(mark_node, settlement_node, "map_mark_settlement", source=source, evidence=f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}")
+        for field, payload in (("plantId", detail_map), ("plantId", visibility_map)):
+            plant_node = self.add_sewage_treat_plant_node(payload.get(field), source=source)
+            if plant_node:
+                self.add_edge(mark_node, plant_node, "map_mark_sewage_treat_plant", source=source, evidence=f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}")
+        for field, payload in (("minigameIds", visibility_map),):
+            values = payload.get(field)
+            if not isinstance(values, list):
+                continue
+            for index, value in enumerate(values):
+                minigame_node = self.add_minigame_node(value, source=source)
+                if minigame_node:
+                    self.add_edge(mark_node, minigame_node, "map_mark_minigame", source=source, evidence=f"visibilityData.{field}[{index}]")
+        for field, payload in (("coreLogicId", detail_map), ("allCoreEntity", visibility_map)):
+            values = payload.get(field)
+            if not isinstance(values, list):
+                continue
+            for index, value in enumerate(values):
+                logic_node = self.add_level_gen_doodad_logic_node(value, source=source)
+                if logic_node:
+                    self.add_edge(mark_node, logic_node, "map_mark_core_doodad_logic", source=source, evidence=f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}[{index}]")
+
+    def add_gameplay_level_map_mark_edges(self, file_node: str, entry: dict[str, Any], payload: dict[str, Any], *, source: str, source_id: str) -> None:
+        rows = list(self.iter_gameplay_config_grouped_rows(payload))
+        region_rows = self.gameplay_config_map_regions_by_id(entry)
+        template_ids: set[str] = set()
+        mist_refs = 0
+        tier_refs = 0
+        detailed_count = 0
+        visibility_count = 0
+        for _top_key, _index, row in rows:
+            basic = row.get("basicData") if isinstance(row.get("basicData"), dict) else {}
+            template_id = safe_key(basic.get("templateId"))
+            if template_id:
+                template_ids.add(template_id)
+            mist_refs += 1 if safe_key(basic.get("mistMap")) and safe_key(basic.get("mistMap")) != "0" else 0
+            tier_refs += 1 if safe_key(basic.get("tierMap")) and safe_key(basic.get("tierMap")) != "0" else 0
+            detailed_count += 1 if isinstance(row.get("detailedData"), dict) else 0
+            visibility_count += 1 if isinstance(row.get("visibilityData"), dict) else 0
+        self.update_node_details(file_node, data=compact_payload({**self.decoded_config_entry_data(entry), "topKeyCount": len(payload), "markCount": len(rows), "templateCount": len(template_ids), "mistRefCount": mist_refs, "tierRefCount": tier_refs, "detailedCount": detailed_count, "visibilityCount": visibility_count}, depth=3))
+        for top_key, index, row in rows:
+            basic = row.get("basicData") if isinstance(row.get("basicData"), dict) else {}
+            mark_id = safe_key(basic.get("markInstId"))
+            if not mark_id:
+                continue
+            detail = row.get("detailedData") if isinstance(row.get("detailedData"), dict) else {}
+            visibility = row.get("visibilityData") if isinstance(row.get("visibilityData"), dict) else {}
+            mist_region_id = safe_key(basic.get("mistMap"))
+            tier_region_id = safe_key(basic.get("tierMap"))
+            if mist_region_id == "0":
+                mist_region_id = ""
+            if tier_region_id == "0":
+                tier_region_id = ""
+            level_candidates = {safe_key(region_rows.get(region_id, {}).get("levelId")) for region_id in (mist_region_id, tier_region_id) if safe_key(region_rows.get(region_id, {}).get("levelId"))}
+            level_id = next(iter(level_candidates)) if len(level_candidates) == 1 else ""
+            mark_data = compact_payload({
+                "markInstId": mark_id,
+                "topKey": top_key,
+                "templateId": basic.get("templateId"),
+                "defaultVisible": basic.get("defaultVisible"),
+                "serverMarkIndex": basic.get("serverMarkIndex"),
+                "mistMap": basic.get("mistMap"),
+                "tierMap": basic.get("tierMap"),
+                "tierIndex": basic.get("tierIndex"),
+                "pos": basic.get("pos"),
+                "levelId": level_id,
+                "detailType": detail.get("$type"),
+                "visibilityType": visibility.get("$type"),
+                "distToPosThreshold": visibility.get("distToPosThreshold"),
+                "source": source_id,
+            }, depth=4)
+            mark_node = self.add_node("map_mark", mark_id, name=mark_id, source=source, data=mark_data)
+            self.update_node_details(mark_node, name=mark_id, source=source, data=mark_data)
+            self.add_alias(mark_id, mark_node, kind="map_mark_id", source=source)
+            self.add_alias(f"{top_key}:{mark_id}", mark_node, kind="level_map_mark_key", source=source)
+            self.add_edge(file_node, mark_node, "defines_level_map_mark", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id, "topKey": top_key, "index": index})
+            template_node = self.add_map_mark_template_node(basic.get("templateId"), source=source)
+            if template_node:
+                self.add_edge(mark_node, template_node, "map_mark_uses_template", source=source, evidence="basicData.templateId", data={"source": source_id})
+            if level_id:
+                level_node = self.add_level_node(level_id, source=source)
+                self.add_edge(level_node, mark_node, "level_has_map_mark", source=source, evidence="LevelMapMark.region", data={"source": source_id})
+                self.add_level_map_edge(level_node, level_id, source=source, evidence="LevelMapMark.region")
+            for region_id, edge_kind, evidence in ((mist_region_id, "map_mark_mist_region", "basicData.mistMap"), (tier_region_id, "map_mark_tier_region", "basicData.tierMap")):
+                if not region_id:
+                    continue
+                region = region_rows.get(region_id, {})
+                region_node = self.add_map_region_node(region_id, name=region.get("mapRegionIdName"), source=source)
+                self.add_edge(mark_node, region_node, edge_kind, source=source, evidence=evidence, data={"source": source_id})
+            self.add_level_map_mark_reference_edges(mark_node, detail, visibility, source=source)
+
+    def mine_point_team_mark_id(self, inst_id: Any) -> str:
+        inst_key = safe_key(inst_id)
+        prefix = "mark_p_minepoint_team"
+        if inst_key.startswith(prefix):
+            return safe_key(inst_key[len(prefix):])
+        return ""
+
+    def add_gameplay_mine_point_team_edges(self, file_node: str, entry: dict[str, Any], payload: dict[str, Any], *, source: str, source_id: str) -> None:
+        rows = list(self.iter_gameplay_config_grouped_rows(payload))
+        doodad_ref_count = sum(len(row.get("doodadCoreIds") or []) for _top_key, _index, row in rows)
+        self.update_node_details(file_node, data=compact_payload({**self.decoded_config_entry_data(entry), "topKeyCount": len(payload), "teamCount": len(rows), "doodadRefCount": doodad_ref_count}, depth=3))
+        for top_key, index, row in rows:
+            inst_id = safe_key(row.get("instId"))
+            if not inst_id:
+                continue
+            level_id = safe_key(row.get("levelId"))
+            mark_id = self.mine_point_team_mark_id(inst_id)
+            doodad_ids = [safe_key(value) for value in (row.get("doodadCoreIds") or []) if safe_key(value)]
+            team_node = self.add_node("factory_mine_team", inst_id, name=inst_id, source=source, data=compact_payload({"instId": inst_id, "levelId": level_id, "topKey": top_key, "markInstId": mark_id, "doodadCoreIds": doodad_ids, "source": source_id}, depth=3))
+            self.add_alias(inst_id, team_node, kind="factory_mine_team_id", source=source)
+            if mark_id:
+                self.add_alias(mark_id, team_node, kind="factory_mine_team_mark_id", source=source)
+            self.add_edge(file_node, team_node, "defines_factory_mine_team", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id, "topKey": top_key, "index": index})
+            if level_id:
+                level_node = self.add_level_node(level_id, source=source)
+                self.add_edge(level_node, team_node, "level_has_factory_mine_team", source=source, evidence="levelId", data={"source": source_id})
+                self.add_level_map_edge(level_node, level_id, source=source, evidence="MinePointTeamTable.levelId")
+            if mark_id:
+                mark_node = self.add_node("map_mark", mark_id, name=mark_id, source=source)
+                self.add_alias(mark_id, mark_node, kind="map_mark_id", source=source)
+                self.add_edge(team_node, mark_node, "factory_mine_team_map_mark", source=source, evidence="instId", data={"source": source_id})
+                self.add_edge(mark_node, team_node, "map_mark_has_factory_mine_team", source=source, evidence="instId", data={"source": source_id})
+            for doodad_index, doodad_id in enumerate(doodad_ids):
+                logic_node = self.add_level_gen_doodad_logic_node(doodad_id, source=source)
+                if logic_node:
+                    self.add_edge(team_node, logic_node, "factory_mine_team_uses_doodad_logic", source=source, evidence=f"doodadCoreIds[{doodad_index}]", data={"source": source_id})
+
+    def add_gameplay_config_map_placement_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        payload = self.read_decoded_config_json_payload(entry)
+        if not isinstance(payload, dict):
+            return
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        table_name = Path(safe_key(entry.get("dp"))).name
+        if table_name == "LevelMapMark.json":
+            self.add_gameplay_level_map_mark_edges(file_node, entry, payload, source=source, source_id=source_id)
+        elif table_name == "MapRegionTable.json":
+            self.add_gameplay_map_region_table_edges(file_node, entry, payload, source=source, source_id=source_id)
+        elif table_name == "MinePointTeamTable.json":
+            self.add_gameplay_mine_point_team_edges(file_node, entry, payload, source=source, source_id=source_id)
 
     def add_gameplay_config_map_level_lookup_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         payload = self.read_decoded_config_json_payload(entry)
@@ -12996,6 +13340,14 @@ QUERY_KIND_PRIORITY = {
     "map_sublevel_brief": 146,
     "ui_map_region_info": 147,
     "factory_area": 148,
+    "map_region": 149,
+    "factory_mine_team": 150,
+    "map_mark_detail_type": 151,
+    "map_mark_visibility_type": 152,
+    "map_mark_logic_ref": 153,
+    "system_interactive": 154,
+    "minigame": 155,
+    "sewage_treat_plant": 156,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -13304,6 +13656,14 @@ NODE_ID_PREFIXES = (
     "map_sublevel_brief",
     "ui_map_region_info",
     "factory_area",
+    "map_region",
+    "factory_mine_team",
+    "map_mark_detail_type",
+    "map_mark_visibility_type",
+    "map_mark_logic_ref",
+    "system_interactive",
+    "minigame",
+    "sewage_treat_plant",
     "mission",
     "map",
     "level",

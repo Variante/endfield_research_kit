@@ -1111,6 +1111,35 @@ python tools\endfield_source_graph.py query map01 --kind map_brief_info
 python tools\endfield_source_graph.py query map01:200000000 --kind map_sublevel_brief
 ```
 
+2026-07-01 GameplayConfig placed-map graph progress: source graph ingestion
+now promotes decoded `LevelMapMark`, `MapRegionTable`, and
+`MinePointTeamTable` text JSON from `Json_GameplayConfig.json`. A fast CN
+rebuild to `tmp/source_graph_gameplay_map_placement.sqlite` verified 1,502,251
+total nodes, 2,642,324 edges, and 2,026,314 aliases. New coverage includes
+1,993 unique `map_mark` nodes from 3,915 source-file mark definitions split as
+Persistent 1,958 and StreamingAssets 1,957; 268 `map_region` nodes from 536
+source-file region definitions; and 46 `factory_mine_team` nodes from 92
+source-file team definitions. Region evidence adds 268 level-region links, 98
+tier-region links, 100 mist-hide links, and 11 group-region links. Mark
+evidence adds 1,877 region-derived level links, 1,803 mist-region links, 884
+tier-region links, 10 detail type nodes, 31 visibility type nodes, 109 item
+refs, 42 reward refs, 79 teleport validation refs, 122 system-instance refs,
+370 logic refs, 42 activity refs, 35 activity-stage refs, 6 settlement refs, 103
+minigame refs, and 300 core-doodad logic refs from the detail and visibility
+payloads. Mine-team evidence adds 46 mark links, 46 level links, and 150 doodad
+logic refs. Geometry arrays stay as compact payload counts, and the top-level
+numeric keys are preserved as placement/group keys, not treated as map ids. This
+is static placed-map evidence; it does not prove live visibility, activation,
+fog reveal, resource refresh, or runtime map rendering behavior. Example exact
+queries:
+
+```bat
+python tools\endfield_source_graph.py query 200060037 --kind map_mark
+python tools\endfield_source_graph.py query mark_p_minepoint_team200060037 --kind factory_mine_team
+python tools\endfield_source_graph.py query map01_lv002_region_tier_001 --kind map_region
+python tools\endfield_source_graph.py query TpForMap_ent_200001237 --kind teleport_point
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
