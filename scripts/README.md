@@ -277,10 +277,15 @@ Expected active inputs and outputs:
   `..\export.bat --with-assets`, not the story-only `..\export.bat`.
 - `build_gameplay_data.py`: builds the compact Gameplay tab payload under
   `webui/data/lang/<LANG>/gameplay/index.json` from structured tables such as
-  `WeaponBasicTable`, `ItemTable`, `CharacterTable`, `CharGrowthTable`,
-  `SkillPatchTable`, and talent/profession/type lookup tables. It is run by
-  `..\export.bat` after the Story builder and can be run directly for extra
-  languages with `--languages CN EN JP --default-language CN`.
+  `WeaponBasicTable`, `WeaponUpgradeTemplate*`, `WeaponBreakThroughTemplateTable`,
+  `WeaponTalentTemplateTable`, `ItemTable`, `CharacterTable`, `CharGrowthTable`,
+  `CharLevelUpTable`, `CharBreak*`, `CharacterPotentialTable`, `SkillPatchTable`,
+  and talent/profession/type lookup tables. It resolves localized display names,
+  default weapon links, skill blackboard values, level-up costs, weapon upgrade
+  checkpoints, breakthrough material costs, character break-stage caps, character
+  breakthrough costs, and potential unlock effects. It is run by `..\export.bat`
+  after the Story builder and can be run directly for extra languages with
+  `--languages CN EN JP --default-language CN`.
 - `build_data_index.py`: builds the local-only Data tab index from final
   decoded config files under `export_full/structured/StreamingAssets/Data/Json`
   and `export_full/structured/Persistent/Data/Json` by default. It writes

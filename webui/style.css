@@ -4040,6 +4040,12 @@ body.is-resizing-filter * {
   gap: 10px;
 }
 
+.gameplay-action-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .gameplay-skill-card {
   min-width: 0;
   padding: 12px;
@@ -4231,6 +4237,11 @@ body.is-resizing-filter * {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 0;
+}
+
+.gameplay-talent-upgrade .gameplay-talent-levels,
+.gameplay-talent-attribute .gameplay-talent-levels {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
 }
 
 .gameplay-talent-level {

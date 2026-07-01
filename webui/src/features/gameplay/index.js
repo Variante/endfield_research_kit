@@ -48,6 +48,35 @@
       levelUpCosts: "\u5347\u7ea7\u6d88\u8017",
       gold: "\u91d1\u5e01",
       materials: "\u6750\u6599",
+      rank: "\u9636",
+      unlockHint: "\u89e3\u9501\u6761\u4ef6",
+      requiredItems: "\u9700\u6c42\u6750\u6599",
+      passiveSkill: "\u88ab\u52a8\u6280\u80fd",
+      factorySkill: "\u57fa\u5efa\u6280\u80fd",
+      equipmentBreak: "\u88c5\u5907\u7a81\u7834",
+      attributeNode: "\u5c5e\u6027\u8282\u70b9",
+      upgradeNodes: "\u7a81\u7834\u8282\u70b9",
+      selectedLevel: "\u663e\u793a\u7b49\u7ea7",
+      progression: "\u517b\u6210",
+      upgradeCurve: "\u5347\u7ea7\u66f2\u7ebf",
+      weaponBreakthroughs: "\u6b66\u5668\u7a81\u7834",
+      weaponTalentBounds: "\u6b66\u5668\u5929\u8d4b\u4e0a\u9650",
+      characterLevelCurve: "\u89d2\u8272\u7b49\u7ea7\u66f2\u7ebf",
+      characterBreakStages: "\u7a81\u7834\u9636\u6bb5",
+      characterBreakthroughs: "\u7a81\u7834\u6d88\u8017",
+      characterPotentials: "\u6f5c\u80fd",
+      stage: "\u9636\u6bb5",
+      levelRange: "\u7b49\u7ea7\u8303\u56f4",
+      baseAtk: "\u57fa\u7840\u653b\u51fb",
+      exp: "\u7ecf\u9a8c",
+      cumulativeExp: "\u7d2f\u8ba1\u7ecf\u9a8c",
+      cumulativeGold: "\u7d2f\u8ba1\u91d1\u5e01",
+      skillBounds: "\u6280\u80fd\u8303\u56f4",
+      skillCaps: "\u6280\u80fd\u4e0a\u9650",
+      breakStatus: "\u7a81\u7834\u72b6\u6001",
+      expItems: "\u7ecf\u9a8c\u6750\u6599",
+      potential: "\u6f5c\u80fd",
+      showLevel: "\u663e\u793a\u7b49\u7ea7",
       generated: "\u751f\u6210\u65f6\u95f4",
     },
     en: {
@@ -96,6 +125,35 @@
       levelUpCosts: "Level-up costs",
       gold: "Gold",
       materials: "Materials",
+      rank: "Rank",
+      unlockHint: "Unlock",
+      requiredItems: "Required materials",
+      passiveSkill: "Passive skill",
+      factorySkill: "Factory skill",
+      equipmentBreak: "Equipment break",
+      attributeNode: "Attribute node",
+      upgradeNodes: "Upgrade nodes",
+      selectedLevel: "Selected level",
+      progression: "Progression",
+      upgradeCurve: "Upgrade curve",
+      weaponBreakthroughs: "Weapon breakthroughs",
+      weaponTalentBounds: "Weapon talent bounds",
+      characterLevelCurve: "Character level curve",
+      characterBreakStages: "Break stages",
+      characterBreakthroughs: "Breakthrough costs",
+      characterPotentials: "Potentials",
+      stage: "Stage",
+      levelRange: "Level range",
+      baseAtk: "Base ATK",
+      exp: "EXP",
+      cumulativeExp: "Cumulative EXP",
+      cumulativeGold: "Cumulative gold",
+      skillBounds: "Skill bounds",
+      skillCaps: "Skill caps",
+      breakStatus: "Break status",
+      expItems: "EXP items",
+      potential: "Potential",
+      showLevel: "Shown level",
       generated: "Generated",
     },
   };
@@ -343,6 +401,7 @@
   function talentKindLabel(kind) {
     if (kind === "passive") return text("passiveSkill");
     if (kind === "factory") return text("factorySkill");
+    if (kind === "upgrade") return text("upgradeNodes");
     if (kind === "equipmentBreak") return text("equipmentBreak");
     if (kind === "attribute") return text("attributeNode");
     return kind || "";
@@ -381,10 +440,11 @@
     const meta = [talentKindLabel(group.kind), group.rank ? `${text("rank")} ${formatValue(group.rank)}` : "", group.id]
       .filter(Boolean)
       .join(" / ");
+    const title = (group.kind === "attribute" || group.kind === "upgrade") ? talentKindLabel(group.kind) : (group.title || group.id || "");
     return `<article class="gameplay-talent-row gameplay-talent-${escapeHtml(group.kind || "other")}">
       <header class="gameplay-talent-row-header">
         <div>
-          <div class="gameplay-group-title">${escapeHtml(group.title || group.id || "")}</div>
+          <div class="gameplay-group-title">${escapeHtml(title)}</div>
           <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
         </div>
       </header>
@@ -395,6 +455,146 @@
   function renderTalentGroups(groups) {
     const rows = (groups || []).map(renderTalentGroupRow).filter(Boolean);
     return rows.length ? `<div class="gameplay-talent-table">${rows.join("")}</div>` : "";
+  }
+
+  function renderChipPairs(pairs) {
+    const rows = (pairs || [])
+      .filter((item) => item && item.value !== undefined && item.value !== null && item.value !== "")
+      .map((item) => `<span class="gameplay-value-chip"><b>${escapeHtml(item.label)}</b>${escapeHtml(formatValue(item.value))}</span>`);
+    return rows.length ? `<div class="gameplay-blackboard">${rows.join("")}</div>` : "";
+  }
+
+  function levelRangeLabel(range) {
+    if (!Array.isArray(range) || range.length < 2) return "";
+    const start = formatValue(range[0]);
+    const end = formatValue(range[1]);
+    return start && end ? `${start}-${end}` : start || end;
+  }
+
+  function renderBounds(bounds) {
+    const rows = (bounds || [])
+      .map((bound, index) => {
+        if (!bound || typeof bound !== "object") return null;
+        const lower = bound.lowerBound;
+        const upper = bound.upperBound;
+        if ((lower === undefined || lower === null) && (upper === undefined || upper === null)) return null;
+        const value = String(lower) === String(upper) ? formatValue(lower) : `${formatValue(lower)}-${formatValue(upper)}`;
+        return { label: `${text("skillBounds")} ${index + 1}`, value };
+      })
+      .filter(Boolean);
+    return renderChipPairs(rows);
+  }
+
+  function progressionCard(title, meta, body) {
+    if (!body) return "";
+    return `<article class="gameplay-skill-card">
+      <header>
+        <div class="gameplay-skill-title">${escapeHtml(title)}</div>
+        <div class="gameplay-skill-meta">${escapeHtml(meta || "")}</div>
+      </header>
+      ${body}
+    </article>`;
+  }
+
+  function renderProgressionRows(rows, renderValues) {
+    const out = (rows || []).filter(Boolean).map((row) => {
+      const level = row.level !== undefined && row.level !== null ? row.level : row.stage;
+      return `<div class="gameplay-level-row">
+        <div class="gameplay-level-num">${escapeHtml(formatValue(level === undefined || level === null ? "" : level))}</div>
+        <div class="gameplay-level-effect">${renderValues(row) || `<span class="muted">-</span>`}</div>
+        <div class="gameplay-level-values"></div>
+      </div>`;
+    });
+    return out.length ? `<div class="gameplay-level-table">${out.join("")}</div>` : "";
+  }
+
+  function renderWeaponProgression(entry) {
+    const cards = [];
+    const upgrade = entry.upgrade || {};
+    const upgradeRows = renderProgressionRows(upgrade.checkpoints || [], (row) => renderChipPairs([
+      { label: text("baseAtk"), value: row.baseAtk },
+      { label: text("exp"), value: row.lvUpExp },
+      { label: text("gold"), value: row.lvUpGold },
+      { label: text("cumulativeExp"), value: row.lvUpExpSum },
+      { label: text("cumulativeGold"), value: row.lvUpGoldSum },
+    ]));
+    cards.push(progressionCard(text("upgradeCurve"), [upgrade.templateId, `${formatValue(upgrade.rowCount)} ${text("level")}`].filter(Boolean).join(" / "), upgradeRows));
+
+    const breakthroughRows = (entry.breakthrough && entry.breakthrough.rows || []).map((row) => {
+      const meta = [row.showLevel ? `${text("showLevel")} ${formatValue(row.showLevel)}` : "", row.goldCost ? `${text("gold")} ${formatValue(row.goldCost)}` : ""].filter(Boolean).join(" / ");
+      const bounds = renderBounds(row.skillLevelBounds || []);
+      const items = renderRequiredItems(row.items || []);
+      return `<div class="gameplay-talent-level">
+        <div class="gameplay-talent-level-title">${escapeHtml(`${text("level")} ${formatValue(row.level === undefined || row.level === null ? "" : row.level)}`)}</div>
+        <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
+        ${bounds}
+        ${items ? `<div class="gameplay-subheading">${escapeHtml(text("requiredItems"))}</div>${items}` : ""}
+      </div>`;
+    }).join("");
+    cards.push(progressionCard(text("weaponBreakthroughs"), entry.breakthrough && entry.breakthrough.templateId, breakthroughRows ? `<div class="gameplay-talent-levels">${breakthroughRows}</div>` : ""));
+
+    const talentRows = renderProgressionRows(entry.talentTemplate && entry.talentTemplate.rows || [], (row) => renderBounds(row.skillLevelExtraBounds || []));
+    cards.push(progressionCard(text("weaponTalentBounds"), entry.talentTemplate && entry.talentTemplate.templateId, talentRows));
+    const body = cards.filter(Boolean).join("");
+    return body ? `<div class="gameplay-card-grid">${body}</div>` : "";
+  }
+
+  function renderCharacterProgression(entry) {
+    const cards = [];
+    const curve = entry.levelCurve || {};
+    const levelRows = renderProgressionRows(curve.checkpoints || [], (row) => renderChipPairs([
+      { label: text("exp"), value: row.exp },
+      { label: text("gold"), value: row.gold },
+    ]));
+    cards.push(progressionCard(text("characterLevelCurve"), [curve.table, curve.maxLevel ? `${text("maxLevel")} ${formatValue(curve.maxLevel)}` : ""].filter(Boolean).join(" / "), levelRows));
+
+    const stageRows = (entry.breakStages || []).map((row) => {
+      const caps = row.skillCaps && Object.keys(row.skillCaps).length
+        ? renderBlackboard(Object.entries(row.skillCaps).map(([key, value]) => ({ key, value })))
+        : "";
+      const facts = renderChipPairs([
+        { label: text("levelRange"), value: levelRangeLabel(row.levelRange) },
+        { label: text("breakStatus"), value: row.breakStatus },
+        { label: text("gold"), value: row.goldCost },
+      ]);
+      const expItems = renderRequiredItems(row.availableExpItems || []);
+      return `<div class="gameplay-talent-level">
+        <div class="gameplay-talent-level-title">${escapeHtml(`${text("stage")} ${formatValue(row.stage === undefined || row.stage === null ? "" : row.stage)}`)}</div>
+        ${facts}
+        ${caps ? `<div class="gameplay-subheading">${escapeHtml(text("skillCaps"))}</div>${caps}` : ""}
+        ${expItems ? `<div class="gameplay-subheading">${escapeHtml(text("expItems"))}</div>${expItems}` : ""}
+      </div>`;
+    }).join("");
+    cards.push(progressionCard(text("characterBreakStages"), "CharBreakStageTable.json", stageRows ? `<div class="gameplay-talent-levels">${stageRows}</div>` : ""));
+
+    const breakthroughRows = (entry.breakthroughs || []).map((row) => {
+      const meta = [row.id, row.stage ? `${text("stage")} ${formatValue(row.stage)}` : "", row.equipTierLimit ? `T${formatValue(row.equipTierLimit)}` : ""].filter(Boolean).join(" / ");
+      const required = renderRequiredItems(row.requiredItem || []);
+      return `<div class="gameplay-talent-level">
+        <div class="gameplay-talent-level-title">${escapeHtml(row.name || row.id || "")}</div>
+        <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
+        ${renderDescription(row.description)}
+        ${required ? `<div class="gameplay-subheading">${escapeHtml(text("requiredItems"))}</div>${required}` : ""}
+      </div>`;
+    }).join("");
+    cards.push(progressionCard(text("characterBreakthroughs"), "CharGrowthTable.json", breakthroughRows ? `<div class="gameplay-talent-levels">${breakthroughRows}</div>` : ""));
+
+    const potentialRows = (entry.potentials && entry.potentials.levels || []).map((row) => {
+      const meta = [row.potentialEffectId, row.level ? `${text("level")} ${formatValue(row.level)}` : ""].filter(Boolean).join(" / ");
+      const required = renderRequiredItems(row.requiredItem || []);
+      const values = renderBlackboard(row.blackboard || []);
+      return `<div class="gameplay-talent-level">
+        <div class="gameplay-talent-level-title">${escapeHtml(row.name || `${text("potential")} ${formatValue(row.level === undefined || row.level === null ? "" : row.level)}`)}</div>
+        <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
+        ${renderDescription(row.description)}
+        ${values}
+        ${required ? `<div class="gameplay-subheading">${escapeHtml(text("requiredItems"))}</div>${required}` : ""}
+      </div>`;
+    }).join("");
+    cards.push(progressionCard(text("characterPotentials"), entry.potentials && entry.potentials.firstItemId, potentialRows ? `<div class="gameplay-talent-levels">${potentialRows}</div>` : ""));
+
+    const body = cards.filter(Boolean).join("");
+    return body ? `<div class="gameplay-card-grid">${body}</div>` : "";
   }
 
   function renderWeaponDetail(entry) {
@@ -415,6 +615,7 @@
       body: [
         section(text("itemDescription"), renderDescription(entry.itemDescription)),
         section(text("description"), renderDescription(entry.description)),
+        section(text("progression"), renderWeaponProgression(entry)),
         section(text("weaponSkills"), skills ? `<div class="gameplay-card-grid">${skills}</div>` : ""),
       ].join(""),
     };
@@ -427,14 +628,14 @@
       fact(text("profession"), entry.professionLabel || entry.profession),
       fact(text("element"), entry.elementLabel || entry.element),
       fact(text("weaponType"), entry.weaponTypeLabel || entry.weaponType),
-      fact(text("defaultWeapon"), entry.defaultWeaponId, { mono: true }),
+      fact(text("defaultWeapon"), entry.defaultWeaponName || entry.defaultWeaponId),
       fact(text("source"), `${entry.source && entry.source.table || ""} / ${entry.source && entry.source.id || ""}`, { mono: true }),
     ].filter(Boolean).join("");
     const groups = (entry.skillGroups || []).map((group) => {
       const actionIds = renderIdChips(group.actionSkillIds || []);
       const levelUpRows = group.levelUp || [];
       const skills = (group.skills || []).map((skill) => renderSkillCard(skill, { slider: true, levelUp: levelUpRows })).join("");
-      return `<section class="gameplay-group-card">
+      return `<section class="gameplay-group-card" data-linked-level-group>
         <header>
           <div class="gameplay-group-title">${escapeHtml(group.name || group.id || "")}</div>
           <div class="gameplay-skill-meta">${escapeHtml([group.typeLabel, group.id].filter(Boolean).join(" / "))}</div>
@@ -442,20 +643,22 @@
         ${renderDescription(group.description)}
         ${actionIds ? `<div class="gameplay-subheading">${escapeHtml(text("actionSkillIds"))}</div>${actionIds}` : ""}
 
-        ${skills ? `<div class="gameplay-subheading">${escapeHtml(text("actionData"))}</div><div class="gameplay-card-grid">${skills}</div>` : ""}
+        ${skills ? `<div class="gameplay-subheading">${escapeHtml(text("actionData"))}</div><div class="gameplay-action-stack">${skills}</div>` : ""}
       </section>`;
     }).join("");
-    const talents = renderTalentGroups(entry.talentGroups || []) || (entry.talents || []).map(renderTalentCard).join("");
+    const talentGroups = renderTalentGroups(entry.talentGroups || []);
+    const talentCards = (entry.talents || []).map(renderTalentCard).join("");
     return {
       facts,
       body: [
+        section(text("progression"), renderCharacterProgression(entry)),
         section(text("characterSkills"), groups),
-        section(text("talents"), talents ? `<div class="gameplay-card-grid">${talents}</div>` : ""),
+        section(text("talents"), talentGroups || (talentCards ? `<div class="gameplay-card-grid">${talentCards}</div>` : "")),
       ].join(""),
     };
   }
 
-  function syncLevelSlider(input) {
+  function syncLevelCard(input) {
     const card = input.closest("[data-level-card]");
     if (!card) return;
     const index = Number(input.value || 0);
@@ -467,10 +670,21 @@
     if (output && panes[index]) output.textContent = panes[index].dataset.levelLabel || "";
   }
 
+  function syncLevelSlider(input) {
+    const group = input.closest("[data-linked-level-group]");
+    const sliders = group ? [...group.querySelectorAll(".gameplay-level-slider")] : [input];
+    const requested = Number(input.value || 0);
+    sliders.forEach((slider) => {
+      const max = Number(slider.max || requested);
+      slider.value = String(Math.max(0, Math.min(requested, max)));
+      syncLevelCard(slider);
+    });
+  }
+
   function bindLevelSliders(root) {
     root.querySelectorAll(".gameplay-level-slider").forEach((input) => {
       input.addEventListener("input", () => syncLevelSlider(input));
-      syncLevelSlider(input);
+      syncLevelCard(input);
     });
   }
 
