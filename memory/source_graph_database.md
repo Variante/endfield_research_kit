@@ -428,8 +428,26 @@ links to item nodes, 457 item drag/drop links to factory items, 9 item-type
 drag/drop links, 146 item drag/drop event refs, 99 level audio profile links,
 and 105 level audio event refs. Values in SFX/config fields are modeled as
 `wwise_event` nodes unless they
-are explicit voice/audio IDs; the broad `DialogTextTable`/`DialogOptionTable`
-semantics remain deferred because they overlap story and option recovery.
+are explicit voice/audio IDs. The broad `DialogTextTable`/`DialogOptionTable`
+support bridge has since landed below with exact joins only.
+
+2026-07-01 dialog support graph progress: source graph ingestion now promotes
+`DialogTextTable`, `DialogOptionTable`, `DialogSummaryTable`,
+`DialogSummaryMapTable`, and `DomainDepotDeliverTargetDialogTable` into raw
+support nodes that link back to generated Story/WebUI evidence only by exact ID.
+A fast CN rebuild verified 1,026,124 total nodes and 1,698,548 edges, with 0
+orphan edges from these dialog support sources. New node counts include 17,528
+`dialog_text`, 4,343 `dialog_option`, 997 `dialog_summary`, 931
+`dialog_summary_map`, and 15 `domain_depot_deliver_target_dialog` nodes. Edge
+checks verified 17,528 dialog-text links to generated `line` nodes, 17,528
+dialog-text story links via generated WebUI line ownership, 17,329 non-sentinel
+dialog-text audio links, 15,337 dialog-text actor links, 4,219 dialog-option
+links to generated option nodes, 931 summary-map links to summary nodes and raw
+summary rows, 908 summary-map links to generated story nodes, and 15 initial
+plus 15 repeat domain-depot dialog links to story nodes. The graph no longer
+emits the `audio:0` sentinel as an audio node or edge target. These nodes are
+supporting source-table evidence; they do not replace generated line order,
+option branch, or option route recovery.
 
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,

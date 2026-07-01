@@ -151,7 +151,7 @@ Selected edge counts:
 
 - `indexes_asset`: 292,020.
 - `has_line`: 40,863.
-- `uses_audio`: 24,936.
+- `uses_audio`: 24,738.
 - `has_story`: 9,472.
 - `has_option`: 5,299.
 - `option_enters_story`: 3,039.
@@ -340,7 +340,8 @@ The CN WebUI output contains thousands of conversation files, hundreds of
 mission data files, over one hundred thousand reference rows, actor metadata,
 audio links, source links, and narrative video references. The generated
 source graph links lines, stories, options, missions, actors, audio, videos,
-and selected table rows.
+selected table rows, and exact DialogText/DialogOption/Summary support-table
+evidence.
 
 The current system is good at answering questions such as:
 
@@ -351,6 +352,29 @@ The current system is good at answering questions such as:
 - Which option groups exist?
 - Which source file appears to back a story key?
 - Which table rows and text IDs are visible to the WebUI?
+- Which raw DialogText/DialogOption/Summary rows support a generated line,
+  option, or story?
+
+2026-07-01 source graph dialog-support progress: a fast CN rebuild verified
+1,026,124 graph nodes and 1,698,548 edges after adding exact support-table
+semantics for DialogText, DialogOption, DialogSummary, DialogSummaryMap, and
+DomainDepotDeliverTargetDialog. The pass adds 17,528 `dialog_text`, 4,343
+`dialog_option`, 997 `dialog_summary`, 931 `dialog_summary_map`, and 15
+`domain_depot_deliver_target_dialog` nodes, with 0 orphan edges from those
+sources. It links all 17,528 dialog text rows to generated line nodes and
+generated WebUI story ownership, 17,329 to non-sentinel audio, 15,337 to
+actors, 4,219 dialog options to generated option nodes, 908 summary maps to
+story nodes, and all 30 domain-depot initial/repeat dialog refs to story nodes.
+The graph no longer emits the `audio:0` sentinel as an audio node or edge
+target. Useful checks include:
+
+```bat
+python tools\endfield_source_graph.py query dlg_a1m10_1_001 --kind dialog_text
+python tools\endfield_source_graph.py query dlg_spaceship_creditshop_trade --kind dialog_option
+python tools\endfield_source_graph.py query summary_a1m2_1_001 --kind dialog_summary
+python tools\endfield_source_graph.py query dlg_a1m2_1 --kind dialog_summary_map
+python tools\endfield_source_graph.py query ahe_map02_v1d2d0_depot --kind domain_depot_deliver_target_dialog
+```
 
 ### Line Order Inside Dialog Scenes
 
@@ -432,11 +456,11 @@ Understanding is strong for story-facing audio.
 
 The source graph includes:
 
-- Audio nodes: 35,321.
+- Audio nodes: 35,320.
 - `audio_path` edges: 25,245.
 - `defines_audio` edges: 25,245.
 - `speaker_channel` edges: 25,245.
-- `uses_audio` edges: 24,936.
+- `uses_audio` edges: 24,738.
 - `radio_line_uses_audio` edges: 4,103.
 - `remote_common_line_uses_voice` edges: 284.
 - `audio_voice_extra_for_audio` edges: 25,245.
@@ -492,9 +516,9 @@ python tools\endfield_source_graph.py query base01_lv001 --kind audio_level
 ```
 
 Remaining audio improvements are now mostly about deeper Wwise/runtime behavior,
-DialogText/DialogOption table semantics, tone/voice intent classification, and
-coverage validation outside story voice, not basic line playback, raw
-communication-table bridging, or basic support/config table linkage.
+tone/voice intent classification, and coverage validation outside story voice,
+not basic line playback, raw communication-table bridging, or basic
+support/config table linkage.
 
 ### Updates and Change Tracking
 
@@ -1552,7 +1576,8 @@ The project understands the original game data well enough to provide a broad
 static WebUI over story, text tables, audio, videos, assets, and many recovered
 config structures. Extraction health is strong, texture output is verified, the
 source graph is large and useful, CN story display is mostly reconstructed, raw
-SNS/radio/remote/audio table bridges are queryable, and several
+SNS/radio/remote/audio and DialogText/DialogOption support bridges are
+queryable, and several
 binary/MonoBehaviour payload families now have real schema recovery rather than
 only raw dumps.
 
