@@ -21,9 +21,11 @@ field offsets* on option objects that the disassembly proves matter:
 The script confirms which evidence is in the catalog output and which
 field semantic is locked to which call site. It then emits a digest
 report (markdown + JSON) plus a one-line summary of the next decoding
-target (currently: identify the constructor / serialization site that
-sets `+0x18`, since that is the gate keeping option responses
-classified as `inferredOptionResponse` in the WebUI builder).
+target. The current target is no longer finding a `+0x18` writer: the
+body-target catalog proves `DialogChooseOption` writes the selected runtime
+option index to `+0x18`. The remaining recovery target is binding authored
+Timeline option rows to active runtime clips strongly enough to promote branch
+edges without relying on display-only overrides.
 
 This script is **read-only** with respect to the IL2CPP tools — it
 adds an interpretation layer over their existing output. No
@@ -202,13 +204,13 @@ def build_report(body_targets_path: Path) -> dict[str, Any]:
         "runtimeFieldAnnotations": annotations,
         "edgeFieldUses": edge_field_uses,
         "nextDecodingTarget": (
-            "Identify the producer/initializer of the +0x18 active-clip "
-            "gate field on the runtime option object. The TryTrigger / "
-            "SetDialogOption flow reads it but does not write it; the "
-            "writer is likely in `DialogTimelineManager.SetDialogOption` "
-            "or the `DialogOptionPlayableAsset` post-bind path. Once the "
-            "writer is identified, the WebUI builder can promote authored "
-            "+0x18 evidence into a real option-response edge."
+            "The +0x18 writer is now identified: DialogChooseOption writes "
+            "the selected optionIndex into a runtime option/playable object "
+            "+0x18 field, while TryTriggerTrunkBindingOption and "
+            "SetDialogOption gate active option clips on positive +0x18. "
+            "Next, bind authored Timeline option rows to active runtime clips "
+            "strongly enough to promote branch edges; candidate rows whose "
+            "+0x18 evidence remains zero should stay diagnostic only."
         ),
     }
 

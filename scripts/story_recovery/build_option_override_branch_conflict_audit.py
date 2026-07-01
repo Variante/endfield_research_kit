@@ -16,13 +16,25 @@ for _path in (_REPO_ROOT / "scripts", Path(__file__).resolve().parent):
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
-from common import EXPORT_ROOT, REPORTS_DIR, ROOT, md_escape, safe_key, write_report_json
+from common import EXPORT_ROOT, REPORTS_DIR, ROOT, compact_dict, md_escape, safe_key, write_report_json
 from build_runtime_jump_option_route_audit import collect_audit_rows
+from build_timeline_option_flow_audit import (
+    DEFAULT_IL2CPP_REPORT,
+    collect_rows as collect_timeline_option_flow_rows,
+    load_il2cpp_option_flow_facts,
+)
 
 
 DEFAULT_DB = REPORTS_DIR / "source_graph" / "endfield_source_graph.sqlite"
 DEFAULT_OUTPUT_PREFIX = REPORTS_DIR / "source_graph" / "option_override_branch_conflicts"
 DEFAULT_TIMELINE_ORDERS = EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "timeline_line_orders.json"
+REQUIRED_IL2CPP_FACT_KINDS = (
+    "timelineSelectCallsChooseThenReset",
+    "selectedOptionFieldToRuntimeChoice",
+    "runtimeOptionIndexWrite",
+    "activeClipOptionGate",
+    "selectedClipLoopDisableRange",
+)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -48,6 +60,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--skip-runtime-jump",
         action="store_true",
         help="Only compare graph manual/inferred branch edges; skip runtime-jump audit join.",
+    )
+    parser.add_argument(
+        "--skip-timeline-flow",
+        action="store_true",
+        help="Skip joining Timeline option-flow writer/gate evidence.",
+    )
+    parser.add_argument(
+        "--il2cpp-report",
+        type=Path,
+        default=DEFAULT_IL2CPP_REPORT,
+        help="IL2CPP option-flow body-target report used to summarize writer/gate fact coverage.",
     )
     return parser.parse_args(argv)
 
@@ -185,6 +208,137 @@ def runtime_rows_by_group(
     return out
 
 
+def timeline_flow_rows_by_group(
+    language: str,
+    conv_dir: Path,
+    timeline_orders: Path,
+    stories: list[str],
+    *,
+    skip: bool,
+) -> dict[tuple[str, str], dict[str, Any]]:
+    if skip or not stories:
+        return {}
+    rows = collect_timeline_option_flow_rows(
+        language,
+        conv_dir,
+        timeline_orders,
+        story_filters=stories,
+        only_interesting=False,
+    )
+    out: dict[tuple[str, str], dict[str, Any]] = {}
+    for row in rows:
+        story = safe_key(row.get("storyKey"))
+        group = safe_key(row.get("group"))
+        if story and group:
+            out[(story, group)] = row
+    return out
+
+
+def il2cpp_fact_summary(report_path: Path | None) -> dict[str, Any]:
+    facts = load_il2cpp_option_flow_facts(report_path)
+    kind_counts = facts.get("factKindCounts") if isinstance(facts.get("factKindCounts"), dict) else {}
+    present = [kind for kind in REQUIRED_IL2CPP_FACT_KINDS if int(kind_counts.get(kind) or 0) > 0]
+    missing = [kind for kind in REQUIRED_IL2CPP_FACT_KINDS if kind not in present]
+    return {
+        "source": facts.get("source"),
+        "missingReport": bool(facts.get("missing")),
+        "factCount": facts.get("factCount") or 0,
+        "requiredKinds": list(REQUIRED_IL2CPP_FACT_KINDS),
+        "presentRequiredKinds": present,
+        "missingRequiredKinds": missing,
+        "factKindCounts": kind_counts,
+    }
+
+
+def option_clip_window(option_row: dict[str, Any] | None) -> dict[str, Any]:
+    if not option_row:
+        return {}
+    start = option_row.get("start")
+    duration = option_row.get("duration")
+    end = None
+    try:
+        if start is not None and duration is not None:
+            end = round(float(start) + float(duration), 6)
+    except (TypeError, ValueError):
+        end = None
+    return compact_dict({
+        "start": round(float(start), 6) if isinstance(start, (int, float)) else start,
+        "duration": round(float(duration), 6) if isinstance(duration, (int, float)) else duration,
+        "end": end,
+        "trackName": option_row.get("trackName"),
+        "trackPathId": option_row.get("trackPathId"),
+        "anchorMode": option_row.get("anchorMode"),
+        "anchorLineId": option_row.get("anchorLineId"),
+        "assetTrack": option_row.get("assetTrack"),
+    }, empty_values=(None, "", [], {}))
+
+
+def runtime_field_for_line(line_id: str, runtime_gate: dict[str, Any]) -> Any:
+    for key in ("candidateRuntimeFieldByLine", "windowRuntimeFieldByLine"):
+        values = runtime_gate.get(key) if isinstance(runtime_gate.get(key), dict) else {}
+        if line_id in values:
+            return values[line_id]
+    return None
+
+
+def classify_writer_evidence(
+    option_id: str,
+    manual_first: str,
+    inferred_firsts: set[str],
+    flow_row: dict[str, Any] | None,
+    fact_summary: dict[str, Any],
+) -> dict[str, Any]:
+    if not flow_row:
+        return {
+            "classification": "timeline_flow_missing",
+            "requiredIl2cppFacts": fact_summary,
+        }
+    options = [item for item in flow_row.get("options") or [] if isinstance(item, dict)]
+    option_row = next((item for item in options if safe_key(item.get("optionId")) == option_id), None)
+    window_pattern = flow_row.get("windowPattern") if isinstance(flow_row.get("windowPattern"), dict) else {}
+    runtime_gate = window_pattern.get("runtimeGate") if isinstance(window_pattern.get("runtimeGate"), dict) else {}
+    manual_value = runtime_field_for_line(manual_first, runtime_gate)
+    inferred_values = {
+        line_id: runtime_field_for_line(line_id, runtime_gate)
+        for line_id in sorted(inferred_firsts)
+        if runtime_field_for_line(line_id, runtime_gate) is not None
+    }
+    verdict = safe_key(runtime_gate.get("verdict"))
+    if not option_row:
+        classification = "timeline_flow_option_missing"
+    elif manual_value not in (None, "", 0):
+        classification = "manual_first_has_runtime_writer"
+    elif any(value not in (None, "", 0) for value in inferred_values.values()):
+        classification = "inferred_first_has_runtime_writer"
+    elif verdict == "strictOptionRowsButAllZeroCandidateRuntimeField":
+        classification = "option_rows_present_candidates_runtime_zero"
+    elif verdict:
+        classification = f"runtime_gate_{verdict}"
+    else:
+        classification = "timeline_flow_present_without_runtime_gate"
+    return compact_dict({
+        "classification": classification,
+        "timelineClassification": flow_row.get("classification"),
+        "timelineRecommendation": flow_row.get("recommendation"),
+        "timeline": flow_row.get("timeline"),
+        "optionClipWindow": option_clip_window(option_row),
+        "optionRow": compact_dict(option_row or {}, empty_values=(None, "", [], {})),
+        "manualFirstRuntimeField": manual_value,
+        "inferredFirstRuntimeFields": inferred_values,
+        "runtimeGate": compact_dict({
+            "verdict": runtime_gate.get("verdict"),
+            "optionIndexPattern": runtime_gate.get("optionIndexPattern"),
+            "candidateRuntimeFieldPattern": runtime_gate.get("candidateRuntimeFieldPattern"),
+            "windowRuntimeFieldPattern": runtime_gate.get("windowRuntimeFieldPattern"),
+            "candidateRuntimeFieldAllZero": runtime_gate.get("candidateRuntimeFieldAllZero"),
+            "candidateRuntimeFieldMapsOptionIndices": runtime_gate.get("candidateRuntimeFieldMapsOptionIndices"),
+            "timing": runtime_gate.get("timing"),
+        }, empty_values=(None, "", [], {})),
+        "nearbyRuntimeRoutes": flow_row.get("nearbyRuntimeRoutes") or {},
+        "requiredIl2cppFacts": fact_summary,
+    }, empty_values=(None, "", [], {}))
+
+
 def classify_runtime_support(
     option_id: str,
     manual_first: str,
@@ -217,6 +371,8 @@ def build_rows(
     conv_dir: Path,
     timeline_orders: Path,
     skip_runtime_jump: bool,
+    skip_timeline_flow: bool,
+    il2cpp_report: Path | None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     manual_by_option, inferred_by_option = load_first_line_edges(conn)
     manual_paths = load_manual_paths(conn)
@@ -235,10 +391,20 @@ def build_rows(
         stories,
         skip=skip_runtime_jump,
     )
+    flow_by_group = timeline_flow_rows_by_group(
+        language,
+        conv_dir,
+        timeline_orders,
+        stories,
+        skip=skip_timeline_flow,
+    )
+    fact_summary = il2cpp_fact_summary(il2cpp_report)
 
     rows: list[dict[str, Any]] = []
     class_counts: Counter[str] = Counter()
     runtime_counts: Counter[str] = Counter()
+    writer_counts: Counter[str] = Counter()
+    conflict_writer_counts: Counter[str] = Counter()
     for option_node, manual_edge in sorted(manual_by_option.items(), key=lambda item: node_key(item[0])):
         option_id = node_key(option_node)
         story, group = story_group_from_option(option_id)
@@ -253,8 +419,18 @@ def build_rows(
             inferred_firsts,
             runtime_row,
         )
+        writer_evidence = classify_writer_evidence(
+            option_id,
+            manual_first,
+            inferred_firsts,
+            flow_by_group.get((story, group)),
+            fact_summary,
+        )
         class_counts[classification] += 1
         runtime_counts[runtime_class] += 1
+        writer_counts[writer_evidence.get("classification") or "unknown"] += 1
+        if classification == "manual_conflicts_inference":
+            conflict_writer_counts[writer_evidence.get("classification") or "unknown"] += 1
         row = {
             "story": story,
             "group": group,
@@ -272,6 +448,7 @@ def build_rows(
                 "classification": runtime_class,
                 **runtime_evidence,
             },
+            "writerEvidence": writer_evidence,
         }
         rows.append(row)
 
@@ -282,6 +459,10 @@ def build_rows(
         "classificationCounts": dict(sorted(class_counts.items())),
         "runtimeJumpCounts": dict(sorted(runtime_counts.items())),
         "runtimeJumpGroupsJoined": len(runtime_by_group),
+        "timelineFlowGroupsJoined": len(flow_by_group),
+        "writerEvidenceCounts": dict(sorted(writer_counts.items())),
+        "conflictWriterEvidenceCounts": dict(sorted(conflict_writer_counts.items())),
+        "requiredIl2cppFacts": fact_summary,
         "conflictingStories": sorted({row["story"] for row in rows if row["classification"] == "manual_conflicts_inference"}),
         "highSignalRuntimeManualSupport": [
             {
@@ -318,6 +499,9 @@ def write_markdown(path: Path, summary: dict[str, Any], rows: list[dict[str, Any
         f"- Runtime jump supports manual: {summary['runtimeJumpCounts'].get('runtime_jump_supports_manual', 0)}",
         f"- Runtime jump supports inference: {summary['runtimeJumpCounts'].get('runtime_jump_supports_inference', 0)}",
         f"- Runtime jump incomplete: {summary['runtimeJumpCounts'].get('runtime_jump_incomplete', 0)}",
+        f"- Timeline option-flow groups joined: {summary.get('timelineFlowGroupsJoined', 0)}",
+        f"- Conflict writer evidence, candidate runtime all zero: {summary.get('conflictWriterEvidenceCounts', {}).get('option_rows_present_candidates_runtime_zero', 0)}",
+        f"- Required IL2CPP writer/gate facts present: {len((summary.get('requiredIl2cppFacts') or {}).get('presentRequiredKinds') or [])}/{len((summary.get('requiredIl2cppFacts') or {}).get('requiredKinds') or [])}",
         "",
         "## High-Signal Runtime Support",
         "",
@@ -349,8 +533,8 @@ def write_markdown(path: Path, summary: dict[str, Any], rows: list[dict[str, Any
         "",
         "## Manual Conflicts",
         "",
-        "| Story | Group | Option | Manual first | Inferred first | Runtime support |",
-        "| --- | ---: | --- | --- | --- | --- |",
+        "| Story | Group | Option | Manual first | Inferred first | Runtime support | Writer evidence | Runtime gate |",
+        "| --- | ---: | --- | --- | --- | --- | --- | --- |",
     ])
     for row in conflicts:
         lines.append(
@@ -364,6 +548,8 @@ def write_markdown(path: Path, summary: dict[str, Any], rows: list[dict[str, Any
                     row["manual"]["firstLine"]["id"],
                     ", ".join(item["line"]["id"] for item in row["inferred"]),
                     row["runtimeJump"]["classification"],
+                    row.get("writerEvidence", {}).get("classification") or "",
+                    row.get("writerEvidence", {}).get("runtimeGate", {}).get("verdict") or "",
                 )
             )
             + " |"
@@ -383,6 +569,8 @@ def build_report(args: argparse.Namespace) -> dict[str, Path]:
             conv_dir=conv_dir,
             timeline_orders=args.timeline_orders,
             skip_runtime_jump=args.skip_runtime_jump,
+            skip_timeline_flow=args.skip_timeline_flow,
+            il2cpp_report=args.il2cpp_report,
         )
     payload = {"summary": summary, "rows": rows}
     json_path = args.output_prefix.with_suffix(".json")
