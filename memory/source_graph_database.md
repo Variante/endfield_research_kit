@@ -217,6 +217,16 @@ runtime-jump join finds 3 manual-supported rows overall and highlights
 `dlg_e6m1_10` plus `dlg_e6m4_14` as high-signal conflicts where nearby Runtime
 Jump evidence supports the manual first line over the old inferred edge.
 
+2026-07-01 story query precedence annotations: `tools/endfield_source_graph.py
+story` now labels branch refs from `webui/option_override` as
+`manual_authoritative` / `webuiOnly`, `option_branch_risk` refs as
+`diagnostic_inference`, `timeline_route_branch` refs as
+`runtime_route_evidence`, and `timeline_line_orders` refs as
+`runtime_timeline_evidence`. For `option_first_line`, the story output also tags
+manual/inferred match or conflict states and includes the opposing manual or
+inferred first-line IDs. This makes mixed manual, inferred, and runtime-derived
+story output safer to interpret without changing the underlying evidence graph.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type

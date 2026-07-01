@@ -529,7 +529,12 @@ with it, or manual-only. The current audit verifies 74 manual response options:
 26 match inference, 24 conflict with inferred first lines, and 24 are
 manual-only. Runtime-jump evidence is still sparse, but the join highlights
 `dlg_e6m1_10` and `dlg_e6m4_14` as high-signal conflicts where nearby Runtime
-Jump evidence supports the manual first line over the old inferred edge.
+Jump evidence supports the manual first line over the old inferred edge. The
+`story` source graph query now carries the same distinction inline by tagging
+manual override branch refs as `manual_authoritative`, `option_branch_risk` refs
+as `diagnostic_inference`, and timeline-derived refs as runtime evidence;
+conflicting `option_first_line` refs name the opposing manual or inferred
+first-line IDs.
 
 ### Mission Timeline and Global Story Order
 

@@ -3152,6 +3152,51 @@ def option_sort_key(option: dict[str, Any]) -> tuple[int, str]:
     return (999999, option["key"])
 
 
+def annotate_option_branch_precedence(branches: dict[str, list[dict[str, Any]]]) -> None:
+    manual_first_lines = {
+        safe_key(ref.get("key"))
+        for ref in branches.get("option_first_line", [])
+        if ref.get("source") == "webui/option_override" and safe_key(ref.get("key"))
+    }
+    inferred_first_lines = {
+        safe_key(ref.get("key"))
+        for ref in branches.get("option_first_line", [])
+        if ref.get("source") != "webui/option_override" and safe_key(ref.get("key"))
+    }
+    for edge_kind, refs in branches.items():
+        for ref in refs:
+            source = safe_key(ref.get("source"))
+            if source == "webui/option_override":
+                ref["precedence"] = "manual_authoritative"
+                ref["webuiOnly"] = True
+                if edge_kind == "option_first_line":
+                    if not inferred_first_lines:
+                        ref["classification"] = "manual_only"
+                    elif safe_key(ref.get("key")) in inferred_first_lines:
+                        ref["classification"] = "manual_matches_inference"
+                    else:
+                        ref["classification"] = "manual_conflicts_inference"
+                        ref["inferredFirstLineIds"] = sorted(inferred_first_lines)
+            elif edge_kind.startswith("option_") or edge_kind.startswith("timeline_"):
+                if source == "timeline_route_branch":
+                    ref["precedence"] = "runtime_route_evidence"
+                    match_label = "runtime_route_matches_manual"
+                    conflict_label = "runtime_route_conflicts_manual"
+                elif source == "timeline_line_orders":
+                    ref["precedence"] = "runtime_timeline_evidence"
+                    match_label = "runtime_timeline_matches_manual"
+                    conflict_label = "runtime_timeline_conflicts_manual"
+                else:
+                    ref["precedence"] = "diagnostic_inference"
+                    match_label = "inference_matches_manual"
+                    conflict_label = "inference_conflicts_manual"
+                if edge_kind == "option_first_line" and manual_first_lines:
+                    if safe_key(ref.get("key")) in manual_first_lines:
+                        ref["classification"] = match_label
+                    else:
+                        ref["classification"] = conflict_label
+                        ref["manualFirstLineIds"] = sorted(manual_first_lines)
+
 def story_arrangement(db_path: Path, story_key: str, *, limit_lines: int = 0) -> dict[str, Any]:
     with sqlite3.connect(db_path) as conn:
         conn.row_factory = sqlite3.Row
@@ -3345,6 +3390,7 @@ def story_arrangement(db_path: Path, story_key: str, *, limit_lines: int = 0) ->
                     option["branches"].setdefault(branch_row["edgeKind"], []).append(
                         compact_node_ref(target_row, branch_row)
                     )
+                annotate_option_branch_precedence(option["branches"])
                 group["options"].append(option)
             group["options"].sort(key=option_sort_key)
             groups.append(group)
