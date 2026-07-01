@@ -16,6 +16,7 @@ import os
 import re
 import sqlite3
 import struct
+import sys
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -23,6 +24,10 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS_DIR = ROOT / "scripts"
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+from build_data_index import decode_interactive_template_memorypack
 EXPORT_ROOT = ROOT / "export_full"
 WEBUI_DATA = ROOT / "webui" / "data"
 WEBUI_OPTION_OVERRIDES = ROOT / "webui" / "overrides" / "options.json"
@@ -65,6 +70,7 @@ STORY_KEY_RE = re.compile(
 )
 ASSET_ACTOR_RE = re.compile(r"(?:^|[/\\])(?:S|T|M|A|AC)_actor_([A-Za-z0-9]+)", re.IGNORECASE)
 LINE_AUDIO_RE = re.compile(r"\bau_[A-Za-z0-9_]{2,160}\b")
+LINE_AUDIO_BYTES_RE = re.compile(rb"\bau_[A-Za-z0-9_]{2,160}\b")
 PATH_ID_EXPORT_STEM_RE = re.compile(r"^(?P<base>.+)_p(?P<path_id>[0-9A-Fa-f]{16})$")
 ASSET_SINGLE_PREFIX_RE = re.compile(r"^[A-Za-z]_")
 ASSET_LOD_SUFFIX_RE = re.compile(r"(?:[_-])lod\d+$", re.IGNORECASE)
@@ -428,6 +434,7 @@ def parse_summary_assignments(summary: Any) -> dict[str, str]:
         if key:
             out[key] = value.strip()
     return out
+
 
 
 def mp_read_u32(data: bytes, offset: int, field_name: str, *, max_count: int = 50_000) -> tuple[int, int]:
@@ -3437,36 +3444,327 @@ class SourceGraphBuilder:
                 template_node = self.add_node("interactive_template", template_id, name=template_id, source="webui/game_data")
                 self.add_edge(object_node, template_node, "interactive_object_uses_template", source="webui/game_data", evidence="interactiveDataDict")
 
+    def decode_interactive_template_payload(self, entry: dict[str, Any], raw_data: bytes | None = None) -> dict[str, Any] | None:
+        data = raw_data if raw_data is not None else self.read_decoded_config_bytes(entry)
+        if not data:
+            return None
+        try:
+            decoded = decode_interactive_template_memorypack(self.decoded_config_raw_path(entry), data, len(data))
+        except Exception:
+            return None
+        payload = decoded.get("decoded") if isinstance(decoded, dict) else None
+        return payload if isinstance(payload, dict) else None
+
+    def add_interactive_component_type_node(self, component_type: Any, *, source: str = "") -> str:
+        component_key = safe_key(component_type)
+        if not component_key:
+            return ""
+        node = self.add_node("interactive_component_type", component_key, name=component_key, source=source)
+        self.add_alias(component_key, node, kind="interactive_component_type", source=source)
+        return node
+
+    def add_interactive_property_key_node(self, property_key: Any, *, source: str = "") -> str:
+        key = safe_key(property_key)
+        if not key:
+            return ""
+        node = self.add_node("interactive_property_key", key, name=key, source=source)
+        self.add_alias(key, node, kind="interactive_property_key", source=source)
+        return node
+
+    def add_interactive_component_node(
+        self,
+        template_id: str,
+        source_id: str,
+        row: dict[str, Any],
+        *,
+        source: str,
+    ) -> str:
+        component_type = safe_key(row.get("type"))
+        index = safe_key(row.get("index"))
+        if not component_type or not index:
+            return ""
+        component_key = f"{source_id}:{template_id}:{index}:{component_type}"
+        data = compact_payload(
+            {
+                "index": row.get("index"),
+                "tag": row.get("tag"),
+                "type": component_type,
+                "memberCount": row.get("memberCount"),
+                "tagWidth": row.get("tagWidth"),
+                "payloadOffset": row.get("payloadOffset"),
+                "byteLength": row.get("byteLength"),
+                "parsedBody": row.get("parsedBody"),
+                "bodyShape": row.get("bodyShape"),
+            },
+            depth=2,
+        )
+        return self.add_node(
+            "interactive_component",
+            component_key,
+            name=f"{template_id}[{index}] {component_type}",
+            source=source,
+            data=data,
+        )
+
+    def add_interactive_logic_type_node(self, logic_type: Any, *, source: str = "") -> str:
+        key = safe_key(logic_type)
+        if not key:
+            return ""
+        node = self.add_node("interactive_logic_type", key, name=key, source=source)
+        self.add_alias(key, node, kind="interactive_logic_type", source=source)
+        return node
+
+    def add_interactive_shape_node(self, kind: str, value: Any, *, source: str = "") -> str:
+        key = safe_key(value)
+        if not key:
+            return ""
+        node = self.add_node(kind, key, name=key, source=source)
+        self.add_alias(key, node, kind=kind, source=source)
+        return node
+
+    def add_interactive_property_edges(
+        self,
+        data_node: str,
+        component_node: str,
+        keys: Iterable[Any],
+        *,
+        template_edge_kind: str,
+        component_edge_kind: str,
+        source: str,
+        evidence: str,
+    ) -> None:
+        seen: set[str] = set()
+        for raw_key in keys:
+            key = safe_key(raw_key)
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            property_node = self.add_interactive_property_key_node(key, source=source)
+            self.add_edge(data_node, property_node, template_edge_kind, source=source, evidence=evidence)
+            if component_node:
+                self.add_edge(component_node, property_node, component_edge_kind, source=source, evidence=evidence)
+
+    def add_interactive_template_decoded_edges(
+        self,
+        data_node: str,
+        template_id: str,
+        source_id: str,
+        decoded: dict[str, Any],
+        *,
+        source: str,
+    ) -> None:
+        for tag_row in decoded.get("bornTags") or []:
+            tag = safe_key(tag_row.get("tag") if isinstance(tag_row, dict) else tag_row)
+            if not tag.startswith("Category/"):
+                continue
+            category_node = self.add_gameplay_tag_node(tag, source=source)
+            self.add_edge(data_node, category_node, "interactive_template_has_category_tag", source=source, evidence="bornTags")
+
+        component_nodes_by_index: dict[int, str] = {}
+
+        def add_component(row: Any, template_edge_kind: str, evidence: str) -> str:
+            if not isinstance(row, dict):
+                return ""
+            component_node = self.add_interactive_component_node(template_id, source_id, row, source=source)
+            component_type = safe_key(row.get("type"))
+            if not component_node or not component_type:
+                return ""
+            index = row.get("index")
+            if isinstance(index, int):
+                component_nodes_by_index[index] = component_node
+            self.add_edge(data_node, component_node, "interactive_template_data_has_component", source=source, evidence=evidence)
+            component_type_node = self.add_interactive_component_type_node(component_type, source=source)
+            edge_data = compact_payload(
+                {"index": row.get("index"), "tag": row.get("tag"), "memberCount": row.get("memberCount"), "parsedBody": row.get("parsedBody")},
+                depth=1,
+            )
+            self.add_edge(component_node, component_type_node, "interactive_component_has_type", source=source, evidence=evidence, data=edge_data)
+            self.add_edge(data_node, component_type_node, template_edge_kind, source=source, evidence=evidence, data=edge_data)
+            if template_edge_kind != "interactive_template_has_component_type":
+                self.add_edge(data_node, component_type_node, "interactive_template_has_component_type", source=source, evidence=evidence, data=edge_data)
+            return component_node
+
+        for row in decoded.get("componentListPrefixRows") or []:
+            edge_kind = "interactive_template_has_first_component_type" if row.get("index") == 0 else "interactive_template_has_component_type"
+            add_component(row, edge_kind, "componentListPrefixRows")
+        for row in decoded.get("componentListParsedPayloadRows") or []:
+            add_component(row, "interactive_template_has_payload_component_type", "componentListParsedPayloadRows")
+        stop_row = decoded.get("componentListStopPayload")
+        if isinstance(stop_row, dict):
+            add_component(stop_row, "interactive_template_stopped_at_component_type", "componentListStopPayload")
+
+        def component_for_detail(detail: dict[str, Any], evidence: str) -> str:
+            index = detail.get("index")
+            if isinstance(index, int) and index in component_nodes_by_index:
+                return component_nodes_by_index[index]
+            return add_component(detail, "interactive_template_has_component_type", evidence)
+
+        for detail in decoded.get("componentTriggerObserverComponents") or []:
+            if not isinstance(detail, dict):
+                continue
+            component_node = component_for_detail(detail, "componentTriggerObserverComponents")
+            self.add_interactive_property_edges(
+                data_node,
+                component_node,
+                detail.get("primaryKeys") or [],
+                template_edge_kind="interactive_template_has_trigger_property_key",
+                component_edge_kind="interactive_component_uses_trigger_property_key",
+                source=source,
+                evidence="componentTriggerObserverComponents.primaryKeys",
+            )
+            preview = detail.get("primaryPreviewByKey") or {}
+            if isinstance(preview, dict):
+                trigger_shape = safe_key(preview.get("shape"))
+                if trigger_shape:
+                    shape_node = self.add_interactive_shape_node("interactive_trigger_shape", trigger_shape, source=source)
+                    data = {"radius": safe_key(preview.get("radius"))} if safe_key(preview.get("radius")) else None
+                    self.add_edge(data_node, shape_node, "interactive_template_has_trigger_shape", source=source, evidence="componentTriggerObserverComponents", data=data)
+                    if component_node:
+                        self.add_edge(component_node, shape_node, "interactive_component_has_trigger_shape", source=source, evidence="componentTriggerObserverComponents", data=data)
+
+        for detail in decoded.get("componentPropertyMapComponents") or []:
+            if not isinstance(detail, dict):
+                continue
+            self.add_interactive_property_edges(
+                data_node,
+                component_for_detail(detail, "componentPropertyMapComponents"),
+                detail.get("propertyKeys") or [],
+                template_edge_kind="interactive_template_has_property_key",
+                component_edge_kind="interactive_component_uses_property_key",
+                source=source,
+                evidence="componentPropertyMapComponents.propertyKeys",
+            )
+
+        for detail in decoded.get("componentCommonPerformComponents") or []:
+            if not isinstance(detail, dict):
+                continue
+            component_node = component_for_detail(detail, "componentCommonPerformComponents")
+            self.add_interactive_property_edges(
+                data_node,
+                component_node,
+                detail.get("dynamicPropertyKeys") or [],
+                template_edge_kind="interactive_template_has_property_key",
+                component_edge_kind="interactive_component_uses_property_key",
+                source=source,
+                evidence="componentCommonPerformComponents.dynamicPropertyKeys",
+            )
+            self.add_interactive_property_edges(
+                data_node,
+                component_node,
+                (detail.get("performPropertyNameCounts") or {}).keys(),
+                template_edge_kind="interactive_template_has_perform_property_key",
+                component_edge_kind="interactive_component_uses_perform_property_key",
+                source=source,
+                evidence="componentCommonPerformComponents.performPropertyNameCounts",
+            )
+
+        for detail in decoded.get("componentLogicControllerComponents") or []:
+            if not isinstance(detail, dict):
+                continue
+            component_node = component_for_detail(detail, "componentLogicControllerComponents")
+            logic_node = self.add_interactive_logic_type_node(detail.get("logicType"), source=source)
+            if logic_node:
+                self.add_edge(data_node, logic_node, "interactive_template_has_logic_type", source=source, evidence="componentLogicControllerComponents.logicType")
+                if component_node:
+                    self.add_edge(component_node, logic_node, "interactive_component_has_logic_type", source=source, evidence="componentLogicControllerComponents.logicType")
+            self.add_interactive_property_edges(
+                data_node,
+                component_node,
+                detail.get("propertyKeys") or [],
+                template_edge_kind="interactive_template_has_logic_property_key",
+                component_edge_kind="interactive_component_uses_logic_property_key",
+                source=source,
+                evidence="componentLogicControllerComponents.propertyKeys",
+            )
+
+        for detail in decoded.get("componentHittableComponents") or []:
+            if not isinstance(detail, dict):
+                continue
+            self.add_interactive_property_edges(
+                data_node,
+                component_for_detail(detail, "componentHittableComponents"),
+                detail.get("propertyKeys") or [],
+                template_edge_kind="interactive_template_has_hittable_property_key",
+                component_edge_kind="interactive_component_uses_hittable_property_key",
+                source=source,
+                evidence="componentHittableComponents.propertyKeys",
+            )
+
+        for detail in decoded.get("componentShowGuideComponents") or []:
+            if not isinstance(detail, dict):
+                continue
+            component_node = component_for_detail(detail, "componentShowGuideComponents")
+            guide_shape = safe_key(detail.get("shape"))
+            if guide_shape:
+                guide_node = self.add_interactive_shape_node("interactive_guide_shape", guide_shape, source=source)
+                self.add_edge(data_node, guide_node, "interactive_template_has_guide_shape", source=source, evidence="componentShowGuideComponents.shape")
+                if component_node:
+                    self.add_edge(component_node, guide_node, "interactive_component_has_guide_shape", source=source, evidence="componentShowGuideComponents.shape")
+            self.add_interactive_property_edges(
+                data_node,
+                component_node,
+                detail.get("propertyKeys") or [],
+                template_edge_kind="interactive_template_has_property_key",
+                component_edge_kind="interactive_component_uses_property_key",
+                source=source,
+                evidence="componentShowGuideComponents.propertyKeys",
+            )
     def add_interactive_template_data_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         fields = parse_summary_assignments(entry.get("t"))
-        template_id = safe_key(fields.get("name")) or Path(safe_key(entry.get("p"))).stem.removeprefix("data_")
+        raw_data = self.read_decoded_config_bytes(entry)
+        decoded = self.decode_interactive_template_payload(entry, raw_data)
+        template_id = safe_key((decoded or {}).get("name")) or safe_key(fields.get("name")) or Path(safe_key(entry.get("p"))).stem.removeprefix("data_")
         if not template_id:
             return
+        source_id = safe_key(entry.get("source")) or "webui"
+        decoded_brief = None
+        if decoded:
+            decoded_brief = compact_payload(
+                {
+                    "schemaSource": decoded.get("schemaSource"),
+                    "componentListCount": decoded.get("componentListCount"),
+                    "componentListPrefixParsedCount": decoded.get("componentListPrefixParsedCount"),
+                    "componentListParsedPayloadCount": decoded.get("componentListParsedPayloadCount"),
+                    "componentParseError": decoded.get("componentParseError"),
+                    "exactLength": decoded.get("exactLength"),
+                },
+                depth=2,
+            )
         data_node = self.add_node(
             "interactive_template_data",
-            f"{safe_key(entry.get('source'))}:{template_id}",
+            f"{source_id}:{template_id}",
             name=template_id,
             source="webui/game_data",
             path=safe_key(entry.get("p")),
-            data=compact_payload({**self.decoded_config_entry_data(entry), "decodedSummary": fields}, depth=3),
+            data=compact_payload({**self.decoded_config_entry_data(entry), "decodedSummary": fields, "interactiveDecoded": decoded_brief}, depth=3),
         )
         template_node = self.add_node("interactive_template", template_id, name=template_id, source="webui/game_data")
         self.add_edge(file_node, data_node, "defines_interactive_template_data", source="webui/game_data", evidence=safe_key(entry.get("dp")))
         self.add_edge(data_node, template_node, "interactive_template_data_for_template", source="webui/game_data", evidence="name")
         self.add_alias(template_id, data_node, kind="interactive_template_id", source="webui/game_data")
-        object_type = safe_key(fields.get("objectType"))
+        object_type = safe_key((decoded or {}).get("objectType")) or safe_key(fields.get("objectType"))
         if object_type and object_type != template_id:
             object_node = self.add_node("interactive_object", object_type, name=object_type, source="webui/game_data")
             self.add_edge(data_node, object_node, "interactive_template_object_type", source="webui/game_data", evidence="objectType")
-        model_component = safe_key(fields.get("modelComponent"))
+        model_data = (decoded or {}).get("componentModelData") if isinstance((decoded or {}).get("componentModelData"), dict) else {}
+        model_component = safe_key(model_data.get("modelId")) or safe_key(fields.get("modelComponent"))
         if model_component:
             model_node = self.add_node("model_config_model", model_component, name=model_component, source="webui/game_data")
-            self.add_edge(data_node, model_node, "interactive_template_uses_model", source="webui/game_data", evidence="modelComponent")
+            self.add_edge(data_node, model_node, "interactive_template_uses_model", source="webui/game_data", evidence="componentModelData.modelId" if model_data else "modelComponent")
             self.add_alias(model_component, model_node, kind="model_id", source="webui/game_data")
-            self.add_model_asset_entity_edges(data_node, (model_component,), edge_kind="interactive_template_asset_entity", source="webui/game_data", evidence="modelComponent")
-        for audio_id in LINE_AUDIO_RE.findall(str(entry.get("t") or "")):
-            self.add_audio_target_edge(data_node, audio_id, edge_kind="interactive_template_uses_audio", source="webui/game_data", evidence="summary")
-
+            self.add_model_asset_entity_edges(data_node, (model_component,), edge_kind="interactive_template_asset_entity", source="webui/game_data", evidence="componentModelData.modelId" if model_data else "modelComponent")
+        if decoded:
+            self.add_interactive_template_decoded_edges(data_node, template_id, source_id, decoded, source="webui/game_data")
+        audio_ids: set[str] = set()
+        for match in LINE_AUDIO_BYTES_RE.findall(raw_data or b""):
+            try:
+                audio_ids.add(match.decode("ascii"))
+            except UnicodeDecodeError:
+                continue
+        if not audio_ids:
+            audio_ids.update(LINE_AUDIO_RE.findall(str(entry.get("t") or "")))
+        for audio_id in sorted(audio_ids):
+            self.add_audio_target_edge(data_node, audio_id, edge_kind="interactive_template_uses_audio", source="webui/game_data", evidence="memorypack-bytes" if raw_data else "summary")
     def add_world_entity_registry_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         config_key = safe_key(entry.get("p"))
         registry_node = self.add_node("world_entity_registry", config_key, name=Path(config_key).name, source="webui/game_data", path=config_key, data=self.decoded_config_entry_data(entry))
@@ -10700,6 +10998,12 @@ QUERY_KIND_PRIORITY = {
     "char_interact_perform_config": 92,
     "char_interact_asset_reference": 93,
     "char_interact_ccs_reference": 94,
+    "interactive_component": 95,
+    "interactive_component_type": 96,
+    "interactive_property_key": 97,
+    "interactive_logic_type": 98,
+    "interactive_trigger_shape": 99,
+    "interactive_guide_shape": 100,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -10954,6 +11258,12 @@ NODE_ID_PREFIXES = (
     "char_interact_perform_config",
     "char_interact_asset_reference",
     "char_interact_ccs_reference",
+    "interactive_component",
+    "interactive_component_type",
+    "interactive_property_key",
+    "interactive_logic_type",
+    "interactive_trigger_shape",
+    "interactive_guide_shape",
     "mission",
     "map",
     "level",

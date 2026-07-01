@@ -755,6 +755,35 @@ python tools\endfield_source_graph.py query CharIntPerform_Camille_RelaxLoop --k
 python tools\endfield_source_graph.py query LD/CCS_LD_c28m3kanjiangjun --kind char_interact_ccs_reference
 ```
 
+2026-07-01 InteractiveTemplateData exact component graph progress: source graph
+ingestion now reuses the existing `decode_interactive_template_memorypack()`
+parser from `scripts/build_data_index.py` instead of the truncated compact
+`entry["t"]` preview for new interactive semantics. A fast CN rebuild to
+`tmp/source_graph_interactive_exact.sqlite` verified 1,140,216 total nodes,
+2,020,247 edges, and 1,593,937 aliases. Exact decoded coverage includes 542
+`interactive_template_data` source nodes collapsed onto 271 template ids, 3,234
+source-qualified `interactive_component` nodes, 79 `interactive_component_type`
+nodes, 296 `interactive_property_key` nodes, 33 `interactive_logic_type` nodes,
+3 trigger shapes, and 3 guide shapes. Edge checks verified 3,234
+template-to-component edges, 3,234 component-to-type edges, 542 first-component
+edges, 1,284 parsed-payload type edges, 306 stop-component type edges, 574
+category-tag edges, 418 model edges, 488 raw-byte audio edges, 3,840 generic
+property-key edges, 3,144 trigger-property edges, 242 perform-property edges,
+156 logic-property edges, 448 hittable-property edges, 88 logic-type edges, 262
+trigger-shape edges, and 50 guide-shape edges. This pass models exact decoded
+component inventory and selected component bodies; it does not prove runtime
+interaction control flow, component execution order, formula behavior, or the
+meaning of numeric logic/shape enums. `Json_InteractiveData` collection rows
+remain audited but not yet promoted beyond the existing template/table graph.
+Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query Core_InteractiveRootComponentData --kind interactive_component_type
+python tools\endfield_source_graph.py query destroy_self --kind interactive_property_key
+python tools\endfield_source_graph.py query 70 --kind interactive_logic_type
+python tools\endfield_source_graph.py query Category/Interactive/Model --kind gameplay_tag
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,

@@ -369,8 +369,12 @@ same bounded row-string evidence. The `CharInteractPerformCfgs` pass adds 318
 file-to-config definition edges collapsed to 159 perform configs, with 83 exact
 active-tag edges, 54 status-tag refs, 102 montage refs, 37 actor/template refs,
 146 effect refs, 46 intra-family perform refs, 52 asset-path refs, and 13 CCS
-refs from a strong parsed prefix plus bounded body string evidence. It does not
-prove runtime formula usage, full SpawnerConfig tail semantics,
+refs from a strong parsed prefix plus bounded body string evidence. The exact
+`InteractiveTemplateData` pass adds 3,234 source-qualified component nodes, 79
+component-type nodes, 296 property-key nodes, 33 logic-type nodes, 574 category
+tag edges, 418 model edges, 488 raw-byte audio edges, and exact component links
+for first/payload/stop components, trigger/guide shapes, and selected property
+maps. It does not prove runtime formula usage, full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
 flow, montage clip playback semantics, full exported model/icon reconstruction,
@@ -418,10 +422,12 @@ Partial but useful current examples include:
   montage refs, character/NPC-template refs, effects, inherited perform configs,
   asset paths, and CCS paths; action dictionaries, timing, IK/follow rules,
   interrupt behavior, and runtime interaction state machines remain future work.
-- `Interactive/InteractiveData`: 25-member template roots and many component
-  bodies parse far enough to expose names, component families, property maps,
-  audio rows, guide geometry, trigger observers, hittable data, and interactive
-  state properties.
+- `Interactive/InteractiveData`: queryable template/component inventory across
+  542 decoded source files and 271 template ids, including exact component
+  nodes, component-type links, category tags, model ids, raw-byte audio refs,
+  property keys, logic types, trigger shapes, guide shapes, trigger observers,
+  common perform data, hittable data, and selected property maps; component
+  execution/control flow and numeric enum meaning remain future work.
 - `LevelScriptTemplateData` and other partially previewed families have verified
   top-level ids/counts and meaningful previews.
 
