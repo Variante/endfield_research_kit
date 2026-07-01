@@ -308,12 +308,14 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_AIConfig.json",
     "Json_MapConfig.json",
     "Json_GameplayConfigScriptTaskExtraInfoTable.json",
+    "Json_LevelMountPoint.json",
 )
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
     "AIConfigEnemyTemplateDataSummary",
     "MapConfig",
     "GameplayConfigScriptTaskExtraInfoTable",
+    "LevelMountPoint",
     "BambooRaftTaskTable",
     "CharInteractPerformCfgs",
     "NpcAtmosphericDataTable",
@@ -2886,6 +2888,8 @@ class SourceGraphBuilder:
                     subtype = "MapConfig"
                 if group_name == "Json_GameplayConfigScriptTaskExtraInfoTable.json":
                     subtype = "GameplayConfigScriptTaskExtraInfoTable"
+                if group_name == "Json_LevelMountPoint.json":
+                    subtype = "LevelMountPoint"
                 if subtype not in DECODED_CONFIG_TARGET_TYPES:
                     continue
                 self.add_decoded_config_entry(group_node, entry, subtype=subtype)
@@ -2914,6 +2918,8 @@ class SourceGraphBuilder:
             self.add_map_config_edges(file_node, entry)
         elif subtype == "GameplayConfigScriptTaskExtraInfoTable":
             self.add_gameplay_script_task_extra_edges(file_node, entry)
+        elif subtype == "LevelMountPoint":
+            self.add_level_mount_point_edges(file_node, entry)
         elif subtype == "AnimationConfig":
             self.add_animation_config_edges(file_node, entry)
         elif subtype == "NpcAtmosphericDataTable":
@@ -4105,6 +4111,81 @@ class SourceGraphBuilder:
                             source=source,
                             evidence=f"trackingInfoDict.{safe_key(objective_key)}.description",
                         )
+
+    def iter_level_mount_points(self, node: Any, path: list[str]) -> Iterable[tuple[list[str], dict[str, Any]]]:
+        if not isinstance(node, dict):
+            return
+        mount_point = node.get("mountPoint")
+        if isinstance(mount_point, dict):
+            yield path, mount_point
+        children = node.get("children")
+        if isinstance(children, dict):
+            for child_key, child in sorted(children.items(), key=lambda item: safe_key(item[0])):
+                child_name = safe_key(child_key)
+                if child_name:
+                    yield from self.iter_level_mount_points(child, [*path, child_name])
+
+    def add_level_mount_type_node(self, mount_type: Any, *, source: str = "") -> str:
+        type_key = safe_key(mount_type)
+        if not type_key:
+            return ""
+        node = self.add_node("level_mount_type", type_key, name=type_key, source=source)
+        self.add_alias(type_key, node, kind="level_mount_type", source=source)
+        return node
+
+    def add_level_mount_point_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        raw_data = self.read_decoded_config_bytes(entry)
+        if not raw_data:
+            return
+        try:
+            payload = json.loads(raw_data.decode("utf-8-sig"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return
+        if not isinstance(payload, dict):
+            return
+        sub_roots = payload.get("subRootByType")
+        if not isinstance(sub_roots, dict):
+            return
+        level_id = Path(safe_key(entry.get("dp") or entry.get("p"))).stem
+        if not level_id:
+            return
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        level_node = self.add_level_node(level_id, source=source)
+        mount_count = 0
+        for mount_type_raw, root_node in sorted(sub_roots.items(), key=lambda item: safe_key(item[0])):
+            mount_type = safe_key(mount_type_raw)
+            if not mount_type:
+                continue
+            type_node = self.add_level_mount_type_node(mount_type, source=source)
+            for path_parts, mount_point in self.iter_level_mount_points(root_node, [mount_type]):
+                mount_path = "/".join(path_parts)
+                if not mount_path:
+                    continue
+                mount_count += 1
+                node_key = f"{level_id}:{mount_path}"
+                mount_node = self.add_node(
+                    "level_mount_point",
+                    node_key,
+                    name=mount_path,
+                    source=source,
+                    data=compact_payload({
+                        "levelId": level_id,
+                        "mountType": mount_type,
+                        "path": mount_path,
+                        "position": mount_point.get("position"),
+                        "rotation": mount_point.get("rotation"),
+                    }, depth=4),
+                )
+                self.add_alias(node_key, mount_node, kind="level_mount_point_key", source=source)
+                self.add_alias(mount_path, mount_node, kind="level_mount_path", source=source)
+                self.add_alias(f"{level_id}:{mount_path}", mount_node, kind="level_mount_path", source=source)
+                self.add_edge(file_node, mount_node, "defines_level_mount_point", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id})
+                if level_node:
+                    self.add_edge(mount_node, level_node, "level_mount_point_in_level", source=source, evidence="LevelMountPoint")
+                if type_node:
+                    self.add_edge(mount_node, type_node, "level_mount_point_type", source=source, evidence="subRootByType")
+        self.update_node_details(file_node, data=compact_payload({**self.decoded_config_entry_data(entry), "levelId": level_id, "mountPointCount": mount_count, "mountTypeCount": len(sub_roots)}, depth=3))
 
     def mission_runtime_text_key(self, payload: Any) -> str:
         if isinstance(payload, dict):
@@ -12355,6 +12436,8 @@ QUERY_KIND_PRIORITY = {
     "map_streaming_asset": 128,
     "map_config_condition_type": 129,
     "level_script_task_extra": 130,
+    "level_mount_point": 131,
+    "level_mount_type": 132,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -12645,6 +12728,8 @@ NODE_ID_PREFIXES = (
     "map_streaming_asset",
     "map_config_condition_type",
     "level_script_task_extra",
+    "level_mount_point",
+    "level_mount_type",
     "mission",
     "map",
     "level",
