@@ -869,6 +869,26 @@ python tools\endfield_source_graph.py query map02:12 --kind navmesh_area_id
 python tools\endfield_source_graph.py query blackbox01_dg001:f02:r0000 --kind navmesh_state_record
 ```
 
+2026-07-01 BambooRaftTaskTable decoded-config graph progress: source graph
+ingestion now promotes exact MemoryPack rows from
+`Json/NonGeneratedConfigs/BambooRaftTaskTable.json`. A fast CN rebuild to
+`tmp/source_graph_bamboo.sqlite` verified 1,157,214 total nodes, 2,060,373
+edges, and 1,609,399 aliases. New coverage includes 7
+`bamboo_raft_task_group` hash nodes, 14 `defines_bamboo_raft_task_group` edges
+split evenly across Persistent and StreamingAssets, 13 `quest_task` nodes, 26
+`defines_bamboo_raft_task_ref` source edges, 13 `bamboo_raft_group_has_task`
+edges, 13 `quest_task_in_mission` prefix links, and 13 duplicate-id matches.
+The task ids link to six mission prefixes: `e5m1`, `e6m1`, `e6m4`, `e8m2`,
+`sm2l1m1`, and `sm2l1m3`. The row hash and `field0U32` values remain preserved
+payload evidence only; this pass does not infer quest ordering, task execution,
+or bamboo-raft gameplay mechanics. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query 1510085735 --kind bamboo_raft_task_group
+python tools\endfield_source_graph.py query e8m2_q#10 --kind quest_task
+python tools\endfield_source_graph.py query e8m2 --kind mission
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,

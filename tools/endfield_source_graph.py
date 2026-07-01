@@ -28,6 +28,7 @@ SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 from build_data_index import (
+    decode_bamboo_raft_task_table_memorypack,
     decode_dialog_id_table_memorypack,
     decode_interactive_template_memorypack,
     decode_model_view_state_controller_memorypack,
@@ -303,6 +304,7 @@ DECODED_CONFIG_GROUP_FILES = (
 )
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
+    "BambooRaftTaskTable",
     "CharInteractPerformCfgs",
     "NpcAtmosphericDataTable",
     "BuffData",
@@ -2897,6 +2899,8 @@ class SourceGraphBuilder:
             self.add_skill_data_config_edges(file_node, entry)
         elif subtype == "DialogIdTable":
             self.add_dialog_id_table_edges(file_node, entry)
+        elif subtype == "BambooRaftTaskTable":
+            self.add_bamboo_raft_task_table_edges(file_node, entry)
         elif subtype == "LunaArea":
             self.add_navmesh_luna_area_edges(file_node, entry)
         elif subtype == "NavMeshStateContainer":
@@ -3787,6 +3791,91 @@ class SourceGraphBuilder:
                     option_node = self.add_node("option", option_id, name=option_id, source="DialogIdTable")
                     self.add_edge(scene_node, option_node, "dialog_registry_has_option", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
                     self.add_edge(option_node, story_node, "dialog_registry_option_for_story", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
+
+    def decode_bamboo_raft_task_table_payload(self, entry: dict[str, Any], raw_data: bytes | None = None) -> dict[str, Any] | None:
+        data = raw_data if raw_data is not None else self.read_decoded_config_bytes(entry)
+        if not data:
+            return None
+        try:
+            decoded = decode_bamboo_raft_task_table_memorypack(safe_key(entry.get("dp")), data, len(data))
+        except Exception:
+            return None
+        payload = decoded.get("decoded") if isinstance(decoded, dict) else None
+        return payload if isinstance(payload, dict) else None
+
+    def quest_task_mission_prefix(self, task_id: Any) -> str:
+        task_key = safe_key(task_id)
+        match = re.match(r"^(.+)_q#\d+$", task_key)
+        return match.group(1) if match else ""
+
+    def add_quest_task_node(self, task_id: Any, *, source: str = "", data: Any = None) -> str:
+        task_key = safe_key(task_id)
+        if not task_key:
+            return ""
+        node = self.add_node("quest_task", task_key, name=task_key, source=source, data=data)
+        self.add_alias(task_key, node, kind="quest_task_id", source=source)
+        return node
+
+    def add_bamboo_raft_task_table_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        raw_data = self.read_decoded_config_bytes(entry)
+        decoded = self.decode_bamboo_raft_task_table_payload(entry, raw_data)
+        if not decoded:
+            return
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        self.update_node_details(
+            file_node,
+            data=compact_payload(
+                {
+                    **self.decoded_config_entry_data(entry),
+                    "entryCount": decoded.get("entryCount"),
+                    "totalTaskRefs": decoded.get("totalTaskRefs"),
+                    "duplicateIdMatches": decoded.get("duplicateIdMatches"),
+                    "field0Counts": decoded.get("field0Counts"),
+                    "taskCountCounts": decoded.get("taskCountCounts"),
+                    "exactLength": decoded.get("exactLength"),
+                },
+                depth=3,
+            ),
+        )
+        for row_index, row in enumerate(decoded.get("sampleRows") or []):
+            if not isinstance(row, dict):
+                continue
+            group_key = safe_key(row.get("hashU32"))
+            if not group_key:
+                continue
+            group_node = self.add_node(
+                "bamboo_raft_task_group",
+                group_key,
+                name=group_key,
+                source=source,
+                data=compact_payload(
+                    {
+                        "hashU32": row.get("hashU32"),
+                        "field0U32": row.get("field0U32"),
+                        "valueMemberCount": row.get("valueMemberCount"),
+                        "taskCount": row.get("taskCount"),
+                        "tailU64": row.get("tailU64"),
+                    },
+                    depth=2,
+                ),
+            )
+            self.add_alias(group_key, group_node, kind="bamboo_raft_task_group_hash", source=source)
+            self.add_edge(file_node, group_node, "defines_bamboo_raft_task_group", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id, "rowIndex": row_index})
+            for task_index, task in enumerate(row.get("taskRefs") or []):
+                if not isinstance(task, dict):
+                    continue
+                task_id = safe_key(task.get("taskId"))
+                if not task_id:
+                    continue
+                mission_prefix = self.quest_task_mission_prefix(task_id)
+                task_node = self.add_quest_task_node(task_id, source=source, data={"taskId": task_id, "missionPrefix": mission_prefix})
+                self.add_edge(group_node, task_node, "bamboo_raft_group_has_task", source=source, evidence=f"taskRefs[{task_index}]", data=compact_payload(task, depth=1))
+                self.add_edge(file_node, task_node, "defines_bamboo_raft_task_ref", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id, "rowIndex": row_index, "taskIndex": task_index, "duplicateIdMatches": task.get("duplicateId") == task_id})
+                if mission_prefix:
+                    mission_node = self.add_mission_ref_node(mission_prefix, source=source)
+                    if mission_node:
+                        self.add_edge(task_node, mission_node, "quest_task_in_mission", source=source, evidence="taskIdPrefix")
 
     def navmesh_owner_from_entry(self, entry: dict[str, Any]) -> str:
         rel = safe_key(entry.get("dp") or entry.get("p"))
@@ -11584,10 +11673,12 @@ QUERY_KIND_PRIORITY = {
     "model_view_animator_name": 104,
     "dialog_id_table_config": 105,
     "dialog_registry_scene": 106,
-    "navmesh_area": 107,
-    "navmesh_area_id": 108,
-    "navmesh_state_container": 109,
-    "navmesh_state_record": 110,
+    "bamboo_raft_task_group": 107,
+    "quest_task": 108,
+    "navmesh_area": 109,
+    "navmesh_area_id": 110,
+    "navmesh_state_container": 111,
+    "navmesh_state_record": 112,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -11854,6 +11945,8 @@ NODE_ID_PREFIXES = (
     "model_view_animator_name",
     "dialog_id_table_config",
     "dialog_registry_scene",
+    "bamboo_raft_task_group",
+    "quest_task",
     "navmesh_area",
     "navmesh_area_id",
     "navmesh_state_container",
