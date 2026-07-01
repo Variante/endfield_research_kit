@@ -278,6 +278,8 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_SkillData.json",
     "Json_SpawnerConfig.json",
     "Json_Interactive.json",
+    "Json_LevelConfig.json",
+    "Json_LevelData.json",
     "Json_LevelScriptData.json",
     "Json_LevelScriptTemplateData.json",
     "Json_GameplayConfigWorldEntityRegistry.json",
@@ -288,6 +290,8 @@ DECODED_CONFIG_TARGET_TYPES = {
     "GameplayConfigWorldEntityRegistry",
     "InteractiveTable",
     "InteractiveTemplateData",
+    "LevelConfig",
+    "LevelData",
     "LevelScriptData",
     "LevelScriptTemplateData",
     "ModelRadiusTable",
@@ -835,6 +839,139 @@ def extract_level_script_template_entry_summary(entry: dict[str, Any]) -> dict[s
 LEVEL_SCRIPT_MISSIONISH_RE = re.compile(r"^[cer]\d+m\d+(?:[A-Za-z0-9_#-]*)?$", re.IGNORECASE)
 LEVEL_SCRIPT_TEMPLATE_PATH_RE = re.compile(r"(?:^|/)LevelScriptTemplateData/(?P<name>[^/\\]+)\.json$", re.IGNORECASE)
 
+
+LEVEL_DATA_MEMBER_COUNT = 42
+LEVEL_CONFIG_MEMBER_COUNT = 15
+LEVEL_DATA_STRING_MAX_SAMPLES = 512
+LEVEL_DATA_LEVEL_REF_RE = re.compile(
+    r"^(?:base\d+|map\d+|dung\d+|indie|main\d+|rgl\d+)_(?:lv|dg|rdg|ssdg)\d+[A-Za-z0-9_]*$",
+    re.IGNORECASE,
+)
+
+
+def parse_optional_int(value: Any) -> int | None:
+    text = safe_key(value)
+    if not text or text.lower() == "null":
+        return None
+    try:
+        return int(text)
+    except ValueError:
+        return None
+
+
+def level_data_scene_id_from_entry(entry: dict[str, Any]) -> str:
+    rel = safe_key(entry.get("p") or entry.get("dp"))
+    if not rel:
+        return ""
+    parts = Path(rel).parts
+    for index, part in enumerate(parts):
+        if part == "LevelData" and index + 1 < len(parts):
+            return safe_key(parts[index + 1])
+    return safe_key(Path(rel).parent.name)
+
+
+def level_data_node_key_from_entry(entry: dict[str, Any]) -> str:
+    return safe_key(entry.get("dp") or entry.get("p"))
+
+
+def level_data_string_ref_kind(value: Any, scene_id: str) -> str:
+    text = safe_key(value)
+    if not text or text == scene_id:
+        return ""
+    if text.startswith("sc_"):
+        return "level_script"
+    story_match = STORY_KEY_RE.search(text)
+    if story_match and story_match.group(0) == text:
+        return "story"
+    if LEVEL_SCRIPT_MISSIONISH_RE.match(text):
+        return "mission"
+    if text.startswith(("au_", "bark_")):
+        return "audio"
+    if text.startswith("P_") and len(text) > 2:
+        return "effect"
+    if text.startswith("buff_"):
+        return "buff"
+    if text.startswith("Montage/"):
+        return "montage"
+    if LEVEL_SCRIPT_TEMPLATE_PATH_RE.search(text):
+        return "template"
+    if text.startswith(("Assets/", "assets/")):
+        return "asset_path"
+    if LEVEL_DATA_LEVEL_REF_RE.match(text):
+        return "level"
+    if text.startswith("lt:") or text.startswith(("Task", "FinishObj_", "guide_")):
+        return "marker"
+    if is_buff_data_param_string(text) and not text.startswith(("guide_", "scene_", "base", "map", "dung", "indie", "Task", "FinishObj_", "lt:")):
+        return "param"
+    return ""
+
+
+def extract_level_config_summary(entry: dict[str, Any]) -> dict[str, Any]:
+    values = parse_summary_assignments(entry.get("t"))
+    level_id = safe_key(values.get("id")) or Path(safe_key(entry.get("p"))).stem
+    return {
+        "levelId": level_id,
+        "idStringVerified": safe_key(values.get("idString")) == "verified",
+        "idNum": parse_optional_int(values.get("idNum")),
+        "mapId": safe_key(values.get("mapId")),
+        "levelDataPathCount": parse_optional_int(values.get("levelDataPaths")) if values.get("levelDataPaths") is not None else entry.get("r"),
+        "scope": parse_optional_int(values.get("scope")),
+        "playerInitPos": safe_key(values.get("init")),
+        "rect": safe_key(values.get("rect")),
+        "defaultSceneConfigPath": safe_key(values.get("defaultScene")),
+        "memberCount": LEVEL_CONFIG_MEMBER_COUNT,
+        "exactLength": "exact length" in safe_key(entry.get("h")).lower() or "numeric tail parsed" in safe_key(entry.get("h")).lower(),
+    }
+
+
+def extract_level_data_summary(entry: dict[str, Any], data: bytes) -> dict[str, Any] | None:
+    if not data or data[0] != LEVEL_DATA_MEMBER_COUNT:
+        return None
+    scene_id = level_data_scene_id_from_entry(entry)
+    id_offsets = length_prefixed_utf8_marker_offsets(data, scene_id)
+    hits = scan_length_prefixed_utf8_string_hits(data, max_samples=LEVEL_DATA_STRING_MAX_SAMPLES, max_length=320)
+    refs: dict[str, list[dict[str, Any]]] = {
+        "level_script": [],
+        "story": [],
+        "mission": [],
+        "audio": [],
+        "effect": [],
+        "buff": [],
+        "montage": [],
+        "template": [],
+        "asset_path": [],
+        "level": [],
+        "marker": [],
+        "param": [],
+    }
+    seen: set[tuple[str, str]] = set()
+    for index, hit in enumerate(hits):
+        value = safe_key(hit.get("value"))
+        kind = level_data_string_ref_kind(value, scene_id)
+        if not kind:
+            continue
+        key = (kind, value)
+        if key in seen:
+            continue
+        seen.add(key)
+        refs[kind].append({
+            "index": index,
+            "offset": hit.get("offsetHex"),
+            "length": hit.get("length"),
+            "value": value,
+        })
+    return {
+        "sceneId": scene_id,
+        "memberCount": LEVEL_DATA_MEMBER_COUNT,
+        "sceneIdStringVerified": bool(id_offsets),
+        "sceneIdMarkerCount": len(id_offsets),
+        "sceneIdMarkerOffsets": [mp_format_offset(offset) for offset in id_offsets[:16]],
+        "sampledStringCount": len(hits),
+        "stringScanLimit": LEVEL_DATA_STRING_MAX_SAMPLES,
+        "refCounts": {kind: len(values) for kind, values in refs.items()},
+        "refs": refs,
+        "exactLength": False,
+    }
 
 def level_script_ref_kind(value: Any, owner_id: str) -> str:
     text = safe_key(value)
@@ -2172,6 +2309,10 @@ class SourceGraphBuilder:
             self.add_interactive_table_config_edges(file_node, entry)
         elif subtype == "InteractiveTemplateData":
             self.add_interactive_template_data_edges(file_node, entry)
+        elif subtype == "LevelConfig":
+            self.add_level_config_edges(file_node, entry)
+        elif subtype == "LevelData":
+            self.add_level_data_edges(file_node, entry)
         elif subtype == "LevelScriptData":
             self.add_level_script_data_edges(file_node, entry)
         elif subtype == "LevelScriptTemplateData":
@@ -2180,6 +2321,130 @@ class SourceGraphBuilder:
             self.add_world_entity_registry_edges(file_node, entry)
         elif subtype == "TeleportValidationDataTable":
             self.add_teleport_validation_config_edges(file_node, entry)
+
+    def add_level_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        summary = extract_level_config_summary(entry)
+        level_id = safe_key(summary.get("levelId"))
+        if not level_id:
+            return
+        config_node = self.add_node(
+            "level_config",
+            level_id,
+            name=level_id,
+            source="webui/game_data",
+            path=safe_key(entry.get("p")),
+            data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": summary}, depth=3),
+        )
+        self.add_edge(file_node, config_node, "level_config_data_defines_config", source="webui/game_data", evidence=safe_key(entry.get("dp")))
+        self.add_alias(level_id, config_node, kind="level_config_id", source="webui/game_data")
+        self.add_alias(entry.get("dp"), config_node, kind="level_config_path", source="webui/game_data")
+        self.add_alias(entry.get("p"), config_node, kind="level_config_data_path", source="webui/game_data")
+
+        level_node = self.add_level_node(level_id, source="webui/game_data")
+        self.add_edge(config_node, level_node, "level_config_defines_level", source="webui/game_data", evidence=safe_key(entry.get("dp")))
+        map_id = safe_key(summary.get("mapId"))
+        if map_id:
+            map_node = self.add_map_node(map_id, source="webui/game_data")
+            self.add_edge(config_node, map_node, "level_config_has_map_id", source="webui/game_data", evidence="mapId")
+            self.add_level_map_edge(level_node, level_id, source="webui/game_data", evidence="level_config_mapId", map_id=map_id)
+        default_scene = safe_key(summary.get("defaultSceneConfigPath"))
+        if default_scene:
+            scene_node = self.add_node(
+                "level_scene_config",
+                default_scene,
+                name=Path(default_scene).name,
+                source="webui/game_data",
+                path=default_scene,
+            )
+            self.add_alias(default_scene, scene_node, kind="level_scene_config_path", source="webui/game_data")
+            self.add_edge(config_node, scene_node, "level_config_uses_default_scene_config", source="webui/game_data", evidence="defaultScene")
+
+    def add_level_data_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        decoded = extract_level_data_summary(entry, self.read_decoded_config_bytes(entry))
+        if not decoded:
+            return
+        data_key = level_data_node_key_from_entry(entry)
+        scene_id = safe_key(decoded.get("sceneId"))
+        if not data_key or not scene_id:
+            return
+        data_node = self.add_node(
+            "level_data",
+            data_key,
+            name=Path(data_key).name,
+            source="webui/game_data",
+            path=safe_key(entry.get("p")),
+            data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": decoded}, depth=3),
+        )
+        self.add_edge(file_node, data_node, "level_data_file_defines_level_data", source="webui/game_data", evidence=safe_key(entry.get("dp")))
+        self.add_alias(data_key, data_node, kind="level_data_path", source="webui/game_data")
+        self.add_alias(entry.get("p"), data_node, kind="level_data_path", source="webui/game_data")
+        self.add_alias(Path(data_key).stem, data_node, kind="level_data_file_stem", source="webui/game_data")
+        self.add_alias(scene_id, data_node, kind="level_data_scene_id", source="webui/game_data")
+        level_node = self.add_level_node(scene_id, source="webui/game_data")
+        self.add_edge(level_node, data_node, "level_has_level_data", source="webui/game_data", evidence=Path(data_key).name)
+        self.add_level_map_edge(level_node, scene_id, source="webui/game_data", evidence="level_data_scene_id")
+        refs = decoded.get("refs") if isinstance(decoded.get("refs"), dict) else {}
+        self.add_level_data_reference_edges(data_node, refs, source="webui/game_data")
+
+    def add_level_data_reference_edges(self, data_node: str, refs: dict[str, list[dict[str, Any]]], *, source: str) -> None:
+        for ref_kind, values in refs.items():
+            if not isinstance(values, list):
+                continue
+            for ref in values:
+                if not isinstance(ref, dict):
+                    continue
+                value = safe_key(ref.get("value"))
+                if not value:
+                    continue
+                evidence = safe_key(ref.get("offset")) or f"strings[{ref.get('index')}]"
+                data = {"index": ref.get("index"), "offset": ref.get("offset"), "length": ref.get("length"), "value": value}
+                if ref_kind == "level_script":
+                    script_node = self.add_node("level_script", value, name=value, source=source)
+                    self.add_alias(value, script_node, kind="level_script_id", source=source)
+                    self.add_edge(data_node, script_node, "level_data_references_level_script", source=source, evidence=evidence, data=data)
+                elif ref_kind == "story":
+                    story_node = self.add_node("story", value, name=value, source=source)
+                    self.add_alias(value, story_node, kind="story_key", source=source)
+                    self.add_edge(data_node, story_node, "level_data_references_story", source=source, evidence=evidence, data=data)
+                elif ref_kind == "mission":
+                    mission_node = self.add_mission_ref_node(value, source=source)
+                    self.add_edge(data_node, mission_node, "level_data_references_mission", source=source, evidence=evidence, data=data)
+                elif ref_kind == "audio":
+                    self.add_audio_target_edge(data_node, value, edge_kind="level_data_references_audio", source=source, evidence=evidence)
+                elif ref_kind == "effect":
+                    effect_node = self.add_node("gameplay_effect", value, name=value, source=source)
+                    self.add_alias(value, effect_node, kind="gameplay_effect_id", source=source)
+                    self.add_edge(data_node, effect_node, "level_data_references_effect", source=source, evidence=evidence, data=data)
+                elif ref_kind == "buff":
+                    buff_node = self.add_buff_ref_node(value, source=source)
+                    self.add_edge(data_node, buff_node, "level_data_references_buff", source=source, evidence=evidence, data=data)
+                elif ref_kind == "montage":
+                    montage_node = self.add_level_script_montage_node(value, source=source)
+                    self.add_edge(data_node, montage_node, "level_data_references_montage", source=source, evidence=evidence, data=data)
+                elif ref_kind == "template":
+                    template_id = level_script_template_id_from_ref(value)
+                    if not template_id:
+                        continue
+                    template_node = self.add_node("level_script_template", template_id, name=template_id, source=source, data={"referencedPath": value})
+                    self.add_alias(template_id, template_node, kind="level_script_template_id", source=source)
+                    self.add_alias(value, template_node, kind="level_script_template_path", source=source)
+                    self.add_edge(data_node, template_node, "level_data_references_template", source=source, evidence=evidence, data=data)
+                elif ref_kind == "asset_path":
+                    asset_ref_node = self.add_node("level_asset_reference", value, name=Path(value).name, source=source, path=value)
+                    self.add_alias(value, asset_ref_node, kind="level_asset_path", source=source)
+                    self.add_edge(data_node, asset_ref_node, "level_data_references_asset_path", source=source, evidence=evidence, data=data)
+                elif ref_kind == "level":
+                    level_node = self.add_level_node(value, source=source)
+                    self.add_edge(data_node, level_node, "level_data_references_level", source=source, evidence=evidence, data=data)
+                    self.add_level_map_edge(level_node, value, source=source, evidence="level_data_reference")
+                elif ref_kind == "marker":
+                    marker_node = self.add_node("level_task_marker", value, name=value, source=source)
+                    self.add_alias(value, marker_node, kind="level_task_marker_id", source=source)
+                    self.add_edge(data_node, marker_node, "level_data_has_task_marker", source=source, evidence=evidence, data=data)
+                elif ref_kind == "param":
+                    param_node = self.add_node("level_data_param", value, name=value, source=source)
+                    self.add_alias(value, param_node, kind="level_data_param", source=source)
+                    self.add_edge(data_node, param_node, "level_data_has_param_string", source=source, evidence=evidence, data=data)
 
     def add_level_script_data_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         summary = extract_level_script_entry_summary(entry)
@@ -9794,11 +10059,17 @@ QUERY_KIND_PRIORITY = {
     "buff_icon": 67,
     "skill_parameter": 68,
     "skill_icon": 69,
-    "level_script": 70,
-    "level_script_template": 71,
-    "level_script_template_group": 72,
-    "level_script_start_type": 73,
-    "level_script_montage": 74,
+    "level_config": 70,
+    "level_data": 71,
+    "level_scene_config": 72,
+    "level_asset_reference": 73,
+    "level_task_marker": 74,
+    "level_data_param": 75,
+    "level_script": 76,
+    "level_script_template": 77,
+    "level_script_template_group": 78,
+    "level_script_start_type": 79,
+    "level_script_montage": 80,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,

@@ -345,13 +345,20 @@ file-to-script definition edges collapsed to 3,756 unique level scripts, 148
 level-folder links, 35 level-script templates, 20 template groups, 3 start types,
 120 montage refs, and high-signal string edges for 3,135 story keys, 393
 mission-like ids, 683 audio keys, 148 effect keys, 157 buff ids, and 27 template
-refs while preserving action-map/list-count totals. It does not prove runtime
-formula usage, full SpawnerConfig tail semantics, BuffData timeline action
-execution, SkillData target/action execution, LevelScript action-body control
-flow, full exported model/icon reconstruction, or runtime proof for effect asset
-dependencies. A strict suffix-normalized gameplay-effect-to-asset name-match now
-exists for a small slice, but the lean asset-index entity join for config model
-IDs is still empty.
+refs while preserving action-map/list-count totals. The LevelConfig/LevelData
+pass adds 290 LevelConfig file edges collapsed to 149 level configs, 1,593
+LevelData file edges collapsed to 810 level-data nodes, 149 config-to-level
+links, 139 config map-id links, 149 default-scene-config links, 810
+level-to-LevelData links, plus bounded LevelData string edges for 303 level
+scripts, 360 story keys, 511 mission-like ids, 26 audio keys, 103 effect keys, 5
+buff ids, 347 montage ids, 19 asset paths, 4,635 task markers, and 13,370
+parameter strings. It does not prove runtime formula usage, full SpawnerConfig
+tail semantics, BuffData timeline action execution, SkillData target/action
+execution, LevelScript action-body control flow, LevelData object placement or
+control flow, full exported model/icon reconstruction, or runtime proof for
+effect asset dependencies. A strict suffix-normalized gameplay-effect-to-asset
+name-match now exists for a small slice, but the lean asset-index entity join
+for config model IDs is still empty.
 
 Partial but useful current examples include:
 
@@ -368,6 +375,12 @@ Partial but useful current examples include:
   counts, UID counts, list-count summaries, and high-signal story/audio/effect/
   buff/template/montage references; generic keys, per-action bodies, and control
   flow remain bounded future work.
+- `LevelConfig`/`LevelData`: queryable level config/data inventory across 290
+  config files and 1,593 data files, including config-to-level/map/default-scene
+  links, level-to-data ownership, and bounded string references for scripts,
+  story keys, missions, audio, effects, buffs, montages, task markers, params,
+  and asset paths; object placement and control-flow semantics remain future
+  work.
 - `Interactive/InteractiveData`: 25-member template roots and many component
   bodies parse far enough to expose names, component families, property maps,
   audio rows, guide geometry, trigger observers, hittable data, and interactive
