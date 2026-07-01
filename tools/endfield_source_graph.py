@@ -959,13 +959,27 @@ class SourceGraphBuilder:
         if depth <= 0 or payload in (None, "", [], {}):
             return
         if isinstance(payload, dict):
-            for key in ("costs", "requiredItem", "requiredItems"):
+            for key in ("costs", "requiredItem", "requiredItems", "itemBundle", "items"):
                 self.add_gameplay_item_edges(owner_node, payload.get(key), evidence=f"{evidence}.{key}")
+            self.add_gameplay_gold_edge(owner_node, payload.get("goldCost"), evidence=f"{evidence}.goldCost")
             for key in ("rows", "checkpoints", "levels", "potentials", "breakthroughs", "formula", "suit", "propertyCurves"):
                 self.add_gameplay_required_items(owner_node, payload.get(key), evidence=f"{evidence}.{key}", depth=depth - 1)
         elif isinstance(payload, list):
             for item in payload:
                 self.add_gameplay_required_items(owner_node, item, evidence=evidence, depth=depth - 1)
+
+    def add_gameplay_gold_edge(self, owner_node: str, value: Any, *, evidence: str) -> None:
+        if not isinstance(value, (int, float)) or value <= 0:
+            return
+        item_node = self.add_node(
+            "item",
+            "item_gold",
+            name="item_gold",
+            source="webui/gameplay",
+            data={"id": "item_gold", "name": "item_gold"},
+        )
+        self.add_edge(owner_node, item_node, "requires_item", source="webui/gameplay", evidence=evidence, data={"count": value})
+        self.add_alias("item_gold", item_node, kind="item_id", source="webui/gameplay")
 
     def add_gameplay_item_edges(self, owner_node: str, items: Any, *, evidence: str) -> None:
         if not isinstance(items, list):
@@ -976,16 +990,20 @@ class SourceGraphBuilder:
             item_id = safe_key(item.get("id") or item.get("itemId"))
             if not item_id:
                 continue
+            count = item.get("count")
+            if isinstance(count, (int, float)) and count <= 0:
+                continue
             item_node = self.add_node(
                 "item",
                 item_id,
                 name=item.get("name") or item_id,
                 source="webui/gameplay",
-                data={"id": item_id, "name": item.get("name"), "count": item.get("count")},
+                data={"id": item_id, "name": item.get("name"), "count": count},
             )
-            self.add_edge(owner_node, item_node, "requires_item", source="webui/gameplay", evidence=evidence, data={"count": item.get("count")})
+            self.add_edge(owner_node, item_node, "requires_item", source="webui/gameplay", evidence=evidence, data={"count": count})
             self.add_alias(item_id, item_node, kind="item_id", source="webui/gameplay")
             self.add_alias(item.get("name"), item_node, kind="item_name", source="webui/gameplay")
+
     def add_story_node(self, story_key: str, data: dict[str, Any], *, path: str = "") -> str:
         summary = data.get("summary")
         if isinstance(summary, dict):
