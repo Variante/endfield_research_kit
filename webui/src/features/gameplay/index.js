@@ -13,6 +13,8 @@
       basicFilters: "\u57fa\u7840\u7b5b\u9009",
       kind: "\u7c7b\u578b",
       group: "\u5206\u7ec4",
+      job: "\u804c\u4e1a",
+      rareLevel: "\u7a00\u6709\u5ea6",
       listUnit: "\u6761",
       empty: "\u4ece\u5de6\u4fa7\u9009\u62e9\u4e00\u6761\u5b9e\u6218\u6570\u636e",
       noData: "\u5c1a\u672a\u6784\u5efa\u5b9e\u6218\u6570\u636e\u3002\u8fd0\u884c python scripts\\build_gameplay_data.py\u3002",
@@ -84,6 +86,16 @@
       stat_agi: "\u654f\u6377",
       stat_wis: "\u667a\u8bc6",
       stat_will: "\u610f\u5fd7",
+      stat_heal_output: "\u6cbb\u7597\u6548\u679c",
+      stat_skill_damage: "\u6218\u6280\u4f24\u5bb3",
+      stat_combo_skill_damage: "\u8fde\u643a\u6280\u4f24\u5bb3",
+      stat_normal_attack_damage: "\u666e\u653b\u4f24\u5bb3",
+      stat_physical_damage: "\u7269\u7406\u4f24\u5bb3",
+      stat_fire_damage: "\u706b\u70ed\u4f24\u5bb3",
+      stat_pulse_damage: "\u7535\u78c1\u4f24\u5bb3",
+      stat_cryst_damage: "\u5bd2\u51b7\u4f24\u5bb3",
+      stat_natural_damage: "\u81ea\u7136\u4f24\u5bb3",
+      stat_infliction: "\u6e90\u77f3\u6280\u827a\u5f3a\u5ea6",
       progression: "\u517b\u6210",
       upgradeCurve: "\u5347\u7ea7\u66f2\u7ebf",
       weaponBreakthroughs: "\u6b66\u5668\u7a81\u7834",
@@ -121,6 +133,8 @@
       basicFilters: "Basic filters",
       kind: "Kind",
       group: "Group",
+      job: "Job",
+      rareLevel: "Rare level",
       listUnit: "items",
       empty: "Select a gameplay entry",
       noData: "Gameplay data has not been built. Run python scripts\\build_gameplay_data.py.",
@@ -192,6 +206,16 @@
       stat_agi: "AGI",
       stat_wis: "WIS",
       stat_will: "WILL",
+      stat_heal_output: "Heal Output",
+      stat_skill_damage: "Skill DMG",
+      stat_combo_skill_damage: "Combo DMG",
+      stat_normal_attack_damage: "Normal ATK DMG",
+      stat_physical_damage: "Physical DMG",
+      stat_fire_damage: "Fire DMG",
+      stat_pulse_damage: "Pulse DMG",
+      stat_cryst_damage: "Cold DMG",
+      stat_natural_damage: "Natural DMG",
+      stat_infliction: "Infliction",
       progression: "Progression",
       upgradeCurve: "Upgrade curve",
       weaponBreakthroughs: "Weapon breakthroughs",
@@ -241,6 +265,8 @@
     filters: {
       kinds: new Set(),
       groups: new Set(),
+      jobs: new Set(),
+      rarities: new Set(),
     },
   };
 
@@ -349,9 +375,10 @@
     return `<div class="gameplay-fact"><span>${escapeHtml(label)}</span><b${opts.mono ? ' class="mono"' : ""}>${escapeHtml(display)}</b></div>`;
   }
 
-  function section(title, body) {
+  function section(title, body, opts = {}) {
     if (!body) return "";
-    return `<section class="gameplay-section"><h2>${escapeHtml(title)}</h2>${body}</section>`;
+    const open = opts.open === false ? "" : " open";
+    return `<details class="gameplay-section"${open}><summary><span>${escapeHtml(title)}</span></summary><div class="gameplay-section-body">${body}</div></details>`;
   }
 
   function storyWikiKey(entry) {
@@ -781,6 +808,61 @@
   }
 
 
+
+  function sortedSkillLevelsForGroup(group) {
+    const levels = new Set();
+    for (const skill of group.skills || []) {
+      for (const level of skill.levels || []) {
+        if (level && level.level !== undefined && level.level !== null) levels.add(String(level.level));
+      }
+    }
+    for (const row of group.levelUp || []) {
+      if (row && row.level !== undefined && row.level !== null) levels.add(String(row.level));
+    }
+    return [...levels].sort((a, b) => Number(a) - Number(b));
+  }
+
+  function levelForSkill(skill, levelValue) {
+    const wanted = String(levelValue || "");
+    return (skill.levels || []).find((level) => level && String(level.level) === wanted) || null;
+  }
+
+  function renderMergedSkillAction(skill, levelValue) {
+    const level = levelForSkill(skill, levelValue) || {};
+    const values = [renderBlackboard(level.blackboard), renderSubDesc(level.subDesc)].filter(Boolean).join("");
+    const desc = renderDescription(level.description || skill.description || "");
+    if (!values && !desc) return "";
+    return `<div class="gameplay-action-row">
+      <div class="gameplay-action-title">${escapeHtml(skill.name || skill.id || "")}</div>
+      ${desc}
+      ${values}
+    </div>`;
+  }
+
+  function renderSkillGroupPane(group, levelValue, active) {
+    const actionRows = (group.skills || []).map((skill) => renderMergedSkillAction(skill, levelValue)).filter(Boolean).join("");
+    const cost = renderUpgradeCost(levelUpForLevel({ level: levelValue }, group.levelUp || []));
+    return `<div class="gameplay-level-pane gameplay-merged-skill-pane" data-level-label="${escapeHtml(levelLabel({ level: levelValue }))}"${active ? "" : " hidden"}>
+      <div class="gameplay-action-stack">${actionRows || `<span class="muted">-</span>`}</div>
+      ${cost}
+    </div>`;
+  }
+
+  function renderMergedSkillGroupLevels(group) {
+    const levels = sortedSkillLevelsForGroup(group);
+    if (!levels.length) return "";
+    if (levels.length === 1) {
+      return `<div class="gameplay-level-table">${renderSkillGroupPane(group, levels[0], true)}</div>`;
+    }
+    return `<div class="gameplay-level-slider-wrap" data-level-card>
+      <div class="gameplay-level-slider-control">
+        <span>${escapeHtml(text("selectedLevel"))}</span>
+        <input class="gameplay-level-slider" type="range" min="0" max="${levels.length - 1}" step="1" value="0" aria-label="${escapeHtml(text("selectedLevel"))}">
+        <output class="gameplay-level-slider-output">${escapeHtml(levelLabel({ level: levels[0] }))}</output>
+      </div>
+      <div class="gameplay-level-panes">${levels.map((level, index) => renderSkillGroupPane(group, level, index === 0)).join("")}</div>
+    </div>`;
+  }
   function renderWeaponDetail(entry) {
     const facts = [
       fact(text("id"), entry.id, { mono: true }),
@@ -818,16 +900,15 @@
     ].filter(Boolean).join("");
     const groups = (entry.skillGroups || []).map((group) => {
       const actionIds = renderIdChips(group.actionSkillIds || []);
-      const levelUpRows = group.levelUp || [];
-      const skills = (group.skills || []).map((skill) => renderSkillCard(skill, { slider: true, levelUp: levelUpRows })).join("");
-      return `<section class="gameplay-group-card" data-linked-level-group>
+      const mergedLevels = renderMergedSkillGroupLevels(group);
+      return `<section class="gameplay-group-card">
         <header>
           <div class="gameplay-group-title">${escapeHtml(group.name || group.id || "")}</div>
           <div class="gameplay-skill-meta">${escapeHtml([group.typeLabel, group.id].filter(Boolean).join(" / "))}</div>
         </header>
         ${renderDescription(group.description)}
         ${actionIds ? `<div class="gameplay-subheading">${escapeHtml(text("actionSkillIds"))}</div>${actionIds}` : ""}
-        ${skills ? `<div class="gameplay-subheading">${escapeHtml(text("actionData"))}</div><div class="gameplay-action-stack">${skills}</div>` : ""}
+        ${mergedLevels ? `<div class="gameplay-subheading">${escapeHtml(text("actionData"))}</div>${mergedLevels}` : ""}
       </section>`;
     }).join("");
     const talentGroups = renderTalentGroups(entry.talentGroups || []);
@@ -838,7 +919,7 @@
         section(text("storyWiki"), renderStoryWikiLink(entry)),
         section(text("characterStats"), renderStats(entry.stats)),
         section(text("progression"), renderCharacterProgression(entry)),
-        section(text("characterSkills"), groups),
+        section(text("characterSkills"), groups ? `<div class="gameplay-character-skill-grid">${groups}</div>` : ""),
         section(text("talents"), talentGroups || (talentCards ? `<div class="gameplay-card-grid">${talentCards}</div>` : "")),
       ].join(""),
     };
@@ -864,32 +945,43 @@
     return effects ? `<div class="gameplay-card-grid">${effects}</div>` : "";
   }
 
-  function renderEquipmentFormula(entry) {
-    const formula = entry.formula || {};
-    if (!formula.formulaId && !(formula.costs || []).length) return "";
-    const details = renderChipPairs([
-      { label: text("formula"), value: formula.formulaId },
-      { label: text("pack"), value: formula.packId },
-      { label: text("unlock"), value: formula.unlockKey || formula.unlockValue || formula.unlockType },
-    ]);
-    const costs = renderMaterialChips(formula.costs || []);
-    return `<article class="gameplay-skill-card">
-      <header>
-        <div class="gameplay-skill-title">${escapeHtml(formula.formulaId || text("equipmentFormula"))}</div>
-        <div class="gameplay-skill-meta">${escapeHtml(entry.id || "")}</div>
-      </header>
-      ${details}
-      ${costs ? `<div class="gameplay-subheading">${escapeHtml(text("materials"))}</div>${costs}` : ""}
-    </article>`;
+  function renderEquipmentPropertyStats(stats) {
+    const curves = (stats && stats.propertyCurves || []).filter((curve) => curve && (curve.rows || []).length);
+    if (!curves.length) return renderStats(stats);
+    const cards = curves.map((curve) => {
+      const rows = (curve.rows || []).filter((row) => row && (row.attrs || []).length);
+      if (!rows.length) return "";
+      const body = rows.length > 1
+        ? `<div class="gameplay-level-slider-wrap gameplay-stat-slider" data-level-card>
+          <div class="gameplay-level-slider-control">
+            <span>${escapeHtml(text("selectedLevel"))}</span>
+            <input class="gameplay-level-slider" type="range" min="0" max="${rows.length - 1}" step="1" value="0" aria-label="${escapeHtml(text("selectedLevel"))}">
+            <output class="gameplay-level-slider-output">${escapeHtml(statLevelLabel(rows[0]))}</output>
+          </div>
+          <div class="gameplay-level-panes">${rows.map((row, index) => renderStatPane(row, index === 0)).join("")}</div>
+        </div>`
+        : `<div class="gameplay-level-table"><div class="gameplay-level-row gameplay-stat-row">
+          <div class="gameplay-level-num">${escapeHtml(statLevelLabel(rows[0]))}</div>
+          <div class="gameplay-level-effect">${renderStatAttrs(rows[0]) || `<span class="muted">-</span>`}</div>
+          <div class="gameplay-level-values"></div>
+        </div></div>`;
+      return `<article class="gameplay-skill-card gameplay-stat-card">
+        <header>
+          <div class="gameplay-skill-title">${escapeHtml(curve.label || curve.key || "")}</div>
+          <div class="gameplay-skill-meta">${escapeHtml([stats.source, curve.compositeAttr].filter(Boolean).join(" / "))}</div>
+        </header>
+        ${body}
+      </article>`;
+    }).filter(Boolean).join("");
+    return cards ? `<div class="gameplay-equipment-property-grid">${cards}</div>` : "";
   }
-
   function renderEquipmentDetail(entry) {
     const facts = [
       fact(text("id"), entry.id, { mono: true }),
       fact(text("rarity"), entry.rarity),
-      fact(text("partType"), entry.partTypeLabel || entry.partType),
+      fact(text("partType"), entry.showingTypeLabel || entry.partTypeLabel || entry.partType),
       fact(text("minWearLevel"), entry.minWearLv),
-      fact(text("domain"), entry.domainId, { mono: true }),
+      fact(text("domain"), entry.domainName || (entry.domain && entry.domain.name) || entry.domainId),
       fact(text("suit"), entry.suit && (entry.suit.name || entry.suit.id)),
       fact(text("source"), `${entry.source && entry.source.table || ""} / ${entry.source && entry.source.id || ""}`, { mono: true }),
     ].filter(Boolean).join("");
@@ -900,11 +992,29 @@
         section(text("itemDescription"), renderDescription(entry.itemDescription)),
         section(text("description"), renderDescription(entry.description)),
         section(text("displayAttrs"), renderStatAttrs(entry.stats && entry.stats.displayAttrs || [])),
-        section(text("equipmentStats"), renderStats(entry.stats)),
+        section(text("equipmentStats"), renderEquipmentPropertyStats(entry.stats)),
         section(text("equipmentSuit"), renderEquipmentSuit(entry)),
         section(text("equipmentFormula"), renderEquipmentFormula(entry)),
       ].join(""),
     };
+  }
+  function renderEquipmentFormula(entry) {
+    const formula = entry.formula || {};
+    if (!formula.formulaName && !(formula.costs || []).length) return "";
+    const details = renderChipPairs([
+      { label: text("formula"), value: formula.formulaName || formula.name },
+      { label: text("pack"), value: formula.packName },
+      { label: text("unlock"), value: formula.unlockName || formula.unlockValue || formula.unlockType },
+    ]);
+    const costs = renderMaterialChips(formula.costs || []);
+    return `<article class="gameplay-skill-card">
+      <header>
+        <div class="gameplay-skill-title">${escapeHtml(formula.formulaName || formula.name || text("equipmentFormula"))}</div>
+        <div class="gameplay-skill-meta">${escapeHtml([formula.packName, formula.unlockName].filter(Boolean).join(" / "))}</div>
+      </header>
+      ${details}
+      ${costs ? `<div class="gameplay-subheading">${escapeHtml(text("materials"))}</div>${costs}` : ""}
+    </article>`;
   }
   function syncLevelCard(input) {
     const card = input.closest("[data-level-card]");
@@ -917,7 +1027,6 @@
     const output = card.querySelector(".gameplay-level-slider-output");
     if (output && panes[index]) output.textContent = panes[index].dataset.levelLabel || "";
   }
-
   function syncLevelSlider(input) {
     const group = input.closest("[data-linked-level-group]");
     const sliders = group ? [...group.querySelectorAll(".gameplay-level-slider")] : [input];
@@ -1008,13 +1117,43 @@
     return map;
   }
 
+
+  function jobFilterKey(entry) {
+    if (!entry || entry.kind !== "character") return "";
+    return String(entry.profession !== undefined && entry.profession !== null && entry.profession !== "" ? entry.profession : (entry.professionLabel || ""));
+  }
+
+  function jobFilterLabel(entry) {
+    return entry && (entry.professionLabel || entry.profession || "");
+  }
+
+  function rarityFilterKey(entry) {
+    return entry && entry.rarity !== undefined && entry.rarity !== null && entry.rarity !== "" ? String(entry.rarity) : "";
+  }
+
+  function rarityFilterLabel(value) {
+    return `${text("rareLevel")} ${formatValue(value)}`;
+  }
   function buildFilterChips() {
     const kindCounts = countBy(STATE.entries, (entry) => entry.kind);
     const groupCounts = countBy(STATE.entries, (entry) => entry.group);
+    const jobCounts = countBy(STATE.entries, (entry) => jobFilterKey(entry));
+    const rarityCounts = countBy(STATE.entries, (entry) => rarityFilterKey(entry));
+    const jobLabels = new Map(STATE.entries.map((entry) => [jobFilterKey(entry), jobFilterLabel(entry)]).filter(([value]) => value));
     const kindItems = [...kindCounts.keys()].sort().map((value) => ({ value, label: kindLabel(value), count: kindCounts.get(value) }));
     const groupItems = [...groupCounts.keys()].sort().map((value) => ({ value, label: value, count: groupCounts.get(value) }));
+    const jobItems = [...jobCounts.keys()].sort((a, b) => String(jobLabels.get(a) || a).localeCompare(String(jobLabels.get(b) || b))).map((value) => ({ value, label: jobLabels.get(value) || value, count: jobCounts.get(value) }));
+    const rarityItems = [...rarityCounts.keys()].sort((a, b) => Number(b) - Number(a)).map((value) => ({ value, label: rarityFilterLabel(value), count: rarityCounts.get(value) }));
     window.WebUI.filters.buildChips("#gameplay-kind-filter", kindItems, {
       active: STATE.filters.kinds,
+      onToggle: () => applyFilters(),
+    });
+    window.WebUI.filters.buildChips("#gameplay-job-filter", jobItems, {
+      active: STATE.filters.jobs,
+      onToggle: () => applyFilters(),
+    });
+    window.WebUI.filters.buildChips("#gameplay-rarity-filter", rarityItems, {
+      active: STATE.filters.rarities,
       onToggle: () => applyFilters(),
     });
     window.WebUI.filters.buildChips("#gameplay-group-filter", groupItems, {
@@ -1022,11 +1161,12 @@
       onToggle: () => applyFilters(),
     });
   }
-
   function applyFilters() {
     const q = String((gp$("#gameplay-q") && gp$("#gameplay-q").value) || "").trim().toLowerCase();
     STATE.filtered = STATE.entries.filter((entry) => {
       if (STATE.filters.kinds.size && !STATE.filters.kinds.has(entry.kind)) return false;
+      if (STATE.filters.jobs.size && !STATE.filters.jobs.has(jobFilterKey(entry))) return false;
+      if (STATE.filters.rarities.size && !STATE.filters.rarities.has(rarityFilterKey(entry))) return false;
       if (STATE.filters.groups.size && !STATE.filters.groups.has(entry.group)) return false;
       if (q) {
         const haystack = [entry.search, entry.title, entry.id, entry.group, entry.subtitle].join(" ");
@@ -1052,6 +1192,8 @@
     if (q) q.value = "";
     STATE.filters.kinds.clear();
     STATE.filters.groups.clear();
+    STATE.filters.jobs.clear();
+    STATE.filters.rarities.clear();
     buildFilterChips();
     applyFilters();
   }
@@ -1063,6 +1205,8 @@
       ["#gameplay-count-label", "countLabel"],
       ["#gameplay-basic-filter-label", "basicFilters"],
       ["#gameplay-kind-label", "kind"],
+      ["#gameplay-job-label", "job"],
+      ["#gameplay-rarity-label", "rareLevel"],
       ["#gameplay-group-label", "group"],
       ["#gameplay-reset", "reset"],
       ["#gameplay-list-meta-label", "listUnit"],

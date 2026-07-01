@@ -665,6 +665,14 @@ extending to level 99 while the playable level curve caps at 90. This improves
 practical access to numerical progression data, but it still stops short of
 full formula/runtime simulation.
 
+2026-07-01 WebUI equipment-stat progress: Equipment entries now expose
+localized part/domain/formula/suit context plus per-property stat curves derived
+from `EquipTable` display attributes and enhancement arrays. The current CN
+Gameplay payload verifies 220 equipment entries and 618 equipment property
+curves. These curves make equipment progression inspectable in the WebUI, while
+formula evaluation and exact runtime combat math remain outside the static
+payload.
+
 2026-07-01 source graph progress: `tools/endfield_source_graph.py` now ingests
 the generated Gameplay payload as evidence graph nodes and relationships. A
 fast CN verification build with `--skip-asset-maps --skip-reference-rows --skip-followups` produced 322 Gameplay entry edges, 72 weapon nodes, 220
