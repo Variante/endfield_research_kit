@@ -1514,16 +1514,19 @@ prefix matches were rejected because they create false collisions. This improves
 lookup for effect-adjacent exported assets but remains export-filename evidence,
 not runtime dependency proof.
 
-2026-07-01 model config asset-binding audit:
-`memory/model_config_asset_binding_audit_20260701.md` verifies that decoded
-`ModelTable` rows still do not bind to renderable `asset_entity` groups through
-exact or prefix `modelId`/prefab-stem matching. The current fast graph has 1,201
-`model_config_model` rows and 10,424 renderable asset entities, but 0 exact or
-prefix config-to-renderable matches, 0 `model_config_asset_entity` edges, and 0
-`interactive_template_asset_entity` edges. Several highly used interactive
-postmodels, such as `int_doodad_ore_cluster_iron`, have world/entity consumers
-and prefab paths but no exported renderable owner link yet. The likely next
-step is prefab/component or asset-map evidence, not looser filename matching.
+2026-07-01 postmodel asset-binding progress: source graph asset ingestion now
+adds exported model files whose normalized stem ends in `_postmodel` to
+`asset_entity` groups, alongside the existing LOD model grouping. Decoded model
+references match exact normalized bases, append-only `_postmodel` variants, and
+the existing delimiter-boundary entity-prefix rule. A fast CN temp graph build
+verified 10,678 `asset_entity` nodes and recovered 215
+`model_config_asset_entity`, 82 `interactive_template_asset_entity`, and 86
+`model_view_state_controller_asset_entity` edges. Example resolved lookups are
+`chr_0012_avywen_postmodel`, `int_collection_common`, and
+`int_base01_autodoor_1`. This improves direct renderable lookup for decoded
+model, interactive, and MVSC data, but it is still filename/export evidence and
+not a semantic remap from gameplay ids to unrelated actor, monster, or broad
+substring asset families.
 
 The deeper semantic model is still incomplete:
 

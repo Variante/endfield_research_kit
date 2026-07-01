@@ -445,13 +445,28 @@ def normalized_model_entity_base(stem: str) -> str:
     return ASSET_LOD_SUFFIX_RE.sub("", stripped).lower()
 
 
-def lod_model_entity_base(rel: str) -> str:
+def model_asset_entity_candidate_bases(token: Any) -> list[str]:
+    token_key = safe_key(token)
+    if not token_key:
+        return []
+    candidates: list[str] = []
+    for value in (token_key, Path(token_key).stem):
+        base = normalized_model_entity_base(value)
+        if not base:
+            continue
+        candidates.append(base)
+        if not base.endswith("_postmodel"):
+            candidates.append(f"{base}_postmodel")
+    return _unique_preserve(candidate for candidate in candidates if candidate)
+
+
+def exported_model_entity_base(rel: str) -> str:
     stem = Path(rel).stem
     logical_stem = path_id_export_base_stem(stem) or stem
     stripped = ASSET_SINGLE_PREFIX_RE.sub("", logical_stem, count=1)
-    if not ASSET_LOD_SUFFIX_RE.search(stripped):
-        return ""
-    return normalized_model_entity_base(stem)
+    if ASSET_LOD_SUFFIX_RE.search(stripped) or stripped.lower().endswith("_postmodel"):
+        return normalized_model_entity_base(stem)
+    return ""
 
 
 def compact_payload(value: Any, *, depth: int = 2, list_limit: int = 12) -> Any:
@@ -2580,7 +2595,7 @@ class SourceGraphBuilder:
             if pid:
                 add_pid_aliases(pid, node)
             if kind == "model":
-                model_base = lod_model_entity_base(rel)
+                model_base = exported_model_entity_base(rel)
                 if model_base:
                     source = rel.split("/", 1)[0]
                     entity_key = (source, model_base)
@@ -2855,11 +2870,7 @@ class SourceGraphBuilder:
             token_key = safe_key(token)
             if not token_key:
                 continue
-            candidate_bases = _unique_preserve(
-                normalized_model_entity_base(value)
-                for value in (token_key, Path(token_key).stem)
-                if safe_key(value)
-            )
+            candidate_bases = model_asset_entity_candidate_bases(token_key)
             for base in candidate_bases:
                 if not base:
                     continue
