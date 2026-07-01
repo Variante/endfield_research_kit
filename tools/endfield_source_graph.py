@@ -194,6 +194,7 @@ class SourceGraphBuilder:
         root: Path = ROOT,
         export_root: Path = EXPORT_ROOT,
         language: str = "CN",
+        include_gameplay: bool = True,
         include_asset_maps: bool = True,
         include_reference_rows: bool = True,
         include_all_material_json: bool = False,
@@ -202,6 +203,7 @@ class SourceGraphBuilder:
         self.root = root
         self.export_root = export_root
         self.language = language
+        self.include_gameplay = include_gameplay
         self.db_path = db_path
         self.include_asset_maps = include_asset_maps
         self.include_reference_rows = include_reference_rows
@@ -395,6 +397,9 @@ class SourceGraphBuilder:
             self.commit_step("videos")
             self.ingest_webui_story()
             self.commit_step("story")
+            if self.include_gameplay:
+                self.ingest_gameplay()
+                self.commit_step("gameplay")
             self.ingest_timeline_line_orders()
             self.commit_step("timelineLineOrders")
             self.ingest_story_source_links()
@@ -515,6 +520,283 @@ class SourceGraphBuilder:
             self.add_scene_graph_edges(conv, story_node)
             self.add_recovery_warnings(conv, story_node)
 
+    def ingest_gameplay(self) -> None:
+        path = WEBUI_DATA / "lang" / self.language / "gameplay" / "index.json"
+        payload = read_json(path, {})
+        if not isinstance(payload, dict):
+            return
+        entries = [entry for entry in payload.get("entries") or [] if isinstance(entry, dict)]
+        if not entries:
+            return
+        dataset = self.add_node(
+            "dataset",
+            f"gameplay_{self.language}",
+            name=f"Gameplay {self.language}",
+            source="webui/gameplay",
+            path=slash(path),
+            data={"counts": payload.get("counts"), "entryCount": len(entries)},
+        )
+        language_node = self.add_node("language", self.language, name=self.language)
+        self.add_edge(language_node, dataset, "has_gameplay_dataset", source="webui/gameplay")
+        self.add_file(slash(path), kind="gameplay_index", source=self.language)
+        for entry in entries:
+            self.add_gameplay_entry(dataset, entry)
+
+    def add_gameplay_entry(self, dataset_node: str, entry: dict[str, Any]) -> None:
+        entry_id = safe_key(entry.get("id"))
+        if not entry_id:
+            return
+        kind = safe_key(entry.get("kind")) or "entry"
+        node_kind = {"weapon": "weapon", "equipment": "equipment", "character": "character"}.get(kind, "gameplay_entry")
+        stats = entry.get("stats") if isinstance(entry.get("stats"), dict) else {}
+        node = self.add_node(
+            node_kind,
+            entry_id,
+            name=entry.get("title") or entry_id,
+            source="webui/gameplay",
+            data={
+                "kind": kind,
+                "title": entry.get("title"),
+                "subtitle": entry.get("subtitle"),
+                "group": entry.get("group"),
+                "rarity": entry.get("rarity"),
+                "weaponType": entry.get("weaponType"),
+                "weaponTypeLabel": entry.get("weaponTypeLabel"),
+                "element": entry.get("element"),
+                "elementLabel": entry.get("elementLabel"),
+                "profession": entry.get("profession"),
+                "professionLabel": entry.get("professionLabel"),
+                "partType": entry.get("partType"),
+                "partTypeLabel": entry.get("partTypeLabel"),
+                "source": entry.get("source"),
+                "stats": self.gameplay_progression_summary(stats),
+            },
+        )
+        self.add_edge(dataset_node, node, "has_gameplay_entry", source="webui/gameplay", evidence=kind)
+        for alias, alias_kind in (
+            (entry_id, f"{node_kind}_id"),
+            (entry.get("title"), f"{node_kind}_name"),
+            (entry.get("subtitle"), f"{node_kind}_alias"),
+            (entry.get("internalName"), f"{node_kind}_alias"),
+            (entry.get("engName"), f"{node_kind}_alias"),
+            (entry.get("fileName"), "model_name"),
+            (entry.get("modelPath"), "model_path"),
+            (entry.get("iconId"), "icon_id"),
+        ):
+            self.add_alias(alias, node, kind=alias_kind, source="webui/gameplay")
+        self.add_gameplay_source_edges(node, entry.get("source"))
+
+        default_weapon_id = safe_key(entry.get("defaultWeaponId"))
+        if default_weapon_id:
+            weapon_node = self.add_node("weapon", default_weapon_id, name=entry.get("defaultWeaponName") or default_weapon_id, source="webui/gameplay")
+            self.add_edge(node, weapon_node, "default_weapon", source="webui/gameplay")
+
+        for label in ("stats", "upgrade", "breakthrough", "levelCurve", "breakthroughs", "potentials", "formula", "suit"):
+            self.add_gameplay_progression_node(node, entry_id, label, entry.get(label))
+
+        for index, skill in enumerate(entry.get("skills") or []):
+            if isinstance(skill, dict):
+                self.add_gameplay_skill(node, skill, edge_kind="has_weapon_skill", owner_key=entry_id, index=index)
+
+        for index, group in enumerate(entry.get("skillGroups") or []):
+            if not isinstance(group, dict):
+                continue
+            group_id = safe_key(group.get("id") or f"group_{index}")
+            group_node = self.add_node(
+                "gameplay_skill_group",
+                f"{entry_id}:{group_id}",
+                name=group.get("name") or group_id,
+                source="webui/gameplay",
+                data={
+                    "id": group.get("id"),
+                    "type": group.get("type"),
+                    "typeLabel": group.get("typeLabel"),
+                    "name": group.get("name"),
+                    "description": compact_text(group.get("description"), 500),
+                    "actionSkillIds": group.get("actionSkillIds"),
+                    "levelUp": self.gameplay_progression_summary(group.get("levelUp")),
+                },
+            )
+            self.add_edge(node, group_node, "has_skill_group", source="webui/gameplay")
+            self.add_alias(group.get("id"), group_node, kind="gameplay_skill_group_id", source="webui/gameplay")
+            self.add_alias(group.get("name"), group_node, kind="gameplay_skill_group_name", source="webui/gameplay")
+            self.add_gameplay_required_items(group_node, group.get("levelUp"), evidence="skillGroup.levelUp")
+            for skill_index, skill in enumerate(group.get("skills") or []):
+                if isinstance(skill, dict):
+                    self.add_gameplay_skill(group_node, skill, edge_kind="has_action_skill", owner_key=f"{entry_id}:{group_id}", index=skill_index)
+
+        for index, group in enumerate(entry.get("talentGroups") or []):
+            if isinstance(group, dict):
+                self.add_gameplay_talent_group(node, entry_id, group, index)
+        if not entry.get("talentGroups"):
+            for index, talent in enumerate(entry.get("talents") or []):
+                if isinstance(talent, dict):
+                    self.add_gameplay_talent(node, f"{entry_id}:talents", talent, index)
+
+    def add_gameplay_source_edges(self, owner_node: str, source: Any, *, edge_kind: str = "defined_by_row") -> None:
+        if not isinstance(source, dict):
+            return
+        row_id = safe_key(source.get("id"))
+        if not row_id:
+            return
+        for key, kind in (("table", edge_kind), ("nameTable", "named_by_row")):
+            table_name = safe_key(source.get(key))
+            if not table_name:
+                continue
+            table_key = Path(table_name).stem
+            table_node = self.add_node("table", table_key, name=table_key, source="webui/gameplay")
+            row_node = self.add_node("table_row", f"{table_key}:{row_id}", name=row_id, source=table_key)
+            self.add_edge(table_node, row_node, "has_row", source="webui/gameplay")
+            self.add_edge(owner_node, row_node, kind, source="webui/gameplay", evidence=table_name)
+
+    def gameplay_progression_summary(self, payload: Any) -> dict[str, Any]:
+        if isinstance(payload, dict):
+            out = {
+                key: payload.get(key)
+                for key in (
+                    "source",
+                    "templateId",
+                    "rowCount",
+                    "rawRowCount",
+                    "maxLevel",
+                    "rawMaxLevel",
+                    "playableMaxLevel",
+                    "extraRowsBeyondPlayable",
+                )
+                if payload.get(key) not in (None, "", [], {})
+            }
+            for key in ("rows", "checkpoints", "levels", "costs", "requiredItem", "displayAttrs"):
+                if isinstance(payload.get(key), list):
+                    out[f"{key}Count"] = len(payload[key])
+            return out
+        if isinstance(payload, list):
+            return {"count": len(payload), "preview": compact_payload(payload[:2], depth=2, list_limit=4)}
+        return {}
+
+    def add_gameplay_progression_node(self, owner_node: str, owner_key: str, label: str, payload: Any) -> str:
+        if payload in (None, "", [], {}):
+            return ""
+        data = self.gameplay_progression_summary(payload)
+        if not data:
+            data = compact_payload(payload, depth=2, list_limit=6)
+        node = self.add_node(
+            "gameplay_progression",
+            f"{owner_key}:{label}",
+            name=f"{owner_key} {label}",
+            source="webui/gameplay",
+            data=data,
+        )
+        self.add_edge(owner_node, node, "has_gameplay_progression", source="webui/gameplay", evidence=label)
+        self.add_gameplay_required_items(node, payload, evidence=label)
+        return node
+
+    def add_gameplay_skill(self, owner_node: str, skill: dict[str, Any], *, edge_kind: str, owner_key: str, index: int) -> str:
+        skill_id = safe_key(skill.get("id") or f"skill_{index}")
+        node = self.add_node(
+            "gameplay_skill",
+            skill_id,
+            name=skill.get("name") or skill_id,
+            source="webui/gameplay",
+            data={
+                "id": skill.get("id"),
+                "name": skill.get("name"),
+                "description": compact_text(skill.get("description"), 500),
+                "maxDescription": compact_text(skill.get("maxDescription"), 500),
+                "levelCount": skill.get("levelCount"),
+                "source": skill.get("source"),
+            },
+        )
+        self.add_edge(owner_node, node, edge_kind, source="webui/gameplay", evidence=str(index))
+        self.add_alias(skill.get("id"), node, kind="gameplay_skill_id", source="webui/gameplay")
+        self.add_alias(skill.get("name"), node, kind="gameplay_skill_name", source="webui/gameplay")
+        self.add_gameplay_source_edges(node, skill.get("source"))
+        self.add_gameplay_required_items(node, skill, evidence="skill")
+        return node
+
+    def add_gameplay_talent_group(self, owner_node: str, owner_key: str, group: dict[str, Any], index: int) -> str:
+        group_id = safe_key(group.get("id") or f"talent_group_{index}")
+        node = self.add_node(
+            "gameplay_talent_group",
+            f"{owner_key}:{group_id}",
+            name=group.get("title") or group_id,
+            source="webui/gameplay",
+            data={
+                "id": group.get("id"),
+                "kind": group.get("kind"),
+                "kindLabel": group.get("kindLabel"),
+                "rank": group.get("rank"),
+                "rankIndex": group.get("rankIndex"),
+                "title": group.get("title"),
+                "levelCount": len(group.get("levels") or []),
+            },
+        )
+        self.add_edge(owner_node, node, "has_talent_group", source="webui/gameplay", evidence=str(index))
+        self.add_alias(group.get("id"), node, kind="gameplay_talent_group_id", source="webui/gameplay")
+        self.add_alias(group.get("title"), node, kind="gameplay_talent_group_name", source="webui/gameplay")
+        for level_index, level in enumerate(group.get("levels") or []):
+            if isinstance(level, dict):
+                self.add_gameplay_talent(node, f"{owner_key}:{group_id}", level, level_index)
+        return node
+
+    def add_gameplay_talent(self, owner_node: str, owner_key: str, talent: dict[str, Any], index: int) -> str:
+        talent_id = safe_key(talent.get("id") or f"talent_{index}")
+        node = self.add_node(
+            "gameplay_talent",
+            f"{owner_key}:{talent_id}:{index}",
+            name=talent.get("title") or talent_id,
+            source="webui/gameplay",
+            data={
+                "id": talent.get("id"),
+                "nodeType": talent.get("nodeType"),
+                "typeLabel": talent.get("typeLabel"),
+                "kind": talent.get("kind"),
+                "kindLabel": talent.get("kindLabel"),
+                "title": talent.get("title"),
+                "description": compact_text(talent.get("description"), 500),
+                "level": talent.get("level"),
+                "rank": talent.get("rank"),
+                "breakStage": talent.get("breakStage"),
+                "source": talent.get("source"),
+            },
+        )
+        self.add_edge(owner_node, node, "has_talent", source="webui/gameplay", evidence=str(index))
+        self.add_alias(talent.get("id"), node, kind="gameplay_talent_id", source="webui/gameplay")
+        self.add_alias(talent.get("title"), node, kind="gameplay_talent_name", source="webui/gameplay")
+        self.add_gameplay_source_edges(node, talent.get("source"))
+        self.add_gameplay_required_items(node, talent, evidence="talent")
+        return node
+
+    def add_gameplay_required_items(self, owner_node: str, payload: Any, *, evidence: str, depth: int = 4) -> None:
+        if depth <= 0 or payload in (None, "", [], {}):
+            return
+        if isinstance(payload, dict):
+            for key in ("costs", "requiredItem", "requiredItems"):
+                self.add_gameplay_item_edges(owner_node, payload.get(key), evidence=f"{evidence}.{key}")
+            for key in ("rows", "checkpoints", "levels", "potentials", "breakthroughs", "formula", "suit"):
+                self.add_gameplay_required_items(owner_node, payload.get(key), evidence=f"{evidence}.{key}", depth=depth - 1)
+        elif isinstance(payload, list):
+            for item in payload:
+                self.add_gameplay_required_items(owner_node, item, evidence=evidence, depth=depth - 1)
+
+    def add_gameplay_item_edges(self, owner_node: str, items: Any, *, evidence: str) -> None:
+        if not isinstance(items, list):
+            return
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            item_id = safe_key(item.get("id") or item.get("itemId"))
+            if not item_id:
+                continue
+            item_node = self.add_node(
+                "item",
+                item_id,
+                name=item.get("name") or item_id,
+                source="webui/gameplay",
+                data={"id": item_id, "name": item.get("name"), "count": item.get("count")},
+            )
+            self.add_edge(owner_node, item_node, "requires_item", source="webui/gameplay", evidence=evidence, data={"count": item.get("count")})
+            self.add_alias(item_id, item_node, kind="item_id", source="webui/gameplay")
+            self.add_alias(item.get("name"), item_node, kind="item_name", source="webui/gameplay")
     def add_story_node(self, story_key: str, data: dict[str, Any], *, path: str = "") -> str:
         summary = data.get("summary")
         if isinstance(summary, dict):
@@ -1573,6 +1855,7 @@ class SourceGraphBuilder:
             "edgesByKind": edges_by_kind,
             "filesByKind": files_by_kind,
             "options": {
+                "includeGameplay": self.include_gameplay,
                 "includeAssetMaps": self.include_asset_maps,
                 "includeReferenceRows": self.include_reference_rows,
                 "includeAllMaterialJson": self.include_all_material_json,
@@ -1849,9 +2132,18 @@ QUERY_KIND_PRIORITY = {
     "timeline_option_route": 5,
     "runtime_jump_clip": 6,
     "mission": 7,
-    "actor": 8,
-    "audio": 9,
-    "file": 10,
+    "character": 8,
+    "weapon": 9,
+    "equipment": 10,
+    "item": 11,
+    "gameplay_skill_group": 12,
+    "gameplay_skill": 13,
+    "gameplay_talent_group": 14,
+    "gameplay_talent": 15,
+    "gameplay_progression": 16,
+    "actor": 17,
+    "audio": 18,
+    "file": 19,
 }
 
 NODE_ID_PREFIXES = (
@@ -1860,6 +2152,15 @@ NODE_ID_PREFIXES = (
     "option",
     "line",
     "mission",
+    "character",
+    "weapon",
+    "equipment",
+    "item",
+    "gameplay_skill_group",
+    "gameplay_skill",
+    "gameplay_talent_group",
+    "gameplay_talent",
+    "gameplay_progression",
     "actor",
     "audio",
     "video",
@@ -1869,7 +2170,6 @@ NODE_ID_PREFIXES = (
     "file",
     "table_row",
 )
-
 OPTION_BRANCH_EDGE_KINDS = (
     "option_anchor_after",
     "option_first_line",
@@ -1938,13 +2238,22 @@ def resolve_seed_node(conn: sqlite3.Connection, term: str, nodes: list[dict[str,
           CASE aliases.kind
             WHEN 'story_key' THEN 0
             WHEN 'line_id' THEN 1
-            ELSE 2
+            WHEN 'character_id' THEN 2
+            WHEN 'weapon_id' THEN 3
+            WHEN 'equipment_id' THEN 4
+            WHEN 'item_id' THEN 5
+            WHEN 'gameplay_skill_id' THEN 6
+            ELSE 9
           END,
           CASE nodes.kind
             WHEN 'story' THEN 0
             WHEN 'option' THEN 1
             WHEN 'line' THEN 2
-            ELSE 3
+            WHEN 'character' THEN 3
+            WHEN 'weapon' THEN 4
+            WHEN 'equipment' THEN 5
+            WHEN 'item' THEN 6
+            ELSE 9
           END
         LIMIT 1
         """,
@@ -2434,6 +2743,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     build = sub.add_parser("build", help="Build the SQLite source graph")
     build.add_argument("--db", type=Path, default=DEFAULT_DB)
     build.add_argument("--language", default="CN")
+    build.add_argument("--skip-gameplay", action="store_true")
     build.add_argument("--skip-asset-maps", action="store_true")
     build.add_argument("--skip-reference-rows", action="store_true")
     build.add_argument("--include-all-material-json", action="store_true")
@@ -2464,6 +2774,7 @@ def main(argv: list[str] | None = None) -> int:
         builder = SourceGraphBuilder(
             db_path=args.db if hasattr(args, "db") else DEFAULT_DB,
             language=getattr(args, "language", "CN"),
+            include_gameplay=not getattr(args, "skip_gameplay", False),
             include_asset_maps=not getattr(args, "skip_asset_maps", False),
             include_reference_rows=not getattr(args, "skip_reference_rows", False),
             include_all_material_json=getattr(args, "include_all_material_json", False),
