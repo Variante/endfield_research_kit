@@ -719,9 +719,9 @@ runtime combat formula or modifier-order reconstruction.
 2026-07-01 source graph progress: `tools/endfield_source_graph.py` now ingests
 the generated Gameplay payload, a pre-Gameplay item/economy table pass, an early
 world/map table pass, a pre-Gameplay combat semantics pass, selected structured
-factory tables, Spaceship/base tables, and Activity/Achievement/SystemJump
-tables as evidence graph nodes and relationships. A fast CN
-verification build with `--skip-asset-maps --skip-reference-rows
+factory tables, Spaceship/base tables, Activity/Achievement/SystemJump tables,
+and factory tech-tree/unlock tables as evidence graph nodes and relationships. A
+fast CN verification build with `--skip-asset-maps --skip-reference-rows
 --skip-followups` produced 72 weapon nodes, 220 equipment nodes, 30 character
 nodes, 290 enemy nodes, 78 enemy template nodes, 98 enemy attribute-template
 nodes, 134 enemy ability nodes, 217 buff nodes, 6 map nodes, 208 level nodes,
@@ -751,9 +751,10 @@ separate visible Gameplay entries. Exact queries such as `chr_0017_yvonne`,
 `component_activity_xiranite_cmpt_1`, `aglina_base01_lv001`,
 `spaceship_skill_chr_0004_pelica_1_1`,
 `growcabin_plant_crylplant_1_1`, `envEmoji_common_adaptationwork`,
-`activity_weekly_task_1`, `week10_task1`, `achv_adv_tundra_box`, and
-`jump_activity_conditional_multistage_1` now resolve to semantic nodes with
-source table rows and neighbors. This improves
+`activity_weekly_task_1`, `week10_task1`, `achv_adv_tundra_box`,
+`jump_activity_conditional_multistage_1`, `tech_jinlong_1_battle_cannon_2`,
+`air_dancer_1`, and `hdwk_item_drop_agfly_1_1` now resolve to semantic nodes
+with source table rows and neighbors. This improves
 cross-domain lookup; it still does not prove formulas beyond generated
 source-table evidence.
 
@@ -809,10 +810,24 @@ activity tasks, 150 activity stages, 5 milestones, 18 banners, 34 push bubbles,
 200 achievement conditions, 3 achievement statistic rows, 63 activity-tag edges,
 276 activity-task edges, 350 activity-stage edges, 332 stage reward edges, 156
 achievement-level edges, 200 level-condition edges, 66 jump-to-activity edges,
-16 jump-to-factory-tech edges, and 50 jump-to-manual-craft-unlock edges. Averroes
-scout identified factory tech-tree/unlock bridge as the next compact graph
-slice, with expected local evidence around tech prerequisites, machine-to-tech
-links, blueprint/building links, renderer templates, and manual-craft unlocks.
+13 jump-to-factory-tech edges, 1 jump-to-factory-tech-group edge, and 50
+jump-to-manual-craft-unlock edges. The scouted factory tech-tree/unlock bridge
+has since landed below.
+
+2026-07-01 source graph factory tech-tree/unlock progress: `FacSTT*` tech
+groups/categories/layers/nodes/conditions, machine-to-tech links,
+blueprint-to-machine item links, factory buildings, building types, renderer
+templates, blueprint machine icons, manual-craft formula unlocks, and
+manual-craft upgrade rows are now queryable. The corrected fast CN rebuild
+verified 2 tech groups, 11 categories, 6 layers, 71 authored tech nodes, 5 tech
+conditions, 94 factory buildings, 31 referenced building types, 113 renderer
+templates, 61 blueprint machine icon nodes, 168 manual-craft unlock nodes, 55
+tech prerequisite edges, 128 tech unlock-item edges, 75 tech action refs, 72
+machine-to-tech links, 59 blueprint item links, 89 building item links, 82
+building map-mark refs, 97 building renderer-template refs, 168 manual-craft
+formula unlock links, 45 manual-craft upgrade links, 13 system jumps to exact
+factory techs, and 1 system jump to a factory tech group. James scout identified
+PRTS Archive / Reading / RichContent bridge as the next compact graph slice.
 
 2026-07-01 source graph item/economy progress: item, reward, reward-drop, and
 shop table semantics are now queryable before Gameplay ingestion. A fast source

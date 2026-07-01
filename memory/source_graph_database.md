@@ -142,8 +142,12 @@ structured-table ingestion adds exact-queryable `weapon`, `equipment`,
 `activity`, `activity_tag`, `activity_condition`, `activity_task`,
 `activity_stage`, `activity_milestone`, `activity_banner`, `activity_push`,
 `achievement_category`, `achievement_group`, `achievement`,
-`achievement_level`, `achievement_condition`, `achievement_statistic`, and
-`factory_tech` nodes. A fast CN build with `--skip-asset-maps
+`achievement_level`, `achievement_condition`, `achievement_statistic`,
+`factory_tech_group`, `factory_tech_category`, `factory_tech_layer`,
+`factory_tech`, `factory_tech_condition`, `factory_building`,
+`factory_building_type`, `factory_renderer_template`,
+`factory_blueprint_machine_icon`, and `manual_craft_unlock` nodes. A fast CN
+build with `--skip-asset-maps
 --skip-reference-rows
 --skip-followups` verified 72 weapon nodes, 220 equipment nodes, 30 character
 nodes, 290 enemy nodes, 78 enemy template nodes, 98 enemy attribute-template
@@ -193,6 +197,9 @@ python tools\endfield_source_graph.py query activity_weekly_task_1 --kind activi
 python tools\endfield_source_graph.py query week10_task1 --kind activity_task
 python tools\endfield_source_graph.py query achv_adv_tundra_box --kind achievement
 python tools\endfield_source_graph.py query jump_activity_conditional_multistage_1 --kind system_jump
+python tools\endfield_source_graph.py query tech_jinlong_1_battle_cannon_2 --kind factory_tech
+python tools\endfield_source_graph.py query air_dancer_1 --kind factory_building
+python tools\endfield_source_graph.py query hdwk_item_drop_agfly_1_1 --kind manual_craft_unlock
 ```
 
 2026-07-01 character progression graph progress: generated Gameplay character
@@ -269,13 +276,34 @@ conditions, and 3 achievement statistic rows. Edge checks verified 63
 condition edges, 18 `banner_jumps_to`, 34 `activity_has_push`, 12
 `achievement_category_has_group`, 114 `achievement_group_has_achievement`, 156
 `achievement_has_level`, 200 `achievement_level_has_condition`, 3
-`achievement_statistic_tracks`, 66 `system_jump_targets_activity`, 16
-`system_jump_targets_factory_tech`, 50 `system_jump_targets_manual_craft_unlock`,
-4 map jump targets, 24 dungeon jump targets, 22 domain jump targets, and 44 shop
-group jump targets. Averroes scout identified factory tech-tree/unlock bridge as
-the next compact graph slice: 71 tech nodes, 72 machine-to-tech links, 59
-blueprint links, 89 building item links, 168 manual-craft unlock links, and 45
-manual-craft upgrade rows expected from local tables.
+`achievement_statistic_tracks`, 66 `system_jump_targets_activity`, 13
+`system_jump_targets_factory_tech`, 1 `system_jump_targets_factory_tech_group`,
+50 `system_jump_targets_manual_craft_unlock`, 4 map jump targets, 24 dungeon
+jump targets, 22 domain jump targets, and 44 shop group jump targets. The
+scouted factory tech-tree/unlock bridge has since landed below.
+
+2026-07-01 Factory tech-tree/unlock graph progress: source graph ingestion now
+promotes `FacSTT*` tech groups/categories/layers/nodes/conditions,
+machine-to-tech links, blueprint-to-machine item links, factory buildings,
+building types, renderer templates, blueprint machine icons, manual-craft
+formula unlocks, and manual-craft upgrade rows. The corrected fast CN rebuild
+verified 816,942 total graph nodes and 1,259,077 edges, including 2
+`factory_tech_group` nodes, 11 categories, 6 layers, 71 authored tech nodes, 5
+tech conditions, 94 factory buildings, 31 referenced building types, 113
+renderer templates, 61 blueprint machine icon nodes, 168 manual-craft unlock
+nodes, and 194 factory machine nodes. Edge checks verified 55
+`factory_tech_requires_tech`, 128 `factory_tech_unlocks_item`, 52 tech action
+item refs, 20 tech action machine refs, 3 tech action domain refs, 6
+condition-to-level refs, 72 `machine_unlocked_by_tech`, 59
+`blueprint_item_builds_item`, 89 `building_item_defines_building`, 94
+`factory_building_has_type`, 82 `factory_building_has_map_mark_template`, 93
+default renderer template refs, 97 building renderer template refs, 113
+`renderer_template_for_machine`, 168 `manual_craft_material_unlocks_formula_item`,
+45 manual-craft upgrade item edges, 13 system jumps to exact factory techs, and
+1 system jump to a factory tech group. James scout identified PRTS Archive /
+Reading / RichContent bridge as the next compact graph slice: 414 PRTS archive
+entries, 586 rich-content rows, 576 reading popups, 21 PRTS reading roots, 12
+investigation roots, and 29 notes expected from local tables.
 
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,

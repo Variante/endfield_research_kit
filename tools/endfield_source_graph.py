@@ -183,6 +183,23 @@ SPACESHIP_SEMANTIC_TABLES = (
     "SpaceshipGuestRoomClueLvTable.json",
     "SpaceshipEmptyRoomTable.json",
 )
+FACTORY_TECH_TABLES = (
+    "FacSTTGroupTable.json",
+    "FacSTTCategoryTable.json",
+    "FacSTTLayerTable.json",
+    "FacSTTNodeTable.json",
+    "FacSTTConditionTable.json",
+    "FacSTTPackConditionTable.json",
+    "MachineId2MachineTechIdTable.json",
+    "MachineBlueprint2MachineItemTable.json",
+    "FactoryBuildingTypeTable.json",
+    "FactoryBuildingRendererTemplateTable.json",
+    "FactoryBuildingTable.json",
+    "FactoryBuildingItemTable.json",
+    "FactoryBlueprintMachineIconTable.json",
+    "FactoryManualCraftFormulaUnlockTable.json",
+    "FactoryManualCraftUpgradeTable.json",
+)
 ACTIVITY_ACHIEVEMENT_TABLES = (
     "SystemJumpTable.json",
     "ActivityTagTable.json",
@@ -487,6 +504,23 @@ class SourceGraphBuilder:
             self.node_counts[kind] += 1
         return node_id
 
+    def update_node_details(self, node_id: str, *, name: Any = None, source: Any = None, data: Any = None) -> None:
+        updates: list[str] = []
+        values: list[Any] = []
+        if name is not None:
+            updates.append("name = ?")
+            values.append(compact_text(name, 300))
+        if source is not None:
+            updates.append("source = ?")
+            values.append(safe_key(source) or None)
+        if data is not None:
+            updates.append("data = ?")
+            values.append(dump_json(data))
+        if not updates:
+            return
+        values.append(node_id)
+        self.db.execute(f"UPDATE nodes SET {', '.join(updates)} WHERE id = ?", values)
+
     def add_alias(self, alias: Any, node_id: str, *, kind: str = "", source: str = "") -> None:
         alias_text = safe_key(alias)
         if not alias_text:
@@ -577,6 +611,8 @@ class SourceGraphBuilder:
             self.commit_step("characterSupport")
             self.ingest_spaceship_semantics()
             self.commit_step("spaceshipSemantics")
+            self.ingest_factory_tech_semantics()
+            self.commit_step("factoryTech")
             self.ingest_activity_achievement_semantics()
             self.commit_step("activityAchievement")
             self.ingest_timeline_line_orders()
@@ -3995,6 +4031,479 @@ class SourceGraphBuilder:
         elif table in {"SpaceshipClueDataTable", "SpaceshipClueDataIndex2IdTable"}:
             self.add_spaceship_clue_edges(table, row_key, row, row_node)
 
+    def ingest_factory_tech_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_factory_tech_semantics", path=slash(table_root))
+        for table_name in FACTORY_TECH_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if payload is None:
+                continue
+            table_key = Path(table_name).stem
+            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/factory_tech")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            if not isinstance(payload, dict):
+                continue
+            for row_key, row in payload.items():
+                row_node = self.add_node(
+                    "table_row",
+                    f"{table_key}:{row_key}",
+                    name=str(row_key),
+                    source=table_key,
+                    data=compact_payload(row, depth=2),
+                )
+                self.add_edge(table_node, row_node, "has_row", source="structured/factory_tech")
+                self.add_factory_tech_row_edges(table_key, row_key, row, row_node)
+
+    def add_factory_tech_group_node(self, group_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        group_key = safe_key(group_id)
+        if not group_key:
+            return ""
+        group_name = table_display_text(name) or group_key
+        node = self.add_node("factory_tech_group", group_key, name=group_name, source=source, data=data)
+        self.add_alias(group_key, node, kind="factory_tech_group_id", source=source)
+        if group_name != group_key:
+            self.add_alias(group_name, node, kind="factory_tech_group_name", source=source)
+        return node
+
+    def add_factory_tech_category_node(self, category_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        category_key = safe_key(category_id)
+        if not category_key:
+            return ""
+        category_name = table_display_text(name) or category_key
+        node = self.add_node("factory_tech_category", category_key, name=category_name, source=source, data=data)
+        self.add_alias(category_key, node, kind="factory_tech_category_id", source=source)
+        if category_name != category_key:
+            self.add_alias(category_name, node, kind="factory_tech_category_name", source=source)
+        return node
+
+    def add_factory_tech_layer_node(self, layer_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        layer_key = safe_key(layer_id)
+        if not layer_key:
+            return ""
+        layer_name = table_display_text(name) or layer_key
+        node = self.add_node("factory_tech_layer", layer_key, name=layer_name, source=source, data=data)
+        self.add_alias(layer_key, node, kind="factory_tech_layer_id", source=source)
+        if layer_name != layer_key:
+            self.add_alias(layer_name, node, kind="factory_tech_layer_name", source=source)
+        return node
+
+    def add_factory_tech_node(self, tech_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        tech_key = safe_key(tech_id)
+        if not tech_key:
+            return ""
+        tech_name = table_display_text(name) or tech_key
+        node = self.add_node("factory_tech", tech_key, name=tech_name, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=tech_name, source=source, data=data)
+        self.add_alias(tech_key, node, kind="factory_tech_id", source=source)
+        if tech_name != tech_key:
+            self.add_alias(tech_name, node, kind="factory_tech_name", source=source)
+        return node
+
+    def add_factory_tech_condition_node(self, condition_id: Any, *, source: str = "", data: Any = None) -> str:
+        condition_key = safe_key(condition_id)
+        if not condition_key:
+            return ""
+        node = self.add_node("factory_tech_condition", condition_key, name=condition_key, source=source, data=data)
+        self.add_alias(condition_key, node, kind="factory_tech_condition_id", source=source)
+        return node
+
+    def add_factory_building_node(self, building_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        building_key = safe_key(building_id)
+        if not building_key:
+            return ""
+        building_name = table_display_text(name) or building_key
+        node = self.add_node("factory_building", building_key, name=building_name, source=source, data=data)
+        self.add_alias(building_key, node, kind="factory_building_id", source=source)
+        if building_name != building_key:
+            self.add_alias(building_name, node, kind="factory_building_name", source=source)
+        return node
+
+    def add_factory_building_type_node(self, type_id: Any, *, source: str = "", data: Any = None) -> str:
+        type_key = safe_key(type_id)
+        if not type_key:
+            return ""
+        node = self.add_node("factory_building_type", type_key, name=type_key, source=source, data=data)
+        self.add_alias(type_key, node, kind="factory_building_type_id", source=source)
+        return node
+
+    def add_factory_renderer_template_node(self, template_id: Any, *, source: str = "", data: Any = None) -> str:
+        template_key = safe_key(template_id)
+        if not template_key:
+            return ""
+        node = self.add_node("factory_renderer_template", template_key, name=template_key, source=source, data=data)
+        self.add_alias(template_key, node, kind="factory_renderer_template_id", source=source)
+        return node
+
+    def add_factory_blueprint_machine_icon_node(self, icon_id: Any, *, source: str = "", data: Any = None) -> str:
+        icon_key = safe_key(icon_id)
+        if not icon_key:
+            return ""
+        node = self.add_node("factory_blueprint_machine_icon", icon_key, name=icon_key, source=source, data=data)
+        self.add_alias(icon_key, node, kind="factory_blueprint_machine_icon_id", source=source)
+        return node
+
+    def add_manual_craft_unlock_node(self, unlock_id: Any, *, source: str = "", data: Any = None) -> str:
+        unlock_key = safe_key(unlock_id)
+        if not unlock_key:
+            return ""
+        node = self.add_node("manual_craft_unlock", unlock_key, name=unlock_key, source=source, data=data)
+        self.add_alias(unlock_key, node, kind="manual_craft_unlock_id", source=source)
+        return node
+
+    def add_factory_machine_node(self, machine_id: Any, *, source: str = "", data: Any = None) -> str:
+        machine_key = safe_key(machine_id)
+        if not machine_key:
+            return ""
+        node = self.add_node("factory_machine", machine_key, name=machine_key, source=source, data=data)
+        self.add_alias(machine_key, node, kind="factory_machine_id", source=source)
+        return node
+
+    def add_gameplay_domain_node(self, domain_id: Any, *, source: str = "") -> str:
+        domain_key = safe_key(domain_id)
+        if not domain_key:
+            return ""
+        node = self.add_node("gameplay_domain", domain_key, name=domain_key, source=source)
+        self.add_alias(domain_key, node, kind="gameplay_domain_id", source=source)
+        return node
+
+    def add_map_mark_template_node(self, template_id: Any, *, source: str = "", data: Any = None) -> str:
+        template_key = safe_key(template_id)
+        if not template_key:
+            return ""
+        node = self.add_node("map_mark_template", template_key, name=template_key, source=source, data=data)
+        self.add_alias(template_key, node, kind="map_mark_template_id", source=source)
+        return node
+
+    def factory_renderer_template_key(self, machine_id: Any, template_id: Any) -> str:
+        machine_key = safe_key(machine_id)
+        template_key = safe_key(template_id)
+        if not machine_key or not template_key:
+            return ""
+        if "__" in template_key:
+            mode, level = template_key.split("__", 1)
+            return safe_key(f"{machine_key}_{mode}_{level}")
+        return template_key
+
+    def add_factory_condition_parameter_refs(self, condition_node: str, parameters: Any, *, source: str, evidence_prefix: str) -> None:
+        if not isinstance(parameters, list):
+            return
+        for param_index, param in enumerate(parameters):
+            if not isinstance(param, dict):
+                continue
+            values = param.get("valueStringList")
+            if not isinstance(values, list):
+                continue
+            for value_index, raw_value in enumerate(values):
+                ref = safe_key(raw_value)
+                if not ref or re.fullmatch(r"-?\d+(?:\.\d+)?", ref):
+                    continue
+                evidence = f"{evidence_prefix}.parameters[{param_index}].valueStringList[{value_index}]"
+                if re.fullmatch(r"map\d+_lv\d+", ref):
+                    ref_node = self.add_level_node(ref, source=source)
+                    edge_kind = "factory_tech_condition_references_level"
+                elif ref.startswith("item_"):
+                    ref_node = self.add_item_node(ref, source=source)
+                    edge_kind = "factory_tech_condition_references_item"
+                elif ref.startswith("domain_"):
+                    ref_node = self.add_gameplay_domain_node(ref, source=source)
+                    edge_kind = "factory_tech_condition_references_domain"
+                else:
+                    ref_node = self.add_factory_machine_node(ref, source=source)
+                    edge_kind = "factory_tech_condition_references_machine"
+                self.add_edge(condition_node, ref_node, edge_kind, source=source, evidence=evidence)
+
+    def add_factory_tech_condition_edges(self, owner_node: str, condition: dict[str, Any], *, edge_kind: str, source: str, evidence: str) -> None:
+        condition_id = safe_key(condition.get("conditionId"))
+        condition_node = self.add_factory_tech_condition_node(
+            condition_id,
+            source=source,
+            data={"conditionType": condition.get("conditionType"), "groupId": condition.get("groupId"), "techId": condition.get("techId")},
+        )
+        if not condition_node:
+            return
+        self.add_edge(owner_node, condition_node, edge_kind, source=source, evidence=evidence)
+        self.add_factory_condition_parameter_refs(condition_node, condition.get("parameters"), source=source, evidence_prefix=evidence)
+        self.add_i18n_text_edges(condition_node, condition, source=source)
+
+    def add_factory_tech_action_refs(self, tech_node: str, action: Any, *, source: str) -> None:
+        if not isinstance(action, dict):
+            return
+        for param_index, param in enumerate(action.get("parameters") or []):
+            if not isinstance(param, dict):
+                continue
+            for value_index, raw_value in enumerate(param.get("valueStringList") or []):
+                ref = safe_key(raw_value)
+                if not ref or re.fullmatch(r"-?\d+(?:\.\d+)?", ref):
+                    continue
+                evidence = f"action.parameters[{param_index}].valueStringList[{value_index}]"
+                if ref.startswith("item_"):
+                    ref_node = self.add_item_node(ref, source=source)
+                    edge_kind = "factory_tech_action_references_item"
+                elif ref.startswith("domain_"):
+                    ref_node = self.add_gameplay_domain_node(ref, source=source)
+                    edge_kind = "factory_tech_action_references_domain"
+                else:
+                    ref_node = self.add_factory_machine_node(ref, source=source)
+                    edge_kind = "factory_tech_action_references_machine"
+                self.add_edge(tech_node, ref_node, edge_kind, source=source, evidence=evidence)
+
+    def add_factory_tech_group_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        group_node = self.add_factory_tech_group_node(row.get("groupId") or row_key, name=row.get("groupName"), source=table, data={"domainId": row.get("domainId"), "costPointType": row.get("costPointType"), "adventurebookRewardId": row.get("adventurebookRewardId")})
+        if not group_node:
+            return
+        self.add_edge(row_node, group_node, "defines_factory_tech_group", source=table)
+        self.add_reward_ref_edge(group_node, row.get("adventurebookRewardId"), edge_kind="factory_tech_group_rewards", source=table, evidence="adventurebookRewardId")
+        domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
+        if domain_node:
+            self.add_edge(group_node, domain_node, "factory_tech_group_domain", source=table, evidence="domainId")
+        cost_item = self.add_item_node(row.get("costPointType"), source=table)
+        if cost_item:
+            self.add_edge(group_node, cost_item, "factory_tech_group_uses_point_item", source=table, evidence="costPointType")
+        for index, category_id in enumerate(row.get("categoryIds") or []):
+            category_node = self.add_factory_tech_category_node(category_id, source=table)
+            if category_node:
+                self.add_edge(group_node, category_node, "factory_tech_group_has_category", source=table, evidence=f"categoryIds[{index}]")
+        for index, layer_id in enumerate(row.get("layerIds") or []):
+            layer_node = self.add_factory_tech_layer_node(layer_id, source=table)
+            if layer_node:
+                self.add_edge(group_node, layer_node, "factory_tech_group_has_layer", source=table, evidence=f"layerIds[{index}]")
+        for index, tech_id in enumerate(row.get("techIds") or []):
+            tech_node = self.add_factory_tech_node(tech_id, source=table)
+            if tech_node:
+                self.add_edge(group_node, tech_node, "factory_tech_group_has_tech", source=table, evidence=f"techIds[{index}]")
+        for index, dungeon_id in enumerate(row.get("blackboxIds") or []):
+            dungeon_node = self.add_dungeon_node(dungeon_id, source=table)
+            if dungeon_node:
+                self.add_edge(group_node, dungeon_node, "factory_tech_group_has_blackbox", source=table, evidence=f"blackboxIds[{index}]")
+        for index, condition in enumerate(row.get("conditions") or []):
+            if isinstance(condition, dict):
+                self.add_factory_tech_condition_edges(group_node, condition, edge_kind="factory_tech_group_has_condition", source=table, evidence=f"conditions[{index}]")
+        self.add_alias(row.get("icon"), group_node, kind="asset_stem", source=table)
+        self.add_i18n_text_edges(group_node, row, source=table)
+
+    def add_factory_tech_category_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        category_node = self.add_factory_tech_category_node(row.get("category") or row_key, name=row.get("name"), source=table, data={"groupId": row.get("groupId"), "order": row.get("order"), "startPosX": row.get("startPosX"), "defaultHidden": row.get("defaultHidden")})
+        if not category_node:
+            return
+        self.add_edge(row_node, category_node, "defines_factory_tech_category", source=table)
+        group_node = self.add_factory_tech_group_node(row.get("groupId"), source=table)
+        if group_node:
+            self.add_edge(group_node, category_node, "factory_tech_group_has_category", source=table, evidence="groupId")
+        for index, tech_id in enumerate(row.get("techIds") or []):
+            tech_node = self.add_factory_tech_node(tech_id, source=table)
+            if tech_node:
+                self.add_edge(category_node, tech_node, "factory_tech_category_has_tech", source=table, evidence=f"techIds[{index}]")
+        self.add_i18n_text_edges(category_node, row, source=table)
+
+    def add_factory_tech_layer_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        layer_node = self.add_factory_tech_layer_node(row.get("layerId") or row_key, name=row.get("name"), source=table, data={"groupId": row.get("groupId"), "order": row.get("order"), "preLayer": row.get("preLayer"), "isTBD": row.get("isTBD")})
+        if not layer_node:
+            return
+        self.add_edge(row_node, layer_node, "defines_factory_tech_layer", source=table)
+        group_node = self.add_factory_tech_group_node(row.get("groupId"), source=table)
+        if group_node:
+            self.add_edge(group_node, layer_node, "factory_tech_group_has_layer", source=table, evidence="groupId")
+        pre_layer = self.add_factory_tech_layer_node(row.get("preLayer"), source=table)
+        if pre_layer:
+            self.add_edge(layer_node, pre_layer, "factory_tech_layer_requires_layer", source=table, evidence="preLayer")
+        for index, item in enumerate(row.get("costItems") or []):
+            if not isinstance(item, dict):
+                continue
+            item_node = self.add_item_node(item.get("costItemId"), source=table)
+            if item_node:
+                self.add_edge(layer_node, item_node, "factory_tech_layer_requires_item", source=table, evidence=f"costItems[{index}]", data={"count": item.get("costItemCount")})
+        for index, tech_id in enumerate(row.get("techIds") or []):
+            tech_node = self.add_factory_tech_node(tech_id, source=table)
+            if tech_node:
+                self.add_edge(layer_node, tech_node, "factory_tech_layer_has_tech", source=table, evidence=f"techIds[{index}]")
+        for index, dungeon_id in enumerate(row.get("blackboxIds") or []):
+            dungeon_node = self.add_dungeon_node(dungeon_id, source=table)
+            if dungeon_node:
+                self.add_edge(layer_node, dungeon_node, "factory_tech_layer_has_blackbox", source=table, evidence=f"blackboxIds[{index}]")
+        self.add_alias(row.get("icon"), layer_node, kind="asset_stem", source=table)
+        self.add_i18n_text_edges(layer_node, row, source=table)
+
+    def add_factory_tech_node_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        tech_id = safe_key(row.get("techId") or row_key)
+        tech_node = self.add_factory_tech_node(tech_id, name=row.get("name"), source=table, data={"groupId": row.get("groupId"), "category": row.get("category"), "layer": row.get("layer"), "sortId": row.get("sortId"), "actionType": (row.get("action") or {}).get("actionType") if isinstance(row.get("action"), dict) else None, "costPointCount": row.get("costPointCount"), "alreadyUnlock": row.get("alreadyUnlock"), "defaultHidden": row.get("defaultHidden")})
+        if not tech_node:
+            return
+        self.add_edge(row_node, tech_node, "defines_factory_tech", source=table)
+        group_node = self.add_factory_tech_group_node(row.get("groupId"), source=table)
+        if group_node:
+            self.add_edge(group_node, tech_node, "factory_tech_group_has_tech", source=table, evidence="groupId")
+        category_node = self.add_factory_tech_category_node(row.get("category"), source=table)
+        if category_node:
+            self.add_edge(category_node, tech_node, "factory_tech_category_has_tech", source=table, evidence="category")
+        layer_node = self.add_factory_tech_layer_node(row.get("layer"), source=table)
+        if layer_node:
+            self.add_edge(layer_node, tech_node, "factory_tech_layer_has_tech", source=table, evidence="layer")
+        for index, pre_node in enumerate(row.get("preNode") or []):
+            pre_tech = self.add_factory_tech_node(pre_node, source=table)
+            if pre_tech:
+                self.add_edge(tech_node, pre_tech, "factory_tech_requires_tech", source=table, evidence=f"preNode[{index}]")
+        for index, item in enumerate(row.get("unlockReward") or []):
+            if not isinstance(item, dict):
+                continue
+            item_node = self.add_item_node(item.get("itemId"), source=table)
+            if item_node:
+                self.add_edge(tech_node, item_node, "factory_tech_unlocks_item", source=table, evidence=f"unlockReward[{index}]", data={"count": item.get("count")})
+        for index, dungeon_id in enumerate(row.get("blackboxIds") or []):
+            dungeon_node = self.add_dungeon_node(dungeon_id, source=table)
+            if dungeon_node:
+                self.add_edge(tech_node, dungeon_node, "factory_tech_has_blackbox", source=table, evidence=f"blackboxIds[{index}]")
+        self.add_factory_tech_action_refs(tech_node, row.get("action"), source=table)
+        for field in ("icon", "cornerIcon"):
+            self.add_alias(row.get(field), tech_node, kind="asset_stem", source=table)
+        self.add_i18n_text_edges(tech_node, row, source=table)
+
+    def add_factory_tech_condition_table_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        condition_node = self.add_factory_tech_condition_node(row.get("conditionId") or row_key, source=table, data={"conditionType": row.get("conditionType"), "groupId": row.get("groupId"), "techId": row.get("techId")})
+        if not condition_node:
+            return
+        self.add_edge(row_node, condition_node, "defines_factory_tech_condition", source=table)
+        group_node = self.add_factory_tech_group_node(row.get("groupId"), source=table)
+        if group_node:
+            self.add_edge(group_node, condition_node, "factory_tech_group_has_condition", source=table, evidence="groupId")
+        tech_node = self.add_factory_tech_node(row.get("techId"), source=table)
+        if tech_node:
+            self.add_edge(tech_node, condition_node, "factory_tech_has_condition", source=table, evidence="techId")
+        self.add_factory_condition_parameter_refs(condition_node, row.get("parameters"), source=table, evidence_prefix="parameters")
+        self.add_i18n_text_edges(condition_node, row, source=table)
+
+    def add_machine_tech_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        machine_node = self.add_factory_machine_node(row_key, source=table)
+        tech_node = self.add_factory_tech_node(row.get("techId"), source=table)
+        if machine_node and tech_node:
+            self.add_edge(row_node, machine_node, "defines_machine_tech_link", source=table)
+            self.add_edge(machine_node, tech_node, "machine_unlocked_by_tech", source=table, evidence="techId")
+
+    def add_machine_blueprint_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        blueprint_item = self.add_item_node(row_key, source=table)
+        machine_item = self.add_item_node(row.get("itemId"), source=table)
+        if blueprint_item and machine_item:
+            self.add_edge(row_node, blueprint_item, "defines_machine_blueprint_item", source=table)
+            self.add_edge(blueprint_item, machine_item, "blueprint_item_builds_item", source=table, evidence="itemId")
+
+    def add_factory_building_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        type_node = self.add_factory_building_type_node(row.get("type") if "type" in row else row_key, source=table, data={"rangeExtend": row.get("rangeExtend")})
+        if type_node:
+            self.add_edge(row_node, type_node, "defines_factory_building_type", source=table)
+
+    def add_factory_renderer_template_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        template_node = self.add_factory_renderer_template_node(row_key, source=table, data=compact_payload(row, depth=2))
+        if not template_node:
+            return
+        self.add_edge(row_node, template_node, "defines_factory_renderer_template", source=table)
+        machine_node = self.add_factory_machine_node(row.get("machineId"), source=table)
+        if machine_node:
+            self.add_edge(template_node, machine_node, "renderer_template_for_machine", source=table, evidence="machineId")
+        render_node = self.add_factory_machine_node(row.get("machineRenderId"), source=table)
+        if render_node:
+            self.add_edge(template_node, render_node, "renderer_template_uses_render_machine", source=table, evidence="machineRenderId")
+
+    def add_factory_building_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        building_id = safe_key(row.get("id") or row_key)
+        building_node = self.add_factory_building_node(building_id, name=row.get("name"), source=table, data={"type": row.get("type"), "needPower": row.get("needPower"), "powerConsume": row.get("powerConsume"), "quickBarType": row.get("quickBarType"), "defaultRendererTemplate": row.get("defaultRendererTemplate"), "markInfoId": row.get("markInfoId"), "canDelete": row.get("canDelete"), "liquidEnabled": row.get("liquidEnabled")})
+        if not building_node:
+            return
+        self.add_edge(row_node, building_node, "defines_factory_building", source=table)
+        type_node = self.add_factory_building_type_node(row.get("type"), source=table)
+        if type_node:
+            self.add_edge(building_node, type_node, "factory_building_has_type", source=table, evidence="type")
+        mark_node = self.add_map_mark_template_node(row.get("markInfoId"), source=table)
+        if mark_node:
+            self.add_edge(building_node, mark_node, "factory_building_has_map_mark_template", source=table, evidence="markInfoId")
+        default_template = self.add_factory_renderer_template_node(self.factory_renderer_template_key(building_id, row.get("defaultRendererTemplate")), source=table)
+        if default_template:
+            self.add_edge(building_node, default_template, "factory_building_default_renderer_template", source=table, evidence="defaultRendererTemplate")
+        template_map = row.get("rendererTemplateMap") if isinstance(row.get("rendererTemplateMap"), dict) else {}
+        for index, (template_key, template_row) in enumerate(template_map.items()):
+            template_node = self.add_factory_renderer_template_node(self.factory_renderer_template_key(building_id, template_key), source=table, data=compact_payload(template_row, depth=2) if isinstance(template_row, dict) else None)
+            if template_node:
+                self.add_edge(building_node, template_node, "factory_building_uses_renderer_template", source=table, evidence=f"rendererTemplateMap[{index}]")
+        for field, edge_kind in (("placeDomains", "factory_building_place_domain"), ("recommendDomains", "factory_building_recommend_domain")):
+            for index, domain_id in enumerate(row.get(field) or []):
+                domain_node = self.add_gameplay_domain_node(domain_id, source=table)
+                if domain_node:
+                    self.add_edge(building_node, domain_node, edge_kind, source=table, evidence=f"{field}[{index}]")
+        for field in ("bgOnPanel", "iconOnPanel", "buildCamState"):
+            self.add_alias(row.get(field), building_node, kind="asset_stem", source=table)
+        self.add_i18n_text_edges(building_node, row, source=table)
+
+    def add_factory_building_item_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        item_node = self.add_item_node(row.get("itemId") or row_key, source=table)
+        building_node = self.add_factory_building_node(row.get("buildingId"), source=table)
+        if item_node and building_node:
+            self.add_edge(row_node, item_node, "defines_factory_building_item", source=table)
+            self.add_edge(item_node, building_node, "building_item_defines_building", source=table, evidence="buildingId")
+
+    def add_factory_blueprint_machine_icon_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        icon_node = self.add_factory_blueprint_machine_icon_node(row.get("id") or row_key, source=table, data={"canModify": row.get("canModify")})
+        if not icon_node:
+            return
+        self.add_edge(row_node, icon_node, "defines_factory_blueprint_machine_icon", source=table)
+        machine_node = self.add_factory_machine_node(row.get("id") or row_key, source=table)
+        if machine_node:
+            self.add_edge(icon_node, machine_node, "factory_blueprint_icon_for_machine", source=table, evidence="id")
+
+    def add_manual_craft_formula_unlock_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        unlock_node = self.add_manual_craft_unlock_node(row.get("id") or row_key, source=table, data={"gainItemNum": row.get("gainItemNum"), "itemId": row.get("itemId"), "rewardItemId1": row.get("rewardItemId1"), "rewardItemCount1": row.get("rewardItemCount1")})
+        if not unlock_node:
+            return
+        self.add_edge(row_node, unlock_node, "defines_manual_craft_unlock", source=table)
+        source_item = self.add_item_node(row.get("itemId"), source=table)
+        reward_item = self.add_item_node(row.get("rewardItemId1"), source=table)
+        if source_item:
+            self.add_edge(unlock_node, source_item, "manual_craft_unlock_requires_item", source=table, evidence="itemId", data={"count": row.get("gainItemNum")})
+        if reward_item:
+            self.add_edge(unlock_node, reward_item, "manual_craft_unlock_grants_formula_item", source=table, evidence="rewardItemId1", data={"count": row.get("rewardItemCount1")})
+        if source_item and reward_item:
+            self.add_edge(source_item, reward_item, "manual_craft_material_unlocks_formula_item", source=table, evidence=safe_key(row.get("id") or row_key), data={"count": row.get("rewardItemCount1")})
+
+    def add_manual_craft_upgrade_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        item_node = self.add_item_node(row.get("itemId") or row_key, source=table)
+        target_item = self.add_item_node(row.get("levelUpItemId"), source=table)
+        if item_node and target_item:
+            self.add_edge(row_node, item_node, "defines_manual_craft_upgrade_item", source=table)
+            self.add_edge(item_node, target_item, "manual_craft_upgrade_item_targets_item", source=table, evidence="levelUpItemId")
+
+    def add_factory_tech_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if not isinstance(row, dict):
+            return
+        self.add_i18n_text_edges(row_node, row, source=table)
+        if table == "FacSTTGroupTable":
+            self.add_factory_tech_group_edges(table, row_key, row, row_node)
+        elif table == "FacSTTCategoryTable":
+            self.add_factory_tech_category_edges(table, row_key, row, row_node)
+        elif table == "FacSTTLayerTable":
+            self.add_factory_tech_layer_edges(table, row_key, row, row_node)
+        elif table == "FacSTTNodeTable":
+            self.add_factory_tech_node_edges(table, row_key, row, row_node)
+        elif table in {"FacSTTConditionTable", "FacSTTPackConditionTable"}:
+            self.add_factory_tech_condition_table_edges(table, row_key, row, row_node)
+        elif table == "MachineId2MachineTechIdTable":
+            self.add_machine_tech_edges(table, row_key, row, row_node)
+        elif table == "MachineBlueprint2MachineItemTable":
+            self.add_machine_blueprint_edges(table, row_key, row, row_node)
+        elif table == "FactoryBuildingTypeTable":
+            self.add_factory_building_type_edges(table, row_key, row, row_node)
+        elif table == "FactoryBuildingRendererTemplateTable":
+            self.add_factory_renderer_template_edges(table, row_key, row, row_node)
+        elif table == "FactoryBuildingTable":
+            self.add_factory_building_edges(table, row_key, row, row_node)
+        elif table == "FactoryBuildingItemTable":
+            self.add_factory_building_item_edges(table, row_key, row, row_node)
+        elif table == "FactoryBlueprintMachineIconTable":
+            self.add_factory_blueprint_machine_icon_edges(table, row_key, row, row_node)
+        elif table == "FactoryManualCraftFormulaUnlockTable":
+            self.add_manual_craft_formula_unlock_edges(table, row_key, row, row_node)
+        elif table == "FactoryManualCraftUpgradeTable":
+            self.add_manual_craft_upgrade_edges(table, row_key, row, row_node)
+
     def ingest_activity_achievement_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_activity_achievement_semantics", path=slash(table_root))
@@ -4272,10 +4781,12 @@ class SourceGraphBuilder:
             activity_node = self.add_activity_node(args.get("activityId"), source=source)
             self.add_edge(jump_node, activity_node, "system_jump_targets_snapshot_activity", source=source, evidence="phaseArgs.activityId")
         if phase_id == "FacTechTree":
-            tech_id = args.get("techId") or args.get("nodeId") or args.get("id") or args.get("jumpItem") or args.get("itemId") or "fac_tech_tree"
-            tech_node = self.add_node("factory_tech", tech_id, name=tech_id, source=source)
-            self.add_alias(tech_id, tech_node, kind="factory_tech_id", source=source)
-            self.add_edge(jump_node, tech_node, "system_jump_targets_factory_tech", source=source, evidence="phaseArgs")
+            tech_node = self.add_factory_tech_node(args.get("techId") or args.get("nodeId") or args.get("id"), source=source)
+            if tech_node:
+                self.add_edge(jump_node, tech_node, "system_jump_targets_factory_tech", source=source, evidence="phaseArgs.techId")
+            group_node = self.add_factory_tech_group_node(args.get("packageId"), source=source)
+            if group_node:
+                self.add_edge(jump_node, group_node, "system_jump_targets_factory_tech_group", source=source, evidence="phaseArgs.packageId")
         if phase_id in {"ManualCraft", "ManualCraftPopups"}:
             item_id = args.get("jumpItem") or args.get("itemId") or args.get("formulaId") or "manual_craft"
             item_node = self.add_item_node(item_id, source=source)
@@ -5901,7 +6412,16 @@ QUERY_KIND_PRIORITY = {
     "achievement_level": 57,
     "achievement_condition": 58,
     "achievement_statistic": 59,
-    "factory_tech": 60,
+    "factory_tech_group": 60,
+    "factory_tech_category": 61,
+    "factory_tech_layer": 62,
+    "factory_tech": 63,
+    "factory_tech_condition": 64,
+    "factory_building": 65,
+    "factory_building_type": 66,
+    "factory_renderer_template": 67,
+    "factory_blueprint_machine_icon": 68,
+    "manual_craft_unlock": 69,
     "weapon": 10,
     "equipment": 11,
     "enemy": 12,
@@ -6026,7 +6546,16 @@ NODE_ID_PREFIXES = (
     "achievement_level",
     "achievement_condition",
     "achievement_statistic",
+    "factory_tech_group",
+    "factory_tech_category",
+    "factory_tech_layer",
     "factory_tech",
+    "factory_tech_condition",
+    "factory_building",
+    "factory_building_type",
+    "factory_renderer_template",
+    "factory_blueprint_machine_icon",
+    "manual_craft_unlock",
     "weapon",
     "equipment",
     "enemy",
