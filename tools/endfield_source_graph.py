@@ -66,6 +66,23 @@ LINE_AUDIO_RE = re.compile(r"\bau_[A-Za-z0-9_]{2,160}\b")
 PATH_ID_EXPORT_STEM_RE = re.compile(r"^(?P<base>.+)_p(?P<path_id>[0-9A-Fa-f]{16})$")
 ASSET_SINGLE_PREFIX_RE = re.compile(r"^[A-Za-z]_")
 ASSET_LOD_SUFFIX_RE = re.compile(r"(?:[_-])lod\d+$", re.IGNORECASE)
+WORLD_SEMANTIC_TABLES = (
+    "MapIdTable.json",
+    "LevelDescTable.json",
+    "LevelLoadingTable.json",
+    "MapMarkCategoryTable.json",
+    "MapMarkTypeTable.json",
+    "MapMarkTempTable.json",
+    "MapMarkInsTable.json",
+    "SceneAreaTable.json",
+    "SceneCollectableItemTable.json",
+    "SpecialLevelToMapTable.json",
+    "FactoryLevelRegionTable.json",
+    "SettlementLevelPOIMapTable.json",
+    "ShopChannelLevelPOIMapTable.json",
+    "TrackMapPointTable.json",
+    "TrackMapLinkTable.json",
+)
 SELECTED_STRUCTURED_TABLES = (
     "AudioDialog.json",
     "AudioSequenceDialog.json",
@@ -80,11 +97,21 @@ SELECTED_STRUCTURED_TABLES = (
     "FactoryManualCraftTable.json",
     "InteractiveMissionDataTable.json",
     "LevelDescTable.json",
+    "LevelLoadingTable.json",
     "MapIdTable.json",
+    "MapMarkCategoryTable.json",
+    "MapMarkTypeTable.json",
+    "MapMarkTempTable.json",
     "MapMarkInsTable.json",
     "MissionExtraInfoTable.json",
     "SceneAreaTable.json",
+    "SceneCollectableItemTable.json",
     "SpecialLevelToMapTable.json",
+    "FactoryLevelRegionTable.json",
+    "SettlementLevelPOIMapTable.json",
+    "ShopChannelLevelPOIMapTable.json",
+    "TrackMapPointTable.json",
+    "TrackMapLinkTable.json",
 )
 ITEM_ECONOMY_TABLES = (
     "ItemTypeTable.json",
@@ -465,6 +492,8 @@ class SourceGraphBuilder:
             self.commit_step("optionOverrides")
             self.ingest_item_economy()
             self.commit_step("itemEconomy")
+            self.ingest_world_semantics()
+            self.commit_step("worldSemantics")
             self.ingest_combat_semantics()
             self.commit_step("combatSemantics")
             if self.include_gameplay:
@@ -2974,12 +3003,12 @@ class SourceGraphBuilder:
             unlock_node = self.add_node("gameplay_unlock", unlock_key, name=unlock_key, source=table)
             self.add_edge(ability_node, unlock_node, "general_ability_unlock_system", source=table, evidence="unlockSystemType")
             self.add_alias(unlock_key, unlock_node, kind="gameplay_unlock_id", source=table)
-        for index, level_id in enumerate(row.get("banMap") or []):
-            level_id = safe_key(level_id)
-            if not level_id:
+        for index, map_id in enumerate(row.get("banMap") or []):
+            map_id = safe_key(map_id)
+            if not map_id:
                 continue
-            level_node = self.add_node("level", level_id, name=level_id, source=table)
-            self.add_edge(ability_node, level_node, "general_ability_banned_in_level", source=table, evidence=f"banMap[{index}]")
+            map_node = self.add_map_node(map_id, source=table)
+            self.add_edge(ability_node, map_node, "general_ability_banned_in_map", source=table, evidence=f"banMap[{index}]")
 
     def add_ability_entity_attr_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         entity_id = safe_key(row.get("abilityEntityId") or row_key)
@@ -3068,10 +3097,36 @@ class SourceGraphBuilder:
         elif table == "PotentialTalentEffectTable":
             self.add_potential_talent_effect_edges(table, row_key, row, row_node)
 
+    def ingest_world_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_tables_selected", path=slash(table_root))
+        for table_name in WORLD_SEMANTIC_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if payload is None:
+                continue
+            table_key = Path(table_name).stem
+            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            if not isinstance(payload, dict):
+                continue
+            for row_key, row in payload.items():
+                row_node = self.add_node(
+                    "table_row",
+                    f"{table_key}:{row_key}",
+                    name=str(row_key),
+                    source=table_key,
+                    data=compact_payload(row, depth=2),
+                )
+                self.add_edge(table_node, row_node, "has_row", source="structured")
+                self.add_structured_row_edges(table_key, row_key, row, row_node)
     def ingest_selected_structured_tables(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_tables_selected", path=slash(table_root))
         for table_name in SELECTED_STRUCTURED_TABLES:
+            if table_name in WORLD_SEMANTIC_TABLES:
+                continue
             path = table_root / table_name
             payload = read_json(path, None)
             if payload is None:
@@ -3275,6 +3330,225 @@ class SourceGraphBuilder:
         self.add_edge(row_node, showing_node, "defines_factory_showing_type", source=table)
         self.add_alias(showing_id, showing_node, kind="factory_craft_showing_type_id", source=table)
         self.add_alias(table_text(row.get("name")), showing_node, kind="factory_craft_showing_type_name", source=table)
+
+    def add_map_node(self, map_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        map_key = safe_key(map_id)
+        if not map_key:
+            return ""
+        map_name = table_display_text(name) or map_key
+        map_node = self.add_node("map", map_key, name=map_name, source=source, data=data)
+        self.add_alias(map_key, map_node, kind="map_id", source=source)
+        if map_name != map_key:
+            self.add_alias(map_name, map_node, kind="map_name", source=source)
+        return map_node
+
+    def add_level_node(self, level_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        level_key = safe_key(level_id)
+        if not level_key:
+            return ""
+        level_name = table_display_text(name) or level_key
+        level_node = self.add_node("level", level_key, name=level_name, source=source, data=data)
+        self.add_alias(level_key, level_node, kind="level_id", source=source)
+        if level_name != level_key:
+            self.add_alias(level_name, level_node, kind="level_name", source=source)
+        return level_node
+
+    def inferred_map_id_for_level(self, level_id: Any) -> str:
+        level_key = safe_key(level_id)
+        if not level_key:
+            return ""
+        if "_lv" in level_key:
+            return level_key.split("_lv", 1)[0]
+        match = re.match(r"^(map\d+)", level_key, re.IGNORECASE)
+        return match.group(1) if match else ""
+
+    def add_level_map_edge(self, level_node: str, level_id: Any, *, source: str, evidence: str, map_id: Any = None) -> None:
+        map_key = safe_key(map_id) or self.inferred_map_id_for_level(level_id)
+        if not map_key:
+            return
+        map_node = self.add_map_node(map_key, source=source)
+        self.add_edge(level_node, map_node, "level_belongs_to_map", source=source, evidence=evidence)
+
+    def add_map_table_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        map_id = safe_key(row_key)
+        if not map_id:
+            return
+        map_node = self.add_map_node(map_id, name=row.get("showName"), source=table, data={"id": map_id})
+        self.add_edge(row_node, map_node, "defines_map", source=table)
+
+    def add_level_desc_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        level_id = safe_key(row.get("id") or row_key)
+        if not level_id:
+            return
+        level_node = self.add_level_node(level_id, name=row.get("showName"), source=table, data={"id": level_id, "phoneticName": row.get("phoneticName")})
+        self.add_edge(row_node, level_node, "defines_level", source=table)
+        self.add_alias(row.get("phoneticName"), level_node, kind="level_phonetic_name", source=table)
+        self.add_level_map_edge(level_node, level_id, source=table, evidence="inferred_level_prefix")
+
+    def add_level_loading_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        level_id = safe_key(row.get("levelId") or row_key)
+        if not level_id:
+            return
+        loading_node = self.add_node("level_loading", level_id, name=level_id, source=table, data={"levelId": level_id, "bgNameGroup": row.get("bgNameGroup"), "regularBgNameGroup": row.get("regularBgNameGroup"), "regularTipsKeyGroup": row.get("regularTipsKeyGroup"), "mapTags": row.get("mapTags"), "typeTags": row.get("typeTags"), "overrideTypeTags": row.get("overrideTypeTags"), "regionRelated": row.get("regionRelated")})
+        level_node = self.add_level_node(level_id, source=table)
+        self.add_edge(row_node, loading_node, "defines_level_loading", source=table)
+        self.add_edge(level_node, loading_node, "level_has_loading", source=table, evidence="levelId")
+        self.add_level_map_edge(level_node, level_id, source=table, evidence="inferred_level_prefix")
+
+    def add_special_level_map_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        level_id = safe_key(row_key)
+        map_id = safe_key(row.get("mapId"))
+        if not level_id or not map_id:
+            return
+        level_node = self.add_level_node(level_id, source=table)
+        map_node = self.add_map_node(map_id, source=table)
+        self.add_edge(row_node, level_node, "defines_special_level_map", source=table)
+        self.add_edge(level_node, map_node, "level_belongs_to_map", source=table, evidence="mapId")
+
+    def add_scene_area_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        area_id = safe_key(row.get("areaId") or row_key)
+        if not area_id:
+            return
+        scene_id = safe_key(row.get("sceneId"))
+        area_node = self.add_node("scene_area", area_id, name=area_id, source=table, data={"areaId": area_id, "sceneId": scene_id, "areaIndex": row.get("areaIndex"), "bandwidth": row.get("bandwidth"), "spBuildingCnt": row.get("spBuildingCnt"), "uiAreaNode": row.get("uiAreaNode")})
+        self.add_edge(row_node, area_node, "defines_scene_area", source=table)
+        self.add_alias(area_id, area_node, kind="scene_area_id", source=table)
+        if scene_id:
+            level_node = self.add_level_node(scene_id, source=table)
+            self.add_edge(level_node, area_node, "level_has_scene_area", source=table, evidence="sceneId")
+            self.add_level_map_edge(level_node, scene_id, source=table, evidence="inferred_level_prefix")
+
+    def add_map_mark_category_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        category_id = safe_key(row.get("category") if "category" in row else row_key)
+        if not category_id:
+            return
+        category_node = self.add_node("map_mark_category", category_id, name=table_display_text(row.get("name")) or category_id, source=table, data={"category": row.get("category"), "sortId": row.get("sortId")})
+        self.add_edge(row_node, category_node, "defines_map_mark_category", source=table)
+        self.add_alias(category_id, category_node, kind="map_mark_category_id", source=table)
+
+    def add_map_mark_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        type_id = safe_key(row.get("markInfoType") if "markInfoType" in row else row_key)
+        if not type_id:
+            return
+        type_node = self.add_node("map_mark_type", type_id, name=table_display_text(row.get("name")) or type_id, source=table, data={"markInfoType": row.get("markInfoType"), "category": row.get("category"), "icon": row.get("icon"), "sortId": row.get("sortId")})
+        self.add_edge(row_node, type_node, "defines_map_mark_type", source=table)
+        self.add_alias(type_id, type_node, kind="map_mark_type_id", source=table)
+        category_id = safe_key(row.get("category"))
+        if category_id:
+            category_node = self.add_node("map_mark_category", category_id, name=category_id, source=table)
+            self.add_edge(type_node, category_node, "map_mark_type_has_category", source=table, evidence="category")
+
+    def add_map_mark_template_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        template_id = safe_key(row.get("markInfoId") or row_key)
+        if not template_id:
+            return
+        template_node = self.add_node("map_mark_template", template_id, name=table_display_text(row.get("name")) or template_id, source=table, data={"markInfoId": template_id, "markInfoType": row.get("markInfoType"), "markType": row.get("markType"), "activeIcon": row.get("activeIcon"), "inActiveIcon": row.get("inActiveIcon"), "defaultVisible": row.get("defaultVisible"), "isStatic": row.get("isStatic"), "visibleLayer": row.get("visibleLayer"), "visibleDist": row.get("visibleDist"), "sortOrder": row.get("sortOrder")})
+        self.add_edge(row_node, template_node, "defines_map_mark_template", source=table)
+        self.add_alias(template_id, template_node, kind="map_mark_template_id", source=table)
+        self.add_alias(row.get("activeIcon"), template_node, kind="icon_id", source=table)
+        type_id = safe_key(row.get("markInfoType"))
+        if type_id:
+            type_node = self.add_node("map_mark_type", type_id, name=type_id, source=table)
+            self.add_edge(template_node, type_node, "map_mark_template_has_type", source=table, evidence="markInfoType")
+
+    def add_map_mark_instance_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        mark_id = safe_key(row.get("markInsId") or row_key)
+        if not mark_id:
+            return
+        level_id = safe_key(row.get("levelId"))
+        template_id = safe_key(row.get("markInfoId"))
+        mark_node = self.add_node("map_mark", mark_id, name=mark_id, source=table, data={"markInsId": mark_id, "levelId": level_id, "markInfoId": template_id, "logicId": row.get("logicId"), "activeMethod": row.get("activeMethod"), "visibleMethod": row.get("visibleMethod"), "pos": row.get("pos")})
+        self.add_edge(row_node, mark_node, "defines_map_mark", source=table)
+        self.add_alias(mark_id, mark_node, kind="map_mark_id", source=table)
+        if level_id:
+            level_node = self.add_level_node(level_id, source=table)
+            self.add_edge(level_node, mark_node, "level_has_map_mark", source=table, evidence="levelId")
+            self.add_level_map_edge(level_node, level_id, source=table, evidence="inferred_level_prefix")
+        if template_id:
+            template_node = self.add_node("map_mark_template", template_id, name=template_id, source=table)
+            self.add_edge(mark_node, template_node, "map_mark_uses_template", source=table, evidence="markInfoId")
+
+    def add_track_map_point_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        point_id = safe_key(row_key)
+        point_node = self.add_node("track_map_point", point_id, name=point_id, source=table, data={"id": point_id, "start": row.get("start"), "end": row.get("end"), "quest": row.get("quest"), "pos": row.get("pos")})
+        self.add_edge(row_node, point_node, "defines_track_map_point", source=table)
+        for field, edge_kind in (("start", "track_point_starts_at_level"), ("end", "track_point_ends_at_level")):
+            level_id = safe_key(row.get(field))
+            if not level_id:
+                continue
+            level_node = self.add_level_node(level_id, source=table)
+            self.add_edge(point_node, level_node, edge_kind, source=table, evidence=field)
+            self.add_level_map_edge(level_node, level_id, source=table, evidence="inferred_level_prefix")
+
+    def add_track_map_link_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        link_id = safe_key(row_key)
+        link_node = self.add_node("track_map_link", link_id, name=link_id, source=table, data={"id": link_id, "start": row.get("start"), "mid": row.get("mid"), "end": row.get("end"), "quest": row.get("quest")})
+        self.add_edge(row_node, link_node, "defines_track_map_link", source=table)
+        for field, edge_kind in (("start", "track_link_starts_at_level"), ("mid", "track_link_passes_level"), ("end", "track_link_ends_at_level")):
+            level_id = safe_key(row.get(field))
+            if not level_id:
+                continue
+            level_node = self.add_level_node(level_id, source=table)
+            self.add_edge(link_node, level_node, edge_kind, source=table, evidence=field)
+            self.add_level_map_edge(level_node, level_id, source=table, evidence="inferred_level_prefix")
+
+    def add_scene_collectable_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        scene_id = safe_key(row_key)
+        level_node = self.add_level_node(scene_id, source=table)
+        self.add_level_map_edge(level_node, scene_id, source=table, evidence="inferred_level_prefix")
+        for index, item in enumerate(row.get("itemList") or []):
+            if not isinstance(item, dict):
+                continue
+            item_id = safe_key(item.get("itemId"))
+            if not item_id:
+                continue
+            collectable_node = self.add_node("scene_collectable", f"{scene_id}:{item_id}:{index}", name=item_id, source=table, data={"sceneId": item.get("sceneId") or scene_id, "itemId": item_id, "maxCount": item.get("maxCount"), "imagePath": item.get("imagePath"), "hasConvertRule": item.get("hasConvertRule"), "convertTargetItemId": item.get("convertTargetItemId"), "convertRequiredCount": item.get("convertRequiredCount"), "extraBandwidthCapacity": item.get("extraBandwidthCapacity"), "extraBuildingNumLimit": item.get("extraBuildingNumLimit")})
+            item_node = self.add_item_node(item_id, source=table)
+            self.add_edge(row_node, collectable_node, "defines_scene_collectable", source=table, evidence=str(index))
+            self.add_edge(level_node, collectable_node, "level_has_scene_collectable", source=table, evidence=str(index))
+            self.add_edge(level_node, item_node, "level_has_collectable_item", source=table, evidence=str(index), data={"maxCount": item.get("maxCount")})
+            self.add_edge(collectable_node, item_node, "scene_collectable_item", source=table, evidence="itemId")
+            convert_node = self.add_item_node(item.get("convertTargetItemId"), source=table)
+            if convert_node:
+                self.add_edge(collectable_node, convert_node, "scene_collectable_converts_to_item", source=table, evidence="convertTargetItemId", data={"convertRequiredCount": item.get("convertRequiredCount")})
+
+    def add_factory_level_region_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        level_id = safe_key(row_key)
+        level_node = self.add_level_node(level_id, source=table)
+        self.add_level_map_edge(level_node, level_id, source=table, evidence="inferred_level_prefix")
+        for index, region_id in enumerate(row.get("list") or []):
+            region_id = safe_key(region_id)
+            if not region_id:
+                continue
+            region_node = self.add_node("factory_region", region_id, name=region_id, source=table)
+            self.add_edge(row_node, region_node, "defines_factory_region_ref", source=table, evidence=str(index))
+            self.add_edge(level_node, region_node, "level_has_factory_region", source=table, evidence=f"list[{index}]")
+            self.add_alias(region_id, region_node, kind="factory_region_id", source=table)
+
+    def add_settlement_level_poi_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        level_id = safe_key(row_key)
+        poi_id = safe_key(row.get("settlementId"))
+        if not level_id or not poi_id:
+            return
+        level_node = self.add_level_node(level_id, source=table)
+        poi_node = self.add_node("settlement_poi", poi_id, name=poi_id, source=table)
+        self.add_edge(row_node, poi_node, "defines_settlement_poi", source=table)
+        self.add_edge(level_node, poi_node, "level_has_settlement_poi", source=table, evidence="settlementId")
+        self.add_alias(poi_id, poi_node, kind="settlement_poi_id", source=table)
+        self.add_level_map_edge(level_node, level_id, source=table, evidence="inferred_level_prefix")
+
+    def add_shop_channel_level_poi_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        level_id = safe_key(row_key)
+        poi_id = safe_key(row.get("channelPartner"))
+        if not level_id or not poi_id:
+            return
+        level_node = self.add_level_node(level_id, source=table)
+        poi_node = self.add_node("shop_channel_poi", poi_id, name=poi_id, source=table)
+        self.add_edge(row_node, poi_node, "defines_shop_channel_poi", source=table)
+        self.add_edge(level_node, poi_node, "level_has_shop_channel_poi", source=table, evidence="channelPartner")
+        self.add_alias(poi_id, poi_node, kind="shop_channel_poi_id", source=table)
+        self.add_level_map_edge(level_node, level_id, source=table, evidence="inferred_level_prefix")
+
     def add_structured_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if table in {"FactoryManualCraftTable", "FactoryMachineCraftTable", "FactoryHubCraftTable"} and isinstance(row, dict):
             self.add_factory_recipe_edges(table, row_key, row, row_node)
@@ -3284,6 +3558,36 @@ class SourceGraphBuilder:
             self.add_factory_machine_edges(table, row_key, row, row_node)
         elif table == "FactoryCraftShowingTypeTable" and isinstance(row, dict):
             self.add_factory_showing_type_edges(table, row_key, row, row_node)
+        elif table == "MapIdTable" and isinstance(row, dict):
+            self.add_map_table_edges(table, row_key, row, row_node)
+        elif table == "LevelDescTable" and isinstance(row, dict):
+            self.add_level_desc_edges(table, row_key, row, row_node)
+        elif table == "LevelLoadingTable" and isinstance(row, dict):
+            self.add_level_loading_edges(table, row_key, row, row_node)
+        elif table == "SpecialLevelToMapTable" and isinstance(row, dict):
+            self.add_special_level_map_edges(table, row_key, row, row_node)
+        elif table == "SceneAreaTable" and isinstance(row, dict):
+            self.add_scene_area_edges(table, row_key, row, row_node)
+        elif table == "MapMarkCategoryTable" and isinstance(row, dict):
+            self.add_map_mark_category_edges(table, row_key, row, row_node)
+        elif table == "MapMarkTypeTable" and isinstance(row, dict):
+            self.add_map_mark_type_edges(table, row_key, row, row_node)
+        elif table == "MapMarkTempTable" and isinstance(row, dict):
+            self.add_map_mark_template_edges(table, row_key, row, row_node)
+        elif table == "MapMarkInsTable" and isinstance(row, dict):
+            self.add_map_mark_instance_edges(table, row_key, row, row_node)
+        elif table == "TrackMapPointTable" and isinstance(row, dict):
+            self.add_track_map_point_edges(table, row_key, row, row_node)
+        elif table == "TrackMapLinkTable" and isinstance(row, dict):
+            self.add_track_map_link_edges(table, row_key, row, row_node)
+        elif table == "SceneCollectableItemTable" and isinstance(row, dict):
+            self.add_scene_collectable_edges(table, row_key, row, row_node)
+        elif table == "FactoryLevelRegionTable" and isinstance(row, dict):
+            self.add_factory_level_region_edges(table, row_key, row, row_node)
+        elif table == "SettlementLevelPOIMapTable" and isinstance(row, dict):
+            self.add_settlement_level_poi_edges(table, row_key, row, row_node)
+        elif table == "ShopChannelLevelPOIMapTable" and isinstance(row, dict):
+            self.add_shop_channel_level_poi_edges(table, row_key, row, row_node)
         elif table == "AudioDialog" and isinstance(row, dict):
             path = safe_key(row.get("path"))
             audio_key = Path(path).stem if path else row_key
@@ -3327,20 +3631,7 @@ class SourceGraphBuilder:
                     continue
                 audio_node = self.add_node("audio", vo_id, name=vo_id, source="CharacterTable")
                 self.add_edge(char_node, audio_node, "has_profile_voice", source="CharacterTable", evidence=str(voice.get("voiceIndex") or ""))
-        elif table == "MapMarkInsTable" and isinstance(row, dict):
-            level = safe_key(row.get("levelId"))
-            mark = safe_key(row.get("markInsId") or row_key)
-            mark_node = self.add_node(
-                "map_mark",
-                mark,
-                name=mark,
-                source="MapMarkInsTable",
-                data={"levelId": level, "markInfoId": row.get("markInfoId"), "pos": row.get("pos")},
-            )
-            self.add_edge(row_node, mark_node, "defines_map_mark", source="MapMarkInsTable")
-            if level:
-                level_node = self.add_node("level", level, name=level, source="MapMarkInsTable")
-                self.add_edge(level_node, mark_node, "has_map_mark", source="MapMarkInsTable")
+
         elif table == "AudioSequenceDialog" and isinstance(row, dict):
             for sequence_key, sequence in row.items():
                 seq_node = self.add_node("audio_sequence", sequence_key, name=sequence_key, source="AudioSequenceDialog")
@@ -3744,6 +4035,20 @@ QUERY_KIND_PRIORITY = {
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
     "mission": 8,
+    "map": 9,
+    "level": 10,
+    "level_loading": 11,
+    "scene_area": 12,
+    "map_mark": 13,
+    "map_mark_template": 14,
+    "map_mark_type": 15,
+    "map_mark_category": 16,
+    "track_map_point": 17,
+    "track_map_link": 18,
+    "scene_collectable": 19,
+    "factory_region": 20,
+    "settlement_poi": 21,
+    "shop_channel_poi": 22,
     "character": 9,
     "weapon": 10,
     "equipment": 11,
@@ -3804,6 +4109,20 @@ NODE_ID_PREFIXES = (
     "option_override",
     "line",
     "mission",
+    "map",
+    "level",
+    "level_loading",
+    "scene_area",
+    "map_mark",
+    "map_mark_template",
+    "map_mark_type",
+    "map_mark_category",
+    "track_map_point",
+    "track_map_link",
+    "scene_collectable",
+    "factory_region",
+    "settlement_poi",
+    "shop_channel_poi",
     "character",
     "weapon",
     "equipment",
