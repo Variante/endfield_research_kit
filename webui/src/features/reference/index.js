@@ -73,7 +73,6 @@
     escapeHtml,
     storageGet,
     storageSet,
-    textIncludes,
   } = window.WebUI;
   const REF_STATE = {
     index: null,
@@ -308,13 +307,13 @@
   }
 
   function tableMetadataMatches(table, q) {
-    return [
+    return window.WebUI.queryMatches([
       table.label,
       table.table,
       table.source,
       table.sourceLabel,
       tablePrefix(table),
-    ].some((value) => textIncludes(value, q));
+    ], window.WebUI.parseQuery(q));
   }
 
   function tableContentMatches(table, q, source) {
@@ -903,15 +902,13 @@
   }
 
   function rowMatches(row, q) {
-    if (!q) return true;
-    if ([row.id, row.title, row.bucket].some((value) => textIncludes(value, q))) return true;
-    return (row.texts || []).some((item) => [
-      item.field,
-      item.hint,
-      item.path,
-      item.i18nId,
-      item.text,
-    ].some((value) => textIncludes(value, q)));
+    const tokens = window.WebUI.parseQuery(q);
+    if (!tokens.length) return true;
+    const haystack = [row.id, row.title, row.bucket];
+    for (const item of row.texts || []) {
+      haystack.push(item.field, item.hint, item.path, item.i18nId, item.text);
+    }
+    return window.WebUI.queryMatches(haystack, tokens);
   }
 
   function renderReferenceRows() {

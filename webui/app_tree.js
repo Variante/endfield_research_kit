@@ -4,8 +4,32 @@ function normalizeSearchText(value) {
   return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function searchTextIncludes(value, q) {
-  return normalizeSearchText(value).includes(q);
+// Concatenate every searchable field of an entry into one lowercased blob, so a
+// multi-token query can be OR-matched and scored against it in one pass.
+function entrySearchHaystack(e) {
+  const parts = [e.k, e.m, e.title, e.p, e.x];
+  const missionName = missionDisplay(entryTreeMissionId(e), entryDataType(e));
+  if (missionName) parts.push(missionName);
+  for (const dataType of entryTreeDataTypes(e)) {
+    parts.push(dataType, dataTypeLabel(dataType));
+    const group = treeGroupInfo(e, dataType);
+    if (group.label) parts.push(group.label);
+    if (group.raw) parts.push(group.raw);
+  }
+  for (const typeKey of entryMediaTypeFilterKeys(e)) {
+    parts.push(typeKey, typeFilterLabel(typeKey));
+  }
+  for (const tag of entryMetadataTags(e)) {
+    parts.push(tag, metadataTagLabel(tag));
+  }
+  for (const method of entryRecoveryMethods(e)) {
+    parts.push(method, recoveryMethodLabel(method));
+  }
+  for (const aid of e.c || []) {
+    parts.push(aid);
+    for (const nm of (STATE.actorNames[aid] || [])) parts.push(nm);
+  }
+  return normalizeSearchText(parts.filter(Boolean).join("\n"));
 }
 
 function entrySearchAliasBaseKey(key) {
@@ -640,7 +664,7 @@ function storyOrderMissionMoveUnusedControl(row) {
   );
 }
 
-// #2 â€?flag missions whose order is NOT human-verified (not locked). Non-locked
+// #2 ï¿½?flag missions whose order is NOT human-verified (not locked). Non-locked
 // overrides may be OCR/auto-seeded; per project policy OCR is untrusted, so these
 // need a human pass. Locked missions are treated as verified and show no badge.
 function storyOrderMissionVerifiedControl(row) {
@@ -657,7 +681,7 @@ function storyOrderMissionVerifiedControl(row) {
   return `<span class="story-order-unverified-badge" title="${title}">${label}</span>`;
 }
 
-// #1 â€?jump to the next low-confidence row needing review. Count reflects the
+// #1 ï¿½?jump to the next low-confidence row needing review. Count reflects the
 // mission's fallback/weak rows; only shown once the mission JSON is cached (debug).
 function storyOrderMissionReviewControl(row) {
   if ((STATE.sortMode || "story") !== "story" || !STATE.showDebug) return "";
@@ -1027,50 +1051,31 @@ function applyFilters() {
   if (f.media.size) out = out.filter((e) => entryMatchesMediaFilters(e, f.media));
   if (f.issues.size) out = out.filter((e) => entryMatchesStoryIssueFilters(e, f.issues));
   if (f.recoveryMethods.size) out = out.filter((e) => entryMatchesRecoveryMethodFilters(e, f.recoveryMethods));
-  if (f.q) {
-    const q = f.q;
+  const tokens = window.WebUI.parseQuery(f.q);
+  if (tokens.length) {
     if (typeof ensureStorySearchIndexLoaded === "function" && !STATE.storySearchLoaded) {
       void ensureStorySearchIndexLoaded().then(() => {
         if (STATE.filters.q && STATE.storySearchLoaded) applyFilters();
       });
     }
+    // OR semantics: keep an entry if any token matches any searchable field, and
+    // record how many distinct tokens matched so multi-word queries can rank by it.
+    const scores = new Map();
     out = out.filter((e) => {
-      if (searchTextIncludes(e.k, q)) return true;
-      if (searchTextIncludes(e.m, q)) return true;
-      if (e.title && searchTextIncludes(e.title, q)) return true;
-      const missionName = missionDisplay(entryTreeMissionId(e), entryDataType(e));
-      if (missionName && searchTextIncludes(missionName, q)) return true;
-      for (const dataType of entryTreeDataTypes(e)) {
-        if (searchTextIncludes(dataType, q)) return true;
-        if (searchTextIncludes(dataTypeLabel(dataType), q)) return true;
-        const group = treeGroupInfo(e, dataType);
-        if (group.label && searchTextIncludes(group.label, q)) return true;
-        if (group.raw && searchTextIncludes(group.raw, q)) return true;
+      const hay = entrySearchHaystack(e);
+      let score = 0;
+      for (const token of tokens) {
+        if (hay.includes(token) || entryMatchesOptionIdSearch(e, token)) score += 1;
       }
-      for (const typeKey of entryMediaTypeFilterKeys(e)) {
-        if (searchTextIncludes(typeKey, q)) return true;
-        if (searchTextIncludes(typeFilterLabel(typeKey), q)) return true;
-      }
-      for (const tag of entryMetadataTags(e)) {
-        if (searchTextIncludes(tag, q)) return true;
-        if (searchTextIncludes(metadataTagLabel(tag), q)) return true;
-      }
-      for (const method of entryRecoveryMethods(e)) {
-        if (searchTextIncludes(method, q)) return true;
-        if (searchTextIncludes(recoveryMethodLabel(method), q)) return true;
-      }
-      if (entryMatchesOptionIdSearch(e, q)) return true;
-      if (e.p && searchTextIncludes(e.p, q)) return true;
-      if (e.x && searchTextIncludes(e.x, q)) return true;
-      for (const aid of e.c) {
-        if (searchTextIncludes(aid, q)) return true;
-        for (const nm of (STATE.actorNames[aid] || [])) {
-          if (searchTextIncludes(nm, q)) return true;
-        }
-      }
-      return false;
+      if (score <= 0) return false;
+      scores.set(e.k, score);
+      return true;
     });
+    STATE.searchScores = scores;
+  } else {
+    STATE.searchScores = null;
   }
+  STATE.searchTokens = tokens;
 
   STATE.filtered = out;
   $("#shown").textContent = out.length.toLocaleString();
@@ -1080,6 +1085,13 @@ function applyFilters() {
 }
 
 function rebuildTree({ resetScroll = true } = {}) {
+  // A multi-word query switches to a flat list ranked by how many keywords each
+  // entry matched, so the best hits float to the top regardless of story order.
+  if ((STATE.searchTokens || []).length > 1) {
+    rebuildFlatSearchList({ resetScroll });
+    return;
+  }
+
   // Group by data type and then mission. Kind (dlg/sns/misc) is not a tree
   // level, so story and chat from the same mission stay together.
   const tree = {};
@@ -1166,6 +1178,30 @@ function rebuildTree({ resetScroll = true } = {}) {
         for (const member of familyBucket.items) pushItem(member);
       }
     }
+  }
+
+  STATE.rows = rows;
+  STATE.totalH = offset;
+  $("#list-spacer").style.height = offset + "px";
+  if (resetScroll) $("#list-wrap").scrollTop = 0;
+  renderList();
+}
+
+// Flat, ranked result list used when a multi-word query is active: order by
+// keyword-match count (desc), breaking ties with the active sort mode.
+function rebuildFlatSearchList({ resetScroll = true } = {}) {
+  const scores = STATE.searchScores || new Map();
+  const tieBreak = makeItemSorter(STATE.sortMode || "story");
+  const items = [...STATE.filtered].sort((a, b) => {
+    const delta = (scores.get(b.k) || 0) - (scores.get(a.k) || 0);
+    return delta || tieBreak(a, b);
+  });
+
+  const rows = [];
+  let offset = 0;
+  for (const entry of items) {
+    rows.push({ type: "item", entry, top: offset, h: ROW_ITEM_H });
+    offset += ROW_ITEM_H;
   }
 
   STATE.rows = rows;
