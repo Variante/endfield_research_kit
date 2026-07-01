@@ -2438,3 +2438,112 @@ Validation commands:
 - `python -m py_compile scripts\build_data_index.py`
 - Focused direct `decode_buff_memorypack` scan over both `structured/StreamingAssets/Data/Json/BuffData` and `structured/Persistent/Data/Json/BuffData`.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_convert_debug_validate_20260630`
+
+## 2026-06-30 BuffData EffectAction and ModifyDynamicBlackboard Partial Decoders
+
+Added two more fail-closed partial decoders for exposed single-item `AbilityActionData` payloads.
+
+What changed:
+
+- Added `Core_EffectAction_EffectActionData` for one-byte union tag `0x0091`, member count `15`.
+- The EffectAction decoder parses the inherited `AbilityActionData` prefix, `bigEffectName`, a bounded `EffectActionCfg` blob, `effectSource` TargetSettings envelope, six boolean flags, `saveEffectIdToBlackboard`, and `targetSettings` envelope.
+- `EffectActionCfg` remains partial: the decoder validates its bounded member-count candidate and preserves hash/prefix/tail/string diagnostics instead of naming the many nested fields.
+- TargetSettings envelope parsing now derives byte length from the string slot (`67 + string length`) instead of only accepting `67` and `79` byte cases. This covers current `main`, `tarpoint`, `otherTar`, `smart_target`, `ballPos`, and other string-slot variants while still checking the stable envelope prefix and allowed tail candidates.
+- Two EffectAction variants remain opaque because their first TargetSettings-like anchor is inside `EffectActionCfg`, not the outer `effectSource`; the decoder returns `None` for that unsupported shape rather than producing a typed-decoder failure.
+- Added `Core_ModifyDynamicBlackboard_Data` for one-byte union tag `0x00d1`, member count `10`.
+- ModifyDynamicBlackboard parses the inherited prefix, `calculateType`, `calculationTarget` TargetSettings envelope, `directValue`, `key`, `operation`, and a BlackboardFloat-shaped `value`; `calculateType` and TargetSettings semantics remain partial.
+
+Focused validation over current exported BuffData roots:
+
+| Root | BuffData files | Timeline rows | Timeline records | Emitted single-item summaries | Exact item decodes | Partial item decodes | Typed decoder failures |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `structured/StreamingAssets` | 2,291 | 79 | 338 | 263 | 11 | 134 | 0 |
+| `structured/Persistent` | 2,325 | 79 | 338 | 263 | 11 | 134 | 0 |
+
+Action item decode-status distribution in both roots:
+
+| Decode status | Count |
+| --- | ---: |
+| `partial` | 134 |
+| `opaque` | 118 |
+| `exact` | 11 |
+
+Decoded action item type distribution in both roots:
+
+| Action type | Count | Status |
+| --- | ---: | --- |
+| `Core_EffectAction_EffectActionData` | 117 | partial |
+| `Core_PlaySoundAction_PlaySoundActionData` | 10 | partial |
+| `Core_SendBattleSignalToLevel_Data` | 8 | exact |
+| `Core_ConvertToTargetContext_Data` | 4 | partial |
+| `Core_DebugPrintAction_Data` | 2 | partial |
+| `Core_PlayAnimationAction_PlayAnimationActionData` | 2 | exact |
+| `Core_ModifyDynamicBlackboard_Data` | 1 | partial |
+| `Core_PatrolTeleport_Data` | 1 | exact |
+
+EffectAction envelope coverage in both roots:
+
+| Field | Byte lengths |
+| --- | --- |
+| `effectSource` | `67:101`, `75:9`, `71:6`, `74:1` |
+| `targetSettings` | `67:91`, `71:14`, `75:9`, `74:2`, `79:1` |
+
+Remaining exposed opaque EffectAction variants:
+
+| BuffData row | Timeline record | Bytes | Reason |
+| --- | ---: | ---: | --- |
+| `buff_eny_0081_ruanyi_skill_09.json` | 0 | 494 | first TargetSettings-like anchor is inside `EffectActionCfg` |
+| `buff_eny_0116_zfydef_fireball.json` | 2 | 501 | first TargetSettings-like anchor is inside `EffectActionCfg` |
+
+Decoded ModifyDynamicBlackboard sample:
+
+| BuffData row | Timeline record | Frames | `serverActionIndex` | `key` | `operationName` | `value` | TargetSettings bytes/tail |
+| --- | ---: | --- | ---: | --- | --- | ---: | --- |
+| `buff_chr_0028_wulfa_combo_2_qte_timerlistening.json` | 0 | `0..3` | 5 | `EntityBB_Combo_QTE_Trigger` | `Assign` | 0.0 | `67 / 4` |
+
+Independent subagent findings used this round:
+
+- Strict multi-action splitting has zero safe current impact if it requires a unique chain where every item is consumed by existing typed decoders. Header-only splitting is unsafe: some multi-action payloads have too many plausible tag/member hits and others have too few.
+- Current multi-action first tags are mostly `CompareFloat`, `FindTargetAction`, `EffectAction`, `GetAITransDataAction`, `CheckBuffStackNumAdvanced`, `Interrupt`, `DamageAction`, and `CreateBuffAction`.
+- `ModifyDynamicBlackboard` has one proven single-item payload per root and exact field order from `reports/option_flow_runtime_metadata.json`.
+- `SelfRotate` has seven proven single-item payloads per root, but its nested `DirectionSettings`/TargetSettings windows are not understood enough for a named field decoder; keep it for a later shape-only or deeper nested-envelope pass.
+
+Full WebUI Json validation after this change:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 143 |
+| `Json/BuffData` unresolved issue rows | 143 |
+| `Json/LevelScriptData` unresolved issue rows | 0 |
+
+Current strict issue field distribution remains row-level unchanged because multi-item timeline actions and other nested BuffData sections remain partial:
+
+| Status | Count |
+| --- | ---: |
+| `decoded.postIdPrefix.timelineActionsBodyStatus=partial-timelineActions-opaque-actionData` | 79 |
+| `decoded.postIdPrefix.timelineActionsSemanticStatus=partial-inner-actionData-union-payloads-opaque` | 79 |
+| `decoded.postIdPrefix.stackingSettings.stackEffectsBodyStatus=opaque-effectActions` | 47 |
+| `decoded.postIdPrefix.stackingSettings.effectActionsSemanticStatus=partial-effectActions-unproven-field-order` | 47 |
+| `decoded.postIdPrefix.poiseModifierBodyStatus=opaque-poiseModifier` | 9 |
+| `decoded.postIdPrefix.poiseModifierSemanticStatus=partial-poiseModifier-opaque-processors` | 9 |
+| `decoded.postIdPrefix.shieldConfigsBodyStatus=opaque-shieldConfigs` | 4 |
+| `decoded.postIdPrefix.shieldConfigsSemanticStatus=partial-shieldConfigs-opaque-nested-fields` | 4 |
+| `decoded.postIdPrefix.igniteEventActionBodyStatus=opaque-igniteEventAction` | 4 |
+| `decoded.postIdPrefix.igniteEventActionSemanticStatus=partial-igniteEventAction-opaque-actionData` | 4 |
+| `decoded.postIdPrefix.igniteEventActionBodyStatus=opaque-igniteEventAction-nestedBlocks` | 4 |
+| `decoded.postIdPrefix.igniteEventActionSemanticStatus=partial-igniteEventAction-nestedBlocks-opaque-actionData` | 4 |
+| `decoded.postIdPrefix.poiseModifierBodyTailPreview.timelineActionsBodyStatus=partial-timelineActions-opaque-actionData` | 3 |
+
+Interpretation:
+
+- Single-item typed coverage improved from 27 decoded items to 145 decoded items per root.
+- Opaque single-item summaries dropped from 236 to 118.
+- The row-level warning count remains unchanged by design; warnings are not suppressed while multi-action boundaries, stack effect actions, poise/shield/ignite payloads, and parts of EffectActionCfg remain partial.
+- Next useful targets are `CompareFloat`/`FindTargetAction` for multi-action boundary progress, or a shape-only `SelfRotate` partial decoder if we want to expose its bounded nested envelopes without naming fields prematurely.
+
+Validation commands:
+
+- `python -m py_compile scripts\build_data_index.py`
+- Focused direct `decode_buff_memorypack` scan over both `structured/StreamingAssets/Data/Json/BuffData` and `structured/Persistent/Data/Json/BuffData`.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_effect_modify_validate_20260630`
