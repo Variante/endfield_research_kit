@@ -26,7 +26,9 @@
     <nav id="view-tabs" aria-label="Primary views">
       <button id="story-tab" class="view-tab is-active" type="button" data-view="story">&#21095;&#24773;</button>
       <button id="reference-tab" class="view-tab" type="button" data-view="reference">&#25991;&#26412;</button>
+      <button id="gameplay-tab" class="view-tab" type="button" data-view="gameplay">Gameplay</button>
       <button id="game-data-tab" class="view-tab" type="button" data-view="game-data">&#25968;&#25454;</button>
+      <button id="decoded-tab" class="view-tab" type="button" data-view="decoded">Decoded</button>
       <button id="assets-tab" class="view-tab" type="button" data-view="assets">&#36164;&#28304;</button>
       <button id="updates-tab" class="view-tab" type="button" data-view="updates">&#26356;&#26032;</button>
     </nav>
@@ -238,6 +240,64 @@
       </div>
     </section>
 
+    <section id="gameplay-view" class="page-view" data-view="gameplay" hidden>
+      <div id="gameplay-app">
+        <aside id="gameplay-left">
+          <header>
+            <h1 id="gameplay-title">Gameplay</h1>
+            <div id="gameplay-stats"><span id="gameplay-count">?</span> <span id="gameplay-count-label">entries</span></div>
+            <div class="sidebar-header-actions">
+              <button id="gameplay-filter-toggle" class="panel-toggle" type="button" aria-controls="gameplay-filter-panel" aria-expanded="true">Hide filters</button>
+              <button id="gameplay-reset" type="button">Reset filters</button>
+            </div>
+          </header>
+
+          <div id="gameplay-filter-panel" class="filters">
+            <section class="filter-section filter-section-basic" data-filter-section="gameplay-basic" data-fixed-open="1">
+              <div class="filter-section-title">
+                <span id="gameplay-basic-filter-label">Basic filters</span>
+              </div>
+              <div id="gameplay-filter-section-basic-body" class="filter-section-body filter-section-body-stack">
+                <input id="gameplay-q" type="search" placeholder="Search weapon / character / skill / stat">
+              </div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="gameplay-kind" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="gameplay-filter-section-kind-body">
+                <span id="gameplay-kind-label">Kind</span>
+              </button>
+              <div id="gameplay-filter-section-kind-body" class="filter-section-body" hidden>
+                <div id="gameplay-kind-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="gameplay-group" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="gameplay-filter-section-group-body">
+                <span id="gameplay-group-label">Group</span>
+              </button>
+              <div id="gameplay-filter-section-group-body" class="filter-section-body" hidden>
+                <div id="gameplay-group-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+          </div>
+
+          <div id="gameplay-list-meta"><span id="gameplay-shown">0</span> / <span id="gameplay-total">0</span> <span id="gameplay-list-meta-label">entries</span></div>
+          <div id="gameplay-list"></div>
+        </aside>
+        <div id="gameplay-splitter" class="pane-splitter" role="separator" aria-label="Resize sidebar" aria-orientation="vertical" tabindex="0"></div>
+
+        <main id="gameplay-right">
+          <div id="gameplay-empty">Select a gameplay entry</div>
+          <div id="gameplay-detail" hidden>
+            <header id="gameplay-detail-header">
+              <div id="gameplay-detail-title"></div>
+              <div id="gameplay-detail-meta"></div>
+            </header>
+            <div id="gameplay-detail-facts"></div>
+            <div id="gameplay-detail-body"></div>
+          </div>
+        </main>
+      </div>
+    </section>
+
     <section id="game-data-view" class="page-view" data-view="game-data" hidden>
       <div id="game-data-app">
         <aside id="game-data-left">
@@ -318,6 +378,118 @@
             <section id="game-data-preview-panel" class="asset-panel">
               <div id="game-data-preview"></div>
             </section>
+          </div>
+        </main>
+      </div>
+    </section>
+    <section id="decoded-view" class="page-view" data-view="decoded" hidden>
+      <div id="decoded-app">
+        <aside id="decoded-left">
+          <header>
+            <h1 id="decoded-title">Decoded Files</h1>
+            <div id="decoded-stats"><span id="decoded-count">?</span> <span id="decoded-count-label">files</span></div>
+            <div class="sidebar-header-actions">
+              <button id="decoded-filter-toggle" class="panel-toggle" type="button" aria-controls="decoded-filter-panel" aria-expanded="true">Hide filters</button>
+              <button id="decoded-reset" type="button">Reset filters</button>
+            </div>
+          </header>
+
+          <div id="decoded-filter-panel" class="filters">
+            <section class="filter-section filter-section-basic" data-filter-section="decoded-basic" data-fixed-open="1">
+              <div class="filter-section-title">
+                <span id="decoded-basic-filter-label">Basic filters</span>
+              </div>
+              <div id="decoded-filter-section-basic-body" class="filter-section-body filter-section-body-stack">
+                <input id="decoded-q" type="search" placeholder="Search domain / schema / class / prefix / path">
+              </div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="decoded-group" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="decoded-filter-section-group-body">
+                <span id="decoded-group-label">Group</span>
+              </button>
+              <div id="decoded-filter-section-group-body" class="filter-section-body" hidden>
+                <div id="decoded-group-filter" class="chips" data-multi="0"></div>
+              </div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="decoded-source" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="decoded-filter-section-source-body">
+                <span id="decoded-source-label">Source</span>
+              </button>
+              <div id="decoded-filter-section-source-body" class="filter-section-body" hidden>
+                <div id="decoded-source-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="decoded-type" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="decoded-filter-section-type-body">
+                <span id="decoded-type-label">Type</span>
+              </button>
+              <div id="decoded-filter-section-type-body" class="filter-section-body" hidden>
+                <div id="decoded-type-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="decoded-status" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="decoded-filter-section-status-body">
+                <span id="decoded-status-label">Status</span>
+              </button>
+              <div id="decoded-filter-section-status-body" class="filter-section-body" hidden>
+                <div id="decoded-status-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="decoded-class" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="decoded-filter-section-class-body">
+                <span id="decoded-class-label">Managed class</span>
+              </button>
+              <div id="decoded-filter-section-class-body" class="filter-section-body" hidden>
+                <div id="decoded-class-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="decoded-sort-section" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="decoded-filter-section-sort-body">
+                <span id="decoded-sort-label">Sort</span>
+              </button>
+              <div id="decoded-filter-section-sort-body" class="filter-section-body" hidden>
+                <select id="decoded-sort" aria-labelledby="decoded-sort-label">
+                  <option id="decoded-sort-name" value="name">Name (A-Z)</option>
+                  <option id="decoded-sort-size-desc" value="size-desc">File size (high to low)</option>
+                  <option id="decoded-sort-size-asc" value="size-asc">File size (low to high)</option>
+                  <option id="decoded-sort-status" value="status">Status</option>
+                </select>
+              </div>
+            </section>
+          </div>
+          <div id="decoded-filter-splitter" class="filter-splitter" role="separator" aria-label="Resize filters" aria-orientation="horizontal" tabindex="0"></div>
+
+          <div id="decoded-list-meta"><span id="decoded-shown">0</span> / <span id="decoded-total">0</span> <span id="decoded-list-meta-label">items</span></div>
+          <div id="decoded-list"></div>
+        </aside>
+        <div id="decoded-splitter" class="pane-splitter" role="separator" aria-label="Resize sidebar" aria-orientation="vertical" tabindex="0"></div>
+
+        <main id="decoded-right">
+          <div id="decoded-run-meta"></div>
+          <div id="decoded-empty">Select a decoded file</div>
+          <div id="decoded-detail" hidden>
+            <header id="decoded-detail-header">
+              <div id="decoded-detail-title"></div>
+              <div id="decoded-detail-meta"></div>
+            </header>
+            <div class="decoded-detail-toolbar">
+              <a id="decoded-open-raw" class="asset-link-button" href="#" target="_blank" rel="noopener">Open JSON</a>
+              <label class="decoded-raw-toggle">
+                <input id="decoded-show-raw" type="checkbox">
+                <span id="decoded-show-raw-label">Show raw JSON</span>
+              </label>
+            </div>
+            <div id="decoded-detail-facts"></div>
+            <div id="decoded-detail-body">
+              <section class="asset-panel decoded-structure-panel">
+                <div id="decoded-structure-label" class="decoded-panel-label">Structure</div>
+                <div id="decoded-structure"></div>
+              </section>
+              <section id="decoded-json-panel" class="asset-panel decoded-json-panel" hidden>
+                <div id="decoded-json-label" class="decoded-panel-label">Raw JSON</div>
+                <pre id="decoded-json"></pre>
+              </section>
+            </div>
           </div>
         </main>
       </div>
@@ -597,7 +769,9 @@
 <script src="app.js?v=20260628-story-tag-prune"></script>
 <script src="assets.js?v=20260627-foldable-filters"></script>
 <script src="src/features/reference/index.js?v=20260627-foldable-filters"></script>
+<script src="src/features/gameplay/index.js?v=20260701-gameplay-browser"></script>
 <script src="src/features/game_data/index.js?v=20260627-foldable-filters"></script>
+<script src="src/features/decoded/index.js?v=20260630-decoded-browser"></script>
 <script src="src/features/updates/index.js?v=20260627-foldable-filters"></script>
 </body>
 </html>

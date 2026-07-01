@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Build split WebUI zips without the 3D asset browser payload.
 
-The primary package keeps the story/reference browser text data, code, and
-emoji image files. A companion assets package contains the larger exported
+The primary package keeps the story/reference/gameplay browser text data, code,
+and emoji image files. A companion assets package contains the larger exported
 image/video files that the story renderer can display, and a standalone audio
-package contains decoded story audio files. OBJ/FBX files, Blender bundles, and
-the asset-browser data page are intentionally left out.
+package contains decoded story audio files. OBJ/FBX files, Blender bundles,
+the local-only Data/Decoded tabs, and the asset-browser data page are
+intentionally left out.
 """
 from __future__ import annotations
 
@@ -64,22 +65,22 @@ ASSET_TAB_RE = re.compile(r'(<button\s+id="assets-tab"(?=[\s>]))([^>]*>)', re.IG
 ASSET_SHIM_JS = """(() => {
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+  const AVAILABLE_VIEWS = new Set(["story", "reference", "gameplay", "updates"]);
+  const HIDDEN_VIEWS = new Set(["assets", "game-data", "decoded"]);
 
   function resolveViewFromHash() {
-    const hash = (window.location.hash || "").toLowerCase();
-    if (hash === "#reference") return "reference";
-    if (hash === "#updates") return "updates";
-    return "story";
+    const hash = (window.location.hash || "").replace(/^#/, "").toLowerCase();
+    return AVAILABLE_VIEWS.has(hash) ? hash : "story";
   }
 
   function updateHashForView(view) {
-    const nextHash = view === "reference" ? "#reference" : view === "updates" ? "#updates" : "#story";
+    const nextHash = AVAILABLE_VIEWS.has(view) ? `#${view}` : "#story";
     if (window.location.hash === nextHash) return;
     history.replaceState(null, "", `${window.location.pathname}${window.location.search}${nextHash}`);
   }
 
   function setActiveView(view, { updateHash = true } = {}) {
-    const active = view === "reference" || view === "updates" ? view : "story";
+    const active = AVAILABLE_VIEWS.has(view) ? view : "story";
     document.body.dataset.activeView = active;
 
     $$(".view-tab").forEach((button) => {
@@ -99,15 +100,13 @@ ASSET_SHIM_JS = """(() => {
     window.dispatchEvent(new Event("resize"));
   }
 
-  const assetTab = $("#assets-tab");
-  if (assetTab) {
-    assetTab.hidden = true;
-    assetTab.setAttribute("aria-hidden", "true");
-    assetTab.tabIndex = -1;
-  }
-
   $$(".view-tab").forEach((button) => {
-    if (button.dataset.view === "assets") return;
+    if (HIDDEN_VIEWS.has(button.dataset.view)) {
+      button.hidden = true;
+      button.setAttribute("aria-hidden", "true");
+      button.tabIndex = -1;
+      return;
+    }
     button.addEventListener("click", () => setActiveView(button.dataset.view));
   });
 
@@ -115,7 +114,6 @@ ASSET_SHIM_JS = """(() => {
   setActiveView(resolveViewFromHash(), { updateHash: false });
 })();
 """
-
 PACKAGE_README = """Endfield WebUI story package
 
 Run from this extracted directory:
@@ -124,14 +122,14 @@ Run from this extracted directory:
 
 Then open the printed localhost URL.
 
-This package includes the story/reference text data, WebUI code, emoji images,
-and the compact media indexes. Larger story images and videos are in the
-companion assets zip. Decoded story audio is in the standalone audio zip.
+This package includes the story/reference/gameplay text data, WebUI code, emoji
+images, and the compact media indexes. Larger story images and videos are in
+the companion assets zip. Decoded story audio is in the standalone audio zip.
 Extract those zips into the same directory after this one when you want
 inline/wiki media or playable audio too.
 
-The 3D asset browser, OBJ/FBX payloads, and Blender bundle downloads are
-intentionally excluded.
+The local-only Data/Decoded tabs, 3D asset browser, OBJ/FBX payloads, and
+Blender bundle downloads are intentionally excluded.
 """
 
 CHINESE_QUICKSTART_README = """Endfield WebUI 使用说明
@@ -329,6 +327,8 @@ def iter_webui_text_files(webui_root: Path) -> Iterable[Path]:
         if rel.startswith("data/audio/"):
             continue
         if rel.startswith("data/game_data/"):
+            continue
+        if rel.startswith("data/decoded/"):
             continue
         if path.suffix.lower() in TEXT_EXTENSIONS:
             yield path

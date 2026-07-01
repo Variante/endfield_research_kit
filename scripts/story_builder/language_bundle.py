@@ -6571,11 +6571,12 @@ def build_language_bundle(
                 },
             })
         for voice in sorted(profile_voice, key=lambda item: (int(item.get("voiceIndex") or 0), str(item.get("id") or ""))):
+            voice_id = str(voice.get("voId") or "").strip()
             voice_text = t((voice.get("voiceDesc") or {}).get("id"))
-            if not voice_text:
+            if not voice_text and not voice_id:
                 continue
-            voice_title = brace_text(t((voice.get("voiceTitle") or {}).get("id"))) or str(voice.get("voId") or voice.get("id") or "")
-            lines.append({
+            voice_title = brace_text(t((voice.get("voiceTitle") or {}).get("id"))) or str(voice_id or voice.get("id") or "")
+            line = {
                 "id": str(voice.get("id") or voice.get("voId") or f"{char_id}_voice"),
                 "aid": actor_id,
                 "actor": char_name,
@@ -6593,7 +6594,10 @@ def build_language_bundle(
                         "text": text_trace("CharacterTable.profileVoice", str(voice.get("id") or char_id), "voiceDesc", voice.get("voiceDesc")),
                     },
                 },
-            })
+            }
+            if voice_id:
+                line["voice"] = voice_id
+            lines.append(line)
         if not lines:
             continue
         out_key = f"wiki_{char_id}"

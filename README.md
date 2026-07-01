@@ -2,8 +2,9 @@
 
 Endfield Research Kit turns a local Windows version Endfield install into an
 offline research browser. Its main surface is a static `webui/` app for
-browsing recovered story text, raw text tables, exported media/assets, playable
-audio/video, and focused update diffs between game-data exports.
+browsing recovered story text, raw text tables, curated gameplay records,
+exported media/assets, playable audio/video, local decoded-data indexes, and
+focused update diffs between game-data exports.
 
 The project is built around reproducible local exports:
 
@@ -11,8 +12,12 @@ The project is built around reproducible local exports:
   story order, and recovery evidence from generated game-data JSON.
 - `Text Tables` exposes localized table rows and source data in a searchable
   browser.
+- `Gameplay` surfaces curated weapon, character, skill, talent, and numeric
+  table records from structured game-data tables.
 - `Assets` indexes exported images, models, videos, materials, metadata, and
   related files.
+- `Data` and `Decoded` are local research tabs for decoded config JSON and
+  AnimeStudio decoded Unity JSON indexes.
 - `Updates` compares a saved previous export against the current export so the
   WebUI reports game-data changes without treating local WebUI edits as
   upstream changes.
@@ -66,7 +71,7 @@ Set `ENDFIELD_GAME_ROOT` to the installed `Endfield_Data` folder. The same file
 also stores the saved previous export folder used by Updates tracking.
 
 The script initializes the AnimeStudio submodule, builds AnimeStudio, verifies
-AnimeStudio's integrated VFS/audio commands, exports Story/Text Tables data
+AnimeStudio's integrated VFS/audio commands, exports Story/Text Tables/Gameplay data
 into `export_full/` and `webui/data/`, then starts or reuses the WebUI server
 at `http://127.0.0.1:8765/`.
 
@@ -81,7 +86,7 @@ and [EIHRTeam/EndfieldStudio](https://github.com/EIHRTeam/EndfieldStudio).
 Many thanks to those projects and their maintainers for the groundwork.
 
 First-time setup still does real work. Building AnimeStudio and exporting
-Story/Text Tables can take a while; the optional installed-game asset/media and
+Story/Text Tables/Gameplay can take a while; the optional installed-game asset/media and
 CN audio refresh can take several hours. The full asset path has been observed
 around 27 GiB of process-tree RAM on a 64 GiB workstation, so 64 GiB system RAM
 is the comfortable target for full media refreshes. On lower-RAM systems, start
@@ -102,7 +107,7 @@ without starting the server, add `--no-serve`:
 Useful setup options:
 
 - `--game-root PATH`: one-off override for `ENDFIELD_GAME_ROOT` in `endfield_paths.bat`.
-- `--no-serve`: build Story/Text Tables without starting the WebUI server.
+- `--no-serve`: build Story/Text Tables/Gameplay without starting the WebUI server.
 - `--help`: show the script help and examples.
 
 For troubleshooting and implementation details behind the wrappers, see
@@ -121,8 +126,8 @@ the faster rebuild commands:
 python serve.py
 ```
 
-Plain `export.bat` rebuilds Story/Text Tables browser data from the existing
-`export_full/` and verifies freshness first. Use `export.bat --with-assets`
+Plain `export.bat` rebuilds Story/Text Tables and Gameplay browser data from
+the existing `export_full/` and verifies freshness first. Use `export.bat --with-assets`
 when you want Story plus asset indexes and CN audio relinking in one local
 rebuild. Use `export.bat --export-from-game` after the installed game updates,
 after `scripts\verify_export_freshness.py` reports stale source roots, or
@@ -185,8 +190,10 @@ python scripts\pack_webui.py
 ```
 
 Packaging writes three zips by default: a story zip with the WebUI,
-story and text-table data, and emoji images; a companion assets zip with larger
-story images and videos; and a standalone audio zip with decoded story audio.
+story, text-table, gameplay data, and emoji images; a companion assets zip with
+larger story images and videos; and a standalone audio zip with decoded story
+audio. The default package hides local-only Data/Decoded tabs because their
+indexes point back to the local export tree.
 Extract the story zip first, then extract the assets and audio zips into the
 same directory when those media or audio files are needed.
 

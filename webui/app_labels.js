@@ -1840,9 +1840,12 @@ function actorDisplay(aid) {
   if (String(aid).startsWith("sns_")) {
     return selectSnsActorDisplay(v) || aid;
   }
-  return v
+  const names = v
     .map((name) => stripBraceSegments(name) || String(name || "").trim())
-    .filter(Boolean)
+    .filter(Boolean);
+  const displayNames = names.filter((name) => !isQuestionMarkOnlyName(name));
+  return (displayNames.length ? displayNames : names)
+    .filter((name, index, values) => values.indexOf(name) === index)
     .join(" / ") || aid;
 }
 

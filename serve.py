@@ -5,7 +5,7 @@ Usage:
     python serve.py 9000   # custom port
 
 Serves the `webui` app at `/`, raw current exported assets at
-`/export_full/...`, raw StreamingAssets/Data files at `/export_data/...`, and
+`/export_full/...`, raw StreamingAssets/Data and Persistent/Data files at `/export_data/...`, and
 saved previous-export assets at `/export_previous/...`.
 """
 from __future__ import annotations
@@ -227,8 +227,15 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             root = EXPORT_FULL_ROOT
             request_path = "/" + request_path.removeprefix("/export_full").lstrip("/")
         elif export_data:
-            root = DATA_EXPORT_ROOT
             request_path = "/" + request_path.removeprefix("/export_data").lstrip("/")
+            first_segment = request_path.strip("/").split("/", 1)[0]
+            if (
+                first_segment in {"StreamingAssets", "Persistent"}
+                and (EXPORT_FULL_ROOT / "structured" / first_segment / "Data").exists()
+            ):
+                root = EXPORT_FULL_ROOT / "structured"
+            else:
+                root = DATA_EXPORT_ROOT
         elif export_previous:
             root = PREVIOUS_EXPORT_ROOT
             request_path = "/" + request_path.removeprefix("/export_previous").lstrip("/")

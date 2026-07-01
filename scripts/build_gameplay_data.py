@@ -1,0 +1,882 @@
+"""Build compact gameplay data for the WebUI Gameplay tab.
+
+Run from the repo root:
+    python scripts/build_gameplay_data.py
+    python scripts/build_gameplay_data.py --languages CN EN JP --default-language CN
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+import time
+from pathlib import Path
+from typing import Any
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from common import EXPORT_ROOT, LANG_DIR, rel_path, write_json
+
+
+DEFAULT_TABLE_SOURCE_RELS = (
+    ("StreamingAssets", Path("structured") / "StreamingAssets" / "Table"),
+    ("Persistent", Path("structured") / "Persistent" / "Table"),
+)
+PLACEHOLDER_RE = re.compile(r"\{([^}:]+)(?::([^}]+))?\}")
+TAG_RE = re.compile(r"</?@[^>]*>|</>|<#[^>]+>")
+
+WEAPON_TYPE_LABELS = {
+    "sword": "Sword",
+    "claym": "Claymore",
+    "lance": "Lance",
+    "pistol": "Pistol",
+    "funnel": "Funnel",
+}
+
+SKILL_GROUP_TYPE_LABELS = {
+    0: "Normal Attack",
+    1: "Skill",
+    2: "Ultimate",
+    3: "Combo",
+}
+
+NODE_TYPE_LABELS = {
+    1: "Breakthrough",
+    2: "Equipment Break",
+    3: "Attribute",
+    4: "Passive",
+    5: "Factory",
+}
+
+TALENT_KIND_LABELS = {
+    "attribute": "Attribute",
+    "passive": "Passive",
+    "equipmentBreak": "Equipment Break",
+    "factory": "Factory",
+    "other": "Talent",
+}
+
+PASSIVE_NODE_RE = re.compile(r"^(?P<base>.+_passive_skill_(?P<rank>\d+))_(?P<level>\d+)$")
+FACTORY_NODE_RE = re.compile(r"^fac_(?P<char>chr_.+)_(?P<rank>\d+)_(?P<level>\d+)$")
+EQUIP_BREAK_RE = re.compile(r"^equipBreakT(?P<tier>\d+)$")
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Build compact WebUI gameplay data from exported Endfield tables.",
+    )
+    parser.add_argument(
+        "--languages",
+        nargs="+",
+        default=["CN"],
+        help="Language codes to build. Defaults to CN.",
+    )
+    parser.add_argument(
+        "--default-language",
+        default="CN",
+        help="Fallback language for unresolved text.",
+    )
+    parser.add_argument(
+        "--export-root",
+        type=Path,
+        default=EXPORT_ROOT,
+        help="Export root containing structured/{StreamingAssets,Persistent}/Table.",
+    )
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=LANG_DIR,
+        help="WebUI language data directory.",
+    )
+    return parser.parse_args(argv)
+
+
+def read_json(path: Path, default: Any = None) -> Any:
+    try:
+        return json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return default
+
+
+def load_table(table_dir: Path, name: str, default: Any = None) -> Any:
+    return read_json(table_dir / name, default if default is not None else {})
+
+
+def table_source_roots(export_root: Path) -> list[tuple[str, Path]]:
+    return [(label, export_root / rel) for label, rel in DEFAULT_TABLE_SOURCE_RELS if (export_root / rel).exists()]
+
+
+def merge_table_payload(base: Any, overlay: Any) -> Any:
+    if isinstance(base, dict) and isinstance(overlay, dict):
+        merged = dict(base)
+        merged.update(overlay)
+        return merged
+    if isinstance(base, list) and isinstance(overlay, list):
+        return [*base, *overlay]
+    return overlay
+
+
+def load_merged_table(table_roots: list[tuple[str, Path]], name: str, default: Any = None) -> Any:
+    found = False
+    result: Any = None
+    for _label, root in table_roots:
+        payload = read_json(root / name, None)
+        if payload is None:
+            continue
+        result = payload if not found else merge_table_payload(result, payload)
+        found = True
+    if found:
+        return result
+    if isinstance(default, dict):
+        return dict(default)
+    if isinstance(default, list):
+        return list(default)
+    return default if default is not None else {}
+
+
+def normalize_id(value: Any) -> str:
+    if value in (None, ""):
+        return ""
+    return str(value)
+
+
+def i18n_text(i18n: dict[str, Any], node: Any, fallback_i18n: dict[str, Any] | None = None) -> str:
+    if node is None:
+        return ""
+    if isinstance(node, str):
+        return node
+    if isinstance(node, (int, float)):
+        if int(node) == 0:
+            return ""
+        return str(i18n.get(str(int(node))) or (fallback_i18n or {}).get(str(int(node))) or "")
+    if not isinstance(node, dict):
+        return ""
+
+    text = node.get("text")
+    if text:
+        return str(text)
+    text_id = node.get("id")
+    if text_id in (None, "", 0, "0"):
+        return ""
+    key = str(text_id)
+    return str(i18n.get(key) or (fallback_i18n or {}).get(key) or "")
+
+
+def text_id(node: Any) -> str:
+    if isinstance(node, dict):
+        return normalize_id(node.get("id"))
+    if isinstance(node, (int, float)):
+        return normalize_id(int(node))
+    return ""
+
+
+def clean_text(value: Any) -> str:
+    text = TAG_RE.sub("", str(value or ""))
+    return text.replace("\\n", "\n").strip()
+
+
+def format_template_value(value: Any, spec: str) -> str:
+    number = float(value) if isinstance(value, (int, float)) else None
+    if number is not None and spec:
+        if "%" in spec:
+            decimals = 0
+            match = re.search(r"\.(\d+)", spec)
+            if match:
+                decimals = len(match.group(1))
+            return f"{number * 100:.{decimals}f}%"
+        if spec == "0":
+            return str(int(round(number)))
+    if isinstance(value, float):
+        if value.is_integer():
+            return str(int(value))
+        return f"{value:.6g}"
+    return str(value)
+
+
+def resolve_placeholder(expr: str, values: dict[str, Any]) -> Any:
+    raw = expr.strip()
+    if "-" in raw:
+        name, _, rhs = raw.partition("-")
+        try:
+            return float(values.get(name.strip(), 0)) - float(rhs.strip())
+        except (TypeError, ValueError):
+            return values.get(raw)
+    return values.get(raw)
+
+
+def render_description(template: str, blackboard: list[dict[str, Any]]) -> str:
+    values = {
+        str(item.get("key")): item.get("valueStr") or item.get("value")
+        for item in blackboard
+        if isinstance(item, dict) and item.get("key")
+    }
+
+    def replace(match: re.Match[str]) -> str:
+        value = resolve_placeholder(match.group(1), values)
+        if value is None:
+            return match.group(0)
+        return format_template_value(value, match.group(2) or "")
+
+    return clean_text(PLACEHOLDER_RE.sub(replace, template))
+
+
+def normalize_blackboard(items: Any) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for item in items or []:
+        if not isinstance(item, dict):
+            continue
+        key = normalize_id(item.get("key"))
+        if not key:
+            continue
+        value = item.get("valueStr") if item.get("valueStr") not in (None, "") else item.get("value")
+        out.append({"key": key, "value": value})
+    return out
+
+
+def skill_level_payload(
+    bundle: dict[str, Any],
+    i18n: dict[str, Any],
+    fallback_i18n: dict[str, Any],
+    fallback_name: str = "",
+    fallback_desc: str = "",
+) -> dict[str, Any]:
+    blackboard = normalize_blackboard(bundle.get("blackboard"))
+    desc_template = i18n_text(i18n, bundle.get("description"), fallback_i18n) or fallback_desc
+    sub_names = bundle.get("subDescNameList") or []
+    sub_values = bundle.get("subDescList") or []
+    sub_desc: list[dict[str, str]] = []
+    for idx, label_node in enumerate(sub_names):
+        label = i18n_text(i18n, label_node, fallback_i18n)
+        value = normalize_id(sub_values[idx]) if idx < len(sub_values) else ""
+        if label or value:
+            sub_desc.append({"label": label, "value": value})
+
+    return {
+        "level": int(bundle.get("level") or 0),
+        "name": i18n_text(i18n, bundle.get("skillName"), fallback_i18n) or fallback_name,
+        "description": render_description(desc_template, blackboard) if desc_template else "",
+        "descriptionTemplate": clean_text(desc_template),
+        "blackboard": blackboard,
+        "subDesc": sub_desc,
+        "coolDown": bundle.get("coolDown"),
+        "costType": bundle.get("costType"),
+        "costValue": bundle.get("costValue"),
+        "maxChargeTime": bundle.get("maxChargeTime"),
+        "tagId": normalize_id(bundle.get("tagId")),
+        "iconId": normalize_id(bundle.get("iconId")),
+    }
+
+
+def skill_payload(
+    skill_id: str,
+    skill_table: dict[str, Any],
+    i18n: dict[str, Any],
+    fallback_i18n: dict[str, Any],
+    fallback_name: str = "",
+    fallback_desc: str = "",
+) -> dict[str, Any]:
+    row = skill_table.get(skill_id) or {}
+    bundles = row.get("SkillPatchDataBundle") if isinstance(row, dict) else []
+    levels = [
+        skill_level_payload(bundle, i18n, fallback_i18n, fallback_name, fallback_desc)
+        for bundle in bundles or []
+        if isinstance(bundle, dict)
+    ]
+    levels.sort(key=lambda item: item.get("level") or 0)
+    first = levels[0] if levels else {}
+    last = levels[-1] if levels else {}
+    return {
+        "id": skill_id,
+        "name": first.get("name") or fallback_name or skill_id,
+        "description": first.get("description") or fallback_desc,
+        "maxDescription": last.get("description") or "",
+        "levelCount": len(levels),
+        "levels": levels,
+        "source": {"table": "SkillPatchTable.json", "id": skill_id},
+    }
+
+
+def skill_search_text(skill: dict[str, Any]) -> str:
+    parts = [skill.get("id"), skill.get("name"), skill.get("description"), skill.get("maxDescription")]
+    blackboard_keys: set[str] = set()
+    subdesc_labels: set[str] = set()
+    for level in skill.get("levels") or []:
+        for item in level.get("blackboard") or []:
+            key = normalize_id(item.get("key"))
+            if key:
+                blackboard_keys.add(key)
+        for item in level.get("subDesc") or []:
+            label = normalize_id(item.get("label"))
+            if label:
+                subdesc_labels.add(label)
+    parts.extend(sorted(blackboard_keys))
+    parts.extend(sorted(subdesc_labels))
+    return " ".join(str(part or "") for part in parts)
+
+
+def weapon_type_from_id(weapon_id: str) -> str:
+    parts = weapon_id.split("_")
+    if len(parts) <= 1:
+        return ""
+    token = parts[1]
+    return WEAPON_TYPE_LABELS.get(token, token.title())
+
+
+def build_weapon_entries(
+    tables: dict[str, Any],
+    i18n: dict[str, Any],
+    fallback_i18n: dict[str, Any],
+) -> list[dict[str, Any]]:
+    weapons = tables["WeaponBasicTable.json"]
+    items = tables.get("ItemTable.json") or {}
+    skill_table = tables["SkillPatchTable.json"]
+    breakthroughs = tables.get("WeaponBreakThroughTemplateTable.json") or {}
+    talents = tables.get("WeaponTalentTemplateTable.json") or {}
+    upgrades = tables.get("WeaponUpgradeTemplateTable.json") or {}
+    entries = []
+    for weapon_id, row in sorted(weapons.items(), key=lambda item: (item[1].get("rarity", 0), item[0])):
+        if not isinstance(row, dict):
+            continue
+        item_row = items.get(weapon_id) or {}
+        item_name = i18n_text(i18n, item_row.get("name"), fallback_i18n) if isinstance(item_row, dict) else ""
+        item_desc = i18n_text(i18n, item_row.get("desc"), fallback_i18n) if isinstance(item_row, dict) else ""
+        internal_name = i18n_text(i18n, row.get("engName"), fallback_i18n)
+        title = item_name or internal_name or weapon_id
+        desc = i18n_text(i18n, row.get("weaponDesc"), fallback_i18n)
+        skill_ids = [normalize_id(value) for value in row.get("weaponSkillList") or [] if normalize_id(value)]
+        skills = [skill_payload(skill_id, skill_table, i18n, fallback_i18n) for skill_id in skill_ids]
+        weapon_type = weapon_type_from_id(weapon_id)
+        upgrade_rows = (upgrades.get(row.get("levelTemplateId")) or {}).get("list") or []
+        max_upgrade = upgrade_rows[-1] if upgrade_rows else {}
+        breakthrough_rows = (breakthroughs.get(row.get("breakthroughTemplateId")) or {}).get("list") or []
+        talent_rows = (talents.get(row.get("talentTemplateId")) or {}).get("list") or []
+        search = " ".join([
+            weapon_id,
+            title,
+            internal_name,
+            item_desc,
+            desc,
+            weapon_type,
+            *(skill_search_text(skill) for skill in skills),
+        ])
+        entries.append({
+            "id": weapon_id,
+            "kind": "weapon",
+            "title": title,
+            "subtitle": weapon_id,
+            "fileName": title,
+            "internalName": internal_name,
+            "itemDescription": clean_text(item_desc),
+            "group": f"Weapon / {weapon_type or 'Unknown'}",
+            "rarity": row.get("rarity"),
+            "weaponType": row.get("weaponType"),
+            "weaponTypeLabel": weapon_type,
+            "maxLv": row.get("maxLv"),
+            "modelPath": normalize_id(row.get("modelPath")),
+            "description": clean_text(desc),
+            "skills": skills,
+            "breakthrough": {
+                "templateId": normalize_id(row.get("breakthroughTemplateId")),
+                "rowCount": len(breakthrough_rows),
+            },
+            "talentTemplate": {
+                "templateId": normalize_id(row.get("talentTemplateId")),
+                "rowCount": len(talent_rows),
+            },
+            "upgrade": {
+                "templateId": normalize_id(row.get("levelTemplateId")),
+                "baseAtkAtMax": max_upgrade.get("baseAtk"),
+                "rowCount": len(upgrade_rows),
+            },
+            "source": {"table": "WeaponBasicTable.json", "nameTable": "ItemTable.json", "id": weapon_id},
+            "search": search.lower(),
+        })
+    return entries
+
+
+def label_lookup(table: dict[str, Any], key: Any, i18n: dict[str, Any], fallback_i18n: dict[str, Any]) -> str:
+    row = table.get(str(key)) or table.get(key) or {}
+    if not isinstance(row, dict):
+        return ""
+    return i18n_text(i18n, row.get("name"), fallback_i18n)
+
+
+def text_table_text(
+    text_table: dict[str, Any],
+    key: str,
+    i18n: dict[str, Any],
+    fallback_i18n: dict[str, Any],
+) -> str:
+    row = text_table.get(key) or {}
+    if not isinstance(row, dict):
+        return ""
+    return i18n_text(i18n, row, fallback_i18n)
+
+
+def required_item_payload(items: Any, item_table: dict[str, Any], i18n: dict[str, Any], fallback_i18n: dict[str, Any]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for item in items or []:
+        if not isinstance(item, dict):
+            continue
+        item_id = normalize_id(item.get("id"))
+        if not item_id:
+            continue
+        item_row = item_table.get(item_id) or {}
+        name = i18n_text(i18n, item_row.get("name"), fallback_i18n) if isinstance(item_row, dict) else ""
+        out.append({"id": item_id, "name": name, "count": item.get("count")})
+    return out
+
+
+def potential_effect_blackboard(effect: dict[str, Any]) -> list[dict[str, Any]]:
+    values: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    def add_items(items: Any) -> None:
+        for item in normalize_blackboard(items):
+            key = normalize_id(item.get("key"))
+            if key and key not in seen:
+                seen.add(key)
+                values.append(item)
+
+    for row in effect.get("dataList") or []:
+        if not isinstance(row, dict):
+            continue
+        attach_skill = row.get("attachSkill") if isinstance(row.get("attachSkill"), dict) else {}
+        attach_buff = row.get("attachBuff") if isinstance(row.get("attachBuff"), dict) else {}
+        add_items(attach_skill.get("blackboard"))
+        add_items(attach_buff.get("blackboard"))
+        bb_mod = row.get("skillBbModifier") if isinstance(row.get("skillBbModifier"), dict) else {}
+        key = normalize_id(bb_mod.get("bbKey"))
+        if key and key not in seen:
+            value = bb_mod.get("stringValue") if bb_mod.get("stringValue") not in (None, "") else bb_mod.get("floatValue")
+            seen.add(key)
+            values.append({"key": key, "value": value})
+    return values
+
+
+def potential_effect_refs(effect: dict[str, Any]) -> list[dict[str, str]]:
+    refs: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for row in effect.get("dataList") or []:
+        if not isinstance(row, dict):
+            continue
+        attach_skill = row.get("attachSkill") if isinstance(row.get("attachSkill"), dict) else {}
+        skill_id = normalize_id(attach_skill.get("skillId"))
+        if skill_id and ("skill", skill_id) not in seen:
+            seen.add(("skill", skill_id))
+            refs.append({"type": "skill", "id": skill_id})
+        attach_buff = row.get("attachBuff") if isinstance(row.get("attachBuff"), dict) else {}
+        buff_id = normalize_id(attach_buff.get("buffId"))
+        if buff_id and ("buff", buff_id) not in seen:
+            seen.add(("buff", buff_id))
+            refs.append({"type": "buff", "id": buff_id})
+    return refs
+
+
+def spaceship_skill_for_factory_node(
+    char_id: str,
+    node: dict[str, Any],
+    spaceship_char_skills: dict[str, Any],
+    spaceship_skills: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    factory = node.get("factorySkillNodeInfo") if isinstance(node.get("factorySkillNodeInfo"), dict) else {}
+    index = int(factory.get("index") or 0)
+    level = int(factory.get("level") or 0)
+    row = spaceship_char_skills.get(char_id) or {}
+    expected_suffix = f"_{index + 1}_{level}"
+    for item in row.get("skillList") or []:
+        if not isinstance(item, dict):
+            continue
+        skill_id = normalize_id(item.get("skillId"))
+        skill = spaceship_skills.get(skill_id) or {}
+        skill_level = int(skill.get("level") or 0) if isinstance(skill, dict) else 0
+        if int(item.get("skillIndex") or 0) == index and skill_level == level:
+            return item, skill if isinstance(skill, dict) else {}
+        if skill_id.endswith(expected_suffix):
+            return item, skill if isinstance(skill, dict) else {}
+    return {}, {}
+
+
+def build_talent_level_payload(
+    char_id: str,
+    node_id: str,
+    node: dict[str, Any],
+    tables: dict[str, Any],
+    i18n: dict[str, Any],
+    fallback_i18n: dict[str, Any],
+) -> dict[str, Any]:
+    potential_effects = tables.get("PotentialTalentEffectTable.json") or {}
+    item_table = tables.get("ItemTable.json") or {}
+    char_break_nodes = tables.get("CharBreakNodeTable.json") or {}
+    text_table = tables.get("TextTable.json") or {}
+    spaceship_char_skills = tables.get("SpaceshipCharSkillTable.json") or {}
+    spaceship_skills = tables.get("SpaceshipSkillTable.json") or {}
+
+    node_type = int(node.get("nodeType") or 0)
+    passive = node.get("passiveSkillNodeInfo") if isinstance(node.get("passiveSkillNodeInfo"), dict) else {}
+    attr = node.get("attributeNodeInfo") if isinstance(node.get("attributeNodeInfo"), dict) else {}
+    factory = node.get("factorySkillNodeInfo") if isinstance(node.get("factorySkillNodeInfo"), dict) else {}
+    required_items = required_item_payload(node.get("requiredItem"), item_table, i18n, fallback_i18n)
+
+    base_payload: dict[str, Any] = {
+        "id": node_id,
+        "nodeType": node_type,
+        "typeLabel": NODE_TYPE_LABELS.get(node_type, f"Node {node_type}" if node_type else ""),
+        "requiredItem": required_items,
+        "source": {"table": "CharGrowthTable.json", "id": node_id},
+    }
+
+    passive_match = PASSIVE_NODE_RE.match(node_id)
+    if passive_match or node_type == 4:
+        effect_id = normalize_id(passive.get("talentEffectId"))
+        effect = potential_effects.get(effect_id) or {}
+        desc_template = i18n_text(i18n, effect.get("desc"), fallback_i18n)
+        blackboard = potential_effect_blackboard(effect if isinstance(effect, dict) else {})
+        rank_index = int(passive.get("index") if passive.get("index") is not None else passive_match.group("rank") if passive_match else 0)
+        level = int(passive.get("level") or (passive_match.group("level") if passive_match else 0) or 0)
+        title = i18n_text(i18n, passive.get("name"), fallback_i18n) or node_id
+        base_payload.update({
+            "kind": "passive",
+            "kindLabel": TALENT_KIND_LABELS["passive"],
+            "rank": rank_index + 1,
+            "rankIndex": rank_index,
+            "level": level,
+            "title": title,
+            "description": render_description(desc_template, blackboard) if desc_template else "",
+            "descriptionTemplate": clean_text(desc_template),
+            "blackboard": blackboard,
+            "breakStage": passive.get("breakStage"),
+            "iconId": normalize_id(passive.get("iconId")),
+            "talentEffectId": effect_id,
+            "effectRefs": potential_effect_refs(effect if isinstance(effect, dict) else {}),
+        })
+        return base_payload
+
+    factory_match = FACTORY_NODE_RE.match(node_id)
+    if factory_match or node_type == 5:
+        skill_ref, skill = spaceship_skill_for_factory_node(char_id, node, spaceship_char_skills, spaceship_skills)
+        rank_index = int(factory.get("index") if factory.get("index") is not None else factory_match.group("rank") if factory_match else 0)
+        level = int(factory.get("level") or (factory_match.group("level") if factory_match else 0) or skill.get("level") or 0)
+        title = i18n_text(i18n, skill.get("talentName"), fallback_i18n) or i18n_text(i18n, skill.get("name"), fallback_i18n) or node_id
+        name = i18n_text(i18n, skill.get("name"), fallback_i18n) or title
+        desc = i18n_text(i18n, skill.get("desc"), fallback_i18n)
+        base_payload.update({
+            "kind": "factory",
+            "kindLabel": TALENT_KIND_LABELS["factory"],
+            "rank": rank_index + 1,
+            "rankIndex": rank_index,
+            "level": level,
+            "title": title,
+            "name": name,
+            "description": clean_text(desc),
+            "breakStage": factory.get("breakStage"),
+            "unlockHint": clean_text(i18n_text(i18n, skill_ref.get("unlockHint"), fallback_i18n)),
+            "skillId": normalize_id(skill.get("id") or skill_ref.get("skillId")),
+            "iconId": normalize_id(skill.get("icon")),
+            "roomType": skill.get("roomType"),
+            "effectType": skill.get("effectType"),
+            "parameters": skill.get("parameters") or [],
+            "source": {"table": "SpaceshipSkillTable.json", "id": normalize_id(skill.get("id") or skill_ref.get("skillId")) or node_id},
+        })
+        return base_payload
+
+    equip_match = EQUIP_BREAK_RE.match(node_id)
+    if equip_match or node_type == 2:
+        break_node = char_break_nodes.get(node_id) or {}
+        tier = int(equip_match.group("tier")) if equip_match else int(break_node.get("equipTierLimit") or 0)
+        equip_label = text_table_text(text_table, "LUA_CHAR_INFO_TITLE_EQUIP", i18n, fallback_i18n) or "Equipment"
+        break_label = text_table_text(text_table, "LUA_CHAR_BREAK", i18n, fallback_i18n) or "Breakthrough"
+        title = f"{equip_label}{break_label} T{tier}" if equip_label or break_label else node_id
+        desc = text_table_text(text_table, "LUA_CHAR_INFO_EQUIP_JUMP_TALENT", i18n, fallback_i18n)
+        base_payload.update({
+            "kind": "equipmentBreak",
+            "kindLabel": TALENT_KIND_LABELS["equipmentBreak"],
+            "rank": tier,
+            "rankIndex": tier - 1 if tier else 0,
+            "level": tier,
+            "title": title,
+            "description": clean_text(desc),
+            "breakStage": break_node.get("breakStage"),
+            "equipTierLimit": break_node.get("equipTierLimit"),
+            "source": {"table": "CharBreakNodeTable.json", "id": node_id},
+        })
+        return base_payload
+
+    if node_type == 3:
+        attr_mod = (attr.get("attributeModifier") or {}) if isinstance(attr, dict) else {}
+        base_payload.update({
+            "kind": "attribute",
+            "kindLabel": TALENT_KIND_LABELS["attribute"],
+            "rank": int(attr.get("breakStage") or 0),
+            "rankIndex": int(attr.get("breakStage") or 0),
+            "level": int(attr.get("breakStage") or 0),
+            "title": i18n_text(i18n, attr.get("title"), fallback_i18n) or node_id,
+            "description": clean_text(i18n_text(i18n, attr.get("desc"), fallback_i18n)),
+            "breakStage": attr.get("breakStage"),
+            "favorability": attr.get("favorability"),
+            "attributeModifier": attr_mod,
+        })
+        return base_payload
+
+    base_payload.update({
+        "kind": "other",
+        "kindLabel": TALENT_KIND_LABELS["other"],
+        "rank": 0,
+        "rankIndex": 0,
+        "level": 0,
+        "title": node_id,
+        "description": "",
+    })
+    return base_payload
+
+
+def build_talent_groups(
+    char_id: str,
+    talent_node_map: dict[str, Any],
+    tables: dict[str, Any],
+    i18n: dict[str, Any],
+    fallback_i18n: dict[str, Any],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    flat_levels: list[dict[str, Any]] = []
+    grouped: dict[str, dict[str, Any]] = {}
+
+    for node_id, node in talent_node_map.items():
+        node_id = normalize_id(node_id)
+        if not isinstance(node, dict) or normalize_id(node_id).startswith("charBreak"):
+            continue
+        level = build_talent_level_payload(char_id, node_id, node, tables, i18n, fallback_i18n)
+        flat_levels.append(level)
+        kind = normalize_id(level.get("kind")) or "other"
+        if kind in {"passive", "factory"}:
+            group_id = f"{kind}:{char_id}:{level.get('rankIndex', 0)}"
+        elif kind == "equipmentBreak":
+            group_id = f"{kind}:{node_id}"
+        elif kind == "attribute":
+            group_id = f"{kind}:{node_id}"
+        else:
+            group_id = f"{kind}:{node_id}"
+
+        group = grouped.get(group_id)
+        if not group:
+            group = {
+                "id": group_id,
+                "kind": kind,
+                "kindLabel": level.get("kindLabel") or TALENT_KIND_LABELS.get(kind, kind),
+                "rank": level.get("rank"),
+                "rankIndex": level.get("rankIndex"),
+                "title": level.get("title") or node_id,
+                "levels": [],
+            }
+            grouped[group_id] = group
+        if kind in {"passive", "factory"} and level.get("title"):
+            group["title"] = level.get("title")
+        group["levels"].append(level)
+
+    for group in grouped.values():
+        group["levels"].sort(key=lambda item: (int(item.get("level") or 0), str(item.get("id") or "")))
+        if group["levels"]:
+            first = group["levels"][0]
+            group.setdefault("title", first.get("title") or first.get("id"))
+            if group.get("kind") == "factory":
+                group["title"] = first.get("title") or group.get("title")
+
+    order = {"attribute": 0, "passive": 1, "equipmentBreak": 2, "factory": 3, "other": 9}
+    groups = sorted(
+        grouped.values(),
+        key=lambda item: (
+            order.get(str(item.get("kind") or "other"), 9),
+            int(item.get("rankIndex") or 0),
+            int(item.get("rank") or 0),
+            str(item.get("id") or ""),
+        ),
+    )
+    return groups, flat_levels
+
+def character_sort_key(char_id: str, row: Any) -> tuple[int, str]:
+    if isinstance(row, dict):
+        value = row.get("sortOrder")
+        try:
+            return int(value), char_id
+        except (TypeError, ValueError):
+            pass
+    return 1_000_000, char_id
+
+
+def build_character_entries(
+    tables: dict[str, Any],
+    i18n: dict[str, Any],
+    fallback_i18n: dict[str, Any],
+) -> list[dict[str, Any]]:
+    chars = tables["CharacterTable.json"]
+    growth = tables["CharGrowthTable.json"]
+    skill_table = tables["SkillPatchTable.json"]
+    item_table = tables.get("ItemTable.json") or {}
+    professions = tables.get("CharProfessionTable.json") or {}
+    char_types = tables.get("CharTypeTable.json") or {}
+    potential_effects = tables.get("PotentialTalentEffectTable.json") or {}
+    entries = []
+    for char_id, row in sorted(chars.items(), key=lambda item: character_sort_key(item[0], item[1])):
+        if not isinstance(row, dict):
+            continue
+        growth_row = growth.get(char_id) or {}
+        name = i18n_text(i18n, row.get("name"), fallback_i18n) or normalize_id(row.get("engName")) or char_id
+        profession_label = label_lookup(professions, row.get("profession"), i18n, fallback_i18n)
+        type_row = char_types.get(normalize_id(row.get("charTypeId"))) or {}
+        element_label = i18n_text(i18n, type_row.get("name"), fallback_i18n) or normalize_id(row.get("charTypeId"))
+        skill_groups = []
+        for group_id, group in sorted((growth_row.get("skillGroupMap") or {}).items(), key=lambda item: int((item[1] or {}).get("skillGroupType") or 0)):
+            if not isinstance(group, dict):
+                continue
+            group_name = i18n_text(i18n, group.get("name"), fallback_i18n) or group_id
+            group_desc = i18n_text(i18n, group.get("desc"), fallback_i18n)
+            skill_ids = [normalize_id(skill_id) for skill_id in group.get("skillIdList") or [] if normalize_id(skill_id)]
+            skills = [
+                skill_payload(skill_id, skill_table, i18n, fallback_i18n)
+                for skill_id in skill_ids
+            ]
+            level_up_rows = []
+            for level_row in growth_row.get("skillLevelUp") or []:
+                if not isinstance(level_row, dict) or normalize_id(level_row.get("skillGroupId")) != group_id:
+                    continue
+                level_up_rows.append({
+                    "skillGroupId": normalize_id(level_row.get("skillGroupId")),
+                    "level": level_row.get("level"),
+                    "goldCost": level_row.get("goldCost"),
+                    "itemBundle": required_item_payload(level_row.get("itemBundle"), item_table, i18n, fallback_i18n),
+                })
+            skill_groups.append({
+                "id": group_id,
+                "type": group.get("skillGroupType"),
+                "typeLabel": SKILL_GROUP_TYPE_LABELS.get(int(group.get("skillGroupType") or 0), f"Group {group.get('skillGroupType')}"),
+                "name": group_name,
+                "description": clean_text(group_desc),
+                "iconId": normalize_id(group.get("icon")),
+                "actionSkillIds": skill_ids,
+                "levelUp": level_up_rows,
+                "skills": skills,
+            })
+        talent_groups, talents = build_talent_groups(
+            char_id,
+            growth_row.get("talentNodeMap") or {},
+            tables,
+            i18n,
+            fallback_i18n,
+        )
+        search = " ".join([
+            char_id,
+            name,
+            normalize_id(row.get("engName")),
+            profession_label,
+            element_label,
+            *(group.get("name") or "" for group in skill_groups),
+            *(group.get("description") or "" for group in skill_groups),
+            *(skill_search_text(skill) for group in skill_groups for skill in group.get("skills") or []),
+            *(group.get("title") or "" for group in talent_groups),
+            *(level.get("title") or "" for group in talent_groups for level in group.get("levels") or []),
+            *(level.get("description") or "" for group in talent_groups for level in group.get("levels") or []),
+        ])
+        entries.append({
+            "id": char_id,
+            "kind": "character",
+            "title": name,
+            "subtitle": char_id,
+            "group": f"Character / {element_label or 'Unknown'}",
+            "engName": normalize_id(row.get("engName")),
+            "rarity": row.get("rarity"),
+            "profession": row.get("profession"),
+            "professionLabel": profession_label,
+            "element": normalize_id(row.get("charTypeId")),
+            "elementLabel": element_label,
+            "weaponType": row.get("weaponType"),
+            "weaponTypeLabel": weapon_type_from_id(normalize_id(row.get("defaultWeaponId"))),
+            "defaultWeaponId": normalize_id(row.get("defaultWeaponId")),
+            "mainAttrType": row.get("mainAttrType"),
+            "subAttrType": row.get("subAttrType"),
+            "skillGroups": skill_groups,
+            "talentGroups": talent_groups,
+            "talents": talents,
+            "source": {"table": "CharacterTable.json", "id": char_id},
+            "search": search.lower(),
+        })
+    return entries
+
+
+def build_language_payload(
+    language: str,
+    table_roots: list[tuple[str, Path]],
+    fallback_language: str,
+) -> dict[str, Any]:
+    fallback_i18n = load_merged_table(table_roots, f"I18nTextTable_{fallback_language}.json", {})
+    i18n = fallback_i18n if language == fallback_language else load_merged_table(table_roots, f"I18nTextTable_{language}.json", fallback_i18n)
+    table_names = [
+        "ItemTable.json",
+        "WeaponBasicTable.json",
+        "WeaponBreakThroughTemplateTable.json",
+        "WeaponTalentTemplateTable.json",
+        "WeaponUpgradeTemplateTable.json",
+        "SkillPatchTable.json",
+        "CharacterTable.json",
+        "CharGrowthTable.json",
+        "CharProfessionTable.json",
+        "CharTypeTable.json",
+        "CharBreakNodeTable.json",
+        "PotentialTalentEffectTable.json",
+        "SpaceshipCharSkillTable.json",
+        "SpaceshipSkillTable.json",
+        "TextTable.json",
+    ]
+    tables = {name: load_merged_table(table_roots, name, {}) for name in table_names}
+    weapons = build_weapon_entries(tables, i18n, fallback_i18n)
+    characters = build_character_entries(tables, i18n, fallback_i18n)
+    entries = sorted(
+        [*weapons, *characters],
+        key=lambda item: (item.get("kind") != "weapon", str(item.get("group") or ""), str(item.get("title") or "")),
+    )
+    return {
+        "generated": int(time.time()),
+        "language": language,
+        "sourceRoot": ", ".join(rel_path(root) for _label, root in table_roots),
+        "sourceRoots": [{"source": label, "root": rel_path(root)} for label, root in table_roots],
+        "tables": table_names,
+        "counts": {
+            "entries": len(entries),
+            "weapons": len(weapons),
+            "characters": len(characters),
+            "characterSkillGroups": sum(len(item.get("skillGroups") or []) for item in characters),
+            "weaponSkills": sum(len(item.get("skills") or []) for item in weapons),
+            "characterTalentGroups": sum(len(item.get("talentGroups") or []) for item in characters),
+        },
+        "entries": entries,
+    }
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
+    table_roots = table_source_roots(args.export_root)
+    if not table_roots:
+        print(f"Missing table directories under: {args.export_root / 'structured'}", file=sys.stderr)
+        return 2
+
+    outputs = []
+    for language in args.languages:
+        code = str(language).strip().upper()
+        if not code:
+            continue
+        payload = build_language_payload(code, table_roots, str(args.default_language).strip().upper())
+        out_path = args.out_dir / code / "gameplay" / "index.json"
+        write_json(out_path, payload)
+        outputs.append((code, out_path, payload["counts"]))
+
+    for code, path, counts in outputs:
+        print(
+            f"{code}: wrote {rel_path(path)} "
+            f"({counts['weapons']} weapons, {counts['characters']} characters)"
+        )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

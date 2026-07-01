@@ -51,6 +51,7 @@
       showingFirst: "\u4ec5\u663e\u793a\u524d",
       generated: "\u751f\u6210\u65f6\u95f4",
       sourceRoot: "\u6e90\u76ee\u5f55",
+      source: "\u6765\u6e90",
     },
     en: {
       tab: "Data",
@@ -97,6 +98,7 @@
       showingFirst: "Showing first",
       generated: "Generated",
       sourceRoot: "Source root",
+      source: "Source",
     },
   };
 
@@ -199,7 +201,7 @@
     return parts.slice(0, maxParts).join("_");
   }
   function structuredJsonPrefix(entry) {
-    const parts = String(entry && entry.p || "").split("/").filter(Boolean);
+    const parts = String(entry && (entry.dp || entry.p) || "").split("/").filter(Boolean);
     if (parts[0] === "Json" && parts.length >= 4) return parts.slice(1, -1).join("/");
     return "";
   }
@@ -288,6 +290,8 @@
   function entrySearchText(entry) {
     return [
       entry.p,
+      entry.dp,
+      entry.source,
       entry.d,
       entry.g,
       entry.e,
@@ -465,6 +469,8 @@
       d: String(entry && entry.d || ""),
       g: String(entry && entry.g || ""),
       e: String(entry && entry.e || ""),
+      dp: String(entry && entry.dp || ""),
+      source: String(entry && entry.source || ""),
     };
   }
 
@@ -480,7 +486,7 @@
 
   function aggregatePathSearch(entry) {
     return aggregateFiles(entry)
-      .map((file) => [file.p, file.d, file.g, file.e].filter(Boolean).join(" "))
+      .map((file) => [file.p, file.dp, file.source, file.d, file.g, file.e].filter(Boolean).join(" "))
       .join(" ");
   }
 
@@ -730,7 +736,7 @@
         duplicateBadge +
       `</div>` +
       `<div class="game-data-row-path">${escapeHtml(pathText)}</div>` +
-      `<div class="game-data-row-meta">${escapeHtml([entry.d, entry.e, formatBytes(entry.s), hash ? hash.slice(0, 12) : "", entry.h].filter(Boolean).join(" | "))}</div>`;
+      `<div class="game-data-row-meta">${escapeHtml([entry.source, entry.d, entry.e, formatBytes(entry.s), hash ? hash.slice(0, 12) : "", entry.h].filter(Boolean).join(" | "))}</div>`;
     button.addEventListener("click", () => {
       STATE.selected = entry;
       renderList();
@@ -816,6 +822,7 @@
     if (rawLink) rawLink.href = rawHref;
     gd$("#game-data-detail-facts").innerHTML = [
       factRow(dataText("file"), entry.p, { mono: true }),
+      factRow(dataText("source"), entry.source),
       fileCount > 1 ? factRow(dataText("duplicateFiles"), aggregatePathSummary(entry, 48), { mono: true }) : "",
       factRow(dataText("folder"), entry.d),
       factRow(dataText("prefix"), entryPrefix(entry)),

@@ -93,6 +93,10 @@ python scripts\story_builder\refresh_evidence.py
 python scripts\story_builder\source_links.py
 python scripts\story_builder\build.py --languages CN --default-language CN
 python scripts\story_builder\build.py --languages CN EN JP --default-language CN
+python scripts\build_gameplay_data.py
+python scripts\build_data_index.py
+python scripts\build_decoded_index.py
+python scripts\story_recovery\build_option_override_coverage_audit.py --language CN
 python scripts\build_assets.py
 python scripts\build_audio.py
 python scripts\download_bilibili_video.py --dry-run
@@ -330,6 +334,9 @@ WebUI:
 - `scripts/story_builder/source_links.py`
 - `scripts/story_builder/build.py`
 - `scripts/story_builder/timeline_action_evidence.py`
+- `scripts/build_gameplay_data.py`
+- `scripts/build_data_index.py`
+- `scripts/build_decoded_index.py`
 - `scripts/build_assets.py`
 - `scripts/build_audio.py`
 - `scripts/pack_webui.py`
