@@ -2256,3 +2256,84 @@ Validation commands:
 - `python -m py_compile scripts\build_data_index.py`
 - Focused direct `decode_buff_memorypack` scan over both `structured/StreamingAssets/Data/Json/BuffData` and `structured/Persistent/Data/Json/BuffData`.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_patrol_teleport_validate_20260630`
+
+## 2026-06-30 BuffData PlayAnimation Exact Decoder
+
+Added a fail-closed exact decoder for the two bounded `Core_PlayAnimationAction_PlayAnimationActionData` timeline action payloads.
+
+What changed:
+
+- Added exact parsing for one-byte union tag `0x00f8` with serialized member count `12`.
+- Decodes the inherited `AbilityActionData` prefix.
+- Decodes `animName`, `blendDuration`, `blendOut`, `blendOutNextStateHash`, `duration`, `exitToIdle`, `playbackSpeed`, and `startTime` in MemoryPack setter order.
+- Requires a non-empty bounded UTF-8 animation name, finite numeric fields, valid bool byte, and exact end-of-item consumption.
+
+Focused validation over current exported BuffData roots:
+
+| Root | BuffData files | Timeline rows | Timeline records | Emitted single-item summaries | Exact item decodes | Partial item decodes | Typed decoder failures |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `structured/StreamingAssets` | 2,291 | 79 | 338 | 263 | 11 | 10 | 0 |
+| `structured/Persistent` | 2,325 | 79 | 338 | 263 | 11 | 10 | 0 |
+
+Action item decode-status distribution in both roots:
+
+| Decode status | Count |
+| --- | ---: |
+| `opaque` | 242 |
+| `exact` | 11 |
+| `partial` | 10 |
+
+Decoded action item type distribution in both roots:
+
+| Action type | Count | Status |
+| --- | ---: | --- |
+| `Core_PlaySoundAction_PlaySoundActionData` | 10 | partial |
+| `Core_SendBattleSignalToLevel_Data` | 8 | exact |
+| `Core_PlayAnimationAction_PlayAnimationActionData` | 2 | exact |
+| `Core_PatrolTeleport_Data` | 1 | exact |
+
+Decoded PlayAnimation samples:
+
+| BuffData row | Timeline record | `animName` | `duration` | `playbackSpeed` | `serverActionIndex` |
+| --- | ---: | --- | ---: | ---: | ---: |
+| `buff_eny_0095_ethillu_fakedead.json` | 0 | `06reborn` | 2.9 | 1.0 | 6 |
+| `buff_test_timeline.json` | 4 | `Attack01` | 0.0 | 1.0 | 4 |
+
+Full WebUI Json validation after this change:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 143 |
+| `Json/BuffData` unresolved issue rows | 143 |
+| `Json/LevelScriptData` unresolved issue rows | 0 |
+
+Current strict issue field distribution remains row-level unchanged because broader timeline payload semantics are still partial:
+
+| Status | Count |
+| --- | ---: |
+| `decoded.postIdPrefix.timelineActionsBodyStatus=partial-timelineActions-opaque-actionData` | 79 |
+| `decoded.postIdPrefix.timelineActionsSemanticStatus=partial-inner-actionData-union-payloads-opaque` | 79 |
+| `decoded.postIdPrefix.stackingSettings.stackEffectsBodyStatus=opaque-effectActions` | 47 |
+| `decoded.postIdPrefix.stackingSettings.effectActionsSemanticStatus=partial-effectActions-unproven-field-order` | 47 |
+| `decoded.postIdPrefix.poiseModifierBodyStatus=opaque-poiseModifier` | 9 |
+| `decoded.postIdPrefix.poiseModifierSemanticStatus=partial-poiseModifier-opaque-processors` | 9 |
+| `decoded.postIdPrefix.shieldConfigsBodyStatus=opaque-shieldConfigs` | 4 |
+| `decoded.postIdPrefix.shieldConfigsSemanticStatus=partial-shieldConfigs-opaque-nested-fields` | 4 |
+| `decoded.postIdPrefix.igniteEventActionBodyStatus=opaque-igniteEventAction` | 4 |
+| `decoded.postIdPrefix.igniteEventActionSemanticStatus=partial-igniteEventAction-opaque-actionData` | 4 |
+| `decoded.postIdPrefix.igniteEventActionBodyStatus=opaque-igniteEventAction-nestedBlocks` | 4 |
+| `decoded.postIdPrefix.igniteEventActionSemanticStatus=partial-igniteEventAction-nestedBlocks-opaque-actionData` | 4 |
+| `decoded.postIdPrefix.poiseModifierBodyTailPreview.timelineActionsBodyStatus=partial-timelineActions-opaque-actionData` | 3 |
+
+Interpretation:
+
+- Exact typed action coverage increased to 11 single-item payloads, and opaque single-item summaries dropped to 242.
+- This still does not remove the broad timeline warning because multi-item and high-volume action bodies remain opaque.
+- The next low-risk path is likely a bounded partial decoder for `Core_ConvertToTargetContext_Data` or `Core_DebugPrintAction_Data`; both require preserving `TargetSettings` as partial.
+
+Validation commands:
+
+- `python -m py_compile scripts\build_data_index.py`
+- Focused direct `decode_buff_memorypack` scan over both `structured/StreamingAssets/Data/Json/BuffData` and `structured/Persistent/Data/Json/BuffData`.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_play_animation_validate_20260630`
