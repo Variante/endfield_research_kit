@@ -111,10 +111,15 @@ level-to-map tables.
 `character`, `gameplay_skill_group`, `gameplay_skill`,
 `gameplay_talent_group`, `gameplay_talent`, `gameplay_progression`, and `item`
 nodes from `webui/data/lang/<LANG>/gameplay/index.json`. A fast CN build with
-`--skip-asset-maps --skip-reference-rows --skip-followups` verified 322
-Gameplay entries, 409 skills, 556 talent nodes, 958 progression nodes, 53 item
-nodes, and edges for source rows, default weapons, skill/talent membership,
-progression records, and required item costs. Example exact queries:
+`--skip-asset-maps --skip-reference-rows --skip-followups` verified 72 weapon
+nodes, 220 equipment nodes, 30 character nodes, 409 skills, 526 talent nodes,
+950 progression nodes, 66 item nodes, and edges for source rows, default
+weapons, skill/talent membership, progression records, and required item costs.
+The generated WebUI payload deliberately exposes 320 visible Gameplay entries:
+72 weapons, 220 equipment records, and 28 visible character records. The two
+hidden `chr_0002_endminm` / `chr_0003_endminf` Endministrator rows remain as
+`CharacterTable` graph nodes and are folded into `chr_9000_endmin` story wiki
+aliases for WebUI navigation. Example exact queries:
 
 ```bat
 python tools\endfield_source_graph.py query chr_0017_yvonne --kind character
@@ -123,8 +128,8 @@ python tools\endfield_source_graph.py query wpn_pistol_0001 --kind weapon
 
 The same build now links Gameplay entries to exported asset nodes by exact
 Gameplay ID, icon ID, or model-path stem containment in asset paths. The fast
-CN verification build produced 5,991 `has_gameplay_asset` edges: 2,078 from
-weapons, 2,153 from characters, and 1,760 from equipment. Evidence values record
+CN verification build produced 5,877 `has_gameplay_asset` edges: 2,078 from
+weapons, 2,039 from characters, and 1,760 from equipment. Evidence values record
 the source field (`id`, `iconId`, or `modelPath`) so later audits can separate
 broad ID matches from icon/model-path matches.
 
@@ -133,10 +138,10 @@ suit, unlock, and stat-property details from compact Gameplay payload blobs to
 queryable graph nodes. A fast CN build with
 `--skip-asset-maps --skip-reference-rows --skip-followups` verified 220
 `equipment_formula` nodes, 27 formula packs, 22 suits, 2 gameplay domains, 22
-unlock keys, 618 equipment property curves, and 23 stat-property nodes. It also
+unlock keys, 838 equipment property curves, and 24 stat-property nodes. It also
 verified 220 `crafted_by_formula`, 220 `formula_outputs_equipment`, 220
 `belongs_to_formula_pack`, 129 `unlocked_by`, 220 `uses_gameplay_domain`, 182
-`has_equipment_suit`, 618 `has_equipment_property_curve`, and 618
+`has_equipment_suit`, 838 `has_equipment_property_curve`, and 838
 `scales_stat_property` edges. Example exact queries:
 
 ```bat
@@ -145,12 +150,13 @@ python tools\endfield_source_graph.py query domain_2 --kind gameplay_domain
 python tools\endfield_source_graph.py query agi --kind gameplay_stat_property
 ```
 
-2026-07-01 progression cost traversal now follows `itemBundle`, `items`, and
-positive `goldCost` fields in Gameplay progression payloads. A fast CN build
-verified 3,974 `requires_item` edges total, including 960 from `itemBundle`,
-504 from `items`, 192 from `goldCost`, and 776 total edges to `item_gold`.
-Numeric item counts at or below 0 are filtered, so the rebuilt graph has no
-zero-count required-item edges.
+2026-07-01 progression cost traversal now follows `itemBundle`, `items`,
+formula materials, and positive `goldCost` fields in Gameplay payloads. A fast
+CN build verified 3,820 `requires_item` edges total: 1,268 from progression
+nodes, 1,008 from skill groups, 1,104 from talent nodes, 440 from equipment
+formula nodes, and 736 total edges to `item_gold`. Numeric item counts at or
+below 0 are filtered, so the rebuilt graph has no zero-count required-item
+edges.
 
 2026-07-01 asset relation ingestion now preserves `pid:<hex>` and
 `pathid:<signed>` aliases for WebUI asset-index entries with exported PathIDs
