@@ -143,6 +143,12 @@ python tools\endfield_source_graph.py query domain_2 --kind gameplay_domain
 python tools\endfield_source_graph.py query agi --kind gameplay_stat_property
 ```
 
+2026-07-01 progression cost traversal now follows `itemBundle`, `items`, and
+positive `goldCost` fields in Gameplay progression payloads. A fast CN build
+verified 3,974 `requires_item` edges total, including 960 from `itemBundle`,
+504 from `items`, 192 from `goldCost`, and 776 total edges to `item_gold`.
+Numeric item counts at or below 0 are filtered, so the rebuilt graph has no
+zero-count required-item edges.
 
 Use the quick build for normal story/option/map investigation. Use the full
 build only when Unity asset container, PathID, or exported asset relationship

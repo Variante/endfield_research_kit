@@ -694,6 +694,14 @@ equipment, source `EquipFormulaTable` rows, formula packs, unlock keys, and
 material costs. This improves static equipment semantics, but it still does not
 simulate runtime crafting or combat formulas.
 
+2026-07-01 source graph progression-cost progress: Gameplay progression item
+traversal now follows `itemBundle`, `items`, and positive `goldCost` fields. A
+fast CN source graph rebuild verified 3,974 `requires_item` edges total,
+including 960 from skill-level `itemBundle`, 504 from weapon-breakthrough
+`items`, 192 from positive `goldCost`, and 776 total edges to `item_gold`. The
+builder filters numeric item counts at or below 0, so zero-cost placeholder
+breakthrough rows no longer become required-item evidence.
+
 2026-07-01 WebUI semantic-link progress: Gameplay entries now link to Story
 wiki pages only when the current Story index contains the matching `wiki_*`
 entry, and Story wiki pages link back to the relevant Gameplay entry through
@@ -794,6 +802,14 @@ inside an exported asset path. The fast CN source graph build verifies 3,652
 equipment edges. This maps common weapon meshes/materials, character UI/portrait
 textures, and equipment icon textures to semantic Gameplay entries without
 using fuzzy localized-name matching.
+
+2026-07-01 next asset-semantics target: a read-only asset audit found that the
+current full asset index has 251,697 entries but no populated `relations`, while
+Material JSON texture slots carry many nonzero `m_PathID` references and no
+useful texture names. The next compact asset-catalog slice should resolve
+material texture references by PathID, populate asset-index relations, and let
+the source graph ingest those relations so asset queries can answer material and
+texture "used by" questions without scanning all Material JSON every build.
 
 The deeper semantic model is still incomplete:
 
