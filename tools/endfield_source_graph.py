@@ -260,6 +260,13 @@ AUDIO_CONFIG_TABLES = (
     "AudioItemTypeDragAndDrop.json",
     "AudioLevel.json",
 )
+DIALOG_SUPPORT_TABLES = (
+    "DialogSummaryTable.json",
+    "DialogSummaryMapTable.json",
+    "DialogTextTable.json",
+    "DialogOptionTable.json",
+    "DomainDepotDeliverTargetDialogTable.json",
+)
 ACTIVITY_ACHIEVEMENT_TABLES = (
     "SystemJumpTable.json",
     "ActivityTagTable.json",
@@ -713,6 +720,8 @@ class SourceGraphBuilder:
             self.commit_step("narrativeAudio")
             self.ingest_audio_config_semantics()
             self.commit_step("audioConfig")
+            self.ingest_dialog_support_semantics()
+            self.commit_step("dialogSupport")
             if self.include_reference_rows:
                 self.ingest_reference_tables()
                 self.commit_step("reference")
@@ -2105,7 +2114,7 @@ class SourceGraphBuilder:
                 actor_node = self.add_node("actor", actor_id, name=line.get("actor"), source="webui/story")
                 self.add_edge(line_node, actor_node, "spoken_by", source="webui/story")
             audio_id = safe_key(line.get("audio"))
-            if audio_id:
+            if audio_id and audio_id not in {"0", "0.0"}:
                 audio_node = self.add_node("audio", audio_id, name=audio_id, source="dialog_line")
                 self.add_edge(line_node, audio_node, "uses_audio", source="webui/story")
 
@@ -5560,9 +5569,31 @@ class SourceGraphBuilder:
         if line_key and self.node_exists("line", line_key):
             self.add_edge(owner_node, self.node_id("line", line_key), edge_kind, source=source, evidence=evidence)
 
+    def add_story_edges_for_line_target(self, owner_node: str, line_id: Any, *, edge_kind: str, source: str, evidence: str) -> None:
+        line_key = safe_key(line_id)
+        if not line_key:
+            return
+        line_node = self.node_id("line", line_key)
+        rows = self.db.execute(
+            """
+            SELECT edges.src
+            FROM edges
+            JOIN nodes ON nodes.id = edges.src
+            WHERE edges.dst = ?
+              AND edges.kind = 'has_line'
+              AND edges.source = 'webui/story'
+              AND nodes.kind = 'story'
+              AND nodes.source = 'webui/story'
+            ORDER BY edges.src
+            """,
+            (line_node,),
+        ).fetchall()
+        for (story_node,) in rows:
+            self.add_edge(owner_node, story_node, edge_kind, source=source, evidence=evidence)
+
     def add_audio_target_edge(self, owner_node: str, audio_id: Any, *, edge_kind: str, source: str, evidence: str) -> None:
         audio_key = safe_key(audio_id)
-        if not audio_key:
+        if not audio_key or audio_key in {"0", "0.0"}:
             return
         audio_node = self.add_node("audio", audio_key, name=audio_key, source=source)
         self.add_edge(owner_node, audio_node, edge_kind, source=source, evidence=evidence)
@@ -5783,6 +5814,103 @@ class SourceGraphBuilder:
             self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_item_type_drag_drop", define_edge="defines_audio_item_type_drag_drop", event_edge="audio_item_type_drag_drop_uses_event", owner_edges=(("item_type", "audio_item_type_drag_drop_for_item_type"),))
         elif table == "AudioLevel" and isinstance(row, dict):
             self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_level", define_edge="defines_audio_level", event_edge="audio_level_uses_event", owner_edges=(("level", "audio_level_for_level"),))
+
+
+    def ingest_dialog_support_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_dialog_support_semantics", path=slash(table_root))
+        for table_name in DIALOG_SUPPORT_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if payload is None:
+                continue
+            table_key = Path(table_name).stem
+            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/dialog_support")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            if not isinstance(payload, dict):
+                continue
+            for row_key, row in payload.items():
+                row_node = self.add_node(
+                    "table_row",
+                    f"{table_key}:{row_key}",
+                    name=str(row_key),
+                    source=table_key,
+                    data=compact_payload(row, depth=2),
+                )
+                self.add_edge(table_node, row_node, "has_row", source="structured/dialog_support")
+                self.add_dialog_support_row_edges(table_key, row_key, row, row_node)
+
+    def add_dialog_text_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        text_node = self.add_semantic_node(
+            "dialog_text",
+            row_key,
+            source=table,
+            data={"actorNameId": row.get("actorNameId"), "audioOverride": row.get("audioOverride"), "audioEffect": row.get("audioEffect"), "emotionType": row.get("emotionType"), "hideHint": row.get("hideHint")},
+        )
+        if not text_node:
+            return
+        self.add_edge(row_node, text_node, "defines_dialog_text", source=table)
+        self.add_line_target_edge(text_node, row_key, edge_kind="dialog_text_line_node", source=table, evidence="rowKey")
+        self.add_story_edges_for_line_target(text_node, row_key, edge_kind="dialog_text_story_node", source=table, evidence="has_line")
+        self.add_audio_target_edge(text_node, row.get("audioOverride"), edge_kind="dialog_text_uses_audio", source=table, evidence="audioOverride")
+        self.add_actor_or_character_edges(text_node, row.get("actorNameId"), actor_edge="dialog_text_actor", character_edge="dialog_text_character", source=table, evidence="actorNameId")
+        self.add_i18n_text_edges(text_node, row, source=table)
+
+    def add_dialog_option_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        option_node = self.add_semantic_node("dialog_option", row_key, source=table, data={"iconType": row.get("iconType")})
+        if not option_node:
+            return
+        self.add_edge(row_node, option_node, "defines_dialog_option", source=table)
+        if self.node_exists("option", row_key):
+            self.add_edge(option_node, self.node_id("option", row_key), "dialog_option_generated_option", source=table, evidence="rowKey")
+        self.add_i18n_text_edges(option_node, row, source=table)
+
+    def add_dialog_summary_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        summary_node = self.add_semantic_node("dialog_summary", row_key, source=table, data=compact_payload(row, depth=2))
+        if not summary_node:
+            return
+        self.add_edge(row_node, summary_node, "defines_dialog_summary", source=table)
+        self.add_i18n_text_edges(summary_node, row, source=table)
+
+    def add_dialog_summary_map_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        summary_key = safe_key(row)
+        map_node = self.add_semantic_node("dialog_summary_map", row_key, source=table, data={"summaryId": summary_key})
+        if not map_node:
+            return
+        self.add_edge(row_node, map_node, "defines_dialog_summary_map", source=table)
+        self.add_story_target_edge(map_node, row_key, edge_kind="dialog_summary_map_targets_story", source=table, evidence="rowKey")
+        summary_node = self.add_semantic_node("dialog_summary", summary_key, source=table)
+        if summary_node:
+            self.add_edge(map_node, summary_node, "dialog_summary_map_uses_summary", source=table, evidence="rowValue")
+        summary_row_key = f"DialogSummaryTable:{summary_key}"
+        if self.node_exists("table_row", summary_row_key):
+            self.add_edge(map_node, self.node_id("table_row", summary_row_key), "dialog_summary_map_uses_summary_row", source=table, evidence="rowValue")
+
+    def add_domain_depot_deliver_target_dialog_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        target_node = self.add_semantic_node(
+            "domain_depot_deliver_target_dialog",
+            row_key,
+            source=table,
+            data={"npcProxyId": row.get("npcProxyId"), "initialDialogId": row.get("initialDialogId"), "repeatDialogId": row.get("repeatDialogId")},
+        )
+        if not target_node:
+            return
+        self.add_edge(row_node, target_node, "defines_domain_depot_deliver_target_dialog", source=table)
+        self.add_story_target_edge(target_node, row.get("initialDialogId"), edge_kind="domain_depot_initial_dialog", source=table, evidence="initialDialogId")
+        self.add_story_target_edge(target_node, row.get("repeatDialogId"), edge_kind="domain_depot_repeat_dialog", source=table, evidence="repeatDialogId")
+
+    def add_dialog_support_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "DialogTextTable" and isinstance(row, dict):
+            self.add_dialog_text_edges(table, row_key, row, row_node)
+        elif table == "DialogOptionTable" and isinstance(row, dict):
+            self.add_dialog_option_edges(table, row_key, row, row_node)
+        elif table == "DialogSummaryTable":
+            self.add_dialog_summary_edges(table, row_key, row, row_node)
+        elif table == "DialogSummaryMapTable":
+            self.add_dialog_summary_map_edges(table, row_key, row, row_node)
+        elif table == "DomainDepotDeliverTargetDialogTable" and isinstance(row, dict):
+            self.add_domain_depot_deliver_target_dialog_edges(table, row_key, row, row_node)
 
     def add_actor_or_character_edges(self, owner_node: str, actor_id: Any, *, actor_edge: str, character_edge: str, source: str, evidence: str) -> None:
         actor_key = safe_key(actor_id)
@@ -7952,6 +8080,11 @@ QUERY_KIND_PRIORITY = {
     "audio_item_drag_drop": 33,
     "audio_item_type_drag_drop": 34,
     "audio_level": 35,
+    "dialog_text": 36,
+    "dialog_option": 37,
+    "dialog_summary": 38,
+    "dialog_summary_map": 39,
+    "domain_depot_deliver_target_dialog": 40,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -8153,6 +8286,11 @@ NODE_ID_PREFIXES = (
     "audio_item_drag_drop",
     "audio_item_type_drag_drop",
     "audio_level",
+    "dialog_text",
+    "dialog_option",
+    "dialog_summary",
+    "dialog_summary_map",
+    "domain_depot_deliver_target_dialog",
     "mission",
     "map",
     "level",
