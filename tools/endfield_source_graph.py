@@ -247,6 +247,19 @@ NARRATIVE_AUDIO_TABLES = (
     "AudioDialogCustomEventTable.json",
     "AudioDialogConfigs.json",
 )
+AUDIO_CONFIG_TABLES = (
+    "TextVoIdTable.json",
+    "AudioVoTone.json",
+    "AudioSpeakerTypeWeights.json",
+    "AudioBattleBuildings.json",
+    "AudioCollection.json",
+    "AudioDrop.json",
+    "AudioFactory.json",
+    "AudioFactoryAnnouncement.json",
+    "AudioItemDragAndDrop.json",
+    "AudioItemTypeDragAndDrop.json",
+    "AudioLevel.json",
+)
 ACTIVITY_ACHIEVEMENT_TABLES = (
     "SystemJumpTable.json",
     "ActivityTagTable.json",
@@ -698,6 +711,8 @@ class SourceGraphBuilder:
             self.commit_step("npcVoiceBark")
             self.ingest_narrative_audio_semantics()
             self.commit_step("narrativeAudio")
+            self.ingest_audio_config_semantics()
+            self.commit_step("audioConfig")
             if self.include_reference_rows:
                 self.ingest_reference_tables()
                 self.commit_step("reference")
@@ -5552,6 +5567,223 @@ class SourceGraphBuilder:
         audio_node = self.add_node("audio", audio_key, name=audio_key, source=source)
         self.add_edge(owner_node, audio_node, edge_kind, source=source, evidence=evidence)
 
+    def add_audio_dialog_reference_edges(
+        self,
+        owner_node: str,
+        audio_dialog_id: Any,
+        *,
+        row_edge: str,
+        audio_edge: str,
+        source: str,
+        evidence: str,
+        line_edge: str = "",
+    ) -> None:
+        audio_dialog_key = safe_key(audio_dialog_id)
+        if not audio_dialog_key:
+            return
+        row_key = f"AudioDialog:{audio_dialog_key}"
+        if self.node_exists("table_row", row_key):
+            self.add_edge(owner_node, self.node_id("table_row", row_key), row_edge, source=source, evidence=evidence)
+        audio_row = self.audio_dialog_rows().get(audio_dialog_key)
+        if isinstance(audio_row, dict):
+            path = safe_key(audio_row.get("path"))
+            audio_key = Path(path).stem if path else audio_dialog_key
+            audio_node = self.add_node("audio", audio_key, name=audio_key, source="AudioDialog", path=path)
+            self.add_edge(owner_node, audio_node, audio_edge, source=source, evidence=evidence)
+        if line_edge:
+            self.add_line_target_edge(owner_node, audio_dialog_key, edge_kind=line_edge, source=source, evidence=evidence)
+
+    def ingest_audio_config_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_audio_config_semantics", path=slash(table_root))
+        for table_name in AUDIO_CONFIG_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if payload is None:
+                continue
+            table_key = Path(table_name).stem
+            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/audio_config")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            if not isinstance(payload, dict):
+                continue
+            for row_key, row in payload.items():
+                row_node = self.add_node(
+                    "table_row",
+                    f"{table_key}:{row_key}",
+                    name=str(row_key),
+                    source=table_key,
+                    data=compact_payload(row, depth=2),
+                )
+                self.add_edge(table_node, row_node, "has_row", source="structured/audio_config")
+                self.add_audio_config_row_edges(table_key, row_key, row, row_node)
+        self.add_audio_sequence_response_links()
+
+    def add_audio_sequence_response_links(self) -> None:
+        rows = self.db.execute(
+            "SELECT id FROM nodes WHERE kind = 'audio_sequence_dialog' ORDER BY id"
+        ).fetchall()
+        for (sequence_node,) in rows:
+            sequence_key = sequence_node.rsplit(":", 1)[-1]
+            if self.node_exists("responsive_response", sequence_key):
+                self.add_edge(
+                    sequence_node,
+                    self.node_id("responsive_response", sequence_key),
+                    "audio_sequence_dialog_targets_response",
+                    source="AudioSequenceDialog",
+                    evidence="sequenceKey",
+                )
+
+    def add_text_voice_id_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        voice_id = safe_key(row)
+        mapping_node = self.add_semantic_node("text_voice_id", row_key, source=table, data={"voiceId": voice_id})
+        if not mapping_node:
+            return
+        self.add_edge(row_node, mapping_node, "defines_text_voice_id", source=table)
+        self.add_line_target_edge(mapping_node, row_key, edge_kind="text_voice_id_line_node", source=table, evidence="rowKey")
+        if voice_id:
+            self.add_audio_target_edge(mapping_node, voice_id, edge_kind="text_voice_id_uses_audio", source=table, evidence="rowValue")
+
+    def add_audio_vo_tone_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        tones = row.get("toneList") if isinstance(row.get("toneList"), list) else []
+        tone_node = self.add_semantic_node("audio_vo_tone", row_key, source=table, data={"toneCount": len(tones)})
+        if not tone_node:
+            return
+        self.add_edge(row_node, tone_node, "defines_audio_vo_tone", source=table)
+        self.add_audio_dialog_reference_edges(
+            tone_node,
+            row_key,
+            row_edge="audio_vo_tone_for_dialog_row",
+            audio_edge="audio_vo_tone_for_audio",
+            source=table,
+            evidence="rowKey",
+        )
+        for index, tone_id in enumerate(tones):
+            self.add_audio_dialog_reference_edges(
+                tone_node,
+                tone_id,
+                row_edge="audio_vo_tone_has_variant_dialog_row",
+                audio_edge="audio_vo_tone_has_variant_audio",
+                source=table,
+                evidence=f"toneList[{index}]",
+            )
+
+    def add_audio_speaker_type_weight_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        weight_node = self.add_semantic_node("audio_speaker_type_weight", row_key, source=table, data={"weight": row})
+        if weight_node:
+            self.add_edge(row_node, weight_node, "defines_audio_speaker_type_weight", source=table)
+
+    def add_audio_config_event_edges(self, owner_node: str, payload: Any, *, edge_kind: str, source: str, evidence_prefix: str = "") -> None:
+        if isinstance(payload, dict):
+            for field, value in payload.items():
+                field_key = safe_key(field)
+                if not (field_key.startswith("audio") or field_key.endswith("Event") or "Music" in field_key):
+                    continue
+                self.add_audio_config_event_edges(owner_node, value, edge_kind=edge_kind, source=source, evidence_prefix=field_key)
+        elif isinstance(payload, list):
+            for index, item in enumerate(payload):
+                evidence = f"{evidence_prefix}[{index}]" if evidence_prefix else f"[{index}]"
+                self.add_audio_config_event_edges(owner_node, item, edge_kind=edge_kind, source=source, evidence_prefix=evidence)
+        else:
+            event_key = safe_key(payload)
+            if not event_key or event_key in {"0", "0.0"}:
+                return
+            event_node = self.add_wwise_event_node(event_key, source=source)
+            if event_node:
+                self.add_edge(owner_node, event_node, edge_kind, source=source, evidence=evidence_prefix)
+
+    def add_audio_config_owner_edges(self, config_node: str, row_key: str, *, source: str, owner_edges: tuple[tuple[str, str], ...]) -> None:
+        for kind, edge_kind in owner_edges:
+            if self.node_exists(kind, row_key):
+                self.add_edge(config_node, self.node_id(kind, row_key), edge_kind, source=source, evidence="rowKey")
+
+    def add_audio_sfx_config_edges(
+        self,
+        table: str,
+        row_key: str,
+        row: dict[str, Any],
+        row_node: str,
+        *,
+        kind: str,
+        define_edge: str,
+        event_edge: str,
+        owner_edges: tuple[tuple[str, str], ...] = (),
+    ) -> None:
+        config_node = self.add_semantic_node(kind, row_key, source=table, data=compact_payload(row, depth=2))
+        if not config_node:
+            return
+        self.add_edge(row_node, config_node, define_edge, source=table)
+        self.add_audio_config_owner_edges(config_node, row_key, source=table, owner_edges=owner_edges)
+        self.add_audio_config_event_edges(config_node, row, edge_kind=event_edge, source=table)
+
+    def add_audio_factory_announcement_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        announce_node = self.add_semantic_node("audio_factory_announcement", row_key, source=table, data=compact_payload(row, depth=2))
+        if not announce_node:
+            return
+        self.add_edge(row_node, announce_node, "defines_audio_factory_announcement", source=table)
+        event_node = self.add_wwise_event_node(row_key, source=table)
+        if event_node:
+            self.add_edge(announce_node, event_node, "audio_factory_announcement_key_event", source=table, evidence="rowKey")
+        self.add_audio_target_edge(announce_node, row.get("voiceId"), edge_kind="audio_factory_announcement_uses_voice", source=table, evidence="voiceId")
+
+    def add_audio_sequence_dialog_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        sequences = row.get("sequence") if isinstance(row.get("sequence"), dict) else {}
+        group_node = self.add_semantic_node("audio_sequence_dialog_set", row_key, source=table, data={"sequenceCount": len(sequences)})
+        if group_node:
+            self.add_edge(row_node, group_node, "defines_audio_sequence_dialog_set", source=table)
+        for sequence_key, sequence in sequences.items():
+            if not isinstance(sequence, dict):
+                continue
+            sequence_node = self.add_semantic_node(
+                "audio_sequence_dialog",
+                f"{row_key}:{sequence_key}",
+                name=sequence_key,
+                source=table,
+                data={"setId": row_key, "sequenceId": sequence_key, "cdTime": sequence.get("cdTime"), "speakerCount": len(sequence.get("involvedSpeakers") or []), "audioCount": len(sequence.get("sequence") or [])},
+            )
+            if not sequence_node:
+                continue
+            self.add_edge(row_node, sequence_node, "defines_audio_sequence_dialog", source=table, evidence=sequence_key)
+            if group_node:
+                self.add_edge(group_node, sequence_node, "audio_sequence_set_has_dialog", source=table, evidence=sequence_key)
+
+            for index, speaker in enumerate(sequence.get("involvedSpeakers") or []):
+                self.add_actor_or_character_edges(sequence_node, speaker, actor_edge="audio_sequence_dialog_speaker_actor", character_edge="audio_sequence_dialog_speaker_character", source=table, evidence=f"involvedSpeakers[{index}]")
+            for index, audio_id in enumerate(sequence.get("sequence") or []):
+                self.add_audio_dialog_reference_edges(
+                    sequence_node,
+                    audio_id,
+                    row_edge="audio_sequence_dialog_uses_dialog_row",
+                    audio_edge="audio_sequence_dialog_uses_audio",
+                    line_edge="audio_sequence_dialog_line_node",
+                    source=table,
+                    evidence=f"sequence[{index}]",
+                )
+
+    def add_audio_config_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "TextVoIdTable":
+            self.add_text_voice_id_edges(table, row_key, row, row_node)
+        elif table == "AudioVoTone" and isinstance(row, dict):
+            self.add_audio_vo_tone_edges(table, row_key, row, row_node)
+        elif table == "AudioSpeakerTypeWeights":
+            self.add_audio_speaker_type_weight_edges(table, row_key, row, row_node)
+        elif table == "AudioBattleBuildings" and isinstance(row, dict):
+            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_battle_building", define_edge="defines_audio_battle_building", event_edge="audio_battle_building_uses_event", owner_edges=(("factory_building", "audio_battle_building_for_factory_building"), ("factory_machine", "audio_battle_building_for_factory_machine")))
+        elif table == "AudioCollection" and isinstance(row, dict):
+            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_collection", define_edge="defines_audio_collection", event_edge="audio_collection_uses_event")
+        elif table == "AudioDrop" and isinstance(row, dict):
+            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_drop", define_edge="defines_audio_drop", event_edge="audio_drop_uses_event")
+        elif table == "AudioFactory" and isinstance(row, dict):
+            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_factory", define_edge="defines_audio_factory", event_edge="audio_factory_uses_event", owner_edges=(("factory_building", "audio_factory_for_factory_building"), ("factory_machine", "audio_factory_for_factory_machine")))
+        elif table == "AudioFactoryAnnouncement" and isinstance(row, dict):
+            self.add_audio_factory_announcement_edges(table, row_key, row, row_node)
+        elif table == "AudioItemDragAndDrop" and isinstance(row, dict):
+            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_item_drag_drop", define_edge="defines_audio_item_drag_drop", event_edge="audio_item_drag_drop_uses_event", owner_edges=(("item", "audio_item_drag_drop_for_item"), ("factory_item", "audio_item_drag_drop_for_factory_item"), ("factory_machine", "audio_item_drag_drop_for_factory_machine")))
+        elif table == "AudioItemTypeDragAndDrop" and isinstance(row, dict):
+            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_item_type_drag_drop", define_edge="defines_audio_item_type_drag_drop", event_edge="audio_item_type_drag_drop_uses_event", owner_edges=(("item_type", "audio_item_type_drag_drop_for_item_type"),))
+        elif table == "AudioLevel" and isinstance(row, dict):
+            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_level", define_edge="defines_audio_level", event_edge="audio_level_uses_event", owner_edges=(("level", "audio_level_for_level"),))
+
     def add_actor_or_character_edges(self, owner_node: str, actor_id: Any, *, actor_edge: str, character_edge: str, source: str, evidence: str) -> None:
         actor_key = safe_key(actor_id)
         if not actor_key:
@@ -7300,16 +7532,7 @@ class SourceGraphBuilder:
                 self.add_edge(char_node, audio_node, "has_profile_voice", source="CharacterTable", evidence=str(voice.get("voiceIndex") or ""))
 
         elif table == "AudioSequenceDialog" and isinstance(row, dict):
-            for sequence_key, sequence in row.items():
-                seq_node = self.add_node("audio_sequence", sequence_key, name=sequence_key, source="AudioSequenceDialog")
-                self.add_edge(row_node, seq_node, "has_audio_sequence", source="AudioSequenceDialog")
-                if isinstance(sequence, dict):
-                    for speaker in sequence.get("involvedSpeakers") or []:
-                        char_node = self.add_node("character", speaker, name=speaker, source="AudioSequenceDialog")
-                        self.add_edge(seq_node, char_node, "involves_speaker", source="AudioSequenceDialog")
-                    for audio_id in sequence.get("sequence") or []:
-                        audio_node = self.add_node("audio", str(audio_id), name=str(audio_id), source="AudioSequenceDialog")
-                        self.add_edge(seq_node, audio_node, "sequence_audio_id", source="AudioSequenceDialog")
+            self.add_audio_sequence_dialog_edges(table, row_key, row, row_node)
 
     def ingest_reference_tables(self) -> None:
         ref_root = WEBUI_DATA / "lang" / self.language / "reference"
@@ -7716,6 +7939,19 @@ QUERY_KIND_PRIORITY = {
     "voice_id_conflict": 20,
     "audio_dialog_custom_event": 21,
     "audio_dialog_config": 22,
+    "text_voice_id": 23,
+    "audio_vo_tone": 24,
+    "audio_speaker_type_weight": 25,
+    "audio_sequence_dialog_set": 26,
+    "audio_sequence_dialog": 27,
+    "audio_battle_building": 28,
+    "audio_collection": 29,
+    "audio_drop": 30,
+    "audio_factory": 31,
+    "audio_factory_announcement": 32,
+    "audio_item_drag_drop": 33,
+    "audio_item_type_drag_drop": 34,
+    "audio_level": 35,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -7904,6 +8140,19 @@ NODE_ID_PREFIXES = (
     "voice_id_conflict",
     "audio_dialog_custom_event",
     "audio_dialog_config",
+    "text_voice_id",
+    "audio_vo_tone",
+    "audio_speaker_type_weight",
+    "audio_sequence_dialog_set",
+    "audio_sequence_dialog",
+    "audio_battle_building",
+    "audio_collection",
+    "audio_drop",
+    "audio_factory",
+    "audio_factory_announcement",
+    "audio_item_drag_drop",
+    "audio_item_type_drag_drop",
+    "audio_level",
     "mission",
     "map",
     "level",

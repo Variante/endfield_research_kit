@@ -432,7 +432,7 @@ Understanding is strong for story-facing audio.
 
 The source graph includes:
 
-- Audio nodes: 35,151.
+- Audio nodes: 35,321.
 - `audio_path` edges: 25,245.
 - `defines_audio` edges: 25,245.
 - `speaker_channel` edges: 25,245.
@@ -441,6 +441,12 @@ The source graph includes:
 - `remote_common_line_uses_voice` edges: 284.
 - `audio_voice_extra_for_audio` edges: 25,245.
 - `audio_cue_handler_uses_event` edges: 221.
+- `text_voice_id_uses_audio` edges: 153.
+- `audio_vo_tone_has_variant_audio` edges: 291.
+- `audio_sequence_dialog_uses_audio` edges: 100.
+- `audio_factory_uses_event` edges: 240.
+- `audio_item_drag_drop_uses_event` edges: 146.
+- `audio_level_uses_event` edges: 105.
 
 The WebUI build also post-processes generated conversation JSON with playable
 `audioSrc` links. This makes the story audio experience usable and gives a
@@ -466,9 +472,29 @@ python tools\endfield_source_graph.py query remotecomm_c13m2_1 --kind remote_com
 python tools\endfield_source_graph.py query -1000413093 --kind audio_voice_extra
 ```
 
+2026-07-01 source graph audio-config progress: a follow-up fast CN rebuild
+verified 942,880 graph nodes and 1,538,834 edges after adding support/config
+semantics for TextVoId, voice tone groups, speaker weights, battle/factory/item
+SFX tables, factory announcements, and level audio settings. The pass adds 180
+`text_voice_id`, 115 `audio_vo_tone`, 38 corrected `audio_sequence_dialog`, 571
+`audio_item_drag_drop`, 73 `audio_factory`, and 103 `audio_level` nodes, among
+others, with 0 orphan edges from those sources. `AudioSequenceDialog` now links
+38 sequence records to responsive responses and 100 sequence entries to
+`AudioDialog` rows, audio nodes, and generated line nodes where present instead of collapsing under a single `audio_sequence:sequence`
+node. Useful checks include:
+
+```bat
+python tools\endfield_source_graph.py query black_a1m6d2_3_001 --kind text_voice_id
+python tools\endfield_source_graph.py query -1008092446 --kind audio_vo_tone
+python tools\endfield_source_graph.py query audio_sequence_dialog:1:-1043173561
+python tools\endfield_source_graph.py query air_dancer_1 --kind audio_factory
+python tools\endfield_source_graph.py query base01_lv001 --kind audio_level
+```
+
 Remaining audio improvements are now mostly about deeper Wwise/runtime behavior,
-TextVoId/tone table semantics, and coverage validation outside story voice, not
-basic line playback or raw communication-table bridging.
+DialogText/DialogOption table semantics, tone/voice intent classification, and
+coverage validation outside story voice, not basic line playback, raw
+communication-table bridging, or basic support/config table linkage.
 
 ### Updates and Change Tracking
 
