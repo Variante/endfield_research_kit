@@ -172,6 +172,14 @@ paths and `pid:<hex>` aliases to WebUI asset nodes by default, and can use
 `--kind unity_pathid` for lower-level Material JSON `uses_texture_pathid`
 queries.
 
+2026-07-01 renderable asset entity ingestion groups exported LOD model rows into
+`asset_entity` nodes keyed by source plus normalized model base. A fast CN graph
+rebuild verified 10,465 `asset_entity` nodes, 30,482 `entity_has_lod_model`
+edges, 1,962 `entity_uses_material` edges, and 8,581 `entity_uses_texture`
+edges. Entity aliases resolve bare bases such as `actor_aglina_body_01`; texture
+`used-by` queries now surface renderable entities such as
+`anm_com_machine+1_001_01` in addition to raw material/model rows.
+
 Use the quick build for normal story/option/map investigation. Use the full
 build only when Unity asset container, PathID, or exported asset relationship
 coverage matters.

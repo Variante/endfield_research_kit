@@ -836,10 +836,20 @@ aliases, 291,078 `asset_pathid` aliases, 229,557 `uses_texture` edges, 8,450
 `referenced_by_model` edges. Asset queries can now follow many material and
 texture "used by" chains without scanning all Material JSON during graph use.
 
+2026-07-01 renderable asset entity progress: source graph asset ingestion now
+groups exported LOD model files into `asset_entity` nodes keyed by source plus
+normalized model base. A fast graph rebuild verified 10,465 `asset_entity`
+nodes, 30,482 `entity_has_lod_model` edges, 1,962 `entity_uses_material` edges,
+and 8,581 `entity_uses_texture` edges. Queries such as
+`python tools\endfield_source_graph.py used-by actor_aglina_body_01 --kind asset_entity`
+resolve semantic renderable groups, and texture `used-by` queries now return
+entity-level consumers before the raw material/model details.
+
 The deeper semantic model is still incomplete:
 
-- Many model files are not yet mapped to gameplay entities or runtime prefab
-  usage.
+- Exported LOD model files are now grouped into renderable `asset_entity` nodes,
+  but many entities are still not mapped to gameplay records or runtime prefab
+  placement.
 - Material and texture dependency chains are now normalized for many
   PathID-resolved Material JSON links, but runtime material variants, shader
   behavior, and scene-specific swaps are not fully classified.
