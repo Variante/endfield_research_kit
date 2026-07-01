@@ -115,7 +115,9 @@ info, special level-to-map, and factory tables.
 
 2026-07-01 Gameplay, item/economy, combat semantics, world/map, and selected
 structured-table ingestion adds exact-queryable `weapon`, `equipment`,
-`character`, `enemy`, `enemy_template`, `enemy_attribute_template`,
+`character`, `character_break_stage`, `character_level_checkpoint`,
+`character_stat_checkpoint`, `character_breakthrough`, `character_potential`,
+`enemy`, `enemy_template`, `enemy_attribute_template`,
 `enemy_display_type`, `enemy_ability`, `enemy_attribute_modifier`, `buff`,
 `map`, `level`, `level_loading`, `scene_area`, `map_mark`,
 `map_mark_template`, `map_mark_type`, `map_mark_category`, `track_map_point`,
@@ -152,6 +154,9 @@ aliases for WebUI navigation. Example exact queries:
 
 ```bat
 python tools\endfield_source_graph.py query chr_0017_yvonne --kind character
+python tools\endfield_source_graph.py query chr_0017_yvonne:stat:90:4 --kind character_stat_checkpoint
+python tools\endfield_source_graph.py query chr_0017_yvonne:potential:1 --kind character_potential
+python tools\endfield_source_graph.py query chr_0017_yvonne:breakthrough:charBreak20 --kind character_breakthrough
 python tools\endfield_source_graph.py query wpn_pistol_0001 --kind weapon
 python tools\endfield_source_graph.py query eny_0018_lbtough --kind enemy
 python tools\endfield_source_graph.py query item_gold --kind item
@@ -164,6 +169,25 @@ python tools\endfield_source_graph.py query map01 --kind map
 python tools\endfield_source_graph.py query mark_arrow --kind map_mark_template
 python tools\endfield_source_graph.py query component_activity_xiranite_cmpt_1 --kind factory_recipe
 ```
+
+2026-07-01 character progression graph progress: generated Gameplay character
+payloads now promote break-stage ranges, level EXP/gold checkpoints, visible
+character stat checkpoints, breakthroughs, and potential levels into first-class
+source graph nodes. A fast rebuild on the current CN payload verified 140
+`character_break_stage` nodes, 196 `character_level_checkpoint` nodes, 2,632
+`character_stat_checkpoint` nodes, 112 `character_breakthrough` nodes, and 140
+`character_potential` nodes. Edge checks verified 140 `has_character_break_stage`,
+364 `break_stage_allows_exp_item`, 196 `has_character_level_checkpoint`, 140
+`level_checkpoint_gold_cost`, 2,632 `has_character_stat_checkpoint`, 18,424
+`stat_checkpoint_has_property`, 112 `has_character_breakthrough`, 112
+`unlocks_character_break_stage`, 28 `uses_character_potential_item`, 140
+`has_character_potential`, 140 `uses_potential_talent_effect`, 794
+`character_potential_uses_blackboard_key`, 101 `character_potential_unlocks_item`,
+and 28 `uses_default_weapon` edges. The current CN Gameplay payload used for
+this check reports 515 visible entries: 72 weapons, 220 equipment records, 28
+characters, 78 visible enemy entries, and 117 usable items, while preserving 290
+`enemyVariants` as generated payload evidence. This makes authored character
+progression values queryable without simulating runtime formulas.
 
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
