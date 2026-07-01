@@ -133,6 +133,31 @@ COMBAT_SEMANTIC_TABLES = (
     "UseItemTable.json",
     "PotentialTalentEffectTable.json",
 )
+ATTRIBUTE_DICTIONARY_TABLES = (
+    "AttributeMetaTable.json",
+    "AttributeShowConfigTable.json",
+    "CompositeAttributeTable.json",
+    "CompositeAttributeShowConfigTable.json",
+    "AttributeFilterTable.json",
+    "InteractiveAttributeDataTable.json",
+)
+CHARACTER_SUPPORT_TABLES = (
+    "CharacterTagTable.json",
+    "CharacterTagDesTable.json",
+    "CharProfessionTable.json",
+    "CharTypeTable.json",
+    "CharPresetTable.json",
+    "CharTeamTable.json",
+    "CharWpnRecommendTable.json",
+    "CharWpnSkillRecommendTable.json",
+    "DungeonCharTutorialStepTable.json",
+    "DungeonCharTutorialTable.json",
+    "DungeonCharTrialTable.json",
+    "CharId2DungeonIdTable.json",
+    "ActivityCharTrial.json",
+    "ActivityCharacterGuideLineTable.json",
+    "RecommendTraining.json",
+)
 
 
 def slash(path: Path) -> str:
@@ -496,9 +521,13 @@ class SourceGraphBuilder:
             self.commit_step("worldSemantics")
             self.ingest_combat_semantics()
             self.commit_step("combatSemantics")
+            self.ingest_attribute_dictionary()
+            self.commit_step("attributeDictionary")
             if self.include_gameplay:
                 self.ingest_gameplay()
                 self.commit_step("gameplay")
+            self.ingest_character_support_semantics()
+            self.commit_step("characterSupport")
             self.ingest_timeline_line_orders()
             self.commit_step("timelineLineOrders")
             self.ingest_story_source_links()
@@ -1123,6 +1152,13 @@ class SourceGraphBuilder:
                     self.add_gameplay_talent(node, f"{entry_id}:talents", talent, index)
 
     def add_gameplay_character_semantics(self, character_node: str, character_id: str, entry: dict[str, Any]) -> None:
+        profession_node = self.add_character_profession_node(entry.get("profession"), name=entry.get("professionLabel"), source="webui/gameplay")
+        if profession_node:
+            self.add_edge(character_node, profession_node, "character_has_profession", source="webui/gameplay", evidence="profession")
+        type_node = self.add_character_type_node(entry.get("element"), name=entry.get("elementLabel"), source="webui/gameplay")
+        if type_node:
+            self.add_edge(character_node, type_node, "character_has_type", source="webui/gameplay", evidence="element")
+
         default_weapon_id = safe_key(entry.get("defaultWeaponId"))
         if default_weapon_id:
             weapon_node = self.add_node("weapon", default_weapon_id, name=entry.get("defaultWeaponName") or default_weapon_id, source="webui/gameplay")
@@ -2984,6 +3020,522 @@ class SourceGraphBuilder:
         elif table == "ShopGoodsTable":
             self.add_shop_goods_edges(table, row_key, row, row_node)
 
+    def ingest_attribute_dictionary(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_attribute_dictionary", path=slash(table_root))
+        for table_name in ATTRIBUTE_DICTIONARY_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if payload is None:
+                continue
+            table_key = Path(table_name).stem
+            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/attribute_dictionary")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            if not isinstance(payload, dict):
+                continue
+            for row_key, row in payload.items():
+                row_node = self.add_node(
+                    "table_row",
+                    f"{table_key}:{row_key}",
+                    name=str(row_key),
+                    source=table_key,
+                    data=compact_payload(row, depth=2),
+                )
+                self.add_edge(table_node, row_node, "has_row", source="structured/attribute_dictionary")
+                self.add_attribute_dictionary_row_edges(table_key, row_key, row, row_node)
+
+    def add_attribute_meta_node(self, attr_type: Any, *, source: str = "", data: Any = None) -> str:
+        attr_key = safe_key(attr_type)
+        if not attr_key:
+            return ""
+        node = self.add_node("attribute_meta", attr_key, name=f"attr_{attr_key}", source=source, data=data)
+        self.add_alias(attr_key, node, kind="attribute_type", source=source)
+        self.add_alias(f"attr_{attr_key}", node, kind="attribute_meta_id", source=source)
+        return node
+
+    def add_gameplay_stat_property_node(self, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        prop_key = safe_key(key)
+        if not prop_key:
+            return ""
+        prop_name = table_display_text(name) or prop_key
+        node = self.add_node("gameplay_stat_property", prop_key, name=prop_name, source=source, data=data)
+        self.add_alias(prop_key, node, kind="gameplay_stat_property_key", source=source)
+        if prop_name != prop_key:
+            self.add_alias(prop_name, node, kind="gameplay_stat_property_name", source=source)
+        return node
+
+    def add_attribute_display_entry_node(self, key: str, entry: dict[str, Any], *, source: str) -> str:
+        entry_node = self.add_node(
+            "attribute_display_entry",
+            key,
+            name=table_display_text(entry.get("name")) or key,
+            source=source,
+            data={
+                "attributeModifier": entry.get("attributeModifier"),
+                "index": entry.get("index"),
+                "showPercent": entry.get("showPercent"),
+                "isReduce": entry.get("isReduce"),
+                "valueFormat": entry.get("valueFormat"),
+                "defaultDisplayType": entry.get("defaultDisplayType"),
+                "charFullAttrDisplayType": entry.get("charFullAttrDisplayType"),
+                "equipFullAttrDisplayType": entry.get("equipFullAttrDisplayType"),
+            },
+        )
+        self.add_alias(key, entry_node, kind="attribute_display_entry_id", source=source)
+        self.add_alias(table_display_text(entry.get("name")), entry_node, kind="attribute_display_name", source=source)
+        return entry_node
+
+    def add_attribute_meta_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        attr_type = safe_key(row.get("attributeType") if "attributeType" in row else row_key)
+        if not attr_type:
+            return
+        node = self.add_attribute_meta_node(
+            attr_type,
+            source=table,
+            data={
+                "attributeType": row.get("attributeType"),
+                "defaultValue": row.get("defaultValue"),
+                "hasMaxValue": row.get("hasMaxValue"),
+                "maxValue": row.get("maxValue"),
+                "hasMinValue": row.get("hasMinValue"),
+                "minValue": row.get("minValue"),
+                "iconName": row.get("iconName"),
+                "bigIconName": row.get("bigIconName"),
+            },
+        )
+        self.add_edge(row_node, node, "defines_attribute_meta", source=table)
+        self.add_alias(row.get("iconName"), node, kind="icon_id", source=table)
+        self.add_alias(row.get("bigIconName"), node, kind="icon_id", source=table)
+
+    def add_attribute_show_config_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        attr_type = safe_key(row_key)
+        if not attr_type:
+            return
+        config_node = self.add_node("attribute_display_config", f"attribute:{attr_type}", name=f"attribute {attr_type} display", source=table, data={"attributeType": attr_type, "entryCount": len(row.get("list") or [])})
+        self.add_edge(row_node, config_node, "defines_attribute_display_config", source=table)
+        meta_node = self.add_attribute_meta_node(attr_type, source=table)
+        if meta_node:
+            self.add_edge(config_node, meta_node, "attribute_display_config_for_meta", source=table, evidence="attributeType")
+        for index, entry in enumerate(row.get("list") or []):
+            if not isinstance(entry, dict):
+                continue
+            entry_node = self.add_attribute_display_entry_node(f"attribute:{attr_type}:{index}", entry, source=table)
+            self.add_edge(config_node, entry_node, "attribute_show_includes_modifier", source=table, evidence=f"list[{index}]", data={"attributeModifier": entry.get("attributeModifier")})
+            if meta_node:
+                self.add_edge(entry_node, meta_node, "display_entry_for_attribute_meta", source=table, evidence="attributeType")
+
+    def add_composite_attribute_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        composite_id = safe_key(row_key)
+        if not composite_id:
+            return
+        node = self.add_node("composite_attribute", composite_id, name=composite_id, source=table, data={"id": composite_id, "memberCount": len(row.get("list") or [])})
+        self.add_edge(row_node, node, "defines_composite_attribute", source=table)
+        self.add_alias(composite_id, node, kind="composite_attribute_id", source=table)
+        for index, member_id in enumerate(row.get("list") or []):
+            member_node = self.add_gameplay_stat_property_node(member_id, source=table)
+            if member_node:
+                self.add_edge(node, member_node, "composite_attribute_includes", source=table, evidence=f"list[{index}]")
+
+    def add_composite_attribute_show_config_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        composite_id = safe_key(row_key)
+        if not composite_id:
+            return
+        composite_node = self.add_node("composite_attribute", composite_id, name=composite_id, source=table)
+        config_node = self.add_node("attribute_display_config", f"composite:{composite_id}", name=f"{composite_id} display", source=table, data={"compositeAttribute": composite_id, "entryCount": len(row.get("list") or [])})
+        self.add_edge(row_node, config_node, "defines_composite_attribute_display_config", source=table)
+        self.add_edge(composite_node, config_node, "has_composite_attribute_display_config", source=table)
+        for index, entry in enumerate(row.get("list") or []):
+            if not isinstance(entry, dict):
+                continue
+            entry_node = self.add_attribute_display_entry_node(f"composite:{composite_id}:{index}", entry, source=table)
+            self.add_edge(config_node, entry_node, "composite_attribute_show_includes_modifier", source=table, evidence=f"list[{index}]", data={"attributeModifier": entry.get("attributeModifier")})
+            self.add_edge(entry_node, composite_node, "display_entry_for_composite_attribute", source=table, evidence="compositeAttribute")
+
+    def add_attribute_filter_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        filter_id = safe_key(row_key)
+        if not filter_id:
+            return
+        filter_node = self.add_node("attribute_filter", filter_id, name=filter_id, source=table, data={"id": filter_id, "entryCount": len(row.get("list") or [])})
+        self.add_edge(row_node, filter_node, "defines_attribute_filter", source=table)
+        self.add_alias(filter_id, filter_node, kind="attribute_filter_id", source=table)
+        for index, entry in enumerate(row.get("list") or []):
+            if not isinstance(entry, dict):
+                continue
+            entry_node = self.add_attribute_display_entry_node(f"filter:{filter_id}:{index}", entry, source=table)
+            self.add_edge(filter_node, entry_node, "attribute_filter_includes", source=table, evidence=f"list[{index}]")
+            composite_id = safe_key(entry.get("compositeAttr"))
+            if composite_id:
+                composite_node = self.add_node("composite_attribute", composite_id, name=composite_id, source=table)
+                self.add_edge(entry_node, composite_node, "filter_entry_uses_composite_attribute", source=table, evidence="compositeAttr")
+            else:
+                meta_node = self.add_attribute_meta_node(entry.get("attributeType"), source=table)
+                if meta_node:
+                    self.add_edge(entry_node, meta_node, "filter_entry_uses_attribute_meta", source=table, evidence="attributeType")
+
+    def add_interactive_attribute_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        attr_id = safe_key(row.get("id") or row_key)
+        if not attr_id:
+            return
+        node = self.add_node("interactive_attribute", attr_id, name=attr_id, source=table, data={"id": attr_id, "hp": row.get("hp"), "atk": row.get("atk"), "def": row.get("def"), "pen": row.get("pen")})
+        self.add_edge(row_node, node, "defines_interactive_attribute", source=table)
+        self.add_alias(attr_id, node, kind="interactive_attribute_id", source=table)
+        for field in ("hp", "atk", "def", "pen"):
+            value = row.get(field)
+            if value is None:
+                continue
+            prop_node = self.add_gameplay_stat_property_node(field, source=table)
+            self.add_edge(node, prop_node, "interactive_attribute_sets_property", source=table, evidence=field, data={"value": value})
+
+    def add_attribute_dictionary_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if not isinstance(row, dict):
+            return
+        if table == "AttributeMetaTable":
+            self.add_attribute_meta_edges(table, row_key, row, row_node)
+        elif table == "AttributeShowConfigTable":
+            self.add_attribute_show_config_edges(table, row_key, row, row_node)
+        elif table == "CompositeAttributeTable":
+            self.add_composite_attribute_edges(table, row_key, row, row_node)
+        elif table == "CompositeAttributeShowConfigTable":
+            self.add_composite_attribute_show_config_edges(table, row_key, row, row_node)
+        elif table == "AttributeFilterTable":
+            self.add_attribute_filter_edges(table, row_key, row, row_node)
+        elif table == "InteractiveAttributeDataTable":
+            self.add_interactive_attribute_edges(table, row_key, row, row_node)
+
+    def ingest_character_support_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_character_support", path=slash(table_root))
+        for table_name in CHARACTER_SUPPORT_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if payload is None:
+                continue
+            table_key = Path(table_name).stem
+            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/character_support")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            if not isinstance(payload, dict):
+                continue
+            for row_key, row in payload.items():
+                row_node = self.add_node(
+                    "table_row",
+                    f"{table_key}:{row_key}",
+                    name=str(row_key),
+                    source=table_key,
+                    data=compact_payload(row, depth=2),
+                )
+                self.add_edge(table_node, row_node, "has_row", source="structured/character_support")
+                self.add_character_support_row_edges(table_key, row_key, row, row_node)
+
+    def add_character_ref_node(self, char_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        char_key = safe_key(char_id)
+        if not char_key:
+            return ""
+        char_name = table_display_text(name) or char_key
+        node = self.add_node("character", char_key, name=char_name, source=source, data=data)
+        self.add_alias(char_key, node, kind="character_id", source=source)
+        if char_name != char_key:
+            self.add_alias(char_name, node, kind="character_name", source=source)
+        return node
+
+    def add_character_tag_node(self, tag_id: Any, *, source: str = "", data: Any = None) -> str:
+        tag_key = safe_key(tag_id)
+        if not tag_key:
+            return ""
+        node = self.add_node("character_tag", tag_key, name=tag_key, source=source, data=data)
+        self.add_alias(tag_key, node, kind="character_tag_id", source=source)
+        return node
+
+    def add_character_profession_node(self, profession_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        profession_key = safe_key(profession_id)
+        if not profession_key:
+            return ""
+        profession_name = table_display_text(name) or profession_key
+        node = self.add_node("character_profession", profession_key, name=profession_name, source=source, data=data)
+        self.add_alias(profession_key, node, kind="character_profession_id", source=source)
+        if profession_name != profession_key:
+            self.add_alias(profession_name, node, kind="character_profession_name", source=source)
+        return node
+
+    def add_character_type_node(self, type_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        type_key = safe_key(type_id)
+        if not type_key:
+            return ""
+        type_name = table_display_text(name) or type_key
+        node = self.add_node("character_type", type_key, name=type_name, source=source, data=data)
+        self.add_alias(type_key, node, kind="character_type_id", source=source)
+        if type_name != type_key:
+            self.add_alias(type_name, node, kind="character_type_name", source=source)
+        return node
+
+    def add_character_preset_node(self, preset_id: Any, *, source: str = "", data: Any = None) -> str:
+        preset_key = safe_key(preset_id)
+        if not preset_key:
+            return ""
+        node = self.add_node("character_preset", preset_key, name=preset_key, source=source, data=data)
+        self.add_alias(preset_key, node, kind="character_preset_id", source=source)
+        return node
+
+    def add_character_team_node(self, team_id: Any, *, source: str = "", data: Any = None) -> str:
+        team_key = safe_key(team_id)
+        if not team_key:
+            return ""
+        node = self.add_node("character_team", team_key, name=team_key, source=source, data=data)
+        self.add_alias(team_key, node, kind="character_team_id", source=source)
+        return node
+
+    def add_dungeon_node(self, dungeon_id: Any, *, source: str = "", data: Any = None) -> str:
+        dungeon_key = safe_key(dungeon_id)
+        if not dungeon_key:
+            return ""
+        node = self.add_node("dungeon", dungeon_key, name=dungeon_key, source=source, data=data)
+        self.add_alias(dungeon_key, node, kind="dungeon_id", source=source)
+        return node
+
+    def add_character_tag_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        char_id = safe_key(row.get("charId") or row_key)
+        char_node = self.add_character_ref_node(char_id, source=table)
+        if not char_node:
+            return
+        self.add_edge(row_node, char_node, "defines_character_tags", source=table)
+        tag_fields = (
+            ("blocTagId", "bloc"),
+            ("raceTagId", "race"),
+            ("giftPreferTagId", "gift_prefer"),
+            ("dispositionTagIds", "disposition"),
+            ("expertTagIds", "expert"),
+            ("hobbyTagIds", "hobby"),
+            ("behaviourHateTagIds", "behaviour_hate"),
+            ("behaviourUnavailableTagIds", "behaviour_unavailable"),
+        )
+        for field, category in tag_fields:
+            value = row.get(field)
+            values = value if isinstance(value, list) else [value]
+            for index, tag_id in enumerate(values):
+                tag_node = self.add_character_tag_node(tag_id, source=table, data={"category": category})
+                if tag_node:
+                    evidence = f"{field}[{index}]" if isinstance(value, list) else field
+                    self.add_edge(char_node, tag_node, "has_character_tag", source=table, evidence=evidence, data={"category": category})
+        bloc_id = safe_key(row.get("blocId"))
+        if bloc_id:
+            bloc_node = self.add_character_tag_node(bloc_id, source=table, data={"category": "bloc_id"})
+            self.add_edge(char_node, bloc_node, "character_has_bloc", source=table, evidence="blocId")
+
+    def add_character_tag_desc_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        char_id = safe_key(row_key)
+        char_node = self.add_character_ref_node(char_id, source=table)
+        if not char_node:
+            return
+        for tag_id, desc in (row.get("tagDesc") or {}).items():
+            tag_key = safe_key(tag_id)
+            if not tag_key or not isinstance(desc, dict):
+                continue
+            desc_node = self.add_node("character_tag_desc", f"{char_id}:{tag_key}", name=tag_key, source=table, data={"characterId": char_id, "tagId": tag_key, "desc": table_text(desc.get("desc"))})
+            tag_node = self.add_character_tag_node(tag_key, source=table)
+            self.add_edge(row_node, desc_node, "defines_character_tag_desc", source=table)
+            self.add_edge(char_node, desc_node, "has_character_tag_desc", source=table, evidence=tag_key)
+            self.add_edge(desc_node, tag_node, "describes_character_tag", source=table, evidence="tagId")
+
+    def add_character_profession_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        profession_id = safe_key(row.get("profession") if "profession" in row else row_key)
+        node = self.add_character_profession_node(profession_id, name=row.get("name"), source=table, data={"profession": row.get("profession"), "iconId": row.get("iconId"), "sortId": row.get("sortId"), "desc": table_text(row.get("desc"))})
+        if node:
+            self.add_edge(row_node, node, "defines_character_profession", source=table)
+            self.add_alias(row.get("iconId"), node, kind="icon_id", source=table)
+
+    def add_character_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        type_id = safe_key(row.get("charTypeId") or row_key)
+        node = self.add_character_type_node(type_id, name=row.get("name"), source=table, data={"charTypeId": type_id, "damageType": row.get("damageType"), "icon": row.get("icon"), "color": row.get("color")})
+        if node:
+            self.add_edge(row_node, node, "defines_character_type", source=table)
+            self.add_alias(row.get("icon"), node, kind="icon_id", source=table)
+
+    def add_character_preset_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        preset_id = safe_key(row.get("id") or row_key)
+        preset_node = self.add_character_preset_node(preset_id, source=table, data={"id": preset_id, "charId": row.get("charId"), "charLv": row.get("charLv"), "weaponId": row.get("weaponId"), "weaponLv": row.get("weaponLv"), "potentialLevel": row.get("potentialLevel"), "normalAttackSkillLevel": row.get("normalAttackSkillLevel"), "normalSkillLevel": row.get("normalSkillLevel"), "ultimateSkillLevel": row.get("ultimateSkillLevel"), "comboSkillLevel": row.get("comboSkillLevel"), "equipmentCount": len(row.get("equips") or [])})
+        if not preset_node:
+            return
+        self.add_edge(row_node, preset_node, "defines_character_preset", source=table)
+        char_node = self.add_character_ref_node(row.get("charId"), source=table)
+        if char_node:
+            self.add_edge(preset_node, char_node, "preset_uses_character", source=table, evidence="charId", data={"charLv": row.get("charLv"), "potentialLevel": row.get("potentialLevel")})
+            self.add_edge(char_node, preset_node, "character_has_preset", source=table, evidence=preset_id)
+        weapon_id = safe_key(row.get("weaponId"))
+        if weapon_id:
+            weapon_node = self.add_node("weapon", weapon_id, name=weapon_id, source=table)
+            self.add_edge(preset_node, weapon_node, "preset_uses_weapon", source=table, evidence="weaponId", data={"weaponLv": row.get("weaponLv"), "isWeaponBreakthrough": row.get("isWeaponBreakthrough")})
+            self.add_alias(weapon_id, weapon_node, kind="weapon_id", source=table)
+        for index, equip_id in enumerate(row.get("equips") or []):
+            equip_key = safe_key(equip_id)
+            if not equip_key:
+                continue
+            equip_node = self.add_node("equipment", equip_key, name=equip_key, source=table)
+            self.add_edge(preset_node, equip_node, "preset_uses_equipment", source=table, evidence=f"equips[{index}]")
+            self.add_alias(equip_key, equip_node, kind="equipment_id", source=table)
+
+    def add_character_team_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        team_id = safe_key(row.get("id") or row_key)
+        team_node = self.add_character_team_node(team_id, source=table, data={"id": team_id, "maxMemberCount": row.get("maxMemberCount"), "presetCharListCount": len(row.get("presetCharList") or []), "presetTeamCount": len(row.get("presetTeam") or []), "requiredCharacterCount": len(row.get("requireCharTids") or [])})
+        if not team_node:
+            return
+        self.add_edge(row_node, team_node, "defines_character_team", source=table)
+        for index, preset_id in enumerate(row.get("presetCharList") or []):
+            preset_node = self.add_character_preset_node(preset_id, source=table)
+            if preset_node:
+                self.add_edge(team_node, preset_node, "team_includes_preset", source=table, evidence=f"presetCharList[{index}]")
+        for index, preset_id in enumerate(row.get("presetTeam") or []):
+            preset_node = self.add_character_preset_node(preset_id, source=table)
+            if preset_node:
+                self.add_edge(team_node, preset_node, "team_uses_preset", source=table, evidence=f"presetTeam[{index}]")
+        for index, char_id in enumerate(row.get("requireCharTids") or []):
+            char_node = self.add_character_ref_node(char_id, source=table)
+            if char_node:
+                self.add_edge(team_node, char_node, "team_requires_character", source=table, evidence=f"requireCharTids[{index}]")
+
+    def add_character_weapon_recommend_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        char_node = self.add_character_ref_node(row.get("charId") or row_key, source=table)
+        if not char_node:
+            return
+        self.add_edge(row_node, char_node, "defines_character_weapon_recommendations", source=table)
+        for tier, field in enumerate(("weaponIds1", "weaponIds2", "weaponIds3"), start=1):
+            for index, weapon_id in enumerate(row.get(field) or []):
+                weapon_key = safe_key(weapon_id)
+                if not weapon_key:
+                    continue
+                weapon_node = self.add_node("weapon", weapon_key, name=weapon_key, source=table)
+                self.add_edge(char_node, weapon_node, "character_recommends_weapon", source=table, evidence=f"{field}[{index}]", data={"tier": tier, "index": index})
+                self.add_alias(weapon_key, weapon_node, kind="weapon_id", source=table)
+
+    def add_character_weapon_skill_recommend_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        char_node = self.add_character_ref_node(row.get("charId") or row_key, source=table)
+        if not char_node:
+            return
+        self.add_edge(row_node, char_node, "defines_character_weapon_skill_recommendations", source=table)
+        for index, skill_id in enumerate(row.get("weaponSkillIds") or []):
+            skill_key = safe_key(skill_id)
+            if not skill_key:
+                continue
+            skill_node = self.add_node("weapon_skill_recommendation", skill_key, name=skill_key, source=table)
+            self.add_edge(char_node, skill_node, "character_recommends_weapon_skill", source=table, evidence=f"weaponSkillIds[{index}]")
+            self.add_alias(skill_key, skill_node, kind="weapon_skill_recommendation_id", source=table)
+
+    def add_tutorial_step_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        step_id = safe_key(row.get("stepId") or row_key)
+        if not step_id:
+            return
+        step_node = self.add_node("character_tutorial_step", step_id, name=step_id, source=table, data={"stepId": step_id, "stepIcon": row.get("stepIcon"), "stepDesc": table_text(row.get("stepDesc")), "iconDesc": table_text(row.get("iconDesc"))})
+        self.add_edge(row_node, step_node, "defines_character_tutorial_step", source=table)
+        self.add_alias(step_id, step_node, kind="character_tutorial_step_id", source=table)
+        self.add_alias(row.get("stepIcon"), step_node, kind="icon_id", source=table)
+
+    def add_tutorial_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        tutorial_id = safe_key(row_key)
+        tutorial_node = self.add_node("character_tutorial", tutorial_id, name=tutorial_id, source=table, data={"dungeonId": tutorial_id, "stageCount": len(row.get("tutorialStageData") or [])})
+        dungeon_node = self.add_dungeon_node(tutorial_id, source=table)
+        self.add_edge(row_node, tutorial_node, "defines_character_tutorial", source=table)
+        self.add_edge(tutorial_node, dungeon_node, "tutorial_uses_dungeon", source=table, evidence="rowKey")
+        self.add_alias(tutorial_id, tutorial_node, kind="character_tutorial_id", source=table)
+        for index, stage in enumerate(row.get("tutorialStageData") or []):
+            if not isinstance(stage, dict):
+                continue
+            stage_key = safe_key(stage.get("stage") if stage.get("stage") is not None else index)
+            stage_node = self.add_node("character_tutorial_stage", f"{tutorial_id}:{stage_key}", name=f"{tutorial_id} stage {stage_key}", source=table, data={"tutorialId": tutorial_id, "stage": stage.get("stage"), "guideGroupId": stage.get("guideGroupId"), "stepCount": len(stage.get("stepIds") or [])})
+            self.add_edge(tutorial_node, stage_node, "tutorial_has_stage", source=table, evidence=f"tutorialStageData[{index}]")
+            self.add_alias(stage.get("guideGroupId"), stage_node, kind="guide_group_id", source=table)
+            for step_index, step_id in enumerate(stage.get("stepIds") or []):
+                step_node = self.add_node("character_tutorial_step", step_id, name=step_id, source=table)
+                self.add_edge(stage_node, step_node, "tutorial_stage_has_step", source=table, evidence=f"stepIds[{step_index}]")
+                self.add_alias(step_id, step_node, kind="character_tutorial_step_id", source=table)
+
+    def add_char_training_dungeon_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        char_node = self.add_character_ref_node(row_key, source=table)
+        dungeon_node = self.add_dungeon_node(row, source=table)
+        if not char_node or not dungeon_node:
+            return
+        tutorial_node = self.add_node("character_tutorial", safe_key(row), name=safe_key(row), source=table)
+        self.add_edge(row_node, char_node, "defines_character_training_dungeon", source=table)
+        self.add_edge(char_node, dungeon_node, "character_training_dungeon", source=table, evidence="rowValue")
+        self.add_edge(char_node, tutorial_node, "character_has_tutorial", source=table, evidence=safe_key(row))
+        self.add_edge(tutorial_node, dungeon_node, "tutorial_uses_dungeon", source=table, evidence="CharId2DungeonIdTable")
+
+    def add_character_trial_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        dungeon_id = safe_key(row.get("dungeonId") or row_key)
+        if not dungeon_id:
+            return
+        trial_node = self.add_node("character_trial", dungeon_id, name=dungeon_id, source=table, data={"dungeonId": dungeon_id, "guideGroupId": row.get("guideGroupId")})
+        dungeon_node = self.add_dungeon_node(dungeon_id, source=table)
+        self.add_edge(row_node, trial_node, "defines_character_trial", source=table)
+        self.add_edge(trial_node, dungeon_node, "trial_uses_dungeon", source=table, evidence="dungeonId")
+        self.add_alias(dungeon_id, trial_node, kind="character_trial_id", source=table)
+        self.add_alias(row.get("guideGroupId"), trial_node, kind="guide_group_id", source=table)
+
+    def add_activity_char_trial_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        dungeon_id = safe_key(row.get("dungeonId") or row_key)
+        if not dungeon_id:
+            return
+        trial_node = self.add_node("character_trial", dungeon_id, name=dungeon_id, source=table, data={"activityId": row.get("activityId"), "jumpId": row.get("jumpId"), "rewardId": row.get("rewardId"), "sortId": row.get("sortId")})
+        self.add_edge(row_node, trial_node, "defines_activity_character_trial", source=table)
+        reward_node = self.add_reward_node(row.get("rewardId"), source=table)
+        if reward_node:
+            self.add_edge(trial_node, reward_node, "trial_grants_reward", source=table, evidence="rewardId")
+        self.add_alias(row.get("activityId"), trial_node, kind="activity_id", source=table)
+        self.add_alias(row.get("jumpId"), trial_node, kind="jump_id", source=table)
+        self.add_alias(row.get("bgRolePath"), trial_node, kind="asset_stem", source=table)
+        self.add_alias(row.get("dungeonBgPath"), trial_node, kind="asset_stem", source=table)
+
+    def add_activity_character_guide_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        guide_id = safe_key(row_key)
+        if not guide_id:
+            return
+        guide_node = self.add_node("character_guide", guide_id, name=guide_id, source=table, data={"bgNode": row.get("bgNode")})
+        self.add_edge(row_node, guide_node, "defines_character_guide", source=table)
+        self.add_alias(guide_id, guide_node, kind="character_guide_id", source=table)
+        self.add_alias(row.get("bgNode"), guide_node, kind="bg_node", source=table)
+
+    def add_recommend_training_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        rec_id = safe_key(row_key)
+        if not rec_id:
+            return
+        node = self.add_node("training_recommendation", rec_id, name=f"enemy level {rec_id}", source=table, data={"enemyLv": row.get("enemyLv"), "squadLvSum": row.get("squadLvSum"), "squadWeaponLvSum": row.get("squadWeaponLvSum"), "squadSkillLvSum": row.get("squadSkillLvSum"), "squadEquipLvSum": row.get("squadEquipLvSum")})
+        self.add_edge(row_node, node, "defines_training_recommendation", source=table)
+        self.add_alias(rec_id, node, kind="training_recommendation_id", source=table)
+
+    def add_character_support_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "CharId2DungeonIdTable":
+            self.add_char_training_dungeon_edges(table, row_key, row, row_node)
+            return
+        if not isinstance(row, dict):
+            return
+        if table == "CharacterTagTable":
+            self.add_character_tag_edges(table, row_key, row, row_node)
+        elif table == "CharacterTagDesTable":
+            self.add_character_tag_desc_edges(table, row_key, row, row_node)
+        elif table == "CharProfessionTable":
+            self.add_character_profession_edges(table, row_key, row, row_node)
+        elif table == "CharTypeTable":
+            self.add_character_type_edges(table, row_key, row, row_node)
+        elif table == "CharPresetTable":
+            self.add_character_preset_edges(table, row_key, row, row_node)
+        elif table == "CharTeamTable":
+            self.add_character_team_edges(table, row_key, row, row_node)
+        elif table == "CharWpnRecommendTable":
+            self.add_character_weapon_recommend_edges(table, row_key, row, row_node)
+        elif table == "CharWpnSkillRecommendTable":
+            self.add_character_weapon_skill_recommend_edges(table, row_key, row, row_node)
+        elif table == "DungeonCharTutorialStepTable":
+            self.add_tutorial_step_edges(table, row_key, row, row_node)
+        elif table == "DungeonCharTutorialTable":
+            self.add_tutorial_edges(table, row_key, row, row_node)
+        elif table == "DungeonCharTrialTable":
+            self.add_character_trial_edges(table, row_key, row, row_node)
+        elif table == "ActivityCharTrial":
+            self.add_activity_char_trial_edges(table, row_key, row, row_node)
+        elif table == "ActivityCharacterGuideLineTable":
+            self.add_activity_character_guide_edges(table, row_key, row, row_node)
+        elif table == "RecommendTraining":
+            self.add_recommend_training_edges(table, row_key, row, row_node)
+
     def ingest_combat_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_combat_semantics", path=slash(table_root))
@@ -4251,6 +4803,26 @@ QUERY_KIND_PRIORITY = {
     "character_stat_checkpoint": 12,
     "character_breakthrough": 13,
     "character_potential": 14,
+    "character_tag": 15,
+    "character_tag_desc": 16,
+    "character_profession": 17,
+    "character_type": 18,
+    "character_team": 19,
+    "character_preset": 20,
+    "weapon_skill_recommendation": 21,
+    "dungeon": 22,
+    "character_tutorial": 23,
+    "character_tutorial_stage": 24,
+    "character_tutorial_step": 25,
+    "character_trial": 26,
+    "character_guide": 27,
+    "training_recommendation": 28,
+    "attribute_meta": 29,
+    "attribute_display_config": 30,
+    "attribute_display_entry": 31,
+    "composite_attribute": 32,
+    "attribute_filter": 33,
+    "interactive_attribute": 34,
     "weapon": 10,
     "equipment": 11,
     "enemy": 12,
@@ -4330,6 +4902,26 @@ NODE_ID_PREFIXES = (
     "character_stat_checkpoint",
     "character_breakthrough",
     "character_potential",
+    "character_tag",
+    "character_tag_desc",
+    "character_profession",
+    "character_type",
+    "character_team",
+    "character_preset",
+    "weapon_skill_recommendation",
+    "dungeon",
+    "character_tutorial",
+    "character_tutorial_stage",
+    "character_tutorial_step",
+    "character_trial",
+    "character_guide",
+    "training_recommendation",
+    "attribute_meta",
+    "attribute_display_config",
+    "attribute_display_entry",
+    "composite_attribute",
+    "attribute_filter",
+    "interactive_attribute",
     "weapon",
     "equipment",
     "enemy",
