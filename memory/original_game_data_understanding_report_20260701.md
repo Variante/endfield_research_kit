@@ -654,13 +654,16 @@ schemas. Focused examples include:
 
 2026-07-01 WebUI progress: `scripts/build_gameplay_data.py` now promotes a
 compact, inspectable subset of progression semantics into the Gameplay tab. It
-samples weapon upgrade curves with cumulative costs, weapon breakthrough
-materials and skill bounds, weapon talent bound templates, character level EXP
-checkpoints, global character break-stage caps, per-character breakthrough
-materials, and potential unlock effects/items. This improves practical access
-to numerical progression data, but it still stops short of full formula/runtime
-simulation; raw `CharacterTable.attributes` curves also need a separate cap rule
-because table rows extend past the current playable level cap.
+samples weapon upgrade curves with cumulative costs, weapon base-ATK stat
+checkpoints, weapon breakthrough materials and skill bounds, weapon talent bound
+templates, character level EXP checkpoints, global character break-stage caps,
+playable-capped character stat checkpoints from `CharacterTable.attributes`,
+per-character breakthrough materials, and potential unlock effects/items. The
+builder preserves raw stat metadata separately: the current CN export has 2,820
+playable character stat rows and 3,090 raw rows, with raw character curves
+extending to level 99 while the playable level curve caps at 90. This improves
+practical access to numerical progression data, but it still stops short of
+full formula/runtime simulation.
 
 - `AbilitySystemData` field order and many serialized fields for 28 character
   rows, including skill bundles, command mappings, combo conditions, UI data,

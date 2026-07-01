@@ -7,6 +7,7 @@ Run from the repo root:
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 import sys
@@ -73,6 +74,53 @@ FACTORY_NODE_RE = re.compile(r"^fac_(?P<char>chr_.+)_(?P<rank>\d+)_(?P<level>\d+
 CHAR_BREAK_RE = re.compile(r"^charBreak(?P<level>\d+)$")
 EQUIP_BREAK_RE = re.compile(r"^equipBreakT(?P<tier>\d+)$")
 CURVE_SAMPLE_LEVELS = (1, 20, 40, 60, 70, 80, 90)
+CHARACTER_STAT_ATTR_TYPES = (1, 2, 3, 39, 40, 41, 42)
+STAT_ATTR_KEYS = {
+    1: "hp",
+    2: "atk",
+    3: "def",
+    39: "str",
+    40: "agi",
+    41: "wis",
+    42: "will",
+}
+STAT_ATTR_LABELS = {
+    1: "HP",
+    2: "ATK",
+    3: "DEF",
+    39: "STR",
+    40: "AGI",
+    41: "WIS",
+    42: "WILL",
+}
+POTENTIAL_ATTR_BLACKBOARD_KEYS = {
+    1: ("MaxHp",),
+    2: ("Atk",),
+    3: ("Def",),
+    29: ("HealOutputIncrease",),
+    32: ("NormalSkillDamageIncrease",),
+    33: ("ComboSkillDamageIncrease",),
+    34: ("NormalAttackDamageIncrease",),
+    39: ("Str",),
+    40: ("Agi",),
+    41: ("Wisd",),
+    42: ("Will",),
+    50: ("PhysicalDamageIncrease",),
+    51: ("FireDamageIncrease",),
+    52: ("PulseDamageIncrease",),
+    53: ("CrystDamageIncrease",),
+    54: ("NaturalDamageIncrease",),
+    87: ("PhysicalAndSpellInflictionEnhance",),
+}
+SKILL_PARAM_BLACKBOARD_KEYS = {
+    1: ("costvalue", "costValue"),
+    2: ("coolDown", "cooldown", "cd"),
+}
+EQUIPMENT_PART_LABELS = {
+    0: "Body",
+    1: "Hand",
+    2: "Accessory",
+}
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -207,23 +255,76 @@ def format_template_value(value: Any, spec: str) -> str:
     return str(value)
 
 
+def placeholder_number(value: Any) -> float | None:
+    if isinstance(value, bool):
+        return float(int(value))
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number == number else None
+
+
+def lookup_placeholder_value(raw: str, values: dict[str, Any]) -> Any:
+    if raw in values:
+        return values[raw]
+    lowered = raw.lower()
+    if lowered in values:
+        return values[lowered]
+    return None
+
+
+def evaluate_placeholder_expr(node: ast.AST, values: dict[str, Any]) -> float | None:
+    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+        return float(node.value)
+    if isinstance(node, ast.Name):
+        return placeholder_number(lookup_placeholder_value(node.id, values))
+    if isinstance(node, ast.UnaryOp):
+        value = evaluate_placeholder_expr(node.operand, values)
+        if value is None:
+            return None
+        if isinstance(node.op, ast.USub):
+            return -value
+        if isinstance(node.op, ast.UAdd):
+            return value
+        return None
+    if isinstance(node, ast.BinOp):
+        left = evaluate_placeholder_expr(node.left, values)
+        right = evaluate_placeholder_expr(node.right, values)
+        if left is None or right is None:
+            return None
+        if isinstance(node.op, ast.Add):
+            return left + right
+        if isinstance(node.op, ast.Sub):
+            return left - right
+        if isinstance(node.op, ast.Mult):
+            return left * right
+        if isinstance(node.op, ast.Div) and right != 0:
+            return left / right
+    return None
+
+
 def resolve_placeholder(expr: str, values: dict[str, Any]) -> Any:
     raw = expr.strip()
-    if "-" in raw:
-        name, _, rhs = raw.partition("-")
-        try:
-            return float(values.get(name.strip(), 0)) - float(rhs.strip())
-        except (TypeError, ValueError):
-            return values.get(raw)
-    return values.get(raw)
+    direct = lookup_placeholder_value(raw, values)
+    if direct is not None:
+        return direct
+    try:
+        parsed = ast.parse(raw, mode="eval")
+    except SyntaxError:
+        return None
+    return evaluate_placeholder_expr(parsed.body, values)
 
 
 def render_description(template: str, blackboard: list[dict[str, Any]]) -> str:
-    values = {
-        str(item.get("key")): item.get("valueStr") or item.get("value")
-        for item in blackboard
-        if isinstance(item, dict) and item.get("key")
-    }
+    values: dict[str, Any] = {}
+    for item in blackboard:
+        if not isinstance(item, dict) or not item.get("key"):
+            continue
+        key = str(item.get("key"))
+        value = item.get("valueStr") if item.get("valueStr") not in (None, "") else item.get("value")
+        values[key] = value
+        values.setdefault(key.lower(), value)
 
     def replace(match: re.Match[str]) -> str:
         value = resolve_placeholder(match.group(1), values)
@@ -404,6 +505,7 @@ def build_weapon_entries(
         weapon_type_id = row.get("weaponType") if row.get("weaponType") not in (None, "") else weapon_type_id_from_weapon_id(weapon_id)
         weapon_type = weapon_type_label(weapon_type_id, weapon_id, text_table, i18n, fallback_i18n)
         upgrade_payload = weapon_upgrade_payload(row.get("levelTemplateId"), upgrades, upgrade_sums)
+        stat_payload = weapon_stat_curve_payload(row.get("levelTemplateId"), upgrades)
         breakthrough_payload = weapon_breakthrough_payload(row.get("breakthroughTemplateId"), breakthroughs, items, i18n, fallback_i18n)
         talent_payload = weapon_talent_payload(row.get("talentTemplateId"), talents)
         search = " ".join([
@@ -435,6 +537,7 @@ def build_weapon_entries(
             "breakthrough": breakthrough_payload,
             "talentTemplate": talent_payload,
             "upgrade": upgrade_payload,
+            "stats": stat_payload,
             "source": {"table": "WeaponBasicTable.json", "nameTable": "ItemTable.json", "id": weapon_id},
             "search": search.lower(),
         })
@@ -502,6 +605,262 @@ def sampled_curve_rows(rows: list[dict[str, Any]], level_field: str, max_level: 
     out = [row for row in rows if isinstance(row, dict) and row.get(level_field) in levels]
     return sorted(out, key=lambda item: int(item.get(level_field) or 0))
 
+
+def int_value(value: Any) -> int | None:
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return None
+
+
+def attribute_values(row: dict[str, Any]) -> dict[int, Any]:
+    attr_node = row.get("Attribute") if isinstance(row.get("Attribute"), dict) else {}
+    values: dict[int, Any] = {}
+    for item in attr_node.get("attrs") or []:
+        if not isinstance(item, dict):
+            continue
+        attr_type = int_value(item.get("attrType"))
+        if attr_type is None:
+            continue
+        values[attr_type] = item.get("attrValue")
+    return values
+
+
+def stat_attr_payload(attr_type: int | str, value: Any, attr_meta: dict[str, Any] | None = None) -> dict[str, Any]:
+    if isinstance(attr_type, int):
+        key = STAT_ATTR_KEYS.get(attr_type, f"attr_{attr_type}")
+        label = STAT_ATTR_LABELS.get(attr_type, key)
+    else:
+        key = str(attr_type)
+        label = key
+    payload: dict[str, Any] = {"type": attr_type, "key": key, "label": label, "value": value}
+    if isinstance(attr_type, int) and attr_meta:
+        meta = attr_meta.get(str(attr_type)) or attr_meta.get(attr_type) or {}
+        if isinstance(meta, dict) and meta.get("iconName"):
+            payload["iconName"] = meta.get("iconName")
+    return payload
+
+
+def character_stat_curve_payload(char_row: dict[str, Any], attr_meta: dict[str, Any], playable_max_level: Any = None) -> dict[str, Any]:
+    stat_rows = []
+    for index, row in enumerate(char_row.get("attributes") or []):
+        if not isinstance(row, dict):
+            continue
+        values = attribute_values(row)
+        level = int_value(values.get(0))
+        if level is None:
+            level = index + 1
+        attrs = [
+            stat_attr_payload(attr_type, values[attr_type], attr_meta)
+            for attr_type in CHARACTER_STAT_ATTR_TYPES
+            if attr_type in values
+        ]
+        if not attrs:
+            continue
+        stat_rows.append({
+            "level": level,
+            "breakStage": row.get("breakStage"),
+            "attrs": attrs,
+        })
+    raw_max_level = max((int(row["level"]) for row in stat_rows if row.get("level") is not None), default=None)
+    playable_cap = int_value(playable_max_level)
+    display_rows = [
+        row for row in stat_rows
+        if playable_cap is None or int_value(row.get("level")) is None or int_value(row.get("level")) <= playable_cap
+    ]
+    max_level = max((int(row["level"]) for row in display_rows if row.get("level") is not None), default=None)
+    return {
+        "source": "CharacterTable.attributes",
+        "rowCount": len(display_rows),
+        "rawRowCount": len(stat_rows),
+        "maxLevel": max_level,
+        "rawMaxLevel": raw_max_level,
+        "playableMaxLevel": playable_cap,
+        "extraRowsBeyondPlayable": max(0, len(stat_rows) - len(display_rows)),
+        "rows": display_rows,
+        "checkpoints": sampled_curve_rows(display_rows, "level", max_level),
+    }
+
+
+def weapon_stat_curve_payload(template_id_raw: Any, upgrades: dict[str, Any]) -> dict[str, Any]:
+    template_id = normalize_id(template_id_raw)
+    rows = (upgrades.get(template_id) or {}).get("list") or []
+    stat_rows = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        level = int_value(row.get("weaponLv"))
+        if level is None or row.get("baseAtk") in (None, ""):
+            continue
+        stat_rows.append({
+            "level": level,
+            "attrs": [stat_attr_payload("baseAtk", row.get("baseAtk"))],
+        })
+    max_level = max((int(row["level"]) for row in stat_rows if row.get("level") is not None), default=None)
+    return {
+        "source": "WeaponUpgradeTemplateTable.baseAtk",
+        "templateId": template_id,
+        "rowCount": len(stat_rows),
+        "maxLevel": max_level,
+        "rows": stat_rows,
+        "checkpoints": sampled_curve_rows(stat_rows, "level", max_level),
+    }
+
+def equipment_stat_payload(equip_row: dict[str, Any], attr_meta: dict[str, Any]) -> dict[str, Any]:
+    modifiers = [item for item in (equip_row.get("equipAttrModifiers") or []) if isinstance(item, dict)]
+    max_len = max((len(item.get("attrValues") or []) for item in modifiers), default=0)
+    rows = []
+    for index in range(max_len):
+        attrs = []
+        for modifier in sorted(modifiers, key=lambda item: int_value(item.get("attrIndex")) or 0):
+            attr_type = int_value(modifier.get("attrType"))
+            values = modifier.get("attrValues") or []
+            if attr_type is None or index >= len(values):
+                continue
+            attrs.append(stat_attr_payload(attr_type, values[index], attr_meta))
+        if attrs:
+            rows.append({"level": index + 1, "attrs": attrs})
+    display_modifiers = []
+    base_modifier = equip_row.get("displayBaseAttrModifier") if isinstance(equip_row.get("displayBaseAttrModifier"), dict) else {}
+    if base_modifier:
+        display_modifiers.append(base_modifier)
+    display_modifiers.extend(item for item in (equip_row.get("displayAttrModifiers") or []) if isinstance(item, dict))
+    display_attrs = [
+        stat_attr_payload(int_value(item.get("attrType")) or normalize_id(item.get("attrType")), item.get("attrValue"), attr_meta)
+        for item in sorted(display_modifiers, key=lambda item: int_value(item.get("attrIndex")) or 0)
+        if item.get("attrValue") not in (None, "")
+    ]
+    return {
+        "source": "EquipTable.equipAttrModifiers",
+        "rowCount": len(rows),
+        "maxLevel": rows[-1]["level"] if rows else None,
+        "rows": rows,
+        "checkpoints": rows,
+        "displayAttrs": display_attrs,
+    }
+
+
+def equipment_formula_payload(formula: dict[str, Any], item_table: dict[str, Any], i18n: dict[str, Any], fallback_i18n: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(formula, dict) or not formula:
+        return {}
+    costs = item_ids_counts_payload(formula.get("costItemId"), formula.get("costItemNum"), item_table, i18n, fallback_i18n)
+    gold_id = normalize_id(formula.get("costGoldId"))
+    if gold_id and formula.get("costGoldNum") not in (None, "", 0):
+        costs.insert(0, {
+            "id": gold_id,
+            "name": item_name(item_table, gold_id, i18n, fallback_i18n),
+            "count": formula.get("costGoldNum"),
+        })
+    return {
+        "formulaId": normalize_id(formula.get("formulaId")),
+        "packId": normalize_id(formula.get("packId")),
+        "unlockType": formula.get("unlockType"),
+        "unlockValue": formula.get("unlockValue"),
+        "unlockKey": normalize_id(formula.get("unlockKey")),
+        "costs": costs,
+    }
+
+
+def equipment_suit_lookup(
+    equip_suits: dict[str, Any],
+    skill_table: dict[str, Any],
+    i18n: dict[str, Any],
+    fallback_i18n: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
+    lookup: dict[str, dict[str, Any]] = {}
+    for suit_id, row in equip_suits.items():
+        if not isinstance(row, dict):
+            continue
+        effects = []
+        suit_name = ""
+        for effect in row.get("list") or []:
+            if not isinstance(effect, dict):
+                continue
+            if not suit_name:
+                suit_name = i18n_text(i18n, effect.get("suitName"), fallback_i18n)
+            skill_id = normalize_id(effect.get("skillID"))
+            effects.append({
+                "equipCount": effect.get("equipCnt"),
+                "skillId": skill_id,
+                "skillLevel": effect.get("skillLv"),
+                "suitLogoName": normalize_id(effect.get("suitLogoName")),
+                "skill": skill_payload(skill_id, skill_table, i18n, fallback_i18n) if skill_id else {},
+            })
+        payload = {
+            "id": normalize_id(suit_id),
+            "name": suit_name or normalize_id(suit_id),
+            "effects": effects,
+        }
+        for equip_id in row.get("equipList") or []:
+            equip_key = normalize_id(equip_id)
+            if equip_key:
+                lookup[equip_key] = payload
+    return lookup
+
+
+def build_equipment_entries(
+    tables: dict[str, Any],
+    i18n: dict[str, Any],
+    fallback_i18n: dict[str, Any],
+) -> list[dict[str, Any]]:
+    equips = tables.get("EquipTable.json") or {}
+    items = tables.get("ItemTable.json") or {}
+    formulas = tables.get("EquipFormulaTable.json") or {}
+    suit_lookup = equipment_suit_lookup(tables.get("EquipSuitTable.json") or {}, tables.get("SkillPatchTable.json") or {}, i18n, fallback_i18n)
+    attr_meta = tables.get("AttributeMetaTable.json") or {}
+    formula_by_equip = {
+        normalize_id(row.get("outcomeEquipId")): row
+        for row in formulas.values()
+        if isinstance(row, dict) and normalize_id(row.get("outcomeEquipId"))
+    }
+    entries = []
+    for equip_id, row in sorted(equips.items(), key=lambda item: (int_value((items.get(item[0]) or {}).get("rarity")) or 0, item[0])):
+        if not isinstance(row, dict):
+            continue
+        item_row = items.get(equip_id) or {}
+        title = i18n_text(i18n, item_row.get("name"), fallback_i18n) if isinstance(item_row, dict) else ""
+        desc = i18n_text(i18n, item_row.get("desc"), fallback_i18n) if isinstance(item_row, dict) else ""
+        deco_desc = i18n_text(i18n, item_row.get("decoDesc"), fallback_i18n) if isinstance(item_row, dict) else ""
+        part_type = int_value(row.get("partType"))
+        part_label = EQUIPMENT_PART_LABELS.get(part_type, f"Part {part_type}" if part_type is not None else "Equipment")
+        suit = suit_lookup.get(equip_id) or ({"id": normalize_id(row.get("suitID")), "name": normalize_id(row.get("suitID")), "effects": []} if row.get("suitID") else {})
+        formula = equipment_formula_payload(formula_by_equip.get(equip_id) or {}, items, i18n, fallback_i18n)
+        stats = equipment_stat_payload(row, attr_meta)
+        search = " ".join([
+            equip_id,
+            title,
+            desc,
+            deco_desc,
+            part_label,
+            normalize_id(row.get("domainId")),
+            suit.get("id") or "",
+            suit.get("name") or "",
+            *(effect.get("skillId") or "" for effect in suit.get("effects") or []),
+            *(skill_search_text(effect.get("skill") or {}) for effect in suit.get("effects") or []),
+            *(item.get("name") or "" for item in formula.get("costs") or []),
+        ])
+        entries.append({
+            "id": equip_id,
+            "kind": "equipment",
+            "title": title or equip_id,
+            "subtitle": equip_id,
+            "group": f"Equipment / {part_label}",
+            "rarity": item_row.get("rarity") if isinstance(item_row, dict) else None,
+            "partType": part_type,
+            "partTypeLabel": part_label,
+            "domainId": normalize_id(row.get("domainId")),
+            "minWearLv": row.get("minWearLv"),
+            "suitId": normalize_id(row.get("suitID")),
+            "suit": suit,
+            "formula": formula,
+            "stats": stats,
+            "iconId": normalize_id(item_row.get("iconId")) if isinstance(item_row, dict) else "",
+            "description": clean_text(desc),
+            "itemDescription": clean_text(deco_desc),
+            "source": {"table": "EquipTable.json", "nameTable": "ItemTable.json", "id": equip_id},
+            "search": search.lower(),
+        })
+    return entries
 
 def weapon_upgrade_payload(template_id_raw: Any, upgrades: dict[str, Any], upgrade_sums: dict[str, Any]) -> dict[str, Any]:
     template_id = normalize_id(template_id_raw)
@@ -653,12 +1012,15 @@ def potential_effect_blackboard(effect: dict[str, Any]) -> list[dict[str, Any]]:
     values: list[dict[str, Any]] = []
     seen: set[str] = set()
 
+    def append_value(key_raw: Any, value: Any) -> None:
+        key = normalize_id(key_raw)
+        if key and key not in seen:
+            seen.add(key)
+            values.append({"key": key, "value": value})
+
     def add_items(items: Any) -> None:
         for item in normalize_blackboard(items):
-            key = normalize_id(item.get("key"))
-            if key and key not in seen:
-                seen.add(key)
-                values.append(item)
+            append_value(item.get("key"), item.get("value"))
 
     for row in effect.get("dataList") or []:
         if not isinstance(row, dict):
@@ -667,14 +1029,30 @@ def potential_effect_blackboard(effect: dict[str, Any]) -> list[dict[str, Any]]:
         attach_buff = row.get("attachBuff") if isinstance(row.get("attachBuff"), dict) else {}
         add_items(attach_skill.get("blackboard"))
         add_items(attach_buff.get("blackboard"))
+
         bb_mod = row.get("skillBbModifier") if isinstance(row.get("skillBbModifier"), dict) else {}
         key = normalize_id(bb_mod.get("bbKey"))
-        if key and key not in seen:
+        if key:
             value = bb_mod.get("stringValue") if bb_mod.get("stringValue") not in (None, "") else bb_mod.get("floatValue")
-            seen.add(key)
-            values.append({"key": key, "value": value})
-    return values
+            append_value(key, value)
 
+        attr_mod = row.get("attrModifier") if isinstance(row.get("attrModifier"), dict) else {}
+        attr_type = int_value(attr_mod.get("attrType"))
+        if attr_type is not None:
+            attr_value = attr_mod.get("attrValue")
+            append_value(f"attr_{attr_type}", attr_value)
+            append_value(f"{attr_type},0", attr_value)
+            for attr_key in POTENTIAL_ATTR_BLACKBOARD_KEYS.get(attr_type, ()):
+                append_value(attr_key, attr_value)
+
+        skill_param = row.get("skillParamModifier") if isinstance(row.get("skillParamModifier"), dict) else {}
+        param_type = int_value(skill_param.get("paramType"))
+        if param_type is not None:
+            param_value = skill_param.get("paramValue")
+            append_value(f"param_{param_type}", param_value)
+            for param_key in SKILL_PARAM_BLACKBOARD_KEYS.get(param_type, ()):
+                append_value(param_key, param_value)
+    return values
 
 def potential_effect_refs(effect: dict[str, Any]) -> list[dict[str, str]]:
     refs: list[dict[str, str]] = []
@@ -968,6 +1346,7 @@ def build_character_entries(
     professions = tables.get("CharProfessionTable.json") or {}
     char_types = tables.get("CharTypeTable.json") or {}
     level_curve = character_level_curve_payload(tables.get("CharLevelUpTable.json") or {})
+    attr_meta = tables.get("AttributeMetaTable.json") or {}
     break_stages = character_break_stage_payload(tables, item_table, i18n, fallback_i18n)
     entries = []
     for char_id, row in sorted(chars.items(), key=lambda item: character_sort_key(item[0], item[1])):
@@ -1023,6 +1402,7 @@ def build_character_entries(
         )
         breakthroughs = character_breakthrough_payload(growth_row, item_table, i18n, fallback_i18n)
         potentials = character_potential_payload(char_id, tables, item_table, i18n, fallback_i18n)
+        stats = character_stat_curve_payload(row, attr_meta, level_curve.get("maxLevel"))
         default_weapon_id = normalize_id(row.get("defaultWeaponId"))
         default_weapon_name = item_name(item_table, default_weapon_id, i18n, fallback_i18n)
         weapon_type_name = weapon_type_label(row.get("weaponType"), default_weapon_id, text_table, i18n, fallback_i18n)
@@ -1072,6 +1452,7 @@ def build_character_entries(
             "breakStages": break_stages,
             "breakthroughs": breakthroughs,
             "potentials": potentials,
+            "stats": stats,
             "source": {"table": "CharacterTable.json", "id": char_id},
             "search": search.lower(),
         })
@@ -1101,6 +1482,12 @@ def build_language_payload(
         "CharacterPotentialTable.json",
         "CharProfessionTable.json",
         "CharTypeTable.json",
+        "AttributeMetaTable.json",
+        "EquipTable.json",
+        "EquipItemTable.json",
+        "EquipSuitTable.json",
+        "EquipFormulaTable.json",
+        "EquipEnhanceCostTable.json",
         "CharBreakNodeTable.json",
         "PotentialTalentEffectTable.json",
         "SpaceshipCharSkillTable.json",
@@ -1109,10 +1496,11 @@ def build_language_payload(
     ]
     tables = {name: load_merged_table(table_roots, name, {}) for name in table_names}
     weapons = build_weapon_entries(tables, i18n, fallback_i18n)
+    equipment = build_equipment_entries(tables, i18n, fallback_i18n)
     characters = build_character_entries(tables, i18n, fallback_i18n)
     entries = sorted(
-        [*weapons, *characters],
-        key=lambda item: (item.get("kind") != "weapon", str(item.get("group") or ""), str(item.get("title") or "")),
+        [*weapons, *equipment, *characters],
+        key=lambda item: ({"weapon": 0, "equipment": 1, "character": 2}.get(str(item.get("kind") or ""), 9), str(item.get("group") or ""), str(item.get("title") or "")),
     )
     return {
         "generated": int(time.time()),
@@ -1124,12 +1512,18 @@ def build_language_payload(
             "entries": len(entries),
             "weapons": len(weapons),
             "characters": len(characters),
+            "equipment": len(equipment),
             "characterSkillGroups": sum(len(item.get("skillGroups") or []) for item in characters),
             "weaponSkills": sum(len(item.get("skills") or []) for item in weapons),
+            "equipmentSuitEffects": sum(len(((item.get("suit") or {}).get("effects") or [])) for item in equipment),
+            "equipmentStatRows": sum(len((item.get("stats") or {}).get("rows") or []) for item in equipment),
             "characterTalentGroups": sum(len(item.get("talentGroups") or []) for item in characters),
             "characterBreakthroughRows": sum(len(item.get("breakthroughs") or []) for item in characters),
             "characterPotentialLevels": sum(len((item.get("potentials") or {}).get("levels") or []) for item in characters),
             "weaponUpgradeCheckpoints": sum(len((item.get("upgrade") or {}).get("checkpoints") or []) for item in weapons),
+            "weaponStatRows": sum(len((item.get("stats") or {}).get("rows") or []) for item in weapons),
+            "characterStatRows": sum(len((item.get("stats") or {}).get("rows") or []) for item in characters),
+            "characterRawStatRows": sum(int((item.get("stats") or {}).get("rawRowCount") or 0) for item in characters),
             "weaponBreakthroughRows": sum(len((item.get("breakthrough") or {}).get("rows") or []) for item in weapons),
         },
         "entries": entries,
@@ -1156,7 +1550,7 @@ def main(argv: list[str] | None = None) -> int:
     for code, path, counts in outputs:
         print(
             f"{code}: wrote {rel_path(path)} "
-            f"({counts['weapons']} weapons, {counts['characters']} characters)"
+            f"({counts['weapons']} weapons, {counts['equipment']} equipment, {counts['characters']} characters)"
         )
     return 0
 

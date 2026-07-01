@@ -19,7 +19,7 @@ notepad endfield_paths.bat
 
 For a fresh checkout, edit `endfield_paths.bat` first, then prefer the root
 `setup_first_time.bat` wrapper. It initializes and builds the required external
-tools, runs the installed-game Story/Text Tables export, prints optional
+tools, runs the installed-game Story/Gameplay/Text Tables export, prints optional
 Assets/media and Updates follow-up commands, and starts or reuses the default
 WebUI server. Pass `--no-serve` if the setup should stop after the build/export
 steps.
@@ -30,7 +30,7 @@ The root wrappers load `endfield_paths.bat` before parsing arguments. It sets
 `--game-root`, `--previous-export-root`, and `--export-root` still take
 precedence for one-off commands.
 
-`export.bat` is the normal Story/Text Tables and Gameplay WebUI rebuild path from an existing
+`export.bat` is the normal Story, Gameplay, and Text Tables WebUI rebuild path from an existing
 `export_full/`. It runs:
 
 - `scripts/verify_export_freshness.py`
@@ -46,7 +46,7 @@ bindings, and story source-link refresh in parallel before the Story builder
 loads those generated files.
 
 Pass `--export-from-game` when you explicitly want to refresh `export_full/`
-from installed game data before rebuilding Story/Text Tables data. Pass
+from installed game data before rebuilding Story/Gameplay/Text Tables data. Pass
 `--with-assets` to also run the asset index builder and CN audio relinker after
 Story is rebuilt. When `--export-from-game` and `--with-assets` are combined,
 the wrapper runs one AnimeStudio Story+asset export so the source scan, maps
@@ -282,11 +282,12 @@ Expected active inputs and outputs:
   `CharLevelUpTable`, `CharBreak*`, `CharacterPotentialTable`, `SkillPatchTable`,
   and talent/profession/type lookup tables. It resolves localized display names,
   default weapon links, skill blackboard values, level-up costs, weapon upgrade
-  checkpoints, breakthrough material costs, character break-stage caps, character
-  breakthrough costs, and potential unlock effects. It is run by `..\export.bat`
-  after the Story builder and can be run directly for extra languages with
-  `--languages CN EN JP --default-language CN`.
-- `build_data_index.py`: builds the local-only Data tab index from final
+  checkpoints, weapon base-ATK stat checkpoints, breakthrough material costs,
+  character break-stage caps, capped character stat checkpoints from
+  `CharacterTable.attributes`, character breakthrough costs, and potential unlock
+  effects. It is run by `..\export.bat` after the Story builder and can be run
+  directly for extra languages with `--languages CN EN JP --default-language CN`.
+- `build_data_index.py`: builds a legacy local decoded-config index from final
   decoded config files under `export_full/structured/StreamingAssets/Data/Json`
   and `export_full/structured/Persistent/Data/Json` by default. It writes
   lazy-loaded shards under `webui/data/game_data/`, splits
@@ -296,8 +297,8 @@ Expected active inputs and outputs:
   `LipSync` and `LevelScriptData` preview facts. Raw `.ab` bundles, packed
   audio, video/media, streaming, irradiance, and extend-data payloads are
   intentionally excluded; the Assets/export tooling owns richer media and asset
-  browsing.
-- `build_decoded_index.py`: builds the local-only Decoded tab index from
+  browsing. The current WebUI no longer loads this as a tab.
+- `build_decoded_index.py`: builds a legacy local AnimeStudio decoded JSON index from
   AnimeStudio JSON outputs under
   `export_full/recovered/AnimeStudio-cli/<source>/json_by_type/`. It defaults to
   MonoBehaviour, writes lazy-loaded shards under `webui/data/decoded/`, groups
@@ -305,7 +306,7 @@ Expected active inputs and outputs:
   semantic/schema groups into balanced lazy-loaded parts, records `$animestudio`
   metadata, decode status markers, managed-reference classes/layouts, semantic
   meaning/tags, schema/field-set IDs, and links raw previews back to
-  `export_full/` without copying decoded files.
+  `export_full/` without copying decoded files. The current WebUI no longer loads this as a tab.
 - `build_audio.py`: decodes audio via AnimeStudio CLI, stores shared
   SFX/music once under `export_full/structured/Audio/shared/`, indexes
   language voice files under `export_full/structured/Audio/<LANG>/`, parses Wwise bank
@@ -325,10 +326,10 @@ Expected active inputs and outputs:
   demo bundle helpers used by `build_assets.py` and the Updates builder.
 - `pack_webui.py`: packages split shareable WebUI zips from
   `serve.py`, `..\webui\`, and displayed media files under `..\export_full\`.
-  The primary zip is story/reference/gameplay code/data plus emoji, including
+  The primary zip is story/gameplay/reference code/data plus emoji, including
   the full `envEmoji_common_*` prefab layer sprite set; the companion assets zip
   carries larger images and videos; the standalone audio zip carries decoded
-  story audio. Local-only Data/Decoded indexes are excluded by default because
+  story audio. Legacy local index folders are excluded by default because
   they point back to the local export tree.
 - `download_bilibili_video.py`: optional gameplay-video intake helper for the
   OCR/audio story-order workflow. It downloads Bilibili pages into the flat

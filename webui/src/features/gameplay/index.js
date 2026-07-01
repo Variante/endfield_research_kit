@@ -6,7 +6,7 @@
       tab: "\u5b9e\u6218",
       title: "\u5b9e\u6218\u6570\u636e",
       countLabel: "\u6761\u76ee",
-      search: "\u641c\u7d22\u6b66\u5668 / \u89d2\u8272 / \u6280\u80fd / \u6570\u503c",
+      search: "\u641c\u7d22\u6b66\u5668 / \u88c5\u5907 / \u89d2\u8272 / \u6280\u80fd / \u6570\u503c",
       showFilters: "\u663e\u793a\u7b5b\u9009",
       hideFilters: "\u9690\u85cf\u7b5b\u9009",
       reset: "\u91cd\u7f6e\u7b5b\u9009",
@@ -21,6 +21,7 @@
       loadError: "\u52a0\u8f7d\u5931\u8d25: {message}",
       weapon: "\u6b66\u5668",
       character: "\u89d2\u8272",
+      equipment: "\u88c5\u5907",
       id: "ID",
       rarity: "\u7a00\u6709\u5ea6",
       groupFact: "\u5206\u7ec4",
@@ -57,10 +58,38 @@
       attributeNode: "\u5c5e\u6027\u8282\u70b9",
       upgradeNodes: "\u7a81\u7834\u8282\u70b9",
       selectedLevel: "\u663e\u793a\u7b49\u7ea7",
+      weaponStats: "\u6b66\u5668\u5c5e\u6027",
+      equipmentStats: "\u88c5\u5907\u5c5e\u6027",
+      equipmentSuit: "\u5957\u88c5\u6548\u679c",
+      equipmentFormula: "\u5236\u9020\u914d\u65b9",
+      partType: "\u90e8\u4f4d",
+      minWearLevel: "\u7a7f\u6234\u7b49\u7ea7",
+      domain: "\u5730\u533a",
+      suit: "\u5957\u88c5",
+      formula: "\u914d\u65b9",
+      pack: "\u5236\u9020\u5305",
+      unlock: "\u89e3\u9501",
+      equipCount: "\u4ef6\u6570",
+      displayAttrs: "\u5c55\u793a\u5c5e\u6027",
+      characterStats: "\u89d2\u8272\u5c5e\u6027",
+      statCheckpoints: "\u5c5e\u6027\u6570\u503c",
+      breakStage: "\u7a81\u7834\u9636\u6bb5",
+      stat_baseAtk: "\u57fa\u7840\u653b\u51fb",
+      stat_hp: "\u751f\u547d\u503c",
+      stat_atk: "\u653b\u51fb\u529b",
+      stat_def: "\u9632\u5fa1\u529b",
+      stat_str: "\u529b\u91cf",
+      stat_agi: "\u654f\u6377",
+      stat_wis: "\u667a\u8bc6",
+      stat_will: "\u610f\u5fd7",
       progression: "\u517b\u6210",
       upgradeCurve: "\u5347\u7ea7\u66f2\u7ebf",
       weaponBreakthroughs: "\u6b66\u5668\u7a81\u7834",
       weaponTalentBounds: "\u6b66\u5668\u5929\u8d4b\u4e0a\u9650",
+      weaponStatCurve: "\u6b66\u5668\u5c5e\u6027\u66f2\u7ebf",
+      characterStatCurve: "\u89d2\u8272\u5c5e\u6027\u66f2\u7ebf",
+      rawMaxLevel: "\u539f\u59cb\u6700\u5927\u7b49\u7ea7",
+      extraRawRows: "\u8d85\u51fa\u53ef\u7528\u4e0a\u9650\u884c",
       characterLevelCurve: "\u89d2\u8272\u7b49\u7ea7\u66f2\u7ebf",
       characterBreakStages: "\u7a81\u7834\u9636\u6bb5",
       characterBreakthroughs: "\u7a81\u7834\u6d88\u8017",
@@ -83,7 +112,7 @@
       tab: "Gameplay",
       title: "Gameplay Data",
       countLabel: "entries",
-      search: "Search weapon / character / skill / stat",
+      search: "Search weapon / equipment / character / skill / stat",
       showFilters: "Show filters",
       hideFilters: "Hide filters",
       reset: "Reset filters",
@@ -98,6 +127,7 @@
       loadError: "Load failed: {message}",
       weapon: "Weapon",
       character: "Character",
+      equipment: "Equipment",
       id: "ID",
       rarity: "Rarity",
       groupFact: "Group",
@@ -134,10 +164,38 @@
       attributeNode: "Attribute node",
       upgradeNodes: "Upgrade nodes",
       selectedLevel: "Selected level",
+      weaponStats: "Weapon stats",
+      equipmentStats: "Equipment stats",
+      equipmentSuit: "Suit effects",
+      equipmentFormula: "Crafting formula",
+      partType: "Part",
+      minWearLevel: "Wear level",
+      domain: "Domain",
+      suit: "Suit",
+      formula: "Formula",
+      pack: "Pack",
+      unlock: "Unlock",
+      equipCount: "Pieces",
+      displayAttrs: "Display attrs",
+      characterStats: "Character stats",
+      statCheckpoints: "Stat values",
+      breakStage: "Break stage",
+      stat_baseAtk: "Base ATK",
+      stat_hp: "HP",
+      stat_atk: "ATK",
+      stat_def: "DEF",
+      stat_str: "STR",
+      stat_agi: "AGI",
+      stat_wis: "WIS",
+      stat_will: "WILL",
       progression: "Progression",
       upgradeCurve: "Upgrade curve",
       weaponBreakthroughs: "Weapon breakthroughs",
       weaponTalentBounds: "Weapon talent bounds",
+      weaponStatCurve: "Weapon stat curve",
+      characterStatCurve: "Character stat curve",
+      rawMaxLevel: "Raw max level",
+      extraRawRows: "Rows beyond playable cap",
       characterLevelCurve: "Character level curve",
       characterBreakStages: "Break stages",
       characterBreakthroughs: "Breakthrough costs",
@@ -221,6 +279,31 @@
     return `data/lang/${encodeURIComponent(language)}/gameplay/index.json`;
   }
 
+  function normalizeGameplaySelection(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    let decoded = raw;
+    try { decoded = decodeURIComponent(raw); }
+    catch (_) {}
+    if (decoded.includes(":")) decoded = decoded.split(":").pop();
+    if (decoded.startsWith("wiki_chr_")) return `chr_${decoded.slice("wiki_chr_".length)}`;
+    if (decoded.startsWith("wiki_wpn_")) return `wpn_${decoded.slice("wiki_wpn_".length)}`;
+    if (decoded.startsWith("wiki_item_")) return `item_${decoded.slice("wiki_item_".length)}`;
+    if (decoded.startsWith("wiki_")) return decoded.slice("wiki_".length);
+    return decoded;
+  }
+
+  function requestedGameplaySelection() {
+    const params = new URLSearchParams(window.location.search || "");
+    return normalizeGameplaySelection(params.get("gameplay") || params.get("gameplayId") || params.get("entry") || "");
+  }
+
+  function findGameplayEntry(value) {
+    const id = normalizeGameplaySelection(value);
+    if (!id) return null;
+    return STATE.entries.find((entry) => entry && (entry.id === id || `${entry.kind}:${entry.id}` === id || entry.storyWikiKey === id)) || null;
+  }
+
   function isGameplayActive() {
     return document.body.dataset.activeView === "gameplay"
       || (window.location.hash || "").replace(/^#/, "").toLowerCase() === "gameplay";
@@ -238,13 +321,17 @@
   }
 
   function kindLabel(kind) {
-    return kind === "weapon" ? text("weapon") : kind === "character" ? text("character") : String(kind || "");
+    return kind === "weapon" ? text("weapon") : kind === "equipment" ? text("equipment") : kind === "character" ? text("character") : String(kind || "");
   }
 
   function entrySubtitle(entry) {
     const parts = [];
     if (entry.rarity) parts.push(`${text("rarity")} ${entry.rarity}`);
     if (entry.kind === "weapon" && entry.weaponTypeLabel) parts.push(entry.weaponTypeLabel);
+    if (entry.kind === "equipment") {
+      if (entry.partTypeLabel) parts.push(entry.partTypeLabel);
+      if (entry.suit && entry.suit.name) parts.push(entry.suit.name);
+    }
     if (entry.kind === "character") {
       if (entry.professionLabel) parts.push(entry.professionLabel);
       if (entry.elementLabel) parts.push(entry.elementLabel);
@@ -329,6 +416,52 @@
 
   function levelLabel(level) {
     return `${text("level")} ${formatValue(level && level.level || "")}`.trim();
+  }
+
+  function statAttrLabel(attr) {
+    const key = `stat_${attr && attr.key || ""}`;
+    const translated = text(key);
+    return translated === key ? (attr && (attr.label || attr.key) || "") : translated;
+  }
+
+  function statLevelLabel(row) {
+    const parts = [];
+    if (row && row.level !== undefined && row.level !== null) parts.push(`${text("level")} ${formatValue(row.level)}`);
+    if (row && row.breakStage !== undefined && row.breakStage !== null) parts.push(`${text("breakStage")} ${formatValue(row.breakStage)}`);
+    return parts.join(" / ");
+  }
+
+
+  function renderStatPane(row, active) {
+    return `<div class="gameplay-level-pane gameplay-stat-pane" data-level-label="${escapeHtml(statLevelLabel(row))}"${active ? "" : " hidden"}>
+      <div class="gameplay-level-effect">${renderStatAttrs(row) || `<span class="muted">-</span>`}</div>
+    </div>`;
+  }
+
+  function renderStats(stats) {
+    const rows = ((stats && (stats.rows || stats.checkpoints)) || []).filter((row) => row && (row.attrs || []).length);
+    if (!rows.length) return "";
+    const body = rows.length > 1
+      ? `<div class="gameplay-level-slider-wrap gameplay-stat-slider" data-level-card>
+        <div class="gameplay-level-slider-control">
+          <span>${escapeHtml(text("selectedLevel"))}</span>
+          <input class="gameplay-level-slider" type="range" min="0" max="${rows.length - 1}" step="1" value="0" aria-label="${escapeHtml(text("selectedLevel"))}">
+          <output class="gameplay-level-slider-output">${escapeHtml(statLevelLabel(rows[0]))}</output>
+        </div>
+        <div class="gameplay-level-panes">${rows.map((row, index) => renderStatPane(row, index === 0)).join("")}</div>
+      </div>`
+      : `<div class="gameplay-level-table">${rows.map((row) => `<div class="gameplay-level-row gameplay-stat-row">
+        <div class="gameplay-level-num">${escapeHtml(statLevelLabel(row))}</div>
+        <div class="gameplay-level-effect">${renderStatAttrs(row) || `<span class="muted">-</span>`}</div>
+        <div class="gameplay-level-values"></div>
+      </div>`).join("")}</div>`;
+    return `<article class="gameplay-skill-card gameplay-stat-card">
+      <header>
+        <div class="gameplay-skill-title">${escapeHtml(text("statCheckpoints"))}</div>
+        <div class="gameplay-skill-meta">${escapeHtml(statCurveMeta(stats))}</div>
+      </header>
+      ${body}
+    </article>`;
   }
 
   function renderLevelPane(level, active, costRow) {
@@ -508,6 +641,32 @@
     return out.length ? `<div class="gameplay-level-table">${out.join("")}</div>` : "";
   }
 
+  function formatStatValue(value) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      if (Number.isInteger(value)) return value.toLocaleString();
+      return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    }
+    return formatValue(value);
+  }
+
+  function renderStatAttrs(rowOrAttrs) {
+    const attrs = Array.isArray(rowOrAttrs) ? rowOrAttrs : (rowOrAttrs && rowOrAttrs.attrs || []);
+    const rows = attrs
+      .filter((item) => item && item.value !== undefined && item.value !== null && item.value !== "")
+      .map((item) => `<span class="gameplay-value-chip"><b>${escapeHtml(statAttrLabel(item))}</b>${escapeHtml(formatStatValue(item.value))}</span>`);
+    return rows.length ? `<div class="gameplay-blackboard">${rows.join("")}</div>` : "";
+  }
+
+  function statCurveMeta(stats) {
+    if (!stats) return "";
+    return [
+      stats.source,
+      stats.maxLevel ? `${text("maxLevel")} ${formatValue(stats.maxLevel)}` : "",
+      stats.rawMaxLevel && String(stats.rawMaxLevel) !== String(stats.maxLevel) ? `${text("rawMaxLevel")} ${formatValue(stats.rawMaxLevel)}` : "",
+      stats.extraRowsBeyondPlayable ? `${text("extraRawRows")} ${formatValue(stats.extraRowsBeyondPlayable)}` : "",
+    ].filter(Boolean).join(" / ");
+  }
+
   function renderWeaponProgression(entry) {
     const cards = [];
     const upgrade = entry.upgrade || {};
@@ -615,6 +774,7 @@
       body: [
         section(text("itemDescription"), renderDescription(entry.itemDescription)),
         section(text("description"), renderDescription(entry.description)),
+        section(text("weaponStats"), renderStats(entry.stats)),
         section(text("progression"), renderWeaponProgression(entry)),
         section(text("weaponSkills"), skills ? `<div class="gameplay-card-grid">${skills}</div>` : ""),
       ].join(""),
@@ -651,6 +811,7 @@
     return {
       facts,
       body: [
+        section(text("characterStats"), renderStats(entry.stats)),
         section(text("progression"), renderCharacterProgression(entry)),
         section(text("characterSkills"), groups),
         section(text("talents"), talentGroups || (talentCards ? `<div class="gameplay-card-grid">${talentCards}</div>` : "")),
@@ -700,7 +861,7 @@
     detail.hidden = false;
     gp$("#gameplay-detail-title").textContent = entry.title || entry.id || "";
     gp$("#gameplay-detail-meta").textContent = [kindLabel(entry.kind), entrySubtitle(entry), entry.group].filter(Boolean).join(" / ");
-    const rendered = entry.kind === "weapon" ? renderWeaponDetail(entry) : renderCharacterDetail(entry);
+    const rendered = entry.kind === "weapon" ? renderWeaponDetail(entry) : entry.kind === "equipment" ? renderEquipmentDetail(entry) : renderCharacterDetail(entry);
     gp$("#gameplay-detail-facts").innerHTML = rendered.facts;
     gp$("#gameplay-detail-body").innerHTML = rendered.body || "";
     bindLevelSliders(detail);
@@ -786,8 +947,9 @@
       }
       return true;
     }).sort((a, b) => {
-      const ak = a.kind === "weapon" ? 0 : 1;
-      const bk = b.kind === "weapon" ? 0 : 1;
+      const order = { weapon: 0, equipment: 1, character: 2 };
+      const ak = order[a.kind] ?? 9;
+      const bk = order[b.kind] ?? 9;
       if (ak !== bk) return ak - bk;
       const ar = Number(a.rarity || 0);
       const br = Number(b.rarity || 0);
@@ -848,7 +1010,7 @@
         const data = await res.json();
         STATE.index = data || {};
         STATE.entries = Array.isArray(data.entries) ? data.entries : [];
-        STATE.selected = null;
+        STATE.selected = findGameplayEntry(requestedGameplaySelection());
         gp$("#gameplay-count").textContent = formatNumber(STATE.entries.length);
         buildFilterChips();
         applyFilters();
