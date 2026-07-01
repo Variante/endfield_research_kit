@@ -1,24 +1,22 @@
 # StreamingAssets Data Format Notes
 
-Source inspected: `export_full/structured/StreamingAssets/Data`.
+Source inspected: `export_full/structured/StreamingAssets/Data` and `export_full/structured/Persistent/Data`.
 
 ## Summary
 
-- Current moved root: `Audio/`, `Bundles/`, `DynamicStreaming/`,
-  `ExtendData/`, `IrradianceVolume/`, `Json/`, `Streaming/`, and `Video/`.
-- Full WebUI Data index: 379,465 files, 60,871,904,787 bytes
-  (about 58,052 MiB), split into 193 lazy-loaded groups.
-- Major file families: 258,422 `.ab` bundle payloads, 81,735 `.json`
-  config files, 38,824 `.bytes` streaming/irradiance payloads, 464 `.mp4`
-  videos, 16 `.pck` Wwise packages, three `.bin` ExtendData indexes, and one
-  `manifest.hgmmap` bundle map.
-- `Json/`: 3,025 parseable text JSON files plus 78,710 binary MemoryPack-like
+- Current moved StreamingAssets root contains `Audio/`, `Bundles/`, `DynamicStreaming/`,
+  `ExtendData/`, `IrradianceVolume/`, `Json/`, `Streaming/`, and `Video/`, but
+  the active WebUI Data index only tracks final decoded config files under
+  `Json/` from both StreamingAssets and Persistent.
+- Current decoded Data scope: 163,822 `.json` config files, 1,403,397,770 bytes
+  (about 1,338.4 MiB), split into 30 lazy-loaded groups.
+- Source split: 81,735 StreamingAssets files and 82,087 Persistent files.
+- `Json/`: 6,070 parseable text JSON files plus 157,752 binary MemoryPack-like
   config blobs with `.json` names.
-- Raw archive/media folders are indexed by header and path. The Data tab does
-  not unpack `.ab`, `.pck`, `.hgmmap`, or dense streaming payload bodies.
-- Because the current root is large, `webui/data/game_data/index.json` sets
-  `requiresGroupSelection: true`; the browser waits for a group selection
-  before loading entry shards.
+- Raw archive/media folders are intentionally excluded from the Data tab:
+  `.ab` bundles, packed Wwise audio, videos, streaming bytes, irradiance
+  volumes, extend-data indexes, and bundle maps belong to the asset/export
+  tooling rather than this decoded-config browser.
 
 ## Text JSON
 
@@ -72,34 +70,22 @@ tab treats unresolved files as `binary-json`; decoded MemoryPack families are sh
 
 ## Other Data Folders
 
-The current `export_full/structured/StreamingAssets/Data` root includes the raw
-installed-game Data families as well as extracted `Json/` and `Video/` folders.
-The WebUI index now includes all of these families and uses smaller group shards
-for very large raw groups.
+The current `export_full/structured/StreamingAssets/Data` root still contains
+raw installed-game Data families outside `Json/`, while Persistent contributes
+additional decoded `Json/` config files. The WebUI Data tab no longer indexes
+raw package/media/container folders.
 
-- `Bundles/`: 258,422 `.ab` asset bundle payloads plus
-  `Bundles/Windows/manifest.hgmmap`. Main bundles are sharded by the first hex
-  stem nibble (`Bundles/Windows/main/0` through `f`) to avoid one huge browser
-  payload. The sampled `.ab` headers do not start with plain `UnityFS`, but many
-  expose a `2021.3.3` Unity version marker, so the index reports them as
-  Endfield encoded AssetBundle payloads rather than decoded Unity bundles.
-- `Audio/`: 16 `.pck` Wwise bank/stream packages across Audit, Initial, Main,
-  and language folders. Their headers are encoded Endfield payloads rather than
-  plain `AKPK`, so the index records bank/stream subtype and header words only.
-- `Streaming/` and `DynamicStreaming/`: 38,561 `.bytes` files are recognized as
-  schema-less FlatBuffer-like payloads with root/vtable/vector summaries and
-  embedded string samples. Remaining `.bytes` files are kept as bounded binary
-  headers. Semantic field names still require `.fbs` schema evidence.
-- `IrradianceVolume/`: 263 `.bytes` files are classified separately as
-  irradiance index, region, or dense volume payloads by path/header.
-- `ExtendData/`: three `.bin` files. `InitStringPathHash.bin` aligns to 36,520
-  fixed 8-byte rows; `StringPathHash.bin` and `CompressData.bin` remain encoded
-  binary index payloads with header-word previews only.
-- `Video/`: 464 `.mp4` files with normal `ftyp` headers. The Data tab includes
-  lightweight MP4 brand summaries and browser video preview, while the Assets
-  tab remains the richer media browser.
+- `Bundles/`: `.ab` asset bundle payloads and `manifest.hgmmap` are raw package
+  metadata/container files, not final decoded Data page records.
+- `Audio/`: `.pck` Wwise bank/stream packages remain packed audio inputs. The
+  decoded-audio workflow writes final media under `export_full/structured/Audio/`.
+- `Streaming/`, `DynamicStreaming/`, and `IrradianceVolume/`: dense world and
+  lighting payloads remain raw binary inputs unless a schema-specific decoder is
+  promoted into maintained tooling.
+- `ExtendData/`: binary index payloads remain outside the Data page.
+- `Video/`: MP4 media is excluded from the Data tab; media browsing belongs on
+  the Assets/Story paths.
 
 Generated WebUI indexes are local-only under `webui/data/game_data/` and are
-ignored by git. The Data tab splits JSON rows by directory, raw bundles by
-bundle shard, streaming/irradiance by map-like subfolder, and requires choosing
-a group before entries are loaded for this large root.
+ignored by git. The Data tab splits decoded JSON rows by directory and does not
+copy raw Data files or package/media containers.

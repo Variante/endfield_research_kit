@@ -22,7 +22,9 @@ const FILTER_SECTION_STORAGE_KEY = "webui_filter_sections_collapsed_v2";
 const STORY_SPLITTER_STORAGE_KEY = "webui_story_splitter_width";
 const ASSET_SPLITTER_STORAGE_KEY = "webui_asset_splitter_width";
 const REFERENCE_SPLITTER_STORAGE_KEY = "webui_reference_splitter_width";
+const GAMEPLAY_SPLITTER_STORAGE_KEY = "webui_gameplay_splitter_width";
 const GAME_DATA_SPLITTER_STORAGE_KEY = "webui_game_data_splitter_width";
+const DECODED_SPLITTER_STORAGE_KEY = "webui_decoded_splitter_width";
 const UPDATES_SPLITTER_STORAGE_KEY = "webui_updates_splitter_width";
 const FILTER_SPLITTER_STORAGE_PREFIX = "webui_filter_splitter_height_";
 const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
@@ -169,10 +171,22 @@ function initPaneSplitters() {
     storageKey: REFERENCE_SPLITTER_STORAGE_KEY,
   });
   setupPaneSplitter({
+    container: "#gameplay-app",
+    pane: "#gameplay-left",
+    splitter: "#gameplay-splitter",
+    storageKey: GAMEPLAY_SPLITTER_STORAGE_KEY,
+  });
+  setupPaneSplitter({
     container: "#game-data-app",
     pane: "#game-data-left",
     splitter: "#game-data-splitter",
     storageKey: GAME_DATA_SPLITTER_STORAGE_KEY,
+  });
+  setupPaneSplitter({
+    container: "#decoded-app",
+    pane: "#decoded-left",
+    splitter: "#decoded-splitter",
+    storageKey: DECODED_SPLITTER_STORAGE_KEY,
   });
   setupPaneSplitter({
     container: "#updates-app",
@@ -185,6 +199,7 @@ function initPaneSplitters() {
   setupFilterSplitter({ pane: "#asset-left", panel: "#asset-filter-panel", splitter: "#asset-filter-splitter", list: "#asset-list-wrap", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}assets` });
   setupFilterSplitter({ pane: "#reference-left", panel: "#reference-filter-panel", splitter: "#reference-filter-splitter", list: "#reference-list", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}reference` });
   setupFilterSplitter({ pane: "#game-data-left", panel: "#game-data-filter-panel", splitter: "#game-data-filter-splitter", list: "#game-data-list", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}game_data` });
+  setupFilterSplitter({ pane: "#decoded-left", panel: "#decoded-filter-panel", splitter: "#decoded-filter-splitter", list: "#decoded-list", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}decoded` });
   setupFilterSplitter({ pane: "#updates-left", panel: "#updates-filter-panel", splitter: "#updates-filter-splitter", list: "#updates-list", storageKey: `${FILTER_SPLITTER_STORAGE_PREFIX}updates` });
 }
 
@@ -8735,6 +8750,15 @@ function createAudioControl(src, label = "") {
   return wrap;
 }
 
+function lineAudioLabel(line, variant, src) {
+  const meta = variant && variant.meta && typeof variant.meta === "object"
+    ? variant.meta
+    : (line.audioMeta && typeof line.audioMeta === "object" ? line.audioMeta : {});
+  const direct = (variant && variant.id) || line.voice || line.audio || meta.id || "";
+  if (direct) return String(direct);
+  return audioFileStem({ src: meta.audioDialogPath || meta.audioPath || src });
+}
+
 function appendLineAudio(parent, line) {
   if (!line) return;
   const variant = line.audioVariants && typeof line.audioVariants === "object"
@@ -8742,8 +8766,7 @@ function appendLineAudio(parent, line) {
     : null;
   const src = (variant && variant.src) || line.audioSrc || "";
   if (!src) return;
-  const variantId = variant && variant.id ? String(variant.id) : "";
-  const label = variantId || line.voice || line.audio || "";
+  const label = lineAudioLabel(line, variant, src);
   const node = createAudioControl(src, label);
   if (node) parent.appendChild(node);
 }

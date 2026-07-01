@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Build the WebUI game-data browser index.
 
-The input is an installed/exported StreamingAssets/Data tree. The browser loads
-the generated index lazily by logical group, with Json split by category and
-folded by directory structure before filename prefix, while raw file previews
-are served from the local export by serve.py.
+The input is installed/exported StreamingAssets/Data and Persistent/Data trees, but the WebUI
+Data tab indexes only final decoded config files under Data/Json. Raw bundle,
+packed audio, video/media, streaming, irradiance, and extend-data payloads are
+left to the dedicated export/asset tooling instead of being listed here.
 """
 from __future__ import annotations
 
@@ -33,13 +33,26 @@ from story_builder.levelscript_binary import (
 
 DEFAULT_EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_DATA_REL = Path("structured") / "StreamingAssets" / "Data"
+DEFAULT_DATA_SOURCE_RELS = (
+    ("StreamingAssets", Path("structured") / "StreamingAssets" / "Data"),
+    ("Persistent", Path("structured") / "Persistent" / "Data"),
+)
 GAME_DATA_DIR = OUT_DIR / "game_data"
 HEADER_BYTES = 1024
 STRING_SAMPLE_LIMIT = 8
 STRING_SAMPLE_MAX_CHARS = 360
-EXCLUDED_EXTENSIONS: set[str] = set()
-EXCLUDED_GROUPS: set[str] = set()
 VIDEO_EXTENSIONS = {"mp4", "webm", "mov", "usm"}
+INDEXED_GROUPS = {"Json"}
+RAW_CONTAINER_GROUPS = {
+    "Audio",
+    "Bundles",
+    "DynamicStreaming",
+    "ExtendData",
+    "IrradianceVolume",
+    "Streaming",
+    "Video",
+}
+RAW_CONTAINER_EXTENSIONS = {"ab", "bin", "bytes", "bundle", "hgmmap", "pck", *VIDEO_EXTENSIONS}
 PREFIX_GROUP_ROOTS = {"Json"}
 AUTO_LOAD_ALL_FILE_LIMIT = 120_000
 BUNDLE_MAIN_SHARD_CHARS = 1
@@ -773,18 +786,18 @@ TRAILING_VARIANT_TOKEN_RE = re.compile(r"^\d+[A-Za-z]?$")
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build WebUI indexes for StreamingAssets/Data.")
+    parser = argparse.ArgumentParser(description="Build WebUI indexes for decoded StreamingAssets/Persistent Data JSON files.")
     parser.add_argument(
         "--export-root",
         type=Path,
         default=DEFAULT_EXPORT_ROOT,
-        help=f"Export root that contains structured/StreamingAssets/Data. Default: {DEFAULT_EXPORT_ROOT}",
+        help=f"Export root that contains structured/{{StreamingAssets,Persistent}}/Data. Default: {DEFAULT_EXPORT_ROOT}",
     )
     parser.add_argument(
         "--data-root",
         type=Path,
         default=None,
-        help="Data root to scan. Overrides --export-root/structured/StreamingAssets/Data.",
+        help="Single Data root to scan. Overrides the default StreamingAssets + Persistent merge.",
     )
     parser.add_argument(
         "--output",
@@ -796,7 +809,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--groups",
         nargs="*",
         default=None,
-        help="Optional top-level Data groups to scan, e.g. Json Bundles.",
+        help="Optional top-level decoded Data groups to scan. Defaults to Json; raw container/media groups are ignored.",
     )
     return parser.parse_args(argv)
 
@@ -907,7 +920,12 @@ def ext_label(path: Path) -> str:
 
 def should_index_path(path: Path, data_root: Path) -> bool:
     rel = rel_to_data_root(path, data_root)
-    return first_group(rel) not in EXCLUDED_GROUPS and ext_label(path) not in EXCLUDED_EXTENSIONS
+    group = first_group(rel)
+    if group not in INDEXED_GROUPS:
+        return False
+    if ext_label(path) in RAW_CONTAINER_EXTENSIONS:
+        return False
+    return True
 
 
 def hex_signature(data: bytes, length: int = 8) -> str:
@@ -5275,7 +5293,7 @@ def read_skill_gameplay_tag_list_field(
 def is_clean_skill_tag_name(value: str) -> bool:
     if not value or len(value) > 180:
         return False
-    if any(ord(ch) < 32 or ch == "�" for ch in value):
+    if any(ord(ch) < 32 or ord(ch) == 0xFFFD for ch in value):
         return False
     return bool(re.fullmatch(r"[A-Za-z0-9_./#:+-]+", value))
 
@@ -5285,7 +5303,7 @@ def is_clean_skill_identifier_string(value: str) -> bool:
         return True
     if len(value) > 180:
         return False
-    if any(ord(ch) < 32 or ch == "�" for ch in value):
+    if any(ord(ch) < 32 or ord(ch) == 0xFFFD for ch in value):
         return False
     return bool(re.fullmatch(r"[A-Za-z0-9_./#:+-]+", value))
 
@@ -12111,10 +12129,6 @@ def safe_group_filename(group: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", group).strip("_") or "root"
 
 
-def group_matches_selected(group: str, selected: set[str] | None) -> bool:
-    if not selected:
-        return True
-    return first_group(group) in selected
 
 
 def aggregate_group_counts(groups: list[dict[str, Any]]) -> dict[str, Any]:
@@ -12135,7 +12149,28 @@ def aggregate_group_counts(groups: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def build_index(data_root: Path, output: Path, export_root: Path, selected_groups: set[str] | None) -> dict[str, Any]:
+def repo_rel(path: Path) -> str:
+    try:
+        return path.resolve().relative_to(ROOT.resolve()).as_posix()
+    except (OSError, ValueError):
+        return path.resolve().as_posix()
+
+
+def default_data_roots(export_root: Path) -> list[tuple[str, Path]]:
+    roots: list[tuple[str, Path]] = []
+    for source, rel in DEFAULT_DATA_SOURCE_RELS:
+        root = export_root / rel
+        if root.exists():
+            roots.append((source, root))
+    return roots
+
+
+def source_data_rel(source: str, rel: str) -> str:
+    source = str(source or "").strip()
+    return f"{source}/Data/{rel}" if source else rel
+
+
+def build_index(data_roots: list[tuple[str, Path]], output: Path, export_root: Path, selected_groups: set[str] | None) -> dict[str, Any]:
     entries_by_group: dict[str, list[dict[str, Any]]] = defaultdict(list)
     group_stats: dict[str, dict[str, Any]] = defaultdict(lambda: {
         "files": 0,
@@ -12149,19 +12184,21 @@ def build_index(data_root: Path, output: Path, export_root: Path, selected_group
     total_files = 0
     total_bytes = 0
 
-    file_infos: list[tuple[Path, str, Any, bytes, tuple[int, str]]] = []
+    file_infos: list[tuple[Path, str, str, str, Path, Any, bytes, tuple[int, str]]] = []
     hash_candidate_keys: Counter[tuple[int, str]] = Counter()
-    for path in sorted(data_root.rglob("*")):
-        if not (path.is_file() and wanted_group(path, data_root, selected_groups) and should_index_path(path, data_root)):
-            continue
-        rel = rel_to_data_root(path, data_root)
-        stat = path.stat()
-        header = read_header(path)
-        key = (int(stat.st_size), hex_signature(header))
-        file_infos.append((path, rel, stat, header, key))
-        hash_candidate_keys[key] += 1
+    for source, data_root in data_roots:
+        for path in sorted(data_root.rglob("*")):
+            if not (path.is_file() and wanted_group(path, data_root, selected_groups) and should_index_path(path, data_root)):
+                continue
+            rel = rel_to_data_root(path, data_root)
+            raw_rel = source_data_rel(source, rel)
+            stat = path.stat()
+            header = read_header(path)
+            key = (int(stat.st_size), hex_signature(header))
+            file_infos.append((path, rel, raw_rel, source, data_root, stat, header, key))
+            hash_candidate_keys[key] += 1
 
-    for path, rel, stat, header, hash_key in file_infos:
+    for path, rel, raw_rel, source, data_root, stat, header, hash_key in file_infos:
         group = index_group_for_rel(rel)
         entry = compact_entry(
             rel,
@@ -12171,6 +12208,10 @@ def build_index(data_root: Path, output: Path, export_root: Path, selected_group
             stat_result=stat,
             header=header,
         )
+        entry["p"] = raw_rel
+        entry["dp"] = rel
+        if source:
+            entry["source"] = source
         entries_by_group[group].append(entry)
 
         stats = group_stats[group]
@@ -12188,36 +12229,13 @@ def build_index(data_root: Path, output: Path, export_root: Path, selected_group
         total_extensions[ext] += 1
         total_kinds[kind] += 1
 
-    try:
-        source_root = data_root.resolve().relative_to(ROOT.resolve()).as_posix()
-    except ValueError:
-        source_root = data_root.resolve().as_posix()
-    try:
-        export_root_rel = export_root.resolve().relative_to(ROOT.resolve()).as_posix()
-    except ValueError:
-        export_root_rel = export_root.resolve().as_posix()
+    source_roots = {source or "Data": repo_rel(root) for source, root in data_roots}
+    source_root = ", ".join(source_roots.values())
+    export_root_rel = repo_rel(export_root)
 
     groups_dir = output / "groups"
     groups_dir.mkdir(parents=True, exist_ok=True)
-    existing_index: dict[str, Any] | None = None
-    existing_index_path = output / "index.json"
-    if selected_groups and existing_index_path.exists():
-        try:
-            loaded_index = json.loads(existing_index_path.read_text(encoding="utf-8"))
-            if loaded_index.get("sourceRoot") == source_root and loaded_index.get("exportRoot") == export_root_rel:
-                existing_index = loaded_index
-        except (OSError, json.JSONDecodeError):
-            existing_index = None
-
-    if selected_groups and existing_index:
-        stale_files = []
-        for group in existing_index.get("groups", []):
-            group_id = str(group.get("id") or "")
-            file_rel = str(group.get("file") or "")
-            if file_rel and group_matches_selected(group_id, selected_groups):
-                stale_files.append(output / file_rel)
-    else:
-        stale_files = list(groups_dir.glob("*.json"))
+    stale_files = list(groups_dir.glob("*.json"))
 
     for stale_group in stale_files:
         try:
@@ -12244,25 +12262,19 @@ def build_index(data_root: Path, output: Path, export_root: Path, selected_group
             "categories": dict(stats["categories"].most_common(80)),
         })
 
-    if selected_groups and existing_index:
-        preserved_groups = [
-            group
-            for group in existing_index.get("groups", [])
-            if not group_matches_selected(str(group.get("id") or ""), selected_groups)
-        ]
-        group_payloads = sorted(
-            preserved_groups + group_payloads,
-            key=lambda group: str(group.get("id") or ""),
-        )
-    else:
-        group_payloads.sort(key=lambda group: str(group.get("id") or ""))
+    group_payloads.sort(key=lambda group: str(group.get("id") or ""))
 
     aggregate_counts = aggregate_group_counts(group_payloads)
     payload = {
         "generated": int(time.time()),
         "sourceRoot": source_root,
+        "sourceRoots": source_roots,
         "exportRoot": export_root_rel,
         "rawRoute": "/export_data/",
+        "indexScope": "decoded_data_json",
+        "indexedGroups": sorted(INDEXED_GROUPS),
+        "excludedRawGroups": sorted(RAW_CONTAINER_GROUPS),
+        "excludedRawExtensions": sorted(RAW_CONTAINER_EXTENSIONS),
         "counts": aggregate_counts,
         "requiresGroupSelection": int(aggregate_counts.get("files") or 0) > AUTO_LOAD_ALL_FILE_LIMIT,
         "autoLoadAllLimit": AUTO_LOAD_ALL_FILE_LIMIT,
@@ -12271,17 +12283,34 @@ def build_index(data_root: Path, output: Path, export_root: Path, selected_group
     write_json(output / "index.json", payload)
     return payload
 
-
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     export_root = args.export_root
-    data_root = args.data_root or (export_root / DEFAULT_DATA_REL)
-    if not data_root.exists():
-        raise SystemExit(f"Data root not found: {data_root}")
+    if args.data_root:
+        if not args.data_root.exists():
+            raise SystemExit(f"Data root not found: {args.data_root}")
+        data_roots = [("", args.data_root)]
+    else:
+        data_roots = default_data_roots(export_root)
+        if not data_roots:
+            raise SystemExit(f"Data roots not found under: {export_root / 'structured'}")
 
-    selected_groups = set(args.groups) if args.groups else None
+    requested_groups = set(args.groups) if args.groups else set(INDEXED_GROUPS)
+    selected_groups = requested_groups & INDEXED_GROUPS
+    ignored_groups = requested_groups - INDEXED_GROUPS
+    if ignored_groups:
+        print(
+            "[build_data_index] Ignoring raw/non-decoded Data group(s): "
+            + ", ".join(sorted(ignored_groups)),
+            file=sys.stderr,
+        )
+    if not selected_groups:
+        raise SystemExit(
+            "No decoded Data groups selected. Supported group(s): "
+            + ", ".join(sorted(INDEXED_GROUPS))
+        )
     args.output.mkdir(parents=True, exist_ok=True)
-    payload = build_index(data_root, args.output, export_root, selected_groups)
+    payload = build_index(data_roots, args.output, export_root, selected_groups)
     counts = payload["counts"]
     print(
         "Game data index written:",

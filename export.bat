@@ -116,6 +116,9 @@ if errorlevel 1 exit /b %errorlevel%
 python .\scripts\story_builder\build.py --languages CN --default-language CN --skip-audio-link
 if errorlevel 1 exit /b %errorlevel%
 
+python .\scripts\build_gameplay_data.py --languages CN --default-language CN
+if errorlevel 1 exit /b %errorlevel%
+
 if "%WITH_ASSETS%"=="0" goto :done
 
 set "BUILD_ASSET_MODE=%ASSET_MODE%"
@@ -148,7 +151,7 @@ exit /b 2
 echo Usage: export.bat [--export-from-game] [--with-assets] [--game-root PATH] [export_full_from_game.py options]
 echo.
 echo Runs the Story/Reference WebUI refresh from existing export_full by default,
-echo rebuilds source-link evidence, builds CN data,
+echo rebuilds source-link evidence, builds CN Story/Text/Gameplay data,
 echo and preserves OCR-managed Story sort order. Use --with-assets to also
 echo rebuild Assets tab data and relink CN audio in the same command.
 echo Reading installed game data and tool-based extraction are opt-in.
