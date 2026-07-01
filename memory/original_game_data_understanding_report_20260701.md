@@ -506,12 +506,20 @@ A CN rebuild found 959 responsive lines with `audioPaths`, all 959 linked to
 That is useful supporting evidence, but it is not the same as full branch proof.
 The current representation is practical and mostly coherent, but not fully
 authoritative for every branch.
+
 Memory notes explain the current promotion rule more precisely: timeline/audio
 monotonicity is supporting evidence only. Option responses should be promoted
 only when authored source evidence binds option indices to response lines. The
 next runtime target is the writer of the `DialogOptionPlayableAsset` active
 clip gate at `+0x18`; without that, several option-response groups remain
 inferred rather than proven.
+
+2026-07-01 source graph progress: `webui/overrides/options.json` is now ingested
+as explicitly WebUI-only `option_override` evidence. The fast CN build verified
+43 override nodes and 587 `webui/option_override` edges, including manual
+response `option_first_line` / `option_path_line` edges that keep their
+`webuiOnly` marker in edge data. This improves auditability of display fixes,
+but it still does not upgrade manual overrides into original game-source proof.
 
 ### Mission Timeline and Global Story Order
 
