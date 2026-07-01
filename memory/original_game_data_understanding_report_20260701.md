@@ -388,7 +388,10 @@ MemoryPack graph evidence for 139 LunaArea polygon rows, 17 owner-qualified
 area ids, 6 NavMeshStateContainer owners, 569 state rows, and 57 bounds-to-area
 id refs across Persistent/StreamingAssets copies. The `BambooRaftTaskTable` pass
 adds exact graph evidence for 7 task-group hashes, 13 quest task ids, 26
-source-file task refs, and 13 mission-prefix links. These decoded-config passes do not prove runtime formula usage, full SpawnerConfig tail semantics,
+source-file task refs, and 13 mission-prefix links. The `damage_text` pass adds
+20 UI combat-text style rows, 10 animation refs, 58 UI node names, and 8
+filtered `ui_*` resources. These decoded-config passes do not prove runtime
+formula usage, full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
 flow, montage clip playback semantics, full exported model/icon reconstruction,
@@ -457,6 +460,10 @@ Partial but useful current examples include:
 - `BambooRaftTaskTable`: queryable bamboo-raft task-group hashes and 13 exact
   quest task ids, with mission-prefix links such as `e8m2_q#10` to `e8m2`;
   hash meaning, quest order, and task execution remain future work.
+- `GPUISystemConfig/damage_text`: queryable UI combat-text style rows,
+  animation refs, UI node names, and filtered `ui_*` resource refs; numeric
+  placeholders, text samples, prefab hierarchy, and runtime rendering behavior
+  remain future work.
 - `LevelScriptTemplateData` and other partially previewed families have verified
   top-level ids/counts and meaningful previews.
 
@@ -527,6 +534,16 @@ definition edges, 26 task-ref source-file definition edges, 13 group-to-task
 edges, and 13 mission-prefix links across `e5m1`, `e6m1`, `e6m4`, `e8m2`,
 `sm2l1m1`, and `sm2l1m3`. It preserves hash/field payload evidence without
 inferring quest order or bamboo-raft gameplay mechanics.
+
+2026-07-01 source graph GPUISystemConfig damage_text progress: a fast CN
+rebuild to `tmp/source_graph_damage_text.sqlite` verified exact UI combat-text
+row evidence from `Json/GPUISystemConfig/damage_text.json`. The pass adds 20
+`damage_text_style` row nodes, 10 `damage_text_animation` nodes, 58
+`damage_text_node_name` nodes, 8 filtered `damage_text_ui_resource` nodes, 40
+row source-file definition edges, 22 animation refs, 143 node-name refs, and 23
+`ui_*` resource refs. Numeric placeholders and non-`ui_*` strings remain
+payload-only evidence; the graph does not infer UI prefab hierarchy or runtime
+rendering behavior.
 
 Useful support-table checks include:
 
