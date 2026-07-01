@@ -2449,6 +2449,7 @@ def read_buff_timeline_first_union_tag(
 
 
 BUFF_CONVERT_TO_TARGET_CONTEXT_ACTION_TAG = 0x007e
+BUFF_CREATE_BUFF_ACTION_TAG = 0x0082
 BUFF_MODIFY_DYNAMIC_BLACKBOARD_ACTION_TAG = 0x00d1
 BUFF_DEBUG_PRINT_ACTION_TAG = 0x008b
 BUFF_EFFECT_ACTION_TAG = 0x0091
@@ -2462,6 +2463,9 @@ BUFF_TARGET_SETTINGS_STRING_SLOT_OFFSET = 59
 BUFF_TARGET_SETTINGS_STRING_SLOT_MAX_BYTES = 128
 BUFF_CONVERT_TO_TARGET_CONTEXT_TARGET_SETTINGS_BYTES = 67
 BUFF_EFFECT_ACTION_CFG_MIN_BYTES = 256
+BUFF_CREATE_BUFF_ICON_DURATION_SOURCE_BYTES = 9
+BUFF_CREATE_BUFF_INPUT_TAIL_BYTES = 5
+BUFF_CREATE_BUFF_MAX_BUFF_IDS = 16
 BUFF_MODIFY_DYNAMIC_BLACKBOARD_OPERATION_NAMES = {
     0: "Assign",
     1: "Add",
@@ -2498,6 +2502,32 @@ def read_buff_memorypack_utf8_string_strict(
     if length == MEMORYPACK_NULL_COUNT:
         return None, offset
     if length > max_length or offset + length > len(data):
+        raise ValueError(f"{field_name}:invalid-length={length}")
+    raw = data[offset:offset + length]
+    try:
+        value = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"{field_name}:invalid-utf8") from exc
+    if any(ord(ch) < 32 for ch in value):
+        raise ValueError(f"{field_name}:control-char")
+    return value, offset + length
+
+
+def read_buff_memorypack_utf8_string_strict_bounded(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+    *,
+    max_length: int = 512,
+) -> tuple[str | None, int]:
+    if offset + 4 > limit:
+        raise ValueError(f"{field_name}:truncated-length")
+    length = struct.unpack_from("<I", data, offset)[0]
+    offset += 4
+    if length == MEMORYPACK_NULL_COUNT:
+        return None, offset
+    if length > max_length or offset + length > limit:
         raise ValueError(f"{field_name}:invalid-length={length}")
     raw = data[offset:offset + length]
     try:
@@ -2756,6 +2786,220 @@ def read_buff_effect_action_cfg_partial(
         "tailHex": raw[-48:].hex(" "),
         "stringHits": string_hits,
     }, limit
+
+
+def read_buff_create_buff_icon_duration_source_partial(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    end = offset + BUFF_CREATE_BUFF_ICON_DURATION_SOURCE_BYTES
+    if end > limit:
+        raise ValueError(f"{field_name}:truncated")
+    member_count = data[offset]
+    if member_count != 2:
+        raise ValueError(f"{field_name}:member-count={member_count}")
+    word0 = struct.unpack_from("<I", data, offset + 1)[0]
+    word1 = struct.unpack_from("<I", data, offset + 5)[0]
+    raw = data[start:end]
+    return {
+        "status": "partial",
+        "semanticStatus": "partial-buff-icon-duration-source-setting-opaque",
+        "offset": format_offset(start),
+        "bytes": len(raw),
+        "memberCount": member_count,
+        "rawU32": [word0, word1],
+        "rawHex": raw.hex(" "),
+    }, end
+
+
+def read_buff_create_buff_input_partial(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    if offset + 10 > limit:
+        raise ValueError(f"{field_name}:truncated-prefix")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 5:
+        raise ValueError(f"{field_name}:member-count={member_count}")
+    flag_candidate, offset = read_buff_bool_field(data, offset, f"{field_name}.flagCandidate")
+    reserved_u32, offset = read_buff_u32_field(data, offset, f"{field_name}.reservedU32")
+    if reserved_u32 != 0:
+        raise ValueError(f"{field_name}.reservedU32={reserved_u32}")
+    buff_id, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data,
+        offset,
+        limit,
+        f"{field_name}.buffId",
+        max_length=256,
+    )
+    if not buff_id or not buff_id.startswith("buff_"):
+        raise ValueError(f"{field_name}.buffId:unexpected={buff_id}")
+    tail_end = offset + BUFF_CREATE_BUFF_INPUT_TAIL_BYTES
+    if tail_end > limit:
+        raise ValueError(f"{field_name}:truncated-tail")
+    tail = data[offset:tail_end]
+    if tail != b"\x00" * BUFF_CREATE_BUFF_INPUT_TAIL_BYTES:
+        raise ValueError(f"{field_name}:tail={tail.hex(' ')}")
+    offset = tail_end
+    return {
+        "status": "partial",
+        "semanticStatus": "partial-create-buff-input-fields-opaque",
+        "offset": format_offset(start),
+        "bytes": offset - start,
+        "memberCount": member_count,
+        "flagCandidate": flag_candidate,
+        "reservedU32": reserved_u32,
+        "buffId": buff_id,
+        "tailRaw": tail.hex(" "),
+    }, offset
+
+
+def read_buff_create_buff_list_partial(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    count, offset = read_buff_u32_field(data, offset, f"{field_name}.count")
+    if count <= 0 or count > BUFF_CREATE_BUFF_MAX_BUFF_IDS:
+        raise ValueError(f"{field_name}.count={count}")
+    items: list[dict[str, Any]] = []
+    for index in range(count):
+        item, offset = read_buff_create_buff_input_partial(
+            data,
+            offset,
+            limit,
+            f"{field_name}[{index}]",
+        )
+        items.append(item)
+    return {
+        "status": "partial",
+        "semanticStatus": "partial-create-buff-input-list-fields-opaque",
+        "offset": format_offset(start),
+        "bytes": offset - start,
+        "count": count,
+        "items": items,
+    }, offset
+
+
+def decode_buff_create_buff_action(
+    data: bytes,
+    item_start: int,
+    item_end: int,
+    tag_width: int,
+    member_count: int,
+) -> dict[str, Any]:
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, item_end)
+    if tag != BUFF_CREATE_BUFF_ACTION_TAG or actual_tag_width != tag_width:
+        raise ValueError("createBuff:tag-mismatch")
+    if tag_width != 1:
+        raise ValueError(f"createBuff:tag-width={tag_width}")
+    if member_count != 17:
+        raise ValueError(f"createBuff:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_exact(
+        data,
+        offset,
+        "createBuff.prefix",
+    )
+    as_child_buff, offset = read_buff_bool_field(data, offset, "createBuff.asChildBuff")
+    auto_finish_by_action, offset = read_buff_bool_field(data, offset, "createBuff.autoFinishByAction")
+    buff_icon_duration_source, offset = read_buff_create_buff_icon_duration_source_partial(
+        data,
+        offset,
+        item_end,
+        "createBuff.buffIconDurationSource",
+    )
+    buffs, offset = read_buff_create_buff_list_partial(
+        data,
+        offset,
+        item_end,
+        "createBuff.buffs",
+    )
+    buff_source_raw, offset = read_buff_u32_field(data, offset, "createBuff.buffSourceRaw")
+    if buff_source_raw > 1_000_000:
+        raise ValueError(f"createBuff.buffSourceRaw={buff_source_raw}")
+    context_key, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data,
+        offset,
+        item_end,
+        "createBuff.contextKey",
+        max_length=256,
+    )
+    if offset + 10 > item_end:
+        raise ValueError("createBuff.count:truncated")
+    count_candidate, offset = read_buff_blackboard_float_raw_field_exact(
+        data,
+        offset,
+        "createBuff.count",
+    )
+    inherit_skill_id_count, offset = read_buff_u32_field(
+        data,
+        offset,
+        "createBuff.inheritSkillIdList.count",
+    )
+    if inherit_skill_id_count != 0:
+        raise ValueError(f"createBuff.inheritSkillIdList.count={inherit_skill_id_count}")
+    inherit_source_skill_cast_id, offset = read_buff_bool_field(
+        data,
+        offset,
+        "createBuff.inheritSourceSkillCastId",
+    )
+    inherit_source_skill_cast_info, offset = read_buff_bool_field(
+        data,
+        offset,
+        "createBuff.inheritSourceSkillCastInfo",
+    )
+    is_extra, offset = read_buff_bool_field(data, offset, "createBuff.isExtra")
+    override_buff_icon_duration, offset = read_buff_bool_field(
+        data,
+        offset,
+        "createBuff.overrideBuffIconDuration",
+    )
+    target_settings, offset = read_buff_target_settings_partial(
+        data,
+        offset,
+        item_end,
+        "createBuff.targetSettings",
+        allowed_tail_u32s=(0, 1, 2, 4),
+    )
+    if offset != item_end:
+        raise ValueError(f"createBuff:tail-at={format_offset(offset)} end={format_offset(item_end)}")
+    return {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[BUFF_CREATE_BUFF_ACTION_TAG],
+        "decodeStatus": "partial",
+        "semanticStatus": "partial-create-buff-input-tail-and-target-settings-opaque",
+        "schemaSource": (
+            "MemoryPack setter order plus current byte evidence: AbilityActionData prefix, asChildBuff, "
+            "autoFinishByAction, buffIconDurationSource, buffs, buffSource, contextKey, count, "
+            "empty inheritSkillIdList, four boolean tail flags, targetSettings; buff input internals, "
+            "BlackboardDouble/count semantics, and TargetSettings internals remain partial"
+        ),
+        "byteLength": item_end - item_start,
+        "prefix": prefix,
+        "asChildBuff": as_child_buff,
+        "autoFinishByAction": auto_finish_by_action,
+        "buffIconDurationSourcePartial": buff_icon_duration_source,
+        "buffsPartial": buffs,
+        "buffSourceRaw": buff_source_raw,
+        "contextKey": context_key or "",
+        "countCandidate": count_candidate,
+        "inheritSkillIdListCount": inherit_skill_id_count,
+        "inheritSourceSkillCastId": inherit_source_skill_cast_id,
+        "inheritSourceSkillCastInfo": inherit_source_skill_cast_info,
+        "isExtra": is_extra,
+        "overrideBuffIconDuration": override_buff_icon_duration,
+        "targetSettingsEnvelopePartial": target_settings,
+    }
+
 
 def decode_buff_modify_dynamic_blackboard_action(
     data: bytes,
@@ -3413,6 +3657,14 @@ def decode_buff_ability_action_item_exact(
     tag_width: int,
     member_count: int,
 ) -> dict[str, Any] | None:
+    if tag == BUFF_CREATE_BUFF_ACTION_TAG:
+        return decode_buff_create_buff_action(
+            data,
+            item_start,
+            item_end,
+            tag_width,
+            member_count,
+        )
     if tag == BUFF_MODIFY_DYNAMIC_BLACKBOARD_ACTION_TAG:
         return decode_buff_modify_dynamic_blackboard_action(
             data,
@@ -3636,8 +3888,8 @@ def decode_buff_timeline_actions_outer(
                 continue
             if data[payload_end] not in (0, 1) or data[payload_end + 1] not in (0, 1):
                 continue
-            only_main_char = bool(data[payload_end])
-            only_guard = bool(data[payload_end + 1])
+            only_guard = bool(data[payload_end])
+            only_main_char = bool(data[payload_end + 1])
             start_frame_offset = payload_end + 2
             start_frame = struct.unpack_from("<i", data, start_frame_offset)[0]
             if abs(start_frame) > 1_000_000:
@@ -3695,8 +3947,8 @@ def decode_buff_timeline_actions_outer(
                     "firstActionTagRaw": first_tag_raw,
                     "actionDataSplit": action_data_split,
                     "actionDataItems": action_data_items,
-                    "onlyExecuteWhenSourceIsMainChar": only_main_char,
                     "onlyExecuteWhenSourceIsGuard": only_guard,
+                    "onlyExecuteWhenSourceIsMainChar": only_main_char,
                     "stringHits": string_hits,
                 },
                 "forceSyncAnimData": force_sync,
@@ -3753,7 +4005,7 @@ def decode_buff_timeline_actions_outer(
         "timelineActionsBodyStatus": "partial-timelineActions-opaque-actionData",
         "timelineActionsBodyShape": (
             "outer TimelineActionData list decoded as memberCount=4, endFrame, "
-            "SequenceActionData(memberCount=3, opaque union actionData payloads, two bools), "
+            "SequenceActionData(memberCount=3, opaque union actionData payloads, guard/main-char bools), "
             "startFrame, and ForceSyncAnimData(memberCount=4)"
         ),
         "timelineActionsSemanticStatus": "partial-inner-actionData-union-payloads-opaque",

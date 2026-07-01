@@ -2547,3 +2547,113 @@ Validation commands:
 - `python -m py_compile scripts\build_data_index.py`
 - Focused direct `decode_buff_memorypack` scan over both `structured/StreamingAssets/Data/Json/BuffData` and `structured/Persistent/Data/Json/BuffData`.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_effect_modify_validate_20260630`
+
+## 2026-07-01 BuffData CreateBuff Partial Decoder and SequenceActionData Bool Order
+
+Added a fail-closed partial decoder for exposed single-item `Core_CreateBuffAction_Data` timeline payloads and corrected the decoded `SequenceActionData` bool field order from local MemoryPack metadata.
+
+What changed:
+
+- Added `Core_CreateBuffAction_Data` for one-byte union tag `0x0082`, member count `17`.
+- The decoder validates the inherited `AbilityActionData` prefix, two top-level bools, a bounded 9-byte `buffIconDurationSource` envelope, counted `CreateBuffActionInput` buff-id records, `buffSourceRaw`, `contextKey`, a BlackboardFloat-shaped `count` candidate, empty `inheritSkillIdList`, four tail bools, and a 67-byte `TargetSettings` envelope.
+- Nested semantics remain partial by design: `CreateBuffActionInput` internals, `BuffIconDurationSourceSetting`, exact BlackboardDouble/count semantics, enum meanings, and TargetSettings internals are not promoted to full meaning.
+- Any variant that fails those checks remains opaque/failed locally instead of being silently accepted.
+- Corrected `SequenceActionData` bool assignment. `Beyond_Gameplay_Core_SequenceActionDataForMemoryPack` setter order is `actionData`, `onlyExecuteWhenSourceIsGuard`, then `onlyExecuteWhenSourceIsMainChar`; the parser now labels the two post-actionData bool bytes in that order.
+
+Focused validation over current exported BuffData roots:
+
+| Root | BuffData files | Timeline records | Emitted single-item summaries | Exact item decodes | Partial item decodes | Opaque item summaries | Typed decoder failures |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `structured/StreamingAssets` | 2,291 | 338 | 263 | 11 | 141 | 111 | 0 |
+| `structured/Persistent` | 2,325 | 338 | 263 | 11 | 141 | 111 | 0 |
+
+Action item decode-status distribution in both roots:
+
+| Decode status | Count |
+| --- | ---: |
+| `partial` | 141 |
+| `opaque` | 111 |
+| `exact` | 11 |
+
+Decoded action item type distribution in both roots:
+
+| Action type | Count | Status |
+| --- | ---: | --- |
+| `Core_EffectAction_EffectActionData` | 117 | partial |
+| `Core_PlaySoundAction_PlaySoundActionData` | 10 | partial |
+| `Core_CreateBuffAction_Data` | 7 | partial |
+| `Core_SendBattleSignalToLevel_Data` | 8 | exact |
+| `Core_ConvertToTargetContext_Data` | 4 | partial |
+| `Core_DebugPrintAction_Data` | 2 | partial |
+| `Core_PlayAnimationAction_PlayAnimationActionData` | 2 | exact |
+| `Core_ModifyDynamicBlackboard_Data` | 1 | partial |
+| `Core_PatrolTeleport_Data` | 1 | exact |
+
+Decoded CreateBuff samples in both roots:
+
+| BuffData row | Timeline record | Bytes | Buff ids | `autoFinishByAction` | `count` | TargetSettings bytes/tail |
+| --- | ---: | ---: | --- | --- | ---: | --- |
+| `buff_eny_0046_lbshamman_teleport_main_hdg016_2.json` | 4 | 172 | `buff_race_enemy_full_immune_big_fx` | true | 1.0 | `67 / 4` |
+| `buff_eny_0046_lbshamman_teleport_main_hdg016_back.json` | 6 | 163 | `buff_common_damage_immune` | true | 1.0 | `67 / 4` |
+| `buff_eny_0046_lbshamman_teleport_main_hdg016_back_2.json` | 4 | 163 | `buff_common_damage_immune` | true | 1.0 | `67 / 4` |
+| `buff_eny_0080_reaper_break_delay.json` | 1 | 164 | `buff_eny_0080_reaper_break` | false | 1.0 | `67 / 4` |
+| `buff_eny_0080_reaper_break_left.json` | 14 | 212 | `buff_eny_0080_reaper_onlyleft`, `buff_eny_0080_reaper_onlyright` | false | 1.0 | `67 / 4` |
+| `buff_eny_0080_reaper_break_right.json` | 13 | 212 | `buff_eny_0080_reaper_onlyleft`, `buff_eny_0080_reaper_onlyright` | false | 1.0 | `67 / 4` |
+| `buff_eny_0086_rpsword_passive.json` | 0 | 169 | `buff_eny_0086_rpsword_castskill` | false | 1.0 | `67 / 4` |
+
+SequenceActionData bool evidence after correction:
+
+| Root | `(onlyExecuteWhenSourceIsGuard, onlyExecuteWhenSourceIsMainChar)` | Count |
+| --- | --- | ---: |
+| `structured/StreamingAssets` | `(false, false)` | 337 |
+| `structured/StreamingAssets` | `(false, true)` | 1 |
+| `structured/Persistent` | `(false, false)` | 337 |
+| `structured/Persistent` | `(false, true)` | 1 |
+
+Independent subagent findings used this round:
+
+- Control/target-selection families cannot safely reduce warnings yet. `CompareFloat`, `GetAITransDataAction`, and `CheckBuffStackNumAdvanced` currently appear only as first actions inside multi-action payloads with ambiguous item boundaries; `FindTargetAction` has 15 ambiguous multi-action records out of 25 first-tag records.
+- `IfElseAction` has 22 first-tag records, 19 single-item opaque and 3 ambiguous multi-action records; its fields are action lists plus `alwaysNext`, so it needs safe nested action-list boundaries before promotion.
+- `CreateBuffAction` has 20 physical records across both roots: 14 single-item records and 6 ambiguous multi-item records. The maintained parser now covers the 7 unique single-item records per root; multi-item CreateBuff records remain unresolved.
+- `SelfRotateAction` has 14 physical single-item records across both roots, but `DirectionSettings`/advanced direction/root-motion semantics are not proven enough for a named field decoder. A later shape-only partial decoder may be justified.
+
+Full WebUI Json validation after this change:
+
+| Metric | Count |
+| --- | ---: |
+| Json files indexed | 81,735 |
+| Entries with unresolved decoder issue fields (`di`) | 143 |
+| `Json/BuffData` unresolved issue rows | 143 |
+| `Json/LevelScriptData` unresolved issue rows | 0 |
+
+Current strict issue field distribution remains row-level unchanged because multi-item timeline actions and other nested BuffData sections remain partial:
+
+| Status | Count |
+| --- | ---: |
+| `decoded.postIdPrefix.timelineActionsBodyStatus=partial-timelineActions-opaque-actionData` | 79 |
+| `decoded.postIdPrefix.timelineActionsSemanticStatus=partial-inner-actionData-union-payloads-opaque` | 79 |
+| `decoded.postIdPrefix.stackingSettings.stackEffectsBodyStatus=opaque-effectActions` | 47 |
+| `decoded.postIdPrefix.stackingSettings.effectActionsSemanticStatus=partial-effectActions-unproven-field-order` | 47 |
+| `decoded.postIdPrefix.poiseModifierBodyStatus=opaque-poiseModifier` | 9 |
+| `decoded.postIdPrefix.poiseModifierSemanticStatus=partial-poiseModifier-opaque-processors` | 9 |
+| `decoded.postIdPrefix.shieldConfigsBodyStatus=opaque-shieldConfigs` | 4 |
+| `decoded.postIdPrefix.shieldConfigsSemanticStatus=partial-shieldConfigs-opaque-nested-fields` | 4 |
+| `decoded.postIdPrefix.igniteEventActionBodyStatus=opaque-igniteEventAction` | 4 |
+| `decoded.postIdPrefix.igniteEventActionSemanticStatus=partial-igniteEventAction-opaque-actionData` | 4 |
+| `decoded.postIdPrefix.igniteEventActionBodyStatus=opaque-igniteEventAction-nestedBlocks` | 4 |
+| `decoded.postIdPrefix.igniteEventActionSemanticStatus=partial-igniteEventAction-nestedBlocks-opaque-actionData` | 4 |
+| `decoded.postIdPrefix.poiseModifierBodyTailPreview.timelineActionsBodyStatus=partial-timelineActions-opaque-actionData` | 3 |
+
+Interpretation:
+
+- Single-item typed coverage improved from 145 decoded items to 152 decoded items per root.
+- Opaque single-item summaries dropped from 118 to 111 per root.
+- This does not suppress warnings. The remaining 143 warning rows stay visible because multi-action boundaries, stack effect actions, poise/shield/ignite payloads, SelfRotate nested fields, and several other action payloads remain partial or opaque.
+- Next useful targets are either a conservative `SelfRotateAction` shape-only decoder or deeper multi-action boundary recovery through `IfElse`/action-list structures.
+
+Validation commands:
+
+- `python -m py_compile scripts\build_data_index.py`
+- Focused direct `decode_buff_memorypack` scan over both `structured/StreamingAssets/Data/Json/BuffData` and `structured/Persistent/Data/Json/BuffData`.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_create_validate_20260701`
+- Aggregated `di` fields from `tmp\game_data_index_buff_create_validate_20260701`.
