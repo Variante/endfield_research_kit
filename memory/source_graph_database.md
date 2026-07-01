@@ -514,6 +514,21 @@ standalone area evidence instead of inferred mission links. Example exact query:
 python tools\endfield_source_graph.py query c13m2_001 --kind mission_area
 ```
 
+2026-07-01 subgame instance decoded-config progress: source graph ingestion now
+promotes exact `SubGameInstanceDataTable` rows from the WebUI Data index. A fast
+CN rebuild to `tmp/source_graph_subgame.sqlite` verified 1,032,791 total nodes,
+1,716,624 edges, and 1,438,147 aliases. New coverage includes 2
+`subgame_instance_config` nodes, 4 unique `subgame_instance` nodes collapsed
+across Persistent and StreamingAssets duplicate rows, 1 `subgame_group` node, 8
+`subgame_config_has_instance` edges, 4 `subgame_instance_default_group` edges,
+and 12 explicit text edges split across failure, quit-button, and success text
+ids. Each subgame instance preserves its source id, short hash, prefix bytes,
+default group, three UI text ids, and marker bytes. Example exact query:
+
+```bat
+python tools\endfield_source_graph.py query world_energy_point04 --kind subgame_instance
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,

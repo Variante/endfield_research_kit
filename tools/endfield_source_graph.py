@@ -272,6 +272,7 @@ DIALOG_SUPPORT_TABLES = (
 DECODED_CONFIG_GROUP_FILES = (
     "Json_GameplayConfig.json",
     "Json_GameplayConfigMissionAreaTable.json",
+    "Json_GameplayConfigSubGameInstanceDataTable.json",
     "Json_NonGeneratedConfigs.json",
     "Json_Interactive.json",
     "Json_GameplayConfigWorldEntityRegistry.json",
@@ -283,6 +284,7 @@ DECODED_CONFIG_TARGET_TYPES = {
     "InteractiveTemplateData",
     "ModelRadiusTable",
     "ModelTable",
+    "SubGameInstanceDataTable",
     "TeleportValidationDataTable",
 }
 MEMORYPACK_NULL_COUNT = 0xFFFFFFFF
@@ -645,6 +647,70 @@ def extract_teleport_validation_rows(data: bytes) -> dict[str, Any] | None:
             })
         if offset != len(data):
             raise ValueError("TeleportValidationDataTable:trailing-bytes")
+        return {"rowCount": row_count, "rows": rows}
+    except (ValueError, struct.error):
+        return None
+
+
+def extract_subgame_instance_rows(data: bytes) -> dict[str, Any] | None:
+    if not data or data[0] != 1:
+        return None
+
+    def read_fixed(offset: int, length: int, field_name: str) -> tuple[bytes, int]:
+        if offset + length > len(data):
+            raise ValueError(f"{field_name}:truncated")
+        return data[offset:offset + length], offset + length
+
+    try:
+        offset = 1
+        row_count, offset = mp_read_u32(data, offset, "SubGameInstanceDataTable", max_count=1_000)
+        rows: list[dict[str, Any]] = []
+        for index in range(row_count):
+            instance_id, offset = mp_read_required_string(data, offset, f"SubGameInstanceDataTable[{index}].key", max_length=160)
+            if offset >= len(data):
+                raise ValueError(f"SubGameInstanceDataTable[{index}].memberCount:truncated")
+            member_count = data[offset]
+            offset += 1
+            if member_count != 6:
+                raise ValueError(f"SubGameInstanceDataTable[{index}].memberCount={member_count}")
+            prefix_bytes, offset = read_fixed(offset, 28, f"SubGameInstanceDataTable[{index}].prefix")
+            failure_text_id, offset = mp_read_required_string(data, offset, f"SubGameInstanceDataTable[{index}].failureTextId", max_length=160)
+            after_failure, offset = read_fixed(offset, 11, f"SubGameInstanceDataTable[{index}].afterFailure")
+            source_id, offset = mp_read_required_string(data, offset, f"SubGameInstanceDataTable[{index}].sourceId", max_length=160)
+            after_source, offset = read_fixed(offset, 10, f"SubGameInstanceDataTable[{index}].afterSource")
+            short_hash, offset = mp_read_required_string(data, offset, f"SubGameInstanceDataTable[{index}].shortHash", max_length=32)
+            if not re.fullmatch(r"[0-9A-Fa-f]{8}", short_hash):
+                raise ValueError(f"SubGameInstanceDataTable[{index}].shortHash:unexpected")
+            after_short_hash, offset = read_fixed(offset, 2, f"SubGameInstanceDataTable[{index}].afterShortHash")
+            default_group, offset = mp_read_required_string(data, offset, f"SubGameInstanceDataTable[{index}].defaultGroup", max_length=160)
+            after_default, offset = read_fixed(offset, 9, f"SubGameInstanceDataTable[{index}].afterDefault")
+            quit_button_text_id, offset = mp_read_required_string(data, offset, f"SubGameInstanceDataTable[{index}].quitButtonTextId", max_length=160)
+            after_quit, offset = read_fixed(offset, 10, f"SubGameInstanceDataTable[{index}].afterQuit")
+            success_text_id, offset = mp_read_required_string(data, offset, f"SubGameInstanceDataTable[{index}].successTextId", max_length=160)
+            tail_bytes, offset = read_fixed(offset, 10, f"SubGameInstanceDataTable[{index}].tail")
+            if source_id != instance_id:
+                raise ValueError(f"SubGameInstanceDataTable[{index}].sourceMismatch")
+            rows.append({
+                "instanceId": instance_id,
+                "prefixU64": struct.unpack_from("<Q", prefix_bytes, 0)[0],
+                "prefixBytes": prefix_bytes.hex(" "),
+                "failureTextId": failure_text_id,
+                "sourceId": source_id,
+                "shortHash": short_hash,
+                "defaultGroup": default_group,
+                "quitButtonTextId": quit_button_text_id,
+                "successTextId": success_text_id,
+                "markerBytes": {
+                    "afterFailure": after_failure.hex(" "),
+                    "afterSource": after_source.hex(" "),
+                    "afterShortHash": after_short_hash.hex(" "),
+                    "afterDefault": after_default.hex(" "),
+                    "afterQuit": after_quit.hex(" "),
+                    "tail": tail_bytes.hex(" "),
+                },
+            })
+        if offset != len(data):
+            raise ValueError("SubGameInstanceDataTable:trailing-bytes")
         return {"rowCount": row_count, "rows": rows}
     except (ValueError, struct.error):
         return None
@@ -1502,6 +1568,8 @@ class SourceGraphBuilder:
             self.add_model_table_config_edges(file_node, entry)
         elif subtype == "ModelRadiusTable":
             self.add_model_radius_config_edges(file_node, entry)
+        elif subtype == "SubGameInstanceDataTable":
+            self.add_subgame_instance_config_edges(file_node, entry)
         elif subtype == "InteractiveTable":
             self.add_interactive_table_config_edges(file_node, entry)
         elif subtype == "InteractiveTemplateData":
@@ -1510,6 +1578,36 @@ class SourceGraphBuilder:
             self.add_world_entity_registry_edges(file_node, entry)
         elif subtype == "TeleportValidationDataTable":
             self.add_teleport_validation_config_edges(file_node, entry)
+
+    def add_subgame_instance_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        config_key = safe_key(entry.get("p"))
+        config_node = self.add_node("subgame_instance_config", config_key, name=Path(config_key).name, source="webui/game_data", path=config_key, data=self.decoded_config_entry_data(entry))
+        self.add_edge(file_node, config_node, "defines_subgame_instance_config", source="webui/game_data")
+        decoded = extract_subgame_instance_rows(self.read_decoded_config_bytes(entry))
+        if not decoded:
+            return
+        self.update_node_details(config_node, data={**self.decoded_config_entry_data(entry), "rowCountParsed": decoded.get("rowCount")})
+        for row in decoded.get("rows") or []:
+            instance_id = safe_key(row.get("instanceId"))
+            if not instance_id:
+                continue
+            instance_node = self.add_node("subgame_instance", instance_id, name=instance_id, source="webui/game_data", data=compact_payload(row, depth=3))
+            self.add_edge(config_node, instance_node, "subgame_config_has_instance", source="webui/game_data", evidence=safe_key(entry.get("dp")), data=compact_payload(row, depth=1))
+            self.add_alias(instance_id, instance_node, kind="subgame_instance_id", source="webui/game_data")
+            self.add_alias(row.get("shortHash"), instance_node, kind="subgame_instance_hash", source="webui/game_data")
+            group_id = safe_key(row.get("defaultGroup"))
+            if group_id:
+                group_node = self.add_node("subgame_group", group_id, name=group_id, source="webui/game_data")
+                self.add_edge(instance_node, group_node, "subgame_instance_default_group", source="webui/game_data", evidence="defaultGroup")
+                self.add_alias(group_id, group_node, kind="subgame_group_id", source="webui/game_data")
+            for field, edge_kind in (
+                ("failureTextId", "subgame_failure_text"),
+                ("quitButtonTextId", "subgame_quit_text"),
+                ("successTextId", "subgame_success_text"),
+            ):
+                text_node = self.add_i18n_text_node(row.get(field), source="SubGameInstanceDataTable")
+                if text_node:
+                    self.add_edge(instance_node, text_node, edge_kind, source="webui/game_data", evidence=field)
 
     def add_mission_area_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         config_key = safe_key(entry.get("p"))
@@ -8786,6 +8884,9 @@ QUERY_KIND_PRIORITY = {
     "teleport_point": 56,
     "mission_area_config": 57,
     "mission_area": 58,
+    "subgame_instance_config": 59,
+    "subgame_instance": 60,
+    "subgame_group": 61,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -9010,6 +9111,9 @@ NODE_ID_PREFIXES = (
     "teleport_point",
     "mission_area_config",
     "mission_area",
+    "subgame_instance_config",
+    "subgame_instance",
+    "subgame_group",
     "mission",
     "map",
     "level",

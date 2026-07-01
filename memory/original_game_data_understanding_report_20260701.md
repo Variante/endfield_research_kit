@@ -326,9 +326,11 @@ unique teleport points, 444 config-to-point edges, and 106 point-to-level links
 across 17 level ids, preserving position, rotation, nullable `mapId`, flag word,
 and integer tails. The exact mission-area pass adds 2 mission-area config nodes,
 73 unique area rows, 146 config-to-area edges, and 37 prefix-backed links to 9
-existing mission nodes. It does not prove runtime formula usage or exported
-model reconstruction; the lean asset-index entity join for these config model
-IDs is still empty.
+existing mission nodes. The exact subgame-instance pass adds 2 config nodes, 4
+unique subgame instances, 1 default group, 8 config-to-instance edges, 4 group
+edges, and 12 failure/quit/success text edges. It does not prove runtime formula
+usage or exported model reconstruction; the lean asset-index entity join for
+these config model IDs is still empty.
 
 Partial but useful current examples include:
 
