@@ -1162,6 +1162,17 @@ only weapon without a renderable entity candidate. The relationship makes
 queries like `used-by wpn_sword_0019_01 --kind asset_entity` surface the
 semantic weapon before lower-level material/model rows.
 
+2026-07-01 model config asset-binding audit:
+`memory/model_config_asset_binding_audit_20260701.md` verifies that decoded
+`ModelTable` rows still do not bind to renderable `asset_entity` groups through
+exact or prefix `modelId`/prefab-stem matching. The current fast graph has 1,201
+`model_config_model` rows and 10,424 renderable asset entities, but 0 exact or
+prefix config-to-renderable matches, 0 `model_config_asset_entity` edges, and 0
+`interactive_template_asset_entity` edges. Several highly used interactive
+postmodels, such as `int_doodad_ore_cluster_iron`, have world/entity consumers
+and prefab paths but no exported renderable owner link yet. The likely next
+step is prefab/component or asset-map evidence, not looser filename matching.
+
 The deeper semantic model is still incomplete:
 
 - Exported LOD model files are now grouped into renderable `asset_entity` nodes,
