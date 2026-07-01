@@ -101,28 +101,35 @@ High-value inputs:
 - selected structured tables under `export_full/structured/StreamingAssets/Table/`
 - optional AnimeStudio asset maps under `export_full/recovered/AnimeStudio-cli/`
 
-Selected structured tables currently include audio, character, dialog summary,
-interactive mission, level/map, mission extra info, scene area, and special
-level-to-map tables.
+The pre-Gameplay item/economy pass currently includes item, item type, item
+showing type, reward, reward-drop, shop group, shop, shop goods, and shop goods
+tag tables. Selected structured tables also include audio, character, dialog
+summary, interactive mission, level/map, mission extra info, scene area,
+special level-to-map, and factory tables.
 
 ## Current Notes
 
-2026-07-01 Gameplay and selected structured-table ingestion adds exact-queryable
-`weapon`, `equipment`, `character`, `enemy`, `enemy_template`,
+2026-07-01 Gameplay, item/economy, and selected structured-table ingestion adds
+exact-queryable `weapon`, `equipment`, `character`, `enemy`, `enemy_template`,
 `enemy_attribute_template`, `enemy_display_type`, `enemy_ability`,
 `enemy_attribute_modifier`, `buff`, `gameplay_skill_group`, `gameplay_skill`,
 `gameplay_talent_group`, `gameplay_talent`, `gameplay_progression`, `item`,
-`factory_recipe`, `factory_item`, `factory_machine`, `factory_craft_group`, and
+`item_type`, `item_showing_type`, `item_obtain_way`, `reward`, `reward_drop`,
+`shop_group`, `shop`, `shop_goods`, `shop_goods_tag`, `factory_recipe`,
+`factory_item`, `factory_machine`, `factory_craft_group`, and
 `factory_craft_showing_type` nodes. A fast CN build with
 `--skip-asset-maps --skip-reference-rows --skip-followups` verified 72 weapon
 nodes, 220 equipment nodes, 30 character nodes, 290 enemy nodes, 78 enemy
 template nodes, 98 enemy attribute-template nodes, 5 enemy display-type nodes,
 134 enemy ability nodes, 70 enemy modifier nodes, 83 buff nodes, 409 skills, 526
-talent nodes, 1,240 progression nodes, 593 item nodes, 392 factory recipes, 485
-factory item descriptors, 38 factory machines, 20 factory craft groups, and 22
-factory craft showing types. The generated WebUI payload deliberately exposes
-610 visible Gameplay entries: 72 weapons, 220 equipment records, 28 visible
-character records, and 290 enemy records. The two hidden
+talent nodes, 1,240 progression nodes, 2,425 item nodes, 93 item type nodes, 11
+item showing-type nodes, 232 item obtain-way nodes, 5,722 reward nodes, 1,252
+reward-drop nodes, 19 shop groups, 28 shops, 687 shop goods, 6 shop goods tags,
+392 factory recipes, 485 factory item descriptors, 38 factory machines, 20
+factory craft groups, and 22 factory craft showing types. The generated WebUI
+payload deliberately exposes 610 visible Gameplay entries: 72 weapons, 220
+equipment records, 28 visible character records, and 290 enemy records. The two
+hidden
 `chr_0002_endminm` / `chr_0003_endminf` Endministrator rows remain as
 `CharacterTable` graph nodes and are folded into `chr_9000_endmin` story wiki
 aliases for WebUI navigation. Example exact queries:
@@ -131,8 +138,27 @@ aliases for WebUI navigation. Example exact queries:
 python tools\endfield_source_graph.py query chr_0017_yvonne --kind character
 python tools\endfield_source_graph.py query wpn_pistol_0001 --kind weapon
 python tools\endfield_source_graph.py query eny_0018_lbtough --kind enemy
+python tools\endfield_source_graph.py query item_gold --kind item
+python tools\endfield_source_graph.py query reward_payshop_wpn_claym_0003 --kind reward
+python tools\endfield_source_graph.py query domainshop_goods_map01_10001 --kind shop_goods
 python tools\endfield_source_graph.py query component_activity_xiranite_cmpt_1 --kind factory_recipe
 ```
+
+2026-07-01 item/economy graph progress: a pre-Gameplay pass now ingests
+`ItemTable`, `ItemTypeTable`, `ItemShowingTypeTable`, `RewardTable`,
+`RewardDropTable`, `ShopGroupTable`, `ShopTable`, `ShopGoodsTable`, and
+`ShopGoodsTagTable`. The fast CN rebuild verified 2,376 `defines_item` edges,
+2,376 `item_has_type` edges, 2,376 `item_has_showing_type` edges, 2,035
+`item_has_obtain_way` edges, 288 `item_outcomes_item` edges, 5,722
+`defines_reward` edges, 16,865 `reward_grants_item` edges, 2,344
+`reward_may_grant_item` edges, 1,252 `defines_reward_drop` edges, 3,319
+`reward_drop_may_drop_item` edges, 19 `defines_shop_group` edges, 28
+`shop_group_has_shop` edges, 28 `defines_shop` edges, 687 `shop_has_goods`
+edges, 687 `defines_shop_goods` edges, 687 `shop_goods_priced_in_item` edges,
+673 `shop_goods_grants_reward` edges, 6 `defines_shop_goods_tag` edges, and 214
+`shop_goods_tagged` edges. Item nodes are created before Gameplay ingestion so
+full `ItemTable` rows own authored item ids, while reward/drop references add
+unresolved gem item ids as item nodes when no `ItemTable` row exists.
 
 2026-07-01 enemy semantic ingestion promotes authored `EnemyTable`,
 `EnemyAttributeTemplateTable`, enemy display, ability, drop, and born-buff data
