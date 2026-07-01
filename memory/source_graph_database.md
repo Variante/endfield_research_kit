@@ -452,22 +452,25 @@ option branch, or option route recovery.
 2026-07-01 decoded Data/Json config graph progress: source graph ingestion now
 promotes exact WebUI Data-index MemoryPack decodes for `ModelTable`,
 `ModelRadiusTable`, `InteractiveTable`, `InteractiveTemplateData`, and
-`GameplayConfigWorldEntityRegistry`. After moving the pass behind Gameplay
-entry ingestion, a fast CN rebuild verified 1,032,449 total nodes, 1,715,003
-edges, and 1,437,796 aliases. New coverage includes 552 `decoded_config_file`
-nodes, 5 decoded config families, 4 `model_config` roots, 1,201 unique
-`model_config_model` rows, 1,125 `model_radius` rows, 2
-`interactive_table_config` roots, 271 `interactive_template` nodes, 923
-`interactive_object` nodes, 542 `interactive_template_data` nodes, 2
-`world_entity_registry` roots, 893 `world_entity` rows, and 231 remaining
-neutral `world_entity_detail` nodes. Edge checks verified 4,397
-`model_config_has_model` edges, 1,125 `model_config_has_radius` edges, 2,250
-`model_radius_config_has_model` edges, 542 core-template path edges, 1,834
-interactive object table edges, 917 interactive object-to-template edges, 418
-interactive template-to-model edges, 26 interactive template audio edges, 1,786
-world entity registry row edges, 66 world entity-to-enemy edges, 66 world
-entity-to-enemy-template edges, 595 world entity-to-interactive detail edges,
-and 231 world entity-to-neutral detail edges. Lean asset-index entity joins for
+`GameplayConfigWorldEntityRegistry`. After moving the pass behind Gameplay,
+NPC, and audio config ingestion, a fast CN rebuild to a temporary DB verified
+1,032,445 total nodes, 1,715,815 edges, and 1,437,796 aliases. New coverage
+includes 552 `decoded_config_file` nodes, 5 decoded config families, 4
+`model_config` roots, 1,201 unique `model_config_model` rows, 1,125
+`model_radius` rows, 2 `interactive_table_config` roots, 271
+`interactive_template` nodes, 922 `interactive_object` nodes, 542
+`interactive_template_data` nodes, 2 `world_entity_registry` roots, 893
+`world_entity` rows, and 228 remaining neutral `world_entity_detail` nodes. Edge
+checks verified 4,397 `model_config_has_model` edges, 1,125
+`model_config_has_radius` edges, 2,250 `model_radius_config_has_model` edges,
+542 core-template path edges, 1,834 interactive object table edges, 917
+interactive object-to-template edges, 418 interactive template-to-model edges,
+26 interactive template audio edges, 1,786 world entity registry row edges, 66
+world entity-to-enemy edges, 66 world entity-to-enemy-template edges, 3 world
+entity-to-NPC edges, 594 world entity-to-interactive detail edges, 267 world
+entity-to-model edges, 267 world entity-to-model-radius edges, 214 world
+entity-to-audio-collection edges, 65 world entity-to-audio-dialog-channel edges,
+and 228 world entity-to-neutral detail edges. Lean asset-index entity joins for
 these model IDs remain 0, so the new model nodes are decoded config evidence,
 not proof of exported model reconstruction. Example exact queries:
 
