@@ -348,8 +348,10 @@ mission-like ids, 683 audio keys, 148 effect keys, 157 buff ids, and 27 template
 refs while preserving action-map/list-count totals. It does not prove runtime
 formula usage, full SpawnerConfig tail semantics, BuffData timeline action
 execution, SkillData target/action execution, LevelScript action-body control
-flow, or exported model/effect/icon reconstruction; the lean asset-index entity
-join for these config model IDs is still empty.
+flow, full exported model/icon reconstruction, or runtime proof for effect asset
+dependencies. A strict suffix-normalized gameplay-effect-to-asset name-match now
+exists for a small slice, but the lean asset-index entity join for config model
+IDs is still empty.
 
 Partial but useful current examples include:
 
@@ -1194,6 +1196,16 @@ sources and 132 renderable entity targets; `wpn_lance_0003` (`寻路者道标`) 
 only weapon without a renderable entity candidate. The relationship makes
 queries like `used-by wpn_sword_0019_01 --kind asset_entity` surface the
 semantic weapon before lower-level material/model rows.
+
+2026-07-01 gameplay-effect asset-name progress: source graph now adds strict
+suffix-normalized name-match edges from `gameplay_effect` keys to exported
+`asset` rows whose stem equals `<effectKey>_p[0-9A-F]{16}`. A fast CN temp graph
+build verified 232 `effect_name_matches_export_base_asset` edges from 223
+effects to 232 concrete asset rows, split across 225 model assets and 7 JSON
+assets. Direct exact effect-to-asset alias matches remain zero, and broader
+prefix matches were rejected because they create false collisions. This improves
+lookup for effect-adjacent exported assets but remains export-filename evidence,
+not runtime dependency proof.
 
 2026-07-01 model config asset-binding audit:
 `memory/model_config_asset_binding_audit_20260701.md` verifies that decoded
