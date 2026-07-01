@@ -278,6 +278,8 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_SkillData.json",
     "Json_SpawnerConfig.json",
     "Json_Interactive.json",
+    "Json_LevelScriptData.json",
+    "Json_LevelScriptTemplateData.json",
     "Json_GameplayConfigWorldEntityRegistry.json",
 )
 DECODED_CONFIG_TARGET_TYPES = {
@@ -286,6 +288,8 @@ DECODED_CONFIG_TARGET_TYPES = {
     "GameplayConfigWorldEntityRegistry",
     "InteractiveTable",
     "InteractiveTemplateData",
+    "LevelScriptData",
+    "LevelScriptTemplateData",
     "ModelRadiusTable",
     "ModelTable",
     "SkillData",
@@ -761,6 +765,71 @@ def mp_read_vec3(data: bytes, offset: int, field_name: str) -> tuple[list[float]
             raise ValueError(f"{field_name}[{axis}]:out-of-range")
         values.append(round(value, 6))
     return values, offset
+
+
+LEVEL_SCRIPT_SAMPLE_INT_RE = re.compile(r"(?P<key>records|uidRecords|actionList|getterList|headerList|root|linked|tail)=(-?\d+)")
+LEVEL_SCRIPT_SAMPLE_VALUE_RE = re.compile(r"(?:^|; )(?P<key>startType|triggerVolumes|actionMap|scriptId|templateId)=([^;]+)")
+
+
+def level_script_level_id_from_entry(entry: dict[str, Any]) -> str:
+    rel = safe_key(entry.get("p"))
+    if not rel:
+        return ""
+    parts = Path(rel).parts
+    if len(parts) >= 2:
+        return safe_key(parts[-2])
+    return ""
+
+
+def parse_level_script_sample(sample: Any) -> dict[str, Any]:
+    text = safe_key(sample)
+    values: dict[str, Any] = {}
+    for match in LEVEL_SCRIPT_SAMPLE_INT_RE.finditer(text):
+        values[match.group("key")] = int(match.group(2))
+    for match in LEVEL_SCRIPT_SAMPLE_VALUE_RE.finditer(text):
+        values[match.group("key")] = match.group(2).strip()
+    return values
+
+
+def decoded_status_lookup(entry: dict[str, Any], prefix: str) -> str:
+    for item in entry.get("ds") or []:
+        text = safe_key(item)
+        if text.startswith(prefix):
+            return text.split("=", 1)[1]
+    return ""
+
+
+def extract_level_script_entry_summary(entry: dict[str, Any]) -> dict[str, Any]:
+    script_id = Path(safe_key(entry.get("p"))).stem
+    sample = parse_level_script_sample(entry.get("t"))
+    return {
+        "scriptId": safe_key(sample.get("scriptId")) or script_id,
+        "levelId": level_script_level_id_from_entry(entry),
+        "actionMapStatus": decoded_status_lookup(entry, "decoded.actionMapStatus=") or safe_key(sample.get("actionMap")),
+        "actionMapRecordCount": sample.get("records"),
+        "uidRecordCount": sample.get("uidRecords"),
+        "actionListCount": sample.get("actionList"),
+        "getterListCount": sample.get("getterList"),
+        "headerListCount": sample.get("headerList"),
+        "rootActionCount": sample.get("root"),
+        "linkedActionCount": sample.get("linked"),
+        "startType": safe_key(sample.get("startType")),
+        "triggerVolumesStatus": decoded_status_lookup(entry, "decoded.triggerVolumesStatus=") or safe_key(sample.get("triggerVolumes")),
+        "triggerVolumesParseStatus": decoded_status_lookup(entry, "decoded.triggerVolumesDetails.parseStatus="),
+        "taskMapStatus": decoded_status_lookup(entry, "decoded.taskMapStatus="),
+        "startShapeListStatus": decoded_status_lookup(entry, "decoded.startShapeListStatus="),
+    }
+
+
+def extract_level_script_template_entry_summary(entry: dict[str, Any]) -> dict[str, Any]:
+    template_id = Path(safe_key(entry.get("p"))).stem
+    sample = parse_level_script_sample(entry.get("t"))
+    return {
+        "templateId": safe_key(sample.get("templateId")) or template_id,
+        "templateGroup": safe_key(entry.get("g")),
+        "actionMapStatus": decoded_status_lookup(entry, "decoded.actionMapStatus=") or safe_key(sample.get("actionMap")),
+        "actionMapRecordCount": sample.get("records"),
+    }
 
 
 def extract_model_table_rows(data: bytes) -> dict[str, Any] | None:
@@ -1986,10 +2055,65 @@ class SourceGraphBuilder:
             self.add_interactive_table_config_edges(file_node, entry)
         elif subtype == "InteractiveTemplateData":
             self.add_interactive_template_data_edges(file_node, entry)
+        elif subtype == "LevelScriptData":
+            self.add_level_script_data_edges(file_node, entry)
+        elif subtype == "LevelScriptTemplateData":
+            self.add_level_script_template_data_edges(file_node, entry)
         elif subtype == "GameplayConfigWorldEntityRegistry":
             self.add_world_entity_registry_edges(file_node, entry)
         elif subtype == "TeleportValidationDataTable":
             self.add_teleport_validation_config_edges(file_node, entry)
+
+    def add_level_script_data_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        summary = extract_level_script_entry_summary(entry)
+        script_id = safe_key(summary.get("scriptId"))
+        if not script_id:
+            return
+        script_node = self.add_node(
+            "level_script",
+            script_id,
+            name=script_id,
+            source="webui/game_data",
+            path=safe_key(entry.get("p")),
+            data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": summary}, depth=3),
+        )
+        self.add_edge(file_node, script_node, "level_script_data_defines_script", source="webui/game_data", evidence=safe_key(entry.get("dp")))
+        self.add_alias(script_id, script_node, kind="level_script_id", source="webui/game_data")
+        self.add_alias(entry.get("dp"), script_node, kind="level_script_config_path", source="webui/game_data")
+        self.add_alias(entry.get("p"), script_node, kind="level_script_data_path", source="webui/game_data")
+        level_id = safe_key(summary.get("levelId"))
+        if level_id:
+            level_node = self.add_level_node(level_id, source="webui/game_data")
+            self.add_edge(level_node, script_node, "level_has_level_script", source="webui/game_data", evidence=level_id, data={"scriptId": script_id})
+            self.add_level_map_edge(level_node, level_id, source="webui/game_data", evidence="level_script_path")
+        start_type = safe_key(summary.get("startType"))
+        if start_type:
+            start_node = self.add_node("level_script_start_type", start_type, name=start_type, source="webui/game_data")
+            self.add_alias(start_type, start_node, kind="level_script_start_type_id", source="webui/game_data")
+            self.add_edge(script_node, start_node, "level_script_has_start_type", source="webui/game_data", evidence="startType")
+
+    def add_level_script_template_data_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        summary = extract_level_script_template_entry_summary(entry)
+        template_id = safe_key(summary.get("templateId"))
+        if not template_id:
+            return
+        template_node = self.add_node(
+            "level_script_template",
+            template_id,
+            name=template_id,
+            source="webui/game_data",
+            path=safe_key(entry.get("p")),
+            data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": summary}, depth=3),
+        )
+        self.add_edge(file_node, template_node, "level_script_data_defines_template", source="webui/game_data", evidence=safe_key(entry.get("dp")))
+        self.add_alias(template_id, template_node, kind="level_script_template_id", source="webui/game_data")
+        self.add_alias(entry.get("dp"), template_node, kind="level_script_template_path", source="webui/game_data")
+        self.add_alias(entry.get("p"), template_node, kind="level_script_template_data_path", source="webui/game_data")
+        group_key = safe_key(summary.get("templateGroup"))
+        if group_key:
+            group_node = self.add_node("level_script_template_group", group_key, name=group_key, source="webui/game_data")
+            self.add_alias(group_key, group_node, kind="level_script_template_group_id", source="webui/game_data")
+            self.add_edge(group_node, template_node, "level_script_template_group_has_template", source="webui/game_data", evidence=group_key)
 
     def add_buff_data_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         decoded = extract_buff_data_summary(entry, self.read_decoded_config_bytes(entry))
@@ -9497,6 +9621,10 @@ QUERY_KIND_PRIORITY = {
     "buff_icon": 67,
     "skill_parameter": 68,
     "skill_icon": 69,
+    "level_script": 70,
+    "level_script_template": 71,
+    "level_script_template_group": 72,
+    "level_script_start_type": 73,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -9732,6 +9860,10 @@ NODE_ID_PREFIXES = (
     "buff_icon",
     "skill_parameter",
     "skill_icon",
+    "level_script",
+    "level_script_template",
+    "level_script_template_group",
+    "level_script_start_type",
     "mission",
     "map",
     "level",

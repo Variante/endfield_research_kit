@@ -340,10 +340,14 @@ length-prefixed string evidence. The bounded `SkillData` pass adds 4,191
 file-to-skill definition edges collapsed to 2,108 unique skill ids, 833 linked
 buff ids, 311 gameplay tag strings, 3,323 parameter strings, 3,900 effect keys,
 3,156 audio keys, and 43 icon ids from the same guarded string evidence plus
-post-tail status samples. It does not prove runtime formula usage, full
+post-tail status samples. The LevelScript inventory pass adds 7,414 file-to-script
+definition edges collapsed to 3,756 unique level scripts, 148 level-folder links,
+35 level-script templates, 20 template groups, and 3 start types while preserving
+action-map/list-count totals. It does not prove runtime formula usage, full
 SpawnerConfig tail semantics, BuffData timeline action execution, SkillData
-target/action execution, or exported model/effect/icon reconstruction; the lean
-asset-index entity join for these config model IDs is still empty.
+target/action execution, LevelScript action-body control flow, or exported
+model/effect/icon reconstruction; the lean asset-index entity join for these
+config model IDs is still empty.
 
 Partial but useful current examples include:
 
@@ -355,9 +359,10 @@ Partial but useful current examples include:
   for visible tags, parameters, linked buffs, audio, effects, and icons; strict
   id rows, switch-tail status, target/buff settings, and UI range hints remain
   evidence, not runtime action or targeting proof.
-- `LevelScriptData`: all 3,658 files validate through a compact action-map
-  helper, exposing script ids, action-map shape, UID records, list counts, and
-  source hints while leaving full action payload semantics bounded.
+- `LevelScriptData`: queryable script/template inventory across 7,414 files and
+  3,756 unique script ids, including level ownership, start types, action-map
+  counts, UID counts, and list-count summaries; per-action bodies and control
+  flow remain bounded future work.
 - `Interactive/InteractiveData`: 25-member template roots and many component
   bodies parse far enough to expose names, component families, property maps,
   audio rows, guide geometry, trigger observers, hittable data, and interactive

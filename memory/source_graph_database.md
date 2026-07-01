@@ -601,6 +601,31 @@ python tools\endfield_source_graph.py query P_actor_ikut_attack_01_start --kind 
 python tools\endfield_source_graph.py query icon_round_chr_0007_ikut --kind skill_icon
 ```
 
+2026-07-01 LevelScript inventory graph progress: source graph ingestion now
+promotes bounded `LevelScriptData` and `LevelScriptTemplateData` inventory
+evidence from the WebUI Data index. A fast CN rebuild to
+`tmp/source_graph_levelscript.sqlite` verified 1,089,315 total nodes, 1,871,231
+edges, and 1,517,337 aliases. New coverage includes 3,756 `level_script` nodes
+collapsed across 7,414 decoded script files, 35 `level_script_template` nodes
+collapsed across 70 template files, 20 template groups, and 3 start-type nodes.
+Edge checks verified 7,414 `level_script_data_defines_script` edges, 3,756
+`level_has_level_script` edges across 148 level folders, 3,756
+`level_script_has_start_type` edges, 70 template definition edges, and 35
+template-group edges. Metadata totals preserved on script nodes include 84,326
+action-map records, 129,065 UID records, 84,326 action-list entries, 17,410
+getter-list entries, 21,917 header-list entries, 42,202 root action entries, and
+42,124 linked action entries. Template metadata preserves 1,751 action-map
+records. This pass makes script ids, level ownership, template ids, start types,
+and action-map/list counts queryable; it intentionally does not emit per-action
+nodes, action-body control-flow edges, target semantics, or formula behavior.
+Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query 9900010001 --kind level_script
+python tools\endfield_source_graph.py query map02_lv002 --kind level
+python tools\endfield_source_graph.py query LST_EnergyPoint_Small_Graph --kind level_script_template
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
