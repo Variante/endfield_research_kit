@@ -930,6 +930,34 @@ python tools\endfield_source_graph.py query Chinese --kind lipsync_language
 python tools\endfield_source_graph.py query au_dlg_c13m1_1_001 --kind audio
 ```
 
+2026-07-01 MissionRuntimeAsset graph progress: source graph ingestion now
+promotes bounded mission runtime JSON semantics from `Json_MissionRuntimeAsset.json`.
+A fast CN rebuild to `tmp/source_graph_mission_runtime.sqlite` verified
+1,494,351 total nodes, 2,615,206 edges, and 2,013,397 aliases. New coverage
+includes 884 `mission_runtime_asset` nodes, 1,756 source-file definition edges
+split as Persistent 884 and StreamingAssets 872, 884 mission links, 813 level
+links, 494 reward links, 331 mission-name text links, 324 mission-description
+text links, 3,984 mission quest links, 3,984 mission-runtime quest-to-mission
+links, 3,334 previous-quest dependency edges, 3,155 objective text links, 55
+condition-type nodes with 3,964 quest condition edges, 7 tracking-type nodes
+with 3,167 tracking edges, 2,755 tracking scene/level links, 1,134 mission-area
+tracking links, 6 action-type nodes with 495 action edges, 345 action narrative
+refs, and 579 quest narrative refs. Top condition types are
+`GameConditionServerPlaceHolder`, `ReachDestination`, `CheckTalkOptionFinish`,
+and `CombineCondition`; top tracking types are `MissionAreaTrackingInfo`,
+`NpcProxyTrackingInfo`, `PosTrackingInfo`, and `EntityTrackingInfo`; action
+refs are mostly `PlayRadio`. This pass models static mission asset/quest DAG
+and authored tracking evidence; it does not prove observed runtime chronology,
+condition evaluation, action execution, or exact player-visible mission order.
+Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query e8m2:runtime --kind mission_runtime_asset
+python tools\endfield_source_graph.py query e8m2_q#10 --kind quest_task
+python tools\endfield_source_graph.py query ReachDestination --kind mission_runtime_condition_type
+python tools\endfield_source_graph.py query MissionAreaTrackingInfo --kind mission_runtime_tracking_type
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
