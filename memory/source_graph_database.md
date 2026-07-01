@@ -449,6 +449,34 @@ emits the `audio:0` sentinel as an audio node or edge target. These nodes are
 supporting source-table evidence; they do not replace generated line order,
 option branch, or option route recovery.
 
+2026-07-01 decoded Data/Json config graph progress: source graph ingestion now
+promotes exact WebUI Data-index MemoryPack decodes for `ModelTable`,
+`ModelRadiusTable`, `InteractiveTable`, `InteractiveTemplateData`, and
+`GameplayConfigWorldEntityRegistry`. A fast CN rebuild verified 1,032,461 total
+nodes, 1,714,937 edges, and 1,437,796 aliases. New coverage includes 552
+`decoded_config_file` nodes, 5 decoded config families, 4 `model_config` roots,
+1,201 unique `model_config_model` rows, 1,125 `model_radius` rows, 2
+`interactive_table_config` roots, 271 `interactive_template` nodes, 923
+`interactive_object` nodes, 542 `interactive_template_data` nodes, 2
+`world_entity_registry` roots, 893 `world_entity` rows, and 243 neutral
+`world_entity_detail` nodes. Edge checks verified 4,397 `model_config_has_model`
+edges, 1,125 `model_config_has_radius` edges, 2,250
+`model_radius_config_has_model` edges, 542 core-template path edges, 1,834
+interactive object table edges, 917 interactive object-to-template edges, 418
+interactive template-to-model edges, 26 interactive template audio edges, 1,786
+world entity registry row edges, 595 world entity-to-interactive detail edges,
+and 297 world entity-to-neutral detail edges. Lean asset-index entity joins for
+these model IDs remain 0, so the new model nodes are decoded config evidence,
+not proof of exported model reconstruction. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query abilityentity_0007_mimicw_death_postmodel --kind model_config_model
+python tools\endfield_source_graph.py query abilityentity_0007_mimicw_death_postmodel --kind model_radius
+python tools\endfield_source_graph.py query gantry_terminal1 --kind interactive_object
+python tools\endfield_source_graph.py query int_001_comm_terminal --kind interactive_template_data
+python tools\endfield_source_graph.py query 2800000160 --kind world_entity
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,

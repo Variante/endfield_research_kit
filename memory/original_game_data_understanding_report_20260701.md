@@ -310,6 +310,17 @@ Strong or exact current examples include:
 - Several NavMesh, teleport, mission-area, matrix, bamboo-raft, damage-text,
   and small gameplay config roots that consume exactly.
 
+2026-07-01 decoded config graph progress: the source graph now promotes these
+exact WebUI Data-index decodes into queryable evidence nodes. The fast CN graph
+contains 1,201 unique `model_config_model` rows, 1,125 `model_radius` rows, 271
+interactive templates, 923 interactive objects, 542 interactive template-data
+nodes, and 893 world entities from the exact MemoryPack families above. This
+makes questions such as "which radius row belongs to this model id?", "which
+interactive object aliases this template?", and "which world entity uses this
+interactive detail?" answerable from SQLite. It does not prove runtime formula
+usage or exported model reconstruction; the lean asset-index entity join for
+these config model IDs is still empty.
+
 Partial but useful current examples include:
 
 - `BuffData`: top-level schema, id verification, stacking settings for large
@@ -1379,6 +1390,12 @@ Success metric:
 
 - More binary config families move from "identified" to "exactly consumed" or
   "bounded partial with named fields", with no silent guessing.
+
+2026-07-01 progress: exact `ModelTable`, `ModelRadiusTable`,
+`InteractiveTable`, `InteractiveTemplateData`, and
+`GameplayConfigWorldEntityRegistry` decodes are now first-class source graph
+nodes and edges, backed by the current WebUI Data index plus bounded row parsers
+for the verified MemoryPack shapes.
 
 ### 4c. Rebuild And Rank Current MonoBehaviour Gaps
 
