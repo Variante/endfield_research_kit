@@ -231,6 +231,22 @@ NPC_VOICE_BARK_TABLES = (
     "AIBark.json",
     "AIBarkTableConst.json",
 )
+NARRATIVE_AUDIO_TABLES = (
+    "SNSChatTable.json",
+    "SNSDialogTopicTable.json",
+    "SNSDialogOptionTable.json",
+    "SNSDialogTable.json",
+    "SNSConst.json",
+    "RadioTable.json",
+    "AudioRadioContinueTable.json",
+    "RemoteCommonTable.json",
+    "AudioCueTable.json",
+    "AudioVoiceExtraData.json",
+    "EmotionVoiceConfig.json",
+    "VoiceIdConflictTable.json",
+    "AudioDialogCustomEventTable.json",
+    "AudioDialogConfigs.json",
+)
 ACTIVITY_ACHIEVEMENT_TABLES = (
     "SystemJumpTable.json",
     "ActivityTagTable.json",
@@ -680,6 +696,8 @@ class SourceGraphBuilder:
             self.commit_step("structuredTables")
             self.ingest_npc_voice_bark_semantics()
             self.commit_step("npcVoiceBark")
+            self.ingest_narrative_audio_semantics()
+            self.commit_step("narrativeAudio")
             if self.include_reference_rows:
                 self.ingest_reference_tables()
                 self.commit_step("reference")
@@ -5470,6 +5488,369 @@ class SourceGraphBuilder:
         elif table == "AIBarkTableConst":
             self.add_bark_table_const_edges(table, row_key, row, row_node)
 
+    def add_semantic_node(
+        self,
+        kind: str,
+        key: Any,
+        *,
+        name: Any = None,
+        source: str = "",
+        data: Any = None,
+        alias_kind: str | None = None,
+    ) -> str:
+        node_key = safe_key(key)
+        if not node_key:
+            return ""
+        node_name = table_display_text(name) or node_key
+        node = self.add_node(kind, node_key, name=node_name, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=node_name, source=source, data=data)
+        self.add_alias(node_key, node, kind=alias_kind or f"{kind}_id", source=source)
+        if node_name != node_key:
+            self.add_alias(node_name, node, kind=f"{kind}_name", source=source)
+        return node
+
+    def ingest_narrative_audio_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_narrative_audio_semantics", path=slash(table_root))
+        for table_name in NARRATIVE_AUDIO_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if payload is None:
+                continue
+            table_key = Path(table_name).stem
+            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/narrative_audio")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            if not isinstance(payload, dict):
+                continue
+            for row_key, row in payload.items():
+                row_node = self.add_node(
+                    "table_row",
+                    f"{table_key}:{row_key}",
+                    name=str(row_key),
+                    source=table_key,
+                    data=compact_payload(row, depth=2),
+                )
+                self.add_edge(table_node, row_node, "has_row", source="structured/narrative_audio")
+                self.add_narrative_audio_row_edges(table_key, row_key, row, row_node)
+
+    def add_story_target_edge(self, owner_node: str, story_id: Any, *, edge_kind: str, source: str, evidence: str) -> None:
+        story_key = safe_key(story_id)
+        if story_key and self.node_exists("story", story_key):
+            self.add_edge(owner_node, self.node_id("story", story_key), edge_kind, source=source, evidence=evidence)
+
+    def add_line_target_edge(self, owner_node: str, line_id: Any, *, edge_kind: str, source: str, evidence: str) -> None:
+        line_key = safe_key(line_id)
+        if line_key and self.node_exists("line", line_key):
+            self.add_edge(owner_node, self.node_id("line", line_key), edge_kind, source=source, evidence=evidence)
+
+    def add_audio_target_edge(self, owner_node: str, audio_id: Any, *, edge_kind: str, source: str, evidence: str) -> None:
+        audio_key = safe_key(audio_id)
+        if not audio_key:
+            return
+        audio_node = self.add_node("audio", audio_key, name=audio_key, source=source)
+        self.add_edge(owner_node, audio_node, edge_kind, source=source, evidence=evidence)
+
+    def add_actor_or_character_edges(self, owner_node: str, actor_id: Any, *, actor_edge: str, character_edge: str, source: str, evidence: str) -> None:
+        actor_key = safe_key(actor_id)
+        if not actor_key:
+            return
+        if self.node_exists("actor", actor_key):
+            self.add_edge(owner_node, self.node_id("actor", actor_key), actor_edge, source=source, evidence=evidence)
+        if self.node_exists("character", actor_key):
+            self.add_edge(owner_node, self.node_id("character", actor_key), character_edge, source=source, evidence=evidence)
+
+    def add_sns_chat_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        chat_node = self.add_semantic_node(
+            "sns_chat",
+            row.get("chatId") or row_key,
+            name=row.get("name"),
+            source=table,
+            data={"chatType": row.get("chatType"), "tagType": row.get("tagType"), "owner": row.get("owner"), "memberRawNum": row.get("memberRawNum"), "isSettlementChannel": row.get("isSettlementChannel"), "icon": row.get("icon"), "listIcon": row.get("listIcon")},
+        )
+        if not chat_node:
+            return
+        self.add_edge(row_node, chat_node, "defines_sns_chat", source=table)
+        for alias in (row.get("icon"), row.get("listIcon")):
+            self.add_alias(alias, chat_node, kind="asset_stem", source=table)
+        self.add_actor_or_character_edges(chat_node, row.get("owner"), actor_edge="sns_chat_owner_actor", character_edge="sns_chat_owner_character", source=table, evidence="owner")
+        self.add_i18n_text_edges(chat_node, row, source=table)
+
+    def add_sns_topic_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        topic_node = self.add_semantic_node("sns_topic", row.get("topicId") or row_key, name=row.get("topicName"), source=table, data={"sortId": row.get("sortId"), "dialogCount": len(row.get("includeDialogIds") or [])})
+        if not topic_node:
+            return
+        self.add_edge(row_node, topic_node, "defines_sns_topic", source=table)
+        for index, dialog_id in enumerate(row.get("includeDialogIds") or []):
+            dialog_node = self.add_semantic_node("sns_dialog", dialog_id, source=table)
+            if dialog_node:
+                self.add_edge(topic_node, dialog_node, "sns_topic_includes_dialog", source=table, evidence=f"includeDialogIds[{index}]")
+                self.add_story_target_edge(dialog_node, dialog_id, edge_kind="sns_dialog_targets_story", source=table, evidence="includeDialogIds")
+        self.add_i18n_text_edges(topic_node, row, source=table)
+
+    def add_sns_option_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        option_node = self.add_semantic_node("sns_option", row.get("optionId") or row_key, name=row.get("optionDesc"), source=table, data={"optionNextContentId": row.get("optionNextContentId"), "optionNPCCount": row.get("optionNPCCount"), "optionResPath": row.get("optionResPath")})
+        if not option_node:
+            return
+        self.add_edge(row_node, option_node, "defines_sns_option", source=table)
+        for index, npc_id in enumerate(row.get("optionNPCIds") or []):
+            self.add_actor_or_character_edges(option_node, npc_id, actor_edge="sns_option_uses_actor", character_edge="sns_option_uses_character", source=table, evidence=f"optionNPCIds[{index}]")
+        self.add_i18n_text_edges(option_node, row, source=table)
+
+    def add_sns_dialog_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        content_map = row.get("dialogContentData") if isinstance(row.get("dialogContentData"), dict) else {}
+        dialog_node = self.add_semantic_node(
+            "sns_dialog",
+            row.get("dialogId") or row_key,
+            source=table,
+            data={"chatId": row.get("chatId"), "topicId": row.get("topicId"), "dialogType": row.get("dialogType"), "noticeType": row.get("noticeType"), "relatedMissionId": row.get("relatedMissionId"), "skipToFirstOption": row.get("skipToFirstOption"), "contentCount": len(content_map)},
+        )
+        if not dialog_node:
+            return
+        dialog_key = safe_key(row.get("dialogId") or row_key)
+        self.add_edge(row_node, dialog_node, "defines_sns_dialog", source=table)
+        self.add_story_target_edge(dialog_node, dialog_key, edge_kind="sns_dialog_targets_story", source=table, evidence="dialogId")
+        chat_node = self.add_semantic_node("sns_chat", row.get("chatId"), source=table)
+        if chat_node:
+            self.add_edge(dialog_node, chat_node, "sns_dialog_uses_chat", source=table, evidence="chatId")
+        topic_node = self.add_semantic_node("sns_topic", row.get("topicId"), source=table)
+        if topic_node:
+            self.add_edge(dialog_node, topic_node, "sns_dialog_has_topic", source=table, evidence="topicId")
+        mission_node = self.add_mission_ref_node(row.get("relatedMissionId"), source=table)
+        if mission_node:
+            self.add_edge(dialog_node, mission_node, "sns_dialog_related_mission", source=table, evidence="relatedMissionId")
+        content_nodes: dict[str, str] = {}
+        for content_key, content in content_map.items():
+            if not isinstance(content, dict):
+                continue
+            content_id = safe_key(content.get("contentId") if content.get("contentId") is not None else content_key)
+            node_key = f"{dialog_key}:content:{content_id}"
+            content_node = self.add_semantic_node(
+                "sns_content",
+                node_key,
+                name=content.get("content"),
+                source=table,
+                data={"dialogId": dialog_key, "contentId": content_id, "contentType": content.get("contentType"), "speaker": content.get("speaker"), "optionType": content.get("optionType"), "isEnd": content.get("isEnd"), "preContentId": content.get("preContentId"), "nextContentId": content.get("nextContentId"), "optionCount": len(content.get("dialogOptionIds") or []), "linkMissionId": content.get("linkMissionId"), "linkRewardId": content.get("linkRewardId")},
+            )
+            if not content_node:
+                continue
+            content_nodes[content_id] = content_node
+            self.add_edge(dialog_node, content_node, "sns_dialog_has_content", source=table, evidence=content_id)
+            self.add_actor_or_character_edges(content_node, content.get("speaker"), actor_edge="sns_content_speaker_actor", character_edge="sns_content_speaker_character", source=table, evidence="speaker")
+            linked_mission = self.add_mission_ref_node(content.get("linkMissionId"), source=table)
+            if linked_mission:
+                self.add_edge(content_node, linked_mission, "sns_content_links_mission", source=table, evidence="linkMissionId")
+            reward_node = self.add_reward_node(content.get("linkRewardId"), source=table)
+            if reward_node:
+                self.add_edge(content_node, reward_node, "sns_content_links_reward", source=table, evidence="linkRewardId")
+            for index, option_id in enumerate(content.get("dialogOptionIds") or []):
+                option_node = self.add_semantic_node("sns_option", option_id, source=table)
+                if option_node:
+                    self.add_edge(content_node, option_node, "sns_content_has_option", source=table, evidence=f"dialogOptionIds[{index}]")
+            self.add_i18n_text_edges(content_node, content, source=table)
+        for content_key, content in content_map.items():
+            if not isinstance(content, dict):
+                continue
+            content_id = safe_key(content.get("contentId") if content.get("contentId") is not None else content_key)
+            content_node = content_nodes.get(content_id)
+            if not content_node:
+                continue
+            for field, edge_kind in (("preContentId", "sns_content_previous"), ("nextContentId", "sns_content_next")):
+                target_id = safe_key(content.get(field))
+                target_node = content_nodes.get(target_id)
+                if target_node:
+                    self.add_edge(content_node, target_node, edge_kind, source=table, evidence=field)
+
+    def add_sns_const_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        const_node = self.add_semantic_node("sns_const", row_key, source=table, data={"value": compact_payload(row, depth=2)})
+        if not const_node:
+            return
+        self.add_edge(row_node, const_node, "defines_sns_const", source=table)
+        values = row if isinstance(row, list) else [row]
+        for index, value in enumerate(values):
+            dialog_key = safe_key(value)
+            if not dialog_key.startswith(("sns_", "test_sns_")):
+                continue
+            dialog_node = self.add_semantic_node("sns_dialog", dialog_key, source=table)
+            if dialog_node:
+                self.add_edge(const_node, dialog_node, "sns_const_refs_dialog", source=table, evidence=f"value[{index}]")
+                self.add_story_target_edge(dialog_node, dialog_key, edge_kind="sns_dialog_targets_story", source=table, evidence=row_key)
+
+    def add_radio_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        lines = row.get("radioSingleDataList") if isinstance(row.get("radioSingleDataList"), list) else []
+        radio_node = self.add_semantic_node("radio", row_key, source=table, data={"radioType": row.get("radioType"), "priority": row.get("priority"), "continueAfterDialog": row.get("continueAfterDialog"), "continueAfterRadio": row.get("continueAfterRadio"), "lineCount": len(lines)})
+        if not radio_node:
+            return
+        self.add_edge(row_node, radio_node, "defines_radio", source=table)
+        self.add_story_target_edge(radio_node, row_key, edge_kind="radio_targets_story", source=table, evidence="rowKey")
+        for index, item in enumerate(lines):
+            if not isinstance(item, dict):
+                continue
+            line_node = self.add_semantic_node("radio_line", item.get("id") or f"{row_key}:line:{index + 1}", name=item.get("radioText"), source=table, data={"radioId": row_key, "index": item.get("index"), "actorNameId": item.get("actorNameId"), "audioOverride": item.get("audioOverride"), "audioEffect": item.get("audioEffect"), "emotionType": item.get("emotionType"), "is3D": item.get("is3D"), "iconSuffix": item.get("iconSuffix")})
+            if not line_node:
+                continue
+            self.add_edge(radio_node, line_node, "radio_has_line", source=table, evidence=f"radioSingleDataList[{index}]")
+            self.add_line_target_edge(line_node, item.get("id"), edge_kind="radio_line_node", source=table, evidence="id")
+            self.add_audio_target_edge(line_node, item.get("audioOverride"), edge_kind="radio_line_uses_audio", source=table, evidence="audioOverride")
+            self.add_actor_or_character_edges(line_node, item.get("actorNameId"), actor_edge="radio_line_actor", character_edge="radio_line_character", source=table, evidence="actorNameId")
+            self.add_i18n_text_edges(line_node, item, source=table)
+
+    def add_remote_common_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        lines = row.get("remoteCommSingleDataList") if isinstance(row.get("remoteCommSingleDataList"), list) else []
+        remote_node = self.add_semantic_node("remote_common", row_key, source=table, data={"autoPlay": row.get("autoPlay"), "startAudioEvent": row.get("startAudioEvent"), "endAudioEvent": row.get("endAudioEvent"), "lineCount": len(lines)})
+        if not remote_node:
+            return
+        self.add_edge(row_node, remote_node, "defines_remote_common", source=table)
+        self.add_story_target_edge(remote_node, row_key, edge_kind="remote_common_targets_story", source=table, evidence="rowKey")
+        for field, edge_kind in (("startAudioEvent", "remote_common_start_event"), ("endAudioEvent", "remote_common_end_event")):
+            event_node = self.add_wwise_event_node(row.get(field), source=table)
+            if event_node:
+                self.add_edge(remote_node, event_node, edge_kind, source=table, evidence=field)
+        for index, item in enumerate(lines):
+            if not isinstance(item, dict):
+                continue
+            line_node = self.add_semantic_node("remote_common_line", item.get("singleId") or f"{row_key}:line:{index + 1}", name=item.get("remoteCommText"), source=table, data={"remoteId": row_key, "index": item.get("index"), "middleId": item.get("middleId"), "voiceId": item.get("voiceId"), "audioId": item.get("audioId"), "musicId": item.get("musicId"), "autoPlayTime": item.get("autoPlayTime"), "isVideoLoop": item.get("isVideoLoop"), "actorCount": len(item.get("actorList") or []), "imageCount": len(item.get("imageList") or [])})
+            if not line_node:
+                continue
+            self.add_edge(remote_node, line_node, "remote_common_has_line", source=table, evidence=f"remoteCommSingleDataList[{index}]")
+            self.add_line_target_edge(line_node, item.get("singleId"), edge_kind="remote_common_line_node", source=table, evidence="singleId")
+            for field, edge_kind in (("voiceId", "remote_common_line_uses_voice"), ("audioId", "remote_common_line_uses_audio"), ("musicId", "remote_common_line_uses_music")):
+                self.add_audio_target_edge(line_node, item.get(field), edge_kind=edge_kind, source=table, evidence=field)
+            self.add_actor_or_character_edges(line_node, item.get("middleId"), actor_edge="remote_common_line_middle_actor", character_edge="remote_common_line_middle_character", source=table, evidence="middleId")
+            if safe_key(item.get("middleId")) and not self.node_exists("actor", item.get("middleId")) and not self.node_exists("character", item.get("middleId")):
+                self.add_alias(item.get("middleId"), line_node, kind="asset_stem", source=table)
+            for actor_index, actor_id in enumerate(item.get("actorList") or []):
+                self.add_actor_or_character_edges(line_node, actor_id, actor_edge="remote_common_line_actor", character_edge="remote_common_line_character", source=table, evidence=f"actorList[{actor_index}]")
+            for image_index, image_id in enumerate(item.get("imageList") or []):
+                self.add_alias(image_id, line_node, kind="asset_stem", source=table)
+            self.add_i18n_text_edges(line_node, item, source=table)
+
+    def iter_audio_cue_expr_strings(self, value: Any) -> Iterable[str]:
+        if isinstance(value, dict):
+            string_value = safe_key(value.get("stringValue"))
+            if string_value:
+                yield string_value
+            for child in value.get("children") or []:
+                yield from self.iter_audio_cue_expr_strings(child)
+        elif isinstance(value, list):
+            for item in value:
+                yield from self.iter_audio_cue_expr_strings(item)
+
+    def add_audio_cue_handler_edges(self, cue_node: str, handler: Any, *, handler_id: str, source: str, evidence: str, level_id: Any = None) -> None:
+        if not isinstance(handler, dict):
+            return
+        handler_node = self.add_semantic_node("audio_cue_handler", handler_id, source=source, data={"levelId": level_id, "evidence": evidence, "conditionExpr": compact_payload(handler.get("conditionExpr"), depth=3), "behaviourExpr": compact_payload(handler.get("behaviourExpr"), depth=3)})
+        if not handler_node:
+            return
+        self.add_edge(cue_node, handler_node, "audio_cue_has_handler", source=source, evidence=evidence)
+        if safe_key(level_id) and self.node_exists("level", level_id):
+            self.add_edge(handler_node, self.node_id("level", level_id), "audio_cue_handler_for_level", source=source, evidence="levelHandlerMap")
+        seen: set[str] = set()
+        for expr in (handler.get("conditionExpr"), handler.get("behaviourExpr")):
+            for string_value in self.iter_audio_cue_expr_strings(expr):
+                if string_value in seen:
+                    continue
+                seen.add(string_value)
+                event_node = self.add_wwise_event_node(string_value, source=source)
+                if event_node:
+                    self.add_edge(handler_node, event_node, "audio_cue_handler_uses_event", source=source, evidence=string_value)
+
+    def add_audio_cue_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        direct_handlers = row.get("directHandlers") if isinstance(row.get("directHandlers"), list) else []
+        level_map = row.get("levelHandlerMap") if isinstance(row.get("levelHandlerMap"), dict) else {}
+        cue_node = self.add_semantic_node("audio_cue", row_key, source=table, data={"directHandlerCount": len(direct_handlers), "levelHandlerLevelCount": len(level_map)})
+        if not cue_node:
+            return
+        self.add_edge(row_node, cue_node, "defines_audio_cue", source=table)
+        for index, handler in enumerate(direct_handlers):
+            self.add_audio_cue_handler_edges(cue_node, handler, handler_id=f"{row_key}:direct:{index + 1}", source=table, evidence=f"directHandlers[{index}]")
+        for level_id, handlers in level_map.items():
+            values = handlers if isinstance(handlers, list) else [handlers]
+            for index, handler in enumerate(values):
+                self.add_audio_cue_handler_edges(cue_node, handler, handler_id=f"{row_key}:level:{level_id}:{index + 1}", source=table, evidence=f"levelHandlerMap[{level_id}][{index}]", level_id=level_id)
+
+    def add_audio_voice_extra_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        voice_node = self.add_semantic_node("audio_voice_extra", row_key, source=table, data={"durationCN": row.get("durationCN"), "durationEN": row.get("durationEN"), "durationJP": row.get("durationJP"), "durationKR": row.get("durationKR"), "devStageCN": row.get("devStageCN"), "devStageEN": row.get("devStageEN"), "devStageJP": row.get("devStageJP"), "devStageKR": row.get("devStageKR")})
+        if not voice_node:
+            return
+        self.add_edge(row_node, voice_node, "defines_audio_voice_extra", source=table)
+        audio_row = self.audio_dialog_rows().get(safe_key(row_key))
+        if isinstance(audio_row, dict):
+            audio_dialog_row = self.node_id("table_row", f"AudioDialog:{row_key}")
+            if self.node_exists("table_row", f"AudioDialog:{row_key}"):
+                self.add_edge(voice_node, audio_dialog_row, "audio_voice_extra_for_dialog_row", source=table, evidence=row_key)
+            path = safe_key(audio_row.get("path"))
+            audio_key = Path(path).stem if path else row_key
+            audio_node = self.add_node("audio", audio_key, name=audio_key, source="AudioDialog", path=path)
+            self.add_edge(voice_node, audio_node, "audio_voice_extra_for_audio", source=table, evidence=row_key)
+        self.add_line_target_edge(voice_node, row_key, edge_kind="audio_voice_extra_line_node", source=table, evidence=row_key)
+
+    def add_emotion_voice_config_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        config_node = self.add_semantic_node("emotion_voice_config", row_key, source=table, data={"emotionType": row.get("emotionType"), "interjection": row.get("interjection"), "interjectionCount": len(row.get("interjectionList") or [])})
+        if not config_node:
+            return
+        self.add_edge(row_node, config_node, "defines_emotion_voice_config", source=table)
+        for index, interjection in enumerate(row.get("interjectionList") or []):
+            interjection_node = self.add_semantic_node("voice_interjection", interjection, source=table)
+            if interjection_node:
+                self.add_edge(config_node, interjection_node, "emotion_voice_uses_interjection", source=table, evidence=f"interjectionList[{index}]")
+
+    def add_voice_id_conflict_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        conflict_node = self.add_semantic_node("voice_id_conflict", row_key, source=table, data={"value": compact_payload(row, depth=2)})
+        if conflict_node:
+            self.add_edge(row_node, conflict_node, "defines_voice_id_conflict", source=table)
+
+    def add_audio_dialog_custom_event_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        event_node = self.add_semantic_node("audio_dialog_custom_event", row.get("dlgId") or row_key, source=table, data={"preloadCount": len(row.get("preloadEvents") or []), "preEnterCount": len(row.get("preEnterEvents") or []), "postEnterCount": len(row.get("postEnterEvents") or []), "preExitCount": len(row.get("preExitEvents") or []), "postExitCount": len(row.get("postExitEvents") or [])})
+        if not event_node:
+            return
+        self.add_edge(row_node, event_node, "defines_audio_dialog_custom_event", source=table)
+        self.add_story_target_edge(event_node, row.get("dlgId") or row_key, edge_kind="audio_dialog_custom_event_targets_story", source=table, evidence="dlgId")
+        for field, edge_kind in (("preloadEvents", "audio_dialog_preloads_event"), ("preEnterEvents", "audio_dialog_pre_enter_event"), ("postEnterEvents", "audio_dialog_post_enter_event"), ("preExitEvents", "audio_dialog_pre_exit_event"), ("postExitEvents", "audio_dialog_post_exit_event")):
+            for index, event_id in enumerate(row.get(field) or []):
+                wwise_node = self.add_wwise_event_node(event_id, source=table)
+                if wwise_node:
+                    self.add_edge(event_node, wwise_node, edge_kind, source=table, evidence=f"{field}[{index}]")
+
+    def add_audio_dialog_config_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        config_node = self.add_semantic_node("audio_dialog_config", row_key, source=table, data={"value": row})
+        if not config_node:
+            return
+        self.add_edge(row_node, config_node, "defines_audio_dialog_config", source=table)
+        if isinstance(row, str):
+            event_node = self.add_wwise_event_node(row, source=table)
+            if event_node:
+                self.add_edge(config_node, event_node, "audio_dialog_config_uses_event", source=table, evidence="rowValue")
+
+    def add_narrative_audio_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "SNSChatTable" and isinstance(row, dict):
+            self.add_sns_chat_edges(table, row_key, row, row_node)
+        elif table == "SNSDialogTopicTable" and isinstance(row, dict):
+            self.add_sns_topic_edges(table, row_key, row, row_node)
+        elif table == "SNSDialogOptionTable" and isinstance(row, dict):
+            self.add_sns_option_edges(table, row_key, row, row_node)
+        elif table == "SNSDialogTable" and isinstance(row, dict):
+            self.add_sns_dialog_edges(table, row_key, row, row_node)
+        elif table == "SNSConst":
+            self.add_sns_const_edges(table, row_key, row, row_node)
+        elif table == "RadioTable" and isinstance(row, dict):
+            self.add_radio_edges(table, row_key, row, row_node)
+        elif table == "RemoteCommonTable" and isinstance(row, dict):
+            self.add_remote_common_edges(table, row_key, row, row_node)
+        elif table == "AudioCueTable" and isinstance(row, dict):
+            self.add_audio_cue_edges(table, row_key, row, row_node)
+        elif table == "AudioVoiceExtraData" and isinstance(row, dict):
+            self.add_audio_voice_extra_edges(table, row_key, row, row_node)
+        elif table == "EmotionVoiceConfig" and isinstance(row, dict):
+            self.add_emotion_voice_config_edges(table, row_key, row, row_node)
+        elif table == "VoiceIdConflictTable":
+            self.add_voice_id_conflict_edges(table, row_key, row, row_node)
+        elif table == "AudioDialogCustomEventTable" and isinstance(row, dict):
+            self.add_audio_dialog_custom_event_edges(table, row_key, row, row_node)
+        elif table == "AudioDialogConfigs":
+            self.add_audio_dialog_config_edges(table, row_key, row, row_node)
+
     def ingest_activity_achievement_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_activity_achievement_semantics", path=slash(table_root))
@@ -7317,6 +7698,24 @@ QUERY_KIND_PRIORITY = {
     "option": 2,
     "option_override": 3,
     "line": 4,
+    "sns_dialog": 5,
+    "sns_content": 6,
+    "sns_option": 7,
+    "sns_topic": 8,
+    "sns_chat": 9,
+    "sns_const": 10,
+    "radio": 11,
+    "radio_line": 12,
+    "remote_common": 13,
+    "remote_common_line": 14,
+    "audio_cue": 15,
+    "audio_cue_handler": 16,
+    "audio_voice_extra": 17,
+    "emotion_voice_config": 18,
+    "voice_interjection": 19,
+    "voice_id_conflict": 20,
+    "audio_dialog_custom_event": 21,
+    "audio_dialog_config": 22,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -7487,6 +7886,24 @@ NODE_ID_PREFIXES = (
     "option",
     "option_override",
     "line",
+    "sns_chat",
+    "sns_topic",
+    "sns_option",
+    "sns_dialog",
+    "sns_content",
+    "sns_const",
+    "radio",
+    "radio_line",
+    "remote_common",
+    "remote_common_line",
+    "audio_cue",
+    "audio_cue_handler",
+    "audio_voice_extra",
+    "emotion_voice_config",
+    "voice_interjection",
+    "voice_id_conflict",
+    "audio_dialog_custom_event",
+    "audio_dialog_config",
     "mission",
     "map",
     "level",

@@ -64,9 +64,10 @@ Additional durable memory reviewed:
 ## Executive Assessment
 
 The project has strong coverage of raw extraction, indexing, CN Story/Text
-Tables display, texture extraction, audio linkage, and broad asset discovery.
-The WebUI-facing data is coherent enough to browse most story, table, audio,
-video, and asset references from extracted game data.
+Tables display, texture extraction, audio linkage, broad asset discovery, and
+queryable SNS/radio/remote communication table bridges. The WebUI-facing data
+is coherent enough to browse most story, table, audio, video, and asset
+references from extracted game data.
 
 After reading the memory notes, the main assessment changes in two ways:
 
@@ -92,7 +93,7 @@ Current confidence by area:
 | Text/reference tables | High for extraction, moderate for meaning | Tables and IDs are mostly accessible; gameplay semantics and formulas are not fully decoded. |
 | Binary config formats | Moderate to high by family | Many MemoryPack-like families have exact or bounded decoders; nested bodies and FlatBuffer schemas remain partial. |
 | Numerical systems | Moderate for recovered schemas, low for formulas | Many fields and values are decoded; exact runtime formulas and evaluators remain partial. |
-| Audio | High for story linkage, moderate for full semantics | Event/media links and line usage are strong; non-story semantic classification can improve. |
+| Audio | High for story linkage, moderate for full semantics | Event/media links, line usage, raw SNS/radio/remote bridges, and voice-extra table joins are strong; deeper Wwise/runtime behavior remains partial. |
 | Video | Moderate | Narrative and FMV links are partially bound; some references and standalone files remain unresolved. |
 | Texture assets | High | Texture2D extraction and collision handling are verified by dedicated audits. |
 | Models/materials | Moderate | Broad asset indexes and PathID-resolved material/texture relations exist, but semantic entity-level reconstruction is incomplete. |
@@ -436,14 +437,38 @@ The source graph includes:
 - `defines_audio` edges: 25,245.
 - `speaker_channel` edges: 25,245.
 - `uses_audio` edges: 24,936.
+- `radio_line_uses_audio` edges: 4,103.
+- `remote_common_line_uses_voice` edges: 284.
+- `audio_voice_extra_for_audio` edges: 25,245.
+- `audio_cue_handler_uses_event` edges: 221.
 
 The WebUI build also post-processes generated conversation JSON with playable
 `audioSrc` links. This makes the story audio experience usable and gives a
 solid evidence base for line-to-audio investigation.
 
-Remaining audio improvements are mostly about semantic classification,
-coverage validation outside story voice, and deeper Wwise/runtime behavior, not
-basic line playback.
+2026-07-01 source graph narrative/audio progress: a fast CN rebuild verified
+939,999 graph nodes and 1,532,614 edges after adding semantic ingestion for SNS,
+radio, remote-common, audio cue, emotion voice, audio dialog custom event, and
+AudioVoiceExtraData tables. The new slice adds 122 `sns_chat`, 108 `sns_topic`,
+1,284 `sns_option`, 288 `sns_dialog`, 5,684 `sns_content`, 2,375 `radio`, 4,103
+`radio_line`, 30 `remote_common`, 284 `remote_common_line`, 175 `audio_cue`, 264
+`audio_cue_handler`, and 25,245 `audio_voice_extra` nodes, with 0 orphan edges
+from those sources. SNS content is preserved as raw table content rather than
+forced into generated story line IDs; radio lines, remote lines, and matching
+voice-extra keys link to generated `line` nodes where the WebUI story corpus has
+them. Useful checks include:
+
+```bat
+python tools\endfield_source_graph.py query sns_a1m1_1 --kind sns_dialog
+python tools\endfield_source_graph.py query option_sns_a1m1_1_1_001 --kind sns_option
+python tools\endfield_source_graph.py query radio_a1m6d1_1 --kind radio
+python tools\endfield_source_graph.py query remotecomm_c13m2_1 --kind remote_common
+python tools\endfield_source_graph.py query -1000413093 --kind audio_voice_extra
+```
+
+Remaining audio improvements are now mostly about deeper Wwise/runtime behavior,
+TextVoId/tone table semantics, and coverage validation outside story voice, not
+basic line playback or raw communication-table bridging.
 
 ### Updates and Change Tracking
 
@@ -1500,9 +1525,10 @@ Success metric:
 The project understands the original game data well enough to provide a broad
 static WebUI over story, text tables, audio, videos, assets, and many recovered
 config structures. Extraction health is strong, texture output is verified, the
-source graph is large and useful, CN story display is mostly reconstructed, and
-several binary/MonoBehaviour payload families now have real schema recovery
-rather than only raw dumps.
+source graph is large and useful, CN story display is mostly reconstructed, raw
+SNS/radio/remote/audio table bridges are queryable, and several
+binary/MonoBehaviour payload families now have real schema recovery rather than
+only raw dumps.
 
 The next level is semantic proof. The highest-value improvements are to finish
 the small remaining story gap hotlist, prove more option routes with runtime
