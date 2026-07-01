@@ -844,6 +844,31 @@ python tools\endfield_source_graph.py query A_imod_map02_sfwaterwheel+1_005_01_o
 python tools\endfield_source_graph.py query defaultlayer --kind model_view_animator_name
 ```
 
+2026-07-01 NavMesh decoded-config graph progress: source graph ingestion now
+includes `Json_NavMesh.json` and promotes exact raw MemoryPack rows for
+`LunaArea` and `NavMeshStateContainer`. A fast CN rebuild to
+`tmp/source_graph_navmesh.sqlite` verified 1,157,189 total nodes, 2,060,303
+edges, and 1,609,373 aliases. New coverage includes 139 unique `navmesh_area`
+nodes with 278 `defines_navmesh_area` source-file edges split evenly across
+Persistent and StreamingAssets, 17 owner-qualified `navmesh_area_id` nodes, 6
+`navmesh_state_container` nodes with 12 source definition edges, and 569
+`navmesh_state_record` nodes with 1,138 source definition edges. State record
+kinds split into 57 `bounds36`, 6 `groupedU64Lists`, 144 `idValueLists`, 314
+`ints16`, and 48 `ints20` rows. Area owners are `base01_lv001`,
+`indie_hdg004`, `map01`, and `map02`; state owners are `base01_lv001`,
+`blackbox01_dg001`, `blackbox02_dg001`, `indie_dg006`, `map01`, and `map02`.
+Bounds records add 57 owner-qualified area-id refs, and owner-to-level links
+produce 3 inferred map edges for `base01`, `map01`, and `map02`. This pass
+preserves decoded geometry/state evidence; it does not infer walkability,
+pathfinding behavior, state row semantics, or grouped/id-list meanings. Example
+exact queries:
+
+```bat
+python tools\endfield_source_graph.py query map02:row0000:area12 --kind navmesh_area
+python tools\endfield_source_graph.py query map02:12 --kind navmesh_area_id
+python tools\endfield_source_graph.py query blackbox01_dg001:f02:r0000 --kind navmesh_state_record
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
