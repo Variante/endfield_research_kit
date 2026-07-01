@@ -683,6 +683,27 @@ Example exact query:
 python tools\endfield_source_graph.py query Montage/NPC/Generic/rabbit01/escaped --kind level_script_montage
 ```
 
+2026-07-01 AnimationConfig decoded-config progress: source graph ingestion now
+promotes bounded `AnimationConfig` evidence from the WebUI Data index. A fast
+CN rebuild to `tmp/source_graph_animation.sqlite` verified 1,125,538 total
+nodes, 1,941,396 edges, and 1,573,659 aliases after the typed-path classifier
+fix. New coverage includes 213 `animation_config_data_defines_config` edges
+collapsed to 107 unique `animation_config` nodes, 584 `animation_state` nodes,
+315 `facial_morph` nodes, 197 `actor_animation_ref` nodes, 3
+`animation_cutscene_ref` nodes, and 1 generic `animation_path_ref` node. Edge
+checks verified 1,886 state refs, 339 facial-morph refs, 34 montage refs joined
+to `level_script_montage`, 364 actor-animation refs, 14 cutscene-like refs, and
+1 sampled skeleton/bone path ref. This pass mirrors the guarded MemoryPack
+string scan: member-count 12, up to 640 string hits, and 192 unique sampled
+strings. It does not decode controller graphs, blend trees, clip bindings,
+animation curves, actor skeletons, or runtime playback conditions. Example
+exact queries:
+
+```bat
+python tools\endfield_source_graph.py query anim_cfg_abilityEntity_chr_0030_zhuangfy_ult --kind animation_config
+python tools\endfield_source_graph.py query A_actor_zhuangfy_battle_skill_ult_03 --kind actor_animation_ref
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
