@@ -183,6 +183,29 @@ SPACESHIP_SEMANTIC_TABLES = (
     "SpaceshipGuestRoomClueLvTable.json",
     "SpaceshipEmptyRoomTable.json",
 )
+ACTIVITY_ACHIEVEMENT_TABLES = (
+    "SystemJumpTable.json",
+    "ActivityTagTable.json",
+    "ActivityTable.json",
+    "AchievementTypeTable.json",
+    "AchievementTable.json",
+    "AchievementStatisticTable.json",
+    "ActivityAchievementDataTable.json",
+    "ActivityWeeklyTaskTable.json",
+    "ActivityWeeklyTaskMileStoneTable.json",
+    "ActivityConditionalMultiStageTable.json",
+    "ActivityConditionalMultiStageStageToActivityTable.json",
+    "ActivityConditionalMultiStageConditionTable.json",
+    "ActivityConditionalMultiStageCompleteConditionTable.json",
+    "ActivityConditionalMultiStageTaskConfigTable.json",
+    "ActivityConditionalMultiStageTaskCompleteConditionTable.json",
+    "ActivityLevelRewardsTable.json",
+    "ActivityCultivationRefundStageTable.json",
+    "ActivityVersionGuideTable.json",
+    "ActivityVersionGuideStageTable.json",
+    "ActivityBannerTable.json",
+    "ActivityPushBubbleTable.json",
+)
 
 def slash(path: Path) -> str:
     try:
@@ -554,6 +577,8 @@ class SourceGraphBuilder:
             self.commit_step("characterSupport")
             self.ingest_spaceship_semantics()
             self.commit_step("spaceshipSemantics")
+            self.ingest_activity_achievement_semantics()
+            self.commit_step("activityAchievement")
             self.ingest_timeline_line_orders()
             self.commit_step("timelineLineOrders")
             self.ingest_story_source_links()
@@ -3970,6 +3995,600 @@ class SourceGraphBuilder:
         elif table in {"SpaceshipClueDataTable", "SpaceshipClueDataIndex2IdTable"}:
             self.add_spaceship_clue_edges(table, row_key, row, row_node)
 
+    def ingest_activity_achievement_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_activity_achievement_semantics", path=slash(table_root))
+        for table_name in ACTIVITY_ACHIEVEMENT_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if payload is None:
+                continue
+            table_key = Path(table_name).stem
+            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/activity_achievement")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            if not isinstance(payload, dict):
+                continue
+            for row_key, row in payload.items():
+                row_node = self.add_node(
+                    "table_row",
+                    f"{table_key}:{row_key}",
+                    name=str(row_key),
+                    source=table_key,
+                    data=compact_payload(row, depth=2),
+                )
+                self.add_edge(table_node, row_node, "has_row", source="structured/activity_achievement")
+                self.add_activity_achievement_row_edges(table_key, row_key, row, row_node)
+
+    def add_system_jump_node(self, jump_id: Any, *, source: str = "", data: Any = None) -> str:
+        jump_key = safe_key(jump_id)
+        if not jump_key:
+            return ""
+        node = self.add_node("system_jump", jump_key, name=jump_key, source=source, data=data)
+        self.add_alias(jump_key, node, kind="system_jump_id", source=source)
+        self.add_alias(jump_key, node, kind="jump_id", source=source)
+        return node
+
+    def add_activity_node(self, activity_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        activity_key = safe_key(activity_id)
+        if not activity_key:
+            return ""
+        activity_name = table_display_text(name) or activity_key
+        node = self.add_node("activity", activity_key, name=activity_name, source=source, data=data)
+        self.add_alias(activity_key, node, kind="activity_id", source=source)
+        if activity_name != activity_key:
+            self.add_alias(activity_name, node, kind="activity_name", source=source)
+        return node
+
+    def add_activity_tag_node(self, tag_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        tag_key = safe_key(tag_id)
+        if not tag_key:
+            return ""
+        tag_name = table_display_text(name) or tag_key
+        node = self.add_node("activity_tag", tag_key, name=tag_name, source=source, data=data)
+        self.add_alias(tag_key, node, kind="activity_tag_id", source=source)
+        if tag_name != tag_key:
+            self.add_alias(tag_name, node, kind="activity_tag_name", source=source)
+        return node
+
+    def add_activity_condition_node(self, condition_id: Any, *, source: str = "", data: Any = None) -> str:
+        condition_key = safe_key(condition_id)
+        if not condition_key:
+            return ""
+        node = self.add_node("activity_condition", condition_key, name=condition_key, source=source, data=data)
+        self.add_alias(condition_key, node, kind="activity_condition_id", source=source)
+        return node
+
+    def add_activity_task_node(self, task_id: Any, *, source: str = "", data: Any = None) -> str:
+        task_key = safe_key(task_id)
+        if not task_key:
+            return ""
+        node = self.add_node("activity_task", task_key, name=task_key, source=source, data=data)
+        self.add_alias(task_key, node, kind="activity_task_id", source=source)
+        return node
+
+    def add_activity_stage_node(self, stage_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        stage_key = safe_key(stage_id)
+        if not stage_key:
+            return ""
+        stage_name = table_display_text(name) or stage_key
+        node = self.add_node("activity_stage", stage_key, name=stage_name, source=source, data=data)
+        self.add_alias(stage_key, node, kind="activity_stage_id", source=source)
+        if stage_name != stage_key:
+            self.add_alias(stage_name, node, kind="activity_stage_name", source=source)
+        return node
+
+    def add_activity_milestone_node(self, milestone_id: Any, *, source: str = "", data: Any = None) -> str:
+        milestone_key = safe_key(milestone_id)
+        if not milestone_key:
+            return ""
+        node = self.add_node("activity_milestone", milestone_key, name=milestone_key, source=source, data=data)
+        self.add_alias(milestone_key, node, kind="activity_milestone_id", source=source)
+        return node
+
+    def add_activity_banner_node(self, banner_id: Any, *, source: str = "", data: Any = None) -> str:
+        banner_key = safe_key(banner_id)
+        if not banner_key:
+            return ""
+        node = self.add_node("activity_banner", banner_key, name=banner_key, source=source, data=data)
+        self.add_alias(banner_key, node, kind="activity_banner_id", source=source)
+        return node
+
+    def add_activity_push_node(self, push_id: Any, *, source: str = "", data: Any = None) -> str:
+        push_key = safe_key(push_id)
+        if not push_key:
+            return ""
+        node = self.add_node("activity_push", push_key, name=push_key, source=source, data=data)
+        self.add_alias(push_key, node, kind="activity_push_id", source=source)
+        return node
+
+    def add_achievement_category_node(self, category_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        category_key = safe_key(category_id)
+        if not category_key:
+            return ""
+        category_name = table_display_text(name) or category_key
+        node = self.add_node("achievement_category", category_key, name=category_name, source=source, data=data)
+        self.add_alias(category_key, node, kind="achievement_category_id", source=source)
+        if category_name != category_key:
+            self.add_alias(category_name, node, kind="achievement_category_name", source=source)
+        return node
+
+    def add_achievement_group_node(self, group_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        group_key = safe_key(group_id)
+        if not group_key:
+            return ""
+        group_name = table_display_text(name) or group_key
+        node = self.add_node("achievement_group", group_key, name=group_name, source=source, data=data)
+        self.add_alias(group_key, node, kind="achievement_group_id", source=source)
+        if group_name != group_key:
+            self.add_alias(group_name, node, kind="achievement_group_name", source=source)
+        return node
+
+    def add_achievement_node(self, achievement_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        achievement_key = safe_key(achievement_id)
+        if not achievement_key:
+            return ""
+        achievement_name = table_display_text(name) or achievement_key
+        node = self.add_node("achievement", achievement_key, name=achievement_name, source=source, data=data)
+        self.add_alias(achievement_key, node, kind="achievement_id", source=source)
+        if achievement_name != achievement_key:
+            self.add_alias(achievement_name, node, kind="achievement_name", source=source)
+        return node
+
+    def add_achievement_level_node(self, level_id: Any, *, source: str = "", data: Any = None) -> str:
+        level_key = safe_key(level_id)
+        if not level_key:
+            return ""
+        node = self.add_node("achievement_level", level_key, name=level_key, source=source, data=data)
+        self.add_alias(level_key, node, kind="achievement_level_id", source=source)
+        return node
+
+    def add_achievement_condition_node(self, condition_id: Any, *, source: str = "", data: Any = None) -> str:
+        condition_key = safe_key(condition_id)
+        if not condition_key:
+            return ""
+        node = self.add_node("achievement_condition", condition_key, name=condition_key, source=source, data=data)
+        self.add_alias(condition_key, node, kind="achievement_condition_id", source=source)
+        return node
+
+    def add_achievement_statistic_node(self, statistic_id: Any, *, source: str = "", data: Any = None) -> str:
+        statistic_key = safe_key(statistic_id)
+        if not statistic_key:
+            return ""
+        node = self.add_node("achievement_statistic", statistic_key, name=statistic_key, source=source, data=data)
+        self.add_alias(statistic_key, node, kind="achievement_statistic_id", source=source)
+        return node
+
+    def add_mission_ref_node(self, mission_id: Any, *, source: str = "") -> str:
+        mission_key = safe_key(mission_id)
+        if not mission_key:
+            return ""
+        node = self.add_node("mission", mission_key, name=mission_key, source=source)
+        self.add_alias(mission_key, node, kind="mission_id", source=source)
+        return node
+
+    def add_system_jump_edge(self, owner_node: str, jump_id: Any, *, edge_kind: str, source: str, evidence: str) -> None:
+        jump_node = self.add_system_jump_node(jump_id, source=source)
+        if jump_node:
+            self.add_edge(owner_node, jump_node, edge_kind, source=source, evidence=evidence)
+
+    def add_reward_ref_edge(self, owner_node: str, reward_id: Any, *, edge_kind: str, source: str, evidence: str, data: Any = None) -> None:
+        reward_node = self.add_reward_node(reward_id, source=source)
+        if reward_node:
+            self.add_edge(owner_node, reward_node, edge_kind, source=source, evidence=evidence, data=data)
+
+    def iter_activity_conditions(self, value: Any) -> Iterable[dict[str, Any]]:
+        if isinstance(value, dict):
+            if isinstance(value.get("conditionList"), list):
+                for item in value.get("conditionList") or []:
+                    yield from self.iter_activity_conditions(item)
+            elif "conditionId" in value or "conditionType" in value or "progressToCompare" in value:
+                yield value
+        elif isinstance(value, list):
+            for item in value:
+                yield from self.iter_activity_conditions(item)
+        else:
+            condition_id = safe_key(value)
+            if condition_id:
+                yield {"conditionId": condition_id}
+
+    def add_activity_parameter_refs(self, condition_node: str, parameters: Any, *, source: str, evidence_prefix: str) -> None:
+        if not isinstance(parameters, list):
+            return
+        for param_index, param in enumerate(parameters):
+            if not isinstance(param, dict):
+                continue
+            values = param.get("valueStringList")
+            if not isinstance(values, list):
+                continue
+            for value_index, raw_value in enumerate(values):
+                ref = safe_key(raw_value)
+                if not ref or re.fullmatch(r"-?\d+(?:\.\d+)?", ref):
+                    continue
+                evidence = f"{evidence_prefix}.parameters[{param_index}].valueStringList[{value_index}]"
+                if ref.startswith("jump_"):
+                    ref_node = self.add_system_jump_node(ref, source=source)
+                    edge_kind = "activity_condition_refs_system_jump"
+                elif ref.startswith("reward_"):
+                    ref_node = self.add_reward_node(ref, source=source)
+                    edge_kind = "activity_condition_refs_reward"
+                elif ref.startswith("item_"):
+                    ref_node = self.add_item_node(ref, source=source)
+                    edge_kind = "activity_condition_refs_item"
+                elif ref.startswith("chr_"):
+                    ref_node = self.add_character_ref_node(ref, source=source)
+                    edge_kind = "activity_condition_refs_character"
+                elif ref.startswith("achv_"):
+                    ref_node = self.add_achievement_node(ref, source=source)
+                    edge_kind = "activity_condition_refs_achievement"
+                elif "_stage_" in ref:
+                    ref_node = self.add_activity_stage_node(ref, source=source)
+                    edge_kind = "activity_condition_refs_stage"
+                elif ref.startswith("activity_") or ref.startswith("CharacterGuide_") or ref.startswith("web_activity_"):
+                    ref_node = self.add_activity_node(ref, source=source)
+                    edge_kind = "activity_condition_refs_activity"
+                elif ref.startswith("dung"):
+                    ref_node = self.add_dungeon_node(ref, source=source)
+                    edge_kind = "activity_condition_refs_dungeon"
+                elif re.fullmatch(r"[a-z]\d+m\d+[A-Za-z0-9_#-]*", ref):
+                    ref_node = self.add_mission_ref_node(ref, source=source)
+                    edge_kind = "activity_condition_refs_mission"
+                else:
+                    continue
+                self.add_edge(condition_node, ref_node, edge_kind, source=source, evidence=evidence)
+
+    def add_activity_condition_edges(self, owner_node: str, conditions: Any, *, edge_kind: str, source: str, evidence_prefix: str) -> None:
+        for index, condition in enumerate(self.iter_activity_conditions(conditions)):
+            condition_id = safe_key(condition.get("conditionId") or f"{owner_node}:{evidence_prefix}:{index}")
+            condition_node = self.add_activity_condition_node(
+                condition_id,
+                source=source,
+                data={
+                    "conditionType": condition.get("conditionType"),
+                    "compareOperator": condition.get("compareOperator"),
+                    "progressToCompare": condition.get("progressToCompare"),
+                    "blockShow": condition.get("blockShow"),
+                },
+            )
+            if not condition_node:
+                continue
+            evidence = f"{evidence_prefix}[{index}]"
+            self.add_edge(owner_node, condition_node, edge_kind, source=source, evidence=evidence)
+            self.add_i18n_text_edges(condition_node, condition, source=source)
+            self.add_system_jump_edge(condition_node, condition.get("jumpId"), edge_kind="activity_condition_jumps_to", source=source, evidence=f"{evidence}.jumpId")
+            stage_node = self.add_activity_stage_node(condition.get("stageId"), source=source)
+            if stage_node:
+                self.add_edge(condition_node, stage_node, "activity_condition_refs_stage", source=source, evidence=f"{evidence}.stageId")
+            self.add_activity_parameter_refs(condition_node, condition.get("parameters"), source=source, evidence_prefix=evidence)
+
+    def add_system_jump_target_edges(self, jump_node: str, phase_id: str, phase_args: Any, *, source: str) -> None:
+        args = parse_json_text(phase_args) if safe_key(phase_args) else {}
+        if not isinstance(args, dict):
+            args = {}
+        if args.get("activityId"):
+            activity_node = self.add_activity_node(args.get("activityId"), source=source)
+            self.add_edge(jump_node, activity_node, "system_jump_targets_activity", source=source, evidence="phaseArgs.activityId")
+        if phase_id == "SnapshotChallenge" and args.get("activityId"):
+            activity_node = self.add_activity_node(args.get("activityId"), source=source)
+            self.add_edge(jump_node, activity_node, "system_jump_targets_snapshot_activity", source=source, evidence="phaseArgs.activityId")
+        if phase_id == "FacTechTree":
+            tech_id = args.get("techId") or args.get("nodeId") or args.get("id") or args.get("jumpItem") or args.get("itemId") or "fac_tech_tree"
+            tech_node = self.add_node("factory_tech", tech_id, name=tech_id, source=source)
+            self.add_alias(tech_id, tech_node, kind="factory_tech_id", source=source)
+            self.add_edge(jump_node, tech_node, "system_jump_targets_factory_tech", source=source, evidence="phaseArgs")
+        if phase_id in {"ManualCraft", "ManualCraftPopups"}:
+            item_id = args.get("jumpItem") or args.get("itemId") or args.get("formulaId") or "manual_craft"
+            item_node = self.add_item_node(item_id, source=source)
+            self.add_edge(jump_node, item_node, "system_jump_targets_manual_craft_unlock", source=source, evidence="phaseArgs")
+        for field, kind in (("itemId", "system_jump_targets_item"), ("jumpItem", "system_jump_targets_item"), ("sourceId", "system_jump_targets_item"), ("targetId", "system_jump_targets_item")):
+            item_node = self.add_item_node(args.get(field), source=source)
+            if item_node:
+                self.add_edge(jump_node, item_node, kind, source=source, evidence=f"phaseArgs.{field}")
+        reward_node = self.add_reward_node(args.get("selectedRewardId"), source=source)
+        if reward_node:
+            self.add_edge(jump_node, reward_node, "system_jump_targets_reward", source=source, evidence="phaseArgs.selectedRewardId")
+        for field in ("dungeonId", "dungeonSeriesId"):
+            dungeon_node = self.add_dungeon_node(args.get(field), source=source)
+            if dungeon_node:
+                self.add_edge(jump_node, dungeon_node, "system_jump_targets_dungeon", source=source, evidence=f"phaseArgs.{field}")
+        for field in ("missionId",):
+            mission_node = self.add_mission_ref_node(args.get(field), source=source)
+            if mission_node:
+                self.add_edge(jump_node, mission_node, "system_jump_targets_mission", source=source, evidence=f"phaseArgs.{field}")
+        map_node = self.add_map_node(args.get("mapId"), source=source)
+        if map_node:
+            self.add_edge(jump_node, map_node, "system_jump_targets_map", source=source, evidence="phaseArgs.mapId")
+        mark_node = self.add_node("map_mark_template", args.get("templateId"), name=args.get("templateId"), source=source) if safe_key(args.get("templateId")) else ""
+        if mark_node:
+            self.add_alias(args.get("templateId"), mark_node, kind="map_mark_template_id", source=source)
+            self.add_edge(jump_node, mark_node, "system_jump_targets_map_mark_template", source=source, evidence="phaseArgs.templateId")
+        domain_id = safe_key(args.get("domainId"))
+        if domain_id:
+            domain_node = self.add_node("gameplay_domain", domain_id, name=domain_id, source=source)
+            self.add_alias(domain_id, domain_node, kind="gameplay_domain_id", source=source)
+            self.add_edge(jump_node, domain_node, "system_jump_targets_domain", source=source, evidence="phaseArgs.domainId")
+        shop_node = self.add_shop_node(args.get("shopId"), source=source)
+        if shop_node:
+            self.add_edge(jump_node, shop_node, "system_jump_targets_shop", source=source, evidence="phaseArgs.shopId")
+        shop_group = self.add_node("shop_group", args.get("shopGroupId"), name=args.get("shopGroupId"), source=source) if safe_key(args.get("shopGroupId")) else ""
+        if shop_group:
+            self.add_alias(args.get("shopGroupId"), shop_group, kind="shop_group_id", source=source)
+            self.add_edge(jump_node, shop_group, "system_jump_targets_shop_group", source=source, evidence="phaseArgs.shopGroupId")
+        character_node = self.add_character_ref_node(args.get("charId") or args.get("characterId"), source=source)
+        if character_node:
+            self.add_edge(jump_node, character_node, "system_jump_targets_character", source=source, evidence="phaseArgs.characterId")
+        achievement_node = self.add_achievement_node(args.get("achieveId") or args.get("achievementId"), source=source)
+        if achievement_node:
+            self.add_edge(jump_node, achievement_node, "system_jump_targets_achievement", source=source, evidence="phaseArgs.achievementId")
+
+    def add_system_jump_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        jump_id = safe_key(row.get("id") or row_key)
+        phase_id = safe_key(row.get("phaseId"))
+        jump_node = self.add_system_jump_node(jump_id, source=table, data={"bindSystem": row.get("bindSystem"), "phaseId": row.get("phaseId"), "phaseArgs": row.get("phaseArgs"), "iconId": row.get("iconId")})
+        if not jump_node:
+            return
+        self.add_edge(row_node, jump_node, "defines_system_jump", source=table)
+        self.add_alias(row.get("iconId"), jump_node, kind="asset_stem", source=table)
+        self.add_system_jump_target_edges(jump_node, phase_id, row.get("phaseArgs"), source=table)
+        self.add_i18n_text_edges(jump_node, row, source=table)
+
+    def add_activity_tag_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        tag_node = self.add_activity_tag_node(row.get("tagId") or row_key, name=row.get("name"), source=table)
+        if tag_node:
+            self.add_edge(row_node, tag_node, "defines_activity_tag", source=table)
+            self.add_i18n_text_edges(tag_node, row, source=table)
+
+    def add_activity_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        activity_id = safe_key(row.get("id") or row_key)
+        activity_node = self.add_activity_node(activity_id, name=row.get("name"), source=table, data={"type": row.get("type"), "panelId": row.get("panelId"), "timeId": row.get("timeId"), "sortId": row.get("sortId"), "instructionId": row.get("instructionId")})
+        if not activity_node:
+            return
+        self.add_edge(row_node, activity_node, "defines_activity", source=table)
+        for field in ("detailJumpId", "introMissionJumpId"):
+            self.add_system_jump_edge(activity_node, row.get(field), edge_kind="activity_jumps_to", source=table, evidence=field)
+        self.add_reward_ref_edge(activity_node, row.get("rewardId"), edge_kind="activity_rewards", source=table, evidence="rewardId")
+        mission_node = self.add_mission_ref_node(row.get("introMissionQuestId"), source=table)
+        if mission_node:
+            self.add_edge(activity_node, mission_node, "activity_intro_mission", source=table, evidence="introMissionQuestId")
+        for index, tag_id in enumerate(row.get("tagIds") or []):
+            tag_node = self.add_activity_tag_node(tag_id, source=table)
+            if tag_node:
+                self.add_edge(activity_node, tag_node, "activity_has_tag", source=table, evidence=f"tagIds[{index}]")
+        for field in ("bgImg", "tabImg", "tabImgColor", "tabImgGender", "popUpPanelId"):
+            self.add_alias(row.get(field), activity_node, kind="asset_stem", source=table)
+        self.add_activity_condition_edges(activity_node, row.get("conditions"), edge_kind="activity_has_condition", source=table, evidence_prefix="conditions")
+        self.add_i18n_text_edges(activity_node, row, source=table)
+
+    def add_activity_task_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        task_id = safe_key(row.get("taskId") or row_key)
+        task_node = self.add_activity_task_node(task_id, source=table, data={"activityId": row.get("activityId"), "progressToCompare": row.get("progressToCompare"), "score": row.get("score"), "sortId": row.get("sortId"), "displayFactor": row.get("displayFactor")})
+        if not task_node:
+            return
+        self.add_edge(row_node, task_node, "defines_activity_task", source=table)
+        activity_node = self.add_activity_node(row.get("activityId"), source=table)
+        if activity_node:
+            self.add_edge(activity_node, task_node, "activity_has_task", source=table, evidence="activityId")
+        self.add_system_jump_edge(task_node, row.get("jumpId"), edge_kind="task_jumps_to", source=table, evidence="jumpId")
+        self.add_i18n_text_edges(task_node, row, source=table)
+
+    def add_activity_milestone_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        activity_node = self.add_activity_node(row_key, source=table)
+        milestones = row.get("mileStones") if isinstance(row.get("mileStones"), dict) else {}
+        for milestone_id, milestone in milestones.items():
+            if not isinstance(milestone, dict):
+                continue
+            milestone_node = self.add_activity_milestone_node(milestone_id, source=table, data={"score": milestone.get("score"), "rewardId": milestone.get("rewardId")})
+            if not milestone_node:
+                continue
+            self.add_edge(row_node, milestone_node, "defines_activity_milestone", source=table)
+            self.add_edge(activity_node, milestone_node, "activity_has_milestone", source=table, evidence="mileStones")
+            self.add_reward_ref_edge(milestone_node, milestone.get("rewardId"), edge_kind="activity_milestone_rewards", source=table, evidence="rewardId", data={"score": milestone.get("score")})
+
+    def add_activity_stage_semantics(self, table: str, row_key: str, stage: dict[str, Any], row_node: str, *, activity_id: Any = None, evidence: str = "") -> str:
+        stage_id = safe_key(stage.get("stageId") or stage.get("stageStrId") or row_key)
+        stage_node = self.add_activity_stage_node(stage_id, name=stage.get("name") or stage.get("desc"), source=table, data={"activityId": stage.get("activityId") or activity_id, "missionId": stage.get("missionId"), "rewardId": stage.get("rewardId"), "jumpId": stage.get("jumpId"), "sortId": stage.get("sortId"), "timeId": stage.get("timeId"), "rankRelatedId": stage.get("rankRelatedId")})
+        if not stage_node:
+            return ""
+        self.add_edge(row_node, stage_node, "defines_activity_stage", source=table, evidence=evidence)
+        activity_node = self.add_activity_node(stage.get("activityId") or activity_id, source=table)
+        if activity_node:
+            self.add_edge(activity_node, stage_node, "activity_has_stage", source=table, evidence=evidence or "activityId", data={"sortId": stage.get("sortId")})
+        self.add_reward_ref_edge(stage_node, stage.get("rewardId"), edge_kind="stage_rewards", source=table, evidence="rewardId")
+        self.add_system_jump_edge(stage_node, stage.get("jumpId"), edge_kind="stage_jumps_to", source=table, evidence="jumpId")
+        mission_node = self.add_mission_ref_node(stage.get("missionId"), source=table)
+        if mission_node:
+            self.add_edge(stage_node, mission_node, "stage_uses_mission", source=table, evidence="missionId")
+        self.add_activity_condition_edges(stage_node, stage.get("conditions"), edge_kind="stage_has_condition", source=table, evidence_prefix=f"{evidence}.conditions" if evidence else "conditions")
+        self.add_i18n_text_edges(stage_node, stage, source=table)
+        return stage_node
+
+    def add_activity_multistage_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        activity_id = row.get("activityId") or row_key
+        activity_node = self.add_activity_node(activity_id, source=table, data={"stageCount": len(row.get("stageList") or {})})
+        if activity_node:
+            self.add_edge(row_node, activity_node, "defines_activity_stage_group", source=table)
+        stage_list = row.get("stageList") if isinstance(row.get("stageList"), dict) else {}
+        for index, (stage_id, stage) in enumerate(stage_list.items()):
+            if isinstance(stage, dict):
+                self.add_activity_stage_semantics(table, stage_id, stage, row_node, activity_id=activity_id, evidence=f"stageList[{index}]")
+
+    def add_activity_stage_to_activity_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        self.add_activity_stage_semantics(table, row.get("stageId") or row_key, row, row_node, activity_id=row.get("activityId"), evidence="stageId")
+
+    def add_activity_stage_condition_table_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str, *, edge_kind: str) -> None:
+        stage_node = self.add_activity_stage_node(row_key, source=table)
+        if stage_node:
+            self.add_edge(row_node, stage_node, "defines_activity_stage_conditions", source=table)
+            self.add_activity_condition_edges(stage_node, row, edge_kind=edge_kind, source=table, evidence_prefix="conditionList")
+
+    def add_activity_task_config_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        activity_node = self.add_activity_node(row_key, source=table)
+        task_map = row.get("TaskConfigMap") if isinstance(row.get("TaskConfigMap"), dict) else {}
+        for index, (task_id, task) in enumerate(task_map.items()):
+            if not isinstance(task, dict):
+                continue
+            task_node = self.add_activity_task_node(task.get("taskId") or task_id, source=table, data={"rewardId": task.get("rewardId"), "sortId": task.get("sortId"), "taskGroupId": task.get("taskGroupId"), "unlockTimeId": task.get("unlockTimeId")})
+            if not task_node:
+                continue
+            self.add_edge(row_node, task_node, "defines_activity_task", source=table, evidence=f"TaskConfigMap[{index}]")
+            self.add_edge(activity_node, task_node, "activity_has_task", source=table, evidence=f"TaskConfigMap[{index}]")
+            self.add_reward_ref_edge(task_node, task.get("rewardId"), edge_kind="task_rewards", source=table, evidence="rewardId")
+            self.add_system_jump_edge(task_node, task.get("jumpId"), edge_kind="task_jumps_to", source=table, evidence="jumpId")
+            for condition_index, condition_id in enumerate(task.get("completeConditionId") or []):
+                condition_node = self.add_activity_condition_node(condition_id, source=table)
+                if condition_node:
+                    self.add_edge(task_node, condition_node, "task_has_complete_condition", source=table, evidence=f"completeConditionId[{condition_index}]")
+            self.add_i18n_text_edges(task_node, task, source=table)
+
+    def add_activity_task_condition_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        condition_node = self.add_activity_condition_node(row.get("conditionId") or row_key, source=table, data={"conditionType": row.get("conditionType"), "compareOperator": row.get("compareOperator"), "progressToCompare": row.get("progressToCompare")})
+        if condition_node:
+            self.add_edge(row_node, condition_node, "defines_activity_condition", source=table)
+            self.add_activity_parameter_refs(condition_node, row.get("parameters"), source=table, evidence_prefix="parameters")
+
+    def add_activity_level_reward_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        for index, stage in enumerate(row.get("stageList") or []):
+            if isinstance(stage, dict):
+                self.add_activity_stage_semantics(table, stage.get("stageStrId") or f"{row_key}:{index}", stage, row_node, activity_id=stage.get("activityId") or row_key, evidence=f"stageList[{index}]")
+
+    def add_activity_version_guide_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        activity_node = self.add_activity_node(row_key, source=table, data={"prefabName": row.get("prefabName")})
+        if activity_node:
+            self.add_edge(row_node, activity_node, "defines_activity_version_guide", source=table)
+            self.add_alias(row.get("prefabName"), activity_node, kind="prefab_name", source=table)
+
+    def add_activity_banner_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        banner_node = self.add_activity_banner_node(row.get("bannerId") or row_key, source=table, data={"bannerType": row.get("bannerType"), "corrSysId": row.get("corrSysId"), "image": row.get("image"), "index": row.get("index"), "jumpId": row.get("jumpId")})
+        if not banner_node:
+            return
+        self.add_edge(row_node, banner_node, "defines_activity_banner", source=table)
+        self.add_alias(row.get("image"), banner_node, kind="asset_stem", source=table)
+        activity_node = self.add_activity_node(row.get("corrSysId"), source=table)
+        if activity_node:
+            self.add_edge(banner_node, activity_node, "banner_for_activity", source=table, evidence="corrSysId")
+        self.add_system_jump_edge(banner_node, row.get("jumpId"), edge_kind="banner_jumps_to", source=table, evidence="jumpId")
+
+    def add_activity_push_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        push_node = self.add_activity_push_node(row.get("pushID") or row_key, source=table, data={"activityId": row.get("activityId"), "bubbleType": row.get("bubbleType"), "pushType": row.get("pushType"), "tabType": row.get("tabType"), "bubbleSortId": row.get("bubbleSortId")})
+        if not push_node:
+            return
+        self.add_edge(row_node, push_node, "defines_activity_push", source=table)
+        activity_node = self.add_activity_node(row.get("activityId"), source=table)
+        if activity_node:
+            self.add_edge(activity_node, push_node, "activity_has_push", source=table, evidence="activityId")
+        for index, condition_id in enumerate(row.get("conditionIdList") or []):
+            condition_node = self.add_activity_condition_node(condition_id, source=table)
+            if condition_node:
+                self.add_edge(push_node, condition_node, "push_has_condition", source=table, evidence=f"conditionIdList[{index}]")
+        self.add_i18n_text_edges(push_node, row, source=table)
+
+    def add_activity_achievement_data_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        activity_node = self.add_activity_node(row_key, source=table)
+        achievement_node = self.add_achievement_node(row.get("achievementId"), source=table)
+        if activity_node and achievement_node:
+            self.add_edge(row_node, activity_node, "defines_activity_achievement_link", source=table)
+            self.add_edge(activity_node, achievement_node, "activity_has_achievement", source=table, evidence="achievementId")
+
+    def add_achievement_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        category_node = self.add_achievement_category_node(row.get("categoryId") or row_key, name=row.get("categoryName"), source=table, data={"categoryPriority": row.get("categoryPriority"), "noObtainCanView": row.get("noObtainCanView")})
+        if not category_node:
+            return
+        self.add_edge(row_node, category_node, "defines_achievement_category", source=table)
+        for index, group in enumerate(row.get("achievementGroupData") or []):
+            if not isinstance(group, dict):
+                continue
+            group_node = self.add_achievement_group_node(group.get("groupId"), name=group.get("groupName"), source=table)
+            if group_node:
+                self.add_edge(category_node, group_node, "achievement_category_has_group", source=table, evidence=f"achievementGroupData[{index}]")
+                self.add_i18n_text_edges(group_node, group, source=table)
+        self.add_i18n_text_edges(category_node, row, source=table)
+
+    def add_achievement_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        achievement_id = safe_key(row.get("achieveId") or row_key)
+        achievement_node = self.add_achievement_node(achievement_id, name=row.get("name"), source=table, data={"groupId": row.get("groupId"), "initLevel": row.get("initLevel"), "order": row.get("order"), "canBeUpgraded": row.get("canBeUpgraded"), "canBePlated": row.get("canBePlated"), "specialProgress": row.get("specialProgress")})
+        if not achievement_node:
+            return
+        self.add_edge(row_node, achievement_node, "defines_achievement", source=table)
+        group_node = self.add_achievement_group_node(row.get("groupId"), source=table)
+        if group_node:
+            self.add_edge(group_node, achievement_node, "achievement_group_has_achievement", source=table, evidence="groupId")
+        self.add_activity_condition_edges(achievement_node, row.get("plateConditions"), edge_kind="achievement_has_plate_condition", source=table, evidence_prefix="plateConditions")
+        level_infos = row.get("levelInfos") if isinstance(row.get("levelInfos"), dict) else {}
+        for level_key, level in level_infos.items():
+            if not isinstance(level, dict):
+                continue
+            level_node = self.add_achievement_level_node(f"{achievement_id}:level:{level_key}", source=table, data={"achievementId": achievement_id, "achieveLevel": level.get("achieveLevel") or level_key})
+            if not level_node:
+                continue
+            self.add_edge(achievement_node, level_node, "achievement_has_level", source=table, evidence=f"levelInfos[{level_key}]")
+            self.add_i18n_text_edges(level_node, level, source=table)
+            for condition_index, condition in enumerate(level.get("conditions") or []):
+                if not isinstance(condition, dict):
+                    continue
+                condition_node = self.add_achievement_condition_node(condition.get("conditionId") or f"{achievement_id}:level:{level_key}:condition:{condition_index}", source=table, data={"achievementId": achievement_id, "achieveLevel": level.get("achieveLevel") or level_key, "progressToCompare": condition.get("progressToCompare")})
+                if condition_node:
+                    self.add_edge(level_node, condition_node, "achievement_level_has_condition", source=table, evidence=f"conditions[{condition_index}]")
+                    self.add_i18n_text_edges(condition_node, condition, source=table)
+        self.add_i18n_text_edges(achievement_node, row, source=table)
+
+    def add_achievement_statistic_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        statistic_node = self.add_achievement_statistic_node(row_key, source=table, data={"maxStatVal": row.get("maxStatVal")})
+        if not statistic_node:
+            return
+        self.add_edge(row_node, statistic_node, "defines_achievement_statistic", source=table)
+        for index, entry in enumerate(row.get("achieveList") or []):
+            if not isinstance(entry, dict):
+                continue
+            achievement_node = self.add_achievement_node(entry.get("achieveId"), source=table)
+            if achievement_node:
+                self.add_edge(statistic_node, achievement_node, "achievement_statistic_tracks", source=table, evidence=f"achieveList[{index}]", data={"statVal": entry.get("statVal")})
+
+    def add_activity_achievement_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if not isinstance(row, dict):
+            return
+        if table != "AchievementTable":
+            self.add_i18n_text_edges(row_node, row, source=table)
+        if table == "SystemJumpTable":
+            self.add_system_jump_edges(table, row_key, row, row_node)
+        elif table == "ActivityTagTable":
+            self.add_activity_tag_edges(table, row_key, row, row_node)
+        elif table == "ActivityTable":
+            self.add_activity_edges(table, row_key, row, row_node)
+        elif table == "ActivityWeeklyTaskTable":
+            self.add_activity_task_edges(table, row_key, row, row_node)
+        elif table == "ActivityWeeklyTaskMileStoneTable":
+            self.add_activity_milestone_edges(table, row_key, row, row_node)
+        elif table == "ActivityConditionalMultiStageTable":
+            self.add_activity_multistage_edges(table, row_key, row, row_node)
+        elif table == "ActivityConditionalMultiStageStageToActivityTable":
+            self.add_activity_stage_to_activity_edges(table, row_key, row, row_node)
+        elif table == "ActivityConditionalMultiStageConditionTable":
+            self.add_activity_stage_condition_table_edges(table, row_key, row, row_node, edge_kind="stage_has_unlock_condition")
+        elif table == "ActivityConditionalMultiStageCompleteConditionTable":
+            self.add_activity_stage_condition_table_edges(table, row_key, row, row_node, edge_kind="stage_has_complete_condition")
+        elif table == "ActivityConditionalMultiStageTaskConfigTable":
+            self.add_activity_task_config_edges(table, row_key, row, row_node)
+        elif table == "ActivityConditionalMultiStageTaskCompleteConditionTable":
+            self.add_activity_task_condition_edges(table, row_key, row, row_node)
+        elif table in {"ActivityLevelRewardsTable", "ActivityVersionGuideStageTable"}:
+            self.add_activity_level_reward_edges(table, row_key, row, row_node)
+        elif table == "ActivityCultivationRefundStageTable":
+            self.add_activity_stage_to_activity_edges(table, row_key, row, row_node)
+        elif table == "ActivityVersionGuideTable":
+            self.add_activity_version_guide_edges(table, row_key, row, row_node)
+        elif table == "ActivityBannerTable":
+            self.add_activity_banner_edges(table, row_key, row, row_node)
+        elif table == "ActivityPushBubbleTable":
+            self.add_activity_push_edges(table, row_key, row, row_node)
+        elif table == "ActivityAchievementDataTable":
+            self.add_activity_achievement_data_edges(table, row_key, row, row_node)
+        elif table == "AchievementTypeTable":
+            self.add_achievement_type_edges(table, row_key, row, row_node)
+        elif table == "AchievementTable":
+            self.add_achievement_edges(table, row_key, row, row_node)
+        elif table == "AchievementStatisticTable":
+            self.add_achievement_statistic_edges(table, row_key, row, row_node)
+
     def ingest_combat_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_combat_semantics", path=slash(table_root))
@@ -5267,6 +5886,22 @@ QUERY_KIND_PRIORITY = {
     "spaceship_clue": 42,
     "env_talk": 43,
     "i18n_text": 44,
+    "system_jump": 45,
+    "activity": 46,
+    "activity_tag": 47,
+    "activity_condition": 48,
+    "activity_task": 49,
+    "activity_stage": 50,
+    "activity_milestone": 51,
+    "activity_banner": 52,
+    "activity_push": 53,
+    "achievement_category": 54,
+    "achievement_group": 55,
+    "achievement": 56,
+    "achievement_level": 57,
+    "achievement_condition": 58,
+    "achievement_statistic": 59,
+    "factory_tech": 60,
     "weapon": 10,
     "equipment": 11,
     "enemy": 12,
@@ -5376,6 +6011,22 @@ NODE_ID_PREFIXES = (
     "spaceship_clue",
     "env_talk",
     "i18n_text",
+    "system_jump",
+    "activity",
+    "activity_tag",
+    "activity_condition",
+    "activity_task",
+    "activity_stage",
+    "activity_milestone",
+    "activity_banner",
+    "activity_push",
+    "achievement_category",
+    "achievement_group",
+    "achievement",
+    "achievement_level",
+    "achievement_condition",
+    "achievement_statistic",
+    "factory_tech",
     "weapon",
     "equipment",
     "enemy",

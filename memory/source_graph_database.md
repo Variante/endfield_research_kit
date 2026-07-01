@@ -138,8 +138,13 @@ structured-table ingestion adds exact-queryable `weapon`, `equipment`,
 `factory_machine`, `factory_craft_group`, `factory_craft_showing_type`,
 `spaceship_npc_proxy`, `spaceship_skill`, `spaceship_room_type`,
 `spaceship_room_attr`, `spaceship_room_level`, `spaceship_empty_room`,
-`spaceship_formula`, `spaceship_clue`, `env_talk`, and `i18n_text` nodes. A
-fast CN build with `--skip-asset-maps --skip-reference-rows
+`spaceship_formula`, `spaceship_clue`, `env_talk`, `i18n_text`, `system_jump`,
+`activity`, `activity_tag`, `activity_condition`, `activity_task`,
+`activity_stage`, `activity_milestone`, `activity_banner`, `activity_push`,
+`achievement_category`, `achievement_group`, `achievement`,
+`achievement_level`, `achievement_condition`, `achievement_statistic`, and
+`factory_tech` nodes. A fast CN build with `--skip-asset-maps
+--skip-reference-rows
 --skip-followups` verified 72 weapon nodes, 220 equipment nodes, 30 character
 nodes, 290 enemy nodes, 78 enemy template nodes, 98 enemy attribute-template
 nodes, 5 enemy display-type nodes, 134 enemy ability nodes, 70 enemy modifier
@@ -184,6 +189,10 @@ python tools\endfield_source_graph.py query aglina_base01_lv001 --kind spaceship
 python tools\endfield_source_graph.py query spaceship_skill_chr_0004_pelica_1_1 --kind spaceship_skill
 python tools\endfield_source_graph.py query growcabin_plant_crylplant_1_1 --kind spaceship_formula
 python tools\endfield_source_graph.py query envEmoji_common_adaptationwork --kind env_talk
+python tools\endfield_source_graph.py query activity_weekly_task_1 --kind activity
+python tools\endfield_source_graph.py query week10_task1 --kind activity_task
+python tools\endfield_source_graph.py query achv_adv_tundra_box --kind achievement
+python tools\endfield_source_graph.py query jump_activity_conditional_multistage_1 --kind system_jump
 ```
 
 2026-07-01 character progression graph progress: generated Gameplay character
@@ -227,9 +236,9 @@ edges. That scouted slice has since landed in the Spaceship/base graph pass
 below.
 
 2026-07-01 Spaceship/base graph progress: source graph ingestion now promotes
-Spaceship NPC proxies, behavior EnvTalk refs, base skills, room types, room attrs, room levels, empty rooms, growth/manufacture
-formulas, clue rows, EnvTalk rows,
-audio refs, item refs, and local I18n text references. A fast CN rebuild
+Spaceship NPC proxies, behavior EnvTalk refs, base skills, room types, room
+attrs, room levels, empty rooms, growth/manufacture formulas, clue rows, EnvTalk
+rows, audio refs, item refs, and local I18n text references. A fast CN rebuild
 verified 52 `spaceship_npc_proxy` nodes, 140 `spaceship_skill` nodes, 8
 `spaceship_room_type` nodes, 18 room attrs, 15 room levels, 6 empty rooms, 38
 formulas, 7 clues, 1,704 EnvTalk nodes, and 516 I18n text ref nodes. Edge
@@ -239,9 +248,34 @@ checks verified 52 `spaceship_proxy_for_character`, 234
 room-level item costs, 23 room-level formula unlocks, 30 formula consumed-item
 edges, 38 produced-item edges, 15 material-to-seed and 15 seed-to-material
 reverse map edges, 2,537 `env_talk_uses_audio`, and 1,046 `uses_i18n_text`
-edges. Descartes scout identified Activity/Achievement plus SystemJump as the
-next compact graph slice: 64 activities, 260 weekly tasks, 114 achievements,
-156 achievement levels, and 600 system jumps expected.
+edges. The scouted Activity/Achievement plus SystemJump slice has since landed
+below.
+
+2026-07-01 Activity/Achievement/SystemJump graph progress: source graph
+ingestion now promotes `SystemJumpTable`, root activities, activity tags,
+activity conditions, weekly and multistage tasks, activity stages, milestones,
+banners, push bubbles, achievement categories/groups, achievements, achievement
+levels, achievement conditions, and achievement statistic rows. The corrected
+fast CN rebuild verified 814,908 total graph nodes and 1,254,229 edges, including
+600 `defines_system_jump` edges, 64 authored `defines_activity` edges, 23
+activity tags, 300 activity conditions, 276 activity tasks, 150 activity stage
+nodes, 5 milestones, 18 banners, 34 push bubbles, 8 achievement categories, 12
+achievement groups, 114 achievements, 156 achievement levels, 200 achievement
+conditions, and 3 achievement statistic rows. Edge checks verified 63
+`activity_has_tag`, 42 `activity_jumps_to`, 40 `activity_rewards`, 276
+`activity_has_task`, 43 `task_jumps_to`, 16 task reward edges, 350
+`activity_has_stage`, 332 `stage_rewards`, 121 `stage_jumps_to`, 50
+`stage_uses_mission`, 41 stage unlock-condition edges, 139 stage completion
+condition edges, 18 `banner_jumps_to`, 34 `activity_has_push`, 12
+`achievement_category_has_group`, 114 `achievement_group_has_achievement`, 156
+`achievement_has_level`, 200 `achievement_level_has_condition`, 3
+`achievement_statistic_tracks`, 66 `system_jump_targets_activity`, 16
+`system_jump_targets_factory_tech`, 50 `system_jump_targets_manual_craft_unlock`,
+4 map jump targets, 24 dungeon jump targets, 22 domain jump targets, and 44 shop
+group jump targets. Averroes scout identified factory tech-tree/unlock bridge as
+the next compact graph slice: 71 tech nodes, 72 machine-to-tech links, 59
+blueprint links, 89 building item links, 168 manual-craft unlock links, and 45
+manual-craft upgrade rows expected from local tables.
 
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
