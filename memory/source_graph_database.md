@@ -665,6 +665,24 @@ python tools\endfield_source_graph.py query map01_lv006_lv_data_sub_sm1l6m3 --ki
 python tools\endfield_source_graph.py query radio_sm1l6m3_1d5_finished --kind story
 ```
 
+2026-07-01 NPC montage graph progress: source graph ingestion now promotes
+`NPCMontageJson` definitions from the WebUI Data index onto the same
+`level_script_montage` nodes used by LevelScript and LevelData references. A
+fast CN rebuild to `tmp/source_graph_npc_montage.sqlite` verified 1,123,902
+total nodes, 1,938,118 edges, and 1,571,706 aliases. New definition coverage
+includes 6,800 `npc_montage_data_defines_montage` edges collapsed to 3,392
+unique montage tags, 2 `npc_montage_category` nodes, 47 `npc_montage_body`
+nodes, and 1,078 `npc_montage_action` nodes. The graph adds 3,392 category
+edges, 3,392 body edges, and 3,392 action edges from montage tags, plus
+`npc_montage_tag`, `npc_montage_path`, and source data-path aliases. This pass
+uses the Data index's exact tail GameplayTag parse and does not decode montage
+clip payloads, controller states, animation curves, or runtime playback rules.
+Example exact query:
+
+```bat
+python tools\endfield_source_graph.py query Montage/NPC/Generic/rabbit01/escaped --kind level_script_montage
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,

@@ -280,6 +280,7 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_Interactive.json",
     "Json_LevelConfig.json",
     "Json_LevelData.json",
+    "Json_NPC.json",
     "Json_LevelScriptData.json",
     "Json_LevelScriptTemplateData.json",
     "Json_GameplayConfigWorldEntityRegistry.json",
@@ -296,6 +297,7 @@ DECODED_CONFIG_TARGET_TYPES = {
     "LevelScriptTemplateData",
     "ModelRadiusTable",
     "ModelTable",
+    "NPCMontageJson",
     "SkillData",
     "SpawnerConfig",
     "SubGameInstanceDataTable",
@@ -971,6 +973,51 @@ def extract_level_data_summary(entry: dict[str, Any], data: bytes) -> dict[str, 
         "refCounts": {kind: len(values) for kind, values in refs.items()},
         "refs": refs,
         "exactLength": False,
+    }
+
+def parse_npc_montage_tag(tag: Any) -> dict[str, str]:
+    tag_text = safe_key(tag)
+    parts = [part for part in tag_text.split("/") if part]
+    if len(parts) < 3:
+        return {"domain": tag_text, "category": "", "form": "", "body": "", "role": "", "action": ""}
+    category = parts[2]
+    action = parts[-1] if parts else ""
+    if category == "Generic":
+        return {
+            "domain": "/".join(parts[:3]),
+            "category": category,
+            "form": "",
+            "body": parts[3] if len(parts) > 3 else "",
+            "role": "",
+            "action": action,
+        }
+    return {
+        "domain": "/".join(parts[:3]),
+        "category": category,
+        "form": parts[3] if len(parts) > 3 else "",
+        "body": parts[4] if len(parts) > 4 else "",
+        "role": parts[5] if len(parts) > 5 else "",
+        "action": action,
+    }
+
+
+def extract_npc_montage_summary(entry: dict[str, Any]) -> dict[str, Any]:
+    values = parse_summary_assignments(entry.get("t"))
+    tag = safe_key(values.get("tag"))
+    tag_info = parse_npc_montage_tag(tag)
+    return {
+        "tag": tag,
+        "animType": parse_optional_int(values.get("animType")),
+        "dataMemberCount": parse_optional_int(values.get("dataMembers")),
+        "category": safe_key(values.get("category")) or tag_info.get("category", ""),
+        "form": safe_key(values.get("form")) or tag_info.get("form", ""),
+        "body": safe_key(values.get("body")) or tag_info.get("body", ""),
+        "role": safe_key(values.get("role")) or tag_info.get("role", ""),
+        "action": safe_key(values.get("action")) or tag_info.get("action", ""),
+        "domain": tag_info.get("domain", ""),
+        "memberCount": 3,
+        "tailGameplayTagParsed": "tail gameplaytag parsed exactly" in safe_key(entry.get("h")).lower(),
+        "sourceFolder": safe_key(entry.get("g")),
     }
 
 def level_script_ref_kind(value: Any, owner_id: str) -> str:
@@ -2301,6 +2348,8 @@ class SourceGraphBuilder:
             self.add_model_table_config_edges(file_node, entry)
         elif subtype == "ModelRadiusTable":
             self.add_model_radius_config_edges(file_node, entry)
+        elif subtype == "NPCMontageJson":
+            self.add_npc_montage_config_edges(file_node, entry)
         elif subtype == "SpawnerConfig":
             self.add_spawner_config_edges(file_node, entry)
         elif subtype == "SubGameInstanceDataTable":
@@ -2321,6 +2370,42 @@ class SourceGraphBuilder:
             self.add_world_entity_registry_edges(file_node, entry)
         elif subtype == "TeleportValidationDataTable":
             self.add_teleport_validation_config_edges(file_node, entry)
+
+    def add_npc_montage_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        summary = extract_npc_montage_summary(entry)
+        tag = safe_key(summary.get("tag"))
+        if not tag:
+            return
+        montage_node = self.add_level_script_montage_node(tag, source="webui/game_data")
+        self.update_node_details(
+            montage_node,
+            name=tag,
+            source="webui/game_data",
+            path=safe_key(entry.get("p")),
+            data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": summary}, depth=3),
+        )
+        self.add_edge(file_node, montage_node, "npc_montage_data_defines_montage", source="webui/game_data", evidence=safe_key(entry.get("dp")))
+        self.add_alias(tag, montage_node, kind="npc_montage_tag", source="webui/game_data")
+        self.add_alias(entry.get("dp"), montage_node, kind="npc_montage_path", source="webui/game_data")
+        self.add_alias(entry.get("p"), montage_node, kind="npc_montage_data_path", source="webui/game_data")
+
+        category = safe_key(summary.get("category"))
+        if category:
+            category_node = self.add_node("npc_montage_category", category, name=category, source="webui/game_data")
+            self.add_alias(category, category_node, kind="npc_montage_category_id", source="webui/game_data")
+            self.add_edge(montage_node, category_node, "npc_montage_has_category", source="webui/game_data", evidence="category")
+        body = safe_key(summary.get("body"))
+        if body:
+            body_key = f"{category}/{body}" if category else body
+            body_node = self.add_node("npc_montage_body", body_key, name=body, source="webui/game_data", data={"category": category, "body": body})
+            self.add_alias(body, body_node, kind="npc_montage_body_id", source="webui/game_data")
+            self.add_alias(body_key, body_node, kind="npc_montage_body_id", source="webui/game_data")
+            self.add_edge(montage_node, body_node, "npc_montage_has_body", source="webui/game_data", evidence="body")
+        action = safe_key(summary.get("action"))
+        if action:
+            action_node = self.add_node("npc_montage_action", action, name=action, source="webui/game_data")
+            self.add_alias(action, action_node, kind="npc_montage_action_id", source="webui/game_data")
+            self.add_edge(montage_node, action_node, "npc_montage_has_action", source="webui/game_data", evidence="action")
 
     def add_level_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         summary = extract_level_config_summary(entry)
@@ -10070,6 +10155,9 @@ QUERY_KIND_PRIORITY = {
     "level_script_template_group": 78,
     "level_script_start_type": 79,
     "level_script_montage": 80,
+    "npc_montage_category": 81,
+    "npc_montage_body": 82,
+    "npc_montage_action": 83,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
