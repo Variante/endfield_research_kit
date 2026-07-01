@@ -539,6 +539,7 @@ def build_weapon_entries(
             "upgrade": upgrade_payload,
             "stats": stat_payload,
             "source": {"table": "WeaponBasicTable.json", "nameTable": "ItemTable.json", "id": weapon_id},
+            "storyWikiKey": f"wiki_{weapon_id}",
             "search": search.lower(),
         })
     return entries
@@ -858,6 +859,7 @@ def build_equipment_entries(
             "description": clean_text(desc),
             "itemDescription": clean_text(deco_desc),
             "source": {"table": "EquipTable.json", "nameTable": "ItemTable.json", "id": equip_id},
+            "storyWikiKey": f"wiki_{equip_id}",
             "search": search.lower(),
         })
     return entries
@@ -1454,15 +1456,39 @@ def build_character_entries(
             "potentials": potentials,
             "stats": stats,
             "source": {"table": "CharacterTable.json", "id": char_id},
+            "storyWikiKey": f"wiki_{char_id}",
             "search": search.lower(),
         })
     return entries
 
 
+def load_story_wiki_keys(out_dir: Path, language: str) -> set[str]:
+    payload = read_json(out_dir / language / "index.json", {})
+    if not isinstance(payload, dict):
+        return set()
+    return {
+        normalize_id(entry.get("k"))
+        for entry in payload.get("entries") or []
+        if isinstance(entry, dict) and normalize_id(entry.get("k")).startswith("wiki_")
+    }
+
+
+def apply_story_wiki_keys(entries: list[dict[str, Any]], story_wiki_keys: set[str]) -> int:
+    count = 0
+    for entry in entries:
+        key = normalize_id(entry.get("storyWikiKey") or (f"wiki_{entry.get('id')}" if entry.get("id") else ""))
+        if key and key in story_wiki_keys:
+            entry["storyWikiKey"] = key
+            count += 1
+        else:
+            entry.pop("storyWikiKey", None)
+    return count
+
 def build_language_payload(
     language: str,
     table_roots: list[tuple[str, Path]],
     fallback_language: str,
+    story_wiki_keys: set[str] | None = None,
 ) -> dict[str, Any]:
     fallback_i18n = load_merged_table(table_roots, f"I18nTextTable_{fallback_language}.json", {})
     i18n = fallback_i18n if language == fallback_language else load_merged_table(table_roots, f"I18nTextTable_{language}.json", fallback_i18n)
@@ -1502,6 +1528,7 @@ def build_language_payload(
         [*weapons, *equipment, *characters],
         key=lambda item: ({"weapon": 0, "equipment": 1, "character": 2}.get(str(item.get("kind") or ""), 9), str(item.get("group") or ""), str(item.get("title") or "")),
     )
+    story_wiki_link_count = apply_story_wiki_keys(entries, story_wiki_keys or set())
     return {
         "generated": int(time.time()),
         "language": language,
@@ -1525,6 +1552,7 @@ def build_language_payload(
             "characterStatRows": sum(len((item.get("stats") or {}).get("rows") or []) for item in characters),
             "characterRawStatRows": sum(int((item.get("stats") or {}).get("rawRowCount") or 0) for item in characters),
             "weaponBreakthroughRows": sum(len((item.get("breakthrough") or {}).get("rows") or []) for item in weapons),
+            "storyWikiLinks": story_wiki_link_count,
         },
         "entries": entries,
     }
@@ -1542,7 +1570,8 @@ def main(argv: list[str] | None = None) -> int:
         code = str(language).strip().upper()
         if not code:
             continue
-        payload = build_language_payload(code, table_roots, str(args.default_language).strip().upper())
+        story_wiki_keys = load_story_wiki_keys(args.out_dir, code)
+        payload = build_language_payload(code, table_roots, str(args.default_language).strip().upper(), story_wiki_keys)
         out_path = args.out_dir / code / "gameplay" / "index.json"
         write_json(out_path, payload)
         outputs.append((code, out_path, payload["counts"]))

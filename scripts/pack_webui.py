@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Build split WebUI zips without the 3D asset browser payload.
 
-The primary package keeps the story/reference/gameplay browser text data, code,
+The primary package keeps the story/gameplay/reference browser text data, code,
 and emoji image files. A companion assets package contains the larger exported
 image/video files that the story renderer can display, and a standalone audio
 package contains decoded story audio files. OBJ/FBX files, Blender bundles,
-the local-only Data/Decoded tabs, and the asset-browser data page are
-intentionally left out.
+legacy local index folders, and the asset-browser data page are intentionally
+left out.
 """
 from __future__ import annotations
 
@@ -65,8 +65,8 @@ ASSET_TAB_RE = re.compile(r'(<button\s+id="assets-tab"(?=[\s>]))([^>]*>)', re.IG
 ASSET_SHIM_JS = """(() => {
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-  const AVAILABLE_VIEWS = new Set(["story", "reference", "gameplay", "updates"]);
-  const HIDDEN_VIEWS = new Set(["assets", "game-data", "decoded"]);
+  const AVAILABLE_VIEWS = new Set(["story", "gameplay", "reference", "updates"]);
+  const HIDDEN_VIEWS = new Set(["assets"]);
 
   function resolveViewFromHash() {
     const hash = (window.location.hash || "").replace(/^#/, "").toLowerCase();
@@ -122,13 +122,13 @@ Run from this extracted directory:
 
 Then open the printed localhost URL.
 
-This package includes the story/reference/gameplay text data, WebUI code, emoji
+This package includes the story/gameplay/reference text data, WebUI code, emoji
 images, and the compact media indexes. Larger story images and videos are in
 the companion assets zip. Decoded story audio is in the standalone audio zip.
 Extract those zips into the same directory after this one when you want
 inline/wiki media or playable audio too.
 
-The local-only Data/Decoded tabs, 3D asset browser, OBJ/FBX payloads, and
+The 3D asset browser, legacy local index folders, OBJ/FBX payloads, and
 Blender bundle downloads are intentionally excluded.
 """
 

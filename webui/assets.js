@@ -566,19 +566,17 @@
 
   function resolveViewFromHash() {
     const hash = (window.location.hash || "").replace(/^#/, "").toLowerCase();
-    if (hash === "assets" || hash === "reference" || hash === "updates" || hash === "gameplay" || hash === "game-data" || hash === "decoded") return hash;
+    if (hash === "assets" || hash === "gameplay" || hash === "reference" || hash === "updates") return hash;
     return "story";
   }
 
   function updateHashForView(view) {
     const nextHash =
       view === "assets" ? "#assets"
-        : view === "reference" ? "#reference"
-          : view === "gameplay" ? "#gameplay"
-            : view === "game-data" ? "#game-data"
-              : view === "decoded" ? "#decoded"
-                : view === "updates" ? "#updates"
-                  : "#story";
+        : view === "gameplay" ? "#gameplay"
+          : view === "reference" ? "#reference"
+            : view === "updates" ? "#updates"
+              : "#story";
     if (window.location.hash === nextHash) return;
     const url = `${window.location.pathname}${window.location.search}${nextHash}`;
     history.replaceState(null, "", url);
@@ -604,22 +602,12 @@
       document.title = gameplayTitle;
       return;
     }
-    if (view === "game-data") {
-      const dataTitle = ($("#game-data-title") && $("#game-data-title").textContent) || "Endfield Game Data";
-      document.title = dataTitle;
-      return;
-    }
-    if (view === "decoded") {
-      const decodedTitle = ($("#decoded-title") && $("#decoded-title").textContent) || "Endfield Decoded Files";
-      document.title = decodedTitle;
-      return;
-    }
     const storyTitle = ($("#app-title") && $("#app-title").textContent) || "Endfield Story Browser";
     document.title = storyTitle;
   }
 
   function setActiveView(view, { updateHash = true } = {}) {
-    ASSET_STATE.activeView = view === "assets" || view === "reference" || view === "updates" || view === "gameplay" || view === "game-data" || view === "decoded" ? view : "story";
+    ASSET_STATE.activeView = view === "assets" || view === "gameplay" || view === "reference" || view === "updates" ? view : "story";
     document.body.dataset.activeView = ASSET_STATE.activeView;
 
     $$(".view-tab").forEach((button) => {

@@ -1,4 +1,4 @@
-﻿// Endfield conversation browser - shared label/type helpers.
+// Endfield conversation browser - shared label/type helpers.
 
 const UI_TEXTS = {
   zh: {
@@ -270,6 +270,8 @@ const UI_TEXTS = {
     lineOrderModeDetailFallback: "\u4f7f\u7528\u56de\u9000\u7b56\u7565 {mode} \u6062\u590d\u987a\u5e8f\u3002",
     optionGroup: "\u7b2c {group} \u7ec4\u9009\u9879",
     relatedScenesHeading: "\u5171\u7528 Unity Timeline",
+    gameplayLinkHeading: "\u5b9e\u6218\u6570\u636e",
+    openGameplayData: "\u5728\u5b9e\u6218\u9875\u6253\u5f00",
     archiveLinksHeading: "\u6863\u6848\u5173\u8054",
     archiveReports: "\u62a5\u544a",
     archiveMaterials: "\u76f8\u5173\u6863\u6848",
@@ -623,6 +625,8 @@ const UI_TEXTS = {
     lineOrderModeDetailFallback: "Recovered order via fallback strategy {mode}.",
     optionGroup: "Option Group {group}",
     relatedScenesHeading: "Shared Unity Timeline",
+    gameplayLinkHeading: "Gameplay Data",
+    openGameplayData: "Open in Gameplay",
     archiveLinksHeading: "Archive Links",
     archiveReports: "Reports",
     archiveMaterials: "Connected Files",

@@ -284,8 +284,9 @@ Expected active inputs and outputs:
   default weapon links, skill blackboard values, level-up costs, weapon upgrade
   checkpoints, weapon base-ATK stat checkpoints, breakthrough material costs,
   character break-stage caps, capped character stat checkpoints from
-  `CharacterTable.attributes`, character breakthrough costs, and potential unlock
-  effects. It is run by `..\export.bat` after the Story builder and can be run
+  `CharacterTable.attributes`, character breakthrough costs, potential unlock
+  effects, and Story wiki cross-links when a matching `wiki_*` Story page exists.
+  It is run by `..\export.bat` after the Story builder and can be run
   directly for extra languages with `--languages CN EN JP --default-language CN`.
 - `build_data_index.py`: builds a legacy local decoded-config index from final
   decoded config files under `export_full/structured/StreamingAssets/Data/Json`

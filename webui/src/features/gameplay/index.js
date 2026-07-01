@@ -22,6 +22,8 @@
       weapon: "\u6b66\u5668",
       character: "\u89d2\u8272",
       equipment: "\u88c5\u5907",
+      storyWiki: "\u5267\u60c5 Wiki",
+      openStoryWiki: "\u5728\u5267\u60c5\u9875\u6253\u5f00",
       id: "ID",
       rarity: "\u7a00\u6709\u5ea6",
       groupFact: "\u5206\u7ec4",
@@ -128,6 +130,8 @@
       weapon: "Weapon",
       character: "Character",
       equipment: "Equipment",
+      storyWiki: "Story wiki",
+      openStoryWiki: "Open in Story",
       id: "ID",
       rarity: "Rarity",
       groupFact: "Group",
@@ -348,6 +352,26 @@
   function section(title, body) {
     if (!body) return "";
     return `<section class="gameplay-section"><h2>${escapeHtml(title)}</h2>${body}</section>`;
+  }
+
+  function storyWikiKey(entry) {
+    return entry && entry.storyWikiKey ? String(entry.storyWikiKey) : "";
+  }
+
+  function storyWikiHref(entry) {
+    const key = storyWikiKey(entry);
+    if (!key) return "";
+    const params = new URLSearchParams();
+    params.set("lang", STATE.language || currentLanguage());
+    params.set("ui", STATE.uiLocale || "zh");
+    params.set("story", key);
+    return `?${params.toString()}#story`;
+  }
+
+  function renderStoryWikiLink(entry) {
+    const href = storyWikiHref(entry);
+    if (!href) return "";
+    return `<div class="gameplay-link-row"><a class="gameplay-wiki-link" href="${escapeHtml(href)}">${escapeHtml(text("openStoryWiki"))}</a></div>`;
   }
 
   function renderDescription(value) {
@@ -756,6 +780,7 @@
     return body ? `<div class="gameplay-card-grid">${body}</div>` : "";
   }
 
+
   function renderWeaponDetail(entry) {
     const facts = [
       fact(text("id"), entry.id, { mono: true }),
@@ -772,6 +797,7 @@
     return {
       facts,
       body: [
+        section(text("storyWiki"), renderStoryWikiLink(entry)),
         section(text("itemDescription"), renderDescription(entry.itemDescription)),
         section(text("description"), renderDescription(entry.description)),
         section(text("weaponStats"), renderStats(entry.stats)),
@@ -780,7 +806,6 @@
       ].join(""),
     };
   }
-
   function renderCharacterDetail(entry) {
     const facts = [
       fact(text("id"), entry.id, { mono: true }),
@@ -802,7 +827,6 @@
         </header>
         ${renderDescription(group.description)}
         ${actionIds ? `<div class="gameplay-subheading">${escapeHtml(text("actionSkillIds"))}</div>${actionIds}` : ""}
-
         ${skills ? `<div class="gameplay-subheading">${escapeHtml(text("actionData"))}</div><div class="gameplay-action-stack">${skills}</div>` : ""}
       </section>`;
     }).join("");
@@ -811,6 +835,7 @@
     return {
       facts,
       body: [
+        section(text("storyWiki"), renderStoryWikiLink(entry)),
         section(text("characterStats"), renderStats(entry.stats)),
         section(text("progression"), renderCharacterProgression(entry)),
         section(text("characterSkills"), groups),
@@ -818,7 +843,69 @@
       ].join(""),
     };
   }
+  function renderEquipmentSuit(entry) {
+    const suit = entry.suit || {};
+    const effects = (suit.effects || []).map((effect) => {
+      const skill = effect.skill || {};
+      const meta = [
+        effect.equipCount ? `${text("equipCount")} ${formatValue(effect.equipCount)}` : "",
+        effect.skillId,
+        effect.skillLevel ? `${text("level")} ${formatValue(effect.skillLevel)}` : "",
+      ].filter(Boolean).join(" / ");
+      return `<article class="gameplay-skill-card">
+        <header>
+          <div class="gameplay-skill-title">${escapeHtml(skill.name || suit.name || effect.skillId || "")}</div>
+          <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
+        </header>
+        ${renderDescription(skill.description)}
+        ${renderLevelRows(skill, { slider: true })}
+      </article>`;
+    }).join("");
+    return effects ? `<div class="gameplay-card-grid">${effects}</div>` : "";
+  }
 
+  function renderEquipmentFormula(entry) {
+    const formula = entry.formula || {};
+    if (!formula.formulaId && !(formula.costs || []).length) return "";
+    const details = renderChipPairs([
+      { label: text("formula"), value: formula.formulaId },
+      { label: text("pack"), value: formula.packId },
+      { label: text("unlock"), value: formula.unlockKey || formula.unlockValue || formula.unlockType },
+    ]);
+    const costs = renderMaterialChips(formula.costs || []);
+    return `<article class="gameplay-skill-card">
+      <header>
+        <div class="gameplay-skill-title">${escapeHtml(formula.formulaId || text("equipmentFormula"))}</div>
+        <div class="gameplay-skill-meta">${escapeHtml(entry.id || "")}</div>
+      </header>
+      ${details}
+      ${costs ? `<div class="gameplay-subheading">${escapeHtml(text("materials"))}</div>${costs}` : ""}
+    </article>`;
+  }
+
+  function renderEquipmentDetail(entry) {
+    const facts = [
+      fact(text("id"), entry.id, { mono: true }),
+      fact(text("rarity"), entry.rarity),
+      fact(text("partType"), entry.partTypeLabel || entry.partType),
+      fact(text("minWearLevel"), entry.minWearLv),
+      fact(text("domain"), entry.domainId, { mono: true }),
+      fact(text("suit"), entry.suit && (entry.suit.name || entry.suit.id)),
+      fact(text("source"), `${entry.source && entry.source.table || ""} / ${entry.source && entry.source.id || ""}`, { mono: true }),
+    ].filter(Boolean).join("");
+    return {
+      facts,
+      body: [
+        section(text("storyWiki"), renderStoryWikiLink(entry)),
+        section(text("itemDescription"), renderDescription(entry.itemDescription)),
+        section(text("description"), renderDescription(entry.description)),
+        section(text("displayAttrs"), renderStatAttrs(entry.stats && entry.stats.displayAttrs || [])),
+        section(text("equipmentStats"), renderStats(entry.stats)),
+        section(text("equipmentSuit"), renderEquipmentSuit(entry)),
+        section(text("equipmentFormula"), renderEquipmentFormula(entry)),
+      ].join(""),
+    };
+  }
   function syncLevelCard(input) {
     const card = input.closest("[data-level-card]");
     if (!card) return;

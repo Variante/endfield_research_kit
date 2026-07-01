@@ -675,6 +675,14 @@ character/weapon nodes with source table row, default weapon, progression,
 skill, talent, and item-cost neighbors. This improves cross-domain lookup; it
 still does not prove formulas beyond the generated source-table evidence.
 
+2026-07-01 WebUI semantic-link progress: Gameplay entries now link to Story
+wiki pages only when the current Story index contains the matching `wiki_*`
+entry, and Story wiki pages link back to the relevant Gameplay entry through
+`?gameplay=...#gameplay`. The current CN payload verifies 321 resolved links:
+72 weapons, 220 equipment records, and 29 characters. `chr_9000_endmin` remains
+unlinked because no corresponding Story wiki page exists in the current Story
+index.
+
 - `AbilitySystemData` field order and many serialized fields for 28 character
   rows, including skill bundles, command mappings, combo conditions, UI data,
   buff lists, blackboard entries, camera config, hit/effect settings, health
