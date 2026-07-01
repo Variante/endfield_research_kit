@@ -668,61 +668,68 @@ schemas. Focused examples include:
 
 2026-07-01 WebUI progress: `scripts/build_gameplay_data.py` now promotes a
 compact, inspectable subset of progression semantics into the Gameplay tab. It
-samples weapon upgrade curves with cumulative costs, weapon base-ATK stat
-checkpoints, weapon breakthrough materials and skill bounds, weapon talent bound
-templates, character level EXP checkpoints, global character break-stage caps,
-playable-capped character stat checkpoints from `CharacterTable.attributes`,
-per-character breakthrough materials, and potential unlock effects/items. The
-builder preserves raw stat metadata separately: the current CN export has 2,820
-playable character stat rows and 3,090 raw rows, with raw character curves
-extending to level 99 while the playable level curve caps at 90. This improves
-practical access to numerical progression data, but it still stops short of
-full formula/runtime simulation.
+samples weapon upgrade curves with cumulative costs, weapon base-ATK stat rows
+annotated by breakthrough stage, weapon breakthrough materials and skill bounds,
+weapon talent bound templates, character level EXP checkpoints, global character
+break-stage caps, playable-capped character stat checkpoints from
+`CharacterTable.attributes`, per-character breakthrough materials, and potential
+unlock effects/items. The builder preserves raw stat metadata separately: the
+current CN export has 2,632 visible character stat rows and 2,884 raw rows, with
+raw character curves extending to level 99 while the playable level curve caps at
+90. This improves practical access to numerical progression data, but it still
+stops short of full formula/runtime simulation.
 
 2026-07-01 WebUI equipment-stat progress: Equipment entries now expose
 localized part/domain/formula/suit context plus per-property stat curves derived
 from `EquipTable` display attributes and enhancement arrays. The current CN
-Gameplay payload verifies 220 equipment entries and 618 equipment property
-curves. These curves make equipment progression inspectable in the WebUI, while
-formula evaluation and exact runtime combat math remain outside the static
-payload.
+Gameplay payload verifies 220 equipment entries, 838 nested equipment property
+curves, 40 composite-attribute curves, and 28 emitted stat keys. The builder now
+filters placeholder `attrType == 0` rows, preserves the base modifier as its own
+property curve, and labels composite attributes such as all-skill damage,
+fire/natural damage, and cold/pulse damage. These curves make equipment
+progression inspectable in the WebUI, while formula evaluation and exact runtime
+combat math remain outside the static payload.
 
 2026-07-01 source graph progress: `tools/endfield_source_graph.py` now ingests
 the generated Gameplay payload as evidence graph nodes and relationships. A
-fast CN verification build with `--skip-asset-maps --skip-reference-rows --skip-followups` produced 322 Gameplay entry edges, 72 weapon nodes, 220
-equipment nodes, 30 character nodes, 409 skill nodes, 556 talent nodes, 958
-progression nodes, 53 item nodes, and 1,878 required-item edges. Exact queries
-such as `chr_0017_yvonne` and `wpn_pistol_0001` now resolve to Gameplay
-character/weapon nodes with source table row, default weapon, progression,
-skill, talent, and item-cost neighbors. This improves cross-domain lookup; it
-still does not prove formulas beyond the generated source-table evidence.
+fast CN verification build with `--skip-asset-maps --skip-reference-rows --skip-followups` produced 72 weapon nodes, 220 equipment nodes, 30 character
+nodes, 409 skill nodes, 526 talent nodes, 950 progression nodes, 66 item nodes,
+and 3,820 required-item edges. The generated WebUI payload itself exposes 320
+visible entries: 72 weapons, 220 equipment records, and 28 visible character
+records. The two hidden Endministrator rows remain as `CharacterTable` graph
+nodes but are no longer separate visible Gameplay entries. Exact queries such as
+`chr_0017_yvonne` and `wpn_pistol_0001` now resolve to Gameplay character/weapon
+nodes with source table row, default weapon, progression, skill, talent, and
+item-cost neighbors. This improves cross-domain lookup; it still does not prove
+formulas beyond the generated source-table evidence.
 
 2026-07-01 source graph equipment-semantic progress: equipment formula,
 domain, suit, unlock, and stat-property details are now queryable instead of
 only compacted into progression blobs. A fast CN source graph rebuild verified
 220 `equipment_formula` nodes, 27 formula packs, 22 suits, 2 gameplay domains,
-22 unlock keys, 618 equipment property curves, 23 stat-property nodes, 220
+22 unlock keys, 838 equipment property curves, 24 stat-property nodes, 220
 `crafted_by_formula` edges, 220 formula output edges, 220 domain edges, 182 suit
-edges, and 618 property-curve-to-stat edges. Formula queries now show output
+edges, and 838 property-curve-to-stat edges. Formula queries now show output
 equipment, source `EquipFormulaTable` rows, formula packs, unlock keys, and
 material costs. This improves static equipment semantics, but it still does not
 simulate runtime crafting or combat formulas.
 
-2026-07-01 source graph progression-cost progress: Gameplay progression item
-traversal now follows `itemBundle`, `items`, and positive `goldCost` fields. A
-fast CN source graph rebuild verified 3,974 `requires_item` edges total,
-including 960 from skill-level `itemBundle`, 504 from weapon-breakthrough
-`items`, 192 from positive `goldCost`, and 776 total edges to `item_gold`. The
-builder filters numeric item counts at or below 0, so zero-cost placeholder
-breakthrough rows no longer become required-item evidence.
+2026-07-01 source graph progression-cost progress: Gameplay item-cost
+traversal now follows `itemBundle`, `items`, equipment formula materials, and
+positive `goldCost` fields. A fast CN source graph rebuild verified 3,820
+`requires_item` edges total: 1,268 from progression nodes, 1,008 from skill
+groups, 1,104 from talent nodes, 440 from equipment formula nodes, and 736 total
+edges to `item_gold`. The builder filters numeric item counts at or below 0, so
+zero-cost placeholder rows no longer become required-item evidence.
 
 2026-07-01 WebUI semantic-link progress: Gameplay entries now link to Story
 wiki pages only when the current Story index contains the matching `wiki_*`
 entry, and Story wiki pages link back to the relevant Gameplay entry through
 `?gameplay=...#gameplay`. The current CN payload verifies 321 resolved links:
-72 weapons, 220 equipment records, and 29 characters. `chr_9000_endmin` remains
-unlinked because no corresponding Story wiki page exists in the current Story
-index.
+72 weapons, 220 equipment records, and 29 character-story links across 28
+visible character entries. `chr_9000_endmin` now carries both
+`wiki_chr_0002_endminm` and `wiki_chr_0003_endminf`, so the hidden male/female
+Endministrator wiki records resolve through the single visible Gameplay entry.
 
 - `AbilitySystemData` field order and many serialized fields for 28 character
   rows, including skill bundles, command mappings, combo conditions, UI data,
@@ -812,8 +819,8 @@ This supports browsing and targeted lookup.
 
 2026-07-01 source graph asset progress: Gameplay entries now get conservative
 asset neighbors when an exact gameplay ID, icon ID, or model-path stem appears
-inside an exported asset path. The fast CN source graph build verifies 5,991
-`has_gameplay_asset` edges: 2,078 weapon edges, 2,153 character edges, and 1,760
+inside an exported asset path. The fast CN source graph build verifies 5,877
+`has_gameplay_asset` edges: 2,078 weapon edges, 2,039 character edges, and 1,760
 equipment edges. This maps common weapon meshes/materials, character UI/portrait
 textures, and equipment icon textures to semantic Gameplay entries without
 using fuzzy localized-name matching.

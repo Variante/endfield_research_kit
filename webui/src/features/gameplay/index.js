@@ -14,6 +14,9 @@
       kind: "\u7c7b\u578b",
       group: "\u5206\u7ec4",
       job: "\u804c\u4e1a",
+      characterPropertyFilter: "\u4e3b\u5c5e\u6027",
+      weaponTypeFilter: "\u6b66\u5668\u7c7b\u578b",
+      equipmentTypeFilter: "\u88c5\u5907\u7c7b\u578b",
       rareLevel: "\u7a00\u6709\u5ea6",
       listUnit: "\u6761",
       empty: "\u4ece\u5de6\u4fa7\u9009\u62e9\u4e00\u6761\u5b9e\u6218\u6570\u636e",
@@ -47,7 +50,6 @@
       source: "\u6765\u6e90",
       fileName: "\u6587\u4ef6\u540d",
       internalName: "\u5185\u90e8\u540d",
-      itemDescription: "\u7269\u54c1\u63cf\u8ff0",
       actionData: "\u52a8\u4f5c\u6570\u636e",
       actionSkillIds: "\u52a8\u4f5c ID",
       levelUpCosts: "\u5347\u7ea7\u6d88\u8017",
@@ -86,12 +88,36 @@
       stat_agi: "\u654f\u6377",
       stat_wis: "\u667a\u8bc6",
       stat_will: "\u610f\u5fd7",
+      stat_physical_damage_taken: "受到的物理伤害",
+      stat_fire_damage_taken: "受到的灼热伤害",
+      stat_pulse_damage_taken: "受到的电磁伤害",
+      stat_cryst_damage_taken: "受到的寒冷伤害",
+      stat_natural_damage_taken: "受到的自然伤害",
+      stat_ether_damage_taken: "受到的超域伤害",
+      stat_critical_rate: "暴击率",
+      stat_normal_attack_efficiency: "普通攻击效率",
+      stat_ultimate_skill_efficiency: "终结技充能效率",
+      stat_heal_taken: "受治疗效果",
+      stat_healing_taken_scalar: "受治疗倍率",
+      stat_fire_burst_damage: "灼热爆发伤害",
+      stat_pulse_burst_damage: "电磁爆发伤害",
+      stat_cryst_burst_damage: "寒冷爆发伤害",
+      stat_natural_burst_damage: "自然爆发伤害",
+      stat_ultimate_sp_gain: "终结技充能效率",
+      stat_broken_unit_damage: "失衡目标伤害",
+      stat_all_damage_taken_scalar: "受到的所有伤害",
+      stat_all_skill_damage: "所有技能伤害",
+      stat_cryst_pulse_damage: "寒冷和电磁伤害加成",
+      stat_spell_damage: "法术伤害",
+      stat_main_attr: "主能力",
+      stat_sub_attr: "副能力",
+      stat_fire_natural_damage: "灼热和自然伤害",
       stat_heal_output: "\u6cbb\u7597\u6548\u679c",
       stat_skill_damage: "\u6218\u6280\u4f24\u5bb3",
       stat_combo_skill_damage: "\u8fde\u643a\u6280\u4f24\u5bb3",
       stat_normal_attack_damage: "\u666e\u653b\u4f24\u5bb3",
       stat_physical_damage: "\u7269\u7406\u4f24\u5bb3",
-      stat_fire_damage: "\u706b\u70ed\u4f24\u5bb3",
+      stat_fire_damage: "\u707c\u70ed\u4f24\u5bb3",
       stat_pulse_damage: "\u7535\u78c1\u4f24\u5bb3",
       stat_cryst_damage: "\u5bd2\u51b7\u4f24\u5bb3",
       stat_natural_damage: "\u81ea\u7136\u4f24\u5bb3",
@@ -134,6 +160,9 @@
       kind: "Kind",
       group: "Group",
       job: "Job",
+      characterPropertyFilter: "Main property",
+      weaponTypeFilter: "Weapon type",
+      equipmentTypeFilter: "Equipment type",
       rareLevel: "Rare level",
       listUnit: "items",
       empty: "Select a gameplay entry",
@@ -167,7 +196,6 @@
       source: "Source",
       fileName: "File name",
       internalName: "Internal name",
-      itemDescription: "Item description",
       actionData: "Action data",
       actionSkillIds: "Action IDs",
       levelUpCosts: "Level-up costs",
@@ -206,6 +234,24 @@
       stat_agi: "AGI",
       stat_wis: "WIS",
       stat_will: "WILL",
+      stat_physical_damage_taken: "Physical Taken",
+      stat_fire_damage_taken: "Fire Taken",
+      stat_pulse_damage_taken: "Pulse Taken",
+      stat_cryst_damage_taken: "Cold Taken",
+      stat_natural_damage_taken: "Natural Taken",
+      stat_ether_damage_taken: "Ether Taken",
+      stat_critical_rate: "Critical Rate",
+      stat_normal_attack_efficiency: "Normal ATK Efficiency",
+      stat_ultimate_skill_efficiency: "Ultimate Efficiency",
+      stat_heal_taken: "Heal Taken",
+      stat_healing_taken_scalar: "Healing Taken Scalar",
+      stat_fire_burst_damage: "Fire Burst DMG",
+      stat_pulse_burst_damage: "Pulse Burst DMG",
+      stat_cryst_burst_damage: "Cold Burst DMG",
+      stat_natural_burst_damage: "Natural Burst DMG",
+      stat_ultimate_sp_gain: "Ultimate SP Gain",
+      stat_broken_unit_damage: "Broken Target DMG",
+      stat_fire_natural_damage: "Fire / Natural DMG",
       stat_heal_output: "Heal Output",
       stat_skill_damage: "Skill DMG",
       stat_combo_skill_damage: "Combo DMG",
@@ -264,8 +310,10 @@
     loading: null,
     filters: {
       kinds: new Set(),
-      groups: new Set(),
       jobs: new Set(),
+      characterProperties: new Set(),
+      weaponTypes: new Set(),
+      equipmentTypes: new Set(),
       rarities: new Set(),
     },
   };
@@ -331,7 +379,13 @@
   function findGameplayEntry(value) {
     const id = normalizeGameplaySelection(value);
     if (!id) return null;
-    return STATE.entries.find((entry) => entry && (entry.id === id || `${entry.kind}:${entry.id}` === id || entry.storyWikiKey === id)) || null;
+    const candidates = new Set([id]);
+    if (!id.startsWith("wiki_")) candidates.add(`wiki_${id}`);
+    return STATE.entries.find((entry) => entry && (
+      candidates.has(entry.id)
+      || candidates.has(`${entry.kind}:${entry.id}`)
+      || storyWikiKeys(entry).some((key) => candidates.has(key))
+    )) || null;
   }
 
   function isGameplayActive() {
@@ -371,22 +425,55 @@
 
   function fact(label, value, opts = {}) {
     const display = formatValue(value);
-    if (!display) return "";
-    return `<div class="gameplay-fact"><span>${escapeHtml(label)}</span><b${opts.mono ? ' class="mono"' : ""}>${escapeHtml(display)}</b></div>`;
+    if (!display) return null;
+    return { label, value: display, mono: !!opts.mono, kind: opts.kind || "" };
   }
 
+  function dedupeDetailTags(tags) {
+    const seen = new Set();
+    return (tags || []).filter((tag) => {
+      if (!tag || tag.value === undefined || tag.value === null || tag.value === "") return false;
+      const key = `${String(tag.label || "").trim().toLowerCase()}\u0000${String(tag.value || "").trim().toLowerCase()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  function renderDetailTags(tags, entry) {
+    const chips = dedupeDetailTags(tags).map((tag) => {
+      const kindAttr = tag.kind ? ` data-kind="${escapeHtml(tag.kind)}"` : "";
+      return `<span class="gameplay-detail-tag"${kindAttr}><span>${escapeHtml(tag.label || "")}</span><b${tag.mono ? ' class="mono"' : ""}>${escapeHtml(formatValue(tag.value))}</b></span>`;
+    });
+    const wiki = renderStoryWikiLink(entry);
+    if (wiki) chips.unshift(wiki);
+    return chips.join("");
+  }
   function section(title, body, opts = {}) {
     if (!body) return "";
     const open = opts.open === false ? "" : " open";
     return `<details class="gameplay-section"${open}><summary><span>${escapeHtml(title)}</span></summary><div class="gameplay-section-body">${body}</div></details>`;
   }
 
-  function storyWikiKey(entry) {
-    return entry && entry.storyWikiKey ? String(entry.storyWikiKey) : "";
+  function storyWikiKeys(entry) {
+    const keys = [];
+    const seen = new Set();
+    const add = (value) => {
+      const key = String(value || "").trim();
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      keys.push(key);
+    };
+    if (entry && Array.isArray(entry.storyWikiKeys)) entry.storyWikiKeys.forEach(add);
+    if (entry && entry.storyWikiKey) add(entry.storyWikiKey);
+    return keys;
   }
 
-  function storyWikiHref(entry) {
-    const key = storyWikiKey(entry);
+  function storyWikiKey(entry) {
+    return storyWikiKeys(entry)[0] || "";
+  }
+
+  function storyWikiHrefForKey(key) {
     if (!key) return "";
     const params = new URLSearchParams();
     params.set("lang", STATE.language || currentLanguage());
@@ -395,12 +482,24 @@
     return `?${params.toString()}#story`;
   }
 
-  function renderStoryWikiLink(entry) {
-    const href = storyWikiHref(entry);
-    if (!href) return "";
-    return `<div class="gameplay-link-row"><a class="gameplay-wiki-link" href="${escapeHtml(href)}">${escapeHtml(text("openStoryWiki"))}</a></div>`;
+  function storyWikiHref(entry) {
+    return storyWikiHrefForKey(storyWikiKey(entry));
   }
 
+  function storyWikiLinkLabel(key, index, total) {
+    if (total <= 1) return text("openStoryWiki");
+    const suffix = String(key || "").replace(/^wiki_chr_\d+_/, "").replace(/^wiki_/, "");
+    return suffix || `${index + 1}`;
+  }
+
+  function renderStoryWikiLink(entry) {
+    const keys = storyWikiKeys(entry);
+    return keys.map((key, index) => {
+      const href = storyWikiHrefForKey(key);
+      if (!href) return "";
+      return `<a class="gameplay-detail-tag gameplay-detail-wiki-link gameplay-wiki-link" href="${escapeHtml(href)}"><span>${escapeHtml(text("storyWiki"))}</span><b>${escapeHtml(storyWikiLinkLabel(key, index, keys.length))}</b></a>`;
+    }).filter(Boolean).join("");
+  }
   function renderDescription(value) {
     const textValue = String(value || "").trim();
     if (!textValue) return "";
@@ -552,18 +651,19 @@
   }
   function renderSkillCard(skill, opts = {}) {
     if (!skill) return "";
-    const maxDifferent = skill.maxDescription && skill.maxDescription !== skill.description;
+    const levels = skill.levels || [];
+    const hasSlider = !!opts.slider && levels.length > 1;
+    const maxDifferent = !hasSlider && skill.maxDescription && skill.maxDescription !== skill.description;
     return `<article class="gameplay-skill-card">
       <header>
         <div class="gameplay-skill-title">${escapeHtml(skill.name || skill.id || "")}</div>
         <div class="gameplay-skill-meta">${escapeHtml(skill.id || "")}${skill.levelCount ? ` / ${formatNumber(skill.levelCount)} Lv` : ""}</div>
       </header>
-      ${renderDescription(skill.description)}
+      ${hasSlider ? "" : renderDescription(skill.description)}
       ${maxDifferent ? `<div class="gameplay-max-effect"><span>${escapeHtml(text("maxEffect"))}</span>${renderDescription(skill.maxDescription)}</div>` : ""}
       ${renderLevelRows(skill, opts)}
     </article>`;
   }
-
   function renderTalentCard(talent) {
     if (!talent) return "";
     const meta = [talent.typeLabel, talent.breakStage ? `Break ${talent.breakStage}` : "", talent.level ? `Lv ${talent.level}` : ""]
@@ -843,7 +943,7 @@
     const actionRows = (group.skills || []).map((skill) => renderMergedSkillAction(skill, levelValue)).filter(Boolean).join("");
     const cost = renderUpgradeCost(levelUpForLevel({ level: levelValue }, group.levelUp || []));
     return `<div class="gameplay-level-pane gameplay-merged-skill-pane" data-level-label="${escapeHtml(levelLabel({ level: levelValue }))}"${active ? "" : " hidden"}>
-      <div class="gameplay-action-stack">${actionRows || `<span class="muted">-</span>`}</div>
+      <div class="gameplay-action-group"><div class="gameplay-action-stack">${actionRows || `<span class="muted">-</span>`}</div></div>
       ${cost}
     </div>`;
   }
@@ -863,6 +963,21 @@
       <div class="gameplay-level-panes">${levels.map((level, index) => renderSkillGroupPane(group, level, index === 0)).join("")}</div>
     </div>`;
   }
+  function renderCharacterPotentials(entry) {
+    const potentialRows = (entry.potentials && entry.potentials.levels || []).map((row) => {
+      const meta = [row.potentialEffectId, row.level ? `${text("level")} ${formatValue(row.level)}` : ""].filter(Boolean).join(" / ");
+      const required = renderRequiredItems(row.requiredItem || []);
+      const values = renderBlackboard(row.blackboard || []);
+      return `<div class="gameplay-talent-level">
+        <div class="gameplay-talent-level-title">${escapeHtml(row.name || `${text("potential")} ${formatValue(row.level === undefined || row.level === null ? "" : row.level)}`)}</div>
+        <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
+        ${renderDescription(row.description)}
+        ${values}
+        ${required ? `<div class="gameplay-subheading">${escapeHtml(text("requiredItems"))}</div>${required}` : ""}
+      </div>`;
+    }).join("");
+    return potentialRows ? `<div class="gameplay-talent-levels">${potentialRows}</div>` : "";
+  }
   function renderWeaponDetail(entry) {
     const facts = [
       fact(text("id"), entry.id, { mono: true }),
@@ -874,16 +989,12 @@
       fact(text("baseAtkMax"), entry.upgrade && entry.upgrade.baseAtkAtMax),
       fact(text("modelPath"), entry.modelPath, { mono: true }),
       fact(text("source"), `${entry.source && entry.source.table || ""} / ${entry.source && entry.source.id || ""}`, { mono: true }),
-    ].filter(Boolean).join("");
-    const skills = (entry.skills || []).map(renderSkillCard).join("");
+    ].filter(Boolean);
+    const skills = (entry.skills || []).map((skill) => renderSkillCard(skill, { slider: true })).join("");
     return {
       facts,
       body: [
-        section(text("storyWiki"), renderStoryWikiLink(entry)),
-        section(text("itemDescription"), renderDescription(entry.itemDescription)),
-        section(text("description"), renderDescription(entry.description)),
         section(text("weaponStats"), renderStats(entry.stats)),
-        section(text("progression"), renderWeaponProgression(entry)),
         section(text("weaponSkills"), skills ? `<div class="gameplay-card-grid">${skills}</div>` : ""),
       ].join(""),
     };
@@ -897,7 +1008,7 @@
       fact(text("weaponType"), entry.weaponTypeLabel || entry.weaponType),
       fact(text("defaultWeapon"), entry.defaultWeaponName || entry.defaultWeaponId),
       fact(text("source"), `${entry.source && entry.source.table || ""} / ${entry.source && entry.source.id || ""}`, { mono: true }),
-    ].filter(Boolean).join("");
+    ].filter(Boolean);
     const groups = (entry.skillGroups || []).map((group) => {
       const actionIds = renderIdChips(group.actionSkillIds || []);
       const mergedLevels = renderMergedSkillGroupLevels(group);
@@ -916,11 +1027,10 @@
     return {
       facts,
       body: [
-        section(text("storyWiki"), renderStoryWikiLink(entry)),
         section(text("characterStats"), renderStats(entry.stats)),
-        section(text("progression"), renderCharacterProgression(entry)),
         section(text("characterSkills"), groups ? `<div class="gameplay-character-skill-grid">${groups}</div>` : ""),
         section(text("talents"), talentGroups || (talentCards ? `<div class="gameplay-card-grid">${talentCards}</div>` : "")),
+        section(text("characterPotentials"), renderCharacterPotentials(entry)),
       ].join(""),
     };
   }
@@ -930,15 +1040,13 @@
       const skill = effect.skill || {};
       const meta = [
         effect.equipCount ? `${text("equipCount")} ${formatValue(effect.equipCount)}` : "",
-        effect.skillId,
         effect.skillLevel ? `${text("level")} ${formatValue(effect.skillLevel)}` : "",
       ].filter(Boolean).join(" / ");
       return `<article class="gameplay-skill-card">
         <header>
-          <div class="gameplay-skill-title">${escapeHtml(skill.name || suit.name || effect.skillId || "")}</div>
+          <div class="gameplay-skill-title">${escapeHtml(skill.name || suit.name || text("equipmentSuit"))}</div>
           <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
         </header>
-        ${renderDescription(skill.description)}
         ${renderLevelRows(skill, { slider: true })}
       </article>`;
     }).join("");
@@ -967,8 +1075,8 @@
         </div></div>`;
       return `<article class="gameplay-skill-card gameplay-stat-card">
         <header>
-          <div class="gameplay-skill-title">${escapeHtml(curve.label || curve.key || "")}</div>
-          <div class="gameplay-skill-meta">${escapeHtml([stats.source, curve.compositeAttr].filter(Boolean).join(" / "))}</div>
+          <div class="gameplay-skill-title">${escapeHtml(statAttrLabel(curve))}</div>
+          <div class="gameplay-skill-meta">${escapeHtml(stats.source || "")}</div>
         </header>
         ${body}
       </article>`;
@@ -984,14 +1092,10 @@
       fact(text("domain"), entry.domainName || (entry.domain && entry.domain.name) || entry.domainId),
       fact(text("suit"), entry.suit && (entry.suit.name || entry.suit.id)),
       fact(text("source"), `${entry.source && entry.source.table || ""} / ${entry.source && entry.source.id || ""}`, { mono: true }),
-    ].filter(Boolean).join("");
+    ].filter(Boolean);
     return {
       facts,
       body: [
-        section(text("storyWiki"), renderStoryWikiLink(entry)),
-        section(text("itemDescription"), renderDescription(entry.itemDescription)),
-        section(text("description"), renderDescription(entry.description)),
-        section(text("displayAttrs"), renderStatAttrs(entry.stats && entry.stats.displayAttrs || [])),
         section(text("equipmentStats"), renderEquipmentPropertyStats(entry.stats)),
         section(text("equipmentSuit"), renderEquipmentSuit(entry)),
         section(text("equipmentFormula"), renderEquipmentFormula(entry)),
@@ -1056,9 +1160,12 @@
     if (empty) empty.hidden = true;
     detail.hidden = false;
     gp$("#gameplay-detail-title").textContent = entry.title || entry.id || "";
-    gp$("#gameplay-detail-meta").textContent = [kindLabel(entry.kind), entrySubtitle(entry), entry.group].filter(Boolean).join(" / ");
     const rendered = entry.kind === "weapon" ? renderWeaponDetail(entry) : entry.kind === "equipment" ? renderEquipmentDetail(entry) : renderCharacterDetail(entry);
-    gp$("#gameplay-detail-facts").innerHTML = rendered.facts;
+    const detailTags = [
+      fact(text("kind"), kindLabel(entry.kind), { kind: entry.kind }),
+      ...(rendered.facts || []),
+    ];
+    gp$("#gameplay-detail-meta").innerHTML = renderDetailTags(detailTags, entry);
     gp$("#gameplay-detail-body").innerHTML = rendered.body || "";
     bindLevelSliders(detail);
   }
@@ -1086,7 +1193,7 @@
       const selected = key === selectedId ? " is-selected" : "";
       return `<button class="gameplay-row${selected}" type="button" data-key="${escapeHtml(key)}">
         <div class="gameplay-row-head">
-          <span class="gameplay-kind-badge">${escapeHtml(kindLabel(entry.kind))}</span>
+          <span class="gameplay-kind-badge" data-kind="${escapeHtml(entry.kind || "")}">${escapeHtml(kindLabel(entry.kind))}</span>
           <span class="gameplay-row-name">${escapeHtml(entry.title || entry.id || "")}</span>
         </div>
         <div class="gameplay-row-meta">${escapeHtml(entrySubtitle(entry) || entry.group || "")}</div>
@@ -1127,6 +1234,15 @@
     return entry && (entry.professionLabel || entry.profession || "");
   }
 
+  function characterPropertyFilterKey(entry) {
+    if (!entry || entry.kind !== "character") return "";
+    return String(entry.element || entry.elementLabel || "");
+  }
+
+  function characterPropertyFilterLabel(entry) {
+    return entry && (entry.elementLabel || entry.element || "");
+  }
+
   function rarityFilterKey(entry) {
     return entry && entry.rarity !== undefined && entry.rarity !== null && entry.rarity !== "" ? String(entry.rarity) : "";
   }
@@ -1134,15 +1250,51 @@
   function rarityFilterLabel(value) {
     return `${text("rareLevel")} ${formatValue(value)}`;
   }
+
+  function weaponTypeFilterKey(entry) {
+    if (!entry || entry.kind !== "weapon") return "";
+    return String(entry.weaponTypeKey || entry.weaponTypeLabel || entry.weaponType || "");
+  }
+
+  function weaponTypeFilterLabel(entry) {
+    return entry && (entry.weaponTypeLabel || entry.weaponTypeKey || entry.weaponType || "");
+  }
+
+  function equipmentTypeFilterKey(entry) {
+    if (!entry || entry.kind !== "equipment") return "";
+    return String(entry.showingType !== undefined && entry.showingType !== null && entry.showingType !== "" ? entry.showingType : (entry.showingTypeLabel || entry.partTypeLabel || entry.partType || ""));
+  }
+
+  function equipmentTypeFilterLabel(entry) {
+    return entry && (entry.showingTypeLabel || entry.partTypeLabel || entry.partType || "");
+  }
+
+  function typeFiltersMatch(entry) {
+    const hasCharacterProperties = STATE.filters.characterProperties.size > 0;
+    const hasWeaponTypes = STATE.filters.weaponTypes.size > 0;
+    const hasEquipmentTypes = STATE.filters.equipmentTypes.size > 0;
+    if (!hasCharacterProperties && !hasWeaponTypes && !hasEquipmentTypes) return true;
+    if (entry && entry.kind === "character") return hasCharacterProperties && STATE.filters.characterProperties.has(characterPropertyFilterKey(entry));
+    if (entry && entry.kind === "weapon") return hasWeaponTypes && STATE.filters.weaponTypes.has(weaponTypeFilterKey(entry));
+    if (entry && entry.kind === "equipment") return hasEquipmentTypes && STATE.filters.equipmentTypes.has(equipmentTypeFilterKey(entry));
+    return false;
+  }
   function buildFilterChips() {
     const kindCounts = countBy(STATE.entries, (entry) => entry.kind);
-    const groupCounts = countBy(STATE.entries, (entry) => entry.group);
     const jobCounts = countBy(STATE.entries, (entry) => jobFilterKey(entry));
+    const propertyCounts = countBy(STATE.entries, (entry) => characterPropertyFilterKey(entry));
+    const weaponTypeCounts = countBy(STATE.entries, (entry) => weaponTypeFilterKey(entry));
+    const equipmentTypeCounts = countBy(STATE.entries, (entry) => equipmentTypeFilterKey(entry));
     const rarityCounts = countBy(STATE.entries, (entry) => rarityFilterKey(entry));
     const jobLabels = new Map(STATE.entries.map((entry) => [jobFilterKey(entry), jobFilterLabel(entry)]).filter(([value]) => value));
+    const propertyLabels = new Map(STATE.entries.map((entry) => [characterPropertyFilterKey(entry), characterPropertyFilterLabel(entry)]).filter(([value]) => value));
+    const weaponTypeLabels = new Map(STATE.entries.map((entry) => [weaponTypeFilterKey(entry), weaponTypeFilterLabel(entry)]).filter(([value]) => value));
+    const equipmentTypeLabels = new Map(STATE.entries.map((entry) => [equipmentTypeFilterKey(entry), equipmentTypeFilterLabel(entry)]).filter(([value]) => value));
     const kindItems = [...kindCounts.keys()].sort().map((value) => ({ value, label: kindLabel(value), count: kindCounts.get(value) }));
-    const groupItems = [...groupCounts.keys()].sort().map((value) => ({ value, label: value, count: groupCounts.get(value) }));
     const jobItems = [...jobCounts.keys()].sort((a, b) => String(jobLabels.get(a) || a).localeCompare(String(jobLabels.get(b) || b))).map((value) => ({ value, label: jobLabels.get(value) || value, count: jobCounts.get(value) }));
+    const propertyItems = [...propertyCounts.keys()].sort((a, b) => String(propertyLabels.get(a) || a).localeCompare(String(propertyLabels.get(b) || b))).map((value) => ({ value, label: propertyLabels.get(value) || value, count: propertyCounts.get(value) }));
+    const weaponTypeItems = [...weaponTypeCounts.keys()].sort((a, b) => String(weaponTypeLabels.get(a) || a).localeCompare(String(weaponTypeLabels.get(b) || b))).map((value) => ({ value, label: weaponTypeLabels.get(value) || value, count: weaponTypeCounts.get(value) }));
+    const equipmentTypeItems = [...equipmentTypeCounts.keys()].sort((a, b) => String(equipmentTypeLabels.get(a) || a).localeCompare(String(equipmentTypeLabels.get(b) || b))).map((value) => ({ value, label: equipmentTypeLabels.get(value) || value, count: equipmentTypeCounts.get(value) }));
     const rarityItems = [...rarityCounts.keys()].sort((a, b) => Number(b) - Number(a)).map((value) => ({ value, label: rarityFilterLabel(value), count: rarityCounts.get(value) }));
     window.WebUI.filters.buildChips("#gameplay-kind-filter", kindItems, {
       active: STATE.filters.kinds,
@@ -1152,12 +1304,20 @@
       active: STATE.filters.jobs,
       onToggle: () => applyFilters(),
     });
-    window.WebUI.filters.buildChips("#gameplay-rarity-filter", rarityItems, {
-      active: STATE.filters.rarities,
+    window.WebUI.filters.buildChips("#gameplay-character-property-filter", propertyItems, {
+      active: STATE.filters.characterProperties,
       onToggle: () => applyFilters(),
     });
-    window.WebUI.filters.buildChips("#gameplay-group-filter", groupItems, {
-      active: STATE.filters.groups,
+    window.WebUI.filters.buildChips("#gameplay-weapon-type-filter", weaponTypeItems, {
+      active: STATE.filters.weaponTypes,
+      onToggle: () => applyFilters(),
+    });
+    window.WebUI.filters.buildChips("#gameplay-equipment-type-filter", equipmentTypeItems, {
+      active: STATE.filters.equipmentTypes,
+      onToggle: () => applyFilters(),
+    });
+    window.WebUI.filters.buildChips("#gameplay-rarity-filter", rarityItems, {
+      active: STATE.filters.rarities,
       onToggle: () => applyFilters(),
     });
   }
@@ -1167,7 +1327,7 @@
       if (STATE.filters.kinds.size && !STATE.filters.kinds.has(entry.kind)) return false;
       if (STATE.filters.jobs.size && !STATE.filters.jobs.has(jobFilterKey(entry))) return false;
       if (STATE.filters.rarities.size && !STATE.filters.rarities.has(rarityFilterKey(entry))) return false;
-      if (STATE.filters.groups.size && !STATE.filters.groups.has(entry.group)) return false;
+      if (!typeFiltersMatch(entry)) return false;
       if (q) {
         const haystack = [entry.search, entry.title, entry.id, entry.group, entry.subtitle].join(" ");
         if (!textIncludes(haystack, q)) return false;
@@ -1191,8 +1351,10 @@
     const q = gp$("#gameplay-q");
     if (q) q.value = "";
     STATE.filters.kinds.clear();
-    STATE.filters.groups.clear();
     STATE.filters.jobs.clear();
+    STATE.filters.characterProperties.clear();
+    STATE.filters.weaponTypes.clear();
+    STATE.filters.equipmentTypes.clear();
     STATE.filters.rarities.clear();
     buildFilterChips();
     applyFilters();
@@ -1206,8 +1368,10 @@
       ["#gameplay-basic-filter-label", "basicFilters"],
       ["#gameplay-kind-label", "kind"],
       ["#gameplay-job-label", "job"],
+      ["#gameplay-character-property-label", "characterPropertyFilter"],
+      ["#gameplay-weapon-type-label", "weaponTypeFilter"],
+      ["#gameplay-equipment-type-label", "equipmentTypeFilter"],
       ["#gameplay-rarity-label", "rareLevel"],
-      ["#gameplay-group-label", "group"],
       ["#gameplay-reset", "reset"],
       ["#gameplay-list-meta-label", "listUnit"],
       ["#gameplay-empty", "empty"],
@@ -1222,7 +1386,6 @@
     buildFilterChips();
     if (STATE.entries.length) renderList();
   }
-
   async function loadGameplay(force = false) {
     const language = currentLanguage();
     if (!force && STATE.index && STATE.language === language) return;

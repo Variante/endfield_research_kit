@@ -275,6 +275,30 @@
                 <div id="gameplay-job-filter" class="chips" data-multi="1"></div>
               </div>
             </section>
+            <section class="filter-section is-collapsed" data-filter-section="gameplay-character-property" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="gameplay-filter-section-character-property-body">
+                <span id="gameplay-character-property-label">Main property</span>
+              </button>
+              <div id="gameplay-filter-section-character-property-body" class="filter-section-body" hidden>
+                <div id="gameplay-character-property-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="gameplay-weapon-type" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="gameplay-filter-section-weapon-type-body">
+                <span id="gameplay-weapon-type-label">Weapon type</span>
+              </button>
+              <div id="gameplay-filter-section-weapon-type-body" class="filter-section-body" hidden>
+                <div id="gameplay-weapon-type-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="gameplay-equipment-type" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="gameplay-filter-section-equipment-type-body">
+                <span id="gameplay-equipment-type-label">Equipment type</span>
+              </button>
+              <div id="gameplay-filter-section-equipment-type-body" class="filter-section-body" hidden>
+                <div id="gameplay-equipment-type-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
             <section class="filter-section is-collapsed" data-filter-section="gameplay-rarity" data-default-collapsed="1">
               <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="gameplay-filter-section-rarity-body">
                 <span id="gameplay-rarity-label">Rare level</span>
@@ -283,16 +307,7 @@
                 <div id="gameplay-rarity-filter" class="chips" data-multi="1"></div>
               </div>
             </section>
-            <section class="filter-section is-collapsed" data-filter-section="gameplay-group" data-default-collapsed="1">
-              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="gameplay-filter-section-group-body">
-                <span id="gameplay-group-label">Group</span>
-              </button>
-              <div id="gameplay-filter-section-group-body" class="filter-section-body" hidden>
-                <div id="gameplay-group-filter" class="chips" data-multi="1"></div>
-              </div>
-            </section>
           </div>
-
           <div id="gameplay-list-meta"><span id="gameplay-shown">0</span> / <span id="gameplay-total">0</span> <span id="gameplay-list-meta-label">entries</span></div>
           <div id="gameplay-list"></div>
         </aside>
@@ -305,7 +320,6 @@
               <div id="gameplay-detail-title"></div>
               <div id="gameplay-detail-meta"></div>
             </header>
-            <div id="gameplay-detail-facts"></div>
             <div id="gameplay-detail-body"></div>
           </div>
         </main>

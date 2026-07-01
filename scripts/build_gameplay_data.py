@@ -79,39 +79,91 @@ STAT_ATTR_KEYS = {
     1: "hp",
     2: "atk",
     3: "def",
+    4: "physical_damage_taken",
+    5: "fire_damage_taken",
+    6: "pulse_damage_taken",
+    7: "cryst_damage_taken",
+    9: "critical_rate",
+    17: "normal_attack_efficiency",
+    28: "ultimate_skill_efficiency",
     29: "heal_output",
+    30: "heal_taken",
+    31: "healing_taken_scalar",
     32: "skill_damage",
     33: "combo_skill_damage",
     34: "normal_attack_damage",
+    35: "fire_burst_damage",
+    36: "pulse_burst_damage",
+    37: "cryst_burst_damage",
+    38: "natural_burst_damage",
     39: "str",
     40: "agi",
     41: "wis",
     42: "will",
+    44: "ultimate_sp_gain",
+    48: "natural_damage_taken",
     50: "physical_damage",
     51: "fire_damage",
     52: "pulse_damage",
     53: "cryst_damage",
     54: "natural_damage",
+    60: "ether_damage_taken",
+    61: "broken_unit_damage",
     87: "infliction",
 }
 STAT_ATTR_LABELS = {
     1: "HP",
     2: "ATK",
     3: "DEF",
+    4: "Physical Taken",
+    5: "Fire Taken",
+    6: "Pulse Taken",
+    7: "Cold Taken",
+    9: "Critical Rate",
+    17: "Normal ATK Efficiency",
+    28: "Ultimate Efficiency",
     29: "Heal Output",
+    30: "Heal Taken",
+    31: "Healing Taken Scalar",
     32: "Skill DMG",
     33: "Combo DMG",
     34: "Normal ATK DMG",
+    35: "Fire Burst DMG",
+    36: "Pulse Burst DMG",
+    37: "Cold Burst DMG",
+    38: "Natural Burst DMG",
     39: "STR",
     40: "AGI",
     41: "WIS",
     42: "WILL",
+    44: "Ultimate SP Gain",
+    48: "Natural Taken",
     50: "Physical DMG",
     51: "Fire DMG",
     52: "Pulse DMG",
     53: "Cold DMG",
     54: "Natural DMG",
+    60: "Ether Taken",
+    61: "Broken Target DMG",
     87: "Infliction",
+}
+COMPOSITE_ATTR_KEYS = {
+    "AllDamageTakenScalar": "all_damage_taken_scalar",
+    "AllSkillDamageIncrease": "all_skill_damage",
+    "CrystAndPulseDamageIncrease": "cryst_pulse_damage",
+    "FireAndNaturalDamageIncrease": "fire_natural_damage",
+    "Main": "main_attr",
+    "SpellDamageIncrease": "spell_damage",
+    "Sub": "sub_attr",
+}
+COMPOSITE_ATTR_LABELS = {
+    "AllDamageTakenScalar": "All Damage Taken",
+    "AllSkillDamageIncrease": "All Skill DMG",
+    "CrystAndPulseDamageIncrease": "Cold / Pulse DMG",
+    "FireAndNaturalDamageIncrease": "Fire / Natural DMG",
+    "Main": "Main Attribute",
+    "SpellDamageIncrease": "Spell DMG",
+    "Sub": "Sub Attribute",
 }
 POTENTIAL_ATTR_BLACKBOARD_KEYS = {
     1: ("MaxHp",),
@@ -142,6 +194,13 @@ EQUIPMENT_PART_LABELS = {
     2: "Accessory",
 }
 
+HIDDEN_CHARACTER_IDS = {
+    "chr_0002_endminm",
+    "chr_0003_endminf",
+}
+CHARACTER_STORY_WIKI_KEYS = {
+    "chr_9000_endmin": ["wiki_chr_0002_endminm", "wiki_chr_0003_endminf"],
+}
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -525,8 +584,8 @@ def build_weapon_entries(
         weapon_type_id = row.get("weaponType") if row.get("weaponType") not in (None, "") else weapon_type_id_from_weapon_id(weapon_id)
         weapon_type = weapon_type_label(weapon_type_id, weapon_id, text_table, i18n, fallback_i18n)
         upgrade_payload = weapon_upgrade_payload(row.get("levelTemplateId"), upgrades, upgrade_sums)
-        stat_payload = weapon_stat_curve_payload(row.get("levelTemplateId"), upgrades)
         breakthrough_payload = weapon_breakthrough_payload(row.get("breakthroughTemplateId"), breakthroughs, items, i18n, fallback_i18n)
+        stat_payload = weapon_stat_curve_payload(row.get("levelTemplateId"), upgrades, breakthrough_payload.get("rows") or [])
         talent_payload = weapon_talent_payload(row.get("talentTemplateId"), talents)
         search = " ".join([
             weapon_id,
@@ -581,6 +640,7 @@ def row_label_lookup(
     fields: tuple[str, ...] = ("name",),
 ) -> str:
     row = table.get(str(key)) or table.get(key) or {}
+
     if not isinstance(row, dict):
         return ""
     for field in fields:
@@ -731,9 +791,22 @@ def character_stat_curve_payload(char_row: dict[str, Any], attr_meta: dict[str, 
     }
 
 
-def weapon_stat_curve_payload(template_id_raw: Any, upgrades: dict[str, Any]) -> dict[str, Any]:
+def weapon_break_stage_for_level(level: int | None, break_rows: list[dict[str, Any]]) -> Any:
+    if level is None:
+        return None
+    stage = None
+    for row in sorted((row for row in break_rows if isinstance(row, dict)), key=lambda item: int_value(item.get("level")) or 0):
+        cap_level = int_value(row.get("level"))
+        if cap_level is None or cap_level > level:
+            continue
+        stage = row.get("showLevel")
+    return stage
+
+
+def weapon_stat_curve_payload(template_id_raw: Any, upgrades: dict[str, Any], break_rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     template_id = normalize_id(template_id_raw)
     rows = (upgrades.get(template_id) or {}).get("list") or []
+    break_rows = break_rows or []
     stat_rows = []
     for row in rows:
         if not isinstance(row, dict):
@@ -743,6 +816,7 @@ def weapon_stat_curve_payload(template_id_raw: Any, upgrades: dict[str, Any]) ->
             continue
         stat_rows.append({
             "level": level,
+            "breakStage": weapon_break_stage_for_level(level, break_rows),
             "attrs": [stat_attr_payload("baseAtk", row.get("baseAtk"))],
         })
     max_level = max((int(row["level"]) for row in stat_rows if row.get("level") is not None), default=None)
@@ -759,15 +833,16 @@ def display_attr_payload(modifier: dict[str, Any], value: Any, attr_meta: dict[s
     attr_type = int_value(modifier.get("attrType"))
     composite = normalize_id(modifier.get("compositeAttr"))
     attr_key: int | str
-    attr_key = composite if composite else (attr_type if attr_type is not None else normalize_id(modifier.get("attrType")))
+    attr_key = COMPOSITE_ATTR_KEYS.get(composite, composite) if composite else (attr_type if attr_type is not None else normalize_id(modifier.get("attrType")))
     payload = stat_attr_payload(attr_key, value, attr_meta)
+    if composite and composite in COMPOSITE_ATTR_LABELS:
+        payload["label"] = COMPOSITE_ATTR_LABELS[composite]
     payload["attrIndex"] = modifier.get("attrIndex")
     if composite:
         payload["compositeAttr"] = composite
     if attr_type is not None:
         payload["rawAttrType"] = attr_type
     return payload
-
 
 def equipment_stat_payload(equip_row: dict[str, Any], attr_meta: dict[str, Any]) -> dict[str, Any]:
     modifiers = [item for item in (equip_row.get("equipAttrModifiers") or []) if isinstance(item, dict)]
@@ -778,7 +853,7 @@ def equipment_stat_payload(equip_row: dict[str, Any], attr_meta: dict[str, Any])
         for modifier in sorted(modifiers, key=lambda item: int_value(item.get("attrIndex")) or 0):
             attr_type = int_value(modifier.get("attrType"))
             values = modifier.get("attrValues") or []
-            if attr_type is None or index >= len(values):
+            if attr_type is None or attr_type == 0 or index >= len(values):
                 continue
             attrs.append(stat_attr_payload(attr_type, values[index], attr_meta))
         if attrs:
@@ -801,6 +876,18 @@ def equipment_stat_payload(equip_row: dict[str, Any], attr_meta: dict[str, Any])
         modifiers_by_index.setdefault(attr_index, []).append(modifier)
 
     property_curves = []
+    if base_modifier and base_modifier.get("attrValue") not in (None, ""):
+        base_payload = display_attr_payload(base_modifier, base_modifier.get("attrValue"), attr_meta)
+        property_curves.append({
+            "attrIndex": int_value(base_modifier.get("attrIndex")),
+            "key": base_payload.get("key"),
+            "label": base_payload.get("label"),
+            "iconName": base_payload.get("iconName"),
+            "compositeAttr": base_payload.get("compositeAttr"),
+            "rowCount": 1,
+            "maxLevel": 1,
+            "rows": [{"level": 1, "attrs": [base_payload]}],
+        })
     for modifier in sorted(display_modifiers, key=lambda item: int_value(item.get("attrIndex")) or 0):
         if modifier.get("attrValue") in (None, ""):
             continue
@@ -813,7 +900,7 @@ def equipment_stat_payload(equip_row: dict[str, Any], attr_meta: dict[str, Any])
             for attr_modifier in matching_modifiers:
                 attr_type = int_value(attr_modifier.get("attrType"))
                 attr_values = attr_modifier.get("attrValues") or []
-                if attr_type is None or index >= len(attr_values):
+                if attr_type is None or attr_type == 0 or index >= len(attr_values):
                     continue
                 attrs.append(stat_attr_payload(attr_type, attr_values[index], attr_meta))
             if not attrs:
@@ -1495,6 +1582,8 @@ def build_character_entries(
     break_stages = character_break_stage_payload(tables, item_table, i18n, fallback_i18n)
     entries = []
     for char_id, row in sorted(chars.items(), key=lambda item: character_sort_key(item[0], item[1])):
+        if char_id in HIDDEN_CHARACTER_IDS:
+            continue
         if not isinstance(row, dict):
             continue
         growth_row = growth.get(char_id) or {}
@@ -1571,6 +1660,7 @@ def build_character_entries(
             *(level.get("description") or "" for level in (potentials.get("levels") or [])),
             *(item.get("name") or "" for level in (potentials.get("levels") or []) for item in level.get("requiredItem") or []),
         ])
+        story_wiki_keys = CHARACTER_STORY_WIKI_KEYS.get(char_id) or [f"wiki_{char_id}"]
         entries.append({
             "id": char_id,
             "kind": "character",
@@ -1599,7 +1689,8 @@ def build_character_entries(
             "potentials": potentials,
             "stats": stats,
             "source": {"table": "CharacterTable.json", "id": char_id},
-            "storyWikiKey": f"wiki_{char_id}",
+            "storyWikiKey": story_wiki_keys[0],
+            "storyWikiKeys": story_wiki_keys,
             "search": search.lower(),
         })
     return entries
@@ -1619,12 +1710,31 @@ def load_story_wiki_keys(out_dir: Path, language: str) -> set[str]:
 def apply_story_wiki_keys(entries: list[dict[str, Any]], story_wiki_keys: set[str]) -> int:
     count = 0
     for entry in entries:
-        key = normalize_id(entry.get("storyWikiKey") or (f"wiki_{entry.get('id')}" if entry.get("id") else ""))
-        if key and key in story_wiki_keys:
-            entry["storyWikiKey"] = key
-            count += 1
+        raw_keys: list[Any] = []
+        alias_keys = entry.get("storyWikiKeys")
+        if isinstance(alias_keys, list):
+            raw_keys.extend(alias_keys)
+        elif alias_keys:
+            raw_keys.append(alias_keys)
+        raw_keys.append(entry.get("storyWikiKey") or (f"wiki_{entry.get('id')}" if entry.get("id") else ""))
+        valid_keys = []
+        seen = set()
+        for raw_key in raw_keys:
+            key = normalize_id(raw_key)
+            if not key or key in seen or key not in story_wiki_keys:
+                continue
+            seen.add(key)
+            valid_keys.append(key)
+        if valid_keys:
+            entry["storyWikiKey"] = valid_keys[0]
+            if len(valid_keys) > 1:
+                entry["storyWikiKeys"] = valid_keys
+            else:
+                entry.pop("storyWikiKeys", None)
+            count += len(valid_keys)
         else:
             entry.pop("storyWikiKey", None)
+            entry.pop("storyWikiKeys", None)
     return count
 
 def build_language_payload(
