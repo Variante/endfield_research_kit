@@ -281,6 +281,7 @@ DECODED_CONFIG_TARGET_TYPES = {
     "InteractiveTemplateData",
     "ModelRadiusTable",
     "ModelTable",
+    "TeleportValidationDataTable",
 }
 MEMORYPACK_NULL_COUNT = 0xFFFFFFFF
 ACTIVITY_ACHIEVEMENT_TABLES = (
@@ -442,6 +443,12 @@ def mp_read_i32(data: bytes, offset: int, field_name: str) -> tuple[int, int]:
     return struct.unpack_from("<i", data, offset)[0], offset + 4
 
 
+def mp_read_u16(data: bytes, offset: int, field_name: str) -> tuple[int, int]:
+    if offset + 2 > len(data):
+        raise ValueError(f"{field_name}:truncated-u16")
+    return struct.unpack_from("<H", data, offset)[0], offset + 2
+
+
 def mp_read_u64(data: bytes, offset: int, field_name: str) -> tuple[int, int]:
     if offset + 8 > len(data):
         raise ValueError(f"{field_name}:truncated-u64")
@@ -591,6 +598,52 @@ def extract_world_entity_brief_rows(data: bytes) -> dict[str, Any] | None:
             rotation, offset = mp_read_vec3(data, offset, f"worldEntityBriefInfos[{index}].rotation")
             rows.append({"entityId": str(entity_id), "detailId": detail_id, "entityType": entity_type, "position": position, "rotation": rotation})
         return {"briefCount": brief_count, "briefRows": rows}
+    except (ValueError, struct.error):
+        return None
+
+
+def extract_teleport_validation_rows(data: bytes) -> dict[str, Any] | None:
+    if not data or data[0] != 1:
+        return None
+    try:
+        offset = 1
+        row_count, offset = mp_read_u32(data, offset, "TeleportValidationDataTable", max_count=10_000)
+        rows: list[dict[str, Any]] = []
+        for index in range(row_count):
+            teleport_id, offset = mp_read_required_string(data, offset, f"TeleportValidationDataTable[{index}].key", max_length=1024)
+            if offset >= len(data):
+                raise ValueError(f"TeleportValidationDataTable[{index}].memberCount:truncated")
+            member_count = data[offset]
+            offset += 1
+            if member_count != 10:
+                raise ValueError(f"TeleportValidationDataTable[{index}].memberCount={member_count}")
+            field0_float, offset = mp_read_f32(data, offset, f"TeleportValidationDataTable[{index}].field0Float")
+            duplicate_id, offset = mp_read_required_string(data, offset, f"TeleportValidationDataTable[{index}].id", max_length=1024)
+            if duplicate_id != teleport_id:
+                raise ValueError(f"TeleportValidationDataTable[{index}].idMismatch")
+            flag_word, offset = mp_read_u16(data, offset, f"TeleportValidationDataTable[{index}].flagWord")
+            position, offset = mp_read_vec3(data, offset, f"TeleportValidationDataTable[{index}].position")
+            rotation, offset = mp_read_vec3(data, offset, f"TeleportValidationDataTable[{index}].rotation")
+            map_id, offset = mp_read_utf8_string(data, offset, f"TeleportValidationDataTable[{index}].mapId", max_length=1024)
+            tail0, offset = mp_read_i32(data, offset, f"TeleportValidationDataTable[{index}].tail0")
+            tail1, offset = mp_read_i32(data, offset, f"TeleportValidationDataTable[{index}].tail1")
+            tail2, offset = mp_read_i32(data, offset, f"TeleportValidationDataTable[{index}].tail2")
+            tail3, offset = mp_read_i32(data, offset, f"TeleportValidationDataTable[{index}].tail3")
+            rows.append({
+                "teleportId": teleport_id,
+                "field0Float": round(field0_float, 6),
+                "flagWord": flag_word,
+                "position": position,
+                "rotation": rotation,
+                "mapId": map_id,
+                "tail0": tail0,
+                "tail1": tail1,
+                "tail2": tail2,
+                "tail3": tail3,
+            })
+        if offset != len(data):
+            raise ValueError("TeleportValidationDataTable:trailing-bytes")
+        return {"rowCount": row_count, "rows": rows}
     except (ValueError, struct.error):
         return None
 
@@ -1355,6 +1408,8 @@ class SourceGraphBuilder:
             self.add_interactive_template_data_edges(file_node, entry)
         elif subtype == "GameplayConfigWorldEntityRegistry":
             self.add_world_entity_registry_edges(file_node, entry)
+        elif subtype == "TeleportValidationDataTable":
+            self.add_teleport_validation_config_edges(file_node, entry)
 
     def add_model_table_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         config_key = safe_key(entry.get("p"))
@@ -1498,6 +1553,29 @@ class SourceGraphBuilder:
                     detail_node = self.add_node("world_entity_detail", detail_id, name=detail_id, source="webui/game_data")
                     self.add_edge(entity_node, detail_node, "world_entity_uses_detail", source="webui/game_data", evidence="detailId")
             self.add_alias(detail_id, entity_node, kind="world_entity_detail_id", source="webui/game_data")
+
+    def add_teleport_validation_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        config_key = safe_key(entry.get("p"))
+        config_name = Path(config_key).stem
+        config_node = self.add_node("teleport_validation_config", config_key, name=config_name, source="webui/game_data", path=config_key, data=self.decoded_config_entry_data(entry))
+        self.add_edge(file_node, config_node, "defines_teleport_validation_config", source="webui/game_data")
+        decoded = extract_teleport_validation_rows(self.read_decoded_config_bytes(entry))
+        if not decoded:
+            return
+        self.update_node_details(config_node, data={**self.decoded_config_entry_data(entry), "rowCountParsed": decoded.get("rowCount")})
+        for row in decoded.get("rows") or []:
+            teleport_id = safe_key(row.get("teleportId"))
+            if not teleport_id:
+                continue
+            point_node = self.add_node("teleport_point", teleport_id, name=teleport_id, source="webui/game_data", data=compact_payload({**row, "config": config_name}, depth=2))
+            self.add_edge(config_node, point_node, "teleport_validation_has_point", source="webui/game_data", evidence=safe_key(entry.get("dp")), data=compact_payload(row, depth=1))
+            self.add_alias(teleport_id, point_node, kind="teleport_point_id", source="webui/game_data")
+            map_id = safe_key(row.get("mapId"))
+            if not map_id:
+                continue
+            level_node = self.add_level_node(map_id, source="webui/game_data")
+            self.add_edge(point_node, level_node, "teleport_point_in_level", source="webui/game_data", evidence="mapId")
+            self.add_level_map_edge(level_node, map_id, source="webui/game_data", evidence="teleport_mapId")
 
     def ingest_videos(self) -> None:
         path = WEBUI_DATA / "assets" / "videos.json"
@@ -8584,6 +8662,8 @@ QUERY_KIND_PRIORITY = {
     "world_entity_registry": 52,
     "world_entity": 53,
     "world_entity_detail": 54,
+    "teleport_validation_config": 55,
+    "teleport_point": 56,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -8804,6 +8884,8 @@ NODE_ID_PREFIXES = (
     "world_entity_registry",
     "world_entity",
     "world_entity_detail",
+    "teleport_validation_config",
+    "teleport_point",
     "mission",
     "map",
     "level",
