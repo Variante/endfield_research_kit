@@ -328,9 +328,14 @@ and integer tails. The exact mission-area pass adds 2 mission-area config nodes,
 73 unique area rows, 146 config-to-area edges, and 37 prefix-backed links to 9
 existing mission nodes. The exact subgame-instance pass adds 2 config nodes, 4
 unique subgame instances, 1 default group, 8 config-to-instance edges, 4 group
-edges, and 12 failure/quit/success text edges. It does not prove runtime formula
-usage or exported model reconstruction; the lean asset-index entity join for
-these config model IDs is still empty.
+edges, and 12 failure/quit/success text edges. The bounded `SpawnerConfig` pass
+adds 436 unique spawner configs, 1,057 enemy rows, 178 distinct enemy keys, 61
+born-buff keys, 23 blackboard keys, 16 prewarn audio-event keys, and 22 prewarn
+effect keys while preserving enemy levels, force flags, wave keys, override AI,
+born-buff blackboard values, fixed rotations, and prewarn timings. It does not
+prove runtime formula usage, full SpawnerConfig tail semantics, or exported model
+reconstruction; the lean asset-index entity join for these config model IDs is
+still empty.
 
 Partial but useful current examples include:
 
@@ -347,8 +352,8 @@ Partial but useful current examples include:
   state properties.
 - `AnimationConfig`, `AtmosphericNpcData`, `CharInteractPerformCfgs`,
   `LevelConfig`, `LevelData`, `LevelScriptTemplateData`, NPC montage rows,
-  `SpawnerConfig`, and other families have verified top-level ids/counts and
-  meaningful previews.
+  and other families have verified top-level ids/counts and meaningful
+  previews.
 
 The remaining risk is nested semantics. A decoded field name or count proves
 structure; it does not automatically prove gameplay meaning, formula behavior,
@@ -1414,10 +1419,12 @@ Success metric:
   "bounded partial with named fields", with no silent guessing.
 
 2026-07-01 progress: exact `ModelTable`, `ModelRadiusTable`,
-`InteractiveTable`, `InteractiveTemplateData`, and
-`GameplayConfigWorldEntityRegistry` decodes are now first-class source graph
-nodes and edges, backed by the current WebUI Data index plus bounded row parsers
-for the verified MemoryPack shapes.
+`InteractiveTable`, `InteractiveTemplateData`,
+`GameplayConfigWorldEntityRegistry`, teleport, mission-area, and subgame decodes
+are now first-class source graph nodes and edges, backed by the current WebUI
+Data index plus bounded row parsers for the verified MemoryPack shapes.
+`SpawnerConfig` now contributes bounded enemy-library graph evidence without
+claiming full-file tail semantics.
 
 ### 4c. Rebuild And Rank Current MonoBehaviour Gaps
 

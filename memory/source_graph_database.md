@@ -529,6 +529,30 @@ default group, three UI text ids, and marker bytes. Example exact query:
 python tools\endfield_source_graph.py query world_energy_point04 --kind subgame_instance
 ```
 
+2026-07-01 spawner decoded-config progress: source graph ingestion now promotes
+bounded `SpawnerConfig` MemoryPack decodes from the WebUI Data index. A fast CN
+rebuild to `tmp/source_graph_spawner.sqlite` verified 1,036,207 total nodes,
+1,725,406 edges, and 1,442,058 aliases. New coverage includes 436 unique
+`spawner_config` nodes collapsed across 849 Persistent/StreamingAssets config
+files, 1,057 `spawner_enemy_entry` nodes, and 22 `gameplay_effect` key nodes.
+Edge checks verified 849 `defines_spawner_config` edges, 1,057 config-to-enemy
+row edges, 1,057 enemy-id edges to 178 distinct enemy keys, 1,599 born-buff
+edges to 61 distinct buff keys, 677 blackboard-key edges to 23 distinct keys,
+864 prewarn-audio edges to 16 distinct audio-event keys, and 980 prewarn-effect
+edges to 22 distinct effect keys. Each enemy row preserves its row index,
+enemy id, level, force-to-battle flag, wave/key string, override AI config,
+patrol gait, born buffs with blackboard values, prewarn audio key, prewarn
+effect key, fixed rotation, and prewarn time. The parser intentionally stops at
+the enemy-library payload instead of claiming full-file consumption, and effect
+or audio keys are reference evidence rather than exported asset proof. Example
+exact queries:
+
+```bat
+python tools\endfield_source_graph.py query sc_base01_dg001_9900010011 --kind spawner_config
+python tools\endfield_source_graph.py query eny_0018_lbtough_train --kind enemy
+python tools\endfield_source_graph.py query buff_common_undeadable --kind buff
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
