@@ -73,15 +73,18 @@ Node kinds include story entries, lines, options, actors, localized text,
 audio, videos, Gameplay weapons/equipment/characters/skills/talents/items,
 equipment formulas/packs/suits/domains/unlock keys/stat properties/property
 curves, progression records, assets, materials, meshes, shaders, animations,
-map marks, structured table rows, reference rows, Unity asset containers,
+map marks, SNS/radio/remote communication rows, audio cue handlers,
+voice-extra rows, structured table rows, reference rows, Unity asset containers,
 Unity assets, and Unity PathIDs.
 
 Edge kinds capture story membership, line ordering, actor names, localized
-text, option anchors, audio use, narrative video links, Gameplay source-row,
-skill, talent, progression, default-weapon, equipment domain/suit/formula/stat
-property, formula-pack/unlock/output, and required-item relationships, table
-ownership, exported files, character recovery manifest contents, asset-map
-container ownership, and exported asset matches.
+text, option anchors, audio use, narrative video links, raw SNS content/option
+links, radio/remote line-to-audio bridges, audio cue event references,
+AudioVoiceExtra-to-AudioDialog links, Gameplay source-row, skill, talent,
+progression, default-weapon, equipment domain/suit/formula/stat property,
+formula-pack/unlock/output, and required-item relationships, table ownership,
+exported files, character recovery manifest contents, asset-map container
+ownership, and exported asset matches.
 
 ## Ingested Sources
 
@@ -98,7 +101,9 @@ High-value inputs:
 - `export_full/recovered/AnimeStudio-cli/timeline_line_orders.json`
 - actor material JSON under recovered AnimeStudio outputs
 - Unity character recovery manifests under `unity_endfield_graph_shader_lab/`
-- selected structured tables under `export_full/structured/StreamingAssets/Table/`
+- selected structured tables under `export_full/structured/StreamingAssets/Table/`,
+  including gameplay, world, activity, PRTS, NPC/voice/bark, SNS, radio,
+  remote-common, audio cue, and voice-extra tables
 - optional AnimeStudio asset maps under `export_full/recovered/AnimeStudio-cli/`
 
 The pre-Gameplay item/economy pass currently includes item, item type, item
@@ -217,6 +222,11 @@ python tools\endfield_source_graph.py query chaosheng --kind npc
 python tools\endfield_source_graph.py query CommonKid --kind npc_voice_profile
 python tools\endfield_source_graph.py query action_dash_start --kind responsive_trigger_key
 python tools\endfield_source_graph.py query -1006722661 --kind bark_text
+python tools\endfield_source_graph.py query sns_a1m1_1 --kind sns_dialog
+python tools\endfield_source_graph.py query option_sns_a1m1_1_1_001 --kind sns_option
+python tools\endfield_source_graph.py query radio_a1m6d1_1 --kind radio
+python tools\endfield_source_graph.py query remotecomm_c13m2_1 --kind remote_common
+python tools\endfield_source_graph.py query -1000413093 --kind audio_voice_extra
 ```
 
 2026-07-01 character progression graph progress: generated Gameplay character
@@ -369,8 +379,30 @@ trigger-response occurrence edges, 4,304 unique response-to-AudioDialog/audio
 links, 868 response-to-bark-text links, 928 bark text-to-line links, and 30 bark
 variant trigger-key links. Exact asset/dataKey joins remain intentionally zero
 for this slice because current `asset_entity_id` aliases do not match NPC
-template/dataKey IDs; SNS, radio, remote-common, cue, and full voice-extra
-tables remain a larger narrative/audio pass.
+template/dataKey IDs; the SNS, radio, remote-common, cue, and voice-extra
+narrative/audio bridge has since landed below.
+
+2026-07-01 narrative/audio communication graph progress: source graph ingestion
+now promotes `SNSChatTable`, `SNSDialogTopicTable`, `SNSDialogOptionTable`,
+`SNSDialogTable`, `SNSConst`, `RadioTable`, `RemoteCommonTable`,
+`AudioCueTable`, `AudioVoiceExtraData`, `EmotionVoiceConfig`,
+`AudioDialogCustomEventTable`, and `AudioDialogConfigs` into queryable semantic
+nodes. A fast CN rebuild using the skip-asset-maps, skip-reference-rows, and
+skip-followups path verified 939,999 total nodes and 1,532,614 edges, with 0
+orphan edges from the new sources. New node counts include 122 `sns_chat`, 108
+`sns_topic`, 1,284 `sns_option`, 288 `sns_dialog`, 5,684 `sns_content`, 2,375
+`radio`, 4,103 `radio_line`, 30 `remote_common`, 284 `remote_common_line`, 175
+`audio_cue`, 264 `audio_cue_handler`, 25,245 `audio_voice_extra`, 41
+`emotion_voice_config`, 28 `voice_interjection`, 47 `audio_dialog_custom_event`,
+and 4 `audio_dialog_config` nodes. Edge checks verified 288 raw SNS dialogs to
+story nodes, 5,684 SNS content edges, 1,284 SNS content-to-option edges, 4,103
+radio line-to-story-line and line-to-audio bridges, 284 remote line-to-story-line
+bridges, 284 remote voice links, 221 cue handler event references, 25,245
+voice-extra links to `AudioDialog` rows and audio nodes, and 928 voice-extra
+links to existing story line nodes. SNS content IDs remain raw table content and
+do not map directly to generated `line` nodes; radio lines, remote lines, and
+matching `AudioVoiceExtraData` keys do map to generated line nodes where the
+WebUI story corpus has them.
 
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
