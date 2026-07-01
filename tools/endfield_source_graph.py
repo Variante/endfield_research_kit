@@ -914,8 +914,6 @@ class SourceGraphBuilder:
             if self.include_gameplay:
                 self.ingest_gameplay()
                 self.commit_step("gameplay")
-            self.ingest_decoded_config_semantics()
-            self.commit_step("decodedConfigs")
             self.ingest_character_support_semantics()
             self.commit_step("characterSupport")
             self.ingest_spaceship_semantics()
@@ -944,6 +942,8 @@ class SourceGraphBuilder:
             self.commit_step("audioConfig")
             self.ingest_dialog_support_semantics()
             self.commit_step("dialogSupport")
+            self.ingest_decoded_config_semantics()
+            self.commit_step("decodedConfigs")
             if self.include_reference_rows:
                 self.ingest_reference_tables()
                 self.commit_step("reference")
@@ -1479,7 +1479,12 @@ class SourceGraphBuilder:
                 ("enemy", "world_entity_uses_enemy"),
                 ("enemy_template", "world_entity_uses_enemy_template"),
                 ("npc", "world_entity_uses_npc"),
+                ("environmental_npc", "world_entity_uses_environmental_npc"),
                 ("interactive_object", "world_entity_uses_interactive_detail"),
+                ("model_config_model", "world_entity_uses_model"),
+                ("model_radius", "world_entity_has_model_radius"),
+                ("audio_collection", "world_entity_uses_audio_collection"),
+                ("audio_dialog_channel", "world_entity_uses_audio_dialog_channel"),
             ):
                 if not self.node_exists(target_kind, detail_id):
                     continue
