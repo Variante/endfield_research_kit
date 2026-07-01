@@ -239,6 +239,7 @@ class SourceGraphBuilder:
         self.ingest_counts: Counter[str] = Counter()
         self.asset_by_stem: dict[str, list[str]] = defaultdict(list)
         self.asset_by_name: dict[str, list[str]] = defaultdict(list)
+        self.asset_entities_by_base: dict[str, list[str]] = defaultdict(list)
         self.asset_paths: list[str] = []
         self.alias_count = 0
 
@@ -689,6 +690,7 @@ class SourceGraphBuilder:
             )
             self.add_alias(model_base, entity_node, kind="asset_entity_id", source="webui/assets")
             self.add_alias(f"{source}/{model_base}", entity_node, kind="asset_entity_id", source="webui/assets")
+            self.asset_entities_by_base[model_base].append(entity_node)
             for model_rel, model_info in sorted(group["models"].items()):
                 model_node = asset_node_for_rel(model_rel)
                 model_data = {"rel": model_rel}
@@ -979,6 +981,7 @@ class SourceGraphBuilder:
             self.add_alias(alias, node, kind=alias_kind, source="webui/gameplay")
         self.add_gameplay_source_edges(node, entry.get("source"))
         self.add_gameplay_asset_edges(node, entry)
+        self.add_gameplay_asset_entity_edges(node, entry)
 
         default_weapon_id = safe_key(entry.get("defaultWeaponId"))
         if default_weapon_id:
@@ -1170,6 +1173,37 @@ class SourceGraphBuilder:
         self.add_alias(key, stat_node, kind="gameplay_stat_property_key", source="webui/gameplay")
         self.add_alias(curve.get("label"), stat_node, kind="gameplay_stat_property_name", source="webui/gameplay")
         return node
+
+    def add_gameplay_asset_entity_edges(self, owner_node: str, entry: dict[str, Any]) -> None:
+        if safe_key(entry.get("kind")) != "weapon":
+            return
+        model_path = safe_key(entry.get("modelPath"))
+        if not model_path:
+            return
+        model_stem = Path(model_path).stem.lower()
+        if not model_stem:
+            return
+        seen_entities: set[str] = set()
+        for model_base, entity_nodes in sorted(self.asset_entities_by_base.items()):
+            if model_base != model_stem and not model_base.startswith(f"{model_stem}_"):
+                continue
+            for entity_node in entity_nodes:
+                if entity_node in seen_entities:
+                    continue
+                seen_entities.add(entity_node)
+                self.add_edge(
+                    owner_node,
+                    entity_node,
+                    "has_gameplay_asset_entity",
+                    source="webui/gameplay",
+                    evidence="modelPath",
+                    data={
+                        "modelPath": model_path,
+                        "token": model_stem,
+                        "modelBase": model_base,
+                        "assetEntity": node_key(entity_node),
+                    },
+                )
 
     def add_gameplay_asset_edges(self, owner_node: str, entry: dict[str, Any]) -> None:
         tokens: list[tuple[str, str]] = []
@@ -2813,6 +2847,7 @@ ISSUE_EVIDENCE_EDGE_KINDS = (
 )
 ASSET_USED_BY_INCOMING_EDGE_KINDS = (
     "has_gameplay_asset",
+    "has_gameplay_asset_entity",
     "previewed_by",
     "uses_material",
     "uses_texture_pathid",
@@ -2825,6 +2860,7 @@ ASSET_USED_BY_OUTGOING_EDGE_KINDS = (
     "referenced_by_model",
 )
 ASSET_USES_EDGE_KINDS = (
+    "has_gameplay_asset_entity",
     "previewed_by",
     "uses_material",
     "uses_texture",
