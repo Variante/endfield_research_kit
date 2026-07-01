@@ -278,11 +278,13 @@ Expected active inputs and outputs:
 - `build_gameplay_data.py`: builds the compact Gameplay tab payload under
   `webui/data/lang/<LANG>/gameplay/index.json` from structured tables such as
   `WeaponBasicTable`, `WeaponUpgradeTemplate*`, `WeaponBreakThroughTemplateTable`,
-  `WeaponTalentTemplateTable`, `ItemTable`, `CharacterTable`, `CharGrowthTable`,
-  `CharLevelUpTable`, `CharBreak*`, `CharacterPotentialTable`, `SkillPatchTable`,
-  and talent/profession/type lookup tables. It resolves localized display names,
+  `WeaponTalentTemplateTable`, `ItemTable`, `EquipTable`, `EquipFormulaTable`,
+  `EquipSuitTable`, `CharacterTable`, `CharGrowthTable`, `CharLevelUpTable`,
+  `CharBreak*`, `CharacterPotentialTable`, `SkillPatchTable`, and
+  talent/profession/type lookup tables. It resolves localized display names,
   default weapon links, skill blackboard values, level-up costs, weapon upgrade
   checkpoints, weapon base-ATK stat checkpoints, breakthrough material costs,
+  equipment display/property stat curves, domain/formula/suit context,
   character break-stage caps, capped character stat checkpoints from
   `CharacterTable.attributes`, character breakthrough costs, potential unlock
   effects, and Story wiki cross-links when a matching `wiki_*` Story page exists.

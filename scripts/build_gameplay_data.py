@@ -79,19 +79,39 @@ STAT_ATTR_KEYS = {
     1: "hp",
     2: "atk",
     3: "def",
+    29: "heal_output",
+    32: "skill_damage",
+    33: "combo_skill_damage",
+    34: "normal_attack_damage",
     39: "str",
     40: "agi",
     41: "wis",
     42: "will",
+    50: "physical_damage",
+    51: "fire_damage",
+    52: "pulse_damage",
+    53: "cryst_damage",
+    54: "natural_damage",
+    87: "infliction",
 }
 STAT_ATTR_LABELS = {
     1: "HP",
     2: "ATK",
     3: "DEF",
+    29: "Heal Output",
+    32: "Skill DMG",
+    33: "Combo DMG",
+    34: "Normal ATK DMG",
     39: "STR",
     40: "AGI",
     41: "WIS",
     42: "WILL",
+    50: "Physical DMG",
+    51: "Fire DMG",
+    52: "Pulse DMG",
+    53: "Cold DMG",
+    54: "Natural DMG",
+    87: "Infliction",
 }
 POTENTIAL_ATTR_BLACKBOARD_KEYS = {
     1: ("MaxHp",),
@@ -552,6 +572,34 @@ def label_lookup(table: dict[str, Any], key: Any, i18n: dict[str, Any], fallback
     return i18n_text(i18n, row.get("name"), fallback_i18n)
 
 
+
+def row_label_lookup(
+    table: dict[str, Any],
+    key: Any,
+    i18n: dict[str, Any],
+    fallback_i18n: dict[str, Any],
+    fields: tuple[str, ...] = ("name",),
+) -> str:
+    row = table.get(str(key)) or table.get(key) or {}
+    if not isinstance(row, dict):
+        return ""
+    for field in fields:
+        label = i18n_text(i18n, row.get(field), fallback_i18n)
+        if label:
+            return label
+    return ""
+
+
+def equipment_part_label(item_row: dict[str, Any], showing_types: dict[str, Any], part_type: Any, i18n: dict[str, Any], fallback_i18n: dict[str, Any]) -> tuple[Any, str]:
+    showing_type = item_row.get("showingType") if isinstance(item_row, dict) else None
+    label = row_label_lookup(showing_types, showing_type, i18n, fallback_i18n)
+    if label:
+        return showing_type, label
+    part_value = int_value(part_type)
+    fallback = EQUIPMENT_PART_LABELS.get(part_value, f"Part {part_value}" if part_value is not None else "Equipment")
+    return showing_type, fallback
+
+
 def text_table_text(
     text_table: dict[str, Any],
     key: str,
@@ -707,6 +755,20 @@ def weapon_stat_curve_payload(template_id_raw: Any, upgrades: dict[str, Any]) ->
         "checkpoints": sampled_curve_rows(stat_rows, "level", max_level),
     }
 
+def display_attr_payload(modifier: dict[str, Any], value: Any, attr_meta: dict[str, Any]) -> dict[str, Any]:
+    attr_type = int_value(modifier.get("attrType"))
+    composite = normalize_id(modifier.get("compositeAttr"))
+    attr_key: int | str
+    attr_key = composite if composite else (attr_type if attr_type is not None else normalize_id(modifier.get("attrType")))
+    payload = stat_attr_payload(attr_key, value, attr_meta)
+    payload["attrIndex"] = modifier.get("attrIndex")
+    if composite:
+        payload["compositeAttr"] = composite
+    if attr_type is not None:
+        payload["rawAttrType"] = attr_type
+    return payload
+
+
 def equipment_stat_payload(equip_row: dict[str, Any], attr_meta: dict[str, Any]) -> dict[str, Any]:
     modifiers = [item for item in (equip_row.get("equipAttrModifiers") or []) if isinstance(item, dict)]
     max_len = max((len(item.get("attrValues") or []) for item in modifiers), default=0)
@@ -721,16 +783,54 @@ def equipment_stat_payload(equip_row: dict[str, Any], attr_meta: dict[str, Any])
             attrs.append(stat_attr_payload(attr_type, values[index], attr_meta))
         if attrs:
             rows.append({"level": index + 1, "attrs": attrs})
-    display_modifiers = []
+
     base_modifier = equip_row.get("displayBaseAttrModifier") if isinstance(equip_row.get("displayBaseAttrModifier"), dict) else {}
-    if base_modifier:
-        display_modifiers.append(base_modifier)
-    display_modifiers.extend(item for item in (equip_row.get("displayAttrModifiers") or []) if isinstance(item, dict))
+    display_modifiers = [item for item in (equip_row.get("displayAttrModifiers") or []) if isinstance(item, dict)]
+    all_display_modifiers = ([base_modifier] if base_modifier else []) + display_modifiers
     display_attrs = [
-        stat_attr_payload(int_value(item.get("attrType")) or normalize_id(item.get("attrType")), item.get("attrValue"), attr_meta)
-        for item in sorted(display_modifiers, key=lambda item: int_value(item.get("attrIndex")) or 0)
+        display_attr_payload(item, item.get("attrValue"), attr_meta)
+        for item in sorted(all_display_modifiers, key=lambda item: int_value(item.get("attrIndex")) or 0)
         if item.get("attrValue") not in (None, "")
     ]
+
+    modifiers_by_index: dict[int, list[dict[str, Any]]] = {}
+    for modifier in modifiers:
+        attr_index = int_value(modifier.get("attrIndex"))
+        if attr_index is None:
+            continue
+        modifiers_by_index.setdefault(attr_index, []).append(modifier)
+
+    property_curves = []
+    for modifier in sorted(display_modifiers, key=lambda item: int_value(item.get("attrIndex")) or 0):
+        if modifier.get("attrValue") in (None, ""):
+            continue
+        values = [modifier.get("attrValue"), *(modifier.get("enhancedAttrValues") or [])]
+        attr_index = int_value(modifier.get("attrIndex"))
+        matching_modifiers = sorted(modifiers_by_index.get(attr_index or -1, []), key=lambda item: int_value(item.get("attrType")) or 0)
+        curve_rows = []
+        for index, value in enumerate(values):
+            attrs = []
+            for attr_modifier in matching_modifiers:
+                attr_type = int_value(attr_modifier.get("attrType"))
+                attr_values = attr_modifier.get("attrValues") or []
+                if attr_type is None or index >= len(attr_values):
+                    continue
+                attrs.append(stat_attr_payload(attr_type, attr_values[index], attr_meta))
+            if not attrs:
+                attrs = [display_attr_payload(modifier, value, attr_meta)]
+            curve_rows.append({"level": index + 1, "attrs": attrs})
+        label_payload = display_attr_payload(modifier, modifier.get("attrValue"), attr_meta)
+        property_curves.append({
+            "attrIndex": attr_index,
+            "key": label_payload.get("key"),
+            "label": label_payload.get("label"),
+            "iconName": label_payload.get("iconName"),
+            "compositeAttr": label_payload.get("compositeAttr"),
+            "rowCount": len(curve_rows),
+            "maxLevel": curve_rows[-1]["level"] if curve_rows else None,
+            "rows": curve_rows,
+        })
+
     return {
         "source": "EquipTable.equipAttrModifiers",
         "rowCount": len(rows),
@@ -738,10 +838,18 @@ def equipment_stat_payload(equip_row: dict[str, Any], attr_meta: dict[str, Any])
         "rows": rows,
         "checkpoints": rows,
         "displayAttrs": display_attrs,
+        "propertyCurves": property_curves,
     }
 
 
-def equipment_formula_payload(formula: dict[str, Any], item_table: dict[str, Any], i18n: dict[str, Any], fallback_i18n: dict[str, Any]) -> dict[str, Any]:
+def equipment_formula_payload(
+    formula: dict[str, Any],
+    item_table: dict[str, Any],
+    equip_packs: dict[str, Any],
+    shop_channels: dict[str, Any],
+    i18n: dict[str, Any],
+    fallback_i18n: dict[str, Any],
+) -> dict[str, Any]:
     if not isinstance(formula, dict) or not formula:
         return {}
     costs = item_ids_counts_payload(formula.get("costItemId"), formula.get("costItemNum"), item_table, i18n, fallback_i18n)
@@ -752,15 +860,36 @@ def equipment_formula_payload(formula: dict[str, Any], item_table: dict[str, Any
             "name": item_name(item_table, gold_id, i18n, fallback_i18n),
             "count": formula.get("costGoldNum"),
         })
+    formula_id = normalize_id(formula.get("formulaId"))
+    outcome_equip_id = normalize_id(formula.get("outcomeEquipId"))
+    outcome_name = item_name(item_table, outcome_equip_id, i18n, fallback_i18n)
+    pack_id = normalize_id(formula.get("packId"))
+    unlock_key = normalize_id(formula.get("unlockKey"))
     return {
-        "formulaId": normalize_id(formula.get("formulaId")),
-        "packId": normalize_id(formula.get("packId")),
+        "formulaId": formula_id,
+        "formulaName": outcome_name or formula_id,
+        "name": outcome_name or formula_id,
+        "outcomeEquipId": outcome_equip_id,
+        "outcomeEquipName": outcome_name,
+        "packId": pack_id,
+        "packName": row_label_lookup(equip_packs, pack_id, i18n, fallback_i18n),
         "unlockType": formula.get("unlockType"),
         "unlockValue": formula.get("unlockValue"),
-        "unlockKey": normalize_id(formula.get("unlockKey")),
+        "unlockKey": unlock_key,
+        "unlockName": row_label_lookup(shop_channels, unlock_key, i18n, fallback_i18n, ("channelName", "name")),
         "costs": costs,
     }
 
+
+def equipment_domain_payload(domain_id: Any, domains: dict[str, Any], i18n: dict[str, Any], fallback_i18n: dict[str, Any]) -> dict[str, Any]:
+    key = normalize_id(domain_id)
+    if not key:
+        return {}
+    return {
+        "id": key,
+        "name": row_label_lookup(domains, key, i18n, fallback_i18n, ("domainName", "name")) or key,
+        "storageName": row_label_lookup(domains, key, i18n, fallback_i18n, ("storageName",)),
+    }
 
 def equipment_suit_lookup(
     equip_suits: dict[str, Any],
@@ -807,6 +936,10 @@ def build_equipment_entries(
     equips = tables.get("EquipTable.json") or {}
     items = tables.get("ItemTable.json") or {}
     formulas = tables.get("EquipFormulaTable.json") or {}
+    showing_types = tables.get("ItemShowingTypeTable.json") or {}
+    equip_packs = tables.get("EquipPackTable.json") or {}
+    shop_channels = tables.get("ShopChannelDevelopmentTable.json") or {}
+    domains = tables.get("DomainDataTable.json") or {}
     suit_lookup = equipment_suit_lookup(tables.get("EquipSuitTable.json") or {}, tables.get("SkillPatchTable.json") or {}, i18n, fallback_i18n)
     attr_meta = tables.get("AttributeMetaTable.json") or {}
     formula_by_equip = {
@@ -823,9 +956,10 @@ def build_equipment_entries(
         desc = i18n_text(i18n, item_row.get("desc"), fallback_i18n) if isinstance(item_row, dict) else ""
         deco_desc = i18n_text(i18n, item_row.get("decoDesc"), fallback_i18n) if isinstance(item_row, dict) else ""
         part_type = int_value(row.get("partType"))
-        part_label = EQUIPMENT_PART_LABELS.get(part_type, f"Part {part_type}" if part_type is not None else "Equipment")
+        showing_type, part_label = equipment_part_label(item_row, showing_types, row.get("partType"), i18n, fallback_i18n)
+        domain = equipment_domain_payload(row.get("domainId"), domains, i18n, fallback_i18n)
         suit = suit_lookup.get(equip_id) or ({"id": normalize_id(row.get("suitID")), "name": normalize_id(row.get("suitID")), "effects": []} if row.get("suitID") else {})
-        formula = equipment_formula_payload(formula_by_equip.get(equip_id) or {}, items, i18n, fallback_i18n)
+        formula = equipment_formula_payload(formula_by_equip.get(equip_id) or {}, items, equip_packs, shop_channels, i18n, fallback_i18n)
         stats = equipment_stat_payload(row, attr_meta)
         search = " ".join([
             equip_id,
@@ -833,11 +967,16 @@ def build_equipment_entries(
             desc,
             deco_desc,
             part_label,
-            normalize_id(row.get("domainId")),
+            domain.get("id") or "",
+            domain.get("name") or "",
+            domain.get("storageName") or "",
             suit.get("id") or "",
             suit.get("name") or "",
             *(effect.get("skillId") or "" for effect in suit.get("effects") or []),
             *(skill_search_text(effect.get("skill") or {}) for effect in suit.get("effects") or []),
+            formula.get("formulaName") or "",
+            formula.get("packName") or "",
+            formula.get("unlockName") or "",
             *(item.get("name") or "" for item in formula.get("costs") or []),
         ])
         entries.append({
@@ -849,7 +988,11 @@ def build_equipment_entries(
             "rarity": item_row.get("rarity") if isinstance(item_row, dict) else None,
             "partType": part_type,
             "partTypeLabel": part_label,
-            "domainId": normalize_id(row.get("domainId")),
+            "showingType": showing_type,
+            "showingTypeLabel": part_label,
+            "domainId": domain.get("id") or normalize_id(row.get("domainId")),
+            "domainName": domain.get("name") or "",
+            "domain": domain,
             "minWearLv": row.get("minWearLv"),
             "suitId": normalize_id(row.get("suitID")),
             "suit": suit,
@@ -1514,6 +1657,10 @@ def build_language_payload(
         "EquipSuitTable.json",
         "EquipFormulaTable.json",
         "EquipEnhanceCostTable.json",
+        "ItemShowingTypeTable.json",
+        "EquipPackTable.json",
+        "ShopChannelDevelopmentTable.json",
+        "DomainDataTable.json",
         "CharBreakNodeTable.json",
         "PotentialTalentEffectTable.json",
         "SpaceshipCharSkillTable.json",
@@ -1544,6 +1691,7 @@ def build_language_payload(
             "weaponSkills": sum(len(item.get("skills") or []) for item in weapons),
             "equipmentSuitEffects": sum(len(((item.get("suit") or {}).get("effects") or [])) for item in equipment),
             "equipmentStatRows": sum(len((item.get("stats") or {}).get("rows") or []) for item in equipment),
+            "equipmentPropertyCurves": sum(len((item.get("stats") or {}).get("propertyCurves") or []) for item in equipment),
             "characterTalentGroups": sum(len(item.get("talentGroups") or []) for item in characters),
             "characterBreakthroughRows": sum(len(item.get("breakthroughs") or []) for item in characters),
             "characterPotentialLevels": sum(len((item.get("potentials") or {}).get("levels") or []) for item in characters),
