@@ -320,9 +320,13 @@ interactive object aliases this template?", and "which world entity uses this
 interactive detail or enemy?" answerable from SQLite. The corrected graph now
 links `detailId` matches to 66 Gameplay enemy nodes, 66 enemy templates, 3 NPCs,
 594 interactive objects, 267 model rows, 267 model-radius rows, 214 audio
-collections, and 65 audio dialog channels. It does not prove runtime formula
-usage or exported model reconstruction; the lean asset-index entity join for
-these config model IDs is still empty.
+collections, and 65 audio dialog channels. A follow-up exact
+`TeleportValidationDataTable` graph pass adds 8 validation config nodes, 222
+unique teleport points, 444 config-to-point edges, and 106 point-to-level links
+across 17 level ids, preserving position, rotation, nullable `mapId`, flag word,
+and integer tails. It does not prove runtime formula usage or exported model
+reconstruction; the lean asset-index entity join for these config model IDs is
+still empty.
 
 Partial but useful current examples include:
 

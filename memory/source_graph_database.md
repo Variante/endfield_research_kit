@@ -482,6 +482,22 @@ python tools\endfield_source_graph.py query int_001_comm_terminal --kind interac
 python tools\endfield_source_graph.py query 2800000160 --kind world_entity
 ```
 
+2026-07-01 teleport validation decoded-config progress: source graph ingestion
+now promotes exact `TeleportValidationDataTable` MemoryPack decodes from the
+WebUI Data index. A fast CN rebuild to `tmp/source_graph_teleport.sqlite`
+verified 1,032,692 total nodes, 1,716,403 edges, and 1,438,054 aliases. New
+coverage includes 8 `teleport_validation_config` nodes, 222 unique
+`teleport_point` nodes collapsed across Persistent and StreamingAssets duplicate
+rows, 444 `teleport_validation_has_point` edges, 106 `teleport_point_in_level`
+edges, and teleport links covering 17 distinct level ids. Each teleport point
+preserves the exact id, validation float, 16-bit flag word, position, rotation,
+nullable `mapId`, and four integer tail fields; `mapId` values are treated as
+level ids and linked through the existing level/map graph. Example exact query:
+
+```bat
+python tools\endfield_source_graph.py query TpForMap_ent_10100020314 --kind teleport_point
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
