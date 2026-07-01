@@ -369,7 +369,9 @@ same bounded row-string evidence. The `CharInteractPerformCfgs` pass adds 318
 file-to-config definition edges collapsed to 159 perform configs, with 83 exact
 active-tag edges, 54 status-tag refs, 102 montage refs, 37 actor/template refs,
 146 effect refs, 46 intra-family perform refs, 52 asset-path refs, and 13 CCS
-refs from a strong parsed prefix plus bounded body string evidence. The exact
+refs from a strong parsed prefix plus bounded body string evidence. The
+`DialogIdTable` registry pass adds exact runtime registration evidence for
+4,918 scenes, 3,589 line ids, and 4,131 option ids. The
 `InteractiveTemplateData` pass adds 3,234 source-qualified component nodes, 79
 component-type nodes, 296 property-key nodes, 33 logic-type nodes, 574 category
 tag edges, 418 model edges, 488 raw-byte audio edges, and exact component links
@@ -484,7 +486,19 @@ generated WebUI story ownership, 17,329 to non-sentinel audio, 15,337 to
 actors, 4,219 dialog options to generated option nodes, 908 summary maps to
 story nodes, and all 30 domain-depot initial/repeat dialog refs to story nodes.
 The graph no longer emits the `audio:0` sentinel as an audio node or edge
-target. Useful checks include:
+target.
+
+2026-07-01 source graph DialogIdTable registry progress: a fast CN rebuild to
+`tmp/source_graph_dialog_registry.sqlite` verified runtime registry evidence
+from exact `DialogIdTable` decoding and the generated dialog registry JSON. The
+pass adds 1 `dialog_id_table_config` node, 2 decoded source-file definition
+edges, 4,918 `dialog_registry_scene` nodes, 4,918 registry-to-story links, 3,589
+registered line links, 4,131 registered option links, and matching line/option
+to-story edges. This proves runtime registration structure for scenes, trunks,
+lines, and options; it does not supersede generated WebUI line order,
+scene-graph option placement, or timeline route evidence.
+
+Useful support-table checks include:
 
 ```bat
 python tools\endfield_source_graph.py query dlg_a1m10_1_001 --kind dialog_text
