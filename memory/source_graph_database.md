@@ -1140,6 +1140,34 @@ python tools\endfield_source_graph.py query map01_lv002_region_tier_001 --kind m
 python tools\endfield_source_graph.py query TpForMap_ent_200001237 --kind teleport_point
 ```
 
+2026-07-01 GameplayConfig text WorldEntityRegistry graph progress: source graph
+ingestion now promotes decoded text `Json/GameplayConfig/WorldEntityRegistry.json`
+from `Json_GameplayConfig.json`, separate from the compact MemoryPack
+`Json_GameplayConfigWorldEntityRegistry.json` pass. A fast CN rebuild to
+`tmp/source_graph_world_entity_text.sqlite` verified 1,538,463 total nodes,
+2,729,132 edges, and 2,084,083 aliases. New coverage includes 2
+`world_entity_text_registry` source roots, 15,083 collapsed
+`world_entity_instance` nodes from 30,129 Persistent/StreamingAssets source
+rows, 2,591 `world_entity_script_slot` nodes from 5,093 source slot rows, 77
+`world_entity_config` nodes, 154 `world_entity_config_property` nodes, 1,646
+`npc_proxy_brief` nodes, and 1,646 `world_entity_segment` nodes. The pass adds
+15,083 instance-to-compact-world-entity links, 1,642 instance enemy links, 1,613
+instance enemy-template links, 8,740 instance interactive-detail links, 269
+fallback detail links, 2,591 script-slot-to-level-script links, 648 script-slot
+enemy links, 1,840 script-slot interactive-detail links, 154 config-to-property
+links, 77 config-to-instance links, 1,646 proxy-to-segment links, and 101 proxy
+segment-to-instance links. Position, rotation, and config property arrays stay
+as compact payloads; numeric prefixes are not interpreted as map or level ids.
+This is static placement/registry evidence, not runtime spawn, visibility,
+lifetime, or script execution proof. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query 200001183 --kind world_entity_instance
+python tools\endfield_source_graph.py query 200000033:30001 --kind world_entity_script_slot
+python tools\endfield_source_graph.py query 200001237 --kind world_entity_config
+python tools\endfield_source_graph.py query xiaona_map01_e1m7cage --kind npc_proxy_brief
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,

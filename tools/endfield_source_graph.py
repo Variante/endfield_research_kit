@@ -327,6 +327,11 @@ GAMEPLAY_CONFIG_MAP_PLACEMENT_PATHS = frozenset(
         "Json/GameplayConfig/MinePointTeamTable.json",
     }
 )
+GAMEPLAY_CONFIG_WORLD_ENTITY_TEXT_PATHS = frozenset(
+    {
+        "Json/GameplayConfig/WorldEntityRegistry.json",
+    }
+)
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
     "AIConfigEnemyTemplateDataSummary",
@@ -344,6 +349,7 @@ DECODED_CONFIG_TARGET_TYPES = {
     "GameplayConfigMapLevelLookups",
     "GameplayConfigMapPlacement",
     "GameplayConfigWorldEntityRegistry",
+    "GameplayConfigWorldEntityTextRegistry",
     "GPUISystemConfigDamageText",
     "InteractiveTable",
     "InteractiveTemplateData",
@@ -2911,6 +2917,8 @@ class SourceGraphBuilder:
                     subtype = "GameplayConfigMapLevelLookups"
                 if group_name == "Json_GameplayConfig.json" and safe_key(entry.get("dp")) in GAMEPLAY_CONFIG_MAP_PLACEMENT_PATHS:
                     subtype = "GameplayConfigMapPlacement"
+                if group_name == "Json_GameplayConfig.json" and safe_key(entry.get("dp")) in GAMEPLAY_CONFIG_WORLD_ENTITY_TEXT_PATHS:
+                    subtype = "GameplayConfigWorldEntityTextRegistry"
                 if group_name == "Json_GameplayConfigScriptTaskExtraInfoTable.json":
                     subtype = "GameplayConfigScriptTaskExtraInfoTable"
                 if group_name == "Json_LevelMountPoint.json":
@@ -3011,6 +3019,8 @@ class SourceGraphBuilder:
             self.add_level_script_template_data_edges(file_node, entry)
         elif subtype == "GameplayConfigWorldEntityRegistry":
             self.add_world_entity_registry_edges(file_node, entry)
+        elif subtype == "GameplayConfigWorldEntityTextRegistry":
+            self.add_world_entity_text_registry_edges(file_node, entry)
         elif subtype == "TeleportValidationDataTable":
             self.add_teleport_validation_config_edges(file_node, entry)
 
@@ -6053,6 +6063,159 @@ class SourceGraphBuilder:
             audio_ids.update(LINE_AUDIO_RE.findall(str(entry.get("t") or "")))
         for audio_id in sorted(audio_ids):
             self.add_audio_target_edge(data_node, audio_id, edge_kind="interactive_template_uses_audio", source="webui/game_data", evidence="memorypack-bytes" if raw_data else "summary")
+
+    def add_world_entity_detail_ref_edges(self, owner_node: str, detail_id: Any, *, source: str, edge_prefix: str, alias_kind: str = "") -> bool:
+        detail_key = safe_key(detail_id)
+        if not detail_key:
+            return False
+        linked_detail = False
+        for target_kind, suffix in (
+            ("enemy", "uses_enemy"),
+            ("enemy_template", "uses_enemy_template"),
+            ("npc", "uses_npc"),
+            ("environmental_npc", "uses_environmental_npc"),
+            ("interactive_object", "uses_interactive_detail"),
+            ("model_config_model", "uses_model"),
+            ("model_radius", "has_model_radius"),
+            ("audio_collection", "uses_audio_collection"),
+            ("audio_dialog_channel", "uses_audio_dialog_channel"),
+        ):
+            if not self.node_exists(target_kind, detail_key):
+                continue
+            self.add_edge(owner_node, self.node_id(target_kind, detail_key), f"{edge_prefix}_{suffix}", source=source, evidence="detailId")
+            linked_detail = True
+        if not linked_detail:
+            if detail_key.startswith("int_"):
+                detail_node = self.add_node("interactive_object", detail_key, name=detail_key, source=source)
+                self.add_edge(owner_node, detail_node, f"{edge_prefix}_uses_interactive_detail", source=source, evidence="detailId")
+            else:
+                detail_node = self.add_node("world_entity_detail", detail_key, name=detail_key, source=source)
+                self.add_edge(owner_node, detail_node, f"{edge_prefix}_uses_detail", source=source, evidence="detailId")
+        if alias_kind:
+            self.add_alias(detail_key, owner_node, kind=alias_kind, source=source)
+        return True
+
+    def add_world_entity_instance_node(self, entity_id: Any, *, source: str, data: Any = None) -> str:
+        entity_key = safe_key(entity_id)
+        if not entity_key:
+            return ""
+        node = self.add_node("world_entity_instance", entity_key, name=entity_key, source=source, data=data)
+        self.add_alias(entity_key, node, kind="world_entity_instance_id", source=source)
+        return node
+
+    def add_world_entity_text_registry_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        payload = self.read_decoded_config_json_payload(entry)
+        if not isinstance(payload, dict):
+            return
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        registry_key = safe_key(entry.get("p"))
+        registry_node = self.add_node("world_entity_text_registry", registry_key, name=Path(registry_key).name, source=source, path=registry_key, data=self.decoded_config_entry_data(entry))
+        self.add_edge(file_node, registry_node, "defines_world_entity_text_registry", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id})
+
+        entity_rows = payload.get("worldEntityBriefInfos") if isinstance(payload.get("worldEntityBriefInfos"), dict) else {}
+        script_ids = payload.get("m_scriptEntityIdList") if isinstance(payload.get("m_scriptEntityIdList"), list) else []
+        script_briefs = payload.get("m_scriptEntityBriefInfo") if isinstance(payload.get("m_scriptEntityBriefInfo"), list) else []
+        config_rows = payload.get("worldEntityConfigInfos") if isinstance(payload.get("worldEntityConfigInfos"), dict) else {}
+        npc_proxy_rows = payload.get("npcProxyBriefInfos") if isinstance(payload.get("npcProxyBriefInfos"), dict) else {}
+        self.update_node_details(
+            registry_node,
+            data=compact_payload({
+                **self.decoded_config_entry_data(entry),
+                "worldEntityCount": len(entity_rows),
+                "scriptEntityIdCount": len(script_ids),
+                "scriptEntityBriefCount": len(script_briefs),
+                "configInfoCount": len(config_rows),
+                "npcProxyBriefCount": len(npc_proxy_rows),
+            }, depth=3),
+        )
+
+        for entity_id_raw, row in sorted(entity_rows.items(), key=lambda item: safe_key(item[0])):
+            if not isinstance(row, dict):
+                continue
+            entity_id = safe_key(entity_id_raw)
+            if not entity_id:
+                continue
+            detail_id = safe_key(row.get("detailId"))
+            instance_data = compact_payload({
+                "entityId": entity_id,
+                "entityType": row.get("entityType"),
+                "detailId": detail_id,
+                "position": row.get("position"),
+                "rotation": row.get("rotation"),
+                "source": source_id,
+            }, depth=3)
+            instance_node = self.add_world_entity_instance_node(entity_id, source=source, data=instance_data)
+            self.update_node_details(instance_node, name=entity_id, source=source, data=instance_data)
+            self.add_edge(registry_node, instance_node, "world_entity_text_registry_has_instance", source=source, evidence="worldEntityBriefInfos", data={"source": source_id})
+            world_node = self.add_node("world_entity", entity_id, name=entity_id, source=source)
+            self.add_alias(entity_id, world_node, kind="world_entity_id", source=source)
+            self.add_edge(instance_node, world_node, "world_entity_instance_compact_entity", source=source, evidence="entityId", data={"source": source_id})
+            self.add_world_entity_detail_ref_edges(instance_node, detail_id, source=source, edge_prefix="world_entity_instance", alias_kind="world_entity_instance_detail_id")
+
+        for index, id_row in enumerate(script_ids):
+            if not isinstance(id_row, dict):
+                continue
+            brief = script_briefs[index] if index < len(script_briefs) and isinstance(script_briefs[index], dict) else {}
+            script_id = safe_key(id_row.get("scriptIdGlobal"))
+            slot_id = safe_key(id_row.get("slotId"))
+            if not script_id or not slot_id:
+                continue
+            node_key = f"{script_id}:{slot_id}"
+            detail_id = safe_key(brief.get("detailId"))
+            slot_node = self.add_node(
+                "world_entity_script_slot",
+                node_key,
+                name=node_key,
+                source=source,
+                data=compact_payload({"scriptIdGlobal": script_id, "slotId": slot_id, "detailId": detail_id, "entityType": brief.get("entityType"), "position": brief.get("position"), "rotation": brief.get("rotation"), "source": source_id}, depth=3),
+            )
+            self.add_alias(node_key, slot_node, kind="world_entity_script_slot_id", source=source)
+            self.add_alias(script_id, slot_node, kind="world_entity_script_id", source=source)
+            self.add_edge(registry_node, slot_node, "world_entity_text_registry_has_script_slot", source=source, evidence="m_scriptEntityIdList", data={"source": source_id, "index": index})
+            script_node = self.add_node("level_script", script_id, name=script_id, source=source)
+            self.add_alias(script_id, script_node, kind="level_script_id", source=source)
+            self.add_edge(slot_node, script_node, "world_entity_script_slot_uses_level_script", source=source, evidence="scriptIdGlobal")
+            self.add_world_entity_detail_ref_edges(slot_node, detail_id, source=source, edge_prefix="world_entity_script_slot", alias_kind="world_entity_script_slot_detail_id")
+
+        for entity_id_raw, row in sorted(config_rows.items(), key=lambda item: safe_key(item[0])):
+            if not isinstance(row, dict):
+                continue
+            entity_id = safe_key(entity_id_raw)
+            if not entity_id:
+                continue
+            properties = row.get("propertyList") if isinstance(row.get("propertyList"), list) else []
+            config_node = self.add_node("world_entity_config", entity_id, name=entity_id, source=source, data=compact_payload({"entityId": entity_id, "propertyCount": len(properties), "source": source_id}, depth=2))
+            self.add_alias(entity_id, config_node, kind="world_entity_config_id", source=source)
+            self.add_edge(registry_node, config_node, "world_entity_text_registry_has_config", source=source, evidence="worldEntityConfigInfos", data={"source": source_id})
+            instance_node = self.add_world_entity_instance_node(entity_id, source=source)
+            if instance_node:
+                self.add_edge(config_node, instance_node, "world_entity_config_for_instance", source=source, evidence="entityId")
+            for prop_index, prop in enumerate(properties):
+                if not isinstance(prop, dict):
+                    continue
+                prop_key = safe_key(prop.get("key")) or f"property_{prop_index}"
+                prop_node_key = f"{entity_id}:{prop_key}"
+                prop_node = self.add_node("world_entity_config_property", prop_node_key, name=prop_key, source=source, data=compact_payload({"entityId": entity_id, "key": prop_key, "value": prop.get("value"), "source": source_id}, depth=4))
+                self.add_alias(prop_node_key, prop_node, kind="world_entity_config_property_id", source=source)
+                self.add_edge(config_node, prop_node, "world_entity_config_has_property", source=source, evidence=f"propertyList[{prop_index}]", data={"source": source_id})
+
+        for segment_id_raw, row in sorted(npc_proxy_rows.items(), key=lambda item: safe_key(item[0])):
+            if not isinstance(row, dict):
+                continue
+            segment_id = safe_key(row.get("segmentIdGlobal") or segment_id_raw)
+            proxy_id = safe_key(row.get("proxyId"))
+            if not proxy_id:
+                continue
+            proxy_node = self.add_node("npc_proxy_brief", proxy_id, name=proxy_id, source=source, data=compact_payload({"proxyId": proxy_id, "segmentIdGlobal": segment_id, "position": row.get("position"), "source": source_id}, depth=3))
+            self.add_alias(proxy_id, proxy_node, kind="npc_proxy_brief_id", source=source)
+            self.add_alias(segment_id, proxy_node, kind="npc_proxy_segment_id", source=source)
+            self.add_edge(registry_node, proxy_node, "world_entity_text_registry_has_npc_proxy_brief", source=source, evidence="npcProxyBriefInfos", data={"source": source_id})
+            segment_node = self.add_node("world_entity_segment", segment_id, name=segment_id, source=source)
+            self.add_alias(segment_id, segment_node, kind="world_entity_segment_id", source=source)
+            self.add_edge(proxy_node, segment_node, "npc_proxy_brief_in_segment", source=source, evidence="segmentIdGlobal")
+            if self.node_exists("world_entity_instance", segment_id):
+                self.add_edge(proxy_node, self.node_id("world_entity_instance", segment_id), "npc_proxy_brief_segment_instance", source=source, evidence="segmentIdGlobal")
     def add_world_entity_registry_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         config_key = safe_key(entry.get("p"))
         registry_node = self.add_node("world_entity_registry", config_key, name=Path(config_key).name, source="webui/game_data", path=config_key, data=self.decoded_config_entry_data(entry))
@@ -13348,6 +13511,13 @@ QUERY_KIND_PRIORITY = {
     "system_interactive": 154,
     "minigame": 155,
     "sewage_treat_plant": 156,
+    "world_entity_text_registry": 157,
+    "world_entity_instance": 158,
+    "world_entity_script_slot": 159,
+    "world_entity_config": 160,
+    "world_entity_config_property": 161,
+    "npc_proxy_brief": 162,
+    "world_entity_segment": 163,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -13664,6 +13834,13 @@ NODE_ID_PREFIXES = (
     "system_interactive",
     "minigame",
     "sewage_treat_plant",
+    "world_entity_text_registry",
+    "world_entity_instance",
+    "world_entity_script_slot",
+    "world_entity_config",
+    "world_entity_config_property",
+    "npc_proxy_brief",
+    "world_entity_segment",
     "mission",
     "map",
     "level",

@@ -415,7 +415,10 @@ short-id scenes, 86 short-id rows, 142 map-brief rows, 211 map-local sublevel
 rows, and 1,009 sublevel enemy refs from the decoded text JSON tables. The
 placed-map pass adds 1,993 map-mark nodes, 268 map regions, 46 mine-team nodes,
 and high-confidence mark-to-level, mark-to-region, teleport, reward, item,
-activity, minigame, and doodad logic refs.
+activity, minigame, and doodad logic refs. The text `WorldEntityRegistry` pass
+adds 15,083 placed world-entity instances, 2,591 script slots, 77 config nodes,
+154 config properties, 1,646 NPC proxy briefs, and exact detail/script joins to
+existing entity and level-script nodes.
 These decoded-config passes still do not prove runtime formula usage,
 full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
@@ -706,6 +709,18 @@ item refs, 103 minigame refs, 300 mark core-doodad refs, and 150 mine-team
 doodad refs. Geometry remains payload-level, and the top-level numeric keys are
 not treated as map ids. This is static placed-map evidence, not proof of live
 visibility, activation, fog reveal, resource refresh, or runtime map rendering.
+
+2026-07-01 source graph text WorldEntityRegistry progress: a fast CN rebuild to
+`tmp/source_graph_world_entity_text.sqlite` verified decoded text
+`Json/GameplayConfig/WorldEntityRegistry.json`. The pass adds 15,083 collapsed
+world-entity instance nodes from 30,129 source rows, 2,591 script-slot nodes,
+77 config nodes, 154 config-property nodes, 1,646 NPC proxy briefs, and 1,646
+segment nodes. It links instances and script slots to existing enemy,
+enemy-template, interactive-detail, model, model-radius, audio, and level-script
+nodes where exact detail or script ids already resolve. Position, rotation, and
+config values remain payload-level, and numeric prefixes are not treated as
+level or map ids. This is static registry evidence, not proof of runtime spawn,
+visibility, lifetime, or script execution.
 
 Useful support-table checks include:
 
