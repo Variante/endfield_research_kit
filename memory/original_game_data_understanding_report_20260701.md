@@ -360,8 +360,12 @@ collapsed to 107 config nodes, 584 states, 315 facial morph paths, 197 actor
 animation refs, 3 cutscene-like refs, 34 montage refs joined to existing
 montage nodes, and 1 generic skeleton/bone path ref from guarded MemoryPack
 string evidence; controller graphs, blend trees, clip bindings, animation
-curves, and runtime playback conditions remain outside this pass. It does not
-prove runtime formula usage, full SpawnerConfig tail semantics,
+curves, and runtime playback conditions remain outside this pass. The
+`AtmosphericNpcData` pass adds 15,452 file-row occurrence edges collapsed to
+7,760 atmospheric NPC row aliases on `environmental_npc` nodes, with 7,760
+template links, 7,760 level links, 7,577 AI-config links, 4,866 montage links,
+2,427 facial-morph links, 994 cluster links, and 615 envTalk links from the
+same bounded row-string evidence. It does not prove runtime formula usage, full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
 flow, montage clip playback semantics, full exported model/icon reconstruction,
@@ -399,11 +403,16 @@ Partial but useful current examples include:
   morph paths, montage paths, actor animation refs, cutscene-like ids, and one
   skeleton/bone path; controller graphs, blend trees, clip bindings, animation
   curves, and runtime playback conditions remain future work.
+- `AtmosphericNpcData`: queryable atmospheric/environmental NPC row inventory
+  across 276 decoded tables, including row-to-template, level, AI config,
+  montage, facial morph, cluster, and envTalk references; full row payloads,
+  coordinates, placement volumes, behavior trees, schedules, and playback timing
+  remain future work.
 - `Interactive/InteractiveData`: 25-member template roots and many component
   bodies parse far enough to expose names, component families, property maps,
   audio rows, guide geometry, trigger observers, hittable data, and interactive
   state properties.
-- `AtmosphericNpcData`, `CharInteractPerformCfgs`, `LevelScriptTemplateData`,
+- `CharInteractPerformCfgs`, `LevelScriptTemplateData`,
   and other partially previewed families have verified top-level ids/counts and
   meaningful previews.
 
