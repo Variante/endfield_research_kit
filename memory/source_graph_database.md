@@ -1060,6 +1060,27 @@ python tools\endfield_source_graph.py query region_301:200060537 --kind factory_
 python tools\endfield_source_graph.py query item_originium_ore --kind item
 ```
 
+2026-07-01 UILevelMapLoadConfig graph progress: source graph ingestion
+now promotes bounded UI map-load metadata from `Json_UILevelMapLoadConfig.json`.
+A fast CN rebuild to `tmp/source_graph_ui_level_map.sqlite` verified
+1,498,815 total nodes, 2,623,975 edges, and 2,019,120 aliases. New
+coverage includes 17 `ui_level_map_config` nodes from 34 source-file
+definition edges plus 34 load-list refs, 220 `ui_map_static_element` nodes
+from 440 source-file definition edges, 7 static-element type nodes, 220
+config-to-static-element edges, 54 target-level refs, 2 region-level refs,
+157 static-element text refs, 58 `ui_map_tier_name` nodes from 116
+source-file definition edges, and 58 tier text refs. Static-element type
+splits are 2:157, 1:30, 7:24, 4:5, 3:2, 5:1, and 6:1. Chunk/grid/mist
+and tier geometry arrays are preserved as config payload counts only; this
+pass does not prove UI map rendering, fog/mist reveal behavior, chunk LOD
+selection, or coordinate projection. Example exact queries:
+
+```bat
+python tools\endfield_source_graph.py query map01_lv001 --kind ui_level_map_config
+python tools\endfield_source_graph.py query map01_lv001_se_1 --kind ui_map_static_element
+python tools\endfield_source_graph.py query scene_map01_lv001_sub01_location_tips_10 --kind i18n_text
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,

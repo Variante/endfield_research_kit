@@ -408,7 +408,8 @@ extra nodes, one level link set, and 5 task title/objective text refs. The
 and exact position/rotation payloads for `base01_lv001` and `base01_lv003`.
 The `LevelGenForRuntime` pass adds 267 doodad groups, 1,967 doodad logic
 ids, 68 runtime factory regions, 202 mine nodes, and exact mine output item
-refs. These decoded-config passes still do not prove runtime formula usage,
+refs. The `UILevelMapLoadConfig` pass adds 17 UI map configs, 220 static map
+elements, 58 tier names, target-level refs, and UI text refs. These decoded-config passes still do not prove runtime formula usage,
 full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
@@ -512,6 +513,10 @@ Partial but useful current examples include:
   factory regions, mines, mine proto ids, mine output items, and map-mark
   refs; resource refresh formulas, gathering logic, factory simulation, and
   map-mark visibility remain future work.
+- `UILevelMapLoadConfig`: queryable UI map config nodes, static map
+  elements, static-element types, tier names, target-level refs, and text
+  refs; chunk/grid/mist geometry, LOD selection, coordinate projection, and
+  actual UI rendering remain future work.
 - `LevelScriptTemplateData` and other partially previewed families have verified
   top-level ids/counts and meaningful previews.
 
@@ -662,6 +667,16 @@ regions, 202 mines, 4 mine proto ids, 202 mine output item links, 267 center
 links, 1,700 outer links, and 56 doodad map-mark links. This is static
 authored generation metadata, not proof of resource refresh formulas,
 gathering logic, factory simulation behavior, or map-mark visibility.
+
+2026-07-01 source graph UILevelMapLoadConfig progress: a fast CN rebuild
+to `tmp/source_graph_ui_level_map.sqlite` verified bounded UI map-load
+metadata from `Json_UILevelMapLoadConfig.json`. It adds 17
+`ui_level_map_config` nodes, 220 static map elements, 7 static-element
+types, 54 target-level refs, 2 region-level refs, 157 static-element text
+refs, 58 tier-name nodes, and 58 tier text refs. Chunk/grid/mist and tier
+geometry arrays are payload counts only; this is static UI map metadata,
+not proof of UI map rendering, fog/mist reveal behavior, chunk LOD
+selection, or coordinate projection.
 
 Useful support-table checks include:
 

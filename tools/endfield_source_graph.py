@@ -310,6 +310,7 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_GameplayConfigScriptTaskExtraInfoTable.json",
     "Json_LevelMountPoint.json",
     "Json_LevelGenForRuntime.json",
+    "Json_UILevelMapLoadConfig.json",
 )
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
@@ -318,6 +319,7 @@ DECODED_CONFIG_TARGET_TYPES = {
     "GameplayConfigScriptTaskExtraInfoTable",
     "LevelMountPoint",
     "LevelGenForRuntime",
+    "UILevelMapLoadConfig",
     "BambooRaftTaskTable",
     "CharInteractPerformCfgs",
     "NpcAtmosphericDataTable",
@@ -2894,6 +2896,8 @@ class SourceGraphBuilder:
                     subtype = "LevelMountPoint"
                 if group_name == "Json_LevelGenForRuntime.json":
                     subtype = "LevelGenForRuntime"
+                if group_name == "Json_UILevelMapLoadConfig.json":
+                    subtype = "UILevelMapLoadConfig"
                 if subtype not in DECODED_CONFIG_TARGET_TYPES:
                     continue
                 self.add_decoded_config_entry(group_node, entry, subtype=subtype)
@@ -2926,6 +2930,8 @@ class SourceGraphBuilder:
             self.add_level_mount_point_edges(file_node, entry)
         elif subtype == "LevelGenForRuntime":
             self.add_level_gen_for_runtime_edges(file_node, entry)
+        elif subtype == "UILevelMapLoadConfig":
+            self.add_ui_level_map_load_config_edges(file_node, entry)
         elif subtype == "AnimationConfig":
             self.add_animation_config_edges(file_node, entry)
         elif subtype == "NpcAtmosphericDataTable":
@@ -4357,6 +4363,132 @@ class SourceGraphBuilder:
             self.add_level_gen_doodad_group_edges(file_node, entry, payload)
         elif dp.endswith("TotalFactoryRegions.json"):
             self.add_level_gen_factory_region_edges(file_node, entry, payload)
+
+    def add_ui_map_static_element_type_node(self, type_id: Any, *, source: str = "") -> str:
+        type_key = safe_key(type_id)
+        if not type_key:
+            return ""
+        node = self.add_node("ui_map_static_element_type", type_key, name=type_key, source=source)
+        self.add_alias(type_key, node, kind="ui_map_static_element_type", source=source)
+        return node
+
+    def add_ui_map_text_edge(self, owner_node: str, text_id: Any, *, edge_kind: str, source: str, evidence: str) -> None:
+        text_key = safe_key(text_id)
+        if not text_key:
+            return
+        text_node = self.add_i18n_text_node(text_key, source=source)
+        if text_node:
+            self.add_edge(owner_node, text_node, edge_kind, source=source, evidence=evidence)
+
+    def add_ui_level_map_load_list_edges(self, file_node: str, entry: dict[str, Any], payload: dict[str, Any]) -> None:
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        levels = [safe_key(value) for value in (payload.get("loadLevelList") or []) if safe_key(value)]
+        self.update_node_details(file_node, data=compact_payload({**self.decoded_config_entry_data(entry), "loadLevelCount": len(levels)}, depth=3))
+        for index, level_id in enumerate(levels):
+            config_node = self.add_node("ui_level_map_config", level_id, name=level_id, source=source)
+            self.add_alias(level_id, config_node, kind="ui_level_map_config_id", source=source)
+            level_node = self.add_level_node(level_id, source=source)
+            self.add_edge(file_node, config_node, "ui_level_map_load_list_includes_config", source=source, evidence="loadLevelList", data={"source": source_id, "index": index})
+            if level_node:
+                self.add_edge(config_node, level_node, "ui_level_map_config_for_level", source=source, evidence="loadLevelList")
+
+    def add_ui_level_map_config_edges(self, file_node: str, entry: dict[str, Any], payload: dict[str, Any]) -> None:
+        level_id = Path(safe_key(entry.get("dp") or entry.get("p"))).stem
+        if not level_id:
+            return
+        source = "webui/game_data"
+        source_id = safe_key(entry.get("source")) or "webui"
+        basic = payload.get("basic") if isinstance(payload.get("basic"), dict) else {}
+        static_elements = payload.get("staticElements") if isinstance(payload.get("staticElements"), dict) else {}
+        tier_names = payload.get("tierNames") if isinstance(payload.get("tierNames"), dict) else {}
+        count_fields = {field: len(payload.get(field) or {}) if isinstance(payload.get(field), dict) else 0 for field in ("lowChunks", "mediumChunks", "highChunks", "gridInfos", "mistInfos", "tierInfos")}
+        config_node = self.add_node(
+            "ui_level_map_config",
+            level_id,
+            name=level_id,
+            source=source,
+            data=compact_payload({
+                "levelId": level_id,
+                "basic": basic,
+                "staticElementCount": len(static_elements),
+                "tierNameCount": len(tier_names),
+                **count_fields,
+            }, depth=4),
+        )
+        self.add_alias(level_id, config_node, kind="ui_level_map_config_id", source=source)
+        self.add_edge(file_node, config_node, "defines_ui_level_map_config", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id})
+        level_node = self.add_level_node(level_id, source=source)
+        if level_node:
+            self.add_edge(config_node, level_node, "ui_level_map_config_for_level", source=source, evidence="fileName")
+        for element_key_raw, element in sorted(static_elements.items(), key=lambda item: safe_key(item[0])):
+            if not isinstance(element, dict):
+                continue
+            element_id = safe_key(element.get("id") or element_key_raw)
+            if not element_id:
+                continue
+            element_node = self.add_node(
+                "ui_map_static_element",
+                element_id,
+                name=element_id,
+                source=source,
+                data=compact_payload({
+                    "id": element_id,
+                    "levelId": level_id,
+                    "type": element.get("type"),
+                    "position": element.get("position"),
+                    "isPermanent": element.get("isPermanent"),
+                    "loadDistance": element.get("loadDistance"),
+                    "directionAngle": element.get("directionAngle"),
+                    "targetLevelId": element.get("targetLevelId"),
+                    "regionLevelId": element.get("regionLevelId"),
+                    "textId": element.get("textId"),
+                    "targetLevelSpriteName": element.get("targetLevelSpriteName"),
+                    "regionPanelIndex": element.get("regionPanelIndex"),
+                }, depth=4),
+            )
+            self.add_alias(element_id, element_node, kind="ui_map_static_element_id", source=source)
+            self.add_alias(f"{level_id}:{element_id}", element_node, kind="ui_map_static_element_key", source=source)
+            self.add_edge(file_node, element_node, "defines_ui_map_static_element", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id})
+            self.add_edge(config_node, element_node, "ui_level_map_config_has_static_element", source=source, evidence="staticElements")
+            type_node = self.add_ui_map_static_element_type_node(element.get("type"), source=source)
+            if type_node:
+                self.add_edge(element_node, type_node, "ui_map_static_element_type", source=source, evidence="type")
+            target_level = self.add_level_node(element.get("targetLevelId"), source=source)
+            if target_level:
+                self.add_edge(element_node, target_level, "ui_map_static_element_targets_level", source=source, evidence="targetLevelId")
+            region_level = self.add_level_node(element.get("regionLevelId"), source=source)
+            if region_level:
+                self.add_edge(element_node, region_level, "ui_map_static_element_region_level", source=source, evidence="regionLevelId")
+            self.add_ui_map_text_edge(element_node, element.get("textId"), edge_kind="ui_map_static_element_text", source=source, evidence="textId")
+        for tier_id_raw, text_id_raw in sorted(tier_names.items(), key=lambda item: safe_key(item[0])):
+            tier_id = safe_key(tier_id_raw)
+            text_id = safe_key(text_id_raw)
+            if not tier_id:
+                continue
+            tier_node = self.add_node("ui_map_tier_name", f"{level_id}:{tier_id}", name=tier_id, source=source, data={"levelId": level_id, "tierId": tier_id, "textId": text_id})
+            self.add_alias(f"{level_id}:{tier_id}", tier_node, kind="ui_map_tier_key", source=source)
+            self.add_alias(tier_id, tier_node, kind="ui_map_tier_id", source=source)
+            self.add_edge(file_node, tier_node, "defines_ui_map_tier_name", source=source, evidence=safe_key(entry.get("dp")), data={"source": source_id})
+            self.add_edge(config_node, tier_node, "ui_level_map_config_has_tier_name", source=source, evidence="tierNames")
+            self.add_ui_map_text_edge(tier_node, text_id, edge_kind="ui_map_tier_name_text", source=source, evidence="tierNames")
+        self.update_node_details(file_node, data=compact_payload({**self.decoded_config_entry_data(entry), "levelId": level_id, "staticElementCount": len(static_elements), "tierNameCount": len(tier_names), **count_fields}, depth=3))
+
+    def add_ui_level_map_load_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        raw_data = self.read_decoded_config_bytes(entry)
+        if not raw_data:
+            return
+        try:
+            payload = json.loads(raw_data.decode("utf-8-sig"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return
+        if not isinstance(payload, dict):
+            return
+        dp = safe_key(entry.get("dp"))
+        if dp.endswith("LoadListConfig.json"):
+            self.add_ui_level_map_load_list_edges(file_node, entry, payload)
+        else:
+            self.add_ui_level_map_config_edges(file_node, entry, payload)
 
     def mission_runtime_text_key(self, payload: Any) -> str:
         if isinstance(payload, dict):
@@ -12614,6 +12746,10 @@ QUERY_KIND_PRIORITY = {
     "level_gen_doodad_logic": 135,
     "factory_mine": 136,
     "factory_mine_proto": 137,
+    "ui_level_map_config": 138,
+    "ui_map_static_element": 139,
+    "ui_map_static_element_type": 140,
+    "ui_map_tier_name": 141,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -12911,6 +13047,10 @@ NODE_ID_PREFIXES = (
     "level_gen_doodad_logic",
     "factory_mine",
     "factory_mine_proto",
+    "ui_level_map_config",
+    "ui_map_static_element",
+    "ui_map_static_element_type",
+    "ui_map_tier_name",
     "mission",
     "map",
     "level",
