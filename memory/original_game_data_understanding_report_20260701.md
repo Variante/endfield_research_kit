@@ -720,8 +720,8 @@ runtime combat formula or modifier-order reconstruction.
 the generated Gameplay payload, a pre-Gameplay item/economy table pass, an early
 world/map table pass, a pre-Gameplay combat semantics pass, selected structured
 factory tables, Spaceship/base tables, Activity/Achievement/SystemJump tables,
-and factory tech-tree/unlock, PRTS Archive, Reading, and RichContent tables as
-evidence graph nodes and relationships. A fast CN verification build with `--skip-asset-maps --skip-reference-rows
+and factory tech-tree/unlock, PRTS Archive, Reading, RichContent, NPC, ambient
+voice, and responsive bark tables as evidence graph nodes and relationships. A fast CN verification build with `--skip-asset-maps --skip-reference-rows
 --skip-followups` produced 72 weapon nodes, 220 equipment nodes, 30 character
 nodes, 290 enemy nodes, 78 enemy template nodes, 98 enemy attribute-template
 nodes, 134 enemy ability nodes, 217 buff nodes, 6 map nodes, 208 level nodes,
@@ -754,8 +754,9 @@ separate visible Gameplay entries. Exact queries such as `chr_0017_yvonne`,
 `activity_weekly_task_1`, `week10_task1`, `achv_adv_tundra_box`,
 `jump_activity_conditional_multistage_1`, `tech_jinlong_1_battle_cannon_2`,
 `air_dancer_1`, `hdwk_item_drop_agfly_1_1`, `nar_002_settlement`,
-`text_002_settelment`, `rp_radio_c16m4_50`, and `research_001` now resolve to
-semantic nodes with source table rows and neighbors. This improves
+`text_002_settelment`, `rp_radio_c16m4_50`, `research_001`, `chaosheng`,
+`CommonKid`, `action_dash_start`, and `-1006722661` now resolve to semantic
+nodes with source table rows and neighbors. This improves
 cross-domain lookup; it still does not prove formulas beyond generated
 source-table evidence.
 
@@ -847,10 +848,26 @@ and 5 system
 jumps to PRTS investigations. Investigation grouping intentionally keeps the two
 source evidence paths from `PrtsInvestigate.categoryDataList` and
 `PrtsInvestigateCategory.list`; inferred PRTS page buckets remain out of scope
-until backed by a table or UI binding. Lovelace scout identified NPC / Ambient
-Voice / Responsive Bark as the next bounded graph slice, leaving SNS, radio,
-remote-common, cue, and full voice-extra tables for a broader narrative/audio
-pass.
+until backed by a table or UI binding. The scouted NPC / Ambient Voice /
+Responsive Bark bridge has since landed below.
+
+2026-07-01 source graph NPC/Ambient Voice/Responsive Bark progress: NPC rows,
+NPC groups, NPC templates, voice profiles, environmental NPCs, atmosphere
+camp/career tags, audio dialog channels, responsive trigger groups, responsive
+speakers/triggers/responses, AIBark rules, AIBark text, and bark constants are
+now queryable. The corrected fast CN rebuild verified 359 NPC nodes, 939 NPC
+groups, 543 unique NPC templates from 676 source rows, 1,239 voice profiles, 43
+environmental NPC rows, 676 audio dialog channel nodes including 33 channel
+aliases, 1,142 Wwise event nodes, 72 responsive speakers, 9,521 responsive
+triggers, 165 global responsive trigger types, 4,325 responsive responses, 928
+bark text rows, 359 NPC-to-group links, 33 NPC-to-EnvTalk links, 689 voice
+profile-to-template links, 541 Wwise-channel and 635 voActor-channel voice
+profile links, 642 channel-to-actor matches, 13,919 trigger-response occurrence
+edges, 4,304 unique response-to-AudioDialog/audio links, 868 response-to-bark-
+text links, and 928 bark text-to-line links. NPC template/dataKey asset joins
+remain intentionally absent because current exact asset entity aliases do not
+match those IDs; SNS, radio, remote-common, cue, and full voice-extra tables
+remain a broader narrative/audio pass.
 
 2026-07-01 source graph item/economy progress: item, reward, reward-drop, and
 shop table semantics are now queryable before Gameplay ingestion. A fast source

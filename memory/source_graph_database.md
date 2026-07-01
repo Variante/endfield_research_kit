@@ -149,8 +149,13 @@ structured-table ingestion adds exact-queryable `weapon`, `equipment`,
 `factory_blueprint_machine_icon`, `manual_craft_unlock`, `prts_page`,
 `prts_category`, `prts_first_level`, `prts_entry`, `rich_content`,
 `rich_content_line`, `reading_popup`, `reading_popup_icon`, `prts_reading`,
-`prts_reading_entry`, `prts_investigation`, `prts_investigation_group`, and
-`prts_note` nodes. A fast CN
+`prts_reading_entry`, `prts_investigation`, `prts_investigation_group`,
+`prts_note`, `npc`, `npc_group`, `npc_template`, `npc_voice_profile`,
+`environmental_npc`, `npc_camp_tag`, `npc_career_tag`,
+`audio_dialog_channel`, `wwise_event`, `responsive_dialog_group`,
+`responsive_speaker`, `responsive_trigger`, `responsive_trigger_key`,
+`responsive_trigger_type`, `responsive_event_template`, `responsive_response`,
+`bark_group`, `bark_variant`, `bark_text`, and `bark_table_const` nodes. A fast CN
 build with `--skip-asset-maps
 --skip-reference-rows
 --skip-followups` verified 72 weapon nodes, 220 equipment nodes, 30 character
@@ -208,6 +213,10 @@ python tools\endfield_source_graph.py query nar_002_settlement --kind prts_entry
 python tools\endfield_source_graph.py query text_002_settelment --kind rich_content
 python tools\endfield_source_graph.py query rp_radio_c16m4_50 --kind reading_popup
 python tools\endfield_source_graph.py query research_001 --kind prts_investigation
+python tools\endfield_source_graph.py query chaosheng --kind npc
+python tools\endfield_source_graph.py query CommonKid --kind npc_voice_profile
+python tools\endfield_source_graph.py query action_dash_start --kind responsive_trigger_key
+python tools\endfield_source_graph.py query -1006722661 --kind bark_text
 ```
 
 2026-07-01 character progression graph progress: generated Gameplay character
@@ -334,11 +343,34 @@ investigations. Investigation grouping counts intentionally preserve duplicate
 evidence from both `PrtsInvestigate.categoryDataList` and
 `PrtsInvestigateCategory.list`; direct `PrtsCategory` to `PrtsPage` edges are
 only emitted for exact key matches, so inferred page buckets remain out of graph
-scope. Lovelace scout identified NPC / Ambient Voice / Responsive Bark as the
-next bounded graph slice: `Npc*`, `AudioDialogChannel*`, `ResponsiveDialog`,
-`ResponsiveTriggers`, `AIBark`, and `AIBarkText`, while leaving SNS, radio,
-remote-common, cue, and full voice-extra tables for a larger narrative/audio
-pass.
+scope. The scouted NPC / Ambient Voice / Responsive Bark bridge has since
+landed below.
+
+2026-07-01 NPC/Ambient Voice/Responsive Bark graph progress: source graph
+ingestion now promotes `NpcTable`, `NpcGroupTable`, `NpcTemplateGroupTable`,
+`NpcInfoTable`, `AtmosphereNpcTable`, `GameplayAndEnvironmentalNpc`,
+`AudioDialogChannel*`, `ResponsiveDialog`, `ResponsiveTriggers`, `AIBark`,
+`AIBarkText`, and `AIBarkTableConst` into queryable semantic nodes. The corrected
+fast CN rebuild verified 855,321 total graph nodes and 1,361,843 edges,
+including 359 NPC nodes, 939 NPC groups, 543 unique NPC templates from 676
+source rows, 1,239 voice profiles, 43 environmental NPC rows, 5 camp tags, 27
+career tags, 676 audio dialog channel nodes including 33 mapping aliases, 1,142
+Wwise event nodes, 7 responsive dialog/trigger groups, 72 responsive speakers,
+9,521 responsive trigger nodes, 283 trigger keys, 165 global trigger types, 63
+event templates, 4,325 responsive response nodes, 25 bark groups, 26 bark
+variants, 928 bark text rows, and 11 bark constants. Edge checks verified 359
+`npc_in_group`, 342 `npc_uses_template`, 341 `npc_group_uses_template`, 33
+`npc_uses_env_talk`, 39 environmental NPC data-key group matches, 10
+environmental template matches, 689 `npc_info_uses_template`, 541 Wwise-channel
+and 635 voActor-channel voice profile links, 706 direct actor matches, 599
+narrating and 599 radio Wwise channel events, 33 channel aliases, 642 channel to
+actor matches, 9,521 responsive speaker-trigger/type/key edges, 13,919
+trigger-response occurrence edges, 4,304 unique response-to-AudioDialog/audio
+links, 868 response-to-bark-text links, 928 bark text-to-line links, and 30 bark
+variant trigger-key links. Exact asset/dataKey joins remain intentionally zero
+for this slice because current `asset_entity_id` aliases do not match NPC
+template/dataKey IDs; SNS, radio, remote-common, cue, and full voice-extra
+tables remain a larger narrative/audio pass.
 
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,

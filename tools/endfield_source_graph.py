@@ -216,6 +216,21 @@ PRTS_ARCHIVE_TABLES = (
     "PrtsInvestigate.json",
     "PrtsInvestigateCategory.json",
 )
+NPC_VOICE_BARK_TABLES = (
+    "AudioDialogChannel.json",
+    "AudioDialogChannelMappings.json",
+    "NpcTemplateGroupTable.json",
+    "NpcGroupTable.json",
+    "NpcTable.json",
+    "GameplayAndEnvironmentalNpc.json",
+    "AtmosphereNpcTable.json",
+    "NpcInfoTable.json",
+    "ResponsiveTriggers.json",
+    "AIBarkText.json",
+    "ResponsiveDialog.json",
+    "AIBark.json",
+    "AIBarkTableConst.json",
+)
 ACTIVITY_ACHIEVEMENT_TABLES = (
     "SystemJumpTable.json",
     "ActivityTagTable.json",
@@ -412,6 +427,7 @@ class SourceGraphBuilder:
         self.asset_entities_by_base: dict[str, list[str]] = defaultdict(list)
         self.asset_paths: list[str] = []
         self.gameplay_item_asset_cache: dict[str, list[str]] = {}
+        self.audio_dialog_row_cache: dict[str, Any] | None = None
         self.alias_count = 0
 
     @property
@@ -540,6 +556,22 @@ class SourceGraphBuilder:
     def node_exists(self, kind: str, key: Any) -> bool:
         return self.db.execute("SELECT 1 FROM nodes WHERE id = ?", (self.node_id(kind, key),)).fetchone() is not None
 
+    def alias_node_ids(self, alias: Any, *, kind: str = "") -> list[str]:
+        alias_text = safe_key(alias)
+        if not alias_text:
+            return []
+        if kind:
+            rows = self.db.execute(
+                "SELECT node_id FROM aliases WHERE alias = ? AND kind = ? ORDER BY node_id",
+                (alias_text, kind),
+            ).fetchall()
+        else:
+            rows = self.db.execute(
+                "SELECT node_id FROM aliases WHERE alias = ? ORDER BY node_id",
+                (alias_text,),
+            ).fetchall()
+        return [row[0] for row in rows]
+
     def add_alias(self, alias: Any, node_id: str, *, kind: str = "", source: str = "") -> None:
         alias_text = safe_key(alias)
         if not alias_text:
@@ -646,6 +678,8 @@ class SourceGraphBuilder:
             self.commit_step("characterManifests")
             self.ingest_selected_structured_tables()
             self.commit_step("structuredTables")
+            self.ingest_npc_voice_bark_semantics()
+            self.commit_step("npcVoiceBark")
             if self.include_reference_rows:
                 self.ingest_reference_tables()
                 self.commit_step("reference")
@@ -4905,6 +4939,537 @@ class SourceGraphBuilder:
         elif table == "PrtsInvestigateCategory":
             self.add_prts_investigation_category_edges(table, row_key, row, row_node)
 
+    def ingest_npc_voice_bark_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_npc_voice_bark_semantics", path=slash(table_root))
+        for table_name in NPC_VOICE_BARK_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if payload is None:
+                continue
+            table_key = Path(table_name).stem
+            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/npc_voice_bark")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            if not isinstance(payload, dict):
+                continue
+            for row_key, row in payload.items():
+                row_node = self.add_node(
+                    "table_row",
+                    f"{table_key}:{row_key}",
+                    name=str(row_key),
+                    source=table_key,
+                    data=compact_payload(row, depth=2),
+                )
+                self.add_edge(table_node, row_node, "has_row", source="structured/npc_voice_bark")
+                self.add_npc_voice_bark_row_edges(table_key, row_key, row, row_node)
+
+    def add_npc_node(self, npc_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        npc_key = safe_key(npc_id)
+        if not npc_key:
+            return ""
+        npc_name = table_display_text(name) or npc_key
+        node = self.add_node("npc", npc_key, name=npc_name, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=npc_name, source=source, data=data)
+        self.add_alias(npc_key, node, kind="npc_id", source=source)
+        if npc_name != npc_key:
+            self.add_alias(npc_name, node, kind="npc_name", source=source)
+        return node
+
+    def add_npc_group_node(self, group_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        group_key = safe_key(group_id)
+        if not group_key:
+            return ""
+        group_name = table_display_text(name) or group_key
+        node = self.add_node("npc_group", group_key, name=group_name, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=group_name, source=source, data=data)
+        self.add_alias(group_key, node, kind="npc_group_id", source=source)
+        if group_name != group_key:
+            self.add_alias(group_name, node, kind="npc_group_name", source=source)
+        return node
+
+    def add_npc_template_node(self, template_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        template_key = safe_key(template_id)
+        if not template_key:
+            return ""
+        template_name = table_display_text(name) or template_key
+        node = self.add_node("npc_template", template_key, name=template_name, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=template_name, source=source, data=data)
+        self.add_alias(template_key, node, kind="npc_template_id", source=source)
+        if template_name != template_key:
+            self.add_alias(template_name, node, kind="npc_template_name", source=source)
+        return node
+
+    def add_npc_voice_profile_node(self, profile_id: Any, *, source: str = "", data: Any = None) -> str:
+        profile_key = safe_key(profile_id)
+        if not profile_key:
+            return ""
+        node = self.add_node("npc_voice_profile", profile_key, name=profile_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=profile_key, source=source, data=data)
+        self.add_alias(profile_key, node, kind="npc_voice_profile_id", source=source)
+        return node
+
+    def add_environmental_npc_node(self, npc_id: Any, *, source: str = "", data: Any = None) -> str:
+        npc_key = safe_key(npc_id)
+        if not npc_key:
+            return ""
+        node = self.add_node("environmental_npc", npc_key, name=npc_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=npc_key, source=source, data=data)
+        self.add_alias(npc_key, node, kind="environmental_npc_id", source=source)
+        return node
+
+    def add_npc_camp_tag_node(self, tag_id: Any, *, source: str = "", data: Any = None) -> str:
+        tag_key = safe_key(tag_id)
+        if not tag_key:
+            return ""
+        node = self.add_node("npc_camp_tag", tag_key, name=tag_key, source=source, data=data)
+        self.add_alias(tag_key, node, kind="npc_camp_tag_id", source=source)
+        return node
+
+    def add_npc_career_tag_node(self, tag_id: Any, *, source: str = "", data: Any = None) -> str:
+        tag_key = safe_key(tag_id)
+        if not tag_key:
+            return ""
+        node = self.add_node("npc_career_tag", tag_key, name=tag_key, source=source, data=data)
+        self.add_alias(tag_key, node, kind="npc_career_tag_id", source=source)
+        return node
+
+    def add_audio_dialog_channel_node(self, channel_id: Any, *, source: str = "", data: Any = None) -> str:
+        channel_key = safe_key(channel_id)
+        if not channel_key:
+            return ""
+        node = self.add_node("audio_dialog_channel", channel_key, name=channel_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=channel_key, source=source, data=data)
+        self.add_alias(channel_key, node, kind="audio_dialog_channel_id", source=source)
+        return node
+
+    def add_wwise_event_node(self, event_id: Any, *, source: str = "") -> str:
+        event_key = safe_key(event_id)
+        if not event_key:
+            return ""
+        node = self.add_node("wwise_event", event_key, name=event_key, source=source)
+        self.add_alias(event_key, node, kind="wwise_event_id", source=source)
+        return node
+
+    def audio_dialog_rows(self) -> dict[str, Any]:
+        if self.audio_dialog_row_cache is None:
+            path = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table" / "AudioDialog.json"
+            payload = read_json(path, {})
+            self.audio_dialog_row_cache = payload if isinstance(payload, dict) else {}
+        return self.audio_dialog_row_cache
+
+    def add_responsive_response_audio_edges(self, response_node: str, response_id: Any, *, source: str, evidence: str) -> None:
+        response_key = safe_key(response_id)
+        if not response_key:
+            return
+        response_evidence = response_key
+        line_node = self.node_id("line", response_key)
+        if self.node_exists("line", response_key):
+            self.add_edge(response_node, line_node, "responsive_response_line_node", source=source, evidence=response_evidence)
+        row = self.audio_dialog_rows().get(response_key)
+        if not isinstance(row, dict):
+            return
+        row_node = self.node_id("table_row", f"AudioDialog:{response_key}")
+        if self.node_exists("table_row", f"AudioDialog:{response_key}"):
+            self.add_edge(response_node, row_node, "responsive_response_audio_dialog_row", source=source, evidence=response_evidence)
+        path = safe_key(row.get("path"))
+        audio_key = Path(path).stem if path else response_key
+        audio_node = self.add_node(
+            "audio",
+            audio_key,
+            name=audio_key,
+            source="AudioDialog",
+            path=path,
+            data={"id": response_key, "speaker": row.get("speakerChannel"), "duration": row.get("wavDuration"), "voType": row.get("voType"), "codec": row.get("codec")},
+        )
+        self.add_edge(response_node, audio_node, "responsive_response_uses_audio", source=source, evidence=response_evidence)
+
+    def add_responsive_dialog_group_node(self, group_id: Any, *, source: str = "", data: Any = None) -> str:
+        group_key = safe_key(group_id)
+        if not group_key:
+            return ""
+        node = self.add_node("responsive_dialog_group", group_key, name=group_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=group_key, source=source, data=data)
+        self.add_alias(group_key, node, kind="responsive_dialog_group_id", source=source)
+        return node
+
+    def add_responsive_speaker_node(self, speaker_id: Any, *, source: str = "") -> str:
+        speaker_key = safe_key(speaker_id)
+        if not speaker_key:
+            return ""
+        node = self.add_node("responsive_speaker", speaker_key, name=speaker_key, source=source)
+        self.add_alias(speaker_key, node, kind="responsive_speaker_id", source=source)
+        return node
+
+    def add_responsive_trigger_key_node(self, trigger_key: Any, *, source: str = "") -> str:
+        key = safe_key(trigger_key)
+        if not key:
+            return ""
+        node = self.add_node("responsive_trigger_key", key, name=key, source=source)
+        self.add_alias(key, node, kind="responsive_trigger_key_id", source=source)
+        return node
+
+    def add_responsive_trigger_node(self, trigger_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        trigger_key = safe_key(trigger_id)
+        if not trigger_key:
+            return ""
+        trigger_name = safe_key(name) or trigger_key
+        node = self.add_node("responsive_trigger", trigger_key, name=trigger_name, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=trigger_name, source=source, data=data)
+        self.add_alias(trigger_key, node, kind="responsive_trigger_id", source=source)
+        if trigger_name != trigger_key:
+            self.add_alias(trigger_name, node, kind="responsive_trigger_key", source=source)
+        return node
+
+    def add_responsive_trigger_type_node(self, trigger_type_id: Any, *, source: str = "", data: Any = None) -> str:
+        type_key = safe_key(trigger_type_id)
+        if not type_key:
+            return ""
+        node = self.add_node("responsive_trigger_type", type_key, name=type_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=type_key, source=source, data=data)
+        self.add_alias(type_key, node, kind="responsive_trigger_type_id", source=source)
+        return node
+
+    def add_responsive_event_template_node(self, template_id: Any, *, source: str = "") -> str:
+        template_key = safe_key(template_id)
+        if not template_key:
+            return ""
+        node = self.add_node("responsive_event_template", template_key, name=template_key, source=source)
+        self.add_alias(template_key, node, kind="responsive_event_template_id", source=source)
+        return node
+
+    def add_responsive_response_node(self, response_id: Any, *, source: str = "") -> str:
+        response_key = safe_key(response_id)
+        if not response_key:
+            return ""
+        node = self.add_node("responsive_response", response_key, name=response_key, source=source)
+        self.add_alias(response_key, node, kind="responsive_response_id", source=source)
+        return node
+
+    def add_bark_group_node(self, bark_id: Any, *, source: str = "", data: Any = None) -> str:
+        bark_key = safe_key(bark_id)
+        if not bark_key:
+            return ""
+        node = self.add_node("bark_group", bark_key, name=bark_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=bark_key, source=source, data=data)
+        self.add_alias(bark_key, node, kind="bark_group_id", source=source)
+        return node
+
+    def add_bark_variant_node(self, variant_id: Any, *, source: str = "", data: Any = None) -> str:
+        variant_key = safe_key(variant_id)
+        if not variant_key:
+            return ""
+        node = self.add_node("bark_variant", variant_key, name=variant_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=variant_key, source=source, data=data)
+        self.add_alias(variant_key, node, kind="bark_variant_id", source=source)
+        return node
+
+    def add_bark_text_node(self, text_id: Any, *, source: str = "", data: Any = None) -> str:
+        text_key = safe_key(text_id)
+        if not text_key:
+            return ""
+        node = self.add_node("bark_text", text_key, name=text_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=text_key, source=source, data=data)
+        self.add_alias(text_key, node, kind="bark_text_id", source=source)
+        return node
+
+    def add_bark_table_const_node(self, const_id: Any, *, source: str = "", data: Any = None) -> str:
+        const_key = safe_key(const_id)
+        if not const_key:
+            return ""
+        node = self.add_node("bark_table_const", const_key, name=const_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=const_key, source=source, data=data)
+        self.add_alias(const_key, node, kind="bark_table_const_id", source=source)
+        return node
+
+    def add_npc_template_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        template_node = self.add_npc_template_node(
+            row.get("templateId") or row_key,
+            name=row.get("name") or row.get("npcNameId"),
+            source=table,
+            data={"npcNameId": row.get("npcNameId"), "voActor": row.get("voActor"), "faction": row.get("faction"), "title": row.get("title")},
+        )
+        if not template_node:
+            return
+        self.add_edge(row_node, template_node, "defines_npc_template", source=table)
+        for alias, kind in ((row.get("npcNameId"), "npc_name_id"), (row.get("name"), "npc_name_key"), (row.get("voActor"), "voice_actor_id")):
+            self.add_alias(alias, template_node, kind=kind, source=table)
+        channel_node = self.add_audio_dialog_channel_node(row.get("voActor"), source=table) if self.node_exists("audio_dialog_channel", row.get("voActor")) else ""
+        if channel_node:
+            self.add_edge(template_node, channel_node, "npc_template_uses_voice_actor_channel", source=table, evidence="voActor")
+        self.add_i18n_text_edges(template_node, row, source=table)
+
+    def add_npc_group_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        group_node = self.add_npc_group_node(
+            row.get("npcGroupId") or row_key,
+            name=row.get("name"),
+            source=table,
+            data={"dataKey": row.get("dataKey"), "ignoreGroupVisibleRule": row.get("ignoreGroupVisibleRule"), "headIcon": row.get("headIcon"), "headLabelIcon": row.get("headLabelIcon")},
+        )
+        if not group_node:
+            return
+        self.add_edge(row_node, group_node, "defines_npc_group", source=table)
+        self.add_alias(row.get("dataKey"), group_node, kind="npc_group_data_key", source=table)
+        for alias in (row.get("headIcon"), row.get("headLabelIcon")):
+            self.add_alias(alias, group_node, kind="asset_stem", source=table)
+        if self.node_exists("npc_template", row.get("dataKey")):
+            template_node = self.node_id("npc_template", row.get("dataKey"))
+            self.add_edge(group_node, template_node, "npc_group_uses_template", source=table, evidence="dataKey")
+        self.add_i18n_text_edges(group_node, row, source=table)
+
+    def add_npc_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        npc_node = self.add_npc_node(
+            row.get("npcId") or row_key,
+            name=row.get("name"),
+            source=table,
+            data={"dataKey": row.get("dataKey"), "npcGroupId": row.get("npcGroupId"), "dialogSelector": row.get("dialogSelector"), "normalCfg": row.get("normalCfg"), "interactRangeType": row.get("interactRangeType"), "envTalkCount": len(row.get("envTalkIds") or [])},
+        )
+        if not npc_node:
+            return
+        self.add_edge(row_node, npc_node, "defines_npc", source=table)
+        self.add_alias(row.get("dataKey"), npc_node, kind="npc_data_key", source=table)
+        for alias in (row.get("headIcon"), row.get("headLabelIcon")):
+            self.add_alias(alias, npc_node, kind="asset_stem", source=table)
+        group_node = self.add_npc_group_node(row.get("npcGroupId"), source=table)
+        if group_node:
+            self.add_edge(npc_node, group_node, "npc_in_group", source=table, evidence="npcGroupId")
+        if self.node_exists("npc_template", row.get("dataKey")):
+            template_node = self.node_id("npc_template", row.get("dataKey"))
+            self.add_edge(npc_node, template_node, "npc_uses_template", source=table, evidence="dataKey")
+        odds = row.get("envTalkOdd") if isinstance(row.get("envTalkOdd"), list) else []
+        for index, talk_id in enumerate(row.get("envTalkIds") or []):
+            talk_node = self.add_env_talk_node(talk_id, source=table)
+            if talk_node:
+                data = {"odd": odds[index]} if index < len(odds) else None
+                self.add_edge(npc_node, talk_node, "npc_uses_env_talk", source=table, evidence=f"envTalkIds[{index}]", data=data)
+        self.add_i18n_text_edges(npc_node, row, source=table)
+    def add_environmental_npc_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        data_key = row.get("dataKey") or row_key
+        npc_node = self.add_environmental_npc_node(row_key, source=table, data={"dataKey": data_key})
+        if not npc_node:
+            return
+        self.add_edge(row_node, npc_node, "defines_environmental_npc", source=table)
+        self.add_alias(data_key, npc_node, kind="environmental_npc_data_key", source=table)
+        if self.node_exists("npc_template", data_key):
+            self.add_edge(npc_node, self.node_id("npc_template", data_key), "environmental_npc_uses_template", source=table, evidence="dataKey")
+        for group_node in self.alias_node_ids(data_key, kind="npc_group_data_key"):
+            self.add_edge(npc_node, group_node, "environmental_npc_matches_group_data_key", source=table, evidence="dataKey")
+
+    def add_atmosphere_npc_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        camp_node = self.add_npc_camp_tag_node(row_key, source=table, data={"careerCount": len(row.get("itemList") or [])})
+        if not camp_node:
+            return
+        self.add_edge(row_node, camp_node, "defines_npc_camp_tag", source=table)
+        for index, item in enumerate(row.get("itemList") or []):
+            if not isinstance(item, dict):
+                continue
+            item_camp = self.add_npc_camp_tag_node(item.get("npcCampTag") or row_key, source=table)
+            career_node = self.add_npc_career_tag_node(item.get("npcCareerTag"), source=table)
+            if item_camp and item_camp != camp_node:
+                self.add_edge(camp_node, item_camp, "npc_camp_aliases_item_camp", source=table, evidence=f"itemList[{index}]")
+            if career_node:
+                self.add_edge(row_node, career_node, "defines_npc_career_tag", source=table, evidence=f"itemList[{index}]")
+                self.add_edge(camp_node, career_node, "npc_camp_has_career", source=table, evidence=f"itemList[{index}]")
+
+    def add_audio_dialog_channel_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        channel_node = self.add_audio_dialog_channel_node(
+            row_key,
+            source=table,
+            data={"speakerType": row.get("speakerType"), "cdTime": row.get("cdTime"), "attenuationScale": row.get("attenuationScale"), "volOffset": row.get("volOffset"), "narratingWwiseEvent": row.get("narratingWwiseEvent"), "radioWwiseEvent": row.get("radioWwiseEvent")},
+        )
+        if not channel_node:
+            return
+        self.add_edge(row_node, channel_node, "defines_audio_dialog_channel", source=table)
+        for field, edge_kind in (("narratingWwiseEvent", "audio_dialog_channel_uses_narrating_event"), ("radioWwiseEvent", "audio_dialog_channel_uses_radio_event")):
+            event_node = self.add_wwise_event_node(row.get(field), source=table)
+            if event_node:
+                self.add_edge(channel_node, event_node, edge_kind, source=table, evidence=field)
+        if self.node_exists("actor", row_key):
+            self.add_edge(channel_node, self.node_id("actor", row_key), "audio_dialog_channel_matches_actor", source=table, evidence="channelId")
+
+    def add_audio_dialog_channel_mapping_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        alias_node = self.add_audio_dialog_channel_node(row_key, source=table, data={"canonicalChannel": row})
+        target_node = self.add_audio_dialog_channel_node(row, source=table) if safe_key(row) else ""
+        if alias_node:
+            self.add_edge(row_node, alias_node, "defines_audio_dialog_channel_mapping", source=table)
+        if alias_node and target_node:
+            self.add_edge(alias_node, target_node, "audio_dialog_channel_aliases", source=table, evidence="rowValue")
+            self.add_alias(row_key, target_node, kind="audio_dialog_channel_alias", source=table)
+
+    def add_npc_voice_profile_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        profile_node = self.add_npc_voice_profile_node(
+            row.get("npcId") or row_key,
+            source=table,
+            data={"templateId": row.get("templateId"), "wwiseId": row.get("wwiseId"), "voActor": row.get("voActor")},
+        )
+        if not profile_node:
+            return
+        self.add_edge(row_node, profile_node, "defines_npc_voice_profile", source=table)
+        template_id = row.get("templateId")
+        if self.node_exists("npc_template", template_id):
+            self.add_edge(profile_node, self.node_id("npc_template", template_id), "npc_info_uses_template", source=table, evidence="templateId")
+        for field, edge_kind in (("wwiseId", "npc_info_uses_wwise_channel"), ("voActor", "npc_info_uses_vo_actor_channel")):
+            channel_id = row.get(field)
+            if self.node_exists("audio_dialog_channel", channel_id):
+                self.add_edge(profile_node, self.node_id("audio_dialog_channel", channel_id), edge_kind, source=table, evidence=field)
+        for field, edge_kind in (("npcId", "npc_info_matches_actor"), ("wwiseId", "npc_info_uses_wwise_actor"), ("voActor", "npc_info_uses_vo_actor")):
+            actor_id = row.get(field)
+            if self.node_exists("actor", actor_id):
+                self.add_edge(profile_node, self.node_id("actor", actor_id), edge_kind, source=table, evidence=field)
+    def add_responsive_trigger_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        group_node = self.add_responsive_dialog_group_node(row_key, source=table, data={"triggerTypeCount": len(row.get("triggerTypes") or {})})
+        if group_node:
+            self.add_edge(row_node, group_node, "defines_responsive_trigger_group", source=table)
+        trigger_types = row.get("triggerTypes") if isinstance(row.get("triggerTypes"), dict) else {}
+        for trigger_type_id, trigger_type in trigger_types.items():
+            if not isinstance(trigger_type, dict):
+                continue
+            type_node = self.add_responsive_trigger_type_node(trigger_type_id, source=table, data=compact_payload(trigger_type, depth=2))
+            if not type_node:
+                continue
+            self.add_edge(row_node, type_node, "defines_responsive_trigger_type", source=table, evidence=f"triggerTypes[{trigger_type_id}]")
+            if group_node:
+                self.add_edge(group_node, type_node, "responsive_group_defines_trigger_type", source=table, evidence=trigger_type_id)
+            event_node = self.add_responsive_event_template_node(trigger_type.get("eventTemplate"), source=table)
+            if event_node:
+                self.add_edge(type_node, event_node, "responsive_trigger_type_uses_event_template", source=table, evidence="eventTemplate")
+            base_type = safe_key(trigger_type.get("baseTriggerType"))
+            if base_type and base_type != "-1":
+                base_node = self.add_responsive_trigger_type_node(base_type, source=table)
+                if base_node:
+                    self.add_edge(type_node, base_node, "responsive_trigger_type_extends", source=table, evidence="baseTriggerType")
+
+    def add_bark_text_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        text_node = self.add_bark_text_node(row_key, source=table, data={"barkText": table_text(row.get("barkText"))})
+        if not text_node:
+            return
+        self.add_edge(row_node, text_node, "defines_bark_text", source=table)
+        if self.node_exists("line", row_key):
+            self.add_edge(text_node, self.node_id("line", row_key), "bark_text_line_node", source=table, evidence=row_key)
+        self.add_i18n_text_edges(text_node, row.get("barkText"), source=table)
+        for text_id in self.iter_i18n_text_ids(row.get("barkText")):
+            i18n_node = self.add_i18n_text_node(text_id, source=table)
+            if i18n_node:
+                self.add_edge(text_node, i18n_node, "bark_text_uses_i18n_text", source=table, evidence=text_id)
+
+    def add_responsive_dialog_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        speakers = row.get("speakers") if isinstance(row.get("speakers"), dict) else {}
+        group_node = self.add_responsive_dialog_group_node(row_key, source=table, data={"speakerCount": len(speakers)})
+        if not group_node:
+            return
+        self.add_edge(row_node, group_node, "defines_responsive_dialog_group", source=table)
+        for speaker_id, speaker in speakers.items():
+            if not isinstance(speaker, dict):
+                continue
+            speaker_node = self.add_responsive_speaker_node(speaker_id, source=table)
+            if not speaker_node:
+                continue
+            self.add_edge(group_node, speaker_node, "responsive_group_has_speaker", source=table, evidence=speaker_id)
+            if self.node_exists("character", speaker_id):
+                self.add_edge(speaker_node, self.node_id("character", speaker_id), "responsive_speaker_is_character", source=table, evidence="speakerId")
+            if self.node_exists("actor", speaker_id):
+                self.add_edge(speaker_node, self.node_id("actor", speaker_id), "responsive_speaker_is_actor", source=table, evidence="speakerId")
+            triggers = speaker.get("triggers") if isinstance(speaker.get("triggers"), dict) else {}
+            for trigger_key, trigger in triggers.items():
+                if not isinstance(trigger, dict):
+                    continue
+                key_node = self.add_responsive_trigger_key_node(trigger_key, source=table)
+                trigger_node = self.add_responsive_trigger_node(
+                    f"{row_key}:{speaker_id}:{trigger_key}",
+                    name=trigger_key,
+                    source=table,
+                    data={"groupId": row_key, "speakerId": speaker_id, "triggerKey": trigger_key, "triggerTypeId": trigger.get("triggerTypeId"), "responseCount": len(trigger.get("response") or []), "weightCount": len(trigger.get("weight") or []), "weight": compact_payload(trigger.get("weight") or [], depth=2)},
+                )
+                if not trigger_node:
+                    continue
+                self.add_edge(speaker_node, trigger_node, "responsive_speaker_has_trigger", source=table, evidence=f"{row_key}:{trigger_key}")
+                self.add_edge(group_node, trigger_node, "responsive_group_has_trigger", source=table, evidence=f"{speaker_id}:{trigger_key}")
+                if key_node:
+                    self.add_edge(trigger_node, key_node, "responsive_trigger_uses_key", source=table, evidence="triggerKey")
+                type_node = self.add_responsive_trigger_type_node(trigger.get("triggerTypeId"), source=table)
+                if type_node:
+                    self.add_edge(trigger_node, type_node, "responsive_trigger_has_type", source=table, evidence="triggerTypeId")
+                for index, response_id in enumerate(trigger.get("response") or []):
+                    response_node = self.add_responsive_response_node(response_id, source=table)
+                    if not response_node:
+                        continue
+                    evidence = f"response[{index}]"
+                    self.add_edge(trigger_node, response_node, "responsive_trigger_has_response", source=table, evidence=evidence)
+                    self.add_responsive_response_audio_edges(response_node, response_id, source=table, evidence=evidence)
+                    if self.node_exists("bark_text", response_id):
+                        bark_text_node = self.node_id("bark_text", response_id)
+                        self.add_edge(response_node, bark_text_node, "responsive_response_has_bark_text", source=table, evidence=safe_key(response_id))
+
+    def add_ai_bark_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        variants = row.get("array") if isinstance(row.get("array"), list) else []
+        group_node = self.add_bark_group_node(row_key, source=table, data={"variantCount": len(variants)})
+        if not group_node:
+            return
+        self.add_edge(row_node, group_node, "defines_bark_group", source=table)
+        for index, variant in enumerate(variants):
+            if not isinstance(variant, dict):
+                continue
+            variant_id = f"{row_key}:variant:{index + 1}"
+            variant_node = self.add_bark_variant_node(
+                variant_id,
+                source=table,
+                data={"barkId": variant.get("barkId"), "type": variant.get("type"), "speakerType": variant.get("speakerType"), "voType": variant.get("voType"), "delay": variant.get("delay"), "isEnabled": variant.get("isEnabled"), "isShuffle": variant.get("isShuffle"), "triggerOdd": variant.get("triggerOdd"), "barkOdd": variant.get("barkOdd")},
+            )
+            if not variant_node:
+                continue
+            self.add_edge(group_node, variant_node, "bark_group_has_variant", source=table, evidence=f"array[{index}]")
+            self.add_alias(variant.get("barkId"), variant_node, kind="bark_id", source=table)
+            for trigger_index, trigger_key in enumerate(variant.get("triggerKey") or []):
+                key_node = self.add_responsive_trigger_key_node(trigger_key, source=table)
+                if key_node:
+                    self.add_edge(variant_node, key_node, "bark_variant_uses_trigger_key", source=table, evidence=f"triggerKey[{trigger_index}]")
+
+    def add_bark_table_const_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        const_node = self.add_bark_table_const_node(row_key, source=table, data={"value": row})
+        if const_node:
+            self.add_edge(row_node, const_node, "defines_bark_table_const", source=table)
+
+    def add_npc_voice_bark_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "AudioDialogChannel" and isinstance(row, dict):
+            self.add_audio_dialog_channel_edges(table, row_key, row, row_node)
+        elif table == "AudioDialogChannelMappings":
+            self.add_audio_dialog_channel_mapping_edges(table, row_key, row, row_node)
+        elif table == "NpcTemplateGroupTable" and isinstance(row, dict):
+            self.add_npc_template_edges(table, row_key, row, row_node)
+        elif table == "NpcGroupTable" and isinstance(row, dict):
+            self.add_npc_group_edges(table, row_key, row, row_node)
+        elif table == "NpcTable" and isinstance(row, dict):
+            self.add_npc_edges(table, row_key, row, row_node)
+        elif table == "GameplayAndEnvironmentalNpc" and isinstance(row, dict):
+            self.add_environmental_npc_edges(table, row_key, row, row_node)
+        elif table == "AtmosphereNpcTable" and isinstance(row, dict):
+            self.add_atmosphere_npc_edges(table, row_key, row, row_node)
+        elif table == "NpcInfoTable" and isinstance(row, dict):
+            self.add_npc_voice_profile_edges(table, row_key, row, row_node)
+        elif table == "ResponsiveTriggers" and isinstance(row, dict):
+            self.add_responsive_trigger_type_edges(table, row_key, row, row_node)
+        elif table == "AIBarkText" and isinstance(row, dict):
+            self.add_bark_text_edges(table, row_key, row, row_node)
+        elif table == "ResponsiveDialog" and isinstance(row, dict):
+            self.add_responsive_dialog_edges(table, row_key, row, row_node)
+        elif table == "AIBark" and isinstance(row, dict):
+            self.add_ai_bark_edges(table, row_key, row, row_node)
+        elif table == "AIBarkTableConst":
+            self.add_bark_table_const_edges(table, row_key, row, row_node)
+
     def ingest_activity_achievement_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_activity_achievement_semantics", path=slash(table_root))
@@ -6844,6 +7409,26 @@ QUERY_KIND_PRIORITY = {
     "prts_investigation": 80,
     "prts_investigation_group": 81,
     "prts_note": 82,
+    "npc": 83,
+    "npc_group": 84,
+    "npc_template": 85,
+    "npc_voice_profile": 86,
+    "environmental_npc": 87,
+    "npc_camp_tag": 88,
+    "npc_career_tag": 89,
+    "audio_dialog_channel": 90,
+    "wwise_event": 91,
+    "responsive_dialog_group": 92,
+    "responsive_speaker": 93,
+    "responsive_trigger": 94,
+    "responsive_trigger_key": 95,
+    "responsive_trigger_type": 96,
+    "responsive_event_template": 97,
+    "responsive_response": 98,
+    "bark_group": 99,
+    "bark_variant": 100,
+    "bark_text": 101,
+    "bark_table_const": 102,
     "weapon": 10,
     "equipment": 11,
     "enemy": 12,
@@ -6991,6 +7576,26 @@ NODE_ID_PREFIXES = (
     "prts_investigation",
     "prts_investigation_group",
     "prts_note",
+    "npc",
+    "npc_group",
+    "npc_template",
+    "npc_voice_profile",
+    "environmental_npc",
+    "npc_camp_tag",
+    "npc_career_tag",
+    "audio_dialog_channel",
+    "wwise_event",
+    "responsive_dialog_group",
+    "responsive_speaker",
+    "responsive_trigger",
+    "responsive_trigger_key",
+    "responsive_trigger_type",
+    "responsive_event_template",
+    "responsive_response",
+    "bark_group",
+    "bark_variant",
+    "bark_text",
+    "bark_table_const",
     "weapon",
     "equipment",
     "enemy",
