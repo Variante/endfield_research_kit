@@ -86,6 +86,17 @@ SELECTED_STRUCTURED_TABLES = (
     "SceneAreaTable.json",
     "SpecialLevelToMapTable.json",
 )
+ITEM_ECONOMY_TABLES = (
+    "ItemTypeTable.json",
+    "ItemShowingTypeTable.json",
+    "ItemTable.json",
+    "RewardTable.json",
+    "RewardDropTable.json",
+    "ShopGoodsTagTable.json",
+    "ShopGoodsTable.json",
+    "ShopTable.json",
+    "ShopGroupTable.json",
+)
 
 
 def slash(path: Path) -> str:
@@ -117,6 +128,12 @@ def compact_text(value: Any, limit: int = 240) -> str:
 def table_text(value: Any) -> str:
     if isinstance(value, dict):
         return compact_text(value.get("text") or value.get("id") or "")
+    return compact_text(value)
+
+
+def table_display_text(value: Any) -> str:
+    if isinstance(value, dict):
+        return compact_text(value.get("text") or "")
     return compact_text(value)
 
 
@@ -437,6 +454,8 @@ class SourceGraphBuilder:
             self.commit_step("story")
             self.ingest_option_overrides()
             self.commit_step("optionOverrides")
+            self.ingest_item_economy()
+            self.commit_step("itemEconomy")
             if self.include_gameplay:
                 self.ingest_gameplay()
                 self.commit_step("gameplay")
@@ -2439,6 +2458,296 @@ class SourceGraphBuilder:
                 )
                 self.add_edge(manifest_node, clip_node, "has_animation_clip", source="unity_character_lab")
 
+    def ingest_item_economy(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_item_economy", path=slash(table_root))
+        for table_name in ITEM_ECONOMY_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if payload is None:
+                continue
+            table_key = Path(table_name).stem
+            table_node = self.add_node("table", table_key, name=table_key, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/item_economy")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            if not isinstance(payload, dict):
+                continue
+            for row_key, row in payload.items():
+                row_node = self.add_node(
+                    "table_row",
+                    f"{table_key}:{row_key}",
+                    name=str(row_key),
+                    source=table_key,
+                    data=compact_payload(row, depth=2),
+                )
+                self.add_edge(table_node, row_node, "has_row", source="structured/item_economy")
+                self.add_item_economy_row_edges(table_key, row_key, row, row_node)
+
+    def add_item_node(self, item_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        item_key = safe_key(item_id)
+        if not item_key:
+            return ""
+        item_name = table_display_text(name) or item_key
+        item_node = self.add_node("item", item_key, name=item_name, source=source, data=data)
+        self.add_alias(item_key, item_node, kind="item_id", source=source)
+        self.add_alias(item_key.removeprefix("item_"), item_node, kind="item_alias", source=source)
+        if item_name != item_key:
+            self.add_alias(item_name, item_node, kind="item_name", source=source)
+        return item_node
+
+    def add_item_type_node(self, type_id: Any, *, name: Any = None, source: str = "") -> str:
+        type_key = safe_key(type_id)
+        if not type_key:
+            return ""
+        type_name = table_display_text(name) or type_key
+        type_node = self.add_node("item_type", type_key, name=type_name, source=source)
+        self.add_alias(type_key, type_node, kind="item_type_id", source=source)
+        if type_name != type_key:
+            self.add_alias(type_name, type_node, kind="item_type_name", source=source)
+        return type_node
+
+    def add_item_showing_type_node(self, showing_type: Any, *, name: Any = None, source: str = "") -> str:
+        showing_key = safe_key(showing_type)
+        if not showing_key:
+            return ""
+        showing_name = table_display_text(name) or showing_key
+        showing_node = self.add_node("item_showing_type", showing_key, name=showing_name, source=source)
+        self.add_alias(showing_key, showing_node, kind="item_showing_type_id", source=source)
+        if showing_name != showing_key:
+            self.add_alias(showing_name, showing_node, kind="item_showing_type_name", source=source)
+        return showing_node
+
+    def add_reward_node(self, reward_id: Any, *, source: str = "", data: Any = None) -> str:
+        reward_key = safe_key(reward_id)
+        if not reward_key:
+            return ""
+        reward_node = self.add_node("reward", reward_key, name=reward_key, source=source, data=data)
+        self.add_alias(reward_key, reward_node, kind="reward_id", source=source)
+        return reward_node
+
+    def add_shop_node(self, shop_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        shop_key = safe_key(shop_id)
+        if not shop_key:
+            return ""
+        shop_name = table_display_text(name) or shop_key
+        shop_node = self.add_node("shop", shop_key, name=shop_name, source=source, data=data)
+        self.add_alias(shop_key, shop_node, kind="shop_id", source=source)
+        if shop_name != shop_key:
+            self.add_alias(shop_name, shop_node, kind="shop_name", source=source)
+        return shop_node
+
+    def add_shop_goods_node(self, goods_id: Any, *, source: str = "", data: Any = None) -> str:
+        goods_key = safe_key(goods_id)
+        if not goods_key:
+            return ""
+        goods_node = self.add_node("shop_goods", goods_key, name=goods_key, source=source, data=data)
+        self.add_alias(goods_key, goods_node, kind="shop_goods_id", source=source)
+        return goods_node
+
+    def add_shop_goods_tag_node(self, tag_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        tag_key = safe_key(tag_id)
+        if not tag_key:
+            return ""
+        tag_name = table_display_text(name) or tag_key
+        tag_node = self.add_node("shop_goods_tag", tag_key, name=tag_name, source=source, data=data)
+        self.add_alias(tag_key, tag_node, kind="shop_goods_tag_id", source=source)
+        if tag_name != tag_key:
+            self.add_alias(tag_name, tag_node, kind="shop_goods_tag_name", source=source)
+        return tag_node
+
+    def add_item_table_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        item_id = safe_key(row.get("id") or row_key)
+        if not item_id:
+            return
+        item_node = self.add_item_node(
+            item_id,
+            name=row.get("name"),
+            source=table,
+            data={
+                "id": item_id,
+                "type": row.get("type"),
+                "showingType": row.get("showingType"),
+                "rarity": row.get("rarity"),
+                "iconId": row.get("iconId"),
+                "iconCompositeId": row.get("iconCompositeId"),
+                "modelKey": row.get("modelKey"),
+                "maxStackCount": row.get("maxStackCount"),
+                "maxBackpackStackCount": row.get("maxBackpackStackCount"),
+                "sortId1": row.get("sortId1"),
+                "sortId2": row.get("sortId2"),
+                "valuableTabType": row.get("valuableTabType"),
+                "notObtainShow": row.get("notObtainShow"),
+                "obtainWayCount": len(row.get("obtainWayIds") or []),
+                "outcomeItemCount": len(row.get("outcomeItemIds") or []),
+            },
+        )
+        self.add_edge(row_node, item_node, "defines_item", source=table)
+        self.add_alias(row.get("iconId"), item_node, kind="icon_id", source=table)
+        self.add_alias(row.get("iconCompositeId"), item_node, kind="icon_composite_id", source=table)
+        self.add_alias(row.get("modelKey"), item_node, kind="model_key", source=table)
+        type_node = self.add_item_type_node(row.get("type"), source=table)
+        if type_node:
+            self.add_edge(item_node, type_node, "item_has_type", source=table, evidence="type")
+        showing_node = self.add_item_showing_type_node(row.get("showingType"), source=table)
+        if showing_node:
+            self.add_edge(item_node, showing_node, "item_has_showing_type", source=table, evidence="showingType")
+        for index, obtain_id in enumerate(row.get("obtainWayIds") or []):
+            obtain_key = safe_key(obtain_id)
+            if not obtain_key:
+                continue
+            obtain_node = self.add_node("item_obtain_way", obtain_key, name=obtain_key, source=table)
+            self.add_alias(obtain_key, obtain_node, kind="item_obtain_way_id", source=table)
+            self.add_edge(item_node, obtain_node, "item_has_obtain_way", source=table, evidence=f"obtainWayIds[{index}]")
+        for index, outcome_id in enumerate(row.get("outcomeItemIds") or []):
+            outcome_node = self.add_item_node(outcome_id, source=table)
+            self.add_edge(item_node, outcome_node, "item_outcomes_item", source=table, evidence=f"outcomeItemIds[{index}]")
+
+    def add_item_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        type_id = row.get("itemType") if "itemType" in row else row_key
+        type_node = self.add_item_type_node(type_id, name=row.get("name"), source=table)
+        self.add_edge(row_node, type_node, "defines_item_type", source=table)
+
+    def add_item_showing_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        showing_node = self.add_item_showing_type_node(row.get("type") if "type" in row else row_key, name=row.get("name"), source=table)
+        self.add_edge(row_node, showing_node, "defines_item_showing_type", source=table)
+
+    def add_reward_item_bundle_edges(self, reward_node: str, bundles: Any, *, edge_kind: str, source: str, field: str, visible_list: Any = None) -> None:
+        if not isinstance(bundles, list):
+            return
+        for index, bundle in enumerate(bundles):
+            if not isinstance(bundle, dict):
+                continue
+            item_id = safe_key(bundle.get("id") or bundle.get("itemId"))
+            if not item_id:
+                continue
+            item_node = self.add_item_node(item_id, source=source)
+            data = {"count": bundle.get("count"), "index": index}
+            if isinstance(visible_list, list) and index < len(visible_list):
+                data["visible"] = visible_list[index]
+            self.add_edge(reward_node, item_node, edge_kind, source=source, evidence=f"{field}[{index}]", data=data)
+
+    def add_reward_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        reward_id = safe_key(row.get("rewardId") or row_key)
+        if not reward_id:
+            return
+        reward_node = self.add_reward_node(
+            reward_id,
+            source=table,
+            data={
+                "id": reward_id,
+                "itemBundleCount": len(row.get("itemBundles") or []),
+                "probItemBundleCount": len(row.get("probItemBundles") or []),
+            },
+        )
+        self.add_edge(row_node, reward_node, "defines_reward", source=table)
+        self.add_reward_item_bundle_edges(reward_node, row.get("itemBundles"), edge_kind="reward_grants_item", source=table, field="itemBundles", visible_list=row.get("itemBundleVisibleList"))
+        self.add_reward_item_bundle_edges(reward_node, row.get("probItemBundles"), edge_kind="reward_may_grant_item", source=table, field="probItemBundles")
+
+    def add_reward_drop_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        drop_id = safe_key(row.get("rewardId") or row_key)
+        if not drop_id:
+            return
+        drop_node = self.add_node("reward_drop", drop_id, name=drop_id, source=table, data={"id": drop_id, "itemCount": len(row.get("itemIds") or [])})
+        reward_node = self.add_reward_node(drop_id, source=table)
+        self.add_edge(row_node, drop_node, "defines_reward_drop", source=table)
+        self.add_edge(reward_node, drop_node, "reward_has_drop_table", source=table, evidence="rewardId")
+        self.add_alias(drop_id, drop_node, kind="reward_drop_id", source=table)
+        for index, item_id in enumerate(row.get("itemIds") or []):
+            item_node = self.add_item_node(item_id, source=table)
+            self.add_edge(drop_node, item_node, "reward_drop_may_drop_item", source=table, evidence=f"itemIds[{index}]", data={"index": index})
+
+    def add_shop_group_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        group_id = safe_key(row.get("shopGroupId") or row_key)
+        if not group_id:
+            return
+        group_node = self.add_node(
+            "shop_group",
+            group_id,
+            name=table_display_text(row.get("shopGroupName")) or group_id,
+            source=table,
+            data={"id": group_id, "type": row.get("shopGroupType"), "icon": row.get("icon"), "shopCount": len(row.get("shopIds") or [])},
+        )
+        self.add_edge(row_node, group_node, "defines_shop_group", source=table)
+        self.add_alias(group_id, group_node, kind="shop_group_id", source=table)
+        self.add_alias(table_display_text(row.get("shopGroupName")), group_node, kind="shop_group_name", source=table)
+        for index, shop_id in enumerate(row.get("shopIds") or []):
+            shop_node = self.add_shop_node(shop_id, source=table)
+            self.add_edge(group_node, shop_node, "shop_group_has_shop", source=table, evidence=f"shopIds[{index}]")
+
+    def add_shop_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        shop_id = safe_key(row.get("shopId") or row_key)
+        if not shop_id:
+            return
+        shop_node = self.add_shop_node(
+            shop_id,
+            name=row.get("shopName") or row.get("shopEnName"),
+            source=table,
+            data={"id": shop_id, "iconId": row.get("iconId"), "goodsCount": len(row.get("shopGoodsIds") or []), "isShowWhenLock": row.get("isShowWhenLock")},
+        )
+        self.add_edge(row_node, shop_node, "defines_shop", source=table)
+        for index, goods_id in enumerate(row.get("shopGoodsIds") or []):
+            goods_node = self.add_shop_goods_node(goods_id, source=table)
+            self.add_edge(shop_node, goods_node, "shop_has_goods", source=table, evidence=f"shopGoodsIds[{index}]")
+
+    def add_shop_goods_tag_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        tag_id = safe_key(row.get("goodsTagId") or row_key)
+        if not tag_id:
+            return
+        tag_node = self.add_shop_goods_tag_node(tag_id, name=row.get("tagName"), source=table, data={"id": tag_id, "icon": row.get("tagIcon"), "sortId": row.get("sortId")})
+        self.add_edge(row_node, tag_node, "defines_shop_goods_tag", source=table)
+
+    def add_shop_goods_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        goods_id = safe_key(row.get("goodsId") or row_key)
+        if not goods_id:
+            return
+        goods_node = self.add_shop_goods_node(
+            goods_id,
+            source=table,
+            data={
+                "id": goods_id,
+                "shopId": row.get("shopId"),
+                "moneyId": row.get("moneyId"),
+                "price": row.get("price"),
+                "rewardId": row.get("rewardId"),
+                "goodsTagId": row.get("goodsTagId"),
+                "limitCount": row.get("limitCount"),
+                "limitCountRefreshType": row.get("limitCountRefreshType"),
+                "sortId": row.get("sortId"),
+            },
+        )
+        self.add_edge(row_node, goods_node, "defines_shop_goods", source=table)
+        money_node = self.add_item_node(row.get("moneyId"), source=table)
+        if money_node:
+            self.add_edge(goods_node, money_node, "shop_goods_priced_in_item", source=table, evidence="moneyId", data={"price": row.get("price"), "discount": row.get("cnDiscount")})
+        reward_node = self.add_reward_node(row.get("rewardId"), source=table)
+        if reward_node:
+            self.add_edge(goods_node, reward_node, "shop_goods_grants_reward", source=table, evidence="rewardId")
+        tag_node = self.add_shop_goods_tag_node(row.get("goodsTagId"), source=table)
+        if tag_node:
+            self.add_edge(goods_node, tag_node, "shop_goods_tagged", source=table, evidence="goodsTagId")
+
+    def add_item_economy_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if not isinstance(row, dict):
+            return
+        if table == "ItemTable":
+            self.add_item_table_edges(table, row_key, row, row_node)
+        elif table == "ItemTypeTable":
+            self.add_item_type_edges(table, row_key, row, row_node)
+        elif table == "ItemShowingTypeTable":
+            self.add_item_showing_type_edges(table, row_key, row, row_node)
+        elif table == "RewardTable":
+            self.add_reward_edges(table, row_key, row, row_node)
+        elif table == "RewardDropTable":
+            self.add_reward_drop_edges(table, row_key, row, row_node)
+        elif table == "ShopGroupTable":
+            self.add_shop_group_edges(table, row_key, row, row_node)
+        elif table == "ShopTable":
+            self.add_shop_edges(table, row_key, row, row_node)
+        elif table == "ShopGoodsTagTable":
+            self.add_shop_goods_tag_edges(table, row_key, row, row_node)
+        elif table == "ShopGoodsTable":
+            self.add_shop_goods_edges(table, row_key, row, row_node)
+
     def ingest_selected_structured_tables(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_tables_selected", path=slash(table_root))
@@ -3139,16 +3448,25 @@ QUERY_KIND_PRIORITY = {
     "gameplay_stat_property": 30,
     "gameplay_unlock": 31,
     "item": 32,
-    "gameplay_skill_group": 33,
-    "gameplay_skill": 34,
-    "gameplay_talent_group": 35,
-    "gameplay_talent": 36,
-    "gameplay_progression": 37,
-    "asset_entity": 38,
-    "asset": 39,
-    "actor": 40,
-    "audio": 41,
-    "file": 42,
+    "item_type": 33,
+    "item_showing_type": 34,
+    "item_obtain_way": 35,
+    "reward": 36,
+    "reward_drop": 37,
+    "shop_group": 38,
+    "shop": 39,
+    "shop_goods": 40,
+    "shop_goods_tag": 41,
+    "gameplay_skill_group": 42,
+    "gameplay_skill": 43,
+    "gameplay_talent_group": 44,
+    "gameplay_talent": 45,
+    "gameplay_progression": 46,
+    "asset_entity": 47,
+    "asset": 48,
+    "actor": 49,
+    "audio": 50,
+    "file": 51,
 }
 NODE_ID_PREFIXES = (
     "story",
@@ -3181,6 +3499,15 @@ NODE_ID_PREFIXES = (
     "gameplay_stat_property",
     "gameplay_unlock",
     "item",
+    "item_type",
+    "item_showing_type",
+    "item_obtain_way",
+    "reward",
+    "reward_drop",
+    "shop_group",
+    "shop",
+    "shop_goods",
+    "shop_goods_tag",
     "gameplay_skill_group",
     "gameplay_skill",
     "gameplay_talent_group",
