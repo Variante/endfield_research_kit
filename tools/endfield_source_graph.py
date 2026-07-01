@@ -274,6 +274,7 @@ DECODED_CONFIG_GROUP_FILES = (
     "Json_GameplayConfigMissionAreaTable.json",
     "Json_GameplayConfigSubGameInstanceDataTable.json",
     "Json_NonGeneratedConfigs.json",
+    "Json_SpawnerConfig.json",
     "Json_Interactive.json",
     "Json_GameplayConfigWorldEntityRegistry.json",
 )
@@ -284,6 +285,7 @@ DECODED_CONFIG_TARGET_TYPES = {
     "InteractiveTemplateData",
     "ModelRadiusTable",
     "ModelTable",
+    "SpawnerConfig",
     "SubGameInstanceDataTable",
     "TeleportValidationDataTable",
 }
@@ -451,6 +453,15 @@ def mp_read_u16(data: bytes, offset: int, field_name: str) -> tuple[int, int]:
     if offset + 2 > len(data):
         raise ValueError(f"{field_name}:truncated-u16")
     return struct.unpack_from("<H", data, offset)[0], offset + 2
+
+
+def mp_read_bool(data: bytes, offset: int, field_name: str) -> tuple[bool, int]:
+    if offset >= len(data):
+        raise ValueError(f"{field_name}:truncated-bool")
+    value = data[offset]
+    if value not in {0, 1}:
+        raise ValueError(f"{field_name}:invalid-bool={value}")
+    return bool(value), offset + 1
 
 
 def mp_read_u64(data: bytes, offset: int, field_name: str) -> tuple[int, int]:
@@ -648,6 +659,127 @@ def extract_teleport_validation_rows(data: bytes) -> dict[str, Any] | None:
         if offset != len(data):
             raise ValueError("TeleportValidationDataTable:trailing-bytes")
         return {"rowCount": row_count, "rows": rows}
+    except (ValueError, struct.error):
+        return None
+
+
+def extract_spawner_blackboard_pair(data: bytes, offset: int) -> tuple[dict[str, Any], int]:
+    if offset >= len(data):
+        raise ValueError("SpawnerConfig.blackboard:truncated-member-count")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 4:
+        raise ValueError(f"SpawnerConfig.blackboard:memberCount={member_count}")
+    key, offset = mp_read_utf8_string(data, offset, "SpawnerConfig.blackboard.key", max_length=256)
+    use_string, offset = mp_read_bool(data, offset, "SpawnerConfig.blackboard.useString")
+    value_float, offset = mp_read_f32(data, offset, "SpawnerConfig.blackboard.valueFloat")
+    value_string, offset = mp_read_utf8_string(data, offset, "SpawnerConfig.blackboard.valueString", max_length=512)
+    return {
+        "key": key,
+        "useString": use_string,
+        "valueFloat": round(value_float, 4),
+        "valueString": value_string,
+    }, offset
+
+
+def extract_spawner_buff_inst(data: bytes, offset: int) -> tuple[dict[str, Any], int]:
+    if offset >= len(data):
+        raise ValueError("SpawnerConfig.buff:truncated-member-count")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 2:
+        raise ValueError(f"SpawnerConfig.buff:memberCount={member_count}")
+    if offset + 4 > len(data):
+        raise ValueError("SpawnerConfig.buff:blackboardCount:truncated")
+    blackboard_count = struct.unpack_from("<I", data, offset)[0]
+    offset += 4
+    if blackboard_count == MEMORYPACK_NULL_COUNT:
+        blackboard_count = 0
+    if blackboard_count > 256:
+        raise ValueError(f"SpawnerConfig.buff:blackboardCount={blackboard_count}")
+    blackboard: list[dict[str, Any]] = []
+    for _index in range(blackboard_count):
+        pair, offset = extract_spawner_blackboard_pair(data, offset)
+        blackboard.append(pair)
+    buff_id, offset = mp_read_utf8_string(data, offset, "SpawnerConfig.buff.buffId", max_length=256)
+    return {"buffId": buff_id, "blackboard": blackboard}, offset
+
+
+def extract_spawner_enemy_library_item(data: bytes, offset: int) -> tuple[dict[str, Any], int]:
+    if offset >= len(data):
+        raise ValueError("SpawnerConfig.enemy:truncated-member-count")
+    member_count = data[offset]
+    offset += 1
+    if member_count != 11:
+        raise ValueError(f"SpawnerConfig.enemy:memberCount={member_count}")
+    if offset + 4 > len(data):
+        raise ValueError("SpawnerConfig.enemy:bornBuffCount:truncated")
+    born_buff_count = struct.unpack_from("<I", data, offset)[0]
+    offset += 4
+    if born_buff_count == MEMORYPACK_NULL_COUNT:
+        born_buff_count = 0
+    if born_buff_count > 256:
+        raise ValueError(f"SpawnerConfig.enemy:bornBuffCount={born_buff_count}")
+    born_buffs: list[dict[str, Any]] = []
+    for _index in range(born_buff_count):
+        buff, offset = extract_spawner_buff_inst(data, offset)
+        born_buffs.append(buff)
+    enemy_id, offset = mp_read_utf8_string(data, offset, "SpawnerConfig.enemy.enemyId", max_length=256)
+    enemy_level, offset = mp_read_i32(data, offset, "SpawnerConfig.enemy.enemyLevel")
+    force_to_battle, offset = mp_read_bool(data, offset, "SpawnerConfig.enemy.forceToBattle")
+    key, offset = mp_read_utf8_string(data, offset, "SpawnerConfig.enemy.key", max_length=256)
+    override_ai_config, offset = mp_read_utf8_string(data, offset, "SpawnerConfig.enemy.overrideAIConfig", max_length=512)
+    patrol_gait, offset = mp_read_i32(data, offset, "SpawnerConfig.enemy.patrolGait")
+    prewarn_audio, offset = mp_read_utf8_string(data, offset, "SpawnerConfig.enemy.preWarnAudioEventKey", max_length=512)
+    fixed_rotation: list[float] = []
+    for rot_index in range(4):
+        value, offset = mp_read_f32(data, offset, f"SpawnerConfig.enemy.preWarnEffectFixedRotation[{rot_index}]")
+        fixed_rotation.append(round(value, 4))
+    prewarn_effect, offset = mp_read_utf8_string(data, offset, "SpawnerConfig.enemy.preWarnEffectKey", max_length=512)
+    prewarn_time, offset = mp_read_f32(data, offset, "SpawnerConfig.enemy.preWarnTime")
+    return {
+        "enemyId": enemy_id,
+        "enemyLevel": enemy_level,
+        "forceToBattle": force_to_battle,
+        "key": key,
+        "overrideAIConfig": override_ai_config,
+        "patrolGait": patrol_gait,
+        "preWarnAudioEventKey": prewarn_audio,
+        "preWarnEffectFixedRotation": fixed_rotation,
+        "preWarnEffectKey": prewarn_effect,
+        "preWarnTime": round(prewarn_time, 4),
+        "bornBuffs": born_buffs,
+    }, offset
+
+
+def extract_spawner_config_rows(data: bytes) -> dict[str, Any] | None:
+    if not data or data[0] != 5:
+        return None
+    try:
+        offset = 1
+        config_id, offset = mp_read_required_string(data, offset, "SpawnerConfig.configId", max_length=512)
+        if offset + 4 > len(data):
+            raise ValueError("SpawnerConfig.enemyLibraryCount:truncated")
+        enemy_library_count = struct.unpack_from("<I", data, offset)[0]
+        offset += 4
+        if enemy_library_count == MEMORYPACK_NULL_COUNT:
+            enemy_library_count_value: int | None = None
+        elif enemy_library_count <= 10_000:
+            enemy_library_count_value = int(enemy_library_count)
+        else:
+            raise ValueError(f"SpawnerConfig.enemyLibraryCount={enemy_library_count}")
+        enemy_rows: list[dict[str, Any]] = []
+        if enemy_library_count_value is not None:
+            for index in range(enemy_library_count_value):
+                item, offset = extract_spawner_enemy_library_item(data, offset)
+                item["index"] = index
+                enemy_rows.append(item)
+        return {
+            "configId": config_id,
+            "enemyLibraryCount": enemy_library_count_value,
+            "enemyLibraryEndOffset": offset,
+            "enemyRows": enemy_rows,
+        }
     except (ValueError, struct.error):
         return None
 
@@ -1568,6 +1700,8 @@ class SourceGraphBuilder:
             self.add_model_table_config_edges(file_node, entry)
         elif subtype == "ModelRadiusTable":
             self.add_model_radius_config_edges(file_node, entry)
+        elif subtype == "SpawnerConfig":
+            self.add_spawner_config_edges(file_node, entry)
         elif subtype == "SubGameInstanceDataTable":
             self.add_subgame_instance_config_edges(file_node, entry)
         elif subtype == "InteractiveTable":
@@ -1578,6 +1712,58 @@ class SourceGraphBuilder:
             self.add_world_entity_registry_edges(file_node, entry)
         elif subtype == "TeleportValidationDataTable":
             self.add_teleport_validation_config_edges(file_node, entry)
+
+    def add_spawner_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        decoded = extract_spawner_config_rows(self.read_decoded_config_bytes(entry))
+        config_id = safe_key(decoded.get("configId") if decoded else "") or Path(safe_key(entry.get("p"))).stem
+        if not config_id:
+            return
+        config_node = self.add_node(
+            "spawner_config",
+            config_id,
+            name=config_id,
+            source="webui/game_data",
+            path=safe_key(entry.get("p")),
+            data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": decoded or {}}, depth=3),
+        )
+        self.add_edge(file_node, config_node, "defines_spawner_config", source="webui/game_data", evidence=safe_key(entry.get("dp")))
+        self.add_alias(config_id, config_node, kind="spawner_config_id", source="webui/game_data")
+        self.add_alias(entry.get("dp"), config_node, kind="spawner_config_path", source="webui/game_data")
+        if not decoded:
+            return
+        self.update_node_details(config_node, data=compact_payload({**self.decoded_config_entry_data(entry), "decoded": {"enemyLibraryCount": decoded.get("enemyLibraryCount"), "enemyLibraryEndOffset": decoded.get("enemyLibraryEndOffset")}}, depth=3))
+        for row in decoded.get("enemyRows") or []:
+            index = row.get("index")
+            enemy_id = safe_key(row.get("enemyId"))
+            row_key = f"{config_id}:{index}:{enemy_id or 'enemy'}"
+            entry_node = self.add_node(
+                "spawner_enemy_entry",
+                row_key,
+                name=enemy_id or row_key,
+                source="webui/game_data",
+                data=compact_payload(row, depth=3),
+            )
+            self.add_edge(config_node, entry_node, "spawner_config_has_enemy", source="webui/game_data", evidence=str(index), data={"enemyId": enemy_id, "enemyLevel": row.get("enemyLevel"), "forceToBattle": row.get("forceToBattle")})
+            self.add_alias(row_key, entry_node, kind="spawner_enemy_entry_id", source="webui/game_data")
+            if enemy_id:
+                enemy_node = self.add_node("enemy", enemy_id, name=enemy_id, source="webui/game_data")
+                self.add_edge(entry_node, enemy_node, "spawner_enemy_uses_enemy", source="webui/game_data", evidence="enemyId", data={"enemyLevel": row.get("enemyLevel"), "forceToBattle": row.get("forceToBattle")})
+                self.add_alias(enemy_id, enemy_node, kind="enemy_id", source="webui/game_data")
+            for buff_index, buff in enumerate(row.get("bornBuffs") or []):
+                if not isinstance(buff, dict):
+                    continue
+                buff_id = safe_key(buff.get("buffId"))
+                if not buff_id:
+                    continue
+                buff_node = self.add_buff_ref_node(buff_id, source="webui/game_data")
+                self.add_edge(entry_node, buff_node, "spawner_enemy_starts_with_buff", source="webui/game_data", evidence=f"bornBuffs[{buff_index}]", data={"blackboardCount": len(buff.get("blackboard") or [])})
+                self.add_blackboard_edges(entry_node, buff.get("blackboard"), edge_kind="spawner_buff_uses_blackboard_key", source="webui/game_data", evidence_prefix=f"bornBuffs[{buff_index}].blackboard", context={"buffId": buff_id})
+            self.add_audio_target_edge(entry_node, row.get("preWarnAudioEventKey"), edge_kind="spawner_enemy_prewarn_audio", source="webui/game_data", evidence="preWarnAudioEventKey")
+            effect_key = safe_key(row.get("preWarnEffectKey"))
+            if effect_key:
+                effect_node = self.add_node("gameplay_effect", effect_key, name=effect_key, source="webui/game_data")
+                self.add_edge(entry_node, effect_node, "spawner_enemy_prewarn_effect", source="webui/game_data", evidence="preWarnEffectKey", data={"fixedRotation": row.get("preWarnEffectFixedRotation"), "preWarnTime": row.get("preWarnTime")})
+                self.add_alias(effect_key, effect_node, kind="gameplay_effect_id", source="webui/game_data")
 
     def add_subgame_instance_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         config_key = safe_key(entry.get("p"))
@@ -8887,6 +9073,9 @@ QUERY_KIND_PRIORITY = {
     "subgame_instance_config": 59,
     "subgame_instance": 60,
     "subgame_group": 61,
+    "spawner_config": 62,
+    "spawner_enemy_entry": 63,
+    "gameplay_effect": 64,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -9114,6 +9303,9 @@ NODE_ID_PREFIXES = (
     "subgame_instance_config",
     "subgame_instance",
     "subgame_group",
+    "spawner_config",
+    "spawner_enemy_entry",
+    "gameplay_effect",
     "mission",
     "map",
     "level",
