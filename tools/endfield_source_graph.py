@@ -2554,7 +2554,22 @@ ISSUE_EVIDENCE_EDGE_KINDS = (
     "timeline_route_continues_to_option",
     "timeline_route_runtime_jump",
 )
-
+ASSET_USED_BY_INCOMING_EDGE_KINDS = (
+    "has_gameplay_asset",
+    "previewed_by",
+    "uses_material",
+    "uses_texture_pathid",
+)
+ASSET_USED_BY_OUTGOING_EDGE_KINDS = (
+    "referenced_by_material",
+    "referenced_by_model",
+)
+ASSET_USES_EDGE_KINDS = (
+    "previewed_by",
+    "uses_material",
+    "uses_texture",
+    "uses_texture_pathid",
+)
 
 def exact_node_candidates(term: str) -> list[str]:
     candidates = [term]
@@ -2700,6 +2715,97 @@ def query_graph(db_path: Path, term: str, *, limit: int = 40, kind: str = "") ->
                 ).fetchall()
             )
         return {"seedNode": seed, "nodes": nodes, "aliases": aliases, "relatedToFirstNode": related}
+
+
+def usage_node_ref(row: sqlite3.Row, side: str) -> dict[str, Any]:
+    data = parse_json_text(row[f"{side}Data"])
+    ref: dict[str, Any] = {
+        "id": row[f"{side}Id"],
+        "key": node_key(row[f"{side}Id"]),
+        "kind": row[f"{side}Kind"],
+        "name": row[f"{side}Name"],
+    }
+    if row[f"{side}Path"]:
+        ref["path"] = row[f"{side}Path"]
+    if isinstance(data, dict):
+        for key in ("type", "size", "preview", "pid", "category", "materialLike"):
+            value = data.get(key)
+            if value not in (None, "", [], {}):
+                ref[key] = value
+    return ref
+
+
+def usage_edge_ref(row: sqlite3.Row, actor_side: str, seed: str) -> dict[str, Any]:
+    ref = usage_node_ref(row, actor_side)
+    ref["edge"] = row["edge"]
+    ref["direction"] = "incoming" if row["dstId"] == seed else "outgoing"
+    if row["source"]:
+        ref["source"] = row["source"]
+    if row["evidence"]:
+        ref["evidence"] = row["evidence"]
+    edge_data = parse_json_text(row["edgeData"])
+    if edge_data:
+        ref["edgeData"] = edge_data
+    return ref
+
+
+def asset_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "asset") -> dict[str, Any]:
+    lookup = query_graph(db_path, term, limit=min(max(limit, 1), 20), kind=kind)
+    seed = safe_key(lookup.get("seedNode"))
+    if not seed:
+        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "usedBy": [], "uses": []}
+
+    incoming_placeholders = ",".join("?" for _ in ASSET_USED_BY_INCOMING_EDGE_KINDS)
+    outgoing_placeholders = ",".join("?" for _ in ASSET_USED_BY_OUTGOING_EDGE_KINDS)
+    uses_placeholders = ",".join("?" for _ in ASSET_USES_EDGE_KINDS)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        seed_row = conn.execute(
+            "SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?",
+            (seed,),
+        ).fetchone()
+        used_by_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.kind IN ({incoming_placeholders}) AND e.dst = ?)
+               OR (e.kind IN ({outgoing_placeholders}) AND e.src = ?)
+            ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (*ASSET_USED_BY_INCOMING_EDGE_KINDS, seed, *ASSET_USED_BY_OUTGOING_EDGE_KINDS, seed, limit),
+        ).fetchall()
+        uses_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE e.kind IN ({uses_placeholders})
+              AND e.src = ?
+            ORDER BY e.kind, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (*ASSET_USES_EDGE_KINDS, seed, limit),
+        ).fetchall()
+
+    return {
+        "term": term,
+        "seedNode": seed,
+        "seed": compact_node_ref(seed_row) if seed_row else {"id": seed, "key": node_key(seed)},
+        "aliases": lookup.get("aliases") or [],
+        "usedBy": [
+            usage_edge_ref(row, "src" if row["dstId"] == seed else "dst", seed)
+            for row in used_by_rows
+        ],
+        "uses": [usage_edge_ref(row, "dst", seed) for row in uses_rows],
+    }
 
 
 def compact_node_ref(row: sqlite3.Row, edge_row: sqlite3.Row | None = None) -> dict[str, Any]:
@@ -3117,6 +3223,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     query.add_argument("--limit", type=int, default=40)
     query.add_argument("--kind", default="", help="Optional node kind filter, such as story, option, line, or audio.")
 
+    used_by = sub.add_parser("used-by", help="Show what uses an asset/pathid plus direct asset dependencies")
+    used_by.add_argument("term")
+    used_by.add_argument("--db", type=Path, default=DEFAULT_DB)
+    used_by.add_argument("--limit", type=int, default=40)
+    used_by.add_argument("--kind", default="asset", help="Node kind to resolve before usage lookup; defaults to asset.")
+
     story = sub.add_parser("story", help="Show recovered line order and option branch evidence for one story key")
     story.add_argument("story_key")
     story.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -3156,6 +3268,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "query":
         result = query_graph(args.db, args.term, limit=args.limit, kind=args.kind)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "used-by":
+        result = asset_usage(args.db, args.term, limit=args.limit, kind=args.kind)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "story":

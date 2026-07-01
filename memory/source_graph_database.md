@@ -29,6 +29,8 @@ Useful queries:
 python tools\endfield_source_graph.py query dlg_c17m1_5 --limit 20
 python tools\endfield_source_graph.py story dlg_c17m1_5 --limit-lines 8
 python tools\endfield_source_graph.py issues --code inferredOptionResponse --limit 20
+python tools\endfield_source_graph.py used-by pid:6C45653831AB1627 --limit 10
+python tools\endfield_source_graph.py used-by pathid:4135669062202981187 --kind unity_pathid --limit 10
 ```
 
 Useful flags:
@@ -159,6 +161,10 @@ full asset index, a fast CN graph build with
 edges, 8,450 `uses_material` edges, 190,457 `referenced_by_material` edges,
 and 37,702 `referenced_by_model` edges. The current full asset index has 84,103
 relation records and resolves blank-name Material texture slots by `m_PathID`.
+The `used-by` command is the focused CLI for those edges: it resolves asset
+paths and `pid:<hex>` aliases to WebUI asset nodes by default, and can use
+`--kind unity_pathid` for lower-level Material JSON `uses_texture_pathid`
+queries.
 
 Use the quick build for normal story/option/map investigation. Use the full
 build only when Unity asset container, PathID, or exported asset relationship
