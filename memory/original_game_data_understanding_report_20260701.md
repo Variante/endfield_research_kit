@@ -395,7 +395,11 @@ language/audio clip nodes from 129,732 source entries and links every clip to an
 audio stem. The `MissionRuntimeAsset` pass adds 884 mission runtime/meta assets,
 3,984 quest-task links, 3,334 previous-quest dependencies, 3,155 objective text
 links, condition/tracking/action type nodes, and exact mission-area and
-narrative refs. These decoded-config passes do not prove runtime formula usage,
+narrative refs. The `AIConfig/EnemyTemplateDataSummary` pass adds 78
+enemy data asset path nodes from 156 Persistent/StreamingAssets source
+mappings, 156 file-to-template preload edges, and 78 deduplicated
+template-to-asset preload edges. These decoded-config passes do not prove
+runtime formula usage,
 full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
@@ -477,6 +481,10 @@ Partial but useful current examples include:
   edges, previous-quest dependencies, objective text refs, condition/tracking
   type refs, level/reward links, and narrative refs; this is static authored
   mission evidence, not observed runtime chronology or condition evaluation.
+- `AIConfig/EnemyTemplateDataSummary`: queryable enemy-template preload
+  mappings for 78 template ids to exact `EnemyData/*.asset` paths, with
+  Persistent/StreamingAssets source-file evidence; these are preload path
+  refs, not full AI behavior, behavior-tree, or renderable model bindings.
 - `LevelScriptTemplateData` and other partially previewed families have verified
   top-level ids/counts and meaningful previews.
 
@@ -580,6 +588,15 @@ links, 345 action narrative refs, and 579 quest narrative refs. It is strong
 static quest DAG and authored tracking evidence; it does not prove observed
 runtime chronology, condition evaluation, action execution, or exact
 player-visible mission order.
+
+2026-07-01 source graph AIConfig progress: a fast CN rebuild to
+`tmp/source_graph_aiconfig.sqlite` verified exact enemy-template preload
+mappings from `Json_AIConfig.json` `EnemyTemplateDataSummary.json`. The pass
+adds 78 `enemy_data_asset` nodes, 156 file-to-template preload edges split as
+Persistent 78 and StreamingAssets 78, 78 deduplicated template-to-asset
+preload edges, and 78 path plus 78 stem aliases. This is static preload-path
+evidence only; it does not prove AI behavior trees, spawn behavior, renderable
+model binding, or asset presence in the lean asset index.
 
 Useful support-table checks include:
 
