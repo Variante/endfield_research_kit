@@ -4154,6 +4154,15 @@ body.is-resizing-filter * {
   display: none;
 }
 
+
+.gameplay-stat-pane {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.gameplay-stat-row {
+  grid-template-columns: minmax(96px, 0.28fr) minmax(220px, 1fr) 0;
+}
+
 .gameplay-level-cost {
   grid-column: 1 / -1;
   padding-top: 8px;
