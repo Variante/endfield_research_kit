@@ -409,7 +409,11 @@ and exact position/rotation payloads for `base01_lv001` and `base01_lv003`.
 The `LevelGenForRuntime` pass adds 267 doodad groups, 1,967 doodad logic
 ids, 68 runtime factory regions, 202 mine nodes, and exact mine output item
 refs. The `UILevelMapLoadConfig` pass adds 17 UI map configs, 220 static map
-elements, 58 tier names, target-level refs, and UI text refs. These decoded-config passes still do not prove runtime formula usage,
+elements, 58 tier names, target-level refs, and UI text refs. The
+`GameplayConfig` map/level lookup pass adds 149 level-basic-info rows, 21
+short-id scenes, 86 short-id rows, 142 map-brief rows, 211 map-local sublevel
+rows, and 1,009 sublevel enemy refs from the decoded text JSON tables.
+These decoded-config passes still do not prove runtime formula usage,
 full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
@@ -677,6 +681,17 @@ refs, 58 tier-name nodes, and 58 tier text refs. Chunk/grid/mist and tier
 geometry arrays are payload counts only; this is static UI map metadata,
 not proof of UI map rendering, fog/mist reveal behavior, chunk LOD
 selection, or coordinate projection.
+
+2026-07-01 source graph GameplayConfig map/level lookup progress: a fast CN
+rebuild to `tmp/source_graph_gameplay_map_level.sqlite` verified four decoded
+text JSON lookup tables from `Json_GameplayConfig.json`. The pass adds 270
+source-file map-id definition edges, 149 `level_basic_info` nodes with level,
+level-config, domain, map-UI, region-UI, and factory-area links, 21 short-id
+scene nodes plus 86 `level_short_id` nodes, and 142 `map_brief_info` nodes
+with 211 map-local sublevel nodes and 1,009 enemy refs. Numeric
+`MapBriefInfoTable` map ids only join to `map` nodes through `MapIdTable`, and
+sublevel ids are preserved as map-local subdata ids rather than inferred level
+ids. Placed map marks, map regions, and mine teams remain a separate pass.
 
 Useful support-table checks include:
 

@@ -1081,6 +1081,36 @@ python tools\endfield_source_graph.py query map01_lv001_se_1 --kind ui_map_stati
 python tools\endfield_source_graph.py query scene_map01_lv001_sub01_location_tips_10 --kind i18n_text
 ```
 
+2026-07-01 GameplayConfig map/level lookup graph progress: source graph
+ingestion now promotes four decoded text JSON lookup tables from
+`Json_GameplayConfig.json`: `MapIdTable`, `LevelBasicInfoTable`,
+`LevelShortIdTable`, and `MapBriefInfoTable`. A fast CN rebuild to
+`tmp/source_graph_gameplay_map_level.sqlite` verified 1,499,464 total nodes,
+2,627,034 edges, and 2,020,809 aliases. New coverage includes 270
+`gameplay_config_map_id_table_defines_map` source-file edges split as
+Persistent 139 and StreamingAssets 131; 149 `level_basic_info` nodes from
+290 source-file definition edges split as Persistent 149 and StreamingAssets
+141; 149 level links, 149 level-config path links, 149 domain links, 5 map-UI
+links, 5 region-UI links, and 3 factory-area links; 21 short-id scene nodes,
+86 `level_short_id` nodes, 42 source-file scene-definition edges, and 86
+scene-to-short-id edges; plus 142 `map_brief_info` nodes, 211
+`map_sublevel_brief` nodes, 276 source-file map-brief definition edges split
+as Persistent 142 and StreamingAssets 134, 139 resolved map links, 211
+sublevel-to-map links, and 1,009 sublevel enemy refs. Numeric map ids from
+`MapBriefInfoTable` are joined to `map` nodes only when `MapIdTable` resolves
+them; unresolved numeric rows stay as brief-info nodes. Sublevel ids are kept
+as map-local subdata ids, not forced into level ids. `LevelMapMark`,
+`MapRegionTable`, and `MinePointTeamTable` remain a separate placed-map pass;
+their top-level numeric keys should not be treated as map ids. Example exact
+queries:
+
+```bat
+python tools\endfield_source_graph.py query map01_lv001 --kind level_basic_info
+python tools\endfield_source_graph.py query map01_lv001:2100000031 --kind level_short_id
+python tools\endfield_source_graph.py query map01 --kind map_brief_info
+python tools\endfield_source_graph.py query map01:200000000 --kind map_sublevel_brief
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,
