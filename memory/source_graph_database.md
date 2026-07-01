@@ -498,6 +498,22 @@ level ids and linked through the existing level/map graph. Example exact query:
 python tools\endfield_source_graph.py query TpForMap_ent_10100020314 --kind teleport_point
 ```
 
+2026-07-01 mission-area decoded-config progress: source graph ingestion now
+promotes exact `GameplayConfigMissionAreaTable` rows from the WebUI Data index.
+A fast CN rebuild to `tmp/source_graph_mission_area.sqlite` verified 1,032,774
+total nodes, 1,716,593 edges, and 1,438,131 aliases. New coverage includes 2
+`mission_area_config` nodes, 73 unique `mission_area` nodes collapsed across
+Persistent and StreamingAssets duplicate rows, 146 `mission_area_config_has_area`
+edges, and 37 `mission_area_for_mission` edges to 9 existing mission nodes when
+the area key prefix exactly matches a known mission id. Each area node preserves
+the exact key, type id, flag, two recovered vector triples, size values, and
+bounded tail-length metadata; keys without an existing mission prefix remain
+standalone area evidence instead of inferred mission links. Example exact query:
+
+```bat
+python tools\endfield_source_graph.py query c13m2_001 --kind mission_area
+```
+
 2026-07-01 world/map graph progress: an early world semantics pass now ingests
 `MapIdTable`, `LevelDescTable`, `LevelLoadingTable`, `SpecialLevelToMapTable`,
 `SceneAreaTable`, `MapMarkInsTable`, `MapMarkTempTable`, `MapMarkTypeTable`,

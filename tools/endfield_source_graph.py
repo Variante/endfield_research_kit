@@ -271,11 +271,13 @@ DIALOG_SUPPORT_TABLES = (
 )
 DECODED_CONFIG_GROUP_FILES = (
     "Json_GameplayConfig.json",
+    "Json_GameplayConfigMissionAreaTable.json",
     "Json_NonGeneratedConfigs.json",
     "Json_Interactive.json",
     "Json_GameplayConfigWorldEntityRegistry.json",
 )
 DECODED_CONFIG_TARGET_TYPES = {
+    "GameplayConfigMissionAreaTable",
     "GameplayConfigWorldEntityRegistry",
     "InteractiveTable",
     "InteractiveTemplateData",
@@ -644,6 +646,102 @@ def extract_teleport_validation_rows(data: bytes) -> dict[str, Any] | None:
         if offset != len(data):
             raise ValueError("TeleportValidationDataTable:trailing-bytes")
         return {"rowCount": row_count, "rows": rows}
+    except (ValueError, struct.error):
+        return None
+
+
+def extract_mission_area_rows(data: bytes) -> dict[str, Any] | None:
+    if not data or data[0] != 1:
+        return None
+
+    def read_ascii_id_at(offset: int, *, max_length: int = 96) -> tuple[str, int] | None:
+        if offset + 4 > len(data):
+            return None
+        length = struct.unpack_from("<I", data, offset)[0]
+        if length <= 0 or length > max_length or offset + 4 + length > len(data):
+            return None
+        raw = data[offset + 4:offset + 4 + length]
+        try:
+            value = raw.decode("ascii")
+        except UnicodeDecodeError:
+            return None
+        if not all(ch.isalnum() or ch == "_" for ch in value):
+            return None
+        return value, offset + 4 + length
+
+    def is_row_start(offset: int) -> bool:
+        parsed = read_ascii_id_at(offset)
+        if not parsed:
+            return False
+        key, cursor = parsed
+        if cursor >= len(data) or data[cursor] != 8:
+            return False
+        cursor += 1
+        if cursor >= len(data) or data[cursor] != 0:
+            return False
+        cursor += 1
+        duplicate = read_ascii_id_at(cursor)
+        return bool(duplicate and duplicate[0] == key)
+
+    def find_next_row_start(min_offset: int) -> int | None:
+        for candidate in range(max(min_offset, 0), len(data)):
+            if is_row_start(candidate):
+                return candidate
+        return None
+
+    try:
+        offset = 1
+        header_count0, offset = mp_read_u32(data, offset, "MissionAreaTable.headerCount0", max_count=128)
+        header_count1, offset = mp_read_u32(data, offset, "MissionAreaTable.headerCount1", max_count=10_000)
+        row_count, offset = mp_read_u32(data, offset, "MissionAreaTable.rows", max_count=10_000)
+        if header_count0 != 1 or row_count <= 0:
+            raise ValueError("MissionAreaTable:unexpected-header")
+        rows: list[dict[str, Any]] = []
+        for index in range(row_count):
+            area_key, offset = mp_read_required_string(data, offset, f"MissionAreaTable[{index}].key", max_length=96)
+            if offset >= len(data):
+                raise ValueError(f"MissionAreaTable[{index}].memberCount:truncated")
+            member_count = data[offset]
+            offset += 1
+            if member_count != 8:
+                raise ValueError(f"MissionAreaTable[{index}].memberCount={member_count}")
+            if offset >= len(data):
+                raise ValueError(f"MissionAreaTable[{index}].marker:truncated")
+            string_marker = data[offset]
+            offset += 1
+            if string_marker != 0:
+                raise ValueError(f"MissionAreaTable[{index}].marker={string_marker}")
+            duplicate_id, offset = mp_read_required_string(data, offset, f"MissionAreaTable[{index}].duplicateId", max_length=96)
+            if duplicate_id != area_key:
+                raise ValueError(f"MissionAreaTable[{index}].idMismatch")
+            next_offset = find_next_row_start(offset + 60) if index + 1 < row_count else len(data)
+            if next_offset is None:
+                raise ValueError(f"MissionAreaTable[{index}].nextRowStart")
+            tail = data[offset:next_offset]
+            if len(tail) < 67:
+                raise ValueError(f"MissionAreaTable[{index}].tailLength={len(tail)}")
+            flag = tail[0]
+            type_id = struct.unpack_from("<i", tail, 1)[0]
+            values = [round(struct.unpack_from("<f", tail, 5 + value_index * 4)[0], 4) for value_index in range(10)]
+            if not all(math.isfinite(value) and abs(value) < 10_000_000 for value in values):
+                raise ValueError(f"MissionAreaTable[{index}].values")
+            if flag not in {0, 1} or type_id not in {1, 2}:
+                raise ValueError(f"MissionAreaTable[{index}].flagOrType")
+            rows.append({
+                "areaKey": area_key,
+                "flag": flag,
+                "typeId": type_id,
+                "primaryVec3": values[:3],
+                "secondaryVec3": values[3:6],
+                "sizeValues": values[6:10],
+                "tailLength": len(tail),
+                "extraTailLength": max(0, len(tail) - 67),
+                "tailMarkerPreview": tail[45:min(len(tail), 67)].hex(" "),
+            })
+            offset = next_offset
+        if offset != len(data):
+            raise ValueError("MissionAreaTable:trailing-bytes")
+        return {"headerCount0": header_count0, "headerCount1": header_count1, "rowCount": row_count, "rows": rows}
     except (ValueError, struct.error):
         return None
 
@@ -1398,7 +1496,9 @@ class SourceGraphBuilder:
         self.add_file(entry_path, kind="decoded_game_data", source=safe_key(entry.get("source")) or "webui/game_data", size=entry.get("s"), data={"subtype": subtype, "rows": entry.get("r"), "hash": entry.get("hash")})
         family_node = self.add_node("decoded_config_family", subtype, name=subtype, source="webui/game_data")
         self.add_edge(file_node, family_node, "decoded_as_config_family", source="webui/game_data", evidence=safe_key(entry.get("q")))
-        if subtype == "ModelTable":
+        if subtype == "GameplayConfigMissionAreaTable":
+            self.add_mission_area_config_edges(file_node, entry)
+        elif subtype == "ModelTable":
             self.add_model_table_config_edges(file_node, entry)
         elif subtype == "ModelRadiusTable":
             self.add_model_radius_config_edges(file_node, entry)
@@ -1410,6 +1510,26 @@ class SourceGraphBuilder:
             self.add_world_entity_registry_edges(file_node, entry)
         elif subtype == "TeleportValidationDataTable":
             self.add_teleport_validation_config_edges(file_node, entry)
+
+    def add_mission_area_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
+        config_key = safe_key(entry.get("p"))
+        config_node = self.add_node("mission_area_config", config_key, name=Path(config_key).name, source="webui/game_data", path=config_key, data=self.decoded_config_entry_data(entry))
+        self.add_edge(file_node, config_node, "defines_mission_area_config", source="webui/game_data")
+        decoded = extract_mission_area_rows(self.read_decoded_config_bytes(entry))
+        if not decoded:
+            return
+        self.update_node_details(config_node, data={**self.decoded_config_entry_data(entry), "rowCountParsed": decoded.get("rowCount"), "headerCount1": decoded.get("headerCount1")})
+        for row in decoded.get("rows") or []:
+            area_key = safe_key(row.get("areaKey"))
+            if not area_key:
+                continue
+            area_node = self.add_node("mission_area", area_key, name=area_key, source="webui/game_data", data=compact_payload(row, depth=2))
+            self.add_edge(config_node, area_node, "mission_area_config_has_area", source="webui/game_data", evidence=safe_key(entry.get("dp")), data=compact_payload(row, depth=1))
+            self.add_alias(area_key, area_node, kind="mission_area_id", source="webui/game_data")
+            prefix_parts = area_key.rsplit("_", 1)
+            mission_key = prefix_parts[0] if len(prefix_parts) == 2 and prefix_parts[1].isdigit() else ""
+            if mission_key and self.node_exists("mission", mission_key):
+                self.add_edge(area_node, self.node_id("mission", mission_key), "mission_area_for_mission", source="webui/game_data", evidence="areaKeyPrefix")
 
     def add_model_table_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         config_key = safe_key(entry.get("p"))
@@ -8664,6 +8784,8 @@ QUERY_KIND_PRIORITY = {
     "world_entity_detail": 54,
     "teleport_validation_config": 55,
     "teleport_point": 56,
+    "mission_area_config": 57,
+    "mission_area": 58,
     "timeline": 5,
     "timeline_option_route": 6,
     "runtime_jump_clip": 7,
@@ -8886,6 +9008,8 @@ NODE_ID_PREFIXES = (
     "world_entity_detail",
     "teleport_validation_config",
     "teleport_point",
+    "mission_area_config",
+    "mission_area",
     "mission",
     "map",
     "level",
