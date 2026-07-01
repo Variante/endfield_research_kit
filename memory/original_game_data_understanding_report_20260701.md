@@ -365,7 +365,12 @@ curves, and runtime playback conditions remain outside this pass. The
 7,760 atmospheric NPC row aliases on `environmental_npc` nodes, with 7,760
 template links, 7,760 level links, 7,577 AI-config links, 4,866 montage links,
 2,427 facial-morph links, 994 cluster links, and 615 envTalk links from the
-same bounded row-string evidence. It does not prove runtime formula usage, full SpawnerConfig tail semantics,
+same bounded row-string evidence. The `CharInteractPerformCfgs` pass adds 318
+file-to-config definition edges collapsed to 159 perform configs, with 83 exact
+active-tag edges, 54 status-tag refs, 102 montage refs, 37 actor/template refs,
+146 effect refs, 46 intra-family perform refs, 52 asset-path refs, and 13 CCS
+refs from a strong parsed prefix plus bounded body string evidence. It does not
+prove runtime formula usage, full SpawnerConfig tail semantics,
 BuffData timeline action execution, SkillData target/action execution,
 LevelScript action-body control flow, LevelData object placement or control
 flow, montage clip playback semantics, full exported model/icon reconstruction,
@@ -408,13 +413,17 @@ Partial but useful current examples include:
   montage, facial morph, cluster, and envTalk references; full row payloads,
   coordinates, placement volumes, behavior trees, schedules, and playback timing
   remain future work.
+- `CharInteractPerformCfgs`: queryable common-interaction perform configs across
+  318 decoded files and 159 unique perform ids, including active/status tags,
+  montage refs, character/NPC-template refs, effects, inherited perform configs,
+  asset paths, and CCS paths; action dictionaries, timing, IK/follow rules,
+  interrupt behavior, and runtime interaction state machines remain future work.
 - `Interactive/InteractiveData`: 25-member template roots and many component
   bodies parse far enough to expose names, component families, property maps,
   audio rows, guide geometry, trigger observers, hittable data, and interactive
   state properties.
-- `CharInteractPerformCfgs`, `LevelScriptTemplateData`,
-  and other partially previewed families have verified top-level ids/counts and
-  meaningful previews.
+- `LevelScriptTemplateData` and other partially previewed families have verified
+  top-level ids/counts and meaningful previews.
 
 The remaining risk is nested semantics. A decoded field name or count proves
 structure; it does not automatically prove gameplay meaning, formula behavior,
