@@ -2657,3 +2657,498 @@ Validation commands:
 - Focused direct `decode_buff_memorypack` scan over both `structured/StreamingAssets/Data/Json/BuffData` and `structured/Persistent/Data/Json/BuffData`.
 - `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_create_validate_20260701`
 - Aggregated `di` fields from `tmp\game_data_index_buff_create_validate_20260701`.
+
+## 2026-07-01 BuffData Multi-Action Boundary Recovery
+
+Landed the first fail-closed multi-action `actionData` splitter for BuffData
+timeline records with `actionDataCount > 1`. Work was implemented by a
+delegated coding agent and validated/finalized on 2026-07-02.
+
+What changed:
+
+- Refactored the existing typed single-item decoders into paired
+  `consume_buff_*_action` functions that return the exact consumed byte length
+  (CreateBuff, ModifyDynamicBlackboard, EffectAction, ConvertToTargetContext,
+  DebugPrint, PlayAnimation, PatrolTeleport, PlaySound,
+  SendBattleSignalToLevel, CompareFloat, and related helpers such as
+  `read_buff_target_settings_envelope_partial`).
+- Added a strict typed-chain walker: a multi-action record is split only when
+  every item in the chain is consumed by a typed consumer and the final cursor
+  reaches the exact body end. Any failure returns
+  `ambiguous-union-tag-boundaries` with a bounded diagnostic instead of a
+  guessed split. Header-only tag scanning is intentionally not used (proven
+  unsafe earlier).
+- Added `Core_CompareFloat_Data` as a new exact item decoder and bounded
+  IfElseAction handling; single-item opaque payloads keep first-tag type names
+  so opaque items are named rather than anonymous.
+
+Focused validation (`scratch/buff_multiaction_scan_20260701.py`, both roots
+identical unless noted):
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| BuffData files (StreamingAssets / Persistent) | 2,291 / 2,325 | 2,291 / 2,325 |
+| Timeline rows / records | 79 / 338 | 79 / 338 |
+| Split status `single-item` | 263 | 263 |
+| Split status `typed-chain-items` | 0 | 11 |
+| Split status `ambiguous-union-tag-boundaries` | 68 (implicit) | 57 |
+| Split status `empty` | 7 | 7 |
+| Emitted item summaries | 263 | 297 |
+| Item decodes exact / partial / opaque | 11 / 141 / 111 | 17 / 171 / 109 |
+| Typed decoder failures | 0 | 0 |
+
+Newly split multi-action records (11 per root): three CompareFloat+Effect/
+PlaySound pairs each in `buff_chr_0030_zhuangfy_sword_triggerd` and
+`..._triggerd_ult`, `buff_eny_0023_aghornb_levelact01_exit` (3 items),
+`buff_eny_0080_reaper_break_spawnblade` (6 EffectActions),
+and `buff_eny_0081_ruanyi_P1_weakness_1/3/4` (2/5/6 EffectActions).
+
+Full WebUI Json validation
+(`tmp\game_data_index_buff_multiaction_validate_20260701`, first build to
+index both structured roots 閳?4,616 BuffData entries):
+
+| Metric | Count |
+| --- | ---: |
+| BuffData entries with unresolved `di` fields (total, both roots) | 289 |
+| StreamingAssets `di` rows (comparable to the old 143 baseline) | 143 |
+| Persistent `di` rows (34 more source files than StreamingAssets) | 146 |
+
+Row-level warnings are unchanged per root by design: splitting exposes item
+boundaries but does not claim nested semantics, so
+`partial-timelineActions-opaque-actionData` style statuses remain visible
+(158/97/18/8/8/6 across both roots, exactly the per-root baseline shape).
+
+Remaining gaps:
+
+- 57 multi-action records per root remain `ambiguous-union-tag-boundaries`
+  because at least one chain item lacks a typed consumer. The measured
+  ceiling: FindTargetAction/SelectorData structure blocks 20 chains;
+  CheckBuffStackNumAdvanced buffSettings tag-queries and DamageAction
+  DamageUnit (32 members; the same gap keeps 12 TickIntervalAction
+  single-item payloads opaque) block most of the rest; six unknown nested
+  union tags remain.
+- A recursive IfElseAction decoder exists and emits branch items, but those
+  items stay mostly opaque (17 opaque, 2 partial per root) until their inner
+  action types gain typed consumers.
+- Nested semantics inside partial items (EffectActionCfg internals,
+  TargetSettings meaning) are unchanged and intentionally partial.
+
+Validation commands:
+
+- `python -m py_compile scripts\build_data_index.py`
+- `python scratch\buff_multiaction_scan_20260701.py`
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_multiaction_validate_20260701`
+- `di` aggregation over `tmp\game_data_index_buff_multiaction_validate_20260701\groups\Json_BuffData.json`
+
+### 2026-07-02 Review Caveats (multi-action pass)
+
+An independent code review approved the multi-action change with nits. The
+chain walker's cursor arithmetic, overshoot/undershoot rejection, exact-landing
+check, IfElse recursion caps, and unchanged single-item output shape were all
+verified sound. Caveats to carry forward:
+
+- Three acceptance widenings beyond a pure refactor, all deterministic and
+  exact-landing-guarded but broader than the previously observed evidence:
+  the TargetSettings tail-u32 whitelist collapsed to a global `(0, 1, 2, 4)`
+  (was per-context), `convertToTargetContext.convertFrom` now allows a
+  data-derived string slot (was fixed 67 bytes), and playSound dropped the
+  `item_end - 26` fixed-tail cross-check. Current data is unaffected; future
+  variants will be accepted under the wider rules.
+- `decode_buff_best_effort_single_action_item` swallows decoder exceptions as
+  plain `opaque` with no trace; a real bug in the five new consumers would be
+  invisible. Add a `bestEffortDecodeError` note before relying on
+  "0 typed decoder failures" from that path.
+- Chain splits add many status keys per item; `collect_decoder_status_fields`
+  caps at 24 fields / first 8 list items, so `di` contents (not counts) can
+  shift for verbose records.
+- `decode_buff_effect_action` was not rewired onto `consume_buff_effect_action`;
+  two divergent EffectAction parsers coexist (documented, both fail closed) 閳?
+  maintenance trap.
+
+## 2026-07-01 BuffData Multi-Action Boundary Recovery 閳?Implementation Detail and Evidence
+
+Added strict full-chain typed consumption for timeline `actionData` payloads with `actionDataCount > 1`, a recursive `IfElseAction` decoder built on its proven SequenceActionData branch envelopes, and four new typed action consumers. Never header-only splitting: a multi-action payload splits only when every item is consumed by a typed decoder and the chain lands exactly on the outer-parser-proven payload end; otherwise the payload stays `ambiguous-union-tag-boundaries` with a visible probe note.
+
+What changed:
+
+- Refactored the existing single-item action decoders (CreateBuff, ModifyDynamicBlackboard, ConvertToTargetContext, DebugPrint, PlayAnimation, PatrolTeleport, PlaySound, SendBattleSignal) into consume-style parsers `consume_buff_*(data, item_start, limit) -> (decoded, end)` plus thin exact wrappers that keep the previous `end == item_end` acceptance. TargetSettings envelope ends are now always data-derived (`67 + string-slot length`), which is byte-equivalent for every previously accepted item.
+- Kept the existing two-anchor exact `decode_buff_effect_action` for single-item payloads and added a separate chain-mode `consume_buff_effect_action` that anchors the first envelope after the bounded `EffectActionCfg` blob and requires the second envelope to start exactly at the parse cursor.
+- Added `consume_buff_ability_action_item`: header validation against the recovered tag/member-count map, dispatch to a typed consumer, and hard failure for unknown tags, unknown member counts, or missing consumers (depth-limited to 6 for recursion).
+- Added `consume_buff_if_else_action` (tag `0x00b4`, member count 8). Byte-proven layout: `AbilityActionData` prefix, `alwaysNext` bool, then three `SequenceActionData` envelopes (`memberCount=3`, u32 actionDataCount, counted `AbilityActionData` union items, guard/main-char bools). Branch-list naming `conditionAction`, `failActions`, `succeedActions` follows MemoryPack setter order, consistent with every previously proven decoder.
+- Added new typed consumers with byte evidence:
+  - `Core_CompareFloat_Data` (`0x47`, mc 7, exact): prefix, `compare` i32, `valueA`/`valueB` member-count-3 BlackboardFloat wrappers.
+  - `Core_GetAITransDataAction_Data` (`0xac`, mc 6, exact): prefix, `aiTransKey`, `saveTo` strings (observed `buff_1`->`tar1`, `buff_2`->`tar2`, `debuff`->`tarde`).
+  - `Core_InterruptAction_Data` (`0xbf`, mc 8, partial): prefix, attacker/defender TargetSettings envelopes, `immobilizedTime` f32, `overrideSuperArmorLimit` i32 (`-1` observed).
+  - `Core_SpellInfliction_Data` (`0x0140` wide tag, mc 8, partial): prefix, `inflictionType` i32, `isExtra` bool, source/target TargetSettings envelopes.
+- New-family single-item decode (IfElse, CompareFloat, GetAITransData, Interrupt, SpellInfliction) is best-effort: a failed parse keeps the item `opaque` instead of emitting `typed-decoder-failed`, because these families routinely contain nested items with no typed consumer yet.
+- Widened the TargetSettings envelope tail-u32 candidate set uniformly to `(0, 1, 2, 4)`. Tail `2` is proven by exact chain-end landing (InterruptAction defender envelope in `buff_chr_0026_lastrite_normal_skill_phantom`); the tail word remains an unproven field and the envelope stays partial.
+- Failed multi-action chains keep the previous split status and now carry `actionDataSplitProbeNote` (first blocking reason). The key deliberately avoids the `status`/`error` suffixes so it never enters `ds`/`di` collection.
+
+Root cause of the previous multi-action ceiling: contiguous one-byte union tags make header scanning unsafe, so boundaries must come from full typed consumption. The consumption framework plus the IfElse branch envelopes provide deterministic, fail-closed boundaries with no candidate search.
+
+Focused validation over current exported BuffData roots (identical for `structured/StreamingAssets` 2,291 files and `structured/Persistent` 2,325 files):
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Timeline rows / records | 79 / 338 | 79 / 338 |
+| `single-item` records | 263 | 263 |
+| `empty` records | 7 | 7 |
+| `ambiguous-union-tag-boundaries` records | 68 | 57 |
+| `typed-chain-items` records (new) | 0 | 11 |
+| Exposed action items | 263 | 297 |
+| Item decode `exact` | 11 | 17 |
+| Item decode `partial` | 141 | 171 |
+| Item decode `opaque` | 111 | 109 |
+| Typed decoder failures | 0 | 0 |
+
+Newly split multi-action records (per root):
+
+| BuffData row | Record | Count | Chain |
+| --- | ---: | ---: | --- |
+| `buff_chr_0030_zhuangfy_sword_triggerd.json` | 10 | 2 | CompareFloat(exact) + EffectAction(partial) |
+| `buff_chr_0030_zhuangfy_sword_triggerd.json` | 11 | 2 | CompareFloat(exact) + EffectAction(partial) |
+| `buff_chr_0030_zhuangfy_sword_triggerd.json` | 12 | 2 | CompareFloat(exact) + PlaySound(partial) |
+| `buff_chr_0030_zhuangfy_sword_triggerd_ult.json` | 10 | 2 | CompareFloat(exact) + EffectAction(partial) |
+| `buff_chr_0030_zhuangfy_sword_triggerd_ult.json` | 11 | 2 | CompareFloat(exact) + EffectAction(partial) |
+| `buff_chr_0030_zhuangfy_sword_triggerd_ult.json` | 13 | 2 | CompareFloat(exact) + PlaySound(partial) |
+| `buff_eny_0023_aghornb_levelact01_exit.json` | 0 | 3 | EffectAction x2 + CreateBuff (`buff_common_enemy_halo_elite_effect`) |
+| `buff_eny_0080_reaper_break_spawnblade.json` | 2 | 6 | EffectAction x6 |
+| `buff_eny_0081_ruanyi_P1_weakness_1.json` | 1 | 2 | EffectAction x2 |
+| `buff_eny_0081_ruanyi_P1_weakness_3.json` | 1 | 5 | EffectAction x5 |
+| `buff_eny_0081_ruanyi_P1_weakness_4.json` | 1 | 6 | EffectAction x6 |
+
+IfElse single-item decode coverage: 2 of 19 records now partial (`buff_chr_0030_zhuangfy_sword_triggerd.json[9]` and `buff_chr_0030_zhuangfy_sword_triggerd_ult.json[9]`): condition CompareFloat on blackboard `swordIndex` vs `8.0`, empty failActions, succeedActions PlaySound `au_chr_0030_zhuangfy_normal_skill_thunder_a`.
+
+Remaining gaps (why the other 57 multi-action records and 17 IfElse singles stay opaque):
+
+- `Core_FindTargetAction_FindTargetActionData` blocks 20 chains (15 first-item + 5 later-item). Its body inlines live TargetSettings-like fields with real `SelectorData` content (bounded singles show 89/90/191/272/292-byte variants), so it needs SelectorData structural recovery, not the 67+slot envelope rule.
+- `Core_CheckBuffStackNumAdvanced_Data` blocks 5 chains + 5 IfElse singles; its `buffSettings` member nests a recursive tag-query structure (path strings like `Skill/Character/Common/SpellStatu...` behind member-count-2/3 wrappers) that is not yet proven.
+- `Core_DamageAction_DamageActionData` blocks 6 chains and all 12 `TickIntervalAction` singles (TickInterval nests a SequenceActionData whose item is DamageAction); `DamageUnit` has 32 serialized members including nested effect/sound/cost lists.
+- `CameraImpulseAction` (7), `SpawnEnemyAction` (3), `FinishBuffAdvanced` (4 chains + 1 IfElse), `HitStopAction`, `SpawnAbilityEntity`, `AuraAction`, `LaunchProjectile`, `Conditions_CheckBuffStackNum` (1 each) have no typed consumers yet.
+- Unknown nested union tags `0x5c`, `0x75`, `0x7a`, `0x86`, `0x102`, `0x147` appear inside IfElse branches / chains; they are absent from the compact observed-first-tag map, so they fail closed. Recovering the full formatter tag table (0x0000..0x0165) would name them.
+- Two CreateBuff-bearing chains fail on `CreateBuffActionInput.reservedU32=1`; widening to `{0,1}` was tested and disproven (the parse then breaks on buffId UTF-8, so the real multi-input layout differs). The strict `reservedU32=0` check stays.
+- `Core_SelfRotateAction_Data` (7 identical 135-byte singles) was deliberately not promoted: its targetSettings envelope carries non-default selector internals (70 bytes with an empty string slot), violating the 67+slot rule, so naming fields would be guesswork until SelectorData is understood.
+
+Warning preservation proof:
+
+- Per-row `di` comparison old-vs-new decoder over all 2,291 StreamingAssets BuffData rows: 143 rows with `di` before and after, 0 rows with any `di` difference.
+- 5 rows have `ds`-only additions: the new chain items publish their partial envelope statuses inside the first-8-record diagnostic window; no issue-valued field was displaced.
+- Row-level `timelineActionsBodyStatus` / `timelineActionsSemanticStatus` are intentionally unchanged; multi-action bodies are not fully proven repo-wide, so no warning was suppressed.
+
+Full WebUI Json validation after this change (`tmp\game_data_index_buff_multiaction_validate_20260701`, both export roots indexed):
+
+| Metric | Count |
+| --- | ---: |
+| Json group entries indexed (both roots) | 163,822 |
+| Entries with unresolved decoder issue fields (`di`) | 289 |
+| `Json/BuffData` unresolved issue rows (`structured/StreamingAssets`) | 143 |
+| `Json/BuffData` unresolved issue rows (`structured/Persistent`) | 146 |
+| Unresolved issue rows outside `Json/BuffData` | 0 |
+
+The `di` field distribution matches the pre-change baseline exactly (per-root StreamingAssets: 79/79 timeline statuses, 47/47 stackEffects, 9/9 poiseModifier, 4/4 shieldConfigs, 4+4 igniteEventAction, 3 poiseModifier tail previews). No warning was suppressed.
+
+Validation commands:
+
+- `python -m py_compile scripts\build_data_index.py`
+- Focused scan `python scratch\buff_multiaction_scan_20260701.py` over both BuffData roots (output archived at `tmp\buff_multiaction_scan_after_20260701.txt`).
+- Old-vs-new per-row `di` diff against `git show HEAD:scripts/build_data_index.py` (0 differences).
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_buff_multiaction_validate_20260701`
+- Aggregated `di` fields from `tmp\game_data_index_buff_multiaction_validate_20260701`.
+
+### 2026-07-02 DamageAction Boundary Probe
+
+Follow-up to the multi-action review and the abandoned Claude subagent pass.
+This pass does **not** claim full `DamageAction` / `DamageUnit` decoding. It
+adds bounded observability and a fail-closed consume probe for
+`Core_DamageAction_DamageActionData` (`0x008a`, member count 11):
+
+- Renamed the best-effort single-item failure marker from
+  `bestEffortDecodeError` to `bestEffortDecodeProbeNote`, so probe notes no
+  longer enter generic `ds` / `di` collection through the `*Error` suffix.
+- Added bounded primitive reads used by the DamageAction probe.
+- Added a DamageAction parser that verifies the common `AbilityActionData`
+  prefix, `alwaysNext`, `attacker`, `damageUnits` count, and the byte-proven
+  first `DamageUnit` member-count anchor at `action_start + 0x18 == 0x20`.
+- DamageUnit internals remain opaque. The parser preserves the entire counted
+  DamageUnit span as a hashed/string-scanned blob, then accepts only a unique
+  pair of bounded `TargetSettings` envelopes for the tail. The gap between the
+  envelopes is preserved as opaque `hitEnvData` / `hitEnvironment` bytes.
+- `TickIntervalAction` was deliberately not promoted. Its 12 exact 1134-byte
+  BuffData single items nest DamageAction, but the nested tail has unresolved
+  target-like blocks (`string-slot-length=1792` on the second candidate in the
+  Wulfa family), so promoting it would overstate the evidence.
+
+Evidence used:
+
+- `reports/buff_runtime_metadata.json` gives direct IL2CPP names for
+  `DamageActionData`, `DamageUnit`, and `TickIntervalAction+Data`, plus
+  MemoryPack setter methods. Names are high-confidence; serialized byte order
+  remains byte-proven only for the parsed prefix and target-tail anchors.
+- Focused byte replay over the six unique BuffData multi-action records that
+  previously failed first on DamageAction showed five character records with
+  ambiguous target-tail candidates, and one enemy record that gets past
+  DamageAction and fails next on `Core_CameraImpulseAction_Data`.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py`
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_damage_validate_20260702`
+- Old/new compact BuffData comparison against
+  `tmp\game_data_index_current_validate_20260702`:
+  - entries: 4616 before / 4616 after
+  - changed `di` rows: 0
+  - `di` totals: 289 rows / 600 fields before and after
+  - changed `ds` rows: 24, all from the probe-key rename or deeper non-issue
+    status visibility; user-facing `h` and `t` summaries were unchanged
+  - typed decoder failures in focused rich scan: 0
+
+Recovery impact:
+
+- No new `typed-chain-items` records were promoted. This is intentional: the
+  five character DamageAction chains have ambiguous target-tail candidates, and
+  the remaining enemy chain is blocked by CameraImpulse after DamageAction.
+- Remaining DamageAction work is now narrower: prove `DamageUnit` internals and
+  `HitSoundData` / `HitEnvData` layout, or add a separate CameraImpulse consumer
+  for the enemy chain. Until then, the DamageAction probe is boundary evidence,
+  not semantic DamageUnit recovery.
+
+### 2026-07-02 DamageAction Boundary Probe Review Adjustment
+
+Second-pass review rejected wiring DamageAction into the multi-action chain
+consumer because the target-tail candidate search can find unique false
+TargetSettings-like pairs inside opaque DamageUnit / hit-env bytes. The outer
+chain walker stayed fail-closed on the current corpus, and no new typed-chain
+records were promoted, but the heuristic was not strong enough for future
+chain-splitting.
+
+Final accepted state after this adjustment:
+
+- `bestEffortDecodeProbeNote` remains, preventing best-effort probe failures
+  from entering `ds` / `di` via an `*Error` key.
+- The exact-boundary DamageAction partial parser remains available only for
+  already-bounded single-item summaries. It requires the second TargetSettings
+  envelope to end exactly at the known item end.
+- DamageAction is **not** registered in `BUFF_ABILITY_ACTION_CONSUME_DECODERS`.
+  Multi-action chains therefore still fail before DamageAction until DamageUnit
+  boundaries are proven by stronger evidence.
+
+Final validation after removing chain consumption:
+
+- `python -m py_compile scripts\build_data_index.py`
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_damage_probe_validate_20260702`
+- Compact BuffData comparison against
+  `tmp\game_data_index_current_validate_20260702`:
+  - `h` changed: 0 rows
+  - `t` changed: 0 rows
+  - `di` changed: 0 rows
+  - `di` totals: 289 rows / 600 fields before and after
+  - `ds` changed: 24 rows, solely from the `bestEffortDecodeError` ->
+    `bestEffortDecodeProbeNote` rename no longer being collected as status
+  - `bestEffortDecode*` entries in `ds`: 26 before, 0 after
+
+Next safe DamageAction step is a read-only audit/report, not parser promotion:
+list every DamageAction target-tail candidate pair, selected end offset, next
+byte/header classification, and final chain result. Promote chain consumption
+only if accepted boundaries are proven against the full corpus and cannot be
+caused by false TargetSettings-like bytes inside DamageUnit internals.
+
+### 2026-07-02 DamageAction Target-Tail Audit
+
+Generated audit outputs:
+
+- `tmp/damage_action_target_tail_audit_20260702.json`
+- `tmp/damage_action_target_tail_audit_20260702.md`
+
+Raw duplicate-root scan:
+
+- BuffData: 398 files, 514 `8a 0b` DamageAction tag hits; 510 have the
+  `action_start + 0x18 == 0x20` DamageUnit anchor; 4 reject with `0x0d`.
+- SkillData: 1979 files, 4289 `8a 0b` hits; 4277 have the same anchor; 12
+  reject with `0x0d`.
+- TickInterval wide-tag hits: 24 in duplicate-root BuffData, 60 in
+  duplicate-root SkillData.
+
+The six generated BuffData chain contexts that currently fail first on
+DamageAction are not ready for chain promotion:
+
+- Five character chains each have two plausible target-tail candidate pairs.
+  Some early candidates point at real-looking next action headers, but later
+  candidates also land at plausible body/tail boundaries, so selecting the
+  early one would be heuristic rather than proof.
+- `buff_eny_0113_jzogre_skill05_onground_attack.json` has one DamageAction
+  target-tail candidate ending at `0x39c`, followed by
+  `Core_CameraImpulseAction_CameraImpulseActionData`. This is the only chain
+  where DamageAction disambiguation is currently unique, but the chain still
+  cannot split until CameraImpulse has a typed consumer.
+
+Conclusion: DamageAction chain consumption remains withheld. The next safe
+implementation choices are either a CameraImpulse consumer for the one unique
+post-DamageAction enemy chain, or deeper DamageUnit / HitSoundData / HitEnvData
+recovery to disambiguate the five character chains and the TickInterval family.
+### 2026-07-02 CameraImpulse Deterministic Consumer
+
+Follow-up to the DamageAction target-tail audit. This pass adds typed
+boundary recovery for `Core_CameraImpulseAction_CameraImpulseActionData`
+(`0x0020`, member count 12) without promoting DamageAction chain consumption.
+
+Recovered byte layout:
+
+- common `AbilityActionData` prefix after the union tag/member-count header
+- `_boneNode` MemoryPack string and `_followTarget` bool, matching the
+  MemoryPack setter order in `reports/buff_runtime_metadata.json`
+- `ImpulseDefinitionData` starts immediately after `_followTarget` and must
+  have member count 18
+- the curve/noise string length is read at `impulseStart + 0x40`
+- `TargetSettings` starts at `impulseStart + 0xbb + curveStringLength`
+- two bools immediately before TargetSettings are exposed as
+  `realCameraShake2D` and `releaseWhenActionEnds`
+- `ImpulseDefinitionData` / mount point / position offset internals remain an
+  opaque hashed block, with the curve/noise asset string surfaced as a
+  candidate because its offset is part of the boundary proof
+
+Implementation constraints:
+
+- CameraImpulse is now registered in `BUFF_ABILITY_ACTION_CONSUME_DECODERS`
+  because it computes its own end deterministically from an action-item start.
+- No raw `20 0c` byte hits are accepted as boundaries. The parser only runs
+  when the existing chain walker is already at an action item start.
+- DamageAction remains absent from the consume decoder map. The five ambiguous
+  character DamageAction chains are still blocked on DamageUnit / hit-env
+  structure, not on CameraImpulse.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py`
+- targeted source replay:
+  - four generated Reaper break CameraImpulse singles decode as partial
+    358-byte items and recover `FixedSignal_CamShake_SinY/Z.asset`
+  - the DamageAction-audit enemy follow-up candidate consumes
+    `buff_eny_0113_jzogre_skill05_onground_attack.json` `0x39c..0x50a` and
+    recovers `NoiseSettings_Skill_3D_CosY_noise.asset`
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_cameraimpulse_consume_validate_20260702`
+- Compact BuffData comparison against
+  `tmp\game_data_index_damage_probe_validate_20260702`:
+  - entries: 4616 before / 4616 after
+  - changed `h` rows: 0
+  - changed `t` rows: 0
+  - changed `di` rows: 0
+  - `di` totals: 289 rows / 600 fields before and after
+  - changed `ds` rows: 2, both duplicate roots of
+    `buff_chr_0016_laevat_combo_skill_hit_self.json`
+  - all non-BuffData Json group files are byte-identical to the previous
+    validation output
+
+Recovery impact:
+
+- The duplicated `buff_chr_0016_laevat_combo_skill_hit_self.json` two-action
+  record now splits as typed-chain items: CameraImpulse at `0xf9` (358 bytes)
+  followed by CreateBuff at `0x25f` (165 bytes). Both item boundaries are
+  proven by typed consumption.
+- The unique `buff_eny_0113_jzogre_skill05_onground_attack.json` post-
+  DamageAction CameraImpulse candidate is no longer a blocker by itself, but
+  the chain still cannot be promoted while DamageAction is withheld.
+
+Next safe P2 work: recover enough of `DamageUnit` / `HitSoundData` /
+`HitEnvData` to disambiguate DamageAction boundaries, or switch to
+SelectorData / FindTargetAction because that blocks many more multi-action
+chains. CameraImpulse has no obvious remaining high-confidence improvement
+without the nested `ImpulseDefinitionData` field schema, which is not directly
+present in the current runtime metadata report.
+### 2026-07-02 FindTarget Exact Partial and DamageAction HitEnv Recovery
+
+Follow-up after the CameraImpulse consumer. This pass adds two conservative
+P2 improvements and then stops at the next evidence boundary.
+
+FindTargetAction exact partial decode:
+
+- `Core_FindTargetAction_FindTargetActionData` (`0x009f`, member count 18)
+  now decodes only already-bounded single-item summaries.
+- The decoder validates the union tag, member count, and common
+  `AbilityActionData` prefix, then preserves the remaining selector body as a
+  bounded opaque block with hash, prefix/tail hex, and string hits.
+- It records the IL2CPP field token order (`targetGroupKey`, `center`,
+  `selectorData`, `selectorDirection`, `target`, `contextKey`, etc.) as
+  declared-field evidence only. It does not name serialized fields because the
+  current metadata report does not expose a MemoryPack wrapper setter order for
+  this type.
+- FindTargetAction is deliberately **not** in
+  `BUFF_ABILITY_ACTION_CONSUME_DECODERS`. Multi-action chains still fail closed
+  on FindTargetAction until SelectorData can determine its own end without
+  next-header or size-whitelist guessing.
+
+Observed exact single-item FindTarget sizes per duplicate root: 89, 90, 191,
+272, and 292 bytes. Examples include `main`, `tar`, `thunderTar`,
+`thunderTarDmg`, and `ballPos` string slots inside the opaque selector body.
+
+DamageAction HitEnvData boundary recovery:
+
+- DamageAction candidate selection now requires the byte span between
+  `effectSource` and `targetSettings` to parse exactly as a bounded
+  `HitEnvData + hitEnvironment` block:
+  - member count 4
+  - fixed prefix `00 00 00 00 00 00 00 00 00 01 02 03 00`
+  - two BlackboardFloat-like fields
+  - one trailing hitEnvironment bool
+- This disambiguates the previous target-tail candidates without parsing the
+  32-member DamageUnit internals.
+- DamageAction is now registered in the strict chain consumer map, but only the
+  bounded prefix, counted opaque DamageUnit list, effectSource TargetSettings,
+  validated HitEnvData/hitEnvironment, and targetSettings are exposed.
+- DamageUnit `HitSoundData`, `effectData`, and cost/effect subblocks remain
+  opaque because their internal boundaries are not proven.
+
+Targeted source replay after this change:
+
+- `buff_chr_0026_lastrite_normal_skill_phantom_main.json` record 8 now splits
+  as DamageAction (`0x1a34`, 714 bytes) followed by EffectAction (`0x1cfe`,
+  521 bytes). The hit-env block is 42 bytes with `env_dmg=15.0`.
+- `buff_eny_0113_jzogre_skill05_onground_attack.json` record 0 now splits as
+  DamageAction (`0x131`, 619 bytes) followed by CameraImpulse (`0x39c`, 366
+  bytes). The CameraImpulse parser recovers
+  `NoiseSettings_Skill_3D_CosY_noise.asset`.
+- Other previously ambiguous DamageAction chains now advance to later blockers
+  (`HitStop`, `FinishBuffAdvanced`, `CheckBuffStackNumAdvanced`, or unknown
+  union tags such as `0x0097`) rather than failing on target-tail ambiguity.
+
+Final validation commands:
+
+- `python -m py_compile scripts\build_data_index.py`
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_findtarget_exact_validate_20260702`
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_damage_hit_env_validate_20260702`
+
+Final compact validation against the prior step:
+
+- entries: 4616 before / 4616 after
+- changed `h` rows: 0
+- changed `t` rows: 0
+- changed `di` rows: 0
+- `di` totals: 289 rows / 600 fields before and after
+- changed `ds` rows after DamageAction hit-env: 2, both duplicate roots of
+  `buff_eny_0113_jzogre_skill05_onground_attack.json`
+- no typed decoder failures
+- only `Json_BuffData.json` changed among Json group outputs
+
+Final BuffData action split counts across duplicate roots:
+
+- `typed-chain-items`: 28
+- `single-item`: 526
+- `ambiguous-union-tag-boundaries`: 108
+- `empty`: 14
+
+Final decoded item type counts include 286 EffectAction, 24 PlaySound, 20
+FindTargetAction exact partials, 18 CreateBuff, 16 SendBattleSignalToLevel, 12
+CameraImpulse, 12 CompareFloat, 8 ConvertToTargetContext, and 4 DamageAction.
+
+Remaining blockers are now structural, not cheap parser gaps:
+
+- FindTargetAction / SelectorData still blocks 30 duplicated-root chains as a
+  first item, plus 10 more behind GetAITransData. It needs real SelectorData
+  end recovery before a chain consumer is safe.
+- CheckBuffStackNumAdvanced still needs recursive tag-query/buffSettings
+  structure.
+- HitStop, FinishBuffAdvanced, SpawnEnemy, SpawnAbilityEntity, Aura,
+  LaunchProjectile, Conditions_CheckBuffStackNum, and unknown union tags
+  (`0x0056`, `0x0075`, `0x007a`, `0x0086`, `0x0097`) remain fail-closed until
+  separate evidence proves their layouts.
+- Full DamageUnit / HitSoundData / effect/cost subblocks remain opaque; the
+  current safe recovery only proves the DamageAction tail after DamageUnit.
