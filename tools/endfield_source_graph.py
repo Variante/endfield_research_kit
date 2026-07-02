@@ -230,6 +230,12 @@ WORLD_HARVESTABLE_TABLES = (
     "FertilizeDataTable.json",
     "FertilizeIncreaseTable.json",
 )
+DOMAIN_CORE_TABLES = (
+    "DomainDataTable.json",
+    "SettlementBasicDataTable.json",
+    "DomainDegreeSourceTable.json",
+    "MissionTypeInfoTable.json",
+)
 DOMAIN_DEPOT_TABLES = (
     "DomainDepotTable.json",
     "DomainDepotBuyerTable.json",
@@ -3082,6 +3088,8 @@ class SourceGraphBuilder:
             self.commit_step("cashShop")
             self.ingest_world_semantics()
             self.commit_step("worldSemantics")
+            self.ingest_domain_core_semantics()
+            self.commit_step("domainCoreSemantics")
             self.ingest_domain_depot_semantics()
             self.commit_step("domainDepotSemantics")
             self.ingest_condition_semantics()
@@ -9740,6 +9748,210 @@ class SourceGraphBuilder:
                 )
                 self.add_edge(table_node, row_node, "has_row", source="structured/item_economy")
                 self.add_item_economy_row_edges(table_key, row_key, row, row_node)
+
+    def ingest_domain_core_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_domain_core", name="Structured domain, settlement, and mission-type core tables", path=slash(table_root))
+        for table_name in DOMAIN_CORE_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/domain_core")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/domain_core")
+                self.add_domain_core_row_edges(table, str(row_key), row, row_node)
+
+    def add_domain_core_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node(kind, key, name=name, source=source, data=data)
+
+    def add_shop_group_node(self, group_id: Any, *, source: str = "", data: Any = None) -> str:
+        group_key = safe_key(group_id)
+        if not group_key:
+            return ""
+        node = self.add_node("shop_group", group_key, name=group_key, source=source, data=data)
+        self.add_alias(group_key, node, kind="shop_group_id", source=source)
+        return node
+
+    def add_settlement_node(self, settlement_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_domain_core_node("settlement", settlement_id, name=name, source=source, data=data)
+
+    def add_domain_asset_aliases(self, owner_node: str, row: dict[str, Any], fields: Iterable[str], *, source: str) -> None:
+        for field in fields:
+            self.add_alias(row.get(field), owner_node, kind="asset_stem", source=source)
+
+    def add_domain_data_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        domain_id = row.get("domainId") or row_key
+        domain_node = self.add_gameplay_domain_node(domain_id, source=table)
+        if not domain_node:
+            return
+        self.update_node_details(
+            domain_node,
+            name=table_display_text(row.get("domainName")) or safe_key(domain_id),
+            source=table,
+            data={
+                "domainId": domain_id,
+                "domainMap": row.get("domainMap"),
+                "sortId": row.get("sortId"),
+                "domainColor": row.get("domainColor"),
+                "domainShopGroupId": row.get("domainShopGroupId"),
+                "facTechPackageId": row.get("facTechPackageId"),
+                "levelCount": len(row.get("levelGroup") or []),
+                "settlementCount": len(row.get("settlementGroup") or []),
+                "developmentLevelCount": len(row.get("domainDevelopmentLevel") or []),
+            },
+        )
+        self.add_edge(row_node, domain_node, "defines_domain", source=table)
+        self.add_tag_i18n_edges(domain_node, row.get("domainName"), source=table, edge_kind="domain_name_text")
+        self.add_tag_i18n_edges(domain_node, row.get("storageName"), source=table, edge_kind="domain_storage_name_text")
+        map_node = self.add_map_node(row.get("domainMap"), source=table)
+        if map_node:
+            self.add_edge(domain_node, map_node, "domain_uses_map", source=table, evidence="domainMap")
+        shop_group = self.add_shop_group_node(row.get("domainShopGroupId"), source=table)
+        if shop_group:
+            self.add_edge(domain_node, shop_group, "domain_shop_group", source=table, evidence="domainShopGroupId")
+        tech_group = self.add_factory_tech_group_node(row.get("facTechPackageId"), source=table)
+        if tech_group:
+            self.add_edge(domain_node, tech_group, "domain_factory_tech_package", source=table, evidence="facTechPackageId")
+        money_item = self.add_item_node(row.get("domainGoldItemId"), source=table)
+        if money_item:
+            self.add_edge(domain_node, money_item, "domain_money_item", source=table, evidence="domainGoldItemId")
+        self.add_domain_asset_aliases(domain_node, row, ("domainIcon", "domainPic", "domainDeco", "domainDevelopmentDeco", "domainBlackboxIcon", "domainBlackboxPic"), source=table)
+        for field in ("audKeySwitchRegionPopup", "audKeyUpToastLevelUpAfterEnhance", "audKeyUpToastLevelUpMoment", "audKeyUpToastLevelUpPreEnhance", "audKeyUpToastNotLevelUpEnhance"):
+            self.add_audio_target_edge(domain_node, row.get(field), edge_kind="domain_ui_audio", source=table, evidence=field)
+        for index, level_id in enumerate(row.get("levelGroup") or []):
+            level_node = self.add_level_node(level_id, source=table)
+            if level_node:
+                self.add_edge(domain_node, level_node, "domain_has_level", source=table, evidence=f"levelGroup[{index}]", data={"index": index})
+                self.add_level_map_edge(level_node, level_id, source=table, evidence="domain.levelGroup")
+        for index, settlement_id in enumerate(row.get("settlementGroup") or []):
+            settlement_node = self.add_settlement_node(settlement_id, source=table)
+            if settlement_node:
+                self.add_edge(domain_node, settlement_node, "domain_has_settlement", source=table, evidence=f"settlementGroup[{index}]", data={"index": index})
+        for index, poi_type in enumerate(row.get("domainPoiTypeGroup") or []):
+            poi_node = self.add_semantic_node("domain_poi_type", poi_type, source=table)
+            if poi_node:
+                self.add_edge(domain_node, poi_node, "domain_has_poi_type", source=table, evidence=f"domainPoiTypeGroup[{index}]", data={"index": index})
+        for index, mode_type in enumerate(row.get("machineModeTypeGroup") or []):
+            mode_node = self.add_domain_core_node("domain_machine_mode_type", mode_type, source=table)
+            if mode_node:
+                self.add_edge(domain_node, mode_node, "domain_has_machine_mode_type", source=table, evidence=f"machineModeTypeGroup[{index}]", data={"index": index})
+        for index, kite_id in enumerate(row.get("domainKiteStationIds") or []):
+            kite_node = self.add_kite_station_node(kite_id, source=table)
+            if kite_node:
+                self.add_edge(domain_node, kite_node, "domain_has_kite_station", source=table, evidence=f"domainKiteStationIds[{index}]", data={"index": index})
+        for index, level_row in enumerate(row.get("domainDevelopmentLevel") or []):
+            if isinstance(level_row, dict):
+                self.add_domain_development_level_edges(domain_node, domain_id, level_row, index, source=table)
+
+    def add_domain_development_level_edges(self, domain_node: str, domain_id: Any, level_row: dict[str, Any], index: int, *, source: str) -> None:
+        dev_level = level_row.get("domainDevelopmentLevel")
+        level_key = f"{safe_key(domain_id)}:{safe_key(dev_level)}"
+        level_node = self.add_domain_core_node("domain_development_level", level_key, source=source, data={"domainId": domain_id, "domainDevelopmentLevel": dev_level, "levelUpExp": level_row.get("levelUpExp"), "moneyLimit": level_row.get("moneyLimit"), "rewardId": level_row.get("rewardId"), "versionStart": level_row.get("versionStart"), "effectCount": len(level_row.get("domainDevelopmentLevelEffect") or {})})
+        if not level_node:
+            return
+        self.add_edge(domain_node, level_node, "domain_has_development_level", source=source, evidence=f"domainDevelopmentLevel[{index}]", data={"index": index, "level": dev_level})
+        self.add_reward_ref_edge(level_node, level_row.get("rewardId"), edge_kind="domain_development_level_reward", source=source, evidence="rewardId")
+        effects = level_row.get("domainDevelopmentLevelEffect") if isinstance(level_row.get("domainDevelopmentLevelEffect"), dict) else {}
+        for effect_key, effect in effects.items():
+            if not isinstance(effect, dict):
+                continue
+            level_id = effect.get("levelId") or effect_key
+            effect_node = self.add_domain_core_node("domain_level_effect", f"{level_key}:{safe_key(level_id)}", source=source, data={"domainId": domain_id, "domainDevelopmentLevel": dev_level, "levelId": level_id, "bandwidth": effect.get("bandwidth"), "battleBuildingLimit": effect.get("battleBuildingLimit"), "travelPoleLimit": effect.get("travelPoleLimit"), "isMineOutputUp": effect.get("isMineOutputUp"), "sortId": effect.get("sortId")})
+            if effect_node:
+                self.add_edge(level_node, effect_node, "domain_development_level_has_effect", source=source, evidence=f"domainDevelopmentLevelEffect.{effect_key}")
+                target_level = self.add_level_node(level_id, source=source)
+                if target_level:
+                    self.add_edge(effect_node, target_level, "domain_level_effect_applies_to_level", source=source, evidence="levelId")
+                    self.add_level_map_edge(target_level, level_id, source=source, evidence="domainDevelopmentLevelEffect")
+
+    def add_settlement_basic_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        settlement_id = row.get("settlementId") or row_key
+        settlement_node = self.add_settlement_node(settlement_id, name=row.get("settlementName"), source=table, data={"settlementId": settlement_id, "domainId": row.get("domainId"), "domainLevelId": row.get("domainLevelId"), "facRegionIndex": row.get("facRegionIndex"), "settlementColor": row.get("settlementColor"), "levelCount": len(row.get("settlementLevelMap") or {}), "wantTagCount": len(row.get("wantTagIdGroup") or [])})
+        if not settlement_node:
+            return
+        self.add_edge(row_node, settlement_node, "defines_settlement", source=table)
+        self.add_tag_i18n_edges(settlement_node, row.get("settlementName"), source=table, edge_kind="settlement_name_text")
+        domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
+        if domain_node:
+            self.add_edge(settlement_node, domain_node, "settlement_in_domain", source=table, evidence="domainId")
+        level_node = self.add_level_node(row.get("domainLevelId"), source=table)
+        if level_node:
+            self.add_edge(settlement_node, level_node, "settlement_in_level", source=table, evidence="domainLevelId")
+            self.add_level_map_edge(level_node, row.get("domainLevelId"), source=table, evidence="domainLevelId")
+        poi_node = self.add_node("settlement_poi", settlement_id, name=settlement_id, source=table)
+        self.add_alias(settlement_id, poi_node, kind="settlement_poi_id", source=table)
+        self.add_edge(settlement_node, poi_node, "settlement_has_poi", source=table, evidence="settlementId")
+        for index, tag_id in enumerate(row.get("wantTagIdGroup") or []):
+            tag_node = self.add_tag_node(tag_id, source=table)
+            if tag_node:
+                self.add_edge(settlement_node, tag_node, "settlement_wants_tag", source=table, evidence=f"wantTagIdGroup[{index}]", data={"index": index})
+        level_map = row.get("settlementLevelMap") if isinstance(row.get("settlementLevelMap"), dict) else {}
+        for level_key, level in level_map.items():
+            if isinstance(level, dict):
+                self.add_settlement_level_edges(settlement_node, settlement_id, level_key, level, source=table)
+
+    def add_settlement_level_edges(self, settlement_node: str, settlement_id: Any, level_key: Any, level: dict[str, Any], *, source: str) -> None:
+        node_key = f"{safe_key(settlement_id)}:{safe_key(level_key)}"
+        level_node = self.add_domain_core_node("settlement_level", node_key, source=source, data={"settlementId": settlement_id, "level": level_key, "levelUpExp": level.get("levelUpExp"), "moneyMax": level.get("moneyMax"), "moneyPeriod": level.get("moneyPeriod"), "bandwidth": level.get("bandwidth"), "battleBuildingLimit": level.get("battleBuildingLimit"), "travelPoleLimit": level.get("travelPoleLimit"), "upgradeMissionId": level.get("upgradeMissionId"), "recoItemId": level.get("recoItemId"), "settlementPicId": level.get("settlementPicId"), "tradeItemCount": len(level.get("settlementTradeItemMap") or {})})
+        if not level_node:
+            return
+        self.add_edge(settlement_node, level_node, "settlement_has_level", source=source, evidence=f"settlementLevelMap.{level_key}", data={"level": level_key})
+        self.add_tag_i18n_edges(level_node, level.get("desc"), source=source, edge_kind="settlement_level_desc_text")
+        self.add_alias(level.get("settlementPicId"), level_node, kind="asset_stem", source=source)
+        reco_item = self.add_item_node(level.get("recoItemId"), source=source)
+        if reco_item:
+            self.add_edge(level_node, reco_item, "settlement_level_recommended_item", source=source, evidence="recoItemId")
+        mission_node = self.add_mission_ref_node(level.get("upgradeMissionId"), source=source)
+        if mission_node:
+            self.add_edge(level_node, mission_node, "settlement_level_upgrade_mission", source=source, evidence="upgradeMissionId")
+        trade_map = level.get("settlementTradeItemMap") if isinstance(level.get("settlementTradeItemMap"), dict) else {}
+        for trade_key, trade in trade_map.items():
+            if isinstance(trade, dict):
+                self.add_settlement_trade_item_edges(level_node, settlement_id, level_key, trade_key, trade, source=source)
+
+    def add_settlement_trade_item_edges(self, level_node: str, settlement_id: Any, level_key: Any, trade_key: Any, trade: dict[str, Any], *, source: str) -> None:
+        item_id = trade.get("itemId") or trade_key
+        node_key = f"{safe_key(settlement_id)}:{safe_key(level_key)}:{safe_key(item_id)}"
+        trade_node = self.add_domain_core_node("settlement_trade_item", node_key, source=source, data={"settlementId": settlement_id, "level": level_key, "itemId": item_id, "activityId": trade.get("activityId"), "rewardMoneyCount": trade.get("rewardMoneyCount"), "stmExp": trade.get("stmExp"), "timeId": trade.get("timeId"), "versionStart": trade.get("versionStart")})
+        if not trade_node:
+            return
+        self.add_edge(level_node, trade_node, "settlement_level_has_trade_item", source=source, evidence=f"settlementTradeItemMap.{trade_key}")
+        item_node = self.add_item_node(item_id, source=source)
+        if item_node:
+            self.add_edge(trade_node, item_node, "settlement_trade_item", source=source, evidence="itemId", data={"rewardMoneyCount": trade.get("rewardMoneyCount"), "stmExp": trade.get("stmExp")})
+        activity_node = self.add_activity_node(trade.get("activityId"), source=source)
+        if activity_node:
+            self.add_edge(trade_node, activity_node, "settlement_trade_item_activity", source=source, evidence="activityId")
+
+    def add_domain_degree_source_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        source_type = row.get("sourceType") if row.get("sourceType") is not None else row_key
+        source_node = self.add_domain_core_node("domain_degree_source", source_type, name=row.get("sourceName"), source=table, data={"sourceType": source_type})
+        if source_node:
+            self.add_edge(row_node, source_node, "defines_domain_degree_source", source=table)
+            self.add_tag_i18n_edges(source_node, row.get("sourceName"), source=table, edge_kind="domain_degree_source_name_text")
+
+    def add_mission_type_info_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        mission_type = self.add_domain_core_node("mission_type_info", row_key, source=table, data={"missionType": row_key, "missionViewType": row.get("missionViewType"), "typePriority": row.get("typePriority"), "isVisible": row.get("isVisible")})
+        if mission_type:
+            self.add_edge(row_node, mission_type, "defines_mission_type_info", source=table)
+            view_type = self.add_domain_core_node("mission_view_type", row.get("missionViewType"), source=table)
+            if view_type:
+                self.add_edge(mission_type, view_type, "mission_type_uses_view_type", source=table, evidence="missionViewType")
+
+    def add_domain_core_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "DomainDataTable" and isinstance(row, dict):
+            self.add_domain_data_edges(table, row_key, row, row_node)
+        elif table == "SettlementBasicDataTable" and isinstance(row, dict):
+            self.add_settlement_basic_edges(table, row_key, row, row_node)
+        elif table == "DomainDegreeSourceTable" and isinstance(row, dict):
+            self.add_domain_degree_source_edges(table, row_key, row, row_node)
+        elif table == "MissionTypeInfoTable" and isinstance(row, dict):
+            self.add_mission_type_info_edges(table, row_key, row, row_node)
 
     def ingest_domain_depot_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -21031,6 +21243,15 @@ QUERY_KIND_PRIORITY = {
     "soil_reward": 19.05,
     "fertilize_item": 19.06,
     "fertilize_effect": 19.07,
+    "domain_development_level": 19.071,
+    "domain_level_effect": 19.072,
+    "domain_machine_mode_type": 19.073,
+    "domain_degree_source": 19.074,
+    "mission_type_info": 19.075,
+    "mission_view_type": 19.076,
+    "settlement": 19.077,
+    "settlement_level": 19.078,
+    "settlement_trade_item": 19.079,
     "domain_depot": 19.08,
     "domain_depot_buyer": 19.09,
     "domain_depot_deliver_target": 19.1,
@@ -21675,6 +21896,15 @@ NODE_ID_PREFIXES = (
     "soil_reward",
     "fertilize_item",
     "fertilize_effect",
+    "domain_development_level",
+    "domain_level_effect",
+    "domain_machine_mode_type",
+    "domain_degree_source",
+    "mission_type_info",
+    "mission_view_type",
+    "settlement",
+    "settlement_level",
+    "settlement_trade_item",
     "domain_depot",
     "domain_depot_buyer",
     "domain_depot_deliver_target",
