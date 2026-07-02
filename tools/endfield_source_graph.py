@@ -626,6 +626,17 @@ SPACESHIP_SEMANTIC_TABLES = (
     "SpaceshipGuestRoomLvTable.json",
     "SpaceshipGuestRoomClueLvTable.json",
     "SpaceshipEmptyRoomTable.json",
+    "SpaceshipGrowCabinBoxIdToUnlockLevelTable.json",
+    "SpaceshipShowcaseItemTable.json",
+    "SpaceshipShowcaseTable.json",
+    "SpaceshipShowcaseBySortIdTable.json",
+    "SpaceshipBuildTypeTable.json",
+    "SpaceshipGrowCabinFormulaShowingTypeTable.json",
+    "SpaceshipCreditTable.json",
+    "SpaceshipClueGoodsPriceConvertDataTable.json",
+    "SpaceshipCharRelationNeedMap.json",
+    "SpaceshipCharRelationLevelTable.json",
+    "SpaceshipCharGiftGainRatio.json",
 )
 FACTORY_TECH_TABLES = (
     "FacSTTGroupTable.json",
@@ -15566,9 +15577,96 @@ class SourceGraphBuilder:
             self.add_edge(clue_node, attr_node, "spaceship_clue_uses_room_attr", source=table, evidence="roomAttrType")
         self.add_i18n_text_edges(clue_node, row, source=table)
 
+    def add_spaceship_semantic_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node(kind, key, name=name, source=source, data=data)
+
+    def add_spaceship_showcase_item_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        item_id = row.get("id") or row_key
+        showcase_item = self.add_spaceship_semantic_node("spaceship_showcase_item", item_id, source=table, data={"resPath": row.get("resPath"), "tagCount": len(row.get("tagIds") or [])})
+        if not showcase_item:
+            return
+        self.add_edge(row_node, showcase_item, "defines_spaceship_showcase_item", source=table)
+        item_node = self.add_item_node(item_id, source=table)
+        if item_node:
+            self.add_edge(showcase_item, item_node, "spaceship_showcase_item_object", source=table, evidence="id")
+        self.add_alias(row.get("resPath"), showcase_item, kind="asset_stem", source=table)
+        for index, tag_id in enumerate(row.get("tagIds") or []):
+            tag_node = self.add_tag_node(tag_id, source=table)
+            if tag_node:
+                self.add_edge(showcase_item, tag_node, "spaceship_showcase_item_tag", source=table, evidence=f"tagIds[{index}]", data={"index": index})
+
+    def add_spaceship_showcase_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        showcase_id = row.get("id") or row_key
+        showcase = self.add_spaceship_semantic_node("spaceship_showcase", showcase_id, name=row.get("name"), source=table, data={"sortId": row.get("sortId")})
+        if not showcase:
+            return
+        self.add_edge(row_node, showcase, "defines_spaceship_showcase", source=table)
+        if table == "SpaceshipShowcaseBySortIdTable":
+            sort_node = self.add_spaceship_semantic_node("spaceship_showcase_sort", row_key, source=table, data={"sortId": row_key, "showcaseId": showcase_id})
+            if sort_node:
+                self.add_edge(sort_node, showcase, "spaceship_showcase_sort_refs_showcase", source=table, evidence="id")
+                self.add_edge(row_node, sort_node, "defines_spaceship_showcase_sort", source=table)
+        self.add_tag_i18n_edges(showcase, row.get("name"), source=table, edge_kind="spaceship_showcase_name_text")
+
+    def add_spaceship_build_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        group = self.add_spaceship_semantic_node("spaceship_build_type_group", row_key, source=table, data={"typeCount": len(row.get("typeList") or [])})
+        if not group:
+            return
+        self.add_edge(row_node, group, "defines_spaceship_build_type_group", source=table)
+        for index, item in enumerate(row.get("typeList") or []):
+            if not isinstance(item, dict):
+                continue
+            type_node = self.add_spaceship_semantic_node("spaceship_build_type", item.get("type"), source=table)
+            if type_node:
+                self.add_edge(group, type_node, "spaceship_build_type_group_has_type", source=table, evidence=f"typeList[{index}]", data={"index": index})
+
+    def add_spaceship_grow_cabin_unlock_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        unlock = self.add_spaceship_semantic_node("spaceship_grow_cabin_box_unlock", row_key, source=table, data={"boxId": row_key, "unlockLevel": row})
+        if unlock:
+            self.add_edge(row_node, unlock, "defines_spaceship_grow_cabin_box_unlock", source=table)
+            level_node = self.add_spaceship_room_level_node(row, source=table)
+            if level_node:
+                self.add_edge(unlock, level_node, "spaceship_grow_cabin_box_unlock_level", source=table, evidence="rowValue")
+
+    def add_spaceship_formula_showing_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        type_id = row.get("type") if row.get("type") is not None else row_key
+        showing = self.add_spaceship_semantic_node("spaceship_formula_showing_type", type_id, name=row.get("name"), source=table, data={"icon": row.get("icon")})
+        if showing:
+            self.add_edge(row_node, showing, "defines_spaceship_formula_showing_type", source=table)
+            self.add_tag_i18n_edges(showing, row.get("name"), source=table, edge_kind="spaceship_formula_showing_type_name_text")
+            self.add_alias(row.get("icon"), showing, kind="asset_stem", source=table)
+
+    def add_spaceship_credit_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        credit = self.add_spaceship_semantic_node("spaceship_credit_tier", row.get("id") if row.get("id") is not None else row_key, source=table, data={"totalPrice": row.get("totalPrice"), "creditRewardCnt": row.get("creditRewardCnt")})
+        if credit:
+            self.add_edge(row_node, credit, "defines_spaceship_credit_tier", source=table)
+
+    def add_spaceship_relation_need_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        need = self.add_spaceship_semantic_node("spaceship_relation_need", row_key, source=table, data={"relationLevel": row_key, "favorabilityRequired": row})
+        if need:
+            self.add_edge(row_node, need, "defines_spaceship_relation_need", source=table)
+
+    def add_spaceship_relation_level_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        level = row.get("relationLevel") if row.get("relationLevel") is not None else row_key
+        relation = self.add_spaceship_semantic_node("spaceship_relation_level", level, source=table, data={"favorability": row.get("favorability")})
+        if relation:
+            self.add_edge(row_node, relation, "defines_spaceship_relation_level", source=table)
+            self.add_tag_i18n_edges(relation, row.get("favorDesc"), source=table, edge_kind="spaceship_relation_level_desc_text")
+
+    def add_spaceship_gift_gain_ratio_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        ratio = self.add_spaceship_semantic_node("spaceship_gift_gain_ratio", row.get("id") if row.get("id") is not None else row_key, source=table, data={"gainRatio": row.get("gainRatio"), "maxLimit": row.get("maxLimit")})
+        if ratio:
+            self.add_edge(row_node, ratio, "defines_spaceship_gift_gain_ratio", source=table)
+
     def add_spaceship_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if table in {"SpaceShipNpc2Char", "SpaceShipFriendNpc2Char"}:
             self.add_spaceship_proxy_edges(table, row_key, row, row_node)
+            return
+        if table == "SpaceshipGrowCabinBoxIdToUnlockLevelTable":
+            self.add_spaceship_grow_cabin_unlock_edges(table, row_key, row, row_node)
+            return
+        if table == "SpaceshipCharRelationNeedMap":
+            self.add_spaceship_relation_need_edges(table, row_key, row, row_node)
             return
         if not isinstance(row, dict):
             return
@@ -15604,6 +15702,20 @@ class SourceGraphBuilder:
             self.add_spaceship_grow_reverse_edges(table, row_key, row, row_node)
         elif table in {"SpaceshipClueDataTable", "SpaceshipClueDataIndex2IdTable"}:
             self.add_spaceship_clue_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipShowcaseItemTable":
+            self.add_spaceship_showcase_item_edges(table, row_key, row, row_node)
+        elif table in {"SpaceshipShowcaseTable", "SpaceshipShowcaseBySortIdTable"}:
+            self.add_spaceship_showcase_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipBuildTypeTable":
+            self.add_spaceship_build_type_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipGrowCabinFormulaShowingTypeTable":
+            self.add_spaceship_formula_showing_type_edges(table, row_key, row, row_node)
+        elif table in {"SpaceshipCreditTable", "SpaceshipClueGoodsPriceConvertDataTable"}:
+            self.add_spaceship_credit_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipCharRelationLevelTable":
+            self.add_spaceship_relation_level_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipCharGiftGainRatio":
+            self.add_spaceship_gift_gain_ratio_edges(table, row_key, row, row_node)
 
     def ingest_factory_tech_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -21127,6 +21239,17 @@ QUERY_KIND_PRIORITY = {
     "spaceship_empty_room": 40,
     "spaceship_formula": 41,
     "spaceship_clue": 42,
+    "spaceship_showcase_item": 42.01,
+    "spaceship_showcase": 42.02,
+    "spaceship_showcase_sort": 42.03,
+    "spaceship_build_type_group": 42.04,
+    "spaceship_build_type": 42.05,
+    "spaceship_grow_cabin_box_unlock": 42.06,
+    "spaceship_formula_showing_type": 42.07,
+    "spaceship_credit_tier": 42.08,
+    "spaceship_relation_need": 42.09,
+    "spaceship_relation_level": 42.1,
+    "spaceship_gift_gain_ratio": 42.11,
     "env_talk": 43,
     "i18n_text": 44,
     "system_jump": 45,
@@ -21760,6 +21883,17 @@ NODE_ID_PREFIXES = (
     "spaceship_empty_room",
     "spaceship_formula",
     "spaceship_clue",
+    "spaceship_showcase_item",
+    "spaceship_showcase",
+    "spaceship_showcase_sort",
+    "spaceship_build_type_group",
+    "spaceship_build_type",
+    "spaceship_grow_cabin_box_unlock",
+    "spaceship_formula_showing_type",
+    "spaceship_credit_tier",
+    "spaceship_relation_need",
+    "spaceship_relation_level",
+    "spaceship_gift_gain_ratio",
     "env_talk",
     "i18n_text",
     "system_jump",
