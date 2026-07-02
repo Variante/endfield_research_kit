@@ -476,6 +476,45 @@ FACTORY_TECH_TABLES = (
     "FactoryManualCraftFormulaUnlockTable.json",
     "FactoryManualCraftUpgradeTable.json",
 )
+FACTORY_LOGISTICS_TABLES = (
+    "FactoryMachineCraftGroupTable.json",
+    "FactoryIngredientTagTable.json",
+    "FactoryMachineId2tagIdsTable.json",
+    "FactoryResourceItemId2MachineIdTable.json",
+    "FactoryResourceItemId2TagIdTable.json",
+    "FactoryItem2LogisticIdTable.json",
+    "FactoryGridBeltTable.json",
+    "FactoryLiquidPipeTable.json",
+    "FactoryGridConnecterTable.json",
+    "FactoryGridRouterTable.json",
+    "FactoryLiquidConnectorTable.json",
+    "FactoryLiquidRouterTable.json",
+    "FactoryBoxValveTable.json",
+    "FactoryFluidValveTable.json",
+    "FactoryFreeBusTable.json",
+    "FactoryBusStructureTable.json",
+    "FactoryPanelStoreTable.json",
+    "FacPanelStoreActionDescTable.json",
+    "FacPanelStoreConditionDescTable.json",
+    "FactoryBuildingPanelLock.json",
+    "FactoryBlueprintTagTable.json",
+    "FactoryBlueprintTagTypeTable.json",
+    "FactorySystemBlueprintMetaTable.json",
+    "FactoryRegionTable.json",
+    "FactoryMainRegionTable.json",
+)
+FACTORY_LOGISTIC_UNIT_TABLES = {
+    "FactoryGridBeltTable",
+    "FactoryLiquidPipeTable",
+    "FactoryGridConnecterTable",
+    "FactoryGridRouterTable",
+    "FactoryLiquidConnectorTable",
+    "FactoryLiquidRouterTable",
+    "FactoryBoxValveTable",
+    "FactoryFluidValveTable",
+    "FactoryFreeBusTable",
+    "FactoryBusStructureTable",
+}
 PRTS_ARCHIVE_TABLES = (
     "RichContentTable.json",
     "PrtsPage.json",
@@ -2851,6 +2890,8 @@ class SourceGraphBuilder:
             self.commit_step("spaceshipSemantics")
             self.ingest_factory_tech_semantics()
             self.commit_step("factoryTech")
+            self.ingest_factory_logistics_semantics()
+            self.commit_step("factoryLogistics")
             self.ingest_prts_archive_semantics()
             self.commit_step("prtsArchive")
             self.ingest_activity_achievement_semantics()
@@ -13811,6 +13852,298 @@ class SourceGraphBuilder:
         elif table == "FactoryManualCraftUpgradeTable":
             self.add_manual_craft_upgrade_edges(table, row_key, row, row_node)
 
+    def ingest_factory_logistics_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_factory_logistics", name="Structured factory logistics and capability tables", path=slash(table_root))
+        for table_name in FACTORY_LOGISTICS_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/factory_logistics")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/factory_logistics")
+                self.add_factory_logistics_row_edges(table, row_key, row, row_node)
+
+    def add_factory_craft_group_node(self, group_id: Any, *, source: str = "", data: Any = None) -> str:
+        group_key = safe_key(group_id)
+        if not group_key:
+            return ""
+        node = self.add_node("factory_craft_group", group_key, name=group_key, source=source, data=data)
+        self.add_alias(group_key, node, kind="factory_craft_group_id", source=source)
+        return node
+
+    def add_factory_recipe_node(self, recipe_id: Any, *, source: str = "") -> str:
+        recipe_key = safe_key(recipe_id)
+        if not recipe_key:
+            return ""
+        node = self.add_node("factory_recipe", recipe_key, name=recipe_key, source=source)
+        self.add_alias(recipe_key, node, kind="factory_recipe_id", source=source)
+        return node
+
+    def add_factory_ingredient_tag_node(self, tag_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        tag_key = safe_key(tag_id)
+        if not tag_key:
+            return ""
+        tag_name = table_display_text(name) or tag_key
+        node = self.add_node("factory_ingredient_tag", tag_key, name=tag_name, source=source, data=data)
+        self.add_alias(tag_key, node, kind="factory_ingredient_tag_id", source=source)
+        if tag_name != tag_key:
+            self.add_alias(tag_name, node, kind="factory_ingredient_tag_name", source=source)
+        return node
+
+    def add_factory_logistic_unit_node(self, unit_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        unit_key = safe_key(unit_id)
+        if not unit_key:
+            return ""
+        unit_name = table_display_text(name) or unit_key
+        node = self.add_node("factory_logistic_unit", unit_key, name=unit_name, source=source, data=data)
+        self.add_alias(unit_key, node, kind="factory_logistic_unit_id", source=source)
+        if unit_name != unit_key:
+            self.add_alias(unit_name, node, kind="factory_logistic_unit_name", source=source)
+        return node
+
+    def add_factory_blueprint_tag_node(self, tag_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node("factory_blueprint_tag", tag_id, name=name, source=source, data=data)
+
+    def add_factory_blueprint_tag_type_node(self, type_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node("factory_blueprint_tag_type", type_id, name=name, source=source, data=data)
+
+    def add_factory_panel_store_action_node(self, action_type: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node("factory_panel_store_action", action_type, name=name, source=source, data=data)
+
+    def add_factory_panel_store_condition_node(self, condition_type: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node("factory_panel_store_condition", condition_type, name=name, source=source, data=data)
+
+    def factory_logistic_unit_payload(self, row: dict[str, Any]) -> tuple[Any, dict[str, Any]]:
+        for field in ("gridUnitData", "liquidUnitData", "beltData", "pipeData"):
+            payload = row.get(field)
+            if isinstance(payload, dict):
+                return payload, payload
+        return {}, {}
+
+    def add_factory_logistic_unit_renderer_edges(self, unit_node: str, row: dict[str, Any], *, source: str) -> None:
+        default_template = self.add_factory_renderer_template_node(row.get("defaultRendererTemplate"), source=source)
+        if default_template:
+            self.add_edge(unit_node, default_template, "factory_logistic_unit_default_renderer_template", source=source, evidence="defaultRendererTemplate")
+        renderer_map = row.get("rendererTemplateMap")
+        if isinstance(renderer_map, dict):
+            for template_key, template in renderer_map.items():
+                template_node = self.add_factory_renderer_template_node(template_key, source=source, data=compact_payload(template, depth=2))
+                if template_node:
+                    self.add_edge(unit_node, template_node, "factory_logistic_unit_uses_renderer_template", source=source, evidence=f"rendererTemplateMap[{template_key}]")
+
+    def add_factory_logistic_unit_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        unit_data, _ = self.factory_logistic_unit_payload(row)
+        unit_id = row.get("id") or row_key
+        unit_node = self.add_factory_logistic_unit_node(
+            unit_id,
+            name=unit_data.get("name") if isinstance(unit_data, dict) else None,
+            source=table,
+            data={
+                "id": row.get("id"),
+                "unitTable": table,
+                "itemId": unit_data.get("itemId") if isinstance(unit_data, dict) else row.get("itemId"),
+                "msPerRound": unit_data.get("msPerRound") if isinstance(unit_data, dict) else None,
+                "volume": unit_data.get("volume") if isinstance(unit_data, dict) else None,
+                "type": row.get("type"),
+                "defaultRendererTemplate": row.get("defaultRendererTemplate"),
+                "inputPortCount": len(row.get("inputPorts") or []),
+                "outputPortCount": len(row.get("outputPorts") or []),
+                "range": row.get("range"),
+            },
+        )
+        if not unit_node:
+            return
+        self.add_edge(row_node, unit_node, "defines_factory_logistic_unit", source=table)
+        item_id = unit_data.get("itemId") if isinstance(unit_data, dict) else row.get("itemId")
+        item_node = self.add_item_node(item_id, source=table)
+        if item_node:
+            self.add_edge(item_node, unit_node, "item_builds_factory_logistic_unit", source=table, evidence="itemId")
+        self.add_tag_i18n_edges(unit_node, unit_data.get("name") if isinstance(unit_data, dict) else row.get("name"), source=table, edge_kind="factory_logistic_unit_name_text")
+        self.add_alias(unit_data.get("iconOnPanel") if isinstance(unit_data, dict) else None, unit_node, kind="asset_stem", source=table)
+        self.add_alias(unit_data.get("buildCamState") if isinstance(unit_data, dict) else None, unit_node, kind="camera_state", source=table)
+        self.add_factory_logistic_unit_renderer_edges(unit_node, row, source=table)
+        if self.node_exists("factory_building", unit_id):
+            self.add_edge(unit_node, self.node_id("factory_building", unit_id), "factory_logistic_unit_for_building", source=table, evidence="id")
+
+    def add_factory_logistics_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if not isinstance(row, dict):
+            return
+        if table == "FactoryMachineCraftGroupTable":
+            group_id = row.get("formulaGroupIdGroup") or row_key
+            group_node = self.add_factory_craft_group_node(group_id, source=table, data={"recipeCount": len(row.get("craftList") or []), "msPerRound": row.get("msPerRound"), "ingredientBufferBinding": row.get("ingredientBufferBinding"), "outcomeBufferBinding": row.get("outcomeBufferBinding"), "pipeIngredientBufferBinding": row.get("pipeIngredientBufferBinding"), "pipeOutcomeBufferBinding": row.get("pipeOutcomeBufferBinding")})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_factory_machine_craft_group", source=table)
+                for index, recipe_id in enumerate(row.get("craftList") or []):
+                    recipe_node = self.add_factory_recipe_node(recipe_id, source=table)
+                    if recipe_node:
+                        self.add_edge(group_node, recipe_node, "factory_craft_group_has_recipe", source=table, evidence=f"craftList[{index}]", data={"index": index})
+        elif table == "FactoryIngredientTagTable":
+            tag_node = self.add_factory_ingredient_tag_node(row.get("id") or row_key, name=row.get("tagLabel"), source=table, data={"combineMachineCount": len(row.get("combineMachineIds") or [])})
+            if tag_node:
+                self.add_edge(row_node, tag_node, "defines_factory_ingredient_tag", source=table)
+                self.add_tag_i18n_edges(tag_node, row.get("tagLabel"), source=table, edge_kind="factory_ingredient_tag_label_text")
+                label_node = self.node_id("ui_label", f"FactoryIngredientTagTable:{safe_key(row.get('id') or row_key)}")
+                if self.node_exists("ui_label", f"FactoryIngredientTagTable:{safe_key(row.get('id') or row_key)}"):
+                    self.add_edge(tag_node, label_node, "factory_ingredient_tag_ui_label", source=table, evidence="id")
+                for index, machine_id in enumerate(row.get("combineMachineIds") or []):
+                    machine_node = self.add_factory_machine_node(machine_id, source=table)
+                    if machine_node:
+                        self.add_edge(tag_node, machine_node, "factory_ingredient_tag_combines_on_machine", source=table, evidence=f"combineMachineIds[{index}]", data={"index": index})
+        elif table == "FactoryMachineId2tagIdsTable":
+            machine_node = self.add_factory_machine_node(row_key, source=table)
+            if machine_node:
+                self.add_edge(row_node, machine_node, "defines_factory_machine_tag_map", source=table)
+                for index, tag_id in enumerate(row.get("tagIds") or []):
+                    tag_node = self.add_factory_ingredient_tag_node(tag_id, source=table)
+                    if tag_node:
+                        self.add_edge(machine_node, tag_node, "factory_machine_accepts_ingredient_tag", source=table, evidence=f"tagIds[{index}]", data={"index": index})
+        elif table == "FactoryResourceItemId2MachineIdTable":
+            item_node = self.add_item_node(row_key, source=table)
+            if item_node:
+                self.add_edge(row_node, item_node, "defines_factory_resource_machine_map", source=table)
+                for index, machine_id in enumerate(row.get("machineIds") or []):
+                    machine_node = self.add_factory_machine_node(machine_id, source=table)
+                    if machine_node:
+                        self.add_edge(item_node, machine_node, "factory_resource_item_supported_by_machine", source=table, evidence=f"machineIds[{index}]", data={"index": index})
+        elif table == "FactoryResourceItemId2TagIdTable":
+            item_node = self.add_item_node(row_key, source=table)
+            if item_node:
+                self.add_edge(row_node, item_node, "defines_factory_resource_tag_map", source=table)
+                craft_map = row.get("craftId2TagId") if isinstance(row.get("craftId2TagId"), dict) else {}
+                for recipe_id, tag_id in craft_map.items():
+                    recipe_node = self.add_factory_recipe_node(recipe_id, source=table)
+                    tag_node = self.add_factory_ingredient_tag_node(tag_id, source=table)
+                    if recipe_node:
+                        self.add_edge(item_node, recipe_node, "factory_resource_item_used_by_recipe", source=table, evidence=f"craftId2TagId[{recipe_id}]")
+                    if recipe_node and tag_node:
+                        self.add_edge(recipe_node, tag_node, "factory_recipe_item_uses_ingredient_tag", source=table, evidence=f"craftId2TagId[{recipe_id}]", data={"itemId": row_key})
+        elif table == "FactoryItem2LogisticIdTable":
+            unit_node = self.add_factory_logistic_unit_node(row.get("logisticId"), source=table, data={"itemId": row.get("itemId"), "type": row.get("type")})
+            item_node = self.add_item_node(row.get("itemId") or row_key, source=table)
+            if unit_node:
+                self.add_edge(row_node, unit_node, "defines_factory_item_logistic_unit", source=table)
+            if item_node and unit_node:
+                self.add_edge(item_node, unit_node, "item_builds_factory_logistic_unit", source=table, evidence="logisticId", data={"type": row.get("type")})
+        elif table in FACTORY_LOGISTIC_UNIT_TABLES:
+            self.add_factory_logistic_unit_edges(table, row_key, row, row_node)
+        elif table == "FactoryPanelStoreTable":
+            good_node = self.add_semantic_node("factory_panel_store_good", row.get("id") or row_key, name=row.get("name"), source=table, data={"goodType": row.get("goodType"), "cost": row.get("cost"), "currencyType": row.get("currencyType"), "regionId": row.get("regionId"), "regionIndex": row.get("regionIndex"), "sortId": row.get("sortId"), "actions": row.get("actions"), "conditions": row.get("conditions")})
+            if good_node:
+                self.add_edge(row_node, good_node, "defines_factory_panel_store_good", source=table)
+                self.add_tag_i18n_edges(good_node, row.get("name"), source=table, edge_kind="factory_panel_store_good_name_text")
+                currency_node = self.add_item_node(row.get("currencyType"), source=table)
+                if currency_node:
+                    self.add_edge(good_node, currency_node, "factory_panel_store_good_cost_item", source=table, evidence="currencyType", data={"cost": row.get("cost")})
+                level_node = self.add_level_node(row.get("regionId"), source=table)
+                if level_node:
+                    self.add_edge(good_node, level_node, "factory_panel_store_good_region_level", source=table, evidence="regionId")
+                region_node = self.add_node("factory_region", safe_key(row.get("regionId")), name=safe_key(row.get("regionId")), source=table)
+                if safe_key(row.get("regionId")):
+                    self.add_alias(row.get("regionId"), region_node, kind="factory_region_id", source=table)
+                    self.add_edge(good_node, region_node, "factory_panel_store_good_region", source=table, evidence="regionId")
+                for index, action_type in enumerate(row.get("actions") or []):
+                    action_node = self.add_factory_panel_store_action_node(action_type, source=table)
+                    if action_node:
+                        params = row.get("actionParamsList") or []
+                        self.add_edge(good_node, action_node, "factory_panel_store_good_action", source=table, evidence=f"actions[{index}]", data={"index": index, "params": params[index] if index < len(params) else None})
+                for index, condition_type in enumerate(row.get("conditions") or []):
+                    condition_node = self.add_factory_panel_store_condition_node(condition_type, source=table)
+                    if condition_node:
+                        params = row.get("conditionParamsList") or []
+                        param_payload = params[index] if index < len(params) else None
+                        self.add_edge(good_node, condition_node, "factory_panel_store_good_condition", source=table, evidence=f"conditions[{index}]", data={"index": index, "params": param_payload})
+                        values = param_payload.get("conditionParams") if isinstance(param_payload, dict) else []
+                        for param in values or []:
+                            if safe_key(param).startswith("tech_"):
+                                tech_node = self.add_factory_tech_node(param, source=table)
+                                if tech_node:
+                                    self.add_edge(condition_node, tech_node, "factory_panel_store_condition_refs_tech", source=table, evidence=f"conditionParamsList[{index}]")
+        elif table == "FacPanelStoreActionDescTable":
+            action_node = self.add_factory_panel_store_action_node(row.get("actionType") if "actionType" in row else row_key, name=row.get("actionDesc"), source=table, data={"actionType": row.get("actionType")})
+            if action_node:
+                self.add_edge(row_node, action_node, "defines_factory_panel_store_action", source=table)
+                self.add_tag_i18n_edges(action_node, row.get("actionDesc"), source=table, edge_kind="factory_panel_store_action_desc_text")
+        elif table == "FacPanelStoreConditionDescTable":
+            condition_node = self.add_factory_panel_store_condition_node(row.get("conditionType") if "conditionType" in row else row_key, name=row.get("conditionDesc"), source=table, data={"conditionType": row.get("conditionType")})
+            if condition_node:
+                self.add_edge(row_node, condition_node, "defines_factory_panel_store_condition", source=table)
+                self.add_tag_i18n_edges(condition_node, row.get("conditionDesc"), source=table, edge_kind="factory_panel_store_condition_desc_text")
+        elif table == "FactoryBuildingPanelLock":
+            lock_node = self.add_semantic_node("factory_panel_lock", row.get("instKey") or row_key, source=table, data={"lockCount": len(row.get("list") or [])})
+            if lock_node:
+                self.add_edge(row_node, lock_node, "defines_factory_panel_lock", source=table)
+                building_node = self.add_factory_building_node(row.get("instKey") or row_key, source=table)
+                if building_node:
+                    self.add_edge(lock_node, building_node, "factory_panel_lock_for_building", source=table, evidence="instKey")
+                for index, lock in enumerate(row.get("list") or []):
+                    if not isinstance(lock, dict):
+                        continue
+                    detail_node = self.add_semantic_node("factory_panel_lock_rule", f"{safe_key(row.get('instKey') or row_key)}:{index}", source=table, data={"lockType": lock.get("lockType"), "priority": lock.get("priority"), "startQuestId": lock.get("startQuestId"), "endQuestId": lock.get("endQuestId"), "radioId": lock.get("radioId"), "args": lock.get("args")})
+                    if detail_node:
+                        self.add_edge(lock_node, detail_node, "factory_panel_lock_has_rule", source=table, evidence=f"list[{index}]", data={"index": index})
+                        for field, edge_kind in (("startQuestId", "factory_panel_lock_start_quest"), ("endQuestId", "factory_panel_lock_end_quest")):
+                            mission_node = self.add_mission_ref_node(lock.get(field), source=table)
+                            if mission_node:
+                                self.add_edge(detail_node, mission_node, edge_kind, source=table, evidence=field)
+                        radio_key = safe_key(lock.get("radioId"))
+                        if radio_key:
+                            radio_node = self.add_node("radio", radio_key, name=radio_key, source=table)
+                            self.add_alias(radio_key, radio_node, kind="radio_id", source=table)
+                            self.add_edge(detail_node, radio_node, "factory_panel_lock_radio", source=table, evidence="radioId")
+        elif table == "FactoryBlueprintTagTypeTable":
+            type_node = self.add_factory_blueprint_tag_type_node(row.get("id") or row_key, name=row.get("name"), source=table, data={"allowMultiSelect": row.get("allowMultiSelect"), "sortId": row.get("sortId")})
+            if type_node:
+                self.add_edge(row_node, type_node, "defines_factory_blueprint_tag_type", source=table)
+                self.add_tag_i18n_edges(type_node, row.get("name"), source=table, edge_kind="factory_blueprint_tag_type_name_text")
+        elif table == "FactoryBlueprintTagTable":
+            tag_node = self.add_factory_blueprint_tag_node(row.get("id") or row_key, name=row.get("name"), source=table, data={"type": row.get("type"), "formulaId": row.get("formulaId"), "sortId": row.get("sortId")})
+            if tag_node:
+                self.add_edge(row_node, tag_node, "defines_factory_blueprint_tag", source=table)
+                self.add_tag_i18n_edges(tag_node, row.get("name"), source=table, edge_kind="factory_blueprint_tag_name_text")
+                type_node = self.add_factory_blueprint_tag_type_node(row.get("type"), source=table)
+                if type_node:
+                    self.add_edge(tag_node, type_node, "factory_blueprint_tag_has_type", source=table, evidence="type")
+                recipe_node = self.add_factory_recipe_node(row.get("formulaId"), source=table)
+                if recipe_node:
+                    self.add_edge(tag_node, recipe_node, "factory_blueprint_tag_refs_recipe", source=table, evidence="formulaId")
+                ui_node_id = f"FactoryBlueprintTagTable:{safe_key(row.get('id') or row_key)}"
+                if self.node_exists("ui_label", ui_node_id):
+                    self.add_edge(tag_node, self.node_id("ui_label", ui_node_id), "factory_blueprint_tag_ui_label", source=table, evidence="id")
+        elif table == "FactorySystemBlueprintMetaTable":
+            bp_node = self.add_semantic_node("factory_system_blueprint", row.get("id") or row_key, name=row.get("name"), source=table, data={"id": row.get("id")})
+            if bp_node:
+                self.add_edge(row_node, bp_node, "defines_factory_system_blueprint", source=table)
+                self.add_tag_i18n_edges(bp_node, row.get("name"), source=table, edge_kind="factory_system_blueprint_name_text")
+                self.add_tag_i18n_edges(bp_node, row.get("desc"), source=table, edge_kind="factory_system_blueprint_desc_text")
+                self.add_tag_i18n_edges(bp_node, row.get("creatorName"), source=table, edge_kind="factory_system_blueprint_creator_text")
+        elif table == "FactoryRegionTable":
+            region_id = row.get("regionId") or row_key
+            region_node = self.add_node("factory_region", safe_key(region_id), name=safe_key(region_id), source=table, data={"levelId": row.get("levelId")})
+            self.add_alias(region_id, region_node, kind="factory_region_id", source=table)
+            self.add_edge(row_node, region_node, "defines_factory_region", source=table)
+            level_node = self.add_level_node(row.get("levelId"), source=table)
+            if level_node:
+                self.add_edge(region_node, level_node, "factory_region_belongs_to_level", source=table, evidence="levelId")
+        elif table == "FactoryMainRegionTable":
+            blackbox_node = self.add_semantic_node("factory_blackbox", row_key, source=table, data={"regionCount": len(row.get("list") or [])})
+            if blackbox_node:
+                self.add_edge(row_node, blackbox_node, "defines_factory_blackbox_regions", source=table)
+                for index, entry in enumerate(row.get("list") or []):
+                    if not isinstance(entry, dict):
+                        continue
+                    region_node = self.add_node("factory_region", safe_key(entry.get("id")), name=safe_key(entry.get("id")), source=table)
+                    self.add_alias(entry.get("id"), region_node, kind="factory_region_id", source=table)
+                    self.add_edge(blackbox_node, region_node, "factory_blackbox_has_region", source=table, evidence=f"list[{index}]", data={"index": entry.get("index")})
+                    building_node = self.add_factory_building_node(entry.get("requireHubBuildingId"), source=table)
+                    if building_node:
+                        self.add_edge(region_node, building_node, "factory_region_requires_hub_building", source=table, evidence=f"list[{index}].requireHubBuildingId")
+
     def ingest_prts_archive_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_prts_archive_semantics", path=slash(table_root))
@@ -17816,6 +18149,17 @@ QUERY_KIND_PRIORITY = {
     "factory_tech_condition": 64,
     "factory_building": 65,
     "factory_building_type": 66,
+    "factory_ingredient_tag": 66.1,
+    "factory_logistic_unit": 66.2,
+    "factory_panel_store_good": 66.3,
+    "factory_panel_store_action": 66.31,
+    "factory_panel_store_condition": 66.32,
+    "factory_panel_lock": 66.4,
+    "factory_panel_lock_rule": 66.41,
+    "factory_blueprint_tag": 66.5,
+    "factory_blueprint_tag_type": 66.51,
+    "factory_system_blueprint": 66.6,
+    "factory_blackbox": 66.7,
     "factory_renderer_template": 67,
     "factory_blueprint_machine_icon": 68,
     "manual_craft_unlock": 69,
@@ -17879,6 +18223,17 @@ QUERY_KIND_PRIORITY = {
     "factory_item": 21,
     "factory_machine": 22,
     "factory_craft_group": 23,
+    "factory_ingredient_tag": 23.1,
+    "factory_logistic_unit": 23.2,
+    "factory_panel_store_good": 23.3,
+    "factory_panel_store_action": 23.31,
+    "factory_panel_store_condition": 23.32,
+    "factory_panel_lock": 23.4,
+    "factory_panel_lock_rule": 23.41,
+    "factory_blueprint_tag": 23.5,
+    "factory_blueprint_tag_type": 23.51,
+    "factory_system_blueprint": 23.6,
+    "factory_blackbox": 23.7,
     "factory_craft_showing_type": 24,
     "equipment_formula": 25,
     "equipment_formula_pack": 26,
@@ -18279,6 +18634,17 @@ NODE_ID_PREFIXES = (
     "factory_tech_condition",
     "factory_building",
     "factory_building_type",
+    "factory_ingredient_tag",
+    "factory_logistic_unit",
+    "factory_panel_store_good",
+    "factory_panel_store_action",
+    "factory_panel_store_condition",
+    "factory_panel_lock",
+    "factory_panel_lock_rule",
+    "factory_blueprint_tag",
+    "factory_blueprint_tag_type",
+    "factory_system_blueprint",
+    "factory_blackbox",
     "factory_renderer_template",
     "factory_blueprint_machine_icon",
     "manual_craft_unlock",
@@ -18342,6 +18708,17 @@ NODE_ID_PREFIXES = (
     "factory_item",
     "factory_machine",
     "factory_craft_group",
+    "factory_ingredient_tag",
+    "factory_logistic_unit",
+    "factory_panel_store_good",
+    "factory_panel_store_action",
+    "factory_panel_store_condition",
+    "factory_panel_lock",
+    "factory_panel_lock_rule",
+    "factory_blueprint_tag",
+    "factory_blueprint_tag_type",
+    "factory_system_blueprint",
+    "factory_blackbox",
     "factory_craft_showing_type",
     "equipment_formula",
     "equipment_formula_pack",
