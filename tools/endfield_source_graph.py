@@ -4643,8 +4643,28 @@ class SourceGraphBuilder:
             self.add_alias(model_id, model_node, kind="model_id", source="webui/game_data")
             prefab_path = safe_key(row.get("prefabPath"))
             if prefab_path:
+                prefab_stem = safe_key(Path(prefab_path).stem)
+                prefab_node = self.add_node(
+                    "model_prefab",
+                    prefab_path,
+                    name=prefab_stem or Path(prefab_path).name,
+                    source="webui/game_data",
+                    path=prefab_path,
+                    data={"modelId": model_id, "prefabStem": prefab_stem},
+                )
+                self.add_edge(
+                    model_node,
+                    prefab_node,
+                    "model_config_uses_prefab",
+                    source="webui/game_data",
+                    evidence="prefabPath",
+                    data={"prefabStem": prefab_stem},
+                )
                 self.add_alias(prefab_path, model_node, kind="prefab_path", source="webui/game_data")
-                self.add_alias(Path(prefab_path).stem, model_node, kind="model_name", source="webui/game_data")
+                self.add_alias(prefab_path, prefab_node, kind="prefab_path", source="webui/game_data")
+                if prefab_stem:
+                    self.add_alias(prefab_stem, model_node, kind="model_name", source="webui/game_data")
+                    self.add_alias(prefab_stem, prefab_node, kind="model_prefab_stem", source="webui/game_data")
             self.add_model_asset_entity_edges(model_node, (model_id, prefab_path), edge_kind="model_config_asset_entity", source="webui/game_data", evidence="modelId/prefabPath")
             radius_node = self.node_id("model_radius", model_id)
             if self.node_exists("model_radius", model_id):
@@ -22198,6 +22218,7 @@ QUERY_KIND_PRIORITY = {
     "decoded_config_group": 43,
     "model_config": 44,
     "model_config_model": 45,
+    "model_prefab": 45.5,
     "model_radius": 46,
     "model_radius_config": 47,
     "interactive_table_config": 48,
@@ -22901,6 +22922,7 @@ NODE_ID_PREFIXES = (
     "decoded_config_group",
     "model_config",
     "model_config_model",
+    "model_prefab",
     "model_radius",
     "model_radius_config",
     "interactive_table_config",
