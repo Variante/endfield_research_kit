@@ -325,6 +325,20 @@ MODE_CONSTANT_TABLES = (
     "FactorySmartAlertTable.json",
     "FactoryBattleTable.json",
 )
+DISPLAY_METADATA_TABLES = (
+    "CashShopHideInGameTable.json",
+    "UserAvatarTableFrame.json",
+    "OverseaShareTable.json",
+    "SKLandShareTable.json",
+    "CashShopHasWeaponGoldPackTable.json",
+    "GiftpackCashShopIdTable.json",
+    "GiftpackCashShopClientShowDataTable.json",
+    "RarityColorTable.json",
+    "FactoryBlueprintIconBGColorTable.json",
+    "CollectionLabelTable.json",
+    "ShopDomainConst.json",
+    "ShopChannelDevelopmentTable.json",
+)
 TAG_TAXONOMY_TABLES = (
     "TagGroupDataTable.json",
     "TagDataTable.json",
@@ -3056,6 +3070,8 @@ class SourceGraphBuilder:
             self.commit_step("settingsSemantics")
             self.ingest_mode_constant_semantics()
             self.commit_step("modeConstants")
+            self.ingest_display_metadata_semantics()
+            self.commit_step("displayMetadata")
             if self.include_gameplay:
                 self.ingest_gameplay()
                 self.commit_step("gameplay")
@@ -14745,6 +14761,146 @@ class SourceGraphBuilder:
         elif table == "MapMarkTypeTempTable":
             self.add_temp_map_mark_edges(table, table_node, payload)
 
+    def ingest_display_metadata_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_display_metadata", name="Structured display, profile, share, and cash-shop metadata tables", path=slash(table_root))
+        for table_name in DISPLAY_METADATA_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/display_metadata")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/display_metadata")
+                self.add_display_metadata_row_edges(table, row_key, row, row_node)
+
+    def add_display_metadata_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node(kind, key, name=name, source=source, data=data)
+
+    def add_display_metadata_item_edges(self, owner_node: str, item_ids: Any, counts: Any, *, edge_kind: str, source: str, evidence_prefix: str) -> None:
+        if not isinstance(item_ids, list):
+            return
+        count_values = counts if isinstance(counts, list) else []
+        for index, item_id in enumerate(item_ids):
+            item_node = self.add_item_node(item_id, source=source)
+            if item_node:
+                count = count_values[index] if index < len(count_values) else None
+                self.add_edge(owner_node, item_node, edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]", data={"index": index, "count": count})
+
+    def add_display_metadata_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "ShopDomainConst":
+            const_node = self.add_display_metadata_node("display_const", f"{table}:{row_key}", name=row_key, source=table, data={"key": row_key, "value": row})
+            if const_node:
+                self.add_edge(row_node, const_node, "defines_display_const", source=table, evidence=str(row_key))
+                self.add_constant_ref_edges(const_node, row, source=table, evidence="value", edge_prefix="display_const_refs")
+            return
+        if not isinstance(row, dict):
+            return
+        if table == "CashShopHideInGameTable":
+            visibility_node = self.add_display_metadata_node("cash_shop_visibility", row_key, source=table, data={"hideInGame": row.get("hideInGame")})
+            if visibility_node:
+                self.add_edge(row_node, visibility_node, "defines_cash_shop_visibility", source=table)
+                goods_node = self.add_cash_goods_node(row_key, source=table)
+                if goods_node:
+                    self.add_edge(goods_node, visibility_node, "cash_goods_visibility", source=table, evidence="rowKey")
+            return
+        if table == "UserAvatarTableFrame":
+            frame_node = self.add_profile_social_node("user_avatar_frame", row.get("id") or row_key, source=table, data={"icon": row.get("icon"), "itemId": row.get("itemId"), "sort": row.get("sort")})
+            if frame_node:
+                self.add_edge(row_node, frame_node, "defines_user_avatar_frame", source=table)
+                item_node = self.add_item_node(row.get("itemId"), source=table)
+                if item_node:
+                    self.add_edge(frame_node, item_node, "user_avatar_frame_unlock_item", source=table, evidence="itemId")
+                self.add_alias(row.get("icon"), frame_node, kind="asset_stem", source=table)
+            return
+        if table == "OverseaShareTable":
+            group_node = self.add_display_metadata_node("oversea_share_config", row.get("envLang") if row.get("envLang") is not None else row_key, source=table, data={"envLang": row.get("envLang"), "channelCount": len(row.get("shareChannelIdList") or [])})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_oversea_share_config", source=table)
+                for index, channel_id in enumerate(row.get("shareChannelIdList") or []):
+                    channel_node = self.add_ui_label_node("ShareChannelTable", channel_id, source=table)
+                    if channel_node:
+                        self.add_edge(group_node, channel_node, "oversea_share_allows_channel", source=table, evidence=f"shareChannelIdList[{index}]", data={"index": index})
+            return
+        if table == "SKLandShareTable":
+            share_node = self.add_display_metadata_node("skland_share_type", row.get("typeName") or row_key, name=row.get("name"), source=table, data={"boardId": row.get("boardId"), "tagList": row.get("tagList"), "typeName": row.get("typeName")})
+            if share_node:
+                self.add_edge(row_node, share_node, "defines_skland_share_type", source=table)
+                self.add_tag_i18n_edges(share_node, row.get("name"), source=table, edge_kind="skland_share_type_name_text")
+            return
+        if table == "CashShopHasWeaponGoldPackTable":
+            marker_node = self.add_display_metadata_node("cash_shop_weapon_gold_pack", row.get("cashGoodsId") or row_key, source=table, data={"cashGoodsId": row.get("cashGoodsId")})
+            if marker_node:
+                self.add_edge(row_node, marker_node, "defines_cash_shop_weapon_gold_pack", source=table)
+                goods_node = self.add_cash_goods_node(row.get("cashGoodsId"), source=table)
+                if goods_node:
+                    self.add_edge(goods_node, marker_node, "cash_goods_has_weapon_gold_pack_marker", source=table, evidence="cashGoodsId")
+            return
+        if table == "GiftpackCashShopIdTable":
+            shop_node = self.add_cash_shop_node("cash_shop", row_key, name=row, source=table)
+            label_node = self.add_display_metadata_node("giftpack_cash_shop_label", row_key, name=row, source=table)
+            if label_node:
+                self.add_edge(row_node, label_node, "defines_giftpack_cash_shop_label", source=table)
+                self.add_tag_i18n_edges(label_node, row, source=table, edge_kind="giftpack_cash_shop_label_text")
+                if shop_node:
+                    self.add_edge(shop_node, label_node, "cash_shop_has_giftpack_label", source=table, evidence="rowKey")
+            return
+        if table == "GiftpackCashShopClientShowDataTable":
+            show_node = self.add_display_metadata_node("giftpack_cash_shop_show_data", row.get("cashShopId") or row_key, name=row.get("shopName"), source=table, data={"cashShopId": row.get("cashShopId"), "priority": row.get("priority"), "dynamicPriority": row.get("dynamicPriority"), "setBottomWhenAllSoldOut": row.get("setBottomWhenAllSoldOut")})
+            if show_node:
+                self.add_edge(row_node, show_node, "defines_giftpack_cash_shop_show_data", source=table)
+                shop_node = self.add_cash_shop_node("cash_shop", row.get("cashShopId"), source=table)
+                if shop_node:
+                    self.add_edge(shop_node, show_node, "cash_shop_has_client_show_data", source=table, evidence="cashShopId")
+                self.add_tag_i18n_edges(show_node, row.get("shopName"), source=table, edge_kind="giftpack_cash_shop_show_name_text")
+            return
+        if table == "RarityColorTable":
+            color_node = self.add_display_metadata_node("rarity_color", row.get("rarity") if row.get("rarity") is not None else row_key, source=table, data={"rarity": row.get("rarity"), "color": row.get("color")})
+            if color_node:
+                self.add_edge(row_node, color_node, "defines_rarity_color", source=table)
+            return
+        if table == "FactoryBlueprintIconBGColorTable":
+            color_node = self.add_display_metadata_node("factory_blueprint_icon_bg_color", row.get("id") or row_key, source=table, data={"id": row.get("id"), "color": row.get("color"), "imgName": row.get("imgName"), "playerCanUse": row.get("playerCanUse"), "sortId": row.get("sortId")})
+            if color_node:
+                self.add_edge(row_node, color_node, "defines_factory_blueprint_icon_bg_color", source=table)
+                self.add_alias(row.get("imgName"), color_node, kind="asset_stem", source=table)
+            return
+        if table == "CollectionLabelTable":
+            label_node = self.add_display_metadata_node("collection_label", row_key, source=table, data={"prefabCount": len(row.get("list") or [])})
+            if label_node:
+                self.add_edge(row_node, label_node, "defines_collection_label", source=table)
+                for index, item in enumerate(row.get("list") or []):
+                    if not isinstance(item, dict):
+                        continue
+                    collection_node = self.add_item_submission_node("collection_entry", item.get("prefabId"), source=table)
+                    if collection_node:
+                        self.add_edge(label_node, collection_node, "collection_label_has_entry", source=table, evidence=f"list[{index}].prefabId", data={"index": index})
+            return
+        if table == "ShopChannelDevelopmentTable":
+            channel_node = self.add_display_metadata_node("shop_channel_development", row_key, source=table, data={"levelCount": len(row.get("channelLevelMap") or {})})
+            if channel_node:
+                self.add_edge(row_node, channel_node, "defines_shop_channel_development", source=table)
+                for level_key, level_row in (row.get("channelLevelMap") or {}).items():
+                    if not isinstance(level_row, dict):
+                        continue
+                    level_node = self.add_display_metadata_node("shop_channel_development_level", f"{safe_key(row_key)}:{safe_key(level_key)}", source=table, data={"level": level_key, "versionStart": level_row.get("versionStart"), "newGoodsCount": len(level_row.get("newGoodsList") or []), "randGoodsBaseLimitUp": level_row.get("randGoodsBaseLimitUp"), "randGoodsDailyAddLimitUp": level_row.get("randGoodsDailyAddLimitUp"), "isFinalMaxLevel": level_row.get("isFinalMaxLevel")})
+                    if level_node:
+                        self.add_edge(channel_node, level_node, "shop_channel_development_has_level", source=table, evidence=f"channelLevelMap.{level_key}")
+                        self.add_display_metadata_item_edges(level_node, level_row.get("costItemIdList"), level_row.get("costItemNumList"), edge_kind="shop_channel_level_cost_item", source=table, evidence_prefix=f"channelLevelMap.{level_key}.costItemIdList")
+                        for index, goods_id in enumerate(level_row.get("newGoodsList") or []):
+                            goods_node = self.add_shop_goods_node(goods_id, source=table)
+                            if goods_node:
+                                count_values = level_row.get("newGoodsNum") if isinstance(level_row.get("newGoodsNum"), list) else []
+                                count = count_values[index] if index < len(count_values) else None
+                                self.add_edge(level_node, goods_node, "shop_channel_level_unlocks_goods", source=table, evidence=f"channelLevelMap.{level_key}.newGoodsList[{index}]", data={"index": index, "count": count})
+                        self.add_tag_i18n_edges(level_node, level_row.get("channelDesc"), source=table, edge_kind="shop_channel_level_desc_text")
+                        self.add_tag_i18n_edges(level_node, level_row.get("upgradeDesc"), source=table, edge_kind="shop_channel_level_upgrade_desc_text")
+            return
+
     def ingest_mode_constant_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_mode_constants", name="Structured mode constants and small mapping tables", path=slash(table_root))
@@ -20683,6 +20839,11 @@ QUERY_KIND_PRIORITY = {
     "profile_picture": 34.8695,
     "profile_picture_type": 34.86951,
     "user_avatar": 34.86952,
+    "user_avatar_frame": 34.869521,
+    "oversea_share_config": 34.869522,
+    "skland_share_type": 34.869523,
+    "giftpack_cash_shop_label": 34.869524,
+    "giftpack_cash_shop_show_data": 34.869525,
     "business_card_topic": 34.86953,
     "mail_sender": 34.86954,
     "mail_template": 34.86955,
@@ -20957,7 +21118,15 @@ QUERY_KIND_PRIORITY = {
     "cash_recharge_bonus": 41.6,
     "cash_recommendation": 41.7,
     "cash_shop_tag": 41.8,
+    "cash_shop_visibility": 41.81,
+    "cash_shop_weapon_gold_pack": 41.82,
     "recharge_pack": 41.9,
+    "rarity_color": 41.91,
+    "factory_blueprint_icon_bg_color": 41.92,
+    "collection_label": 41.93,
+    "display_const": 41.94,
+    "shop_channel_development": 41.95,
+    "shop_channel_development_level": 41.96,
     "gameplay_skill_group": 42,
     "gameplay_skill": 43,
     "gameplay_talent_group": 44,
@@ -21286,6 +21455,11 @@ NODE_ID_PREFIXES = (
     "profile_picture",
     "profile_picture_type",
     "user_avatar",
+    "user_avatar_frame",
+    "oversea_share_config",
+    "skland_share_type",
+    "giftpack_cash_shop_label",
+    "giftpack_cash_shop_show_data",
     "business_card_topic",
     "mail_sender",
     "mail_template",
@@ -21546,7 +21720,15 @@ NODE_ID_PREFIXES = (
     "cash_recharge_bonus",
     "cash_recommendation",
     "cash_shop_tag",
+    "cash_shop_visibility",
+    "cash_shop_weapon_gold_pack",
     "recharge_pack",
+    "rarity_color",
+    "factory_blueprint_icon_bg_color",
+    "collection_label",
+    "display_const",
+    "shop_channel_development",
+    "shop_channel_development_level",
     "gameplay_skill_group",
     "gameplay_skill",
     "gameplay_talent_group",
