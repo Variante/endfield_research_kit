@@ -1525,6 +1525,9 @@ Validated settings edges include 100 `setting_tab_has_item`, 92 `setting_item_re
 
 2026-07-01 character support i18n bridge refs: existing `CharacterTagDesTable` and `DungeonCharTutorialStepTable` graph nodes now link to their text records instead of only storing compact text in node data. A fast CN graph build to `tmp/source_graph_character_support_i18n.sqlite` verified 104 `character_tag_desc_text` edges, 336 `tutorial_step_desc_text` edges, 336 `tutorial_step_icon_desc_text` edges, and 776 `uses_i18n_text` edges from those two sources. Query smoke tests passed for `aglina_stage_1_step_01` and `chr_0004_pelica:tag_expert_oripow`.
 
+
+2026-07-01 attribute display i18n bridge refs: existing attribute display/filter graph entries now link to their text records. A fast CN graph build to `tmp/source_graph_attribute_i18n.sqlite` verified 150 `attribute_display_entry_text` edges and matching `uses_i18n_text` edges: 109 from `AttributeShowConfigTable`, 20 from `CompositeAttributeShowConfigTable`, and 21 from `AttributeFilterTable`. Query smoke tests passed for `attribute:1:0` and `filter:equipExtraAttr:0`.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type

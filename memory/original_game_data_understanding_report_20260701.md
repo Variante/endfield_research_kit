@@ -2047,6 +2047,13 @@ The source graph now links existing character tag-description and character tuto
 
 This does not change character/tutorial structure; it closes a text explainability gap where `CharacterTagDesTable` and `DungeonCharTutorialStepTable` were structurally modeled but still appeared as large unhandled I18n clusters.
 
+
+### 2026-07-01 Attribute Display Text Bridge Progress
+
+The source graph now links attribute display/filter entries to their I18n text records. A fast CN build verified 150 attribute display-entry text edges: 109 from normal attribute display config, 20 from composite attribute display config, and 21 from attribute filter rows.
+
+This keeps the existing numeric attribute graph intact while making the visible stat names and filter labels queryable through `i18n_text` evidence.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
