@@ -11606,20 +11606,26 @@ class SourceGraphBuilder:
             effect_node = self.add_node("potential_talent_effect", effect_id, name=effect_id, source=source)
             self.add_alias(effect_id, effect_node, kind="potential_talent_effect_id", source=source)
             self.add_edge(potential_node, effect_node, "character_potential_effect", source=source, evidence=f"{evidence}.potentialEffectId")
+            self.add_edge(effect_node, potential_node, "potential_effect_used_by_character_potential", source=source, evidence=f"{evidence}.potentialEffectId")
         item_ids = bundle.get("itemIds") if isinstance(bundle.get("itemIds"), list) else []
         item_counts = bundle.get("itemCnts") if isinstance(bundle.get("itemCnts"), list) else []
         for index, item_id in enumerate(item_ids):
             item_node = self.add_item_node(item_id, source=source)
             if item_node:
                 count = item_counts[index] if index < len(item_counts) else None
-                self.add_edge(potential_node, item_node, "character_potential_cost_item", source=source, evidence=f"{evidence}.itemIds[{index}]", data={"index": index, "count": count})
+                data = {"index": index, "count": count}
+                self.add_edge(potential_node, item_node, "character_potential_cost_item", source=source, evidence=f"{evidence}.itemIds[{index}]", data=data)
+                self.add_edge(item_node, potential_node, "item_cost_for_character_potential", source=source, evidence=f"{evidence}.itemIds[{index}]", data=data)
         for index, item_id in enumerate(bundle.get("unlockCharPictureItemList") or []):
             item_node = self.add_item_node(item_id, source=source)
             if item_node:
-                self.add_edge(potential_node, item_node, "character_potential_unlock_picture_item", source=source, evidence=f"{evidence}.unlockCharPictureItemList[{index}]", data={"index": index})
+                data = {"index": index}
+                self.add_edge(potential_node, item_node, "character_potential_unlock_picture_item", source=source, evidence=f"{evidence}.unlockCharPictureItemList[{index}]", data=data)
+                self.add_edge(item_node, potential_node, "item_unlocks_character_potential_picture", source=source, evidence=f"{evidence}.unlockCharPictureItemList[{index}]", data=data)
         card_item = self.add_item_node(bundle.get("unlockCardTopicItem"), source=source)
         if card_item:
             self.add_edge(potential_node, card_item, "character_potential_unlock_card_topic_item", source=source, evidence=f"{evidence}.unlockCardTopicItem")
+            self.add_edge(card_item, potential_node, "item_unlocks_character_potential_card_topic", source=source, evidence=f"{evidence}.unlockCardTopicItem")
         self.add_tag_i18n_edges(potential_node, bundle.get("name"), source=source, edge_kind="character_potential_name_text")
 
     def add_equipment_progression_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
@@ -11700,6 +11706,7 @@ class SourceGraphBuilder:
                 first_item = self.add_item_node(row.get("firstItemId"), source=table)
                 if first_item:
                     self.add_edge(character_node, first_item, "character_uses_potential_item", source=table, evidence="firstItemId")
+                    self.add_edge(first_item, character_node, "potential_item_used_by_character", source=table, evidence="firstItemId")
                 bundles = row.get("potentialUnlockBundle") if isinstance(row.get("potentialUnlockBundle"), list) else []
                 for index, bundle in enumerate(bundles):
                     if not isinstance(bundle, dict):
