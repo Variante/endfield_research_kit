@@ -747,6 +747,12 @@ gameplay-video OCR/audio workflow.
   stores complete body-middle hex for parser replay in JSON, lists ambiguous
   first-FindTarget records, and keeps selector tag byte hits as non-proof
   prioritization hints.
+- `story_recovery/build_findtarget_selector_replay_audit.py`: replays the saved
+  FindTargetAction body-middle byte shapes against the current TargetSettings
+  envelope helper and selector formatter tag maps. It writes
+  `reports/mission_order/findtarget_selector_replay_audit.json` / `.md`, keeps
+  selector matches as tag-only hints, and reports exact boundary proof and
+  chain-safe FindTarget counters separately from noisy union-tag candidates.
 - `story_recovery/build_lua_consumer_reference_audit.py`: scans extracted Lua
   roots and writes `reports/mission_order/lua_consumer_reference_audit.json` /
   `.md`. It deduplicates Persistent/StreamingAssets modules by relative Lua
