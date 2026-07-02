@@ -2174,6 +2174,12 @@ The source graph now models authored domain-depot tables directly. Depot rows co
 
 A fast CN temp build verified 5 depots, 55 buyers, 22 delivery targets, 7 recycle targets, 19 depot upgrade levels, 45 pack-value rows, 3 deliver item types, 3 deliver pack types, 3 integrity reduce types, 8 constants, 8 domain POI types, 1 depot feature node, 22 target-to-dialog links, 55 buyer-to-depot shared-level links, and 22 target-to-depot shared-level links. This improves logistics/depot semantics while marking buyer/target depot links as level/refLevelId inference rather than direct buyer-target matching, placed POI proof, or live delivery state.
 
+### 2026-07-02 Factory Logistics And Capability Graph Progress
+
+The source graph now models selected factory logistics/capability tables directly. The new coverage links machine craft groups to recipes, ingredient tags to machines and UI labels, resource items to supported machines and recipe-specific tags, build items to logistics units, panel-store goods to costs/actions/conditions/tech gates, panel locks to quests/radio ids, blueprint tags/types to UI labels and recipes, system blueprint metadata to text ids, and factory regions/blackboxes to level and hub-building requirements.
+
+A fast CN temp build verified 14 ingredient tags, 16 logistics units, 42 panel-store goods, 11 panel locks, 14 panel-lock rules, 20 blueprint tags, 3 blueprint tag types, 45 system blueprints, 57 blackbox nodes, 257 craft-group recipe edges, 229 resource item-to-machine edges, 241 recipe item-to-tag edges, 20 item-to-logistics-unit edges, 5 panel-condition tech refs, 27 lock quest edges, 5 lock radio edges, 57 blackbox-region edges, and 69 region-level edges. This improves factory production/logistics explainability while staying limited to authored capability/index metadata rather than runtime logistics simulation, recipe throughput execution, or live building state.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
