@@ -643,6 +643,10 @@ SPACESHIP_SEMANTIC_TABLES = (
     "SpaceshipCharRelationNeedMap.json",
     "SpaceshipCharRelationLevelTable.json",
     "SpaceshipCharGiftGainRatio.json",
+    "SpaceshipAreaUnlockNeedCenterLvTable.json",
+    "SpaceshipBacklogConfigDataTable.json",
+    "SpaceshipConst.json",
+    "SpaceshipSubCharGiftTable.json",
 )
 FACTORY_TECH_TABLES = (
     "FacSTTGroupTable.json",
@@ -15984,6 +15988,71 @@ class SourceGraphBuilder:
             if level_node:
                 self.add_edge(unlock, level_node, "spaceship_grow_cabin_box_unlock_level", source=table, evidence="rowValue")
 
+
+    def add_spaceship_area_unlock_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        area_node = self.add_spaceship_semantic_node("spaceship_construction_area", row_key, source=table, data={"requiredCenterLevel": row})
+        if area_node:
+            self.add_edge(row_node, area_node, "defines_spaceship_construction_area_unlock", source=table, evidence=row_key)
+            level_node = self.add_spaceship_room_level_node(row, source=table)
+            if level_node:
+                self.add_edge(area_node, level_node, "spaceship_area_requires_center_level", source=table, evidence="rowValue", data={"requiredCenterLevel": row})
+
+    def add_spaceship_backlog_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        backlog_type = row.get("type") if row.get("type") is not None else row_key
+        backlog_node = self.add_spaceship_semantic_node("spaceship_backlog_type", backlog_type, source=table, data={"sortId": row.get("sortId"), "icon": row.get("icon"), "color": row.get("color")})
+        if backlog_node:
+            self.add_edge(row_node, backlog_node, "defines_spaceship_backlog_type", source=table, evidence=row_key)
+            self.add_tag_i18n_edges(backlog_node, row.get("title"), source=table, edge_kind="spaceship_backlog_title_text")
+            self.add_tag_i18n_edges(backlog_node, row.get("subTitle"), source=table, edge_kind="spaceship_backlog_subtitle_text")
+            self.add_alias(row.get("icon"), backlog_node, kind="asset_stem", source=table)
+
+    def add_spaceship_const_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        const_node = self.add_spaceship_semantic_node("spaceship_const", row_key, source=table, data={"value": row})
+        if not const_node:
+            return
+        self.add_edge(row_node, const_node, "defines_spaceship_const", source=table, evidence=row_key)
+        values = row if isinstance(row, list) else [row]
+        for index, value in enumerate(values):
+            value_key = safe_key(value)
+            if not value_key:
+                continue
+            evidence = f"rowValue[{index}]" if isinstance(row, list) else "rowValue"
+            if value_key.startswith("item_") or row_key.lower().endswith("itemid"):
+                item_node = self.add_item_node(value_key, source=table)
+                if item_node:
+                    self.add_edge(const_node, item_node, "spaceship_const_item_ref", source=table, evidence=evidence)
+            if row_key.lower().endswith("rewardid"):
+                self.add_reward_ref_edge(const_node, value_key, edge_kind="spaceship_const_reward_ref", source=table, evidence=evidence)
+            if row_key.lower().endswith("roomid") or row_key == "defaultBuiltRooms":
+                room_node = self.add_spaceship_room_type_node(value_key, source=table)
+                if room_node:
+                    self.add_edge(const_node, room_node, "spaceship_const_room_ref", source=table, evidence=evidence)
+            if row_key.lower().endswith("scenename"):
+                scene_node = self.add_spaceship_semantic_node("spaceship_scene", value_key, source=table)
+                if scene_node:
+                    self.add_edge(const_node, scene_node, "spaceship_const_scene_ref", source=table, evidence=evidence)
+            if row_key.lower().endswith("gamemode"):
+                mode_node = self.add_spaceship_semantic_node("spaceship_game_mode", value_key, source=table)
+                if mode_node:
+                    self.add_edge(const_node, mode_node, "spaceship_const_game_mode_ref", source=table, evidence=evidence)
+
+    def add_spaceship_sub_char_gift_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        char_node = self.add_character_ref_node(row_key, source=table)
+        if char_node:
+            self.add_edge(row_node, char_node, "defines_spaceship_sub_character_gifts", source=table, evidence=row_key)
+        for slot, entry in (row.get("list") or {}).items():
+            if not isinstance(entry, dict):
+                continue
+            gift_node = self.add_spaceship_semantic_node("spaceship_char_gift_talk", f"{safe_key(row_key)}:{safe_key(slot)}", source=table, data={"slot": slot, "charGiftTalkId": entry.get("charGiftTalkId"), "dialogId": entry.get("dialogId")})
+            if gift_node:
+                self.add_edge(row_node, gift_node, "defines_spaceship_char_gift_talk", source=table, evidence=f"list.{slot}")
+                if char_node:
+                    self.add_edge(char_node, gift_node, "spaceship_character_has_gift_talk", source=table, evidence=f"list.{slot}")
+                story_key = safe_key(entry.get("dialogId"))
+                if story_key:
+                    story_node = self.add_node("story", story_key, name=story_key, source=table)
+                    self.add_edge(gift_node, story_node, "spaceship_gift_talk_dialog", source=table, evidence=f"list.{slot}.dialogId", data={"slot": slot, "charGiftTalkId": entry.get("charGiftTalkId")})
+
     def add_spaceship_formula_showing_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         type_id = row.get("type") if row.get("type") is not None else row_key
         showing = self.add_spaceship_semantic_node("spaceship_formula_showing_type", type_id, name=row.get("name"), source=table, data={"icon": row.get("icon")})
@@ -16020,6 +16089,12 @@ class SourceGraphBuilder:
             return
         if table == "SpaceshipGrowCabinBoxIdToUnlockLevelTable":
             self.add_spaceship_grow_cabin_unlock_edges(table, row_key, row, row_node)
+            return
+        if table == "SpaceshipAreaUnlockNeedCenterLvTable":
+            self.add_spaceship_area_unlock_edges(table, row_key, row, row_node)
+            return
+        if table == "SpaceshipConst":
+            self.add_spaceship_const_edges(table, row_key, row, row_node)
             return
         if table == "SpaceshipCharRelationNeedMap":
             self.add_spaceship_relation_need_edges(table, row_key, row, row_node)
@@ -16066,6 +16141,10 @@ class SourceGraphBuilder:
             self.add_spaceship_build_type_edges(table, row_key, row, row_node)
         elif table == "SpaceshipGrowCabinFormulaShowingTypeTable":
             self.add_spaceship_formula_showing_type_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipBacklogConfigDataTable":
+            self.add_spaceship_backlog_edges(table, row_key, row, row_node)
+        elif table == "SpaceshipSubCharGiftTable":
+            self.add_spaceship_sub_char_gift_edges(table, row_key, row, row_node)
         elif table in {"SpaceshipCreditTable", "SpaceshipClueGoodsPriceConvertDataTable"}:
             self.add_spaceship_credit_edges(table, row_key, row, row_node)
         elif table == "SpaceshipCharRelationLevelTable":
@@ -22028,6 +22107,12 @@ QUERY_KIND_PRIORITY = {
     "spaceship_relation_need": 42.09,
     "spaceship_relation_level": 42.1,
     "spaceship_gift_gain_ratio": 42.11,
+    "spaceship_construction_area": 42.12,
+    "spaceship_backlog_type": 42.13,
+    "spaceship_const": 42.14,
+    "spaceship_char_gift_talk": 42.15,
+    "spaceship_scene": 42.16,
+    "spaceship_game_mode": 42.17,
     "env_talk": 43,
     "i18n_text": 44,
     "system_jump": 45,
@@ -22706,6 +22791,12 @@ NODE_ID_PREFIXES = (
     "spaceship_relation_need",
     "spaceship_relation_level",
     "spaceship_gift_gain_ratio",
+    "spaceship_construction_area",
+    "spaceship_backlog_type",
+    "spaceship_const",
+    "spaceship_char_gift_talk",
+    "spaceship_scene",
+    "spaceship_game_mode",
     "env_talk",
     "i18n_text",
     "system_jump",
