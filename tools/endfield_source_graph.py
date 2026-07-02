@@ -400,6 +400,11 @@ DUNGEON_TRAINING_TABLES = (
     "AdventureLevelTable.json",
     "AdventureWorldLevelTable.json",
 )
+TOWER_DEFENSE_TABLES = (
+    "TowerDefenseTable.json",
+    "TowerDefenseGroupTable.json",
+    "TowerDefenseMapTable.json",
+)
 GAME_MECHANIC_SEMANTIC_TABLES = (
     "GameMechanicCategoryTable.json",
     "GameMechanicGroupTable.json",
@@ -2943,6 +2948,8 @@ class SourceGraphBuilder:
             self.commit_step("gameMechanics")
             self.ingest_dungeon_training_semantics()
             self.commit_step("dungeonTraining")
+            self.ingest_tower_defense_semantics()
+            self.commit_step("towerDefense")
             self.ingest_battlepass_semantics()
             self.commit_step("battlepassSemantics")
             self.ingest_profile_social_semantics()
@@ -12237,6 +12244,82 @@ class SourceGraphBuilder:
     def add_game_mechanic_ref_node(self, mechanic_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         return self.add_game_mechanic_node("game_mechanic", mechanic_id, name=name, source=source, data=data)
 
+    def ingest_tower_defense_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_tower_defense", name="Structured tower defense tables", path=slash(table_root))
+        for table_name in TOWER_DEFENSE_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/tower_defense")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/tower_defense")
+                self.add_tower_defense_row_edges(table, row_key, row, row_node)
+
+    def add_tower_defense_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node(kind, key, name=name, source=source, data=data)
+
+    def add_tower_defense_enemy_edge(self, stage_node: str, enemy_id: Any, *, source: str, evidence: str, data: Any = None) -> None:
+        enemy_key = safe_key(enemy_id)
+        if not enemy_key:
+            return
+        enemy_node = self.add_node("enemy", enemy_key, name=enemy_key, source=source)
+        self.add_alias(enemy_key, enemy_node, kind="enemy_id", source=source)
+        template_node = self.add_node("enemy_template", enemy_key, name=enemy_key, source=source)
+        self.add_alias(enemy_key, template_node, kind="enemy_template_id", source=source)
+        self.add_edge(stage_node, enemy_node, "tower_defense_enemy", source=source, evidence=evidence, data=data)
+        self.add_edge(enemy_node, template_node, "tower_defense_enemy_template_ref", source=source, evidence=evidence)
+
+    def add_tower_defense_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if not isinstance(row, dict):
+            return
+        if table == "TowerDefenseGroupTable":
+            group_id = row.get("tdGroup") or row_key
+            group_node = self.add_tower_defense_node("tower_defense_group", group_id, name=row.get("name"), source=table, data={"sortId": row.get("sortId")})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_tower_defense_group", source=table)
+                self.add_tag_i18n_edges(group_node, row.get("name"), source=table, edge_kind="tower_defense_group_name_text")
+        elif table == "TowerDefenseMapTable":
+            settlement_id = row.get("settlementId") or row_key
+            map_node = self.add_tower_defense_node("tower_defense_settlement_map", settlement_id, source=table, data={"mapImage": row.get("mapImage"), "leftBottomPos": compact_payload(row.get("leftBottomPos"), depth=1), "rightUpPos": compact_payload(row.get("rightUpPos"), depth=1)})
+            if map_node:
+                self.add_edge(row_node, map_node, "defines_tower_defense_settlement_map", source=table)
+                self.add_alias(row.get("mapImage"), map_node, kind="asset_stem", source=table)
+        elif table == "TowerDefenseTable":
+            stage_id = row.get("tdId") or row_key
+            stage_node = self.add_tower_defense_node("tower_defense_stage", stage_id, source=table, data={"tdGroup": row.get("tdGroup"), "tdType": row.get("tdType"), "sceneName": row.get("sceneName"), "settlementId": row.get("settlementId"), "settlementLevel": row.get("settlementLevel"), "rewardBandwidth": row.get("rewardBandwidth"), "rewardBattleBuildingLimit": row.get("rewardBattleBuildingLimit"), "rewardTravelPoleLimit": row.get("rewardTravelPoleLimit"), "detailImage": row.get("detailImage")})
+            if stage_node:
+                self.add_edge(row_node, stage_node, "defines_tower_defense_stage", source=table)
+                group_node = self.add_tower_defense_node("tower_defense_group", row.get("tdGroup"), source=table)
+                if group_node:
+                    self.add_edge(group_node, stage_node, "tower_defense_group_has_stage", source=table, evidence="tdGroup", data={"tdType": row.get("tdType"), "settlementLevel": row.get("settlementLevel")})
+                map_node = self.add_tower_defense_node("tower_defense_settlement_map", row.get("settlementId"), source=table)
+                if map_node:
+                    self.add_edge(stage_node, map_node, "tower_defense_stage_settlement_map", source=table, evidence="settlementId")
+                level_node = self.add_level_node(row.get("sceneName"), source=table)
+                if level_node:
+                    self.add_edge(stage_node, level_node, "tower_defense_stage_scene", source=table, evidence="sceneName")
+                self.add_reward_ref_edge(stage_node, row.get("rewardId"), edge_kind="tower_defense_stage_reward", source=table, evidence="rewardId")
+                self.add_alias(row.get("detailImage"), stage_node, kind="asset_stem", source=table)
+                enemy_ids = row.get("enemyIds") if isinstance(row.get("enemyIds"), list) else []
+                enemy_levels = row.get("enemyLevels") if isinstance(row.get("enemyLevels"), list) else []
+                for index, enemy_id in enumerate(enemy_ids):
+                    level = enemy_levels[index] if index < len(enemy_levels) else None
+                    self.add_tower_defense_enemy_edge(stage_node, enemy_id, source=table, evidence=f"enemyIds[{index}]", data={"index": index, "enemyLevel": level})
+                for index, item_id in enumerate(row.get("recommendBuildingItemIds") or []):
+                    item_node = self.add_item_node(item_id, source=table)
+                    if item_node:
+                        self.add_edge(stage_node, item_node, "tower_defense_recommended_building_item", source=table, evidence=f"recommendBuildingItemIds[{index}]", data={"index": index})
+                for index, spawner_id in enumerate(row.get("spawnerIds") or []):
+                    spawner_node = self.add_tower_defense_node("tower_defense_spawner", spawner_id, source=table)
+                    if spawner_node:
+                        self.add_edge(stage_node, spawner_node, "tower_defense_stage_spawner", source=table, evidence=f"spawnerIds[{index}]", data={"index": index})
+
     def ingest_game_mechanic_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_game_mechanics", name="Structured game mechanic tables", path=slash(table_root))
@@ -18800,6 +18883,10 @@ QUERY_KIND_PRIORITY = {
     "training_type": 22.7,
     "adventure_level": 22.8,
     "adventure_world_level": 22.9,
+    "tower_defense_stage": 22.91,
+    "tower_defense_group": 22.92,
+    "tower_defense_settlement_map": 22.93,
+    "tower_defense_spawner": 22.94,
     "character_tutorial": 23,
     "character_tutorial_stage": 24,
     "character_tutorial_step": 25,
@@ -19327,6 +19414,10 @@ NODE_ID_PREFIXES = (
     "training_type",
     "adventure_level",
     "adventure_world_level",
+    "tower_defense_stage",
+    "tower_defense_group",
+    "tower_defense_settlement_map",
+    "tower_defense_spawner",
     "character_tutorial",
     "character_tutorial_stage",
     "character_tutorial_step",
