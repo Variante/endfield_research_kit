@@ -172,6 +172,18 @@ REWARD_CATALOG_TABLES = (
     "ImportantItemShowTable.json",
     "ImportantRewardItemTable.json",
 )
+WEEK_RAID_TABLES = (
+    "WeekRaidTable.json",
+    "WeekRaidItemTable.json",
+    "WeekRaidItemReverseTable.json",
+    "WeekraidItemDomainTable.json",
+    "WeekRaidTechTypeTable.json",
+    "WeekRaidBufTechTypeTable.json",
+    "WeekRaidTechTable.json",
+    "WeekRaidDelegateTable.json",
+    "WeekRaidRefreshTable.json",
+    "WeekRaidBattlePassTable.json",
+)
 EQUIPMENT_GEM_TABLES = (
     "EquipTable.json",
     "EquipItemTable.json",
@@ -2927,6 +2939,8 @@ class SourceGraphBuilder:
             self.commit_step("activityAchievement")
             self.ingest_activity_catalog_semantics()
             self.commit_step("activityCatalog")
+            self.ingest_week_raid_semantics()
+            self.commit_step("weekRaid")
             self.ingest_timeline_line_orders()
             self.commit_step("timelineLineOrders")
             self.ingest_runtime_option_route_audits()
@@ -9969,6 +9983,153 @@ class SourceGraphBuilder:
                 if item_node:
                     self.add_edge(important_node, item_node, "important_reward_item_ref", source=table, evidence="id")
                 self.add_tag_i18n_edges(important_node, row.get("desc"), source=table, edge_kind="important_reward_item_desc_text")
+
+    def ingest_week_raid_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_week_raid", name="Structured Week Raid tables", path=slash(table_root))
+        for table_name in WEEK_RAID_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/week_raid")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/week_raid")
+                self.add_week_raid_row_edges(table, row_key, row, row_node)
+
+    def add_week_raid_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node(kind, key, name=name, source=source, data=data)
+
+    def add_week_raid_game_ref(self, owner_node: str, game_id: Any, *, edge_kind: str, source: str, evidence: str, data: Any = None) -> str:
+        game_key = safe_key(game_id)
+        if not game_key:
+            return ""
+        game_node = self.add_week_raid_node("week_raid_game", game_key, source=source, data=data)
+        self.add_edge(owner_node, game_node, edge_kind, source=source, evidence=evidence, data=data)
+        dungeon_node = self.add_dungeon_node(game_key, source=source)
+        if dungeon_node:
+            self.add_edge(game_node, dungeon_node, "week_raid_game_dungeon_ref", source=source, evidence=evidence)
+        return game_node
+
+    def add_week_raid_type_text_edges(self, owner_node: str, row: dict[str, Any], *, source: str, prefix: str) -> None:
+        text_fields = (
+            ("name", "name"),
+            ("desc", "desc"),
+            ("normalDesc", "normal_desc"),
+            ("formatText", "format_text"),
+        )
+        for field, edge_suffix in text_fields:
+            self.add_tag_i18n_edges(owner_node, row.get(field), source=source, edge_kind=f"{prefix}_{edge_suffix}_text")
+        self.add_alias(row.get("icon"), owner_node, kind="asset_stem", source=source)
+
+    def add_week_raid_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "WeekraidItemDomainTable":
+            item_node = self.add_item_node(row_key, source=table)
+            domain_node = self.add_week_raid_node("week_raid_item_domain", row, source=table)
+            if item_node:
+                self.add_edge(row_node, item_node, "defines_week_raid_item_domain_item", source=table)
+            if item_node and domain_node:
+                self.add_edge(item_node, domain_node, "week_raid_item_domain", source=table, evidence="value")
+            return
+        if table == "WeekRaidItemReverseTable":
+            converted_item = self.add_item_node(row_key, source=table)
+            original_item = self.add_item_node(row, source=table)
+            if converted_item:
+                self.add_edge(row_node, converted_item, "defines_week_raid_reverse_item", source=table)
+            if converted_item and original_item:
+                self.add_edge(converted_item, original_item, "week_raid_item_reverse_original", source=table, evidence="value")
+            return
+        if not isinstance(row, dict):
+            return
+        if table == "WeekRaidTable":
+            game_id = row.get("gameId") or row_key
+            game_node = self.add_week_raid_node("week_raid_game", game_id, name=row.get("raidTopic"), source=table, data={"baseGridLimit": row.get("baseGridLimit"), "maxDangerMeter": row.get("maxDangerMeter"), "maxScore": row.get("maxScore"), "moneyId": row.get("moneyId"), "unlockRandomStageMission": row.get("unlockRandomStageMission")})
+            if game_node:
+                self.add_edge(row_node, game_node, "defines_week_raid_game", source=table)
+                dungeon_node = self.add_dungeon_node(game_id, source=table)
+                if dungeon_node:
+                    self.add_edge(game_node, dungeon_node, "week_raid_game_dungeon_ref", source=table, evidence="gameId")
+                item_node = self.add_item_node(row.get("moneyId"), source=table)
+                if item_node:
+                    self.add_edge(game_node, item_node, "week_raid_currency", source=table, evidence="moneyId")
+                mission_node = self.add_mission_ref_node(row.get("unlockRandomStageMission"), source=table)
+                if mission_node:
+                    self.add_edge(game_node, mission_node, "week_raid_unlock_random_stage_mission", source=table, evidence="unlockRandomStageMission")
+                self.add_tag_i18n_edges(game_node, row.get("raidTopic"), source=table, edge_kind="week_raid_topic_text")
+                self.add_alias(row.get("icon"), game_node, kind="asset_stem", source=table)
+        elif table == "WeekRaidItemTable":
+            item_node = self.add_item_node(row.get("itemId") or row_key, source=table, data={"convertGoldId": row.get("convertGoldId"), "convertGoldNum": row.get("convertGoldNum"), "convertItemId": row.get("convertItemId")})
+            if item_node:
+                self.add_edge(row_node, item_node, "defines_week_raid_item", source=table)
+                converted_item = self.add_item_node(row.get("convertItemId"), source=table)
+                if converted_item:
+                    self.add_edge(item_node, converted_item, "week_raid_item_converts_to_item", source=table, evidence="convertItemId")
+                converted_gold = self.add_item_node(row.get("convertGoldId"), source=table)
+                if converted_gold:
+                    self.add_edge(item_node, converted_gold, "week_raid_item_converts_to_currency", source=table, evidence="convertGoldId", data={"convertGoldNum": row.get("convertGoldNum")})
+        elif table in ("WeekRaidTechTypeTable", "WeekRaidBufTechTypeTable"):
+            type_kind = "week_raid_buff_tech_type" if table == "WeekRaidBufTechTypeTable" else "week_raid_tech_type"
+            type_id = row.get("strValue") or row.get("techType") or row_key
+            type_node = self.add_week_raid_node(type_kind, type_id, name=row.get("name"), source=table, data={"techType": row.get("techType"), "sort": row.get("sort"), "icon": row.get("icon")})
+            if type_node:
+                self.add_edge(row_node, type_node, f"defines_{type_kind}", source=table)
+                self.add_week_raid_type_text_edges(type_node, row, source=table, prefix=type_kind)
+        elif table == "WeekRaidTechTable":
+            tech_node = self.add_week_raid_node("week_raid_tech", row.get("techId") or row_key, source=table, data={"gameId": row.get("gameId"), "group": row.get("group"), "itemId": row.get("itemId"), "level": row.get("level"), "numValue": row.get("numValue"), "strValue": row.get("strValue"), "techType": row.get("techType")})
+            if tech_node:
+                self.add_edge(row_node, tech_node, "defines_week_raid_tech", source=table)
+                self.add_week_raid_game_ref(tech_node, row.get("gameId"), edge_kind="week_raid_tech_game", source=table, evidence="gameId")
+                item_node = self.add_item_node(row.get("itemId"), source=table)
+                if item_node:
+                    self.add_edge(tech_node, item_node, "week_raid_tech_item", source=table, evidence="itemId")
+                type_node = self.add_week_raid_node("week_raid_tech_type", row.get("techType"), source=table)
+                if type_node:
+                    self.add_edge(tech_node, type_node, "week_raid_tech_type", source=table, evidence="techType")
+                if safe_key(row.get("strValue")):
+                    buff_type_node = self.add_week_raid_node("week_raid_buff_tech_type", row.get("strValue"), source=table)
+                    self.add_edge(tech_node, buff_type_node, "week_raid_tech_buff_type", source=table, evidence="strValue")
+                if isinstance(row.get("techTypeData"), dict):
+                    self.add_week_raid_type_text_edges(tech_node, row.get("techTypeData") or {}, source=table, prefix="week_raid_tech")
+        elif table == "WeekRaidDelegateTable":
+            delegate_node = self.add_week_raid_node("week_raid_delegate", row.get("missionId") or row_key, name=row.get("name"), source=table, data={"gameId": row.get("gameId"), "difficulty": row.get("difficulty"), "weekRaidMissionType": row.get("weekRaidMissionType"), "isSubmit": row.get("isSubmit"), "rewardId": row.get("rewardId"), "questId": row.get("questId"), "submitId": row.get("submitId"), "submitQuestId": row.get("submitQuestId")})
+            if delegate_node:
+                self.add_edge(row_node, delegate_node, "defines_week_raid_delegate", source=table)
+                self.add_week_raid_game_ref(delegate_node, row.get("gameId"), edge_kind="week_raid_delegate_game", source=table, evidence="gameId")
+                self.add_reward_ref_edge(delegate_node, row.get("rewardId"), edge_kind="week_raid_delegate_reward", source=table, evidence="rewardId")
+                for field, edge_kind in (("missionId", "week_raid_delegate_mission"), ("dependentMission", "week_raid_delegate_dependent_mission")):
+                    mission_node = self.add_mission_ref_node(row.get(field), source=table)
+                    if mission_node:
+                        self.add_edge(delegate_node, mission_node, edge_kind, source=table, evidence=field)
+                for field, edge_kind in (("name", "week_raid_delegate_name_text"), ("desc", "week_raid_delegate_desc_text"), ("typeDesc", "week_raid_delegate_type_desc_text")):
+                    self.add_tag_i18n_edges(delegate_node, row.get(field), source=table, edge_kind=edge_kind)
+        elif table == "WeekRaidRefreshTable":
+            game_node = self.add_week_raid_node("week_raid_game", row_key, source=table, data={"refreshLevels": len(row.get("levelMap") or {})})
+            currency_node = self.add_item_node(row.get("costGoldId"), source=table)
+            if game_node:
+                self.add_edge(row_node, game_node, "defines_week_raid_refresh", source=table)
+                if currency_node:
+                    self.add_edge(game_node, currency_node, "week_raid_refresh_currency", source=table, evidence="costGoldId")
+                level_map = row.get("levelMap") if isinstance(row.get("levelMap"), dict) else {}
+                for level_key, level in level_map.items():
+                    refresh_node = self.add_week_raid_node("week_raid_refresh_level", f"{safe_key(row_key)}:{level_key}", source=table, data=compact_payload(level, depth=1))
+                    if refresh_node:
+                        self.add_edge(game_node, refresh_node, "week_raid_has_refresh_level", source=table, evidence=f"levelMap[{level_key}]")
+        elif table == "WeekRaidBattlePassTable":
+            tier_node = self.add_week_raid_node("week_raid_battlepass_tier", row.get("bpNodeId") or row_key, source=table, data={"gameId": row.get("gameId"), "score": row.get("score"), "conditionAdventureLevel": row.get("conditionAdventureLevel"), "conditionTech": row.get("conditionTech"), "rewardId": row.get("rewardId"), "rewardItemId": row.get("rewardItemId")})
+            if tier_node:
+                self.add_edge(row_node, tier_node, "defines_week_raid_battlepass_tier", source=table)
+                self.add_week_raid_game_ref(tier_node, row.get("gameId"), edge_kind="week_raid_battlepass_tier_game", source=table, evidence="gameId")
+                self.add_reward_ref_edge(tier_node, row.get("rewardId"), edge_kind="week_raid_battlepass_tier_reward", source=table, evidence="rewardId")
+                reward_item = self.add_item_node(row.get("rewardItemId"), source=table)
+                if reward_item:
+                    self.add_edge(tier_node, reward_item, "week_raid_battlepass_reward_item", source=table, evidence="rewardItemId")
+                condition_tech = self.add_week_raid_node("week_raid_tech", row.get("conditionTech"), source=table)
+                if condition_tech:
+                    self.add_edge(tier_node, condition_tech, "week_raid_battlepass_condition_tech", source=table, evidence="conditionTech")
 
     def ingest_equipment_gem_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -18536,6 +18697,14 @@ QUERY_KIND_PRIORITY = {
     "activity_submit_item": 53.51,
     "activity_benefit_group": 53.6,
     "activity_benefit": 53.61,
+    "week_raid_game": 53.7,
+    "week_raid_item_domain": 53.71,
+    "week_raid_tech_type": 53.72,
+    "week_raid_buff_tech_type": 53.73,
+    "week_raid_tech": 53.74,
+    "week_raid_delegate": 53.75,
+    "week_raid_refresh_level": 53.76,
+    "week_raid_battlepass_tier": 53.77,
     "achievement_category": 54,
     "achievement_group": 55,
     "achievement": 56,

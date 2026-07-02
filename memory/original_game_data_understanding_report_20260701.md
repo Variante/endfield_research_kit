@@ -2192,6 +2192,12 @@ The source graph now promotes compact activity/adventure catalog structure from 
 
 A fast CN temp build verified 85 adventure book tasks, 13 adventure book stages, 1 activity entrance group, 2 activity entrance series, 45 catalog game refs, 4 high-difficulty series, 3 PS activities, 11 PS activity tasks, 14 submit-food stages, 14 submit items, 8 activity benefits, 85 adventure task reward edges, 86 adventure task condition edges, 72 adventure stage task edges, 15 entrance-series game edges, 30 high-difficulty game edges, 22 PS task mission edges, 14 submit-food recipe edges, and 19 benefit reward/showcase refs. CLI smoke checks passed for `adventure_book_task:ab_01_01`, `activity_game_entrance_series:activity_puzzle_v1d0`, and `activity_benefit:checkIn`. This improves authored activity lookup while staying limited to catalog/navigation evidence rather than live event availability, runtime unlock evaluation, account progress, or server-side activity state.
 
+### 2026-07-02 Week Raid Graph Progress
+
+The source graph now promotes Week Raid gameplay-mode structure from `WeekRaidTable`, `WeekRaidTechTable`, `WeekRaidTechTypeTable`, `WeekRaidBufTechTypeTable`, `WeekRaidDelegateTable`, `WeekRaidItemTable`, `WeekRaidItemReverseTable`, `WeekraidItemDomainTable`, `WeekRaidRefreshTable`, and `WeekRaidBattlePassTable`. It adds queryable nodes for Week Raid games, tech types, buff tech types, tech rows, delegate missions, refresh levels, battle-pass tiers, and item-domain labels, with edges to dungeon/game ids, currency items, unlock missions, tech unlock items, rewards, item conversions, domain display buckets, and tier reward items.
+
+A fast CN temp build verified 2 Week Raid games, 6 item-domain labels, 7 tech types, 9 buff tech types, 31 tech rows, 66 delegate missions, 9 refresh levels, 20 battle-pass tiers, 31 tech item edges, 66 delegate reward edges, 68 item conversion/reverse edges, 68 item-domain edges, 9 refresh-level edges, 20 tier reward edges, and 44 normalized format-text links. CLI smoke checks passed for `week_raid_game:dung01_wrdg001`, `week_raid_tech:t_1_1`, `week_raid_delegate:db01m2d1`, and `week_raid_battlepass_tier:1`. This improves authored gameplay-mode lookup while staying limited to config evidence rather than runtime danger/score formulas, live weekly rotation, account progress, or server-side refresh state.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
