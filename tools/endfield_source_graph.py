@@ -157,6 +157,13 @@ ATTRIBUTE_DICTIONARY_TABLES = (
     "AttributeFilterTable.json",
     "InteractiveAttributeDataTable.json",
 )
+SETTINGS_SEMANTIC_TABLES = (
+    "SettingTabTable.json",
+    "QualitySubSettingTable.json",
+    "QualitySubSettingOptionTable.json",
+    "GamepadSettingItemTable.json",
+    "GamepadImplicitSettingItemTable.json",
+)
 CHARACTER_SUPPORT_TABLES = (
     "CharacterTagTable.json",
     "CharacterTagDesTable.json",
@@ -2548,6 +2555,8 @@ class SourceGraphBuilder:
             self.commit_step("combatSemantics")
             self.ingest_attribute_dictionary()
             self.commit_step("attributeDictionary")
+            self.ingest_settings_semantics()
+            self.commit_step("settingsSemantics")
             if self.include_gameplay:
                 self.ingest_gameplay()
                 self.commit_step("gameplay")
@@ -9989,6 +9998,286 @@ class SourceGraphBuilder:
             if text_node:
                 self.add_edge(owner_node, text_node, "uses_i18n_text", source=source, evidence=text_id)
 
+    def add_setting_text_edges(self, owner_node: str, payload: Any, *, source: str, edge_kind: str = "setting_uses_i18n_text") -> None:
+        seen: set[str] = set()
+        for text_id in self.iter_i18n_text_ids(payload):
+            if text_id in seen:
+                continue
+            seen.add(text_id)
+            text_node = self.add_i18n_text_node(text_id, source=source)
+            if text_node:
+                self.add_edge(owner_node, text_node, edge_kind, source=source, evidence=text_id)
+                self.add_edge(owner_node, text_node, "uses_i18n_text", source=source, evidence=text_id)
+
+    def add_setting_text_key_node(self, text_key: Any, *, source: str = "") -> str:
+        key = safe_key(text_key)
+        if not key:
+            return ""
+        node = self.add_node("setting_text_key", key, name=key, source=source)
+        self.add_alias(key, node, kind="setting_text_key", source=source)
+        return node
+
+    def add_setting_item_node(self, setting_id: Any, *, source: str = "", data: Any = None) -> str:
+        key = safe_key(setting_id)
+        if not key:
+            return ""
+        node = self.add_node("setting_item", key, name=key, source=source, data=data)
+        self.add_alias(key, node, kind="setting_id", source=source)
+        return node
+
+    def add_setting_function_node(self, function_name: Any, *, source: str = "") -> str:
+        key = safe_key(function_name)
+        if not key:
+            return ""
+        node = self.add_node("setting_function", key, name=key, source=source)
+        self.add_alias(key, node, kind="setting_function", source=source)
+        return node
+
+    def add_setting_function_edges(self, owner_node: str, payload: dict[str, Any], *, source: str, edge_kind: str = "setting_uses_function") -> None:
+        for field, value in payload.items():
+            if not field.lower().endswith("function"):
+                continue
+            function_node = self.add_setting_function_node(value, source=source)
+            if function_node:
+                self.add_edge(owner_node, function_node, edge_kind, source=source, evidence=field)
+
+    def add_input_action_node(self, action_id: Any, *, source: str = "") -> str:
+        key = safe_key(action_id)
+        if not key:
+            return ""
+        node = self.add_node("input_action", key, name=key, source=source)
+        self.add_alias(key, node, kind="input_action_id", source=source)
+        return node
+
+    def add_input_scope_node(self, scope_id: Any, *, source: str = "") -> str:
+        key = safe_key(scope_id)
+        if not key:
+            return ""
+        node = self.add_node("input_scope", key, name=key, source=source)
+        self.add_alias(key, node, kind="input_scope", source=source)
+        return node
+
+    def add_input_key_node(self, key_id: Any, *, source: str = "") -> str:
+        key = safe_key(key_id)
+        if not key:
+            return ""
+        node = self.add_node("input_key", key, name=key, source=source)
+        self.add_alias(key, node, kind="input_key", source=source)
+        return node
+
+    def setting_item_payload(self, row: dict[str, Any]) -> dict[str, Any]:
+        keys = (
+            "settingId",
+            "settingTabId",
+            "settingItemType",
+            "settingSortOrder",
+            "settingRedDot",
+            "isDefaultValueValid",
+            "settingDefaultValue",
+            "validGameStates",
+            "validInputTypes",
+            "validPlatform",
+            "validRegions",
+            "validServerChannels",
+            "validUserPlatform",
+            "validateFunction",
+            "buttonGetStateFunction",
+            "buttonIcon",
+            "buttonOnClickFunction",
+            "dropdownOptionGetFunction",
+            "dropdownOptionSelectFunction",
+            "dropdownOptionValidateSelectFunction",
+            "toggleValueGetFunction",
+            "toggleValueSetFunction",
+            "sliderValueGetFunction",
+            "sliderValueSetFunction",
+            "sliderMinValue",
+            "sliderMaxValue",
+            "sliderStepValue",
+            "sliderWholeNumbers",
+        )
+        return compact_payload({key: row.get(key) for key in keys if row.get(key) not in (None, "", [], {})}, depth=3)
+
+    def ingest_settings_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_settings", name="Structured settings tables", path=slash(table_root))
+        for table_name in SETTINGS_SEMANTIC_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/settings")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            if table == "SettingTabTable":
+                self.add_setting_tab_edges(table, table_node, payload)
+            elif table == "QualitySubSettingTable":
+                self.add_quality_subsetting_edges(table, table_node, payload)
+            elif table == "QualitySubSettingOptionTable":
+                self.add_quality_option_edges(table, table_node, payload)
+            elif table == "GamepadSettingItemTable":
+                self.add_gamepad_setting_edges(table, table_node, payload, implicit=False)
+            elif table == "GamepadImplicitSettingItemTable":
+                self.add_gamepad_setting_edges(table, table_node, payload, implicit=True)
+
+    def add_setting_tab_edges(self, table: str, table_node: str, payload: dict[str, Any]) -> None:
+        for row_key, row in payload.items():
+            if not isinstance(row, dict):
+                continue
+            tab_id = safe_key(row.get("tabId") or row_key)
+            if not tab_id:
+                continue
+            tab_data = {
+                "tabId": tab_id,
+                "tabIcon": row.get("tabIcon"),
+                "tabSortOrder": row.get("tabSortOrder"),
+                "tabRedDot": row.get("tabRedDot"),
+                "validGameStates": row.get("validGameStates") or [],
+                "validInputTypes": row.get("validInputTypes") or [],
+                "validPlatform": row.get("validPlatform") or [],
+                "validateFunction": row.get("validateFunction"),
+                "tabLeaveFunction": row.get("tabLeaveFunction"),
+                "itemCount": len(row.get("tabItems") or {}),
+            }
+            tab_node = self.add_node("setting_tab", tab_id, name=tab_id, source=table, data=compact_payload(tab_data, depth=2))
+            self.add_alias(tab_id, tab_node, kind="setting_tab_id", source=table)
+            self.add_edge(table_node, tab_node, "defines_setting_tab", source=table, evidence=tab_id)
+            self.add_setting_text_edges(tab_node, row.get("tabText"), source=table, edge_kind="setting_tab_text")
+            self.add_setting_function_edges(tab_node, row, source=table, edge_kind="setting_tab_uses_function")
+            for setting_key, setting in (row.get("tabItems") or {}).items():
+                if not isinstance(setting, dict):
+                    continue
+                setting_id = safe_key(setting.get("settingId") or setting_key)
+                if not setting_id:
+                    continue
+                item_data = self.setting_item_payload(setting)
+                item_node = self.add_setting_item_node(setting_id, source=table, data=item_data)
+                self.add_edge(table_node, item_node, "defines_setting_item", source=table, evidence=setting_id)
+                self.add_edge(tab_node, item_node, "setting_tab_has_item", source=table, evidence=setting_id, data={"sortOrder": setting.get("settingSortOrder")})
+                self.add_setting_text_edges(item_node, setting, source=table)
+                self.add_setting_function_edges(item_node, setting, source=table)
+                for field in ("keyActionIds1", "keyActionIds2"):
+                    for index, action_id in enumerate(setting.get(field) or []):
+                        action_node = self.add_input_action_node(action_id, source=table)
+                        if action_node:
+                            self.add_edge(item_node, action_node, "setting_item_references_action", source=table, evidence=f"{field}[{index}]")
+                for index, scope in enumerate(setting.get("keyActionScopes") or []):
+                    scope_node = self.add_input_scope_node(scope, source=table)
+                    if scope_node:
+                        self.add_edge(item_node, scope_node, "setting_item_has_key_scope", source=table, evidence=f"keyActionScopes[{index}]")
+
+    def add_quality_subsetting_edges(self, table: str, table_node: str, payload: dict[str, Any]) -> None:
+        for row_key, row in payload.items():
+            if not isinstance(row, dict):
+                continue
+            setting_id = safe_key(row.get("settingId") or row_key)
+            if not setting_id:
+                continue
+            item_node = self.add_setting_item_node(setting_id, source=table)
+            quality_node = self.add_node(
+                "setting_quality_subsetting",
+                setting_id,
+                name=setting_id,
+                source=table,
+                data={"settingId": setting_id, "settingSortOrder": row.get("settingSortOrder"), "validPlatform": row.get("validPlatform") or []},
+            )
+            self.add_alias(setting_id, quality_node, kind="setting_quality_subsetting_id", source=table)
+            self.add_edge(table_node, quality_node, "defines_setting_quality_subsetting", source=table, evidence=setting_id)
+            self.add_edge(quality_node, item_node, "quality_subsetting_extends_setting_item", source=table, evidence=setting_id)
+            self.add_setting_text_edges(quality_node, row, source=table)
+
+    def add_quality_option_edges(self, table: str, table_node: str, payload: dict[str, Any]) -> None:
+        for row_key, row in payload.items():
+            if not isinstance(row, dict):
+                continue
+            option_id = safe_key(row.get("optionId") or row_key)
+            if not option_id:
+                continue
+            option_node = self.add_node("setting_quality_option", option_id, name=option_id, source=table, data={"optionId": option_id})
+            self.add_alias(option_id, option_node, kind="setting_quality_option_id", source=table)
+            self.add_edge(table_node, option_node, "defines_setting_quality_option", source=table, evidence=option_id)
+            self.add_setting_text_edges(option_node, row.get("optionText"), source=table, edge_kind="setting_quality_option_text")
+
+    def add_gamepad_setting_edges(self, table: str, table_node: str, payload: dict[str, Any], *, implicit: bool) -> None:
+        node_kind = "setting_gamepad_implicit_item" if implicit else "setting_gamepad_item"
+        define_edge = "defines_implicit_gamepad_setting_item" if implicit else "defines_gamepad_setting_item"
+        for row_key, row in payload.items():
+            if not isinstance(row, dict):
+                continue
+            setting_id = safe_key(row.get("settingId") or row_key)
+            if not setting_id:
+                continue
+            item_node = self.add_setting_item_node(setting_id, source=table, data=self.setting_item_payload(row))
+            gamepad_node = self.add_node(
+                node_kind,
+                setting_id,
+                name=setting_id,
+                source=table,
+                data=compact_payload({
+                    "settingId": setting_id,
+                    "settingItemType": row.get("settingItemType"),
+                    "settingSortOrder": row.get("settingSortOrder"),
+                    "settingRedDot": row.get("settingRedDot"),
+                    "actionScope": row.get("actionScope"),
+                    "actionCount": len(row.get("actions") or []),
+                    "optionCount": len(row.get("options") or []),
+                    "mutexSettingIds": row.get("mutexSettingIds") or [],
+                }, depth=2),
+            )
+            self.add_alias(setting_id, gamepad_node, kind=node_kind, source=table)
+            self.add_edge(table_node, gamepad_node, define_edge, source=table, evidence=setting_id)
+            self.add_edge(gamepad_node, item_node, "gamepad_setting_extends_setting_item", source=table, evidence=setting_id)
+            self.add_setting_text_edges(gamepad_node, row, source=table)
+            scope_node = self.add_input_scope_node(row.get("actionScope"), source=table)
+            if scope_node:
+                self.add_edge(gamepad_node, scope_node, "gamepad_setting_has_action_scope", source=table, evidence="actionScope")
+            for field in ("actionFactoryKeyHintTextIds", "actionKeyHintTextIds"):
+                for index, text_key in enumerate(row.get(field) or []):
+                    text_node = self.add_setting_text_key_node(text_key, source=table)
+                    if text_node:
+                        self.add_edge(gamepad_node, text_node, "gamepad_setting_uses_hint_text_key", source=table, evidence=f"{field}[{index}]")
+            for action_index, action in enumerate(row.get("actions") or []):
+                if not isinstance(action, dict):
+                    continue
+                for action_id in action.get("actionIds") or []:
+                    action_node = self.add_input_action_node(action_id, source=table)
+                    if action_node:
+                        self.add_edge(
+                            gamepad_node,
+                            action_node,
+                            "gamepad_setting_references_action",
+                            source=table,
+                            evidence=f"actions[{action_index}]",
+                            data={
+                                "actionKey": action.get("actionKey"),
+                                "actionKeyIsModifyKey": action.get("actionKeyIsModifyKey"),
+                                "actionOverrideKeyIconName": action.get("actionOverrideKeyIconName"),
+                            },
+                        )
+                key_node = self.add_input_key_node(action.get("actionKey"), source=table)
+                if key_node:
+                    self.add_edge(gamepad_node, key_node, "gamepad_setting_uses_input_key", source=table, evidence=f"actions[{action_index}].actionKey")
+            for option_index, option in enumerate(row.get("options") or []):
+                if not isinstance(option, dict):
+                    continue
+                option_node = self.add_node(
+                    "setting_gamepad_option",
+                    f"{setting_id}:{option.get('optionIndex')}",
+                    name=f"{setting_id}:{option.get('optionIndex')}",
+                    source=table,
+                    data={"settingId": setting_id, "optionIndex": option.get("optionIndex"), "optionActionKeys": option.get("optionActionKeys") or []},
+                )
+                self.add_edge(gamepad_node, option_node, "gamepad_setting_has_option", source=table, evidence=f"options[{option_index}]")
+                for key_index, key_id in enumerate(option.get("optionActionKeys") or []):
+                    key_node = self.add_input_key_node(key_id, source=table)
+                    if key_node:
+                        self.add_edge(option_node, key_node, "gamepad_option_uses_input_key", source=table, evidence=f"optionActionKeys[{key_index}]")
+            for index, mutex_setting_id in enumerate(row.get("mutexSettingIds") or []):
+                mutex_node = self.add_setting_item_node(mutex_setting_id, source=table)
+                if mutex_node:
+                    self.add_edge(gamepad_node, mutex_node, "setting_item_mutex_setting", source=table, evidence=f"mutexSettingIds[{index}]")
+
     def add_env_talk_node(self, talk_id: Any, *, source: str = "", data: Any = None) -> str:
         talk_key = safe_key(talk_id)
         if not talk_key:
@@ -14633,6 +14922,18 @@ QUERY_KIND_PRIORITY = {
     "composite_attribute": 32,
     "attribute_filter": 33,
     "interactive_attribute": 34,
+    "setting_tab": 34.1,
+    "setting_item": 34.2,
+    "setting_quality_subsetting": 34.3,
+    "setting_quality_option": 34.4,
+    "setting_gamepad_item": 34.5,
+    "setting_gamepad_implicit_item": 34.6,
+    "setting_gamepad_option": 34.7,
+    "setting_text_key": 34.8,
+    "setting_function": 34.85,
+    "input_action": 34.9,
+    "input_scope": 34.91,
+    "input_key": 34.92,
     "spaceship_npc_proxy": 35,
     "spaceship_skill": 36,
     "spaceship_room_type": 37,
@@ -14966,6 +15267,18 @@ NODE_ID_PREFIXES = (
     "composite_attribute",
     "attribute_filter",
     "interactive_attribute",
+    "setting_tab",
+    "setting_item",
+    "setting_quality_subsetting",
+    "setting_quality_option",
+    "setting_gamepad_item",
+    "setting_gamepad_implicit_item",
+    "setting_gamepad_option",
+    "setting_text_key",
+    "setting_function",
+    "input_action",
+    "input_scope",
+    "input_key",
     "spaceship_npc_proxy",
     "spaceship_skill",
     "spaceship_room_type",

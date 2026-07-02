@@ -1515,6 +1515,13 @@ story output safer to interpret without changing the underlying evidence graph.
 
 `reports/source_graph/option_branch_gaps.json` now appends audit-only scene entries when runtime audit evidence exists outside the inferred-anchor report. The validated rows surface `dlg_c28m3_10`, `dlg_c28m3_23`, `dlg_e6m1_10`, and `dlg_e6m4_14` with runtime audit group/conflict/jump counts plus all contributing audit report paths. These edges remain generated audit evidence from `runtime_jump_option_route_audit`, not automatic WebUI override promotions.
 
+
+2026-07-01 settings semantics graph refs: `tools/endfield_source_graph.py` now ingests `SettingTabTable`, `QualitySubSettingTable`, `QualitySubSettingOptionTable`, `GamepadSettingItemTable`, and `GamepadImplicitSettingItemTable` as the `structured_settings` dataset. A fast CN graph build to `tmp/source_graph_settings_semantics.sqlite` verified 8 `setting_tab` nodes, 139 `setting_item` nodes, 27 `setting_quality_subsetting` nodes, 55 `setting_quality_option` nodes, 7 `setting_gamepad_item` nodes, 5 `setting_gamepad_implicit_item` nodes, 31 `setting_gamepad_option` nodes, 9 `setting_text_key` nodes, 116 `setting_function` nodes, 88 `input_action` nodes, 5 `input_scope` nodes, and 10 `input_key` nodes.
+
+Validated settings edges include 100 `setting_tab_has_item`, 92 `setting_item_references_action`, 74 `setting_item_has_key_scope`, 27 `quality_subsetting_extends_setting_item`, 55 `setting_quality_option_text`, 40 `gamepad_setting_references_action`, 41 `gamepad_option_uses_input_key`, 6 `gamepad_setting_uses_input_key`, 14 `setting_item_mutex_setting`, 120 setting function-reference edges, and 255 setting-related i18n text edges across the specific setting text edge kinds. Query smoke tests passed for `gameSetting_video`, `battle_attack_start`, and `sub_anisoLevel_x16`. This covers a previously unmodeled Settings/I18n island without promoting platform, region, or channel filters into content categories.
+
+Next queued semantic island from the read-only scout: `TagDataTable` and `TagGroupDataTable` remain unmodeled while reports list them as high-count leftover UI/system text. Model them as canonical `tag`/`tag_group` taxonomy nodes and bridge only matching existing `character_tag` ids; do not conflate them with activity/enemy/gameplay tags.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type

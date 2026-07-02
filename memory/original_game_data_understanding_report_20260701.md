@@ -2027,6 +2027,13 @@ The source graph now carries generated nearby Runtime Jump option-route audits a
 
 This improves the semantic proof trail for risky option branches, especially the e6m1/e6m4 conflicts, but it does not promote routes automatically. The audit source is generated diagnostic evidence and still needs manual review or stronger runtime binding before changing authoritative WebUI overrides.
 
+
+### 2026-07-01 Settings Semantics Graph Progress
+
+The source graph now models the settings tables that were previously a large unselected I18n cluster: setting tabs/items, quality subsettings/options, gamepad setting rows/options, input actions, scopes, keys, function hooks, hint-text keys, and mutex settings. A fast CN build verified 8 tabs, 139 shared setting items, 55 quality options, 88 input actions, 5 input scopes, 10 input keys, 14 mutex links, 132 action-reference edges, 81 scope edges, 120 function-reference edges, and 255 setting-related i18n text links.
+
+This improves non-story UI/system text explainability and makes settings controls queryable from either the setting id or the input action id. The next high-confidence unmodeled semantic island is the generic tag taxonomy in `TagDataTable` and `TagGroupDataTable`; it should be modeled separately from activity, enemy, and gameplay tags.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
