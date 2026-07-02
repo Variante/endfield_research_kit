@@ -21096,15 +21096,18 @@ class SourceGraphBuilder:
             item_node = self.add_node("item", formula_item_id, name=formula_item_id, source=table)
             self.add_factory_item_aliases(item_node, formula_item_id, source=table)
             self.add_edge(recipe_node, item_node, "unlocked_by_factory_formula_item", source=table, evidence="itemId")
+            self.add_edge(item_node, recipe_node, "factory_formula_item_unlocks_recipe", source=table, evidence="itemId")
         machine_id = safe_key(row.get("machineId"))
         if machine_id:
             machine_node = self.add_node("factory_machine", machine_id, name=machine_id, source=table)
             self.add_edge(recipe_node, machine_node, "crafted_by_machine", source=table, evidence="machineId")
+            self.add_edge(machine_node, recipe_node, "factory_machine_crafts_recipe", source=table, evidence="machineId")
             self.add_alias(machine_id, machine_node, kind="factory_machine_id", source=table)
         domain_id = safe_key(row.get("domainId"))
         if domain_id:
             domain_node = self.add_node("gameplay_domain", domain_id, name=domain_id, source=table)
             self.add_edge(recipe_node, domain_node, "factory_recipe_domain", source=table, evidence="domainId")
+            self.add_edge(domain_node, recipe_node, "domain_has_factory_recipe", source=table, evidence="domainId")
             self.add_alias(domain_id, domain_node, kind="gameplay_domain_id", source=table)
         showing_type = safe_key(row.get("showingType"))
         if showing_type:
@@ -21115,6 +21118,7 @@ class SourceGraphBuilder:
         if formula_group_id:
             group_node = self.add_node("factory_craft_group", formula_group_id, name=formula_group_id, source=table)
             self.add_edge(recipe_node, group_node, "belongs_to_factory_craft_group", source=table, evidence="formulaGroupId")
+            self.add_edge(group_node, recipe_node, "factory_craft_group_has_canonical_recipe", source=table, evidence="formulaGroupId")
             self.add_alias(formula_group_id, group_node, kind="factory_craft_group_id", source=table)
         for group_id in row.get("belongingGroupIds") or []:
             group_id = safe_key(group_id)
@@ -21122,6 +21126,7 @@ class SourceGraphBuilder:
                 continue
             group_node = self.add_node("factory_craft_group", group_id, name=group_id, source=table)
             self.add_edge(recipe_node, group_node, "belongs_to_factory_craft_group", source=table, evidence="belongingGroupIds")
+            self.add_edge(group_node, recipe_node, "factory_craft_group_has_canonical_recipe", source=table, evidence="belongingGroupIds")
             self.add_alias(group_id, group_node, kind="factory_craft_group_id", source=table)
 
     def add_factory_item_table_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
