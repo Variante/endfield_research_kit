@@ -34,6 +34,7 @@ BUILD_DATA_INDEX = ROOT / "scripts" / "build_data_index.py"
 REPORT_DIR = ROOT / "reports" / "mission_order"
 DEFAULT_BOUNDARY_JSON = REPORT_DIR / "findtarget_selector_boundary_audit.json"
 DEFAULT_TAG_JSON = REPORT_DIR / "selector_formatter_tag_audit.json"
+DEFAULT_METADATA_JSON = REPORT_DIR / "selector_targetsettings_memorypack_metadata.json"
 DEFAULT_JSON = REPORT_DIR / "findtarget_selector_replay_audit.json"
 DEFAULT_MD = REPORT_DIR / "findtarget_selector_replay_audit.md"
 
@@ -124,6 +125,69 @@ def load_selector_tag_maps(path: Path) -> dict[str, Any]:
     }
 
 
+def wrapper_type_from_formatter(formatter_name: str) -> str:
+    if formatter_name.endswith("Formatter"):
+        return formatter_name[: -len("Formatter")] + "ForMemoryPack"
+    return formatter_name
+
+
+def load_metadata_types(path: Path) -> dict[str, dict[str, Any]]:
+    if not path.exists():
+        return {}
+    payload = read_json(path)
+    by_name: dict[str, dict[str, Any]] = {}
+    for section in ("matchedTypes", "memberOnlyTypes"):
+        for row in payload.get(section) or []:
+            full_name = str(row.get("fullName") or "")
+            if full_name and full_name not in by_name:
+                by_name[full_name] = row
+    return by_name
+
+
+def payload_setter_rows(type_row: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = []
+    for method in type_row.get("methods") or []:
+        name = str(method.get("name") or "")
+        if not (name.startswith("set___") and name.endswith("__")):
+            continue
+        field = name[len("set___") : -len("__")]
+        if field == "instance":
+            continue
+        rows.append({"field": field, "method": name, "token": method.get("token")})
+    return rows
+
+
+def empty_payload_selector_tags(
+    metadata_types: dict[str, dict[str, Any]],
+    tag_maps: dict[str, dict[int, dict[str, Any]]],
+) -> dict[str, dict[int, dict[str, Any]]]:
+    empty: dict[str, dict[int, dict[str, Any]]] = {}
+    for family, rows in tag_maps.items():
+        for tag, tag_row in rows.items():
+            formatter_name = str(tag_row.get("formatterName") or "")
+            wrapper_type = wrapper_type_from_formatter(formatter_name)
+            type_row = metadata_types.get(wrapper_type)
+            if not type_row or payload_setter_rows(type_row):
+                continue
+            empty.setdefault(family, {})[tag] = {
+                "family": family,
+                "tag": tag,
+                "tagHex": hex_tag(tag),
+                "actionName": tag_row.get("actionName") or "",
+                "formatterName": formatter_name,
+                "wrapperType": wrapper_type,
+            }
+    return empty
+
+
+def empty_payload_selector_tag_rows(empty_tags: dict[str, dict[int, dict[str, Any]]]) -> list[dict[str, Any]]:
+    rows = []
+    for family, tags in empty_tags.items():
+        for tag, row in tags.items():
+            rows.append({**row, "family": family, "tag": tag, "tagHex": hex_tag(tag)})
+    return sorted(rows, key=lambda row: (str(row.get("family") or ""), int(row.get("tag") or 0)))
+
+
 def tag_label(row: dict[str, Any] | None) -> str:
     if not row:
         return ""
@@ -193,6 +257,68 @@ def order_matches(
     return matches
 
 
+def try_consume_empty_payload_prefix(
+    helper: Any,
+    raw: bytes,
+    offset: int,
+    order_candidate: dict[str, Any],
+    tag_maps: dict[str, dict[int, dict[str, Any]]],
+    empty_payload_tags: dict[str, dict[int, dict[str, Any]]],
+) -> dict[str, Any]:
+    cursor = offset
+    steps = []
+    families = list(order_candidate.get("families") or [])
+    stop_reason = ""
+    for family in families:
+        try:
+            tag, next_cursor, width = helper.read_memorypack_union_tag(raw, cursor)
+        except (ValueError, IndexError, struct.error) as exc:
+            stop_reason = normalize_error(exc)
+            break
+        if tag == 0:
+            stop_reason = f"zero-{family}-tag"
+            break
+        tag_row = tag_maps.get(family, {}).get(tag)
+        if tag_row is None:
+            stop_reason = f"unknown-{family}-tag-{hex_tag(tag)}"
+            break
+        empty_row = empty_payload_tags.get(family, {}).get(tag)
+        if empty_row is None:
+            stop_reason = f"non-empty-or-unknown-{family}-payload-{hex_tag(tag)}"
+            break
+        if next_cursor >= len(raw):
+            stop_reason = "truncated-empty-payload-member-count"
+            break
+        member_count = raw[next_cursor]
+        if member_count != 0:
+            stop_reason = f"empty-payload-member-count-{member_count}"
+            break
+        steps.append(
+            {
+                "family": family,
+                "tag": tag,
+                "tagHex": hex_tag(tag),
+                "name": tag_label(tag_row),
+                "formatterName": empty_row.get("formatterName") or "",
+                "tagOffset": offset_hex(cursor),
+                "tagWidth": width,
+                "payloadMemberCountOffset": offset_hex(next_cursor),
+                "payloadMemberCount": member_count,
+                "nextOffset": offset_hex(next_cursor + 1),
+            }
+        )
+        cursor = next_cursor + 1
+    return {
+        "orderId": order_candidate.get("id"),
+        "startOffset": offset_hex(offset),
+        "endOffset": offset_hex(cursor),
+        "consumedFieldCount": len(steps),
+        "completeOrder": len(steps) == len(families),
+        "stopReason": stop_reason or None,
+        "steps": steps,
+    }
+
+
 def replay_target_settings(helper: Any, raw: bytes) -> dict[str, Any]:
     accepted = []
     failures: Counter[str] = Counter()
@@ -228,7 +354,12 @@ def replay_target_settings(helper: Any, raw: bytes) -> dict[str, Any]:
     }
 
 
-def replay_selector_tags(helper: Any, raw: bytes, tag_maps: dict[str, dict[int, dict[str, Any]]]) -> dict[str, Any]:
+def replay_selector_tags(
+    helper: Any,
+    raw: bytes,
+    tag_maps: dict[str, dict[int, dict[str, Any]]],
+    empty_payload_tags: dict[str, dict[int, dict[str, Any]]],
+) -> dict[str, Any]:
     union_hits = []
     union_hit_count = 0
     nonzero_union_hits = 0
@@ -236,6 +367,11 @@ def replay_selector_tags(helper: Any, raw: bytes, tag_maps: dict[str, dict[int, 
     nonzero_family_counts: Counter[str] = Counter()
     family_tag_counts: Counter[str] = Counter()
     nonzero_family_tag_counts: Counter[str] = Counter()
+    empty_payload_probe_attempts = 0
+    empty_payload_probe_successes = 0
+    empty_payload_probe_full_orders = 0
+    max_empty_payload_prefix_fields = 0
+    empty_payload_probe_samples = []
     for offset in range(len(raw)):
         try:
             tag, next_offset, width = helper.read_memorypack_union_tag(raw, offset)
@@ -272,11 +408,32 @@ def replay_selector_tags(helper: Any, raw: bytes, tag_maps: dict[str, dict[int, 
             continue
         tags, read_error = read_union_tags(helper, raw, offset + 1, max_tags=5)
         matches = order_matches(tags, tag_maps)
+        empty_prefix_attempts = []
+        for candidate in SELECTOR_ORDER_CANDIDATES:
+            attempt = try_consume_empty_payload_prefix(
+                helper,
+                raw,
+                offset + 1,
+                candidate,
+                tag_maps,
+                empty_payload_tags,
+            )
+            empty_payload_probe_attempts += 1
+            consumed = int(attempt.get("consumedFieldCount") or 0)
+            if consumed <= 0:
+                continue
+            empty_prefix_attempts.append(attempt)
+            empty_payload_probe_successes += 1
+            max_empty_payload_prefix_fields = max(max_empty_payload_prefix_fields, consumed)
+            if attempt.get("completeOrder"):
+                empty_payload_probe_full_orders += 1
+            if len(empty_payload_probe_samples) < 24:
+                empty_payload_probe_samples.append({"memberCountOffset": offset_hex(offset), **attempt})
         anchors.append(
             {
                 "memberCountOffset": offset_hex(offset),
                 "tagStartOffset": offset_hex(offset + 1),
-                "tagOnlyState": "header-only-no-payload-consumption",
+                "tagOnlyState": "header-only-plus-empty-payload-local-probe",
                 "tagsRead": len(tags),
                 "readError": read_error,
                 "zeroTagCount": sum(1 for row in tags if int(row.get("tag") or 0) == 0),
@@ -288,6 +445,7 @@ def replay_selector_tags(helper: Any, raw: bytes, tag_maps: dict[str, dict[int, 
                     for row in tags
                 ],
                 "orderMatches": matches,
+                "emptyPayloadPrefixAttempts": empty_prefix_attempts,
             }
         )
 
@@ -312,16 +470,26 @@ def replay_selector_tags(helper: Any, raw: bytes, tag_maps: dict[str, dict[int, 
         "nonZeroPlausibleOrderAnchorCount": len(nonzero_plausible),
         "zeroOnlyPlausibleOrderAnchorCount": len(plausible) - len(nonzero_plausible),
         "tagOnlyAnchorSamples": anchors[:24],
+        "emptyPayloadProbeAttemptCount": empty_payload_probe_attempts,
+        "emptyPayloadProbeSuccessCount": empty_payload_probe_successes,
+        "emptyPayloadProbeFullOrderCount": empty_payload_probe_full_orders,
+        "maxEmptyPayloadPrefixFields": max_empty_payload_prefix_fields,
+        "emptyPayloadProbeSamples": empty_payload_probe_samples,
         "exactBoundaryProofCount": 0,
         "exactBoundaryProofStatus": "not-proven: selector formatter payloads are not consumed to a known end offset",
         "chainSafeFindTargetCount": 0,
     }
 
 
-def shape_row(helper: Any, row: dict[str, Any], tag_maps: dict[str, dict[int, dict[str, Any]]]) -> dict[str, Any]:
+def shape_row(
+    helper: Any,
+    row: dict[str, Any],
+    tag_maps: dict[str, dict[int, dict[str, Any]]],
+    empty_payload_tags: dict[str, dict[int, dict[str, Any]]],
+) -> dict[str, Any]:
     raw = bytes.fromhex(str(row.get("bodyMiddleHex") or ""))
     target_settings = replay_target_settings(helper, raw)
-    selector = replay_selector_tags(helper, raw, tag_maps)
+    selector = replay_selector_tags(helper, raw, tag_maps, empty_payload_tags)
     return {
         "bodyMiddleSha256": row.get("bodyMiddleSha256"),
         "sampleCount": row.get("sampleCount"),
@@ -341,7 +509,12 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     boundary = read_json(args.boundary_json)
     tag_info = load_selector_tag_maps(args.tag_json)
     tag_maps = tag_info["families"]
-    rows = [shape_row(helper, row, tag_maps) for row in boundary.get("uniqueBodyMiddleShapes") or []]
+    metadata_types = load_metadata_types(args.metadata_json)
+    empty_tags = empty_payload_selector_tags(metadata_types, tag_maps)
+    rows = [
+        shape_row(helper, row, tag_maps, empty_tags)
+        for row in boundary.get("uniqueBodyMiddleShapes") or []
+    ]
 
     target_settings_failures: Counter[str] = Counter()
     selector_family_counts: Counter[str] = Counter()
@@ -359,6 +532,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     summary = {
         "sourceBoundaryJson": repo_rel(args.boundary_json),
         "sourceTagJson": repo_rel(args.tag_json),
+        "sourceMetadataJson": repo_rel(args.metadata_json),
         "samplesAttempted": len(boundary.get("samples") or []),
         "uniqueBodyMiddleShapeCount": len(rows),
         "uniqueShapesAttempted": len(rows),
@@ -393,6 +567,9 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         "selectorNonZeroUnionTagFamilyCounts": dict(selector_nonzero_family_counts.most_common()),
         "selectorUnionTagFamilyTagCounts": dict(selector_family_tag_counts.most_common(24)),
         "selectorNonZeroUnionTagFamilyTagCounts": dict(selector_nonzero_family_tag_counts.most_common(24)),
+        "selectorNonZeroTagCandidates": selector_tag_candidates(selector_nonzero_family_tag_counts, tag_maps),
+        "emptyPayloadSelectorTagCount": sum(len(tags) for tags in empty_tags.values()),
+        "emptyPayloadSelectorTags": empty_payload_selector_tag_rows(empty_tags),
         "plausibleSelectorOrderAnchorCount": sum(
             int(row.get("selectorReplay", {}).get("plausibleOrderAnchorCount") or 0) for row in rows
         ),
@@ -401,6 +578,19 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         ),
         "zeroOnlyPlausibleSelectorOrderAnchorCount": sum(
             int(row.get("selectorReplay", {}).get("zeroOnlyPlausibleOrderAnchorCount") or 0) for row in rows
+        ),
+        "emptyPayloadProbeAttemptCount": sum(
+            int(row.get("selectorReplay", {}).get("emptyPayloadProbeAttemptCount") or 0) for row in rows
+        ),
+        "emptyPayloadProbeSuccessCount": sum(
+            int(row.get("selectorReplay", {}).get("emptyPayloadProbeSuccessCount") or 0) for row in rows
+        ),
+        "emptyPayloadProbeFullOrderCount": sum(
+            int(row.get("selectorReplay", {}).get("emptyPayloadProbeFullOrderCount") or 0) for row in rows
+        ),
+        "maxEmptyPayloadPrefixFields": max(
+            (int(row.get("selectorReplay", {}).get("maxEmptyPayloadPrefixFields") or 0) for row in rows),
+            default=0,
         ),
         "exactBoundaryProofCount": 0,
         "chainSafeFindTargetCount": 0,
@@ -412,6 +602,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
             "helper": repo_rel(BUILD_DATA_INDEX),
             "boundaryAudit": repo_rel(args.boundary_json),
             "selectorTagAudit": repo_rel(args.tag_json),
+            "selectorTargetSettingsMetadata": repo_rel(args.metadata_json),
             "selectorTagSummary": tag_info["sourceSummary"],
         },
         "settings": {
@@ -421,11 +612,35 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         "summary": summary,
         "interpretation": [
             "TargetSettings replay is exact: accepted candidates would use the same envelope helper as the WebUI data decoder.",
-            "Selector replay is intentionally tag-only. Member-count and union-tag hits are useful priorities, but they do not consume formatter payloads or prove field boundaries.",
+            "Selector replay now consumes only empty selector payload prefixes: a known union tag whose MemoryPack wrapper has no payload setters plus an immediate zero member-count byte.",
+            "Empty-payload prefix hits prove only those local bytes. They still do not prove the full SelectorData boundary or any nested selector payload.",
             "FindTargetAction chain consumption should remain disabled until SelectorData payload readers consume to a known boundary such as selectorOwner or item end.",
         ],
         "shapes": rows,
     }
+
+
+def selector_tag_candidates(
+    counts: Counter[str],
+    tag_maps: dict[str, dict[int, dict[str, Any]]],
+    *,
+    limit: int = 24,
+) -> list[dict[str, Any]]:
+    rows = []
+    for key, count in counts.most_common(limit):
+        family, tag_hex = key.split(":", 1)
+        tag = int(tag_hex, 16)
+        formatter = tag_maps.get(family, {}).get(tag) or {}
+        rows.append(
+            {
+                "family": family,
+                "tag": tag_hex,
+                "count": count,
+                "actionName": formatter.get("actionName") or "",
+                "formatterName": formatter.get("formatterName") or "",
+            }
+        )
+    return rows
 
 
 def render_counts(value: dict[str, Any], limit: int = 6) -> str:
@@ -441,6 +656,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
         "",
         f"- Source boundary JSON: `{md_escape(summary.get('sourceBoundaryJson'))}`",
         f"- Source tag JSON: `{md_escape(summary.get('sourceTagJson'))}`",
+        f"- Source metadata JSON: `{md_escape(summary.get('sourceMetadataJson'))}`",
         f"- unique body-middle shapes: `{summary.get('uniqueBodyMiddleShapeCount')}`",
         f"- source decoded FindTarget items: `{summary.get('sourceDecodedFindTargetItemCount')}`",
         f"- source ambiguous first-FindTarget records: `{summary.get('sourceAmbiguousFirstFindTargetRecordCount')}`",
@@ -452,6 +668,10 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- plausible selector order anchors: `{summary.get('plausibleSelectorOrderAnchorCount')}` "
         f"(nonzero `{summary.get('nonZeroPlausibleSelectorOrderAnchorCount')}`, "
         f"zero-only `{summary.get('zeroOnlyPlausibleSelectorOrderAnchorCount')}`)",
+        f"- empty-payload selector tags from metadata: `{summary.get('emptyPayloadSelectorTagCount')}`",
+        f"- empty-payload prefix probe successes: `{summary.get('emptyPayloadProbeSuccessCount')}` "
+        f"(full order `{summary.get('emptyPayloadProbeFullOrderCount')}`, "
+        f"max fields `{summary.get('maxEmptyPayloadPrefixFields')}`)",
         f"- exact boundary proofs: `{summary.get('exactBoundaryProofCount')}`",
         f"- chain-safe FindTarget consumptions: `{summary.get('chainSafeFindTargetCount')}`",
         f"- ambiguous records explained: `{summary.get('ambiguousRecordsExplained')}`",
@@ -477,6 +697,19 @@ def render_markdown(payload: dict[str, Any]) -> str:
             f"- Nonzero family counts: `{md_escape(render_counts(summary.get('selectorNonZeroUnionTagFamilyCounts') or {}))}`",
             f"- Top nonzero family/tag counts: `{md_escape(render_counts(summary.get('selectorNonZeroUnionTagFamilyTagCounts') or {}, 10))}`",
             "",
+            "| family | tag | count | selector formatter |",
+            "| --- | ---: | ---: | --- |",
+        ]
+    )
+    for row in (summary.get("selectorNonZeroTagCandidates") or [])[:12]:
+        lines.append(
+            f"| `{md_escape(row.get('family'))}` | `{md_escape(row.get('tag'))}` | {row.get('count')} | "
+            f"`{md_escape(row.get('actionName') or row.get('formatterName'))}` |"
+        )
+
+    lines.extend(
+        [
+            "",
             "## Shape Replay",
             "",
         ]
@@ -498,6 +731,8 @@ def render_markdown(payload: dict[str, Any]) -> str:
             f"  - selector member3=`{selector.get('memberCount3AnchorCount')}` "
             f"plausibleOrders=`{selector.get('plausibleOrderAnchorCount')}` "
             f"nonzeroOrders=`{selector.get('nonZeroPlausibleOrderAnchorCount')}` "
+            f"emptyPayloadPrefixes=`{selector.get('emptyPayloadProbeSuccessCount')}` "
+            f"maxEmptyPayloadFields=`{selector.get('maxEmptyPayloadPrefixFields')}` "
             f"unionHits=`{selector.get('unionTagHitCount')}` "
             f"nonzeroUnionHits=`{selector.get('nonZeroUnionTagHitCount')}`"
         )
@@ -505,9 +740,14 @@ def render_markdown(payload: dict[str, Any]) -> str:
         for anchor in sample_anchors[:3]:
             tags = ", ".join(str(tag.get("tagHex")) for tag in (anchor.get("tags") or [])[:5])
             matches = ", ".join(match.get("id", "") for match in anchor.get("orderMatches") or [])
+            prefixes = ", ".join(
+                f"{attempt.get('orderId')}:{attempt.get('consumedFieldCount')}@{attempt.get('endOffset')}"
+                for attempt in anchor.get("emptyPayloadPrefixAttempts") or []
+            )
             lines.append(
                 f"  - anchor `{anchor.get('memberCountOffset')}` tags=`{md_escape(tags)}` "
-                f"matches=`{md_escape(matches or '-')}`"
+                f"matches=`{md_escape(matches or '-')}` "
+                f"emptyPayload=`{md_escape(prefixes or '-')}`"
             )
 
     return "\n".join(lines).rstrip() + "\n"
@@ -517,6 +757,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--boundary-json", type=Path, default=DEFAULT_BOUNDARY_JSON)
     parser.add_argument("--tag-json", type=Path, default=DEFAULT_TAG_JSON)
+    parser.add_argument("--metadata-json", type=Path, default=DEFAULT_METADATA_JSON)
     parser.add_argument("--json", type=Path, default=DEFAULT_JSON)
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MD)
     parser.add_argument("--markdown-shapes", type=int, default=24)
@@ -536,6 +777,7 @@ def main() -> int:
         f"{summary['uniqueBodyMiddleShapeCount']} "
         f"targetSettingsAccepted={summary['targetSettingsAcceptedCandidateCount']} "
         f"selectorOrderAnchors={summary['plausibleSelectorOrderAnchorCount']} "
+        f"emptyPayloadPrefixes={summary['emptyPayloadProbeSuccessCount']} "
         f"exactBoundaryProofs={summary['exactBoundaryProofCount']}"
     )
     return 0

@@ -751,8 +751,15 @@ gameplay-video OCR/audio workflow.
   FindTargetAction body-middle byte shapes against the current TargetSettings
   envelope helper and selector formatter tag maps. It writes
   `reports/mission_order/findtarget_selector_replay_audit.json` / `.md`, keeps
-  selector matches as tag-only hints, and reports exact boundary proof and
-  chain-safe FindTarget counters separately from noisy union-tag candidates.
+  selector matches as tag-only hints, consumes only locally proven empty-payload
+  selector prefixes, and reports exact boundary proof and chain-safe FindTarget
+  counters separately from noisy union-tag candidates.
+- `story_recovery/build_findtarget_selector_payload_priority_audit.py`: ranks
+  nonzero FindTarget selector tag hints against MemoryPack metadata setter
+  complexity. It writes
+  `reports/mission_order/findtarget_selector_payload_priority_audit.json` /
+  `.md` and identifies empty-payload selector targets for bounded byte-probe
+  follow-up work.
 - `story_recovery/build_lua_consumer_reference_audit.py`: scans extracted Lua
   roots and writes `reports/mission_order/lua_consumer_reference_audit.json` /
   `.md`. It deduplicates Persistent/StreamingAssets modules by relative Lua
