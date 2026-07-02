@@ -11748,10 +11748,16 @@ class SourceGraphBuilder:
                 domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
                 if domain_node:
                     self.add_edge(cost_node, domain_node, "equipment_enhance_cost_domain", source=table, evidence="domainId")
-                for field, count_field, edge_kind in (("consumeItemId", "consumeItemCnt", "equipment_enhance_cost_consumes_item"), ("returnbackItemId", "returnbackItemCnt", "equipment_enhance_cost_refund_item")):
+                    self.add_edge(domain_node, cost_node, "domain_has_equipment_enhance_cost", source=table, evidence="domainId")
+                for field, count_field, edge_kind, reverse_edge in (
+                    ("consumeItemId", "consumeItemCnt", "equipment_enhance_cost_consumes_item", "item_consumed_by_equipment_enhance_cost"),
+                    ("returnbackItemId", "returnbackItemCnt", "equipment_enhance_cost_refund_item", "item_refunded_by_equipment_enhance_cost"),
+                ):
                     item_node = self.add_item_node(row.get(field), source=table)
                     if item_node:
-                        self.add_edge(cost_node, item_node, edge_kind, source=table, evidence=field, data={"count": row.get(count_field)})
+                        data = {"count": row.get(count_field)}
+                        self.add_edge(cost_node, item_node, edge_kind, source=table, evidence=field, data=data)
+                        self.add_edge(item_node, cost_node, reverse_edge, source=table, evidence=field, data=data)
         elif table == "EquipEnhanceGuaranteeTimesRuleTable":
             rule_node = self.add_equipment_progression_node("equipment_enhance_guarantee_rule", row_key, source=table, data=compact_payload(row, depth=2))
             if rule_node:
