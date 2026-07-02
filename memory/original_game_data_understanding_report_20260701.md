@@ -1576,6 +1576,16 @@ prefix matches were rejected because they create false collisions. This improves
 lookup for effect-adjacent exported assets but remains export-filename evidence,
 not runtime dependency proof.
 
+2026-07-01 visual-token asset bridge progress: semantic nodes with top-level
+icon/image tokens now link to exported image assets through the same strict
+PathID-suffix stem rule. A fast CN temp graph build verified 32,422
+`uses_icon_asset` edges and 340 `uses_visual_asset` edges across 8,008 typed
+source nodes, 1,507 visual tokens, and 10,620 image assets. This improves item,
+NPC, PRTS, SNS, system jump, activity banner, scene collectable, spaceship, and
+map-mark visual lookup while excluding generic `table_row` duplicates. The edge
+is field-backed export-name evidence, not a runtime Sprite-vs-Texture2D loading
+or atlas-selection proof.
+
 2026-07-01 postmodel asset-binding progress: source graph asset ingestion now
 adds exported model files whose normalized stem ends in `_postmodel` to
 `asset_entity` groups, alongside the existing LOD model grouping. Decoded model
