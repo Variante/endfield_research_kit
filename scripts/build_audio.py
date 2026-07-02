@@ -67,6 +67,8 @@ WWISE_EVENT_CATEGORY_BY_FOLDER = {
 }
 WWISE_UNKNOWN_FOLDER = "unknown"
 SHARED_AUDIO_BLOCKS = ("audio", "initial-audio", "audit-audio")
+OPTIONAL_SHARED_AUDIO_BLOCKS = ("hotfix-audio",)
+SHARED_AUDIO_STORAGE_BLOCKS = (*SHARED_AUDIO_BLOCKS, *OPTIONAL_SHARED_AUDIO_BLOCKS)
 EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio",
     "initial-audio",
@@ -87,6 +89,7 @@ SHARED_AUDIO_BLOCK_LABELS = {
     "audio": "Audio",
     "initial-audio": "InitAudio",
     "audit-audio": "AuditAudio",
+    "hotfix-audio": "HotfixAudio",
 }
 AUDIO_META_KEYS = (
     "audioDialogKey",
@@ -650,7 +653,7 @@ def audio_rel_for_dialog_path(dialog_path: str, extension: str) -> str:
 
 
 def storage_root_for_block(block: str, language: str) -> str:
-    if block in SHARED_AUDIO_BLOCKS:
+    if block in SHARED_AUDIO_STORAGE_BLOCKS:
         return SHARED_AUDIO_STORAGE
     return language
 
@@ -697,7 +700,7 @@ def selected_audio_blocks(block_mode: str) -> tuple[str, ...]:
 
 
 def source_scope_for_block(block: str) -> str:
-    if block in SHARED_AUDIO_BLOCKS:
+    if block in SHARED_AUDIO_STORAGE_BLOCKS:
         return "shared"
     if block in LANGUAGE_AUDIO_BLOCKS:
         return "language"
@@ -1733,7 +1736,7 @@ def run_audio_dumper(
         storage_root = storage_root_for_block(block, language)
         output_root = args.audio_root / storage_root
         output_root.mkdir(parents=True, exist_ok=True)
-        dumper_language_info = shared_language_info if block in SHARED_AUDIO_BLOCKS else language_info
+        dumper_language_info = shared_language_info if block in SHARED_AUDIO_STORAGE_BLOCKS else language_info
         for source_label, streaming_assets, fallback_assets in audio_vfs_sources(args):
             before = snapshot_audio_file_stats(output_root)
             run_audio_dumper_block(
@@ -2431,7 +2434,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--language", choices=sorted(LANGUAGES), default="CN")
     parser.add_argument("--format", choices=("wav", "wem"), default="wav")
-    parser.add_argument("--block", choices=("all", "voice", "audio", "initial-audio", "audit-audio"), default="all")
+    parser.add_argument(
+        "--block",
+        choices=("all", "voice", "audio", "initial-audio", "audit-audio", "hotfix-audio"),
+        default="all",
+    )
     parser.add_argument("--skip-decode", action="store_true", help="Only rebuild the audio index and story links.")
     parser.add_argument(
         "--audio-dumper",
