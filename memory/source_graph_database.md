@@ -1393,6 +1393,25 @@ collisions such as `P_agtrinit_skill13` vs `P_agtrinit_skill132_*`. These edges
 are filename/export-suffix evidence for browsing, not proof of runtime effect
 dependency.
 
+2026-07-01 FMV binding graph progress: source graph now ingests
+`export_full/recovered/video_bindings.json` as first-class video/story evidence.
+A fast CN graph build to `tmp/source_graph_video_bindings.sqlite` verified 29
+`fmv_binding` nodes, 29 `fmv_clip` nodes, 29 `defines_fmv_binding` edges, 29
+`fmv_binding_targets_story` edges, 29 `fmv_binding_in_mission` edges, 84
+`fmv_binding_uses_video` edges, 29 `fmv_binding_timeline_clip` edges, 58
+`fmv_binding_source_file` edges, 58 `fmv_binding_playable_pathid` edges, and
+110 `unbound_video_candidate` edges. Example queries:
+
+```bat
+python tools\endfield_source_graph.py query cs_video_dlg_e10m1_1 --kind fmv_binding
+python tools\endfield_source_graph.py query StreamingAssets-structured/Data/Video/PC/Narrative/Cutscene/cs_video_dlg_e10m1_1.mp4 --kind video
+```
+
+The binding pass preserves Timeline playable and MissionRuntime source-file
+links, playable PathID values, mission hints, story fallback hints, and the
+`sceneIsHint` caveat. The 110 unbound videos are diagnostic candidates only;
+they are not promoted to story links.
+
 Use the quick build for normal story/option/map investigation. Use the full
 build only when Unity asset container, PathID, or exported asset relationship
 coverage matters.
