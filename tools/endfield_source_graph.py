@@ -591,6 +591,19 @@ FACTORY_UTILITY_TABLES = (
     "FactorySewageTreatExportTable.json",
     "FactorySewageTreatPlantStoreTable.json",
 )
+FACTORY_REVERSE_SOCIAL_TABLES = (
+    "FactoryItemAsHubCraftIncomeTable.json",
+    "FactoryItemAsHubCraftOutcomeTable.json",
+    "FactoryItemAsMachineCrafterIncomeTable.json",
+    "FactoryItemAsMachineCrafterOutcomeTable.json",
+    "FactoryItemAsManualCraftOutcomeTable.json",
+    "FactoryBuildingItemReverseTable.json",
+    "FactoryManualCraftReverseTable.json",
+    "FactorySocialBuildingTable.json",
+    "FactorySocialBuildingNpcTable.json",
+    "FactorySpecialCraftTable.json",
+    "FactoryStoragerTable.json",
+)
 FACTORY_LOGISTIC_UNIT_TABLES = {
     "FactoryGridBeltTable",
     "FactoryLiquidPipeTable",
@@ -3009,6 +3022,8 @@ class SourceGraphBuilder:
             self.commit_step("factoryLogistics")
             self.ingest_factory_utility_semantics()
             self.commit_step("factoryUtility")
+            self.ingest_factory_reverse_social_semantics()
+            self.commit_step("factoryReverseSocial")
             self.ingest_prts_archive_semantics()
             self.commit_step("prtsArchive")
             self.ingest_activity_achievement_semantics()
@@ -15402,6 +15417,117 @@ class SourceGraphBuilder:
                         self.add_tag_i18n_edges(sewage_level, level.get("levelDesc"), source=table, edge_kind="factory_sewage_level_desc_text")
                         self.add_factory_sewage_action_param_edges(sewage_level, level.get("actionParams"), source=table)
 
+    def ingest_factory_reverse_social_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_factory_reverse_social", name="Structured factory reverse and social indexes", path=slash(table_root))
+        for table_name in FACTORY_REVERSE_SOCIAL_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/factory_reverse_social")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/factory_reverse_social")
+                self.add_factory_reverse_social_row_edges(table, row_key, row, row_node)
+
+    def add_factory_reverse_index_node(self, table: str, row_key: str, *, source: str, data: Any = None) -> str:
+        node_key = f"{table}:{safe_key(row_key)}"
+        node = self.add_node("factory_item_reverse_index", node_key, name=str(row_key), source=source, data=data)
+        self.add_alias(node_key, node, kind="factory_item_reverse_index_id", source=source)
+        return node
+
+    def add_factory_reverse_recipe_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str, *, direction: str, recipe_kind: str) -> None:
+        item_node = self.add_item_node(row_key, source=table)
+        recipes = row.get("list") if isinstance(row.get("list"), list) else []
+        index_node = self.add_factory_reverse_index_node(table, row_key, source=table, data={"itemId": row_key, "direction": direction, "recipeKind": recipe_kind, "recipeCount": len(recipes)})
+        self.add_edge(row_node, index_node, "defines_factory_item_reverse_index", source=table)
+        if item_node:
+            self.add_edge(index_node, item_node, "factory_reverse_index_item", source=table, evidence="rowKey")
+        for index, recipe_id in enumerate(recipes):
+            recipe_node = self.add_factory_recipe_node(recipe_id, source=table)
+            if not recipe_node:
+                continue
+            edge_data = {"index": index, "recipeKind": recipe_kind}
+            self.add_edge(index_node, recipe_node, "factory_reverse_index_recipe", source=table, evidence=f"list[{index}]", data=edge_data)
+            if item_node:
+                if direction == "input":
+                    self.add_edge(item_node, recipe_node, "item_input_to_factory_recipe", source=table, evidence=f"list[{index}]", data=edge_data)
+                else:
+                    self.add_edge(recipe_node, item_node, "factory_recipe_outputs_item", source=table, evidence=f"list[{index}]", data=edge_data)
+
+    def add_factory_reverse_social_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table in {"FactoryItemAsHubCraftIncomeTable", "FactoryItemAsMachineCrafterIncomeTable"} and isinstance(row, dict):
+            recipe_kind = "hub" if "Hub" in table else "machine"
+            self.add_factory_reverse_recipe_edges(table, row_key, row, row_node, direction="input", recipe_kind=recipe_kind)
+            return
+        if table in {"FactoryItemAsHubCraftOutcomeTable", "FactoryItemAsMachineCrafterOutcomeTable", "FactoryItemAsManualCraftOutcomeTable"} and isinstance(row, dict):
+            recipe_kind = "manual" if "Manual" in table else ("hub" if "Hub" in table else "machine")
+            self.add_factory_reverse_recipe_edges(table, row_key, row, row_node, direction="output", recipe_kind=recipe_kind)
+            return
+        if table == "FactoryBuildingItemReverseTable" and isinstance(row, dict):
+            building_node = self.add_factory_building_node(row.get("buildingId") or row_key, source=table)
+            item_node = self.add_item_node(row.get("itemId"), source=table)
+            reverse_node = self.add_semantic_node("factory_building_item_reverse", row_key, source=table, data={"buildingId": row.get("buildingId"), "itemId": row.get("itemId")})
+            if reverse_node:
+                self.add_edge(row_node, reverse_node, "defines_factory_building_item_reverse", source=table)
+                if building_node:
+                    self.add_edge(reverse_node, building_node, "factory_building_item_reverse_building", source=table, evidence="buildingId")
+                if item_node:
+                    self.add_edge(reverse_node, item_node, "factory_building_item_reverse_item", source=table, evidence="itemId")
+            if building_node and item_node:
+                self.add_edge(item_node, building_node, "item_builds_factory_building", source=table, evidence="itemId")
+            return
+        if table == "FactoryManualCraftReverseTable":
+            formula_item = self.add_item_node(row_key, source=table)
+            recipe_node = self.add_factory_recipe_node(row, source=table)
+            reverse_node = self.add_factory_reverse_index_node(table, row_key, source=table, data={"formulaItemId": row_key, "recipeId": row})
+            self.add_edge(row_node, reverse_node, "defines_factory_manual_craft_reverse", source=table)
+            if formula_item:
+                self.add_edge(reverse_node, formula_item, "factory_manual_craft_reverse_item", source=table, evidence="rowKey")
+            if recipe_node:
+                self.add_edge(reverse_node, recipe_node, "factory_manual_craft_reverse_recipe", source=table, evidence="rowValue")
+            if formula_item and recipe_node:
+                self.add_edge(formula_item, recipe_node, "manual_craft_reverse_points_to_recipe", source=table, evidence="rowValue")
+            return
+        if table == "FactorySocialBuildingTable" and isinstance(row, dict):
+            social_node = self.add_semantic_node("factory_social_building", row.get("nodeType") if "nodeType" in row else row_key, source=table, data={"nodeType": row.get("nodeType"), "isSocialBuilding": row.get("isSocialBuilding"), "canReport": row.get("canReport")})
+            if social_node:
+                self.add_edge(row_node, social_node, "defines_factory_social_building", source=table)
+                type_node = self.add_factory_building_type_node(row.get("nodeType"), source=table)
+                if type_node:
+                    self.add_edge(social_node, type_node, "factory_social_building_type", source=table, evidence="nodeType")
+            return
+        if table == "FactorySocialBuildingNpcTable" and isinstance(row, dict):
+            npc_node = self.add_semantic_node("factory_social_npc", row.get("id") or row_key, name=row.get("name"), source=table, data={"avatarPath": row.get("avatarPath"), "avatarFramePath": row.get("avatarFramePath")})
+            if npc_node:
+                self.add_edge(row_node, npc_node, "defines_factory_social_npc", source=table)
+                self.add_tag_i18n_edges(npc_node, row.get("name"), source=table, edge_kind="factory_social_npc_name_text")
+                self.add_tag_i18n_edges(npc_node, row.get("signature"), source=table, edge_kind="factory_social_npc_signature_text")
+                for field in ("avatarPath", "avatarFramePath"):
+                    self.add_alias(row.get(field), npc_node, kind="asset_stem", source=table)
+            return
+        if table == "FactorySpecialCraftTable" and isinstance(row, dict):
+            special_node = self.add_semantic_node("factory_special_craft", row.get("recipeGroupId") or row_key, name=row.get("name"), source=table, data={"recipeGroupId": row.get("recipeGroupId"), "sortId": row.get("sortId")})
+            if special_node:
+                self.add_edge(row_node, special_node, "defines_factory_special_craft", source=table)
+                self.add_tag_i18n_edges(special_node, row.get("name"), source=table, edge_kind="factory_special_craft_name_text")
+                self.add_tag_i18n_edges(special_node, row.get("desc"), source=table, edge_kind="factory_special_craft_desc_text")
+                group_node = self.add_factory_craft_group_node(row.get("recipeGroupId"), source=table)
+                if group_node:
+                    self.add_edge(special_node, group_node, "factory_special_craft_group", source=table, evidence="recipeGroupId")
+            return
+        if table == "FactoryStoragerTable" and isinstance(row, dict):
+            storage_node = self.add_semantic_node("factory_storage_rule", row.get("id") or row_key, source=table, data={"capacity": row.get("capacity"), "msTransferCD": row.get("msTransferCD")})
+            if storage_node:
+                self.add_edge(row_node, storage_node, "defines_factory_storage_rule", source=table)
+                building_node = self.add_factory_building_node(row.get("id") or row_key, source=table)
+                if building_node:
+                    self.add_edge(storage_node, building_node, "factory_storage_rule_for_building", source=table, evidence="id")
+
     def ingest_prts_archive_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_prts_archive_semantics", path=slash(table_root))
@@ -19665,6 +19791,12 @@ QUERY_KIND_PRIORITY = {
     "factory_fluid_machine": 65.91,
     "factory_sewage_level": 65.92,
     "factory_sewage_action_param": 65.93,
+    "factory_item_reverse_index": 65.94,
+    "factory_building_item_reverse": 65.95,
+    "factory_social_building": 65.96,
+    "factory_social_npc": 65.97,
+    "factory_special_craft": 65.98,
+    "factory_storage_rule": 65.99,
     "factory_ingredient_tag": 66.1,
     "factory_logistic_unit": 66.2,
     "factory_panel_store_good": 66.3,
@@ -20203,6 +20335,12 @@ NODE_ID_PREFIXES = (
     "factory_tech_condition",
     "factory_building",
     "factory_building_type",
+    "factory_item_reverse_index",
+    "factory_building_item_reverse",
+    "factory_social_building",
+    "factory_social_npc",
+    "factory_special_craft",
+    "factory_storage_rule",
     "factory_ingredient_tag",
     "factory_logistic_unit",
     "factory_panel_store_good",
@@ -20277,6 +20415,12 @@ NODE_ID_PREFIXES = (
     "factory_item",
     "factory_machine",
     "factory_craft_group",
+    "factory_item_reverse_index",
+    "factory_building_item_reverse",
+    "factory_social_building",
+    "factory_social_npc",
+    "factory_special_craft",
+    "factory_storage_rule",
     "factory_ingredient_tag",
     "factory_logistic_unit",
     "factory_panel_store_good",
