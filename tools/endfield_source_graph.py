@@ -3242,8 +3242,6 @@ class SourceGraphBuilder:
             self.commit_step("characterManifests")
             self.ingest_selected_structured_tables()
             self.commit_step("structuredTables")
-            self.ingest_lua_consumer_reference_audit()
-            self.commit_step("luaConsumers")
             self.ingest_npc_voice_bark_semantics()
             self.commit_step("npcVoiceBark")
             self.ingest_narrative_audio_semantics()
@@ -3265,6 +3263,8 @@ class SourceGraphBuilder:
             if self.include_reference_rows:
                 self.ingest_reference_tables()
                 self.commit_step("reference")
+            self.ingest_lua_consumer_reference_audit()
+            self.commit_step("luaConsumers")
             if self.include_asset_maps:
                 self.ingest_asset_maps()
                 self.commit_step("assetMaps")
@@ -20774,7 +20774,8 @@ class SourceGraphBuilder:
         if not isinstance(payload, dict):
             return
         edges = payload.get("tableModuleEdges") if isinstance(payload.get("tableModuleEdges"), list) else []
-        if not edges:
+        module_findings = payload.get("moduleFindings") if isinstance(payload.get("moduleFindings"), list) else []
+        if not edges and not module_findings:
             return
         dataset = self.add_node(
             "dataset",
@@ -20793,12 +20794,10 @@ class SourceGraphBuilder:
 
         module_nodes: dict[str, str] = {}
         table_nodes: dict[str, str] = {}
-        for row in edges:
-            if not isinstance(row, dict):
-                continue
-            module_key = safe_key(row.get("module"))
+
+        def get_module_node(module_key: str, row: dict[str, Any]) -> str:
             if not module_key:
-                continue
+                return ""
             module_node = module_nodes.get(module_key)
             if not module_node:
                 module_path = safe_key(row.get("path"))
@@ -20817,6 +20816,15 @@ class SourceGraphBuilder:
                 if module_path:
                     module_file = self.add_file(module_path, kind="lua_script", source="lua_consumer_reference_audit")
                     self.add_edge(module_node, module_file, "lua_module_source_file", source="lua_consumer_reference_audit")
+            return module_node
+
+        for row in edges:
+            if not isinstance(row, dict):
+                continue
+            module_key = safe_key(row.get("module"))
+            module_node = get_module_node(module_key, row)
+            if not module_node:
+                continue
 
             table_value = safe_key(row.get("value"))
             table_key = safe_key(row.get("table"))
@@ -20862,6 +20870,55 @@ class SourceGraphBuilder:
                     source="lua_consumer_reference_audit",
                     evidence=table_value,
                     data={"count": row.get("count"), "focus": row.get("focus") or []},
+                )
+
+        enum_nodes: dict[str, str] = {}
+        cs_nodes: dict[str, str] = {}
+        for module in module_findings:
+            if not isinstance(module, dict):
+                continue
+            module_key = safe_key(module.get("module"))
+            module_node = get_module_node(module_key, module)
+            if not module_node:
+                continue
+            focus = module.get("focus") or {}
+            for item in module.get("topEnums") or []:
+                if not isinstance(item, dict):
+                    continue
+                value = safe_key(item.get("value"))
+                if not value:
+                    continue
+                enum_node = enum_nodes.get(value)
+                if not enum_node:
+                    enum_node = self.add_node("lua_enum_reference", value, name=value, source="lua_consumer_reference_audit")
+                    enum_nodes[value] = enum_node
+                    self.add_alias(value, enum_node, kind="lua_enum_reference", source="lua_consumer_reference_audit")
+                self.add_edge(
+                    module_node,
+                    enum_node,
+                    "lua_module_references_enum",
+                    source="lua_consumer_reference_audit",
+                    evidence=value,
+                    data={"count": item.get("count"), "focus": focus},
+                )
+            for item in module.get("topCsBeyond") or []:
+                if not isinstance(item, dict):
+                    continue
+                value = safe_key(item.get("value"))
+                if not value:
+                    continue
+                cs_node = cs_nodes.get(value)
+                if not cs_node:
+                    cs_node = self.add_node("lua_cs_reference", value, name=value, source="lua_consumer_reference_audit")
+                    cs_nodes[value] = cs_node
+                    self.add_alias(value, cs_node, kind="lua_cs_reference", source="lua_consumer_reference_audit")
+                self.add_edge(
+                    module_node,
+                    cs_node,
+                    "lua_module_references_cs_api",
+                    source="lua_consumer_reference_audit",
+                    evidence=value,
+                    data={"count": item.get("count"), "focus": focus},
                 )
 
     def iter_factory_item_refs(self, values: Any) -> Iterable[tuple[int, int, dict[str, Any]]]:
@@ -22178,6 +22235,8 @@ QUERY_KIND_PRIORITY = {
     "dialog_id_table_config": 105,
     "lua_module": 105.2,
     "lua_table_reference": 105.3,
+    "lua_enum_reference": 105.4,
+    "lua_cs_reference": 105.5,
     "dialog_registry_scene": 106,
     "bamboo_raft_task_group": 107,
     "quest_task": 108,
@@ -22872,6 +22931,8 @@ NODE_ID_PREFIXES = (
     "dialog_id_table_config",
     "lua_module",
     "lua_table_reference",
+    "lua_enum_reference",
+    "lua_cs_reference",
     "dialog_registry_scene",
     "bamboo_raft_task_group",
     "quest_task",
