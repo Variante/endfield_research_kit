@@ -2020,6 +2020,13 @@ Success metric:
 - Routine WebUI refreshes remain fast, while heavy full/debug exports are
   clearly opt-in and benchmarked.
 
+
+### 2026-07-01 Runtime Option Audit Graph Progress
+
+The source graph now carries generated nearby Runtime Jump option-route audits as queryable evidence. A fast CN build verified audit group/conflict nodes plus expected, runtime, directional first-line, conflict-owner, and nearby jump edges for `dlg_c28m3_10`, `dlg_c28m3_23`, `dlg_e6m1_10`, and `dlg_e6m4_14`. `option_branch_gaps.json` now includes audit-only scene rows with report paths, so runtime option proof is visible even when a scene is absent from the inferred-anchor report.
+
+This improves the semantic proof trail for risky option branches, especially the e6m1/e6m4 conflicts, but it does not promote routes automatically. The audit source is generated diagnostic evidence and still needs manual review or stronger runtime binding before changing authoritative WebUI overrides.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come

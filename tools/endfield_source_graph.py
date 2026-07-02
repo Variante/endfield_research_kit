@@ -52,6 +52,7 @@ DEFAULT_SUMMARY_MD = GRAPH_DIR / "summary.md"
 TIMELINE_LINE_ORDERS_REL = Path("recovered") / "AnimeStudio-cli" / "timeline_line_orders.json"
 TIMELINE_LINE_ORDERS_PATH = EXPORT_ROOT / TIMELINE_LINE_ORDERS_REL
 DIALOG_ID_TABLE_INDEX_PATH = EXPORT_ROOT / "recovered" / "dialog_id_table_index.json"
+RUNTIME_OPTION_ROUTE_AUDIT_GLOB = "runtime_jump_option_route_audit_CN*_nearby*.json"
 
 ASSET_MAPS = {
     "StreamingAssets": (
@@ -2562,6 +2563,8 @@ class SourceGraphBuilder:
             self.commit_step("activityAchievement")
             self.ingest_timeline_line_orders()
             self.commit_step("timelineLineOrders")
+            self.ingest_runtime_option_route_audits()
+            self.commit_step("runtimeOptionRouteAudits")
             self.ingest_story_source_links()
             self.commit_step("storySourceLinks")
             self.ingest_materials()
@@ -8799,6 +8802,177 @@ class SourceGraphBuilder:
         self.add_edge(option_node, jump_node, "timeline_route_runtime_jump", source="timeline_line_orders", evidence=str(jump_index), data=jump_data)
         self.add_timeline_clip_files(jump_node, jump, prefix="runtime_jump")
 
+    def ingest_runtime_option_route_audits(self) -> None:
+        source = "runtime_jump_option_route_audit"
+        for path in sorted((ROOT / "reports").glob(RUNTIME_OPTION_ROUTE_AUDIT_GLOB)):
+            payload = read_json(path, {})
+            groups = payload.get("groups") or []
+            if not isinstance(groups, list) or not groups:
+                continue
+            source_path = slash(path.relative_to(ROOT))
+            dataset = self.add_node(
+                "dataset",
+                f"runtime_option_route_audit:{path.stem}",
+                name=path.name,
+                source=source,
+                path=source_path,
+                data={"summary": compact_payload(payload.get("summary"), depth=2), "groupCount": len(groups)},
+            )
+            file_node = self.add_file(source_path, kind="runtime_option_route_audit", source=source, size=path.stat().st_size)
+            self.add_edge(file_node, dataset, "defines_runtime_option_route_audit", source=source, evidence=path.name)
+            for group_index, group in enumerate(groups):
+                if not isinstance(group, dict):
+                    continue
+                story_key = safe_key(group.get("sceneKey") or group.get("storyKey"))
+                group_key = safe_key(group.get("group") if group.get("group") is not None else group.get("groupKey"))
+                if not story_key or not group_key:
+                    continue
+                audit_key = f"{story_key}#group:{group_key}"
+                checks = group.get("checks") if isinstance(group.get("checks"), dict) else {}
+                audit_data = {
+                    "sceneKey": story_key,
+                    "group": group_key,
+                    "mission": group.get("mission"),
+                    "recommendation": group.get("recommendation"),
+                    "optionIds": group.get("optionIds") or [],
+                    "optionIndex": group.get("optionIndex") or [],
+                    "commonContinuationLineId": group.get("commonContinuationLineId"),
+                    "candidateLineIds": group.get("candidateLineIds") or [],
+                    "sourceFiles": group.get("sourceFiles") or [],
+                    "sourceReport": source_path,
+                    "runtimePathConflictCount": checks.get("runtimePathConflictCount"),
+                    "directionalFirstLineConflictCount": checks.get("directionalFirstLineConflictCount"),
+                    "nearbyRuntimeJumpCount": len(group.get("nearbyRuntimeJumps") or []),
+                }
+                audit_node = self.add_node(
+                    "runtime_option_route_audit_group",
+                    audit_key,
+                    name=audit_key,
+                    source=source,
+                    path=source_path,
+                    data=compact_payload(audit_data, depth=3),
+                )
+                story_node = self.add_node("story", story_key, source=source)
+                option_group_node = self.add_node(
+                    "option_group",
+                    self.timeline_group_key(story_key, group_key),
+                    source=source,
+                    data={"g": group_key, "index": self.timeline_group_index(group_key)},
+                )
+                self.add_edge(dataset, audit_node, "has_runtime_option_route_audit", source=source, evidence=str(group_index), data=audit_data)
+                self.add_edge(story_node, audit_node, "has_runtime_option_route_audit", source=source, evidence=group_key, data=audit_data)
+                self.add_edge(option_group_node, audit_node, "option_group_runtime_audit", source=source, evidence=source_path, data=audit_data)
+
+                option_ids = [safe_key(option_id) for option_id in (group.get("optionIds") or []) if safe_key(option_id)]
+                option_indices = group.get("optionIndex") or []
+                option_by_index = {safe_key(index): option_id for option_id, index in zip(option_ids, option_indices) if safe_key(index)}
+                for option_id in option_ids:
+                    option_node = self.add_node("option", option_id, name=option_id, source=source)
+                    self.add_edge(audit_node, option_node, "runtime_audit_has_option", source=source, evidence=option_id, data=audit_data)
+
+                for map_key, edge_kind in (
+                    ("expectedFirstLineByOption", "runtime_audit_expected_first_line"),
+                    ("runtimeFirstLineByOption", "runtime_audit_runtime_first_line"),
+                    ("directionalFirstLineByOption", "runtime_audit_directional_first_line"),
+                ):
+                    mapping = checks.get(map_key) if isinstance(checks.get(map_key), dict) else {}
+                    for option_id, line_id in mapping.items():
+                        option_key = safe_key(option_id)
+                        line_key = safe_key(line_id)
+                        if not option_key or not line_key:
+                            continue
+                        option_node = self.add_node("option", option_key, name=option_key, source=source)
+                        line_node = self.add_node("line", line_key, source=source)
+                        edge_data = {
+                            "sceneKey": story_key,
+                            "group": group_key,
+                            "optionId": option_key,
+                            "lineId": line_key,
+                            "field": f"checks.{map_key}.{option_key}",
+                            "recommendation": group.get("recommendation"),
+                            "sourceReport": source_path,
+                        }
+                        self.add_edge(option_node, line_node, edge_kind, source=source, evidence=source_path, data=edge_data)
+
+                conflicts = checks.get("runtimePathConflicts") if isinstance(checks.get("runtimePathConflicts"), list) else []
+                for conflict_index, conflict in enumerate(conflicts):
+                    if not isinstance(conflict, dict):
+                        continue
+                    option_id = safe_key(conflict.get("optionId"))
+                    if not option_id:
+                        continue
+                    conflict_key = f"{audit_key}:{option_id}:conflict:{conflict_index}"
+                    conflict_data = {
+                        "sceneKey": story_key,
+                        "group": group_key,
+                        "optionId": option_id,
+                        "expectedFirstLineId": conflict.get("expectedFirstLineId"),
+                        "runtimeFirstLineId": conflict.get("runtimeFirstLineId"),
+                        "runtimeFirstLineCandidateOwner": conflict.get("runtimeFirstLineCandidateOwner"),
+                        "recommendation": group.get("recommendation"),
+                        "sourceReport": source_path,
+                    }
+                    option_node = self.add_node("option", option_id, name=option_id, source=source)
+                    conflict_node = self.add_node(
+                        "runtime_option_route_conflict",
+                        conflict_key,
+                        name=f"{story_key} group {group_key} {option_id}",
+                        source=source,
+                        path=source_path,
+                        data=conflict_data,
+                    )
+                    self.add_edge(option_node, conflict_node, "has_runtime_route_conflict", source=source, evidence=source_path, data=conflict_data)
+                    self.add_edge(audit_node, conflict_node, "runtime_audit_has_conflict", source=source, evidence=str(conflict_index), data=conflict_data)
+                    for line_field, edge_kind in (
+                        ("expectedFirstLineId", "runtime_route_conflict_expected_first_line"),
+                        ("runtimeFirstLineId", "runtime_route_conflict_runtime_first_line"),
+                    ):
+                        line_key = safe_key(conflict.get(line_field))
+                        if line_key:
+                            line_node = self.add_node("line", line_key, source=source)
+                            self.add_edge(conflict_node, line_node, edge_kind, source=source, evidence=line_field, data=conflict_data)
+                    owner_key = safe_key(conflict.get("runtimeFirstLineCandidateOwner"))
+                    if owner_key:
+                        owner_node = self.add_node("option", owner_key, name=owner_key, source=source)
+                        self.add_edge(conflict_node, owner_node, "runtime_first_line_candidate_owner", source=source, evidence=owner_key, data=conflict_data)
+
+                for jump_index, jump in enumerate(group.get("nearbyRuntimeJumps") or []):
+                    if not isinstance(jump, dict):
+                        continue
+                    jump_key = safe_key(jump.get("assetTrack") or jump.get("track"))
+                    if not jump_key:
+                        jump_key = f"{story_key}:runtimeAuditJump:{group_key}:{jump_index}:{jump.get('start')}:{jump.get('end')}"
+                    option_id = option_by_index.get(safe_key(jump.get("optionIndex")))
+                    if not option_id:
+                        continue
+                    option_node = self.add_node("option", option_id, name=option_id, source=source)
+                    jump_data = {
+                        "sceneKey": story_key,
+                        "group": group_key,
+                        "optionId": option_id,
+                        "optionIndex": jump.get("optionIndex"),
+                        "start": jump.get("start"),
+                        "end": jump.get("end"),
+                        "duration": jump.get("duration"),
+                        "trackName": jump.get("trackName"),
+                        "displayName": jump.get("displayName"),
+                        "track": jump.get("track"),
+                        "assetTrack": jump.get("assetTrack"),
+                        "needChangeOptionAfterJump": jump.get("needChangeOptionAfterJump"),
+                        "optionIndexAfterJump": jump.get("optionIndexAfterJump"),
+                        "sourceReport": source_path,
+                    }
+                    jump_node = self.add_node(
+                        "runtime_jump_clip",
+                        jump_key,
+                        name=Path(jump_key).stem,
+                        source=source,
+                        path=safe_key(jump.get("assetTrack") or jump.get("track")),
+                        data=jump_data,
+                    )
+                    self.add_edge(option_node, jump_node, "runtime_audit_nearby_jump", source=source, evidence=str(jump_index), data=jump_data)
+                    self.add_edge(audit_node, jump_node, "runtime_audit_has_nearby_jump", source=source, evidence=str(jump_index), data=jump_data)
+
     def ingest_story_source_links(self) -> None:
         path = EXPORT_ROOT / "recovered" / "story_source_links.json"
         payload = read_json(path, {})
@@ -14073,15 +14247,93 @@ def emit_option_branch_gaps(conn: sqlite3.Connection) -> None:
         """
     ).fetchall()
     edge_counts = {row["storyKey"]: row["graphEdges"] for row in story_rows}
+    audit_rows = conn.execute(
+        """
+        SELECT
+            story.name AS storyKey,
+            audit.data AS auditData,
+            (
+                SELECT GROUP_CONCAT(DISTINCT dataset.path)
+                FROM edges dataset_edge
+                JOIN nodes dataset ON dataset.id = dataset_edge.src
+                WHERE dataset_edge.dst = audit.id
+                  AND dataset_edge.kind = 'has_runtime_option_route_audit'
+                  AND dataset.kind = 'dataset'
+            ) AS runtimeAuditReports,
+            (
+                SELECT COUNT(*)
+                FROM edges conflict_edge
+                WHERE conflict_edge.src = audit.id
+                  AND conflict_edge.kind = 'runtime_audit_has_conflict'
+            ) AS runtimeAuditConflicts,
+            (
+                SELECT COUNT(*)
+                FROM edges jump_edge
+                WHERE jump_edge.src = audit.id
+                  AND jump_edge.kind = 'runtime_audit_has_nearby_jump'
+            ) AS runtimeAuditNearbyJumps
+        FROM edges e
+        JOIN nodes story ON story.id = e.src
+        JOIN nodes audit ON audit.id = e.dst
+        WHERE story.kind = 'story'
+          AND audit.kind = 'runtime_option_route_audit_group'
+          AND e.kind = 'has_runtime_option_route_audit'
+        """
+    ).fetchall()
+    audit_stats: dict[str, dict[str, Any]] = {}
+    for row in audit_rows:
+        story_key = row["storyKey"]
+        data = parse_json_text(row["auditData"])
+        stats = audit_stats.setdefault(
+            story_key,
+            {
+                "runtimeAuditGroups": 0,
+                "runtimeAuditConflicts": 0,
+                "runtimeAuditNearbyJumps": 0,
+                "runtimeAuditRecommendations": Counter(),
+                "runtimeAuditReports": set(),
+            },
+        )
+        stats["runtimeAuditGroups"] += 1
+        stats["runtimeAuditConflicts"] += int(row["runtimeAuditConflicts"] or 0)
+        stats["runtimeAuditNearbyJumps"] += int(row["runtimeAuditNearbyJumps"] or 0)
+        recommendation = safe_key(data.get("recommendation"))
+        if recommendation:
+            stats["runtimeAuditRecommendations"][recommendation] += 1
+        for source_report in safe_key(row["runtimeAuditReports"]).split(","):
+            if source_report:
+                stats["runtimeAuditReports"].add(source_report)
     output_scenes = []
+    seen_scene_keys: set[str] = set()
     if isinstance(scenes, list):
         for scene in scenes:
             key = scene.get("scene") or scene.get("key") or scene.get("storyKey")
             if not key:
                 continue
+            seen_scene_keys.add(key)
             scene = dict(scene)
             scene["graphOptionEdges"] = edge_counts.get(key, 0)
+            stats = audit_stats.get(key)
+            if stats:
+                scene["runtimeAuditGroups"] = stats["runtimeAuditGroups"]
+                scene["runtimeAuditConflicts"] = stats["runtimeAuditConflicts"]
+                scene["runtimeAuditNearbyJumps"] = stats["runtimeAuditNearbyJumps"]
+                scene["runtimeAuditRecommendations"] = dict(sorted(stats["runtimeAuditRecommendations"].items()))
+                scene["runtimeAuditReports"] = sorted(stats["runtimeAuditReports"])
             output_scenes.append(scene)
+    for key, stats in sorted(audit_stats.items()):
+        if key in seen_scene_keys:
+            continue
+        output_scenes.append({
+            "scene": key,
+            "auditOnly": True,
+            "graphOptionEdges": edge_counts.get(key, 0),
+            "runtimeAuditGroups": stats["runtimeAuditGroups"],
+            "runtimeAuditConflicts": stats["runtimeAuditConflicts"],
+            "runtimeAuditNearbyJumps": stats["runtimeAuditNearbyJumps"],
+            "runtimeAuditRecommendations": dict(sorted(stats["runtimeAuditRecommendations"].items())),
+            "runtimeAuditReports": sorted(stats["runtimeAuditReports"]),
+        })
     payload = {
         "generated": int(time.time()),
         "sourceReport": slash(report_path),
@@ -14164,6 +14416,8 @@ QUERY_KIND_PRIORITY = {
     "option_group": 1,
     "option": 2,
     "option_override": 3,
+    "runtime_option_route_audit_group": 3.2,
+    "runtime_option_route_conflict": 3.3,
     "line": 4,
     "sns_dialog": 5,
     "sns_content": 6,
@@ -14504,6 +14758,8 @@ NODE_ID_PREFIXES = (
     "option_group",
     "option",
     "option_override",
+    "runtime_option_route_audit_group",
+    "runtime_option_route_conflict",
     "line",
     "sns_chat",
     "sns_topic",
@@ -14832,6 +15088,8 @@ NODE_ID_PREFIXES = (
     "timeline",
     "timeline_option_route",
     "runtime_jump_clip",
+    "runtime_option_route_audit_group",
+    "runtime_option_route_conflict",
 )
 OPTION_BRANCH_EDGE_KINDS = (
     "option_anchor_after",
@@ -14848,6 +15106,14 @@ OPTION_BRANCH_EDGE_KINDS = (
     "timeline_route_skips_line",
     "timeline_route_continues_to_option",
     "timeline_route_runtime_jump",
+    "runtime_audit_expected_first_line",
+    "runtime_audit_runtime_first_line",
+    "runtime_audit_directional_first_line",
+    "runtime_audit_nearby_jump",
+    "has_runtime_route_conflict",
+    "runtime_route_conflict_expected_first_line",
+    "runtime_route_conflict_runtime_first_line",
+    "runtime_first_line_candidate_owner",
 )
 
 ISSUE_EVIDENCE_EDGE_KINDS = (
@@ -14862,6 +15128,14 @@ ISSUE_EVIDENCE_EDGE_KINDS = (
     "timeline_route_skips_line",
     "timeline_route_continues_to_option",
     "timeline_route_runtime_jump",
+    "runtime_audit_expected_first_line",
+    "runtime_audit_runtime_first_line",
+    "runtime_audit_directional_first_line",
+    "runtime_audit_nearby_jump",
+    "has_runtime_route_conflict",
+    "runtime_route_conflict_expected_first_line",
+    "runtime_route_conflict_runtime_first_line",
+    "runtime_first_line_candidate_owner",
 )
 ASSET_USED_BY_INCOMING_EDGE_KINDS = (
     "has_gameplay_asset",

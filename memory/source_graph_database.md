@@ -1510,6 +1510,11 @@ manual/inferred match or conflict states and includes the opposing manual or
 inferred first-line IDs. This makes mixed manual, inferred, and runtime-derived
 story output safer to interpret without changing the underlying evidence graph.
 
+
+2026-07-01 runtime option-route audit graph refs: `tools/endfield_source_graph.py` now ingests generated nearby Runtime Jump option-route audit reports matching `reports/runtime_jump_option_route_audit_CN*_nearby*.json`. A fast CN graph build to `tmp/source_graph_runtime_option_audit.sqlite` verified 4 `runtime_option_route_audit_group` nodes, 3 `runtime_option_route_conflict` nodes, 18 `runtime_audit_expected_first_line` edges, 10 `runtime_audit_runtime_first_line` edges, 10 `runtime_audit_directional_first_line` edges, 7 `has_runtime_route_conflict` edges, 3 `runtime_audit_has_conflict` edges, and 7 `runtime_audit_nearby_jump` edges. The ingester links audited story option groups to expected/runtime/directional first-line candidates, conflict records, candidate-owner options, and nearby runtime jump clips by `assetTrack` when available.
+
+`reports/source_graph/option_branch_gaps.json` now appends audit-only scene entries when runtime audit evidence exists outside the inferred-anchor report. The validated rows surface `dlg_c28m3_10`, `dlg_c28m3_23`, `dlg_e6m1_10`, and `dlg_e6m4_14` with runtime audit group/conflict/jump counts plus all contributing audit report paths. These edges remain generated audit evidence from `runtime_jump_option_route_audit`, not automatic WebUI override promotions.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type
