@@ -801,6 +801,21 @@ ACTIVITY_ACHIEVEMENT_TABLES = (
     "ActivityBannerTable.json",
     "ActivityPushBubbleTable.json",
 )
+ACTIVITY_CATALOG_TABLES = (
+    "AdventureTaskTable.json",
+    "AdventureBookStageRewardTable.json",
+    "ActivityGameEntranceGameTable.json",
+    "ActivityGameEntranceSeriesTable.json",
+    "ActivityGameEntranceGameIdToSeriesIdTable.json",
+    "ActivityGameEntranceSeriesAchieveTable.json",
+    "HighDifficultyGameTable.json",
+    "HighDifficultySeriesTable.json",
+    "HighDifficultyGameIdToSeriesIdTable.json",
+    "PsActivityTable.json",
+    "PsActivityTaskTable.json",
+    "ActivitySubmitFoodTable.json",
+    "ActivityBenefitsTable.json",
+)
 
 def slash(path: Path) -> str:
     try:
@@ -2910,6 +2925,8 @@ class SourceGraphBuilder:
             self.commit_step("prtsArchive")
             self.ingest_activity_achievement_semantics()
             self.commit_step("activityAchievement")
+            self.ingest_activity_catalog_semantics()
+            self.commit_step("activityCatalog")
             self.ingest_timeline_line_orders()
             self.commit_step("timelineLineOrders")
             self.ingest_runtime_option_route_audits()
@@ -16536,6 +16553,201 @@ class SourceGraphBuilder:
         elif table == "AchievementStatisticTable":
             self.add_achievement_statistic_edges(table, row_key, row, row_node)
 
+    def ingest_activity_catalog_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_activity_catalog", name="Structured adventure and activity catalog tables", path=slash(table_root))
+        for table_name in ACTIVITY_CATALOG_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/activity_catalog")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/activity_catalog")
+                self.add_activity_catalog_row_edges(table, row_key, row, row_node)
+
+    def add_activity_catalog_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node(kind, key, name=name, source=source, data=data)
+
+    def add_adventure_book_stage_node(self, stage_id: Any, *, source: str = "", data: Any = None) -> str:
+        return self.add_activity_catalog_node("adventure_book_stage", stage_id, source=source, data=data)
+
+    def add_adventure_book_task_node(self, task_id: Any, *, source: str = "", data: Any = None) -> str:
+        return self.add_activity_catalog_node("adventure_book_task", task_id, source=source, data=data)
+
+    def add_activity_showcase_ref(self, owner_node: str, ref_id: Any, *, edge_kind: str, source: str, evidence: str, data: Any = None) -> None:
+        ref_key = safe_key(ref_id)
+        if not ref_key:
+            return
+        if ref_key.startswith("chr_"):
+            target_node = self.add_character_ref_node(ref_key, source=source)
+        elif ref_key.startswith("wpn_"):
+            target_node = self.add_weapon_ref_node(ref_key, source=source)
+        else:
+            target_node = self.add_item_node(ref_key, source=source)
+        if target_node:
+            self.add_edge(owner_node, target_node, edge_kind, source=source, evidence=evidence, data=data)
+
+    def add_activity_catalog_game_ref(self, owner_node: str, game_id: Any, *, edge_kind: str, source: str, evidence: str, data: Any = None) -> str:
+        game_key = safe_key(game_id)
+        if not game_key:
+            return ""
+        game_node = self.add_activity_catalog_node("activity_catalog_game", game_key, source=source, data=data)
+        self.add_edge(owner_node, game_node, edge_kind, source=source, evidence=evidence, data=data)
+        dungeon_node = self.add_dungeon_node(game_key, source=source)
+        if dungeon_node:
+            self.add_edge(game_node, dungeon_node, "activity_catalog_game_dungeon_ref", source=source, evidence=evidence)
+        return game_node
+
+    def add_activity_catalog_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if not isinstance(row, dict):
+            return
+        if table == "AdventureTaskTable":
+            task_id = row.get("adventureTaskId") or row_key
+            task_node = self.add_adventure_book_task_node(task_id, source=table, data={"adventureBookStage": row.get("adventureBookStage"), "taskType": row.get("taskType"), "sortId": row.get("sortId"), "jumpSystemId": row.get("jumpSystemId"), "rewardId": row.get("rewardId"), "conditionCount": len(row.get("conditionDataList") or [])})
+            if task_node:
+                self.add_edge(row_node, task_node, "defines_adventure_book_task", source=table)
+                stage_node = self.add_adventure_book_stage_node(row.get("adventureBookStage"), source=table)
+                if stage_node:
+                    self.add_edge(task_node, stage_node, "adventure_book_task_stage", source=table, evidence="adventureBookStage")
+                self.add_reward_ref_edge(task_node, row.get("rewardId"), edge_kind="adventure_book_task_reward", source=table, evidence="rewardId")
+                self.add_system_jump_edge(task_node, row.get("jumpSystemId"), edge_kind="adventure_book_task_jump", source=table, evidence="jumpSystemId")
+                self.add_activity_condition_edges(task_node, row.get("conditionDataList"), edge_kind="adventure_book_task_condition", source=table, evidence_prefix="conditionDataList")
+                self.add_tag_i18n_edges(task_node, row.get("taskDesc"), source=table, edge_kind="adventure_book_task_desc_text")
+        elif table == "AdventureBookStageRewardTable":
+            stage_id = row.get("adventureBookStage") if row.get("adventureBookStage") is not None else row_key
+            stage_node = self.add_adventure_book_stage_node(stage_id, source=table, data={"adventureBookStage": row.get("adventureBookStage"), "rewardId": row.get("rewardId"), "taskCount": len(row.get("taskIds") or [])})
+            if stage_node:
+                self.add_edge(row_node, stage_node, "defines_adventure_book_stage", source=table)
+                self.add_reward_ref_edge(stage_node, row.get("rewardId"), edge_kind="adventure_book_stage_reward", source=table, evidence="rewardId")
+                for index, task_id in enumerate(row.get("taskIds") or []):
+                    task_node = self.add_adventure_book_task_node(task_id, source=table)
+                    if task_node:
+                        self.add_edge(stage_node, task_node, "adventure_book_stage_has_task", source=table, evidence=f"taskIds[{index}]", data={"index": index})
+        elif table == "ActivityGameEntranceSeriesTable":
+            group_node = self.add_activity_catalog_node("activity_game_entrance_group", row_key, source=table, data={"seriesCount": len(row.get("seriesMap") or {}), "introMissionId": row.get("introMissionId")})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_activity_game_entrance_group", source=table)
+                mission_node = self.add_mission_ref_node(row.get("introMissionId"), source=table)
+                if mission_node:
+                    self.add_edge(group_node, mission_node, "activity_game_entrance_intro_mission", source=table, evidence="introMissionId")
+                series_map = row.get("seriesMap") if isinstance(row.get("seriesMap"), dict) else {}
+                for series_id, series in series_map.items():
+                    if not isinstance(series, dict):
+                        continue
+                    series_node = self.add_activity_catalog_node("activity_game_entrance_series", series_id, name=series.get("name"), source=table, data={"achieveId": series.get("achieveId"), "sortId": series.get("sortId"), "bgImg": series.get("bgImg"), "bgPrefab": series.get("bgPrefab")})
+                    if series_node:
+                        self.add_edge(group_node, series_node, "activity_game_entrance_group_has_series", source=table, evidence=f"seriesMap[{series_id}]", data={"sortId": series.get("sortId")})
+                        self.add_tag_i18n_edges(series_node, series.get("name"), source=table, edge_kind="activity_game_entrance_series_name_text")
+                        achievement_node = self.add_achievement_node(series.get("achieveId"), source=table)
+                        if achievement_node:
+                            self.add_edge(series_node, achievement_node, "activity_game_entrance_series_achievement", source=table, evidence="achieveId")
+                        for field in ("bgImg", "bgPrefab"):
+                            self.add_alias(series.get(field), series_node, kind="asset_stem", source=table)
+        elif table == "ActivityGameEntranceGameTable":
+            series_node = self.add_activity_catalog_node("activity_game_entrance_series", row.get("seriesId") or row_key, source=table, data={"gameCount": len(row.get("gameList") or [])})
+            if series_node:
+                self.add_edge(row_node, series_node, "defines_activity_game_entrance_games", source=table)
+                for index, game in enumerate(row.get("gameList") or []):
+                    if isinstance(game, dict):
+                        self.add_activity_catalog_game_ref(series_node, game.get("gameId"), edge_kind="activity_game_entrance_series_has_game", source=table, evidence=f"gameList[{index}]", data={"index": index, "sortId": game.get("sortId"), "timeOffset": game.get("timeOffset")})
+        elif table == "ActivityGameEntranceGameIdToSeriesIdTable":
+            game_node = self.add_activity_catalog_node("activity_catalog_game", row_key, source=table)
+            series_node = self.add_activity_catalog_node("activity_game_entrance_series", row.get("seriesId"), source=table)
+            if game_node:
+                self.add_edge(row_node, game_node, "defines_activity_game_entrance_game_map", source=table)
+            if game_node and series_node:
+                self.add_edge(game_node, series_node, "activity_game_maps_to_series", source=table, evidence="seriesId")
+        elif table == "ActivityGameEntranceSeriesAchieveTable":
+            series_node = self.add_activity_catalog_node("activity_game_entrance_series", row_key, source=table)
+            achievement_node = self.add_achievement_node(row.get("achieveId"), source=table)
+            if series_node:
+                self.add_edge(row_node, series_node, "defines_activity_game_entrance_series_achieve", source=table)
+            if series_node and achievement_node:
+                self.add_edge(series_node, achievement_node, "activity_game_entrance_series_achievement", source=table, evidence="achieveId")
+        elif table == "HighDifficultySeriesTable":
+            series_node = self.add_activity_catalog_node("high_difficulty_series", row_key, name=row.get("name"), source=table, data={"achieveId": row.get("achieveId"), "sortId": row.get("sortId"), "newSeriesSortId": row.get("newSeriesSortId"), "bgImg": row.get("bgImg")})
+            if series_node:
+                self.add_edge(row_node, series_node, "defines_high_difficulty_series", source=table)
+                self.add_tag_i18n_edges(series_node, row.get("name"), source=table, edge_kind="high_difficulty_series_name_text")
+                achievement_node = self.add_achievement_node(row.get("achieveId"), source=table)
+                if achievement_node:
+                    self.add_edge(series_node, achievement_node, "high_difficulty_series_achievement", source=table, evidence="achieveId")
+                self.add_alias(row.get("bgImg"), series_node, kind="asset_stem", source=table)
+        elif table == "HighDifficultyGameTable":
+            series_node = self.add_activity_catalog_node("high_difficulty_series", row.get("seriesId") or row_key, source=table, data={"gameCount": len(row.get("gameList") or [])})
+            if series_node:
+                self.add_edge(row_node, series_node, "defines_high_difficulty_games", source=table)
+                for index, game in enumerate(row.get("gameList") or []):
+                    if isinstance(game, dict):
+                        self.add_activity_catalog_game_ref(series_node, game.get("gameId"), edge_kind="high_difficulty_series_has_game", source=table, evidence=f"gameList[{index}]", data={"index": index, "sortId": game.get("sortId"), "timeOffset": game.get("timeOffset")})
+        elif table == "HighDifficultyGameIdToSeriesIdTable":
+            game_node = self.add_activity_catalog_node("activity_catalog_game", row_key, source=table)
+            series_node = self.add_activity_catalog_node("high_difficulty_series", row.get("seriesId"), source=table)
+            if game_node:
+                self.add_edge(row_node, game_node, "defines_high_difficulty_game_map", source=table)
+            if game_node and series_node:
+                self.add_edge(game_node, series_node, "high_difficulty_game_maps_to_series", source=table, evidence="seriesId")
+        elif table == "PsActivityTable":
+            ps_node = self.add_activity_catalog_node("ps_activity", row.get("objectId") or row_key, source=table, data={"taskCount": len(row.get("activityTasks") or []), "activityId": row_key})
+            if ps_node:
+                self.add_edge(row_node, ps_node, "defines_ps_activity", source=table)
+                for index, task in enumerate(row.get("activityTasks") or []):
+                    if isinstance(task, dict):
+                        task_node = self.add_activity_catalog_node("ps_activity_task", task.get("objectId"), source=table, data=compact_payload(task, depth=2))
+                        if task_node:
+                            self.add_edge(ps_node, task_node, "ps_activity_has_task", source=table, evidence=f"activityTasks[{index}]", data={"index": index})
+        elif table == "PsActivityTaskTable":
+            task_node = self.add_activity_catalog_node("ps_activity_task", row.get("objectId") or row_key, source=table, data={"activityId": row.get("activityId"), "startMissionId": row.get("startMissionId"), "endMissionId": row.get("endMissionId")})
+            if task_node:
+                self.add_edge(row_node, task_node, "defines_ps_activity_task", source=table)
+                ps_node = self.add_activity_catalog_node("ps_activity", row.get("activityId"), source=table)
+                if ps_node:
+                    self.add_edge(ps_node, task_node, "ps_activity_has_task", source=table, evidence="activityId")
+                for field, edge_kind in (("startMissionId", "ps_activity_task_start_mission"), ("endMissionId", "ps_activity_task_end_mission")):
+                    mission_node = self.add_mission_ref_node(row.get(field), source=table)
+                    if mission_node:
+                        self.add_edge(task_node, mission_node, edge_kind, source=table, evidence=field)
+        elif table == "ActivitySubmitFoodTable":
+            stage_node = self.add_activity_catalog_node("activity_submit_food_stage", row.get("stageId") or row_key, name=row.get("name"), source=table, data={"submitItemId": row.get("submitItemId"), "tipManualCraftId": row.get("tipManualCraftId"), "unlockShow": row.get("unlockShow"), "showImg": row.get("showImg")})
+            if stage_node:
+                self.add_edge(row_node, stage_node, "defines_activity_submit_food_stage", source=table)
+                activity_stage = self.add_activity_stage_node(row.get("stageId") or row_key, source=table)
+                if activity_stage:
+                    self.add_edge(stage_node, activity_stage, "activity_submit_food_stage_overlay", source=table, evidence="stageId")
+                submit_item = self.add_activity_catalog_node("activity_submit_item", row.get("submitItemId"), source=table)
+                if submit_item:
+                    self.add_edge(stage_node, submit_item, "activity_submit_food_requires_submit_item", source=table, evidence="submitItemId")
+                recipe_node = self.add_factory_recipe_node(row.get("tipManualCraftId"), source=table)
+                if recipe_node:
+                    self.add_edge(stage_node, recipe_node, "activity_submit_food_tip_recipe", source=table, evidence="tipManualCraftId")
+                self.add_tag_i18n_edges(stage_node, row.get("name"), source=table, edge_kind="activity_submit_food_name_text")
+                self.add_tag_i18n_edges(stage_node, row.get("submitDesc"), source=table, edge_kind="activity_submit_food_submit_desc_text")
+                self.add_tag_i18n_edges(stage_node, row.get("noteDesc"), source=table, edge_kind="activity_submit_food_note_desc_text")
+                self.add_alias(row.get("showImg"), stage_node, kind="asset_stem", source=table)
+        elif table == "ActivityBenefitsTable":
+            group_node = self.add_activity_catalog_node("activity_benefit_group", row_key, source=table, data={"stageCount": len(row.get("stageList") or [])})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_activity_benefit_group", source=table)
+                for index, benefit in enumerate(row.get("stageList") or []):
+                    if not isinstance(benefit, dict):
+                        continue
+                    benefit_node = self.add_activity_catalog_node("activity_benefit", benefit.get("benefitId") or f"{safe_key(row_key)}:{index}", name=benefit.get("title"), source=table, data={"benefitId": benefit.get("benefitId"), "bigRewardId": benefit.get("bigRewardId"), "jumpId": benefit.get("jumpId"), "sortId": benefit.get("sortId"), "rewardCount": len(benefit.get("rewardIdList") or []), "iconId": benefit.get("iconId")})
+                    if benefit_node:
+                        self.add_edge(group_node, benefit_node, "activity_benefit_group_has_benefit", source=table, evidence=f"stageList[{index}]", data={"index": index, "sortId": benefit.get("sortId")})
+                        self.add_system_jump_edge(benefit_node, benefit.get("jumpId"), edge_kind="activity_benefit_jump", source=table, evidence="jumpId")
+                        self.add_activity_showcase_ref(benefit_node, benefit.get("bigRewardId"), edge_kind="activity_benefit_big_reward_ref", source=table, evidence="bigRewardId")
+                        for reward_index, ref_id in enumerate(benefit.get("rewardIdList") or []):
+                            self.add_activity_showcase_ref(benefit_node, ref_id, edge_kind="activity_benefit_reward_ref", source=table, evidence=f"rewardIdList[{reward_index}]", data={"index": reward_index})
+                        self.add_tag_i18n_edges(benefit_node, benefit.get("title"), source=table, edge_kind="activity_benefit_title_text")
+                        self.add_tag_i18n_edges(benefit_node, benefit.get("desc"), source=table, edge_kind="activity_benefit_desc_text")
+                        self.add_tag_i18n_edges(benefit_node, benefit.get("bigRewardStatement"), source=table, edge_kind="activity_benefit_big_reward_statement_text")
+                        self.add_alias(benefit.get("iconId"), benefit_node, kind="asset_stem", source=table)
+
     def ingest_combat_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_combat_semantics", path=slash(table_root))
@@ -18312,6 +18524,18 @@ QUERY_KIND_PRIORITY = {
     "activity_milestone": 51,
     "activity_banner": 52,
     "activity_push": 53,
+    "adventure_book_stage": 53.1,
+    "adventure_book_task": 53.11,
+    "activity_game_entrance_group": 53.2,
+    "activity_game_entrance_series": 53.21,
+    "activity_catalog_game": 53.22,
+    "high_difficulty_series": 53.3,
+    "ps_activity": 53.4,
+    "ps_activity_task": 53.41,
+    "activity_submit_food_stage": 53.5,
+    "activity_submit_item": 53.51,
+    "activity_benefit_group": 53.6,
+    "activity_benefit": 53.61,
     "achievement_category": 54,
     "achievement_group": 55,
     "achievement": 56,
@@ -18807,6 +19031,18 @@ NODE_ID_PREFIXES = (
     "activity_milestone",
     "activity_banner",
     "activity_push",
+    "adventure_book_stage",
+    "adventure_book_task",
+    "activity_game_entrance_group",
+    "activity_game_entrance_series",
+    "activity_catalog_game",
+    "high_difficulty_series",
+    "ps_activity",
+    "ps_activity_task",
+    "activity_submit_food_stage",
+    "activity_submit_item",
+    "activity_benefit_group",
+    "activity_benefit",
     "achievement_category",
     "achievement_group",
     "achievement",
