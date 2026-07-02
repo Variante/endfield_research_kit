@@ -33,6 +33,14 @@ only selector wrappers whose payload has no setters beyond `instance`.
 - Payload priority ranking found `24` nonzero selector candidates, `10`
   empty-payload candidates, and `3` nested TargetSettings candidates. Empty
   payloads remain the safest next reader target.
+- `0x0000` is not a null selector sentinel. The selector formatter tag audit
+  registers real zero-tag types for all three families. The payload-priority
+  audit now classifies those rows: Finder `0x0000`
+  `Core_Selector_AbilityEntityTargetFinder_Data` is empty-instance-only,
+  Validator `0x0000` `Core_Selector_AttributeValidator_Data` has primitive
+  attribute/min/max fields, and PostProcessor `0x0000`
+  `Core_Selector_ConvertToBoxCenterPlaneProjectionPoint_Data` has an
+  unresolved `boxShape` payload.
 
 ## Interpretation
 
@@ -44,12 +52,12 @@ record to a known boundary such as `selectorOwner` or the item end.
 
 ## Next Steps
 
-1. Extend the report-only SelectorData probe to recognize nullable/zero selector
-   fields after a consumed empty selector payload, without enabling chain
-   consumption.
-2. Decode the highest-volume simple non-empty payloads after the empty/null path
+1. Do not treat selector tag `0x0000` as null. Add report-only readers for
+   actual zero-tag payloads in order of complexity: Finder `0x0000` first
+   because it is empty, then Validator `0x0000`, then PostProcessor `0x0000`
+   after the shape payload is understood.
+2. Decode the highest-volume simple non-empty payloads after the zero-tag path
    is bounded, starting with primitive/string candidates before nested
    TargetSettings.
-3. In the parallel toolchain branch, test HotfixAudio decode support for
-   `fluffy-dumper`/AnimeStudio audio output; this is independent of the
-   FindTarget parser gate.
+3. Keep FindTargetAction chain consumption disabled until a full SelectorData
+   reader reaches a known boundary such as `selectorOwner` or item end.
