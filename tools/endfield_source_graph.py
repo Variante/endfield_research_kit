@@ -170,6 +170,16 @@ TAG_TAXONOMY_TABLES = (
     "TagGroupDataTable.json",
     "TagDataTable.json",
 )
+SYSTEM_TIP_SEMANTIC_TABLES = (
+    "ErrorCodeTable.json",
+    "LoadingTipsTable.json",
+    "HyperlinkTextTable.json",
+    "CommonDeathTips.json",
+    "DungeonDeathTips.json",
+    "EnemyRelatedDeathTips.json",
+    "TrainingDeathTips.json",
+    "BattlePassForecastTipTable.json",
+)
 UI_LABEL_SEMANTIC_TABLES = {
     "BattlePassTaskLabelTable.json": {
         "id_fields": ("labelId",),
@@ -2667,6 +2677,8 @@ class SourceGraphBuilder:
             self.commit_step("tagTaxonomy")
             self.ingest_ui_label_semantics()
             self.commit_step("uiLabels")
+            self.ingest_system_tip_semantics()
+            self.commit_step("systemTips")
             self.ingest_weapon_semantics()
             self.commit_step("weaponSemantics")
             self.ingest_spaceship_semantics()
@@ -9999,6 +10011,84 @@ class SourceGraphBuilder:
                     self.add_ui_label_text_edges(label_node, payload_value, source=table, edge_kind=edge_kind)
                 self.add_ui_label_reference_edges(label_node, table, row)
 
+    def add_system_tip_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        tip_key = safe_key(key)
+        if not tip_key:
+            return ""
+        node = self.add_node(kind, tip_key, name=safe_key(name) or tip_key, source=source, data=data)
+        self.add_alias(tip_key, node, kind=f"{kind}_id", source=source)
+        return node
+
+    def ingest_system_tip_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_system_tips", name="Structured system tips and errors", path=slash(table_root))
+        for table_name in SYSTEM_TIP_SEMANTIC_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/system_tips")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                if not isinstance(row, dict):
+                    continue
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/system_tips")
+                self.add_system_tip_row_edges(table, row_key, row, row_node)
+
+    def add_system_tip_row_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        if table == "ErrorCodeTable":
+            node = self.add_system_tip_node("error_code", row_key, source=table)
+            if node:
+                self.add_edge(row_node, node, "defines_error_code", source=table)
+                self.add_tag_i18n_edges(node, row.get("text"), source=table, edge_kind="error_code_text")
+        elif table == "LoadingTipsTable":
+            tip_id = safe_key(row.get("key") or row_key)
+            node = self.add_system_tip_node("loading_tip", tip_id, source=table, data={"key": tip_id, "mapTag": row.get("mapTag"), "typeTag": row.get("typeTag"), "unlockMissionId": row.get("unlockMissionId")})
+            if node:
+                self.add_edge(row_node, node, "defines_loading_tip", source=table)
+                self.add_tag_i18n_edges(node, row.get("tipsTitle"), source=table, edge_kind="loading_tip_title_text")
+                self.add_tag_i18n_edges(node, row.get("text"), source=table, edge_kind="loading_tip_body_text")
+                mission_node = self.add_mission_ref_node(row.get("unlockMissionId"), source=table)
+                if mission_node:
+                    self.add_edge(node, mission_node, "loading_tip_unlocks_after_mission", source=table, evidence="unlockMissionId")
+        elif table == "HyperlinkTextTable":
+            link_id = safe_key(row.get("id") or row_key)
+            node = self.add_system_tip_node("hyperlink_text", link_id, source=table, data={"id": link_id, "richTextId": row.get("richTextId"), "jumpWikiId": row.get("jumpWikiId"), "iconPath": row.get("iconPath")})
+            if node:
+                self.add_edge(row_node, node, "defines_hyperlink_text", source=table)
+                self.add_tag_i18n_edges(node, row.get("name"), source=table, edge_kind="hyperlink_name_text")
+                self.add_tag_i18n_edges(node, row.get("desc"), source=table, edge_kind="hyperlink_desc_text")
+                self.add_alias(row.get("richTextId"), node, kind="rich_text_id", source=table)
+                self.add_alias(row.get("iconPath"), node, kind="asset_stem", source=table)
+                wiki_id = safe_key(row.get("jumpWikiId"))
+                if wiki_id:
+                    wiki_node = self.add_node("wiki_entry", wiki_id, name=wiki_id, source=table)
+                    self.add_alias(wiki_id, wiki_node, kind="wiki_entry_id", source=table)
+                    self.add_edge(node, wiki_node, "hyperlink_jumps_to_wiki", source=table, evidence="jumpWikiId")
+        elif table in {"CommonDeathTips", "DungeonDeathTips", "EnemyRelatedDeathTips", "TrainingDeathTips"}:
+            node = self.add_system_tip_node("death_tip", f"{table}:{row_key}", source=table, data={"table": table, "key": row_key})
+            if node:
+                self.add_edge(row_node, node, "defines_death_tip", source=table)
+                self.add_tag_i18n_edges(node, row, source=table, edge_kind="death_tip_text")
+                if table == "EnemyRelatedDeathTips":
+                    enemy_node = self.add_node("enemy", row_key, name=row_key, source=table)
+                    self.add_alias(row_key, enemy_node, kind="enemy_id", source=table)
+                    self.add_edge(node, enemy_node, "death_tip_related_enemy", source=table, evidence="rowKey")
+                elif table == "DungeonDeathTips":
+                    dungeon_node = self.add_node("dungeon", row_key, name=row_key, source=table)
+                    self.add_alias(row_key, dungeon_node, kind="dungeon_id", source=table)
+                    self.add_edge(node, dungeon_node, "death_tip_related_dungeon", source=table, evidence="rowKey")
+        elif table == "BattlePassForecastTipTable":
+            tip_id = safe_key(row.get("forecastTipId") or row_key)
+            node = self.add_system_tip_node("battlepass_forecast_tip", tip_id, source=table, data={"forecastTipId": tip_id, "priority": row.get("priority")})
+            if node:
+                self.add_edge(row_node, node, "defines_battlepass_forecast_tip", source=table)
+                self.add_tag_i18n_edges(node, row.get("text1"), source=table, edge_kind="battlepass_forecast_text1")
+                self.add_tag_i18n_edges(node, row.get("text2"), source=table, edge_kind="battlepass_forecast_text2")
+
     def add_weapon_node(self, weapon_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         weapon_key = safe_key(weapon_id)
         if not weapon_key:
@@ -15532,6 +15622,12 @@ QUERY_KIND_PRIORITY = {
     "setting_text_key": 34.8,
     "setting_function": 34.85,
     "ui_label": 34.87,
+    "error_code": 34.88,
+    "loading_tip": 34.881,
+    "hyperlink_text": 34.882,
+    "wiki_entry": 34.8825,
+    "death_tip": 34.883,
+    "battlepass_forecast_tip": 34.884,
     "input_action": 34.9,
     "input_scope": 34.91,
     "input_key": 34.92,
@@ -15885,6 +15981,12 @@ NODE_ID_PREFIXES = (
     "setting_text_key",
     "setting_function",
     "ui_label",
+    "error_code",
+    "loading_tip",
+    "hyperlink_text",
+    "wiki_entry",
+    "death_tip",
+    "battlepass_forecast_tip",
     "input_action",
     "input_scope",
     "input_key",

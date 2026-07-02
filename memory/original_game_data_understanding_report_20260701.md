@@ -2090,6 +2090,12 @@ The source graph now makes item-facing text roles queryable on the existing item
 
 A fast CN build verified 2,348 item name links, 2,296 item description links, 2,174 decoration-description links, 862 no-obtain hint links, 101 type/showing-type label links, and 42 gather-description/domain rows. This adds high-volume item text semantics without changing item/reward/shop topology.
 
+### 2026-07-02 System Tips And Errors Graph Progress
+
+The source graph now models the UI/system text cluster for error codes, loading tips, hyperlink rich-text entries, death tips, and battle-pass forecast tips. These nodes expose role-specific text edges and preserve lightweight links to missions, wiki targets, enemies, and dungeons where the source rows prove those relationships.
+
+A fast CN build verified 1,061 system-tip nodes across the covered tables and 1,362 system-tip `uses_i18n_text` edges, including 599 error-code text links, 288 loading-tip title/body links, 210 hyperlink name/description links, and 259 death-tip text links. This closes another high-volume non-story text island without mixing it into story recovery.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
