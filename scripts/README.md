@@ -744,8 +744,9 @@ gameplay-video OCR/audio workflow.
   `reports/mission_order/findtarget_selector_boundary_audit.json` / `.md`. It
   groups real FindTargetAction body-middle byte shapes, checks whether the
   current TargetSettings envelope parser accepts any middle-byte candidates,
-  lists ambiguous first-FindTarget records, and keeps selector tag byte hits as
-  non-proof prioritization hints.
+  stores complete body-middle hex for parser replay in JSON, lists ambiguous
+  first-FindTarget records, and keeps selector tag byte hits as non-proof
+  prioritization hints.
 - `story_recovery/build_skipped_vfs_block_audit.py`: summarizes an
   AnimeStudio/fluffy-dumper `vfs-index` JSON for WebUI-skipped VFS blocks such
   as Lua, ExtendData, Streaming, DynamicStreaming, and BundleManifest. It
