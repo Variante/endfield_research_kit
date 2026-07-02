@@ -9837,6 +9837,11 @@ class SourceGraphBuilder:
             self.add_edge(row_node, desc_node, "defines_character_tag_desc", source=table)
             self.add_edge(char_node, desc_node, "has_character_tag_desc", source=table, evidence=tag_key)
             self.add_edge(desc_node, tag_node, "describes_character_tag", source=table, evidence="tagId")
+            for text_id in self.iter_i18n_text_ids(desc.get("desc")):
+                text_node = self.add_i18n_text_node(text_id, source=table)
+                if text_node:
+                    self.add_edge(desc_node, text_node, "character_tag_desc_text", source=table, evidence=text_id)
+                    self.add_edge(desc_node, text_node, "uses_i18n_text", source=table, evidence=text_id)
 
     def add_character_profession_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         profession_id = safe_key(row.get("profession") if "profession" in row else row_key)
@@ -9929,6 +9934,12 @@ class SourceGraphBuilder:
         self.add_edge(row_node, step_node, "defines_character_tutorial_step", source=table)
         self.add_alias(step_id, step_node, kind="character_tutorial_step_id", source=table)
         self.add_alias(row.get("stepIcon"), step_node, kind="icon_id", source=table)
+        for field, edge_kind in (("stepDesc", "tutorial_step_desc_text"), ("iconDesc", "tutorial_step_icon_desc_text")):
+            for text_id in self.iter_i18n_text_ids(row.get(field)):
+                text_node = self.add_i18n_text_node(text_id, source=table)
+                if text_node:
+                    self.add_edge(step_node, text_node, edge_kind, source=table, evidence=text_id)
+                    self.add_edge(step_node, text_node, "uses_i18n_text", source=table, evidence=text_id)
 
     def add_tutorial_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         tutorial_id = safe_key(row_key)
