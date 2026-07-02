@@ -1361,6 +1361,17 @@ from decoded config strings to SkillPatch/potential/GamePlay blackboard
 consumers, while still avoiding claims about runtime formula behavior or
 parameter typing.
 
+2026-07-01 attribute consumer graph progress: source graph now links
+CharacterTable base/main/sub attribute ids, PotentialTalentEffectTable attr
+modifiers, AbilityEntityAttrTable `atk`/`maxHp`, AttributeShowConfig display
+modifiers, and `AttributeMetaTable` rows to explicit attribute/stat nodes. A
+fast CN temp graph build verified 83,636 character base-attribute edges, 58
+main/sub attribute edges, 51 potential talent attribute-meta edges, 28
+ability-entity stat-property edges, 86 display modifier-property edges, and 40
+mapped `attribute_meta_has_stat_property` edges. This makes numeric attributes
+queryable by character, potential, and stat key while still avoiding runtime
+formula or modifier-order claims.
+
 2026-07-01 source graph world/map progress: map, level, loading, scene-area,
 map-mark, track-map, scene collectable, factory-region, settlement POI, and shop
 channel POI table semantics are now queryable. A fast source graph rebuild

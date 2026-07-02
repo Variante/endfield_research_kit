@@ -1246,6 +1246,20 @@ edges, 331 `potential_talent_modifies_skill_blackboard` edges, 331
 stored as edge data for lookup; this pass indexes authored static parameters and
 does not execute skill, buff, or talent formulas.
 
+2026-07-01 attribute consumer graph progress: source graph now links authored
+attribute consumers to `AttributeMetaTable` and mapped stat-property keys. A
+fast CN temp graph build to `tmp/source_graph_attribute_consumers.sqlite`
+verified 83,636 `character_base_attribute_meta` edges, 29
+`character_main_attribute_meta` edges, 29 `character_sub_attribute_meta` edges,
+51 `potential_talent_modifies_attribute_meta` edges, 28
+`ability_entity_sets_stat_property` edges, 86
+`attribute_display_entry_uses_modifier_property` edges, and 40
+`attribute_meta_has_stat_property` edges from the maintained `STAT_ATTR_KEYS`
+mapping. Example queries now resolve `chr_0013_aglina`, `attr_39`, and
+`chr_0005_chen_potential_2` to explicit stat metadata evidence. This indexes
+authored attribute values and modifiers; it does not infer runtime formula
+execution, modifier order, or display-modifier semantic identity.
+
 2026-07-01 item/economy graph progress: a pre-Gameplay pass now ingests
 `ItemTable`, `ItemTypeTable`, `ItemShowingTypeTable`, `RewardTable`,
 `RewardDropTable`, `ShopGroupTable`, `ShopTable`, `ShopGoodsTable`, and
