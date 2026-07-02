@@ -26,7 +26,8 @@ equipment/gem semantic pass:
 - Formula packs now link display names/icons to their included formula ids.
 - Character potential rows now link characters to first unlock items, potential
   levels, cost items, potential effect ids, unlocked picture items, and card
-  topic items.
+  topic items. Reverse edges now let item/effect queries walk back to the
+  affected character potential rows.
 - The single potential decoration config now links to its mission and exposes
   model/animation asset stems as aliases.
 - Equipment enhancement cost and guarantee rows are queryable, including domain,
@@ -80,6 +81,11 @@ character_potential_cost_item              145 edges
 character_potential_effect                 145 edges
 character_potential_unlock_picture_item     91 edges
 character_potential_unlock_card_topic_item  12 edges
+potential_effect_used_by_character_potential 145 edges
+item_cost_for_character_potential          145 edges
+item_unlocks_character_potential_picture    91 edges
+item_unlocks_character_potential_card_topic 12 edges
+potential_item_used_by_character            29 edges
 defines_character_potential_deco             1 edge
 character_potential_deco_mission             1 edge
 defines_equipment_enhance_cost               1 edge
@@ -90,3 +96,25 @@ defines_equipment_enhance_guarantee_rule     3 edges
 defines_equipment_const                      6 edges
 ```
 
+## Character potential reverse edge follow-up
+
+A follow-up build of `reports/source_graph/endfield_source_graph.sqlite` verified
+the reverse character-potential edges against the generated SQLite graph:
+
+```text
+potential_effect_used_by_character_potential 145
+item_cost_for_character_potential           145
+item_unlocks_character_potential_picture     91
+item_unlocks_character_potential_card_topic  12
+potential_item_used_by_character             29
+```
+
+Sample edge evidence from SQLite:
+
+```text
+item:item_charpotentialup_chr_0004_pelica -> character_potential:chr_0004_pelica:potential:1
+kind=item_cost_for_character_potential
+source=CharacterPotentialTable
+evidence=potentialUnlockBundle[0].itemIds[0]
+data={"count":1,"index":0}
+```
