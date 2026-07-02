@@ -405,6 +405,28 @@ TOWER_DEFENSE_TABLES = (
     "TowerDefenseGroupTable.json",
     "TowerDefenseMapTable.json",
 )
+PHOTO_CHAIN_TABLES = (
+    "SnapshotIdentifyBaseTable.json",
+    "SnapshotIdentifyGroupTable.json",
+    "SnapshotIdPrefixTable.json",
+    "SnapshotIdentifyMonsterTable.json",
+    "SnapshotIdentifyNpcTable.json",
+    "SnapshotIdentifyFacTable.json",
+    "SnapshotIdentifyFormationTable.json",
+    "SnapshotIdentifyInteractiveTable.json",
+    "SnapshotIdentifyTeamTable.json",
+    "SnapshotIdentifyEmptyObbTable.json",
+    "SnapshotIdentifyEmptySphereTable.json",
+    "SnapshotFilterTable.json",
+    "SnapshotStickerTable.json",
+    "ActivitySnapshotChallengeMainTable.json",
+    "ActivitySnapshotChallengeTable.json",
+    "ActivitySnapShotStageTable.json",
+    "IdentifyGroupId2ActivitySnapshotStageTable.json",
+    "KiteStationLevelTable.json",
+    "KiteStationEntrustTasksTable.json",
+    "KiteStationRewardTable.json",
+)
 GAME_MECHANIC_SEMANTIC_TABLES = (
     "GameMechanicCategoryTable.json",
     "GameMechanicGroupTable.json",
@@ -2950,6 +2972,8 @@ class SourceGraphBuilder:
             self.commit_step("dungeonTraining")
             self.ingest_tower_defense_semantics()
             self.commit_step("towerDefense")
+            self.ingest_photo_chain_semantics()
+            self.commit_step("photoChain")
             self.ingest_battlepass_semantics()
             self.commit_step("battlepassSemantics")
             self.ingest_profile_social_semantics()
@@ -12320,6 +12344,226 @@ class SourceGraphBuilder:
                     if spawner_node:
                         self.add_edge(stage_node, spawner_node, "tower_defense_stage_spawner", source=table, evidence=f"spawnerIds[{index}]", data={"index": index})
 
+    def ingest_photo_chain_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_photo_chain", name="Structured snapshot and kite station photo tables", path=slash(table_root))
+        for table_name in PHOTO_CHAIN_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/photo_chain")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/photo_chain")
+                self.add_photo_chain_row_edges(table, row_key, row, row_node)
+
+    def add_photo_chain_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node(kind, key, name=name, source=source, data=data)
+
+    def add_snapshot_identify_node(self, identify_id: Any, *, source: str = "", data: Any = None) -> str:
+        return self.add_photo_chain_node("snapshot_identify", identify_id, source=source, data=data)
+
+    def add_snapshot_group_node(self, group_id: Any, *, source: str = "", data: Any = None) -> str:
+        return self.add_photo_chain_node("snapshot_identify_group", group_id, source=source, data=data)
+
+    def add_activity_snapshot_stage_node(self, stage_id: Any, *, source: str = "", data: Any = None) -> str:
+        return self.add_photo_chain_node("activity_snapshot_stage", stage_id, source=source, data=data)
+
+    def add_kite_station_node(self, station_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_photo_chain_node("kite_station", station_id, name=name, source=source, data=data)
+
+    def add_snapshot_identify_type_edge(self, identify_node: str, type_id: Any, *, source: str, evidence: str) -> None:
+        type_node = self.add_photo_chain_node("snapshot_identify_type", type_id, source=source)
+        if type_node:
+            self.add_edge(identify_node, type_node, "snapshot_identify_has_type", source=source, evidence=evidence)
+
+    def add_snapshot_template_target_edges(self, identify_node: str, values: Any, *, target_kind: str, edge_kind: str, source: str, evidence_prefix: str) -> None:
+        if isinstance(values, list):
+            iterable = enumerate(values)
+        else:
+            iterable = [(0, values)]
+        for index, value in iterable:
+            value_key = safe_key(value)
+            if not value_key:
+                continue
+            if target_kind == "enemy":
+                target_node = self.add_node("enemy", value_key, name=value_key, source=source)
+                self.add_alias(value_key, target_node, kind="enemy_id", source=source)
+            elif target_kind == "npc_template":
+                target_node = self.add_npc_template_node(value_key, source=source)
+            elif target_kind == "factory_building":
+                target_node = self.add_factory_building_node(value_key, source=source)
+            else:
+                target_node = self.add_photo_chain_node(target_kind, value_key, source=source)
+            if target_node:
+                self.add_edge(identify_node, target_node, edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]" if isinstance(values, list) else evidence_prefix, data={"index": index} if isinstance(values, list) else None)
+
+    def add_photo_text_edges(self, owner_node: str, row: dict[str, Any], fields: Iterable[tuple[str, str]], *, source: str) -> None:
+        for field, edge_kind in fields:
+            self.add_tag_i18n_edges(owner_node, row.get(field), source=source, edge_kind=edge_kind)
+
+    def add_photo_chain_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if not isinstance(row, dict):
+            return
+        if table == "SnapshotIdentifyBaseTable":
+            identify_node = self.add_snapshot_identify_node(row.get("id") or row_key, source=table, data={"count": row.get("count")})
+            if identify_node:
+                self.add_edge(row_node, identify_node, "defines_snapshot_identify_base", source=table)
+                self.add_tag_i18n_edges(identify_node, row.get("desc"), source=table, edge_kind="snapshot_identify_desc_text")
+        elif table == "SnapshotIdentifyGroupTable":
+            group_node = self.add_snapshot_group_node(row.get("id") or row_key, source=table, data={"identifyCount": len(row.get("identifyIds") or [])})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_snapshot_identify_group", source=table)
+                for index, identify_id in enumerate(row.get("identifyIds") or []):
+                    identify_node = self.add_snapshot_identify_node(identify_id, source=table)
+                    if identify_node:
+                        self.add_edge(group_node, identify_node, "snapshot_group_has_identify", source=table, evidence=f"identifyIds[{index}]", data={"index": index})
+        elif table == "SnapshotIdPrefixTable":
+            type_node = self.add_photo_chain_node("snapshot_identify_type", row.get("idPrefix") or row_key, source=table, data={"identifyType": row.get("identifyType")})
+            if type_node:
+                self.add_edge(row_node, type_node, "defines_snapshot_identify_type", source=table)
+        elif table in ("SnapshotIdentifyMonsterTable", "SnapshotIdentifyNpcTable", "SnapshotIdentifyFacTable", "SnapshotIdentifyFormationTable", "SnapshotIdentifyInteractiveTable", "SnapshotIdentifyTeamTable", "SnapshotIdentifyEmptyObbTable", "SnapshotIdentifyEmptySphereTable"):
+            identify_id = row.get("id") or row_key
+            type_map = {
+                "SnapshotIdentifyMonsterTable": ("m3", "enemy", "snapshot_identify_target_enemy"),
+                "SnapshotIdentifyNpcTable": ("npc", "npc_template", "snapshot_identify_target_npc"),
+                "SnapshotIdentifyFacTable": ("fac", "factory_building", "snapshot_identify_target_factory_template"),
+                "SnapshotIdentifyFormationTable": ("form", "snapshot_formation", "snapshot_identify_target_formation"),
+                "SnapshotIdentifyInteractiveTable": ("ia", "snapshot_interactive_target", "snapshot_identify_target_interactive"),
+                "SnapshotIdentifyTeamTable": ("team", "snapshot_team_param", "snapshot_identify_target_team_param"),
+                "SnapshotIdentifyEmptyObbTable": ("obb", "snapshot_empty_volume", "snapshot_identify_target_empty_volume"),
+                "SnapshotIdentifyEmptySphereTable": ("sph", "snapshot_empty_volume", "snapshot_identify_target_empty_volume"),
+            }
+            type_id, target_kind, edge_kind = type_map[table]
+            identify_node = self.add_snapshot_identify_node(identify_id, source=table, data=compact_payload(row, depth=2))
+            if identify_node:
+                self.add_edge(row_node, identify_node, f"defines_{type_id}_snapshot_identify", source=table)
+                self.add_snapshot_identify_type_edge(identify_node, type_id, source=table, evidence="typed table")
+                if table == "SnapshotIdentifyInteractiveTable":
+                    self.add_snapshot_template_target_edges(identify_node, row.get("idParam1"), target_kind=target_kind, edge_kind=edge_kind, source=table, evidence_prefix="idParam1")
+                    self.add_snapshot_template_target_edges(identify_node, row.get("idParam2"), target_kind=target_kind, edge_kind=edge_kind, source=table, evidence_prefix="idParam2")
+                elif table == "SnapshotIdentifyTeamTable":
+                    self.add_snapshot_template_target_edges(identify_node, row.get("typeParamId"), target_kind=target_kind, edge_kind=edge_kind, source=table, evidence_prefix="typeParamId")
+                else:
+                    self.add_snapshot_template_target_edges(identify_node, row.get("templateId"), target_kind=target_kind, edge_kind=edge_kind, source=table, evidence_prefix="templateId")
+        elif table == "SnapshotFilterTable":
+            filter_node = self.add_photo_chain_node("snapshot_filter", row.get("id") or row_key, name=row.get("name"), source=table, data={"sortId": row.get("sortId"), "isDefaultUnlock": row.get("isDefaultUnlock"), "filterPath": row.get("filterPath"), "filterEffectPath": row.get("filterEffectPath")})
+            if filter_node:
+                self.add_edge(row_node, filter_node, "defines_snapshot_filter", source=table)
+                self.add_photo_text_edges(filter_node, row, (("name", "snapshot_filter_name_text"),), source=table)
+                item_node = self.add_item_node(row.get("itemId"), source=table)
+                if item_node:
+                    self.add_edge(filter_node, item_node, "snapshot_filter_unlock_item", source=table, evidence="itemId")
+                for field in ("icon", "filterPath", "filterEffectPath"):
+                    self.add_alias(row.get(field), filter_node, kind="asset_stem", source=table)
+        elif table == "SnapshotStickerTable":
+            sticker_node = self.add_photo_chain_node("snapshot_sticker", row.get("id") or row_key, source=table, data={"sortId": row.get("sortId"), "isDefaultUnlock": row.get("isDefaultUnlock"), "icon": row.get("icon")})
+            if sticker_node:
+                self.add_edge(row_node, sticker_node, "defines_snapshot_sticker", source=table)
+                item_node = self.add_item_node(row.get("itemId"), source=table)
+                if item_node:
+                    self.add_edge(sticker_node, item_node, "snapshot_sticker_unlock_item", source=table, evidence="itemId")
+                self.add_alias(row.get("icon"), sticker_node, kind="asset_stem", source=table)
+        elif table == "ActivitySnapshotChallengeMainTable":
+            main_node = self.add_photo_chain_node("activity_snapshot_main", row.get("activityId") or row_key, source=table, data={"mainPrefabName": row.get("mainPrefabName")})
+            if main_node:
+                self.add_edge(row_node, main_node, "defines_activity_snapshot_main", source=table)
+                activity_node = self.add_photo_chain_node("activity", row.get("activityId"), source=table)
+                if activity_node:
+                    self.add_edge(activity_node, main_node, "activity_has_snapshot_main", source=table, evidence="activityId")
+                self.add_alias(row.get("mainPrefabName"), main_node, kind="asset_stem", source=table)
+        elif table == "ActivitySnapshotChallengeTable":
+            challenge_node = self.add_photo_chain_node("activity_snapshot_challenge", row.get("stageId") or row_key, source=table, data={"missionId": row.get("missionId"), "normalImg": row.get("normalImg"), "completeImg": row.get("completeImg")})
+            if challenge_node:
+                self.add_edge(row_node, challenge_node, "defines_activity_snapshot_challenge", source=table)
+                stage_node = self.add_activity_snapshot_stage_node(row.get("stageId") or row_key, source=table)
+                if stage_node:
+                    self.add_edge(challenge_node, stage_node, "activity_snapshot_challenge_stage", source=table, evidence="stageId")
+                mission_node = self.add_mission_ref_node(row.get("missionId"), source=table)
+                if mission_node:
+                    self.add_edge(challenge_node, mission_node, "activity_snapshot_challenge_mission", source=table, evidence="missionId")
+                self.add_photo_text_edges(challenge_node, row, (("normalStoryDesc", "activity_snapshot_normal_desc_text"), ("completeStoryDesc", "activity_snapshot_complete_desc_text")), source=table)
+                self.add_alias(row.get("normalImg"), challenge_node, kind="asset_stem", source=table)
+                self.add_alias(row.get("completeImg"), challenge_node, kind="asset_stem", source=table)
+        elif table == "ActivitySnapShotStageTable":
+            stage_node = self.add_activity_snapshot_stage_node(row_key, source=table, data={"levelId": row.get("levelId"), "questId": row.get("questId")})
+            if stage_node:
+                self.add_edge(row_node, stage_node, "defines_activity_snapshot_stage", source=table)
+                level_node = self.add_level_node(row.get("levelId"), source=table)
+                if level_node:
+                    self.add_edge(stage_node, level_node, "activity_snapshot_stage_level", source=table, evidence="levelId")
+                quest_node = self.add_mission_ref_node(row.get("questId"), source=table)
+                if quest_node:
+                    self.add_edge(stage_node, quest_node, "activity_snapshot_stage_quest", source=table, evidence="questId")
+        elif table == "IdentifyGroupId2ActivitySnapshotStageTable":
+            group_node = self.add_snapshot_group_node(row_key, source=table)
+            stage_node = self.add_activity_snapshot_stage_node(row.get("stageId"), source=table)
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_snapshot_group_activity_stage_map", source=table)
+            if group_node and stage_node:
+                self.add_edge(group_node, stage_node, "snapshot_group_activity_stage", source=table, evidence="stageId", data={"activityId": row.get("activityId")})
+        elif table == "KiteStationLevelTable":
+            station_node = self.add_kite_station_node(row.get("kiteStation") or row_key, name=row.get("name"), source=table, data={"domainId": row.get("domainId"), "levelId": row.get("levelId"), "levelCount": len(row.get("list") or {})})
+            if station_node:
+                self.add_edge(row_node, station_node, "defines_kite_station", source=table)
+                domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
+                if domain_node:
+                    self.add_edge(station_node, domain_node, "kite_station_in_domain", source=table, evidence="domainId")
+                level_node = self.add_level_node(row.get("levelId"), source=table)
+                if level_node:
+                    self.add_edge(station_node, level_node, "kite_station_in_level", source=table, evidence="levelId")
+                self.add_tag_i18n_edges(station_node, row.get("name"), source=table, edge_kind="kite_station_name_text")
+                levels = row.get("list") if isinstance(row.get("list"), dict) else {}
+                for level_key, level in levels.items():
+                    if not isinstance(level, dict):
+                        continue
+                    level_id = f"{safe_key(row.get('kiteStation') or row_key)}:{safe_key(level_key)}"
+                    kite_level = self.add_photo_chain_node("kite_station_level", level_id, source=table, data={"level": level.get("level"), "domainDevExp": level.get("domainDevExp"), "entrustSlotCnt": level.get("entrustSlotCnt"), "costItemCount": level.get("costItemCount"), "versionStart": level.get("versionStart"), "upgradeQuestId": level.get("upgradeQuestId")})
+                    if kite_level:
+                        self.add_edge(station_node, kite_level, "kite_station_has_level", source=table, evidence=f"list[{level_key}]", data={"level": level.get("level")})
+                        quest_node = self.add_mission_ref_node(level.get("upgradeQuestId"), source=table)
+                        if quest_node:
+                            self.add_edge(kite_level, quest_node, "kite_station_level_upgrade_quest", source=table, evidence="upgradeQuestId")
+                        self.add_photo_text_edges(kite_level, level, (("levelTitle", "kite_station_level_title_text"), ("levelDesc", "kite_station_level_desc_text"), ("upgradeQuestDesc", "kite_station_level_upgrade_desc_text")), source=table)
+        elif table == "KiteStationEntrustTasksTable":
+            station_node = self.add_kite_station_node(row_key, source=table)
+            if station_node:
+                self.add_edge(row_node, station_node, "defines_kite_station_tasks", source=table)
+                tasks = row.get("list") if isinstance(row.get("list"), dict) else {}
+                for task_key, task in tasks.items():
+                    if not isinstance(task, dict):
+                        continue
+                    task_id = f"{safe_key(row_key)}:{safe_key(task_key)}"
+                    task_node = self.add_photo_chain_node("kite_station_entrust_task", task_id, name=task.get("name"), source=table, data={"entrustIdx": task.get("entrustIdx"), "missionId": task.get("missionId"), "snapshotId": task.get("snapshotId"), "isGuideMission": task.get("isGuideMission"), "isRepeatable": task.get("isRepeatable"), "timeConsumeType": task.get("timeConsumeType")})
+                    if task_node:
+                        self.add_edge(station_node, task_node, "kite_station_has_entrust_task", source=table, evidence=f"list[{task_key}]", data={"entrustIdx": task.get("entrustIdx")})
+                        mission_node = self.add_mission_ref_node(task.get("missionId"), source=table)
+                        if mission_node:
+                            self.add_edge(task_node, mission_node, "kite_station_task_mission", source=table, evidence="missionId")
+                        group_node = self.add_snapshot_group_node(task.get("snapshotId"), source=table)
+                        if group_node:
+                            self.add_edge(task_node, group_node, "kite_station_task_snapshot_group", source=table, evidence="snapshotId")
+                        for reward_index, reward_id in enumerate(task.get("rewardIdLv") or []):
+                            self.add_reward_ref_edge(task_node, reward_id, edge_kind="kite_station_task_reward_by_level", source=table, evidence=f"rewardIdLv[{reward_index}]", data={"levelIndex": reward_index})
+                        self.add_photo_text_edges(task_node, task, (("name", "kite_station_task_name_text"), ("desc", "kite_station_task_desc_text"), ("completeDesc", "kite_station_task_complete_desc_text"), ("shotTargetName", "kite_station_task_target_name_text")), source=table)
+                        self.add_alias(task.get("shotTargetIcon"), task_node, kind="asset_stem", source=table)
+        elif table == "KiteStationRewardTable":
+            station_node = self.add_kite_station_node(row_key, source=table)
+            if station_node:
+                self.add_edge(row_node, station_node, "defines_kite_station_rewards", source=table)
+                for index, reward in enumerate(row.get("rewardList") or []):
+                    if not isinstance(reward, dict):
+                        continue
+                    milestone_id = f"{safe_key(row_key)}:{safe_key(reward.get('collectionCnt'))}"
+                    milestone_node = self.add_photo_chain_node("kite_station_milestone_reward", milestone_id, source=table, data={"collectionCnt": reward.get("collectionCnt"), "rewardId": reward.get("rewardId")})
+                    if milestone_node:
+                        self.add_edge(station_node, milestone_node, "kite_station_has_milestone_reward", source=table, evidence=f"rewardList[{index}]", data={"index": index, "collectionCnt": reward.get("collectionCnt")})
+                        self.add_reward_ref_edge(milestone_node, reward.get("rewardId"), edge_kind="kite_station_milestone_reward", source=table, evidence="rewardId", data={"collectionCnt": reward.get("collectionCnt")})
+
     def ingest_game_mechanic_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_game_mechanics", name="Structured game mechanic tables", path=slash(table_root))
@@ -18887,6 +19131,18 @@ QUERY_KIND_PRIORITY = {
     "tower_defense_group": 22.92,
     "tower_defense_settlement_map": 22.93,
     "tower_defense_spawner": 22.94,
+    "snapshot_identify_group": 22.95,
+    "snapshot_identify": 22.96,
+    "snapshot_identify_type": 22.961,
+    "snapshot_filter": 22.962,
+    "snapshot_sticker": 22.963,
+    "activity_snapshot_main": 22.964,
+    "activity_snapshot_stage": 22.965,
+    "activity_snapshot_challenge": 22.966,
+    "kite_station": 22.967,
+    "kite_station_level": 22.968,
+    "kite_station_entrust_task": 22.969,
+    "kite_station_milestone_reward": 22.9691,
     "character_tutorial": 23,
     "character_tutorial_stage": 24,
     "character_tutorial_step": 25,
@@ -19418,6 +19674,18 @@ NODE_ID_PREFIXES = (
     "tower_defense_group",
     "tower_defense_settlement_map",
     "tower_defense_spawner",
+    "snapshot_identify_group",
+    "snapshot_identify",
+    "snapshot_identify_type",
+    "snapshot_filter",
+    "snapshot_sticker",
+    "activity_snapshot_main",
+    "activity_snapshot_stage",
+    "activity_snapshot_challenge",
+    "kite_station",
+    "kite_station_level",
+    "kite_station_entrust_task",
+    "kite_station_milestone_reward",
     "character_tutorial",
     "character_tutorial_stage",
     "character_tutorial_step",
