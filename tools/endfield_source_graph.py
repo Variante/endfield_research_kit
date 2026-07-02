@@ -279,6 +279,20 @@ UI_LABEL_SEMANTIC_TABLES = {
         "text_fields": ("__self__",),
     },
 }
+PROFILE_SOCIAL_TABLES = (
+    "PictureTable.json",
+    "PictureItemTable.json",
+    "PictureTypeTable.json",
+    "PictureGenderTable.json",
+    "UserAvatarTable.json",
+    "BusinessCardTopicTable.json",
+    "MailSenderTable.json",
+    "MailTemplateTable.json",
+    "FriendChatEmotionTable.json",
+    "FriendChatTabEmotionTable.json",
+    "FriendChatTextTable.json",
+    "FriendChatTabTextTable.json",
+)
 BATTLEPASS_SEMANTIC_TABLES = (
     "BattlePassSeasonTable.json",
     "BattlePassTaskTable.json",
@@ -2758,6 +2772,8 @@ class SourceGraphBuilder:
             self.commit_step("dungeonTraining")
             self.ingest_battlepass_semantics()
             self.commit_step("battlepassSemantics")
+            self.ingest_profile_social_semantics()
+            self.commit_step("profileSocial")
             self.ingest_spaceship_semantics()
             self.commit_step("spaceshipSemantics")
             self.ingest_factory_tech_semantics()
@@ -10291,6 +10307,144 @@ class SourceGraphBuilder:
 
 
 
+
+    def add_profile_social_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        profile_key = safe_key(key)
+        if not profile_key:
+            return ""
+        profile_name = table_display_text(name) or profile_key
+        node = self.add_node(kind, profile_key, name=profile_name, source=source, data=data)
+        self.add_alias(profile_key, node, kind=f"{kind}_id", source=source)
+        if profile_name != profile_key:
+            self.add_alias(profile_name, node, kind=f"{kind}_name", source=source)
+        return node
+
+    def ingest_profile_social_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_profile_social", name="Structured profile and social catalog tables", path=slash(table_root))
+        for table_name in PROFILE_SOCIAL_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/profile_social")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/profile_social")
+                self.add_profile_social_row_edges(table, row_key, row, row_node)
+
+    def add_picture_character_edge(self, picture_node: str, picture_id: Any, *, source: str) -> None:
+        picture_key = safe_key(picture_id)
+        if not picture_key:
+            return
+        match = re.search(r"chr_\d{4}_[A-Za-z0-9]+", picture_key)
+        if match:
+            char_node = self.add_character_ref_node(match.group(0), source=source)
+            if char_node:
+                self.add_edge(picture_node, char_node, "picture_for_character", source=source, evidence="pictureId")
+
+    def add_profile_social_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "PictureTable" and isinstance(row, dict):
+            picture_node = self.add_profile_social_node("profile_picture", row.get("pictureId") or row_key, name=row.get("name"), source=table, data={"pictureType": row.get("pictureType"), "imgId": row.get("imgId"), "unlockCharPictureItem": row.get("unlockCharPictureItem")})
+            if picture_node:
+                self.add_edge(row_node, picture_node, "defines_profile_picture", source=table)
+                self.add_tag_i18n_edges(picture_node, row.get("name"), source=table, edge_kind="profile_picture_name_text")
+                self.add_tag_i18n_edges(picture_node, row.get("author"), source=table, edge_kind="profile_picture_author_text")
+                type_node = self.add_profile_social_node("profile_picture_type", row.get("pictureType"), source=table)
+                if type_node:
+                    self.add_edge(type_node, picture_node, "profile_picture_type_has_picture", source=table, evidence="pictureType")
+                item_node = self.add_item_node(row.get("unlockCharPictureItem"), source=table)
+                if item_node:
+                    self.add_edge(picture_node, item_node, "profile_picture_unlock_item", source=table, evidence="unlockCharPictureItem")
+                self.add_alias(row.get("imgId"), picture_node, kind="asset_stem", source=table)
+                self.add_picture_character_edge(picture_node, row.get("pictureId") or row_key, source=table)
+        elif table == "PictureItemTable" and isinstance(row, str):
+            item_node = self.add_item_node(row_key, source=table)
+            picture_node = self.add_profile_social_node("profile_picture", row, source=table)
+            if item_node and picture_node:
+                self.add_edge(item_node, picture_node, "item_unlocks_profile_picture", source=table, evidence="rowValue")
+        elif table == "PictureTypeTable" and isinstance(row, dict):
+            type_node = self.add_profile_social_node("profile_picture_type", row_key, source=table, data={"pictureCount": len(row.get("typeList") or [])})
+            if type_node:
+                self.add_edge(row_node, type_node, "defines_profile_picture_type", source=table)
+                for index, entry in enumerate(row.get("typeList") or []):
+                    if not isinstance(entry, dict):
+                        continue
+                    picture_node = self.add_profile_social_node("profile_picture", entry.get("pictureId"), source=table)
+                    if picture_node:
+                        self.add_edge(type_node, picture_node, "profile_picture_type_has_picture", source=table, evidence=f"typeList[{index}]")
+        elif table == "PictureGenderTable" and isinstance(row, dict):
+            picture_node = self.add_profile_social_node("profile_picture", row.get("pictureId") or row_key, source=table, data={"gender": row.get("gender")})
+            reverse_node = self.add_profile_social_node("profile_picture", row.get("reversePictureId"), source=table)
+            if picture_node:
+                self.add_edge(row_node, picture_node, "defines_profile_picture_gender", source=table)
+                if reverse_node:
+                    self.add_edge(picture_node, reverse_node, "profile_picture_reverse_gender", source=table, evidence="reversePictureId", data={"gender": row.get("gender")})
+        elif table == "UserAvatarTable" and isinstance(row, dict):
+            avatar_node = self.add_profile_social_node("user_avatar", row.get("id") or row_key, source=table, data={"sort": row.get("sort"), "icon": row.get("icon"), "itemId": row.get("itemId")})
+            if avatar_node:
+                self.add_edge(row_node, avatar_node, "defines_user_avatar", source=table)
+                item_node = self.add_item_node(row.get("itemId"), source=table)
+                if item_node:
+                    self.add_edge(avatar_node, item_node, "user_avatar_unlock_item", source=table, evidence="itemId")
+                self.add_alias(row.get("icon"), avatar_node, kind="asset_stem", source=table)
+        elif table == "BusinessCardTopicTable" and isinstance(row, dict):
+            card_node = self.add_profile_social_node("business_card_topic", row.get("id") or row_key, source=table, data={"sort": row.get("sort"), "color": row.get("color"), "expand": row.get("expand"), "panelPrefab": row.get("panelPrefab"), "watchPrefab": row.get("watchPrefab")})
+            if card_node:
+                self.add_edge(row_node, card_node, "defines_business_card_topic", source=table)
+                item_node = self.add_item_node(row.get("itemId"), source=table)
+                if item_node:
+                    self.add_edge(card_node, item_node, "business_card_unlock_item", source=table, evidence="itemId")
+                for field in ("icon", "panelPrefab", "watchPrefab"):
+                    self.add_alias(row.get(field), card_node, kind="asset_stem", source=table)
+        elif table == "MailSenderTable" and isinstance(row, dict):
+            sender_node = self.add_profile_social_node("mail_sender", row.get("id") or row_key, name=row.get("senderName"), source=table, data={"senderIcon": row.get("senderIcon")})
+            if sender_node:
+                self.add_edge(row_node, sender_node, "defines_mail_sender", source=table)
+                self.add_tag_i18n_edges(sender_node, row.get("senderName"), source=table, edge_kind="mail_sender_name_text")
+                self.add_alias(row.get("senderIcon"), sender_node, kind="asset_stem", source=table)
+        elif table == "MailTemplateTable" and isinstance(row, dict):
+            mail_node = self.add_profile_social_node("mail_template", row.get("templateId") or row_key, name=row.get("title"), source=table, data={"senderId": row.get("senderId"), "type": row.get("type"), "duration": row.get("duration")})
+            if mail_node:
+                self.add_edge(row_node, mail_node, "defines_mail_template", source=table)
+                self.add_tag_i18n_edges(mail_node, row.get("title"), source=table, edge_kind="mail_template_title_text")
+                self.add_tag_i18n_edges(mail_node, row.get("mailContent"), source=table, edge_kind="mail_template_content_text")
+                sender_node = self.add_profile_social_node("mail_sender", row.get("senderId"), source=table)
+                if sender_node:
+                    self.add_edge(mail_node, sender_node, "mail_template_sender", source=table, evidence="senderId")
+                self.add_reward_ref_edge(mail_node, row.get("rewardId"), edge_kind="mail_template_reward", source=table, evidence="rewardId")
+        elif table == "FriendChatEmotionTable" and isinstance(row, dict):
+            emotion_node = self.add_profile_social_node("friend_chat_emotion", row_key, source=table, data={"tabName": row.get("tabName"), "sortId": row.get("sortId"), "tabSort": row.get("tabSort")})
+            if emotion_node:
+                self.add_edge(row_node, emotion_node, "defines_friend_chat_emotion", source=table)
+                tab_node = self.add_profile_social_node("friend_chat_emotion_tab", row.get("tabName"), source=table)
+                if tab_node:
+                    self.add_edge(tab_node, emotion_node, "friend_chat_emotion_tab_has_emotion", source=table, evidence="tabName")
+                for field in ("emotionImgPath", "tabImgPath"):
+                    self.add_alias(row.get(field), emotion_node, kind="asset_stem", source=table)
+        elif table == "FriendChatTabEmotionTable" and isinstance(row, dict):
+            tab_node = self.add_profile_social_node("friend_chat_emotion_tab", row.get("tabName") or row_key, source=table, data={"tabSort": row.get("tabSort")})
+            if tab_node:
+                self.add_edge(row_node, tab_node, "defines_friend_chat_emotion_tab", source=table)
+                self.add_alias(row.get("tabImgPath"), tab_node, kind="asset_stem", source=table)
+        elif table == "FriendChatTextTable" and isinstance(row, dict):
+            text_node = self.add_profile_social_node("friend_chat_text", row_key, name=row.get("messageText"), source=table, data={"tabName": row.get("tabName"), "sortId": row.get("sortId"), "tabSort": row.get("tabSort")})
+            if text_node:
+                self.add_edge(row_node, text_node, "defines_friend_chat_text", source=table)
+                self.add_tag_i18n_edges(text_node, row.get("messageText"), source=table, edge_kind="friend_chat_message_text")
+                self.add_tag_i18n_edges(text_node, row.get("tabText"), source=table, edge_kind="friend_chat_tab_text")
+                tab_node = self.add_profile_social_node("friend_chat_text_tab", row.get("tabName"), source=table)
+                if tab_node:
+                    self.add_edge(tab_node, text_node, "friend_chat_text_tab_has_text", source=table, evidence="tabName")
+        elif table == "FriendChatTabTextTable" and isinstance(row, dict):
+            tab_node = self.add_profile_social_node("friend_chat_text_tab", row.get("tabName") or row_key, name=row.get("tabText"), source=table, data={"tabSort": row.get("tabSort")})
+            if tab_node:
+                self.add_edge(row_node, tab_node, "defines_friend_chat_text_tab", source=table)
+                self.add_tag_i18n_edges(tab_node, row.get("tabText"), source=table, edge_kind="friend_chat_text_tab_label")
+
     def add_battlepass_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         bp_key = safe_key(key)
         if not bp_key:
@@ -16560,6 +16714,16 @@ QUERY_KIND_PRIORITY = {
     "battlepass_banner": 34.8692,
     "battlepass_banner_entry": 34.8693,
     "weekraid_battlepass_node": 34.8694,
+    "profile_picture": 34.8695,
+    "profile_picture_type": 34.86951,
+    "user_avatar": 34.86952,
+    "business_card_topic": 34.86953,
+    "mail_sender": 34.86954,
+    "mail_template": 34.86955,
+    "friend_chat_emotion_tab": 34.86956,
+    "friend_chat_emotion": 34.86957,
+    "friend_chat_text_tab": 34.86958,
+    "friend_chat_text": 34.86959,
     "ui_label": 34.87,
     "error_code": 34.88,
     "loading_tip": 34.881,
@@ -16963,6 +17127,16 @@ NODE_ID_PREFIXES = (
     "battlepass_banner",
     "battlepass_banner_entry",
     "weekraid_battlepass_node",
+    "profile_picture",
+    "profile_picture_type",
+    "user_avatar",
+    "business_card_topic",
+    "mail_sender",
+    "mail_template",
+    "friend_chat_emotion_tab",
+    "friend_chat_emotion",
+    "friend_chat_text_tab",
+    "friend_chat_text",
     "ui_label",
     "error_code",
     "loading_tip",

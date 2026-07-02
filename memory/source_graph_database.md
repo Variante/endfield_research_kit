@@ -1563,6 +1563,11 @@ This bridges authored dungeon taxonomy, playable dungeon rows, simulation traini
 
 This models authored battle-pass progression, task, reward, preview, and week-raid linkage. It does not model live server season state, purchase entitlement, or runtime progress counters.
 
+
+2026-07-02 profile/social catalog graph refs: `tools/endfield_source_graph.py` now ingests player-profile and social catalog tables as `structured_profile_social`, covering `PictureTable`, `PictureItemTable`, `PictureTypeTable`, `PictureGenderTable`, `UserAvatarTable`, `BusinessCardTopicTable`, `MailSenderTable`, `MailTemplateTable`, and the friend-chat text/emotion tables. A fast CN graph build to `tmp/source_graph_profile_social.sqlite` verified 88 `profile_picture`, 1 `profile_picture_type`, 39 `user_avatar`, 20 `business_card_topic`, 57 `mail_sender`, 39 `mail_template`, 7 `friend_chat_emotion_tab`, 118 `friend_chat_emotion`, 5 `friend_chat_text_tab`, and 48 `friend_chat_text` nodes. Validated edge coverage includes 88 picture name/author/unlock/character links, 88 item-to-picture unlock links, 39 avatar unlock links, 20 business-card unlock links, 57 mail-sender name links, 39 mail-template title/content/sender links, 22 mail reward links, 118 emotion-to-tab links, 48 friend-chat message/tab text links, and 5 friend-chat tab labels. Smoke tests passed for `pic_1_chr_0004_pelica`, `user_avatar_activity_1`, `activity_reissue_test_mail`, `chat_text_blueprint_1`, and `chat_emojis_tab_1`.
+
+This models authored profile-picture, avatar, business-card, mail-template, and friend-chat catalog semantics. It does not prove live account unlock state, mail delivery state, or server-side social behavior.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type

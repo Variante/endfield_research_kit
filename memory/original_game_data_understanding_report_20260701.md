@@ -2127,6 +2127,13 @@ The source graph now models battle-pass progression tables directly: seasons, ta
 
 A fast CN build verified 4 seasons, 45 task groups, 306 tasks, 288 conditions, 162 level entries, 484 level reward edges, 44 preview entries/items, 16 banner entries, 46 label/sublabel links, 167 task system-jump links, and 20 week-raid nodes linked to dungeons, rewards, and reward items. This improves monetization/progression semantics while staying limited to authored table data rather than live server season state or runtime progress counters.
 
+
+### 2026-07-02 Profile And Social Catalog Graph Progress
+
+The source graph now models authored player-profile and social catalog tables directly: profile pictures, picture item unlock rows, picture type/gender rows, user avatars, business-card topics, mail senders/templates, and friend-chat emotion/text tabs.
+
+A fast CN build verified 88 profile pictures, 39 user avatars, 20 business-card topics, 57 mail senders, 39 mail templates, 118 friend-chat emotions, and 48 friend-chat text rows. The validated edges cover picture name/author/unlock/character links, avatar and business-card unlock items, mail template title/content/sender/reward links, friend-chat emotion tab placement, and friend-chat message/tab text labels. This improves profile/social lookup while staying limited to authored catalog evidence, not live account unlock state, mail delivery state, or server-side social behavior.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
