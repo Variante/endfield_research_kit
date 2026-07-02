@@ -125,3 +125,35 @@ Validation on the installed 2026-05-27 `GameAssembly.dll` and installed `global-
   - PostProcessor: 9 tags, `0x0000..0x0008` (`ConvertToBoxCenterPlaneProjectionPoint`, `ConvertToPosition`, `ConvertToSlot`, `ExcludeTarget`, `LockOrMarkTargetFilter`, `NavMeshPathPositionProcessor`, `PriorityFilter`, `ShuffleTarget`, `TargetPriorityFilter`).
 
 This upgrades the selector tag evidence from range-only to explicit tag-to-formatter maps. It still does not make FindTargetAction safe for chain consumption: exact FindTarget body spot checks show selector/middle bytes with plausible tag-like values and parameter strings, but no proven self-delimiting `SelectorData` end yet.
+
+## Follow-up: skipped VFS block inventory
+
+Checked the repo-local VFS toolchain after the selector audit:
+
+- `tools/fluffy-dumper-src/target/release/fluffy-dumper.exe` is built and supports `dump`, `audio`, `vfs-index`, and `list`, including local `--fallback-assets` support.
+- `tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/AnimeStudio.CLI.exe` supports the same block families and adds repeated `--block-type`, `--file-regex`, and the JSONL `stream` command. For targeted recovery probes, AnimeStudio is the better first tool; fluffy-dumper remains useful for parity checks.
+- Online tool survey: AssetRipper is the active modern Unity fallback; AssetStudio and RazTools/Studio are archived/older. Il2CppDumper remains useful for DummyDlls, and Cpp2IL is useful for deeper IL2CPP method/IR analysis, but neither replaces the local Endfield VFS-specific dumpers.
+
+Generated a disposable index for WebUI-skipped VFS blocks:
+
+```bat
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe vfs-index --streaming-assets "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" --output tmp\skipped_vfs_index_20260702.json --block-type lua --block-type extend-data --block-type streaming --block-type dynamic-streaming --block-type bundle-manifest --block-type i-fix-patch --block-type audit-streaming --block-type audit-dynamic-streaming --block-type audit-iv
+python scripts\story_recovery\build_skipped_vfs_block_audit.py --index tmp\skipped_vfs_index_20260702.json
+```
+
+Result: `39,738` files, `3,145,356,881` bytes, `83` chunks, no missing indexed blocks. The generated report is `reports/mission_order/skipped_vfs_block_audit.md`.
+
+Most actionable blocks:
+
+- Lua: `1,174` encrypted `.lua` files, `17,818,916` bytes total. A narrow dump with `--file-regex "DialogConst|SNSContent|RemoteComm|PanelConfig|GameSetting"` extracted plaintext Lua. The sample confirms useful runtime consumers: `SNSContentBase` reads `Tables.sNSDialogTable[dialogId].dialogContentData[contentInfo.contentId]`, `SNSContentPic` resolves `contentParam` through `SNSUtils.getDiffPicNameByGender`, and `PhaseRemoteComm` drives `RemoteCommonData` display through `RemoteComm`/`RemoteCommHud` panels.
+- ExtendData: `StringPathHash.bin` (`103,398,986` bytes) plus `CompressData.bin` (`575,057` bytes). This looks high-value for resolving hashed paths/references before broad asset dumps.
+- BundleManifest: single encrypted `Data/Bundles/Windows/manifest.hgmmap` (`44,596,126` bytes). Useful for bundle dependency/name recovery if parsed.
+- Streaming/DynamicStreaming: large scene/world byte families. Keep to `vfs-index`, `stream --file-regex`, or very narrow dump probes until a parser target is known.
+
+Added `scripts/story_recovery/build_skipped_vfs_block_audit.py` so this prioritization can be regenerated from any future `vfs-index` JSON.
+
+Next split tracks:
+
+- Lightweight VFS track: dump all Lua or a curated Lua subset, then build a Lua consumer/reference audit for SNS, RemoteComm, Dialog, map marks, and mission UI tables.
+- AnimeStudio refresh track: run a separate current MonoBehaviour `json_by_type` refresh with `tools\DummyDll`, then rebuild a decoded index. This rewrites `export_full/recovered/AnimeStudio-cli/**`, so keep it out of the VFS-audit commit.
+- IL2CPP track: follow the selector/TargetSettings metadata-body audit before re-enabling `FindTargetAction` chain consumption.
