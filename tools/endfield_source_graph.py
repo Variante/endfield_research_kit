@@ -53,6 +53,7 @@ TIMELINE_LINE_ORDERS_REL = Path("recovered") / "AnimeStudio-cli" / "timeline_lin
 TIMELINE_LINE_ORDERS_PATH = EXPORT_ROOT / TIMELINE_LINE_ORDERS_REL
 DIALOG_ID_TABLE_INDEX_PATH = EXPORT_ROOT / "recovered" / "dialog_id_table_index.json"
 RUNTIME_OPTION_ROUTE_AUDIT_GLOB = "runtime_jump_option_route_audit_CN*_nearby*.json"
+LUA_CONSUMER_REFERENCE_AUDIT_PATH = ROOT / "reports" / "mission_order" / "lua_consumer_reference_audit.json"
 
 ASSET_MAPS = {
     "StreamingAssets": (
@@ -3241,6 +3242,8 @@ class SourceGraphBuilder:
             self.commit_step("characterManifests")
             self.ingest_selected_structured_tables()
             self.commit_step("structuredTables")
+            self.ingest_lua_consumer_reference_audit()
+            self.commit_step("luaConsumers")
             self.ingest_npc_voice_bark_semantics()
             self.commit_step("npcVoiceBark")
             self.ingest_narrative_audio_semantics()
@@ -20766,6 +20769,101 @@ class SourceGraphBuilder:
                 self.add_edge(table_node, row_node, "has_row", source="structured")
                 self.add_structured_row_edges(table_key, row_key, row, row_node)
 
+    def ingest_lua_consumer_reference_audit(self) -> None:
+        payload = read_json(LUA_CONSUMER_REFERENCE_AUDIT_PATH, {})
+        if not isinstance(payload, dict):
+            return
+        edges = payload.get("tableModuleEdges") if isinstance(payload.get("tableModuleEdges"), list) else []
+        if not edges:
+            return
+        dataset = self.add_node(
+            "dataset",
+            "lua_consumer_reference_audit",
+            name="Lua consumer reference audit",
+            path=slash(LUA_CONSUMER_REFERENCE_AUDIT_PATH),
+            data=compact_payload(payload.get("summary") or {}, depth=2),
+        )
+        report_file = self.add_file(
+            slash(LUA_CONSUMER_REFERENCE_AUDIT_PATH),
+            kind="lua_consumer_reference_audit",
+            source="lua_consumer_reference_audit",
+            data=compact_payload(payload.get("summary") or {}, depth=2),
+        )
+        self.add_edge(dataset, report_file, "has_report", source="lua_consumer_reference_audit")
+
+        module_nodes: dict[str, str] = {}
+        table_nodes: dict[str, str] = {}
+        for row in edges:
+            if not isinstance(row, dict):
+                continue
+            module_key = safe_key(row.get("module"))
+            if not module_key:
+                continue
+            module_node = module_nodes.get(module_key)
+            if not module_node:
+                module_path = safe_key(row.get("path"))
+                module_node = self.add_node(
+                    "lua_module",
+                    module_key,
+                    name=Path(module_key).name,
+                    source="lua_consumer_reference_audit",
+                    path=module_path or None,
+                    data={"focus": row.get("focus") or []},
+                )
+                module_nodes[module_key] = module_node
+                self.add_edge(dataset, module_node, "has_lua_module", source="lua_consumer_reference_audit")
+                self.add_alias(module_key, module_node, kind="lua_module_path", source="lua_consumer_reference_audit")
+                self.add_alias(Path(module_key).stem, module_node, kind="lua_module_stem", source="lua_consumer_reference_audit")
+                if module_path:
+                    module_file = self.add_file(module_path, kind="lua_script", source="lua_consumer_reference_audit")
+                    self.add_edge(module_node, module_file, "lua_module_source_file", source="lua_consumer_reference_audit")
+
+            table_value = safe_key(row.get("value"))
+            table_key = safe_key(row.get("table"))
+            if table_key:
+                table_node = table_nodes.get(table_key)
+                if not table_node:
+                    paths = [safe_key(path) for path in row.get("paths") or [] if safe_key(path)]
+                    table_node = self.add_node(
+                        "table",
+                        table_key,
+                        name=table_key,
+                        source="lua_consumer_reference_audit",
+                        path=paths[0] if paths else None,
+                        data={"roots": row.get("roots") or []},
+                    )
+                    table_nodes[table_key] = table_node
+                    self.add_alias(table_key, table_node, kind="table_name", source="lua_consumer_reference_audit")
+                    for path in paths:
+                        table_file = self.add_file(path, kind="structured_table", source="lua_consumer_reference_audit")
+                        self.add_edge(table_node, table_file, "exported_table_file", source="lua_consumer_reference_audit")
+                if table_value and table_value != table_key:
+                    self.add_alias(table_value, table_node, kind="lua_table_ref", source="lua_consumer_reference_audit")
+                self.add_edge(
+                    module_node,
+                    table_node,
+                    "lua_module_references_table",
+                    source="lua_consumer_reference_audit",
+                    evidence=table_value or table_key,
+                    data={"count": row.get("count"), "focus": row.get("focus") or []},
+                )
+            elif table_value:
+                ref_node = self.add_node(
+                    "lua_table_reference",
+                    table_value,
+                    name=table_value,
+                    source="lua_consumer_reference_audit",
+                    data={"matched": False},
+                )
+                self.add_edge(
+                    module_node,
+                    ref_node,
+                    "lua_module_references_unmatched_table",
+                    source="lua_consumer_reference_audit",
+                    evidence=table_value,
+                    data={"count": row.get("count"), "focus": row.get("focus") or []},
+                )
+
     def iter_factory_item_refs(self, values: Any) -> Iterable[tuple[int, int, dict[str, Any]]]:
         if not isinstance(values, list):
             return
@@ -22078,6 +22176,8 @@ QUERY_KIND_PRIORITY = {
     "model_view_clip_ref": 103,
     "model_view_animator_name": 104,
     "dialog_id_table_config": 105,
+    "lua_module": 105.2,
+    "lua_table_reference": 105.3,
     "dialog_registry_scene": 106,
     "bamboo_raft_task_group": 107,
     "quest_task": 108,
@@ -22770,6 +22870,8 @@ NODE_ID_PREFIXES = (
     "model_view_clip_ref",
     "model_view_animator_name",
     "dialog_id_table_config",
+    "lua_module",
+    "lua_table_reference",
     "dialog_registry_scene",
     "bamboo_raft_task_group",
     "quest_task",
