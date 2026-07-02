@@ -373,6 +373,13 @@ CHARACTER_SUPPORT_TABLES = (
     "ActivityCharacterGuideLineTable.json",
     "RecommendTraining.json",
 )
+CHARACTER_PROGRESSION_TABLES = (
+    "CharLevelUpTable.json",
+    "CharBreakTable.json",
+    "CharBreakStageTable.json",
+    "CharBreakNodeTable.json",
+    "CharGrowthTable.json",
+)
 SPACESHIP_SEMANTIC_TABLES = (
     "EnvTalkTable.json",
     "SpaceShipNpc2Char.json",
@@ -2754,6 +2761,8 @@ class SourceGraphBuilder:
                 self.commit_step("gameplay")
             self.ingest_character_support_semantics()
             self.commit_step("characterSupport")
+            self.ingest_character_progression_semantics()
+            self.commit_step("characterProgression")
             self.ingest_tag_taxonomy_semantics()
             self.commit_step("tagTaxonomy")
             self.ingest_ui_label_semantics()
@@ -9883,6 +9892,107 @@ class SourceGraphBuilder:
                 self.add_edge(table_node, row_node, "has_row", source="structured/character_support")
                 self.add_character_support_row_edges(table_key, row_key, row, row_node)
 
+    def ingest_character_progression_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_character_progression", name="Structured character progression tables", path=slash(table_root))
+        for table_name in CHARACTER_PROGRESSION_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/character_progression")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/character_progression")
+                self.add_character_progression_row_edges(table, row_key, row, row_node)
+
+    def add_character_progression_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        node_key = safe_key(key)
+        if not node_key:
+            return ""
+        node_name = table_display_text(name) or node_key
+        node = self.add_node(kind, node_key, name=node_name, source=source, data=data)
+        self.add_alias(node_key, node, kind=f"{kind}_id", source=source)
+        if node_name != node_key:
+            self.add_alias(node_name, node, kind=f"{kind}_name", source=source)
+        return node
+
+    def add_character_progression_required_items(self, owner_node: str, items: Any, *, edge_kind: str, source: str, evidence_prefix: str) -> None:
+        for index, item in enumerate(items or []):
+            if not isinstance(item, dict):
+                continue
+            item_node = self.add_item_node(item.get("id"), source=source)
+            if item_node:
+                self.add_edge(owner_node, item_node, edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]", data={"count": item.get("count"), "index": index})
+
+    def add_character_progression_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "CharLevelUpTable" and isinstance(row, dict):
+            level_node = self.add_character_progression_node("character_level_cost", row_key, source=table, data={"level": parse_optional_int(row_key), "exp": row.get("exp"), "gold": row.get("gold")})
+            if level_node:
+                self.add_edge(row_node, level_node, "defines_character_level_cost", source=table)
+        elif table == "CharBreakTable" and isinstance(row, dict):
+            break_node = self.add_character_progression_node("character_break_config", row_key, source=table, data={"breakStage": parse_optional_int(row_key), "breakStatus": row.get("breakStatus"), "maxLevel": row.get("maxLevel"), "goldCost": row.get("goldCost"), "expType": row.get("expType")})
+            if break_node:
+                self.add_edge(row_node, break_node, "defines_character_break_config", source=table)
+                stage_node = self.add_character_progression_node("character_break_stage", row_key, source=table)
+                if stage_node:
+                    self.add_edge(break_node, stage_node, "character_break_config_stage", source=table, evidence="rowKey")
+                for index, item_id in enumerate(row.get("availableExpItems") or []):
+                    item_node = self.add_item_node(item_id, source=table)
+                    if item_node:
+                        self.add_edge(break_node, item_node, "character_break_config_exp_item", source=table, evidence=f"availableExpItems[{index}]")
+        elif table == "CharBreakStageTable" and isinstance(row, dict):
+            stage_key = row.get("breakStage") if row.get("breakStage") is not None else row_key
+            stage_node = self.add_character_progression_node("character_break_stage", stage_key, source=table, data={"breakStage": row.get("breakStage"), "minCharLevel": row.get("minCharLevel"), "maxCharLevel": row.get("maxCharLevel"), "normalAttackSkillLevel": row.get("normalAttackSkillLevel"), "normalSkillLevel": row.get("normalSkillLevel"), "ultimateSkillLevel": row.get("ultimateSkillLevel"), "comboSkillLevel": row.get("comboSkillLevel")})
+            if stage_node:
+                self.add_edge(row_node, stage_node, "defines_character_break_stage", source=table)
+        elif table == "CharBreakNodeTable" and isinstance(row, dict):
+            node = self.add_character_progression_node("character_break_node", row.get("nodeId") or row_key, source=table, data={"breakStage": row.get("breakStage"), "equipTierLimit": row.get("equipTierLimit"), "talentNodeType": row.get("talentNodeType")})
+            if node:
+                self.add_edge(row_node, node, "defines_character_break_node", source=table)
+                stage_node = self.add_character_progression_node("character_break_stage", row.get("breakStage"), source=table)
+                if stage_node:
+                    self.add_edge(node, stage_node, "character_break_node_stage", source=table, evidence="breakStage")
+        elif table == "CharGrowthTable" and isinstance(row, dict):
+            char_id = safe_key(row.get("charId") or row_key)
+            char_node = self.add_character_ref_node(char_id, name=row.get("name") or row.get("engName"), source=table, data={"rarity": row.get("rarity"), "weaponType": row.get("weaponType")})
+            if not char_node:
+                return
+            self.add_edge(row_node, char_node, "defines_character_growth", source=table)
+            type_node = self.add_character_type_node(row.get("charTypeId"), source=table)
+            if type_node:
+                self.add_edge(char_node, type_node, "character_growth_type", source=table, evidence="charTypeId")
+            profession_node = self.add_character_profession_node(row.get("profession"), source=table)
+            if profession_node:
+                self.add_edge(char_node, profession_node, "character_growth_profession", source=table, evidence="profession")
+            weapon_node = self.add_node("weapon", safe_key(row.get("defaultWeaponId")), name=safe_key(row.get("defaultWeaponId")), source=table) if safe_key(row.get("defaultWeaponId")) else ""
+            if weapon_node:
+                self.add_edge(char_node, weapon_node, "character_growth_default_weapon", source=table, evidence="defaultWeaponId")
+                self.add_alias(row.get("defaultWeaponId"), weapon_node, kind="weapon_id", source=table)
+            for field, edge_kind in (("mainAttrType", "character_growth_main_attribute_meta"), ("subAttrType", "character_growth_sub_attribute_meta")):
+                meta_node = self.add_attribute_meta_node(row.get(field), source=table)
+                if meta_node:
+                    self.add_edge(char_node, meta_node, edge_kind, source=table, evidence=field)
+            for break_key, entry in (row.get("charBreakCostMap") or {}).items():
+                if not isinstance(entry, dict):
+                    continue
+                cost_node = self.add_character_progression_node("character_break_cost", f"{char_id}:{break_key}", name=entry.get("name") or break_key, source=table, data={"charId": char_id, "nodeId": entry.get("nodeId"), "nodeType": entry.get("nodeType"), "breakStage": entry.get("breakStage"), "equipTierLimit": entry.get("equipTierLimit"), "requiredItemCount": len(entry.get("requiredItem") or [])})
+                if not cost_node:
+                    continue
+                self.add_edge(char_node, cost_node, "character_has_break_cost", source=table, evidence=f"charBreakCostMap.{break_key}")
+                self.add_tag_i18n_edges(cost_node, entry.get("name"), source=table, edge_kind="character_break_cost_name_text")
+                self.add_tag_i18n_edges(cost_node, entry.get("description"), source=table, edge_kind="character_break_cost_desc_text")
+                break_node = self.add_character_progression_node("character_break_node", entry.get("nodeId") or break_key, source=table)
+                if break_node:
+                    self.add_edge(cost_node, break_node, "character_break_cost_uses_node", source=table, evidence="nodeId")
+                stage_node = self.add_character_progression_node("character_break_stage", entry.get("breakStage"), source=table)
+                if stage_node:
+                    self.add_edge(cost_node, stage_node, "character_break_cost_stage", source=table, evidence="breakStage")
+                self.add_character_progression_required_items(cost_node, entry.get("requiredItem"), edge_kind="character_break_cost_requires_item", source=table, evidence_prefix="requiredItem")
+
     def add_character_ref_node(self, char_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         char_key = safe_key(char_id)
         if not char_key:
@@ -16661,6 +16771,11 @@ QUERY_KIND_PRIORITY = {
     "character_stat_checkpoint": 12,
     "character_breakthrough": 13,
     "character_potential": 14,
+    "character_level_cost": 14.1,
+    "character_break_config": 14.2,
+    "character_break_stage": 14.3,
+    "character_break_node": 14.4,
+    "character_break_cost": 14.5,
     "character_tag": 15,
     "character_tag_desc": 16,
     "tag": 16.2,
@@ -17074,6 +17189,11 @@ NODE_ID_PREFIXES = (
     "character_stat_checkpoint",
     "character_breakthrough",
     "character_potential",
+    "character_level_cost",
+    "character_break_config",
+    "character_break_stage",
+    "character_break_node",
+    "character_break_cost",
     "character_tag",
     "character_tag_desc",
     "tag",
