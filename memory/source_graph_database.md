@@ -1536,6 +1536,8 @@ Validated settings edges include 100 `setting_tab_has_item`, 92 `setting_item_re
 
 2026-07-02 scene collectable text/interactive refs: existing `SceneCollectableItemTable` graph nodes now link nested `infoLabel` text ids, expose `imagePath` stems for the visual-token bridge, and post-link collectables to real `interactive_object` / `interactive_template` nodes after decoded configs are ingested. A fast CN graph build to `tmp/source_graph_scene_collectable_text.sqlite` verified 37 `scene_collectable` nodes, 32 `scene_collectable_info_text` edges plus matching `uses_i18n_text`, 74 collectable `asset_stem` aliases, 10 item `asset_stem` aliases from the table, 296 `uses_visual_asset` edges from collectables, and 19 each of `scene_collectable_uses_interactive_object` / `scene_collectable_uses_interactive_template`. Smoke tests passed for `indie_dg007:int_campfire_v2:0`, text id `-1191669540078518252`, and `interactive_object:int_collection_piece`.
 
+2026-07-02 achievement text bridge refs: existing achievement graph nodes now expose specific text edge kinds instead of only generic `uses_i18n_text` links. A fast CN graph build to `tmp/source_graph_achievement_text.sqlite` verified 8 `achievement_category_name_text`, 8 `achievement_group_name_text`, 114 `achievement_name_text`, 156 `achievement_level_complete_text`, and 200 `achievement_condition_desc_text` edges; `achievement_desc_text` is currently 0 because the structured `desc` fields are id `0`. Smoke tests passed for `achv_adv_tundra_box`, `achv_adv_tundra_box:level:1`, and `achv_type_adventure`.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type

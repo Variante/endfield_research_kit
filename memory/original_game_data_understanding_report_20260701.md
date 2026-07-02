@@ -2078,6 +2078,12 @@ The source graph now closes the remaining `SceneCollectableItemTable` text/asset
 
 A fast CN build verified 37 scene collectable nodes, 32 collectable info-text links, 296 visual asset links, and 19 collectable-to-interactive-object plus 19 collectable-to-interactive-template links. This makes scene collectable labels and interactive-object overlap explainable while avoiding broad fanout to placed world entities.
 
+### 2026-07-02 Achievement Text Bridge Progress
+
+The source graph now makes achievement-facing text roles explicit. Achievement categories, groups, achievement names, level completion strings, and condition descriptions now have role-specific edges to `i18n_text`, while preserving generic text reachability.
+
+A fast CN build verified 8 category name links, 8 group name links, 114 achievement name links, 156 level completion links, and 200 condition description links. This improves achievement lookup without changing the existing activity/achievement topology.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
