@@ -255,6 +255,15 @@ UI_LABEL_SEMANTIC_TABLES = {
         "text_fields": ("__self__",),
     },
 }
+WEAPON_SEMANTIC_TABLES = (
+    "WeaponBasicTable.json",
+    "WeaponBreakThroughTemplateTable.json",
+    "WeaponUpgradeTemplateTable.json",
+    "WeaponUpgradeTemplateSumTable.json",
+    "WeaponTalentTemplateTable.json",
+    "WeaponPotentialUpItemTable.json",
+    "WeaponExpItemTable.json",
+)
 CHARACTER_SUPPORT_TABLES = (
     "CharacterTagTable.json",
     "CharacterTagDesTable.json",
@@ -2657,6 +2666,8 @@ class SourceGraphBuilder:
             self.commit_step("tagTaxonomy")
             self.ingest_ui_label_semantics()
             self.commit_step("uiLabels")
+            self.ingest_weapon_semantics()
+            self.commit_step("weaponSemantics")
             self.ingest_spaceship_semantics()
             self.commit_step("spaceshipSemantics")
             self.ingest_factory_tech_semantics()
@@ -9957,6 +9968,192 @@ class SourceGraphBuilder:
                     self.add_ui_label_text_edges(label_node, payload_value, source=table, edge_kind=edge_kind)
                 self.add_ui_label_reference_edges(label_node, table, row)
 
+    def add_weapon_node(self, weapon_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        weapon_key = safe_key(weapon_id)
+        if not weapon_key:
+            return ""
+        weapon_name = table_display_text(name) or weapon_key
+        node = self.add_node("weapon", weapon_key, name=weapon_name, source=source, data=data)
+        self.add_alias(weapon_key, node, kind="weapon_id", source=source)
+        if weapon_name != weapon_key:
+            self.add_alias(weapon_name, node, kind="weapon_name", source=source)
+        return node
+
+    def add_weapon_template_node(self, kind: str, template_id: Any, *, source: str, data: Any = None) -> str:
+        key = safe_key(template_id)
+        if not key:
+            return ""
+        node = self.add_node(kind, key, name=key, source=source, data=data)
+        self.add_alias(key, node, kind=f"{kind}_id", source=source)
+        return node
+
+    def add_weapon_text_edges(self, weapon_node: str, payload: Any, *, source: str, edge_kind: str) -> None:
+        seen: set[str] = set()
+        for text_id in self.iter_i18n_text_ids(payload):
+            if text_id in seen:
+                continue
+            seen.add(text_id)
+            text_node = self.add_i18n_text_node(text_id, source=source)
+            if text_node:
+                self.add_edge(weapon_node, text_node, edge_kind, source=source, evidence=text_id)
+                self.add_edge(weapon_node, text_node, "uses_i18n_text", source=source, evidence=text_id)
+
+    def weapon_level_summary(self, levels: Any) -> dict[str, Any]:
+        if not isinstance(levels, list):
+            return {"levelCount": 0}
+        level_values = [row.get("weaponLv") for row in levels if isinstance(row, dict) and isinstance(row.get("weaponLv"), int)]
+        out: dict[str, Any] = {"levelCount": len(levels)}
+        if level_values:
+            out["minLevel"] = min(level_values)
+            out["maxLevel"] = max(level_values)
+        first = next((row for row in levels if isinstance(row, dict)), None)
+        last = next((row for row in reversed(levels) if isinstance(row, dict)), None)
+        if first:
+            out["first"] = compact_payload(first, depth=1)
+        if last and last is not first:
+            out["last"] = compact_payload(last, depth=1)
+        return out
+
+    def ingest_weapon_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_weapon_semantics", name="Structured weapon tables", path=slash(table_root))
+        for table_name in WEAPON_SEMANTIC_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/weapon_semantics")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                if not isinstance(row, dict):
+                    continue
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/weapon_semantics")
+                self.add_weapon_semantic_row_edges(table, row_key, row, row_node)
+
+    def add_weapon_semantic_row_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        if table == "WeaponBasicTable":
+            self.add_weapon_basic_edges(table, row_key, row, row_node)
+        elif table == "WeaponBreakThroughTemplateTable":
+            self.add_weapon_breakthrough_template_edges(table, row_key, row, row_node)
+        elif table == "WeaponUpgradeTemplateTable":
+            self.add_weapon_upgrade_template_edges(table, row_key, row, row_node, kind="weapon_upgrade_template", edge_kind="defines_weapon_upgrade_template")
+        elif table == "WeaponUpgradeTemplateSumTable":
+            self.add_weapon_upgrade_template_edges(table, row_key, row, row_node, kind="weapon_upgrade_sum_template", edge_kind="defines_weapon_upgrade_sum_template")
+        elif table == "WeaponTalentTemplateTable":
+            self.add_weapon_talent_template_edges(table, row_key, row, row_node)
+        elif table == "WeaponPotentialUpItemTable":
+            self.add_weapon_potential_item_edges(table, row_key, row, row_node)
+        elif table == "WeaponExpItemTable":
+            self.add_weapon_exp_item_edges(table, row_key, row, row_node)
+
+    def add_weapon_basic_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        weapon_id = safe_key(row.get("weaponId") or row_key)
+        if not weapon_id:
+            return
+        data = {
+            "id": weapon_id,
+            "rarity": row.get("rarity"),
+            "weaponType": row.get("weaponType"),
+            "maxLv": row.get("maxLv"),
+            "modelPath": row.get("modelPath"),
+            "levelTemplateId": row.get("levelTemplateId"),
+            "breakthroughTemplateId": row.get("breakthroughTemplateId"),
+            "talentTemplateId": row.get("talentTemplateId"),
+            "weaponPotentialSkill": row.get("weaponPotentialSkill"),
+            "skillCount": len(row.get("weaponSkillList") or []),
+        }
+        weapon_node = self.add_weapon_node(weapon_id, name=row.get("engName"), source=table, data=compact_payload(data, depth=2))
+        if not weapon_node:
+            return
+        self.add_edge(row_node, weapon_node, "defines_weapon", source=table)
+        self.add_weapon_text_edges(weapon_node, row.get("engName"), source=table, edge_kind="weapon_name_text")
+        self.add_weapon_text_edges(weapon_node, row.get("weaponDesc"), source=table, edge_kind="weapon_desc_text")
+        self.add_alias(row.get("modelPath"), weapon_node, kind="model_path", source=table)
+        model_path = safe_key(row.get("modelPath"))
+        if model_path:
+            self.add_alias(Path(model_path).stem, weapon_node, kind="model_name", source=table)
+            self.add_model_asset_entity_edges(weapon_node, (model_path,), edge_kind="weapon_model_asset_entity", source=table, evidence="modelPath")
+        template_specs = (
+            ("levelTemplateId", "weapon_upgrade_template", "weapon_uses_upgrade_template"),
+            ("breakthroughTemplateId", "weapon_breakthrough_template", "weapon_uses_breakthrough_template"),
+            ("talentTemplateId", "weapon_talent_template", "weapon_uses_talent_template"),
+        )
+        for field, kind, edge_kind in template_specs:
+            template_node = self.add_weapon_template_node(kind, row.get(field), source=table)
+            if template_node:
+                self.add_edge(weapon_node, template_node, edge_kind, source=table, evidence=field)
+        for index, skill_id in enumerate(row.get("weaponSkillList") or []):
+            skill_key = safe_key(skill_id)
+            if not skill_key:
+                continue
+            skill_node = self.add_gameplay_skill_ref_node(skill_key, source=table)
+            edge_kind = "weapon_has_potential_skill" if skill_key == safe_key(row.get("weaponPotentialSkill")) else "weapon_has_skill_entry"
+            self.add_edge(weapon_node, skill_node, edge_kind, source=table, evidence=f"weaponSkillList[{index}]", data={"index": index})
+        for index, item_id in enumerate(row.get("potentialUpItemList") or []):
+            item_node = self.add_item_node(item_id, source=table)
+            if item_node:
+                self.add_edge(weapon_node, item_node, "weapon_potential_requires_item", source=table, evidence=f"potentialUpItemList[{index}]")
+
+    def add_weapon_upgrade_template_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str, *, kind: str, edge_kind: str) -> None:
+        template_id = safe_key(row_key)
+        levels = row.get("list") or []
+        template_node = self.add_weapon_template_node(kind, template_id, source=table, data=self.weapon_level_summary(levels))
+        if not template_node:
+            return
+        self.add_edge(row_node, template_node, edge_kind, source=table)
+        if kind == "weapon_upgrade_sum_template":
+            upgrade_node = self.add_weapon_template_node("weapon_upgrade_template", template_id, source=table)
+            if upgrade_node:
+                self.add_edge(upgrade_node, template_node, "weapon_upgrade_has_sum_template", source=table, evidence=template_id)
+
+    def add_weapon_breakthrough_template_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        template_id = safe_key(row_key)
+        entries = row.get("list") or []
+        template_node = self.add_weapon_template_node("weapon_breakthrough_template", template_id, source=table, data=self.weapon_level_summary(entries))
+        if not template_node:
+            return
+        self.add_edge(row_node, template_node, "defines_weapon_breakthrough_template", source=table)
+        if not isinstance(entries, list):
+            return
+        for level_index, entry in enumerate(entries):
+            if not isinstance(entry, dict):
+                continue
+            for item_index, item in enumerate(entry.get("breakItemList") or []):
+                if not isinstance(item, dict):
+                    continue
+                item_node = self.add_item_node(item.get("id"), source=table)
+                if item_node:
+                    self.add_edge(template_node, item_node, "weapon_breakthrough_requires_item", source=table, evidence=f"list[{level_index}].breakItemList[{item_index}]", data={"breakthroughLv": entry.get("breakthroughLv"), "count": item.get("count"), "gold": entry.get("breakthroughGold")})
+
+    def add_weapon_talent_template_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        template_id = safe_key(row_key)
+        entries = row.get("list") or []
+        template_node = self.add_weapon_template_node("weapon_talent_template", template_id, source=table, data={"levelCount": len(entries) if isinstance(entries, list) else 0, "levels": compact_payload(entries, depth=2)})
+        if template_node:
+            self.add_edge(row_node, template_node, "defines_weapon_talent_template", source=table)
+
+    def add_weapon_potential_item_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        item_id = safe_key(row.get("itemId") or row_key)
+        item_node = self.add_item_node(item_id, source=table)
+        if item_node:
+            self.add_edge(row_node, item_node, "defines_weapon_potential_item", source=table, evidence=item_id)
+        for index, weapon_id in enumerate(row.get("weaponIds") or []):
+            weapon_node = self.add_weapon_node(weapon_id, source=table)
+            if weapon_node and item_node:
+                self.add_edge(item_node, weapon_node, "weapon_potential_item_for_weapon", source=table, evidence=f"weaponIds[{index}]")
+                self.add_edge(weapon_node, item_node, "weapon_potential_requires_item", source=table, evidence=f"weaponIds[{index}]")
+
+    def add_weapon_exp_item_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        exp_item_id = safe_key(row.get("expItemId"))
+        if not exp_item_id:
+            return
+        item_node = self.add_item_node(exp_item_id, source=table, data={"weaponExp": row.get("weaponExp"), "itemExp": row.get("itemExp"), "weaponExpConvertRatio": row.get("weaponExpConvertRatio")})
+        if item_node:
+            self.add_edge(row_node, item_node, "defines_weapon_exp_item", source=table, evidence=exp_item_id, data={"weaponExp": row.get("weaponExp"), "itemExp": row.get("itemExp"), "weaponExpConvertRatio": row.get("weaponExpConvertRatio")})
+
     def add_character_profession_node(self, profession_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         profession_key = safe_key(profession_id)
         if not profession_key:
@@ -15343,6 +15540,10 @@ QUERY_KIND_PRIORITY = {
     "bark_text": 101,
     "bark_table_const": 102,
     "weapon": 10,
+    "weapon_upgrade_template": 10.1,
+    "weapon_upgrade_sum_template": 10.2,
+    "weapon_breakthrough_template": 10.3,
+    "weapon_talent_template": 10.4,
     "equipment": 11,
     "enemy": 12,
     "enemy_template": 13,
@@ -15691,6 +15892,10 @@ NODE_ID_PREFIXES = (
     "bark_text",
     "bark_table_const",
     "weapon",
+    "weapon_upgrade_template",
+    "weapon_upgrade_sum_template",
+    "weapon_breakthrough_template",
+    "weapon_talent_template",
     "equipment",
     "enemy",
     "enemy_template",
