@@ -2066,6 +2066,12 @@ The source graph now adds explicit label-text edges for activity tags and shop g
 
 This is a narrow explainability bridge for tag-like tables that already had domain nodes, not a new tag taxonomy.
 
+### 2026-07-01 Weapon Semantics Graph Progress
+
+The source graph now models weapon definitions and their numeric progression templates directly from structured game tables. `WeaponBasicTable` enriches the existing `weapon` nodes with name/description text links, model path aliases, model asset-entity links, upgrade/breakthrough/talent template edges, potential-skill edges, regular weapon skill edges, and potential item requirements. Related weapon template tables now expose upgrade curves, cumulative upgrade summaries, breakthrough item/gold requirements, talent-level bounds, weapon potential-up item applicability, and weapon EXP items.
+
+A fast CN build verified 71 weapon definitions, 142 weapon text links, 21 upgrade templates, 21 upgrade-sum templates, 20 breakthrough templates, 2 talent templates, 208 weapon-to-`gameplay_skill` edges, 200 breakthrough item requirement edges, and 16 potential item requirement edges. This closes the largest remaining coherent unmodeled report-listed table without creating a parallel weapon namespace.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
