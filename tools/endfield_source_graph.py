@@ -160,6 +160,17 @@ ITEM_ACQUISITION_TABLES = (
     "LTItemTable.json",
     "LTItemTypeTable.json",
 )
+ITEM_SUBMISSION_TABLES = (
+    "SubmitItem.json",
+    "FullBottleTable.json",
+    "EmptyBottleTable.json",
+    "FoodSubmitStageIdTable.json",
+    "RecoverApItemTable.json",
+    "ValuableDepot.json",
+    "CollectionTable.json",
+    "RecycleBinTable.json",
+    "LevelId2RecycleBinsTable.json",
+)
 REWARD_CATALOG_TABLES = (
     "GiftItemTable.json",
     "GiftPreferTagConfigTable.json",
@@ -2981,6 +2992,8 @@ class SourceGraphBuilder:
             self.commit_step("itemEconomy")
             self.ingest_item_acquisition_semantics()
             self.commit_step("itemAcquisition")
+            self.ingest_item_submission_semantics()
+            self.commit_step("itemSubmission")
             self.ingest_reward_catalog_semantics()
             self.commit_step("rewardCatalog")
             self.ingest_equipment_gem_semantics()
@@ -10230,6 +10243,174 @@ class SourceGraphBuilder:
             if effect_node:
                 self.add_edge(row_node, effect_node, "defines_fertilize_effect", source=table)
                 self.add_alias(row.get("loopEffectId"), effect_node, kind="asset_stem", source=table)
+
+    def ingest_item_submission_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_item_submission", name="Structured item submission and recovery tables", path=slash(table_root))
+        for table_name in ITEM_SUBMISSION_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/item_submission")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/item_submission")
+                self.add_item_submission_row_edges(table, row_key, row, row_node)
+
+    def add_item_submission_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node(kind, key, name=name, source=source, data=data)
+
+    def add_submit_item_node(self, submit_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_item_submission_node("activity_submit_item", submit_id, name=name, source=source, data=data)
+
+    def add_submit_item_requirement_edges(self, submit_node: str, row: dict[str, Any], *, source: str) -> None:
+        for group_index, param_group in enumerate(row.get("paramData") or []):
+            if not isinstance(param_group, dict):
+                continue
+            params = param_group.get("paramList") if isinstance(param_group.get("paramList"), list) else []
+            item_ids = []
+            counts = []
+            if params:
+                first = params[0]
+                if isinstance(first, dict):
+                    item_ids = first.get("valueStringList") if isinstance(first.get("valueStringList"), list) else []
+            if len(params) > 1 and isinstance(params[1], dict):
+                count_param = params[1]
+                counts = count_param.get("valueIntList") or count_param.get("valueFloatList") or count_param.get("valueStringList") or []
+                if not isinstance(counts, list):
+                    counts = []
+            requirement_kind = safe_key(param_group.get("type"))
+            for index, item_id in enumerate(item_ids):
+                item_node = self.add_item_node(item_id, source=source)
+                if item_node:
+                    count = counts[index] if index < len(counts) else (counts[0] if counts else None)
+                    self.add_edge(submit_node, item_node, "submit_item_requires_item", source=source, evidence=f"paramData[{group_index}].paramList[0].valueStringList[{index}]", data={"groupIndex": group_index, "index": index, "count": count, "requirementType": requirement_kind})
+
+    def add_item_list_edges(self, owner_node: str, values: Any, *, edge_kind: str, source: str, evidence_prefix: str) -> None:
+        if not isinstance(values, list):
+            return
+        for index, item_id in enumerate(values):
+            item_node = self.add_item_node(item_id, source=source)
+            if item_node:
+                self.add_edge(owner_node, item_node, edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]", data={"index": index})
+
+    def add_item_submission_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if not isinstance(row, dict):
+            return
+        if table == "SubmitItem":
+            submit_node = self.add_submit_item_node(row.get("submitId") or row_key, name=row.get("name"), source=table, data={"submitId": row.get("submitId"), "icon": row.get("icon"), "paramGroupCount": len(row.get("paramData") or [])})
+            if submit_node:
+                self.add_edge(row_node, submit_node, "defines_submit_item", source=table)
+                self.add_alias(row.get("icon"), submit_node, kind="asset_stem", source=table)
+                self.add_tag_i18n_edges(submit_node, row.get("name"), source=table, edge_kind="submit_item_name_text")
+                self.add_tag_i18n_edges(submit_node, row.get("desc"), source=table, edge_kind="submit_item_desc_text")
+                self.add_tag_i18n_edges(submit_node, row.get("hintDes"), source=table, edge_kind="submit_item_hint_text")
+                self.add_tag_i18n_edges(submit_node, row.get("selectHintDes"), source=table, edge_kind="submit_item_select_hint_text")
+                self.add_submit_item_requirement_edges(submit_node, row, source=table)
+        elif table == "FullBottleTable":
+            bottle_item = self.add_item_node(row.get("id") or row_key, source=table, data={"liquidCapacity": row.get("liquidCapacity")})
+            full_node = self.add_item_submission_node("full_bottle_item", row.get("id") or row_key, source=table, data={"emptyBottleId": row.get("emptyBottleId"), "liquidId": row.get("liquidId"), "liquidCapacity": row.get("liquidCapacity")})
+            if full_node:
+                self.add_edge(row_node, full_node, "defines_full_bottle", source=table)
+                if bottle_item:
+                    self.add_edge(full_node, bottle_item, "full_bottle_item_ref", source=table, evidence="id")
+                empty_item = self.add_item_node(row.get("emptyBottleId"), source=table)
+                if empty_item:
+                    self.add_edge(full_node, empty_item, "full_bottle_empty_container", source=table, evidence="emptyBottleId")
+                liquid_item = self.add_item_node(row.get("liquidId"), source=table)
+                if liquid_item:
+                    self.add_edge(full_node, liquid_item, "full_bottle_contains_liquid", source=table, evidence="liquidId", data={"capacity": row.get("liquidCapacity")})
+        elif table == "EmptyBottleTable":
+            empty_item = self.add_item_node(row.get("id") or row_key, source=table, data={"liquidCapacity": row.get("liquidCapacity")})
+            empty_node = self.add_item_submission_node("empty_bottle_item", row.get("id") or row_key, source=table, data={"liquidCapacity": row.get("liquidCapacity"), "liquidItemCount": len(row.get("liquidItems") or []), "fullBottleItemCount": len(row.get("fullBottleItems") or [])})
+            if empty_node:
+                self.add_edge(row_node, empty_node, "defines_empty_bottle", source=table)
+                if empty_item:
+                    self.add_edge(empty_node, empty_item, "empty_bottle_item_ref", source=table, evidence="id")
+                self.add_item_list_edges(empty_node, row.get("liquidItems"), edge_kind="empty_bottle_accepts_liquid", source=table, evidence_prefix="liquidItems")
+                self.add_item_list_edges(empty_node, row.get("fullBottleItems"), edge_kind="empty_bottle_full_variant", source=table, evidence_prefix="fullBottleItems")
+        elif table == "FoodSubmitStageIdTable":
+            stage_node = self.add_activity_catalog_node("activity_submit_food_stage", row.get("stageId") or row_key, name=row.get("name"), source=table, data={"activityId": row.get("activityId"), "rewardId": row.get("rewardId"), "jumpId": row.get("jumpId"), "sortId": row.get("sortId")})
+            if stage_node:
+                self.add_edge(row_node, stage_node, "defines_food_submit_stage_id", source=table)
+                activity_node = self.add_activity_node(row.get("activityId"), source=table)
+                if activity_node:
+                    self.add_edge(stage_node, activity_node, "food_submit_stage_activity", source=table, evidence="activityId")
+                activity_stage = self.add_activity_stage_node(row.get("stageId") or row_key, name=row.get("name"), source=table)
+                if activity_stage:
+                    self.add_edge(stage_node, activity_stage, "food_submit_stage_id_overlay", source=table, evidence="stageId")
+                self.add_reward_ref_edge(stage_node, row.get("rewardId"), edge_kind="food_submit_stage_reward", source=table, evidence="rewardId")
+                self.add_tag_i18n_edges(stage_node, row.get("name"), source=table, edge_kind="food_submit_stage_name_text")
+                jump_key = safe_key(row.get("jumpId"))
+                if jump_key:
+                    jump_node = self.add_node("system_jump", jump_key, name=jump_key, source=table)
+                    self.add_alias(jump_key, jump_node, kind="system_jump_id", source=table)
+                    self.add_edge(stage_node, jump_node, "food_submit_stage_jump", source=table, evidence="jumpId")
+        elif table == "RecoverApItemTable":
+            item_node = self.add_item_node(row.get("id") or row_key, source=table)
+            recover_node = self.add_item_submission_node("ap_recovery_item", row.get("id") or row_key, source=table, data={"apRecoverValue": row.get("apRecoverValue")})
+            if recover_node:
+                self.add_edge(row_node, recover_node, "defines_ap_recovery_item", source=table)
+                if item_node:
+                    self.add_edge(item_node, recover_node, "item_has_ap_recovery", source=table, evidence="id", data={"apRecoverValue": row.get("apRecoverValue")})
+        elif table == "ValuableDepot":
+            depot_node = self.add_item_submission_node("valuable_depot", row.get("type") or row_key, name=row.get("name"), source=table, data={"type": row.get("type"), "gridLimit": row.get("gridLimit"), "sortId": row.get("sortId"), "isHidden": row.get("isHidden"), "storageItemTypeCount": len(row.get("storageItemType") or [])})
+            if depot_node:
+                self.add_edge(row_node, depot_node, "defines_valuable_depot", source=table)
+                self.add_alias(row.get("icon"), depot_node, kind="asset_stem", source=table)
+                self.add_tag_i18n_edges(depot_node, row.get("name"), source=table, edge_kind="valuable_depot_name_text")
+                for index, type_id in enumerate(row.get("storageItemType") or []):
+                    type_node = self.add_item_type_node(type_id, source=table)
+                    if type_node:
+                        self.add_edge(depot_node, type_node, "valuable_depot_allows_item_type", source=table, evidence=f"storageItemType[{index}]", data={"index": index})
+        elif table == "CollectionTable":
+            collection_node = self.add_item_submission_node("collection_entry", row.get("prefabId") or row_key, source=table, data={"prefabId": row.get("prefabId"), "mergeId": row.get("mergeId"), "incrementId": row.get("incrementId"), "showToast": row.get("showToast")})
+            if collection_node:
+                self.add_edge(row_node, collection_node, "defines_collection_entry", source=table)
+                item_node = self.add_item_node(row.get("itemId"), source=table)
+                if item_node:
+                    self.add_edge(collection_node, item_node, "collection_entry_item", source=table, evidence="itemId")
+                bandwidth_item = self.add_item_node(row.get("bandwidthItemId"), source=table)
+                if bandwidth_item:
+                    self.add_edge(collection_node, bandwidth_item, "collection_entry_bandwidth_item", source=table, evidence="bandwidthItemId")
+                merge_key = safe_key(row.get("mergeId"))
+                if merge_key:
+                    merge_node = self.add_item_submission_node("collection_entry", merge_key, source=table)
+                    self.add_edge(collection_node, merge_node, "collection_entry_merges_to", source=table, evidence="mergeId")
+        elif table == "RecycleBinTable":
+            recycle_node = self.add_item_submission_node("recycle_bin", row.get("recycleBinId") or row_key, source=table, data={"domainId": row.get("domainId"), "levelId": row.get("levelId"), "levelObjId": row.get("levelObjId"), "serialId": row.get("serialId"), "unlockCost": row.get("unlockCost"), "refreshMode": row.get("refreshMode"), "refreshParam": row.get("refreshParam")})
+            if recycle_node:
+                self.add_edge(row_node, recycle_node, "defines_recycle_bin", source=table)
+                domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
+                if domain_node:
+                    self.add_edge(recycle_node, domain_node, "recycle_bin_domain", source=table, evidence="domainId")
+                level_node = self.add_level_node(row.get("levelId"), source=table)
+                if level_node:
+                    self.add_edge(recycle_node, level_node, "recycle_bin_level", source=table, evidence="levelId")
+                    self.add_level_map_edge(level_node, row.get("levelId"), source=table, evidence="levelId")
+                self.add_tag_i18n_edges(recycle_node, row.get("unlockDesc"), source=table, edge_kind="recycle_bin_unlock_desc_text")
+                level_data = row.get("levelData") if isinstance(row.get("levelData"), dict) else {}
+                for level_key, level_row in level_data.items():
+                    if not isinstance(level_row, dict):
+                        continue
+                    bin_level_node = self.add_item_submission_node("recycle_bin_level", f"{safe_key(row.get('recycleBinId') or row_key)}:{safe_key(level_key)}", source=table, data={"lv": level_row.get("lv"), "lvUpCost": level_row.get("lvUpCost"), "rewardId": level_row.get("rewardId")})
+                    if bin_level_node:
+                        self.add_edge(recycle_node, bin_level_node, "recycle_bin_has_level", source=table, evidence=f"levelData.{level_key}", data={"levelKey": level_key})
+                        self.add_reward_ref_edge(bin_level_node, level_row.get("rewardId"), edge_kind="recycle_bin_level_reward", source=table, evidence=f"levelData.{level_key}.rewardId")
+                        self.add_tag_i18n_edges(bin_level_node, level_row.get("desc"), source=table, edge_kind="recycle_bin_level_desc_text")
+        elif table == "LevelId2RecycleBinsTable":
+            level_node = self.add_level_node(row.get("levelId") or row_key, source=table)
+            if level_node:
+                self.add_edge(row_node, level_node, "defines_level_recycle_bins", source=table)
+                self.add_level_map_edge(level_node, row.get("levelId") or row_key, source=table, evidence="levelId")
+                for index, recycle_id in enumerate(row.get("recycleBinIds") or []):
+                    recycle_node = self.add_item_submission_node("recycle_bin", recycle_id, source=table)
+                    if recycle_node:
+                        self.add_edge(level_node, recycle_node, "level_has_recycle_bin", source=table, evidence=f"recycleBinIds[{index}]", data={"index": index})
 
     def ingest_reward_catalog_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -20337,6 +20518,13 @@ QUERY_KIND_PRIORITY = {
     "gameplay_stat_property": 30,
     "gameplay_unlock": 31,
     "item": 32,
+    "full_bottle_item": 32.1,
+    "empty_bottle_item": 32.2,
+    "ap_recovery_item": 32.3,
+    "valuable_depot": 32.4,
+    "collection_entry": 32.5,
+    "recycle_bin": 32.6,
+    "recycle_bin_level": 32.61,
     "item_type": 33,
     "item_showing_type": 34,
     "item_obtain_way": 35,
@@ -20894,6 +21082,13 @@ NODE_ID_PREFIXES = (
     "gameplay_stat_property",
     "gameplay_unlock",
     "item",
+    "full_bottle_item",
+    "empty_bottle_item",
+    "ap_recovery_item",
+    "valuable_depot",
+    "collection_entry",
+    "recycle_bin",
+    "recycle_bin_level",
     "item_type",
     "item_showing_type",
     "item_obtain_way",
