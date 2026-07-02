@@ -1538,6 +1538,8 @@ Validated settings edges include 100 `setting_tab_has_item`, 92 `setting_item_re
 
 2026-07-02 achievement text bridge refs: existing achievement graph nodes now expose specific text edge kinds instead of only generic `uses_i18n_text` links. A fast CN graph build to `tmp/source_graph_achievement_text.sqlite` verified 8 `achievement_category_name_text`, 8 `achievement_group_name_text`, 114 `achievement_name_text`, 156 `achievement_level_complete_text`, and 200 `achievement_condition_desc_text` edges; `achievement_desc_text` is currently 0 because the structured `desc` fields are id `0`. Smoke tests passed for `achv_adv_tundra_box`, `achv_adv_tundra_box:level:1`, and `achv_type_adventure`.
 
+2026-07-02 item economy text refs: existing item economy graph nodes now expose role-specific item text edges and `ItemGatherTextTable` is part of `structured_item_economy`. A fast CN graph build to `tmp/source_graph_item_text.sqlite` verified 2,348 `item_name_text`, 2,296 `item_desc_text`, 2,174 `item_deco_desc_text`, 862 `item_no_obtain_hint_text`, 91 `item_type_name_text`, 10 `item_showing_type_name_text`, 42 `item_gather_desc_text`, 42 `defines_item_gather_text`, and 42 `item_gather_text_domain` edges. The item family produced 7,644 generic `uses_i18n_text` edges from `item`, `item_type`, `item_showing_type`, and `item_gather_text` nodes. Smoke tests passed for `achv_adv_tundra_box_1`, item type `1`, and `item_drop_agfly_1`.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type

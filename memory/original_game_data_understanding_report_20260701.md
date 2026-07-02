@@ -2084,6 +2084,12 @@ The source graph now makes achievement-facing text roles explicit. Achievement c
 
 A fast CN build verified 8 category name links, 8 group name links, 114 achievement name links, 156 level completion links, and 200 condition description links. This improves achievement lookup without changing the existing activity/achievement topology.
 
+### 2026-07-02 Item Economy Text Graph Progress
+
+The source graph now makes item-facing text roles queryable on the existing item economy model. `ItemTable` items link name, description, decoration-description, and no-obtain hint text; item type and showing type labels have dedicated text edges; and `ItemGatherTextTable` now has compact gather-text nodes linked to descriptions, domains, and icon assets.
+
+A fast CN build verified 2,348 item name links, 2,296 item description links, 2,174 decoration-description links, 862 no-obtain hint links, 101 type/showing-type label links, and 42 gather-description/domain rows. This adds high-volume item text semantics without changing item/reward/shop topology.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
