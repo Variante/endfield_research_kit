@@ -360,6 +360,11 @@ DISPLAY_METADATA_TABLES = (
     "ShopDomainConst.json",
     "ShopChannelDevelopmentTable.json",
     "IntroTable.json",
+    "ItemStorage.json",
+    "CashShopRecommendTextTable.json",
+    "ShareTable.json",
+    "I18nHotFix.json",
+    "BattleBossOverrideIconTable.json",
 )
 FACTORY_INTERACTION_LOOKUP_TABLES = (
     "FactorySpecialPowerPoleTable.json",
@@ -15306,6 +15311,48 @@ class SourceGraphBuilder:
                         self.add_tag_i18n_edges(page_node, page.get("title"), source=table, edge_kind="intro_page_title_text")
                         self.add_tag_i18n_edges(page_node, page.get("desc"), source=table, edge_kind="intro_page_desc_text")
                         self.add_alias(page.get("imagePath"), page_node, kind="asset_stem", source=table)
+            return
+        if table == "ItemStorage" and isinstance(row, dict):
+            storage_node = self.add_display_metadata_node("item_storage_rule", row_key, source=table, data={"types": row.get("types")})
+            if storage_node:
+                self.add_edge(row_node, storage_node, "defines_item_storage_rule", source=table)
+                for index, item_type in enumerate(row.get("types") or []):
+                    type_node = self.add_item_type_node(item_type, source=table)
+                    if type_node:
+                        self.add_edge(storage_node, type_node, "item_storage_allows_type", source=table, evidence=f"types[{index}]", data={"index": index})
+            return
+        if table == "CashShopRecommendTextTable":
+            text_node = self.add_display_metadata_node("cash_shop_recommend_text", row_key, name=row, source=table, data={"text": row})
+            if text_node:
+                self.add_edge(row_node, text_node, "defines_cash_shop_recommend_text", source=table)
+                self.add_tag_i18n_edges(text_node, row, source=table, edge_kind="cash_shop_recommend_text")
+            return
+        if table == "ShareTable" and isinstance(row, dict):
+            share_node = self.add_display_metadata_node("share_channel_config", f"{safe_key(row_key)}:{safe_key(row.get('envLang')) if row.get('envLang') is not None else 'env'}", source=table, data={"envLang": row.get("envLang"), "channelCount": len(row.get("shareChannelIdList") or [])})
+            if share_node:
+                self.add_edge(row_node, share_node, "defines_share_channel_config", source=table)
+                for index, channel_id in enumerate(row.get("shareChannelIdList") or []):
+                    channel_node = self.add_ui_label_node("ShareChannelTable", channel_id, source=table)
+                    if channel_node:
+                        self.add_edge(share_node, channel_node, "share_config_allows_channel", source=table, evidence=f"shareChannelIdList[{index}]", data={"index": index})
+            return
+        if table == "I18nHotFix" and isinstance(row, dict):
+            hotfix_node = self.add_display_metadata_node("i18n_hotfix", row_key, source=table, data={"entryCount": len(row.get("list") or [])})
+            if hotfix_node:
+                self.add_edge(row_node, hotfix_node, "defines_i18n_hotfix", source=table)
+                for index, entry in enumerate(row.get("list") or []):
+                    if not isinstance(entry, dict):
+                        continue
+                    entry_node = self.add_display_metadata_node("i18n_hotfix_entry", f"{safe_key(row_key)}:{index}", source=table, data=compact_payload(entry, depth=2))
+                    if entry_node:
+                        self.add_edge(hotfix_node, entry_node, "i18n_hotfix_has_entry", source=table, evidence=f"list[{index}]", data={"index": index, "platform": entry.get("platform"), "id": entry.get("id")})
+                        self.add_tag_i18n_edges(entry_node, {"id": entry.get("id"), "text": entry.get("text")}, source=table, edge_kind="i18n_hotfix_text")
+            return
+        if table == "BattleBossOverrideIconTable" and isinstance(row, dict):
+            icon_node = self.add_display_metadata_node("battle_boss_override_icon", row_key, source=table, data={"iconId": row.get("iconId")})
+            if icon_node:
+                self.add_edge(row_node, icon_node, "defines_battle_boss_override_icon", source=table)
+                self.add_alias(row.get("iconId"), icon_node, kind="asset_stem", source=table)
             return
         if table == "ShopDomainConst":
             const_node = self.add_display_metadata_node("display_const", f"{table}:{row_key}", name=row_key, source=table, data={"key": row_key, "value": row})
