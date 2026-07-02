@@ -982,6 +982,30 @@ guide-group edges, 69 guide text edges, 17 chapter-panel edges, and 7 static
 specific `actionList[...]` fields. This is static authored action-map evidence;
 it does not simulate action execution, condition evaluation, or mission
 chronology.
+
+2026-07-01 MissionRuntimeAsset condition graph progress: mission runtime
+objective conditions now get `mission_runtime_condition` nodes, typed links to
+condition classes, and conservative target edges for high-signal payload fields.
+A fast CN temp graph build to `tmp/source_graph_mission_conditions.sqlite`
+verified 4,725 condition nodes, 79 condition-type nodes, 4,725
+`quest_has_runtime_condition` edges, 4,725 `mission_runtime_condition_type`
+edges, 761 nested `condition_has_sub_condition` edges, 263 condition-to-level
+edges, 200 `condition_checks_level_script_property` edges, 200 property-key
+edges, 63 script-kill level-script edges, 201 composite
+`condition_checks_world_entity_script_slot` edges, 149 quest-state checks, 79
+mission-state checks, 60 factory-tech checks, 231 item/money count checks, 707
+ReachDestination level edges, 707 ReachDestination mission-area edges, and 449
+TalkOptionFinish story refs. Example queries:
+
+```bat
+python tools\endfield_source_graph.py query c13m1:runtime:c13m1_q#1:objective:0:CheckLevelScriptPropertyBool:aacc615d --kind mission_runtime_condition
+python tools\endfield_source_graph.py query 22800970011:30001 --kind world_entity_script_slot
+python tools\endfield_source_graph.py query dlg_a1m10_1 --kind story
+```
+
+These edges expose authored runtime condition references, including nested
+`subConditions`; they do not evaluate comparers, infer enum names, treat
+`finishId = -1` as a concrete option, or prove observed mission chronology.
 2026-07-01 ScriptTaskExtraInfoTable display-metadata graph progress: the
 `GameplayConfigScriptTaskExtraInfoTable` handler now also ingests the larger
 `Json/GameplayConfig/ScriptTaskExtraInfoTable.json` entries in `Json_GameplayConfig.json`,
