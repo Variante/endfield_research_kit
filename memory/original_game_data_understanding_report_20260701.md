@@ -2155,6 +2155,13 @@ The source graph now models the item grouping and acquisition-display support ta
 
 A fast CN build verified 1,946 item-type list edges, 1,946 showing-type list edges, 53 obtain-condition nodes, 32 obtain-way show-condition links, 36 usable chest configs with 154 reward links, 28 limited-time aliases, and 5 limited-time type preset links. Smoke checks covered normal type/showing-type lists, dungeon/wiki/factory-tech condition refs, a battle-pass self-select obtain condition, a random BP chest reward, and a limited-time AP supply alias. This improves item acquisition semantics while staying limited to authored display/config evidence rather than live inventory or runtime chest selection.
 
+
+### 2026-07-02 World Harvestable And Crop Graph Progress
+
+The source graph now models authored harvestable/crop tables directly. General pickable/breakable doodads, tree doodads, planting crop configs, soil reward rows, fertilize item configs, and fertilize increase effects now link to labels, rewards, items, crop-step parameters, and preserved model/effect asset tokens.
+
+A fast CN build verified 86 world doodads, 24 tree doodads, 16 planting crops, 92 planting steps, 20 soil reward rows, 2 fertilize items, and 3 fertilize effect nodes. Smoke checks covered moss pick rewards, tree breaking/broken rewards, BB flower crop rewards and steps, soil reward item output, and muck fertilize config. This improves world-resource and crop semantics while staying limited to authored table evidence, not placed world instances or live harvest state.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come

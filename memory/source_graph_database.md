@@ -1583,6 +1583,11 @@ This models authored paid-shop goods, display grouping, recommendations, gift-pa
 
 This models authored item grouping, obtain-display gates, chest reward configs, and limited-time item aliases. It does not prove live inventory contents, server-side acquisition availability, or runtime chest selection behavior.
 
+
+2026-07-02 world harvestable/crop graph refs: `tools/endfield_source_graph.py` now ingests `DoodadGeneralTable`, `DoodadTreeTable`, `PlantingDataTable`, `RewardSoilTable`, `FertilizeDataTable`, and `FertilizeIncreaseTable` as `structured_world_harvestables`. A fast CN graph build to `tmp/source_graph_world_harvestables.sqlite` verified 86 `world_doodad`, 24 `world_tree_doodad`, 16 `planting_crop`, 92 `planting_step`, 20 `soil_reward`, 2 `fertilize_item`, and 3 `fertilize_effect` nodes. Validated edge coverage includes 86 `defines_world_doodad`, 52 doodad label text links, 16 doodad item links, 48 doodad pickable reward links, 24 tree breaking reward links, 24 tree broken reward links, 16 crop reward links, 16 crop increased-reward links, 92 crop-step links, 20 reward-to-soil table links, 20 soil reward item links, 2 item-to-fertilize config links, and 2 fertilize item effect-type links. The quick build resolved 2 tree model-asset edges and preserved model/asset tokens through aliases, including 96 crop asset/model aliases, 144 tree asset/model aliases, and 5 fertilize asset aliases. Smoke tests passed for `pick_moss_once_1`, `picks_tundra_tree_1`, `soil_bbflower_1`, `reward_doodad_soil_bbflower_1`, and `item_muck_feces_1`.
+
+This models authored pickable/breakable doodads, tree rewards/models, planting crop growth steps, soil reward outputs, and fertilize item effects. It does not prove placed world instances, runtime harvest state, or unresolved model-token-to-exported-asset matches.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type
