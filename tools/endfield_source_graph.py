@@ -303,6 +303,28 @@ SETTINGS_SEMANTIC_TABLES = (
     "ItemIconCompositeTable.json",
     "MapMarkTypeTempTable.json",
 )
+MODE_CONSTANT_TABLES = (
+    "SpaceshipConst.json",
+    "FactoryConst.json",
+    "CinematicConst.json",
+    "SimulationTrainingConst.json",
+    "DungeonConst.json",
+    "ActivityConst.json",
+    "FacBlueprintConst.json",
+    "BattlePassConst.json",
+    "CashShopConst.json",
+    "InteractiveFacWrapperTable.json",
+    "PsTrophyTable.json",
+    "FactoryNodeTypeToBuildingType.json",
+    "FactoryBuildingTypeToNodeType.json",
+    "ActivityHighDifficultySpecialStageTable.json",
+    "CharGatherBehaviourTable.json",
+    "SpaceshipSubCharGiftTable.json",
+    "LevelGradeTable.json",
+    "DistributionInfoTable.json",
+    "FactorySmartAlertTable.json",
+    "FactoryBattleTable.json",
+)
 TAG_TAXONOMY_TABLES = (
     "TagGroupDataTable.json",
     "TagDataTable.json",
@@ -3032,6 +3054,8 @@ class SourceGraphBuilder:
             self.commit_step("attributeDictionary")
             self.ingest_settings_semantics()
             self.commit_step("settingsSemantics")
+            self.ingest_mode_constant_semantics()
+            self.commit_step("modeConstants")
             if self.include_gameplay:
                 self.ingest_gameplay()
                 self.commit_step("gameplay")
@@ -14721,6 +14745,151 @@ class SourceGraphBuilder:
         elif table == "MapMarkTypeTempTable":
             self.add_temp_map_mark_edges(table, table_node, payload)
 
+    def ingest_mode_constant_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_mode_constants", name="Structured mode constants and small mapping tables", path=slash(table_root))
+        for table_name in MODE_CONSTANT_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/mode_constants")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/mode_constants")
+                self.add_mode_constant_row_edges(table, row_key, row, row_node)
+
+    def add_mode_constant_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node(kind, key, name=name, source=source, data=data)
+
+    def add_interactive_template_ref_node(self, template_id: Any, *, source: str = "", data: Any = None) -> str:
+        template_key = safe_key(template_id)
+        if not template_key:
+            return ""
+        node = self.add_node("interactive_template", template_key, name=template_key, source=source, data=data)
+        self.add_alias(template_key, node, kind="interactive_template_id", source=source)
+        return node
+
+    def add_mode_const_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        const_node = self.add_mode_constant_node("mode_const", f"{table}:{row_key}", name=row_key, source=table, data={"table": table, "key": row_key, "value": row})
+        if const_node:
+            self.add_edge(row_node, const_node, "defines_mode_const", source=table, evidence=str(row_key))
+            self.add_constant_ref_edges(const_node, row, source=table, evidence="value", edge_prefix="mode_const_refs")
+
+    def add_mode_constant_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table in {"SpaceshipConst", "FactoryConst", "CinematicConst", "SimulationTrainingConst", "DungeonConst", "ActivityConst", "FacBlueprintConst", "BattlePassConst", "CashShopConst"}:
+            self.add_mode_const_edges(table, row_key, row, row_node)
+            return
+        if table == "InteractiveFacWrapperTable" and isinstance(row, dict):
+            wrapper_node = self.add_mode_constant_node("interactive_fac_wrapper", row_key, source=table, data={"interactiveTemplateId": row.get("interactiveTemplateId")})
+            if wrapper_node:
+                self.add_edge(row_node, wrapper_node, "defines_interactive_fac_wrapper", source=table)
+                template_node = self.add_interactive_template_ref_node(row.get("interactiveTemplateId"), source=table)
+                if template_node:
+                    self.add_edge(wrapper_node, template_node, "interactive_fac_wrapper_template", source=table, evidence="interactiveTemplateId")
+            return
+        if table == "PsTrophyTable" and isinstance(row, dict):
+            trophy_node = self.add_mode_constant_node("ps_trophy", row.get("objectId") or row_key, source=table, data={"objectId": row.get("objectId"), "trophyId": row.get("trophyId")})
+            if trophy_node:
+                self.add_edge(row_node, trophy_node, "defines_ps_trophy", source=table)
+                self.add_alias(row.get("trophyId"), trophy_node, kind="ps_trophy_id", source=table)
+            return
+        if table in {"FactoryNodeTypeToBuildingType", "FactoryBuildingTypeToNodeType"}:
+            map_node = self.add_mode_constant_node("factory_building_type_map", f"{table}:{row_key}", source=table, data={"key": row_key, "value": row, "direction": table})
+            source_type = self.add_factory_building_type_node(row_key, source=table)
+            target_type = self.add_factory_building_type_node(row, source=table)
+            if map_node:
+                self.add_edge(row_node, map_node, "defines_factory_building_type_map", source=table)
+                if source_type:
+                    self.add_edge(map_node, source_type, "factory_building_type_map_source", source=table, evidence="rowKey")
+                if target_type:
+                    self.add_edge(map_node, target_type, "factory_building_type_map_target", source=table, evidence="rowValue")
+            return
+        if table == "ActivityHighDifficultySpecialStageTable" and isinstance(row, dict):
+            stage_node = self.add_mode_constant_node("activity_high_difficulty_special_stage", row_key, source=table, data={"bgName": row.get("bgName")})
+            if stage_node:
+                self.add_edge(row_node, stage_node, "defines_high_difficulty_special_stage", source=table)
+                activity_stage = self.add_activity_stage_node(row_key, source=table)
+                if activity_stage:
+                    self.add_edge(stage_node, activity_stage, "high_difficulty_special_stage_activity_stage", source=table, evidence="rowKey")
+                self.add_alias(row.get("bgName"), stage_node, kind="asset_stem", source=table)
+            return
+        if table == "CharGatherBehaviourTable" and isinstance(row, dict):
+            char_node = self.add_character_ref_node(row.get("charId") or row_key, source=table)
+            behavior_node = self.add_mode_constant_node("character_gather_behavior", row.get("charId") or row_key, source=table, data=compact_payload(row, depth=2))
+            if behavior_node:
+                self.add_edge(row_node, behavior_node, "defines_character_gather_behavior", source=table)
+                if char_node:
+                    self.add_edge(char_node, behavior_node, "character_has_gather_behavior", source=table, evidence="charId")
+                for field in ("cropEnv", "cropFinishEnv", "doodadEnv", "doodadFinishEnv"):
+                    emoji_node = self.add_mode_constant_node("env_emoji", row.get(field), source=table)
+                    if emoji_node:
+                        self.add_edge(behavior_node, emoji_node, "character_gather_behavior_env_emoji", source=table, evidence=field, data={"field": field, "cooldown": row.get(f"{field}CD")})
+            return
+        if table == "SpaceshipSubCharGiftTable" and isinstance(row, dict):
+            char_node = self.add_character_ref_node(row_key, source=table)
+            gift_node = self.add_mode_constant_node("spaceship_character_gift", row_key, source=table, data={"entryCount": len(row.get("list") or {})})
+            if gift_node:
+                self.add_edge(row_node, gift_node, "defines_spaceship_character_gift", source=table)
+                if char_node:
+                    self.add_edge(char_node, gift_node, "character_has_spaceship_gift_dialogs", source=table, evidence="rowKey")
+                for gift_key, gift in (row.get("list") or {}).items():
+                    if not isinstance(gift, dict):
+                        continue
+                    entry_node = self.add_mode_constant_node("spaceship_character_gift_entry", f"{safe_key(row_key)}:{safe_key(gift_key)}", source=table, data={"charGiftTalkId": gift.get("charGiftTalkId"), "dialogId": gift.get("dialogId")})
+                    if entry_node:
+                        self.add_edge(gift_node, entry_node, "spaceship_character_gift_has_entry", source=table, evidence=f"list.{gift_key}")
+                        story_key = safe_key(gift.get("dialogId"))
+                        if story_key:
+                            story_node = self.add_node("story", story_key, name=story_key, source=table)
+                            self.add_edge(entry_node, story_node, "spaceship_character_gift_dialog", source=table, evidence="dialogId")
+            return
+        if table == "LevelGradeTable" and isinstance(row, dict):
+            config_node = self.add_mode_constant_node("level_grade_config", row.get("name") or row_key, source=table, data={"gradeCount": len(row.get("grades") or [])})
+            if config_node:
+                self.add_edge(row_node, config_node, "defines_level_grade_config", source=table)
+                for index, grade in enumerate(row.get("grades") or []):
+                    if not isinstance(grade, dict):
+                        continue
+                    grade_node = self.add_mode_constant_node("level_grade_entry", f"{safe_key(row.get('name') or row_key)}:{grade.get('grade') if grade.get('grade') is not None else index}", source=table, data=compact_payload(grade, depth=2))
+                    if grade_node:
+                        self.add_edge(config_node, grade_node, "level_grade_config_has_grade", source=table, evidence=f"grades[{index}]", data={"index": index})
+            return
+        if table == "DistributionInfoTable" and isinstance(row, dict):
+            dist_node = self.add_mode_constant_node("distribution_info", row.get("distributionId") or row_key, name=row.get("areaName"), source=table, data={"distributionId": row.get("distributionId"), "jumpId": row.get("jumpId")})
+            if dist_node:
+                self.add_edge(row_node, dist_node, "defines_distribution_info", source=table)
+                self.add_tag_i18n_edges(dist_node, row.get("areaName"), source=table, edge_kind="distribution_area_name_text")
+                self.add_system_jump_edge(dist_node, row.get("jumpId"), edge_kind="distribution_info_jump", source=table, evidence="jumpId")
+            return
+        if table == "FactorySmartAlertTable" and isinstance(row, dict):
+            alert_node = self.add_mode_constant_node("factory_smart_alert", row_key, source=table)
+            if alert_node:
+                self.add_edge(row_node, alert_node, "defines_factory_smart_alert", source=table)
+                for field in ("alertText", "alertText_ct", "alertText_mb"):
+                    self.add_tag_i18n_edges(alert_node, row.get(field), source=table, edge_kind=f"factory_smart_alert_{field}_text")
+            return
+        if table == "FactoryBattleTable" and isinstance(row, dict):
+            battle_node = self.add_mode_constant_node("factory_battle_config", row.get("id") or row_key, source=table, data={"attackRange": row.get("attackRange"), "attackRangeType": row.get("attackRangeType"), "attackCost": row.get("attackCost"), "energyMax": row.get("energyMax"), "commonSkillId": row.get("commonSkillId"), "overloadSkillId": row.get("overloadSkillId"), "relateTempBuildingId": row.get("relateTempBuildingId")})
+            if battle_node:
+                self.add_edge(row_node, battle_node, "defines_factory_battle_config", source=table)
+                self.add_alias(row.get("attackRangeEffect"), battle_node, kind="asset_stem", source=table)
+                for field, edge_kind in (("commonSkillId", "factory_battle_common_skill"), ("overloadSkillId", "factory_battle_overload_skill")):
+                    skill_key = safe_key(row.get(field))
+                    if skill_key:
+                        skill_node = self.add_node("gameplay_skill", skill_key, name=skill_key, source=table)
+                        self.add_alias(skill_key, skill_node, kind="gameplay_skill_id", source=table)
+                        self.add_edge(battle_node, skill_node, edge_kind, source=table, evidence=field)
+                building_node = self.add_factory_building_node(row.get("relateTempBuildingId"), source=table)
+                if building_node:
+                    self.add_edge(battle_node, building_node, "factory_battle_related_temp_building", source=table, evidence="relateTempBuildingId")
+                self.add_tag_i18n_edges(battle_node, row.get("normalDesc"), source=table, edge_kind="factory_battle_normal_desc_text")
+                self.add_tag_i18n_edges(battle_node, row.get("overloadDesc"), source=table, edge_kind="factory_battle_overload_desc_text")
+            return
+
     def add_env_talk_node(self, talk_id: Any, *, source: str = "", data: Any = None) -> str:
         talk_key = safe_key(talk_id)
         if not talk_key:
@@ -20486,6 +20655,7 @@ QUERY_KIND_PRIORITY = {
     "setting_gamepad_option": 34.7,
     "setting_text_key": 34.8,
     "setting_function": 34.85,
+    "mode_const": 34.8501,
     "setting_group": 34.851,
     "setting_id_map": 34.852,
     "id_dictionary": 34.853,
@@ -20552,6 +20722,19 @@ QUERY_KIND_PRIORITY = {
     "input_action": 34.9,
     "input_scope": 34.91,
     "input_key": 34.92,
+    "interactive_fac_wrapper": 34.8593,
+    "ps_trophy": 34.8594,
+    "factory_building_type_map": 34.8595,
+    "activity_high_difficulty_special_stage": 34.8596,
+    "character_gather_behavior": 34.8597,
+    "env_emoji": 34.8598,
+    "spaceship_character_gift": 34.8599,
+    "spaceship_character_gift_entry": 34.85991,
+    "level_grade_config": 34.85992,
+    "level_grade_entry": 34.85993,
+    "distribution_info": 34.85994,
+    "factory_smart_alert": 34.85995,
+    "factory_battle_config": 34.85996,
     "spaceship_npc_proxy": 35,
     "spaceship_skill": 36,
     "spaceship_room_type": 37,
@@ -21075,6 +21258,7 @@ NODE_ID_PREFIXES = (
     "setting_gamepad_option",
     "setting_text_key",
     "setting_function",
+    "mode_const",
     "setting_group",
     "setting_id_map",
     "id_dictionary",
@@ -21141,6 +21325,19 @@ NODE_ID_PREFIXES = (
     "input_action",
     "input_scope",
     "input_key",
+    "interactive_fac_wrapper",
+    "ps_trophy",
+    "factory_building_type_map",
+    "activity_high_difficulty_special_stage",
+    "character_gather_behavior",
+    "env_emoji",
+    "spaceship_character_gift",
+    "spaceship_character_gift_entry",
+    "level_grade_config",
+    "level_grade_entry",
+    "distribution_info",
+    "factory_smart_alert",
+    "factory_battle_config",
     "spaceship_npc_proxy",
     "spaceship_skill",
     "spaceship_room_type",
