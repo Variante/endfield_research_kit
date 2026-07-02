@@ -2032,7 +2032,13 @@ This improves the semantic proof trail for risky option branches, especially the
 
 The source graph now models the settings tables that were previously a large unselected I18n cluster: setting tabs/items, quality subsettings/options, gamepad setting rows/options, input actions, scopes, keys, function hooks, hint-text keys, and mutex settings. A fast CN build verified 8 tabs, 139 shared setting items, 55 quality options, 88 input actions, 5 input scopes, 10 input keys, 14 mutex links, 132 action-reference edges, 81 scope edges, 120 function-reference edges, and 255 setting-related i18n text links.
 
-This improves non-story UI/system text explainability and makes settings controls queryable from either the setting id or the input action id. The next high-confidence unmodeled semantic island is the generic tag taxonomy in `TagDataTable` and `TagGroupDataTable`; it should be modeled separately from activity, enemy, and gameplay tags.
+This improves non-story UI/system text explainability and makes settings controls queryable from either the setting id or the input action id.
+
+### 2026-07-01 Tag Taxonomy Graph Progress
+
+The source graph now models the generic tag taxonomy in `TagDataTable` and `TagGroupDataTable` separately from activity, enemy, and gameplay tags. A fast CN build verified 77 canonical tags, 6 tag groups, 77 tag-to-group edges, 89 taxonomy i18n text links, 8 preserved hidden-tag rows, and 69 exact bridges from existing `character_tag` assignment nodes to canonical `tag` nodes.
+
+This closes a high-count leftover UI/system text cluster and makes character tag assignments explainable through the canonical label/group dictionary without forcing unrelated bloc or gameplay tag ids into the taxonomy.
 
 ## Caveats
 
