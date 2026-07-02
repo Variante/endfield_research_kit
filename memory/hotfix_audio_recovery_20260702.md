@@ -39,7 +39,9 @@ from VFS and parsed embedded Wwise HIRC metadata. It found `59` embedded banks,
 linked all `23` media ids to `4` Wwise event hashes, tested `548` known
 event-name candidates from current Story/export tables, and found `0` matches. Event
 hash `0x0fe31eb5` owns `18` media ids; `0x6f74a1f3` owns `1`; `0x8c9d6ae4`
-owns `1`; `0xb7d20b57` owns `3`.
+owns `1`; `0xb7d20b57` owns `3`. A follow-up Wwise section probe did not
+find useful `STID` event-name strings in the embedded HotfixAudio banks;
+printable HIRC fragments were byte noise rather than stable labels.
 
 ## Interpretation
 
