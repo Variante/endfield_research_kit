@@ -337,6 +337,48 @@ GAMEPLAY_CONFIG_SCRIPT_TASK_EXTRA_PATHS = frozenset(
         "Json/GameplayConfig/ScriptTaskExtraInfoTable.json",
     }
 )
+STAT_ATTR_KEYS = {
+    1: "hp",
+    2: "atk",
+    3: "def",
+    4: "physical_damage_taken",
+    5: "fire_damage_taken",
+    6: "pulse_damage_taken",
+    7: "cryst_damage_taken",
+    9: "critical_rate",
+    17: "normal_attack_efficiency",
+    28: "ultimate_skill_efficiency",
+    29: "heal_output",
+    30: "heal_taken",
+    31: "healing_taken_scalar",
+    32: "skill_damage",
+    33: "combo_skill_damage",
+    34: "normal_attack_damage",
+    35: "fire_burst_damage",
+    36: "pulse_burst_damage",
+    37: "cryst_burst_damage",
+    38: "natural_burst_damage",
+    39: "str",
+    40: "agi",
+    41: "wis",
+    42: "will",
+    44: "ultimate_sp_gain",
+    48: "natural_damage_taken",
+    50: "physical_damage",
+    51: "fire_damage",
+    52: "pulse_damage",
+    53: "cryst_damage",
+    54: "natural_damage",
+    60: "ether_damage_taken",
+    61: "broken_unit_damage",
+    80: "physical_damage_taken_scalar",
+    81: "natural_damage_taken_scalar",
+    82: "cryst_damage_taken_scalar",
+    83: "pulse_damage_taken_scalar",
+    84: "fire_damage_taken_scalar",
+    85: "ether_damage_taken_scalar",
+    87: "infliction",
+}
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
     "AIConfigEnemyTemplateDataSummary",
@@ -8745,6 +8787,11 @@ class SourceGraphBuilder:
             },
         )
         self.add_edge(row_node, node, "defines_attribute_meta", source=table)
+        stat_key = STAT_ATTR_KEYS.get(int(attr_type)) if str(attr_type).isdigit() else None
+        if stat_key:
+            stat_node = self.add_gameplay_stat_property_node(stat_key, source=table)
+            if stat_node:
+                self.add_edge(node, stat_node, "attribute_meta_has_stat_property", source=table, evidence="STAT_ATTR_KEYS", data={"attributeType": attr_type, "statKey": stat_key})
         self.add_alias(row.get("iconName"), node, kind="icon_id", source=table)
         self.add_alias(row.get("bigIconName"), node, kind="icon_id", source=table)
 
@@ -8762,6 +8809,9 @@ class SourceGraphBuilder:
                 continue
             entry_node = self.add_attribute_display_entry_node(f"attribute:{attr_type}:{index}", entry, source=table)
             self.add_edge(config_node, entry_node, "attribute_show_includes_modifier", source=table, evidence=f"list[{index}]", data={"attributeModifier": entry.get("attributeModifier")})
+            modifier_node = self.add_gameplay_stat_property_node(entry.get("attributeModifier"), source=table)
+            if modifier_node:
+                self.add_edge(entry_node, modifier_node, "attribute_display_entry_uses_modifier_property", source=table, evidence="attributeModifier")
             if meta_node:
                 self.add_edge(entry_node, meta_node, "display_entry_for_attribute_meta", source=table, evidence="attributeType")
 
@@ -12542,6 +12592,13 @@ class SourceGraphBuilder:
         entity_node = self.add_node("ability_entity", entity_id, name=entity_id, source=table, data={"id": entity_id, "atk": row.get("atk"), "maxHp": row.get("maxHp")})
         self.add_edge(row_node, entity_node, "defines_ability_entity_attr", source=table)
         self.add_alias(entity_id, entity_node, kind="ability_entity_id", source=table)
+        for field in ("atk", "maxHp"):
+            value = row.get(field)
+            if value is None:
+                continue
+            stat_node = self.add_gameplay_stat_property_node(field, source=table)
+            if stat_node:
+                self.add_edge(entity_node, stat_node, "ability_entity_sets_stat_property", source=table, evidence=field, data={"value": value})
 
     def add_global_effect_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         effect_id = safe_key(row.get("effectId") or row_key)
@@ -12601,8 +12658,12 @@ class SourceGraphBuilder:
             if any(attr.get(key) not in (None, "", 0, 0.0) for key in ("attrType", "attrValue", "modifierType", "modifyAttributeType")):
                 attr_key = safe_key(attr.get("attrType"))
                 stat_node = self.add_node("gameplay_stat_property", attr_key, name=attr_key, source=table, data={"key": attr_key, "rawAttrType": attr.get("attrType")})
-                self.add_edge(effect_node, stat_node, "potential_talent_modifies_stat_property", source=table, evidence=f"dataList[{index}].attrModifier", data={"index": index, "modifyType": modify_type, "attrType": attr.get("attrType"), "attrValue": attr.get("attrValue"), "modifierType": attr.get("modifierType"), "modifyAttributeType": attr.get("modifyAttributeType")})
+                edge_data = {"index": index, "modifyType": modify_type, "attrType": attr.get("attrType"), "attrValue": attr.get("attrValue"), "modifierType": attr.get("modifierType"), "modifyAttributeType": attr.get("modifyAttributeType")}
+                self.add_edge(effect_node, stat_node, "potential_talent_modifies_stat_property", source=table, evidence=f"dataList[{index}].attrModifier", data=edge_data)
                 self.add_alias(attr_key, stat_node, kind="gameplay_stat_property_key", source=table)
+                meta_node = self.add_attribute_meta_node(attr.get("attrType"), source=table)
+                if meta_node:
+                    self.add_edge(effect_node, meta_node, "potential_talent_modifies_attribute_meta", source=table, evidence=f"dataList[{index}].attrModifier.attrType", data=edge_data)
 
     def add_combat_semantic_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if not isinstance(row, dict):
@@ -13150,6 +13211,29 @@ class SourceGraphBuilder:
             self.add_edge(row_node, char_node, "defines_character", source="CharacterTable")
             actor_hint = char_id.replace("chr_", "")
             self.add_alias(actor_hint, char_node, kind="character_alias", source="CharacterTable")
+            for field, edge_kind in (("mainAttrType", "character_main_attribute_meta"), ("subAttrType", "character_sub_attribute_meta")):
+                meta_node = self.add_attribute_meta_node(row.get(field), source="CharacterTable")
+                if meta_node:
+                    self.add_edge(char_node, meta_node, edge_kind, source="CharacterTable", evidence=field)
+            for stage_index, stage in enumerate(row.get("attributes") or []):
+                if not isinstance(stage, dict):
+                    continue
+                attr_payload = stage.get("Attribute") if isinstance(stage.get("Attribute"), dict) else {}
+                attrs = attr_payload.get("attrs") if isinstance(attr_payload.get("attrs"), list) else []
+                for attr_index, attr in enumerate(attrs):
+                    if not isinstance(attr, dict):
+                        continue
+                    meta_node = self.add_attribute_meta_node(attr.get("attrType"), source="CharacterTable")
+                    if not meta_node:
+                        continue
+                    self.add_edge(
+                        char_node,
+                        meta_node,
+                        "character_base_attribute_meta",
+                        source="CharacterTable",
+                        evidence=f"attributes[{stage_index}].Attribute.attrs[{attr_index}].attrType",
+                        data={"breakStage": stage.get("breakStage"), "attrType": attr.get("attrType"), "attrValue": attr.get("attrValue"), "index": attr_index},
+                    )
             for voice in row.get("profileVoice") or []:
                 vo_id = safe_key(voice.get("voId"))
                 if not vo_id:
