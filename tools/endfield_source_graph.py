@@ -279,6 +279,23 @@ UI_LABEL_SEMANTIC_TABLES = {
         "text_fields": ("__self__",),
     },
 }
+GACHA_SEMANTIC_TABLES = (
+    "GachaCharInfoTable.json",
+    "GachaCharPoolTable.json",
+    "GachaCharPoolContentTable.json",
+    "GachaCharPoolTypeTable.json",
+    "GachaPoolCharPresetTable.json",
+    "GachaPoolWeaponPresetTable.json",
+    "GachaWeaponPoolTable.json",
+    "GachaWeaponPoolContentTable.json",
+    "GachaWeaponPoolTypeTable.json",
+    "GachaLtTicket2PoolTable.json",
+    "GachaWeaponLtTicket2PoolTable.json",
+    "GachaEntryRecommendTable.json",
+    "GachaEntryRecommendRuleTable.json",
+    "GachaRefreshBaseTimeTable.json",
+    "GachaWeaponRefreshRuleTable.json",
+)
 WEAPON_SEMANTIC_TABLES = (
     "WeaponBasicTable.json",
     "WeaponBreakThroughTemplateTable.json",
@@ -2696,6 +2713,8 @@ class SourceGraphBuilder:
             self.commit_step("wikiSemantics")
             self.ingest_weapon_semantics()
             self.commit_step("weaponSemantics")
+            self.ingest_gacha_semantics()
+            self.commit_step("gachaSemantics")
             self.ingest_spaceship_semantics()
             self.commit_step("spaceshipSemantics")
             self.ingest_factory_tech_semantics()
@@ -10225,6 +10244,208 @@ class SourceGraphBuilder:
                 self.add_tag_i18n_edges(node, row.get("text1"), source=table, edge_kind="battlepass_forecast_text1")
                 self.add_tag_i18n_edges(node, row.get("text2"), source=table, edge_kind="battlepass_forecast_text2")
 
+
+    def add_gacha_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        gacha_key = safe_key(key)
+        if not gacha_key:
+            return ""
+        gacha_name = table_display_text(name) or gacha_key
+        node = self.add_node(kind, gacha_key, name=gacha_name, source=source, data=data)
+        self.add_alias(gacha_key, node, kind=f"{kind}_id", source=source)
+        if gacha_name != gacha_key:
+            self.add_alias(gacha_name, node, kind=f"{kind}_name", source=source)
+        return node
+
+    def ingest_gacha_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_gacha", name="Structured gacha and pool tables", path=slash(table_root))
+        for table_name in GACHA_SEMANTIC_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/gacha")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/gacha")
+                self.add_gacha_row_edges(table, row_key, row, row_node)
+
+    def add_gacha_pool_type_cost_edges(self, type_node: str, row: dict[str, Any], *, source: str, field_prefix: str) -> None:
+        item_ids = row.get(f"{field_prefix}CostItemIds") or []
+        counts = row.get(f"{field_prefix}CostItemCounts") or []
+        for index, item_id in enumerate(item_ids):
+            item_node = self.add_item_node(item_id, source=source)
+            if item_node:
+                count = counts[index] if index < len(counts) else None
+                self.add_edge(type_node, item_node, f"gacha_{field_prefix}_pull_cost_item", source=source, evidence=f"{field_prefix}CostItemIds[{index}]", data={"count": count})
+
+    def add_gacha_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "GachaCharInfoTable" and isinstance(row, dict):
+            info_node = self.add_gacha_node("gacha_char_info", row.get("id") or row_key, source=table, data={"itemId": row.get("itemId"), "timelineAssetName": row.get("timelineAssetName")})
+            char_node = self.add_character_ref_node(row.get("id") or row_key, source=table)
+            if info_node:
+                self.add_edge(row_node, info_node, "defines_gacha_char_info", source=table)
+                if char_node:
+                    self.add_edge(info_node, char_node, "gacha_info_for_character", source=table, evidence="id")
+                item_node = self.add_item_node(row.get("itemId"), source=table)
+                if item_node:
+                    self.add_edge(info_node, item_node, "gacha_char_info_item", source=table, evidence="itemId")
+                for field in ("timelineAssetName", "potentialPopupCharImg"):
+                    self.add_alias(row.get(field), info_node, kind="asset_stem", source=table)
+        elif table == "GachaCharPoolTable" and isinstance(row, dict):
+            pool_node = self.add_gacha_node("gacha_char_pool", row.get("id") or row_key, name=row.get("name"), source=table, data={"type": row.get("type"), "sortId": row.get("sortId"), "uiPrefab": row.get("uiPrefab"), "videoPath": row.get("videoPath")})
+            if pool_node:
+                self.add_edge(row_node, pool_node, "defines_gacha_char_pool", source=table)
+                self.add_tag_i18n_edges(pool_node, row.get("name"), source=table, edge_kind="gacha_pool_name_text")
+                self.add_tag_i18n_edges(pool_node, row.get("videoDesc"), source=table, edge_kind="gacha_pool_video_desc_text")
+                type_node = self.add_gacha_node("gacha_char_pool_type", row.get("type"), source=table)
+                if type_node:
+                    self.add_edge(pool_node, type_node, "gacha_pool_has_type", source=table, evidence="type")
+                for index, char_id in enumerate(row.get("upCharIds") or []):
+                    char_node = self.add_character_ref_node(char_id, source=table)
+                    if char_node:
+                        self.add_edge(pool_node, char_node, "gacha_pool_up_character", source=table, evidence=f"upCharIds[{index}]")
+                for field, edge_kind in (("onceRewardId", "gacha_pool_once_reward"), ("onceRewardId2", "gacha_pool_once_reward"), ("bonusRewardIdEveryPull", "gacha_pool_every_pull_reward"), ("testimonialRewardItemId", "gacha_pool_testimonial_reward_item")):
+                    if edge_kind.endswith("reward_item"):
+                        item_node = self.add_item_node(row.get(field), source=table)
+                        if item_node:
+                            self.add_edge(pool_node, item_node, edge_kind, source=table, evidence=field)
+                    else:
+                        self.add_reward_ref_edge(pool_node, row.get(field), edge_kind=edge_kind, source=table, evidence=field)
+                for index, reward_id in enumerate(row.get("cumulativeRewardIds") or []):
+                    self.add_reward_ref_edge(pool_node, reward_id, edge_kind="gacha_pool_cumulative_reward", source=table, evidence=f"cumulativeRewardIds[{index}]")
+                for index, reward_id in enumerate(row.get("intervalAutoRewardIds") or []):
+                    self.add_reward_ref_edge(pool_node, reward_id, edge_kind="gacha_pool_interval_reward", source=table, evidence=f"intervalAutoRewardIds[{index}]")
+                for field in ("ticketGachaSingleLt", "ticketGachaTenLt"):
+                    item_node = self.add_item_node(row.get(field), source=table)
+                    if item_node:
+                        self.add_edge(pool_node, item_node, "gacha_pool_accepts_ticket", source=table, evidence=field)
+                self.add_system_jump_edge(pool_node, row.get("trialActivityJumpId"), edge_kind="gacha_pool_trial_jump", source=table, evidence="trialActivityJumpId")
+                for field in ("tabImage", "nameImage", "mailBannerImage", "videoPath"):
+                    self.add_alias(row.get(field), pool_node, kind="asset_stem", source=table)
+        elif table == "GachaCharPoolContentTable" and isinstance(row, dict):
+            pool_node = self.add_gacha_node("gacha_char_pool", row_key, source=table)
+            for index, entry in enumerate(row.get("list") or []):
+                if not isinstance(entry, dict):
+                    continue
+                char_node = self.add_character_ref_node(entry.get("charId"), source=table)
+                if pool_node and char_node:
+                    self.add_edge(pool_node, char_node, "gacha_pool_contains_character", source=table, evidence=f"list[{index}]", data={"starLevel": entry.get("starLevel"), "isHardGuaranteeItem": entry.get("isHardGuaranteeItem")})
+        elif table == "GachaCharPoolTypeTable" and isinstance(row, dict):
+            type_node = self.add_gacha_node("gacha_char_pool_type", row.get("type") if row.get("type") is not None else row_key, name=row.get("name"), source=table, data={"softGuarantee": row.get("softGuarantee"), "hardGuarantee": row.get("hardGuarantee"), "maxPullCount": row.get("maxPullCount"), "shareSoftGuarantee": row.get("shareSoftGuarantee"), "star4BaseRate": row.get("star4BaseRate"), "star5BaseRate": row.get("star5BaseRate"), "star6BaseRate": row.get("star6BaseRate")})
+            if type_node:
+                self.add_edge(row_node, type_node, "defines_gacha_char_pool_type", source=table)
+                self.add_tag_i18n_edges(type_node, row.get("name"), source=table, edge_kind="gacha_pool_type_name_text")
+                self.add_tag_i18n_edges(type_node, row.get("tagName"), source=table, edge_kind="gacha_pool_type_tag_text")
+                self.add_gacha_pool_type_cost_edges(type_node, row, source=table, field_prefix="singlePull")
+                self.add_gacha_pool_type_cost_edges(type_node, row, source=table, field_prefix="tenPull")
+        elif table == "GachaPoolCharPresetTable" and isinstance(row, dict):
+            char_node = self.add_character_ref_node(row.get("charId") or row_key, source=table)
+            if char_node:
+                self.add_edge(row_node, char_node, "defines_gacha_char_preset", source=table)
+                for field, edge_kind in (("initialWeaponId", "gacha_char_initial_weapon"), ("perfectWeaponId", "gacha_char_perfect_weapon")):
+                    weapon_node = self.add_weapon_node(row.get(field), source=table)
+                    if weapon_node:
+                        self.add_edge(char_node, weapon_node, edge_kind, source=table, evidence=field)
+                gem_node = self.add_item_node(row.get("perfectWeaponGemId"), source=table)
+                if gem_node:
+                    self.add_edge(char_node, gem_node, "gacha_char_perfect_weapon_gem", source=table, evidence="perfectWeaponGemId")
+                for index, equip_id in enumerate(row.get("perfectEquips") or []):
+                    equip_node = self.add_item_node(equip_id, source=table)
+                    if equip_node:
+                        self.add_edge(char_node, equip_node, "gacha_char_perfect_equip", source=table, evidence=f"perfectEquips[{index}]")
+        elif table == "GachaPoolWeaponPresetTable" and isinstance(row, dict):
+            weapon_node = self.add_weapon_node(row.get("weaponId") or row_key, source=table)
+            if weapon_node:
+                self.add_edge(row_node, weapon_node, "defines_gacha_weapon_preset", source=table)
+                gem_node = self.add_item_node(row.get("perfectGemId"), source=table)
+                if gem_node:
+                    self.add_edge(weapon_node, gem_node, "gacha_weapon_perfect_gem", source=table, evidence="perfectGemId")
+        elif table == "GachaWeaponPoolTable" and isinstance(row, dict):
+            pool_node = self.add_gacha_node("gacha_weapon_pool", row.get("id") or row_key, name=row.get("name"), source=table, data={"type": row.get("type"), "sortId": row.get("sortId"), "index": row.get("index"), "finalIndex": row.get("finalIndex")})
+            if pool_node:
+                self.add_edge(row_node, pool_node, "defines_gacha_weapon_pool", source=table)
+                self.add_tag_i18n_edges(pool_node, row.get("name"), source=table, edge_kind="gacha_weapon_pool_name_text")
+                self.add_tag_i18n_edges(pool_node, row.get("loopRewardShowTag"), source=table, edge_kind="gacha_weapon_pool_loop_tag_text")
+                self.add_tag_i18n_edges(pool_node, row.get("loopRewardShowTitle"), source=table, edge_kind="gacha_weapon_pool_loop_title_text")
+                type_node = self.add_gacha_node("gacha_weapon_pool_type", row.get("type"), source=table)
+                if type_node:
+                    self.add_edge(pool_node, type_node, "gacha_weapon_pool_has_type", source=table, evidence="type")
+                for index, weapon_id in enumerate(row.get("upWeaponIds") or []):
+                    weapon_node = self.add_weapon_node(weapon_id, source=table)
+                    if weapon_node:
+                        self.add_edge(pool_node, weapon_node, "gacha_weapon_pool_up_weapon", source=table, evidence=f"upWeaponIds[{index}]")
+                for index, reward_id in enumerate(row.get("intervalAutoRewardIds") or []):
+                    self.add_reward_ref_edge(pool_node, reward_id, edge_kind="gacha_weapon_pool_interval_reward", source=table, evidence=f"intervalAutoRewardIds[{index}]")
+                ticket_node = self.add_item_node(row.get("ticketGachaTenLt"), source=table)
+                if ticket_node:
+                    self.add_edge(pool_node, ticket_node, "gacha_weapon_pool_accepts_ticket", source=table, evidence="ticketGachaTenLt")
+                for field in ("upWeaponIcon", "upWeaponDoublePoolIcon", "smallPoolIcon", "smallPoolIconFar"):
+                    self.add_alias(row.get(field), pool_node, kind="asset_stem", source=table)
+        elif table == "GachaWeaponPoolContentTable" and isinstance(row, dict):
+            pool_node = self.add_gacha_node("gacha_weapon_pool", row_key, source=table)
+            for index, entry in enumerate(row.get("list") or []):
+                if not isinstance(entry, dict):
+                    continue
+                weapon_node = self.add_weapon_node(entry.get("itemId"), source=table)
+                if pool_node and weapon_node:
+                    self.add_edge(pool_node, weapon_node, "gacha_weapon_pool_contains_weapon", source=table, evidence=f"list[{index}]", data={"starLevel": entry.get("starLevel"), "randomWeight": entry.get("randomWeight"), "isHardGuaranteeItem": entry.get("isHardGuaranteeItem")})
+        elif table == "GachaWeaponPoolTypeTable" and isinstance(row, dict):
+            type_node = self.add_gacha_node("gacha_weapon_pool_type", row.get("type") if row.get("type") is not None else row_key, source=table, data={"softGuarantee": row.get("softGuarantee"), "hardGuarantee": row.get("hardGuarantee"), "star4BaseRate": row.get("star4BaseRate"), "star5BaseRate": row.get("star5BaseRate"), "star6BaseRate": row.get("star6BaseRate")})
+            if type_node:
+                self.add_edge(row_node, type_node, "defines_gacha_weapon_pool_type", source=table)
+        elif table == "GachaLtTicket2PoolTable" and isinstance(row, dict):
+            ticket_node = self.add_item_node(row_key, source=table)
+            for index, pool_id in enumerate(row.get("poolIdList") or []):
+                pool_node = self.add_gacha_node("gacha_char_pool", pool_id, source=table)
+                if ticket_node and pool_node:
+                    self.add_edge(ticket_node, pool_node, "gacha_ticket_unlocks_pool", source=table, evidence=f"poolIdList[{index}]")
+        elif table == "GachaWeaponLtTicket2PoolTable" and isinstance(row, dict):
+            ticket_node = self.add_item_node(row_key, source=table)
+            for index, entry in enumerate(row.get("poolDataList") or []):
+                if not isinstance(entry, dict):
+                    continue
+                pool_node = self.add_gacha_node("gacha_weapon_pool", entry.get("gachaPoolId"), source=table)
+                if ticket_node and pool_node:
+                    self.add_edge(ticket_node, pool_node, "gacha_weapon_ticket_unlocks_pool", source=table, evidence=f"poolDataList[{index}]")
+        elif table == "GachaEntryRecommendTable" and isinstance(row, dict):
+            rec_node = self.add_gacha_node("gacha_recommendation", row.get("id") or row_key, name=row.get("title"), source=table, data={"groupId": row.get("recommonendGroupId"), "type": row.get("recommonendType"), "sortValue": row.get("recommonendSortValue"), "refParam": row.get("refParam")})
+            if rec_node:
+                self.add_edge(row_node, rec_node, "defines_gacha_recommendation", source=table)
+                self.add_tag_i18n_edges(rec_node, row.get("title"), source=table, edge_kind="gacha_recommendation_title_text")
+                self.add_tag_i18n_edges(rec_node, row.get("desc"), source=table, edge_kind="gacha_recommendation_desc_text")
+                group_node = self.add_gacha_node("gacha_recommendation_group", row.get("recommonendGroupId"), source=table)
+                if group_node:
+                    self.add_edge(group_node, rec_node, "gacha_recommendation_group_has_entry", source=table, evidence="recommonendGroupId")
+                self.add_system_jump_edge(rec_node, row.get("jump"), edge_kind="gacha_recommendation_jump", source=table, evidence="jump")
+                self.add_alias(row.get("image"), rec_node, kind="asset_stem", source=table)
+        elif table == "GachaEntryRecommendRuleTable" and isinstance(row, dict):
+            rule_node = self.add_gacha_node("gacha_recommendation_rule", row.get("id") or row_key, source=table)
+            if rule_node:
+                self.add_edge(row_node, rule_node, "defines_gacha_recommendation_rule", source=table)
+                for index, group_id in enumerate(row.get("recommonendGroupIdList") or []):
+                    group_node = self.add_gacha_node("gacha_recommendation_group", group_id, source=table)
+                    if group_node:
+                        self.add_edge(rule_node, group_node, "gacha_recommendation_rule_has_group", source=table, evidence=f"recommonendGroupIdList[{index}]")
+        elif table == "GachaRefreshBaseTimeTable" and isinstance(row, dict):
+            rule_node = self.add_gacha_node("gacha_refresh_rule", row.get("refreshRuleId") or row_key, source=table, data={"baseTime1": row.get("baseTime1"), "baseTime2": row.get("baseTime2"), "baseTime3": row.get("baseTime3")})
+            if rule_node:
+                self.add_edge(row_node, rule_node, "defines_gacha_refresh_rule", source=table)
+        elif table == "GachaWeaponRefreshRuleTable" and isinstance(row, dict):
+            rule_node = self.add_gacha_node("gacha_refresh_rule", row_key, source=table)
+            if rule_node:
+                self.add_edge(row_node, rule_node, "defines_gacha_weapon_refresh_rule", source=table)
+                for day_index, entry in enumerate(row.get("list") or []):
+                    if not isinstance(entry, dict):
+                        continue
+                    for goods_index, goods_id in enumerate(entry.get("shopGoodsList") or []):
+                        goods_node = self.add_shop_goods_node(goods_id, source=table)
+                        if goods_node:
+                            self.add_edge(rule_node, goods_node, "gacha_refresh_offers_shop_goods", source=table, evidence=f"list[{day_index}].shopGoodsList[{goods_index}]", data={"serverDays": entry.get("serverDays")})
+
     def add_weapon_node(self, weapon_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         weapon_key = safe_key(weapon_id)
         if not weapon_key:
@@ -15770,6 +15991,15 @@ QUERY_KIND_PRIORITY = {
     "wiki_craft_ref": 34.8829,
     "death_tip": 34.883,
     "battlepass_forecast_tip": 34.884,
+    "gacha_char_info": 34.885,
+    "gacha_char_pool": 34.886,
+    "gacha_char_pool_type": 34.887,
+    "gacha_weapon_pool": 34.888,
+    "gacha_weapon_pool_type": 34.889,
+    "gacha_recommendation": 34.89,
+    "gacha_recommendation_group": 34.891,
+    "gacha_recommendation_rule": 34.892,
+    "gacha_refresh_rule": 34.893,
     "input_action": 34.9,
     "input_scope": 34.91,
     "input_key": 34.92,
@@ -16135,6 +16365,15 @@ NODE_ID_PREFIXES = (
     "wiki_craft_ref",
     "death_tip",
     "battlepass_forecast_tip",
+    "gacha_char_info",
+    "gacha_char_pool",
+    "gacha_char_pool_type",
+    "gacha_weapon_pool",
+    "gacha_weapon_pool_type",
+    "gacha_recommendation",
+    "gacha_recommendation_group",
+    "gacha_recommendation_rule",
+    "gacha_refresh_rule",
     "input_action",
     "input_scope",
     "input_key",

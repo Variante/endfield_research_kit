@@ -2103,6 +2103,12 @@ The source graph now models the game wiki/tutorial data directly: categories, gr
 
 This makes encyclopedia/tutorial lookup explainable from either the wiki ids, text ids, tutorial page ids, items, or enemies, and it connects the earlier hyperlink-only wiki ids to their structured source rows.
 
+### 2026-07-02 Gacha Pool Graph Progress
+
+The source graph now models the exported gacha pool tables directly. Character pools, weapon pools, pool-type rate/guarantee configs, pool contents, ticket mappings, character/weapon presets, recommendations, and weapon refresh offers are queryable from pool ids, tickets, characters, weapons, items, rewards, and text ids.
+
+A fast CN build verified 10 character pools, 14 weapon pools, 210 character-pool membership edges, 532 weapon-pool membership edges, 13 character-ticket-to-pool links, 1 weapon-ticket-to-pool link, 23 character initial/perfect weapon links, 92 recommended equipment links, 64 weapon perfect-gem links, 24 pool name text links, and 3 refresh-rule shop-goods links. This improves monetization/pool semantics while staying limited to authored table evidence rather than runtime probability simulation or server guarantee state.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
