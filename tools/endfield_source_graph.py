@@ -1013,6 +1013,19 @@ ACTIVITY_ACHIEVEMENT_TABLES = (
     "ActivityBannerTable.json",
     "ActivityPushBubbleTable.json",
 )
+
+ECONOMY_METADATA_TABLES = (
+    "SettlementTagTable.json",
+    "SettlementConst.json",
+    "ShopGroupDomainTable.json",
+    "ShopManualRefreshTable.json",
+    "ShopMonthlyPassRewardTable.json",
+    "SpaceshipDomainMoneyExchangeRateDataTable.json",
+    "WaterDroneLiquidTable.json",
+    "MoneyConsumeTable.json",
+    "MoneyGainTable.json",
+)
+
 ACTIVITY_CATALOG_TABLES = (
     "AdventureTaskTable.json",
     "AdventureBookStageRewardTable.json",
@@ -3099,6 +3112,8 @@ class SourceGraphBuilder:
             self.commit_step("equipmentProgression")
             self.ingest_cash_shop_semantics()
             self.commit_step("cashShop")
+            self.ingest_economy_metadata_semantics()
+            self.commit_step("economyMetadata")
             self.ingest_world_semantics()
             self.commit_step("worldSemantics")
             self.ingest_domain_core_semantics()
@@ -9761,6 +9776,122 @@ class SourceGraphBuilder:
                 )
                 self.add_edge(table_node, row_node, "has_row", source="structured/item_economy")
                 self.add_item_economy_row_edges(table_key, row_key, row, row_node)
+
+
+    def ingest_economy_metadata_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_economy_metadata", name="Structured economy, settlement tag, and money source metadata", path=slash(table_root))
+        for table_name in ECONOMY_METADATA_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/economy_metadata")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/economy_metadata")
+                self.add_economy_metadata_row_edges(table, str(row_key), row, row_node)
+
+    def add_economy_metadata_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node(kind, key, name=name, source=source, data=data)
+
+    def add_economy_source_type_edges(self, table: str, row_key: str, row: Any, row_node: str, *, kind: str, define_edge: str, text_edge: str) -> None:
+        source_type = row.get("sourceType") if isinstance(row, dict) else row_key
+        source_node = self.add_economy_metadata_node(kind, source_type if source_type is not None else row_key, source=table, data=compact_payload(row, depth=2))
+        if source_node:
+            self.add_edge(row_node, source_node, define_edge, source=table, evidence=row_key)
+            if isinstance(row, dict):
+                self.add_tag_i18n_edges(source_node, row.get("name"), source=table, edge_kind=text_edge)
+
+    def add_economy_metadata_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "SettlementConst":
+            const_node = self.add_economy_metadata_node("settlement_const", row_key, source=table, data={"value": row})
+            if const_node:
+                self.add_edge(row_node, const_node, "defines_settlement_const", source=table, evidence=row_key)
+                if row_key.lower().endswith("missionid"):
+                    mission_node = self.add_mission_ref_node(row, source=table)
+                    if mission_node:
+                        self.add_edge(const_node, mission_node, "settlement_const_mission_ref", source=table, evidence=row_key)
+                if isinstance(row, str) and row.startswith("item_"):
+                    item_node = self.add_item_node(row, source=table)
+                    if item_node:
+                        self.add_edge(const_node, item_node, "settlement_const_item_ref", source=table, evidence=row_key)
+        elif table == "SettlementTagTable" and isinstance(row, dict):
+            tag_id = row.get("settlementTagId") or row_key
+            tag_node = self.add_economy_metadata_node("settlement_tag", tag_id, name=row.get("settlementTagName"), source=table, data={"enhanceExpProfitRate": row.get("enhanceExpProfitRate"), "enhanceMoneyProduceSpeedRate": row.get("enhanceMoneyProduceSpeedRate"), "enhanceMoneyProfitRate": row.get("enhanceMoneyProfitRate"), "enhanceCharTagCount": len(row.get("enhanceCharTagId") or [])})
+            if tag_node:
+                self.add_edge(row_node, tag_node, "defines_settlement_tag", source=table, evidence=tag_id)
+                settlement_key = re.sub(r"_\d+$", "", safe_key(tag_id))
+                if settlement_key.startswith("stm_tag_"):
+                    settlement_key = "stm_" + settlement_key[len("stm_tag_"):]
+                settlement_node = self.add_settlement_node(settlement_key, source=table) if settlement_key and settlement_key != safe_key(tag_id) else ""
+                if settlement_node:
+                    self.add_edge(tag_node, settlement_node, "settlement_tag_for_settlement", source=table, evidence="settlementTagId")
+                self.add_tag_i18n_edges(tag_node, row.get("settlementTagName"), source=table, edge_kind="settlement_tag_name_text")
+                self.add_tag_i18n_edges(tag_node, row.get("desc"), source=table, edge_kind="settlement_tag_desc_text")
+                for index, char_tag_id in enumerate(row.get("enhanceCharTagId") or []):
+                    char_tag_node = self.add_character_tag_node(char_tag_id, source=table)
+                    if char_tag_node:
+                        self.add_edge(tag_node, char_tag_node, "settlement_tag_enhances_character_tag", source=table, evidence=f"enhanceCharTagId[{index}]", data={"index": index})
+        elif table == "ShopGroupDomainTable" and isinstance(row, dict):
+            group_node = self.add_shop_group_node(row_key, source=table, data={"domainId": row.get("domainId"), "channelPartnerCount": len(row.get("channelPartnerList") or []), "bgImg": row.get("bgImg")})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_domain_shop_group", source=table, evidence=row_key)
+                domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
+                if domain_node:
+                    self.add_edge(group_node, domain_node, "domain_shop_group_for_domain", source=table, evidence="domainId")
+                self.add_alias(row.get("bgImg"), group_node, kind="asset_stem", source=table)
+                for index, partner_id in enumerate(row.get("channelPartnerList") or []):
+                    partner_node = self.add_economy_metadata_node("domain_shop_channel_partner", partner_id, source=table)
+                    if partner_node:
+                        self.add_edge(group_node, partner_node, "domain_shop_group_has_channel_partner", source=table, evidence=f"channelPartnerList[{index}]", data={"index": index})
+        elif table == "ShopManualRefreshTable" and isinstance(row, dict):
+            group_node = self.add_shop_group_node(row_key, source=table, data={"manualRefreshStepCount": len(row.get("list") or [])})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_shop_manual_refresh", source=table, evidence=row_key)
+                for index, step in enumerate(row.get("list") or []):
+                    if not isinstance(step, dict):
+                        continue
+                    step_key = f"{row_key}:{step.get('countIdx') or index + 1}"
+                    step_node = self.add_economy_metadata_node("shop_manual_refresh_step", step_key, source=table, data={"countIdx": step.get("countIdx"), "manualRefreshType": step.get("manualRefreshType"), "costItemId1": step.get("costItemId1"), "costItemCount1": step.get("costItemCount1")})
+                    if step_node:
+                        self.add_edge(group_node, step_node, "shop_group_has_manual_refresh_step", source=table, evidence=f"list[{index}]", data={"index": index, "countIdx": step.get("countIdx")})
+                        item_node = self.add_item_node(step.get("costItemId1"), source=table)
+                        if item_node:
+                            self.add_edge(step_node, item_node, "manual_refresh_costs_item", source=table, evidence="costItemId1", data={"count": step.get("costItemCount1"), "index": index})
+        elif table == "ShopMonthlyPassRewardTable" and isinstance(row, dict):
+            pass_node = self.add_economy_metadata_node("shop_monthly_pass_reward", row.get("goodsId") or row_key, source=table, data=compact_payload(row, depth=2))
+            if pass_node:
+                self.add_edge(row_node, pass_node, "defines_shop_monthly_pass_reward", source=table, evidence=row_key)
+                goods_node = self.add_shop_goods_node(row.get("goodsId") or row_key, source=table)
+                if goods_node:
+                    self.add_edge(pass_node, goods_node, "monthly_pass_reward_for_goods", source=table, evidence="goodsId")
+                for index in (1, 2, 3):
+                    reward_id = row.get(f"rewardId{index}")
+                    item_node = self.add_item_node(reward_id, source=table)
+                    if item_node:
+                        self.add_edge(pass_node, item_node, "monthly_pass_reward_item", source=table, evidence=f"rewardId{index}", data={"count": row.get(f"rewardCount{index}"), "index": index})
+        elif table == "SpaceshipDomainMoneyExchangeRateDataTable" and isinstance(row, dict):
+            rate_node = self.add_economy_metadata_node("domain_money_exchange_rate", row.get("id") or row_key, source=table, data={"exchangeRate": row.get("exchangeRate")})
+            if rate_node:
+                self.add_edge(row_node, rate_node, "defines_domain_money_exchange_rate", source=table, evidence=row_key)
+                item_node = self.add_item_node(row.get("id") or row_key, source=table)
+                if item_node:
+                    self.add_edge(rate_node, item_node, "domain_money_exchange_rate_item", source=table, evidence="id")
+        elif table == "WaterDroneLiquidTable" and isinstance(row, dict):
+            liquid_node = self.add_economy_metadata_node("water_drone_liquid", row.get("itemId") or row_key, source=table, data={"rate": row.get("rate")})
+            if liquid_node:
+                self.add_edge(row_node, liquid_node, "defines_water_drone_liquid", source=table, evidence=row_key)
+                item_node = self.add_item_node(row.get("itemId") or row_key, source=table)
+                if item_node:
+                    self.add_edge(liquid_node, item_node, "water_drone_liquid_item", source=table, evidence="itemId")
+        elif table == "MoneyConsumeTable":
+            self.add_economy_source_type_edges(table, row_key, row, row_node, kind="money_consume_source", define_edge="defines_money_consume_source", text_edge="money_consume_source_name_text")
+        elif table == "MoneyGainTable":
+            self.add_economy_source_type_edges(table, row_key, row, row_node, kind="money_gain_source", define_edge="defines_money_gain_source", text_edge="money_gain_source_name_text")
 
     def ingest_domain_core_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -21914,7 +22045,16 @@ QUERY_KIND_PRIORITY = {
     "important_reward_item": 35.7,
     "reward": 36,
     "reward_drop": 37,
+    "settlement_tag": 37.1,
+    "settlement_const": 37.11,
+    "domain_money_exchange_rate": 37.12,
+    "water_drone_liquid": 37.13,
+    "money_consume_source": 37.14,
+    "money_gain_source": 37.15,
     "shop_group": 38,
+    "domain_shop_channel_partner": 38.01,
+    "shop_manual_refresh_step": 38.02,
+    "shop_monthly_pass_reward": 38.03,
     "shop": 39,
     "shop_goods": 40,
     "shop_goods_tag": 41,
