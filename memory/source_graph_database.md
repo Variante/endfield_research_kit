@@ -1588,6 +1588,8 @@ This models authored item grouping, obtain-display gates, chest reward configs, 
 
 This models authored pickable/breakable doodads, tree rewards/models, planting crop growth steps, soil reward outputs, and fertilize item effects. It does not prove placed world instances, runtime harvest state, or unresolved model-token-to-exported-asset matches.
 
+2026-07-02 equipment/gem table graph progress: source graph ingestion now promotes authored `EquipTable`, `EquipItemTable`, `EquipSuitTable`, `GemTable`, gem preset/tag/pool maps, gem enhance/dismantle rules, and drop-gem type rows directly from structured tables. A fast CN temp build to `tmp/equipment_gems_source_graph.sqlite` verified 220 `defines_equipment` edges, 49 equippable item-use configs, 22 defined equipment suits, 182 suit-equipment membership edges, 22 suit-bonus nodes, 31 gem terms, 31 gem tags, 156 gem presets, 59 tag-combo weapon recommendation nodes, 16 gem term pools, 12 enhance rules, 8 dismantle rules, 1 drop-gem type, 1,753 equipment attribute edges, and 458 gem preset term edges. Smoke checks passed for `item_equip_t0_parts_tundra01_body_01`, `suit_agi01`, `gat_passive_attr_agi`, `gem_claym_0003_442`, `attr_agi+attr_atk+burst`, `class1attr_pool_ep`, and dismantle domain payout rules. This adds authored static equipment/gem semantics; it does not prove runtime enhancement RNG, live inventory state, or server-side drop-roll behavior.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type

@@ -160,6 +160,21 @@ ITEM_ACQUISITION_TABLES = (
     "LTItemTable.json",
     "LTItemTypeTable.json",
 )
+EQUIPMENT_GEM_TABLES = (
+    "EquipTable.json",
+    "EquipItemTable.json",
+    "EquipSuitTable.json",
+    "GemTable.json",
+    "GemPresetTable.json",
+    "GemTagIdTable.json",
+    "GemTagKeyToWeaponTable.json",
+    "GemItemDomainTable.json",
+    "GemItemId2TermPoolIdDataTable.json",
+    "TermPoolId2TermPoolIdDataTable.json",
+    "GemEnhanceTable.json",
+    "GemDismantleTable.json",
+    "DropGemTable.json",
+)
 WORLD_HARVESTABLE_TABLES = (
     "DoodadGeneralTable.json",
     "DoodadTreeTable.json",
@@ -2777,6 +2792,8 @@ class SourceGraphBuilder:
             self.commit_step("itemEconomy")
             self.ingest_item_acquisition_semantics()
             self.commit_step("itemAcquisition")
+            self.ingest_equipment_gem_semantics()
+            self.commit_step("equipmentGems")
             self.ingest_cash_shop_semantics()
             self.commit_step("cashShop")
             self.ingest_world_semantics()
@@ -9511,6 +9528,288 @@ class SourceGraphBuilder:
             if effect_node:
                 self.add_edge(row_node, effect_node, "defines_fertilize_effect", source=table)
                 self.add_alias(row.get("loopEffectId"), effect_node, kind="asset_stem", source=table)
+
+    def ingest_equipment_gem_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_equipment_gems", name="Structured equipment and gem tables", path=slash(table_root))
+        for table_name in EQUIPMENT_GEM_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/equipment_gems")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/equipment_gems")
+                self.add_equipment_gem_row_edges(table, row_key, row, row_node)
+
+    def add_equipment_gem_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        node_key = safe_key(key)
+        if not node_key:
+            return ""
+        node_name = table_display_text(name) or node_key
+        node = self.add_node(kind, node_key, name=node_name, source=source, data=data)
+        self.add_alias(node_key, node, kind=f"{kind}_id", source=source)
+        if node_name != node_key:
+            self.add_alias(node_name, node, kind=f"{kind}_name", source=source)
+        return node
+
+    def add_equipment_node(self, equip_id: Any, *, source: str = "", data: Any = None) -> str:
+        equip_key = safe_key(equip_id)
+        if not equip_key:
+            return ""
+        node = self.add_node("equipment", equip_key, name=equip_key, source=source, data=data)
+        self.add_alias(equip_key, node, kind="equipment_id", source=source)
+        return node
+
+    def add_equipment_suit_node(self, suit_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        suit_key = safe_key(suit_id)
+        if not suit_key:
+            return ""
+        suit_name = table_display_text(name) or suit_key
+        node = self.add_node("equipment_suit", suit_key, name=suit_name, source=source, data=data)
+        self.add_alias(suit_key, node, kind="equipment_suit_id", source=source)
+        if suit_name != suit_key:
+            self.add_alias(suit_name, node, kind="equipment_suit_name", source=source)
+        return node
+
+    def add_weapon_node(self, weapon_id: Any, *, source: str = "", data: Any = None) -> str:
+        weapon_key = safe_key(weapon_id)
+        if not weapon_key:
+            return ""
+        node = self.add_node("weapon", weapon_key, name=weapon_key, source=source, data=data)
+        self.add_alias(weapon_key, node, kind="weapon_id", source=source)
+        return node
+
+    def add_gem_term_node(self, term_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_equipment_gem_node("gem_term", term_id, name=name, source=source, data=data)
+
+    def add_gem_tag_node(self, tag_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_equipment_gem_node("gem_tag", tag_id, name=name, source=source, data=data)
+
+    def add_gem_term_pool_node(self, pool_id: Any, *, source: str = "", data: Any = None) -> str:
+        return self.add_equipment_gem_node("gem_term_pool", pool_id, source=source, data=data)
+
+    def add_equipment_attribute_edges(self, owner_node: str, modifiers: Any, *, edge_kind: str, source: str, evidence: str) -> None:
+        entries = modifiers if isinstance(modifiers, list) else ([modifiers] if isinstance(modifiers, dict) else [])
+        for index, modifier in enumerate(entries):
+            if not isinstance(modifier, dict):
+                continue
+            attr_node = self.add_attribute_meta_node(modifier.get("attrType"), source=source)
+            if attr_node:
+                data = {
+                    "index": index,
+                    "attrType": modifier.get("attrType"),
+                    "attrValue": modifier.get("attrValue"),
+                    "attrValues": modifier.get("attrValues"),
+                    "modifierType": modifier.get("modifierType"),
+                    "modifyAttributeType": modifier.get("modifyAttributeType"),
+                }
+                self.add_edge(owner_node, attr_node, edge_kind, source=source, evidence=f"{evidence}[{index}]", data=data)
+            composite_attr = safe_key(modifier.get("compositeAttr"))
+            if composite_attr:
+                composite_node = self.add_node("composite_attribute", composite_attr, name=composite_attr, source=source)
+                self.add_alias(composite_attr, composite_node, kind="composite_attribute_id", source=source)
+                self.add_edge(owner_node, composite_node, f"{edge_kind}_composite", source=source, evidence=f"{evidence}[{index}].compositeAttr", data={"index": index})
+
+    def add_gem_term_edges(self, owner_node: str, terms: Any, *, source: str, evidence: str, edge_kind: str = "gem_preset_has_term") -> None:
+        if not isinstance(terms, list):
+            return
+        for index, term in enumerate(terms):
+            if isinstance(term, dict):
+                term_id = term.get("termId") or term.get("gemTermId")
+                level = term.get("level")
+            else:
+                term_id = term
+                level = None
+            term_node = self.add_gem_term_node(term_id, source=source)
+            if term_node:
+                self.add_edge(owner_node, term_node, edge_kind, source=source, evidence=f"{evidence}[{index}]", data={"index": index, "level": level})
+
+    def add_equipment_gem_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if not isinstance(row, dict):
+            return
+        if table == "EquipTable":
+            equip_id = row.get("itemId") or row_key
+            equip_node = self.add_equipment_node(
+                equip_id,
+                source=table,
+                data={
+                    "itemId": row.get("itemId"),
+                    "domainId": row.get("domainId"),
+                    "partType": row.get("partType"),
+                    "suitID": row.get("suitID"),
+                    "minWearLv": row.get("minWearLv"),
+                },
+            )
+            if equip_node:
+                self.add_edge(row_node, equip_node, "defines_equipment", source=table)
+                item_node = self.add_item_node(equip_id, source=table)
+                if item_node:
+                    self.add_edge(equip_node, item_node, "equipment_is_item", source=table, evidence="itemId")
+                domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
+                if domain_node:
+                    self.add_edge(equip_node, domain_node, "equipment_domain", source=table, evidence="domainId")
+                suit_node = self.add_equipment_suit_node(row.get("suitID"), source=table)
+                if suit_node:
+                    self.add_edge(equip_node, suit_node, "equipment_in_suit", source=table, evidence="suitID")
+                self.add_equipment_attribute_edges(equip_node, row.get("displayBaseAttrModifier"), edge_kind="equipment_display_base_attribute", source=table, evidence="displayBaseAttrModifier")
+                self.add_equipment_attribute_edges(equip_node, row.get("displayAttrModifiers"), edge_kind="equipment_display_attribute", source=table, evidence="displayAttrModifiers")
+                self.add_equipment_attribute_edges(equip_node, row.get("equipAttrModifiers"), edge_kind="equipment_runtime_attribute", source=table, evidence="equipAttrModifiers")
+        elif table == "EquipItemTable":
+            item_id = row.get("itemId") or row_key
+            use_node = self.add_equipment_gem_node(
+                "equippable_item_use",
+                item_id,
+                source=table,
+                data={
+                    "itemId": row.get("itemId"),
+                    "condType": row.get("condType"),
+                    "condParams": row.get("condParams"),
+                    "useTarget": row.get("useTarget"),
+                    "checkTarget": row.get("checkTarget"),
+                    "castTime": row.get("castTime"),
+                    "cooldown": row.get("cooldown"),
+                    "chargeCount": row.get("chargeCount"),
+                    "recoverTime": row.get("recoverTime"),
+                    "recoverUpperCount": row.get("recoverUpperCount"),
+                    "toMainCharCount": row.get("toMainCharCount"),
+                },
+            )
+            if use_node:
+                self.add_edge(row_node, use_node, "defines_equippable_item_use", source=table)
+                item_node = self.add_item_node(item_id, source=table)
+                if item_node:
+                    self.add_edge(item_node, use_node, "item_has_equippable_use_config", source=table, evidence="itemId")
+                self.add_tag_i18n_edges(use_node, row.get("equipDesc"), source=table, edge_kind="equippable_item_desc_text")
+                self.add_tag_i18n_edges(use_node, row.get("equipExtraDesc"), source=table, edge_kind="equippable_item_extra_desc_text")
+        elif table == "EquipSuitTable":
+            suit_id = row.get("suitID") or row_key
+            suit_node = self.add_equipment_suit_node(suit_id, source=table, data={"equipCount": len(row.get("equipList") or []), "bonusCount": len(row.get("list") or [])})
+            if suit_node:
+                self.add_edge(row_node, suit_node, "defines_equipment_suit", source=table)
+                for index, equip_id in enumerate(row.get("equipList") or []):
+                    equip_node = self.add_equipment_node(equip_id, source=table)
+                    if equip_node:
+                        self.add_edge(suit_node, equip_node, "equipment_suit_includes_equipment", source=table, evidence=f"equipList[{index}]", data={"index": index})
+                for index, bonus in enumerate(row.get("list") or []):
+                    if not isinstance(bonus, dict):
+                        continue
+                    bonus_key = f"{safe_key(suit_id)}:{index}"
+                    bonus_node = self.add_equipment_gem_node("equipment_suit_bonus", bonus_key, name=bonus.get("suitName"), source=table, data={"index": index, "equipCnt": bonus.get("equipCnt"), "skillID": bonus.get("skillID"), "skillLv": bonus.get("skillLv"), "suitLogoName": bonus.get("suitLogoName")})
+                    if bonus_node:
+                        self.add_edge(suit_node, bonus_node, "equipment_suit_has_bonus", source=table, evidence=f"list[{index}]", data={"index": index, "equipCnt": bonus.get("equipCnt")})
+                        self.add_tag_i18n_edges(bonus_node, bonus.get("suitName"), source=table, edge_kind="equipment_suit_bonus_name_text")
+                        self.add_alias(bonus.get("suitLogoName"), bonus_node, kind="asset_stem", source=table)
+                        skill_key = safe_key(bonus.get("skillID"))
+                        if skill_key:
+                            skill_node = self.add_node("gameplay_skill", skill_key, name=skill_key, source=table)
+                            self.add_alias(skill_key, skill_node, kind="gameplay_skill_id", source=table)
+                            self.add_edge(bonus_node, skill_node, "equipment_suit_bonus_skill", source=table, evidence=f"list[{index}].skillID", data={"skillLv": bonus.get("skillLv")})
+        elif table == "GemTable":
+            term_id = row.get("gemTermId") or row_key
+            term_node = self.add_gem_term_node(term_id, name=row.get("tagName"), source=table, data={"gemTermId": row.get("gemTermId"), "tagId": row.get("tagId"), "termType": row.get("termType"), "sortOrder": row.get("sortOrder"), "isSkillTerm": row.get("isSkillTerm"), "tagIcon": row.get("tagIcon")})
+            if term_node:
+                self.add_edge(row_node, term_node, "defines_gem_term", source=table)
+                self.add_tag_i18n_edges(term_node, row.get("tagName"), source=table, edge_kind="gem_term_name_text")
+                self.add_tag_i18n_edges(term_node, row.get("tagDesc"), source=table, edge_kind="gem_term_desc_text")
+                self.add_alias(row.get("tagIcon"), term_node, kind="asset_stem", source=table)
+                tag_node = self.add_gem_tag_node(row.get("tagId"), name=row.get("tagName"), source=table)
+                if tag_node:
+                    self.add_edge(term_node, tag_node, "gem_term_has_tag", source=table, evidence="tagId")
+        elif table == "GemTagIdTable":
+            tag_node = self.add_gem_tag_node(row_key, source=table)
+            term_node = self.add_gem_term_node(row.get("gemTermId") or row.get("id") or next(iter(row.values()), None), source=table)
+            if tag_node and term_node:
+                self.add_edge(row_node, tag_node, "defines_gem_tag", source=table)
+                self.add_edge(tag_node, term_node, "gem_tag_resolves_to_term", source=table, evidence="rowValue")
+        elif table == "GemPresetTable":
+            preset_id = row.get("gemItemId") or row_key
+            preset_node = self.add_equipment_gem_node("gem_preset", preset_id, source=table, data={"gemItemId": row.get("gemItemId"), "realItemId": row.get("realItemId"), "domainId": row.get("domainId"), "rarity": row.get("rarity"), "termCount": len(row.get("termList") or [])})
+            if preset_node:
+                self.add_edge(row_node, preset_node, "defines_gem_preset", source=table)
+                for field, edge_kind in (("gemItemId", "gem_preset_item"), ("realItemId", "gem_preset_real_item")):
+                    item_node = self.add_item_node(row.get(field), source=table)
+                    if item_node:
+                        self.add_edge(preset_node, item_node, edge_kind, source=table, evidence=field)
+                domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
+                if domain_node:
+                    self.add_edge(preset_node, domain_node, "gem_preset_domain", source=table, evidence="domainId")
+                self.add_gem_term_edges(preset_node, row.get("termList"), source=table, evidence="termList")
+        elif table == "GemTagKeyToWeaponTable":
+            combo_node = self.add_equipment_gem_node("gem_tag_combo", row_key, source=table, data={"weaponCount": len(row.get("list") or [])})
+            if combo_node:
+                self.add_edge(row_node, combo_node, "defines_gem_tag_combo", source=table)
+                for index, tag_id in enumerate(safe_key(row_key).split("+")):
+                    tag_node = self.add_gem_tag_node(tag_id, source=table)
+                    if tag_node:
+                        self.add_edge(combo_node, tag_node, "gem_tag_combo_has_tag", source=table, evidence=f"key[{index}]", data={"index": index})
+                for index, weapon_id in enumerate(row.get("list") or []):
+                    weapon_node = self.add_weapon_node(weapon_id, source=table)
+                    if weapon_node:
+                        self.add_edge(combo_node, weapon_node, "gem_tag_combo_recommended_weapon", source=table, evidence=f"list[{index}]", data={"index": index})
+        elif table == "GemItemDomainTable":
+            item_node = self.add_item_node(row_key, source=table)
+            domain_id = row.get("domainId") or row.get("id") or next(iter(row.values()), None)
+            domain_node = self.add_gameplay_domain_node(domain_id, source=table)
+            if item_node and domain_node:
+                self.add_edge(row_node, item_node, "defines_gem_item_domain", source=table)
+                self.add_edge(item_node, domain_node, "gem_item_domain", source=table, evidence="rowValue")
+        elif table == "GemItemId2TermPoolIdDataTable":
+            item_node = self.add_item_node(row.get("gemItemId") or row_key, source=table)
+            if item_node:
+                self.add_edge(row_node, item_node, "defines_gem_item_term_pools", source=table)
+                for field in ("termPoolId1", "termPoolId2", "termPoolId3"):
+                    pool_node = self.add_gem_term_pool_node(row.get(field), source=table)
+                    if pool_node:
+                        self.add_edge(item_node, pool_node, "gem_item_uses_term_pool", source=table, evidence=field, data={"field": field})
+        elif table == "TermPoolId2TermPoolIdDataTable":
+            pool_node = self.add_gem_term_pool_node(row.get("termPoolId") or row_key, source=table, data={"termCount": len(row.get("gemTermIdList") or [])})
+            if pool_node:
+                self.add_edge(row_node, pool_node, "defines_gem_term_pool", source=table)
+                self.add_gem_term_edges(pool_node, row.get("gemTermIdList"), source=table, evidence="gemTermIdList", edge_kind="gem_term_pool_includes_term")
+        elif table == "GemEnhanceTable":
+            group_node = self.add_equipment_gem_node("gem_enhance_rule_group", row_key, source=table, data={"ruleCount": len(row.get("list") or [])})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_gem_enhance_rule_group", source=table)
+                for index, rule in enumerate(row.get("list") or []):
+                    if not isinstance(rule, dict):
+                        continue
+                    rule_node = self.add_equipment_gem_node("gem_enhance_rule", f"{safe_key(row_key)}:{index}", source=table, data={"index": index, "termCost": rule.get("termCost"), "costEnhancementItem": rule.get("costEnhancementItem"), "successProbality": rule.get("successProbality"), "probStateName": rule.get("probStateName")})
+                    if rule_node:
+                        self.add_edge(group_node, rule_node, "gem_enhance_group_has_rule", source=table, evidence=f"list[{index}]", data={"index": index})
+                        cost_item = self.add_item_node(rule.get("costEnhancementItem"), source=table)
+                        if cost_item:
+                            self.add_edge(rule_node, cost_item, "gem_enhance_rule_cost_item", source=table, evidence=f"list[{index}].costEnhancementItem", data={"termCost": rule.get("termCost")})
+        elif table == "GemDismantleTable":
+            group_node = self.add_equipment_gem_node("gem_dismantle_rule_group", row_key, source=table, data={"ruleCount": len(row.get("list") or [])})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_gem_dismantle_rule_group", source=table)
+                rule_entries = row.get("list") or []
+                if isinstance(rule_entries, dict):
+                    iterable_rules = list(rule_entries.items())
+                else:
+                    iterable_rules = [(str(index), rule) for index, rule in enumerate(rule_entries)] if isinstance(rule_entries, list) else []
+                for index, (rule_key, rule) in enumerate(iterable_rules):
+                    if not isinstance(rule, dict):
+                        continue
+                    rule_node = self.add_equipment_gem_node("gem_dismantle_rule", f"{safe_key(row_key)}:{safe_key(rule_key) or index}", source=table, data={"index": index, "domainKey": rule_key, "domainId": rule.get("domainId"), "goldId": rule.get("goldId"), "goldNum": rule.get("goldNum"), "itemId": rule.get("itemId"), "itemNum": rule.get("itemNum")})
+                    if rule_node:
+                        self.add_edge(group_node, rule_node, "gem_dismantle_group_has_rule", source=table, evidence=f"list[{rule_key}]", data={"index": index, "domainKey": rule_key})
+                        domain_node = self.add_gameplay_domain_node(rule.get("domainId"), source=table)
+                        if domain_node:
+                            self.add_edge(rule_node, domain_node, "gem_dismantle_rule_domain", source=table, evidence=f"list[{rule_key}].domainId")
+                        for field, count_field, edge_kind in (("goldId", "goldNum", "gem_dismantle_rule_gold_item"), ("itemId", "itemNum", "gem_dismantle_rule_output_item")):
+                            item_node = self.add_item_node(rule.get(field), source=table)
+                            if item_node:
+                                self.add_edge(rule_node, item_node, edge_kind, source=table, evidence=f"list[{rule_key}].{field}", data={"count": rule.get(count_field)})
+        elif table == "DropGemTable":
+            drop_node = self.add_equipment_gem_node("drop_gem_type", row.get("dropGemTypeId") or row_key, source=table, data=compact_payload(row, depth=2))
+            if drop_node:
+                self.add_edge(row_node, drop_node, "defines_drop_gem_type", source=table)
 
     def ingest_item_acquisition_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -17365,6 +17664,18 @@ QUERY_KIND_PRIORITY = {
     "equipment_formula": 25,
     "equipment_formula_pack": 26,
     "equipment_suit": 27,
+    "equipment_suit_bonus": 27.1,
+    "equippable_item_use": 27.2,
+    "gem_term": 28.1,
+    "gem_tag": 28.2,
+    "gem_preset": 28.3,
+    "gem_tag_combo": 28.4,
+    "gem_term_pool": 28.5,
+    "gem_enhance_rule_group": 28.6,
+    "gem_enhance_rule": 28.61,
+    "gem_dismantle_rule_group": 28.7,
+    "gem_dismantle_rule": 28.71,
+    "drop_gem_type": 28.8,
     "gameplay_domain": 28,
     "gameplay_property_curve": 29,
     "gameplay_stat_property": 30,
@@ -17804,6 +18115,18 @@ NODE_ID_PREFIXES = (
     "equipment_formula",
     "equipment_formula_pack",
     "equipment_suit",
+    "equipment_suit_bonus",
+    "equippable_item_use",
+    "gem_term",
+    "gem_tag",
+    "gem_preset",
+    "gem_tag_combo",
+    "gem_term_pool",
+    "gem_enhance_rule_group",
+    "gem_enhance_rule",
+    "gem_dismantle_rule_group",
+    "gem_dismantle_rule",
+    "drop_gem_type",
     "gameplay_domain",
     "gameplay_property_curve",
     "gameplay_stat_property",
