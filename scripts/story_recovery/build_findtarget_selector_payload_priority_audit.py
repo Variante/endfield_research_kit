@@ -148,28 +148,46 @@ def replay_candidate_rows(replay_payload: dict[str, Any], tag_payload: dict[str,
     return rows
 
 
+def zero_tag_candidate_rows(replay_payload: dict[str, Any], tag_payload: dict[str, Any]) -> list[dict[str, Any]]:
+    count_map = (replay_payload.get("summary") or {}).get("selectorUnionTagFamilyTagCounts") or {}
+    rows = []
+    for row in tag_map_rows(tag_payload):
+        if row.get("tag") != "0x0000":
+            continue
+        family = str(row.get("family") or "")
+        rows.append({**row, "count": int(count_map.get(f"{family}:0x0000") or 0)})
+    return rows
+
+
+def enrich_candidate(candidate: dict[str, Any], metadata_types: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    formatter_name = str(candidate.get("formatterName") or "")
+    wrapper_type = wrapper_type_from_formatter(formatter_name)
+    type_row = metadata_types.get(wrapper_type) or {}
+    setters = setter_rows(type_row)
+    classification = classify_payload(setters)
+    return {
+        **candidate,
+        "wrapperType": wrapper_type,
+        "metadataTypeFound": bool(type_row),
+        "payloadSetterCount": len(setters),
+        "payloadClassification": classification,
+        "payloadSetters": setters,
+        "complexityRank": list(complexity_rank(classification, len(setters))),
+    }
+
+
 def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     replay = read_json(args.replay_json)
     tag_payload = read_json(args.tag_json)
     metadata_types = load_metadata_types(args.metadata_json)
-    rows = []
-    for candidate in replay_candidate_rows(replay, tag_payload)[: args.limit]:
-        formatter_name = str(candidate.get("formatterName") or "")
-        wrapper_type = wrapper_type_from_formatter(formatter_name)
-        type_row = metadata_types.get(wrapper_type) or {}
-        setters = setter_rows(type_row)
-        classification = classify_payload(setters)
-        rows.append(
-            {
-                **candidate,
-                "wrapperType": wrapper_type,
-                "metadataTypeFound": bool(type_row),
-                "payloadSetterCount": len(setters),
-                "payloadClassification": classification,
-                "payloadSetters": setters,
-                "complexityRank": list(complexity_rank(classification, len(setters))),
-            }
-        )
+    rows = [
+        enrich_candidate(candidate, metadata_types)
+        for candidate in replay_candidate_rows(replay, tag_payload)[: args.limit]
+    ]
+    zero_rows = [
+        enrich_candidate(candidate, metadata_types)
+        for candidate in zero_tag_candidate_rows(replay, tag_payload)
+    ]
 
     ranked = sorted(
         rows,
@@ -193,6 +211,13 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
             "nestedTargetSettingsCandidateCount": sum(
                 1 for row in rows if row.get("payloadClassification") == "nested-target-settings"
             ),
+            "zeroTagCandidateCount": len(zero_rows),
+            "zeroTagEmptyPayloadCandidateCount": sum(
+                1 for row in zero_rows if row.get("payloadClassification") == "empty-instance-only"
+            ),
+            "zeroTagNestedTargetSettingsCandidateCount": sum(
+                1 for row in zero_rows if row.get("payloadClassification") == "nested-target-settings"
+            ),
             "topRecommendation": (
                 "Probe empty-instance-only selector payloads first; they should only need a union tag and no nested payload bytes."
                 if any(row.get("payloadClassification") == "empty-instance-only" for row in rows)
@@ -207,6 +232,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         "candidates": rows,
         "rankedCandidates": ranked,
         "simplestCandidates": simplest,
+        "zeroTagCandidates": zero_rows,
     }
 
 
@@ -228,6 +254,9 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- candidates: `{summary.get('candidateCount')}`",
         f"- empty-payload candidates: `{summary.get('emptyPayloadCandidateCount')}`",
         f"- nested TargetSettings candidates: `{summary.get('nestedTargetSettingsCandidateCount')}`",
+        f"- zero-tag candidates: `{summary.get('zeroTagCandidateCount')}` "
+        f"(empty `{summary.get('zeroTagEmptyPayloadCandidateCount')}`, "
+        f"nested TargetSettings `{summary.get('zeroTagNestedTargetSettingsCandidateCount')}`)",
         f"- recommendation: {md_escape(summary.get('topRecommendation'))}",
         "",
         "## Interpretation",
@@ -246,6 +275,22 @@ def render_markdown(payload: dict[str, Any]) -> str:
         ]
     )
     for row in payload.get("simplestCandidates") or []:
+        lines.append(
+            f"| `{md_escape(row.get('family'))}` | `{md_escape(row.get('tag'))}` | {row.get('count')} | "
+            f"`{md_escape(row.get('actionName'))}` | `{md_escape(row.get('payloadClassification'))}` | "
+            f"`{md_escape(setter_summary(row))}` |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Zero Tag Candidates",
+            "",
+            "| family | tag | count | selector | class | setters |",
+            "| --- | ---: | ---: | --- | --- | --- |",
+        ]
+    )
+    for row in payload.get("zeroTagCandidates") or []:
         lines.append(
             f"| `{md_escape(row.get('family'))}` | `{md_escape(row.get('tag'))}` | {row.get('count')} | "
             f"`{md_escape(row.get('actionName'))}` | `{md_escape(row.get('payloadClassification'))}` | "

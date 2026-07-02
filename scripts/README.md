@@ -757,8 +757,8 @@ gameplay-video OCR/audio workflow.
   selector prefixes, and reports exact boundary proof and chain-safe FindTarget
   counters separately from noisy union-tag candidates.
 - `story_recovery/build_findtarget_selector_payload_priority_audit.py`: ranks
-  nonzero FindTarget selector tag hints against MemoryPack metadata setter
-  complexity. It writes
+  nonzero FindTarget selector tag hints and actual `0x0000` selector formatter
+  tags against MemoryPack metadata setter complexity. It writes
   `reports/mission_order/findtarget_selector_payload_priority_audit.json` /
   `.md` and identifies empty-payload selector targets for bounded byte-probe
   follow-up work.
