@@ -527,6 +527,26 @@ FACTORY_LOGISTICS_TABLES = (
     "FactoryRegionTable.json",
     "FactoryMainRegionTable.json",
 )
+FACTORY_UTILITY_TABLES = (
+    "FactoryPowerStationTable.json",
+    "FactoryHubTable.json",
+    "FactoryPowerPoleTable.json",
+    "FactoryPowerDataTypeTable.json",
+    "FactoryProductivityDataTypeTable.json",
+    "FactoryMinerTable.json",
+    "FactoryFuelItemTable.json",
+    "FactoryBatteryItemTable.json",
+    "LiquidTable.json",
+    "FactoryFluidContainerTable.json",
+    "FactoryFluidPumpInTable.json",
+    "FactoryFluidPumpOutTable.json",
+    "FactoryFluidConsumeTable.json",
+    "FactoryFluidReactionTable.json",
+    "FactoryFluidSprayTable.json",
+    "FactorySewageTreatImportTable.json",
+    "FactorySewageTreatExportTable.json",
+    "FactorySewageTreatPlantStoreTable.json",
+)
 FACTORY_LOGISTIC_UNIT_TABLES = {
     "FactoryGridBeltTable",
     "FactoryLiquidPipeTable",
@@ -2933,6 +2953,8 @@ class SourceGraphBuilder:
             self.commit_step("factoryTech")
             self.ingest_factory_logistics_semantics()
             self.commit_step("factoryLogistics")
+            self.ingest_factory_utility_semantics()
+            self.commit_step("factoryUtility")
             self.ingest_prts_archive_semantics()
             self.commit_step("prtsArchive")
             self.ingest_activity_achievement_semantics()
@@ -14498,6 +14520,194 @@ class SourceGraphBuilder:
                     if building_node:
                         self.add_edge(region_node, building_node, "factory_region_requires_hub_building", source=table, evidence=f"list[{index}].requireHubBuildingId")
 
+    def ingest_factory_utility_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_factory_utility", name="Structured factory utility numeric tables", path=slash(table_root))
+        for table_name in FACTORY_UTILITY_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/factory_utility")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/factory_utility")
+                self.add_factory_utility_row_edges(table, row_key, row, row_node)
+
+    def add_factory_utility_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node(kind, key, name=name, source=source, data=data)
+
+    def add_factory_liquid_node(self, liquid_id: Any, *, source: str = "", data: Any = None) -> str:
+        return self.add_factory_utility_node("factory_liquid", liquid_id, source=source, data=data)
+
+    def add_factory_fluid_machine_node(self, machine_id: Any, *, source: str = "", data: Any = None) -> str:
+        return self.add_factory_utility_node("factory_fluid_machine", machine_id, source=source, data=data)
+
+    def add_factory_utility_item_edge(self, owner_node: str, item_id: Any, edge_kind: str, *, source: str, evidence: str, data: Any = None) -> None:
+        item_node = self.add_item_node(item_id, source=source)
+        if item_node:
+            self.add_edge(owner_node, item_node, edge_kind, source=source, evidence=evidence, data=data)
+
+    def add_factory_liquid_edge(self, owner_node: str, liquid_id: Any, edge_kind: str, *, source: str, evidence: str, data: Any = None) -> None:
+        liquid_node = self.add_factory_liquid_node(liquid_id, source=source)
+        if liquid_node:
+            self.add_edge(owner_node, liquid_node, edge_kind, source=source, evidence=evidence, data=data)
+            item_node = self.add_item_node(liquid_id, source=source)
+            if item_node:
+                self.add_edge(liquid_node, item_node, "factory_liquid_item_ref", source=source, evidence=evidence)
+
+    def add_factory_utility_liquid_list_edges(self, owner_node: str, liquid_ids: Any, edge_kind: str, *, source: str, evidence_prefix: str) -> None:
+        if not isinstance(liquid_ids, list):
+            return
+        for index, liquid_id in enumerate(liquid_ids):
+            self.add_factory_liquid_edge(owner_node, liquid_id, edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]", data={"index": index})
+
+    def add_factory_utility_item_list_edges(self, owner_node: str, item_ids: Any, edge_kind: str, *, source: str, evidence_prefix: str) -> None:
+        if not isinstance(item_ids, list):
+            return
+        for index, item_id in enumerate(item_ids):
+            self.add_factory_utility_item_edge(owner_node, item_id, edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]", data={"index": index})
+
+    def add_factory_liquid_bottle_pair_edges(self, liquid_node: str, empty_items: Any, full_items: Any, *, source: str) -> None:
+        if not isinstance(empty_items, list) or not isinstance(full_items, list):
+            return
+        for index, (empty_item_id, full_item_id) in enumerate(zip(empty_items, full_items)):
+            empty_node = self.add_item_node(empty_item_id, source=source)
+            full_node = self.add_item_node(full_item_id, source=source)
+            if empty_node and full_node:
+                self.add_edge(empty_node, full_node, "liquid_bottle_pair", source=source, evidence=f"emptyBottleItems[{index}]/fullBottleItems[{index}]", data={"index": index, "liquid": liquid_node.split(":", 1)[1] if ":" in liquid_node else liquid_node})
+                self.add_edge(liquid_node, full_node, "liquid_filled_bottle_pair", source=source, evidence=f"fullBottleItems[{index}]", data={"index": index, "emptyBottleItem": safe_key(empty_item_id)})
+
+    def add_factory_utility_metric_node(self, kind: str, key: Any, row: dict[str, Any], *, source: str, row_node: str, define_edge: str, text_edge: str) -> None:
+        metric_node = self.add_factory_utility_node(kind, key, name=row.get("name"), source=source, data={"type": row.get("type"), "count": row.get("count"), "sortId": row.get("sortId")})
+        if metric_node:
+            self.add_edge(row_node, metric_node, define_edge, source=source)
+            self.add_tag_i18n_edges(metric_node, row.get("name"), source=source, edge_kind=text_edge)
+
+    def add_factory_sewage_action_param_edges(self, level_node: str, params: Any, *, source: str) -> None:
+        if not isinstance(params, list):
+            return
+        for index, param in enumerate(params):
+            param_key = safe_key(param)
+            if not param_key:
+                continue
+            param_node = self.add_factory_utility_node("factory_sewage_action_param", param_key, source=source, data={"index": index})
+            if param_node:
+                self.add_edge(level_node, param_node, "factory_sewage_level_action_param", source=source, evidence=f"actionParams[{index}]", data={"index": index})
+            if re.fullmatch(r"map\d+_lv\d+", param_key):
+                level_ref = self.add_level_node(param_key, source=source)
+                if level_ref:
+                    self.add_edge(level_node, level_ref, "factory_sewage_level_action_level_ref", source=source, evidence=f"actionParams[{index}]", data={"index": index})
+            elif "liquid" in param_key:
+                machine_ref = self.add_factory_fluid_machine_node(param_key, source=source)
+                if machine_ref:
+                    self.add_edge(level_node, machine_ref, "factory_sewage_level_action_machine_ref", source=source, evidence=f"actionParams[{index}]", data={"index": index})
+
+    def add_factory_utility_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if not isinstance(row, dict):
+            return
+        if table == "FactoryPowerStationTable":
+            station_node = self.add_factory_utility_node("factory_power_station", row.get("id") or row_key, source=table, data={"powerProvide": row.get("powerProvide"), "msPerRound": row.get("msPerRound")})
+            if station_node:
+                self.add_edge(row_node, station_node, "defines_factory_power_station", source=table)
+                machine_node = self.add_factory_machine_node(row.get("id") or row_key, source=table)
+                if machine_node:
+                    self.add_edge(station_node, machine_node, "factory_power_station_machine_ref", source=table, evidence="id")
+        elif table == "FactoryHubTable":
+            hub_node = self.add_factory_utility_node("factory_hub_power", row.get("buildingId") or row_key, source=table, data={"powerGenerate": row.get("powerGenerate"), "powerStorageCapacity": row.get("powerStorageCapacity")})
+            if hub_node:
+                self.add_edge(row_node, hub_node, "defines_factory_hub_power", source=table)
+                building_node = self.add_factory_building_node(row.get("buildingId"), source=table)
+                if building_node:
+                    self.add_edge(hub_node, building_node, "factory_hub_power_building_ref", source=table, evidence="buildingId")
+        elif table == "FactoryPowerPoleTable":
+            pole_node = self.add_factory_utility_node("factory_power_pole", row.get("id") or row_key, source=table, data={"autoConnect": row.get("autoConnect"), "autoConnectLength": row.get("autoConnectLength"), "defaultCanBeWireStart": row.get("defaultCanBeWireStart"), "defaultEnableDiffuser": row.get("defaultEnableDiffuser"), "rangeExtend": compact_payload(row.get("rangeExtend"), depth=1)})
+            if pole_node:
+                self.add_edge(row_node, pole_node, "defines_factory_power_pole", source=table)
+                machine_node = self.add_factory_machine_node(row.get("id") or row_key, source=table)
+                if machine_node:
+                    self.add_edge(pole_node, machine_node, "factory_power_pole_machine_ref", source=table, evidence="id")
+        elif table == "FactoryPowerDataTypeTable":
+            self.add_factory_utility_metric_node("factory_power_data_type", row.get("type") if row.get("type") is not None else row_key, row, source=table, row_node=row_node, define_edge="defines_factory_power_data_type", text_edge="factory_power_data_type_name_text")
+        elif table == "FactoryProductivityDataTypeTable":
+            self.add_factory_utility_metric_node("factory_productivity_data_type", row.get("type") if row.get("type") is not None else row_key, row, source=table, row_node=row_node, define_edge="defines_factory_productivity_data_type", text_edge="factory_productivity_data_type_name_text")
+        elif table == "FactoryMinerTable":
+            miner_node = self.add_factory_utility_node("factory_miner", row.get("id") or row_key, source=table, data={"hasDroneMode": row.get("hasDroneMode"), "msPerRound": row.get("msPerRound"), "msTransferCD": row.get("msTransferCD"), "minePosition": compact_payload(row.get("minePosition"), depth=1), "mineableCount": len(row.get("mineable") or [])})
+            if miner_node:
+                self.add_edge(row_node, miner_node, "defines_factory_miner", source=table)
+                machine_node = self.add_factory_machine_node(row.get("id") or row_key, source=table)
+                if machine_node:
+                    self.add_edge(miner_node, machine_node, "factory_miner_machine_ref", source=table, evidence="id")
+                for index, mineable in enumerate(row.get("mineable") or []):
+                    if not isinstance(mineable, dict):
+                        continue
+                    self.add_factory_utility_item_edge(miner_node, mineable.get("miningItemId"), "factory_miner_outputs_item", source=table, evidence=f"mineable[{index}].miningItemId", data={"index": index, "produceRate": mineable.get("produceRate")})
+                    consume = mineable.get("consumeItem") if isinstance(mineable.get("consumeItem"), dict) else {}
+                    self.add_factory_utility_item_edge(miner_node, consume.get("id"), "factory_miner_consumes_item", source=table, evidence=f"mineable[{index}].consumeItem.id", data={"index": index, "count": consume.get("count")})
+        elif table == "FactoryFuelItemTable":
+            fuel_node = self.add_factory_utility_node("factory_fuel", row.get("id") or row_key, source=table, data={"fuelEnergy": row.get("fuelEnergy"), "powerProvide": row.get("powerProvide"), "progressRound": row.get("progressRound")})
+            if fuel_node:
+                self.add_edge(row_node, fuel_node, "defines_factory_fuel", source=table)
+                self.add_factory_utility_item_edge(fuel_node, row.get("id") or row_key, "factory_fuel_item", source=table, evidence="id")
+        elif table == "FactoryBatteryItemTable":
+            battery_node = self.add_factory_utility_node("factory_battery", row.get("id") or row_key, source=table, data={"batteryEnergy": row.get("BatteryEnergy")})
+            if battery_node:
+                self.add_edge(row_node, battery_node, "defines_factory_battery", source=table)
+                self.add_factory_utility_item_edge(battery_node, row.get("id") or row_key, "factory_battery_item", source=table, evidence="id")
+        elif table == "LiquidTable":
+            liquid_node = self.add_factory_liquid_node(row.get("id") or row_key, source=table, data={"emptyBottleCount": len(row.get("emptyBottleItems") or []), "fullBottleCount": len(row.get("fullBottleItems") or [])})
+            if liquid_node:
+                self.add_edge(row_node, liquid_node, "defines_factory_liquid", source=table)
+                self.add_factory_utility_item_edge(liquid_node, row.get("id") or row_key, "factory_liquid_item_ref", source=table, evidence="id")
+                self.add_factory_utility_item_list_edges(liquid_node, row.get("emptyBottleItems"), "liquid_empty_bottle_item", source=table, evidence_prefix="emptyBottleItems")
+                self.add_factory_utility_item_list_edges(liquid_node, row.get("fullBottleItems"), "liquid_full_bottle_item", source=table, evidence_prefix="fullBottleItems")
+                self.add_factory_liquid_bottle_pair_edges(liquid_node, row.get("emptyBottleItems"), row.get("fullBottleItems"), source=table)
+        elif table in ("FactoryFluidContainerTable", "FactoryFluidPumpInTable", "FactoryFluidPumpOutTable", "FactoryFluidConsumeTable", "FactoryFluidReactionTable", "FactoryFluidSprayTable", "FactorySewageTreatImportTable", "FactorySewageTreatExportTable"):
+            machine_type = {
+                "FactoryFluidContainerTable": "container",
+                "FactoryFluidPumpInTable": "pump_in",
+                "FactoryFluidPumpOutTable": "pump_out",
+                "FactoryFluidConsumeTable": "consume",
+                "FactoryFluidReactionTable": "reaction",
+                "FactoryFluidSprayTable": "spray",
+                "FactorySewageTreatImportTable": "sewage_import",
+                "FactorySewageTreatExportTable": "sewage_export",
+            }.get(table, "fluid")
+            machine_node = self.add_factory_fluid_machine_node(row.get("id") or row_key, source=table, data={"machineType": machine_type, "capacity": row.get("capacity"), "msPerRound": row.get("msPerRound"), "maximumSupply": row.get("maximumSuply"), "countCost": row.get("countCost"), "countProduce": row.get("countProduce")})
+            if machine_node:
+                self.add_edge(row_node, machine_node, "defines_factory_fluid_machine", source=table, data={"machineType": machine_type})
+                factory_machine = self.add_factory_machine_node(row.get("id") or row_key, source=table)
+                if factory_machine:
+                    self.add_edge(machine_node, factory_machine, "factory_fluid_machine_ref", source=table, evidence="id")
+                self.add_factory_utility_liquid_list_edges(machine_node, row.get("enableLiquidIds"), "factory_fluid_machine_accepts_liquid", source=table, evidence_prefix="enableLiquidIds")
+                self.add_factory_utility_liquid_list_edges(machine_node, row.get("liquidable"), "factory_fluid_machine_accepts_liquid", source=table, evidence_prefix="liquidable")
+                self.add_factory_utility_liquid_list_edges(machine_node, row.get("validItemIds"), "factory_fluid_machine_accepts_liquid", source=table, evidence_prefix="validItemIds")
+                self.add_factory_liquid_edge(machine_node, row.get("productItemId"), "factory_fluid_machine_product_liquid", source=table, evidence="productItemId", data={"countProduce": row.get("countProduce")})
+        elif table == "FactorySewageTreatPlantStoreTable":
+            plant_node = self.add_sewage_treat_plant_node(row.get("id") or row_key, source=table)
+            if plant_node:
+                self.add_edge(row_node, plant_node, "defines_factory_sewage_plant_store", source=table)
+                domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
+                if domain_node:
+                    self.add_edge(plant_node, domain_node, "factory_sewage_plant_domain", source=table, evidence="domainId")
+                level_ref = self.add_level_node(row.get("levelId"), source=table)
+                if level_ref:
+                    self.add_edge(plant_node, level_ref, "factory_sewage_plant_level_ref", source=table, evidence="levelId")
+                self.add_tag_i18n_edges(plant_node, row.get("name"), source=table, edge_kind="factory_sewage_plant_name_text")
+                for index, level in enumerate(row.get("levelList") or []):
+                    if not isinstance(level, dict):
+                        continue
+                    level_key = f"{safe_key(row.get('id') or row_key)}:{safe_key(level.get('level'))}"
+                    sewage_level = self.add_factory_utility_node("factory_sewage_level", level_key, source=table, data={"level": level.get("level"), "cost": level.get("cost"), "domainDevExp": level.get("domainDevExp"), "isImportLevel": level.get("isImportLevel"), "action": level.get("action")})
+                    if sewage_level:
+                        self.add_edge(plant_node, sewage_level, "factory_sewage_plant_has_level", source=table, evidence=f"levelList[{index}]", data={"index": index})
+                        self.add_tag_i18n_edges(sewage_level, level.get("levelTitle"), source=table, edge_kind="factory_sewage_level_title_text")
+                        self.add_tag_i18n_edges(sewage_level, level.get("levelDesc"), source=table, edge_kind="factory_sewage_level_desc_text")
+                        self.add_factory_sewage_action_param_edges(sewage_level, level.get("actionParams"), source=table)
+
     def ingest_prts_archive_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_prts_archive_semantics", path=slash(table_root))
@@ -18718,6 +18928,18 @@ QUERY_KIND_PRIORITY = {
     "factory_tech_condition": 64,
     "factory_building": 65,
     "factory_building_type": 66,
+    "factory_power_station": 65.1,
+    "factory_hub_power": 65.2,
+    "factory_power_pole": 65.3,
+    "factory_power_data_type": 65.4,
+    "factory_productivity_data_type": 65.5,
+    "factory_miner": 65.6,
+    "factory_fuel": 65.7,
+    "factory_battery": 65.8,
+    "factory_liquid": 65.9,
+    "factory_fluid_machine": 65.91,
+    "factory_sewage_level": 65.92,
+    "factory_sewage_action_param": 65.93,
     "factory_ingredient_tag": 66.1,
     "factory_logistic_unit": 66.2,
     "factory_panel_store_good": 66.3,
