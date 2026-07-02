@@ -13742,8 +13742,8 @@ class SourceGraphBuilder:
             group_node = self.add_achievement_group_node(group.get("groupId"), name=group.get("groupName"), source=table)
             if group_node:
                 self.add_edge(category_node, group_node, "achievement_category_has_group", source=table, evidence=f"achievementGroupData[{index}]")
-                self.add_i18n_text_edges(group_node, group, source=table)
-        self.add_i18n_text_edges(category_node, row, source=table)
+                self.add_tag_i18n_edges(group_node, group.get("groupName"), source=table, edge_kind="achievement_group_name_text")
+        self.add_tag_i18n_edges(category_node, row.get("categoryName"), source=table, edge_kind="achievement_category_name_text")
 
     def add_achievement_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         achievement_id = safe_key(row.get("achieveId") or row_key)
@@ -13751,6 +13751,8 @@ class SourceGraphBuilder:
         if not achievement_node:
             return
         self.add_edge(row_node, achievement_node, "defines_achievement", source=table)
+        self.add_tag_i18n_edges(achievement_node, row.get("name"), source=table, edge_kind="achievement_name_text")
+        self.add_tag_i18n_edges(achievement_node, row.get("desc"), source=table, edge_kind="achievement_desc_text")
         group_node = self.add_achievement_group_node(row.get("groupId"), source=table)
         if group_node:
             self.add_edge(group_node, achievement_node, "achievement_group_has_achievement", source=table, evidence="groupId")
@@ -13763,14 +13765,14 @@ class SourceGraphBuilder:
             if not level_node:
                 continue
             self.add_edge(achievement_node, level_node, "achievement_has_level", source=table, evidence=f"levelInfos[{level_key}]")
-            self.add_i18n_text_edges(level_node, level, source=table)
+            self.add_tag_i18n_edges(level_node, level.get("completeDesc"), source=table, edge_kind="achievement_level_complete_text")
             for condition_index, condition in enumerate(level.get("conditions") or []):
                 if not isinstance(condition, dict):
                     continue
                 condition_node = self.add_achievement_condition_node(condition.get("conditionId") or f"{achievement_id}:level:{level_key}:condition:{condition_index}", source=table, data={"achievementId": achievement_id, "achieveLevel": level.get("achieveLevel") or level_key, "progressToCompare": condition.get("progressToCompare")})
                 if condition_node:
                     self.add_edge(level_node, condition_node, "achievement_level_has_condition", source=table, evidence=f"conditions[{condition_index}]")
-                    self.add_i18n_text_edges(condition_node, condition, source=table)
+                    self.add_tag_i18n_edges(condition_node, condition.get("desc"), source=table, edge_kind="achievement_condition_desc_text")
         self.add_i18n_text_edges(achievement_node, row, source=table)
 
     def add_achievement_statistic_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
