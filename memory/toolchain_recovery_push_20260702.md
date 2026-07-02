@@ -244,3 +244,33 @@ Current output scans `2,348` Lua files across both roots, groups them into `1,17
 Focused module coverage is: SNS `57`, RemoteComm `36`, Dialog `32`, map marks `86`, and mission UI `95`. Top focused modules include `Common/Utils/SNSUtils.lua`, `Phase/SNS/PhaseSNS.lua`, `UI/Widgets/SNSDialogContentCore.lua`; `LuaSystem/RadioSystem.lua`, `UI/Panels/RemoteComm/RemoteCommCtrl.lua`, `Phase/RemoteComm/PhaseRemoteComm.lua`; `UI/Widgets/FriendDialogueSendArea.lua`, `Phase/Dialog/PhaseDialog.lua`; `Phase/Map/PhaseMap.lua`, `UI/Widgets/LevelMapMark.lua`, `Common/Utils/MapUtils.lua`; and `UI/Panels/Mission/MissionCtrl.lua`, `UI/Panels/MissionHud/MissionHudCtrl.lua`, `UI/Panels/CommonTaskTrackHud/CommonTaskTrackHudCtrl.lua`.
 
 This makes Lua the best next WebUI/source-graph enrichment path: add graph edges from Lua modules to table ids/enums/CS APIs and use the focus report to prioritize SNS/Dialog/RemoteComm/map-mark/mission consumer links before spending more effort on opaque ExtendData or unsafe FindTargetAction chain parsing.
+
+## Follow-up: Lua source graph consumer edges
+
+`tools/endfield_source_graph.py` now ingests `reports/mission_order/lua_consumer_reference_audit.json` late in the source-graph build, after structured/reference table ingests, so existing table nodes keep their stronger `StreamingAssets/Table` sources while Lua fills missing table references. The importer adds queryable `lua_module`, `lua_focus_area`, `lua_table_reference`, `lua_enum_reference`, and `lua_cs_reference` nodes plus module-to-focus, module-to-table, module-to-unmatched-table, module-to-enum, and module-to-CS edges.
+
+Validation:
+
+```bat
+python -B -m py_compile tools\endfield_source_graph.py
+python tools\endfield_source_graph.py build --skip-asset-maps --skip-reference-rows --skip-followups
+python tools\endfield_source_graph.py query SNSUtils --kind lua_module
+python tools\endfield_source_graph.py query sns --kind lua_focus_area
+python tools\endfield_source_graph.py query SNSChatType.Group --kind lua_enum_reference
+python tools\endfield_source_graph.py query CS.Beyond.Gameplay.MissionSystem.QuestState.Completed --kind lua_cs_reference
+```
+
+The quick source-graph build produced `1,686,855` nodes and `3,119,360` edges before the model-prefab follow-up below. Lua-specific coverage from SQLite is `724` Lua module nodes, `5` focus-area nodes, `8` unmatched Lua table-reference nodes, `237` Lua enum-reference nodes, `251` Lua CS-reference nodes, `306` module-to-focus edges, `2,018` matched Lua module-to-table edges, `9` unmatched Lua table-reference edges, `372` enum edges, and `323` CS API/reference edges. `SNSDialogTable` now remains sourced from `StreamingAssets/Table` while still receiving `sNSDialogTable` Lua aliases and Lua consumer edges.
+
+## Follow-up: model prefab source graph split
+
+`tools/endfield_source_graph.py` now splits `ModelConfigTable.prefabPath` into queryable `model_prefab` nodes, linked from each model config by `model_config_uses_prefab`. The old aliases remain on the model config, but prefab stems and full prefab paths can now resolve to the prefab node directly, which should help actor/model recovery where the config id and the Unity prefab asset name diverge.
+
+Validation:
+
+```bat
+python -B -m py_compile tools\endfield_source_graph.py
+python tools\endfield_source_graph.py build --skip-asset-maps --skip-reference-rows --skip-followups
+```
+
+The rebuild produced `1,688,007` nodes, `3,120,562` edges, and `2,277,552` aliases. SQLite counts show `1,152` `model_prefab` nodes and `1,202` `model_config_uses_prefab` edges.
