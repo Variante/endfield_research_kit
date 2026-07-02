@@ -2072,6 +2072,12 @@ The source graph now models weapon definitions and their numeric progression tem
 
 A fast CN build verified 71 weapon definitions, 142 weapon text links, 21 upgrade templates, 21 upgrade-sum templates, 20 breakthrough templates, 2 talent templates, 208 weapon-to-`gameplay_skill` edges, 200 breakthrough item requirement edges, and 16 potential item requirement edges. This closes the largest remaining coherent unmodeled report-listed table without creating a parallel weapon namespace.
 
+### 2026-07-02 Scene Collectable Graph Progress
+
+The source graph now closes the remaining `SceneCollectableItemTable` text/asset gap without changing the existing level/item model. Each nested collectable can link to its `infoLabel` text id, icon asset stems, visual asset matches, and, when the same `itemId` is proven by decoded config nodes, the corresponding interactive object/template.
+
+A fast CN build verified 37 scene collectable nodes, 32 collectable info-text links, 296 visual asset links, and 19 collectable-to-interactive-object plus 19 collectable-to-interactive-template links. This makes scene collectable labels and interactive-object overlap explainable while avoiding broad fanout to placed world entities.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come

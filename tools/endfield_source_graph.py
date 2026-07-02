@@ -2698,6 +2698,8 @@ class SourceGraphBuilder:
             self.commit_step("dialogSupport")
             self.ingest_decoded_config_semantics()
             self.commit_step("decodedConfigs")
+            self.add_scene_collectable_interactive_refs()
+            self.commit_step("sceneCollectableInteractiveRefs")
             self.link_decoded_parameter_blackboard_keys()
             self.commit_step("decodedParameterBlackboardMatches")
             self.link_gameplay_effect_export_assets()
@@ -14625,9 +14627,40 @@ class SourceGraphBuilder:
             self.add_edge(level_node, collectable_node, "level_has_scene_collectable", source=table, evidence=str(index))
             self.add_edge(level_node, item_node, "level_has_collectable_item", source=table, evidence=str(index), data={"maxCount": item.get("maxCount")})
             self.add_edge(collectable_node, item_node, "scene_collectable_item", source=table, evidence="itemId")
+            image_path = safe_key(item.get("imagePath"))
+            if image_path:
+                self.add_alias(image_path, collectable_node, kind="asset_stem", source=table)
+                self.add_alias(Path(image_path).name, collectable_node, kind="asset_stem", source=table)
+                self.add_alias(image_path, item_node, kind="asset_stem", source=table)
+                self.add_alias(Path(image_path).name, item_node, kind="asset_stem", source=table)
+            for text_id in self.iter_i18n_text_ids(item.get("infoLabel")):
+                text_node = self.add_i18n_text_node(text_id, source=table)
+                if text_node:
+                    self.add_edge(collectable_node, text_node, "scene_collectable_info_text", source=table, evidence=text_id)
+                    self.add_edge(collectable_node, text_node, "uses_i18n_text", source=table, evidence=text_id)
             convert_node = self.add_item_node(item.get("convertTargetItemId"), source=table)
             if convert_node:
                 self.add_edge(collectable_node, convert_node, "scene_collectable_converts_to_item", source=table, evidence="convertTargetItemId", data={"convertRequiredCount": item.get("convertRequiredCount")})
+
+    def add_scene_collectable_interactive_refs(self) -> None:
+        rows = self.db.execute(
+            "SELECT id, data FROM nodes WHERE kind='scene_collectable' AND source='SceneCollectableItemTable'"
+        ).fetchall()
+        for collectable_id, raw_data in rows:
+            collectable_node = safe_key(collectable_id)
+            try:
+                data = json.loads(raw_data or "{}")
+            except json.JSONDecodeError:
+                continue
+            item_id = safe_key(data.get("itemId"))
+            if not item_id:
+                continue
+            interactive_object_node = self.node_id("interactive_object", item_id)
+            if self.node_exists("interactive_object", item_id):
+                self.add_edge(collectable_node, interactive_object_node, "scene_collectable_uses_interactive_object", source="SceneCollectableItemTable", evidence="itemId")
+            interactive_template_node = self.node_id("interactive_template", item_id)
+            if self.node_exists("interactive_template", item_id):
+                self.add_edge(collectable_node, interactive_template_node, "scene_collectable_uses_interactive_template", source="SceneCollectableItemTable", evidence="itemId")
 
     def add_factory_level_region_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         level_id = safe_key(row_key)
