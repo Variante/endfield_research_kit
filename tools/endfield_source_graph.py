@@ -1076,6 +1076,10 @@ ACTIVITY_CATALOG_TABLES = (
     "ActivitySubmitTextTable.json",
     "ActivityHighDifficultyTable.json",
     "ActivityStaminaRefundBgStateTable.json",
+    "AdventureActivityDataTable.json",
+    "ActivityWebTable.json",
+    "ActivityGlobalEffectTable.json",
+    "ActivityArknightsBirthMultiStageTable.json",
 )
 
 def slash(path: Path) -> str:
@@ -20008,6 +20012,49 @@ class SourceGraphBuilder:
                 if activity_node:
                     self.add_edge(bg_node, activity_node, "activity_stamina_refund_bg_state_for_activity", source=table)
                 self.add_audio_target_edge(bg_node, row.get("audioOnOpen"), edge_kind="activity_stamina_refund_bg_state_open_audio", source=table, evidence="audioOnOpen")
+
+        elif table == "AdventureActivityDataTable":
+            entry_node = self.add_activity_catalog_node("adventure_activity_entry", row.get("id") or row_key, name=row.get("name"), source=table, data={"id": row.get("id"), "type": row.get("type"), "rewardCount": len(row.get("rewardList") or []), "bgImg": row.get("bgImg"), "decoImg": row.get("decoImg"), "titleImg": row.get("titleImg"), "bgNodeColor": row.get("bgNodeColor")})
+            if entry_node:
+                self.add_edge(row_node, entry_node, "defines_adventure_activity_entry", source=table)
+                self.add_tag_i18n_edges(entry_node, row.get("name"), source=table, edge_kind="adventure_activity_name_text")
+                for field in ("bgImg", "decoImg", "titleImg"):
+                    self.add_alias(row.get(field), entry_node, kind="asset_stem", source=table)
+                for index, reward_id in enumerate(row.get("rewardList") or []):
+                    item_node = self.add_item_node(reward_id, source=table)
+                    if item_node:
+                        self.add_edge(entry_node, item_node, "adventure_activity_reward_item", source=table, evidence=f"rewardList[{index}]", data={"index": index})
+        elif table == "ActivityWebTable":
+            web_node = self.add_activity_catalog_node("activity_web_entry", row_key, source=table, data={"jumpId": row.get("jumpId"), "disableAudio": row.get("disableAudio")})
+            if web_node:
+                self.add_edge(row_node, web_node, "defines_activity_web_entry", source=table)
+                activity_node = self.add_activity_node(row_key, source=table)
+                if activity_node:
+                    self.add_edge(activity_node, web_node, "activity_has_web_entry", source=table, evidence="rowKey")
+                self.add_system_jump_edge(web_node, row.get("jumpId"), edge_kind="activity_web_entry_jump", source=table, evidence="jumpId")
+        elif table == "ActivityGlobalEffectTable":
+            effect_group_node = self.add_activity_catalog_node("activity_global_effect_group", row_key, source=table, data={"effectCount": len(row.get("globalEffectIds") or [])})
+            if effect_group_node:
+                self.add_edge(row_node, effect_group_node, "defines_activity_global_effect_group", source=table)
+                activity_node = self.add_activity_node(row_key, source=table)
+                if activity_node:
+                    self.add_edge(activity_node, effect_group_node, "activity_has_global_effect_group", source=table, evidence="rowKey")
+                for index, effect_id in enumerate(row.get("globalEffectIds") or []):
+                    effect_key = safe_key(effect_id)
+                    if not effect_key:
+                        continue
+                    effect_node = self.add_node("global_effect", effect_key, name=effect_key, source=table)
+                    self.add_alias(effect_key, effect_node, kind="global_effect_id", source=table)
+                    self.add_edge(effect_group_node, effect_node, "activity_global_effect_group_effect", source=table, evidence=f"globalEffectIds[{index}]", data={"index": index})
+        elif table == "ActivityArknightsBirthMultiStageTable":
+            stage_node = self.add_activity_catalog_node("activity_web_stage", row_key, source=table, data={"centerPanelId": row.get("centerPanelId"), "popupPanelId": row.get("popupPanelId"), "isVisible": row.get("isVisible"), "jumpId": row.get("jumpId"), "rewardItemId": row.get("rewardItemId")})
+            if stage_node:
+                self.add_edge(row_node, stage_node, "defines_activity_web_stage", source=table)
+                activity_stage = self.add_activity_stage_node(row_key, source=table)
+                if activity_stage:
+                    self.add_edge(activity_stage, stage_node, "activity_stage_has_web_stage", source=table, evidence="rowKey")
+                self.add_system_jump_edge(stage_node, row.get("jumpId"), edge_kind="activity_web_stage_jump", source=table, evidence="jumpId")
+                self.add_reward_ref_edge(stage_node, row.get("rewardItemId"), edge_kind="activity_web_stage_reward", source=table, evidence="rewardItemId")
 
     def ingest_combat_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
