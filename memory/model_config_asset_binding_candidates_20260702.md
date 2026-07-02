@@ -22,9 +22,13 @@ The previous audit showed the important gap:
 - exported renderable entity groups were queryable;
 - but the bridge between gameplay model ids and renderable groups was unclear.
 
-The new report makes that gap measurable per model row:
+The report now makes that gap measurable per model row and separates strong
+matches from discovery-grade matches:
 
-- `exact_graph_edge`: existing `model_config_model -> asset_entity` graph edge.
+- `strong_exact_graph_edge`: one direct graph edge whose token normalizes
+  exactly to the exported asset-entity base.
+- `ambiguous_graph_edge`: existing graph edge exists, but it is multi-edge,
+  prefix-expanded, or otherwise not a single exact token/base match.
 - `candidate_name_match`: conservative candidate entity match without direct
   edge.
 - `no_exported_renderable_candidate`: world/interactive gameplay references
@@ -41,7 +45,7 @@ entity metadata.
 Built a temporary graph with follow-up reports enabled:
 
 ```bat
-python tools\endfield_source_graph.py build --db tmp\model_binding_candidates_source_graph.sqlite --skip-asset-maps --skip-reference-rows
+python tools\endfield_source_graph.py build --db tmp\model_binding_strength_source_graph.sqlite --skip-asset-maps --skip-reference-rows
 ```
 
 Result:
@@ -56,10 +60,18 @@ Generated report summary:
 - Model config rows: 1,201
 - Asset entities: 10,678
 - Direct `model_config_asset_entity` edges: 215
+- Strong exact graph-edge rows: 200
+- Ambiguous graph-edge rows: 10
 - Candidate entity matches: 215
-- `exact_graph_edge`: 210
+- `strong_exact_graph_edge`: 200
+- `ambiguous_graph_edge`: 10
 - `no_exported_renderable_candidate`: 161
 - `runtime_only_or_unreferenced`: 830
+
+Read-only edge-strength checking also found 203 exact-token-base edges and 12
+prefix-expanded edges among the 215 direct edges. Multi-edge or prefix examples
+include `int_collection_coin`, `chr_0031_mifu_postmodel`, and
+`int_trigger_dnarrative_paper`.
 
 The report preserves the main unresolved examples from the earlier audit as
 top referenced unbound models:
