@@ -776,6 +776,11 @@ gameplay-video OCR/audio workflow.
   writes `reports/mission_order/skipped_vfs_block_audit.json` / `.md` with
   counts, sizes, top directories, largest files, and story/SNS/UI signal
   samples so broad raw dumps can be prioritized.
+- `story_recovery/build_hotfix_audio_event_audit.py`: streams
+  `hotfix-audio` PCK payloads directly from VFS, parses embedded Wwise bank
+  HIRC metadata, and writes
+  `reports/mission_order/hotfix_audio_event_audit.json` / `.md` with
+  HotfixAudio media ids mapped to event hashes and any known event names.
 - `story_recovery/build_levelscript_header_chain_audit.py`: uses the compact
   `ActionHeader.nextId` payload field on `headerList` rows to walk from
   event/listener records into `actionList` chains. It writes

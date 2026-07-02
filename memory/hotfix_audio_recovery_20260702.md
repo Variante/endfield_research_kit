@@ -34,6 +34,13 @@ Both decode paths found one PCK,
 entries with `0` errors. Both output trees contain `23` files totaling
 `33,354,305` bytes. All entries are currently unmapped by `AudioDialog.json`.
 
+`build_hotfix_audio_event_audit.py` then streamed `hotfix_main.pck` directly
+from VFS and parsed embedded Wwise HIRC metadata. It found `59` embedded banks,
+linked all `23` media ids to `4` Wwise event hashes, tested `548` known
+event-name candidates from current Story/export tables, and found `0` matches. Event
+hash `0x0fe31eb5` owns `18` media ids; `0x6f74a1f3` owns `1`; `0x8c9d6ae4`
+owns `1`; `0xb7d20b57` owns `3`.
+
 ## Interpretation
 
 HotfixAudio contains recoverable Wwise media. The current dialog table does not
@@ -44,7 +51,8 @@ UI, or story/cutscene audio before adding it to default audio export behavior.
 ## Next Steps
 
 1. Keep HotfixAudio decode explicit until its media IDs are categorized.
-2. Use the existing Wwise event-bank metadata path to map HotfixAudio media IDs
-   to event names or prove they are standalone/unreferenced.
+2. Search for a name source for event hashes `0x0fe31eb5`, `0x6f74a1f3`,
+   `0x8c9d6ae4`, and `0xb7d20b57`; current Story/export event-name sources do
+   not contain matching FNV hashes.
 3. Separate the local fluffy-dumper checkout's pre-existing VFS index work from
    the `AudioBlockType::HotfixAudio` patch before committing upstream there.
