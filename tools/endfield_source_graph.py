@@ -11839,6 +11839,7 @@ class SourceGraphBuilder:
                     item_node = self.add_item_node(item_id, source=table)
                     if item_node:
                         self.add_edge(type_node, item_node, "item_type_lists_item", source=table, evidence=f"list[{index}]", data={"index": index})
+                        self.add_edge(item_node, type_node, "item_listed_by_item_type", source=table, evidence=f"list[{index}]", data={"index": index})
         elif table == "ItemListByShowingTypeTable" and isinstance(row, dict):
             showing_node = self.add_item_showing_type_node(row_key, source=table)
             if showing_node:
@@ -11847,6 +11848,7 @@ class SourceGraphBuilder:
                     item_node = self.add_item_node(item_id, source=table)
                     if item_node:
                         self.add_edge(showing_node, item_node, "item_showing_type_lists_item", source=table, evidence=f"list[{index}]", data={"index": index})
+                        self.add_edge(item_node, showing_node, "item_listed_by_showing_type", source=table, evidence=f"list[{index}]", data={"index": index})
         elif table == "NoObtainWayCondTable" and isinstance(row, dict):
             condition_node = self.add_item_obtain_condition_node(row.get("id") or row_key, source=table, data={"conditionType": row.get("conditionType"), "checkId": row.get("checkId")})
             if condition_node:
@@ -11870,14 +11872,19 @@ class SourceGraphBuilder:
             self.add_edge(row_node, chest_node, "defines_usable_item_chest", source=table)
             if item_node:
                 self.add_edge(item_node, chest_node, "item_uses_chest_config", source=table, evidence="id")
+                self.add_edge(chest_node, item_node, "usable_chest_config_for_item", source=table, evidence="id")
             counts = row.get("randomChestItemCounts") if isinstance(row.get("randomChestItemCounts"), list) else []
             for index, random_item_id in enumerate(row.get("randomChestItemIds") or []):
                 random_item_node = self.add_item_node(random_item_id, source=table)
                 if random_item_node:
                     count = counts[index] if index < len(counts) else None
                     self.add_edge(chest_node, random_item_node, "usable_chest_random_item", source=table, evidence=f"randomChestItemIds[{index}]", data={"count": count, "index": index})
+                    self.add_edge(random_item_node, chest_node, "item_random_in_usable_chest", source=table, evidence=f"randomChestItemIds[{index}]", data={"count": count, "index": index})
             for index, reward_id in enumerate(row.get("rewardIdList") or []):
                 self.add_reward_ref_edge(chest_node, reward_id, edge_kind="usable_chest_reward", source=table, evidence=f"rewardIdList[{index}]", data={"index": index})
+                reward_node = self.add_reward_node(reward_id, source=table)
+                if reward_node:
+                    self.add_edge(reward_node, chest_node, "reward_used_by_usable_chest", source=table, evidence=f"rewardIdList[{index}]", data={"index": index})
         elif table == "LTItemTable" and isinstance(row, dict):
             lt_node = self.add_node("limited_time_item_alias", safe_key(row_key), name=safe_key(row_key), source=table, data={"itemId": row.get("itemId")})
             self.add_alias(row_key, lt_node, kind="limited_time_item_alias_id", source=table)
@@ -11885,6 +11892,7 @@ class SourceGraphBuilder:
             item_node = self.add_item_node(row.get("itemId"), source=table)
             if item_node:
                 self.add_edge(lt_node, item_node, "limited_time_alias_resolves_item", source=table, evidence="itemId")
+                self.add_edge(item_node, lt_node, "item_has_limited_time_alias", source=table, evidence="itemId")
         elif table == "LTItemTypeTable" and isinstance(row, dict):
             type_node = self.add_item_type_node(row_key, source=table)
             preset_node = self.add_item_type_node(row.get("presetItemType"), source=table)
@@ -11892,6 +11900,7 @@ class SourceGraphBuilder:
                 self.add_edge(row_node, type_node, "defines_limited_time_item_type", source=table)
                 if preset_node:
                     self.add_edge(type_node, preset_node, "limited_time_item_type_preset", source=table, evidence="presetItemType", data={"daysBeforeExpireToNotify": row.get("daysBeforeExpireToNotify")})
+                    self.add_edge(preset_node, type_node, "item_type_used_by_limited_time_type", source=table, evidence="presetItemType", data={"daysBeforeExpireToNotify": row.get("daysBeforeExpireToNotify")})
 
     def ingest_cash_shop_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -12150,6 +12159,7 @@ class SourceGraphBuilder:
         for index, outcome_id in enumerate(row.get("outcomeItemIds") or []):
             outcome_node = self.add_item_node(outcome_id, source=table)
             self.add_edge(item_node, outcome_node, "item_outcomes_item", source=table, evidence=f"outcomeItemIds[{index}]")
+            self.add_edge(outcome_node, item_node, "item_outcome_of_item", source=table, evidence=f"outcomeItemIds[{index}]", data={"index": index})
 
     def add_item_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         type_id = row.get("itemType") if "itemType" in row else row_key
