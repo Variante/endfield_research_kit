@@ -12198,6 +12198,12 @@ class SourceGraphBuilder:
             if isinstance(visible_list, list) and index < len(visible_list):
                 data["visible"] = visible_list[index]
             self.add_edge(reward_node, item_node, edge_kind, source=source, evidence=f"{field}[{index}]", data=data)
+            reverse_kind = {
+                "reward_grants_item": "item_granted_by_reward",
+                "reward_may_grant_item": "item_may_be_granted_by_reward",
+            }.get(edge_kind)
+            if reverse_kind:
+                self.add_edge(item_node, reward_node, reverse_kind, source=source, evidence=f"{field}[{index}]", data=data)
 
     def add_reward_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         reward_id = safe_key(row.get("rewardId") or row_key)
@@ -12224,10 +12230,12 @@ class SourceGraphBuilder:
         reward_node = self.add_reward_node(drop_id, source=table)
         self.add_edge(row_node, drop_node, "defines_reward_drop", source=table)
         self.add_edge(reward_node, drop_node, "reward_has_drop_table", source=table, evidence="rewardId")
+        self.add_edge(drop_node, reward_node, "reward_drop_for_reward", source=table, evidence="rewardId")
         self.add_alias(drop_id, drop_node, kind="reward_drop_id", source=table)
         for index, item_id in enumerate(row.get("itemIds") or []):
             item_node = self.add_item_node(item_id, source=table)
             self.add_edge(drop_node, item_node, "reward_drop_may_drop_item", source=table, evidence=f"itemIds[{index}]", data={"index": index})
+            self.add_edge(item_node, drop_node, "item_may_drop_from_reward_drop", source=table, evidence=f"itemIds[{index}]", data={"index": index})
 
     def add_shop_group_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         group_id = safe_key(row.get("shopGroupId") or row_key)
@@ -12246,6 +12254,7 @@ class SourceGraphBuilder:
         for index, shop_id in enumerate(row.get("shopIds") or []):
             shop_node = self.add_shop_node(shop_id, source=table)
             self.add_edge(group_node, shop_node, "shop_group_has_shop", source=table, evidence=f"shopIds[{index}]")
+            self.add_edge(shop_node, group_node, "shop_in_shop_group", source=table, evidence=f"shopIds[{index}]", data={"index": index})
 
     def add_shop_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         shop_id = safe_key(row.get("shopId") or row_key)
@@ -12261,6 +12270,7 @@ class SourceGraphBuilder:
         for index, goods_id in enumerate(row.get("shopGoodsIds") or []):
             goods_node = self.add_shop_goods_node(goods_id, source=table)
             self.add_edge(shop_node, goods_node, "shop_has_goods", source=table, evidence=f"shopGoodsIds[{index}]")
+            self.add_edge(goods_node, shop_node, "shop_goods_in_shop", source=table, evidence=f"shopGoodsIds[{index}]", data={"index": index})
 
     def add_shop_goods_tag_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         tag_id = safe_key(row.get("goodsTagId") or row_key)
@@ -12293,12 +12303,15 @@ class SourceGraphBuilder:
         money_node = self.add_item_node(row.get("moneyId"), source=table)
         if money_node:
             self.add_edge(goods_node, money_node, "shop_goods_priced_in_item", source=table, evidence="moneyId", data={"price": row.get("price"), "discount": row.get("cnDiscount")})
+            self.add_edge(money_node, goods_node, "item_prices_shop_goods", source=table, evidence="moneyId", data={"price": row.get("price"), "discount": row.get("cnDiscount")})
         reward_node = self.add_reward_node(row.get("rewardId"), source=table)
         if reward_node:
             self.add_edge(goods_node, reward_node, "shop_goods_grants_reward", source=table, evidence="rewardId")
+            self.add_edge(reward_node, goods_node, "reward_sold_by_shop_goods", source=table, evidence="rewardId")
         tag_node = self.add_shop_goods_tag_node(row.get("goodsTagId"), source=table)
         if tag_node:
             self.add_edge(goods_node, tag_node, "shop_goods_tagged", source=table, evidence="goodsTagId")
+            self.add_edge(tag_node, goods_node, "shop_goods_tag_has_goods", source=table, evidence="goodsTagId")
 
     def add_item_economy_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if not isinstance(row, dict):
