@@ -21039,18 +21039,25 @@ class SourceGraphBuilder:
             return
         item_node = self.add_node("item", item_id, name=item_id, source=source)
         self.add_factory_item_aliases(item_node, item_id, source=source)
+        edge_data = {
+            "count": item.get("count"),
+            "groupIndex": group_index,
+            "itemIndex": item_index,
+        }
         self.add_edge(
             recipe_node,
             item_node,
             edge_kind,
             source=source,
             evidence=evidence,
-            data={
-                "count": item.get("count"),
-                "groupIndex": group_index,
-                "itemIndex": item_index,
-            },
+            data=edge_data,
         )
+        reverse_edge = {
+            "factory_consumes_item": "item_consumed_by_factory_recipe",
+            "factory_produces_item": "item_produced_by_factory_recipe",
+        }.get(edge_kind)
+        if reverse_edge:
+            self.add_edge(item_node, recipe_node, reverse_edge, source=source, evidence=evidence, data=edge_data)
 
     def add_factory_recipe_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         recipe_id = safe_key(row.get("id") or row_key)
