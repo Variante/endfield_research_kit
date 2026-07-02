@@ -1027,6 +1027,13 @@ ACTIVITY_CATALOG_TABLES = (
     "PsActivityTaskTable.json",
     "ActivitySubmitFoodTable.json",
     "ActivityBenefitsTable.json",
+    "ActivityLimitedFormulaTable.json",
+    "ActivityLimitedFormulaSettlementTable.json",
+    "ActivityRankInfoTable.json",
+    "ActivityShopAdditionalTable.json",
+    "ActivitySubmitTextTable.json",
+    "ActivityHighDifficultyTable.json",
+    "ActivityStaminaRefundBgStateTable.json",
 )
 
 def slash(path: Path) -> str:
@@ -19504,6 +19511,124 @@ class SourceGraphBuilder:
                         self.add_tag_i18n_edges(benefit_node, benefit.get("bigRewardStatement"), source=table, edge_kind="activity_benefit_big_reward_statement_text")
                         self.add_alias(benefit.get("iconId"), benefit_node, kind="asset_stem", source=table)
 
+        elif table == "ActivityLimitedFormulaTable":
+            activity_id = row.get("activityId") or row_key
+            formula_node = self.add_activity_catalog_node("activity_limited_formula", activity_id, source=table, data={"shopGroupId": row.get("shopGroupId"), "moneyId": row.get("moneyId"), "endStageId": row.get("endStageId"), "stageCount": len(row.get("activityStageList") or {}), "recipeCount": len(row.get("timeLimitFormula") or []), "itemCount": len(row.get("timeLimitItem") or [])})
+            if formula_node:
+                self.add_edge(row_node, formula_node, "defines_activity_limited_formula", source=table)
+                activity_node = self.add_activity_node(activity_id, source=table)
+                if activity_node:
+                    self.add_edge(formula_node, activity_node, "activity_limited_formula_for_activity", source=table, evidence="activityId")
+                shop_node = self.add_shop_node(row.get("shopGroupId"), source=table)
+                if shop_node:
+                    self.add_edge(formula_node, shop_node, "activity_limited_formula_shop_group", source=table, evidence="shopGroupId")
+                money_node = self.add_item_node(row.get("moneyId"), source=table)
+                if money_node:
+                    self.add_edge(formula_node, money_node, "activity_limited_formula_money_item", source=table, evidence="moneyId")
+                end_stage_node = self.add_activity_catalog_node("activity_limited_formula_stage", row.get("endStageId"), source=table)
+                if end_stage_node:
+                    self.add_edge(formula_node, end_stage_node, "activity_limited_formula_end_stage", source=table, evidence="endStageId")
+                for shop_id, lock in (row.get("activityShopLockList") or {}).items():
+                    lock_node = self.add_activity_catalog_node("activity_limited_formula_shop_lock", shop_id, source=table, data=compact_payload(lock, depth=2))
+                    if lock_node:
+                        self.add_edge(formula_node, lock_node, "activity_limited_formula_shop_lock", source=table, evidence=f"activityShopLockList[{shop_id}]", data={"unlockTimeOffset": lock.get("unlockTimeOffset") if isinstance(lock, dict) else None})
+                        shop_ref = self.add_shop_node(shop_id, source=table)
+                        if shop_ref:
+                            self.add_edge(lock_node, shop_ref, "activity_limited_formula_lock_shop", source=table, evidence=f"activityShopLockList[{shop_id}]")
+                        if isinstance(lock, dict):
+                            self.add_tag_i18n_edges(lock_node, lock.get("lockToast"), source=table, edge_kind="activity_limited_formula_lock_toast_text")
+                for stage_id, stage in (row.get("activityStageList") or {}).items():
+                    stage_node = self.add_activity_catalog_node("activity_limited_formula_stage", stage_id, source=table, data=compact_payload(stage, depth=2))
+                    if stage_node:
+                        self.add_edge(formula_node, stage_node, "activity_limited_formula_has_stage", source=table, evidence=f"activityStageList[{stage_id}]")
+                        activity_stage = self.add_activity_stage_node(stage_id, source=table)
+                        if activity_stage:
+                            self.add_edge(stage_node, activity_stage, "activity_limited_formula_stage_overlay", source=table, evidence=stage_id)
+                        if isinstance(stage, dict):
+                            self.add_system_jump_edge(stage_node, stage.get("completeJumpId"), edge_kind="activity_limited_formula_stage_complete_jump", source=table, evidence=f"activityStageList[{stage_id}].completeJumpId")
+                            self.add_system_jump_edge(stage_node, stage.get("incompleteJumpId"), edge_kind="activity_limited_formula_stage_incomplete_jump", source=table, evidence=f"activityStageList[{stage_id}].incompleteJumpId")
+                            for field, edge_kind in (("completeTitle", "activity_limited_formula_stage_complete_title_text"), ("completeDesc", "activity_limited_formula_stage_complete_desc_text"), ("completeTips", "activity_limited_formula_stage_complete_tips_text"), ("incompleteDesc", "activity_limited_formula_stage_incomplete_desc_text"), ("incompleteTips", "activity_limited_formula_stage_incomplete_tips_text")):
+                                self.add_tag_i18n_edges(stage_node, stage.get(field), source=table, edge_kind=edge_kind)
+                for index, recipe_id in enumerate(row.get("timeLimitFormula") or []):
+                    recipe_node = self.add_factory_recipe_node(recipe_id, source=table)
+                    if recipe_node:
+                        self.add_edge(formula_node, recipe_node, "activity_limited_formula_recipe", source=table, evidence=f"timeLimitFormula[{index}]", data={"index": index})
+                for index, item_id in enumerate(row.get("timeLimitItem") or []):
+                    item_node = self.add_item_node(item_id, source=table)
+                    if item_node:
+                        self.add_edge(formula_node, item_node, "activity_limited_formula_item", source=table, evidence=f"timeLimitItem[{index}]", data={"index": index})
+        elif table == "ActivityLimitedFormulaSettlementTable":
+            formula_node = self.add_activity_catalog_node("activity_limited_formula", row_key, source=table, data={"settlementCount": len(row.get("settlementList") or {})})
+            if formula_node:
+                self.add_edge(row_node, formula_node, "defines_activity_limited_formula_settlement", source=table)
+                for settlement_id, settlement in (row.get("settlementList") or {}).items():
+                    settlement_node = self.add_settlement_node(settlement_id, source=table, data={"tradeCount": len((settlement or {}).get("tradeList") or {}) if isinstance(settlement, dict) else 0})
+                    if settlement_node:
+                        self.add_edge(formula_node, settlement_node, "activity_limited_formula_settlement", source=table, evidence=f"settlementList[{settlement_id}]")
+                        trade_list = settlement.get("tradeList") if isinstance(settlement, dict) else {}
+                        for item_key, trade in (trade_list or {}).items():
+                            item_id = trade.get("itemId") if isinstance(trade, dict) else item_key
+                            item_node = self.add_item_node(item_id or item_key, source=table, data=compact_payload(trade, depth=1))
+                            if item_node:
+                                self.add_edge(settlement_node, item_node, "activity_limited_formula_settlement_trade_item", source=table, evidence=f"settlementList[{settlement_id}].tradeList[{item_key}]", data={"moneyCount": trade.get("moneyCount") if isinstance(trade, dict) else None})
+        elif table == "ActivityRankInfoTable":
+            rank_node = self.add_activity_catalog_node("activity_rank_info", row.get("rankRelatedId") or row_key, source=table, data={"isIncremental": row.get("isIncremental"), "rankValueStyleType": row.get("rankValueStyleType"), "npcRankCount": len(row.get("npcRankInfo") or {})})
+            if rank_node:
+                self.add_edge(row_node, rank_node, "defines_activity_rank_info", source=table)
+                activity_node = self.add_activity_node(row.get("rankRelatedId") or row_key, source=table)
+                if activity_node:
+                    self.add_edge(rank_node, activity_node, "activity_rank_info_for_activity", source=table, evidence="rankRelatedId")
+                for npc_key, npc in (row.get("npcRankInfo") or {}).items():
+                    npc_node = self.add_activity_catalog_node("activity_rank_npc", f"{safe_key(row_key)}:{safe_key(npc_key)}", name=(npc or {}).get("name") if isinstance(npc, dict) else None, source=table, data=compact_payload(npc, depth=2))
+                    if npc_node:
+                        self.add_edge(rank_node, npc_node, "activity_rank_info_has_npc", source=table, evidence=f"npcRankInfo[{npc_key}]", data={"rankValue": npc.get("rankValue") if isinstance(npc, dict) else None})
+                        if isinstance(npc, dict):
+                            self.add_alias(npc.get("headIcon"), npc_node, kind="asset_stem", source=table)
+                            self.add_tag_i18n_edges(npc_node, npc.get("name"), source=table, edge_kind="activity_rank_npc_name_text")
+                            topic_node = self.add_profile_social_node("business_card_topic", npc.get("topicId"), source=table)
+                            if topic_node:
+                                self.add_edge(npc_node, topic_node, "activity_rank_npc_topic", source=table, evidence="topicId")
+        elif table == "ActivityShopAdditionalTable":
+            shop_node = self.add_activity_catalog_node("activity_shop_additional", row.get("shopGroupId") or row_key, source=table, data={"activityId": row.get("activityId"), "activityMoneyId": row.get("activityMoneyId"), "banner": row.get("banner"), "hasSortComponent": row.get("hasSortComponent"), "hasHelpComponent": row.get("hasHelpComponent")})
+            if shop_node:
+                self.add_edge(row_node, shop_node, "defines_activity_shop_additional", source=table)
+                activity_node = self.add_activity_node(row.get("activityId"), source=table)
+                if activity_node:
+                    self.add_edge(shop_node, activity_node, "activity_shop_additional_for_activity", source=table, evidence="activityId")
+                group_node = self.add_shop_node(row.get("shopGroupId") or row_key, source=table)
+                if group_node:
+                    self.add_edge(shop_node, group_node, "activity_shop_additional_shop_group", source=table, evidence="shopGroupId")
+                money_node = self.add_item_node(row.get("activityMoneyId"), source=table)
+                if money_node:
+                    self.add_edge(shop_node, money_node, "activity_shop_additional_money_item", source=table, evidence="activityMoneyId")
+                self.add_alias(row.get("banner"), shop_node, kind="asset_stem", source=table)
+                self.add_tag_i18n_edges(shop_node, row.get("closeCdText"), source=table, edge_kind="activity_shop_additional_close_cd_text")
+        elif table == "ActivitySubmitTextTable":
+            submit_node = self.add_activity_catalog_node("activity_submit_text", row.get("activityName") or row_key, source=table)
+            if submit_node:
+                self.add_edge(row_node, submit_node, "defines_activity_submit_text", source=table)
+                activity_node = self.add_activity_node(row.get("activityName") or row_key, source=table)
+                if activity_node:
+                    self.add_edge(submit_node, activity_node, "activity_submit_text_for_activity", source=table, evidence="activityName")
+                for field, edge_kind in (("foodLockedText", "activity_submit_food_locked_text"), ("foodLockedToast", "activity_submit_food_locked_toast_text"), ("foodNoteLockedtText", "activity_submit_food_note_locked_text"), ("foodNoteLockedtToast", "activity_submit_food_note_locked_toast_text")):
+                    self.add_tag_i18n_edges(submit_node, row.get(field), source=table, edge_kind=edge_kind)
+        elif table == "ActivityHighDifficultyTable":
+            high_node = self.add_activity_catalog_node("activity_high_difficulty_config", row_key, source=table, data={"bgNode": row.get("bgNode")})
+            if high_node:
+                self.add_edge(row_node, high_node, "defines_activity_high_difficulty_config", source=table)
+                activity_node = self.add_activity_node(row_key, source=table)
+                if activity_node:
+                    self.add_edge(high_node, activity_node, "activity_high_difficulty_config_for_activity", source=table)
+                self.add_alias(row.get("bgNode"), high_node, kind="asset_stem", source=table)
+        elif table == "ActivityStaminaRefundBgStateTable":
+            bg_node = self.add_activity_catalog_node("activity_stamina_refund_bg_state", row_key, source=table, data={"bgStateName": row.get("bgStateName"), "audioOnOpen": row.get("audioOnOpen")})
+            if bg_node:
+                self.add_edge(row_node, bg_node, "defines_activity_stamina_refund_bg_state", source=table)
+                activity_node = self.add_activity_node(row_key, source=table)
+                if activity_node:
+                    self.add_edge(bg_node, activity_node, "activity_stamina_refund_bg_state_for_activity", source=table)
+                self.add_audio_target_edge(bg_node, row.get("audioOnOpen"), edge_kind="activity_stamina_refund_bg_state_open_audio", source=table, evidence="audioOnOpen")
+
     def ingest_combat_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_combat_semantics", path=slash(table_root))
@@ -21594,6 +21719,15 @@ QUERY_KIND_PRIORITY = {
     "activity_submit_item": 53.51,
     "activity_benefit_group": 53.6,
     "activity_benefit": 53.61,
+    "activity_limited_formula": 53.62,
+    "activity_limited_formula_stage": 53.63,
+    "activity_limited_formula_shop_lock": 53.64,
+    "activity_rank_info": 53.65,
+    "activity_rank_npc": 53.66,
+    "activity_shop_additional": 53.67,
+    "activity_submit_text": 53.68,
+    "activity_high_difficulty_config": 53.69,
+    "activity_stamina_refund_bg_state": 53.695,
     "week_raid_game": 53.7,
     "week_raid_item_domain": 53.71,
     "week_raid_tech_type": 53.72,
@@ -22254,6 +22388,15 @@ NODE_ID_PREFIXES = (
     "activity_submit_item",
     "activity_benefit_group",
     "activity_benefit",
+    "activity_limited_formula",
+    "activity_limited_formula_stage",
+    "activity_limited_formula_shop_lock",
+    "activity_rank_info",
+    "activity_rank_npc",
+    "activity_shop_additional",
+    "activity_submit_text",
+    "activity_high_difficulty_config",
+    "activity_stamina_refund_bg_state",
     "achievement_category",
     "achievement_group",
     "achievement",
