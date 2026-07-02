@@ -339,6 +339,25 @@ DISPLAY_METADATA_TABLES = (
     "ShopDomainConst.json",
     "ShopChannelDevelopmentTable.json",
 )
+FACTORY_INTERACTION_LOOKUP_TABLES = (
+    "FactorySpecialPowerPoleTable.json",
+    "MapRemindTable.json",
+    "FactorySeedItemTable.json",
+    "InteractiveMarkDataTable.json",
+    "LimitedFormulaCraftIdReverseTable.json",
+    "LimitedFormulaItemIdReverseTable.json",
+    "OriginiumStaminaCost.json",
+    "GemCustomizationBox.json",
+    "FactoryQuickBarTypeTable.json",
+    "LoadingTypeTagTable.json",
+    "ActivityDungeonState.json",
+    "ActivityDungeonFightingStageTable.json",
+    "ActivityCleaningStageDataTable.json",
+    "FactoryHubCraftTypeListTable.json",
+    "LTItemTyp2ItemTypeTable.json",
+    "ExpItemMap.json",
+    "ExpItemDataMap.json",
+)
 TAG_TAXONOMY_TABLES = (
     "TagGroupDataTable.json",
     "TagDataTable.json",
@@ -3072,6 +3091,8 @@ class SourceGraphBuilder:
             self.commit_step("modeConstants")
             self.ingest_display_metadata_semantics()
             self.commit_step("displayMetadata")
+            self.ingest_factory_interaction_lookup_semantics()
+            self.commit_step("factoryInteractionLookups")
             if self.include_gameplay:
                 self.ingest_gameplay()
                 self.commit_step("gameplay")
@@ -14901,6 +14922,191 @@ class SourceGraphBuilder:
                         self.add_tag_i18n_edges(level_node, level_row.get("upgradeDesc"), source=table, edge_kind="shop_channel_level_upgrade_desc_text")
             return
 
+    def ingest_factory_interaction_lookup_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_factory_interaction_lookups", name="Structured factory, interaction, activity, and item lookup tables", path=slash(table_root))
+        for table_name in FACTORY_INTERACTION_LOOKUP_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/factory_interaction_lookups")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/factory_interaction_lookups")
+                self.add_factory_interaction_lookup_row_edges(table, str(row_key), row, row_node)
+
+    def add_factory_interaction_lookup_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node(kind, key, name=name, source=source, data=data)
+
+    def add_factory_lookup_asset_aliases(self, owner_node: str, values: Any, *, source: str, evidence_prefix: str) -> None:
+        if isinstance(values, str):
+            asset_values = [values]
+        elif isinstance(values, list):
+            asset_values = [value for value in values if isinstance(value, str)]
+        else:
+            return
+        for index, value in enumerate(asset_values):
+            asset_key = safe_key(value)
+            if not asset_key:
+                continue
+            self.add_alias(asset_key, owner_node, kind="asset_stem", source=source)
+            asset_node = self.add_node("asset_ref", asset_key, name=asset_key, source=source)
+            self.add_edge(owner_node, asset_node, "lookup_references_asset", source=source, evidence=f"{evidence_prefix}[{index}]")
+
+    def add_factory_interaction_lookup_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "FactorySpecialPowerPoleTable" and isinstance(row, dict):
+            pole_node = self.add_factory_interaction_lookup_node("factory_special_power_pole", row.get("id") or row_key, name=row.get("buildingName"), source=table, data={"mapId": row.get("mapId")})
+            if pole_node:
+                self.add_edge(row_node, pole_node, "defines_factory_special_power_pole", source=table)
+                for field, edge in (("buildingName", "factory_special_power_pole_name_text"), ("buildingDesc", "factory_special_power_pole_desc_text"), ("mapName", "factory_special_power_pole_map_name_text"), ("positionDesc", "factory_special_power_pole_position_text")):
+                    self.add_tag_i18n_edges(pole_node, row.get(field), source=table, edge_kind=edge)
+                level_node = self.add_level_node(row.get("mapId"), source=table)
+                if level_node:
+                    self.add_edge(pole_node, level_node, "factory_special_power_pole_in_level", source=table, evidence="mapId")
+            return
+        if table == "MapRemindTable" and isinstance(row, dict):
+            remind_node = self.add_factory_interaction_lookup_node("map_reminder", row.get("remindType") if row.get("remindType") is not None else row_key, source=table, data={"tabType": row.get("tabType"), "icon": row.get("icon")})
+            if remind_node:
+                self.add_edge(row_node, remind_node, "defines_map_reminder", source=table)
+                self.add_tag_i18n_edges(remind_node, row.get("desc"), source=table, edge_kind="map_reminder_desc_text")
+                self.add_factory_lookup_asset_aliases(remind_node, row.get("icon"), source=table, evidence_prefix="icon")
+                tab_node = self.add_factory_interaction_lookup_node("map_reminder_tab", row.get("tabType"), source=table)
+                if tab_node:
+                    self.add_edge(remind_node, tab_node, "map_reminder_in_tab", source=table, evidence="tabType")
+            return
+        if table == "FactorySeedItemTable" and isinstance(row, dict):
+            seed_node = self.add_factory_interaction_lookup_node("factory_seed_item", row.get("id") or row_key, source=table, data={"growTotalProgress": row.get("growTotalProgress"), "doodadId": row.get("doodadId"), "modelKey": row.get("modelKey"), "growingModelKey": row.get("growingModelKey")})
+            if seed_node:
+                self.add_edge(row_node, seed_node, "defines_factory_seed_item", source=table)
+                item_node = self.add_item_node(row.get("id") or row_key, source=table)
+                if item_node:
+                    self.add_edge(seed_node, item_node, "factory_seed_item_item", source=table, evidence="id")
+                doodad_node = self.add_system_interactive_node(row.get("doodadId"), source=table)
+                if doodad_node:
+                    self.add_edge(seed_node, doodad_node, "factory_seed_item_doodad", source=table, evidence="doodadId")
+                for field in ("modelKey", "growingModelKey"):
+                    self.add_factory_lookup_asset_aliases(seed_node, row.get(field), source=table, evidence_prefix=field)
+            return
+        if table == "InteractiveMarkDataTable" and isinstance(row, dict):
+            binding_node = self.add_factory_interaction_lookup_node("interactive_mark_binding", row.get("id") or row_key, source=table, data={"markId": row.get("markId")})
+            if binding_node:
+                self.add_edge(row_node, binding_node, "defines_interactive_mark_binding", source=table)
+                interactive_node = self.add_system_interactive_node(row.get("id") or row_key, source=table)
+                mark_node = self.add_map_mark_template_node(row.get("markId"), source=table)
+                if interactive_node:
+                    self.add_edge(binding_node, interactive_node, "interactive_mark_binding_interactive", source=table, evidence="id")
+                if mark_node:
+                    self.add_edge(binding_node, mark_node, "interactive_mark_binding_mark_template", source=table, evidence="markId")
+            return
+        if table in {"LimitedFormulaCraftIdReverseTable", "LimitedFormulaItemIdReverseTable"}:
+            reverse_node = self.add_factory_interaction_lookup_node("limited_formula_reverse", f"{table}:{row_key}", source=table, data={"sourceId": row_key, "formulaId": row})
+            if reverse_node:
+                self.add_edge(row_node, reverse_node, "defines_limited_formula_reverse", source=table)
+                formula_node = self.add_factory_recipe_node(row, source=table)
+                source_node = self.add_item_node(row_key, source=table) if safe_key(row_key).startswith("item_") else self.add_factory_recipe_node(row_key, source=table)
+                if formula_node:
+                    self.add_edge(reverse_node, formula_node, "limited_formula_reverse_formula", source=table, evidence="rowValue")
+                if source_node:
+                    self.add_edge(reverse_node, source_node, "limited_formula_reverse_source", source=table, evidence="rowKey")
+            return
+        if table == "OriginiumStaminaCost":
+            cost_node = self.add_factory_interaction_lookup_node("originium_stamina_cost", row_key, source=table, data={"purchaseCount": row_key, "staminaCost": row})
+            if cost_node:
+                self.add_edge(row_node, cost_node, "defines_originium_stamina_cost", source=table)
+            return
+        if table == "GemCustomizationBox" and isinstance(row, dict):
+            box_node = self.add_factory_interaction_lookup_node("gem_customization_box", row.get("boxItemId") or row_key, source=table, data={"gemItemId": row.get("gemItemId"), "lockedTermCount": row.get("lockedTermCount")})
+            if box_node:
+                self.add_edge(row_node, box_node, "defines_gem_customization_box", source=table)
+                for field, edge_kind in (("boxItemId", "gem_customization_box_item"), ("gemItemId", "gem_customization_result_gem")):
+                    item_node = self.add_item_node(row.get(field), source=table)
+                    if item_node:
+                        self.add_edge(box_node, item_node, edge_kind, source=table, evidence=field)
+                for term_field in ("term1Type", "term2Type", "term3Type"):
+                    for index, term_type in enumerate(row.get(term_field) or []):
+                        term_node = self.add_factory_interaction_lookup_node("gem_customization_term_type", term_type, source=table)
+                        if term_node:
+                            self.add_edge(box_node, term_node, "gem_customization_locks_term_type", source=table, evidence=f"{term_field}[{index}]", data={"slot": term_field, "index": index})
+            return
+        if table == "FactoryQuickBarTypeTable" and isinstance(row, dict):
+            quickbar_node = self.add_factory_interaction_lookup_node("factory_quickbar_type", row.get("id") or row_key, name=row.get("name"), source=table, data={"icon": row.get("icon"), "priority": row.get("priority")})
+            if quickbar_node:
+                self.add_edge(row_node, quickbar_node, "defines_factory_quickbar_type", source=table)
+                self.add_tag_i18n_edges(quickbar_node, row.get("name"), source=table, edge_kind="factory_quickbar_type_name_text")
+                self.add_factory_lookup_asset_aliases(quickbar_node, row.get("icon"), source=table, evidence_prefix="icon")
+            return
+        if table == "LoadingTypeTagTable" and isinstance(row, dict):
+            loading_node = self.add_factory_interaction_lookup_node("loading_type_tag", row.get("typeTag") if row.get("typeTag") is not None else row_key, source=table, data={"bgNameCount": len(row.get("bgNameGroup") or [])})
+            if loading_node:
+                self.add_edge(row_node, loading_node, "defines_loading_type_tag", source=table)
+                self.add_factory_lookup_asset_aliases(loading_node, row.get("bgNameGroup"), source=table, evidence_prefix="bgNameGroup")
+            return
+        if table == "ActivityDungeonState" and isinstance(row, dict):
+            state_node = self.add_factory_interaction_lookup_node("activity_dungeon_state", row_key, source=table, data={"activityStage": row.get("activityStage"), "lv": row.get("lv"), "showState": row.get("showState")})
+            if state_node:
+                self.add_edge(row_node, state_node, "defines_activity_dungeon_state", source=table)
+                level_node = self.add_level_node(row_key, source=table)
+                stage_node = self.add_activity_stage_node(row.get("activityStage"), source=table)
+                show_node = self.add_factory_interaction_lookup_node("activity_dungeon_show_state", row.get("showState"), source=table)
+                if level_node:
+                    self.add_edge(state_node, level_node, "activity_dungeon_state_level", source=table, evidence="rowKey")
+                if stage_node:
+                    self.add_edge(state_node, stage_node, "activity_dungeon_state_stage", source=table, evidence="activityStage")
+                if show_node:
+                    self.add_edge(state_node, show_node, "activity_dungeon_state_show_state", source=table, evidence="showState")
+            return
+        if table == "ActivityDungeonFightingStageTable" and isinstance(row, dict):
+            stage_node = self.add_activity_stage_node(row_key, source=table, data={"levelId": row.get("levelId"), "questId": row.get("questId")})
+            if stage_node:
+                self.add_edge(row_node, stage_node, "defines_activity_dungeon_fighting_stage", source=table)
+                level_node = self.add_level_node(row.get("levelId"), source=table)
+                quest_node = self.add_quest_task_node(row.get("questId"), source=table)
+                if level_node:
+                    self.add_edge(stage_node, level_node, "activity_stage_level", source=table, evidence="levelId")
+                if quest_node:
+                    self.add_edge(stage_node, quest_node, "activity_stage_quest", source=table, evidence="questId")
+            return
+        if table == "ActivityCleaningStageDataTable" and isinstance(row, dict):
+            stage_node = self.add_factory_interaction_lookup_node("activity_cleaning_stage", row_key, source=table, data={"img": row.get("img")})
+            if stage_node:
+                self.add_edge(row_node, stage_node, "defines_activity_cleaning_stage", source=table)
+                self.add_factory_lookup_asset_aliases(stage_node, row.get("img"), source=table, evidence_prefix="img")
+            return
+        if table == "FactoryHubCraftTypeListTable" and isinstance(row, dict):
+            list_node = self.add_factory_interaction_lookup_node("factory_hub_craft_type_list", row_key, source=table, data={"buildingCount": len(row.get("list") or [])})
+            if list_node:
+                self.add_edge(row_node, list_node, "defines_factory_hub_craft_type_list", source=table)
+                for index, building_id in enumerate(row.get("list") or []):
+                    building_node = self.add_factory_building_node(building_id, source=table)
+                    if building_node:
+                        self.add_edge(list_node, building_node, "factory_hub_craft_type_has_building", source=table, evidence=f"list[{index}]", data={"index": index})
+            return
+        if table == "LTItemTyp2ItemTypeTable" and isinstance(row, dict):
+            conversion_node = self.add_factory_interaction_lookup_node("item_type_conversion", row_key, source=table, data={"fromType": row_key, "itemType": row.get("itemType")})
+            if conversion_node:
+                self.add_edge(row_node, conversion_node, "defines_item_type_conversion", source=table)
+                from_node = self.add_item_type_node(row_key, source=table)
+                to_node = self.add_item_type_node(row.get("itemType"), source=table)
+                if from_node:
+                    self.add_edge(conversion_node, from_node, "item_type_conversion_from", source=table, evidence="rowKey")
+                if to_node:
+                    self.add_edge(conversion_node, to_node, "item_type_conversion_to", source=table, evidence="itemType")
+            return
+        if table in {"ExpItemMap", "ExpItemDataMap"}:
+            exp_value = row.get("expGain") if isinstance(row, dict) else row
+            exp_type = row.get("expType") if isinstance(row, dict) else None
+            exp_node = self.add_factory_interaction_lookup_node("exp_item_value", row_key, source=table, data={"expGain": exp_value, "expType": exp_type})
+            if exp_node:
+                self.add_edge(row_node, exp_node, "defines_exp_item_value", source=table)
+                item_node = self.add_item_node(row_key, source=table)
+                if item_node:
+                    self.add_edge(exp_node, item_node, "exp_item_value_item", source=table, evidence="rowKey")
+            return
+
     def ingest_mode_constant_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_mode_constants", name="Structured mode constants and small mapping tables", path=slash(table_root))
@@ -20896,6 +21102,23 @@ QUERY_KIND_PRIORITY = {
     "distribution_info": 34.85994,
     "factory_smart_alert": 34.85995,
     "factory_battle_config": 34.85996,
+    "factory_special_power_pole": 34.859961,
+    "map_reminder": 34.859962,
+    "map_reminder_tab": 34.859963,
+    "factory_seed_item": 34.859964,
+    "interactive_mark_binding": 34.859965,
+    "limited_formula_reverse": 34.859966,
+    "originium_stamina_cost": 34.859967,
+    "gem_customization_box": 34.859968,
+    "gem_customization_term_type": 34.859969,
+    "factory_quickbar_type": 34.859970,
+    "loading_type_tag": 34.859971,
+    "activity_dungeon_state": 34.859972,
+    "activity_dungeon_show_state": 34.859973,
+    "activity_cleaning_stage": 34.859974,
+    "factory_hub_craft_type_list": 34.859975,
+    "item_type_conversion": 34.859976,
+    "exp_item_value": 34.859977,
     "spaceship_npc_proxy": 35,
     "spaceship_skill": 36,
     "spaceship_room_type": 37,
@@ -21512,6 +21735,23 @@ NODE_ID_PREFIXES = (
     "distribution_info",
     "factory_smart_alert",
     "factory_battle_config",
+    "factory_special_power_pole",
+    "map_reminder",
+    "map_reminder_tab",
+    "factory_seed_item",
+    "interactive_mark_binding",
+    "limited_formula_reverse",
+    "originium_stamina_cost",
+    "gem_customization_box",
+    "gem_customization_term_type",
+    "factory_quickbar_type",
+    "loading_type_tag",
+    "activity_dungeon_state",
+    "activity_dungeon_show_state",
+    "activity_cleaning_stage",
+    "factory_hub_craft_type_list",
+    "item_type_conversion",
+    "exp_item_value",
     "spaceship_npc_proxy",
     "spaceship_skill",
     "spaceship_room_type",
