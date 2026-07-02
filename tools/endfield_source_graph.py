@@ -183,6 +183,18 @@ WORLD_HARVESTABLE_TABLES = (
     "FertilizeDataTable.json",
     "FertilizeIncreaseTable.json",
 )
+DOMAIN_DEPOT_TABLES = (
+    "DomainDepotTable.json",
+    "DomainDepotBuyerTable.json",
+    "DomainDepotDeliverTargetTable.json",
+    "DomainDepotLevelTable.json",
+    "DomainDepotPackValueTable.json",
+    "DomainDepotDeliverItemTypeTable.json",
+    "DomainDepotDeliverPackTypeTable.json",
+    "DomainDepotPackageIntegrityReduceTypeTable.json",
+    "DomainDepotConst.json",
+    "DomainPoiTable.json",
+)
 COMBAT_SEMANTIC_TABLES = (
     "BuffTable.json",
     "SkillPatchTable.json",
@@ -2798,6 +2810,8 @@ class SourceGraphBuilder:
             self.commit_step("cashShop")
             self.ingest_world_semantics()
             self.commit_step("worldSemantics")
+            self.ingest_domain_depot_semantics()
+            self.commit_step("domainDepotSemantics")
             self.ingest_world_harvestable_semantics()
             self.commit_step("worldHarvestables")
             self.ingest_combat_semantics()
@@ -9426,6 +9440,199 @@ class SourceGraphBuilder:
                 )
                 self.add_edge(table_node, row_node, "has_row", source="structured/item_economy")
                 self.add_item_economy_row_edges(table_key, row_key, row, row_node)
+
+    def ingest_domain_depot_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_domain_depot", name="Structured domain depot tables", path=slash(table_root))
+        depot_rows = read_json(table_root / "DomainDepotTable.json", {})
+        depot_by_level: dict[str, list[str]] = defaultdict(list)
+        if isinstance(depot_rows, dict):
+            for depot_key, depot_row in depot_rows.items():
+                if isinstance(depot_row, dict):
+                    level_key = safe_key(depot_row.get("refLevelId"))
+                    depot_id = safe_key(depot_row.get("domainDepotId") or depot_key)
+                    if level_key and depot_id:
+                        depot_by_level[level_key].append(depot_id)
+        for table_name in DOMAIN_DEPOT_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/domain_depot")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/domain_depot")
+                self.add_domain_depot_row_edges(table, row_key, row, row_node, depot_by_level)
+
+    def add_domain_depot_node(self, depot_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node("domain_depot", depot_id, name=name, source=source, data=data)
+
+    def add_domain_depot_item_type_node(self, item_type: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node("domain_depot_deliver_item_type", item_type, name=name, source=source, data=data)
+
+    def add_domain_depot_pack_type_node(self, pack_type: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node("domain_depot_deliver_pack_type", pack_type, name=name, source=source, data=data)
+
+    def add_domain_depot_level_edges(self, owner_node: str, level_id: Any, *, edge_kind: str, source: str, evidence: str) -> None:
+        level_node = self.add_level_node(level_id, source=source)
+        if level_node:
+            self.add_edge(owner_node, level_node, edge_kind, source=source, evidence=evidence)
+
+    def add_domain_depot_domain_edge(self, owner_node: str, domain_id: Any, *, edge_kind: str, source: str, evidence: str) -> None:
+        domain_node = self.add_gameplay_domain_node(domain_id, source=source)
+        if domain_node:
+            self.add_edge(owner_node, domain_node, edge_kind, source=source, evidence=evidence)
+
+    def add_domain_depot_inferred_depot_edges(self, owner_node: str, level_id: Any, depot_by_level: dict[str, list[str]], *, edge_kind: str, source: str, evidence: str) -> None:
+        for depot_id in depot_by_level.get(safe_key(level_id), []):
+            depot_node = self.add_domain_depot_node(depot_id, source=source)
+            if depot_node:
+                self.add_edge(owner_node, depot_node, edge_kind, source=source, evidence=evidence, data={"inference": "shared level/refLevelId"})
+
+    def add_domain_depot_row_edges(self, table: str, row_key: str, row: Any, row_node: str, depot_by_level: dict[str, list[str]]) -> None:
+        if table == "DomainDepotConst":
+            const_node = self.add_semantic_node("domain_depot_const", row_key, source=table, data={"value": row})
+            if const_node:
+                self.add_edge(row_node, const_node, "defines_domain_depot_const", source=table)
+                if safe_key(row_key).lower().endswith("missionid"):
+                    mission_node = self.add_mission_ref_node(row, source=table)
+                    if mission_node:
+                        self.add_edge(const_node, mission_node, "domain_depot_const_mission", source=table, evidence="rowValue")
+            return
+        if not isinstance(row, dict):
+            return
+        if table == "DomainDepotTable":
+            depot_id = row.get("domainDepotId") or row_key
+            depot_node = self.add_domain_depot_node(
+                depot_id,
+                name=row.get("depotName"),
+                source=table,
+                data={
+                    "domainDepotId": row.get("domainDepotId"),
+                    "domainId": row.get("domainId"),
+                    "refLevelId": row.get("refLevelId"),
+                    "levelObjId": row.get("levelObjId"),
+                    "sortId": row.get("sortId"),
+                    "unlockQuestId": row.get("unlockQuestId"),
+                    "depotImage": row.get("depotImage"),
+                },
+            )
+            if depot_node:
+                self.add_edge(row_node, depot_node, "defines_domain_depot", source=table)
+                self.add_domain_depot_domain_edge(depot_node, row.get("domainId"), edge_kind="domain_depot_in_domain", source=table, evidence="domainId")
+                self.add_domain_depot_level_edges(depot_node, row.get("refLevelId"), edge_kind="domain_depot_in_level", source=table, evidence="refLevelId")
+                mission_node = self.add_mission_ref_node(row.get("unlockQuestId"), source=table)
+                if mission_node:
+                    self.add_edge(depot_node, mission_node, "domain_depot_unlock_quest", source=table, evidence="unlockQuestId")
+                self.add_alias(row.get("levelObjId"), depot_node, kind="level_object_id", source=table)
+                self.add_alias(row.get("depotImage"), depot_node, kind="asset_stem", source=table)
+                self.add_tag_i18n_edges(depot_node, row.get("depotName"), source=table, edge_kind="domain_depot_name_text")
+                self.add_tag_i18n_edges(depot_node, row.get("depotDesc"), source=table, edge_kind="domain_depot_desc_text")
+                self.add_tag_i18n_edges(depot_node, row.get("unlockQuestDesc"), source=table, edge_kind="domain_depot_unlock_desc_text")
+        elif table == "DomainDepotBuyerTable":
+            buyer_id = row.get("buyerId") or row_key
+            buyer_node = self.add_semantic_node("domain_depot_buyer", buyer_id, name=row.get("buyerName"), source=table, data={"buyerId": row.get("buyerId"), "domainId": row.get("domainId"), "level": row.get("level"), "headIcon": row.get("headIcon")})
+            if buyer_node:
+                self.add_edge(row_node, buyer_node, "defines_domain_depot_buyer", source=table)
+                self.add_domain_depot_domain_edge(buyer_node, row.get("domainId"), edge_kind="domain_depot_buyer_in_domain", source=table, evidence="domainId")
+                self.add_domain_depot_level_edges(buyer_node, row.get("level"), edge_kind="domain_depot_buyer_in_level", source=table, evidence="level")
+                self.add_domain_depot_inferred_depot_edges(buyer_node, row.get("level"), depot_by_level, edge_kind="domain_depot_buyer_for_depot", source=table, evidence="level/refLevelId")
+                self.add_alias(row.get("headIcon"), buyer_node, kind="asset_stem", source=table)
+                self.add_tag_i18n_edges(buyer_node, row.get("buyerName"), source=table, edge_kind="domain_depot_buyer_name_text")
+                self.add_tag_i18n_edges(buyer_node, row.get("desc"), source=table, edge_kind="domain_depot_buyer_desc_text")
+        elif table == "DomainDepotDeliverTargetTable":
+            target_id = row.get("deliverTargetId") or row_key
+            target_node = self.add_semantic_node("domain_depot_deliver_target", target_id, source=table, data={"deliverTargetId": row.get("deliverTargetId"), "domainId": row.get("domainId"), "level": row.get("level"), "targetId": row.get("targetId"), "entityType": row.get("entityType")})
+            if target_node:
+                self.add_edge(row_node, target_node, "defines_domain_depot_deliver_target", source=table)
+                self.add_domain_depot_domain_edge(target_node, row.get("domainId"), edge_kind="domain_depot_target_in_domain", source=table, evidence="domainId")
+                self.add_domain_depot_level_edges(target_node, row.get("level"), edge_kind="domain_depot_target_in_level", source=table, evidence="level")
+                self.add_domain_depot_inferred_depot_edges(target_node, row.get("level"), depot_by_level, edge_kind="domain_depot_target_for_depot", source=table, evidence="level/refLevelId")
+                self.add_tag_i18n_edges(target_node, row.get("missionObjDesc"), source=table, edge_kind="domain_depot_target_objective_text")
+                self.add_alias(row.get("targetId"), target_node, kind="domain_depot_target_npc_proxy", source=table)
+                dialog_node = self.add_semantic_node("domain_depot_deliver_target_dialog", row.get("targetId"), source=table)
+                if dialog_node:
+                    self.add_edge(target_node, dialog_node, "domain_depot_target_dialog", source=table, evidence="targetId")
+                if safe_key(row.get("targetId")).startswith("recycle"):
+                    recycle_node = self.add_semantic_node("domain_depot_recycle_target", row.get("targetId"), source=table, data={"entityType": row.get("entityType")})
+                    if recycle_node:
+                        self.add_edge(target_node, recycle_node, "domain_depot_target_recycle_bin", source=table, evidence="targetId")
+        elif table == "DomainDepotLevelTable":
+            depot_node = self.add_domain_depot_node(row_key, source=table)
+            if depot_node:
+                self.add_edge(row_node, depot_node, "defines_domain_depot_levels", source=table)
+                levels = row.get("levelList") if isinstance(row.get("levelList"), dict) else {}
+                for level_key, level in levels.items():
+                    if not isinstance(level, dict):
+                        continue
+                    upgrade_node = self.add_semantic_node("domain_depot_upgrade_level", f"{safe_key(row_key)}:{safe_key(level_key)}", source=table, data={"depotId": row_key, "level": level.get("level"), "costDomainMoney": level.get("costDomainMoney"), "extraDepotLimit": level.get("extraDepotLimit"), "isFinalItemTypeListLevel": level.get("isFinalItemTypeListLevel"), "isFinalMaxLevel": level.get("isFinalMaxLevel"), "timeId": level.get("timeId"), "versionStart": level.get("versionStart")})
+                    if upgrade_node:
+                        self.add_edge(depot_node, upgrade_node, "domain_depot_has_upgrade_level", source=table, evidence=f"levelList[{level_key}]", data={"level": level.get("level")})
+                        self.add_tag_i18n_edges(upgrade_node, level.get("levelDesc"), source=table, edge_kind="domain_depot_level_desc_text")
+                        self.add_tag_i18n_edges(upgrade_node, level.get("upgradeDeliverItemTypeDesc"), source=table, edge_kind="domain_depot_level_item_unlock_text")
+                        self.add_tag_i18n_edges(upgrade_node, level.get("upgradeDeliverPackTypeDesc"), source=table, edge_kind="domain_depot_level_pack_unlock_text")
+                        for index, item_type in enumerate(level.get("deliverItemTypeList") or []):
+                            item_type_node = self.add_domain_depot_item_type_node(item_type, source=table)
+                            if item_type_node:
+                                self.add_edge(upgrade_node, item_type_node, "domain_depot_level_unlocks_item_type", source=table, evidence=f"levelList[{level_key}].deliverItemTypeList[{index}]", data={"index": index})
+                        for index, pack_type in enumerate(level.get("deliverPackTypeList") or []):
+                            pack_type_node = self.add_domain_depot_pack_type_node(pack_type, source=table)
+                            if pack_type_node:
+                                self.add_edge(upgrade_node, pack_type_node, "domain_depot_level_unlocks_pack_type", source=table, evidence=f"levelList[{level_key}].deliverPackTypeList[{index}]", data={"index": index})
+        elif table == "DomainDepotPackValueTable":
+            depot_node = self.add_domain_depot_node(row_key, source=table)
+            if depot_node:
+                self.add_edge(row_node, depot_node, "defines_domain_depot_pack_values", source=table)
+                for index, value in enumerate(row.get("packValueList") or []):
+                    if not isinstance(value, dict):
+                        continue
+                    value_node = self.add_semantic_node("domain_depot_pack_value", f"{safe_key(row_key)}:{index}", source=table, data={"depotId": row_key, "deliverItemType": value.get("deliverItemType"), "deliverPackType": value.get("deliverPackType"), "minLimit": value.get("minLimit"), "maxLimit": value.get("maxLimit")})
+                    if value_node:
+                        self.add_edge(depot_node, value_node, "domain_depot_has_pack_value", source=table, evidence=f"packValueList[{index}]", data={"index": index})
+                        item_type_node = self.add_domain_depot_item_type_node(value.get("deliverItemType"), source=table)
+                        pack_type_node = self.add_domain_depot_pack_type_node(value.get("deliverPackType"), source=table)
+                        if item_type_node:
+                            self.add_edge(value_node, item_type_node, "domain_depot_pack_value_item_type", source=table, evidence=f"packValueList[{index}].deliverItemType")
+                        if pack_type_node:
+                            self.add_edge(value_node, pack_type_node, "domain_depot_pack_value_pack_type", source=table, evidence=f"packValueList[{index}].deliverPackType")
+        elif table == "DomainDepotDeliverItemTypeTable":
+            type_node = self.add_domain_depot_item_type_node(row.get("deliverItemType") or row_key, name=row.get("typeDesc"), source=table, data={"deliverItemType": row.get("deliverItemType"), "priceFactor": row.get("priceFactor"), "typeIcon": row.get("typeIcon")})
+            if type_node:
+                self.add_edge(row_node, type_node, "defines_domain_depot_item_type", source=table)
+                self.add_alias(row.get("typeIcon"), type_node, kind="asset_stem", source=table)
+                self.add_tag_i18n_edges(type_node, row.get("typeDesc"), source=table, edge_kind="domain_depot_item_type_desc_text")
+                self.add_tag_i18n_edges(type_node, row.get("deliveryDesc"), source=table, edge_kind="domain_depot_item_type_delivery_text")
+                self.add_tag_i18n_edges(type_node, row.get("fragileDesc"), source=table, edge_kind="domain_depot_item_type_fragile_text")
+        elif table == "DomainDepotDeliverPackTypeTable":
+            type_node = self.add_domain_depot_pack_type_node(row.get("deliverPackType") or row_key, name=row.get("typeDesc"), source=table, data={"deliverPackType": row.get("deliverPackType")})
+            if type_node:
+                self.add_edge(row_node, type_node, "defines_domain_depot_pack_type", source=table)
+                self.add_tag_i18n_edges(type_node, row.get("typeDesc"), source=table, edge_kind="domain_depot_pack_type_desc_text")
+                self.add_tag_i18n_edges(type_node, row.get("deliveryDesc"), source=table, edge_kind="domain_depot_pack_type_delivery_text")
+        elif table == "DomainDepotPackageIntegrityReduceTypeTable":
+            reduce_node = self.add_semantic_node("domain_depot_integrity_reduce_type", row.get("reduceType") if "reduceType" in row else row_key, source=table, data={"reduceType": row.get("reduceType"), "effectiveType": row.get("effectiveType")})
+            if reduce_node:
+                self.add_edge(row_node, reduce_node, "defines_domain_depot_integrity_reduce_type", source=table)
+                for index, item_type in enumerate(row.get("effectiveType") or []):
+                    item_type_node = self.add_domain_depot_item_type_node(item_type, source=table)
+                    if item_type_node:
+                        self.add_edge(reduce_node, item_type_node, "domain_depot_integrity_reduce_affects_item_type", source=table, evidence=f"effectiveType[{index}]", data={"index": index})
+        elif table == "DomainPoiTable":
+            poi_node = self.add_semantic_node("domain_poi_type", row.get("domainPoiType") if "domainPoiType" in row else row_key, name=row.get("name"), source=table, data={"domainPoiType": row.get("domainPoiType"), "phaseId": row.get("phaseId"), "unlockSystemType": row.get("unlockSystemType"), "overviewSortId": row.get("overviewSortId")})
+            if poi_node:
+                self.add_edge(row_node, poi_node, "defines_domain_poi_type", source=table)
+                for field in ("icon", "noBackgroundIcon", "overviewIcon", "smallIcon", "upgradeToastIcon"):
+                    self.add_alias(row.get(field), poi_node, kind="asset_stem", source=table)
+                self.add_tag_i18n_edges(poi_node, row.get("name"), source=table, edge_kind="domain_poi_type_name_text")
+                self.add_tag_i18n_edges(poi_node, row.get("unlockToastTitle"), source=table, edge_kind="domain_poi_type_unlock_toast_text")
+                self.add_tag_i18n_edges(poi_node, row.get("upgradeToastTitle"), source=table, edge_kind="domain_poi_type_upgrade_toast_text")
+                if safe_key(row.get("phaseId")) == "DomainDepotPackage":
+                    feature_node = self.add_semantic_node("domain_depot_feature", row.get("phaseId"), source=table, data={"domainPoiType": row.get("domainPoiType")})
+                    if feature_node:
+                        self.add_edge(poi_node, feature_node, "domain_poi_type_feature", source=table, evidence="phaseId")
 
     def ingest_world_harvestable_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -17456,6 +17663,18 @@ QUERY_KIND_PRIORITY = {
     "soil_reward": 19.05,
     "fertilize_item": 19.06,
     "fertilize_effect": 19.07,
+    "domain_depot": 19.08,
+    "domain_depot_buyer": 19.09,
+    "domain_depot_deliver_target": 19.1,
+    "domain_depot_recycle_target": 19.11,
+    "domain_depot_upgrade_level": 19.12,
+    "domain_depot_deliver_item_type": 19.13,
+    "domain_depot_deliver_pack_type": 19.14,
+    "domain_depot_pack_value": 19.15,
+    "domain_depot_integrity_reduce_type": 19.16,
+    "domain_depot_const": 19.17,
+    "domain_poi_type": 19.18,
+    "domain_depot_feature": 19.19,
     "factory_region": 20,
     "settlement_poi": 21,
     "shop_channel_poi": 22,
@@ -17907,6 +18126,18 @@ NODE_ID_PREFIXES = (
     "soil_reward",
     "fertilize_item",
     "fertilize_effect",
+    "domain_depot",
+    "domain_depot_buyer",
+    "domain_depot_deliver_target",
+    "domain_depot_recycle_target",
+    "domain_depot_upgrade_level",
+    "domain_depot_deliver_item_type",
+    "domain_depot_deliver_pack_type",
+    "domain_depot_pack_value",
+    "domain_depot_integrity_reduce_type",
+    "domain_depot_const",
+    "domain_poi_type",
+    "domain_depot_feature",
     "factory_region",
     "settlement_poi",
     "shop_channel_poi",

@@ -2168,6 +2168,12 @@ The source graph now models authored equipment and gem tables directly. Equipmen
 
 A fast CN temp build verified 220 equipment definitions, 49 equippable item-use configs, 22 equipment suits, 182 suit-equipment membership edges, 22 suit-bonus nodes, 31 gem terms, 31 gem tags, 156 gem presets, 59 tag-combo recommendation nodes, 16 gem term pools, 12 enhance rules, 8 dismantle rules, 1 drop-gem type, 1,753 equipment attribute edges, and 458 gem preset term edges. This improves static loadout/gem semantics while staying limited to authored table evidence rather than runtime enhancement RNG, live inventory, or server-side drop-roll behavior.
 
+### 2026-07-02 Domain Depot Graph Progress
+
+The source graph now models authored domain-depot tables directly. Depot rows connect to gameplay domains, levels, unlock quests, text ids, image tokens, buyers, delivery targets, nested upgrade levels, deliver item/pack types, pack-value ranges, package-integrity reduce rules, depot constants, existing delivery-target dialog nodes, and `DomainPoiTable` feature categories.
+
+A fast CN temp build verified 5 depots, 55 buyers, 22 delivery targets, 7 recycle targets, 19 depot upgrade levels, 45 pack-value rows, 3 deliver item types, 3 deliver pack types, 3 integrity reduce types, 8 constants, 8 domain POI types, 1 depot feature node, 22 target-to-dialog links, 55 buyer-to-depot shared-level links, and 22 target-to-depot shared-level links. This improves logistics/depot semantics while marking buyer/target depot links as level/refLevelId inference rather than direct buyer-target matching, placed POI proof, or live delivery state.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
