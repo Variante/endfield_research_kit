@@ -211,6 +211,10 @@ ANIMESTUDIO_EXPORT_ERROR_RE = re.compile(r"^\[Error\]\s+Export\s+(?P<asset>.+?)\
 ANIMESTUDIO_METADATA_ONLY_JSON_RE = re.compile(
     r"^\[Warning\]\s+Exporting MonoBehaviour (?P<asset>.+?) as metadata-only JSON after (?P<exception>[^:]+): (?P<reason>.+)$"
 )
+ANIMESTUDIO_PARTIAL_MONO_BEHAVIOUR_RE = re.compile(
+    r"^\[Warning\]\s+Partially decoded MonoBehaviour (?P<asset>.+?) with (?P<decoder>.+?) after (?P<exception>[^:]+): (?P<reason>.+)$"
+)
+ANIMESTUDIO_PARTIAL_MONO_REASON_OFFSET_RE = re.compile(r"\s+at position 0x[0-9A-Fa-f]+\.?$")
 ANIMESTUDIO_TEXTURE2D_NO_OUTPUT_RE = re.compile(r"^\[Warning\]\s+Texture2D no output (?P<fields>.*)$")
 ANIMESTUDIO_MESH_NO_OUTPUT_RE = re.compile(r"^\[Warning\]\s+Mesh no output (?P<fields>.*)$")
 ANIMESTUDIO_ANIMATOR_NO_OUTPUT_RE = re.compile(r"^\[Warning\]\s+Animator no output (?P<fields>.*)$")
@@ -2823,6 +2827,14 @@ def parse_animestudio_log_fields(text: str) -> dict[str, str]:
     return fields
 
 
+def normalize_partial_mono_behaviour_reason(reason: str) -> str:
+    return ANIMESTUDIO_PARTIAL_MONO_REASON_OFFSET_RE.sub(" at position <offset>.", reason.strip())
+
+
+def increment_count(mapping: dict[str, int], key: str) -> None:
+    mapping[key] = mapping.get(key, 0) + 1
+
+
 def summarize_animestudio_log_issues(stdout_log: str | Path | None, stderr_log: str | Path | None) -> dict[str, Any]:
     summary: dict[str, Any] = {
         "error_count": 0,
@@ -2832,6 +2844,10 @@ def summarize_animestudio_log_issues(stdout_log: str | Path | None, stderr_log: 
         "export_error_count": 0,
         "story_like_export_error_count": 0,
         "metadata_only_json_count": 0,
+        "partial_mono_behaviour_count": 0,
+        "partial_mono_behaviour_by_decoder": {},
+        "partial_mono_behaviour_by_exception": {},
+        "partial_mono_behaviour_by_reason": {},
         "texture2d_no_output_count": 0,
         "texture2d_no_payload_count": 0,
         "texture2d_decode_failed_count": 0,
@@ -2845,6 +2861,7 @@ def summarize_animestudio_log_issues(stdout_log: str | Path | None, stderr_log: 
         "export_error_samples": [],
         "story_like_export_error_samples": [],
         "metadata_only_json_samples": [],
+        "partial_mono_behaviour_samples": [],
         "texture2d_no_output_samples": [],
         "texture2d_no_output_records": [],
         "mesh_no_output_samples": [],
@@ -3012,6 +3029,28 @@ def summarize_animestudio_log_issues(stdout_log: str | Path | None, stderr_log: 
                         },
                     )
 
+                partial_mono_match = ANIMESTUDIO_PARTIAL_MONO_BEHAVIOUR_RE.match(text)
+                if partial_mono_match:
+                    asset = partial_mono_match.group("asset").strip()
+                    decoder = partial_mono_match.group("decoder").strip()
+                    exception = partial_mono_match.group("exception").strip()
+                    reason = normalize_partial_mono_behaviour_reason(partial_mono_match.group("reason"))
+                    summary["partial_mono_behaviour_count"] += 1
+                    increment_count(summary["partial_mono_behaviour_by_decoder"], decoder)
+                    increment_count(summary["partial_mono_behaviour_by_exception"], exception)
+                    increment_count(summary["partial_mono_behaviour_by_reason"], reason)
+                    add_sample(
+                        "partial_mono_behaviour_samples",
+                        {
+                            "stream": stream_name,
+                            "line": line_number,
+                            "asset": asset,
+                            "decoder": decoder,
+                            "exception": exception,
+                            "reason": reason,
+                        },
+                    )
+
                 export_match = ANIMESTUDIO_EXPORT_ERROR_RE.match(text)
                 if not export_match:
                     continue
@@ -3049,6 +3088,15 @@ def summarize_animestudio_log_issues(stdout_log: str | Path | None, stderr_log: 
         summary.pop("story_like_export_error_samples", None)
     if not summary["metadata_only_json_samples"]:
         summary.pop("metadata_only_json_samples", None)
+    if not summary["partial_mono_behaviour_samples"]:
+        summary.pop("partial_mono_behaviour_samples", None)
+    for key in (
+        "partial_mono_behaviour_by_decoder",
+        "partial_mono_behaviour_by_exception",
+        "partial_mono_behaviour_by_reason",
+    ):
+        if not summary[key]:
+            summary.pop(key, None)
     if not summary["texture2d_no_output_samples"]:
         summary.pop("texture2d_no_output_samples", None)
     if not summary["texture2d_no_output_records"]:
@@ -3073,6 +3121,10 @@ def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]
         "export_error_count": 0,
         "story_like_export_error_count": 0,
         "metadata_only_json_count": 0,
+        "partial_mono_behaviour_count": 0,
+        "partial_mono_behaviour_by_decoder": {},
+        "partial_mono_behaviour_by_exception": {},
+        "partial_mono_behaviour_by_reason": {},
         "texture2d_no_output_count": 0,
         "texture2d_no_payload_count": 0,
         "texture2d_decode_failed_count": 0,
@@ -3086,6 +3138,7 @@ def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]
         "export_error_samples": [],
         "story_like_export_error_samples": [],
         "metadata_only_json_samples": [],
+        "partial_mono_behaviour_samples": [],
         "texture2d_no_output_samples": [],
         "texture2d_no_output_records": [],
         "mesh_no_output_samples": [],
@@ -3099,6 +3152,7 @@ def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]
         "export_error_samples",
         "story_like_export_error_samples",
         "metadata_only_json_samples",
+        "partial_mono_behaviour_samples",
         "texture2d_no_output_samples",
         "mesh_no_output_samples",
         "animator_no_output_samples",
@@ -3111,6 +3165,7 @@ def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]
         "export_error_count",
         "story_like_export_error_count",
         "metadata_only_json_count",
+        "partial_mono_behaviour_count",
         "texture2d_no_output_count",
         "texture2d_no_payload_count",
         "texture2d_decode_failed_count",
@@ -3133,6 +3188,14 @@ def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]
                 enriched = dict(sample)
                 enriched.setdefault("command", result.name)
                 target.append(enriched)
+        for key in (
+            "partial_mono_behaviour_by_decoder",
+            "partial_mono_behaviour_by_exception",
+            "partial_mono_behaviour_by_reason",
+        ):
+            target = merged.setdefault(key, {})
+            for item_key, count in (issues.get(key) or {}).items():
+                target[item_key] = int(target.get(item_key) or 0) + int(count or 0)
         for key in ("texture2d_no_output_records", "mesh_no_output_records", "animator_no_output_records"):
             target = merged.setdefault(key, [])
             for sample in issues.get(key) or []:
@@ -3141,7 +3204,15 @@ def merge_animestudio_log_issues(results: list[CommandResult]) -> dict[str, Any]
                 target.append(enriched)
         merged["missing_logs"].extend(issues.get("missing_logs") or [])
 
-    for key in sample_keys + ("texture2d_no_output_records", "mesh_no_output_records", "animator_no_output_records", "missing_logs"):
+    for key in sample_keys + (
+        "texture2d_no_output_records",
+        "mesh_no_output_records",
+        "animator_no_output_records",
+        "partial_mono_behaviour_by_decoder",
+        "partial_mono_behaviour_by_exception",
+        "partial_mono_behaviour_by_reason",
+        "missing_logs",
+    ):
         if not merged.get(key):
             merged.pop(key, None)
     return merged
@@ -5264,6 +5335,7 @@ def main() -> int:
                         f"export_errors=`{issues.get('export_error_count', 0)}`, "
                         f"story_like_export_errors=`{issues.get('story_like_export_error_count', 0)}`, "
                         f"metadata_only_json=`{issues.get('metadata_only_json_count', 0)}`, "
+                        f"partial_mono=`{issues.get('partial_mono_behaviour_count', 0)}`, "
                         f"animator_no_output=`{issues.get('animator_no_output_count', 0)}`, "
                         f"animator_no_mesh=`{issues.get('animator_no_mesh_count', 0)}`"
                     )
@@ -5274,6 +5346,13 @@ def main() -> int:
                             f"`{sample.get('asset')}`"
                             + (f" - {sample.get('reason')}" if sample.get("reason") else "")
                         )
+                    if not samples:
+                        for sample in (issues.get("partial_mono_behaviour_samples") or [])[:3]:
+                            md_lines.append(
+                                "    partial MonoBehaviour sample: "
+                                f"`{sample.get('asset')}`"
+                                + (f" - {sample.get('exception')}: {sample.get('reason')}" if sample.get("exception") else "")
+                            )
                     if not samples:
                         for sample in (issues.get("metadata_only_json_samples") or [])[:3]:
                             md_lines.append(
