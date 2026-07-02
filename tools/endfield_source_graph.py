@@ -571,6 +571,7 @@ GACHA_SEMANTIC_TABLES = (
     "GachaEntryRecommendRuleTable.json",
     "GachaRefreshBaseTimeTable.json",
     "GachaWeaponRefreshRuleTable.json",
+    "CharGachaConst.json",
 )
 WEAPON_SEMANTIC_TABLES = (
     "WeaponBasicTable.json",
@@ -597,6 +598,9 @@ CHARACTER_SUPPORT_TABLES = (
     "ActivityCharTrial.json",
     "ActivityCharacterGuideLineTable.json",
     "RecommendTraining.json",
+    "CharBattleTagTable.json",
+    "CharacterConst.json",
+    "BlocDataTable.json",
 )
 CHARACTER_VISUAL_TABLES = (
     "ActorImageTable.json",
@@ -12482,6 +12486,47 @@ class SourceGraphBuilder:
                 self.add_edge(table_node, row_node, "has_row", source="structured/character_progression")
                 self.add_character_progression_row_edges(table, row_key, row, row_node)
 
+
+
+    def add_bloc_data_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        bloc_id = row.get("blocId") or row_key
+        bloc_node = self.add_character_progression_node("bloc", bloc_id, name=row.get("blocName") or row.get("engName"), source=table, data={"engName": row.get("engName"), "icon": row.get("icon"), "tagId": row.get("tagId")})
+        if bloc_node:
+            self.add_edge(row_node, bloc_node, "defines_bloc", source=table, evidence=bloc_id)
+            self.add_tag_i18n_edges(bloc_node, row.get("blocName"), source=table, edge_kind="bloc_name_text")
+            self.add_alias(row.get("icon"), bloc_node, kind="asset_stem", source=table)
+            tag_node = self.add_tag_node(row.get("tagId"), source=table)
+            if tag_node:
+                self.add_edge(bloc_node, tag_node, "bloc_has_tag", source=table, evidence="tagId")
+            char_tag_node = self.add_character_tag_node(row.get("tagId"), source=table)
+            if char_tag_node:
+                self.add_edge(bloc_node, char_tag_node, "bloc_has_character_tag", source=table, evidence="tagId")
+
+    def add_character_battle_tag_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        battle_node = self.add_character_progression_node("character_battle_tag", row_key, source=table, data={"battleTagText": table_text(row)})
+        if battle_node:
+            self.add_edge(row_node, battle_node, "defines_character_battle_tag", source=table, evidence=row_key)
+            self.add_tag_i18n_edges(battle_node, row, source=table, edge_kind="character_battle_tag_text")
+            tag_node = self.add_character_tag_node(row_key, source=table)
+            if tag_node:
+                self.add_edge(battle_node, tag_node, "character_battle_tag_ref", source=table, evidence=row_key)
+
+    def add_character_const_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        const_node = self.add_character_progression_node("character_const", row_key, source=table, data={"value": row})
+        if not const_node:
+            return
+        self.add_edge(row_node, const_node, "defines_character_const", source=table, evidence=row_key)
+        values = row if isinstance(row, list) else [row]
+        for index, value in enumerate(values):
+            value_key = safe_key(value)
+            if not value_key:
+                continue
+            evidence = f"rowValue[{index}]" if isinstance(row, list) else "rowValue"
+            if value_key.startswith("item_") or row_key.lower().endswith("item") or row_key.lower().endswith("itemid"):
+                item_node = self.add_item_node(value_key, source=table)
+                if item_node:
+                    self.add_edge(const_node, item_node, "character_const_item_ref", source=table, evidence=evidence)
+
     def add_character_progression_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         node_key = safe_key(key)
         if not node_key:
@@ -13975,8 +14020,37 @@ class SourceGraphBuilder:
                 count = counts[index] if index < len(counts) else None
                 self.add_edge(type_node, item_node, f"gacha_{field_prefix}_pull_cost_item", source=source, evidence=f"{field_prefix}CostItemIds[{index}]", data={"count": count})
 
+
+    def add_gacha_const_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        const_node = self.add_gacha_node("gacha_const", row_key, source=table, data={"value": row})
+        if not const_node:
+            return
+        self.add_edge(row_node, const_node, "defines_gacha_const", source=table, evidence=row_key)
+        values = row if isinstance(row, list) else [row]
+        for index, value in enumerate(values):
+            value_key = safe_key(value)
+            if not value_key:
+                continue
+            evidence = f"rowValue[{index}]" if isinstance(row, list) else "rowValue"
+            if value_key.startswith("item_") or row_key.lower().endswith("itemid"):
+                item_node = self.add_item_node(value_key, source=table)
+                if item_node:
+                    self.add_edge(const_node, item_node, "gacha_const_item_ref", source=table, evidence=evidence)
+            if value_key.startswith("reward_") or row_key.lower().endswith("rewardid"):
+                self.add_reward_ref_edge(const_node, value_key, edge_kind="gacha_const_reward_ref", source=table, evidence=evidence)
+            if value_key.startswith("activity_") or row_key.lower().endswith("activityid"):
+                activity_node = self.add_activity_node(value_key, source=table)
+                if activity_node:
+                    self.add_edge(const_node, activity_node, "gacha_const_activity_ref", source=table, evidence=evidence)
+            if row_key.lower().endswith("poolid"):
+                pool_node = self.add_gacha_node("gacha_char_pool", value_key, source=table)
+                if pool_node:
+                    self.add_edge(const_node, pool_node, "gacha_const_pool_ref", source=table, evidence=evidence)
+
     def add_gacha_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
-        if table == "GachaCharInfoTable" and isinstance(row, dict):
+        if table == "CharGachaConst":
+            self.add_gacha_const_edges(table, row_key, row, row_node)
+        elif table == "GachaCharInfoTable" and isinstance(row, dict):
             info_node = self.add_gacha_node("gacha_char_info", row.get("id") or row_key, source=table, data={"itemId": row.get("itemId"), "timelineAssetName": row.get("timelineAssetName")})
             char_node = self.add_character_ref_node(row.get("id") or row_key, source=table)
             if info_node:
@@ -14594,6 +14668,9 @@ class SourceGraphBuilder:
         if table == "CharId2DungeonIdTable":
             self.add_char_training_dungeon_edges(table, row_key, row, row_node)
             return
+        if table == "CharacterConst":
+            self.add_character_const_edges(table, row_key, row, row_node)
+            return
         if not isinstance(row, dict):
             return
         if table == "CharacterTagTable":
@@ -14624,6 +14701,10 @@ class SourceGraphBuilder:
             self.add_activity_character_guide_edges(table, row_key, row, row_node)
         elif table == "RecommendTraining":
             self.add_recommend_training_edges(table, row_key, row, row_node)
+        elif table == "CharBattleTagTable":
+            self.add_character_battle_tag_edges(table, row_key, row, row_node)
+        elif table == "BlocDataTable" and isinstance(row, dict):
+            self.add_bloc_data_edges(table, row_key, row, row_node)
 
     def ingest_spaceship_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -21931,7 +22012,10 @@ QUERY_KIND_PRIORITY = {
     "character_break_node": 14.4,
     "character_break_cost": 14.5,
     "character_tag": 15,
+    "character_battle_tag": 15.5,
     "character_tag_desc": 16,
+    "character_const": 16.05,
+    "bloc": 16.06,
     "tag": 16.2,
     "tag_group": 16.3,
     "character_profession": 17,
@@ -22048,6 +22132,7 @@ QUERY_KIND_PRIORITY = {
     "gacha_recommendation_group": 34.891,
     "gacha_recommendation_rule": 34.892,
     "gacha_refresh_rule": 34.893,
+    "gacha_const": 34.894,
     "game_mechanic_category": 34.894,
     "game_mechanic_group": 34.895,
     "game_mechanic": 34.896,
@@ -22615,7 +22700,10 @@ NODE_ID_PREFIXES = (
     "character_break_node",
     "character_break_cost",
     "character_tag",
+    "character_battle_tag",
     "character_tag_desc",
+    "character_const",
+    "bloc",
     "tag",
     "tag_group",
     "character_profession",
@@ -22732,6 +22820,7 @@ NODE_ID_PREFIXES = (
     "gacha_recommendation_group",
     "gacha_recommendation_rule",
     "gacha_refresh_rule",
+    "gacha_const",
     "game_mechanic_category",
     "game_mechanic_group",
     "game_mechanic",
