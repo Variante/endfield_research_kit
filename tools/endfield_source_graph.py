@@ -132,6 +132,7 @@ SELECTED_STRUCTURED_TABLES = (
 ITEM_ECONOMY_TABLES = (
     "ItemTypeTable.json",
     "ItemShowingTypeTable.json",
+    "ItemGatherTextTable.json",
     "ItemTable.json",
     "RewardTable.json",
     "RewardDropTable.json",
@@ -9296,6 +9297,14 @@ class SourceGraphBuilder:
             self.add_alias(showing_name, showing_node, kind="item_showing_type_name", source=source)
         return showing_node
 
+    def add_item_gather_text_node(self, gather_id: Any, *, source: str = "", data: Any = None) -> str:
+        gather_key = safe_key(gather_id)
+        if not gather_key:
+            return ""
+        node = self.add_node("item_gather_text", gather_key, name=gather_key, source=source, data=data)
+        self.add_alias(gather_key, node, kind="item_gather_text_id", source=source)
+        return node
+
     def add_reward_node(self, reward_id: Any, *, source: str = "", data: Any = None) -> str:
         reward_key = safe_key(reward_id)
         if not reward_key:
@@ -9361,6 +9370,10 @@ class SourceGraphBuilder:
             },
         )
         self.add_edge(row_node, item_node, "defines_item", source=table)
+        self.add_tag_i18n_edges(item_node, row.get("name"), source=table, edge_kind="item_name_text")
+        self.add_tag_i18n_edges(item_node, row.get("desc"), source=table, edge_kind="item_desc_text")
+        self.add_tag_i18n_edges(item_node, row.get("decoDesc"), source=table, edge_kind="item_deco_desc_text")
+        self.add_tag_i18n_edges(item_node, row.get("noObtainWayHint"), source=table, edge_kind="item_no_obtain_hint_text")
         self.add_alias(row.get("iconId"), item_node, kind="icon_id", source=table)
         self.add_alias(row.get("iconCompositeId"), item_node, kind="icon_composite_id", source=table)
         self.add_alias(row.get("modelKey"), item_node, kind="model_key", source=table)
@@ -9385,10 +9398,24 @@ class SourceGraphBuilder:
         type_id = row.get("itemType") if "itemType" in row else row_key
         type_node = self.add_item_type_node(type_id, name=row.get("name"), source=table)
         self.add_edge(row_node, type_node, "defines_item_type", source=table)
+        self.add_tag_i18n_edges(type_node, row.get("name"), source=table, edge_kind="item_type_name_text")
 
     def add_item_showing_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         showing_node = self.add_item_showing_type_node(row.get("type") if "type" in row else row_key, name=row.get("name"), source=table)
         self.add_edge(row_node, showing_node, "defines_item_showing_type", source=table)
+        self.add_tag_i18n_edges(showing_node, row.get("name"), source=table, edge_kind="item_showing_type_name_text")
+
+    def add_item_gather_text_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        gather_id = safe_key(row.get("id") or row_key)
+        if not gather_id:
+            return
+        gather_node = self.add_item_gather_text_node(gather_id, source=table, data={"id": gather_id, "domainId": row.get("domainId"), "icon": row.get("icon"), "desc": table_text(row.get("desc"))})
+        self.add_edge(row_node, gather_node, "defines_item_gather_text", source=table)
+        self.add_tag_i18n_edges(gather_node, row.get("desc"), source=table, edge_kind="item_gather_desc_text")
+        self.add_alias(row.get("icon"), gather_node, kind="icon_id", source=table)
+        domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
+        if domain_node:
+            self.add_edge(gather_node, domain_node, "item_gather_text_domain", source=table, evidence="domainId")
 
     def add_reward_item_bundle_edges(self, reward_node: str, bundles: Any, *, edge_kind: str, source: str, field: str, visible_list: Any = None) -> None:
         if not isinstance(bundles, list):
@@ -9515,6 +9542,8 @@ class SourceGraphBuilder:
             self.add_item_type_edges(table, row_key, row, row_node)
         elif table == "ItemShowingTypeTable":
             self.add_item_showing_type_edges(table, row_key, row, row_node)
+        elif table == "ItemGatherTextTable":
+            self.add_item_gather_text_edges(table, row_key, row, row_node)
         elif table == "RewardTable":
             self.add_reward_edges(table, row_key, row, row_node)
         elif table == "RewardDropTable":
@@ -15613,6 +15642,7 @@ QUERY_KIND_PRIORITY = {
     "item_type": 33,
     "item_showing_type": 34,
     "item_obtain_way": 35,
+    "item_gather_text": 35.1,
     "reward": 36,
     "reward_drop": 37,
     "shop_group": 38,
@@ -15965,6 +15995,7 @@ NODE_ID_PREFIXES = (
     "item_type",
     "item_showing_type",
     "item_obtain_way",
+    "item_gather_text",
     "reward",
     "reward_drop",
     "shop_group",
