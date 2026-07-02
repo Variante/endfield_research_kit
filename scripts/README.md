@@ -752,8 +752,9 @@ gameplay-video OCR/audio workflow.
   `.md`. It deduplicates Persistent/StreamingAssets modules by relative Lua
   path, extracts `Tables.*`, `GEnums.*`, `CS.Beyond.*`, `contentParam`,
   dialog/RemoteComm ids, sprite/video/audio helper references, checks
-  `Tables.*` names against exported Table JSON roots, and summarizes focus
-  areas such as SNS, RemoteComm, Dialog, map marks, and mission UI.
+  `Tables.*` names against exported Table JSON roots, emits graph-ready
+  Lua module-to-table edge candidates, and summarizes focus areas such as
+  SNS, RemoteComm, Dialog, map marks, and mission UI.
 - `story_recovery/build_skipped_vfs_block_audit.py`: summarizes an
   AnimeStudio/fluffy-dumper `vfs-index` JSON for WebUI-skipped VFS blocks such
   as Lua, ExtendData, Streaming, DynamicStreaming, and BundleManifest. It
