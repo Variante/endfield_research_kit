@@ -148,6 +148,7 @@ COMBAT_SEMANTIC_TABLES = (
     "GeneralAbilityTable.json",
     "UseItemTable.json",
     "PotentialTalentEffectTable.json",
+    "EnemyTagTable.json",
 )
 ATTRIBUTE_DICTIONARY_TABLES = (
     "AttributeMetaTable.json",
@@ -9460,6 +9461,7 @@ class SourceGraphBuilder:
             return
         tag_node = self.add_shop_goods_tag_node(tag_id, name=row.get("tagName"), source=table, data={"id": tag_id, "icon": row.get("tagIcon"), "sortId": row.get("sortId")})
         self.add_edge(row_node, tag_node, "defines_shop_goods_tag", source=table)
+        self.add_tag_i18n_edges(tag_node, row.get("tagName"), source=table, edge_kind="shop_goods_tag_name_text")
 
     def add_shop_goods_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         goods_id = safe_key(row.get("goodsId") or row_key)
@@ -13377,7 +13379,7 @@ class SourceGraphBuilder:
         tag_node = self.add_activity_tag_node(row.get("tagId") or row_key, name=row.get("name"), source=table)
         if tag_node:
             self.add_edge(row_node, tag_node, "defines_activity_tag", source=table)
-            self.add_i18n_text_edges(tag_node, row, source=table)
+            self.add_tag_i18n_edges(tag_node, row.get("name"), source=table, edge_kind="activity_tag_name_text")
 
     def add_activity_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         activity_id = safe_key(row.get("id") or row_key)
@@ -13698,6 +13700,17 @@ class SourceGraphBuilder:
         self.add_alias(tag_key, tag_node, kind="gameplay_tag_id", source=source)
         return tag_node
 
+    def add_enemy_tag_node(self, tag_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        tag_key = safe_key(tag_id)
+        if not tag_key:
+            return ""
+        tag_name = table_display_text(name) or tag_key
+        tag_node = self.add_node("enemy_tag", tag_key, name=tag_name, source=source, data=data)
+        self.add_alias(tag_key, tag_node, kind="enemy_tag_id", source=source)
+        if tag_name != tag_key:
+            self.add_alias(tag_name, tag_node, kind="enemy_tag_name", source=source)
+        return tag_node
+
     def add_buff_parameter_node(self, parameter_id: Any, *, source: str = "") -> str:
         parameter_key = safe_key(parameter_id)
         if not parameter_key:
@@ -13974,6 +13987,16 @@ class SourceGraphBuilder:
                 if meta_node:
                     self.add_edge(effect_node, meta_node, "potential_talent_modifies_attribute_meta", source=table, evidence=f"dataList[{index}].attrModifier.attrType", data=edge_data)
 
+    def add_enemy_tag_table_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
+        tag_id = safe_key(row.get("tagId") or row_key)
+        if not tag_id:
+            return
+        tag_node = self.add_enemy_tag_node(tag_id, name=row.get("tagText"), source=table, data={"id": tag_id})
+        if not tag_node:
+            return
+        self.add_edge(row_node, tag_node, "defines_enemy_tag", source=table)
+        self.add_tag_i18n_edges(tag_node, row.get("tagText"), source=table, edge_kind="enemy_tag_text")
+
     def add_combat_semantic_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if not isinstance(row, dict):
             return
@@ -13991,6 +14014,8 @@ class SourceGraphBuilder:
             self.add_global_effect_edges(table, row_key, row, row_node)
         elif table == "PotentialTalentEffectTable":
             self.add_potential_talent_effect_edges(table, row_key, row, row_node)
+        elif table == "EnemyTagTable":
+            self.add_enemy_tag_table_edges(table, row_key, row, row_node)
 
     def ingest_world_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
