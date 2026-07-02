@@ -7400,7 +7400,10 @@ class SourceGraphBuilder:
         ):
             if not self.node_exists(target_kind, detail_key):
                 continue
-            self.add_edge(owner_node, self.node_id(target_kind, detail_key), f"{edge_prefix}_{suffix}", source=source, evidence="detailId")
+            target_node = self.node_id(target_kind, detail_key)
+            self.add_edge(owner_node, target_node, f"{edge_prefix}_{suffix}", source=source, evidence="detailId")
+            if target_kind == "model_config_model":
+                self.add_edge(target_node, owner_node, f"model_config_used_by_{edge_prefix}", source=source, evidence="detailId")
             linked_detail = True
         if not linked_detail:
             if detail_key.startswith("int_"):
@@ -7566,7 +7569,10 @@ class SourceGraphBuilder:
             ):
                 if not self.node_exists(target_kind, detail_id):
                     continue
-                self.add_edge(entity_node, self.node_id(target_kind, detail_id), edge_kind, source="webui/game_data", evidence="detailId")
+                target_node = self.node_id(target_kind, detail_id)
+                self.add_edge(entity_node, target_node, edge_kind, source="webui/game_data", evidence="detailId")
+                if target_kind == "model_config_model":
+                    self.add_edge(target_node, entity_node, "model_config_used_by_world_entity", source="webui/game_data", evidence="detailId")
                 linked_detail = True
             if not linked_detail:
                 if detail_id.startswith("int_"):

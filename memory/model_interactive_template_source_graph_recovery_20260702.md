@@ -62,3 +62,23 @@ The same validation also covered two graph-query hygiene improvements:
 - Query seed ranking now prefers `model_prefab` nodes for `prefab_path` and
   `model_prefab_stem` aliases while retaining `model_config_prefab_path` on
   model rows.
+
+## Follow-up: world entity model consumers
+
+The graph now also adds reverse model-consumer edges when world-entity detail ids resolve to `model_config_model` nodes. This covers direct `world_entity` rows plus shared `add_world_entity_detail_ref_edges` callers for `world_entity_instance` and `world_entity_script_slot` owners.
+
+Validation command:
+
+```bat
+python tools\endfield_source_graph.py build --skip-asset-maps --skip-reference-rows --skip-followups
+```
+
+Result:
+
+- graph size: 1,688,007 nodes, 3,125,477 edges, 2,277,552 aliases
+- retained `model_config_used_by_interactive_template`: 209 edges
+- added `model_config_used_by_world_entity`: 267 edges
+- added `model_config_used_by_world_entity_instance`: 4,368 edges
+- added `model_config_used_by_world_entity_script_slot`: 71 edges
+
+A query for `int_fixable_robot --kind model_config_model` now shows its interactive templates, direct world entity, and many world entity instances from the model node, making model-centric recovery usable without starting from each map/entity container.
