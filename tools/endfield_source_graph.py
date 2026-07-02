@@ -151,6 +151,15 @@ CASH_SHOP_SEMANTIC_TABLES = (
     "GiftpackCashShopGoodsDataTable.json",
     "RechargeTable.json",
 )
+ITEM_ACQUISITION_TABLES = (
+    "ItemListByTypeTable.json",
+    "ItemListByShowingTypeTable.json",
+    "NoObtainWayCondTable.json",
+    "ObtainWayShowCondTable.json",
+    "UsableItemChestTable.json",
+    "LTItemTable.json",
+    "LTItemTypeTable.json",
+)
 COMBAT_SEMANTIC_TABLES = (
     "BuffTable.json",
     "SkillPatchTable.json",
@@ -2758,6 +2767,8 @@ class SourceGraphBuilder:
             self.commit_step("optionOverrides")
             self.ingest_item_economy()
             self.commit_step("itemEconomy")
+            self.ingest_item_acquisition_semantics()
+            self.commit_step("itemAcquisition")
             self.ingest_cash_shop_semantics()
             self.commit_step("cashShop")
             self.ingest_world_semantics()
@@ -9388,6 +9399,133 @@ class SourceGraphBuilder:
                 )
                 self.add_edge(table_node, row_node, "has_row", source="structured/item_economy")
                 self.add_item_economy_row_edges(table_key, row_key, row, row_node)
+
+    def ingest_item_acquisition_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_item_acquisition", name="Structured item acquisition and grouping tables", path=slash(table_root))
+        for table_name in ITEM_ACQUISITION_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/item_acquisition")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/item_acquisition")
+                self.add_item_acquisition_row_edges(table, row_key, row, row_node)
+
+    def add_item_obtain_way_node(self, obtain_id: Any, *, source: str = "", data: Any = None) -> str:
+        obtain_key = safe_key(obtain_id)
+        if not obtain_key:
+            return ""
+        node = self.add_node("item_obtain_way", obtain_key, name=obtain_key, source=source, data=data)
+        self.add_alias(obtain_key, node, kind="item_obtain_way_id", source=source)
+        return node
+
+    def add_item_obtain_condition_node(self, condition_id: Any, *, source: str = "", data: Any = None) -> str:
+        condition_key = safe_key(condition_id)
+        if not condition_key:
+            return ""
+        node = self.add_node("item_obtain_condition", condition_key, name=condition_key, source=source, data=data)
+        self.add_alias(condition_key, node, kind="item_obtain_condition_id", source=source)
+        return node
+
+    def add_item_obtain_condition_type_node(self, condition_type: Any, *, source: str = "") -> str:
+        type_key = safe_key(condition_type)
+        if not type_key:
+            return ""
+        node = self.add_node("item_obtain_condition_type", type_key, name=type_key, source=source)
+        self.add_alias(type_key, node, kind="item_obtain_condition_type_id", source=source)
+        return node
+
+    def add_item_acquisition_check_ref(self, condition_node: str, check_id: Any, *, source: str) -> None:
+        check_key = safe_key(check_id)
+        if not check_key:
+            return
+        ref_node = ""
+        edge_kind = "item_obtain_condition_check_ref"
+        if check_key.startswith("dung"):
+            ref_node = self.add_dungeon_node(check_key, source=source)
+            edge_kind = "item_obtain_condition_refs_dungeon"
+        elif check_key.startswith("wiki_"):
+            ref_node = self.add_wiki_node("wiki_entry", check_key, source=source)
+            edge_kind = "item_obtain_condition_refs_wiki"
+        elif check_key.startswith("tech_"):
+            ref_node = self.add_node("factory_tech", check_key, name=check_key, source=source)
+            self.add_alias(check_key, ref_node, kind="factory_tech_id", source=source)
+            edge_kind = "item_obtain_condition_refs_factory_tech"
+        elif check_key.startswith("item_"):
+            ref_node = self.add_item_node(check_key, source=source)
+            edge_kind = "item_obtain_condition_refs_item"
+        else:
+            ref_node = self.add_node("item_obtain_check", check_key, name=check_key, source=source)
+            self.add_alias(check_key, ref_node, kind="item_obtain_check_id", source=source)
+        if ref_node:
+            self.add_edge(condition_node, ref_node, edge_kind, source=source, evidence="checkId")
+
+    def add_item_acquisition_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "ItemListByTypeTable" and isinstance(row, dict):
+            type_node = self.add_item_type_node(row_key, source=table)
+            if type_node:
+                self.add_edge(row_node, type_node, "defines_item_type_list", source=table)
+                for index, item_id in enumerate(row.get("list") or []):
+                    item_node = self.add_item_node(item_id, source=table)
+                    if item_node:
+                        self.add_edge(type_node, item_node, "item_type_lists_item", source=table, evidence=f"list[{index}]", data={"index": index})
+        elif table == "ItemListByShowingTypeTable" and isinstance(row, dict):
+            showing_node = self.add_item_showing_type_node(row_key, source=table)
+            if showing_node:
+                self.add_edge(row_node, showing_node, "defines_item_showing_type_list", source=table)
+                for index, item_id in enumerate(row.get("list") or []):
+                    item_node = self.add_item_node(item_id, source=table)
+                    if item_node:
+                        self.add_edge(showing_node, item_node, "item_showing_type_lists_item", source=table, evidence=f"list[{index}]", data={"index": index})
+        elif table == "NoObtainWayCondTable" and isinstance(row, dict):
+            condition_node = self.add_item_obtain_condition_node(row.get("id") or row_key, source=table, data={"conditionType": row.get("conditionType"), "checkId": row.get("checkId")})
+            if condition_node:
+                self.add_edge(row_node, condition_node, "defines_item_obtain_condition", source=table)
+                type_node = self.add_item_obtain_condition_type_node(row.get("conditionType"), source=table)
+                if type_node:
+                    self.add_edge(condition_node, type_node, "item_obtain_condition_has_type", source=table, evidence="conditionType")
+                self.add_item_acquisition_check_ref(condition_node, row.get("checkId"), source=table)
+        elif table == "ObtainWayShowCondTable" and isinstance(row, str):
+            obtain_node = self.add_item_obtain_way_node(row_key, source=table)
+            condition_node = self.add_item_obtain_condition_node(row, source=table)
+            if obtain_node and condition_node:
+                self.add_edge(obtain_node, condition_node, "item_obtain_way_show_condition", source=table, evidence="rowValue")
+        elif table == "UsableItemChestTable" and isinstance(row, dict):
+            item_id = row.get("id") or row_key
+            item_node = self.add_item_node(item_id, source=table)
+            chest_node = self.add_node("usable_item_chest", safe_key(item_id), name=safe_key(item_id), source=table, data={"type": row.get("type"), "selectedCount": row.get("selectedCount"), "randomItemCount": len(row.get("randomChestItemIds") or []), "rewardCount": len(row.get("rewardIdList") or [])})
+            self.add_alias(item_id, chest_node, kind="usable_item_chest_id", source=table)
+            self.add_edge(row_node, chest_node, "defines_usable_item_chest", source=table)
+            if item_node:
+                self.add_edge(item_node, chest_node, "item_uses_chest_config", source=table, evidence="id")
+            counts = row.get("randomChestItemCounts") if isinstance(row.get("randomChestItemCounts"), list) else []
+            for index, random_item_id in enumerate(row.get("randomChestItemIds") or []):
+                random_item_node = self.add_item_node(random_item_id, source=table)
+                if random_item_node:
+                    count = counts[index] if index < len(counts) else None
+                    self.add_edge(chest_node, random_item_node, "usable_chest_random_item", source=table, evidence=f"randomChestItemIds[{index}]", data={"count": count, "index": index})
+            for index, reward_id in enumerate(row.get("rewardIdList") or []):
+                self.add_reward_ref_edge(chest_node, reward_id, edge_kind="usable_chest_reward", source=table, evidence=f"rewardIdList[{index}]", data={"index": index})
+        elif table == "LTItemTable" and isinstance(row, dict):
+            lt_node = self.add_node("limited_time_item_alias", safe_key(row_key), name=safe_key(row_key), source=table, data={"itemId": row.get("itemId")})
+            self.add_alias(row_key, lt_node, kind="limited_time_item_alias_id", source=table)
+            self.add_edge(row_node, lt_node, "defines_limited_time_item_alias", source=table)
+            item_node = self.add_item_node(row.get("itemId"), source=table)
+            if item_node:
+                self.add_edge(lt_node, item_node, "limited_time_alias_resolves_item", source=table, evidence="itemId")
+        elif table == "LTItemTypeTable" and isinstance(row, dict):
+            type_node = self.add_item_type_node(row_key, source=table)
+            preset_node = self.add_item_type_node(row.get("presetItemType"), source=table)
+            if type_node:
+                self.add_edge(row_node, type_node, "defines_limited_time_item_type", source=table)
+                if preset_node:
+                    self.add_edge(type_node, preset_node, "limited_time_item_type_preset", source=table, evidence="presetItemType", data={"daysBeforeExpireToNotify": row.get("daysBeforeExpireToNotify")})
 
     def ingest_cash_shop_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -17116,6 +17254,11 @@ QUERY_KIND_PRIORITY = {
     "item_type": 33,
     "item_showing_type": 34,
     "item_obtain_way": 35,
+    "item_obtain_condition": 35.01,
+    "item_obtain_condition_type": 35.02,
+    "item_obtain_check": 35.03,
+    "usable_item_chest": 35.04,
+    "limited_time_item_alias": 35.05,
     "item_gather_text": 35.1,
     "reward": 36,
     "reward_drop": 37,
@@ -17543,6 +17686,11 @@ NODE_ID_PREFIXES = (
     "item_type",
     "item_showing_type",
     "item_obtain_way",
+    "item_obtain_condition",
+    "item_obtain_condition_type",
+    "item_obtain_check",
+    "usable_item_chest",
+    "limited_time_item_alias",
     "item_gather_text",
     "reward",
     "reward_drop",
