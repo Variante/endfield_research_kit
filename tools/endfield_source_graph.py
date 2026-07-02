@@ -4460,6 +4460,7 @@ class SourceGraphBuilder:
                 if ref_kind == "linked_buff":
                     target_node = self.add_buff_ref_node(value, source="webui/game_data")
                     self.add_edge(buff_node, target_node, "buff_data_references_buff", source="webui/game_data", evidence=evidence, data=data)
+                    self.add_edge(target_node, buff_node, "buff_used_by_buff_data", source="webui/game_data", evidence=evidence, data=data)
                 elif ref_kind == "tag":
                     target_node = self.add_gameplay_tag_node(value, source="webui/game_data")
                     self.add_edge(buff_node, target_node, "buff_data_has_tag_string", source="webui/game_data", evidence=evidence, data=data)
@@ -4470,6 +4471,7 @@ class SourceGraphBuilder:
                     target_node = self.add_node("gameplay_effect", value, name=value, source="webui/game_data")
                     self.add_alias(value, target_node, kind="gameplay_effect_id", source="webui/game_data")
                     self.add_edge(buff_node, target_node, "buff_data_references_effect", source="webui/game_data", evidence=evidence, data=data)
+                    self.add_edge(target_node, buff_node, "gameplay_effect_used_by_buff_data", source="webui/game_data", evidence=evidence, data=data)
                 elif ref_kind == "audio":
                     self.add_audio_target_edge(buff_node, value, edge_kind="buff_data_references_audio", source="webui/game_data", evidence=evidence)
                 elif ref_kind == "icon":
@@ -4508,6 +4510,7 @@ class SourceGraphBuilder:
                 if ref_kind == "linked_buff":
                     target_node = self.add_buff_ref_node(value, source="webui/game_data")
                     self.add_edge(skill_node, target_node, "skill_data_references_buff", source="webui/game_data", evidence=evidence, data=data)
+                    self.add_edge(target_node, skill_node, "buff_used_by_skill_data", source="webui/game_data", evidence=evidence, data=data)
                 elif ref_kind == "tag":
                     target_node = self.add_gameplay_tag_node(value, source="webui/game_data")
                     self.add_edge(skill_node, target_node, "skill_data_has_tag_string", source="webui/game_data", evidence=evidence, data=data)
@@ -4518,6 +4521,7 @@ class SourceGraphBuilder:
                     target_node = self.add_node("gameplay_effect", value, name=value, source="webui/game_data")
                     self.add_alias(value, target_node, kind="gameplay_effect_id", source="webui/game_data")
                     self.add_edge(skill_node, target_node, "skill_data_references_effect", source="webui/game_data", evidence=evidence, data=data)
+                    self.add_edge(target_node, skill_node, "gameplay_effect_used_by_skill_data", source="webui/game_data", evidence=evidence, data=data)
                 elif ref_kind == "audio":
                     self.add_audio_target_edge(skill_node, value, edge_kind="skill_data_references_audio", source="webui/game_data", evidence=evidence)
                 elif ref_kind == "icon":
