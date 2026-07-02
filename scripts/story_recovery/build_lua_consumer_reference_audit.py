@@ -36,6 +36,10 @@ DEFAULT_LUA_ROOTS = (
     ROOT / "export_full" / "structured" / "Persistent" / "Lua",
     ROOT / "export_full" / "structured" / "StreamingAssets" / "Lua",
 )
+DEFAULT_TABLE_ROOTS = (
+    ROOT / "export_full" / "structured" / "Persistent" / "Table",
+    ROOT / "export_full" / "structured" / "StreamingAssets" / "Table",
+)
 
 REFERENCE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("tables", re.compile(r"\bTables\.([A-Za-z_]\w*)")),
@@ -91,6 +95,12 @@ def lua_files(root: Path) -> list[Path]:
     if not root.exists():
         return []
     return sorted(root.glob("**/*.lua"))
+
+
+def table_files(root: Path) -> list[Path]:
+    if not root.exists():
+        return []
+    return sorted(root.glob("*.json"))
 
 
 def module_key(path: Path, root: Path) -> str:
@@ -179,6 +189,50 @@ def counter_rows(counter: Counter[str], limit: int) -> list[dict[str, Any]]:
     return [{"value": value, "count": count} for value, count in counter.most_common(limit)]
 
 
+def build_table_index(table_roots: list[Path]) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]]]:
+    index: dict[str, dict[str, Any]] = {}
+    summaries = []
+    for root in table_roots:
+        files = table_files(root)
+        label = root_label(root)
+        summaries.append({"root": repo_rel(root), "label": label, "fileCount": len(files)})
+        for path in files:
+            stem = path.stem
+            key = stem.casefold()
+            row = index.setdefault(key, {"table": stem, "roots": [], "paths": []})
+            row["roots"].append(label)
+            row["paths"].append(repo_rel(path))
+    return index, summaries
+
+
+def table_reference_availability(
+    table_refs: Counter[str],
+    table_index: dict[str, dict[str, Any]],
+    *,
+    limit: int,
+) -> dict[str, Any]:
+    matched = []
+    unmatched = []
+    for value, count in table_refs.most_common():
+        row = table_index.get(value.casefold())
+        out = {"value": value, "count": count}
+        if row:
+            out.update({"table": row["table"], "roots": sorted(set(row["roots"])), "paths": row["paths"][:4]})
+            matched.append(out)
+        else:
+            unmatched.append(out)
+    return {
+        "availableTableCount": len(table_index),
+        "referencedTableCount": len(table_refs),
+        "matchedReferencedTableCount": len(matched),
+        "unmatchedReferencedTableCount": len(unmatched),
+        "matchedReferenceUseCount": sum(int(row["count"]) for row in matched),
+        "unmatchedReferenceUseCount": sum(int(row["count"]) for row in unmatched),
+        "topMatched": matched[:limit],
+        "topUnmatched": unmatched[:limit],
+    }
+
+
 def merge_counter_dicts(target: dict[str, Counter[str]], source: dict[str, Counter[str]]) -> None:
     for category, counter in source.items():
         target[category].update(counter)
@@ -190,6 +244,8 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     focus_names = [name for name in focus_names if name in FOCUS_PATTERNS]
 
     lua_roots = [root.resolve() for root in (args.lua_root or list(DEFAULT_LUA_ROOTS))]
+    table_roots = [root.resolve() for root in (args.table_root or list(DEFAULT_TABLE_ROOTS))]
+    table_index, table_root_summaries = build_table_index(table_roots)
     modules: dict[str, dict[str, Any]] = {}
     root_summaries = []
     read_errors = []
@@ -307,6 +363,8 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
             },
         }
 
+    table_availability = table_reference_availability(global_counts["tables"], table_index, limit=args.top_limit)
+
     duplicate_modules = [
         {
             "module": rel,
@@ -323,6 +381,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "metadata": {
             "luaRoots": [repo_rel(root) for root in lua_roots],
+            "tableRoots": [repo_rel(root) for root in table_roots],
             "focus": focus_names,
             "unknownFocus": unknown_focus,
         },
@@ -341,9 +400,13 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
             "duplicateSameContentCount": same_content_count,
             "readErrorCount": len(read_errors),
             "referenceCounts": {category: sum(counter.values()) for category, counter in global_counts.items()},
+            "matchedTableReferenceCount": table_availability["matchedReferencedTableCount"],
+            "unmatchedTableReferenceCount": table_availability["unmatchedReferencedTableCount"],
             "focusFileCounts": {name: focus_module_counts[name] for name in focus_names},
         },
         "rootSummaries": root_summaries,
+        "tableRootSummaries": table_root_summaries,
+        "tableReferenceAvailability": table_availability,
         "topReferences": {
             category: counter_rows(counter, args.top_limit)
             for category, counter in global_counts.items()
@@ -377,6 +440,17 @@ def render_markdown(payload: dict[str, Any]) -> str:
     focus_counts = summary.get("focusFileCounts") or {}
     for name, count in focus_counts.items():
         lines.append(f"- `{md_escape(name)}` files: `{count}`")
+
+    table_availability = payload.get("tableReferenceAvailability") or {}
+    lines.extend(["", "## Table Reference Availability", ""])
+    lines.append(f"- Exported table files indexed: `{table_availability.get('availableTableCount')}`")
+    lines.append(f"- Referenced Lua table names: `{table_availability.get('referencedTableCount')}`")
+    lines.append(f"- Matched referenced table names: `{table_availability.get('matchedReferencedTableCount')}`")
+    lines.append(f"- Unmatched referenced table names: `{table_availability.get('unmatchedReferencedTableCount')}`")
+    unmatched = table_availability.get("topUnmatched") or []
+    if unmatched:
+        compact_unmatched = ", ".join(f"{item['value']} ({item['count']})" for item in unmatched[:10])
+        lines.append(f"- Top unmatched: {md_escape(compact_unmatched)}")
 
     lines.extend(["", "## Top References", ""])
     for category, rows in (payload.get("topReferences") or {}).items():
@@ -421,6 +495,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--lua-root", type=Path, action="append", help="Lua root to scan; repeatable")
+    parser.add_argument("--table-root", type=Path, action="append", help="Exported Table JSON root for Tables.* availability checks; repeatable")
     parser.add_argument("--focus", default="sns,remotecomm,dialog,mapmark,mission")
     parser.add_argument("--json", type=Path, default=DEFAULT_JSON)
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MD)
