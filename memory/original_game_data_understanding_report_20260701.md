@@ -2109,6 +2109,12 @@ The source graph now models the exported gacha pool tables directly. Character p
 
 A fast CN build verified 10 character pools, 14 weapon pools, 210 character-pool membership edges, 532 weapon-pool membership edges, 13 character-ticket-to-pool links, 1 weapon-ticket-to-pool link, 23 character initial/perfect weapon links, 92 recommended equipment links, 64 weapon perfect-gem links, 24 pool name text links, and 3 refresh-rule shop-goods links. This improves monetization/pool semantics while staying limited to authored table evidence rather than runtime probability simulation or server guarantee state.
 
+### 2026-07-02 Game Mechanic Graph Progress
+
+The source graph now models authored game-mechanic tables directly: mechanic categories, groups, individual mechanics, condition rows, conditional child-mechanic groups, and world-mechanic display info. This was selected after a subagent triage also flagged the GameMechanic family as a high-value remaining gap for understanding tutorialized/playable mode rules.
+
+A fast CN build verified 28 categories, 9 groups, 480 game-mechanic nodes, 249 conditions, 438 defined mechanics, 498 mechanic-condition links, 727 mechanic name/description text links, 155 condition-description links, 245 mechanic reward edges, 296 condition string-parameter refs, 5 world display level links, 148 world display enemy-level edges, and 122 world display item-drop edges. This improves static gameplay-mode semantics while avoiding claims about runtime condition evaluator behavior.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come

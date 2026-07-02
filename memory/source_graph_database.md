@@ -1551,6 +1551,10 @@ This turns wiki categories, encyclopedia entries, tutorial pages, limited guides
 
 This models authored pool membership, tickets, display text, featured entries, presets, and refresh offers as queryable evidence. It does not simulate live gacha probability execution or server-side guarantee state.
 
+2026-07-02 game mechanic graph refs: `tools/endfield_source_graph.py` now ingests `GameMechanicCategoryTable`, `GameMechanicGroupTable`, `GameMechanicTable`, `GameMechanicConditionTable`, `GameMechanicGroupByConditionTable`, and `WorldGameMechanicsDisplayInfoTable` as `structured_game_mechanics`. A fast CN graph build to `tmp/source_graph_game_mechanics.sqlite` verified 28 `game_mechanic_category`, 9 `game_mechanic_group`, 480 `game_mechanic`, 249 `game_mechanic_condition`, 8 `game_mechanic_condition_type`, 1 `game_mechanic_type`, and 5 `world_game_mechanic_display` nodes. Validated edge coverage includes 438 defined mechanics, 438 category links, 498 mechanic-condition links, 395 mechanic name text links, 332 mechanic description text links, 155 condition description links, 126 group membership links, 9 conditional child-mechanic links, 9 group first-pass rewards, 245 mechanic reward edges across normal/first-pass/extra/hunter reward fields, 296 string-parameter mechanic refs, 5 world display level links, 148 world display enemy-level edges, and 122 world display item-drop edges. Smoke tests passed for `world_energy_point01`, `activity_high_difficulty_condition_s1_01s`, and `dungeon_bossrush`, including direct grade/level payload checks on world-energy enemy edges.
+
+This closes a gameplay-mode/instruction-table gap by making authored mechanic categories, groups, conditions, rewards, display enemies/items, and level placement queryable. Condition parameter refs remain static source-table evidence and are not proof of runtime evaluator behavior.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type
