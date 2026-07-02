@@ -224,6 +224,15 @@ CONDITION_SEMANTIC_TABLES = (
     "TimeRangeTable.json",
     "ConditionTable.json",
 )
+WORLD_ENERGY_SEMANTIC_TABLES = (
+    "WorldEnergyPointTable.json",
+    "WorldEnergyPointGroupTable.json",
+    "WorldEnergyPointConst.json",
+    "EtherSubmitInfoTable.json",
+    "EtherSubmitBuffShowTable.json",
+    "EtherSubmitDomainShowTable.json",
+    "EtherSubmitGlobalEffectTable.json",
+)
 COMBAT_SEMANTIC_TABLES = (
     "BuffTable.json",
     "SkillPatchTable.json",
@@ -2946,6 +2955,8 @@ class SourceGraphBuilder:
             self.commit_step("domainDepotSemantics")
             self.ingest_condition_semantics()
             self.commit_step("conditionSemantics")
+            self.ingest_world_energy_semantics()
+            self.commit_step("worldEnergy")
             self.ingest_world_harvestable_semantics()
             self.commit_step("worldHarvestables")
             self.ingest_combat_semantics()
@@ -9933,6 +9944,144 @@ class SourceGraphBuilder:
                 logic = (row.get("subConditionIdLogics") or [None] * (index + 1))[index] if index < len(row.get("subConditionIdLogics") or []) else None
                 self.add_edge(condition_node, sub_node, "condition_has_subcondition", source=table, evidence=f"subConditionIds[{index}]", data={"index": index, "logic": logic})
         self.add_condition_parameter_refs(condition_node, condition_id, row.get("parameters"), source=table)
+
+    def add_world_energy_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node(kind, key, name=name, source=source, data=data)
+
+    def ingest_world_energy_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_world_energy", name="Structured world energy and ether submit tables", path=slash(table_root))
+        for table_name in WORLD_ENERGY_SEMANTIC_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/world_energy")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/world_energy")
+                self.add_world_energy_row_edges(table, row_key, row, row_node)
+
+    def add_world_energy_enemy_edges(self, point_node: str, row: dict[str, Any], *, source: str) -> None:
+        levels = row.get("enemyLevels") if isinstance(row.get("enemyLevels"), list) else []
+        for index, enemy_id in enumerate(row.get("enemyIds") or []):
+            enemy_key = safe_key(enemy_id)
+            if not enemy_key:
+                continue
+            enemy_node = self.add_node("enemy", enemy_key, name=enemy_key, source=source)
+            self.add_alias(enemy_key, enemy_node, kind="enemy_id", source=source)
+            level = levels[index] if index < len(levels) else None
+            self.add_edge(point_node, enemy_node, "world_energy_point_enemy", source=source, evidence=f"enemyIds[{index}]", data={"index": index, "enemyLevel": level})
+
+    def add_world_energy_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "WorldEnergyPointConst":
+            const_node = self.add_world_energy_node("world_energy_const", row_key, source=table, data={"value": row})
+            if const_node:
+                self.add_edge(row_node, const_node, "defines_world_energy_const", source=table)
+            return
+        if table == "EtherSubmitDomainShowTable" and isinstance(row, dict):
+            domain_node = self.add_world_energy_node("ether_submit_domain", row_key, source=table, data={"domainIcon": row.get("domainIcon"), "itemIcon": row.get("itemIcon")})
+            if domain_node:
+                self.add_edge(row_node, domain_node, "defines_ether_submit_domain", source=table)
+                gameplay_domain = self.add_gameplay_domain_node(row_key, source=table)
+                if gameplay_domain:
+                    self.add_edge(domain_node, gameplay_domain, "ether_submit_domain_ref", source=table, evidence="rowKey")
+                item_node = self.add_item_node(row.get("itemIcon"), source=table)
+                if item_node:
+                    self.add_edge(domain_node, item_node, "ether_submit_domain_item_icon", source=table, evidence="itemIcon")
+                for field in ("domainIcon", "itemIcon"):
+                    self.add_alias(row.get(field), domain_node, kind="asset_stem", source=table)
+            return
+        if table == "EtherSubmitBuffShowTable" and isinstance(row, dict):
+            effect_node = self.add_world_energy_node("ether_submit_effect", row_key, name=row.get("effectTitle"), source=table, data={"effectFlagLevel": row.get("effectFlagLevel"), "effectFlagType": row.get("effectFlagType"), "effectIcon": row.get("effectIcon"), "effectSubIcon": row.get("effectSubIcon")})
+            if effect_node:
+                self.add_edge(row_node, effect_node, "defines_ether_submit_effect", source=table)
+                self.add_tag_i18n_edges(effect_node, row.get("effectTitle"), source=table, edge_kind="ether_submit_effect_title_text")
+                self.add_tag_i18n_edges(effect_node, row.get("effectContentText"), source=table, edge_kind="ether_submit_effect_content_text")
+                self.add_tag_i18n_edges(effect_node, row.get("effectLevelText"), source=table, edge_kind="ether_submit_effect_level_text")
+                for field in ("effectIcon", "effectSubIcon"):
+                    self.add_alias(row.get(field), effect_node, kind="asset_stem", source=table)
+            return
+        if table == "EtherSubmitGlobalEffectTable" and isinstance(row, dict):
+            effect_node = self.add_node("global_effect", row_key, name=row_key, source=table, data={"effectType": row.get("effectType"), "dp1": row.get("dp1"), "blackboardCount": len(row.get("blackboard") or [])})
+            self.add_alias(row_key, effect_node, kind="global_effect_id", source=table)
+            self.add_edge(row_node, effect_node, "defines_ether_submit_global_effect", source=table)
+            type_node = self.add_world_energy_node("ether_submit_effect_type", row.get("effectType"), source=table)
+            if type_node:
+                self.add_edge(effect_node, type_node, "ether_submit_global_effect_type", source=table, evidence="effectType")
+            self.add_blackboard_edges(effect_node, row.get("blackboard"), edge_kind="ether_submit_global_effect_blackboard", source=table, evidence_prefix="blackboard")
+            return
+        if not isinstance(row, dict):
+            return
+        if table == "WorldEnergyPointGroupTable":
+            group_id = row.get("gameGroupId") or row_key
+            group_node = self.add_world_energy_node("world_energy_point_group", group_id, name=row.get("gameGroupName"), source=table, data={"firstPassRewardId": row.get("firstPassRewardId"), "gemCustomItemId": row.get("gemCustomItemId"), "gemRandId": row.get("gemRandId"), "icon": row.get("icon"), "worldLevelCount": len(row.get("worldLevel2GameMechanicsIdMap") or {})})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_world_energy_point_group", source=table)
+                self.add_tag_i18n_edges(group_node, row.get("gameGroupName"), source=table, edge_kind="world_energy_group_name_text")
+                self.add_alias(row.get("icon"), group_node, kind="asset_stem", source=table)
+                self.add_reward_ref_edge(group_node, row.get("firstPassRewardId"), edge_kind="world_energy_group_first_pass_reward", source=table, evidence="firstPassRewardId")
+                for field, edge_kind in (("gemCustomItemId", "world_energy_group_custom_gem_item"), ("gemRandId", "world_energy_group_random_gem_item")):
+                    item_node = self.add_item_node(row.get(field), source=table)
+                    if item_node:
+                        self.add_edge(group_node, item_node, edge_kind, source=table, evidence=field)
+                for field, edge_kind in (("primAttrTermIds", "world_energy_group_primary_gem_term"), ("secAttrTermIds", "world_energy_group_secondary_gem_term"), ("skillTermIds", "world_energy_group_skill_gem_term")):
+                    for index, term_id in enumerate(row.get(field) or []):
+                        term_node = self.add_gem_term_node(term_id, source=table)
+                        if term_node:
+                            self.add_edge(group_node, term_node, edge_kind, source=table, evidence=f"{field}[{index}]", data={"index": index})
+                for world_level, mechanic_id in (row.get("worldLevel2GameMechanicsIdMap") or {}).items():
+                    point_node = self.add_world_energy_node("world_energy_point", mechanic_id, source=table)
+                    if point_node:
+                        self.add_edge(group_node, point_node, "world_energy_group_has_point", source=table, evidence=f"worldLevel2GameMechanicsIdMap[{world_level}]", data={"worldLevel": world_level})
+            return
+        if table == "WorldEnergyPointTable":
+            point_id = row.get("gameMechanicsId") or row_key
+            point_node = self.add_world_energy_node("world_energy_point", point_id, name=row.get("gameName"), source=table, data={"gameGroupId": row.get("gameGroupId"), "worldLevel": row.get("worldLevel"), "levelId": row.get("levelId"), "recommendLv": row.get("recommendLv"), "costStamina": row.get("costStamina"), "enemyCount": len(row.get("enemyIds") or []), "probGemCount": len(row.get("probGemItemIds") or [])})
+            if point_node:
+                self.add_edge(row_node, point_node, "defines_world_energy_point", source=table)
+                self.add_tag_i18n_edges(point_node, row.get("gameName"), source=table, edge_kind="world_energy_point_name_text")
+                self.add_tag_i18n_edges(point_node, row.get("desc"), source=table, edge_kind="world_energy_point_desc_text")
+                group_node = self.add_world_energy_node("world_energy_point_group", row.get("gameGroupId"), source=table)
+                if group_node:
+                    self.add_edge(group_node, point_node, "world_energy_group_has_point", source=table, evidence="gameGroupId", data={"worldLevel": row.get("worldLevel")})
+                mechanic_node = self.add_game_mechanic_ref_node(point_id, source=table)
+                if mechanic_node:
+                    self.add_edge(point_node, mechanic_node, "world_energy_point_game_mechanic", source=table, evidence="gameMechanicsId")
+                level_node = self.add_level_node(row.get("levelId"), source=table)
+                if level_node:
+                    self.add_edge(point_node, level_node, "world_energy_point_in_level", source=table, evidence="levelId")
+                    self.add_level_map_edge(level_node, row.get("levelId"), source=table, evidence="levelId")
+                self.add_world_energy_enemy_edges(point_node, row, source=table)
+                counts = row.get("regularItemCount") if isinstance(row.get("regularItemCount"), list) else []
+                for index, item_id in enumerate(row.get("regularItemIds") or []):
+                    item_node = self.add_item_node(item_id, source=table)
+                    if item_node:
+                        count = counts[index] if index < len(counts) else None
+                        self.add_edge(point_node, item_node, "world_energy_point_regular_item", source=table, evidence=f"regularItemIds[{index}]", data={"index": index, "count": count})
+                for index, item_id in enumerate(row.get("probGemItemIds") or []):
+                    item_node = self.add_item_node(item_id, source=table)
+                    if item_node:
+                        self.add_edge(point_node, item_node, "world_energy_point_probable_gem", source=table, evidence=f"probGemItemIds[{index}]", data={"index": index})
+            return
+        if table == "EtherSubmitInfoTable":
+            submit_node = self.add_world_energy_node("ether_submit_level", row.get("id") or row_key, source=table, data={"level": row.get("level"), "domainId": row.get("domainId"), "etherItemId": row.get("etherItemId"), "count": row.get("count"), "rewardID": row.get("rewardID"), "effectCount": len(row.get("effectList") or [])})
+            if submit_node:
+                self.add_edge(row_node, submit_node, "defines_ether_submit_level", source=table)
+                domain_node = self.add_world_energy_node("ether_submit_domain", row.get("domainId"), source=table)
+                if domain_node:
+                    self.add_edge(submit_node, domain_node, "ether_submit_in_domain", source=table, evidence="domainId")
+                item_node = self.add_item_node(row.get("etherItemId"), source=table)
+                if item_node:
+                    self.add_edge(submit_node, item_node, "ether_submit_requires_item", source=table, evidence="etherItemId", data={"count": row.get("count")})
+                self.add_reward_ref_edge(submit_node, row.get("rewardID"), edge_kind="ether_submit_reward", source=table, evidence="rewardID")
+                for index, effect_id in enumerate(row.get("effectList") or []):
+                    effect_node = self.add_node("global_effect", safe_key(effect_id), name=safe_key(effect_id), source=table)
+                    self.add_alias(effect_id, effect_node, kind="global_effect_id", source=table)
+                    self.add_edge(submit_node, effect_node, "ether_submit_applies_effect", source=table, evidence=f"effectList[{index}]", data={"index": index})
 
     def ingest_world_harvestable_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -19262,6 +19411,13 @@ QUERY_KIND_PRIORITY = {
     "compare_operator": 19.24,
     "global_variable": 19.25,
     "time_range": 19.26,
+    "world_energy_point_group": 19.3,
+    "world_energy_point": 19.31,
+    "world_energy_const": 19.32,
+    "ether_submit_level": 19.33,
+    "ether_submit_effect": 19.34,
+    "ether_submit_effect_type": 19.35,
+    "ether_submit_domain": 19.36,
     "factory_region": 20,
     "settlement_poi": 21,
     "shop_channel_poi": 22,
@@ -19812,6 +19968,13 @@ NODE_ID_PREFIXES = (
     "compare_operator",
     "global_variable",
     "time_range",
+    "world_energy_point_group",
+    "world_energy_point",
+    "world_energy_const",
+    "ether_submit_level",
+    "ether_submit_effect",
+    "ether_submit_effect_type",
+    "ether_submit_domain",
     "factory_region",
     "settlement_poi",
     "shop_channel_poi",
