@@ -301,6 +301,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     focus_module_counts: Counter[str] = Counter()
     focus_files: dict[str, list[dict[str, Any]]] = {name: [] for name in focus_names}
     module_findings = []
+    table_module_edges = []
 
     for rel, row in sorted(modules.items()):
         text = str(row.get("text") or "")
@@ -311,6 +312,24 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
                 add_example(global_examples[category], item, args.example_limit)
 
         hits = focus_hits(text, rel, focus_names, args.focus_example_limit)
+        for table_name, count in counts["tables"].items():
+            table_row = table_index.get(table_name.casefold())
+            edge = {
+                "module": rel,
+                "path": row.get("canonicalPath"),
+                "value": table_name,
+                "count": count,
+                "focus": sorted(hits.keys()),
+                "matched": bool(table_row),
+            }
+            if table_row:
+                edge.update({
+                    "table": table_row["table"],
+                    "roots": sorted(set(table_row["roots"])),
+                    "paths": table_row["paths"][:4],
+                })
+            table_module_edges.append(edge)
+
         if hits:
             for focus_name in hits:
                 focus_module_counts[focus_name] += 1
@@ -343,6 +362,14 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     module_findings.sort(
         key=lambda row: (
             -sum(int(value) for value in (row.get("focus") or {}).values()),
+            str(row.get("module") or ""),
+        )
+    )
+    table_module_edges.sort(
+        key=lambda row: (
+            not bool(row.get("matched")),
+            -int(row.get("count") or 0),
+            str(row.get("table") or row.get("value") or ""),
             str(row.get("module") or ""),
         )
     )
@@ -391,6 +418,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
             "focusExampleLimit": args.focus_example_limit,
             "maxFocusFiles": args.max_focus_files,
             "maxModuleFindings": args.max_module_findings,
+            "maxTableModuleEdges": args.max_table_module_edges,
         },
         "summary": {
             "rootCount": len(lua_roots),
@@ -402,6 +430,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
             "referenceCounts": {category: sum(counter.values()) for category, counter in global_counts.items()},
             "matchedTableReferenceCount": table_availability["matchedReferencedTableCount"],
             "unmatchedTableReferenceCount": table_availability["unmatchedReferencedTableCount"],
+            "tableModuleEdgeCount": len(table_module_edges),
             "focusFileCounts": {name: focus_module_counts[name] for name in focus_names},
         },
         "rootSummaries": root_summaries,
@@ -415,6 +444,7 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         "examples": global_examples,
         "focusAreas": focus_payload,
         "moduleFindings": module_findings[: args.max_module_findings],
+        "tableModuleEdges": table_module_edges[: args.max_table_module_edges],
         "duplicateModulesSample": duplicate_modules[: args.top_limit],
         "readErrors": read_errors[:100],
     }
@@ -447,6 +477,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
     lines.append(f"- Referenced Lua table names: `{table_availability.get('referencedTableCount')}`")
     lines.append(f"- Matched referenced table names: `{table_availability.get('matchedReferencedTableCount')}`")
     lines.append(f"- Unmatched referenced table names: `{table_availability.get('unmatchedReferencedTableCount')}`")
+    lines.append(f"- Lua module-to-table edge candidates: `{summary.get('tableModuleEdgeCount')}`")
     unmatched = table_availability.get("topUnmatched") or []
     if unmatched:
         compact_unmatched = ", ".join(f"{item['value']} ({item['count']})" for item in unmatched[:10])
@@ -504,6 +535,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--focus-example-limit", type=int, default=4)
     parser.add_argument("--max-focus-files", type=int, default=30)
     parser.add_argument("--max-module-findings", type=int, default=300)
+    parser.add_argument("--max-table-module-edges", type=int, default=2500)
     return parser.parse_args()
 
 
