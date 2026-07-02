@@ -2115,6 +2115,12 @@ The source graph now models authored game-mechanic tables directly: mechanic cat
 
 A fast CN build verified 28 categories, 9 groups, 480 game-mechanic nodes, 249 conditions, 438 defined mechanics, 498 mechanic-condition links, 727 mechanic name/description text links, 155 condition-description links, 245 mechanic reward edges, 296 condition string-parameter refs, 5 world display level links, 148 world display enemy-level edges, and 122 world display item-drop edges. This improves static gameplay-mode semantics while avoiding claims about runtime condition evaluator behavior.
 
+### 2026-07-02 Dungeon And Training Catalog Graph Progress
+
+The source graph now models authored dungeon and training catalog tables directly: dungeon rows, dungeon series/types/category labels, raid variants, factory dungeon dependencies, simulation training levels/cards/card pools, training type labels, adventure levels, and adventure world-level tip text.
+
+A fast CN build verified 215 defined dungeon rows, 106 dungeon series, 18 dungeon types, 370 series-to-dungeon links, 316 dungeon scene/level links, 274 dungeon enemy links with level payloads, 177 dungeon reward edges, 30 raid-related dungeon links, 46 factory dungeon rows, 125 simulation training pool-card links, 60 adventure levels, 59 adventure level rewards, and 42 adventure world-level tip text links. This improves playable-mode and progression catalog semantics while keeping numeric progression values as authored table evidence rather than runtime formula proof.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
