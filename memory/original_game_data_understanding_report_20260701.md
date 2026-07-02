@@ -2054,6 +2054,12 @@ The source graph now links attribute display/filter entries to their I18n text r
 
 This keeps the existing numeric attribute graph intact while making the visible stat names and filter labels queryable through `i18n_text` evidence.
 
+### 2026-07-01 UI Label Graph Progress
+
+The source graph now models another group of small UI/system dictionaries as generic `ui_label` nodes rather than leaving their localized text ids as unstructured leftovers. The new coverage spans battle-pass task labels, settlement/social/building labels, factory tag labels, cash-shop pack tags, money source labels, report reasons, system menu labels, tower-defense groups, bloc labels, and character battle tags. A fast CN build verified 243 labels across 16 tables, 297 text-id links, 25 social sign-to-tab links, 20 factory tag-to-type links, and 39 tag/character-tag reference links.
+
+This improves lookup for non-story UI strings and lightweight taxonomy/config labels while leaving dedicated domains such as shop goods tags and enemy tags to their existing ingesters.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
