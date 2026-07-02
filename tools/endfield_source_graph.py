@@ -2489,6 +2489,8 @@ class SourceGraphBuilder:
             self.commit_step("dialogSupport")
             self.ingest_decoded_config_semantics()
             self.commit_step("decodedConfigs")
+            self.link_decoded_parameter_blackboard_keys()
+            self.commit_step("decodedParameterBlackboardMatches")
             self.link_gameplay_effect_export_assets()
             self.commit_step("effectAssetMatches")
             if self.include_reference_rows:
@@ -2782,6 +2784,36 @@ class SourceGraphBuilder:
                     evidence=safe_key(texture_info.get("evidence")) if isinstance(texture_info, dict) else Path(texture_rel).stem,
                     data=texture_data,
                 )
+
+    def link_decoded_parameter_blackboard_keys(self) -> None:
+        rows = self.db.execute(
+            """
+            SELECT parameter.id, parameter.kind, blackboard.id, parameter.name
+            FROM nodes AS parameter
+            JOIN nodes AS blackboard
+              ON parameter.name = blackboard.name
+             AND blackboard.kind = 'gameplay_blackboard_key'
+            WHERE parameter.kind IN ('buff_parameter', 'skill_parameter')
+            ORDER BY parameter.kind, parameter.name
+            """
+        ).fetchall()
+        seen: set[tuple[str, str, str]] = set()
+        for parameter_node, parameter_kind, blackboard_node, parameter_name in rows:
+            if not parameter_node or not blackboard_node:
+                continue
+            edge_kind = "buff_parameter_matches_blackboard_key" if parameter_kind == "buff_parameter" else "skill_parameter_matches_blackboard_key"
+            edge_key = (safe_key(parameter_node), safe_key(blackboard_node), edge_kind)
+            if edge_key in seen:
+                continue
+            seen.add(edge_key)
+            self.add_edge(
+                parameter_node,
+                blackboard_node,
+                edge_kind,
+                source="source_graph/decoded_parameter_bridge",
+                evidence="exact_parameter_name",
+                data={"parameter": parameter_name},
+            )
 
     def link_gameplay_effect_export_assets(self) -> None:
         effect_rows = self.db.execute(
