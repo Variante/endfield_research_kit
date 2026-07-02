@@ -290,6 +290,18 @@ SETTINGS_SEMANTIC_TABLES = (
     "QualitySubSettingOptionTable.json",
     "GamepadSettingItemTable.json",
     "GamepadImplicitSettingItemTable.json",
+    "SettingIdTable.json",
+    "SettingIdToStr.json",
+    "SettingIdToNum.json",
+    "StrIdNumTable.json",
+    "NumIdStrTable.json",
+    "GlobalConst.json",
+    "JsonConst.json",
+    "GameSystemConfigTable.json",
+    "RichTextStyleTable.json",
+    "InstructionBook.json",
+    "ItemIconCompositeTable.json",
+    "MapMarkTypeTempTable.json",
 )
 TAG_TAXONOMY_TABLES = (
     "TagGroupDataTable.json",
@@ -14358,6 +14370,8 @@ class SourceGraphBuilder:
                 self.add_gamepad_setting_edges(table, table_node, payload, implicit=False)
             elif table == "GamepadImplicitSettingItemTable":
                 self.add_gamepad_setting_edges(table, table_node, payload, implicit=True)
+            else:
+                self.add_setting_metadata_edges(table, table_node, payload)
 
     def add_setting_tab_edges(self, table: str, table_node: str, payload: dict[str, Any]) -> None:
         for row_key, row in payload.items():
@@ -14515,6 +14529,197 @@ class SourceGraphBuilder:
                 mutex_node = self.add_setting_item_node(mutex_setting_id, source=table)
                 if mutex_node:
                     self.add_edge(gamepad_node, mutex_node, "setting_item_mutex_setting", source=table, evidence=f"mutexSettingIds[{index}]")
+
+    def add_setting_metadata_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node(kind, key, name=name, source=source, data=data)
+
+    def iter_constant_ref_values(self, value: Any) -> Iterable[tuple[str, str]]:
+        if isinstance(value, str):
+            yield "value", value
+        elif isinstance(value, list):
+            for index, item in enumerate(value):
+                for path, ref in self.iter_constant_ref_values(item):
+                    yield f"[{index}]{path if path != 'value' else ''}", ref
+        elif isinstance(value, dict):
+            for key, item in value.items():
+                for path, ref in self.iter_constant_ref_values(item):
+                    suffix = path if path != "value" else ""
+                    yield f".{safe_key(key)}{suffix}", ref
+
+    def add_constant_ref_edges(self, owner_node: str, value: Any, *, source: str, evidence: str, edge_prefix: str) -> None:
+        seen: set[tuple[str, str]] = set()
+        for path, ref in self.iter_constant_ref_values(value):
+            ref_key = safe_key(ref)
+            if not ref_key:
+                continue
+            ref_node = ""
+            edge_kind = ""
+            if ref_key.startswith("item_"):
+                ref_node = self.add_item_node(ref_key, source=source)
+                edge_kind = f"{edge_prefix}_item"
+            elif ref_key.startswith("reward_"):
+                ref_node = self.add_reward_node(ref_key, source=source)
+                edge_kind = f"{edge_prefix}_reward"
+            elif ref_key.startswith("activity_") or ref_key.startswith("CharacterGuide_"):
+                ref_node = self.add_activity_node(ref_key, source=source)
+                edge_kind = f"{edge_prefix}_activity"
+            elif ref_key.startswith("system_"):
+                ref_node = self.add_setting_metadata_node("game_system_config", ref_key, source=source)
+                edge_kind = f"{edge_prefix}_system"
+            elif ref_key.startswith("mark_"):
+                ref_node = self.add_map_mark_template_node(ref_key, source=source)
+                edge_kind = f"{edge_prefix}_map_mark"
+            elif ref_key.startswith("map"):
+                ref_node = self.add_level_node(ref_key, source=source) if "_lv" in ref_key else self.add_map_node(ref_key, source=source)
+                edge_kind = f"{edge_prefix}_map_or_level"
+            if not ref_node or not edge_kind or (edge_kind, ref_node) in seen:
+                continue
+            seen.add((edge_kind, ref_node))
+            self.add_edge(owner_node, ref_node, edge_kind, source=source, evidence=f"{evidence}{path if path != 'value' else ''}")
+
+    def add_setting_row_node(self, table: str, table_node: str, row_key: Any, row: Any) -> str:
+        row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+        self.add_edge(table_node, row_node, "has_row", source="structured/settings")
+        return row_node
+
+    def add_setting_id_map_edges(self, table: str, table_node: str, payload: dict[str, Any]) -> None:
+        for row_key, row in payload.items():
+            row_node = self.add_setting_row_node(table, table_node, row_key, row)
+            if table == "SettingIdTable":
+                setting_node = self.add_setting_item_node(row_key, source=table, data={"settingGroup": row})
+                group_node = self.add_setting_metadata_node("setting_group", row, source=table)
+                if setting_node:
+                    self.add_edge(row_node, setting_node, "defines_setting_id", source=table, evidence=str(row_key))
+                    if group_node:
+                        self.add_edge(setting_node, group_node, "setting_id_in_group", source=table, evidence="rowValue")
+            elif table == "SettingIdToStr":
+                map_node = self.add_setting_metadata_node("setting_id_map", f"num:{row_key}", name=str(row_key), source=table, data={"numId": row_key, "settingId": row})
+                setting_node = self.add_setting_item_node(row, source=table)
+                if map_node:
+                    self.add_edge(row_node, map_node, "defines_setting_num_to_str", source=table, evidence=str(row_key))
+                    if setting_node:
+                        self.add_edge(map_node, setting_node, "setting_num_maps_to_setting", source=table, evidence="rowValue")
+            elif table == "SettingIdToNum":
+                map_node = self.add_setting_metadata_node("setting_id_map", f"str:{row_key}", name=str(row_key), source=table, data={"settingId": row_key, "numId": row})
+                setting_node = self.add_setting_item_node(row_key, source=table)
+                if map_node:
+                    self.add_edge(row_node, map_node, "defines_setting_str_to_num", source=table, evidence=str(row_key))
+                    if setting_node:
+                        self.add_edge(setting_node, map_node, "setting_maps_to_num", source=table, evidence="rowValue")
+
+    def add_id_dictionary_edges(self, table: str, table_node: str, payload: dict[str, Any]) -> None:
+        reverse = table == "NumIdStrTable"
+        define_edge = "defines_num_id_str_dictionary" if reverse else "defines_str_id_num_dictionary"
+        entry_edge = "dictionary_num_to_str_entry" if reverse else "dictionary_str_to_num_entry"
+        for row_key, row in payload.items():
+            row_node = self.add_setting_row_node(table, table_node, row_key, row)
+            entries = row.get("dic") if isinstance(row, dict) and isinstance(row.get("dic"), dict) else {}
+            dict_node = self.add_setting_metadata_node("id_dictionary", f"{table}:{row_key}", name=row_key, source=table, data={"entryCount": len(entries), "reverse": reverse})
+            if dict_node:
+                self.add_edge(row_node, dict_node, define_edge, source=table, evidence=str(row_key))
+                for index, (entry_key, entry_value) in enumerate(entries.items()):
+                    entry_node = self.add_setting_metadata_node("id_dictionary_entry", f"{table}:{row_key}:{entry_key}", name=str(entry_key), source=table, data={"key": entry_key, "value": entry_value, "dictionary": row_key})
+                    if entry_node:
+                        self.add_edge(dict_node, entry_node, entry_edge, source=table, evidence=f"dic.{entry_key}", data={"index": index})
+
+    def add_global_const_edges(self, table: str, table_node: str, payload: dict[str, Any]) -> None:
+        for row_key, row in payload.items():
+            row_node = self.add_setting_row_node(table, table_node, row_key, row)
+            value = row.get("value") if table == "JsonConst" and isinstance(row, dict) else row
+            parsed_value = value
+            if table == "JsonConst" and isinstance(value, str):
+                try:
+                    parsed_value = json.loads(value)
+                except Exception:
+                    parsed_value = value
+            const_node = self.add_setting_metadata_node("json_const" if table == "JsonConst" else "global_const", f"{table}:{row_key}", name=row_key, source=table, data={"key": row_key, "value": value, "parsedValue": parsed_value if parsed_value is not value else None})
+            if const_node:
+                self.add_edge(row_node, const_node, "defines_json_const" if table == "JsonConst" else "defines_global_const", source=table, evidence=str(row_key))
+                self.add_constant_ref_edges(const_node, parsed_value, source=table, evidence="value", edge_prefix="json_const_refs" if table == "JsonConst" else "global_const_refs")
+
+    def add_game_system_config_edges(self, table: str, table_node: str, payload: dict[str, Any]) -> None:
+        for row_key, row in payload.items():
+            if not isinstance(row, dict):
+                continue
+            row_node = self.add_setting_row_node(table, table_node, row_key, row)
+            system_node = self.add_setting_metadata_node("game_system_config", row.get("systemId") or row_key, name=row.get("systemName"), source=table, data={"systemId": row.get("systemId"), "systemIcon": row.get("systemIcon"), "redDotName": row.get("redDotName"), "unlockSystemType": row.get("unlockSystemType")})
+            if system_node:
+                self.add_edge(row_node, system_node, "defines_game_system_config", source=table, evidence=str(row_key))
+                self.add_alias(row.get("systemIcon"), system_node, kind="asset_stem", source=table)
+                self.add_setting_text_edges(system_node, row.get("systemName"), source=table, edge_kind="game_system_name_text")
+                self.add_setting_text_edges(system_node, row.get("systemDesc"), source=table, edge_kind="game_system_desc_text")
+
+    def add_rich_text_style_edges(self, table: str, table_node: str, payload: dict[str, Any]) -> None:
+        for row_key, row in payload.items():
+            if not isinstance(row, dict):
+                continue
+            row_node = self.add_setting_row_node(table, table_node, row_key, row)
+            style_node = self.add_setting_metadata_node("rich_text_style", row.get("id") or row_key, source=table, data={"preDef": row.get("preDef"), "postDef": row.get("postDef")})
+            if style_node:
+                self.add_edge(row_node, style_node, "defines_rich_text_style", source=table, evidence=str(row_key))
+
+    def add_instruction_book_edges(self, table: str, table_node: str, payload: dict[str, Any]) -> None:
+        for row_key, row in payload.items():
+            if not isinstance(row, dict):
+                continue
+            row_node = self.add_setting_row_node(table, table_node, row_key, row)
+            book_node = self.add_setting_metadata_node("instruction_book", row.get("id") or row_key, name=row.get("title"), source=table, data={"id": row.get("id")})
+            if book_node:
+                self.add_edge(row_node, book_node, "defines_instruction_book", source=table, evidence=str(row_key))
+                self.add_setting_text_edges(book_node, row.get("title"), source=table, edge_kind="instruction_book_title_text")
+                self.add_setting_text_edges(book_node, row.get("content"), source=table, edge_kind="instruction_book_content_text")
+                activity_node = self.add_activity_node(row.get("id") or row_key, source=table)
+                if activity_node:
+                    self.add_edge(book_node, activity_node, "instruction_book_activity_ref", source=table, evidence="id")
+
+    def add_item_icon_composite_edges(self, table: str, table_node: str, payload: dict[str, Any]) -> None:
+        for row_key, row in payload.items():
+            if not isinstance(row, dict):
+                continue
+            row_node = self.add_setting_row_node(table, table_node, row_key, row)
+            icon_node = self.add_setting_metadata_node("item_icon_composite", row.get("id") or row_key, source=table, data={"iconTransType": row.get("iconTransType"), "showRarity": row.get("showRarity"), "bgIconCount": len(row.get("bgIcons") or []), "markIcon": row.get("markIcon")})
+            if icon_node:
+                self.add_edge(row_node, icon_node, "defines_item_icon_composite", source=table, evidence=str(row_key))
+                self.add_alias(row.get("markIcon"), icon_node, kind="asset_stem", source=table)
+                for index, icon in enumerate(row.get("bgIcons") or []):
+                    self.add_alias(icon, icon_node, kind="asset_stem", source=table)
+
+    def add_temp_map_mark_edges(self, table: str, table_node: str, payload: dict[str, Any]) -> None:
+        for row_key, row in payload.items():
+            row_node = self.add_setting_row_node(table, table_node, row_key, row)
+            if not isinstance(row, dict):
+                continue
+            group_node = self.add_setting_metadata_node("map_mark_temp_group", row_key, source=table, data={"typeCount": len(row.get("typeList") or [])})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_map_mark_temp_group", source=table, evidence=str(row_key))
+                for index, entry in enumerate(row.get("typeList") or []):
+                    if not isinstance(entry, dict):
+                        continue
+                    mark_node = self.add_map_mark_template_node(entry.get("markInfoId"), source=table, data={"markInfoType": entry.get("markInfoType"), "markType": entry.get("markType"), "sortOrder": entry.get("sortOrder"), "visibleLayer": entry.get("visibleLayer"), "visibleDist": entry.get("visibleDist"), "defaultVisible": entry.get("defaultVisible"), "isStatic": entry.get("isStatic")})
+                    if mark_node:
+                        self.add_edge(group_node, mark_node, "map_mark_temp_group_has_template", source=table, evidence=f"typeList[{index}]")
+                        for field, edge_kind in (("activeIcon", "map_mark_template_active_icon"), ("inActiveIcon", "map_mark_template_inactive_icon")):
+                            self.add_alias(entry.get(field), mark_node, kind="asset_stem", source=table)
+                        self.add_tag_i18n_edges(mark_node, entry.get("name"), source=table, edge_kind="map_mark_template_name_text")
+                        self.add_tag_i18n_edges(mark_node, entry.get("desc"), source=table, edge_kind="map_mark_template_desc_text")
+
+    def add_setting_metadata_edges(self, table: str, table_node: str, payload: dict[str, Any]) -> None:
+        if table in {"SettingIdTable", "SettingIdToStr", "SettingIdToNum"}:
+            self.add_setting_id_map_edges(table, table_node, payload)
+        elif table in {"StrIdNumTable", "NumIdStrTable"}:
+            self.add_id_dictionary_edges(table, table_node, payload)
+        elif table in {"GlobalConst", "JsonConst"}:
+            self.add_global_const_edges(table, table_node, payload)
+        elif table == "GameSystemConfigTable":
+            self.add_game_system_config_edges(table, table_node, payload)
+        elif table == "RichTextStyleTable":
+            self.add_rich_text_style_edges(table, table_node, payload)
+        elif table == "InstructionBook":
+            self.add_instruction_book_edges(table, table_node, payload)
+        elif table == "ItemIconCompositeTable":
+            self.add_item_icon_composite_edges(table, table_node, payload)
+        elif table == "MapMarkTypeTempTable":
+            self.add_temp_map_mark_edges(table, table_node, payload)
 
     def add_env_talk_node(self, talk_id: Any, *, source: str = "", data: Any = None) -> str:
         talk_key = safe_key(talk_id)
@@ -20281,6 +20486,17 @@ QUERY_KIND_PRIORITY = {
     "setting_gamepad_option": 34.7,
     "setting_text_key": 34.8,
     "setting_function": 34.85,
+    "setting_group": 34.851,
+    "setting_id_map": 34.852,
+    "id_dictionary": 34.853,
+    "id_dictionary_entry": 34.854,
+    "global_const": 34.855,
+    "json_const": 34.856,
+    "game_system_config": 34.857,
+    "rich_text_style": 34.858,
+    "instruction_book": 34.859,
+    "item_icon_composite": 34.8591,
+    "map_mark_temp_group": 34.8592,
     "battlepass_season": 34.861,
     "battlepass_task_group": 34.862,
     "battlepass_task": 34.863,
@@ -20859,6 +21075,17 @@ NODE_ID_PREFIXES = (
     "setting_gamepad_option",
     "setting_text_key",
     "setting_function",
+    "setting_group",
+    "setting_id_map",
+    "id_dictionary",
+    "id_dictionary_entry",
+    "global_const",
+    "json_const",
+    "game_system_config",
+    "rich_text_style",
+    "instruction_book",
+    "item_icon_composite",
+    "map_mark_temp_group",
     "battlepass_season",
     "battlepass_task_group",
     "battlepass_task",
