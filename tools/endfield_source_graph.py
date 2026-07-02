@@ -7594,6 +7594,25 @@ class SourceGraphBuilder:
             self.add_file(rel, kind="video", source=rel.split("/", 1)[0], size=entry.get("s"))
             self.add_alias(Path(rel).stem.lower(), node, kind="video_stem", source="webui/videos")
 
+    def video_node_by_stem(self, value: Any) -> str:
+        stem = safe_key(value).replace("\\", "/")
+        if not stem:
+            return ""
+        stem = Path(stem).stem.lower()
+        video_nodes = sorted({node_id for node_id in self.alias_node_ids(stem, kind="video_stem") if node_id.startswith("video:")})
+        if len(video_nodes) == 1:
+            return video_nodes[0]
+        streaming_nodes = [node_id for node_id in video_nodes if node_id.startswith("video:StreamingAssets-structured/")]
+        if len(streaming_nodes) == 1:
+            return streaming_nodes[0]
+        persistent_nodes = [node_id for node_id in video_nodes if node_id.startswith("video:Persistent-structured/")]
+        return persistent_nodes[0] if len(persistent_nodes) == 1 else ""
+
+    def add_video_stem_edge(self, owner_node: str, value: Any, *, edge_kind: str, source: str, evidence: str, data: Any = None) -> None:
+        video_node = self.video_node_by_stem(value)
+        if video_node:
+            self.add_edge(owner_node, video_node, edge_kind, source=source, evidence=evidence, data=data)
+
     def normalized_video_binding_path(self, value: Any) -> str:
         rel = safe_key(value).replace("\\", "/")
         if not rel:
@@ -12955,6 +12974,7 @@ class SourceGraphBuilder:
                 self.add_tag_i18n_edges(page_node, row.get("content"), source=table, edge_kind="wiki_tutorial_page_content_text")
                 self.add_alias(row.get("image"), page_node, kind="asset_stem", source=table)
                 self.add_alias(row.get("video"), page_node, kind="video_stem", source=table)
+                self.add_video_stem_edge(page_node, row.get("video"), edge_kind="wiki_tutorial_page_uses_video", source=table, evidence="video", data={"videoDeviceType": row.get("videoDeviceType")})
                 if tutorial_node:
                     self.add_edge(tutorial_node, page_node, "wiki_tutorial_has_page", source=table, evidence="tutorialId", data={"order": row.get("order")})
                 for index, entry_id in enumerate(row.get("refWikiEntryIds") or []):
@@ -14618,6 +14638,14 @@ class SourceGraphBuilder:
             self.add_edge(char_node, skill_node, "character_recommends_weapon_skill", source=table, evidence=f"weaponSkillIds[{index}]")
             self.add_alias(skill_key, skill_node, kind="weapon_skill_recommendation_id", source=table)
 
+    def add_guide_group_node(self, guide_group_id: Any, *, source: str = "", data: Any = None) -> str:
+        group_key = safe_key(guide_group_id)
+        if not group_key:
+            return ""
+        node = self.add_node("guide_group", group_key, name=group_key, source=source, data=data)
+        self.add_alias(group_key, node, kind="guide_group_id", source=source)
+        return node
+
     def add_tutorial_step_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         step_id = safe_key(row.get("stepId") or row_key)
         if not step_id:
@@ -14647,6 +14675,9 @@ class SourceGraphBuilder:
             stage_node = self.add_node("character_tutorial_stage", f"{tutorial_id}:{stage_key}", name=f"{tutorial_id} stage {stage_key}", source=table, data={"tutorialId": tutorial_id, "stage": stage.get("stage"), "guideGroupId": stage.get("guideGroupId"), "stepCount": len(stage.get("stepIds") or [])})
             self.add_edge(tutorial_node, stage_node, "tutorial_has_stage", source=table, evidence=f"tutorialStageData[{index}]")
             self.add_alias(stage.get("guideGroupId"), stage_node, kind="guide_group_id", source=table)
+            guide_group_node = self.add_guide_group_node(stage.get("guideGroupId"), source=table, data={"tutorialId": tutorial_id, "stage": stage.get("stage")})
+            if guide_group_node:
+                self.add_edge(stage_node, guide_group_node, "tutorial_stage_uses_guide_group", source=table, evidence="guideGroupId")
             for step_index, step_id in enumerate(stage.get("stepIds") or []):
                 step_node = self.add_node("character_tutorial_step", step_id, name=step_id, source=table)
                 self.add_edge(stage_node, step_node, "tutorial_stage_has_step", source=table, evidence=f"stepIds[{step_index}]")
@@ -14673,6 +14704,9 @@ class SourceGraphBuilder:
         self.add_edge(trial_node, dungeon_node, "trial_uses_dungeon", source=table, evidence="dungeonId")
         self.add_alias(dungeon_id, trial_node, kind="character_trial_id", source=table)
         self.add_alias(row.get("guideGroupId"), trial_node, kind="guide_group_id", source=table)
+        guide_group_node = self.add_guide_group_node(row.get("guideGroupId"), source=table, data={"dungeonId": dungeon_id})
+        if guide_group_node:
+            self.add_edge(trial_node, guide_group_node, "trial_uses_guide_group", source=table, evidence="guideGroupId")
 
     def add_activity_char_trial_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         dungeon_id = safe_key(row.get("dungeonId") or row_key)
