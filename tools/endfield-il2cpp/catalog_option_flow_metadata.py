@@ -799,6 +799,7 @@ def build_catalog(
     type_re: re.Pattern[str],
     member_re: re.Pattern[str],
     body_target_re: re.Pattern[str],
+    body_target_type_re: re.Pattern[str] | None,
     image_re: re.Pattern[str] | None,
     *,
     only_focus: bool,
@@ -861,7 +862,15 @@ def build_catalog(
     matched.sort(key=lambda r: (not r["matchedBy"]["focusName"], r["fullName"]))
     focus.sort(key=lambda r: r["fullName"])
     member_only.sort(key=lambda r: r["fullName"])
-    body_target_rows = focus or matched
+    if body_target_type_re is not None:
+        body_target_rows = [
+            row
+            for row in matched
+            if body_target_type_re.search(row["fullName"])
+            or body_target_type_re.search(row["name"])
+        ]
+    else:
+        body_target_rows = focus or matched
     body_targets = collect_body_targets(
         md,
         body_target_rows,
@@ -876,6 +885,9 @@ def build_catalog(
             "typeRegex": type_re.pattern,
             "memberRegex": member_re.pattern,
             "bodyTargetRegex": body_target_re.pattern,
+            "bodyTargetTypeRegex": (
+                body_target_type_re.pattern if body_target_type_re is not None else None
+            ),
             "bodyContext": max(0, body_context),
             "imageRegex": image_re.pattern if image_re is not None else None,
             "onlyFocus": only_focus,
@@ -1329,6 +1341,15 @@ def parse_args() -> argparse.Namespace:
         help="Regex for method names to promote as likely GameAssembly body targets.",
     )
     parser.add_argument(
+        "--body-target-type-regex",
+        default=None,
+        help=(
+            "Optional regex for matched type full/simple names to consider for "
+            "body targets. When omitted, the historical focus-or-matched type "
+            "selection is used."
+        ),
+    )
+    parser.add_argument(
         "--body-context",
         type=int,
         default=DEFAULT_BODY_CONTEXT,
@@ -1379,6 +1400,11 @@ def main() -> int:
     type_re = re.compile(args.type_regex, re.IGNORECASE)
     member_re = re.compile(args.member_regex, re.IGNORECASE)
     body_target_re = re.compile(args.body_target_regex, re.IGNORECASE)
+    body_target_type_re = (
+        re.compile(args.body_target_type_regex, re.IGNORECASE)
+        if args.body_target_type_regex
+        else None
+    )
     image_re = None if args.all_images else re.compile(args.image_regex, re.IGNORECASE)
 
     md = Metadata(metadata_path)
@@ -1387,6 +1413,7 @@ def main() -> int:
         type_re,
         member_re,
         body_target_re,
+        body_target_type_re,
         image_re,
         only_focus=args.only_focus,
         include_all_members=args.include_all_members,
