@@ -1074,6 +1074,16 @@ Together, these reports show good but incomplete video understanding. Many
 important narrative links are attached, but standalone videos and unresolved
 refs need more classification.
 
+2026-07-01 FMV binding graph progress: `export_full/recovered/video_bindings.json`
+is now ingested as queryable source graph evidence. A fast CN temp graph build
+to `tmp/source_graph_video_bindings.sqlite` verified 29 `fmv_binding` nodes, 29
+`fmv_clip` nodes, 84 `fmv_binding_uses_video` edges, 29 story-target edges, 29
+mission edges, 29 timeline-clip edges, 58 source-file edges, 58 playable PathID
+edges, and 110 `unbound_video_candidate` diagnostic edges. Binding video paths
+are normalized back to the existing `StreamingAssets-structured` and
+`Persistent-structured` video nodes, and `sceneIsHint` remains explicit payload
+data rather than being treated as authoritative story proof.
+
 ### Text Tables and I18n Coverage
 
 Understanding is high for extraction and partial for completeness/meaning.

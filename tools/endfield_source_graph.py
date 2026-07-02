@@ -2488,6 +2488,8 @@ class SourceGraphBuilder:
             self.commit_step("videos")
             self.ingest_webui_story()
             self.commit_step("story")
+            self.ingest_video_bindings()
+            self.commit_step("videoBindings")
             self.ingest_option_overrides()
             self.commit_step("optionOverrides")
             self.ingest_item_economy()
@@ -6531,6 +6533,151 @@ class SourceGraphBuilder:
             self.add_edge(root_node, node, "indexes_video", source="webui/videos")
             self.add_file(rel, kind="video", source=rel.split("/", 1)[0], size=entry.get("s"))
             self.add_alias(Path(rel).stem.lower(), node, kind="video_stem", source="webui/videos")
+
+    def normalized_video_binding_path(self, value: Any) -> str:
+        rel = safe_key(value).replace("\\", "/")
+        if not rel:
+            return ""
+        marker = "export_full/structured/"
+        if rel.startswith(marker):
+            rel = rel[len(marker) :]
+        if rel.startswith("structured/"):
+            rel = rel[len("structured/") :]
+        if rel.startswith("StreamingAssets/"):
+            return f"StreamingAssets-structured/{rel[len('StreamingAssets/') :]}"
+        if rel.startswith("Persistent/"):
+            return f"Persistent-structured/{rel[len('Persistent/') :]}"
+        return rel
+
+    def ingest_video_bindings(self) -> None:
+        path = EXPORT_ROOT / "recovered" / "video_bindings.json"
+        payload = read_json(path, {})
+        bindings = payload.get("bindings") if isinstance(payload, dict) else None
+        if not isinstance(bindings, dict) or not bindings:
+            return
+        dataset = self.add_node(
+            "dataset",
+            "fmv_video_bindings",
+            name="FMV video bindings",
+            path=slash(path),
+            source="video_bindings",
+            data=payload.get("summary"),
+        )
+        self.add_file(slash(path), kind="video_bindings", source="video_bindings", data=payload.get("summary"))
+        for binding_key, binding in sorted(bindings.items()):
+            if not isinstance(binding, dict):
+                continue
+            fmv_id = safe_key(binding.get("fmvId") or binding_key)
+            if not fmv_id:
+                continue
+            binding_node = self.add_node(
+                "fmv_binding",
+                fmv_id,
+                name=fmv_id,
+                source="video_bindings",
+                data={
+                    "fmvId": fmv_id,
+                    "baseFmvId": binding.get("baseFmvId"),
+                    "gender": binding.get("gender"),
+                    "scene": binding.get("scene"),
+                    "mission": binding.get("mission"),
+                    "fallbackSceneHint": binding.get("fallbackSceneHint"),
+                    "fallbackMissionHint": binding.get("fallbackMissionHint"),
+                    "sceneIsHint": binding.get("sceneIsHint"),
+                    "videoCount": len(binding.get("videos") or []),
+                    "clipCount": len(binding.get("clips") or []),
+                    "sourceCount": len(binding.get("sources") or []),
+                },
+            )
+            self.add_edge(dataset, binding_node, "defines_fmv_binding", source="video_bindings", evidence=fmv_id)
+            self.add_alias(fmv_id, binding_node, kind="fmv_id", source="video_bindings")
+            self.add_alias(binding.get("baseFmvId"), binding_node, kind="fmv_base_id", source="video_bindings")
+
+            story_key = safe_key(binding.get("fallbackSceneHint"))
+            if story_key:
+                story_node = self.add_node("story", story_key, source="video_bindings")
+                self.add_edge(
+                    binding_node,
+                    story_node,
+                    "fmv_binding_targets_story",
+                    source="video_bindings",
+                    evidence="fallbackSceneHint",
+                    data={"scene": binding.get("scene"), "sceneIsHint": bool(binding.get("sceneIsHint"))},
+                )
+            mission_id = safe_key(binding.get("mission") or binding.get("fallbackMissionHint"))
+            if mission_id:
+                mission_node = self.add_node("mission", mission_id, source="video_bindings")
+                self.add_edge(
+                    binding_node,
+                    mission_node,
+                    "fmv_binding_in_mission",
+                    source="video_bindings",
+                    evidence="mission" if safe_key(binding.get("mission")) else "fallbackMissionHint",
+                    data={"fallbackMissionHint": binding.get("fallbackMissionHint")},
+                )
+            for video_index, video_path in enumerate(binding.get("videos") or []):
+                rel = self.normalized_video_binding_path(video_path)
+                if not rel:
+                    continue
+                video_node = self.add_node("video", rel, name=Path(rel).name, source=rel.split("/", 1)[0], path=rel)
+                self.add_edge(
+                    binding_node,
+                    video_node,
+                    "fmv_binding_uses_video",
+                    source="video_bindings",
+                    evidence=f"videos[{video_index}]",
+                    data={"rawPath": video_path},
+                )
+
+            for clip_index, clip in enumerate(binding.get("clips") or []):
+                if not isinstance(clip, dict):
+                    continue
+                clip_node = self.add_node(
+                    "fmv_clip",
+                    f"{fmv_id}:{clip_index}",
+                    name=safe_key(clip.get("displayName")) or f"{fmv_id}:{clip_index}",
+                    source="video_bindings",
+                    data={
+                        "fmvId": fmv_id,
+                        "index": clip_index,
+                        "scene": clip.get("scene"),
+                        "start": clip.get("start"),
+                        "duration": clip.get("duration"),
+                        "optionIndex": clip.get("optionIndex"),
+                        "displayName": clip.get("displayName"),
+                        "playableAssetPathId": clip.get("playableAssetPathId"),
+                    },
+                )
+                self.add_edge(binding_node, clip_node, "fmv_binding_timeline_clip", source="video_bindings", evidence=f"clips[{clip_index}]")
+                track_file = safe_key(clip.get("trackFile"))
+                if track_file:
+                    file_node = self.add_file(track_file, kind="timeline_fmv_track", source="video_bindings")
+                    self.add_edge(clip_node, file_node, "fmv_binding_source_file", source="video_bindings", evidence=f"clips[{clip_index}].trackFile")
+                path_id = safe_key(clip.get("playableAssetPathId"))
+                if path_id:
+                    pid_node = self.add_node("unity_pathid", f"pathid:{path_id}", name=f"pathid:{path_id}", source="video_bindings")
+                    self.add_alias(f"pathid:{path_id}", pid_node, kind="unity_pathid", source="video_bindings")
+                    self.add_edge(clip_node, pid_node, "fmv_binding_playable_pathid", source="video_bindings", evidence=f"clips[{clip_index}].playableAssetPathId")
+
+            for source_index, source_row in enumerate(binding.get("sources") or []):
+                if not isinstance(source_row, dict):
+                    continue
+                source_file = safe_key(source_row.get("asset"))
+                if source_file:
+                    file_node = self.add_file(source_file, kind="fmv_binding_source", source=safe_key(source_row.get("kind")) or "video_bindings", data=compact_payload(source_row, depth=2))
+                    self.add_edge(binding_node, file_node, "fmv_binding_source_file", source="video_bindings", evidence=f"sources[{source_index}].asset", data=compact_payload(source_row, depth=2))
+                path_id = safe_key(source_row.get("pathId"))
+                if path_id:
+                    pid_node = self.add_node("unity_pathid", f"pathid:{path_id}", name=f"pathid:{path_id}", source="video_bindings")
+                    self.add_alias(f"pathid:{path_id}", pid_node, kind="unity_pathid", source="video_bindings")
+                    self.add_edge(binding_node, pid_node, "fmv_binding_playable_pathid", source="video_bindings", evidence=f"sources[{source_index}].pathId", data={"kind": source_row.get("kind"), "duration": source_row.get("duration")})
+
+        for index, video_path in enumerate(payload.get("unboundVideos") or []):
+            rel = self.normalized_video_binding_path(video_path)
+            if not rel:
+                continue
+            video_node = self.add_node("video", rel, name=Path(rel).name, source=rel.split("/", 1)[0], path=rel)
+            self.add_edge(dataset, video_node, "unbound_video_candidate", source="video_bindings", evidence=str(index), data={"rawPath": video_path})
 
     def ingest_webui_story(self) -> None:
         lang_root = WEBUI_DATA / "lang" / self.language
@@ -13745,6 +13892,8 @@ QUERY_KIND_PRIORITY = {
     "navmesh_area_id": 116,
     "navmesh_state_container": 117,
     "navmesh_state_record": 118,
+    "fmv_binding": 118.4,
+    "fmv_clip": 118.5,
     "mission_runtime_asset": 119,
     "mission_runtime_action": 119.1,
     "mission_runtime_action_type": 120,
@@ -14075,6 +14224,8 @@ NODE_ID_PREFIXES = (
     "navmesh_area_id",
     "navmesh_state_container",
     "navmesh_state_record",
+    "fmv_binding",
+    "fmv_clip",
     "mission_runtime_asset",
     "mission_runtime_action",
     "mission_runtime_action_type",
