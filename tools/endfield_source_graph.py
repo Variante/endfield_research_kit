@@ -492,6 +492,9 @@ CHARACTER_SUPPORT_TABLES = (
     "ActivityCharacterGuideLineTable.json",
     "RecommendTraining.json",
 )
+CHARACTER_VISUAL_TABLES = (
+    "ActorImageTable.json",
+)
 CHARACTER_PROGRESSION_TABLES = (
     "CharLevelUpTable.json",
     "CharBreakTable.json",
@@ -2970,6 +2973,8 @@ class SourceGraphBuilder:
                 self.commit_step("gameplay")
             self.ingest_character_support_semantics()
             self.commit_step("characterSupport")
+            self.ingest_character_visual_semantics()
+            self.commit_step("characterVisuals")
             self.ingest_character_progression_semantics()
             self.commit_step("characterProgression")
             self.ingest_tag_taxonomy_semantics()
@@ -11519,6 +11524,58 @@ class SourceGraphBuilder:
         elif table == "InteractiveAttributeDataTable":
             self.add_interactive_attribute_edges(table, row_key, row, row_node)
 
+    def ingest_character_visual_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_character_visuals", name="Structured character visual tables", path=slash(table_root))
+        for table_name in CHARACTER_VISUAL_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/character_visuals")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/character_visuals")
+                self.add_character_visual_row_edges(table, row_key, row, row_node)
+
+    def add_character_visual_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table != "ActorImageTable" or not isinstance(row, dict):
+            return
+        char_id = safe_key(row_key)
+        image_node = self.add_semantic_node(
+            "actor_image",
+            char_id,
+            source=table,
+            data={
+                "avatarPath": row.get("avatarPath"),
+                "bustPath": row.get("bustPath"),
+                "illustrationPath": row.get("illustrationPath"),
+                "missionPanelChrAvatarPath": row.get("missionPanelChrAvatarPath"),
+            },
+        )
+        if not image_node:
+            return
+        self.add_edge(row_node, image_node, "defines_actor_image", source=table)
+        character_node = self.add_character_ref_node(char_id, source=table)
+        if character_node:
+            self.add_edge(character_node, image_node, "character_has_actor_image", source=table, evidence="rowKey")
+        for field, edge_kind in (
+            ("avatarPath", "character_has_avatar_image"),
+            ("bustPath", "character_has_bust_image"),
+            ("illustrationPath", "character_has_illustration_image"),
+            ("missionPanelChrAvatarPath", "character_has_mission_panel_image"),
+        ):
+            token = safe_key(row.get(field))
+            if not token:
+                continue
+            token_node = self.add_node("visual_token", token, name=token, source=table)
+            self.add_alias(token, token_node, kind="visual_token", source=table)
+            self.add_alias(token, image_node, kind="asset_stem", source=table)
+            self.add_edge(image_node, token_node, edge_kind, source=table, evidence=field, data={"field": field})
+
     def ingest_character_support_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_character_support", path=slash(table_root))
@@ -19422,6 +19479,7 @@ QUERY_KIND_PRIORITY = {
     "settlement_poi": 21,
     "shop_channel_poi": 22,
     "character": 9,
+    "actor_image": 9.1,
     "character_break_stage": 10,
     "character_level_checkpoint": 11,
     "character_stat_checkpoint": 12,
@@ -19979,6 +20037,7 @@ NODE_ID_PREFIXES = (
     "settlement_poi",
     "shop_channel_poi",
     "character",
+    "actor_image",
     "character_break_stage",
     "character_level_checkpoint",
     "character_stat_checkpoint",
