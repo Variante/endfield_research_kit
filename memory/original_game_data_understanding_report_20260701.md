@@ -2198,6 +2198,12 @@ The source graph now promotes Week Raid gameplay-mode structure from `WeekRaidTa
 
 A fast CN temp build verified 2 Week Raid games, 6 item-domain labels, 7 tech types, 9 buff tech types, 31 tech rows, 66 delegate missions, 9 refresh levels, 20 battle-pass tiers, 31 tech item edges, 66 delegate reward edges, 68 item conversion/reverse edges, 68 item-domain edges, 9 refresh-level edges, 20 tier reward edges, and 44 normalized format-text links. CLI smoke checks passed for `week_raid_game:dung01_wrdg001`, `week_raid_tech:t_1_1`, `week_raid_delegate:db01m2d1`, and `week_raid_battlepass_tier:1`. This improves authored gameplay-mode lookup while staying limited to config evidence rather than runtime danger/score formulas, live weekly rotation, account progress, or server-side refresh state.
 
+### 2026-07-02 Factory Utility Numeric Graph Progress
+
+The source graph now promotes authored factory utility numeric profiles from power station/hub/pole tables, factory power/productivity data type tables, miner/fuel/battery tables, `LiquidTable`, fluid machine tables, and sewage treatment plant tables. It adds queryable nodes for power stations, hub power profiles, power poles, power/productivity data types, miners, fuel profiles, battery profiles, liquids, fluid machines, sewage plant levels, and sewage action params, with edges to factory buildings/machines, items, liquid item refs, empty/full bottle pairs, accepted liquids, product liquids, domains, levels, and sewage action targets.
+
+A fast CN temp build verified 1 power station, 2 hub power profiles, 4 power poles, 5 power data types, 5 productivity data types, 4 miners, 6 fuel profiles, 5 battery profiles, 11 liquids, 17 fluid-machine refs, 4 sewage levels, 10 miner output item edges, 4 miner consume item edges, 67 empty bottle refs, 67 full bottle refs, 67 bottle-pair edges, 24 fluid accepted-liquid edges, 1 fluid product liquid edge, 4 sewage plant level edges, 8 sewage action param edges, 4 action level refs, and 4 action machine refs. CLI smoke checks passed for `factory_miner:miner_2`, `factory_liquid:item_liquid_acid`, `factory_fluid_machine:pump_2`, `sewage_treat_plant:liquidcleanfactory_005_1`, and `factory_sewage_level:liquidcleanfactory_005_1:4`. This improves authored utility lookup while staying limited to config evidence rather than runtime throughput, placement behavior, power simulation, liquid transfer simulation, or account/world upgrade state.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
