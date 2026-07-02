@@ -346,6 +346,9 @@ MODE_CONSTANT_TABLES = (
     "FactoryBattleTable.json",
 )
 MODE_CONST_TABLES = {Path(table_name).stem for table_name in MODE_CONSTANT_TABLES if Path(table_name).stem.endswith("Const")}
+TEXT_REFERENCE_TABLES = (
+    "TextTable.json",
+)
 DISPLAY_METADATA_TABLES = (
     "CashShopHideInGameTable.json",
     "UserAvatarTableFrame.json",
@@ -3171,6 +3174,8 @@ class SourceGraphBuilder:
             self.commit_step("modeConstants")
             self.ingest_display_metadata_semantics()
             self.commit_step("displayMetadata")
+            self.ingest_text_reference_semantics()
+            self.commit_step("textReferences")
             self.ingest_factory_interaction_lookup_semantics()
             self.commit_step("factoryInteractionLookups")
             if self.include_gameplay:
@@ -14797,6 +14802,38 @@ class SourceGraphBuilder:
             if text_node:
                 self.add_edge(owner_node, text_node, "uses_i18n_text", source=source, evidence=text_id)
 
+    def add_text_table_key_node(self, text_key: Any, *, source: str = "", data: Any = None) -> str:
+        key = safe_key(text_key)
+        if not key:
+            return ""
+        node = self.add_node("text_table_key", key, name=key, source=source, data=data)
+        self.add_alias(key, node, kind="text_table_key", source=source)
+        return node
+
+    def ingest_text_reference_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_text_references", name="Structured text key to i18n id references", path=slash(table_root))
+        for table_name in TEXT_REFERENCE_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/text_references")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/text_references")
+                text_key_node = self.add_text_table_key_node(row_key, source=table, data={"textId": row.get("id") if isinstance(row, dict) else None, "hasInlineText": bool(row.get("text")) if isinstance(row, dict) else False})
+                if not text_key_node:
+                    continue
+                self.add_edge(row_node, text_key_node, "defines_text_table_key", source=table, evidence=str(row_key))
+                if isinstance(row, dict):
+                    text_node = self.add_i18n_text_node(row.get("id"), source=table)
+                    if text_node:
+                        self.add_edge(text_key_node, text_node, "text_table_key_i18n_text", source=table, evidence="id")
+
     def add_setting_text_edges(self, owner_node: str, payload: Any, *, source: str, edge_kind: str = "setting_uses_i18n_text") -> None:
         seen: set[str] = set()
         for text_id in self.iter_i18n_text_ids(payload):
@@ -21274,7 +21311,8 @@ class SourceGraphBuilder:
                     i18n_id = safe_key(text.get("i18nId"))
                     if i18n_id:
                         text_node = self.add_node(
-                            "i18n_text",
+                            "text_table_key",
+    "i18n_text",
                             f"{self.language}:{i18n_id}",
                             name=compact_text(text.get("text"), 160),
                             source=self.language,
@@ -22335,6 +22373,7 @@ QUERY_KIND_PRIORITY = {
     "spaceship_scene": 42.16,
     "spaceship_game_mode": 42.17,
     "env_talk": 43,
+    "text_table_key": 43.9,
     "i18n_text": 44,
     "system_jump": 45,
     "activity": 46,
