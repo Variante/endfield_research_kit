@@ -279,6 +279,21 @@ UI_LABEL_SEMANTIC_TABLES = {
         "text_fields": ("__self__",),
     },
 }
+BATTLEPASS_SEMANTIC_TABLES = (
+    "BattlePassSeasonTable.json",
+    "BattlePassTaskTable.json",
+    "BattlePassTaskGroupTable.json",
+    "BattlePassTaskLabelMapTable.json",
+    "BattlePassTaskSubLabelMapTable.json",
+    "BattlePassConditionTable.json",
+    "BattlePassLevelTable.json",
+    "BattlePassOverrideLevelTable.json",
+    "BattlePassTrackTable.json",
+    "BattlePassTrackTypeToIDTable.json",
+    "BattlePassRewardPreviewTable.json",
+    "BattlePassBannerTable.json",
+    "WeekRaidBattlePassTable.json",
+)
 DUNGEON_TRAINING_TABLES = (
     "DungeonTable.json",
     "DungeonSeriesTable.json",
@@ -2741,6 +2756,8 @@ class SourceGraphBuilder:
             self.commit_step("gameMechanics")
             self.ingest_dungeon_training_semantics()
             self.commit_step("dungeonTraining")
+            self.ingest_battlepass_semantics()
+            self.commit_step("battlepassSemantics")
             self.ingest_spaceship_semantics()
             self.commit_step("spaceshipSemantics")
             self.ingest_factory_tech_semantics()
@@ -10273,6 +10290,182 @@ class SourceGraphBuilder:
 
 
 
+
+    def add_battlepass_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        bp_key = safe_key(key)
+        if not bp_key:
+            return ""
+        bp_name = table_display_text(name) or bp_key
+        node = self.add_node(kind, bp_key, name=bp_name, source=source, data=data)
+        self.add_alias(bp_key, node, kind=f"{kind}_id", source=source)
+        if bp_name != bp_key:
+            self.add_alias(bp_name, node, kind=f"{kind}_name", source=source)
+        return node
+
+    def ingest_battlepass_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_battlepass", name="Structured battle pass tables", path=slash(table_root))
+        for table_name in BATTLEPASS_SEMANTIC_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/battlepass")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/battlepass")
+                self.add_battlepass_row_edges(table, row_key, row, row_node)
+
+    def add_battlepass_reward_edges(self, owner_node: str, row: dict[str, Any], *, source: str, fields: Iterable[tuple[str, str]]) -> None:
+        for field, edge_kind in fields:
+            self.add_reward_ref_edge(owner_node, row.get(field), edge_kind=edge_kind, source=source, evidence=field)
+
+    def add_battlepass_level_rewards(self, level_node: str, level_info: dict[str, Any], *, source: str) -> None:
+        for field, edge_kind in (("freeRewardId", "battlepass_level_free_reward"), ("originiumRewardId", "battlepass_level_originium_reward"), ("payRewardId", "battlepass_level_pay_reward")):
+            self.add_reward_ref_edge(level_node, level_info.get(field), edge_kind=edge_kind, source=source, evidence=field)
+
+    def add_battlepass_preview_entry(self, group_node: str, group_id: str, entry: dict[str, Any], index: int, *, source: str) -> None:
+        entry_key = f"{group_id}:{index}"
+        entry_node = self.add_battlepass_node("battlepass_reward_preview", entry_key, name=entry.get("name"), source=source, data={"previewGroupId": group_id, "sortId": entry.get("sortId"), "finishLevel": entry.get("finishLevel"), "count": entry.get("count"), "voucherInclusive": entry.get("voucherInclusive")})
+        if not entry_node:
+            return
+        self.add_edge(group_node, entry_node, "battlepass_preview_group_has_entry", source=source, evidence=f"rewardInfos[{index}]")
+        self.add_tag_i18n_edges(entry_node, entry.get("name"), source=source, edge_kind="battlepass_preview_name_text")
+        self.add_tag_i18n_edges(entry_node, entry.get("desc"), source=source, edge_kind="battlepass_preview_desc_text")
+        item_node = self.add_item_node(entry.get("itemId"), source=source)
+        if item_node:
+            self.add_edge(entry_node, item_node, "battlepass_preview_item", source=source, evidence="itemId", data={"count": entry.get("count")})
+        self.add_alias(entry.get("iconId"), entry_node, kind="asset_stem", source=source)
+
+    def add_battlepass_banner_entry(self, banner_node: str, banner_id: str, entry: dict[str, Any], index: int, *, source: str) -> None:
+        entry_node = self.add_battlepass_node("battlepass_banner_entry", f"{banner_id}:{index}", source=source, data={"bannerPresetId": banner_id, "sortId": entry.get("sortId"), "trackId": entry.get("trackId"), "itemId": entry.get("itemId")})
+        if not entry_node:
+            return
+        self.add_edge(banner_node, entry_node, "battlepass_banner_has_entry", source=source, evidence=f"bannerInfos[{index}]")
+        self.add_tag_i18n_edges(entry_node, entry.get("desc"), source=source, edge_kind="battlepass_banner_desc_text")
+        self.add_tag_i18n_edges(entry_node, entry.get("labelTip"), source=source, edge_kind="battlepass_banner_label_text")
+        track_node = self.add_battlepass_node("battlepass_track", entry.get("trackId"), source=source)
+        if track_node:
+            self.add_edge(entry_node, track_node, "battlepass_banner_entry_track", source=source, evidence="trackId")
+        item_node = self.add_item_node(entry.get("itemId"), source=source)
+        if item_node:
+            self.add_edge(entry_node, item_node, "battlepass_banner_entry_item", source=source, evidence="itemId")
+        self.add_alias(entry.get("iconId"), entry_node, kind="asset_stem", source=source)
+
+    def add_battlepass_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "BattlePassSeasonTable" and isinstance(row, dict):
+            season_node = self.add_battlepass_node("battlepass_season", row.get("id") or row_key, name=row.get("name"), source=table, data={"maxLevel": row.get("maxLevel"), "levelGroupId": row.get("levelGroupId"), "ovrLvRewardGroupId": row.get("ovrLvRewardGroupId"), "bannerPresetId": row.get("bannerPresetId")})
+            if season_node:
+                self.add_edge(row_node, season_node, "defines_battlepass_season", source=table)
+                self.add_tag_i18n_edges(season_node, row.get("name"), source=table, edge_kind="battlepass_season_name_text")
+                self.add_tag_i18n_edges(season_node, row.get("shortName"), source=table, edge_kind="battlepass_season_short_name_text")
+                for field, kind, edge_kind in (("levelGroupId", "battlepass_level_group", "battlepass_season_level_group"), ("ovrLvRewardGroupId", "battlepass_level_group", "battlepass_season_override_level_group"), ("bannerPresetId", "battlepass_banner", "battlepass_season_banner"), ("originiumPreviewGroupId", "battlepass_reward_preview_group", "battlepass_season_originium_preview"), ("payPreviewGroupId", "battlepass_reward_preview_group", "battlepass_season_pay_preview")):
+                    target = self.add_battlepass_node(kind, row.get(field), source=table)
+                    if target:
+                        self.add_edge(season_node, target, edge_kind, source=table, evidence=field)
+                for field, edge_kind in (("originiumHintRewardId", "battlepass_season_originium_hint_reward"), ("payHintRewardId", "battlepass_season_pay_hint_reward")):
+                    self.add_reward_ref_edge(season_node, row.get(field), edge_kind=edge_kind, source=table, evidence=field)
+                item_node = self.add_item_node(row.get("weaponBoxId"), source=table)
+                if item_node:
+                    self.add_edge(season_node, item_node, "battlepass_season_weapon_box", source=table, evidence="weaponBoxId")
+                self.add_alias(row.get("bussinessCardId"), season_node, kind="business_card_id", source=table)
+        elif table == "BattlePassTaskGroupTable" and isinstance(row, dict):
+            group_node = self.add_battlepass_node("battlepass_task_group", row.get("groupId") or row_key, name=row.get("name"), source=table, data={"labelId": row.get("labelId"), "sortId": row.get("sortId"), "isDefault": row.get("isDefault")})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_battlepass_task_group", source=table)
+                self.add_tag_i18n_edges(group_node, row.get("name"), source=table, edge_kind="battlepass_task_group_name_text")
+                label_node = self.add_ui_label_node("BattlePassTaskLabelTable", row.get("labelId"), source=table)
+                if label_node:
+                    self.add_edge(group_node, label_node, "battlepass_task_group_label", source=table, evidence="labelId")
+        elif table == "BattlePassTaskTable" and isinstance(row, dict):
+            task_node = self.add_battlepass_node("battlepass_task", row.get("taskId") or row_key, name=row.get("name"), source=table, data={"groupId": row.get("groupId"), "addexp": row.get("addexp"), "opType": row.get("opType"), "sortId": row.get("sortId"), "defaultEnable": row.get("defaultEnable"), "formatType": row.get("formatType")})
+            if task_node:
+                self.add_edge(row_node, task_node, "defines_battlepass_task", source=table)
+                self.add_tag_i18n_edges(task_node, row.get("name"), source=table, edge_kind="battlepass_task_name_text")
+                group_node = self.add_battlepass_node("battlepass_task_group", row.get("groupId"), source=table)
+                if group_node:
+                    self.add_edge(group_node, task_node, "battlepass_group_has_task", source=table, evidence="groupId")
+                for index, condition_id in enumerate(row.get("conditionIds") or []):
+                    condition_node = self.add_battlepass_node("battlepass_condition", condition_id, source=table)
+                    if condition_node:
+                        self.add_edge(task_node, condition_node, "battlepass_task_has_condition", source=table, evidence=f"conditionIds[{index}]")
+                tip_node = self.add_system_tip_node("battlepass_forecast_tip", row.get("forecastTipId"), source=table)
+                if tip_node:
+                    self.add_edge(task_node, tip_node, "battlepass_task_forecast_tip", source=table, evidence="forecastTipId")
+                self.add_system_jump_edge(task_node, row.get("jumpId"), edge_kind="battlepass_task_jump", source=table, evidence="jumpId")
+        elif table == "BattlePassConditionTable" and isinstance(row, dict):
+            condition_node = self.add_battlepass_node("battlepass_condition", row.get("conditionId") or row_key, source=table, data={"progressToCompare": row.get("progressToCompare")})
+            if condition_node:
+                self.add_edge(row_node, condition_node, "defines_battlepass_condition", source=table)
+        elif table in {"BattlePassLevelTable", "BattlePassOverrideLevelTable"} and isinstance(row, dict):
+            group_id = safe_key(row.get("levelGroupId") or row_key)
+            group_node = self.add_battlepass_node("battlepass_level_group", group_id, source=table, data={"levelCount": len(row.get("levelInfos") or {}), "override": table == "BattlePassOverrideLevelTable"})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_battlepass_level_group" if table == "BattlePassLevelTable" else "defines_battlepass_override_level_group", source=table)
+                for level_key, info in (row.get("levelInfos") or {}).items():
+                    if not isinstance(info, dict):
+                        continue
+                    level = info.get("level") if info.get("level") is not None else level_key
+                    level_node = self.add_battlepass_node("battlepass_level", f"{group_id}:{level}", source=table, data={"levelGroupId": group_id, "level": level, "levelExp": info.get("levelExp"), "isMilestone": info.get("isMilestone"), "isRecurring": info.get("isRecurring"), "buyHintType": info.get("buyHintType"), "override": table == "BattlePassOverrideLevelTable"})
+                    if level_node:
+                        self.add_edge(group_node, level_node, "battlepass_group_has_level", source=table, evidence=str(level))
+                        self.add_battlepass_level_rewards(level_node, info, source=table)
+        elif table == "BattlePassTrackTable" and isinstance(row, dict):
+            track_node = self.add_battlepass_node("battlepass_track", row.get("trackId") or row_key, name=row.get("name"), source=table, data={"trackType": row.get("trackType"), "bpExpUpRatio": row.get("bpExpUpRatio")})
+            if track_node:
+                self.add_edge(row_node, track_node, "defines_battlepass_track", source=table)
+                self.add_tag_i18n_edges(track_node, row.get("name"), source=table, edge_kind="battlepass_track_name_text")
+        elif table == "BattlePassTrackTypeToIDTable" and isinstance(row, dict):
+            type_node = self.add_battlepass_node("battlepass_track_type", row_key, source=table)
+            track_node = self.add_battlepass_node("battlepass_track", row.get("bpTrackID"), source=table)
+            if type_node:
+                self.add_edge(row_node, type_node, "defines_battlepass_track_type", source=table)
+                if track_node:
+                    self.add_edge(type_node, track_node, "battlepass_track_type_resolves", source=table, evidence="bpTrackID")
+        elif table == "BattlePassRewardPreviewTable" and isinstance(row, dict):
+            group_id = safe_key(row.get("previewGroupId") or row_key)
+            group_node = self.add_battlepass_node("battlepass_reward_preview_group", group_id, source=table, data={"entryCount": len(row.get("rewardInfos") or [])})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_battlepass_reward_preview_group", source=table)
+                for index, entry in enumerate(row.get("rewardInfos") or []):
+                    if isinstance(entry, dict):
+                        self.add_battlepass_preview_entry(group_node, group_id, entry, index, source=table)
+        elif table == "BattlePassBannerTable" and isinstance(row, dict):
+            banner_id = safe_key(row.get("bannerPresetId") or row_key)
+            banner_node = self.add_battlepass_node("battlepass_banner", banner_id, source=table, data={"entryCount": len(row.get("bannerInfos") or [])})
+            if banner_node:
+                self.add_edge(row_node, banner_node, "defines_battlepass_banner", source=table)
+                for index, entry in enumerate(row.get("bannerInfos") or []):
+                    if isinstance(entry, dict):
+                        self.add_battlepass_banner_entry(banner_node, banner_id, entry, index, source=table)
+        elif table == "BattlePassTaskLabelMapTable" and isinstance(row, dict):
+            parent_node = self.add_ui_label_node("BattlePassTaskLabelTable", row.get("parentLabelID") or row_key, source=table)
+            for index, sub in enumerate(row.get("subLabels") or []):
+                if not isinstance(sub, dict):
+                    continue
+                sub_node = self.add_ui_label_node("BattlePassTaskLabelTable", sub.get("taskLabelID"), source=table)
+                if parent_node and sub_node:
+                    self.add_edge(parent_node, sub_node, "battlepass_label_has_sublabel", source=table, evidence=f"subLabels[{index}]")
+        elif table == "BattlePassTaskSubLabelMapTable" and isinstance(row, dict):
+            sub_node = self.add_ui_label_node("BattlePassTaskLabelTable", row_key, source=table)
+            parent_node = self.add_ui_label_node("BattlePassTaskLabelTable", row.get("parentLabelId"), source=table)
+            if parent_node and sub_node:
+                self.add_edge(parent_node, sub_node, "battlepass_label_has_sublabel", source=table, evidence="parentLabelId")
+        elif table == "WeekRaidBattlePassTable" and isinstance(row, dict):
+            node = self.add_battlepass_node("weekraid_battlepass_node", row.get("bpNodeId") if row.get("bpNodeId") is not None else row_key, source=table, data={"score": row.get("score"), "conditionAdventureLevel": row.get("conditionAdventureLevel"), "conditionTech": row.get("conditionTech"), "gameId": row.get("gameId")})
+            if node:
+                self.add_edge(row_node, node, "defines_weekraid_battlepass_node", source=table)
+                dungeon_node = self.add_dungeon_node(row.get("gameId"), source=table)
+                if dungeon_node:
+                    self.add_edge(node, dungeon_node, "weekraid_battlepass_game", source=table, evidence="gameId")
+                self.add_reward_ref_edge(node, row.get("rewardId"), edge_kind="weekraid_battlepass_reward", source=table, evidence="rewardId")
+                item_node = self.add_item_node(row.get("rewardItemId"), source=table)
+                if item_node:
+                    self.add_edge(node, item_node, "weekraid_battlepass_reward_item", source=table, evidence="rewardItemId")
+
     def add_dungeon_catalog_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         catalog_key = safe_key(key)
         if not catalog_key:
@@ -16354,6 +16547,19 @@ QUERY_KIND_PRIORITY = {
     "setting_gamepad_option": 34.7,
     "setting_text_key": 34.8,
     "setting_function": 34.85,
+    "battlepass_season": 34.861,
+    "battlepass_task_group": 34.862,
+    "battlepass_task": 34.863,
+    "battlepass_condition": 34.864,
+    "battlepass_level_group": 34.865,
+    "battlepass_level": 34.866,
+    "battlepass_track": 34.867,
+    "battlepass_track_type": 34.868,
+    "battlepass_reward_preview_group": 34.869,
+    "battlepass_reward_preview": 34.8691,
+    "battlepass_banner": 34.8692,
+    "battlepass_banner_entry": 34.8693,
+    "weekraid_battlepass_node": 34.8694,
     "ui_label": 34.87,
     "error_code": 34.88,
     "loading_tip": 34.881,
@@ -16744,6 +16950,19 @@ NODE_ID_PREFIXES = (
     "setting_gamepad_option",
     "setting_text_key",
     "setting_function",
+    "battlepass_season",
+    "battlepass_task_group",
+    "battlepass_task",
+    "battlepass_condition",
+    "battlepass_level_group",
+    "battlepass_level",
+    "battlepass_track",
+    "battlepass_track_type",
+    "battlepass_reward_preview_group",
+    "battlepass_reward_preview",
+    "battlepass_banner",
+    "battlepass_banner_entry",
+    "weekraid_battlepass_node",
     "ui_label",
     "error_code",
     "loading_tip",

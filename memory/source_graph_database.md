@@ -1559,6 +1559,10 @@ This closes a gameplay-mode/instruction-table gap by making authored mechanic ca
 
 This bridges authored dungeon taxonomy, playable dungeon rows, simulation training card pools, and adventure/world-level progression into the graph. Numeric training/adventure fields are preserved as table evidence, not treated as runtime economy or balancing formulas.
 
+2026-07-02 battle-pass progression graph refs: `tools/endfield_source_graph.py` now ingests `BattlePassSeasonTable`, task/task-group/condition tables, level and override level groups, tracks, reward previews, banners, label maps, and `WeekRaidBattlePassTable` as `structured_battlepass`. A fast CN graph build to `tmp/source_graph_battlepass.sqlite` verified 4 `battlepass_season`, 45 `battlepass_task_group`, 306 `battlepass_task`, 288 `battlepass_condition`, 6 `battlepass_level_group`, 162 `battlepass_level`, 3 `battlepass_track`, 3 `battlepass_track_type`, 8 `battlepass_reward_preview_group`, 44 `battlepass_reward_preview`, 4 `battlepass_banner`, 16 `battlepass_banner_entry`, and 20 `weekraid_battlepass_node` nodes. Validated edge coverage includes 8 season name/short-name text links, 4 season level-group links, 4 season override-level-group links, 8 season preview-group links, 4 season banner links, 4 weapon-box item links, 45 task-group label links, 306 task name links, 306 group-task links, 322 task-condition links, 167 task system-jump links, 162 level entries, 484 level reward edges across free/originium/pay tracks, 3 track name links, 44 preview entries/items, 16 banner entries, 46 label/sublabel links, and 20 week-raid node links each to game dungeon, reward, and reward item. Smoke tests passed for `bp_01`, `bp_01_task_activity_1`, `bp_lv_group_default:10`, and week-raid node `10`, including direct level-reward and week-raid edge checks.
+
+This models authored battle-pass progression, task, reward, preview, and week-raid linkage. It does not model live server season state, purchase entitlement, or runtime progress counters.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type

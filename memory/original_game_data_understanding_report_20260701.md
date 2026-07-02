@@ -2121,6 +2121,12 @@ The source graph now models authored dungeon and training catalog tables directl
 
 A fast CN build verified 215 defined dungeon rows, 106 dungeon series, 18 dungeon types, 370 series-to-dungeon links, 316 dungeon scene/level links, 274 dungeon enemy links with level payloads, 177 dungeon reward edges, 30 raid-related dungeon links, 46 factory dungeon rows, 125 simulation training pool-card links, 60 adventure levels, 59 adventure level rewards, and 42 adventure world-level tip text links. This improves playable-mode and progression catalog semantics while keeping numeric progression values as authored table evidence rather than runtime formula proof.
 
+### 2026-07-02 Battle Pass Progression Graph Progress
+
+The source graph now models battle-pass progression tables directly: seasons, task groups, tasks, conditions, level and override level reward groups, tracks, reward-preview entries, banners, label maps, and week-raid battle-pass nodes. This completes the larger battle-pass structure that earlier passes only touched through UI task labels and forecast tips.
+
+A fast CN build verified 4 seasons, 45 task groups, 306 tasks, 288 conditions, 162 level entries, 484 level reward edges, 44 preview entries/items, 16 banner entries, 46 label/sublabel links, 167 task system-jump links, and 20 week-raid nodes linked to dungeons, rewards, and reward items. This improves monetization/progression semantics while staying limited to authored table data rather than live server season state or runtime progress counters.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
