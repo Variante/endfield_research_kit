@@ -199,6 +199,18 @@ EQUIPMENT_GEM_TABLES = (
     "GemDismantleTable.json",
     "DropGemTable.json",
 )
+EQUIPMENT_PROGRESSION_TABLES = (
+    "EquipFormulaTable.json",
+    "EquipFormulaReverseTable.json",
+    "EquipPackTable.json",
+    "EquipPackFormulaTable.json",
+    "CharacterPotentialTable.json",
+    "CharPotentialDecoTable.json",
+    "EquipEnhanceCostTable.json",
+    "EquipEnhanceGuaranteeTimesRuleTable.json",
+    "EquipConst.json",
+    "EquipTechConst.json",
+)
 WORLD_HARVESTABLE_TABLES = (
     "DoodadGeneralTable.json",
     "DoodadTreeTable.json",
@@ -2973,6 +2985,8 @@ class SourceGraphBuilder:
             self.commit_step("rewardCatalog")
             self.ingest_equipment_gem_semantics()
             self.commit_step("equipmentGems")
+            self.ingest_equipment_progression_semantics()
+            self.commit_step("equipmentProgression")
             self.ingest_cash_shop_semantics()
             self.commit_step("cashShop")
             self.ingest_world_semantics()
@@ -10807,6 +10821,204 @@ class SourceGraphBuilder:
             drop_node = self.add_equipment_gem_node("drop_gem_type", row.get("dropGemTypeId") or row_key, source=table, data=compact_payload(row, depth=2))
             if drop_node:
                 self.add_edge(row_node, drop_node, "defines_drop_gem_type", source=table)
+
+    def ingest_equipment_progression_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_equipment_progression", name="Structured equipment progression tables", path=slash(table_root))
+        for table_name in EQUIPMENT_PROGRESSION_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/equipment_progression")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/equipment_progression")
+                self.add_equipment_progression_row_edges(table, row_key, row, row_node)
+
+    def add_equipment_progression_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        node_key = safe_key(key)
+        if not node_key:
+            return ""
+        node_name = table_display_text(name) or node_key
+        node = self.add_node(kind, node_key, name=node_name, source=source, data=data)
+        self.add_alias(node_key, node, kind=f"{kind}_id", source=source)
+        if node_name != node_key:
+            self.add_alias(node_name, node, kind=f"{kind}_name", source=source)
+        return node
+
+    def add_equipment_formula_node(self, formula_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        node = self.add_equipment_progression_node("equipment_formula", formula_id, name=name, source=source, data=data)
+        if node and data and isinstance(data, dict):
+            self.add_alias(data.get("outcomeEquipId"), node, kind="equipment_formula_outcome_id", source=source)
+        return node
+
+    def add_equipment_formula_pack_node(self, pack_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_equipment_progression_node("equipment_formula_pack", pack_id, name=name, source=source, data=data)
+
+    def add_equipment_formula_cost_edges(self, formula_node: str, row: dict[str, Any], *, source: str) -> None:
+        gold_node = self.add_item_node(row.get("costGoldId"), source=source)
+        if gold_node:
+            self.add_edge(formula_node, gold_node, "equipment_formula_cost_currency", source=source, evidence="costGoldId", data={"count": row.get("costGoldNum")})
+        item_ids = row.get("costItemId") if isinstance(row.get("costItemId"), list) else []
+        item_counts = row.get("costItemNum") if isinstance(row.get("costItemNum"), list) else []
+        for index, item_id in enumerate(item_ids):
+            item_node = self.add_item_node(item_id, source=source)
+            if item_node:
+                count = item_counts[index] if index < len(item_counts) else None
+                self.add_edge(formula_node, item_node, "equipment_formula_cost_item", source=source, evidence=f"costItemId[{index}]", data={"index": index, "count": count})
+
+    def add_character_potential_level_edges(self, character_node: str, potential_node: str, bundle: dict[str, Any], *, source: str, evidence: str) -> None:
+        effect_id = safe_key(bundle.get("potentialEffectId"))
+        if effect_id:
+            effect_node = self.add_node("potential_talent_effect", effect_id, name=effect_id, source=source)
+            self.add_alias(effect_id, effect_node, kind="potential_talent_effect_id", source=source)
+            self.add_edge(potential_node, effect_node, "character_potential_effect", source=source, evidence=f"{evidence}.potentialEffectId")
+        item_ids = bundle.get("itemIds") if isinstance(bundle.get("itemIds"), list) else []
+        item_counts = bundle.get("itemCnts") if isinstance(bundle.get("itemCnts"), list) else []
+        for index, item_id in enumerate(item_ids):
+            item_node = self.add_item_node(item_id, source=source)
+            if item_node:
+                count = item_counts[index] if index < len(item_counts) else None
+                self.add_edge(potential_node, item_node, "character_potential_cost_item", source=source, evidence=f"{evidence}.itemIds[{index}]", data={"index": index, "count": count})
+        for index, item_id in enumerate(bundle.get("unlockCharPictureItemList") or []):
+            item_node = self.add_item_node(item_id, source=source)
+            if item_node:
+                self.add_edge(potential_node, item_node, "character_potential_unlock_picture_item", source=source, evidence=f"{evidence}.unlockCharPictureItemList[{index}]", data={"index": index})
+        card_item = self.add_item_node(bundle.get("unlockCardTopicItem"), source=source)
+        if card_item:
+            self.add_edge(potential_node, card_item, "character_potential_unlock_card_topic_item", source=source, evidence=f"{evidence}.unlockCardTopicItem")
+        self.add_tag_i18n_edges(potential_node, bundle.get("name"), source=source, edge_kind="character_potential_name_text")
+
+    def add_equipment_progression_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "EquipFormulaReverseTable":
+            equip_node = self.add_equipment_node(row_key, source=table)
+            formula_id = row if isinstance(row, str) else (row.get("formulaId") if isinstance(row, dict) else None)
+            formula_node = self.add_equipment_formula_node(formula_id, source=table)
+            reverse_node = self.add_equipment_progression_node("equipment_formula_reverse", row_key, source=table, data={"equipmentId": row_key, "formulaId": formula_id})
+            if reverse_node:
+                self.add_edge(row_node, reverse_node, "defines_equipment_formula_reverse", source=table)
+                if equip_node:
+                    self.add_edge(reverse_node, equip_node, "equipment_formula_reverse_equipment", source=table, evidence="key")
+                if formula_node:
+                    self.add_edge(reverse_node, formula_node, "equipment_formula_reverse_formula", source=table, evidence="rowValue")
+                    if equip_node:
+                        self.add_edge(equip_node, formula_node, "equipment_reverse_points_to_formula", source=table, evidence="rowValue")
+            return
+        if table in {"EquipConst", "EquipTechConst"}:
+            const_node = self.add_equipment_progression_node("equipment_const", f"{table}:{row_key}", name=row_key, source=table, data={"table": table, "key": row_key, "value": row})
+            if const_node:
+                self.add_edge(row_node, const_node, "defines_equipment_const", source=table)
+            return
+        if not isinstance(row, dict):
+            return
+        if table == "EquipFormulaTable":
+            formula_id = row.get("formulaId") or row_key
+            formula_node = self.add_equipment_formula_node(
+                formula_id,
+                source=table,
+                data={
+                    "formulaId": row.get("formulaId"),
+                    "outcomeEquipId": row.get("outcomeEquipId"),
+                    "packId": row.get("packId"),
+                    "unlockType": row.get("unlockType"),
+                    "unlockKey": row.get("unlockKey"),
+                    "unlockValue": row.get("unlockValue"),
+                    "isNew": row.get("isNew"),
+                },
+            )
+            if formula_node:
+                self.add_edge(row_node, formula_node, "defines_equipment_formula", source=table)
+                equip_node = self.add_equipment_node(row.get("outcomeEquipId"), source=table)
+                if equip_node:
+                    self.add_edge(formula_node, equip_node, "equipment_formula_outputs_equipment", source=table, evidence="outcomeEquipId")
+                    self.add_edge(equip_node, formula_node, "equipment_crafted_by_formula", source=table, evidence="formulaId")
+                pack_node = self.add_equipment_formula_pack_node(row.get("packId"), source=table)
+                if pack_node:
+                    self.add_edge(formula_node, pack_node, "equipment_formula_in_pack", source=table, evidence="packId")
+                unlock_key = safe_key(row.get("unlockKey"))
+                if unlock_key:
+                    unlock_node = self.add_node("gameplay_unlock", unlock_key, name=unlock_key, source=table, data={"unlockType": row.get("unlockType"), "unlockValue": row.get("unlockValue")})
+                    self.add_alias(unlock_key, unlock_node, kind="gameplay_unlock_id", source=table)
+                    self.add_edge(formula_node, unlock_node, "equipment_formula_unlock_key", source=table, evidence="unlockKey")
+                self.add_equipment_formula_cost_edges(formula_node, row, source=table)
+        elif table == "EquipPackTable":
+            pack_id = row.get("packId") or row_key
+            pack_node = self.add_equipment_formula_pack_node(pack_id, name=row.get("name"), source=table, data={"packId": row.get("packId"), "iconId": row.get("iconId"), "isSuit": row.get("isSuit"), "sortId": row.get("sortId")})
+            if pack_node:
+                self.add_edge(row_node, pack_node, "defines_equipment_formula_pack", source=table)
+                self.add_tag_i18n_edges(pack_node, row.get("name"), source=table, edge_kind="equipment_formula_pack_name_text")
+                self.add_alias(row.get("iconId"), pack_node, kind="asset_stem", source=table)
+        elif table == "EquipPackFormulaTable":
+            pack_node = self.add_equipment_formula_pack_node(row_key, source=table, data={"formulaCount": len(row.get("itemList") or [])})
+            if pack_node:
+                self.add_edge(row_node, pack_node, "defines_equipment_formula_pack", source=table)
+                for index, item in enumerate(row.get("itemList") or []):
+                    if not isinstance(item, dict):
+                        continue
+                    formula_node = self.add_equipment_formula_node(item.get("formulaId"), source=table)
+                    if formula_node:
+                        self.add_edge(pack_node, formula_node, "equipment_formula_pack_has_formula", source=table, evidence=f"itemList[{index}].formulaId", data={"index": index})
+                        self.add_edge(formula_node, pack_node, "equipment_formula_in_pack", source=table, evidence=f"itemList[{index}].formulaId", data={"index": index})
+        elif table == "CharacterPotentialTable":
+            character_node = self.add_character_ref_node(row_key, source=table)
+            if character_node:
+                self.add_edge(row_node, character_node, "defines_character_potential", source=table)
+                first_item = self.add_item_node(row.get("firstItemId"), source=table)
+                if first_item:
+                    self.add_edge(character_node, first_item, "character_uses_potential_item", source=table, evidence="firstItemId")
+                bundles = row.get("potentialUnlockBundle") if isinstance(row.get("potentialUnlockBundle"), list) else []
+                for index, bundle in enumerate(bundles):
+                    if not isinstance(bundle, dict):
+                        continue
+                    level_key = safe_key(bundle.get("level") if bundle.get("level") is not None else index)
+                    potential_key = f"{safe_key(row_key)}:potential:{level_key or index}"
+                    potential_node = self.add_equipment_progression_node(
+                        "character_potential",
+                        potential_key,
+                        name=bundle.get("name") or bundle.get("potentialEffectId") or level_key,
+                        source=table,
+                        data={
+                            "characterId": row_key,
+                            "level": bundle.get("level"),
+                            "name": bundle.get("name"),
+                            "potentialEffectId": bundle.get("potentialEffectId"),
+                            "itemCount": len(bundle.get("itemIds") or []),
+                            "unlockPictureItemCount": len(bundle.get("unlockCharPictureItemList") or []),
+                            "unlockCardTopicItem": bundle.get("unlockCardTopicItem"),
+                        },
+                    )
+                    if potential_node:
+                        self.add_edge(character_node, potential_node, "has_character_potential", source=table, evidence=f"potentialUnlockBundle[{index}]", data={"index": index, "level": bundle.get("level")})
+                        self.add_alias(potential_key, potential_node, kind="character_potential_id", source=table)
+                        self.add_character_potential_level_edges(character_node, potential_node, bundle, source=table, evidence=f"potentialUnlockBundle[{index}]")
+        elif table == "CharPotentialDecoTable":
+            deco_node = self.add_equipment_progression_node("character_potential_deco", row.get("id") or row_key, source=table, data=compact_payload(row, depth=2))
+            if deco_node:
+                self.add_edge(row_node, deco_node, "defines_character_potential_deco", source=table)
+                mission_node = self.add_mission_ref_node(row.get("missionId"), source=table)
+                if mission_node:
+                    self.add_edge(deco_node, mission_node, "character_potential_deco_mission", source=table, evidence="missionId")
+                for field in ("animatorId", "carModelId", "rabbitModelId"):
+                    self.add_alias(row.get(field), deco_node, kind="asset_stem", source=table)
+        elif table == "EquipEnhanceCostTable":
+            cost_node = self.add_equipment_progression_node("equipment_enhance_cost", row.get("domainId") or row_key, source=table, data=compact_payload(row, depth=2))
+            if cost_node:
+                self.add_edge(row_node, cost_node, "defines_equipment_enhance_cost", source=table)
+                domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
+                if domain_node:
+                    self.add_edge(cost_node, domain_node, "equipment_enhance_cost_domain", source=table, evidence="domainId")
+                for field, count_field, edge_kind in (("consumeItemId", "consumeItemCnt", "equipment_enhance_cost_consumes_item"), ("returnbackItemId", "returnbackItemCnt", "equipment_enhance_cost_refund_item")):
+                    item_node = self.add_item_node(row.get(field), source=table)
+                    if item_node:
+                        self.add_edge(cost_node, item_node, edge_kind, source=table, evidence=field, data={"count": row.get(count_field)})
+        elif table == "EquipEnhanceGuaranteeTimesRuleTable":
+            rule_node = self.add_equipment_progression_node("equipment_enhance_guarantee_rule", row_key, source=table, data=compact_payload(row, depth=2))
+            if rule_node:
+                self.add_edge(row_node, rule_node, "defines_equipment_enhance_guarantee_rule", source=table)
 
     def ingest_item_acquisition_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -19826,6 +20038,7 @@ QUERY_KIND_PRIORITY = {
     "character_stat_checkpoint": 12,
     "character_breakthrough": 13,
     "character_potential": 14,
+    "character_potential_deco": 14.05,
     "character_level_cost": 14.1,
     "character_break_config": 14.2,
     "character_break_stage": 14.3,
@@ -20101,7 +20314,11 @@ QUERY_KIND_PRIORITY = {
     "factory_blackbox": 23.7,
     "factory_craft_showing_type": 24,
     "equipment_formula": 25,
+    "equipment_formula_reverse": 25.1,
     "equipment_formula_pack": 26,
+    "equipment_enhance_cost": 26.1,
+    "equipment_enhance_guarantee_rule": 26.2,
+    "equipment_const": 26.3,
     "equipment_suit": 27,
     "equipment_suit_bonus": 27.1,
     "equippable_item_use": 27.2,
@@ -20392,6 +20609,7 @@ NODE_ID_PREFIXES = (
     "character_stat_checkpoint",
     "character_breakthrough",
     "character_potential",
+    "character_potential_deco",
     "character_level_cost",
     "character_break_config",
     "character_break_stage",
@@ -20653,7 +20871,11 @@ NODE_ID_PREFIXES = (
     "factory_blackbox",
     "factory_craft_showing_type",
     "equipment_formula",
+    "equipment_formula_reverse",
     "equipment_formula_pack",
+    "equipment_enhance_cost",
+    "equipment_enhance_guarantee_rule",
+    "equipment_const",
     "equipment_suit",
     "equipment_suit_bonus",
     "equippable_item_use",
