@@ -2204,6 +2204,12 @@ The source graph now promotes authored factory utility numeric profiles from pow
 
 A fast CN temp build verified 1 power station, 2 hub power profiles, 4 power poles, 5 power data types, 5 productivity data types, 4 miners, 6 fuel profiles, 5 battery profiles, 11 liquids, 17 fluid-machine refs, 4 sewage levels, 10 miner output item edges, 4 miner consume item edges, 67 empty bottle refs, 67 full bottle refs, 67 bottle-pair edges, 24 fluid accepted-liquid edges, 1 fluid product liquid edge, 4 sewage plant level edges, 8 sewage action param edges, 4 action level refs, and 4 action machine refs. CLI smoke checks passed for `factory_miner:miner_2`, `factory_liquid:item_liquid_acid`, `factory_fluid_machine:pump_2`, `sewage_treat_plant:liquidcleanfactory_005_1`, and `factory_sewage_level:liquidcleanfactory_005_1:4`. This improves authored utility lookup while staying limited to config evidence rather than runtime throughput, placement behavior, power simulation, liquid transfer simulation, or account/world upgrade state.
 
+### 2026-07-02 Tower Defense Graph Progress
+
+The source graph now promotes settlement defense structure from `TowerDefenseTable`, `TowerDefenseGroupTable`, and `TowerDefenseMapTable`. It adds queryable nodes for tower defense stages, groups, settlement maps, and spawners, with edges to rewards, scene levels, settlement maps, group membership, enemy ids/templates, recommended battle-building items, detail/map image asset aliases, and spawner ids.
+
+A fast CN temp build verified 22 tower defense stages, 11 groups, 3 settlement maps, 11 unique spawners, 22 group-to-stage edges, 22 stage scene-level edges, 22 stage reward edges, 96 per-stage enemy refs, 40 deduped enemy-template refs, 82 recommended battle-building item refs, 22 spawner refs, and 11 group name text links. CLI smoke checks passed for `tower_defense_stage:stm_hongs_1_1_normal`, `tower_defense_group:stm_hongs_1_1`, and `tower_defense_settlement_map:stm_hongs_1`. This improves authored settlement-defense lookup while staying limited to config evidence rather than runtime wave timing, settlement combat behavior, placement validation, or account/world defense progress.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
