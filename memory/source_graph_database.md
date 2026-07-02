@@ -1568,6 +1568,11 @@ This models authored battle-pass progression, task, reward, preview, and week-ra
 
 This models authored profile-picture, avatar, business-card, mail-template, and friend-chat catalog semantics. It does not prove live account unlock state, mail delivery state, or server-side social behavior.
 
+
+2026-07-02 character progression graph refs: `tools/endfield_source_graph.py` now ingests `CharLevelUpTable`, `CharBreakTable`, `CharBreakStageTable`, `CharBreakNodeTable`, and `CharGrowthTable` as `structured_character_progression`, bridging previously modeled characters to explicit level costs, break configs, break-stage caps, break nodes, default weapons, growth profession/type, main/sub attribute metadata, and per-character break-cost requirements. A fast CN graph build to `tmp/source_graph_character_progression.sqlite` verified 90 `defines_character_level_cost`, 5 `defines_character_break_config`, 5 `character_break_config_stage`, 13 `character_break_config_exp_item`, 5 `defines_character_break_stage`, 7 `defines_character_break_node`, 7 `character_break_node_stage`, 29 `defines_character_growth`, 29 each of growth type/profession/default-weapon/main-attribute/sub-attribute links, 203 `character_has_break_cost`, 203 each of break-cost name/description/node/stage links, and 464 `character_break_cost_requires_item` edges. Smoke tests passed for `chr_0004_pelica`, `chr_0004_pelica:charBreak20`, break config `1`, and node `charBreak20`.
+
+This models authored character level and breakthrough progression costs as table evidence. It does not prove live account level state, dynamic balance formulas, or runtime progression execution.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type

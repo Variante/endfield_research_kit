@@ -2134,6 +2134,13 @@ The source graph now models authored player-profile and social catalog tables di
 
 A fast CN build verified 88 profile pictures, 39 user avatars, 20 business-card topics, 57 mail senders, 39 mail templates, 118 friend-chat emotions, and 48 friend-chat text rows. The validated edges cover picture name/author/unlock/character links, avatar and business-card unlock items, mail template title/content/sender/reward links, friend-chat emotion tab placement, and friend-chat message/tab text labels. This improves profile/social lookup while staying limited to authored catalog evidence, not live account unlock state, mail delivery state, or server-side social behavior.
 
+
+### 2026-07-02 Character Progression Graph Progress
+
+The source graph now models the missing character level and breakthrough progression tables directly. `CharLevelUpTable`, `CharBreakTable`, `CharBreakStageTable`, `CharBreakNodeTable`, and `CharGrowthTable` now connect characters to level costs, break configs, break-stage caps, break nodes, default weapons, growth profession/type, attribute metadata, and required breakthrough items.
+
+A fast CN build verified 90 level-cost rows, 5 break configs, 5 stage-cap rows, 7 generic break nodes, 29 character growth rows, 203 per-character break-cost nodes, and 464 break-cost item requirement edges. Smoke checks passed for Pelica growth and `charBreak20` requirements, including text links, item counts, stage refs, and break-node refs. This improves character progression semantics while staying limited to authored table evidence rather than live account state or runtime progression formulas.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
