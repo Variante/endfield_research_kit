@@ -11828,6 +11828,7 @@ class SourceGraphBuilder:
             self.add_alias(check_key, ref_node, kind="item_obtain_check_id", source=source)
         if ref_node:
             self.add_edge(condition_node, ref_node, edge_kind, source=source, evidence="checkId")
+            self.add_edge(ref_node, condition_node, "item_obtain_check_used_by_condition", source=source, evidence="checkId")
 
     def add_item_acquisition_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if table == "ItemListByTypeTable" and isinstance(row, dict):
@@ -11853,12 +11854,14 @@ class SourceGraphBuilder:
                 type_node = self.add_item_obtain_condition_type_node(row.get("conditionType"), source=table)
                 if type_node:
                     self.add_edge(condition_node, type_node, "item_obtain_condition_has_type", source=table, evidence="conditionType")
+                    self.add_edge(type_node, condition_node, "item_obtain_type_has_condition", source=table, evidence="conditionType")
                 self.add_item_acquisition_check_ref(condition_node, row.get("checkId"), source=table)
         elif table == "ObtainWayShowCondTable" and isinstance(row, str):
             obtain_node = self.add_item_obtain_way_node(row_key, source=table)
             condition_node = self.add_item_obtain_condition_node(row, source=table)
             if obtain_node and condition_node:
                 self.add_edge(obtain_node, condition_node, "item_obtain_way_show_condition", source=table, evidence="rowValue")
+                self.add_edge(condition_node, obtain_node, "item_obtain_condition_shows_obtain_way", source=table, evidence="rowValue")
         elif table == "UsableItemChestTable" and isinstance(row, dict):
             item_id = row.get("id") or row_key
             item_node = self.add_item_node(item_id, source=table)
