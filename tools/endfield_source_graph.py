@@ -319,6 +319,19 @@ MODE_CONSTANT_TABLES = (
     "FacBlueprintConst.json",
     "BattlePassConst.json",
     "CashShopConst.json",
+    "AchievementConst.json",
+    "BattleConst.json",
+    "BlocConst.json",
+    "FactorySocialBuildingConst.json",
+    "GemConst.json",
+    "KiteStationConst.json",
+    "LoadingConst.json",
+    "NotifyPushConst.json",
+    "SceneConst.json",
+    "ShopWeaponConst.json",
+    "SnapshotConst.json",
+    "TrackMapConst.json",
+    "WeekRaidConst.json",
     "InteractiveFacWrapperTable.json",
     "PsTrophyTable.json",
     "FactoryNodeTypeToBuildingType.json",
@@ -331,6 +344,7 @@ MODE_CONSTANT_TABLES = (
     "FactorySmartAlertTable.json",
     "FactoryBattleTable.json",
 )
+MODE_CONST_TABLES = {Path(table_name).stem for table_name in MODE_CONSTANT_TABLES if Path(table_name).stem.endswith("Const")}
 DISPLAY_METADATA_TABLES = (
     "CashShopHideInGameTable.json",
     "UserAvatarTableFrame.json",
@@ -15594,7 +15608,7 @@ class SourceGraphBuilder:
             self.add_constant_ref_edges(const_node, row, source=table, evidence="value", edge_prefix="mode_const_refs")
 
     def add_mode_constant_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
-        if table in {"SpaceshipConst", "FactoryConst", "CinematicConst", "SimulationTrainingConst", "DungeonConst", "ActivityConst", "FacBlueprintConst", "BattlePassConst", "CashShopConst"}:
+        if table in MODE_CONST_TABLES:
             self.add_mode_const_edges(table, row_key, row, row_node)
             return
         if table == "InteractiveFacWrapperTable" and isinstance(row, dict):
