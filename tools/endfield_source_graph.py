@@ -164,6 +164,10 @@ SETTINGS_SEMANTIC_TABLES = (
     "GamepadSettingItemTable.json",
     "GamepadImplicitSettingItemTable.json",
 )
+TAG_TAXONOMY_TABLES = (
+    "TagGroupDataTable.json",
+    "TagDataTable.json",
+)
 CHARACTER_SUPPORT_TABLES = (
     "CharacterTagTable.json",
     "CharacterTagDesTable.json",
@@ -2562,6 +2566,8 @@ class SourceGraphBuilder:
                 self.commit_step("gameplay")
             self.ingest_character_support_semantics()
             self.commit_step("characterSupport")
+            self.ingest_tag_taxonomy_semantics()
+            self.commit_step("tagTaxonomy")
             self.ingest_spaceship_semantics()
             self.commit_step("spaceshipSemantics")
             self.ingest_factory_tech_semantics()
@@ -9654,6 +9660,94 @@ class SourceGraphBuilder:
         self.add_alias(tag_key, node, kind="character_tag_id", source=source)
         return node
 
+    def add_tag_group_node(self, group_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        group_key = safe_key(group_id)
+        if not group_key:
+            return ""
+        group_name = table_display_text(name) or group_key
+        node = self.add_node("tag_group", group_key, name=group_name, source=source, data=data)
+        self.add_alias(group_key, node, kind="tag_group_id", source=source)
+        if group_name != group_key:
+            self.add_alias(group_name, node, kind="tag_group_name", source=source)
+        return node
+
+    def add_tag_node(self, tag_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        tag_key = safe_key(tag_id)
+        if not tag_key:
+            return ""
+        tag_name = table_display_text(name) or tag_key
+        node = self.add_node("tag", tag_key, name=tag_name, source=source, data=data)
+        self.add_alias(tag_key, node, kind="tag_id", source=source)
+        if tag_name != tag_key:
+            self.add_alias(tag_name, node, kind="tag_name", source=source)
+        return node
+
+    def add_tag_i18n_edges(self, owner_node: str, payload: Any, *, source: str, edge_kind: str) -> None:
+        seen: set[str] = set()
+        for text_id in self.iter_i18n_text_ids(payload):
+            if text_id in seen:
+                continue
+            seen.add(text_id)
+            text_node = self.add_i18n_text_node(text_id, source=source)
+            if text_node:
+                self.add_edge(owner_node, text_node, edge_kind, source=source, evidence=text_id)
+                self.add_edge(owner_node, text_node, "uses_i18n_text", source=source, evidence=text_id)
+
+    def ingest_tag_taxonomy_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_tag_taxonomy", name="Structured tag taxonomy tables", path=slash(table_root))
+        group_nodes: dict[str, str] = {}
+        for table_name in TAG_TAXONOMY_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/tag_taxonomy")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            if table == "TagGroupDataTable":
+                for row_key, row in payload.items():
+                    if not isinstance(row, dict):
+                        continue
+                    group_id = safe_key(row.get("tagGroupId") or row_key)
+                    if not group_id:
+                        continue
+                    group_data = {
+                        "tagGroupId": group_id,
+                        "tagGroupName": table_text(row.get("tagGroupName")),
+                        "desc": table_text(row.get("desc")),
+                    }
+                    group_node = self.add_tag_group_node(group_id, name=row.get("tagGroupName"), source=table, data=group_data)
+                    group_nodes[group_id] = group_node
+                    self.add_edge(table_node, group_node, "defines_tag_group", source=table, evidence=group_id)
+                    self.add_tag_i18n_edges(group_node, row.get("tagGroupName"), source=table, edge_kind="tag_group_name_text")
+                    self.add_tag_i18n_edges(group_node, row.get("desc"), source=table, edge_kind="tag_group_desc_text")
+            elif table == "TagDataTable":
+                for row_key, row in payload.items():
+                    if not isinstance(row, dict):
+                        continue
+                    tag_id = safe_key(row.get("tagId") or row_key)
+                    if not tag_id:
+                        continue
+                    group_id = safe_key(row.get("tagGroupId"))
+                    tag_data = {
+                        "tagId": tag_id,
+                        "tagGroupId": group_id,
+                        "tagName": table_text(row.get("tagName")),
+                        "hideTag": bool(row.get("hideTag")),
+                    }
+                    tag_node = self.add_tag_node(tag_id, name=row.get("tagName"), source=table, data=tag_data)
+                    self.add_edge(table_node, tag_node, "defines_tag", source=table, evidence=tag_id)
+                    self.add_tag_i18n_edges(tag_node, row.get("tagName"), source=table, edge_kind="tag_name_text")
+                    if group_id:
+                        group_node = group_nodes.get(group_id) or self.add_tag_group_node(group_id, source=table)
+                        group_nodes[group_id] = group_node
+                        self.add_edge(tag_node, group_node, "tag_belongs_to_group", source=table, evidence="tagGroupId")
+                    character_tag_node = self.node_id("character_tag", tag_id)
+                    if self.node_exists("character_tag", tag_id):
+                        self.add_edge(character_tag_node, tag_node, "character_tag_resolves_to_tag", source=table, evidence=tag_id)
+
     def add_character_profession_node(self, profession_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         profession_key = safe_key(profession_id)
         if not profession_key:
@@ -14904,6 +14998,8 @@ QUERY_KIND_PRIORITY = {
     "character_potential": 14,
     "character_tag": 15,
     "character_tag_desc": 16,
+    "tag": 16.2,
+    "tag_group": 16.3,
     "character_profession": 17,
     "character_type": 18,
     "character_team": 19,
@@ -15249,6 +15345,8 @@ NODE_ID_PREFIXES = (
     "character_potential",
     "character_tag",
     "character_tag_desc",
+    "tag",
+    "tag_group",
     "character_profession",
     "character_type",
     "character_team",
