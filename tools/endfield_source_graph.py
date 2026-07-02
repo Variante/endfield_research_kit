@@ -141,6 +141,16 @@ ITEM_ECONOMY_TABLES = (
     "ShopTable.json",
     "ShopGroupTable.json",
 )
+CASH_SHOP_SEMANTIC_TABLES = (
+    "CashShopGoodsTable.json",
+    "CashShopTable.json",
+    "CashShopGroupTable.json",
+    "CashShopRechargeTable.json",
+    "CashShopRecommendTable.json",
+    "CashshopShopTabDataTable.json",
+    "GiftpackCashShopGoodsDataTable.json",
+    "RechargeTable.json",
+)
 COMBAT_SEMANTIC_TABLES = (
     "BuffTable.json",
     "SkillPatchTable.json",
@@ -2748,6 +2758,8 @@ class SourceGraphBuilder:
             self.commit_step("optionOverrides")
             self.ingest_item_economy()
             self.commit_step("itemEconomy")
+            self.ingest_cash_shop_semantics()
+            self.commit_step("cashShop")
             self.ingest_world_semantics()
             self.commit_step("worldSemantics")
             self.ingest_combat_semantics()
@@ -9376,6 +9388,132 @@ class SourceGraphBuilder:
                 )
                 self.add_edge(table_node, row_node, "has_row", source="structured/item_economy")
                 self.add_item_economy_row_edges(table_key, row_key, row, row_node)
+
+    def ingest_cash_shop_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_cash_shop", name="Structured cash shop and recharge tables", path=slash(table_root))
+        for table_name in CASH_SHOP_SEMANTIC_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/cash_shop")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/cash_shop")
+                self.add_cash_shop_row_edges(table, row_key, row, row_node)
+
+    def add_cash_shop_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        node_key = safe_key(key)
+        if not node_key:
+            return ""
+        node_name = table_display_text(name) or node_key
+        node = self.add_node(kind, node_key, name=node_name, source=source, data=data)
+        self.add_alias(node_key, node, kind=f"{kind}_id", source=source)
+        if node_name != node_key:
+            self.add_alias(node_name, node, kind=f"{kind}_name", source=source)
+        return node
+
+    def add_cash_goods_node(self, goods_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_cash_shop_node("cash_goods", goods_id, name=name, source=source, data=data)
+
+    def add_cash_shop_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if not isinstance(row, dict):
+            return
+        if table == "CashShopGoodsTable":
+            goods_node = self.add_cash_goods_node(row.get("cashGoodsId") or row_key, name=row.get("goodsName"), source=table, data={"cashShopId": row.get("cashShopId"), "goodsType": row.get("goodsType"), "iconId": row.get("iconId"), "priceCNY": row.get("priceCNY"), "priceUSD": row.get("priceUSD"), "rewardId": row.get("rewardId")})
+            if goods_node:
+                self.add_edge(row_node, goods_node, "defines_cash_goods", source=table)
+                self.add_tag_i18n_edges(goods_node, row.get("goodsName"), source=table, edge_kind="cash_goods_name_text")
+                shop_node = self.add_cash_shop_node("cash_shop", row.get("cashShopId"), source=table)
+                if shop_node:
+                    self.add_edge(shop_node, goods_node, "cash_shop_has_goods", source=table, evidence="cashShopId")
+                    self.add_edge(goods_node, shop_node, "cash_goods_in_shop", source=table, evidence="cashShopId")
+                self.add_reward_ref_edge(goods_node, row.get("rewardId"), edge_kind="cash_goods_grants_reward", source=table, evidence="rewardId", data={"goodsType": row.get("goodsType")})
+                self.add_alias(row.get("iconId"), goods_node, kind="icon_id", source=table)
+        elif table == "CashShopTable":
+            shop_node = self.add_cash_shop_node("cash_shop", row.get("cashShopId") or row_key, name=row.get("shopName"), source=table, data={"goodsCount": len(row.get("cashGoodsIds") or [])})
+            if shop_node:
+                self.add_edge(row_node, shop_node, "defines_cash_shop", source=table)
+                self.add_tag_i18n_edges(shop_node, row.get("shopName"), source=table, edge_kind="cash_shop_name_text")
+                for index, goods_id in enumerate(row.get("cashGoodsIds") or []):
+                    goods_node = self.add_cash_goods_node(goods_id, source=table)
+                    if goods_node:
+                        self.add_edge(shop_node, goods_node, "cash_shop_lists_goods", source=table, evidence=f"cashGoodsIds[{index}]")
+        elif table == "CashShopGroupTable":
+            group_node = self.add_cash_shop_node("cash_shop_group", row.get("shopGroupId") or row_key, name=row.get("shopGroupName"), source=table, data={"shopGroupType": row.get("shopGroupType"), "icon": row.get("icon"), "shopCount": len(row.get("cashShopIds") or [])})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_cash_shop_group", source=table)
+                self.add_tag_i18n_edges(group_node, row.get("shopGroupName"), source=table, edge_kind="cash_shop_group_name_text")
+                self.add_alias(row.get("icon"), group_node, kind="icon_id", source=table)
+                for index, shop_id in enumerate(row.get("cashShopIds") or []):
+                    shop_node = self.add_cash_shop_node("cash_shop", shop_id, source=table)
+                    if shop_node:
+                        self.add_edge(group_node, shop_node, "cash_shop_group_has_shop", source=table, evidence=f"cashShopIds[{index}]")
+        elif table == "CashShopRechargeTable":
+            bonus_node = self.add_cash_shop_node("cash_recharge_bonus", row.get("cashGoodsId") or row_key, source=table, data={"rewardTimes": row.get("rewardTimes"), "bonusRewardId": row.get("bonusRewardId")})
+            if bonus_node:
+                self.add_edge(row_node, bonus_node, "defines_cash_recharge_bonus", source=table)
+                goods_node = self.add_cash_goods_node(row.get("cashGoodsId"), source=table)
+                if goods_node:
+                    self.add_edge(goods_node, bonus_node, "cash_goods_has_recharge_bonus", source=table, evidence="cashGoodsId")
+                self.add_reward_ref_edge(bonus_node, row.get("bonusRewardId"), edge_kind="cash_recharge_bonus_reward", source=table, evidence="bonusRewardId", data={"rewardTimes": row.get("rewardTimes")})
+        elif table == "CashShopRecommendTable":
+            rec_node = self.add_cash_shop_node("cash_recommendation", row.get("id") or row_key, name=row.get("name"), source=table, data={"type": row.get("type"), "priority": row.get("priority"), "prefabName": row.get("prefabName"), "goodsCount": len(row.get("cashGoodsIdList") or [])})
+            if rec_node:
+                self.add_edge(row_node, rec_node, "defines_cash_recommendation", source=table)
+                self.add_tag_i18n_edges(rec_node, row.get("name"), source=table, edge_kind="cash_recommendation_name_text")
+                self.add_alias(row.get("prefabName"), rec_node, kind="prefab_name", source=table)
+                next_node = self.add_cash_shop_node("cash_recommendation", row.get("nextChooseId"), source=table)
+                if next_node:
+                    self.add_edge(rec_node, next_node, "cash_recommendation_next_choice", source=table, evidence="nextChooseId")
+                for index, goods_id in enumerate(row.get("cashGoodsIdList") or []):
+                    goods_node = self.add_cash_goods_node(goods_id, source=table)
+                    if goods_node:
+                        self.add_edge(rec_node, goods_node, "cash_recommendation_surfaces_goods", source=table, evidence=f"cashGoodsIdList[{index}]")
+        elif table == "CashshopShopTabDataTable":
+            tab_node = self.add_cash_shop_node("cash_shop_tab", row.get("id") or row_key, source=table, data={"tagCount": len(row.get("tagList") or [])})
+            if tab_node:
+                self.add_edge(row_node, tab_node, "defines_cash_shop_tab", source=table)
+                shop_node = self.add_cash_shop_node("cash_shop", row.get("id") or row_key, source=table)
+                if shop_node:
+                    self.add_edge(tab_node, shop_node, "cash_shop_tab_for_shop", source=table, evidence="id")
+                for index, tag_id in enumerate(row.get("tagList") or []):
+                    tag_node = self.add_cash_shop_node("cash_shop_tag", tag_id, source=table)
+                    if tag_node:
+                        self.add_edge(tab_node, tag_node, "cash_shop_tab_has_tag", source=table, evidence=f"tagList[{index}]")
+        elif table == "GiftpackCashShopGoodsDataTable":
+            config_node = self.add_cash_shop_node("cash_giftpack_config", row.get("cashGoodsId") or row_key, source=table, data={"availCount": row.get("availCount"), "availRefresh": row.get("availRefresh"), "priority": row.get("priority"), "dynamicPriority": row.get("dynamicPriority"), "dynamicTag": row.get("dynamicTag"), "hideInGame": row.get("hideInGame"), "conditionOpType": row.get("conditionOpType"), "tagCount": len(row.get("tagList") or [])})
+            if config_node:
+                self.add_edge(row_node, config_node, "defines_cash_giftpack_config", source=table)
+                goods_node = self.add_cash_goods_node(row.get("cashGoodsId"), source=table)
+                if goods_node:
+                    self.add_edge(goods_node, config_node, "cash_goods_has_giftpack_config", source=table, evidence="cashGoodsId")
+                anchor_node = self.add_cash_goods_node(row.get("anchorCashGoodsId"), source=table)
+                if anchor_node:
+                    self.add_edge(config_node, anchor_node, "cash_giftpack_anchor_goods", source=table, evidence="anchorCashGoodsId")
+                after_node = self.add_cash_goods_node(row.get("clientShowAfterGoodsId"), source=table)
+                if after_node:
+                    self.add_edge(config_node, after_node, "cash_giftpack_show_after_goods", source=table, evidence="clientShowAfterGoodsId")
+                for field in ("bg", "bigBg", "bigIcon", "deco"):
+                    self.add_alias(row.get(field), config_node, kind="asset_stem", source=table)
+                for index, tag_id in enumerate(row.get("tagList") or []):
+                    tag_node = self.add_cash_shop_node("cash_shop_tag", tag_id, source=table)
+                    if tag_node:
+                        self.add_edge(config_node, tag_node, "cash_giftpack_has_tag", source=table, evidence=f"tagList[{index}]")
+        elif table == "RechargeTable":
+            recharge_node = self.add_cash_shop_node("recharge_pack", row.get("rechargeId") or row_key, name=row.get("name"), source=table, data={"price": row.get("price"), "itemCount": row.get("itemCount"), "bonusCount": row.get("bonusCount"), "sdkId": row.get("sdkId"), "sortId": row.get("sortId"), "icon": row.get("icon")})
+            if recharge_node:
+                self.add_edge(row_node, recharge_node, "defines_recharge_pack", source=table)
+                self.add_tag_i18n_edges(recharge_node, row.get("name"), source=table, edge_kind="recharge_pack_name_text")
+                self.add_alias(row.get("sdkId"), recharge_node, kind="sdk_id", source=table)
+                self.add_alias(row.get("icon"), recharge_node, kind="asset_stem", source=table)
+                item_node = self.add_item_node(row.get("itemid"), source=table)
+                if item_node:
+                    self.add_edge(recharge_node, item_node, "recharge_pack_grants_item", source=table, evidence="itemid", data={"itemCount": row.get("itemCount"), "bonusCount": row.get("bonusCount")})
 
     def add_item_node(self, item_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         item_key = safe_key(item_id)
@@ -16985,6 +17123,15 @@ QUERY_KIND_PRIORITY = {
     "shop": 39,
     "shop_goods": 40,
     "shop_goods_tag": 41,
+    "cash_shop_group": 41.1,
+    "cash_shop": 41.2,
+    "cash_shop_tab": 41.3,
+    "cash_goods": 41.4,
+    "cash_giftpack_config": 41.5,
+    "cash_recharge_bonus": 41.6,
+    "cash_recommendation": 41.7,
+    "cash_shop_tag": 41.8,
+    "recharge_pack": 41.9,
     "gameplay_skill_group": 42,
     "gameplay_skill": 43,
     "gameplay_talent_group": 44,
@@ -17403,6 +17550,15 @@ NODE_ID_PREFIXES = (
     "shop",
     "shop_goods",
     "shop_goods_tag",
+    "cash_shop_group",
+    "cash_shop",
+    "cash_shop_tab",
+    "cash_goods",
+    "cash_giftpack_config",
+    "cash_recharge_bonus",
+    "cash_recommendation",
+    "cash_shop_tag",
+    "recharge_pack",
     "gameplay_skill_group",
     "gameplay_skill",
     "gameplay_talent_group",

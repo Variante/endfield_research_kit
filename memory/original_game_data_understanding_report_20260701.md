@@ -2141,6 +2141,13 @@ The source graph now models the missing character level and breakthrough progres
 
 A fast CN build verified 90 level-cost rows, 5 break configs, 5 stage-cap rows, 7 generic break nodes, 29 character growth rows, 203 per-character break-cost nodes, and 464 break-cost item requirement edges. Smoke checks passed for Pelica growth and `charBreak20` requirements, including text links, item counts, stage refs, and break-node refs. This improves character progression semantics while staying limited to authored table evidence rather than live account state or runtime progression formulas.
 
+
+### 2026-07-02 Cash Shop Commerce Graph Progress
+
+The source graph now models the paid commerce tables directly. Cash-shop goods, paid shop groups, shop tabs, recharge bonus rows, recommendation surfaces, gift-pack display config, and direct recharge packs now link to text ids, rewards, items, shops, tags, and presentation assets where the source rows prove those relationships.
+
+A fast CN build verified 61 defined cash goods, 8 defined cash shops, 2 cash-shop groups, 34 recharge bonus rows, 24 recommendation rows, 31 tab rows, 26 gift-pack configs, and 6 direct recharge packs. Smoke checks passed for the BP paid track, the BP shop, the paid gift-pack group, a newbie recommendation chain, a gift-pack tag, a direct recharge pack, and an overseas recharge bonus reward. This improves monetization/catalog semantics while staying limited to authored table evidence, not live purchase state or server-side store availability.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
