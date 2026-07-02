@@ -21094,6 +21094,7 @@ def emit_followup_indexes(db_path: Path, summary: dict[str, Any]) -> None:
         conn.row_factory = sqlite3.Row
         emit_voice_audio_links(conn)
         emit_character_recovery_candidates(conn)
+        emit_model_config_asset_binding_candidates(conn)
         emit_option_branch_gaps(conn)
         emit_map_level_index(conn)
         emit_semantic_update_summary(conn)
@@ -21215,6 +21216,185 @@ def emit_character_recovery_candidates(conn: sqlite3.Connection) -> None:
         encoding="utf-8",
     )
 
+
+
+def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None:
+    model_rows = conn.execute(
+        """
+        SELECT id, name, data
+        FROM nodes
+        WHERE kind = 'model_config_model'
+        ORDER BY name
+        """
+    ).fetchall()
+    entity_rows = conn.execute(
+        """
+        SELECT id, name, source, data
+        FROM nodes
+        WHERE kind = 'asset_entity'
+        ORDER BY name
+        """
+    ).fetchall()
+    entity_by_base: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in entity_rows:
+        payload = parse_node_data(row)
+        base = safe_key(payload.get("modelBase") or row["name"]).lower()
+        if not base:
+            continue
+        entity_by_base[base].append({
+            "node": row["id"],
+            "base": base,
+            "source": row["source"],
+            "lodModelCount": payload.get("lodModelCount"),
+            "materialCount": payload.get("materialCount"),
+            "textureCount": payload.get("textureCount"),
+        })
+
+    def direct_edges(model_node: str) -> list[dict[str, Any]]:
+        rows = conn.execute(
+            """
+            SELECT entity.id AS entityNode, entity.name AS entityName, entity.source AS source, edge.evidence AS evidence, edge.data AS edgeData, entity.data AS entityData
+            FROM edges edge
+            JOIN nodes entity ON entity.id = edge.dst
+            WHERE edge.src = ? AND edge.kind = 'model_config_asset_entity'
+            ORDER BY entity.name
+            """,
+            (model_node,),
+        ).fetchall()
+        out = []
+        for row in rows:
+            entity_data = parse_json_text(row["entityData"])
+            out.append({
+                "entityNode": row["entityNode"],
+                "entityName": row["entityName"],
+                "source": row["source"],
+                "evidence": row["evidence"],
+                "edgeData": parse_json_text(row["edgeData"]),
+                "entityData": entity_data,
+            })
+        return out
+
+    def candidate_entities(tokens: Iterable[Any]) -> tuple[list[str], list[dict[str, Any]]]:
+        candidate_bases: list[str] = []
+        candidates: list[dict[str, Any]] = []
+        seen_nodes: set[str] = set()
+        for token in tokens:
+            for base in model_asset_entity_candidate_bases(token):
+                if not base:
+                    continue
+                candidate_bases.append(base)
+                matched = list(entity_by_base.get(base, []))
+                if not matched:
+                    for model_base, rows in sorted(entity_by_base.items()):
+                        if model_base.startswith(f"{base}_"):
+                            matched.extend(rows)
+                for entity in matched:
+                    node = entity.get("node")
+                    if not node or node in seen_nodes:
+                        continue
+                    seen_nodes.add(node)
+                    candidates.append(entity)
+        return _unique_preserve(candidate_bases), candidates
+
+    def count_edges(kind: str, model_node: str, direction: str) -> int:
+        if direction == "incoming":
+            return conn.execute("SELECT COUNT(*) FROM edges WHERE kind = ? AND dst = ?", (kind, model_node)).fetchone()[0]
+        return conn.execute("SELECT COUNT(*) FROM edges WHERE kind = ? AND src = ?", (kind, model_node)).fetchone()[0]
+
+    records: list[dict[str, Any]] = []
+    status_counts: Counter[str] = Counter()
+    direct_edge_total = 0
+    candidate_total = 0
+    for row in model_rows:
+        payload = parse_node_data(row)
+        model_id = safe_key(payload.get("modelId") or row["name"])
+        prefab_path = safe_key(payload.get("prefabPath"))
+        prefab_stem = safe_key(Path(prefab_path).stem) if prefab_path else ""
+        tokens = [model_id, prefab_path, prefab_stem]
+        bases, candidates = candidate_entities(tokens)
+        direct = direct_edges(row["id"])
+        world_uses = count_edges("world_entity_uses_model", row["id"], "incoming")
+        interactive_uses = count_edges("interactive_template_uses_model", row["id"], "incoming")
+        has_radius = count_edges("model_config_has_radius", row["id"], "outgoing") > 0 or conn.execute("SELECT 1 FROM nodes WHERE kind = 'model_radius' AND name = ? LIMIT 1", (model_id,)).fetchone() is not None
+        if direct:
+            status = "exact_graph_edge"
+        elif candidates:
+            status = "candidate_name_match"
+        elif world_uses or interactive_uses:
+            status = "no_exported_renderable_candidate"
+        else:
+            status = "runtime_only_or_unreferenced"
+        status_counts[status] += 1
+        direct_edge_total += len(direct)
+        candidate_total += len(candidates)
+        record = {
+            "modelNode": row["id"],
+            "modelId": model_id,
+            "prefabPath": prefab_path,
+            "prefabStem": prefab_stem,
+            "status": status,
+            "hasRadius": has_radius,
+            "worldEntityUses": world_uses,
+            "interactiveTemplateUses": interactive_uses,
+            "candidateBases": bases,
+            "directEdges": direct[:8],
+            "candidateEntities": candidates[:12],
+        }
+        records.append(record)
+
+    records.sort(key=lambda item: (
+        0 if item["status"] == "exact_graph_edge" else 1 if item["status"] == "candidate_name_match" else 2 if item["status"] == "no_exported_renderable_candidate" else 3,
+        -(item.get("worldEntityUses") or 0) - (item.get("interactiveTemplateUses") or 0),
+        item.get("modelId") or "",
+    ))
+    payload = {
+        "generated": int(time.time()),
+        "modelConfigModels": len(model_rows),
+        "assetEntities": sum(len(rows) for rows in entity_by_base.values()),
+        "statusCounts": dict(status_counts),
+        "directModelConfigAssetEntityEdges": direct_edge_total,
+        "candidateEntityMatches": candidate_total,
+        "records": records,
+    }
+    json_path = GRAPH_DIR / "model_config_asset_binding_candidates.json"
+    json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    lines = [
+        "# Model Config Asset Binding Candidates",
+        "",
+        "This report classifies decoded `model_config_model` rows against exported `asset_entity` groups using only existing graph evidence and conservative name-token candidates. It does not promote speculative graph edges.",
+        "",
+        "## Summary",
+        "",
+        f"- Model config rows: `{len(model_rows)}`",
+        f"- Asset entities: `{sum(len(rows) for rows in entity_by_base.values())}`",
+        f"- Direct `model_config_asset_entity` edges: `{direct_edge_total}`",
+        f"- Candidate entity matches: `{candidate_total}`",
+    ]
+    for status, count in sorted(status_counts.items()):
+        lines.append(f"- `{status}`: `{count}`")
+    lines.extend(["", "## Top Referenced Unbound Models", ""])
+    unbound = [item for item in records if item["status"] == "no_exported_renderable_candidate"][:40]
+    if unbound:
+        lines.append("| Model id | World uses | Interactive uses | Radius | Prefab stem |")
+        lines.append("| --- | ---: | ---: | --- | --- |")
+        for item in unbound:
+            lines.append(
+                f"| `{item['modelId']}` | {item['worldEntityUses']} | {item['interactiveTemplateUses']} | {str(item['hasRadius']).lower()} | `{item['prefabStem']}` |"
+            )
+    else:
+        lines.append("No referenced unbound model rows found.")
+    lines.extend(["", "## Candidate Matches", ""])
+    candidate_records = [item for item in records if item["status"] in {"exact_graph_edge", "candidate_name_match"}][:40]
+    if candidate_records:
+        lines.append("| Model id | Status | Candidate entities | Prefab stem |")
+        lines.append("| --- | --- | ---: | --- |")
+        for item in candidate_records:
+            lines.append(f"| `{item['modelId']}` | `{item['status']}` | {len(item['candidateEntities']) + len(item['directEdges'])} | `{item['prefabStem']}` |")
+    else:
+        lines.append("No direct or candidate model-config to asset-entity bindings were found.")
+    lines.append("")
+    (GRAPH_DIR / "model_config_asset_binding_candidates.md").write_text("\n".join(lines), encoding="utf-8")
 
 def emit_option_branch_gaps(conn: sqlite3.Connection) -> None:
     report_path = ROOT / "reports" / f"inferred_option_anchors_{conn.execute('SELECT value FROM meta WHERE key=?', ('language',)).fetchone()[0]}.json"
