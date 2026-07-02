@@ -54,6 +54,10 @@ SIGNAL_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
 )
 
 CANDIDATE_NOTES = {
+    "InitialExtendData": (
+        "High value. Initial global binary lookup data; useful for resolving "
+        "hashed paths/references before the regular ExtendData block."
+    ),
     "Lua": (
         "High value. Small encrypted script block; AnimeStudio dump decrypts it "
         "to Lua source. Prioritize UI/SNS/Dialog/RemoteComm modules."
@@ -117,6 +121,15 @@ def file_block(row: dict[str, Any]) -> str:
     )
 
 
+def block_record_name(row: dict[str, Any]) -> str:
+    return str(
+        row.get("name")
+        or row.get("blockName")
+        or row.get("blockType")
+        or "[unknown]"
+    )
+
+
 def file_name(row: dict[str, Any]) -> str:
     return str(row.get("fileName") or row.get("name") or "")
 
@@ -154,16 +167,32 @@ def signal_hits(name: str) -> list[str]:
     return [label for label, pattern in SIGNAL_PATTERNS if pattern.search(name)]
 
 
-def summarize_files(files: list[dict[str, Any]], *, directory_depth: int, limit: int) -> dict[str, Any]:
+def summarize_files(
+    files: list[dict[str, Any]],
+    block_records: list[dict[str, Any]],
+    *,
+    directory_depth: int,
+    limit: int,
+) -> dict[str, Any]:
     groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for row in files:
         if isinstance(row, dict):
             groups[file_block(row)].append(row)
 
+    block_metadata: dict[str, dict[str, Any]] = {}
+    for row in block_records:
+        if not isinstance(row, dict):
+            continue
+        block = block_record_name(row)
+        block_metadata.setdefault(block, row)
+
     summaries: list[dict[str, Any]] = []
-    for block in sorted(groups):
-        rows = groups[block]
+    for block in sorted(set(groups) | set(block_metadata)):
+        rows = groups.get(block, [])
+        metadata = block_metadata.get(block, {})
         lengths = sorted(file_length(row) for row in rows)
+        byte_count = sum(lengths) if lengths else safe_int(metadata.get("byteCount"))
+        file_count = len(rows) if rows else safe_int(metadata.get("fileCount"))
         encrypted_counts: Counter[str] = Counter(
             "encrypted" if bool(row.get("encrypted")) else "plain" for row in rows
         )
@@ -185,8 +214,11 @@ def summarize_files(files: list[dict[str, Any]], *, directory_depth: int, limit:
         summaries.append(
             {
                 "block": block,
-                "fileCount": len(rows),
-                "byteCount": sum(lengths),
+                "hashDirectory": metadata.get("hashDirectory"),
+                "chunkCount": safe_int(metadata.get("chunkCount")),
+                "missingChunkCount": safe_int(metadata.get("missingChunkCount")),
+                "fileCount": file_count,
+                "byteCount": byte_count,
                 "minBytes": lengths[0] if lengths else 0,
                 "medianBytes": percentile(lengths, 0.5),
                 "p95Bytes": percentile(lengths, 0.95),
@@ -241,6 +273,16 @@ def render_counter(values: list[dict[str, Any]]) -> str:
     return ", ".join(f"{item['value']} ({item['count']})" for item in values)
 
 
+def missing_block_label(value: Any) -> str:
+    if isinstance(value, dict):
+        name = value.get("name") or value.get("blockName") or value.get("blockType") or "[unknown]"
+        hash_directory = value.get("hashDirectory")
+        if hash_directory:
+            return f"{name} ({hash_directory})"
+        return str(name)
+    return str(value)
+
+
 def render_markdown(payload: dict[str, Any]) -> str:
     index = payload["index"]
     summary = payload["summary"]
@@ -273,9 +315,9 @@ def render_markdown(payload: dict[str, Any]) -> str:
     lines.append("## Block Summary")
     lines.append("")
     lines.append(
-        "| Block | Files | Bytes | Median | P95 | Max | Encryption | Top Extensions | Signals |"
+        "| Block | Files | Bytes | Chunks | Missing Chunks | Median | P95 | Max | Encryption | Top Extensions | Signals |"
     )
-    lines.append("|---|---:|---:|---:|---:|---:|---|---|---|")
+    lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---|---|---|")
     for block in payload["blocks"]:
         signals = ", ".join(
             f"{key}:{value}" for key, value in sorted(block["signalCounts"].items())
@@ -285,6 +327,8 @@ def render_markdown(payload: dict[str, Any]) -> str:
             f"`{md_escape(block['block'])}` | "
             f"{block['fileCount']} | "
             f"{block['byteCount']} | "
+            f"{block['chunkCount']} | "
+            f"{block['missingChunkCount']} | "
             f"{block['medianBytes']} | "
             f"{block['p95Bytes']} | "
             f"{block['maxBytes']} | "
@@ -296,6 +340,17 @@ def render_markdown(payload: dict[str, Any]) -> str:
 
     for block in payload["blocks"]:
         lines.append(f"## {block['block']}")
+        lines.append("")
+        details = [
+            f"files: `{block['fileCount']}`",
+            f"bytes: `{block['byteCount']}`",
+            f"chunks: `{block['chunkCount']}`",
+        ]
+        if block.get("missingChunkCount"):
+            details.append(f"missing chunks: `{block['missingChunkCount']}`")
+        if block.get("hashDirectory"):
+            details.append(f"hash directory: `{md_escape(block['hashDirectory'])}`")
+        lines.append("- " + "; ".join(details))
         lines.append("")
         lines.append("Top directories:")
         for item in block["topDirectories"]:
@@ -317,7 +372,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
         lines.append("## Missing Blocks")
         lines.append("")
         for item in missing:
-            lines.append(f"- `{md_escape(item)}`")
+            lines.append(f"- `{md_escape(missing_block_label(item))}`")
         lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"
@@ -325,7 +380,13 @@ def render_markdown(payload: dict[str, Any]) -> str:
 
 def build_payload(index_path: Path, data: dict[str, Any], *, directory_depth: int, limit: int) -> dict[str, Any]:
     files = [row for row in data.get("files", []) if isinstance(row, dict)]
-    summarized = summarize_files(files, directory_depth=directory_depth, limit=limit)
+    block_records = [row for row in data.get("blocks", []) if isinstance(row, dict)]
+    summarized = summarize_files(
+        files,
+        block_records,
+        directory_depth=directory_depth,
+        limit=limit,
+    )
     raw_summary = data.get("summary") if isinstance(data.get("summary"), dict) else {}
     return {
         "generatedAt": datetime.now(timezone.utc).isoformat(),
@@ -350,18 +411,48 @@ def build_payload(index_path: Path, data: dict[str, Any], *, directory_depth: in
     }
 
 
+class ReportHelpFormatter(
+    argparse.ArgumentDefaultsHelpFormatter,
+    argparse.RawDescriptionHelpFormatter,
+):
+    pass
+
+
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=ReportHelpFormatter,
+    )
     parser.add_argument(
         "--index",
         required=True,
         type=Path,
         help="Path to a vfs-index JSON produced by AnimeStudio.CLI or fluffy-dumper.",
     )
-    parser.add_argument("--output-json", type=Path, default=DEFAULT_JSON)
-    parser.add_argument("--output-md", type=Path, default=DEFAULT_MD)
-    parser.add_argument("--directory-depth", type=int, default=4)
-    parser.add_argument("--limit", type=int, default=10)
+    parser.add_argument(
+        "--output-json",
+        type=Path,
+        default=DEFAULT_JSON,
+        help="Path for the machine-readable JSON audit report.",
+    )
+    parser.add_argument(
+        "--output-md",
+        type=Path,
+        default=DEFAULT_MD,
+        help="Path for the human-readable Markdown audit report.",
+    )
+    parser.add_argument(
+        "--directory-depth",
+        type=int,
+        default=4,
+        help="Number of leading path components to group under top directories.",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=10,
+        help="Maximum sample, largest-file, extension, and directory entries per block.",
+    )
     return parser.parse_args()
 
 

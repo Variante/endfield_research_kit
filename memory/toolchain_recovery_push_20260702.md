@@ -157,3 +157,38 @@ Next split tracks:
 - Lightweight VFS track: dump all Lua or a curated Lua subset, then build a Lua consumer/reference audit for SNS, RemoteComm, Dialog, map marks, and mission UI tables.
 - AnimeStudio refresh track: run a separate current MonoBehaviour `json_by_type` refresh with `tools\DummyDll`, then rebuild a decoded index. This rewrites `export_full/recovered/AnimeStudio-cli/**`, so keep it out of the VFS-audit commit.
 - IL2CPP track: follow the selector/TargetSettings metadata-body audit before re-enabling `FindTargetAction` chain consumption.
+
+## Follow-up: Persistent skipped blocks and ExtendData parity
+
+Ran the skipped-block probe against `Persistent` with `StreamingAssets` fallback:
+
+```bat
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe vfs-index -s "D:\Program Files\Endfield Game\Endfield_Data\Persistent" --fallback-assets "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" -o "D:\fluffy-dump\tmp\vfs_skipped_probe\Persistent_nonbundle_vfs_index.json" -b bundle-manifest -b extend-data -b streaming -b dynamic-streaming -b iv -b lua -b i-fix-patch -b hotfix-audio
+python -B scripts\story_recovery\build_skipped_vfs_block_audit.py --index tmp\vfs_skipped_probe\Persistent_nonbundle_vfs_index.json --output-json reports\mission_order\skipped_vfs_block_audit_persistent.json --output-md reports\mission_order\skipped_vfs_block_audit_persistent.md
+```
+
+Persistent result: `40,004` files, `11,828,335,706` bytes, `146` chunks. It keeps the same Lua/Streaming/DynamicStreaming shape as StreamingAssets, but adds `IV` (`263` files, `8,647,006,666` bytes), `HotfixAudio` (`1` PCK, `34,412,094` bytes), and `IFixPatchOut` (`2` encrypted `.bytes`, `56,424` bytes). Treat `IV` as a large separate parser target; do not broad dump it.
+
+Ran an ExtendData parity check between fluffy-dumper and AnimeStudio on StreamingAssets:
+
+```bat
+.\tools\fluffy-dumper-src\target\release\fluffy-dumper.exe vfs-index -s "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" -o "D:\fluffy-dump\tmp\fluffy_parity\StreamingAssets_extend-data_fluffy.json" -b extend-data
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe vfs-index -s "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" -o "D:\fluffy-dump\tmp\fluffy_parity\StreamingAssets_extend-data_animestudio.json" -b extend-data
+```
+
+Parity matched exactly for the two StreamingAssets ExtendData files: same filenames, sizes, data MD5s, and chunk path.
+
+Narrow dumped ExtendData only for header probing:
+
+```bat
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe dump -s "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" -o "D:\fluffy-dump\tmp\extenddata_probe\StreamingAssets" -b extend-data
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe dump -s "D:\Program Files\Endfield Game\Endfield_Data\Persistent" --fallback-assets "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" -o "D:\fluffy-dump\tmp\extenddata_probe\Persistent" -b extend-data
+```
+
+Findings:
+
+- `CompressData.bin` starts with a 57-entry ascending little-endian offset table. The first offset is `0xE4` (`228`), and later offsets include `916`, `2731`, `4476`; most segment lengths match a segment-local first u32 plus 8. No `Data/`, `SNS`, `Dialog`, `RemoteComm`, `Compress`, or `StringPath` ASCII was found, and quick zlib/zstd/lz4/gzip probes did not decode segments.
+- StreamingAssets `StringPathHash.bin` starts with `11030624, 459609, 0, 0`; Persistent starts with `11108816, 462867, ...`. Both look like dense fixed numeric/hash tables with no ASCII hits.
+- Existing `scripts/build_data_index.py --groups ExtendData` refuses the group by design because the active WebUI Data index only supports decoded `Json`. Keep ExtendData recovery as a focused audit/probe track until exact semantics are proven.
+
+The reviewed VFS audit script now includes block records even when a requested block has zero files, readable missing-block labels, `InitialExtendData` priority text, chunk/missing-chunk counts, and preserved multiline CLI help.
