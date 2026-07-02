@@ -170,6 +170,19 @@ TAG_TAXONOMY_TABLES = (
     "TagGroupDataTable.json",
     "TagDataTable.json",
 )
+WIKI_SEMANTIC_TABLES = (
+    "WikiCategoryTable.json",
+    "WikiGroupTable.json",
+    "WikiEntryTable.json",
+    "WikiEntryDataTable.json",
+    "WikiEntryDataReverseTable.json",
+    "WikiTutorialPageTable.json",
+    "WikiTutorialPageByEntryTable.json",
+    "WikiLimitedGuideTable.json",
+    "WikiCraftJumpTable.json",
+    "WikiDefaultCraftTable.json",
+    "WikiEnemyDropTable.json",
+)
 SYSTEM_TIP_SEMANTIC_TABLES = (
     "ErrorCodeTable.json",
     "LoadingTipsTable.json",
@@ -2679,6 +2692,8 @@ class SourceGraphBuilder:
             self.commit_step("uiLabels")
             self.ingest_system_tip_semantics()
             self.commit_step("systemTips")
+            self.ingest_wiki_semantics()
+            self.commit_step("wikiSemantics")
             self.ingest_weapon_semantics()
             self.commit_step("weaponSemantics")
             self.ingest_spaceship_semantics()
@@ -10011,6 +10026,127 @@ class SourceGraphBuilder:
                     self.add_ui_label_text_edges(label_node, payload_value, source=table, edge_kind=edge_kind)
                 self.add_ui_label_reference_edges(label_node, table, row)
 
+    def add_wiki_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        wiki_key = safe_key(key)
+        if not wiki_key:
+            return ""
+        node = self.add_node(kind, wiki_key, name=table_display_text(name) or wiki_key, source=source, data=data)
+        self.add_alias(wiki_key, node, kind=f"{kind}_id", source=source)
+        return node
+
+    def add_wiki_entry_node(self, entry_id: Any, *, source: str = "", data: Any = None) -> str:
+        return self.add_wiki_node("wiki_entry", entry_id, source=source, data=data)
+
+    def ingest_wiki_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_wiki", name="Structured wiki/tutorial tables", path=slash(table_root))
+        for table_name in WIKI_SEMANTIC_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/wiki")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/wiki")
+                self.add_wiki_row_edges(table, row_key, row, row_node)
+
+    def add_wiki_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "WikiCategoryTable" and isinstance(row, dict):
+            category_node = self.add_wiki_node("wiki_category", row.get("categoryId") or row_key, name=row.get("categoryName"), source=table, data={"priority": row.get("categoryPriority")})
+            if category_node:
+                self.add_edge(row_node, category_node, "defines_wiki_category", source=table)
+                self.add_tag_i18n_edges(category_node, row.get("categoryName"), source=table, edge_kind="wiki_category_name_text")
+        elif table == "WikiGroupTable" and isinstance(row, dict):
+            category_node = self.add_wiki_node("wiki_category", row_key, source=table)
+            for index, group in enumerate(row.get("list") or []):
+                if not isinstance(group, dict):
+                    continue
+                group_node = self.add_wiki_node("wiki_group", group.get("groupId"), name=group.get("groupName"), source=table, data={"iconId": group.get("iconId"), "categoryId": row_key})
+                if group_node:
+                    self.add_edge(category_node, group_node, "wiki_category_has_group", source=table, evidence=f"list[{index}]")
+                    self.add_alias(group.get("iconId"), group_node, kind="icon_id", source=table)
+                    self.add_tag_i18n_edges(group_node, group.get("groupName"), source=table, edge_kind="wiki_group_name_text")
+        elif table == "WikiEntryTable" and isinstance(row, dict):
+            domain_node = self.add_gameplay_domain_node(row_key, source=table)
+            for index, entry_id in enumerate(row.get("list") or []):
+                entry_node = self.add_wiki_entry_node(entry_id, source=table)
+                if entry_node and domain_node:
+                    self.add_edge(domain_node, entry_node, "domain_has_wiki_entry", source=table, evidence=f"list[{index}]")
+        elif table == "WikiEntryDataTable" and isinstance(row, dict):
+            entry_id = safe_key(row.get("id") or row_key)
+            entry_node = self.add_wiki_entry_node(entry_id, source=table, data={"groupId": row.get("groupId"), "order": row.get("order"), "prtsId": row.get("prtsId"), "refItemId": row.get("refItemId"), "refMonsterTemplateId": row.get("refMonsterTemplateId")})
+            if entry_node:
+                self.add_edge(row_node, entry_node, "defines_wiki_entry", source=table)
+                self.add_tag_i18n_edges(entry_node, row.get("desc"), source=table, edge_kind="wiki_entry_desc_text")
+                group_node = self.add_wiki_node("wiki_group", row.get("groupId"), source=table)
+                if group_node:
+                    self.add_edge(group_node, entry_node, "wiki_group_has_entry", source=table, evidence="groupId")
+                item_node = self.add_item_node(row.get("refItemId"), source=table)
+                if item_node:
+                    self.add_edge(entry_node, item_node, "wiki_entry_refers_item", source=table, evidence="refItemId")
+                enemy_node = self.add_node("enemy", safe_key(row.get("refMonsterTemplateId")), name=safe_key(row.get("refMonsterTemplateId")), source=table) if safe_key(row.get("refMonsterTemplateId")) else ""
+                if enemy_node:
+                    self.add_alias(row.get("refMonsterTemplateId"), enemy_node, kind="enemy_id", source=table)
+                    self.add_edge(entry_node, enemy_node, "wiki_entry_refers_enemy", source=table, evidence="refMonsterTemplateId")
+                self.add_alias(row.get("prtsId"), entry_node, kind="prts_id", source=table)
+        elif table == "WikiEntryDataReverseTable" and isinstance(row, str):
+            source_key = safe_key(row_key)
+            entry_node = self.add_wiki_entry_node(row, source=table)
+            if entry_node and source_key:
+                self.add_alias(source_key, entry_node, kind="wiki_reverse_lookup", source=table)
+        elif table == "WikiTutorialPageTable" and isinstance(row, dict):
+            page_id = safe_key(row.get("id") or row_key)
+            page_node = self.add_wiki_node("wiki_tutorial_page", page_id, name=row.get("title"), source=table, data={"tutorialId": row.get("tutorialId"), "order": row.get("order"), "image": row.get("image"), "video": row.get("video"), "videoDeviceType": row.get("videoDeviceType")})
+            tutorial_node = self.add_wiki_node("wiki_tutorial", row.get("tutorialId"), source=table)
+            if page_node:
+                self.add_edge(row_node, page_node, "defines_wiki_tutorial_page", source=table)
+                self.add_tag_i18n_edges(page_node, row.get("title"), source=table, edge_kind="wiki_tutorial_page_title_text")
+                self.add_tag_i18n_edges(page_node, row.get("content"), source=table, edge_kind="wiki_tutorial_page_content_text")
+                self.add_alias(row.get("image"), page_node, kind="asset_stem", source=table)
+                self.add_alias(row.get("video"), page_node, kind="video_stem", source=table)
+                if tutorial_node:
+                    self.add_edge(tutorial_node, page_node, "wiki_tutorial_has_page", source=table, evidence="tutorialId", data={"order": row.get("order")})
+                for index, entry_id in enumerate(row.get("refWikiEntryIds") or []):
+                    entry_node = self.add_wiki_entry_node(entry_id, source=table)
+                    if entry_node:
+                        self.add_edge(page_node, entry_node, "wiki_tutorial_page_refs_entry", source=table, evidence=f"refWikiEntryIds[{index}]")
+        elif table == "WikiTutorialPageByEntryTable" and isinstance(row, dict):
+            tutorial_node = self.add_wiki_node("wiki_tutorial", row_key, source=table)
+            for index, page_id in enumerate(row.get("pageIds") or []):
+                page_node = self.add_wiki_node("wiki_tutorial_page", page_id, source=table)
+                if tutorial_node and page_node:
+                    self.add_edge(tutorial_node, page_node, "wiki_tutorial_has_page", source=table, evidence=f"pageIds[{index}]", data={"index": index})
+        elif table == "WikiLimitedGuideTable" and isinstance(row, dict):
+            guide_node = self.add_wiki_node("wiki_limited_guide", row.get("guideGroupId") or row_key, source=table, data={"wikiEntryId": row.get("wikiEntryId")})
+            entry_node = self.add_wiki_entry_node(row.get("wikiEntryId"), source=table)
+            if guide_node:
+                self.add_edge(row_node, guide_node, "defines_wiki_limited_guide", source=table)
+                if entry_node:
+                    self.add_edge(guide_node, entry_node, "wiki_limited_guide_entry", source=table, evidence="wikiEntryId")
+        elif table == "WikiCraftJumpTable" and isinstance(row, dict):
+            item_node = self.add_item_node(row.get("itemId") or row_key, source=table)
+            if item_node:
+                for field, edge_kind in (("blueprintId", "wiki_craft_item_blueprint"), ("blackboxId", "wiki_craft_item_blackbox")):
+                    ref_node = self.add_wiki_node("wiki_craft_ref", row.get(field), source=table)
+                    if ref_node:
+                        self.add_edge(item_node, ref_node, edge_kind, source=table, evidence=field)
+        elif table == "WikiDefaultCraftTable" and isinstance(row, str):
+            source_item = self.add_item_node(row_key, source=table)
+            craft_item = self.add_item_node(row, source=table)
+            if source_item and craft_item:
+                self.add_edge(source_item, craft_item, "wiki_default_craft_item", source=table, evidence="rowValue")
+        elif table == "WikiEnemyDropTable" and isinstance(row, dict):
+            enemy_node = self.add_node("enemy", row_key, name=row_key, source=table)
+            self.add_alias(row_key, enemy_node, kind="enemy_id", source=table)
+            for index, item_id in enumerate(row.get("dropItemIds") or []):
+                item_node = self.add_item_node(item_id, source=table)
+                if item_node:
+                    self.add_edge(enemy_node, item_node, "wiki_enemy_drops_item", source=table, evidence=f"dropItemIds[{index}]")
+
     def add_system_tip_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         tip_key = safe_key(key)
         if not tip_key:
@@ -15625,7 +15761,13 @@ QUERY_KIND_PRIORITY = {
     "error_code": 34.88,
     "loading_tip": 34.881,
     "hyperlink_text": 34.882,
+    "wiki_category": 34.8821,
+    "wiki_group": 34.8822,
     "wiki_entry": 34.8825,
+    "wiki_tutorial": 34.8826,
+    "wiki_tutorial_page": 34.8827,
+    "wiki_limited_guide": 34.8828,
+    "wiki_craft_ref": 34.8829,
     "death_tip": 34.883,
     "battlepass_forecast_tip": 34.884,
     "input_action": 34.9,
@@ -15984,7 +16126,13 @@ NODE_ID_PREFIXES = (
     "error_code",
     "loading_tip",
     "hyperlink_text",
+    "wiki_category",
+    "wiki_group",
     "wiki_entry",
+    "wiki_tutorial",
+    "wiki_tutorial_page",
+    "wiki_limited_guide",
+    "wiki_craft_ref",
     "death_tip",
     "battlepass_forecast_tip",
     "input_action",

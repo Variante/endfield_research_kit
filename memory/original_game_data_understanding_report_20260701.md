@@ -2096,6 +2096,13 @@ The source graph now models the UI/system text cluster for error codes, loading 
 
 A fast CN build verified 1,061 system-tip nodes across the covered tables and 1,362 system-tip `uses_i18n_text` edges, including 599 error-code text links, 288 loading-tip title/body links, 210 hyperlink name/description links, and 259 death-tip text links. This closes another high-volume non-story text island without mixing it into story recovery.
 
+
+### 2026-07-02 Wiki And Tutorial Graph Progress
+
+The source graph now models the game wiki/tutorial data directly: categories, groups, entries, tutorial pages, limited guides, craft jumps, default craft hints, and wiki enemy-drop rows. A fast CN build verified 6 categories, 56 groups, 1,107 wiki entries, 308 tutorial ids, 527 tutorial pages, 118 limited guides, 69 craft refs, 434 entry-description text links, 1,054 tutorial-page ordering links, 455 tutorial page-to-entry refs, 724 wiki item refs, and 73 wiki enemy refs.
+
+This makes encyclopedia/tutorial lookup explainable from either the wiki ids, text ids, tutorial page ids, items, or enemies, and it connects the earlier hyperlink-only wiki ids to their structured source rows.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
