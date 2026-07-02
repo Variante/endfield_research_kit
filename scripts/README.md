@@ -731,6 +731,12 @@ gameplay-video OCR/audio workflow.
   recovery resolves Finder tags `0x0000..0x0013`, Validator tags
   `0x0000..0x000a`, and PostProcessor tags `0x0000..0x0008` to concrete
   selector formatter names.
+- `story_recovery/build_skipped_vfs_block_audit.py`: summarizes an
+  AnimeStudio/fluffy-dumper `vfs-index` JSON for WebUI-skipped VFS blocks such
+  as Lua, ExtendData, Streaming, DynamicStreaming, and BundleManifest. It
+  writes `reports/mission_order/skipped_vfs_block_audit.json` / `.md` with
+  counts, sizes, top directories, largest files, and story/SNS/UI signal
+  samples so broad raw dumps can be prioritized.
 - `story_recovery/build_levelscript_header_chain_audit.py`: uses the compact
   `ActionHeader.nextId` payload field on `headerList` rows to walk from
   event/listener records into `actionList` chains. It writes
