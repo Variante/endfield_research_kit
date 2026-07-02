@@ -107,6 +107,21 @@ A direct pass through the existing metadata-slot decoder resolved the PostProces
 | `0x0007` | `Core_Selector_ShuffleTarget_Data` |
 | `0x0008` | `Core_Selector_TargetPriorityFilter_Data` |
 
-This supersedes the earlier "do not promote subtype names" statement for PostProcessor only. Finder and Validator remain not safe to promote as tag maps: their cctors load many selector formatter metadata slots, but the existing ActionBase-style scanner does not recover explicit tag constants from those constructors. Their `Deserialize` bodies still only support a tag-range constraint, not subtype labels.
+Snapshot before the reproducible selector audit below: PostProcessor was the only selector family with explicit tag-to-formatter evidence from the existing ActionBase-style scanner. Finder and Validator still only had range constraints and metadata slot names at this point.
 
 Spot checks of exact FindTarget bodies (`buff_chr_0026_lastrite_normal_skill_phantom`, `buff_chr_0030_zhuangfy_sword_triggerd`, `buff_eny_0116_zfydef_fireball`) show selector/middle bytes with plausible tag-like values and parameter strings, but no self-delimiting selector span. Keep `FindTargetAction` chain consumption disabled until `SelectorData` can prove its own end.
+
+## Follow-up: reproducible selector formatter audit
+
+Added `scripts/story_recovery/build_selector_formatter_tag_audit.py` so selector formatter tag recovery is repeatable after game updates instead of depending on inline probes. The script writes generated evidence to `reports/mission_order/selector_formatter_tag_audit.json` and `.md`.
+
+Validation on the installed 2026-05-27 `GameAssembly.dll` and installed `global-metadata.dat`:
+
+- `python -m py_compile scripts\story_recovery\build_selector_formatter_tag_audit.py` passed.
+- `python scripts\story_recovery\build_selector_formatter_tag_audit.py --metadata "D:\Program Files\Endfield Game\Endfield_Data\il2cpp_data\Metadata\global-metadata.dat"` completed.
+- Recovered explicit cctor registration rows:
+  - Finder: 20 tags, `0x0000..0x0013` (`AbilityEntityTargetFinder`, `CharacterTeamFinder`, `FixedPointFinder`, `GlobalContextFinder`, `GodEntityFinder`, `GuardAITargetFinder`, `HitBoxFinder`, `InFightEnemyFinder`, `InteractiveShapeFinder`, `MainTargetFinder`, `OwnerPartsFinder`, `OwnerSpawnedEntityFinder`, `PointFinder`, `RandomPointFinder`, `ShapeFinder`, `ShapeFinderData`, `SmartTargetFinder`, `SnapPointFinder`, `SourceFinder`, `TargetFinder`).
+  - Validator: 11 tags, `0x0000..0x000a` (`AttributeValidator`, `CheckRaycastValidator`, `CurHpRatioValidator`, `DistanceValidator`, `ExcludeOwnerValidator`, `HittableObjectValidator`, `InteractiveKeyValidator`, `MainCharacterValidator`, `SkillCastIdValidator`, `TagValidator`, `TargetContainsValidator`).
+  - PostProcessor: 9 tags, `0x0000..0x0008` (`ConvertToBoxCenterPlaneProjectionPoint`, `ConvertToPosition`, `ConvertToSlot`, `ExcludeTarget`, `LockOrMarkTargetFilter`, `NavMeshPathPositionProcessor`, `PriorityFilter`, `ShuffleTarget`, `TargetPriorityFilter`).
+
+This upgrades the selector tag evidence from range-only to explicit tag-to-formatter maps. It still does not make FindTargetAction safe for chain consumption: exact FindTarget body spot checks show selector/middle bytes with plausible tag-like values and parameter strings, but no proven self-delimiting `SelectorData` end yet.
