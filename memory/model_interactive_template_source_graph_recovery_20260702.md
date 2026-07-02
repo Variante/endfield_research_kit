@@ -40,6 +40,9 @@ Result:
 - retained `model_prefab`: 1,152 nodes
 - retained `model_config_uses_prefab`: 1,202 edges
 - retained `model_config_asset_entity`: 215 edges
+- `prefab_path`: 1,152 aliases on `model_prefab`
+- `model_config_prefab_path`: 1,202 aliases on `model_config_model`
+- `model_prefab_stem`: 1,152 aliases
 
 Example model consumers:
 
@@ -51,3 +54,11 @@ Example model consumers:
 
 This advances the asset semantics gap by showing which decoded interactive
 containers use a model even when exported renderable assets remain absent.
+
+The same validation also covered two graph-query hygiene improvements:
+
+- Lua module focus payloads are normalized to focus-name arrays, with
+  `focusCounts` retained when the audit source has per-focus hit counts.
+- Query seed ranking now prefers `model_prefab` nodes for `prefab_path` and
+  `model_prefab_stem` aliases while retaining `model_config_prefab_path` on
+  model rows.
