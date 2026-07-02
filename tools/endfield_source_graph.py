@@ -12143,6 +12143,7 @@ class SourceGraphBuilder:
             obtain_node = self.add_node("item_obtain_way", obtain_key, name=obtain_key, source=table)
             self.add_alias(obtain_key, obtain_node, kind="item_obtain_way_id", source=table)
             self.add_edge(item_node, obtain_node, "item_has_obtain_way", source=table, evidence=f"obtainWayIds[{index}]")
+            self.add_edge(obtain_node, item_node, "obtain_way_has_item", source=table, evidence=f"obtainWayIds[{index}]", data={"index": index})
         for index, outcome_id in enumerate(row.get("outcomeItemIds") or []):
             outcome_node = self.add_item_node(outcome_id, source=table)
             self.add_edge(item_node, outcome_node, "item_outcomes_item", source=table, evidence=f"outcomeItemIds[{index}]")
