@@ -2060,6 +2060,12 @@ The source graph now models another group of small UI/system dictionaries as gen
 
 This improves lookup for non-story UI strings and lightweight taxonomy/config labels while leaving dedicated domains such as shop goods tags and enemy tags to their existing ingesters.
 
+### 2026-07-01 Tag Text Bridge Progress
+
+The source graph now adds explicit label-text edges for activity tags and shop goods tags, and it ingests `EnemyTagTable` directly through combat semantics. A fast CN build verified 23 activity tag label links, 6 shop goods tag label links, and 5 enemy tag label links with direct `defines_enemy_tag` evidence.
+
+This is a narrow explainability bridge for tag-like tables that already had domain nodes, not a new tag taxonomy.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come

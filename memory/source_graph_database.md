@@ -1530,6 +1530,8 @@ Validated settings edges include 100 `setting_tab_has_item`, 92 `setting_item_re
 
 2026-07-01 UI label graph refs: `tools/endfield_source_graph.py` now ingests 16 compact UI label/config dictionaries as the `structured_ui_labels` dataset: battle-pass task labels, settlement tags, share channels, social sign tabs/signs, factory blueprint and ingredient tag labels, cash-shop pack tags, money gain/consume source labels, report reasons, system menu labels, tower-defense groups, bloc labels, and character battle tags. A fast CN graph build to `tmp/source_graph_ui_labels.sqlite` verified 243 `ui_label` nodes, 243 `defines_ui_label` edges, 297 specific UI-label text edges, 297 matching `uses_i18n_text` edges, 25 social sign tab edges, 20 factory blueprint tag-type edges, and 39 tag/character-tag reference edges. Query smoke tests passed for `BattlePassTaskLabelTable:bp_01_task_label_activity`, `SocialBuildingSignTable:1`, `FactoryBlueprintTagTable:101`, and `system_activity_center`.
 
+2026-07-01 tag text bridge refs: existing activity and shop tag graph nodes now use specific label text edge kinds, and `EnemyTagTable` is ingested directly through combat semantics instead of relying only on generated gameplay output. A fast CN graph build to `tmp/source_graph_tag_text_bridges.sqlite` verified 23 `activity_tag_name_text` edges, 6 `shop_goods_tag_name_text` edges, 5 `enemy_tag_text` edges, and 5 `defines_enemy_tag` edges. Query smoke tests passed for `activity_tag_benefits`, `crafts`, and `tag_boss`.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type
