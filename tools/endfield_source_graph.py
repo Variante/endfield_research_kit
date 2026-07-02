@@ -168,6 +168,92 @@ TAG_TAXONOMY_TABLES = (
     "TagGroupDataTable.json",
     "TagDataTable.json",
 )
+UI_LABEL_SEMANTIC_TABLES = {
+    "BattlePassTaskLabelTable.json": {
+        "id_fields": ("labelId",),
+        "text_fields": ("name", "subName", "conditionHint"),
+        "sort_fields": ("sortId", "forecastType", "isLifeTime"),
+    },
+    "SettlementTagTable.json": {
+        "id_fields": ("settlementTagId",),
+        "text_fields": ("settlementTagName", "desc"),
+        "ref_fields": ("enhanceCharTagId",),
+        "sort_fields": ("enhanceExpProfitRate", "enhanceMoneyProfitRate", "enhanceMoneyProduceSpeedRate"),
+    },
+    "ShareChannelTable.json": {
+        "id_fields": ("shareChannelId",),
+        "text_fields": ("name",),
+        "asset_fields": ("icon",),
+        "sort_fields": ("sort",),
+    },
+    "SocialBuildingSignTabTable.json": {
+        "id_fields": ("tabId",),
+        "text_fields": ("name",),
+        "asset_fields": ("icon",),
+        "sort_fields": ("priority",),
+    },
+    "SocialBuildingSignTable.json": {
+        "id_fields": ("signId",),
+        "text_fields": ("text",),
+        "asset_fields": ("iconKey", "uiIconKey"),
+        "ref_fields": ("tab",),
+        "sort_fields": ("sortId",),
+    },
+    "FactoryBlueprintTagTypeTable.json": {
+        "id_fields": ("id",),
+        "text_fields": ("name",),
+        "sort_fields": ("sortId", "allowMultiSelect"),
+    },
+    "FactoryBlueprintTagTable.json": {
+        "id_fields": ("id",),
+        "text_fields": ("name",),
+        "ref_fields": ("type", "formulaId"),
+        "sort_fields": ("sortId",),
+    },
+    "FactoryIngredientTagTable.json": {
+        "id_fields": ("id",),
+        "text_fields": ("tagLabel",),
+        "ref_fields": ("combineMachineIds",),
+    },
+    "CashShopGiftPackTagTable.json": {
+        "id_fields": ("tagId",),
+        "text_fields": ("value",),
+        "sort_fields": ("style",),
+    },
+    "MoneyConsumeTable.json": {
+        "id_fields": ("sourceType",),
+        "text_fields": ("name",),
+    },
+    "MoneyGainTable.json": {
+        "id_fields": ("sourceType",),
+        "text_fields": ("name",),
+    },
+    "ReportTable.json": {
+        "id_fields": (),
+        "text_fields": ("__self__",),
+    },
+    "GameSystemConfigTable.json": {
+        "id_fields": ("systemId",),
+        "text_fields": ("systemName", "systemDesc"),
+        "asset_fields": ("systemIcon",),
+        "sort_fields": ("unlockSystemType", "redDotName"),
+    },
+    "TowerDefenseGroupTable.json": {
+        "id_fields": ("tdGroup",),
+        "text_fields": ("name",),
+        "sort_fields": ("sortId",),
+    },
+    "BlocDataTable.json": {
+        "id_fields": ("blocId",),
+        "text_fields": ("blocName", "engName"),
+        "asset_fields": ("icon",),
+        "ref_fields": ("tagId",),
+    },
+    "CharBattleTagTable.json": {
+        "id_fields": (),
+        "text_fields": ("__self__",),
+    },
+}
 CHARACTER_SUPPORT_TABLES = (
     "CharacterTagTable.json",
     "CharacterTagDesTable.json",
@@ -2568,6 +2654,8 @@ class SourceGraphBuilder:
             self.commit_step("characterSupport")
             self.ingest_tag_taxonomy_semantics()
             self.commit_step("tagTaxonomy")
+            self.ingest_ui_label_semantics()
+            self.commit_step("uiLabels")
             self.ingest_spaceship_semantics()
             self.commit_step("spaceshipSemantics")
             self.ingest_factory_tech_semantics()
@@ -9753,6 +9841,120 @@ class SourceGraphBuilder:
                     if self.node_exists("character_tag", tag_id):
                         self.add_edge(character_tag_node, tag_node, "character_tag_resolves_to_tag", source=table, evidence=tag_id)
 
+    def ui_label_identity(self, table: str, row_key: Any, row: dict[str, Any], config: dict[str, Any]) -> str:
+        for field in config.get("id_fields", ()):
+            value = safe_key(row.get(field))
+            if value:
+                return value
+        return safe_key(row_key)
+
+    def ui_label_payload(self, table: str, identity: str, row: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
+        text_fields = config.get("text_fields", ())
+        asset_fields = config.get("asset_fields", ())
+        ref_fields = config.get("ref_fields", ())
+        sort_fields = config.get("sort_fields", ())
+        data: dict[str, Any] = {"table": table, "id": identity}
+        for field in text_fields:
+            if field == "__self__":
+                data["text"] = table_text(row)
+            elif field in row:
+                data[field] = table_text(row.get(field))
+        for field in (*asset_fields, *ref_fields, *sort_fields):
+            if field in row and row.get(field) not in (None, "", [], {}):
+                data[field] = compact_payload(row.get(field), depth=2)
+        return data
+
+    def add_ui_label_node(self, table: str, identity: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        label_key = safe_key(identity)
+        if not label_key:
+            return ""
+        node_key = f"{table}:{label_key}"
+        label_name = table_display_text(name) or label_key
+        node = self.add_node("ui_label", node_key, name=label_name, source=source, data=data)
+        self.add_alias(label_key, node, kind="ui_label_id", source=source)
+        self.add_alias(node_key, node, kind="ui_label_id", source=source)
+        if label_name and label_name != label_key:
+            self.add_alias(label_name, node, kind="ui_label_name", source=source)
+        return node
+
+    def add_ui_label_text_edges(self, owner_node: str, payload: Any, *, source: str, edge_kind: str) -> None:
+        seen: set[str] = set()
+        for text_id in self.iter_i18n_text_ids(payload):
+            if text_id in seen:
+                continue
+            seen.add(text_id)
+            text_node = self.add_i18n_text_node(text_id, source=source)
+            if text_node:
+                self.add_edge(owner_node, text_node, edge_kind, source=source, evidence=text_id)
+                self.add_edge(owner_node, text_node, "uses_i18n_text", source=source, evidence=text_id)
+
+    def add_ui_label_reference_edges(self, label_node: str, table: str, row: dict[str, Any]) -> None:
+        if table == "SettlementTagTable":
+            for tag_id in row.get("enhanceCharTagId") or []:
+                tag_key = safe_key(tag_id)
+                if not tag_key:
+                    continue
+                character_tag_node = self.node_id("character_tag", tag_key)
+                if self.node_exists("character_tag", tag_key):
+                    self.add_edge(label_node, character_tag_node, "ui_label_references_character_tag", source=table, evidence="enhanceCharTagId")
+                tag_node = self.node_id("tag", tag_key)
+                if self.node_exists("tag", tag_key):
+                    self.add_edge(label_node, tag_node, "ui_label_references_tag", source=table, evidence="enhanceCharTagId")
+        elif table == "SocialBuildingSignTable":
+            tab_id = safe_key(row.get("tab"))
+            tab_node = self.node_id("ui_label", f"SocialBuildingSignTabTable:{tab_id}")
+            if tab_id and self.node_exists("ui_label", f"SocialBuildingSignTabTable:{tab_id}"):
+                self.add_edge(label_node, tab_node, "ui_label_in_tab", source=table, evidence="tab")
+        elif table == "FactoryBlueprintTagTable":
+            type_id = safe_key(row.get("type"))
+            type_node = self.node_id("ui_label", f"FactoryBlueprintTagTypeTable:{type_id}")
+            if type_id and self.node_exists("ui_label", f"FactoryBlueprintTagTypeTable:{type_id}"):
+                self.add_edge(label_node, type_node, "ui_label_has_type", source=table, evidence="type")
+        elif table == "BlocDataTable":
+            tag_id = safe_key(row.get("tagId"))
+            tag_node = self.node_id("tag", tag_id)
+            if tag_id and self.node_exists("tag", tag_id):
+                self.add_edge(label_node, tag_node, "ui_label_references_tag", source=table, evidence="tagId")
+
+    def ingest_ui_label_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_ui_labels", name="Structured UI label tables", path=slash(table_root))
+        for table_name, config in UI_LABEL_SEMANTIC_TABLES.items():
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/ui_labels")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                if not isinstance(row, dict):
+                    continue
+                identity = self.ui_label_identity(table, row_key, row, config)
+                if not identity:
+                    continue
+                name_payload = None
+                for field in config.get("text_fields", ()):  # choose the first configured label as display name
+                    name_payload = row if field == "__self__" else row.get(field)
+                    if name_payload not in (None, "", {}, []):
+                        break
+                label_data = self.ui_label_payload(table, identity, row, config)
+                label_node = self.add_ui_label_node(table, identity, name=name_payload, source=table, data=compact_payload(label_data, depth=3))
+                if not label_node:
+                    continue
+                self.add_edge(table_node, label_node, "defines_ui_label", source=table, evidence=identity)
+                for field in config.get("asset_fields", ()):
+                    asset_key = safe_key(row.get(field))
+                    if asset_key:
+                        self.add_alias(asset_key, label_node, kind="asset_stem", source=table)
+                for field in config.get("text_fields", ()):
+                    payload_value = row if field == "__self__" else row.get(field)
+                    edge_field = "text" if field == "__self__" else field
+                    edge_kind = "ui_label_text" if edge_field == "text" else f"ui_label_{edge_field}_text"
+                    self.add_ui_label_text_edges(label_node, payload_value, source=table, edge_kind=edge_kind)
+                self.add_ui_label_reference_edges(label_node, table, row)
+
     def add_character_profession_node(self, profession_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         profession_key = safe_key(profession_id)
         if not profession_key:
@@ -15043,6 +15245,7 @@ QUERY_KIND_PRIORITY = {
     "setting_gamepad_option": 34.7,
     "setting_text_key": 34.8,
     "setting_function": 34.85,
+    "ui_label": 34.87,
     "input_action": 34.9,
     "input_scope": 34.91,
     "input_key": 34.92,
@@ -15390,6 +15593,7 @@ NODE_ID_PREFIXES = (
     "setting_gamepad_option",
     "setting_text_key",
     "setting_function",
+    "ui_label",
     "input_action",
     "input_scope",
     "input_key",
