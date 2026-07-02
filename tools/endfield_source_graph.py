@@ -229,6 +229,7 @@ WORLD_HARVESTABLE_TABLES = (
     "RewardSoilTable.json",
     "FertilizeDataTable.json",
     "FertilizeIncreaseTable.json",
+    "PlantingStepConstTable.json",
 )
 DOMAIN_CORE_TABLES = (
     "DomainDataTable.json",
@@ -358,6 +359,7 @@ DISPLAY_METADATA_TABLES = (
     "CollectionLabelTable.json",
     "ShopDomainConst.json",
     "ShopChannelDevelopmentTable.json",
+    "IntroTable.json",
 )
 FACTORY_INTERACTION_LOOKUP_TABLES = (
     "FactorySpecialPowerPoleTable.json",
@@ -10688,6 +10690,17 @@ class SourceGraphBuilder:
                     self.add_edge(reward_node, soil_reward_node, "reward_has_soil_reward_table", source=table, evidence="rewardId")
                 self.add_reward_item_bundle_edges(soil_reward_node, row.get("itemBundles"), edge_kind="soil_reward_grants_item", source=table, field="itemBundles", visible_list=row.get("itemBundleVisibleList"))
                 self.add_reward_item_bundle_edges(soil_reward_node, row.get("probItemBundles"), edge_kind="soil_reward_prob_item", source=table, field="probItemBundles")
+        elif table == "PlantingStepConstTable":
+            step_node = self.add_world_harvestable_node("planting_step_type", row.get("id") or row_key, source=table, data={"id": row.get("id")})
+            if step_node:
+                self.add_edge(row_node, step_node, "defines_planting_step_type", source=table)
+                for field, edge_kind in (
+                    ("btnText", "planting_step_type_button_text"),
+                    ("hintText", "planting_step_type_hint_text"),
+                    ("progressText", "planting_step_type_progress_text"),
+                    ("stepDescription", "planting_step_type_description_text"),
+                ):
+                    self.add_tag_i18n_edges(step_node, row.get(field), source=table, edge_kind=edge_kind)
         elif table == "FertilizeDataTable":
             item_node = self.add_item_node(row.get("id") or row_key, source=table)
             fertilize_node = self.add_world_harvestable_node("fertilize_item", row.get("id") or row_key, source=table, data={"fertilizeType": row.get("fertilizeType"), "fertilizeTime": row.get("fertilizeTime"), "detailIconId": row.get("detailIconId"), "startEffectId": row.get("startEffectId")})
@@ -15279,6 +15292,21 @@ class SourceGraphBuilder:
                 self.add_edge(owner_node, item_node, edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]", data={"index": index, "count": count})
 
     def add_display_metadata_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "IntroTable" and isinstance(row, dict):
+            intro_node = self.add_display_metadata_node("intro_topic", row_key, source=table, data={"pageCount": len(row.get("dataArray") or [])})
+            if intro_node:
+                self.add_edge(row_node, intro_node, "defines_intro_topic", source=table)
+                for index, page in enumerate(row.get("dataArray") or []):
+                    if not isinstance(page, dict):
+                        continue
+                    page_key = f"{safe_key(row_key)}:{index}:{safe_key(page.get('pageIndex') if page.get('pageIndex') is not None else page.get('id') or index)}"
+                    page_node = self.add_display_metadata_node("intro_page", page_key, source=table, data={"id": page.get("id"), "pageIndex": page.get("pageIndex"), "imagePath": page.get("imagePath")})
+                    if page_node:
+                        self.add_edge(intro_node, page_node, "intro_topic_has_page", source=table, evidence=f"dataArray[{index}]", data={"index": index})
+                        self.add_tag_i18n_edges(page_node, page.get("title"), source=table, edge_kind="intro_page_title_text")
+                        self.add_tag_i18n_edges(page_node, page.get("desc"), source=table, edge_kind="intro_page_desc_text")
+                        self.add_alias(page.get("imagePath"), page_node, kind="asset_stem", source=table)
+            return
         if table == "ShopDomainConst":
             const_node = self.add_display_metadata_node("display_const", f"{table}:{row_key}", name=row_key, source=table, data={"key": row_key, "value": row})
             if const_node:
