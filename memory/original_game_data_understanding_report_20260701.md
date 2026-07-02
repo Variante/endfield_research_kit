@@ -2040,6 +2040,13 @@ The source graph now models the generic tag taxonomy in `TagDataTable` and `TagG
 
 This closes a high-count leftover UI/system text cluster and makes character tag assignments explainable through the canonical label/group dictionary without forcing unrelated bloc or gameplay tag ids into the taxonomy.
 
+
+### 2026-07-01 Character Support Text Bridge Progress
+
+The source graph now links existing character tag-description and character tutorial-step nodes to their I18n text records. A fast CN build verified 104 character tag-description text edges plus 672 tutorial-step text edges split evenly between step descriptions and icon descriptions.
+
+This does not change character/tutorial structure; it closes a text explainability gap where `CharacterTagDesTable` and `DungeonCharTutorialStepTable` were structurally modeled but still appeared as large unhandled I18n clusters.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come

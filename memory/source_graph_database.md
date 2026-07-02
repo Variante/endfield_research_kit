@@ -1522,6 +1522,9 @@ Validated settings edges include 100 `setting_tab_has_item`, 92 `setting_item_re
 
 2026-07-01 tag taxonomy graph refs: `tools/endfield_source_graph.py` now ingests `TagGroupDataTable` and `TagDataTable` as the `structured_tag_taxonomy` dataset, separate from activity, enemy, and gameplay tag systems. A fast CN graph build to `tmp/source_graph_tag_taxonomy.sqlite` verified 77 canonical `tag` nodes, 6 `tag_group` nodes, 77 `defines_tag`, 6 `defines_tag_group`, 77 `tag_belongs_to_group`, 77 `tag_name_text`, 6 `tag_group_name_text`, 6 `tag_group_desc_text`, and 69 `character_tag_resolves_to_tag` edges. The 8 `hideTag` rows are preserved as tag data instead of being excluded. Query smoke tests passed for `tag_disposition_active`, `tag_group_disposition`, and the overlapping character tag `tag_activity_universe`.
 
+
+2026-07-01 character support i18n bridge refs: existing `CharacterTagDesTable` and `DungeonCharTutorialStepTable` graph nodes now link to their text records instead of only storing compact text in node data. A fast CN graph build to `tmp/source_graph_character_support_i18n.sqlite` verified 104 `character_tag_desc_text` edges, 336 `tutorial_step_desc_text` edges, 336 `tutorial_step_icon_desc_text` edges, and 776 `uses_i18n_text` edges from those two sources. Query smoke tests passed for `aglina_stage_1_step_01` and `chr_0004_pelica:tag_expert_oripow`.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type
