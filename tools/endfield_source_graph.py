@@ -15890,7 +15890,19 @@ class SourceGraphBuilder:
             battle_node = self.add_mode_constant_node("factory_battle_config", row.get("id") or row_key, source=table, data={"attackRange": row.get("attackRange"), "attackRangeType": row.get("attackRangeType"), "attackCost": row.get("attackCost"), "energyMax": row.get("energyMax"), "commonSkillId": row.get("commonSkillId"), "overloadSkillId": row.get("overloadSkillId"), "relateTempBuildingId": row.get("relateTempBuildingId")})
             if battle_node:
                 self.add_edge(row_node, battle_node, "defines_factory_battle_config", source=table)
-                self.add_alias(row.get("attackRangeEffect"), battle_node, kind="asset_stem", source=table)
+                attack_effect = safe_key(row.get("attackRangeEffect"))
+                if attack_effect:
+                    effect_node = self.add_node("gameplay_effect", attack_effect, name=attack_effect, source=table)
+                    self.add_alias(attack_effect, effect_node, kind="gameplay_effect_id", source=table)
+                    self.add_alias(attack_effect, battle_node, kind="asset_stem", source=table)
+                    self.add_edge(
+                        battle_node,
+                        effect_node,
+                        "factory_battle_attack_range_effect",
+                        source=table,
+                        evidence="attackRangeEffect",
+                        data={"attackRange": row.get("attackRange"), "attackRangeType": row.get("attackRangeType"), "minAttackRange": row.get("minAttackRange")},
+                    )
                 for field, edge_kind in (("commonSkillId", "factory_battle_common_skill"), ("overloadSkillId", "factory_battle_overload_skill")):
                     skill_key = safe_key(row.get(field))
                     if skill_key:
