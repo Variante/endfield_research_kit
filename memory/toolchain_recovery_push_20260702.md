@@ -212,3 +212,18 @@ Current output maps `311/311` focused selector body targets across `147` MemoryP
 - selector formatter tag-map ranges from `selector_formatter_tag_audit`: Finder `0x0000..0x0013`, Validator `0x0000..0x000a`, PostProcessor `0x0000..0x0008`.
 
 This upgrades the FindTargetAction evidence from separate raw reports into a single reproducible gate summary. It still does not enable chain consumption: the missing proof is a sample-byte parser that shows nested `SelectorData`/`TargetSettings` payloads are self-delimiting and end at the exact expected offset in real BuffData rows.
+
+## Follow-up: FindTarget selector boundary sample audit
+
+Added `scripts/story_recovery/build_findtarget_selector_boundary_audit.py` to scan real exported BuffData through the existing `scripts/build_data_index.py` decoder and make the FindTargetAction parser gate measurable.
+
+Validation:
+
+```bat
+python -B -m py_compile scripts\story_recovery\build_findtarget_selector_boundary_audit.py
+python scripts\story_recovery\build_findtarget_selector_boundary_audit.py
+```
+
+Current scan over `4,616` BuffData files found `24` already-decoded single-item FindTargetAction samples, grouped into `7` unique body-middle byte shapes, plus `30` ambiguous records where the first action is FindTargetAction but the action-data list cannot be safely split by typed consumption yet. The existing TargetSettings envelope parser accepts `0` candidates inside all decoded FindTargetAction body-middle bytes.
+
+This is useful negative evidence: the TargetSettings envelope shape used by other action parsers is not directly embedded in the current FindTargetAction middle bytes. The next parser work should focus on the selector/DirectionSettings reader state and ambiguous action-list splitting, not on reusing the current `read_buff_target_settings_envelope_partial` shape inside FindTargetAction.

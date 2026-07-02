@@ -739,6 +739,13 @@ gameplay-video OCR/audio workflow.
   setter call order, setter store offsets, aliasing warnings, selector tag-map
   evidence, and the current "parser still missing" gate before FindTargetAction
   chain consumption can be enabled.
+- `story_recovery/build_findtarget_selector_boundary_audit.py`: scans exported
+  BuffData through the existing WebUI data decoder and writes
+  `reports/mission_order/findtarget_selector_boundary_audit.json` / `.md`. It
+  groups real FindTargetAction body-middle byte shapes, checks whether the
+  current TargetSettings envelope parser accepts any middle-byte candidates,
+  lists ambiguous first-FindTarget records, and keeps selector tag byte hits as
+  non-proof prioritization hints.
 - `story_recovery/build_skipped_vfs_block_audit.py`: summarizes an
   AnimeStudio/fluffy-dumper `vfs-index` JSON for WebUI-skipped VFS blocks such
   as Lua, ExtendData, Streaming, DynamicStreaming, and BundleManifest. It
