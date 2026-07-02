@@ -21296,6 +21296,20 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
                     candidates.append(entity)
         return _unique_preserve(candidate_bases), candidates
 
+    def classify_direct_edge(edge: dict[str, Any]) -> dict[str, Any]:
+        edge_data = edge.get("edgeData") if isinstance(edge.get("edgeData"), dict) else {}
+        entity_data = edge.get("entityData") if isinstance(edge.get("entityData"), dict) else {}
+        token = safe_key(edge_data.get("token"))
+        entity_base = safe_key(entity_data.get("modelBase") or edge.get("entityName")).lower()
+        candidate_bases = [base.lower() for base in model_asset_entity_candidate_bases(token)]
+        if entity_base and entity_base in candidate_bases:
+            strength = "exact_token_base"
+        elif entity_base and any(entity_base.startswith(f"{base}_") for base in candidate_bases):
+            strength = "prefix_expanded"
+        else:
+            strength = "unknown_match"
+        return {**edge, "matchStrength": strength, "candidateBases": candidate_bases}
+
     def count_edges(kind: str, model_node: str, direction: str) -> int:
         if direction == "incoming":
             return conn.execute("SELECT COUNT(*) FROM edges WHERE kind = ? AND dst = ?", (kind, model_node)).fetchone()[0]
@@ -21312,12 +21326,15 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
         prefab_stem = safe_key(Path(prefab_path).stem) if prefab_path else ""
         tokens = [model_id, prefab_path, prefab_stem]
         bases, candidates = candidate_entities(tokens)
-        direct = direct_edges(row["id"])
+        direct = [classify_direct_edge(edge) for edge in direct_edges(row["id"])]
         world_uses = count_edges("world_entity_uses_model", row["id"], "incoming")
         interactive_uses = count_edges("interactive_template_uses_model", row["id"], "incoming")
         has_radius = count_edges("model_config_has_radius", row["id"], "outgoing") > 0 or conn.execute("SELECT 1 FROM nodes WHERE kind = 'model_radius' AND name = ? LIMIT 1", (model_id,)).fetchone() is not None
-        if direct:
-            status = "exact_graph_edge"
+        direct_strengths = [edge.get("matchStrength") for edge in direct]
+        if len(direct) == 1 and direct_strengths == ["exact_token_base"]:
+            status = "strong_exact_graph_edge"
+        elif direct:
+            status = "ambiguous_graph_edge"
         elif candidates:
             status = "candidate_name_match"
         elif world_uses or interactive_uses:
@@ -21343,7 +21360,7 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
         records.append(record)
 
     records.sort(key=lambda item: (
-        0 if item["status"] == "exact_graph_edge" else 1 if item["status"] == "candidate_name_match" else 2 if item["status"] == "no_exported_renderable_candidate" else 3,
+        0 if item["status"] == "strong_exact_graph_edge" else 1 if item["status"] == "ambiguous_graph_edge" else 2 if item["status"] == "candidate_name_match" else 3 if item["status"] == "no_exported_renderable_candidate" else 4,
         -(item.get("worldEntityUses") or 0) - (item.get("interactiveTemplateUses") or 0),
         item.get("modelId") or "",
     ))
@@ -21354,6 +21371,8 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
         "statusCounts": dict(status_counts),
         "directModelConfigAssetEntityEdges": direct_edge_total,
         "candidateEntityMatches": candidate_total,
+        "strongExactGraphEdgeRows": status_counts.get("strong_exact_graph_edge", 0),
+        "ambiguousGraphEdgeRows": status_counts.get("ambiguous_graph_edge", 0),
         "records": records,
     }
     json_path = GRAPH_DIR / "model_config_asset_binding_candidates.json"
@@ -21369,6 +21388,8 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
         f"- Model config rows: `{len(model_rows)}`",
         f"- Asset entities: `{sum(len(rows) for rows in entity_by_base.values())}`",
         f"- Direct `model_config_asset_entity` edges: `{direct_edge_total}`",
+        f"- Strong exact graph-edge rows: `{status_counts.get('strong_exact_graph_edge', 0)}`",
+        f"- Ambiguous graph-edge rows: `{status_counts.get('ambiguous_graph_edge', 0)}`",
         f"- Candidate entity matches: `{candidate_total}`",
     ]
     for status, count in sorted(status_counts.items()):
@@ -21385,7 +21406,7 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
     else:
         lines.append("No referenced unbound model rows found.")
     lines.extend(["", "## Candidate Matches", ""])
-    candidate_records = [item for item in records if item["status"] in {"exact_graph_edge", "candidate_name_match"}][:40]
+    candidate_records = [item for item in records if item["status"] in {"strong_exact_graph_edge", "ambiguous_graph_edge", "candidate_name_match"}][:40]
     if candidate_records:
         lines.append("| Model id | Status | Candidate entities | Prefab stem |")
         lines.append("| --- | --- | ---: | --- |")
