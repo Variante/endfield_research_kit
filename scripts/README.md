@@ -724,6 +724,13 @@ gameplay-video OCR/audio workflow.
   post flag, and optional tail local action ref; `0x0bed/0x00` is now decoded
   as a compact terminal branch carrier with local action refs, though both
   runtime class families are still unnamed.
+- `story_recovery/build_selector_formatter_tag_audit.py`: extracts selector
+  Finder/Validator/PostProcessor MemoryPack formatter evidence from
+  `GameAssembly.dll`. It writes
+  `reports/mission_order/selector_formatter_tag_audit.json` / `.md`; current
+  recovery resolves Finder tags `0x0000..0x0013`, Validator tags
+  `0x0000..0x000a`, and PostProcessor tags `0x0000..0x0008` to concrete
+  selector formatter names.
 - `story_recovery/build_levelscript_header_chain_audit.py`: uses the compact
   `ActionHeader.nextId` payload field on `headerList` rows to walk from
   event/listener records into `actionList` chains. It writes
