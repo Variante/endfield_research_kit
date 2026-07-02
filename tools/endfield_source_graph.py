@@ -219,6 +219,11 @@ DOMAIN_DEPOT_TABLES = (
     "DomainDepotConst.json",
     "DomainPoiTable.json",
 )
+CONDITION_SEMANTIC_TABLES = (
+    "GlobalVarTable.json",
+    "TimeRangeTable.json",
+    "ConditionTable.json",
+)
 COMBAT_SEMANTIC_TABLES = (
     "BuffTable.json",
     "SkillPatchTable.json",
@@ -2939,6 +2944,8 @@ class SourceGraphBuilder:
             self.commit_step("worldSemantics")
             self.ingest_domain_depot_semantics()
             self.commit_step("domainDepotSemantics")
+            self.ingest_condition_semantics()
+            self.commit_step("conditionSemantics")
             self.ingest_world_harvestable_semantics()
             self.commit_step("worldHarvestables")
             self.ingest_combat_semantics()
@@ -9772,6 +9779,160 @@ class SourceGraphBuilder:
                     feature_node = self.add_semantic_node("domain_depot_feature", row.get("phaseId"), source=table, data={"domainPoiType": row.get("domainPoiType")})
                     if feature_node:
                         self.add_edge(poi_node, feature_node, "domain_poi_type_feature", source=table, evidence="phaseId")
+
+    def add_condition_node(self, condition_id: Any, *, source: str = "", data: Any = None) -> str:
+        condition_key = safe_key(condition_id)
+        if not condition_key:
+            return ""
+        node = self.add_node("condition", condition_key, name=condition_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=condition_key, source=source, data=data)
+        self.add_alias(condition_key, node, kind="condition_id", source=source)
+        return node
+
+    def add_condition_type_node(self, condition_type: Any, *, source: str = "") -> str:
+        type_key = safe_key(condition_type)
+        if not type_key:
+            return ""
+        node = self.add_node("condition_type", type_key, name=type_key, source=source, data={"conditionType": condition_type})
+        self.add_alias(type_key, node, kind="condition_type_id", source=source)
+        return node
+
+    def add_compare_operator_node(self, operator: Any, *, source: str = "") -> str:
+        operator_key = safe_key(operator)
+        if not operator_key:
+            return ""
+        node = self.add_node("compare_operator", operator_key, name=operator_key, source=source, data={"compareOperator": operator})
+        self.add_alias(operator_key, node, kind="compare_operator_id", source=source)
+        return node
+
+    def add_global_variable_node(self, variable_id: Any, *, source: str = "", data: Any = None) -> str:
+        variable_key = safe_key(variable_id)
+        if not variable_key:
+            return ""
+        node = self.add_node("global_variable", variable_key, name=variable_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=variable_key, source=source, data=data)
+        self.add_alias(variable_key, node, kind="global_variable_id", source=source)
+        return node
+
+    def add_time_range_node(self, range_id: Any, *, source: str = "", data: Any = None) -> str:
+        range_key = safe_key(range_id)
+        if not range_key:
+            return ""
+        node = self.add_node("time_range", range_key, name=range_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=range_key, source=source, data=data)
+        self.add_alias(range_key, node, kind="time_range_id", source=source)
+        return node
+
+    def add_condition_parameter_refs(self, condition_node: str, condition_id: str, parameters: Any, *, source: str) -> None:
+        if not isinstance(parameters, list):
+            return
+        for param_index, param in enumerate(parameters):
+            if not isinstance(param, dict):
+                continue
+            param_node = self.add_node(
+                "condition_parameter",
+                f"{condition_id}:{param_index}",
+                name=f"{condition_id} parameter {param_index + 1}",
+                source=source,
+                data=compact_payload(param, depth=2),
+            )
+            self.add_alias(f"{condition_id}:{param_index}", param_node, kind="condition_parameter_id", source=source)
+            self.add_edge(condition_node, param_node, "condition_has_parameter", source=source, evidence=f"parameters[{param_index}]", data={"realType": param.get("realType"), "valueType": param.get("valueType")})
+            value_lists = (
+                ("valueStringList", param.get("valueStringList") or []),
+                ("valueIntList", param.get("valueIntList") or []),
+                ("valueFloatList", param.get("valueFloatList") or []),
+                ("valueBoolList", param.get("valueBoolList") or []),
+            )
+            for field, values in value_lists:
+                if not isinstance(values, list):
+                    continue
+                for value_index, value in enumerate(values):
+                    value_key = safe_key(value)
+                    if not value_key:
+                        continue
+                    evidence = f"parameters[{param_index}].{field}[{value_index}]"
+                    data = {"field": field, "index": value_index, "realType": param.get("realType"), "valueType": param.get("valueType")}
+                    ref_node = ""
+                    edge_kind = "condition_parameter_value"
+                    if field == "valueStringList":
+                        if value_key.startswith("item_"):
+                            ref_node = self.add_item_node(value_key, source=source)
+                            edge_kind = "condition_parameter_item"
+                        elif value_key.startswith(("quest", "questms_")):
+                            ref_node = self.add_quest_task_node(value_key, source=source)
+                            edge_kind = "condition_parameter_quest"
+                        elif value_key.startswith(("mission_", "main_", "sub_")):
+                            ref_node = self.add_mission_ref_node(value_key, source=source)
+                            edge_kind = "condition_parameter_mission"
+                        elif value_key.startswith("activity_"):
+                            ref_node = self.add_activity_node(value_key, source=source)
+                            edge_kind = "condition_parameter_activity"
+                        elif value_key.startswith("chr_"):
+                            ref_node = self.add_character_ref_node(value_key, source=source)
+                            edge_kind = "condition_parameter_character"
+                        elif value_key.startswith("time_") or value_key.endswith("_time"):
+                            ref_node = self.add_time_range_node(value_key, source=source)
+                            edge_kind = "condition_parameter_time_range"
+                        else:
+                            ref_node = self.add_node("condition_parameter_literal", value_key, name=value_key, source=source, data={"value": value})
+                    else:
+                        ref_node = self.add_node("condition_parameter_literal", f"{condition_id}:{param_index}:{field}:{value_index}", name=str(value), source=source, data={"value": value, "field": field})
+                    if ref_node:
+                        self.add_edge(param_node, ref_node, edge_kind, source=source, evidence=evidence, data=data)
+
+    def ingest_condition_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_conditions", name="Structured condition tables", path=slash(table_root))
+        for table_name in CONDITION_SEMANTIC_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/conditions")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/conditions")
+                self.add_condition_row_edges(table, row_key, row, row_node)
+
+    def add_condition_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "GlobalVarTable" and isinstance(row, dict):
+            var_node = self.add_global_variable_node(row.get("name") or row_key, source=table, data={"defaultValue": row.get("defaultValue"), "bClientOp": row.get("bClientOp")})
+            if var_node:
+                self.add_edge(row_node, var_node, "defines_global_variable", source=table)
+            return
+        if table == "TimeRangeTable" and isinstance(row, dict):
+            ranges = row.get("timeRangeList") if isinstance(row.get("timeRangeList"), list) else []
+            range_node = self.add_time_range_node(row_key, source=table, data={"rangeCount": len(ranges), "ranges": compact_payload(ranges, depth=2)})
+            if range_node:
+                self.add_edge(row_node, range_node, "defines_time_range", source=table)
+            return
+        if table != "ConditionTable" or not isinstance(row, dict):
+            return
+        condition_id = safe_key(row.get("conditionId") or row_key)
+        condition_node = self.add_condition_node(condition_id, source=table, data={"conditionType": row.get("conditionType"), "compareOperator": row.get("compareOperator"), "progressToCompare": row.get("progressToCompare"), "parameterCount": len(row.get("parameters") or []), "subConditionCount": len(row.get("subConditionIds") or [])})
+        if not condition_node:
+            return
+        self.add_edge(row_node, condition_node, "defines_condition", source=table)
+        self.add_tag_i18n_edges(condition_node, row.get("desc"), source=table, edge_kind="condition_desc_text")
+        type_node = self.add_condition_type_node(row.get("conditionType"), source=table)
+        if type_node:
+            self.add_edge(condition_node, type_node, "condition_has_type", source=table, evidence="conditionType")
+        operator_node = self.add_compare_operator_node(row.get("compareOperator"), source=table)
+        if operator_node:
+            self.add_edge(condition_node, operator_node, "condition_compare_operator", source=table, evidence="compareOperator")
+        for index, sub_id in enumerate(row.get("subConditionIds") or []):
+            sub_node = self.add_condition_node(sub_id, source=table)
+            if sub_node:
+                logic = (row.get("subConditionIdLogics") or [None] * (index + 1))[index] if index < len(row.get("subConditionIdLogics") or []) else None
+                self.add_edge(condition_node, sub_node, "condition_has_subcondition", source=table, evidence=f"subConditionIds[{index}]", data={"index": index, "logic": logic})
+        self.add_condition_parameter_refs(condition_node, condition_id, row.get("parameters"), source=table)
 
     def ingest_world_harvestable_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -19094,6 +19255,13 @@ QUERY_KIND_PRIORITY = {
     "domain_depot_const": 19.17,
     "domain_poi_type": 19.18,
     "domain_depot_feature": 19.19,
+    "condition": 19.2,
+    "condition_type": 19.21,
+    "condition_parameter": 19.22,
+    "condition_parameter_literal": 19.23,
+    "compare_operator": 19.24,
+    "global_variable": 19.25,
+    "time_range": 19.26,
     "factory_region": 20,
     "settlement_poi": 21,
     "shop_channel_poi": 22,
@@ -19637,6 +19805,13 @@ NODE_ID_PREFIXES = (
     "domain_depot_const",
     "domain_poi_type",
     "domain_depot_feature",
+    "condition",
+    "condition_type",
+    "condition_parameter",
+    "condition_parameter_literal",
+    "compare_operator",
+    "global_variable",
+    "time_range",
     "factory_region",
     "settlement_poi",
     "shop_channel_poi",
