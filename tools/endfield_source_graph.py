@@ -160,6 +160,18 @@ ITEM_ACQUISITION_TABLES = (
     "LTItemTable.json",
     "LTItemTypeTable.json",
 )
+REWARD_CATALOG_TABLES = (
+    "GiftItemTable.json",
+    "GiftPreferTagConfigTable.json",
+    "CheckInInfoTable.json",
+    "CheckInRewardTable.json",
+    "DailyActivationRewardTable.json",
+    "MoneyConfigTable.json",
+    "MoneyExchangeTable.json",
+    "MoneyRecordTable.json",
+    "ImportantItemShowTable.json",
+    "ImportantRewardItemTable.json",
+)
 EQUIPMENT_GEM_TABLES = (
     "EquipTable.json",
     "EquipItemTable.json",
@@ -2843,6 +2855,8 @@ class SourceGraphBuilder:
             self.commit_step("itemEconomy")
             self.ingest_item_acquisition_semantics()
             self.commit_step("itemAcquisition")
+            self.ingest_reward_catalog_semantics()
+            self.commit_step("rewardCatalog")
             self.ingest_equipment_gem_semantics()
             self.commit_step("equipmentGems")
             self.ingest_cash_shop_semantics()
@@ -9776,6 +9790,168 @@ class SourceGraphBuilder:
             if effect_node:
                 self.add_edge(row_node, effect_node, "defines_fertilize_effect", source=table)
                 self.add_alias(row.get("loopEffectId"), effect_node, kind="asset_stem", source=table)
+
+    def ingest_reward_catalog_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_reward_catalog", name="Structured reward and currency catalog tables", path=slash(table_root))
+        for table_name in REWARD_CATALOG_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/reward_catalog")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/reward_catalog")
+                self.add_reward_catalog_row_edges(table, row_key, row, row_node)
+
+    def add_gift_prefer_tag_node(self, tag_id: Any, *, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node("gift_prefer_tag", tag_id, source=source, data=data)
+
+    def add_checkin_node(self, checkin_id: Any, *, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node("checkin_activity", checkin_id, source=source, data=data)
+
+    def add_money_config_node(self, money_id: Any, *, source: str = "", data: Any = None) -> str:
+        return self.add_semantic_node("money_config", money_id, source=source, data=data)
+
+    def add_character_ref_node(self, character_id: Any, *, source: str = "") -> str:
+        character_key = safe_key(character_id)
+        if not character_key:
+            return ""
+        node = self.add_node("character", character_key, name=character_key, source=source)
+        self.add_alias(character_key, node, kind="character_id", source=source)
+        return node
+
+    def add_weapon_ref_node(self, weapon_id: Any, *, source: str = "") -> str:
+        weapon_key = safe_key(weapon_id)
+        if not weapon_key:
+            return ""
+        node = self.add_node("weapon", weapon_key, name=weapon_key, source=source)
+        self.add_alias(weapon_key, node, kind="weapon_id", source=source)
+        return node
+
+    def add_tag_ref_node(self, tag_id: Any, *, source: str = "") -> str:
+        tag_key = safe_key(tag_id)
+        if not tag_key:
+            return ""
+        node = self.add_node("tag", tag_key, name=tag_key, source=source)
+        self.add_alias(tag_key, node, kind="tag_id", source=source)
+        return node
+
+    def add_reward_catalog_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if not isinstance(row, dict):
+            return
+        if table == "GiftPreferTagConfigTable":
+            tag_node = self.add_gift_prefer_tag_node(row.get("tag") or row_key, source=table, data={"iconName": row.get("iconName")})
+            if tag_node:
+                self.add_edge(row_node, tag_node, "defines_gift_prefer_tag", source=table)
+                self.add_alias(row.get("iconName"), tag_node, kind="asset_stem", source=table)
+                generic_tag = self.add_tag_ref_node(row.get("tag") or row_key, source=table)
+                if generic_tag:
+                    self.add_edge(tag_node, generic_tag, "gift_prefer_tag_resolves_to_tag", source=table, evidence="tag")
+        elif table == "GiftItemTable":
+            item_id = row.get("id") or row_key
+            gift_node = self.add_semantic_node("gift_item", item_id, source=table, data={"favorablePoint": row.get("favorablePoint"), "giftPreferTag": row.get("giftPreferTag"), "finishPopularTimeId": row.get("finishPopularTimeId"), "isPopular": row.get("isPopular"), "isShowPopularFinishTime": row.get("isShowPopularFinishTime"), "tagCount": len(row.get("tagList") or [])})
+            if gift_node:
+                self.add_edge(row_node, gift_node, "defines_gift_item", source=table)
+                item_node = self.add_item_node(item_id, source=table)
+                if item_node:
+                    self.add_edge(item_node, gift_node, "item_has_gift_config", source=table, evidence="id", data={"favorablePoint": row.get("favorablePoint")})
+                prefer_node = self.add_gift_prefer_tag_node(row.get("giftPreferTag"), source=table)
+                if prefer_node:
+                    self.add_edge(gift_node, prefer_node, "gift_item_prefer_tag", source=table, evidence="giftPreferTag")
+                for index, tag_id in enumerate(row.get("tagList") or []):
+                    tag_node = self.add_tag_ref_node(tag_id, source=table)
+                    if tag_node:
+                        self.add_edge(gift_node, tag_node, "gift_item_hobby_tag", source=table, evidence=f"tagList[{index}]", data={"index": index})
+                self.add_alias(row.get("finishPopularTimeId"), gift_node, kind="time_id", source=table)
+        elif table == "CheckInInfoTable":
+            checkin_node = self.add_checkin_node(row_key, source=table, data={"checkInRewardChangeTime": row.get("checkInRewardChangeTime"), "forceShowTwoDigits": row.get("forceShowTwoDigits"), "maxRewardCnt": row.get("maxRewardCnt"), "commonPanelWidgetName": row.get("commonPanelWidgetName"), "popupPanelWidgetName": row.get("popupPanelWidgetName")})
+            if checkin_node:
+                self.add_edge(row_node, checkin_node, "defines_checkin_activity", source=table)
+                activity_node = self.add_activity_node(row_key, source=table)
+                if activity_node:
+                    self.add_edge(activity_node, checkin_node, "activity_has_checkin_config", source=table, evidence="rowKey")
+                self.add_alias(row.get("commonPanelWidgetName"), checkin_node, kind="widget_name", source=table)
+                self.add_alias(row.get("popupPanelWidgetName"), checkin_node, kind="widget_name", source=table)
+        elif table == "CheckInRewardTable":
+            checkin_node = self.add_checkin_node(row_key, source=table, data={"stageCount": len(row.get("stageList") or [])})
+            if checkin_node:
+                self.add_edge(row_node, checkin_node, "defines_checkin_rewards", source=table)
+                for index, stage in enumerate(row.get("stageList") or []):
+                    if not isinstance(stage, dict):
+                        continue
+                    stage_key = f"{safe_key(row_key)}:{stage.get('day') if stage.get('day') is not None else index}"
+                    stage_node = self.add_semantic_node("checkin_stage", stage_key, source=table, data={"activityId": stage.get("activityId"), "day": stage.get("day"), "isKeyReward": stage.get("isKeyReward"), "isPopup": stage.get("isPopup"), "rewardId": stage.get("rewardId"), "charId": stage.get("charId"), "weaponId": stage.get("weaponId"), "rewardImg": stage.get("rewardImg"), "dateImg": stage.get("dateImg")})
+                    if not stage_node:
+                        continue
+                    self.add_edge(checkin_node, stage_node, "checkin_has_stage", source=table, evidence=f"stageList[{index}]", data={"index": index, "day": stage.get("day")})
+                    self.add_reward_ref_edge(stage_node, stage.get("rewardId"), edge_kind="checkin_stage_reward", source=table, evidence="rewardId", data={"day": stage.get("day"), "isKeyReward": stage.get("isKeyReward")})
+                    character_node = self.add_character_ref_node(stage.get("charId"), source=table)
+                    if character_node:
+                        self.add_edge(stage_node, character_node, "checkin_stage_featured_character", source=table, evidence="charId")
+                    weapon_node = self.add_weapon_ref_node(stage.get("weaponId"), source=table)
+                    if weapon_node:
+                        self.add_edge(stage_node, weapon_node, "checkin_stage_featured_weapon", source=table, evidence="weaponId")
+                    self.add_tag_i18n_edges(stage_node, stage.get("rewardName"), source=table, edge_kind="checkin_stage_reward_name_text")
+                    for field in ("rewardImg", "dateImg"):
+                        self.add_alias(stage.get(field), stage_node, kind="asset_stem", source=table)
+        elif table == "DailyActivationRewardTable":
+            activation_node = self.add_semantic_node("daily_activation_reward", row.get("id") or row_key, source=table, data={"activation": row.get("activation"), "rewardId": row.get("rewardId")})
+            if activation_node:
+                self.add_edge(row_node, activation_node, "defines_daily_activation_reward", source=table)
+                self.add_reward_ref_edge(activation_node, row.get("rewardId"), edge_kind="daily_activation_reward_grants", source=table, evidence="rewardId", data={"activation": row.get("activation")})
+        elif table == "MoneyConfigTable":
+            money_id = row.get("moneyId") or row_key
+            money_node = self.add_money_config_node(money_id, source=table, data={"moneyId": row.get("moneyId"), "clearRule": row.get("clearRule"), "MoneyClearLimit": row.get("MoneyClearLimit")})
+            if money_node:
+                self.add_edge(row_node, money_node, "defines_money_config", source=table)
+                item_node = self.add_item_node(money_id, source=table)
+                if item_node:
+                    self.add_edge(money_node, item_node, "money_config_item", source=table, evidence="moneyId")
+        elif table == "MoneyRecordTable":
+            money_node = self.add_money_config_node(row.get("moneyId") or row_key, source=table, data={"recordType": row.get("recordType")})
+            if money_node:
+                self.add_edge(row_node, money_node, "defines_money_record", source=table)
+                item_node = self.add_item_node(row.get("moneyId") or row_key, source=table)
+                if item_node:
+                    self.add_edge(money_node, item_node, "money_record_item", source=table, evidence="moneyId", data={"recordType": row.get("recordType")})
+        elif table == "MoneyExchangeTable":
+            exchange_node = self.add_semantic_node("money_exchange", row.get("id") or row_key, source=table, data={"sourceMoneyId": row.get("sourceMoneyId"), "sourceMoneyCost": row.get("sourceMoneyCost"), "sourceMoneyMinSwap": row.get("sourceMoneyMinSwap"), "targetMoneyId": row.get("targetMoneyId"), "targetMoneyGet": row.get("targetMoneyGet")})
+            if exchange_node:
+                self.add_edge(row_node, exchange_node, "defines_money_exchange", source=table)
+                source_item = self.add_item_node(row.get("sourceMoneyId"), source=table)
+                target_item = self.add_item_node(row.get("targetMoneyId"), source=table)
+                if source_item:
+                    self.add_edge(exchange_node, source_item, "money_exchange_source_item", source=table, evidence="sourceMoneyId", data={"cost": row.get("sourceMoneyCost"), "minSwap": row.get("sourceMoneyMinSwap")})
+                if target_item:
+                    self.add_edge(exchange_node, target_item, "money_exchange_target_item", source=table, evidence="targetMoneyId", data={"get": row.get("targetMoneyGet")})
+        elif table == "ImportantItemShowTable":
+            group_node = self.add_semantic_node("important_item_show_group", row_key, source=table, data={"entryCount": len(row.get("showMap") or {})})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_important_item_show_group", source=table)
+                show_map = row.get("showMap") if isinstance(row.get("showMap"), dict) else {}
+                for type_key, entry in show_map.items():
+                    if not isinstance(entry, dict):
+                        continue
+                    entry_node = self.add_semantic_node("important_item_show_entry", f"{safe_key(row_key)}:{safe_key(type_key)}", source=table, data={"type": entry.get("type"), "order": entry.get("order"), "rarity": entry.get("rarity")})
+                    if entry_node:
+                        self.add_edge(group_node, entry_node, "important_item_show_has_entry", source=table, evidence=f"showMap[{type_key}]", data={"order": entry.get("order")})
+                        type_node = self.add_item_type_node(entry.get("type") if entry.get("type") is not None else type_key, source=table)
+                        if type_node:
+                            self.add_edge(entry_node, type_node, "important_item_show_entry_item_type", source=table, evidence="type")
+        elif table == "ImportantRewardItemTable":
+            item_id = row.get("id") or row_key
+            important_node = self.add_semantic_node("important_reward_item", item_id, source=table, data={"id": item_id})
+            if important_node:
+                self.add_edge(row_node, important_node, "defines_important_reward_item", source=table)
+                item_node = self.add_item_node(item_id, source=table)
+                if item_node:
+                    self.add_edge(important_node, item_node, "important_reward_item_ref", source=table, evidence="id")
+                self.add_tag_i18n_edges(important_node, row.get("desc"), source=table, edge_kind="important_reward_item_desc_text")
 
     def ingest_equipment_gem_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -18264,6 +18440,16 @@ QUERY_KIND_PRIORITY = {
     "usable_item_chest": 35.04,
     "limited_time_item_alias": 35.05,
     "item_gather_text": 35.1,
+    "gift_item": 35.2,
+    "gift_prefer_tag": 35.21,
+    "checkin_activity": 35.3,
+    "checkin_stage": 35.31,
+    "daily_activation_reward": 35.4,
+    "money_config": 35.5,
+    "money_exchange": 35.51,
+    "important_item_show_group": 35.6,
+    "important_item_show_entry": 35.61,
+    "important_reward_item": 35.7,
     "reward": 36,
     "reward_drop": 37,
     "shop_group": 38,
@@ -18749,6 +18935,16 @@ NODE_ID_PREFIXES = (
     "usable_item_chest",
     "limited_time_item_alias",
     "item_gather_text",
+    "gift_item",
+    "gift_prefer_tag",
+    "checkin_activity",
+    "checkin_stage",
+    "daily_activation_reward",
+    "money_config",
+    "money_exchange",
+    "important_item_show_group",
+    "important_item_show_entry",
+    "important_reward_item",
     "reward",
     "reward_drop",
     "shop_group",

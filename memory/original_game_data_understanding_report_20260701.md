@@ -2180,6 +2180,12 @@ The source graph now models selected factory logistics/capability tables directl
 
 A fast CN temp build verified 14 ingredient tags, 16 logistics units, 42 panel-store goods, 11 panel locks, 14 panel-lock rules, 20 blueprint tags, 3 blueprint tag types, 45 system blueprints, 57 blackbox nodes, 257 craft-group recipe edges, 229 resource item-to-machine edges, 241 recipe item-to-tag edges, 20 item-to-logistics-unit edges, 5 panel-condition tech refs, 27 lock quest edges, 5 lock radio edges, 57 blackbox-region edges, and 69 region-level edges. This improves factory production/logistics explainability while staying limited to authored capability/index metadata rather than runtime logistics simulation, recipe throughput execution, or live building state.
 
+### 2026-07-02 Reward And Currency Catalog Graph Progress
+
+The source graph now models compact reward/currency catalog tables directly. Gift items connect to their item ids, preference tags, hobby tags, and popularity time ids; check-in configs connect activities to per-day rewards plus featured character/weapon rows; daily activation rewards connect activation thresholds to reward ids; money configs/exchanges connect currency items and exchange ratios; important item show rows connect display categories to item types; and important reward items connect item ids to description text.
+
+A fast CN temp build verified 14 gift items, 6 gift preference tags, 14 check-in activities, 114 check-in stages, 5 daily activation reward rows, 5 money configs, 2 money exchanges, 4 important item show entries, 12 important reward items, 114 check-in reward edges, 28 gift hobby-tag edges, 14 gift preference edges, 5 activation reward edges, 4 money exchange source/target item edges, and 12 important reward description text links. This improves reward/currency lookup while staying limited to authored catalog evidence rather than live account check-in state, inventory ownership, reward claiming, or runtime currency transaction execution.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
