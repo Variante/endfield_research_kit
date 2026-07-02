@@ -9489,6 +9489,11 @@ class SourceGraphBuilder:
         )
         self.add_alias(key, entry_node, kind="attribute_display_entry_id", source=source)
         self.add_alias(table_display_text(entry.get("name")), entry_node, kind="attribute_display_name", source=source)
+        for text_id in self.iter_i18n_text_ids(entry):
+            text_node = self.add_i18n_text_node(text_id, source=source)
+            if text_node:
+                self.add_edge(entry_node, text_node, "attribute_display_entry_text", source=source, evidence=text_id)
+                self.add_edge(entry_node, text_node, "uses_i18n_text", source=source, evidence=text_id)
         return entry_node
 
     def add_attribute_meta_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
