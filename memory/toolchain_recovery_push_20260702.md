@@ -227,3 +227,20 @@ python scripts\story_recovery\build_findtarget_selector_boundary_audit.py
 Current scan over `4,616` BuffData files found `24` already-decoded single-item FindTargetAction samples, grouped into `7` unique body-middle byte shapes, plus `30` ambiguous records where the first action is FindTargetAction but the action-data list cannot be safely split by typed consumption yet. The existing TargetSettings envelope parser accepts `0` candidates inside all decoded FindTargetAction body-middle bytes. The JSON report now keeps complete `bodyMiddleHex` bytes on both samples and unique shapes, so parser experiments can replay the opaque regions without reopening every BuffData source file.
 
 This is useful negative evidence: the TargetSettings envelope shape used by other action parsers is not directly embedded in the current FindTargetAction middle bytes. The next parser work should focus on the selector/DirectionSettings reader state and ambiguous action-list splitting, not on reusing the current `read_buff_target_settings_envelope_partial` shape inside FindTargetAction.
+
+## Follow-up: Lua consumer reference audit
+
+Added `scripts/story_recovery/build_lua_consumer_reference_audit.py` to turn the already-extracted AnimeStudio VFS Lua into reproducible consumer evidence. It scans `export_full/structured/Persistent/Lua` and `export_full/structured/StreamingAssets/Lua`, deduplicates modules by relative Lua path, extracts `Tables.*`, `GEnums.*`, `CS.Beyond.*`, `contentParam`, dialog/RemoteComm ids, sprite/video/audio helper references, and writes `reports/mission_order/lua_consumer_reference_audit.json` / `.md`.
+
+Validation:
+
+```bat
+python -B -m py_compile scripts\story_recovery\build_lua_consumer_reference_audit.py
+python scripts\story_recovery\build_lua_consumer_reference_audit.py --lua-root export_full\structured\Persistent\Lua --lua-root export_full\structured\StreamingAssets\Lua --focus sns,remotecomm,dialog,mapmark,mission
+```
+
+Current output scans `2,348` Lua files across both roots, groups them into `1,174` unique modules, and finds `1,127/1,174` duplicated modules with identical bytes between Persistent and StreamingAssets. It records `3,641` `Tables.*` references, `2,413` `GEnums.*` references, `1,486` `CS.Beyond.*` references, `808` sprite helper hits, `284` video helper hits, and `1,457` audio helper hits.
+
+Focused module coverage is: SNS `57`, RemoteComm `36`, Dialog `32`, map marks `86`, and mission UI `95`. Top focused modules include `Common/Utils/SNSUtils.lua`, `Phase/SNS/PhaseSNS.lua`, `UI/Widgets/SNSDialogContentCore.lua`; `LuaSystem/RadioSystem.lua`, `UI/Panels/RemoteComm/RemoteCommCtrl.lua`, `Phase/RemoteComm/PhaseRemoteComm.lua`; `UI/Widgets/FriendDialogueSendArea.lua`, `Phase/Dialog/PhaseDialog.lua`; `Phase/Map/PhaseMap.lua`, `UI/Widgets/LevelMapMark.lua`, `Common/Utils/MapUtils.lua`; and `UI/Panels/Mission/MissionCtrl.lua`, `UI/Panels/MissionHud/MissionHudCtrl.lua`, `UI/Panels/CommonTaskTrackHud/CommonTaskTrackHudCtrl.lua`.
+
+This makes Lua the best next WebUI/source-graph enrichment path: add graph edges from Lua modules to table ids/enums/CS APIs and use the focus report to prioritize SNS/Dialog/RemoteComm/map-mark/mission consumer links before spending more effort on opaque ExtendData or unsafe FindTargetAction chain parsing.
