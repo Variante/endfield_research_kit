@@ -4,7 +4,8 @@
 The graph is intentionally evidence-first. It connects recovered WebUI story
 data, source-link evidence, exported assets, AnimeStudio asset maps, material
 texture references, character recovery manifests, selected structured tables,
-and a few derived follow-up indexes into one SQLite database.
+Lua consumer-reference audits, and a few derived follow-up indexes into one
+SQLite database.
 """
 
 from __future__ import annotations
@@ -20872,6 +20873,7 @@ class SourceGraphBuilder:
                     data={"count": row.get("count"), "focus": row.get("focus") or []},
                 )
 
+        focus_nodes: dict[str, str] = {}
         enum_nodes: dict[str, str] = {}
         cs_nodes: dict[str, str] = {}
         for module in module_findings:
@@ -20882,6 +20884,30 @@ class SourceGraphBuilder:
             if not module_node:
                 continue
             focus = module.get("focus") or {}
+            for focus_name, hit_count in focus.items():
+                focus_key = safe_key(focus_name)
+                if not focus_key or not hit_count:
+                    continue
+                focus_node = focus_nodes.get(focus_key)
+                if not focus_node:
+                    focus_node = self.add_node(
+                        "lua_focus_area",
+                        focus_key,
+                        name=focus_key,
+                        source="lua_consumer_reference_audit",
+                        data=compact_payload((payload.get("focusAreas") or {}).get(focus_key) or {}, depth=2),
+                    )
+                    focus_nodes[focus_key] = focus_node
+                    self.add_edge(dataset, focus_node, "has_lua_focus_area", source="lua_consumer_reference_audit")
+                    self.add_alias(focus_key, focus_node, kind="lua_focus_area", source="lua_consumer_reference_audit")
+                self.add_edge(
+                    module_node,
+                    focus_node,
+                    "lua_module_in_focus_area",
+                    source="lua_consumer_reference_audit",
+                    evidence=focus_key,
+                    data={"hitCount": hit_count},
+                )
             for item in module.get("topEnums") or []:
                 if not isinstance(item, dict):
                     continue
@@ -22237,6 +22263,7 @@ QUERY_KIND_PRIORITY = {
     "lua_table_reference": 105.3,
     "lua_enum_reference": 105.4,
     "lua_cs_reference": 105.5,
+    "lua_focus_area": 105.6,
     "dialog_registry_scene": 106,
     "bamboo_raft_task_group": 107,
     "quest_task": 108,
@@ -22933,6 +22960,7 @@ NODE_ID_PREFIXES = (
     "lua_table_reference",
     "lua_enum_reference",
     "lua_cs_reference",
+    "lua_focus_area",
     "dialog_registry_scene",
     "bamboo_raft_task_group",
     "quest_task",
