@@ -731,6 +731,14 @@ gameplay-video OCR/audio workflow.
   recovery resolves Finder tags `0x0000..0x0013`, Validator tags
   `0x0000..0x000a`, and PostProcessor tags `0x0000..0x0008` to concrete
   selector formatter names.
+- `story_recovery/build_selector_targetsettings_body_audit.py`: regenerates the
+  focused selector/TargetSettings IL2CPP metadata catalog, maps it to
+  `GameAssembly.dll`, preserves the raw body report, and writes
+  `reports/mission_order/selector_targetsettings_chain_summary.json` / `.md`.
+  The compact summary records FindTargetAction/SelectorData/TargetSettings
+  setter call order, setter store offsets, aliasing warnings, selector tag-map
+  evidence, and the current "parser still missing" gate before FindTargetAction
+  chain consumption can be enabled.
 - `story_recovery/build_skipped_vfs_block_audit.py`: summarizes an
   AnimeStudio/fluffy-dumper `vfs-index` JSON for WebUI-skipped VFS blocks such
   as Lua, ExtendData, Streaming, DynamicStreaming, and BundleManifest. It

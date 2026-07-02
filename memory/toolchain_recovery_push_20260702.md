@@ -192,3 +192,23 @@ Findings:
 - Existing `scripts/build_data_index.py --groups ExtendData` refuses the group by design because the active WebUI Data index only supports decoded `Json`. Keep ExtendData recovery as a focused audit/probe track until exact semantics are proven.
 
 The reviewed VFS audit script now includes block records even when a requested block has zero files, readable missing-block labels, `InitialExtendData` priority text, chunk/missing-chunk counts, and preserved multiline CLI help.
+
+## Follow-up: selector TargetSettings body audit
+
+Added `scripts/story_recovery/build_selector_targetsettings_body_audit.py` to make the selector/TargetSettings IL2CPP body evidence reproducible. It builds a focused MemoryPack metadata catalog, maps targets to `GameAssembly.dll`, preserves the full raw body report at `reports/mission_order/selector_targetsettings_body_targets_gameassembly.json` / `.md`, and writes a compact chain-gate summary at `reports/mission_order/selector_targetsettings_chain_summary.json` / `.md`.
+
+Validation on the installed `GameAssembly.dll` and installed `global-metadata.dat`:
+
+```bat
+python -B -m py_compile scripts\story_recovery\build_selector_targetsettings_body_audit.py tools\endfield-il2cpp\catalog_option_flow_metadata.py
+python scripts\story_recovery\build_selector_targetsettings_body_audit.py --metadata "D:\Program Files\Endfield Game\Endfield_Data\il2cpp_data\Metadata\global-metadata.dat" --gameassembly "D:\Program Files\Endfield Game\GameAssembly.dll"
+```
+
+Current output maps `311/311` focused selector body targets across `147` MemoryPack types, resolves `3,999` direct calls, and finds `140` direct calls back into focused catalog targets. The compact summary now includes:
+
+- wrapper call order for `ContinuousFindTargetAction`, `EffectFindTargetAction`, `SelectorData`, and `TargetSettingsForMemoryPack` deserializers;
+- setter store offsets for `FindTargetActionData`, `SelectorData`, and `TargetSettings` fields, including `FindTargetActionData.selectorData` at `0x50`, `SelectorData.finderData`/`validatorData`/`postProcessorData` at `0x10`/`0x18`/`0x20`, and `TargetSettings.selectorData` at `0x48`;
+- four alias warnings where one method-pointer VA resolves as both `TargetSettingsForMemoryPack.set___targetGroupKey__` and `SelectorDataForMemoryPack.set___validatorData__`; consumers must disambiguate by caller/context, not VA alone;
+- selector formatter tag-map ranges from `selector_formatter_tag_audit`: Finder `0x0000..0x0013`, Validator `0x0000..0x000a`, PostProcessor `0x0000..0x0008`.
+
+This upgrades the FindTargetAction evidence from separate raw reports into a single reproducible gate summary. It still does not enable chain consumption: the missing proof is a sample-byte parser that shows nested `SelectorData`/`TargetSettings` payloads are self-delimiting and end at the exact expected offset in real BuffData rows.
