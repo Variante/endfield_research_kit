@@ -2486,6 +2486,7 @@ BUFF_DAMAGE_ACTION_TAG = 0x008a
 BUFF_TICK_INTERVAL_ACTION_TAG = 0x0152
 BUFF_DAMAGE_UNIT_MEMBER_COUNT = 32
 BUFF_DAMAGE_MAX_UNITS = 16
+BUFF_DAMAGE_UNIT_MIN_OPAQUE_BYTES = 64
 BUFF_DAMAGE_HIT_ENV_MAX_BYTES = 256
 BUFF_DAMAGE_HIT_ENV_FIXED_PREFIX = bytes.fromhex("00 00 00 00 00 00 00 00 00 01 02 03 00")
 BUFF_CAMERA_IMPULSE_OPAQUE_NESTED_MAX_BYTES = 16 * 1024
@@ -4718,7 +4719,7 @@ def decode_buff_damage_action_item_partial(
         found = "eof" if offset >= item_end else f"0x{data[offset]:02x}"
         return None, f"damageAction.damageUnits[0].memberCount={found}"
 
-    min_tail_search = offset + 64
+    min_tail_search = offset + damage_unit_count * BUFF_DAMAGE_UNIT_MIN_OPAQUE_BYTES
     if min_tail_search >= item_end:
         return None, "damageAction.damageUnits:too-short"
     candidates = find_damage_action_target_tail_candidates(
@@ -4761,6 +4762,7 @@ def decode_buff_damage_action_item_partial(
             "offset": format_offset(offset),
             "bytes": len(damage_units_raw),
             "count": damage_unit_count,
+            "minBytesPerDeclaredUnit": BUFF_DAMAGE_UNIT_MIN_OPAQUE_BYTES,
             "firstMemberCount": data[offset],
             "rawSha256": hashlib.sha256(damage_units_raw).hexdigest(),
             "stringHits": scan_length_prefixed_utf8_string_hits(
@@ -5196,6 +5198,7 @@ BUFF_ABILITY_ACTION_CONSUME_DECODERS = {
     BUFF_CAMERA_IMPULSE_ACTION_TAG: consume_buff_camera_impulse_action,
     BUFF_CONVERT_TO_TARGET_CONTEXT_ACTION_TAG: consume_buff_convert_to_target_context_action,
     BUFF_CREATE_BUFF_ACTION_TAG: consume_buff_create_buff_action,
+    BUFF_DAMAGE_ACTION_TAG: consume_buff_damage_action,
     BUFF_DEBUG_PRINT_ACTION_TAG: consume_buff_debug_print_action,
     BUFF_EFFECT_ACTION_TAG: consume_buff_effect_action,
     BUFF_GET_AI_TRANS_DATA_ACTION_TAG: consume_buff_get_ai_trans_data_action,

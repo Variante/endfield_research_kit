@@ -53,3 +53,40 @@ Validation:
 - Do not re-enable DamageAction chain consumption until `damageUnits` can be consumed exactly by count, including `DamageUnit`, `HitSoundData`, effect data, processors, and cost subblocks.
 - Use IL2CPP metadata and byte evidence to target `SelectorData` first, because `FindTargetAction` is still the largest chain blocker (`no-typed-consumer=Core_FindTargetAction_FindTargetActionData` in 40 duplicate-root records).
 - Consider an AnimeStudio raw-sidecar MonoBehaviour refresh only for MonoBehaviour managed-reference boundaries. It is not a replacement for raw BuffData table MemoryPack parsing.
+
+## Follow-up: DamageAction tail and selector tag evidence
+
+Second pass on 2026-07-02 changed the DamageAction conclusion. Full DamageUnit parsing is still unsafe, but chain consumption is safe for the one proven tail shape when all of these checks pass:
+
+- `DamageActionData` tag/member count and common AbilityActionData prefix validate.
+- Declared `damageUnits.count` is 1..16 and the first opaque unit starts with member count 32.
+- The tail search starts only after `damageUnits.count * 64` opaque bytes, so a later target-settings-like byte pattern cannot be accepted immediately after the first unit marker.
+- `effectSource` TargetSettings, bounded `HitEnvData + hitEnvironment`, and final `targetSettings` all consume exactly to the candidate item end. The HitEnv block still has unproven field names and remains partial.
+
+Code result: `scripts/build_data_index.py` now registers `DamageAction` as a consume decoder again, but only through the exact bounded tail proof above. It still keeps `DamageUnit`, `HitSoundData`, effect data, and cost data opaque.
+
+Validation:
+
+- `python -m py_compile scripts\build_data_index.py` passed.
+- `python scripts\build_data_index.py --groups Json --output tmp\game_data_index_damage_consume_validate_20260702` completed: 163,822 files, 30 groups.
+- Compared to `tmp\game_data_index_findtarget_tail_validate_20260702`, only two compact BuffData entries changed: the duplicate StreamingAssets/Persistent copies of `buff_eny_0113_jzogre_skill05_onground_attack.json`.
+- Direct decode of that row now splits record 0 as `DamageAction` (619 bytes, one opaque 426-byte DamageUnit, exact 35-byte HitEnv span) followed by `CameraImpulse` (366 bytes). Record 1 remains a single `EffectAction` item. No other BuffData compact rows changed.
+
+Selector formatter body-map evidence:
+
+- `tmp\selector_formatter_body_map_20260702.json/md` maps six selector formatter methods from installed `GameAssembly.dll` plus installed `global-metadata.dat`.
+- `Beyond_Gameplay_Core_Selector_PostProcessor_DataForMemoryPack+...Formatter..cctor` at VA `0x185a738b0` constructs a dictionary-like table with capacity 9 and adds tag constants 0..8. Its `Deserialize` body at VA `0x18548afc0` also bounds dispatch with `cmp eax, 0x8`, so tag range 0..8 is high-confidence.
+- Finder formatter `Deserialize` at VA `0x184c41d60` and Validator formatter `Deserialize` at VA `0x1850e7710` each bounds dispatch with `cmp eax, 0x6`, so their tag range 0..6 is medium-confidence.
+- Do not promote selector subtype names yet. The body map currently resolves type-handle storage addresses, not managed subtype names. This evidence can constrain future parsers but cannot label selector finder/validator/postprocessor variants by itself.
+
+Tool status / online source check:
+
+- Local AnimeStudio CLI remains the preferred active extractor: VFS `dump`, `stream`, `vfs-index`, `audio`, `list`; recent logs have zero export errors and DummyDlls resolve from `tools\DummyDll`.
+- Local fluffy-dumper is useful for VFS/audio/index checks but still has no general IL2CPP, TypeTree, MonoBehaviour, or MemoryPack schema parser.
+- Public references checked: MemoryPack docs (`https://github.com/Cysharp/MemoryPack`) confirm member order and union serialization matter; Cpp2IL (`https://github.com/SamboyCoding/Cpp2IL`) and Il2CppDumper (`https://github.com/Perfare/Il2CppDumper`) are still metadata/body-recovery helpers; AssetStudio (`https://github.com/Perfare/AssetStudio`) is archived, while AssetRipper (`https://github.com/AssetRipper/AssetRipper`) is a better current candidate to compare against AnimeStudio for general Unity asset analysis.
+
+Next safe work:
+
+- Use the selector formatter tag ranges as constraints while looking for a metadata-usage/type-handle resolver that maps handle storage VAs such as `0x18ec32ff8` back to managed type names.
+- Keep FindTargetAction out of chain consumption until `SelectorData` has a self-delimiting parser. The exact-only FindTarget tail parser remains valid for already-bounded single items.
+- Consider targeted AnimeStudio probes only for VFS indexes, raw sidecars, and MonoBehaviour managed-reference boundaries; raw BuffData table parsing remains in `scripts/build_data_index.py`.
