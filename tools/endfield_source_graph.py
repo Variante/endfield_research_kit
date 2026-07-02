@@ -279,6 +279,20 @@ UI_LABEL_SEMANTIC_TABLES = {
         "text_fields": ("__self__",),
     },
 }
+DUNGEON_TRAINING_TABLES = (
+    "DungeonTable.json",
+    "DungeonSeriesTable.json",
+    "DungeonTypeTable.json",
+    "DungeonCategory2ndTable.json",
+    "DungeonRaidTable.json",
+    "DungeonFactoryTable.json",
+    "SimulationTrainingLevelTable.json",
+    "SimulationTrainingCardTable.json",
+    "SimulationTrainingCardPoolTable.json",
+    "TrainingTypeInfoTable.json",
+    "AdventureLevelTable.json",
+    "AdventureWorldLevelTable.json",
+)
 GAME_MECHANIC_SEMANTIC_TABLES = (
     "GameMechanicCategoryTable.json",
     "GameMechanicGroupTable.json",
@@ -2725,6 +2739,8 @@ class SourceGraphBuilder:
             self.commit_step("gachaSemantics")
             self.ingest_game_mechanic_semantics()
             self.commit_step("gameMechanics")
+            self.ingest_dungeon_training_semantics()
+            self.commit_step("dungeonTraining")
             self.ingest_spaceship_semantics()
             self.commit_step("spaceshipSemantics")
             self.ingest_factory_tech_semantics()
@@ -10256,6 +10272,189 @@ class SourceGraphBuilder:
 
 
 
+
+    def add_dungeon_catalog_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        catalog_key = safe_key(key)
+        if not catalog_key:
+            return ""
+        catalog_name = table_display_text(name) or catalog_key
+        node = self.add_node(kind, catalog_key, name=catalog_name, source=source, data=data)
+        self.add_alias(catalog_key, node, kind=f"{kind}_id", source=source)
+        if catalog_name != catalog_key:
+            self.add_alias(catalog_name, node, kind=f"{kind}_name", source=source)
+        return node
+
+    def ingest_dungeon_training_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_dungeon_training", name="Structured dungeon and training tables", path=slash(table_root))
+        for table_name in DUNGEON_TRAINING_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/dungeon_training")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/dungeon_training")
+                self.add_dungeon_training_row_edges(table, row_key, row, row_node)
+
+    def add_dungeon_text_edges(self, owner_node: str, row: dict[str, Any], *, source: str, fields: Iterable[tuple[str, str]]) -> None:
+        for field, edge_kind in fields:
+            self.add_tag_i18n_edges(owner_node, row.get(field), source=source, edge_kind=edge_kind)
+
+    def add_dungeon_enemy_edges(self, dungeon_node: str, row: dict[str, Any], *, source: str) -> None:
+        levels = row.get("enemyLevels") or []
+        for index, enemy_id in enumerate(row.get("enemyIds") or []):
+            enemy_key = safe_key(enemy_id)
+            if not enemy_key:
+                continue
+            enemy_node = self.add_node("enemy", enemy_key, name=enemy_key, source=source)
+            self.add_alias(enemy_key, enemy_node, kind="enemy_id", source=source)
+            level = levels[index] if index < len(levels) else None
+            self.add_edge(dungeon_node, enemy_node, "dungeon_enemy", source=source, evidence=f"enemyIds[{index}]", data={"level": level})
+
+    def add_dungeon_reward_edges(self, owner_node: str, row: dict[str, Any], *, source: str, fields: Iterable[tuple[str, str]]) -> None:
+        for field, edge_kind in fields:
+            self.add_reward_ref_edge(owner_node, row.get(field), edge_kind=edge_kind, source=source, evidence=field)
+
+    def add_dungeon_training_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "DungeonTable" and isinstance(row, dict):
+            dungeon_id = row.get("dungeonId") or row_key
+            dungeon_node = self.add_dungeon_node(dungeon_id, source=table, data={"category": row.get("dungeonCategory"), "seriesId": row.get("dungeonSeriesId"), "sceneId": row.get("sceneId"), "levelId": row.get("levelId"), "recommendLv": row.get("recommendLv"), "costStamina": row.get("costStamina"), "hunterModeCostStamina": row.get("hunterModeCostStamina"), "sortId": row.get("sortId")})
+            if dungeon_node:
+                self.add_edge(row_node, dungeon_node, "defines_dungeon", source=table)
+                self.add_dungeon_text_edges(dungeon_node, row, source=table, fields=(("dungeonName", "dungeon_name_text"), ("dungeonDesc", "dungeon_desc_text"), ("dungeonLevelDesc", "dungeon_level_desc_text"), ("featureDesc", "dungeon_feature_desc_text"), ("mainGoalDesc", "dungeon_main_goal_text"), ("extraGoalDesc", "dungeon_extra_goal_text"), ("tabGroupName", "dungeon_tab_group_text")))
+                type_node = self.add_dungeon_catalog_node("dungeon_type", row.get("dungeonCategory"), source=table)
+                if type_node:
+                    self.add_edge(dungeon_node, type_node, "dungeon_has_type", source=table, evidence="dungeonCategory")
+                series_node = self.add_dungeon_catalog_node("dungeon_series", row.get("dungeonSeriesId"), source=table)
+                if series_node:
+                    self.add_edge(series_node, dungeon_node, "dungeon_series_includes", source=table, evidence="dungeonSeriesId")
+                for field in ("sceneId", "levelId"):
+                    level_node = self.add_level_node(row.get(field), source=table)
+                    if level_node:
+                        self.add_edge(dungeon_node, level_node, "dungeon_uses_level", source=table, evidence=field)
+                        self.add_level_map_edge(level_node, row.get(field), source=table, evidence=field)
+                self.add_dungeon_enemy_edges(dungeon_node, row, source=table)
+                self.add_dungeon_reward_edges(dungeon_node, row, source=table, fields=(("rewardId", "dungeon_reward"), ("firstPassRewardId", "dungeon_first_pass_reward"), ("extraRewardId", "dungeon_extra_reward"), ("hunterModeRewardId", "dungeon_hunter_reward"), ("customRewardId", "dungeon_custom_reward")))
+                char_node = self.add_character_ref_node(row.get("relatedCharId"), source=table)
+                if char_node:
+                    self.add_edge(dungeon_node, char_node, "dungeon_related_character", source=table, evidence="relatedCharId")
+                domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
+                if domain_node:
+                    self.add_edge(dungeon_node, domain_node, "dungeon_in_domain", source=table, evidence="domainId")
+                for field in ("dungeonPicPath", "dungeonImg"):
+                    self.add_alias(row.get(field), dungeon_node, kind="asset_stem", source=table)
+        elif table == "DungeonSeriesTable" and isinstance(row, dict):
+            series_node = self.add_dungeon_catalog_node("dungeon_series", row.get("id") or row_key, name=row.get("name"), source=table, data={"gameCategory": row.get("gameCategory"), "dungeonCategory": row.get("dungeonCategory"), "dungeonCategory2nd": row.get("dungeonCategory2nd"), "sortId": row.get("sortId"), "dungeonCount": len(row.get("includeDungeonIds") or [])})
+            if series_node:
+                self.add_edge(row_node, series_node, "defines_dungeon_series", source=table)
+                self.add_dungeon_text_edges(series_node, row, source=table, fields=(("name", "dungeon_series_name_text"), ("desc", "dungeon_series_desc_text"), ("staminaText", "dungeon_series_stamina_text")))
+                category_node = self.add_game_mechanic_node("game_mechanic_category", row.get("gameCategory"), source=table)
+                if category_node:
+                    self.add_edge(series_node, category_node, "dungeon_series_game_category", source=table, evidence="gameCategory")
+                category2_node = self.add_dungeon_catalog_node("dungeon_category2nd", row.get("dungeonCategory2nd"), source=table)
+                if category2_node:
+                    self.add_edge(series_node, category2_node, "dungeon_series_category2nd", source=table, evidence="dungeonCategory2nd")
+                for index, dungeon_id in enumerate(row.get("includeDungeonIds") or []):
+                    dungeon_node = self.add_dungeon_node(dungeon_id, source=table)
+                    if dungeon_node:
+                        self.add_edge(series_node, dungeon_node, "dungeon_series_includes", source=table, evidence=f"includeDungeonIds[{index}]")
+                for field in ("dungeonImg", "dungeonRoleImg"):
+                    self.add_alias(row.get(field), series_node, kind="asset_stem", source=table)
+        elif table == "DungeonTypeTable" and isinstance(row, dict):
+            type_node = self.add_dungeon_catalog_node("dungeon_type", row.get("dungeonType") or row_key, source=table, data={"mapMarkType": row.get("mapMarkType"), "interactToLeaveDungeon": row.get("interactToLeaveDungeon"), "showTimeRecord": row.get("showTimeRecord")})
+            if type_node:
+                self.add_edge(row_node, type_node, "defines_dungeon_type", source=table)
+                self.add_dungeon_text_edges(type_node, row, source=table, fields=(("entryText", "dungeon_type_entry_text"), ("dungeonInfoTitle", "dungeon_type_info_title_text"), ("enemyInfoTitle", "dungeon_type_enemy_title_text"), ("resetConfirmText", "dungeon_type_reset_text"), ("beforeSuccStopConfirmText", "dungeon_type_before_stop_text"), ("afterSuccStopConfirmText", "dungeon_type_after_stop_text")))
+                mark_type = safe_key(row.get("mapMarkType"))
+                if mark_type:
+                    mark_node = self.add_node("map_mark_type", mark_type, name=mark_type, source=table)
+                    self.add_alias(mark_type, mark_node, kind="map_mark_type_id", source=table)
+                    self.add_edge(type_node, mark_node, "dungeon_type_map_mark_type", source=table, evidence="mapMarkType")
+        elif table == "DungeonCategory2ndTable" and isinstance(row, dict):
+            category_node = self.add_dungeon_catalog_node("dungeon_category2nd", row.get("dungeonCategory2nd") if row.get("dungeonCategory2nd") is not None else row_key, name=row.get("name"), source=table)
+            if category_node:
+                self.add_edge(row_node, category_node, "defines_dungeon_category2nd", source=table)
+                self.add_tag_i18n_edges(category_node, row.get("name"), source=table, edge_kind="dungeon_category2nd_name_text")
+        elif table == "DungeonRaidTable" and isinstance(row, dict):
+            dungeon_node = self.add_dungeon_node(row_key, source=table, data={"isRaid": row.get("isRaid")})
+            related_node = self.add_dungeon_node(row.get("RelatedLevel"), source=table)
+            if dungeon_node:
+                self.add_edge(row_node, dungeon_node, "defines_dungeon_raid_state", source=table)
+                if related_node:
+                    self.add_edge(dungeon_node, related_node, "dungeon_related_raid_level", source=table, evidence="RelatedLevel", data={"isRaid": row.get("isRaid")})
+        elif table == "DungeonFactoryTable" and isinstance(row, dict):
+            dungeon_node = self.add_dungeon_node(row_key, source=table, data={"domainId": row.get("domainId"), "canDirectlyGetRewardForBlackbox": row.get("canDirectlyGetRewardForBlackbox"), "afterDirectlyGetRewardGuideGroupId": row.get("afterDirectlyGetRewardGuideGroupId")})
+            if dungeon_node:
+                self.add_edge(row_node, dungeon_node, "defines_factory_dungeon", source=table)
+                domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
+                if domain_node:
+                    self.add_edge(dungeon_node, domain_node, "factory_dungeon_domain", source=table, evidence="domainId")
+                guide_node = self.add_node("guide_group", safe_key(row.get("afterDirectlyGetRewardGuideGroupId")), name=safe_key(row.get("afterDirectlyGetRewardGuideGroupId")), source=table) if safe_key(row.get("afterDirectlyGetRewardGuideGroupId")) else ""
+                if guide_node:
+                    self.add_alias(row.get("afterDirectlyGetRewardGuideGroupId"), guide_node, kind="guide_group_id", source=table)
+                    self.add_edge(dungeon_node, guide_node, "factory_dungeon_after_reward_guide", source=table, evidence="afterDirectlyGetRewardGuideGroupId")
+                for index, dep_id in enumerate(row.get("preDependencies") or []):
+                    dep_node = self.add_dungeon_node(dep_id, source=table)
+                    if dep_node:
+                        self.add_edge(dungeon_node, dep_node, "factory_dungeon_requires", source=table, evidence=f"preDependencies[{index}]")
+        elif table == "SimulationTrainingLevelTable" and isinstance(row, dict):
+            level_id = row.get("gamblingBattleLevel") if row.get("gamblingBattleLevel") is not None else row_key
+            level_node = self.add_dungeon_catalog_node("simulation_training_level", level_id, source=table, data={"costDomainMoney": row.get("costDomainMoney"), "domainDevExp": row.get("domainDevExp"), "doubleLimit": row.get("doubleLimit"), "isFinalMaxLevel": row.get("isFinalMaxLevel"), "pointAwardCount": len(row.get("pointAward") or [])})
+            if level_node:
+                self.add_edge(row_node, level_node, "defines_simulation_training_level", source=table)
+                self.add_tag_i18n_edges(level_node, row.get("desc"), source=table, edge_kind="simulation_training_level_desc_text")
+        elif table == "SimulationTrainingCardTable" and isinstance(row, dict):
+            card_node = self.add_dungeon_catalog_node("simulation_training_card", row.get("enemyGroupId") or row_key, source=table, data={"cardPoint": row.get("cardPoint"), "isBonusCard": row.get("isBonusCard"), "enemyCount": len(row.get("enemyIdList") or [])})
+            if card_node:
+                self.add_edge(row_node, card_node, "defines_simulation_training_card", source=table)
+                levels = row.get("enemyLevel") or []
+                counts = row.get("enemyCountList") or []
+                for index, enemy_id in enumerate(row.get("enemyIdList") or []):
+                    enemy_key = safe_key(enemy_id)
+                    if not enemy_key:
+                        continue
+                    enemy_node = self.add_node("enemy", enemy_key, name=enemy_key, source=table)
+                    self.add_alias(enemy_key, enemy_node, kind="enemy_id", source=table)
+                    self.add_edge(card_node, enemy_node, "simulation_training_card_enemy", source=table, evidence=f"enemyIdList[{index}]", data={"level": levels[index] if index < len(levels) else None, "count": counts[index] if index < len(counts) else None})
+        elif table == "SimulationTrainingCardPoolTable" and isinstance(row, dict):
+            pool_node = self.add_dungeon_catalog_node("simulation_training_card_pool", row_key, source=table, data={"entryCount": len(row.get("list") or [])})
+            if pool_node:
+                self.add_edge(row_node, pool_node, "defines_simulation_training_card_pool", source=table)
+                for index, entry in enumerate(row.get("list") or []):
+                    if not isinstance(entry, dict):
+                        continue
+                    card_node = self.add_dungeon_catalog_node("simulation_training_card", entry.get("enemyGroupId"), source=table)
+                    if card_node:
+                        self.add_edge(pool_node, card_node, "simulation_training_pool_has_card", source=table, evidence=f"list[{index}]", data={"cardNum": entry.get("cardNum"), "cardWeight": entry.get("cardWeight")})
+        elif table == "TrainingTypeInfoTable" and isinstance(row, dict):
+            type_node = self.add_dungeon_catalog_node("training_type", row.get("trainingType") or row_key, name=row.get("progressBarLabel"), source=table, data={"priority": row.get("priority"), "trainingThresholdFactor": row.get("trainingThresholdFactor")})
+            if type_node:
+                self.add_edge(row_node, type_node, "defines_training_type", source=table)
+                self.add_tag_i18n_edges(type_node, row.get("progressBarLabel"), source=table, edge_kind="training_type_label_text")
+        elif table == "AdventureLevelTable" and isinstance(row, dict):
+            level_node = self.add_dungeon_catalog_node("adventure_level", row.get("level") if row.get("level") is not None else row_key, source=table, data={"levelUpExp": row.get("levelUpExp"), "nextLevelUpExp": row.get("nextLevelUpExp"), "raiseMaxStamina": row.get("raiseMaxStamina"), "rewardShowType": row.get("rewardShowType")})
+            if level_node:
+                self.add_edge(row_node, level_node, "defines_adventure_level", source=table)
+                self.add_reward_ref_edge(level_node, row.get("rewardId"), edge_kind="adventure_level_reward", source=table, evidence="rewardId")
+        elif table == "AdventureWorldLevelTable" and isinstance(row, dict):
+            world_node = self.add_dungeon_catalog_node("adventure_world_level", row.get("level") if row.get("level") is not None else row_key, source=table, data={"charMaxLv": row.get("charMaxLv"), "monsterBaseLv": row.get("monsterBaseLv"), "missionId": row.get("missionId")})
+            if world_node:
+                self.add_edge(row_node, world_node, "defines_adventure_world_level", source=table)
+                mission_node = self.add_mission_ref_node(row.get("missionId"), source=table)
+                if mission_node:
+                    self.add_edge(world_node, mission_node, "adventure_world_level_unlock_mission", source=table, evidence="missionId")
+                for field, edge_kind in (("levelUpTipTextIds", "adventure_world_level_up_tip_text"), ("levelDownTipTextIds", "adventure_world_level_down_tip_text")):
+                    for index, text_id in enumerate(row.get(field) or []):
+                        text_node = self.add_i18n_text_node(text_id, source=table)
+                        if text_node:
+                            self.add_edge(world_node, text_node, edge_kind, source=table, evidence=f"{field}[{index}]")
+                            self.add_edge(world_node, text_node, "uses_i18n_text", source=table, evidence=f"{field}[{index}]")
+
     def add_game_mechanic_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         mechanic_key = safe_key(key)
         if not mechanic_key:
@@ -16125,6 +16324,15 @@ QUERY_KIND_PRIORITY = {
     "character_preset": 20,
     "weapon_skill_recommendation": 21,
     "dungeon": 22,
+    "dungeon_series": 22.1,
+    "dungeon_type": 22.2,
+    "dungeon_category2nd": 22.3,
+    "simulation_training_level": 22.4,
+    "simulation_training_card": 22.5,
+    "simulation_training_card_pool": 22.6,
+    "training_type": 22.7,
+    "adventure_level": 22.8,
+    "adventure_world_level": 22.9,
     "character_tutorial": 23,
     "character_tutorial_stage": 24,
     "character_tutorial_step": 25,
@@ -16506,6 +16714,15 @@ NODE_ID_PREFIXES = (
     "character_preset",
     "weapon_skill_recommendation",
     "dungeon",
+    "dungeon_series",
+    "dungeon_type",
+    "dungeon_category2nd",
+    "simulation_training_level",
+    "simulation_training_card",
+    "simulation_training_card_pool",
+    "training_type",
+    "adventure_level",
+    "adventure_world_level",
     "character_tutorial",
     "character_tutorial_stage",
     "character_tutorial_step",
