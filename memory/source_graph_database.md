@@ -1573,6 +1573,11 @@ This models authored profile-picture, avatar, business-card, mail-template, and 
 
 This models authored character level and breakthrough progression costs as table evidence. It does not prove live account level state, dynamic balance formulas, or runtime progression execution.
 
+
+2026-07-02 cash shop commerce graph refs: `tools/endfield_source_graph.py` now ingests `CashShopGoodsTable`, `CashShopTable`, `CashShopGroupTable`, `CashShopRechargeTable`, `CashShopRecommendTable`, `CashshopShopTabDataTable`, `GiftpackCashShopGoodsDataTable`, and `RechargeTable` as `structured_cash_shop`. A fast CN graph build to `tmp/source_graph_cash_shop.sqlite` verified 61 `defines_cash_goods`, 40 cash-goods name text links, 61 cash-goods shop links, 61 cash-goods reward links, 8 defined cash shops, 8 cash-shop name links, 61 shop-list goods links, 2 defined cash-shop groups, 8 group-to-shop links, 34 recharge bonus rows and reward links, 24 recommendations, 25 recommendation-to-goods links, 31 cash-shop tab rows, 26 gift-pack config rows, 16 gift-pack tag links, 6 gift-pack show-after links, and 6 recharge packs linked to recharge items. Smoke tests passed for `bp_pay_track`, shop `BP`, `shop_pay_gift_pack`, `recommend_newbie_special`, `newbie_giftpack_01`, `direct_recharge_198`, and `os_recharge_originium_198`.
+
+This models authored paid-shop goods, display grouping, recommendations, gift-pack presentation config, recharge packs, and first-purchase/bonus reward rows. It does not prove live purchase availability, platform pricing enforcement, entitlement ownership, or server-side store rotation.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type
