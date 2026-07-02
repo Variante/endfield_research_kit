@@ -5347,6 +5347,219 @@ class SourceGraphBuilder:
         for ref_index, ref in enumerate(sorted(set(STORY_KEY_RE.findall("\n".join(self.iter_mission_runtime_strings(action)))))):
             self.add_mission_runtime_narrative_ref_edge(action_node, ref, edge_kind="mission_runtime_action_references_narrative", source=source, evidence=f"{evidence_prefix}.storyRef[{ref_index}]")
 
+    def mission_runtime_condition_short_type(self, condition: dict[str, Any]) -> str:
+        type_key = safe_key(condition.get("$type"))
+        type_class = type_key.split(",", 1)[0]
+        return type_class.rsplit(".", 1)[-1] if type_class else ""
+
+    def mission_runtime_condition_id(self, asset_key: str, quest_id: str, objective_index: int, condition: dict[str, Any], condition_path: str = "") -> str:
+        unique_id = safe_key(condition.get("uniqueId")) or f"objective_{objective_index}"
+        short_type = self.mission_runtime_condition_short_type(condition) or "condition"
+        path_key = safe_key(condition_path).replace("[", ":").replace("]", "")
+        suffix = f":{path_key}" if path_key else ""
+        return f"{asset_key}:{quest_id}:objective:{objective_index}:{short_type}:{unique_id}{suffix}"
+
+    def mission_runtime_const_key(self, condition: dict[str, Any], field: str) -> str:
+        return safe_key(self.mission_runtime_const_value(condition.get(field)))
+
+    def mission_runtime_const_list(self, condition: dict[str, Any], field: str) -> list[Any]:
+        value = self.mission_runtime_const_value(condition.get(field))
+        if isinstance(value, list):
+            return value
+        if safe_key(value):
+            return [value]
+        return []
+
+    def add_mission_runtime_condition_node(
+        self,
+        quest_node: str,
+        asset_key: str,
+        mission_id: str,
+        quest_id: str,
+        objective_index: int,
+        condition: dict[str, Any],
+        *,
+        source: str,
+        evidence_prefix: str,
+        condition_path: str = "",
+        parent_node: str = "",
+        parent_edge_kind: str = "",
+    ) -> str:
+        condition_key = self.mission_runtime_condition_id(asset_key, quest_id, objective_index, condition, condition_path)
+        short_type = self.mission_runtime_condition_short_type(condition)
+        condition_node = self.add_node(
+            "mission_runtime_condition",
+            condition_key,
+            name=f"{quest_id} {short_type or 'condition'}",
+            source=source,
+            data=compact_payload(
+                {
+                    "missionId": mission_id,
+                    "assetKey": asset_key,
+                    "questId": quest_id,
+                    "objectiveIndex": objective_index,
+                    "conditionPath": condition_path,
+                    "uniqueId": condition.get("uniqueId"),
+                    "type": condition.get("$type"),
+                    "shortType": short_type,
+                    "scopeMask": condition.get("scopeMask"),
+                    "useCurrentScope": condition.get("useCurrentScope"),
+                    "useGraphScope": condition.get("useGraphScope"),
+                },
+                depth=2,
+            ),
+        )
+        self.add_alias(condition_key, condition_node, kind="mission_runtime_condition_key", source=source)
+        self.add_edge(quest_node, condition_node, "quest_has_runtime_condition", source=source, evidence=evidence_prefix, data={"objectiveIndex": objective_index, "conditionPath": condition_path, "type": short_type})
+        if parent_node and parent_edge_kind:
+            self.add_edge(parent_node, condition_node, parent_edge_kind, source=source, evidence=evidence_prefix, data={"objectiveIndex": objective_index, "conditionPath": condition_path, "type": short_type})
+        type_node = self.add_mission_runtime_type_node("mission_runtime_condition_type", condition.get("$type"), source=source)
+        if type_node:
+            self.add_edge(condition_node, type_node, "mission_runtime_condition_type", source=source, evidence=f"{evidence_prefix}.$type")
+            self.add_edge(quest_node, type_node, "quest_objective_condition_type", source=source, evidence=evidence_prefix)
+        self.add_mission_runtime_condition_reference_edges(condition_node, condition, source=source, evidence_prefix=evidence_prefix)
+        for sub_index, sub_condition in enumerate(condition.get("subConditions") or []):
+            if not isinstance(sub_condition, dict):
+                continue
+            sub_path = f"{condition_path}.subConditions[{sub_index}]" if condition_path else f"subConditions[{sub_index}]"
+            self.add_mission_runtime_condition_node(
+                quest_node,
+                asset_key,
+                mission_id,
+                quest_id,
+                objective_index,
+                sub_condition,
+                source=source,
+                evidence_prefix=f"{evidence_prefix}.subConditions[{sub_index}]",
+                condition_path=sub_path,
+                parent_node=condition_node,
+                parent_edge_kind="condition_has_sub_condition",
+            )
+        failed_condition = condition.get("failedCondition")
+        if isinstance(failed_condition, dict):
+            failed_path = f"{condition_path}.failedCondition" if condition_path else "failedCondition"
+            self.add_mission_runtime_condition_node(
+                quest_node,
+                asset_key,
+                mission_id,
+                quest_id,
+                objective_index,
+                failed_condition,
+                source=source,
+                evidence_prefix=f"{evidence_prefix}.failedCondition",
+                condition_path=failed_path,
+                parent_node=condition_node,
+                parent_edge_kind="condition_has_failed_condition",
+            )
+        return condition_node
+
+    def add_mission_runtime_condition_reference_edges(self, condition_node: str, condition: dict[str, Any], *, source: str, evidence_prefix: str) -> None:
+        short_type = self.mission_runtime_condition_short_type(condition)
+
+        def add_level(field: str, edge_kind: str) -> str:
+            level_id = self.mission_runtime_const_key(condition, field)
+            if not level_id:
+                return ""
+            level_node = self.add_level_node(level_id, source=source)
+            self.add_edge(condition_node, level_node, edge_kind, source=source, evidence=f"{evidence_prefix}.{field}")
+            self.add_level_map_edge(level_node, level_id, source=source, evidence=f"mission_runtime_condition.{field}")
+            return level_id
+
+        def add_level_script(field: str, edge_kind: str, data: Any = None) -> str:
+            value = self.mission_runtime_const_value(condition.get(field))
+            script_id = safe_key(value.get("scriptId") if isinstance(value, dict) else value)
+            if not script_id:
+                return ""
+            script_node = self.add_node("level_script", script_id, name=script_id, source=source)
+            self.add_alias(script_id, script_node, kind="level_script_id", source=source)
+            self.add_edge(condition_node, script_node, edge_kind, source=source, evidence=f"{evidence_prefix}.{field}", data=data)
+            return script_id
+
+        if short_type in {"CheckLevelScriptPropertyBool", "CheckLevelScriptPropertyInt"}:
+            add_level("_mapId", "condition_checks_level")
+            script_id = add_level_script(
+                "_scriptId",
+                "condition_checks_level_script_property",
+                data={
+                    "key": self.mission_runtime_const_value(condition.get("_key")),
+                    "value": self.mission_runtime_const_value(condition.get("_value")),
+                    "comparer": self.mission_runtime_const_value(condition.get("_comparer")),
+                    "propertyType": short_type.removeprefix("CheckLevelScriptProperty"),
+                },
+            )
+            key = self.mission_runtime_const_value(condition.get("_key"))
+            if script_id and safe_key(key):
+                property_node = self.add_node("level_script_property", f"{script_id}:{safe_key(key)}", name=f"{script_id}:{safe_key(key)}", source=source, data={"scriptId": script_id, "key": key})
+                self.add_edge(condition_node, property_node, "condition_checks_level_script_property_key", source=source, evidence=f"{evidence_prefix}._key")
+            return
+
+        if short_type == "CheckScriptMonsterKilled":
+            add_level("_sceneId", "condition_checks_level")
+            script_id = add_level_script("_scriptId", "condition_checks_level_script", data={"needAllKill": condition.get("needAllKill"), "compareOperator": self.mission_runtime_const_value(condition.get("_compareOperator")), "progressToCompare": self.mission_runtime_const_value(condition.get("_progressToCompare"))})
+            if script_id:
+                for slot_index, slot_id_raw in enumerate(self.mission_runtime_const_list(condition, "_slotIds")):
+                    slot_id = safe_key(slot_id_raw)
+                    if not slot_id:
+                        continue
+                    slot_node = self.add_node("world_entity_script_slot", f"{script_id}:{slot_id}", name=f"{script_id}:{slot_id}", source=source, data={"scriptIdGlobal": script_id, "slotId": slot_id})
+                    self.add_alias(f"{script_id}:{slot_id}", slot_node, kind="world_entity_script_slot_id", source=source)
+                    self.add_edge(condition_node, slot_node, "condition_checks_world_entity_script_slot", source=source, evidence=f"{evidence_prefix}._slotIds[{slot_index}]", data={"needAllKill": condition.get("needAllKill")})
+            return
+
+        if short_type == "CheckQuestState":
+            quest_id = self.mission_runtime_const_key(condition, "_questId")
+            quest_node = self.add_quest_task_node(quest_id, source=source)
+            if quest_node:
+                self.add_edge(condition_node, quest_node, "condition_checks_quest_state", source=source, evidence=f"{evidence_prefix}._questId", data={"targetQuestState": self.mission_runtime_const_value(condition.get("_targetQuestState")), "comparer": self.mission_runtime_const_value(condition.get("_comparer"))})
+            return
+
+        if short_type == "CheckMissionState":
+            mission_node = self.add_mission_ref_node(self.mission_runtime_const_key(condition, "_missionId"), source=source)
+            if mission_node:
+                self.add_edge(condition_node, mission_node, "condition_checks_mission_state", source=source, evidence=f"{evidence_prefix}._missionId", data={"targetMissionState": self.mission_runtime_const_value(condition.get("_targetMissionState")), "comparer": self.mission_runtime_const_value(condition.get("_comparer"))})
+            return
+
+        if short_type == "CheckUnlockTech":
+            tech_id = self.mission_runtime_const_key(condition, "_facTechId")
+            tech_node = self.add_factory_tech_node(tech_id, source=source)
+            if tech_node:
+                self.add_edge(condition_node, tech_node, "condition_requires_factory_tech", source=source, evidence=f"{evidence_prefix}._facTechId")
+            return
+
+        if short_type in {"WeekRaidPlayerHasItem", "PlayerHasItem", "PlayerHasItemInItemBag", "CheckMoney"}:
+            item_field = "_moneyId" if short_type == "CheckMoney" else "_itemId"
+            item_node = self.add_item_node(self.mission_runtime_const_key(condition, item_field), source=source)
+            if item_node:
+                self.add_edge(
+                    condition_node,
+                    item_node,
+                    "condition_requires_item_count",
+                    source=source,
+                    evidence=f"{evidence_prefix}.{item_field}",
+                    data={
+                        "conditionType": short_type,
+                        "count": self.mission_runtime_const_value(condition.get("_progressToCompare")) if short_type != "PlayerHasItemInItemBag" else self.mission_runtime_const_value(condition.get("_targetItemCount")),
+                        "comparer": self.mission_runtime_const_value(condition.get("_comparer")),
+                        "compareOperator": self.mission_runtime_const_value(condition.get("_compareOperator")),
+                    },
+                )
+            return
+
+        if short_type == "ReachDestination":
+            add_level("_mapId", "condition_reaches_level")
+            area_id = self.mission_runtime_const_key(condition, "_areaId")
+            if area_id:
+                area_node = self.add_node("mission_area", area_id, name=area_id, source=source)
+                self.add_alias(area_id, area_node, kind="mission_area_id", source=source)
+                self.add_edge(condition_node, area_node, "condition_reaches_mission_area", source=source, evidence=f"{evidence_prefix}._areaId", data={"mapId": self.mission_runtime_const_value(condition.get("_mapId"))})
+            return
+
+        if short_type == "CheckTalkOptionFinish":
+            dialog_id = self.mission_runtime_const_key(condition, "_dialogId")
+            if dialog_id:
+                self.add_mission_runtime_narrative_ref_edge(condition_node, dialog_id, edge_kind="condition_checks_dialog_finish", source=source, evidence=f"{evidence_prefix}._dialogId")
+            return
+
     def add_mission_runtime_asset_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         raw_data = self.read_decoded_config_bytes(entry)
         if not raw_data:
@@ -5483,9 +5696,17 @@ class SourceGraphBuilder:
                 if text_node:
                     self.add_edge(quest_node, text_node, "quest_objective_text", source=source, evidence=f"objectiveList[{objective_index}].description")
                 condition = objective.get("condition") if isinstance(objective.get("condition"), dict) else {}
-                condition_node = self.add_mission_runtime_type_node("mission_runtime_condition_type", condition.get("$type"), source=source)
-                if condition_node:
-                    self.add_edge(quest_node, condition_node, "quest_objective_condition_type", source=source, evidence=f"objectiveList[{objective_index}].condition")
+                if condition:
+                    self.add_mission_runtime_condition_node(
+                        quest_node,
+                        asset_key,
+                        mission_id,
+                        quest_id,
+                        objective_index,
+                        condition,
+                        source=source,
+                        evidence_prefix=f"objectiveList[{objective_index}].condition",
+                    )
                 for tracking_index, tracking in enumerate(objective.get("trackingInfoList") or []):
                     if not isinstance(tracking, dict):
                         continue
@@ -13850,6 +14071,7 @@ QUERY_KIND_PRIORITY = {
     "level_task_marker": 74,
     "level_data_param": 75,
     "level_script": 76,
+    "level_script_property": 76.1,
     "level_script_template": 77,
     "level_script_template_group": 78,
     "level_script_start_type": 79,
@@ -13899,6 +14121,7 @@ QUERY_KIND_PRIORITY = {
     "mission_runtime_action_type": 120,
     "guide_group": 120.1,
     "mission_runtime_chapter_panel": 120.2,
+    "mission_runtime_condition": 120.9,
     "mission_runtime_condition_type": 121,
     "mission_runtime_tracking_type": 122,
     "enemy_data_asset": 123,
@@ -14182,6 +14405,7 @@ NODE_ID_PREFIXES = (
     "skill_parameter",
     "skill_icon",
     "level_script",
+    "level_script_property",
     "level_script_template",
     "level_script_template_group",
     "level_script_start_type",
@@ -14231,6 +14455,7 @@ NODE_ID_PREFIXES = (
     "mission_runtime_action_type",
     "guide_group",
     "mission_runtime_chapter_panel",
+    "mission_runtime_condition",
     "mission_runtime_condition_type",
     "mission_runtime_tracking_type",
     "enemy_data_asset",

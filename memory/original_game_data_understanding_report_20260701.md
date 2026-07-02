@@ -641,6 +641,17 @@ now field-specific, for example `radio_a1m9_2`, `guide_group_connector_intro`,
 and `chr_0013_aglina_e1`. These are authored action-map references, not proof
 that those actions execute in a particular runtime chronology.
 
+2026-07-01 mission runtime condition progress: objective conditions now become
+first-class graph nodes with typed references to levels, level scripts, script
+property keys, world-entity script slots, quest state, mission state, factory
+tech, item/money counts, mission areas, and dialog/story completion checks. A
+fast CN temp graph build verified 4,725 `mission_runtime_condition` nodes, 761
+nested sub-condition edges, 200 level-script property checks, 201
+world-entity-slot checks, 149 quest-state checks, 79 mission-state checks, 60
+factory-tech checks, 231 item/money checks, 707 mission-area reach checks, and
+449 dialog-finish story refs. This improves static runtime-condition semantics,
+but still does not execute the conditions or prove live mission order.
+
 2026-07-01 script task display-metadata progress: source graph now ingests the
 larger `Json/GameplayConfig/ScriptTaskExtraInfoTable.json` surface as well as
 the small wrapper group. A fast CN temp graph build verified 536 collapsed
