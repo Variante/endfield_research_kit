@@ -1578,6 +1578,11 @@ This models authored character level and breakthrough progression costs as table
 
 This models authored paid-shop goods, display grouping, recommendations, gift-pack presentation config, recharge packs, and first-purchase/bonus reward rows. It does not prove live purchase availability, platform pricing enforcement, entitlement ownership, or server-side store rotation.
 
+
+2026-07-02 item acquisition/grouping graph refs: `tools/endfield_source_graph.py` now ingests `ItemListByTypeTable`, `ItemListByShowingTypeTable`, `NoObtainWayCondTable`, `ObtainWayShowCondTable`, `UsableItemChestTable`, `LTItemTable`, and `LTItemTypeTable` as `structured_item_acquisition`. A fast CN graph build to `tmp/source_graph_item_acquisition.sqlite` verified 83 `defines_item_type_list`, 1,946 `item_type_lists_item`, 11 `defines_item_showing_type_list`, 1,946 `item_showing_type_lists_item`, 53 `item_obtain_condition`, 6 `item_obtain_condition_type`, 53 typed condition-type edges, 27 dungeon condition refs, 12 wiki condition refs, 13 factory-tech condition refs, 1 item condition ref, 32 obtain-way show-condition edges, 36 usable chest configs, 36 item-to-chest config edges, 5 random chest item edges, 154 chest reward edges, 28 limited-time item aliases, and 5 limited-time item-type preset edges. Smoke tests passed for item type `1`, showing type `0`, dungeon/wiki/tech obtain conditions, `item_obtain_case_bp_selfselect_skillsp_1_1`, `item_case_bp_random_1`, `ap_supply_lt_abs1`, and limited-time item type `63`.
+
+This models authored item grouping, obtain-display gates, chest reward configs, and limited-time item aliases. It does not prove live inventory contents, server-side acquisition availability, or runtime chest selection behavior.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type

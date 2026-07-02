@@ -2148,6 +2148,13 @@ The source graph now models the paid commerce tables directly. Cash-shop goods, 
 
 A fast CN build verified 61 defined cash goods, 8 defined cash shops, 2 cash-shop groups, 34 recharge bonus rows, 24 recommendation rows, 31 tab rows, 26 gift-pack configs, and 6 direct recharge packs. Smoke checks passed for the BP paid track, the BP shop, the paid gift-pack group, a newbie recommendation chain, a gift-pack tag, a direct recharge pack, and an overseas recharge bonus reward. This improves monetization/catalog semantics while staying limited to authored table evidence, not live purchase state or server-side store availability.
 
+
+### 2026-07-02 Item Acquisition And Grouping Graph Progress
+
+The source graph now models the item grouping and acquisition-display support tables directly. Item type lists, showing-type lists, no-obtain conditions, obtain-way show conditions, usable item chests, limited-time item aliases, and limited-time item-type presets now link to existing item, type, reward, dungeon, wiki, and factory-tech nodes.
+
+A fast CN build verified 1,946 item-type list edges, 1,946 showing-type list edges, 53 obtain-condition nodes, 32 obtain-way show-condition links, 36 usable chest configs with 154 reward links, 28 limited-time aliases, and 5 limited-time type preset links. Smoke checks covered normal type/showing-type lists, dungeon/wiki/factory-tech condition refs, a battle-pass self-select obtain condition, a random BP chest reward, and a limited-time AP supply alias. This improves item acquisition semantics while staying limited to authored display/config evidence rather than live inventory or runtime chest selection.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
