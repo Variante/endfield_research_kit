@@ -747,6 +747,12 @@ gameplay-video OCR/audio workflow.
   stores complete body-middle hex for parser replay in JSON, lists ambiguous
   first-FindTarget records, and keeps selector tag byte hits as non-proof
   prioritization hints.
+- `story_recovery/build_lua_consumer_reference_audit.py`: scans extracted Lua
+  roots and writes `reports/mission_order/lua_consumer_reference_audit.json` /
+  `.md`. It deduplicates Persistent/StreamingAssets modules by relative Lua
+  path, extracts `Tables.*`, `GEnums.*`, `CS.Beyond.*`, `contentParam`,
+  dialog/RemoteComm ids, sprite/video/audio helper references, and summarizes
+  focus areas such as SNS, RemoteComm, Dialog, map marks, and mission UI.
 - `story_recovery/build_skipped_vfs_block_audit.py`: summarizes an
   AnimeStudio/fluffy-dumper `vfs-index` JSON for WebUI-skipped VFS blocks such
   as Lua, ExtendData, Streaming, DynamicStreaming, and BundleManifest. It
