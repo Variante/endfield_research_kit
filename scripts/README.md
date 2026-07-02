@@ -167,7 +167,9 @@ audio-only maintenance. It indexes shared files under
 generated conversation JSON when a line's `audio` id matches a decoded file,
 streams Wwise bank HIRC metadata from VFS `*banks.pck` payloads via AnimeStudio
 `stream`, and links cutscene audio events such as `au_sfx_*`/`au_vo_*` when
-the event graph reaches decoded media.
+the event graph reaches decoded media. Pass `--block hotfix-audio` for an
+explicit HotfixAudio decode; it is treated as shared audio storage but is not
+part of `--block all`.
 
 `pack_webui.bat` runs `scripts/pack_webui.py` and creates split
 shareable zips. The main story zip contains `serve.py`, `webui/`, generated
