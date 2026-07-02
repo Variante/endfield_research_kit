@@ -621,6 +621,18 @@ python tools\endfield_source_graph.py query abilityentity_0110_rytoken_boom_abil
 python tools\endfield_source_graph.py query P_actor_ikut_attack_01_start --kind gameplay_effect
 python tools\endfield_source_graph.py query icon_round_chr_0007_ikut --kind skill_icon
 ```
+2026-07-01 decoded parameter blackboard bridge progress: source graph now runs a
+post-decoded-config exact-name bridge from `buff_parameter` and
+`skill_parameter` nodes to already-authored `gameplay_blackboard_key` nodes. A
+fast CN temp graph build to `tmp/source_graph_parameter_blackboard.sqlite`
+verified 214 `buff_parameter_matches_blackboard_key` edges, 357
+`skill_parameter_matches_blackboard_key` edges, and 391 distinct blackboard keys
+covered by at least one decoded parameter string. Example lookups such as
+`atk_scale --kind gameplay_blackboard_key`, `atk_scale --kind buff_parameter`,
+and `atb_gain --kind skill_parameter` now connect decoded BuffData/SkillData
+string evidence to SkillPatch, potential, and Gameplay blackboard consumers.
+This is exact string-key evidence only; it does not prove parameter typing,
+formula evaluation, modifier order, or runtime action execution.
 
 2026-07-01 LevelScript inventory/reference graph progress: source graph
 ingestion now promotes bounded `LevelScriptData` and `LevelScriptTemplateData`

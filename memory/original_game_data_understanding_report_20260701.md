@@ -1351,6 +1351,16 @@ recovers static combat parameter and reference evidence; runtime skill execution
 order, skill targeting, buff stacking, BuffData timeline action behavior, and
 formula evaluation remain future work.
 
+2026-07-01 decoded parameter blackboard bridge progress: a post-decoded-config
+source graph pass now connects decoded BuffData/SkillData parameter strings to
+authored `gameplay_blackboard_key` nodes by exact name. A fast CN temp graph
+build verified 214 buff-parameter bridge edges, 357 skill-parameter bridge
+edges, and 391 distinct blackboard keys covered by at least one decoded
+parameter string. This makes lookups such as `atk_scale` or `atb_gain` traverse
+from decoded config strings to SkillPatch/potential/GamePlay blackboard
+consumers, while still avoiding claims about runtime formula behavior or
+parameter typing.
+
 2026-07-01 source graph world/map progress: map, level, loading, scene-area,
 map-mark, track-map, scene collectable, factory-region, settlement POI, and shop
 channel POI table semantics are now queryable. A fast source graph rebuild
