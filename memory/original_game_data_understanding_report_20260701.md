@@ -2162,6 +2162,12 @@ The source graph now models authored harvestable/crop tables directly. General p
 
 A fast CN build verified 86 world doodads, 24 tree doodads, 16 planting crops, 92 planting steps, 20 soil reward rows, 2 fertilize items, and 3 fertilize effect nodes. Smoke checks covered moss pick rewards, tree breaking/broken rewards, BB flower crop rewards and steps, soil reward item output, and muck fertilize config. This improves world-resource and crop semantics while staying limited to authored table evidence, not placed world instances or live harvest state.
 
+### 2026-07-02 Equipment And Gem Table Graph Progress
+
+The source graph now models authored equipment and gem tables directly. Equipment rows connect to item ids, domains, suits, display/runtime attribute metadata, equippable item-use configs, suit membership and bonus skills, gem terms/tags, gem presets, gem term pools, tag-combo weapon recommendations, enhance rules, dismantle outputs, and drop-gem type rows.
+
+A fast CN temp build verified 220 equipment definitions, 49 equippable item-use configs, 22 equipment suits, 182 suit-equipment membership edges, 22 suit-bonus nodes, 31 gem terms, 31 gem tags, 156 gem presets, 59 tag-combo recommendation nodes, 16 gem term pools, 12 enhance rules, 8 dismantle rules, 1 drop-gem type, 1,753 equipment attribute edges, and 458 gem preset term edges. This improves static loadout/gem semantics while staying limited to authored table evidence rather than runtime enhancement RNG, live inventory, or server-side drop-roll behavior.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
