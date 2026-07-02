@@ -4660,7 +4660,7 @@ class SourceGraphBuilder:
                     evidence="prefabPath",
                     data={"prefabStem": prefab_stem},
                 )
-                self.add_alias(prefab_path, model_node, kind="prefab_path", source="webui/game_data")
+                self.add_alias(prefab_path, model_node, kind="model_config_prefab_path", source="webui/game_data")
                 self.add_alias(prefab_path, prefab_node, kind="prefab_path", source="webui/game_data")
                 if prefab_stem:
                     self.add_alias(prefab_stem, model_node, kind="model_name", source="webui/game_data")
@@ -7364,9 +7364,11 @@ class SourceGraphBuilder:
         model_component = safe_key(model_data.get("modelId")) or safe_key(fields.get("modelComponent"))
         if model_component:
             model_node = self.add_node("model_config_model", model_component, name=model_component, source="webui/game_data")
-            self.add_edge(data_node, model_node, "interactive_template_uses_model", source="webui/game_data", evidence="componentModelData.modelId" if model_data else "modelComponent")
+            model_evidence = "componentModelData.modelId" if model_data else "modelComponent"
+            self.add_edge(data_node, model_node, "interactive_template_uses_model", source="webui/game_data", evidence=model_evidence)
+            self.add_edge(model_node, template_node, "model_config_used_by_interactive_template", source="webui/game_data", evidence=model_evidence)
             self.add_alias(model_component, model_node, kind="model_id", source="webui/game_data")
-            self.add_model_asset_entity_edges(data_node, (model_component,), edge_kind="interactive_template_asset_entity", source="webui/game_data", evidence="componentModelData.modelId" if model_data else "modelComponent")
+            self.add_model_asset_entity_edges(data_node, (model_component,), edge_kind="interactive_template_asset_entity", source="webui/game_data", evidence=model_evidence)
         if decoded:
             self.add_interactive_template_decoded_edges(data_node, template_id, source_id, decoded, source="webui/game_data")
         audio_ids: set[str] = set()
@@ -20816,6 +20818,23 @@ class SourceGraphBuilder:
         module_nodes: dict[str, str] = {}
         table_nodes: dict[str, str] = {}
 
+        def normalized_focus(value: Any) -> list[str]:
+            if isinstance(value, dict):
+                return sorted(safe_key(key) for key, count in value.items() if safe_key(key) and count)
+            if isinstance(value, (list, tuple, set)):
+                return sorted({safe_key(item) for item in value if safe_key(item)})
+            text = safe_key(value)
+            return [text] if text else []
+
+        def module_focus_data(row: dict[str, Any]) -> dict[str, Any]:
+            focus = row.get("focus") or []
+            data: dict[str, Any] = {"focus": normalized_focus(focus)}
+            if isinstance(focus, dict):
+                counts = {safe_key(key): count for key, count in focus.items() if safe_key(key) and count}
+                if counts:
+                    data["focusCounts"] = counts
+            return data
+
         def get_module_node(module_key: str, row: dict[str, Any]) -> str:
             if not module_key:
                 return ""
@@ -20828,7 +20847,7 @@ class SourceGraphBuilder:
                     name=Path(module_key).name,
                     source="lua_consumer_reference_audit",
                     path=module_path or None,
-                    data={"focus": row.get("focus") or []},
+                    data=module_focus_data(row),
                 )
                 module_nodes[module_key] = module_node
                 self.add_edge(dataset, module_node, "has_lua_module", source="lua_consumer_reference_audit")
@@ -20874,7 +20893,7 @@ class SourceGraphBuilder:
                     "lua_module_references_table",
                     source="lua_consumer_reference_audit",
                     evidence=table_value or table_key,
-                    data={"count": row.get("count"), "focus": row.get("focus") or []},
+                    data={"count": row.get("count"), "focus": normalized_focus(row.get("focus"))},
                 )
             elif table_value:
                 ref_node = self.add_node(
@@ -20890,7 +20909,7 @@ class SourceGraphBuilder:
                     "lua_module_references_unmatched_table",
                     source="lua_consumer_reference_audit",
                     evidence=table_value,
-                    data={"count": row.get("count"), "focus": row.get("focus") or []},
+                    data={"count": row.get("count"), "focus": normalized_focus(row.get("focus"))},
                 )
 
         focus_nodes: dict[str, str] = {}
@@ -23672,6 +23691,9 @@ def resolve_seed_node(conn: sqlite3.Connection, term: str, nodes: list[dict[str,
             WHEN 'item_id' THEN 9
             WHEN 'gameplay_skill_id' THEN 10
             WHEN 'asset_entity_id' THEN 11
+            WHEN 'prefab_path' THEN 12
+            WHEN 'model_prefab_stem' THEN 13
+            WHEN 'model_config_prefab_path' THEN 18
             ELSE 19
           END,
           CASE nodes.kind
@@ -23688,6 +23710,8 @@ def resolve_seed_node(conn: sqlite3.Connection, term: str, nodes: list[dict[str,
             WHEN 'item' THEN 10
             WHEN 'asset_entity' THEN 11
             WHEN 'asset' THEN 12
+            WHEN 'model_prefab' THEN 13
+            WHEN 'model_config_model' THEN 14
             ELSE 19
           END
         LIMIT 1
@@ -23738,19 +23762,28 @@ def query_graph(db_path: Path, term: str, *, limit: int = 40, kind: str = "") ->
                     (like, like, like, *exact_candidates, kind, kind, fuzzy_limit),
                 ).fetchall()
             )
-        nodes = [*exact_nodes, *fuzzy_nodes]
+        nodes = []
+        seen_node_ids = set()
+        for row in [*exact_nodes, *fuzzy_nodes]:
+            node_id = safe_key(row.get("id"))
+            if node_id in seen_node_ids:
+                continue
+            seen_node_ids.add(node_id)
+            nodes.append(row)
         nodes.sort(key=lambda row: node_sort_key(row, term, exact_ids))
         nodes = nodes[:limit]
         aliases = rows_to_dicts(
             conn.execute(
                 """
-                SELECT alias, node_id, kind, source
+                SELECT aliases.alias, aliases.node_id, aliases.kind, aliases.source
                 FROM aliases
-                WHERE alias LIKE ?
-                ORDER BY alias
+                JOIN nodes ON nodes.id = aliases.node_id
+                WHERE aliases.alias LIKE ?
+                  AND (? = '' OR nodes.kind = ?)
+                ORDER BY aliases.alias
                 LIMIT ?
                 """,
-                (like, limit),
+                (like, kind, kind, limit),
             ).fetchall()
         )
         related: list[dict[str, Any]] = []
