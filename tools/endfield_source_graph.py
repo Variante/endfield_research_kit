@@ -279,6 +279,14 @@ UI_LABEL_SEMANTIC_TABLES = {
         "text_fields": ("__self__",),
     },
 }
+GAME_MECHANIC_SEMANTIC_TABLES = (
+    "GameMechanicCategoryTable.json",
+    "GameMechanicGroupTable.json",
+    "GameMechanicTable.json",
+    "GameMechanicConditionTable.json",
+    "GameMechanicGroupByConditionTable.json",
+    "WorldGameMechanicsDisplayInfoTable.json",
+)
 GACHA_SEMANTIC_TABLES = (
     "GachaCharInfoTable.json",
     "GachaCharPoolTable.json",
@@ -2715,6 +2723,8 @@ class SourceGraphBuilder:
             self.commit_step("weaponSemantics")
             self.ingest_gacha_semantics()
             self.commit_step("gachaSemantics")
+            self.ingest_game_mechanic_semantics()
+            self.commit_step("gameMechanics")
             self.ingest_spaceship_semantics()
             self.commit_step("spaceshipSemantics")
             self.ingest_factory_tech_semantics()
@@ -10245,6 +10255,164 @@ class SourceGraphBuilder:
                 self.add_tag_i18n_edges(node, row.get("text2"), source=table, edge_kind="battlepass_forecast_text2")
 
 
+
+    def add_game_mechanic_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        mechanic_key = safe_key(key)
+        if not mechanic_key:
+            return ""
+        mechanic_name = table_display_text(name) or mechanic_key
+        node = self.add_node(kind, mechanic_key, name=mechanic_name, source=source, data=data)
+        self.add_alias(mechanic_key, node, kind=f"{kind}_id", source=source)
+        if mechanic_name != mechanic_key:
+            self.add_alias(mechanic_name, node, kind=f"{kind}_name", source=source)
+        return node
+
+    def add_game_mechanic_ref_node(self, mechanic_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        return self.add_game_mechanic_node("game_mechanic", mechanic_id, name=name, source=source, data=data)
+
+    def ingest_game_mechanic_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_game_mechanics", name="Structured game mechanic tables", path=slash(table_root))
+        for table_name in GAME_MECHANIC_SEMANTIC_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/game_mechanics")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/game_mechanics")
+                self.add_game_mechanic_row_edges(table, row_key, row, row_node)
+
+    def add_game_mechanic_parameter_refs(self, condition_node: str, parameters: Any, *, source: str) -> None:
+        if not isinstance(parameters, list):
+            return
+        for param_index, param in enumerate(parameters):
+            if not isinstance(param, dict):
+                continue
+            for value_index, value in enumerate(param.get("valueStringList") or []):
+                value_key = safe_key(value)
+                if not value_key:
+                    continue
+                evidence = f"parameter[{param_index}].valueStringList[{value_index}]"
+                data = {"realType": param.get("realType"), "valueType": param.get("valueType")}
+                if value_key.startswith("item_"):
+                    ref_node = self.add_item_node(value_key, source=source)
+                    edge_kind = "game_mechanic_condition_param_item"
+                elif value_key.startswith("reward_"):
+                    ref_node = self.add_node("reward", value_key, name=value_key, source=source)
+                    self.add_alias(value_key, ref_node, kind="reward_id", source=source)
+                    edge_kind = "game_mechanic_condition_param_reward"
+                elif value_key.startswith("chr_"):
+                    ref_node = self.add_character_ref_node(value_key, source=source)
+                    edge_kind = "game_mechanic_condition_param_character"
+                elif value_key.startswith("eny_"):
+                    ref_node = self.add_node("enemy", value_key, name=value_key, source=source)
+                    self.add_alias(value_key, ref_node, kind="enemy_id", source=source)
+                    edge_kind = "game_mechanic_condition_param_enemy"
+                elif value_key.startswith("map") or "_lv" in value_key:
+                    ref_node = self.add_level_node(value_key, source=source)
+                    edge_kind = "game_mechanic_condition_param_level"
+                else:
+                    ref_node = self.add_game_mechanic_ref_node(value_key, source=source)
+                    edge_kind = "game_mechanic_condition_param_mechanic"
+                if ref_node:
+                    self.add_edge(condition_node, ref_node, edge_kind, source=source, evidence=evidence, data=data)
+
+    def add_game_mechanic_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "GameMechanicCategoryTable" and isinstance(row, dict):
+            category_node = self.add_game_mechanic_node("game_mechanic_category", row.get("gameCategory") or row_key, source=table, data={"startToastType": row.get("startToastType"), "canReChallenge": row.get("canReChallenge"), "hideWorldEnemy": row.get("hideWorldEnemy"), "hideWorldNpc": row.get("hideWorldNpc"), "resetCharInfoWhenEnterDungeon": row.get("resetCharInfoWhenEnterDungeon"), "dungeonResetCharUltimateSpMode": row.get("dungeonResetCharUltimateSpMode")})
+            if category_node:
+                self.add_edge(row_node, category_node, "defines_game_mechanic_category", source=table)
+                for field in ("icon", "iconBg", "toastIcon"):
+                    self.add_alias(row.get(field), category_node, kind="asset_stem", source=table)
+        elif table == "GameMechanicGroupTable" and isinstance(row, dict):
+            group_node = self.add_game_mechanic_node("game_mechanic_group", row.get("gameGroupId") or row_key, name=row.get("gameGroupName"), source=table, data={"gameMechanicsType": row.get("gameMechanicsType"), "mechanicCount": len(row.get("includeGameMechanicIds") or [])})
+            if group_node:
+                self.add_edge(row_node, group_node, "defines_game_mechanic_group", source=table)
+                self.add_tag_i18n_edges(group_node, row.get("gameGroupName"), source=table, edge_kind="game_mechanic_group_name_text")
+                self.add_reward_ref_edge(group_node, row.get("firstPassRewardId"), edge_kind="game_mechanic_group_first_pass_reward", source=table, evidence="firstPassRewardId")
+                type_node = self.add_game_mechanic_node("game_mechanic_type", row.get("gameMechanicsType"), source=table)
+                if type_node:
+                    self.add_edge(group_node, type_node, "game_mechanic_group_has_type", source=table, evidence="gameMechanicsType")
+                for index, mechanic_id in enumerate(row.get("includeGameMechanicIds") or []):
+                    mechanic_node = self.add_game_mechanic_ref_node(mechanic_id, source=table)
+                    if mechanic_node:
+                        self.add_edge(group_node, mechanic_node, "game_mechanic_group_includes", source=table, evidence=f"includeGameMechanicIds[{index}]")
+        elif table == "GameMechanicTable" and isinstance(row, dict):
+            mechanic_node = self.add_game_mechanic_ref_node(row.get("gameMechanicsId") or row_key, name=row.get("gameName"), source=table, data={"gameCategory": row.get("gameCategory"), "gameGroupId": row.get("gameGroupId"), "difficulty": row.get("difficulty"), "costStamina": row.get("costStamina"), "gameCoolDown": row.get("gameCoolDown"), "conditionCount": len(row.get("conditionIds") or [])})
+            if mechanic_node:
+                self.add_edge(row_node, mechanic_node, "defines_game_mechanic", source=table)
+                self.add_tag_i18n_edges(mechanic_node, row.get("gameName"), source=table, edge_kind="game_mechanic_name_text")
+                self.add_tag_i18n_edges(mechanic_node, row.get("desc"), source=table, edge_kind="game_mechanic_desc_text")
+                category_node = self.add_game_mechanic_node("game_mechanic_category", row.get("gameCategory"), source=table)
+                if category_node:
+                    self.add_edge(mechanic_node, category_node, "game_mechanic_has_category", source=table, evidence="gameCategory")
+                group_node = self.add_game_mechanic_node("game_mechanic_group", row.get("gameGroupId"), source=table)
+                if group_node:
+                    self.add_edge(group_node, mechanic_node, "game_mechanic_group_includes", source=table, evidence="gameGroupId")
+                for field, edge_kind in (("rewardId", "game_mechanic_reward"), ("firstPassRewardId", "game_mechanic_first_pass_reward"), ("extraRewardId", "game_mechanic_extra_reward"), ("hunterModeRewardId", "game_mechanic_hunter_reward")):
+                    self.add_reward_ref_edge(mechanic_node, row.get(field), edge_kind=edge_kind, source=table, evidence=field)
+                for index, condition_id in enumerate(row.get("conditionIds") or []):
+                    condition_node = self.add_game_mechanic_node("game_mechanic_condition", condition_id, source=table)
+                    if condition_node:
+                        self.add_edge(mechanic_node, condition_node, "game_mechanic_has_condition", source=table, evidence=f"conditionIds[{index}]")
+        elif table == "GameMechanicConditionTable" and isinstance(row, dict):
+            condition_node = self.add_game_mechanic_node("game_mechanic_condition", row.get("conditionId") or row_key, source=table, data={"conditionType": row.get("conditionType"), "compareOperator": row.get("compareOperator"), "progressToCompare": row.get("progressToCompare"), "parameterCount": len(row.get("parameter") or [])})
+            if condition_node:
+                self.add_edge(row_node, condition_node, "defines_game_mechanic_condition", source=table)
+                self.add_tag_i18n_edges(condition_node, row.get("desc"), source=table, edge_kind="game_mechanic_condition_desc_text")
+                mechanic_node = self.add_game_mechanic_ref_node(row.get("gameMechanicsId"), source=table)
+                if mechanic_node:
+                    self.add_edge(mechanic_node, condition_node, "game_mechanic_has_condition", source=table, evidence="gameMechanicsId")
+                type_node = self.add_game_mechanic_node("game_mechanic_condition_type", row.get("conditionType"), source=table)
+                if type_node:
+                    self.add_edge(condition_node, type_node, "game_mechanic_condition_has_type", source=table, evidence="conditionType")
+                self.add_game_mechanic_parameter_refs(condition_node, row.get("parameter"), source=table)
+        elif table == "GameMechanicGroupByConditionTable" and isinstance(row, dict):
+            parent_node = self.add_game_mechanic_ref_node(row.get("gameMechanicsId") or row_key, source=table)
+            if parent_node:
+                self.add_edge(row_node, parent_node, "defines_game_mechanic_condition_group", source=table)
+                for index, child_id in enumerate(row.get("childGameMechanicsId") or []):
+                    child_node = self.add_game_mechanic_ref_node(child_id, source=table)
+                    if child_node:
+                        self.add_edge(parent_node, child_node, "game_mechanic_condition_unlocks_child", source=table, evidence=f"childGameMechanicsId[{index}]")
+        elif table == "WorldGameMechanicsDisplayInfoTable" and isinstance(row, dict):
+            display_node = self.add_game_mechanic_node("world_game_mechanic_display", row.get("gameMechanicsId") or row_key, source=table, data={"sceneId": row.get("sceneId"), "sortId": row.get("sortId"), "enemyGradeCount": len(row.get("diffGradeEnemyInfosList") or []), "itemGradeCount": len(row.get("diffGradeItemList") or [])})
+            mechanic_node = self.add_game_mechanic_ref_node(row.get("gameMechanicsId") or row_key, source=table)
+            if display_node:
+                self.add_edge(row_node, display_node, "defines_world_game_mechanic_display", source=table)
+                if mechanic_node:
+                    self.add_edge(mechanic_node, display_node, "game_mechanic_has_world_display", source=table, evidence="gameMechanicsId")
+                level_node = self.add_level_node(row.get("sceneId"), source=table)
+                if level_node:
+                    self.add_edge(display_node, level_node, "world_game_mechanic_in_level", source=table, evidence="sceneId")
+                    self.add_level_map_edge(level_node, row.get("sceneId"), source=table, evidence="sceneId")
+                self.add_reward_ref_edge(display_node, row.get("firstPassRewardId"), edge_kind="world_game_mechanic_first_pass_reward", source=table, evidence="firstPassRewardId")
+                self.add_alias(row.get("icon"), display_node, kind="asset_stem", source=table)
+                for grade_index, grade in enumerate(row.get("diffGradeEnemyInfosList") or []):
+                    if not isinstance(grade, dict):
+                        continue
+                    levels = grade.get("levels") or []
+                    for enemy_index, enemy_id in enumerate(grade.get("ids") or []):
+                        enemy_key = safe_key(enemy_id)
+                        if not enemy_key:
+                            continue
+                        enemy_node = self.add_node("enemy", enemy_key, name=enemy_key, source=table)
+                        self.add_alias(enemy_key, enemy_node, kind="enemy_id", source=table)
+                        level = levels[enemy_index] if enemy_index < len(levels) else None
+                        self.add_edge(display_node, enemy_node, "world_game_mechanic_enemy", source=table, evidence=f"diffGradeEnemyInfosList[{grade_index}].ids[{enemy_index}]", data={"grade": grade_index, "level": level})
+                for grade_index, grade in enumerate(row.get("diffGradeItemList") or []):
+                    if not isinstance(grade, dict):
+                        continue
+                    for item_index, item_id in enumerate(grade.get("ids") or []):
+                        item_node = self.add_item_node(item_id, source=table)
+                        if item_node:
+                            self.add_edge(display_node, item_node, "world_game_mechanic_item_drop", source=table, evidence=f"diffGradeItemList[{grade_index}].ids[{item_index}]", data={"grade": grade_index})
+
     def add_gacha_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         gacha_key = safe_key(key)
         if not gacha_key:
@@ -16000,6 +16168,13 @@ QUERY_KIND_PRIORITY = {
     "gacha_recommendation_group": 34.891,
     "gacha_recommendation_rule": 34.892,
     "gacha_refresh_rule": 34.893,
+    "game_mechanic_category": 34.894,
+    "game_mechanic_group": 34.895,
+    "game_mechanic": 34.896,
+    "game_mechanic_condition": 34.897,
+    "game_mechanic_condition_type": 34.898,
+    "game_mechanic_type": 34.8985,
+    "world_game_mechanic_display": 34.899,
     "input_action": 34.9,
     "input_scope": 34.91,
     "input_key": 34.92,
@@ -16374,6 +16549,13 @@ NODE_ID_PREFIXES = (
     "gacha_recommendation_group",
     "gacha_recommendation_rule",
     "gacha_refresh_rule",
+    "game_mechanic_category",
+    "game_mechanic_group",
+    "game_mechanic",
+    "game_mechanic_condition",
+    "game_mechanic_condition_type",
+    "game_mechanic_type",
+    "world_game_mechanic_display",
     "input_action",
     "input_scope",
     "input_key",
