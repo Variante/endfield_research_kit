@@ -11587,14 +11587,18 @@ class SourceGraphBuilder:
     def add_equipment_formula_cost_edges(self, formula_node: str, row: dict[str, Any], *, source: str) -> None:
         gold_node = self.add_item_node(row.get("costGoldId"), source=source)
         if gold_node:
-            self.add_edge(formula_node, gold_node, "equipment_formula_cost_currency", source=source, evidence="costGoldId", data={"count": row.get("costGoldNum")})
+            data = {"count": row.get("costGoldNum")}
+            self.add_edge(formula_node, gold_node, "equipment_formula_cost_currency", source=source, evidence="costGoldId", data=data)
+            self.add_edge(gold_node, formula_node, "currency_cost_for_equipment_formula", source=source, evidence="costGoldId", data=data)
         item_ids = row.get("costItemId") if isinstance(row.get("costItemId"), list) else []
         item_counts = row.get("costItemNum") if isinstance(row.get("costItemNum"), list) else []
         for index, item_id in enumerate(item_ids):
             item_node = self.add_item_node(item_id, source=source)
             if item_node:
                 count = item_counts[index] if index < len(item_counts) else None
-                self.add_edge(formula_node, item_node, "equipment_formula_cost_item", source=source, evidence=f"costItemId[{index}]", data={"index": index, "count": count})
+                data = {"index": index, "count": count}
+                self.add_edge(formula_node, item_node, "equipment_formula_cost_item", source=source, evidence=f"costItemId[{index}]", data=data)
+                self.add_edge(item_node, formula_node, "item_cost_for_equipment_formula", source=source, evidence=f"costItemId[{index}]", data=data)
 
     def add_character_potential_level_edges(self, character_node: str, potential_node: str, bundle: dict[str, Any], *, source: str, evidence: str) -> None:
         effect_id = safe_key(bundle.get("potentialEffectId"))
@@ -11669,6 +11673,7 @@ class SourceGraphBuilder:
                     unlock_node = self.add_node("gameplay_unlock", unlock_key, name=unlock_key, source=table, data={"unlockType": row.get("unlockType"), "unlockValue": row.get("unlockValue")})
                     self.add_alias(unlock_key, unlock_node, kind="gameplay_unlock_id", source=table)
                     self.add_edge(formula_node, unlock_node, "equipment_formula_unlock_key", source=table, evidence="unlockKey")
+                    self.add_edge(unlock_node, formula_node, "unlock_key_unlocks_equipment_formula", source=table, evidence="unlockKey")
                 self.add_equipment_formula_cost_edges(formula_node, row, source=table)
         elif table == "EquipPackTable":
             pack_id = row.get("packId") or row_key
