@@ -160,6 +160,14 @@ ITEM_ACQUISITION_TABLES = (
     "LTItemTable.json",
     "LTItemTypeTable.json",
 )
+WORLD_HARVESTABLE_TABLES = (
+    "DoodadGeneralTable.json",
+    "DoodadTreeTable.json",
+    "PlantingDataTable.json",
+    "RewardSoilTable.json",
+    "FertilizeDataTable.json",
+    "FertilizeIncreaseTable.json",
+)
 COMBAT_SEMANTIC_TABLES = (
     "BuffTable.json",
     "SkillPatchTable.json",
@@ -2773,6 +2781,8 @@ class SourceGraphBuilder:
             self.commit_step("cashShop")
             self.ingest_world_semantics()
             self.commit_step("worldSemantics")
+            self.ingest_world_harvestable_semantics()
+            self.commit_step("worldHarvestables")
             self.ingest_combat_semantics()
             self.commit_step("combatSemantics")
             self.ingest_attribute_dictionary()
@@ -9399,6 +9409,108 @@ class SourceGraphBuilder:
                 )
                 self.add_edge(table_node, row_node, "has_row", source="structured/item_economy")
                 self.add_item_economy_row_edges(table_key, row_key, row, row_node)
+
+    def ingest_world_harvestable_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_world_harvestables", name="Structured world harvestable and planting tables", path=slash(table_root))
+        for table_name in WORLD_HARVESTABLE_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/world_harvestables")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/world_harvestables")
+                self.add_world_harvestable_row_edges(table, row_key, row, row_node)
+
+    def add_world_harvestable_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        node_key = safe_key(key)
+        if not node_key:
+            return ""
+        node_name = table_display_text(name) or node_key
+        node = self.add_node(kind, node_key, name=node_name, source=source, data=data)
+        self.add_alias(node_key, node, kind=f"{kind}_id", source=source)
+        if node_name != node_key:
+            self.add_alias(node_name, node, kind=f"{kind}_name", source=source)
+        return node
+
+    def add_harvestable_model_refs(self, owner_node: str, tokens: Iterable[Any], *, source: str, evidence: str, edge_kind: str = "harvestable_uses_model_asset") -> None:
+        clean_tokens = [safe_key(token) for token in tokens if safe_key(token)]
+        for token in clean_tokens:
+            self.add_alias(token, owner_node, kind="asset_stem", source=source)
+            self.add_alias(token, owner_node, kind="model_token", source=source)
+        self.add_model_asset_entity_edges(owner_node, clean_tokens, edge_kind=edge_kind, source=source, evidence=evidence)
+
+    def add_world_harvestable_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if not isinstance(row, dict):
+            return
+        if table == "DoodadGeneralTable":
+            doodad_id = row.get("id") or row_key
+            doodad_node = self.add_world_harvestable_node("world_doodad", doodad_id, name=row.get("label"), source=table, data={"isPickable": row.get("isPickable"), "isBreakable": row.get("isBreakable"), "breakCount": row.get("breakCount"), "maxHp": row.get("maxHp"), "upgradeSource": row.get("upgradeSource"), "itemId": row.get("itemId"), "rewardCount": len(row.get("pickableRewardId") or [])})
+            if doodad_node:
+                self.add_edge(row_node, doodad_node, "defines_world_doodad", source=table)
+                self.add_tag_i18n_edges(doodad_node, row.get("label"), source=table, edge_kind="world_doodad_label_text")
+                item_node = self.add_item_node(row.get("itemId"), source=table)
+                if item_node:
+                    self.add_edge(doodad_node, item_node, "world_doodad_item", source=table, evidence="itemId")
+                for index, reward_id in enumerate(row.get("pickableRewardId") or []):
+                    self.add_reward_ref_edge(doodad_node, reward_id, edge_kind="world_doodad_pickable_reward", source=table, evidence=f"pickableRewardId[{index}]", data={"index": index})
+                self.add_harvestable_model_refs(doodad_node, [row.get("modelName")], source=table, evidence="modelName")
+        elif table == "DoodadTreeTable":
+            tree_id = row.get("id") or row_key
+            tree_node = self.add_world_harvestable_node("world_tree_doodad", tree_id, source=table, data={"breakCount": row.get("breakCount"), "maxHp": row.get("maxHp"), "fallDataId": row.get("fallDataId"), "modelId": row.get("modelId"), "normalModel": row.get("normalModel"), "breakModel": row.get("breakModel")})
+            if tree_node:
+                self.add_edge(row_node, tree_node, "defines_world_tree_doodad", source=table)
+                self.add_alias(row.get("fallDataId"), tree_node, kind="fall_data_id", source=table)
+                self.add_reward_ref_edge(tree_node, row.get("breakingDropRewardId"), edge_kind="world_tree_breaking_reward", source=table, evidence="breakingDropRewardId")
+                self.add_reward_ref_edge(tree_node, row.get("breakedDropRewardId"), edge_kind="world_tree_broken_reward", source=table, evidence="breakedDropRewardId")
+                self.add_harvestable_model_refs(tree_node, [row.get("modelId"), row.get("normalModel"), row.get("breakModel")], source=table, evidence="modelId/normalModel/breakModel", edge_kind="world_tree_uses_model_asset")
+        elif table == "PlantingDataTable":
+            crop_id = row.get("id") or row_key
+            crop_node = self.add_world_harvestable_node("planting_crop", crop_id, name=row.get("name"), source=table, data={"fertilizeCount": row.get("fertilizeCount"), "modelTemplateId": row.get("modelTemplateId"), "cropModelId": row.get("cropModelId"), "littleCropModelId": row.get("littleCropModelId"), "rewardId": row.get("rewardId"), "newRewardId": row.get("newRewardId"), "stepCount": len(row.get("plantingSteps") or [])})
+            if crop_node:
+                self.add_edge(row_node, crop_node, "defines_planting_crop", source=table)
+                self.add_tag_i18n_edges(crop_node, row.get("name"), source=table, edge_kind="planting_crop_name_text")
+                self.add_reward_ref_edge(crop_node, row.get("rewardId"), edge_kind="planting_crop_reward", source=table, evidence="rewardId")
+                self.add_reward_ref_edge(crop_node, row.get("newRewardId"), edge_kind="planting_crop_increased_reward", source=table, evidence="newRewardId")
+                self.add_harvestable_model_refs(crop_node, [row.get("modelTemplateId"), row.get("cropModelId"), row.get("littleCropModelId")], source=table, evidence="modelTemplateId/cropModelId/littleCropModelId", edge_kind="planting_crop_uses_model_asset")
+                for index, step in enumerate(row.get("plantingSteps") or []):
+                    if not isinstance(step, dict):
+                        continue
+                    step_node = self.add_node("planting_step", f"{safe_key(crop_id)}:{index}", name=f"{safe_key(crop_id)} step {index}", source=table, data={"index": index, "plantingStepType": step.get("plantingStepType"), "parameter": compact_payload(step.get("plantingStepParameter"), depth=2)})
+                    self.add_alias(f"{safe_key(crop_id)}:{index}", step_node, kind="planting_step_id", source=table)
+                    self.add_edge(crop_node, step_node, "planting_crop_has_step", source=table, evidence=f"plantingSteps[{index}]", data={"index": index, "plantingStepType": step.get("plantingStepType")})
+        elif table == "RewardSoilTable":
+            reward_id = row.get("rewardId") or row_key
+            soil_reward_node = self.add_world_harvestable_node("soil_reward", reward_id, source=table, data={"itemBundleCount": len(row.get("itemBundles") or []), "probItemBundleCount": len(row.get("probItemBundles") or [])})
+            if soil_reward_node:
+                self.add_edge(row_node, soil_reward_node, "defines_soil_reward", source=table)
+                reward_node = self.add_reward_node(reward_id, source=table)
+                if reward_node:
+                    self.add_edge(reward_node, soil_reward_node, "reward_has_soil_reward_table", source=table, evidence="rewardId")
+                self.add_reward_item_bundle_edges(soil_reward_node, row.get("itemBundles"), edge_kind="soil_reward_grants_item", source=table, field="itemBundles", visible_list=row.get("itemBundleVisibleList"))
+                self.add_reward_item_bundle_edges(soil_reward_node, row.get("probItemBundles"), edge_kind="soil_reward_prob_item", source=table, field="probItemBundles")
+        elif table == "FertilizeDataTable":
+            item_node = self.add_item_node(row.get("id") or row_key, source=table)
+            fertilize_node = self.add_world_harvestable_node("fertilize_item", row.get("id") or row_key, source=table, data={"fertilizeType": row.get("fertilizeType"), "fertilizeTime": row.get("fertilizeTime"), "detailIconId": row.get("detailIconId"), "startEffectId": row.get("startEffectId")})
+            if fertilize_node:
+                self.add_edge(row_node, fertilize_node, "defines_fertilize_item", source=table)
+                if item_node:
+                    self.add_edge(item_node, fertilize_node, "item_has_fertilize_config", source=table, evidence="id")
+                effect_node = self.add_world_harvestable_node("fertilize_effect", row.get("fertilizeType"), source=table)
+                if effect_node:
+                    self.add_edge(fertilize_node, effect_node, "fertilize_item_has_effect_type", source=table, evidence="fertilizeType")
+                for field in ("detailIconId", "startEffectId"):
+                    self.add_alias(row.get(field), fertilize_node, kind="asset_stem", source=table)
+        elif table == "FertilizeIncreaseTable":
+            effect_node = self.add_world_harvestable_node("fertilize_effect", row.get("increaseType") if row.get("increaseType") is not None else row_key, source=table, data={"increaseType": row.get("increaseType"), "loopEffectId": row.get("loopEffectId")})
+            if effect_node:
+                self.add_edge(row_node, effect_node, "defines_fertilize_effect", source=table)
+                self.add_alias(row.get("loopEffectId"), effect_node, kind="asset_stem", source=table)
 
     def ingest_item_acquisition_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -17038,6 +17150,13 @@ QUERY_KIND_PRIORITY = {
     "track_map_point": 17,
     "track_map_link": 18,
     "scene_collectable": 19,
+    "world_doodad": 19.01,
+    "world_tree_doodad": 19.02,
+    "planting_crop": 19.03,
+    "planting_step": 19.04,
+    "soil_reward": 19.05,
+    "fertilize_item": 19.06,
+    "fertilize_effect": 19.07,
     "factory_region": 20,
     "settlement_poi": 21,
     "shop_channel_poi": 22,
@@ -17470,6 +17589,13 @@ NODE_ID_PREFIXES = (
     "track_map_point",
     "track_map_link",
     "scene_collectable",
+    "world_doodad",
+    "world_tree_doodad",
+    "planting_crop",
+    "planting_step",
+    "soil_reward",
+    "fertilize_item",
+    "fertilize_effect",
     "factory_region",
     "settlement_poi",
     "shop_channel_poi",
