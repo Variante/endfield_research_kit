@@ -90,3 +90,23 @@ Next safe work:
 - Use the selector formatter tag ranges as constraints while looking for a metadata-usage/type-handle resolver that maps handle storage VAs such as `0x18ec32ff8` back to managed type names.
 - Keep FindTargetAction out of chain consumption until `SelectorData` has a self-delimiting parser. The exact-only FindTarget tail parser remains valid for already-bounded single items.
 - Consider targeted AnimeStudio probes only for VFS indexes, raw sidecars, and MonoBehaviour managed-reference boundaries; raw BuffData table parsing remains in `scripts/build_data_index.py`.
+
+## Follow-up: selector subtype labels
+
+A direct pass through the existing metadata-slot decoder resolved the PostProcessor formatter handle-storage VAs from `GameAssembly.dll`:
+
+| tag | selector postprocessor formatter |
+|---:|---|
+| `0x0000` | `Core_Selector_ConvertToBoxCenterPlaneProjectionPoint_Data` |
+| `0x0001` | `Core_Selector_ConvertToPosition_Data` |
+| `0x0002` | `Core_Selector_ConvertToSlot_Data` |
+| `0x0003` | `Core_Selector_ExcludeTarget_Data` |
+| `0x0004` | `Core_Selector_LockOrMarkTargetFilter_Data` |
+| `0x0005` | `Core_Selector_NavMeshPathPositionProcessor_Data` |
+| `0x0006` | `Core_Selector_PriorityFilter_Data` |
+| `0x0007` | `Core_Selector_ShuffleTarget_Data` |
+| `0x0008` | `Core_Selector_TargetPriorityFilter_Data` |
+
+This supersedes the earlier "do not promote subtype names" statement for PostProcessor only. Finder and Validator remain not safe to promote as tag maps: their cctors load many selector formatter metadata slots, but the existing ActionBase-style scanner does not recover explicit tag constants from those constructors. Their `Deserialize` bodies still only support a tag-range constraint, not subtype labels.
+
+Spot checks of exact FindTarget bodies (`buff_chr_0026_lastrite_normal_skill_phantom`, `buff_chr_0030_zhuangfy_sword_triggerd`, `buff_eny_0116_zfydef_fireball`) show selector/middle bytes with plausible tag-like values and parameter strings, but no self-delimiting selector span. Keep `FindTargetAction` chain consumption disabled until `SelectorData` can prove its own end.
