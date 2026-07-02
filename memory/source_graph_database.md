@@ -1417,6 +1417,27 @@ collisions such as `P_agtrinit_skill13` vs `P_agtrinit_skill132_*`. These edges
 are filename/export-suffix evidence for browsing, not proof of runtime effect
 dependency.
 
+2026-07-01 visual token asset bridge progress: source graph now links typed
+semantic nodes with top-level authored visual tokens to exported image assets by
+strict suffix-normalized stem match. A fast CN temp graph build to
+`tmp/source_graph_visual_tokens_semantic.sqlite` verified 32,422
+`uses_icon_asset` edges and 340 `uses_visual_asset` edges across 8,008 semantic
+source nodes, 1,507 distinct visual tokens, and 10,620 exported image assets.
+The largest source kinds are item, gameplay skill level, NPC group, PRTS first
+level, SNS chat, system jump, scene collectable, spaceship skill, map-mark type,
+and activity banner nodes. Generic `table_row` nodes are intentionally excluded
+so lookups prefer domain records. Example queries:
+
+```bat
+python tools\endfield_source_graph.py query achv_adv_tundra_box_1 --kind item
+python tools\endfield_source_graph.py query beginner_gacha --kind activity_banner
+python tools\endfield_source_graph.py used-by StreamingAssets/Sprite/new_journey_pC8860EAECF821AC9.png
+```
+
+These edges preserve the source field path, token, normalized base, asset stem,
+and asset path. They are exact export-name evidence for browsing, not proof that
+the runtime UI loader chooses a specific Sprite/Texture2D duplicate.
+
 2026-07-01 FMV binding graph progress: source graph now ingests
 `export_full/recovered/video_bindings.json` as first-class video/story evidence.
 A fast CN graph build to `tmp/source_graph_video_bindings.sqlite` verified 29

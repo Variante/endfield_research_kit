@@ -282,6 +282,53 @@ DIALOG_SUPPORT_TABLES = (
     "DialogOptionTable.json",
     "DomainDepotDeliverTargetDialogTable.json",
 )
+VISUAL_TOKEN_FIELDS = {
+    "icon",
+    "iconId",
+    "tabIcon",
+    "headIcon",
+    "headLabelIcon",
+    "listIcon",
+    "cornerIcon",
+    "visitorIcon",
+    "bg",
+    "bgImg",
+    "tabImg",
+    "tabImgColor",
+    "tabImgGender",
+    "bgRolePath",
+    "dungeonBgPath",
+    "image",
+    "imagePath",
+    "bgOnPanel",
+    "iconOnPanel",
+}
+
+VISUAL_TOKEN_KINDS = {
+    "icon",
+    "iconId",
+    "tabIcon",
+    "headIcon",
+    "headLabelIcon",
+    "listIcon",
+    "cornerIcon",
+    "visitorIcon",
+    "iconOnPanel",
+}
+
+VISUAL_BACKGROUND_FIELDS = {
+    "bg",
+    "bgImg",
+    "tabImg",
+    "tabImgColor",
+    "tabImgGender",
+    "bgRolePath",
+    "dungeonBgPath",
+    "image",
+    "imagePath",
+    "bgOnPanel",
+}
+
 DECODED_CONFIG_GROUP_FILES = (
     "Json_AnimationConfig.json",
     "Json_AtmosphericNpcData.json",
@@ -2537,6 +2584,8 @@ class SourceGraphBuilder:
             self.commit_step("decodedParameterBlackboardMatches")
             self.link_gameplay_effect_export_assets()
             self.commit_step("effectAssetMatches")
+            self.link_visual_token_export_assets()
+            self.commit_step("visualTokenAssetMatches")
             if self.include_reference_rows:
                 self.ingest_reference_tables()
                 self.commit_step("reference")
@@ -2913,6 +2962,123 @@ class SourceGraphBuilder:
                         "assetPath": asset_path,
                     },
                 )
+
+    def iter_visual_token_values(self, value: Any, *, path: str = "") -> Iterable[tuple[str, str, str]]:
+        if not isinstance(value, dict):
+            return
+        for key, child in value.items():
+            key_text = safe_key(key)
+            if key_text == "iconMap" and isinstance(child, dict):
+                for icon_key, icon_row in child.items():
+                    if isinstance(icon_row, dict):
+                        token = safe_key(icon_row.get("icon"))
+                        if token:
+                            yield "icon", token, f"iconMap.{safe_key(icon_key)}.icon"
+                    else:
+                        token = safe_key(icon_row)
+                        if token:
+                            yield "icon", token, f"iconMap.{safe_key(icon_key)}"
+                continue
+            if key_text not in VISUAL_TOKEN_FIELDS:
+                continue
+            if isinstance(child, dict):
+                for child_key, child_value in child.items():
+                    token = safe_key(child_value)
+                    if token:
+                        yield key_text, token, f"{key_text}.{safe_key(child_key)}"
+            elif isinstance(child, list):
+                for index, item in enumerate(child):
+                    token = safe_key(item)
+                    if token:
+                        yield key_text, token, f"{key_text}[{index}]"
+            else:
+                token = safe_key(child)
+                if token:
+                    yield key_text, token, key_text
+
+    def visual_token_edge_kind(self, field_name: str) -> str:
+        if field_name in VISUAL_TOKEN_KINDS:
+            return "uses_icon_asset"
+        if field_name in VISUAL_BACKGROUND_FIELDS:
+            return "uses_visual_asset"
+        return "visual_token_matches_export_base_asset"
+
+    def link_visual_token_export_assets(self) -> None:
+        asset_rows = self.db.execute(
+            """
+            SELECT aliases.alias AS stem, aliases.node_id AS asset_id, nodes.path AS asset_path, nodes.data AS asset_data
+            FROM aliases
+            JOIN nodes ON nodes.id = aliases.node_id
+            WHERE aliases.kind = 'asset_stem'
+              AND nodes.kind = 'asset'
+              AND aliases.node_id LIKE 'asset:%'
+            """
+        ).fetchall()
+        assets_by_base: dict[str, list[tuple[str, str, str]]] = defaultdict(list)
+        for stem_value, asset_id, asset_path, asset_data in asset_rows:
+            stem = safe_key(stem_value)
+            match = PATH_ID_EXPORT_STEM_RE.match(stem)
+            if not match:
+                continue
+            asset_type = ""
+            try:
+                decoded_data = json.loads(asset_data) if asset_data else {}
+                asset_type = safe_key(decoded_data.get("type")) if isinstance(decoded_data, dict) else ""
+            except json.JSONDecodeError:
+                asset_type = ""
+            if asset_type != "image":
+                continue
+            normalized_base = match.group("base").lower()
+            assets_by_base[normalized_base].append((asset_id, asset_path, stem))
+        if not assets_by_base:
+            return
+
+        rows = self.db.execute(
+            """
+            SELECT id, kind, data
+            FROM nodes
+            WHERE data IS NOT NULL
+              AND kind NOT IN ('asset', 'file', 'dataset', 'material', 'texture', 'shader', 'table_row')
+            """
+        ).fetchall()
+        seen: set[tuple[str, str, str, str]] = set()
+        for node_id, node_kind, data_text in rows:
+            try:
+                payload = json.loads(data_text) if data_text else None
+            except json.JSONDecodeError:
+                continue
+            if payload is None:
+                continue
+            for field_name, token, field_path in self.iter_visual_token_values(payload):
+                token_key = token.strip().strip("/").replace("\\", "/")
+                if not token_key:
+                    continue
+                token_base = Path(token_key).stem.lower() or token_key.lower()
+                asset_matches = assets_by_base.get(token_base)
+                if not asset_matches:
+                    continue
+                edge_kind = self.visual_token_edge_kind(field_name)
+                for asset_id, asset_path, asset_stem in asset_matches:
+                    edge_key = (node_id, asset_id, edge_kind, field_path)
+                    if edge_key in seen:
+                        continue
+                    seen.add(edge_key)
+                    self.add_edge(
+                        node_id,
+                        asset_id,
+                        edge_kind,
+                        source="source_graph/visual_token_bridge",
+                        evidence=field_path,
+                        data={
+                            "nodeKind": node_kind,
+                            "field": field_name,
+                            "fieldPath": field_path,
+                            "token": token,
+                            "normalizedBase": token_base,
+                            "assetStem": asset_stem,
+                            "assetPath": asset_path,
+                        },
+                    )
 
     def decoded_config_entry_data(self, entry: dict[str, Any]) -> dict[str, Any]:
         return compact_payload(
@@ -14700,6 +14866,9 @@ ISSUE_EVIDENCE_EDGE_KINDS = (
 ASSET_USED_BY_INCOMING_EDGE_KINDS = (
     "has_gameplay_asset",
     "has_gameplay_asset_entity",
+    "uses_icon_asset",
+    "uses_visual_asset",
+    "visual_token_matches_export_base_asset",
     "previewed_by",
     "uses_material",
     "uses_texture_pathid",
@@ -14713,6 +14882,9 @@ ASSET_USED_BY_OUTGOING_EDGE_KINDS = (
 )
 ASSET_USES_EDGE_KINDS = (
     "has_gameplay_asset_entity",
+    "uses_icon_asset",
+    "uses_visual_asset",
+    "visual_token_matches_export_base_asset",
     "previewed_by",
     "uses_material",
     "uses_texture",
