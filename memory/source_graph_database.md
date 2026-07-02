@@ -1547,6 +1547,10 @@ Validated settings edges include 100 `setting_tab_has_item`, 92 `setting_item_re
 
 This turns wiki categories, encyclopedia entries, tutorial pages, limited guides, craft jumps, and wiki enemy-drop dictionaries into queryable semantic evidence instead of leaving them as mostly disconnected table rows or hyperlink-only wiki ids.
 
+2026-07-02 gacha pool graph refs: `tools/endfield_source_graph.py` now ingests the character/weapon gacha pool family as `structured_gacha`, including character info, character pools, pool content, pool types, character and weapon presets, weapon pools, ticket-to-pool maps, entry recommendations, and weapon refresh offers. A fast CN graph build to `tmp/source_graph_gacha_semantics.sqlite` verified 26 `gacha_char_info`, 10 `gacha_char_pool`, 4 `gacha_char_pool_type`, 14 `gacha_weapon_pool`, 1 `gacha_weapon_pool_type`, 1 `gacha_recommendation`, 4 `gacha_recommendation_group`, 1 `gacha_recommendation_rule`, and 1 `gacha_refresh_rule` nodes. Validated edge coverage includes 210 character-pool membership edges, 532 weapon-pool membership edges, 9 featured character edges, 14 featured weapon edges, 13 character-ticket-to-pool edges, 1 weapon-ticket-to-pool edge, 23 initial/perfect character weapon links, 92 perfect equipment links, 64 weapon perfect-gem links, 9 pool cost item edges, 24 pool name text links across character/weapon pools, and 3 refresh-rule shop-goods edges. Smoke tests passed for `joint_1_2_2`, `weaponbox_constant_2`, `item_ticketgacha_joint_single_lt_1_2_2`, `beginnerPool`, and direct `chr_0007_ikut` gacha preset edges.
+
+This models authored pool membership, tickets, display text, featured entries, presets, and refresh offers as queryable evidence. It does not simulate live gacha probability execution or server-side guarantee state.
+
 Known parser limits are acceptable for current use:
 
 - lightweight IL2CPP metadata parsing can leave generic/array/byref type
