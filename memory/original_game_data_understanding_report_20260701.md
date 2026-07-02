@@ -2186,6 +2186,12 @@ The source graph now models compact reward/currency catalog tables directly. Gif
 
 A fast CN temp build verified 14 gift items, 6 gift preference tags, 14 check-in activities, 114 check-in stages, 5 daily activation reward rows, 5 money configs, 2 money exchanges, 4 important item show entries, 12 important reward items, 114 check-in reward edges, 28 gift hobby-tag edges, 14 gift preference edges, 5 activation reward edges, 4 money exchange source/target item edges, and 12 important reward description text links. This improves reward/currency lookup while staying limited to authored catalog evidence rather than live account check-in state, inventory ownership, reward claiming, or runtime currency transaction execution.
 
+### 2026-07-02 Activity And Adventure Catalog Graph Progress
+
+The source graph now promotes compact activity/adventure catalog structure from `AdventureTaskTable`, `AdventureBookStageRewardTable`, `ActivityGameEntrance*`, `HighDifficulty*`, `PsActivity*`, `ActivitySubmitFoodTable`, and `ActivityBenefitsTable`. It adds queryable nodes for adventure book tasks/stages, activity entrance groups/series/games, high-difficulty series, PS activities/tasks, submit-food stages/items, and activity benefits, with edges to rewards, conditions, jumps, achievements, missions, recipes, item/character/weapon showcase refs, and dungeon/catalog game ids.
+
+A fast CN temp build verified 85 adventure book tasks, 13 adventure book stages, 1 activity entrance group, 2 activity entrance series, 45 catalog game refs, 4 high-difficulty series, 3 PS activities, 11 PS activity tasks, 14 submit-food stages, 14 submit items, 8 activity benefits, 85 adventure task reward edges, 86 adventure task condition edges, 72 adventure stage task edges, 15 entrance-series game edges, 30 high-difficulty game edges, 22 PS task mission edges, 14 submit-food recipe edges, and 19 benefit reward/showcase refs. CLI smoke checks passed for `adventure_book_task:ab_01_01`, `activity_game_entrance_series:activity_puzzle_v1d0`, and `activity_benefit:checkIn`. This improves authored activity lookup while staying limited to catalog/navigation evidence rather than live event availability, runtime unlock evaluation, account progress, or server-side activity state.
+
 ## Caveats
 
 - Some reports are historical snapshots. Current headline metrics should come
