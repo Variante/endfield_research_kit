@@ -243,6 +243,16 @@ COMBAT_SEMANTIC_TABLES = (
     "PotentialTalentEffectTable.json",
     "EnemyTagTable.json",
 )
+ENEMY_SEMANTIC_TABLES = (
+    "EnemyTable.json",
+    "EnemyDisplayInfoTable.json",
+    "EnemyAbilityDescTable.json",
+    "EnemyAttributeTemplateTable.json",
+    "EnemyTemplateTable.json",
+    "EnemyTemplateDisplayInfoTable.json",
+    "DisplayEnemyTypeTable.json",
+    "EnemyDamageTakenLevelTable.json",
+)
 ATTRIBUTE_DICTIONARY_TABLES = (
     "AttributeMetaTable.json",
     "AttributeShowConfigTable.json",
@@ -2977,6 +2987,8 @@ class SourceGraphBuilder:
             self.commit_step("worldHarvestables")
             self.ingest_combat_semantics()
             self.commit_step("combatSemantics")
+            self.ingest_enemy_semantics()
+            self.commit_step("enemySemantics")
             self.ingest_attribute_dictionary()
             self.commit_step("attributeDictionary")
             self.ingest_settings_semantics()
@@ -17964,6 +17976,209 @@ class SourceGraphBuilder:
                 self.add_edge(table_node, row_node, "has_row", source="structured/combat_semantics")
                 self.add_combat_semantic_row_edges(table_key, row_key, row, row_node)
 
+    def ingest_enemy_semantics(self) -> None:
+        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        dataset = self.add_node("dataset", "structured_enemy_semantics", name="Structured enemy tables", path=slash(table_root))
+        for table_name in ENEMY_SEMANTIC_TABLES:
+            path = table_root / table_name
+            payload = read_json(path, None)
+            if payload is None:
+                continue
+            table = Path(table_name).stem
+            table_node = self.add_node("table", table, name=table, source="StreamingAssets/Table", path=slash(path))
+            self.add_edge(dataset, table_node, "has_table", source="structured/enemy_semantics")
+            self.add_file(slash(path), kind="structured_table", source="StreamingAssets/Table")
+            if not isinstance(payload, dict):
+                continue
+            for row_key, row in payload.items():
+                row_node = self.add_node("table_row", f"{table}:{row_key}", name=str(row_key), source=table, data=compact_payload(row, depth=2))
+                self.add_edge(table_node, row_node, "has_row", source="structured/enemy_semantics")
+                self.add_enemy_row_edges(table, row_key, row, row_node)
+
+    def add_enemy_ref_node(self, enemy_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        enemy_key = safe_key(enemy_id)
+        if not enemy_key:
+            return ""
+        enemy_name = table_display_text(name) or enemy_key
+        node = self.add_node("enemy", enemy_key, name=enemy_name, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=enemy_name, source=source, data=data)
+        self.add_alias(enemy_key, node, kind="enemy_id", source=source)
+        if enemy_name != enemy_key:
+            self.add_alias(enemy_name, node, kind="enemy_name", source=source)
+        return node
+
+    def add_enemy_template_ref_node(self, template_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        template_key = safe_key(template_id)
+        if not template_key:
+            return ""
+        template_name = table_display_text(name) or template_key
+        node = self.add_node("enemy_template", template_key, name=template_name, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=template_name, source=source, data=data)
+        self.add_alias(template_key, node, kind="enemy_template_id", source=source)
+        if template_name != template_key:
+            self.add_alias(template_name, node, kind="enemy_template_name", source=source)
+        return node
+
+    def add_enemy_attribute_template_node(self, template_id: Any, *, source: str = "", data: Any = None) -> str:
+        template_key = safe_key(template_id)
+        if not template_key:
+            return ""
+        node = self.add_node("enemy_attribute_template", template_key, name=template_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=template_key, source=source, data=data)
+        self.add_alias(template_key, node, kind="enemy_attribute_template_id", source=source)
+        return node
+
+    def add_enemy_ability_node(self, ability_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        ability_key = safe_key(ability_id)
+        if not ability_key:
+            return ""
+        ability_name = table_display_text(name) or ability_key
+        node = self.add_node("enemy_ability", ability_key, name=ability_name, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=ability_name, source=source, data=data)
+        self.add_alias(ability_key, node, kind="enemy_ability_id", source=source)
+        if ability_name != ability_key:
+            self.add_alias(ability_name, node, kind="enemy_ability_name", source=source)
+        return node
+
+    def add_enemy_display_type_node(self, display_type: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
+        type_key = safe_key(display_type)
+        if not type_key:
+            return ""
+        type_name = table_display_text(name) or type_key
+        node = self.add_node("enemy_display_type", type_key, name=type_name, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=type_name, source=source, data=data)
+        self.add_alias(type_key, node, kind="enemy_display_type_id", source=source)
+        if type_name != type_key:
+            self.add_alias(type_name, node, kind="enemy_display_type_name", source=source)
+        return node
+
+    def add_enemy_distribution_node(self, distribution_id: Any, *, source: str = "") -> str:
+        distribution_key = safe_key(distribution_id)
+        if not distribution_key:
+            return ""
+        node = self.add_node("enemy_distribution", distribution_key, name=distribution_key, source=source)
+        self.add_alias(distribution_key, node, kind="enemy_distribution_id", source=source)
+        return node
+
+    def add_enemy_attribute_meta_edges(self, owner_node: str, attrs: Any, *, edge_kind: str, source: str, evidence_prefix: str, context: dict[str, Any] | None = None) -> None:
+        if isinstance(attrs, dict):
+            attrs = attrs.get("attrs")
+        if not isinstance(attrs, list):
+            return
+        for index, attr in enumerate(attrs):
+            if not isinstance(attr, dict):
+                continue
+            meta_node = self.add_attribute_meta_node(attr.get("attrType"), source=source)
+            if not meta_node:
+                continue
+            data = {"index": index, "attrValue": attr.get("attrValue")}
+            if context:
+                data.update(context)
+            self.add_edge(owner_node, meta_node, edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]", data=data)
+
+    def add_enemy_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
+        if table == "DisplayEnemyTypeTable" and isinstance(row, dict):
+            type_node = self.add_enemy_display_type_node(row_key, name=row.get("name"), source=table)
+            if type_node:
+                self.add_edge(row_node, type_node, "defines_enemy_display_type", source=table)
+                self.add_tag_i18n_edges(type_node, row.get("name"), source=table, edge_kind="enemy_display_type_name_text")
+            return
+        if table == "EnemyDamageTakenLevelTable" and isinstance(row, dict):
+            level_node = self.add_semantic_node("enemy_damage_taken_level", row.get("damageTakenLevel") or row_key, name=row.get("name"), source=table, data={"damageTakenLevel": row.get("damageTakenLevel"), "damageTakenScalar": row.get("damageTakenScalar")})
+            if level_node:
+                self.add_edge(row_node, level_node, "defines_enemy_damage_taken_level", source=table)
+                self.add_tag_i18n_edges(level_node, row.get("name"), source=table, edge_kind="enemy_damage_taken_level_name_text")
+            return
+        if not isinstance(row, dict):
+            return
+        if table == "EnemyTable":
+            enemy_node = self.add_enemy_ref_node(row.get("enemyId") or row_key, source=table, data={"templateId": row.get("templateId"), "attrTemplateId": row.get("attrTemplateId"), "aiTemplateId": row.get("aiTemplateId"), "modelId": row.get("modelId"), "isDangerous": row.get("isDangerous"), "bornBuffCount": len(row.get("bornBuffs") or []), "attrModifierCount": len(row.get("attrModifiers") or [])})
+            if not enemy_node:
+                return
+            self.add_edge(row_node, enemy_node, "defines_enemy", source=table)
+            template_node = self.add_enemy_template_ref_node(row.get("templateId"), source=table)
+            if template_node:
+                self.add_edge(enemy_node, template_node, "uses_enemy_template", source=table, evidence="templateId")
+            attr_node = self.add_enemy_attribute_template_node(row.get("attrTemplateId"), source=table)
+            if attr_node:
+                self.add_edge(enemy_node, attr_node, "uses_enemy_attribute_template", source=table, evidence="attrTemplateId")
+            ai_node = self.add_ai_config_node(row.get("aiTemplateId"), source=table)
+            if ai_node:
+                self.add_edge(enemy_node, ai_node, "enemy_uses_ai_config", source=table, evidence="aiTemplateId")
+            self.add_model_asset_entity_edges(enemy_node, (row.get("modelId"),), edge_kind="enemy_uses_model_asset", source=table, evidence="modelId")
+            for index, buff_id in enumerate(row.get("bornBuffs") or []):
+                buff_node = self.add_buff_ref_node(buff_id, source=table)
+                if buff_node:
+                    self.add_edge(enemy_node, buff_node, "starts_with_buff", source=table, evidence=f"bornBuffs[{index}]", data={"index": index})
+            self.add_enemy_attribute_meta_edges(enemy_node, row.get("attrModifiers"), edge_kind="enemy_attribute_modifier_meta", source=table, evidence_prefix="attrModifiers")
+        elif table == "EnemyDisplayInfoTable":
+            enemy_node = self.add_enemy_ref_node(row.get("enemyId") or row_key, name=row.get("name"), source=table, data={"templateId": row.get("templateId"), "abilityDescCount": len(row.get("abilityDescIds") or [])})
+            if not enemy_node:
+                return
+            self.add_edge(row_node, enemy_node, "defines_enemy_display_info", source=table)
+            self.add_tag_i18n_edges(enemy_node, row.get("name"), source=table, edge_kind="enemy_name_text")
+            self.add_tag_i18n_edges(enemy_node, row.get("nickname"), source=table, edge_kind="enemy_nickname_text")
+            self.add_tag_i18n_edges(enemy_node, row.get("description"), source=table, edge_kind="enemy_description_text")
+            template_node = self.add_enemy_template_ref_node(row.get("templateId"), source=table)
+            if template_node:
+                self.add_edge(enemy_node, template_node, "uses_enemy_template", source=table, evidence="templateId")
+            for index, ability_id in enumerate(row.get("abilityDescIds") or []):
+                ability_node = self.add_enemy_ability_node(ability_id, source=table)
+                if ability_node:
+                    self.add_edge(enemy_node, ability_node, "has_enemy_ability", source=table, evidence=f"abilityDescIds[{index}]", data={"index": index})
+        elif table == "EnemyAbilityDescTable":
+            ability_node = self.add_enemy_ability_node(row.get("abilityId") or row_key, name=row.get("name"), source=table, data={"description": compact_text(row.get("description"), 500)})
+            if ability_node:
+                self.add_edge(row_node, ability_node, "defines_enemy_ability", source=table)
+                self.add_tag_i18n_edges(ability_node, row.get("name"), source=table, edge_kind="enemy_ability_name_text")
+                self.add_tag_i18n_edges(ability_node, row.get("description"), source=table, edge_kind="enemy_ability_description_text")
+        elif table == "EnemyAttributeTemplateTable":
+            attr_node = self.add_enemy_attribute_template_node(row.get("templateId") or row_key, source=table, data={"levelDependentCount": len(row.get("levelDependentAttributes") or []), "independentAttributeCount": len((row.get("levelIndependentAttributes") or {}).get("attrs") or []), "poiseKnotBuffCount": len(row.get("poiseKnotBuffList") or []), "maxResilience": row.get("maxResilience"), "physicalDmgResistScalar": row.get("physicalDmgResistScalar"), "naturalDmgResistScalar": row.get("naturalDmgResistScalar"), "fireDmgResistScalar": row.get("fireDmgResistScalar"), "crystDmgResistScalar": row.get("crystDmgResistScalar"), "pulseDmgResistScalar": row.get("pulseDmgResistScalar")})
+            if not attr_node:
+                return
+            self.add_edge(row_node, attr_node, "defines_enemy_attribute_template", source=table)
+            self.add_enemy_attribute_meta_edges(attr_node, row.get("levelIndependentAttributes"), edge_kind="enemy_attribute_template_independent_attr", source=table, evidence_prefix="levelIndependentAttributes.attrs")
+            for level_index, level_entry in enumerate(row.get("levelDependentAttributes") or []):
+                if isinstance(level_entry, dict):
+                    self.add_enemy_attribute_meta_edges(attr_node, level_entry.get("attrs"), edge_kind="enemy_attribute_template_level_attr", source=table, evidence_prefix=f"levelDependentAttributes[{level_index}].attrs", context={"levelIndex": level_index})
+            pcts = row.get("poiseKnotPctList") if isinstance(row.get("poiseKnotPctList"), list) else []
+            for index, buff_id in enumerate(row.get("poiseKnotBuffList") or []):
+                buff_node = self.add_buff_ref_node(buff_id, source=table)
+                if buff_node:
+                    self.add_edge(attr_node, buff_node, "enemy_poise_knot_buff", source=table, evidence=f"poiseKnotBuffList[{index}]", data={"index": index, "poiseKnotPct": pcts[index] if index < len(pcts) else None})
+        elif table == "EnemyTemplateTable":
+            template_node = self.add_enemy_template_ref_node(row.get("templateId") or row_key, source=table)
+            if template_node:
+                self.add_edge(row_node, template_node, "defines_enemy_template", source=table)
+        elif table == "EnemyTemplateDisplayInfoTable":
+            template_node = self.add_enemy_template_ref_node(row.get("templateId") or row_key, name=row.get("name"), source=table, data={"displayType": row.get("displayType"), "abilityDescCount": len(row.get("abilityDescIds") or []), "distributionCount": len(row.get("distributionIds") or []), "tagCount": len(row.get("tags") or [])})
+            if not template_node:
+                return
+            self.add_edge(row_node, template_node, "defines_enemy_template_display_info", source=table)
+            self.add_tag_i18n_edges(template_node, row.get("name"), source=table, edge_kind="enemy_template_name_text")
+            self.add_tag_i18n_edges(template_node, row.get("nickname"), source=table, edge_kind="enemy_template_nickname_text")
+            self.add_tag_i18n_edges(template_node, row.get("description"), source=table, edge_kind="enemy_template_description_text")
+            display_node = self.add_enemy_display_type_node(row.get("displayType"), source=table)
+            if display_node:
+                self.add_edge(template_node, display_node, "has_enemy_display_type", source=table, evidence="displayType")
+            for index, ability_id in enumerate(row.get("abilityDescIds") or []):
+                ability_node = self.add_enemy_ability_node(ability_id, source=table)
+                if ability_node:
+                    self.add_edge(template_node, ability_node, "enemy_template_has_ability", source=table, evidence=f"abilityDescIds[{index}]", data={"index": index})
+            for index, distribution_id in enumerate(row.get("distributionIds") or []):
+                distribution_node = self.add_enemy_distribution_node(distribution_id, source=table)
+                if distribution_node:
+                    self.add_edge(template_node, distribution_node, "enemy_template_distribution", source=table, evidence=f"distributionIds[{index}]", data={"index": index})
+            for index, tag_id in enumerate(row.get("tags") or []):
+                tag_node = self.add_enemy_tag_node(tag_id, source=table)
+                if tag_node:
+                    self.add_edge(template_node, tag_node, "enemy_template_has_tag", source=table, evidence=f"tags[{index}]", data={"index": index})
+
     def add_buff_ref_node(self, buff_id: Any, *, source: str = "", data: Any = None) -> str:
         buff_key = safe_key(buff_id)
         if not buff_key:
@@ -19857,6 +20072,8 @@ QUERY_KIND_PRIORITY = {
     "enemy_ability": 16,
     "enemy_tag": 17,
     "enemy_attribute_modifier": 18,
+    "enemy_distribution": 18.1,
+    "enemy_damage_taken_level": 18.2,
     "buff": 19,
     "general_ability": 20,
     "use_item_effect": 21,
@@ -20401,6 +20618,8 @@ NODE_ID_PREFIXES = (
     "enemy_ability",
     "enemy_tag",
     "enemy_attribute_modifier",
+    "enemy_distribution",
+    "enemy_damage_taken_level",
     "buff",
     "general_ability",
     "use_item_effect",
