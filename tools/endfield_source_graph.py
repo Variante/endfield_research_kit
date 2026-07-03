@@ -15864,6 +15864,7 @@ class SourceGraphBuilder:
                 group_node = self.add_wiki_node("wiki_group", group.get("groupId"), name=group.get("groupName"), source=table, data={"iconId": group.get("iconId"), "categoryId": row_key})
                 if group_node:
                     self.add_edge(category_node, group_node, "wiki_category_has_group", source=table, evidence=f"list[{index}]")
+                    self.add_edge(group_node, category_node, "wiki_group_in_category", source=table, evidence=f"list[{index}]")
                     self.add_alias(group.get("iconId"), group_node, kind="icon_id", source=table)
                     self.add_tag_i18n_edges(group_node, group.get("groupName"), source=table, edge_kind="wiki_group_name_text")
         elif table == "WikiEntryTable" and isinstance(row, dict):
@@ -15872,6 +15873,7 @@ class SourceGraphBuilder:
                 entry_node = self.add_wiki_entry_node(entry_id, source=table)
                 if entry_node and domain_node:
                     self.add_edge(domain_node, entry_node, "domain_has_wiki_entry", source=table, evidence=f"list[{index}]")
+                    self.add_edge(entry_node, domain_node, "wiki_entry_in_domain", source=table, evidence=f"list[{index}]")
         elif table == "WikiEntryDataTable" and isinstance(row, dict):
             entry_id = safe_key(row.get("id") or row_key)
             entry_node = self.add_wiki_entry_node(entry_id, source=table, data={"groupId": row.get("groupId"), "order": row.get("order"), "prtsId": row.get("prtsId"), "refItemId": row.get("refItemId"), "refMonsterTemplateId": row.get("refMonsterTemplateId")})
@@ -15881,13 +15883,16 @@ class SourceGraphBuilder:
                 group_node = self.add_wiki_node("wiki_group", row.get("groupId"), source=table)
                 if group_node:
                     self.add_edge(group_node, entry_node, "wiki_group_has_entry", source=table, evidence="groupId")
+                    self.add_edge(entry_node, group_node, "wiki_entry_in_group", source=table, evidence="groupId")
                 item_node = self.add_item_node(row.get("refItemId"), source=table)
                 if item_node:
                     self.add_edge(entry_node, item_node, "wiki_entry_refers_item", source=table, evidence="refItemId")
+                    self.add_edge(item_node, entry_node, "item_referenced_by_wiki_entry", source=table, evidence="refItemId")
                 enemy_node = self.add_node("enemy", safe_key(row.get("refMonsterTemplateId")), name=safe_key(row.get("refMonsterTemplateId")), source=table) if safe_key(row.get("refMonsterTemplateId")) else ""
                 if enemy_node:
                     self.add_alias(row.get("refMonsterTemplateId"), enemy_node, kind="enemy_id", source=table)
                     self.add_edge(entry_node, enemy_node, "wiki_entry_refers_enemy", source=table, evidence="refMonsterTemplateId")
+                    self.add_edge(enemy_node, entry_node, "enemy_referenced_by_wiki_entry", source=table, evidence="refMonsterTemplateId")
                 self.add_alias(row.get("prtsId"), entry_node, kind="prts_id", source=table)
         elif table == "WikiEntryDataReverseTable" and isinstance(row, str):
             source_key = safe_key(row_key)
@@ -15907,16 +15912,19 @@ class SourceGraphBuilder:
                 self.add_video_stem_edge(page_node, row.get("video"), edge_kind="wiki_tutorial_page_uses_video", source=table, evidence="video", data={"videoDeviceType": row.get("videoDeviceType")})
                 if tutorial_node:
                     self.add_edge(tutorial_node, page_node, "wiki_tutorial_has_page", source=table, evidence="tutorialId", data={"order": row.get("order")})
+                    self.add_edge(page_node, tutorial_node, "wiki_tutorial_page_in_tutorial", source=table, evidence="tutorialId", data={"order": row.get("order")})
                 for index, entry_id in enumerate(row.get("refWikiEntryIds") or []):
                     entry_node = self.add_wiki_entry_node(entry_id, source=table)
                     if entry_node:
                         self.add_edge(page_node, entry_node, "wiki_tutorial_page_refs_entry", source=table, evidence=f"refWikiEntryIds[{index}]")
+                        self.add_edge(entry_node, page_node, "wiki_entry_referenced_by_tutorial_page", source=table, evidence=f"refWikiEntryIds[{index}]")
         elif table == "WikiTutorialPageByEntryTable" and isinstance(row, dict):
             tutorial_node = self.add_wiki_node("wiki_tutorial", row_key, source=table)
             for index, page_id in enumerate(row.get("pageIds") or []):
                 page_node = self.add_wiki_node("wiki_tutorial_page", page_id, source=table)
                 if tutorial_node and page_node:
                     self.add_edge(tutorial_node, page_node, "wiki_tutorial_has_page", source=table, evidence=f"pageIds[{index}]", data={"index": index})
+                    self.add_edge(page_node, tutorial_node, "wiki_tutorial_page_in_tutorial", source=table, evidence=f"pageIds[{index}]", data={"index": index})
         elif table == "WikiLimitedGuideTable" and isinstance(row, dict):
             guide_node = self.add_wiki_node("wiki_limited_guide", row.get("guideGroupId") or row_key, source=table, data={"wikiEntryId": row.get("wikiEntryId")})
             guide_group_node = self.add_guide_group_node(row.get("guideGroupId") or row_key, source=table)
@@ -15928,6 +15936,7 @@ class SourceGraphBuilder:
                     self.add_edge(guide_group_node, guide_node, "guide_group_used_by_wiki_limited_guide", source=table, evidence="guideGroupId")
                 if entry_node:
                     self.add_edge(guide_node, entry_node, "wiki_limited_guide_entry", source=table, evidence="wikiEntryId")
+                    self.add_edge(entry_node, guide_node, "wiki_entry_used_by_limited_guide", source=table, evidence="wikiEntryId")
         elif table == "WikiCraftJumpTable" and isinstance(row, dict):
             item_node = self.add_item_node(row.get("itemId") or row_key, source=table)
             if item_node:
@@ -15935,11 +15944,13 @@ class SourceGraphBuilder:
                     ref_node = self.add_wiki_node("wiki_craft_ref", row.get(field), source=table)
                     if ref_node:
                         self.add_edge(item_node, ref_node, edge_kind, source=table, evidence=field)
+                        self.add_edge(ref_node, item_node, f"{edge_kind}_used_by_item", source=table, evidence=field)
         elif table == "WikiDefaultCraftTable" and isinstance(row, str):
             source_item = self.add_item_node(row_key, source=table)
             craft_item = self.add_item_node(row, source=table)
             if source_item and craft_item:
                 self.add_edge(source_item, craft_item, "wiki_default_craft_item", source=table, evidence="rowValue")
+                self.add_edge(craft_item, source_item, "item_has_wiki_default_craft_source", source=table, evidence="rowValue")
         elif table == "WikiEnemyDropTable" and isinstance(row, dict):
             enemy_node = self.add_node("enemy", row_key, name=row_key, source=table)
             self.add_alias(row_key, enemy_node, kind="enemy_id", source=table)
@@ -15947,6 +15958,7 @@ class SourceGraphBuilder:
                 item_node = self.add_item_node(item_id, source=table)
                 if item_node:
                     self.add_edge(enemy_node, item_node, "wiki_enemy_drops_item", source=table, evidence=f"dropItemIds[{index}]")
+                    self.add_edge(item_node, enemy_node, "item_dropped_by_wiki_enemy", source=table, evidence=f"dropItemIds[{index}]")
 
     def add_system_tip_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         tip_key = safe_key(key)
