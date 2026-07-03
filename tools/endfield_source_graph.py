@@ -5091,6 +5091,7 @@ class SourceGraphBuilder:
         map_node = self.add_map_node(map_id, source=source, data={"mapId": payload.get("mapId")})
         if map_node:
             self.add_edge(config_node, map_node, "map_config_defines_map", source=source, evidence="mapIdStr")
+            self.add_edge(map_node, config_node, "map_has_config", source=source, evidence="mapIdStr")
         domain_name = safe_key(payload.get("domainName"))
         if domain_name:
             domain_node = self.add_node("map_domain", domain_name, name=domain_name, source=source)
@@ -5106,11 +5107,13 @@ class SourceGraphBuilder:
             self.add_edge(config_node, level_node, "map_config_has_level_id", source=source, evidence="levelIds", data={"gridCellCount": count})
             if map_node:
                 self.add_edge(level_node, map_node, "level_belongs_to_map", source=source, evidence="MapConfig.levelIds")
+                self.add_edge(map_node, level_node, "map_has_level", source=source, evidence="MapConfig.levelIds")
         for level_id in level_str_ids:
             level_node = self.add_level_node(level_id, source=source)
             self.add_edge(config_node, level_node, "map_config_has_level_str_id", source=source, evidence="levelStrIds")
             if map_node:
                 self.add_edge(level_node, map_node, "level_belongs_to_map", source=source, evidence="MapConfig.levelStrIds")
+                self.add_edge(map_node, level_node, "map_has_level", source=source, evidence="MapConfig.levelStrIds")
         for num_id, var_name in sorted(map_vars_by_num.items(), key=lambda item: safe_key(item[0])):
             var_node = self.add_map_variable_node(map_id, var_name, num_id, source=source)
             if var_node:
@@ -5325,6 +5328,7 @@ class SourceGraphBuilder:
             if map_node:
                 self.add_alias(map_num, map_node, kind="map_numeric_id", source=source)
                 self.add_edge(brief_node, map_node, "map_brief_info_for_map", source=source, evidence="mapIdNumToStr", data={"mapIdNum": map_num})
+                self.add_edge(map_node, brief_node, "map_has_brief_info", source=source, evidence="mapIdNumToStr", data={"mapIdNum": map_num})
             sub_table = row.get("subLevelTable") if isinstance(row.get("subLevelTable"), dict) else {}
             for sub_id_raw, sub_row in sorted(sub_table.items(), key=lambda item: safe_key(item[0])):
                 if not isinstance(sub_row, dict):
@@ -5345,8 +5349,10 @@ class SourceGraphBuilder:
                 self.add_alias(sub_node_key, sub_node, kind="map_sublevel_brief_id", source=source)
                 self.add_alias(f"{map_key}:{parent_id}", sub_node, kind="map_sublevel_parent_id", source=source)
                 self.add_edge(brief_node, sub_node, "map_brief_info_has_sublevel", source=source, evidence="subLevelTable", data={"subDataParentId": parent_id})
+                self.add_edge(sub_node, brief_node, "map_sublevel_in_brief_info", source=source, evidence="subLevelTable", data={"subDataParentId": parent_id})
                 if map_node:
                     self.add_edge(sub_node, map_node, "map_sublevel_brief_in_map", source=source, evidence="mapIdNum")
+                    self.add_edge(map_node, sub_node, "map_has_sublevel_brief", source=source, evidence="mapIdNum")
                 for enemy_index, enemy_id in enumerate(enemies):
                     enemy_node = self.add_node("enemy", enemy_id, name=enemy_id, source=source)
                     self.add_alias(enemy_id, enemy_node, kind="enemy_id", source=source)
@@ -5482,6 +5488,7 @@ class SourceGraphBuilder:
             if level_id:
                 level_node = self.add_level_node(level_id, source=source)
                 self.add_edge(level_node, region_node, "level_has_map_region", source=source, evidence="levelId", data={"source": source_id})
+                self.add_edge(region_node, level_node, "map_region_in_level", source=source, evidence="levelId", data={"source": source_id})
                 self.add_level_map_edge(level_node, level_id, source=source, evidence="MapRegionTable.levelId")
             region_entries.append((region_id, region_node, index, row, top_key))
         for region_id, region_node, _index, row, _top_key in region_entries:
@@ -5491,14 +5498,17 @@ class SourceGraphBuilder:
                     continue
                 tier_node = self.add_map_region_node(tier_key, source=source)
                 self.add_edge(region_node, tier_node, "map_region_has_tier_region", source=source, evidence=f"tierMapRegionIds[{tier_index}]", data={"source": source_id})
+                self.add_edge(tier_node, region_node, "map_region_tier_used_by_region", source=source, evidence=f"tierMapRegionIds[{tier_index}]", data={"source": source_id})
             hide_id = safe_key(row.get("hideByMistId"))
             if hide_id and hide_id in region_ids:
                 hide_node = self.add_map_region_node(hide_id, source=source)
                 self.add_edge(region_node, hide_node, "map_region_hidden_by_mist_region", source=source, evidence="hideByMistId", data={"source": source_id})
+                self.add_edge(hide_node, region_node, "map_region_hides_region", source=source, evidence="hideByMistId", data={"source": source_id})
             group_id = safe_key(row.get("groupId"))
             if group_id and group_id in region_ids:
                 group_node = self.add_map_region_node(group_id, source=source)
                 self.add_edge(region_node, group_node, "map_region_group_region", source=source, evidence="groupId", data={"source": source_id})
+                self.add_edge(group_node, region_node, "map_region_groups_region", source=source, evidence="groupId", data={"source": source_id})
 
     def add_level_map_mark_reference_edges(self, mark_node: str, detail: Any, visibility: Any, *, source: str) -> None:
         detail_map = detail if isinstance(detail, dict) else {}
@@ -5622,9 +5632,11 @@ class SourceGraphBuilder:
             template_node = self.add_map_mark_template_node(basic.get("templateId"), source=source)
             if template_node:
                 self.add_edge(mark_node, template_node, "map_mark_uses_template", source=source, evidence="basicData.templateId", data={"source": source_id})
+                self.add_edge(template_node, mark_node, "map_mark_template_used_by_mark", source=source, evidence="basicData.templateId", data={"source": source_id})
             if level_id:
                 level_node = self.add_level_node(level_id, source=source)
                 self.add_edge(level_node, mark_node, "level_has_map_mark", source=source, evidence="LevelMapMark.region", data={"source": source_id})
+                self.add_edge(mark_node, level_node, "map_mark_in_level", source=source, evidence="LevelMapMark.region", data={"source": source_id})
                 self.add_level_map_edge(level_node, level_id, source=source, evidence="LevelMapMark.region")
             for region_id, edge_kind, evidence in ((mist_region_id, "map_mark_mist_region", "basicData.mistMap"), (tier_region_id, "map_mark_tier_region", "basicData.tierMap")):
                 if not region_id:
@@ -21888,6 +21900,7 @@ class SourceGraphBuilder:
             return
         map_node = self.add_map_node(map_key, source=source)
         self.add_edge(level_node, map_node, "level_belongs_to_map", source=source, evidence=evidence)
+        self.add_edge(map_node, level_node, "map_has_level", source=source, evidence=evidence)
 
     def add_map_table_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         map_id = safe_key(row_key)
@@ -21924,6 +21937,7 @@ class SourceGraphBuilder:
         map_node = self.add_map_node(map_id, source=table)
         self.add_edge(row_node, level_node, "defines_special_level_map", source=table)
         self.add_edge(level_node, map_node, "level_belongs_to_map", source=table, evidence="mapId")
+        self.add_edge(map_node, level_node, "map_has_level", source=table, evidence="mapId")
 
     def add_scene_area_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         area_id = safe_key(row.get("areaId") or row_key)
@@ -21957,6 +21971,7 @@ class SourceGraphBuilder:
         if category_id:
             category_node = self.add_node("map_mark_category", category_id, name=category_id, source=table)
             self.add_edge(type_node, category_node, "map_mark_type_has_category", source=table, evidence="category")
+            self.add_edge(category_node, type_node, "map_mark_category_has_type", source=table, evidence="category")
 
     def add_map_mark_template_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         template_id = safe_key(row.get("markInfoId") or row_key)
@@ -21970,6 +21985,7 @@ class SourceGraphBuilder:
         if type_id:
             type_node = self.add_node("map_mark_type", type_id, name=type_id, source=table)
             self.add_edge(template_node, type_node, "map_mark_template_has_type", source=table, evidence="markInfoType")
+            self.add_edge(type_node, template_node, "map_mark_type_has_template", source=table, evidence="markInfoType")
 
     def add_map_mark_instance_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         mark_id = safe_key(row.get("markInsId") or row_key)
@@ -21983,10 +21999,12 @@ class SourceGraphBuilder:
         if level_id:
             level_node = self.add_level_node(level_id, source=table)
             self.add_edge(level_node, mark_node, "level_has_map_mark", source=table, evidence="levelId")
+            self.add_edge(mark_node, level_node, "map_mark_in_level", source=table, evidence="levelId")
             self.add_level_map_edge(level_node, level_id, source=table, evidence="inferred_level_prefix")
         if template_id:
             template_node = self.add_node("map_mark_template", template_id, name=template_id, source=table)
             self.add_edge(mark_node, template_node, "map_mark_uses_template", source=table, evidence="markInfoId")
+            self.add_edge(template_node, mark_node, "map_mark_template_used_by_mark", source=table, evidence="markInfoId")
 
     def add_track_map_point_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         point_id = safe_key(row_key)
