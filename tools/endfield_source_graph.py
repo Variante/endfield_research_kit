@@ -6418,25 +6418,28 @@ class SourceGraphBuilder:
             tech_node = self.add_factory_tech_node(tech_id, source=source)
             if tech_node:
                 self.add_edge(condition_node, tech_node, "condition_requires_factory_tech", source=source, evidence=f"{evidence_prefix}._facTechId")
+                self.add_edge(tech_node, condition_node, "factory_tech_required_by_condition", source=source, evidence=f"{evidence_prefix}._facTechId")
             return
 
         if short_type in {"WeekRaidPlayerHasItem", "PlayerHasItem", "PlayerHasItemInItemBag", "CheckMoney"}:
             item_field = "_moneyId" if short_type == "CheckMoney" else "_itemId"
             item_node = self.add_item_node(self.mission_runtime_const_key(condition, item_field), source=source)
             if item_node:
+                data = {
+                    "conditionType": short_type,
+                    "count": self.mission_runtime_const_value(condition.get("_progressToCompare")) if short_type != "PlayerHasItemInItemBag" else self.mission_runtime_const_value(condition.get("_targetItemCount")),
+                    "comparer": self.mission_runtime_const_value(condition.get("_comparer")),
+                    "compareOperator": self.mission_runtime_const_value(condition.get("_compareOperator")),
+                }
                 self.add_edge(
                     condition_node,
                     item_node,
                     "condition_requires_item_count",
                     source=source,
                     evidence=f"{evidence_prefix}.{item_field}",
-                    data={
-                        "conditionType": short_type,
-                        "count": self.mission_runtime_const_value(condition.get("_progressToCompare")) if short_type != "PlayerHasItemInItemBag" else self.mission_runtime_const_value(condition.get("_targetItemCount")),
-                        "comparer": self.mission_runtime_const_value(condition.get("_comparer")),
-                        "compareOperator": self.mission_runtime_const_value(condition.get("_compareOperator")),
-                    },
+                    data=data,
                 )
+                self.add_edge(item_node, condition_node, "item_required_by_condition", source=source, evidence=f"{evidence_prefix}.{item_field}", data=data)
             return
 
         if short_type == "ReachDestination":
