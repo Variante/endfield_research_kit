@@ -6337,6 +6337,11 @@ class SourceGraphBuilder:
             guide_node = self.add_mission_runtime_guide_group_node(self.mission_runtime_const_value(action.get(field)), source=source)
             if guide_node:
                 self.add_edge(action_node, guide_node, edge_kind, source=source, evidence=f"{evidence_prefix}.{field}")
+                reverse_kind = {
+                    "mission_runtime_action_media_guide_group": "guide_group_used_by_mission_runtime_media_action",
+                    "mission_runtime_action_guide_group": "guide_group_used_by_mission_runtime_action",
+                }[edge_kind]
+                self.add_edge(guide_node, action_node, reverse_kind, source=source, evidence=f"{evidence_prefix}.{field}")
         chapter_node = self.add_mission_runtime_chapter_panel_node(self.mission_runtime_const_value(action.get("_chapterId")), source=source)
         if chapter_node:
             self.add_edge(action_node, chapter_node, "mission_runtime_action_shows_chapter_panel", source=source, evidence=f"{evidence_prefix}._chapterId", data={"chapterEffectType": self.mission_runtime_const_value(action.get("_chapterEffectType")), "isToBeContinue": self.mission_runtime_const_value(action.get("_isToBeContinue"))})
@@ -6557,6 +6562,14 @@ class SourceGraphBuilder:
             dialog_id = self.mission_runtime_const_key(condition, "_dialogId")
             if dialog_id:
                 self.add_mission_runtime_narrative_ref_edge(condition_node, dialog_id, edge_kind="condition_checks_dialog_finish", source=source, evidence=f"{evidence_prefix}._dialogId")
+            return
+
+        if short_type == "CheckGuideGroupComplete":
+            guide_node = self.add_mission_runtime_guide_group_node(self.mission_runtime_const_key(condition, "_guideGroupId"), source=source)
+            if guide_node:
+                data = {"completeType": self.mission_runtime_const_value(condition.get("_completeType"))}
+                self.add_edge(condition_node, guide_node, "condition_checks_guide_group_complete", source=source, evidence=f"{evidence_prefix}._guideGroupId", data=data)
+                self.add_edge(guide_node, condition_node, "guide_group_checked_by_condition", source=source, evidence=f"{evidence_prefix}._guideGroupId", data=data)
             return
 
     def add_mission_runtime_asset_edges(self, file_node: str, entry: dict[str, Any]) -> None:
@@ -13430,9 +13443,13 @@ class SourceGraphBuilder:
                     self.add_edge(tutorial_node, page_node, "wiki_tutorial_has_page", source=table, evidence=f"pageIds[{index}]", data={"index": index})
         elif table == "WikiLimitedGuideTable" and isinstance(row, dict):
             guide_node = self.add_wiki_node("wiki_limited_guide", row.get("guideGroupId") or row_key, source=table, data={"wikiEntryId": row.get("wikiEntryId")})
+            guide_group_node = self.add_guide_group_node(row.get("guideGroupId") or row_key, source=table)
             entry_node = self.add_wiki_entry_node(row.get("wikiEntryId"), source=table)
             if guide_node:
                 self.add_edge(row_node, guide_node, "defines_wiki_limited_guide", source=table)
+                if guide_group_node:
+                    self.add_edge(guide_node, guide_group_node, "wiki_limited_guide_uses_guide_group", source=table, evidence="guideGroupId")
+                    self.add_edge(guide_group_node, guide_node, "guide_group_used_by_wiki_limited_guide", source=table, evidence="guideGroupId")
                 if entry_node:
                     self.add_edge(guide_node, entry_node, "wiki_limited_guide_entry", source=table, evidence="wikiEntryId")
         elif table == "WikiCraftJumpTable" and isinstance(row, dict):
@@ -14000,6 +14017,7 @@ class SourceGraphBuilder:
                 if guide_node:
                     self.add_alias(row.get("afterDirectlyGetRewardGuideGroupId"), guide_node, kind="guide_group_id", source=table)
                     self.add_edge(dungeon_node, guide_node, "factory_dungeon_after_reward_guide", source=table, evidence="afterDirectlyGetRewardGuideGroupId")
+                    self.add_edge(guide_node, dungeon_node, "guide_group_used_by_factory_dungeon_after_reward", source=table, evidence="afterDirectlyGetRewardGuideGroupId")
                 for index, dep_id in enumerate(row.get("preDependencies") or []):
                     dep_node = self.add_dungeon_node(dep_id, source=table)
                     if dep_node:
@@ -15168,6 +15186,7 @@ class SourceGraphBuilder:
             guide_group_node = self.add_guide_group_node(stage.get("guideGroupId"), source=table, data={"tutorialId": tutorial_id, "stage": stage.get("stage")})
             if guide_group_node:
                 self.add_edge(stage_node, guide_group_node, "tutorial_stage_uses_guide_group", source=table, evidence="guideGroupId")
+                self.add_edge(guide_group_node, stage_node, "guide_group_used_by_tutorial_stage", source=table, evidence="guideGroupId")
             for step_index, step_id in enumerate(stage.get("stepIds") or []):
                 step_node = self.add_node("character_tutorial_step", step_id, name=step_id, source=table)
                 self.add_edge(stage_node, step_node, "tutorial_stage_has_step", source=table, evidence=f"stepIds[{step_index}]")
@@ -15197,6 +15216,7 @@ class SourceGraphBuilder:
         guide_group_node = self.add_guide_group_node(row.get("guideGroupId"), source=table, data={"dungeonId": dungeon_id})
         if guide_group_node:
             self.add_edge(trial_node, guide_group_node, "trial_uses_guide_group", source=table, evidence="guideGroupId")
+            self.add_edge(guide_group_node, trial_node, "guide_group_used_by_trial", source=table, evidence="guideGroupId")
 
     def add_activity_char_trial_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         dungeon_id = safe_key(row.get("dungeonId") or row_key)
