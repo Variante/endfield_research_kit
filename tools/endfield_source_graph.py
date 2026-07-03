@@ -17718,9 +17718,16 @@ class SourceGraphBuilder:
             return
         trial_node = self.add_node("character_trial", dungeon_id, name=dungeon_id, source=table, data={"activityId": row.get("activityId"), "jumpId": row.get("jumpId"), "rewardId": row.get("rewardId"), "sortId": row.get("sortId")})
         self.add_edge(row_node, trial_node, "defines_activity_character_trial", source=table)
-        reward_node = self.add_reward_node(row.get("rewardId"), source=table)
-        if reward_node:
-            self.add_edge(trial_node, reward_node, "trial_grants_reward", source=table, evidence="rewardId")
+        activity_node = self.add_activity_node(row.get("activityId"), source=table)
+        if activity_node:
+            self.add_edge(activity_node, trial_node, "activity_has_character_trial", source=table, evidence="activityId")
+            self.add_edge(trial_node, activity_node, "character_trial_in_activity", source=table, evidence="activityId")
+        dungeon_node = self.add_dungeon_node(dungeon_id, source=table)
+        if dungeon_node:
+            self.add_edge(trial_node, dungeon_node, "activity_character_trial_uses_dungeon", source=table, evidence="dungeonId")
+            self.add_edge(dungeon_node, trial_node, "dungeon_used_by_activity_character_trial", source=table, evidence="dungeonId")
+        self.add_system_jump_edge(trial_node, row.get("jumpId"), edge_kind="character_trial_jumps_to", source=table, evidence="jumpId")
+        self.add_reward_ref_edge(trial_node, row.get("rewardId"), edge_kind="trial_grants_reward", source=table, evidence="rewardId")
         self.add_alias(row.get("activityId"), trial_node, kind="activity_id", source=table)
         self.add_alias(row.get("jumpId"), trial_node, kind="jump_id", source=table)
         self.add_alias(row.get("bgRolePath"), trial_node, kind="asset_stem", source=table)
@@ -23199,6 +23206,7 @@ class SourceGraphBuilder:
                 "activity_web_entry_jump": "system_jump_used_by_activity_web_entry",
                 "activity_web_stage_jump": "system_jump_used_by_activity_web_stage",
                 "battlepass_task_jump": "system_jump_used_by_battlepass_task",
+                "character_trial_jumps_to": "system_jump_used_by_character_trial",
             }.get(edge_kind)
             if reverse_kind:
                 self.add_edge(jump_node, owner_node, reverse_kind, source=source, evidence=evidence)
@@ -23231,6 +23239,7 @@ class SourceGraphBuilder:
                 "game_mechanic_extra_reward": "reward_used_by_game_mechanic_extra",
                 "game_mechanic_hunter_reward": "reward_used_by_game_mechanic_hunter",
                 "world_game_mechanic_first_pass_reward": "reward_used_by_world_game_mechanic_first_pass",
+                "trial_grants_reward": "reward_granted_by_character_trial",
             }.get(edge_kind)
             if reverse_kind:
                 self.add_edge(reward_node, owner_node, reverse_kind, source=source, evidence=evidence, data=data)
