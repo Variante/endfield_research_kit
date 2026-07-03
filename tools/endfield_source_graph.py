@@ -3269,6 +3269,8 @@ class SourceGraphBuilder:
             self.commit_step("weekRaid")
             self.ingest_timeline_line_orders()
             self.commit_step("timelineLineOrders")
+            self.ingest_option_response_audio_evidence()
+            self.commit_step("optionResponseAudioEvidence")
             self.ingest_runtime_option_route_audits()
             self.commit_step("runtimeOptionRouteAudits")
             self.ingest_timeline_option_flow_audit()
@@ -10938,6 +10940,175 @@ class SourceGraphBuilder:
                             option_id=safe_key(option_id),
                             route=route,
                         )
+
+    def ingest_option_response_audio_evidence(self) -> None:
+        path = self.root / "reports" / f"option_response_audio_evidence_{self.language}.json"
+        if not path.exists() and self.language != "CN":
+            path = self.root / "reports" / "option_response_audio_evidence_CN.json"
+        payload = read_json(path, {})
+        rows = payload.get("rows") if isinstance(payload, dict) else None
+        if not isinstance(rows, list):
+            return
+        source = "option_response_audio_evidence"
+        source_path = slash(path.relative_to(self.root)) if path.is_relative_to(self.root) else slash(path)
+        summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+        language = safe_key(payload.get("language")) or self.language
+        audit_node = self.add_node(
+            "option_response_audio_audit",
+            language,
+            name=f"Option response audio evidence {language}",
+            source=source,
+            path=source_path,
+            data=compact_payload({"generated": payload.get("generated"), "summary": summary}, depth=3),
+        )
+        file_node = self.add_file(source_path, kind="option_response_audio_evidence", source=source, size=path.stat().st_size if path.exists() else None)
+        self.add_edge(file_node, audit_node, "defines_option_response_audio_audit", source=source, evidence=source_path)
+
+        def line_node_for(line_id: Any) -> str:
+            line_key = safe_key(line_id)
+            if not line_key:
+                return ""
+            return self.add_node("line", line_key, name=line_key, source=source)
+
+        def option_node_for(option_id: Any, option_data: Any = None) -> str:
+            option_key = safe_key(option_id)
+            if not option_key:
+                return ""
+            data = compact_payload(option_data, depth=2) if isinstance(option_data, dict) else None
+            return self.add_node("option", option_key, name=option_key, source=source, data=data)
+
+        def timeline_node_for(timeline_id: Any) -> str:
+            timeline_key = safe_key(timeline_id)
+            if not timeline_key:
+                return ""
+            node = self.add_node("timeline", timeline_key, name=timeline_key, source=source)
+            self.add_alias(timeline_key.lower(), node, kind="timeline_name", source=source)
+            return node
+
+        def audio_node_for(item: dict[str, Any], *, role: str) -> str:
+            audio_name = safe_key(item.get("audioName"))
+            audio_path = safe_key(item.get("audioDialogPath"))
+            audio_key = audio_name or (Path(audio_path).stem if audio_path else "")
+            if not audio_key or audio_key in {"None", "null", "0", "0.0"}:
+                return ""
+            node = self.add_node(
+                "audio",
+                audio_key,
+                name=audio_key,
+                source=source,
+                path=audio_path,
+                data={
+                    "role": role,
+                    "audioDialogKey": item.get("audioDialogKey"),
+                    "audioSpeakerChannel": item.get("audioSpeakerChannel"),
+                    "audioVoType": item.get("audioVoType"),
+                    "audioWavDuration": item.get("audioWavDuration"),
+                },
+            )
+            self.add_alias(audio_key, node, kind="audio_id", source=source)
+            return node
+
+        def add_response_line_edges(group_node: str, item: Any, *, role: str, index: int) -> None:
+            if not isinstance(item, dict):
+                return
+            line_node = line_node_for(item.get("lineId"))
+            if not line_node:
+                return
+            edge_kind = "response_audio_anchor_line" if role == "anchor" else "response_audio_candidate_line"
+            evidence = role if role == "anchor" else f"candidates[{index}]"
+            data = {
+                "role": role,
+                "index": index,
+                "speaker": item.get("speaker"),
+                "actorDisplay": item.get("actorDisplay"),
+                "emotion": item.get("emotion"),
+                "timeline": item.get("timeline"),
+                "timelineStart": item.get("timelineStart"),
+                "timelineDuration": item.get("timelineDuration"),
+                "audioDialogKey": item.get("audioDialogKey"),
+                "audioDialogPath": item.get("audioDialogPath"),
+                "audioWavDuration": item.get("audioWavDuration"),
+            }
+            self.add_edge(group_node, line_node, edge_kind, source=source, evidence=evidence, data=compact_payload(data, depth=2))
+            audio_node = audio_node_for(item, role=role)
+            if audio_node:
+                audio_edge = "response_audio_anchor_line_audio" if role == "anchor" else "response_audio_candidate_line_audio"
+                self.add_edge(line_node, audio_node, audio_edge, source=source, evidence=evidence, data=compact_payload(data, depth=2))
+                self.add_edge(audio_node, line_node, f"audio_used_by_{audio_edge}", source=source, evidence=evidence, data=compact_payload(data, depth=2))
+            actor_key = safe_key(item.get("speaker"))
+            if actor_key:
+                actor_node = self.add_node("actor", actor_key, name=item.get("actorDisplay") or actor_key, source=source)
+                self.add_edge(group_node, actor_node, f"response_audio_{role}_speaker", source=source, evidence=evidence)
+            timeline_node = timeline_node_for(item.get("timeline"))
+            if timeline_node:
+                self.add_edge(group_node, timeline_node, "response_audio_group_timeline", source=source, evidence=evidence, data={"role": role, "index": index})
+
+        check_fields = (
+            "timelineStartMonotonic",
+            "audioDialogKeyMonotonic",
+            "candidatesAllAfterAnchor",
+            "speakerConsistent",
+            "anchorIsDifferentSpeaker",
+            "timelinesSameAsAnchor",
+        )
+
+        for row_index, row in enumerate(rows):
+            if not isinstance(row, dict):
+                continue
+            story_key = safe_key(row.get("scene"))
+            group_id = safe_key(row.get("group")) or str(row_index)
+            group_key = f"{story_key}#group:{group_id}" if story_key else f"{language}#group:{row_index}"
+            option_group_key = f"{story_key}#optionGroup:{group_id}" if story_key else ""
+            group_node = self.add_node(
+                "option_response_audio_group",
+                group_key,
+                name=group_key,
+                source=source,
+                path=source_path,
+                data=compact_payload(
+                    {
+                        "scene": story_key,
+                        "mission": row.get("mission"),
+                        "group": row.get("group"),
+                        "anchorLineId": row.get("anchorLineId"),
+                        "commonLineId": row.get("commonLineId"),
+                        "candidateLineIds": row.get("candidateLineIds"),
+                        "checks": row.get("checks"),
+                    },
+                    depth=3,
+                ),
+            )
+            self.add_alias(group_key, group_node, kind="option_response_audio_group", source=source)
+            self.add_edge(audit_node, group_node, "option_response_audio_audit_has_group", source=source, evidence=str(row_index))
+            if story_key:
+                story_node = self.add_node("story", story_key, name=story_key, source=source)
+                self.add_alias(story_key, story_node, kind="story_key", source=source)
+                self.add_edge(story_node, group_node, "story_has_option_response_audio_group", source=source, evidence=group_id)
+            mission_key = safe_key(row.get("mission"))
+            if mission_key:
+                mission_node = self.add_node("mission", mission_key, name=mission_key, source=source)
+                self.add_edge(mission_node, group_node, "mission_has_option_response_audio_group", source=source, evidence=group_id)
+            if option_group_key:
+                option_group_node = self.add_node("option_group", option_group_key, name=option_group_key, source=source)
+                self.add_edge(option_group_node, group_node, "option_group_has_response_audio_evidence", source=source, evidence=group_id)
+
+            add_response_line_edges(group_node, row.get("anchor"), role="anchor", index=0)
+            for candidate_index, candidate in enumerate(row.get("candidates") or []):
+                add_response_line_edges(group_node, candidate, role="candidate", index=candidate_index)
+            for option_index, option in enumerate(row.get("options") or []):
+                if not isinstance(option, dict):
+                    continue
+                option_node = option_node_for(option.get("optionId") or option.get("rowId"), option)
+                if option_node:
+                    self.add_edge(group_node, option_node, "response_audio_candidate_option", source=source, evidence=f"options[{option_index}]", data=compact_payload(option, depth=2))
+            checks = row.get("checks") if isinstance(row.get("checks"), dict) else {}
+            for check_name in check_fields:
+                if check_name not in checks:
+                    continue
+                check_value = checks.get(check_name)
+                check_key = f"{check_name}:{str(check_value).lower()}"
+                check_node = self.add_node("option_response_audio_check", check_key, name=check_key, source=source, data={"check": check_name, "value": check_value})
+                self.add_edge(group_node, check_node, "response_audio_group_check", source=source, evidence=check_name)
 
     def timeline_clip_payload(self, clip: dict[str, Any], story_key: str, index: int) -> dict[str, Any]:
         data = {
@@ -26466,6 +26637,9 @@ QUERY_KIND_PRIORITY = {
     "option_group": 1,
     "option": 2,
     "option_override": 3,
+    "option_response_audio_audit": 3.05,
+    "option_response_audio_group": 3.06,
+    "option_response_audio_check": 3.07,
     "runtime_option_route_audit_group": 3.2,
     "runtime_option_route_conflict": 3.3,
     "timeline_option_flow_audit_group": 3.4,
@@ -27287,6 +27461,9 @@ NODE_ID_PREFIXES = (
     "option_group",
     "option",
     "option_override",
+    "option_response_audio_audit",
+    "option_response_audio_group",
+    "option_response_audio_check",
     "runtime_option_route_audit_group",
     "runtime_option_route_conflict",
     "timeline_option_flow_audit_group",
