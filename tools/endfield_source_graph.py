@@ -23207,6 +23207,8 @@ class SourceGraphBuilder:
                 "activity_web_stage_jump": "system_jump_used_by_activity_web_stage",
                 "battlepass_task_jump": "system_jump_used_by_battlepass_task",
                 "character_trial_jumps_to": "system_jump_used_by_character_trial",
+                "gacha_pool_trial_jump": "system_jump_used_by_gacha_pool",
+                "gacha_recommendation_jump": "system_jump_used_by_gacha_recommendation",
             }.get(edge_kind)
             if reverse_kind:
                 self.add_edge(jump_node, owner_node, reverse_kind, source=source, evidence=evidence)
@@ -23240,6 +23242,12 @@ class SourceGraphBuilder:
                 "game_mechanic_hunter_reward": "reward_used_by_game_mechanic_hunter",
                 "world_game_mechanic_first_pass_reward": "reward_used_by_world_game_mechanic_first_pass",
                 "trial_grants_reward": "reward_granted_by_character_trial",
+                "gacha_const_reward_ref": "reward_used_by_gacha_const",
+                "gacha_pool_once_reward": "reward_used_by_gacha_pool_once",
+                "gacha_pool_every_pull_reward": "reward_used_by_gacha_pool_every_pull",
+                "gacha_pool_cumulative_reward": "reward_used_by_gacha_pool_cumulative",
+                "gacha_pool_interval_reward": "reward_used_by_gacha_pool_interval",
+                "gacha_weapon_pool_interval_reward": "reward_used_by_gacha_weapon_pool_interval",
             }.get(edge_kind)
             if reverse_kind:
                 self.add_edge(reward_node, owner_node, reverse_kind, source=source, evidence=evidence, data=data)
