@@ -14840,6 +14840,14 @@ class SourceGraphBuilder:
             self.add_alias(type_name, type_node, kind="item_type_name", source=source)
         return type_node
 
+    def add_item_valuable_tab_node(self, tab_id: Any, *, source: str = "", data: Any = None) -> str:
+        tab_key = safe_key(tab_id)
+        if not tab_key:
+            return ""
+        tab_node = self.add_node("item_valuable_tab", tab_key, name=tab_key, source=source, data=data)
+        self.add_alias(tab_key, tab_node, kind="item_valuable_tab_id", source=source)
+        return tab_node
+
     def add_item_showing_type_node(self, showing_type: Any, *, name: Any = None, source: str = "") -> str:
         showing_key = safe_key(showing_type)
         if not showing_key:
@@ -14955,7 +14963,7 @@ class SourceGraphBuilder:
 
     def add_item_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         type_id = row.get("itemType") if "itemType" in row else row_key
-        type_node = self.add_item_type_node(type_id, name=row.get("name"), source=table, data={"unlockSystemType": row.get("unlockSystemType")})
+        type_node = self.add_item_type_node(type_id, name=row.get("name"), source=table, data={"unlockSystemType": row.get("unlockSystemType"), "valuableTabType": row.get("valuableTabType")})
         self.add_edge(row_node, type_node, "defines_item_type", source=table)
         self.add_tag_i18n_edges(type_node, row.get("name"), source=table, edge_kind="item_type_name_text")
         unlock_key = safe_key(row.get("unlockSystemType"))
@@ -14964,6 +14972,10 @@ class SourceGraphBuilder:
             self.add_alias(unlock_key, unlock_node, kind="gameplay_unlock_id", source=table)
             self.add_edge(type_node, unlock_node, "item_type_unlock_system", source=table, evidence="unlockSystemType")
             self.add_edge(unlock_node, type_node, "gameplay_unlock_controls_item_type", source=table, evidence="unlockSystemType")
+        tab_node = self.add_item_valuable_tab_node(row.get("valuableTabType"), source=table)
+        if tab_node:
+            self.add_edge(type_node, tab_node, "item_type_valuable_tab", source=table, evidence="valuableTabType")
+            self.add_edge(tab_node, type_node, "valuable_tab_has_item_type", source=table, evidence="valuableTabType")
 
     def add_item_showing_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         showing_node = self.add_item_showing_type_node(row.get("type") if "type" in row else row_key, name=row.get("name"), source=table)
@@ -27987,6 +27999,7 @@ QUERY_KIND_PRIORITY = {
     "activity_cleaning_stage": 34.859974,
     "factory_hub_craft_type_list": 34.859975,
     "item_type_conversion": 34.859976,
+    "item_valuable_tab": 34.8599765,
     "exp_item_value": 34.859977,
     "spaceship_npc_proxy": 35,
     "spaceship_skill": 36,
@@ -28799,6 +28812,7 @@ NODE_ID_PREFIXES = (
     "activity_cleaning_stage",
     "factory_hub_craft_type_list",
     "item_type_conversion",
+    "item_valuable_tab",
     "exp_item_value",
     "spaceship_npc_proxy",
     "spaceship_skill",
