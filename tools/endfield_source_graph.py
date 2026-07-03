@@ -24603,6 +24603,38 @@ class SourceGraphBuilder:
                 self.add_edge(entity_node, stat_node, "ability_entity_sets_stat_property", source=table, evidence=field, data=data)
                 self.add_edge(stat_node, entity_node, "stat_property_set_by_ability_entity", source=table, evidence=field, data=data)
 
+    def add_global_effect_param_target_edges(
+        self,
+        param_node: str,
+        param_value: Any,
+        *,
+        source: str,
+        evidence_prefix: str,
+    ) -> None:
+        if not isinstance(param_value, dict):
+            return
+        for index, raw_value in enumerate(param_value.get("valueStringList") or []):
+            value_key = safe_key(raw_value)
+            if not value_key:
+                continue
+            data = {"value": value_key, "stringIndex": index}
+            evidence = f"{evidence_prefix}.valueStringList[{index}]"
+            if value_key.startswith("stm_"):
+                settlement_node = self.add_settlement_node(value_key, source=source)
+                if settlement_node:
+                    self.add_edge(param_node, settlement_node, "global_effect_param_refers_settlement", source=source, evidence=evidence, data=data)
+                    self.add_edge(settlement_node, param_node, "settlement_referenced_by_global_effect_param", source=source, evidence=evidence, data=data)
+            elif value_key.startswith("activity_limited_formula_") and "_stage_" in value_key:
+                stage_node = self.add_activity_catalog_node("activity_limited_formula_stage", value_key, source=source)
+                if stage_node:
+                    self.add_edge(param_node, stage_node, "global_effect_param_refers_activity_limited_formula_stage", source=source, evidence=evidence, data=data)
+                    self.add_edge(stage_node, param_node, "activity_limited_formula_stage_referenced_by_global_effect_param", source=source, evidence=evidence, data=data)
+            elif value_key.startswith("activity_limited_formula_"):
+                formula_node = self.add_activity_catalog_node("activity_limited_formula", value_key, source=source)
+                if formula_node:
+                    self.add_edge(param_node, formula_node, "global_effect_param_refers_activity_limited_formula", source=source, evidence=evidence, data=data)
+                    self.add_edge(formula_node, param_node, "activity_limited_formula_referenced_by_global_effect_param", source=source, evidence=evidence, data=data)
+
     def add_global_effect_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         effect_id = safe_key(row.get("effectId") or row_key)
         if not effect_id:
@@ -24621,6 +24653,7 @@ class SourceGraphBuilder:
             for index, value in enumerate(values):
                 param_node = self.add_node("global_effect_param", f"{effect_id}:{field}:{index}", name=f"{effect_id} {field} {index}", source=table, data=compact_payload(value, depth=2))
                 self.add_edge(effect_node, param_node, "global_effect_has_param", source=table, evidence=f"{field}[{index}]")
+                self.add_global_effect_param_target_edges(param_node, value, source=table, evidence_prefix=f"{field}[{index}]")
 
     def add_potential_talent_effect_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         effect_id = safe_key(row.get("id") or row_key)
