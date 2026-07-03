@@ -25384,6 +25384,10 @@ class SourceGraphBuilder:
             if entry_path:
                 file_node = self.add_file(entry_path, kind="monobehaviour_json", source=entry.get("source"), size=entry.get("size"), data={"status": entry.get("status"), "schema": entry.get("schema")})
                 self.add_edge(entry_node, file_node, "monobehaviour_frontier_entry_file", source=source, evidence="p")
+                decoded_path = ROOT / "export_full" / entry_path
+                decoded_payload = read_json(decoded_path, {}) if decoded_path.exists() else {}
+                if isinstance(decoded_payload, dict):
+                    self.add_monobehaviour_frontier_semantic_refs(entry_node, decoded_payload, source_root=safe_key(entry.get("source")) or "decoded_index")
             source_file = safe_key(entry.get("sourceFile"))
             if source_file:
                 source_node = self.add_node("monobehaviour_source_file", source_file, name=source_file, source=entry.get("source"))
@@ -25441,6 +25445,133 @@ class SourceGraphBuilder:
                     continue
                 tag_node = self.add_node("monobehaviour_tag", key_text, name=key_text, source="decoded_index")
                 self.add_edge(entry_node, tag_node, "monobehaviour_frontier_entry_tag", source=source)
+
+    def add_animation_config_ref_node(self, value: Any, *, source: str) -> str:
+        raw = safe_key(value)
+        if not raw:
+            return ""
+        stem = Path(raw.replace("\\", "/")).stem
+        key = stem or raw
+        node = self.add_node("animation_config", key, name=key, source=source, data={"rawRef": raw} if raw != key else None)
+        self.add_alias(key, node, kind="animation_config_id", source=source)
+        if raw != key:
+            self.add_alias(raw, node, kind="animation_config_path", source=source)
+        return node
+
+    def monobehaviour_frontier_semantic_refs(self, payload: Any) -> dict[str, list[dict[str, str]]]:
+        refs: dict[str, list[dict[str, str]]] = defaultdict(list)
+        seen: set[tuple[str, str, str]] = set()
+
+        def add(category: str, value: Any, path: str, field: str) -> None:
+            if not isinstance(value, str):
+                return
+            value_text = safe_key(value)
+            if not value_text or value_text in {"True", "False", "None", "null"}:
+                return
+            key = (category, value_text, path)
+            if key in seen:
+                return
+            seen.add(key)
+            refs[category].append({"value": value_text, "path": path, "field": field})
+
+        def classify_scalar(item: str, path: str, field: str) -> None:
+            lower_field = field.lower()
+            lower_path = path.lower()
+            item_text = safe_key(item)
+            if lower_field in {"skillid", "normalskillid", "ultimateskillid", "dodgeskillid", "comboskillid", "extrapassiveskillid"} or lower_field.endswith("skillid"):
+                add("skill", item, path, field)
+            elif "skilldatabundle" in lower_path and re.search(r"(?:^|_)(?:skill|attack|dodge|passive)(?:_|$)", item_text):
+                add("skill", item, path, field)
+            elif lower_field in {"allnormalattackid", "allactiveskillid", "allpassiveskillid", "normalattacklist"} and re.search(r"(?:^|_)(?:skill|attack|dodge|passive)(?:_|$)", item_text):
+                add("skill", item, path, field)
+            elif lower_field in {"modelid", "modelkey", "postmodelkey"}:
+                add("model", item, path, field)
+            elif lower_field in {"aicfgpath", "aiconfig", "aiconfigpath"} or item_text.startswith("aiconf_"):
+                add("ai_config", item, path, field)
+            elif lower_field in {"animcfgpath", "animconfigpath", "animationconfigpath"}:
+                add("animation_config", item, path, field)
+            elif lower_field in {"blackboardkey", "presetpointkey"} or (lower_field == "key" and "entityblackboard" in lower_path):
+                add("blackboard_key", item, path, field)
+            elif lower_field in {"modeid", "movemodeid", "parentmodeid"} or lower_field.endswith("modeid"):
+                add("mode", item, path, field)
+            elif lower_field in {"idlemountpoint", "fightmountpoint", "mountpoint", "locator", "locatorid", "locatorids", "locatorname", "locatornames"} or "locator" in lower_field:
+                add("locator", item, path, field)
+            elif lower_field in {"defaulthiteffect", "effectname", "vfxkey", "prewarneffectkey", "hitflashasset"} or (("effect" in lower_field or "vfx" in lower_field) and item_text.startswith(("P_", "E_", "fx", "vfx"))):
+                add("effect", item, path, field)
+            elif lower_field in {"maxpotentialeffectbuffid", "buffid"} or lower_field.endswith("buffid"):
+                add("buff", item, path, field)
+            elif lower_field == "class" and "componentlist" in lower_path:
+                add("component_class", item, path, field)
+            elif lower_field == "stringvalue" and ("skill" in lower_path or "dashbuff" in lower_path) and re.search(r"(?:^|_)(?:skill|attack|dodge|passive)(?:_|$)", item_text):
+                add("skill", item, path, field)
+
+        def walk(value: Any, path: str = "$", field: str = "") -> None:
+            if isinstance(value, dict):
+                for key, item in value.items():
+                    key_text = safe_key(key)
+                    child_path = f"{path}.{key_text}" if path else key_text
+                    if isinstance(item, str):
+                        classify_scalar(item, child_path, key_text)
+                    walk(item, child_path, key_text)
+            elif isinstance(value, list):
+                for item in value:
+                    child_path = f"{path}[]"
+                    if isinstance(item, str):
+                        classify_scalar(item, child_path, field)
+                    walk(item, child_path, field)
+
+        walk(payload)
+        return {key: rows for key, rows in refs.items() if rows}
+
+    def add_monobehaviour_frontier_semantic_refs(self, entry_node: str, payload: dict[str, Any], *, source_root: str) -> None:
+        source = "monobehaviour_frontier_semantic_refs"
+        refs = self.monobehaviour_frontier_semantic_refs(payload)
+        for category, rows in sorted(refs.items()):
+            for index, row in enumerate(rows):
+                value = safe_key(row.get("value"))
+                if not value:
+                    continue
+                evidence = safe_key(row.get("path")) or f"{category}[{index}]"
+                data = {"field": row.get("field"), "path": row.get("path")}
+                if category == "skill":
+                    target = self.add_gameplay_skill_ref_node(value, source=source)
+                    edge_kind = "monobehaviour_frontier_entry_uses_skill"
+                elif category == "model":
+                    target = self.add_node("model_config_model", value, name=value, source=source)
+                    self.add_alias(value, target, kind="model_id", source=source)
+                    self.add_model_asset_entity_edges(entry_node, (value,), edge_kind="monobehaviour_frontier_entry_model_asset_entity", source=source, evidence=evidence)
+                    edge_kind = "monobehaviour_frontier_entry_uses_model"
+                elif category == "ai_config":
+                    target = self.add_ai_config_node(value, source=source)
+                    edge_kind = "monobehaviour_frontier_entry_uses_ai_config"
+                elif category == "animation_config":
+                    target = self.add_animation_config_ref_node(value, source=source)
+                    edge_kind = "monobehaviour_frontier_entry_uses_animation_config"
+                elif category == "blackboard_key":
+                    target = self.add_blackboard_key_node(value, source=source)
+                    edge_kind = "monobehaviour_frontier_entry_uses_blackboard_key"
+                elif category == "effect":
+                    target = self.add_node("gameplay_effect", value, name=value, source=source)
+                    self.add_alias(value, target, kind="gameplay_effect_id", source=source)
+                    edge_kind = "monobehaviour_frontier_entry_uses_gameplay_effect"
+                elif category == "buff":
+                    target = self.add_buff_ref_node(value, source=source)
+                    edge_kind = "monobehaviour_frontier_entry_uses_buff"
+                elif category == "mode":
+                    target = self.add_node("monobehaviour_mode_id", value, name=value, source=source_root or source)
+                    self.add_alias(value, target, kind="monobehaviour_mode_id", source=source)
+                    edge_kind = "monobehaviour_frontier_entry_uses_mode"
+                elif category == "locator":
+                    target = self.add_node("monobehaviour_locator", value, name=value, source=source_root or source)
+                    self.add_alias(value, target, kind="monobehaviour_locator", source=source)
+                    edge_kind = "monobehaviour_frontier_entry_uses_locator"
+                elif category == "component_class":
+                    target = self.add_node("monobehaviour_managed_class", value, name=value, source=source)
+                    self.add_alias(value, target, kind="monobehaviour_managed_class", source=source)
+                    edge_kind = "monobehaviour_frontier_entry_has_component_class"
+                else:
+                    continue
+                self.add_edge(entry_node, target, edge_kind, source=source, evidence=evidence, data=data)
 
     def add_monobehaviour_frontier_counter_edges(
         self,
@@ -26291,6 +26422,8 @@ QUERY_KIND_PRIORITY = {
     "monobehaviour_tag": 42.996,
     "monobehaviour_source_file": 42.997,
     "vfs_chunk": 42.998,
+    "monobehaviour_mode_id": 42.999,
+    "monobehaviour_locator": 43.0,
     "selector_formatter_table": 43.01,
     "selector_formatter": 43.02,
     "selector_formatter_slot": 43.03,
