@@ -288,3 +288,67 @@ Toolchain audit status: AnimeStudio remains the production extractor. The local 
 `scripts/export_full_from_game.py` now parses `Partially decoded MonoBehaviour ...` AnimeStudio warnings into the existing log issue summary. It records total partial MonoBehaviour count, groups by decoder path, exception type, and normalized reason, and surfaces `partial_mono` plus sample lines in the Markdown export summary. This is reporting-only; it does not change export behavior or parser recovery.
 
 Validation used the June 27 story JSON logs directly through `summarize_animestudio_log_issues`. StreamingAssets counted `11,948` partial MonoBehaviour warnings: `11,778` `EndOfStreamException` and `170` `InvalidDataException`, all from `serialized TypeTree`; the top normalized reason was `No bytes remain while reading data:ReferencedObjectData at position <offset>.` with `9,515` hits. Persistent counted `1,486` partial warnings: `1,427` `EndOfStreamException` and `59` `InvalidDataException`, all from `serialized TypeTree`; the same top reason had `1,175` hits. A report-only smoke run of `scripts\export_full_from_game.py` also completed, and the ignored latest summary was restored to the prior AnimeStudio asset summary afterward.
+
+## Follow-up: current toolchain and online comparison pass
+
+Rechecked the local recovery toolchain on 2026-07-02:
+
+- AnimeStudio CLI exists at
+  `tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe`.
+  `dump`, `stream`, `vfs-index`, and `audio` expose `--fallback-assets`; the
+  VFS commands also expose repeated `--block-type` and `--file-regex` where
+  expected. `.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore`
+  completed with existing warnings and no errors.
+- `tools\fluffy-dumper-src\target\release\fluffy-dumper.exe` and
+  `usm-convert.exe` are callable. `cargo build --release` completed with
+  existing `vgmstream` warnings only. The checkout remains intentionally dirty
+  with the local Endfield fallback-assets/indexer patch.
+- `tools\Il2CppDumper-v6.7.46\Il2CppDumper.exe` is callable; public GitHub
+  release metadata still shows v6.7.46 as the latest release.
+- `tools\Cpp2IL-2022.0.7\Cpp2IL-2022.0.7-Windows.exe --help` works, but this
+  local build is old compared with current Cpp2IL development and should be a
+  comparison path, not the first extractor.
+- `python tools\endfield-il2cpp\catalog_option_flow_metadata.py --only-focus`
+  works against cached metadata v29 (`58,618,724` bytes,
+  `61,338` types, `469,596` methods, `283,933` fields).
+- `tools\Ruri.ShaderDecompiler` is present with local build artifacts and is a
+  shader-symbol experiment, not an integrated WebUI path.
+
+Online comparison targets checked:
+
+- `https://github.com/Escartem/AnimeStudio`: active AssetStudio-successor base;
+  upstream README presents it as an up-to-date AssetStudio base with current
+  .NET builds.
+- `https://github.com/EIHRTeam/EndfieldStudio`: Endfield-specific comparison
+  target for VFS decryption, UnityFS deobfuscation, and asset decoding.
+- `https://git.nekolab.app/fluffield/fluffy-dumper`: original Rust VFS/audio
+  reference for the local patched fluffy checkout.
+- `https://github.com/Perfare/Il2CppDumper`: useful for DummyDll/script output
+  and IL2CPP analysis helpers, but not a replacement for Endfield VFS handling.
+- `https://github.com/SamboyCoding/Cpp2IL`: useful for IL2CPP method/body
+  comparison; current development branch is explicitly in flux.
+- `https://github.com/AssetRipper/AssetRipper`: current Unity asset parser to
+  compare on small bundle samples.
+- `https://github.com/Perfare/AssetStudio`: older baseline; latest public
+  release is 2022-era, so prefer AnimeStudio/AssetRipper for new experiments.
+- `https://github.com/ShiyumeMeguri/Ruri.ShaderDecompiler`: shader symbol
+  recovery comparison path.
+
+Safe next experiments:
+
+- VFS parity: compare AnimeStudio and fluffy `vfs-index` on one skipped block
+  under `tmp\`, starting with ExtendData or Lua.
+- MonoBehaviour schema probe: direct AnimeStudio CLI on a tiny selected
+  MonoBehaviour set, comparing `serialized-first` and `script-first` with
+  `tools\DummyDll`.
+- EndfieldStudio sample: build/run only list or one small table/Lua dump into
+  `tmp\endfieldstudio_probe\`.
+- IL2CPP route probe: focus one body chain such as
+  `DialogTimelineManager._SelectIndexInTimeline` against unresolved WebUI
+  option groups.
+- Shader probe: run Ruri on one exported shader plus related Material JSON and
+  check whether recovered symbols help enough to integrate.
+
+The immediate code push after this audit was the source-graph material PathID
+asset-link slice recorded in
+`memory/material_pathid_asset_source_graph_recovery_20260702.md`.

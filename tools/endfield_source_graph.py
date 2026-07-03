@@ -1130,6 +1130,18 @@ def path_id_export_base_stem(value: Any) -> str:
     return match.group("base") if match else ""
 
 
+def asset_pid_signed_path_id(value: Any) -> str:
+    raw = safe_key(value).upper()
+    if raw.startswith("PID:"):
+        raw = raw[4:]
+    if raw.startswith("0X"):
+        raw = raw[2:]
+    if not re.fullmatch(r"[0-9A-F]{1,16}", raw):
+        return ""
+    number = int(raw, 16)
+    return str(number - (1 << 64) if number & (1 << 63) else number)
+
+
 def normalized_model_entity_base(stem: str) -> str:
     logical_stem = path_id_export_base_stem(stem) or stem
     stripped = ASSET_SINGLE_PREFIX_RE.sub("", logical_stem, count=1)
@@ -2907,6 +2919,8 @@ class SourceGraphBuilder:
         self.file_counts: Counter[str] = Counter()
         self.ingest_counts: Counter[str] = Counter()
         self.asset_by_stem: dict[str, list[str]] = defaultdict(list)
+        self.asset_by_export_base: dict[str, list[str]] = defaultdict(list)
+        self.asset_by_pathid: dict[str, list[str]] = defaultdict(list)
         self.asset_by_name: dict[str, list[str]] = defaultdict(list)
         self.asset_entities_by_base: dict[str, list[str]] = defaultdict(list)
         self.asset_paths: list[str] = []
@@ -3269,6 +3283,8 @@ class SourceGraphBuilder:
             if self.include_asset_maps:
                 self.ingest_asset_maps()
                 self.commit_step("assetMaps")
+                self.link_material_pathid_unity_assets()
+                self.commit_step("materialPathIdAssetLinks")
             self.finalize_indices()
             summary = self.summary(started)
             write_summary(summary)
@@ -3317,8 +3333,9 @@ class SourceGraphBuilder:
             number = int(raw, 16)
             pid = f"{number:016X}"
             self.add_alias(f"pid:{pid}", node_id, kind="asset_pid", source="webui/assets")
-            signed_path_id = number - (1 << 64) if number & (1 << 63) else number
-            self.add_alias(f"pathid:{signed_path_id}", node_id, kind="asset_pathid", source="webui/assets")
+            signed_path_id = asset_pid_signed_path_id(raw)
+            if signed_path_id:
+                self.add_alias(f"pathid:{signed_path_id}", node_id, kind="asset_pathid", source="webui/assets")
 
         def relation_data(item: dict[str, Any]) -> dict[str, Any]:
             return {
@@ -3365,12 +3382,18 @@ class SourceGraphBuilder:
             self.add_file(rel, kind=kind, source=rel.split("/", 1)[0], size=size)
             stem = Path(rel).stem.lower()
             self.asset_by_stem[stem].append(rel)
+            export_base = path_id_export_base_stem(stem)
+            if export_base:
+                self.asset_by_export_base[export_base.lower()].append(rel)
             self.asset_by_name[Path(rel).name.lower()].append(rel)
             self.asset_paths.append(rel)
             self.add_alias(stem, node, kind="asset_stem", source="webui/assets")
             self.add_alias(Path(rel).name.lower(), node, kind="asset_name", source="webui/assets")
             if pid:
                 add_pid_aliases(pid, node)
+                signed_path_id = asset_pid_signed_path_id(pid)
+                if signed_path_id:
+                    self.asset_by_pathid[signed_path_id].append(rel)
             if kind == "model":
                 model_base = exported_model_entity_base(rel)
                 if model_base:
@@ -21783,11 +21806,83 @@ class SourceGraphBuilder:
                 if container:
                     container_node = self.add_node("asset_container", container, name=Path(container).name, source=source, path=container)
                     self.add_edge(container_node, node, "contains_unity_asset", source="AnimeStudio/maps")
-                for rel in self.asset_by_stem.get(name.lower(), []):
-                    self.add_edge(node, self.add_node("asset", rel), "exported_as", source="AnimeStudio/maps")
+                candidate_rels = [
+                    *self.asset_by_pathid.get(safe_key(path_id), []),
+                    *self.asset_by_stem.get(name.lower(), []),
+                    *self.asset_by_export_base.get(name.lower(), []),
+                ]
+                for rel in _unique_preserve(candidate_rels):
+                    if rel.split("/", 1)[0] == source:
+                        self.add_edge(node, self.add_node("asset", rel), "exported_as", source="AnimeStudio/maps")
                 batch += 1
                 if batch % 25000 == 0:
                     self.db.commit()
+
+    def link_material_pathid_unity_assets(self) -> None:
+        rows = self.db.execute(
+            """
+            SELECT
+                material.id AS material_node,
+                pathid.id AS pathid_node,
+                unity.id AS unity_node,
+                exported.dst AS asset_node,
+                texture_edge.evidence AS slot,
+                texture_edge.data AS texture_data
+            FROM edges texture_edge
+            JOIN nodes material ON material.id = texture_edge.src
+            JOIN nodes pathid ON pathid.id = texture_edge.dst
+            JOIN edges resolved
+                ON resolved.src = pathid.id
+                AND resolved.kind = 'resolves_to_unity_asset'
+            JOIN nodes unity ON unity.id = resolved.dst
+                AND unity.source = material.source
+            LEFT JOIN edges exported
+                ON exported.src = unity.id
+                AND exported.kind = 'exported_as'
+            WHERE texture_edge.kind = 'uses_texture_pathid'
+            ORDER BY material.id, pathid.id, unity.id, exported.dst
+            """
+        ).fetchall()
+        for material_node, pathid_node, unity_node, asset_node, slot, texture_data in rows:
+            data = parse_json_text(texture_data) if texture_data else {}
+            if isinstance(data, dict):
+                data = dict(data)
+            else:
+                data = {}
+            data["pathidNode"] = pathid_node
+            self.add_edge(
+                material_node,
+                unity_node,
+                "material_texture_pathid_resolves_unity_asset",
+                source="material_json+AnimeStudio/maps",
+                evidence=slot or "",
+                data=data,
+            )
+            self.add_edge(
+                unity_node,
+                material_node,
+                "unity_asset_used_by_material_texture_slot",
+                source="material_json+AnimeStudio/maps",
+                evidence=slot or "",
+                data=data,
+            )
+            if asset_node:
+                self.add_edge(
+                    material_node,
+                    asset_node,
+                    "material_texture_pathid_exports_asset",
+                    source="material_json+AnimeStudio/maps",
+                    evidence=slot or "",
+                    data=data,
+                )
+                self.add_edge(
+                    asset_node,
+                    material_node,
+                    "asset_export_used_by_material_texture_slot",
+                    source="material_json+AnimeStudio/maps",
+                    evidence=slot or "",
+                    data=data,
+                )
 
     def summary(self, started: float) -> dict[str, Any]:
         node_total = self.db.execute("SELECT COUNT(*) FROM nodes").fetchone()[0]
@@ -23796,6 +23891,8 @@ ASSET_USED_BY_INCOMING_EDGE_KINDS = (
     "previewed_by",
     "uses_material",
     "uses_texture_pathid",
+    "material_texture_pathid_resolves_unity_asset",
+    "material_texture_pathid_exports_asset",
     "entity_has_lod_model",
     "entity_uses_material",
     "entity_uses_texture",
@@ -23803,6 +23900,8 @@ ASSET_USED_BY_INCOMING_EDGE_KINDS = (
 ASSET_USED_BY_OUTGOING_EDGE_KINDS = (
     "referenced_by_material",
     "referenced_by_model",
+    "unity_asset_used_by_material_texture_slot",
+    "asset_export_used_by_material_texture_slot",
 )
 ASSET_USES_EDGE_KINDS = (
     "has_gameplay_asset_entity",
@@ -23813,6 +23912,8 @@ ASSET_USES_EDGE_KINDS = (
     "uses_material",
     "uses_texture",
     "uses_texture_pathid",
+    "material_texture_pathid_resolves_unity_asset",
+    "material_texture_pathid_exports_asset",
     "entity_has_lod_model",
     "entity_uses_material",
     "entity_uses_texture",
