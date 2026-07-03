@@ -20000,6 +20000,13 @@ class SourceGraphBuilder:
                     ref_node = self.add_factory_machine_node(ref, source=source)
                     edge_kind = "factory_tech_action_references_machine"
                 self.add_edge(tech_node, ref_node, edge_kind, source=source, evidence=evidence)
+                reverse_kind = {
+                    "factory_tech_action_references_item": "item_used_by_factory_tech_action",
+                    "factory_tech_action_references_domain": "domain_used_by_factory_tech_action",
+                    "factory_tech_action_references_machine": "factory_machine_used_by_factory_tech_action",
+                }.get(edge_kind)
+                if reverse_kind:
+                    self.add_edge(ref_node, tech_node, reverse_kind, source=source, evidence=evidence)
 
     def add_factory_tech_group_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         group_node = self.add_factory_tech_group_node(row.get("groupId") or row_key, name=row.get("groupName"), source=table, data={"domainId": row.get("domainId"), "costPointType": row.get("costPointType"), "adventurebookRewardId": row.get("adventurebookRewardId")})
