@@ -19022,11 +19022,14 @@ class SourceGraphBuilder:
                     item_node = self.add_item_node(row.get(field), source=table)
                     if item_node:
                         self.add_edge(box_node, item_node, edge_kind, source=table, evidence=field)
+                        reverse_kind = "item_has_gem_customization_box_config" if field == "boxItemId" else "item_is_gem_customization_result"
+                        self.add_edge(item_node, box_node, reverse_kind, source=table, evidence=field)
                 for term_field in ("term1Type", "term2Type", "term3Type"):
                     for index, term_type in enumerate(row.get(term_field) or []):
                         term_node = self.add_factory_interaction_lookup_node("gem_customization_term_type", term_type, source=table)
                         if term_node:
                             self.add_edge(box_node, term_node, "gem_customization_locks_term_type", source=table, evidence=f"{term_field}[{index}]", data={"slot": term_field, "index": index})
+                            self.add_edge(term_node, box_node, "gem_customization_term_type_locked_by_box", source=table, evidence=f"{term_field}[{index}]", data={"slot": term_field, "index": index})
             return
         if table == "FactoryQuickBarTypeTable" and isinstance(row, dict):
             quickbar_node = self.add_factory_interaction_lookup_node("factory_quickbar_type", row.get("id") or row_key, name=row.get("name"), source=table, data={"icon": row.get("icon"), "priority": row.get("priority")})
