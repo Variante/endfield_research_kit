@@ -23682,10 +23682,12 @@ class SourceGraphBuilder:
         mission_node = self.add_mission_ref_node(row.get("introMissionQuestId"), source=table)
         if mission_node:
             self.add_edge(activity_node, mission_node, "activity_intro_mission", source=table, evidence="introMissionQuestId")
+            self.add_edge(mission_node, activity_node, "mission_used_by_activity_intro", source=table, evidence="introMissionQuestId")
         for index, tag_id in enumerate(row.get("tagIds") or []):
             tag_node = self.add_activity_tag_node(tag_id, source=table)
             if tag_node:
                 self.add_edge(activity_node, tag_node, "activity_has_tag", source=table, evidence=f"tagIds[{index}]")
+                self.add_edge(tag_node, activity_node, "activity_tag_used_by_activity", source=table, evidence=f"tagIds[{index}]")
         for field in ("bgImg", "tabImg", "tabImgColor", "tabImgGender", "popUpPanelId"):
             self.add_alias(row.get(field), activity_node, kind="asset_stem", source=table)
         self.add_activity_condition_edges(activity_node, row.get("conditions"), edge_kind="activity_has_condition", source=table, evidence_prefix="conditions")
