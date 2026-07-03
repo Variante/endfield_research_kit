@@ -24206,7 +24206,9 @@ class SourceGraphBuilder:
                 continue
             stat_node = self.add_gameplay_stat_property_node(field, source=table)
             if stat_node:
-                self.add_edge(entity_node, stat_node, "ability_entity_sets_stat_property", source=table, evidence=field, data={"value": value})
+                data = {"value": value}
+                self.add_edge(entity_node, stat_node, "ability_entity_sets_stat_property", source=table, evidence=field, data=data)
+                self.add_edge(stat_node, entity_node, "stat_property_set_by_ability_entity", source=table, evidence=field, data=data)
 
     def add_global_effect_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         effect_id = safe_key(row.get("effectId") or row_key)
@@ -24270,10 +24272,12 @@ class SourceGraphBuilder:
                 stat_node = self.add_node("gameplay_stat_property", attr_key, name=attr_key, source=table, data={"key": attr_key, "rawAttrType": attr.get("attrType")})
                 edge_data = {"index": index, "modifyType": modify_type, "attrType": attr.get("attrType"), "attrValue": attr.get("attrValue"), "modifierType": attr.get("modifierType"), "modifyAttributeType": attr.get("modifyAttributeType")}
                 self.add_edge(effect_node, stat_node, "potential_talent_modifies_stat_property", source=table, evidence=f"dataList[{index}].attrModifier", data=edge_data)
+                self.add_edge(stat_node, effect_node, "stat_property_modified_by_potential_talent", source=table, evidence=f"dataList[{index}].attrModifier", data=edge_data)
                 self.add_alias(attr_key, stat_node, kind="gameplay_stat_property_key", source=table)
                 meta_node = self.add_attribute_meta_node(attr.get("attrType"), source=table)
                 if meta_node:
                     self.add_edge(effect_node, meta_node, "potential_talent_modifies_attribute_meta", source=table, evidence=f"dataList[{index}].attrModifier.attrType", data=edge_data)
+                    self.add_edge(meta_node, effect_node, "attribute_meta_modified_by_potential_talent", source=table, evidence=f"dataList[{index}].attrModifier.attrType", data=edge_data)
 
     def add_enemy_tag_table_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         tag_id = safe_key(row.get("tagId") or row_key)
