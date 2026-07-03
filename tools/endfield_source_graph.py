@@ -19016,8 +19016,10 @@ class SourceGraphBuilder:
                 mark_node = self.add_map_mark_template_node(row.get("markId"), source=table)
                 if interactive_node:
                     self.add_edge(binding_node, interactive_node, "interactive_mark_binding_interactive", source=table, evidence="id")
+                    self.add_edge(interactive_node, binding_node, "system_interactive_has_mark_binding", source=table, evidence="id")
                 if mark_node:
                     self.add_edge(binding_node, mark_node, "interactive_mark_binding_mark_template", source=table, evidence="markId")
+                    self.add_edge(mark_node, binding_node, "map_mark_template_has_interactive_binding", source=table, evidence="markId")
             return
         if table in {"LimitedFormulaCraftIdReverseTable", "LimitedFormulaItemIdReverseTable"}:
             reverse_node = self.add_factory_interaction_lookup_node("limited_formula_reverse", f"{table}:{row_key}", source=table, data={"sourceId": row_key, "formulaId": row})
