@@ -14,13 +14,16 @@ The 64-byte parent movement payload extends the known 48-byte scalar movement
 block with:
 
 - 10 float-compatible scalar words
-- `overrideMoveMode`
-- `abilityEntityMovementDataCount`
-- two managed-reference RID links, currently exposed as `movementData` and
+- `overrideMoveMode` fixed to `13`
+- `abilityEntityMovementDataCount` fixed to `2`
+- two required managed-reference RID links, exposed as `movementData` and
   `proxyShape`
 
-The nested records remain conservative raw-word decodes until IL2CPP field names
-are proven, but they no longer appear as `$unparsed` heuristic blocks.
+The parent decoder now succeeds only when `movementData` resolves to
+`BasePositionMovementData` and `proxyShape` resolves to either
+`BaseRotationData` or `SurroundingMovementData`. The nested records use
+IL2CPP-backed field names where proven; Blackboard-backed triplets are still
+kept as raw word blocks until their key/value shape is promoted.
 
 ## Evidence
 
@@ -47,9 +50,9 @@ Nested payload shapes validated in focused outputs:
 
 | Class | Length | Shape |
 | --- | ---: | --- |
-| `BasePositionMovementData` | 12 | 3 raw int32 words |
-| `BaseRotationData` | 12 | 3 raw int32 words |
-| `SurroundingMovementData` | 84 | 21 raw int32/float-compatible words |
+| `BasePositionMovementData` | 12 | `surroundingBaseType`, `rotationType`, `mountPoint` |
+| `BaseRotationData` | 12 | `baseType`, `mountPoint`, `followSelfRotation` |
+| `SurroundingMovementData` | 84 | `centerOffset`, `normalVector`, `radius`, `radiusBB`, `angleSpeed`, `angleSpeedBB`, `rotationClockwise`, `initAngleType`, `initAngle`, `initAngleBB`, `followSelfRotation` |
 
 ## Validation
 
@@ -81,6 +84,25 @@ Focused validation metrics across 6 exported JSON files:
 | `SurroundingMovementData` | 1 | 84: 1 | 0 | 0 | 0 |
 
 No `decodeError` entries appeared in the focused outputs.
+
+Follow-up strict validation after adding required RID target checks and named
+nested fields used the same three focused export commands with output roots:
+
+- `tmp/abilityentity_movement_strict_after_68b3`
+- `tmp/abilityentity_movement_strict_after_fbad`
+- `tmp/abilityentity_movement_strict_after_3267`
+
+Strict validation metrics matched the earlier pass:
+
+| Class | Decoded | Lengths | Partial | Unparsed | Heuristic |
+| --- | ---: | --- | ---: | ---: | ---: |
+| `CharacterMovementComponentData` | 5 | 64: 4, 48: 1 | 0 | 0 | 0 |
+| `BasePositionMovementData` | 4 | 12: 4 | 0 | 0 | 0 |
+| `BaseRotationData` | 3 | 12: 3 | 0 | 0 | 0 |
+| `SurroundingMovementData` | 1 | 84: 1 | 0 | 0 | 0 |
+
+The strict outputs confirmed named nested fields and required RID targets, with
+no `decodeError` entries.
 
 ## Follow-Ups
 
