@@ -25427,6 +25427,52 @@ class SourceGraphBuilder:
         self.add_alias(poi_id, poi_node, kind="shop_channel_poi_id", source=table)
         self.add_level_map_edge(level_node, level_id, source=table, evidence="inferred_level_prefix")
 
+    def add_audio_rtpc_parameter_node(self, parameter_id: Any, *, source: str = "", data: Any = None) -> str:
+        parameter_key = safe_key(parameter_id)
+        if not parameter_key:
+            return ""
+        node = self.add_node("audio_rtpc_parameter", parameter_key, name=parameter_key, source=source, data=data)
+        self.add_alias(parameter_key, node, kind="audio_rtpc_parameter_id", source=source)
+        return node
+
+    def add_audio_dialog_rtpc_edges(self, audio_node: str, row_key: str, row: dict[str, Any], *, source: str, path: str) -> None:
+        for field, language in (
+            ("RTPCMap", ""),
+            ("RTPCMapCN", "CN"),
+            ("RTPCMapEN", "EN"),
+            ("RTPCMapJP", "JP"),
+            ("RTPCMapKR", "KR"),
+        ):
+            rtpc_map = row.get(field)
+            if not isinstance(rtpc_map, dict):
+                continue
+            for parameter_id, value in sorted(rtpc_map.items(), key=lambda item: safe_key(item[0])):
+                parameter_node = self.add_audio_rtpc_parameter_node(parameter_id, source=source)
+                if not parameter_node:
+                    continue
+                data = {
+                    "dialogId": row_key,
+                    "field": field,
+                    "language": language,
+                    "value": value,
+                    "path": path,
+                    "speakerChannel": row.get("speakerChannel"),
+                }
+                evidence = f"{field}.{safe_key(parameter_id)}"
+                self.add_edge(audio_node, parameter_node, "audio_has_rtpc_value", source=source, evidence=evidence, data=data)
+                self.add_edge(parameter_node, audio_node, "audio_rtpc_parameter_used_by_audio", source=source, evidence=evidence, data=data)
+
+    def add_audio_dialog_override_event_edge(self, audio_node: str, row_key: str, row: dict[str, Any], *, source: str, path: str) -> None:
+        event_id = safe_key(row.get("overrideWwiseEvent"))
+        if not event_id:
+            return
+        event_node = self.add_wwise_event_node(event_id, source=source)
+        if not event_node:
+            return
+        data = {"dialogId": row_key, "path": path, "speakerChannel": row.get("speakerChannel")}
+        self.add_edge(audio_node, event_node, "audio_dialog_overrides_wwise_event", source=source, evidence="overrideWwiseEvent", data=data)
+        self.add_edge(event_node, audio_node, "wwise_event_overrides_audio_dialog", source=source, evidence="overrideWwiseEvent", data=data)
+
     def add_structured_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if table in {"FactoryManualCraftTable", "FactoryMachineCraftTable", "FactoryHubCraftTable"} and isinstance(row, dict):
             self.add_factory_recipe_edges(table, row_key, row, row_node)
@@ -25492,6 +25538,8 @@ class SourceGraphBuilder:
             if path:
                 file_node = self.add_file(path, kind="wem_path", source="AudioDialog")
                 self.add_edge(audio_node, file_node, "audio_path", source="AudioDialog")
+            self.add_audio_dialog_rtpc_edges(audio_node, row_key, row, source="AudioDialog", path=path)
+            self.add_audio_dialog_override_event_edge(audio_node, row_key, row, source="AudioDialog", path=path)
         elif table == "CharacterTable" and isinstance(row, dict):
             char_id = safe_key(row.get("charId") or row_key)
             char_node = self.add_node(
