@@ -3198,6 +3198,8 @@ class SourceGraphBuilder:
             self.commit_step("displayMetadata")
             self.ingest_text_reference_semantics()
             self.commit_step("textReferences")
+            self.ingest_i18n_reference_index()
+            self.commit_step("i18nReferenceIndex")
             if self.include_i18n_values:
                 self.ingest_i18n_text_values()
                 self.commit_step("i18nTextValues")
@@ -16668,6 +16670,139 @@ class SourceGraphBuilder:
                 self.add_edge(owner_node, text_node, "uses_i18n_text", source=source, evidence=text_id)
                 self.add_i18n_used_by_edge(text_node, owner_node, source=source, evidence=text_id)
 
+    def ingest_i18n_reference_index(self) -> None:
+        path = self.root / "reports" / f"i18n_reference_index_{self.language}.json"
+        if not path.exists() and self.language != "CN":
+            path = self.root / "reports" / "i18n_reference_index_CN.json"
+        payload = read_json(path, {})
+        if not isinstance(payload, dict):
+            return
+        file_rows = payload.get("fileRows")
+        if not isinstance(file_rows, list):
+            return
+        source = "i18n_reference_index"
+        summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+        language = safe_key(summary.get("language")) or self.language
+        source_path = slash(path.relative_to(self.root)) if path.is_relative_to(self.root) else slash(path)
+        dataset = self.add_node(
+            "dataset",
+            f"i18n_reference_index:{language}",
+            name=f"I18n reference index {language}",
+            source=source,
+            path=source_path,
+            data=compact_payload(summary, depth=3),
+        )
+        self.add_file(source_path, kind="i18n_reference_index", source=source, size=path.stat().st_size if path.exists() else None)
+
+        for table_index, table_name in enumerate(payload.get("buildStoryDirectTables") or []):
+            table_key = safe_key(table_name)
+            if not table_key:
+                continue
+            table_node = self.add_node("table", Path(table_key).stem, name=Path(table_key).stem, source=source, data={"fileName": table_key})
+            self.add_edge(dataset, table_node, "i18n_reference_index_build_story_direct_table", source=source, evidence=str(table_index))
+
+        for row_index, row in enumerate(file_rows):
+            if not isinstance(row, dict):
+                continue
+            file_path = safe_key(row.get("path"))
+            if not file_path:
+                continue
+            row_data = {
+                "path": file_path,
+                "scanMode": row.get("scanMode"),
+                "occurrences": row.get("occurrences"),
+                "distinctIds": row.get("distinctIds"),
+                "recoveredIds": row.get("recoveredIds"),
+                "unrecoveredIds": row.get("unrecoveredIds"),
+                "handledByBuildStory": row.get("handledByBuildStory"),
+                "buildStoryMode": row.get("buildStoryMode"),
+                "buildStoryDetail": row.get("buildStoryDetail"),
+                "textishFieldScore": row.get("textishFieldScore"),
+                "topFields": row.get("topFields"),
+                "samplePaths": row.get("samplePaths"),
+                "sampleIds": row.get("sampleIds"),
+            }
+            ref_file_node = self.add_node(
+                "i18n_reference_file",
+                file_path,
+                name=Path(file_path).name,
+                source=source,
+                path=file_path,
+                data=compact_payload(row_data, depth=3),
+            )
+            file_node = self.add_file(file_path, kind="i18n_reference_source", source=source, data={"language": language})
+            self.add_edge(dataset, ref_file_node, "i18n_reference_index_has_file", source=source, evidence=str(row_index), data=compact_payload(row_data, depth=2))
+            self.add_edge(file_node, ref_file_node, "file_has_i18n_reference_summary", source=source, evidence=file_path)
+
+            for field_index, field_row in enumerate(row.get("topFields") or []):
+                if not isinstance(field_row, dict):
+                    continue
+                field_key = safe_key(field_row.get("field"))
+                if not field_key:
+                    continue
+                field_node = self.add_node("i18n_reference_field", field_key, name=field_key, source=source)
+                self.add_edge(ref_file_node, field_node, "i18n_reference_file_top_field", source=source, evidence=f"topFields[{field_index}]", data=compact_payload(field_row, depth=1))
+            for field, kind, edge_kind in (
+                ("scanMode", "i18n_reference_scan_mode", "i18n_reference_file_scan_mode"),
+                ("buildStoryMode", "i18n_reference_build_story_mode", "i18n_reference_file_build_story_mode"),
+            ):
+                value_key = safe_key(row.get(field))
+                if value_key:
+                    value_node = self.add_node(kind, value_key, name=value_key, source=source)
+                    self.add_edge(ref_file_node, value_node, edge_kind, source=source, evidence=field)
+
+            unrecovered_ids = {safe_key(value) for value in row.get("unrecoveredIdList") or [] if safe_key(value)}
+            id_counts = row.get("idCountMap") if isinstance(row.get("idCountMap"), dict) else {}
+            for text_id, count in id_counts.items():
+                text_key = safe_key(text_id)
+                if not text_key:
+                    continue
+                text_node = self.add_i18n_text_node(text_key, source=source)
+                if not text_node:
+                    continue
+                edge_data = {
+                    "path": file_path,
+                    "occurrences": count if isinstance(count, int) else None,
+                    "handledByBuildStory": row.get("handledByBuildStory"),
+                    "buildStoryMode": row.get("buildStoryMode"),
+                    "recovered": text_key not in unrecovered_ids,
+                }
+                self.add_edge(ref_file_node, text_node, "i18n_reference_file_references_text", source=source, evidence=text_key, data=edge_data)
+                self.add_edge(text_node, ref_file_node, "i18n_text_used_by_reference_file", source=source, evidence=file_path, data=edge_data)
+
+        for top_index, top in enumerate(payload.get("topIds") or []):
+            if not isinstance(top, dict):
+                continue
+            text_key = safe_key(top.get("id"))
+            if not text_key:
+                continue
+            text_node = self.add_i18n_text_node(text_key, source=source)
+            if not text_node:
+                continue
+            text_value = safe_key(top.get("text"))
+            self.update_node_details(
+                text_node,
+                name=text_value or text_key,
+                data=compact_payload(
+                    {
+                        "id": text_key,
+                        "text": top.get("text"),
+                        "sources": top.get("sources"),
+                        "recoveredByBuildStory": top.get("recoveredByBuildStory"),
+                        "totalOccurrences": top.get("totalOccurrences"),
+                        "handledFileCount": top.get("handledFileCount"),
+                        "unhandledFileCount": top.get("unhandledFileCount"),
+                    },
+                    depth=2,
+                ),
+            )
+            self.add_edge(dataset, text_node, "i18n_reference_index_top_text", source=source, evidence=str(top_index), data=compact_payload(top, depth=2))
+            for file_index, file_path in enumerate(top.get("files") or []):
+                file_key = safe_key(file_path)
+                if file_key:
+                    ref_file_node = self.add_node("i18n_reference_file", file_key, name=Path(file_key).name, source=source, path=file_key)
+                    self.add_edge(text_node, ref_file_node, "i18n_top_text_used_by_file", source=source, evidence=f"topIds[{top_index}].files[{file_index}]")
+
     def ingest_i18n_text_values(self) -> None:
         table_root = self.export_root / "structured" / "StreamingAssets" / "Table"
         languages = {value.upper() for value in self.i18n_value_languages}
@@ -25272,6 +25407,10 @@ QUERY_KIND_PRIORITY = {
     "text_table_key": 43.9,
     "i18n_text": 44,
     "i18n_text_value": 44.1,
+    "i18n_reference_file": 44.2,
+    "i18n_reference_field": 44.3,
+    "i18n_reference_scan_mode": 44.4,
+    "i18n_reference_build_story_mode": 44.5,
     "system_jump": 45,
     "activity": 46,
     "activity_tag": 47,
@@ -26016,6 +26155,10 @@ NODE_ID_PREFIXES = (
     "env_talk",
     "i18n_text",
     "i18n_text_value",
+    "i18n_reference_file",
+    "i18n_reference_field",
+    "i18n_reference_scan_mode",
+    "i18n_reference_build_story_mode",
     "system_jump",
     "activity",
     "activity_tag",
