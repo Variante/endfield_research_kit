@@ -21654,6 +21654,12 @@ class SourceGraphBuilder:
 
         module_nodes: dict[str, str] = {}
         table_nodes: dict[str, str] = {}
+        virtual_table_targets: dict[str, dict[str, Any]] = {
+            "formulaIdToStr": {"kind": "id_dictionary", "key": "NumIdStrTable:formula_id", "edge": "lua_virtual_table_resolves_to_id_dictionary", "confidence": "exact", "reason": "CS.Beyond.Cfg.Tables formula id int-to-string dictionary"},
+            "formulaIdToNum": {"kind": "id_dictionary", "key": "StrIdNumTable:formula_id", "edge": "lua_virtual_table_resolves_to_id_dictionary", "confidence": "exact", "reason": "CS.Beyond.Cfg.Tables formula id string-to-int dictionary"},
+            "i18nTextTable": {"kind": "table", "key": "I18nTextTable_CN", "edge": "lua_virtual_table_resolves_to_table", "confidence": "current_language", "reason": "LuaCfg text lookup table; CN is the current WebUI default language table"},
+            "factoryProcessorCraftTable": {"kind": "table", "key": "FactoryHubCraftTable", "edge": "lua_virtual_table_resolves_to_table", "confidence": "field_match", "reason": "Lua reads usableLevel; FactoryHubCraftTable is the exported craft table with usableLevel"},
+        }
 
         def normalized_focus(value: Any) -> list[str]:
             if isinstance(value, dict):
@@ -21748,6 +21754,20 @@ class SourceGraphBuilder:
                     evidence=table_value,
                     data={"count": row.get("count"), "focus": normalized_focus(row.get("focus"))},
                 )
+                target = virtual_table_targets.get(table_value)
+                if target:
+                    virtual_node = self.add_node(
+                        "lua_virtual_table",
+                        table_value,
+                        name=table_value,
+                        source="lua_consumer_reference_audit",
+                        data={"confidence": target["confidence"], "reason": target["reason"]},
+                    )
+                    target_node = self.add_node(target["kind"], target["key"], name=target["key"], source="lua_consumer_reference_audit")
+                    self.add_edge(ref_node, virtual_node, "lua_unmatched_table_has_virtual_resolution", source="lua_consumer_reference_audit", evidence=table_value, data={"confidence": target["confidence"]})
+                    self.add_edge(module_node, virtual_node, "lua_module_references_virtual_table", source="lua_consumer_reference_audit", evidence=table_value, data={"count": row.get("count"), "focus": normalized_focus(row.get("focus")), "confidence": target["confidence"]})
+                    self.add_edge(virtual_node, target_node, target["edge"], source="lua_consumer_reference_audit", evidence=table_value, data={"confidence": target["confidence"], "reason": target["reason"]})
+                    self.add_alias(table_value, virtual_node, kind="lua_table_ref", source="lua_consumer_reference_audit")
 
         focus_nodes: dict[str, str] = {}
         enum_nodes: dict[str, str] = {}
