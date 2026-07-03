@@ -11512,6 +11512,7 @@ class SourceGraphBuilder:
                     "modifyAttributeType": modifier.get("modifyAttributeType"),
                 }
                 self.add_edge(owner_node, attr_node, edge_kind, source=source, evidence=f"{evidence}[{index}]", data=data)
+                self.add_edge(attr_node, owner_node, "attribute_meta_used_by_equipment", source=source, evidence=f"{evidence}[{index}]", data={**data, "edgeKind": edge_kind})
             composite_attr = safe_key(modifier.get("compositeAttr"))
             if composite_attr:
                 composite_node = self.add_node("composite_attribute", composite_attr, name=composite_attr, source=source)
@@ -20780,6 +20781,7 @@ class SourceGraphBuilder:
             if context:
                 data.update(context)
             self.add_edge(owner_node, meta_node, edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]", data=data)
+            self.add_edge(meta_node, owner_node, "attribute_meta_used_by_enemy", source=source, evidence=f"{evidence_prefix}[{index}]", data={**data, "edgeKind": edge_kind})
 
     def add_enemy_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if table == "DisplayEnemyTypeTable" and isinstance(row, dict):
@@ -22008,6 +22010,8 @@ class SourceGraphBuilder:
                 meta_node = self.add_attribute_meta_node(row.get(field), source="CharacterTable")
                 if meta_node:
                     self.add_edge(char_node, meta_node, edge_kind, source="CharacterTable", evidence=field)
+                    reverse_edge = "attribute_meta_used_by_character_main" if field == "mainAttrType" else "attribute_meta_used_by_character_sub"
+                    self.add_edge(meta_node, char_node, reverse_edge, source="CharacterTable", evidence=field)
             for stage_index, stage in enumerate(row.get("attributes") or []):
                 if not isinstance(stage, dict):
                     continue
@@ -22023,6 +22027,14 @@ class SourceGraphBuilder:
                         char_node,
                         meta_node,
                         "character_base_attribute_meta",
+                        source="CharacterTable",
+                        evidence=f"attributes[{stage_index}].Attribute.attrs[{attr_index}].attrType",
+                        data={"breakStage": stage.get("breakStage"), "attrType": attr.get("attrType"), "attrValue": attr.get("attrValue"), "index": attr_index},
+                    )
+                    self.add_edge(
+                        meta_node,
+                        char_node,
+                        "attribute_meta_used_by_character_base",
                         source="CharacterTable",
                         evidence=f"attributes[{stage_index}].Attribute.attrs[{attr_index}].attrType",
                         data={"breakStage": stage.get("breakStage"), "attrType": attr.get("attrType"), "attrValue": attr.get("attrValue"), "index": attr_index},
@@ -22076,7 +22088,6 @@ class SourceGraphBuilder:
                     if i18n_id:
                         text_node = self.add_node(
                             "text_table_key",
-    "i18n_text",
                             f"{self.language}:{i18n_id}",
                             name=compact_text(text.get("text"), 160),
                             source=self.language,
