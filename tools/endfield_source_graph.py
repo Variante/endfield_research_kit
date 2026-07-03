@@ -4380,7 +4380,7 @@ class SourceGraphBuilder:
                     mission_node = self.add_mission_ref_node(value, source=source)
                     self.add_edge(data_node, mission_node, "level_data_references_mission", source=source, evidence=evidence, data=data)
                 elif ref_kind == "audio":
-                    self.add_audio_target_edge(data_node, value, edge_kind="level_data_references_audio", source=source, evidence=evidence)
+                    self.add_audio_target_edge(data_node, value, edge_kind="level_data_references_audio", source=source, evidence=evidence, reverse_edge_kind="audio_used_by_level_data")
                 elif ref_kind == "effect":
                     effect_node = self.add_node("gameplay_effect", value, name=value, source=source)
                     self.add_alias(value, effect_node, kind="gameplay_effect_id", source=source)
@@ -4503,7 +4503,7 @@ class SourceGraphBuilder:
                     mission_node = self.add_mission_ref_node(value, source=source)
                     self.add_edge(owner_node, mission_node, f"{edge_prefix}_references_mission", source=source, evidence=evidence, data=data)
                 elif ref_kind == "audio":
-                    self.add_audio_target_edge(owner_node, value, edge_kind=f"{edge_prefix}_references_audio", source=source, evidence=evidence)
+                    self.add_audio_target_edge(owner_node, value, edge_kind=f"{edge_prefix}_references_audio", source=source, evidence=evidence, reverse_edge_kind=f"audio_used_by_{edge_prefix}")
                 elif ref_kind == "effect":
                     effect_node = self.add_node("gameplay_effect", value, name=value, source=source)
                     self.add_alias(value, effect_node, kind="gameplay_effect_id", source=source)
@@ -4568,7 +4568,7 @@ class SourceGraphBuilder:
                     self.add_edge(buff_node, target_node, "buff_data_references_effect", source="webui/game_data", evidence=evidence, data=data)
                     self.add_edge(target_node, buff_node, "gameplay_effect_used_by_buff_data", source="webui/game_data", evidence=evidence, data=data)
                 elif ref_kind == "audio":
-                    self.add_audio_target_edge(buff_node, value, edge_kind="buff_data_references_audio", source="webui/game_data", evidence=evidence)
+                    self.add_audio_target_edge(buff_node, value, edge_kind="buff_data_references_audio", source="webui/game_data", evidence=evidence, reverse_edge_kind="audio_used_by_buff_data")
                 elif ref_kind == "icon":
                     target_node = self.add_buff_icon_node(value, source="webui/game_data")
                     self.add_edge(buff_node, target_node, "buff_data_references_icon", source="webui/game_data", evidence=evidence, data=data)
@@ -4618,7 +4618,7 @@ class SourceGraphBuilder:
                     self.add_edge(skill_node, target_node, "skill_data_references_effect", source="webui/game_data", evidence=evidence, data=data)
                     self.add_edge(target_node, skill_node, "gameplay_effect_used_by_skill_data", source="webui/game_data", evidence=evidence, data=data)
                 elif ref_kind == "audio":
-                    self.add_audio_target_edge(skill_node, value, edge_kind="skill_data_references_audio", source="webui/game_data", evidence=evidence)
+                    self.add_audio_target_edge(skill_node, value, edge_kind="skill_data_references_audio", source="webui/game_data", evidence=evidence, reverse_edge_kind="audio_used_by_skill_data")
                 elif ref_kind == "icon":
                     target_node = self.add_skill_icon_node(value, source="webui/game_data")
                     self.add_edge(skill_node, target_node, "skill_data_references_icon", source="webui/game_data", evidence=evidence, data=data)
@@ -4669,7 +4669,7 @@ class SourceGraphBuilder:
                 buff_node = self.add_buff_ref_node(buff_id, source="webui/game_data")
                 self.add_edge(entry_node, buff_node, "spawner_enemy_starts_with_buff", source="webui/game_data", evidence=f"bornBuffs[{buff_index}]", data={"blackboardCount": len(buff.get("blackboard") or [])})
                 self.add_blackboard_edges(entry_node, buff.get("blackboard"), edge_kind="spawner_buff_uses_blackboard_key", source="webui/game_data", evidence_prefix=f"bornBuffs[{buff_index}].blackboard", context={"buffId": buff_id})
-            self.add_audio_target_edge(entry_node, row.get("preWarnAudioEventKey"), edge_kind="spawner_enemy_prewarn_audio", source="webui/game_data", evidence="preWarnAudioEventKey")
+            self.add_audio_target_edge(entry_node, row.get("preWarnAudioEventKey"), edge_kind="spawner_enemy_prewarn_audio", source="webui/game_data", evidence="preWarnAudioEventKey", reverse_edge_kind="audio_used_by_spawner_enemy_prewarn")
             effect_key = safe_key(row.get("preWarnEffectKey"))
             if effect_key:
                 effect_node = self.add_node("gameplay_effect", effect_key, name=effect_key, source="webui/game_data")
@@ -6746,7 +6746,7 @@ class SourceGraphBuilder:
         language_node = self.add_lipsync_language_node(language, source=source)
         if language_node:
             self.add_edge(clip_node, language_node, "lipsync_clip_language", source=source, evidence="path")
-        self.add_audio_target_edge(clip_node, audio_id, edge_kind="lipsync_for_audio", source=source, evidence="pathStem")
+        self.add_audio_target_edge(clip_node, audio_id, edge_kind="lipsync_for_audio", source=source, evidence="pathStem", reverse_edge_kind="audio_has_lipsync_clip")
 
     def decode_damage_text_payload(self, entry: dict[str, Any], raw_data: bytes | None = None) -> dict[str, Any] | None:
         data = raw_data if raw_data is not None else self.read_decoded_config_bytes(entry)
@@ -7489,7 +7489,7 @@ class SourceGraphBuilder:
         if not audio_ids:
             audio_ids.update(LINE_AUDIO_RE.findall(str(entry.get("t") or "")))
         for audio_id in sorted(audio_ids):
-            self.add_audio_target_edge(data_node, audio_id, edge_kind="interactive_template_uses_audio", source="webui/game_data", evidence="memorypack-bytes" if raw_data else "summary")
+            self.add_audio_target_edge(data_node, audio_id, edge_kind="interactive_template_uses_audio", source="webui/game_data", evidence="memorypack-bytes" if raw_data else "summary", reverse_edge_kind="audio_used_by_interactive_template")
 
     def add_world_entity_detail_ref_edges(self, owner_node: str, detail_id: Any, *, source: str, edge_prefix: str, alias_kind: str = "") -> bool:
         detail_key = safe_key(detail_id)
@@ -9045,6 +9045,7 @@ class SourceGraphBuilder:
             if audio_id and audio_id not in {"0", "0.0"}:
                 audio_node = self.add_node("audio", audio_id, name=audio_id, source="dialog_line")
                 self.add_edge(line_node, audio_node, "uses_audio", source="webui/story")
+                self.add_edge(audio_node, line_node, "audio_used_by_line", source="webui/story")
 
         for group in conv.get("optionGroups") or []:
             branch_risk = group.get("optionBranchRisk") or {}
@@ -10229,7 +10230,7 @@ class SourceGraphBuilder:
             self.add_edge(domain_node, money_item, "domain_money_item", source=table, evidence="domainGoldItemId")
         self.add_domain_asset_aliases(domain_node, row, ("domainIcon", "domainPic", "domainDeco", "domainDevelopmentDeco", "domainBlackboxIcon", "domainBlackboxPic"), source=table)
         for field in ("audKeySwitchRegionPopup", "audKeyUpToastLevelUpAfterEnhance", "audKeyUpToastLevelUpMoment", "audKeyUpToastLevelUpPreEnhance", "audKeyUpToastNotLevelUpEnhance"):
-            self.add_audio_target_edge(domain_node, row.get(field), edge_kind="domain_ui_audio", source=table, evidence=field)
+            self.add_audio_target_edge(domain_node, row.get(field), edge_kind="domain_ui_audio", source=table, evidence=field, reverse_edge_kind="audio_used_by_domain_ui")
         for index, level_id in enumerate(row.get("levelGroup") or []):
             level_node = self.add_level_node(level_id, source=table)
             if level_node:
@@ -16426,6 +16427,7 @@ class SourceGraphBuilder:
             if audio_id:
                 audio_node = self.add_node("audio", audio_id, name=audio_id, source=table)
                 self.add_edge(talk_node, audio_node, "env_talk_uses_audio", source=table, evidence=f"envTalkDataList[{index}]")
+                self.add_edge(audio_node, talk_node, "audio_used_by_env_talk", source=table, evidence=f"envTalkDataList[{index}]")
             actor_id = safe_key(item.get("actorId"))
             if actor_id:
                 actor_node = self.add_node("actor", actor_id, name=actor_id, source=table)
@@ -18529,6 +18531,7 @@ class SourceGraphBuilder:
             data={"id": response_key, "speaker": row.get("speakerChannel"), "duration": row.get("wavDuration"), "voType": row.get("voType"), "codec": row.get("codec")},
         )
         self.add_edge(response_node, audio_node, "responsive_response_uses_audio", source=source, evidence=response_evidence)
+        self.add_edge(audio_node, response_node, "audio_used_by_responsive_response", source=source, evidence=response_evidence)
 
     def add_responsive_dialog_group_node(self, group_id: Any, *, source: str = "", data: Any = None) -> str:
         group_key = safe_key(group_id)
@@ -18989,12 +18992,23 @@ class SourceGraphBuilder:
         for (story_node,) in rows:
             self.add_edge(owner_node, story_node, edge_kind, source=source, evidence=evidence)
 
-    def add_audio_target_edge(self, owner_node: str, audio_id: Any, *, edge_kind: str, source: str, evidence: str) -> None:
+    def add_audio_target_edge(
+        self,
+        owner_node: str,
+        audio_id: Any,
+        *,
+        edge_kind: str,
+        source: str,
+        evidence: str,
+        reverse_edge_kind: str = "",
+    ) -> None:
         audio_key = safe_key(audio_id)
         if not audio_key or audio_key in {"0", "0.0"}:
             return
         audio_node = self.add_node("audio", audio_key, name=audio_key, source=source)
         self.add_edge(owner_node, audio_node, edge_kind, source=source, evidence=evidence)
+        if reverse_edge_kind:
+            self.add_edge(audio_node, owner_node, reverse_edge_kind, source=source, evidence=evidence)
 
     def add_audio_dialog_reference_edges(
         self,
@@ -19005,6 +19019,7 @@ class SourceGraphBuilder:
         audio_edge: str,
         source: str,
         evidence: str,
+        audio_reverse_edge: str = "",
         line_edge: str = "",
     ) -> None:
         audio_dialog_key = safe_key(audio_dialog_id)
@@ -19019,6 +19034,8 @@ class SourceGraphBuilder:
             audio_key = Path(path).stem if path else audio_dialog_key
             audio_node = self.add_node("audio", audio_key, name=audio_key, source="AudioDialog", path=path)
             self.add_edge(owner_node, audio_node, audio_edge, source=source, evidence=evidence)
+            if audio_reverse_edge:
+                self.add_edge(audio_node, owner_node, audio_reverse_edge, source=source, evidence=evidence)
         if line_edge:
             self.add_line_target_edge(owner_node, audio_dialog_key, edge_kind=line_edge, source=source, evidence=evidence)
 
@@ -19202,7 +19219,7 @@ class SourceGraphBuilder:
         self.add_edge(row_node, mapping_node, "defines_text_voice_id", source=table)
         self.add_line_target_edge(mapping_node, row_key, edge_kind="text_voice_id_line_node", source=table, evidence="rowKey")
         if voice_id:
-            self.add_audio_target_edge(mapping_node, voice_id, edge_kind="text_voice_id_uses_audio", source=table, evidence="rowValue")
+            self.add_audio_target_edge(mapping_node, voice_id, edge_kind="text_voice_id_uses_audio", source=table, evidence="rowValue", reverse_edge_kind="audio_used_by_text_voice_id")
 
     def add_audio_vo_tone_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         tones = row.get("toneList") if isinstance(row.get("toneList"), list) else []
@@ -19215,6 +19232,7 @@ class SourceGraphBuilder:
             row_key,
             row_edge="audio_vo_tone_for_dialog_row",
             audio_edge="audio_vo_tone_for_audio",
+            audio_reverse_edge="audio_used_by_vo_tone",
             source=table,
             evidence="rowKey",
         )
@@ -19224,6 +19242,7 @@ class SourceGraphBuilder:
                 tone_id,
                 row_edge="audio_vo_tone_has_variant_dialog_row",
                 audio_edge="audio_vo_tone_has_variant_audio",
+                audio_reverse_edge="audio_used_by_vo_tone_variant",
                 source=table,
                 evidence=f"toneList[{index}]",
             )
@@ -19284,7 +19303,7 @@ class SourceGraphBuilder:
         event_node = self.add_wwise_event_node(row_key, source=table)
         if event_node:
             self.add_edge(announce_node, event_node, "audio_factory_announcement_key_event", source=table, evidence="rowKey")
-        self.add_audio_target_edge(announce_node, row.get("voiceId"), edge_kind="audio_factory_announcement_uses_voice", source=table, evidence="voiceId")
+        self.add_audio_target_edge(announce_node, row.get("voiceId"), edge_kind="audio_factory_announcement_uses_voice", source=table, evidence="voiceId", reverse_edge_kind="audio_used_by_factory_announcement")
 
     def add_audio_sequence_dialog_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         sequences = row.get("sequence") if isinstance(row.get("sequence"), dict) else {}
@@ -19315,6 +19334,7 @@ class SourceGraphBuilder:
                     audio_id,
                     row_edge="audio_sequence_dialog_uses_dialog_row",
                     audio_edge="audio_sequence_dialog_uses_audio",
+                    audio_reverse_edge="audio_used_by_sequence_dialog",
                     line_edge="audio_sequence_dialog_line_node",
                     source=table,
                     evidence=f"sequence[{index}]",
@@ -19382,7 +19402,7 @@ class SourceGraphBuilder:
         self.add_edge(row_node, text_node, "defines_dialog_text", source=table)
         self.add_line_target_edge(text_node, row_key, edge_kind="dialog_text_line_node", source=table, evidence="rowKey")
         self.add_story_edges_for_line_target(text_node, row_key, edge_kind="dialog_text_story_node", source=table, evidence="has_line")
-        self.add_audio_target_edge(text_node, row.get("audioOverride"), edge_kind="dialog_text_uses_audio", source=table, evidence="audioOverride")
+        self.add_audio_target_edge(text_node, row.get("audioOverride"), edge_kind="dialog_text_uses_audio", source=table, evidence="audioOverride", reverse_edge_kind="audio_used_by_dialog_text")
         self.add_actor_or_character_edges(text_node, row.get("actorNameId"), actor_edge="dialog_text_actor", character_edge="dialog_text_character", source=table, evidence="actorNameId")
         self.add_i18n_text_edges(text_node, row, source=table)
 
@@ -19581,7 +19601,7 @@ class SourceGraphBuilder:
                 continue
             self.add_edge(radio_node, line_node, "radio_has_line", source=table, evidence=f"radioSingleDataList[{index}]")
             self.add_line_target_edge(line_node, item.get("id"), edge_kind="radio_line_node", source=table, evidence="id")
-            self.add_audio_target_edge(line_node, item.get("audioOverride"), edge_kind="radio_line_uses_audio", source=table, evidence="audioOverride")
+            self.add_audio_target_edge(line_node, item.get("audioOverride"), edge_kind="radio_line_uses_audio", source=table, evidence="audioOverride", reverse_edge_kind="audio_used_by_radio_line")
             self.add_actor_or_character_edges(line_node, item.get("actorNameId"), actor_edge="radio_line_actor", character_edge="radio_line_character", source=table, evidence="actorNameId")
             self.add_i18n_text_edges(line_node, item, source=table)
 
@@ -19604,8 +19624,12 @@ class SourceGraphBuilder:
                 continue
             self.add_edge(remote_node, line_node, "remote_common_has_line", source=table, evidence=f"remoteCommSingleDataList[{index}]")
             self.add_line_target_edge(line_node, item.get("singleId"), edge_kind="remote_common_line_node", source=table, evidence="singleId")
-            for field, edge_kind in (("voiceId", "remote_common_line_uses_voice"), ("audioId", "remote_common_line_uses_audio"), ("musicId", "remote_common_line_uses_music")):
-                self.add_audio_target_edge(line_node, item.get(field), edge_kind=edge_kind, source=table, evidence=field)
+            for field, edge_kind, reverse_edge_kind in (
+                ("voiceId", "remote_common_line_uses_voice", "audio_used_by_remote_common_line_voice"),
+                ("audioId", "remote_common_line_uses_audio", "audio_used_by_remote_common_line"),
+                ("musicId", "remote_common_line_uses_music", "audio_used_by_remote_common_line_music"),
+            ):
+                self.add_audio_target_edge(line_node, item.get(field), edge_kind=edge_kind, source=table, evidence=field, reverse_edge_kind=reverse_edge_kind)
             self.add_actor_or_character_edges(line_node, item.get("middleId"), actor_edge="remote_common_line_middle_actor", character_edge="remote_common_line_middle_character", source=table, evidence="middleId")
             if safe_key(item.get("middleId")) and not self.node_exists("actor", item.get("middleId")) and not self.node_exists("character", item.get("middleId")):
                 self.add_alias(item.get("middleId"), line_node, kind="asset_stem", source=table)
@@ -20717,7 +20741,7 @@ class SourceGraphBuilder:
                 activity_node = self.add_activity_node(row_key, source=table)
                 if activity_node:
                     self.add_edge(bg_node, activity_node, "activity_stamina_refund_bg_state_for_activity", source=table)
-                self.add_audio_target_edge(bg_node, row.get("audioOnOpen"), edge_kind="activity_stamina_refund_bg_state_open_audio", source=table, evidence="audioOnOpen")
+                self.add_audio_target_edge(bg_node, row.get("audioOnOpen"), edge_kind="activity_stamina_refund_bg_state_open_audio", source=table, evidence="audioOnOpen", reverse_edge_kind="audio_used_by_activity_stamina_refund_bg_state")
 
         elif table == "AdventureActivityDataTable":
             entry_node = self.add_activity_catalog_node("adventure_activity_entry", row.get("id") or row_key, name=row.get("name"), source=table, data={"id": row.get("id"), "type": row.get("type"), "rewardCount": len(row.get("rewardList") or []), "bgImg": row.get("bgImg"), "decoImg": row.get("decoImg"), "titleImg": row.get("titleImg"), "bgNodeColor": row.get("bgNodeColor")})
@@ -22105,6 +22129,7 @@ class SourceGraphBuilder:
             if row.get("speakerChannel"):
                 actor_node = self.add_node("actor", row["speakerChannel"], source="AudioDialog")
                 self.add_edge(audio_node, actor_node, "speaker_channel", source="AudioDialog")
+                self.add_edge(actor_node, audio_node, "actor_has_speaker_channel", source="AudioDialog")
             if path:
                 file_node = self.add_file(path, kind="wem_path", source="AudioDialog")
                 self.add_edge(audio_node, file_node, "audio_path", source="AudioDialog")
