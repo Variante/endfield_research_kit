@@ -12630,6 +12630,7 @@ class SourceGraphBuilder:
                         item_node = self.add_item_node(step.get("costItemId1"), source=table)
                         if item_node:
                             self.add_edge(step_node, item_node, "manual_refresh_costs_item", source=table, evidence="costItemId1", data={"count": step.get("costItemCount1"), "index": index})
+                            self.add_edge(item_node, step_node, "item_cost_for_manual_refresh", source=table, evidence="costItemId1", data={"count": step.get("costItemCount1"), "index": index})
         elif table == "ShopMonthlyPassRewardTable" and isinstance(row, dict):
             pass_node = self.add_economy_metadata_node("shop_monthly_pass_reward", row.get("goodsId") or row_key, source=table, data=compact_payload(row, depth=2))
             if pass_node:
@@ -12821,6 +12822,7 @@ class SourceGraphBuilder:
         mission_node = self.add_mission_ref_node(level.get("upgradeMissionId"), source=source)
         if mission_node:
             self.add_edge(level_node, mission_node, "settlement_level_upgrade_mission", source=source, evidence="upgradeMissionId")
+            self.add_edge(mission_node, level_node, "mission_upgrades_settlement_level", source=source, evidence="upgradeMissionId")
         trade_map = level.get("settlementTradeItemMap") if isinstance(level.get("settlementTradeItemMap"), dict) else {}
         for trade_key, trade in trade_map.items():
             if isinstance(trade, dict):
@@ -12836,9 +12838,11 @@ class SourceGraphBuilder:
         item_node = self.add_item_node(item_id, source=source)
         if item_node:
             self.add_edge(trade_node, item_node, "settlement_trade_item", source=source, evidence="itemId", data={"rewardMoneyCount": trade.get("rewardMoneyCount"), "stmExp": trade.get("stmExp")})
+            self.add_edge(item_node, trade_node, "item_traded_by_settlement", source=source, evidence="itemId", data={"rewardMoneyCount": trade.get("rewardMoneyCount"), "stmExp": trade.get("stmExp")})
         activity_node = self.add_activity_node(trade.get("activityId"), source=source)
         if activity_node:
             self.add_edge(trade_node, activity_node, "settlement_trade_item_activity", source=source, evidence="activityId")
+            self.add_edge(activity_node, trade_node, "activity_uses_settlement_trade_item", source=source, evidence="activityId")
 
     def add_domain_degree_source_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         source_type = row.get("sourceType") if row.get("sourceType") is not None else row_key
