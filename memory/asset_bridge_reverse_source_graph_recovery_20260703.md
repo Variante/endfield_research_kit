@@ -32,7 +32,10 @@ Focused temporary graph build:
 python -m py_compile tools\endfield_source_graph.py
 ```
 
-Temporary DB: `tmp/asset_bridge_reverse.sqlite`
+Temporary DBs:
+
+- `tmp/asset_bridge_reverse.sqlite`
+- `tmp/visual_asset_reverse_structured.sqlite`
 
 Focused ingest methods:
 
@@ -51,7 +54,16 @@ Counts:
 - `uses_visual_asset`: 0 / `visual_asset_used_by`: 0 in this focused build
 - `visual_token_matches_export_base_asset`: 0 / `asset_matched_by_visual_token`: 0 in this focused build
 
+The focused asset/gameplay build did not include the structured nodes that
+carry icon/background payload fields, so a second structured visual-token build
+was run with `ingest_assets`, structured semantic ingesters, and
+`link_visual_token_export_assets`:
+
+- `uses_icon_asset`: 31,300 / `asset_used_as_icon_by`: 31,300
+- `uses_visual_asset`: 992 / `visual_asset_used_by`: 992
+
 Sample reverse rows showed weapon asset entities such as
 `asset_entity:StreamingAssets/wpn_claym_0008_01` pointing back to
 `weapon:wpn_claym_0008`, preserving `modelPath`, token, model base, and asset
-entity payloads.
+entity payloads. The structured visual-token build showed item/blueprint
+sprites and domain buyer icons pointing back to their item and buyer nodes.
