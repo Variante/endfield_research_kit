@@ -11017,6 +11017,7 @@ class SourceGraphBuilder:
                 generic_tag = self.add_tag_ref_node(row.get("tag") or row_key, source=table)
                 if generic_tag:
                     self.add_edge(tag_node, generic_tag, "gift_prefer_tag_resolves_to_tag", source=table, evidence="tag")
+                    self.add_edge(generic_tag, tag_node, "tag_has_gift_prefer_config", source=table, evidence="tag")
         elif table == "GiftItemTable":
             item_id = row.get("id") or row_key
             gift_node = self.add_semantic_node("gift_item", item_id, source=table, data={"favorablePoint": row.get("favorablePoint"), "giftPreferTag": row.get("giftPreferTag"), "finishPopularTimeId": row.get("finishPopularTimeId"), "isPopular": row.get("isPopular"), "isShowPopularFinishTime": row.get("isShowPopularFinishTime"), "tagCount": len(row.get("tagList") or [])})
@@ -11025,13 +11026,16 @@ class SourceGraphBuilder:
                 item_node = self.add_item_node(item_id, source=table)
                 if item_node:
                     self.add_edge(item_node, gift_node, "item_has_gift_config", source=table, evidence="id", data={"favorablePoint": row.get("favorablePoint")})
+                    self.add_edge(gift_node, item_node, "gift_config_for_item", source=table, evidence="id", data={"favorablePoint": row.get("favorablePoint")})
                 prefer_node = self.add_gift_prefer_tag_node(row.get("giftPreferTag"), source=table)
                 if prefer_node:
                     self.add_edge(gift_node, prefer_node, "gift_item_prefer_tag", source=table, evidence="giftPreferTag")
+                    self.add_edge(prefer_node, gift_node, "gift_prefer_tag_used_by_gift_item", source=table, evidence="giftPreferTag")
                 for index, tag_id in enumerate(row.get("tagList") or []):
                     tag_node = self.add_tag_ref_node(tag_id, source=table)
                     if tag_node:
                         self.add_edge(gift_node, tag_node, "gift_item_hobby_tag", source=table, evidence=f"tagList[{index}]", data={"index": index})
+                        self.add_edge(tag_node, gift_node, "tag_used_by_gift_item", source=table, evidence=f"tagList[{index}]", data={"index": index})
                 self.add_alias(row.get("finishPopularTimeId"), gift_node, kind="time_id", source=table)
         elif table == "CheckInInfoTable":
             checkin_node = self.add_checkin_node(row_key, source=table, data={"checkInRewardChangeTime": row.get("checkInRewardChangeTime"), "forceShowTwoDigits": row.get("forceShowTwoDigits"), "maxRewardCnt": row.get("maxRewardCnt"), "commonPanelWidgetName": row.get("commonPanelWidgetName"), "popupPanelWidgetName": row.get("popupPanelWidgetName")})
@@ -11040,6 +11044,7 @@ class SourceGraphBuilder:
                 activity_node = self.add_activity_node(row_key, source=table)
                 if activity_node:
                     self.add_edge(activity_node, checkin_node, "activity_has_checkin_config", source=table, evidence="rowKey")
+                    self.add_edge(checkin_node, activity_node, "checkin_config_for_activity", source=table, evidence="rowKey")
                 self.add_alias(row.get("commonPanelWidgetName"), checkin_node, kind="widget_name", source=table)
                 self.add_alias(row.get("popupPanelWidgetName"), checkin_node, kind="widget_name", source=table)
         elif table == "CheckInRewardTable":
@@ -11054,13 +11059,19 @@ class SourceGraphBuilder:
                     if not stage_node:
                         continue
                     self.add_edge(checkin_node, stage_node, "checkin_has_stage", source=table, evidence=f"stageList[{index}]", data={"index": index, "day": stage.get("day")})
+                    self.add_edge(stage_node, checkin_node, "checkin_stage_in_checkin", source=table, evidence=f"stageList[{index}]", data={"index": index, "day": stage.get("day")})
                     self.add_reward_ref_edge(stage_node, stage.get("rewardId"), edge_kind="checkin_stage_reward", source=table, evidence="rewardId", data={"day": stage.get("day"), "isKeyReward": stage.get("isKeyReward")})
+                    reward_node = self.add_reward_node(stage.get("rewardId"), source=table)
+                    if reward_node:
+                        self.add_edge(reward_node, stage_node, "reward_used_by_checkin_stage", source=table, evidence="rewardId", data={"day": stage.get("day"), "isKeyReward": stage.get("isKeyReward")})
                     character_node = self.add_character_ref_node(stage.get("charId"), source=table)
                     if character_node:
                         self.add_edge(stage_node, character_node, "checkin_stage_featured_character", source=table, evidence="charId")
+                        self.add_edge(character_node, stage_node, "character_featured_by_checkin_stage", source=table, evidence="charId")
                     weapon_node = self.add_weapon_ref_node(stage.get("weaponId"), source=table)
                     if weapon_node:
                         self.add_edge(stage_node, weapon_node, "checkin_stage_featured_weapon", source=table, evidence="weaponId")
+                        self.add_edge(weapon_node, stage_node, "weapon_featured_by_checkin_stage", source=table, evidence="weaponId")
                     self.add_tag_i18n_edges(stage_node, stage.get("rewardName"), source=table, edge_kind="checkin_stage_reward_name_text")
                     for field in ("rewardImg", "dateImg"):
                         self.add_alias(stage.get(field), stage_node, kind="asset_stem", source=table)
@@ -11069,6 +11080,9 @@ class SourceGraphBuilder:
             if activation_node:
                 self.add_edge(row_node, activation_node, "defines_daily_activation_reward", source=table)
                 self.add_reward_ref_edge(activation_node, row.get("rewardId"), edge_kind="daily_activation_reward_grants", source=table, evidence="rewardId", data={"activation": row.get("activation")})
+                reward_node = self.add_reward_node(row.get("rewardId"), source=table)
+                if reward_node:
+                    self.add_edge(reward_node, activation_node, "reward_used_by_daily_activation", source=table, evidence="rewardId", data={"activation": row.get("activation")})
         elif table == "MoneyConfigTable":
             money_id = row.get("moneyId") or row_key
             money_node = self.add_money_config_node(money_id, source=table, data={"moneyId": row.get("moneyId"), "clearRule": row.get("clearRule"), "MoneyClearLimit": row.get("MoneyClearLimit")})
@@ -11077,6 +11091,7 @@ class SourceGraphBuilder:
                 item_node = self.add_item_node(money_id, source=table)
                 if item_node:
                     self.add_edge(money_node, item_node, "money_config_item", source=table, evidence="moneyId")
+                    self.add_edge(item_node, money_node, "item_has_money_config", source=table, evidence="moneyId")
         elif table == "MoneyRecordTable":
             money_node = self.add_money_config_node(row.get("moneyId") or row_key, source=table, data={"recordType": row.get("recordType")})
             if money_node:
@@ -11084,6 +11099,7 @@ class SourceGraphBuilder:
                 item_node = self.add_item_node(row.get("moneyId") or row_key, source=table)
                 if item_node:
                     self.add_edge(money_node, item_node, "money_record_item", source=table, evidence="moneyId", data={"recordType": row.get("recordType")})
+                    self.add_edge(item_node, money_node, "item_has_money_record", source=table, evidence="moneyId", data={"recordType": row.get("recordType")})
         elif table == "MoneyExchangeTable":
             exchange_node = self.add_semantic_node("money_exchange", row.get("id") or row_key, source=table, data={"sourceMoneyId": row.get("sourceMoneyId"), "sourceMoneyCost": row.get("sourceMoneyCost"), "sourceMoneyMinSwap": row.get("sourceMoneyMinSwap"), "targetMoneyId": row.get("targetMoneyId"), "targetMoneyGet": row.get("targetMoneyGet")})
             if exchange_node:
@@ -11092,8 +11108,10 @@ class SourceGraphBuilder:
                 target_item = self.add_item_node(row.get("targetMoneyId"), source=table)
                 if source_item:
                     self.add_edge(exchange_node, source_item, "money_exchange_source_item", source=table, evidence="sourceMoneyId", data={"cost": row.get("sourceMoneyCost"), "minSwap": row.get("sourceMoneyMinSwap")})
+                    self.add_edge(source_item, exchange_node, "item_used_as_money_exchange_source", source=table, evidence="sourceMoneyId", data={"cost": row.get("sourceMoneyCost"), "minSwap": row.get("sourceMoneyMinSwap")})
                 if target_item:
                     self.add_edge(exchange_node, target_item, "money_exchange_target_item", source=table, evidence="targetMoneyId", data={"get": row.get("targetMoneyGet")})
+                    self.add_edge(target_item, exchange_node, "item_received_from_money_exchange", source=table, evidence="targetMoneyId", data={"get": row.get("targetMoneyGet")})
         elif table == "ImportantItemShowTable":
             group_node = self.add_semantic_node("important_item_show_group", row_key, source=table, data={"entryCount": len(row.get("showMap") or {})})
             if group_node:
@@ -11105,9 +11123,11 @@ class SourceGraphBuilder:
                     entry_node = self.add_semantic_node("important_item_show_entry", f"{safe_key(row_key)}:{safe_key(type_key)}", source=table, data={"type": entry.get("type"), "order": entry.get("order"), "rarity": entry.get("rarity")})
                     if entry_node:
                         self.add_edge(group_node, entry_node, "important_item_show_has_entry", source=table, evidence=f"showMap[{type_key}]", data={"order": entry.get("order")})
+                        self.add_edge(entry_node, group_node, "important_item_show_entry_in_group", source=table, evidence=f"showMap[{type_key}]", data={"order": entry.get("order")})
                         type_node = self.add_item_type_node(entry.get("type") if entry.get("type") is not None else type_key, source=table)
                         if type_node:
                             self.add_edge(entry_node, type_node, "important_item_show_entry_item_type", source=table, evidence="type")
+                            self.add_edge(type_node, entry_node, "item_type_used_by_important_item_show", source=table, evidence="type")
         elif table == "ImportantRewardItemTable":
             item_id = row.get("id") or row_key
             important_node = self.add_semantic_node("important_reward_item", item_id, source=table, data={"id": item_id})
@@ -11116,6 +11136,7 @@ class SourceGraphBuilder:
                 item_node = self.add_item_node(item_id, source=table)
                 if item_node:
                     self.add_edge(important_node, item_node, "important_reward_item_ref", source=table, evidence="id")
+                    self.add_edge(item_node, important_node, "item_has_important_reward_config", source=table, evidence="id")
                 self.add_tag_i18n_edges(important_node, row.get("desc"), source=table, edge_kind="important_reward_item_desc_text")
 
     def ingest_week_raid_semantics(self) -> None:
