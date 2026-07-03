@@ -22685,6 +22685,12 @@ class SourceGraphBuilder:
             if self.node_exists(kind, row_key):
                 self.add_edge(config_node, self.node_id(kind, row_key), edge_kind, source=source, evidence="rowKey")
 
+    def add_audio_drop_item_model_key_edges(self, drop_node: str, row_key: str, *, source: str) -> None:
+        for item_node in self.alias_node_ids(row_key, kind="model_key"):
+            if item_node.startswith("item:"):
+                self.add_edge(item_node, drop_node, "item_uses_audio_drop_config", source=source, evidence="modelKey")
+                self.add_edge(drop_node, item_node, "audio_drop_config_used_by_item", source=source, evidence="modelKey")
+
     def add_audio_sfx_config_edges(
         self,
         table: str,
@@ -22771,6 +22777,9 @@ class SourceGraphBuilder:
             self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_collection", define_edge="defines_audio_collection", event_edge="audio_collection_uses_event")
         elif table == "AudioDrop" and isinstance(row, dict):
             self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_drop", define_edge="defines_audio_drop", event_edge="audio_drop_uses_event")
+            drop_node = self.node_id("audio_drop", row_key)
+            if self.node_exists("audio_drop", row_key):
+                self.add_audio_drop_item_model_key_edges(drop_node, row_key, source=table)
         elif table == "AudioFactory" and isinstance(row, dict):
             self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_factory", define_edge="defines_audio_factory", event_edge="audio_factory_uses_event", owner_edges=(("factory_building", "audio_factory_for_factory_building"), ("factory_machine", "audio_factory_for_factory_machine")))
         elif table == "AudioFactoryAnnouncement" and isinstance(row, dict):
