@@ -3282,6 +3282,8 @@ class SourceGraphBuilder:
             self.commit_step("decodedConfigs")
             self.ingest_findtarget_selector_payload_audit()
             self.commit_step("findTargetSelectorAudit")
+            self.ingest_findtarget_selector_replay_audit()
+            self.commit_step("findTargetSelectorReplayAudit")
             self.add_scene_collectable_interactive_refs()
             self.commit_step("sceneCollectableInteractiveRefs")
             self.link_decoded_parameter_blackboard_keys()
@@ -4086,6 +4088,84 @@ class SourceGraphBuilder:
         if not family or not tag or not action_name:
             return ""
         return f"{family}:{tag}:{action_name}"
+
+    def ingest_findtarget_selector_replay_audit(self) -> None:
+        path = self.root / "reports" / "mission_order" / "findtarget_selector_replay_audit.json"
+        payload = read_json(path, {})
+        if not isinstance(payload, dict):
+            return
+        shapes = payload.get("shapes") or []
+        if not isinstance(shapes, list):
+            return
+        source = "findtarget_selector_replay_audit"
+        source_path = slash(path.relative_to(self.root)) if path.is_relative_to(self.root) else slash(path)
+        summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+        dataset = self.add_node(
+            "dataset",
+            "findtarget_selector_replay_audit",
+            name=path.name,
+            source=source,
+            path=source_path,
+            data=compact_payload(summary, depth=3),
+        )
+        self.add_file(source_path, kind="findtarget_selector_replay_audit", source=source, size=path.stat().st_size if path.exists() else None)
+        for index, shape in enumerate(shapes):
+            if not isinstance(shape, dict):
+                continue
+            shape_hash = safe_key(shape.get("bodyMiddleSha256"))
+            if not shape_hash:
+                continue
+            target_replay = shape.get("targetSettingsReplay") if isinstance(shape.get("targetSettingsReplay"), dict) else {}
+            selector_replay = shape.get("selectorReplay") if isinstance(shape.get("selectorReplay"), dict) else {}
+            shape_data = {
+                "bodyMiddleSha256": shape_hash,
+                "sampleCount": shape.get("sampleCount"),
+                "bodyMiddleBytes": shape.get("bodyMiddleBytes"),
+                "targetGroupKeys": shape.get("targetGroupKeys") or [],
+                "examplePath": shape.get("examplePath"),
+                "exampleRecordIndex": shape.get("exampleRecordIndex"),
+                "exampleItemOffset": shape.get("exampleItemOffset"),
+                "stringHitCount": len(shape.get("stringHits") or []),
+                "targetSettingsAcceptedCount": target_replay.get("acceptedCount"),
+                "targetSettingsExactBodyMiddleEndHitCount": target_replay.get("exactBodyMiddleEndHitCount"),
+                "selectorUnionTagHitCount": selector_replay.get("unionTagHitCount"),
+                "selectorNonZeroUnionTagHitCount": selector_replay.get("nonZeroUnionTagHitCount"),
+                "memberCount3AnchorCount": selector_replay.get("memberCount3AnchorCount"),
+                "plausibleOrderAnchorCount": selector_replay.get("plausibleOrderAnchorCount"),
+                "emptyPayloadProbeSuccessCount": selector_replay.get("emptyPayloadProbeSuccessCount"),
+                "exactBoundaryProofCount": selector_replay.get("exactBoundaryProofCount"),
+                "chainSafeFindTargetCount": selector_replay.get("chainSafeFindTargetCount"),
+                "sourceReport": source_path,
+            }
+            shape_node = self.add_node(
+                "findtarget_selector_replay_shape",
+                shape_hash,
+                name=shape_hash[:12],
+                source=source,
+                path=safe_key(shape.get("examplePath")),
+                data=compact_payload(shape_data, depth=3),
+            )
+            self.add_edge(dataset, shape_node, "has_findtarget_selector_replay_shape", source=source, evidence=str(index), data=shape_data)
+            example_path = safe_key(shape.get("examplePath"))
+            if example_path:
+                file_node = self.add_file(example_path, kind="decoded_game_data", source=source)
+                self.add_edge(shape_node, file_node, "findtarget_replay_shape_example_file", source=source, evidence=safe_key(shape.get("exampleItemOffset")))
+
+            for reason, count in (target_replay.get("failureReasons") or {}).items():
+                reason_key = safe_key(reason)
+                if not reason_key:
+                    continue
+                reason_node = self.add_node("findtarget_replay_failure_reason", reason_key, name=reason_key, source=source)
+                self.add_edge(shape_node, reason_node, "findtarget_replay_shape_failure_reason", source=source, evidence=reason_key, data={"count": count})
+
+            for family_tag, count in (selector_replay.get("unionTagFamilyTagCounts") or {}).items():
+                family_key, _, tag_key = safe_key(family_tag).partition(":")
+                tag_node = self.add_node("selector_tag", family_tag, name=tag_key or family_tag, source=source, data={"family": family_key, "tag": tag_key, "count": count})
+                self.add_edge(shape_node, tag_node, "findtarget_replay_shape_selector_tag_hit", source=source, evidence=family_tag, data={"count": count})
+            for family_tag, count in (selector_replay.get("nonZeroUnionTagFamilyTagCounts") or {}).items():
+                family_key, _, tag_key = safe_key(family_tag).partition(":")
+                tag_node = self.add_node("selector_tag", family_tag, name=tag_key or family_tag, source=source, data={"family": family_key, "tag": tag_key, "count": count})
+                self.add_edge(shape_node, tag_node, "findtarget_replay_shape_nonzero_selector_tag_hit", source=source, evidence=family_tag, data={"count": count})
 
     def add_decoded_config_entry(self, group_node: str, entry: dict[str, Any], *, subtype: str) -> None:
         entry_path = safe_key(entry.get("p"))
@@ -23772,6 +23852,8 @@ QUERY_KIND_PRIORITY = {
     "selector_tag": 43.3,
     "selector_payload_classification": 43.4,
     "selector_payload_setter": 43.5,
+    "findtarget_selector_replay_shape": 43.6,
+    "findtarget_replay_failure_reason": 43.7,
     "model_config": 44,
     "model_config_model": 45,
     "model_prefab": 45.5,
@@ -24485,6 +24567,8 @@ NODE_ID_PREFIXES = (
     "selector_tag",
     "selector_payload_classification",
     "selector_payload_setter",
+    "findtarget_selector_replay_shape",
+    "findtarget_replay_failure_reason",
     "model_config",
     "model_config_model",
     "model_prefab",

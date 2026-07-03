@@ -96,3 +96,44 @@ Use these graph nodes to choose safe future bounded-reader experiments. They
 should not be treated as decoded selector payloads; the report itself says the
 current replay has zero exact TargetSettings body-middle end hits and zero
 chain-safe FindTarget consumptions.
+
+## Replay Audit Follow-Up
+
+`tools/endfield_source_graph.py` also ingests
+`reports/mission_order/findtarget_selector_replay_audit.json` after the
+priority audit. This companion report records the seven observed
+FindTargetAction body-middle byte shapes and the exact replay result that keeps
+chain consumption disabled.
+
+Additional node kinds:
+
+- `findtarget_selector_replay_shape`
+- `findtarget_replay_failure_reason`
+
+Additional edges:
+
+- `has_findtarget_selector_replay_shape`
+- `findtarget_replay_shape_example_file`
+- `findtarget_replay_shape_failure_reason`
+- `findtarget_replay_shape_selector_tag_hit`
+- `findtarget_replay_shape_nonzero_selector_tag_hit`
+
+Focused validation called both FindTarget audit ingests in one temporary
+database so shared `selector_tag` nodes were exercised:
+
+| Item | Count |
+|---|---:|
+| `findtarget_selector_candidate` nodes | 27 |
+| `findtarget_selector_replay_shape` nodes | 7 |
+| `findtarget_replay_failure_reason` nodes | 4 |
+| `selector_tag` nodes | 31 |
+| `findtarget_replay_shape_example_file` edges | 7 |
+| `findtarget_replay_shape_failure_reason` edges | 15 |
+| `findtarget_replay_shape_selector_tag_hit` edges | 101 |
+| `findtarget_replay_shape_nonzero_selector_tag_hit` edges | 83 |
+| shapes with accepted TargetSettings candidates | 0 |
+| shapes with chain-safe FindTarget consumption | 0 |
+
+The validation preserved the negative result: selector tag hits are queryable
+evidence, but none of the seven body-middle shapes proves a full
+TargetSettings boundary or chain-safe FindTarget decode.
