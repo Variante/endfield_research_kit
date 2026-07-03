@@ -19435,10 +19435,12 @@ class SourceGraphBuilder:
         if dialog_id:
             story_node = self.add_node("story", dialog_id, name=dialog_id, source=table)
             self.add_edge(level_node, story_node, "spaceship_room_level_upgrade_dialog", source=table, evidence="upgradeDialogId")
+            self.add_edge(story_node, level_node, "story_used_by_spaceship_room_level_upgrade", source=table, evidence="upgradeDialogId")
         condition_id = safe_key(row.get("conditionId"))
         if condition_id:
             condition_node = self.add_spaceship_room_level_node(condition_id, source=table)
             self.add_edge(level_node, condition_node, "spaceship_room_level_condition", source=table, evidence="conditionId")
+            self.add_edge(condition_node, level_node, "spaceship_room_level_required_by_level", source=table, evidence="conditionId")
         self.add_i18n_text_edges(level_node, row, source=table)
 
     def add_spaceship_room_level_helper_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
@@ -19449,6 +19451,7 @@ class SourceGraphBuilder:
             self.add_edge(row_node, level_node, "defines_spaceship_room_level_helper", source=table)
         if level_node and room_node:
             self.add_edge(level_node, room_node, "spaceship_room_level_for_type", source=table, evidence="roomType", data={"level": row.get("level")})
+            self.add_edge(room_node, level_node, "spaceship_room_type_has_room_level", source=table, evidence="roomType", data={"level": row.get("level")})
 
     def add_spaceship_specialized_room_level_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         level_id = safe_key(row.get("id") or row_key)
@@ -19459,12 +19462,15 @@ class SourceGraphBuilder:
         room_node = self.add_spaceship_room_type_node(row.get("roomType"), source=table)
         if room_node:
             self.add_edge(level_node, room_node, "spaceship_room_level_for_type", source=table, evidence="roomType", data={"level": row.get("level")})
+            self.add_edge(room_node, level_node, "spaceship_room_type_has_room_level", source=table, evidence="roomType", data={"level": row.get("level")})
         reward_node = self.add_reward_node(row.get("rewardId"), source=table)
         if reward_node:
             self.add_edge(level_node, reward_node, "spaceship_room_level_reward", source=table, evidence="rewardId")
+            self.add_edge(reward_node, level_node, "reward_used_by_spaceship_room_level", source=table, evidence="rewardId")
         for index, recipe_id in enumerate(row.get("unlockRecipe") or []):
             formula_node = self.add_node("spaceship_formula", recipe_id, name=recipe_id, source=table)
             self.add_edge(level_node, formula_node, "spaceship_room_level_unlocks_formula", source=table, evidence=f"unlockRecipe[{index}]")
+            self.add_edge(formula_node, level_node, "spaceship_formula_unlocked_by_room_level", source=table, evidence=f"unlockRecipe[{index}]")
             self.add_alias(recipe_id, formula_node, kind="spaceship_formula_id", source=table)
         for index, field_id in enumerate(row.get("unlockPlantingField") or []):
             field_key = safe_key(field_id)
@@ -19479,6 +19485,7 @@ class SourceGraphBuilder:
         if unlock_room_type:
             unlock_room_node = self.add_spaceship_room_type_node(unlock_room_type, source=table)
             self.add_edge(level_node, unlock_room_node, "spaceship_room_level_unlocks_room_type", source=table, evidence="unlockRoomType")
+            self.add_edge(unlock_room_node, level_node, "spaceship_room_type_unlocked_by_room_level", source=table, evidence="unlockRoomType")
         self.add_i18n_text_edges(level_node, row, source=table)
 
     def add_spaceship_empty_room_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
