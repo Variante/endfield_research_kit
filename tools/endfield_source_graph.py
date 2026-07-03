@@ -23228,6 +23228,7 @@ class SourceGraphBuilder:
                 "activity_web_stage_jump": "system_jump_used_by_activity_web_stage",
                 "battlepass_task_jump": "system_jump_used_by_battlepass_task",
                 "character_trial_jumps_to": "system_jump_used_by_character_trial",
+                "distribution_info_jump": "system_jump_used_by_distribution_info",
                 "gacha_pool_trial_jump": "system_jump_used_by_gacha_pool",
                 "gacha_recommendation_jump": "system_jump_used_by_gacha_recommendation",
             }.get(edge_kind)
