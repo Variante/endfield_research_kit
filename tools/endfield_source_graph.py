@@ -10662,6 +10662,16 @@ class SourceGraphBuilder:
         self.add_alias(range_key, node, kind="time_range_id", source=source)
         return node
 
+    def add_time_range_ref_edge(self, owner_node: str, range_id: Any, *, edge_kind: str, source: str, evidence: str, data: Any = None) -> None:
+        range_node = self.add_time_range_node(range_id, source=source)
+        if not range_node:
+            return
+        self.add_edge(owner_node, range_node, edge_kind, source=source, evidence=evidence, data=data)
+        reverse_data = {"consumerEdge": edge_kind}
+        if isinstance(data, dict):
+            reverse_data.update(data)
+        self.add_edge(range_node, owner_node, "time_range_used_by", source=source, evidence=evidence, data=reverse_data)
+
     def add_condition_parameter_refs(self, condition_node: str, condition_id: str, parameters: Any, *, source: str) -> None:
         if not isinstance(parameters, list):
             return
@@ -11302,6 +11312,7 @@ class SourceGraphBuilder:
                         self.add_edge(gift_node, tag_node, "gift_item_hobby_tag", source=table, evidence=f"tagList[{index}]", data={"index": index})
                         self.add_edge(tag_node, gift_node, "tag_used_by_gift_item", source=table, evidence=f"tagList[{index}]", data={"index": index})
                 self.add_alias(row.get("finishPopularTimeId"), gift_node, kind="time_id", source=table)
+                self.add_time_range_ref_edge(gift_node, row.get("finishPopularTimeId"), edge_kind="gift_popularity_time", source=table, evidence="finishPopularTimeId")
         elif table == "CheckInInfoTable":
             checkin_node = self.add_checkin_node(row_key, source=table, data={"checkInRewardChangeTime": row.get("checkInRewardChangeTime"), "forceShowTwoDigits": row.get("forceShowTwoDigits"), "maxRewardCnt": row.get("maxRewardCnt"), "commonPanelWidgetName": row.get("commonPanelWidgetName"), "popupPanelWidgetName": row.get("popupPanelWidgetName")})
             if checkin_node:
@@ -12478,6 +12489,7 @@ class SourceGraphBuilder:
         self.add_alias(row.get("iconId"), item_node, kind="icon_id", source=table)
         self.add_alias(row.get("iconCompositeId"), item_node, kind="icon_composite_id", source=table)
         self.add_alias(row.get("modelKey"), item_node, kind="model_key", source=table)
+        self.add_time_range_ref_edge(item_node, row.get("notObtainShowTimeId"), edge_kind="item_obtain_visibility_time", source=table, evidence="notObtainShowTimeId")
         type_node = self.add_item_type_node(row.get("type"), source=table)
         if type_node:
             self.add_edge(item_node, type_node, "item_has_type", source=table, evidence="type")
@@ -14682,6 +14694,7 @@ class SourceGraphBuilder:
                 ticket_node = self.add_item_node(row.get("ticketGachaTenLt"), source=table)
                 if ticket_node:
                     self.add_edge(pool_node, ticket_node, "gacha_weapon_pool_accepts_ticket", source=table, evidence="ticketGachaTenLt")
+                self.add_time_range_ref_edge(pool_node, row.get("clientTopTimeId"), edge_kind="gacha_pool_top_time", source=table, evidence="clientTopTimeId")
                 for field in ("upWeaponIcon", "upWeaponDoublePoolIcon", "smallPoolIcon", "smallPoolIconFar"):
                     self.add_alias(row.get(field), pool_node, kind="asset_stem", source=table)
         elif table == "GachaWeaponPoolContentTable" and isinstance(row, dict):
@@ -20325,6 +20338,7 @@ class SourceGraphBuilder:
         if not activity_node:
             return
         self.add_edge(row_node, activity_node, "defines_activity", source=table)
+        self.add_time_range_ref_edge(activity_node, row.get("timeId"), edge_kind="activity_available_during", source=table, evidence="timeId")
         for field in ("detailJumpId", "introMissionJumpId"):
             self.add_system_jump_edge(activity_node, row.get(field), edge_kind="activity_jumps_to", source=table, evidence=field)
         self.add_reward_ref_edge(activity_node, row.get("rewardId"), edge_kind="activity_rewards", source=table, evidence="rewardId")
@@ -20377,6 +20391,7 @@ class SourceGraphBuilder:
         if activity_node:
             self.add_edge(activity_node, stage_node, "activity_has_stage", source=table, evidence=evidence or "activityId", data={"sortId": stage.get("sortId")})
             self.add_edge(stage_node, activity_node, "activity_stage_in_activity", source=table, evidence=evidence or "activityId", data={"sortId": stage.get("sortId")})
+        self.add_time_range_ref_edge(stage_node, stage.get("timeId"), edge_kind="activity_stage_available_during", source=table, evidence=f"{evidence}.timeId" if evidence else "timeId")
         self.add_reward_ref_edge(stage_node, stage.get("rewardId"), edge_kind="stage_rewards", source=table, evidence="rewardId")
         self.add_system_jump_edge(stage_node, stage.get("jumpId"), edge_kind="stage_jumps_to", source=table, evidence="jumpId")
         mission_node = self.add_mission_ref_node(stage.get("missionId"), source=table)
@@ -20501,6 +20516,7 @@ class SourceGraphBuilder:
         self.add_edge(row_node, achievement_node, "defines_achievement", source=table)
         self.add_tag_i18n_edges(achievement_node, row.get("name"), source=table, edge_kind="achievement_name_text")
         self.add_tag_i18n_edges(achievement_node, row.get("desc"), source=table, edge_kind="achievement_desc_text")
+        self.add_time_range_ref_edge(achievement_node, row.get("displayTimeId"), edge_kind="achievement_display_time", source=table, evidence="displayTimeId")
         group_node = self.add_achievement_group_node(row.get("groupId"), source=table)
         if group_node:
             self.add_edge(group_node, achievement_node, "achievement_group_has_achievement", source=table, evidence="groupId")
