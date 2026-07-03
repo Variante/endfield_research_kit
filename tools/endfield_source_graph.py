@@ -15153,6 +15153,45 @@ class SourceGraphBuilder:
             self.add_alias(prop_name, node, kind="gameplay_stat_property_name", source=source)
         return node
 
+    def add_attribute_modifier_kind_node(self, code: Any, *, source: str = "") -> str:
+        code_key = safe_key(code)
+        if not code_key:
+            return ""
+        node = self.add_node("attribute_modifier_kind", code_key, name=f"modifier {code_key}", source=source, data={"code": code})
+        self.add_alias(code_key, node, kind="attribute_modifier_kind_code", source=source)
+        self.add_alias(f"attribute_modifier_kind:{code_key}", node, kind="attribute_modifier_kind_id", source=source)
+        return node
+
+    def attribute_modifier_edge_data(self, entry: dict[str, Any], *, index: int) -> dict[str, Any]:
+        value_format = entry.get("valueFormat")
+        return {
+            "index": index,
+            "attributeModifier": entry.get("attributeModifier"),
+            "valueFormat": value_format,
+            "showPercent": entry.get("showPercent"),
+            "isReduce": entry.get("isReduce"),
+            "inverseFormat": isinstance(value_format, str) and "1-value" in value_format,
+            "displayIndex": entry.get("index"),
+        }
+
+    def add_attribute_modifier_kind_usage(
+        self,
+        entry_node: str,
+        entry: dict[str, Any],
+        *,
+        source: str,
+        evidence: str,
+        edge_kind: str,
+        reverse_kind: str,
+        index: int,
+    ) -> None:
+        modifier_node = self.add_attribute_modifier_kind_node(entry.get("attributeModifier"), source=source)
+        if not modifier_node:
+            return
+        data = self.attribute_modifier_edge_data(entry, index=index)
+        self.add_edge(entry_node, modifier_node, edge_kind, source=source, evidence=evidence, data=data)
+        self.add_edge(modifier_node, entry_node, reverse_kind, source=source, evidence=evidence, data=data)
+
     def add_attribute_display_entry_node(self, key: str, entry: dict[str, Any], *, source: str) -> str:
         entry_node = self.add_node(
             "attribute_display_entry",
@@ -15224,6 +15263,15 @@ class SourceGraphBuilder:
             modifier_node = self.add_gameplay_stat_property_node(entry.get("attributeModifier"), source=table)
             if modifier_node:
                 self.add_edge(entry_node, modifier_node, "attribute_display_entry_uses_modifier_property", source=table, evidence="attributeModifier")
+            self.add_attribute_modifier_kind_usage(
+                entry_node,
+                entry,
+                source=table,
+                evidence=f"list[{index}].attributeModifier",
+                edge_kind="attribute_display_entry_uses_modifier_kind",
+                reverse_kind="attribute_modifier_kind_used_by_display_entry",
+                index=index,
+            )
             if meta_node:
                 self.add_edge(entry_node, meta_node, "display_entry_for_attribute_meta", source=table, evidence="attributeType")
 
@@ -15252,6 +15300,15 @@ class SourceGraphBuilder:
                 continue
             entry_node = self.add_attribute_display_entry_node(f"composite:{composite_id}:{index}", entry, source=table)
             self.add_edge(config_node, entry_node, "composite_attribute_show_includes_modifier", source=table, evidence=f"list[{index}]", data={"attributeModifier": entry.get("attributeModifier")})
+            self.add_attribute_modifier_kind_usage(
+                entry_node,
+                entry,
+                source=table,
+                evidence=f"list[{index}].attributeModifier",
+                edge_kind="composite_attribute_display_entry_uses_modifier_kind",
+                reverse_kind="attribute_modifier_kind_used_by_display_entry",
+                index=index,
+            )
             self.add_edge(entry_node, composite_node, "display_entry_for_composite_attribute", source=table, evidence="compositeAttribute")
 
     def add_attribute_filter_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
@@ -15266,6 +15323,15 @@ class SourceGraphBuilder:
                 continue
             entry_node = self.add_attribute_display_entry_node(f"filter:{filter_id}:{index}", entry, source=table)
             self.add_edge(filter_node, entry_node, "attribute_filter_includes", source=table, evidence=f"list[{index}]")
+            self.add_attribute_modifier_kind_usage(
+                entry_node,
+                entry,
+                source=table,
+                evidence=f"list[{index}].attributeModifier",
+                edge_kind="attribute_filter_entry_uses_modifier_kind",
+                reverse_kind="attribute_modifier_kind_used_by_filter_entry",
+                index=index,
+            )
             composite_id = safe_key(entry.get("compositeAttr"))
             if composite_id:
                 composite_node = self.add_node("composite_attribute", composite_id, name=composite_id, source=table)
@@ -27106,6 +27172,7 @@ QUERY_KIND_PRIORITY = {
     "attribute_display_entry": 31,
     "composite_attribute": 32,
     "attribute_filter": 33,
+    "attribute_modifier_kind": 33.5,
     "interactive_attribute": 34,
     "setting_tab": 34.1,
     "setting_item": 34.2,
@@ -27906,6 +27973,7 @@ NODE_ID_PREFIXES = (
     "attribute_display_entry",
     "composite_attribute",
     "attribute_filter",
+    "attribute_modifier_kind",
     "interactive_attribute",
     "setting_tab",
     "setting_item",
