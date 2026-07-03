@@ -23544,6 +23544,19 @@ class SourceGraphBuilder:
                 else:
                     continue
                 self.add_edge(condition_node, ref_node, edge_kind, source=source, evidence=evidence)
+                reverse_kind = {
+                    "activity_condition_refs_system_jump": "system_jump_used_by_activity_condition_param",
+                    "activity_condition_refs_reward": "reward_used_by_activity_condition_param",
+                    "activity_condition_refs_item": "item_used_by_activity_condition_param",
+                    "activity_condition_refs_character": "character_used_by_activity_condition_param",
+                    "activity_condition_refs_achievement": "achievement_used_by_activity_condition_param",
+                    "activity_condition_refs_stage": "activity_stage_used_by_activity_condition_param",
+                    "activity_condition_refs_activity": "activity_used_by_activity_condition_param",
+                    "activity_condition_refs_dungeon": "dungeon_used_by_activity_condition_param",
+                    "activity_condition_refs_mission": "mission_used_by_activity_condition_param",
+                }.get(edge_kind)
+                if reverse_kind:
+                    self.add_edge(ref_node, condition_node, reverse_kind, source=source, evidence=evidence)
 
     def add_activity_condition_edges(self, owner_node: str, conditions: Any, *, edge_kind: str, source: str, evidence_prefix: str) -> None:
         for index, condition in enumerate(self.iter_activity_conditions(conditions)):
@@ -23578,6 +23591,7 @@ class SourceGraphBuilder:
             stage_node = self.add_activity_stage_node(condition.get("stageId"), source=source)
             if stage_node:
                 self.add_edge(condition_node, stage_node, "activity_condition_refs_stage", source=source, evidence=f"{evidence}.stageId")
+                self.add_edge(stage_node, condition_node, "activity_stage_used_by_activity_condition_param", source=source, evidence=f"{evidence}.stageId")
             self.add_activity_parameter_refs(condition_node, condition.get("parameters"), source=source, evidence_prefix=evidence)
 
     def add_system_jump_target_edges(self, jump_node: str, phase_id: str, phase_args: Any, *, source: str) -> None:
