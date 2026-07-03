@@ -3262,6 +3262,8 @@ class SourceGraphBuilder:
             self.commit_step("runtimeOptionRouteAudits")
             self.ingest_timeline_option_flow_audit()
             self.commit_step("timelineOptionFlowAudit")
+            self.ingest_runtime_metadata_focus_report()
+            self.commit_step("runtimeMetadataFocus")
             self.ingest_story_source_links()
             self.commit_step("storySourceLinks")
             self.ingest_main_story_order_override_comparison()
@@ -11261,6 +11263,157 @@ class SourceGraphBuilder:
                 if line_key:
                     line_node = self.add_node("line", line_key, source=source)
                     self.add_edge(audit_node, line_node, "option_flow_audit_window_line", source=source, evidence=str(line_index), data=audit_data)
+
+    def ingest_runtime_metadata_focus_report(self) -> None:
+        path = self.root / "reports" / "buff_runtime_metadata.json"
+        payload = read_json(path, {})
+        if not isinstance(payload, dict):
+            return
+        source = "runtime_metadata_focus"
+        source_path = slash(path.relative_to(self.root)) if path.is_relative_to(self.root) else slash(path)
+        metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+        settings = payload.get("settings") if isinstance(payload.get("settings"), dict) else {}
+        summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+        report_node = self.add_node(
+            "il2cpp_metadata_report",
+            "buff_runtime_metadata",
+            name="buff_runtime_metadata.json",
+            source=source,
+            path=source_path,
+            data=compact_payload({"metadata": metadata, "settings": settings, "summary": summary}, depth=3),
+        )
+        self.add_file(source_path, kind="il2cpp_metadata_report", source=source, size=path.stat().st_size if path.exists() else None)
+
+        def add_type_ref(type_name: Any, type_index: Any = None, *, evidence: str = "") -> str:
+            name_key = safe_key(type_name)
+            index_key = safe_key(type_index)
+            if not name_key and index_key:
+                name_key = f"type-index:{index_key}"
+            if not name_key:
+                return ""
+            type_node = self.add_node("il2cpp_type", name_key, name=name_key, source=source, data={"typeIndex": type_index, "typeName": type_name})
+            self.add_alias(name_key, type_node, kind="il2cpp_type_name", source=source)
+            if index_key:
+                self.add_alias(f"type-index:{index_key}", type_node, kind="il2cpp_type_index", source=source)
+            if evidence:
+                self.add_edge(report_node, type_node, "il2cpp_metadata_report_mentions_type", source=source, evidence=evidence)
+            return type_node
+
+        for type_index, type_row in enumerate(payload.get("focusTypes") or []):
+            if not isinstance(type_row, dict):
+                continue
+            type_name = safe_key(type_row.get("fullName") or type_row.get("name"))
+            if not type_name:
+                continue
+            type_node = self.add_node(
+                "il2cpp_type",
+                type_name,
+                name=type_name,
+                source=source,
+                data=compact_payload(
+                    {
+                        "index": type_row.get("index"),
+                        "fullName": type_row.get("fullName"),
+                        "name": type_row.get("name"),
+                        "namespace": type_row.get("namespace"),
+                        "image": type_row.get("image"),
+                        "token": type_row.get("token"),
+                        "fieldCount": type_row.get("fieldCount"),
+                        "methodCount": type_row.get("methodCount"),
+                        "matchedBy": type_row.get("matchedBy"),
+                    },
+                    depth=3,
+                ),
+            )
+            self.add_alias(type_name, type_node, kind="il2cpp_type_name", source=source)
+            if type_row.get("index") is not None:
+                self.add_alias(f"type-index:{type_row.get('index')}", type_node, kind="il2cpp_type_index", source=source)
+            self.add_edge(report_node, type_node, "il2cpp_metadata_report_focus_type", source=source, evidence=str(type_index), data=compact_payload(type_row.get("matchedBy"), depth=2))
+            image_key = safe_key(type_row.get("image"))
+            if image_key:
+                image_node = self.add_node("il2cpp_image", image_key, name=image_key, source=source)
+                self.add_edge(type_node, image_node, "il2cpp_type_in_image", source=source, evidence="image")
+
+            for field_index, field in enumerate(type_row.get("fields") or []):
+                if not isinstance(field, dict):
+                    continue
+                field_name = safe_key(field.get("name"))
+                if not field_name:
+                    continue
+                field_node = self.add_node(
+                    "il2cpp_field",
+                    f"{type_name}:{field_name}",
+                    name=f"{type_name}.{field_name}",
+                    source=source,
+                    data=compact_payload(field, depth=2),
+                )
+                self.add_edge(type_node, field_node, "il2cpp_type_has_field", source=source, evidence=str(field_index), data=compact_payload(field, depth=1))
+                target_type = add_type_ref(field.get("typeName"), field.get("typeIndex"), evidence="")
+                if target_type:
+                    self.add_edge(field_node, target_type, "il2cpp_field_uses_type", source=source, evidence="typeName")
+
+            for method_index, method in enumerate(type_row.get("methods") or []):
+                if not isinstance(method, dict):
+                    continue
+                method_name = safe_key(method.get("name"))
+                if not method_name:
+                    continue
+                method_key = f"{type_name}:{method_name}:{safe_key(method.get('token')) or method_index}"
+                method_node = self.add_node(
+                    "il2cpp_method",
+                    method_key,
+                    name=f"{type_name}.{method_name}",
+                    source=source,
+                    data=compact_payload(method, depth=2),
+                )
+                self.add_edge(type_node, method_node, "il2cpp_type_has_method", source=source, evidence=str(method_index), data=compact_payload(method, depth=1))
+                return_type = add_type_ref(method.get("returnTypeName"), method.get("returnTypeIndex"), evidence="")
+                if return_type:
+                    self.add_edge(method_node, return_type, "il2cpp_method_returns_type", source=source, evidence="returnTypeName")
+                for parameter_index, parameter in enumerate(method.get("parameterDetails") or []):
+                    if not isinstance(parameter, dict):
+                        continue
+                    parameter_name = safe_key(parameter.get("name") or parameter_index)
+                    parameter_node = self.add_node(
+                        "il2cpp_parameter",
+                        f"{method_key}:param:{parameter_index}:{parameter_name}",
+                        name=f"{method_name}({parameter_name})",
+                        source=source,
+                        data=compact_payload(parameter, depth=2),
+                    )
+                    self.add_edge(method_node, parameter_node, "il2cpp_method_has_parameter", source=source, evidence=str(parameter_index), data=compact_payload(parameter, depth=1))
+                    parameter_type = add_type_ref(parameter.get("typeName"), parameter.get("typeIndex"), evidence="")
+                    if parameter_type:
+                        self.add_edge(parameter_node, parameter_type, "il2cpp_parameter_uses_type", source=source, evidence="typeName")
+
+        for unresolved_index, unresolved in enumerate(payload.get("unresolvedTypeIndexUsages") or []):
+            if not isinstance(unresolved, dict):
+                continue
+            type_index = safe_key(unresolved.get("typeIndex"))
+            if not type_index:
+                continue
+            unresolved_node = self.add_node(
+                "il2cpp_unresolved_type_index",
+                type_index,
+                name=safe_key(unresolved.get("typeName")) or f"type-index:{type_index}",
+                source=source,
+                data=compact_payload({"typeIndex": unresolved.get("typeIndex"), "typeName": unresolved.get("typeName"), "useCount": len(unresolved.get("uses") or [])}, depth=2),
+            )
+            self.add_edge(report_node, unresolved_node, "il2cpp_metadata_report_unresolved_type_index", source=source, evidence=str(unresolved_index))
+            for use_index, use in enumerate(unresolved.get("uses") or []):
+                if not isinstance(use, dict):
+                    continue
+                owner_node = add_type_ref(use.get("owner"), evidence="")
+                use_node = self.add_node(
+                    "il2cpp_unresolved_type_usage",
+                    f"{type_index}:{safe_key(use.get('owner'))}:{safe_key(use.get('memberKind'))}:{safe_key(use.get('memberName'))}:{safe_key(use.get('token'))}:{use_index}",
+                    name=f"{safe_key(use.get('owner'))}.{safe_key(use.get('memberName'))}",
+                    source=source,
+                    data=compact_payload(use, depth=2),
+                )
+                self.add_edge(unresolved_node, use_node, "il2cpp_unresolved_type_has_usage", source=source, evidence=str(use_index), data=compact_payload(use, depth=1))
+                if owner_node:
+                    self.add_edge(owner_node, use_node, "il2cpp_type_has_unresolved_usage", source=source, evidence=str(use_index), data=compact_payload(use, depth=1))
 
     def ingest_story_source_links(self) -> None:
         path = EXPORT_ROOT / "recovered" / "story_source_links.json"
@@ -24916,6 +25069,14 @@ QUERY_KIND_PRIORITY = {
     "timeline_option_flow_audit_group": 3.4,
     "option_flow_verdict": 3.5,
     "il2cpp_option_flow_fact": 3.6,
+    "il2cpp_metadata_report": 3.61,
+    "il2cpp_type": 3.62,
+    "il2cpp_field": 3.63,
+    "il2cpp_method": 3.64,
+    "il2cpp_parameter": 3.65,
+    "il2cpp_image": 3.66,
+    "il2cpp_unresolved_type_index": 3.67,
+    "il2cpp_unresolved_type_usage": 3.68,
     "main_story_order_comparison": 3.7,
     "main_story_order_status": 3.71,
     "story_order_inversion_sample": 3.72,
@@ -25678,6 +25839,14 @@ NODE_ID_PREFIXES = (
     "timeline_option_flow_audit_group",
     "option_flow_verdict",
     "il2cpp_option_flow_fact",
+    "il2cpp_metadata_report",
+    "il2cpp_type",
+    "il2cpp_field",
+    "il2cpp_method",
+    "il2cpp_parameter",
+    "il2cpp_image",
+    "il2cpp_unresolved_type_index",
+    "il2cpp_unresolved_type_usage",
     "main_story_order_comparison",
     "main_story_order_status",
     "story_order_inversion_sample",
