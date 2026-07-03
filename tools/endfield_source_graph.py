@@ -17000,6 +17000,12 @@ class SourceGraphBuilder:
                 elif value_key.startswith("map") or "_lv" in value_key:
                     ref_node = self.add_level_node(value_key, source=source)
                     edge_kind = "game_mechanic_condition_param_level"
+                elif re.fullmatch(r"[a-z]\d+m\d+(?:d\d+)?_q#\d+", value_key):
+                    ref_node = self.add_quest_task_node(value_key, source=source)
+                    edge_kind = "game_mechanic_condition_param_quest_task"
+                elif re.fullmatch(r"[a-z]\d+m\d+(?:d\d+)?", value_key):
+                    ref_node = self.add_mission_ref_node(value_key, source=source)
+                    edge_kind = "game_mechanic_condition_param_mission"
                 else:
                     ref_node = self.add_game_mechanic_ref_node(value_key, source=source)
                     edge_kind = "game_mechanic_condition_param_mechanic"
@@ -17011,6 +17017,8 @@ class SourceGraphBuilder:
                         "game_mechanic_condition_param_character": "character_used_by_game_mechanic_condition_param",
                         "game_mechanic_condition_param_enemy": "enemy_used_by_game_mechanic_condition_param",
                         "game_mechanic_condition_param_level": "level_used_by_game_mechanic_condition_param",
+                        "game_mechanic_condition_param_quest_task": "quest_task_used_by_game_mechanic_condition_param",
+                        "game_mechanic_condition_param_mission": "mission_used_by_game_mechanic_condition_param",
                         "game_mechanic_condition_param_mechanic": "game_mechanic_used_by_condition_param",
                     }.get(edge_kind)
                     if reverse_kind:
