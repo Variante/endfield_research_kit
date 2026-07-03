@@ -2,9 +2,8 @@
 
 ## Slice
 
-Added reverse source-graph traversal for item submission, bottle/liquid,
-food-submit stage, AP recovery, valuable depot, collection, and recycle-bin
-relationships.
+Added reverse source-graph traversal for item submission, bottle, food-submit,
+AP recovery, depot, collection, and recycle-bin metadata.
 
 New reverse edge families include:
 
@@ -35,7 +34,7 @@ New reverse edge families include:
 Quick graph build:
 
 ```bat
-python tools\endfield_source_graph.py build --db tmp\item_submission_reverse_source_graph.sqlite --skip-asset-maps --skip-reference-rows --skip-followups
+python tools\endfield_source_graph.py build --db tmp\item_submission_reverse_source_graph_2.sqlite --skip-asset-maps --skip-reference-rows --skip-followups
 ```
 
 Result:
@@ -44,7 +43,7 @@ Result:
 - `3,178,345` edges
 - `2,277,554` aliases
 
-Parity checks:
+Populated parity checks:
 
 - `submit_item_requires_item`: `308`
 - `item_required_by_submit_item`: `308`
@@ -66,8 +65,6 @@ Parity checks:
 - `activity_stage_has_food_submit_overlay`: `16`
 - `food_submit_stage_reward`: `14`
 - `reward_used_by_food_submit_stage`: `14`
-- `food_submit_stage_jump`: `0`
-- `system_jump_used_by_food_submit_stage`: `0`
 - `item_has_ap_recovery`: `18`
 - `ap_recovery_config_for_item`: `18`
 - `valuable_depot_allows_item_type`: `42`
@@ -89,26 +86,12 @@ Parity checks:
 - `level_has_recycle_bin`: `16`
 - `recycle_bin_listed_for_level`: `16`
 
-Sample evidence:
+Empty in this dataset:
 
-- `item:item_003_chips_1 -> activity_submit_item:submit_003_chips` as
-  `item_required_by_submit_item`, source `SubmitItem`, evidence
-  `paramData[0].paramList[0].valueStringList[0]`
-- `item:item_liquid_acid -> full_bottle_item:item_fbottle_copper_acid` as
-  `item_liquid_used_by_full_bottle`, source `FullBottleTable`, evidence
-  `liquidId`
-- `collection_entry:int_blackbox_entry -> collection_entry:int_blackbox_entry_hard`
-  as `collection_entry_merged_from`, source `CollectionTable`, evidence
-  `mergeId`
-- `reward:reward_recycle_1 -> recycle_bin_level:recycle_bin_1_001_1:1` as
-  `reward_used_by_recycle_bin_level`, source `RecycleBinTable`, evidence
-  `levelData.1.rewardId`
+- `food_submit_stage_jump` / `system_jump_used_by_food_submit_stage`
 
 ## Notes
 
-This closes the item-submission inbound lookup gap for required items,
-bottle/liquid transforms, collection merge targets, AP recovery configs,
-valuable depot item types, and recycle-bin level rewards. Queries can now start
-from item, reward, level, domain, activity, activity-stage, item-type, or
-collection nodes and traverse back to the exact item-submission declarations
-that reference them.
+These edges make item-submission and depot-like metadata queryable from the
+items, rewards, activities, levels, domains, item types, and collection entries
+that participate in them, rather than requiring manual inbound scans.
