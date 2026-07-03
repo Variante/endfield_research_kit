@@ -11946,6 +11946,9 @@ class SourceGraphBuilder:
                     self.add_edge(shop_node, goods_node, "cash_shop_has_goods", source=table, evidence="cashShopId")
                     self.add_edge(goods_node, shop_node, "cash_goods_in_shop", source=table, evidence="cashShopId")
                 self.add_reward_ref_edge(goods_node, row.get("rewardId"), edge_kind="cash_goods_grants_reward", source=table, evidence="rewardId", data={"goodsType": row.get("goodsType")})
+                reward_node = self.add_reward_node(row.get("rewardId"), source=table)
+                if reward_node:
+                    self.add_edge(reward_node, goods_node, "reward_granted_by_cash_goods", source=table, evidence="rewardId", data={"goodsType": row.get("goodsType")})
                 self.add_alias(row.get("iconId"), goods_node, kind="icon_id", source=table)
         elif table == "CashShopTable":
             shop_node = self.add_cash_shop_node("cash_shop", row.get("cashShopId") or row_key, name=row.get("shopName"), source=table, data={"goodsCount": len(row.get("cashGoodsIds") or [])})
@@ -11956,6 +11959,7 @@ class SourceGraphBuilder:
                     goods_node = self.add_cash_goods_node(goods_id, source=table)
                     if goods_node:
                         self.add_edge(shop_node, goods_node, "cash_shop_lists_goods", source=table, evidence=f"cashGoodsIds[{index}]")
+                        self.add_edge(goods_node, shop_node, "cash_goods_listed_by_shop", source=table, evidence=f"cashGoodsIds[{index}]", data={"index": index})
         elif table == "CashShopGroupTable":
             group_node = self.add_cash_shop_node("cash_shop_group", row.get("shopGroupId") or row_key, name=row.get("shopGroupName"), source=table, data={"shopGroupType": row.get("shopGroupType"), "icon": row.get("icon"), "shopCount": len(row.get("cashShopIds") or [])})
             if group_node:
@@ -11966,6 +11970,7 @@ class SourceGraphBuilder:
                     shop_node = self.add_cash_shop_node("cash_shop", shop_id, source=table)
                     if shop_node:
                         self.add_edge(group_node, shop_node, "cash_shop_group_has_shop", source=table, evidence=f"cashShopIds[{index}]")
+                        self.add_edge(shop_node, group_node, "cash_shop_in_group", source=table, evidence=f"cashShopIds[{index}]", data={"index": index})
         elif table == "CashShopRechargeTable":
             bonus_node = self.add_cash_shop_node("cash_recharge_bonus", row.get("cashGoodsId") or row_key, source=table, data={"rewardTimes": row.get("rewardTimes"), "bonusRewardId": row.get("bonusRewardId")})
             if bonus_node:
@@ -11973,7 +11978,11 @@ class SourceGraphBuilder:
                 goods_node = self.add_cash_goods_node(row.get("cashGoodsId"), source=table)
                 if goods_node:
                     self.add_edge(goods_node, bonus_node, "cash_goods_has_recharge_bonus", source=table, evidence="cashGoodsId")
+                    self.add_edge(bonus_node, goods_node, "cash_recharge_bonus_for_goods", source=table, evidence="cashGoodsId")
                 self.add_reward_ref_edge(bonus_node, row.get("bonusRewardId"), edge_kind="cash_recharge_bonus_reward", source=table, evidence="bonusRewardId", data={"rewardTimes": row.get("rewardTimes")})
+                reward_node = self.add_reward_node(row.get("bonusRewardId"), source=table)
+                if reward_node:
+                    self.add_edge(reward_node, bonus_node, "reward_used_by_cash_recharge_bonus", source=table, evidence="bonusRewardId", data={"rewardTimes": row.get("rewardTimes")})
         elif table == "CashShopRecommendTable":
             rec_node = self.add_cash_shop_node("cash_recommendation", row.get("id") or row_key, name=row.get("name"), source=table, data={"type": row.get("type"), "priority": row.get("priority"), "prefabName": row.get("prefabName"), "goodsCount": len(row.get("cashGoodsIdList") or [])})
             if rec_node:
@@ -11983,10 +11992,12 @@ class SourceGraphBuilder:
                 next_node = self.add_cash_shop_node("cash_recommendation", row.get("nextChooseId"), source=table)
                 if next_node:
                     self.add_edge(rec_node, next_node, "cash_recommendation_next_choice", source=table, evidence="nextChooseId")
+                    self.add_edge(next_node, rec_node, "cash_recommendation_previous_choice", source=table, evidence="nextChooseId")
                 for index, goods_id in enumerate(row.get("cashGoodsIdList") or []):
                     goods_node = self.add_cash_goods_node(goods_id, source=table)
                     if goods_node:
                         self.add_edge(rec_node, goods_node, "cash_recommendation_surfaces_goods", source=table, evidence=f"cashGoodsIdList[{index}]")
+                        self.add_edge(goods_node, rec_node, "cash_goods_in_recommendation", source=table, evidence=f"cashGoodsIdList[{index}]", data={"index": index})
         elif table == "CashshopShopTabDataTable":
             tab_node = self.add_cash_shop_node("cash_shop_tab", row.get("id") or row_key, source=table, data={"tagCount": len(row.get("tagList") or [])})
             if tab_node:
@@ -11994,10 +12005,12 @@ class SourceGraphBuilder:
                 shop_node = self.add_cash_shop_node("cash_shop", row.get("id") or row_key, source=table)
                 if shop_node:
                     self.add_edge(tab_node, shop_node, "cash_shop_tab_for_shop", source=table, evidence="id")
+                    self.add_edge(shop_node, tab_node, "cash_shop_has_tab", source=table, evidence="id")
                 for index, tag_id in enumerate(row.get("tagList") or []):
                     tag_node = self.add_cash_shop_node("cash_shop_tag", tag_id, source=table)
                     if tag_node:
                         self.add_edge(tab_node, tag_node, "cash_shop_tab_has_tag", source=table, evidence=f"tagList[{index}]")
+                        self.add_edge(tag_node, tab_node, "cash_shop_tag_in_tab", source=table, evidence=f"tagList[{index}]", data={"index": index})
         elif table == "GiftpackCashShopGoodsDataTable":
             config_node = self.add_cash_shop_node("cash_giftpack_config", row.get("cashGoodsId") or row_key, source=table, data={"availCount": row.get("availCount"), "availRefresh": row.get("availRefresh"), "priority": row.get("priority"), "dynamicPriority": row.get("dynamicPriority"), "dynamicTag": row.get("dynamicTag"), "hideInGame": row.get("hideInGame"), "conditionOpType": row.get("conditionOpType"), "tagCount": len(row.get("tagList") or [])})
             if config_node:
@@ -12005,18 +12018,22 @@ class SourceGraphBuilder:
                 goods_node = self.add_cash_goods_node(row.get("cashGoodsId"), source=table)
                 if goods_node:
                     self.add_edge(goods_node, config_node, "cash_goods_has_giftpack_config", source=table, evidence="cashGoodsId")
+                    self.add_edge(config_node, goods_node, "cash_giftpack_config_for_goods", source=table, evidence="cashGoodsId")
                 anchor_node = self.add_cash_goods_node(row.get("anchorCashGoodsId"), source=table)
                 if anchor_node:
                     self.add_edge(config_node, anchor_node, "cash_giftpack_anchor_goods", source=table, evidence="anchorCashGoodsId")
+                    self.add_edge(anchor_node, config_node, "cash_goods_anchor_for_giftpack", source=table, evidence="anchorCashGoodsId")
                 after_node = self.add_cash_goods_node(row.get("clientShowAfterGoodsId"), source=table)
                 if after_node:
                     self.add_edge(config_node, after_node, "cash_giftpack_show_after_goods", source=table, evidence="clientShowAfterGoodsId")
+                    self.add_edge(after_node, config_node, "cash_goods_show_after_giftpack", source=table, evidence="clientShowAfterGoodsId")
                 for field in ("bg", "bigBg", "bigIcon", "deco"):
                     self.add_alias(row.get(field), config_node, kind="asset_stem", source=table)
                 for index, tag_id in enumerate(row.get("tagList") or []):
                     tag_node = self.add_cash_shop_node("cash_shop_tag", tag_id, source=table)
                     if tag_node:
                         self.add_edge(config_node, tag_node, "cash_giftpack_has_tag", source=table, evidence=f"tagList[{index}]")
+                        self.add_edge(tag_node, config_node, "cash_shop_tag_used_by_giftpack", source=table, evidence=f"tagList[{index}]", data={"index": index})
         elif table == "RechargeTable":
             recharge_node = self.add_cash_shop_node("recharge_pack", row.get("rechargeId") or row_key, name=row.get("name"), source=table, data={"price": row.get("price"), "itemCount": row.get("itemCount"), "bonusCount": row.get("bonusCount"), "sdkId": row.get("sdkId"), "sortId": row.get("sortId"), "icon": row.get("icon")})
             if recharge_node:
@@ -12027,6 +12044,7 @@ class SourceGraphBuilder:
                 item_node = self.add_item_node(row.get("itemid"), source=table)
                 if item_node:
                     self.add_edge(recharge_node, item_node, "recharge_pack_grants_item", source=table, evidence="itemid", data={"itemCount": row.get("itemCount"), "bonusCount": row.get("bonusCount")})
+                    self.add_edge(item_node, recharge_node, "item_granted_by_recharge_pack", source=table, evidence="itemid", data={"itemCount": row.get("itemCount"), "bonusCount": row.get("bonusCount")})
 
     def add_item_node(self, item_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         item_key = safe_key(item_id)
@@ -20067,7 +20085,7 @@ class SourceGraphBuilder:
                 activity_node = self.add_activity_node(activity_id, source=table)
                 if activity_node:
                     self.add_edge(formula_node, activity_node, "activity_limited_formula_for_activity", source=table, evidence="activityId")
-                shop_node = self.add_shop_node(row.get("shopGroupId"), source=table)
+                shop_node = self.add_shop_group_node(row.get("shopGroupId"), source=table)
                 if shop_node:
                     self.add_edge(formula_node, shop_node, "activity_limited_formula_shop_group", source=table, evidence="shopGroupId")
                 money_node = self.add_item_node(row.get("moneyId"), source=table)
@@ -20080,7 +20098,7 @@ class SourceGraphBuilder:
                     lock_node = self.add_activity_catalog_node("activity_limited_formula_shop_lock", shop_id, source=table, data=compact_payload(lock, depth=2))
                     if lock_node:
                         self.add_edge(formula_node, lock_node, "activity_limited_formula_shop_lock", source=table, evidence=f"activityShopLockList[{shop_id}]", data={"unlockTimeOffset": lock.get("unlockTimeOffset") if isinstance(lock, dict) else None})
-                        shop_ref = self.add_shop_node(shop_id, source=table)
+                        shop_ref = self.add_shop_group_node(shop_id, source=table)
                         if shop_ref:
                             self.add_edge(lock_node, shop_ref, "activity_limited_formula_lock_shop", source=table, evidence=f"activityShopLockList[{shop_id}]")
                         if isinstance(lock, dict):
@@ -20143,7 +20161,7 @@ class SourceGraphBuilder:
                 activity_node = self.add_activity_node(row.get("activityId"), source=table)
                 if activity_node:
                     self.add_edge(shop_node, activity_node, "activity_shop_additional_for_activity", source=table, evidence="activityId")
-                group_node = self.add_shop_node(row.get("shopGroupId") or row_key, source=table)
+                group_node = self.add_shop_group_node(row.get("shopGroupId") or row_key, source=table)
                 if group_node:
                     self.add_edge(shop_node, group_node, "activity_shop_additional_shop_group", source=table, evidence="shopGroupId")
                 money_node = self.add_item_node(row.get("activityMoneyId"), source=table)
