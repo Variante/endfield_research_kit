@@ -19580,12 +19580,19 @@ class SourceGraphBuilder:
             if reverse_kind:
                 self.add_edge(item_node, formula_node, reverse_kind, source=source, evidence=evidence, data=data)
 
+    def add_spaceship_formula_showing_type_ref(self, formula_node: str, type_id: Any, *, source: str, evidence: str) -> None:
+        showing = self.add_spaceship_semantic_node("spaceship_formula_showing_type", type_id, source=source)
+        if showing:
+            self.add_edge(formula_node, showing, "spaceship_formula_has_showing_type", source=source, evidence=evidence)
+            self.add_edge(showing, formula_node, "spaceship_formula_showing_type_has_formula", source=source, evidence=evidence)
+
     def add_spaceship_grow_formula_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         formula_id = safe_key(row.get("id") or row_key)
         formula_node = self.add_spaceship_formula_node(formula_id, source=table, data={"id": formula_id, "kind": "grow", "level": row.get("level"), "type": row.get("type"), "rarity": row.get("rarity"), "roomAttrType": row.get("roomAttrType"), "totalProgress": row.get("totalProgress"), "sortId": row.get("sortId"), "growingPostmodelId": row.get("growingPostmodelId"), "finishPostmodelId": row.get("finishPostmodelId")})
         if not formula_node:
             return
         self.add_edge(row_node, formula_node, "defines_spaceship_formula", source=table)
+        self.add_spaceship_formula_showing_type_ref(formula_node, row.get("type"), source=table, evidence="type")
         self.add_spaceship_formula_item_edge(formula_node, row.get("seedItemId"), edge_kind="spaceship_formula_consumes_item", source=table, evidence="seedItemId", count=row.get("seedItemCount"))
         self.add_spaceship_formula_item_edge(formula_node, row.get("outcomeItemId"), edge_kind="spaceship_formula_produces_item", source=table, evidence="outcomeItemId", count=row.get("outcomeItemCount"))
         seed_formula_node = self.add_spaceship_formula_node(row.get("seedFormulaId"), source=table)
@@ -19601,6 +19608,7 @@ class SourceGraphBuilder:
         if not formula_node:
             return
         self.add_edge(row_node, formula_node, "defines_spaceship_formula", source=table)
+        self.add_spaceship_formula_showing_type_ref(formula_node, row.get("type"), source=table, evidence="type")
         self.add_spaceship_formula_item_edge(formula_node, row.get("materialItemId"), edge_kind="spaceship_formula_consumes_item", source=table, evidence="materialItemId", count=row.get("materialItemCount"))
         self.add_spaceship_formula_item_edge(formula_node, row.get("outcomeseedItemId"), edge_kind="spaceship_formula_produces_item", source=table, evidence="outcomeseedItemId", count=row.get("outcomeseedItemCount"))
 
