@@ -5434,6 +5434,7 @@ class SourceGraphBuilder:
             state_node = self.add_node("animation_state", state_key, name=state_key, source="webui/game_data")
             self.add_alias(state_key, state_node, kind="animation_state_name", source="webui/game_data")
             self.add_edge(config_node, state_node, "animation_config_references_state", source="webui/game_data", evidence=f"stateNames[{index}]")
+            self.add_edge(state_node, config_node, "animation_state_used_by_animation_config", source="webui/game_data", evidence=f"stateNames[{index}]")
         for index, value in enumerate(decoded.get("facialMorphs") or []):
             morph_key = safe_key(value)
             if not morph_key:
@@ -5441,6 +5442,7 @@ class SourceGraphBuilder:
             morph_node = self.add_node("facial_morph", morph_key, name=Path(morph_key).name, source="webui/game_data", path=morph_key)
             self.add_alias(morph_key, morph_node, kind="facial_morph_path", source="webui/game_data")
             self.add_edge(config_node, morph_node, "animation_config_references_facial_morph", source="webui/game_data", evidence=f"facialMorphs[{index}]")
+            self.add_edge(morph_node, config_node, "facial_morph_used_by_animation_config", source="webui/game_data", evidence=f"facialMorphs[{index}]")
         for index, value in enumerate(decoded.get("montagePaths") or []):
             montage_node = self.add_level_script_montage_node(value, source="webui/game_data")
             self.add_edge(config_node, montage_node, "animation_config_references_montage", source="webui/game_data", evidence=f"montagePaths[{index}]")
@@ -5452,6 +5454,7 @@ class SourceGraphBuilder:
             anim_node = self.add_node("actor_animation_ref", anim_key, name=anim_key, source="webui/game_data")
             self.add_alias(anim_key, anim_node, kind="actor_animation_ref_id", source="webui/game_data")
             self.add_edge(config_node, anim_node, "animation_config_references_actor_animation", source="webui/game_data", evidence=f"actorAnimationRefs[{index}]")
+            self.add_edge(anim_node, config_node, "actor_animation_ref_used_by_animation_config", source="webui/game_data", evidence=f"actorAnimationRefs[{index}]")
         for index, value in enumerate(decoded.get("cutsceneRefs") or []):
             cutscene_key = safe_key(value)
             if not cutscene_key:
@@ -5459,6 +5462,7 @@ class SourceGraphBuilder:
             cutscene_node = self.add_node("animation_cutscene_ref", cutscene_key, name=cutscene_key, source="webui/game_data")
             self.add_alias(cutscene_key, cutscene_node, kind="animation_cutscene_ref_id", source="webui/game_data")
             self.add_edge(config_node, cutscene_node, "animation_config_references_cutscene", source="webui/game_data", evidence=f"cutsceneRefs[{index}]")
+            self.add_edge(cutscene_node, config_node, "animation_cutscene_ref_used_by_animation_config", source="webui/game_data", evidence=f"cutsceneRefs[{index}]")
         for index, value in enumerate(decoded.get("otherPaths") or []):
             path_key = safe_key(value)
             if not path_key:
@@ -5466,6 +5470,7 @@ class SourceGraphBuilder:
             path_node = self.add_node("animation_path_ref", path_key, name=Path(path_key).name, source="webui/game_data", path=path_key)
             self.add_alias(path_key, path_node, kind="animation_path_ref", source="webui/game_data")
             self.add_edge(config_node, path_node, "animation_config_references_path", source="webui/game_data", evidence=f"otherPaths[{index}]")
+            self.add_edge(path_node, config_node, "animation_path_ref_used_by_animation_config", source="webui/game_data", evidence=f"otherPaths[{index}]")
 
     def add_npc_montage_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         summary = extract_npc_montage_summary(entry)
