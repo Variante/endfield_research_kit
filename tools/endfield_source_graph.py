@@ -3262,6 +3262,8 @@ class SourceGraphBuilder:
             self.commit_step("timelineOptionFlowAudit")
             self.ingest_story_source_links()
             self.commit_step("storySourceLinks")
+            self.ingest_levelscript_property_flow_audit()
+            self.commit_step("levelScriptPropertyFlowAudit")
             self.ingest_materials()
             self.commit_step("materials")
             self.ingest_character_manifests()
@@ -3733,6 +3735,135 @@ class SourceGraphBuilder:
                             continue
                         sample_node = self.add_file(sample_key, kind="vfs_skipped_signal_sample", source=source, data={"root": root_label, "block": block_name, "signal": signal_key})
                         self.add_edge(signal_node, sample_node, "vfs_signal_sample_file", source=source, evidence=f"{root_label}:{block_name}:{sample_index}")
+
+    def ingest_levelscript_property_flow_audit(self) -> None:
+        path = self.root / "reports" / "mission_order" / f"levelscript_property_flow_{self.language}.json"
+        if not path.exists() and self.language != "CN":
+            path = self.root / "reports" / "mission_order" / "levelscript_property_flow_CN.json"
+        payload = read_json(path, {})
+        if not isinstance(payload, dict):
+            return
+        rows = payload.get("rows")
+        if not isinstance(rows, list):
+            return
+        source = "levelscript_property_flow_audit"
+        source_path = slash(path.relative_to(self.root)) if path.is_relative_to(self.root) else slash(path)
+        summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+        classification = payload.get("evidenceClassification") if isinstance(payload.get("evidenceClassification"), dict) else {}
+        dataset = self.add_node(
+            "dataset",
+            f"levelscript_property_flow:{safe_key(payload.get('language')) or self.language}",
+            name=f"LevelScript property flow audit {self.language}",
+            source=source,
+            path=source_path,
+            data=compact_payload({"summary": summary, "evidenceClassification": classification, "generated": payload.get("generated")}, depth=3),
+        )
+        self.add_file(source_path, kind="levelscript_property_flow_audit", source=source, size=path.stat().st_size if path.exists() else None)
+
+        def add_story_ref(owner_node: str, story_id: Any, edge_kind: str, evidence: str, data: Any = None) -> None:
+            story_key = safe_key(story_id)
+            if not story_key:
+                return
+            story_node = self.add_node("story", story_key, name=story_key, source=source)
+            self.add_alias(story_key, story_node, kind="story_key", source=source)
+            self.add_edge(owner_node, story_node, edge_kind, source=source, evidence=evidence, data=data)
+            self.add_edge(story_node, owner_node, f"story_used_by_{edge_kind}", source=source, evidence=evidence, data=data)
+
+        for row_index, row in enumerate(rows):
+            if not isinstance(row, dict):
+                continue
+            map_id = safe_key(row.get("mapId"))
+            script_id = safe_key(row.get("scriptId"))
+            key = safe_key(row.get("key"))
+            if not script_id or not key:
+                continue
+            flow_key = f"{map_id}:{script_id}:{key}" if map_id else f"{script_id}:{key}"
+            ls_detect = row.get("lsDetect") if isinstance(row.get("lsDetect"), dict) else {}
+            bridge_status = safe_key(row.get("bridgeStatus")) or "unknown"
+            flow_data = {
+                "mapId": map_id,
+                "scriptId": script_id,
+                "key": key,
+                "checkerCount": row.get("checkerCount"),
+                "checkerMissions": row.get("checkerMissions"),
+                "bridgeStatus": bridge_status,
+                "lsDetect": ls_detect,
+                "propertyRecordHitCount": len(row.get("propertyRecordHits") or []),
+                "nearbyStoryRefCount": len(row.get("nearbyStoryRefs") or []),
+                "checkerStoryRefCount": len(row.get("checkerStoryRefs") or []),
+            }
+            flow_node = self.add_node(
+                "level_script_property_flow",
+                flow_key,
+                name=f"{script_id}:{key}",
+                source=source,
+                data=compact_payload(flow_data, depth=3),
+            )
+            self.add_alias(flow_key, flow_node, kind="level_script_property_flow_key", source=source)
+            self.add_edge(dataset, flow_node, "levelscript_property_flow_audit_has_row", source=source, evidence=str(row_index), data=compact_payload(flow_data, depth=2))
+
+            status_node = self.add_node("level_script_property_bridge_status", bridge_status, name=bridge_status, source=source)
+            self.add_edge(flow_node, status_node, "level_script_property_flow_bridge_status", source=source, evidence="bridgeStatus", data=compact_payload(ls_detect, depth=2))
+            if map_id:
+                level_node = self.add_level_node(map_id, source=source)
+                self.add_edge(flow_node, level_node, "level_script_property_flow_in_level", source=source, evidence="mapId")
+                self.add_level_map_edge(level_node, map_id, source=source, evidence="levelscript_property_flow.mapId")
+            script_node = self.add_node("level_script", script_id, name=script_id, source=source)
+            self.add_alias(script_id, script_node, kind="level_script_id", source=source)
+            self.add_edge(flow_node, script_node, "level_script_property_flow_uses_script", source=source, evidence="scriptId")
+            property_node = self.add_node("level_script_property", f"{script_id}:{key}", name=f"{script_id}:{key}", source=source, data={"scriptId": script_id, "key": key})
+            self.add_edge(flow_node, property_node, "level_script_property_flow_for_property", source=source, evidence="key")
+
+            for mission_index, mission_id in enumerate(row.get("checkerMissions") or []):
+                mission_node = self.add_mission_ref_node(mission_id, source=source)
+                if mission_node:
+                    self.add_edge(flow_node, mission_node, "level_script_property_flow_checked_by_mission", source=source, evidence=f"checkerMissions[{mission_index}]")
+                    self.add_edge(mission_node, flow_node, "mission_checks_level_script_property_flow", source=source, evidence=f"checkerMissions[{mission_index}]")
+            for checker_index, checker in enumerate(row.get("checkers") or []):
+                if not isinstance(checker, dict):
+                    continue
+                quest_node = self.add_quest_task_node(checker.get("questId"), source=source)
+                if quest_node:
+                    self.add_edge(flow_node, quest_node, "level_script_property_flow_checked_by_quest", source=source, evidence=f"checkers[{checker_index}]", data=compact_payload(checker, depth=2))
+                    mission_id = safe_key(checker.get("mission")) or self.quest_task_mission_prefix(checker.get("questId"))
+                    mission_node = self.add_mission_ref_node(mission_id, source=source)
+                    if mission_node:
+                        self.add_edge(quest_node, mission_node, "quest_task_in_mission", source=source, evidence=f"checkers[{checker_index}].mission")
+            for story_index, story_id in enumerate(row.get("checkerStoryRefs") or []):
+                add_story_ref(flow_node, story_id, "level_script_property_flow_checker_story_ref", f"checkerStoryRefs[{story_index}]")
+
+            for hit_index, hit in enumerate(row.get("propertyRecordHits") or []):
+                if not isinstance(hit, dict):
+                    continue
+                offset = safe_key(hit.get("recordOffsetHex") or hit.get("recordOffset") or hit_index)
+                record_node = self.add_node(
+                    "level_script_property_record",
+                    f"{flow_key}:{offset}",
+                    name=f"{script_id}:{key}@{offset}",
+                    source=source,
+                    data=compact_payload(hit, depth=3),
+                )
+                self.add_edge(flow_node, record_node, "level_script_property_flow_has_record_hit", source=source, evidence=f"propertyRecordHits[{hit_index}]", data=compact_payload(hit, depth=2))
+                opcode = safe_key(hit.get("opcode"))
+                if opcode:
+                    opcode_node = self.add_node("level_script_property_opcode", opcode, name=opcode, source=source)
+                    self.add_edge(record_node, opcode_node, "level_script_property_record_opcode", source=source, evidence="opcode")
+
+            for nearby_index, nearby in enumerate(row.get("nearbyStoryRefs") or []):
+                if not isinstance(nearby, dict):
+                    continue
+                for neighbor_index, neighbor in enumerate(nearby.get("neighborStoryRefs") or []):
+                    if not isinstance(neighbor, dict):
+                        continue
+                    data = compact_payload({"nearby": nearby, "neighbor": neighbor}, depth=2)
+                    for story_index, story_id in enumerate(neighbor.get("storyRefs") or []):
+                        add_story_ref(
+                            flow_node,
+                            story_id,
+                            "level_script_property_flow_nearby_story_ref",
+                            f"nearbyStoryRefs[{nearby_index}].neighborStoryRefs[{neighbor_index}].storyRefs[{story_index}]",
+                            data=data,
+                        )
 
     def link_decoded_parameter_blackboard_keys(self) -> None:
         rows = self.db.execute(
@@ -24418,6 +24549,10 @@ QUERY_KIND_PRIORITY = {
     "level_data_param": 75,
     "level_script": 76,
     "level_script_property": 76.1,
+    "level_script_property_flow": 76.2,
+    "level_script_property_record": 76.3,
+    "level_script_property_opcode": 76.4,
+    "level_script_property_bridge_status": 76.5,
     "level_script_template": 77,
     "level_script_template_group": 78,
     "level_script_start_type": 79,
@@ -25145,6 +25280,10 @@ NODE_ID_PREFIXES = (
     "skill_icon",
     "level_script",
     "level_script_property",
+    "level_script_property_flow",
+    "level_script_property_record",
+    "level_script_property_opcode",
+    "level_script_property_bridge_status",
     "level_script_template",
     "level_script_template_group",
     "level_script_start_type",
