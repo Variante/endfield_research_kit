@@ -25388,6 +25388,7 @@ class SourceGraphBuilder:
                 decoded_payload = read_json(decoded_path, {}) if decoded_path.exists() else {}
                 if isinstance(decoded_payload, dict):
                     self.add_monobehaviour_frontier_semantic_refs(entry_node, decoded_payload, source_root=safe_key(entry.get("source")) or "decoded_index")
+                    self.add_monobehaviour_frontier_projectile_move_mode_refs(entry_node, decoded_payload, source_root=safe_key(entry.get("source")) or "decoded_index")
             source_file = safe_key(entry.get("sourceFile"))
             if source_file:
                 source_node = self.add_node("monobehaviour_source_file", source_file, name=source_file, source=entry.get("source"))
@@ -25572,6 +25573,137 @@ class SourceGraphBuilder:
                 else:
                     continue
                 self.add_edge(entry_node, target, edge_kind, source=source, evidence=evidence, data=data)
+
+    def projectile_curve_summary(self, curve: Any) -> dict[str, Any]:
+        if not isinstance(curve, dict):
+            return {}
+        keyframes = curve.get("keyframes") if isinstance(curve.get("keyframes"), list) else []
+
+        def finite_value(value: Any) -> Any:
+            if isinstance(value, dict) and "$nonFinite" in value:
+                return {"nonFinite": value.get("$nonFinite"), "rawHex": value.get("rawHex")}
+            return value
+
+        def keyframe_summary(frame: Any) -> dict[str, Any]:
+            if not isinstance(frame, dict):
+                return {}
+            return {
+                key: finite_value(frame.get(key))
+                for key in ("time", "value", "inSlope", "outSlope")
+                if key in frame
+            }
+
+        def count_non_finite(value: Any) -> int:
+            if isinstance(value, dict):
+                return (1 if "$nonFinite" in value else 0) + sum(count_non_finite(item) for item in value.values())
+            if isinstance(value, list):
+                return sum(count_non_finite(item) for item in value)
+            return 0
+
+        summary: dict[str, Any] = {
+            "keyframeCount": len(keyframes),
+            "nonFiniteCount": count_non_finite(curve),
+        }
+        if keyframes:
+            summary["firstKeyframe"] = keyframe_summary(keyframes[0])
+            summary["lastKeyframe"] = keyframe_summary(keyframes[-1])
+        for field in ("preInfinity", "postInfinity", "rotationOrder"):
+            item = curve.get(field)
+            if isinstance(item, dict):
+                summary[field] = {"value": item.get("value"), "name": item.get("name")}
+        return summary
+
+    def add_monobehaviour_frontier_projectile_move_mode_refs(self, entry_node: str, payload: dict[str, Any], *, source_root: str) -> None:
+        source = "monobehaviour_frontier_projectile_move_modes"
+
+        def add_status_edge(owner_node: str, status: Any, *, evidence: str, error: Any = None) -> None:
+            status_text = safe_key(status) or "unknown"
+            status_node = self.add_node("projectile_move_mode_decode_status", status_text, name=status_text, source=source)
+            self.add_edge(owner_node, status_node, "projectile_move_mode_decode_status", source=source, evidence=evidence)
+            error_text = safe_key(error)
+            if error_text:
+                error_node = self.add_node("projectile_move_mode_decode_error", error_text, name=error_text, source=source)
+                self.add_edge(owner_node, error_node, "projectile_move_mode_decode_error", source=source, evidence=evidence)
+
+        def add_enum_edge(owner_node: str, enum_value: Any, field: str) -> None:
+            if not isinstance(enum_value, dict):
+                return
+            enum_type = safe_key(enum_value.get("enumType"))
+            raw_value = safe_key(enum_value.get("value"))
+            if not enum_type or not raw_value:
+                return
+            key = f"{enum_type}:{raw_value}"
+            node = self.add_node("projectile_enum_value", key, name=key, source=source, data={"enumType": enum_type, "value": enum_value.get("value"), "hex": enum_value.get("hex")})
+            self.add_alias(key, node, kind="projectile_enum_value", source=source)
+            self.add_edge(owner_node, node, "projectile_move_mode_enum_value", source=source, evidence=field, data={"field": field})
+
+        def add_blackboard_edge(owner_node: str, value: Any, field: str) -> None:
+            if not isinstance(value, dict):
+                return
+            key = safe_key(value.get("blackboardKey"))
+            if not key:
+                return
+            target = self.add_blackboard_key_node(key, source=source)
+            self.add_edge(owner_node, target, "projectile_move_mode_uses_blackboard_key", source=source, evidence=field, data={"field": field, "useBlackboardKey": value.get("useBlackboardKey")})
+
+        def add_curve_edge(owner_node: str, curve_name: str, curve: Any, evidence: str) -> None:
+            if not isinstance(curve, dict) or not isinstance(curve.get("keyframes"), list):
+                return
+            curve_key = f"{owner_node}:{curve_name}"
+            data = self.projectile_curve_summary(curve)
+            data["curveName"] = curve_name
+            node = self.add_node("projectile_animation_curve", curve_key, name=curve_name, source=source_root or source, data=compact_payload(data, depth=4))
+            self.add_alias(curve_name, node, kind="projectile_animation_curve_name", source=source)
+            self.add_edge(owner_node, node, "projectile_move_mode_has_curve", source=source, evidence=evidence, data=compact_payload(data, depth=3))
+
+        def add_move_mode(move_mode: dict[str, Any], path: str, index: int) -> None:
+            key = safe_key(move_mode.get("key")) or f"mode_{index}"
+            suffix = move_mode.get("structuredSuffix") if isinstance(move_mode.get("structuredSuffix"), dict) else {}
+            status = suffix.get("structuredDecodeStatus") or ("partial" if suffix.get("$partial") else "unknown")
+            mode_data = {
+                "key": key,
+                "path": path,
+                "traceType": move_mode.get("traceType"),
+                "moveType": move_mode.get("moveType"),
+                "parabolaDef": move_mode.get("parabolaDef"),
+                "relativeOffset": move_mode.get("relativeOffset"),
+                "decodedPrefixWordCount": move_mode.get("decodedPrefixWordCount"),
+                "remainingRawWordCount": move_mode.get("remainingRawWordCount"),
+                "structuredSuffixStatus": status,
+                "structuredSuffixError": suffix.get("structuredDecodeError"),
+            }
+            mode_node = self.add_node("projectile_move_mode", f"{entry_node}:{index}:{key}", name=key, source=source_root or source, data=compact_payload(mode_data, depth=3))
+            self.add_alias(key, mode_node, kind="projectile_move_mode_key", source=source)
+            self.add_edge(entry_node, mode_node, "monobehaviour_frontier_entry_has_projectile_move_mode", source=source, evidence=path, data=compact_payload(mode_data, depth=2))
+            add_status_edge(mode_node, status, evidence=f"{path}.structuredSuffix", error=suffix.get("structuredDecodeError"))
+            for field in ("traceType", "moveType", "parabolaDef"):
+                add_enum_edge(mode_node, move_mode.get(field), field)
+            for field in ("traceTime", "traceUntilDistance"):
+                add_blackboard_edge(mode_node, move_mode.get(field), field)
+            for field, value in suffix.items():
+                if isinstance(value, dict) and value.get("layout") == "Beyond.Blackboard.BlackboardDouble":
+                    add_blackboard_edge(mode_node, value, f"structuredSuffix.{field}")
+                if isinstance(value, dict) and isinstance(value.get("keyframes"), list):
+                    add_curve_edge(mode_node, field, value, f"{path}.structuredSuffix.{field}")
+
+        def walk(value: Any, path: str = "$") -> None:
+            if isinstance(value, dict):
+                move_dict = value.get("moveModeDict")
+                if isinstance(move_dict, dict) and isinstance(move_dict.get("values"), list):
+                    keys = move_dict.get("keys") if isinstance(move_dict.get("keys"), list) else []
+                    for index, item in enumerate(move_dict.get("values") or []):
+                        if not isinstance(item, dict):
+                            continue
+                        if not safe_key(item.get("key")) and index < len(keys):
+                            item = {**item, "key": keys[index]}
+                        add_move_mode(item, f"{path}.moveModeDict.values[{index}]", index)
+                for key, item in value.items():
+                    walk(item, f"{path}.{safe_key(key)}")
+            elif isinstance(value, list):
+                for index, item in enumerate(value):
+                    walk(item, f"{path}[{index}]")
+
+        walk(payload)
 
     def add_monobehaviour_frontier_counter_edges(
         self,
@@ -26424,6 +26556,11 @@ QUERY_KIND_PRIORITY = {
     "vfs_chunk": 42.998,
     "monobehaviour_mode_id": 42.999,
     "monobehaviour_locator": 43.0,
+    "projectile_move_mode": 43.001,
+    "projectile_animation_curve": 43.002,
+    "projectile_enum_value": 43.003,
+    "projectile_move_mode_decode_status": 43.004,
+    "projectile_move_mode_decode_error": 43.005,
     "selector_formatter_table": 43.01,
     "selector_formatter": 43.02,
     "selector_formatter_slot": 43.03,
@@ -27214,6 +27351,19 @@ NODE_ID_PREFIXES = (
     "monobehaviour_registry_status",
     "monobehaviour_managed_class",
     "monobehaviour_layout",
+    "monobehaviour_frontier_entry",
+    "monobehaviour_decode_error",
+    "monobehaviour_field",
+    "monobehaviour_tag",
+    "monobehaviour_source_file",
+    "vfs_chunk",
+    "monobehaviour_mode_id",
+    "monobehaviour_locator",
+    "projectile_move_mode",
+    "projectile_animation_curve",
+    "projectile_enum_value",
+    "projectile_move_mode_decode_status",
+    "projectile_move_mode_decode_error",
     "selector_formatter_table",
     "selector_formatter",
     "selector_formatter_slot",
