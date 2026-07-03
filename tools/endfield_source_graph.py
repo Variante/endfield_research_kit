@@ -12989,6 +12989,11 @@ class SourceGraphBuilder:
             level_node = self.add_character_progression_node("character_level_cost", row_key, source=table, data={"level": parse_optional_int(row_key), "exp": row.get("exp"), "gold": row.get("gold")})
             if level_node:
                 self.add_edge(row_node, level_node, "defines_character_level_cost", source=table)
+                if row.get("gold") is not None:
+                    gold_node = self.add_item_node("item_gold", source=table)
+                    if gold_node:
+                        self.add_edge(level_node, gold_node, "character_level_cost_requires_gold", source=table, evidence="gold", data={"count": row.get("gold")})
+                        self.add_edge(gold_node, level_node, "item_gold_cost_for_character_level_cost", source=table, evidence="gold", data={"count": row.get("gold")})
         elif table == "CharBreakTable" and isinstance(row, dict):
             break_node = self.add_character_progression_node("character_break_config", row_key, source=table, data={"breakStage": parse_optional_int(row_key), "breakStatus": row.get("breakStatus"), "maxLevel": row.get("maxLevel"), "goldCost": row.get("goldCost"), "expType": row.get("expType")})
             if break_node:
@@ -13000,6 +13005,7 @@ class SourceGraphBuilder:
                     item_node = self.add_item_node(item_id, source=table)
                     if item_node:
                         self.add_edge(break_node, item_node, "character_break_config_exp_item", source=table, evidence=f"availableExpItems[{index}]")
+                        self.add_edge(item_node, break_node, "item_usable_for_character_break_exp", source=table, evidence=f"availableExpItems[{index}]")
         elif table == "CharBreakStageTable" and isinstance(row, dict):
             stage_key = row.get("breakStage") if row.get("breakStage") is not None else row_key
             stage_node = self.add_character_progression_node("character_break_stage", stage_key, source=table, data={"breakStage": row.get("breakStage"), "minCharLevel": row.get("minCharLevel"), "maxCharLevel": row.get("maxCharLevel"), "normalAttackSkillLevel": row.get("normalAttackSkillLevel"), "normalSkillLevel": row.get("normalSkillLevel"), "ultimateSkillLevel": row.get("ultimateSkillLevel"), "comboSkillLevel": row.get("comboSkillLevel")})
