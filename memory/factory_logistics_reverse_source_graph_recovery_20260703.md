@@ -2,44 +2,43 @@
 
 ## Context
 
-Factory logistics and resource-index tables already connected hub item
-visibility, machine craft groups, recipe ingredient tags, and build items to
-their factory targets in the forward direction. Starting from an item, recipe,
-ingredient tag, or logistic unit still missed direct reverse lookup for factory
-availability and crafting context.
+Factory logistics and crafting tables had forward graph edges from items to
+logistic units, hubs to displayed items, craft groups to recipes, and recipes to
+ingredient tags. Reverse lookup from the unit, displayed item, recipe, or tag
+still required manual SQL.
 
 ## Change
 
-`tools/endfield_source_graph.py` now emits reverse edges for selected factory
-logistics relationships:
+`tools/endfield_source_graph.py` now emits reverse edges for:
 
+- `factory_logistic_unit_built_from_item`
 - `item_shown_in_factory_hub`
 - `factory_recipe_in_craft_group`
 - `factory_ingredient_tag_used_by_recipe_item`
-- `factory_logistic_unit_built_from_item`
 
-The reverse edges preserve the same source, evidence, and payload data as the
-existing forward edges.
+The reverse edges preserve the same source, evidence, index/type payload, and
+item id payloads as the forward edges where available.
 
 ## Validation
 
-Syntax and diff checks:
-
 ```bat
-python -m py_compile tools\endfield_source_graph.py
-git diff --check -- tools/endfield_source_graph.py
+python -B -m py_compile tools\endfield_source_graph.py
+python tools\endfield_source_graph.py build --db tmp\factory_logistics_reverse_validation_20260703.sqlite --skip-asset-maps --skip-reference-rows --skip-followups
 ```
 
-Temporary graph:
+Temporary graph result:
 
-```bat
-python tools\endfield_source_graph.py build --db tmp\factory_logistics_reverse_source_graph.sqlite --skip-asset-maps --skip-reference-rows --skip-followups
+```text
+Source graph: 1691485 nodes, 3806630 edges, 2289338 aliases
 ```
 
-The graph built successfully with 1,691,485 nodes and 3,806,630 edges.
-Forward/reverse counts matched:
+SQLite reverse-pair checks:
 
-- `factory_hub_shows_item`: 238 / `item_shown_in_factory_hub`: 238
-- `factory_craft_group_has_recipe`: 257 / `factory_recipe_in_craft_group`: 257
-- `factory_recipe_item_uses_ingredient_tag`: 241 / `factory_ingredient_tag_used_by_recipe_item`: 241
-- `item_builds_factory_logistic_unit`: 20 / `factory_logistic_unit_built_from_item`: 20
+| Forward | Reverse | Count |
+|---|---|---:|
+| `item_builds_factory_logistic_unit` | `factory_logistic_unit_built_from_item` | 20 |
+| `factory_hub_shows_item` | `item_shown_in_factory_hub` | 238 |
+| `factory_craft_group_has_recipe` | `factory_recipe_in_craft_group` | 257 |
+| `factory_recipe_item_uses_ingredient_tag` | `factory_ingredient_tag_used_by_recipe_item` | 241 |
+
+All four pairs had `0` missing reverse edges and `0` extra reverse edges.

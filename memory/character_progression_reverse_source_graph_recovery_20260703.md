@@ -2,40 +2,41 @@
 
 ## Context
 
-Character progression tables already exposed level cost rows and break-stage
-EXP item lists, but the gold cost was only preserved as node data and EXP item
-usage was forward-only from the break config. Item-centered progression queries
-therefore missed authored character level and break EXP consumers.
+Character progression tables already exposed level-cost and break-config rows,
+but item-centric queries could not directly answer which level costs used gold
+or which break configs accepted a specific exp item.
 
 ## Change
 
-`tools/endfield_source_graph.py` now emits explicit item edges for character
-progression costs:
+`tools/endfield_source_graph.py` now emits:
 
 - `character_level_cost_requires_gold`
 - `item_gold_cost_for_character_level_cost`
 - `item_usable_for_character_break_exp`
 
-The gold edges preserve the authored `gold` value as a count payload, and the
-EXP item reverse edge preserves the original `availableExpItems[...]` evidence.
+The level-cost gold edge links each `CharacterLevelTable` cost row to the
+canonical `item_gold` node. The break exp-item reverse edge mirrors the existing
+`character_break_config_exp_item` edge from `CharBreakTable.availableExpItems`.
 
 ## Validation
 
-Syntax and diff checks:
-
 ```bat
-python -m py_compile tools\endfield_source_graph.py
-git diff --check -- tools/endfield_source_graph.py
+python -B -m py_compile tools\endfield_source_graph.py
+python tools\endfield_source_graph.py build --db tmp\character_progression_reverse_validation_20260703.sqlite --skip-asset-maps --skip-reference-rows --skip-followups
 ```
 
-Temporary graph:
+Temporary graph result:
 
-```bat
-python tools\endfield_source_graph.py build --db tmp\character_progression_reverse_source_graph.sqlite --skip-asset-maps --skip-reference-rows --skip-followups
+```text
+Source graph: 1691485 nodes, 3805874 edges, 2289338 aliases
 ```
 
-The graph built successfully with 1,691,485 nodes and 3,805,874 edges.
-Forward/reverse counts matched:
+SQLite reverse-pair checks:
 
-- `character_level_cost_requires_gold`: 90 / `item_gold_cost_for_character_level_cost`: 90
-- `character_break_config_exp_item`: 13 / `item_usable_for_character_break_exp`: 13
+| Forward | Reverse | Count |
+|---|---|---:|
+| `character_level_cost_requires_gold` | `item_gold_cost_for_character_level_cost` | 90 |
+| `character_break_config_exp_item` | `item_usable_for_character_break_exp` | 13 |
+
+Both pairs had `0` missing reverse edges and `0` extra reverse edges. The graph
+contains one canonical `item:item_gold` node.
