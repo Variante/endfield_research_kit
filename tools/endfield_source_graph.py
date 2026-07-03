@@ -24111,6 +24111,7 @@ class SourceGraphBuilder:
                         task_node = self.add_activity_catalog_node("ps_activity_task", task.get("objectId"), source=table, data=compact_payload(task, depth=2))
                         if task_node:
                             self.add_edge(ps_node, task_node, "ps_activity_has_task", source=table, evidence=f"activityTasks[{index}]", data={"index": index})
+                            self.add_edge(task_node, ps_node, "ps_activity_task_in_activity", source=table, evidence=f"activityTasks[{index}]", data={"index": index})
         elif table == "PsActivityTaskTable":
             task_node = self.add_activity_catalog_node("ps_activity_task", row.get("objectId") or row_key, source=table, data={"activityId": row.get("activityId"), "startMissionId": row.get("startMissionId"), "endMissionId": row.get("endMissionId")})
             if task_node:
@@ -24118,10 +24119,17 @@ class SourceGraphBuilder:
                 ps_node = self.add_activity_catalog_node("ps_activity", row.get("activityId"), source=table)
                 if ps_node:
                     self.add_edge(ps_node, task_node, "ps_activity_has_task", source=table, evidence="activityId")
+                    self.add_edge(task_node, ps_node, "ps_activity_task_in_activity", source=table, evidence="activityId")
                 for field, edge_kind in (("startMissionId", "ps_activity_task_start_mission"), ("endMissionId", "ps_activity_task_end_mission")):
                     mission_node = self.add_mission_ref_node(row.get(field), source=table)
                     if mission_node:
                         self.add_edge(task_node, mission_node, edge_kind, source=table, evidence=field)
+                        reverse_kind = {
+                            "ps_activity_task_start_mission": "mission_used_by_ps_activity_task_start",
+                            "ps_activity_task_end_mission": "mission_used_by_ps_activity_task_end",
+                        }.get(edge_kind)
+                        if reverse_kind:
+                            self.add_edge(mission_node, task_node, reverse_kind, source=table, evidence=field)
         elif table == "ActivitySubmitFoodTable":
             stage_node = self.add_activity_catalog_node("activity_submit_food_stage", row.get("stageId") or row_key, name=row.get("name"), source=table, data={"submitItemId": row.get("submitItemId"), "tipManualCraftId": row.get("tipManualCraftId"), "unlockShow": row.get("unlockShow"), "showImg": row.get("showImg")})
             if stage_node:
