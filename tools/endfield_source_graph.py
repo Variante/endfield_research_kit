@@ -17449,14 +17449,16 @@ class SourceGraphBuilder:
             self.add_alias(Path(model_path).stem, weapon_node, kind="model_name", source=table)
             self.add_model_asset_entity_edges(weapon_node, (model_path,), edge_kind="weapon_model_asset_entity", source=table, evidence="modelPath")
         template_specs = (
-            ("levelTemplateId", "weapon_upgrade_template", "weapon_uses_upgrade_template"),
-            ("breakthroughTemplateId", "weapon_breakthrough_template", "weapon_uses_breakthrough_template"),
-            ("talentTemplateId", "weapon_talent_template", "weapon_uses_talent_template"),
+            ("levelTemplateId", "weapon_upgrade_template", "weapon_uses_upgrade_template", "weapon_upgrade_template_used_by_weapon"),
+            ("breakthroughTemplateId", "weapon_breakthrough_template", "weapon_uses_breakthrough_template", "weapon_breakthrough_template_used_by_weapon"),
+            ("talentTemplateId", "weapon_talent_template", "weapon_uses_talent_template", "weapon_talent_template_used_by_weapon"),
         )
-        for field, kind, edge_kind in template_specs:
+        for field, kind, edge_kind, reverse_kind in template_specs:
             template_node = self.add_weapon_template_node(kind, row.get(field), source=table)
             if template_node:
-                self.add_edge(weapon_node, template_node, edge_kind, source=table, evidence=field)
+                data = {"field": field}
+                self.add_edge(weapon_node, template_node, edge_kind, source=table, evidence=field, data=data)
+                self.add_edge(template_node, weapon_node, reverse_kind, source=table, evidence=field, data=data)
         for index, skill_id in enumerate(row.get("weaponSkillList") or []):
             skill_key = safe_key(skill_id)
             if not skill_key:
