@@ -7689,6 +7689,16 @@ class SourceGraphBuilder:
             return f"Persistent-structured/{rel[len('Persistent/') :]}"
         return rel
 
+    def recovered_source_root(self, value: Any) -> str:
+        rel = safe_key(value).replace("\\", "/")
+        if not rel:
+            return ""
+        if "/StreamingAssets/" in rel or rel.startswith("StreamingAssets/"):
+            return "StreamingAssets"
+        if "/Persistent/" in rel or rel.startswith("Persistent/"):
+            return "Persistent"
+        return ""
+
     def ingest_video_bindings(self) -> None:
         path = EXPORT_ROOT / "recovered" / "video_bindings.json"
         payload = read_json(path, {})
@@ -7795,9 +7805,16 @@ class SourceGraphBuilder:
                     self.add_edge(clip_node, file_node, "fmv_binding_source_file", source="video_bindings", evidence=f"clips[{clip_index}].trackFile")
                 path_id = safe_key(clip.get("playableAssetPathId"))
                 if path_id:
-                    pid_node = self.add_node("unity_pathid", f"pathid:{path_id}", name=f"pathid:{path_id}", source="video_bindings")
+                    pid_node = self.add_node("unity_pathid", path_id, name=f"pathid:{path_id}", source="video_bindings")
                     self.add_alias(f"pathid:{path_id}", pid_node, kind="unity_pathid", source="video_bindings")
-                    self.add_edge(clip_node, pid_node, "fmv_binding_playable_pathid", source="video_bindings", evidence=f"clips[{clip_index}].playableAssetPathId")
+                    self.add_edge(
+                        clip_node,
+                        pid_node,
+                        "fmv_binding_playable_pathid",
+                        source="video_bindings",
+                        evidence=f"clips[{clip_index}].playableAssetPathId",
+                        data={"sourceRoot": self.recovered_source_root(track_file), "trackFile": track_file},
+                    )
 
             for source_index, source_row in enumerate(binding.get("sources") or []):
                 if not isinstance(source_row, dict):
@@ -7808,9 +7825,21 @@ class SourceGraphBuilder:
                     self.add_edge(binding_node, file_node, "fmv_binding_source_file", source="video_bindings", evidence=f"sources[{source_index}].asset", data=compact_payload(source_row, depth=2))
                 path_id = safe_key(source_row.get("pathId"))
                 if path_id:
-                    pid_node = self.add_node("unity_pathid", f"pathid:{path_id}", name=f"pathid:{path_id}", source="video_bindings")
+                    pid_node = self.add_node("unity_pathid", path_id, name=f"pathid:{path_id}", source="video_bindings")
                     self.add_alias(f"pathid:{path_id}", pid_node, kind="unity_pathid", source="video_bindings")
-                    self.add_edge(binding_node, pid_node, "fmv_binding_playable_pathid", source="video_bindings", evidence=f"sources[{source_index}].pathId", data={"kind": source_row.get("kind"), "duration": source_row.get("duration")})
+                    self.add_edge(
+                        binding_node,
+                        pid_node,
+                        "fmv_binding_playable_pathid",
+                        source="video_bindings",
+                        evidence=f"sources[{source_index}].pathId",
+                        data={
+                            "kind": source_row.get("kind"),
+                            "duration": source_row.get("duration"),
+                            "sourceRoot": self.recovered_source_root(source_file),
+                            "asset": source_file,
+                        },
+                    )
 
         for index, video_path in enumerate(payload.get("unboundVideos") or []):
             rel = self.normalized_video_binding_path(video_path)
@@ -21969,6 +21998,7 @@ class SourceGraphBuilder:
                 owner.kind AS owner_kind,
                 pathid.id AS pathid_node,
                 unity.id AS unity_node,
+                unity.source AS unity_source,
                 exported.dst AS asset_node,
                 playable_edge.evidence AS evidence,
                 playable_edge.data AS playable_data
@@ -21986,12 +22016,15 @@ class SourceGraphBuilder:
             ORDER BY owner.id, pathid.id, unity.id, exported.dst
             """
         ).fetchall()
-        for owner_node, owner_kind, pathid_node, unity_node, asset_node, evidence, playable_data in rows:
+        for owner_node, owner_kind, pathid_node, unity_node, unity_source, asset_node, evidence, playable_data in rows:
             data = parse_json_text(playable_data) if playable_data else {}
             if isinstance(data, dict):
                 data = dict(data)
             else:
                 data = {}
+            source_root = safe_key(data.get("sourceRoot"))
+            if source_root and safe_key(unity_source) != source_root:
+                continue
             data["pathidNode"] = pathid_node
             data["ownerKind"] = owner_kind
             self.add_edge(
@@ -24037,6 +24070,8 @@ ASSET_USED_BY_INCOMING_EDGE_KINDS = (
     "uses_texture_pathid",
     "material_texture_pathid_resolves_unity_asset",
     "material_texture_pathid_exports_asset",
+    "fmv_playable_pathid_resolves_unity_asset",
+    "fmv_playable_pathid_exports_asset",
     "entity_has_lod_model",
     "entity_uses_material",
     "entity_uses_texture",
@@ -24046,6 +24081,8 @@ ASSET_USED_BY_OUTGOING_EDGE_KINDS = (
     "referenced_by_model",
     "unity_asset_used_by_material_texture_slot",
     "asset_export_used_by_material_texture_slot",
+    "unity_asset_used_by_fmv_playable_pathid",
+    "asset_export_used_by_fmv_playable_pathid",
 )
 ASSET_USES_EDGE_KINDS = (
     "has_gameplay_asset_entity",
@@ -24058,6 +24095,8 @@ ASSET_USES_EDGE_KINDS = (
     "uses_texture_pathid",
     "material_texture_pathid_resolves_unity_asset",
     "material_texture_pathid_exports_asset",
+    "fmv_playable_pathid_resolves_unity_asset",
+    "fmv_playable_pathid_exports_asset",
     "entity_has_lod_model",
     "entity_uses_material",
     "entity_uses_texture",
