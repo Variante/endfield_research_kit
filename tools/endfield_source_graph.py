@@ -18974,6 +18974,7 @@ class SourceGraphBuilder:
             self.add_alias(asset_key, owner_node, kind="asset_stem", source=source)
             asset_node = self.add_node("asset_ref", asset_key, name=asset_key, source=source)
             self.add_edge(owner_node, asset_node, "lookup_references_asset", source=source, evidence=f"{evidence_prefix}[{index}]")
+            self.add_edge(asset_node, owner_node, "asset_referenced_by_lookup", source=source, evidence=f"{evidence_prefix}[{index}]")
 
     def add_factory_interaction_lookup_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if table == "FactorySpecialPowerPoleTable" and isinstance(row, dict):
@@ -19188,6 +19189,7 @@ class SourceGraphBuilder:
                 template_node = self.add_interactive_template_ref_node(row.get("interactiveTemplateId"), source=table)
                 if template_node:
                     self.add_edge(wrapper_node, template_node, "interactive_fac_wrapper_template", source=table, evidence="interactiveTemplateId")
+                    self.add_edge(template_node, wrapper_node, "interactive_template_has_fac_wrapper", source=table, evidence="interactiveTemplateId")
             return
         if table == "PsTrophyTable" and isinstance(row, dict):
             trophy_node = self.add_mode_constant_node("ps_trophy", row.get("objectId") or row_key, source=table, data={"objectId": row.get("objectId"), "trophyId": row.get("trophyId")})
@@ -19203,8 +19205,10 @@ class SourceGraphBuilder:
                 self.add_edge(row_node, map_node, "defines_factory_building_type_map", source=table)
                 if source_type:
                     self.add_edge(map_node, source_type, "factory_building_type_map_source", source=table, evidence="rowKey")
+                    self.add_edge(source_type, map_node, "factory_building_type_source_for_map", source=table, evidence="rowKey")
                 if target_type:
                     self.add_edge(map_node, target_type, "factory_building_type_map_target", source=table, evidence="rowValue")
+                    self.add_edge(target_type, map_node, "factory_building_type_target_for_map", source=table, evidence="rowValue")
             return
         if table == "ActivityHighDifficultySpecialStageTable" and isinstance(row, dict):
             stage_node = self.add_mode_constant_node("activity_high_difficulty_special_stage", row_key, source=table, data={"bgName": row.get("bgName")})
@@ -19213,6 +19217,7 @@ class SourceGraphBuilder:
                 activity_stage = self.add_activity_stage_node(row_key, source=table)
                 if activity_stage:
                     self.add_edge(stage_node, activity_stage, "high_difficulty_special_stage_activity_stage", source=table, evidence="rowKey")
+                    self.add_edge(activity_stage, stage_node, "activity_stage_has_high_difficulty_special_stage", source=table, evidence="rowKey")
                 self.add_alias(row.get("bgName"), stage_node, kind="asset_stem", source=table)
             return
         if table == "CharGatherBehaviourTable" and isinstance(row, dict):
