@@ -3272,6 +3272,8 @@ class SourceGraphBuilder:
             self.commit_step("audioConfig")
             self.ingest_decoded_audio_index()
             self.commit_step("decodedAudio")
+            self.ingest_hotfix_audio_event_audit()
+            self.commit_step("hotfixAudio")
             self.ingest_dialog_support_semantics()
             self.commit_step("dialogSupport")
             self.ingest_decoded_config_semantics()
@@ -18700,6 +18702,21 @@ class SourceGraphBuilder:
             self.add_alias(path, node, kind="wwise_bank_path", source=source)
         return node
 
+    def add_hotfix_wwise_event_hash_node(self, event_hash: Any, *, source: str = "", data: Any = None) -> str:
+        event_key = safe_key(event_hash)
+        if not event_key:
+            return ""
+        node = self.add_node("hotfix_wwise_event_hash", event_key, name=event_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=event_key, source=source, data=data)
+        self.add_alias(event_key, node, kind="hotfix_wwise_event_hash", source=source)
+        event_hex = ""
+        if isinstance(data, dict):
+            event_hex = safe_key(data.get("eventHashHex"))
+        if event_hex:
+            self.add_alias(event_hex.lower(), node, kind="hotfix_wwise_event_hash_hex", source=source)
+        return node
+
     def decoded_audio_media_id(self, entry: dict[str, Any]) -> str:
         media_key = safe_key(entry.get("mediaId")) or safe_key(entry.get("id"))
         return media_key if media_key.isdigit() else ""
@@ -19400,6 +19417,126 @@ class SourceGraphBuilder:
                 if media_node and bank_node:
                     self.add_edge(media_node, bank_node, "wwise_media_from_bank", source=source, evidence=f"eventEvidence.mediaIds[{index}]")
                     self.add_edge(bank_node, media_node, "wwise_bank_has_media", source=source, evidence=f"eventEvidence.mediaIds[{index}]")
+
+    def ingest_hotfix_audio_event_audit(self) -> None:
+        audit_path = self.root / "reports" / "mission_order" / "hotfix_audio_event_audit.json"
+        payload = read_json(audit_path, {})
+        if not isinstance(payload, dict):
+            return
+        source = "hotfix_audio_event_audit"
+        dataset = self.add_node(
+            "dataset",
+            "hotfix_audio_event_audit",
+            name="Hotfix audio event audit",
+            source=source,
+            path=slash(audit_path),
+            data=compact_payload(payload.get("summary") or {}, depth=3),
+        )
+        self.add_file(slash(audit_path), kind="hotfix_audio_event_audit", source=source, data=compact_payload(payload.get("metadata") or {}, depth=2))
+
+        pck_nodes: dict[str, str] = {}
+        for pck in payload.get("pcks") or []:
+            if not isinstance(pck, dict):
+                continue
+            pck_path = safe_key(pck.get("fileName"))
+            if not pck_path:
+                continue
+            pck_node = self.add_node(
+                "hotfix_audio_pck",
+                pck_path,
+                name=Path(pck_path).name,
+                source=source,
+                path=pck_path,
+                data=compact_payload(
+                    {
+                        "blockType": pck.get("blockType"),
+                        "bytes": pck.get("bytes"),
+                        "mediaIdCount": pck.get("mediaIdCount"),
+                        "embeddedBankCount": pck.get("embeddedBankCount"),
+                    },
+                    depth=2,
+                ),
+            )
+            pck_nodes[pck_path] = pck_node
+            self.add_edge(dataset, pck_node, "has_hotfix_audio_pck", source=source, evidence=pck_path)
+            self.add_file(pck_path, kind="hotfix_audio_pck", source=source, size=pck.get("bytes") if isinstance(pck.get("bytes"), int) else None)
+            for index, media_id in enumerate(pck.get("mediaIds") or []):
+                media_node = self.add_wwise_media_node(media_id, source=source)
+                if media_node:
+                    self.add_edge(pck_node, media_node, "hotfix_pck_contains_media", source=source, evidence=f"mediaIds[{index}]")
+
+        event_by_hex: dict[str, str] = {}
+        for event in payload.get("events") or []:
+            if not isinstance(event, dict):
+                continue
+            event_node = self.add_hotfix_wwise_event_hash_node(
+                event.get("eventHash"),
+                source=source,
+                data=compact_payload(
+                    {
+                        "eventHashHex": event.get("eventHashHex"),
+                        "bankId": event.get("bankId"),
+                        "bankIdHex": event.get("bankIdHex"),
+                        "actionIds": event.get("actionIds"),
+                        "knownEventNameCount": len(event.get("knownEventNames") or []),
+                        "resolvedMediaCount": event.get("resolvedMediaCount"),
+                        "visitedObjectCount": event.get("visitedObjectCount"),
+                    },
+                    depth=2,
+                ),
+            )
+            if not event_node:
+                continue
+            event_hex = safe_key(event.get("eventHashHex")).lower()
+            if event_hex:
+                event_by_hex[event_hex] = event_node
+            pck_node = pck_nodes.get(safe_key(event.get("sourcePck")))
+            if pck_node:
+                self.add_edge(pck_node, event_node, "hotfix_pck_has_event_hash", source=source, evidence=safe_key(event.get("eventHashHex") or event.get("eventHash")))
+            bank_node = self.add_wwise_bank_node(event.get("bankId"), bank_path=event.get("sourcePck"), source=source)
+            if bank_node:
+                self.add_edge(event_node, bank_node, "hotfix_event_hash_in_bank", source=source, evidence=safe_key(event.get("bankIdHex") or event.get("bankId")))
+                self.add_edge(bank_node, event_node, "hotfix_bank_has_event_hash", source=source, evidence=safe_key(event.get("eventHashHex") or event.get("eventHash")))
+            for index, media_id in enumerate(event.get("mediaIds") or []):
+                media_node = self.add_wwise_media_node(media_id, source=source)
+                if media_node:
+                    self.add_edge(event_node, media_node, "hotfix_event_hash_uses_media", source=source, evidence=f"mediaIds[{index}]")
+                    self.add_edge(media_node, event_node, "hotfix_media_used_by_event_hash", source=source, evidence=f"mediaIds[{index}]")
+
+        for media in payload.get("media") or []:
+            if not isinstance(media, dict):
+                continue
+            media_node = self.add_wwise_media_node(
+                media.get("mediaId"),
+                source=source,
+                data=compact_payload(
+                    {
+                        "mediaIdHex": media.get("mediaIdHex"),
+                        "extension": media.get("extension"),
+                        "decodedBytes": media.get("decodedBytes"),
+                        "eventHashCount": media.get("eventHashCount"),
+                        "knownEventNameCount": media.get("knownEventNameCount"),
+                    },
+                    depth=2,
+                ),
+            )
+            if not media_node:
+                continue
+            decoded_path = safe_key(media.get("decodedPath"))
+            if decoded_path:
+                file_node = self.add_file(
+                    decoded_path,
+                    kind="decoded_audio",
+                    source=source,
+                    size=media.get("decodedBytes") if isinstance(media.get("decodedBytes"), int) else None,
+                    data=compact_payload({"mediaId": media.get("mediaId"), "extension": media.get("extension"), "source": "hotfix_audio_probe"}, depth=2),
+                )
+                self.add_edge(media_node, file_node, "hotfix_media_decoded_file", source=source, evidence=decoded_path)
+                self.add_edge(file_node, media_node, "decoded_audio_file_hotfix_media", source=source, evidence=decoded_path)
+            for event_hex in media.get("eventHashes") or []:
+                event_node = event_by_hex.get(safe_key(event_hex).lower())
+                if event_node:
+                    self.add_edge(media_node, event_node, "hotfix_media_has_event_hash_evidence", source=source, evidence=safe_key(event_hex))
 
     def add_audio_sequence_response_links(self) -> None:
         rows = self.db.execute(
@@ -23367,6 +23504,8 @@ QUERY_KIND_PRIORITY = {
     "audio_level": 35,
     "wwise_media": 35.1,
     "wwise_bank": 35.2,
+    "hotfix_audio_pck": 35.3,
+    "hotfix_wwise_event_hash": 35.4,
     "dialog_text": 36,
     "dialog_option": 37,
     "dialog_summary": 38,
@@ -24565,6 +24704,8 @@ NODE_ID_PREFIXES = (
     "wwise_event",
     "wwise_media",
     "wwise_bank",
+    "hotfix_audio_pck",
+    "hotfix_wwise_event_hash",
     "responsive_dialog_group",
     "responsive_speaker",
     "responsive_trigger",
