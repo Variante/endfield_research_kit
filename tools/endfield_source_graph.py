@@ -6809,11 +6809,15 @@ class SourceGraphBuilder:
         for field, payload in (("displayItemId", detail_map), ("pieceItemId", visibility_map)):
             item_node = self.add_item_node(payload.get(field), source=source)
             if item_node:
-                self.add_edge(mark_node, item_node, "map_mark_displays_item", source=source, evidence=f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}")
+                evidence = f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}"
+                self.add_edge(mark_node, item_node, "map_mark_displays_item", source=source, evidence=evidence)
+                self.add_edge(item_node, mark_node, "item_displayed_by_map_mark", source=source, evidence=evidence)
         for field, payload in (("rewardId", detail_map), ("rewardId", visibility_map)):
             reward_node = self.add_reward_node(payload.get(field), source=source)
             if reward_node:
-                self.add_edge(mark_node, reward_node, "map_mark_rewards", source=source, evidence=f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}")
+                evidence = f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}"
+                self.add_edge(mark_node, reward_node, "map_mark_rewards", source=source, evidence=evidence)
+                self.add_edge(reward_node, mark_node, "reward_used_by_map_mark", source=source, evidence=evidence)
         teleport_node = self.add_node("teleport_point", safe_key(detail_map.get("teleportValidationId")), name=safe_key(detail_map.get("teleportValidationId")), source=source) if safe_key(detail_map.get("teleportValidationId")) else ""
         if teleport_node:
             self.add_alias(detail_map.get("teleportValidationId"), teleport_node, kind="teleport_point_id", source=source)
@@ -6821,7 +6825,9 @@ class SourceGraphBuilder:
         for field, payload in (("systemInstId", detail_map), ("systemInsId", visibility_map)):
             system_node = self.add_system_interactive_node(payload.get(field), source=source)
             if system_node:
-                self.add_edge(mark_node, system_node, "map_mark_system_instance", source=source, evidence=f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}")
+                evidence = f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}"
+                self.add_edge(mark_node, system_node, "map_mark_system_instance", source=source, evidence=evidence)
+                self.add_edge(system_node, mark_node, "system_interactive_used_by_map_mark", source=source, evidence=evidence)
         for field, payload in (("logicIdGlobal", detail_map), ("entityLogicIdGlobal", visibility_map), ("intLogicIdGlobal", visibility_map), ("logicId", visibility_map)):
             logic_node = self.add_map_mark_logic_ref_node(payload.get(field), source=source)
             if logic_node:
@@ -6829,11 +6835,15 @@ class SourceGraphBuilder:
         for field, payload in (("activityId", detail_map), ("activityId", visibility_map)):
             activity_node = self.add_activity_node(payload.get(field), source=source)
             if activity_node:
-                self.add_edge(mark_node, activity_node, "map_mark_activity", source=source, evidence=f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}")
+                evidence = f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}"
+                self.add_edge(mark_node, activity_node, "map_mark_activity", source=source, evidence=evidence)
+                self.add_edge(activity_node, mark_node, "activity_used_by_map_mark", source=source, evidence=evidence)
         for field, payload in (("activityStageId", detail_map), ("activityStageId", visibility_map)):
             stage_node = self.add_activity_stage_node(payload.get(field), source=source)
             if stage_node:
-                self.add_edge(mark_node, stage_node, "map_mark_activity_stage", source=source, evidence=f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}")
+                evidence = f"{'detailedData' if payload is detail_map else 'visibilityData'}.{field}"
+                self.add_edge(mark_node, stage_node, "map_mark_activity_stage", source=source, evidence=evidence)
+                self.add_edge(stage_node, mark_node, "activity_stage_used_by_map_mark", source=source, evidence=evidence)
         for field, payload in (("settlementId", detail_map), ("settlementId", visibility_map)):
             settlement_id = safe_key(payload.get(field))
             if not settlement_id:
@@ -6852,7 +6862,9 @@ class SourceGraphBuilder:
             for index, value in enumerate(values):
                 minigame_node = self.add_minigame_node(value, source=source)
                 if minigame_node:
-                    self.add_edge(mark_node, minigame_node, "map_mark_minigame", source=source, evidence=f"visibilityData.{field}[{index}]")
+                    evidence = f"visibilityData.{field}[{index}]"
+                    self.add_edge(mark_node, minigame_node, "map_mark_minigame", source=source, evidence=evidence)
+                    self.add_edge(minigame_node, mark_node, "minigame_used_by_map_mark", source=source, evidence=evidence)
         for field, payload in (("coreLogicId", detail_map), ("allCoreEntity", visibility_map)):
             values = payload.get(field)
             if not isinstance(values, list):
