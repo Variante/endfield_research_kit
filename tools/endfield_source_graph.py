@@ -8322,6 +8322,7 @@ class SourceGraphBuilder:
             area_id_node = self.add_navmesh_area_id_node(owner, area_id, source=source)
             if area_id_node:
                 self.add_edge(area_node, area_id_node, "navmesh_area_has_area_id", source=source, evidence="areaId")
+                self.add_edge(area_id_node, area_node, "navmesh_area_id_has_area", source=source, evidence="areaId")
 
     def add_navmesh_state_container_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         raw_data = self.read_decoded_config_bytes(entry)
@@ -8381,6 +8382,7 @@ class SourceGraphBuilder:
                     area_id_node = self.add_navmesh_area_id_node(owner, row.get("areaId"), source=source)
                     if area_id_node:
                         self.add_edge(record_node, area_id_node, "navmesh_state_record_references_area_id", source=source, evidence="areaId")
+                        self.add_edge(area_id_node, record_node, "navmesh_area_id_used_by_state_record", source=source, evidence="areaId")
 
     def add_model_view_state_controller_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         raw_data = self.read_decoded_config_bytes(entry)
