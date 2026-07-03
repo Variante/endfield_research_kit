@@ -3256,6 +3256,8 @@ class SourceGraphBuilder:
             self.commit_step("timelineLineOrders")
             self.ingest_runtime_option_route_audits()
             self.commit_step("runtimeOptionRouteAudits")
+            self.ingest_timeline_option_flow_audit()
+            self.commit_step("timelineOptionFlowAudit")
             self.ingest_story_source_links()
             self.commit_step("storySourceLinks")
             self.ingest_materials()
@@ -9951,6 +9953,140 @@ class SourceGraphBuilder:
                     )
                     self.add_edge(option_node, jump_node, "runtime_audit_nearby_jump", source=source, evidence=str(jump_index), data=jump_data)
                     self.add_edge(audit_node, jump_node, "runtime_audit_has_nearby_jump", source=source, evidence=str(jump_index), data=jump_data)
+
+    def ingest_timeline_option_flow_audit(self) -> None:
+        path = ROOT / "reports" / "timeline_option_flow_audit_CN_interesting.json"
+        payload = read_json(path, {})
+        if not isinstance(payload, dict):
+            return
+        groups = payload.get("groups") or []
+        if not isinstance(groups, list) or not groups:
+            return
+        source = "timeline_option_flow_audit"
+        source_path = slash(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else slash(path)
+        summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+        dataset = self.add_node(
+            "dataset",
+            "timeline_option_flow_audit_CN_interesting",
+            name=path.name,
+            source=source,
+            path=source_path,
+            data=compact_payload(summary, depth=3),
+        )
+        self.add_file(source_path, kind="timeline_option_flow_audit", source=source, size=path.stat().st_size if path.exists() else None)
+
+        fact_nodes: list[str] = []
+        il2cpp = summary.get("il2cppOptionFlow") if isinstance(summary.get("il2cppOptionFlow"), dict) else {}
+        for index, fact in enumerate(il2cpp.get("facts") or []):
+            if not isinstance(fact, dict):
+                continue
+            fact_key = f"{safe_key(fact.get('type'))}.{safe_key(fact.get('method'))}:{safe_key(fact.get('kind'))}"
+            fact_node = self.add_node(
+                "il2cpp_option_flow_fact",
+                fact_key,
+                name=safe_key(fact.get("kind")) or fact_key,
+                source=source,
+                path=safe_key(il2cpp.get("source")),
+                data=compact_payload(fact, depth=2),
+            )
+            fact_nodes.append(fact_node)
+            self.add_edge(dataset, fact_node, "timeline_option_flow_audit_has_il2cpp_fact", source=source, evidence=str(index))
+
+        for group_index, group in enumerate(groups):
+            if not isinstance(group, dict):
+                continue
+            story_key = safe_key(group.get("storyKey"))
+            group_key = safe_key(group.get("group"))
+            if not story_key or not group_key:
+                continue
+            audit_key = f"{story_key}:group:{group_key}"
+            window_pattern = group.get("windowPattern") if isinstance(group.get("windowPattern"), dict) else {}
+            runtime_gate = window_pattern.get("runtimeGate") if isinstance(window_pattern.get("runtimeGate"), dict) else {}
+            verdict_key = safe_key(runtime_gate.get("verdict") or group.get("runtimeGateVerdict"))
+            audit_data = {
+                "language": group.get("language"),
+                "storyKey": story_key,
+                "mission": group.get("mission"),
+                "group": group_key,
+                "timeline": group.get("timeline"),
+                "after": group.get("after"),
+                "classification": group.get("classification"),
+                "recommendation": group.get("recommendation"),
+                "semanticsClassification": group.get("semanticsClassification"),
+                "semanticsRecommendation": group.get("semanticsRecommendation"),
+                "candidateLineCount": len(group.get("candidateLineIds") or []),
+                "windowLineCount": len(group.get("windowLineIds") or []),
+                "candidateContiguous": window_pattern.get("candidateContiguous"),
+                "candidatesAtWindowStart": window_pattern.get("candidatesAtWindowStart"),
+                "runtimeGateVerdict": verdict_key,
+                "candidateRuntimeFieldPattern": runtime_gate.get("candidateRuntimeFieldPattern"),
+                "windowRuntimeFieldPattern": runtime_gate.get("windowRuntimeFieldPattern"),
+                "sourceReport": source_path,
+            }
+            audit_node = self.add_node(
+                "timeline_option_flow_audit_group",
+                audit_key,
+                name=audit_key,
+                source=source,
+                path=source_path,
+                data=compact_payload(audit_data, depth=3),
+            )
+            story_node = self.add_node("story", story_key, source=source)
+            option_group_node = self.add_node(
+                "option_group",
+                self.timeline_group_key(story_key, group_key),
+                source=source,
+                data={"g": group_key, "index": self.timeline_group_index(group_key)},
+            )
+            self.add_edge(dataset, audit_node, "has_timeline_option_flow_audit", source=source, evidence=str(group_index), data=audit_data)
+            self.add_edge(story_node, audit_node, "story_has_option_flow_audit", source=source, evidence=group_key, data=audit_data)
+            self.add_edge(option_group_node, audit_node, "option_group_has_option_flow_audit", source=source, evidence=source_path, data=audit_data)
+
+            if verdict_key:
+                verdict_node = self.add_node(
+                    "option_flow_verdict",
+                    verdict_key,
+                    name=verdict_key,
+                    source=source,
+                    data={"recommendation": group.get("recommendation"), "runtimeGate": compact_payload(runtime_gate, depth=2)},
+                )
+                self.add_edge(audit_node, verdict_node, "option_flow_audit_has_verdict", source=source, evidence=verdict_key, data=audit_data)
+
+            for fact_node in fact_nodes:
+                self.add_edge(audit_node, fact_node, "option_flow_audit_uses_il2cpp_fact", source=source, evidence=source_path)
+
+            for option_index, option in enumerate(group.get("options") or []):
+                if not isinstance(option, dict):
+                    continue
+                option_id = safe_key(option.get("optionId"))
+                if not option_id:
+                    continue
+                option_node = self.add_node("option", option_id, name=option_id, source=source)
+                option_data = {
+                    "candidateLineId": option.get("candidateLineId"),
+                    "optionIndex": option.get("optionIndex"),
+                    "clipOptionIndex": option.get("clipOptionIndex"),
+                    "logicId": option.get("logicId"),
+                    "assetTrack": option.get("assetTrack"),
+                    "sourceReport": source_path,
+                }
+                self.add_edge(audit_node, option_node, "option_flow_audit_candidate_option", source=source, evidence=str(option_index), data=option_data)
+                line_key = safe_key(option.get("candidateLineId"))
+                if line_key:
+                    line_node = self.add_node("line", line_key, source=source)
+                    self.add_edge(option_node, line_node, "option_flow_candidate_option_line", source=source, evidence=option_id, data=option_data)
+
+            for line_index, line_id in enumerate(group.get("candidateLineIds") or []):
+                line_key = safe_key(line_id)
+                if line_key:
+                    line_node = self.add_node("line", line_key, source=source)
+                    self.add_edge(audit_node, line_node, "option_flow_audit_candidate_line", source=source, evidence=str(line_index), data=audit_data)
+
+            for line_index, line_id in enumerate(group.get("windowLineIds") or []):
+                line_key = safe_key(line_id)
+                if line_key:
+                    line_node = self.add_node("line", line_key, source=source)
+                    self.add_edge(audit_node, line_node, "option_flow_audit_window_line", source=source, evidence=str(line_index), data=audit_data)
 
     def ingest_story_source_links(self) -> None:
         path = EXPORT_ROOT / "recovered" / "story_source_links.json"
@@ -23470,6 +23606,9 @@ QUERY_KIND_PRIORITY = {
     "option_override": 3,
     "runtime_option_route_audit_group": 3.2,
     "runtime_option_route_conflict": 3.3,
+    "timeline_option_flow_audit_group": 3.4,
+    "option_flow_verdict": 3.5,
+    "il2cpp_option_flow_fact": 3.6,
     "line": 4,
     "sns_dialog": 5,
     "sns_content": 6,
@@ -24179,6 +24318,9 @@ NODE_ID_PREFIXES = (
     "option_override",
     "runtime_option_route_audit_group",
     "runtime_option_route_conflict",
+    "timeline_option_flow_audit_group",
+    "option_flow_verdict",
+    "il2cpp_option_flow_fact",
     "line",
     "sns_chat",
     "sns_topic",
