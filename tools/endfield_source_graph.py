@@ -13474,11 +13474,13 @@ class SourceGraphBuilder:
         if not entry_node:
             return
         self.add_edge(group_node, entry_node, "battlepass_preview_group_has_entry", source=source, evidence=f"rewardInfos[{index}]")
+        self.add_edge(entry_node, group_node, "battlepass_preview_entry_in_group", source=source, evidence=f"rewardInfos[{index}]")
         self.add_tag_i18n_edges(entry_node, entry.get("name"), source=source, edge_kind="battlepass_preview_name_text")
         self.add_tag_i18n_edges(entry_node, entry.get("desc"), source=source, edge_kind="battlepass_preview_desc_text")
         item_node = self.add_item_node(entry.get("itemId"), source=source)
         if item_node:
             self.add_edge(entry_node, item_node, "battlepass_preview_item", source=source, evidence="itemId", data={"count": entry.get("count")})
+            self.add_edge(item_node, entry_node, "item_used_by_battlepass_preview", source=source, evidence="itemId", data={"count": entry.get("count")})
         self.add_alias(entry.get("iconId"), entry_node, kind="asset_stem", source=source)
 
     def add_battlepass_banner_entry(self, banner_node: str, banner_id: str, entry: dict[str, Any], index: int, *, source: str) -> None:
@@ -13486,14 +13488,17 @@ class SourceGraphBuilder:
         if not entry_node:
             return
         self.add_edge(banner_node, entry_node, "battlepass_banner_has_entry", source=source, evidence=f"bannerInfos[{index}]")
+        self.add_edge(entry_node, banner_node, "battlepass_banner_entry_in_banner", source=source, evidence=f"bannerInfos[{index}]")
         self.add_tag_i18n_edges(entry_node, entry.get("desc"), source=source, edge_kind="battlepass_banner_desc_text")
         self.add_tag_i18n_edges(entry_node, entry.get("labelTip"), source=source, edge_kind="battlepass_banner_label_text")
         track_node = self.add_battlepass_node("battlepass_track", entry.get("trackId"), source=source)
         if track_node:
             self.add_edge(entry_node, track_node, "battlepass_banner_entry_track", source=source, evidence="trackId")
+            self.add_edge(track_node, entry_node, "battlepass_track_used_by_banner_entry", source=source, evidence="trackId")
         item_node = self.add_item_node(entry.get("itemId"), source=source)
         if item_node:
             self.add_edge(entry_node, item_node, "battlepass_banner_entry_item", source=source, evidence="itemId")
+            self.add_edge(item_node, entry_node, "item_used_by_battlepass_banner_entry", source=source, evidence="itemId")
         self.add_alias(entry.get("iconId"), entry_node, kind="asset_stem", source=source)
 
     def add_battlepass_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
@@ -13507,11 +13512,21 @@ class SourceGraphBuilder:
                     target = self.add_battlepass_node(kind, row.get(field), source=table)
                     if target:
                         self.add_edge(season_node, target, edge_kind, source=table, evidence=field)
+                        reverse_kind = {
+                            "battlepass_season_level_group": "battlepass_level_group_used_by_season",
+                            "battlepass_season_override_level_group": "battlepass_override_level_group_used_by_season",
+                            "battlepass_season_banner": "battlepass_banner_used_by_season",
+                            "battlepass_season_originium_preview": "battlepass_preview_group_used_by_season",
+                            "battlepass_season_pay_preview": "battlepass_preview_group_used_by_season",
+                        }.get(edge_kind)
+                        if reverse_kind:
+                            self.add_edge(target, season_node, reverse_kind, source=table, evidence=field)
                 for field, edge_kind in (("originiumHintRewardId", "battlepass_season_originium_hint_reward"), ("payHintRewardId", "battlepass_season_pay_hint_reward")):
                     self.add_reward_ref_edge(season_node, row.get(field), edge_kind=edge_kind, source=table, evidence=field)
                 item_node = self.add_item_node(row.get("weaponBoxId"), source=table)
                 if item_node:
                     self.add_edge(season_node, item_node, "battlepass_season_weapon_box", source=table, evidence="weaponBoxId")
+                    self.add_edge(item_node, season_node, "item_used_as_battlepass_weapon_box", source=table, evidence="weaponBoxId")
                 self.add_alias(row.get("bussinessCardId"), season_node, kind="business_card_id", source=table)
         elif table == "BattlePassTaskGroupTable" and isinstance(row, dict):
             group_node = self.add_battlepass_node("battlepass_task_group", row.get("groupId") or row_key, name=row.get("name"), source=table, data={"labelId": row.get("labelId"), "sortId": row.get("sortId"), "isDefault": row.get("isDefault")})
@@ -13521,6 +13536,7 @@ class SourceGraphBuilder:
                 label_node = self.add_ui_label_node("BattlePassTaskLabelTable", row.get("labelId"), source=table)
                 if label_node:
                     self.add_edge(group_node, label_node, "battlepass_task_group_label", source=table, evidence="labelId")
+                    self.add_edge(label_node, group_node, "ui_label_used_by_battlepass_task_group", source=table, evidence="labelId")
         elif table == "BattlePassTaskTable" and isinstance(row, dict):
             task_node = self.add_battlepass_node("battlepass_task", row.get("taskId") or row_key, name=row.get("name"), source=table, data={"groupId": row.get("groupId"), "addexp": row.get("addexp"), "opType": row.get("opType"), "sortId": row.get("sortId"), "defaultEnable": row.get("defaultEnable"), "formatType": row.get("formatType")})
             if task_node:
@@ -13529,13 +13545,16 @@ class SourceGraphBuilder:
                 group_node = self.add_battlepass_node("battlepass_task_group", row.get("groupId"), source=table)
                 if group_node:
                     self.add_edge(group_node, task_node, "battlepass_group_has_task", source=table, evidence="groupId")
+                    self.add_edge(task_node, group_node, "battlepass_task_in_group", source=table, evidence="groupId")
                 for index, condition_id in enumerate(row.get("conditionIds") or []):
                     condition_node = self.add_battlepass_node("battlepass_condition", condition_id, source=table)
                     if condition_node:
                         self.add_edge(task_node, condition_node, "battlepass_task_has_condition", source=table, evidence=f"conditionIds[{index}]")
+                        self.add_edge(condition_node, task_node, "battlepass_condition_used_by_task", source=table, evidence=f"conditionIds[{index}]")
                 tip_node = self.add_system_tip_node("battlepass_forecast_tip", row.get("forecastTipId"), source=table)
                 if tip_node:
                     self.add_edge(task_node, tip_node, "battlepass_task_forecast_tip", source=table, evidence="forecastTipId")
+                    self.add_edge(tip_node, task_node, "battlepass_forecast_tip_used_by_task", source=table, evidence="forecastTipId")
                 self.add_system_jump_edge(task_node, row.get("jumpId"), edge_kind="battlepass_task_jump", source=table, evidence="jumpId")
         elif table == "BattlePassConditionTable" and isinstance(row, dict):
             condition_node = self.add_battlepass_node("battlepass_condition", row.get("conditionId") or row_key, source=table, data={"progressToCompare": row.get("progressToCompare")})
@@ -13553,6 +13572,7 @@ class SourceGraphBuilder:
                     level_node = self.add_battlepass_node("battlepass_level", f"{group_id}:{level}", source=table, data={"levelGroupId": group_id, "level": level, "levelExp": info.get("levelExp"), "isMilestone": info.get("isMilestone"), "isRecurring": info.get("isRecurring"), "buyHintType": info.get("buyHintType"), "override": table == "BattlePassOverrideLevelTable"})
                     if level_node:
                         self.add_edge(group_node, level_node, "battlepass_group_has_level", source=table, evidence=str(level))
+                        self.add_edge(level_node, group_node, "battlepass_level_in_group", source=table, evidence=str(level))
                         self.add_battlepass_level_rewards(level_node, info, source=table)
         elif table == "BattlePassTrackTable" and isinstance(row, dict):
             track_node = self.add_battlepass_node("battlepass_track", row.get("trackId") or row_key, name=row.get("name"), source=table, data={"trackType": row.get("trackType"), "bpExpUpRatio": row.get("bpExpUpRatio")})
@@ -13566,6 +13586,7 @@ class SourceGraphBuilder:
                 self.add_edge(row_node, type_node, "defines_battlepass_track_type", source=table)
                 if track_node:
                     self.add_edge(type_node, track_node, "battlepass_track_type_resolves", source=table, evidence="bpTrackID")
+                    self.add_edge(track_node, type_node, "battlepass_track_has_type", source=table, evidence="bpTrackID")
         elif table == "BattlePassRewardPreviewTable" and isinstance(row, dict):
             group_id = safe_key(row.get("previewGroupId") or row_key)
             group_node = self.add_battlepass_node("battlepass_reward_preview_group", group_id, source=table, data={"entryCount": len(row.get("rewardInfos") or [])})
@@ -13590,11 +13611,13 @@ class SourceGraphBuilder:
                 sub_node = self.add_ui_label_node("BattlePassTaskLabelTable", sub.get("taskLabelID"), source=table)
                 if parent_node and sub_node:
                     self.add_edge(parent_node, sub_node, "battlepass_label_has_sublabel", source=table, evidence=f"subLabels[{index}]")
+                    self.add_edge(sub_node, parent_node, "battlepass_label_has_parent", source=table, evidence=f"subLabels[{index}]")
         elif table == "BattlePassTaskSubLabelMapTable" and isinstance(row, dict):
             sub_node = self.add_ui_label_node("BattlePassTaskLabelTable", row_key, source=table)
             parent_node = self.add_ui_label_node("BattlePassTaskLabelTable", row.get("parentLabelId"), source=table)
             if parent_node and sub_node:
                 self.add_edge(parent_node, sub_node, "battlepass_label_has_sublabel", source=table, evidence="parentLabelId")
+                self.add_edge(sub_node, parent_node, "battlepass_label_has_parent", source=table, evidence="parentLabelId")
         elif table == "WeekRaidBattlePassTable" and isinstance(row, dict):
             node = self.add_battlepass_node("weekraid_battlepass_node", row.get("bpNodeId") if row.get("bpNodeId") is not None else row_key, source=table, data={"score": row.get("score"), "conditionAdventureLevel": row.get("conditionAdventureLevel"), "conditionTech": row.get("conditionTech"), "gameId": row.get("gameId")})
             if node:
@@ -13602,10 +13625,12 @@ class SourceGraphBuilder:
                 dungeon_node = self.add_dungeon_node(row.get("gameId"), source=table)
                 if dungeon_node:
                     self.add_edge(node, dungeon_node, "weekraid_battlepass_game", source=table, evidence="gameId")
+                    self.add_edge(dungeon_node, node, "dungeon_used_by_weekraid_battlepass_node", source=table, evidence="gameId")
                 self.add_reward_ref_edge(node, row.get("rewardId"), edge_kind="weekraid_battlepass_reward", source=table, evidence="rewardId")
                 item_node = self.add_item_node(row.get("rewardItemId"), source=table)
                 if item_node:
                     self.add_edge(node, item_node, "weekraid_battlepass_reward_item", source=table, evidence="rewardItemId")
+                    self.add_edge(item_node, node, "item_used_by_weekraid_battlepass_node", source=table, evidence="rewardItemId")
 
     def add_dungeon_catalog_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         catalog_key = safe_key(key)
@@ -19563,6 +19588,7 @@ class SourceGraphBuilder:
                 "activity_limited_formula_stage_incomplete_jump": "system_jump_used_by_activity_limited_formula_stage",
                 "activity_web_entry_jump": "system_jump_used_by_activity_web_entry",
                 "activity_web_stage_jump": "system_jump_used_by_activity_web_stage",
+                "battlepass_task_jump": "system_jump_used_by_battlepass_task",
             }.get(edge_kind)
             if reverse_kind:
                 self.add_edge(jump_node, owner_node, reverse_kind, source=source, evidence=evidence)
@@ -19579,6 +19605,12 @@ class SourceGraphBuilder:
                 "adventure_book_task_reward": "reward_used_by_adventure_book_task",
                 "adventure_book_stage_reward": "reward_used_by_adventure_book_stage",
                 "activity_web_stage_reward": "reward_used_by_activity_web_stage",
+                "battlepass_level_free_reward": "reward_used_by_battlepass_level_free",
+                "battlepass_level_originium_reward": "reward_used_by_battlepass_level_originium",
+                "battlepass_level_pay_reward": "reward_used_by_battlepass_level_pay",
+                "battlepass_season_originium_hint_reward": "reward_used_by_battlepass_season_originium_hint",
+                "battlepass_season_pay_hint_reward": "reward_used_by_battlepass_season_pay_hint",
+                "weekraid_battlepass_reward": "reward_used_by_weekraid_battlepass_node",
             }.get(edge_kind)
             if reverse_kind:
                 self.add_edge(reward_node, owner_node, reverse_kind, source=source, evidence=evidence, data=data)
