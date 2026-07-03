@@ -14817,12 +14817,12 @@ class SourceGraphBuilder:
             self.add_alias(item_name, item_node, kind="item_name", source=source)
         return item_node
 
-    def add_item_type_node(self, type_id: Any, *, name: Any = None, source: str = "") -> str:
+    def add_item_type_node(self, type_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         type_key = safe_key(type_id)
         if not type_key:
             return ""
         type_name = table_display_text(name) or type_key
-        type_node = self.add_node("item_type", type_key, name=type_name, source=source)
+        type_node = self.add_node("item_type", type_key, name=type_name, source=source, data=data)
         self.add_alias(type_key, type_node, kind="item_type_id", source=source)
         if type_name != type_key:
             self.add_alias(type_name, type_node, kind="item_type_name", source=source)
@@ -14941,9 +14941,15 @@ class SourceGraphBuilder:
 
     def add_item_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         type_id = row.get("itemType") if "itemType" in row else row_key
-        type_node = self.add_item_type_node(type_id, name=row.get("name"), source=table)
+        type_node = self.add_item_type_node(type_id, name=row.get("name"), source=table, data={"unlockSystemType": row.get("unlockSystemType")})
         self.add_edge(row_node, type_node, "defines_item_type", source=table)
         self.add_tag_i18n_edges(type_node, row.get("name"), source=table, edge_kind="item_type_name_text")
+        unlock_key = safe_key(row.get("unlockSystemType"))
+        if unlock_key:
+            unlock_node = self.add_node("gameplay_unlock", unlock_key, name=unlock_key, source=table)
+            self.add_alias(unlock_key, unlock_node, kind="gameplay_unlock_id", source=table)
+            self.add_edge(type_node, unlock_node, "item_type_unlock_system", source=table, evidence="unlockSystemType")
+            self.add_edge(unlock_node, type_node, "gameplay_unlock_controls_item_type", source=table, evidence="unlockSystemType")
 
     def add_item_showing_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         showing_node = self.add_item_showing_type_node(row.get("type") if "type" in row else row_key, name=row.get("name"), source=table)
