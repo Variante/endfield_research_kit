@@ -20226,6 +20226,17 @@ class SourceGraphBuilder:
                 continue
             evidence = f"{evidence_prefix}[{index}]"
             self.add_edge(owner_node, condition_node, edge_kind, source=source, evidence=evidence)
+            reverse_edge_kind = {
+                "stage_has_condition": "activity_condition_used_by_stage",
+                "stage_has_unlock_condition": "activity_condition_unlocks_stage",
+                "stage_has_complete_condition": "activity_condition_completes_stage",
+                "achievement_has_plate_condition": "activity_condition_used_by_achievement_plate",
+                "adventure_book_task_condition": "activity_condition_used_by_adventure_book_task",
+                "adventure_task_condition": "activity_condition_used_by_adventure_task",
+                "activity_benefit_condition": "activity_condition_used_by_benefit",
+            }.get(edge_kind)
+            if reverse_edge_kind:
+                self.add_edge(condition_node, owner_node, reverse_edge_kind, source=source, evidence=evidence)
             self.add_i18n_text_edges(condition_node, condition, source=source)
             self.add_system_jump_edge(condition_node, condition.get("jumpId"), edge_kind="activity_condition_jumps_to", source=source, evidence=f"{evidence}.jumpId")
             stage_node = self.add_activity_stage_node(condition.get("stageId"), source=source)
@@ -20413,6 +20424,7 @@ class SourceGraphBuilder:
                 condition_node = self.add_activity_condition_node(condition_id, source=table)
                 if condition_node:
                     self.add_edge(task_node, condition_node, "task_has_complete_condition", source=table, evidence=f"completeConditionId[{condition_index}]")
+                    self.add_edge(condition_node, task_node, "activity_condition_completes_task", source=table, evidence=f"completeConditionId[{condition_index}]")
             self.add_i18n_text_edges(task_node, task, source=table)
 
     def add_activity_task_condition_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
@@ -20455,6 +20467,7 @@ class SourceGraphBuilder:
             condition_node = self.add_activity_condition_node(condition_id, source=table)
             if condition_node:
                 self.add_edge(push_node, condition_node, "push_has_condition", source=table, evidence=f"conditionIdList[{index}]")
+                self.add_edge(condition_node, push_node, "activity_condition_used_by_push", source=table, evidence=f"conditionIdList[{index}]")
         self.add_i18n_text_edges(push_node, row, source=table)
 
     def add_activity_achievement_data_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
@@ -20463,6 +20476,7 @@ class SourceGraphBuilder:
         if activity_node and achievement_node:
             self.add_edge(row_node, activity_node, "defines_activity_achievement_link", source=table)
             self.add_edge(activity_node, achievement_node, "activity_has_achievement", source=table, evidence="achievementId")
+            self.add_edge(achievement_node, activity_node, "achievement_used_by_activity", source=table, evidence="achievementId")
 
     def add_achievement_type_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         category_node = self.add_achievement_category_node(row.get("categoryId") or row_key, name=row.get("categoryName"), source=table, data={"categoryPriority": row.get("categoryPriority"), "noObtainCanView": row.get("noObtainCanView")})
@@ -20475,6 +20489,7 @@ class SourceGraphBuilder:
             group_node = self.add_achievement_group_node(group.get("groupId"), name=group.get("groupName"), source=table)
             if group_node:
                 self.add_edge(category_node, group_node, "achievement_category_has_group", source=table, evidence=f"achievementGroupData[{index}]")
+                self.add_edge(group_node, category_node, "achievement_group_in_category", source=table, evidence=f"achievementGroupData[{index}]")
                 self.add_tag_i18n_edges(group_node, group.get("groupName"), source=table, edge_kind="achievement_group_name_text")
         self.add_tag_i18n_edges(category_node, row.get("categoryName"), source=table, edge_kind="achievement_category_name_text")
 
@@ -20489,6 +20504,7 @@ class SourceGraphBuilder:
         group_node = self.add_achievement_group_node(row.get("groupId"), source=table)
         if group_node:
             self.add_edge(group_node, achievement_node, "achievement_group_has_achievement", source=table, evidence="groupId")
+            self.add_edge(achievement_node, group_node, "achievement_in_group", source=table, evidence="groupId")
         self.add_activity_condition_edges(achievement_node, row.get("plateConditions"), edge_kind="achievement_has_plate_condition", source=table, evidence_prefix="plateConditions")
         level_infos = row.get("levelInfos") if isinstance(row.get("levelInfos"), dict) else {}
         for level_key, level in level_infos.items():
@@ -20498,6 +20514,7 @@ class SourceGraphBuilder:
             if not level_node:
                 continue
             self.add_edge(achievement_node, level_node, "achievement_has_level", source=table, evidence=f"levelInfos[{level_key}]")
+            self.add_edge(level_node, achievement_node, "achievement_level_for_achievement", source=table, evidence=f"levelInfos[{level_key}]")
             self.add_tag_i18n_edges(level_node, level.get("completeDesc"), source=table, edge_kind="achievement_level_complete_text")
             for condition_index, condition in enumerate(level.get("conditions") or []):
                 if not isinstance(condition, dict):
@@ -20505,6 +20522,7 @@ class SourceGraphBuilder:
                 condition_node = self.add_achievement_condition_node(condition.get("conditionId") or f"{achievement_id}:level:{level_key}:condition:{condition_index}", source=table, data={"achievementId": achievement_id, "achieveLevel": level.get("achieveLevel") or level_key, "progressToCompare": condition.get("progressToCompare")})
                 if condition_node:
                     self.add_edge(level_node, condition_node, "achievement_level_has_condition", source=table, evidence=f"conditions[{condition_index}]")
+                    self.add_edge(condition_node, level_node, "achievement_condition_for_level", source=table, evidence=f"conditions[{condition_index}]")
                     self.add_tag_i18n_edges(condition_node, condition.get("desc"), source=table, edge_kind="achievement_condition_desc_text")
         self.add_i18n_text_edges(achievement_node, row, source=table)
 
@@ -20519,6 +20537,7 @@ class SourceGraphBuilder:
             achievement_node = self.add_achievement_node(entry.get("achieveId"), source=table)
             if achievement_node:
                 self.add_edge(statistic_node, achievement_node, "achievement_statistic_tracks", source=table, evidence=f"achieveList[{index}]", data={"statVal": entry.get("statVal")})
+                self.add_edge(achievement_node, statistic_node, "achievement_tracked_by_statistic", source=table, evidence=f"achieveList[{index}]", data={"statVal": entry.get("statVal")})
 
     def add_activity_achievement_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if not isinstance(row, dict):
