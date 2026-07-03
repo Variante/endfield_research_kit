@@ -87,6 +87,10 @@ ASSET_ACTOR_RE = re.compile(r"(?:^|[/\\])(?:S|T|M|A|AC)_actor_([A-Za-z0-9]+)", r
 LINE_AUDIO_RE = re.compile(r"\bau_[A-Za-z0-9_]{2,160}\b")
 LINE_AUDIO_BYTES_RE = re.compile(rb"\bau_[A-Za-z0-9_]{2,160}\b")
 PATH_ID_EXPORT_STEM_RE = re.compile(r"^(?P<base>.+)_p(?P<path_id>[0-9A-Fa-f]{16})$")
+SHADER_NAME_RE = re.compile(r'^\s*Shader\s+"(?P<name>[^"]+)"')
+ENDFIELD_SHADER_SNIPPET_RE = re.compile(
+    r"Endfield\s+(?P<backend>DXBC|SMOL-V)\s+snippet\s+(?P<index>\d+):\s+offset\s+0x(?P<offset>[0-9A-Fa-f]+),\s+size\s+0x(?P<size>[0-9A-Fa-f]+)"
+)
 ASSET_SINGLE_PREFIX_RE = re.compile(r"^[A-Za-z]_")
 ASSET_LOD_SUFFIX_RE = re.compile(r"(?:[_-])lod\d+$", re.IGNORECASE)
 WORLD_SEMANTIC_TABLES = (
@@ -3283,6 +3287,8 @@ class SourceGraphBuilder:
             self.commit_step("levelScriptPropertyFlowAudit")
             self.ingest_materials()
             self.commit_step("materials")
+            self.ingest_shader_programs()
+            self.commit_step("shaderPrograms")
             self.ingest_character_manifests()
             self.commit_step("characterManifests")
             self.ingest_selected_structured_tables()
@@ -3331,6 +3337,8 @@ class SourceGraphBuilder:
                 self.commit_step("assetMaps")
                 self.link_material_pathid_unity_assets()
                 self.commit_step("materialPathIdAssetLinks")
+                self.link_shader_program_unity_assets()
+                self.commit_step("shaderProgramAssetLinks")
                 self.link_fmv_pathid_unity_assets()
                 self.commit_step("fmvPathIdAssetLinks")
                 self.ingest_texture2d_raw_hash_collision_audit()
@@ -12002,6 +12010,158 @@ class SourceGraphBuilder:
                         evidence=slot,
                         data={"slot": slot, "fileId": texture.get("m_FileID")},
                     )
+
+    def shader_program_key_for_path(self, source: str, path: Path) -> tuple[str, str, str]:
+        stem = path.stem
+        match = PATH_ID_EXPORT_STEM_RE.match(stem)
+        if not match:
+            return f"{source}:{stem}", stem, ""
+        path_id = asset_pid_signed_path_id(match.group("path_id"))
+        return f"{source}:{path_id or match.group('path_id')}", match.group("base"), path_id
+
+    def shader_family_for_name(self, shader_name: str, fallback_base: str) -> str:
+        name = safe_key(shader_name)
+        if "/" in name:
+            return name.split("/", 1)[0]
+        base = safe_key(fallback_base)
+        if "_" in base:
+            return base.split("_", 1)[0]
+        return base or "unknown"
+
+    def scan_shader_program_file(self, path: Path) -> dict[str, Any]:
+        shader_name = ""
+        snippet_counts: Counter[str] = Counter()
+        snippet_bytes: Counter[str] = Counter()
+        snippets: list[dict[str, Any]] = []
+        occurrence = 0
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            for line_number, line in enumerate(handle, 1):
+                if not shader_name:
+                    name_match = SHADER_NAME_RE.search(line)
+                    if name_match:
+                        shader_name = safe_key(name_match.group("name"))
+                match = ENDFIELD_SHADER_SNIPPET_RE.search(line)
+                if not match:
+                    continue
+                backend = safe_key(match.group("backend"))
+                size_bytes = int(match.group("size"), 16)
+                snippet_counts[backend] += 1
+                snippet_bytes[backend] += size_bytes
+                snippets.append({
+                    "backend": backend,
+                    "index": int(match.group("index")),
+                    "occurrence": occurrence,
+                    "line": line_number,
+                    "offsetHex": f"0x{match.group('offset').upper()}",
+                    "sizeHex": f"0x{match.group('size').upper()}",
+                    "sizeBytes": size_bytes,
+                })
+                occurrence += 1
+        sidecar_root = path.with_suffix(path.suffix + ".bytecode")
+        sidecar_counts: Counter[str] = Counter()
+        sidecar_bytes: Counter[str] = Counter()
+        if sidecar_root.is_dir():
+            for sidecar in sidecar_root.iterdir():
+                if not sidecar.is_file():
+                    continue
+                suffix = sidecar.suffix.lower().lstrip(".") or "unknown"
+                sidecar_counts[suffix] += 1
+                sidecar_bytes[suffix] += sidecar.stat().st_size
+        return {
+            "shaderName": shader_name,
+            "snippetCounts": dict(snippet_counts),
+            "snippetBytes": dict(snippet_bytes),
+            "snippets": snippets,
+            "sidecarCounts": dict(sidecar_counts),
+            "sidecarBytes": dict(sidecar_bytes),
+        }
+
+    def ingest_shader_programs(self) -> None:
+        dataset = self.add_node("dataset", "animestudio_shader_program_exports", name="AnimeStudio shader program exports")
+        for source in ("StreamingAssets", "Persistent"):
+            root = EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / source / "convert_by_type" / "Shader"
+            status_path = EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / source / "asset_status" / "convert_by_type_Shader.json"
+            if not root.is_dir():
+                continue
+            status_payload = read_json(status_path, {})
+            status_summary = status_payload.get("summary") if isinstance(status_payload, dict) and isinstance(status_payload.get("summary"), dict) else {}
+            export_node = self.add_node(
+                "shader_export",
+                source,
+                name=f"{source} shader export",
+                source=source,
+                path=slash(root),
+                data=compact_payload({"status": status_summary, "statusPath": slash(status_path)}, depth=2),
+            )
+            self.add_edge(dataset, export_node, "has_shader_export", source="AnimeStudio/shader_export")
+            if status_path.exists():
+                self.add_file(slash(status_path), kind="shader_export_status", source=source, size=status_path.stat().st_size, data=compact_payload(status_summary, depth=2))
+
+            for shader_path in sorted(root.glob("*.shader")):
+                program_key, export_base, path_id = self.shader_program_key_for_path(source, shader_path)
+                scan = self.scan_shader_program_file(shader_path)
+                shader_name = safe_key(scan.get("shaderName")) or export_base
+                family = self.shader_family_for_name(shader_name, export_base)
+                snippet_counts = scan.get("snippetCounts") if isinstance(scan.get("snippetCounts"), dict) else {}
+                snippet_bytes = scan.get("snippetBytes") if isinstance(scan.get("snippetBytes"), dict) else {}
+                sidecar_counts = scan.get("sidecarCounts") if isinstance(scan.get("sidecarCounts"), dict) else {}
+                data = {
+                    "shaderName": shader_name,
+                    "exportBase": export_base,
+                    "pathId": path_id,
+                    "fileSize": shader_path.stat().st_size,
+                    "snippetCounts": snippet_counts,
+                    "snippetBytes": snippet_bytes,
+                    "sidecarCounts": sidecar_counts,
+                    "sidecarBytes": scan.get("sidecarBytes"),
+                    "source": source,
+                }
+                program_node = self.add_node(
+                    "shader_program",
+                    program_key,
+                    name=shader_name,
+                    source=source,
+                    path=slash(shader_path),
+                    data=compact_payload(data, depth=3),
+                )
+                self.add_edge(export_node, program_node, "shader_export_has_program", source="AnimeStudio/shader_export", evidence=shader_path.name, data=compact_payload(status_summary, depth=1))
+                self.add_file(slash(shader_path), kind="shader_program", source=source, size=shader_path.stat().st_size)
+                self.add_alias(shader_name, program_node, kind="shader_name", source=source)
+                self.add_alias(shader_name.lower(), program_node, kind="shader_name", source=source)
+                self.add_alias(Path(shader_path).stem.lower(), program_node, kind="shader_export_stem", source=source)
+                if path_id:
+                    self.add_alias(f"pathid:{path_id}", program_node, kind="shader_pathid", source=source)
+                    pathid_node = self.add_node("unity_pathid", path_id, name=f"pathid:{path_id}", source=source)
+                    self.add_edge(program_node, pathid_node, "shader_program_pathid", source="AnimeStudio/shader_export", evidence=Path(shader_path).stem)
+                shader_node = self.add_node("shader", shader_name, name=shader_name, source="AnimeStudio/shader_export")
+                self.add_edge(program_node, shader_node, "shader_program_named_shader", source="AnimeStudio/shader_export", evidence="ShaderName")
+                family_node = self.add_node("shader_family", family, name=family, source="AnimeStudio/shader_export")
+                self.add_edge(program_node, family_node, "shader_program_family", source="AnimeStudio/shader_export", evidence="ShaderName")
+
+                for backend, count in sorted(snippet_counts.items()):
+                    backend_node = self.add_node("shader_bytecode_backend", backend, name=backend, source="AnimeStudio/shader_export")
+                    self.add_edge(program_node, backend_node, "shader_program_has_backend", source="AnimeStudio/shader_export", evidence=backend, data={"count": count, "declaredBytes": snippet_bytes.get(backend)})
+                for sidecar_ext, count in sorted(sidecar_counts.items()):
+                    sidecar_node = self.add_node("shader_sidecar_format", sidecar_ext, name=sidecar_ext, source="AnimeStudio/shader_export")
+                    self.add_edge(program_node, sidecar_node, "shader_program_has_sidecar_format", source="AnimeStudio/shader_export", evidence=sidecar_ext, data={"count": count, "bytes": (scan.get("sidecarBytes") or {}).get(sidecar_ext)})
+
+                for snippet in scan.get("snippets") or []:
+                    if not isinstance(snippet, dict):
+                        continue
+                    backend = safe_key(snippet.get("backend"))
+                    snippet_key = f"{program_key}:{backend}:{snippet.get('occurrence')}"
+                    snippet_node = self.add_node(
+                        "shader_snippet",
+                        snippet_key,
+                        name=f"{shader_name}:{backend}:{snippet.get('occurrence')}",
+                        source=source,
+                        path=slash(shader_path),
+                        data=compact_payload(snippet, depth=2),
+                    )
+                    self.add_edge(program_node, snippet_node, "shader_program_has_snippet", source="AnimeStudio/shader_export", evidence=str(snippet.get("line")))
+                    if backend:
+                        backend_node = self.add_node("shader_bytecode_backend", backend, name=backend, source="AnimeStudio/shader_export")
+                        self.add_edge(snippet_node, backend_node, "shader_snippet_backend", source="AnimeStudio/shader_export", evidence=safe_key(snippet.get("index")))
 
     def ingest_character_manifests(self) -> None:
         if not UNITY_CHARACTER_ROOT.exists():
@@ -24943,6 +25103,75 @@ class SourceGraphBuilder:
                     data=data,
                 )
 
+    def link_shader_program_unity_assets(self) -> None:
+        rows = self.db.execute(
+            """
+            SELECT
+                program.id AS program_node,
+                pathid.id AS pathid_node,
+                unity.id AS unity_node,
+                unity.data AS unity_data
+            FROM edges pathid_edge
+            JOIN nodes program ON program.id = pathid_edge.src
+            JOIN nodes pathid ON pathid.id = pathid_edge.dst
+            JOIN edges resolved
+                ON resolved.src = pathid.id
+                AND resolved.kind = 'resolves_to_unity_asset'
+            JOIN nodes unity ON unity.id = resolved.dst
+                AND unity.source = program.source
+            WHERE pathid_edge.kind = 'shader_program_pathid'
+            ORDER BY program.id, unity.id
+            """
+        ).fetchall()
+        for program_node, pathid_node, unity_node, unity_data in rows:
+            asset_data = parse_json_text(unity_data) if unity_data else {}
+            asset_type = asset_data.get("type") if isinstance(asset_data, dict) else ""
+            data = {"pathidNode": pathid_node, "assetType": asset_type}
+            self.add_edge(
+                program_node,
+                unity_node,
+                "shader_program_resolves_unity_asset",
+                source="AnimeStudio/shader_export+AnimeStudio/maps",
+                evidence="PathID",
+                data=data,
+            )
+            self.add_edge(
+                unity_node,
+                program_node,
+                "unity_asset_exports_shader_program",
+                source="AnimeStudio/shader_export+AnimeStudio/maps",
+                evidence="PathID",
+                data=data,
+            )
+            material_rows = self.db.execute(
+                """
+                SELECT dst, evidence, data
+                FROM edges
+                WHERE src = ?
+                  AND kind = 'shader_used_by_material_slot'
+                ORDER BY dst
+                """,
+                (unity_node,),
+            ).fetchall()
+            for material_node, evidence, edge_data in material_rows:
+                material_data = parse_json_text(edge_data) if edge_data else {}
+                self.add_edge(
+                    material_node,
+                    program_node,
+                    "material_uses_shader_program",
+                    source="material_json+AnimeStudio/shader_export",
+                    evidence=evidence or "m_Shader",
+                    data=material_data,
+                )
+                self.add_edge(
+                    program_node,
+                    material_node,
+                    "shader_program_used_by_material",
+                    source="material_json+AnimeStudio/shader_export",
+                    evidence=evidence or "m_Shader",
+                    data=material_data,
+                )
+
     def link_fmv_pathid_unity_assets(self) -> None:
         rows = self.db.execute(
             """
@@ -25882,6 +26111,11 @@ QUERY_KIND_PRIORITY = {
     "narrative_video_override_bucket": 3.97,
     "narrative_video_override_status": 3.98,
     "narrative_video_candidate_status": 3.99,
+    "shader_program": 3.995,
+    "shader_snippet": 3.996,
+    "shader_family": 3.997,
+    "shader_bytecode_backend": 3.998,
+    "shader_export": 3.999,
     "line": 4,
     "sns_dialog": 5,
     "sns_content": 6,
@@ -27458,6 +27692,7 @@ ASSET_USED_BY_INCOMING_EDGE_KINDS = (
     "uses_texture_pathid",
     "fmv_binding_playable_pathid",
     "material_shader_pathid_resolves_unity_asset",
+    "shader_program_resolves_unity_asset",
     "material_texture_pathid_resolves_unity_asset",
     "material_texture_pathid_exports_asset",
     "fmv_playable_pathid_resolves_unity_asset",
@@ -27471,6 +27706,7 @@ ASSET_USED_BY_OUTGOING_EDGE_KINDS = (
     "referenced_by_model",
     "unity_asset_used_by_material_shader_slot",
     "shader_used_by_material_slot",
+    "unity_asset_exports_shader_program",
     "unity_asset_used_by_material_texture_slot",
     "asset_export_used_by_material_texture_slot",
     "unity_asset_used_by_fmv_playable_pathid",
@@ -27491,6 +27727,7 @@ ASSET_USES_EDGE_KINDS = (
     "uses_texture_pathid",
     "resolves_to_unity_asset",
     "material_shader_pathid_resolves_unity_asset",
+    "shader_program_resolves_unity_asset",
     "material_texture_pathid_resolves_unity_asset",
     "material_texture_pathid_exports_asset",
     "fmv_playable_pathid_resolves_unity_asset",
@@ -27506,8 +27743,10 @@ ASSET_USES_EDGE_KINDS = (
     "texture2d_collision_sample_entry",
     "texture2d_collision_sample_container",
     "texture2d_collision_sample_raw_map_hash",
+    "shader_program_pathid",
+    "shader_program_has_snippet",
 )
-ASSET_USAGE_KIND_FALLBACKS = ("asset", "unity_asset", "unity_pathid", "texture2d_raw_hash_collision_group", "asset_container")
+ASSET_USAGE_KIND_FALLBACKS = ("asset", "unity_asset", "unity_pathid", "shader_program", "texture2d_raw_hash_collision_group", "asset_container")
 
 def exact_node_candidates(term: str) -> list[str]:
     candidates = [term]
