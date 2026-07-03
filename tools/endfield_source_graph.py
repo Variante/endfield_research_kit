@@ -22903,6 +22903,17 @@ class SourceGraphBuilder:
             for item in value:
                 yield from self.iter_audio_cue_expr_strings(item)
 
+    def iter_audio_cue_expr_string_entries(self, value: Any, *, path: str) -> Iterable[dict[str, Any]]:
+        if isinstance(value, dict):
+            string_value = safe_key(value.get("stringValue"))
+            if string_value:
+                yield {"value": string_value, "exprType": value.get("exprType"), "exprPath": path}
+            for index, child in enumerate(value.get("children") or []):
+                yield from self.iter_audio_cue_expr_string_entries(child, path=f"{path}.children[{index}]")
+        elif isinstance(value, list):
+            for index, item in enumerate(value):
+                yield from self.iter_audio_cue_expr_string_entries(item, path=f"{path}[{index}]")
+
     def add_audio_cue_handler_edges(self, cue_node: str, handler: Any, *, handler_id: str, source: str, evidence: str, level_id: Any = None) -> None:
         if not isinstance(handler, dict):
             return
@@ -22913,14 +22924,24 @@ class SourceGraphBuilder:
         if safe_key(level_id) and self.node_exists("level", level_id):
             self.add_edge(handler_node, self.node_id("level", level_id), "audio_cue_handler_for_level", source=source, evidence="levelHandlerMap")
         seen: set[str] = set()
-        for expr in (handler.get("conditionExpr"), handler.get("behaviourExpr")):
-            for string_value in self.iter_audio_cue_expr_strings(expr):
-                if string_value in seen:
-                    continue
-                seen.add(string_value)
-                event_node = self.add_wwise_event_node(string_value, source=source)
-                if event_node:
-                    self.add_edge(handler_node, event_node, "audio_cue_handler_uses_event", source=source, evidence=string_value)
+        for string_value in self.iter_audio_cue_expr_strings(handler.get("behaviourExpr")):
+            if string_value in seen:
+                continue
+            seen.add(string_value)
+            event_node = self.add_wwise_event_node(string_value, source=source)
+            if event_node:
+                self.add_edge(handler_node, event_node, "audio_cue_handler_uses_event", source=source, evidence=string_value)
+        for entry in self.iter_audio_cue_expr_string_entries(handler.get("conditionExpr"), path="conditionExpr"):
+            condition_key = safe_key(entry.get("value"))
+            if not condition_key:
+                continue
+            condition_node = self.add_semantic_node("audio_cue_condition_key", condition_key, source=source, data={"exprType": entry.get("exprType")})
+            if not condition_node:
+                continue
+            data = {"exprType": entry.get("exprType"), "exprPath": entry.get("exprPath"), "handlerEvidence": evidence}
+            condition_evidence = f"{entry.get('exprPath')}:{condition_key}"
+            self.add_edge(handler_node, condition_node, "audio_cue_handler_condition_key", source=source, evidence=condition_evidence, data=data)
+            self.add_edge(condition_node, handler_node, "audio_cue_condition_key_used_by_handler", source=source, evidence=condition_evidence, data=data)
 
     def add_audio_cue_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         direct_handlers = row.get("directHandlers") if isinstance(row.get("directHandlers"), list) else []
