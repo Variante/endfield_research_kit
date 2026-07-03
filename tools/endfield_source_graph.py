@@ -24005,6 +24005,12 @@ class SourceGraphBuilder:
             target_node = self.add_item_node(ref_key, source=source)
         if target_node:
             self.add_edge(owner_node, target_node, edge_kind, source=source, evidence=evidence, data=data)
+            reverse_kind = {
+                "activity_benefit_big_reward_ref": "showcase_ref_used_by_activity_benefit_big_reward",
+                "activity_benefit_reward_ref": "showcase_ref_used_by_activity_benefit_reward",
+            }.get(edge_kind)
+            if reverse_kind:
+                self.add_edge(target_node, owner_node, reverse_kind, source=source, evidence=evidence, data=data)
 
     def add_activity_catalog_game_ref(self, owner_node: str, game_id: Any, *, edge_kind: str, source: str, evidence: str, data: Any = None) -> str:
         game_key = safe_key(game_id)
@@ -24069,6 +24075,7 @@ class SourceGraphBuilder:
                         achievement_node = self.add_achievement_node(series.get("achieveId"), source=table)
                         if achievement_node:
                             self.add_edge(series_node, achievement_node, "activity_game_entrance_series_achievement", source=table, evidence="achieveId")
+                            self.add_edge(achievement_node, series_node, "achievement_used_by_activity_game_entrance_series", source=table, evidence="achieveId")
                         for field in ("bgImg", "bgPrefab"):
                             self.add_alias(series.get(field), series_node, kind="asset_stem", source=table)
         elif table == "ActivityGameEntranceGameTable":
@@ -24092,6 +24099,7 @@ class SourceGraphBuilder:
                 self.add_edge(row_node, series_node, "defines_activity_game_entrance_series_achieve", source=table)
             if series_node and achievement_node:
                 self.add_edge(series_node, achievement_node, "activity_game_entrance_series_achievement", source=table, evidence="achieveId")
+                self.add_edge(achievement_node, series_node, "achievement_used_by_activity_game_entrance_series", source=table, evidence="achieveId")
         elif table == "HighDifficultySeriesTable":
             series_node = self.add_activity_catalog_node("high_difficulty_series", row_key, name=row.get("name"), source=table, data={"achieveId": row.get("achieveId"), "sortId": row.get("sortId"), "newSeriesSortId": row.get("newSeriesSortId"), "bgImg": row.get("bgImg")})
             if series_node:
@@ -24100,6 +24108,7 @@ class SourceGraphBuilder:
                 achievement_node = self.add_achievement_node(row.get("achieveId"), source=table)
                 if achievement_node:
                     self.add_edge(series_node, achievement_node, "high_difficulty_series_achievement", source=table, evidence="achieveId")
+                    self.add_edge(achievement_node, series_node, "achievement_used_by_high_difficulty_series", source=table, evidence="achieveId")
                 self.add_alias(row.get("bgImg"), series_node, kind="asset_stem", source=table)
         elif table == "HighDifficultyGameTable":
             series_node = self.add_activity_catalog_node("high_difficulty_series", row.get("seriesId") or row_key, source=table, data={"gameCount": len(row.get("gameList") or [])})
@@ -24313,6 +24322,7 @@ class SourceGraphBuilder:
                     item_node = self.add_item_node(reward_id, source=table)
                     if item_node:
                         self.add_edge(entry_node, item_node, "adventure_activity_reward_item", source=table, evidence=f"rewardList[{index}]", data={"index": index})
+                        self.add_edge(item_node, entry_node, "item_used_by_adventure_activity_reward", source=table, evidence=f"rewardList[{index}]", data={"index": index})
         elif table == "ActivityWebTable":
             web_node = self.add_activity_catalog_node("activity_web_entry", row_key, source=table, data={"jumpId": row.get("jumpId"), "disableAudio": row.get("disableAudio")})
             if web_node:
