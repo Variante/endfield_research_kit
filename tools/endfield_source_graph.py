@@ -23270,6 +23270,13 @@ class SourceGraphBuilder:
                 "gacha_pool_cumulative_reward": "reward_used_by_gacha_pool_cumulative",
                 "gacha_pool_interval_reward": "reward_used_by_gacha_pool_interval",
                 "gacha_weapon_pool_interval_reward": "reward_used_by_gacha_weapon_pool_interval",
+                "world_energy_group_first_pass_reward": "reward_used_by_world_energy_group_first_pass",
+                "ether_submit_reward": "reward_used_by_ether_submit_level",
+                "world_doodad_pickable_reward": "reward_used_by_world_doodad_pickable",
+                "world_tree_breaking_reward": "reward_used_by_world_tree_breaking",
+                "world_tree_broken_reward": "reward_used_by_world_tree_broken",
+                "planting_crop_reward": "reward_used_by_planting_crop",
+                "planting_crop_increased_reward": "reward_used_by_planting_crop_increased",
             }.get(edge_kind)
             if reverse_kind:
                 self.add_edge(reward_node, owner_node, reverse_kind, source=source, evidence=evidence, data=data)
