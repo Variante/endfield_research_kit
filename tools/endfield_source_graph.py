@@ -12360,6 +12360,8 @@ class SourceGraphBuilder:
             reverse_kind = {
                 "reward_grants_item": "item_granted_by_reward",
                 "reward_may_grant_item": "item_may_be_granted_by_reward",
+                "soil_reward_grants_item": "item_granted_by_soil_reward",
+                "soil_reward_prob_item": "item_may_be_granted_by_soil_reward",
             }.get(edge_kind)
             if reverse_kind:
                 self.add_edge(item_node, reward_node, reverse_kind, source=source, evidence=f"{field}[{index}]", data=data)
