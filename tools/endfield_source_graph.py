@@ -10833,14 +10833,17 @@ class SourceGraphBuilder:
                 if item_node:
                     count = counts[index] if index < len(counts) else (counts[0] if counts else None)
                     self.add_edge(submit_node, item_node, "submit_item_requires_item", source=source, evidence=f"paramData[{group_index}].paramList[0].valueStringList[{index}]", data={"groupIndex": group_index, "index": index, "count": count, "requirementType": requirement_kind})
+                    self.add_edge(item_node, submit_node, "item_required_by_submit_item", source=source, evidence=f"paramData[{group_index}].paramList[0].valueStringList[{index}]", data={"groupIndex": group_index, "index": index, "count": count, "requirementType": requirement_kind})
 
-    def add_item_list_edges(self, owner_node: str, values: Any, *, edge_kind: str, source: str, evidence_prefix: str) -> None:
+    def add_item_list_edges(self, owner_node: str, values: Any, *, edge_kind: str, source: str, evidence_prefix: str, reverse_edge_kind: str = "") -> None:
         if not isinstance(values, list):
             return
         for index, item_id in enumerate(values):
             item_node = self.add_item_node(item_id, source=source)
             if item_node:
                 self.add_edge(owner_node, item_node, edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]", data={"index": index})
+                if reverse_edge_kind:
+                    self.add_edge(item_node, owner_node, reverse_edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]", data={"index": index})
 
     def add_item_submission_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if not isinstance(row, dict):
@@ -10862,12 +10865,15 @@ class SourceGraphBuilder:
                 self.add_edge(row_node, full_node, "defines_full_bottle", source=table)
                 if bottle_item:
                     self.add_edge(full_node, bottle_item, "full_bottle_item_ref", source=table, evidence="id")
+                    self.add_edge(bottle_item, full_node, "item_has_full_bottle_config", source=table, evidence="id")
                 empty_item = self.add_item_node(row.get("emptyBottleId"), source=table)
                 if empty_item:
                     self.add_edge(full_node, empty_item, "full_bottle_empty_container", source=table, evidence="emptyBottleId")
+                    self.add_edge(empty_item, full_node, "item_used_as_full_bottle_container", source=table, evidence="emptyBottleId")
                 liquid_item = self.add_item_node(row.get("liquidId"), source=table)
                 if liquid_item:
                     self.add_edge(full_node, liquid_item, "full_bottle_contains_liquid", source=table, evidence="liquidId", data={"capacity": row.get("liquidCapacity")})
+                    self.add_edge(liquid_item, full_node, "item_liquid_used_by_full_bottle", source=table, evidence="liquidId", data={"capacity": row.get("liquidCapacity")})
         elif table == "EmptyBottleTable":
             empty_item = self.add_item_node(row.get("id") or row_key, source=table, data={"liquidCapacity": row.get("liquidCapacity")})
             empty_node = self.add_item_submission_node("empty_bottle_item", row.get("id") or row_key, source=table, data={"liquidCapacity": row.get("liquidCapacity"), "liquidItemCount": len(row.get("liquidItems") or []), "fullBottleItemCount": len(row.get("fullBottleItems") or [])})
@@ -10875,8 +10881,9 @@ class SourceGraphBuilder:
                 self.add_edge(row_node, empty_node, "defines_empty_bottle", source=table)
                 if empty_item:
                     self.add_edge(empty_node, empty_item, "empty_bottle_item_ref", source=table, evidence="id")
-                self.add_item_list_edges(empty_node, row.get("liquidItems"), edge_kind="empty_bottle_accepts_liquid", source=table, evidence_prefix="liquidItems")
-                self.add_item_list_edges(empty_node, row.get("fullBottleItems"), edge_kind="empty_bottle_full_variant", source=table, evidence_prefix="fullBottleItems")
+                    self.add_edge(empty_item, empty_node, "item_has_empty_bottle_config", source=table, evidence="id")
+                self.add_item_list_edges(empty_node, row.get("liquidItems"), edge_kind="empty_bottle_accepts_liquid", source=table, evidence_prefix="liquidItems", reverse_edge_kind="item_accepted_by_empty_bottle")
+                self.add_item_list_edges(empty_node, row.get("fullBottleItems"), edge_kind="empty_bottle_full_variant", source=table, evidence_prefix="fullBottleItems", reverse_edge_kind="item_full_variant_of_empty_bottle")
         elif table == "FoodSubmitStageIdTable":
             stage_node = self.add_activity_catalog_node("activity_submit_food_stage", row.get("stageId") or row_key, name=row.get("name"), source=table, data={"activityId": row.get("activityId"), "rewardId": row.get("rewardId"), "jumpId": row.get("jumpId"), "sortId": row.get("sortId")})
             if stage_node:
@@ -10884,16 +10891,22 @@ class SourceGraphBuilder:
                 activity_node = self.add_activity_node(row.get("activityId"), source=table)
                 if activity_node:
                     self.add_edge(stage_node, activity_node, "food_submit_stage_activity", source=table, evidence="activityId")
+                    self.add_edge(activity_node, stage_node, "activity_has_food_submit_stage", source=table, evidence="activityId")
                 activity_stage = self.add_activity_stage_node(row.get("stageId") or row_key, name=row.get("name"), source=table)
                 if activity_stage:
                     self.add_edge(stage_node, activity_stage, "food_submit_stage_id_overlay", source=table, evidence="stageId")
+                    self.add_edge(activity_stage, stage_node, "activity_stage_has_food_submit_overlay", source=table, evidence="stageId")
                 self.add_reward_ref_edge(stage_node, row.get("rewardId"), edge_kind="food_submit_stage_reward", source=table, evidence="rewardId")
+                reward_node = self.add_reward_node(row.get("rewardId"), source=table)
+                if reward_node:
+                    self.add_edge(reward_node, stage_node, "reward_used_by_food_submit_stage", source=table, evidence="rewardId")
                 self.add_tag_i18n_edges(stage_node, row.get("name"), source=table, edge_kind="food_submit_stage_name_text")
                 jump_key = safe_key(row.get("jumpId"))
                 if jump_key:
                     jump_node = self.add_node("system_jump", jump_key, name=jump_key, source=table)
                     self.add_alias(jump_key, jump_node, kind="system_jump_id", source=table)
                     self.add_edge(stage_node, jump_node, "food_submit_stage_jump", source=table, evidence="jumpId")
+                    self.add_edge(jump_node, stage_node, "system_jump_used_by_food_submit_stage", source=table, evidence="jumpId")
         elif table == "RecoverApItemTable":
             item_node = self.add_item_node(row.get("id") or row_key, source=table)
             recover_node = self.add_item_submission_node("ap_recovery_item", row.get("id") or row_key, source=table, data={"apRecoverValue": row.get("apRecoverValue")})
@@ -10901,6 +10914,7 @@ class SourceGraphBuilder:
                 self.add_edge(row_node, recover_node, "defines_ap_recovery_item", source=table)
                 if item_node:
                     self.add_edge(item_node, recover_node, "item_has_ap_recovery", source=table, evidence="id", data={"apRecoverValue": row.get("apRecoverValue")})
+                    self.add_edge(recover_node, item_node, "ap_recovery_config_for_item", source=table, evidence="id", data={"apRecoverValue": row.get("apRecoverValue")})
         elif table == "ValuableDepot":
             depot_node = self.add_item_submission_node("valuable_depot", row.get("type") or row_key, name=row.get("name"), source=table, data={"type": row.get("type"), "gridLimit": row.get("gridLimit"), "sortId": row.get("sortId"), "isHidden": row.get("isHidden"), "storageItemTypeCount": len(row.get("storageItemType") or [])})
             if depot_node:
@@ -10911,6 +10925,7 @@ class SourceGraphBuilder:
                     type_node = self.add_item_type_node(type_id, source=table)
                     if type_node:
                         self.add_edge(depot_node, type_node, "valuable_depot_allows_item_type", source=table, evidence=f"storageItemType[{index}]", data={"index": index})
+                        self.add_edge(type_node, depot_node, "item_type_allowed_by_valuable_depot", source=table, evidence=f"storageItemType[{index}]", data={"index": index})
         elif table == "CollectionTable":
             collection_node = self.add_item_submission_node("collection_entry", row.get("prefabId") or row_key, source=table, data={"prefabId": row.get("prefabId"), "mergeId": row.get("mergeId"), "incrementId": row.get("incrementId"), "showToast": row.get("showToast")})
             if collection_node:
@@ -10918,13 +10933,16 @@ class SourceGraphBuilder:
                 item_node = self.add_item_node(row.get("itemId"), source=table)
                 if item_node:
                     self.add_edge(collection_node, item_node, "collection_entry_item", source=table, evidence="itemId")
+                    self.add_edge(item_node, collection_node, "item_used_by_collection_entry", source=table, evidence="itemId")
                 bandwidth_item = self.add_item_node(row.get("bandwidthItemId"), source=table)
                 if bandwidth_item:
                     self.add_edge(collection_node, bandwidth_item, "collection_entry_bandwidth_item", source=table, evidence="bandwidthItemId")
+                    self.add_edge(bandwidth_item, collection_node, "item_used_as_collection_bandwidth", source=table, evidence="bandwidthItemId")
                 merge_key = safe_key(row.get("mergeId"))
                 if merge_key:
                     merge_node = self.add_item_submission_node("collection_entry", merge_key, source=table)
                     self.add_edge(collection_node, merge_node, "collection_entry_merges_to", source=table, evidence="mergeId")
+                    self.add_edge(merge_node, collection_node, "collection_entry_merged_from", source=table, evidence="mergeId")
         elif table == "RecycleBinTable":
             recycle_node = self.add_item_submission_node("recycle_bin", row.get("recycleBinId") or row_key, source=table, data={"domainId": row.get("domainId"), "levelId": row.get("levelId"), "levelObjId": row.get("levelObjId"), "serialId": row.get("serialId"), "unlockCost": row.get("unlockCost"), "refreshMode": row.get("refreshMode"), "refreshParam": row.get("refreshParam")})
             if recycle_node:
@@ -10932,9 +10950,11 @@ class SourceGraphBuilder:
                 domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
                 if domain_node:
                     self.add_edge(recycle_node, domain_node, "recycle_bin_domain", source=table, evidence="domainId")
+                    self.add_edge(domain_node, recycle_node, "domain_has_recycle_bin", source=table, evidence="domainId")
                 level_node = self.add_level_node(row.get("levelId"), source=table)
                 if level_node:
                     self.add_edge(recycle_node, level_node, "recycle_bin_level", source=table, evidence="levelId")
+                    self.add_edge(level_node, recycle_node, "level_has_recycle_bin_config", source=table, evidence="levelId")
                     self.add_level_map_edge(level_node, row.get("levelId"), source=table, evidence="levelId")
                 self.add_tag_i18n_edges(recycle_node, row.get("unlockDesc"), source=table, edge_kind="recycle_bin_unlock_desc_text")
                 level_data = row.get("levelData") if isinstance(row.get("levelData"), dict) else {}
@@ -10944,7 +10964,11 @@ class SourceGraphBuilder:
                     bin_level_node = self.add_item_submission_node("recycle_bin_level", f"{safe_key(row.get('recycleBinId') or row_key)}:{safe_key(level_key)}", source=table, data={"lv": level_row.get("lv"), "lvUpCost": level_row.get("lvUpCost"), "rewardId": level_row.get("rewardId")})
                     if bin_level_node:
                         self.add_edge(recycle_node, bin_level_node, "recycle_bin_has_level", source=table, evidence=f"levelData.{level_key}", data={"levelKey": level_key})
+                        self.add_edge(bin_level_node, recycle_node, "recycle_bin_level_in_bin", source=table, evidence=f"levelData.{level_key}", data={"levelKey": level_key})
                         self.add_reward_ref_edge(bin_level_node, level_row.get("rewardId"), edge_kind="recycle_bin_level_reward", source=table, evidence=f"levelData.{level_key}.rewardId")
+                        reward_node = self.add_reward_node(level_row.get("rewardId"), source=table)
+                        if reward_node:
+                            self.add_edge(reward_node, bin_level_node, "reward_used_by_recycle_bin_level", source=table, evidence=f"levelData.{level_key}.rewardId")
                         self.add_tag_i18n_edges(bin_level_node, level_row.get("desc"), source=table, edge_kind="recycle_bin_level_desc_text")
         elif table == "LevelId2RecycleBinsTable":
             level_node = self.add_level_node(row.get("levelId") or row_key, source=table)
@@ -10955,6 +10979,7 @@ class SourceGraphBuilder:
                     recycle_node = self.add_item_submission_node("recycle_bin", recycle_id, source=table)
                     if recycle_node:
                         self.add_edge(level_node, recycle_node, "level_has_recycle_bin", source=table, evidence=f"recycleBinIds[{index}]", data={"index": index})
+                        self.add_edge(recycle_node, level_node, "recycle_bin_listed_for_level", source=table, evidence=f"recycleBinIds[{index}]", data={"index": index})
 
     def ingest_reward_catalog_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
