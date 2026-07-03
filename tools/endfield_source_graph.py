@@ -23369,6 +23369,8 @@ class SourceGraphBuilder:
                 "mail_template_reward": "reward_used_by_mail_template",
                 "adventure_level_reward": "reward_used_by_adventure_level",
                 "tower_defense_stage_reward": "reward_used_by_tower_defense_stage",
+                "kite_station_task_reward_by_level": "reward_used_by_kite_station_task_level",
+                "kite_station_milestone_reward": "reward_used_by_kite_station_milestone",
             }.get(edge_kind)
             if reverse_kind:
                 self.add_edge(reward_node, owner_node, reverse_kind, source=source, evidence=evidence, data=data)
