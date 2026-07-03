@@ -12929,6 +12929,12 @@ class SourceGraphBuilder:
             depot_node = self.add_domain_depot_node(depot_id, source=source)
             if depot_node:
                 self.add_edge(owner_node, depot_node, edge_kind, source=source, evidence=evidence, data={"inference": "shared level/refLevelId"})
+                reverse_kind = {
+                    "domain_depot_buyer_for_depot": "domain_depot_has_buyer",
+                    "domain_depot_target_for_depot": "domain_depot_has_target",
+                }.get(edge_kind)
+                if reverse_kind:
+                    self.add_edge(depot_node, owner_node, reverse_kind, source=source, evidence=evidence, data={"inference": "shared level/refLevelId"})
 
     def add_domain_depot_row_edges(self, table: str, row_key: str, row: Any, row_node: str, depot_by_level: dict[str, list[str]]) -> None:
         if table == "DomainDepotConst":
