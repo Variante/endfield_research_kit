@@ -3569,6 +3569,14 @@ class SourceGraphBuilder:
                     evidence=safe_key(material_info.get("evidence")) if isinstance(material_info, dict) else Path(material_rel).stem,
                     data=material_data,
                 )
+                self.add_edge(
+                    material_node,
+                    entity_node,
+                    "material_used_by_asset_entity",
+                    source="webui/assets",
+                    evidence=safe_key(material_info.get("evidence")) if isinstance(material_info, dict) else Path(material_rel).stem,
+                    data=material_data,
+                )
             for texture_rel, texture_info in sorted(group["textures"].items()):
                 texture_node = asset_node_for_rel(texture_rel)
                 texture_data = dict(texture_info.get("data") or {}) if isinstance(texture_info, dict) else {}
@@ -3577,6 +3585,14 @@ class SourceGraphBuilder:
                     entity_node,
                     texture_node,
                     "entity_uses_texture",
+                    source="webui/assets",
+                    evidence=safe_key(texture_info.get("evidence")) if isinstance(texture_info, dict) else Path(texture_rel).stem,
+                    data=texture_data,
+                )
+                self.add_edge(
+                    texture_node,
+                    entity_node,
+                    "texture_used_by_asset_entity",
                     source="webui/assets",
                     evidence=safe_key(texture_info.get("evidence")) if isinstance(texture_info, dict) else Path(texture_rel).stem,
                     data=texture_data,
