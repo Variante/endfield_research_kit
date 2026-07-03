@@ -14011,6 +14011,7 @@ class SourceGraphBuilder:
                     enemy_node = self.add_node("enemy", enemy_key, name=enemy_key, source=table)
                     self.add_alias(enemy_key, enemy_node, kind="enemy_id", source=table)
                     self.add_edge(card_node, enemy_node, "simulation_training_card_enemy", source=table, evidence=f"enemyIdList[{index}]", data={"level": levels[index] if index < len(levels) else None, "count": counts[index] if index < len(counts) else None})
+                    self.add_edge(enemy_node, card_node, "enemy_used_by_simulation_training_card", source=table, evidence=f"enemyIdList[{index}]", data={"level": levels[index] if index < len(levels) else None, "count": counts[index] if index < len(counts) else None})
         elif table == "SimulationTrainingCardPoolTable" and isinstance(row, dict):
             pool_node = self.add_dungeon_catalog_node("simulation_training_card_pool", row_key, source=table, data={"entryCount": len(row.get("list") or [])})
             if pool_node:
@@ -14021,6 +14022,7 @@ class SourceGraphBuilder:
                     card_node = self.add_dungeon_catalog_node("simulation_training_card", entry.get("enemyGroupId"), source=table)
                     if card_node:
                         self.add_edge(pool_node, card_node, "simulation_training_pool_has_card", source=table, evidence=f"list[{index}]", data={"cardNum": entry.get("cardNum"), "cardWeight": entry.get("cardWeight")})
+                        self.add_edge(card_node, pool_node, "simulation_training_card_used_by_pool", source=table, evidence=f"list[{index}]", data={"cardNum": entry.get("cardNum"), "cardWeight": entry.get("cardWeight")})
         elif table == "TrainingTypeInfoTable" and isinstance(row, dict):
             type_node = self.add_dungeon_catalog_node("training_type", row.get("trainingType") or row_key, name=row.get("progressBarLabel"), source=table, data={"priority": row.get("priority"), "trainingThresholdFactor": row.get("trainingThresholdFactor")})
             if type_node:
@@ -14089,6 +14091,7 @@ class SourceGraphBuilder:
         template_node = self.add_node("enemy_template", enemy_key, name=enemy_key, source=source)
         self.add_alias(enemy_key, template_node, kind="enemy_template_id", source=source)
         self.add_edge(stage_node, enemy_node, "tower_defense_enemy", source=source, evidence=evidence, data=data)
+        self.add_edge(enemy_node, stage_node, "enemy_used_by_tower_defense_stage", source=source, evidence=evidence, data=data)
         self.add_edge(enemy_node, template_node, "tower_defense_enemy_template_ref", source=source, evidence=evidence)
 
     def add_tower_defense_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
@@ -14131,10 +14134,12 @@ class SourceGraphBuilder:
                     item_node = self.add_item_node(item_id, source=table)
                     if item_node:
                         self.add_edge(stage_node, item_node, "tower_defense_recommended_building_item", source=table, evidence=f"recommendBuildingItemIds[{index}]", data={"index": index})
+                        self.add_edge(item_node, stage_node, "item_recommended_by_tower_defense_stage", source=table, evidence=f"recommendBuildingItemIds[{index}]", data={"index": index})
                 for index, spawner_id in enumerate(row.get("spawnerIds") or []):
                     spawner_node = self.add_tower_defense_node("tower_defense_spawner", spawner_id, source=table)
                     if spawner_node:
                         self.add_edge(stage_node, spawner_node, "tower_defense_stage_spawner", source=table, evidence=f"spawnerIds[{index}]", data={"index": index})
+                        self.add_edge(spawner_node, stage_node, "tower_defense_spawner_used_by_stage", source=table, evidence=f"spawnerIds[{index}]", data={"index": index})
 
     def ingest_photo_chain_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -16307,15 +16312,22 @@ class SourceGraphBuilder:
                             self.add_edge(entry_node, story_node, "spaceship_character_gift_dialog", source=table, evidence="dialogId")
             return
         if table == "LevelGradeTable" and isinstance(row, dict):
-            config_node = self.add_mode_constant_node("level_grade_config", row.get("name") or row_key, source=table, data={"gradeCount": len(row.get("grades") or [])})
+            config_key = safe_key(row.get("name") or row_key)
+            config_node = self.add_mode_constant_node("level_grade_config", config_key, source=table, data={"gradeCount": len(row.get("grades") or [])})
             if config_node:
                 self.add_edge(row_node, config_node, "defines_level_grade_config", source=table)
+                if "_lv" in config_key or re.match(r"^map\d+", config_key, re.IGNORECASE):
+                    level_node = self.add_level_node(config_key, source=table)
+                    if level_node:
+                        self.add_edge(config_node, level_node, "level_grade_config_for_level", source=table, evidence="rowKey")
+                        self.add_edge(level_node, config_node, "level_uses_level_grade_config", source=table, evidence="rowKey")
                 for index, grade in enumerate(row.get("grades") or []):
                     if not isinstance(grade, dict):
                         continue
                     grade_node = self.add_mode_constant_node("level_grade_entry", f"{safe_key(row.get('name') or row_key)}:{grade.get('grade') if grade.get('grade') is not None else index}", source=table, data=compact_payload(grade, depth=2))
                     if grade_node:
                         self.add_edge(config_node, grade_node, "level_grade_config_has_grade", source=table, evidence=f"grades[{index}]", data={"index": index})
+                        self.add_edge(grade_node, config_node, "level_grade_entry_in_config", source=table, evidence=f"grades[{index}]", data={"index": index})
             return
         if table == "DistributionInfoTable" and isinstance(row, dict):
             dist_node = self.add_mode_constant_node("distribution_info", row.get("distributionId") or row_key, name=row.get("areaName"), source=table, data={"distributionId": row.get("distributionId"), "jumpId": row.get("jumpId")})
