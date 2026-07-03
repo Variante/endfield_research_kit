@@ -12854,6 +12854,7 @@ class SourceGraphBuilder:
             view_type = self.add_domain_core_node("mission_view_type", row.get("missionViewType"), source=table)
             if view_type:
                 self.add_edge(mission_type, view_type, "mission_type_uses_view_type", source=table, evidence="missionViewType")
+                self.add_edge(view_type, mission_type, "mission_view_type_has_mission_type", source=table, evidence="missionViewType")
 
     def add_domain_core_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if table == "DomainDataTable" and isinstance(row, dict):
@@ -12945,6 +12946,7 @@ class SourceGraphBuilder:
                     mission_node = self.add_mission_ref_node(row, source=table)
                     if mission_node:
                         self.add_edge(const_node, mission_node, "domain_depot_const_mission", source=table, evidence="rowValue")
+                        self.add_edge(mission_node, const_node, "mission_referenced_by_domain_depot_const", source=table, evidence="rowValue")
             return
         if not isinstance(row, dict):
             return
@@ -13001,6 +13003,7 @@ class SourceGraphBuilder:
                 dialog_node = self.add_semantic_node("domain_depot_deliver_target_dialog", row.get("targetId"), source=table)
                 if dialog_node:
                     self.add_edge(target_node, dialog_node, "domain_depot_target_dialog", source=table, evidence="targetId")
+                    self.add_edge(dialog_node, target_node, "domain_depot_deliver_target_dialog_for_target", source=table, evidence="targetId")
                 if safe_key(row.get("targetId")).startswith("recycle"):
                     recycle_node = self.add_semantic_node("domain_depot_recycle_target", row.get("targetId"), source=table, data={"entityType": row.get("entityType")})
                     if recycle_node:
