@@ -58,3 +58,37 @@ UI, or story/cutscene audio before adding it to default audio export behavior.
    not contain matching FNV hashes.
 3. Separate the local fluffy-dumper checkout's pre-existing VFS index work from
    the `AudioBlockType::HotfixAudio` patch before committing upstream there.
+
+## 2026-07-03 Tool Parity Recheck
+
+Rechecked `Persistent` HotfixAudio with `StreamingAssets` fallback:
+
+```bat
+.\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe vfs-index -s "D:\Program Files\Endfield Game\Endfield_Data\Persistent" --fallback-assets "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" -b hotfix-audio -o tmp\hotfix_audio_probe\Persistent_hotfix_audio_animestudio.json
+.\tools\fluffy-dumper-src\target\release\fluffy-dumper.exe vfs-index -s "D:\Program Files\Endfield Game\Endfield_Data\Persistent" --fallback-assets "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" -b hotfix-audio -o tmp\hotfix_audio_probe\Persistent_hotfix_audio_fluffy.json
+```
+
+The two index JSON files were byte-identical. Both identify one PCK:
+`Data/Audio/PCK/Windows/Hotfix/hotfix_main.pck`, length `34,412,094`, chunk
+`Persistent/VFS/F151B649/DFF4A9F3294DB6C8A98BFADE8768298D.chk`, data MD5
+`20418F4C17B0F919BF0149DC5963A2E1`.
+
+Fresh WEM decode parity:
+
+- AnimeStudio: `23` WEM files, `33,354,305` bytes, `0` errors, output under
+  `unmapped/hotfix/`.
+- fluffy-dumper: `23` WEM files, `33,354,305` bytes, `0` errors, output under
+  `unmapped/chinese/`.
+- Normalized by filename/media ID, all `23` files have identical byte sizes and
+  SHA-256 hashes.
+
+Re-ran:
+
+```bat
+python scripts\story_recovery\build_hotfix_audio_event_audit.py --decoded-root tmp\hotfix_audio_probe\animestudio_wem
+```
+
+Result: `23` media IDs, `4` event hashes, `0` known named media, and `0`
+unresolved media. This keeps the prior interpretation: HotfixAudio is fully
+extractable but still lacks a stable event-name source, so it should remain an
+explicit recovery block instead of joining default `--block all`.
