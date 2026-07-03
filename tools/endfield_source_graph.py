@@ -11190,9 +11190,17 @@ class SourceGraphBuilder:
             return ""
         game_node = self.add_week_raid_node("week_raid_game", game_key, source=source, data=data)
         self.add_edge(owner_node, game_node, edge_kind, source=source, evidence=evidence, data=data)
+        reverse_kind = {
+            "week_raid_tech_game": "week_raid_game_has_tech",
+            "week_raid_delegate_game": "week_raid_game_has_delegate",
+            "week_raid_battlepass_tier_game": "week_raid_game_has_battlepass_tier",
+        }.get(edge_kind)
+        if reverse_kind:
+            self.add_edge(game_node, owner_node, reverse_kind, source=source, evidence=evidence, data=data)
         dungeon_node = self.add_dungeon_node(game_key, source=source)
         if dungeon_node:
             self.add_edge(game_node, dungeon_node, "week_raid_game_dungeon_ref", source=source, evidence=evidence)
+            self.add_edge(dungeon_node, game_node, "dungeon_used_by_week_raid_game", source=source, evidence=evidence)
         return game_node
 
     def add_week_raid_type_text_edges(self, owner_node: str, row: dict[str, Any], *, source: str, prefix: str) -> None:
@@ -11214,6 +11222,7 @@ class SourceGraphBuilder:
                 self.add_edge(row_node, item_node, "defines_week_raid_item_domain_item", source=table)
             if item_node and domain_node:
                 self.add_edge(item_node, domain_node, "week_raid_item_domain", source=table, evidence="value")
+                self.add_edge(domain_node, item_node, "week_raid_domain_has_item", source=table, evidence="value")
             return
         if table == "WeekRaidItemReverseTable":
             converted_item = self.add_item_node(row_key, source=table)
@@ -11222,6 +11231,7 @@ class SourceGraphBuilder:
                 self.add_edge(row_node, converted_item, "defines_week_raid_reverse_item", source=table)
             if converted_item and original_item:
                 self.add_edge(converted_item, original_item, "week_raid_item_reverse_original", source=table, evidence="value")
+                self.add_edge(original_item, converted_item, "week_raid_item_reverse_converted", source=table, evidence="value")
             return
         if not isinstance(row, dict):
             return
@@ -11233,12 +11243,15 @@ class SourceGraphBuilder:
                 dungeon_node = self.add_dungeon_node(game_id, source=table)
                 if dungeon_node:
                     self.add_edge(game_node, dungeon_node, "week_raid_game_dungeon_ref", source=table, evidence="gameId")
+                    self.add_edge(dungeon_node, game_node, "dungeon_used_by_week_raid_game", source=table, evidence="gameId")
                 item_node = self.add_item_node(row.get("moneyId"), source=table)
                 if item_node:
                     self.add_edge(game_node, item_node, "week_raid_currency", source=table, evidence="moneyId")
+                    self.add_edge(item_node, game_node, "item_used_as_week_raid_currency", source=table, evidence="moneyId")
                 mission_node = self.add_mission_ref_node(row.get("unlockRandomStageMission"), source=table)
                 if mission_node:
                     self.add_edge(game_node, mission_node, "week_raid_unlock_random_stage_mission", source=table, evidence="unlockRandomStageMission")
+                    self.add_edge(mission_node, game_node, "mission_unlocks_week_raid_random_stage", source=table, evidence="unlockRandomStageMission")
                 self.add_tag_i18n_edges(game_node, row.get("raidTopic"), source=table, edge_kind="week_raid_topic_text")
                 self.add_alias(row.get("icon"), game_node, kind="asset_stem", source=table)
         elif table == "WeekRaidItemTable":
@@ -11248,9 +11261,11 @@ class SourceGraphBuilder:
                 converted_item = self.add_item_node(row.get("convertItemId"), source=table)
                 if converted_item:
                     self.add_edge(item_node, converted_item, "week_raid_item_converts_to_item", source=table, evidence="convertItemId")
+                    self.add_edge(converted_item, item_node, "item_converted_from_week_raid_item", source=table, evidence="convertItemId")
                 converted_gold = self.add_item_node(row.get("convertGoldId"), source=table)
                 if converted_gold:
                     self.add_edge(item_node, converted_gold, "week_raid_item_converts_to_currency", source=table, evidence="convertGoldId", data={"convertGoldNum": row.get("convertGoldNum")})
+                    self.add_edge(converted_gold, item_node, "currency_converted_from_week_raid_item", source=table, evidence="convertGoldId", data={"convertGoldNum": row.get("convertGoldNum")})
         elif table in ("WeekRaidTechTypeTable", "WeekRaidBufTechTypeTable"):
             type_kind = "week_raid_buff_tech_type" if table == "WeekRaidBufTechTypeTable" else "week_raid_tech_type"
             type_id = row.get("strValue") or row.get("techType") or row_key
@@ -11266,12 +11281,15 @@ class SourceGraphBuilder:
                 item_node = self.add_item_node(row.get("itemId"), source=table)
                 if item_node:
                     self.add_edge(tech_node, item_node, "week_raid_tech_item", source=table, evidence="itemId")
+                    self.add_edge(item_node, tech_node, "item_unlocks_week_raid_tech", source=table, evidence="itemId")
                 type_node = self.add_week_raid_node("week_raid_tech_type", row.get("techType"), source=table)
                 if type_node:
                     self.add_edge(tech_node, type_node, "week_raid_tech_type", source=table, evidence="techType")
+                    self.add_edge(type_node, tech_node, "week_raid_tech_type_has_tech", source=table, evidence="techType")
                 if safe_key(row.get("strValue")):
                     buff_type_node = self.add_week_raid_node("week_raid_buff_tech_type", row.get("strValue"), source=table)
                     self.add_edge(tech_node, buff_type_node, "week_raid_tech_buff_type", source=table, evidence="strValue")
+                    self.add_edge(buff_type_node, tech_node, "week_raid_buff_tech_type_has_tech", source=table, evidence="strValue")
                 if isinstance(row.get("techTypeData"), dict):
                     self.add_week_raid_type_text_edges(tech_node, row.get("techTypeData") or {}, source=table, prefix="week_raid_tech")
         elif table == "WeekRaidDelegateTable":
@@ -11280,10 +11298,15 @@ class SourceGraphBuilder:
                 self.add_edge(row_node, delegate_node, "defines_week_raid_delegate", source=table)
                 self.add_week_raid_game_ref(delegate_node, row.get("gameId"), edge_kind="week_raid_delegate_game", source=table, evidence="gameId")
                 self.add_reward_ref_edge(delegate_node, row.get("rewardId"), edge_kind="week_raid_delegate_reward", source=table, evidence="rewardId")
+                reward_node = self.add_reward_node(row.get("rewardId"), source=table)
+                if reward_node:
+                    self.add_edge(reward_node, delegate_node, "reward_used_by_week_raid_delegate", source=table, evidence="rewardId")
                 for field, edge_kind in (("missionId", "week_raid_delegate_mission"), ("dependentMission", "week_raid_delegate_dependent_mission")):
                     mission_node = self.add_mission_ref_node(row.get(field), source=table)
                     if mission_node:
                         self.add_edge(delegate_node, mission_node, edge_kind, source=table, evidence=field)
+                        reverse_kind = "mission_has_week_raid_delegate" if field == "missionId" else "mission_required_by_week_raid_delegate"
+                        self.add_edge(mission_node, delegate_node, reverse_kind, source=table, evidence=field)
                 for field, edge_kind in (("name", "week_raid_delegate_name_text"), ("desc", "week_raid_delegate_desc_text"), ("typeDesc", "week_raid_delegate_type_desc_text")):
                     self.add_tag_i18n_edges(delegate_node, row.get(field), source=table, edge_kind=edge_kind)
         elif table == "WeekRaidRefreshTable":
@@ -11293,23 +11316,30 @@ class SourceGraphBuilder:
                 self.add_edge(row_node, game_node, "defines_week_raid_refresh", source=table)
                 if currency_node:
                     self.add_edge(game_node, currency_node, "week_raid_refresh_currency", source=table, evidence="costGoldId")
+                    self.add_edge(currency_node, game_node, "item_used_as_week_raid_refresh_currency", source=table, evidence="costGoldId")
                 level_map = row.get("levelMap") if isinstance(row.get("levelMap"), dict) else {}
                 for level_key, level in level_map.items():
                     refresh_node = self.add_week_raid_node("week_raid_refresh_level", f"{safe_key(row_key)}:{level_key}", source=table, data=compact_payload(level, depth=1))
                     if refresh_node:
                         self.add_edge(game_node, refresh_node, "week_raid_has_refresh_level", source=table, evidence=f"levelMap[{level_key}]")
+                        self.add_edge(refresh_node, game_node, "week_raid_refresh_level_for_game", source=table, evidence=f"levelMap[{level_key}]")
         elif table == "WeekRaidBattlePassTable":
             tier_node = self.add_week_raid_node("week_raid_battlepass_tier", row.get("bpNodeId") or row_key, source=table, data={"gameId": row.get("gameId"), "score": row.get("score"), "conditionAdventureLevel": row.get("conditionAdventureLevel"), "conditionTech": row.get("conditionTech"), "rewardId": row.get("rewardId"), "rewardItemId": row.get("rewardItemId")})
             if tier_node:
                 self.add_edge(row_node, tier_node, "defines_week_raid_battlepass_tier", source=table)
                 self.add_week_raid_game_ref(tier_node, row.get("gameId"), edge_kind="week_raid_battlepass_tier_game", source=table, evidence="gameId")
                 self.add_reward_ref_edge(tier_node, row.get("rewardId"), edge_kind="week_raid_battlepass_tier_reward", source=table, evidence="rewardId")
+                reward_node = self.add_reward_node(row.get("rewardId"), source=table)
+                if reward_node:
+                    self.add_edge(reward_node, tier_node, "reward_used_by_week_raid_battlepass_tier", source=table, evidence="rewardId")
                 reward_item = self.add_item_node(row.get("rewardItemId"), source=table)
                 if reward_item:
                     self.add_edge(tier_node, reward_item, "week_raid_battlepass_reward_item", source=table, evidence="rewardItemId")
+                    self.add_edge(reward_item, tier_node, "item_used_by_week_raid_battlepass_tier", source=table, evidence="rewardItemId")
                 condition_tech = self.add_week_raid_node("week_raid_tech", row.get("conditionTech"), source=table)
                 if condition_tech:
                     self.add_edge(tier_node, condition_tech, "week_raid_battlepass_condition_tech", source=table, evidence="conditionTech")
+                    self.add_edge(condition_tech, tier_node, "week_raid_tech_required_by_battlepass_tier", source=table, evidence="conditionTech")
 
     def ingest_equipment_gem_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
