@@ -16350,7 +16350,13 @@ class SourceGraphBuilder:
                 if item_node:
                     self.add_edge(season_node, item_node, "battlepass_season_weapon_box", source=table, evidence="weaponBoxId")
                     self.add_edge(item_node, season_node, "item_used_as_battlepass_weapon_box", source=table, evidence="weaponBoxId")
-                self.add_alias(row.get("bussinessCardId"), season_node, kind="business_card_id", source=table)
+                business_card_id = safe_key(row.get("bussinessCardId"))
+                if business_card_id:
+                    card_node = self.add_profile_social_node("business_card_topic", business_card_id, source=table)
+                    if card_node:
+                        self.add_edge(season_node, card_node, "battlepass_season_business_card_topic", source=table, evidence="bussinessCardId")
+                        self.add_edge(card_node, season_node, "business_card_topic_used_by_battlepass_season", source=table, evidence="bussinessCardId")
+                    self.add_alias(business_card_id, season_node, kind="business_card_id", source=table)
         elif table == "BattlePassTaskGroupTable" and isinstance(row, dict):
             group_node = self.add_battlepass_node("battlepass_task_group", row.get("groupId") or row_key, name=row.get("name"), source=table, data={"labelId": row.get("labelId"), "sortId": row.get("sortId"), "isDefault": row.get("isDefault")})
             if group_node:
