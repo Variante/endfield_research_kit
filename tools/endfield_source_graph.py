@@ -14935,6 +14935,7 @@ class SourceGraphBuilder:
         type_node = self.add_item_type_node(row.get("type"), source=table)
         if type_node:
             self.add_edge(item_node, type_node, "item_has_type", source=table, evidence="type")
+            self.add_edge(type_node, item_node, "item_type_has_item", source=table, evidence="type")
         showing_node = self.add_item_showing_type_node(row.get("showingType"), source=table)
         if showing_node:
             self.add_edge(item_node, showing_node, "item_has_showing_type", source=table, evidence="showingType")
