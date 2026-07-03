@@ -3264,6 +3264,8 @@ class SourceGraphBuilder:
             self.commit_step("storySourceLinks")
             self.ingest_main_story_order_override_comparison()
             self.commit_step("mainStoryOrderComparison")
+            self.ingest_scene_order_gap_report()
+            self.commit_step("sceneOrderGapReport")
             self.ingest_levelscript_property_flow_audit()
             self.commit_step("levelScriptPropertyFlowAudit")
             self.ingest_materials()
@@ -4000,6 +4002,204 @@ class SourceGraphBuilder:
                     story_node = story_ref(sample.get(field))
                     if story_node:
                         self.add_edge(sample_node, story_node, f"story_order_coarse_inversion_{field}_story", source=source, evidence=field, data=compact_payload(sample, depth=1))
+
+    def ingest_scene_order_gap_report(self) -> None:
+        path = self.root / "reports" / f"scene_order_gap_report_{self.language}.json"
+        if not path.exists() and self.language != "CN":
+            path = self.root / "reports" / "scene_order_gap_report_CN.json"
+        payload = read_json(path, {})
+        if not isinstance(payload, dict):
+            return
+        scenes = payload.get("scenes")
+        if not isinstance(scenes, list) or not scenes:
+            return
+        source = "scene_order_gap_report"
+        summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+        report_language = safe_key(summary.get("language")) or self.language
+        source_path = slash(path.relative_to(self.root)) if path.is_relative_to(self.root) else slash(path)
+        dataset = self.add_node(
+            "dataset",
+            f"scene_order_gap_report:{report_language}",
+            name=f"Scene order gap report {report_language}",
+            source=source,
+            path=source_path,
+            data=compact_payload(summary, depth=3),
+        )
+        self.add_file(source_path, kind="scene_order_gap_report", source=source, size=path.stat().st_size if path.exists() else None)
+
+        def add_story_ref(story_id: Any) -> str:
+            story_key = safe_key(story_id)
+            if not story_key:
+                return ""
+            story_node = self.add_node("story", story_key, name=story_key, source=source)
+            self.add_alias(story_key, story_node, kind="story_key", source=source)
+            return story_node
+
+        def add_line_ref(line_id: Any) -> str:
+            line_key = safe_key(line_id)
+            if not line_key:
+                return ""
+            return self.add_node("line", line_key, name=line_key, source=source)
+
+        for scene_index, scene in enumerate(scenes):
+            if not isinstance(scene, dict):
+                continue
+            story_key = safe_key(scene.get("key"))
+            if not story_key:
+                continue
+            mission_id = safe_key(scene.get("mission"))
+            line_analysis = scene.get("lineOrderAnalysis") if isinstance(scene.get("lineOrderAnalysis"), dict) else {}
+            option_analysis = scene.get("optionLayoutAnalysis") if isinstance(scene.get("optionLayoutAnalysis"), dict) else {}
+            option_warning = option_analysis.get("warning") if isinstance(option_analysis.get("warning"), dict) else {}
+            placement = scene.get("scenePlacement") if isinstance(scene.get("scenePlacement"), dict) else {}
+            gap_data = {
+                "key": story_key,
+                "mission": mission_id,
+                "kind": scene.get("kind"),
+                "title": scene.get("title"),
+                "lineOrderStatus": scene.get("lineOrderStatus"),
+                "lineOrderReasonCode": scene.get("lineOrderReasonCode"),
+                "lineOrderPatternCode": scene.get("lineOrderPatternCode"),
+                "optionLayoutStatus": scene.get("optionLayoutStatus"),
+                "optionLayoutReason": scene.get("optionLayoutReason"),
+                "optionPositionPatternCode": scene.get("optionPositionPatternCode"),
+                "inferredOptionLayout": scene.get("inferredOptionLayout"),
+                "inferredOptionResponse": scene.get("inferredOptionResponse"),
+                "warningCodes": scene.get("warningCodes"),
+                "scenePlacementEvidenceKinds": scene.get("scenePlacementEvidenceKinds"),
+                "lineCount": scene.get("lineCount"),
+                "meaningfulLineCount": scene.get("meaningfulLineCount"),
+                "optionGroupCount": scene.get("optionGroupCount"),
+                "optionCount": scene.get("optionCount"),
+                "meaningfulOptionCount": scene.get("meaningfulOptionCount"),
+                "path": scene.get("path"),
+                "lineOrderPattern": scene.get("lineOrderPattern"),
+                "optionPositionPattern": scene.get("optionPositionPattern"),
+                "lineOrderUncoveredCount": line_analysis.get("uncoveredLineCount"),
+                "lineOrderCoveredCount": line_analysis.get("coveredLineCount"),
+            }
+            gap_node = self.add_node(
+                "scene_order_gap",
+                f"{report_language}:{story_key}",
+                name=story_key,
+                source=source,
+                path=safe_key(scene.get("path")),
+                data=compact_payload(gap_data, depth=3),
+            )
+            self.add_alias(f"scene-order-gap:{story_key}", gap_node, kind="scene_order_gap_key", source=source)
+            self.add_edge(dataset, gap_node, "scene_order_gap_report_has_scene", source=source, evidence=str(scene_index), data=compact_payload(gap_data, depth=2))
+
+            story_node = add_story_ref(story_key)
+            if story_node:
+                self.add_edge(story_node, gap_node, "story_has_scene_order_gap", source=source, evidence=source_path, data=compact_payload(gap_data, depth=2))
+                self.add_edge(gap_node, story_node, "scene_order_gap_for_story", source=source, evidence=story_key)
+            if mission_id:
+                mission_node = self.add_mission_ref_node(mission_id, source=source)
+                if mission_node:
+                    self.add_edge(gap_node, mission_node, "scene_order_gap_in_mission", source=source, evidence="mission")
+                    self.add_edge(mission_node, gap_node, "mission_has_scene_order_gap", source=source, evidence=story_key)
+
+            for warning_index, warning_code in enumerate(scene.get("warningCodes") or []):
+                warning_key = safe_key(warning_code)
+                if warning_key:
+                    warning_node = self.add_node("scene_order_gap_warning", warning_key, name=warning_key, source=source)
+                    self.add_edge(gap_node, warning_node, "scene_order_gap_has_warning", source=source, evidence=f"warningCodes[{warning_index}]")
+
+            for field, kind, edge_kind in (
+                ("lineOrderStatus", "scene_order_line_status", "scene_order_gap_line_status"),
+                ("lineOrderReasonCode", "scene_order_line_reason", "scene_order_gap_line_reason"),
+                ("lineOrderPatternCode", "scene_order_line_pattern", "scene_order_gap_line_pattern"),
+                ("optionLayoutStatus", "scene_order_option_layout_status", "scene_order_gap_option_layout_status"),
+                ("optionLayoutReason", "scene_order_option_layout_reason", "scene_order_gap_option_layout_reason"),
+                ("optionPositionPatternCode", "scene_order_option_position_pattern", "scene_order_gap_option_position_pattern"),
+            ):
+                value_key = safe_key(scene.get(field))
+                if value_key:
+                    value_node = self.add_node(kind, value_key, name=value_key, source=source)
+                    self.add_edge(gap_node, value_node, edge_kind, source=source, evidence=field)
+
+            for evidence_index, evidence_kind in enumerate(scene.get("scenePlacementEvidenceKinds") or []):
+                evidence_key = safe_key(evidence_kind)
+                if evidence_key:
+                    evidence_node = self.add_node("scene_placement_evidence_kind", evidence_key, name=evidence_key, source=source)
+                    self.add_edge(gap_node, evidence_node, "scene_order_gap_has_placement_evidence", source=source, evidence=f"scenePlacementEvidenceKinds[{evidence_index}]")
+
+            for line_index, line_id in enumerate(line_analysis.get("orderedLineIds") or []):
+                line_node = add_line_ref(line_id)
+                if line_node:
+                    self.add_edge(gap_node, line_node, "scene_order_gap_ordered_line", source=source, evidence=str(line_index), data={"order": line_index})
+            for line_index, line_id in enumerate(line_analysis.get("uncoveredLineIds") or []):
+                line_node = add_line_ref(line_id)
+                if line_node:
+                    self.add_edge(gap_node, line_node, "scene_order_gap_uncovered_line", source=source, evidence=str(line_index))
+            for source_index, line_source in enumerate(line_analysis.get("sources") or []):
+                if not isinstance(line_source, dict):
+                    continue
+                line_source_key = safe_key(line_source.get("sourceKey") or f"{story_key}:lineSource:{source_index}")
+                line_source_node = self.add_node("scene_order_line_source", line_source_key, name=line_source_key, source=source, path=safe_key(line_source.get("file")), data=compact_payload(line_source, depth=2))
+                self.add_edge(gap_node, line_source_node, "scene_order_gap_line_source", source=source, evidence=str(source_index), data=compact_payload(line_source, depth=2))
+                if line_source.get("file"):
+                    file_node = self.add_file(safe_key(line_source.get("file")), kind="scene_order_line_source", source=source)
+                    self.add_edge(file_node, line_source_node, "defines_scene_order_line_source", source=source, evidence=line_source_key)
+
+            group_details = option_warning.get("groupDetails") if isinstance(option_warning.get("groupDetails"), list) else []
+            for group_index, group in enumerate(group_details):
+                if not isinstance(group, dict):
+                    continue
+                group_key = safe_key(group.get("group"))
+                if not group_key:
+                    continue
+                option_group_node = self.add_node(
+                    "option_group",
+                    self.timeline_group_key(story_key, group_key),
+                    source=source,
+                    data=compact_payload({"storyKey": story_key, **group}, depth=3),
+                )
+                self.add_edge(gap_node, option_group_node, "scene_order_gap_option_group", source=source, evidence=str(group_index), data=compact_payload(group, depth=2))
+                status_key = safe_key(group.get("status"))
+                if status_key:
+                    status_node = self.add_node("scene_order_option_group_status", status_key, name=status_key, source=source)
+                    self.add_edge(option_group_node, status_node, "scene_order_gap_option_group_status", source=source, evidence="status")
+                for field, edge_kind in (("after", "scene_order_gap_option_group_after_line"), ("fallbackAnchorId", "scene_order_gap_option_group_fallback_anchor")):
+                    line_node = add_line_ref(group.get(field))
+                    if line_node:
+                        self.add_edge(option_group_node, line_node, edge_kind, source=source, evidence=field)
+                for option_index, option_id in enumerate(group.get("optionIds") or []):
+                    option_key = safe_key(option_id)
+                    if option_key:
+                        option_node = self.add_node("option", option_key, name=option_key, source=source)
+                        self.add_edge(option_group_node, option_node, "scene_order_gap_option_group_has_option", source=source, evidence=f"optionIds[{option_index}]")
+                for option_index, option_id in enumerate(group.get("unauthoredOptionIds") or []):
+                    option_key = safe_key(option_id)
+                    if option_key:
+                        option_node = self.add_node("option", option_key, name=option_key, source=source)
+                        self.add_edge(option_group_node, option_node, "scene_order_gap_unauthored_option", source=source, evidence=f"unauthoredOptionIds[{option_index}]")
+
+            for quest_index, quest_id in enumerate(placement.get("questIds") or []):
+                quest_node = self.add_quest_task_node(quest_id, source=source)
+                if quest_node:
+                    self.add_edge(gap_node, quest_node, "scene_order_gap_placement_quest", source=source, evidence=f"scenePlacement.questIds[{quest_index}]")
+            placement_edges = []
+            if isinstance(placement.get("incomingEdges"), list):
+                placement_edges.extend(placement.get("incomingEdges") or [])
+            if isinstance(placement.get("outgoingEdges"), list):
+                placement_edges.extend(placement.get("outgoingEdges") or [])
+            for edge_index, edge in enumerate(placement_edges):
+                if not isinstance(edge, dict):
+                    continue
+                neighbor_node = add_story_ref(edge.get("neighbor"))
+                if neighbor_node:
+                    self.add_edge(gap_node, neighbor_node, "scene_order_gap_placement_neighbor", source=source, evidence=str(edge_index), data=compact_payload(edge, depth=2))
+                for file_index, file_path in enumerate(edge.get("sourceFiles") or []):
+                    file_key = safe_key(file_path)
+                    if file_key:
+                        file_node = self.add_file(file_key, kind="scene_order_gap_placement_source", source=source)
+                        self.add_edge(gap_node, file_node, "scene_order_gap_placement_source_file", source=source, evidence=f"{edge_index}:{file_index}", data=compact_payload(edge, depth=1))
+            for timeline_index, timeline in enumerate(placement.get("timelines") or []):
+                timeline_key = safe_key(timeline)
+                if timeline_key:
+                    timeline_node = self.add_node("timeline_asset", timeline_key, name=timeline_key, source=source)
+                    self.add_edge(gap_node, timeline_node, "scene_order_gap_placement_timeline", source=source, evidence=f"scenePlacement.timelines[{timeline_index}]")
 
     def link_decoded_parameter_blackboard_keys(self) -> None:
         rows = self.db.execute(
@@ -24587,6 +24787,17 @@ QUERY_KIND_PRIORITY = {
     "story_order_confidence": 3.73,
     "story_order_source": 3.74,
     "story_order_evidence_kind": 3.75,
+    "scene_order_gap": 3.8,
+    "scene_order_gap_warning": 3.81,
+    "scene_order_line_status": 3.82,
+    "scene_order_line_reason": 3.83,
+    "scene_order_line_pattern": 3.84,
+    "scene_order_option_layout_status": 3.85,
+    "scene_order_option_layout_reason": 3.86,
+    "scene_order_option_position_pattern": 3.87,
+    "scene_order_option_group_status": 3.88,
+    "scene_placement_evidence_kind": 3.89,
+    "scene_order_line_source": 3.9,
     "line": 4,
     "sns_dialog": 5,
     "sns_content": 6,
@@ -25334,6 +25545,17 @@ NODE_ID_PREFIXES = (
     "story_order_confidence",
     "story_order_source",
     "story_order_evidence_kind",
+    "scene_order_gap",
+    "scene_order_gap_warning",
+    "scene_order_line_status",
+    "scene_order_line_reason",
+    "scene_order_line_pattern",
+    "scene_order_option_layout_status",
+    "scene_order_option_layout_reason",
+    "scene_order_option_position_pattern",
+    "scene_order_option_group_status",
+    "scene_placement_evidence_kind",
+    "scene_order_line_source",
     "line",
     "sns_chat",
     "sns_topic",
