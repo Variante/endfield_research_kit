@@ -2,31 +2,30 @@
 
 ## Slice
 
-Added reverse source-graph traversal for reward catalog metadata: gifts,
-check-in stages, daily activation rewards, money config/record rows, money
-exchange rows, important item display groups, and important reward item flags.
+Added reverse source-graph traversal for reward catalog side tables covering
+gift items, check-in stages, daily activation rewards, money config/record
+rows, money exchanges, important item show groups, and important reward item
+configs.
 
-New reverse edges include:
+New reverse edge families include:
 
-- `tag -> gift_prefer_tag` as `tag_has_gift_prefer_config`
-- `gift_item -> item` as `gift_config_for_item`
-- `gift_prefer_tag -> gift_item` as `gift_prefer_tag_used_by_gift_item`
-- `tag -> gift_item` as `tag_used_by_gift_item`
-- `checkin_activity -> activity` as `checkin_config_for_activity`
-- `checkin_stage -> checkin_activity` as `checkin_stage_in_checkin`
-- `reward -> checkin_stage` as `reward_used_by_checkin_stage`
-- `character -> checkin_stage` as `character_featured_by_checkin_stage`
-- `weapon -> checkin_stage` as `weapon_featured_by_checkin_stage`
-- `reward -> daily_activation_reward` as `reward_used_by_daily_activation`
-- `item -> money_config` as `item_has_money_config`
-- `item -> money_config` as `item_has_money_record`
-- `item -> money_exchange` as `item_used_as_money_exchange_source`
-- `item -> money_exchange` as `item_received_from_money_exchange`
-- `important_item_show_entry -> important_item_show_group` as
-  `important_item_show_entry_in_group`
-- `item_type -> important_item_show_entry` as
-  `item_type_used_by_important_item_show`
-- `item -> important_reward_item` as `item_has_important_reward_config`
+- `tag_has_gift_prefer_config`
+- `gift_config_for_item`
+- `gift_prefer_tag_used_by_gift_item`
+- `tag_used_by_gift_item`
+- `checkin_config_for_activity`
+- `checkin_stage_in_checkin`
+- `reward_used_by_checkin_stage`
+- `character_featured_by_checkin_stage`
+- `weapon_featured_by_checkin_stage`
+- `reward_used_by_daily_activation`
+- `item_has_money_config`
+- `item_has_money_record`
+- `item_used_as_money_exchange_source`
+- `item_received_from_money_exchange`
+- `important_item_show_entry_in_group`
+- `item_type_used_by_important_item_show`
+- `item_has_important_reward_config`
 
 ## Validation
 
@@ -95,8 +94,7 @@ Sample evidence:
 
 ## Notes
 
-This closes the reward-catalog inbound lookup gap for gifts, check-in rewards,
-activation rewards, money exchange metadata, and important-item display flags.
-Queries can now start from item, reward, tag, character, weapon, or item-type
-nodes and reach the catalog rows that reference them without manual inbound
-edge scans.
+These edges improve numerical/economy recovery by making catalog lookups
+bidirectional from items, rewards, tags, activities, characters, weapons, money
+items, and item types back to the authored reward catalog tables that reference
+them.
