@@ -7458,19 +7458,34 @@ class SourceGraphBuilder:
         ref_key = safe_key(ref_id)
         if not ref_key:
             return
+        owner_kind = owner_node.split(":", 1)[0]
+        if owner_kind == "mission_runtime_asset" and edge_kind == "mission_runtime_action_map_references_narrative":
+            reverse_owner = "mission_runtime_action_map"
+        elif owner_kind == "mission_runtime_action":
+            reverse_owner = "mission_runtime_action"
+        elif owner_kind == "mission_runtime_condition":
+            reverse_owner = "mission_runtime_condition"
+        else:
+            reverse_owner = edge_kind
         if ref_key.startswith("radio_"):
             ref_node = self.add_node("radio", ref_key, name=ref_key, source=source)
             self.add_alias(ref_key, ref_node, kind="radio_id", source=source)
+            reverse_edge_kind = f"radio_used_by_{reverse_owner}"
         elif ref_key.startswith("sns_"):
             ref_node = self.add_node("sns_dialog", ref_key, name=ref_key, source=source)
             self.add_alias(ref_key, ref_node, kind="sns_dialog_id", source=source)
+            reverse_edge_kind = f"sns_dialog_used_by_{reverse_owner}"
         elif ref_key.startswith("remotecomm_"):
             ref_node = self.add_node("remote_common", ref_key, name=ref_key, source=source)
             self.add_alias(ref_key, ref_node, kind="remote_common_id", source=source)
+            reverse_edge_kind = f"remote_common_used_by_{reverse_owner}"
         else:
             ref_node = self.add_node("story", ref_key, name=ref_key, source=source)
             self.add_alias(ref_key, ref_node, kind="story_key", source=source)
+            reverse_edge_kind = f"story_used_by_{reverse_owner}"
         self.add_edge(owner_node, ref_node, edge_kind, source=source, evidence=evidence)
+        if reverse_edge_kind:
+            self.add_edge(ref_node, owner_node, reverse_edge_kind, source=source, evidence=evidence, data={"forwardEdge": edge_kind})
 
     def mission_runtime_const_value(self, value: Any) -> Any:
         if isinstance(value, dict) and "constValue" in value:
@@ -7538,6 +7553,7 @@ class SourceGraphBuilder:
         text_node = self.add_i18n_text_node(text_id, source=source)
         if text_node:
             self.add_edge(action_node, text_node, "mission_runtime_action_text", source=source, evidence=f"{evidence_prefix}._textId")
+            self.add_edge(text_node, action_node, "i18n_text_used_by_mission_runtime_action", source=source, evidence=f"{evidence_prefix}._textId")
         for field, edge_kind in (
             ("_mediaGuideGroupId", "mission_runtime_action_media_guide_group"),
             ("_groupId", "mission_runtime_action_guide_group"),
@@ -7552,7 +7568,9 @@ class SourceGraphBuilder:
                 self.add_edge(guide_node, action_node, reverse_kind, source=source, evidence=f"{evidence_prefix}.{field}")
         chapter_node = self.add_mission_runtime_chapter_panel_node(self.mission_runtime_const_value(action.get("_chapterId")), source=source)
         if chapter_node:
-            self.add_edge(action_node, chapter_node, "mission_runtime_action_shows_chapter_panel", source=source, evidence=f"{evidence_prefix}._chapterId", data={"chapterEffectType": self.mission_runtime_const_value(action.get("_chapterEffectType")), "isToBeContinue": self.mission_runtime_const_value(action.get("_isToBeContinue"))})
+            chapter_data = {"chapterEffectType": self.mission_runtime_const_value(action.get("_chapterEffectType")), "isToBeContinue": self.mission_runtime_const_value(action.get("_isToBeContinue"))}
+            self.add_edge(action_node, chapter_node, "mission_runtime_action_shows_chapter_panel", source=source, evidence=f"{evidence_prefix}._chapterId", data=chapter_data)
+            self.add_edge(chapter_node, action_node, "chapter_panel_used_by_mission_runtime_action", source=source, evidence=f"{evidence_prefix}._chapterId", data=chapter_data)
         for ref_index, ref in enumerate(sorted(set(STORY_KEY_RE.findall("\n".join(self.iter_mission_runtime_strings(action)))))):
             self.add_mission_runtime_narrative_ref_edge(action_node, ref, edge_kind="mission_runtime_action_references_narrative", source=source, evidence=f"{evidence_prefix}.storyRef[{ref_index}]")
 
@@ -7870,6 +7888,7 @@ class SourceGraphBuilder:
             next_node = action_nodes_by_id.get(next_id)
             if next_node:
                 self.add_edge(action_node, next_node, "mission_runtime_action_next", source=source, evidence=f"actionList[{action_index}]._nextID")
+                self.add_edge(next_node, action_node, "mission_runtime_action_previous", source=source, evidence=f"actionList[{action_index}]._nextID")
         for ref_index, ref in enumerate(sorted(set(STORY_KEY_RE.findall("\n".join(self.iter_mission_runtime_strings(payload.get("actionMapRaw"))))))):
             self.add_mission_runtime_narrative_ref_edge(asset_node, ref, edge_kind="mission_runtime_action_map_references_narrative", source=source, evidence=f"actionMapRaw[{ref_index}]")
 
