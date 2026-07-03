@@ -19081,10 +19081,13 @@ class SourceGraphBuilder:
                 show_node = self.add_factory_interaction_lookup_node("activity_dungeon_show_state", row.get("showState"), source=table)
                 if level_node:
                     self.add_edge(state_node, level_node, "activity_dungeon_state_level", source=table, evidence="rowKey")
+                    self.add_edge(level_node, state_node, "level_has_activity_dungeon_state", source=table, evidence="rowKey")
                 if stage_node:
                     self.add_edge(state_node, stage_node, "activity_dungeon_state_stage", source=table, evidence="activityStage")
+                    self.add_edge(stage_node, state_node, "activity_stage_has_dungeon_state", source=table, evidence="activityStage")
                 if show_node:
                     self.add_edge(state_node, show_node, "activity_dungeon_state_show_state", source=table, evidence="showState")
+                    self.add_edge(show_node, state_node, "activity_dungeon_show_state_has_state", source=table, evidence="showState")
             return
         if table == "ActivityDungeonFightingStageTable" and isinstance(row, dict):
             stage_node = self.add_activity_stage_node(row_key, source=table, data={"levelId": row.get("levelId"), "questId": row.get("questId")})
@@ -19094,8 +19097,10 @@ class SourceGraphBuilder:
                 quest_node = self.add_quest_task_node(row.get("questId"), source=table)
                 if level_node:
                     self.add_edge(stage_node, level_node, "activity_stage_level", source=table, evidence="levelId")
+                    self.add_edge(level_node, stage_node, "level_has_activity_stage", source=table, evidence="levelId")
                 if quest_node:
                     self.add_edge(stage_node, quest_node, "activity_stage_quest", source=table, evidence="questId")
+                    self.add_edge(quest_node, stage_node, "quest_task_used_by_activity_stage", source=table, evidence="questId")
             return
         if table == "ActivityCleaningStageDataTable" and isinstance(row, dict):
             stage_node = self.add_factory_interaction_lookup_node("activity_cleaning_stage", row_key, source=table, data={"img": row.get("img")})
