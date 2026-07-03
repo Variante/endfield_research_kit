@@ -4499,18 +4499,22 @@ class SourceGraphBuilder:
                     story_node = self.add_node("story", value, name=value, source=source)
                     self.add_alias(value, story_node, kind="story_key", source=source)
                     self.add_edge(owner_node, story_node, f"{edge_prefix}_references_story", source=source, evidence=evidence, data=data)
+                    self.add_edge(story_node, owner_node, f"story_used_by_{edge_prefix}", source=source, evidence=evidence, data=data)
                 elif ref_kind == "mission":
                     mission_node = self.add_mission_ref_node(value, source=source)
                     self.add_edge(owner_node, mission_node, f"{edge_prefix}_references_mission", source=source, evidence=evidence, data=data)
+                    self.add_edge(mission_node, owner_node, f"mission_used_by_{edge_prefix}", source=source, evidence=evidence, data=data)
                 elif ref_kind == "audio":
                     self.add_audio_target_edge(owner_node, value, edge_kind=f"{edge_prefix}_references_audio", source=source, evidence=evidence, reverse_edge_kind=f"audio_used_by_{edge_prefix}")
                 elif ref_kind == "effect":
                     effect_node = self.add_node("gameplay_effect", value, name=value, source=source)
                     self.add_alias(value, effect_node, kind="gameplay_effect_id", source=source)
                     self.add_edge(owner_node, effect_node, f"{edge_prefix}_references_effect", source=source, evidence=evidence, data=data)
+                    self.add_edge(effect_node, owner_node, f"gameplay_effect_used_by_{edge_prefix}", source=source, evidence=evidence, data=data)
                 elif ref_kind == "buff":
                     buff_node = self.add_buff_ref_node(value, source=source)
                     self.add_edge(owner_node, buff_node, f"{edge_prefix}_references_buff", source=source, evidence=evidence, data=data)
+                    self.add_edge(buff_node, owner_node, f"buff_used_by_{edge_prefix}", source=source, evidence=evidence, data=data)
                 elif ref_kind == "template":
                     template_id = level_script_template_id_from_ref(value)
                     if not template_id:
@@ -4519,9 +4523,11 @@ class SourceGraphBuilder:
                     self.add_alias(template_id, template_node, kind="level_script_template_id", source=source)
                     self.add_alias(value, template_node, kind="level_script_template_path", source=source)
                     self.add_edge(owner_node, template_node, f"{edge_prefix}_references_template", source=source, evidence=evidence, data=data)
+                    self.add_edge(template_node, owner_node, f"level_script_template_used_by_{edge_prefix}", source=source, evidence=evidence, data=data)
                 elif ref_kind == "montage":
                     montage_node = self.add_level_script_montage_node(value, source=source)
                     self.add_edge(owner_node, montage_node, f"{edge_prefix}_references_montage", source=source, evidence=evidence, data=data)
+                    self.add_edge(montage_node, owner_node, f"level_script_montage_used_by_{edge_prefix}", source=source, evidence=evidence, data=data)
 
     def add_buff_data_config_edges(self, file_node: str, entry: dict[str, Any]) -> None:
         decoded = extract_buff_data_summary(entry, self.read_decoded_config_bytes(entry))
