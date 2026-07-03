@@ -38,6 +38,10 @@ from build_data_index import (
 EXPORT_ROOT = ROOT / "export_full"
 WEBUI_DATA = ROOT / "webui" / "data"
 WEBUI_OPTION_OVERRIDES = ROOT / "webui" / "overrides" / "options.json"
+GAMEPLAY_CONFIG_ROOT = EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json" / "GameplayConfig"
+NPC_PROXY_TABLE_PATH = GAMEPLAY_CONFIG_ROOT / "NpcProxyTable.json"
+NPC_PROXY_EX_TABLE_PATH = GAMEPLAY_CONFIG_ROOT / "NpcProxyExDataTable.json"
+ATMOSPHERIC_NPC_CLUSTER_TABLE_PATH = GAMEPLAY_CONFIG_ROOT / "AtmosphericNpcClusterDataTable.json"
 UNITY_CHARACTER_ROOT = (
     ROOT
     / "unity_endfield_graph_shader_lab"
@@ -3297,6 +3301,8 @@ class SourceGraphBuilder:
             self.commit_step("structuredTables")
             self.ingest_npc_voice_bark_semantics()
             self.commit_step("npcVoiceBark")
+            self.ingest_npc_proxy_world_dialog_semantics()
+            self.commit_step("npcProxyWorldDialog")
             self.ingest_narrative_audio_semantics()
             self.commit_step("narrativeAudio")
             self.ingest_audio_config_semantics()
@@ -19081,6 +19087,58 @@ class SourceGraphBuilder:
         self.add_alias(talk_key, node, kind="env_talk_id", source=source)
         return node
 
+    def add_npc_proxy_node(self, proxy_id: Any, *, source: str = "", data: Any = None) -> str:
+        proxy_key = safe_key(proxy_id)
+        if not proxy_key:
+            return ""
+        node = self.add_node("npc_proxy", proxy_key, name=proxy_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=proxy_key, source=source, data=data)
+        self.add_alias(proxy_key, node, kind="npc_proxy_id", source=source)
+        return node
+
+    def add_npc_proxy_ex_entry_node(self, proxy_id: Any, index: int, *, source: str = "", data: Any = None) -> str:
+        proxy_key = safe_key(proxy_id)
+        if not proxy_key:
+            return ""
+        entry_key = f"{proxy_key}:ex:{index + 1}"
+        node = self.add_node("npc_proxy_ex_entry", entry_key, name=entry_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=entry_key, source=source, data=data)
+        self.add_alias(entry_key, node, kind="npc_proxy_ex_entry_id", source=source)
+        return node
+
+    def add_atmospheric_npc_cluster_node(self, cluster_id: Any, *, source: str = "", data: Any = None) -> str:
+        cluster_key = safe_key(cluster_id)
+        if not cluster_key:
+            return ""
+        node = self.add_node("atmospheric_npc_cluster", cluster_key, name=cluster_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=cluster_key, source=source, data=data)
+        self.add_alias(cluster_key, node, kind="atmospheric_npc_cluster_id", source=source)
+        return node
+
+    def add_npc_proxy_env_talk_edge(self, proxy_node: str, talk_id: Any, *, source: str, evidence: str, data: Any = None) -> None:
+        talk_node = self.add_env_talk_node(talk_id, source=source)
+        if not talk_node:
+            return
+        self.add_edge(proxy_node, talk_node, "npc_proxy_uses_env_talk", source=source, evidence=evidence, data=data)
+        self.add_edge(talk_node, proxy_node, "env_talk_used_by_npc_proxy", source=source, evidence=evidence, data=data)
+
+    def add_npc_proxy_ex_env_talk_edge(self, entry_node: str, talk_id: Any, *, source: str, evidence: str, data: Any = None) -> None:
+        talk_node = self.add_env_talk_node(talk_id, source=source)
+        if not talk_node:
+            return
+        self.add_edge(entry_node, talk_node, "npc_proxy_ex_entry_uses_env_talk", source=source, evidence=evidence, data=data)
+        self.add_edge(talk_node, entry_node, "env_talk_used_by_npc_proxy_ex_entry", source=source, evidence=evidence, data=data)
+
+    def add_atmospheric_cluster_env_talk_edge(self, cluster_node: str, talk_id: Any, *, source: str, evidence: str) -> None:
+        talk_node = self.add_env_talk_node(talk_id, source=source)
+        if not talk_node:
+            return
+        self.add_edge(cluster_node, talk_node, "atmospheric_cluster_uses_env_talk", source=source, evidence=evidence)
+        self.add_edge(talk_node, cluster_node, "env_talk_used_by_atmospheric_cluster", source=source, evidence=evidence)
+
     def add_spaceship_proxy_node(self, proxy_id: Any, *, source: str = "", data: Any = None) -> str:
         proxy_key = safe_key(proxy_id)
         if not proxy_key:
@@ -21218,6 +21276,139 @@ class SourceGraphBuilder:
                 )
                 self.add_edge(table_node, row_node, "has_row", source="structured/npc_voice_bark")
                 self.add_npc_voice_bark_row_edges(table_key, row_key, row, row_node)
+
+    def ingest_npc_proxy_world_dialog_semantics(self) -> None:
+        dataset = self.add_node("dataset", "gameplay_config_npc_proxy_semantics", path=slash(GAMEPLAY_CONFIG_ROOT))
+        proxy_payload = read_json(NPC_PROXY_TABLE_PATH, {})
+        proxy_table = proxy_payload.get("dataTable") if isinstance(proxy_payload, dict) and isinstance(proxy_payload.get("dataTable"), dict) else {}
+        proxy_ex_payload = read_json(NPC_PROXY_EX_TABLE_PATH, {})
+        proxy_ex_data = proxy_ex_payload.get("data") if isinstance(proxy_ex_payload, dict) and isinstance(proxy_ex_payload.get("data"), dict) else {}
+        proxy_info_data = proxy_ex_payload.get("proxyInfoData") if isinstance(proxy_ex_payload, dict) and isinstance(proxy_ex_payload.get("proxyInfoData"), dict) else {}
+        cluster_payload = read_json(ATMOSPHERIC_NPC_CLUSTER_TABLE_PATH, {})
+        cluster_table = cluster_payload.get("dataTable") if isinstance(cluster_payload, dict) and isinstance(cluster_payload.get("dataTable"), dict) else {}
+
+        proxy_table_node = self.add_node("table", "NpcProxyTable", name="NpcProxyTable", source="GameplayConfig", path=slash(NPC_PROXY_TABLE_PATH), data={"proxyCount": len(proxy_table)})
+        self.add_edge(dataset, proxy_table_node, "has_table", source="structured/npc_proxy")
+        self.add_file(slash(NPC_PROXY_TABLE_PATH), kind="structured_gameplay_config", source="GameplayConfig")
+        for row_key, row in sorted(proxy_table.items(), key=lambda item: safe_key(item[0])):
+            if not isinstance(row, dict):
+                continue
+            proxy_id = safe_key(row.get("proxyId") or row_key)
+            if not proxy_id:
+                continue
+            info = proxy_info_data.get(proxy_id) if isinstance(proxy_info_data.get(proxy_id), dict) else {}
+            odds = row.get("envTalkOdd") if isinstance(row.get("envTalkOdd"), list) else []
+            proxy_data = compact_payload(
+                {
+                    "proxyId": proxy_id,
+                    "levelId": row.get("levelId"),
+                    "levelLogicId": row.get("levelLogicId"),
+                    "npcGroupId": row.get("npcGroupId"),
+                    "type": row.get("type"),
+                    "clusterId": row.get("clusterId"),
+                    "envTalkCount": len(row.get("envTalkIds") or []),
+                    "envTalkOverrideNpc": row.get("envTalkOverrideNpc"),
+                    "npcProxyType": info.get("npcProxyType"),
+                    "npcId": info.get("npcId"),
+                    "npcNameId": info.get("npcNameId"),
+                    "mapId": info.get("mapId"),
+                    "position": row.get("position"),
+                    "rotation": row.get("rotation"),
+                },
+                depth=3,
+            )
+            row_node = self.add_node("table_row", f"NpcProxyTable:{proxy_id}", name=proxy_id, source="NpcProxyTable", data=compact_payload(row, depth=2))
+            self.add_edge(proxy_table_node, row_node, "has_row", source="structured/npc_proxy")
+            proxy_node = self.add_npc_proxy_node(proxy_id, source="NpcProxyTable", data=proxy_data)
+            self.add_edge(row_node, proxy_node, "defines_npc_proxy", source="NpcProxyTable")
+            group_node = self.add_npc_group_node(row.get("npcGroupId"), source="NpcProxyTable")
+            if group_node:
+                self.add_edge(proxy_node, group_node, "npc_proxy_in_group", source="NpcProxyTable", evidence="npcGroupId")
+            level_node = self.add_level_node(row.get("levelId"), source="NpcProxyTable")
+            if level_node:
+                self.add_edge(proxy_node, level_node, "npc_proxy_in_level", source="NpcProxyTable", evidence="levelId")
+                self.add_edge(level_node, proxy_node, "level_has_npc_proxy", source="NpcProxyTable", evidence="levelId")
+                self.add_level_map_edge(level_node, row.get("levelId"), source="NpcProxyTable", evidence="levelId", map_id=info.get("mapId"))
+            map_node = self.add_map_node(info.get("mapId"), source="NpcProxyTable")
+            if map_node:
+                self.add_edge(proxy_node, map_node, "npc_proxy_on_map", source="NpcProxyTable", evidence="proxyInfoData.mapId")
+                self.add_edge(map_node, proxy_node, "map_has_npc_proxy", source="NpcProxyTable", evidence="proxyInfoData.mapId")
+            npc_name_id = safe_key(info.get("npcNameId"))
+            if npc_name_id:
+                name_node = self.add_semantic_node("npc_proxy_name", npc_name_id, source="NpcProxyExDataTable", data={"npcId": info.get("npcId"), "mapId": info.get("mapId")})
+                self.add_edge(proxy_node, name_node, "npc_proxy_info_uses_npc_name", source="NpcProxyExDataTable", evidence="proxyInfoData.npcNameId")
+                self.add_edge(name_node, proxy_node, "npc_proxy_name_used_by_proxy", source="NpcProxyExDataTable", evidence="proxyInfoData.npcNameId")
+            self.add_alias(info.get("npcId"), proxy_node, kind="npc_proxy_info_npc_id", source="NpcProxyExDataTable")
+            for index, talk_id in enumerate(row.get("envTalkIds") or []):
+                data = {"odd": odds[index]} if index < len(odds) else None
+                self.add_npc_proxy_env_talk_edge(proxy_node, talk_id, source="NpcProxyTable", evidence=f"envTalkIds[{index}]", data=data)
+            for brief_node in self.alias_node_ids(proxy_id, kind="npc_proxy_brief_id"):
+                self.add_edge(brief_node, proxy_node, "npc_proxy_brief_matches_authored_proxy", source="source_graph/npc_proxy_bridge", evidence=proxy_id)
+                self.add_edge(proxy_node, brief_node, "npc_proxy_has_brief", source="source_graph/npc_proxy_bridge", evidence=proxy_id)
+
+        ex_table_node = self.add_node("table", "NpcProxyExDataTable", name="NpcProxyExDataTable", source="GameplayConfig", path=slash(NPC_PROXY_EX_TABLE_PATH), data={"proxyCount": len(proxy_ex_data)})
+        self.add_edge(dataset, ex_table_node, "has_table", source="structured/npc_proxy")
+        self.add_file(slash(NPC_PROXY_EX_TABLE_PATH), kind="structured_gameplay_config", source="GameplayConfig")
+        for proxy_id_raw, entries in sorted(proxy_ex_data.items(), key=lambda item: safe_key(item[0])):
+            proxy_id = safe_key(proxy_id_raw)
+            if not proxy_id or not isinstance(entries, list):
+                continue
+            proxy_node = self.add_npc_proxy_node(proxy_id, source="NpcProxyExDataTable")
+            for index, entry in enumerate(entries):
+                if not isinstance(entry, dict):
+                    continue
+                entry_node = self.add_npc_proxy_ex_entry_node(
+                    proxy_id,
+                    index,
+                    source="NpcProxyExDataTable",
+                    data=compact_payload({"proxyId": proxy_id, "index": index, "dialogId": entry.get("dialogId"), "missionId": entry.get("missionId"), "addDialogExOption": entry.get("addDialogExOption"), "envTalkData": entry.get("envTalkData")}, depth=3),
+                )
+                if not entry_node:
+                    continue
+                self.add_edge(ex_table_node, entry_node, "defines_npc_proxy_ex_entry", source="NpcProxyExDataTable", evidence=f"{proxy_id}[{index}]")
+                self.add_edge(proxy_node, entry_node, "npc_proxy_has_ex_entry", source="NpcProxyExDataTable", evidence=f"data[{index}]")
+                story_id = safe_key(entry.get("dialogId"))
+                if story_id:
+                    story_node = self.add_node("story", story_id, name=story_id, source="NpcProxyExDataTable")
+                    self.add_edge(entry_node, story_node, "npc_proxy_ex_entry_targets_story", source="NpcProxyExDataTable", evidence="dialogId")
+                    self.add_edge(story_node, entry_node, "story_targeted_by_npc_proxy_ex_entry", source="NpcProxyExDataTable", evidence="dialogId")
+                mission_node = self.add_mission_ref_node(entry.get("missionId"), source="NpcProxyExDataTable")
+                if mission_node:
+                    self.add_edge(entry_node, mission_node, "npc_proxy_ex_entry_in_mission", source="NpcProxyExDataTable", evidence="missionId")
+                    self.add_edge(mission_node, entry_node, "mission_has_npc_proxy_ex_entry", source="NpcProxyExDataTable", evidence="missionId")
+                env_talk_data = entry.get("envTalkData") if isinstance(entry.get("envTalkData"), dict) else {}
+                env_talk_ids = env_talk_data.get("envTalkIds") if isinstance(env_talk_data.get("envTalkIds"), list) else []
+                for talk_index, talk_id in enumerate(env_talk_ids):
+                    self.add_npc_proxy_ex_env_talk_edge(entry_node, talk_id, source="NpcProxyExDataTable", evidence=f"envTalkData.envTalkIds[{talk_index}]")
+
+        cluster_table_node = self.add_node("table", "AtmosphericNpcClusterDataTable", name="AtmosphericNpcClusterDataTable", source="GameplayConfig", path=slash(ATMOSPHERIC_NPC_CLUSTER_TABLE_PATH), data={"clusterCount": len(cluster_table)})
+        self.add_edge(dataset, cluster_table_node, "has_table", source="structured/npc_proxy")
+        self.add_file(slash(ATMOSPHERIC_NPC_CLUSTER_TABLE_PATH), kind="structured_gameplay_config", source="GameplayConfig")
+        for row_key, row in sorted(cluster_table.items(), key=lambda item: safe_key(item[0])):
+            if not isinstance(row, dict):
+                continue
+            cluster_id = safe_key(row.get("clusterId") or row_key)
+            if not cluster_id:
+                continue
+            row_node = self.add_node("table_row", f"AtmosphericNpcClusterDataTable:{cluster_id}", name=cluster_id, source="AtmosphericNpcClusterDataTable", data=compact_payload(row, depth=2))
+            self.add_edge(cluster_table_node, row_node, "has_row", source="structured/npc_proxy")
+            cluster_node = self.add_atmospheric_npc_cluster_node(
+                cluster_id,
+                source="AtmosphericNpcClusterDataTable",
+                data=compact_payload({"clusterId": cluster_id, "levelId": row.get("levelId"), "envTalkId": row.get("envTalkId"), "npcCount": len(row.get("npcIds") or []), "position": row.get("position")}, depth=3),
+            )
+            self.add_edge(row_node, cluster_node, "defines_atmospheric_npc_cluster", source="AtmosphericNpcClusterDataTable")
+            level_node = self.add_level_node(row.get("levelId"), source="AtmosphericNpcClusterDataTable")
+            if level_node:
+                self.add_edge(cluster_node, level_node, "atmospheric_cluster_in_level", source="AtmosphericNpcClusterDataTable", evidence="levelId")
+                self.add_edge(level_node, cluster_node, "level_has_atmospheric_cluster", source="AtmosphericNpcClusterDataTable", evidence="levelId")
+                self.add_level_map_edge(level_node, row.get("levelId"), source="AtmosphericNpcClusterDataTable", evidence="levelId")
+            self.add_atmospheric_cluster_env_talk_edge(cluster_node, row.get("envTalkId"), source="AtmosphericNpcClusterDataTable", evidence="envTalkId")
+            for index, npc_id in enumerate(row.get("npcIds") or []):
+                npc_node = self.add_environmental_npc_node(npc_id, source="AtmosphericNpcClusterDataTable")
+                if npc_node:
+                    self.add_edge(cluster_node, npc_node, "atmospheric_cluster_has_npc", source="AtmosphericNpcClusterDataTable", evidence=f"npcIds[{index}]")
+                    self.add_edge(npc_node, cluster_node, "environmental_npc_in_atmospheric_cluster", source="AtmosphericNpcClusterDataTable", evidence=f"npcIds[{index}]")
 
     def add_npc_node(self, npc_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         npc_key = safe_key(npc_id)
