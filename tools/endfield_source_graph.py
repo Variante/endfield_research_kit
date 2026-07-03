@@ -18974,7 +18974,7 @@ class SourceGraphBuilder:
             self.add_alias(asset_key, owner_node, kind="asset_stem", source=source)
             asset_node = self.add_node("asset_ref", asset_key, name=asset_key, source=source)
             self.add_edge(owner_node, asset_node, "lookup_references_asset", source=source, evidence=f"{evidence_prefix}[{index}]")
-            self.add_edge(asset_node, owner_node, "asset_referenced_by_lookup", source=source, evidence=f"{evidence_prefix}[{index}]")
+            self.add_edge(asset_node, owner_node, "asset_ref_used_by_lookup", source=source, evidence=f"{evidence_prefix}[{index}]")
 
     def add_factory_interaction_lookup_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if table == "FactorySpecialPowerPoleTable" and isinstance(row, dict):
@@ -18996,6 +18996,7 @@ class SourceGraphBuilder:
                 tab_node = self.add_factory_interaction_lookup_node("map_reminder_tab", row.get("tabType"), source=table)
                 if tab_node:
                     self.add_edge(remind_node, tab_node, "map_reminder_in_tab", source=table, evidence="tabType")
+                    self.add_edge(tab_node, remind_node, "map_reminder_tab_has_reminder", source=table, evidence="tabType")
             return
         if table == "FactorySeedItemTable" and isinstance(row, dict):
             seed_node = self.add_factory_interaction_lookup_node("factory_seed_item", row.get("id") or row_key, source=table, data={"growTotalProgress": row.get("growTotalProgress"), "doodadId": row.get("doodadId"), "modelKey": row.get("modelKey"), "growingModelKey": row.get("growingModelKey")})
@@ -19085,10 +19086,10 @@ class SourceGraphBuilder:
                     self.add_edge(level_node, state_node, "level_has_activity_dungeon_state", source=table, evidence="rowKey")
                 if stage_node:
                     self.add_edge(state_node, stage_node, "activity_dungeon_state_stage", source=table, evidence="activityStage")
-                    self.add_edge(stage_node, state_node, "activity_stage_has_dungeon_state", source=table, evidence="activityStage")
+                    self.add_edge(stage_node, state_node, "activity_stage_has_activity_dungeon_state", source=table, evidence="activityStage")
                 if show_node:
                     self.add_edge(state_node, show_node, "activity_dungeon_state_show_state", source=table, evidence="showState")
-                    self.add_edge(show_node, state_node, "activity_dungeon_show_state_has_state", source=table, evidence="showState")
+                    self.add_edge(show_node, state_node, "activity_dungeon_show_state_has_activity_dungeon_state", source=table, evidence="showState")
             return
         if table == "ActivityDungeonFightingStageTable" and isinstance(row, dict):
             stage_node = self.add_activity_stage_node(row_key, source=table, data={"levelId": row.get("levelId"), "questId": row.get("questId")})
@@ -19098,7 +19099,7 @@ class SourceGraphBuilder:
                 quest_node = self.add_quest_task_node(row.get("questId"), source=table)
                 if level_node:
                     self.add_edge(stage_node, level_node, "activity_stage_level", source=table, evidence="levelId")
-                    self.add_edge(level_node, stage_node, "level_has_activity_stage", source=table, evidence="levelId")
+                    self.add_edge(level_node, stage_node, "level_has_activity_dungeon_fighting_stage", source=table, evidence="levelId")
                 if quest_node:
                     self.add_edge(stage_node, quest_node, "activity_stage_quest", source=table, evidence="questId")
                     self.add_edge(quest_node, stage_node, "quest_task_used_by_activity_stage", source=table, evidence="questId")
@@ -19107,6 +19108,10 @@ class SourceGraphBuilder:
             stage_node = self.add_factory_interaction_lookup_node("activity_cleaning_stage", row_key, source=table, data={"img": row.get("img")})
             if stage_node:
                 self.add_edge(row_node, stage_node, "defines_activity_cleaning_stage", source=table)
+                activity_stage = self.add_activity_stage_node(row_key, source=table)
+                if activity_stage:
+                    self.add_edge(stage_node, activity_stage, "activity_cleaning_stage_overlay", source=table, evidence="rowKey")
+                    self.add_edge(activity_stage, stage_node, "activity_stage_has_cleaning_stage_overlay", source=table, evidence="rowKey")
                 self.add_factory_lookup_asset_aliases(stage_node, row.get("img"), source=table, evidence_prefix="img")
             return
         if table == "FactoryHubCraftTypeListTable" and isinstance(row, dict):
