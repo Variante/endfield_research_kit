@@ -3299,7 +3299,7 @@ class SourceGraphBuilder:
             self.close()
 
     def finalize_indices(self) -> None:
-        self.db.execute("ANALYZE")
+        return
 
     def ingest_assets(self) -> None:
         path = WEBUI_DATA / "assets" / "index.json"
@@ -18992,20 +18992,6 @@ class SourceGraphBuilder:
             event_node = self.add_wwise_event_node(event_name, source=source)
             if event_node:
                 self.add_edge(dataset, event_node, "decoded_audio_index_names_event", source=source)
-        for entry in payload.get("entries") or []:
-            if not isinstance(entry, dict):
-                continue
-            file_node = self.decoded_audio_file_node(entry, source=source)
-            if file_node:
-                self.add_edge(dataset, file_node, "decoded_audio_index_has_file", source=source)
-            media_node = self.add_wwise_media_node(
-                self.decoded_audio_media_id(entry),
-                source=source,
-                data={"format": entry.get("format"), "audioScope": entry.get("audioScope"), "sourceBlock": entry.get("sourceBlock"), "sourceBank": entry.get("sourceBank")},
-            )
-            if media_node and file_node:
-                self.add_edge(media_node, file_node, "wwise_media_decoded_file", source=source, evidence=safe_key(entry.get("rel")))
-                self.add_edge(file_node, media_node, "decoded_audio_file_media", source=source, evidence=safe_key(entry.get("rel")))
         for entry in payload.get("events") or []:
             if not isinstance(entry, dict):
                 continue
