@@ -349,6 +349,54 @@ Safe next experiments:
 - Shader probe: run Ruri on one exported shader plus related Material JSON and
   check whether recovered symbols help enough to integrate.
 
+## Follow-up: 2026-07-03 tool parity and shader probe
+
+Local tool state from the parallel survey:
+
+- `tools/AnimeStudio` is at local commit `aad1379` and ahead of its tracked
+  upstream. The built CLI reports the expected VFS/audio commands and
+  `--fallback-assets` support.
+- `tools/fluffy-dumper-src` is a dirty local `tmp` branch with the patched
+  `vfs-index`/audio support. Treat it as a parity/reference tool, not as a
+  clean vendored upstream.
+- `tools/Il2CppDumper-v6.7.46` still matches the latest stable public
+  Il2CppDumper release line.
+- `tools/Cpp2IL-2022.0.7` works locally, but current public Cpp2IL preview
+  builds are newer and should be tested under `tmp/` before replacing local
+  assumptions.
+- `tools/EndfieldStudio-main` runs locally but is older than current upstream
+  commits; use a side clone under `tmp/` for comparison.
+- `tools/Ruri.ShaderDecompiler` runs locally from `bin-flat/` and can decompile
+  the bundled Endfield DXBC fixture.
+
+Online targets checked by the subagent survey:
+
+- `https://github.com/Escartem/AnimeStudio`
+- `https://github.com/EIHRTeam/EndfieldStudio`
+- `https://github.com/Perfare/Il2CppDumper`
+- `https://github.com/SamboyCoding/Cpp2IL`
+- `https://github.com/AssetRipper/AssetRipper`
+- `https://github.com/ShiyumeMeguri/Ruri.ShaderDecompiler`
+
+HotfixAudio parity was rechecked with AnimeStudio and patched fluffy-dumper:
+both tools indexed the same one-file `HotfixAudio` block byte-identically and
+decoded the same `23` WEM files from `hotfix_main.pck`. The only difference is
+output folder naming (`unmapped/hotfix/` vs `unmapped/chinese/`). The detailed
+result is in `memory/hotfix_audio_recovery_20260702.md`.
+
+Ruri shader fixture probe:
+
+```bat
+.\tools\Ruri.ShaderDecompiler\bin-flat\Release\net8.0\Ruri.ShaderDecompiler.exe "tools\Ruri.ShaderDecompiler\Test\UnityBinary\EndField\litpoly.shader.sub0.pass0.blob1.HGBuffer.dxbc.bin" - --metadata "tools\Ruri.ShaderDecompiler\Test\UnityBinary\EndField\litpoly.shader.sub0.pass0.blob1.HGBuffer.metadata.json" > tmp\ruri_litpoly_hgbuffer_probe.hlsl
+```
+
+Result: `tmp\ruri_litpoly_hgbuffer_probe.hlsl` was written as a `25,294` byte
+HLSL file with constant buffers and recovered vertex inputs. This confirms Ruri
+is viable for isolated DXBC fixture decompilation. The next useful code change
+is not to wire Ruri into the WebUI; it is to make AnimeStudio emit selected raw
+DXBC/SPIR-V sidecars for shader snippets so Ruri can be tested against real
+exported shader bytes without relying on fixture paths.
+
 The immediate code push after this audit was the source-graph material PathID
 asset-link slice recorded in
 `memory/material_pathid_asset_source_graph_recovery_20260702.md`.
