@@ -17825,6 +17825,19 @@ class SourceGraphBuilder:
         node = self.add_node("training_recommendation", rec_id, name=f"enemy level {rec_id}", source=table, data={"enemyLv": row.get("enemyLv"), "squadLvSum": row.get("squadLvSum"), "squadWeaponLvSum": row.get("squadWeaponLvSum"), "squadSkillLvSum": row.get("squadSkillLvSum"), "squadEquipLvSum": row.get("squadEquipLvSum")})
         self.add_edge(row_node, node, "defines_training_recommendation", source=table)
         self.add_alias(rec_id, node, kind="training_recommendation_id", source=table)
+        enemy_level = safe_key(row.get("enemyLv") if row.get("enemyLv") is not None else row_key)
+        if enemy_level:
+            enemy_node = self.add_node("combat_enemy_level", enemy_level, name=f"enemy level {enemy_level}", source=table, data={"enemyLv": row.get("enemyLv")})
+            self.add_alias(enemy_level, enemy_node, kind="combat_enemy_level", source=table)
+            self.add_edge(node, enemy_node, "training_recommendation_for_enemy_level", source=table, evidence="enemyLv")
+            self.add_edge(enemy_node, node, "enemy_level_has_training_recommendation", source=table, evidence="enemyLv")
+        for axis in ("squadLvSum", "squadWeaponLvSum", "squadSkillLvSum", "squadEquipLvSum"):
+            value = row.get(axis)
+            axis_node = self.add_node("training_power_axis", axis, name=axis, source=table)
+            self.add_alias(axis, axis_node, kind="training_power_axis_id", source=table)
+            data = {"value": value}
+            self.add_edge(node, axis_node, "training_recommendation_requires_axis", source=table, evidence=axis, data=data)
+            self.add_edge(axis_node, node, "training_power_axis_used_by_recommendation", source=table, evidence=axis, data=data)
 
     def add_character_support_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if table == "CharId2DungeonIdTable":
@@ -27666,6 +27679,8 @@ QUERY_KIND_PRIORITY = {
     "character_trial": 26,
     "character_guide": 27,
     "training_recommendation": 28,
+    "combat_enemy_level": 28.1,
+    "training_power_axis": 28.2,
     "attribute_meta": 29,
     "attribute_display_config": 30,
     "attribute_display_entry": 31,
@@ -28475,6 +28490,8 @@ NODE_ID_PREFIXES = (
     "character_trial",
     "character_guide",
     "training_recommendation",
+    "combat_enemy_level",
+    "training_power_axis",
     "attribute_meta",
     "attribute_display_config",
     "attribute_display_entry",
