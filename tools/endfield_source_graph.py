@@ -17705,7 +17705,9 @@ class SourceGraphBuilder:
             if not skill_key:
                 continue
             skill_node = self.add_node("weapon_skill_recommendation", skill_key, name=skill_key, source=table)
-            self.add_edge(char_node, skill_node, "character_recommends_weapon_skill", source=table, evidence=f"weaponSkillIds[{index}]")
+            data = {"index": index}
+            self.add_edge(char_node, skill_node, "character_recommends_weapon_skill", source=table, evidence=f"weaponSkillIds[{index}]", data=data)
+            self.add_edge(skill_node, char_node, "weapon_skill_recommended_by_character", source=table, evidence=f"weaponSkillIds[{index}]", data=data)
             self.add_alias(skill_key, skill_node, kind="weapon_skill_recommendation_id", source=table)
 
     def add_guide_group_node(self, guide_group_id: Any, *, source: str = "", data: Any = None) -> str:
