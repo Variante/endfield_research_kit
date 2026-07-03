@@ -5031,6 +5031,56 @@ class SourceGraphBuilder:
                 tag_node = self.add_node("selector_tag", family_tag, name=tag_key or family_tag, source=source, data={"family": family_key, "tag": tag_key, "count": count})
                 self.add_edge(shape_node, tag_node, "findtarget_replay_shape_nonzero_selector_tag_hit", source=source, evidence=family_tag, data={"count": count})
 
+            exact_status = safe_key(selector_replay.get("exactBoundaryProofStatus"))
+            if exact_status:
+                verdict_node = self.add_node("findtarget_chain_consumption_verdict", exact_status, name=exact_status, source=source)
+                self.add_edge(shape_node, verdict_node, "findtarget_chain_consumption_blocked_by", source=source, evidence="exactBoundaryProofStatus")
+
+            for probe_index, probe in enumerate(selector_replay.get("emptyPayloadProbeSamples") or []):
+                if not isinstance(probe, dict):
+                    continue
+                steps = [step for step in (probe.get("steps") or []) if isinstance(step, dict)]
+                if not steps:
+                    continue
+                probe_key = f"{shape_hash}:{safe_key(probe.get('orderId'))}:{safe_key(probe.get('memberCountOffset'))}:{safe_key(probe.get('startOffset'))}:{safe_key(probe.get('endOffset'))}"
+                probe_node = self.add_node(
+                    "findtarget_selector_boundary_probe",
+                    probe_key,
+                    name=f"{shape_hash[:12]} {safe_key(probe.get('orderId'))}",
+                    source=source,
+                    path=safe_key(shape.get("examplePath")),
+                    data=compact_payload({**probe, "bodyMiddleSha256": shape_hash, "examplePath": shape.get("examplePath")}, depth=4),
+                )
+                self.add_edge(shape_node, probe_node, "findtarget_boundary_probe_matches_shape", source=source, evidence=str(probe_index), data=compact_payload(probe, depth=3))
+                stop_reason = safe_key(probe.get("stopReason"))
+                if stop_reason:
+                    verdict_node = self.add_node("findtarget_chain_consumption_verdict", f"not-chain-safe:{stop_reason}", name=f"not-chain-safe:{stop_reason}", source=source)
+                    self.add_edge(probe_node, verdict_node, "findtarget_chain_consumption_blocked_by", source=source, evidence="stopReason", data={"completeOrder": probe.get("completeOrder")})
+                for step_index, step in enumerate(steps):
+                    family = safe_key(step.get("family"))
+                    tag_hex = safe_key(step.get("tagHex"))
+                    name = safe_key(step.get("name"))
+                    formatter = safe_key(step.get("formatterName"))
+                    tag_node = self.add_node("selector_tag", f"{family}:{tag_hex}" if family else tag_hex, name=tag_hex, source=source, data={"family": family, "tag": tag_hex})
+                    self.add_edge(probe_node, tag_node, "findtarget_boundary_probe_uses_selector_tag", source=source, evidence=f"steps[{step_index}]", data=compact_payload(step, depth=2))
+                    if formatter:
+                        formatter_node = self.add_node("selector_formatter", formatter, name=formatter, source=source)
+                        self.add_edge(probe_node, formatter_node, "findtarget_boundary_probe_calls_formatter", source=source, evidence=f"steps[{step_index}]")
+                    candidate_key = f"{family}:{tag_hex}:{name}" if family and tag_hex and name else ""
+                    if candidate_key:
+                        candidate_node = self.add_node("findtarget_selector_candidate", candidate_key, name=name, source=source)
+                        self.add_edge(candidate_node, probe_node, "findtarget_selector_candidate_has_boundary_probe", source=source, evidence=f"steps[{step_index}]")
+                    if step.get("payloadMemberCount") == 0:
+                        boundary_key = f"{candidate_key or probe_key}:empty-payload"
+                        boundary_node = self.add_node(
+                            "findtarget_selector_payload_boundary",
+                            boundary_key,
+                            name=name or boundary_key,
+                            source=source,
+                            data=compact_payload({"payloadMemberCount": step.get("payloadMemberCount"), "nextOffset": step.get("nextOffset"), "probe": probe_key}, depth=2),
+                        )
+                        self.add_edge(probe_node, boundary_node, "findtarget_boundary_probe_accepts_payload", source=source, evidence=f"steps[{step_index}]", data=compact_payload(step, depth=2))
+
     def ingest_findtarget_selector_boundary_audit(self) -> None:
         path = self.root / "reports" / "mission_order" / "findtarget_selector_boundary_audit.json"
         payload = read_json(path, {})
@@ -26775,13 +26825,16 @@ QUERY_KIND_PRIORITY = {
     "findtarget_selector_boundary_sample": 43.9,
     "findtarget_ambiguous_record": 43.91,
     "findtarget_split_status": 43.92,
-    "target_group_key": 43.93,
-    "selector_chain_method": 43.94,
-    "selector_chain_setter_call": 43.95,
-    "selector_chain_store_offset": 43.96,
-    "selector_chain_field": 43.97,
-    "selector_chain_alias_warning": 43.98,
-    "selector_chain_direct_call": 43.99,
+    "findtarget_selector_boundary_probe": 43.93,
+    "findtarget_selector_payload_boundary": 43.94,
+    "findtarget_chain_consumption_verdict": 43.95,
+    "target_group_key": 43.96,
+    "selector_chain_method": 43.97,
+    "selector_chain_setter_call": 43.98,
+    "selector_chain_store_offset": 43.99,
+    "selector_chain_field": 43.991,
+    "selector_chain_alias_warning": 43.992,
+    "selector_chain_direct_call": 43.993,
     "vfs_skipped_block": 43.995,
     "vfs_skipped_block_audit": 43.996,
     "vfs_block_directory": 43.997,
@@ -27581,6 +27634,9 @@ NODE_ID_PREFIXES = (
     "findtarget_selector_boundary_sample",
     "findtarget_ambiguous_record",
     "findtarget_split_status",
+    "findtarget_selector_boundary_probe",
+    "findtarget_selector_payload_boundary",
+    "findtarget_chain_consumption_verdict",
     "target_group_key",
     "selector_chain_method",
     "selector_chain_setter_call",
