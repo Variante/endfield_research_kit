@@ -3146,6 +3146,8 @@ class SourceGraphBuilder:
             self.db.execute("INSERT INTO meta(key, value) VALUES (?, ?)", ("language", self.language))
             self.ingest_assets()
             self.commit_step("assets")
+            self.ingest_skipped_vfs_block_audits()
+            self.commit_step("skippedVfsBlocks")
             self.ingest_videos()
             self.commit_step("videos")
             self.ingest_webui_story()
@@ -3626,6 +3628,111 @@ class SourceGraphBuilder:
                     evidence=safe_key(texture_info.get("evidence")) if isinstance(texture_info, dict) else Path(texture_rel).stem,
                     data=texture_data,
                 )
+
+    def ingest_skipped_vfs_block_audits(self) -> None:
+        def iter_value_counts(rows: Any) -> Iterable[tuple[str, int | None]]:
+            if isinstance(rows, dict):
+                for key, value in rows.items():
+                    yield safe_key(key), value if isinstance(value, int) else None
+                return
+            if not isinstance(rows, list):
+                return
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                value = safe_key(row.get("value") or row.get("name") or row.get("path"))
+                if not value:
+                    continue
+                count = row.get("count")
+                yield value, count if isinstance(count, int) else None
+
+        audit_specs = (
+            ("StreamingAssets", self.root / "reports" / "mission_order" / "skipped_vfs_block_audit.json"),
+            ("Persistent", self.root / "reports" / "mission_order" / "skipped_vfs_block_audit_persistent.json"),
+        )
+        source = "skipped_vfs_block_audit"
+        dataset = self.add_node("dataset", "skipped_vfs_block_audits", name="Skipped VFS block audits", source=source)
+        for root_label, path in audit_specs:
+            payload = read_json(path, {})
+            if not isinstance(payload, dict):
+                continue
+            source_path = slash(path.relative_to(self.root)) if path.is_relative_to(self.root) else slash(path)
+            audit_key = safe_key(root_label)
+            summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+            audit_node = self.add_node(
+                "vfs_skipped_block_audit",
+                audit_key,
+                name=root_label,
+                source=source,
+                path=source_path,
+                data=compact_payload({"summary": summary, "index": payload.get("index"), "generatedAt": payload.get("generatedAt")}, depth=3),
+            )
+            self.add_edge(dataset, audit_node, "has_vfs_skipped_block_audit", source=source, evidence=root_label, data=compact_payload(summary, depth=2))
+            self.add_file(source_path, kind="skipped_vfs_block_audit", source=source, size=path.stat().st_size if path.exists() else None, data={"root": root_label})
+            for block_index, block in enumerate(payload.get("blocks") or []):
+                if not isinstance(block, dict):
+                    continue
+                block_name = safe_key(block.get("block"))
+                if not block_name:
+                    continue
+                block_data = {
+                    "root": root_label,
+                    "block": block_name,
+                    "hashDirectory": block.get("hashDirectory"),
+                    "fileCount": block.get("fileCount"),
+                    "byteCount": block.get("byteCount"),
+                    "chunkCount": block.get("chunkCount"),
+                    "missingChunkCount": block.get("missingChunkCount"),
+                    "minBytes": block.get("minBytes"),
+                    "medianBytes": block.get("medianBytes"),
+                    "p95Bytes": block.get("p95Bytes"),
+                    "maxBytes": block.get("maxBytes"),
+                    "encryption": block.get("encryption"),
+                    "extensions": block.get("extensions"),
+                    "signalCounts": block.get("signalCounts"),
+                    "candidateNote": block.get("candidateNote"),
+                }
+                block_node = self.add_node(
+                    "vfs_skipped_block",
+                    f"{audit_key}:{block_name}",
+                    name=f"{root_label}:{block_name}",
+                    source=source,
+                    data=compact_payload(block_data, depth=3),
+                )
+                self.add_edge(audit_node, block_node, "vfs_audit_has_skipped_block", source=source, evidence=str(block_index), data=compact_payload(block_data, depth=2))
+                for directory_key, count in iter_value_counts(block.get("topDirectories")):
+                    if not directory_key:
+                        continue
+                    directory_node = self.add_node("vfs_block_directory", f"{audit_key}:{block_name}:{directory_key}", name=directory_key, source=source, path=directory_key)
+                    self.add_edge(block_node, directory_node, "vfs_skipped_block_top_directory", source=source, evidence=directory_key, data={"count": count})
+                for file_index, file_row in enumerate(block.get("largestFiles") or []):
+                    if not isinstance(file_row, dict):
+                        continue
+                    file_path = safe_key(file_row.get("path") or file_row.get("file") or file_row.get("name"))
+                    if not file_path:
+                        continue
+                    file_size = file_row.get("bytes") if isinstance(file_row.get("bytes"), int) else file_row.get("length")
+                    file_node = self.add_file(
+                        file_path,
+                        kind="vfs_skipped_block_file",
+                        source=source,
+                        size=file_size if isinstance(file_size, int) else None,
+                        data={"root": root_label, "block": block_name},
+                    )
+                    self.add_edge(block_node, file_node, "vfs_skipped_block_largest_file", source=source, evidence=str(file_index), data=compact_payload(file_row, depth=2))
+                for signal, count in (block.get("signalCounts") or {}).items():
+                    signal_key = safe_key(signal)
+                    if not signal_key:
+                        continue
+                    signal_node = self.add_node("vfs_block_signal", signal_key, name=signal_key, source=source)
+                    self.add_edge(block_node, signal_node, "vfs_skipped_block_has_signal", source=source, evidence=signal_key, data={"count": count})
+                    signal_samples = block.get("signalSamples") if isinstance(block.get("signalSamples"), dict) else {}
+                    for sample_index, sample_path in enumerate(signal_samples.get(signal) or []):
+                        sample_key = safe_key(sample_path)
+                        if not sample_key:
+                            continue
+                        sample_node = self.add_file(sample_key, kind="vfs_skipped_signal_sample", source=source, data={"root": root_label, "block": block_name, "signal": signal_key})
+                        self.add_edge(signal_node, sample_node, "vfs_signal_sample_file", source=source, evidence=f"{root_label}:{block_name}:{sample_index}")
 
     def link_decoded_parameter_blackboard_keys(self) -> None:
         rows = self.db.execute(
@@ -24272,6 +24379,10 @@ QUERY_KIND_PRIORITY = {
     "selector_chain_field": 43.97,
     "selector_chain_alias_warning": 43.98,
     "selector_chain_direct_call": 43.99,
+    "vfs_skipped_block": 43.995,
+    "vfs_skipped_block_audit": 43.996,
+    "vfs_block_directory": 43.997,
+    "vfs_block_signal": 43.998,
     "model_config": 44,
     "model_config_model": 45,
     "model_prefab": 45.5,
@@ -25001,6 +25112,10 @@ NODE_ID_PREFIXES = (
     "selector_chain_field",
     "selector_chain_alias_warning",
     "selector_chain_direct_call",
+    "vfs_skipped_block",
+    "vfs_skipped_block_audit",
+    "vfs_block_directory",
+    "vfs_block_signal",
     "model_config",
     "model_config_model",
     "model_prefab",
