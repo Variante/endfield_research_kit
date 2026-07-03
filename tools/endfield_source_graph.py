@@ -59,6 +59,7 @@ MONOBEHAVIOUR_FRONTIER_REPORT_PATH = ROOT / "reports" / "monobehaviour_frontier_
 OPTION_FLOW_BODY_TARGETS_GAMEASSEMBLY_PATH = ROOT / "reports" / "option_flow_body_targets_gameassembly.json"
 OPTION_FLOW_ACTIVE_CLIP_FIELD_ANALYSIS_PATH = ROOT / "reports" / "option_flow_active_clip_field_analysis.json"
 TEXTURE2D_RAW_HASH_COLLISION_AUDIT_PATH = ROOT / "reports" / "texture2d_raw_hash_collision_audit.json"
+NARRATIVE_VIDEO_OVERRIDE_AUDIT_PATH = ROOT / "reports" / "narrative_video_override_audit_CN.json"
 
 ASSET_MAPS = {
     "StreamingAssets": (
@@ -3158,6 +3159,8 @@ class SourceGraphBuilder:
             self.commit_step("story")
             self.ingest_video_bindings()
             self.commit_step("videoBindings")
+            self.ingest_narrative_video_override_audit()
+            self.commit_step("narrativeVideoOverrideAudit")
             self.ingest_option_overrides()
             self.commit_step("optionOverrides")
             self.ingest_item_economy()
@@ -9196,6 +9199,238 @@ class SourceGraphBuilder:
             video_node = self.add_node("video", rel, name=Path(rel).name, source=rel.split("/", 1)[0], path=rel)
             self.add_edge(dataset, video_node, "unbound_video_candidate", source="video_bindings", evidence=str(index), data={"rawPath": video_path})
 
+    def narrative_video_audit_path(self) -> Path:
+        if self.language == "CN":
+            return NARRATIVE_VIDEO_OVERRIDE_AUDIT_PATH
+        language_path = ROOT / "reports" / f"narrative_video_override_audit_{self.language}.json"
+        return language_path if language_path.exists() else NARRATIVE_VIDEO_OVERRIDE_AUDIT_PATH
+
+    def add_narrative_video_audit_story_edge(
+        self,
+        owner_node: str,
+        key_value: Any,
+        *,
+        edge_kind: str,
+        reverse_edge_kind: str = "",
+        source: str,
+        evidence: str,
+        data: Any = None,
+    ) -> str:
+        story_key = safe_key(key_value)
+        if not story_key:
+            return ""
+        story_node = self.add_node("story", story_key, name=story_key, source=source)
+        self.add_alias(story_key, story_node, kind="story_key", source=source)
+        self.add_edge(owner_node, story_node, edge_kind, source=source, evidence=evidence, data=data)
+        if reverse_edge_kind:
+            self.add_edge(story_node, owner_node, reverse_edge_kind, source=source, evidence=evidence, data=data)
+        return story_node
+
+    def add_narrative_video_audit_file_edge(self, owner_node: str, file_value: Any, *, edge_kind: str, source: str, evidence: str) -> None:
+        file_key = safe_key(file_value)
+        if not file_key:
+            return
+        file_node = self.add_file(file_key, kind="narrative_video_candidate_file", source=source)
+        self.add_edge(owner_node, file_node, edge_kind, source=source, evidence=evidence)
+        self.add_video_stem_edge(owner_node, file_key, edge_kind="narrative_video_candidate_resolves_video", source=source, evidence=evidence, data={"file": file_key})
+
+    def add_narrative_video_stem_node(self, stem_value: Any, *, source: str) -> str:
+        stem = safe_key(stem_value)
+        if not stem:
+            return ""
+        stem_node = self.add_node("narrative_video_stem", stem, name=stem, source=source)
+        self.add_alias(stem, stem_node, kind="narrative_video_stem", source=source)
+        self.add_alias(stem.lower(), stem_node, kind="narrative_video_stem", source=source)
+        return stem_node
+
+    def ingest_narrative_video_override_audit(self) -> None:
+        path = self.narrative_video_audit_path()
+        payload = read_json(path, {})
+        if not isinstance(payload, dict) or not path.exists():
+            return
+        source = "narrative_video_override_audit"
+        source_path = slash(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else slash(path)
+        language = safe_key(payload.get("language")) or self.language
+        summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+        report_node = self.add_node(
+            "narrative_video_override_audit",
+            language,
+            name=f"Narrative video override audit {language}",
+            source=source,
+            path=source_path,
+            data=compact_payload({"generated": payload.get("generated"), "summary": summary, "inputs": payload.get("inputs"), "inputWarnings": payload.get("inputWarnings")}, depth=3),
+        )
+        self.add_file(source_path, kind="narrative_video_override_audit", source=source, size=path.stat().st_size, data=compact_payload(summary, depth=2))
+
+        for rule_index, rule in enumerate(payload.get("rules") or []):
+            if not isinstance(rule, dict):
+                continue
+            target_key = safe_key(rule.get("target_key"))
+            rule_key = f"{language}:rule:{rule.get('ordinal') or rule_index}:{target_key or rule_index}"
+            rule_node = self.add_node(
+                "narrative_video_override_rule",
+                rule_key,
+                name=f"{safe_key(rule.get('bucket')) or 'rule'}:{target_key or rule_index}",
+                source=source,
+                data=compact_payload({
+                    "bucket": rule.get("bucket"),
+                    "targetKey": target_key,
+                    "targetKind": rule.get("targetKind"),
+                    "targetExists": rule.get("targetExists"),
+                    "targetNarrativeVideoRefs": rule.get("targetNarrativeVideoRefs"),
+                    "targetAudioEvents": rule.get("targetAudioEvents"),
+                    "status": rule.get("status"),
+                    "note": rule.get("note"),
+                    "errors": rule.get("errors"),
+                    "warnings": rule.get("warnings"),
+                }, depth=3),
+            )
+            self.add_edge(report_node, rule_node, "has_narrative_video_override_rule", source=source, evidence=str(rule_index))
+            self.add_alias(target_key, rule_node, kind="narrative_video_override_target", source=source)
+            bucket = safe_key(rule.get("bucket")) or "unknown"
+            bucket_node = self.add_node("narrative_video_override_bucket", bucket, name=bucket, source=source)
+            self.add_edge(rule_node, bucket_node, "narrative_video_override_bucket", source=source, evidence="bucket")
+            status = safe_key(rule.get("status")) or "unknown"
+            status_node = self.add_node("narrative_video_override_status", status, name=status, source=source)
+            self.add_edge(rule_node, status_node, "narrative_video_override_status", source=source, evidence="status", data={"errors": rule.get("errors"), "warnings": rule.get("warnings")})
+            self.add_narrative_video_audit_story_edge(
+                rule_node,
+                target_key,
+                edge_kind="narrative_video_override_targets_story",
+                reverse_edge_kind="story_has_narrative_video_override_rule",
+                source=source,
+                evidence="target_key",
+                data={"targetKind": rule.get("targetKind"), "targetExists": rule.get("targetExists")},
+            )
+            for audio_index, audio_row in enumerate(rule.get("audioFrom") or []):
+                if not isinstance(audio_row, dict):
+                    continue
+                self.add_narrative_video_audit_story_edge(
+                    rule_node,
+                    audio_row.get("sourceKey"),
+                    edge_kind="narrative_video_override_copies_audio_from_story",
+                    reverse_edge_kind="story_audio_copied_by_narrative_video_override",
+                    source=source,
+                    evidence=f"audioFrom[{audio_index}]",
+                    data=compact_payload(audio_row, depth=2),
+                )
+            for stem_index, stem_row in enumerate(rule.get("stems") or []):
+                if not isinstance(stem_row, dict):
+                    continue
+                stem_node = self.add_narrative_video_stem_node(stem_row.get("stem"), source=source)
+                if not stem_node:
+                    continue
+                self.add_edge(rule_node, stem_node, "narrative_video_override_uses_stem", source=source, evidence=f"stems[{stem_index}]", data=compact_payload(stem_row, depth=2))
+                self.add_video_stem_edge(stem_node, stem_row.get("stem"), edge_kind="narrative_video_stem_resolves_video", source=source, evidence="stem")
+                standalone_key = safe_key(stem_row.get("standaloneVideoKey"))
+                if standalone_key:
+                    self.add_narrative_video_audit_story_edge(
+                        stem_node,
+                        standalone_key,
+                        edge_kind="narrative_video_stem_has_standalone_story_key",
+                        reverse_edge_kind="story_is_standalone_narrative_video_key_for_stem",
+                        source=source,
+                        evidence=f"stems[{stem_index}].standaloneVideoKey",
+                        data={"standaloneReason": stem_row.get("standaloneReason")},
+                    )
+                for candidate_index, candidate_key in enumerate(stem_row.get("keyCandidates") or []):
+                    self.add_narrative_video_audit_story_edge(
+                        stem_node,
+                        candidate_key,
+                        edge_kind="narrative_video_stem_key_candidate",
+                        reverse_edge_kind="story_is_narrative_video_stem_candidate",
+                        source=source,
+                        evidence=f"stems[{stem_index}].keyCandidates[{candidate_index}]",
+                    )
+                for example_index, example in enumerate(stem_row.get("matchedExamples") or []):
+                    if not isinstance(example, dict):
+                        continue
+                    file_name = safe_key(example.get("name"))
+                    if file_name:
+                        self.add_narrative_video_audit_file_edge(stem_node, file_name, edge_kind="narrative_video_stem_matched_file", source=source, evidence=f"stems[{stem_index}].matchedExamples[{example_index}]")
+                    example_key = safe_key(example.get("webuiKey") or example.get("targetKey"))
+                    if example_key:
+                        self.add_narrative_video_audit_story_edge(
+                            stem_node,
+                            example_key,
+                            edge_kind="narrative_video_stem_matched_story_key",
+                            reverse_edge_kind="story_matched_by_narrative_video_stem",
+                            source=source,
+                            evidence=f"stems[{stem_index}].matchedExamples[{example_index}]",
+                            data=compact_payload(example, depth=2),
+                        )
+
+        for row_index, row in enumerate(payload.get("knownFalseSuppressedAttachments") or []):
+            if not isinstance(row, dict):
+                continue
+            target_key = safe_key(row.get("targetKey"))
+            stem = safe_key(row.get("stem"))
+            false_node = self.add_node(
+                "narrative_video_known_false_suppression",
+                f"{language}:false_suppression:{target_key}:{stem}",
+                name=f"{target_key}:{stem}",
+                source=source,
+                data=compact_payload(row, depth=3),
+            )
+            self.add_edge(report_node, false_node, "has_narrative_video_known_false_suppression", source=source, evidence=str(row_index))
+            self.add_narrative_video_audit_story_edge(false_node, target_key, edge_kind="narrative_video_false_suppression_targets_story", reverse_edge_kind="story_has_narrative_video_false_suppression", source=source, evidence="targetKey")
+            stem_node = self.add_narrative_video_stem_node(stem, source=source)
+            if stem_node:
+                self.add_edge(false_node, stem_node, "narrative_video_false_suppression_uses_stem", source=source, evidence="stem")
+            for file_index, file_name in enumerate(row.get("files") or []):
+                self.add_narrative_video_audit_file_edge(false_node, file_name, edge_kind="narrative_video_false_suppression_file", source=source, evidence=f"files[{file_index}]")
+
+        for row_index, row in enumerate(payload.get("filenameOnlyAttachmentCandidates") or []):
+            if not isinstance(row, dict):
+                continue
+            target_key = safe_key(row.get("targetKey"))
+            stem = safe_key(row.get("stem"))
+            candidate_node = self.add_node(
+                "narrative_video_filename_candidate",
+                f"{language}:filename_only:{row_index}:{target_key}:{stem}",
+                name=f"{target_key}:{stem}",
+                source=source,
+                data=compact_payload(row, depth=3),
+            )
+            self.add_edge(report_node, candidate_node, "has_narrative_video_filename_candidate", source=source, evidence=str(row_index))
+            self.add_narrative_video_audit_story_edge(candidate_node, target_key, edge_kind="narrative_video_filename_candidate_targets_story", reverse_edge_kind="story_has_narrative_video_filename_candidate", source=source, evidence="targetKey", data={"reason": row.get("reason"), "mission": row.get("mission"), "kind": row.get("kind")})
+            stem_node = self.add_narrative_video_stem_node(stem, source=source)
+            if stem_node:
+                self.add_edge(candidate_node, stem_node, "narrative_video_filename_candidate_uses_stem", source=source, evidence="stem")
+            for file_index, file_name in enumerate(row.get("files") or []):
+                self.add_narrative_video_audit_file_edge(candidate_node, file_name, edge_kind="narrative_video_filename_candidate_file", source=source, evidence=f"files[{file_index}]")
+
+        for row_index, row in enumerate(payload.get("unresolvedVideoCandidates") or []):
+            if not isinstance(row, dict):
+                continue
+            stem = safe_key(row.get("stem"))
+            unresolved_node = self.add_node(
+                "narrative_video_unresolved_candidate",
+                f"{language}:unresolved:{row_index}:{stem}",
+                name=stem or f"unresolved:{row_index}",
+                source=source,
+                data=compact_payload(row, depth=3),
+            )
+            self.add_edge(report_node, unresolved_node, "has_narrative_video_unresolved_candidate", source=source, evidence=str(row_index))
+            status = safe_key(row.get("candidateStatus")) or "unknown"
+            status_node = self.add_node("narrative_video_candidate_status", status, name=status, source=source)
+            self.add_edge(unresolved_node, status_node, "narrative_video_unresolved_candidate_status", source=source, evidence="candidateStatus")
+            stem_node = self.add_narrative_video_stem_node(stem, source=source)
+            if stem_node:
+                self.add_edge(unresolved_node, stem_node, "narrative_video_unresolved_candidate_uses_stem", source=source, evidence="stem")
+            for candidate_index, candidate_key in enumerate(row.get("keyCandidates") or []):
+                self.add_narrative_video_audit_story_edge(unresolved_node, candidate_key, edge_kind="narrative_video_unresolved_key_candidate", reverse_edge_kind="story_is_narrative_video_unresolved_candidate_key", source=source, evidence=f"keyCandidates[{candidate_index}]")
+            for candidate_index, candidate_key in enumerate(row.get("existingCandidates") or []):
+                self.add_narrative_video_audit_story_edge(unresolved_node, candidate_key, edge_kind="narrative_video_unresolved_existing_story_candidate", reverse_edge_kind="story_is_existing_narrative_video_unresolved_candidate", source=source, evidence=f"existingCandidates[{candidate_index}]")
+            for file_index, file_name in enumerate(row.get("files") or []):
+                self.add_narrative_video_audit_file_edge(unresolved_node, file_name, edge_kind="narrative_video_unresolved_file", source=source, evidence=f"files[{file_index}]")
+            for rel_index, rel in enumerate(row.get("rels") or []):
+                rel_key = self.normalized_video_binding_path(rel)
+                if not rel_key:
+                    continue
+                video_node = self.add_node("video", rel_key, name=Path(rel_key).name, source=rel_key.split("/", 1)[0], path=rel_key)
+                self.add_edge(unresolved_node, video_node, "narrative_video_unresolved_rel_video", source=source, evidence=f"rels[{rel_index}]", data={"rawRel": rel})
+
     def ingest_webui_story(self) -> None:
         lang_root = WEBUI_DATA / "lang" / self.language
         index_path = lang_root / "index.json"
@@ -11309,12 +11544,14 @@ class SourceGraphBuilder:
                 self.add_edge(report_node, type_node, "il2cpp_metadata_report_mentions_type", source=source, evidence=evidence)
             return type_node
 
-        for type_index, type_row in enumerate(payload.get("focusTypes") or []):
+        recorded_type_details: set[str] = set()
+
+        def record_metadata_type_row(type_row: dict[str, Any], edge_kind: str, evidence: str, *, bucket: str) -> None:
             if not isinstance(type_row, dict):
-                continue
+                return
             type_name = safe_key(type_row.get("fullName") or type_row.get("name"))
             if not type_name:
-                continue
+                return
             type_node = self.add_node(
                 "il2cpp_type",
                 type_name,
@@ -11331,6 +11568,7 @@ class SourceGraphBuilder:
                         "fieldCount": type_row.get("fieldCount"),
                         "methodCount": type_row.get("methodCount"),
                         "matchedBy": type_row.get("matchedBy"),
+                        "metadataBucket": bucket,
                     },
                     depth=3,
                 ),
@@ -11338,7 +11576,10 @@ class SourceGraphBuilder:
             self.add_alias(type_name, type_node, kind="il2cpp_type_name", source=source)
             if type_row.get("index") is not None:
                 self.add_alias(f"type-index:{type_row.get('index')}", type_node, kind="il2cpp_type_index", source=source)
-            self.add_edge(report_node, type_node, "il2cpp_metadata_report_focus_type", source=source, evidence=str(type_index), data=compact_payload(type_row.get("matchedBy"), depth=2))
+            self.add_edge(report_node, type_node, edge_kind, source=source, evidence=evidence, data=compact_payload(type_row.get("matchedBy"), depth=2))
+            if type_name in recorded_type_details:
+                return
+            recorded_type_details.add(type_name)
             image_key = safe_key(type_row.get("image"))
             if image_key:
                 image_node = self.add_node("il2cpp_image", image_key, name=image_key, source=source)
@@ -11395,6 +11636,26 @@ class SourceGraphBuilder:
                     parameter_type = add_type_ref(parameter.get("typeName"), parameter.get("typeIndex"), evidence="")
                     if parameter_type:
                         self.add_edge(parameter_node, parameter_type, "il2cpp_parameter_uses_type", source=source, evidence="typeName")
+
+        for type_index, type_row in enumerate(payload.get("focusTypes") or []):
+            record_metadata_type_row(type_row, "il2cpp_metadata_report_focus_type", str(type_index), bucket="focusTypes")
+
+        def is_interactive_event_type(type_row: dict[str, Any]) -> bool:
+            full_name = safe_key(type_row.get("fullName") or type_row.get("name"))
+            namespace = safe_key(type_row.get("namespace"))
+            return (
+                namespace == "Beyond.Gameplay.InteractiveEvent"
+                or full_name.startswith("Beyond.Gameplay.InteractiveEvent.")
+                or full_name.startswith("Beyond_Gameplay_InteractiveEvent_")
+            )
+
+        for type_index, type_row in enumerate(payload.get("memberOnlyTypes") or []):
+            if isinstance(type_row, dict) and is_interactive_event_type(type_row):
+                record_metadata_type_row(type_row, "il2cpp_metadata_report_member_only_type", str(type_index), bucket="memberOnlyTypes")
+
+        for type_index, type_row in enumerate(payload.get("matchedTypes") or []):
+            if isinstance(type_row, dict) and is_interactive_event_type(type_row):
+                record_metadata_type_row(type_row, "il2cpp_metadata_report_matched_type", str(type_index), bucket="matchedTypes")
 
         for unresolved_index, unresolved in enumerate(payload.get("unresolvedTypeIndexUsages") or []):
             if not isinstance(unresolved, dict):
@@ -25612,6 +25873,15 @@ QUERY_KIND_PRIORITY = {
     "scene_order_option_group_status": 3.88,
     "scene_placement_evidence_kind": 3.89,
     "scene_order_line_source": 3.9,
+    "narrative_video_override_audit": 3.91,
+    "narrative_video_override_rule": 3.92,
+    "narrative_video_stem": 3.93,
+    "narrative_video_filename_candidate": 3.94,
+    "narrative_video_unresolved_candidate": 3.95,
+    "narrative_video_known_false_suppression": 3.96,
+    "narrative_video_override_bucket": 3.97,
+    "narrative_video_override_status": 3.98,
+    "narrative_video_candidate_status": 3.99,
     "line": 4,
     "sns_dialog": 5,
     "sns_content": 6,

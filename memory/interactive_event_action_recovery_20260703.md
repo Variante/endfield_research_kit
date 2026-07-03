@@ -80,19 +80,25 @@ Intentionally heuristic broad records in the same focused export:
 
 ## Layout evidence
 
+The decoder was then aligned with IL2CPP metadata field names from
+`reports/buff_runtime_metadata.json`. Selector words that were initially labeled
+as generic modes are now emitted as `target` or `source`, and string fields now
+include metadata names such as `name` and `soundEvent` where applicable.
+
 Observed tag actions serialize:
 
-1. operation mode word (`AddTag` = 1, `RemoveAddedTag` = 2, `RemoveTag` = 0)
+1. `target` selector word (`AddTag` = 1, `RemoveAddedTag` = 2, `RemoveTag` = 0)
 2. tag count
 3. repeated aligned ASCII tag strings
 4. one hash word per tag
 
 Observed string actions:
 
-- `PlayAnimationAction` / `StopAnimationAction`: mode word plus aligned animation name.
-- `PlaySoundAction`: aligned sound event string plus one zero word.
-- `CastSkill`: two zero prefix words plus aligned skill id.
-- `AttachSkill`: aligned `SkillData/...json` path plus one zero word.
+- `PlayAnimationAction` / `StopAnimationAction`: `target` selector plus aligned
+  animation `name`.
+- `PlaySoundAction`: aligned `soundEvent` string plus `target`.
+- `CastSkill`: `source`, `target`, then aligned `skillId`.
+- `AttachSkill`: aligned `SkillData/...json` path plus `target`.
 - `ExitThrowMode`: aligned skill id string.
 
 Examples recovered in the focused export include:
