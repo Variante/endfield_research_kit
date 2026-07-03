@@ -949,3 +949,77 @@ Evidence summary:
 - `DialogEmotionActData` length `220`: one unique object, `dlg_e2m5_2_timeline`, PathID `2544947724258404700`, rid `1011`, ref offset `2892`, length `220`, source offset `1132350533` in the same chk.
 
 Conclusion: keep `DialogCamActData` lengths `588`/`644` and `DialogEmotionActData` length `220` as singleton evidence only. They are not safe to promote to decoded layouts without broader dialog/timeline candidates or additional independent samples.
+
+## 2026-07-03 Current DummyDll Priority Recheck
+
+The 11-dialog dependency-map comparison was rerun against the current
+AnimeStudio CLI after the shader sidecar work, using the existing filter:
+
+```text
+tools\animestudio-dummydll-gain-test\dialog_timelines_11_filter_data.json
+```
+
+Important command-context detail: the `endfield_streamingassets_full_current`
+CAB map is loaded relative to the process working directory. Running from the
+repo root misses `Maps\endfield_streamingassets_full_current.bin` and produces
+many `CABMap is not build` warnings. The valid comparison must run from:
+
+```bat
+cd /d D:\fluffy-dump\tools\animestudio-dummydll-gain-test
+```
+
+Validated outputs:
+
+```text
+tmp\dialog_timelines_11_serialized_first_map_20260703
+tmp\dialog_timelines_11_script_first_map_20260703
+```
+
+Both runs:
+
+- loaded `tools\DummyDll` successfully: `165/165` assemblies, `0` failed;
+- loaded `Maps\endfield_streamingassets_full_current.bin`;
+- exported the 11 strict `dlg_*_timeline` JSON files;
+- had no warning or error log lines;
+- produced `typeTreeSource: serializedType` and `typeTreeNodeCount: 59` for all
+  final JSON outputs.
+
+Aggregate comparison:
+
+| Metric | SerializedFirst | ScriptFirst |
+| --- | ---: | ---: |
+| Final JSON files | 11 | 11 |
+| Total `references.RefIds` | 613 | 613 |
+| `$partialDecoded` nodes | 525 | 525 |
+| `managedReferencesRegistryRecovered: true` | 10 | 10 |
+| `managedReferencesRegistryFullyDecoded: true` | 7 | 7 |
+| `managedReferencesRegistryFullyDecoded: false` | 3 | 3 |
+| Objects without managed-reference registry metadata | 1 | 1 |
+
+Recursive JSON comparison shows no decoded payload gains from ScriptFirst. For
+10 populated timeline files, the only value change is:
+
+```text
+$animestudio.monoBehaviourTypeTreePriority:
+  SerializedFirst -> ScriptFirst
+```
+
+The tiny empty `dlg_e1m1_1_timeline` file gains script identity metadata under
+ScriptFirst:
+
+```text
+scriptFullName: Beyond.Gameplay.DialogSlateTimelineData
+scriptAssemblyName: Gameplay.Beyond.dll
+scriptDerivedMonoScriptResolved: true
+scriptDerivedScriptIdentitySource: monoScript
+scriptDerivedTypeTreeAttempted: true
+scriptDerivedTypeTreeStatus: typeDefinitionNotFound
+scriptDerivedTypeTreeUsable: false
+scriptDerivedTypeTreeNodeCount: 12
+```
+
+Conclusion: the current DummyDll set still proves script identity, but does not
+provide a usable `Beyond.Gameplay.DialogSlateTimelineData` field TypeTree for
+these dialog timeline objects. Keep `script-first` as an experiment flag. The
+normal `serialized-first` path remains the better default for Story/WebUI
+exports because it preserves the embedded serialized TypeTree payload coverage.
