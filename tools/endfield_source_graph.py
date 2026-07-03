@@ -22023,7 +22023,7 @@ class SourceGraphBuilder:
             else:
                 data = {}
             source_root = safe_key(data.get("sourceRoot"))
-            if source_root and safe_key(unity_source) != source_root:
+            if not source_root or safe_key(unity_source) != source_root:
                 continue
             data["pathidNode"] = pathid_node
             data["ownerKind"] = owner_kind
@@ -24068,6 +24068,7 @@ ASSET_USED_BY_INCOMING_EDGE_KINDS = (
     "previewed_by",
     "uses_material",
     "uses_texture_pathid",
+    "fmv_binding_playable_pathid",
     "material_texture_pathid_resolves_unity_asset",
     "material_texture_pathid_exports_asset",
     "fmv_playable_pathid_resolves_unity_asset",
@@ -24093,6 +24094,7 @@ ASSET_USES_EDGE_KINDS = (
     "uses_material",
     "uses_texture",
     "uses_texture_pathid",
+    "resolves_to_unity_asset",
     "material_texture_pathid_resolves_unity_asset",
     "material_texture_pathid_exports_asset",
     "fmv_playable_pathid_resolves_unity_asset",
@@ -24101,6 +24103,7 @@ ASSET_USES_EDGE_KINDS = (
     "entity_uses_material",
     "entity_uses_texture",
 )
+ASSET_USAGE_KIND_FALLBACKS = ("asset", "unity_asset", "unity_pathid")
 
 def exact_node_candidates(term: str) -> list[str]:
     candidates = [term]
@@ -24308,8 +24311,19 @@ def usage_edge_ref(row: sqlite3.Row, actor_side: str, seed: str) -> dict[str, An
     return ref
 
 
-def asset_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "asset") -> dict[str, Any]:
-    lookup = query_graph(db_path, term, limit=min(max(limit, 1), 20), kind=kind)
+def resolve_asset_usage_lookup(db_path: Path, term: str, *, limit: int, kind: str = "") -> tuple[dict[str, Any], str]:
+    lookup_limit = min(max(limit, 1), 20)
+    if kind:
+        return query_graph(db_path, term, limit=lookup_limit, kind=kind), kind
+    for fallback_kind in ASSET_USAGE_KIND_FALLBACKS:
+        lookup = query_graph(db_path, term, limit=lookup_limit, kind=fallback_kind)
+        if safe_key(lookup.get("seedNode")):
+            return lookup, fallback_kind
+    return query_graph(db_path, term, limit=lookup_limit), ""
+
+
+def asset_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
+    lookup, resolved_kind = resolve_asset_usage_lookup(db_path, term, limit=limit, kind=kind)
     seed = safe_key(lookup.get("seedNode"))
     if not seed:
         return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "usedBy": [], "uses": []}
@@ -24358,6 +24372,7 @@ def asset_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "asset
         "term": term,
         "seedNode": seed,
         "seed": compact_node_ref(seed_row) if seed_row else {"id": seed, "key": node_key(seed)},
+        "resolvedKind": resolved_kind,
         "aliases": lookup.get("aliases") or [],
         "usedBy": [
             usage_edge_ref(row, "src" if row["dstId"] == seed else "dst", seed)
@@ -24843,7 +24858,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     used_by.add_argument("term")
     used_by.add_argument("--db", type=Path, default=DEFAULT_DB)
     used_by.add_argument("--limit", type=int, default=40)
-    used_by.add_argument("--kind", default="asset", help="Node kind to resolve before usage lookup; defaults to asset.")
+    used_by.add_argument(
+        "--kind",
+        default="",
+        help="Optional node kind to force before usage lookup. By default tries asset, unity_asset, then unity_pathid.",
+    )
 
     story = sub.add_parser("story", help="Show recovered line order and option branch evidence for one story key")
     story.add_argument("story_key")
