@@ -15604,6 +15604,75 @@ class SourceGraphBuilder:
                 if stage_node:
                     self.add_edge(cost_node, stage_node, "character_break_cost_stage", source=table, evidence="breakStage")
                 self.add_character_progression_required_items(cost_node, entry.get("requiredItem"), edge_kind="character_break_cost_requires_item", source=table, evidence_prefix="requiredItem")
+            skill_group_nodes: dict[str, str] = {}
+            for group_key, group in (row.get("skillGroupMap") or {}).items():
+                if not isinstance(group, dict):
+                    continue
+                group_id = safe_key(group.get("skillGroupId") or group_key)
+                group_node = self.add_character_progression_node("character_skill_group", group_id, name=group.get("name") or group_id, source=table, data={"charId": char_id, "skillGroupId": group_id, "skillGroupType": group.get("skillGroupType"), "icon": group.get("icon"), "skillCount": len(group.get("skillIdList") or [])})
+                if not group_node:
+                    continue
+                skill_group_nodes[group_id] = group_node
+                self.add_edge(char_node, group_node, "character_has_skill_group", source=table, evidence=f"skillGroupMap.{group_key}")
+                self.add_tag_i18n_edges(group_node, group.get("name"), source=table, edge_kind="character_skill_group_name_text")
+                self.add_tag_i18n_edges(group_node, group.get("desc"), source=table, edge_kind="character_skill_group_desc_text")
+                for index, skill_id in enumerate(group.get("skillIdList") or []):
+                    skill_node = self.add_gameplay_skill_ref_node(skill_id, source=table)
+                    if skill_node:
+                        data = {"index": index, "skillGroupId": group_id, "skillGroupType": group.get("skillGroupType")}
+                        self.add_edge(group_node, skill_node, "skill_group_has_skill", source=table, evidence=f"skillIdList[{index}]", data=data)
+                        self.add_edge(skill_node, group_node, "skill_used_by_character_skill_group", source=table, evidence=f"skillIdList[{index}]", data=data)
+            for index, entry in enumerate(row.get("skillLevelUp") or []):
+                if not isinstance(entry, dict):
+                    continue
+                group_id = safe_key(entry.get("skillGroupId"))
+                level = entry.get("level")
+                cost_node = self.add_character_progression_node("character_skill_level_cost", f"{char_id}:{group_id}:{level}", name=f"{group_id} level {level}", source=table, data={"charId": char_id, "skillGroupId": group_id, "level": level, "goldCost": entry.get("goldCost"), "itemCount": len(entry.get("itemBundle") or [])})
+                if not cost_node:
+                    continue
+                self.add_edge(char_node, cost_node, "character_has_skill_level_cost", source=table, evidence=f"skillLevelUp[{index}]")
+                group_node = skill_group_nodes.get(group_id) if group_id else ""
+                if group_node:
+                    data = {"level": level, "goldCost": entry.get("goldCost")}
+                    self.add_edge(cost_node, group_node, "character_skill_level_cost_for_group", source=table, evidence="skillGroupId", data=data)
+                    self.add_edge(group_node, cost_node, "skill_group_has_level_cost", source=table, evidence=f"skillLevelUp[{index}]", data=data)
+                if entry.get("goldCost") is not None:
+                    gold_node = self.add_item_node("item_gold", source=table)
+                    if gold_node:
+                        data = {"count": entry.get("goldCost"), "level": level}
+                        self.add_edge(cost_node, gold_node, "character_skill_level_cost_requires_gold", source=table, evidence="goldCost", data=data)
+                        self.add_edge(gold_node, cost_node, "item_gold_cost_for_character_skill_level_cost", source=table, evidence="goldCost", data=data)
+                self.add_character_progression_required_items(cost_node, entry.get("itemBundle"), edge_kind="character_skill_level_cost_requires_item", source=table, evidence_prefix="itemBundle")
+            for talent_key, talent in (row.get("talentNodeMap") or {}).items():
+                if not isinstance(talent, dict):
+                    continue
+                node_id = safe_key(talent.get("nodeId") or talent_key)
+                attr_info = talent.get("attributeNodeInfo") if isinstance(talent.get("attributeNodeInfo"), dict) else {}
+                attr_modifier = attr_info.get("attributeModifier") if isinstance(attr_info.get("attributeModifier"), dict) else {}
+                passive_info = talent.get("passiveSkillNodeInfo") if isinstance(talent.get("passiveSkillNodeInfo"), dict) else {}
+                factory_info = talent.get("factorySkillNodeInfo") if isinstance(talent.get("factorySkillNodeInfo"), dict) else {}
+                talent_node = self.add_character_progression_node("character_talent_node", f"{char_id}:{node_id}", name=attr_info.get("title") or passive_info.get("name") or node_id, source=table, data={"charId": char_id, "nodeId": node_id, "nodeType": talent.get("nodeType"), "requiredItemCount": len(talent.get("requiredItem") or []), "attributeModifier": compact_payload(attr_modifier, depth=2), "passiveSkillNodeInfo": compact_payload(passive_info, depth=2), "factorySkillNodeInfo": compact_payload(factory_info, depth=2)})
+                if not talent_node:
+                    continue
+                self.add_edge(char_node, talent_node, "character_has_talent_node", source=table, evidence=f"talentNodeMap.{talent_key}")
+                self.add_alias(node_id, talent_node, kind="character_talent_node_id", source=table)
+                self.add_tag_i18n_edges(talent_node, attr_info.get("title"), source=table, edge_kind="character_talent_node_name_text")
+                self.add_tag_i18n_edges(talent_node, attr_info.get("desc"), source=table, edge_kind="character_talent_node_desc_text")
+                self.add_tag_i18n_edges(talent_node, passive_info.get("name"), source=table, edge_kind="character_talent_node_name_text")
+                self.add_character_progression_required_items(talent_node, talent.get("requiredItem"), edge_kind="character_talent_node_requires_item", source=table, evidence_prefix="requiredItem")
+                effect_id = safe_key(passive_info.get("talentEffectId"))
+                if effect_id:
+                    effect_node = self.add_node("potential_talent_effect", effect_id, name=effect_id, source=table)
+                    self.add_alias(effect_id, effect_node, kind="potential_talent_effect_id", source=table)
+                    self.add_edge(talent_node, effect_node, "character_talent_node_uses_effect", source=table, evidence="passiveSkillNodeInfo.talentEffectId")
+                    self.add_edge(effect_node, talent_node, "potential_talent_effect_used_by_character_talent_node", source=table, evidence="passiveSkillNodeInfo.talentEffectId")
+                attr_type = attr_modifier.get("attrType")
+                if safe_key(attr_type) and safe_key(attr_type) != "0":
+                    meta_node = self.add_attribute_meta_node(attr_type, source=table)
+                    if meta_node:
+                        data = {"attrType": attr_type, "attrValue": attr_modifier.get("attrValue"), "modifierType": attr_modifier.get("modifierType"), "modifyAttributeType": attr_modifier.get("modifyAttributeType")}
+                        self.add_edge(talent_node, meta_node, "character_talent_node_modifies_attribute_meta", source=table, evidence="attributeNodeInfo.attributeModifier.attrType", data=data)
+                        self.add_edge(meta_node, talent_node, "attribute_meta_modified_by_character_talent_node", source=table, evidence="attributeNodeInfo.attributeModifier.attrType", data=data)
 
     def add_character_ref_node(self, char_id: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         char_key = safe_key(char_id)
@@ -27543,6 +27612,9 @@ QUERY_KIND_PRIORITY = {
     "character_break_stage": 14.3,
     "character_break_node": 14.4,
     "character_break_cost": 14.5,
+    "character_skill_group": 14.6,
+    "character_skill_level_cost": 14.7,
+    "character_talent_node": 14.8,
     "character_tag": 15,
     "character_battle_tag": 15.5,
     "character_tag_desc": 16,
@@ -28349,6 +28421,9 @@ NODE_ID_PREFIXES = (
     "character_break_stage",
     "character_break_node",
     "character_break_cost",
+    "character_skill_group",
+    "character_skill_level_cost",
+    "character_talent_node",
     "character_tag",
     "character_battle_tag",
     "character_tag_desc",
