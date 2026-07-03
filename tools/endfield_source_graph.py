@@ -56,6 +56,8 @@ DIALOG_ID_TABLE_INDEX_PATH = EXPORT_ROOT / "recovered" / "dialog_id_table_index.
 RUNTIME_OPTION_ROUTE_AUDIT_GLOB = "runtime_jump_option_route_audit_CN*_nearby*.json"
 LUA_CONSUMER_REFERENCE_AUDIT_PATH = ROOT / "reports" / "mission_order" / "lua_consumer_reference_audit.json"
 MONOBEHAVIOUR_FRONTIER_REPORT_PATH = ROOT / "reports" / "monobehaviour_frontier_latest.json"
+OPTION_FLOW_BODY_TARGETS_GAMEASSEMBLY_PATH = ROOT / "reports" / "option_flow_body_targets_gameassembly.json"
+OPTION_FLOW_ACTIVE_CLIP_FIELD_ANALYSIS_PATH = ROOT / "reports" / "option_flow_active_clip_field_analysis.json"
 TEXTURE2D_RAW_HASH_COLLISION_AUDIT_PATH = ROOT / "reports" / "texture2d_raw_hash_collision_audit.json"
 
 ASSET_MAPS = {
@@ -3266,6 +3268,8 @@ class SourceGraphBuilder:
             self.commit_step("timelineOptionFlowAudit")
             self.ingest_runtime_metadata_focus_report()
             self.commit_step("runtimeMetadataFocus")
+            self.ingest_option_flow_gameassembly_report()
+            self.commit_step("optionFlowGameAssembly")
             self.ingest_story_source_links()
             self.commit_step("storySourceLinks")
             self.ingest_main_story_order_override_comparison()
@@ -11420,6 +11424,264 @@ class SourceGraphBuilder:
                 self.add_edge(unresolved_node, use_node, "il2cpp_unresolved_type_has_usage", source=source, evidence=str(use_index), data=compact_payload(use, depth=1))
                 if owner_node:
                     self.add_edge(owner_node, use_node, "il2cpp_type_has_unresolved_usage", source=source, evidence=str(use_index), data=compact_payload(use, depth=1))
+
+    def il2cpp_type_node_for_name(self, type_name: Any, *, source: str = "runtime_metadata_focus") -> str:
+        type_text = safe_key(type_name)
+        if not type_text:
+            return ""
+        node = self.add_node("il2cpp_type", type_text, name=type_text, source=source)
+        self.add_alias(type_text, node, kind="il2cpp_type_name", source=source)
+        return node
+
+    def il2cpp_method_node_for_row(self, row: dict[str, Any], *, source: str = "runtime_metadata_focus") -> str:
+        type_name = safe_key(row.get("type"))
+        method_name = safe_key(row.get("method"))
+        if not type_name or not method_name:
+            return ""
+        token = safe_key(row.get("token"))
+        method_index = safe_key(row.get("methodIndex"))
+        method_key = f"{type_name}:{method_name}:{token or method_index or 'unknown'}"
+        node = self.add_node(
+            "il2cpp_method",
+            method_key,
+            name=f"{type_name}.{method_name}",
+            source=source,
+            data={
+                "type": type_name,
+                "method": method_name,
+                "methodIndex": row.get("methodIndex"),
+                "token": row.get("token"),
+            },
+        )
+        self.add_alias(f"{type_name}.{method_name}", node, kind="il2cpp_method_name", source=source)
+        if method_index:
+            self.add_alias(f"method-index:{method_index}", node, kind="il2cpp_method_index", source=source)
+        if token:
+            self.add_alias(f"method-token:{token}", node, kind="il2cpp_method_token", source=source)
+        type_node = self.il2cpp_type_node_for_name(type_name, source=source)
+        if type_node:
+            self.add_edge(type_node, node, "il2cpp_type_has_method", source=source, evidence=token or method_index)
+        return node
+
+    def compact_call_argument_context(self, context: Any) -> dict[str, Any]:
+        if not isinstance(context, dict):
+            return {}
+        writes = {}
+        for register, row in (context.get("argRegisterWrites") or {}).items():
+            if not isinstance(row, dict):
+                continue
+            write = row.get("write") if isinstance(row.get("write"), dict) else {}
+            writes[register] = {
+                "offset": row.get("offset"),
+                "va": row.get("va"),
+                "text": row.get("text"),
+                "value": write.get("value"),
+            }
+        nearby = []
+        for row in context.get("nearbyInstructions") or []:
+            if not isinstance(row, dict):
+                continue
+            if len(nearby) >= 10:
+                break
+            nearby.append({"offset": row.get("offset"), "va": row.get("va"), "text": row.get("text")})
+        return {"argRegisterWrites": writes, "nearbyInstructions": nearby}
+
+    def ingest_option_flow_gameassembly_report(self) -> None:
+        path = OPTION_FLOW_BODY_TARGETS_GAMEASSEMBLY_PATH
+        payload = read_json(path, {})
+        if not isinstance(payload, dict) or not payload:
+            return
+        source = "option_flow_gameassembly"
+        source_path = slash(path.relative_to(self.root)) if path.is_relative_to(self.root) else slash(path)
+        report_node = self.add_node(
+            "il2cpp_gameassembly_report",
+            "option_flow_body_targets_gameassembly",
+            name="Option flow GameAssembly body targets",
+            source=source,
+            path=source_path,
+            data=compact_payload(
+                {
+                    "metadata": payload.get("metadata") or {},
+                    "settings": payload.get("settings") or {},
+                    "summary": payload.get("summary") or {},
+                },
+                depth=3,
+            ),
+        )
+        self.add_file(source_path, kind="il2cpp_gameassembly_report", source=source, size=path.stat().st_size if path.exists() else None)
+        self.add_alias("option flow gameassembly", report_node, kind="report_title", source=source)
+        self.add_alias("option_flow_body_targets_gameassembly", report_node, kind="report_title", source=source)
+
+        method_by_index: dict[str, str] = {}
+        method_by_va: dict[str, str] = {}
+        for index, target in enumerate(payload.get("bodyTargets") or []):
+            if not isinstance(target, dict):
+                continue
+            method_node = self.il2cpp_method_node_for_row(target, source="runtime_metadata_focus")
+            if not method_node:
+                continue
+            method_index = safe_key(target.get("methodIndex"))
+            method_va = safe_key(target.get("methodPointerVa"))
+            if method_index:
+                method_by_index[method_index] = method_node
+            if method_va:
+                method_by_va[method_va.lower()] = method_node
+            body_node = self.add_node(
+                "il2cpp_gameassembly_body_target",
+                method_index or f"{target.get('type')}:{target.get('method')}",
+                name=f"{safe_key(target.get('type'))}.{safe_key(target.get('method'))}",
+                source=source,
+                data={
+                    "type": target.get("type"),
+                    "method": target.get("method"),
+                    "methodIndex": target.get("methodIndex"),
+                    "token": target.get("token"),
+                    "mappingStatus": target.get("mappingStatus"),
+                    "moduleMethodSlot": target.get("moduleMethodSlot"),
+                    "methodPointerVa": target.get("methodPointerVa"),
+                    "methodPointerRva": target.get("methodPointerRva"),
+                    "fileOffset": target.get("fileOffset"),
+                    "section": target.get("section"),
+                    "scanBytes": target.get("scanBytes"),
+                    "directCallCount": len(target.get("directCalls") or []),
+                    "unresolvedDirectCallCount": target.get("unresolvedDirectCallCount"),
+                },
+            )
+            self.add_edge(report_node, body_node, "il2cpp_gameassembly_has_body_target", source=source, evidence=str(index))
+            self.add_edge(body_node, method_node, "il2cpp_body_target_maps_method", source=source, evidence=method_va or method_index)
+            self.add_edge(method_node, body_node, "il2cpp_method_has_gameassembly_body", source=source, evidence=method_va or method_index)
+
+        for edge_index, edge in enumerate(payload.get("directCallEdges") or []):
+            if not isinstance(edge, dict):
+                continue
+            caller = edge.get("caller") if isinstance(edge.get("caller"), dict) else {}
+            caller_node = self.il2cpp_method_node_for_row(caller, source="runtime_metadata_focus")
+            caller_va = safe_key(caller.get("methodPointerVa"))
+            if caller_va:
+                method_by_va.setdefault(caller_va.lower(), caller_node)
+            callees = [row for row in (edge.get("callees") or []) if isinstance(row, dict)]
+            if not callees:
+                continue
+            call_node = self.add_node(
+                "il2cpp_direct_call",
+                f"option_flow:{safe_key(caller.get('methodIndex'))}:{edge.get('offset')}:{safe_key(edge.get('targetVa'))}",
+                name=f"{safe_key(caller.get('type'))}.{safe_key(caller.get('method'))} +0x{int(edge.get('offset') or 0):x}",
+                source=source,
+                data={
+                    "offset": edge.get("offset"),
+                    "targetVa": edge.get("targetVa"),
+                    "isCatalogTarget": edge.get("isCatalogTarget"),
+                    "isDialogRelated": edge.get("isDialogRelated"),
+                    "argumentContext": self.compact_call_argument_context(edge.get("argumentContext")),
+                },
+            )
+            self.add_edge(report_node, call_node, "il2cpp_gameassembly_important_direct_call", source=source, evidence=str(edge_index))
+            if caller_node:
+                self.add_edge(caller_node, call_node, "il2cpp_method_emits_direct_call", source=source, evidence=str(edge.get("offset")))
+            for callee_index, callee in enumerate(callees):
+                callee_node = self.il2cpp_method_node_for_row(callee, source="runtime_metadata_focus")
+                self.add_edge(call_node, callee_node, "il2cpp_direct_call_targets_method", source=source, evidence=str(callee_index))
+                if caller_node and callee_node:
+                    self.add_edge(
+                        caller_node,
+                        callee_node,
+                        "il2cpp_method_direct_calls_method",
+                        source=source,
+                        evidence=f"+0x{int(edge.get('offset') or 0):x}",
+                        data={
+                            "targetVa": edge.get("targetVa"),
+                            "isCatalogTarget": edge.get("isCatalogTarget"),
+                            "isDialogRelated": edge.get("isDialogRelated"),
+                        },
+                    )
+
+        self.ingest_option_flow_active_clip_field_analysis(report_node, method_by_va)
+
+    def ingest_option_flow_active_clip_field_analysis(self, report_node: str, method_by_va: dict[str, str]) -> None:
+        path = OPTION_FLOW_ACTIVE_CLIP_FIELD_ANALYSIS_PATH
+        payload = read_json(path, {})
+        if not isinstance(payload, dict) or not payload:
+            return
+        source = "option_flow_active_clip_field_analysis"
+        analysis_node = self.add_node(
+            "option_flow_runtime_field_analysis",
+            "option_flow_active_clip_field_analysis",
+            name="Option flow runtime field analysis",
+            source=source,
+            path=slash(path.relative_to(self.root)) if path.is_relative_to(self.root) else slash(path),
+            data={
+                "generated": payload.get("generated"),
+                "sourceBodyTargets": normalize_abs_path(payload.get("sourceBodyTargets") or ""),
+                "summary": payload.get("summary") or {},
+                "nextDecodingTarget": payload.get("nextDecodingTarget"),
+            },
+        )
+        self.add_edge(report_node, analysis_node, "il2cpp_gameassembly_has_runtime_field_analysis", source=source)
+        offset_nodes: dict[str, str] = {}
+        for index, annotation in enumerate(payload.get("runtimeFieldAnnotations") or []):
+            if not isinstance(annotation, dict):
+                continue
+            offset = safe_key(annotation.get("offset"))
+            if not offset:
+                continue
+            offset_node = self.add_node(
+                "option_flow_runtime_field_offset",
+                offset,
+                name=f"{offset} {safe_key(annotation.get('kind'))}",
+                source=source,
+                data=compact_payload(annotation, depth=2),
+            )
+            offset_nodes[offset] = offset_node
+            self.add_edge(analysis_node, offset_node, "option_flow_analysis_runtime_field_offset", source=source, evidence=str(index), data=compact_payload(annotation, depth=1))
+            kind = safe_key(annotation.get("kind"))
+            if kind:
+                kind_node = self.add_node("option_flow_runtime_field_kind", kind, name=kind, source=source)
+                self.add_edge(offset_node, kind_node, "option_flow_runtime_field_has_kind", source=source, evidence=kind)
+            for method_name in annotation.get("callerMethods") or []:
+                method_nodes = self.alias_node_ids(method_name, kind="il2cpp_method_name")
+                for method_node in method_nodes:
+                    self.add_edge(method_node, offset_node, "il2cpp_method_uses_option_flow_runtime_field", source=source, evidence=offset)
+            for method_name in annotation.get("calleeMethods") or []:
+                method_nodes = self.alias_node_ids(method_name, kind="il2cpp_method_name")
+                for method_node in method_nodes:
+                    self.add_edge(offset_node, method_node, "option_flow_runtime_field_observed_near_method", source=source, evidence=offset)
+
+        for index, use in enumerate(payload.get("edgeFieldUses") or []):
+            if not isinstance(use, dict):
+                continue
+            caller_node = method_by_va.get(safe_key(use.get("callerVa")).lower())
+            callee_node = method_by_va.get(safe_key(use.get("callTargetVa")).lower())
+            if not caller_node:
+                caller_matches = self.alias_node_ids(use.get("caller"), kind="il2cpp_method_name")
+                caller_node = caller_matches[0] if caller_matches else ""
+            if not callee_node:
+                callee_matches = self.alias_node_ids(use.get("callee"), kind="il2cpp_method_name")
+                callee_node = callee_matches[0] if callee_matches else ""
+            edge_node = self.add_node(
+                "option_flow_runtime_field_use_edge",
+                f"{safe_key(use.get('caller'))}:{safe_key(use.get('callee'))}:{safe_key(use.get('callOffset'))}",
+                name=f"{safe_key(use.get('caller'))} -> {safe_key(use.get('callee'))}",
+                source=source,
+                data={
+                    "caller": use.get("caller"),
+                    "callee": use.get("callee"),
+                    "callerVa": use.get("callerVa"),
+                    "callOffset": use.get("callOffset"),
+                    "callTargetVa": use.get("callTargetVa"),
+                    "offsetUses": use.get("offsetUses") or [],
+                },
+            )
+            self.add_edge(analysis_node, edge_node, "option_flow_analysis_field_use_edge", source=source, evidence=str(index))
+            if caller_node:
+                self.add_edge(caller_node, edge_node, "il2cpp_method_has_option_flow_field_use_edge", source=source, evidence=str(use.get("callOffset")))
+            if callee_node:
+                self.add_edge(edge_node, callee_node, "option_flow_field_use_edge_targets_method", source=source, evidence=str(use.get("callOffset")))
+            for offset_use in use.get("offsetUses") or []:
+                if not isinstance(offset_use, dict):
+                    continue
+                offset_node = offset_nodes.get(safe_key(offset_use.get("offsetHex")))
+                if offset_node:
+                    self.add_edge(edge_node, offset_node, "option_flow_field_use_edge_uses_offset", source=source, evidence=str(offset_use.get("callOffset")), data=compact_payload(offset_use, depth=1))
 
     def ingest_story_source_links(self) -> None:
         path = EXPORT_ROOT / "recovered" / "story_source_links.json"
@@ -25326,6 +25588,13 @@ QUERY_KIND_PRIORITY = {
     "il2cpp_image": 3.66,
     "il2cpp_unresolved_type_index": 3.67,
     "il2cpp_unresolved_type_usage": 3.68,
+    "il2cpp_gameassembly_report": 3.681,
+    "il2cpp_gameassembly_body_target": 3.682,
+    "il2cpp_direct_call": 3.683,
+    "option_flow_runtime_field_analysis": 3.684,
+    "option_flow_runtime_field_offset": 3.685,
+    "option_flow_runtime_field_kind": 3.686,
+    "option_flow_runtime_field_use_edge": 3.687,
     "main_story_order_comparison": 3.7,
     "main_story_order_status": 3.71,
     "story_order_inversion_sample": 3.72,
@@ -26113,6 +26382,13 @@ NODE_ID_PREFIXES = (
     "il2cpp_image",
     "il2cpp_unresolved_type_index",
     "il2cpp_unresolved_type_usage",
+    "il2cpp_gameassembly_report",
+    "il2cpp_gameassembly_body_target",
+    "il2cpp_direct_call",
+    "option_flow_runtime_field_analysis",
+    "option_flow_runtime_field_offset",
+    "option_flow_runtime_field_kind",
+    "option_flow_runtime_field_use_edge",
     "main_story_order_comparison",
     "main_story_order_status",
     "story_order_inversion_sample",
