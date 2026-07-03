@@ -20966,9 +20966,11 @@ class SourceGraphBuilder:
         if self.node_exists("story", content_key):
             story_node = self.node_id("story", content_key)
             self.add_edge(owner_node, story_node, story_edge, source=source, evidence=evidence)
+            self.add_edge(story_node, owner_node, f"{story_edge}_source", source=source, evidence=evidence)
         if self.node_exists("rich_content", content_key):
             rich_node = self.add_rich_content_node(content_key, source=source)
             self.add_edge(owner_node, rich_node, rich_edge, source=source, evidence=evidence)
+            self.add_edge(rich_node, owner_node, f"{rich_edge}_source", source=source, evidence=evidence)
 
     def add_rich_content_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         content_id = safe_key(row_key)
@@ -20985,6 +20987,7 @@ class SourceGraphBuilder:
             if not line_node:
                 continue
             self.add_edge(content_node, line_node, "rich_content_has_line", source=table, evidence=f"contentList[{index}]")
+            self.add_edge(line_node, content_node, "rich_content_line_in_content", source=table, evidence=f"contentList[{index}]")
             for text_id in self.iter_i18n_text_ids(item.get("content")):
                 text_node = self.add_i18n_text_node(text_id, source=table)
                 if text_node:
@@ -21006,6 +21009,7 @@ class SourceGraphBuilder:
         page_key = row.get("categoryId") or row_key
         if self.node_exists("prts_page", page_key):
             self.add_edge(self.node_id("prts_page", page_key), category_node, "prts_page_has_category", source=table, evidence="categoryId")
+            self.add_edge(category_node, self.node_id("prts_page", page_key), "prts_category_in_page", source=table, evidence="categoryId")
         self.add_alias(row.get("tabIcon"), category_node, kind="asset_stem", source=table)
         self.add_i18n_text_edges(category_node, row, source=table)
 
@@ -21018,10 +21022,12 @@ class SourceGraphBuilder:
         category_node = self.add_prts_category_node(row.get("categoryId"), source=table)
         if category_node:
             self.add_edge(category_node, first_node, "prts_category_has_first_level", source=table, evidence="categoryId")
+            self.add_edge(first_node, category_node, "prts_first_level_in_category", source=table, evidence="categoryId")
         for index, entry_id in enumerate(row.get("itemIds") or []):
             entry_node = self.add_prts_entry_node(entry_id, source=table)
             if entry_node:
                 self.add_edge(first_node, entry_node, "prts_first_level_has_entry", source=table, evidence=f"itemIds[{index}]")
+                self.add_edge(entry_node, first_node, "prts_entry_in_first_level", source=table, evidence=f"itemIds[{index}]")
         self.add_alias(row.get("icon"), first_node, kind="asset_stem", source=table)
         self.add_i18n_text_edges(first_node, row, source=table)
 
@@ -21042,6 +21048,10 @@ class SourceGraphBuilder:
             "PrtsMultimedia": "defines_prts_multimedia_entry",
         }.get(table, "defines_prts_entry")
         self.add_edge(row_node, entry_node, edge_kind, source=table)
+        first_node = self.add_prts_first_level_node(row.get("firstLvId"), source=table)
+        if first_node:
+            self.add_edge(first_node, entry_node, "prts_first_level_has_entry", source=table, evidence="firstLvId")
+            self.add_edge(entry_node, first_node, "prts_entry_in_first_level", source=table, evidence="firstLvId")
         if canonical:
             self.add_prts_content_target_edges(entry_node, row.get("contentId"), source=table, evidence="contentId", story_edge="prts_entry_targets_story", rich_edge="prts_entry_targets_rich_content")
             self.add_i18n_text_edges(entry_node, row, source=table)
@@ -21065,6 +21075,7 @@ class SourceGraphBuilder:
         icon_node = self.add_reading_popup_icon_node(f"{row.get('bgType')}:{row.get('iconType')}", source=table)
         if icon_node:
             self.add_edge(popup_node, icon_node, "reading_popup_uses_icon", source=table, evidence="bgType/iconType")
+            self.add_edge(icon_node, popup_node, "reading_popup_icon_used_by_popup", source=table, evidence="bgType/iconType")
         self.add_prts_content_target_edges(popup_node, row.get("contentId"), source=table, evidence="contentId", story_edge="reading_popup_targets_story", rich_edge="reading_popup_targets_rich_content")
         self.add_i18n_text_edges(popup_node, row, source=table)
 
@@ -21084,6 +21095,7 @@ class SourceGraphBuilder:
             prts_entry = self.add_prts_entry_node(entry.get("prtsId"), source=table)
             if prts_entry:
                 self.add_edge(entry_node, prts_entry, "prts_reading_entry_refs_prts_entry", source=table, evidence="prtsId")
+                self.add_edge(prts_entry, entry_node, "prts_entry_referenced_by_reading_entry", source=table, evidence="prtsId")
             self.add_prts_content_target_edges(entry_node, entry.get("contentId"), source=table, evidence="contentId", story_edge="prts_reading_entry_targets_story", rich_edge="prts_reading_entry_targets_rich_content")
             self.add_i18n_text_edges(entry_node, entry, source=table)
 
@@ -21098,14 +21110,17 @@ class SourceGraphBuilder:
         if not group_node:
             return ""
         self.add_edge(investigation_node, group_node, "prts_investigation_has_group", source=source, evidence=evidence_prefix)
+        self.add_edge(group_node, investigation_node, "prts_investigation_group_in_investigation", source=source, evidence=evidence_prefix)
         for index, entry_id in enumerate(group.get("collectionIdList") or []):
             entry_node = self.add_prts_entry_node(entry_id, source=source)
             if entry_node:
                 self.add_edge(group_node, entry_node, "prts_investigation_group_has_entry", source=source, evidence=f"{evidence_prefix}.collectionIdList[{index}]")
+                self.add_edge(entry_node, group_node, "prts_entry_in_investigation_group", source=source, evidence=f"{evidence_prefix}.collectionIdList[{index}]")
         for index, note_id in enumerate(group.get("noteIdList") or []):
             note_node = self.add_prts_note_node(note_id, source=source)
             if note_node:
                 self.add_edge(group_node, note_node, "prts_investigation_group_has_note", source=source, evidence=f"{evidence_prefix}.noteIdList[{index}]")
+                self.add_edge(note_node, group_node, "prts_note_in_investigation_group", source=source, evidence=f"{evidence_prefix}.noteIdList[{index}]")
         self.add_i18n_text_edges(group_node, group, source=source)
         return group_node
 
@@ -21118,19 +21133,23 @@ class SourceGraphBuilder:
         domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
         if domain_node:
             self.add_edge(investigation_node, domain_node, "prts_investigation_uses_domain", source=table, evidence="domainId")
+            self.add_edge(domain_node, investigation_node, "domain_has_prts_investigation", source=table, evidence="domainId")
         unlock_entry = self.add_prts_entry_node(row.get("unlockPrts"), source=table)
         if unlock_entry:
             self.add_edge(investigation_node, unlock_entry, "prts_investigation_unlocks_entry", source=table, evidence="unlockPrts")
+            self.add_edge(unlock_entry, investigation_node, "prts_entry_unlocked_by_investigation", source=table, evidence="unlockPrts")
         for index, entry_id in enumerate(row.get("collectionIdList") or []):
             entry_node = self.add_prts_entry_node(entry_id, source=table)
             if entry_node:
                 self.add_edge(investigation_node, entry_node, "prts_investigation_has_entry", source=table, evidence=f"collectionIdList[{index}]")
+                self.add_edge(entry_node, investigation_node, "prts_entry_in_investigation", source=table, evidence=f"collectionIdList[{index}]")
         for index, item in enumerate(row.get("rewardItemList") or []):
             if not isinstance(item, dict):
                 continue
             item_node = self.add_item_node(item.get("id"), source=table)
             if item_node:
                 self.add_edge(investigation_node, item_node, "prts_investigation_rewards_item", source=table, evidence=f"rewardItemList[{index}]", data={"count": item.get("count")})
+                self.add_edge(item_node, investigation_node, "item_rewarded_by_prts_investigation", source=table, evidence=f"rewardItemList[{index}]", data={"count": item.get("count")})
         for index, group in enumerate(row.get("categoryDataList") or []):
             if isinstance(group, dict):
                 self.add_prts_investigation_group_edges(investigation_node, group, group_id=f"{investigation_id}:group:{group.get('index') or index + 1}", source=table, evidence_prefix=f"categoryDataList[{index}]")
