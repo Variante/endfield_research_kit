@@ -17449,6 +17449,7 @@ class SourceGraphBuilder:
         item_node = self.add_item_node(item_id, source=table)
         if item_node:
             self.add_edge(item_node, unit_node, "item_builds_factory_logistic_unit", source=table, evidence="itemId")
+            self.add_edge(unit_node, item_node, "factory_logistic_unit_built_from_item", source=table, evidence="itemId")
         self.add_tag_i18n_edges(unit_node, unit_data.get("name") if isinstance(unit_data, dict) else row.get("name"), source=table, edge_kind="factory_logistic_unit_name_text")
         self.add_alias(unit_data.get("iconOnPanel") if isinstance(unit_data, dict) else None, unit_node, kind="asset_stem", source=table)
         self.add_alias(unit_data.get("buildCamState") if isinstance(unit_data, dict) else None, unit_node, kind="camera_state", source=table)
@@ -17469,6 +17470,7 @@ class SourceGraphBuilder:
             item_node = self.add_item_node(item_id, source=table)
             if item_node:
                 self.add_edge(showing_node, item_node, "factory_hub_shows_item", source=table, evidence=f"list[{index}]", data={"index": index})
+                self.add_edge(item_node, showing_node, "item_shown_in_factory_hub", source=table, evidence=f"list[{index}]", data={"index": index})
 
     def add_factory_domain_item_transmission_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         domain_id = row.get("domainId") or row_key
@@ -17520,6 +17522,7 @@ class SourceGraphBuilder:
                     recipe_node = self.add_factory_recipe_node(recipe_id, source=table)
                     if recipe_node:
                         self.add_edge(group_node, recipe_node, "factory_craft_group_has_recipe", source=table, evidence=f"craftList[{index}]", data={"index": index})
+                        self.add_edge(recipe_node, group_node, "factory_recipe_in_craft_group", source=table, evidence=f"craftList[{index}]", data={"index": index})
         elif table == "FactoryIngredientTagTable":
             tag_node = self.add_factory_ingredient_tag_node(row.get("id") or row_key, name=row.get("tagLabel"), source=table, data={"combineMachineCount": len(row.get("combineMachineIds") or [])})
             if tag_node:
@@ -17560,6 +17563,7 @@ class SourceGraphBuilder:
                         self.add_edge(item_node, recipe_node, "factory_resource_item_used_by_recipe", source=table, evidence=f"craftId2TagId[{recipe_id}]")
                     if recipe_node and tag_node:
                         self.add_edge(recipe_node, tag_node, "factory_recipe_item_uses_ingredient_tag", source=table, evidence=f"craftId2TagId[{recipe_id}]", data={"itemId": row_key})
+                        self.add_edge(tag_node, recipe_node, "factory_ingredient_tag_used_by_recipe_item", source=table, evidence=f"craftId2TagId[{recipe_id}]", data={"itemId": row_key})
         elif table == "FactoryItem2LogisticIdTable":
             unit_node = self.add_factory_logistic_unit_node(row.get("logisticId"), source=table, data={"itemId": row.get("itemId"), "type": row.get("type")})
             item_node = self.add_item_node(row.get("itemId") or row_key, source=table)
@@ -17567,6 +17571,7 @@ class SourceGraphBuilder:
                 self.add_edge(row_node, unit_node, "defines_factory_item_logistic_unit", source=table)
             if item_node and unit_node:
                 self.add_edge(item_node, unit_node, "item_builds_factory_logistic_unit", source=table, evidence="logisticId", data={"type": row.get("type")})
+                self.add_edge(unit_node, item_node, "factory_logistic_unit_built_from_item", source=table, evidence="logisticId", data={"type": row.get("type")})
         elif table == "FactoryItemShowingHubTable":
             self.add_factory_hub_item_showing_edges(table, row_key, row, row_node)
         elif table == "FactoryDomainItemTransmissionTable":
