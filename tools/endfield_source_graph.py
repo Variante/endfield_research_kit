@@ -16155,6 +16155,7 @@ class SourceGraphBuilder:
             char_node = self.add_character_ref_node(match.group(0), source=source)
             if char_node:
                 self.add_edge(picture_node, char_node, "picture_for_character", source=source, evidence="pictureId")
+                self.add_edge(char_node, picture_node, "character_has_profile_picture", source=source, evidence="pictureId")
 
     def add_profile_social_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if table == "PictureTable" and isinstance(row, dict):
@@ -16166,9 +16167,11 @@ class SourceGraphBuilder:
                 type_node = self.add_profile_social_node("profile_picture_type", row.get("pictureType"), source=table)
                 if type_node:
                     self.add_edge(type_node, picture_node, "profile_picture_type_has_picture", source=table, evidence="pictureType")
+                    self.add_edge(picture_node, type_node, "profile_picture_in_type", source=table, evidence="pictureType")
                 item_node = self.add_item_node(row.get("unlockCharPictureItem"), source=table)
                 if item_node:
                     self.add_edge(picture_node, item_node, "profile_picture_unlock_item", source=table, evidence="unlockCharPictureItem")
+                    self.add_edge(item_node, picture_node, "item_unlocks_profile_picture", source=table, evidence="unlockCharPictureItem")
                 self.add_alias(row.get("imgId"), picture_node, kind="asset_stem", source=table)
                 self.add_picture_character_edge(picture_node, row.get("pictureId") or row_key, source=table)
         elif table == "PictureItemTable" and isinstance(row, str):
@@ -16176,6 +16179,7 @@ class SourceGraphBuilder:
             picture_node = self.add_profile_social_node("profile_picture", row, source=table)
             if item_node and picture_node:
                 self.add_edge(item_node, picture_node, "item_unlocks_profile_picture", source=table, evidence="rowValue")
+                self.add_edge(picture_node, item_node, "profile_picture_unlock_item", source=table, evidence="rowKey")
         elif table == "PictureTypeTable" and isinstance(row, dict):
             type_node = self.add_profile_social_node("profile_picture_type", row_key, source=table, data={"pictureCount": len(row.get("typeList") or [])})
             if type_node:
@@ -16186,6 +16190,7 @@ class SourceGraphBuilder:
                     picture_node = self.add_profile_social_node("profile_picture", entry.get("pictureId"), source=table)
                     if picture_node:
                         self.add_edge(type_node, picture_node, "profile_picture_type_has_picture", source=table, evidence=f"typeList[{index}]")
+                        self.add_edge(picture_node, type_node, "profile_picture_in_type", source=table, evidence=f"typeList[{index}]")
         elif table == "PictureGenderTable" and isinstance(row, dict):
             picture_node = self.add_profile_social_node("profile_picture", row.get("pictureId") or row_key, source=table, data={"gender": row.get("gender")})
             reverse_node = self.add_profile_social_node("profile_picture", row.get("reversePictureId"), source=table)
@@ -16200,6 +16205,7 @@ class SourceGraphBuilder:
                 item_node = self.add_item_node(row.get("itemId"), source=table)
                 if item_node:
                     self.add_edge(avatar_node, item_node, "user_avatar_unlock_item", source=table, evidence="itemId")
+                    self.add_edge(item_node, avatar_node, "item_unlocks_user_avatar", source=table, evidence="itemId")
                 self.add_alias(row.get("icon"), avatar_node, kind="asset_stem", source=table)
         elif table == "BusinessCardTopicTable" and isinstance(row, dict):
             card_node = self.add_profile_social_node("business_card_topic", row.get("id") or row_key, source=table, data={"sort": row.get("sort"), "color": row.get("color"), "expand": row.get("expand"), "panelPrefab": row.get("panelPrefab"), "watchPrefab": row.get("watchPrefab")})
@@ -16208,6 +16214,7 @@ class SourceGraphBuilder:
                 item_node = self.add_item_node(row.get("itemId"), source=table)
                 if item_node:
                     self.add_edge(card_node, item_node, "business_card_unlock_item", source=table, evidence="itemId")
+                    self.add_edge(item_node, card_node, "item_unlocks_business_card_topic", source=table, evidence="itemId")
                 for field in ("icon", "panelPrefab", "watchPrefab"):
                     self.add_alias(row.get(field), card_node, kind="asset_stem", source=table)
         elif table == "MailSenderTable" and isinstance(row, dict):
@@ -16225,6 +16232,7 @@ class SourceGraphBuilder:
                 sender_node = self.add_profile_social_node("mail_sender", row.get("senderId"), source=table)
                 if sender_node:
                     self.add_edge(mail_node, sender_node, "mail_template_sender", source=table, evidence="senderId")
+                    self.add_edge(sender_node, mail_node, "mail_sender_used_by_template", source=table, evidence="senderId")
                 self.add_reward_ref_edge(mail_node, row.get("rewardId"), edge_kind="mail_template_reward", source=table, evidence="rewardId")
         elif table == "FriendChatEmotionTable" and isinstance(row, dict):
             emotion_node = self.add_profile_social_node("friend_chat_emotion", row_key, source=table, data={"tabName": row.get("tabName"), "sortId": row.get("sortId"), "tabSort": row.get("tabSort")})
@@ -16233,6 +16241,7 @@ class SourceGraphBuilder:
                 tab_node = self.add_profile_social_node("friend_chat_emotion_tab", row.get("tabName"), source=table)
                 if tab_node:
                     self.add_edge(tab_node, emotion_node, "friend_chat_emotion_tab_has_emotion", source=table, evidence="tabName")
+                    self.add_edge(emotion_node, tab_node, "friend_chat_emotion_in_tab", source=table, evidence="tabName")
                 for field in ("emotionImgPath", "tabImgPath"):
                     self.add_alias(row.get(field), emotion_node, kind="asset_stem", source=table)
         elif table == "FriendChatTabEmotionTable" and isinstance(row, dict):
@@ -16249,6 +16258,7 @@ class SourceGraphBuilder:
                 tab_node = self.add_profile_social_node("friend_chat_text_tab", row.get("tabName"), source=table)
                 if tab_node:
                     self.add_edge(tab_node, text_node, "friend_chat_text_tab_has_text", source=table, evidence="tabName")
+                    self.add_edge(text_node, tab_node, "friend_chat_text_in_tab", source=table, evidence="tabName")
         elif table == "FriendChatTabTextTable" and isinstance(row, dict):
             tab_node = self.add_profile_social_node("friend_chat_text_tab", row.get("tabName") or row_key, name=row.get("tabText"), source=table, data={"tabSort": row.get("tabSort")})
             if tab_node:
