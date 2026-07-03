@@ -13441,6 +13441,10 @@ class SourceGraphBuilder:
                     step_node = self.add_node("planting_step", f"{safe_key(crop_id)}:{index}", name=f"{safe_key(crop_id)} step {index}", source=table, data={"index": index, "plantingStepType": step.get("plantingStepType"), "parameter": compact_payload(step.get("plantingStepParameter"), depth=2)})
                     self.add_alias(f"{safe_key(crop_id)}:{index}", step_node, kind="planting_step_id", source=table)
                     self.add_edge(crop_node, step_node, "planting_crop_has_step", source=table, evidence=f"plantingSteps[{index}]", data={"index": index, "plantingStepType": step.get("plantingStepType")})
+                    type_node = self.add_world_harvestable_node("planting_step_type", step.get("plantingStepType"), source=table)
+                    if type_node:
+                        self.add_edge(step_node, type_node, "planting_step_has_type", source=table, evidence=f"plantingSteps[{index}].plantingStepType")
+                        self.add_edge(type_node, step_node, "planting_step_type_used_by_step", source=table, evidence=f"plantingSteps[{index}].plantingStepType")
         elif table == "RewardSoilTable":
             reward_id = row.get("rewardId") or row_key
             soil_reward_node = self.add_world_harvestable_node("soil_reward", reward_id, source=table, data={"itemBundleCount": len(row.get("itemBundles") or []), "probItemBundleCount": len(row.get("probItemBundles") or [])})
