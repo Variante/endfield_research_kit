@@ -12971,6 +12971,7 @@ class SourceGraphBuilder:
                 mission_node = self.add_mission_ref_node(row.get("unlockQuestId"), source=table)
                 if mission_node:
                     self.add_edge(depot_node, mission_node, "domain_depot_unlock_quest", source=table, evidence="unlockQuestId")
+                    self.add_edge(mission_node, depot_node, "mission_unlocks_domain_depot", source=table, evidence="unlockQuestId")
                 self.add_alias(row.get("levelObjId"), depot_node, kind="level_object_id", source=table)
                 self.add_alias(row.get("depotImage"), depot_node, kind="asset_stem", source=table)
                 self.add_tag_i18n_edges(depot_node, row.get("depotName"), source=table, edge_kind="domain_depot_name_text")
@@ -19026,8 +19027,10 @@ class SourceGraphBuilder:
                 source_node = self.add_item_node(row_key, source=table) if safe_key(row_key).startswith("item_") else self.add_factory_recipe_node(row_key, source=table)
                 if formula_node:
                     self.add_edge(reverse_node, formula_node, "limited_formula_reverse_formula", source=table, evidence="rowValue")
+                    self.add_edge(formula_node, reverse_node, "factory_recipe_has_limited_formula_reverse", source=table, evidence="rowValue")
                 if source_node:
                     self.add_edge(reverse_node, source_node, "limited_formula_reverse_source", source=table, evidence="rowKey")
+                    self.add_edge(source_node, reverse_node, "limited_formula_source_has_reverse_entry", source=table, evidence="rowKey")
             return
         if table == "OriginiumStaminaCost":
             cost_node = self.add_factory_interaction_lookup_node("originium_stamina_cost", row_key, source=table, data={"purchaseCount": row_key, "staminaCost": row})
@@ -19103,6 +19106,7 @@ class SourceGraphBuilder:
                     building_node = self.add_factory_building_node(building_id, source=table)
                     if building_node:
                         self.add_edge(list_node, building_node, "factory_hub_craft_type_has_building", source=table, evidence=f"list[{index}]", data={"index": index})
+                        self.add_edge(building_node, list_node, "factory_building_in_hub_craft_type_list", source=table, evidence=f"list[{index}]", data={"index": index})
             return
         if table == "LTItemTyp2ItemTypeTable" and isinstance(row, dict):
             conversion_node = self.add_factory_interaction_lookup_node("item_type_conversion", row_key, source=table, data={"fromType": row_key, "itemType": row.get("itemType")})
@@ -19112,8 +19116,10 @@ class SourceGraphBuilder:
                 to_node = self.add_item_type_node(row.get("itemType"), source=table)
                 if from_node:
                     self.add_edge(conversion_node, from_node, "item_type_conversion_from", source=table, evidence="rowKey")
+                    self.add_edge(from_node, conversion_node, "item_type_source_for_conversion", source=table, evidence="rowKey")
                 if to_node:
                     self.add_edge(conversion_node, to_node, "item_type_conversion_to", source=table, evidence="itemType")
+                    self.add_edge(to_node, conversion_node, "item_type_target_for_conversion", source=table, evidence="itemType")
             return
         if table in {"ExpItemMap", "ExpItemDataMap"}:
             exp_value = row.get("expGain") if isinstance(row, dict) else row
@@ -19124,6 +19130,7 @@ class SourceGraphBuilder:
                 item_node = self.add_item_node(row_key, source=table)
                 if item_node:
                     self.add_edge(exp_node, item_node, "exp_item_value_item", source=table, evidence="rowKey")
+                    self.add_edge(item_node, exp_node, "item_has_exp_value_config", source=table, evidence="rowKey")
             return
 
     def ingest_mode_constant_semantics(self) -> None:
