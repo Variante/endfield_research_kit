@@ -20017,6 +20017,7 @@ class SourceGraphBuilder:
         domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
         if domain_node:
             self.add_edge(group_node, domain_node, "factory_tech_group_domain", source=table, evidence="domainId")
+            self.add_edge(domain_node, group_node, "domain_has_factory_tech_group", source=table, evidence="domainId")
         cost_item = self.add_item_node(row.get("costPointType"), source=table)
         if cost_item:
             self.add_edge(group_node, cost_item, "factory_tech_group_uses_point_item", source=table, evidence="costPointType")
@@ -20025,14 +20026,17 @@ class SourceGraphBuilder:
             category_node = self.add_factory_tech_category_node(category_id, source=table)
             if category_node:
                 self.add_edge(group_node, category_node, "factory_tech_group_has_category", source=table, evidence=f"categoryIds[{index}]")
+                self.add_edge(category_node, group_node, "factory_tech_category_in_group", source=table, evidence=f"categoryIds[{index}]")
         for index, layer_id in enumerate(row.get("layerIds") or []):
             layer_node = self.add_factory_tech_layer_node(layer_id, source=table)
             if layer_node:
                 self.add_edge(group_node, layer_node, "factory_tech_group_has_layer", source=table, evidence=f"layerIds[{index}]")
+                self.add_edge(layer_node, group_node, "factory_tech_layer_in_group", source=table, evidence=f"layerIds[{index}]")
         for index, tech_id in enumerate(row.get("techIds") or []):
             tech_node = self.add_factory_tech_node(tech_id, source=table)
             if tech_node:
                 self.add_edge(group_node, tech_node, "factory_tech_group_has_tech", source=table, evidence=f"techIds[{index}]")
+                self.add_edge(tech_node, group_node, "factory_tech_in_group", source=table, evidence=f"techIds[{index}]")
         for index, dungeon_id in enumerate(row.get("blackboxIds") or []):
             dungeon_node = self.add_dungeon_node(dungeon_id, source=table)
             if dungeon_node:
@@ -20051,10 +20055,12 @@ class SourceGraphBuilder:
         group_node = self.add_factory_tech_group_node(row.get("groupId"), source=table)
         if group_node:
             self.add_edge(group_node, category_node, "factory_tech_group_has_category", source=table, evidence="groupId")
+            self.add_edge(category_node, group_node, "factory_tech_category_in_group", source=table, evidence="groupId")
         for index, tech_id in enumerate(row.get("techIds") or []):
             tech_node = self.add_factory_tech_node(tech_id, source=table)
             if tech_node:
                 self.add_edge(category_node, tech_node, "factory_tech_category_has_tech", source=table, evidence=f"techIds[{index}]")
+                self.add_edge(tech_node, category_node, "factory_tech_in_category", source=table, evidence=f"techIds[{index}]")
         self.add_i18n_text_edges(category_node, row, source=table)
 
     def add_factory_tech_layer_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
@@ -20065,9 +20071,11 @@ class SourceGraphBuilder:
         group_node = self.add_factory_tech_group_node(row.get("groupId"), source=table)
         if group_node:
             self.add_edge(group_node, layer_node, "factory_tech_group_has_layer", source=table, evidence="groupId")
+            self.add_edge(layer_node, group_node, "factory_tech_layer_in_group", source=table, evidence="groupId")
         pre_layer = self.add_factory_tech_layer_node(row.get("preLayer"), source=table)
         if pre_layer:
             self.add_edge(layer_node, pre_layer, "factory_tech_layer_requires_layer", source=table, evidence="preLayer")
+            self.add_edge(pre_layer, layer_node, "factory_tech_layer_required_by_layer", source=table, evidence="preLayer")
         for index, item in enumerate(row.get("costItems") or []):
             if not isinstance(item, dict):
                 continue
@@ -20079,6 +20087,7 @@ class SourceGraphBuilder:
             tech_node = self.add_factory_tech_node(tech_id, source=table)
             if tech_node:
                 self.add_edge(layer_node, tech_node, "factory_tech_layer_has_tech", source=table, evidence=f"techIds[{index}]")
+                self.add_edge(tech_node, layer_node, "factory_tech_in_layer", source=table, evidence=f"techIds[{index}]")
         for index, dungeon_id in enumerate(row.get("blackboxIds") or []):
             dungeon_node = self.add_dungeon_node(dungeon_id, source=table)
             if dungeon_node:
@@ -20095,12 +20104,15 @@ class SourceGraphBuilder:
         group_node = self.add_factory_tech_group_node(row.get("groupId"), source=table)
         if group_node:
             self.add_edge(group_node, tech_node, "factory_tech_group_has_tech", source=table, evidence="groupId")
+            self.add_edge(tech_node, group_node, "factory_tech_in_group", source=table, evidence="groupId")
         category_node = self.add_factory_tech_category_node(row.get("category"), source=table)
         if category_node:
             self.add_edge(category_node, tech_node, "factory_tech_category_has_tech", source=table, evidence="category")
+            self.add_edge(tech_node, category_node, "factory_tech_in_category", source=table, evidence="category")
         layer_node = self.add_factory_tech_layer_node(row.get("layer"), source=table)
         if layer_node:
             self.add_edge(layer_node, tech_node, "factory_tech_layer_has_tech", source=table, evidence="layer")
+            self.add_edge(tech_node, layer_node, "factory_tech_in_layer", source=table, evidence="layer")
         for index, pre_node in enumerate(row.get("preNode") or []):
             pre_tech = self.add_factory_tech_node(pre_node, source=table)
             if pre_tech:
