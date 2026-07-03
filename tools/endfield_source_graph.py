@@ -13002,10 +13002,12 @@ class SourceGraphBuilder:
                             item_type_node = self.add_domain_depot_item_type_node(item_type, source=table)
                             if item_type_node:
                                 self.add_edge(upgrade_node, item_type_node, "domain_depot_level_unlocks_item_type", source=table, evidence=f"levelList[{level_key}].deliverItemTypeList[{index}]", data={"index": index})
+                                self.add_edge(item_type_node, upgrade_node, "domain_depot_item_type_unlocked_by_level", source=table, evidence=f"levelList[{level_key}].deliverItemTypeList[{index}]", data={"index": index})
                         for index, pack_type in enumerate(level.get("deliverPackTypeList") or []):
                             pack_type_node = self.add_domain_depot_pack_type_node(pack_type, source=table)
                             if pack_type_node:
                                 self.add_edge(upgrade_node, pack_type_node, "domain_depot_level_unlocks_pack_type", source=table, evidence=f"levelList[{level_key}].deliverPackTypeList[{index}]", data={"index": index})
+                                self.add_edge(pack_type_node, upgrade_node, "domain_depot_pack_type_unlocked_by_level", source=table, evidence=f"levelList[{level_key}].deliverPackTypeList[{index}]", data={"index": index})
         elif table == "DomainDepotPackValueTable":
             depot_node = self.add_domain_depot_node(row_key, source=table)
             if depot_node:
@@ -13020,8 +13022,10 @@ class SourceGraphBuilder:
                         pack_type_node = self.add_domain_depot_pack_type_node(value.get("deliverPackType"), source=table)
                         if item_type_node:
                             self.add_edge(value_node, item_type_node, "domain_depot_pack_value_item_type", source=table, evidence=f"packValueList[{index}].deliverItemType")
+                            self.add_edge(item_type_node, value_node, "domain_depot_item_type_used_by_pack_value", source=table, evidence=f"packValueList[{index}].deliverItemType")
                         if pack_type_node:
                             self.add_edge(value_node, pack_type_node, "domain_depot_pack_value_pack_type", source=table, evidence=f"packValueList[{index}].deliverPackType")
+                            self.add_edge(pack_type_node, value_node, "domain_depot_pack_type_used_by_pack_value", source=table, evidence=f"packValueList[{index}].deliverPackType")
         elif table == "DomainDepotDeliverItemTypeTable":
             type_node = self.add_domain_depot_item_type_node(row.get("deliverItemType") or row_key, name=row.get("typeDesc"), source=table, data={"deliverItemType": row.get("deliverItemType"), "priceFactor": row.get("priceFactor"), "typeIcon": row.get("typeIcon")})
             if type_node:
@@ -13044,6 +13048,7 @@ class SourceGraphBuilder:
                     item_type_node = self.add_domain_depot_item_type_node(item_type, source=table)
                     if item_type_node:
                         self.add_edge(reduce_node, item_type_node, "domain_depot_integrity_reduce_affects_item_type", source=table, evidence=f"effectiveType[{index}]", data={"index": index})
+                        self.add_edge(item_type_node, reduce_node, "domain_depot_item_type_affected_by_integrity_reduce", source=table, evidence=f"effectiveType[{index}]", data={"index": index})
         elif table == "DomainPoiTable":
             poi_node = self.add_semantic_node("domain_poi_type", row.get("domainPoiType") if "domainPoiType" in row else row_key, name=row.get("name"), source=table, data={"domainPoiType": row.get("domainPoiType"), "phaseId": row.get("phaseId"), "unlockSystemType": row.get("unlockSystemType"), "overviewSortId": row.get("overviewSortId")})
             if poi_node:
