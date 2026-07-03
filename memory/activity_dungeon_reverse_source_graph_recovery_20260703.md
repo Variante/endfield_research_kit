@@ -12,9 +12,9 @@ table fields.
 ## Added Edges
 
 - `level_has_activity_dungeon_state`
-- `activity_stage_has_dungeon_state`
-- `activity_dungeon_show_state_has_state`
-- `level_has_activity_stage`
+- `activity_stage_has_activity_dungeon_state`
+- `activity_dungeon_show_state_has_activity_dungeon_state`
+- `level_has_activity_dungeon_fighting_stage`
 - `quest_task_used_by_activity_stage`
 
 ## Validation
@@ -36,11 +36,11 @@ The validation seeded `ingest_factory_interaction_lookup_semantics()`.
 | `activity_dungeon_state_level` | 8 |
 | `level_has_activity_dungeon_state` | 8 |
 | `activity_dungeon_state_stage` | 8 |
-| `activity_stage_has_dungeon_state` | 8 |
+| `activity_stage_has_activity_dungeon_state` | 8 |
 | `activity_dungeon_state_show_state` | 8 |
-| `activity_dungeon_show_state_has_state` | 8 |
+| `activity_dungeon_show_state_has_activity_dungeon_state` | 8 |
 | `activity_stage_level` | 8 |
-| `level_has_activity_stage` | 8 |
+| `level_has_activity_dungeon_fighting_stage` | 8 |
 | `activity_stage_quest` | 8 |
 | `quest_task_used_by_activity_stage` | 8 |
 
