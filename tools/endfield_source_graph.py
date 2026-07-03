@@ -21968,6 +21968,7 @@ class SourceGraphBuilder:
         group_node = self.add_npc_group_node(row.get("npcGroupId"), source=table)
         if group_node:
             self.add_edge(npc_node, group_node, "npc_in_group", source=table, evidence="npcGroupId")
+            self.add_edge(group_node, npc_node, "npc_group_has_npc", source=table, evidence="npcGroupId")
         if self.node_exists("npc_template", row.get("dataKey")):
             template_node = self.node_id("npc_template", row.get("dataKey"))
             self.add_edge(npc_node, template_node, "npc_uses_template", source=table, evidence="dataKey")
