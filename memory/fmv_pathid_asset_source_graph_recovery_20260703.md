@@ -60,6 +60,33 @@ A targeted source-root guard check created one fake FMV PathID with duplicate
 `StreamingAssets` and `Persistent` Unity assets. With `sourceRoot` set to
 `StreamingAssets`, only `unity_asset:StreamingAssets:12345` was linked.
 
+## Review Follow-Up
+
+Post-commit review found two hardening gaps:
+
+- FMV PathID resolution still linked globally if `sourceRoot` was missing.
+- `used-by` defaulted to `asset`, so Unity asset and raw PathID seeds did not
+  reliably expose the new FMV relationships.
+
+The resolver now requires a known `sourceRoot` before linking a video binding
+PathID to an AnimeStudio AssetMap Unity asset. Unknown-root rows remain present
+as `fmv_binding_playable_pathid` evidence but do not produce
+`fmv_playable_pathid_resolves_unity_asset`.
+
+`used-by` now tries `asset`, then `unity_asset`, then `unity_pathid` by default,
+and reports `resolvedKind`. Direct PathID usage includes
+`fmv_binding_playable_pathid` on the used-by side and `resolves_to_unity_asset`
+on the uses side.
+
+Synthetic validation used `tmp\fmv_usage_guard.sqlite` and confirmed:
+
+- an unknown-root duplicate PathID produced no FMV Unity-asset resolution;
+- a known `StreamingAssets` PathID linked only to
+  `unity_asset:StreamingAssets:12345`;
+- default `used-by pathid:12345` resolved as `unity_asset`;
+- forced `used-by pathid:12345 --kind unity_pathid` showed the direct FMV owner
+  edge plus AssetMap `resolves_to_unity_asset` dependencies.
+
 ## Follow-Up
 
 The disposable validator under `tmp/` uses normal asset/video ingests and builds
