@@ -55,6 +55,7 @@ TIMELINE_LINE_ORDERS_PATH = EXPORT_ROOT / TIMELINE_LINE_ORDERS_REL
 DIALOG_ID_TABLE_INDEX_PATH = EXPORT_ROOT / "recovered" / "dialog_id_table_index.json"
 RUNTIME_OPTION_ROUTE_AUDIT_GLOB = "runtime_jump_option_route_audit_CN*_nearby*.json"
 LUA_CONSUMER_REFERENCE_AUDIT_PATH = ROOT / "reports" / "mission_order" / "lua_consumer_reference_audit.json"
+TEXTURE2D_RAW_HASH_COLLISION_AUDIT_PATH = ROOT / "reports" / "texture2d_raw_hash_collision_audit.json"
 
 ASSET_MAPS = {
     "StreamingAssets": (
@@ -3322,6 +3323,8 @@ class SourceGraphBuilder:
                 self.commit_step("materialPathIdAssetLinks")
                 self.link_fmv_pathid_unity_assets()
                 self.commit_step("fmvPathIdAssetLinks")
+                self.ingest_texture2d_raw_hash_collision_audit()
+                self.commit_step("texture2dRawHashCollisions")
             self.finalize_indices()
             summary = self.summary(started)
             write_summary(summary)
@@ -24485,6 +24488,148 @@ class SourceGraphBuilder:
                     data=data,
                 )
 
+    def ingest_texture2d_raw_hash_collision_audit(self) -> None:
+        path = TEXTURE2D_RAW_HASH_COLLISION_AUDIT_PATH
+        payload = read_json(path, {})
+        if not isinstance(payload, dict) or not payload:
+            return
+
+        report_node = self.add_node(
+            "texture2d_raw_hash_collision_audit",
+            "texture2d_raw_hash_collision_audit",
+            name="Texture2D raw-hash collision audit",
+            source="reports",
+            path=slash(path),
+            data={
+                "schemaVersion": payload.get("schema_version"),
+                "exportRoot": payload.get("export_root"),
+                **(payload.get("totals") or {}),
+            },
+        )
+        self.add_alias("texture2d raw hash collision audit", report_node, kind="report_title", source="reports")
+        self.add_alias("raw_hash_output_collision", report_node, kind="asset_status_bucket", source="reports")
+
+        for source_root, source_payload in sorted((payload.get("sources") or {}).items()):
+            if not isinstance(source_payload, dict):
+                continue
+            source_node = self.add_node(
+                "texture2d_collision_source",
+                source_root,
+                name=f"{source_root} Texture2D collisions",
+                source=source_root,
+                path=source_payload.get("manifest_path"),
+                data=source_payload.get("summary") or {},
+            )
+            self.add_edge(report_node, source_node, "has_texture2d_collision_source", source="texture2d_raw_hash_collision_audit")
+
+            for group in source_payload.get("raw_hash_collision_groups") or []:
+                if not isinstance(group, dict):
+                    continue
+                output_path = safe_key(group.get("output_path"))
+                output_name = Path(output_path).name if output_path else ""
+                rel = self.texture2d_collision_output_rel(source_root, output_path)
+                group_key = f"{source_root}:{output_name or output_path}"
+                group_node = self.add_node(
+                    "texture2d_raw_hash_collision_group",
+                    group_key,
+                    name=output_name or group_key,
+                    source=source_root,
+                    path=rel or output_path,
+                    data={
+                        "outputExists": group.get("output_exists"),
+                        "outputSize": group.get("output_size"),
+                        "outputSha256": group.get("output_sha256"),
+                        "pngDimensions": group.get("png_dimensions"),
+                        "entryCount": group.get("entry_count"),
+                        "uniqueMapHashCount": group.get("unique_map_hash_count"),
+                        "uniqueContainerCount": group.get("unique_container_count"),
+                        "uniqueSourceGroupCount": group.get("unique_source_group_count"),
+                        "names": group.get("names") or [],
+                        "pathIds": group.get("path_ids") or [],
+                        "containerPrefixCounts": group.get("container_prefix_counts") or {},
+                        "sourceBlockCounts": group.get("source_block_counts") or {},
+                    },
+                )
+                self.add_alias(output_name.lower(), group_node, kind="texture2d_collision_output", source=source_root)
+                self.add_edge(source_node, group_node, "has_texture2d_raw_hash_collision_group", source="texture2d_raw_hash_collision_audit")
+
+                if rel:
+                    asset_node = self.add_node("asset", rel, name=Path(rel).name, source=source_root, path=rel)
+                    self.add_edge(group_node, asset_node, "texture2d_collision_decodes_to_asset", source="texture2d_raw_hash_collision_audit")
+                    self.add_edge(asset_node, group_node, "asset_has_texture2d_raw_hash_collision_evidence", source="texture2d_raw_hash_collision_audit")
+
+                for path_id in group.get("path_ids") or []:
+                    pathid_text = safe_key(path_id)
+                    pathid_node = self.add_node("unity_pathid", pathid_text, name=f"pathid:{pathid_text}", source=source_root)
+                    self.add_edge(group_node, pathid_node, "texture2d_collision_uses_pathid", source="texture2d_raw_hash_collision_audit")
+                    unity_node = self.node_id("unity_asset", f"{source_root}:{pathid_text}")
+                    if self.db.execute("SELECT 1 FROM nodes WHERE id = ?", (unity_node,)).fetchone():
+                        self.add_edge(group_node, unity_node, "texture2d_collision_resolves_unity_asset", source="texture2d_raw_hash_collision_audit")
+                        self.add_edge(unity_node, group_node, "unity_asset_has_texture2d_collision_evidence", source="texture2d_raw_hash_collision_audit")
+
+                for map_hash in group.get("map_hashes") or []:
+                    hash_text = safe_key(map_hash)
+                    if not hash_text:
+                        continue
+                    hash_node = self.add_node("texture2d_raw_map_hash", f"{source_root}:{hash_text}", name=hash_text, source=source_root)
+                    self.add_edge(group_node, hash_node, "texture2d_collision_has_raw_map_hash", source="texture2d_raw_hash_collision_audit")
+
+                for prefix, count in sorted((group.get("container_prefix_counts") or {}).items()):
+                    prefix_text = safe_key(prefix)
+                    if not prefix_text:
+                        continue
+                    prefix_node = self.add_node("asset_container_prefix", prefix_text, name=prefix_text, source=source_root, path=prefix_text)
+                    self.add_edge(
+                        group_node,
+                        prefix_node,
+                        "texture2d_collision_container_prefix",
+                        source="texture2d_raw_hash_collision_audit",
+                        data={"count": count},
+                    )
+
+                for index, entry in enumerate(group.get("sample_entries") or []):
+                    if not isinstance(entry, dict):
+                        continue
+                    sample_key = f"{source_root}:{output_name}:{index}:{entry.get('hash')}:{entry.get('offset')}"
+                    sample_node = self.add_node(
+                        "texture2d_collision_sample",
+                        sample_key,
+                        name=safe_key(entry.get("container")) or sample_key,
+                        source=source_root,
+                        path=entry.get("container"),
+                        data={
+                            "name": entry.get("name"),
+                            "pathId": entry.get("path_id"),
+                            "hash": entry.get("hash"),
+                            "sourcePath": normalize_abs_path(entry.get("source_path") or ""),
+                            "sourceName": entry.get("source_name"),
+                            "sourceBlock": entry.get("source_block"),
+                            "offset": entry.get("offset"),
+                            "sourceGroupEntryCount": entry.get("source_group_entry_count"),
+                        },
+                    )
+                    self.add_edge(group_node, sample_node, "texture2d_collision_sample_entry", source="texture2d_raw_hash_collision_audit")
+                    container = safe_key(entry.get("container"))
+                    if container:
+                        container_node = self.add_node("asset_container", container, name=Path(container).name, source=source_root, path=container)
+                        self.add_edge(sample_node, container_node, "texture2d_collision_sample_container", source="texture2d_raw_hash_collision_audit")
+                        self.add_edge(container_node, group_node, "container_uses_texture2d_collision_output", source="texture2d_raw_hash_collision_audit")
+                    hash_text = safe_key(entry.get("hash"))
+                    if hash_text:
+                        hash_node = self.add_node("texture2d_raw_map_hash", f"{source_root}:{hash_text}", name=hash_text, source=source_root)
+                        self.add_edge(sample_node, hash_node, "texture2d_collision_sample_raw_map_hash", source="texture2d_raw_hash_collision_audit")
+
+    def texture2d_collision_output_rel(self, source_root: str, output_path: str) -> str:
+        marker = f"AnimeStudio-cli\\{source_root}\\"
+        if marker not in output_path:
+            marker = f"AnimeStudio-cli/{source_root}/"
+        normalized = output_path.replace("/", "\\")
+        marker_normalized = marker.replace("/", "\\")
+        if marker_normalized not in normalized:
+            return ""
+        tail = normalized.split(marker_normalized, 1)[1].replace("\\", "/")
+        return f"{source_root}/{tail}"
+
     def summary(self, started: float) -> dict[str, Any]:
         node_total = self.db.execute("SELECT COUNT(*) FROM nodes").fetchone()[0]
         edge_total = self.db.execute("SELECT COUNT(*) FROM edges").fetchone()[0]
@@ -25825,6 +25970,12 @@ QUERY_KIND_PRIORITY = {
     "gameplay_progression": 46,
     "asset_entity": 47,
     "asset": 48,
+    "texture2d_raw_hash_collision_audit": 48.1,
+    "texture2d_collision_source": 48.2,
+    "texture2d_raw_hash_collision_group": 48.3,
+    "texture2d_collision_sample": 48.4,
+    "texture2d_raw_map_hash": 48.5,
+    "asset_container_prefix": 48.6,
     "actor": 49,
     "audio": 50,
     "file": 51,
@@ -26562,6 +26713,12 @@ NODE_ID_PREFIXES = (
     "gameplay_progression",
     "asset_entity",
     "asset",
+    "texture2d_raw_hash_collision_audit",
+    "texture2d_collision_source",
+    "texture2d_raw_hash_collision_group",
+    "texture2d_collision_sample",
+    "texture2d_raw_map_hash",
+    "asset_container_prefix",
     "actor",
     "audio",
     "video",
@@ -26646,6 +26803,9 @@ ASSET_USED_BY_OUTGOING_EDGE_KINDS = (
     "asset_export_used_by_material_texture_slot",
     "unity_asset_used_by_fmv_playable_pathid",
     "asset_export_used_by_fmv_playable_pathid",
+    "asset_has_texture2d_raw_hash_collision_evidence",
+    "unity_asset_has_texture2d_collision_evidence",
+    "container_uses_texture2d_collision_output",
 )
 ASSET_USES_EDGE_KINDS = (
     "has_gameplay_asset_entity",
@@ -26666,8 +26826,16 @@ ASSET_USES_EDGE_KINDS = (
     "entity_has_lod_model",
     "entity_uses_material",
     "entity_uses_texture",
+    "texture2d_collision_decodes_to_asset",
+    "texture2d_collision_uses_pathid",
+    "texture2d_collision_resolves_unity_asset",
+    "texture2d_collision_has_raw_map_hash",
+    "texture2d_collision_container_prefix",
+    "texture2d_collision_sample_entry",
+    "texture2d_collision_sample_container",
+    "texture2d_collision_sample_raw_map_hash",
 )
-ASSET_USAGE_KIND_FALLBACKS = ("asset", "unity_asset", "unity_pathid")
+ASSET_USAGE_KIND_FALLBACKS = ("asset", "unity_asset", "unity_pathid", "texture2d_raw_hash_collision_group", "asset_container")
 
 def exact_node_candidates(term: str) -> list[str]:
     candidates = [term]
