@@ -6551,6 +6551,7 @@ class SourceGraphBuilder:
         reward_node = self.add_reward_node(payload.get("rewardId"), source=source)
         if reward_node:
             self.add_edge(asset_node, reward_node, "mission_runtime_rewards", source=source, evidence="rewardId")
+            self.add_edge(reward_node, asset_node, "reward_used_by_mission_runtime", source=source, evidence="rewardId")
         for field, edge_kind in (("missionName", "mission_runtime_name_text"), ("missionDescription", "mission_runtime_description_text")):
             text_key = self.mission_runtime_text_key(payload.get(field))
             text_node = self.add_i18n_text_node(text_key, source=source)
@@ -19867,6 +19868,16 @@ class SourceGraphBuilder:
                 "battlepass_season_originium_hint_reward": "reward_used_by_battlepass_season_originium_hint",
                 "battlepass_season_pay_hint_reward": "reward_used_by_battlepass_season_pay_hint",
                 "weekraid_battlepass_reward": "reward_used_by_weekraid_battlepass_node",
+                "dungeon_reward": "reward_used_by_dungeon",
+                "dungeon_first_pass_reward": "reward_used_by_dungeon_first_pass",
+                "dungeon_extra_reward": "reward_used_by_dungeon_extra",
+                "dungeon_hunter_reward": "reward_used_by_dungeon_hunter",
+                "dungeon_custom_reward": "reward_used_by_dungeon_custom",
+                "game_mechanic_reward": "reward_used_by_game_mechanic",
+                "game_mechanic_first_pass_reward": "reward_used_by_game_mechanic_first_pass",
+                "game_mechanic_extra_reward": "reward_used_by_game_mechanic_extra",
+                "game_mechanic_hunter_reward": "reward_used_by_game_mechanic_hunter",
+                "world_game_mechanic_first_pass_reward": "reward_used_by_world_game_mechanic_first_pass",
             }.get(edge_kind)
             if reverse_kind:
                 self.add_edge(reward_node, owner_node, reverse_kind, source=source, evidence=evidence, data=data)
