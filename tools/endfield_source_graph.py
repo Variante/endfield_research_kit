@@ -9038,6 +9038,8 @@ class SourceGraphBuilder:
                     source="webui/story",
                     data={"text": option.get("text"), "icon": option.get("icon"), "index": option.get("i")},
                 )
+                self.add_alias(option_id, option_node, kind="option_id", source="webui/story")
+                self.add_alias(option.get("text"), option_node, kind="option_text", source="webui/story")
                 self.add_edge(group_node, option_node, "has_option", source="webui/story")
                 hint = option_branch_hints.get(option_id)
                 if not hint:
