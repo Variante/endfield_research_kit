@@ -19551,11 +19551,52 @@ class SourceGraphBuilder:
         jump_node = self.add_system_jump_node(jump_id, source=source)
         if jump_node:
             self.add_edge(owner_node, jump_node, edge_kind, source=source, evidence=evidence)
+            reverse_kind = {
+                "activity_jumps_to": "system_jump_used_by_activity",
+                "activity_condition_jumps_to": "system_jump_used_by_activity_condition",
+                "stage_jumps_to": "system_jump_used_by_activity_stage",
+                "task_jumps_to": "system_jump_used_by_activity_task",
+                "banner_jumps_to": "system_jump_used_by_activity_banner",
+                "adventure_book_task_jump": "system_jump_used_by_adventure_book_task",
+                "activity_benefit_jump": "system_jump_used_by_activity_benefit",
+                "activity_limited_formula_stage_complete_jump": "system_jump_used_by_activity_limited_formula_stage",
+                "activity_limited_formula_stage_incomplete_jump": "system_jump_used_by_activity_limited_formula_stage",
+                "activity_web_entry_jump": "system_jump_used_by_activity_web_entry",
+                "activity_web_stage_jump": "system_jump_used_by_activity_web_stage",
+            }.get(edge_kind)
+            if reverse_kind:
+                self.add_edge(jump_node, owner_node, reverse_kind, source=source, evidence=evidence)
 
     def add_reward_ref_edge(self, owner_node: str, reward_id: Any, *, edge_kind: str, source: str, evidence: str, data: Any = None) -> None:
         reward_node = self.add_reward_node(reward_id, source=source)
         if reward_node:
             self.add_edge(owner_node, reward_node, edge_kind, source=source, evidence=evidence, data=data)
+            reverse_kind = {
+                "activity_rewards": "reward_used_by_activity",
+                "activity_milestone_rewards": "reward_used_by_activity_milestone",
+                "stage_rewards": "reward_used_by_activity_stage",
+                "task_rewards": "reward_used_by_activity_task",
+                "adventure_book_task_reward": "reward_used_by_adventure_book_task",
+                "adventure_book_stage_reward": "reward_used_by_adventure_book_stage",
+                "activity_web_stage_reward": "reward_used_by_activity_web_stage",
+            }.get(edge_kind)
+            if reverse_kind:
+                self.add_edge(reward_node, owner_node, reverse_kind, source=source, evidence=evidence, data=data)
+
+    def add_system_jump_target_edge(
+        self,
+        jump_node: str,
+        target_node: str,
+        edge_kind: str,
+        reverse_kind: str,
+        *,
+        source: str,
+        evidence: str,
+    ) -> None:
+        if not target_node:
+            return
+        self.add_edge(jump_node, target_node, edge_kind, source=source, evidence=evidence)
+        self.add_edge(target_node, jump_node, reverse_kind, source=source, evidence=evidence)
 
     def iter_activity_conditions(self, value: Any) -> Iterable[dict[str, Any]]:
         if isinstance(value, dict):
@@ -19647,69 +19688,57 @@ class SourceGraphBuilder:
             args = {}
         if args.get("activityId"):
             activity_node = self.add_activity_node(args.get("activityId"), source=source)
-            self.add_edge(jump_node, activity_node, "system_jump_targets_activity", source=source, evidence="phaseArgs.activityId")
+            self.add_system_jump_target_edge(jump_node, activity_node, "system_jump_targets_activity", "activity_targeted_by_system_jump", source=source, evidence="phaseArgs.activityId")
         if phase_id == "SnapshotChallenge" and args.get("activityId"):
             activity_node = self.add_activity_node(args.get("activityId"), source=source)
-            self.add_edge(jump_node, activity_node, "system_jump_targets_snapshot_activity", source=source, evidence="phaseArgs.activityId")
+            self.add_system_jump_target_edge(jump_node, activity_node, "system_jump_targets_snapshot_activity", "snapshot_activity_targeted_by_system_jump", source=source, evidence="phaseArgs.activityId")
         if phase_id == "FacTechTree":
             tech_node = self.add_factory_tech_node(args.get("techId") or args.get("nodeId") or args.get("id"), source=source)
-            if tech_node:
-                self.add_edge(jump_node, tech_node, "system_jump_targets_factory_tech", source=source, evidence="phaseArgs.techId")
+            self.add_system_jump_target_edge(jump_node, tech_node, "system_jump_targets_factory_tech", "factory_tech_targeted_by_system_jump", source=source, evidence="phaseArgs.techId")
             group_node = self.add_factory_tech_group_node(args.get("packageId"), source=source)
-            if group_node:
-                self.add_edge(jump_node, group_node, "system_jump_targets_factory_tech_group", source=source, evidence="phaseArgs.packageId")
+            self.add_system_jump_target_edge(jump_node, group_node, "system_jump_targets_factory_tech_group", "factory_tech_group_targeted_by_system_jump", source=source, evidence="phaseArgs.packageId")
         if phase_id in {"ManualCraft", "ManualCraftPopups"}:
             item_id = args.get("jumpItem") or args.get("itemId") or args.get("formulaId") or "manual_craft"
             item_node = self.add_item_node(item_id, source=source)
-            self.add_edge(jump_node, item_node, "system_jump_targets_manual_craft_unlock", source=source, evidence="phaseArgs")
+            self.add_system_jump_target_edge(jump_node, item_node, "system_jump_targets_manual_craft_unlock", "item_targeted_by_manual_craft_system_jump", source=source, evidence="phaseArgs")
         for field, kind in (("itemId", "system_jump_targets_item"), ("jumpItem", "system_jump_targets_item"), ("sourceId", "system_jump_targets_item"), ("targetId", "system_jump_targets_item")):
             item_node = self.add_item_node(args.get(field), source=source)
-            if item_node:
-                self.add_edge(jump_node, item_node, kind, source=source, evidence=f"phaseArgs.{field}")
+            self.add_system_jump_target_edge(jump_node, item_node, kind, "item_targeted_by_system_jump", source=source, evidence=f"phaseArgs.{field}")
         reward_node = self.add_reward_node(args.get("selectedRewardId"), source=source)
-        if reward_node:
-            self.add_edge(jump_node, reward_node, "system_jump_targets_reward", source=source, evidence="phaseArgs.selectedRewardId")
+        self.add_system_jump_target_edge(jump_node, reward_node, "system_jump_targets_reward", "reward_targeted_by_system_jump", source=source, evidence="phaseArgs.selectedRewardId")
         for field in ("dungeonId", "dungeonSeriesId"):
             dungeon_node = self.add_dungeon_node(args.get(field), source=source)
-            if dungeon_node:
-                self.add_edge(jump_node, dungeon_node, "system_jump_targets_dungeon", source=source, evidence=f"phaseArgs.{field}")
+            self.add_system_jump_target_edge(jump_node, dungeon_node, "system_jump_targets_dungeon", "dungeon_targeted_by_system_jump", source=source, evidence=f"phaseArgs.{field}")
         for field in ("missionId",):
             mission_node = self.add_mission_ref_node(args.get(field), source=source)
-            if mission_node:
-                self.add_edge(jump_node, mission_node, "system_jump_targets_mission", source=source, evidence=f"phaseArgs.{field}")
+            self.add_system_jump_target_edge(jump_node, mission_node, "system_jump_targets_mission", "mission_targeted_by_system_jump", source=source, evidence=f"phaseArgs.{field}")
         map_node = self.add_map_node(args.get("mapId"), source=source)
-        if map_node:
-            self.add_edge(jump_node, map_node, "system_jump_targets_map", source=source, evidence="phaseArgs.mapId")
+        self.add_system_jump_target_edge(jump_node, map_node, "system_jump_targets_map", "map_targeted_by_system_jump", source=source, evidence="phaseArgs.mapId")
         mark_node = self.add_node("map_mark_template", args.get("templateId"), name=args.get("templateId"), source=source) if safe_key(args.get("templateId")) else ""
         if mark_node:
             self.add_alias(args.get("templateId"), mark_node, kind="map_mark_template_id", source=source)
-            self.add_edge(jump_node, mark_node, "system_jump_targets_map_mark_template", source=source, evidence="phaseArgs.templateId")
+            self.add_system_jump_target_edge(jump_node, mark_node, "system_jump_targets_map_mark_template", "map_mark_template_targeted_by_system_jump", source=source, evidence="phaseArgs.templateId")
         domain_id = safe_key(args.get("domainId"))
         if domain_id:
             domain_node = self.add_node("gameplay_domain", domain_id, name=domain_id, source=source)
             self.add_alias(domain_id, domain_node, kind="gameplay_domain_id", source=source)
-            self.add_edge(jump_node, domain_node, "system_jump_targets_domain", source=source, evidence="phaseArgs.domainId")
+            self.add_system_jump_target_edge(jump_node, domain_node, "system_jump_targets_domain", "domain_targeted_by_system_jump", source=source, evidence="phaseArgs.domainId")
         shop_node = self.add_shop_node(args.get("shopId"), source=source)
-        if shop_node:
-            self.add_edge(jump_node, shop_node, "system_jump_targets_shop", source=source, evidence="phaseArgs.shopId")
+        self.add_system_jump_target_edge(jump_node, shop_node, "system_jump_targets_shop", "shop_targeted_by_system_jump", source=source, evidence="phaseArgs.shopId")
         shop_group = self.add_node("shop_group", args.get("shopGroupId"), name=args.get("shopGroupId"), source=source) if safe_key(args.get("shopGroupId")) else ""
         if shop_group:
             self.add_alias(args.get("shopGroupId"), shop_group, kind="shop_group_id", source=source)
-            self.add_edge(jump_node, shop_group, "system_jump_targets_shop_group", source=source, evidence="phaseArgs.shopGroupId")
+            self.add_system_jump_target_edge(jump_node, shop_group, "system_jump_targets_shop_group", "shop_group_targeted_by_system_jump", source=source, evidence="phaseArgs.shopGroupId")
         character_node = self.add_character_ref_node(args.get("charId") or args.get("characterId"), source=source)
-        if character_node:
-            self.add_edge(jump_node, character_node, "system_jump_targets_character", source=source, evidence="phaseArgs.characterId")
+        self.add_system_jump_target_edge(jump_node, character_node, "system_jump_targets_character", "character_targeted_by_system_jump", source=source, evidence="phaseArgs.characterId")
         achievement_node = self.add_achievement_node(args.get("achieveId") or args.get("achievementId"), source=source)
-        if achievement_node:
-            self.add_edge(jump_node, achievement_node, "system_jump_targets_achievement", source=source, evidence="phaseArgs.achievementId")
+        self.add_system_jump_target_edge(jump_node, achievement_node, "system_jump_targets_achievement", "achievement_targeted_by_system_jump", source=source, evidence="phaseArgs.achievementId")
         if phase_id == "PRTSStoryCollDetail":
             entry_node = self.add_prts_entry_node(args.get("id"), source=source)
-            if entry_node:
-                self.add_edge(jump_node, entry_node, "system_jump_targets_prts_entry", source=source, evidence="phaseArgs.id")
+            self.add_system_jump_target_edge(jump_node, entry_node, "system_jump_targets_prts_entry", "prts_entry_targeted_by_system_jump", source=source, evidence="phaseArgs.id")
         if phase_id == "PRTSInvestigateDetail":
             investigation_node = self.add_prts_investigation_node(args.get("id"), source=source)
-            if investigation_node:
-                self.add_edge(jump_node, investigation_node, "system_jump_targets_prts_investigation", source=source, evidence="phaseArgs.id")
+            self.add_system_jump_target_edge(jump_node, investigation_node, "system_jump_targets_prts_investigation", "prts_investigation_targeted_by_system_jump", source=source, evidence="phaseArgs.id")
 
     def add_system_jump_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         jump_id = safe_key(row.get("id") or row_key)
@@ -19758,6 +19787,7 @@ class SourceGraphBuilder:
         activity_node = self.add_activity_node(row.get("activityId"), source=table)
         if activity_node:
             self.add_edge(activity_node, task_node, "activity_has_task", source=table, evidence="activityId")
+            self.add_edge(task_node, activity_node, "activity_task_in_activity", source=table, evidence="activityId")
         self.add_system_jump_edge(task_node, row.get("jumpId"), edge_kind="task_jumps_to", source=table, evidence="jumpId")
         self.add_i18n_text_edges(task_node, row, source=table)
 
@@ -19772,6 +19802,7 @@ class SourceGraphBuilder:
                 continue
             self.add_edge(row_node, milestone_node, "defines_activity_milestone", source=table)
             self.add_edge(activity_node, milestone_node, "activity_has_milestone", source=table, evidence="mileStones")
+            self.add_edge(milestone_node, activity_node, "activity_milestone_in_activity", source=table, evidence="mileStones")
             self.add_reward_ref_edge(milestone_node, milestone.get("rewardId"), edge_kind="activity_milestone_rewards", source=table, evidence="rewardId", data={"score": milestone.get("score")})
 
     def add_activity_stage_semantics(self, table: str, row_key: str, stage: dict[str, Any], row_node: str, *, activity_id: Any = None, evidence: str = "") -> str:
@@ -19783,11 +19814,13 @@ class SourceGraphBuilder:
         activity_node = self.add_activity_node(stage.get("activityId") or activity_id, source=table)
         if activity_node:
             self.add_edge(activity_node, stage_node, "activity_has_stage", source=table, evidence=evidence or "activityId", data={"sortId": stage.get("sortId")})
+            self.add_edge(stage_node, activity_node, "activity_stage_in_activity", source=table, evidence=evidence or "activityId", data={"sortId": stage.get("sortId")})
         self.add_reward_ref_edge(stage_node, stage.get("rewardId"), edge_kind="stage_rewards", source=table, evidence="rewardId")
         self.add_system_jump_edge(stage_node, stage.get("jumpId"), edge_kind="stage_jumps_to", source=table, evidence="jumpId")
         mission_node = self.add_mission_ref_node(stage.get("missionId"), source=table)
         if mission_node:
             self.add_edge(stage_node, mission_node, "stage_uses_mission", source=table, evidence="missionId")
+            self.add_edge(mission_node, stage_node, "mission_used_by_activity_stage", source=table, evidence="missionId")
         self.add_activity_condition_edges(stage_node, stage.get("conditions"), edge_kind="stage_has_condition", source=table, evidence_prefix=f"{evidence}.conditions" if evidence else "conditions")
         self.add_i18n_text_edges(stage_node, stage, source=table)
         return stage_node
@@ -19822,6 +19855,7 @@ class SourceGraphBuilder:
                 continue
             self.add_edge(row_node, task_node, "defines_activity_task", source=table, evidence=f"TaskConfigMap[{index}]")
             self.add_edge(activity_node, task_node, "activity_has_task", source=table, evidence=f"TaskConfigMap[{index}]")
+            self.add_edge(task_node, activity_node, "activity_task_in_activity", source=table, evidence=f"TaskConfigMap[{index}]")
             self.add_reward_ref_edge(task_node, task.get("rewardId"), edge_kind="task_rewards", source=table, evidence="rewardId")
             self.add_system_jump_edge(task_node, task.get("jumpId"), edge_kind="task_jumps_to", source=table, evidence="jumpId")
             for condition_index, condition_id in enumerate(task.get("completeConditionId") or []):
@@ -20026,9 +20060,16 @@ class SourceGraphBuilder:
             return ""
         game_node = self.add_activity_catalog_node("activity_catalog_game", game_key, source=source, data=data)
         self.add_edge(owner_node, game_node, edge_kind, source=source, evidence=evidence, data=data)
+        reverse_kind = {
+            "activity_game_entrance_series_has_game": "activity_catalog_game_in_entrance_series",
+            "high_difficulty_series_has_game": "activity_catalog_game_in_high_difficulty_series",
+        }.get(edge_kind)
+        if reverse_kind:
+            self.add_edge(game_node, owner_node, reverse_kind, source=source, evidence=evidence, data=data)
         dungeon_node = self.add_dungeon_node(game_key, source=source)
         if dungeon_node:
             self.add_edge(game_node, dungeon_node, "activity_catalog_game_dungeon_ref", source=source, evidence=evidence)
+            self.add_edge(dungeon_node, game_node, "dungeon_used_by_activity_catalog_game", source=source, evidence=evidence)
         return game_node
 
     def add_activity_catalog_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
@@ -20042,6 +20083,7 @@ class SourceGraphBuilder:
                 stage_node = self.add_adventure_book_stage_node(row.get("adventureBookStage"), source=table)
                 if stage_node:
                     self.add_edge(task_node, stage_node, "adventure_book_task_stage", source=table, evidence="adventureBookStage")
+                    self.add_edge(stage_node, task_node, "adventure_book_stage_has_task", source=table, evidence="adventureBookStage")
                 self.add_reward_ref_edge(task_node, row.get("rewardId"), edge_kind="adventure_book_task_reward", source=table, evidence="rewardId")
                 self.add_system_jump_edge(task_node, row.get("jumpSystemId"), edge_kind="adventure_book_task_jump", source=table, evidence="jumpSystemId")
                 self.add_activity_condition_edges(task_node, row.get("conditionDataList"), edge_kind="adventure_book_task_condition", source=table, evidence_prefix="conditionDataList")
@@ -20056,6 +20098,7 @@ class SourceGraphBuilder:
                     task_node = self.add_adventure_book_task_node(task_id, source=table)
                     if task_node:
                         self.add_edge(stage_node, task_node, "adventure_book_stage_has_task", source=table, evidence=f"taskIds[{index}]", data={"index": index})
+                        self.add_edge(task_node, stage_node, "adventure_book_task_stage", source=table, evidence=f"taskIds[{index}]", data={"index": index})
         elif table == "ActivityGameEntranceSeriesTable":
             group_node = self.add_activity_catalog_node("activity_game_entrance_group", row_key, source=table, data={"seriesCount": len(row.get("seriesMap") or {}), "introMissionId": row.get("introMissionId")})
             if group_node:
