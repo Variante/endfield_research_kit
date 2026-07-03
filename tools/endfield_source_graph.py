@@ -19957,6 +19957,14 @@ class SourceGraphBuilder:
                     ref_node = self.add_factory_machine_node(ref, source=source)
                     edge_kind = "factory_tech_condition_references_machine"
                 self.add_edge(condition_node, ref_node, edge_kind, source=source, evidence=evidence)
+                reverse_kind = {
+                    "factory_tech_condition_references_level": "level_used_by_factory_tech_condition",
+                    "factory_tech_condition_references_item": "item_used_by_factory_tech_condition",
+                    "factory_tech_condition_references_domain": "domain_used_by_factory_tech_condition",
+                    "factory_tech_condition_references_machine": "factory_machine_used_by_factory_tech_condition",
+                }.get(edge_kind)
+                if reverse_kind:
+                    self.add_edge(ref_node, condition_node, reverse_kind, source=source, evidence=evidence)
 
     def add_factory_tech_condition_edges(self, owner_node: str, condition: dict[str, Any], *, edge_kind: str, source: str, evidence: str) -> None:
         condition_id = safe_key(condition.get("conditionId"))
