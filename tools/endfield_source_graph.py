@@ -8225,6 +8225,7 @@ class SourceGraphBuilder:
             if isinstance(gold, (int, float)) and gold > 0:
                 item_node = self.add_item_node("item_gold", name="item_gold", source="webui/gameplay")
                 self.add_edge(checkpoint_node, item_node, "level_checkpoint_gold_cost", source="webui/gameplay", evidence="gold", data={"count": gold})
+                self.add_edge(item_node, checkpoint_node, "item_gold_cost_for_level_checkpoint", source="webui/gameplay", evidence="gold", data={"count": gold})
                 self.add_gameplay_item_asset_edges(item_node, "item_gold")
 
         stats = entry.get("stats") if isinstance(entry.get("stats"), dict) else {}
@@ -8262,6 +8263,7 @@ class SourceGraphBuilder:
                     data={"key": attr_key, "type": attr.get("type"), "label": attr.get("label"), "iconName": attr.get("iconName")},
                 )
                 self.add_edge(stat_node, property_node, "stat_checkpoint_has_property", source="webui/gameplay", evidence=f"attrs[{attr_index}]", data={"value": attr.get("value"), "type": attr.get("type"), "key": attr_key})
+                self.add_edge(property_node, stat_node, "stat_property_used_by_character_checkpoint", source="webui/gameplay", evidence=f"attrs[{attr_index}]", data={"value": attr.get("value"), "type": attr.get("type"), "key": attr_key})
                 self.add_alias(attr_key, property_node, kind="gameplay_stat_property_key", source="webui/gameplay")
                 self.add_alias(attr.get("label"), property_node, kind="gameplay_stat_property_name", source="webui/gameplay")
 
@@ -12839,6 +12841,7 @@ class SourceGraphBuilder:
             item_node = self.add_item_node(item.get("id"), source=source)
             if item_node:
                 self.add_edge(owner_node, item_node, edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]", data={"count": item.get("count"), "index": index})
+                self.add_edge(item_node, owner_node, f"item_required_by_{edge_kind}", source=source, evidence=f"{evidence_prefix}[{index}]", data={"count": item.get("count"), "index": index})
 
     def add_character_progression_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if table == "CharLevelUpTable" and isinstance(row, dict):
