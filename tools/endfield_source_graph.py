@@ -22680,10 +22680,14 @@ class SourceGraphBuilder:
             if event_node:
                 self.add_edge(owner_node, event_node, edge_kind, source=source, evidence=evidence_prefix)
 
-    def add_audio_config_owner_edges(self, config_node: str, row_key: str, *, source: str, owner_edges: tuple[tuple[str, str], ...]) -> None:
-        for kind, edge_kind in owner_edges:
+    def add_audio_config_owner_edges(self, config_node: str, row_key: str, *, source: str, owner_edges: tuple[tuple[str, str] | tuple[str, str, str], ...]) -> None:
+        for owner_edge in owner_edges:
+            kind, edge_kind = owner_edge[:2]
             if self.node_exists(kind, row_key):
-                self.add_edge(config_node, self.node_id(kind, row_key), edge_kind, source=source, evidence="rowKey")
+                owner_node = self.node_id(kind, row_key)
+                self.add_edge(config_node, owner_node, edge_kind, source=source, evidence="rowKey")
+                if len(owner_edge) > 2:
+                    self.add_edge(owner_node, config_node, owner_edge[2], source=source, evidence="rowKey")
 
     def add_audio_drop_item_model_key_edges(self, drop_node: str, row_key: str, *, source: str) -> None:
         for item_node in self.alias_node_ids(row_key, kind="model_key"):
@@ -22701,7 +22705,7 @@ class SourceGraphBuilder:
         kind: str,
         define_edge: str,
         event_edge: str,
-        owner_edges: tuple[tuple[str, str], ...] = (),
+        owner_edges: tuple[tuple[str, str] | tuple[str, str, str], ...] = (),
     ) -> None:
         config_node = self.add_semantic_node(kind, row_key, source=table, data=compact_payload(row, depth=2))
         if not config_node:
@@ -22772,7 +22776,7 @@ class SourceGraphBuilder:
         elif table == "AudioSpeakerTypeWeights":
             self.add_audio_speaker_type_weight_edges(table, row_key, row, row_node)
         elif table == "AudioBattleBuildings" and isinstance(row, dict):
-            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_battle_building", define_edge="defines_audio_battle_building", event_edge="audio_battle_building_uses_event", owner_edges=(("factory_building", "audio_battle_building_for_factory_building"), ("factory_machine", "audio_battle_building_for_factory_machine")))
+            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_battle_building", define_edge="defines_audio_battle_building", event_edge="audio_battle_building_uses_event", owner_edges=(("factory_building", "audio_battle_building_for_factory_building", "factory_building_uses_audio_battle_building"), ("factory_machine", "audio_battle_building_for_factory_machine", "factory_machine_uses_audio_battle_building")))
         elif table == "AudioCollection" and isinstance(row, dict):
             self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_collection", define_edge="defines_audio_collection", event_edge="audio_collection_uses_event")
         elif table == "AudioDrop" and isinstance(row, dict):
@@ -22781,15 +22785,15 @@ class SourceGraphBuilder:
             if self.node_exists("audio_drop", row_key):
                 self.add_audio_drop_item_model_key_edges(drop_node, row_key, source=table)
         elif table == "AudioFactory" and isinstance(row, dict):
-            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_factory", define_edge="defines_audio_factory", event_edge="audio_factory_uses_event", owner_edges=(("factory_building", "audio_factory_for_factory_building"), ("factory_machine", "audio_factory_for_factory_machine")))
+            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_factory", define_edge="defines_audio_factory", event_edge="audio_factory_uses_event", owner_edges=(("factory_building", "audio_factory_for_factory_building", "factory_building_uses_audio_factory"), ("factory_machine", "audio_factory_for_factory_machine", "factory_machine_uses_audio_factory")))
         elif table == "AudioFactoryAnnouncement" and isinstance(row, dict):
             self.add_audio_factory_announcement_edges(table, row_key, row, row_node)
         elif table == "AudioItemDragAndDrop" and isinstance(row, dict):
-            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_item_drag_drop", define_edge="defines_audio_item_drag_drop", event_edge="audio_item_drag_drop_uses_event", owner_edges=(("item", "audio_item_drag_drop_for_item"), ("factory_item", "audio_item_drag_drop_for_factory_item"), ("factory_machine", "audio_item_drag_drop_for_factory_machine")))
+            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_item_drag_drop", define_edge="defines_audio_item_drag_drop", event_edge="audio_item_drag_drop_uses_event", owner_edges=(("item", "audio_item_drag_drop_for_item", "item_uses_audio_item_drag_drop"), ("factory_item", "audio_item_drag_drop_for_factory_item", "factory_item_uses_audio_item_drag_drop"), ("factory_machine", "audio_item_drag_drop_for_factory_machine", "factory_machine_uses_audio_item_drag_drop")))
         elif table == "AudioItemTypeDragAndDrop" and isinstance(row, dict):
-            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_item_type_drag_drop", define_edge="defines_audio_item_type_drag_drop", event_edge="audio_item_type_drag_drop_uses_event", owner_edges=(("item_type", "audio_item_type_drag_drop_for_item_type"),))
+            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_item_type_drag_drop", define_edge="defines_audio_item_type_drag_drop", event_edge="audio_item_type_drag_drop_uses_event", owner_edges=(("item_type", "audio_item_type_drag_drop_for_item_type", "item_type_uses_audio_item_type_drag_drop"),))
         elif table == "AudioLevel" and isinstance(row, dict):
-            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_level", define_edge="defines_audio_level", event_edge="audio_level_uses_event", owner_edges=(("level", "audio_level_for_level"),))
+            self.add_audio_sfx_config_edges(table, row_key, row, row_node, kind="audio_level", define_edge="defines_audio_level", event_edge="audio_level_uses_event", owner_edges=(("level", "audio_level_for_level", "level_uses_audio_level"),))
 
 
     def ingest_dialog_support_semantics(self) -> None:
