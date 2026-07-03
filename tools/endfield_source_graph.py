@@ -14358,6 +14358,16 @@ class SourceGraphBuilder:
                     edge_kind = "game_mechanic_condition_param_mechanic"
                 if ref_node:
                     self.add_edge(condition_node, ref_node, edge_kind, source=source, evidence=evidence, data=data)
+                    reverse_kind = {
+                        "game_mechanic_condition_param_item": "item_used_by_game_mechanic_condition_param",
+                        "game_mechanic_condition_param_reward": "reward_used_by_game_mechanic_condition_param",
+                        "game_mechanic_condition_param_character": "character_used_by_game_mechanic_condition_param",
+                        "game_mechanic_condition_param_enemy": "enemy_used_by_game_mechanic_condition_param",
+                        "game_mechanic_condition_param_level": "level_used_by_game_mechanic_condition_param",
+                        "game_mechanic_condition_param_mechanic": "game_mechanic_used_by_condition_param",
+                    }.get(edge_kind)
+                    if reverse_kind:
+                        self.add_edge(ref_node, condition_node, reverse_kind, source=source, evidence=evidence, data=data)
 
     def add_game_mechanic_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if table == "GameMechanicCategoryTable" and isinstance(row, dict):
