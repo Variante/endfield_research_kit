@@ -22554,6 +22554,55 @@ class SourceGraphBuilder:
                     self.db.commit()
 
     def link_material_pathid_unity_assets(self) -> None:
+        shader_rows = self.db.execute(
+            """
+            SELECT
+                material.id AS material_node,
+                pathid.id AS pathid_node,
+                unity.id AS unity_node,
+                unity.data AS unity_data
+            FROM edges shader_edge
+            JOIN nodes material ON material.id = shader_edge.src
+            JOIN nodes pathid ON pathid.id = shader_edge.dst
+            JOIN edges resolved
+                ON resolved.src = pathid.id
+                AND resolved.kind = 'resolves_to_unity_asset'
+            JOIN nodes unity ON unity.id = resolved.dst
+                AND unity.source = material.source
+            WHERE shader_edge.kind = 'uses_shader_pathid'
+            ORDER BY material.id, pathid.id, unity.id
+            """
+        ).fetchall()
+        for material_node, pathid_node, unity_node, unity_data in shader_rows:
+            asset_data = parse_json_text(unity_data) if unity_data else {}
+            asset_type = asset_data.get("type") if isinstance(asset_data, dict) else ""
+            data = {"pathidNode": pathid_node, "assetType": asset_type}
+            self.add_edge(
+                material_node,
+                unity_node,
+                "material_shader_pathid_resolves_unity_asset",
+                source="material_json+AnimeStudio/maps",
+                evidence="m_Shader",
+                data=data,
+            )
+            self.add_edge(
+                unity_node,
+                material_node,
+                "unity_asset_used_by_material_shader_slot",
+                source="material_json+AnimeStudio/maps",
+                evidence="m_Shader",
+                data=data,
+            )
+            if safe_key(asset_type) == "Shader":
+                self.add_edge(
+                    unity_node,
+                    material_node,
+                    "shader_used_by_material_slot",
+                    source="material_json+AnimeStudio/maps",
+                    evidence="m_Shader",
+                    data=data,
+                )
+
         rows = self.db.execute(
             """
             SELECT
@@ -24704,8 +24753,10 @@ ASSET_USED_BY_INCOMING_EDGE_KINDS = (
     "visual_token_matches_export_base_asset",
     "previewed_by",
     "uses_material",
+    "uses_shader_pathid",
     "uses_texture_pathid",
     "fmv_binding_playable_pathid",
+    "material_shader_pathid_resolves_unity_asset",
     "material_texture_pathid_resolves_unity_asset",
     "material_texture_pathid_exports_asset",
     "fmv_playable_pathid_resolves_unity_asset",
@@ -24717,6 +24768,8 @@ ASSET_USED_BY_INCOMING_EDGE_KINDS = (
 ASSET_USED_BY_OUTGOING_EDGE_KINDS = (
     "referenced_by_material",
     "referenced_by_model",
+    "unity_asset_used_by_material_shader_slot",
+    "shader_used_by_material_slot",
     "unity_asset_used_by_material_texture_slot",
     "asset_export_used_by_material_texture_slot",
     "unity_asset_used_by_fmv_playable_pathid",
@@ -24729,9 +24782,11 @@ ASSET_USES_EDGE_KINDS = (
     "visual_token_matches_export_base_asset",
     "previewed_by",
     "uses_material",
+    "uses_shader_pathid",
     "uses_texture",
     "uses_texture_pathid",
     "resolves_to_unity_asset",
+    "material_shader_pathid_resolves_unity_asset",
     "material_texture_pathid_resolves_unity_asset",
     "material_texture_pathid_exports_asset",
     "fmv_playable_pathid_resolves_unity_asset",
