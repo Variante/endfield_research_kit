@@ -2,7 +2,8 @@
 
 ## Slice
 
-Added reverse source-graph traversal for cash-shop commerce relationships.
+Added reverse source-graph traversal for cash-shop goods, groups, recharge
+bonus, recommendations, tabs, gift-pack configs, and recharge item grants.
 
 New reverse edges:
 
@@ -37,7 +38,7 @@ Result:
 - `3,177,047` edges
 - `2,277,554` aliases
 
-Parity checks:
+Populated parity checks:
 
 - `cash_goods_grants_reward`: `61`
 - `reward_granted_by_cash_goods`: `61`
@@ -55,18 +56,19 @@ Parity checks:
 - `cash_goods_in_recommendation`: `25`
 - `cash_shop_tab_for_shop`: `31`
 - `cash_shop_has_tab`: `31`
-- `cash_shop_tab_has_tag`: `0`
-- `cash_shop_tag_in_tab`: `0`
 - `cash_goods_has_giftpack_config`: `26`
 - `cash_giftpack_config_for_goods`: `26`
-- `cash_giftpack_anchor_goods`: `0`
-- `cash_goods_anchor_for_giftpack`: `0`
 - `cash_giftpack_show_after_goods`: `6`
 - `cash_goods_show_after_giftpack`: `6`
 - `cash_giftpack_has_tag`: `16`
 - `cash_shop_tag_used_by_giftpack`: `16`
 - `recharge_pack_grants_item`: `6`
 - `item_granted_by_recharge_pack`: `6`
+
+Empty in this dataset:
+
+- `cash_shop_tab_has_tag` / `cash_shop_tag_in_tab`
+- `cash_giftpack_anchor_goods` / `cash_goods_anchor_for_giftpack`
 
 Sample evidence:
 
@@ -82,7 +84,6 @@ Sample evidence:
 
 ## Notes
 
-This makes cash-shop queries symmetric with the normal item/economy graph:
-callers can now start from a reward, item, cash goods row, shop, group, tab,
-recommendation, recharge bonus, or gift-pack tag and traverse back to the exact
-cash-shop table rows that reference it.
+Cash-shop catalog queries can now start from a reward, item, goods id, shop,
+group, recommendation, tab, or gift-pack tag and traverse back to the authored
+cash-shop declaration. This complements the normal shop reverse graph coverage.
