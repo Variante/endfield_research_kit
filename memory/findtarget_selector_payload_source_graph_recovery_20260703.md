@@ -137,3 +137,56 @@ database so shared `selector_tag` nodes were exercised:
 The validation preserved the negative result: selector tag hits are queryable
 evidence, but none of the seven body-middle shapes proves a full
 TargetSettings boundary or chain-safe FindTarget decode.
+
+## Boundary Audit Follow-Up
+
+`tools/endfield_source_graph.py` also ingests
+`reports/mission_order/findtarget_selector_boundary_audit.json`. This report
+is the source of the seven body-middle shapes and records both concrete decoded
+FindTarget item samples and first-FindTarget records that remain unsafe to
+split.
+
+Additional node kinds:
+
+- `findtarget_selector_boundary_shape`
+- `findtarget_selector_boundary_sample`
+- `findtarget_ambiguous_record`
+- `findtarget_split_status`
+- `target_group_key`
+
+Additional edges:
+
+- `has_findtarget_selector_boundary_shape`
+- `findtarget_boundary_shape_matches_replay_shape`
+- `findtarget_boundary_shape_target_group`
+- `has_findtarget_selector_boundary_sample`
+- `findtarget_boundary_sample_file`
+- `findtarget_boundary_sample_shape`
+- `findtarget_boundary_sample_target_group`
+- `has_findtarget_ambiguous_record`
+- `findtarget_ambiguous_record_file`
+- `findtarget_ambiguous_record_split_status`
+
+Focused validation called the priority, replay, and boundary ingests together:
+
+| Item | Count |
+|---|---:|
+| `findtarget_selector_boundary_shape` nodes | 7 |
+| `findtarget_selector_boundary_sample` nodes | 24 |
+| `findtarget_ambiguous_record` nodes | 30 |
+| `findtarget_split_status` nodes | 1 |
+| `target_group_key` nodes | 5 |
+| `findtarget_boundary_shape_matches_replay_shape` edges | 7 |
+| `findtarget_boundary_shape_target_group` edges | 6 |
+| `findtarget_boundary_sample_file` edges | 24 |
+| `findtarget_boundary_sample_shape` edges | 24 |
+| `findtarget_boundary_sample_target_group` edges | 20 |
+| `findtarget_ambiguous_record_file` edges | 30 |
+| `findtarget_ambiguous_record_split_status` edges | 30 |
+| shape TargetSettings candidates | 0 |
+| sample TargetSettings candidates | 0 |
+
+All 30 ambiguous records point to
+`findtarget_split_status:ambiguous-union-tag-boundaries`. This preserves the
+current decoder gate: header-only union scanning is still not enough to split
+these action chains.
