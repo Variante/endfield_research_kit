@@ -7007,6 +7007,7 @@ class SourceGraphBuilder:
         self.add_alias(model_id, controller_node, kind="model_view_state_controller_id", source="webui/game_data")
         model_node = self.add_node("model_config_model", model_id, name=model_id, source="webui/game_data")
         self.add_edge(controller_node, model_node, "model_view_state_controller_uses_model", source="webui/game_data", evidence="modelId")
+        self.add_edge(model_node, controller_node, "model_config_used_by_model_view_state_controller", source="webui/game_data", evidence="modelId")
         self.add_alias(model_id, model_node, kind="model_id", source="webui/game_data")
         self.add_model_asset_entity_edges(controller_node, (model_id,), edge_kind="model_view_state_controller_asset_entity", source="webui/game_data", evidence="modelId")
 
