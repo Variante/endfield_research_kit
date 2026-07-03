@@ -18979,9 +18979,11 @@ class SourceGraphBuilder:
                 item_node = self.add_item_node(row.get("id") or row_key, source=table)
                 if item_node:
                     self.add_edge(seed_node, item_node, "factory_seed_item_item", source=table, evidence="id")
+                    self.add_edge(item_node, seed_node, "item_has_factory_seed_config", source=table, evidence="id")
                 doodad_node = self.add_system_interactive_node(row.get("doodadId"), source=table)
                 if doodad_node:
                     self.add_edge(seed_node, doodad_node, "factory_seed_item_doodad", source=table, evidence="doodadId")
+                    self.add_edge(doodad_node, seed_node, "system_interactive_used_by_factory_seed_item", source=table, evidence="doodadId")
                 for field in ("modelKey", "growingModelKey"):
                     self.add_factory_lookup_asset_aliases(seed_node, row.get(field), source=table, evidence_prefix=field)
             return
