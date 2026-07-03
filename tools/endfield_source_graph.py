@@ -22954,7 +22954,9 @@ class SourceGraphBuilder:
             return
         self.add_edge(row_node, option_node, "defines_dialog_option", source=table)
         if self.node_exists("option", row_key):
-            self.add_edge(option_node, self.node_id("option", row_key), "dialog_option_generated_option", source=table, evidence="rowKey")
+            generated_option_node = self.node_id("option", row_key)
+            self.add_edge(option_node, generated_option_node, "dialog_option_generated_option", source=table, evidence="rowKey")
+            self.add_edge(generated_option_node, option_node, "generated_option_has_dialog_option", source=table, evidence="rowKey")
         self.add_i18n_text_edges(option_node, row, source=table)
 
     def add_dialog_summary_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
@@ -23569,6 +23571,7 @@ class SourceGraphBuilder:
                 "game_mechanic_extra_reward": "reward_used_by_game_mechanic_extra",
                 "game_mechanic_hunter_reward": "reward_used_by_game_mechanic_hunter",
                 "world_game_mechanic_first_pass_reward": "reward_used_by_world_game_mechanic_first_pass",
+                "domain_development_level_reward": "reward_used_by_domain_development_level",
                 "trial_grants_reward": "reward_granted_by_character_trial",
                 "gacha_const_reward_ref": "reward_used_by_gacha_const",
                 "gacha_pool_once_reward": "reward_used_by_gacha_pool_once",
