@@ -16078,6 +16078,7 @@ class SourceGraphBuilder:
                 mission_node = self.add_mission_ref_node(row.get("unlockMissionId"), source=table)
                 if mission_node:
                     self.add_edge(node, mission_node, "loading_tip_unlocks_after_mission", source=table, evidence="unlockMissionId")
+                    self.add_edge(mission_node, node, "mission_unlocks_loading_tip", source=table, evidence="unlockMissionId")
         elif table == "HyperlinkTextTable":
             link_id = safe_key(row.get("id") or row_key)
             node = self.add_system_tip_node("hyperlink_text", link_id, source=table, data={"id": link_id, "richTextId": row.get("richTextId"), "jumpWikiId": row.get("jumpWikiId"), "iconPath": row.get("iconPath")})
@@ -16092,6 +16093,7 @@ class SourceGraphBuilder:
                     wiki_node = self.add_node("wiki_entry", wiki_id, name=wiki_id, source=table)
                     self.add_alias(wiki_id, wiki_node, kind="wiki_entry_id", source=table)
                     self.add_edge(node, wiki_node, "hyperlink_jumps_to_wiki", source=table, evidence="jumpWikiId")
+                    self.add_edge(wiki_node, node, "wiki_entry_used_by_hyperlink", source=table, evidence="jumpWikiId")
         elif table in {"CommonDeathTips", "DungeonDeathTips", "EnemyRelatedDeathTips", "TrainingDeathTips"}:
             node = self.add_system_tip_node("death_tip", f"{table}:{row_key}", source=table, data={"table": table, "key": row_key})
             if node:
@@ -16101,10 +16103,12 @@ class SourceGraphBuilder:
                     enemy_node = self.add_node("enemy", row_key, name=row_key, source=table)
                     self.add_alias(row_key, enemy_node, kind="enemy_id", source=table)
                     self.add_edge(node, enemy_node, "death_tip_related_enemy", source=table, evidence="rowKey")
+                    self.add_edge(enemy_node, node, "enemy_has_death_tip", source=table, evidence="rowKey")
                 elif table == "DungeonDeathTips":
                     dungeon_node = self.add_node("dungeon", row_key, name=row_key, source=table)
                     self.add_alias(row_key, dungeon_node, kind="dungeon_id", source=table)
                     self.add_edge(node, dungeon_node, "death_tip_related_dungeon", source=table, evidence="rowKey")
+                    self.add_edge(dungeon_node, node, "dungeon_has_death_tip", source=table, evidence="rowKey")
         elif table == "BattlePassForecastTipTable":
             tip_id = safe_key(row.get("forecastTipId") or row_key)
             node = self.add_system_tip_node("battlepass_forecast_tip", tip_id, source=table, data={"forecastTipId": tip_id, "priority": row.get("priority")})
