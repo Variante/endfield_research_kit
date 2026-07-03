@@ -85,11 +85,34 @@ python tools\endfield_source_graph.py query au_music_cs_e8m2_1 --db tmp\decoded_
 
 This resolves the Wwise event and bank evidence for `default_banks.pck`.
 
+Post-commit full smoke build with gameplay, asset maps, reference rows, and
+followups skipped:
+
+```bat
+python -X faulthandler tools\endfield_source_graph.py build --db tmp\audio_min.sqlite --skip-gameplay --skip-asset-maps --skip-reference-rows --skip-followups
+```
+
+Result:
+
+- nodes: `1,817,178`
+- edges: `3,337,860`
+- aliases: `2,322,358`
+- files: `575,321`
+- `wwise_media`: `54,822`
+- `wwise_bank`: `698`
+- `wwise_event`: `2,266`
+- `decoded_audio`: `79,328`
+- `wwise_event_uses_media`: `2,191`
+- `wwise_media_decoded_file`: `54,822`
+
+`python tools\endfield_source_graph.py query 107294543 --kind wwise_media --db tmp\audio_min.sqlite --limit 6`
+returned the expected decoded file, bank, and event relationships.
+
 ## Follow-Up
 
 The audio graph validation databases are disposable. Delete
-`tmp/decoded_audio_ingest_only.sqlite` and any interrupted
-`tmp/audio_index_source_graph.sqlite` after recording counts.
+`tmp/decoded_audio_ingest_only.sqlite`, `tmp/audio_min.sqlite`, and any
+interrupted `tmp/audio_index_source_graph.sqlite` after recording counts.
 
 Next recovery experiment: compare AnimeStudio and patched fluffy-dumper on
 `hotfix-audio` VFS coverage, then decide whether the decoded-audio builder or
