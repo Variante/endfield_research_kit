@@ -10732,6 +10732,7 @@ class SourceGraphBuilder:
                 item_node = self.add_item_node(row.get("etherItemId"), source=table)
                 if item_node:
                     self.add_edge(submit_node, item_node, "ether_submit_requires_item", source=table, evidence="etherItemId", data={"count": row.get("count")})
+                    self.add_edge(item_node, submit_node, "item_required_by_ether_submit", source=table, evidence="etherItemId", data={"count": row.get("count")})
                 self.add_reward_ref_edge(submit_node, row.get("rewardID"), edge_kind="ether_submit_reward", source=table, evidence="rewardID")
                 for index, effect_id in enumerate(row.get("effectList") or []):
                     effect_node = self.add_node("global_effect", safe_key(effect_id), name=safe_key(effect_id), source=table)
@@ -11659,6 +11660,7 @@ class SourceGraphBuilder:
                         cost_item = self.add_item_node(rule.get("costEnhancementItem"), source=table)
                         if cost_item:
                             self.add_edge(rule_node, cost_item, "gem_enhance_rule_cost_item", source=table, evidence=f"list[{index}].costEnhancementItem", data={"termCost": rule.get("termCost")})
+                            self.add_edge(cost_item, rule_node, "item_cost_for_gem_enhance_rule", source=table, evidence=f"list[{index}].costEnhancementItem", data={"termCost": rule.get("termCost")})
         elif table == "GemDismantleTable":
             group_node = self.add_equipment_gem_node("gem_dismantle_rule_group", row_key, source=table, data={"ruleCount": len(row.get("list") or [])})
             if group_node:
@@ -14344,6 +14346,7 @@ class SourceGraphBuilder:
             if item_node:
                 count = counts[index] if index < len(counts) else None
                 self.add_edge(type_node, item_node, f"gacha_{field_prefix}_pull_cost_item", source=source, evidence=f"{field_prefix}CostItemIds[{index}]", data={"count": count})
+                self.add_edge(item_node, type_node, f"item_cost_for_gacha_{field_prefix}_pull", source=source, evidence=f"{field_prefix}CostItemIds[{index}]", data={"count": count})
 
 
     def add_gacha_const_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
@@ -14666,6 +14669,7 @@ class SourceGraphBuilder:
             item_node = self.add_item_node(item_id, source=table)
             if item_node:
                 self.add_edge(weapon_node, item_node, "weapon_potential_requires_item", source=table, evidence=f"potentialUpItemList[{index}]")
+                self.add_edge(item_node, weapon_node, "item_required_by_weapon_potential", source=table, evidence=f"potentialUpItemList[{index}]")
 
     def add_weapon_upgrade_template_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str, *, kind: str, edge_kind: str) -> None:
         template_id = safe_key(row_key)
@@ -14697,6 +14701,7 @@ class SourceGraphBuilder:
                 item_node = self.add_item_node(item.get("id"), source=table)
                 if item_node:
                     self.add_edge(template_node, item_node, "weapon_breakthrough_requires_item", source=table, evidence=f"list[{level_index}].breakItemList[{item_index}]", data={"breakthroughLv": entry.get("breakthroughLv"), "count": item.get("count"), "gold": entry.get("breakthroughGold")})
+                    self.add_edge(item_node, template_node, "item_required_by_weapon_breakthrough", source=table, evidence=f"list[{level_index}].breakItemList[{item_index}]", data={"breakthroughLv": entry.get("breakthroughLv"), "count": item.get("count"), "gold": entry.get("breakthroughGold")})
 
     def add_weapon_talent_template_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         template_id = safe_key(row_key)
@@ -14715,6 +14720,7 @@ class SourceGraphBuilder:
             if weapon_node and item_node:
                 self.add_edge(item_node, weapon_node, "weapon_potential_item_for_weapon", source=table, evidence=f"weaponIds[{index}]")
                 self.add_edge(weapon_node, item_node, "weapon_potential_requires_item", source=table, evidence=f"weaponIds[{index}]")
+                self.add_edge(item_node, weapon_node, "item_required_by_weapon_potential", source=table, evidence=f"weaponIds[{index}]")
 
     def add_weapon_exp_item_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         exp_item_id = safe_key(row.get("expItemId"))
@@ -15625,7 +15631,7 @@ class SourceGraphBuilder:
     def add_display_metadata_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         return self.add_semantic_node(kind, key, name=name, source=source, data=data)
 
-    def add_display_metadata_item_edges(self, owner_node: str, item_ids: Any, counts: Any, *, edge_kind: str, source: str, evidence_prefix: str) -> None:
+    def add_display_metadata_item_edges(self, owner_node: str, item_ids: Any, counts: Any, *, edge_kind: str, source: str, evidence_prefix: str, reverse_edge_kind: str = "") -> None:
         if not isinstance(item_ids, list):
             return
         count_values = counts if isinstance(counts, list) else []
@@ -15634,6 +15640,8 @@ class SourceGraphBuilder:
             if item_node:
                 count = count_values[index] if index < len(count_values) else None
                 self.add_edge(owner_node, item_node, edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]", data={"index": index, "count": count})
+                if reverse_edge_kind:
+                    self.add_edge(item_node, owner_node, reverse_edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]", data={"index": index, "count": count})
 
     def add_display_metadata_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if table == "IntroTable" and isinstance(row, dict):
@@ -15791,7 +15799,7 @@ class SourceGraphBuilder:
                     level_node = self.add_display_metadata_node("shop_channel_development_level", f"{safe_key(row_key)}:{safe_key(level_key)}", source=table, data={"level": level_key, "versionStart": level_row.get("versionStart"), "newGoodsCount": len(level_row.get("newGoodsList") or []), "randGoodsBaseLimitUp": level_row.get("randGoodsBaseLimitUp"), "randGoodsDailyAddLimitUp": level_row.get("randGoodsDailyAddLimitUp"), "isFinalMaxLevel": level_row.get("isFinalMaxLevel")})
                     if level_node:
                         self.add_edge(channel_node, level_node, "shop_channel_development_has_level", source=table, evidence=f"channelLevelMap.{level_key}")
-                        self.add_display_metadata_item_edges(level_node, level_row.get("costItemIdList"), level_row.get("costItemNumList"), edge_kind="shop_channel_level_cost_item", source=table, evidence_prefix=f"channelLevelMap.{level_key}.costItemIdList")
+                        self.add_display_metadata_item_edges(level_node, level_row.get("costItemIdList"), level_row.get("costItemNumList"), edge_kind="shop_channel_level_cost_item", source=table, evidence_prefix=f"channelLevelMap.{level_key}.costItemIdList", reverse_edge_kind="item_cost_for_shop_channel_level")
                         for index, goods_id in enumerate(level_row.get("newGoodsList") or []):
                             goods_node = self.add_shop_goods_node(goods_id, source=table)
                             if goods_node:
@@ -16336,6 +16344,7 @@ class SourceGraphBuilder:
             item_node = self.add_item_node(item.get("id"), source=table)
             if item_node:
                 self.add_edge(level_node, item_node, "spaceship_room_level_requires_item", source=table, evidence=f"costItems[{index}]", data={"count": item.get("count")})
+                self.add_edge(item_node, level_node, "item_required_by_spaceship_room_level", source=table, evidence=f"costItems[{index}]", data={"count": item.get("count")})
         dialog_id = safe_key(row.get("upgradeDialogId"))
         if dialog_id:
             story_node = self.add_node("story", dialog_id, name=dialog_id, source=table)
@@ -16904,6 +16913,7 @@ class SourceGraphBuilder:
         cost_item = self.add_item_node(row.get("costPointType"), source=table)
         if cost_item:
             self.add_edge(group_node, cost_item, "factory_tech_group_uses_point_item", source=table, evidence="costPointType")
+            self.add_edge(cost_item, group_node, "item_used_by_factory_tech_group", source=table, evidence="costPointType")
         for index, category_id in enumerate(row.get("categoryIds") or []):
             category_node = self.add_factory_tech_category_node(category_id, source=table)
             if category_node:
@@ -16957,6 +16967,7 @@ class SourceGraphBuilder:
             item_node = self.add_item_node(item.get("costItemId"), source=table)
             if item_node:
                 self.add_edge(layer_node, item_node, "factory_tech_layer_requires_item", source=table, evidence=f"costItems[{index}]", data={"count": item.get("costItemCount")})
+                self.add_edge(item_node, layer_node, "item_required_by_factory_tech_layer", source=table, evidence=f"costItems[{index}]", data={"count": item.get("costItemCount")})
         for index, tech_id in enumerate(row.get("techIds") or []):
             tech_node = self.add_factory_tech_node(tech_id, source=table)
             if tech_node:
@@ -17101,6 +17112,7 @@ class SourceGraphBuilder:
         reward_item = self.add_item_node(row.get("rewardItemId1"), source=table)
         if source_item:
             self.add_edge(unlock_node, source_item, "manual_craft_unlock_requires_item", source=table, evidence="itemId", data={"count": row.get("gainItemNum")})
+            self.add_edge(source_item, unlock_node, "item_required_by_manual_craft_unlock", source=table, evidence="itemId", data={"count": row.get("gainItemNum")})
         if reward_item:
             self.add_edge(unlock_node, reward_item, "manual_craft_unlock_grants_formula_item", source=table, evidence="rewardItemId1", data={"count": row.get("rewardItemCount1")})
         if source_item and reward_item:
@@ -17394,6 +17406,7 @@ class SourceGraphBuilder:
                 currency_node = self.add_item_node(row.get("currencyType"), source=table)
                 if currency_node:
                     self.add_edge(good_node, currency_node, "factory_panel_store_good_cost_item", source=table, evidence="currencyType", data={"cost": row.get("cost")})
+                    self.add_edge(currency_node, good_node, "item_cost_for_factory_panel_store_good", source=table, evidence="currencyType", data={"cost": row.get("cost")})
                 level_node = self.add_level_node(row.get("regionId"), source=table)
                 if level_node:
                     self.add_edge(good_node, level_node, "factory_panel_store_good_region_level", source=table, evidence="regionId")
