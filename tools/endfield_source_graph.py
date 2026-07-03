@@ -16562,7 +16562,14 @@ class SourceGraphBuilder:
     def add_spaceship_formula_item_edge(self, formula_node: str, item_id: Any, *, edge_kind: str, source: str, evidence: str, count: Any = None) -> None:
         item_node = self.add_item_node(item_id, source=source)
         if item_node:
-            self.add_edge(formula_node, item_node, edge_kind, source=source, evidence=evidence, data={"count": count} if count is not None else None)
+            data = {"count": count} if count is not None else None
+            self.add_edge(formula_node, item_node, edge_kind, source=source, evidence=evidence, data=data)
+            reverse_kind = {
+                "spaceship_formula_consumes_item": "item_consumed_by_spaceship_formula",
+                "spaceship_formula_produces_item": "item_produced_by_spaceship_formula",
+            }.get(edge_kind)
+            if reverse_kind:
+                self.add_edge(item_node, formula_node, reverse_kind, source=source, evidence=evidence, data=data)
 
     def add_spaceship_grow_formula_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         formula_id = safe_key(row.get("id") or row_key)
@@ -17692,6 +17699,17 @@ class SourceGraphBuilder:
         item_node = self.add_item_node(item_id, source=source)
         if item_node:
             self.add_edge(owner_node, item_node, edge_kind, source=source, evidence=evidence, data=data)
+            reverse_kind = {
+                "factory_miner_outputs_item": "item_output_by_factory_miner",
+                "factory_miner_consumes_item": "item_consumed_by_factory_miner",
+                "factory_fuel_item": "item_defines_factory_fuel",
+                "factory_battery_item": "item_defines_factory_battery",
+                "factory_liquid_item_ref": "item_defines_factory_liquid",
+                "liquid_empty_bottle_item": "item_empty_bottle_for_liquid",
+                "liquid_full_bottle_item": "item_full_bottle_for_liquid",
+            }.get(edge_kind)
+            if reverse_kind:
+                self.add_edge(item_node, owner_node, reverse_kind, source=source, evidence=evidence, data=data)
 
     def add_factory_liquid_edge(self, owner_node: str, liquid_id: Any, edge_kind: str, *, source: str, evidence: str, data: Any = None) -> None:
         liquid_node = self.add_factory_liquid_node(liquid_id, source=source)
@@ -17700,6 +17718,7 @@ class SourceGraphBuilder:
             item_node = self.add_item_node(liquid_id, source=source)
             if item_node:
                 self.add_edge(liquid_node, item_node, "factory_liquid_item_ref", source=source, evidence=evidence)
+                self.add_edge(item_node, liquid_node, "item_defines_factory_liquid", source=source, evidence=evidence)
 
     def add_factory_utility_liquid_list_edges(self, owner_node: str, liquid_ids: Any, edge_kind: str, *, source: str, evidence_prefix: str) -> None:
         if not isinstance(liquid_ids, list):
