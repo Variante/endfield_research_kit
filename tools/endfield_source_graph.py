@@ -24988,6 +24988,8 @@ class SourceGraphBuilder:
                 continue
             level_node = self.add_level_node(level_id, source=table)
             self.add_edge(point_node, level_node, edge_kind, source=table, evidence=field)
+            reverse_kind = "level_has_track_point_start" if field == "start" else "level_has_track_point_end"
+            self.add_edge(level_node, point_node, reverse_kind, source=table, evidence=field)
             self.add_level_map_edge(level_node, level_id, source=table, evidence="inferred_level_prefix")
 
     def add_track_map_link_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
@@ -25000,6 +25002,12 @@ class SourceGraphBuilder:
                 continue
             level_node = self.add_level_node(level_id, source=table)
             self.add_edge(link_node, level_node, edge_kind, source=table, evidence=field)
+            reverse_kind = {
+                "start": "level_has_track_link_start",
+                "mid": "level_has_track_link_mid",
+                "end": "level_has_track_link_end",
+            }[field]
+            self.add_edge(level_node, link_node, reverse_kind, source=table, evidence=field)
             self.add_level_map_edge(level_node, level_id, source=table, evidence="inferred_level_prefix")
 
     def add_scene_collectable_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
@@ -25018,6 +25026,7 @@ class SourceGraphBuilder:
             self.add_edge(level_node, collectable_node, "level_has_scene_collectable", source=table, evidence=str(index))
             self.add_edge(level_node, item_node, "level_has_collectable_item", source=table, evidence=str(index), data={"maxCount": item.get("maxCount")})
             self.add_edge(collectable_node, item_node, "scene_collectable_item", source=table, evidence="itemId")
+            self.add_edge(item_node, collectable_node, "item_used_by_scene_collectable", source=table, evidence="itemId", data={"sceneId": scene_id, "maxCount": item.get("maxCount")})
             image_path = safe_key(item.get("imagePath"))
             if image_path:
                 self.add_alias(image_path, collectable_node, kind="asset_stem", source=table)
@@ -25033,6 +25042,7 @@ class SourceGraphBuilder:
             convert_node = self.add_item_node(item.get("convertTargetItemId"), source=table)
             if convert_node:
                 self.add_edge(collectable_node, convert_node, "scene_collectable_converts_to_item", source=table, evidence="convertTargetItemId", data={"convertRequiredCount": item.get("convertRequiredCount")})
+                self.add_edge(convert_node, collectable_node, "item_receives_scene_collectable_conversion", source=table, evidence="convertTargetItemId", data={"sourceItemId": item_id, "convertRequiredCount": item.get("convertRequiredCount")})
 
     def add_scene_collectable_interactive_refs(self) -> None:
         rows = self.db.execute(
