@@ -312,6 +312,11 @@ Expected active inputs and outputs:
   metadata, decode status markers, managed-reference classes/layouts, semantic
   meaning/tags, schema/field-set IDs, and links raw previews back to
   `export_full/` without copying decoded files. The current WebUI no longer loads this as a tab.
+- `build_monobehaviour_frontier_report.py`: summarizes a decoded
+  `build_decoded_index.py` index into the current MonoBehaviour recovery
+  frontier. It reports residual partial/unparsed groups, top schema/domain/
+  registry buckets, and compact group records to
+  `reports/monobehaviour_frontier_latest.json/.md` by default.
 - `build_audio.py`: decodes audio via AnimeStudio CLI, stores shared
   SFX/music once under `export_full/structured/Audio/shared/`, indexes
   language voice files under `export_full/structured/Audio/<LANG>/`, parses Wwise bank
