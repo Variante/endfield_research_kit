@@ -14938,6 +14938,7 @@ class SourceGraphBuilder:
         showing_node = self.add_item_showing_type_node(row.get("showingType"), source=table)
         if showing_node:
             self.add_edge(item_node, showing_node, "item_has_showing_type", source=table, evidence="showingType")
+            self.add_edge(showing_node, item_node, "item_showing_type_has_item", source=table, evidence="showingType")
         for index, obtain_id in enumerate(row.get("obtainWayIds") or []):
             obtain_key = safe_key(obtain_id)
             if not obtain_key:
