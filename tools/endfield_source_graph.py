@@ -23278,6 +23278,8 @@ class SourceGraphBuilder:
                 "planting_crop_reward": "reward_used_by_planting_crop",
                 "planting_crop_increased_reward": "reward_used_by_planting_crop_increased",
                 "mail_template_reward": "reward_used_by_mail_template",
+                "adventure_level_reward": "reward_used_by_adventure_level",
+                "tower_defense_stage_reward": "reward_used_by_tower_defense_stage",
             }.get(edge_kind)
             if reverse_kind:
                 self.add_edge(reward_node, owner_node, reverse_kind, source=source, evidence=evidence, data=data)
