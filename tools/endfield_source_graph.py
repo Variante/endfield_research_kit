@@ -19337,6 +19337,7 @@ class SourceGraphBuilder:
             skill_node = self.add_spaceship_skill_node(skill.get("skillId"), source=table, data={"skillIndex": skill.get("skillIndex"), "unlockHint": table_text(skill.get("unlockHint"))})
             if skill_node:
                 self.add_edge(char_node, skill_node, "character_has_spaceship_skill", source=table, evidence=f"skillList[{index}]", data={"skillIndex": skill.get("skillIndex")})
+                self.add_edge(skill_node, char_node, "spaceship_skill_owned_by_character", source=table, evidence=f"skillList[{index}]", data={"skillIndex": skill.get("skillIndex")})
                 self.add_i18n_text_edges(skill_node, skill.get("unlockHint"), source=table)
 
     def add_spaceship_skill_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
@@ -19363,6 +19364,7 @@ class SourceGraphBuilder:
         room_node = self.add_spaceship_room_type_node(row.get("roomType"), source=table)
         if room_node:
             self.add_edge(skill_node, room_node, "spaceship_skill_applies_to_room_type", source=table, evidence="roomType")
+            self.add_edge(room_node, skill_node, "spaceship_room_type_has_skill", source=table, evidence="roomType")
         self.add_i18n_text_edges(skill_node, {"name": row.get("name"), "desc": row.get("desc"), "talentName": row.get("talentName")}, source=table)
 
     def add_env_talk_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
