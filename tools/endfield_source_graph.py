@@ -3699,6 +3699,19 @@ class SourceGraphBuilder:
                         "assetPath": asset_path,
                     },
                 )
+                self.add_edge(
+                    asset_id,
+                    effect_node,
+                    "asset_matched_by_gameplay_effect",
+                    source="webui/assets",
+                    evidence="asset_stem_pathid_suffix",
+                    data={
+                        "assetStem": stem,
+                        "normalizedBase": normalized_base,
+                        "pathIdSuffix": match.group("path_id").upper(),
+                        "assetPath": asset_path,
+                    },
+                )
 
     def iter_visual_token_values(self, value: Any, *, path: str = "") -> Iterable[tuple[str, str, str]]:
         if not isinstance(value, dict):
@@ -3808,6 +3821,27 @@ class SourceGraphBuilder:
                         evidence=field_path,
                         data={
                             "nodeKind": node_kind,
+                            "field": field_name,
+                            "fieldPath": field_path,
+                            "token": token,
+                            "normalizedBase": token_base,
+                            "assetStem": asset_stem,
+                            "assetPath": asset_path,
+                        },
+                    )
+                    reverse_kind = {
+                        "uses_icon_asset": "asset_used_as_icon_by",
+                        "uses_visual_asset": "visual_asset_used_by",
+                    }.get(edge_kind, "asset_matched_by_visual_token")
+                    self.add_edge(
+                        asset_id,
+                        node_id,
+                        reverse_kind,
+                        source="source_graph/visual_token_bridge",
+                        evidence=field_path,
+                        data={
+                            "nodeKind": node_kind,
+                            "forwardKind": edge_kind,
                             "field": field_name,
                             "fieldPath": field_path,
                             "token": token,
@@ -8688,6 +8722,19 @@ class SourceGraphBuilder:
                         "assetEntity": node_key(entity_node),
                     },
                 )
+                self.add_edge(
+                    entity_node,
+                    owner_node,
+                    "asset_entity_used_by_gameplay",
+                    source="webui/gameplay",
+                    evidence="modelPath",
+                    data={
+                        "modelPath": model_path,
+                        "token": model_stem,
+                        "modelBase": model_base,
+                        "assetEntity": node_key(entity_node),
+                    },
+                )
 
     def add_gameplay_asset_edges(self, owner_node: str, entry: dict[str, Any]) -> None:
         tokens: list[tuple[str, str]] = []
@@ -8722,6 +8769,14 @@ class SourceGraphBuilder:
                     evidence=field,
                     data={"token": token},
                 )
+                self.add_edge(
+                    asset_node,
+                    owner_node,
+                    "asset_used_by_gameplay",
+                    source="webui/gameplay",
+                    evidence=field,
+                    data={"token": token},
+                )
 
     def add_gameplay_item_asset_edges(self, item_node: str, item_id: str) -> None:
         item_key = safe_key(item_id)
@@ -8738,6 +8793,14 @@ class SourceGraphBuilder:
                 item_node,
                 asset_node,
                 "has_gameplay_asset",
+                source="webui/gameplay",
+                evidence="itemId",
+                data={"itemId": item_key, "token": item_key},
+            )
+            self.add_edge(
+                asset_node,
+                item_node,
+                "asset_used_by_gameplay",
                 source="webui/gameplay",
                 evidence="itemId",
                 data={"itemId": item_key, "token": item_key},
