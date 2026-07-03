@@ -17465,7 +17465,10 @@ class SourceGraphBuilder:
                 continue
             skill_node = self.add_gameplay_skill_ref_node(skill_key, source=table)
             edge_kind = "weapon_has_potential_skill" if skill_key == safe_key(row.get("weaponPotentialSkill")) else "weapon_has_skill_entry"
-            self.add_edge(weapon_node, skill_node, edge_kind, source=table, evidence=f"weaponSkillList[{index}]", data={"index": index})
+            reverse_kind = "gameplay_skill_used_as_weapon_potential" if edge_kind == "weapon_has_potential_skill" else "gameplay_skill_used_by_weapon"
+            data = {"index": index}
+            self.add_edge(weapon_node, skill_node, edge_kind, source=table, evidence=f"weaponSkillList[{index}]", data=data)
+            self.add_edge(skill_node, weapon_node, reverse_kind, source=table, evidence=f"weaponSkillList[{index}]", data=data)
         for index, item_id in enumerate(row.get("potentialUpItemList") or []):
             item_node = self.add_item_node(item_id, source=table)
             if item_node:
