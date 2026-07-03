@@ -4088,6 +4088,7 @@ class SourceGraphBuilder:
         for index, montage_id in enumerate(decoded.get("montageRefs") or []):
             montage_node = self.add_level_script_montage_node(montage_id, source=source)
             self.add_edge(config_node, montage_node, "char_interact_references_montage", source=source, evidence=f"montageRefs[{index}]")
+            self.add_edge(montage_node, config_node, "level_script_montage_used_by_char_interact", source=source, evidence=f"montageRefs[{index}]")
         for index, actor_id in enumerate(decoded.get("actorRefs") or []):
             actor_key = safe_key(actor_id)
             if actor_key.startswith("chr_"):
@@ -4103,6 +4104,7 @@ class SourceGraphBuilder:
             effect_node = self.add_node("gameplay_effect", effect_key, name=effect_key, source=source)
             self.add_alias(effect_key, effect_node, kind="gameplay_effect_id", source=source)
             self.add_edge(config_node, effect_node, "char_interact_references_effect", source=source, evidence=f"effectIds[{index}]")
+            self.add_edge(effect_node, config_node, "gameplay_effect_used_by_char_interact", source=source, evidence=f"effectIds[{index}]")
         for index, ref_id in enumerate(decoded.get("performRefs") or []):
             ref_key = safe_key(ref_id)
             if not ref_key:
@@ -4234,6 +4236,7 @@ class SourceGraphBuilder:
         for index, value in enumerate(decoded.get("montagePaths") or []):
             montage_node = self.add_level_script_montage_node(value, source="webui/game_data")
             self.add_edge(config_node, montage_node, "animation_config_references_montage", source="webui/game_data", evidence=f"montagePaths[{index}]")
+            self.add_edge(montage_node, config_node, "level_script_montage_used_by_animation_config", source="webui/game_data", evidence=f"montagePaths[{index}]")
         for index, value in enumerate(decoded.get("actorAnimationRefs") or []):
             anim_key = safe_key(value)
             if not anim_key:
@@ -4376,21 +4379,26 @@ class SourceGraphBuilder:
                     story_node = self.add_node("story", value, name=value, source=source)
                     self.add_alias(value, story_node, kind="story_key", source=source)
                     self.add_edge(data_node, story_node, "level_data_references_story", source=source, evidence=evidence, data=data)
+                    self.add_edge(story_node, data_node, "story_used_by_level_data", source=source, evidence=evidence, data=data)
                 elif ref_kind == "mission":
                     mission_node = self.add_mission_ref_node(value, source=source)
                     self.add_edge(data_node, mission_node, "level_data_references_mission", source=source, evidence=evidence, data=data)
+                    self.add_edge(mission_node, data_node, "mission_used_by_level_data", source=source, evidence=evidence, data=data)
                 elif ref_kind == "audio":
                     self.add_audio_target_edge(data_node, value, edge_kind="level_data_references_audio", source=source, evidence=evidence, reverse_edge_kind="audio_used_by_level_data")
                 elif ref_kind == "effect":
                     effect_node = self.add_node("gameplay_effect", value, name=value, source=source)
                     self.add_alias(value, effect_node, kind="gameplay_effect_id", source=source)
                     self.add_edge(data_node, effect_node, "level_data_references_effect", source=source, evidence=evidence, data=data)
+                    self.add_edge(effect_node, data_node, "gameplay_effect_used_by_level_data", source=source, evidence=evidence, data=data)
                 elif ref_kind == "buff":
                     buff_node = self.add_buff_ref_node(value, source=source)
                     self.add_edge(data_node, buff_node, "level_data_references_buff", source=source, evidence=evidence, data=data)
+                    self.add_edge(buff_node, data_node, "buff_used_by_level_data", source=source, evidence=evidence, data=data)
                 elif ref_kind == "montage":
                     montage_node = self.add_level_script_montage_node(value, source=source)
                     self.add_edge(data_node, montage_node, "level_data_references_montage", source=source, evidence=evidence, data=data)
+                    self.add_edge(montage_node, data_node, "level_script_montage_used_by_level_data", source=source, evidence=evidence, data=data)
                 elif ref_kind == "template":
                     template_id = level_script_template_id_from_ref(value)
                     if not template_id:
@@ -4399,6 +4407,7 @@ class SourceGraphBuilder:
                     self.add_alias(template_id, template_node, kind="level_script_template_id", source=source)
                     self.add_alias(value, template_node, kind="level_script_template_path", source=source)
                     self.add_edge(data_node, template_node, "level_data_references_template", source=source, evidence=evidence, data=data)
+                    self.add_edge(template_node, data_node, "level_script_template_used_by_level_data", source=source, evidence=evidence, data=data)
                 elif ref_kind == "asset_path":
                     asset_ref_node = self.add_node("level_asset_reference", value, name=Path(value).name, source=source, path=value)
                     self.add_alias(value, asset_ref_node, kind="level_asset_path", source=source)
@@ -7141,6 +7150,7 @@ class SourceGraphBuilder:
                 effect_node = self.add_node("gameplay_effect", effect_key, name=effect_key, source="webui/game_data")
                 self.add_alias(effect_key, effect_node, kind="gameplay_effect_id", source="webui/game_data")
                 self.add_edge(controller_node, effect_node, edge_kind, source="webui/game_data", evidence=f"{field}[{index}]")
+                self.add_edge(effect_node, controller_node, f"gameplay_effect_used_by_{edge_kind[:-len('_references_effect')]}", source="webui/game_data", evidence=f"{field}[{index}]")
 
         for index, animator_name in enumerate((decoded or {}).get("animatorNames") or []):
             animator_key = safe_key(animator_name)
@@ -7857,6 +7867,14 @@ class SourceGraphBuilder:
                     evidence="fallbackSceneHint",
                     data={"scene": binding.get("scene"), "sceneIsHint": bool(binding.get("sceneIsHint"))},
                 )
+                self.add_edge(
+                    story_node,
+                    binding_node,
+                    "story_has_fmv_binding",
+                    source="video_bindings",
+                    evidence="fallbackSceneHint",
+                    data={"scene": binding.get("scene"), "sceneIsHint": bool(binding.get("sceneIsHint"))},
+                )
             mission_id = safe_key(binding.get("mission") or binding.get("fallbackMissionHint"))
             if mission_id:
                 mission_node = self.add_node("mission", mission_id, source="video_bindings")
@@ -7864,6 +7882,14 @@ class SourceGraphBuilder:
                     binding_node,
                     mission_node,
                     "fmv_binding_in_mission",
+                    source="video_bindings",
+                    evidence="mission" if safe_key(binding.get("mission")) else "fallbackMissionHint",
+                    data={"fallbackMissionHint": binding.get("fallbackMissionHint")},
+                )
+                self.add_edge(
+                    mission_node,
+                    binding_node,
+                    "mission_has_fmv_binding",
                     source="video_bindings",
                     evidence="mission" if safe_key(binding.get("mission")) else "fallbackMissionHint",
                     data={"fallbackMissionHint": binding.get("fallbackMissionHint")},
@@ -7877,6 +7903,14 @@ class SourceGraphBuilder:
                     binding_node,
                     video_node,
                     "fmv_binding_uses_video",
+                    source="video_bindings",
+                    evidence=f"videos[{video_index}]",
+                    data={"rawPath": video_path},
+                )
+                self.add_edge(
+                    video_node,
+                    binding_node,
+                    "video_used_by_fmv_binding",
                     source="video_bindings",
                     evidence=f"videos[{video_index}]",
                     data={"rawPath": video_path},
@@ -7902,6 +7936,7 @@ class SourceGraphBuilder:
                     },
                 )
                 self.add_edge(binding_node, clip_node, "fmv_binding_timeline_clip", source="video_bindings", evidence=f"clips[{clip_index}]")
+                self.add_edge(clip_node, binding_node, "fmv_clip_used_by_binding", source="video_bindings", evidence=f"clips[{clip_index}]")
                 track_file = safe_key(clip.get("trackFile"))
                 if track_file:
                     file_node = self.add_file(track_file, kind="timeline_fmv_track", source="video_bindings")
@@ -9218,6 +9253,7 @@ class SourceGraphBuilder:
                 data={"format": video.get("format"), "kind": video.get("kind"), "size": video.get("size")},
             )
             self.add_edge(story_node, video_node, "has_narrative_video", source="webui/story")
+            self.add_edge(video_node, story_node, "video_used_by_story_narrative", source="webui/story")
 
     def add_scene_graph_edges(self, conv: dict[str, Any], story_node: str) -> None:
         for fragment in conv.get("graphFragments") or []:
@@ -9910,6 +9946,7 @@ class SourceGraphBuilder:
                 if mission:
                     mission_node = self.add_node("mission", mission, source=row.get("source"))
                     self.add_edge(mission_node, story_node, "source_references_story", source=row.get("source") or "story_source_links")
+                    self.add_edge(story_node, mission_node, "story_used_by_source", source=row.get("source") or "story_source_links")
 
     def ingest_materials(self) -> None:
         for source in ("StreamingAssets", "Persistent"):
