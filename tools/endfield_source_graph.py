@@ -4141,6 +4141,7 @@ class SourceGraphBuilder:
             if level_id:
                 level_node = self.add_level_node(level_id, source=source)
                 self.add_edge(npc_node, level_node, "atmospheric_npc_in_level", source=source, evidence="levelId")
+                self.add_edge(level_node, npc_node, "level_has_atmospheric_npc", source=source, evidence="levelId")
                 self.add_level_map_edge(level_node, level_id, source=source, evidence="atmospheric_npc_levelId")
             ai_cfg = safe_key(row.get("aiCfg"))
             if ai_cfg:
@@ -4623,6 +4624,7 @@ class SourceGraphBuilder:
             if enemy_id:
                 enemy_node = self.add_node("enemy", enemy_id, name=enemy_id, source="webui/game_data")
                 self.add_edge(entry_node, enemy_node, "spawner_enemy_uses_enemy", source="webui/game_data", evidence="enemyId", data={"enemyLevel": row.get("enemyLevel"), "forceToBattle": row.get("forceToBattle")})
+                self.add_edge(enemy_node, entry_node, "enemy_used_by_spawner_entry", source="webui/game_data", evidence="enemyId", data={"enemyLevel": row.get("enemyLevel"), "forceToBattle": row.get("forceToBattle")})
                 self.add_alias(enemy_id, enemy_node, kind="enemy_id", source="webui/game_data")
             for buff_index, buff in enumerate(row.get("bornBuffs") or []):
                 if not isinstance(buff, dict):
@@ -5310,6 +5312,7 @@ class SourceGraphBuilder:
                     enemy_node = self.add_node("enemy", enemy_id, name=enemy_id, source=source)
                     self.add_alias(enemy_id, enemy_node, kind="enemy_id", source=source)
                     self.add_edge(sub_node, enemy_node, "map_sublevel_brief_has_enemy", source=source, evidence=f"enemyIdSet[{enemy_index}]", data={"mapId": map_id, "mapIdNum": map_num, "subLevelId": sub_id})
+                    self.add_edge(enemy_node, sub_node, "enemy_used_by_map_sublevel_brief", source=source, evidence=f"enemyIdSet[{enemy_index}]", data={"mapId": map_id, "mapIdNum": map_num, "subLevelId": sub_id})
 
     def iter_gameplay_config_grouped_rows(self, payload: Any) -> Iterable[tuple[str, int, dict[str, Any]]]:
         if not isinstance(payload, dict):
@@ -6547,6 +6550,7 @@ class SourceGraphBuilder:
         if level_id:
             level_node = self.add_level_node(level_id, source=source)
             self.add_edge(asset_node, level_node, "mission_runtime_in_level", source=source, evidence="levelId")
+            self.add_edge(level_node, asset_node, "level_has_mission_runtime", source=source, evidence="levelId")
             self.add_level_map_edge(level_node, level_id, source=source, evidence="mission_runtime_levelId")
         reward_node = self.add_reward_node(payload.get("rewardId"), source=source)
         if reward_node:
@@ -6648,6 +6652,7 @@ class SourceGraphBuilder:
                     if scene_id:
                         scene_node = self.add_level_node(scene_id, source=source)
                         self.add_edge(quest_node, scene_node, "quest_tracking_in_level", source=source, evidence="trackingInfo.sceneId")
+                        self.add_edge(scene_node, quest_node, "level_has_quest_tracking", source=source, evidence="trackingInfo.sceneId")
                     area_id = safe_key(tracking.get("missionAreaId"))
                     if area_id:
                         area_node = self.add_node("mission_area", area_id, name=area_id, source=source)
@@ -7126,6 +7131,7 @@ class SourceGraphBuilder:
                 continue
             level_node = self.add_node("level", scene_id, name=scene_id, source="webui/game_data")
             self.add_edge(collection_node, level_node, "interactive_collection_in_level", source="webui/game_data", evidence="sceneId", data={"source": source_id})
+            self.add_edge(level_node, collection_node, "level_has_interactive_collection", source="webui/game_data", evidence="sceneId", data={"source": source_id})
 
     def decode_interactive_template_payload(self, entry: dict[str, Any], raw_data: bytes | None = None) -> dict[str, Any] | None:
         data = raw_data if raw_data is not None else self.read_decoded_config_bytes(entry)
