@@ -25381,6 +25381,7 @@ class SourceGraphBuilder:
         if showing_type:
             showing_node = self.add_node("factory_craft_showing_type", showing_type, name=showing_type, source=table)
             self.add_edge(recipe_node, showing_node, "has_factory_showing_type", source=table, evidence="showingType")
+            self.add_edge(showing_node, recipe_node, "factory_showing_type_has_recipe", source=table, evidence="showingType")
             self.add_alias(showing_type, showing_node, kind="factory_craft_showing_type_id", source=table)
         formula_group_id = safe_key(row.get("formulaGroupId"))
         if formula_group_id:
