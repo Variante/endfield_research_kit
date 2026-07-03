@@ -3263,6 +3263,8 @@ class SourceGraphBuilder:
             self.commit_step("narrativeAudio")
             self.ingest_audio_config_semantics()
             self.commit_step("audioConfig")
+            self.ingest_decoded_audio_index()
+            self.commit_step("decodedAudio")
             self.ingest_dialog_support_semantics()
             self.commit_step("dialogSupport")
             self.ingest_decoded_config_semantics()
@@ -18319,6 +18321,31 @@ class SourceGraphBuilder:
         self.add_alias(event_key, node, kind="wwise_event_id", source=source)
         return node
 
+    def add_wwise_media_node(self, media_id: Any, *, source: str = "", data: Any = None) -> str:
+        media_key = safe_key(media_id)
+        if not media_key:
+            return ""
+        node = self.add_node("wwise_media", media_key, name=media_key, source=source, data=data)
+        if data is not None:
+            self.update_node_details(node, name=media_key, source=source, data=data)
+        self.add_alias(media_key, node, kind="wwise_media_id", source=source)
+        return node
+
+    def add_wwise_bank_node(self, bank_id: Any, *, bank_path: Any = "", source: str = "") -> str:
+        bank_key = safe_key(bank_id) or safe_key(bank_path)
+        if not bank_key:
+            return ""
+        path = safe_key(bank_path)
+        node = self.add_node("wwise_bank", bank_key, name=Path(path).name if path else bank_key, source=source, path=path)
+        self.add_alias(bank_key, node, kind="wwise_bank_id", source=source)
+        if path:
+            self.add_alias(path, node, kind="wwise_bank_path", source=source)
+        return node
+
+    def decoded_audio_media_id(self, entry: dict[str, Any]) -> str:
+        media_key = safe_key(entry.get("mediaId")) or safe_key(entry.get("id"))
+        return media_key if media_key.isdigit() else ""
+
     def audio_dialog_rows(self) -> dict[str, Any]:
         if self.audio_dialog_row_cache is None:
             path = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table" / "AudioDialog.json"
@@ -18869,6 +18896,151 @@ class SourceGraphBuilder:
                 self.add_edge(table_node, row_node, "has_row", source="structured/audio_config")
                 self.add_audio_config_row_edges(table_key, row_key, row, row_node)
         self.add_audio_sequence_response_links()
+
+    def decoded_audio_file_path(self, entry: dict[str, Any]) -> str:
+        rel = safe_key(entry.get("rel"))
+        storage_root = safe_key(entry.get("storageRoot"))
+        if rel and storage_root:
+            return slash(self.export_root / "structured" / "Audio" / storage_root / rel)
+        src = safe_key(entry.get("src"))
+        if src.startswith("/export_full/"):
+            return slash(self.export_root / src.removeprefix("/export_full/"))
+        return src or rel
+
+    def decoded_audio_file_node(self, entry: dict[str, Any], *, source: str) -> str:
+        file_path = self.decoded_audio_file_path(entry)
+        if not file_path:
+            return ""
+        return self.add_file(
+            file_path,
+            kind="decoded_audio",
+            source=source,
+            size=entry.get("bytes") if isinstance(entry.get("bytes"), int) else None,
+            data=compact_payload(
+                {
+                    "id": entry.get("id"),
+                    "rel": entry.get("rel"),
+                    "storageRoot": entry.get("storageRoot"),
+                    "format": entry.get("format"),
+                    "audioScope": entry.get("audioScope"),
+                    "sourceBlock": entry.get("sourceBlock"),
+                    "sourceBank": entry.get("sourceBank"),
+                    "eventId": entry.get("eventId"),
+                    "mediaId": entry.get("mediaId"),
+                    "bankId": entry.get("bankId"),
+                },
+                depth=2,
+            ),
+        )
+
+    def add_decoded_audio_bank_edges(self, owner_node: str, entry: dict[str, Any], *, source: str, evidence: str) -> None:
+        bank_node = self.add_wwise_bank_node(entry.get("bankId"), bank_path=entry.get("bank"), source=source)
+        if not bank_node:
+            return
+        self.add_edge(owner_node, bank_node, "wwise_media_from_bank", source=source, evidence=evidence)
+        self.add_edge(bank_node, owner_node, "wwise_bank_has_media", source=source, evidence=evidence)
+
+    def add_decoded_audio_event_edges(
+        self,
+        event_node: str,
+        media_node: str,
+        entry: dict[str, Any],
+        *,
+        source: str,
+        evidence: str,
+    ) -> None:
+        if event_node and media_node:
+            self.add_edge(event_node, media_node, "wwise_event_uses_media", source=source, evidence=evidence)
+            self.add_edge(media_node, event_node, "wwise_media_used_by_event", source=source, evidence=evidence)
+        event_key = safe_key(entry.get("eventId"))
+        if event_node and event_key and self.node_exists("audio", event_key):
+            audio_node = self.node_id("audio", event_key)
+            self.add_edge(event_node, audio_node, "wwise_event_matches_audio_id", source=source, evidence=evidence)
+            self.add_edge(audio_node, event_node, "audio_id_matches_wwise_event", source=source, evidence=evidence)
+        bank_node = self.add_wwise_bank_node(entry.get("bankId"), bank_path=entry.get("bank"), source=source)
+        if event_node and bank_node:
+            self.add_edge(event_node, bank_node, "wwise_event_in_bank", source=source, evidence=evidence)
+            self.add_edge(bank_node, event_node, "wwise_bank_has_event", source=source, evidence=evidence)
+
+    def ingest_decoded_audio_index(self) -> None:
+        index_path = self.export_root / "structured" / "Audio" / self.language / "index.json"
+        if not index_path.exists():
+            return
+        payload = read_json(index_path, {})
+        if not isinstance(payload, dict):
+            return
+        source = f"decoded_audio/{self.language}"
+        dataset = self.add_node(
+            "dataset",
+            f"decoded_audio_{self.language}",
+            name=f"Decoded audio {self.language}",
+            source=source,
+            path=slash(index_path),
+            data=compact_payload(
+                {
+                    "generated": payload.get("generated"),
+                    "language": payload.get("language"),
+                    "dumperLanguage": payload.get("dumperLanguage"),
+                    "counts": payload.get("counts"),
+                    "decodeBlocks": payload.get("decodeBlocks"),
+                },
+                depth=3,
+            ),
+        )
+        self.add_file(slash(index_path), kind="decoded_audio_index", source=source)
+        for event_name in payload.get("eventNames") or []:
+            event_node = self.add_wwise_event_node(event_name, source=source)
+            if event_node:
+                self.add_edge(dataset, event_node, "decoded_audio_index_names_event", source=source)
+        for entry in payload.get("entries") or []:
+            if not isinstance(entry, dict):
+                continue
+            file_node = self.decoded_audio_file_node(entry, source=source)
+            if file_node:
+                self.add_edge(dataset, file_node, "decoded_audio_index_has_file", source=source)
+            media_node = self.add_wwise_media_node(
+                self.decoded_audio_media_id(entry),
+                source=source,
+                data={"format": entry.get("format"), "audioScope": entry.get("audioScope"), "sourceBlock": entry.get("sourceBlock"), "sourceBank": entry.get("sourceBank")},
+            )
+            if media_node and file_node:
+                self.add_edge(media_node, file_node, "wwise_media_decoded_file", source=source, evidence=safe_key(entry.get("rel")))
+                self.add_edge(file_node, media_node, "decoded_audio_file_media", source=source, evidence=safe_key(entry.get("rel")))
+        for entry in payload.get("events") or []:
+            if not isinstance(entry, dict):
+                continue
+            file_node = self.decoded_audio_file_node(entry, source=source)
+            media_node = self.add_wwise_media_node(
+                self.decoded_audio_media_id(entry),
+                source=source,
+                data={"format": entry.get("format"), "audioScope": entry.get("audioScope"), "sourceBlock": entry.get("sourceBlock"), "sourceBank": entry.get("sourceBank")},
+            )
+            if media_node and file_node:
+                self.add_edge(media_node, file_node, "wwise_media_decoded_file", source=source, evidence=safe_key(entry.get("rel")))
+                self.add_edge(file_node, media_node, "decoded_audio_file_media", source=source, evidence=safe_key(entry.get("rel")))
+            if media_node:
+                self.add_decoded_audio_bank_edges(media_node, entry, source=source, evidence="events")
+            event_node = self.add_wwise_event_node(entry.get("eventId"), source=source)
+            self.add_decoded_audio_event_edges(event_node, media_node, entry, source=source, evidence=safe_key(entry.get("rel")) or "events")
+        for entry in payload.get("eventEvidence") or []:
+            if not isinstance(entry, dict):
+                continue
+            event_node = self.add_wwise_event_node(entry.get("eventId"), source=source)
+            bank_node = self.add_wwise_bank_node(entry.get("bankId"), bank_path=entry.get("bank"), source=source)
+            if event_node:
+                self.update_node_details(event_node, data=compact_payload(entry, depth=2))
+                self.add_edge(dataset, event_node, "decoded_audio_index_has_event_evidence", source=source, evidence="eventEvidence")
+            if event_node and bank_node:
+                self.add_edge(event_node, bank_node, "wwise_event_in_bank", source=source, evidence="eventEvidence")
+                self.add_edge(bank_node, event_node, "wwise_bank_has_event", source=source, evidence="eventEvidence")
+            for index, media_id in enumerate(entry.get("mediaIds") or []):
+                media_node = self.add_wwise_media_node(media_id, source=source)
+                if event_node and media_node:
+                    self.add_edge(event_node, media_node, "wwise_event_uses_media", source=source, evidence=f"eventEvidence.mediaIds[{index}]")
+                    self.add_edge(media_node, event_node, "wwise_media_used_by_event", source=source, evidence=f"eventEvidence.mediaIds[{index}]")
+                if media_node and bank_node:
+                    self.add_edge(media_node, bank_node, "wwise_media_from_bank", source=source, evidence=f"eventEvidence.mediaIds[{index}]")
+                    self.add_edge(bank_node, media_node, "wwise_bank_has_media", source=source, evidence=f"eventEvidence.mediaIds[{index}]")
 
     def add_audio_sequence_response_links(self) -> None:
         rows = self.db.execute(
@@ -22672,6 +22844,8 @@ QUERY_KIND_PRIORITY = {
     "audio_item_drag_drop": 33,
     "audio_item_type_drag_drop": 34,
     "audio_level": 35,
+    "wwise_media": 35.1,
+    "wwise_bank": 35.2,
     "dialog_text": 36,
     "dialog_option": 37,
     "dialog_summary": 38,
@@ -23866,6 +24040,8 @@ NODE_ID_PREFIXES = (
     "npc_career_tag",
     "audio_dialog_channel",
     "wwise_event",
+    "wwise_media",
+    "wwise_bank",
     "responsive_dialog_group",
     "responsive_speaker",
     "responsive_trigger",
