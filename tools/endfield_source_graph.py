@@ -3280,6 +3280,8 @@ class SourceGraphBuilder:
             self.commit_step("dialogSupport")
             self.ingest_decoded_config_semantics()
             self.commit_step("decodedConfigs")
+            self.ingest_selector_formatter_tag_audit()
+            self.commit_step("selectorFormatterTagAudit")
             self.ingest_findtarget_selector_payload_audit()
             self.commit_step("findTargetSelectorAudit")
             self.ingest_findtarget_selector_replay_audit()
@@ -3978,6 +3980,116 @@ class SourceGraphBuilder:
                 if subtype not in DECODED_CONFIG_TARGET_TYPES:
                     continue
                 self.add_decoded_config_entry(group_node, entry, subtype=subtype)
+
+    def ingest_selector_formatter_tag_audit(self) -> None:
+        path = self.root / "reports" / "mission_order" / "selector_formatter_tag_audit.json"
+        payload = read_json(path, {})
+        if not isinstance(payload, dict):
+            return
+        source = "selector_formatter_tag_audit"
+        source_path = slash(path.relative_to(self.root)) if path.is_relative_to(self.root) else slash(path)
+        dataset = self.add_node(
+            "dataset",
+            "selector_formatter_tag_audit",
+            name=path.name,
+            source=source,
+            path=source_path,
+            data=compact_payload(payload.get("summary") or {}, depth=3),
+        )
+        self.add_file(source_path, kind="selector_formatter_tag_audit", source=source, size=path.stat().st_size if path.exists() else None)
+
+        for table_index, table in enumerate(payload.get("selectorTables") or []):
+            if not isinstance(table, dict):
+                continue
+            family = safe_key(table.get("id"))
+            if not family:
+                continue
+            table_summary = table.get("summary") if isinstance(table.get("summary"), dict) else {}
+            table_node = self.add_node(
+                "selector_formatter_table",
+                family,
+                name=safe_key(table.get("label")) or family,
+                source=source,
+                data=compact_payload(
+                    {
+                        "type": table.get("type"),
+                        "typeIndex": table.get("typeIndex"),
+                        "typeToken": table.get("typeToken"),
+                        "cctor": table.get("cctor"),
+                        "deserialize": compact_payload(table.get("deserialize"), depth=2),
+                        "summary": table_summary,
+                        "slotDiagnostics": table.get("slotDiagnostics"),
+                    },
+                    depth=3,
+                ),
+            )
+            self.add_edge(dataset, table_node, "has_selector_formatter_table", source=source, evidence=str(table_index))
+            family_node = self.add_node("selector_family", family, name=safe_key(table.get("label")) or family, source=source)
+            self.add_edge(table_node, family_node, "selector_formatter_table_family", source=source, evidence=family)
+
+            for tag_index, row in enumerate(table.get("formatterTags") or []):
+                if not isinstance(row, dict):
+                    continue
+                tag_hex = safe_key(row.get("tagHex"))
+                action_name = safe_key(row.get("actionName"))
+                if not tag_hex or not action_name:
+                    continue
+                tag_key = f"{family}:{tag_hex}"
+                tag_node = self.add_node("selector_tag", tag_key, name=tag_hex, source=source, data={"family": family, "tag": tag_hex, "actionName": action_name})
+                formatter_node = self.add_node(
+                    "selector_formatter",
+                    f"{family}:{action_name}",
+                    name=action_name,
+                    source=source,
+                    data=compact_payload(
+                        {
+                            "typeName": row.get("typeName"),
+                            "formatterName": row.get("formatterName"),
+                            "actionName": row.get("actionName"),
+                            "tag": row.get("tag"),
+                            "tagHex": row.get("tagHex"),
+                            "codeHex": row.get("codeHex"),
+                            "metadataSlot": row.get("metadataSlot"),
+                            "evidence": row.get("evidence"),
+                        },
+                        depth=3,
+                    ),
+                )
+                self.add_edge(table_node, tag_node, "selector_formatter_table_has_tag", source=source, evidence=tag_hex)
+                self.add_edge(tag_node, formatter_node, "selector_tag_resolves_formatter", source=source, evidence=tag_hex)
+                self.add_edge(formatter_node, tag_node, "selector_formatter_registered_tag", source=source, evidence=tag_hex)
+                self.add_edge(table_node, formatter_node, "selector_formatter_table_has_formatter", source=source, evidence=str(tag_index))
+                slot = row.get("metadataSlot") if isinstance(row.get("metadataSlot"), dict) else {}
+                slot_va = safe_key(slot.get("slotVa"))
+                if slot_va:
+                    slot_node = self.add_node(
+                        "selector_formatter_slot",
+                        slot_va,
+                        name=slot_va,
+                        source=source,
+                        data=compact_payload(slot, depth=2),
+                    )
+                    self.add_edge(formatter_node, slot_node, "selector_formatter_metadata_slot", source=source, evidence=slot_va)
+                    self.add_edge(slot_node, formatter_node, "selector_formatter_slot_loads_formatter", source=source, evidence=slot_va)
+
+            for slot_index, slot in enumerate(table.get("selectorFormatterSlots") or []):
+                if not isinstance(slot, dict):
+                    continue
+                slot_va = safe_key(slot.get("slotVa"))
+                action_name = safe_key(slot.get("actionName"))
+                if not slot_va:
+                    continue
+                slot_node = self.add_node(
+                    "selector_formatter_slot",
+                    slot_va,
+                    name=slot_va,
+                    source=source,
+                    data=compact_payload(slot, depth=2),
+                )
+                self.add_edge(table_node, slot_node, "selector_formatter_table_has_slot", source=source, evidence=str(slot_index))
+                if action_name:
+                    formatter_node = self.add_node("selector_formatter", f"{family}:{action_name}", name=action_name, source=source)
+                    self.add_edge(slot_node, formatter_node, "selector_formatter_slot_inventory_formatter", source=source, evidence=slot_va)
 
     def ingest_findtarget_selector_payload_audit(self) -> None:
         path = self.root / "reports" / "mission_order" / "findtarget_selector_payload_priority_audit.json"
@@ -23990,6 +24102,9 @@ QUERY_KIND_PRIORITY = {
     "decoded_config_file": 41,
     "decoded_config_family": 42,
     "decoded_config_group": 43,
+    "selector_formatter_table": 43.01,
+    "selector_formatter": 43.02,
+    "selector_formatter_slot": 43.03,
     "findtarget_selector_candidate": 43.1,
     "selector_family": 43.2,
     "selector_tag": 43.3,
@@ -24710,6 +24825,9 @@ NODE_ID_PREFIXES = (
     "decoded_config_file",
     "decoded_config_family",
     "decoded_config_group",
+    "selector_formatter_table",
+    "selector_formatter",
+    "selector_formatter_slot",
     "findtarget_selector_candidate",
     "selector_family",
     "selector_tag",
