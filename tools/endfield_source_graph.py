@@ -7472,6 +7472,8 @@ class SourceGraphBuilder:
             reverse_owner = "mission_runtime_action"
         elif owner_kind == "mission_runtime_condition":
             reverse_owner = "mission_runtime_condition"
+        elif owner_kind == "quest_task":
+            reverse_owner = "mission_runtime_quest"
         else:
             reverse_owner = edge_kind
         if ref_key.startswith("radio_"):
