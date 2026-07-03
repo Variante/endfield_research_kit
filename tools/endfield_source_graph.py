@@ -16438,6 +16438,14 @@ class SourceGraphBuilder:
                         evidence="attackRangeEffect",
                         data={"attackRange": row.get("attackRange"), "attackRangeType": row.get("attackRangeType"), "minAttackRange": row.get("minAttackRange")},
                     )
+                    self.add_edge(
+                        effect_node,
+                        battle_node,
+                        "gameplay_effect_used_by_factory_battle_attack_range",
+                        source=table,
+                        evidence="attackRangeEffect",
+                        data={"attackRange": row.get("attackRange"), "attackRangeType": row.get("attackRangeType"), "minAttackRange": row.get("minAttackRange")},
+                    )
                 for field, edge_kind in (("commonSkillId", "factory_battle_common_skill"), ("overloadSkillId", "factory_battle_overload_skill")):
                     skill_key = safe_key(row.get(field))
                     if skill_key:
@@ -20884,6 +20892,7 @@ class SourceGraphBuilder:
                 money_node = self.add_item_node(row.get("moneyId"), source=table)
                 if money_node:
                     self.add_edge(formula_node, money_node, "activity_limited_formula_money_item", source=table, evidence="moneyId")
+                    self.add_edge(money_node, formula_node, "item_used_as_activity_limited_formula_money", source=table, evidence="moneyId")
                 end_stage_node = self.add_activity_catalog_node("activity_limited_formula_stage", row.get("endStageId"), source=table)
                 if end_stage_node:
                     self.add_edge(formula_node, end_stage_node, "activity_limited_formula_end_stage", source=table, evidence="endStageId")
@@ -20912,10 +20921,12 @@ class SourceGraphBuilder:
                     recipe_node = self.add_factory_recipe_node(recipe_id, source=table)
                     if recipe_node:
                         self.add_edge(formula_node, recipe_node, "activity_limited_formula_recipe", source=table, evidence=f"timeLimitFormula[{index}]", data={"index": index})
+                        self.add_edge(recipe_node, formula_node, "factory_recipe_used_by_activity_limited_formula", source=table, evidence=f"timeLimitFormula[{index}]", data={"index": index})
                 for index, item_id in enumerate(row.get("timeLimitItem") or []):
                     item_node = self.add_item_node(item_id, source=table)
                     if item_node:
                         self.add_edge(formula_node, item_node, "activity_limited_formula_item", source=table, evidence=f"timeLimitItem[{index}]", data={"index": index})
+                        self.add_edge(item_node, formula_node, "item_used_by_activity_limited_formula", source=table, evidence=f"timeLimitItem[{index}]", data={"index": index})
         elif table == "ActivityLimitedFormulaSettlementTable":
             formula_node = self.add_activity_catalog_node("activity_limited_formula", row_key, source=table, data={"settlementCount": len(row.get("settlementList") or {})})
             if formula_node:
@@ -20930,6 +20941,7 @@ class SourceGraphBuilder:
                             item_node = self.add_item_node(item_id or item_key, source=table, data=compact_payload(trade, depth=1))
                             if item_node:
                                 self.add_edge(settlement_node, item_node, "activity_limited_formula_settlement_trade_item", source=table, evidence=f"settlementList[{settlement_id}].tradeList[{item_key}]", data={"moneyCount": trade.get("moneyCount") if isinstance(trade, dict) else None})
+                                self.add_edge(item_node, settlement_node, "item_traded_by_activity_limited_formula_settlement", source=table, evidence=f"settlementList[{settlement_id}].tradeList[{item_key}]", data={"moneyCount": trade.get("moneyCount") if isinstance(trade, dict) else None})
         elif table == "ActivityRankInfoTable":
             rank_node = self.add_activity_catalog_node("activity_rank_info", row.get("rankRelatedId") or row_key, source=table, data={"isIncremental": row.get("isIncremental"), "rankValueStyleType": row.get("rankValueStyleType"), "npcRankCount": len(row.get("npcRankInfo") or {})})
             if rank_node:
@@ -20960,6 +20972,7 @@ class SourceGraphBuilder:
                 money_node = self.add_item_node(row.get("activityMoneyId"), source=table)
                 if money_node:
                     self.add_edge(shop_node, money_node, "activity_shop_additional_money_item", source=table, evidence="activityMoneyId")
+                    self.add_edge(money_node, shop_node, "item_used_as_activity_shop_additional_money", source=table, evidence="activityMoneyId")
                 self.add_alias(row.get("banner"), shop_node, kind="asset_stem", source=table)
                 self.add_tag_i18n_edges(shop_node, row.get("closeCdText"), source=table, edge_kind="activity_shop_additional_close_cd_text")
         elif table == "ActivitySubmitTextTable":
