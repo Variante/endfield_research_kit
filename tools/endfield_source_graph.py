@@ -2902,6 +2902,8 @@ class SourceGraphBuilder:
         include_asset_maps: bool = True,
         include_reference_rows: bool = True,
         include_all_material_json: bool = False,
+        include_i18n_values: bool = False,
+        i18n_value_languages: Iterable[str] | None = None,
         emit_followups: bool = True,
     ) -> None:
         self.root = root
@@ -2912,6 +2914,8 @@ class SourceGraphBuilder:
         self.include_asset_maps = include_asset_maps
         self.include_reference_rows = include_reference_rows
         self.include_all_material_json = include_all_material_json
+        self.include_i18n_values = include_i18n_values
+        self.i18n_value_languages = [safe_key(value).upper() for value in (i18n_value_languages or []) if safe_key(value)]
         self.emit_followups = emit_followups
         self.conn: sqlite3.Connection | None = None
         self.node_counts: Counter[str] = Counter()
@@ -3192,6 +3196,9 @@ class SourceGraphBuilder:
             self.commit_step("displayMetadata")
             self.ingest_text_reference_semantics()
             self.commit_step("textReferences")
+            if self.include_i18n_values:
+                self.ingest_i18n_text_values()
+                self.commit_step("i18nTextValues")
             self.ingest_factory_interaction_lookup_semantics()
             self.commit_step("factoryInteractionLookups")
             if self.include_gameplay:
@@ -15351,6 +15358,44 @@ class SourceGraphBuilder:
                 self.add_edge(owner_node, text_node, "uses_i18n_text", source=source, evidence=text_id)
                 self.add_i18n_used_by_edge(text_node, owner_node, source=source, evidence=text_id)
 
+    def ingest_i18n_text_values(self) -> None:
+        table_root = self.export_root / "structured" / "StreamingAssets" / "Table"
+        languages = {value.upper() for value in self.i18n_value_languages}
+        paths = sorted(table_root.glob("I18nTextTable_*.json"))
+        if languages:
+            paths = [path for path in paths if path.stem.rsplit("_", 1)[-1].upper() in languages]
+        if not paths:
+            return
+        dataset = self.add_node("dataset", "i18n_text_tables", name="I18n text value tables", path=slash(table_root), data={"languageFilter": sorted(languages)})
+        for path in paths:
+            payload = read_json(path, None)
+            if not isinstance(payload, dict):
+                continue
+            table = path.stem
+            language = table.rsplit("_", 1)[-1].upper()
+            source = table
+            table_node = self.add_node("table", table, name=table, source=source, path=slash(path), data={"language": language, "rowCount": len(payload)})
+            language_node = self.add_node("language", language, name=language, source=source)
+            self.add_edge(dataset, table_node, "has_i18n_text_table", source="i18n_text_values", evidence=table)
+            self.add_edge(table_node, language_node, "i18n_text_table_language", source=source, evidence=language)
+            self.add_file(slash(path), kind="structured_i18n_table", source=source, data={"language": language, "rowCount": len(payload)})
+            for text_id_raw, text in payload.items():
+                text_id = safe_key(text_id_raw)
+                if not text_id or text_id == "0":
+                    continue
+                text_value = "" if text is None else str(text)
+                canonical_node = self.add_i18n_text_node(text_id, source=source)
+                value_node = self.add_node(
+                    "i18n_text_value",
+                    f"{language}:{text_id}",
+                    name=text_value[:160] if text_value else f"{language}:{text_id}",
+                    source=source,
+                    data={"language": language, "textId": text_id, "text": text_value, "length": len(text_value), "isBlank": text_value == "", "hasTrailingTab": text_value.endswith("\t")},
+                )
+                self.add_edge(table_node, value_node, "defines_i18n_text_value", source=source, evidence=text_id)
+                if canonical_node:
+                    self.add_edge(value_node, canonical_node, "i18n_text_value_for_id", source=source, evidence=text_id)
+
     def add_text_table_key_node(self, text_key: Any, *, source: str = "", data: Any = None) -> str:
         key = safe_key(text_key)
         if not key:
@@ -22674,6 +22719,8 @@ class SourceGraphBuilder:
                 "includeAssetMaps": self.include_asset_maps,
                 "includeReferenceRows": self.include_reference_rows,
                 "includeAllMaterialJson": self.include_all_material_json,
+                "includeI18nValues": self.include_i18n_values,
+                "i18nValueLanguages": self.i18n_value_languages,
                 "emitFollowups": self.emit_followups,
             },
         }
@@ -23666,6 +23713,7 @@ QUERY_KIND_PRIORITY = {
     "env_talk": 43,
     "text_table_key": 43.9,
     "i18n_text": 44,
+    "i18n_text_value": 44.1,
     "system_jump": 45,
     "activity": 46,
     "activity_tag": 47,
@@ -24360,6 +24408,7 @@ NODE_ID_PREFIXES = (
     "spaceship_game_mode",
     "env_talk",
     "i18n_text",
+    "i18n_text_value",
     "system_jump",
     "activity",
     "activity_tag",
@@ -25434,6 +25483,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     build.add_argument("--skip-asset-maps", action="store_true")
     build.add_argument("--skip-reference-rows", action="store_true")
     build.add_argument("--include-all-material-json", action="store_true")
+    build.add_argument("--include-i18n-values", action="store_true", help="Opt in to per-language I18nTextTable_* value nodes; can add many nodes.")
+    build.add_argument("--i18n-value-language", action="append", default=[], help="Language code to include with --include-i18n-values; repeatable. Defaults to all I18nTextTable_* languages.")
     build.add_argument("--skip-followups", action="store_true")
 
     query = sub.add_parser("query", help="Search graph nodes and show first-node neighbors")
@@ -25475,6 +25526,8 @@ def main(argv: list[str] | None = None) -> int:
             include_asset_maps=not getattr(args, "skip_asset_maps", False),
             include_reference_rows=not getattr(args, "skip_reference_rows", False),
             include_all_material_json=getattr(args, "include_all_material_json", False),
+            include_i18n_values=getattr(args, "include_i18n_values", False),
+            i18n_value_languages=getattr(args, "i18n_value_language", []),
             emit_followups=not getattr(args, "skip_followups", False),
         )
         summary = builder.build()
