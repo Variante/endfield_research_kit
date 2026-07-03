@@ -3635,6 +3635,15 @@ class SourceGraphBuilder:
                 evidence="exact_parameter_name",
                 data={"parameter": parameter_name},
             )
+            reverse_kind = "blackboard_key_matches_buff_parameter" if parameter_kind == "buff_parameter" else "blackboard_key_matches_skill_parameter"
+            self.add_edge(
+                blackboard_node,
+                parameter_node,
+                reverse_kind,
+                source="source_graph/decoded_parameter_bridge",
+                evidence="exact_parameter_name",
+                data={"parameter": parameter_name},
+            )
 
     def link_gameplay_effect_export_assets(self) -> None:
         effect_rows = self.db.execute(
@@ -8370,6 +8379,7 @@ class SourceGraphBuilder:
                     continue
                 bb_node = self.add_node("gameplay_blackboard_key", bb_key, name=bb_key, source="webui/gameplay")
                 self.add_edge(potential_node, bb_node, "character_potential_uses_blackboard_key", source="webui/gameplay", evidence=f"blackboard[{bb_index}]", data={"value": bb.get("value")})
+                self.add_edge(bb_node, potential_node, "blackboard_key_used_by_character_potential", source="webui/gameplay", evidence=f"blackboard[{bb_index}]", data={"value": bb.get("value")})
                 self.add_alias(bb_key, bb_node, kind="gameplay_blackboard_key", source="webui/gameplay")
             for item_index, item_id in enumerate(potential.get("unlockCharPictureItemList") or []):
                 item_node = self.add_item_node(item_id, source="webui/gameplay")
@@ -20987,6 +20997,7 @@ class SourceGraphBuilder:
             if context:
                 data.update(context)
             self.add_edge(owner_node, key_node, edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]", data=data)
+            self.add_edge(key_node, owner_node, "blackboard_key_used_by_gameplay", source=source, evidence=f"{evidence_prefix}[{index}]", data={**data, "edgeKind": edge_kind})
 
     def add_buff_table_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         buff_id = safe_key(row.get("buffId") or row_key)
@@ -21194,7 +21205,9 @@ class SourceGraphBuilder:
                 self.add_edge(effect_node, skill_node, "potential_talent_modifies_skill_blackboard", source=table, evidence=f"dataList[{index}].skillBbModifier", data={"index": index, "modifyType": modify_type, "bbKey": skill_bb.get("bbKey"), "floatValue": skill_bb.get("floatValue"), "stringValue": skill_bb.get("stringValue")})
                 key_node = self.add_blackboard_key_node(skill_bb.get("bbKey"), source=table)
                 if key_node:
-                    self.add_edge(effect_node, key_node, "potential_talent_modifies_blackboard_key", source=table, evidence=f"dataList[{index}].skillBbModifier.bbKey", data={"index": index, "skillId": skill_bb_id, "floatValue": skill_bb.get("floatValue"), "stringValue": skill_bb.get("stringValue")})
+                    data = {"index": index, "skillId": skill_bb_id, "floatValue": skill_bb.get("floatValue"), "stringValue": skill_bb.get("stringValue")}
+                    self.add_edge(effect_node, key_node, "potential_talent_modifies_blackboard_key", source=table, evidence=f"dataList[{index}].skillBbModifier.bbKey", data=data)
+                    self.add_edge(key_node, effect_node, "blackboard_key_modified_by_potential_talent", source=table, evidence=f"dataList[{index}].skillBbModifier.bbKey", data=data)
             skill_param = entry.get("skillParamModifier") if isinstance(entry.get("skillParamModifier"), dict) else {}
             skill_param_id = safe_key(skill_param.get("skillId"))
             if skill_param_id:
