@@ -3285,6 +3285,8 @@ class SourceGraphBuilder:
                 self.commit_step("assetMaps")
                 self.link_material_pathid_unity_assets()
                 self.commit_step("materialPathIdAssetLinks")
+                self.link_fmv_pathid_unity_assets()
+                self.commit_step("fmvPathIdAssetLinks")
             self.finalize_indices()
             summary = self.summary(started)
             write_summary(summary)
@@ -21956,6 +21958,73 @@ class SourceGraphBuilder:
                     "asset_export_used_by_material_texture_slot",
                     source="material_json+AnimeStudio/maps",
                     evidence=slot or "",
+                    data=data,
+                )
+
+    def link_fmv_pathid_unity_assets(self) -> None:
+        rows = self.db.execute(
+            """
+            SELECT
+                owner.id AS owner_node,
+                owner.kind AS owner_kind,
+                pathid.id AS pathid_node,
+                unity.id AS unity_node,
+                exported.dst AS asset_node,
+                playable_edge.evidence AS evidence,
+                playable_edge.data AS playable_data
+            FROM edges playable_edge
+            JOIN nodes owner ON owner.id = playable_edge.src
+            JOIN nodes pathid ON pathid.id = playable_edge.dst
+            JOIN edges resolved
+                ON resolved.src = pathid.id
+                AND resolved.kind = 'resolves_to_unity_asset'
+            JOIN nodes unity ON unity.id = resolved.dst
+            LEFT JOIN edges exported
+                ON exported.src = unity.id
+                AND exported.kind = 'exported_as'
+            WHERE playable_edge.kind = 'fmv_binding_playable_pathid'
+            ORDER BY owner.id, pathid.id, unity.id, exported.dst
+            """
+        ).fetchall()
+        for owner_node, owner_kind, pathid_node, unity_node, asset_node, evidence, playable_data in rows:
+            data = parse_json_text(playable_data) if playable_data else {}
+            if isinstance(data, dict):
+                data = dict(data)
+            else:
+                data = {}
+            data["pathidNode"] = pathid_node
+            data["ownerKind"] = owner_kind
+            self.add_edge(
+                owner_node,
+                unity_node,
+                "fmv_playable_pathid_resolves_unity_asset",
+                source="video_bindings+AnimeStudio/maps",
+                evidence=evidence or "",
+                data=data,
+            )
+            self.add_edge(
+                unity_node,
+                owner_node,
+                "unity_asset_used_by_fmv_playable_pathid",
+                source="video_bindings+AnimeStudio/maps",
+                evidence=evidence or "",
+                data=data,
+            )
+            if asset_node:
+                self.add_edge(
+                    owner_node,
+                    asset_node,
+                    "fmv_playable_pathid_exports_asset",
+                    source="video_bindings+AnimeStudio/maps",
+                    evidence=evidence or "",
+                    data=data,
+                )
+                self.add_edge(
+                    asset_node,
+                    owner_node,
+                    "asset_export_used_by_fmv_playable_pathid",
+                    source="video_bindings+AnimeStudio/maps",
+                    evidence=evidence or "",
                     data=data,
                 )
 
