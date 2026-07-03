@@ -3284,6 +3284,8 @@ class SourceGraphBuilder:
             self.commit_step("findTargetSelectorAudit")
             self.ingest_findtarget_selector_replay_audit()
             self.commit_step("findTargetSelectorReplayAudit")
+            self.ingest_findtarget_selector_boundary_audit()
+            self.commit_step("findTargetSelectorBoundaryAudit")
             self.add_scene_collectable_interactive_refs()
             self.commit_step("sceneCollectableInteractiveRefs")
             self.link_decoded_parameter_blackboard_keys()
@@ -4166,6 +4168,147 @@ class SourceGraphBuilder:
                 family_key, _, tag_key = safe_key(family_tag).partition(":")
                 tag_node = self.add_node("selector_tag", family_tag, name=tag_key or family_tag, source=source, data={"family": family_key, "tag": tag_key, "count": count})
                 self.add_edge(shape_node, tag_node, "findtarget_replay_shape_nonzero_selector_tag_hit", source=source, evidence=family_tag, data={"count": count})
+
+    def ingest_findtarget_selector_boundary_audit(self) -> None:
+        path = self.root / "reports" / "mission_order" / "findtarget_selector_boundary_audit.json"
+        payload = read_json(path, {})
+        if not isinstance(payload, dict):
+            return
+        source = "findtarget_selector_boundary_audit"
+        source_path = slash(path.relative_to(self.root)) if path.is_relative_to(self.root) else slash(path)
+        summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+        dataset = self.add_node(
+            "dataset",
+            "findtarget_selector_boundary_audit",
+            name=path.name,
+            source=source,
+            path=source_path,
+            data=compact_payload(summary, depth=3),
+        )
+        self.add_file(source_path, kind="findtarget_selector_boundary_audit", source=source, size=path.stat().st_size if path.exists() else None)
+
+        shape_nodes: dict[str, str] = {}
+        for index, shape in enumerate(payload.get("uniqueBodyMiddleShapes") or []):
+            if not isinstance(shape, dict):
+                continue
+            shape_hash = safe_key(shape.get("bodyMiddleSha256"))
+            if not shape_hash:
+                continue
+            stats = shape.get("selectorTagByteStats") if isinstance(shape.get("selectorTagByteStats"), dict) else {}
+            shape_data = {
+                "bodyMiddleSha256": shape_hash,
+                "sampleCount": shape.get("sampleCount"),
+                "bodyMiddleBytes": shape.get("bodyMiddleBytes"),
+                "targetSettingsCandidateCount": shape.get("targetSettingsCandidateCount"),
+                "targetGroupKeys": shape.get("targetGroupKeys") or [],
+                "examplePath": shape.get("examplePath"),
+                "exampleRecordIndex": shape.get("exampleRecordIndex"),
+                "exampleItemOffset": shape.get("exampleItemOffset"),
+                "stringHitCount": len(shape.get("stringHits") or []),
+                "memberCount3Count": stats.get("memberCount3Count"),
+                "nonZeroTagByteCounts": stats.get("nonZeroTagByteCounts"),
+                "sourceReport": source_path,
+            }
+            shape_node = self.add_node(
+                "findtarget_selector_boundary_shape",
+                shape_hash,
+                name=shape_hash[:12],
+                source=source,
+                path=safe_key(shape.get("examplePath")),
+                data=compact_payload(shape_data, depth=3),
+            )
+            shape_nodes[shape_hash] = shape_node
+            self.add_edge(dataset, shape_node, "has_findtarget_selector_boundary_shape", source=source, evidence=str(index), data=shape_data)
+            replay_node = self.add_node("findtarget_selector_replay_shape", shape_hash, name=shape_hash[:12], source=source)
+            self.add_edge(shape_node, replay_node, "findtarget_boundary_shape_matches_replay_shape", source=source, evidence=shape_hash)
+            for group_key in shape.get("targetGroupKeys") or []:
+                group = safe_key(group_key)
+                if group:
+                    group_node = self.add_node("target_group_key", group, name=group, source=source)
+                    self.add_edge(shape_node, group_node, "findtarget_boundary_shape_target_group", source=source, evidence=group)
+
+        for index, sample in enumerate(payload.get("samples") or []):
+            if not isinstance(sample, dict):
+                continue
+            sample_path = safe_key(sample.get("path"))
+            shape_hash = safe_key(sample.get("bodyMiddleSha256"))
+            sample_key = f"{sample_path}:record:{safe_key(sample.get('recordIndex'))}:item:{safe_key(sample.get('itemIndex'))}:offset:{safe_key(sample.get('itemOffset'))}"
+            if not sample_path or not shape_hash:
+                continue
+            sample_data = {
+                "path": sample_path,
+                "recordIndex": sample.get("recordIndex"),
+                "recordOffset": sample.get("recordOffset"),
+                "itemIndex": sample.get("itemIndex"),
+                "itemOffset": sample.get("itemOffset"),
+                "itemBytes": sample.get("itemBytes"),
+                "bodyMiddleOffset": sample.get("bodyMiddleOffset"),
+                "bodyMiddleBytes": sample.get("bodyMiddleBytes"),
+                "bodyMiddleSha256": shape_hash,
+                "targetSettingsCandidateCount": sample.get("targetSettingsCandidateCount"),
+                "targetGroupKey": sample.get("targetGroupKey"),
+                "selectorOwner": sample.get("selectorOwner"),
+                "selectorOwnerContextKey": sample.get("selectorOwnerContextKey"),
+                "target": sample.get("target"),
+                "useAdvancedDirectionSetting": sample.get("useAdvancedDirectionSetting"),
+                "useCenterEntityMountPoint": sample.get("useCenterEntityMountPoint"),
+                "stringHitCount": len(sample.get("stringHits") or []),
+                "sourceReport": source_path,
+            }
+            sample_node = self.add_node(
+                "findtarget_selector_boundary_sample",
+                sample_key,
+                name=Path(sample_path).name,
+                source=source,
+                path=sample_path,
+                data=compact_payload(sample_data, depth=3),
+            )
+            self.add_edge(dataset, sample_node, "has_findtarget_selector_boundary_sample", source=source, evidence=str(index), data=sample_data)
+            file_node = self.add_file(sample_path, kind="decoded_game_data", source=source)
+            self.add_edge(sample_node, file_node, "findtarget_boundary_sample_file", source=source, evidence=safe_key(sample.get("itemOffset")))
+            shape_node = shape_nodes.get(shape_hash) or self.add_node("findtarget_selector_boundary_shape", shape_hash, name=shape_hash[:12], source=source)
+            self.add_edge(sample_node, shape_node, "findtarget_boundary_sample_shape", source=source, evidence=shape_hash)
+            group = safe_key(sample.get("targetGroupKey"))
+            if group:
+                group_node = self.add_node("target_group_key", group, name=group, source=source)
+                self.add_edge(sample_node, group_node, "findtarget_boundary_sample_target_group", source=source, evidence=group)
+
+        for index, record in enumerate(payload.get("ambiguousFirstFindTargetRecords") or []):
+            if not isinstance(record, dict):
+                continue
+            record_path = safe_key(record.get("path"))
+            record_key = f"{record_path}:record:{safe_key(record.get('recordIndex'))}:offset:{safe_key(record.get('recordOffset'))}"
+            if not record_path:
+                continue
+            record_data = {
+                "path": record_path,
+                "recordIndex": record.get("recordIndex"),
+                "recordOffset": record.get("recordOffset"),
+                "recordBytes": record.get("recordBytes"),
+                "actionDataOffset": record.get("actionDataOffset"),
+                "actionDataBytes": record.get("actionDataBytes"),
+                "actionDataCount": record.get("actionDataCount"),
+                "firstActionName": record.get("firstActionName"),
+                "firstActionTag": record.get("firstActionTag"),
+                "splitStatus": record.get("splitStatus"),
+                "stringHitCount": len(record.get("stringHits") or []),
+                "sourceReport": source_path,
+            }
+            record_node = self.add_node(
+                "findtarget_ambiguous_record",
+                record_key,
+                name=Path(record_path).name,
+                source=source,
+                path=record_path,
+                data=compact_payload(record_data, depth=3),
+            )
+            self.add_edge(dataset, record_node, "has_findtarget_ambiguous_record", source=source, evidence=str(index), data=record_data)
+            file_node = self.add_file(record_path, kind="decoded_game_data", source=source)
+            self.add_edge(record_node, file_node, "findtarget_ambiguous_record_file", source=source, evidence=safe_key(record.get("recordOffset")))
+            status = safe_key(record.get("splitStatus"))
+            if status:
+                status_node = self.add_node("findtarget_split_status", status, name=status, source=source)
+                self.add_edge(record_node, status_node, "findtarget_ambiguous_record_split_status", source=source, evidence=status)
 
     def add_decoded_config_entry(self, group_node: str, entry: dict[str, Any], *, subtype: str) -> None:
         entry_path = safe_key(entry.get("p"))
@@ -23854,6 +23997,11 @@ QUERY_KIND_PRIORITY = {
     "selector_payload_setter": 43.5,
     "findtarget_selector_replay_shape": 43.6,
     "findtarget_replay_failure_reason": 43.7,
+    "findtarget_selector_boundary_shape": 43.8,
+    "findtarget_selector_boundary_sample": 43.9,
+    "findtarget_ambiguous_record": 43.91,
+    "findtarget_split_status": 43.92,
+    "target_group_key": 43.93,
     "model_config": 44,
     "model_config_model": 45,
     "model_prefab": 45.5,
@@ -24569,6 +24717,11 @@ NODE_ID_PREFIXES = (
     "selector_payload_setter",
     "findtarget_selector_replay_shape",
     "findtarget_replay_failure_reason",
+    "findtarget_selector_boundary_shape",
+    "findtarget_selector_boundary_sample",
+    "findtarget_ambiguous_record",
+    "findtarget_split_status",
+    "target_group_key",
     "model_config",
     "model_config_model",
     "model_prefab",
