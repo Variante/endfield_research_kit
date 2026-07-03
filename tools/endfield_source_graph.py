@@ -55,6 +55,7 @@ TIMELINE_LINE_ORDERS_PATH = EXPORT_ROOT / TIMELINE_LINE_ORDERS_REL
 DIALOG_ID_TABLE_INDEX_PATH = EXPORT_ROOT / "recovered" / "dialog_id_table_index.json"
 RUNTIME_OPTION_ROUTE_AUDIT_GLOB = "runtime_jump_option_route_audit_CN*_nearby*.json"
 LUA_CONSUMER_REFERENCE_AUDIT_PATH = ROOT / "reports" / "mission_order" / "lua_consumer_reference_audit.json"
+MONOBEHAVIOUR_FRONTIER_REPORT_PATH = ROOT / "reports" / "monobehaviour_frontier_latest.json"
 TEXTURE2D_RAW_HASH_COLLISION_AUDIT_PATH = ROOT / "reports" / "texture2d_raw_hash_collision_audit.json"
 
 ASSET_MAPS = {
@@ -3316,6 +3317,8 @@ class SourceGraphBuilder:
                 self.commit_step("reference")
             self.ingest_lua_consumer_reference_audit()
             self.commit_step("luaConsumers")
+            self.ingest_monobehaviour_frontier_report()
+            self.commit_step("monoBehaviourFrontier")
             if self.include_asset_maps:
                 self.ingest_asset_maps()
                 self.commit_step("assetMaps")
@@ -24488,6 +24491,107 @@ class SourceGraphBuilder:
                     data=data,
                 )
 
+    def ingest_monobehaviour_frontier_report(self) -> None:
+        path = MONOBEHAVIOUR_FRONTIER_REPORT_PATH
+        payload = read_json(path, {})
+        if not isinstance(payload, dict) or not payload:
+            return
+        frontier = payload.get("frontier") or {}
+        report_node = self.add_node(
+            "monobehaviour_frontier_report",
+            "monobehaviour_frontier_latest",
+            name="MonoBehaviour recovery frontier",
+            source="reports",
+            path=slash(path),
+            data={
+                "sourceIndex": payload.get("sourceIndex"),
+                "sourceIndexGenerated": payload.get("sourceIndexGenerated"),
+                "exportRoot": payload.get("exportRoot"),
+                "indexScope": payload.get("indexScope"),
+                "sources": payload.get("sources") or [],
+                "types": payload.get("types") or [],
+                "totalFiles": (payload.get("counts") or {}).get("files"),
+                "totalGroups": payload.get("groupCount"),
+                "frontier": frontier,
+                "allStatusCounts": payload.get("allStatusCounts") or {},
+            },
+        )
+        self.add_alias("monobehaviour frontier", report_node, kind="report_title", source="reports")
+        self.add_alias("monobehaviour recovery frontier", report_node, kind="report_title", source="reports")
+
+        for status, count in sorted((frontier.get("statusCounts") or {}).items()):
+            status_node = self.add_node("monobehaviour_decode_status", status, name=status, source="decoded_index")
+            self.add_edge(
+                report_node,
+                status_node,
+                "monobehaviour_frontier_status_count",
+                source="monobehaviour_frontier_report",
+                data={"count": count},
+            )
+
+        for group in payload.get("residualGroups") or []:
+            if not isinstance(group, dict):
+                continue
+            group_id = safe_key(group.get("id"))
+            if not group_id:
+                continue
+            group_node = self.add_node(
+                "monobehaviour_frontier_group",
+                group_id,
+                name=group_id.rsplit("/", 1)[-1],
+                source="decoded_index",
+                path=group.get("file"),
+                data={
+                    "files": group.get("files"),
+                    "bytes": group.get("bytes"),
+                    "residualFiles": group.get("residualFiles"),
+                    "statuses": group.get("statuses") or {},
+                    "sources": group.get("sources") or {},
+                    "flags": group.get("flags") or {},
+                    "prefixes": group.get("prefixes") or {},
+                    "families": group.get("families") or {},
+                    "meanings": group.get("meanings") or {},
+                    "tags": group.get("tags") or {},
+                },
+            )
+            self.add_alias(group_id.lower(), group_node, kind="monobehaviour_frontier_group_id", source="decoded_index")
+            self.add_edge(report_node, group_node, "has_monobehaviour_frontier_group", source="monobehaviour_frontier_report")
+
+            for status, count in sorted((group.get("statuses") or {}).items()):
+                status_node = self.add_node("monobehaviour_decode_status", status, name=status, source="decoded_index")
+                self.add_edge(
+                    group_node,
+                    status_node,
+                    "monobehaviour_frontier_group_status",
+                    source="monobehaviour_frontier_report",
+                    data={"count": count},
+                )
+
+            self.add_monobehaviour_frontier_counter_edges(group_node, group, "domains", "monobehaviour_domain", "monobehaviour_frontier_domain")
+            self.add_monobehaviour_frontier_counter_edges(group_node, group, "schemas", "monobehaviour_schema", "monobehaviour_frontier_schema")
+            self.add_monobehaviour_frontier_counter_edges(group_node, group, "schemaGroups", "monobehaviour_schema_group", "monobehaviour_frontier_schema_group")
+            self.add_monobehaviour_frontier_counter_edges(group_node, group, "schemaKinds", "monobehaviour_schema_kind", "monobehaviour_frontier_schema_kind")
+            self.add_monobehaviour_frontier_counter_edges(group_node, group, "fieldSets", "monobehaviour_field_set", "monobehaviour_frontier_field_set")
+            self.add_monobehaviour_frontier_counter_edges(group_node, group, "registries", "monobehaviour_registry_status", "monobehaviour_frontier_registry_status")
+            self.add_monobehaviour_frontier_counter_edges(group_node, group, "classes", "monobehaviour_managed_class", "monobehaviour_frontier_managed_class")
+            self.add_monobehaviour_frontier_counter_edges(group_node, group, "layouts", "monobehaviour_layout", "monobehaviour_frontier_layout")
+
+    def add_monobehaviour_frontier_counter_edges(
+        self,
+        group_node: str,
+        group: dict[str, Any],
+        field: str,
+        node_kind: str,
+        edge_kind: str,
+    ) -> None:
+        for key, count in sorted((group.get(field) or {}).items()):
+            key_text = safe_key(key)
+            if not key_text:
+                continue
+            node = self.add_node(node_kind, key_text, name=key_text, source="decoded_index")
+            self.add_alias(key_text.lower(), node, kind=node_kind, source="decoded_index")
+            self.add_edge(group_node, node, edge_kind, source="monobehaviour_frontier_report", data={"count": count})
+
     def ingest_texture2d_raw_hash_collision_audit(self) -> None:
         path = TEXTURE2D_RAW_HASH_COLLISION_AUDIT_PATH
         payload = read_json(path, {})
@@ -25283,6 +25387,17 @@ QUERY_KIND_PRIORITY = {
     "decoded_config_file": 41,
     "decoded_config_family": 42,
     "decoded_config_group": 43,
+    "monobehaviour_frontier_report": 42.91,
+    "monobehaviour_frontier_group": 42.92,
+    "monobehaviour_decode_status": 42.93,
+    "monobehaviour_domain": 42.94,
+    "monobehaviour_schema": 42.95,
+    "monobehaviour_schema_group": 42.96,
+    "monobehaviour_schema_kind": 42.97,
+    "monobehaviour_field_set": 42.98,
+    "monobehaviour_registry_status": 42.99,
+    "monobehaviour_managed_class": 42.991,
+    "monobehaviour_layout": 42.992,
     "selector_formatter_table": 43.01,
     "selector_formatter": 43.02,
     "selector_formatter_slot": 43.03,
@@ -26055,6 +26170,17 @@ NODE_ID_PREFIXES = (
     "decoded_config_file",
     "decoded_config_family",
     "decoded_config_group",
+    "monobehaviour_frontier_report",
+    "monobehaviour_frontier_group",
+    "monobehaviour_decode_status",
+    "monobehaviour_domain",
+    "monobehaviour_schema",
+    "monobehaviour_schema_group",
+    "monobehaviour_schema_kind",
+    "monobehaviour_field_set",
+    "monobehaviour_registry_status",
+    "monobehaviour_managed_class",
+    "monobehaviour_layout",
     "selector_formatter_table",
     "selector_formatter",
     "selector_formatter_slot",
