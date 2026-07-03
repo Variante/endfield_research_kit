@@ -10667,6 +10667,7 @@ class SourceGraphBuilder:
             self.add_alias(enemy_key, enemy_node, kind="enemy_id", source=source)
             level = levels[index] if index < len(levels) else None
             self.add_edge(point_node, enemy_node, "world_energy_point_enemy", source=source, evidence=f"enemyIds[{index}]", data={"index": index, "enemyLevel": level})
+            self.add_edge(enemy_node, point_node, "enemy_used_by_world_energy_point", source=source, evidence=f"enemyIds[{index}]", data={"index": index, "enemyLevel": level})
 
     def add_world_energy_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if table == "WorldEnergyPointConst":
@@ -10720,6 +10721,8 @@ class SourceGraphBuilder:
                     item_node = self.add_item_node(row.get(field), source=table)
                     if item_node:
                         self.add_edge(group_node, item_node, edge_kind, source=table, evidence=field)
+                        reverse_kind = "item_custom_gem_for_world_energy_group" if field == "gemCustomItemId" else "item_random_gem_for_world_energy_group"
+                        self.add_edge(item_node, group_node, reverse_kind, source=table, evidence=field)
                 for field, edge_kind in (("primAttrTermIds", "world_energy_group_primary_gem_term"), ("secAttrTermIds", "world_energy_group_secondary_gem_term"), ("skillTermIds", "world_energy_group_skill_gem_term")):
                     for index, term_id in enumerate(row.get(field) or []):
                         term_node = self.add_gem_term_node(term_id, source=table)
@@ -10746,6 +10749,7 @@ class SourceGraphBuilder:
                 level_node = self.add_level_node(row.get("levelId"), source=table)
                 if level_node:
                     self.add_edge(point_node, level_node, "world_energy_point_in_level", source=table, evidence="levelId")
+                    self.add_edge(level_node, point_node, "level_has_world_energy_point", source=table, evidence="levelId")
                     self.add_level_map_edge(level_node, row.get("levelId"), source=table, evidence="levelId")
                 self.add_world_energy_enemy_edges(point_node, row, source=table)
                 counts = row.get("regularItemCount") if isinstance(row.get("regularItemCount"), list) else []
@@ -10754,10 +10758,12 @@ class SourceGraphBuilder:
                     if item_node:
                         count = counts[index] if index < len(counts) else None
                         self.add_edge(point_node, item_node, "world_energy_point_regular_item", source=table, evidence=f"regularItemIds[{index}]", data={"index": index, "count": count})
+                        self.add_edge(item_node, point_node, "item_regular_drop_for_world_energy_point", source=table, evidence=f"regularItemIds[{index}]", data={"index": index, "count": count})
                 for index, item_id in enumerate(row.get("probGemItemIds") or []):
                     item_node = self.add_item_node(item_id, source=table)
                     if item_node:
                         self.add_edge(point_node, item_node, "world_energy_point_probable_gem", source=table, evidence=f"probGemItemIds[{index}]", data={"index": index})
+                        self.add_edge(item_node, point_node, "item_probable_gem_for_world_energy_point", source=table, evidence=f"probGemItemIds[{index}]", data={"index": index})
             return
         if table == "EtherSubmitInfoTable":
             submit_node = self.add_world_energy_node("ether_submit_level", row.get("id") or row_key, source=table, data={"level": row.get("level"), "domainId": row.get("domainId"), "etherItemId": row.get("etherItemId"), "count": row.get("count"), "rewardID": row.get("rewardID"), "effectCount": len(row.get("effectList") or [])})
