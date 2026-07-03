@@ -2943,6 +2943,7 @@ class SourceGraphBuilder:
         self.asset_paths: list[str] = []
         self.gameplay_item_asset_cache: dict[str, list[str]] = {}
         self.audio_dialog_row_cache: dict[str, Any] | None = None
+        self.game_system_unlock_type_cache: dict[str, dict[str, Any]] | None = None
         self.alias_count = 0
 
     @property
@@ -18575,6 +18576,25 @@ class SourceGraphBuilder:
                 self.add_setting_text_edges(system_node, row.get("systemName"), source=table, edge_kind="game_system_name_text")
                 self.add_setting_text_edges(system_node, row.get("systemDesc"), source=table, edge_kind="game_system_desc_text")
 
+    def game_system_by_unlock_type(self) -> dict[str, dict[str, Any]]:
+        if self.game_system_unlock_type_cache is not None:
+            return self.game_system_unlock_type_cache
+        path = self.export_root / "structured" / "StreamingAssets" / "Table" / "GameSystemConfigTable.json"
+        payload = read_json(path, {})
+        lookup: dict[str, dict[str, Any]] = {}
+        if isinstance(payload, dict):
+            for row_key, row in payload.items():
+                if not isinstance(row, dict):
+                    continue
+                unlock_key = safe_key(row.get("unlockSystemType"))
+                system_id = safe_key(row.get("systemId") or row_key)
+                if unlock_key and system_id:
+                    entry = dict(row)
+                    entry["_systemKey"] = system_id
+                    lookup[unlock_key] = entry
+        self.game_system_unlock_type_cache = lookup
+        return lookup
+
     def add_rich_text_style_edges(self, table: str, table_node: str, payload: dict[str, Any]) -> None:
         for row_key, row in payload.items():
             if not isinstance(row, dict):
@@ -23625,6 +23645,20 @@ class SourceGraphBuilder:
         if not jump_node:
             return
         self.add_edge(row_node, jump_node, "defines_system_jump", source=table)
+        bind_key = safe_key(row.get("bindSystem"))
+        game_system = self.game_system_by_unlock_type().get(bind_key) if bind_key else None
+        if game_system:
+            system_node = self.add_setting_metadata_node(
+                "game_system_config",
+                game_system.get("systemId") or game_system.get("_systemKey"),
+                name=game_system.get("systemName"),
+                source=table,
+                data={"systemId": game_system.get("systemId"), "unlockSystemType": game_system.get("unlockSystemType")},
+            )
+            if system_node:
+                edge_data = {"bindSystem": row.get("bindSystem")}
+                self.add_edge(jump_node, system_node, "system_jump_bound_to_game_system", source=table, evidence="bindSystem", data=edge_data)
+                self.add_edge(system_node, jump_node, "game_system_has_system_jump", source=table, evidence="bindSystem", data=edge_data)
         self.add_alias(row.get("iconId"), jump_node, kind="asset_stem", source=table)
         self.add_system_jump_target_edges(jump_node, phase_id, row.get("phaseArgs"), source=table)
         self.add_i18n_text_edges(jump_node, row, source=table)
