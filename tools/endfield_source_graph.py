@@ -3557,6 +3557,14 @@ class SourceGraphBuilder:
                     evidence=Path(model_rel).stem,
                     data=model_data,
                 )
+                self.add_edge(
+                    model_node,
+                    entity_node,
+                    "model_lod_of_asset_entity",
+                    source="webui/assets",
+                    evidence=Path(model_rel).stem,
+                    data=model_data,
+                )
             for material_rel, material_info in sorted(group["materials"].items()):
                 material_node = asset_node_for_rel(material_rel)
                 material_data = dict(material_info.get("data") or {}) if isinstance(material_info, dict) else {}
