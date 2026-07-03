@@ -3262,6 +3262,8 @@ class SourceGraphBuilder:
             self.commit_step("timelineOptionFlowAudit")
             self.ingest_story_source_links()
             self.commit_step("storySourceLinks")
+            self.ingest_main_story_order_override_comparison()
+            self.commit_step("mainStoryOrderComparison")
             self.ingest_levelscript_property_flow_audit()
             self.commit_step("levelScriptPropertyFlowAudit")
             self.ingest_materials()
@@ -3864,6 +3866,140 @@ class SourceGraphBuilder:
                             f"nearbyStoryRefs[{nearby_index}].neighborStoryRefs[{neighbor_index}].storyRefs[{story_index}]",
                             data=data,
                         )
+
+    def ingest_main_story_order_override_comparison(self) -> None:
+        path = self.root / "reports" / "mission_order" / f"main_story_order_vs_override_{self.language}.json"
+        if not path.exists() and self.language != "CN":
+            path = self.root / "reports" / "mission_order" / "main_story_order_vs_override_CN.json"
+        payload = read_json(path, {})
+        if not isinstance(payload, dict):
+            return
+        missions = payload.get("missions")
+        if not isinstance(missions, list):
+            return
+        source = "main_story_order_vs_override"
+        audit_language = safe_key(payload.get("language")) or self.language
+        source_path = slash(path.relative_to(self.root)) if path.is_relative_to(self.root) else slash(path)
+        summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+        dataset = self.add_node(
+            "dataset",
+            f"main_story_order_vs_override:{audit_language}",
+            name=f"Main story order vs override {audit_language}",
+            source=source,
+            path=source_path,
+            data=compact_payload({"summary": summary, "scope": payload.get("scope"), "algorithm": payload.get("algorithm"), "generated": payload.get("generated")}, depth=3),
+        )
+        self.add_file(source_path, kind="main_story_order_vs_override", source=source, size=path.stat().st_size if path.exists() else None)
+
+        def story_ref(story_id: Any) -> str:
+            story_key = safe_key(story_id)
+            if not story_key:
+                return ""
+            story_node = self.add_node("story", story_key, name=story_key, source=source)
+            self.add_alias(story_key, story_node, kind="story_key", source=source)
+            return story_node
+
+        for mission_index, mission in enumerate(missions):
+            if not isinstance(mission, dict):
+                continue
+            mission_id = safe_key(mission.get("mission"))
+            if not mission_id:
+                continue
+            comparison = mission.get("comparison") if isinstance(mission.get("comparison"), dict) else {}
+            coarse = mission.get("coarsePhaseComparison") if isinstance(mission.get("coarsePhaseComparison"), dict) else {}
+            comparison_data = {
+                "mission": mission_id,
+                "missionName": mission.get("missionName"),
+                "locked": mission.get("locked"),
+                "level": mission.get("level"),
+                "levels": mission.get("levels"),
+                "timelineRecoveryPath": mission.get("timelineRecoveryPath"),
+                "edgeCounts": mission.get("edgeCounts"),
+                "confidenceCounts": mission.get("confidenceCounts"),
+                "comparison": {k: v for k, v in comparison.items() if k != "inversionSamples"},
+                "coarsePhaseComparison": {k: v for k, v in coarse.items() if k != "inversionSamples"},
+            }
+            comparison_node = self.add_node(
+                "main_story_order_comparison",
+                f"{audit_language}:{mission_id}",
+                name=mission_id,
+                source=source,
+                data=compact_payload(comparison_data, depth=3),
+            )
+            self.add_alias(f"main-story-order:{mission_id}", comparison_node, kind="main_story_order_comparison_key", source=source)
+            self.add_edge(dataset, comparison_node, "main_story_order_audit_has_mission", source=source, evidence=str(mission_index), data=compact_payload(comparison_data, depth=2))
+            mission_node = self.add_mission_ref_node(mission_id, source=source)
+            if mission_node:
+                self.add_edge(comparison_node, mission_node, "main_story_order_compares_mission", source=source, evidence="mission")
+                self.add_edge(mission_node, comparison_node, "mission_has_main_story_order_comparison", source=source, evidence="mission")
+            status = safe_key(comparison.get("status"))
+            if status:
+                status_node = self.add_node("main_story_order_status", status, name=status, source=source)
+                self.add_edge(comparison_node, status_node, "main_story_order_comparison_status", source=source, evidence="comparison.status")
+            for level_index, level_id in enumerate(mission.get("levels") or []):
+                level_node = self.add_level_node(level_id, source=source)
+                if level_node:
+                    self.add_edge(comparison_node, level_node, "main_story_order_comparison_level", source=source, evidence=f"levels[{level_index}]")
+                    self.add_level_map_edge(level_node, level_id, source=source, evidence="main_story_order_comparison.levels")
+
+            key_info = mission.get("keyInfo") if isinstance(mission.get("keyInfo"), dict) else {}
+            override_index_by_key: dict[str, int] = {}
+            for order_index, story_id in enumerate(mission.get("overrideOrder") or []):
+                story_key = safe_key(story_id)
+                story_node = story_ref(story_key)
+                if not story_node:
+                    continue
+                override_index_by_key[story_key] = order_index
+                self.add_edge(comparison_node, story_node, "main_story_override_order_position", source=source, evidence=str(order_index), data={"mission": mission_id, "overrideIndex": order_index})
+                self.add_edge(story_node, comparison_node, "story_in_main_story_override_order", source=source, evidence=f"{mission_id}:{order_index}", data={"mission": mission_id, "overrideIndex": order_index})
+            for order_index, story_id in enumerate(mission.get("recoveredOrder") or []):
+                story_key = safe_key(story_id)
+                story_node = story_ref(story_key)
+                if not story_node:
+                    continue
+                info = key_info.get(story_key) if isinstance(key_info.get(story_key), dict) else {}
+                data = compact_payload({"mission": mission_id, "recoveredIndex": order_index, "overrideIndex": override_index_by_key.get(story_key), "keyInfo": info}, depth=3)
+                self.add_edge(comparison_node, story_node, "main_story_recovered_order_position", source=source, evidence=str(order_index), data=data)
+                self.add_edge(story_node, comparison_node, "story_in_main_story_recovered_order", source=source, evidence=f"{mission_id}:{order_index}", data=data)
+                confidence = safe_key(info.get("confidence"))
+                if confidence:
+                    confidence_node = self.add_node("story_order_confidence", confidence, name=confidence, source=source)
+                    self.add_edge(story_node, confidence_node, "story_order_recovery_confidence", source=source, evidence=f"{mission_id}:{order_index}")
+                order_source = safe_key(info.get("orderSource"))
+                if order_source:
+                    order_source_node = self.add_node("story_order_source", order_source, name=order_source, source=source)
+                    self.add_edge(story_node, order_source_node, "story_order_recovery_source", source=source, evidence=f"{mission_id}:{order_index}")
+                for evidence_index, evidence_kind in enumerate(info.get("evidenceKinds") or []):
+                    evidence_key = safe_key(evidence_kind)
+                    if not evidence_key:
+                        continue
+                    evidence_node = self.add_node("story_order_evidence_kind", evidence_key, name=evidence_key, source=source)
+                    self.add_edge(story_node, evidence_node, "story_order_recovery_evidence_kind", source=source, evidence=f"{mission_id}:{order_index}:{evidence_index}")
+
+            for list_name, edge_kind in (("missingOverrideKeys", "main_story_order_missing_override_key"), ("recoveredOnlyKeys", "main_story_order_recovered_only_key")):
+                for item_index, story_id in enumerate(comparison.get(list_name) or []):
+                    story_node = story_ref(story_id)
+                    if story_node:
+                        self.add_edge(comparison_node, story_node, edge_kind, source=source, evidence=f"comparison.{list_name}[{item_index}]")
+
+            for sample_index, sample in enumerate(comparison.get("inversionSamples") or []):
+                if not isinstance(sample, dict):
+                    continue
+                sample_node = self.add_node("story_order_inversion_sample", f"{audit_language}:{mission_id}:strict:{sample_index}", name=f"{mission_id}:strict:{sample_index}", source=source, data=compact_payload(sample, depth=2))
+                self.add_edge(comparison_node, sample_node, "main_story_order_has_inversion_sample", source=source, evidence=f"comparison.inversionSamples[{sample_index}]")
+                for field in ("left", "right"):
+                    story_node = story_ref(sample.get(field))
+                    if story_node:
+                        self.add_edge(sample_node, story_node, f"story_order_inversion_{field}_story", source=source, evidence=field, data=compact_payload(sample, depth=1))
+            for sample_index, sample in enumerate(coarse.get("inversionSamples") or []):
+                if not isinstance(sample, dict):
+                    continue
+                sample_node = self.add_node("story_order_inversion_sample", f"{audit_language}:{mission_id}:coarse:{sample_index}", name=f"{mission_id}:coarse:{sample_index}", source=source, data=compact_payload(sample, depth=2))
+                self.add_edge(comparison_node, sample_node, "main_story_order_has_coarse_inversion_sample", source=source, evidence=f"coarsePhaseComparison.inversionSamples[{sample_index}]")
+                for field in ("left", "right"):
+                    story_node = story_ref(sample.get(field))
+                    if story_node:
+                        self.add_edge(sample_node, story_node, f"story_order_coarse_inversion_{field}_story", source=source, evidence=field, data=compact_payload(sample, depth=1))
 
     def link_decoded_parameter_blackboard_keys(self) -> None:
         rows = self.db.execute(
@@ -24445,6 +24581,12 @@ QUERY_KIND_PRIORITY = {
     "timeline_option_flow_audit_group": 3.4,
     "option_flow_verdict": 3.5,
     "il2cpp_option_flow_fact": 3.6,
+    "main_story_order_comparison": 3.7,
+    "main_story_order_status": 3.71,
+    "story_order_inversion_sample": 3.72,
+    "story_order_confidence": 3.73,
+    "story_order_source": 3.74,
+    "story_order_evidence_kind": 3.75,
     "line": 4,
     "sns_dialog": 5,
     "sns_content": 6,
@@ -25186,6 +25328,12 @@ NODE_ID_PREFIXES = (
     "timeline_option_flow_audit_group",
     "option_flow_verdict",
     "il2cpp_option_flow_fact",
+    "main_story_order_comparison",
+    "main_story_order_status",
+    "story_order_inversion_sample",
+    "story_order_confidence",
+    "story_order_source",
+    "story_order_evidence_kind",
     "line",
     "sns_chat",
     "sns_topic",
