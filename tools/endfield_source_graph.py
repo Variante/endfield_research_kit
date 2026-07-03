@@ -17166,12 +17166,14 @@ class SourceGraphBuilder:
             pre_tech = self.add_factory_tech_node(pre_node, source=table)
             if pre_tech:
                 self.add_edge(tech_node, pre_tech, "factory_tech_requires_tech", source=table, evidence=f"preNode[{index}]")
+                self.add_edge(pre_tech, tech_node, "factory_tech_required_by_tech", source=table, evidence=f"preNode[{index}]")
         for index, item in enumerate(row.get("unlockReward") or []):
             if not isinstance(item, dict):
                 continue
             item_node = self.add_item_node(item.get("itemId"), source=table)
             if item_node:
                 self.add_edge(tech_node, item_node, "factory_tech_unlocks_item", source=table, evidence=f"unlockReward[{index}]", data={"count": item.get("count")})
+                self.add_edge(item_node, tech_node, "item_unlocked_by_factory_tech", source=table, evidence=f"unlockReward[{index}]", data={"count": item.get("count")})
         for index, dungeon_id in enumerate(row.get("blackboxIds") or []):
             dungeon_node = self.add_dungeon_node(dungeon_id, source=table)
             if dungeon_node:
@@ -17283,8 +17285,10 @@ class SourceGraphBuilder:
             self.add_edge(source_item, unlock_node, "item_required_by_manual_craft_unlock", source=table, evidence="itemId", data={"count": row.get("gainItemNum")})
         if reward_item:
             self.add_edge(unlock_node, reward_item, "manual_craft_unlock_grants_formula_item", source=table, evidence="rewardItemId1", data={"count": row.get("rewardItemCount1")})
+            self.add_edge(reward_item, unlock_node, "formula_item_granted_by_manual_craft_unlock", source=table, evidence="rewardItemId1", data={"count": row.get("rewardItemCount1")})
         if source_item and reward_item:
             self.add_edge(source_item, reward_item, "manual_craft_material_unlocks_formula_item", source=table, evidence=safe_key(row.get("id") or row_key), data={"count": row.get("rewardItemCount1")})
+            self.add_edge(reward_item, source_item, "formula_item_unlocked_by_manual_craft_material", source=table, evidence=safe_key(row.get("id") or row_key), data={"count": row.get("rewardItemCount1")})
 
     def add_manual_craft_upgrade_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         item_node = self.add_item_node(row.get("itemId") or row_key, source=table)
@@ -17292,6 +17296,7 @@ class SourceGraphBuilder:
         if item_node and target_item:
             self.add_edge(row_node, item_node, "defines_manual_craft_upgrade_item", source=table)
             self.add_edge(item_node, target_item, "manual_craft_upgrade_item_targets_item", source=table, evidence="levelUpItemId")
+            self.add_edge(target_item, item_node, "item_targeted_by_manual_craft_upgrade", source=table, evidence="levelUpItemId")
 
     def add_factory_tech_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if not isinstance(row, dict):
