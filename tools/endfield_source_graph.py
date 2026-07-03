@@ -8856,6 +8856,7 @@ class SourceGraphBuilder:
             data={"id": "item_gold", "name": "item_gold"},
         )
         self.add_edge(owner_node, item_node, "requires_item", source="webui/gameplay", evidence=evidence, data={"count": value})
+        self.add_edge(item_node, owner_node, "item_required_by_gameplay", source="webui/gameplay", evidence=evidence, data={"count": value})
         self.add_alias("item_gold", item_node, kind="item_id", source="webui/gameplay")
         self.add_gameplay_item_asset_edges(item_node, "item_gold")
 
@@ -8879,6 +8880,7 @@ class SourceGraphBuilder:
                 data={"id": item_id, "name": item.get("name"), "count": count},
             )
             self.add_edge(owner_node, item_node, "requires_item", source="webui/gameplay", evidence=evidence, data={"count": count})
+            self.add_edge(item_node, owner_node, "item_required_by_gameplay", source="webui/gameplay", evidence=evidence, data={"count": count})
             self.add_alias(item_id, item_node, kind="item_id", source="webui/gameplay")
             self.add_alias(item.get("name"), item_node, kind="item_name", source="webui/gameplay")
             self.add_gameplay_item_asset_edges(item_node, item_id)
