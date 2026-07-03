@@ -19456,6 +19456,15 @@ class SourceGraphBuilder:
             formula_node = self.add_node("spaceship_formula", recipe_id, name=recipe_id, source=table)
             self.add_edge(level_node, formula_node, "spaceship_room_level_unlocks_formula", source=table, evidence=f"unlockRecipe[{index}]")
             self.add_alias(recipe_id, formula_node, kind="spaceship_formula_id", source=table)
+        for index, field_id in enumerate(row.get("unlockPlantingField") or []):
+            field_key = safe_key(field_id)
+            if not field_key:
+                continue
+            field_node = self.add_spaceship_semantic_node("spaceship_grow_cabin_planting_field", field_key, source=table, data={"fieldId": field_id})
+            if field_node:
+                data = {"index": index, "level": row.get("level")}
+                self.add_edge(level_node, field_node, "spaceship_room_level_unlocks_planting_field", source=table, evidence=f"unlockPlantingField[{index}]", data=data)
+                self.add_edge(field_node, level_node, "spaceship_planting_field_unlocked_by_room_level", source=table, evidence=f"unlockPlantingField[{index}]", data=data)
         unlock_room_type = safe_key(row.get("unlockRoomType"))
         if unlock_room_type:
             unlock_room_node = self.add_spaceship_room_type_node(unlock_room_type, source=table)
@@ -27827,6 +27836,7 @@ QUERY_KIND_PRIORITY = {
     "spaceship_char_gift_talk": 42.15,
     "spaceship_scene": 42.16,
     "spaceship_game_mode": 42.17,
+    "spaceship_grow_cabin_planting_field": 42.18,
     "env_talk": 43,
     "text_table_key": 43.9,
     "i18n_text": 44,
@@ -28638,6 +28648,7 @@ NODE_ID_PREFIXES = (
     "spaceship_char_gift_talk",
     "spaceship_scene",
     "spaceship_game_mode",
+    "spaceship_grow_cabin_planting_field",
     "env_talk",
     "i18n_text",
     "i18n_text_value",
