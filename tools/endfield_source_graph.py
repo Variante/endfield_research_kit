@@ -12904,11 +12904,25 @@ class SourceGraphBuilder:
         level_node = self.add_level_node(level_id, source=source)
         if level_node:
             self.add_edge(owner_node, level_node, edge_kind, source=source, evidence=evidence)
+            reverse_kind = {
+                "domain_depot_in_level": "level_has_domain_depot",
+                "domain_depot_buyer_in_level": "level_has_domain_depot_buyer",
+                "domain_depot_target_in_level": "level_has_domain_depot_target",
+            }.get(edge_kind)
+            if reverse_kind:
+                self.add_edge(level_node, owner_node, reverse_kind, source=source, evidence=evidence)
 
     def add_domain_depot_domain_edge(self, owner_node: str, domain_id: Any, *, edge_kind: str, source: str, evidence: str) -> None:
         domain_node = self.add_gameplay_domain_node(domain_id, source=source)
         if domain_node:
             self.add_edge(owner_node, domain_node, edge_kind, source=source, evidence=evidence)
+            reverse_kind = {
+                "domain_depot_in_domain": "domain_has_domain_depot",
+                "domain_depot_buyer_in_domain": "domain_has_domain_depot_buyer",
+                "domain_depot_target_in_domain": "domain_has_domain_depot_target",
+            }.get(edge_kind)
+            if reverse_kind:
+                self.add_edge(domain_node, owner_node, reverse_kind, source=source, evidence=evidence)
 
     def add_domain_depot_inferred_depot_edges(self, owner_node: str, level_id: Any, depot_by_level: dict[str, list[str]], *, edge_kind: str, source: str, evidence: str) -> None:
         for depot_id in depot_by_level.get(safe_key(level_id), []):
