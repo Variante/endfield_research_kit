@@ -3280,6 +3280,8 @@ class SourceGraphBuilder:
             self.commit_step("dialogSupport")
             self.ingest_decoded_config_semantics()
             self.commit_step("decodedConfigs")
+            self.ingest_findtarget_selector_payload_audit()
+            self.commit_step("findTargetSelectorAudit")
             self.add_scene_collectable_interactive_refs()
             self.commit_step("sceneCollectableInteractiveRefs")
             self.link_decoded_parameter_blackboard_keys()
@@ -3972,6 +3974,118 @@ class SourceGraphBuilder:
                 if subtype not in DECODED_CONFIG_TARGET_TYPES:
                     continue
                 self.add_decoded_config_entry(group_node, entry, subtype=subtype)
+
+    def ingest_findtarget_selector_payload_audit(self) -> None:
+        path = self.root / "reports" / "mission_order" / "findtarget_selector_payload_priority_audit.json"
+        payload = read_json(path, {})
+        if not isinstance(payload, dict):
+            return
+        source = "findtarget_selector_payload_audit"
+        source_path = slash(path.relative_to(self.root)) if path.is_relative_to(self.root) else slash(path)
+        summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+        dataset = self.add_node(
+            "dataset",
+            "findtarget_selector_payload_priority_audit",
+            name=path.name,
+            source=source,
+            path=source_path,
+            data=compact_payload(summary, depth=3),
+        )
+        self.add_file(source_path, kind="findtarget_selector_payload_audit", source=source, size=path.stat().st_size if path.exists() else None)
+
+        seen_candidates: set[str] = set()
+        ranked_keys: set[str] = set()
+        simplest_keys: set[str] = set()
+        zero_tag_keys: set[str] = set()
+        for collection_name, target in (
+            ("rankedCandidates", ranked_keys),
+            ("simplestCandidates", simplest_keys),
+            ("zeroTagCandidates", zero_tag_keys),
+        ):
+            for candidate in payload.get(collection_name) or []:
+                if not isinstance(candidate, dict):
+                    continue
+                key = self.findtarget_selector_candidate_key(candidate)
+                if key:
+                    target.add(key)
+
+        all_candidates: list[dict[str, Any]] = []
+        for collection_name in ("candidates", "zeroTagCandidates"):
+            for candidate in payload.get(collection_name) or []:
+                if isinstance(candidate, dict):
+                    all_candidates.append(candidate)
+
+        for index, candidate in enumerate(all_candidates):
+            if not isinstance(candidate, dict):
+                continue
+            candidate_key = self.findtarget_selector_candidate_key(candidate)
+            if not candidate_key or candidate_key in seen_candidates:
+                continue
+            seen_candidates.add(candidate_key)
+            family = safe_key(candidate.get("family"))
+            tag = safe_key(candidate.get("tag"))
+            classification = safe_key(candidate.get("payloadClassification"))
+            candidate_data = {
+                "family": family,
+                "tag": tag,
+                "count": candidate.get("count"),
+                "actionName": candidate.get("actionName"),
+                "formatterName": candidate.get("formatterName"),
+                "wrapperType": candidate.get("wrapperType"),
+                "metadataTypeFound": candidate.get("metadataTypeFound"),
+                "payloadSetterCount": candidate.get("payloadSetterCount"),
+                "payloadClassification": classification,
+                "complexityRank": candidate.get("complexityRank"),
+                "isRanked": candidate_key in ranked_keys,
+                "isSimplest": candidate_key in simplest_keys,
+                "isZeroTag": candidate_key in zero_tag_keys,
+                "sourceReport": source_path,
+            }
+            candidate_node = self.add_node(
+                "findtarget_selector_candidate",
+                candidate_key,
+                name=safe_key(candidate.get("actionName")) or candidate_key,
+                source=source,
+                path=source_path,
+                data=compact_payload(candidate_data, depth=3),
+            )
+            self.add_edge(dataset, candidate_node, "has_findtarget_selector_candidate", source=source, evidence=str(index), data=candidate_data)
+
+            if family:
+                family_node = self.add_node("selector_family", family, name=family, source=source)
+                self.add_edge(candidate_node, family_node, "findtarget_selector_candidate_family", source=source, evidence=family)
+            if tag:
+                tag_node = self.add_node("selector_tag", f"{family}:{tag}" if family else tag, name=tag, source=source, data={"family": family, "tag": tag})
+                self.add_edge(candidate_node, tag_node, "findtarget_selector_candidate_tag", source=source, evidence=tag)
+            if classification:
+                class_node = self.add_node("selector_payload_classification", classification, name=classification, source=source)
+                self.add_edge(candidate_node, class_node, "findtarget_selector_candidate_payload_class", source=source, evidence=classification)
+            if candidate_key in simplest_keys:
+                self.add_edge(dataset, candidate_node, "findtarget_selector_simplest_probe_candidate", source=source, evidence=candidate_key, data=candidate_data)
+            if candidate_key in zero_tag_keys:
+                self.add_edge(dataset, candidate_node, "findtarget_selector_zero_tag_candidate", source=source, evidence=candidate_key, data=candidate_data)
+
+            for setter_index, setter in enumerate(candidate.get("payloadSetters") or []):
+                if not isinstance(setter, dict):
+                    continue
+                field = safe_key(setter.get("field"))
+                setter_key = f"{candidate_key}:{field or setter_index}"
+                setter_node = self.add_node(
+                    "selector_payload_setter",
+                    setter_key,
+                    name=field or setter_key,
+                    source=source,
+                    data=compact_payload(setter, depth=2),
+                )
+                self.add_edge(candidate_node, setter_node, "findtarget_selector_candidate_payload_setter", source=source, evidence=str(setter_index))
+
+    def findtarget_selector_candidate_key(self, candidate: dict[str, Any]) -> str:
+        family = safe_key(candidate.get("family"))
+        tag = safe_key(candidate.get("tag"))
+        action_name = safe_key(candidate.get("actionName"))
+        if not family or not tag or not action_name:
+            return ""
+        return f"{family}:{tag}:{action_name}"
 
     def add_decoded_config_entry(self, group_node: str, entry: dict[str, Any], *, subtype: str) -> None:
         entry_path = safe_key(entry.get("p"))
@@ -23653,6 +23767,11 @@ QUERY_KIND_PRIORITY = {
     "decoded_config_file": 41,
     "decoded_config_family": 42,
     "decoded_config_group": 43,
+    "findtarget_selector_candidate": 43.1,
+    "selector_family": 43.2,
+    "selector_tag": 43.3,
+    "selector_payload_classification": 43.4,
+    "selector_payload_setter": 43.5,
     "model_config": 44,
     "model_config_model": 45,
     "model_prefab": 45.5,
@@ -24361,6 +24480,11 @@ NODE_ID_PREFIXES = (
     "decoded_config_file",
     "decoded_config_family",
     "decoded_config_group",
+    "findtarget_selector_candidate",
+    "selector_family",
+    "selector_tag",
+    "selector_payload_classification",
+    "selector_payload_setter",
     "model_config",
     "model_config_model",
     "model_prefab",
