@@ -12618,6 +12618,7 @@ class SourceGraphBuilder:
             if text_node:
                 self.add_edge(entry_node, text_node, "attribute_display_entry_text", source=source, evidence=text_id)
                 self.add_edge(entry_node, text_node, "uses_i18n_text", source=source, evidence=text_id)
+                self.add_i18n_used_by_edge(text_node, entry_node, source=source, evidence=text_id, edge_kind="attribute_display_entry_text")
         return entry_node
 
     def add_attribute_meta_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
@@ -13016,6 +13017,7 @@ class SourceGraphBuilder:
             if text_node:
                 self.add_edge(owner_node, text_node, edge_kind, source=source, evidence=text_id)
                 self.add_edge(owner_node, text_node, "uses_i18n_text", source=source, evidence=text_id)
+                self.add_i18n_used_by_edge(text_node, owner_node, source=source, evidence=text_id, edge_kind=edge_kind)
 
     def ingest_tag_taxonomy_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
@@ -13118,6 +13120,7 @@ class SourceGraphBuilder:
             if text_node:
                 self.add_edge(owner_node, text_node, edge_kind, source=source, evidence=text_id)
                 self.add_edge(owner_node, text_node, "uses_i18n_text", source=source, evidence=text_id)
+                self.add_i18n_used_by_edge(text_node, owner_node, source=source, evidence=text_id, edge_kind=edge_kind)
 
     def add_ui_label_reference_edges(self, label_node: str, table: str, row: dict[str, Any]) -> None:
         if table == "SettlementTagTable":
@@ -13909,6 +13912,7 @@ class SourceGraphBuilder:
                         if text_node:
                             self.add_edge(world_node, text_node, edge_kind, source=table, evidence=f"{field}[{index}]")
                             self.add_edge(world_node, text_node, "uses_i18n_text", source=table, evidence=f"{field}[{index}]")
+                            self.add_i18n_used_by_edge(text_node, world_node, source=table, evidence=f"{field}[{index}]", edge_kind=edge_kind)
 
     def add_game_mechanic_node(self, kind: str, key: Any, *, name: Any = None, source: str = "", data: Any = None) -> str:
         mechanic_key = safe_key(key)
@@ -14623,6 +14627,7 @@ class SourceGraphBuilder:
             if text_node:
                 self.add_edge(weapon_node, text_node, edge_kind, source=source, evidence=text_id)
                 self.add_edge(weapon_node, text_node, "uses_i18n_text", source=source, evidence=text_id)
+                self.add_i18n_used_by_edge(text_node, weapon_node, source=source, evidence=text_id, edge_kind=edge_kind)
 
     def weapon_level_summary(self, levels: Any) -> dict[str, Any]:
         if not isinstance(levels, list):
@@ -14877,6 +14882,7 @@ class SourceGraphBuilder:
                 if text_node:
                     self.add_edge(desc_node, text_node, "character_tag_desc_text", source=table, evidence=text_id)
                     self.add_edge(desc_node, text_node, "uses_i18n_text", source=table, evidence=text_id)
+                    self.add_i18n_used_by_edge(text_node, desc_node, source=table, evidence=text_id, edge_kind="character_tag_desc_text")
 
     def add_character_profession_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         profession_id = safe_key(row.get("profession") if "profession" in row else row_key)
@@ -14983,6 +14989,7 @@ class SourceGraphBuilder:
                 if text_node:
                     self.add_edge(step_node, text_node, edge_kind, source=table, evidence=text_id)
                     self.add_edge(step_node, text_node, "uses_i18n_text", source=table, evidence=text_id)
+                    self.add_i18n_used_by_edge(text_node, step_node, source=table, evidence=text_id, edge_kind=edge_kind)
 
     def add_tutorial_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         tutorial_id = safe_key(row_key)
@@ -15137,6 +15144,10 @@ class SourceGraphBuilder:
         self.add_alias(text_key, node, kind="i18n_text_id", source=source)
         return node
 
+    def add_i18n_used_by_edge(self, text_node: str, owner_node: str, *, source: str, evidence: str, edge_kind: str = "uses_i18n_text") -> None:
+        data = {"edgeKind": edge_kind} if edge_kind and edge_kind != "uses_i18n_text" else None
+        self.add_edge(text_node, owner_node, "i18n_text_used_by", source=source, evidence=evidence, data=data)
+
     def iter_i18n_text_ids(self, value: Any) -> Iterable[str]:
         if isinstance(value, dict):
             if "id" in value and "text" in value:
@@ -15158,6 +15169,7 @@ class SourceGraphBuilder:
             text_node = self.add_i18n_text_node(text_id, source=source)
             if text_node:
                 self.add_edge(owner_node, text_node, "uses_i18n_text", source=source, evidence=text_id)
+                self.add_i18n_used_by_edge(text_node, owner_node, source=source, evidence=text_id)
 
     def add_text_table_key_node(self, text_key: Any, *, source: str = "", data: Any = None) -> str:
         key = safe_key(text_key)
@@ -15190,6 +15202,7 @@ class SourceGraphBuilder:
                     text_node = self.add_i18n_text_node(row.get("id"), source=table)
                     if text_node:
                         self.add_edge(text_key_node, text_node, "text_table_key_i18n_text", source=table, evidence="id")
+                        self.add_edge(text_node, text_key_node, "i18n_text_used_by_text_table_key", source=table, evidence="id")
 
     def add_setting_text_edges(self, owner_node: str, payload: Any, *, source: str, edge_kind: str = "setting_uses_i18n_text") -> None:
         seen: set[str] = set()
@@ -15201,6 +15214,7 @@ class SourceGraphBuilder:
             if text_node:
                 self.add_edge(owner_node, text_node, edge_kind, source=source, evidence=text_id)
                 self.add_edge(owner_node, text_node, "uses_i18n_text", source=source, evidence=text_id)
+                self.add_i18n_used_by_edge(text_node, owner_node, source=source, evidence=text_id, edge_kind=edge_kind)
 
     def add_setting_text_key_node(self, text_key: Any, *, source: str = "") -> str:
         key = safe_key(text_key)
@@ -21905,6 +21919,7 @@ class SourceGraphBuilder:
                 if text_node:
                     self.add_edge(collectable_node, text_node, "scene_collectable_info_text", source=table, evidence=text_id)
                     self.add_edge(collectable_node, text_node, "uses_i18n_text", source=table, evidence=text_id)
+                    self.add_i18n_used_by_edge(text_node, collectable_node, source=table, evidence=text_id, edge_kind="scene_collectable_info_text")
             convert_node = self.add_item_node(item.get("convertTargetItemId"), source=table)
             if convert_node:
                 self.add_edge(collectable_node, convert_node, "scene_collectable_converts_to_item", source=table, evidence="convertTargetItemId", data={"convertRequiredCount": item.get("convertRequiredCount")})
