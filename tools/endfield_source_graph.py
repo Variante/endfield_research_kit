@@ -25270,6 +25270,9 @@ class SourceGraphBuilder:
         )
         self.add_alias("monobehaviour frontier", report_node, kind="report_title", source="reports")
         self.add_alias("monobehaviour recovery frontier", report_node, kind="report_title", source="reports")
+        source_index = safe_key(payload.get("sourceIndex"))
+        source_index_path = (ROOT / source_index) if source_index and not Path(source_index).is_absolute() else Path(source_index) if source_index else Path()
+        group_root = source_index_path.parent if source_index_path else Path()
 
         for status, count in sorted((frontier.get("statusCounts") or {}).items()):
             status_node = self.add_node("monobehaviour_decode_status", status, name=status, source="decoded_index")
@@ -25327,6 +25330,117 @@ class SourceGraphBuilder:
             self.add_monobehaviour_frontier_counter_edges(group_node, group, "registries", "monobehaviour_registry_status", "monobehaviour_frontier_registry_status")
             self.add_monobehaviour_frontier_counter_edges(group_node, group, "classes", "monobehaviour_managed_class", "monobehaviour_frontier_managed_class")
             self.add_monobehaviour_frontier_counter_edges(group_node, group, "layouts", "monobehaviour_layout", "monobehaviour_frontier_layout")
+            self.ingest_monobehaviour_frontier_group_entries(group_node, group, group_root)
+
+    def ingest_monobehaviour_frontier_group_entries(self, group_node: str, group: dict[str, Any], group_root: Path) -> None:
+        group_file = safe_key(group.get("file"))
+        if not group_file or not group_root:
+            return
+        group_path = group_root / group_file
+        payload = read_json(group_path, {})
+        entries = payload.get("entries") if isinstance(payload, dict) else None
+        if not isinstance(entries, list):
+            return
+        source = "monobehaviour_frontier_report"
+        group_file_node = self.add_file(slash(group_path), kind="monobehaviour_frontier_group_json", source=source, size=group_path.stat().st_size if group_path.exists() else None, data={"group": group.get("id"), "entries": len(entries)})
+        self.add_edge(group_node, group_file_node, "monobehaviour_frontier_group_source_file", source=source, evidence=group_file)
+        for entry_index, entry in enumerate(entries):
+            if not isinstance(entry, dict):
+                continue
+            entry_path = safe_key(entry.get("p"))
+            entry_key = entry_path or f"{safe_key(group.get('id'))}:{entry_index}"
+            entry_node = self.add_node(
+                "monobehaviour_frontier_entry",
+                entry_key,
+                name=safe_key(entry.get("name") or entry.get("file") or entry_key),
+                source=safe_key(entry.get("source")) or "decoded_index",
+                path=entry_path,
+                data=compact_payload({
+                    "status": entry.get("status"),
+                    "registry": entry.get("registry"),
+                    "schema": entry.get("schema"),
+                    "fieldSet": entry.get("fieldSet"),
+                    "family": entry.get("family"),
+                    "domain": entry.get("domain"),
+                    "pathId": entry.get("pathId"),
+                    "pathIdHex": entry.get("pathIdHex"),
+                    "classId": entry.get("classId"),
+                    "sourceFile": entry.get("sourceFile"),
+                    "chunk": entry.get("chunk"),
+                    "refCount": entry.get("refCount"),
+                    "flags": entry.get("flags"),
+                    "rawSize": entry.get("rawSize"),
+                    "size": entry.get("size"),
+                    "error": entry.get("error"),
+                }, depth=3),
+            )
+            self.add_edge(group_node, entry_node, "monobehaviour_frontier_group_entry", source=source, evidence=str(entry_index))
+            self.add_alias(safe_key(entry.get("name")).lower(), entry_node, kind="monobehaviour_entry_name", source="decoded_index")
+            self.add_alias(safe_key(entry.get("filenameStem")).lower(), entry_node, kind="monobehaviour_entry_stem", source="decoded_index")
+            if entry.get("pathId"):
+                self.add_alias(f"pathid:{entry.get('pathId')}", entry_node, kind="monobehaviour_pathid", source="decoded_index")
+                pathid_node = self.add_node("unity_pathid", entry.get("pathId"), name=f"pathid:{entry.get('pathId')}", source=entry.get("source"))
+                self.add_edge(entry_node, pathid_node, "monobehaviour_frontier_entry_pathid", source=source, evidence="pathId")
+            if entry_path:
+                file_node = self.add_file(entry_path, kind="monobehaviour_json", source=entry.get("source"), size=entry.get("size"), data={"status": entry.get("status"), "schema": entry.get("schema")})
+                self.add_edge(entry_node, file_node, "monobehaviour_frontier_entry_file", source=source, evidence="p")
+            source_file = safe_key(entry.get("sourceFile"))
+            if source_file:
+                source_node = self.add_node("monobehaviour_source_file", source_file, name=source_file, source=entry.get("source"))
+                self.add_edge(entry_node, source_node, "monobehaviour_frontier_entry_source_file", source=source, evidence="sourceFile")
+            chunk = safe_key(entry.get("chunk"))
+            if chunk:
+                chunk_node = self.add_node("vfs_chunk", chunk, name=chunk, source=entry.get("source"), path=chunk)
+                self.add_edge(entry_node, chunk_node, "monobehaviour_frontier_entry_chunk", source=source, evidence="chunk")
+            status = safe_key(entry.get("status"))
+            if status:
+                status_node = self.add_node("monobehaviour_decode_status", status, name=status, source="decoded_index")
+                self.add_edge(entry_node, status_node, "monobehaviour_frontier_entry_status", source=source, evidence="status")
+            registry = safe_key(entry.get("registry"))
+            if registry:
+                registry_node = self.add_node("monobehaviour_registry_status", registry, name=registry, source="decoded_index")
+                self.add_edge(entry_node, registry_node, "monobehaviour_frontier_entry_registry_status", source=source, evidence="registry")
+            for field_name, node_kind, edge_kind in (
+                ("domain", "monobehaviour_domain", "monobehaviour_frontier_entry_domain"),
+                ("schema", "monobehaviour_schema", "monobehaviour_frontier_entry_schema"),
+                ("schemaGroup", "monobehaviour_schema_group", "monobehaviour_frontier_entry_schema_group"),
+                ("schemaKind", "monobehaviour_schema_kind", "monobehaviour_frontier_entry_schema_kind"),
+                ("fieldSet", "monobehaviour_field_set", "monobehaviour_frontier_entry_field_set"),
+            ):
+                value = safe_key(entry.get(field_name))
+                if not value:
+                    continue
+                node = self.add_node(node_kind, value, name=value, source="decoded_index")
+                self.add_edge(entry_node, node, edge_kind, source=source, evidence=field_name)
+            error_text = safe_key(entry.get("error"))
+            if error_text:
+                signature = error_text.split(":", 1)[0]
+                error_node = self.add_node("monobehaviour_decode_error", signature, name=signature, source="decoded_index", data={"example": compact_text(error_text, 500)})
+                self.add_edge(entry_node, error_node, "monobehaviour_frontier_entry_error", source=source, evidence="error")
+            for value in entry.get("fields") or []:
+                key_text = safe_key(value)
+                if not key_text:
+                    continue
+                field_node = self.add_node("monobehaviour_field", key_text, name=key_text, source="decoded_index")
+                self.add_edge(entry_node, field_node, "monobehaviour_frontier_entry_field", source=source)
+            for value in entry.get("classes") or []:
+                key_text = safe_key(value)
+                if not key_text:
+                    continue
+                class_node = self.add_node("monobehaviour_managed_class", key_text, name=key_text, source="decoded_index")
+                self.add_edge(entry_node, class_node, "monobehaviour_frontier_entry_class", source=source)
+            for value in entry.get("layouts") or []:
+                key_text = safe_key(value)
+                if not key_text:
+                    continue
+                layout_node = self.add_node("monobehaviour_layout", key_text, name=key_text, source="decoded_index")
+                self.add_edge(entry_node, layout_node, "monobehaviour_frontier_entry_layout", source=source)
+            for value in entry.get("tags") or []:
+                key_text = safe_key(value)
+                if not key_text:
+                    continue
+                tag_node = self.add_node("monobehaviour_tag", key_text, name=key_text, source="decoded_index")
+                self.add_edge(entry_node, tag_node, "monobehaviour_frontier_entry_tag", source=source)
 
     def add_monobehaviour_frontier_counter_edges(
         self,
@@ -26171,6 +26285,12 @@ QUERY_KIND_PRIORITY = {
     "monobehaviour_registry_status": 42.99,
     "monobehaviour_managed_class": 42.991,
     "monobehaviour_layout": 42.992,
+    "monobehaviour_frontier_entry": 42.993,
+    "monobehaviour_decode_error": 42.994,
+    "monobehaviour_field": 42.995,
+    "monobehaviour_tag": 42.996,
+    "monobehaviour_source_file": 42.997,
+    "vfs_chunk": 42.998,
     "selector_formatter_table": 43.01,
     "selector_formatter": 43.02,
     "selector_formatter_slot": 43.03,
