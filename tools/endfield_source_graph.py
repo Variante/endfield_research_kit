@@ -13058,6 +13058,12 @@ class SourceGraphBuilder:
                 self.add_tag_i18n_edges(poi_node, row.get("name"), source=table, edge_kind="domain_poi_type_name_text")
                 self.add_tag_i18n_edges(poi_node, row.get("unlockToastTitle"), source=table, edge_kind="domain_poi_type_unlock_toast_text")
                 self.add_tag_i18n_edges(poi_node, row.get("upgradeToastTitle"), source=table, edge_kind="domain_poi_type_upgrade_toast_text")
+                unlock_key = safe_key(row.get("unlockSystemType"))
+                if unlock_key:
+                    unlock_node = self.add_node("gameplay_unlock", unlock_key, name=unlock_key, source=table)
+                    self.add_alias(unlock_key, unlock_node, kind="gameplay_unlock_id", source=table)
+                    self.add_edge(poi_node, unlock_node, "domain_poi_type_unlock_system", source=table, evidence="unlockSystemType")
+                    self.add_edge(unlock_node, poi_node, "gameplay_unlock_controls_domain_poi_type", source=table, evidence="unlockSystemType")
                 if safe_key(row.get("phaseId")) == "DomainDepotPackage":
                     feature_node = self.add_semantic_node("domain_depot_feature", row.get("phaseId"), source=table, data={"domainPoiType": row.get("domainPoiType")})
                     if feature_node:
@@ -13419,6 +13425,7 @@ class SourceGraphBuilder:
                 item_node = self.add_item_node(row.get("itemId"), source=table)
                 if item_node:
                     self.add_edge(doodad_node, item_node, "world_doodad_item", source=table, evidence="itemId")
+                    self.add_edge(item_node, doodad_node, "item_used_by_world_doodad", source=table, evidence="itemId")
                 for index, reward_id in enumerate(row.get("pickableRewardId") or []):
                     self.add_reward_ref_edge(doodad_node, reward_id, edge_kind="world_doodad_pickable_reward", source=table, evidence=f"pickableRewardId[{index}]", data={"index": index})
                 self.add_harvestable_model_refs(doodad_node, [row.get("modelName")], source=table, evidence="modelName")
@@ -13478,9 +13485,11 @@ class SourceGraphBuilder:
                 self.add_edge(row_node, fertilize_node, "defines_fertilize_item", source=table)
                 if item_node:
                     self.add_edge(item_node, fertilize_node, "item_has_fertilize_config", source=table, evidence="id")
+                    self.add_edge(fertilize_node, item_node, "fertilize_config_for_item", source=table, evidence="id")
                 effect_node = self.add_world_harvestable_node("fertilize_effect", row.get("fertilizeType"), source=table)
                 if effect_node:
                     self.add_edge(fertilize_node, effect_node, "fertilize_item_has_effect_type", source=table, evidence="fertilizeType")
+                    self.add_edge(effect_node, fertilize_node, "fertilize_effect_used_by_item", source=table, evidence="fertilizeType")
                 for field in ("detailIconId", "startEffectId"):
                     self.add_alias(row.get(field), fertilize_node, kind="asset_stem", source=table)
         elif table == "FertilizeIncreaseTable":
