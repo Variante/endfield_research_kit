@@ -4910,6 +4910,7 @@ class SourceGraphBuilder:
             story_node = self.add_node("story", scene_key, name=scene_key, source="DialogIdTable")
             self.add_alias(scene_key, story_node, kind="story_key", source="DialogIdTable")
             self.add_edge(scene_node, story_node, "dialog_registry_targets_story", source="DialogIdTable", evidence="sceneKey", data={"hasRootKey": scene.get("hasRootKey")})
+            self.add_edge(story_node, scene_node, "story_has_dialog_registry_scene", source="DialogIdTable", evidence="sceneKey", data={"hasRootKey": scene.get("hasRootKey")})
 
             lines_by_trunk = scene.get("linesByTrunk") if isinstance(scene.get("linesByTrunk"), dict) else {}
             for trunk_key, line_ids in lines_by_trunk.items():
@@ -4921,7 +4922,9 @@ class SourceGraphBuilder:
                         continue
                     line_node = self.add_node("line", line_id, name=line_id, source="DialogIdTable")
                     self.add_edge(scene_node, line_node, "dialog_registry_has_line", source="DialogIdTable", evidence=safe_key(trunk_key), data={"trunk": trunk_key, "index": index})
+                    self.add_edge(line_node, scene_node, "line_in_dialog_registry_scene", source="DialogIdTable", evidence=safe_key(trunk_key), data={"trunk": trunk_key, "index": index})
                     self.add_edge(line_node, story_node, "dialog_registry_line_for_story", source="DialogIdTable", evidence=safe_key(trunk_key), data={"trunk": trunk_key, "index": index})
+                    self.add_edge(story_node, line_node, "story_has_dialog_registry_line", source="DialogIdTable", evidence=safe_key(trunk_key), data={"trunk": trunk_key, "index": index})
 
             options_by_group = scene.get("optionsByGroup") if isinstance(scene.get("optionsByGroup"), dict) else {}
             for group_key, option_ids in options_by_group.items():
@@ -4933,7 +4936,9 @@ class SourceGraphBuilder:
                         continue
                     option_node = self.add_node("option", option_id, name=option_id, source="DialogIdTable")
                     self.add_edge(scene_node, option_node, "dialog_registry_has_option", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
+                    self.add_edge(option_node, scene_node, "option_in_dialog_registry_scene", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
                     self.add_edge(option_node, story_node, "dialog_registry_option_for_story", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
+                    self.add_edge(story_node, option_node, "story_has_dialog_registry_option", source="DialogIdTable", evidence=safe_key(group_key), data={"group": group_key, "index": index})
 
     def add_enemy_data_asset_node(self, asset_path: Any, *, source: str = "") -> str:
         asset_key = safe_key(asset_path)
@@ -7959,6 +7964,7 @@ class SourceGraphBuilder:
             for actor_id in entry.get("c") or []:
                 actor_node = self.add_node("actor", actor_id, source="webui/story")
                 self.add_edge(story_node, actor_node, "mentions_actor", source="webui/story")
+                self.add_edge(actor_node, story_node, "actor_mentioned_by_story", source="webui/story")
 
         conv_root = lang_root / "conv"
         for conv_path in sorted(conv_root.glob("*.json")):
@@ -9041,6 +9047,7 @@ class SourceGraphBuilder:
             if actor_id:
                 actor_node = self.add_node("actor", actor_id, name=line.get("actor"), source="webui/story")
                 self.add_edge(line_node, actor_node, "spoken_by", source="webui/story")
+                self.add_edge(actor_node, line_node, "actor_speaks_line", source="webui/story")
             audio_id = safe_key(line.get("audio"))
             if audio_id and audio_id not in {"0", "0.0"}:
                 audio_node = self.add_node("audio", audio_id, name=audio_id, source="dialog_line")
@@ -19327,7 +19334,16 @@ class SourceGraphBuilder:
                 self.add_edge(group_node, sequence_node, "audio_sequence_set_has_dialog", source=table, evidence=sequence_key)
 
             for index, speaker in enumerate(sequence.get("involvedSpeakers") or []):
-                self.add_actor_or_character_edges(sequence_node, speaker, actor_edge="audio_sequence_dialog_speaker_actor", character_edge="audio_sequence_dialog_speaker_character", source=table, evidence=f"involvedSpeakers[{index}]")
+                self.add_actor_or_character_edges(
+                    sequence_node,
+                    speaker,
+                    actor_edge="audio_sequence_dialog_speaker_actor",
+                    character_edge="audio_sequence_dialog_speaker_character",
+                    actor_reverse_edge="actor_speaks_audio_sequence_dialog",
+                    character_reverse_edge="character_speaks_audio_sequence_dialog",
+                    source=table,
+                    evidence=f"involvedSpeakers[{index}]",
+                )
             for index, audio_id in enumerate(sequence.get("sequence") or []):
                 self.add_audio_dialog_reference_edges(
                     sequence_node,
@@ -19403,7 +19419,7 @@ class SourceGraphBuilder:
         self.add_line_target_edge(text_node, row_key, edge_kind="dialog_text_line_node", source=table, evidence="rowKey")
         self.add_story_edges_for_line_target(text_node, row_key, edge_kind="dialog_text_story_node", source=table, evidence="has_line")
         self.add_audio_target_edge(text_node, row.get("audioOverride"), edge_kind="dialog_text_uses_audio", source=table, evidence="audioOverride", reverse_edge_kind="audio_used_by_dialog_text")
-        self.add_actor_or_character_edges(text_node, row.get("actorNameId"), actor_edge="dialog_text_actor", character_edge="dialog_text_character", source=table, evidence="actorNameId")
+        self.add_actor_or_character_edges(text_node, row.get("actorNameId"), actor_edge="dialog_text_actor", character_edge="dialog_text_character", actor_reverse_edge="actor_speaks_dialog_text", character_reverse_edge="character_speaks_dialog_text", source=table, evidence="actorNameId")
         self.add_i18n_text_edges(text_node, row, source=table)
 
     def add_dialog_option_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
@@ -19461,14 +19477,31 @@ class SourceGraphBuilder:
         elif table == "DomainDepotDeliverTargetDialogTable" and isinstance(row, dict):
             self.add_domain_depot_deliver_target_dialog_edges(table, row_key, row, row_node)
 
-    def add_actor_or_character_edges(self, owner_node: str, actor_id: Any, *, actor_edge: str, character_edge: str, source: str, evidence: str) -> None:
+    def add_actor_or_character_edges(
+        self,
+        owner_node: str,
+        actor_id: Any,
+        *,
+        actor_edge: str,
+        character_edge: str,
+        source: str,
+        evidence: str,
+        actor_reverse_edge: str = "",
+        character_reverse_edge: str = "",
+    ) -> None:
         actor_key = safe_key(actor_id)
         if not actor_key:
             return
         if self.node_exists("actor", actor_key):
-            self.add_edge(owner_node, self.node_id("actor", actor_key), actor_edge, source=source, evidence=evidence)
+            actor_node = self.node_id("actor", actor_key)
+            self.add_edge(owner_node, actor_node, actor_edge, source=source, evidence=evidence)
+            if actor_reverse_edge:
+                self.add_edge(actor_node, owner_node, actor_reverse_edge, source=source, evidence=evidence)
         if self.node_exists("character", actor_key):
-            self.add_edge(owner_node, self.node_id("character", actor_key), character_edge, source=source, evidence=evidence)
+            character_node = self.node_id("character", actor_key)
+            self.add_edge(owner_node, character_node, character_edge, source=source, evidence=evidence)
+            if character_reverse_edge:
+                self.add_edge(character_node, owner_node, character_reverse_edge, source=source, evidence=evidence)
 
     def add_sns_chat_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         chat_node = self.add_semantic_node(
@@ -19483,7 +19516,7 @@ class SourceGraphBuilder:
         self.add_edge(row_node, chat_node, "defines_sns_chat", source=table)
         for alias in (row.get("icon"), row.get("listIcon")):
             self.add_alias(alias, chat_node, kind="asset_stem", source=table)
-        self.add_actor_or_character_edges(chat_node, row.get("owner"), actor_edge="sns_chat_owner_actor", character_edge="sns_chat_owner_character", source=table, evidence="owner")
+        self.add_actor_or_character_edges(chat_node, row.get("owner"), actor_edge="sns_chat_owner_actor", character_edge="sns_chat_owner_character", actor_reverse_edge="actor_owns_sns_chat", character_reverse_edge="character_owns_sns_chat", source=table, evidence="owner")
         self.add_i18n_text_edges(chat_node, row, source=table)
 
     def add_sns_topic_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
@@ -19504,7 +19537,7 @@ class SourceGraphBuilder:
             return
         self.add_edge(row_node, option_node, "defines_sns_option", source=table)
         for index, npc_id in enumerate(row.get("optionNPCIds") or []):
-            self.add_actor_or_character_edges(option_node, npc_id, actor_edge="sns_option_uses_actor", character_edge="sns_option_uses_character", source=table, evidence=f"optionNPCIds[{index}]")
+            self.add_actor_or_character_edges(option_node, npc_id, actor_edge="sns_option_uses_actor", character_edge="sns_option_uses_character", actor_reverse_edge="actor_used_by_sns_option", character_reverse_edge="character_used_by_sns_option", source=table, evidence=f"optionNPCIds[{index}]")
         self.add_i18n_text_edges(option_node, row, source=table)
 
     def add_sns_dialog_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
@@ -19546,7 +19579,7 @@ class SourceGraphBuilder:
                 continue
             content_nodes[content_id] = content_node
             self.add_edge(dialog_node, content_node, "sns_dialog_has_content", source=table, evidence=content_id)
-            self.add_actor_or_character_edges(content_node, content.get("speaker"), actor_edge="sns_content_speaker_actor", character_edge="sns_content_speaker_character", source=table, evidence="speaker")
+            self.add_actor_or_character_edges(content_node, content.get("speaker"), actor_edge="sns_content_speaker_actor", character_edge="sns_content_speaker_character", actor_reverse_edge="actor_speaks_sns_content", character_reverse_edge="character_speaks_sns_content", source=table, evidence="speaker")
             linked_mission = self.add_mission_ref_node(content.get("linkMissionId"), source=table)
             if linked_mission:
                 self.add_edge(content_node, linked_mission, "sns_content_links_mission", source=table, evidence="linkMissionId")
@@ -19602,7 +19635,7 @@ class SourceGraphBuilder:
             self.add_edge(radio_node, line_node, "radio_has_line", source=table, evidence=f"radioSingleDataList[{index}]")
             self.add_line_target_edge(line_node, item.get("id"), edge_kind="radio_line_node", source=table, evidence="id")
             self.add_audio_target_edge(line_node, item.get("audioOverride"), edge_kind="radio_line_uses_audio", source=table, evidence="audioOverride", reverse_edge_kind="audio_used_by_radio_line")
-            self.add_actor_or_character_edges(line_node, item.get("actorNameId"), actor_edge="radio_line_actor", character_edge="radio_line_character", source=table, evidence="actorNameId")
+            self.add_actor_or_character_edges(line_node, item.get("actorNameId"), actor_edge="radio_line_actor", character_edge="radio_line_character", actor_reverse_edge="actor_speaks_radio_line", character_reverse_edge="character_speaks_radio_line", source=table, evidence="actorNameId")
             self.add_i18n_text_edges(line_node, item, source=table)
 
     def add_remote_common_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
@@ -19630,11 +19663,11 @@ class SourceGraphBuilder:
                 ("musicId", "remote_common_line_uses_music", "audio_used_by_remote_common_line_music"),
             ):
                 self.add_audio_target_edge(line_node, item.get(field), edge_kind=edge_kind, source=table, evidence=field, reverse_edge_kind=reverse_edge_kind)
-            self.add_actor_or_character_edges(line_node, item.get("middleId"), actor_edge="remote_common_line_middle_actor", character_edge="remote_common_line_middle_character", source=table, evidence="middleId")
+            self.add_actor_or_character_edges(line_node, item.get("middleId"), actor_edge="remote_common_line_middle_actor", character_edge="remote_common_line_middle_character", actor_reverse_edge="actor_used_by_remote_common_line_middle", character_reverse_edge="character_used_by_remote_common_line_middle", source=table, evidence="middleId")
             if safe_key(item.get("middleId")) and not self.node_exists("actor", item.get("middleId")) and not self.node_exists("character", item.get("middleId")):
                 self.add_alias(item.get("middleId"), line_node, kind="asset_stem", source=table)
             for actor_index, actor_id in enumerate(item.get("actorList") or []):
-                self.add_actor_or_character_edges(line_node, actor_id, actor_edge="remote_common_line_actor", character_edge="remote_common_line_character", source=table, evidence=f"actorList[{actor_index}]")
+                self.add_actor_or_character_edges(line_node, actor_id, actor_edge="remote_common_line_actor", character_edge="remote_common_line_character", actor_reverse_edge="actor_speaks_remote_common_line", character_reverse_edge="character_speaks_remote_common_line", source=table, evidence=f"actorList[{actor_index}]")
             for image_index, image_id in enumerate(item.get("imageList") or []):
                 self.add_alias(image_id, line_node, kind="asset_stem", source=table)
             self.add_i18n_text_edges(line_node, item, source=table)
