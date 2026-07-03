@@ -3282,6 +3282,8 @@ class SourceGraphBuilder:
             self.commit_step("decodedConfigs")
             self.ingest_selector_formatter_tag_audit()
             self.commit_step("selectorFormatterTagAudit")
+            self.ingest_selector_targetsettings_chain_summary()
+            self.commit_step("selectorTargetSettingsChainSummary")
             self.ingest_findtarget_selector_payload_audit()
             self.commit_step("findTargetSelectorAudit")
             self.ingest_findtarget_selector_replay_audit()
@@ -4090,6 +4092,153 @@ class SourceGraphBuilder:
                 if action_name:
                     formatter_node = self.add_node("selector_formatter", f"{family}:{action_name}", name=action_name, source=source)
                     self.add_edge(slot_node, formatter_node, "selector_formatter_slot_inventory_formatter", source=source, evidence=slot_va)
+
+    def selector_chain_method_node(self, row: dict[str, Any], *, source: str, role: str = "") -> str:
+        method_index = safe_key(row.get("methodIndex"))
+        method_type = safe_key(row.get("type"))
+        method_name = safe_key(row.get("method"))
+        key = method_index or f"{method_type}.{method_name}"
+        if not key:
+            return ""
+        node = self.add_node(
+            "selector_chain_method",
+            key,
+            name=f"{method_type}.{method_name}" if method_type and method_name else key,
+            source=source,
+            data=compact_payload(
+                {
+                    "type": row.get("type"),
+                    "method": row.get("method"),
+                    "methodIndex": row.get("methodIndex"),
+                    "methodPointerVa": row.get("methodPointerVa"),
+                    "role": role,
+                },
+                depth=2,
+            ),
+        )
+        self.add_alias(f"{method_type}.{method_name}", node, kind="selector_chain_method", source=source)
+        if row.get("methodPointerVa"):
+            self.add_alias(row.get("methodPointerVa"), node, kind="method_pointer_va", source=source)
+        return node
+
+    def selector_chain_field_node(self, owner_type: Any, field: Any, *, source: str) -> str:
+        owner_key = safe_key(owner_type)
+        field_key = safe_key(field)
+        if not owner_key or not field_key:
+            return ""
+        return self.add_node("selector_chain_field", f"{owner_key}:{field_key}", name=field_key, source=source, data={"ownerType": owner_type, "field": field})
+
+    def ingest_selector_targetsettings_chain_summary(self) -> None:
+        path = self.root / "reports" / "mission_order" / "selector_targetsettings_chain_summary.json"
+        payload = read_json(path, {})
+        if not isinstance(payload, dict):
+            return
+        source = "selector_targetsettings_chain_summary"
+        source_path = slash(path.relative_to(self.root)) if path.is_relative_to(self.root) else slash(path)
+        dataset = self.add_node(
+            "dataset",
+            "selector_targetsettings_chain_summary",
+            name=path.name,
+            source=source,
+            path=source_path,
+            data=compact_payload(payload.get("summary") or {}, depth=3),
+        )
+        self.add_file(source_path, kind="selector_targetsettings_chain_summary", source=source, size=path.stat().st_size if path.exists() else None)
+
+        for index, target in enumerate(payload.get("selectedTargets") or []):
+            if not isinstance(target, dict):
+                continue
+            method_node = self.selector_chain_method_node(target, source=source, role="selectedTarget")
+            if method_node:
+                self.add_edge(dataset, method_node, "has_selector_chain_selected_target", source=source, evidence=str(index), data=compact_payload(target, depth=2))
+
+        for sequence_index, sequence in enumerate(payload.get("setterSequences") or []):
+            if not isinstance(sequence, dict):
+                continue
+            caller_node = self.selector_chain_method_node(sequence, source=source, role="deserializer")
+            if not caller_node:
+                continue
+            self.add_edge(dataset, caller_node, "has_selector_chain_setter_sequence", source=source, evidence=str(sequence_index), data=compact_payload(sequence, depth=2))
+            for call_index, call in enumerate(sequence.get("setterCalls") or []):
+                if not isinstance(call, dict):
+                    continue
+                candidates = [candidate for candidate in (call.get("candidates") or []) if isinstance(candidate, dict)]
+                call_key = f"{node_key(caller_node)}:{safe_key(call.get('offset'))}:{safe_key(call.get('targetVa'))}"
+                call_node = self.add_node(
+                    "selector_chain_setter_call",
+                    call_key,
+                    name=f"{node_key(caller_node)}+0x{int(call.get('offset') or 0):x}" if isinstance(call.get("offset"), int) else call_key,
+                    source=source,
+                    data=compact_payload({"offset": call.get("offset"), "targetVa": call.get("targetVa"), "candidateCount": len(candidates)}, depth=2),
+                )
+                self.add_edge(caller_node, call_node, "selector_chain_deserializer_has_setter_call", source=source, evidence=str(call_index))
+                for candidate_index, candidate in enumerate(candidates):
+                    callee_node = self.selector_chain_method_node(candidate, source=source, role="setter")
+                    if callee_node:
+                        self.add_edge(call_node, callee_node, "selector_chain_setter_call_candidate", source=source, evidence=str(candidate_index), data=compact_payload(candidate, depth=2))
+                        if len(candidates) == 1:
+                            self.add_edge(caller_node, callee_node, "selector_chain_deserializer_calls_setter", source=source, evidence=safe_key(call.get("offset")), data=compact_payload(call, depth=2))
+
+        for index, row in enumerate(payload.get("setterStoreOffsets") or []):
+            if not isinstance(row, dict):
+                continue
+            setter_node = self.selector_chain_method_node(row, source=source, role="setter")
+            field_node = self.selector_chain_field_node(row.get("type"), row.get("field"), source=source)
+            store = row.get("store") if isinstance(row.get("store"), dict) else {}
+            store_key = f"{safe_key(row.get('methodIndex'))}:{safe_key(row.get('field'))}:{safe_key(store.get('offset'))}"
+            store_node = self.add_node(
+                "selector_chain_store_offset",
+                store_key,
+                name=f"{safe_key(row.get('field'))}@{safe_key(store.get('offset'))}",
+                source=source,
+                data=compact_payload(row, depth=3),
+            )
+            self.add_edge(dataset, store_node, "has_selector_chain_store_offset", source=source, evidence=str(index))
+            if setter_node:
+                self.add_edge(setter_node, store_node, "selector_chain_setter_has_store_offset", source=source, evidence=safe_key(store.get("offset")))
+            if setter_node and field_node:
+                self.add_edge(setter_node, field_node, "selector_chain_setter_stores_field", source=source, evidence=safe_key(store.get("offset")), data=compact_payload(store, depth=2))
+                self.add_edge(field_node, setter_node, "selector_chain_field_stored_by_setter", source=source, evidence=safe_key(store.get("offset")), data=compact_payload(store, depth=2))
+
+        for index, warning in enumerate(payload.get("callAliasWarnings") or []):
+            if not isinstance(warning, dict):
+                continue
+            caller = {"type": warning.get("callerType"), "method": warning.get("callerMethod")}
+            caller_node = self.selector_chain_method_node(caller, source=source, role="aliasWarningCaller")
+            warning_key = f"{safe_key(warning.get('callerType'))}.{safe_key(warning.get('callerMethod'))}:{safe_key(warning.get('offset'))}:{safe_key(warning.get('targetVa'))}"
+            warning_node = self.add_node("selector_chain_alias_warning", warning_key, name=warning_key, source=source, data=compact_payload(warning, depth=3))
+            self.add_edge(dataset, warning_node, "has_selector_chain_alias_warning", source=source, evidence=str(index))
+            if caller_node:
+                self.add_edge(caller_node, warning_node, "selector_chain_method_has_alias_warning", source=source, evidence=safe_key(warning.get("offset")))
+            for candidate_index, candidate in enumerate(warning.get("candidates") or []):
+                if not isinstance(candidate, dict):
+                    continue
+                candidate_node = self.selector_chain_method_node(candidate, source=source, role="aliasWarningCandidate")
+                if candidate_node:
+                    self.add_edge(warning_node, candidate_node, "selector_chain_alias_warning_candidate", source=source, evidence=str(candidate_index), data=compact_payload(candidate, depth=2))
+
+        for index, edge in enumerate(payload.get("directCallEdges") or []):
+            if not isinstance(edge, dict):
+                continue
+            caller = edge.get("caller") if isinstance(edge.get("caller"), dict) else {}
+            caller_node = self.selector_chain_method_node(caller, source=source, role="directCallCaller")
+            call_key = f"{safe_key(caller.get('methodIndex'))}:{safe_key(edge.get('offset'))}:{safe_key(edge.get('targetVa'))}"
+            call_node = self.add_node(
+                "selector_chain_direct_call",
+                call_key,
+                name=f"{safe_key(caller.get('method'))}+{safe_key(edge.get('offset'))}",
+                source=source,
+                data=compact_payload({"caller": caller, "offset": edge.get("offset"), "targetVa": edge.get("targetVa"), "isCatalogTarget": edge.get("isCatalogTarget"), "calleeCount": len(edge.get("callees") or [])}, depth=3),
+            )
+            self.add_edge(dataset, call_node, "has_selector_chain_direct_call", source=source, evidence=str(index))
+            if caller_node:
+                self.add_edge(caller_node, call_node, "selector_chain_method_has_direct_call", source=source, evidence=safe_key(edge.get("offset")))
+            for callee_index, callee in enumerate(edge.get("callees") or []):
+                if not isinstance(callee, dict):
+                    continue
+                callee_node = self.selector_chain_method_node(callee, source=source, role="directCallCallee")
+                if callee_node:
+                    self.add_edge(call_node, callee_node, "selector_chain_direct_call_callee", source=source, evidence=str(callee_index), data=compact_payload(callee, depth=2))
 
     def ingest_findtarget_selector_payload_audit(self) -> None:
         path = self.root / "reports" / "mission_order" / "findtarget_selector_payload_priority_audit.json"
@@ -24117,6 +24266,12 @@ QUERY_KIND_PRIORITY = {
     "findtarget_ambiguous_record": 43.91,
     "findtarget_split_status": 43.92,
     "target_group_key": 43.93,
+    "selector_chain_method": 43.94,
+    "selector_chain_setter_call": 43.95,
+    "selector_chain_store_offset": 43.96,
+    "selector_chain_field": 43.97,
+    "selector_chain_alias_warning": 43.98,
+    "selector_chain_direct_call": 43.99,
     "model_config": 44,
     "model_config_model": 45,
     "model_prefab": 45.5,
@@ -24840,6 +24995,12 @@ NODE_ID_PREFIXES = (
     "findtarget_ambiguous_record",
     "findtarget_split_status",
     "target_group_key",
+    "selector_chain_method",
+    "selector_chain_setter_call",
+    "selector_chain_store_offset",
+    "selector_chain_field",
+    "selector_chain_alias_warning",
+    "selector_chain_direct_call",
     "model_config",
     "model_config_model",
     "model_prefab",
