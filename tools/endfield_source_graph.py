@@ -21424,6 +21424,46 @@ class SourceGraphBuilder:
         self.add_alias(template_key, node, kind="responsive_event_template_id", source=source)
         return node
 
+    def add_responsive_policy_node(self, kind: str, value: Any, *, source: str = "") -> str:
+        value_key = safe_key(value)
+        if not value_key:
+            return ""
+        node = self.add_node(kind, value_key, name=value_key, source=source, data={"value": value})
+        self.add_alias(value_key, node, kind=f"{kind}_value", source=source)
+        self.add_alias(f"{kind}:{value_key}", node, kind=f"{kind}_id", source=source)
+        return node
+
+    def responsive_trigger_policy_data(self, trigger_type: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "cdTime": trigger_type.get("cdTime"),
+            "chatCd": trigger_type.get("chatCd"),
+            "delay": trigger_type.get("delay"),
+            "priority": trigger_type.get("priority"),
+            "probability": trigger_type.get("probability"),
+            "samePriorityInterrupt": trigger_type.get("samePriorityInterrupt"),
+        }
+
+    def add_responsive_trigger_policy_edge(
+        self,
+        type_node: str,
+        trigger_type: dict[str, Any],
+        field: str,
+        *,
+        policy_kind: str,
+        edge_kind: str,
+        reverse_edge_kind: str,
+        source: str,
+    ) -> None:
+        if field not in trigger_type:
+            return
+        policy_node = self.add_responsive_policy_node(policy_kind, trigger_type.get(field), source=source)
+        if not policy_node:
+            return
+        data = self.responsive_trigger_policy_data(trigger_type)
+        data[field] = trigger_type.get(field)
+        self.add_edge(type_node, policy_node, edge_kind, source=source, evidence=field, data=data)
+        self.add_edge(policy_node, type_node, reverse_edge_kind, source=source, evidence=field, data=data)
+
     def add_responsive_response_node(self, response_id: Any, *, source: str = "") -> str:
         response_key = safe_key(response_id)
         if not response_key:
@@ -21628,6 +21668,22 @@ class SourceGraphBuilder:
                 base_node = self.add_responsive_trigger_type_node(base_type, source=table)
                 if base_node:
                     self.add_edge(type_node, base_node, "responsive_trigger_type_extends", source=table, evidence="baseTriggerType")
+            for field, policy_kind, edge_kind, reverse_kind in (
+                ("cdType", "responsive_cd_type", "responsive_trigger_type_has_cd_type", "responsive_cd_type_used_by_trigger_type"),
+                ("voLimitType", "responsive_vo_limit_type", "responsive_trigger_type_has_vo_limit_type", "responsive_vo_limit_type_used_by_trigger_type"),
+                ("interruptType", "responsive_interrupt_type", "responsive_trigger_type_has_interrupt_type", "responsive_interrupt_type_used_by_trigger_type"),
+                ("invalidStates", "responsive_invalid_state_mask", "responsive_trigger_type_has_invalid_state_mask", "responsive_invalid_state_mask_used_by_trigger_type"),
+                ("bandLimitCount", "responsive_band_limit_count", "responsive_trigger_type_has_band_limit_count", "responsive_band_limit_count_used_by_trigger_type"),
+            ):
+                self.add_responsive_trigger_policy_edge(
+                    type_node,
+                    trigger_type,
+                    field,
+                    policy_kind=policy_kind,
+                    edge_kind=edge_kind,
+                    reverse_edge_kind=reverse_kind,
+                    source=table,
+                )
 
     def add_bark_text_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         text_node = self.add_bark_text_node(row_key, source=table, data={"barkText": table_text(row.get("barkText"))})
@@ -27460,6 +27516,11 @@ QUERY_KIND_PRIORITY = {
     "responsive_trigger": 94,
     "responsive_trigger_key": 95,
     "responsive_trigger_type": 96,
+    "responsive_cd_type": 96.1,
+    "responsive_vo_limit_type": 96.2,
+    "responsive_interrupt_type": 96.3,
+    "responsive_invalid_state_mask": 96.4,
+    "responsive_band_limit_count": 96.5,
     "responsive_event_template": 97,
     "responsive_response": 98,
     "bark_group": 99,
@@ -28244,6 +28305,11 @@ NODE_ID_PREFIXES = (
     "responsive_trigger",
     "responsive_trigger_key",
     "responsive_trigger_type",
+    "responsive_cd_type",
+    "responsive_vo_limit_type",
+    "responsive_interrupt_type",
+    "responsive_invalid_state_mask",
+    "responsive_band_limit_count",
     "responsive_event_template",
     "responsive_response",
     "bark_group",
