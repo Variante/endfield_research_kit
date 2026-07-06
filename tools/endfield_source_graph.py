@@ -34771,6 +34771,200 @@ def option_branch_gaps(
     }
 
 
+def fetch_compact_node(conn: sqlite3.Connection, node_id: str) -> dict[str, Any] | None:
+    row = conn.execute(
+        "SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?",
+        (node_id,),
+    ).fetchone()
+    return compact_node_ref(row) if row else None
+
+
+def option_route_audit(
+    db_path: Path,
+    *,
+    story: str = "",
+    conflicts_only: bool = False,
+    recommendation: str = "",
+    limit: int = 40,
+) -> dict[str, Any]:
+    story_filter = safe_key(story)
+    recommendation_filter = safe_key(recommendation)
+    group_limit = max(limit, 1)
+    groups: list[dict[str, Any]] = []
+    recommendation_counts: Counter[str] = Counter()
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        audit_rows = conn.execute(
+            """
+            SELECT id, kind, name, source, path, data
+            FROM nodes
+            WHERE kind = 'runtime_option_route_audit_group'
+            ORDER BY name, path
+            """
+        ).fetchall()
+        for row in audit_rows:
+            data = parse_json_text(row["data"])
+            scene_key = safe_key(data.get("sceneKey"))
+            group_key = safe_key(data.get("group"))
+            if story_filter and scene_key != story_filter:
+                continue
+            recommendation_value = safe_key(data.get("recommendation"))
+            if recommendation_filter and recommendation_value != recommendation_filter:
+                continue
+            conflict_count = int(data.get("runtimePathConflictCount") or 0)
+            if conflicts_only and not conflict_count:
+                continue
+            recommendation_counts[recommendation_value or ""] += 1
+            option_ids = [safe_key(option_id) for option_id in (data.get("optionIds") or []) if safe_key(option_id)]
+            option_placeholders = ",".join("?" for _ in option_ids)
+            options = [
+                fetch_compact_node(conn, f"option:{option_id}") or {"id": f"option:{option_id}", "key": option_id, "kind": "option"}
+                for option_id in option_ids
+            ]
+
+            conflicts: list[dict[str, Any]] = []
+            conflict_rows = conn.execute(
+                """
+                SELECT conflict.id, conflict.kind, conflict.name, conflict.source, conflict.path, conflict.data,
+                       e.source AS edgeSource, e.evidence AS edgeEvidence, e.data AS edgeData
+                FROM edges e
+                JOIN nodes conflict ON conflict.id = e.dst
+                WHERE e.src = ?
+                  AND e.kind = 'runtime_audit_has_conflict'
+                ORDER BY e.evidence, conflict.name
+                """,
+                (row["id"],),
+            ).fetchall()
+            for conflict_row in conflict_rows:
+                conflict = compact_node_ref(conflict_row)
+                conflict_data = parse_json_text(conflict_row["data"])
+                expected_id = safe_key(conflict_data.get("expectedFirstLineId"))
+                runtime_id = safe_key(conflict_data.get("runtimeFirstLineId"))
+                owner_id = safe_key(conflict_data.get("runtimeFirstLineCandidateOwner"))
+                if expected_id:
+                    conflict["expectedFirstLine"] = fetch_compact_node(conn, f"line:{expected_id}") or {"id": f"line:{expected_id}", "key": expected_id, "kind": "line"}
+                if runtime_id:
+                    conflict["runtimeFirstLine"] = fetch_compact_node(conn, f"line:{runtime_id}") or {"id": f"line:{runtime_id}", "key": runtime_id, "kind": "line"}
+                if owner_id:
+                    conflict["runtimeFirstLineCandidateOwner"] = fetch_compact_node(conn, f"option:{owner_id}") or {"id": f"option:{owner_id}", "key": owner_id, "kind": "option"}
+                conflicts.append(conflict)
+
+            first_line_maps: dict[str, list[dict[str, Any]]] = {}
+            nearby_jumps: list[dict[str, Any]] = []
+            if option_ids:
+                map_rows = conn.execute(
+                    f"""
+                    SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                           opt.id AS optionId, opt.kind AS optionKind, opt.name AS optionName, opt.path AS optionPath, opt.data AS optionData,
+                           line.id AS lineId, line.kind AS lineKind, line.name AS lineName, line.path AS linePath, line.data AS lineData
+                    FROM edges e
+                    JOIN nodes opt ON opt.id = e.src
+                    JOIN nodes line ON line.id = e.dst
+                    WHERE opt.id IN ({option_placeholders})
+                      AND e.kind IN ('runtime_audit_expected_first_line', 'runtime_audit_runtime_first_line', 'runtime_audit_directional_first_line')
+                    ORDER BY e.kind, opt.name, line.name, e.evidence
+                    """,
+                    tuple(f"option:{option_id}" for option_id in option_ids),
+                ).fetchall()
+                for map_row in map_rows:
+                    edge_data = parse_json_text(map_row["edgeData"])
+                    if scene_key and safe_key(edge_data.get("sceneKey")) != scene_key:
+                        continue
+                    if group_key and safe_key(edge_data.get("group")) != group_key:
+                        continue
+                    first_line_maps.setdefault(map_row["edge"], []).append({
+                        "option": compact_node_ref({
+                            "id": map_row["optionId"],
+                            "kind": map_row["optionKind"],
+                            "name": map_row["optionName"],
+                            "path": map_row["optionPath"],
+                            "data": map_row["optionData"],
+                        }),
+                        "line": compact_node_ref({
+                            "id": map_row["lineId"],
+                            "kind": map_row["lineKind"],
+                            "name": map_row["lineName"],
+                            "path": map_row["linePath"],
+                            "data": map_row["lineData"],
+                        }),
+                        "source": map_row["source"],
+                        "evidence": map_row["evidence"],
+                        "edgeData": edge_data,
+                    })
+                jump_rows = conn.execute(
+                    f"""
+                    SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                           opt.id AS optionId, opt.kind AS optionKind, opt.name AS optionName, opt.path AS optionPath, opt.data AS optionData,
+                           jump.id AS jumpId, jump.kind AS jumpKind, jump.name AS jumpName, jump.path AS jumpPath, jump.data AS jumpData
+                    FROM edges e
+                    JOIN nodes opt ON opt.id = e.src
+                    JOIN nodes jump ON jump.id = e.dst
+                    WHERE opt.id IN ({option_placeholders})
+                      AND e.kind = 'runtime_audit_nearby_jump'
+                    ORDER BY opt.name, e.evidence, jump.name
+                    """,
+                    tuple(f"option:{option_id}" for option_id in option_ids),
+                ).fetchall()
+                for jump_row in jump_rows:
+                    edge_data = parse_json_text(jump_row["edgeData"])
+                    if scene_key and safe_key(edge_data.get("sceneKey")) != scene_key:
+                        continue
+                    if group_key and safe_key(edge_data.get("group")) != group_key:
+                        continue
+                    nearby_jumps.append({
+                        "option": compact_node_ref({
+                            "id": jump_row["optionId"],
+                            "kind": jump_row["optionKind"],
+                            "name": jump_row["optionName"],
+                            "path": jump_row["optionPath"],
+                            "data": jump_row["optionData"],
+                        }),
+                        "jump": compact_node_ref({
+                            "id": jump_row["jumpId"],
+                            "kind": jump_row["jumpKind"],
+                            "name": jump_row["jumpName"],
+                            "path": jump_row["jumpPath"],
+                            "data": jump_row["jumpData"],
+                        }),
+                        "source": jump_row["source"],
+                        "evidence": jump_row["evidence"],
+                        "edgeData": edge_data,
+                    })
+
+            groups.append({
+                "auditGroup": compact_node_ref(row),
+                "sceneKey": scene_key,
+                "group": group_key,
+                "recommendation": recommendation_value,
+                "optionIds": option_ids,
+                "options": options,
+                "candidateLineIds": data.get("candidateLineIds") or [],
+                "commonContinuationLineId": data.get("commonContinuationLineId"),
+                "runtimePathConflictCount": conflict_count,
+                "directionalFirstLineConflictCount": data.get("directionalFirstLineConflictCount"),
+                "nearbyRuntimeJumpCount": data.get("nearbyRuntimeJumpCount"),
+                "sourceReport": data.get("sourceReport") or row["path"],
+                "conflicts": conflicts,
+                "firstLineEvidence": first_line_maps,
+                "nearbyRuntimeJumps": nearby_jumps,
+            })
+            if len(groups) >= group_limit:
+                break
+    return {
+        "story": story_filter,
+        "conflictsOnly": conflicts_only,
+        "recommendation": recommendation_filter,
+        "returned": len(groups),
+        "recommendationCounts": dict(sorted((k, v) for k, v in recommendation_counts.items() if k)),
+        "groups": groups,
+        "caveats": [
+            "runtime_jump_audit_evidence_is_static_timeline_recovery_not_live_playback",
+            "expected_first_line_can_reflect_current_inference_or_manual_override_not_independent_runtime_truth",
+            "nearby_runtime_jump_edges_are_diagnostic_until_their_option_index_mapping_is_proven",
+        ],
+    }
+
+
 def scene_order_gaps(
     db_path: Path,
     *,
@@ -35233,6 +35427,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     option_gaps.add_argument("--recommendation", default="", help="Optional runtime audit recommendation filter.")
     option_gaps.add_argument("--limit", type=int, default=40)
 
+    option_route_audit_cmd = sub.add_parser("option-route-audit", help="Show compact runtime jump option-route audit groups, conflicts, first-line mappings, and nearby jumps")
+    option_route_audit_cmd.add_argument("--db", type=Path, default=DEFAULT_DB)
+    option_route_audit_cmd.add_argument("--story", default="", help="Optional story key filter, such as dlg_e6m1_10.")
+    option_route_audit_cmd.add_argument("--conflicts", action="store_true", help="Only show audit groups with runtime route conflicts.")
+    option_route_audit_cmd.add_argument("--recommendation", default="", help="Optional runtime audit recommendation filter.")
+    option_route_audit_cmd.add_argument("--limit", type=int, default=40)
+
     scene_gaps = sub.add_parser("scene-gaps", help="List scene-order gap hotlist records from the source graph")
     scene_gaps.add_argument("--db", type=Path, default=DEFAULT_DB)
     scene_gaps.add_argument("--warning", default="", help="Optional warning filter, such as sceneOrderDisorder.")
@@ -35370,6 +35571,16 @@ def main(argv: list[str] | None = None) -> int:
         result = option_branch_gaps(
             args.db,
             audit_only=args.audit_only,
+            conflicts_only=args.conflicts,
+            recommendation=args.recommendation,
+            limit=args.limit,
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "option-route-audit":
+        result = option_route_audit(
+            args.db,
+            story=args.story,
             conflicts_only=args.conflicts,
             recommendation=args.recommendation,
             limit=args.limit,
