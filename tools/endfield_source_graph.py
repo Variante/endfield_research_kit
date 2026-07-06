@@ -30523,6 +30523,79 @@ TEXT_USAGE_EXPLICIT_EDGE_KINDS = (
     "rich_content_line_uses_i18n_text",
 )
 
+MISSION_FLOW_KIND_FALLBACKS = (
+    "mission_runtime_asset",
+    "mission",
+    "quest_task",
+    "mission_runtime_action",
+    "mission_runtime_condition",
+    "level",
+    "story",
+)
+
+MISSION_FLOW_EDGE_KINDS = (
+    "defines_mission_runtime_asset",
+    "mission_runtime_asset_for_mission",
+    "mission_runtime_in_level",
+    "level_has_mission_runtime",
+    "mission_runtime_rewards",
+    "reward_used_by_mission_runtime",
+    "mission_runtime_name_text",
+    "mission_runtime_description_text",
+    "mission_runtime_has_quest",
+    "quest_task_in_mission",
+    "quest_task_depends_on_previous",
+    "quest_task_rewards",
+    "quest_objective_text",
+    "quest_description_override_text",
+    "quest_has_runtime_condition",
+    "quest_objective_condition_type",
+    "quest_references_narrative",
+    "story_used_by_mission_runtime_quest",
+    "sns_dialog_used_by_mission_runtime_quest",
+    "remote_common_used_by_mission_runtime_quest",
+    "radio_used_by_mission_runtime_quest",
+    "mission_runtime_has_action",
+    "mission_runtime_action_type",
+    "mission_runtime_action_next",
+    "mission_runtime_action_previous",
+    "mission_runtime_action_text",
+    "i18n_text_used_by_mission_runtime_action",
+    "mission_runtime_action_plays_radio",
+    "radio_used_by_mission_runtime_action",
+    "mission_runtime_action_references_narrative",
+    "mission_runtime_action_map_references_narrative",
+    "radio_used_by_mission_runtime_action_map",
+    "mission_runtime_action_media_guide_group",
+    "guide_group_used_by_mission_runtime_media_action",
+    "mission_runtime_action_guide_group",
+    "guide_group_used_by_mission_runtime_action",
+    "mission_runtime_action_shows_chapter_panel",
+    "chapter_panel_used_by_mission_runtime_action",
+    "mission_runtime_condition_type",
+    "condition_has_sub_condition",
+    "condition_reaches_level",
+    "condition_reaches_mission_area",
+    "condition_checks_dialog_finish",
+    "story_used_by_mission_runtime_condition",
+    "condition_checks_level",
+    "condition_checks_level_script",
+    "condition_checks_level_script_property",
+    "condition_checks_level_script_property_key",
+    "condition_checks_world_entity_script_slot",
+    "condition_checks_quest_state",
+    "condition_checks_mission_state",
+    "condition_requires_item_count",
+    "condition_requires_factory_tech",
+    "condition_checks_guide_group_complete",
+    "condition_compare_operator",
+    "condition_has_type",
+    "condition_has_parameter",
+    "condition_parameter_quest",
+    "condition_parameter_item",
+    "condition_parameter_value",
+)
+
 def exact_node_candidates(term: str) -> list[str]:
     candidates = [term]
     if ":" not in term:
@@ -32054,6 +32127,283 @@ def text_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> 
             "default_graph_i18n_text_nodes_are_ids_not_localized_display_values",
             "reference_file_edges_are_static_scan_evidence_not_runtime_ui_occurrences",
             "domain_specific_name_desc_label_edges_are_stronger_than_broad_i18n_reference_file_edges",
+        ],
+    }
+
+
+def resolve_mission_flow_lookup(db_path: Path, term: str, *, limit: int, kind: str = "") -> tuple[dict[str, Any], str]:
+    lookup_limit = min(max(limit, 1), 20)
+    if kind:
+        return query_graph(db_path, term, limit=lookup_limit, kind=kind), kind
+    for fallback_kind in MISSION_FLOW_KIND_FALLBACKS:
+        lookup = query_graph(db_path, term, limit=lookup_limit, kind=fallback_kind)
+        if safe_key(lookup.get("seedNode")):
+            return lookup, fallback_kind
+    return query_graph(db_path, term, limit=lookup_limit), ""
+
+
+def mission_flow_category(edge_kind: str) -> str:
+    if "defines_mission_runtime_asset" in edge_kind or "asset_for_mission" in edge_kind:
+        return "assets"
+    if "level" in edge_kind or "mission_area" in edge_kind:
+        return "levelsAreas"
+    if "reward" in edge_kind:
+        return "rewards"
+    if "text" in edge_kind or "name" in edge_kind or "description" in edge_kind:
+        return "text"
+    if "quest" in edge_kind and "condition" not in edge_kind:
+        if "depends" in edge_kind or "previous" in edge_kind:
+            return "questDependencies"
+        return "quests"
+    if "condition" in edge_kind or edge_kind.startswith("condition_"):
+        return "conditions"
+    if "action" in edge_kind or "guide_group" in edge_kind or "chapter_panel" in edge_kind:
+        return "actions"
+    if "narrative" in edge_kind or "story" in edge_kind or "dialog" in edge_kind or "radio" in edge_kind or "remote_common" in edge_kind or "sns" in edge_kind:
+        return "narrative"
+    return "other"
+
+
+def mission_flow_order_sql(alias: str = "e") -> str:
+    return f"""
+            CASE
+              WHEN {alias}.kind IN ('defines_mission_runtime_asset', 'mission_runtime_asset_for_mission') THEN 0
+              WHEN {alias}.kind IN ('mission_runtime_in_level', 'level_has_mission_runtime') THEN 1
+              WHEN {alias}.kind = 'mission_runtime_has_quest' THEN 2
+              WHEN {alias}.kind IN ('quest_task_depends_on_previous', 'quest_task_in_mission') THEN 3
+              WHEN {alias}.kind = 'mission_runtime_has_action' THEN 4
+              WHEN {alias}.kind LIKE '%condition%' THEN 5
+              WHEN {alias}.kind LIKE '%narrative%' OR {alias}.kind LIKE '%story%' OR {alias}.kind LIKE '%dialog%' OR {alias}.kind LIKE '%radio%' THEN 6
+              WHEN {alias}.kind LIKE '%reward%' THEN 7
+              WHEN {alias}.kind LIKE '%text%' OR {alias}.kind LIKE '%name%' OR {alias}.kind LIKE '%description%' THEN 8
+              ELSE 9
+            END
+    """
+
+
+def mission_flow_related_asset_ids(conn: sqlite3.Connection, seed: str, seed_kind: str, limit: int) -> list[str]:
+    if seed_kind == "mission_runtime_asset":
+        return [seed]
+    rows: list[sqlite3.Row] = []
+    if seed_kind == "mission":
+        rows = conn.execute(
+            """
+            SELECT src AS assetId
+            FROM edges
+            WHERE dst = ?
+              AND kind = 'mission_runtime_asset_for_mission'
+            ORDER BY src
+            LIMIT ?
+            """,
+            (seed, limit),
+        ).fetchall()
+    elif seed_kind == "quest_task":
+        rows = conn.execute(
+            """
+            SELECT src AS assetId
+            FROM edges
+            WHERE dst = ?
+              AND kind = 'mission_runtime_has_quest'
+            ORDER BY src
+            LIMIT ?
+            """,
+            (seed, limit),
+        ).fetchall()
+    elif seed_kind == "mission_runtime_action":
+        rows = conn.execute(
+            """
+            SELECT src AS assetId
+            FROM edges
+            WHERE dst = ?
+              AND kind = 'mission_runtime_has_action'
+            ORDER BY src
+            LIMIT ?
+            """,
+            (seed, limit),
+        ).fetchall()
+    elif seed_kind == "mission_runtime_condition":
+        rows = conn.execute(
+            """
+            SELECT asset.src AS assetId
+            FROM edges quest_condition
+            JOIN edges asset ON asset.dst = quest_condition.src
+                           AND asset.kind = 'mission_runtime_has_quest'
+            WHERE quest_condition.dst = ?
+              AND quest_condition.kind = 'quest_has_runtime_condition'
+            ORDER BY asset.src
+            LIMIT ?
+            """,
+            (seed, limit),
+        ).fetchall()
+    elif seed_kind == "level":
+        rows = conn.execute(
+            """
+            SELECT dst AS assetId
+            FROM edges
+            WHERE src = ?
+              AND kind = 'level_has_mission_runtime'
+            ORDER BY dst
+            LIMIT ?
+            """,
+            (seed, limit),
+        ).fetchall()
+    elif seed_kind == "story":
+        rows = conn.execute(
+            """
+            SELECT owner.src AS assetId
+            FROM edges story_edge
+            JOIN edges owner ON owner.dst = story_edge.src
+                            AND owner.kind = 'mission_runtime_has_quest'
+            WHERE story_edge.dst = ?
+              AND story_edge.kind IN ('quest_references_narrative', 'story_used_by_mission_runtime_quest')
+            UNION
+            SELECT owner.src AS assetId
+            FROM edges story_edge
+            JOIN edges owner ON owner.dst = story_edge.src
+                            AND owner.kind = 'mission_runtime_has_action'
+            WHERE story_edge.dst = ?
+              AND story_edge.kind IN ('mission_runtime_action_references_narrative', 'mission_runtime_action_map_references_narrative')
+            ORDER BY assetId
+            LIMIT ?
+            """,
+            (seed, seed, limit),
+        ).fetchall()
+    return _unique_preserve(row["assetId"] for row in rows)
+
+
+def mission_flow(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
+    lookup, resolved_kind = resolve_mission_flow_lookup(db_path, term, limit=limit, kind=kind)
+    seed = safe_key(lookup.get("seedNode"))
+    if not seed:
+        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "edgeCounts": {}, "missionSummary": {}, "relations": []}
+
+    relation_limit = max(limit, 1)
+    edge_placeholders = ",".join("?" for _ in MISSION_FLOW_EDGE_KINDS)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        seed_row = conn.execute(
+            "SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?",
+            (seed,),
+        ).fetchone()
+        seed_kind = seed_row["kind"] if seed_row else ""
+        asset_ids = mission_flow_related_asset_ids(conn, seed, seed_kind, relation_limit)
+        if not asset_ids and seed_kind == "mission_runtime_asset":
+            asset_ids = [seed]
+
+        focus_ids = _unique_preserve([seed, *asset_ids])
+        if asset_ids:
+            asset_placeholders = ",".join("?" for _ in asset_ids)
+            quest_rows = conn.execute(
+                f"""
+                SELECT dst AS id
+                FROM edges
+                WHERE src IN ({asset_placeholders})
+                  AND kind = 'mission_runtime_has_quest'
+                ORDER BY evidence, dst
+                LIMIT ?
+                """,
+                (*asset_ids, relation_limit * 4),
+            ).fetchall()
+            action_rows = conn.execute(
+                f"""
+                SELECT dst AS id
+                FROM edges
+                WHERE src IN ({asset_placeholders})
+                  AND kind = 'mission_runtime_has_action'
+                ORDER BY evidence, dst
+                LIMIT ?
+                """,
+                (*asset_ids, relation_limit * 2),
+            ).fetchall()
+            quest_ids = _unique_preserve(row["id"] for row in quest_rows)
+            action_ids = _unique_preserve(row["id"] for row in action_rows)
+            if quest_ids:
+                quest_placeholders = ",".join("?" for _ in quest_ids)
+                condition_rows = conn.execute(
+                    f"""
+                    SELECT dst AS id
+                    FROM edges
+                    WHERE src IN ({quest_placeholders})
+                      AND kind = 'quest_has_runtime_condition'
+                    ORDER BY evidence, dst
+                    LIMIT ?
+                    """,
+                    (*quest_ids, relation_limit * 4),
+                ).fetchall()
+                condition_ids = _unique_preserve(row["id"] for row in condition_rows)
+            else:
+                condition_ids = []
+            focus_ids = _unique_preserve([*focus_ids, *quest_ids, *action_ids, *condition_ids])
+
+        focus_placeholders = ",".join("?" for _ in focus_ids)
+        count_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, COUNT(1) AS count
+            FROM edges e
+            WHERE (e.src IN ({focus_placeholders}) OR e.dst IN ({focus_placeholders}))
+              AND e.kind IN ({edge_placeholders})
+            GROUP BY e.kind
+            ORDER BY e.kind
+            """,
+            (*focus_ids, *focus_ids, *MISSION_FLOW_EDGE_KINDS),
+        ).fetchall()
+        relation_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src IN ({focus_placeholders}) OR e.dst IN ({focus_placeholders}))
+              AND e.kind IN ({edge_placeholders})
+            ORDER BY CASE WHEN e.src = ? OR e.dst = ? THEN -1 ELSE {mission_flow_order_sql("e")} END,
+                     e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (*focus_ids, *focus_ids, *MISSION_FLOW_EDGE_KINDS, seed, seed, relation_limit),
+        ).fetchall()
+        asset_rows = conn.execute(
+            f"""
+            SELECT id, kind, name, source, path, data
+            FROM nodes
+            WHERE id IN ({",".join("?" for _ in asset_ids) if asset_ids else "''"})
+            ORDER BY name
+            """,
+            tuple(asset_ids),
+        ).fetchall() if asset_ids else []
+
+    focus_id_set = set(focus_ids)
+    relations = [
+        usage_edge_ref(
+            row,
+            "dst" if row["srcId"] in focus_id_set else "src",
+            row["srcId"] if row["srcId"] in focus_id_set else row["dstId"],
+        )
+        for row in relation_rows
+    ]
+    mission_summary: dict[str, list[dict[str, Any]]] = {}
+    if asset_rows:
+        mission_summary["missionRuntimeAssets"] = [compact_node_ref(row) for row in asset_rows]
+    for relation in relations:
+        category = mission_flow_category(safe_key(relation.get("edge")))
+        mission_summary.setdefault(category, []).append(relation)
+
+    return {
+        "term": term,
+        "seedNode": seed,
+        "seed": compact_node_ref(seed_row) if seed_row else {"id": seed, "key": node_key(seed)},
+        "resolvedKind": resolved_kind,
+        "aliases": lookup.get("aliases") or [],
+        "missionRuntimeAssetIds": asset_ids,
+        "focusNodeIds": focus_ids,
+        "edgeCounts": {row["edge"]: row["count"] for row in count_rows},
+        "missionSummary": mission_summary,
+        "relations": relations,
+        "caveats": [
+            "static_authored_mission_runtime_graph_not_observed_player_chronology",
+            "condition_and_action_edges_expose_references_not_runtime_evaluator_results",
+            "quest_dependency_edges_are_authored_prevQuestId_links_not proof_of_live_account_state",
         ],
     }
 
@@ -33628,6 +33978,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional node kind to force, such as i18n_text, text_table_key, dialog_text, item, mission_runtime_asset, or ui_label.",
     )
 
+    mission_flow_cmd = sub.add_parser("mission-flow", help="Show static MissionRuntimeAsset quest DAG, conditions, actions, rewards, levels, and narrative refs")
+    mission_flow_cmd.add_argument("term")
+    mission_flow_cmd.add_argument("--db", type=Path, default=DEFAULT_DB)
+    mission_flow_cmd.add_argument("--limit", type=int, default=40)
+    mission_flow_cmd.add_argument(
+        "--kind",
+        default="",
+        help="Optional node kind to force, such as mission_runtime_asset, mission, quest_task, mission_runtime_action, mission_runtime_condition, level, or story.",
+    )
+
     stat_used_by = sub.add_parser("stat-usage", help="Show authored graph consumers/producers of a stat or attribute node")
     stat_used_by.add_argument("term")
     stat_used_by.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -33784,6 +34144,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "text-usage":
         result = text_usage(args.db, args.term, limit=args.limit, kind=args.kind)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "mission-flow":
+        result = mission_flow(args.db, args.term, limit=args.limit, kind=args.kind)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "stat-usage":
