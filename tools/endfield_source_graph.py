@@ -27774,6 +27774,78 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
                     candidates.append(entity)
         return _unique_preserve(candidate_bases), candidates
 
+    def controller_alias_bases(token: Any) -> list[str]:
+        token_key = safe_key(token)
+        if not token_key:
+            return []
+        stem = Path(token_key).stem
+        base = normalized_model_entity_base(stem).replace("+", "_")
+        bases = [base]
+        state_suffixes = (
+            "_closeidle_01",
+            "_openidle_01",
+            "_close_01",
+            "_open_01",
+            "_idle_01",
+            "_available",
+            "_disable",
+            "_disabled",
+            "_on",
+            "_off",
+        )
+        for suffix in state_suffixes:
+            if base.endswith(suffix):
+                bases.append(base[: -len(suffix)])
+        return _unique_preserve(value for value in bases if value)
+
+    def controller_alias_entities(model_node: str) -> list[dict[str, Any]]:
+        rows = conn.execute(
+            """
+            SELECT
+                controller.id AS controllerNode,
+                controller.name AS controllerName,
+                ref.id AS refNode,
+                ref.name AS refName,
+                edge.kind AS edgeKind,
+                edge.evidence AS evidence
+            FROM edges model_edge
+            JOIN nodes controller ON controller.id = model_edge.dst
+            JOIN edges edge ON edge.src = controller.id
+            JOIN nodes ref ON ref.id = edge.dst
+            WHERE model_edge.src = ?
+              AND model_edge.kind = 'model_config_used_by_model_view_state_controller'
+              AND edge.kind IN (
+                'model_view_state_controller_has_clip_asset',
+                'model_view_state_controller_animator_references_clip',
+                'model_view_state_controller_references_effect',
+                'model_view_state_controller_animator_references_effect'
+              )
+            ORDER BY controller.name, edge.kind, ref.name
+            """,
+            (model_node,),
+        ).fetchall()
+        aliases: list[dict[str, Any]] = []
+        seen: set[tuple[str, str, str]] = set()
+        for row in rows:
+            for base in controller_alias_bases(row["refName"]):
+                for entity in entity_by_base.get(base, []):
+                    entity_node = safe_key(entity.get("node"))
+                    key = (safe_key(row["refNode"]), base, entity_node)
+                    if not entity_node or key in seen:
+                        continue
+                    seen.add(key)
+                    aliases.append({
+                        "controllerNode": row["controllerNode"],
+                        "controllerName": row["controllerName"],
+                        "refNode": row["refNode"],
+                        "refName": row["refName"],
+                        "edgeKind": row["edgeKind"],
+                        "evidence": row["evidence"],
+                        "candidateBase": base,
+                        "entity": entity,
+                    })
+        return aliases
+
     def classify_direct_edge(edge: dict[str, Any]) -> dict[str, Any]:
         edge_data = edge.get("edgeData") if isinstance(edge.get("edgeData"), dict) else {}
         entity_data = edge.get("entityData") if isinstance(edge.get("entityData"), dict) else {}
@@ -27805,6 +27877,7 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
         tokens = [model_id, prefab_path, prefab_stem]
         bases, candidates = candidate_entities(tokens)
         direct = [classify_direct_edge(edge) for edge in direct_edges(row["id"])]
+        controller_aliases = controller_alias_entities(row["id"])
         world_uses = count_edges("world_entity_uses_model", row["id"], "incoming")
         interactive_uses = count_edges("interactive_template_uses_model", row["id"], "incoming")
         has_radius = count_edges("model_config_has_radius", row["id"], "outgoing") > 0 or conn.execute("SELECT 1 FROM nodes WHERE kind = 'model_radius' AND name = ? LIMIT 1", (model_id,)).fetchone() is not None
@@ -27834,6 +27907,7 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
             "candidateBases": bases,
             "directEdges": direct[:8],
             "candidateEntities": candidates[:12],
+            "controllerAliasEntities": controller_aliases[:12],
         }
         records.append(record)
 
@@ -27891,6 +27965,7 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
         "candidateEntityMatches": candidate_total,
         "strongExactGraphEdgeRows": status_counts.get("strong_exact_graph_edge", 0),
         "ambiguousGraphEdgeRows": status_counts.get("ambiguous_graph_edge", 0),
+        "controllerAliasCandidateRows": sum(1 for item in records if item.get("controllerAliasEntities")),
         "records": records,
     }
     json_path = GRAPH_DIR / "model_config_asset_binding_candidates.json"
@@ -27909,22 +27984,28 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
         f"- Strong exact graph-edge rows: `{status_counts.get('strong_exact_graph_edge', 0)}`",
         f"- Ambiguous graph-edge rows: `{status_counts.get('ambiguous_graph_edge', 0)}`",
         f"- Candidate entity matches: `{candidate_total}`",
+        f"- Rows with model-view-controller alias candidates: `{sum(1 for item in records if item.get('controllerAliasEntities'))}`",
     ]
     for status, count in sorted(status_counts.items()):
         lines.append(f"- `{status}`: `{count}`")
     lines.extend(["", "## Top Referenced Unbound Models", ""])
     unbound = [item for item in records if item["status"] == "no_exported_renderable_candidate"][:40]
     if unbound:
-        lines.append("| Model id | World uses | Interactive uses | Radius | Prefab stem | Resolved siblings |")
-        lines.append("| --- | ---: | ---: | --- | --- | --- |")
+        lines.append("| Model id | World uses | Interactive uses | Radius | Prefab stem | Controller aliases | Resolved siblings |")
+        lines.append("| --- | ---: | ---: | --- | --- | --- | --- |")
         for item in unbound:
             siblings = ", ".join(
                 f"`{sibling.get('modelId')}`"
                 for sibling in item.get("resolvedSiblingModels", [])[:4]
                 if sibling.get("modelId")
             )
+            controller_aliases = ", ".join(
+                f"`{(alias.get('entity') or {}).get('base')}`"
+                for alias in item.get("controllerAliasEntities", [])[:4]
+                if (alias.get("entity") or {}).get("base")
+            )
             lines.append(
-                f"| `{item['modelId']}` | {item['worldEntityUses']} | {item['interactiveTemplateUses']} | {str(item['hasRadius']).lower()} | `{item['prefabStem']}` | {siblings} |"
+                f"| `{item['modelId']}` | {item['worldEntityUses']} | {item['interactiveTemplateUses']} | {str(item['hasRadius']).lower()} | `{item['prefabStem']}` | {controller_aliases} | {siblings} |"
             )
     else:
         lines.append("No referenced unbound model rows found.")
