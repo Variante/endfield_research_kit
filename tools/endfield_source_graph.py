@@ -30181,6 +30181,76 @@ SHADER_USAGE_EDGE_KINDS = (
     "material_used_by_asset_entity",
 )
 
+VIDEO_USAGE_KIND_FALLBACKS = (
+    "fmv_binding",
+    "video",
+    "story",
+    "mission",
+    "fmv_clip",
+    "unity_pathid",
+    "unity_asset",
+    "asset",
+    "narrative_video_stem",
+    "narrative_video_override_rule",
+    "narrative_video_unresolved_candidate",
+)
+
+VIDEO_USAGE_EDGE_KINDS = (
+    "defines_fmv_binding",
+    "fmv_binding_targets_story",
+    "story_has_fmv_binding",
+    "fmv_binding_in_mission",
+    "mission_has_fmv_binding",
+    "fmv_binding_uses_video",
+    "video_used_by_fmv_binding",
+    "fmv_binding_timeline_clip",
+    "fmv_clip_used_by_binding",
+    "fmv_binding_source_file",
+    "fmv_binding_playable_pathid",
+    "fmv_playable_pathid_resolves_unity_asset",
+    "unity_asset_used_by_fmv_playable_pathid",
+    "fmv_playable_pathid_exports_asset",
+    "asset_export_used_by_fmv_playable_pathid",
+    "indexes_video",
+    "unbound_video_candidate",
+    "has_narrative_video",
+    "video_used_by_story_narrative",
+    "has_narrative_video_override_rule",
+    "story_has_narrative_video_override_rule",
+    "narrative_video_override_targets_story",
+    "narrative_video_override_copies_audio_from_story",
+    "story_audio_copied_by_narrative_video_override",
+    "narrative_video_override_uses_stem",
+    "narrative_video_stem_resolves_video",
+    "narrative_video_stem_has_standalone_story_key",
+    "story_is_standalone_narrative_video_key_for_stem",
+    "narrative_video_stem_key_candidate",
+    "story_is_narrative_video_stem_candidate",
+    "narrative_video_stem_matched_file",
+    "narrative_video_candidate_resolves_video",
+    "narrative_video_stem_matched_story_key",
+    "story_matched_by_narrative_video_stem",
+    "has_narrative_video_known_false_suppression",
+    "narrative_video_false_suppression_targets_story",
+    "story_has_narrative_video_false_suppression",
+    "narrative_video_false_suppression_uses_stem",
+    "narrative_video_false_suppression_file",
+    "has_narrative_video_filename_candidate",
+    "narrative_video_filename_candidate_targets_story",
+    "story_has_narrative_video_filename_candidate",
+    "narrative_video_filename_candidate_uses_stem",
+    "narrative_video_filename_candidate_file",
+    "has_narrative_video_unresolved_candidate",
+    "narrative_video_unresolved_candidate_status",
+    "narrative_video_unresolved_candidate_uses_stem",
+    "narrative_video_unresolved_file",
+    "narrative_video_unresolved_rel_video",
+    "narrative_video_unresolved_key_candidate",
+    "story_is_narrative_video_unresolved_candidate_key",
+    "narrative_video_unresolved_existing_story_candidate",
+    "story_is_existing_narrative_video_unresolved_candidate",
+)
+
 def exact_node_candidates(term: str) -> list[str]:
     candidates = [term]
     if ":" not in term:
@@ -30928,6 +30998,162 @@ def shader_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -
         "caveats": [
             "shader_payload_and_material_reference_evidence_only",
             "not_hlsl_decompilation_or_runtime_renderer_fidelity",
+        ],
+    }
+
+
+def resolve_video_usage_lookup(db_path: Path, term: str, *, limit: int, kind: str = "") -> tuple[dict[str, Any], str]:
+    lookup_limit = min(max(limit, 1), 20)
+    if kind:
+        return query_graph(db_path, term, limit=lookup_limit, kind=kind), kind
+    for fallback_kind in VIDEO_USAGE_KIND_FALLBACKS:
+        lookup = query_graph(db_path, term, limit=lookup_limit, kind=fallback_kind)
+        if safe_key(lookup.get("seedNode")):
+            return lookup, fallback_kind
+    return query_graph(db_path, term, limit=lookup_limit), ""
+
+
+def video_usage_category(edge_kind: str) -> str:
+    if "story" in edge_kind or "narrative_video" in edge_kind and "stem" not in edge_kind:
+        return "story"
+    if "mission" in edge_kind:
+        return "mission"
+    if "video" in edge_kind and "narrative_video" not in edge_kind:
+        return "videos"
+    if "clip" in edge_kind:
+        return "clips"
+    if "pathid" in edge_kind:
+        return "pathids"
+    if "unity_asset" in edge_kind or "asset_export" in edge_kind:
+        return "assets"
+    if "source_file" in edge_kind:
+        return "sourceFiles"
+    if "stem" in edge_kind:
+        return "stems"
+    if "unresolved" in edge_kind or "false_suppression" in edge_kind:
+        return "audit"
+    return "other"
+
+
+def video_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
+    lookup, resolved_kind = resolve_video_usage_lookup(db_path, term, limit=limit, kind=kind)
+    seed = safe_key(lookup.get("seedNode"))
+    if not seed:
+        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "edgeCounts": {}, "videoSummary": {}, "relations": []}
+
+    relation_limit = max(limit, 1)
+    placeholders = ",".join("?" for _ in VIDEO_USAGE_EDGE_KINDS)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        seed_row = conn.execute(
+            "SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?",
+            (seed,),
+        ).fetchone()
+        count_rows = conn.execute(
+            f"""
+            SELECT kind AS edge, COUNT(*) AS count
+            FROM edges
+            WHERE (src = ? OR dst = ?)
+              AND kind IN ({placeholders})
+            GROUP BY kind
+            ORDER BY kind
+            """,
+            (seed, seed, *VIDEO_USAGE_EDGE_KINDS),
+        ).fetchall()
+        relation_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src = ? OR e.dst = ?)
+              AND e.kind IN ({placeholders})
+            ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (seed, seed, *VIDEO_USAGE_EDGE_KINDS, relation_limit),
+        ).fetchall()
+
+        pathid_ids = _unique_preserve(
+            [seed if seed_row and seed_row["kind"] == "unity_pathid" else ""]
+            + [
+                row["dstId"]
+                for row in relation_rows
+                if row["edge"] == "fmv_binding_playable_pathid" and row["dstKind"] == "unity_pathid"
+            ]
+        )
+        pathid_ids = [value for value in pathid_ids if value]
+        playable_owner_rows: list[sqlite3.Row] = []
+        playable_asset_rows: list[sqlite3.Row] = []
+        if pathid_ids:
+            pathid_placeholders = ",".join("?" for _ in pathid_ids)
+            playable_owner_rows = conn.execute(
+                f"""
+                SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                       src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                       dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+                FROM edges e
+                JOIN nodes src ON src.id = e.src
+                JOIN nodes dst ON dst.id = e.dst
+                WHERE e.dst IN ({pathid_placeholders})
+                  AND e.kind = 'fmv_binding_playable_pathid'
+                ORDER BY src.kind, src.name, e.evidence
+                LIMIT ?
+                """,
+                (*pathid_ids, relation_limit),
+            ).fetchall()
+            playable_owner_ids = _unique_preserve(row["srcId"] for row in playable_owner_rows)
+            if playable_owner_ids:
+                owner_placeholders = ",".join("?" for _ in playable_owner_ids)
+                playable_asset_rows = conn.execute(
+                    f"""
+                    SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                           src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                           dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+                    FROM edges e
+                    JOIN nodes src ON src.id = e.src
+                    JOIN nodes dst ON dst.id = e.dst
+                    WHERE e.src IN ({owner_placeholders})
+                      AND e.kind IN ('fmv_playable_pathid_resolves_unity_asset', 'fmv_playable_pathid_exports_asset')
+                    ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name
+                    LIMIT ?
+                    """,
+                    (*playable_owner_ids, relation_limit),
+                ).fetchall()
+
+    relations = [
+        usage_edge_ref(row, "src" if row["dstId"] == seed else "dst", seed)
+        for row in relation_rows
+    ]
+    playable_owners = [usage_edge_ref(row, "src", row["dstId"]) for row in playable_owner_rows]
+    playable_assets = [usage_edge_ref(row, "dst", row["srcId"]) for row in playable_asset_rows]
+
+    video_summary: dict[str, list[dict[str, Any]]] = {}
+    for relation in relations:
+        category = video_usage_category(safe_key(relation.get("edge")))
+        video_summary.setdefault(category, []).append(relation)
+    if playable_owners:
+        video_summary["playableOwners"] = playable_owners
+    if playable_assets:
+        video_summary["playableAssets"] = playable_assets
+
+    return {
+        "term": term,
+        "seedNode": seed,
+        "seed": compact_node_ref(seed_row) if seed_row else {"id": seed, "key": node_key(seed)},
+        "resolvedKind": resolved_kind,
+        "aliases": lookup.get("aliases") or [],
+        "edgeCounts": {row["edge"]: row["count"] for row in count_rows},
+        "videoSummary": video_summary,
+        "relations": relations,
+        "playableOwners": playable_owners,
+        "playableAssets": playable_assets,
+        "caveats": [
+            "fmv_binding_and_narrative_video_reference_evidence_only",
+            "pathid_asset_resolution_requires_source_root_matched_AssetMap_rows",
+            "not_runtime_playback_order_or_video_decoder_fidelity",
         ],
     }
 
@@ -32462,6 +32688,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional node kind to force, such as shader_program, shader, shader_family, shader_snippet, unity_pathid, or material.",
     )
 
+    video_usage_cmd = sub.add_parser("video-usage", help="Show FMV binding, narrative video, PathID, and playable asset evidence")
+    video_usage_cmd.add_argument("term")
+    video_usage_cmd.add_argument("--db", type=Path, default=DEFAULT_DB)
+    video_usage_cmd.add_argument("--limit", type=int, default=40)
+    video_usage_cmd.add_argument(
+        "--kind",
+        default="",
+        help="Optional node kind to force, such as fmv_binding, video, story, mission, fmv_clip, unity_pathid, or narrative_video_stem.",
+    )
+
     stat_used_by = sub.add_parser("stat-usage", help="Show authored graph consumers/producers of a stat or attribute node")
     stat_used_by.add_argument("term")
     stat_used_by.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -32602,6 +32838,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "shader-usage":
         result = shader_usage(args.db, args.term, limit=args.limit, kind=args.kind)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "video-usage":
+        result = video_usage(args.db, args.term, limit=args.limit, kind=args.kind)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "stat-usage":
