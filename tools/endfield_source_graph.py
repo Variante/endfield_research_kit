@@ -1210,6 +1210,28 @@ def exported_model_entity_base(rel: str) -> str:
     return ""
 
 
+def exported_material_entity_base(rel: str) -> str:
+    stem = Path(rel).stem
+    logical_stem = path_id_export_base_stem(stem) or stem
+    stripped = ASSET_SINGLE_PREFIX_RE.sub("", logical_stem, count=1)
+    return stripped.replace("+", "_").lower()
+
+
+def exported_texture_entity_base(rel: str) -> str:
+    stem = Path(rel).stem
+    logical_stem = path_id_export_base_stem(stem) or stem
+    stripped = ASSET_SINGLE_PREFIX_RE.sub("", logical_stem, count=1).replace("+", "_").lower()
+    for suffix in ("_rgb_e", "_mro", "_orm", "_mask", "_basecolor", "_albedo", "_normal", "_d", "_e", "_n"):
+        if stripped.endswith(suffix):
+            return stripped[: -len(suffix)]
+    return stripped
+
+
+def asset_entity_source_for_rel(rel: str) -> str:
+    source = rel.split("/", 1)[0]
+    return source.removesuffix("-materials")
+
+
 def compact_payload(value: Any, *, depth: int = 2, list_limit: int = 12) -> Any:
     """Keep node payloads useful without ballooning the graph."""
     if depth <= 0:
@@ -3400,6 +3422,8 @@ class SourceGraphBuilder:
         asset_entity_groups: dict[tuple[str, str], dict[str, Any]] = defaultdict(
             lambda: {"source": "", "base": "", "models": {}, "materials": {}, "textures": {}}
         )
+        fallback_materials_by_entity_key: dict[tuple[str, str], dict[str, dict[str, Any]]] = defaultdict(dict)
+        fallback_textures_by_entity_key: dict[tuple[str, str], dict[str, dict[str, Any]]] = defaultdict(dict)
 
         def asset_node_for_rel(rel_value: Any) -> str:
             rel_text = safe_key(rel_value)
@@ -3498,6 +3522,22 @@ class SourceGraphBuilder:
                     group["source"] = source
                     group["base"] = model_base
                     group["models"][rel] = {"pid": pid} if pid else {}
+            elif kind == "json" and "/Material/" in rel:
+                material_base = exported_material_entity_base(rel)
+                if material_base:
+                    entity_key = (asset_entity_source_for_rel(rel), material_base)
+                    fallback_materials_by_entity_key[entity_key][rel] = {
+                        "evidence": Path(rel).stem,
+                        "data": {"rel": rel, "pid": pid, "match": "filenameBase"},
+                    }
+            elif kind == "image" and (entry.get("mt") or "/Texture2D/" in rel):
+                texture_base = exported_texture_entity_base(rel)
+                if texture_base:
+                    entity_key = (asset_entity_source_for_rel(rel), texture_base)
+                    fallback_textures_by_entity_key[entity_key][rel] = {
+                        "evidence": Path(rel).stem,
+                        "data": {"rel": rel, "pid": pid, "match": "filenameBase"},
+                    }
             if entry.get("p"):
                 preview = asset_node_for_rel(entry["p"])
                 self.add_edge(node, preview, "previewed_by", source="webui/assets")
@@ -3597,6 +3637,11 @@ class SourceGraphBuilder:
             model_base = safe_key(group.get("base"))
             if not source or not model_base:
                 continue
+            entity_key = (source, model_base)
+            for material_rel, material_info in sorted(fallback_materials_by_entity_key.get(entity_key, {}).items()):
+                group["materials"].setdefault(material_rel, material_info)
+            for texture_rel, texture_info in sorted(fallback_textures_by_entity_key.get(entity_key, {}).items()):
+                group["textures"].setdefault(texture_rel, texture_info)
             for material_rel, material_info in sorted(group["materials"].items()):
                 material_relation = relation_lookup.get(material_rel) or {}
                 if not isinstance(material_relation, dict):
