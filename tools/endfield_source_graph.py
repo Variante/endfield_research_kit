@@ -30251,6 +30251,67 @@ VIDEO_USAGE_EDGE_KINDS = (
     "story_is_existing_narrative_video_unresolved_candidate",
 )
 
+ITEM_USAGE_KIND_FALLBACKS = (
+    "item",
+    "reward",
+    "reward_drop",
+    "item_obtain_way",
+    "item_obtain_condition",
+    "item_type",
+    "item_showing_type",
+    "item_valuable_tab",
+    "usable_item_chest",
+    "limited_time_item",
+    "gift_item",
+    "checkin_stage",
+    "daily_activation_reward",
+    "money_config",
+    "money_exchange",
+    "shop_goods",
+    "shop",
+    "shop_group",
+    "cash_goods",
+    "cash_shop_goods",
+    "cash_shop",
+    "cash_shop_group",
+    "cash_shop_tab",
+    "equipment",
+    "equipment_formula",
+    "equipment_suit",
+    "gem_preset",
+    "gem_term",
+    "gem_tag",
+    "gem_term_pool",
+    "factory_item",
+    "factory_recipe",
+    "factory_mine",
+    "factory_liquid",
+    "factory_miner",
+    "planting_crop",
+    "soil_reward",
+    "fertilize_item",
+    "world_doodad",
+    "activity",
+    "activity_stage",
+    "activity_task",
+    "activity_submit_item",
+    "activity_limited_formula",
+    "business_card_topic",
+    "profile_picture",
+    "user_avatar",
+    "mail_template",
+    "battlepass_season",
+    "battlepass_level",
+    "battlepass_reward_preview",
+)
+
+ITEM_USAGE_EXPLICIT_EDGE_KINDS = (
+    "asset_used_as_icon_by",
+    "uses_icon_asset",
+    "uses_visual_asset",
+    "visual_token_matches_export_base_asset",
+)
+
 def exact_node_candidates(term: str) -> list[str]:
     candidates = [term]
     if ":" not in term:
@@ -31154,6 +31215,202 @@ def video_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") ->
             "fmv_binding_and_narrative_video_reference_evidence_only",
             "pathid_asset_resolution_requires_source_root_matched_AssetMap_rows",
             "not_runtime_playback_order_or_video_decoder_fidelity",
+        ],
+    }
+
+
+def resolve_item_usage_lookup(db_path: Path, term: str, *, limit: int, kind: str = "") -> tuple[dict[str, Any], str]:
+    lookup_limit = min(max(limit, 1), 20)
+    if kind:
+        return query_graph(db_path, term, limit=lookup_limit, kind=kind), kind
+    for fallback_kind in ITEM_USAGE_KIND_FALLBACKS:
+        lookup = query_graph(db_path, term, limit=lookup_limit, kind=fallback_kind)
+        if safe_key(lookup.get("seedNode")):
+            return lookup, fallback_kind
+    return query_graph(db_path, term, limit=lookup_limit), ""
+
+
+def item_usage_relation_clause(alias: str = "e") -> str:
+    explicit = ", ".join(repr(kind) for kind in ITEM_USAGE_EXPLICIT_EDGE_KINDS)
+    return f"""
+              AND (
+                   {alias}.kind LIKE '%item%'
+                OR {alias}.kind LIKE '%reward%'
+                OR {alias}.kind LIKE '%shop%'
+                OR {alias}.kind LIKE '%cost%'
+                OR {alias}.kind LIKE '%currency%'
+                OR {alias}.kind LIKE '%money%'
+                OR {alias}.kind LIKE '%obtain%'
+                OR {alias}.kind LIKE '%unlock%'
+                OR {alias}.kind LIKE '%gift%'
+                OR {alias}.kind LIKE '%checkin%'
+                OR {alias}.kind LIKE '%equip%'
+                OR {alias}.kind LIKE '%gem%'
+                OR {alias}.kind LIKE '%factory%'
+                OR {alias}.kind LIKE '%crop%'
+                OR {alias}.kind LIKE '%soil%'
+                OR {alias}.kind LIKE '%battlepass%'
+                OR {alias}.kind LIKE '%activity%'
+                OR {alias}.kind IN ({explicit})
+              )
+    """
+
+
+def item_usage_category(edge_kind: str) -> str:
+    if "reward" in edge_kind or "checkin" in edge_kind or "daily_activation" in edge_kind:
+        return "rewards"
+    if "shop" in edge_kind or "cash" in edge_kind or "recharge" in edge_kind:
+        return "shops"
+    if "cost" in edge_kind or "currency" in edge_kind or "money" in edge_kind:
+        return "costsCurrencies"
+    if "obtain" in edge_kind or "unlock" in edge_kind:
+        return "obtainUnlock"
+    if "equip" in edge_kind or "gem" in edge_kind:
+        return "equipmentGems"
+    if "factory" in edge_kind:
+        return "factory"
+    if "crop" in edge_kind or "soil" in edge_kind or "doodad" in edge_kind:
+        return "worldResources"
+    if "gift" in edge_kind or "profile" in edge_kind or "mail" in edge_kind:
+        return "profileSocial"
+    if "battlepass" in edge_kind or "activity" in edge_kind or "adventure" in edge_kind:
+        return "activities"
+    if "icon" in edge_kind or "visual" in edge_kind or "asset" in edge_kind:
+        return "visuals"
+    if "type" in edge_kind or "show" in edge_kind:
+        return "grouping"
+    return "other"
+
+
+def item_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
+    lookup, resolved_kind = resolve_item_usage_lookup(db_path, term, limit=limit, kind=kind)
+    seed = safe_key(lookup.get("seedNode"))
+    if not seed:
+        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "edgeCounts": {}, "itemSummary": {}, "relations": []}
+
+    relation_limit = max(limit, 1)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        seed_row = conn.execute(
+            "SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?",
+            (seed,),
+        ).fetchone()
+        count_rows = conn.execute(
+            f"""
+            SELECT kind AS edge, COUNT(*) AS count
+            FROM edges e
+            WHERE (src = ? OR dst = ?)
+            {item_usage_relation_clause("e")}
+            GROUP BY kind
+            ORDER BY kind
+            """,
+            (seed, seed),
+        ).fetchall()
+        relation_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src = ? OR e.dst = ?)
+            {item_usage_relation_clause("e")}
+            ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (seed, seed, relation_limit),
+        ).fetchall()
+        reward_link_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src = ? OR e.dst = ?)
+              AND (src.kind = 'reward' OR dst.kind = 'reward')
+            {item_usage_relation_clause("e")}
+            ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (seed, seed, relation_limit),
+        ).fetchall()
+
+        reward_ids = _unique_preserve(
+            [
+                row["srcId"]
+                for row in [*relation_rows, *reward_link_rows]
+                if row["srcKind"] == "reward"
+            ]
+            + [
+                row["dstId"]
+                for row in [*relation_rows, *reward_link_rows]
+                if row["dstKind"] == "reward"
+            ]
+            + [seed if seed_row and seed_row["kind"] == "reward" else ""]
+        )
+        reward_ids = [value for value in reward_ids if value]
+        reward_context_rows: list[sqlite3.Row] = []
+        if reward_ids:
+            reward_placeholders = ",".join("?" for _ in reward_ids)
+            reward_context_rows = conn.execute(
+                f"""
+                SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                       src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                       dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+                FROM edges e
+                JOIN nodes src ON src.id = e.src
+                JOIN nodes dst ON dst.id = e.dst
+                WHERE (e.src IN ({reward_placeholders}) OR e.dst IN ({reward_placeholders}))
+                {item_usage_relation_clause("e")}
+                ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+                LIMIT ?
+                """,
+                (*reward_ids, *reward_ids, relation_limit),
+            ).fetchall()
+
+    relations = [
+        usage_edge_ref(row, "src" if row["dstId"] == seed else "dst", seed)
+        for row in relation_rows
+    ]
+    reward_links = [
+        usage_edge_ref(row, "src" if row["dstId"] == seed else "dst", seed)
+        for row in reward_link_rows
+    ]
+    reward_context = [
+        usage_edge_ref(
+            row,
+            "src" if row["dstKind"] == "reward" else "dst",
+            row["dstId"] if row["dstKind"] == "reward" else row["srcId"],
+        )
+        for row in reward_context_rows
+    ]
+    item_summary: dict[str, list[dict[str, Any]]] = {}
+    for relation in relations:
+        category = item_usage_category(safe_key(relation.get("edge")))
+        item_summary.setdefault(category, []).append(relation)
+    if reward_links:
+        item_summary["rewardLinks"] = reward_links
+    if reward_context:
+        item_summary["rewardContext"] = reward_context
+
+    return {
+        "term": term,
+        "seedNode": seed,
+        "seed": compact_node_ref(seed_row) if seed_row else {"id": seed, "key": node_key(seed)},
+        "resolvedKind": resolved_kind,
+        "aliases": lookup.get("aliases") or [],
+        "edgeCounts": {row["edge"]: row["count"] for row in count_rows},
+        "itemSummary": item_summary,
+        "relations": relations,
+        "rewardLinks": reward_links,
+        "rewardContext": reward_context,
+        "caveats": [
+            "authored_table_and_extracted_reference_evidence_only",
+            "not_live_inventory_shop_availability_or_drop_roll_simulation",
+            "reward_context_is_one_hop_from_rewards_seen_in_direct_item_relations",
         ],
     }
 
@@ -32698,6 +32955,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional node kind to force, such as fmv_binding, video, story, mission, fmv_clip, unity_pathid, or narrative_video_stem.",
     )
 
+    item_usage_cmd = sub.add_parser("item-usage", help="Show item, reward, shop, obtain, cost, unlock, and economy graph relations")
+    item_usage_cmd.add_argument("term")
+    item_usage_cmd.add_argument("--db", type=Path, default=DEFAULT_DB)
+    item_usage_cmd.add_argument("--limit", type=int, default=40)
+    item_usage_cmd.add_argument(
+        "--kind",
+        default="",
+        help="Optional node kind to force, such as item, reward, item_obtain_way, shop_goods, cash_shop_goods, equipment, or factory_item.",
+    )
+
     stat_used_by = sub.add_parser("stat-usage", help="Show authored graph consumers/producers of a stat or attribute node")
     stat_used_by.add_argument("term")
     stat_used_by.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -32842,6 +33109,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "video-usage":
         result = video_usage(args.db, args.term, limit=args.limit, kind=args.kind)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "item-usage":
+        result = item_usage(args.db, args.term, limit=args.limit, kind=args.kind)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "stat-usage":
