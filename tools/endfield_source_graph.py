@@ -30467,6 +30467,62 @@ ACTOR_USAGE_EXPLICIT_EDGE_KINDS = (
     "trial_grants_reward",
 )
 
+TEXT_USAGE_KIND_FALLBACKS = (
+    "i18n_text",
+    "text_table_key",
+    "dialog_text",
+    "bark_text",
+    "text_voice_id",
+    "dialog_option",
+    "ui_label",
+    "setting_text_key",
+    "hyperlink_text",
+    "rich_text_style",
+    "friend_chat_text",
+    "item_gather_text",
+    "reference_row",
+    "reference_table",
+    "i18n_reference_file",
+    "table_row",
+    "item",
+    "character",
+    "reward",
+    "mission_runtime_asset",
+    "quest_task",
+    "wiki_tutorial_page",
+    "game_mechanic",
+    "map_mark_template",
+    "activity",
+    "cash_shop",
+    "shop_goods",
+    "factory_system_blueprint",
+    "tag",
+    "gameplay_tag",
+    "character_tag",
+)
+
+TEXT_USAGE_EXPLICIT_EDGE_KINDS = (
+    "uses_i18n_text",
+    "i18n_text_used_by",
+    "text_table_key_i18n_text",
+    "i18n_text_used_by_text_table_key",
+    "defines_text_table_key",
+    "i18n_reference_file_references_text",
+    "i18n_text_used_by_reference_file",
+    "i18n_reference_index_top_text",
+    "i18n_top_text_used_by_file",
+    "has_i18n_text",
+    "has_reference_table",
+    "has_reference_row",
+    "defines_dialog_text",
+    "dialog_text_line_node",
+    "dialog_text_story_node",
+    "bark_text_uses_i18n_text",
+    "line_has_bark_text",
+    "rich_content_uses_i18n_text",
+    "rich_content_line_uses_i18n_text",
+)
+
 def exact_node_candidates(term: str) -> list[str]:
     candidates = [term]
     if ":" not in term:
@@ -31788,6 +31844,216 @@ def actor_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") ->
             "direct_edges_are_graph_evidence_but_candidate_matches_are_token_based",
             "actor_ids_character_ids_and_asset_entity_names_are_not_always_one_to_one",
             "not_runtime_party_roster_voice_selection_or_animation_playback_proof",
+        ],
+    }
+
+
+def resolve_text_usage_lookup(db_path: Path, term: str, *, limit: int, kind: str = "") -> tuple[dict[str, Any], str]:
+    lookup_limit = min(max(limit, 1), 20)
+    if kind:
+        return query_graph(db_path, term, limit=lookup_limit, kind=kind), kind
+    for fallback_kind in TEXT_USAGE_KIND_FALLBACKS:
+        lookup = query_graph(db_path, term, limit=lookup_limit, kind=fallback_kind)
+        if safe_key(lookup.get("seedNode")):
+            return lookup, fallback_kind
+    return query_graph(db_path, term, limit=lookup_limit), ""
+
+
+def text_usage_relation_clause(alias: str = "e") -> str:
+    explicit = ", ".join(repr(kind) for kind in TEXT_USAGE_EXPLICIT_EDGE_KINDS)
+    return f"""
+              AND (
+                   {alias}.kind LIKE '%text%'
+                OR {alias}.kind LIKE '%i18n%'
+                OR {alias}.kind LIKE '%name%'
+                OR {alias}.kind LIKE '%desc%'
+                OR {alias}.kind LIKE '%label%'
+                OR {alias}.kind LIKE '%title%'
+                OR {alias}.kind LIKE '%hint%'
+                OR {alias}.kind LIKE '%objective%'
+                OR {alias}.kind LIKE '%voice%'
+                OR {alias}.kind LIKE '%dialog%'
+                OR {alias}.kind LIKE '%bark%'
+                OR {alias}.kind LIKE '%hyperlink%'
+                OR {alias}.kind IN ({explicit})
+              )
+    """
+
+
+def text_usage_category(edge_kind: str) -> str:
+    if "i18n_reference" in edge_kind or "reference_file" in edge_kind or "i18n_top" in edge_kind:
+        return "referenceFiles"
+    if "text_table_key" in edge_kind or edge_kind == "defines_text_table_key":
+        return "textTableKeys"
+    if "dialog" in edge_kind or "bark" in edge_kind or "voice" in edge_kind or "audio" in edge_kind or "line" in edge_kind:
+        return "storyDialog"
+    if "factory" in edge_kind:
+        return "factory"
+    if "item" in edge_kind or "shop" in edge_kind or "cash" in edge_kind or "reward" in edge_kind or "battlepass" in edge_kind:
+        return "itemsEconomy"
+    if "skill" in edge_kind or "buff" in edge_kind or "mechanic" in edge_kind or "attribute" in edge_kind or "weapon" in edge_kind or "enemy" in edge_kind or "dungeon" in edge_kind:
+        return "gameplay"
+    if "mission" in edge_kind or "quest" in edge_kind or "level_script" in edge_kind or "map" in edge_kind:
+        return "mapMission"
+    if "profile" in edge_kind or "friend_chat" in edge_kind or "mail" in edge_kind or "business_card" in edge_kind or "avatar" in edge_kind:
+        return "profileSocial"
+    if "tutorial" in edge_kind or "wiki" in edge_kind or "loading" in edge_kind or "death_tip" in edge_kind or "hyperlink" in edge_kind or "rich" in edge_kind or "setting" in edge_kind or "ui_label" in edge_kind:
+        return "uiHelp"
+    if "tag" in edge_kind:
+        return "tags"
+    return "other"
+
+
+def text_usage_relation_category(relation: dict[str, Any]) -> str:
+    edge_data = relation.get("edgeData")
+    edge_kind = ""
+    if isinstance(edge_data, dict):
+        edge_kind = safe_key(edge_data.get("edgeKind"))
+    if not edge_kind:
+        edge_kind = safe_key(relation.get("edge"))
+    return text_usage_category(edge_kind)
+
+
+def text_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
+    lookup, resolved_kind = resolve_text_usage_lookup(db_path, term, limit=limit, kind=kind)
+    seed = safe_key(lookup.get("seedNode"))
+    if not seed:
+        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "edgeCounts": {}, "textSummary": {}, "relations": []}
+
+    relation_limit = max(limit, 1)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        seed_row = conn.execute(
+            "SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?",
+            (seed,),
+        ).fetchone()
+        count_rows = conn.execute(
+            f"""
+            SELECT kind AS edge, COUNT(*) AS count
+            FROM edges e
+            WHERE (src = ? OR dst = ?)
+            {text_usage_relation_clause("e")}
+            GROUP BY kind
+            ORDER BY kind
+            """,
+            (seed, seed),
+        ).fetchall()
+        relation_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src = ? OR e.dst = ?)
+            {text_usage_relation_clause("e")}
+            ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (seed, seed, relation_limit),
+        ).fetchall()
+
+        seed_is_i18n = bool(seed_row and seed_row["kind"] == "i18n_text")
+        i18n_ids = [seed] if seed_is_i18n else []
+        i18n_target_rows: list[sqlite3.Row] = []
+        if not seed_is_i18n:
+            i18n_target_rows = conn.execute(
+                """
+                SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                       src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                       dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+                FROM edges e
+                JOIN nodes src ON src.id = e.src
+                JOIN nodes dst ON dst.id = e.dst
+                WHERE (e.src = ? OR e.dst = ?)
+                  AND (src.kind = 'i18n_text' OR dst.kind = 'i18n_text')
+                  AND e.kind IN ('uses_i18n_text', 'i18n_text_used_by', 'text_table_key_i18n_text', 'i18n_text_used_by_text_table_key')
+                ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+                LIMIT ?
+                """,
+                (seed, seed, relation_limit),
+            ).fetchall()
+        i18n_ids.extend(row["srcId"] for row in i18n_target_rows if row["srcKind"] == "i18n_text")
+        i18n_ids.extend(row["dstId"] for row in i18n_target_rows if row["dstKind"] == "i18n_text")
+        i18n_ids = _unique_preserve(i18n_ids)
+
+        i18n_consumer_rows: list[sqlite3.Row] = []
+        i18n_count_rows: list[sqlite3.Row] = []
+        if i18n_ids:
+            placeholders = ",".join("?" for _ in i18n_ids)
+            i18n_count_rows = conn.execute(
+                f"""
+                SELECT e.kind AS edge, COUNT(*) AS count
+                FROM edges e
+                WHERE (e.src IN ({placeholders}) OR e.dst IN ({placeholders}))
+                {text_usage_relation_clause("e")}
+                GROUP BY e.kind
+                ORDER BY e.kind
+                """,
+                (*i18n_ids, *i18n_ids),
+            ).fetchall()
+            i18n_consumer_rows = conn.execute(
+                f"""
+                SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                       src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                       dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+                FROM edges e
+                JOIN nodes src ON src.id = e.src
+                JOIN nodes dst ON dst.id = e.dst
+                WHERE (e.src IN ({placeholders}) OR e.dst IN ({placeholders}))
+                {text_usage_relation_clause("e")}
+                ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+                LIMIT ?
+                """,
+                (*i18n_ids, *i18n_ids, relation_limit),
+            ).fetchall()
+
+    relations = [
+        usage_edge_ref(row, "src" if row["dstId"] == seed else "dst", seed)
+        for row in relation_rows
+    ]
+    i18n_targets = [
+        usage_edge_ref(row, "dst" if row["srcId"] == seed else "src", seed)
+        for row in i18n_target_rows
+    ]
+    i18n_id_set = set(i18n_ids)
+    i18n_consumers = [
+        usage_edge_ref(
+            row,
+            "dst" if row["srcId"] in i18n_id_set else "src",
+            row["srcId"] if row["srcId"] in i18n_id_set else row["dstId"],
+        )
+        for row in i18n_consumer_rows
+    ]
+
+    text_summary: dict[str, list[dict[str, Any]]] = {}
+    for relation in relations:
+        category = text_usage_relation_category(relation)
+        text_summary.setdefault(category, []).append(relation)
+    if i18n_targets:
+        text_summary["i18nTargets"] = i18n_targets
+    for relation in i18n_consumers:
+        category = text_usage_relation_category(relation)
+        text_summary.setdefault(f"i18n{category[:1].upper()}{category[1:]}", []).append(relation)
+
+    return {
+        "term": term,
+        "seedNode": seed,
+        "seed": compact_node_ref(seed_row) if seed_row else {"id": seed, "key": node_key(seed)},
+        "resolvedKind": resolved_kind,
+        "aliases": lookup.get("aliases") or [],
+        "i18nTextIds": i18n_ids,
+        "edgeCounts": {row["edge"]: row["count"] for row in count_rows},
+        "i18nEdgeCounts": {row["edge"]: row["count"] for row in i18n_count_rows},
+        "textSummary": text_summary,
+        "relations": relations,
+        "i18nTargets": i18n_targets,
+        "i18nConsumers": i18n_consumers,
+        "caveats": [
+            "default_graph_i18n_text_nodes_are_ids_not_localized_display_values",
+            "reference_file_edges_are_static_scan_evidence_not_runtime_ui_occurrences",
+            "domain_specific_name_desc_label_edges_are_stronger_than_broad_i18n_reference_file_edges",
         ],
     }
 
@@ -33352,6 +33618,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional node kind to force, such as actor, character, asset_entity, profile_picture, user_avatar, or weapon.",
     )
 
+    text_usage_cmd = sub.add_parser("text-usage", help="Show text key, i18n id, localized-reference, dialog, UI, and domain text-field evidence")
+    text_usage_cmd.add_argument("term")
+    text_usage_cmd.add_argument("--db", type=Path, default=DEFAULT_DB)
+    text_usage_cmd.add_argument("--limit", type=int, default=40)
+    text_usage_cmd.add_argument(
+        "--kind",
+        default="",
+        help="Optional node kind to force, such as i18n_text, text_table_key, dialog_text, item, mission_runtime_asset, or ui_label.",
+    )
+
     stat_used_by = sub.add_parser("stat-usage", help="Show authored graph consumers/producers of a stat or attribute node")
     stat_used_by.add_argument("term")
     stat_used_by.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -33504,6 +33780,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "actor-usage":
         result = actor_usage(args.db, args.term, limit=args.limit, kind=args.kind)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "text-usage":
+        result = text_usage(args.db, args.term, limit=args.limit, kind=args.kind)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "stat-usage":
