@@ -40,6 +40,13 @@ Current graph-wide asset-entity counts:
 - `asset_entity_used_by_gameplay`: 132
 - `asset_entity_used_by_weapon_model`: 130
 
+Catalog-scale weapon checks:
+
+- `weapon_model_asset_entity` edges: 130
+- distinct weapons with `weapon_model_asset_entity` edges: 70
+- distinct weapon asset entities: 130
+- weapons whose linked entity has LOD, material, and texture edges: 67
+
 ## Semantic Weapon Row
 
 `WeaponBasicTable` defines `wpn_sword_0019` in both StreamingAssets and
@@ -107,6 +114,30 @@ assets whose names include the same weapon token. Those are useful for lookup,
 but the asset-entity edges are cleaner because they group LOD meshes and
 material/texture dependencies under renderable entities.
 
+## Catalog Cross-Check
+
+A second weapon, `wpn_claym_0013`, confirms that this is not a one-off lookup
+shape. It has two `weapon_model_asset_entity` edges:
+
+- `asset_entity:StreamingAssets/wpn_claym_0013_01`
+- `asset_entity:StreamingAssets/wpn_claym_0013_vfx_01`
+
+The main `wpn_claym_0013_01` entity has:
+
+- four LOD meshes;
+- one material,
+  `StreamingAssets-materials/Material/M_wpn_claym_0013_01_pDA638754E5DFF082.json`;
+- five texture slots:
+  - `_BaseMap`: `T_wpn_claym_0013_01_D_p4AFB7EC441AFDC15.png`
+  - `_EmissionMap`: `T_wpn_claym_0013_01_E_pCB46A33326159F38.png`
+  - `_BumpMap`: `T_wpn_claym_0013_01_N_p265D21ACDBE14105.png`
+  - `_MetallicGlossMap`: `T_wpn_claym_0013_01_P_pC01EC3C656E0AAA0.png`
+  - `_ParallaxTex`: `T_fx_flow_156_M_pBDDD7222A26F331A.png`
+
+This broader check supports using the weapon asset-entity bridge as a catalog
+surface: it has enough coverage to answer many weapon visual lookup questions,
+while still stopping short of runtime prefab proof.
+
 ## Main Model Entity
 
 `asset_entity:StreamingAssets/wpn_sword_0019_01` has:
@@ -172,6 +203,9 @@ lookup:
   slots;
 - material-to-texture links use resolved PathID evidence rather than only name
   substring matching;
+- catalog-scale checks show 70 weapons linked to 130 weapon asset entities, and
+  67 of those weapons have linked entities with LOD, material, and texture
+  edges;
 - item/icon-style direct asset edges exist, but the asset-entity chain is the
   cleaner renderable catalog surface.
 
