@@ -30291,6 +30291,81 @@ EFFECT_USAGE_EXPLICIT_EDGE_KINDS = (
     "fertilize_effect_used_by_item",
 )
 
+ANIMATION_USAGE_KIND_FALLBACKS = (
+    "level_script_montage",
+    "animation_config",
+    "animation_state",
+    "facial_morph",
+    "actor_animation_ref",
+    "animation_cutscene_ref",
+    "animation_path_ref",
+    "model_view_state_controller",
+    "model_view_clip_ref",
+    "model_view_animator_name",
+    "animation_clip",
+    "lipsync_clip",
+    "damage_text_animation",
+    "runtime_jump_clip",
+    "timeline_option_clip",
+    "fmv_clip",
+    "asset_entity",
+    "asset",
+    "audio",
+)
+
+ANIMATION_USAGE_EXPLICIT_EDGE_KINDS = (
+    "animation_config_data_defines_config",
+    "animation_config_references_state",
+    "animation_state_used_by_animation_config",
+    "animation_config_references_facial_morph",
+    "facial_morph_used_by_animation_config",
+    "animation_config_references_montage",
+    "level_script_montage_used_by_animation_config",
+    "animation_config_references_actor_animation",
+    "actor_animation_ref_used_by_animation_config",
+    "animation_config_references_cutscene",
+    "animation_cutscene_ref_used_by_animation_config",
+    "animation_config_references_path",
+    "animation_path_ref_used_by_animation_config",
+    "monobehaviour_frontier_entry_uses_animation_config",
+    "animation_config_used_by_monobehaviour_frontier_entry",
+    "npc_montage_data_defines_montage",
+    "npc_montage_has_category",
+    "npc_montage_has_body",
+    "npc_montage_has_action",
+    "level_script_references_montage",
+    "level_script_montage_used_by_level_script",
+    "level_script_template_references_montage",
+    "level_script_montage_used_by_level_script_template",
+    "level_data_references_montage",
+    "level_script_montage_used_by_level_data",
+    "char_interact_references_montage",
+    "level_script_montage_used_by_char_interact",
+    "atmospheric_npc_uses_montage",
+    "atmospheric_npc_uses_facial_morph",
+    "defines_model_view_state_controller",
+    "model_view_state_controller_uses_model",
+    "model_config_used_by_model_view_state_controller",
+    "model_view_state_controller_asset_entity",
+    "asset_entity_used_by_model_view_state_controller",
+    "model_view_state_controller_has_clip_asset",
+    "model_view_state_controller_animator_references_clip",
+    "model_view_state_controller_has_animator_name",
+    "model_view_state_controller_references_effect",
+    "model_view_state_controller_animator_references_effect",
+    "has_animation_clip",
+    "defines_lipsync_clip",
+    "lipsync_clip_language",
+    "lipsync_for_audio",
+    "audio_has_lipsync_clip",
+    "damage_text_uses_animation",
+    "timeline_line_clip",
+    "timeline_option_clip",
+    "runtime_jump_clip",
+    "fmv_binding_timeline_clip",
+    "fmv_clip_used_by_binding",
+)
+
 VIDEO_USAGE_KIND_FALLBACKS = (
     "fmv_binding",
     "video",
@@ -31747,6 +31822,162 @@ def effect_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -
             "authored_static_effect_reference_and_export_name_match_evidence_only",
             "effect_asset_matches_are_suffix_normalized_filename_matches_not_runtime_prefab_binding_proof",
             "does_not_decode_effect_action_execution_timing_targeting_or_renderer_behavior",
+        ],
+    }
+
+
+def resolve_animation_usage_lookup(db_path: Path, term: str, *, limit: int, kind: str = "") -> tuple[dict[str, Any], str]:
+    lookup_limit = min(max(limit, 1), 20)
+    if kind:
+        return query_graph(db_path, term, limit=lookup_limit, kind=kind), kind
+    for fallback_kind in ANIMATION_USAGE_KIND_FALLBACKS:
+        lookup = query_graph(db_path, term, limit=lookup_limit, kind=fallback_kind)
+        if safe_key(lookup.get("seedNode")):
+            return lookup, fallback_kind
+    return query_graph(db_path, term, limit=lookup_limit), ""
+
+
+def animation_usage_relation_clause(alias: str = "e") -> str:
+    explicit = ", ".join(repr(kind) for kind in ANIMATION_USAGE_EXPLICIT_EDGE_KINDS)
+    return f"""
+              AND (
+                   {alias}.kind LIKE '%animation%'
+                OR {alias}.kind LIKE '%montage%'
+                OR {alias}.kind LIKE '%model_view%'
+                OR {alias}.kind LIKE '%animator%'
+                OR {alias}.kind LIKE '%clip%'
+                OR {alias}.kind LIKE '%facial_morph%'
+                OR {alias}.kind LIKE '%lipsync%'
+                OR {alias}.kind IN ({explicit})
+              )
+    """
+
+
+def animation_usage_category(edge_kind: str) -> str:
+    if "animation_clip" in edge_kind or edge_kind == "has_animation_clip":
+        return "animationClips"
+    if "animation_config" in edge_kind or "animation_state" in edge_kind or "actor_animation" in edge_kind or "cutscene" in edge_kind:
+        return "animationConfigs"
+    if "montage" in edge_kind:
+        return "montages"
+    if "facial_morph" in edge_kind:
+        return "facialMorphs"
+    if "model_view" in edge_kind or "animator" in edge_kind:
+        return "modelView"
+    if "lipsync" in edge_kind:
+        return "lipsync"
+    if "timeline" in edge_kind or "runtime_jump" in edge_kind or "fmv_clip" in edge_kind:
+        return "timelineClips"
+    if "damage_text" in edge_kind:
+        return "damageText"
+    if "asset_entity" in edge_kind or "model_config" in edge_kind:
+        return "assetsModels"
+    if "effect" in edge_kind:
+        return "effects"
+    if "audio" in edge_kind:
+        return "audio"
+    return "other"
+
+
+def animation_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
+    lookup, resolved_kind = resolve_animation_usage_lookup(db_path, term, limit=limit, kind=kind)
+    seed = safe_key(lookup.get("seedNode"))
+    if not seed:
+        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "edgeCounts": {}, "animationSummary": {}, "relations": []}
+
+    relation_limit = max(limit, 1)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        seed_row = conn.execute(
+            "SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?",
+            (seed,),
+        ).fetchone()
+        direct_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src = ? OR e.dst = ?)
+            {animation_usage_relation_clause("e")}
+            ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (seed, seed, relation_limit),
+        ).fetchall()
+        focus_ids = [seed]
+        focus_ids.extend(row["srcId"] for row in direct_rows if row["srcKind"] in ANIMATION_USAGE_KIND_FALLBACKS)
+        focus_ids.extend(row["dstId"] for row in direct_rows if row["dstKind"] in ANIMATION_USAGE_KIND_FALLBACKS)
+        focus_ids = _unique_preserve(focus_ids)
+        focus_placeholders = ",".join("?" for _ in focus_ids)
+        count_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, COUNT(1) AS count
+            FROM edges e
+            WHERE (e.src IN ({focus_placeholders}) OR e.dst IN ({focus_placeholders}))
+            {animation_usage_relation_clause("e")}
+            GROUP BY e.kind
+            ORDER BY e.kind
+            """,
+            (*focus_ids, *focus_ids),
+        ).fetchall()
+        relation_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src IN ({focus_placeholders}) OR e.dst IN ({focus_placeholders}))
+            {animation_usage_relation_clause("e")}
+            ORDER BY CASE WHEN e.src = ? OR e.dst = ? THEN 0 ELSE 1 END,
+                     e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (*focus_ids, *focus_ids, seed, seed, relation_limit),
+        ).fetchall()
+        focus_rows = conn.execute(
+            f"""
+            SELECT id, kind, name, source, path, data
+            FROM nodes
+            WHERE id IN ({focus_placeholders})
+            ORDER BY kind, name
+            LIMIT ?
+            """,
+            (*focus_ids, relation_limit),
+        ).fetchall()
+
+    focus_id_set = set(focus_ids)
+    relations = [
+        usage_edge_ref(
+            row,
+            "dst" if row["srcId"] in focus_id_set else "src",
+            row["srcId"] if row["srcId"] in focus_id_set else row["dstId"],
+        )
+        for row in relation_rows
+    ]
+    animation_summary: dict[str, list[dict[str, Any]]] = {"focusNodes": [compact_node_ref(row) for row in focus_rows]}
+    for relation in relations:
+        category = animation_usage_category(safe_key(relation.get("edge")))
+        animation_summary.setdefault(category, []).append(relation)
+
+    return {
+        "term": term,
+        "seedNode": seed,
+        "seed": compact_node_ref(seed_row) if seed_row else {"id": seed, "key": node_key(seed)},
+        "resolvedKind": resolved_kind,
+        "aliases": lookup.get("aliases") or [],
+        "focusNodeIds": focus_ids,
+        "edgeCounts": {row["edge"]: row["count"] for row in count_rows},
+        "animationSummary": animation_summary,
+        "relations": relations,
+        "caveats": [
+            "authored_static_animation_montage_clip_and_lipsync_reference_evidence_only",
+            "does_not_reconstruct_runtime_animator_state_machines_blend_trees_masks_or_ik",
+            "clip_and_montage_refs_do_not_prove_runtime_playback_timing_or_active_controller_state",
         ],
     }
 
@@ -34757,6 +34988,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional node kind to force, such as gameplay_effect, global_effect, potential_talent_effect, use_item_effect, or asset.",
     )
 
+    animation_usage_cmd = sub.add_parser("animation-usage", help="Show animation config, montage, model-view clip, lipsync, timeline clip, and facial-morph evidence")
+    animation_usage_cmd.add_argument("term")
+    animation_usage_cmd.add_argument("--db", type=Path, default=DEFAULT_DB)
+    animation_usage_cmd.add_argument("--limit", type=int, default=40)
+    animation_usage_cmd.add_argument(
+        "--kind",
+        default="",
+        help="Optional node kind to force, such as animation_config, level_script_montage, model_view_state_controller, model_view_clip_ref, lipsync_clip, or animation_clip.",
+    )
+
     video_usage_cmd = sub.add_parser("video-usage", help="Show FMV binding, narrative video, PathID, and playable asset evidence")
     video_usage_cmd.add_argument("term")
     video_usage_cmd.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -34969,6 +35210,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "effect-usage":
         result = effect_usage(args.db, args.term, limit=args.limit, kind=args.kind)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "animation-usage":
+        result = animation_usage(args.db, args.term, limit=args.limit, kind=args.kind)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "video-usage":
