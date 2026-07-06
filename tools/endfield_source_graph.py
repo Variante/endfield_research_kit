@@ -17528,6 +17528,74 @@ class SourceGraphBuilder:
             out["last"] = compact_payload(last, depth=1)
         return out
 
+    def add_weapon_upgrade_level_checkpoints(self, template_node: str, template_id: str, levels: Any, *, kind: str, source: str) -> None:
+        if not isinstance(levels, list):
+            return
+        stat_node = self.add_gameplay_stat_property_node("atk", source=source)
+        checkpoint_kind = "weapon_upgrade_level_checkpoint"
+        for index, entry in enumerate(levels):
+            if not isinstance(entry, dict):
+                continue
+            level = entry.get("weaponLv")
+            level_key = safe_key(level if level is not None else index + 1)
+            if not level_key:
+                continue
+            checkpoint_id = f"{kind}:{template_id}:level:{level_key}"
+            data = {
+                "templateId": template_id,
+                "templateKind": kind,
+                "level": level,
+                "baseAtk": entry.get("baseAtk"),
+                "lvUpExp": entry.get("lvUpExp"),
+                "lvUpGold": entry.get("lvUpGold"),
+                "lvUpExpSum": entry.get("lvUpExpSum"),
+                "lvUpGoldSum": entry.get("lvUpGoldSum"),
+                "index": index,
+            }
+            checkpoint_node = self.add_node(
+                checkpoint_kind,
+                checkpoint_id,
+                name=f"{template_id} Lv {level_key}",
+                source=source,
+                data=compact_payload(data, depth=1),
+            )
+            self.add_alias(checkpoint_id, checkpoint_node, kind=f"{checkpoint_kind}_id", source=source)
+            self.add_alias(f"{template_id}:level:{level_key}", checkpoint_node, kind=f"{checkpoint_kind}_id", source=source)
+            self.add_edge(
+                template_node,
+                checkpoint_node,
+                "weapon_upgrade_template_has_level_checkpoint",
+                source=source,
+                evidence=f"list[{index}]",
+                data=data,
+            )
+            self.add_edge(
+                checkpoint_node,
+                template_node,
+                "weapon_upgrade_level_checkpoint_for_template",
+                source=source,
+                evidence=f"list[{index}]",
+                data=data,
+            )
+            if stat_node and entry.get("baseAtk") is not None:
+                stat_data = {"value": entry.get("baseAtk"), "statKey": "atk", "level": level, "templateKind": kind}
+                self.add_edge(
+                    checkpoint_node,
+                    stat_node,
+                    "weapon_upgrade_checkpoint_has_stat_property",
+                    source=source,
+                    evidence="baseAtk",
+                    data=stat_data,
+                )
+                self.add_edge(
+                    stat_node,
+                    checkpoint_node,
+                    "stat_property_used_by_weapon_upgrade_checkpoint",
+                    source=source,
+                    evidence="baseAtk",
+                    data=stat_data,
+                )
+
     def ingest_weapon_semantics(self) -> None:
         table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
         dataset = self.add_node("dataset", "structured_weapon_semantics", name="Structured weapon tables", path=slash(table_root))
@@ -17624,6 +17692,7 @@ class SourceGraphBuilder:
         if not template_node:
             return
         self.add_edge(row_node, template_node, edge_kind, source=table)
+        self.add_weapon_upgrade_level_checkpoints(template_node, template_id, levels, kind=kind, source=table)
         if kind == "weapon_upgrade_sum_template":
             upgrade_node = self.add_weapon_template_node("weapon_upgrade_template", template_id, source=table)
             if upgrade_node:
@@ -28544,6 +28613,7 @@ QUERY_KIND_PRIORITY = {
     "weapon": 10,
     "weapon_upgrade_template": 10.1,
     "weapon_upgrade_sum_template": 10.2,
+    "weapon_upgrade_level_checkpoint": 10.25,
     "weapon_breakthrough_template": 10.3,
     "weapon_talent_template": 10.4,
     "equipment": 11,
@@ -29344,6 +29414,7 @@ NODE_ID_PREFIXES = (
     "weapon",
     "weapon_upgrade_template",
     "weapon_upgrade_sum_template",
+    "weapon_upgrade_level_checkpoint",
     "weapon_breakthrough_template",
     "weapon_talent_template",
     "equipment",
