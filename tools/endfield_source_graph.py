@@ -29802,6 +29802,7 @@ ASSET_USES_EDGE_KINDS = (
     "shader_program_has_snippet",
 )
 ASSET_USAGE_KIND_FALLBACKS = ("asset", "unity_asset", "unity_pathid", "shader_program", "texture2d_raw_hash_collision_group", "asset_container")
+STAT_USAGE_KIND_FALLBACKS = ("gameplay_stat_property", "attribute_meta", "composite_attribute")
 
 def exact_node_candidates(term: str) -> list[str]:
     candidates = [term]
@@ -30077,6 +30078,81 @@ def asset_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") ->
             for row in used_by_rows
         ],
         "uses": [usage_edge_ref(row, "dst", seed) for row in uses_rows],
+    }
+
+
+def resolve_stat_usage_lookup(db_path: Path, term: str, *, limit: int, kind: str = "") -> tuple[dict[str, Any], str]:
+    lookup_limit = min(max(limit, 1), 20)
+    if kind:
+        return query_graph(db_path, term, limit=lookup_limit, kind=kind), kind
+    for fallback_kind in STAT_USAGE_KIND_FALLBACKS:
+        lookup = query_graph(db_path, term, limit=lookup_limit, kind=fallback_kind)
+        if safe_key(lookup.get("seedNode")):
+            return lookup, fallback_kind
+    return query_graph(db_path, term, limit=lookup_limit), ""
+
+
+def stat_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
+    lookup, resolved_kind = resolve_stat_usage_lookup(db_path, term, limit=limit, kind=kind)
+    seed = safe_key(lookup.get("seedNode"))
+    if not seed:
+        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "edgeCounts": {}, "relations": []}
+
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        seed_row = conn.execute(
+            "SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?",
+            (seed,),
+        ).fetchone()
+        count_rows = conn.execute(
+            """
+            SELECT kind AS edge, COUNT(*) AS count
+            FROM edges
+            WHERE (src = ? OR dst = ?)
+              AND (
+                   kind LIKE '%stat_property%'
+                OR kind LIKE '%attribute_meta%'
+                OR kind LIKE '%composite_attribute%'
+                OR kind LIKE '%damage_taken_scalar%'
+              )
+            GROUP BY kind
+            ORDER BY kind
+            """,
+            (seed, seed),
+        ).fetchall()
+        relation_rows = conn.execute(
+            """
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src = ? OR e.dst = ?)
+              AND (
+                   e.kind LIKE '%stat_property%'
+                OR e.kind LIKE '%attribute_meta%'
+                OR e.kind LIKE '%composite_attribute%'
+                OR e.kind LIKE '%damage_taken_scalar%'
+              )
+            ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (seed, seed, limit),
+        ).fetchall()
+
+    relations = [
+        usage_edge_ref(row, "src" if row["dstId"] == seed else "dst", seed)
+        for row in relation_rows
+    ]
+    return {
+        "term": term,
+        "seedNode": seed,
+        "seed": compact_node_ref(seed_row) if seed_row else {"id": seed, "key": node_key(seed)},
+        "resolvedKind": resolved_kind,
+        "aliases": lookup.get("aliases") or [],
+        "edgeCounts": {row["edge"]: row["count"] for row in count_rows},
+        "relations": relations,
     }
 
 
@@ -30669,6 +30745,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional node kind to force before usage lookup. By default tries asset, unity_asset, then unity_pathid.",
     )
 
+    stat_used_by = sub.add_parser("stat-usage", help="Show authored graph consumers/producers of a stat or attribute node")
+    stat_used_by.add_argument("term")
+    stat_used_by.add_argument("--db", type=Path, default=DEFAULT_DB)
+    stat_used_by.add_argument("--limit", type=int, default=40)
+    stat_used_by.add_argument(
+        "--kind",
+        default="",
+        help="Optional node kind to force, such as gameplay_stat_property, attribute_meta, or composite_attribute.",
+    )
+
     story = sub.add_parser("story", help="Show recovered line order and option branch evidence for one story key")
     story.add_argument("story_key")
     story.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -30731,6 +30817,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "used-by":
         result = asset_usage(args.db, args.term, limit=args.limit, kind=args.kind)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "stat-usage":
+        result = stat_usage(args.db, args.term, limit=args.limit, kind=args.kind)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "story":
