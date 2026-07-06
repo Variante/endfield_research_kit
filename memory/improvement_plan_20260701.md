@@ -116,7 +116,16 @@ in dedicated memory notes.
   traversal in recovered MonoBehaviour/asset maps, not filename matching.
 - Success: nonzero `model_config_asset_entity` edges with source evidence;
   `int_doodad_ore_cluster_*` family resolves to renderable owners.
-- Status: pending (see `memory/model_config_asset_binding_audit_20260701.md`).
+- Status: in progress. Current source-graph follow-up report now classifies
+  1,280 decoded model config rows against 10,678 asset entities, with 215
+  direct `model_config_asset_entity` edges, 200 strong exact rows, 10
+  ambiguous rows, and 10 name-only candidate rows. The original 0-match audit
+  is stale as a baseline but still documents why naive matching was
+  insufficient. Remaining gap is the 161 referenced rows with no exported
+  renderable candidate, including
+  `int_doodad_ore_cluster_*`; use
+  `python tools\endfield_source_graph.py model-bindings --status no_exported_renderable_candidate`
+  to inspect them.
 
 ### P7. Formula recovery pilot (2-3 systems)
 - Goal: map table columns to IL2CPP getter/evaluator methods for character

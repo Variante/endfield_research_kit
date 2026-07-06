@@ -30347,6 +30347,47 @@ def unresolved_narrative_videos(db_path: Path, *, actionable_only: bool = False)
     }
 
 
+def model_binding_candidates(db_path: Path, *, status: str = "", term: str = "", limit: int = 40) -> dict[str, Any]:
+    report_path = GRAPH_DIR / "model_config_asset_binding_candidates.json"
+    if not report_path.exists():
+        with sqlite3.connect(db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            emit_model_config_asset_binding_candidates(conn)
+    payload = read_json(report_path, {})
+    records = payload.get("records")
+    if not isinstance(records, list):
+        records = []
+    status_filter = safe_key(status)
+    term_filter = safe_key(term).lower()
+    filtered: list[dict[str, Any]] = []
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        if status_filter and safe_key(record.get("status")) != status_filter:
+            continue
+        if term_filter:
+            haystack = " ".join(
+                safe_key(record.get(field)).lower()
+                for field in ("modelId", "prefabPath", "prefabStem")
+            )
+            if term_filter not in haystack:
+                continue
+        filtered.append(record)
+        if len(filtered) >= limit:
+            break
+    return {
+        "sourceReport": slash(report_path),
+        "status": status_filter,
+        "term": term_filter,
+        "returned": len(filtered),
+        "totalRecords": len(records),
+        "statusCounts": payload.get("statusCounts"),
+        "directModelConfigAssetEntityEdges": payload.get("directModelConfigAssetEntityEdges"),
+        "candidateEntityMatches": payload.get("candidateEntityMatches"),
+        "records": filtered,
+    }
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command")
@@ -30391,6 +30432,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     unresolved_videos = sub.add_parser("unresolved-videos", help="List unresolved narrative-video candidate groups")
     unresolved_videos.add_argument("--db", type=Path, default=DEFAULT_DB)
     unresolved_videos.add_argument("--actionable", action="store_true", help="Only show candidates with generated story targets.")
+
+    model_bindings = sub.add_parser("model-bindings", help="List decoded model-config to asset-entity binding candidates")
+    model_bindings.add_argument("--db", type=Path, default=DEFAULT_DB)
+    model_bindings.add_argument("--status", default="", help="Optional status filter, such as strong_exact_graph_edge or no_exported_renderable_candidate.")
+    model_bindings.add_argument("--term", default="", help="Optional substring filter over model id and prefab path.")
+    model_bindings.add_argument("--limit", type=int, default=40)
 
     return parser.parse_args(argv)
 
@@ -30439,6 +30486,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "unresolved-videos":
         result = unresolved_narrative_videos(args.db, actionable_only=args.actionable)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "model-bindings":
+        result = model_binding_candidates(args.db, status=args.status, term=args.term, limit=args.limit)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     raise SystemExit(f"Unknown command: {args.command}")
