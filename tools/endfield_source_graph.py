@@ -30157,6 +30157,30 @@ ENTITY_SEMANTIC_MATERIAL_EDGE_KINDS = (
     "uses_texture_pathid",
 )
 
+SHADER_USAGE_KIND_FALLBACKS = (
+    "shader_program",
+    "shader",
+    "shader_family",
+    "shader_bytecode_backend",
+    "shader_snippet",
+    "unity_pathid",
+    "material",
+)
+
+SHADER_USAGE_EDGE_KINDS = (
+    "shader_export_has_program",
+    "shader_program_family",
+    "shader_program_has_backend",
+    "shader_program_has_snippet",
+    "shader_program_named_shader",
+    "shader_program_pathid",
+    "shader_snippet_backend",
+    "uses_shader",
+    "uses_shader_pathid",
+    "material_shader_pathid_resolves_unity_asset",
+    "material_used_by_asset_entity",
+)
+
 def exact_node_candidates(term: str) -> list[str]:
     candidates = [term]
     if ":" not in term:
@@ -30693,6 +30717,217 @@ def entity_assets(db_path: Path, term: str, *, limit: int = 40, kind: str = "") 
             "exported_asset_entity_evidence_only",
             "semantic_material_nodes_are_matched_from_material_asset_filenames",
             "not_full_runtime_renderer_or_animation_controller_reconstruction",
+        ],
+    }
+
+
+def resolve_shader_usage_lookup(db_path: Path, term: str, *, limit: int, kind: str = "") -> tuple[dict[str, Any], str]:
+    lookup_limit = min(max(limit, 1), 20)
+    if kind:
+        return query_graph(db_path, term, limit=lookup_limit, kind=kind), kind
+    for fallback_kind in SHADER_USAGE_KIND_FALLBACKS:
+        lookup = query_graph(db_path, term, limit=lookup_limit, kind=fallback_kind)
+        if safe_key(lookup.get("seedNode")):
+            return lookup, fallback_kind
+    return query_graph(db_path, term, limit=lookup_limit), ""
+
+
+def shader_usage_category(edge_kind: str) -> str:
+    if edge_kind == "shader_program_has_snippet" or edge_kind == "shader_snippet_backend":
+        return "snippets"
+    if "backend" in edge_kind:
+        return "backends"
+    if "family" in edge_kind:
+        return "family"
+    if "pathid" in edge_kind:
+        return "pathids"
+    if "material" in edge_kind or edge_kind.startswith("uses_shader"):
+        return "materials"
+    if "named_shader" in edge_kind:
+        return "shaderNames"
+    return "other"
+
+
+def material_source_from_node_id(node_id: Any) -> str:
+    parts = safe_key(node_id).split(":", 2)
+    if len(parts) >= 3 and parts[0] == "material":
+        return parts[1]
+    return ""
+
+
+def shader_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
+    lookup, resolved_kind = resolve_shader_usage_lookup(db_path, term, limit=limit, kind=kind)
+    seed = safe_key(lookup.get("seedNode"))
+    if not seed:
+        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "edgeCounts": {}, "shaderSummary": {}, "relations": []}
+
+    relation_limit = max(limit, 1)
+    placeholders = ",".join("?" for _ in SHADER_USAGE_EDGE_KINDS)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        seed_row = conn.execute(
+            "SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?",
+            (seed,),
+        ).fetchone()
+        count_rows = conn.execute(
+            f"""
+            SELECT kind AS edge, COUNT(*) AS count
+            FROM edges
+            WHERE (src = ? OR dst = ?)
+              AND kind IN ({placeholders})
+            GROUP BY kind
+            ORDER BY kind
+            """,
+            (seed, seed, *SHADER_USAGE_EDGE_KINDS),
+        ).fetchall()
+        relation_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src = ? OR e.dst = ?)
+              AND e.kind IN ({placeholders})
+            ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (seed, seed, *SHADER_USAGE_EDGE_KINDS, relation_limit),
+        ).fetchall()
+        pathid_rows = conn.execute(
+            """
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src = ? AND e.kind IN ('shader_program_pathid', 'uses_shader_pathid'))
+               OR (e.dst = ? AND e.kind = 'shader_program_pathid')
+            ORDER BY e.kind, src.source, src.name, dst.name
+            LIMIT ?
+            """,
+            (seed, seed, relation_limit),
+        ).fetchall()
+
+        pathid_ids = _unique_preserve(
+            [
+                row["dstId"]
+                for row in pathid_rows
+                if row["srcId"] == seed and row["edge"] in {"shader_program_pathid", "uses_shader_pathid"}
+            ]
+            + [seed if seed_row and seed_row["kind"] == "unity_pathid" else ""]
+        )
+        pathid_ids = [value for value in pathid_ids if value]
+        material_rows: list[sqlite3.Row] = []
+        pathid_program_rows: list[sqlite3.Row] = []
+        material_entity_rows: list[sqlite3.Row] = []
+        if pathid_ids:
+            pathid_placeholders = ",".join("?" for _ in pathid_ids)
+            material_rows = conn.execute(
+                f"""
+                SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                       src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                       dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+                FROM edges e
+                JOIN nodes src ON src.id = e.src
+                JOIN nodes dst ON dst.id = e.dst
+                WHERE e.dst IN ({pathid_placeholders})
+                  AND e.kind IN ('uses_shader_pathid', 'material_shader_pathid_resolves_unity_asset')
+                ORDER BY src.source, src.name, e.kind
+                LIMIT ?
+                """,
+                (*pathid_ids, relation_limit),
+            ).fetchall()
+            material_refs = _unique_preserve(
+                (material_source_from_node_id(row["srcId"]), safe_key(row["srcName"]))
+                for row in material_rows
+                if safe_key(row["srcName"])
+            )
+            remaining_entity_rows = relation_limit
+            for material_source, material_name in material_refs:
+                if remaining_entity_rows <= 0:
+                    break
+                material_asset_pattern = f"{material_source}-materials/Material/{material_name}_p%.json" if material_source else f"%/Material/{material_name}_p%.json"
+                rows = conn.execute(
+                    """
+                    SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                           src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                           dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+                    FROM edges e
+                    JOIN nodes src ON src.id = e.src
+                    JOIN nodes dst ON dst.id = e.dst
+                    JOIN nodes material_asset ON material_asset.id = e.src OR material_asset.id = e.dst
+                    WHERE material_asset.kind = 'asset'
+                      AND material_asset.path LIKE ?
+                      AND e.kind IN ('entity_uses_material', 'material_used_by_asset_entity')
+                    ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name
+                    LIMIT ?
+                    """,
+                    (material_asset_pattern, remaining_entity_rows),
+                ).fetchall()
+                material_entity_rows.extend(rows)
+                remaining_entity_rows -= len(rows)
+            pathid_program_rows = conn.execute(
+                f"""
+                SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                       src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                       dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+                FROM edges e
+                JOIN nodes src ON src.id = e.src
+                JOIN nodes dst ON dst.id = e.dst
+                WHERE e.dst IN ({pathid_placeholders})
+                  AND e.kind = 'shader_program_pathid'
+                ORDER BY src.source, src.name
+                LIMIT ?
+                """,
+                (*pathid_ids, relation_limit),
+            ).fetchall()
+
+    relations = [
+        usage_edge_ref(row, "src" if row["dstId"] == seed else "dst", seed)
+        for row in relation_rows
+    ]
+    pathid_relations = [
+        usage_edge_ref(row, "src" if row["dstId"] == seed else "dst", seed)
+        for row in pathid_rows
+    ]
+    materials = [usage_edge_ref(row, "src", row["dstId"]) for row in material_rows]
+    pathid_programs = [usage_edge_ref(row, "src", row["dstId"]) for row in pathid_program_rows]
+    material_entities = [
+        usage_edge_ref(row, "src" if row["dstKind"] == "asset" else "dst", row["dstId"] if row["dstKind"] == "asset" else row["srcId"])
+        for row in material_entity_rows
+    ]
+    shader_summary: dict[str, list[dict[str, Any]]] = {}
+    for relation in relations:
+        category = shader_usage_category(safe_key(relation.get("edge")))
+        shader_summary.setdefault(category, []).append(relation)
+    if pathid_relations:
+        shader_summary["pathidRelations"] = pathid_relations
+    if materials:
+        shader_summary["materialsUsingPathid"] = materials
+    if pathid_programs:
+        shader_summary["programsForPathid"] = pathid_programs
+    if material_entities:
+        shader_summary["entitiesUsingMaterials"] = material_entities
+
+    return {
+        "term": term,
+        "seedNode": seed,
+        "seed": compact_node_ref(seed_row) if seed_row else {"id": seed, "key": node_key(seed)},
+        "resolvedKind": resolved_kind,
+        "aliases": lookup.get("aliases") or [],
+        "edgeCounts": {row["edge"]: row["count"] for row in count_rows},
+        "shaderSummary": shader_summary,
+        "relations": relations,
+        "pathidRelations": pathid_relations,
+        "materialsUsingPathid": materials,
+        "programsForPathid": pathid_programs,
+        "entitiesUsingMaterials": material_entities,
+        "caveats": [
+            "shader_payload_and_material_reference_evidence_only",
+            "not_hlsl_decompilation_or_runtime_renderer_fidelity",
         ],
     }
 
@@ -32217,6 +32452,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional node kind to force, such as asset_entity, model_config_model, world_entity_instance, or interactive_template.",
     )
 
+    shader_usage_cmd = sub.add_parser("shader-usage", help="Show shader program, PathID, backend, snippet, and material reference evidence")
+    shader_usage_cmd.add_argument("term")
+    shader_usage_cmd.add_argument("--db", type=Path, default=DEFAULT_DB)
+    shader_usage_cmd.add_argument("--limit", type=int, default=40)
+    shader_usage_cmd.add_argument(
+        "--kind",
+        default="",
+        help="Optional node kind to force, such as shader_program, shader, shader_family, shader_snippet, unity_pathid, or material.",
+    )
+
     stat_used_by = sub.add_parser("stat-usage", help="Show authored graph consumers/producers of a stat or attribute node")
     stat_used_by.add_argument("term")
     stat_used_by.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -32353,6 +32598,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "entity-assets":
         result = entity_assets(args.db, args.term, limit=args.limit, kind=args.kind)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "shader-usage":
+        result = shader_usage(args.db, args.term, limit=args.limit, kind=args.kind)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "stat-usage":
