@@ -30156,6 +30156,149 @@ def stat_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> 
     }
 
 
+GAMEPLAY_PARAMETER_KIND_FALLBACKS = (
+    "gameplay_blackboard_key",
+    "buff_parameter",
+    "skill_parameter",
+)
+
+GAMEPLAY_PARAMETER_BRIDGE_EDGE_KINDS = (
+    "buff_parameter_matches_blackboard_key",
+    "skill_parameter_matches_blackboard_key",
+    "blackboard_key_matches_buff_parameter",
+    "blackboard_key_matches_skill_parameter",
+)
+
+
+def resolve_gameplay_parameter_lookup(db_path: Path, term: str, *, limit: int, kind: str = "") -> tuple[dict[str, Any], str]:
+    lookup_limit = min(max(limit, 1), 20)
+    if kind:
+        return query_graph(db_path, term, limit=lookup_limit, kind=kind), kind
+    for fallback_kind in GAMEPLAY_PARAMETER_KIND_FALLBACKS:
+        lookup = query_graph(db_path, term, limit=lookup_limit, kind=fallback_kind)
+        if safe_key(lookup.get("seedNode")):
+            return lookup, fallback_kind
+    return query_graph(db_path, term, limit=lookup_limit), ""
+
+
+def gameplay_parameter_relation_clause(alias: str = "e") -> str:
+    return f"""
+              AND (
+                   {alias}.kind LIKE '%blackboard%'
+                OR {alias}.kind LIKE '%param%'
+                OR {alias}.kind IN (
+                    'buff_data_has_param_string',
+                    'skill_data_has_param_string',
+                    'level_data_has_param_string'
+                )
+              )
+    """
+
+
+def gameplay_parameter_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
+    lookup, resolved_kind = resolve_gameplay_parameter_lookup(db_path, term, limit=limit, kind=kind)
+    seed = safe_key(lookup.get("seedNode"))
+    if not seed:
+        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "edgeCounts": {}, "relations": [], "bridges": []}
+
+    bridge_placeholders = ",".join("?" for _ in GAMEPLAY_PARAMETER_BRIDGE_EDGE_KINDS)
+    relation_limit = max(limit, 1)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        seed_row = conn.execute(
+            "SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?",
+            (seed,),
+        ).fetchone()
+        count_rows = conn.execute(
+            f"""
+            SELECT kind AS edge, COUNT(*) AS count
+            FROM edges e
+            WHERE (src = ? OR dst = ?)
+            {gameplay_parameter_relation_clause("e")}
+            GROUP BY kind
+            ORDER BY kind
+            """,
+            (seed, seed),
+        ).fetchall()
+        relation_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src = ? OR e.dst = ?)
+            {gameplay_parameter_relation_clause("e")}
+            ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (seed, seed, relation_limit),
+        ).fetchall()
+        bridge_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src = ? OR e.dst = ?)
+              AND e.kind IN ({bridge_placeholders})
+            ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (seed, seed, *GAMEPLAY_PARAMETER_BRIDGE_EDGE_KINDS, relation_limit),
+        ).fetchall()
+
+        bridged_ids = _unique_preserve(
+            row["srcId"] if row["dstId"] == seed else row["dstId"]
+            for row in bridge_rows
+        )
+        bridged_relations: list[dict[str, Any]] = []
+        remaining = relation_limit
+        for bridged_id in bridged_ids:
+            if remaining <= 0:
+                break
+            rows = conn.execute(
+                f"""
+                SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                       src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                       dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+                FROM edges e
+                JOIN nodes src ON src.id = e.src
+                JOIN nodes dst ON dst.id = e.dst
+                WHERE (e.src = ? OR e.dst = ?)
+                {gameplay_parameter_relation_clause("e")}
+                  AND e.kind NOT IN ({bridge_placeholders})
+                ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+                LIMIT ?
+                """,
+                (bridged_id, bridged_id, *GAMEPLAY_PARAMETER_BRIDGE_EDGE_KINDS, remaining),
+            ).fetchall()
+            for row in rows:
+                bridged_relations.append(usage_edge_ref(row, "src" if row["dstId"] == bridged_id else "dst", bridged_id))
+            remaining -= len(rows)
+
+    return {
+        "term": term,
+        "seedNode": seed,
+        "seed": compact_node_ref(seed_row) if seed_row else {"id": seed, "key": node_key(seed)},
+        "resolvedKind": resolved_kind,
+        "aliases": lookup.get("aliases") or [],
+        "edgeCounts": {row["edge"]: row["count"] for row in count_rows},
+        "relations": [
+            usage_edge_ref(row, "src" if row["dstId"] == seed else "dst", seed)
+            for row in relation_rows
+        ],
+        "bridges": [
+            usage_edge_ref(row, "src" if row["dstId"] == seed else "dst", seed)
+            for row in bridge_rows
+        ],
+        "bridgedRelations": bridged_relations,
+    }
+
+
 def compact_node_ref(row: sqlite3.Row, edge_row: sqlite3.Row | None = None) -> dict[str, Any]:
     data = parse_json_text(row["data"])
     ref: dict[str, Any] = {
@@ -30950,6 +31093,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional node kind to force, such as gameplay_stat_property, attribute_meta, or composite_attribute.",
     )
 
+    blackboard_used_by = sub.add_parser("blackboard-usage", aliases=["gameplay-usage"], help="Show blackboard/skill/buff parameter usage and exact-name bridges")
+    blackboard_used_by.add_argument("term")
+    blackboard_used_by.add_argument("--db", type=Path, default=DEFAULT_DB)
+    blackboard_used_by.add_argument("--limit", type=int, default=40)
+    blackboard_used_by.add_argument(
+        "--kind",
+        default="",
+        help="Optional node kind to force, such as gameplay_blackboard_key, buff_parameter, or skill_parameter.",
+    )
+
     story = sub.add_parser("story", help="Show recovered line order and option branch evidence for one story key")
     story.add_argument("story_key")
     story.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -31026,6 +31179,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "stat-usage":
         result = stat_usage(args.db, args.term, limit=args.limit, kind=args.kind)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command in ("blackboard-usage", "gameplay-usage"):
+        result = gameplay_parameter_usage(args.db, args.term, limit=args.limit, kind=args.kind)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "story":
