@@ -130,7 +130,14 @@ in dedicated memory notes.
 ### P7. Formula recovery pilot (2-3 systems)
 - Goal: map table columns to IL2CPP getter/evaluator methods for character
   growth, weapon ATK, and one damage path; one fully proven formula chain.
-- Status: pending; benefits from P1 tooling.
+- Status: in progress. Character growth and attribute/stat table evidence is
+  already queryable, and 2026-07-06 source graph work adds authored weapon ATK
+  level checkpoints from `WeaponUpgradeTemplateTable.list[]`: 1,890 normal
+  upgrade rows now link to `gameplay_stat_property:atk`, with matching
+  checkpoint nodes for the cumulative upgrade-sum rows. This improves the
+  weapon ATK pilot slice while still stopping short of IL2CPP evaluator proof
+  or runtime formula execution. See
+  `memory/weapon_atk_checkpoint_source_graph_recovery_20260706.md`.
 
 ### P8. Cleanup queue (cheap, background)
 - Classify 110 unbound FMV-scope videos and 18 unresolved narrative refs.
