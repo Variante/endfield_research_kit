@@ -998,6 +998,13 @@ STAT_ATTR_KEYS = {
     85: "ether_damage_taken_scalar",
     87: "infliction",
 }
+ENEMY_DAMAGE_TAKEN_SCALAR_FIELDS = {
+    "physicalDmgResistScalar": "physical_damage_taken_scalar",
+    "naturalDmgResistScalar": "natural_damage_taken_scalar",
+    "fireDmgResistScalar": "fire_damage_taken_scalar",
+    "crystDmgResistScalar": "cryst_damage_taken_scalar",
+    "pulseDmgResistScalar": "pulse_damage_taken_scalar",
+}
 DECODED_CONFIG_TARGET_TYPES = {
     "AnimationConfig",
     "AIConfigEnemyTemplateDataSummary",
@@ -24737,6 +24744,18 @@ class SourceGraphBuilder:
             self.add_edge(owner_node, meta_node, edge_kind, source=source, evidence=f"{evidence_prefix}[{index}]", data=data)
             self.add_edge(meta_node, owner_node, "attribute_meta_used_by_enemy", source=source, evidence=f"{evidence_prefix}[{index}]", data={**data, "edgeKind": edge_kind})
 
+    def add_enemy_damage_taken_scalar_edges(self, owner_node: str, row: dict[str, Any], *, source: str) -> None:
+        for field, stat_key in ENEMY_DAMAGE_TAKEN_SCALAR_FIELDS.items():
+            value = row.get(field)
+            if value is None:
+                continue
+            stat_node = self.add_gameplay_stat_property_node(stat_key, source=source)
+            if not stat_node:
+                continue
+            data = {"field": field, "statKey": stat_key, "value": value}
+            self.add_edge(owner_node, stat_node, "enemy_attribute_template_sets_damage_taken_scalar", source=source, evidence=field, data=data)
+            self.add_edge(stat_node, owner_node, "damage_taken_scalar_set_by_enemy_attribute_template", source=source, evidence=field, data=data)
+
     def add_enemy_row_edges(self, table: str, row_key: str, row: Any, row_node: str) -> None:
         if table == "DisplayEnemyTypeTable" and isinstance(row, dict):
             type_node = self.add_enemy_display_type_node(row_key, name=row.get("name"), source=table)
@@ -24745,10 +24764,19 @@ class SourceGraphBuilder:
                 self.add_tag_i18n_edges(type_node, row.get("name"), source=table, edge_kind="enemy_display_type_name_text")
             return
         if table == "EnemyDamageTakenLevelTable" and isinstance(row, dict):
-            level_node = self.add_semantic_node("enemy_damage_taken_level", row.get("damageTakenLevel") or row_key, name=row.get("name"), source=table, data={"damageTakenLevel": row.get("damageTakenLevel"), "damageTakenScalar": row.get("damageTakenScalar")})
+            data = {"damageTakenLevel": row.get("damageTakenLevel"), "damageTakenScalar": row.get("damageTakenScalar")}
+            level_node = self.add_semantic_node("enemy_damage_taken_level", row.get("damageTakenLevel") or row_key, name=row.get("name"), source=table, data=data)
             if level_node:
                 self.add_edge(row_node, level_node, "defines_enemy_damage_taken_level", source=table)
                 self.add_tag_i18n_edges(level_node, row.get("name"), source=table, edge_kind="enemy_damage_taken_level_name_text")
+                stat_node = self.add_gameplay_stat_property_node("all_damage_taken_scalar", source=table)
+                if stat_node:
+                    self.add_edge(level_node, stat_node, "enemy_damage_taken_level_scales_stat_property", source=table, evidence="damageTakenScalar", data=data)
+                    self.add_edge(stat_node, level_node, "stat_property_scaled_by_enemy_damage_taken_level", source=table, evidence="damageTakenScalar", data=data)
+                composite_node = self.add_node("composite_attribute", "AllDamageTakenScalar", name="AllDamageTakenScalar", source=table)
+                self.add_alias("AllDamageTakenScalar", composite_node, kind="composite_attribute_id", source=table)
+                self.add_edge(level_node, composite_node, "enemy_damage_taken_level_scales_composite_attribute", source=table, evidence="damageTakenScalar", data=data)
+                self.add_edge(composite_node, level_node, "composite_attribute_scaled_by_enemy_damage_taken_level", source=table, evidence="damageTakenScalar", data=data)
             return
         if not isinstance(row, dict):
             return
@@ -24798,6 +24826,7 @@ class SourceGraphBuilder:
             if not attr_node:
                 return
             self.add_edge(row_node, attr_node, "defines_enemy_attribute_template", source=table)
+            self.add_enemy_damage_taken_scalar_edges(attr_node, row, source=table)
             self.add_enemy_attribute_meta_edges(attr_node, row.get("levelIndependentAttributes"), edge_kind="enemy_attribute_template_independent_attr", source=table, evidence_prefix="levelIndependentAttributes.attrs")
             for level_index, level_entry in enumerate(row.get("levelDependentAttributes") or []):
                 if isinstance(level_entry, dict):

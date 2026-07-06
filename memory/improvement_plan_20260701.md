@@ -136,8 +136,12 @@ in dedicated memory notes.
   upgrade rows now link to `gameplay_stat_property:atk`, with matching
   checkpoint nodes for the cumulative upgrade-sum rows. This improves the
   weapon ATK pilot slice while still stopping short of IL2CPP evaluator proof
-  or runtime formula execution. See
-  `memory/weapon_atk_checkpoint_source_graph_recovery_20260706.md`.
+  or runtime formula execution. A follow-up damage-path slice links the five
+  authored `EnemyDamageTakenLevelTable` scalar tiers to the all-damage-taken
+  stat/composite vocabulary for queryable static damage-scalar evidence, while
+  leaving DamageAction / DamageUnit evaluator recovery out of scope. See
+  `memory/weapon_atk_checkpoint_source_graph_recovery_20260706.md` and
+  `memory/enemy_damage_taken_scalar_source_graph_recovery_20260706.md`.
 
 ### P8. Cleanup queue (cheap, background)
 - Classify 110 unbound FMV-scope videos and 18 unresolved narrative refs.
