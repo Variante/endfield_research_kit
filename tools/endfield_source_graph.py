@@ -26803,27 +26803,34 @@ class SourceGraphBuilder:
                 if category == "skill":
                     target = self.add_gameplay_skill_ref_node(value, source=source)
                     edge_kind = "monobehaviour_frontier_entry_uses_skill"
+                    reverse_edge_kind = "skill_used_by_monobehaviour_frontier_entry"
                 elif category == "model":
                     target = self.add_node("model_config_model", value, name=value, source=source)
                     self.add_alias(value, target, kind="model_id", source=source)
                     self.add_model_asset_entity_edges(entry_node, (value,), edge_kind="monobehaviour_frontier_entry_model_asset_entity", source=source, evidence=evidence)
                     edge_kind = "monobehaviour_frontier_entry_uses_model"
+                    reverse_edge_kind = "model_used_by_monobehaviour_frontier_entry"
                 elif category == "ai_config":
                     target = self.add_ai_config_node(value, source=source)
                     edge_kind = "monobehaviour_frontier_entry_uses_ai_config"
+                    reverse_edge_kind = "ai_config_used_by_monobehaviour_frontier_entry"
                 elif category == "animation_config":
                     target = self.add_animation_config_ref_node(value, source=source)
                     edge_kind = "monobehaviour_frontier_entry_uses_animation_config"
+                    reverse_edge_kind = "animation_config_used_by_monobehaviour_frontier_entry"
                 elif category == "blackboard_key":
                     target = self.add_blackboard_key_node(value, source=source)
                     edge_kind = "monobehaviour_frontier_entry_uses_blackboard_key"
+                    reverse_edge_kind = "blackboard_key_used_by_monobehaviour_frontier_entry"
                 elif category == "effect":
                     target = self.add_node("gameplay_effect", value, name=value, source=source)
                     self.add_alias(value, target, kind="gameplay_effect_id", source=source)
                     edge_kind = "monobehaviour_frontier_entry_uses_gameplay_effect"
+                    reverse_edge_kind = "gameplay_effect_used_by_monobehaviour_frontier_entry"
                 elif category == "buff":
                     target = self.add_buff_ref_node(value, source=source)
                     edge_kind = "monobehaviour_frontier_entry_uses_buff"
+                    reverse_edge_kind = "buff_used_by_monobehaviour_frontier_entry"
                 elif category == "audio":
                     self.add_audio_target_edge(
                         entry_node,
@@ -26838,17 +26845,21 @@ class SourceGraphBuilder:
                     target = self.add_node("monobehaviour_mode_id", value, name=value, source=source_root or source)
                     self.add_alias(value, target, kind="monobehaviour_mode_id", source=source)
                     edge_kind = "monobehaviour_frontier_entry_uses_mode"
+                    reverse_edge_kind = "mode_used_by_monobehaviour_frontier_entry"
                 elif category == "locator":
                     target = self.add_node("monobehaviour_locator", value, name=value, source=source_root or source)
                     self.add_alias(value, target, kind="monobehaviour_locator", source=source)
                     edge_kind = "monobehaviour_frontier_entry_uses_locator"
+                    reverse_edge_kind = "locator_used_by_monobehaviour_frontier_entry"
                 elif category == "component_class":
                     target = self.add_node("monobehaviour_managed_class", value, name=value, source=source)
                     self.add_alias(value, target, kind="monobehaviour_managed_class", source=source)
                     edge_kind = "monobehaviour_frontier_entry_has_component_class"
+                    reverse_edge_kind = "component_class_used_by_monobehaviour_frontier_entry"
                 else:
                     continue
                 self.add_edge(entry_node, target, edge_kind, source=source, evidence=evidence, data=data)
+                self.add_edge(target, entry_node, reverse_edge_kind, source=source, evidence=evidence, data=data)
 
     def projectile_curve_summary(self, curve: Any) -> dict[str, Any]:
         if not isinstance(curve, dict):
