@@ -27974,27 +27974,191 @@ def emit_option_branch_gaps(conn: sqlite3.Connection) -> None:
 
 
 def emit_map_level_index(conn: sqlite3.Connection) -> None:
-    rows = conn.execute(
+    mark_rows = conn.execute(
         """
-        SELECT level.name AS levelId, mark.name AS markId, mark.data AS markData
+        SELECT level.name AS levelId, mark.name AS markId, mark.data AS markData,
+               e.source AS edgeSource, e.evidence AS edgeEvidence
         FROM edges e
         JOIN nodes level ON level.id = e.src
         JOIN nodes mark ON mark.id = e.dst
-        WHERE e.kind = 'has_map_mark'
+        WHERE e.kind = 'level_has_map_mark'
         ORDER BY level.name, mark.name
         """
     ).fetchall()
-    levels: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for row in rows:
+    levels: dict[str, dict[str, Any]] = defaultdict(lambda: {
+        "levelId": "",
+        "maps": set(),
+        "marks": [],
+        "levelData": [],
+        "levelDataCount": 0,
+        "levelScriptCount": 0,
+        "missionRuntimeCount": 0,
+    })
+    for row in mark_rows:
+        level_id = safe_key(row["levelId"])
+        if not level_id:
+            continue
         data = parse_json_text(row["markData"])
-        levels[row["levelId"]].append({
+        level = levels[level_id]
+        level["levelId"] = level_id
+        level["marks"].append({
             "markId": row["markId"],
-            "markInfoId": data.get("markInfoId"),
+            "markInfoId": data.get("markInfoId") or data.get("templateId"),
+            "templateId": data.get("templateId"),
             "pos": data.get("pos"),
+            "source": row["edgeSource"],
+            "evidence": row["edgeEvidence"],
         })
+
+    map_rows = conn.execute(
+        """
+        SELECT level.name AS levelId, map.name AS mapId
+        FROM edges e
+        JOIN nodes level ON level.id = e.src
+        JOIN nodes map ON map.id = e.dst
+        WHERE e.kind = 'level_belongs_to_map'
+        ORDER BY level.name, map.name
+        """
+    ).fetchall()
+    maps: dict[str, dict[str, Any]] = defaultdict(lambda: {"mapId": "", "levels": set(), "sublevels": []})
+    for row in map_rows:
+        level_id = safe_key(row["levelId"])
+        map_id = safe_key(row["mapId"])
+        if not level_id or not map_id:
+            continue
+        level = levels[level_id]
+        level["levelId"] = level_id
+        level["maps"].add(map_id)
+        maps[map_id]["mapId"] = map_id
+        maps[map_id]["levels"].add(level_id)
+
+    level_data_rows = conn.execute(
+        """
+        SELECT level.name AS levelId, data.name AS levelDataId, data.path AS levelDataPath,
+               e.source AS edgeSource, e.evidence AS edgeEvidence
+        FROM edges e
+        JOIN nodes level ON level.id = e.src
+        JOIN nodes data ON data.id = e.dst
+        WHERE e.kind = 'level_has_level_data'
+        ORDER BY level.name, data.name
+        """
+    ).fetchall()
+    for row in level_data_rows:
+        level_id = safe_key(row["levelId"])
+        if not level_id:
+            continue
+        level = levels[level_id]
+        level["levelId"] = level_id
+        level["levelData"].append({
+            "id": row["levelDataId"],
+            "path": row["levelDataPath"],
+            "source": row["edgeSource"],
+            "evidence": row["edgeEvidence"],
+        })
+    for level in levels.values():
+        level["levelDataCount"] = len(level["levelData"])
+
+    for edge_kind, field in (("level_has_level_script", "levelScriptCount"), ("level_has_mission_runtime", "missionRuntimeCount")):
+        rows = conn.execute(
+            """
+            SELECT level.name AS levelId, COUNT(*) AS count
+            FROM edges e
+            JOIN nodes level ON level.id = e.src
+            WHERE e.kind = ?
+            GROUP BY level.name
+            """,
+            (edge_kind,),
+        ).fetchall()
+        for row in rows:
+            level_id = safe_key(row["levelId"])
+            if not level_id:
+                continue
+            level = levels[level_id]
+            level["levelId"] = level_id
+            level[field] = int(row["count"] or 0)
+
+    sublevel_rows = conn.execute(
+        """
+        SELECT map.name AS mapId, sub.name AS subLevelId, sub.data AS subData,
+               enemy.name AS enemyId
+        FROM edges ms
+        JOIN nodes map ON map.id = ms.src
+        JOIN nodes sub ON sub.id = ms.dst
+        LEFT JOIN edges se ON se.src = sub.id AND se.kind = 'map_sublevel_brief_has_enemy'
+        LEFT JOIN nodes enemy ON enemy.id = se.dst
+        WHERE ms.kind = 'map_has_sublevel_brief'
+        ORDER BY map.name, sub.name, enemy.name
+        """
+    ).fetchall()
+    sublevels_by_map: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
+    for row in sublevel_rows:
+        map_id = safe_key(row["mapId"])
+        sublevel_id = safe_key(row["subLevelId"])
+        if not map_id or not sublevel_id:
+            continue
+        map_entry = maps[map_id]
+        map_entry["mapId"] = map_id
+        sublevels = sublevels_by_map[map_id]
+        sublevel = sublevels.get(sublevel_id)
+        if sublevel is None:
+            data = parse_json_text(row["subData"])
+            sublevel = {
+                "subLevelId": sublevel_id,
+                "subDataParentId": data.get("subDataParentId"),
+                "mapIdNum": data.get("mapIdNum"),
+                "source": data.get("source"),
+                "enemies": [],
+            }
+            sublevels[sublevel_id] = sublevel
+        enemy_id = safe_key(row["enemyId"])
+        if enemy_id and enemy_id not in sublevel["enemies"]:
+            sublevel["enemies"].append(enemy_id)
+
+    for map_id, sublevels in sublevels_by_map.items():
+        maps[map_id]["sublevels"] = list(sublevels.values())
+
+    output_levels = []
+    for level_id, level in sorted(levels.items()):
+        marks = level["marks"]
+        output_levels.append({
+            "levelId": level_id,
+            "maps": sorted(level["maps"]),
+            "markCount": len(marks),
+            "levelDataCount": level["levelDataCount"],
+            "levelScriptCount": level["levelScriptCount"],
+            "missionRuntimeCount": level["missionRuntimeCount"],
+            "levelData": level["levelData"],
+            "marks": marks,
+        })
+
+    output_maps = []
+    for map_id, map_entry in sorted(maps.items()):
+        sublevels = map_entry["sublevels"]
+        output_maps.append({
+            "mapId": map_id,
+            "levelCount": len(map_entry["levels"]),
+            "levels": sorted(map_entry["levels"]),
+            "sublevelCount": len(sublevels),
+            "enemyRefCount": sum(len(sublevel["enemies"]) for sublevel in sublevels),
+            "sublevels": sublevels,
+        })
+
+    summary = {
+        "mapCount": len(output_maps),
+        "levelCount": len(output_levels),
+        "mapLevelPairCount": sum(map_entry["levelCount"] for map_entry in output_maps),
+        "mapMarkCount": sum(level["markCount"] for level in output_levels),
+        "sublevelCount": sum(map_entry["sublevelCount"] for map_entry in output_maps),
+        "sublevelEnemyRefCount": sum(map_entry["enemyRefCount"] for map_entry in output_maps),
+        "levelDataCount": sum(level["levelDataCount"] for level in output_levels),
+        "levelScriptCount": sum(level["levelScriptCount"] for level in output_levels),
+        "missionRuntimeCount": sum(level["missionRuntimeCount"] for level in output_levels),
+    }
     payload = {
         "generated": int(time.time()),
-        "levels": [{"levelId": level, "marks": marks} for level, marks in sorted(levels.items())],
+        "summary": summary,
+        "maps": output_maps,
+        "levels": output_levels,
     }
     (GRAPH_DIR / "map_level_index.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
