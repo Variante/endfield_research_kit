@@ -1184,6 +1184,22 @@ def model_asset_entity_candidate_bases(token: Any) -> list[str]:
     return _unique_preserve(candidate for candidate in candidates if candidate)
 
 
+def model_config_family_prefixes(*tokens: Any) -> list[str]:
+    prefixes: list[str] = []
+    for token in tokens:
+        token_key = safe_key(token)
+        if not token_key:
+            continue
+        for value in (token_key, Path(token_key).stem):
+            base = normalized_model_entity_base(value)
+            if base.endswith("_postmodel"):
+                base = base.removesuffix("_postmodel")
+            parts = [part for part in base.split("_") if part]
+            for length in range(len(parts) - 1, 2, -1):
+                prefixes.append("_".join(parts[:length]))
+    return _unique_preserve(prefix for prefix in prefixes if prefix)
+
+
 def exported_model_entity_base(rel: str) -> str:
     stem = Path(rel).stem
     logical_stem = path_id_export_base_stem(stem) or stem
@@ -6073,6 +6089,14 @@ class SourceGraphBuilder:
                     model_node,
                     prefab_node,
                     "model_config_uses_prefab",
+                    source="webui/game_data",
+                    evidence="prefabPath",
+                    data={"prefabStem": prefab_stem},
+                )
+                self.add_edge(
+                    prefab_node,
+                    model_node,
+                    "model_prefab_used_by_model_config",
                     source="webui/game_data",
                     evidence="prefabPath",
                     data={"prefabStem": prefab_stem},
@@ -27694,6 +27718,46 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
         }
         records.append(record)
 
+    resolved_records = [
+        item
+        for item in records
+        if item.get("directEdges")
+    ]
+    for item in records:
+        if item.get("status") != "no_exported_renderable_candidate":
+            continue
+        prefixes = model_config_family_prefixes(item.get("modelId"), item.get("prefabStem"), item.get("prefabPath"))
+        if not prefixes:
+            continue
+        siblings: list[dict[str, Any]] = []
+        seen_sibling_nodes: set[str] = set()
+        for prefix in prefixes:
+            for sibling in resolved_records:
+                if sibling is item:
+                    continue
+                sibling_id = safe_key(sibling.get("modelId")).lower()
+                sibling_stem = safe_key(sibling.get("prefabStem")).lower()
+                if not (sibling_id.startswith(f"{prefix}_") or sibling_stem.startswith(f"{prefix}_")):
+                    continue
+                sibling_node = safe_key(sibling.get("modelNode"))
+                if not sibling_node or sibling_node in seen_sibling_nodes:
+                    continue
+                seen_sibling_nodes.add(sibling_node)
+                siblings.append({
+                    "modelNode": sibling_node,
+                    "modelId": sibling.get("modelId"),
+                    "status": sibling.get("status"),
+                    "familyPrefix": prefix,
+                    "prefabStem": sibling.get("prefabStem"),
+                    "directEdges": sibling.get("directEdges", [])[:3],
+                })
+                if len(siblings) >= 8:
+                    break
+            if len(siblings) >= 8:
+                break
+        if siblings:
+            item["resolvedSiblingModels"] = siblings
+
     records.sort(key=lambda item: (
         0 if item["status"] == "strong_exact_graph_edge" else 1 if item["status"] == "ambiguous_graph_edge" else 2 if item["status"] == "candidate_name_match" else 3 if item["status"] == "no_exported_renderable_candidate" else 4,
         -(item.get("worldEntityUses") or 0) - (item.get("interactiveTemplateUses") or 0),
@@ -27732,11 +27796,16 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
     lines.extend(["", "## Top Referenced Unbound Models", ""])
     unbound = [item for item in records if item["status"] == "no_exported_renderable_candidate"][:40]
     if unbound:
-        lines.append("| Model id | World uses | Interactive uses | Radius | Prefab stem |")
-        lines.append("| --- | ---: | ---: | --- | --- |")
+        lines.append("| Model id | World uses | Interactive uses | Radius | Prefab stem | Resolved siblings |")
+        lines.append("| --- | ---: | ---: | --- | --- | --- |")
         for item in unbound:
+            siblings = ", ".join(
+                f"`{sibling.get('modelId')}`"
+                for sibling in item.get("resolvedSiblingModels", [])[:4]
+                if sibling.get("modelId")
+            )
             lines.append(
-                f"| `{item['modelId']}` | {item['worldEntityUses']} | {item['interactiveTemplateUses']} | {str(item['hasRadius']).lower()} | `{item['prefabStem']}` |"
+                f"| `{item['modelId']}` | {item['worldEntityUses']} | {item['interactiveTemplateUses']} | {str(item['hasRadius']).lower()} | `{item['prefabStem']}` | {siblings} |"
             )
     else:
         lines.append("No referenced unbound model rows found.")
