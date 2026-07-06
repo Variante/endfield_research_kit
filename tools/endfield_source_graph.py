@@ -16599,6 +16599,7 @@ class SourceGraphBuilder:
             self.add_alias(enemy_key, enemy_node, kind="enemy_id", source=source)
             level = levels[index] if index < len(levels) else None
             self.add_edge(dungeon_node, enemy_node, "dungeon_enemy", source=source, evidence=f"enemyIds[{index}]", data={"level": level})
+            self.add_edge(enemy_node, dungeon_node, "enemy_used_by_dungeon", source=source, evidence=f"enemyIds[{index}]", data={"level": level})
 
     def add_dungeon_reward_edges(self, owner_node: str, row: dict[str, Any], *, source: str, fields: Iterable[tuple[str, str]]) -> None:
         for field, edge_kind in fields:
@@ -16614,22 +16615,27 @@ class SourceGraphBuilder:
                 type_node = self.add_dungeon_catalog_node("dungeon_type", row.get("dungeonCategory"), source=table)
                 if type_node:
                     self.add_edge(dungeon_node, type_node, "dungeon_has_type", source=table, evidence="dungeonCategory")
+                    self.add_edge(type_node, dungeon_node, "dungeon_type_has_dungeon", source=table, evidence="dungeonCategory")
                 series_node = self.add_dungeon_catalog_node("dungeon_series", row.get("dungeonSeriesId"), source=table)
                 if series_node:
                     self.add_edge(series_node, dungeon_node, "dungeon_series_includes", source=table, evidence="dungeonSeriesId")
+                    self.add_edge(dungeon_node, series_node, "dungeon_in_series", source=table, evidence="dungeonSeriesId")
                 for field in ("sceneId", "levelId"):
                     level_node = self.add_level_node(row.get(field), source=table)
                     if level_node:
                         self.add_edge(dungeon_node, level_node, "dungeon_uses_level", source=table, evidence=field)
+                        self.add_edge(level_node, dungeon_node, "level_has_dungeon", source=table, evidence=field)
                         self.add_level_map_edge(level_node, row.get(field), source=table, evidence=field)
                 self.add_dungeon_enemy_edges(dungeon_node, row, source=table)
                 self.add_dungeon_reward_edges(dungeon_node, row, source=table, fields=(("rewardId", "dungeon_reward"), ("firstPassRewardId", "dungeon_first_pass_reward"), ("extraRewardId", "dungeon_extra_reward"), ("hunterModeRewardId", "dungeon_hunter_reward"), ("customRewardId", "dungeon_custom_reward")))
                 char_node = self.add_character_ref_node(row.get("relatedCharId"), source=table)
                 if char_node:
                     self.add_edge(dungeon_node, char_node, "dungeon_related_character", source=table, evidence="relatedCharId")
+                    self.add_edge(char_node, dungeon_node, "character_related_to_dungeon", source=table, evidence="relatedCharId")
                 domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
                 if domain_node:
                     self.add_edge(dungeon_node, domain_node, "dungeon_in_domain", source=table, evidence="domainId")
+                    self.add_edge(domain_node, dungeon_node, "domain_has_dungeon", source=table, evidence="domainId")
                 for field in ("dungeonPicPath", "dungeonImg"):
                     self.add_alias(row.get(field), dungeon_node, kind="asset_stem", source=table)
         elif table == "DungeonSeriesTable" and isinstance(row, dict):
@@ -16640,13 +16646,16 @@ class SourceGraphBuilder:
                 category_node = self.add_game_mechanic_node("game_mechanic_category", row.get("gameCategory"), source=table)
                 if category_node:
                     self.add_edge(series_node, category_node, "dungeon_series_game_category", source=table, evidence="gameCategory")
+                    self.add_edge(category_node, series_node, "game_mechanic_category_has_dungeon_series", source=table, evidence="gameCategory")
                 category2_node = self.add_dungeon_catalog_node("dungeon_category2nd", row.get("dungeonCategory2nd"), source=table)
                 if category2_node:
                     self.add_edge(series_node, category2_node, "dungeon_series_category2nd", source=table, evidence="dungeonCategory2nd")
+                    self.add_edge(category2_node, series_node, "dungeon_category2nd_has_series", source=table, evidence="dungeonCategory2nd")
                 for index, dungeon_id in enumerate(row.get("includeDungeonIds") or []):
                     dungeon_node = self.add_dungeon_node(dungeon_id, source=table)
                     if dungeon_node:
                         self.add_edge(series_node, dungeon_node, "dungeon_series_includes", source=table, evidence=f"includeDungeonIds[{index}]")
+                        self.add_edge(dungeon_node, series_node, "dungeon_in_series", source=table, evidence=f"includeDungeonIds[{index}]")
                 for field in ("dungeonImg", "dungeonRoleImg"):
                     self.add_alias(row.get(field), series_node, kind="asset_stem", source=table)
         elif table == "DungeonTypeTable" and isinstance(row, dict):
@@ -16659,6 +16668,7 @@ class SourceGraphBuilder:
                     mark_node = self.add_node("map_mark_type", mark_type, name=mark_type, source=table)
                     self.add_alias(mark_type, mark_node, kind="map_mark_type_id", source=table)
                     self.add_edge(type_node, mark_node, "dungeon_type_map_mark_type", source=table, evidence="mapMarkType")
+                    self.add_edge(mark_node, type_node, "map_mark_type_used_by_dungeon_type", source=table, evidence="mapMarkType")
         elif table == "DungeonCategory2ndTable" and isinstance(row, dict):
             category_node = self.add_dungeon_catalog_node("dungeon_category2nd", row.get("dungeonCategory2nd") if row.get("dungeonCategory2nd") is not None else row_key, name=row.get("name"), source=table)
             if category_node:
@@ -16678,6 +16688,7 @@ class SourceGraphBuilder:
                 domain_node = self.add_gameplay_domain_node(row.get("domainId"), source=table)
                 if domain_node:
                     self.add_edge(dungeon_node, domain_node, "factory_dungeon_domain", source=table, evidence="domainId")
+                    self.add_edge(domain_node, dungeon_node, "domain_has_factory_dungeon", source=table, evidence="domainId")
                 guide_node = self.add_node("guide_group", safe_key(row.get("afterDirectlyGetRewardGuideGroupId")), name=safe_key(row.get("afterDirectlyGetRewardGuideGroupId")), source=table) if safe_key(row.get("afterDirectlyGetRewardGuideGroupId")) else ""
                 if guide_node:
                     self.add_alias(row.get("afterDirectlyGetRewardGuideGroupId"), guide_node, kind="guide_group_id", source=table)
@@ -16687,6 +16698,7 @@ class SourceGraphBuilder:
                     dep_node = self.add_dungeon_node(dep_id, source=table)
                     if dep_node:
                         self.add_edge(dungeon_node, dep_node, "factory_dungeon_requires", source=table, evidence=f"preDependencies[{index}]")
+                        self.add_edge(dep_node, dungeon_node, "factory_dungeon_required_by", source=table, evidence=f"preDependencies[{index}]")
         elif table == "SimulationTrainingLevelTable" and isinstance(row, dict):
             level_id = row.get("gamblingBattleLevel") if row.get("gamblingBattleLevel") is not None else row_key
             level_node = self.add_dungeon_catalog_node("simulation_training_level", level_id, source=table, data={"costDomainMoney": row.get("costDomainMoney"), "domainDevExp": row.get("domainDevExp"), "doubleLimit": row.get("doubleLimit"), "isFinalMaxLevel": row.get("isFinalMaxLevel"), "pointAwardCount": len(row.get("pointAward") or [])})
