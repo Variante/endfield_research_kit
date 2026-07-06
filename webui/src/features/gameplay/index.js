@@ -345,6 +345,18 @@
     return rows ? `<div class="gameplay-blackboard">${rows}</div>` : "";
   }
 
+  const HIDDEN_CHARACTER_LEVEL_UP_COST_ITEM_IDS = new Set([
+    "item_expcard_stage1_low",
+    "item_expcard_stage1_mid",
+    "item_expcard_stage1_high",
+    "item_expcard_stage2_low",
+    "item_expcard_stage2_high",
+  ]);
+
+  function visibleCharacterLevelUpCostItems(items) {
+    return (items || []).filter((item) => item && !HIDDEN_CHARACTER_LEVEL_UP_COST_ITEM_IDS.has(String(item.id || "")));
+  }
+
   function renderUpgradeCost(row) {
     if (!row) return "";
     const chips = [];
@@ -516,11 +528,11 @@
     if (cp && !cumulativeExpItems && Number(cp.exp) > 0) {
       (upPairs || (upPairs = [])).unshift({ label: text("cumulativeExp"), value: cp.exp });
     }
-    const expItems = costIndex.levelUpItemsByStage.get(stage);
+    const expItems = visibleCharacterLevelUpCostItems(costIndex.levelUpItemsByStage.get(stage));
     const upChips = [
       cumulativeExpItems ? renderMaterialChips(cumulativeExpItems) : "",
       upPairs ? renderChipPairs(upPairs) : "",
-      expItems ? renderMaterialChips(expItems) : "",
+      expItems.length ? renderMaterialChips(expItems) : "",
     ].filter(Boolean).join("");
     if (upChips) parts.push(`<div class="gameplay-subheading">${escapeHtml(text("levelUpCosts"))}</div>${upChips}`);
     return parts.length ? `<div class="gameplay-level-cost">${parts.join("")}</div>` : "";

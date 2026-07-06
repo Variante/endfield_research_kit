@@ -4469,6 +4469,709 @@ def read_buff_find_target_body_partial(
         },
     }
 
+# ---------------------------------------------------------------------------
+# Full byte-proven SelectorData / FindTargetActionData readers (2026-07-05).
+#
+# Layout proof (scratch/selectordata_20260705/, memory/selectordata_recovery_20260705.md):
+# - MemoryPack objects here are a 1-byte member-count header (must equal the
+#   serialized member count) or 0xFF for null.
+# - Serialized member order is base-class members first, each class level
+#   ordered alphabetically (ordinal) by member name. This matches the generated
+#   ForMemoryPack wrapper member sets and was byte-validated against all 24
+#   already-bounded (Continuous)FindTargetAction items (exact end consumption)
+#   plus chain-exact landings in previously ambiguous records.
+# - Union members: 0xFF null, else 1-byte tag from the selector formatter cctor
+#   registration tables (reports/mission_order/selector_formatter_tag_audit.json)
+#   followed by the payload object with its own member-count header.
+# - Lists: u32 count (0xFFFFFFFF null) then elements. Strings: u32 byte length
+#   (0xFFFFFFFF null) + UTF-8.
+# - BlackboardParam<T>: header 3, members [blackboardKey:str,
+#   useBlackboardKey:bool, value:T(4B)] (matches read_buff_blackboard_* layout).
+# - Unknown selector subtype tags or subtypes whose field layout is not proven
+#   raise, so callers fail closed and keep payloads opaque/ambiguous.
+# ---------------------------------------------------------------------------
+
+BUFF_SELECTOR_MAX_NESTED_DEPTH = 8
+BUFF_SELECTOR_MAX_LIST_COUNT = 256
+
+BUFF_SELECTOR_SCHEMA_SOURCE_NOTE = (
+    "SelectorData layout byte-proven 2026-07-05: member-count headers, base-first "
+    "alphabetical member order, selector union tags from GameAssembly formatter cctors; "
+    "validated by exact end consumption on all bounded FindTargetAction samples and "
+    "typed-chain landings (scratch/selectordata_20260705)."
+)
+
+# HitBoxFinder+ShapeData: 18 members, alphabetical (byte-proven).
+BUFF_SELECTOR_SHAPEDATA_MEMBERS = (
+    ("angle", "bbparam"), ("castDirection", "i32"), ("centerOffset", "bbvector3"),
+    ("dirRefMountPoint", "i32"), ("directionRef", "i32"), ("enablePreview", "bool"),
+    ("eulerAngle", "bbvector3"), ("height", "bbparam"), ("hitEffectTowardsType", "i32"),
+    ("limitAngle", "bool"), ("limitHeight", "bool"), ("maxHeight", "bbparam"),
+    ("posRefMP", "i32"), ("positionRef", "i32"), ("radius", "bbparam"),
+    ("shapeType", "i32"), ("size", "bbvector3"), ("useDirection", "bool"),
+)
+
+# TargetFinder+Data serialized members; HitBoxFinder+Data extends TargetFinder+Data
+# (byte-proven: payload header 8 = 5 base + 3 own members).
+BUFF_SELECTOR_TARGETFINDER_MEMBERS = (
+    ("autoSetTargetFaction", "bool"), ("checkAlive", "bool"),
+    ("containsUnMarkable", "bool"), ("factionTarget", "i32"),
+    ("targetFactionType", "i32"),
+)
+
+# Selector union tables: tag -> (subtype name, member schema or None when the
+# subtype field layout is still unproven; None raises = fail closed).
+BUFF_SELECTOR_FINDER_SUBTYPES: dict[int, tuple[str, tuple | None]] = {
+    0x00: ("AbilityEntityTargetFinder", ()),
+    0x01: ("CharacterTeamFinder", ()),
+    0x02: ("FixedPointFinder", (("positionOffset", "vector3"),
+                                ("rotationOffset", "quaternion"),
+                                ("sampleRadius", "bbparam"),
+                                ("snapToNavmesh", "bool"))),
+    0x03: ("GlobalContextFinder", (("targetGroupKey", "string"),)),
+    0x04: ("GodEntityFinder", ()),
+    0x05: ("GuardAITargetFinder", ()),
+    0x06: ("HitBoxFinder", BUFF_SELECTOR_TARGETFINDER_MEMBERS + (
+        ("checkIntUnSelectableTag", "bool"), ("shapeList", "shapedatalist"),
+        ("targetObjectType", "i32"))),
+    0x07: ("InFightEnemyFinder", ()),
+    0x08: ("InteractiveShapeFinder", (("checkIntUnSelectableTag", "bool"),)),
+    0x09: ("MainTargetFinder", ()),
+    0x0A: ("OwnerPartsFinder", (("partQuery", "tagquery"),)),
+    0x0B: ("OwnerSpawnedEntityFinder", (("spawnedObjectType", "i32"),)),
+    0x0C: ("PointFinder", (("positionOffset", "bbvector3"),
+                           ("rotationOffset", "bbvector3"))),
+    0x0D: ("RandomPointFinder", (("angle", "bbparam"),
+                                 ("localPlaneRotationEulers", "bbvector3"),
+                                 ("minRadius", "bbparam"), ("pointNum", "bbparam"),
+                                 ("radius", "bbparam"), ("shape", "i32"),
+                                 ("snapToNavMesh", "bool"))),
+    0x0E: ("ShapeFinder", None),  # shapeData (battle shape data) layout unproven
+    0x0F: ("ShapeFinderData", ()),
+    0x10: ("SmartTargetFinder", (("range", "bbparam"),
+                                 ("selectSetting", "smarttargetselectsetting"),
+                                 ("useCustomRange", "bool"))),
+    0x11: ("SnapPointFinder", (("radius", "bbparam"),
+                               ("snapTargetSettings", "targetsettings"))),
+    0x12: ("SourceFinder", ()),
+    0x13: ("TargetFinder", BUFF_SELECTOR_TARGETFINDER_MEMBERS),
+}
+
+BUFF_SELECTOR_VALIDATOR_SUBTYPES: dict[int, tuple[str, tuple | None]] = {
+    0x00: ("AttributeValidator", (("attributeType", "i32"), ("checkMax", "bool"),
+                                  ("checkMin", "bool"), ("maxValue", "f64"),
+                                  ("minValue", "f64"))),
+    0x01: ("CheckRaycastValidator", (("checkLayerMask", "i32"),
+                                     ("secondCheckLayerMask", "i32"))),
+    0x02: ("CurHpRatioValidator", (("compareType", "i32"), ("value", "bbparam"))),
+    0x03: ("DistanceValidator", (("clampToXZ", "bool"), ("compareType", "i32"),
+                                 ("value", "bbparam"))),
+    0x04: ("ExcludeOwnerValidator", ()),
+    0x05: ("HittableObjectValidator", ()),
+    0x06: ("InteractiveKeyValidator", (("interactiveKey", "string"),)),
+    0x07: ("MainCharacterValidator", ()),
+    0x08: ("SkillCastIdValidator", ()),
+    0x09: ("TagValidator", (("query", "tagquery"),)),
+    0x0A: ("TargetContainsValidator", (("parentTargetSettings", "targetsettings"),)),
+}
+
+BUFF_SELECTOR_POSTPROCESSOR_SUBTYPES: dict[int, tuple[str, tuple | None]] = {
+    0x00: ("ConvertToBoxCenterPlaneProjectionPoint", (("boxShape", "shapedatalist"),)),
+    0x01: ("ConvertToPosition", ()),
+    0x02: ("ConvertToSlot", ()),
+    0x03: ("ExcludeTarget", (("excludedTargetSettings", "targetsettings"),)),
+    0x04: ("LockOrMarkTargetFilter", ()),
+    0x05: ("NavMeshPathPositionProcessor", (
+        ("allowCheckMainCharPosToDestPathAvailable", "bool"),
+        ("checkMaxDistance", "bool"), ("clampDirToXZ", "bool"),
+        ("getNavPosInRangeRadius", "bbparam"), ("ignoreNavmeshLink", "bool"),
+        ("maxDistance", "f32"), ("snapToFloor", "bool"), ("throughWall", "bool"))),
+    0x06: ("PriorityFilter", None),  # buffFilterSettings layout unproven
+    0x07: ("ShuffleTarget", (("targetNumLimit", "bbparam"),)),
+    0x08: ("TargetPriorityFilter", (("limitMaxNum", "bool"), ("maxNum", "i32"),
+                                    ("targetSettings", "targetsettings"))),
+}
+
+# FindTargetActionData body members after the AbilityActionData common prefix,
+# alphabetical (byte-proven; tail order matches the earlier exact tail partial).
+BUFF_FIND_TARGET_BODY_MEMBERS = (
+    ("advancedSelectorDirection", "directionsettings"), ("center", "i32"),
+    ("centerContextKey", "string"), ("centerMountPoint", "i32"),
+    ("centerToGround", "bool"), ("contextKey", "string"),
+    ("selectorData", "selectordata"), ("selectorDirection", "i32"),
+    ("selectorOwner", "i32"), ("selectorOwnerContextKey", "string"),
+    ("target", "i32"), ("targetGroupKey", "string"),
+    ("useAdvancedDirectionSetting", "bool"), ("useCenterEntityMountPoint", "bool"),
+)
+
+
+class BuffSelectorSubtypeUnproven(ValueError):
+    """A selector union payload uses a subtype whose layout is not byte-proven."""
+
+
+def read_buff_selector_object_header(
+    data: bytes,
+    offset: int,
+    limit: int,
+    expected_member_count: int,
+    field_name: str,
+) -> tuple[bool, int]:
+    """Read a MemoryPack object header byte. Returns (present, next_offset)."""
+    if offset >= limit:
+        raise ValueError(f"{field_name}:truncated-member-count")
+    header = data[offset]
+    offset += 1
+    if header == 0xFF:
+        return False, offset
+    if header != expected_member_count:
+        raise ValueError(
+            f"{field_name}:member-count={header} expected={expected_member_count}"
+        )
+    return True, offset
+
+
+def read_buff_selector_bool(data: bytes, offset: int, limit: int, field_name: str) -> tuple[bool, int]:
+    if offset >= limit:
+        raise ValueError(f"{field_name}:truncated-bool")
+    value = data[offset]
+    if value not in (0, 1):
+        raise ValueError(f"{field_name}:bad-bool=0x{value:02x}")
+    return bool(value), offset + 1
+
+
+def read_buff_selector_i32(data: bytes, offset: int, limit: int, field_name: str) -> tuple[int, int]:
+    if offset + 4 > limit:
+        raise ValueError(f"{field_name}:truncated-i32")
+    return struct.unpack_from("<i", data, offset)[0], offset + 4
+
+
+def read_buff_selector_f32(data: bytes, offset: int, limit: int, field_name: str) -> tuple[float, int]:
+    if offset + 4 > limit:
+        raise ValueError(f"{field_name}:truncated-f32")
+    return struct.unpack_from("<f", data, offset)[0], offset + 4
+
+
+def read_buff_selector_f64(data: bytes, offset: int, limit: int, field_name: str) -> tuple[float, int]:
+    if offset + 8 > limit:
+        raise ValueError(f"{field_name}:truncated-f64")
+    return struct.unpack_from("<d", data, offset)[0], offset + 8
+
+
+def read_buff_selector_blackboard_param(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any] | None, int]:
+    present, offset = read_buff_selector_object_header(data, offset, limit, 3, field_name)
+    if not present:
+        return None, offset
+    key, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, f"{field_name}.blackboardKey", max_length=256,
+    )
+    use_key, offset = read_buff_selector_bool(data, offset, limit, f"{field_name}.useBlackboardKey")
+    if offset + 4 > limit:
+        raise ValueError(f"{field_name}.value:truncated")
+    value_f32 = struct.unpack_from("<f", data, offset)[0]
+    value_i32 = struct.unpack_from("<i", data, offset)[0]
+    offset += 4
+    return {
+        "blackboardKey": key,
+        "useBlackboardKey": use_key,
+        "valueF32": value_f32 if math.isfinite(value_f32) else None,
+        "valueI32": value_i32,
+    }, offset
+
+
+def read_buff_selector_blackboard_vector3(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[list[Any] | None, int]:
+    present, offset = read_buff_selector_object_header(data, offset, limit, 3, field_name)
+    if not present:
+        return None, offset
+    components = []
+    for axis in ("x", "y", "z"):
+        component, offset = read_buff_selector_blackboard_param(
+            data, offset, limit, f"{field_name}.{axis}",
+        )
+        components.append(component)
+    return components, offset
+
+
+def read_buff_selector_gameplay_tag(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any] | None, int]:
+    # Beyond.Gameplay.Core.GameplayTag: [tagId:int, tagName:string]
+    present, offset = read_buff_selector_object_header(data, offset, limit, 2, field_name)
+    if not present:
+        return None, offset
+    tag_id, offset = read_buff_selector_i32(data, offset, limit, f"{field_name}.tagId")
+    tag_name, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, f"{field_name}.tagName", max_length=512,
+    )
+    return {"tagId": tag_id, "tagName": tag_name}, offset
+
+
+def read_buff_selector_tag_query(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any] | None, int]:
+    # Beyond.Gameplay.Core.GameplayTagQuery: [queryType:enum, tags:List<GameplayTag>]
+    present, offset = read_buff_selector_object_header(data, offset, limit, 2, field_name)
+    if not present:
+        return None, offset
+    query_type, offset = read_buff_selector_i32(data, offset, limit, f"{field_name}.queryType")
+    tags, offset = read_buff_selector_list(
+        data, offset, limit, f"{field_name}.tags", read_buff_selector_gameplay_tag,
+    )
+    return {"queryType": query_type, "tags": tags}, offset
+
+
+def read_buff_selector_buff_find_settings(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any] | None, int]:
+    # Beyond.Gameplay.Core.BuffFindSettings: [buffIdList:List<int>, checkType:enum,
+    # tagQuery:GameplayTagQuery]
+    present, offset = read_buff_selector_object_header(data, offset, limit, 3, field_name)
+    if not present:
+        return None, offset
+    buff_ids, offset = read_buff_selector_list(
+        data, offset, limit, f"{field_name}.buffIdList", read_buff_selector_list_i32_element,
+    )
+    check_type, offset = read_buff_selector_i32(data, offset, limit, f"{field_name}.checkType")
+    tag_query, offset = read_buff_selector_tag_query(data, offset, limit, f"{field_name}.tagQuery")
+    return {"buffIdList": buff_ids, "checkType": check_type, "tagQuery": tag_query}, offset
+
+
+def read_buff_selector_smart_target_select_setting(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any] | None, int]:
+    # Beyond.Gameplay.Core.SmartTargetSelectSetting: [smartTargetBuffFindSettings,
+    # smartTargetBuffIds:List<int>, smartTargetSelectStrategy:enum,
+    # smartTargetTagQuery:GameplayTagQuery]
+    present, offset = read_buff_selector_object_header(data, offset, limit, 4, field_name)
+    if not present:
+        return None, offset
+    find_settings, offset = read_buff_selector_buff_find_settings(
+        data, offset, limit, f"{field_name}.smartTargetBuffFindSettings",
+    )
+    buff_ids, offset = read_buff_selector_list(
+        data, offset, limit, f"{field_name}.smartTargetBuffIds",
+        read_buff_selector_list_i32_element,
+    )
+    strategy, offset = read_buff_selector_i32(
+        data, offset, limit, f"{field_name}.smartTargetSelectStrategy",
+    )
+    tag_query, offset = read_buff_selector_tag_query(
+        data, offset, limit, f"{field_name}.smartTargetTagQuery",
+    )
+    return {
+        "smartTargetBuffFindSettings": find_settings,
+        "smartTargetBuffIds": buff_ids,
+        "smartTargetSelectStrategy": strategy,
+        "smartTargetTagQuery": tag_query,
+    }, offset
+
+
+def read_buff_selector_list_i32_element(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[int, int]:
+    return read_buff_selector_i32(data, offset, limit, field_name)
+
+
+def read_buff_selector_list(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+    element_reader,
+) -> tuple[list[Any] | None, int]:
+    count, offset = read_buff_u32_field_bounded(data, offset, limit, f"{field_name}.count")
+    if count == MEMORYPACK_NULL_COUNT:
+        return None, offset
+    if count > BUFF_SELECTOR_MAX_LIST_COUNT:
+        raise ValueError(f"{field_name}:list-count={count}")
+    items = []
+    for index in range(count):
+        item, offset = element_reader(data, offset, limit, f"{field_name}[{index}]")
+        items.append(item)
+    return items, offset
+
+
+def read_buff_selector_shape_data(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any] | None, int]:
+    present, offset = read_buff_selector_object_header(
+        data, offset, limit, len(BUFF_SELECTOR_SHAPEDATA_MEMBERS), field_name,
+    )
+    if not present:
+        return None, offset
+    out: dict[str, Any] = {}
+    for member_name, kind in BUFF_SELECTOR_SHAPEDATA_MEMBERS:
+        out[member_name], offset = read_buff_selector_member(
+            data, offset, limit, kind, f"{field_name}.{member_name}", 0,
+        )
+    return out, offset
+
+
+def read_buff_selector_union(
+    data: bytes,
+    offset: int,
+    limit: int,
+    table: dict[int, tuple[str, tuple | None]],
+    family: str,
+    field_name: str,
+    depth: int,
+) -> tuple[dict[str, Any] | None, int]:
+    if depth > BUFF_SELECTOR_MAX_NESTED_DEPTH:
+        raise ValueError(f"{field_name}:selector-depth-exceeded")
+    if offset >= limit:
+        raise ValueError(f"{field_name}:truncated-union-tag")
+    tag = data[offset]
+    offset += 1
+    if tag == 0xFF:
+        return None, offset
+    if tag == MEMORYPACK_UNION_WIDE_TAG:
+        raise ValueError(f"{field_name}:wide-union-tag")
+    entry = table.get(tag)
+    if entry is None:
+        raise BuffSelectorSubtypeUnproven(f"{field_name}:unknown-{family}-tag=0x{tag:02x}")
+    subtype_name, members = entry
+    if members is None:
+        raise BuffSelectorSubtypeUnproven(
+            f"{field_name}:{family}-subtype-layout-unproven={subtype_name}"
+        )
+    present, offset = read_buff_selector_object_header(
+        data, offset, limit, len(members), f"{field_name}.{subtype_name}",
+    )
+    if not present:
+        raise ValueError(f"{field_name}.{subtype_name}:null-payload-after-tag")
+    out: dict[str, Any] = {"subtype": subtype_name}
+    for member_name, kind in members:
+        out[member_name], offset = read_buff_selector_member(
+            data, offset, limit, kind, f"{field_name}.{subtype_name}.{member_name}", depth,
+        )
+    return out, offset
+
+
+def read_buff_selector_data_full(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+    depth: int,
+) -> tuple[dict[str, Any] | None, int]:
+    # Beyond.Gameplay.Core.Selector+SelectorData, alphabetical:
+    # finderData (union), postProcessorData (list of unions), validatorData
+    # (list of unions).
+    if depth > BUFF_SELECTOR_MAX_NESTED_DEPTH:
+        raise ValueError(f"{field_name}:selector-depth-exceeded")
+    present, offset = read_buff_selector_object_header(data, offset, limit, 3, field_name)
+    if not present:
+        return None, offset
+    finder, offset = read_buff_selector_union(
+        data, offset, limit, BUFF_SELECTOR_FINDER_SUBTYPES, "finder",
+        f"{field_name}.finderData", depth,
+    )
+    post_processors, offset = read_buff_selector_list(
+        data, offset, limit, f"{field_name}.postProcessorData",
+        lambda d, o, l, n: read_buff_selector_union(
+            d, o, l, BUFF_SELECTOR_POSTPROCESSOR_SUBTYPES, "postProcessor", n, depth,
+        ),
+    )
+    validators, offset = read_buff_selector_list(
+        data, offset, limit, f"{field_name}.validatorData",
+        lambda d, o, l, n: read_buff_selector_union(
+            d, o, l, BUFF_SELECTOR_VALIDATOR_SUBTYPES, "validator", n, depth,
+        ),
+    )
+    return {
+        "finderData": finder,
+        "postProcessorData": post_processors,
+        "validatorData": validators,
+    }, offset
+
+
+def read_buff_target_settings_full(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+    depth: int,
+) -> tuple[dict[str, Any] | None, int]:
+    # Beyond.Gameplay.Core.TargetSettings, 13 serialized members, alphabetical
+    # (static Default excluded).
+    if depth > BUFF_SELECTOR_MAX_NESTED_DEPTH:
+        raise ValueError(f"{field_name}:selector-depth-exceeded")
+    present, offset = read_buff_selector_object_header(data, offset, limit, 13, field_name)
+    if not present:
+        return None, offset
+    out: dict[str, Any] = {}
+    out["advancedDirection"], offset = read_buff_direction_settings_full(
+        data, offset, limit, f"{field_name}.advancedDirection", depth + 1,
+    )
+    out["centerContextKey"], offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, f"{field_name}.centerContextKey", max_length=256,
+    )
+    out["centerToGround"], offset = read_buff_selector_bool(
+        data, offset, limit, f"{field_name}.centerToGround",
+    )
+    out["centerType"], offset = read_buff_selector_i32(
+        data, offset, limit, f"{field_name}.centerType",
+    )
+    out["enableAdvancedDirection"], offset = read_buff_selector_bool(
+        data, offset, limit, f"{field_name}.enableAdvancedDirection",
+    )
+    out["ownerContextKey"], offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, f"{field_name}.ownerContextKey", max_length=256,
+    )
+    out["selectorData"], offset = read_buff_selector_data_full(
+        data, offset, limit, f"{field_name}.selectorData", depth + 1,
+    )
+    out["selectorDirection"], offset = read_buff_selector_i32(
+        data, offset, limit, f"{field_name}.selectorDirection",
+    )
+    out["selectorOwner"], offset = read_buff_selector_i32(
+        data, offset, limit, f"{field_name}.selectorOwner",
+    )
+    out["target"], offset = read_buff_selector_i32(
+        data, offset, limit, f"{field_name}.target",
+    )
+    out["targetContextKey"], offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, f"{field_name}.targetContextKey", max_length=256,
+    )
+    out["targetGroupKey"], offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, f"{field_name}.targetGroupKey", max_length=256,
+    )
+    out["targetSource"], offset = read_buff_selector_i32(
+        data, offset, limit, f"{field_name}.targetSource",
+    )
+    return out, offset
+
+
+def read_buff_direction_settings_full(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+    depth: int,
+) -> tuple[dict[str, Any] | None, int]:
+    # Beyond.Gameplay.Core.DirectionSettings, 8 serialized members, alphabetical.
+    if depth > BUFF_SELECTOR_MAX_NESTED_DEPTH:
+        raise ValueError(f"{field_name}:selector-depth-exceeded")
+    present, offset = read_buff_selector_object_header(data, offset, limit, 8, field_name)
+    if not present:
+        return None, offset
+    out: dict[str, Any] = {}
+    out["clampToXZ"], offset = read_buff_selector_bool(
+        data, offset, limit, f"{field_name}.clampToXZ",
+    )
+    out["customSourceAndTarget"], offset = read_buff_selector_bool(
+        data, offset, limit, f"{field_name}.customSourceAndTarget",
+    )
+    out["directionType"], offset = read_buff_selector_i32(
+        data, offset, limit, f"{field_name}.directionType",
+    )
+    out["invertDirection"], offset = read_buff_selector_bool(
+        data, offset, limit, f"{field_name}.invertDirection",
+    )
+    out["source"], offset = read_buff_target_settings_full(
+        data, offset, limit, f"{field_name}.source", depth + 1,
+    )
+    out["sourceMountPoint"], offset = read_buff_selector_i32(
+        data, offset, limit, f"{field_name}.sourceMountPoint",
+    )
+    out["target"], offset = read_buff_target_settings_full(
+        data, offset, limit, f"{field_name}.target", depth + 1,
+    )
+    out["targetMountPoint"], offset = read_buff_selector_i32(
+        data, offset, limit, f"{field_name}.targetMountPoint",
+    )
+    return out, offset
+
+
+def read_buff_selector_member(
+    data: bytes,
+    offset: int,
+    limit: int,
+    kind: str,
+    field_name: str,
+    depth: int,
+) -> tuple[Any, int]:
+    if kind == "bool":
+        return read_buff_selector_bool(data, offset, limit, field_name)
+    if kind == "i32":
+        return read_buff_selector_i32(data, offset, limit, field_name)
+    if kind == "f32":
+        return read_buff_selector_f32(data, offset, limit, field_name)
+    if kind == "f64":
+        return read_buff_selector_f64(data, offset, limit, field_name)
+    if kind == "vector3":
+        if offset + 12 > limit:
+            raise ValueError(f"{field_name}:truncated-vector3")
+        return list(struct.unpack_from("<fff", data, offset)), offset + 12
+    if kind == "quaternion":
+        if offset + 16 > limit:
+            raise ValueError(f"{field_name}:truncated-quaternion")
+        return list(struct.unpack_from("<ffff", data, offset)), offset + 16
+    if kind == "string":
+        return read_buff_memorypack_utf8_string_strict_bounded(
+            data, offset, limit, field_name, max_length=512,
+        )
+    if kind == "bbparam":
+        return read_buff_selector_blackboard_param(data, offset, limit, field_name)
+    if kind == "bbvector3":
+        return read_buff_selector_blackboard_vector3(data, offset, limit, field_name)
+    if kind == "tagquery":
+        return read_buff_selector_tag_query(data, offset, limit, field_name)
+    if kind == "smarttargetselectsetting":
+        return read_buff_selector_smart_target_select_setting(data, offset, limit, field_name)
+    if kind == "shapedatalist":
+        return read_buff_selector_list(
+            data, offset, limit, field_name,
+            lambda d, o, l, n: read_buff_selector_shape_data(d, o, l, n),
+        )
+    if kind == "targetsettings":
+        return read_buff_target_settings_full(data, offset, limit, field_name, depth + 1)
+    if kind == "selectordata":
+        return read_buff_selector_data_full(data, offset, limit, field_name, depth + 1)
+    if kind == "directionsettings":
+        return read_buff_direction_settings_full(data, offset, limit, field_name, depth + 1)
+    raise ValueError(f"{field_name}:unknown-member-kind={kind}")
+
+
+BUFF_CONTINUOUS_FIND_TARGET_ACTION_TAG = 0x007C
+BUFF_FIND_TARGET_ACTION_VARIANTS = {
+    # tag -> (member count, has trailing findInterval float)
+    BUFF_FIND_TARGET_ACTION_TAG: (18, False),
+    BUFF_CONTINUOUS_FIND_TARGET_ACTION_TAG: (19, True),
+}
+
+
+def read_buff_find_target_action_item_exact_forward(
+    data: bytes,
+    item_start: int,
+    limit: int,
+    tag_width: int,
+    member_count: int,
+) -> tuple[dict[str, Any], int]:
+    """Fully parse one (Continuous)FindTargetAction item forward; self-delimiting.
+
+    Raises on any layout violation or unproven selector subtype so callers fail
+    closed (chain walkers keep records ambiguous; single-item callers fall back
+    to the older partial decoder).
+    """
+    tag, actual_tag_width, _raw = read_buff_timeline_first_union_tag(data, item_start, limit)
+    variant = BUFF_FIND_TARGET_ACTION_VARIANTS.get(tag if tag is not None else -1)
+    if variant is None or actual_tag_width != tag_width:
+        raise ValueError("findTargetAction:tag-mismatch")
+    if tag_width != 1:
+        raise ValueError(f"findTargetAction:tag-width={tag_width}")
+    expected_member_count, has_find_interval = variant
+    if member_count != expected_member_count:
+        raise ValueError(f"findTargetAction:member-count={member_count}")
+    offset = item_start + tag_width + 1
+    prefix, offset = read_buff_ability_action_common_prefix_bounded(
+        data, offset, limit, "findTargetAction.prefix",
+    )
+    body: dict[str, Any] = {}
+    for field_key, kind in BUFF_FIND_TARGET_BODY_MEMBERS:
+        body[field_key], offset = read_buff_selector_member(
+            data, offset, limit, kind, f"findTargetAction.body.{field_key}", 0,
+        )
+    if has_find_interval:
+        body["findInterval"], offset = read_buff_selector_f32(
+            data, offset, limit, "findTargetAction.body.findInterval",
+        )
+    decoded = {
+        "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag],
+        "decodeStatus": "exact",
+        "semanticStatus": "exact-selector-data-full",
+        "schemaSource": BUFF_SELECTOR_SCHEMA_SOURCE_NOTE,
+        "byteLength": offset - item_start,
+        "prefix": prefix,
+        **body,
+    }
+    return decoded, offset
+
+
+def consume_buff_find_target_action(
+    data: bytes,
+    item_start: int,
+    limit: int,
+    tag_width: int,
+    member_count: int,
+) -> tuple[dict[str, Any], int]:
+    decoded, end = read_buff_find_target_action_item_exact_forward(
+        data, item_start, limit, tag_width, member_count,
+    )
+    if end > limit:
+        raise ValueError(f"findTargetAction:consumed-past-limit={format_offset(end)}")
+    return decoded, end
+
+
+def decode_buff_find_target_action_item_full_or_partial(
+    data: bytes,
+    item_start: int,
+    item_end: int,
+    tag_width: int,
+    member_count: int,
+) -> dict[str, Any]:
+    """Single-item decode: full byte-proven parse when it lands exactly on the
+    proven item end, otherwise the previous fail-closed partial decoder."""
+    try:
+        decoded, end = read_buff_find_target_action_item_exact_forward(
+            data, item_start, item_end, tag_width, member_count,
+        )
+    except (struct.error, UnicodeDecodeError, ValueError):
+        decoded, end = None, -1
+    if decoded is not None and end == item_end:
+        return decoded
+    return decode_buff_find_target_action_item_partial(
+        data, item_start, item_end, tag_width, member_count,
+    )
+
+
+def decode_buff_continuous_find_target_action_item_full(
+    data: bytes,
+    item_start: int,
+    item_end: int,
+    tag_width: int,
+    member_count: int,
+) -> dict[str, Any] | None:
+    """Single-item exact decode for ContinuousFindTargetAction; None keeps the
+    item opaque when the full parse does not land exactly on the proven end."""
+    try:
+        decoded, end = read_buff_find_target_action_item_exact_forward(
+            data, item_start, item_end, tag_width, member_count,
+        )
+    except (struct.error, UnicodeDecodeError, ValueError):
+        return None
+    if end != item_end:
+        return None
+    return decoded
+
+
 def decode_buff_find_target_action_item_partial(
     data: bytes,
     item_start: int,
@@ -4820,7 +5523,15 @@ def decode_buff_ability_action_item_exact(
             member_count,
         )
     if tag == BUFF_FIND_TARGET_ACTION_TAG:
-        return decode_buff_find_target_action_item_partial(
+        return decode_buff_find_target_action_item_full_or_partial(
+            data,
+            item_start,
+            item_end,
+            tag_width,
+            member_count,
+        )
+    if tag == BUFF_CONTINUOUS_FIND_TARGET_ACTION_TAG:
+        return decode_buff_continuous_find_target_action_item_full(
             data,
             item_start,
             item_end,
@@ -5196,11 +5907,13 @@ def consume_buff_if_else_action(
 BUFF_ABILITY_ACTION_CONSUME_DECODERS = {
     BUFF_COMPARE_FLOAT_ACTION_TAG: consume_buff_compare_float_action,
     BUFF_CAMERA_IMPULSE_ACTION_TAG: consume_buff_camera_impulse_action,
+    BUFF_CONTINUOUS_FIND_TARGET_ACTION_TAG: consume_buff_find_target_action,
     BUFF_CONVERT_TO_TARGET_CONTEXT_ACTION_TAG: consume_buff_convert_to_target_context_action,
     BUFF_CREATE_BUFF_ACTION_TAG: consume_buff_create_buff_action,
     BUFF_DAMAGE_ACTION_TAG: consume_buff_damage_action,
     BUFF_DEBUG_PRINT_ACTION_TAG: consume_buff_debug_print_action,
     BUFF_EFFECT_ACTION_TAG: consume_buff_effect_action,
+    BUFF_FIND_TARGET_ACTION_TAG: consume_buff_find_target_action,
     BUFF_GET_AI_TRANS_DATA_ACTION_TAG: consume_buff_get_ai_trans_data_action,
     BUFF_IF_ELSE_ACTION_TAG: consume_buff_if_else_action,
     BUFF_INTERRUPT_ACTION_TAG: consume_buff_interrupt_action,
