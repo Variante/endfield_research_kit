@@ -33850,7 +33850,17 @@ def gameplay_parameter_usage(db_path: Path, term: str, *, limit: int = 40, kind:
 MAP_USAGE_KIND_FALLBACKS = (
     "map",
     "level",
+    "map_config",
+    "level_config",
     "map_sublevel_brief",
+    "map_brief_info",
+    "map_scene_state",
+    "map_variable",
+    "map_mark",
+    "map_mark_template",
+    "level_basic_info",
+    "level_short_id_scene",
+    "level_script",
     "level_data",
     "spawner_config",
     "spawner_enemy_entry",
@@ -33858,8 +33868,37 @@ MAP_USAGE_KIND_FALLBACKS = (
 )
 
 MAP_USAGE_EDGE_KINDS = (
+    "defines_map",
+    "defines_map_config",
+    "gameplay_config_map_id_table_defines_map",
+    "map_config_defines_map",
+    "map_has_config",
+    "map_config_in_domain",
+    "map_config_uses_streaming_asset",
+    "map_config_has_level_id",
+    "map_config_has_level_str_id",
+    "map_config_defines_map_variable",
+    "map_config_has_scene_state",
+    "map_scene_condition_type",
+    "map_scene_condition_quest",
+    "map_scene_condition_mission",
+    "map_scene_condition_map_variable",
     "map_has_level",
     "level_belongs_to_map",
+    "defines_level_basic_info",
+    "level_basic_info_for_level",
+    "level_basic_info_uses_level_config",
+    "level_basic_info_in_domain",
+    "level_basic_info_has_map_ui",
+    "level_basic_info_has_region_ui",
+    "level_basic_info_has_factory_area",
+    "defines_level_short_id_scene",
+    "level_short_id_scene_for_level",
+    "level_short_id_scene_has_short_id",
+    "level_config_data_defines_config",
+    "level_config_defines_level",
+    "level_config_has_map_id",
+    "level_config_uses_default_scene_config",
     "map_has_sublevel_brief",
     "map_sublevel_brief_in_map",
     "map_has_brief_info",
@@ -33869,10 +33908,23 @@ MAP_USAGE_EDGE_KINDS = (
     "map_sublevel_brief_has_enemy",
     "enemy_used_by_map_sublevel_brief",
     "level_has_level_data",
+    "level_data_file_defines_level_data",
+    "level_data_references_level_script",
     "level_has_level_script",
+    "level_script_data_defines_script",
+    "level_script_data_defines_template",
     "level_has_mission_runtime",
+    "mission_runtime_in_level",
     "level_has_map_mark",
+    "map_mark_in_level",
+    "defines_map_mark",
+    "map_mark_uses_template",
+    "map_mark_template_used_by_mark",
+    "defines_map_mark_template",
+    "map_mark_template_has_type",
+    "map_mark_type_has_template",
     "level_has_atmospheric_npc",
+    "atmospheric_npc_in_level",
     "level_has_interactive_collection",
     "level_data_references_level",
     "level_data_references_mission",
@@ -33904,11 +33956,37 @@ def resolve_map_usage_lookup(db_path: Path, term: str, *, limit: int, kind: str 
     return query_graph(db_path, term, limit=lookup_limit), ""
 
 
+def map_usage_category(edge_kind: str) -> str:
+    if "map_config" in edge_kind or edge_kind in {"defines_map", "gameplay_config_map_id_table_defines_map", "map_has_config"}:
+        return "mapConfig"
+    if "level_config" in edge_kind or "level_basic_info" in edge_kind or "level_short_id" in edge_kind:
+        return "levelConfig"
+    if "map_has_level" in edge_kind or "level_belongs_to_map" in edge_kind or "sublevel" in edge_kind:
+        return "mapLevels"
+    if "scene_condition" in edge_kind or "map_variable" in edge_kind or "scene_state" in edge_kind:
+        return "sceneStateConditions"
+    if "map_mark" in edge_kind or "track_map" in edge_kind:
+        return "mapMarks"
+    if "level_data" in edge_kind or "level_script" in edge_kind:
+        return "levelScripts"
+    if "mission" in edge_kind or "story" in edge_kind:
+        return "missionStory"
+    if "spawner" in edge_kind or "enemy" in edge_kind:
+        return "spawnersEnemies"
+    if "atmospheric_npc" in edge_kind or "interactive" in edge_kind:
+        return "worldObjects"
+    if "audio" in edge_kind or "effect" in edge_kind or "buff" in edge_kind:
+        return "gameplayRefs"
+    if "asset" in edge_kind or "streaming" in edge_kind:
+        return "assets"
+    return "other"
+
+
 def map_level_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
     lookup, resolved_kind = resolve_map_usage_lookup(db_path, term, limit=limit, kind=kind)
     seed = safe_key(lookup.get("seedNode"))
     if not seed:
-        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "edgeCounts": {}, "relations": []}
+        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "edgeCounts": {}, "mapSummary": {}, "relations": []}
 
     placeholders = ",".join("?" for _ in MAP_USAGE_EDGE_KINDS)
     relation_limit = max(limit, 1)
@@ -33945,6 +34023,15 @@ def map_level_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = ""
             (seed, seed, *MAP_USAGE_EDGE_KINDS, relation_limit),
         ).fetchall()
 
+    relations = [
+        usage_edge_ref(row, "src" if row["dstId"] == seed else "dst", seed)
+        for row in relation_rows
+    ]
+    map_summary: dict[str, list[dict[str, Any]]] = {}
+    for relation in relations:
+        category = map_usage_category(safe_key(relation.get("edge")))
+        map_summary.setdefault(category, []).append(relation)
+
     return {
         "term": term,
         "seedNode": seed,
@@ -33952,9 +34039,12 @@ def map_level_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = ""
         "resolvedKind": resolved_kind,
         "aliases": lookup.get("aliases") or [],
         "edgeCounts": {row["edge"]: row["count"] for row in count_rows},
-        "relations": [
-            usage_edge_ref(row, "src" if row["dstId"] == seed else "dst", seed)
-            for row in relation_rows
+        "mapSummary": map_summary,
+        "relations": relations,
+        "caveats": [
+            "authored_static_map_level_table_and_decoded_config_reference_evidence_only",
+            "level_to_map_edges_can_be_explicit_or_prefix_inferred_check_edge_evidence",
+            "does_not_reconstruct_runtime_streaming_visibility_spawn_state_or_player_position",
         ],
     }
 
