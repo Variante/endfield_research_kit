@@ -27217,6 +27217,7 @@ def emit_followup_indexes(db_path: Path, summary: dict[str, Any]) -> None:
     with sqlite3.connect(db_path) as conn:
         conn.row_factory = sqlite3.Row
         emit_voice_audio_links(conn)
+        emit_unresolved_narrative_video_candidates(conn)
         emit_character_recovery_candidates(conn)
         emit_model_config_asset_binding_candidates(conn)
         emit_option_branch_gaps(conn)
@@ -27292,6 +27293,109 @@ def emit_voice_audio_links(conn: sqlite3.Connection) -> None:
         "unresolvedExamples": unresolved[:500],
     }
     (GRAPH_DIR / "voice_audio_links.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def related_node_values(conn: sqlite3.Connection, node_id: str, edge_kind: str) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        """
+        SELECT target.id, target.kind, target.name, target.path, target.source, edge.evidence, edge.data
+        FROM edges edge
+        JOIN nodes target ON target.id = edge.dst
+        WHERE edge.src = ? AND edge.kind = ?
+        ORDER BY target.name, target.path, edge.evidence
+        """,
+        (node_id, edge_kind),
+    ).fetchall()
+    values: list[dict[str, Any]] = []
+    for row in rows:
+        values.append({
+            "id": row["id"],
+            "kind": row["kind"],
+            "name": row["name"],
+            "path": row["path"],
+            "source": row["source"],
+            "evidence": row["evidence"],
+            "data": parse_json_text(row["data"]),
+        })
+    return values
+
+
+def emit_unresolved_narrative_video_candidates(conn: sqlite3.Connection) -> None:
+    rows = conn.execute(
+        """
+        SELECT id, name, data
+        FROM nodes
+        WHERE kind = 'narrative_video_unresolved_candidate'
+        ORDER BY name, id
+        """
+    ).fetchall()
+    records: list[dict[str, Any]] = []
+    status_counts: Counter[str] = Counter()
+    actionable: list[dict[str, Any]] = []
+    for row in rows:
+        data = parse_json_text(row["data"])
+        status = safe_key(data.get("candidateStatus")) or "unknown"
+        status_counts[status] += 1
+        record = {
+            "node": row["id"],
+            "stem": safe_key(data.get("stem") or row["name"]),
+            "candidateStatus": status,
+            "keyCandidates": [item["name"] for item in related_node_values(conn, row["id"], "narrative_video_unresolved_key_candidate")],
+            "existingStoryCandidates": [item["name"] for item in related_node_values(conn, row["id"], "narrative_video_unresolved_existing_story_candidate")],
+            "files": [item["path"] or item["name"] for item in related_node_values(conn, row["id"], "narrative_video_unresolved_file")],
+            "relVideos": [item["path"] or item["name"] for item in related_node_values(conn, row["id"], "narrative_video_unresolved_rel_video")],
+            "raw": compact_payload(data, depth=2),
+        }
+        records.append(record)
+        if status == "hasGeneratedStoryTarget":
+            actionable.append(record)
+
+    payload = {
+        "generated": int(time.time()),
+        "count": len(records),
+        "statusCounts": dict(sorted(status_counts.items())),
+        "actionableStatus": "hasGeneratedStoryTarget",
+        "actionableCount": len(actionable),
+        "records": records,
+        "actionable": actionable,
+    }
+    json_path = GRAPH_DIR / "unresolved_narrative_video_candidates.json"
+    json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    lines = [
+        "# Unresolved Narrative Video Candidates",
+        "",
+        "This generated source-graph follow-up groups unresolved narrative-video audit candidates by status and graph-linked story/video evidence. It is a query aid, not a recovery override.",
+        "",
+        "## Summary",
+        "",
+        f"- Candidates: `{len(records)}`",
+        f"- Actionable `hasGeneratedStoryTarget`: `{len(actionable)}`",
+    ]
+    for status, count in sorted(status_counts.items()):
+        lines.append(f"- `{status}`: `{count}`")
+    lines.extend(["", "## Actionable Candidates", ""])
+    if actionable:
+        lines.append("| Stem | Key candidates | Existing stories | Rel videos |")
+        lines.append("| --- | --- | --- | ---: |")
+        for item in actionable:
+            key_candidates = ", ".join(f"`{value}`" for value in item["keyCandidates"]) or ""
+            existing = ", ".join(f"`{value}`" for value in item["existingStoryCandidates"]) or ""
+            lines.append(f"| `{item['stem']}` | {key_candidates} | {existing} | {len(item['relVideos'])} |")
+    else:
+        lines.append("No unresolved candidates with generated story targets were found.")
+    lines.extend(["", "## All Candidates", ""])
+    if records:
+        lines.append("| Status | Stem | Key candidates | Existing stories | Files | Rel videos |")
+        lines.append("| --- | --- | --- | --- | ---: | ---: |")
+        for item in records:
+            key_candidates = ", ".join(f"`{value}`" for value in item["keyCandidates"]) or ""
+            existing = ", ".join(f"`{value}`" for value in item["existingStoryCandidates"]) or ""
+            lines.append(f"| `{item['candidateStatus']}` | `{item['stem']}` | {key_candidates} | {existing} | {len(item['files'])} | {len(item['relVideos'])} |")
+    else:
+        lines.append("No unresolved narrative-video candidate nodes found.")
+    lines.append("")
+    (GRAPH_DIR / "unresolved_narrative_video_candidates.md").write_text("\n".join(lines), encoding="utf-8")
 
 
 def emit_character_recovery_candidates(conn: sqlite3.Connection) -> None:
