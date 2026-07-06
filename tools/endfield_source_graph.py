@@ -1116,6 +1116,44 @@ def slash(path: Path) -> str:
         return path.as_posix()
 
 
+def resolve_runtime_audit_asset_path(path_text: Any) -> dict[str, Any]:
+    rel = str(path_text or "").replace("\\", "/").strip()
+    if not rel:
+        return {}
+    exact = ROOT / rel
+    if exact.exists():
+        return {
+            "assetTrackPathStatus": "exists",
+            "assetTrackExists": True,
+            "assetTrackResolvedPath": slash(exact),
+        }
+    basename = Path(rel).name
+    if not basename:
+        return {
+            "assetTrackPathStatus": "missing",
+            "assetTrackExists": False,
+        }
+    search_root = EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "timeline_extract"
+    matches = sorted(search_root.rglob(basename)) if search_root.exists() else []
+    if len(matches) == 1:
+        return {
+            "assetTrackPathStatus": "basename_resolved",
+            "assetTrackExists": False,
+            "assetTrackResolvedPath": slash(matches[0]),
+        }
+    if len(matches) > 1:
+        return {
+            "assetTrackPathStatus": "basename_ambiguous",
+            "assetTrackExists": False,
+            "assetTrackResolvedCount": len(matches),
+            "assetTrackResolvedPath": slash(matches[0]),
+        }
+    return {
+        "assetTrackPathStatus": "missing",
+        "assetTrackExists": False,
+    }
+
+
 def read_json(path: Path, default: Any = None) -> Any:
     try:
         with path.open("r", encoding="utf-8") as handle:
@@ -11747,6 +11785,7 @@ class SourceGraphBuilder:
                         "optionIndexAfterJump": jump.get("optionIndexAfterJump"),
                         "sourceReport": source_path,
                     }
+                    jump_data.update(resolve_runtime_audit_asset_path(jump.get("assetTrack")))
                     jump_node = self.add_node(
                         "runtime_jump_clip",
                         jump_key,
