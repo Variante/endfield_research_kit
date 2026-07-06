@@ -30181,6 +30181,42 @@ SHADER_USAGE_EDGE_KINDS = (
     "material_used_by_asset_entity",
 )
 
+MATERIAL_USAGE_KIND_FALLBACKS = (
+    "material",
+    "asset",
+    "asset_entity",
+    "unity_pathid",
+    "shader_program",
+    "shader",
+    "texture",
+)
+
+MATERIAL_USAGE_EXPLICIT_EDGE_KINDS = (
+    "uses_material",
+    "referenced_by_material",
+    "entity_uses_material",
+    "material_used_by_asset_entity",
+    "entity_uses_texture",
+    "texture_used_by_asset_entity",
+    "uses_texture",
+    "uses_texture_pathid",
+    "uses_shader",
+    "uses_shader_pathid",
+    "material_shader_pathid_resolves_unity_asset",
+    "unity_asset_used_by_material_shader_slot",
+    "shader_used_by_material_slot",
+    "material_uses_shader_program",
+    "shader_program_used_by_material",
+    "material_texture_pathid_resolves_unity_asset",
+    "unity_asset_used_by_material_texture_slot",
+    "material_texture_pathid_exports_asset",
+    "asset_export_used_by_material_texture_slot",
+    "shader_program_pathid",
+    "shader_program_family",
+    "shader_program_has_backend",
+    "shader_program_named_shader",
+)
+
 VIDEO_USAGE_KIND_FALLBACKS = (
     "fmv_binding",
     "video",
@@ -31261,6 +31297,231 @@ def entity_assets(db_path: Path, term: str, *, limit: int = 40, kind: str = "") 
             "exported_asset_entity_evidence_only",
             "semantic_material_nodes_are_matched_from_material_asset_filenames",
             "not_full_runtime_renderer_or_animation_controller_reconstruction",
+        ],
+    }
+
+
+def resolve_material_usage_lookup(db_path: Path, term: str, *, limit: int, kind: str = "") -> tuple[dict[str, Any], str]:
+    lookup_limit = min(max(limit, 1), 20)
+    if kind:
+        return query_graph(db_path, term, limit=lookup_limit, kind=kind), kind
+    for fallback_kind in MATERIAL_USAGE_KIND_FALLBACKS:
+        lookup = query_graph(db_path, term, limit=lookup_limit, kind=fallback_kind)
+        if safe_key(lookup.get("seedNode")):
+            return lookup, fallback_kind
+    return query_graph(db_path, term, limit=lookup_limit), ""
+
+
+def material_usage_relation_clause(alias: str = "e") -> str:
+    explicit = ", ".join(repr(kind) for kind in MATERIAL_USAGE_EXPLICIT_EDGE_KINDS)
+    return f"""
+              AND (
+                   {alias}.kind LIKE '%material%'
+                OR {alias}.kind LIKE '%texture%'
+                OR {alias}.kind LIKE '%shader%'
+                OR {alias}.kind IN ({explicit})
+              )
+    """
+
+
+def material_usage_category(edge_kind: str) -> str:
+    if "texture" in edge_kind:
+        return "textures"
+    if "shader" in edge_kind:
+        return "shaders"
+    if edge_kind.startswith("entity_uses_material") or edge_kind == "uses_material" or edge_kind == "referenced_by_material":
+        return "materials"
+    if "entity" in edge_kind:
+        return "entities"
+    if "pathid" in edge_kind or "unity_asset" in edge_kind or "asset_export" in edge_kind:
+        return "pathidsAssets"
+    if "material" in edge_kind:
+        return "materials"
+    return "other"
+
+
+def material_ref_from_asset_path(path: str, name: str = "") -> tuple[str, str]:
+    rel = safe_key(path) or safe_key(name)
+    if not rel:
+        return "", ""
+    stem = Path(rel).stem
+    material_name = re.sub(r"_p[0-9A-Fa-f]{8,}$", "", stem)
+    source = ""
+    first_part = rel.replace("\\", "/").split("/", 1)[0]
+    if first_part.endswith("-materials"):
+        source = first_part.removesuffix("-materials")
+    elif first_part in {"StreamingAssets", "Persistent"}:
+        source = first_part
+    return source, material_name
+
+
+def material_asset_pattern_for_material(row: sqlite3.Row | None) -> str:
+    if not row:
+        return ""
+    source = safe_key(row["source"])
+    name = safe_key(row["name"])
+    if not name:
+        return ""
+    if source:
+        return f"{source}-materials/Material/{name}_p%.json"
+    return f"%/Material/{name}_p%.json"
+
+
+def material_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
+    lookup, resolved_kind = resolve_material_usage_lookup(db_path, term, limit=limit, kind=kind)
+    seed = safe_key(lookup.get("seedNode"))
+    if not seed:
+        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "edgeCounts": {}, "materialSummary": {}, "relations": []}
+
+    relation_limit = max(limit, 1)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        seed_row = conn.execute(
+            "SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?",
+            (seed,),
+        ).fetchone()
+        focus_ids = [seed]
+        semantic_material_rows: list[sqlite3.Row] = []
+        material_asset_rows: list[sqlite3.Row] = []
+
+        if seed_row and seed_row["kind"] == "material":
+            semantic_material_rows.append(seed_row)
+            pattern = material_asset_pattern_for_material(seed_row)
+            if pattern:
+                material_asset_rows = conn.execute(
+                    """
+                    SELECT id, kind, name, source, path, data
+                    FROM nodes
+                    WHERE kind = 'asset'
+                      AND path LIKE ?
+                    ORDER BY source, path
+                    LIMIT ?
+                    """,
+                    (pattern, relation_limit),
+                ).fetchall()
+                focus_ids.extend(row["id"] for row in material_asset_rows)
+        elif seed_row and seed_row["kind"] == "asset":
+            source, material_name = material_ref_from_asset_path(seed_row["path"], seed_row["name"])
+            if material_name:
+                rows = conn.execute(
+                    """
+                    SELECT id, kind, name, source, path, data
+                    FROM nodes
+                    WHERE kind = 'material'
+                      AND LOWER(name) = LOWER(?)
+                      AND (? = '' OR source = ?)
+                    ORDER BY source, name
+                    LIMIT ?
+                    """,
+                    (material_name, source, source, relation_limit),
+                ).fetchall()
+                semantic_material_rows.extend(rows)
+                focus_ids.extend(row["id"] for row in rows)
+                if "/Material/" in safe_key(seed_row["path"]).replace("\\", "/"):
+                    material_asset_rows.append(seed_row)
+
+        direct_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src = ? OR e.dst = ?)
+            {material_usage_relation_clause("e")}
+            ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (seed, seed, relation_limit),
+        ).fetchall()
+
+        pathid_ids = _unique_preserve(
+            [
+                row["dstId"]
+                for row in direct_rows
+                if row["dstKind"] == "unity_pathid"
+            ]
+            + [
+                row["srcId"]
+                for row in direct_rows
+                if row["srcKind"] == "unity_pathid"
+            ]
+            + [seed if seed_row and seed_row["kind"] == "unity_pathid" else ""]
+        )
+        pathid_ids = [value for value in pathid_ids if value]
+        if pathid_ids:
+            focus_ids.extend(pathid_ids)
+
+        for row in material_asset_rows:
+            focus_ids.append(row["id"])
+        for row in semantic_material_rows:
+            focus_ids.append(row["id"])
+        focus_ids = _unique_preserve(focus_ids)
+        focus_placeholders = ",".join("?" for _ in focus_ids)
+
+        count_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, COUNT(1) AS count
+            FROM edges e
+            WHERE (e.src IN ({focus_placeholders}) OR e.dst IN ({focus_placeholders}))
+            {material_usage_relation_clause("e")}
+            GROUP BY e.kind
+            ORDER BY e.kind
+            """,
+            (*focus_ids, *focus_ids),
+        ).fetchall()
+        relation_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src IN ({focus_placeholders}) OR e.dst IN ({focus_placeholders}))
+            {material_usage_relation_clause("e")}
+            ORDER BY CASE WHEN e.src = ? OR e.dst = ? THEN 0 ELSE 1 END,
+                     e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (*focus_ids, *focus_ids, seed, seed, relation_limit),
+        ).fetchall()
+
+    focus_id_set = set(focus_ids)
+    relations = [
+        usage_edge_ref(
+            row,
+            "dst" if row["srcId"] in focus_id_set else "src",
+            row["srcId"] if row["srcId"] in focus_id_set else row["dstId"],
+        )
+        for row in relation_rows
+    ]
+    material_summary: dict[str, list[dict[str, Any]]] = {}
+    if semantic_material_rows:
+        material_summary["semanticMaterials"] = [compact_node_ref(row) for row in semantic_material_rows]
+    if material_asset_rows:
+        material_summary["materialAssets"] = [compact_node_ref(row) for row in material_asset_rows]
+    for relation in relations:
+        category = material_usage_category(safe_key(relation.get("edge")))
+        material_summary.setdefault(category, []).append(relation)
+
+    return {
+        "term": term,
+        "seedNode": seed,
+        "seed": compact_node_ref(seed_row) if seed_row else {"id": seed, "key": node_key(seed)},
+        "resolvedKind": resolved_kind,
+        "aliases": lookup.get("aliases") or [],
+        "focusNodeIds": focus_ids,
+        "edgeCounts": {row["edge"]: row["count"] for row in count_rows},
+        "materialSummary": material_summary,
+        "relations": relations,
+        "semanticMaterials": [compact_node_ref(row) for row in semantic_material_rows],
+        "materialAssets": [compact_node_ref(row) for row in material_asset_rows],
+        "caveats": [
+            "material_json_slot_and_asset_index_evidence_only",
+            "pathid_resolution_depends_on_current_AnimeStudio_asset_maps",
+            "not_runtime_material_variant_selection_or_renderer_fidelity",
         ],
     }
 
@@ -34251,6 +34512,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional node kind to force, such as shader_program, shader, shader_family, shader_snippet, unity_pathid, or material.",
     )
 
+    material_usage_cmd = sub.add_parser("material-usage", help="Show material JSON slots, texture/shader PathIDs, exported assets, and asset-entity consumers")
+    material_usage_cmd.add_argument("term")
+    material_usage_cmd.add_argument("--db", type=Path, default=DEFAULT_DB)
+    material_usage_cmd.add_argument("--limit", type=int, default=40)
+    material_usage_cmd.add_argument(
+        "--kind",
+        default="",
+        help="Optional node kind to force, such as material, asset, asset_entity, unity_pathid, shader_program, or texture.",
+    )
+
     video_usage_cmd = sub.add_parser("video-usage", help="Show FMV binding, narrative video, PathID, and playable asset evidence")
     video_usage_cmd.add_argument("term")
     video_usage_cmd.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -34455,6 +34726,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "shader-usage":
         result = shader_usage(args.db, args.term, limit=args.limit, kind=args.kind)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "material-usage":
+        result = material_usage(args.db, args.term, limit=args.limit, kind=args.kind)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "video-usage":
