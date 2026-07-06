@@ -60,6 +60,7 @@ DIALOG_ID_TABLE_INDEX_PATH = EXPORT_ROOT / "recovered" / "dialog_id_table_index.
 RUNTIME_OPTION_ROUTE_AUDIT_GLOB = "runtime_jump_option_route_audit_CN*_nearby*.json"
 LUA_CONSUMER_REFERENCE_AUDIT_PATH = ROOT / "reports" / "mission_order" / "lua_consumer_reference_audit.json"
 MONOBEHAVIOUR_FRONTIER_REPORT_PATH = ROOT / "reports" / "monobehaviour_frontier_latest.json"
+MONOBEHAVIOUR_FRONTIER_TAIL_AUDIT_PATH = ROOT / "reports" / "monobehaviour_frontier_tail_audit.json"
 OPTION_FLOW_BODY_TARGETS_GAMEASSEMBLY_PATH = ROOT / "reports" / "option_flow_body_targets_gameassembly.json"
 OPTION_FLOW_ACTIVE_CLIP_FIELD_ANALYSIS_PATH = ROOT / "reports" / "option_flow_active_clip_field_analysis.json"
 TEXTURE2D_RAW_HASH_COLLISION_AUDIT_PATH = ROOT / "reports" / "texture2d_raw_hash_collision_audit.json"
@@ -3341,6 +3342,8 @@ class SourceGraphBuilder:
             self.commit_step("luaConsumers")
             self.ingest_monobehaviour_frontier_report()
             self.commit_step("monoBehaviourFrontier")
+            self.ingest_monobehaviour_frontier_tail_audit()
+            self.commit_step("monoBehaviourFrontierTailAudit")
             if self.include_asset_maps:
                 self.ingest_asset_maps()
                 self.commit_step("assetMaps")
@@ -22367,12 +22370,34 @@ class SourceGraphBuilder:
     def add_story_target_edge(self, owner_node: str, story_id: Any, *, edge_kind: str, source: str, evidence: str) -> None:
         story_key = safe_key(story_id)
         if story_key and self.node_exists("story", story_key):
-            self.add_edge(owner_node, self.node_id("story", story_key), edge_kind, source=source, evidence=evidence)
+            story_node = self.node_id("story", story_key)
+            self.add_edge(owner_node, story_node, edge_kind, source=source, evidence=evidence)
+            reverse_kind = {
+                "dialog_summary_map_targets_story": "story_targeted_by_dialog_summary_map",
+                "domain_depot_initial_dialog": "story_used_as_domain_depot_initial_dialog",
+                "domain_depot_repeat_dialog": "story_used_as_domain_depot_repeat_dialog",
+                "sns_dialog_targets_story": "story_targeted_by_sns_dialog",
+                "radio_targets_story": "story_targeted_by_radio",
+                "remote_common_targets_story": "story_targeted_by_remote_common",
+                "audio_dialog_custom_event_targets_story": "story_targeted_by_audio_dialog_custom_event",
+            }.get(edge_kind)
+            if reverse_kind:
+                self.add_edge(story_node, owner_node, reverse_kind, source=source, evidence=evidence)
 
     def add_line_target_edge(self, owner_node: str, line_id: Any, *, edge_kind: str, source: str, evidence: str) -> None:
         line_key = safe_key(line_id)
         if line_key and self.node_exists("line", line_key):
-            self.add_edge(owner_node, self.node_id("line", line_key), edge_kind, source=source, evidence=evidence)
+            line_node = self.node_id("line", line_key)
+            self.add_edge(owner_node, line_node, edge_kind, source=source, evidence=evidence)
+            reverse_kind = {
+                "text_voice_id_line_node": "line_has_text_voice_id_mapping",
+                "dialog_text_line_node": "line_has_dialog_text",
+                "radio_line_node": "line_used_by_radio_row",
+                "remote_common_line_node": "line_used_by_remote_common_row",
+                "audio_voice_extra_line_node": "line_has_audio_voice_extra",
+            }.get(edge_kind)
+            if reverse_kind:
+                self.add_edge(line_node, owner_node, reverse_kind, source=source, evidence=evidence)
 
     def add_story_edges_for_line_target(self, owner_node: str, line_id: Any, *, edge_kind: str, source: str, evidence: str) -> None:
         line_key = safe_key(line_id)
@@ -26435,6 +26460,103 @@ class SourceGraphBuilder:
             self.add_monobehaviour_frontier_counter_edges(group_node, group, "layouts", "monobehaviour_layout", "monobehaviour_frontier_layout")
             self.ingest_monobehaviour_frontier_group_entries(group_node, group, group_root)
 
+    def ingest_monobehaviour_frontier_tail_audit(self) -> None:
+        path = MONOBEHAVIOUR_FRONTIER_TAIL_AUDIT_PATH
+        payload = read_json(path, {})
+        if not isinstance(payload, dict) or not payload:
+            return
+        summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+        report_node = self.add_node(
+            "monobehaviour_frontier_tail_audit_report",
+            "monobehaviour_frontier_tail_audit",
+            name="MonoBehaviour frontier tail audit",
+            source="reports",
+            path=slash(path),
+            data={
+                "generated": payload.get("generated"),
+                "inputs": payload.get("inputs") or {},
+                "summary": summary,
+            },
+        )
+        self.add_alias("monobehaviour frontier tail audit", report_node, kind="report_title", source="reports")
+
+        def add_target(item: dict[str, Any], *, category: str, rank: int) -> None:
+            layout = safe_key(item.get("layout"))
+            if not layout:
+                return
+            target_node = self.add_node(
+                "monobehaviour_tail_audit_type",
+                f"{category}:{layout}",
+                name=safe_key(item.get("simpleName")) or layout,
+                source="monobehaviour_frontier_tail_audit",
+                data={
+                    "layout": layout,
+                    "simpleName": item.get("simpleName"),
+                    "category": category,
+                    "rank": rank,
+                    "band": item.get("band"),
+                    "priorityScore": item.get("priorityScore"),
+                    "groupCount": item.get("groupCount"),
+                    "residualFiles": item.get("residualFiles"),
+                    "entryCount": item.get("entryCount"),
+                    "problemRefs": item.get("problemRefs"),
+                    "uniqueAssetCount": item.get("uniqueAssetCount"),
+                    "statusCounts": item.get("statusCounts") or {},
+                    "metadataFieldCount": item.get("metadataFieldCount"),
+                    "bodyTargetCount": item.get("bodyTargetCount"),
+                    "recommendation": item.get("recommendation"),
+                },
+            )
+            self.add_alias(layout, target_node, kind="monobehaviour_tail_audit_layout", source="monobehaviour_frontier_tail_audit")
+            simple_name = safe_key(item.get("simpleName"))
+            if simple_name:
+                self.add_alias(simple_name, target_node, kind="monobehaviour_tail_audit_type_name", source="monobehaviour_frontier_tail_audit")
+            edge_kind = "monobehaviour_tail_audit_ranked_type" if category == "ranked" else "monobehaviour_tail_audit_watch_type"
+            self.add_edge(report_node, target_node, edge_kind, source="monobehaviour_frontier_tail_audit", evidence=str(rank), data={"rank": rank, "priorityScore": item.get("priorityScore")})
+
+            band = safe_key(item.get("band"))
+            if band:
+                band_node = self.add_node("monobehaviour_tail_audit_band", band, name=band, source="monobehaviour_frontier_tail_audit")
+                self.add_edge(target_node, band_node, "monobehaviour_tail_type_in_band", source="monobehaviour_frontier_tail_audit", evidence="band")
+
+            recommendation = safe_key(item.get("recommendation"))
+            if recommendation:
+                rec_node = self.add_node("monobehaviour_tail_audit_recommendation", recommendation, name=recommendation, source="monobehaviour_frontier_tail_audit")
+                self.add_edge(target_node, rec_node, "monobehaviour_tail_type_recommendation", source="monobehaviour_frontier_tail_audit", evidence="recommendation")
+
+            for schema in item.get("topSchemas") or []:
+                if not isinstance(schema, dict):
+                    continue
+                schema_key = safe_key(schema.get("value"))
+                if schema_key:
+                    schema_node = self.add_node("monobehaviour_schema", schema_key, name=schema_key, source="monobehaviour_frontier_tail_audit")
+                    self.add_edge(target_node, schema_node, "monobehaviour_tail_type_top_schema", source="monobehaviour_frontier_tail_audit", evidence="topSchemas", data={"count": schema.get("count")})
+
+            for error in item.get("topErrorKinds") or []:
+                if not isinstance(error, dict):
+                    continue
+                error_key = safe_key(error.get("value"))
+                if error_key:
+                    error_node = self.add_node("monobehaviour_decode_error", error_key, name=error_key, source="monobehaviour_frontier_tail_audit")
+                    self.add_edge(target_node, error_node, "monobehaviour_tail_type_top_error", source="monobehaviour_frontier_tail_audit", evidence="topErrorKinds", data={"count": error.get("count")})
+
+            for group in item.get("groups") or []:
+                if not isinstance(group, dict):
+                    continue
+                group_id = safe_key(group.get("id"))
+                if not group_id:
+                    continue
+                group_node = self.add_node("monobehaviour_frontier_group", group_id, name=group_id.rsplit("/", 1)[-1], source="decoded_index")
+                self.add_edge(target_node, group_node, "monobehaviour_tail_type_affects_group", source="monobehaviour_frontier_tail_audit", evidence="groups", data=compact_payload(group, depth=2))
+                self.add_edge(group_node, target_node, "monobehaviour_frontier_group_has_tail_type", source="monobehaviour_frontier_tail_audit", evidence="groups", data=compact_payload(group, depth=2))
+
+        for index, item in enumerate(payload.get("rankedTypes") or [], start=1):
+            if isinstance(item, dict):
+                add_target(item, category="ranked", rank=index)
+        for index, item in enumerate(payload.get("watchTypes") or [], start=1):
+            if isinstance(item, dict):
+                add_target(item, category="watch", rank=index)
+
     def ingest_monobehaviour_frontier_group_entries(self, group_node: str, group: dict[str, Any], group_root: Path) -> None:
         group_file = safe_key(group.get("file"))
         if not group_file or not group_root:
@@ -27646,6 +27768,10 @@ QUERY_KIND_PRIORITY = {
     "monobehaviour_frontier_report": 42.91,
     "monobehaviour_frontier_group": 42.92,
     "monobehaviour_decode_status": 42.93,
+    "monobehaviour_frontier_tail_audit_report": 42.931,
+    "monobehaviour_tail_audit_type": 42.932,
+    "monobehaviour_tail_audit_band": 42.933,
+    "monobehaviour_tail_audit_recommendation": 42.934,
     "monobehaviour_domain": 42.94,
     "monobehaviour_schema": 42.95,
     "monobehaviour_schema_group": 42.96,
@@ -28468,6 +28594,10 @@ NODE_ID_PREFIXES = (
     "monobehaviour_frontier_report",
     "monobehaviour_frontier_group",
     "monobehaviour_decode_status",
+    "monobehaviour_frontier_tail_audit_report",
+    "monobehaviour_tail_audit_type",
+    "monobehaviour_tail_audit_band",
+    "monobehaviour_tail_audit_recommendation",
     "monobehaviour_domain",
     "monobehaviour_schema",
     "monobehaviour_schema_group",
