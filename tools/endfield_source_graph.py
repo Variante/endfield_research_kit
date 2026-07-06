@@ -30217,6 +30217,80 @@ MATERIAL_USAGE_EXPLICIT_EDGE_KINDS = (
     "shader_program_named_shader",
 )
 
+EFFECT_USAGE_KIND_FALLBACKS = (
+    "gameplay_effect",
+    "global_effect",
+    "global_effect_param",
+    "potential_talent_effect",
+    "use_item_effect",
+    "domain_level_effect",
+    "fertilize_effect",
+    "asset",
+    "buff",
+    "gameplay_skill",
+    "level_script",
+    "level_data",
+    "model_view_state_controller",
+    "char_interact_perform",
+    "spawner_enemy_entry",
+)
+
+EFFECT_USAGE_EXPLICIT_EDGE_KINDS = (
+    "skill_data_references_effect",
+    "gameplay_effect_used_by_skill_data",
+    "buff_data_references_effect",
+    "gameplay_effect_used_by_buff_data",
+    "level_script_references_effect",
+    "gameplay_effect_used_by_level_script",
+    "level_script_template_references_effect",
+    "gameplay_effect_used_by_level_script_template",
+    "level_data_references_effect",
+    "gameplay_effect_used_by_level_data",
+    "spawner_enemy_prewarn_effect",
+    "model_view_state_controller_references_effect",
+    "gameplay_effect_used_by_model_view_state_controller",
+    "model_view_state_controller_animator_references_effect",
+    "gameplay_effect_used_by_model_view_state_controller_animator",
+    "char_interact_references_effect",
+    "gameplay_effect_used_by_char_interact",
+    "monobehaviour_frontier_entry_uses_gameplay_effect",
+    "gameplay_effect_used_by_monobehaviour_frontier_entry",
+    "factory_battle_attack_range_effect",
+    "gameplay_effect_used_by_factory_battle_attack_range",
+    "effect_name_matches_export_base_asset",
+    "asset_matched_by_gameplay_effect",
+    "defines_potential_talent_effect",
+    "uses_potential_talent_effect",
+    "character_potential_effect",
+    "potential_effect_used_by_character_potential",
+    "character_talent_node_uses_effect",
+    "potential_talent_effect_used_by_character_talent_node",
+    "potential_talent_attaches_buff",
+    "potential_talent_attaches_skill",
+    "potential_talent_modifies_skill_blackboard",
+    "potential_talent_modifies_skill_param",
+    "potential_talent_modifies_stat_property",
+    "potential_talent_modifies_attribute_meta",
+    "potential_talent_uses_blackboard_key",
+    "defines_use_item_effect",
+    "item_has_use_effect",
+    "use_effect_applies_buff",
+    "use_effect_runs_skill",
+    "use_effect_uses_blackboard_key",
+    "defines_global_effect",
+    "defines_ether_submit_global_effect",
+    "ether_submit_applies_effect",
+    "global_effect_has_param",
+    "global_effect_domain",
+    "ether_submit_global_effect_blackboard",
+    "activity_global_effect_group_effect",
+    "domain_development_level_has_effect",
+    "domain_level_effect_applies_to_level",
+    "defines_fertilize_effect",
+    "fertilize_item_has_effect_type",
+    "fertilize_effect_used_by_item",
+)
+
 VIDEO_USAGE_KIND_FALLBACKS = (
     "fmv_binding",
     "video",
@@ -31522,6 +31596,157 @@ def material_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "")
             "material_json_slot_and_asset_index_evidence_only",
             "pathid_resolution_depends_on_current_AnimeStudio_asset_maps",
             "not_runtime_material_variant_selection_or_renderer_fidelity",
+        ],
+    }
+
+
+def resolve_effect_usage_lookup(db_path: Path, term: str, *, limit: int, kind: str = "") -> tuple[dict[str, Any], str]:
+    lookup_limit = min(max(limit, 1), 20)
+    if kind:
+        return query_graph(db_path, term, limit=lookup_limit, kind=kind), kind
+    for fallback_kind in EFFECT_USAGE_KIND_FALLBACKS:
+        lookup = query_graph(db_path, term, limit=lookup_limit, kind=fallback_kind)
+        if safe_key(lookup.get("seedNode")):
+            return lookup, fallback_kind
+    return query_graph(db_path, term, limit=lookup_limit), ""
+
+
+def effect_usage_relation_clause(alias: str = "e") -> str:
+    explicit = ", ".join(repr(kind) for kind in EFFECT_USAGE_EXPLICIT_EDGE_KINDS)
+    return f"""
+              AND (
+                   {alias}.kind LIKE '%effect%'
+                OR {alias}.kind LIKE '%vfx%'
+                OR {alias}.kind IN ({explicit})
+              )
+    """
+
+
+def effect_usage_category(edge_kind: str) -> str:
+    if "asset" in edge_kind or "export" in edge_kind or "name_matches" in edge_kind:
+        return "assets"
+    if "skill_data" in edge_kind or "skill" in edge_kind:
+        return "skills"
+    if "buff_data" in edge_kind or "buff" in edge_kind:
+        return "buffs"
+    if "level_script" in edge_kind or "level_data" in edge_kind:
+        return "levelScripts"
+    if "spawner" in edge_kind or "prewarn" in edge_kind:
+        return "spawners"
+    if "model_view" in edge_kind or "animator" in edge_kind:
+        return "modelView"
+    if "char_interact" in edge_kind or "monobehaviour" in edge_kind:
+        return "monobehaviour"
+    if "potential" in edge_kind or "talent" in edge_kind or "character" in edge_kind:
+        return "characterPotential"
+    if "use_item" in edge_kind or "use_effect" in edge_kind or "item_has_use" in edge_kind:
+        return "useItems"
+    if "global_effect" in edge_kind or "ether_submit" in edge_kind or "activity_global" in edge_kind:
+        return "globalEffects"
+    if "domain" in edge_kind or "fertilize" in edge_kind or "factory_battle" in edge_kind:
+        return "worldDomain"
+    return "other"
+
+
+def effect_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
+    lookup, resolved_kind = resolve_effect_usage_lookup(db_path, term, limit=limit, kind=kind)
+    seed = safe_key(lookup.get("seedNode"))
+    if not seed:
+        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "edgeCounts": {}, "effectSummary": {}, "relations": []}
+
+    relation_limit = max(limit, 1)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        seed_row = conn.execute(
+            "SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?",
+            (seed,),
+        ).fetchone()
+        direct_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src = ? OR e.dst = ?)
+            {effect_usage_relation_clause("e")}
+            ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (seed, seed, relation_limit),
+        ).fetchall()
+        effect_ids = [seed] if seed_row and safe_key(seed_row["kind"]) in {"gameplay_effect", "global_effect", "potential_talent_effect", "use_item_effect", "domain_level_effect", "fertilize_effect"} else []
+        effect_ids.extend(row["srcId"] for row in direct_rows if row["srcKind"] in EFFECT_USAGE_KIND_FALLBACKS and "effect" in safe_key(row["srcKind"]))
+        effect_ids.extend(row["dstId"] for row in direct_rows if row["dstKind"] in EFFECT_USAGE_KIND_FALLBACKS and "effect" in safe_key(row["dstKind"]))
+        focus_ids = _unique_preserve([seed, *effect_ids])
+        focus_placeholders = ",".join("?" for _ in focus_ids)
+        count_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, COUNT(1) AS count
+            FROM edges e
+            WHERE (e.src IN ({focus_placeholders}) OR e.dst IN ({focus_placeholders}))
+            {effect_usage_relation_clause("e")}
+            GROUP BY e.kind
+            ORDER BY e.kind
+            """,
+            (*focus_ids, *focus_ids),
+        ).fetchall()
+        relation_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src IN ({focus_placeholders}) OR e.dst IN ({focus_placeholders}))
+            {effect_usage_relation_clause("e")}
+            ORDER BY CASE WHEN e.src = ? OR e.dst = ? THEN 0 ELSE 1 END,
+                     e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (*focus_ids, *focus_ids, seed, seed, relation_limit),
+        ).fetchall()
+        focus_rows = conn.execute(
+            f"""
+            SELECT id, kind, name, source, path, data
+            FROM nodes
+            WHERE id IN ({focus_placeholders})
+            ORDER BY kind, name
+            LIMIT ?
+            """,
+            (*focus_ids, relation_limit),
+        ).fetchall()
+
+    focus_id_set = set(focus_ids)
+    relations = [
+        usage_edge_ref(
+            row,
+            "dst" if row["srcId"] in focus_id_set else "src",
+            row["srcId"] if row["srcId"] in focus_id_set else row["dstId"],
+        )
+        for row in relation_rows
+    ]
+    effect_summary: dict[str, list[dict[str, Any]]] = {"focusNodes": [compact_node_ref(row) for row in focus_rows]}
+    for relation in relations:
+        category = effect_usage_category(safe_key(relation.get("edge")))
+        effect_summary.setdefault(category, []).append(relation)
+
+    return {
+        "term": term,
+        "seedNode": seed,
+        "seed": compact_node_ref(seed_row) if seed_row else {"id": seed, "key": node_key(seed)},
+        "resolvedKind": resolved_kind,
+        "aliases": lookup.get("aliases") or [],
+        "focusNodeIds": focus_ids,
+        "edgeCounts": {row["edge"]: row["count"] for row in count_rows},
+        "effectSummary": effect_summary,
+        "relations": relations,
+        "caveats": [
+            "authored_static_effect_reference_and_export_name_match_evidence_only",
+            "effect_asset_matches_are_suffix_normalized_filename_matches_not_runtime_prefab_binding_proof",
+            "does_not_decode_effect_action_execution_timing_targeting_or_renderer_behavior",
         ],
     }
 
@@ -34522,6 +34747,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional node kind to force, such as material, asset, asset_entity, unity_pathid, shader_program, or texture.",
     )
 
+    effect_usage_cmd = sub.add_parser("effect-usage", help="Show gameplay/global/use-item effect references, exported asset matches, and authored consumers")
+    effect_usage_cmd.add_argument("term")
+    effect_usage_cmd.add_argument("--db", type=Path, default=DEFAULT_DB)
+    effect_usage_cmd.add_argument("--limit", type=int, default=40)
+    effect_usage_cmd.add_argument(
+        "--kind",
+        default="",
+        help="Optional node kind to force, such as gameplay_effect, global_effect, potential_talent_effect, use_item_effect, or asset.",
+    )
+
     video_usage_cmd = sub.add_parser("video-usage", help="Show FMV binding, narrative video, PathID, and playable asset evidence")
     video_usage_cmd.add_argument("term")
     video_usage_cmd.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -34730,6 +34965,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "material-usage":
         result = material_usage(args.db, args.term, limit=args.limit, kind=args.kind)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "effect-usage":
+        result = effect_usage(args.db, args.term, limit=args.limit, kind=args.kind)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "video-usage":
