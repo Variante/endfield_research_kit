@@ -27924,6 +27924,8 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
         direct = [classify_direct_edge(edge) for edge in direct_edges(row["id"])]
         controller_aliases = controller_alias_entities(row["id"])
         world_uses = count_edges("world_entity_uses_model", row["id"], "incoming")
+        world_instance_uses = count_edges("world_entity_instance_uses_model", row["id"], "incoming")
+        placement_uses = world_uses + world_instance_uses
         interactive_uses = count_edges("interactive_template_uses_model", row["id"], "incoming")
         has_radius = count_edges("model_config_has_radius", row["id"], "outgoing") > 0 or conn.execute("SELECT 1 FROM nodes WHERE kind = 'model_radius' AND name = ? LIMIT 1", (model_id,)).fetchone() is not None
         direct_strengths = [edge.get("matchStrength") for edge in direct]
@@ -27933,7 +27935,7 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
             status = "ambiguous_graph_edge"
         elif candidates:
             status = "candidate_name_match"
-        elif world_uses or interactive_uses:
+        elif placement_uses or interactive_uses:
             status = "no_exported_renderable_candidate"
         else:
             status = "runtime_only_or_unreferenced"
@@ -27948,6 +27950,8 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
             "status": status,
             "hasRadius": has_radius,
             "worldEntityUses": world_uses,
+            "worldEntityInstanceUses": world_instance_uses,
+            "placementUses": placement_uses,
             "interactiveTemplateUses": interactive_uses,
             "candidateBases": bases,
             "directEdges": direct[:8],
@@ -27998,7 +28002,7 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
 
     records.sort(key=lambda item: (
         0 if item["status"] == "strong_exact_graph_edge" else 1 if item["status"] == "ambiguous_graph_edge" else 2 if item["status"] == "candidate_name_match" else 3 if item["status"] == "no_exported_renderable_candidate" else 4,
-        -(item.get("worldEntityUses") or 0) - (item.get("interactiveTemplateUses") or 0),
+        -(item.get("placementUses") or item.get("worldEntityUses") or 0) - (item.get("interactiveTemplateUses") or 0),
         item.get("modelId") or "",
     ))
     payload = {
@@ -28036,8 +28040,8 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
     lines.extend(["", "## Top Referenced Unbound Models", ""])
     unbound = [item for item in records if item["status"] == "no_exported_renderable_candidate"][:40]
     if unbound:
-        lines.append("| Model id | World uses | Interactive uses | Radius | Prefab stem | Controller aliases | Resolved siblings |")
-        lines.append("| --- | ---: | ---: | --- | --- | --- | --- |")
+        lines.append("| Model id | World uses | Instance uses | Interactive uses | Radius | Prefab stem | Controller aliases | Resolved siblings |")
+        lines.append("| --- | ---: | ---: | ---: | --- | --- | --- | --- |")
         for item in unbound:
             siblings = ", ".join(
                 f"`{sibling.get('modelId')}`"
@@ -28050,7 +28054,7 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
                 if (alias.get("entity") or {}).get("base")
             )
             lines.append(
-                f"| `{item['modelId']}` | {item['worldEntityUses']} | {item['interactiveTemplateUses']} | {str(item['hasRadius']).lower()} | `{item['prefabStem']}` | {controller_aliases} | {siblings} |"
+                f"| `{item['modelId']}` | {item['worldEntityUses']} | {item.get('worldEntityInstanceUses') or 0} | {item['interactiveTemplateUses']} | {str(item['hasRadius']).lower()} | `{item['prefabStem']}` | {controller_aliases} | {siblings} |"
             )
     else:
         lines.append("No referenced unbound model rows found.")
@@ -35321,8 +35325,9 @@ def model_binding_candidates(
         if status_filter and safe_key(record.get("status")) != status_filter:
             continue
         world_uses = int(record.get("worldEntityUses") or 0)
+        placement_uses = int(record.get("placementUses") or world_uses)
         interactive_uses = int(record.get("interactiveTemplateUses") or 0)
-        if world_uses < min_world_uses:
+        if placement_uses < min_world_uses:
             continue
         if interactive_uses < min_interactive_uses:
             continue
@@ -35340,13 +35345,13 @@ def model_binding_candidates(
         row["_reportIndex"] = index
         filtered.append(row)
     if sort_mode == "world":
-        filtered.sort(key=lambda row: (-(int(row.get("worldEntityUses") or 0)), row["_reportIndex"]))
+        filtered.sort(key=lambda row: (-(int(row.get("placementUses") or row.get("worldEntityUses") or 0)), row["_reportIndex"]))
     elif sort_mode == "interactive":
         filtered.sort(key=lambda row: (-(int(row.get("interactiveTemplateUses") or 0)), row["_reportIndex"]))
     elif sort_mode == "usage":
         filtered.sort(
             key=lambda row: (
-                -(int(row.get("worldEntityUses") or 0) + int(row.get("interactiveTemplateUses") or 0)),
+                -(int(row.get("placementUses") or row.get("worldEntityUses") or 0) + int(row.get("interactiveTemplateUses") or 0)),
                 row["_reportIndex"],
             )
         )
