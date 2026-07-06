@@ -127,7 +127,16 @@ in dedicated memory notes.
 - Classify 110 unbound FMV-scope videos and 18 unresolved narrative refs.
 - Ingest decoded managed-reference `soundName`s into the audio catalog.
 - Keep the 35-scene story gap hotlist shrinking with tagged evidence only.
-- Status: pending.
+- Status: in progress. Decoded managed-reference `soundName` / audio event
+  refs are now source-graph audio links with reverse lookup from audio nodes;
+  see `memory/monobehaviour_soundname_audio_source_graph_recovery_20260706.md`.
+  Unresolved narrative-video candidates now have a generated source-graph
+  follow-up report that separates 3 `hasGeneratedStoryTarget` groups from 4
+  `noGeneratedStoryTarget` groups; see
+  `memory/unresolved_narrative_video_followup_report_20260706.md`.
+  Remaining cleanup is to classify or bind the 110 unbound FMV-scope variants,
+  decide the 3 actionable narrative-video groups, and continue shrinking the
+  story-gap hotlist with tagged evidence only.
 
 ## Ground rules for all items
 
