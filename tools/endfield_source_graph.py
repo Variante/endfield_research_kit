@@ -35160,7 +35160,16 @@ def scene_order_gaps(
     }
 
 
-def model_binding_candidates(db_path: Path, *, status: str = "", term: str = "", limit: int = 40) -> dict[str, Any]:
+def model_binding_candidates(
+    db_path: Path,
+    *,
+    status: str = "",
+    term: str = "",
+    min_world_uses: int = 0,
+    min_interactive_uses: int = 0,
+    with_siblings: bool = False,
+    limit: int = 40,
+) -> dict[str, Any]:
     report_path = GRAPH_DIR / "model_config_asset_binding_candidates.json"
     if not report_path.exists():
         with sqlite3.connect(db_path) as conn:
@@ -35172,11 +35181,22 @@ def model_binding_candidates(db_path: Path, *, status: str = "", term: str = "",
         records = []
     status_filter = safe_key(status)
     term_filter = safe_key(term).lower()
+    min_world_uses = max(min_world_uses, 0)
+    min_interactive_uses = max(min_interactive_uses, 0)
     filtered: list[dict[str, Any]] = []
+    filtered_status_counts: Counter[str] = Counter()
     for record in records:
         if not isinstance(record, dict):
             continue
         if status_filter and safe_key(record.get("status")) != status_filter:
+            continue
+        world_uses = int(record.get("worldEntityUses") or 0)
+        interactive_uses = int(record.get("interactiveTemplateUses") or 0)
+        if world_uses < min_world_uses:
+            continue
+        if interactive_uses < min_interactive_uses:
+            continue
+        if with_siblings and not record.get("resolvedSiblingModels"):
             continue
         if term_filter:
             haystack = " ".join(
@@ -35185,6 +35205,7 @@ def model_binding_candidates(db_path: Path, *, status: str = "", term: str = "",
             )
             if term_filter not in haystack:
                 continue
+        filtered_status_counts[safe_key(record.get("status"))] += 1
         filtered.append(record)
         if len(filtered) >= limit:
             break
@@ -35192,9 +35213,13 @@ def model_binding_candidates(db_path: Path, *, status: str = "", term: str = "",
         "sourceReport": slash(report_path),
         "status": status_filter,
         "term": term_filter,
+        "minWorldUses": min_world_uses,
+        "minInteractiveUses": min_interactive_uses,
+        "withSiblings": with_siblings,
         "returned": len(filtered),
         "totalRecords": len(records),
         "statusCounts": payload.get("statusCounts"),
+        "filteredStatusCounts": dict(sorted(filtered_status_counts.items())),
         "directModelConfigAssetEntityEdges": payload.get("directModelConfigAssetEntityEdges"),
         "candidateEntityMatches": payload.get("candidateEntityMatches"),
         "records": filtered,
@@ -35448,6 +35473,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     model_bindings.add_argument("--db", type=Path, default=DEFAULT_DB)
     model_bindings.add_argument("--status", default="", help="Optional status filter, such as strong_exact_graph_edge or no_exported_renderable_candidate.")
     model_bindings.add_argument("--term", default="", help="Optional substring filter over model id and prefab path.")
+    model_bindings.add_argument("--min-world-uses", type=int, default=0, help="Only include records used by at least this many world entity rows.")
+    model_bindings.add_argument("--min-interactive-uses", type=int, default=0, help="Only include records used by at least this many interactive template rows.")
+    model_bindings.add_argument("--with-siblings", action="store_true", help="Only include records with resolved sibling model evidence.")
     model_bindings.add_argument("--limit", type=int, default=40)
 
     return parser.parse_args(argv)
@@ -35601,7 +35629,15 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "model-bindings":
-        result = model_binding_candidates(args.db, status=args.status, term=args.term, limit=args.limit)
+        result = model_binding_candidates(
+            args.db,
+            status=args.status,
+            term=args.term,
+            min_world_uses=args.min_world_uses,
+            min_interactive_uses=args.min_interactive_uses,
+            with_siblings=args.with_siblings,
+            limit=args.limit,
+        )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     raise SystemExit(f"Unknown command: {args.command}")
