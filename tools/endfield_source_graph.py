@@ -30312,6 +30312,161 @@ ITEM_USAGE_EXPLICIT_EDGE_KINDS = (
     "visual_token_matches_export_base_asset",
 )
 
+ACTOR_USAGE_KIND_FALLBACKS = (
+    "actor",
+    "character",
+    "actor_image",
+    "asset_entity",
+    "model_config_model",
+    "model_prefab",
+    "model_radius",
+    "world_entity",
+    "npc_voice_profile",
+    "text_voice_id",
+    "audio_voice_extra",
+    "profile_picture",
+    "user_avatar",
+    "business_card_topic",
+    "spaceship_character_gift",
+    "gameplay_skill",
+    "gameplay_talent",
+    "weapon",
+    "character_trial",
+)
+
+ACTOR_USAGE_EXPLICIT_EDGE_KINDS = (
+    "has_actor_name",
+    "mentions_actor",
+    "actor_mentioned_by_story",
+    "spoken_by",
+    "actor_speaks_line",
+    "actor_has_speaker_channel",
+    "audio_used_by_actor_speaker_channel",
+    "actor_speaks_dialog_text",
+    "dialog_text_actor",
+    "actor_speaks_audio_sequence_dialog",
+    "audio_sequence_dialog_speaker_actor",
+    "character_speaks_audio_sequence_dialog",
+    "audio_sequence_dialog_speaker_character",
+    "actor_owns_sns_chat",
+    "sns_chat_owner_actor",
+    "character_owns_sns_chat",
+    "actor_used_by_sns_option",
+    "sns_option_uses_actor",
+    "character_used_by_sns_option",
+    "actor_speaks_sns_content",
+    "sns_content_speaker_actor",
+    "character_speaks_sns_content",
+    "actor_speaks_radio_line",
+    "radio_line_actor",
+    "env_talk_actor",
+    "character_speaks_radio_line",
+    "actor_used_by_remote_common_line_middle",
+    "remote_common_line_middle_actor",
+    "character_used_by_remote_common_line_middle",
+    "remote_common_line_middle_character",
+    "actor_speaks_remote_common_line",
+    "remote_common_line_actor",
+    "character_speaks_remote_common_line",
+    "remote_common_line_character",
+    "responsive_speaker_is_actor",
+    "responsive_speaker_is_character",
+    "response_audio_anchor_speaker",
+    "response_audio_candidate_speaker",
+    "speaker_channel",
+    "has_profile_voice",
+    "text_voice_id_uses_audio",
+    "audio_used_by_text_voice_id",
+    "text_voice_id_line_node",
+    "audio_voice_extra_for_audio",
+    "audio_voice_extra_for_dialog_row",
+    "audio_voice_extra_line_node",
+    "npc_info_matches_actor",
+    "npc_info_uses_vo_actor",
+    "npc_info_uses_vo_actor_channel",
+    "npc_info_uses_wwise_actor",
+    "npc_info_uses_wwise_channel",
+    "defines_character",
+    "defines_character_growth",
+    "defines_character_potential",
+    "defined_by_row",
+    "character_growth_default_weapon",
+    "default_weapon",
+    "uses_default_weapon",
+    "character_growth_profession",
+    "character_growth_type",
+    "character_has_profession",
+    "character_has_type",
+    "has_character_potential",
+    "has_character_breakthrough",
+    "has_character_level_checkpoint",
+    "has_character_stat_checkpoint",
+    "has_character_tag",
+    "character_has_bloc",
+    "character_has_preset",
+    "preset_uses_character",
+    "character_recommends_weapon",
+    "character_recommends_weapon_skill",
+    "character_training_dungeon",
+    "dungeon_related_character",
+    "team_requires_character",
+    "game_mechanic_condition_param_character",
+    "character_used_by_game_mechanic_condition_param",
+    "entity_has_lod_model",
+    "model_lod_of_asset_entity",
+    "entity_uses_material",
+    "material_used_by_asset_entity",
+    "entity_uses_texture",
+    "texture_used_by_asset_entity",
+    "has_gameplay_asset_entity",
+    "asset_entity_used_by_gameplay",
+    "has_gameplay_asset",
+    "asset_used_by_gameplay",
+    "model_config_has_model",
+    "model_config_has_radius",
+    "model_config_uses_prefab",
+    "model_config_asset_entity",
+    "model_view_state_controller_uses_model",
+    "model_view_state_controller_asset_entity",
+    "interactive_template_uses_model",
+    "interactive_template_asset_entity",
+    "world_entity_uses_model",
+    "world_entity_instance_uses_model",
+    "world_entity_script_slot_uses_model",
+    "monobehaviour_frontier_entry_uses_model",
+    "monobehaviour_frontier_entry_model_asset_entity",
+    "weapon_model_asset_entity",
+    "asset_entity_used_by_weapon_model",
+    "character_has_actor_image",
+    "defines_actor_image",
+    "character_has_avatar_image",
+    "character_has_bust_image",
+    "character_has_mission_panel_image",
+    "picture_for_character",
+    "profile_picture_unlock_item",
+    "item_unlocks_profile_picture",
+    "profile_picture_type_has_picture",
+    "profile_picture_name_text",
+    "profile_picture_author_text",
+    "character_has_spaceship_gift_dialogs",
+    "spaceship_character_gift_has_entry",
+    "character_has_spaceship_proxy",
+    "spaceship_proxy_for_character",
+    "character_uses_spaceship_proxy",
+    "character_uses_friend_spaceship_proxy",
+    "character_has_spaceship_skill",
+    "gacha_char_initial_weapon",
+    "gacha_char_perfect_weapon",
+    "gacha_info_for_character",
+    "gacha_pool_contains_character",
+    "gacha_pool_up_character",
+    "preset_uses_weapon",
+    "defines_character_trial",
+    "defines_activity_character_trial",
+    "trial_uses_dungeon",
+    "trial_grants_reward",
+)
+
 def exact_node_candidates(term: str) -> list[str]:
     candidates = [term]
     if ":" not in term:
@@ -31411,6 +31566,228 @@ def item_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> 
             "authored_table_and_extracted_reference_evidence_only",
             "not_live_inventory_shop_availability_or_drop_roll_simulation",
             "reward_context_is_one_hop_from_rewards_seen_in_direct_item_relations",
+        ],
+    }
+
+
+def resolve_actor_usage_lookup(db_path: Path, term: str, *, limit: int, kind: str = "") -> tuple[dict[str, Any], str]:
+    lookup_limit = min(max(limit, 1), 20)
+    if kind:
+        return query_graph(db_path, term, limit=lookup_limit, kind=kind), kind
+    for fallback_kind in ACTOR_USAGE_KIND_FALLBACKS:
+        lookup = query_graph(db_path, term, limit=lookup_limit, kind=fallback_kind)
+        if safe_key(lookup.get("seedNode")):
+            return lookup, fallback_kind
+    return query_graph(db_path, term, limit=lookup_limit), ""
+
+
+def actor_usage_relation_clause(alias: str = "e") -> str:
+    explicit = ", ".join(repr(kind) for kind in ACTOR_USAGE_EXPLICIT_EDGE_KINDS)
+    return f"""
+              AND (
+                   {alias}.kind LIKE '%actor%'
+                OR {alias}.kind LIKE '%character%'
+                OR {alias}.kind LIKE '%speaker%'
+                OR {alias}.kind LIKE '%dialog%'
+                OR {alias}.kind LIKE '%voice%'
+                OR {alias}.kind LIKE '%sns%'
+                OR {alias}.kind LIKE '%radio%'
+                OR {alias}.kind LIKE '%remote_common%'
+                OR {alias}.kind LIKE '%profile%'
+                OR {alias}.kind LIKE '%avatar%'
+                OR {alias}.kind LIKE '%business_card%'
+                OR {alias}.kind LIKE '%weapon%'
+                OR {alias}.kind LIKE '%talent%'
+                OR {alias}.kind LIKE '%skill%'
+                OR {alias}.kind LIKE '%growth%'
+                OR {alias}.kind LIKE '%break%'
+                OR {alias}.kind LIKE '%potential%'
+                OR {alias}.kind IN ({explicit})
+              )
+    """
+
+
+def actor_usage_category(edge_kind: str) -> str:
+    if "story" in edge_kind or "line" in edge_kind or "dialog" in edge_kind:
+        return "storyDialog"
+    if "audio" in edge_kind or "voice" in edge_kind or "speaker" in edge_kind:
+        return "audioVoice"
+    if "sns" in edge_kind or "radio" in edge_kind or "remote_common" in edge_kind:
+        return "narrativeChannels"
+    if "asset" in edge_kind or "model" in edge_kind or "material" in edge_kind or "texture" in edge_kind:
+        return "assets"
+    if "growth" in edge_kind or "break" in edge_kind or "potential" in edge_kind or "attribute" in edge_kind:
+        return "progression"
+    if "skill" in edge_kind or "talent" in edge_kind or "weapon" in edge_kind:
+        return "gameplay"
+    if "profile" in edge_kind or "picture" in edge_kind or "avatar" in edge_kind or "business_card" in edge_kind or "mail" in edge_kind:
+        return "profileSocial"
+    return "other"
+
+
+def actor_usage_token(seed_row: sqlite3.Row | None, term: str) -> str:
+    for value in (
+        seed_row["name"] if seed_row else "",
+        node_key(seed_row["id"]) if seed_row else "",
+        term,
+    ):
+        token = safe_key(value).lower()
+        if not token:
+            continue
+        if token.startswith("chr_"):
+            parts = token.split("_")
+            if len(parts) >= 3:
+                return parts[-1]
+        if token.startswith("actor_"):
+            parts = token.split("_")
+            if len(parts) >= 2:
+                return parts[1]
+            token = token[len("actor_"):]
+        if token.startswith("abilityentity_chr_"):
+            parts = token.split("_")
+            if len(parts) >= 4:
+                return parts[3]
+        if token.startswith("sns_chr_"):
+            parts = token.split("_")
+            if len(parts) >= 4:
+                return parts[-1]
+        if re.match(r"^[a-z0-9]+$", token):
+            return token
+    return ""
+
+
+def actor_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
+    lookup, resolved_kind = resolve_actor_usage_lookup(db_path, term, limit=limit, kind=kind)
+    seed = safe_key(lookup.get("seedNode"))
+    if not seed:
+        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "edgeCounts": {}, "actorSummary": {}, "relations": []}
+
+    relation_limit = max(limit, 1)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        seed_row = conn.execute(
+            "SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?",
+            (seed,),
+        ).fetchone()
+        count_rows = conn.execute(
+            f"""
+            SELECT kind AS edge, COUNT(*) AS count
+            FROM edges e
+            WHERE (src = ? OR dst = ?)
+            {actor_usage_relation_clause("e")}
+            GROUP BY kind
+            ORDER BY kind
+            """,
+            (seed, seed),
+        ).fetchall()
+        relation_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src = ? OR e.dst = ?)
+            {actor_usage_relation_clause("e")}
+            ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (seed, seed, relation_limit),
+        ).fetchall()
+
+        token = actor_usage_token(seed_row, term)
+        character_rows: list[sqlite3.Row] = []
+        asset_entity_rows: list[sqlite3.Row] = []
+        candidate_relation_rows: list[sqlite3.Row] = []
+        if token:
+            like_token = f"%{token}%"
+            character_rows = conn.execute(
+                """
+                SELECT id, kind, name, source, path, data
+                FROM nodes
+                WHERE kind IN ('character', 'actor')
+                  AND LOWER(name) LIKE ?
+                  AND id <> ?
+                ORDER BY kind, name, source
+                LIMIT ?
+                """,
+                (like_token, seed, relation_limit),
+            ).fetchall()
+            asset_entity_rows = conn.execute(
+                """
+                SELECT id, kind, name, source, path, data
+                FROM nodes
+                WHERE kind IN ('asset_entity', 'model_config_model', 'world_entity')
+                  AND LOWER(name) LIKE ?
+                ORDER BY kind, name, source
+                LIMIT ?
+                """,
+                (like_token, relation_limit),
+            ).fetchall()
+            candidate_ids = _unique_preserve(
+                [row["id"] for row in character_rows]
+                + [row["id"] for row in asset_entity_rows]
+            )
+            if candidate_ids:
+                candidate_placeholders = ",".join("?" for _ in candidate_ids)
+                candidate_relation_rows = conn.execute(
+                    f"""
+                    SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                           src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                           dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+                    FROM edges e
+                    JOIN nodes src ON src.id = e.src
+                    JOIN nodes dst ON dst.id = e.dst
+                    WHERE (e.src IN ({candidate_placeholders}) OR e.dst IN ({candidate_placeholders}))
+                    {actor_usage_relation_clause("e")}
+                    ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+                    LIMIT ?
+                    """,
+                    (*candidate_ids, *candidate_ids, relation_limit),
+                ).fetchall()
+
+    relations = [
+        usage_edge_ref(row, "src" if row["dstId"] == seed else "dst", seed)
+        for row in relation_rows
+    ]
+    candidate_relations = [
+        usage_edge_ref(
+            row,
+            "src" if any(row["dstId"] == candidate["id"] for candidate in [*character_rows, *asset_entity_rows]) else "dst",
+            row["dstId"] if any(row["dstId"] == candidate["id"] for candidate in [*character_rows, *asset_entity_rows]) else row["srcId"],
+        )
+        for row in candidate_relation_rows
+    ]
+    actor_summary: dict[str, list[dict[str, Any]]] = {}
+    for relation in relations:
+        category = actor_usage_category(safe_key(relation.get("edge")))
+        actor_summary.setdefault(category, []).append(relation)
+    if character_rows:
+        actor_summary["characterCandidates"] = [compact_node_ref(row) for row in character_rows]
+    if asset_entity_rows:
+        actor_summary["assetEntityCandidates"] = [compact_node_ref(row) for row in asset_entity_rows]
+    for relation in candidate_relations:
+        category = actor_usage_category(safe_key(relation.get("edge")))
+        actor_summary.setdefault(f"candidate{category[:1].upper()}{category[1:]}", []).append(relation)
+
+    return {
+        "term": term,
+        "seedNode": seed,
+        "seed": compact_node_ref(seed_row) if seed_row else {"id": seed, "key": node_key(seed)},
+        "resolvedKind": resolved_kind,
+        "token": actor_usage_token(seed_row, term),
+        "aliases": lookup.get("aliases") or [],
+        "edgeCounts": {row["edge"]: row["count"] for row in count_rows},
+        "actorSummary": actor_summary,
+        "relations": relations,
+        "characterCandidates": [compact_node_ref(row) for row in character_rows],
+        "assetEntityCandidates": [compact_node_ref(row) for row in asset_entity_rows],
+        "candidateRelations": candidate_relations,
+        "caveats": [
+            "direct_edges_are_graph_evidence_but_candidate_matches_are_token_based",
+            "actor_ids_character_ids_and_asset_entity_names_are_not_always_one_to_one",
+            "not_runtime_party_roster_voice_selection_or_animation_playback_proof",
         ],
     }
 
@@ -32965,6 +33342,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional node kind to force, such as item, reward, item_obtain_way, shop_goods, cash_shop_goods, equipment, or factory_item.",
     )
 
+    actor_usage_cmd = sub.add_parser("actor-usage", help="Show actor, character, story, voice, gameplay, and asset evidence")
+    actor_usage_cmd.add_argument("term")
+    actor_usage_cmd.add_argument("--db", type=Path, default=DEFAULT_DB)
+    actor_usage_cmd.add_argument("--limit", type=int, default=40)
+    actor_usage_cmd.add_argument(
+        "--kind",
+        default="",
+        help="Optional node kind to force, such as actor, character, asset_entity, profile_picture, user_avatar, or weapon.",
+    )
+
     stat_used_by = sub.add_parser("stat-usage", help="Show authored graph consumers/producers of a stat or attribute node")
     stat_used_by.add_argument("term")
     stat_used_by.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -33113,6 +33500,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "item-usage":
         result = item_usage(args.db, args.term, limit=args.limit, kind=args.kind)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "actor-usage":
+        result = actor_usage(args.db, args.term, limit=args.limit, kind=args.kind)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "stat-usage":
