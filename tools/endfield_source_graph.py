@@ -21900,6 +21900,7 @@ class SourceGraphBuilder:
         line_node = self.node_id("line", response_key)
         if self.node_exists("line", response_key):
             self.add_edge(response_node, line_node, "responsive_response_line_node", source=source, evidence=response_evidence)
+            self.add_edge(line_node, response_node, "line_used_by_responsive_response", source=source, evidence=response_evidence)
         row = self.audio_dialog_rows().get(response_key)
         if not isinstance(row, dict):
             return
@@ -22244,7 +22245,9 @@ class SourceGraphBuilder:
             return
         self.add_edge(row_node, text_node, "defines_bark_text", source=table)
         if self.node_exists("line", row_key):
-            self.add_edge(text_node, self.node_id("line", row_key), "bark_text_line_node", source=table, evidence=row_key)
+            line_node = self.node_id("line", row_key)
+            self.add_edge(text_node, line_node, "bark_text_line_node", source=table, evidence=row_key)
+            self.add_edge(line_node, text_node, "line_has_bark_text", source=table, evidence=row_key)
         self.add_i18n_text_edges(text_node, row.get("barkText"), source=table)
         for text_id in self.iter_i18n_text_ids(row.get("barkText")):
             i18n_node = self.add_i18n_text_node(text_id, source=table)
