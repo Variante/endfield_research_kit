@@ -100,6 +100,11 @@ Source-graph option-flow evidence assigns:
 | `option_dlg_e6m4_14_2_001` | `1` | `88` | `dlg_e6m4_14_020` |
 | `option_dlg_e6m4_14_2_002` | `2` | `44` | `dlg_e6m4_14_021` |
 
+The option texts are:
+
+- `option_dlg_e6m4_14_2_001`: "You are my chief."
+- `option_dlg_e6m4_14_2_002`: "I have never chosen anyone else."
+
 The relevant runtime jump tracks and clips are:
 
 - `Runtime Jump Track_p9D3462F104736088.json`
@@ -135,12 +140,23 @@ The raw `RuntimeJumpClip` payloads do not contain line ids, trunk ids, dialog
 ids, or direct jump targets. The branch result is inferred from option index,
 jump timing, and nearby trunk-line timing.
 
+After rebuilding the quick source graph, runtime-audit jump edges expose the
+new asset-path diagnostic fields:
+
+- stale general-report path
+  `.../048B4163B7ADCBCB40EB3B754F26C8F9/.../RuntimeJumpClip_p3152FD496CC06088.json`
+  has `assetTrackPathStatus=basename_resolved`;
+- story-specific path
+  `.../B0480FD62435984EB094C470D9CDC6A4/.../RuntimeJumpClip_p3152FD496CC06088.json`
+  has `assetTrackPathStatus=exists`.
+
 ## Interpretation
 
 This case is not identical to either previously checked conflict:
 
-- Unlike `dlg_c28m3_10`, the current WebUI override already follows the
-  runtime-audit direction and converges both options to line 020.
+- Like `dlg_c28m3_10`, the jump payload is targetless and
+  `needChangeOptionAfterJump=0`, so the runtime evidence is weak for remapping
+  without a proven runtime rule.
 - Unlike `dlg_e6m1_10`, the jump clips do not set
   `needChangeOptionAfterJump=1`; there is no explicit post-jump reset-to-zero
   signal.
@@ -148,13 +164,12 @@ This case is not identical to either previously checked conflict:
 The best current classification is:
 
 ```text
-runtime-timing convergence, targetless jump payload
+nearbyRuntimeJumpContradictsInferredPath / doNotPromoteWithoutRuntimeRule
 ```
 
-The existing WebUI override is defensible as a manual/WebUI-only route because
-runtime timing for option index 2 points to `dlg_e6m4_14_020`, and the
-content-based split to `dlg_e6m4_14_021` is only an inferred-following-lines
-fallback. It should not be promoted to hard authored truth because:
+The existing WebUI override follows the runtime-audit direction, but this
+evidence should remain a manual/WebUI-only decision rather than promoted
+authored truth because:
 
 - option entries do not name explicit response trunk/dialog ids;
 - runtime jump clips do not name target line ids;
