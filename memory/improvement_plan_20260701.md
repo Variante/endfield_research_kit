@@ -60,7 +60,27 @@ in dedicated memory notes.
 - Where: broad `json_by_type` export + `scripts/build_decoded_index.py`-style
   scan to a fresh index; long-running, schedule deliberately.
 - Success: current (not historical) incomplete counts per class family.
-- Status: pending; run after P2 lands to amortize one broad pass.
+- Status: landed 2026-07-05. Full story-scope re-export (maps + json_by_type,
+  both roots, current CLI with all 2026-07-03 decoder passes plus the
+  2026-07-05 projectile EffectActionCfg effect-list recovery) completed with 0
+  command failures; decoded index rebuilt at `webui/data/decoded`
+  (1,064,294 MonoBehaviour files, 1,478 groups); frontier report and tail
+  audit refreshed. Current truth: 1,063,575 decoded / 719 partial (99.93%),
+  residual schemas ProjectileTemplateData 310, AbilityEntityTemplateData 162,
+  EnemyTemplateData 156, LineFollower 48, CharacterTemplateData 30, plus 15
+  small camera/dialog/remote-factory files. Console partial-MonoBehaviour
+  warnings are genuinely zero since 2026-06-29 (11,948 → 221 → 0 as the
+  managed-reference and animator-dependency fixes landed); partiality now
+  lives in in-JSON `$partial` diagnostics, which is what the index measures.
+  Caveat: the tail audit's per-layout "problem refs" counts rose for
+  EffectActionCfg (961 → 1,497) because newly decoded effect-list entries
+  carry honest semantic-only `$partial` markers; read file-level counts for
+  progress and layout counts for target selection. See
+  `memory/monobehaviour_index_rebuild_20260705.md`. Next structural targets:
+  `AbilityEntityTemplateData` root payload sections (162 files, 49 metadata
+  fields, 2 mapped bodies) and `SelectorData`/`TargetSettings` (74 refs in
+  CharacterTemplateData; same blocker gating BuffData FindTargetAction chain
+  consumption in P2).
 
 ### P4. Per-AB clean/dirty status manifests beyond Texture2D
 - Goal: extend the `asset_status/convert_by_type_Texture2D.json` manifest
