@@ -88,7 +88,8 @@ ASSET_MAPS = {
 STORY_KEY_RE = re.compile(
     r"\b(?:dlg|radio|sns|cutscene|remotecomm|black|timeline|envtalk|responsive|prts|reading)_[A-Za-z0-9_]{2,160}"
 )
-ASSET_ACTOR_RE = re.compile(r"(?:^|[/\\])(?:S|T|M|A|AC)_actor_([A-Za-z0-9]+)", re.IGNORECASE)
+ASSET_ACTOR_RE = re.compile(r"(?:^|[/\\])(?:S|T|M|A|AC)_actor_(?:lod_)?([A-Za-z0-9]+)", re.IGNORECASE)
+ASSET_ENTITY_ACTOR_RE = re.compile(r"(?:^|[:/\\])actor_(?:lod_)?([A-Za-z0-9]+)", re.IGNORECASE)
 LINE_AUDIO_RE = re.compile(r"\bau_[A-Za-z0-9_]{2,160}\b")
 LINE_AUDIO_BYTES_RE = re.compile(rb"\bau_[A-Za-z0-9_]{2,160}\b")
 PATH_ID_EXPORT_STEM_RE = re.compile(r"^(?P<base>.+)_p(?P<path_id>[0-9A-Fa-f]{16})$")
@@ -27534,17 +27535,16 @@ def emit_character_recovery_candidates(conn: sqlite3.Connection) -> None:
         """
         SELECT id, kind, name, path, source, data
         FROM nodes
-        WHERE kind IN ('asset', 'unity_asset', 'material', 'mesh', 'texture', 'animation_clip')
+        WHERE kind IN ('asset', 'asset_entity', 'unity_asset', 'material', 'mesh', 'texture', 'animation_clip')
         """
     ).fetchall()
     grouped: dict[str, Counter[str]] = defaultdict(Counter)
     examples: dict[str, dict[str, list[str]]] = defaultdict(lambda: defaultdict(list))
     for row in rows:
         haystack = " ".join(str(row[key] or "") for key in ("id", "name", "path", "source"))
-        match = ASSET_ACTOR_RE.search(haystack)
-        if not match:
+        actor = character_asset_actor_key(haystack)
+        if not actor:
             continue
-        actor = match.group(1).lower()
         grouped[actor][row["kind"]] += 1
         bucket = examples[actor][row["kind"]]
         if len(bucket) < 8:
@@ -27553,6 +27553,7 @@ def emit_character_recovery_candidates(conn: sqlite3.Connection) -> None:
     for actor, counts in sorted(grouped.items()):
         score = (
             counts.get("mesh", 0) * 4
+            + counts.get("asset_entity", 0) * 4
             + counts.get("material", 0) * 3
             + counts.get("texture", 0) * 2
             + counts.get("animation_clip", 0) * 2
@@ -27574,6 +27575,49 @@ def emit_character_recovery_candidates(conn: sqlite3.Connection) -> None:
         json.dumps(payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+    lines = [
+        "# Character Recovery Candidates",
+        "",
+        "This generated source-graph follow-up groups actor-like exported assets, renderable asset entities, materials, textures, meshes, and animation clips by conservative actor name tokens. It is a review aid, not a character recovery manifest.",
+        "",
+        f"- Candidates: `{len(candidates)}`",
+        "",
+        "## Top Candidates",
+        "",
+        "| Actor | Score | Asset entities | Assets | Materials | Textures | Meshes | Animation clips | Examples |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+    ]
+    for candidate in candidates[:80]:
+        counts = Counter(candidate.get("counts") or {})
+        examples = candidate.get("examples") if isinstance(candidate.get("examples"), dict) else {}
+        example_values: list[str] = []
+        for kind in ("asset_entity", "asset", "material", "texture", "mesh", "animation_clip"):
+            for value in examples.get(kind) or []:
+                if value not in example_values:
+                    example_values.append(value)
+                if len(example_values) >= 5:
+                    break
+            if len(example_values) >= 5:
+                break
+        lines.append(
+            f"| `{candidate['actor']}` | {candidate['score']} | {counts.get('asset_entity', 0)} | {counts.get('asset', 0)} | {counts.get('material', 0)} | {counts.get('texture', 0)} | {counts.get('mesh', 0)} | {counts.get('animation_clip', 0)} | "
+            + ", ".join(f"`{value}`" for value in example_values)
+            + " |"
+        )
+    lines.append("")
+    (GRAPH_DIR / "character_recovery_candidates.md").write_text("\n".join(lines), encoding="utf-8")
+
+
+def character_asset_actor_key(haystack: str) -> str:
+    match = ASSET_ACTOR_RE.search(haystack)
+    if not match:
+        match = ASSET_ENTITY_ACTOR_RE.search(haystack)
+    if not match:
+        return ""
+    actor = safe_key(match.group(1)).lower()
+    if actor in {"lod"}:
+        return ""
+    return actor
 
 
 
