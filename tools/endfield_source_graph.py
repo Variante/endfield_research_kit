@@ -27335,11 +27335,20 @@ def emit_unresolved_narrative_video_candidates(conn: sqlite3.Connection) -> None
     for row in rows:
         data = parse_json_text(row["data"])
         status = safe_key(data.get("candidateStatus")) or "unknown"
+        stem = safe_key(data.get("stem") or row["name"])
+        standalone_key = f"video_{stem or 'unknown'}"
+        recommendation = (
+            "manual_attach_candidate_needs_timeline_or_playback_check"
+            if status == "hasGeneratedStoryTarget"
+            else "keep_standalone_until_generated_target_exists"
+        )
         status_counts[status] += 1
         record = {
             "node": row["id"],
-            "stem": safe_key(data.get("stem") or row["name"]),
+            "stem": stem,
+            "standaloneVideoKey": standalone_key,
             "candidateStatus": status,
+            "recommendation": recommendation,
             "keyCandidates": [item["name"] for item in related_node_values(conn, row["id"], "narrative_video_unresolved_key_candidate")],
             "existingStoryCandidates": [item["name"] for item in related_node_values(conn, row["id"], "narrative_video_unresolved_existing_story_candidate")],
             "files": [item["path"] or item["name"] for item in related_node_values(conn, row["id"], "narrative_video_unresolved_file")],
@@ -27376,22 +27385,22 @@ def emit_unresolved_narrative_video_candidates(conn: sqlite3.Connection) -> None
         lines.append(f"- `{status}`: `{count}`")
     lines.extend(["", "## Actionable Candidates", ""])
     if actionable:
-        lines.append("| Stem | Key candidates | Existing stories | Rel videos |")
-        lines.append("| --- | --- | --- | ---: |")
+        lines.append("| Stem | Standalone key | Key candidates | Existing stories | Rel videos | Recommendation |")
+        lines.append("| --- | --- | --- | --- | ---: | --- |")
         for item in actionable:
             key_candidates = ", ".join(f"`{value}`" for value in item["keyCandidates"]) or ""
             existing = ", ".join(f"`{value}`" for value in item["existingStoryCandidates"]) or ""
-            lines.append(f"| `{item['stem']}` | {key_candidates} | {existing} | {len(item['relVideos'])} |")
+            lines.append(f"| `{item['stem']}` | `{item['standaloneVideoKey']}` | {key_candidates} | {existing} | {len(item['relVideos'])} | `{item['recommendation']}` |")
     else:
         lines.append("No unresolved candidates with generated story targets were found.")
     lines.extend(["", "## All Candidates", ""])
     if records:
-        lines.append("| Status | Stem | Key candidates | Existing stories | Files | Rel videos |")
-        lines.append("| --- | --- | --- | --- | ---: | ---: |")
+        lines.append("| Status | Stem | Standalone key | Key candidates | Existing stories | Files | Rel videos | Recommendation |")
+        lines.append("| --- | --- | --- | --- | --- | ---: | ---: | --- |")
         for item in records:
             key_candidates = ", ".join(f"`{value}`" for value in item["keyCandidates"]) or ""
             existing = ", ".join(f"`{value}`" for value in item["existingStoryCandidates"]) or ""
-            lines.append(f"| `{item['candidateStatus']}` | `{item['stem']}` | {key_candidates} | {existing} | {len(item['files'])} | {len(item['relVideos'])} |")
+            lines.append(f"| `{item['candidateStatus']}` | `{item['stem']}` | `{item['standaloneVideoKey']}` | {key_candidates} | {existing} | {len(item['files'])} | {len(item['relVideos'])} | `{item['recommendation']}` |")
     else:
         lines.append("No unresolved narrative-video candidate nodes found.")
     lines.append("")
