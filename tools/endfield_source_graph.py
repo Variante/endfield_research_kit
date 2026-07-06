@@ -30596,6 +30596,135 @@ MISSION_FLOW_EDGE_KINDS = (
     "condition_parameter_value",
 )
 
+PROGRESSION_FLOW_KIND_FALLBACKS = (
+    "character",
+    "character_level_cost",
+    "character_level_checkpoint",
+    "character_breakthrough",
+    "character_break_cost",
+    "character_break_stage",
+    "character_potential",
+    "character_talent_node",
+    "character_skill_group",
+    "character_skill_level_cost",
+    "weapon",
+    "weapon_upgrade_template",
+    "weapon_upgrade_sum_template",
+    "weapon_breakthrough_template",
+    "weapon_talent_template",
+    "equipment",
+    "equipment_formula",
+    "equipment_formula_pack",
+    "equipment_suit",
+    "equipment_enhance_cost",
+    "gem_preset",
+    "gem_term",
+    "gem_tag",
+    "gem_enhance_rule",
+    "attribute_meta",
+    "gameplay_stat_property",
+    "composite_attribute",
+    "item",
+    "reward",
+)
+
+PROGRESSION_FLOW_EXPLICIT_EDGE_KINDS = (
+    "has_character_level_checkpoint",
+    "has_character_stat_checkpoint",
+    "stat_checkpoint_has_property",
+    "stat_property_used_by_character_checkpoint",
+    "character_has_breakthrough",
+    "unlocks_character_break_stage",
+    "character_has_break_cost",
+    "character_break_cost_requires_item",
+    "item_required_by_character_break_cost_requires_item",
+    "character_break_cost_stage",
+    "character_break_cost_uses_node",
+    "character_level_cost_requires_gold",
+    "item_gold_cost_for_character_level_cost",
+    "level_checkpoint_gold_cost",
+    "item_gold_cost_for_level_checkpoint",
+    "has_character_potential",
+    "character_potential_cost_item",
+    "item_cost_for_character_potential",
+    "character_potential_effect",
+    "potential_effect_used_by_character_potential",
+    "character_potential_unlocks_item",
+    "uses_potential_talent_effect",
+    "potential_talent_modifies_attribute_meta",
+    "attribute_meta_modified_by_potential_talent",
+    "potential_talent_modifies_stat_property",
+    "stat_property_modified_by_potential_talent",
+    "potential_talent_modifies_blackboard_key",
+    "character_has_skill_level_cost",
+    "character_skill_level_cost_for_group",
+    "skill_group_has_level_cost",
+    "character_skill_level_cost_requires_gold",
+    "character_skill_level_cost_requires_item",
+    "character_growth_main_attribute_meta",
+    "character_growth_sub_attribute_meta",
+    "character_growth_default_weapon",
+    "character_recommends_weapon",
+    "character_recommends_weapon_skill",
+    "weapon_uses_upgrade_template",
+    "weapon_uses_breakthrough_template",
+    "weapon_uses_talent_template",
+    "defines_weapon_upgrade_template",
+    "defines_weapon_upgrade_sum_template",
+    "weapon_upgrade_has_sum_template",
+    "weapon_upgrade_template_has_level_checkpoint",
+    "weapon_upgrade_checkpoint_has_stat_property",
+    "weapon_breakthrough_requires_item",
+    "item_required_by_weapon_breakthrough",
+    "weapon_potential_requires_item",
+    "item_required_by_weapon_potential",
+    "weapon_potential_item_for_weapon",
+    "weapon_has_skill_entry",
+    "weapon_has_potential_skill",
+    "equipment_crafted_by_formula",
+    "equipment_formula_outputs_equipment",
+    "equipment_formula_cost_item",
+    "item_cost_for_equipment_formula",
+    "equipment_formula_cost_currency",
+    "currency_cost_for_equipment_formula",
+    "equipment_formula_pack_has_formula",
+    "equipment_formula_in_pack",
+    "equipment_formula_unlock_key",
+    "unlock_key_unlocks_equipment_formula",
+    "equipment_in_suit",
+    "equipment_suit_includes_equipment",
+    "has_equipment_suit",
+    "equipment_runtime_attribute",
+    "equipment_display_attribute",
+    "equipment_display_base_attribute",
+    "equipment_display_attribute_composite",
+    "has_equipment_property_curve",
+    "equipment_enhance_cost_consumes_item",
+    "item_consumed_by_equipment_enhance_cost",
+    "gem_preset_has_term",
+    "gem_preset_item",
+    "gem_preset_real_item",
+    "gem_term_has_tag",
+    "gem_tag_combo_has_tag",
+    "gem_tag_combo_recommended_weapon",
+    "gem_enhance_rule_cost_item",
+    "item_cost_for_gem_enhance_rule",
+    "gem_dismantle_group_has_rule",
+    "gem_dismantle_rule_domain",
+    "gem_dismantle_rule_gold_item",
+    "gem_dismantle_rule_output_item",
+    "attribute_meta_has_stat_property",
+    "attribute_meta_used_by_character_base",
+    "character_base_attribute_meta",
+    "attribute_meta_used_by_equipment",
+    "attribute_display_entry_uses_modifier_property",
+    "interactive_attribute_sets_property",
+    "requires_item",
+    "item_required_by_gameplay",
+    "has_gameplay_progression",
+    "skill_level_uses_blackboard_key",
+)
+
 def exact_node_candidates(term: str) -> list[str]:
     candidates = [term]
     if ":" not in term:
@@ -32408,6 +32537,190 @@ def mission_flow(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -
     }
 
 
+def resolve_progression_flow_lookup(db_path: Path, term: str, *, limit: int, kind: str = "") -> tuple[dict[str, Any], str]:
+    lookup_limit = min(max(limit, 1), 20)
+    if kind:
+        return query_graph(db_path, term, limit=lookup_limit, kind=kind), kind
+    for fallback_kind in PROGRESSION_FLOW_KIND_FALLBACKS:
+        lookup = query_graph(db_path, term, limit=lookup_limit, kind=fallback_kind)
+        if safe_key(lookup.get("seedNode")):
+            return lookup, fallback_kind
+    return query_graph(db_path, term, limit=lookup_limit), ""
+
+
+def progression_flow_relation_clause(alias: str = "e") -> str:
+    explicit = ", ".join(repr(kind) for kind in PROGRESSION_FLOW_EXPLICIT_EDGE_KINDS)
+    return f"""
+              AND (
+                   {alias}.kind LIKE '%progression%'
+                OR {alias}.kind LIKE '%character_%'
+                OR {alias}.kind LIKE '%weapon_%'
+                OR {alias}.kind LIKE '%equipment_%'
+                OR {alias}.kind LIKE '%gem_%'
+                OR {alias}.kind LIKE '%attribute_%'
+                OR {alias}.kind LIKE '%stat_property%'
+                OR {alias}.kind LIKE '%potential%'
+                OR {alias}.kind LIKE '%break%'
+                OR {alias}.kind LIKE '%level_cost%'
+                OR {alias}.kind LIKE '%checkpoint%'
+                OR {alias}.kind LIKE '%requires_item%'
+                OR {alias}.kind LIKE '%cost%'
+                OR {alias}.kind LIKE '%formula%'
+                OR {alias}.kind LIKE '%suit%'
+                OR {alias}.kind IN ({explicit})
+              )
+    """
+
+
+def progression_flow_category(edge_kind: str) -> str:
+    if "character_level" in edge_kind or "checkpoint" in edge_kind:
+        return "characterLevels"
+    if "break" in edge_kind:
+        return "breakthrough"
+    if "potential" in edge_kind or "talent" in edge_kind:
+        return "potentialTalent"
+    if "skill_level" in edge_kind or "skill_group" in edge_kind or "skill_entry" in edge_kind or "potential_skill" in edge_kind:
+        return "skills"
+    if "weapon" in edge_kind:
+        return "weapons"
+    if "equipment_formula" in edge_kind or "crafted_by_formula" in edge_kind or "formula_outputs_equipment" in edge_kind:
+        return "equipmentFormulas"
+    if "equipment" in edge_kind or "suit" in edge_kind:
+        return "equipment"
+    if "gem" in edge_kind:
+        return "gems"
+    if "attribute" in edge_kind or "stat_property" in edge_kind or "composite" in edge_kind:
+        return "statsAttributes"
+    if "cost" in edge_kind or "requires_item" in edge_kind or "required_by" in edge_kind:
+        return "costs"
+    if "gameplay" in edge_kind or "blackboard" in edge_kind:
+        return "gameplay"
+    return "other"
+
+
+def progression_flow_order_sql(alias: str = "e") -> str:
+    return f"""
+            CASE
+              WHEN {alias}.kind LIKE '%level_checkpoint%' OR {alias}.kind LIKE '%character_level%' THEN 0
+              WHEN {alias}.kind LIKE '%break%' THEN 1
+              WHEN {alias}.kind LIKE '%potential%' OR {alias}.kind LIKE '%talent%' THEN 2
+              WHEN {alias}.kind LIKE '%skill%' THEN 3
+              WHEN {alias}.kind LIKE '%weapon%' THEN 4
+              WHEN {alias}.kind LIKE '%equipment_formula%' OR {alias}.kind LIKE '%crafted_by_formula%' THEN 5
+              WHEN {alias}.kind LIKE '%equipment%' OR {alias}.kind LIKE '%suit%' THEN 6
+              WHEN {alias}.kind LIKE '%gem%' THEN 7
+              WHEN {alias}.kind LIKE '%cost%' OR {alias}.kind LIKE '%requires_item%' THEN 8
+              WHEN {alias}.kind LIKE '%stat_property%' OR {alias}.kind LIKE '%attribute_%' THEN 9
+              WHEN {alias}.kind LIKE '%gameplay%' OR {alias}.kind LIKE '%blackboard%' THEN 10
+              ELSE 10
+            END
+    """
+
+
+def progression_flow_related_ids(conn: sqlite3.Connection, seed: str, relation_limit: int) -> list[str]:
+    rows = conn.execute(
+        f"""
+        SELECT CASE WHEN e.src = ? THEN e.dst ELSE e.src END AS id
+        FROM edges e
+        JOIN nodes other ON other.id = CASE WHEN e.src = ? THEN e.dst ELSE e.src END
+        WHERE (e.src = ? OR e.dst = ?)
+        {progression_flow_relation_clause("e")}
+          AND other.kind IN ({",".join(repr(kind) for kind in PROGRESSION_FLOW_KIND_FALLBACKS)})
+        ORDER BY {progression_flow_order_sql("e")}, e.kind, other.kind, other.name
+        LIMIT ?
+        """,
+        (seed, seed, seed, seed, relation_limit * 4),
+    ).fetchall()
+    return _unique_preserve(row["id"] for row in rows)
+
+
+def progression_flow(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
+    lookup, resolved_kind = resolve_progression_flow_lookup(db_path, term, limit=limit, kind=kind)
+    seed = safe_key(lookup.get("seedNode"))
+    if not seed:
+        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "edgeCounts": {}, "progressionSummary": {}, "relations": []}
+
+    relation_limit = max(limit, 1)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        seed_row = conn.execute(
+            "SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?",
+            (seed,),
+        ).fetchone()
+        related_ids = progression_flow_related_ids(conn, seed, relation_limit)
+        focus_ids = _unique_preserve([seed, *related_ids])
+        focus_placeholders = ",".join("?" for _ in focus_ids)
+        count_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, COUNT(1) AS count
+            FROM edges e
+            WHERE (e.src IN ({focus_placeholders}) OR e.dst IN ({focus_placeholders}))
+            {progression_flow_relation_clause("e")}
+            GROUP BY e.kind
+            ORDER BY e.kind
+            """,
+            (*focus_ids, *focus_ids),
+        ).fetchall()
+        relation_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src IN ({focus_placeholders}) OR e.dst IN ({focus_placeholders}))
+            {progression_flow_relation_clause("e")}
+            ORDER BY CASE WHEN e.src = ? OR e.dst = ? THEN 0 ELSE 1 END,
+                     {progression_flow_order_sql("e")}, e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (*focus_ids, *focus_ids, seed, seed, relation_limit),
+        ).fetchall()
+        focus_rows = conn.execute(
+            f"""
+            SELECT id, kind, name, source, path, data
+            FROM nodes
+            WHERE id IN ({focus_placeholders})
+            ORDER BY kind, name
+            LIMIT ?
+            """,
+            (*focus_ids, relation_limit),
+        ).fetchall()
+
+    focus_id_set = set(focus_ids)
+    relations = [
+        usage_edge_ref(
+            row,
+            "dst" if row["srcId"] in focus_id_set else "src",
+            row["srcId"] if row["srcId"] in focus_id_set else row["dstId"],
+        )
+        for row in relation_rows
+    ]
+    progression_summary: dict[str, list[dict[str, Any]]] = {}
+    progression_summary["focusNodes"] = [compact_node_ref(row) for row in focus_rows]
+    for relation in relations:
+        category = progression_flow_category(safe_key(relation.get("edge")))
+        progression_summary.setdefault(category, []).append(relation)
+
+    return {
+        "term": term,
+        "seedNode": seed,
+        "seed": compact_node_ref(seed_row) if seed_row else {"id": seed, "key": node_key(seed)},
+        "resolvedKind": resolved_kind,
+        "aliases": lookup.get("aliases") or [],
+        "focusNodeIds": focus_ids,
+        "edgeCounts": {row["edge"]: row["count"] for row in count_rows},
+        "progressionSummary": progression_summary,
+        "relations": relations,
+        "caveats": [
+            "authored_static_progression_and_cost_evidence_only",
+            "does_not_simulate_runtime_formula_evaluation_modifier_order_or_rng",
+            "item_cost_edges_show_config_requirements_not_live_inventory_or_account_state",
+        ],
+    }
+
+
 def resolve_stat_usage_lookup(db_path: Path, term: str, *, limit: int, kind: str = "") -> tuple[dict[str, Any], str]:
     lookup_limit = min(max(limit, 1), 20)
     if kind:
@@ -33988,6 +34301,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional node kind to force, such as mission_runtime_asset, mission, quest_task, mission_runtime_action, mission_runtime_condition, level, or story.",
     )
 
+    progression_flow_cmd = sub.add_parser(
+        "progression-usage",
+        aliases=["progression-flow"],
+        help="Show static character, weapon, equipment, gem, stat, attribute, and cost progression evidence",
+    )
+    progression_flow_cmd.add_argument("term")
+    progression_flow_cmd.add_argument("--db", type=Path, default=DEFAULT_DB)
+    progression_flow_cmd.add_argument("--limit", type=int, default=40)
+    progression_flow_cmd.add_argument(
+        "--kind",
+        default="",
+        help="Optional node kind to force, such as character, weapon, equipment, character_potential, attribute_meta, gameplay_stat_property, or item.",
+    )
+
     stat_used_by = sub.add_parser("stat-usage", help="Show authored graph consumers/producers of a stat or attribute node")
     stat_used_by.add_argument("term")
     stat_used_by.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -34148,6 +34475,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "mission-flow":
         result = mission_flow(args.db, args.term, limit=args.limit, kind=args.kind)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command in ("progression-usage", "progression-flow"):
+        result = progression_flow(args.db, args.term, limit=args.limit, kind=args.kind)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "stat-usage":
