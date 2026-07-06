@@ -27372,7 +27372,7 @@ def parse_json_text(data: Any) -> dict[str, Any]:
 
 
 def emit_voice_audio_links(conn: sqlite3.Connection) -> None:
-    rows = conn.execute(
+    story_rows = conn.execute(
         """
         SELECT
             line.id AS lineNode,
@@ -27389,9 +27389,9 @@ def emit_voice_audio_links(conn: sqlite3.Connection) -> None:
         ORDER BY line.name
         """
     ).fetchall()
-    linked = []
-    unresolved = []
-    for row in rows:
+    story_linked = []
+    story_unresolved = []
+    for row in story_rows:
         line_data = parse_json_text(row["lineData"])
         audio_data = parse_json_text(row["audioData"])
         record = {
@@ -27405,17 +27405,92 @@ def emit_voice_audio_links(conn: sqlite3.Connection) -> None:
             "speaker": audio_data.get("speaker"),
         }
         if record["audioPath"]:
-            linked.append(record)
+            story_linked.append(record)
         else:
-            unresolved.append(record)
+            story_unresolved.append(record)
+
+    path_rows = conn.execute(
+        """
+        SELECT e.kind AS edgeKind, e.source AS edgeSource, e.evidence AS edgeEvidence,
+               owner.id AS ownerNode, owner.kind AS ownerKind, owner.name AS ownerName, owner.path AS ownerPath,
+               audio.id AS audioNode, audio.name AS audioId, audio.path AS audioPath, audio.data AS audioData
+        FROM edges e
+        JOIN nodes owner ON owner.id = e.src
+        JOIN nodes audio ON audio.id = e.dst
+        WHERE audio.kind = 'audio'
+          AND audio.path IS NOT NULL
+          AND audio.path != ''
+          AND owner.kind != 'audio'
+          AND e.kind NOT IN ('defines_audio', 'audio_voice_extra_for_audio', 'lipsync_for_audio')
+        ORDER BY e.kind, owner.kind, owner.name, audio.name
+        """
+    ).fetchall()
+    path_backed_links = []
+    path_edge_counts: Counter[str] = Counter()
+    path_owner_counts: Counter[str] = Counter()
+    for row in path_rows:
+        audio_data = parse_json_text(row["audioData"])
+        path_edge_counts[row["edgeKind"]] += 1
+        path_owner_counts[row["ownerKind"]] += 1
+        if len(path_backed_links) < 5000:
+            path_backed_links.append({
+                "edgeKind": row["edgeKind"],
+                "source": row["edgeSource"],
+                "evidence": row["edgeEvidence"],
+                "ownerNode": row["ownerNode"],
+                "ownerKind": row["ownerKind"],
+                "ownerName": row["ownerName"],
+                "ownerPath": row["ownerPath"],
+                "audioId": row["audioId"],
+                "audioPath": audio_data.get("path") or row["audioPath"],
+                "duration": audio_data.get("duration"),
+                "speaker": audio_data.get("speaker"),
+            })
+
+    story_audio_ids = {safe_key(row["audioId"]) for row in story_rows if safe_key(row["audioId"])}
+    path_audio_ids = {safe_key(row["audioId"]) for row in path_rows if safe_key(row["audioId"])}
     payload = {
         "generated": int(time.time()),
-        "linked": len(linked),
-        "unresolved": len(unresolved),
-        "links": linked[:5000],
-        "unresolvedExamples": unresolved[:500],
+        "summary": {
+            "storyLineAudioRefs": len(story_rows),
+            "storyLineLinked": len(story_linked),
+            "storyLineUnresolved": len(story_unresolved),
+            "pathBackedUsageLinks": len(path_rows),
+            "pathBackedUniqueAudio": len(path_audio_ids),
+            "storyAudioIdsAlsoPathBacked": len(story_audio_ids & path_audio_ids),
+        },
+        "pathBackedUsageByEdge": dict(sorted(path_edge_counts.items())),
+        "pathBackedUsageByOwnerKind": dict(sorted(path_owner_counts.items())),
+        "pathBackedLinks": path_backed_links,
+        "storyLineLinks": story_linked[:5000],
+        "storyLineUnresolvedExamples": story_unresolved[:500],
     }
     (GRAPH_DIR / "voice_audio_links.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    lines = [
+        "# Voice Audio Links",
+        "",
+        "This generated source-graph follow-up separates WebUI story-line audio ids from graph relations that already resolve to path-backed AudioDialog audio nodes. It is an evidence report, not an audio relinking step.",
+        "",
+        "## Summary",
+        "",
+    ]
+    for key, value in payload["summary"].items():
+        lines.append(f"- `{key}`: `{value}`")
+    lines.extend(["", "## Path-Backed Usage By Edge", ""])
+    for edge_kind, count in sorted(path_edge_counts.items(), key=lambda item: (-item[1], item[0])):
+        lines.append(f"- `{edge_kind}`: `{count}`")
+    lines.extend(["", "## Sample Path-Backed Links", ""])
+    if path_backed_links:
+        lines.append("| Edge | Owner | Audio | Path | Duration | Speaker |")
+        lines.append("| --- | --- | --- | --- | ---: | --- |")
+        for item in path_backed_links[:80]:
+            lines.append(
+                f"| `{item['edgeKind']}` | `{item['ownerKind']}:{item['ownerName']}` | `{item['audioId']}` | `{item['audioPath']}` | {item.get('duration') or ''} | `{item.get('speaker') or ''}` |"
+            )
+    else:
+        lines.append("No path-backed audio usage links found.")
+    lines.append("")
+    (GRAPH_DIR / "voice_audio_links.md").write_text("\n".join(lines), encoding="utf-8")
 
 
 def related_node_values(conn: sqlite3.Connection, node_id: str, edge_kind: str) -> list[dict[str, Any]]:
