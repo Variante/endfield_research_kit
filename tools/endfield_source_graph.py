@@ -27900,11 +27900,14 @@ def emit_option_branch_gaps(conn: sqlite3.Connection) -> None:
     seen_scene_keys: set[str] = set()
     if isinstance(scenes, list):
         for scene in scenes:
-            key = scene.get("scene") or scene.get("key") or scene.get("storyKey")
+            key = scene.get("key") or scene.get("storyKey")
+            if not key and isinstance(scene.get("scene"), str):
+                key = scene.get("scene")
             if not key:
                 continue
             seen_scene_keys.add(key)
             scene = dict(scene)
+            scene["storyKey"] = key
             scene["graphOptionEdges"] = edge_counts.get(key, 0)
             stats = audit_stats.get(key)
             if stats:
@@ -27934,6 +27937,40 @@ def emit_option_branch_gaps(conn: sqlite3.Connection) -> None:
         "count": len(output_scenes),
     }
     (GRAPH_DIR / "option_branch_gaps.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    lines = [
+        "# Option Branch Gaps",
+        "",
+        "This generated source-graph follow-up combines inferred option-anchor gaps with runtime jump option-route audit evidence. It is diagnostic evidence only and does not promote option routes or WebUI overrides.",
+        "",
+        "## Summary",
+        "",
+        f"- Scenes: `{len(output_scenes)}`",
+        f"- Audit-only scenes: `{sum(1 for scene in output_scenes if scene.get('auditOnly'))}`",
+        f"- Runtime conflict scenes: `{sum(1 for scene in output_scenes if scene.get('runtimeAuditConflicts'))}`",
+    ]
+    recommendation_counts: Counter[str] = Counter()
+    for scene in output_scenes:
+        for recommendation, count in (scene.get("runtimeAuditRecommendations") or {}).items():
+            recommendation_counts[safe_key(recommendation)] += int(count or 0)
+    for recommendation, count in sorted(recommendation_counts.items()):
+        lines.append(f"- `{recommendation}`: `{count}`")
+    lines.extend(["", "## Scenes", ""])
+    if output_scenes:
+        lines.append("| Scene | Audit only | Graph option edges | Runtime groups | Conflicts | Nearby jumps | Recommendations |")
+        lines.append("| --- | --- | ---: | ---: | ---: | ---: | --- |")
+        for scene in output_scenes:
+            scene_key = scene.get("storyKey") or scene.get("key") or scene.get("scene")
+            recommendations = ", ".join(
+                f"`{key}`={value}"
+                for key, value in sorted((scene.get("runtimeAuditRecommendations") or {}).items())
+            )
+            lines.append(
+                f"| `{scene_key}` | {str(bool(scene.get('auditOnly'))).lower()} | {scene.get('graphOptionEdges', 0)} | {scene.get('runtimeAuditGroups', 0)} | {scene.get('runtimeAuditConflicts', 0)} | {scene.get('runtimeAuditNearbyJumps', 0)} | {recommendations} |"
+            )
+    else:
+        lines.append("No option branch gap scenes found.")
+    lines.append("")
+    (GRAPH_DIR / "option_branch_gaps.md").write_text("\n".join(lines), encoding="utf-8")
 
 
 def emit_map_level_index(conn: sqlite3.Connection) -> None:
@@ -30516,6 +30553,50 @@ def unresolved_narrative_videos(db_path: Path, *, actionable_only: bool = False)
     }
 
 
+def option_branch_gaps(
+    db_path: Path,
+    *,
+    audit_only: bool = False,
+    conflicts_only: bool = False,
+    recommendation: str = "",
+    limit: int = 40,
+) -> dict[str, Any]:
+    report_path = GRAPH_DIR / "option_branch_gaps.json"
+    if not report_path.exists():
+        with sqlite3.connect(db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            emit_option_branch_gaps(conn)
+    payload = read_json(report_path, {})
+    scenes = payload.get("scenes")
+    if not isinstance(scenes, list):
+        scenes = []
+    recommendation_filter = safe_key(recommendation)
+    filtered: list[dict[str, Any]] = []
+    for scene in scenes:
+        if not isinstance(scene, dict):
+            continue
+        if audit_only and not scene.get("auditOnly"):
+            continue
+        if conflicts_only and not int(scene.get("runtimeAuditConflicts") or 0):
+            continue
+        recommendations = scene.get("runtimeAuditRecommendations") if isinstance(scene.get("runtimeAuditRecommendations"), dict) else {}
+        if recommendation_filter and recommendation_filter not in recommendations:
+            continue
+        filtered.append(scene)
+        if len(filtered) >= limit:
+            break
+    return {
+        "sourceReport": slash(report_path),
+        "sourceInput": payload.get("sourceReport"),
+        "returned": len(filtered),
+        "totalScenes": len(scenes),
+        "auditOnly": audit_only,
+        "conflictsOnly": conflicts_only,
+        "recommendation": recommendation_filter,
+        "scenes": filtered,
+    }
+
+
 def model_binding_candidates(db_path: Path, *, status: str = "", term: str = "", limit: int = 40) -> dict[str, Any]:
     report_path = GRAPH_DIR / "model_config_asset_binding_candidates.json"
     if not report_path.exists():
@@ -30602,6 +30683,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     unresolved_videos.add_argument("--db", type=Path, default=DEFAULT_DB)
     unresolved_videos.add_argument("--actionable", action="store_true", help="Only show candidates with generated story targets.")
 
+    option_gaps = sub.add_parser("option-gaps", help="List inferred option-anchor gaps plus runtime route audit evidence")
+    option_gaps.add_argument("--db", type=Path, default=DEFAULT_DB)
+    option_gaps.add_argument("--audit-only", action="store_true", help="Only show scenes present from runtime audit evidence.")
+    option_gaps.add_argument("--conflicts", action="store_true", help="Only show scenes with runtime route conflicts.")
+    option_gaps.add_argument("--recommendation", default="", help="Optional runtime audit recommendation filter.")
+    option_gaps.add_argument("--limit", type=int, default=40)
+
     model_bindings = sub.add_parser("model-bindings", help="List decoded model-config to asset-entity binding candidates")
     model_bindings.add_argument("--db", type=Path, default=DEFAULT_DB)
     model_bindings.add_argument("--status", default="", help="Optional status filter, such as strong_exact_graph_edge or no_exported_renderable_candidate.")
@@ -30655,6 +30743,16 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "unresolved-videos":
         result = unresolved_narrative_videos(args.db, actionable_only=args.actionable)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "option-gaps":
+        result = option_branch_gaps(
+            args.db,
+            audit_only=args.audit_only,
+            conflicts_only=args.conflicts,
+            recommendation=args.recommendation,
+            limit=args.limit,
+        )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "model-bindings":
