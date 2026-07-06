@@ -30673,6 +30673,201 @@ def option_branch_gaps(
     }
 
 
+def scene_order_gaps(
+    db_path: Path,
+    *,
+    warning: str = "",
+    mission: str = "",
+    line_status: str = "",
+    option_status: str = "",
+    term: str = "",
+    placement: str = "",
+    limit: int = 40,
+) -> dict[str, Any]:
+    warning_filter = safe_key(warning)
+    mission_filter = safe_key(mission)
+    line_status_filter = safe_key(line_status)
+    option_status_filter = safe_key(option_status)
+    term_filter = safe_key(term).lower()
+    placement_filter = safe_key(placement)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            """
+            SELECT id, name, source, path, data
+            FROM nodes
+            WHERE kind = 'scene_order_gap'
+            ORDER BY name
+            """
+        ).fetchall()
+        warning_rows = conn.execute(
+            """
+            SELECT edge.src AS gapNode, warning.name AS warningCode
+            FROM edges edge
+            JOIN nodes warning ON warning.id = edge.dst
+            WHERE edge.kind = 'scene_order_gap_has_warning'
+            ORDER BY edge.src, edge.evidence, warning.name
+            """
+        ).fetchall()
+        placement_rows = conn.execute(
+            """
+            SELECT edge.src AS gapNode, evidence.name AS evidenceKind
+            FROM edges edge
+            JOIN nodes evidence ON evidence.id = edge.dst
+            WHERE edge.kind = 'scene_order_gap_has_placement_evidence'
+            ORDER BY edge.src, edge.evidence, evidence.name
+            """
+        ).fetchall()
+        count_rows = conn.execute(
+            """
+            SELECT src AS gapNode, kind AS edgeKind, COUNT(*) AS count
+            FROM edges
+            WHERE kind IN (
+                'scene_order_gap_ordered_line',
+                'scene_order_gap_uncovered_line',
+                'scene_order_gap_option_group',
+                'scene_order_gap_option_group_has_option',
+                'scene_order_gap_unauthored_option',
+                'scene_order_gap_placement_quest',
+                'scene_order_gap_placement_neighbor',
+                'scene_order_gap_placement_source_file',
+                'scene_order_gap_placement_timeline'
+            )
+            GROUP BY src, kind
+            """
+        ).fetchall()
+        option_count_rows = conn.execute(
+            """
+            SELECT gap_edge.src AS gapNode, option_edge.kind AS edgeKind, COUNT(*) AS count
+            FROM edges gap_edge
+            JOIN edges option_edge ON option_edge.src = gap_edge.dst
+            WHERE gap_edge.kind = 'scene_order_gap_option_group'
+              AND option_edge.kind IN (
+                  'scene_order_gap_option_group_has_option',
+                  'scene_order_gap_unauthored_option'
+              )
+            GROUP BY gap_edge.src, option_edge.kind
+            """
+        ).fetchall()
+
+    warnings_by_gap: dict[str, list[str]] = defaultdict(list)
+    for row in warning_rows:
+        warnings_by_gap[row["gapNode"]].append(row["warningCode"])
+    placements_by_gap: dict[str, list[str]] = defaultdict(list)
+    for row in placement_rows:
+        placements_by_gap[row["gapNode"]].append(row["evidenceKind"])
+    counts_by_gap: dict[str, dict[str, int]] = defaultdict(dict)
+    for row in count_rows:
+        counts_by_gap[row["gapNode"]][row["edgeKind"]] = int(row["count"] or 0)
+    for row in option_count_rows:
+        counts_by_gap[row["gapNode"]][row["edgeKind"]] = int(row["count"] or 0)
+
+    all_records: list[dict[str, Any]] = []
+    warning_counts: Counter[str] = Counter()
+    line_status_counts: Counter[str] = Counter()
+    option_status_counts: Counter[str] = Counter()
+    placement_counts: Counter[str] = Counter()
+
+    for row in rows:
+        data = parse_json_text(row["data"])
+        gap_warnings = _unique_preserve((data.get("warningCodes") or []) + warnings_by_gap.get(row["id"], []))
+        gap_placements = _unique_preserve((data.get("scenePlacementEvidenceKinds") or []) + placements_by_gap.get(row["id"], []))
+        warning_counts.update(gap_warnings)
+        if data.get("lineOrderStatus"):
+            line_status_counts[safe_key(data.get("lineOrderStatus"))] += 1
+        if data.get("optionLayoutStatus"):
+            option_status_counts[safe_key(data.get("optionLayoutStatus"))] += 1
+        placement_counts.update(gap_placements)
+
+        edge_counts = counts_by_gap.get(row["id"], {})
+        ordered_line_edges = edge_counts.get("scene_order_gap_ordered_line", 0)
+        uncovered_line_edges = edge_counts.get("scene_order_gap_uncovered_line", 0)
+        option_group_edges = edge_counts.get("scene_order_gap_option_group", 0)
+        option_edges = edge_counts.get("scene_order_gap_option_group_has_option", 0)
+        unauthored_option_edges = edge_counts.get("scene_order_gap_unauthored_option", 0)
+        record = {
+            "storyKey": data.get("key") or row["name"],
+            "mission": data.get("mission"),
+            "kind": data.get("kind"),
+            "title": data.get("title"),
+            "warningCodes": gap_warnings,
+            "lineOrderStatus": data.get("lineOrderStatus"),
+            "lineOrderReasonCode": data.get("lineOrderReasonCode"),
+            "lineOrderPatternCode": data.get("lineOrderPatternCode"),
+            "optionLayoutStatus": data.get("optionLayoutStatus"),
+            "optionLayoutReason": data.get("optionLayoutReason"),
+            "optionPositionPatternCode": data.get("optionPositionPatternCode"),
+            "inferredOptionLayout": data.get("inferredOptionLayout"),
+            "inferredOptionResponse": data.get("inferredOptionResponse"),
+            "scenePlacementEvidenceKinds": gap_placements,
+            "lineCount": data.get("lineCount") if data.get("lineCount") is not None else ordered_line_edges + uncovered_line_edges,
+            "meaningfulLineCount": data.get("meaningfulLineCount"),
+            "lineOrderCoveredCount": data.get("lineOrderCoveredCount") if data.get("lineOrderCoveredCount") is not None else ordered_line_edges,
+            "lineOrderUncoveredCount": data.get("lineOrderUncoveredCount") if data.get("lineOrderUncoveredCount") is not None else uncovered_line_edges,
+            "orderedLineEdges": ordered_line_edges,
+            "uncoveredLineEdges": uncovered_line_edges,
+            "optionGroupCount": data.get("optionGroupCount") if data.get("optionGroupCount") is not None else option_group_edges,
+            "optionCount": data.get("optionCount") if data.get("optionCount") is not None else option_edges,
+            "optionGroupEdges": option_group_edges,
+            "optionEdges": option_edges,
+            "unauthoredOptionEdges": unauthored_option_edges,
+            "placementQuestEdges": edge_counts.get("scene_order_gap_placement_quest", 0),
+            "placementNeighborEdges": edge_counts.get("scene_order_gap_placement_neighbor", 0),
+            "placementSourceFileEdges": edge_counts.get("scene_order_gap_placement_source_file", 0),
+            "placementTimelineEdges": edge_counts.get("scene_order_gap_placement_timeline", 0),
+            "path": row["path"] or data.get("path"),
+            "source": row["source"],
+        }
+        all_records.append(record)
+
+    filtered: list[dict[str, Any]] = []
+    for record in all_records:
+        if warning_filter and warning_filter not in [safe_key(item) for item in record["warningCodes"]]:
+            continue
+        if mission_filter and safe_key(record.get("mission")) != mission_filter:
+            continue
+        if line_status_filter and safe_key(record.get("lineOrderStatus")) != line_status_filter:
+            continue
+        if option_status_filter and safe_key(record.get("optionLayoutStatus")) != option_status_filter:
+            continue
+        if placement_filter and placement_filter not in [safe_key(item) for item in record["scenePlacementEvidenceKinds"]]:
+            continue
+        if term_filter:
+            haystack = " ".join(
+                safe_key(value).lower()
+                for value in (
+                    record.get("storyKey"),
+                    record.get("mission"),
+                    record.get("kind"),
+                    record.get("title"),
+                    record.get("path"),
+                    " ".join(record["warningCodes"]),
+                    " ".join(record["scenePlacementEvidenceKinds"]),
+                )
+            )
+            if term_filter not in haystack:
+                continue
+        filtered.append(record)
+        if len(filtered) >= limit:
+            break
+
+    return {
+        "totalScenes": len(all_records),
+        "returned": len(filtered),
+        "warning": warning_filter,
+        "mission": mission_filter,
+        "lineStatus": line_status_filter,
+        "optionStatus": option_status_filter,
+        "term": term_filter,
+        "placement": placement_filter,
+        "warningCounts": dict(sorted(warning_counts.items())),
+        "lineOrderStatusCounts": dict(sorted(line_status_counts.items())),
+        "optionLayoutStatusCounts": dict(sorted(option_status_counts.items())),
+        "placementEvidenceCounts": dict(sorted(placement_counts.items())),
+        "scenes": filtered,
+    }
+
+
 def model_binding_candidates(db_path: Path, *, status: str = "", term: str = "", limit: int = 40) -> dict[str, Any]:
     report_path = GRAPH_DIR / "model_config_asset_binding_candidates.json"
     if not report_path.exists():
@@ -30776,6 +30971,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     option_gaps.add_argument("--recommendation", default="", help="Optional runtime audit recommendation filter.")
     option_gaps.add_argument("--limit", type=int, default=40)
 
+    scene_gaps = sub.add_parser("scene-gaps", help="List scene-order gap hotlist records from the source graph")
+    scene_gaps.add_argument("--db", type=Path, default=DEFAULT_DB)
+    scene_gaps.add_argument("--warning", default="", help="Optional warning filter, such as sceneOrderDisorder.")
+    scene_gaps.add_argument("--mission", default="", help="Optional mission id filter, such as c28m3.")
+    scene_gaps.add_argument("--line-status", default="", help="Optional line-order status filter, such as partial.")
+    scene_gaps.add_argument("--option-status", default="", help="Optional option-layout status filter, such as inferred.")
+    scene_gaps.add_argument("--term", default="", help="Optional substring filter over story, mission, title, path, warning, or placement evidence.")
+    scene_gaps.add_argument("--placement", default="", help="Optional scene placement evidence filter, such as timelineEvidence.")
+    scene_gaps.add_argument("--limit", type=int, default=40)
+
     model_bindings = sub.add_parser("model-bindings", help="List decoded model-config to asset-entity binding candidates")
     model_bindings.add_argument("--db", type=Path, default=DEFAULT_DB)
     model_bindings.add_argument("--status", default="", help="Optional status filter, such as strong_exact_graph_edge or no_exported_renderable_candidate.")
@@ -30841,6 +31046,19 @@ def main(argv: list[str] | None = None) -> int:
             audit_only=args.audit_only,
             conflicts_only=args.conflicts,
             recommendation=args.recommendation,
+            limit=args.limit,
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "scene-gaps":
+        result = scene_order_gaps(
+            args.db,
+            warning=args.warning,
+            mission=args.mission,
+            line_status=args.line_status,
+            option_status=args.option_status,
+            term=args.term,
+            placement=args.placement,
             limit=args.limit,
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
