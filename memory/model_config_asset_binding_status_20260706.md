@@ -35,6 +35,24 @@ python tools\endfield_source_graph.py model-bindings --status candidate_name_mat
 python tools\endfield_source_graph.py model-bindings --status no_exported_renderable_candidate --term ore_cluster --limit 5
 ```
 
+## 2026-07-06 Follow-up
+
+`tools/endfield_source_graph.py` now mirrors `model_config_uses_prefab` with
+`model_prefab_used_by_model_config`, so prefab-centered queries can walk back
+to decoded `model_config_model` rows without relying on renderable asset
+bindings. A focused decoded-config smoke build verified 1,202 forward prefab
+edges and 1,202 reverse prefab edges; the reverse edge for
+`int_doodad_ore_cluster_iron_postmodel.prefab` points back to
+`model_config_model:int_doodad_ore_cluster_iron`.
+
+The generated model-binding report also now records `resolvedSiblingModels` for
+referenced unbound rows. This is report-only context, not a promoted graph
+binding. For the active ore-cluster gap, both `int_doodad_ore_cluster_iron` and
+`int_doodad_ore_cluster_originium` remain
+`no_exported_renderable_candidate`, but the report surfaces the resolved sibling
+`int_doodad_ore_cluster_metal_sp` so follow-up work can inspect a nearby
+exported family member without treating it as proof for iron/originium.
+
 ## Remaining Gap
 
 The original P6 success target included the `int_doodad_ore_cluster_*` family.
