@@ -26763,6 +26763,8 @@ class SourceGraphBuilder:
                 add("locator", item, path, field)
             elif lower_field in {"defaulthiteffect", "effectname", "vfxkey", "prewarneffectkey", "hitflashasset"} or (("effect" in lower_field or "vfx" in lower_field) and item_text.startswith(("P_", "E_", "fx", "vfx"))):
                 add("effect", item, path, field)
+            elif lower_field in {"soundname", "audioeventkey", "eventname"} and LINE_AUDIO_RE.fullmatch(item_text):
+                add("audio", item, path, field)
             elif lower_field in {"maxpotentialeffectbuffid", "buffid"} or lower_field.endswith("buffid"):
                 add("buff", item, path, field)
             elif lower_field == "class" and "componentlist" in lower_path:
@@ -26822,6 +26824,16 @@ class SourceGraphBuilder:
                 elif category == "buff":
                     target = self.add_buff_ref_node(value, source=source)
                     edge_kind = "monobehaviour_frontier_entry_uses_buff"
+                elif category == "audio":
+                    self.add_audio_target_edge(
+                        entry_node,
+                        value,
+                        edge_kind="monobehaviour_frontier_entry_uses_audio",
+                        source=source,
+                        evidence=evidence,
+                        reverse_edge_kind="audio_used_by_monobehaviour_frontier_entry",
+                    )
+                    continue
                 elif category == "mode":
                     target = self.add_node("monobehaviour_mode_id", value, name=value, source=source_root or source)
                     self.add_alias(value, target, kind="monobehaviour_mode_id", source=source)
