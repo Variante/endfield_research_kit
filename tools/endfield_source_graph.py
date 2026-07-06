@@ -4515,6 +4515,17 @@ class SourceGraphBuilder:
             return b""
 
     def add_model_asset_entity_edges(self, owner_node: str, tokens: Iterable[Any], *, edge_kind: str, source: str, evidence: str) -> None:
+        reverse_kind = {
+            "model_config_asset_entity": "asset_entity_used_by_model_config",
+            "model_view_state_controller_asset_entity": "asset_entity_used_by_model_view_state_controller",
+            "interactive_template_asset_entity": "asset_entity_used_by_interactive_template",
+            "harvestable_uses_model_asset": "asset_entity_used_by_harvestable",
+            "world_tree_uses_model_asset": "asset_entity_used_by_world_tree",
+            "planting_crop_uses_model_asset": "asset_entity_used_by_planting_crop",
+            "weapon_model_asset_entity": "asset_entity_used_by_weapon_model",
+            "enemy_uses_model_asset": "asset_entity_used_by_enemy",
+            "monobehaviour_frontier_entry_model_asset_entity": "asset_entity_used_by_monobehaviour_frontier_entry",
+        }.get(edge_kind)
         seen_entities: set[str] = set()
         for token in tokens:
             token_key = safe_key(token)
@@ -4541,6 +4552,15 @@ class SourceGraphBuilder:
                         evidence=evidence,
                         data={"token": token_key, "modelBase": node_key(entity_node)},
                     )
+                    if reverse_kind:
+                        self.add_edge(
+                            entity_node,
+                            owner_node,
+                            reverse_kind,
+                            source=source,
+                            evidence=evidence,
+                            data={"token": token_key, "modelBase": node_key(entity_node)},
+                        )
 
     def ingest_decoded_config_semantics(self) -> None:
         group_root = WEBUI_DATA / "game_data" / "groups"
