@@ -30694,6 +30694,211 @@ def map_level_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = ""
     }
 
 
+AUDIO_USAGE_KIND_FALLBACKS = (
+    "audio",
+    "line",
+    "dialog_text",
+    "radio_line",
+    "remote_common_line",
+    "responsive_response",
+)
+
+AUDIO_USAGE_EDGE_KINDS = (
+    "uses_audio",
+    "audio_used_by_line",
+    "dialog_text_uses_audio",
+    "audio_used_by_dialog_text",
+    "radio_line_uses_audio",
+    "audio_used_by_radio_line",
+    "env_talk_uses_audio",
+    "audio_used_by_env_talk",
+    "remote_common_line_uses_voice",
+    "remote_common_line_uses_audio",
+    "remote_common_line_uses_music",
+    "audio_used_by_remote_common_line_voice",
+    "audio_used_by_remote_common_line",
+    "audio_used_by_remote_common_line_music",
+    "responsive_response_uses_audio",
+    "audio_used_by_responsive_response",
+    "audio_sequence_dialog_uses_audio",
+    "audio_used_by_sequence_dialog",
+    "text_voice_id_uses_audio",
+    "audio_used_by_text_voice_id",
+    "audio_voice_extra_for_audio",
+    "audio_voice_extra_line_node",
+    "audio_voice_extra_for_dialog_row",
+    "audio_vo_tone_for_audio",
+    "audio_vo_tone_has_variant_audio",
+    "audio_used_by_vo_tone",
+    "audio_used_by_vo_tone_variant",
+    "skill_data_references_audio",
+    "audio_used_by_skill_data",
+    "buff_data_references_audio",
+    "audio_used_by_buff_data",
+    "level_data_references_audio",
+    "audio_used_by_level_data",
+    "level_script_references_audio",
+    "audio_used_by_level_script",
+    "spawner_enemy_prewarn_audio",
+    "audio_used_by_spawner_enemy_prewarn",
+    "interactive_template_uses_audio",
+    "audio_used_by_interactive_template",
+    "monobehaviour_frontier_entry_uses_audio",
+    "audio_used_by_monobehaviour_frontier_entry",
+    "audio_factory_announcement_uses_voice",
+    "audio_used_by_factory_announcement",
+    "actor_has_speaker_channel",
+    "speaker_channel",
+    "audio_path",
+    "defines_audio",
+    "decoded_audio_index_names_event",
+    "decoded_audio_index_has_event_evidence",
+    "decoded_audio_file_media",
+    "decoded_audio_file_hotfix_media",
+)
+
+
+def resolve_audio_usage_lookup(db_path: Path, term: str, *, limit: int, kind: str = "") -> tuple[dict[str, Any], str]:
+    lookup_limit = min(max(limit, 1), 20)
+    if kind:
+        return query_graph(db_path, term, limit=lookup_limit, kind=kind), kind
+    term_key = safe_key(term)
+    if term_key:
+        with sqlite3.connect(db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            for candidate in _unique_preserve([term_key, Path(term_key).stem]):
+                if not candidate:
+                    continue
+                if conn.execute("SELECT 1 FROM nodes WHERE id = ? AND kind = 'audio' LIMIT 1", (f"audio:{candidate}",)).fetchone():
+                    return query_graph(db_path, candidate, limit=lookup_limit, kind="audio"), "audio"
+                row = conn.execute(
+                    """
+                    SELECT audio.name
+                    FROM edges edge
+                    JOIN nodes row_node ON row_node.id = edge.src
+                    JOIN nodes audio ON audio.id = edge.dst
+                    WHERE row_node.id = ?
+                      AND edge.kind = 'defines_audio'
+                      AND audio.kind = 'audio'
+                    LIMIT 1
+                    """,
+                    (f"table_row:AudioDialog:{candidate}",),
+                ).fetchone()
+                if row:
+                    return query_graph(db_path, row["name"], limit=lookup_limit, kind="audio"), "audio"
+    for fallback_kind in AUDIO_USAGE_KIND_FALLBACKS:
+        lookup = query_graph(db_path, term, limit=lookup_limit, kind=fallback_kind)
+        if safe_key(lookup.get("seedNode")):
+            return lookup, fallback_kind
+    return query_graph(db_path, term, limit=lookup_limit), ""
+
+
+def audio_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
+    lookup, resolved_kind = resolve_audio_usage_lookup(db_path, term, limit=limit, kind=kind)
+    seed = safe_key(lookup.get("seedNode"))
+    if not seed:
+        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "edgeCounts": {}, "relations": []}
+
+    placeholders = ",".join("?" for _ in AUDIO_USAGE_EDGE_KINDS)
+    relation_limit = max(limit, 1)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        seed_row = conn.execute(
+            "SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?",
+            (seed,),
+        ).fetchone()
+        path_rows = conn.execute(
+            """
+            SELECT file_node.id AS fileNode, file_node.path AS audioPath, edge.source, edge.evidence, edge.data
+            FROM edges edge
+            JOIN nodes file_node ON file_node.id = edge.dst
+            WHERE edge.src = ?
+              AND edge.kind = 'audio_path'
+            ORDER BY file_node.path
+            """,
+            (seed,),
+        ).fetchall()
+        count_rows = conn.execute(
+            f"""
+            SELECT kind AS edge, COUNT(*) AS count
+            FROM edges
+            WHERE (src = ? OR dst = ?)
+              AND kind IN ({placeholders})
+            GROUP BY kind
+            ORDER BY kind
+            """,
+            (seed, seed, *AUDIO_USAGE_EDGE_KINDS),
+        ).fetchall()
+        relation_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src = ? OR e.dst = ?)
+              AND e.kind IN ({placeholders})
+            ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (seed, seed, *AUDIO_USAGE_EDGE_KINDS, relation_limit),
+        ).fetchall()
+
+    seed_data = parse_json_text(seed_row["data"]) if seed_row else {}
+    path_values = _unique_preserve(
+        [seed_row["path"] if seed_row else "", seed_data.get("path")]
+        + [row["audioPath"] for row in path_rows]
+    )
+    path_values = [value for value in path_values if safe_key(value)]
+    resolved_audio = {}
+    if seed_row and seed_row["kind"] == "audio":
+        resolved_audio = {
+            "audioId": seed_row["name"],
+            "audioPath": path_values[0] if path_values else None,
+            "pathEvidence": bool(path_values),
+            "duration": seed_data.get("duration"),
+            "speaker": seed_data.get("speaker"),
+            "voType": seed_data.get("voType"),
+            "codec": seed_data.get("codec"),
+            "audioDialogRowId": seed_data.get("id"),
+        }
+    edge_counts = {row["edge"]: row["count"] for row in count_rows}
+    caveats = []
+    if seed_row and seed_row["kind"] == "audio":
+        if path_values:
+            caveats.append("path_backed_audio")
+        else:
+            caveats.append("no_audio_path_evidence")
+        if edge_counts.get("uses_audio") or edge_counts.get("audio_used_by_line"):
+            caveats.append("story_line_audio_reference")
+        if not path_values and (edge_counts.get("uses_audio") or edge_counts.get("audio_used_by_line")):
+            caveats.append("story_line_reference_unresolved_to_wem")
+    return {
+        "term": term,
+        "seedNode": seed,
+        "seed": compact_node_ref(seed_row) if seed_row else {"id": seed, "key": node_key(seed)},
+        "resolvedKind": resolved_kind,
+        "aliases": lookup.get("aliases") or [],
+        "resolvedAudio": resolved_audio,
+        "pathEvidence": [
+            {
+                "audioPath": row["audioPath"],
+                "source": row["source"],
+                "evidence": row["evidence"],
+                "data": parse_json_text(row["data"]),
+            }
+            for row in path_rows
+        ],
+        "caveats": caveats,
+        "edgeCounts": edge_counts,
+        "relations": [
+            usage_edge_ref(row, "src" if row["dstId"] == seed else "dst", seed)
+            for row in relation_rows
+        ],
+    }
+
+
 def compact_node_ref(row: sqlite3.Row, edge_row: sqlite3.Row | None = None) -> dict[str, Any]:
     data = parse_json_text(row["data"])
     ref: dict[str, Any] = {
@@ -31508,6 +31713,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional node kind to force, such as map, level, map_sublevel_brief, spawner_config, or enemy.",
     )
 
+    audio_used_by = sub.add_parser("audio-usage", help="Show audio, line, and audio-config graph relations")
+    audio_used_by.add_argument("term")
+    audio_used_by.add_argument("--db", type=Path, default=DEFAULT_DB)
+    audio_used_by.add_argument("--limit", type=int, default=40)
+    audio_used_by.add_argument(
+        "--kind",
+        default="",
+        help="Optional node kind to force, such as audio, line, dialog_text, radio_line, or remote_common_line.",
+    )
+
     story = sub.add_parser("story", help="Show recovered line order and option branch evidence for one story key")
     story.add_argument("story_key")
     story.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -31592,6 +31807,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command in ("map-usage", "level-usage"):
         result = map_level_usage(args.db, args.term, limit=args.limit, kind=args.kind)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "audio-usage":
+        result = audio_usage(args.db, args.term, limit=args.limit, kind=args.kind)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command == "story":
