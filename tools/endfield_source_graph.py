@@ -30095,6 +30095,21 @@ FORMULA_USAGE_KIND_FALLBACKS = (
     "limited_formula_reverse",
     "equipment_formula_pack",
 )
+FACTORY_FLOW_KIND_FALLBACKS = (
+    "factory_miner",
+    "factory_fluid_machine",
+    "factory_machine",
+    "factory_recipe",
+    "factory_item",
+    "item",
+    "factory_liquid",
+    "factory_building",
+    "factory_logistic_unit",
+    "factory_underground_pipe",
+    "factory_tech",
+    "factory_mine",
+    "factory_region",
+)
 
 def exact_node_candidates(term: str) -> list[str]:
     candidates = [term]
@@ -30522,6 +30537,119 @@ def formula_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") 
         "caveats": [
             "authored_config_formula_evidence_only",
             "not_runtime_crafting_or_factory_simulation",
+        ],
+    }
+
+
+def resolve_factory_flow_lookup(db_path: Path, term: str, *, limit: int, kind: str = "") -> tuple[dict[str, Any], str]:
+    lookup_limit = min(max(limit, 1), 20)
+    if kind:
+        return query_graph(db_path, term, limit=lookup_limit, kind=kind), kind
+    for fallback_kind in FACTORY_FLOW_KIND_FALLBACKS:
+        lookup = query_graph(db_path, term, limit=lookup_limit, kind=fallback_kind)
+        if safe_key(lookup.get("seedNode")):
+            return lookup, fallback_kind
+    return query_graph(db_path, term, limit=lookup_limit), ""
+
+
+def factory_flow_relation_clause(alias: str = "e") -> str:
+    return f"""
+              AND (
+                   {alias}.kind LIKE '%factory%'
+                OR {alias}.kind LIKE '%recipe%'
+                OR {alias}.kind LIKE '%miner%'
+                OR {alias}.kind LIKE '%fluid%'
+                OR {alias}.kind LIKE '%liquid%'
+                OR {alias}.kind LIKE '%logistic%'
+                OR {alias}.kind LIKE '%power%'
+                OR {alias}.kind LIKE '%pipe%'
+                OR {alias}.kind LIKE '%machine%'
+                OR {alias}.kind LIKE '%blueprint%'
+              )
+    """
+
+
+def factory_flow_category(edge_kind: str) -> str:
+    if "recipe" in edge_kind or "craft" in edge_kind or "ingredient" in edge_kind:
+        return "recipe"
+    if "miner" in edge_kind or "mine" in edge_kind:
+        return "mining"
+    if "fluid" in edge_kind or "liquid" in edge_kind:
+        return "fluid"
+    if "logistic" in edge_kind or "pipe" in edge_kind or "transmission" in edge_kind:
+        return "logistics"
+    if "power" in edge_kind or "battery" in edge_kind or "fuel" in edge_kind:
+        return "power"
+    if "tech" in edge_kind or "unlock" in edge_kind or "blueprint" in edge_kind:
+        return "tech"
+    if "building" in edge_kind or "machine" in edge_kind or "renderer" in edge_kind:
+        return "machine"
+    if "item" in edge_kind:
+        return "item"
+    return "other"
+
+
+def factory_flow(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> dict[str, Any]:
+    lookup, resolved_kind = resolve_factory_flow_lookup(db_path, term, limit=limit, kind=kind)
+    seed = safe_key(lookup.get("seedNode"))
+    if not seed:
+        return {"term": term, "seedNode": "", "matches": lookup.get("nodes") or [], "edgeCounts": {}, "flowHints": {}, "relations": []}
+
+    relation_limit = max(limit, 1)
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        seed_row = conn.execute(
+            "SELECT id, kind, name, source, path, data FROM nodes WHERE id = ?",
+            (seed,),
+        ).fetchone()
+        count_rows = conn.execute(
+            f"""
+            SELECT kind AS edge, COUNT(*) AS count
+            FROM edges e
+            WHERE (src = ? OR dst = ?)
+            {factory_flow_relation_clause("e")}
+            GROUP BY kind
+            ORDER BY kind
+            """,
+            (seed, seed),
+        ).fetchall()
+        relation_rows = conn.execute(
+            f"""
+            SELECT e.kind AS edge, e.source, e.evidence, e.data AS edgeData,
+                   src.id AS srcId, src.kind AS srcKind, src.name AS srcName, src.path AS srcPath, src.data AS srcData,
+                   dst.id AS dstId, dst.kind AS dstKind, dst.name AS dstName, dst.path AS dstPath, dst.data AS dstData
+            FROM edges e
+            JOIN nodes src ON src.id = e.src
+            JOIN nodes dst ON dst.id = e.dst
+            WHERE (e.src = ? OR e.dst = ?)
+            {factory_flow_relation_clause("e")}
+            ORDER BY e.kind, src.kind, src.name, dst.kind, dst.name, e.evidence
+            LIMIT ?
+            """,
+            (seed, seed, relation_limit),
+        ).fetchall()
+
+    relations = [
+        usage_edge_ref(row, "src" if row["dstId"] == seed else "dst", seed)
+        for row in relation_rows
+    ]
+    flow_hints: dict[str, list[dict[str, Any]]] = {}
+    for relation in relations:
+        category = factory_flow_category(safe_key(relation.get("edge")))
+        flow_hints.setdefault(category, []).append(relation)
+
+    return {
+        "term": term,
+        "seedNode": seed,
+        "seed": compact_node_ref(seed_row) if seed_row else {"id": seed, "key": node_key(seed)},
+        "resolvedKind": resolved_kind,
+        "aliases": lookup.get("aliases") or [],
+        "edgeCounts": {row["edge"]: row["count"] for row in count_rows},
+        "flowHints": flow_hints,
+        "relations": relations,
+        "caveats": [
+            "authored_factory_config_evidence_only",
+            "not_runtime_logistics_power_or_throughput_simulation",
         ],
     }
 
@@ -31790,6 +31918,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional node kind to force, such as equipment_formula, factory_recipe, spaceship_formula, or activity_limited_formula.",
     )
 
+    factory_flow_cmd = sub.add_parser("factory-flow", help="Show authored factory machine, recipe, item, fluid, mining, logistics, power, and tech graph relations")
+    factory_flow_cmd.add_argument("term")
+    factory_flow_cmd.add_argument("--db", type=Path, default=DEFAULT_DB)
+    factory_flow_cmd.add_argument("--limit", type=int, default=40)
+    factory_flow_cmd.add_argument(
+        "--kind",
+        default="",
+        help="Optional node kind to force, such as factory_machine, factory_miner, factory_fluid_machine, factory_recipe, or factory_item.",
+    )
+
     blackboard_used_by = sub.add_parser("blackboard-usage", aliases=["gameplay-usage"], help="Show blackboard/skill/buff parameter usage and exact-name bridges")
     blackboard_used_by.add_argument("term")
     blackboard_used_by.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -31900,6 +32038,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "formula-usage":
         result = formula_usage(args.db, args.term, limit=args.limit, kind=args.kind)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "factory-flow":
+        result = factory_flow(args.db, args.term, limit=args.limit, kind=args.kind)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if args.command in ("blackboard-usage", "gameplay-usage"):
