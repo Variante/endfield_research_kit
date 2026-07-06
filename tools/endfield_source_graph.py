@@ -3403,7 +3403,14 @@ class SourceGraphBuilder:
                 self.commit_step("texture2dRawHashCollisions")
             self.finalize_indices()
             summary = self.summary(started)
-            write_summary(summary)
+            try:
+                default_db = DEFAULT_DB.resolve()
+                current_db = self.db_path.resolve()
+            except OSError:
+                default_db = DEFAULT_DB.absolute()
+                current_db = self.db_path.absolute()
+            summary_dir = GRAPH_DIR if current_db == default_db else self.db_path.parent
+            write_summary(summary, output_dir=summary_dir)
             if self.emit_followups:
                 emit_followup_indexes(self.db_path, summary)
             return summary
@@ -27354,9 +27361,13 @@ class SourceGraphBuilder:
         }
 
 
-def write_summary(summary: dict[str, Any]) -> None:
-    DEFAULT_SUMMARY_JSON.parent.mkdir(parents=True, exist_ok=True)
-    DEFAULT_SUMMARY_JSON.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+def write_summary(summary: dict[str, Any], *, output_dir: Path = GRAPH_DIR) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    summary_json = output_dir / "summary.json"
+    summary_md = output_dir / "summary.md"
+    summary["summaryJson"] = slash(summary_json)
+    summary["summaryMarkdown"] = slash(summary_md)
+    summary_json.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     lines = [
         "# Endfield Source Graph",
         "",
@@ -27377,7 +27388,7 @@ def write_summary(summary: dict[str, Any]) -> None:
     for key, count in summary.get("edgesByKind", {}).items():
         lines.append(f"- `{key}`: `{count}`")
     lines.append("")
-    DEFAULT_SUMMARY_MD.write_text("\n".join(lines), encoding="utf-8")
+    summary_md.write_text("\n".join(lines), encoding="utf-8")
 
 
 def emit_followup_indexes(db_path: Path, summary: dict[str, Any]) -> None:
@@ -33640,6 +33651,10 @@ def stat_usage(db_path: Path, term: str, *, limit: int = 40, kind: str = "") -> 
         "aliases": lookup.get("aliases") or [],
         "edgeCounts": {row["edge"]: row["count"] for row in count_rows},
         "relations": relations,
+        "caveats": [
+            "authored_static_stat_and_attribute_evidence_only",
+            "does_not_simulate_runtime_formula_evaluation_modifier_order_or_damage_pipeline",
+        ],
     }
 
 
@@ -35657,7 +35672,7 @@ def main(argv: list[str] | None = None) -> int:
             f"{summary['totals']['aliases']} aliases"
         )
         print(f"Wrote {summary['database']}")
-        print(f"Wrote {slash(DEFAULT_SUMMARY_JSON)}")
+        print(f"Wrote {summary.get('summaryJson') or slash(DEFAULT_SUMMARY_JSON)}")
         if summary["options"]["emitFollowups"]:
             print(f"Wrote follow-up indexes under {slash(GRAPH_DIR)}")
         return 0
