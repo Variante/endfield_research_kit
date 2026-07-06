@@ -30318,6 +30318,26 @@ def recovery_issues(db_path: Path, *, code: str = "", limit: int = 40) -> dict[s
         }
 
 
+def unresolved_narrative_videos(db_path: Path, *, actionable_only: bool = False) -> dict[str, Any]:
+    report_path = GRAPH_DIR / "unresolved_narrative_video_candidates.json"
+    if not report_path.exists():
+        with sqlite3.connect(db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            emit_unresolved_narrative_video_candidates(conn)
+    payload = read_json(report_path, {})
+    records = payload.get("actionable") if actionable_only else payload.get("records")
+    if not isinstance(records, list):
+        records = []
+    return {
+        "sourceReport": slash(report_path),
+        "actionableOnly": actionable_only,
+        "count": len(records),
+        "statusCounts": payload.get("statusCounts"),
+        "actionableCount": payload.get("actionableCount"),
+        "records": records,
+    }
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command")
@@ -30358,6 +30378,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     issues.add_argument("--db", type=Path, default=DEFAULT_DB)
     issues.add_argument("--code", default="", help="Optional warning code filter, such as inferredOptionResponse.")
     issues.add_argument("--limit", type=int, default=40)
+
+    unresolved_videos = sub.add_parser("unresolved-videos", help="List unresolved narrative-video candidate groups")
+    unresolved_videos.add_argument("--db", type=Path, default=DEFAULT_DB)
+    unresolved_videos.add_argument("--actionable", action="store_true", help="Only show candidates with generated story targets.")
 
     return parser.parse_args(argv)
 
@@ -30402,6 +30426,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "issues":
         result = recovery_issues(args.db, code=args.code, limit=args.limit)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "unresolved-videos":
+        result = unresolved_narrative_videos(args.db, actionable_only=args.actionable)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     raise SystemExit(f"Unknown command: {args.command}")
