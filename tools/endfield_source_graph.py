@@ -35168,6 +35168,7 @@ def model_binding_candidates(
     min_world_uses: int = 0,
     min_interactive_uses: int = 0,
     with_siblings: bool = False,
+    sort: str = "report",
     limit: int = 40,
 ) -> dict[str, Any]:
     report_path = GRAPH_DIR / "model_config_asset_binding_candidates.json"
@@ -35183,9 +35184,12 @@ def model_binding_candidates(
     term_filter = safe_key(term).lower()
     min_world_uses = max(min_world_uses, 0)
     min_interactive_uses = max(min_interactive_uses, 0)
+    sort_mode = safe_key(sort) or "report"
+    if sort_mode not in {"report", "world", "interactive", "usage"}:
+        sort_mode = "report"
     filtered: list[dict[str, Any]] = []
     filtered_status_counts: Counter[str] = Counter()
-    for record in records:
+    for index, record in enumerate(records):
         if not isinstance(record, dict):
             continue
         if status_filter and safe_key(record.get("status")) != status_filter:
@@ -35206,9 +35210,25 @@ def model_binding_candidates(
             if term_filter not in haystack:
                 continue
         filtered_status_counts[safe_key(record.get("status"))] += 1
-        filtered.append(record)
-        if len(filtered) >= limit:
-            break
+        row = dict(record)
+        row["_reportIndex"] = index
+        filtered.append(row)
+    if sort_mode == "world":
+        filtered.sort(key=lambda row: (-(int(row.get("worldEntityUses") or 0)), row["_reportIndex"]))
+    elif sort_mode == "interactive":
+        filtered.sort(key=lambda row: (-(int(row.get("interactiveTemplateUses") or 0)), row["_reportIndex"]))
+    elif sort_mode == "usage":
+        filtered.sort(
+            key=lambda row: (
+                -(int(row.get("worldEntityUses") or 0) + int(row.get("interactiveTemplateUses") or 0)),
+                row["_reportIndex"],
+            )
+        )
+    limited = []
+    for row in filtered[:limit]:
+        output_row = dict(row)
+        output_row.pop("_reportIndex", None)
+        limited.append(output_row)
     return {
         "sourceReport": slash(report_path),
         "status": status_filter,
@@ -35216,13 +35236,15 @@ def model_binding_candidates(
         "minWorldUses": min_world_uses,
         "minInteractiveUses": min_interactive_uses,
         "withSiblings": with_siblings,
-        "returned": len(filtered),
+        "sort": sort_mode,
+        "returned": len(limited),
+        "filteredTotal": len(filtered),
         "totalRecords": len(records),
         "statusCounts": payload.get("statusCounts"),
         "filteredStatusCounts": dict(sorted(filtered_status_counts.items())),
         "directModelConfigAssetEntityEdges": payload.get("directModelConfigAssetEntityEdges"),
         "candidateEntityMatches": payload.get("candidateEntityMatches"),
-        "records": filtered,
+        "records": limited,
     }
 
 
@@ -35476,6 +35498,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     model_bindings.add_argument("--min-world-uses", type=int, default=0, help="Only include records used by at least this many world entity rows.")
     model_bindings.add_argument("--min-interactive-uses", type=int, default=0, help="Only include records used by at least this many interactive template rows.")
     model_bindings.add_argument("--with-siblings", action="store_true", help="Only include records with resolved sibling model evidence.")
+    model_bindings.add_argument("--sort", choices=("report", "world", "interactive", "usage"), default="report", help="Sort matching rows before applying --limit.")
     model_bindings.add_argument("--limit", type=int, default=40)
 
     return parser.parse_args(argv)
@@ -35636,6 +35659,7 @@ def main(argv: list[str] | None = None) -> int:
             min_world_uses=args.min_world_uses,
             min_interactive_uses=args.min_interactive_uses,
             with_siblings=args.with_siblings,
+            sort=args.sort,
             limit=args.limit,
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
