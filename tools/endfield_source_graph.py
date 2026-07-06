@@ -17887,6 +17887,7 @@ class SourceGraphBuilder:
         dungeon_node = self.add_dungeon_node(tutorial_id, source=table)
         self.add_edge(row_node, tutorial_node, "defines_character_tutorial", source=table)
         self.add_edge(tutorial_node, dungeon_node, "tutorial_uses_dungeon", source=table, evidence="rowKey")
+        self.add_edge(dungeon_node, tutorial_node, "dungeon_used_by_tutorial", source=table, evidence="rowKey")
         self.add_alias(tutorial_id, tutorial_node, kind="character_tutorial_id", source=table)
         for index, stage in enumerate(row.get("tutorialStageData") or []):
             if not isinstance(stage, dict):
@@ -17912,8 +17913,10 @@ class SourceGraphBuilder:
         tutorial_node = self.add_node("character_tutorial", safe_key(row), name=safe_key(row), source=table)
         self.add_edge(row_node, char_node, "defines_character_training_dungeon", source=table)
         self.add_edge(char_node, dungeon_node, "character_training_dungeon", source=table, evidence="rowValue")
+        self.add_edge(dungeon_node, char_node, "dungeon_used_by_character_training", source=table, evidence="rowValue")
         self.add_edge(char_node, tutorial_node, "character_has_tutorial", source=table, evidence=safe_key(row))
         self.add_edge(tutorial_node, dungeon_node, "tutorial_uses_dungeon", source=table, evidence="CharId2DungeonIdTable")
+        self.add_edge(dungeon_node, tutorial_node, "dungeon_used_by_tutorial", source=table, evidence="CharId2DungeonIdTable")
 
     def add_character_trial_edges(self, table: str, row_key: str, row: dict[str, Any], row_node: str) -> None:
         dungeon_id = safe_key(row.get("dungeonId") or row_key)
@@ -17923,6 +17926,7 @@ class SourceGraphBuilder:
         dungeon_node = self.add_dungeon_node(dungeon_id, source=table)
         self.add_edge(row_node, trial_node, "defines_character_trial", source=table)
         self.add_edge(trial_node, dungeon_node, "trial_uses_dungeon", source=table, evidence="dungeonId")
+        self.add_edge(dungeon_node, trial_node, "dungeon_used_by_trial", source=table, evidence="dungeonId")
         self.add_alias(dungeon_id, trial_node, kind="character_trial_id", source=table)
         self.add_alias(row.get("guideGroupId"), trial_node, kind="guide_group_id", source=table)
         guide_group_node = self.add_guide_group_node(row.get("guideGroupId"), source=table, data={"dungeonId": dungeon_id})
