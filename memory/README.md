@@ -16,14 +16,10 @@ experiments belong under `scratch/` or `tmp/`.
 - `character_unity_export_workflow.md`: character recovery path for exporting
   Endfield model, texture, material, animation, shader-reference, and static
   prop resources into the Unity viewer project.
-- `story_runtime_extraction_audit.md`: current runtime/AnimeStudio/IL2CPP
-  evidence for story recovery, option-response gaps, envEmoji prefab parsing,
-  and follow-up decoder priorities.
-- `scene_file_order_recovery.md`: source-backed mission and scene ordering
-  rules, current audit conclusions, and next recovery queue.
-- `e0m0_file_order_from_binary_scripts.md`: focused e0m0 LevelScript,
-  LevelData, LevelTimeline marker, and scene-order recovery evidence; start
-  here for `lt:p` / `lt:mp` follow-up work.
+- `game_story_recovery.md`: single source of truth for Story reconstruction,
+  source-only mission/scene partial order, quest attachment, LevelScript
+  control flow, dialog branches, option-route controls, e0m0 calibration,
+  narrative-video placement, graph queries, and the current recovery queue.
 - `source_graph_database.md`: local SQLite source graph build/query workflow,
   output shape, source coverage, and current limitations.
 

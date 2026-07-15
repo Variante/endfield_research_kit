@@ -7,6 +7,11 @@ Endfield game data, based on generated reports and WebUI data artifacts. It is
 an interpretation of generated evidence, so it lives in `memory/` rather than
 `reports/`.
 
+> The Story, mission-order, option-route, and narrative-video sections below
+> are a dated whole-project snapshot. Their current conclusions and recovery
+> queue have been consolidated into `memory/game_story_recovery.md`, which is
+> the only active Story-order memory source of truth.
+
 Primary evidence reviewed:
 
 - `reports/export_full_summary.md`
@@ -40,13 +45,7 @@ Additional durable memory reviewed:
 - `memory/game_data_formats.md`
 - `memory/binary_json_cracking.md`
 - `memory/source_graph_database.md`
-- `memory/story_runtime_extraction_audit.md`
-- `memory/scene_file_order_recovery.md`
-- `memory/scene_order_static_frontier.md`
-- `memory/mission_file_order_from_original_data.md`
-- `memory/e0m0_file_order_from_binary_scripts.md`
-- `memory/project_c_scene_order_stage4.md`
-- `memory/quest_tree_source_connections.md`
+- `memory/game_story_recovery.md`
 - `memory/animestudio_ab_understanding_report.md`
 - `memory/animestudio_decode_gaps.md`
 - `memory/animestudio_export_recovery_progress_2026-06-28.md`

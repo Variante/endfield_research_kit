@@ -41,7 +41,7 @@ header. The common values line up as member counts: `0x0f = 15`,
 3. **Existing repo evidence**
    - `scripts/story_builder/levelscript_binary.py` already decodes stable
      LevelScriptData facts.
-   - Prior notes in `memory/e0m0_file_order_from_binary_scripts.md` record
+   - The consolidated `memory/game_story_recovery.md` note records
      direct GameAssembly evidence that
      `Beyond_Gameplay_LevelScriptDataForMemoryPack.Deserialize` has
      `memberCount=26` with field order:
@@ -3013,4 +3013,3 @@ Adjusted next parser plan:
    of assuming the 148-byte default branch.
 3. Keep `ActionGroupData`, cast data, blackboard, and early SkillData fields out
    of field-value decoding until their item/list wrappers have exact handoffs.
-
