@@ -14,7 +14,7 @@ import sys
 import time
 from typing import Any
 
-from common import REPORTS_DIR, ROOT, rel_path
+from common import EXPORT_REPORTS_DIR, ROOT, rel_path
 
 
 ACTIVE_ENV = "ENDFIELD_EXPORT_BENCHMARK_ACTIVE"
@@ -420,10 +420,27 @@ def build_markdown(payload: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def write_reports(payload: dict[str, Any], *, reports_dir: Path, label: str, update_latest: bool) -> tuple[Path, Path]:
+def prune_benchmark_runs(out_dir: Path, slug: str, runs_to_keep: int) -> None:
+    if runs_to_keep < 1:
+        return
+    json_paths = sorted(out_dir.glob(f"{slug}_*.json"), key=lambda path: path.name, reverse=True)
+    for json_path in json_paths[runs_to_keep:]:
+        md_path = json_path.with_suffix(".md")
+        json_path.unlink(missing_ok=True)
+        md_path.unlink(missing_ok=True)
+
+
+def write_reports(
+    payload: dict[str, Any],
+    *,
+    reports_dir: Path,
+    label: str,
+    update_latest: bool,
+    runs_to_keep: int,
+) -> tuple[Path, Path]:
     slug = safe_slug(label)
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
-    out_dir = reports_dir / "export_benchmarks"
+    out_dir = reports_dir / "benchmarks"
     out_dir.mkdir(parents=True, exist_ok=True)
     json_path = out_dir / f"{slug}_{run_id}.json"
     md_path = out_dir / f"{slug}_{run_id}.md"
@@ -440,6 +457,7 @@ def write_reports(payload: dict[str, Any], *, reports_dir: Path, label: str, upd
         payload["reports"]["latest_markdown"] = rel_path(latest_md)
         latest_json.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         latest_md.write_text(build_markdown(payload), encoding="utf-8")
+    prune_benchmark_runs(out_dir, slug, runs_to_keep)
     return json_path, md_path
 
 
@@ -447,12 +465,18 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Run an export command, sample process-tree memory, and write "
-            "reports/export_benchmarks plus a latest benchmark report."
+            "reports/export/benchmarks plus a latest benchmark report."
         )
     )
     parser.add_argument("--label", default="export", help="report filename label")
     parser.add_argument("--cwd", type=Path, default=ROOT, help="working directory for the command")
-    parser.add_argument("--reports-dir", type=Path, default=REPORTS_DIR, help="directory for benchmark reports")
+    parser.add_argument("--reports-dir", type=Path, default=EXPORT_REPORTS_DIR, help="directory for export reports")
+    parser.add_argument(
+        "--runs-to-keep",
+        type=int,
+        default=10,
+        help="number of historical benchmark runs to retain per label (default: 10; 0 disables pruning)",
+    )
     parser.add_argument(
         "--sample-interval",
         type=float,
@@ -472,6 +496,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         args.command = list(DEFAULT_COMMAND)
     if args.sample_interval <= 0:
         parser.error("--sample-interval must be greater than 0")
+    if args.runs_to_keep < 0:
+        parser.error("--runs-to-keep must be 0 or greater")
     return args
 
 
@@ -487,6 +513,7 @@ def main(argv: list[str] | None = None) -> int:
         reports_dir=args.reports_dir,
         label=args.label,
         update_latest=not args.no_latest,
+        runs_to_keep=args.runs_to_keep,
     )
     print(
         json.dumps(

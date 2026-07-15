@@ -319,9 +319,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--runtime-audit",
         type=Path,
-        default=ROOT / "reports" / "runtime_jump_option_route_audit_CN.json",
+        default=ROOT / "reports" / "story" / "recovery" / "options" / "runtime_jump_option_route_audit_CN.json",
     )
-    parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports")
+    parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports" / "story" / "recovery" / "options")
     parser.add_argument("--all-buckets", action="store_true", help="Include non-priority story buckets.")
     return parser.parse_args(argv)
 

@@ -35,7 +35,9 @@ from common import (
 
 
 EPSILON = 0.001
-DEFAULT_IL2CPP_REPORT = ROOT / "reports" / "option_flow_body_targets_gameassembly.json"
+DEFAULT_IL2CPP_REPORT = (
+    ROOT / "reports" / "story" / "recovery" / "options" / "option_flow_body_targets_gameassembly.json"
+)
 
 
 def as_float(value: Any) -> float | None:
@@ -1236,7 +1238,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         default=ROOT / "export_full" / "recovered" / "AnimeStudio-cli" / "timeline_line_orders.json",
     )
-    parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports")
+    parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports" / "story" / "recovery" / "options")
     parser.add_argument(
         "--il2cpp-report",
         type=Path,

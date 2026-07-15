@@ -867,7 +867,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         default=ROOT / "export_full" / "recovered" / "AnimeStudio-cli" / "timeline_line_orders.json",
     )
-    parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports")
+    parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports" / "story" / "recovery" / "options")
     parser.add_argument("--story", action="append", help="Story key, substring, glob, or comma-list to audit.")
     parser.add_argument("--group", action="append", help="Option group number or comma-list to audit.")
     parser.add_argument(

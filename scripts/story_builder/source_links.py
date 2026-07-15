@@ -21,12 +21,12 @@ SCRIPTS_DIR = Path(__file__).resolve().parents[1]
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from common import EXPORT_ROOT, REPORTS_DIR, ROOT, rel_path as slash
+from common import EXPORT_ROOT, ROOT, STORY_REPORTS_DIR, rel_path as slash
 
 DATA_JSON_DIR = EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json"
 DEFAULT_OUTPUT = EXPORT_ROOT / "recovered" / "story_source_links.json"
-DEFAULT_REPORT_JSON = REPORTS_DIR / "story_source_links.json"
-DEFAULT_REPORT_MD = REPORTS_DIR / "story_source_links.md"
+DEFAULT_REPORT_JSON = STORY_REPORTS_DIR / "story_source_links.json"
+DEFAULT_REPORT_MD = STORY_REPORTS_DIR / "story_source_links.md"
 
 DEFAULT_SCAN_ROOTS = (
     DATA_JSON_DIR / "MissionRuntimeAsset",

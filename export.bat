@@ -195,8 +195,8 @@ echo.
 echo Other arguments are passed to scripts\export_full_from_game.py only when
 echo --export-from-game is present. The wrapper also forwards --game-root to
 echo the audio linker.
-echo Every export.bat run writes a benchmark report under reports\export_benchmarks
-echo and updates reports\export_benchmark_latest.md/json.
+echo Every export.bat run writes a benchmark report under reports\export\benchmarks
+echo and updates reports\export\export_benchmark_latest.md/json.
 echo.
 echo Companion wrappers:
 echo   build_updates.bat     Build the Updates tab feed.

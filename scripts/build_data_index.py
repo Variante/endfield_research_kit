@@ -4472,7 +4472,8 @@ def read_buff_find_target_body_partial(
 # ---------------------------------------------------------------------------
 # Full byte-proven SelectorData / FindTargetActionData readers (2026-07-05).
 #
-# Layout proof (scratch/selectordata_20260705/, memory/selectordata_recovery_20260705.md):
+# Layout proof (scratch/selectordata_20260705/ and the MemoryPack section of
+# memory/game_data_recovery.md):
 # - MemoryPack objects here are a 1-byte member-count header (must equal the
 #   serialized member count) or 0xFF for null.
 # - Serialized member order is base-class members first, each class level

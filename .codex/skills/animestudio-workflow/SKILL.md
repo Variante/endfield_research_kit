@@ -105,11 +105,11 @@ Common direct options:
 After wrapper runs, start with:
 
 ```text
-reports\export_full_summary.md
-reports\StreamingAssets\*.stdout.log
-reports\StreamingAssets\*.stderr.log
-reports\Persistent\*.stdout.log
-reports\Persistent\*.stderr.log
+reports\export\export_full_summary.md
+reports\export\runs\<timestamp>\StreamingAssets\*.stdout.log
+reports\export\runs\<timestamp>\StreamingAssets\*.stderr.log
+reports\export\runs\<timestamp>\Persistent\*.stdout.log
+reports\export\runs\<timestamp>\Persistent\*.stderr.log
 export_full\recovered\AnimeStudio-cli\animestudio_type_manifest.json
 ```
 

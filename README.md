@@ -44,8 +44,9 @@ include unreleased or not-yet-seen game content. Browsing them may spoil story,
 characters, maps, events, mechanics, or other discoveries. If you care about a
 blind playthrough, be careful about what you export and open.
 
-Older exploration notes, demo status snapshots, and one-off recovery utilities
-belong under `memory/` so the repo root stays focused.
+Durable recovery conclusions are maintained as a small set of living topic
+documents under `memory/`; generated reports and one-off experiments stay out
+of those documents so the repo root and research guidance remain focused.
 
 ## First-Time Setup
 
@@ -167,7 +168,7 @@ accepts `--animestudio-jobs` for Story export work too, and
 `export.bat --export-from-game --with-assets` accepts the same asset mode,
 worker, shard, and type-job controls as `export_assets.bat --export-from-game`.
 Every `export.bat` run also writes a wall-time and process-tree RAM benchmark
-under `reports/export_benchmarks/` and updates `reports/export_benchmark_latest.md`.
+under `reports/export/benchmarks/` and updates `reports/export/export_benchmark_latest.md`.
 
 CN is rebuilt by default. To build more languages after the rebuild:
 
@@ -252,11 +253,35 @@ safeguards, and scanner-cache details are documented in `AGENTS.md` and
   installed-game story and asset exports.
 - `export_full/`: generated data exported from the installed client.
 - `res/`: README screenshots and other small documentation media.
-- `reports/`: durable WebUI/export summaries.
+- `reports/`: generated outputs grouped by topic (`export/`, `story/`,
+  `updates/`, `assets/`, and `source_graph/`).
 - `videos/`: local gameplay captures used by optional Story order OCR/audio
   recovery tools.
 - `scratch/`: disposable local outputs.
-- `memory/`: durable notes, conclusions, and recovery snapshots.
+- `memory/`: consolidated, living recovery conclusions by topic; see
+  `memory/README.md` for the index and writing rules.
+
+## Research Memory
+
+The research memory is intentionally concise and topic-based. Update these
+documents in place instead of adding dated investigation snapshots:
+
+- [`memory/webui_recovery.md`](memory/webui_recovery.md): WebUI export,
+  updates, serving, packaging, media, and performance behavior.
+- [`memory/game_story_recovery.md`](memory/game_story_recovery.md): Story
+  ordering evidence, quests, dialog/options, and narrative video.
+- [`memory/game_data_recovery.md`](memory/game_data_recovery.md): VFS and data
+  formats, gameplay payloads, MonoBehaviour semantics, and source graph.
+- [`memory/asset_recovery.md`](memory/asset_recovery.md): models, entities,
+  materials, textures, media, placement, and asset aliases.
+- [`memory/animestudio_recovery.md`](memory/animestudio_recovery.md): exporter
+  architecture, conversion status, parsers, diagnostics, and memory behavior.
+- [`memory/character_render_and_animation_recovery.md`](memory/character_render_and_animation_recovery.md):
+  Unity character rendering, CharInfo/HGRP recovery, roster, and animation.
+
+Changing inventories and exhaustive audits belong under `reports/`; temporary
+probes belong under `scratch/` or `tmp/`. The full maintenance contract is in
+[`memory/README.md`](memory/README.md) and `AGENTS.md`.
 
 ## Community Resources
 

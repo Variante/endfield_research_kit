@@ -60,7 +60,7 @@ from common import (
     EXPORT_ROOT,
     LANG_DIR,
     OUT_DIR,
-    REPORTS_DIR,
+    STORY_REPORTS_DIR,
     ROOT,
     first_string_field as _first_string_field,
     is_present,
@@ -74,6 +74,8 @@ from common import (
     walk_field_values as _walk_field_values,
     write_json,
 )
+
+REPORTS_DIR = STORY_REPORTS_DIR
 
 SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:

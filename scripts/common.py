@@ -13,6 +13,12 @@ OUT_DIR = ROOT / "webui" / "data"
 LANG_DIR = OUT_DIR / "lang"
 ASSET_DIR = OUT_DIR / "assets"
 REPORTS_DIR = ROOT / "reports"
+EXPORT_REPORTS_DIR = REPORTS_DIR / "export"
+STORY_REPORTS_DIR = REPORTS_DIR / "story" / "build"
+STORY_RECOVERY_REPORTS_DIR = REPORTS_DIR / "story" / "recovery"
+STORY_OPTION_REPORTS_DIR = STORY_RECOVERY_REPORTS_DIR / "options"
+UPDATES_REPORTS_DIR = REPORTS_DIR / "updates"
+ASSET_REPORTS_DIR = REPORTS_DIR / "assets"
 SAFE_REPORT_REPLACEMENTS = str.maketrans({
     "\\": "_",
     "/": "_",

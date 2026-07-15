@@ -11,8 +11,8 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INDEX = ROOT / "webui" / "data" / "decoded" / "index.json"
-DEFAULT_JSON = ROOT / "reports" / "monobehaviour_frontier_latest.json"
-DEFAULT_MD = ROOT / "reports" / "monobehaviour_frontier_latest.md"
+DEFAULT_JSON = ROOT / "reports" / "assets" / "diagnostics" / "monobehaviour_frontier_latest.json"
+DEFAULT_MD = ROOT / "reports" / "assets" / "diagnostics" / "monobehaviour_frontier_latest.md"
 LIST_LIMIT = 12
 
 

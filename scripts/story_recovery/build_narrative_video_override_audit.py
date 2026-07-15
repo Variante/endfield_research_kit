@@ -42,7 +42,8 @@ DEFAULT_OVERRIDE_PATH = ROOT / "webui" / "overrides" / "narrative_videos.json"
 DEFAULT_CONV_ROOT = ROOT / "webui" / "data" / "lang"
 DEFAULT_VIDEO_INDEX = ROOT / "webui" / "data" / "assets" / "videos.json"
 DEFAULT_VIDEO_BINDINGS = ROOT / "export_full" / "recovered" / "video_bindings.json"
-DEFAULT_REPORTS_DIR = ROOT / "reports"
+DEFAULT_REPORTS_DIR = ROOT / "reports" / "story" / "recovery" / "narrative_video"
+DEFAULT_STORY_REPORTS_DIR = ROOT / "reports" / "story" / "build"
 
 VIDEO_STEM_EXT_RE = re.compile(r"\.[A-Za-z0-9]{1,8}$")
 GENDERED_CS_VIDEO_RE = re.compile(r"^(?:f|m|fm)_(cs_video_.+)$", flags=re.IGNORECASE)
@@ -284,7 +285,7 @@ def build_video_catalog(
                 add_ref_from_name(
                     catalog,
                     name,
-                    source=f"reports/narrative_videos.{section}",
+                    source=f"reports/story/build/narrative_videos.{section}",
                     webuiKey=safe_key(row.get("key")),
                     mission=safe_key(row.get("mission")),
                 )
@@ -296,7 +297,7 @@ def build_video_catalog(
             add_ref_from_name(
                 catalog,
                 row.get("name"),
-                source=f"reports/narrative_videos.{section}",
+                source=f"reports/story/build/narrative_videos.{section}",
                 targetKey=safe_key(row.get("targetKey")),
                 rel=safe_key(row.get("rel")),
                 keyCandidates=list(row.get("keyCandidates") or []),
@@ -809,7 +810,7 @@ def build_audit(args: argparse.Namespace) -> dict[str, Any]:
     conv_dir = lang_dir / "conv"
     index_path = lang_dir / "index.json"
     evidence_path = lang_dir / "narrative_video_evidence.json"
-    narrative_report_path = args.reports_dir / f"narrative_videos_{language}.json"
+    narrative_report_path = args.story_reports_dir / f"narrative_videos_{language}.json"
 
     override_payload = read_json(args.override, {})
     rules = parse_override_rules(override_payload)
@@ -1035,6 +1036,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--video-index", type=Path, default=DEFAULT_VIDEO_INDEX)
     parser.add_argument("--video-bindings", type=Path, default=DEFAULT_VIDEO_BINDINGS)
     parser.add_argument("--reports-dir", type=Path, default=DEFAULT_REPORTS_DIR)
+    parser.add_argument("--story-reports-dir", type=Path, default=DEFAULT_STORY_REPORTS_DIR)
     parser.add_argument("--json", type=Path, help="output JSON path")
     parser.add_argument("--markdown", type=Path, help="output Markdown path")
     parser.add_argument("--no-write", action="store_true", help="print the summary without writing reports")

@@ -1789,7 +1789,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "(authored story missions; excludes db/dm/hidden/map*)."
         ),
     )
-    parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports")
+    parser.add_argument(
+        "--reports-dir",
+        type=Path,
+        default=ROOT / "reports",
+        help="Report root for mission-order audit outputs.",
+    )
+    parser.add_argument(
+        "--story-reports-dir",
+        type=Path,
+        default=ROOT / "reports" / "story" / "build",
+        help="Story build report directory containing mission_timeline_recovery_<LANG>.json.",
+    )
     parser.add_argument("--skip-asset-map", action="store_true", help="Skip the large AssetMap string-count pass.")
     return parser.parse_args(argv)
 
@@ -1821,7 +1832,7 @@ def main(argv: list[str] | None = None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     missions = split_missions(args.mission)
     if args.all_target_prefixes:
-        missions.extend(collect_target_prefix_missions(args.language, args.reports_dir))
+        missions.extend(collect_target_prefix_missions(args.language, args.story_reports_dir))
         missions = unique_preserve(missions)
     if not missions:
         print(
@@ -1833,7 +1844,7 @@ def main(argv: list[str] | None = None) -> int:
         payload = build_report(
             mission,
             language=args.language,
-            reports_dir=args.reports_dir,
+            reports_dir=args.story_reports_dir,
             include_asset_map=not args.skip_asset_map,
         )
         json_path = out_dir / f"{mission}_evidence_audit.json"

@@ -345,6 +345,16 @@ source-only metric. A separate broad main-story comparison likewise found
 31.82% strict inversions and 16.37% coarse-phase inversions against manual
 override order; override agreement is not original-game proof.
 
+Gameplay-video OCR/audio matching remains an optional observed-evidence path,
+not source-only chronology. The maintained PP-OCRv5 server benchmark on this
+machine found frame batches 24-56 materially faster than the old batch 8 and
+selected 40 as the stable default (roughly 11.7 fps mean in the repeated
+sample). The audit and Story-order scripts expose
+`--paddleocr-frame-batch-size`; re-benchmark after model, GPU, or crop changes
+instead of treating 40 as universal. OCR proposals stay in
+`webui/data/story_order_ocr.json` and never silently overwrite locked manual
+orders.
+
 ## Source graph and generated audit surface
 
 The source graph is an evidence index, not runtime simulation. After the latest

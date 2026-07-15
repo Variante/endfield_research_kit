@@ -8,8 +8,8 @@ known field order instead of broad guessing.
 
 Output:
 
-    reports/monobehaviour_frontier_tail_audit.json
-    reports/monobehaviour_frontier_tail_audit.md
+    reports/assets/diagnostics/monobehaviour_frontier_tail_audit.json
+    reports/assets/diagnostics/monobehaviour_frontier_tail_audit.md
 """
 from __future__ import annotations
 
@@ -28,12 +28,12 @@ if str(_REPO_ROOT / "scripts") not in sys.path:
 
 from common import ROOT, md_escape, read_json, write_report_json, write_text_if_changed  # noqa: E402
 
-DEFAULT_FRONTIER_JSON = ROOT / "reports" / "monobehaviour_frontier_latest.json"
+DEFAULT_FRONTIER_JSON = ROOT / "reports" / "assets" / "diagnostics" / "monobehaviour_frontier_latest.json"
 DEFAULT_METADATA_JSON = ROOT / "tmp" / "monobehaviour_frontier_runtime_metadata_targets.json"
 DEFAULT_BODY_JSON = ROOT / "tmp" / "monobehaviour_frontier_body_targets_gameassembly.json"
 DEFAULT_EXPORT_ROOT = ROOT / "export_full"
-DEFAULT_JSON = ROOT / "reports" / "monobehaviour_frontier_tail_audit.json"
-DEFAULT_MD = ROOT / "reports" / "monobehaviour_frontier_tail_audit.md"
+DEFAULT_JSON = ROOT / "reports" / "assets" / "diagnostics" / "monobehaviour_frontier_tail_audit.json"
+DEFAULT_MD = ROOT / "reports" / "assets" / "diagnostics" / "monobehaviour_frontier_tail_audit.md"
 
 DEFAULT_FOCUS_SCHEMAS = (
     "ProjectileTemplateData",

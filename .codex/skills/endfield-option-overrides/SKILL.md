@@ -14,7 +14,7 @@ option recovery gaps without changing the automatic recovery rules.
 - Runtime application point: `webui/app.js`
 - Story rendering tags: `webui/app.js`, `webui/app_labels.js`, `webui/style.css`
 - Generated validation targets: `webui/data/lang/CN/conv/<key>.json`,
-  `reports/inferred_option_anchors_CN.json`
+  `reports/story/build/inferred_option_anchors_CN.json`
 
 ## Rules
 
@@ -67,7 +67,7 @@ Inferred response override:
 ## Workflow
 
 1. Identify the target scene and group.
-   - Use existing WebUI JSON, `reports/inferred_option_anchors_CN.json`, or:
+   - Use existing WebUI JSON, `reports/story/build/inferred_option_anchors_CN.json`, or:
      `python tools\endfield_source_graph.py story <key> --limit-lines 12`
    - For inferred responses, inspect the generated warning or run the relevant
      `scripts/story_recovery/` audit before adding a manual mapping.
@@ -83,7 +83,7 @@ Inferred response override:
    - `python -m json.tool webui\overrides\options.json`
    - Confirm the target Story scene shows the manual override tag.
    - Confirm unresolved inferred-anchor counts are expected:
-     `reports/inferred_option_anchors_CN.json`
+     `reports/story/build/inferred_option_anchors_CN.json`
    - Run syntax checks after frontend edits:
      `node --check webui\app.js`
      `node --check webui\app_labels.js`

@@ -18,7 +18,7 @@ Usage:
   python tools/endfield-il2cpp/catalog_option_flow_metadata.py --cache-metadata
   python tools/endfield-il2cpp/catalog_option_flow_metadata.py --only-focus
   python tools/endfield-il2cpp/catalog_option_flow_metadata.py --only-focus --body-context 4
-  python tools/endfield-il2cpp/catalog_option_flow_metadata.py --out reports/option_flow_runtime_metadata.json
+  python tools/endfield-il2cpp/catalog_option_flow_metadata.py --out reports/story/recovery/options/option_flow_runtime_metadata.json
 """
 from __future__ import annotations
 
@@ -43,8 +43,8 @@ DEFAULT_INSTALL_METADATA = Path(
 )
 DEFAULT_CACHE_METADATA = Path("export_full/recovered/il2cpp/global-metadata.dat")
 
-DEFAULT_JSON = Path("reports/option_flow_runtime_metadata.json")
-DEFAULT_MD = Path("reports/option_flow_runtime_metadata.md")
+DEFAULT_JSON = Path("reports/story/recovery/options/option_flow_runtime_metadata.json")
+DEFAULT_MD = Path("reports/story/recovery/options/option_flow_runtime_metadata.md")
 DEFAULT_BODY_CONTEXT = 3
 
 DEFAULT_TYPE_RE = re.compile(

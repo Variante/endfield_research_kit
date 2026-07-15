@@ -31,8 +31,8 @@ EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_MRA_DIR = EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json" / "MissionRuntimeAsset"
 DEFAULT_TIMELINE_ORDERS = EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "timeline_line_orders.json"
 DEFAULT_GENERATED_MISSION_DIR = ROOT / "webui" / "data" / "lang" / "CN" / "mission"
-DEFAULT_OUT_JSON = ROOT / "reports" / "mission_timeline_recovery_CN.json"
-DEFAULT_OUT_MD = ROOT / "reports" / "mission_timeline_recovery_CN.md"
+DEFAULT_OUT_JSON = ROOT / "reports" / "story" / "build" / "mission_timeline_recovery_CN.json"
+DEFAULT_OUT_MD = ROOT / "reports" / "story" / "build" / "mission_timeline_recovery_CN.md"
 
 # Mission ID prefixes the WebUI builders treat as authored story missions.
 # Tutorial / debug buckets (db, dm, hidden, map*) are excluded.

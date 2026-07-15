@@ -27,7 +27,8 @@ from pack_webui import (
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
 DEFAULT_OUTPUT = ROOT / "export_full"
-DEFAULT_REPORTS = ROOT / "reports"
+DEFAULT_REPORTS = ROOT / "reports" / "export"
+DEFAULT_REPORT_RUNS_TO_KEEP = 5
 DEFAULT_ANIMESTUDIO = ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
 DEFAULT_STRUCTURED_DUMPER = DEFAULT_ANIMESTUDIO
 SOURCES = ("StreamingAssets", "Persistent")
@@ -2355,7 +2356,19 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Do not rerun exports; regenerate summary files from existing logs and outputs",
     )
-    return parser.parse_args()
+    parser.add_argument(
+        "--report-runs-to-keep",
+        type=int,
+        default=DEFAULT_REPORT_RUNS_TO_KEEP,
+        help=(
+            "Number of timestamped export report runs to retain (default: "
+            f"{DEFAULT_REPORT_RUNS_TO_KEEP}; 0 disables pruning)."
+        ),
+    )
+    args = parser.parse_args()
+    if args.report_runs_to_keep < 0:
+        parser.error("--report-runs-to-keep must be 0 or greater")
+    return args
 
 
 def ensure_dir(path: Path) -> Path:
@@ -2379,6 +2392,25 @@ def log(message: str) -> None:
 
 def current_report_run_id() -> str:
     return time.strftime("%Y%m%d_%H%M%S", time.localtime())
+
+
+def prune_export_report_runs(runs_root: Path, current_run: Path, runs_to_keep: int) -> None:
+    if runs_to_keep < 1 or not runs_root.exists():
+        return
+    current_resolved = current_run.resolve()
+    run_dirs = sorted(
+        (
+            path
+            for path in runs_root.iterdir()
+            if path.is_dir() and re.fullmatch(r"\d{8}_\d{6}", path.name)
+        ),
+        key=lambda path: path.name,
+        reverse=True,
+    )
+    for path in run_dirs[runs_to_keep:]:
+        if path.resolve() == current_resolved:
+            continue
+        shutil.rmtree(path)
 
 
 def load_previous_summary(primary_path: Path, legacy_path: Path) -> dict[str, Any]:
@@ -4586,7 +4618,8 @@ def main() -> int:
     output_root = args.output.resolve()
     reports_root = ensure_dir(DEFAULT_REPORTS.resolve())
     report_run_id = current_report_run_id()
-    reports_dir = ensure_dir(reports_root / report_run_id)
+    reports_runs_root = ensure_dir(reports_root / "runs")
+    reports_dir = ensure_dir(reports_runs_root / report_run_id)
     legacy_reports_dir = output_root / "reports"
     structured_dumper = args.structured_dumper.resolve()
     animestudio = args.animestudio.resolve()
@@ -5386,6 +5419,7 @@ def main() -> int:
     latest_summary_md = reports_root / "export_full_summary.md"
     latest_summary_md.write_text("\n".join(md_lines), encoding="utf-8")
     log(f"updating latest markdown summary at {latest_summary_md}")
+    prune_export_report_runs(reports_runs_root, reports_dir, args.report_runs_to_keep)
     failed_entry_count = sum(1 for line in failed_lines if line and not line.startswith("["))
     manifest_entry_count = sum(1 for line in manifest_lines if line and not line.startswith("["))
     log(

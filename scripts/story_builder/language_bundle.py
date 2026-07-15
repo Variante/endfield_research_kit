@@ -5775,10 +5775,11 @@ def build_language_bundle(
             },
             "rows": rows,
         }
+        report_json = REPORTS_DIR / f"cutscene_text_candidates_{language_code}.json"
         if not rows:
+            report_json.unlink(missing_ok=True)
             return report
         REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-        report_json = REPORTS_DIR / f"cutscene_text_candidates_{language_code}.json"
         write_json(report_json, report, indent=2, compact=False)
         report["report"] = {
             "json": repo_rel(report_json),
