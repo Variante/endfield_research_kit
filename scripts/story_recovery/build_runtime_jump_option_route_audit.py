@@ -1031,7 +1031,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--language", default="CN")
     parser.add_argument("--conv-dir", type=Path)
     parser.add_argument("--timeline-orders", type=Path, default=ROOT / "export_full" / "recovered" / "AnimeStudio-cli" / "timeline_line_orders.json")
-    parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports")
+    parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports" / "story" / "recovery" / "options")
     parser.add_argument("--story", action="append", help="Story key, substring, glob, or comma-list to audit.")
     parser.add_argument("--group", action="append", help="Option group number or comma-list to audit.")
     parser.add_argument("--only-nearby-jumps", action="store_true", help="Emit only audited groups that have nearby Runtime Jump Track clips.")

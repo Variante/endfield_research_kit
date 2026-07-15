@@ -20,7 +20,7 @@ for _path in (_REPO_ROOT / "scripts",):
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
-from common import REPORTS_DIR, ROOT, md_escape, read_json, rel_path, write_report_json
+from common import ROOT, STORY_OPTION_REPORTS_DIR, md_escape, read_json, rel_path, write_report_json
 
 OPTION_WARNING_CODES = {"inferredOptionLayout", "inferredOptionResponse"}
 
@@ -46,7 +46,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--output-prefix",
         type=Path,
         default=None,
-        help="Output prefix without extension. Defaults to reports/option_override_coverage_<language>.",
+        help="Output prefix without extension. Defaults to reports/story/recovery/options/option_override_coverage_<language>.",
     )
     return parser.parse_args(argv)
 
@@ -435,7 +435,7 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit(f"Conversation root not found: {conv_root}")
     if not args.overrides.exists():
         raise SystemExit(f"Option overrides not found: {args.overrides}")
-    output_prefix = args.output_prefix or (REPORTS_DIR / f"option_override_coverage_{language}")
+    output_prefix = args.output_prefix or (STORY_OPTION_REPORTS_DIR / f"option_override_coverage_{language}")
     payload = build_payload(language, conv_root, args.overrides)
     write_report_json(output_prefix.with_suffix(".json"), payload)
     write_markdown(output_prefix.with_suffix(".md"), payload)

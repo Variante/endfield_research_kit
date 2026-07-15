@@ -6,8 +6,10 @@ Keep root-level docs and workflow guidance focused on:
 
 - the static WebUI in `webui/`
 
-Move observations, conclusions, older exploration notes, and status snapshots to
-`memory/`. Do not use `reports/` for investigation conclusions.
+Fold durable observations, conclusions, and recovery status into the existing
+topic documents under `memory/`. Do not recreate one-file-per-investigation or
+dated status snapshots. Generated inventories belong in `reports/`, and
+disposable evidence belongs in `scratch/` or `tmp/`.
 
 ## Commands
 
@@ -53,8 +55,8 @@ Story+asset export instead of separate Story and asset exporter invocations.
 `export.bat` does not refresh `webui/overrides/story_order.json`; active Story
 order is user-managed there, while OCR recovery writes proposed order references
 under `webui/data/story_order_ocr.json`. Every `export.bat` run writes a
-wall-time and process-tree RAM benchmark under `reports/export_benchmarks/` and updates
-`reports/export_benchmark_latest.md/json`.
+wall-time and process-tree RAM benchmark under `reports/export/benchmarks/` and updates
+`reports/export/export_benchmark_latest.md/json`.
 Use `build_updates.bat` for the standalone Updates feed comparison. Use
 `build_updates.bat --init-build` for first-time/baseline-only builds where the
 Updates feed should be baselined instead of reporting changes. It reads the
@@ -173,7 +175,7 @@ Setup and export internals:
 - `--animestudio-mono-behaviour-type-tree-priority script-first` is for
   targeted MonoBehaviour schema experiments; the default is `serialized-first`.
   Script-first must fall back cleanly when no usable DummyDlls are available.
-- After installed-game refreshes, check `reports/export_full_summary.md` for
+- After installed-game refreshes, check `reports/export/export_full_summary.md` for
   stage return codes and AnimeStudio export errors.
 
 Browser data inputs and outputs:
@@ -206,21 +208,46 @@ Script notes:
 
 - `scripts/README.md` lists the maintained script map and workflow contracts.
 - New one-off exploration scripts should start in `scratch/` or `tmp/`.
-- Durable conclusions belong in `memory/`; reusable helpers should move into
-  maintained workflow code only with matching docs and intentional tracking.
+- Durable conclusions belong in the matching consolidated `memory/` topic;
+  reusable helpers should move into maintained workflow code only with
+  matching docs and intentional tracking.
+
+## Memory Maintenance Rule
+
+`memory/` is intentionally flat and limited to the topic files indexed by
+`memory/README.md`. Treat those files as living sources of truth:
+
+- update the current conclusion, evidence boundary, commands, and recovery
+  queue in the owning topic;
+- fold useful session history into concise evidence notes instead of adding a
+  dated Markdown file;
+- keep changing counts, exhaustive inventories, and generated audits in
+  `reports/`, with links from memory only when they remain useful;
+- keep disposable probes and intermediate output in `scratch/` or `tmp/`;
+- add a new memory file only for a genuinely new durable topic, and update
+  `memory/README.md`, this guidance list, and relevant active docs together.
+
+The owning topics are WebUI, Story recovery, game-data recovery, semantic asset
+recovery, AnimeStudio exporter recovery, and character render/animation
+recovery. Cross-topic improvement plans should be split into the recovery
+queues of those owning files rather than maintained as a second status source.
 
 ## Current Guidance Locations
 
-Older `memory/` exploration archives have been retired into the active docs.
-Do not recreate duplicate README-shaped snapshots in `memory/`; update the
-current source of truth instead:
+The former exploration archive has been consolidated. Do not recreate duplicate
+README-shaped or dated snapshots; update the current source of truth instead:
 
 - user-facing active workflow: `README.md`
 - agent-facing repo rules: `AGENTS.md`
 - script/workflow contract: `scripts/README.md`
 - WebUI frontend scope: `webui/README.md`
+- memory topic index and writing rules: `memory/README.md`
 - detailed WebUI recovery notes: `memory/webui_recovery.md`
-- shader/animation recovery snapshots: dedicated files in `memory/`
+- Story reconstruction conclusions: `memory/game_story_recovery.md`
+- game-data formats, semantics, and source graph: `memory/game_data_recovery.md`
+- semantic asset/entity recovery: `memory/asset_recovery.md`
+- AnimeStudio exporter recovery: `memory/animestudio_recovery.md`
+- character render/animation recovery: `memory/character_render_and_animation_recovery.md`
 
 ## Project Local Skills
 
@@ -245,10 +272,9 @@ active docs (`README.md`, `scripts/README.md`, `webui/README.md`, and
 skill when graph evidence is relevant.
 
 The retired exploration snapshots were collapsed because they mixed active
-workflow guidance with stale conclusions, obsolete package behavior based on
-`reports/`, and Blender/actor recovery detail outside the root active scope.
-Keep generated reports in `reports/`, durable conclusions in `memory/`, and
-disposable experiments in `scratch/` or `tmp/`.
+workflow guidance with stale conclusions and repeated generated-report status.
+Keep generated reports in `reports/`, concise durable conclusions in the six
+owning memory topics, and disposable experiments in `scratch/` or `tmp/`.
 
 ## Update Tracking Rule
 
@@ -298,8 +324,8 @@ folder so the cached scanner baseline is rebuilt.
 - Prefer the layout rooted at `serve.py`, `export.bat`, `webui/`,
   `scripts/`, and `unity_endfield_graph_shader_lab/`.
 - Keep `README.md` focused on active WebUI user-facing usage.
-- Keep observations, conclusions, investigation notes, and status snapshots in
-  `memory/`.
+- Fold durable observations and conclusions into the matching consolidated
+  `memory/` topic; do not add per-session or dated status files.
 - Keep `reports/` for durable generated reports only, not agent conclusions or
   narrative writeups.
 - Use `scratch/` for attempts, tool prototypes, generated previews, and tools

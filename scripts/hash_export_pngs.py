@@ -19,9 +19,9 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from common import EXPORT_ROOT, REPORTS_DIR
+from common import ASSET_REPORTS_DIR, EXPORT_ROOT
 
-DEFAULT_OUTPUT = REPORTS_DIR / "export_full_png_hashes.csv"
+DEFAULT_OUTPUT = ASSET_REPORTS_DIR / "export_full_png_hashes.csv"
 DEFAULT_CHUNK_SIZE = 8 * 1024 * 1024
 PROGRESS_EVERY = 1000
 FIXED_LENGTH_ALGORITHMS = sorted(

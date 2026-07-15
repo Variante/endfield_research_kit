@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Interpret IL2CPP body-target evidence for option active-clip selection.
 
-The IL2CPP catalog at `reports/option_flow_body_targets_gameassembly.json`
+The IL2CPP catalog at
+`reports/story/recovery/options/option_flow_body_targets_gameassembly.json`
 already maps each focused dialog/option method to its GameAssembly.dll
 RVA and a small window of disassembled instructions around catalog-
 target calls. This script walks that JSON and extracts the *runtime
@@ -34,8 +35,8 @@ from disassembly snippets the body-target mapper already captured.
 
 Output:
 
-    reports/option_flow_active_clip_field_analysis.json
-    reports/option_flow_active_clip_field_analysis.md
+    reports/story/recovery/options/option_flow_active_clip_field_analysis.json
+    reports/story/recovery/options/option_flow_active_clip_field_analysis.md
 """
 from __future__ import annotations
 
@@ -55,8 +56,12 @@ for _path in (_REPO_ROOT / "scripts",):
 
 from common import ROOT, md_escape, read_json, write_report_json, write_text_if_changed  # noqa: E402
 
-DEFAULT_BODY_TARGETS_JSON = ROOT / "reports" / "option_flow_body_targets_gameassembly.json"
-DEFAULT_CATALOG_JSON = ROOT / "reports" / "option_flow_runtime_metadata_focus.json"
+DEFAULT_BODY_TARGETS_JSON = (
+    ROOT / "reports" / "story" / "recovery" / "options" / "option_flow_body_targets_gameassembly.json"
+)
+DEFAULT_CATALOG_JSON = (
+    ROOT / "reports" / "story" / "recovery" / "options" / "option_flow_runtime_metadata_focus.json"
+)
 
 OFFSET_RE = re.compile(r"\[(?:r[abcdsp][xpil]|rsi|rdi|r[89]|r1[0-5])\s*\+\s*(0x[0-9a-fA-F]+|\d+)\]")
 
@@ -290,7 +295,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--reports-dir",
         type=Path,
-        default=ROOT / "reports",
+        default=ROOT / "reports" / "story" / "recovery" / "options",
     )
     return parser.parse_args(argv)
 

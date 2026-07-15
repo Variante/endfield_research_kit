@@ -93,7 +93,7 @@ NARRATIVE_VIDEO_DIRS = (
 )
 
 DEFAULT_OUTPUT = RECOVERED_DIR / "video_bindings.json"
-DEFAULT_REPORT = ROOT / "reports" / "video_bindings.md"
+DEFAULT_REPORT = ROOT / "reports" / "story" / "build" / "video_bindings.md"
 
 _DLGTL_FROM_CONTAINER = re.compile(
     r"timeline/(dlgtl_[a-z0-9]+(?:_[a-z0-9]+)*?_sub_\d+)/", re.IGNORECASE

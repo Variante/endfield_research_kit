@@ -51,20 +51,26 @@ UNITY_CHARACTER_ROOT = (
     / "Characters"
 )
 GRAPH_DIR = ROOT / "reports" / "source_graph"
+STORY_BUILD_REPORTS_DIR = ROOT / "reports" / "story" / "build"
 DEFAULT_DB = GRAPH_DIR / "endfield_source_graph.sqlite"
 DEFAULT_SUMMARY_JSON = GRAPH_DIR / "summary.json"
 DEFAULT_SUMMARY_MD = GRAPH_DIR / "summary.md"
 TIMELINE_LINE_ORDERS_REL = Path("recovered") / "AnimeStudio-cli" / "timeline_line_orders.json"
 TIMELINE_LINE_ORDERS_PATH = EXPORT_ROOT / TIMELINE_LINE_ORDERS_REL
 DIALOG_ID_TABLE_INDEX_PATH = EXPORT_ROOT / "recovered" / "dialog_id_table_index.json"
+STORY_OPTION_REPORTS_DIR = ROOT / "reports" / "story" / "recovery" / "options"
 RUNTIME_OPTION_ROUTE_AUDIT_GLOB = "runtime_jump_option_route_audit_CN*_nearby*.json"
 LUA_CONSUMER_REFERENCE_AUDIT_PATH = ROOT / "reports" / "mission_order" / "lua_consumer_reference_audit.json"
-MONOBEHAVIOUR_FRONTIER_REPORT_PATH = ROOT / "reports" / "monobehaviour_frontier_latest.json"
-MONOBEHAVIOUR_FRONTIER_TAIL_AUDIT_PATH = ROOT / "reports" / "monobehaviour_frontier_tail_audit.json"
-OPTION_FLOW_BODY_TARGETS_GAMEASSEMBLY_PATH = ROOT / "reports" / "option_flow_body_targets_gameassembly.json"
-OPTION_FLOW_ACTIVE_CLIP_FIELD_ANALYSIS_PATH = ROOT / "reports" / "option_flow_active_clip_field_analysis.json"
-TEXTURE2D_RAW_HASH_COLLISION_AUDIT_PATH = ROOT / "reports" / "texture2d_raw_hash_collision_audit.json"
-NARRATIVE_VIDEO_OVERRIDE_AUDIT_PATH = ROOT / "reports" / "narrative_video_override_audit_CN.json"
+MONOBEHAVIOUR_FRONTIER_REPORT_PATH = ROOT / "reports" / "assets" / "diagnostics" / "monobehaviour_frontier_latest.json"
+MONOBEHAVIOUR_FRONTIER_TAIL_AUDIT_PATH = ROOT / "reports" / "assets" / "diagnostics" / "monobehaviour_frontier_tail_audit.json"
+OPTION_FLOW_BODY_TARGETS_GAMEASSEMBLY_PATH = STORY_OPTION_REPORTS_DIR / "option_flow_body_targets_gameassembly.json"
+OPTION_FLOW_ACTIVE_CLIP_FIELD_ANALYSIS_PATH = STORY_OPTION_REPORTS_DIR / "option_flow_active_clip_field_analysis.json"
+TEXTURE2D_RAW_HASH_COLLISION_AUDIT_PATH = (
+    ROOT / "reports" / "assets" / "diagnostics" / "texture2d_raw_hash_collision_audit.json"
+)
+NARRATIVE_VIDEO_OVERRIDE_AUDIT_PATH = (
+    ROOT / "reports" / "story" / "recovery" / "narrative_video" / "narrative_video_override_audit_CN.json"
+)
 
 ASSET_MAPS = {
     "StreamingAssets": (
@@ -4155,9 +4161,9 @@ class SourceGraphBuilder:
                         self.add_edge(sample_node, story_node, f"story_order_coarse_inversion_{field}_story", source=source, evidence=field, data=compact_payload(sample, depth=1))
 
     def ingest_scene_order_gap_report(self) -> None:
-        path = self.root / "reports" / f"scene_order_gap_report_{self.language}.json"
+        path = STORY_BUILD_REPORTS_DIR / f"scene_order_gap_report_{self.language}.json"
         if not path.exists() and self.language != "CN":
-            path = self.root / "reports" / "scene_order_gap_report_CN.json"
+            path = STORY_BUILD_REPORTS_DIR / "scene_order_gap_report_CN.json"
         payload = read_json(path, {})
         if not isinstance(payload, dict):
             return
@@ -9454,7 +9460,9 @@ class SourceGraphBuilder:
     def narrative_video_audit_path(self) -> Path:
         if self.language == "CN":
             return NARRATIVE_VIDEO_OVERRIDE_AUDIT_PATH
-        language_path = ROOT / "reports" / f"narrative_video_override_audit_{self.language}.json"
+        language_path = NARRATIVE_VIDEO_OVERRIDE_AUDIT_PATH.with_name(
+            f"narrative_video_override_audit_{self.language}.json"
+        )
         return language_path if language_path.exists() else NARRATIVE_VIDEO_OVERRIDE_AUDIT_PATH
 
     def add_narrative_video_audit_story_edge(
@@ -11160,9 +11168,9 @@ class SourceGraphBuilder:
                         )
 
     def ingest_option_response_audio_evidence(self) -> None:
-        path = self.root / "reports" / f"option_response_audio_evidence_{self.language}.json"
+        path = STORY_OPTION_REPORTS_DIR / f"option_response_audio_evidence_{self.language}.json"
         if not path.exists() and self.language != "CN":
-            path = self.root / "reports" / "option_response_audio_evidence_CN.json"
+            path = STORY_OPTION_REPORTS_DIR / "option_response_audio_evidence_CN.json"
         payload = read_json(path, {})
         rows = payload.get("rows") if isinstance(payload, dict) else None
         if not isinstance(rows, list):
@@ -11627,7 +11635,7 @@ class SourceGraphBuilder:
 
     def ingest_runtime_option_route_audits(self) -> None:
         source = "runtime_jump_option_route_audit"
-        for path in sorted((ROOT / "reports").glob(RUNTIME_OPTION_ROUTE_AUDIT_GLOB)):
+        for path in sorted(STORY_OPTION_REPORTS_DIR.glob(RUNTIME_OPTION_ROUTE_AUDIT_GLOB)):
             payload = read_json(path, {})
             groups = payload.get("groups") or []
             if not isinstance(groups, list) or not groups:
@@ -11798,7 +11806,7 @@ class SourceGraphBuilder:
                     self.add_edge(audit_node, jump_node, "runtime_audit_has_nearby_jump", source=source, evidence=str(jump_index), data=jump_data)
 
     def ingest_timeline_option_flow_audit(self) -> None:
-        path = ROOT / "reports" / "timeline_option_flow_audit_CN_interesting.json"
+        path = STORY_OPTION_REPORTS_DIR / "timeline_option_flow_audit_CN_interesting.json"
         payload = read_json(path, {})
         if not isinstance(payload, dict):
             return
@@ -28121,7 +28129,7 @@ def emit_model_config_asset_binding_candidates(conn: sqlite3.Connection) -> None
     (GRAPH_DIR / "model_config_asset_binding_candidates.md").write_text("\n".join(lines), encoding="utf-8")
 
 def emit_option_branch_gaps(conn: sqlite3.Connection) -> None:
-    report_path = ROOT / "reports" / f"inferred_option_anchors_{conn.execute('SELECT value FROM meta WHERE key=?', ('language',)).fetchone()[0]}.json"
+    report_path = STORY_BUILD_REPORTS_DIR / f"inferred_option_anchors_{conn.execute('SELECT value FROM meta WHERE key=?', ('language',)).fetchone()[0]}.json"
     report = read_json(report_path, {})
     scenes = report.get("scenes") or report.get("entries") or []
     if not scenes and isinstance(report, dict):

@@ -90,13 +90,17 @@ Reference:
 Updates:
 
 - Built by `.\build_updates.bat` or `python scripts\build_updates.py`.
-- Compares the saved previous export, default `export_122/`, with the current
-  `export_full/`.
+- Reads the saved previous and current export roots from `endfield_paths.bat`;
+  the underlying script falls back to `export_1d2/` and `export_full/` when no
+  wrapper configuration or explicit paths are supplied.
 - Stores scanner cache and feed history under `.game-data-tracker/`.
 - Never point the comparison at `webui/`, `reports/`, `memory/`, `scratch/`, or
   `tmp/`.
-- The wrapper skips asset-level entries by default; include them only after
-  refreshing heavy asset exports.
+- Tracks WebUI-facing exported JSON plus exported image/model/video assets and
+  decoded audio by default. Use `--skip-audio-updates` to omit audio while
+  retaining other assets, or `--skip-asset-updates` for a text-only feed.
+- Use `--baseline-only` only when an intentionally empty first/baseline feed is
+  desired. Refresh the cached previous baseline after replacing that folder.
 
 Assets:
 
@@ -217,20 +221,25 @@ Important interpretation:
 
 ## Benchmarks
 
-Useful current measurements:
+Every `export.bat` run writes a wall-time and process-tree RAM benchmark under
+`reports/export_benchmarks/` and updates
+`reports/export_benchmark_latest.{md,json}`. Use those files as current truth.
+The maintained direct CN Story build is presently on the order of minutes, so
+direct runs should have a 10-15 minute shell timeout.
 
-- The old combined fast-assets export path with no content update took about `41.1`
-  minutes on 2026-05-12. The two structured dumps cost about `17.1` minutes.
-- Before the Story builder speed pass, a CN build took about `807` seconds.
-- Prefix-index lookup and path-rendering caches reduced the CN build to about
-  `74` seconds on the same machine.
+Historical profiling found the main Story-builder costs in repeated file
+opens, per-scene regex compilation, mission/LevelScript spatial comparisons,
+DialogTree source loading, raw Reference generation, and reopening freshly
+written conversation JSON. Prefix/path indexes delivered a large early gain;
+future optimization should re-profile before acting because the recovery
+surface has since expanded.
 
-Likely remaining speed targets:
-
-- structured-dump caching or skip logic in `export_full_from_game.py`;
-- AnimeStudio MonoBehaviour file discovery;
-- raw Reference bundle generation across hundreds of tables;
-- mission timeline recovery.
+A historical EndfieldStudio comparison showed it could rapidly cross-check the
+structured Table/Lua/JsonData surface and extract a classified non-material
+image subset, but it did not add Story data and omitted material textures,
+meshes, AnimationClips, Material JSON, bundle JSON, and AnimeStudio
+relationship metadata. It remains a cross-check or preview candidate, not a
+replacement for the canonical AnimeStudio export.
 
 ## Verification
 
@@ -248,7 +257,7 @@ After a refresh, check:
 - Package dry-run reports expected story media and excludes 3D/model payloads
   by default.
 
-## 2026-05-24 Story browsing/debug split
+## Story browsing and debug surface
 
 - The Story view now defaults to a quieter browsing surface. The `Show debug
   info` toggle exposes recovery issue/method filters, line-order evidence,
@@ -268,7 +277,7 @@ After a refresh, check:
   into `videos/`; the OCR worker continues to skip partial `.m4s` and `.lock`
   files.
 
-## 2026-05-20 narrative video attachment policy
+## Narrative video attachment policy
 
 - Story builder now embeds every resolved narrative-video mapping into its
   resolved conversation, replacing the old dialog plus one-cutscene exception.
@@ -287,7 +296,7 @@ After a refresh, check:
   `cutscene_e1m3_1` is suppressed for `cs_video_e1m3_1` because the filename
   match should not attach that video to the black-screen cutscene.
 
-## 2026-05-23 archive duplicate links
+## Archive duplicate identity
 
 - `radio_e1m1_2d7` and `nar_media_map01_128_1` have the same localized audio
   transcript. Keep `radio_e1m1_2d7` as the mission `e1m1` row; keep

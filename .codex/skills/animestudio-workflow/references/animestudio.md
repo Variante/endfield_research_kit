@@ -277,7 +277,7 @@ Use `--dummy_dlls` only when script field recovery matters. Without usable Dummy
 
 This means the stage process continued after that asset failed. Causes include parser layout mismatches, invalid count fields, unsupported conversion data, missing external resources, and asset-specific converter errors.
 
-Wrapper summary code in `scripts\export_full_from_game.py` parses these lines and samples them in `reports\export_full_summary.md`. A nonzero subprocess means the stage failed at process level; an `Export ... error` line means an item failed within an otherwise running process.
+Wrapper summary code in `scripts\export_full_from_game.py` parses these lines and samples them in `reports\export\export_full_summary.md`. A nonzero subprocess means the stage failed at process level; an `Export ... error` line means an item failed within an otherwise running process.
 
 ## Memory And Count Guards
 

@@ -153,7 +153,7 @@ Still-unparsed payloads may include
 clues, not a typed managed-reference schema decode.
 
 `export_full_from_game.py` writes detailed stage logs and summaries under
-`../reports/`. Nonzero AnimeStudio subprocesses now make the wrapper return
+`../reports/export/`. Nonzero AnimeStudio subprocesses now make the wrapper return
 nonzero after the summary is written, so `export.bat` and `export_assets.bat`
 stop on partial type-sliced failure. Metadata-only MonoBehaviour JSON is a
 bounded fallback for objects with impossible schema fields. Per-asset
@@ -194,8 +194,10 @@ Expected active inputs and outputs:
   and package media resolution.
 - `../.game-data-tracker/`: persistent state for exported WebUI text JSON and
   asset update tracking.
-- `../reports/`: durable generated reports and summaries written by exporters
-  or builders. These are outputs, not package inputs, and should not contain
+- `../reports/`: generated reports grouped by topic. Most are outputs, but a
+  small number of recovery reports are explicit inputs to later audit or Story
+  build stages; scripts keep those paths within their topic directories. Reports
+  are never package inputs and should not contain
   agent investigation conclusions.
 - `../videos/`: local gameplay video inputs used by the optional OCR/audio
   story-order recovery tools. Completed `.mp4` files are inputs to
@@ -327,7 +329,7 @@ Expected active inputs and outputs:
   payloads and their `_debug.source` blocks.
 - `hash_export_pngs.py`: hashes every `.png` file under `..\export_full\` with
   parallel readers and writes `path,hash` CSV rows to
-  `..\reports\export_full_png_hashes.csv` by default.
+  `..\reports\assets\export_full_png_hashes.csv` by default.
 - `find_duplicate_dialog_lines.py`: scans generated
   `webui/data/lang/<LANG>/conv/*.json` files for exact repeated spoken line
   text across different missions, reporting the speaker, mission, scene, and
@@ -427,7 +429,7 @@ These are kept because the WebUI story builders import or use them:
 - `story_builder/` also scans narrative video folders under
   `Data/Video/PC/Narrative/Cutscene` and `RemoteComm`, attaches matching
   `narrativeVideos` to dialog/cutscene/remotecomm conv JSON, and writes
-  `reports/narrative_videos_<LANG>.json` / `.md`.
+  `reports/story/build/narrative_videos_<LANG>.json` / `.md`.
 - `story_recovery/build_narrative_video_override_audit.py` validates
   `webui/overrides/narrative_videos.json` against the generated Story video
   report, `narrative_video_evidence.json`, video indexes, and conv payloads.
