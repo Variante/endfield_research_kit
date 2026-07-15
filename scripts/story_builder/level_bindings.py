@@ -167,7 +167,7 @@ def _load_mission_levelscript_dialogs(mission_id: str, level_ids: list[str]) -> 
 # bundles a guide-group id and text id pair.
 #
 # Kept here as shared Story builder recovery metadata; see
-# `memory/e0m0_file_order_from_binary_scripts.md` for the evidence walk.
+# `memory/game_story_recovery.md` for the evidence policy and controls.
 LEVELSCRIPT_OPCODE_TABLE: dict[tuple[int, int], str] = {
     (0x0347, 0x0d): "play_levelseq",
     (0x02e6, 0x09): "play_levelseq",

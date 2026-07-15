@@ -152,8 +152,7 @@ in dedicated memory notes.
   see `memory/monobehaviour_soundname_audio_source_graph_recovery_20260706.md`.
   Unresolved narrative-video candidates now have a generated source-graph
   follow-up report that separates 3 `hasGeneratedStoryTarget` groups from 4
-  `noGeneratedStoryTarget` groups; see
-  `memory/unresolved_narrative_video_followup_report_20260706.md`.
+  `noGeneratedStoryTarget` groups; see `memory/game_story_recovery.md`.
   Remaining cleanup is to classify or bind the 110 unbound FMV-scope variants,
   decide the 3 actionable narrative-video groups, and continue shrinking the
   story-gap hotlist with tagged evidence only.
