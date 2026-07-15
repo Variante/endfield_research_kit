@@ -10,7 +10,7 @@ Example index command:
 
     .\tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe ^
       vfs-index --streaming-assets "D:\Program Files\Endfield Game\Endfield_Data\StreamingAssets" ^
-      --output tmp\skipped_vfs_index.json ^
+      --output tmp\animestudio\skipped_vfs_index.json ^
       --block-type lua --block-type extend-data --block-type streaming ^
       --block-type dynamic-streaming --block-type bundle-manifest
 

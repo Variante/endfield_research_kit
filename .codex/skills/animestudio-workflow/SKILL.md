@@ -113,6 +113,25 @@ reports\export\runs\<timestamp>\Persistent\*.stderr.log
 export_full\recovered\AnimeStudio-cli\animestudio_type_manifest.json
 ```
 
+Use the `reports_run_root` recorded in the latest JSON summary to locate the
+matching timestamped logs. Do not write exporter logs or summaries directly at
+the `reports/` root.
+
+The exporter keeps five timestamped run directories under
+`reports/export/runs/` by default. Override this with
+`--report-runs-to-keep N`; use `0` only when intentionally disabling pruning.
+The separate `benchmark_export.py` wrapper keeps ten runs per label under
+`reports/export/benchmarks/` and writes its latest summary under
+`reports/export/`.
+
+Put revisitable exporter probes under `scratch/animestudio/<task>/` and
+disposable decode/export intermediates under `tmp/animestudio/<task-or-run>/`.
+Put IL2CPP or native-code-only probes under
+`scratch/reverse_engineering/<task>/` or
+`tmp/reverse_engineering/<task-or-run>/`. Do not write loose files or run
+directories at the root of `scratch/` or `tmp/`; remove completed temporary
+runs after validation.
+
 `Export ... error` means one asset conversion failed inside a stage; other assets in that process may still export. A nonzero AnimeStudio subprocess now fails the wrapper. A MonoBehaviour `metadata-only JSON` warning means the tool preserved object metadata and raw hashes after schema decode failed, instead of dropping the object entirely.
 
 For code structure, memory guards, CLI API, and log interpretation, read `references/animestudio.md`.

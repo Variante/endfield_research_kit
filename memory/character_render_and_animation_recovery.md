@@ -92,14 +92,14 @@ procedural IK from the scene.
 
 | Artifact | Current status |
 | --- | --- |
-| `scratch/character_recovery_viewer.png` | Latest shared-viewer Wulfa render, 1920x1080, SHA-256 `AD3B35AA8B61806C3055E55F9776A42D06E7BDDC71C27E1CA14C24AB72335B61`. |
-| `scratch/runtime_reference_wulfa.png` | Current 4K cumulative Wulfa reconstruction, SHA-256 `C5D035DD00730E94B7DE6D4FDA9EFC4E1DEBF832FAAB56077673D3FA998ACBC5`. |
-| `scratch/runtime_reference_zhuangfy.png` | Current 4K cumulative Zhuangfy reconstruction, SHA-256 `FC22179F2268B33FF7A45601A6A93BD42F7249F0D215BCAB7DBFA118C0E0673C`. |
+| `scratch/character_recovery/character_recovery_viewer.png` | Latest shared-viewer Wulfa render, 1920x1080, SHA-256 `AD3B35AA8B61806C3055E55F9776A42D06E7BDDC71C27E1CA14C24AB72335B61`. |
+| `scratch/character_recovery/runtime_reference_wulfa.png` | Current 4K cumulative Wulfa reconstruction, SHA-256 `C5D035DD00730E94B7DE6D4FDA9EFC4E1DEBF832FAAB56077673D3FA998ACBC5`. |
+| `scratch/character_recovery/runtime_reference_zhuangfy.png` | Current 4K cumulative Zhuangfy reconstruction, SHA-256 `FC22179F2268B33FF7A45601A6A93BD42F7249F0D215BCAB7DBFA118C0E0673C`. |
 | `unity_endfield_graph_shader_lab/ReferenceCaptures/{Wulfa,Zhuangfy}/front_full.png` | Supplied retail references. They include the ordinary overlay UI and therefore are not direct character-only pixel targets. |
-| `scratch/character_ui_import/renders/*.png` | 28 current 1920x1080 source-profile roster renders. |
-| `scratch/character_ui_import/renders/playable_character_preview_manifest.json` | Status `ok`: 28 attempted, 28 succeeded, zero failed/pending. |
-| `scratch/character_ui_import/widget_renders/*.png` | Seven source-bound widget-entry renders. |
-| `scratch/character_ui_import/widget_renders/playable_item_widget_preview_manifest.json` | Status `ok`: seven succeeded, zero failed. |
+| `scratch/character_recovery/character_ui_import/renders/*.png` | 28 current 1920x1080 source-profile roster renders. |
+| `scratch/character_recovery/character_ui_import/renders/playable_character_preview_manifest.json` | Status `ok`: 28 attempted, 28 succeeded, zero failed/pending. |
+| `scratch/character_recovery/character_ui_import/widget_renders/*.png` | Seven source-bound widget-entry renders. |
+| `scratch/character_recovery/character_ui_import/widget_renders/playable_item_widget_preview_manifest.json` | Status `ok`: seven succeeded, zero failed. |
 
 The latest viewer update, viewer preview, all-roster render, item-widget render,
 and all-playable import logs exit batch mode with code zero and contain no

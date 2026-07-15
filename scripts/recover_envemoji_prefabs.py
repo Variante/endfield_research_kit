@@ -33,7 +33,7 @@ Inputs:
 
 Output:
     - `webui/app.js` is NOT updated by this script. It writes a standalone JS
-      snippet to `tmp/emoji_extract/env_emoji_prefabs.js`. Copy the
+      snippet to `tmp/assets/emoji_extract/env_emoji_prefabs.js`. Copy the
       `ENV_EMOJI_PREFABS` body into `webui/app.js` after reviewing diffs.
 
 Run via `python scripts/recover_envemoji_prefabs.py`. The whole pipeline takes
@@ -59,7 +59,7 @@ BUNDLE_DIR = REPO / "export_full" / "raw_vfs" / "StreamingAssets" / "files" / "7
 ASSETBUNDLE_JSON_DIR = REPO / "export_full" / "recovered" / "AnimeStudio-cli" / "StreamingAssets" / "json_by_type" / "AssetBundle"
 ANIMESTUDIO_CLI = REPO / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
 
-WORK_ROOT = REPO / "tmp" / "emoji_extract"
+WORK_ROOT = REPO / "tmp" / "assets" / "emoji_extract"
 WORK_BUNDLES = WORK_ROOT / "bundles"
 WORK_DUMP = WORK_ROOT / "out_dump"
 WORK_JSON = WORK_ROOT / "out_json"

@@ -159,7 +159,7 @@ def _load_mission_levelscript_dialogs(mission_id: str, level_ids: list[str]) -> 
 
 # LevelScript record (code, kind) -> semantic class.
 #
-# Recovered by running scratch/opcode_audit.py against indie_dg002 and
+# Recovered by running scratch/story/opcode_audit.py against indie_dg002 and
 # map01_lv001 and observing that every record in each row carries a single
 # kind of string payload (e.g. 0x0347/0x0d records carry only levelseq_*
 # strings). `set_state` rows can scope either to a quest (`<m>_q#N`) or to

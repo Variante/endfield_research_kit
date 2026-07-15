@@ -1540,10 +1540,6 @@ def main(argv: list[str] | None = None) -> int:
     report_json = args.report_json.resolve()
     report_md = args.report_md.resolve()
 
-    if args.baseline_only:
-        report_json.unlink(missing_ok=True)
-        report_md.unlink(missing_ok=True)
-
     if args.reset_baseline and state_dir.exists():
         shutil.rmtree(state_dir)
 
@@ -1561,6 +1557,8 @@ def main(argv: list[str] | None = None) -> int:
             raise SystemExit("--prune-previous-export-untracked is not valid with --baseline-only.")
         assert_safe_previous_export_prune(previous_export_root, export_root)
     if args.baseline_only:
+        report_json.unlink(missing_ok=True)
+        report_md.unlink(missing_ok=True)
         raw_payload = empty_tracker_payload()
     else:
         if not previous_export_root.exists():

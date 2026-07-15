@@ -48,6 +48,8 @@ Durable recovery conclusions are maintained as a small set of living topic
 documents under `memory/`; generated reports and one-off experiments stay out
 of those documents so the repo root and research guidance remain focused.
 
+中文: [b站专栏](https://www.bilibili.com/opus/1212936027582234627)，[百度盘](http://pan.baidu.com/s/1nLaAc6-AdZAbZb6jGObtmA?pwd=94p7)
+
 ## First-Time Setup
 
 For a fresh checkout, install Git, Python 3, and a legally obtained
@@ -195,6 +197,38 @@ audio.
 Extract the story zip first, then extract the assets and audio zips into the
 same directory when those media or audio files are needed.
 
+## Generated Reports
+
+Generated reports are ignored by git and grouped by topic; do not create loose
+files directly under `reports/`.
+
+- `reports/export/`: latest exporter summary, timestamped run logs, and export
+  benchmarks. The exporter retains five runs, and benchmark history retains ten
+  runs per label by default.
+- `reports/story/build/`: reports refreshed by the normal Story build.
+- `reports/story/recovery/`: manual Story recovery and option audits.
+- `reports/updates/`: the current exported game-data comparison summary.
+- `reports/assets/`: asset hashes and diagnostics.
+- `reports/source_graph/`, `reports/mission_order/`,
+  `reports/playable_director/`, and `reports/gameplay_video_ocr/`: current graph
+  and recovery evidence.
+
+Some Story, mission-order, OCR, and option reports are inputs to later audit or
+graph builds, so do not delete a current canonical report solely because it is
+generated. Remove superseded run histories, scoped experiments, and temporary
+outputs; put durable conclusions in `memory/` and disposable work in `scratch/`
+or `tmp/`.
+
+Keep `scratch/` and `tmp/` organized by topic too; do not create loose files or
+one-off run directories at either root. Use
+`scratch/<topic>/<task>/` for experiments or prototypes that may be revisited,
+and `tmp/<topic>/<task-or-run>/` for disposable intermediates. Reuse the active
+topic names (`webui`, `story`, `assets`, `animestudio`, `source_graph`,
+`character_recovery`, `game_data`, `updates`, `ocr`, and
+`reverse_engineering`) and use `tests`, `tools`, or `misc` only when no active
+topic fits. Delete completed `tmp/` runs; promote reusable helpers to
+`scripts/` and durable conclusions to `memory/`.
+
 ## Game Update Tracking
 
 The Updates tab needs two game-data exports: a saved previous export and the
@@ -253,11 +287,11 @@ safeguards, and scanner-cache details are documented in `AGENTS.md` and
   installed-game story and asset exports.
 - `export_full/`: generated data exported from the installed client.
 - `res/`: README screenshots and other small documentation media.
-- `reports/`: generated outputs grouped by topic (`export/`, `story/`,
-  `updates/`, `assets/`, and `source_graph/`).
+- `reports/`: generated outputs grouped by topic; see Generated Reports above.
 - `videos/`: local gameplay captures used by optional Story order OCR/audio
   recovery tools.
-- `scratch/`: disposable local outputs.
+- `scratch/`: topic-grouped experiments and prototypes that may be revisited.
+- `tmp/`: topic-grouped disposable intermediates and per-run output.
 - `memory/`: consolidated, living recovery conclusions by topic; see
   `memory/README.md` for the index and writing rules.
 
@@ -279,9 +313,10 @@ documents in place instead of adding dated investigation snapshots:
 - [`memory/character_render_and_animation_recovery.md`](memory/character_render_and_animation_recovery.md):
   Unity character rendering, CharInfo/HGRP recovery, roster, and animation.
 
-Changing inventories and exhaustive audits belong under `reports/`; temporary
-probes belong under `scratch/` or `tmp/`. The full maintenance contract is in
-[`memory/README.md`](memory/README.md) and `AGENTS.md`.
+Changing inventories and exhaustive audits belong under the matching topic in
+`reports/`; temporary probes belong under `scratch/` or `tmp/`. The full
+maintenance contract is in [`memory/README.md`](memory/README.md) and
+`AGENTS.md`.
 
 ## Community Resources
 

@@ -37,7 +37,7 @@ DEFAULT_MD = Path("reports/story/recovery/options/option_flow_body_targets_gamea
 # CodeRegistration VA is build-specific (HGP relocates it each GameAssembly build).
 # Current value is for the May-27 install. When a game update breaks the mapping
 # (symptom: "VA outside image" in parse_codegen_modules), re-derive it with
-# scratch/il2cpp_gameplay_sim/stage0/find_code_registration.py and update here.
+# scratch/reverse_engineering/il2cpp_gameplay_sim/stage0/find_code_registration.py and update here.
 # Prior build was 0x18A31FAC0.
 DEFAULT_CODE_REGISTRATION = 0x18C439740
 DEFAULT_BODY_SUMMARY_METHOD_RE = (

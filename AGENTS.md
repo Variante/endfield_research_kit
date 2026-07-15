@@ -328,9 +328,25 @@ folder so the cached scanner baseline is rebuilt.
   `memory/` topic; do not add per-session or dated status files.
 - Keep `reports/` for durable generated reports only, not agent conclusions or
   narrative writeups.
-- Use `scratch/` for attempts, tool prototypes, generated previews, and tools
-  written during exploration before they are promoted.
-- Use `tmp/` for temporary results, intermediate output, and disposable files.
+- Keep routine reports grouped by topic: exporter summaries, run logs, and
+  benchmarks under `reports/export/`; Story build summaries under
+  `reports/story/build/`; manual Story recovery evidence under
+  `reports/story/recovery/`; update summaries under `reports/updates/`; and
+  asset diagnostics under `reports/assets/`. Do not add loose report files at
+  the `reports/` root.
+- Keep the roots of `scratch/` and `tmp/` free of loose files and one-off run
+  directories. Write experiments as `scratch/<topic>/<task>/` and disposable
+  intermediates as `tmp/<topic>/<task-or-run>/`. Prefer the active topic names
+  `webui`, `story`, `assets`, `animestudio`, `source_graph`,
+  `character_recovery`, `game_data`, `updates`, `ocr`, and
+  `reverse_engineering`; use `tests`, `tools`, or `misc` only when needed.
+- Use `scratch/` for attempts, tool prototypes, and generated previews that may
+  be revisited. Promote reusable helpers to maintained code or delete stale
+  experiments.
+- Use `tmp/` for disposable results and intermediates. Remove completed run
+  directories after validation, and never cite `tmp/` as durable evidence.
+- For self-contained `ue5_*` or `unity_*` projects, prefer that project's own
+  scratch/temp area instead of the repo-root work directories.
 - Put durable shared helper code under the maintained script/tool surface.
   `tools/` is ignored by default except for already tracked helper scripts, so
   new promoted tools need intentional tracking and documentation.
