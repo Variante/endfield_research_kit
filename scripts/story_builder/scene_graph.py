@@ -141,6 +141,7 @@ def _refine_scene_graph_order(
         "authoredDirect",
         "authoredMenu",
         "levelscriptSceneChain",
+        "levelscriptDialogExit",
     }
     order_hints: dict[str, float] = {
         key: float(order)
@@ -280,6 +281,7 @@ def _detect_scene_graph_entries(
         "authoredDirect",
         "authoredMenu",
         "levelscriptSceneChain",
+        "levelscriptDialogExit",
         "levelscriptFileOrder",
     }
     incoming_kinds: dict[str, set[str]] = defaultdict(set)

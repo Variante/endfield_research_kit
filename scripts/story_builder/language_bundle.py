@@ -11586,6 +11586,33 @@ def build_language_bundle(
             if candidate and candidate not in flow_level_ids:
                 flow_level_ids.append(candidate)
         for level_id in flow_level_ids:
+            for pair in _build_levelscript_dialog_exit_scene_pairs(
+                level_id, dialog_scene_out_key, mission
+            ):
+                src = pair.get("src") or ""
+                dst = pair.get("dst") or ""
+                if src not in available or dst not in available:
+                    continue
+                if edge := ensure_edge(src, dst, "levelscriptDialogExit"):
+                    file_ref = pair.get("file") or ""
+                    if file_ref:
+                        refs = edge.setdefault("sourceFiles", [])
+                        if file_ref not in refs:
+                            refs.append(file_ref)
+                    pair_level_id = pair.get("levelId") or ""
+                    if pair_level_id:
+                        refs = edge.setdefault("levelIds", [])
+                        if pair_level_id not in refs:
+                            refs.append(pair_level_id)
+                    edge["event"] = pair.get("event") or "LevelEvent_OnDialogExit"
+                    edge["sourceScript"] = pair.get("sourceScript") or ""
+                    edge["headerLocalId"] = pair.get("headerLocalId")
+                    edge["targetLocalId"] = pair.get("targetLocalId")
+                    position = pair.get("position")
+                    if isinstance(position, int):
+                        positions = edge.setdefault("positions", [])
+                        if position not in positions:
+                            positions.append(position)
             for file_seq in _build_levelscript_file_order_scene_sequences(
                 level_id, dialog_scene_out_key, mission
             ):
@@ -11727,6 +11754,7 @@ def build_language_bundle(
             "authoredDirect",
             "authoredMenu",
             "levelscriptSceneChain",
+            "levelscriptDialogExit",
             # Authored continueAfterDialog/Radio flag combined with a
             # LevelScript file-offset adjacency is stronger than file-order
             # alone because the flag asserts the radio is meant to follow the

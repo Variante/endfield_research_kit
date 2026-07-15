@@ -48,6 +48,7 @@ STRONG_ORDER_EDGE_KINDS = frozenset({
     "authoredDirect",
     "authoredMenu",
     "levelscriptSceneChain",
+    "levelscriptDialogExit",
     "radioContinuation",
 })
 WEAK_ORDER_EDGE_KINDS = frozenset({

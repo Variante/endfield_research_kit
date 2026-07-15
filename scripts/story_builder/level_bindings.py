@@ -3,10 +3,21 @@ from __future__ import annotations
 from .context import *
 from .anime_assets import *
 from .scene_graph import *
+from .levelscript_binary import (
+    decode_levelscript_record_payload,
+    levelscript_action_map_membership,
+)
 
 _LEVELDATA_NAMED_TABLES_CACHE: dict[str, list[list[dict]]] = {}
 _LEVELSCRIPT_UID_OCCURRENCE_CACHE: dict[tuple[str, ...], dict[str, list[dict]]] = {}
 _LEVELTIMELINE_MARKER_CACHE: dict[tuple[tuple[str, ...], tuple[str, ...]], list[dict]] = {}
+_LEVELSCRIPT_DIALOG_EXIT_TEXT_PAIR_CACHE: dict[str, list[dict]] = {}
+
+# GameAssembly's recovered MemoryPack union table maps this serialized
+# ActionHeader opcode to Beyond.Gameplay.LevelEvent_OnDialogExit.  Unlike
+# file-order proximity, the event itself states that its action chain runs
+# after the named dialog exits.
+LEVELSCRIPT_DIALOG_EXIT_OPCODE = (0x1250, 0x00)
 
 
 def _topo_sort_quests(quests_out: list[dict]) -> list[dict]:
@@ -582,6 +593,177 @@ def _load_levelscript_binding_data(level_id: str) -> dict:
         })
 
     _LEVELSCRIPT_BINDING_CACHE[level_id] = out
+    return out
+
+
+def _levelscript_record_texts(record: dict) -> list[str]:
+    out: list[str] = []
+    for field in ("strings", "plainStrings"):
+        for hit in record.get(field) or []:
+            text = str(hit.get("text") if isinstance(hit, dict) else hit).strip()
+            if text and text not in out:
+                out.append(text)
+    return out
+
+
+def _build_levelscript_dialog_exit_text_pairs(level_id: str) -> list[dict]:
+    """Decode raw ``OnDialogExit`` header-to-action-chain text pairs.
+
+    This deliberately stops at text membership.  Mission-specific Story-key
+    resolution and ambiguity filtering happen in
+    ``_build_levelscript_dialog_exit_scene_pairs``.
+    """
+    if level_id in _LEVELSCRIPT_DIALOG_EXIT_TEXT_PAIR_CACHE:
+        return _LEVELSCRIPT_DIALOG_EXIT_TEXT_PAIR_CACHE[level_id]
+
+    out: list[dict] = []
+    info = _load_levelscript_binding_data(level_id)
+    for file_info in info.get("files") or []:
+        file_ref = str(file_info.get("file") or "")
+        if not file_ref:
+            continue
+        try:
+            data = (ROOT / file_ref).read_bytes()
+        except OSError:
+            continue
+        records = list(file_info.get("records") or [])
+        if not records:
+            continue
+        _action_map, membership = levelscript_action_map_membership(data, records)
+        ordered = sorted(records, key=lambda row: int(row.get("start") or 0))
+        next_starts = {
+            int(record.get("start") or 0): (
+                int(ordered[index + 1].get("start") or len(data))
+                if index + 1 < len(ordered)
+                else len(data)
+            )
+            for index, record in enumerate(ordered)
+        }
+        action_buckets: dict[int, list[dict]] = defaultdict(list)
+        for record in records:
+            local_id = record.get("localId")
+            role = str(membership.get(int(record.get("start") or 0)) or "")
+            if isinstance(local_id, int) and role.startswith("actionList#"):
+                action_buckets[local_id].append(record)
+
+        for header in records:
+            if (header.get("code"), header.get("kind")) != LEVELSCRIPT_DIALOG_EXIT_OPCODE:
+                continue
+            start = int(header.get("start") or 0)
+            if not str(membership.get(start) or "").startswith("headerList#"):
+                continue
+            decoded = decode_levelscript_record_payload(
+                data,
+                header,
+                next_start=next_starts.get(start),
+                action_map_role=str(membership.get(start) or ""),
+            )
+            action_header = decoded.get("actionHeader")
+            target_id = action_header.get("nextId") if isinstance(action_header, dict) else None
+            target_bucket = action_buckets.get(target_id) if isinstance(target_id, int) else None
+            if not target_bucket or len(target_bucket) != 1:
+                continue
+
+            chain: list[dict] = []
+            seen_ids: set[int] = set()
+            current = target_bucket[0]
+            while current is not None and len(chain) < 32:
+                local_id = current.get("localId")
+                if not isinstance(local_id, int) or local_id in seen_ids:
+                    break
+                seen_ids.add(local_id)
+                chain.append(current)
+                next_id = current.get("nextId")
+                next_bucket = action_buckets.get(next_id) if isinstance(next_id, int) and next_id >= 0 else None
+                current = next_bucket[0] if next_bucket and len(next_bucket) == 1 else None
+
+            target_texts: list[str] = []
+            target_text_groups: list[dict] = []
+            for record in chain:
+                record_texts = _levelscript_record_texts(record)
+                target_text_groups.append({
+                    "localId": record.get("localId"),
+                    "texts": record_texts,
+                })
+                for text in record_texts:
+                    if text not in target_texts:
+                        target_texts.append(text)
+            out.append({
+                "levelId": level_id,
+                "file": file_ref,
+                "sourceScript": file_info.get("fileStem") or "",
+                "headerLocalId": header.get("localId"),
+                "targetLocalId": target_id,
+                "sourceTexts": _levelscript_record_texts(header),
+                "targetTexts": target_texts,
+                "targetTextGroups": target_text_groups,
+            })
+
+    _LEVELSCRIPT_DIALOG_EXIT_TEXT_PAIR_CACHE[level_id] = out
+    return out
+
+
+def _build_levelscript_dialog_exit_scene_pairs(
+    level_id: str,
+    dialog_key_resolver,
+    mission_id: str,
+) -> list[dict]:
+    """Return unambiguous same-mission Story edges fired on dialog exit."""
+    out: list[dict] = []
+    seen: set[tuple[str, str, str, int | None]] = set()
+    for row in _build_levelscript_dialog_exit_text_pairs(level_id):
+        source_keys = {
+            payload.get("sceneKey")
+            for payload in _annotate_binding_payloads(
+                row.get("sourceTexts") or [], dialog_key_resolver, mission_id
+            )
+            if payload.get("sceneKey")
+        }
+        if len(source_keys) != 1:
+            continue
+        source_key = next(iter(source_keys))
+        sequence = [source_key]
+        target_local_ids: list[int | None] = []
+        ambiguous = False
+        for group in row.get("targetTextGroups") or []:
+            group_keys = {
+                payload.get("sceneKey")
+                for payload in _annotate_binding_payloads(
+                    group.get("texts") or [], dialog_key_resolver, mission_id
+                )
+                if payload.get("sceneKey")
+            }
+            if len(group_keys) > 1:
+                ambiguous = True
+                break
+            if len(group_keys) == 1:
+                target_key = next(iter(group_keys))
+                if target_key != sequence[-1]:
+                    sequence.append(target_key)
+                    target_local_ids.append(group.get("localId"))
+        if ambiguous or len(sequence) < 2:
+            continue
+        for position, (edge_source, edge_target) in enumerate(zip(sequence, sequence[1:])):
+            signature = (
+                edge_source,
+                edge_target,
+                str(row.get("file") or ""),
+                row.get("headerLocalId"),
+            )
+            if signature in seen:
+                continue
+            seen.add(signature)
+            out.append({
+                "levelId": level_id,
+                "src": edge_source,
+                "dst": edge_target,
+                "file": row.get("file") or "",
+                "sourceScript": row.get("sourceScript") or "",
+                "headerLocalId": row.get("headerLocalId"),
+                "targetLocalId": target_local_ids[position] if position < len(target_local_ids) else None,
+                "position": position,
+                "event": "LevelEvent_OnDialogExit",
+            })
     return out
 
 

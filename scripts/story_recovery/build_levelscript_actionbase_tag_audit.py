@@ -38,7 +38,7 @@ REPORT_DIR = ROOT / "reports" / "mission_order"
 CATALOG_HELPER = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
 BODY_HELPER = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 DEFAULT_GAMEASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
-DEFAULT_CODE_REGISTRATION = "0x18a31fac0"
+DEFAULT_CODE_REGISTRATION = "0x18c439740"
 ACTIONBASE_FORMATTER_TYPE = (
     "Beyond_Gameplay_Actions_ActionBaseForMemoryPack+"
     "Beyond_Gameplay_Actions_ActionBaseForMemoryPackFormatter"
