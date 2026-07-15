@@ -63,6 +63,10 @@ EDGE_EVIDENCE_FIELDS = (
     "prtsRows",
     "firstLvId",
     "fileStems",
+    "event",
+    "sourceScript",
+    "headerLocalId",
+    "targetLocalId",
 )
 
 SOURCE_STORY_NODE_KINDS = frozenset({
@@ -87,6 +91,7 @@ EVIDENCE_POLICY = {
         "DialogTree/DialogTreeFragment option-to-line branchLines verified against sceneGraphLinks",
         "Dialog Timeline Runtime Jump routes with the exact timelineRouteBranches/runtimeJumpTrack signature",
         "typed LevelScript levelscriptSceneChain edges",
+        "LevelScript LevelEvent_OnDialogExit action-chain edges",
         "MissionRuntimeAsset quest branch and merge records",
     ],
     "keepsButDoesNotOrder": [

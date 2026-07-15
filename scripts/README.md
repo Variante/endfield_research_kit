@@ -466,6 +466,14 @@ gameplay-video OCR/audio workflow.
   signature. Run
   `python scripts\story_recovery\build_source_story_partial_order.py`; it
   writes `reports/mission_order/source_story_partial_order_<LANG>.json` / `.md`.
+- `story_recovery/build_source_story_gap_queue.py`: reuses the strict partial
+  order in memory and ranks the remaining source-recovery work by mission and
+  evidence frontier. The score is triage only, never chronology. It separates
+  core Story isolation from ambient `env`/standalone-video rows, and scores a
+  quest attachment gap only when diagnostic Story evidence exists but no
+  strict attachment does. Run
+  `python scripts\story_recovery\build_source_story_gap_queue.py --language CN`;
+  it writes `reports/mission_order/source_story_gap_queue_<LANG>.json` / `.md`.
 - `story_recovery/build_runtime_jump_option_route_audit.py`: audits remaining
   live `inferredOptionResponse` warning groups against nearby Runtime Jump
   Track clips, including forward skip ranges, reverse/directional ranges, and
@@ -802,11 +810,13 @@ gameplay-video OCR/audio workflow.
 - `story_recovery/build_levelscript_header_chain_audit.py`: uses the compact
   `ActionHeader.nextId` payload field on `headerList` rows to walk from
   event/listener records into `actionList` chains. It writes
-  `reports/mission_order/levelscript_header_chain_audit.json` / `.md`;
-  current recovery finds `10,085` header rows, all `10,085` named, `9,961`
-  rows targeting `actionList`, `123` duplicate-local-id ambiguous action
-  targets, `0` missing positive targets, `1,647` event chains with named play
-  actions, and `1,791` chains with scene-like text.
+  `reports/mission_order/levelscript_header_chain_audit.json` / `.md`. The
+  Story builder also decodes the recovered `LevelEvent_OnDialogExit` opcode:
+  when the header names exactly one Story scene and each linked action record
+  resolves to at most one Story scene, it emits the action-chain sequence as
+  strong `levelscriptDialogExit` partial-order edges with file, level, script,
+  local-id, and chain-position provenance. Ambiguous and self-only chains are
+  retained by the audit but not promoted.
 - `story_recovery/build_option_playable_semantics_audit.py`: audits remaining
   `inferredOptionResponse` groups against decoded
   `DialogOptionPlayableAsset` fields such as `logicId`, `trunkId`,
