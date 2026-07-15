@@ -4472,7 +4472,7 @@ def read_buff_find_target_body_partial(
 # ---------------------------------------------------------------------------
 # Full byte-proven SelectorData / FindTargetActionData readers (2026-07-05).
 #
-# Layout proof (scratch/selectordata_20260705/ and the MemoryPack section of
+# Layout proof (scratch/animestudio/selectordata_20260705/ and the MemoryPack section of
 # memory/game_data_recovery.md):
 # - MemoryPack objects here are a 1-byte member-count header (must equal the
 #   serialized member count) or 0xFF for null.
@@ -4499,7 +4499,7 @@ BUFF_SELECTOR_SCHEMA_SOURCE_NOTE = (
     "SelectorData layout byte-proven 2026-07-05: member-count headers, base-first "
     "alphabetical member order, selector union tags from GameAssembly formatter cctors; "
     "validated by exact end consumption on all bounded FindTargetAction samples and "
-    "typed-chain landings (scratch/selectordata_20260705)."
+    "typed-chain landings (scratch/animestudio/selectordata_20260705)."
 )
 
 # HitBoxFinder+ShapeData: 18 members, alphabetical (byte-proven).

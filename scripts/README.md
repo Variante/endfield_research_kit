@@ -199,16 +199,20 @@ Expected active inputs and outputs:
   build stages; scripts keep those paths within their topic directories. Reports
   are never package inputs and should not contain
   agent investigation conclusions.
+  Routine outputs use `reports/export/`, `reports/story/build/`,
+  `reports/updates/`, and `reports/assets/`; manual Story recovery evidence
+  uses `reports/story/recovery/`. The source graph, mission-order audits, and
+  gameplay OCR corpus keep their established topic roots under `reports/`.
 - `../videos/`: local gameplay video inputs used by the optional OCR/audio
   story-order recovery tools. Completed `.mp4` files are inputs to
   `story_recovery/build_gameplay_video_ocr_audit.py`; downloader `.m4s` parts
   and `.lock` files are ignored as incomplete work.
 - `../memory/`: observations, conclusions, older exploration notes, status
   snapshots, and archived scripts.
-- `../scratch/`: disposable probes, temporary prototypes, logs, generated
-  previews, and experiment output that has not become part of a maintained
-  workflow.
-- `../tmp/`: disposable intermediate output and temporary files.
+- `../scratch/`: topic-grouped probes, prototypes, and previews that may be
+  revisited. Use `scratch/<topic>/<task>/`; do not add loose root files.
+- `../tmp/`: topic-grouped disposable intermediates and run output. Use
+  `tmp/<topic>/<task-or-run>/`, and remove completed runs after validation.
 - `../tools/`: the tracked source-graph helper, tracked IL2CPP diagnostics
   used by optional recovery audits, and ignored local vendor/tool caches. If a
   workflow needs reusable helper data such as AnimeStudio DummyDlls, place it
@@ -318,7 +322,7 @@ Expected active inputs and outputs:
   `build_decoded_index.py` index into the current MonoBehaviour recovery
   frontier. It reports residual partial/unparsed groups, top schema/domain/
   registry buckets, and compact group records to
-  `reports/monobehaviour_frontier_latest.json/.md` by default.
+  `reports/assets/diagnostics/monobehaviour_frontier_latest.json/.md` by default.
 - `build_audio.py`: decodes audio via AnimeStudio CLI, stores shared
   SFX/music once under `export_full/structured/Audio/shared/`, indexes
   language voice files under `export_full/structured/Audio/<LANG>/`, parses Wwise bank
@@ -439,7 +443,7 @@ These are kept because the WebUI story builders import or use them:
 - `story_recovery/build_option_override_coverage_audit.py` validates
   current `inferredOptionLayout` and `inferredOptionResponse` warning records
   against `webui/overrides/options.json`. It writes
-  `reports/option_override_coverage_<LANG>.json` / `.md` and distinguishes
+  `reports/story/recovery/options/option_override_coverage_<LANG>.json` / `.md` and distinguishes
   raw recovery uncertainty from manual WebUI display coverage.
 - `webui/overrides/options.json` is a runtime WebUI-only manual
   override file for known option recovery gaps. It can pin option groups with
@@ -480,18 +484,18 @@ gameplay-video OCR/audio workflow.
   live `inferredOptionResponse` warning groups against nearby Runtime Jump
   Track clips, including forward skip ranges, reverse/directional ranges, and
   `needChangeOptionAfterJump` markers. It writes
-  `reports/runtime_jump_option_route_audit_<LANG>.json` / `.md`. Use it
+  `reports/story/recovery/options/runtime_jump_option_route_audit_<LANG>.json` / `.md`. Use it
   before promoting any new automatic option-route rule. Pass
   `--include-promoted-risk-groups` only when you intentionally want to inspect
   already anchored diagnostic `optionBranchRisk` rows.
 - `story_recovery/build_option_route_evidence_controls.py`: summarizes
   positive Runtime Jump route controls from `timeline_line_orders.json` beside
   the current negative-control `runtime_jump_option_route_audit` queue. It
-  writes `reports/option_route_evidence_controls_<LANG>_priority.json` / `.md`
+  writes `reports/story/recovery/options/option_route_evidence_controls_<LANG>_priority.json` / `.md`
   and documents the evidence bar for promoting inferred option responses.
 - `story_recovery/build_priority_story_order_audit.py`: summarizes the current
   main-story, event, major-mission, and character-story recovery surface from
-  the built WebUI data. It writes `reports/priority_story_order_<LANG>.json` /
+  the built WebUI data. It writes `reports/story/recovery/order/priority_story_order_<LANG>.json` /
   `.md`, including ordered/unknown totals, remaining inferred responses,
   non-runtime option-layout rows, uncovered line warnings, and top unknown
   missions.
@@ -525,7 +529,7 @@ gameplay-video OCR/audio workflow.
   `--frame-step 10` for the current default cadence, `--dry-run` to inspect
   pending videos, `--limit-frames` for smoke tests, and `--force` only when
   intentionally reprocessing completed videos. Decoded sampled-frame JPEGs are
-  kept by default under `tmp/gameplay_video_ocr/frames/`; reruns reuse existing
+  kept by default under `tmp/ocr/gameplay_video_ocr/frames/`; reruns reuse existing
   frame files and append only missing sampled frames. Pass `--discard-frames`
   only for a disposable run. The default OCR language is Simplified Chinese
   (`chi_sim`; for EasyOCR mapped to `ch_sim`). PP-OCRv5 weights are cached under
@@ -559,7 +563,7 @@ gameplay-video OCR/audio workflow.
   switch) is passed. The PaddleOCR GPU path uses a locally built
   `paddlepaddle-gpu` wheel with Blackwell `sm_120` support; it imports `torch`
   first so paddle reuses torch's bundled CUDA 12.8 / cuDNN 9 runtime DLLs (see
-  `memory/` notes / `scratch/paddle_build/`). The PP-OCRv5 server default
+  `memory/` notes / `scratch/ocr/paddle_build/`). The PP-OCRv5 server default
   `--paddleocr-frame-batch-size 40` was benchmarked on cached P10 gameplay
   crops on an RTX 5080; batch 56 was effectively tied, while 64+ regressed.
 - `story_recovery/build_gameplay_video_story_order.py`: full OCR/audio-to-order
@@ -570,7 +574,7 @@ gameplay-video OCR/audio workflow.
   matching so mission-title overlays do not place SNS, archive, or other story
   files by title alone.
   Audio matching uses ffmpeg to build cached mono speech-band RMS/delta
-  fingerprints under `tmp/gameplay_video_ocr/audio/`. A sparse landmark
+  fingerprints under `tmp/ocr/gameplay_video_ocr/audio/`. A sparse landmark
   prefilter keeps the expensive normalized correlation pass to the strongest
   candidate offsets instead of scanning every video window for every template.
   `au_music*` templates are skipped by default so gameplay BGM is treated as
@@ -896,5 +900,7 @@ overlaid when applicable.
 
 The old archived-script bucket has been retired. UE5 pose-demo helpers live
 with the UE project under `../ue5_zhuangfy_pose_demo 5.3/Scripts/`.
-Put new experiments in `../scratch/` or `../tmp/`, and move observations or
-conclusions to `../memory/` when they need to be kept.
+Put new experiments in `../scratch/<topic>/<task>/` and disposable runs in
+`../tmp/<topic>/<task-or-run>/`. Move observations or conclusions to
+`../memory/` when they need to be kept, and keep both work-directory roots
+free of loose entries.

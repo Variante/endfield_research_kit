@@ -1,6 +1,6 @@
 ---
 name: endfield-webui-workflow
-description: "Use this skill for the static WebUI workflow: refresh/export, local serving, packaging, Updates tab checks, asset/index refresh, and Story/Text Tables frontend behavior such as inline SNS image rendering."
+description: "Use this skill for the static WebUI workflow: refresh/export, local serving, packaging, Updates tab checks, asset/index refresh, generated report and scratch/tmp organization, and Story/Text Tables frontend behavior such as inline SNS image rendering."
 ---
 
 # Endfield WebUI Workflow
@@ -80,6 +80,53 @@ longer:
 ```text
 timeout_ms >= 900000
 ```
+
+## Report Organization
+
+Keep `reports/` free of loose files. Use these topic roots:
+
+- `reports/export/`: latest export summary, `runs/<timestamp>/` logs, and
+  `benchmarks/`.
+- `reports/story/build/`: normal Story build reports, including source links,
+  narrative videos, mission timeline recovery, scene-order gaps, and inferred
+  option anchors.
+- `reports/story/recovery/`: manual Story recovery audits; option evidence
+  belongs in `reports/story/recovery/options/`.
+- `reports/updates/`: `game-data-change-summary.json/.md`.
+- `reports/assets/`: hashes and asset diagnostics.
+- `reports/source_graph/`, `reports/mission_order/`,
+  `reports/playable_director/`, and `reports/gameplay_video_ocr/`: established
+  graph and recovery topic roots.
+
+Every `export.bat` run keeps the latest benchmark and up to ten historical
+benchmark runs per label. Installed-game exporter runs keep five timestamped
+run directories by default. `build_updates.bat --init-build` removes any stale
+comparison summary because a baseline-only build intentionally has no change
+report.
+
+Treat canonical Story, mission-order, playable-director, OCR, option, and
+source-graph reports as possible downstream inputs. Before deleting one, search
+for readers in `scripts/` and `tools/endfield_source_graph.py`. Delete
+superseded timestamp runs, scoped experiments, and temporary reports; move
+durable conclusions to `memory/` and disposable work to `scratch/` or `tmp/`.
+Never use `reports/` as an Updates comparison root.
+
+Before rebuilding Story or report consumers from `export_full/`, run
+`python scripts\verify_export_freshness.py`. If it reports stale installed-game
+sources, refresh with `export.bat --export-from-game` first.
+
+## Scratch And Temporary Work
+
+Keep the roots of `scratch/` and `tmp/` free of loose entries. Put revisitable
+experiments under `scratch/<topic>/<task>/` and disposable intermediates under
+`tmp/<topic>/<task-or-run>/`. Prefer `webui`, `story`, `assets`, `animestudio`,
+`source_graph`, `game_data`, `updates`, `ocr`, or `reverse_engineering` as the
+topic; use `tests`, `tools`, or `misc` only when nothing else fits.
+
+Delete completed `tmp/` runs after validation. Promote reusable helpers out of
+`scratch/` into maintained code, move durable conclusions to `memory/`, and
+delete superseded experiments. For a self-contained Unity/UE project, keep its
+temporary work inside that project instead of the repo-root work directories.
 
 ## Recovery Investigation Commands
 

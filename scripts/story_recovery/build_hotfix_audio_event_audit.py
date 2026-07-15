@@ -52,7 +52,7 @@ DEFAULT_MD = REPORT_DIR / "hotfix_audio_event_audit.md"
 DEFAULT_HOTFIX_ASSETS = DEFAULT_GAME_ROOT / "Persistent"
 DEFAULT_FALLBACK_ASSETS = DEFAULT_GAME_ROOT / "StreamingAssets"
 DEFAULT_CONV_DIR = DEFAULT_WEBUI_ROOT / "data" / "lang" / "CN" / "conv"
-DEFAULT_DECODED_ROOT = ROOT / "tmp" / "hotfix_audio_probe"
+DEFAULT_DECODED_ROOT = ROOT / "tmp" / "audio" / "hotfix_audio_probe"
 DEFAULT_FILE_REGEX = r"(^|[\\/])hotfix.*\.pck$"
 
 

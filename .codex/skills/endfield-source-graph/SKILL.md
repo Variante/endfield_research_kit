@@ -38,7 +38,15 @@ line-order or option-route explanation.
 ## Build Or Refresh
 
 If `reports/source_graph/endfield_source_graph.sqlite` is missing or clearly
-stale, build it. Use the quick build first for story/option/audio lookups:
+stale, first verify that its exported inputs are current:
+
+```bat
+python scripts\verify_export_freshness.py
+```
+
+If the guard reports stale installed-game sources, refresh with
+`export.bat --export-from-game` before rebuilding the graph. Then use the quick
+build first for story/option/audio lookups:
 
 ```bat
 python tools\endfield_source_graph.py build --skip-asset-maps --skip-reference-rows --skip-followups
@@ -52,6 +60,18 @@ python tools\endfield_source_graph.py build
 
 Generated graph outputs live under `reports/source_graph/` and are ignored by
 git. Do not confuse them with WebUI data; they are investigation artifacts.
+
+The graph also reads canonical generated evidence from
+`reports/story/build/`, `reports/story/recovery/options/`, and
+`reports/mission_order/`. Treat those files as report-to-report inputs: do not
+remove them during cleanup unless their consumer is retired or they will be
+regenerated before the next graph build. Keep graph outputs inside the existing
+`reports/source_graph/` topic root, never loose at `reports/`.
+
+Put revisitable graph experiments under `scratch/source_graph/<task>/` and
+disposable databases or query exports under `tmp/source_graph/<task-or-run>/`.
+Do not create loose SQLite files at the root of `scratch/` or `tmp/`, and delete
+temporary graph copies after the result is validated.
 
 ## Exact Evidence Queries
 

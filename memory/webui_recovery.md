@@ -269,7 +269,7 @@ After a refresh, check:
   accents; kind/category badges remain softly color-coded for scanning.
 - The gameplay video story-order matcher now combines OCR segments with
   decoded Story audio-template matches. Audio fingerprints are cached under
-  `tmp/gameplay_video_ocr/audio/`; `au_music*` templates are ignored by default,
+  `tmp/ocr/gameplay_video_ocr/audio/`; `au_music*` templates are ignored by default,
   and locked missions are used as threshold controls before applying proposed
   order changes.
 - `scripts/download_bilibili_video.py` is the maintained optional intake helper

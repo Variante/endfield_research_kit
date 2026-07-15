@@ -2037,7 +2037,7 @@ def build_quest_spatial_track(
 
 # Scene kinds the WebUI treats as orderable story scenes. Mirrors
 # ORDER_INCLUDE_KINDS in
-# scratch/main_story_order_compare/recover_main_story_order_compare.py.
+# scratch/story/main_story_order_compare/recover_main_story_order_compare.py.
 SCENE_ORDER_INCLUDE_KINDS = frozenset({
     "black",
     "cutscene",
@@ -2119,7 +2119,7 @@ def build_scene_order_info(
     """Resolve additive per-scene static order CONFIDENCE + PHASE for the WebUI.
 
     Ports the per-key resolution from
-    scratch/main_story_order_compare/recover_main_story_order_compare.py so the
+    scratch/story/main_story_order_compare/recover_main_story_order_compare.py so the
     maintained builder emits the same questOrder / orderSource / confidence /
     evidenceKinds the scratch report's ``keyInfo`` carries. This is STATIC
     recovery only: confidence never folds in any OCR-derived signal. It adds no

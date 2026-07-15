@@ -53,7 +53,7 @@ from common import (  # noqa: E402
 
 VIDEO_ROOT = ROOT / "videos"
 REPORT_DIR = REPORTS_DIR / "gameplay_video_ocr"
-TMP_ROOT = ROOT / "tmp" / "gameplay_video_ocr"
+TMP_ROOT = ROOT / "tmp" / "ocr" / "gameplay_video_ocr"
 FRAME_CACHE_ROOT = TMP_ROOT / "frames"
 OCR_DICTIONARY_CACHE_PATH = TMP_ROOT / "ocr_dictionary_allowlist.json"
 INDEX_PATH = REPORT_DIR / "gameplay_video_ocr_index.json"

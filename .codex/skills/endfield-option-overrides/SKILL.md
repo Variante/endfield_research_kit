@@ -15,6 +15,7 @@ option recovery gaps without changing the automatic recovery rules.
 - Story rendering tags: `webui/app.js`, `webui/app_labels.js`, `webui/style.css`
 - Generated validation targets: `webui/data/lang/CN/conv/<key>.json`,
   `reports/story/build/inferred_option_anchors_CN.json`
+- Coverage audit: `reports/story/recovery/options/option_override_coverage_CN.json/.md`
 
 ## Rules
 
@@ -81,12 +82,23 @@ Inferred response override:
 
 4. Verify results.
    - `python -m json.tool webui\overrides\options.json`
+   - Run `python scripts\story_recovery\build_option_override_coverage_audit.py --language CN`
+     when coverage or stale override targets need a full audit.
    - Confirm the target Story scene shows the manual override tag.
    - Confirm unresolved inferred-anchor counts are expected:
      `reports/story/build/inferred_option_anchors_CN.json`
    - Run syntax checks after frontend edits:
      `node --check webui\app.js`
      `node --check webui\app_labels.js`
+
+Keep generated option audits under `reports/story/recovery/options/`; do not
+write loose audit files at the `reports/` root. These reports can feed later
+source-graph or recovery audits, so remove only superseded scoped runs rather
+than the current canonical language report.
+
+Put temporary option probes under `scratch/story/options/<task>/` or
+`tmp/story/options/<task-or-run>/`; do not create loose files at either work
+directory root.
 
 ## Reporting Back
 
