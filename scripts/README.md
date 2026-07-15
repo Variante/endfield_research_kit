@@ -453,6 +453,19 @@ These tools are not part of `export.bat`. Most live under
 scan; the root-level Bilibili downloader is listed here because it feeds the
 gameplay-video OCR/audio workflow.
 
+- `story_recovery/build_source_story_partial_order.py`: builds a strict,
+  source-only per-mission partial-order and branch audit from the generated
+  Story index, mission bundles, and conversation payloads. It does not read
+  `webui/overrides/story_order.json`, OCR proposals, numeric scene suffixes,
+  generated UI rank, or `sceneOrderInfo.questOrder`. Strong source edges are
+  condensed into an SCC DAG and transitively reduced; weak file/order clues,
+  cycles, isolated scenes, rejected option evidence, and option groups with no
+  explicit route remain visible instead of being forced into a total order.
+  Intra-dialog option routes are promoted only from direct
+  DialogTree/DialogTreeFragment paths or the exact decoded Runtime Jump Track
+  signature. Run
+  `python scripts\story_recovery\build_source_story_partial_order.py`; it
+  writes `reports/mission_order/source_story_partial_order_<LANG>.json` / `.md`.
 - `story_recovery/build_runtime_jump_option_route_audit.py`: audits remaining
   live `inferredOptionResponse` warning groups against nearby Runtime Jump
   Track clips, including forward skip ranges, reverse/directional ranges, and
