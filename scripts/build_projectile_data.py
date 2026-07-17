@@ -1,0 +1,503 @@
+"""Build a compact projectile inspector payload from AnimeStudio JSON.
+
+The source records are exact-consumption MonoBehaviour decodes produced by the
+local AnimeStudio fork.  This builder intentionally keeps authored numeric
+values and blackboard keys separate from display labels: enum/hash meanings
+that have not been independently recovered stay numeric.
+
+Examples:
+    python scripts/build_projectile_data.py
+    python scripts/build_projectile_data.py --pretty
+    python scripts/build_projectile_data.py --input-root PATH --output PATH
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from typing import Any, Iterable
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_INPUTS = (
+    REPO_ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/MonoBehaviour",
+    REPO_ROOT / "export_full/recovered/AnimeStudio-cli/Persistent/json_by_type/MonoBehaviour",
+)
+DEFAULT_OUTPUT = REPO_ROOT / "webui/data/gameplay/projectiles.json"
+EFFECT_LIST_FIELDS = (
+    ("main", "mainEffects"),
+    ("launch", "launchEffects"),
+    ("reach", "reachEffects"),
+    ("hit", "hitEffects"),
+    ("block", "blockEffects"),
+    ("finish", "finishEffects"),
+)
+SOUND_FIELDS = (
+    "launchSound",
+    "loopSound",
+    "reachSound",
+    "hitSound",
+    "blockSound",
+    "finishedSound",
+    "sizzleSound",
+)
+
+
+def compact_dict(**values: Any) -> dict[str, Any]:
+    return {key: value for key, value in values.items() if value is not None}
+
+
+def enum_value(value: Any) -> Any:
+    if not isinstance(value, dict):
+        return value
+    return compact_dict(
+        value=value.get("value"),
+        name=value.get("name"),
+        hex=value.get("hex"),
+        enumType=value.get("enumType"),
+    )
+
+
+def blackboard_scalar(value: Any) -> Any:
+    if not isinstance(value, dict):
+        return value
+    result = compact_dict(
+        useBlackboardKey=value.get("useBlackboardKey"),
+        value=value.get("value"),
+        blackboardKey=value.get("blackboardKey"),
+        valueFloatCandidate=value.get("valueFloatCandidate"),
+        valueIntCandidate=value.get("valueIntCandidate"),
+    )
+    if isinstance(value.get("rawWords"), list):
+        result["rawWords"] = [enum_value(word) for word in value["rawWords"]]
+    return result
+
+
+def blackboard_vector(value: Any) -> Any:
+    if not isinstance(value, dict):
+        return value
+    result = {axis: blackboard_scalar(value.get(axis)) for axis in ("x", "y", "z") if axis in value}
+    if isinstance(value.get("valueCandidate"), dict):
+        result["valueCandidate"] = value["valueCandidate"]
+    return result
+
+
+def blackboard_range(value: Any) -> Any:
+    if not isinstance(value, dict):
+        return value
+    result = compact_dict(
+        min=blackboard_scalar(value.get("min")),
+        max=blackboard_scalar(value.get("max")),
+        valueCandidate=value.get("valueCandidate"),
+    )
+    return result
+
+
+def curve(value: Any) -> Any:
+    if not isinstance(value, dict):
+        return value
+    keyframes = []
+    for row in value.get("keyframes") or []:
+        if not isinstance(row, dict):
+            continue
+        keyframes.append(
+            compact_dict(
+                time=row.get("time"),
+                value=row.get("value"),
+                inSlope=row.get("inSlope"),
+                outSlope=row.get("outSlope"),
+                weightedMode=enum_value(row.get("weightedMode")),
+                inWeight=row.get("inWeight"),
+                outWeight=row.get("outWeight"),
+            )
+        )
+    return compact_dict(
+        keyframes=keyframes,
+        preInfinity=enum_value(value.get("preInfinity")),
+        postInfinity=enum_value(value.get("postInfinity")),
+        rotationOrder=enum_value(value.get("rotationOrder")),
+    )
+
+
+def bezier_point(value: Any, status: Any) -> Any:
+    if not isinstance(value, dict):
+        return compact_dict(status=status)
+    return compact_dict(
+        status=status or value.get("decodeStatus"),
+        usePresetPoint=value.get("usePresetPoint"),
+        presetPointKey=value.get("presetPointKey"),
+        xRatioRange=blackboard_range(value.get("xRatioRange")),
+        yzAngleRange=blackboard_range(value.get("yzAngleRange")),
+        yzRadiusRange=blackboard_range(value.get("yzRadiusRange")),
+        scaledYzRadius=value.get("scaledYzRadius"),
+    )
+
+
+def shape_payload(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    return compact_dict(
+        shapeType=enum_value(value.get("shapeType")),
+        radius=blackboard_scalar(value.get("radius")),
+        center=blackboard_vector(value.get("center")),
+        extent=blackboard_vector(value.get("extent")),
+        initOuterRadius=blackboard_scalar(value.get("initOuterRadius")),
+        initInnerRadius=blackboard_scalar(value.get("initInnerRadius")),
+        outerRadiusIncreaseSpeed=blackboard_scalar(value.get("outerRadiusIncreaseSpeed")),
+        innerRadiusIncreaseSpeed=blackboard_scalar(value.get("innerRadiusIncreaseSpeed")),
+        height=blackboard_scalar(value.get("height")),
+        isSector=value.get("isSector"),
+        sectorDirection=enum_value(value.get("sectorDirection")),
+        sectorAngle=blackboard_scalar(value.get("sectorAngle")),
+    )
+
+
+def target_filter_payload(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    query = value.get("tagQuery") if isinstance(value.get("tagQuery"), dict) else {}
+    return compact_dict(
+        checkAlive=value.get("checkAlive"),
+        autoSetTargetFaction=value.get("autoSetTargetFaction"),
+        factionTarget=enum_value(value.get("factionTarget")),
+        targetFactionType=enum_value(value.get("targetFactionType")),
+        filterSlot=value.get("filterSlot"),
+        slotIndex=value.get("slotIndex"),
+        filterGameplayTag=value.get("filterGameplayTag"),
+        tagQuery=compact_dict(queryType=enum_value(query.get("queryType")), tags=query.get("tags") or []),
+    )
+
+
+def move_mode_payload(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    return compact_dict(
+        key=value.get("key"),
+        traceType=enum_value(value.get("traceType")),
+        traceTime=blackboard_scalar(value.get("traceTime")),
+        traceUntilDistance=blackboard_scalar(value.get("traceUntilDistance")),
+        moveType=enum_value(value.get("moveType")),
+        parabolaDef=enum_value(value.get("parabolaDef")),
+        speed=blackboard_scalar(value.get("speed")),
+        speedCurve=curve(value.get("speedCurve")),
+        useSpeedScaleWithDistance=value.get("useSpeedScaleWithDistance"),
+        speedScaleWithDistance=curve(value.get("speedScaleWithDistance")),
+        lockVelocityToXZ=value.get("lockVelocityToXZ"),
+        groundedMove=value.get("groundedMove"),
+        limitAngularSpeed=value.get("limitAngularSpeed"),
+        angularSpeed=blackboard_scalar(value.get("angularSpeed")),
+        angularSpeedCurve=curve(value.get("angularSpeedCurve")),
+        travelDuration=blackboard_scalar(value.get("travelDuration")),
+        vertexYOffset=blackboard_scalar(value.get("vertexYOffset")),
+        gravity=blackboard_scalar(value.get("gravity")),
+        bezierMidPoint1=bezier_point(value.get("bezierMidPoint1"), value.get("bezierMidPoint1Status")),
+        bezierMidPoint2=bezier_point(value.get("bezierMidPoint2"), value.get("bezierMidPoint2Status")),
+        confidence={
+            "structure": "exact",
+            "semantics": "qualified",
+            "note": "Field order and record boundary are byte-proven; numeric movement enum names remain withheld when the exporter has no independently validated member name.",
+        },
+    )
+
+
+def effect_tail_payload(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    scalar_keys = (
+        "isShowInDialog", "isLimitEffectCount", "limitCount", "protectTime", "limitTime", "limitKey",
+        "assetOnlyAffectModelRoot", "isUltimateShow", "visibleWithEntity", "grounded", "followGrounded",
+        "followGroundedMaxDistance", "followHideTarget", "visibleWhenHideTarget", "slotIndex",
+        "useWeaponMountPoint", "useAccurateMp", "isClothMountPoint", "weaponIndex", "showHideWithWeapon",
+        "offsetDirRevert", "usePositionOffsetBB", "useTargetRotation", "scaleWithTargetSize", "fxSize",
+        "unpackPosDelayFrame", "unpackFollowTargetOnRelease", "rotUseWeaponMountPoint", "rotWeaponIndex",
+        "revertDir", "useSelfRotationBB", "lockYRotation", "unpackRotDelayFrame",
+        "unpackFollowTargetRotOnRelease", "weaponVfxKey", "weaponVfxIndex", "weaponVfxPersistent",
+        "animateAlert", "alertAnimateDuration", "isAlertAnimateReverse", "angle", "hollow", "value",
+    )
+    result = {key: value[key] for key in scalar_keys if key in value}
+    for key in (
+        "visibleWithEntityType", "moveType", "positionRef", "mountPoint", "weaponMountPoint", "offsetDir",
+        "rotType", "rotRef", "directionRef", "rotMountPoint", "rotWeaponMountPoint", "alertType", "modifyType",
+    ):
+        if key in value:
+            result[key] = enum_value(value[key])
+    for key in ("positionOffset", "selfRotation"):
+        if key in value:
+            result[key] = value[key]
+    for key in ("positionOffsetBB", "selfRotationBB"):
+        if key in value:
+            result[key] = blackboard_vector(value[key])
+    return result
+
+
+def effect_payload(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    terrain = value.get("effectPosData") if isinstance(value.get("effectPosData"), dict) else {}
+    return compact_dict(
+        fxType=enum_value(value.get("fxType")),
+        effectName=value.get("effectName"),
+        guardEffect=value.get("guardEffect"),
+        forceGuardEffect=value.get("forceGuardEffect"),
+        isCenterChangeLod=value.get("isCenterChangeLod"),
+        scale=value.get("scale"),
+        scaleBB=blackboard_vector(value.get("scaleBB")),
+        useLengthBB=value.get("useLengthBB"),
+        lengthBB=blackboard_scalar(value.get("lengthBB")),
+        releaseByAction=value.get("releaseByAction"),
+        ignoreOwnerTimeScale=value.get("ignoreOwnerTimeScale"),
+        interruptTime=value.get("interruptTime"),
+        terrainPrefab=value.get("terrainPrefab"),
+        terrainEffectCount=terrain.get("count"),
+        behavior=effect_tail_payload(value.get("effectActionTail")),
+        confidence={
+            "structure": "exact",
+            "semantics": "qualified",
+            "note": "The observed projectile effect body is byte-complete. Some wrapper internals and enum labels remain inferred or unnamed.",
+        },
+    )
+
+
+def effect_list_payload(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, dict):
+        return []
+    return [effect_payload(item) for item in value.get("entries") or [] if isinstance(item, dict)]
+
+
+def source_label(path: Path) -> str:
+    for part in reversed(path.parts):
+        if part in {"StreamingAssets", "Persistent"}:
+            return part
+    return path.name or "unknown"
+
+
+def relative_vfs_path(original: Any, source: str) -> str:
+    if not original:
+        return ""
+    normalized = str(original).replace("\\", "/")
+    marker = f"/{source}/"
+    index = normalized.lower().find(marker.lower())
+    return normalized[index + 1 :] if index >= 0 else Path(normalized).name
+
+
+def find_reference(payload: dict[str, Any], class_name: str) -> dict[str, Any] | None:
+    refs = (payload.get("references") or {}).get("RefIds") or []
+    for ref in refs:
+        if isinstance(ref, dict) and ((ref.get("type") or {}).get("class") == class_name):
+            return ref
+    return None
+
+
+def build_entry(path: Path, root: Path) -> dict[str, Any] | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    template_ref = find_reference(payload, "ProjectileTemplateData")
+    component_ref = find_reference(payload, "ProjectileComponentData")
+    if not template_ref or not component_ref:
+        return None
+    template = template_ref.get("data") or {}
+    component = component_ref.get("data") or {}
+    tail = component.get("tail") or {}
+    remaining = tail.get("structuredRemainingTail") or {}
+    move_dict = tail.get("moveModeDict") or {}
+    metadata = payload.get("$animestudio") or {}
+    source = source_label(root)
+    projectile_id = str(component.get("id") or template.get("id") or metadata.get("name") or path.stem)
+    path_id = str(metadata.get("pathId") or "")
+    exact = bool(
+        component.get("$decoded")
+        and remaining.get("structuredDecodeStatus") == "decoded"
+        and int(tail.get("remainingRawWordCount") or 0) == 0
+        and int(remaining.get("remainingRawWordCount") or 0) == 0
+        and remaining.get("consumedWordCount") == remaining.get("wordCount")
+    )
+    effects = {label: effect_list_payload(remaining.get(field)) for label, field in EFFECT_LIST_FIELDS}
+    sounds = remaining.get("postAlertEffectSoundTail") or {}
+    sound_payload = {key: enum_value(sounds.get(key)) for key in SOUND_FIELDS}
+    sound_payload.update(
+        compact_dict(
+            sizzleSoundTriggerDistance=sounds.get("sizzleSoundTriggerDistance"),
+            ringProjectileSoundSmoothFactor=sounds.get("ringProjectileSoundSmoothFactor"),
+        )
+    )
+    segments = []
+    for row in component.get("moveSegments") or []:
+        if not isinstance(row, dict):
+            continue
+        segments.append(
+            compact_dict(
+                startPointKey=row.get("startPointKey"),
+                moveModeId=row.get("moveModeId"),
+                endPointKey=row.get("endPointKey"),
+                earlyNextByDuration=row.get("earlyNextByDuration"),
+                segmentDuration=blackboard_scalar(row.get("segmentDuration")),
+                speedLerpTime=blackboard_scalar(row.get("speedLerpTime")),
+            )
+        )
+    base = template.get("baseTemplate") or {}
+    entity = template.get("entityTemplate") or {}
+    skills = template.get("skillDataBundle") or {}
+    result = {
+        "key": f"{source}:{projectile_id}:{path_id}",
+        "id": projectile_id,
+        "source": compact_dict(
+            root=source,
+            assetName=metadata.get("name") or payload.get("m_Name"),
+            pathId=path_id,
+            sourceFile=metadata.get("sourceFile"),
+            vfsPath=relative_vfs_path(metadata.get("sourceOriginalPath"), source),
+            byteSize=metadata.get("byteSize"),
+            rawDataSha256=metadata.get("rawDataSha256"),
+            typeTreeSource=metadata.get("typeTreeSource"),
+            jsonPath=path.relative_to(REPO_ROOT).as_posix() if path.is_relative_to(REPO_ROOT) else path.name,
+        ),
+        "template": compact_dict(
+            name=base.get("name"),
+            factionIndex=enum_value(base.get("factionIndex")),
+            bornTag=enum_value(entity.get("bornTag")),
+            delayToRecycleTime=entity.get("delayToRecycleTime"),
+            delayRecyclePerformTime=entity.get("delayRecyclePerformTime"),
+            sendDieEvent=entity.get("sendDieEvent"),
+            useWeaponEmitMountPoint=template.get("useWeaponEmitMountPoint"),
+            emitMountPoint=enum_value(template.get("emitMountPoint")),
+            weaponIndex=template.get("weaponIndex"),
+            weaponMountPoint=enum_value(template.get("weaponMountPoint")),
+            hitMountPoint=enum_value(template.get("hitMountPoint")),
+            activeSkillIds=skills.get("allActiveSkillId") or [],
+            passiveSkillIds=skills.get("allPassiveSkillId") or [],
+            normalAttackIds=skills.get("allNormalAttackId") or [],
+        ),
+        "lifetime": compact_dict(
+            finishDuration=blackboard_scalar(component.get("finishDuration")),
+            finishDistance=blackboard_scalar(component.get("finishDistance")),
+            finishOnReach=component.get("finishOnReach"),
+            hitOnReach=component.get("hitOnReach"),
+            keepMoveOnReach=component.get("keepMoveOnReach"),
+            mainEffectFinishType=enum_value(tail.get("mainEffectFinishType")),
+            mainEffectFinishTypeSerialized=enum_value(tail.get("mainEffectFinishTypeSerialized")),
+            mainEffectFinishDistance=blackboard_scalar(tail.get("mainEffectFinishDistance")),
+        ),
+        "collision": shape_payload(component.get("colliderShapeData")),
+        "targeting": compact_dict(
+            blockLayerDef=enum_value(component.get("blockLayerDef")),
+            blockLayer=enum_value(component.get("blockLayer")),
+            targetFilter=target_filter_payload(component.get("targetFilter")),
+            ignoreImmuneLevel=enum_value(component.get("ignoreImmuneLevel")),
+            maxHitCount=blackboard_scalar(component.get("maxHitCount")),
+            allowHitSameTarget=component.get("allowHitSameTarget"),
+            hitIntervalPerTarget=component.get("hitIntervalPerTarget"),
+        ),
+        "movement": {
+            "presetPointKeys": component.get("presetPointKeys") or [],
+            "useSegmentMove": component.get("useSegmentMove"),
+            "segments": segments,
+            "modes": [move_mode_payload(row) for row in move_dict.get("values") or [] if isinstance(row, dict)],
+        },
+        "effects": compact_dict(
+            lists=effects,
+            showReachEffectOnlyWithTarget=remaining.get("showReachEffectOnlyWithTarget"),
+            showFinishEffectOnlyWhenUnblockAndNotHit=remaining.get("showFinishEffectOnlyWhenUnblockAndNotHit"),
+            showAlertEffect=remaining.get("showAlertEffect"),
+            alert=effect_payload(remaining.get("alertEffect")),
+        ),
+        "sounds": sound_payload,
+        "confidence": {
+            "structure": "exact" if exact else "incomplete",
+            "semantics": "mixed",
+            "byteComplete": exact,
+            "qualifiers": [
+                "ProjectileComponentData boundaries and exact tail consumption are validated for the current installed-game export.",
+                "Authored numeric values and blackboard keys are preserved; the WebUI does not evaluate runtime blackboards.",
+                "Exporter-provided enum member names are shown where validated; otherwise the numeric value and enum type are retained.",
+                "The seven sound fields are metadata-named hash-like values, not resolved Wwise events.",
+                "Effect bodies are byte-complete for observed projectile variants while some wrapper semantics remain inferred.",
+            ],
+        },
+    }
+    return result
+
+
+def candidate_files(root: Path) -> Iterable[Path]:
+    if not root.exists():
+        return ()
+    return sorted(root.rglob("*projectile*.json"), key=lambda item: item.as_posix().lower())
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Build compact WebUI projectile data from exact AnimeStudio MonoBehaviour JSON.",
+    )
+    parser.add_argument(
+        "--input-root",
+        action="append",
+        type=Path,
+        help="MonoBehaviour JSON directory to scan; repeat for multiple source roots. Defaults to StreamingAssets and Persistent.",
+    )
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help=f"Output JSON path (default: {DEFAULT_OUTPUT})")
+    parser.add_argument("--pretty", action="store_true", help="Write indented JSON for inspection instead of compact JSON.")
+    parser.add_argument("--require-exact", action="store_true", help="Fail if any emitted projectile lacks exact tail consumption.")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    roots = tuple(path.resolve() for path in (args.input_root or DEFAULT_INPUTS))
+    entries: list[dict[str, Any]] = []
+    scanned = 0
+    missing = []
+    for root in roots:
+        if not root.exists():
+            missing.append(str(root))
+            continue
+        for path in candidate_files(root):
+            scanned += 1
+            entry = build_entry(path, root)
+            if entry:
+                entries.append(entry)
+    entries.sort(key=lambda row: (str(row.get("id") or ""), str(row.get("source", {}).get("root") or ""), str(row.get("source", {}).get("pathId") or "")))
+    incomplete = sum(1 for row in entries if not row["confidence"]["byteComplete"])
+    source_counts: dict[str, int] = {}
+    for row in entries:
+        source = row["source"]["root"]
+        source_counts[source] = source_counts.get(source, 0) + 1
+    output = {
+        "schemaVersion": 1,
+        "source": "AnimeStudio exact MonoBehaviour projectile decode",
+        "sourceRoots": [source_label(root) for root in roots],
+        "counts": {
+            "projectiles": len(entries),
+            "byteComplete": len(entries) - incomplete,
+            "incomplete": incomplete,
+            "bySource": dict(sorted(source_counts.items())),
+        },
+        "confidence": {
+            "structure": "exact" if entries and incomplete == 0 else "mixed",
+            "semantics": "qualified",
+            "note": "Structural completeness does not imply recovered runtime enum/hash meanings or evaluated blackboard values.",
+        },
+        "entries": entries,
+    }
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(
+        json.dumps(output, ensure_ascii=False, indent=2 if args.pretty else None, separators=None if args.pretty else (",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    print(f"Projectile data: {len(entries)} entries ({len(entries) - incomplete} byte-complete, {incomplete} incomplete)")
+    print(f"Scanned candidate JSON: {scanned}")
+    print(f"Sources: {', '.join(f'{key}={value}' for key, value in sorted(source_counts.items())) or 'none'}")
+    if missing:
+        print(f"Missing input roots (skipped): {len(missing)}")
+        for path in missing:
+            print(f"  {path}")
+    print(f"Wrote: {args.output}")
+    if args.require_exact and incomplete:
+        print("ERROR: --require-exact rejected incomplete projectile records")
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

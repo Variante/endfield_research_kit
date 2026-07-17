@@ -52,7 +52,16 @@ LANGUAGES = {
 }
 
 AUDIO_EXTENSIONS = {".wav", ".wem"}
-EVENT_PREFIXES = ("au_sfx_", "au_vo_", "au_music_", "au_cue_", "au_amb_", "au_ui_")
+EVENT_CATEGORY_PREFIXES = {
+    "au_sfx_": "au_sfx",
+    "au_vo_": "au_vo",
+    "au_voice_": "au_vo",
+    "au_music_": "au_music",
+    "au_cue_": "au_cue",
+    "au_amb_": "au_amb",
+    "au_ui_": "au_ui",
+}
+EVENT_PREFIXES = tuple(EVENT_CATEGORY_PREFIXES)
 WWISE_EVENT_CATEGORY_FOLDERS = {
     "au_sfx": "sfx",
     "au_vo": "voice_events",
@@ -107,6 +116,8 @@ AUDIO_META_KEYS = (
     "storageRoot",
     "sourceBank",
     "eventCategory",
+    "audioCategory",
+    "audioCategoryDetail",
 )
 
 
@@ -279,19 +290,17 @@ def same_resolved_path(left: Path, right: Path) -> bool:
 
 
 def audio_vfs_sources(args: argparse.Namespace) -> list[tuple[str, Path, Path | None]]:
-    """Return primary plus overlay VFS roots.
+    """Return the fallback-aware installed VFS source used for audio work.
 
     Endfield installs can keep patch/update tables and PCKs under Persistent.
-    AnimeStudio's fallback path only resolves chunks named by the primary block
-    metadata, so we must also run Persistent as a primary source when present.
+    AnimeStudio resolves missing block metadata and chunks through the fallback.
+    Running the roots again in reverse decodes the same logical PCK set twice on
+    current installs, so audio extraction and bank streaming use one primary
+    source with Persistent configured as its fallback.
     """
-    sources: list[tuple[str, Path, Path | None]] = []
     primary = args.streaming_assets
     fallback = args.fallback_assets if args.fallback_assets and args.fallback_assets.exists() else None
-    sources.append(("StreamingAssets", primary, fallback))
-    if fallback and primary.exists() and not same_resolved_path(primary, fallback):
-        sources.append(("Persistent", fallback, primary))
-    return sources
+    return [("StreamingAssets", primary, fallback)]
 
 
 def audio_id_from_path(path: str) -> str:
@@ -622,6 +631,40 @@ def audio_path_tags_for_rel(rel: str) -> dict[str, str]:
     return tags
 
 
+def audio_category_for_rel(rel: str, event_category: Any = None) -> tuple[str, str]:
+    """Return a stable browser category plus an optional useful subcategory."""
+    parts = PurePosixPath(normalize_posix(rel).lower()).parts
+    if not parts:
+        return "unknown", ""
+    if parts[0] == "voice":
+        section = parts[1] if len(parts) >= 2 else "other"
+        if section == "story":
+            return "story_voice", parts[2] if len(parts) >= 3 else "other"
+        if section == "characters":
+            return "character_voice", parts[2] if len(parts) >= 3 else ""
+        if section == "enemies":
+            return "enemy_voice", parts[2] if len(parts) >= 3 else ""
+        return "other_voice", section
+    if parts[0] == "wwise":
+        folder = wwise_folder_for_event_category(event_category) if event_category else (
+            parts[1] if len(parts) >= 2 else WWISE_UNKNOWN_FOLDER
+        )
+        return folder if folder in WWISE_EVENT_CATEGORY_BY_FOLDER or folder == WWISE_UNKNOWN_FOLDER else "unknown", ""
+    return "unknown", parts[0]
+
+
+def apply_audio_category(entry: dict[str, Any]) -> None:
+    category, detail = audio_category_for_rel(
+        str(entry.get("rel") or ""),
+        entry.get("eventCategory"),
+    )
+    entry["audioCategory"] = category
+    if detail:
+        entry["audioCategoryDetail"] = detail
+    else:
+        entry.pop("audioCategoryDetail", None)
+
+
 def canonical_audio_rel(rel: str, event_category: Any = None) -> str:
     normalized = normalize_posix(rel).lower()
     parts = PurePosixPath(normalized).parts
@@ -726,6 +769,17 @@ def audio_source_metadata(block: str, language: str, language_info: dict[str, st
     return metadata
 
 
+def combined_decode_source_block(storage_root: str, language: str, rel: str) -> str:
+    if storage_root == language:
+        return "voice"
+    source_bank = audio_path_tags_for_rel(rel).get("sourceBank")
+    return {
+        "initial": "initial-audio",
+        "audit": "audit-audio",
+        "hotfix": "hotfix-audio",
+    }.get(source_bank, "audio")
+
+
 def legacy_audio_source_metadata(rel: str, language: str, language_info: dict[str, str]) -> dict[str, str]:
     normalized = normalize_posix(rel).lower()
     if normalized.startswith("voice/"):
@@ -757,6 +811,8 @@ def clean_source_metadata(value: Any) -> dict[str, str]:
         "storageRoot",
         "sourceBank",
         "eventCategory",
+        "audioCategory",
+        "audioCategoryDetail",
     ):
         text = str(value.get(key) or "").strip()
         if text:
@@ -848,14 +904,17 @@ def source_metadata_for_rel(
 def summarize_audio_sources(entries: list[dict[str, Any]]) -> dict[str, Any]:
     by_scope: dict[str, int] = defaultdict(int)
     by_block: dict[str, int] = defaultdict(int)
+    by_category: dict[str, int] = defaultdict(int)
     for entry in entries:
         scope = str(entry.get("audioScope") or "unknown")
         block = str(entry.get("sourceBlock") or "unknown")
         by_scope[scope] += 1
         by_block[block] += 1
+        by_category[str(entry.get("audioCategory") or "unknown")] += 1
     return {
         "byScope": dict(sorted(by_scope.items())),
         "bySourceBlock": dict(sorted(by_block.items())),
+        "byCategory": dict(sorted(by_category.items())),
     }
 
 
@@ -937,6 +996,7 @@ def collect_audio_files(
         }
         for key, value in audio_path_tags_for_rel(rel).items():
             entry.setdefault(key, value)
+        apply_audio_category(entry)
         by_id.setdefault(audio_id, entry)
     return by_id
 
@@ -971,7 +1031,7 @@ def build_dialog_audio_index(
             if not file_path.exists():
                 continue
             duration = row.get(duration_field)
-            out[audio_id] = {
+            entry = {
                 "id": audio_id,
                 "rel": rel,
                 "storageRoot": language,
@@ -986,6 +1046,8 @@ def build_dialog_audio_index(
                 "duration": duration if isinstance(duration, (int, float)) else None,
                 **audio_source_metadata("voice", language, language_info),
             }
+            apply_audio_category(entry)
+            out[audio_id] = entry
     return out
 
 
@@ -1664,6 +1726,7 @@ def load_cached_event_audio_index(
                 rel,
                 cached.get("eventCategory") or event_audio_category(event_key),
             )
+            apply_audio_category(cached)
         if not _audio_entry_file_exists(audio_root, language, cached):
             continue
         cached["src"] = served_audio_href(audio_root, webui_root, cached["storageRoot"], str(cached.get("rel") or ""))
@@ -1688,11 +1751,12 @@ def snapshot_audio_file_stats(source_root: Path) -> dict[str, tuple[int, int]]:
     }
 
 
-def run_audio_dumper_block(
+def run_audio_dumper_once(
     args: argparse.Namespace,
     language_info: dict[str, str],
     output_root: Path,
     block: str,
+    shared_output_root: Path | None,
     source_label: str,
     streaming_assets: Path,
     fallback_assets: Path | None,
@@ -1711,6 +1775,8 @@ def run_audio_dumper_block(
         "--block",
         block,
     ]
+    if shared_output_root is not None:
+        command.extend(["--shared-output", str(shared_output_root)])
     if fallback_assets and fallback_assets.exists():
         command.extend(["--fallback-assets", str(fallback_assets)])
 
@@ -1730,36 +1796,56 @@ def run_audio_dumper(
     if not args.streaming_assets.exists():
         raise SystemExit(f"StreamingAssets not found: {args.streaming_assets}")
 
-    shared_language_info = LANGUAGES[SHARED_AUDIO_LANGUAGE]
     source_by_rel: dict[tuple[str, str], dict[str, str]] = {}
-    for block in selected_audio_blocks(args.block):
-        storage_root = storage_root_for_block(block, language)
-        output_root = args.audio_root / storage_root
-        output_root.mkdir(parents=True, exist_ok=True)
-        dumper_language_info = shared_language_info if block in SHARED_AUDIO_STORAGE_BLOCKS else language_info
-        for source_label, streaming_assets, fallback_assets in audio_vfs_sources(args):
-            before = snapshot_audio_file_stats(output_root)
-            run_audio_dumper_block(
-                args,
-                dumper_language_info,
-                output_root,
-                block,
-                source_label,
-                streaming_assets,
-                fallback_assets,
-            )
-            after = snapshot_audio_file_stats(output_root)
-            metadata = audio_source_metadata(block, language, language_info)
-            metadata["storageRoot"] = storage_root
+    block = args.block
+    storages = (
+        (SHARED_AUDIO_STORAGE, language)
+        if block == "all"
+        else (storage_root_for_block(block, language),)
+    )
+    for storage_root in storages:
+        (args.audio_root / storage_root).mkdir(parents=True, exist_ok=True)
+
+    output_root = args.audio_root / language if block in {"all", "voice"} else args.audio_root / SHARED_AUDIO_STORAGE
+    shared_output_root = args.audio_root / SHARED_AUDIO_STORAGE if block == "all" else None
+    dumper_language_info = language_info if block in {"all", "voice"} else LANGUAGES[SHARED_AUDIO_LANGUAGE]
+    for source_label, streaming_assets, fallback_assets in audio_vfs_sources(args):
+        before_by_storage = {
+            storage_root: snapshot_audio_file_stats(args.audio_root / storage_root)
+            for storage_root in storages
+        }
+        run_audio_dumper_once(
+            args,
+            dumper_language_info,
+            output_root,
+            block,
+            shared_output_root,
+            source_label,
+            streaming_assets,
+            fallback_assets,
+        )
+        for storage_root in storages:
+            after = snapshot_audio_file_stats(args.audio_root / storage_root)
             changed = 0
             for rel, stat in after.items():
-                if before.get(rel) == stat:
+                if before_by_storage[storage_root].get(rel) == stat:
                     continue
+                metadata_block = (
+                    combined_decode_source_block(storage_root, language, rel)
+                    if block == "all"
+                    else block
+                )
+                metadata = audio_source_metadata(metadata_block, language, language_info)
+                metadata["storageRoot"] = storage_root
                 source_by_rel[(storage_root, rel)] = metadata
                 changed += 1
+            summary_block = "voice" if storage_root == language else (
+                "audio" if block == "all" else block
+            )
+            summary_metadata = audio_source_metadata(summary_block, language, language_info)
             print(
                 f"Audio source map [{source_label}]: {changed:,} files tagged as "
-                f"{metadata['audioScope']} from {metadata['sourceBlockLabel']} "
+                f"{summary_metadata['audioScope']} from {summary_metadata['sourceBlockLabel']} "
                 f"under {storage_root}"
             )
     return source_by_rel
@@ -1898,6 +1984,8 @@ def linked_audio_files_for_events(
                 "sourceBlock": entry.get("sourceBlock"),
                 "sourceBlockLabel": entry.get("sourceBlockLabel"),
                 "sourceLanguage": entry.get("sourceLanguage"),
+                "audioCategory": entry.get("audioCategory"),
+                "audioCategoryDetail": entry.get("audioCategoryDetail"),
                 "source": entry.get("source"),
             })
             stats[linked_stat_key] += 1
@@ -2048,9 +2136,9 @@ def unmapped_bank_for_pck_name(name: str) -> str:
 
 def event_audio_category(event_id: Any) -> str:
     name = str(event_id or "").strip().lower()
-    for prefix in EVENT_PREFIXES:
+    for prefix, category in EVENT_CATEGORY_PREFIXES.items():
         if name.startswith(prefix):
-            return prefix.rstrip("_")
+            return category
     return ""
 
 
@@ -2244,6 +2332,7 @@ def regroup_unmapped_by_category(
             entry["eventCategory"] = category
             if bank:
                 entry["sourceBank"] = bank
+            apply_audio_category(entry)
     return moved
 
 
@@ -2309,7 +2398,6 @@ def build_audio(args: argparse.Namespace) -> int:
         prior_source_by_rel,
     )
     generic_audio = {**shared_audio, **language_audio}
-    source_summary = summarize_audio_sources(list(generic_audio.values()))
     dialog_audio = build_dialog_audio_index(
         audio_dialog_paths,
         args.audio_root,
@@ -2381,6 +2469,7 @@ def build_audio(args: argparse.Namespace) -> int:
     )
     if category_moved:
         print(f"Audio layout [{language}]: {category_moved:,} Wwise files filed under event-category folders")
+    source_summary = summarize_audio_sources(list(generic_audio.values()))
     link_stats = link_conversation_audio(conv_dir, audio_by_id, event_audio_by_id, cutscene_audio_events)
 
     index_payload = {

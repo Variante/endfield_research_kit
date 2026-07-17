@@ -69,6 +69,7 @@ ERROR_IMPOSSIBLE_STRING_RE = re.compile(
 )
 
 PROBLEM_STATUSES = {"partial", "unparsed", "heuristic"}
+SEMANTIC_PARTIAL_STATUS = "semantic-partial"
 
 
 def repo_rel(path: Path | str) -> str:
@@ -111,10 +112,88 @@ def parse_csv(values: str) -> list[str]:
     return out
 
 
+def int_equal(left: Any, right: Any) -> bool:
+    try:
+        return int(left) == int(right)
+    except (TypeError, ValueError):
+        return False
+
+
+def structurally_complete_partial(node: dict[str, Any]) -> bool:
+    """Recognize byte-complete layouts that retain semantic confidence markers.
+
+    AnimeStudio deliberately keeps ``$partial`` on layouts whose field names,
+    enum members, hashes, or omitted metadata fields are not fully proven. Those
+    records should remain visible as semantic work, but they are not candidates
+    for another byte-boundary reader once the guarded reader consumed the exact
+    payload.
+    """
+
+    if not node.get("$partial") or node.get("$unparsed"):
+        return False
+    layout = str(node.get("layout") or "")
+    if layout == "Beyond.Gameplay.Core.ProjectileComponentData":
+        tail = node.get("tail") or {}
+        structured = tail.get("structuredRemainingTail") or {}
+        return (
+            tail.get("remainingRawWordCount") == 0
+            and structured.get("structuredDecodeStatus") == "decoded"
+            and int_equal(structured.get("consumedWordCount"), structured.get("wordCount"))
+        )
+    if layout == "Beyond.Gameplay.Core.ProjectileComponentData/RemainingTail":
+        return (
+            node.get("structuredDecodeStatus") == "decoded"
+            and int_equal(node.get("consumedWordCount"), node.get("wordCount"))
+        )
+    if layout == "Beyond.Gameplay.Core.ProjectileComponentData/MoveModeData":
+        return (
+            "consumed by this reader" in str(node.get("observedPayloadStatus") or "")
+            and int(node.get("serializedWordCount") or -1) > 0
+            and int_equal(int(node.get("serializedWordCount") or -1) * 4, node.get("length"))
+        )
+    if layout in {
+        "Beyond.Gameplay.Core.TargetSettings",
+        "Beyond.Gameplay.Core.Selector/SelectorData",
+        "Beyond.Gameplay.Core.DirectionSettings",
+    }:
+        return (
+            node.get("structuredDecodeStatus") == "decoded"
+            and int_equal(node.get("consumedByteCount"), node.get("length"))
+            and node.get("remainingRawWordCount") in (None, 0)
+            and not node.get("rawWords")
+        )
+    if layout == "Beyond.Gameplay.AbilityEntityTemplateData/Opening":
+        return (
+            node.get("structuredDecodeStatus") == "decoded-prefix"
+            and int(node.get("consumedByteCount") or 0) in {60, 80, 84, 104}
+            and node.get("nextFieldBoundary") == "surroundingConfig"
+        )
+    if layout == "Beyond.Gameplay.AbilityEntityTemplateData/SurroundingConfig":
+        return (
+            node.get("structuredDecodeStatus") == "decoded"
+            and int_equal(node.get("consumedByteCount"), 92)
+            and node.get("nextFieldBoundary") == "followMountPointConfig"
+        )
+    if layout == "Beyond.Gameplay.EffectActionCfg":
+        return (
+            "consume" in str(node.get("observedPayloadStatus") or "")
+            and int(node.get("serializedWordCount") or 0) > 0
+            and node.get("remainingRawWordCount") in (None, 0)
+        )
+    if layout in {
+        "Beyond.Gameplay.EffectActionCfg/ProjectileEffectListTail",
+        "Beyond.Gameplay.EffectActionCfg/ProjectileAlertTail",
+    }:
+        return int(node.get("serializedWordCount") or 0) == 80
+    return False
+
+
 def layout_status(node: dict[str, Any]) -> str:
     if node.get("$unparsed"):
         return "unparsed"
     if node.get("$partial"):
+        if structurally_complete_partial(node):
+            return SEMANTIC_PARTIAL_STATUS
         return "partial"
     if node.get("$heuristic"):
         return "heuristic"
@@ -143,7 +222,7 @@ def iter_layout_nodes(node: Any, path: str = "$"):
 
 
 def status_counter_row(counter: Counter[str]) -> dict[str, int]:
-    order = ("decoded", "partial", "unparsed", "heuristic", "unknown")
+    order = ("decoded", SEMANTIC_PARTIAL_STATUS, "partial", "unparsed", "heuristic", "unknown")
     row: dict[str, int] = {}
     for status in order:
         if counter.get(status):
@@ -380,7 +459,11 @@ def audit_group(
         }
         if problems:
             focus_layouts.append(row)
-        elif simple in {"AbilitySystemData", "SkillDataBundle"} or layout in metadata_by_name:
+        elif (
+            simple in {"AbilitySystemData", "SkillDataBundle"}
+            or layout in metadata_by_name
+            or statuses.get(SEMANTIC_PARTIAL_STATUS)
+        ):
             watch_layouts.append(row)
         if meta:
             metadata_matches.append({"layout": layout, **meta})
@@ -412,7 +495,12 @@ def audit_group(
 
     top_error = error_counts.most_common(1)[0][0] if error_counts else ""
     recommendation = "metadata-first tail audit"
-    if top_error == "ReadAlignedString:impossible-length":
+    if actual_problem_refs == 0 and any(
+        (row.get("statusCounts") or {}).get(SEMANTIC_PARTIAL_STATUS)
+        for row in watch_layouts
+    ):
+        recommendation = "byte-complete for observed variants; improve semantic labels or runtime links, not payload boundaries"
+    elif top_error == "ReadAlignedString:impossible-length":
         recommendation = "find pre-string binary block boundary before adding string reads"
     if body_target_total:
         recommendation += "; inspect mapped method body evidence"
@@ -556,6 +644,7 @@ def aggregate_watch_types(groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
             row["groups"].append({"id": group.get("id"), "residualFiles": group.get("residualFiles")})
     out = []
     for row in rows.values():
+        semantic_only = int((row.get("statusCounts") or {}).get(SEMANTIC_PARTIAL_STATUS) or 0) > 0
         out.append(
             {
                 "layout": row["layout"],
@@ -566,7 +655,11 @@ def aggregate_watch_types(groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "metadataFieldCount": row.get("metadataFieldCount") or 0,
                 "bodyTargetCount": row.get("bodyTargetCount") or 0,
                 "groups": row["groups"][:12],
-                "recommendation": "monitor-only unless partial count rises; current residuals are in child/tail layouts",
+                "recommendation": (
+                    "byte-complete for observed variants; resolve semantic names/runtime meaning without reopening payload boundaries"
+                    if semantic_only
+                    else "monitor-only unless partial count rises; current residuals are in child/tail layouts"
+                ),
             }
         )
     return sorted(out, key=lambda item: (-int(item["residualFiles"]), str(item["layout"])))
@@ -788,9 +881,15 @@ def render_markdown(audit: dict[str, Any], *, top_n: int) -> str:
 
     lines.append("## Next Step")
     lines.append("")
-    lines.append(
-        "Start with the highest actual partial layout families, especially `ProjectileComponentData` tails and cross-cutting `EffectActionCfg` records. `AbilitySystemData` and `SkillDataBundle` are kept visible as monitor types when their parent nodes are already decoded; parser work should target the partial child/tail layouts rather than reworking decoded parents."
-    )
+    ranked_layouts = {str(row.get("layout") or "") for row in audit.get("rankedTypes") or []}
+    if any("ProjectileComponentData" in layout for layout in ranked_layouts):
+        lines.append(
+            "Start with the highest actual partial layout families, including the remaining `ProjectileComponentData` byte-boundary failures. `AbilitySystemData` and `SkillDataBundle` stay visible as monitor types when their parent nodes are already decoded."
+        )
+    else:
+        lines.append(
+            "Observed `ProjectileComponentData` variants are byte-complete and remain in Monitor Types only for semantic naming/runtime evidence. Prioritize the highest actual partial families in ability-entity, enemy, and character templates instead of reopening projectile payload boundaries."
+        )
     lines.append("")
     return "\n".join(lines)
 

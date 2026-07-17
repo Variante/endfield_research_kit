@@ -979,6 +979,9 @@ function bindEvents() {
       showDebug.setAttribute("aria-pressed", next ? "true" : "false");
       STATE.showDebug = next;
       document.body.classList.toggle("show-debug", next);
+      window.dispatchEvent(new CustomEvent("webui:debug-changed", {
+        detail: { enabled: next },
+      }));
       if (STATE.selectedKey && STATE.convCache.has(STATE.selectedKey)) {
         renderConv(STATE.convCache.get(STATE.selectedKey));
       }

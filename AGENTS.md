@@ -20,6 +20,9 @@ disposable evidence belongs in `scratch/` or `tmp/`.
 .\export.bat --export-from-game
 .\build_updates.bat
 .\build_updates.bat --init-build
+.\build_updates_by_patch.bat --init-baseline
+.\build_updates_by_patch.bat --check
+.\build_updates_by_patch.bat
 .\export_assets.bat
 python serve.py
 python serve.py 9000
@@ -43,7 +46,7 @@ prints optional `export_assets.bat --export-from-game` and
 default WebUI server. Pass `--no-serve` when setup should finish without
 starting `serve.py`.
 
-`export.bat` is the canonical Story/Text Tables WebUI rebuild from an existing
+`export.bat` is the canonical Story/Text Tables and curated semantic-view WebUI rebuild from an existing
 `export_full/`. It verifies that `export_full/` matches the current installed
 `Endfield_Data` fingerprints before the long WebUI builders run, then builds CN
 Story/Text Tables data by default. It does not export from installed game data by
@@ -52,6 +55,12 @@ default. Pass `--export-from-game` only when the user explicitly asks to refresh
 rebuild asset indexes and relink/decode CN audio after generated conversations
 are rebuilt. Combining `--export-from-game --with-assets` runs one AnimeStudio
 Story+asset export instead of separate Story and asset exporter invocations.
+After semantic-view builders and any requested asset/audio work, `export.bat`
+rebuilds `reports/source_graph/endfield_source_graph.sqlite` and then builds the
+Presentation and Combat views. Presentation emits a stable empty degraded
+payload when its graph is missing or older than its generated inputs. The Combat builder refuses graph edges when the database predates
+its Gameplay/manifest/asset/AbilityEntity/CharacterTemplate inputs and records a
+visible degraded-mode reason instead of treating stale edges as direct.
 `export.bat` does not refresh `webui/overrides/story_order.json`; active Story
 order is user-managed there, while OCR recovery writes proposed order references
 under `webui/data/story_order_ocr.json`. Every `export.bat` run writes a
@@ -78,9 +87,9 @@ maintenance. The audio builder writes shared SFX/music once under
 `export_full/structured/Audio/shared/` and language voice under
 `export_full/structured/Audio/<LANG>/`, parses Wwise bank event-to-media links, and post-processes generated
 conversation JSON with playable `audioSrc` links. The default exporter mode is
-`--animestudio-type-job-mode auto`: it merges non-sharded JSON type jobs inside
-one AnimeStudio process while keeping map-filtered asset conversion sharded;
-use `parallel` only when comparing against the older one-process-per-type path.
+`--animestudio-type-job-mode auto`: it merges map-filtered JSON, runs broad Story
+JSON types sequentially in isolated processes, and keeps map-filtered asset
+conversion sharded; use `parallel` only when comparing concurrent per-type jobs.
 
 Useful direct commands:
 
@@ -95,7 +104,14 @@ python scripts\story_builder\refresh_evidence.py
 python scripts\story_builder\source_links.py
 python scripts\story_builder\build.py --languages CN --default-language CN
 python scripts\story_builder\build.py --languages CN EN JP --default-language CN
+python scripts\build_mission_pipeline_data.py
 python scripts\build_gameplay_data.py
+python scripts\build_progression_data.py
+python scripts\build_projectile_data.py
+python scripts\build_combat_relationships.py --languages CN
+python scripts\build_economy_data.py --languages CN --default-language CN
+python scripts\build_world_data.py --languages CN --default-language CN
+python scripts\build_presentation_data.py --languages CN
 python scripts\story_recovery\build_option_override_coverage_audit.py --language CN
 python scripts\build_assets.py
 python scripts\build_audio.py
@@ -131,11 +147,19 @@ Browser behavior:
   with no popup/modal preview.
 - Non-emoji SNS media such as `sns_image_*` and `sns_sticker_*` render at
   normal image proportions with bounded hover/modal previews.
-- Story recovery issue filters, source/debug blocks, mission timeline evidence,
-  cutscene debug panels, and manual order-edit controls are behind
-  `Show debug info`.
+- Story recovery issue and method filters stay visible in every mode.
+  Source/debug blocks, mission timeline evidence, cutscene debug panels, and
+  manual order-edit controls are behind `Show debug info`.
 - The Story reset button returns filters to Story sort while preserving
   expanded mission groups.
+- Normal semantic navigation exposes Gameplay. Mission Pipeline, Progression, Combat & Projectiles,
+  the retained standalone Combat graph, Factory, World, and Presentation are
+  deferred and hidden unless `Show debug info` is enabled; disabling debug while
+  one is active must normalize to a visible page and URL.
+- Combat & Projectiles groups records by evidence-backed character/enemy sender
+  and must label identifier-only ownership as inferred. World groups by authored
+  level IDs and may plot X/Z positions, but rows without an exported level ID
+  must remain unassigned rather than being inferred from coordinates.
 
 Export freshness:
 
@@ -187,7 +211,14 @@ Browser data inputs and outputs:
   `webui/data/`.
 - Generated browser outputs include `webui/data/manifest.json`,
   `webui/data/lang/<code>/index.json`, `conv/*.json`, `mission/*.json`,
-  `reference/**`, `webui/data/assets/index.json`, and
+  `reference/**`, `webui/data/mission_pipeline/index.json`,
+  `webui/data/mission_pipeline/missions/*.json`, `webui/data/gameplay/projectiles.json`,
+  `webui/data/lang/<code>/progression/index.json`,
+  `webui/data/lang/<code>/gameplay/combat_relationships.json`,
+  `webui/data/lang/<code>/economy/index.json`,
+  `webui/data/lang/<code>/world/index.json`,
+  `webui/data/lang/<code>/presentation/index.json`,
+  `webui/data/assets/index.json`, and
   `webui/data/updates/latest.json`.
 - The current `export.bat` skips raw VFS output and source inventory because
   the browser does not need them.
@@ -296,11 +327,42 @@ export_full
 
 when no wrapper config or explicit flags are supplied. Pass
 `--previous-export-root PATH` for a one-off different saved previous export.
+The direct two-extraction command that also generates the WebUI page is:
+
+```bat
+.\build_updates.bat --previous-export-root OLD --export-root NEW --refresh-previous-export-baseline
+```
+
+`OLD` is the saved extracted version and `NEW` is the current extracted
+version. `build_updates_by_patch.bat --check` is detection-only; the default
+no-argument patch mode invokes the extracted-tree feed comparison itself after
+successful staging and rotation.
 Scanner cache and feed history live under `.game-data-tracker/`; the cached
 baseline is built from the previous export folder, then the current export root
 is scanned against it using the same focused roots. Do not point this
 comparison at `webui/`, `reports/`, `memory/`, or `scratch/`. WebUI edits and
 generated output outside the export roots must not appear as game-data updates.
+
+`build_updates_by_patch.bat` is the original installed-data patch workflow.
+`--init-baseline` builds a logical VFS snapshot from only the current installed
+version and attaches it under the current export without requiring a previous
+export. Use `build_updates.bat --init-build` separately when an empty first
+WebUI feed is desired. `--check` is detection-only. With no mode, the wrapper
+runs `--apply`: logical no-change, version-only, and chunk-only repack results
+leave all published state untouched; logical changes clone the complete current
+export into sibling staging, selectively dump changed Table/JsonData/Video/
+AuditVideo/Lua files, refresh broad AnimeStudio or CN audio scopes only when
+their source blocks changed, re-scan the installed VFS, and then publish.
+
+Patch publication moves the previous `export_full` to the configured previous
+export path, using a snapshot-suffixed sibling if that path already exists,
+renames staging to the canonical `export_full`, rebuilds WebUI data, invokes
+`build_updates.bat` against archive/current, and advances the baseline only
+after all required work succeeds. On a post-rotation failure it restores the
+previous export and WebUI data and retains the failed new tree under
+`.game-data-tracker/original-data/failed/`. The current and archive roots must
+be on the same volume. A transaction journal under the operational root blocks
+new runs if an interrupted publication needs inspection.
 
 The builder scans exported assets in the same two export folders by default to
 add image/model/video/audio asset-level entries to the Updates page. Asset
@@ -375,6 +437,13 @@ WebUI:
 - `scripts/story_builder/build.py`
 - `scripts/story_builder/timeline_action_evidence.py`
 - `scripts/build_gameplay_data.py`
+- `scripts/build_mission_pipeline_data.py`
+- `scripts/build_progression_data.py`
+- `scripts/build_projectile_data.py`
+- `scripts/build_combat_relationships.py`
+- `scripts/build_economy_data.py`
+- `scripts/build_world_data.py`
+- `scripts/build_presentation_data.py`
 - `scripts/build_assets.py`
 - legacy local index helpers `scripts/build_data_index.py` and
   `scripts/build_decoded_index.py` are not active WebUI pages

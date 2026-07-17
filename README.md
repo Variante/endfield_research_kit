@@ -12,6 +12,27 @@ The project is built around reproducible local exports:
   story order, and recovery evidence from generated game-data JSON.
 - `Gameplay` surfaces curated weapon, character, skill, talent, progression,
   and numeric table records from structured game-data tables.
+- `Mission Pipeline` is an experimental debug-only quest DAG with explicit
+  client-to-server objective/dialog messages, server-to-client state updates,
+  and visibly unknown server successor policy.
+- `Progression` traverses direct authored links across character and weapon
+  upgrades, equipment stages, item costs/use/obtain paths, reward bundles, and
+  drop pools while retaining table/row/path provenance.
+- `Projectiles` inspects byte-complete authored projectile payloads, including
+  collision, movement, effects, alerts, and sound references with semantic
+  confidence labels.
+- `Combat` browses evidence-labelled relationships between characters,
+  enemies, abilities, exact AbilityEntity inherited-prefix/component records,
+  exact 92-byte surrounding configurations, reachable TargetSettings/selectors,
+  buffs, projectiles, effects, audio, and assets.
+- `Factory` covers recipes, machines, technology, logistics, utilities, shops,
+  rewards, and activities from static authored configuration.
+- `World` browses deduplicated authored placements, interactives, NPC proxies,
+  spawners, enemies, levels, scripts, models, and audio references without
+  claiming live world state or simulation.
+- `Presentation` follows curated model, prefab, controller, material, shader,
+  animation, effect, and representative exported-asset evidence while keeping
+  inferred name matches separate from direct source references.
 - `Assets` indexes exported images, models, videos, materials, metadata, and
   related files.
 - `Text Tables` exposes localized table rows and source data in a searchable
@@ -72,7 +93,8 @@ Set `ENDFIELD_GAME_ROOT` to the installed `Endfield_Data` folder. The same file
 also stores the saved previous export folder used by Updates tracking.
 
 The script initializes the AnimeStudio submodule, builds AnimeStudio, verifies
-AnimeStudio's integrated VFS/audio commands, exports Story/Gameplay/Text Tables data
+AnimeStudio's integrated VFS/audio commands, exports Story/Gameplay/Text Tables
+plus Mission Pipeline/Progression/Projectile/Combat/Factory/World/Presentation data
 into `export_full/` and `webui/data/`, then starts or reuses the WebUI server
 at `http://127.0.0.1:8765/`.
 
@@ -87,7 +109,7 @@ and [EIHRTeam/EndfieldStudio](https://github.com/EIHRTeam/EndfieldStudio).
 Many thanks to those projects and their maintainers for the groundwork.
 
 First-time setup still does real work. Building AnimeStudio and exporting
-Story/Gameplay/Text Tables can take a while; the optional installed-game asset/media and
+Story/Gameplay/Text Tables and the related semantic views can take a while; the optional installed-game asset/media and
 CN audio refresh can take several hours. The full asset path has been observed
 around 27 GiB of process-tree RAM on a 64 GiB workstation, so 64 GiB system RAM
 is the comfortable target for full media refreshes. On lower-RAM systems, start
@@ -108,7 +130,7 @@ without starting the server, add `--no-serve`:
 Useful setup options:
 
 - `--game-root PATH`: one-off override for `ENDFIELD_GAME_ROOT` in `endfield_paths.bat`.
-- `--no-serve`: build Story/Gameplay/Text Tables without starting the WebUI server.
+- `--no-serve`: build the static WebUI data without starting the WebUI server.
 - `--help`: show the script help and examples.
 
 For troubleshooting and implementation details behind the wrappers, see
@@ -127,8 +149,12 @@ the faster rebuild commands:
 python serve.py
 ```
 
-Plain `export.bat` rebuilds Story, Gameplay, and Text Tables browser data from
-the existing `export_full/` and verifies freshness first. Use `export.bat --with-assets`
+Plain `export.bat` rebuilds Story, Gameplay, Mission Pipeline, Progression, Projectiles, Combat, Factory, World, Presentation, and
+Text Tables browser data from
+the existing `export_full/` and verifies freshness first. It rebuilds the local
+source graph after the authored semantic views (and optional assets/audio), then
+builds Presentation and Combat only from that fresh graph; stale graph evidence degrades visibly
+instead of being emitted as direct. Use `export.bat --with-assets`
 when you want Story plus asset indexes and CN audio relinking in one local
 rebuild. Use `export.bat --export-from-game` after the installed game updates,
 after `scripts\verify_export_freshness.py` reports stale source roots, or
@@ -196,6 +222,7 @@ larger story images and videos; and a standalone audio zip with decoded story
 audio.
 Extract the story zip first, then extract the assets and audio zips into the
 same directory when those media or audio files are needed.
+Pass `--skip-audio` to omit the standalone audio zip.
 
 ## Generated Reports
 
@@ -231,37 +258,120 @@ topic fits. Delete completed `tmp/` runs; promote reusable helpers to
 
 ## Game Update Tracking
 
-The Updates tab needs two game-data exports: a saved previous export and the
-current export. That comparison lets the WebUI show what changed in the game
-while ignoring local WebUI edits, regenerated reports, scratch files, and other
-research workspace noise.
+Use the command that matches the job:
+
+| Job | Command | Changes the WebUI Updates page? |
+| --- | --- | --- |
+| Create an empty Updates page for the first export | `.\build_updates.bat --init-build` | Yes |
+| Detect, patch-export, archive, and build after a game update | `.\build_updates_by_patch.bat` | Yes, only on logical change |
+| Compare the configured previous/current extracted exports | `.\build_updates.bat` | Yes |
+| Compare any two extracted export folders | `.\build_updates.bat --previous-export-root OLD --export-root NEW --refresh-previous-export-baseline` | Yes |
+| Detect whether original VFS data changed without applying it | `.\build_updates_by_patch.bat --check` | No |
+
+`build_updates.bat` is the Updates-page builder. It compares two extracted
+game-data trees and writes `webui/data/updates/latest.json`, which the static
+WebUI reads directly. The normal focused comparison includes Story/Text Tables
+source JSON, exported image/model/video assets, and decoded audio. It ignores
+local WebUI code, reports, memory, scratch, and other repository changes.
+
+`build_updates_by_patch.bat` owns the installed-game update path. With no
+arguments it compares original VFS logical-file hashes against the source
+baseline. Logical no-change, VFS-version-only changes, and chunk repacks leave
+the baseline, exports, archives, and feed untouched. A logical change is built
+in a sibling staging tree: directly dumpable changed VFS files are exported
+selectively, broader AnimeStudio or audio scopes run only when their source
+blocks changed, and unchanged exported outputs are copied forward from the
+previous complete export. After validation it archives the old export,
+publishes the staged tree as the latest `export_full`, rebuilds WebUI data,
+generates the Updates feed, and advances the source baseline.
+
+### First export: create an empty Updates page
 
 For a first-time export, there is no older game export to compare against yet.
-After `setup_first_time.bat` finishes, optionally initialize an empty baseline:
+After `setup_first_time.bat` or the first `export.bat` run finishes, create an
+empty Updates page:
 
 ```bat
 .\build_updates.bat --init-build
 ```
 
-When the game updates:
-
-1. Rename the old `export_full/` to the folder configured as
-   `ENDFIELD_PREVIOUS_EXPORT_ROOT` in `endfield_paths.bat`.
-
-2. Refresh the current export from the installed client:
+This writes a baseline-only `webui/data/updates/latest.json`; it does not report
+the entire first export as newly added. To separately seed the original VFS
+detector from only the currently installed version, run:
 
 ```bat
-.\export.bat --export-from-game
+.\build_updates_by_patch.bat --init-baseline
 ```
 
-Use `.\export.bat --export-from-game --with-assets` instead when refreshed media
-and CN audio should be part of the same installed-game pass.
+The VFS baseline is optional and is not required by `build_updates.bat`.
 
-3. Build the Updates feed:
+### Normal game-update workflow
+
+After the installed game updates, run one command:
 
 ```bat
-.\build_updates.bat
+.\build_updates_by_patch.bat
 ```
+
+The configured `ENDFIELD_PREVIOUS_EXPORT_ROOT` is the preferred archive name.
+If it already exists, the workflow creates a snapshot-suffixed sibling instead
+of overwriting it. The current export and preferred archive must be on the same
+volume so folder publication uses renames. Changed direct structured files are
+exported individually; asset-affecting blocks trigger the configured
+AnimeStudio asset scope, and audio-affecting blocks trigger CN audio refresh.
+
+Use detection-only mode when you want to inspect the change plan without
+building or rotating anything:
+
+```bat
+.\build_updates_by_patch.bat --check
+```
+
+The baseline is copied into the staged new export only after the patch export
+is stable. It becomes active only after the WebUI rebuild and Updates comparison
+succeed. A failed post-rotation build restores the previous `export_full` and
+WebUI data; the failed staged export is retained under
+`.game-data-tracker/original-data/failed/` for inspection.
+
+### Compare two already extracted versions
+
+This is the direct one-off command for any two extracted folders:
+
+```bat
+.\build_updates.bat --previous-export-root "D:\exports\Endfield_old" --export-root "D:\exports\Endfield_new" --refresh-previous-export-baseline
+```
+
+The old folder is always `--previous-export-root`; the new folder is always
+`--export-root`. Both should be complete extraction roots containing
+`structured/` and/or `recovered/`, not `webui/` or the installed
+`Endfield_Data` directory.
+
+Useful comparison modes:
+
+```bat
+:: Text JSON only
+.\build_updates.bat --previous-export-root OLD --export-root NEW --refresh-previous-export-baseline --skip-asset-updates
+
+:: Text, images, models, and videos, but no decoded audio
+.\build_updates.bat --previous-export-root OLD --export-root NEW --refresh-previous-export-baseline --skip-audio-updates
+
+:: Hash binary assets too, detecting same-size binary modifications
+.\build_updates.bat --previous-export-root OLD --export-root NEW --refresh-previous-export-baseline --hash-asset-updates
+
+:: Broad audit of every file under both export roots; not the normal WebUI scope
+.\build_updates.bat --previous-export-root OLD --export-root NEW --refresh-previous-export-baseline --full-export-scan
+```
+
+The builder writes:
+
+- `webui/data/updates/latest.json`: data displayed by the Updates tab.
+- `reports/updates/game-data-change-summary.json`: machine-readable detailed report.
+- `reports/updates/game-data-change-summary.md`: readable detailed report.
+- `.game-data-tracker/`: cached previous-export baseline and feed history.
+
+After the command succeeds, reuse an existing `http://127.0.0.1:8765/` server
+or run `python serve.py`, then refresh the Updates tab. Re-running
+`build_updates.bat` safely replaces the generated latest feed.
 
 If the saved previous export keeps accumulating files that also exist unchanged
 in the refreshed export, `build_updates.bat` can help prune those old duplicate

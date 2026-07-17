@@ -67,17 +67,22 @@ Important options:
 The CLI also exposes the Endfield VFS subcommands used by the WebUI pipeline:
 
 ```bat
-AnimeStudio.CLI.exe dump --streaming-assets path\to\StreamingAssets --output export_full\structured\StreamingAssets --block-type table --block-type json-data
+AnimeStudio.CLI.exe dump --streaming-assets path\to\StreamingAssets --output export_full\structured\StreamingAssets --fallback-assets path\to\Persistent --block-type table --block-type json-data
 AnimeStudio.CLI.exe dump --streaming-assets path\to\Persistent --output export_full\structured\Persistent --fallback-assets path\to\StreamingAssets --block-type table --block-type json-data
 AnimeStudio.CLI.exe audio --streaming-assets path\to\StreamingAssets --output export_full\structured\Audio\CN --language chinese --format wav --block all
 AnimeStudio.CLI.exe stream --streaming-assets path\to\StreamingAssets --block-type audio --file-regex banks\.pck
 AnimeStudio.CLI.exe vfs-index --streaming-assets path\to\StreamingAssets --output export_full\recovered\AnimeStudio-cli\StreamingAssets\vfs_index\bundle_vfs_index.json --block-type bundle
+AnimeStudio.CLI.exe vfs-index --jsonl --streaming-assets path\to\StreamingAssets --output tmp\updates\source_scan\streaming.jsonl
 AnimeStudio.CLI.exe list
 ```
 
 `dump`, `audio`, `stream`, and `vfs-index` accept `--fallback-assets`; `dump`,
 `stream`, and `vfs-index` accept repeated `--block-type` flags plus repeated
-`--file-regex` filters. `stream` writes matching file payloads as JSONL base64.
+`--file-regex` filters. The fallback is consulted for `.blc` block metadata and
+`.chk` payloads; the WebUI wrapper configures StreamingAssets and Persistent as
+sibling fallbacks in both directions. `stream` writes matching file payloads as JSONL base64.
+`vfs-index --jsonl` writes compact streaming metadata records while its default
+output remains the existing JSON document.
 `list` prints the known dumpable VFS block types. The WebUI wrappers default to this same
 AnimeStudio executable:
 
@@ -89,6 +94,12 @@ scripts\build_audio.py            DEFAULT_AUDIO_DUMPER = DEFAULT_ANIMESTUDIO
 `export_assets.bat --export-from-game` writes the lightweight bundle VFS index
 through `vfs-index`, then decodes CN audio through `audio` before relinking
 browser conversations.
+
+`build_updates_by_patch.bat` uses `vfs-index --jsonl` to detect logical source
+changes. Its patch apply path dumps changed Table/JsonData/Video/AuditVideo/Lua
+files with exact `--file-regex` filters. If other changed blocks can affect
+Unity assets or Story objects, it refreshes the configured AnimeStudio scope in
+the cloned staging export rather than claiming unsafe per-output ownership.
 
 ## Wrapper Integration
 
@@ -164,10 +175,11 @@ slices each deterministic asset type is split into. The default runs 8 workers
 against 16 balanced shards; shards and other type requests are queued through the
 same pool so one type does not monopolize the export. Lower jobs when peak memory
 is too high.
-`--animestudio-type-job-mode auto` merges non-sharded JSON types into one
-AnimeStudio process so TextAsset/MonoBehaviour/PlayableDirector/Material can
-share a scan/load pass. Use `parallel` for the old one-process-per-type behavior
-or `merged` to combine every non-sharded type set.
+`--animestudio-type-job-mode auto` merges map-filtered JSON types, but runs broad
+Story TextAsset/MonoBehaviour/PlayableDirector jobs sequentially in isolated
+processes. This prevents a large MonoBehaviour load from starving later Story
+types. Use `parallel` for concurrent one-process-per-type behavior or `merged`
+to explicitly combine every non-sharded type set.
 
 Stage outputs:
 

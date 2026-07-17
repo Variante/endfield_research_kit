@@ -24,17 +24,29 @@ const UI_TEXTS = {
     storyIssuePartialLineOrder: "\u90e8\u5206\u987a\u5e8f",
     storyIssueFallbackLineOrder: "\u56de\u9000\u987a\u5e8f",
     storyIssueUncoveredLines: "\u672a\u8986\u76d6\u53f0\u8bcd",
-    storyIssueInferredOptionLayout: "\u9009\u9879\u5b9a\u4f4d\u7f3a\u5931",
+    storyIssueInferredOptionLayout: "\u9009\u9879\u4f4d\u7f6e\u672a\u5206\u7c7b",
+    storyIssueTableOnlyOptionLayout: "\u672a\u6ce8\u518c\u8868\u6570\u636e\u9009\u9879\u4f4d\u7f6e",
+    storyIssueKeyedOptionLayout: "\u9009\u9879\u4f4d\u7f6e\u6309\u952e\u540d\u5339\u914d",
+    storyIssueGapOptionLayout: "\u9009\u9879\u4f4d\u7f6e\u6309\u884c\u53f7\u7f3a\u53e3\u6062\u590d",
+    storyIssueLastLineOptionLayout: "\u9009\u9879\u4f4d\u7f6e\u4e3a\u672b\u884c\u56de\u9000",
+    storyIssueUnanchoredOptionLayout: "\u9009\u9879\u4f4d\u7f6e\u672a\u77e5",
     storyIssueInferredOptionResponse: "\u9009\u9879\u56de\u5e94\u4e3a\u63a8\u6d4b",
     storyIssueDuplicateTimestamps: "\u65f6\u95f4\u6233\u91cd\u590d",
     storyIssueTimelineTimestampRegression: "Timeline \u65f6\u95f4\u56de\u9000",
     storyIssueOverrided: "\u5df2\u624b\u52a8\u8986\u76d6",
+    storyIssueNotOverrided: "\u4ecd\u9700\u624b\u52a8\u8986\u76d6",
     recoveryMethodLinePrefix: "\u884c\u987a\u5e8f",
     recoveryMethodOptionPrefix: "\u9009\u9879",
     recoveryMethodOptionLayoutAuthored: "\u6388\u6743\u951a\u70b9",
     recoveryMethodOptionLayoutPartial: "\u90e8\u5206\u6388\u6743\u951a\u70b9",
     recoveryMethodOptionLayoutFallback: "\u56de\u9000\u5b9a\u4f4d",
     recoveryMethodOptionLayoutNoAnchor: "\u7f3a\u5c11\u6388\u6743\u951a\u70b9",
+    recoveryMethodOptionLayoutTableOnly: "\u672a\u6ce8\u518c\u8868\u6570\u636e\u663e\u793a\u4f4d\u7f6e",
+    recoveryMethodOptionLayoutKeyMatched: "\u952e\u540d\u884c\u53f7\u5339\u914d",
+    recoveryMethodOptionLayoutSparseGap: "\u539f\u59cb\u884c\u53f7\u7f3a\u53e3",
+    recoveryMethodOptionLayoutSiblingTimeline: "\u5144\u5f1f Timeline \u4f4d\u7f6e",
+    recoveryMethodOptionLayoutLastLine: "\u672b\u884c\u56de\u9000",
+    recoveryMethodOptionLayoutUnanchored: "\u672a\u77e5\u4f4d\u7f6e",
     recoveryMethodOptionSceneGraph: "SceneGraph \u5206\u652f",
     recoveryMethodOptionDialogTreeFragment: "DialogTree \u7247\u6bb5",
     recoveryMethodOptionRuntimeJump: "Runtime Jump \u5206\u652f",
@@ -311,7 +323,12 @@ const UI_TEXTS = {
     envTalk: "\u73af\u5883\u5bf9\u8bdd",
     warningTitle: "\u63d0\u793a",
     warningInferredOptionLayoutTitle: "\u9009\u9879\u4f4d\u7f6e\u63d0\u793a",
-    warningInferredOptionLayoutBody: "\u9009\u9879\u4f4d\u7f6e\u6765\u81ea\u56de\u9000\u6216\u63a8\u65ad\u3002",
+    warningInferredOptionLayoutBody: "\u6240\u6709\u9009\u9879\u7ec4\u90fd\u663e\u793a\u5728\u5df2\u6062\u590d\u7684\u4f4d\u7f6e\u3002\u4e0b\u65b9\u4f1a\u533a\u5206\u952e\u540d\u5339\u914d\u3001\u884c\u53f7\u7f3a\u53e3\u6062\u590d\u3001\u672b\u884c\u56de\u9000\u548c\u771f\u6b63\u672a\u77e5\u7684\u4f4d\u7f6e\u3002",
+    optionPlacementKeyMatched: "\u952e\u540d\u5339\u914d\u4f4d\u7f6e",
+    optionPlacementSparseGap: "\u884c\u53f7\u7f3a\u53e3\u4f4d\u7f6e",
+    optionPlacementSiblingTimeline: "\u5144\u5f1f\u573a\u666f\u4f4d\u7f6e",
+    optionPlacementLastLine: "\u672b\u884c\u56de\u9000",
+    optionPlacementUnknown: "\u4f4d\u7f6e\u672a\u77e5",
     warningInferredOptionResponseTitle: "\u9009\u9879\u56de\u5e94\u63d0\u793a",
     warningInferredOptionResponseBody: "\u90e8\u5206\u9009\u9879\u7684\u56de\u5e94\u53f0\u8bcd\u6765\u81ea Timeline \u987a\u5e8f\u63a8\u6d4b\u3002",
     warningDuplicateTimestampsTitle: "\u65f6\u95f4\u6233\u63d0\u793a",
@@ -379,17 +396,29 @@ const UI_TEXTS = {
     storyIssuePartialLineOrder: "Partial order",
     storyIssueFallbackLineOrder: "Fallback order",
     storyIssueUncoveredLines: "Uncovered lines",
-    storyIssueInferredOptionLayout: "No option anchor",
+    storyIssueInferredOptionLayout: "Unclassified option placement",
+    storyIssueTableOnlyOptionLayout: "Table-only option position",
+    storyIssueKeyedOptionLayout: "Key-based option position",
+    storyIssueGapOptionLayout: "Gap-based option position",
+    storyIssueLastLineOptionLayout: "End-of-scene option guess",
+    storyIssueUnanchoredOptionLayout: "Unknown option position",
     storyIssueInferredOptionResponse: "Inferred reply",
     storyIssueDuplicateTimestamps: "Duplicate timestamps",
     storyIssueTimelineTimestampRegression: "Timeline regression",
-    storyIssueOverrided: "Overrided",
+    storyIssueOverrided: "Manual override",
+    storyIssueNotOverrided: "Needs manual override",
     recoveryMethodLinePrefix: "Line order",
     recoveryMethodOptionPrefix: "Option",
     recoveryMethodOptionLayoutAuthored: "authored anchors",
     recoveryMethodOptionLayoutPartial: "partial authored anchors",
     recoveryMethodOptionLayoutFallback: "fallback placement",
     recoveryMethodOptionLayoutNoAnchor: "missing authored anchors",
+    recoveryMethodOptionLayoutTableOnly: "unregistered table display placement",
+    recoveryMethodOptionLayoutKeyMatched: "table-key match",
+    recoveryMethodOptionLayoutSparseGap: "original line-number gap",
+    recoveryMethodOptionLayoutSiblingTimeline: "sibling Timeline position",
+    recoveryMethodOptionLayoutLastLine: "end-of-scene fallback",
+    recoveryMethodOptionLayoutUnanchored: "unknown position",
     recoveryMethodOptionSceneGraph: "SceneGraph branches",
     recoveryMethodOptionDialogTreeFragment: "DialogTree fragments",
     recoveryMethodOptionRuntimeJump: "Runtime Jump branches",
@@ -666,7 +695,12 @@ const UI_TEXTS = {
     envTalk: "Ambient Talk",
     warningTitle: "Display Warning",
     warningInferredOptionLayoutTitle: "Option placement note",
-    warningInferredOptionLayoutBody: "Option placement is inferred or fallback-based.",
+    warningInferredOptionLayoutBody: "Every option group is shown at its recovered position. The note below distinguishes table-key matches, line-gap recovery, end-of-scene fallback, and any truly unknown position.",
+    optionPlacementKeyMatched: "table-key position",
+    optionPlacementSparseGap: "line-gap position",
+    optionPlacementSiblingTimeline: "sibling-scene position",
+    optionPlacementLastLine: "end fallback",
+    optionPlacementUnknown: "position unknown",
     warningInferredOptionResponseTitle: "Option reply note",
     warningInferredOptionResponseBody: "Some option reply lines are inferred from Timeline order.",
     warningDuplicateTimestampsTitle: "Timestamp note",
@@ -1228,9 +1262,14 @@ const STORY_ISSUE_ORDER = [
   "uncoveredLines",
   "duplicateTimestamps",
   "timelineTimestampRegression",
+  "unanchoredOptionLayout",
+  "tableOnlyOptionLayout",
+  "lastLineOptionLayout",
+  "gapOptionLayout",
+  "keyedOptionLayout",
   "inferredOptionLayout",
   "inferredOptionResponse",
-  "overrided",
+  "notOverrided",
 ];
 
 const STORY_RECOVERY_METHOD_ORDER = [
@@ -1250,6 +1289,12 @@ const STORY_RECOVERY_METHOD_ORDER = [
   "optionLayout:partialAuthoredCoverage",
   "optionLayout:fallback",
   "optionLayout:noAuthoredGroupAnchor",
+  "optionLayout:tableOnlyCutContent",
+  "optionLayout:keyMatched",
+  "optionLayout:sparseGap",
+  "optionLayout:siblingTimelinePosition",
+  "optionLayout:lastLine",
+  "optionLayout:unanchored",
   "optionBranch:sceneGraph",
   "optionBranch:dialogTreeFragment",
   "optionBranch:runtimeJump",
@@ -1433,9 +1478,15 @@ function storyIssueLabel(code) {
   if (code === "uncoveredLines") return uiText("storyIssueUncoveredLines");
   if (code === "duplicateTimestamps") return uiText("storyIssueDuplicateTimestamps");
   if (code === "timelineTimestampRegression") return uiText("storyIssueTimelineTimestampRegression");
+  if (code === "tableOnlyOptionLayout") return uiText("storyIssueTableOnlyOptionLayout");
+  if (code === "keyedOptionLayout") return uiText("storyIssueKeyedOptionLayout");
+  if (code === "gapOptionLayout") return uiText("storyIssueGapOptionLayout");
+  if (code === "lastLineOptionLayout") return uiText("storyIssueLastLineOptionLayout");
+  if (code === "unanchoredOptionLayout") return uiText("storyIssueUnanchoredOptionLayout");
   if (code === "inferredOptionLayout") return uiText("storyIssueInferredOptionLayout");
   if (code === "inferredOptionResponse") return uiText("storyIssueInferredOptionResponse");
   if (code === "overrided") return uiText("storyIssueOverrided");
+  if (code === "notOverrided") return uiText("storyIssueNotOverrided");
   return formatStructuredLabel(code);
 }
 
@@ -1472,6 +1523,12 @@ function recoveryMethodLabel(method) {
   if (raw === "optionLayout:partialAuthoredCoverage") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionLayoutPartial"));
   if (raw === "optionLayout:fallback") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionLayoutFallback"));
   if (raw === "optionLayout:noAuthoredGroupAnchor") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionLayoutNoAnchor"));
+  if (raw === "optionLayout:tableOnlyCutContent") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionLayoutTableOnly"));
+  if (raw === "optionLayout:keyMatched") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionLayoutKeyMatched"));
+  if (raw === "optionLayout:sparseGap") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionLayoutSparseGap"));
+  if (raw === "optionLayout:siblingTimelinePosition") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionLayoutSiblingTimeline"));
+  if (raw === "optionLayout:lastLine") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionLayoutLastLine"));
+  if (raw === "optionLayout:unanchored") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionLayoutUnanchored"));
   if (raw === "optionBranch:sceneGraph") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionSceneGraph"));
   if (raw === "optionBranch:dialogTreeFragment") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionDialogTreeFragment"));
   if (raw === "optionBranch:runtimeJump") return withPrefix("recoveryMethodOptionPrefix", uiText("recoveryMethodOptionRuntimeJump"));

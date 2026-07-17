@@ -1962,7 +1962,11 @@ def animestudio_stage_options_for_scope(scope: str, asset_mode: str = "webui") -
         "json_by_type": {
             "export_type": "JSON",
             "types": json_types,
-            "asset_map_filter": scope != "story" and bool(json_types),
+            # Story TextAssets include DialogTree sources that are not present in
+            # the generated asset map.  A combined Story+asset export must keep
+            # the JSON load broad just like the Story-only path; otherwise the
+            # build silently loses authored option anchors and branch routes.
+            "asset_map_filter": scope == "assets" and bool(json_types),
         },
     }
 
@@ -2314,9 +2318,10 @@ def parse_args() -> argparse.Namespace:
         choices=("auto", "parallel", "merged"),
         default="auto",
         help=(
-            "How to run non-sharded AnimeStudio type jobs. `auto` merges json_by_type "
-            "types into one AnimeStudio process and keeps convert_by_type on the pooled "
-            "sharded path. `parallel` preserves the old one-process-per-type behavior. "
+            "How to run non-sharded AnimeStudio type jobs. `auto` merges map-filtered "
+            "json_by_type jobs but runs broad Story JSON types sequentially in isolated "
+            "processes; convert_by_type stays on the pooled sharded path. `parallel` "
+            "preserves the old concurrent one-process-per-type behavior. "
             "`merged` combines every non-sharded type set."
         ),
     )
@@ -3989,14 +3994,23 @@ def finalize_animestudio_asset_shard_work(
     )
 
 
-def should_merge_animestudio_type_jobs(stage: str, normal_items: list[dict[str, Any]], mode: str) -> bool:
+def should_merge_animestudio_type_jobs(
+    stage: str,
+    normal_items: list[dict[str, Any]],
+    mode: str,
+    *,
+    asset_map_filter: bool = False,
+) -> bool:
     if stage == "maps" or len(normal_items) <= 1:
         return False
     if mode == "parallel":
         return False
     if mode == "merged":
         return True
-    return stage == "json_by_type"
+    # A broad Endfield JSON load can retain hundreds of thousands of
+    # MonoBehaviours while exporting later types.  Keep auto-mode Story types
+    # in isolated processes; merging remains safe for map-filtered asset JSON.
+    return stage == "json_by_type" and asset_map_filter
 
 
 def animestudio_plan_runnable_items(plan: dict[str, Any]) -> list[dict[str, Any]]:
@@ -4264,7 +4278,18 @@ def run_animestudio_stage_plan(
         if has_tasks:
             pending_asset_works.append(asset_work)
 
-    merge_normal_items = should_merge_animestudio_type_jobs(stage, normal_items, type_job_mode)
+    auto_sequential_type_jobs = (
+        stage == "json_by_type"
+        and type_job_mode == "auto"
+        and not options.get("asset_map_filter")
+        and len(normal_items) > 1
+    )
+    merge_normal_items = should_merge_animestudio_type_jobs(
+        stage,
+        normal_items,
+        type_job_mode,
+        asset_map_filter=bool(options.get("asset_map_filter")),
+    )
     task_groups: list[list[dict[str, Any]]] = []
     normal_task_groups: list[dict[str, Any]] = []
 
@@ -4396,7 +4421,14 @@ def run_animestudio_stage_plan(
                 item_suffix = task["item_name"]
                 task["kwargs"]["command_name"] = f"{source}_animestudio_{stage}_{animestudio_log_suffix(item_suffix)}"
 
-    if call_tasks:
+    if call_tasks and auto_sequential_type_jobs:
+        log(
+            f"  animestudio stage {stage} for {source}: running {len(call_tasks)} "
+            "broad type jobs sequentially for process isolation"
+        )
+        for task in call_tasks:
+            run_animestudio_call_tasks([task], jobs=1, call_pool=call_pool)
+    elif call_tasks:
         run_animestudio_call_tasks(call_tasks, jobs=jobs, call_pool=call_pool)
 
     for asset_work in pending_asset_works:
@@ -4814,10 +4846,10 @@ def main() -> int:
                     "-b",
                     cli_block_name,
                 ]
-                if source == "Persistent":
-                    fallback_root = game_root / "StreamingAssets"
-                    if fallback_root.exists():
-                        cmd.extend(["--fallback-assets", str(fallback_root)])
+                fallback_source = "Persistent" if source == "StreamingAssets" else "StreamingAssets"
+                fallback_root = game_root / fallback_source
+                if fallback_root.exists():
+                    cmd.extend(["--fallback-assets", str(fallback_root)])
                 result = run_logged_command(vfs_index_command_name(source, block_name), cmd, ROOT, source_report_dir)
                 command_results.append(result)
                 command_results_by_name[result.name] = result
@@ -4835,10 +4867,8 @@ def main() -> int:
         if not args.skip_structured and not args.report_only:
             structured_out = reset_structured_output_dir(output_root, source)
             log(f"  structured output dir: {structured_out}")
-            if source == "Persistent":
-                fallback_root = game_root / "StreamingAssets"
-            else:
-                fallback_root = None
+            fallback_source = "Persistent" if source == "StreamingAssets" else "StreamingAssets"
+            fallback_root = game_root / fallback_source
             if fallback_root is not None and fallback_root.exists():
                 log(f"  using fallback assets from {fallback_root}")
             for step in structured_dump_plan:

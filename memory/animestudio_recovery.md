@@ -64,11 +64,19 @@ lightweight VFS index, exports the WebUI-facing image/model/Material surface,
 and decodes CN audio. The combined `--with-assets` path shares one AnimeStudio
 run when Story and assets both need an installed-game refresh.
 
-The normal type-job mode is `auto`: non-sharded JSON requests are merged into
-one process while map-filtered conversion stays sharded. Use `parallel` only
-for comparison with the older one-process-per-type path. Worker and shard
-counts are separate controls; lower `--animestudio-jobs` when memory is tight
-without assuming that fewer shards are always desirable.
+The combined scope must not asset-map-filter its `json_by_type` stage. Story
+`TextAsset` DialogTree sources can sit outside the generated asset map; filtering
+the combined JSON load drops authored option anchors and branch routes even
+though the AnimeStudio command succeeds. Asset-only JSON work may remain
+map-filtered, while Story-only and combined Story+asset JSON loads stay broad.
+
+The normal type-job mode is `auto`: map-filtered JSON requests are merged, while
+broad Story JSON types run sequentially in isolated processes so a large
+MonoBehaviour load cannot starve later TextAsset export. Map-filtered conversion
+stays sharded. Use `parallel` only for comparison with concurrent per-type jobs,
+or `merged` for an explicit broad merge experiment. Worker and shard counts are
+separate controls; lower `--animestudio-jobs` when memory is tight without
+assuming that fewer shards are always desirable.
 
 Direct CLI calls are for bounded reproduction only. The integrated VFS
 subcommands are:
@@ -84,7 +92,26 @@ AnimeStudio.CLI.exe list --help
 `dump`, `audio`, `stream`, and `vfs-index` must accept
 `--fallback-assets`. `dump`, `stream`, and `vfs-index` accept repeated
 `--block-type` and `--file-regex` filters. Both `StreamingAssets` and
-`Persistent` matter: the latter is the patch/fallback VFS root.
+`Persistent` matter. The wrappers configure them as sibling fallbacks in both
+directions because authoritative block metadata and chunks may live in either
+root. Fallback resolution applies to the encrypted `.blc` block metadata as
+well as `.chk` payloads. An existing block directory whose `.blc` is missing
+from both roots is an integrity error; do not downgrade it to an omitted block.
+
+The audio command accepts `--shared-output` so one `--block all` process can
+write common Audio/InitAudio/AuditAudio media separately from the selected
+language voice block. `scripts/build_audio.py` uses this once per VFS source,
+using `Persistent` as the fallback for missing metadata/chunks instead of
+decoding the same logical PCK set again with the roots reversed. AnimeStudio
+extracts one PCK at a time and caps converter concurrency at eight by default,
+avoiding the former all-PCK retention and logical-CPU-sized converter fan-out.
+
+`vfs-index --jsonl` is the compact streaming source for original-data update
+snapshots. It preserves the default JSON document mode while emitting ordered
+header/block/chunk/file/summary records that can be loaded into SQLite without
+materializing the duplicated full index. Snapshot consumers must reject
+truncated summaries, missing chunks, duplicate logical identities, and newly
+missing blocks before treating a scan as promotable.
 
 ## Export and status model
 
@@ -330,6 +357,48 @@ condition payloads. Their gameplay meaning and current frontier belong in
 `game_data_recovery.md`; the exporter rule is that every family reader is
 guarded by observed counts, lengths, enums, paths, and final offsets.
 
+Projectile JSON now avoids serializing a second raw-word copy after the guarded
+structured tail consumes exactly. The full observed family across StreamingAssets
+and Persistent validates effect-list assignment, alert-effect variants, sound
+hashes, and final scalars with zero residual tail words. Keep `$partial` on
+unproven enum/hash/runtime meanings, and classify those records as
+`semantic-partial` in recovery audits rather than reopening their byte boundary.
+
+Ability-entity recovery now has a similarly evidence-bounded split. Across all
+161 StreamingAssets and one Persistent `AbilityEntityTemplateData` roots, the
+custom reader consumes the inherited id/name, faction, counted GameplayTag,
+recycle/fade, and component-RID prefix exactly and resolves all 833 component
+links. The revisitable audit under
+`scratch/animestudio/ability_entity_tail_clusters/` now backs a production
+reader through `useFrameTick`: 158 roots consume 60 bytes and four keyed variants
+consume 80/84/104 bytes. All 162 linked exact root-component mirrors match, all
+malformed controls reject, and replay removes 9,852 raw bytes while preserving
+every later word exactly. The following `surroundingConfig` reader consumes 92
+bytes in all 162 roots, reducing residuals to 336-1,084 bytes. Fourteen linked
+SurroundingMovementData mirrors and ten non-consuming BaseRotationData
+next-boundary mirrors match. Surrounding failure is transactional, so the exact
+prefix/opening/component links survive with the remaining tail raw. Production
+recovery now stops before `followMountPointConfig`; the six opening scalars plus
+surrounding enum/hash meanings remain qualified as metadata-order/semantic
+inference.
+
+The rare enemy `EffectActionCfg/OmitUseScaleBBTail` is also structurally closed:
+an exact 80-word/320-byte bounded reader handles the two mirrored
+`data_eny_0092_slbomb` occurrences while leaving the enclosing EffectActionCfg
+semantic-partial. A full 156-file enemy replay preserved all raw hashes, kept
+154 sibling variants on their original reader, and rejected a 79-word malformed
+control. Field and enum meanings remain inferred.
+
+Character target recovery now separates three nested managed-reference layouts
+at their proven byte boundaries. `SelectorData` ends after one finder RID plus
+the validator and post-processor RID lists; the following bytes belong to
+`TargetSettings.enableAdvancedDirection` and its nested `DirectionSettings`.
+A 28 StreamingAssets plus two Persistent asset replay covers 74 occurrences of
+each layout with zero fallback or residual. These records remain
+`semantic-partial` for unnamed enum/hash values and unobserved non-empty
+post-processors, target-context keys, or advanced direction source/target RIDs,
+not for unfinished byte consumption.
+
 Regenerate the MonoBehaviour frontier before ranking work. Old warning logs
 predate many fixes, and console warning elimination does not remove honest
 in-JSON partial markers.
@@ -386,9 +455,11 @@ resolution is part of the repro.
 
 1. Extend clean/partial/error/not-loaded status manifests from Texture2D-style
    coverage to every maintained conversion/JSON stage and source AB.
-2. Keep the current MonoBehaviour frontier concentrated: finish recurring
-   projectile, ability-entity, enemy, and character tails with guarded readers
-   and preserve all residual bytes.
+2. Keep the current MonoBehaviour frontier concentrated: continue recurring
+   ability-entity fields from `followMountPointConfig` and character tails with
+   guarded readers. The rare enemy EffectActionCfg tail is structurally closed;
+   monitor it and projectile semantics unless a future
+   exact-consumption guard fails, and preserve residual bytes on every failure.
 3. Normalize shader sidecar binding metadata enough for repeatable downstream
    lookup without claiming source-level semantics that the bytes do not prove.
 4. Test future Texture2D/Sprite/Animator variants against PathID-based status

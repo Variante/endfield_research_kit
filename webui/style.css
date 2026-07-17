@@ -6,6 +6,12 @@
   --bg: #f5f5f5;
   --bg-2: #f5f5f5;
   --bg-3: #ffffff;
+  /* Shared feature surfaces. Keep these explicit so standalone feature CSS
+     never falls back to its legacy dark palette. */
+  --bg-rgb: 245, 245, 245;
+  --surface: #ffffff;
+  --panel: #ffffff;
+  --panel-bg: #ffffff;
   --border: rgba(48, 56, 65, 0.18);
   --text: #303841;
   --muted: rgba(48, 56, 65, 0.62);
@@ -29,9 +35,78 @@ html, body {
   font-size: 14px; line-height: 1.5;
 }
 
+.fatal-error {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 32px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.fatal-error-panel {
+  width: min(620px, 100%);
+  padding: 28px 30px;
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--accent);
+  border-radius: 10px;
+  background: var(--bg-3);
+  box-shadow: 0 10px 30px rgba(var(--fg-rgb), 0.12);
+}
+
+.fatal-error-panel h2 {
+  margin: 0 0 16px;
+  color: var(--text);
+}
+
+.fatal-error-panel p {
+  margin: 10px 0 0;
+}
+
+.fatal-error-panel code {
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--hover);
+  color: var(--text);
+}
+
 /* The HTML `hidden` attribute is overridden by elements that set their own
    display: rule (e.g. #conv-empty uses display:flex). Force it. */
 [hidden] { display: none !important; }
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 12px;
+  z-index: 1000;
+  padding: 8px 12px;
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  background: var(--bg-3);
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 6px 18px rgba(var(--fg-rgb), 0.18);
+  transform: translateY(calc(-100% - 16px));
+  transition: transform 120ms ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
 
 #shell {
   display: flex;
@@ -152,10 +227,18 @@ html, body {
 #view-tabs {
   display: flex;
   gap: 4px;
-  flex-wrap: wrap;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  min-width: 160px;
+  max-width: 100%;
   padding: 3px;
   border-radius: 10px;
   background: rgba(var(--fg-rgb), 0.05);
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-padding-inline: 6px;
+  scroll-snap-type: inline proximity;
+  scrollbar-width: thin;
 }
 
 /* ------- Story-page TODO note (story view sidebar only) ------- */
@@ -291,6 +374,7 @@ html, body {
 }
 
 .view-tab {
+  flex: 0 0 auto;
   padding: 8px 14px;
   border-radius: 999px;
   border: 1px solid rgba(var(--accent-rgb), 0.22);
@@ -299,6 +383,14 @@ html, body {
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
+  scroll-snap-align: start;
+}
+
+/* Secondary semantic views stay available for investigation without crowding
+   the normal navigation. The shared Story debug switch reveals them. */
+body:not(.show-debug) .view-tab[data-debug-view] {
+  display: none;
 }
 
 .view-tab:hover {
@@ -312,6 +404,47 @@ html, body {
   color: var(--on-accent);
 }
 
+.view-tab:focus-visible,
+.topbar-control select:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.page-view:focus-visible {
+  outline-offset: -3px;
+}
+
+.shell-status {
+  position: fixed;
+  top: 68px;
+  right: 16px;
+  z-index: 90;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent-2);
+  border-radius: 9px;
+  background: var(--bg-3);
+  color: var(--text);
+  box-shadow: 0 8px 24px rgba(var(--fg-rgb), 0.16);
+  font-size: 12px;
+}
+
+.shell-status[data-tone="error"] {
+  border-left-color: var(--accent);
+}
+
+#asset-empty.is-error {
+  color: var(--accent);
+  font-weight: 600;
+}
+
 #views {
   flex: 1;
   min-height: 0;
@@ -321,6 +454,22 @@ html, body {
   height: 100%;
   min-height: 0;
   position: relative;
+}
+
+#projectiles-view,
+#combat-view,
+#economy-view,
+#world-view,
+#progression-view,
+#presentation-view {
+  overflow: auto;
+}
+
+#gameplay-combat-relationships,
+#economy-app,
+#world-app {
+  min-height: 100%;
+  padding: 18px 20px 28px;
 }
 
 /* ------- Per-view loading overlay ------- */
@@ -394,6 +543,7 @@ html, body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .skip-link { transition: none; }
   .view-loader { transition: none; }
   .view-loader-track.is-indeterminate .view-loader-fill {
     animation-duration: 2.2s;
@@ -2944,6 +3094,24 @@ button.story-order-key-button:hover,
   font-size: 10px;
   line-height: 1.4;
   vertical-align: middle;
+}
+.option-placement-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--muted);
+  background: var(--bg-2);
+  font-size: 10px;
+  line-height: 1.4;
+  vertical-align: middle;
+}
+.option-placement-lastLine,
+.option-placement-unknown {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 40%, var(--border));
 }
 .opt-block .option {
   font-size: 13px; color: var(--good); padding: 2px 0;
@@ -5668,11 +5836,18 @@ body.is-resizing-filter * {
 
   #view-tabs {
     width: 100%;
+    min-width: 0;
   }
 
   .view-tab {
-    flex: 1;
+    flex: 0 0 auto;
     text-align: center;
+  }
+
+  .shell-status {
+    top: 12px;
+    right: 12px;
+    max-width: calc(100vw - 24px);
   }
 
   #app {
@@ -6128,12 +6303,6 @@ mark {
   color: var(--text);
   padding: 0 2px;
   border-radius: 2px;
-}
-
-/* Debug-only filter sections: hidden unless the "Show debug info" toggle is on */
-body:not(.show-debug) .filter-section[data-filter-section="story-issue"],
-body:not(.show-debug) .filter-section[data-filter-section="recovery-method"] {
-  display: none;
 }
 
 /* ------- Type / category badges: soft pastel palette for the cream UI -------

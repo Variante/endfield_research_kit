@@ -40,6 +40,7 @@ Use the parent wrappers for normal Endfield exports:
 ```bat
 .\export.bat --export-from-game
 .\export_assets.bat --export-from-game
+.\build_updates_by_patch.bat
 ```
 
 Both pass AnimeStudio options through to `scripts\export_full_from_game.py`. Keep `--animestudio-jobs` conservative unless the machine has enough free RAM:
@@ -59,8 +60,9 @@ Asset conversion uses more shards than workers by default: `--animestudio-shards
 with `--animestudio-jobs 8`; the shared pool consumes those shards alongside
 other AnimeStudio type requests. Adjust `--animestudio-shards` separately to tune
 per-process asset slice size. Non-sharded JSON type jobs use
-`--animestudio-type-job-mode auto` by default, merging them into one AnimeStudio
-process; pass `parallel` only when comparing against the older per-type path.
+`--animestudio-type-job-mode auto` by default, merging map-filtered JSON while
+running broad Story JSON types sequentially in isolated processes; pass
+`parallel` only when comparing concurrent per-type jobs.
 `export_assets.bat --export-from-game` now defaults to the full WebUI-facing
 image/model asset export plus `Material` JSON; add `--webui-assets` when only
 WebUI-referenced Texture2D media is needed, or `--debug-assets` for exhaustive
@@ -81,6 +83,10 @@ AnimeStudio.CLI now owns the Endfield VFS paths used by the WebUI wrappers:
 `dump`, `audio`, `stream`, and `vfs-index` must expose `--fallback-assets`. Use direct
 subcommand calls for parity probes or targeted extraction; use the parent
 wrappers for normal WebUI exports.
+
+`vfs-index --jsonl` writes streaming header/block/chunk/file/summary records for
+the original-data snapshot tracker without materializing the large duplicated
+JSON index shape. The default remains the existing JSON document format.
 
 ## Direct CLI Shape
 

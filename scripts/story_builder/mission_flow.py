@@ -4,6 +4,12 @@ from .context import *
 from .anime_assets import *
 from .level_bindings import *
 
+
+def _mission_text_key(value: object) -> str:
+    if isinstance(value, dict):
+        return str(value.get("key") or "").strip()
+    return ""
+
 def _mission_proxy_dialog_ids(mission_id: str, proxy_id: str) -> list[str]:
     if not mission_id or not proxy_id:
         return []
@@ -81,6 +87,11 @@ def load_mission_flow(mission_id: str) -> dict | None:
             "flowIndex": quest.get("flowIndex", 0),
             "prev": list(quest.get("prevQuestIdList") or []),
         }
+        if quest.get("overrideMissionDesc"):
+            entry["overrideMissionDescription"] = True
+        description_override_key = _mission_text_key(quest.get("descriptionOverride"))
+        if description_override_key:
+            entry["descriptionOverrideKey"] = description_override_key
         quest_story_node = dict(quest)
         quest_story_node.pop("failedCondition", None)
         dialogs = _extract_ref_strings(quest_story_node, _DIALOG_REF_FIELDS)
@@ -210,6 +221,9 @@ def load_mission_flow(mission_id: str) -> dict | None:
         "level": raw.get("levelId", ""),
         "quests": quests_out,
     }
+    mission_description_key = _mission_text_key(raw.get("missionDescription"))
+    if mission_description_key:
+        payload["missionDescriptionKey"] = mission_description_key
     _MISSION_FLOW_CACHE[mission_id] = payload
     return payload
 

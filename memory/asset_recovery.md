@@ -259,6 +259,16 @@ prove controller transition, event timing, root motion, facial routing, or
 secondary physics. Character-lab conclusions and the maintained playable
 roster live in `character_render_and_animation_recovery.md`.
 
+The WebUI Presentation view now materializes a bounded slice of this evidence:
+3,084 curated roots, 7,452 nodes, and 16,857 endpoint-valid relationships over
+model configs/prefabs, controllers, bounded asset entities, representative
+browser assets, shader-backed materials, animation configs/states/clips, and
+presentation-linked effects. It excludes generic `unity_asset`/PathID nodes,
+records per-source caps and omissions, separates 16,133 direct from 724 inferred
+edges, and degrades to an explicit empty payload when its source graph is stale
+or unavailable. It is a static evidence browser, not a reconstruction of the
+runtime renderer, animation state machine, effect timing, or shader execution.
+
 ## Effects, audio, and video
 
 Effect lookup joins gameplay effect ids, decoded managed-reference effect
