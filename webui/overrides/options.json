@@ -41,55 +41,6 @@
         "2": "Second follow-up prompt belongs after Carly explains learning to draw the new storybook."
       }
     },
-    "dlg_c13m2_20": {
-      "responses": {
-        "option_dlg_c13m2_20_1_001": [
-          "dlg_c13m2_20_002"
-        ],
-        "option_dlg_c13m2_20_1_002": [
-          "dlg_c13m2_20_002"
-        ],
-        "option_dlg_c13m2_20_1_003": [
-          "dlg_c13m2_20_002"
-        ]
-      },
-      "notes": {
-        "1": "Camera-advice choices do not branch; all three enter the same continuation at the first response line."
-      }
-    },
-    "dlg_c17m2_1": {
-      "responses": {
-        "option_dlg_c17m2_1_2_001": [
-          "dlg_c17m2_1_025"
-        ],
-        "option_dlg_c17m2_1_2_002": [
-          "dlg_c17m2_1_025"
-        ]
-      },
-      "notes": {
-        "2": "Two help-offer choices converge to Yvonne's objection line."
-      }
-    },
-    "dlg_c17m3_17": {
-      "responses": {
-        "option_dlg_c17m3_17_1_001": [
-          "dlg_c17m3_17_006"
-        ],
-        "option_dlg_c17m3_17_1_002": [
-          "dlg_c17m3_17_006"
-        ],
-        "option_dlg_c17m3_17_2_001": [
-          "dlg_c17m3_17_011"
-        ],
-        "option_dlg_c17m3_17_2_002": [
-          "dlg_c17m3_17_011"
-        ]
-      },
-      "notes": {
-        "1": "Identity/memory choices converge to Yvonne's first response line.",
-        "2": "Final commitment choices converge to the destination response line."
-      }
-    },
     "dlg_c17m3_20": {
       "positions": {
         "after": {
@@ -107,32 +58,24 @@
         "1": "Single continue-style playback prompt; the player presses play after noticing the gift box."
       }
     },
-    "dlg_c27m5_4": {
+    "dlg_c1m3_16": {
+      "positions": {
+        "after": {
+          "dlg_c1m3_16_003": [
+            "1"
+          ]
+        }
+      },
       "responses": {
-        "option_dlg_c27m5_4_3_001": [
-          "dlg_c27m5_4_014"
+        "option_dlg_c1m3_16_1_001": [
+          "dlg_c1m3_16_004"
         ],
-        "option_dlg_c27m5_4_3_002": [
-          "dlg_c27m5_4_016"
+        "option_dlg_c1m3_16_1_002": [
+          "dlg_c1m3_16_005"
         ]
       },
       "notes": {
-        "3": "Hotpot choices split to Tangtang accepting red broth or challenging it before the shared silence beat."
-      }
-    },
-    "dlg_c28m3_23": {
-      "responses": {
-        "option_dlg_c28m3_23_1_001": [
-          "dlg_c28m3_23_009",
-          "dlg_c28m3_23_010"
-        ],
-        "option_dlg_c28m3_23_1_002": [
-          "dlg_c28m3_23_009",
-          "dlg_c28m3_23_010"
-        ]
-      },
-      "notes": {
-        "1": "Permission and teasing choices converge to Rosie's stay-reason response span."
+        "1": "The choices follow Wolf Guard saying he has a theory; ask-to-hear-it leads to line 004, while silence leads to line 005."
       }
     },
     "dlg_e1m10_5": {
@@ -144,62 +87,12 @@
         }
       },
       "responses": {
-        "option_dlg_e1m10_5_2_001": [
-          "dlg_e1m10_5_005"
-        ],
-        "option_dlg_e1m10_5_2_002": [
-          "dlg_e1m10_5_005"
-        ],
-        "option_dlg_e1m10_5_2_003": [
-          "dlg_e1m10_5_005"
-        ],
         "option_dlg_e1m10_5_3_001": [
           "dlg_e1m10_5_006"
-        ],
-        "option_dlg_e1m10_5_4_001": [
-          "dlg_e1m10_5_010"
-        ],
-        "option_dlg_e1m10_5_4_002": [
-          "dlg_e1m10_5_010"
         ]
       },
       "notes": {
-        "2": "Three Administrator doubt choices converge to Pelica's immediate pause before the apology prompt.",
-        "3": "The apology choice sits after Pelica's pause and continues into her surprised response.",
-        "4": "Thanks/honor choices converge to Pelica moving into the S.O.W. information handoff."
-      }
-    },
-    "dlg_e1m10_7": {
-      "responses": {
-        "option_dlg_e1m10_7_5_001": [
-          "dlg_e1m10_7_006"
-        ],
-        "option_dlg_e1m10_7_5_002": [
-          "dlg_e1m10_7_006"
-        ],
-        "option_dlg_e1m10_7_5_003": [
-          "dlg_e1m10_7_006"
-        ]
-      },
-      "notes": {
-        "5": "Three resolve choices converge to Pelica's support line."
-      }
-    },
-    "dlg_e2m5_2": {
-      "responses": {
-        "option_dlg_e2m5_2_3_001": [
-          "dlg_e2m5_2_023"
-        ],
-        "option_dlg_e2m5_2_3_002": [
-          "dlg_e2m5_2_024"
-        ],
-        "option_dlg_e2m5_2_3_003": [
-          "dlg_e2m5_2_025",
-          "dlg_e2m5_2_026"
-        ]
-      },
-      "notes": {
-        "3": "Three self-identification choices map to Aria's Administrator, Pelica-supervisor, and Chen Qianyu response span."
+        "3": "The apology choice sits after Pelica's pause and continues into her surprised response."
       }
     },
     "dlg_e2m6_11": {
@@ -247,115 +140,28 @@
         "1": "Two semantic follow-up topics: ask how Aria knows the Administrator, or comment on Rosie's local reputation."
       }
     },
-    "dlg_e4m1_4": {
-      "responses": {
-        "option_dlg_e4m1_4_3_001": [
-          "dlg_e4m1_4_006"
-        ],
-        "option_dlg_e4m1_4_3_002": [
-          "dlg_e4m1_4_006"
-        ]
+    "dlg_f1m12_1": {
+      "positions": {
+        "after": {
+          "dlg_f1m12_1_009": [
+            "5"
+          ]
+        }
       },
       "notes": {
-        "3": "Confession/apology choices converge to Chen Qianyu's fear admission."
+        "5": "The acknowledgement about checking other items directly answers the retired-predecessor request in line 009."
       }
     },
-    "dlg_e4m1d5_6": {
-      "responses": {
-        "option_dlg_e4m1d5_6_5_001": [
-          "dlg_e4m1d5_6_023",
-          "dlg_e4m1d5_6_024",
-          "dlg_e4m1d5_6_025"
-        ],
-        "option_dlg_e4m1d5_6_5_002": [
-          "dlg_e4m1d5_6_026",
-          "dlg_e4m1d5_6_027",
-          "dlg_e4m1d5_6_028",
-          "dlg_e4m1d5_6_029",
-          "dlg_e4m1d5_6_030"
-        ],
-        "option_dlg_e4m1d5_6_5_003": [
-          "dlg_e4m1d5_6_031",
-          "dlg_e4m1d5_6_032"
-        ]
+    "dlg_f1m4_6": {
+      "positions": {
+        "after": {
+          "dlg_f1m4_6_014": [
+            "15"
+          ]
+        }
       },
       "notes": {
-        "5": "M3 information choices split to the M3, Wuling, and next-step answer spans."
-      }
-    },
-    "dlg_e6m1_10": {
-      "responses": {
-        "option_dlg_e6m1_10_4_001": [
-          "dlg_e6m1_10_016"
-        ],
-        "option_dlg_e6m1_10_4_002": [
-          "dlg_e6m1_10_016"
-        ]
-      },
-      "notes": {
-        "4": "Observation-system choices converge to Pelica noticing the erosion tide."
-      }
-    },
-    "dlg_e6m3_14": {
-      "responses": {
-        "option_dlg_e6m3_14_2_001": [
-          "dlg_e6m3_14_018"
-        ],
-        "option_dlg_e6m3_14_2_002": [
-          "dlg_e6m3_14_018"
-        ],
-        "option_dlg_e6m3_14_3_001": [
-          "dlg_e6m3_14_026",
-          "dlg_e6m3_14_027"
-        ],
-        "option_dlg_e6m3_14_3_002": [
-          "dlg_e6m3_14_028",
-          "dlg_e6m3_14_029"
-        ]
-      },
-      "notes": {
-        "2": "Waiting/confirmation choices converge to Pelica staying behind.",
-        "3": "Concern-for-Zhuang choices split to the two response spans before the shared thanks."
-      }
-    },
-    "dlg_e6m4_14": {
-      "responses": {
-        "option_dlg_e6m4_14_2_001": [
-          "dlg_e6m4_14_020"
-        ],
-        "option_dlg_e6m4_14_2_002": [
-          "dlg_e6m4_14_020"
-        ],
-        "option_dlg_e6m4_14_3_001": [
-          "dlg_e6m4_14_024"
-        ],
-        "option_dlg_e6m4_14_3_002": [
-          "dlg_e6m4_14_024"
-        ],
-        "option_dlg_e6m4_14_4_001": [
-          "dlg_e6m4_14_014"
-        ],
-        "option_dlg_e6m4_14_4_002": [
-          "dlg_e6m4_14_014"
-        ]
-      },
-      "notes": {
-        "2": "Tangtang loyalty choices split to the寨子 future question and Chen Qianyu's concern.",
-        "3": "寨子-condition choices split to Tangtang's resource-pressure line and Pelica's system inference.",
-        "4": "Support-promise choices split to Tangtang's pact and immediate return-to-prepare line."
-      }
-    },
-    "dlg_e9m2_14": {
-      "responses": {
-        "option_dlg_e9m2_14_6_001": [
-          "dlg_e9m2_14_001"
-        ],
-        "option_dlg_e9m2_14_6_002": [
-          "dlg_e9m2_14_001"
-        ]
-      },
-      "notes": {
-        "6": "Good-news/control choices split to the message-received line and the remote-interference follow-up."
+        "15": "The departure choice follows the final warning that the abandoned armory may be a trap."
       }
     },
     "dlg_f1m3_7": {
@@ -380,6 +186,46 @@
       },
       "notes": {
         "1": "One-line NPC prompt with immediate inspect/leave choices."
+      }
+    },
+    "dlg_gm01m5_1": {
+      "positions": {
+        "after": {
+          "dlg_gm01m5_1_017": [
+            "1"
+          ]
+        }
+      },
+      "notes": {
+        "1": "The start prompt follows Henderson's complete explanation; the lower-numbered rows are the acceptance and tutorial continuation."
+      }
+    },
+    "dlg_gm01m5_2": {
+      "positions": {
+        "after": {
+          "dlg_gm01m5_2_003": [
+            "1"
+          ],
+          "dlg_gm01m5_2_005": [
+            "2"
+          ]
+        }
+      },
+      "notes": {
+        "1": "The difficulty reaction follows Henderson's explanation that the second device is harder to start.",
+        "2": "The acceptance prompt follows the operating explanation and precedes Henderson's final request."
+      }
+    },
+    "dlg_gm01m5_3": {
+      "positions": {
+        "after": {
+          "dlg_gm01m5_3_003": [
+            "1"
+          ]
+        }
+      },
+      "notes": {
+        "1": "The question about Henderson's excitement follows his success exclamation and precedes his explanation in lines 004-005."
       }
     },
     "dlg_gm01m12_8": {
@@ -497,6 +343,114 @@
       },
       "notes": {
         "1": "Repeat-race table-only scene; branch layout follows sibling semantic pattern from dlg_gm01m25_1 and dlg_gm01m26_5."
+      }
+    },
+    "dlg_gm02m2_1": {
+      "positions": {
+        "after": {
+          "dlg_gm02m2_1_001": [
+            "1"
+          ],
+          "dlg_gm02m2_1_002": [
+            "2"
+          ],
+          "dlg_gm02m2_1_005": [
+            "3"
+          ]
+        }
+      },
+      "notes": {
+        "1": "Registered table scene with no recovered Timeline or DialogTree; the help offer answers line 001.",
+        "2": "Registered table scene with no recovered Timeline or DialogTree; the pollution follow-up answers line 002.",
+        "3": "Manual semantic placement: line 005 completes the consequence summary and line 006 begins the requested solution. The table-key fallback at line 003 interrupts that explanation."
+      }
+    },
+    "dlg_gm02m2_2": {
+      "positions": {
+        "after": {
+          "dlg_gm02m2_2_001": [
+            "1"
+          ]
+        }
+      },
+      "notes": {
+        "1": "Registered table scene with no recovered Timeline or DialogTree; the choices answer the only line's progress question."
+      }
+    },
+    "dlg_gm02m2_3": {
+      "positions": {
+        "after": {
+          "dlg_gm02m2_3_001": [
+            "1"
+          ],
+          "dlg_gm02m2_3_005": [
+            "2"
+          ]
+        }
+      },
+      "notes": {
+        "1": "Registered table scene with no recovered Timeline or DialogTree; the completion choice answers line 001.",
+        "2": "Manual semantic placement: lines 003-005 introduce the remaining polluted pools and end with the question answered by this group. The table-key fallback at line 002 belongs to the prior response."
+      }
+    },
+    "dlg_gm02m2_4": {
+      "positions": {
+        "after": {
+          "dlg_gm02m2_4_001": [
+            "1"
+          ]
+        }
+      },
+      "notes": {
+        "1": "Registered table scene with no recovered Timeline or DialogTree; the completion choice answers line 001."
+      }
+    },
+    "dlg_gm02m3_1": {
+      "positions": {
+        "after": {
+          "dlg_gm02m3_1_013": [
+            "1"
+          ]
+        }
+      },
+      "notes": {
+        "1": "The three patrol/race choices answer the explicit invitation in line 013; later rows are choice-specific continuations."
+      }
+    },
+    "dlg_gm02m3_2": {
+      "positions": {
+        "after": {
+          "dlg_gm02m3_2_004": [
+            "1"
+          ]
+        }
+      },
+      "notes": {
+        "1": "The return-together choices answer the final question in line 004."
+      }
+    },
+    "dlg_gm02m3_3": {
+      "positions": {
+        "after": {
+          "dlg_gm02m3_3_003": [
+            "1"
+          ]
+        }
+      },
+      "notes": {
+        "1": "The return-together choices answer the final question in line 003."
+      }
+    },
+    "dlg_gm02m3_5": {
+      "positions": {
+        "after": {
+          "dlg_gm02m3_5_002": [
+            "1"
+          ]
+        }
+      },
+      "notes": {
+        "1": "The status/race/leave choices follow the repeat-race invitation in line 002; lines 003-007 are the choice continuations."
       }
     },
     "dlg_map01_lv007_env_1": {
@@ -620,25 +574,6 @@
       },
       "notes": {
         "1": "Single environmental question; response reflects on completed giant-heart repair work."
-      }
-    },
-    "misc_dlg_e5m3_0d5": {
-      "responses": {
-        "option_dlg_e5m3_0d5_2_002": [
-          "dlg_e5m3_0d5_021"
-        ],
-        "option_dlg_e5m3_0d5_2_003": [
-          "dlg_e5m3_0d5_021"
-        ],
-        "option_dlg_e5m3_0d5_2_004": [
-          "dlg_e5m3_0d5_021"
-        ],
-        "option_dlg_e5m3_0d5_2_005": [
-          "dlg_e5m3_0d5_021"
-        ]
-      },
-      "notes": {
-        "2": "Four bravado choices converge to Pelica's sigh."
       }
     },
     "misc_dlg_sm1l6m1_4d2": {

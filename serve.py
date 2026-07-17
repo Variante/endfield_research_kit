@@ -146,6 +146,28 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     error_message_format = ERROR_PAGE_TEMPLATE
     error_content_type = "text/html; charset=utf-8"
 
+    def _redirect_webui_alias(self) -> bool:
+        """Redirect the common repo-relative WebUI URL to this server's root."""
+        request = urlsplit(self.path)
+        if request.path not in {"/webui", "/webui/", "/webui/index.html"}:
+            return False
+        location = "/"
+        if request.query:
+            location += f"?{request.query}"
+        self.send_response(302)
+        self.send_header("Location", location)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+        return True
+
+    def do_GET(self) -> None:
+        if not self._redirect_webui_alias():
+            super().do_GET()
+
+    def do_HEAD(self) -> None:
+        if not self._redirect_webui_alias():
+            super().do_HEAD()
+
     def _send_json(self, status: int, payload: dict) -> None:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)

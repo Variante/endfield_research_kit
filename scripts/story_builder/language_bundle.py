@@ -938,9 +938,22 @@ def build_language_bundle(
         if not isinstance(flow, dict):
             return flow
         localized = copy.deepcopy(flow)
+        mission_description_key = str(localized.get("missionDescriptionKey") or "").strip()
+        if mission_description_key:
+            localized["missionDescription"] = localized_objective_instruction(mission_description_key)
         for quest in localized.get("quests") or []:
             if not isinstance(quest, dict):
                 continue
+            description_key = mission_description_key
+            description_source = "mission"
+            if quest.get("overrideMissionDescription") and quest.get("descriptionOverrideKey"):
+                description_key = str(quest.get("descriptionOverrideKey") or "").strip()
+                description_source = "quest_override"
+            if description_key:
+                description = localized_objective_instruction(description_key)
+                if description:
+                    description["source"] = description_source
+                    quest["missionDescription"] = description
             quest_instructions: list[dict] = []
             for anchor in quest.get("objectiveAnchors") or []:
                 if not isinstance(anchor, dict):
@@ -962,6 +975,37 @@ def build_language_bundle(
             if quest_instructions:
                 quest["objectiveInstructions"] = quest_instructions
         return localized
+
+    def quest_attached_story_files(quest: dict, available: set[str]) -> list[dict]:
+        rows: list[dict] = []
+        seen: set[str] = set()
+
+        def add(key: object, kind: str, evidence: str) -> None:
+            story_key = str(key or "").strip()
+            if not story_key or story_key not in available or story_key in seen:
+                return
+            seen.add(story_key)
+            rows.append({"key": story_key, "kind": kind, "evidence": evidence})
+
+        for field, kind in (
+            ("dialogs", "dialog"),
+            ("cutscenes", "cutscene"),
+            ("remotecomms", "remotecomm"),
+            ("radios", "radio"),
+        ):
+            for key in quest.get(field) or []:
+                add(key, kind, f"MissionRuntimeAsset.{field}")
+        for row in quest.get("proxyDialogs") or []:
+            if isinstance(row, dict):
+                add(row.get("dialogId"), "dialog", str(row.get("source") or "unique NPC proxy dialog"))
+        for row in quest.get("levelDataStoryRefs") or []:
+            if isinstance(row, dict):
+                add(row.get("storyRef"), "level_data", str(row.get("source") or "LevelData quest reference"))
+        for key in quest.get("failStoryRefs") or []:
+            story_key = str(key or "")
+            kind = "dialog" if story_key.startswith("dlg_") else "cutscene" if story_key.startswith("cutscene_") else "failure"
+            add(story_key, kind, "MissionRuntimeAsset.failedCondition")
+        return rows
 
     npc_templates_by_template_id: dict[str, list[str]] = defaultdict(list)
     for template_row_id, row in npc_templates.items():
@@ -1771,6 +1815,7 @@ def build_language_bundle(
         timeline_after: dict[str, str] = {}
         timeline_after_line_ids: dict[str, list[str]] = {}
         timeline_after_line_timings: dict[str, dict[str, dict]] = {}
+        timeline_after_runtime_jump_clips: dict[str, list[dict] | None] = {}
         timeline_option_rows: dict[str, list[dict]] = defaultdict(list)
         timeline_option_routes: dict[str, list[dict]] = defaultdict(list)
         timeline_pre: set[str] = set()
@@ -1851,6 +1896,11 @@ def build_language_bundle(
                         if timeline_line_ids and opt_id not in timeline_after_line_ids:
                             timeline_after_line_ids[opt_id] = timeline_line_ids
                             timeline_after_line_timings[opt_id] = timeline_line_timing_by_id
+                            timeline_after_runtime_jump_clips[opt_id] = (
+                                list(timeline.get("runtimeJumpClips") or [])
+                                if "runtimeJumpClips" in timeline
+                                else None
+                            )
                     elif anchor.get("position") == "pre":
                         timeline_authored_option_ids.add(opt_id)
                         timeline_pre.add(opt_id)
@@ -2562,64 +2612,87 @@ def build_language_bundle(
                 (timeline_line_timing_by_id.get(line_id) or {}).get("clipOptionIndex")
                 for line_id in candidate_line_ids
             ]
-            def index_pattern(values: list[object]) -> str:
-                ints = [value for value in values if isinstance(value, int)]
-                if not ints:
-                    return "missing"
-                if len(ints) < len(values):
-                    return "partialMissing"
-                has_zero = any(value == 0 for value in ints)
-                has_nonzero = any(value != 0 for value in ints)
-                if has_zero and has_nonzero:
-                    return "mixedZeroNonzero"
-                if has_zero:
-                    return "allZero"
-                if has_nonzero:
-                    return "strictNonzero"
-                return "other"
-            if (
-                candidate_clip_indices
-                and len(candidate_clip_indices) == len(candidate_line_ids)
-                and all(value == 0 for value in candidate_clip_indices)
-            ):
-                option_index_pattern = index_pattern(option_indices)
-                candidate_clip_index_pattern = index_pattern(candidate_clip_indices)
-                if option_index_pattern in {"allZero", "mixedZeroNonzero"}:
-                    reason = "defaultTrunkClipContinuation"
+            candidate_timing_rows = [
+                timeline_line_timing_by_id.get(line_id) or {}
+                for line_id in candidate_line_ids
+            ]
+            candidate_starts = [
+                float(row.get("start"))
+                for row in candidate_timing_rows
+                if isinstance(row.get("start"), (int, float))
+            ]
+            candidate_ends = [
+                float(row.get("start")) + float(row.get("duration") or 0.0)
+                for row in candidate_timing_rows
+                if isinstance(row.get("start"), (int, float))
+            ]
+            runtime_jump_clips = (
+                timeline_after_runtime_jump_clips.get(group_opt_ids[0])
+                if group_opt_ids
+                else None
+            )
+            continuation_classification = classify_zero_index_timeline_continuation(
+                option_indices,
+                candidate_clip_indices,
+                candidate_window_start=min(candidate_starts) if candidate_starts else None,
+                candidate_window_end=max(candidate_ends) if candidate_ends else None,
+                runtime_jump_clips=runtime_jump_clips,
+            )
+            if continuation_classification.get("status") == "shared":
+                reason = str(
+                    continuation_classification.get("reason")
+                    or "defaultTrunkClipContinuation"
+                )
+                detail = (
+                    "The current game runtime only activates option-bound trunk "
+                    "clips whose runtime option field is positive. Every adjacent "
+                    "candidate trunk clip carries clipOptionIndex 0, and no raw "
+                    "Runtime Jump overlaps this window, so these lines are a shared "
+                    "Timeline continuation rather than per-option replies."
+                )
+                if reason == "rawOptionIndexConverges":
                     detail = (
-                        "Runtime selection maps the selected UI option through "
-                        "DialogTimelineOptionData.optionIndex before advancing "
-                        "the Timeline. The adjacent trunk candidate clips all "
-                        "carry clipOptionIndex 0, and no Runtime Jump route was "
-                        "recovered for this group, so the window is kept as a "
-                        "shared Timeline continuation instead of inferred "
-                        "per-option branch replies."
+                        "Both the UI option rows and adjacent trunk clips resolve to "
+                        "raw optionIndex 0. The current game runtime treats this as "
+                        "shared Timeline continuation rather than option-specific "
+                        "branch replies."
                     )
-                    if option_index_pattern == "allZero":
-                        reason = "rawOptionIndexConverges"
-                        detail = (
-                            "Runtime selection maps the selected UI option through "
-                            "DialogTimelineOptionData.optionIndex before advancing "
-                            "the Timeline. All option rows in this group resolve to "
-                            "raw optionIndex 0, so the adjacent trunk lines are kept "
-                            "as shared continuation instead of inferred per-option "
-                            "branch replies."
-                        )
-                    return {
-                        "code": "sharedTimelineContinuation",
-                        "reason": reason,
-                        "detail": detail,
-                        "after": after_id,
-                        "optionIds": group_opt_ids,
-                        "candidateLineIds": [],
-                        "candidateWindowLineIds": candidate_line_ids,
-                        "commonContinuationLineId": candidate_line_ids[0],
-                        "source": "dialogTimeline",
-                        "optionIndex": option_indices,
-                        "candidateLineClipOptionIndex": candidate_clip_indices,
-                        "optionIndexPattern": option_index_pattern,
-                        "candidateLineClipOptionIndexPattern": candidate_clip_index_pattern,
-                    }
+                if reason == "defaultTrunkClipContinuationWithRuntimeJump":
+                    detail = (
+                        "Every adjacent candidate trunk clip carries "
+                        "clipOptionIndex 0, so the window is shared immediate "
+                        "continuation rather than one reply per option. Raw "
+                        "Runtime Jump clips overlap the window but do not form "
+                        "a complete per-option route; they remain attached as "
+                        "later-route uncertainty instead of being converted "
+                        "into adjacent reply targets."
+                    )
+                result = {
+                    "code": "sharedTimelineContinuation",
+                    "reason": reason,
+                    "detail": detail,
+                    "after": after_id,
+                    "optionIds": group_opt_ids,
+                    "candidateLineIds": [],
+                    "candidateWindowLineIds": candidate_line_ids,
+                    "commonContinuationLineId": candidate_line_ids[0],
+                    "source": "dialogTimeline",
+                    "optionIndex": option_indices,
+                    "candidateLineClipOptionIndex": candidate_clip_indices,
+                    "optionIndexPattern": continuation_classification.get("optionIndexPattern"),
+                    "candidateLineClipOptionIndexPattern": continuation_classification.get(
+                        "candidateLineClipOptionIndexPattern"
+                    ),
+                }
+                if continuation_classification.get("runtimeJumpRouteStatus"):
+                    result["runtimeJumpRouteStatus"] = continuation_classification[
+                        "runtimeJumpRouteStatus"
+                    ]
+                if continuation_classification.get("overlappingRuntimeJumpClips"):
+                    result["overlappingRuntimeJumpClips"] = continuation_classification[
+                        "overlappingRuntimeJumpClips"
+                    ]
+                return result
             candidate_mapping = ""
             branch_line_ids_by_option: dict[str, list[str]] = {}
             branch_clip_indices_by_option: dict[str, list[int]] = {}
@@ -2718,6 +2791,8 @@ def build_language_bundle(
                     if row.get("assetTrack")
                 ]),
             }
+            if continuation_classification.get("status") in {"blocked", "unverified"}:
+                risk["runtimeContinuationClassification"] = continuation_classification
             if candidate_mapping:
                 risk["candidateMapping"] = candidate_mapping
                 risk["candidateLineIdsByOption"] = {
@@ -3481,7 +3556,9 @@ def build_language_bundle(
                 reason_short = "noTreeReference"
                 reason_text = (
                     "no AnimeStudio tree references any option for this scene; "
-                    "group positions are unanchored and fallback candidates are diagnostic only"
+                    "positions are recovered from original DialogOption/DialogText key "
+                    "structure where possible, with any line-gap or end-of-scene "
+                    "fallback identified separately"
                 )
             elif authored_group_count + pre_group_count == 0:
                 reason_short = "noAuthoredGroupAnchor"
@@ -4044,6 +4121,11 @@ def build_language_bundle(
             if method and method not in methods:
                 methods.append(method)
         debug = payload.get("_debug") if isinstance(payload.get("_debug"), dict) else {}
+        runtime_registry = (
+            debug.get("runtimeRegistry")
+            if isinstance(debug.get("runtimeRegistry"), dict)
+            else {}
+        )
         line_order = debug.get("lineOrder") if isinstance(debug.get("lineOrder"), dict) else {}
         line_order_mode = str(line_order.get("mode") or "")
         if line_order_mode == "lineIdSuffix":
@@ -4076,12 +4158,36 @@ def build_language_bundle(
         )
         if layout_warning:
             reason = str(layout_warning.get("reason") or "")
-            if reason == "partialAuthoredCoverage":
-                add("optionLayout:partialAuthoredCoverage")
-            elif reason == "noAuthoredGroupAnchor":
-                add("optionLayout:noAuthoredGroupAnchor")
+            group_details = [
+                detail
+                for detail in (layout_warning.get("groupDetails") or [])
+                if isinstance(detail, dict) and not detail.get("manualLayoutOverride")
+            ]
+            modes = {
+                str(detail.get("inferredAnchorMode") or "")
+                for detail in group_details
+            }
+            statuses = {str(detail.get("status") or "") for detail in group_details}
+            if runtime_registry.get("registered") is False:
+                add("optionLayout:tableOnlyCutContent")
             else:
-                add("optionLayout:fallback")
+                if "lineNumber" in modes:
+                    add("optionLayout:keyMatched")
+                if "sparseGap" in modes:
+                    add("optionLayout:sparseGap")
+                if "siblingTimelinePosition" in modes:
+                    add("optionLayout:siblingTimelinePosition")
+                if "lastLine" in modes:
+                    add("optionLayout:lastLine")
+                if "unanchored" in statuses:
+                    add("optionLayout:unanchored")
+            if not group_details:
+                if reason == "partialAuthoredCoverage":
+                    add("optionLayout:partialAuthoredCoverage")
+                elif reason == "noAuthoredGroupAnchor":
+                    add("optionLayout:noAuthoredGroupAnchor")
+                else:
+                    add("optionLayout:fallback")
         elif option_groups:
             add("optionLayout:authored")
         if payload.get("sceneGraphLinks"):
@@ -4268,6 +4374,7 @@ def build_language_bundle(
         attach_duplicate_timestamp_warning(payload)
         attach_timeline_timestamp_regression_warning(payload)
         story_issue_codes = dialog_story_issue_codes(payload)
+        option_issue_targets = dialog_option_issue_targets(payload)
         recovery_methods = dialog_recovery_methods(payload)
         if fmv_clips_by_key.get(out_key):
             payload["fmvClips"] = fmv_clips_by_key[out_key]
@@ -4302,6 +4409,8 @@ def build_language_bundle(
                 tags.append("sceneGraph")
         if story_issue_codes:
             entry["storyIssues"] = story_issue_codes
+        if option_issue_targets:
+            entry["optionIssueTargets"] = option_issue_targets
         if recovery_methods:
             entry["recoveryMethods"] = recovery_methods
         if not entry["x"]:
@@ -9473,6 +9582,7 @@ def build_language_bundle(
             attach_scene_order_warning(payload)
             attach_timeline_timestamp_regression_warning(payload)
             story_issue_codes = dialog_story_issue_codes(payload)
+            option_issue_targets = dialog_option_issue_targets(payload)
             recovery_methods = dialog_recovery_methods(payload)
             write_conv_payload(out_key, payload)
             entry = {
@@ -9502,6 +9612,8 @@ def build_language_bundle(
                     tags.append("sceneGraph")
             if story_issue_codes:
                 entry["storyIssues"] = story_issue_codes
+            if option_issue_targets:
+                entry["optionIssueTargets"] = option_issue_targets
             if recovery_methods:
                 entry["recoveryMethods"] = recovery_methods
             if not entry["x"]:
@@ -11861,6 +11973,8 @@ def build_language_bundle(
         if not localized_flow and not scene_graph:
             continue
         payload = {"quests": (localized_flow or {}).get("quests") or []}
+        if (localized_flow or {}).get("missionDescription"):
+            payload["missionDescription"] = localized_flow["missionDescription"]
         if localized_flow:
             referenced: set[str] = set()
             for q in localized_flow["quests"]:
@@ -11869,6 +11983,10 @@ def build_language_bundle(
                 referenced.update(q.get("remotecomms") or [])
                 referenced.update(q.get("radios") or [])
             available = scene_keys_by_mission.get(mission, set())
+            for q in localized_flow["quests"]:
+                story_files = quest_attached_story_files(q, available)
+                if story_files:
+                    q["storyFiles"] = story_files
             for q in localized_flow["quests"]:
                 referenced.update(quest_area_scene_refs(q, available))
                 referenced.update(quest_leveldata_scene_refs(q, available))

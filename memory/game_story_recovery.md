@@ -162,7 +162,8 @@ High compact record families are structurally useful but require care:
 
 ### `LevelEvent_OnDialogExit`
 
-The current installed client uses CodeRegistration `0x18c439740`. Recovered
+The July 11 installed client uses CodeRegistration `0x18b9217d0` and
+MetadataRegistration `0x18b921c30`. Recovered
 MemoryPack formatter mappings identify `0x1250/0x00` as
 `LevelEvent_OnDialogExit`.
 
@@ -208,27 +209,59 @@ Runtime field evidence establishes the following model:
 - the selected option index flows through the Timeline manager and `+0x98`
   into `DialogChooseOption`;
 - `+0x18` is the active option-clip gate used before `SetDialogOption`;
-- nearby candidate lines with zero runtime option fields are not proven option
-  responses.
+- `TryTriggerTrunkBindingOption` ignores zero-valued trunk clips and only
+  activates a candidate whose runtime option field is positive;
+- `RuntimeClip.<optionIndex>` and `TimelinePlayable` current/new/last option
+  state feed `DoJump` / `DoReverseJump` and `TimelineRuntimeUtils`;
+- `RuntimeJumpClip` supplies direction and post-jump state, while its parent
+  Runtime Jump Track clip supplies the source `optionIndex`, start, duration,
+  and asset PPtr.
 
-Fourteen high-signal adjacency groups were checked against this runtime model.
-All fourteen had zero candidate runtime fields and remain
-`doNotPromoteWithoutRuntimeRule`. Audio, speaker consistency, monotonic clip
-times, or shared Timeline membership are corroboration only.
+This closes the former inferred-adjacent-reply ambiguity. In the pre-fix CN
+queue, all 26 `inferredOptionResponse` groups had all-zero candidate trunk
+clips and no overlapping raw Runtime Jump route. They are shared Timeline
+continuation, not one reply per option. The builder now preserves compact raw
+Runtime Jump windows. Missing or malformed jump evidence keeps the warning;
+an incomplete overlap remains visible as later-route uncertainty but does not
+revive the disproven one-adjacent-line-per-option mapping. Completed Runtime
+Jump routes remain higher priority. Audio, speaker consistency, monotonic clip
+times, or shared Timeline membership remain corroboration only.
+
+### Option placement boundary
+
+Option-key suffixes and sparse dialog-line gaps are not runtime placement
+fields. Authored-control validation found group-number/key matching correct in
+only 694 of 2,801 comparable groups, and sparse-gap matching was weaker. The
+runtime instead places Timeline options by active clip time and
+`TimelineClip.optionIndex`, or follows authored DialogTree connections.
+
+The pre-fix CN layout queue contained 189 inferred groups; 178 of those groups
+had no real `DialogIdTable` root. A parser
+bug had counted the embedded `dlg_*` substring inside `option_dlg_*` as a fake
+dialog line; option-only identifiers now populate option vocabulary without
+registering a scene. Unregistered key/gap placements remain useful for static
+table browsing, but the WebUI classifies them as table-only display placement
+instead of live runtime recovery issues.
+
+Only seven uncovered key-position groups retained a real registry root, all in
+`dlg_gm02m2_1..4`. No Timeline, DialogTree, or mission asset survives for those
+scenes, so their prompt/answer placements are explicit WebUI-only overrides.
+Two key matches were semantically wrong and are corrected manually:
+
+- `dlg_gm02m2_1` g3 moves from `_003` to `_005`;
+- `dlg_gm02m2_3` g2 moves from `_002` to `_005`.
+
+The remaining five manual placements happen to match the key fallback, but are
+not promoted as a general key-based runtime rule.
 
 ### Current Runtime Jump conflict controls
 
-Three inferred mappings conflict with nearby Runtime Jump evidence:
-
-| Scene/group | Inferred first line | Runtime-direction line | Conclusion |
-| --- | --- | --- | --- |
-| `dlg_c28m3_10` g1 option 001 | `_023` | `_025` | Late targetless merge jump; keep warning, do not remap automatically. |
-| `dlg_e6m1_10` g4 option 002 | `_003` | `_016` | Both choices plausibly converge to `_016`; existing WebUI override remains manual. |
-| `dlg_e6m4_14` g2 option 002 | `_021` | `_020` | Targetless jump supports the manual convergence direction but not a general rule. |
-
-`dlg_c28m3_23` has incomplete Runtime Jump coverage without a direct conflict.
-The audit paths can refer to stale Timeline folders; basename-resolved current
-assets are useful diagnostics but do not strengthen route semantics.
+Completed Runtime Jump routes remain higher priority than zero-index shared
+continuation. An incomplete overlapping jump is retained on the shared
+continuation as unresolved later-route evidence; malformed or missing raw-jump
+evidence remains warning-worthy. Audit paths can refer to stale Timeline
+folders; only basename-resolved current assets with their parent track clips
+count as route evidence.
 
 Useful commands:
 

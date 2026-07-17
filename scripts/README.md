@@ -36,7 +36,24 @@ precedence for one-off commands.
 - `scripts/verify_export_freshness.py`
 - `scripts/story_builder/refresh_evidence.py`
 - `scripts/story_builder/build.py --languages CN --default-language CN --skip-audio-link`
+- `scripts/build_mission_pipeline_data.py`
 - `scripts/build_gameplay_data.py --languages CN --default-language CN`
+- `scripts/build_progression_data.py --languages CN --default-language CN`
+- `scripts/build_projectile_data.py`
+- `scripts/build_economy_data.py --languages CN --default-language CN`
+- `scripts/build_world_data.py --languages CN --default-language CN`
+- optional asset/audio refresh when requested
+- `tools/endfield_source_graph.py build --language CN`
+- `scripts/build_presentation_data.py --languages CN`
+- `scripts/build_combat_relationships.py --languages CN`
+
+Presentation and Combat check source-graph freshness against their generated
+inputs. Presentation emits a stable empty degraded payload instead of reading
+missing or stale graph evidence. Combat checks its generated Gameplay, manifest,
+asset-index, AbilityEntity, and CharacterTemplate inputs. A stale graph is not
+opened; the payload records the reason and falls back to authored Gameplay plus
+exact AnimeStudio evidence. The wrapper rebuild order keeps the normal output
+graph-backed without allowing stale edges to retain direct confidence.
 
 The freshness verifier uses a fast non-empty check for required generated output
 folders by default; pass `--full-output-counts` directly to
@@ -81,6 +98,25 @@ or `--skip-asset-updates` for a text-only feed. The wrapper reads
 `--game-root`; pass it only for optional decoded-impact mapping from a
 non-default installed
 `Endfield_Data` root. It does not choose the export trees.
+
+For an explicit one-off comparison between two already extracted versions, use:
+
+```bat
+.\build_updates.bat --previous-export-root "D:\exports\Endfield_old" --export-root "D:\exports\Endfield_new" --refresh-previous-export-baseline
+```
+
+The old extraction supplies the cached comparison baseline; the new extraction
+is scanned against it. `--refresh-previous-export-baseline` is required after
+replacing the contents at a previously used old-export path and is safe to use
+for an intentional one-off comparison. The command writes the WebUI feed plus
+`reports/updates/game-data-change-summary.json/.md`. Use `--full-export-scan`
+only for a broad audit of every file in the two export roots; the default
+focused scope is the correct mode for the Updates page.
+
+`build_updates_by_patch.bat --check` compares the installed client's original
+VFS snapshot without changing published state. The wrapper's default `--apply`
+mode uses that result to stage changed extraction work and invokes
+`build_updates.bat` itself after archive/current publication.
 
 `export_assets.bat` runs `scripts/build_assets.py` for the compact WebUI media
 indexes, then runs `scripts/build_audio.py --skip-decode` to relink existing
@@ -167,7 +203,13 @@ audio-only maintenance. It indexes shared files under
 generated conversation JSON when a line's `audio` id matches a decoded file,
 streams Wwise bank HIRC metadata from VFS `*banks.pck` payloads via AnimeStudio
 `stream`, and links cutscene audio events such as `au_sfx_*`/`au_vo_*` when
-the event graph reaches decoded media. Pass `--block hotfix-audio` for an
+the event graph reaches decoded media. The default decode uses one fallback-aware
+AnimeStudio `audio --block all` process; `--shared-output` keeps common
+SFX/music separate from language voice without reloading the VFS once per audio
+block or decoding the same PCKs again with reversed source roots. The CLI reads
+one PCK at a time and limits concurrent converters. Generated indexes categorize voice by story/character/enemy use and
+resolved Wwise media by SFX, voice-event, music, cue, ambience, or UI event.
+Pass `--block hotfix-audio` for an
 explicit HotfixAudio decode; it is treated as shared audio storage but is not
 part of `--block all`.
 
@@ -180,6 +222,10 @@ Extract the story zip first, then extract the assets and audio zips into the
 same directory when media or audio is wanted. Packaging excludes 3D/model
 payloads and does not include
 `scratch/`, `reports/`, or `tmp/`.
+Pass `--skip-audio` when only the story and companion assets zips are needed.
+When the Assets browser is excluded, the packaged `assets.js` navigation shim
+must preserve the source WebUI's debug-only view gating, safe hash fallbacks,
+and keyboard exclusion for hidden tabs.
 
 ## Folder Contract
 
@@ -229,7 +275,10 @@ Expected active inputs and outputs:
   2D/3D/animation asset conversion unless `--with-assets` is passed. The
   structured dump defaults to `--structured-dump-mode webui`, and
   `scripts\build_audio.py` streams Wwise bank metadata directly from VFS for
-  event relinking. `--structured-dump-mode full` keeps the same production skip
+  event relinking. Structured dump and VFS-index commands configure
+  `StreamingAssets` and `Persistent` as sibling fallbacks so AnimeStudio can
+  resolve authoritative `.blc` metadata and `.chk` payloads from either root.
+  `--structured-dump-mode full` keeps the same production skip
   rules, and `--structured-dump-mode debug` is the broad VFS diagnostic mode.
   `..\export_assets.bat` runs those heavier asset passes separately. Summaries
   are written under `..\reports\`, but the workflow does not require `reports`,
@@ -241,6 +290,27 @@ Expected active inputs and outputs:
   `export_full/` data.
 - `track_export_changes.py`: generic file-tree scanner used by the WebUI
   Updates builder.
+- `track_game_data_updates.py`: streams AnimeStudio `vfs-index --jsonl` records
+  for `StreamingAssets` and `Persistent` into a compact SQLite source snapshot.
+  It compares logical VFS files by source/block/path plus data MD5 and length,
+  reports chunk-only repacks separately, rejects truncated scans, missing
+  chunks, duplicate identities, and newly missing blocks, and never promotes a
+  candidate implicitly. `baseline-current` seeds from only the installed
+  current version; `check` writes a candidate/change plan without changing the
+  baseline. Candidate promotion is owned by the transactional patch workflow
+  and occurs only after staged export validation, publication, WebUI rebuild,
+  and Updates-feed generation succeed.
+- `game_data_update_workflow.py`: transactional patch orchestration behind
+  `..\build_updates_by_patch.bat`. `--init-baseline` verifies that the existing
+  export matches the installed sources, then atomically attaches the source
+  snapshot under `export_full/recovered/AnimeStudio-cli/`. `--check` remains
+  read-only. Default `--apply` clones the complete current export into sibling
+  staging, selectively dumps changed direct VFS files, refreshes broader
+  AnimeStudio/audio scopes only when affected, verifies the installed logical
+  snapshot again, archives the previous export, publishes the staged current
+  export, rebuilds WebUI data, invokes the Updates feed comparison, and advances
+  the baseline only after success. It journals folder rotation and restores the
+  previous export/WebUI data on handled post-rotation failures.
 - `build_updates.py`: writes `webui/data/updates/latest.json` by comparing
   WebUI-facing text JSON roots and exported asset roots in a previous exported
   game-data tree, default `..\export_1d2\`, with the current `..\export_full\`.
@@ -288,16 +358,67 @@ Expected active inputs and outputs:
   `WeaponBasicTable`, `WeaponUpgradeTemplate*`, `WeaponBreakThroughTemplateTable`,
   `WeaponTalentTemplateTable`, `ItemTable`, `EquipTable`, `EquipFormulaTable`,
   `EquipSuitTable`, `CharacterTable`, `CharGrowthTable`, `CharLevelUpTable`,
-  `CharBreak*`, `CharacterPotentialTable`, `SkillPatchTable`, and
-  talent/profession/type lookup tables. It resolves localized display names,
+  `CharBreak*`, `CharacterPotentialTable`, `SkillPatchTable`, `EnemyTable`,
+  `EnemyAttributeTemplateTable`, `EnemyAbilityDescTable`, `UseItemTable`,
+  `UsableItemChestTable`, `RewardTable`, and talent/profession/type lookup
+  tables. It resolves localized display names,
   default weapon links, skill blackboard values, level-up costs, weapon upgrade
   checkpoints, weapon base-ATK stat checkpoints, breakthrough material costs,
   equipment display/property stat curves, domain/formula/suit context,
   character break-stage caps, capped character stat checkpoints from
   `CharacterTable.attributes`, character breakthrough costs, potential unlock
-  effects, and Story wiki cross-links when a matching `wiki_*` Story page exists.
+  effects, enemy variants/stat curves/abilities/combat scalars/buffs/drops,
+  usable-item actions and chest rewards, and Story wiki cross-links when a
+  matching `wiki_*` Story page exists.
   It is run by `..\export.bat` after the Story builder and can be run
   directly for extra languages with `--languages CN EN JP --default-language CN`.
+- `build_mission_pipeline_data.py`: builds the language-neutral, lazy
+  `webui/data/mission_pipeline/index.json` and per-mission graph payloads from
+  exported `MissionRuntimeAsset`. It preserves predecessor and condition-state
+  edges as authored evidence, annotates the client/server protocol proven in
+  the current native binary, retains exact dialog finish `0`, and never treats
+  `flowIndex` as an exclusive branch selector. `export.bat` runs it after Story
+  so the experimental debug-only page can merge names and objective text from
+  the selected language's existing mission sidecars. Story bundle generation
+  also localizes base/quest-override mission descriptions and emits per-quest
+  Story-file attachments only for direct runtime or uniquely resolved
+  LevelData/NPC evidence.
+- `build_projectile_data.py`: curates exact AnimeStudio projectile
+  MonoBehaviour payloads into `webui/data/gameplay/projectiles.json`. It keeps
+  byte-completeness and semantic confidence separate; use `--require-exact` for
+  a strict audit run.
+- `build_progression_data.py`: builds
+  `webui/data/lang/<LANG>/progression/index.json` as an endpoint-valid graph of
+  authored character/weapon/equipment progression, item costs/use/obtain paths,
+  rewards, probable bundle entries, drop pools, and wiki enemy drops. Every
+  relation keeps direct table/row/path evidence; the payload explicitly excludes
+  live account state, availability, probabilities, and optimization claims.
+- `build_combat_relationships.py`: builds
+  `webui/data/lang/<LANG>/gameplay/combat_relationships.json` from curated
+  Gameplay data, the exact inherited AbilityEntity prefix/component RID list,
+  the guarded/mirrored opening through `useFrameTick`, the exact 92-byte
+  `surroundingConfig`, and the source graph when available. It preserves direct
+  versus inferred evidence, qualifies metadata-order/enum/hash meanings,
+  excludes bytes from `followMountPointConfig` onward, and adds exact-consumed Character TargetSettings only when their owner
+  RIDs are reachable from the template component graph. It degrades to
+  authored Gameplay plus available AnimeStudio prefix evidence when the
+  optional graph is absent.
+- `build_economy_data.py`: builds the language-scoped Factory view from
+  authored recipe, machine, technology, logistics, utility, shop, reward, and
+  activity tables. The output preserves raw ids/values and does not infer live
+  simulation or account state.
+- `build_world_data.py`: builds `webui/data/lang/<LANG>/world/index.json` from
+  authored map/level tables, decoded WorldEntityRegistry/NPC proxy data,
+  exact-prefix spawner configs, enemy/model/audio tables, and level-script
+  filenames. It deduplicates mirrored roots while preserving source provenance
+  and labels inferred level-prefix map links.
+- `build_presentation_data.py`: builds
+  `webui/data/lang/<LANG>/presentation/index.json` from the current local source
+  graph. It selects authored model/controller/material/animation/effect roots,
+  follows a curated set of direct and inferred presentation edges, caps
+  high-degree asset relationships, rejects generic Unity asset/path-id nodes,
+  and records omissions plus the static/runtime evidence boundary. A missing or
+  stale graph produces a deterministic empty degraded payload.
 - `build_data_index.py`: builds a legacy local decoded-config index from final
   decoded config files under `export_full/structured/StreamingAssets/Data/Json`
   and `export_full/structured/Persistent/Data/Json` by default. It writes
@@ -393,9 +514,13 @@ These are kept because the WebUI story builders import or use them:
   ordering evidence from `MissionRuntimeAsset`.
 - `story_builder/dialog_registry.py`: extracts
   `Beyond.Gameplay.DialogIdTable` (the runtime's authoritative dialog
-  registry) into a sceneKey index used by `scene_order_gap_shared.py` for
-  evidence-grounded "registered vs cut content" classification. Runs as
-  part of `export.bat` between the main export step and the build steps.
+  registry) printable identifier vocabulary into a sceneKey index used by
+  `scene_order_gap_shared.py` for evidence-grounded "registered vs cut
+  content" classification. `option_dlg_*` rows are kept as option vocabulary
+  and never counted as dialog roots or trunk lines. The decoded
+  `DialogBriefInfo` schema has no branch or option-placement field; trunk/line
+  decomposition is token-shape classification only. Runs as part of
+  `export.bat` between the main export step and the build steps.
 - `story_builder/source_links.py`: scans `MissionRuntimeAsset`,
   `LevelScriptData`, and `LevelScriptTemplateData` for `dlg_*`, `radio_*`,
   `sns_*`, `cutscene_*`, `remotecomm_*`, and reading-popup references. It
@@ -451,6 +576,10 @@ These are kept because the WebUI story builders import or use them:
   inferred option replies with `responses.<optionId>: ["<lineId>"]`. Edit it
   and refresh the browser; no Story rebuild is needed. Overrides do not promote
   new automatic evidence, and overridden rows are tagged in the Story view.
+  Generated Story index entries with option issues include compact
+  `optionIssueTargets` metadata. The frontend uses those stable targets to
+  remove an issue counter only when the runtime override covers every affected
+  group/option; partial coverage remains in the outstanding queue.
 
 ## Story Recovery Tools
 
@@ -846,8 +975,10 @@ gameplay-video OCR/audio workflow.
   `inferredOptionResponse` groups against raw Timeline trunk clips. It reports
   whether candidate response clips carry useful non-default `optionIndex`
   values, resolves `misc_dlg_*` WebUI aliases to underlying `dlg_*` Timeline
-  entries, and separates promotable `trunkClipOptionIndexRoute` cases from the
-  common default `optionIndex=0` adjacent layouts that are diagnostic only.
+  entries, and separates promotable `trunkClipOptionIndexRoute` cases from
+  default `optionIndex=0` adjacent layouts. Current native control flow proves
+  zero-index trunk clips are shared continuation unless an overlapping raw
+  Runtime Jump window supplies option-indexed route evidence.
 - `story_recovery/build_timeline_binding_audit.py`: checks whether unresolved
   option responses separate cleanly by Timeline track, track binding, actor
   binding, or option-clip placement.
@@ -861,9 +992,13 @@ gameplay-video OCR/audio workflow.
     dialogTree source matched; `DialogTrunkBehaviour` would iterate
     `DialogTextTable` rows by sceneKey prefix, which produces the same
     sequence we already emit.
+  Option-key suffix and sparse line-gap placements on unregistered scenes are
+  surfaced separately as table-only display recovery; they are not treated as
+  recoverable live-runtime option positions.
 - `story_recovery/annotate_conv_with_registry.py`: standalone refresher for stamping each
   dialog conv JSON's `_debug` block with a `runtimeRegistry` evidence record
-  (registered flag, trunk count, per-trunk line ids from `DialogIdTable`).
+  (registered-root flag and option-id vocabulary from `DialogIdTable`; the
+  current table has no per-trunk line tokens).
   The Story builder does this during normal exports; the refresher is useful
   when updating existing conv files without a full rebuild. Pure evidence
   surfacing; no inference.

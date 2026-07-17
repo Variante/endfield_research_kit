@@ -1042,6 +1042,48 @@ def _normalize_dialog_timeline_option_routes(value) -> dict[str, dict]:
     return dict(sorted(out.items()))
 
 
+def _normalize_dialog_timeline_runtime_jump_clips(value) -> list[dict]:
+    if not isinstance(value, list):
+        return []
+    out: list[dict] = []
+    for raw in value:
+        if not isinstance(raw, dict):
+            continue
+        record: dict = {}
+        for field in ("start", "end", "duration", "crossFadeDurationAfterJump"):
+            value_for_field = raw.get(field)
+            if isinstance(value_for_field, (int, float)):
+                record[field] = round(float(value_for_field), 3)
+        for field in (
+            "optionIndex",
+            "isReverseJump",
+            "needChangeOptionAfterJump",
+            "optionIndexAfterJump",
+            "isJumpFirst",
+        ):
+            value_for_field = raw.get(field)
+            if isinstance(value_for_field, int):
+                record[field] = value_for_field
+        for field in (
+            "track",
+            "trackName",
+            "assetTrack",
+            "displayName",
+            "sourceFile",
+        ):
+            value_for_field = str(raw.get(field) or "").strip()
+            if value_for_field:
+                record[field] = value_for_field
+        if record:
+            out.append(record)
+    out.sort(key=lambda item: (
+        item.get("start", 0.0),
+        item.get("optionIndex") if item.get("optionIndex") is not None else 10**9,
+        item.get("track") or "",
+    ))
+    return out
+
+
 def _index_dialog_timeline_entry(index: dict[str, list[dict]], raw_key: str, entry: dict) -> None:
     line_ids = _normalize_line_order_ids(entry.get("lineIds"))
     option_ids = _normalize_line_order_ids(entry.get("optionIds"))
@@ -1062,6 +1104,10 @@ def _index_dialog_timeline_entry(index: dict[str, list[dict]], raw_key: str, ent
     option_positions = _normalize_dialog_timeline_option_positions(entry.get("optionPositions"))
     option_rows = _normalize_dialog_timeline_option_rows(entry.get("options"))
     option_routes = _normalize_dialog_timeline_option_routes(entry.get("optionRoutes"))
+    runtime_jump_clips = _normalize_dialog_timeline_runtime_jump_clips(
+        entry.get("runtimeJumpClips")
+    )
+    runtime_jump_evidence_present = "runtimeJumpClips" in entry
     normalized = {
         "sourceKey": timeline or raw_key,
         "timeline": timeline,
@@ -1073,6 +1119,8 @@ def _index_dialog_timeline_entry(index: dict[str, list[dict]], raw_key: str, ent
         "optionPositions": option_positions,
         "optionRows": option_rows,
         "optionRoutes": option_routes,
+        "runtimeJumpClips": runtime_jump_clips,
+        "runtimeJumpEvidencePresent": runtime_jump_evidence_present,
     }
     identity = (
         normalized["sourceKey"],
@@ -1082,6 +1130,8 @@ def _index_dialog_timeline_entry(index: dict[str, list[dict]], raw_key: str, ent
         json.dumps(option_anchors, sort_keys=True, ensure_ascii=False),
         json.dumps(option_rows, sort_keys=True, ensure_ascii=False),
         json.dumps(option_routes, sort_keys=True, ensure_ascii=False),
+        json.dumps(runtime_jump_clips, sort_keys=True, ensure_ascii=False),
+        runtime_jump_evidence_present,
     )
     for alias in _dialog_timeline_aliases(raw_key, entry, ordered_line_ids, option_ids):
         bucket = index.setdefault(alias, [])
@@ -1139,6 +1189,8 @@ def _load_dialog_timeline_line_order_index() -> dict[str, list[dict]]:
                 public["optionRows"] = entry["optionRows"]
             if entry.get("optionRoutes"):
                 public["optionRoutes"] = entry["optionRoutes"]
+            if entry.get("runtimeJumpEvidencePresent"):
+                public["runtimeJumpClips"] = entry["runtimeJumpClips"]
             public_entries.append(public)
         public_entries.sort(key=lambda item: (-len(item["lineIds"]), item["sourceKey"], item["file"]))
         cleaned[key] = public_entries

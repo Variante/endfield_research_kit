@@ -116,10 +116,25 @@ if errorlevel 1 exit /b %errorlevel%
 python .\scripts\story_builder\build.py --languages CN --default-language CN --skip-audio-link
 if errorlevel 1 exit /b %errorlevel%
 
+python .\scripts\build_mission_pipeline_data.py
+if errorlevel 1 exit /b %errorlevel%
+
 python .\scripts\build_gameplay_data.py --languages CN --default-language CN
 if errorlevel 1 exit /b %errorlevel%
 
-if "%WITH_ASSETS%"=="0" goto :done
+python .\scripts\build_progression_data.py --languages CN --default-language CN
+if errorlevel 1 exit /b %errorlevel%
+
+python .\scripts\build_projectile_data.py
+if errorlevel 1 exit /b %errorlevel%
+
+python .\scripts\build_economy_data.py --languages CN --default-language CN
+if errorlevel 1 exit /b %errorlevel%
+
+python .\scripts\build_world_data.py --languages CN --default-language CN
+if errorlevel 1 exit /b %errorlevel%
+
+if "%WITH_ASSETS%"=="0" goto :build_semantic_graph
 
 set "BUILD_ASSET_MODE=%ASSET_MODE%"
 if /I "%ASSET_MODE%"=="debug" set "BUILD_ASSET_MODE=full"
@@ -129,10 +144,20 @@ if errorlevel 1 exit /b %errorlevel%
 if "%EXPORT_FROM_GAME%"=="1" goto :decode_audio
 python .\scripts\build_audio.py --skip-decode %AUDIO_ARGS%
 if errorlevel 1 exit /b %errorlevel%
-goto :done
+goto :build_semantic_graph
 
 :decode_audio
 python .\scripts\build_audio.py %AUDIO_ARGS%
+if errorlevel 1 exit /b %errorlevel%
+
+:build_semantic_graph
+python .\tools\endfield_source_graph.py build --language CN
+if errorlevel 1 exit /b %errorlevel%
+
+python .\scripts\build_presentation_data.py --languages CN
+if errorlevel 1 exit /b %errorlevel%
+
+python .\scripts\build_combat_relationships.py --languages CN
 if errorlevel 1 exit /b %errorlevel%
 
 :done
@@ -151,7 +176,9 @@ exit /b 2
 echo Usage: export.bat [--export-from-game] [--with-assets] [--game-root PATH] [export_full_from_game.py options]
 echo.
 echo Runs the Story/Reference WebUI refresh from existing export_full by default,
-echo rebuilds source-link evidence, builds CN Story/Text/Gameplay data,
+echo rebuilds source-link evidence, builds CN Story/Text/Gameplay plus the experimental mission pipeline,
+echo Progression/Projectile/Factory/World data, refreshes the local source graph, then
+echo builds Presentation and Combat from fresh graph and AnimeStudio evidence,
 echo and preserves OCR-managed Story sort order. Use --with-assets to also
 echo rebuild Assets tab data and relink CN audio in the same command.
 echo Reading installed game data and tool-based extraction are opt-in.

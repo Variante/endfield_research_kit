@@ -28,6 +28,9 @@ notepad endfield_paths.bat
 .\export.bat --export-from-game
 .\build_updates.bat
 .\build_updates.bat --init-build
+.\build_updates_by_patch.bat --init-baseline
+.\build_updates_by_patch.bat --check
+.\build_updates_by_patch.bat
 .\export_assets.bat
 python serve.py
 python serve.py 9000
@@ -69,8 +72,33 @@ indexes and CN audio relinking when Story is already current; pass
 installed-game refresh. Pass `--webui-assets` when only WebUI-referenced
 Texture2D media is needed, or `--debug-assets` for exhaustive AnimeStudio
 conversion/JSON diagnostics. The exporter default is
-`--animestudio-type-job-mode auto`: it merges non-sharded JSON type jobs inside
-one AnimeStudio process while leaving asset conversion sharded.
+`--animestudio-type-job-mode auto`: it merges map-filtered JSON, runs broad Story
+JSON types sequentially in isolated processes, and leaves asset conversion
+sharded.
+
+For a one-off diff between two already extracted versions that should directly
+generate the WebUI Updates page, run:
+
+```bat
+.\build_updates.bat --previous-export-root OLD --export-root NEW --refresh-previous-export-baseline
+```
+
+The command writes `webui/data/updates/latest.json` and the detailed reports
+under `reports/updates/`. `build_updates_by_patch.bat --check` is detection-only;
+the default patch mode invokes the feed builder after publishing archive/current.
+Use `--full-export-scan` only for a broad audit, not for the normal WebUI-focused
+feed.
+
+Use `build_updates_by_patch.bat --init-baseline` to seed the separate
+original-data VFS snapshot from only the current installed version and current
+export. Default patch mode preserves published state for logical no-change,
+VFS-version-only changes, and chunk-only repacks. Logical changes are built in a
+complete sibling staging tree: changed Table/JsonData/Video/AuditVideo/Lua files
+are dumped selectively, broad AnimeStudio/audio work runs only for affected
+blocks, the installed snapshot is revalidated, then previous/current folders
+are renamed on the same volume. WebUI data and the Updates feed are rebuilt
+before the candidate baseline is accepted. Handled post-rotation failures
+restore the prior export/WebUI data and retain the failed new tree for review.
 
 When running `python scripts\story_builder\build.py` directly, use a
 longer timeout. The default CN lean build currently takes about 3 minutes on
@@ -350,10 +378,11 @@ Useful built-in fixture conversations already generated in the CN data:
 - `test_sns_sticker`
 - `sns_topic_map02_lv005_12002`
 
-When auditing Story frontend changes, also check that `Show debug info` toggles
-line-order evidence, source/debug blocks, mission timeline recovery, cutscene
-debug panels, recovery filters, and Story order editing controls without
-breaking normal browsing.
+When auditing Story frontend changes, check that recovery issue and method
+filters remain visible in both normal and debug modes. `Show debug info` should
+toggle line-order evidence, source/debug blocks, mission timeline recovery,
+cutscene debug panels, and Story order editing controls without breaking normal
+browsing.
 
 ## Scope Notes
 

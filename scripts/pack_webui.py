@@ -65,8 +65,11 @@ ASSET_TAB_RE = re.compile(r'(<button\s+id="assets-tab"(?=[\s>]))([^>]*>)', re.IG
 ASSET_SHIM_JS = """(() => {
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-  const AVAILABLE_VIEWS = new Set(["story", "gameplay", "reference", "updates"]);
+  const AVAILABLE_VIEWS = new Set(["story", "gameplay", "mission-pipeline", "progression", "projectiles", "combat", "economy", "world", "presentation", "reference", "updates"]);
   const HIDDEN_VIEWS = new Set(["assets"]);
+  const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline", "progression", "projectiles", "combat", "economy", "world", "presentation"]);
+  const DEBUG_VIEW_FALLBACKS = Object.freeze({ "mission-pipeline": "story", progression: "gameplay", projectiles: "gameplay", combat: "gameplay", economy: "gameplay", world: "gameplay", presentation: "story" });
+  let activeView = "story";
 
   function resolveViewFromHash() {
     const hash = (window.location.hash || "").replace(/^#/, "").toLowerCase();
@@ -79,14 +82,38 @@ ASSET_SHIM_JS = """(() => {
     history.replaceState(null, "", `${window.location.pathname}${window.location.search}${nextHash}`);
   }
 
+  function debugViewsEnabled() {
+    return document.body.classList.contains("show-debug");
+  }
+
+  function availableView(view) {
+    const candidate = AVAILABLE_VIEWS.has(view) ? view : "story";
+    if (!DEBUG_ONLY_VIEWS.has(candidate) || debugViewsEnabled()) return candidate;
+    return DEBUG_VIEW_FALLBACKS[candidate] || "story";
+  }
+
+  function syncDebugViewVisibility() {
+    const enabled = debugViewsEnabled();
+    $$(".view-tab[data-debug-view]").forEach((button) => {
+      button.hidden = !enabled;
+    });
+    if (!enabled && DEBUG_ONLY_VIEWS.has(activeView)) {
+      setActiveView(DEBUG_VIEW_FALLBACKS[activeView] || "story");
+    }
+  }
+
   function setActiveView(view, { updateHash = true } = {}) {
-    const active = AVAILABLE_VIEWS.has(view) ? view : "story";
+    const requested = AVAILABLE_VIEWS.has(view) ? view : "story";
+    const active = availableView(requested);
+    activeView = active;
     document.body.dataset.activeView = active;
 
     $$(".view-tab").forEach((button) => {
       const selected = button.dataset.view === active;
       button.classList.toggle("is-active", selected);
       button.setAttribute("aria-selected", String(selected));
+      button.tabIndex = selected ? 0 : -1;
+      if (selected) button.scrollIntoView({ block: "nearest", inline: "nearest" });
     });
 
     $$(".page-view").forEach((page) => {
@@ -95,7 +122,7 @@ ASSET_SHIM_JS = """(() => {
       page.classList.toggle("is-active", selected);
     });
 
-    if (updateHash) updateHashForView(active);
+    if (updateHash || active !== requested) updateHashForView(active);
     window.dispatchEvent(new CustomEvent("webui:view-changed", { detail: { view: active } }));
     window.dispatchEvent(new Event("resize"));
   }
@@ -110,7 +137,26 @@ ASSET_SHIM_JS = """(() => {
     button.addEventListener("click", () => setActiveView(button.dataset.view));
   });
 
+  $("#view-tabs")?.addEventListener("keydown", (event) => {
+    if (!event.target.matches(".view-tab") || event.target.hidden) return;
+    const tabs = $$(".view-tab").filter((button) => !button.hidden && !HIDDEN_VIEWS.has(button.dataset.view));
+    const currentIndex = tabs.indexOf(event.target);
+    if (currentIndex < 0) return;
+    let nextIndex = currentIndex;
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % tabs.length;
+    else if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = tabs.length - 1;
+    else return;
+    event.preventDefault();
+    const nextTab = tabs[nextIndex];
+    nextTab.focus();
+    setActiveView(nextTab.dataset.view);
+  });
+
   window.addEventListener("hashchange", () => setActiveView(resolveViewFromHash(), { updateHash: false }));
+  window.addEventListener("webui:debug-changed", syncDebugViewVisibility);
+  syncDebugViewVisibility();
   setActiveView(resolveViewFromHash(), { updateHash: false });
 })();
 """
@@ -122,7 +168,9 @@ Run from this extracted directory:
 
 Then open the printed localhost URL.
 
-This package includes the story/gameplay/reference text data, WebUI code, emoji
+This package includes story, gameplay, the experimental mission pipeline, progression/rewards, projectile, combat, factory/economy,
+static world, entity presentation,
+reference text data, WebUI code, emoji
 images, and the compact media indexes. Larger story images and videos are in
 the companion assets zip. Decoded story audio is in the standalone audio zip.
 Extract those zips into the same directory after this one when you want
@@ -226,53 +274,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
-        "--assets-output",
-        type=Path,
-        default=None,
-        help=(
-            "Companion assets zip path to write. Default: the primary output "
-            "name with -assets appended before .zip."
-        ),
-    )
-    parser.add_argument(
-        "--audio-output",
-        type=Path,
-        default=None,
-        help=(
-            "Standalone audio zip path to write. Default: the primary output "
-            "name with -audio appended before .zip."
-        ),
-    )
-    parser.add_argument(
-        "--webui-root",
-        type=Path,
-        default=WEBUI_ROOT,
-        help=f"WebUI directory to package. Default: {WEBUI_ROOT}",
-    )
-    parser.add_argument(
-        "--export-root",
-        type=Path,
-        default=EXPORT_ROOT,
-        help=f"Export root used by serve.py. Default: {EXPORT_ROOT}",
-    )
-    parser.add_argument(
-        "--project-root",
-        type=Path,
-        default=PROJECT_ROOT,
-        help=f"Project root containing serve.py. Default: {PROJECT_ROOT}",
-    )
-    parser.add_argument(
-        "--include-asset-browser",
-        action="store_true",
-        help=(
-            "Keep the original asset-browser UI files, but still package only "
-            "the filtered media indexes and no model or bundle files."
-        ),
-    )
-    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print the package plan without writing zips.",
+    )
+    parser.add_argument(
+        "--skip-audio",
+        action="store_true",
+        help="Do not scan or write the standalone audio zip.",
     )
     return parser.parse_args(argv)
 
@@ -1161,10 +1170,10 @@ def webui_arcname(webui_root: Path, path: Path) -> str:
     return archive_name(Path("webui") / path.relative_to(webui_root))
 
 
-def plan_package(args: argparse.Namespace) -> PackagePlan:
-    webui_root = args.webui_root.resolve()
-    project_root = args.project_root.resolve()
-    export_root = args.export_root.resolve()
+def plan_package(*, include_audio: bool = True) -> PackagePlan:
+    webui_root = WEBUI_ROOT.resolve()
+    project_root = PROJECT_ROOT.resolve()
+    export_root = EXPORT_ROOT.resolve()
 
     story_media_payload = load_required_asset_index(webui_root / "data" / "assets" / "story_media.json")
     story_entries = [
@@ -1186,14 +1195,16 @@ def plan_package(args: argparse.Namespace) -> PackagePlan:
         resolve_exported_image(project_root, export_root, filtered_video_payload, rel)
         for rel in sorted(str(entry.get("r") or "") for entry in selected_videos)
     ]
-    audio_files = [
-        exported_file(export_root, path)
-        for path in iter_exported_audio_files(export_root)
-    ]
-    audio_indexes = [
-        exported_file(export_root, path)
-        for path in iter_exported_audio_indexes(export_root)
-    ]
+    audio_files = (
+        [exported_file(export_root, path) for path in iter_exported_audio_files(export_root)]
+        if include_audio
+        else []
+    )
+    audio_indexes = (
+        [exported_file(export_root, path) for path in iter_exported_audio_indexes(export_root)]
+        if include_audio
+        else []
+    )
     counts = story_media_payload.get("counts") if isinstance(story_media_payload.get("counts"), dict) else {}
 
     return PackagePlan(
@@ -1209,12 +1220,12 @@ def plan_package(args: argparse.Namespace) -> PackagePlan:
 
 
 def create_package(args: argparse.Namespace) -> int:
-    webui_root = args.webui_root.resolve()
-    project_root = args.project_root.resolve()
-    export_root = args.export_root.resolve()
+    webui_root = WEBUI_ROOT.resolve()
+    project_root = PROJECT_ROOT.resolve()
+    export_root = EXPORT_ROOT.resolve()
     output = (args.output or default_output_path(project_root)).resolve()
-    assets_output = (args.assets_output or companion_assets_output_path(output, project_root)).resolve()
-    audio_output = (args.audio_output or companion_audio_output_path(output, project_root)).resolve()
+    assets_output = companion_assets_output_path(output, project_root).resolve()
+    audio_output = companion_audio_output_path(output, project_root).resolve() if not args.skip_audio else None
 
     if not webui_root.exists():
         raise SystemExit(f"WebUI root not found: {webui_root}")
@@ -1223,12 +1234,13 @@ def create_package(args: argparse.Namespace) -> int:
     package_outputs = {
         "primary story zip": output,
         "companion assets zip": assets_output,
-        "standalone audio zip": audio_output,
     }
+    if audio_output is not None:
+        package_outputs["standalone audio zip"] = audio_output
     if len(set(package_outputs.values())) != len(package_outputs):
-        raise SystemExit("Primary story zip, companion assets zip, and standalone audio zip must use different paths.")
+        raise SystemExit("Package output paths must be different.")
 
-    plan = plan_package(args)
+    plan = plan_package(include_audio=audio_output is not None)
     missing_images = [image for image in plan.exported_images if not image.source_path.exists()]
     existing_images = [image for image in plan.exported_images if image.source_path.exists()]
     missing_videos = [video for video in plan.exported_videos if not video.source_path.exists()]
@@ -1247,28 +1259,20 @@ def create_package(args: argparse.Namespace) -> int:
         }
         and not path.relative_to(webui_root).as_posix().startswith("data/assets/bundles/")
     ]
-    if args.include_asset_browser:
-        copied_text_files = [
-            path for path in text_files
-            if path.relative_to(webui_root).as_posix() not in {
-                "data/assets/index.json",
-                "data/assets/videos.json",
-            }
-            and not path.relative_to(webui_root).as_posix().startswith("data/assets/bundles/")
-        ]
 
     print(f"WebUI root: {webui_root}")
     print(f"Export root: {export_root}")
     print(f"Story zip: {output}")
     print(f"Assets zip: {assets_output}")
-    print(f"Audio zip: {audio_output}")
-    generated_text_count = 6 if args.include_asset_browser else 7
+    print(f"Audio zip: {audio_output if audio_output is not None else 'skipped'}")
+    generated_text_count = 7
     print(f"Text files: {len(copied_text_files) + generated_text_count:,}")
     print(f"Story image IDs: {plan.image_refs:,}")
     print(f"Resolved image files: {len(existing_images):,} ({len(emoji_images):,} emoji, {len(asset_images):,} asset)")
     print(f"Wiki video refs: {plan.video_refs:,}")
     print(f"Resolved video files: {len(existing_videos):,}")
-    print(f"Decoded audio files: {len(plan.audio_files):,}")
+    if audio_output is not None:
+        print(f"Decoded audio files: {len(plan.audio_files):,}")
     if missing_images:
         preview = ", ".join(image.rel for image in missing_images[:10])
         suffix = "..." if len(missing_images) > 10 else ""
@@ -1284,12 +1288,13 @@ def create_package(args: argparse.Namespace) -> int:
 
     output.parent.mkdir(parents=True, exist_ok=True)
     assets_output.parent.mkdir(parents=True, exist_ok=True)
-    audio_output.parent.mkdir(parents=True, exist_ok=True)
+    if audio_output is not None:
+        audio_output.parent.mkdir(parents=True, exist_ok=True)
     if output.exists():
         output.unlink()
     if assets_output.exists():
         assets_output.unlink()
-    if audio_output.exists():
+    if audio_output is not None and audio_output.exists():
         audio_output.unlink()
 
     written: set[str] = set()
@@ -1314,22 +1319,9 @@ def create_package(args: argparse.Namespace) -> int:
         video_index_json = json.dumps(story_video_payload, ensure_ascii=False, separators=(",", ":"))
         zip_writestr(zipf, written, "webui/data/assets/videos.json", video_index_json)
 
-        if args.include_asset_browser:
-            bundles_index = {
-                "generated": plan.filtered_asset_payload.get("generated"),
-                "bundles": [],
-                "byAssetRel": {},
-            }
-            zip_writestr(
-                zipf,
-                written,
-                "webui/data/assets/bundles/index.json",
-                json.dumps(bundles_index, ensure_ascii=False, separators=(",", ":")),
-            )
-        else:
-            index_html = (webui_root / "index.html").read_text(encoding="utf-8")
-            zip_writestr(zipf, written, "webui/index.html", strip_asset_view_from_index(index_html))
-            zip_writestr(zipf, written, "webui/assets.js", ASSET_SHIM_JS)
+        index_html = (webui_root / "index.html").read_text(encoding="utf-8")
+        zip_writestr(zipf, written, "webui/index.html", strip_asset_view_from_index(index_html))
+        zip_writestr(zipf, written, "webui/assets.js", ASSET_SHIM_JS)
 
         for image in emoji_images:
             zip_write_file(zipf, written, image.source_path, image.archive_path)
@@ -1347,21 +1339,23 @@ def create_package(args: argparse.Namespace) -> int:
         for video in existing_videos:
             zip_write_file(zipf, assets_written, video.source_path, video.archive_path)
 
-    audio_written: set[str] = set()
-    with zipfile.ZipFile(audio_output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
-        zip_writestr(zipf, audio_written, "README.txt", CHINESE_QUICKSTART_README)
-        zip_writestr(zipf, audio_written, "README-webui-audio-package.txt", AUDIO_PACKAGE_README)
-        for audio_path in plan.audio_files:
-            zip_write_file(zipf, audio_written, audio_path.source_path, audio_path.archive_path)
-        for audio_index in plan.audio_indexes:
-            zip_write_file(zipf, audio_written, audio_index.source_path, audio_index.archive_path)
+    if audio_output is not None:
+        audio_written: set[str] = set()
+        with zipfile.ZipFile(audio_output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
+            zip_writestr(zipf, audio_written, "README.txt", CHINESE_QUICKSTART_README)
+            zip_writestr(zipf, audio_written, "README-webui-audio-package.txt", AUDIO_PACKAGE_README)
+            for audio_path in plan.audio_files:
+                zip_write_file(zipf, audio_written, audio_path.source_path, audio_path.archive_path)
+            for audio_index in plan.audio_indexes:
+                zip_write_file(zipf, audio_written, audio_index.source_path, audio_index.archive_path)
 
     size_mb = output.stat().st_size / (1024 * 1024)
     assets_size_mb = assets_output.stat().st_size / (1024 * 1024)
-    audio_size_mb = audio_output.stat().st_size / (1024 * 1024)
     print(f"Wrote story zip: {output} ({size_mb:.1f} MiB)")
     print(f"Wrote assets zip: {assets_output} ({assets_size_mb:.1f} MiB)")
-    print(f"Wrote audio zip: {audio_output} ({audio_size_mb:.1f} MiB)")
+    if audio_output is not None:
+        audio_size_mb = audio_output.stat().st_size / (1024 * 1024)
+        print(f"Wrote audio zip: {audio_output} ({audio_size_mb:.1f} MiB)")
     return 0
 
 

@@ -10,6 +10,30 @@
   const FILTER_PANEL_STORAGE_KEY = "asset_browser_filters_collapsed";
   const UI_LOCALE_STORAGE_KEY = "webui_ui_locale";
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
+  const AVAILABLE_VIEWS = new Set([
+    "story",
+    "gameplay",
+    "mission-pipeline",
+    "progression",
+    "projectiles",
+    "combat",
+    "economy",
+    "world",
+    "presentation",
+    "assets",
+    "reference",
+    "updates",
+  ]);
+  const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline", "progression", "projectiles", "combat", "economy", "world", "presentation"]);
+  const DEBUG_VIEW_FALLBACKS = Object.freeze({
+    "mission-pipeline": "story",
+    progression: "gameplay",
+    projectiles: "gameplay",
+    combat: "gameplay",
+    economy: "gameplay",
+    world: "gameplay",
+    presentation: "assets",
+  });
   const SHARED_ASSET_NAME_PREFIXES = new Set(["S", "T", "P", "M"]);
   const MODEL_PREFIX_RE = /^([A-Z])_(.+)$/;
   const MODEL_UNPATTERNED_OBJ_GROUP = Object.freeze({
@@ -566,20 +590,59 @@
 
   function resolveViewFromHash() {
     const hash = (window.location.hash || "").replace(/^#/, "").toLowerCase();
-    if (hash === "assets" || hash === "gameplay" || hash === "reference" || hash === "updates") return hash;
-    return "story";
+    return AVAILABLE_VIEWS.has(hash) ? hash : "story";
+  }
+
+  function debugViewsEnabled() {
+    return document.body.classList.contains("show-debug");
+  }
+
+  function availableView(view) {
+    const candidate = AVAILABLE_VIEWS.has(view) ? view : "story";
+    if (!DEBUG_ONLY_VIEWS.has(candidate) || debugViewsEnabled()) return candidate;
+    return DEBUG_VIEW_FALLBACKS[candidate] || "story";
+  }
+
+  function syncDebugViewVisibility() {
+    const enabled = debugViewsEnabled();
+    $$(".view-tab[data-debug-view]").forEach((button) => {
+      button.hidden = !enabled;
+    });
+    if (!enabled && DEBUG_ONLY_VIEWS.has(ASSET_STATE.activeView)) {
+      setActiveView(DEBUG_VIEW_FALLBACKS[ASSET_STATE.activeView] || "story");
+    }
   }
 
   function updateHashForView(view) {
-    const nextHash =
-      view === "assets" ? "#assets"
-        : view === "gameplay" ? "#gameplay"
-          : view === "reference" ? "#reference"
-            : view === "updates" ? "#updates"
-              : "#story";
+    const nextHash = AVAILABLE_VIEWS.has(view) ? `#${view}` : "#story";
     if (window.location.hash === nextHash) return;
     const url = `${window.location.pathname}${window.location.search}${nextHash}`;
     history.replaceState(null, "", url);
+  }
+
+  function setViewBusy(view, busy) {
+    const page = document.querySelector(`.page-view[data-view="${view}"]`);
+    if (!page) return;
+    page.setAttribute("aria-busy", busy ? "true" : "false");
+  }
+
+  function setShellStatus(message = "", { tone = "info", view = ASSET_STATE.activeView } = {}) {
+    const status = $("#shell-status");
+    if (!status) return;
+    const text = String(message || "").trim();
+    status.textContent = text;
+    status.dataset.tone = tone;
+    status.dataset.view = view || "";
+    status.hidden = !text || (view && view !== ASSET_STATE.activeView);
+  }
+
+  function clearShellStatus(view = "") {
+    const status = $("#shell-status");
+    if (!status || (view && status.dataset.view !== view)) return;
+    status.textContent = "";
+    status.hidden = true;
+    delete status.dataset.tone;
+    delete status.dataset.view;
   }
 
   function setDocumentTitleForView(view) {
@@ -602,16 +665,49 @@
       document.title = gameplayTitle;
       return;
     }
+    if (view === "mission-pipeline") {
+      document.title = "Endfield Mission Pipeline";
+      return;
+    }
+    if (view === "progression") {
+      document.title = "Endfield Upgrade Costs and Rewards";
+      return;
+    }
+    if (view === "projectiles") {
+      document.title = "Endfield Combat and Projectile Explorer";
+      return;
+    }
+    if (view === "combat") {
+      document.title = "Endfield Character and Enemy Combat Links";
+      return;
+    }
+    if (view === "economy") {
+      document.title = "Endfield Production, Technology, and Shops";
+      return;
+    }
+    if (view === "world") {
+      document.title = "Endfield World Placements and Evidence";
+      return;
+    }
+    if (view === "presentation") {
+      document.title = "Endfield Entity Presentation";
+      return;
+    }
     const storyTitle = ($("#app-title") && $("#app-title").textContent) || "Endfield Story Browser";
     document.title = storyTitle;
   }
 
   function setActiveView(view, { updateHash = true } = {}) {
-    ASSET_STATE.activeView = view === "assets" || view === "gameplay" || view === "reference" || view === "updates" ? view : "story";
+    const requestedView = AVAILABLE_VIEWS.has(view) ? view : "story";
+    ASSET_STATE.activeView = availableView(requestedView);
     document.body.dataset.activeView = ASSET_STATE.activeView;
 
     $$(".view-tab").forEach((button) => {
-      button.classList.toggle("is-active", button.dataset.view === ASSET_STATE.activeView);
+      const isActive = button.dataset.view === ASSET_STATE.activeView;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-selected", isActive ? "true" : "false");
+      button.tabIndex = isActive ? 0 : -1;
+      if (isActive) button.scrollIntoView({ block: "nearest", inline: "nearest" });
     });
     $$(".page-view").forEach((page) => {
       const isActive = page.dataset.view === ASSET_STATE.activeView;
@@ -619,7 +715,12 @@
       page.classList.toggle("is-active", isActive);
     });
 
-    if (updateHash) updateHashForView(ASSET_STATE.activeView);
+    const shellStatus = $("#shell-status");
+    if (shellStatus) shellStatus.hidden = !shellStatus.textContent || shellStatus.dataset.view !== ASSET_STATE.activeView;
+
+    if (updateHash || ASSET_STATE.activeView !== requestedView) {
+      updateHashForView(ASSET_STATE.activeView);
+    }
     setDocumentTitleForView(ASSET_STATE.activeView);
 
     if (ASSET_STATE.activeView === "assets") {
@@ -627,7 +728,7 @@
         renderAssetList();
         if (ASSET_STATE.selectedEntry) renderSelectedAsset();
         queueModelRender();
-      });
+      }).catch(() => {});
     }
 
     window.dispatchEvent(new CustomEvent("webui:view-changed", {
@@ -640,8 +741,25 @@
   }
 
   function bindViewTabs() {
-    $$(".view-tab").forEach((button) => {
+    const tabs = $$(".view-tab");
+    tabs.forEach((button) => {
       button.addEventListener("click", () => setActiveView(button.dataset.view));
+    });
+    $("#view-tabs")?.addEventListener("keydown", (event) => {
+      if (!event.target.matches(".view-tab")) return;
+      const visibleTabs = tabs.filter((tab) => !tab.hidden);
+      const currentIndex = visibleTabs.indexOf(event.target);
+      if (currentIndex < 0) return;
+      let nextIndex = currentIndex;
+      if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % visibleTabs.length;
+      else if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + visibleTabs.length) % visibleTabs.length;
+      else if (event.key === "Home") nextIndex = 0;
+      else if (event.key === "End") nextIndex = visibleTabs.length - 1;
+      else return;
+      event.preventDefault();
+      const nextTab = visibleTabs[nextIndex];
+      nextTab.focus();
+      setActiveView(nextTab.dataset.view);
     });
     window.addEventListener("hashchange", () => {
       setActiveView(resolveViewFromHash(), { updateHash: false });
@@ -718,6 +836,8 @@
     if (ASSET_STATE.loaded) return Promise.resolve();
     if (ASSET_STATE.loadPromise) return ASSET_STATE.loadPromise;
 
+    setViewBusy("assets", true);
+    clearShellStatus("assets");
     window.WebUI.showLoader("assets");
     ASSET_STATE.loadPromise = Promise.all([
       window.WebUI.fetchWithProgress("data/assets/index.json", {
@@ -771,10 +891,16 @@
         applyInitialAssetSelection();
         window.WebUI.updateLoader("assets", 1);
         window.WebUI.hideLoader("assets");
+        setViewBusy("assets", false);
+        $("#asset-empty")?.classList.remove("is-error");
       })
       .catch((error) => {
         window.WebUI.hideLoader("assets");
+        setViewBusy("assets", false);
+        ASSET_STATE.loadPromise = null;
         $("#asset-empty").textContent = assetUiText("assetIndexError", { error: String(error) });
+        $("#asset-empty").classList.add("is-error");
+        setShellStatus(assetUiText("assetIndexError", { error: String(error) }), { tone: "error", view: "assets" });
         throw error;
       });
 
@@ -3390,13 +3516,16 @@
   function init() {
     ASSET_STATE.previewBackground = resolveInitialPreviewBackground();
     setAssetUiLocale(resolveInitialUiLocale(), { refresh: false });
+    syncDebugViewVisibility();
     bindViewTabs();
     bindAssetEvents();
     window.addEventListener("webui:ui-locale-changed", (event) => {
       setAssetUiLocale(event.detail && event.detail.locale);
     });
+    window.addEventListener("webui:debug-changed", syncDebugViewVisibility);
     ensureAssetPanelToggle();
     setActiveView(resolveViewFromHash(), { updateHash: false });
+    Object.assign(window.WebUI, { setViewBusy, setShellStatus, clearShellStatus });
   }
 
   init();

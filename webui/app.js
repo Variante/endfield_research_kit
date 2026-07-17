@@ -1371,17 +1371,132 @@ function optionOverrideSceneForKey(payload, key) {
   return null;
 }
 
+const OPTION_LAYOUT_RECOVERY_ISSUE_CODES = new Set([
+  "tableOnlyOptionLayout",
+  "keyedOptionLayout",
+  "gapOptionLayout",
+  "lastLineOptionLayout",
+  "unanchoredOptionLayout",
+  "inferredOptionLayout",
+]);
+
+const OPTION_RECOVERY_ISSUE_CODES = new Set([
+  ...OPTION_LAYOUT_RECOVERY_ISSUE_CODES,
+  "inferredOptionResponse",
+]);
+
+function coveredOptionOverrideGroups(scene) {
+  const covered = new Set();
+  const positions = scene && scene.positions && typeof scene.positions === "object"
+    ? scene.positions
+    : {};
+  const after = positions.after && typeof positions.after === "object" && !Array.isArray(positions.after)
+    ? positions.after
+    : {};
+  for (const values of Object.values(after)) {
+    for (const groupId of overrideKeyList(values)) covered.add(String(groupId));
+  }
+  for (const groupId of overrideKeyList(positions.pre || [])) covered.add(String(groupId));
+  return covered;
+}
+
+function coveredOptionOverrideResponses(scene) {
+  const covered = new Set();
+  const responses = scene && scene.responses && typeof scene.responses === "object"
+    ? scene.responses
+    : {};
+  for (const [optionId, values] of Object.entries(responses)) {
+    if (overrideKeyList(values).length) covered.add(String(optionId));
+  }
+  return covered;
+}
+
+function optionRecoveryIssueIsCovered(entry, scene, code) {
+  if (!scene) return false;
+  const targets = entry && entry.optionIssueTargets && typeof entry.optionIssueTargets === "object"
+    ? entry.optionIssueTargets
+    : {};
+  if (OPTION_LAYOUT_RECOVERY_ISSUE_CODES.has(code)) {
+    const byCode = targets.layoutGroupsByCode && typeof targets.layoutGroupsByCode === "object"
+      ? targets.layoutGroupsByCode
+      : {};
+    const targetGroups = overrideKeyList(byCode[code]);
+    if (!targetGroups.length) return false;
+    const coveredGroups = coveredOptionOverrideGroups(scene);
+    return targetGroups.every((groupId) => coveredGroups.has(String(groupId)));
+  }
+  if (code === "inferredOptionResponse") {
+    const targetOptionIds = overrideKeyList(targets.responseOptionIds);
+    if (!targetOptionIds.length) return false;
+    const coveredResponses = coveredOptionOverrideResponses(scene);
+    return targetOptionIds.every((optionId) => coveredResponses.has(String(optionId)));
+  }
+  return false;
+}
+
+function applyOptionOverrideFlagsToEntries(payload, entries = STATE.entries) {
+  let changed = false;
+  for (const entry of entries || []) {
+    if (!entry) continue;
+    const overrideScene = optionOverrideSceneForKey(payload, entry.k);
+    const originalIssues = Array.isArray(entry.storyIssues) ? entry.storyIssues : [];
+    const issues = [];
+    let hasCoveredOptionRecoveryIssue = false;
+    let hasUncoveredOptionRecoveryIssue = false;
+    for (const code of originalIssues) {
+      if (code === "overrided" || code === "notOverrided") continue;
+      if (!OPTION_RECOVERY_ISSUE_CODES.has(code)) {
+        issues.push(code);
+        continue;
+      }
+      if (optionRecoveryIssueIsCovered(entry, overrideScene, code)) {
+        hasCoveredOptionRecoveryIssue = true;
+      } else {
+        issues.push(code);
+        hasUncoveredOptionRecoveryIssue = true;
+      }
+    }
+    if (hasCoveredOptionRecoveryIssue) issues.push("overrided");
+    if (hasUncoveredOptionRecoveryIssue) issues.push("notOverrided");
+    if (issues.length !== originalIssues.length || issues.some((code, index) => code !== originalIssues[index])) {
+      entry.storyIssues = issues;
+      changed = true;
+    }
+    if (!overrideScene) continue;
+    const methods = Array.isArray(entry.recoveryMethods) ? entry.recoveryMethods : [];
+    if (!methods.includes("optionBranch:manualOverride")) {
+      entry.recoveryMethods = methods.concat("optionBranch:manualOverride");
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 function optionOverrideNote(scene, groupId, fallback = "") {
   const notes = scene && scene.notes && typeof scene.notes === "object" ? scene.notes : {};
   return String(notes[String(groupId)] || scene.note || fallback || "").trim();
 }
 
 function applyManualOverrideToGroup(group, kind, scene, groupId) {
+  const existing = group.manualOverride && typeof group.manualOverride === "object"
+    ? group.manualOverride
+    : {};
+  const kinds = new Set(Array.isArray(existing.kinds) ? existing.kinds : []);
+  if (existing.kind) kinds.add(existing.kind);
+  kinds.add(kind);
   group.manualOverride = {
-    kind,
+    ...existing,
+    kind: existing.kind || kind,
+    kinds: [...kinds],
     source: "webui/overrides/options.json",
     note: optionOverrideNote(scene, groupId),
   };
+}
+
+function groupHasManualOverrideKind(group, kind) {
+  const manual = group && group.manualOverride;
+  if (!manual || typeof manual !== "object") return false;
+  return manual.kind === kind || (Array.isArray(manual.kinds) && manual.kinds.includes(kind));
 }
 
 function applyOptionOverridesToConv(conv, payload) {
@@ -3114,11 +3229,13 @@ function clearConversationPane() {
 
 function showFatalError(error) {
   document.body.innerHTML =
-    `<div style="padding:32px;font:14px sans-serif;color:#d6deea;background:#0f1419;height:100vh">
+    `<main class="fatal-error" role="alert">
+      <div class="fatal-error-panel">
       <h2>Unable to load the webui data bundle</h2>
       <p>${escapeHtml(String(error))}</p>
-        <p>Use a local HTTP server to open this page, for example <code>python serve.py</code>.</p>
-     </div>`;
+      <p>Use a local HTTP server to open this page, for example <code>python serve.py</code>.</p>
+      </div>
+    </main>`;
 }
 
 async function loadManifest() {
@@ -3169,6 +3286,7 @@ async function switchLanguage(languageCode, { preserveSelection = true, requeste
     STATE.missionNames = missionsPayload.missionNames || {};
     STATE.entries = normalizeLoadedEntries(index.entries || []);
     applyStoryOrderGroupingOverridesToEntries(STATE.entries);
+    applyOptionOverrideFlagsToEntries(await loadOptionOverridePayload(), STATE.entries);
     STATE.entryByKey = new Map(STATE.entries.map((entry) => [entry.k, entry]));
     STATE.readingArchiveLinksByKey = buildReadingArchiveLinkIndex(STATE.entries);
     STATE.archiveMetadataByKey = new Map();
@@ -4666,6 +4784,29 @@ function renderConvWarning(warning) {
   if (warning.code === "inferredOptionLayout") {
     title = uiText("warningInferredOptionLayoutTitle");
     body = uiText("warningInferredOptionLayoutBody");
+    const breakdown = warning.groupBreakdown && typeof warning.groupBreakdown === "object"
+      ? warning.groupBreakdown
+      : {};
+    const placementRows = [
+      ["optionPlacementKeyMatched", Number(breakdown.keyedAfter) || 0],
+      ["optionPlacementSparseGap", (warning.groupDetails || []).filter((detail) => detail && detail.inferredAnchorMode === "sparseGap").length],
+      ["optionPlacementSiblingTimeline", (warning.groupDetails || []).filter((detail) => detail && detail.inferredAnchorMode === "siblingTimelinePosition").length],
+      ["optionPlacementLastLine", (warning.groupDetails || []).filter((detail) => detail && detail.inferredAnchorMode === "lastLine").length],
+      ["optionPlacementUnknown", Number(breakdown.unanchored) || 0],
+    ].filter(([, count]) => count > 0);
+    if (placementRows.length) {
+      const section = document.createElement("section");
+      section.className = "conv-warning-section";
+      const list = document.createElement("ul");
+      list.className = "conv-warning-evidence";
+      for (const [labelKey, count] of placementRows) {
+        const li = document.createElement("li");
+        li.textContent = `${uiText(labelKey)}: ${count}`;
+        list.appendChild(li);
+      }
+      section.appendChild(list);
+      detailSections.push(section);
+    }
   }
   if (warning.code === "inferredOptionResponse") {
     title = uiText("warningInferredOptionResponseTitle");
@@ -4779,9 +4920,46 @@ function convHasWarning(conv, code) {
 
 function renderableConvWarnings(conv) {
   const warnings = getConvWarnings(conv);
-  let visible = warnings;
-  if (warnings.some((warning) => warning.code === "sceneOrderDisorder")) {
-    visible = warnings.filter((warning) => warning.code !== "inferredOptionLayout");
+  const hasDetailedOptionLayout = warnings.some((warning) => warning.code === "inferredOptionLayout");
+  if (!hasDetailedOptionLayout) return warnings;
+  const manualLayoutGroups = new Set(
+    (conv && Array.isArray(conv.optionGroups) ? conv.optionGroups : [])
+      .filter((group) => groupHasManualOverrideKind(group, "optionLayout"))
+      .map((group) => String(group.g))
+  );
+  const visible = [];
+  for (const warning of warnings) {
+    if (warning.code === "inferredOptionLayout" && manualLayoutGroups.size) {
+      const groupDetails = (Array.isArray(warning.groupDetails) ? warning.groupDetails : [])
+        .filter((detail) => detail && !manualLayoutGroups.has(String(detail.group)));
+      if (!groupDetails.length) continue;
+      const groupBreakdown = {
+        total: groupDetails.length,
+        authoredAfter: groupDetails.filter((detail) => detail.status === "authoredAfter").length,
+        authoredPre: groupDetails.filter((detail) => detail.status === "authoredPre").length,
+        keyedAfter: groupDetails.filter((detail) => detail.status === "keyedAfter").length,
+        siblingSceneText: groupDetails.filter((detail) => detail.status === "siblingSceneText").length,
+        fallbackAfter: groupDetails.filter((detail) => detail.status === "fallbackAfter").length,
+        unanchored: groupDetails.filter((detail) => detail.status === "unanchored").length,
+      };
+      visible.push({ ...warning, groupDetails, groupBreakdown });
+      continue;
+    }
+    if (warning.code !== "sceneOrderDisorder") {
+      visible.push(warning);
+      continue;
+    }
+    const aspects = Array.isArray(warning.problematicAspects)
+      ? warning.problematicAspects.filter((aspect) => aspect !== "optionLayout")
+      : [];
+    if (!aspects.length) continue;
+    visible.push({
+      ...warning,
+      problematicAspects: aspects,
+      summary: aspects.length === 1 && aspects[0] === "lineOrder"
+        ? "line order relies on fallback or incomplete authored evidence"
+        : warning.summary,
+    });
   }
   return visible;
 }
@@ -6250,7 +6428,14 @@ function renderConv(conv) {
   );
   const dlgBranchSkipIds = new Set();
   const renderedDlgLineIds = new Set();
-  const uncertainOptionLayout = convHasWarning(conv, "inferredOptionLayout");
+  const optionLayoutWarning = findConvWarning(conv, "inferredOptionLayout");
+  const optionLayoutDetailByGroup = new Map(
+    (optionLayoutWarning && Array.isArray(optionLayoutWarning.groupDetails)
+      ? optionLayoutWarning.groupDetails
+      : [])
+      .filter((detail) => detail && detail.group != null)
+      .map((detail) => [String(detail.group), detail])
+  );
   const uncoveredLineIdSet = getConvUncoveredLineIdSet(conv);
   const duplicateTimestampLineIdSet = getConvDuplicateTimestampLineIdSet(conv);
   const useWikiCharacterHintsAsSpeakers = isWikiCharacterArchiveConv(conv);
@@ -6342,19 +6527,11 @@ function renderConv(conv) {
   const minLineIdx = lineIdxs.length ? Math.min(...lineIdxs) : 0;
   const groupsByLineId = new Map(); // line id -> [group, ...]
   const preGroups = [];
-  const uncertainGroups = [];
   const orphanGroups = [];
 
   const outcomesByOptionId = buildLineOrderOutcomeIndex(conv);
 
   for (const grp of conv.optionGroups || []) {
-    const hasManualLayoutOverride = grp
-      && grp.manualOverride
-      && grp.manualOverride.kind === "optionLayout";
-    if (uncertainOptionLayout && !hasManualLayoutOverride) {
-      uncertainGroups.push(grp);
-      continue;
-    }
     // Authoritative: when another option's scene-graph outcome forwards into
     // this group, treat it as orphan-positioned regardless of `position` or
     // any g-equals-line-suffix fallback. The builder mislabels sub-menus as
@@ -6825,6 +7002,23 @@ function renderConv(conv) {
     h.textContent = uiText("optionGroup").replace("{group}", grp.g);
     const groupManualTag = renderManualOverrideTag(grp.manualOverride);
     if (groupManualTag) h.appendChild(groupManualTag);
+    const placementDetail = optionLayoutDetailByGroup.get(String(grp.g));
+    const hasManualLayoutOverride = groupHasManualOverrideKind(grp, "optionLayout");
+    if (placementDetail && !hasManualLayoutOverride) {
+      const mode = String(placementDetail.inferredAnchorMode || "");
+      const placementLabelKey = {
+        lineNumber: "optionPlacementKeyMatched",
+        sparseGap: "optionPlacementSparseGap",
+        siblingTimelinePosition: "optionPlacementSiblingTimeline",
+        lastLine: "optionPlacementLastLine",
+      }[mode] || (!grp.after && grp.position !== "pre" ? "optionPlacementUnknown" : "");
+      if (placementLabelKey) {
+        const tag = document.createElement("span");
+        tag.className = `option-placement-tag option-placement-${mode || "unknown"}`;
+        tag.textContent = uiText(placementLabelKey);
+        h.appendChild(tag);
+      }
+    }
     g.appendChild(h);
 
     const backlinks = renderOptionGroupBacklinks(grp, conv, outcomesByOptionId);
@@ -7174,7 +7368,9 @@ function renderConv(conv) {
     const snsBranchGroup = conv.kind === "sns" && Number.isInteger(ln.cid)
       ? snsBranchData.byAnchorCid.get(ln.cid)
       : null;
-    const hasLineMedia = Boolean(ln.image || ln.emoji || (Array.isArray(ln.images) && ln.images.length));
+    const hasLineMedia = Boolean(
+      ln.image || ln.emoji || (Array.isArray(ln.images) && ln.images.length) || lineAudioSource(ln)
+    );
     if (!STATE.showEmpty && !ln.text && !hasLineMedia && !(ln.options && ln.options.length)
         && !ln.linkMission && !(inlineGroups && inlineGroups.length)) continue;
     const branchOnlyNode = Boolean(snsBranchGroup && !ln.text && !ln.hint && !ln.linkMission);
@@ -7369,17 +7565,6 @@ function renderConv(conv) {
       appendDebugTrace(group, env._debug, "env talk");
       block.appendChild(group);
     }
-    frag.appendChild(block);
-  }
-
-  if (uncertainGroups.length) {
-    const block = document.createElement("div");
-    block.className = "opt-block";
-    const label = document.createElement("div");
-    label.className = "section-label";
-    label.textContent = uiText("uncertainDialogOptions");
-    block.appendChild(label);
-    for (const grp of uncertainGroups) block.appendChild(renderOptGroup(grp));
     frag.appendChild(block);
   }
 
@@ -8771,7 +8956,8 @@ function formatTimelineSeconds(value) {
 }
 
 function createAudioControl(src, label = "") {
-  if (!src) return null;
+  const resolvedSrc = resolveAudioSource(src);
+  if (!resolvedSrc) return null;
   const wrap = document.createElement("div");
   wrap.className = "line-audio";
   if (label) {
@@ -8782,13 +8968,37 @@ function createAudioControl(src, label = "") {
   }
   const audio = document.createElement("audio");
   audio.preload = "none";
-  audio.src = src;
+  audio.src = resolvedSrc;
   if (label) audio.title = label;
   const player = window.WebUI && window.WebUI.createMediaPlayer
     ? window.WebUI.createMediaPlayer(audio)
     : audio;
   wrap.appendChild(player);
   return wrap;
+}
+
+function resolveAudioSource(value) {
+  const raw = String(value || "").trim().replace(/\\/g, "/");
+  if (!raw) return "";
+  if (/^(?:https?:|blob:|data:)/i.test(raw) || raw.startsWith("/")) return raw;
+  const normalized = raw.replace(/^\.\//, "").replace(/^\/+/, "");
+  if (normalized.startsWith("export_full/")) return `/${normalized}`;
+  if (normalized.startsWith("structured/Audio/")) return `/export_full/${normalized}`;
+  return raw;
+}
+
+function lineAudioSource(line) {
+  if (!line) return "";
+  const variants = line.audioVariants && typeof line.audioVariants === "object"
+    ? line.audioVariants
+    : {};
+  const preferred = variants[resolveGenderVariant()];
+  if (preferred && preferred.src) return resolveAudioSource(preferred.src);
+  if (line.audioSrc) return resolveAudioSource(line.audioSrc);
+  for (const variant of Object.values(variants)) {
+    if (variant && variant.src) return resolveAudioSource(variant.src);
+  }
+  return "";
 }
 
 function lineAudioLabel(line, variant, src) {
@@ -8805,7 +9015,7 @@ function appendLineAudio(parent, line) {
   const variant = line.audioVariants && typeof line.audioVariants === "object"
     ? line.audioVariants[resolveGenderVariant()]
     : null;
-  const src = (variant && variant.src) || line.audioSrc || "";
+  const src = (variant && variant.src) || lineAudioSource(line);
   if (!src) return;
   const label = lineAudioLabel(line, variant, src);
   const node = createAudioControl(src, label);

@@ -997,6 +997,24 @@ def _compact_jump_range(clip: dict) -> dict:
     return out
 
 
+def _compact_runtime_jump_clip(clip: dict) -> dict:
+    """Keep the raw option selector and time window needed by consumers.
+
+    Completed per-option routes are emitted separately as ``optionRoutes``.
+    These compact raw clips let the Story builder remain conservative when a
+    Runtime Jump overlaps an otherwise zero-index shared-continuation window
+    but does not form a complete recoverable route.
+    """
+    out = _compact_jump_range(clip)
+    option_index = as_int(clip.get("optionIndex"))
+    if option_index is not None:
+        out["optionIndex"] = option_index
+    source_file = str(clip.get("sourceFile") or "")
+    if source_file:
+        out["sourceFile"] = source_file
+    return out
+
+
 def _build_runtime_jump_candidate_routes(
     slot: dict,
     route_end: float,
@@ -1360,7 +1378,7 @@ def collect_timeline_signals(
     timeline: str,
     records: list[dict],
     records_by_key: dict[tuple[str, int], dict],
-) -> tuple[list[dict], list[dict], dict[str, dict], int, int]:
+) -> tuple[list[dict], list[dict], dict[str, dict], list[dict], int, int]:
     raw_lines: list[dict] = []
     raw_options: list[dict] = []
     for record in records:
@@ -1476,7 +1494,14 @@ def collect_timeline_signals(
     duplicate_option_count = len(raw_options) - len(options)
     jump_clips = runtime_jump_clip_rows(timeline, records, records_by_key)
     option_routes = build_option_routes(lines, options, jump_clips)
-    return lines, options, option_routes, duplicate_count, duplicate_option_count
+    return (
+        lines,
+        options,
+        option_routes,
+        [_compact_runtime_jump_clip(clip) for clip in jump_clips],
+        duplicate_count,
+        duplicate_option_count,
+    )
 
 
 def primary_dialog_key(timeline: str, line_ids: list[str]) -> str:
@@ -1663,7 +1688,14 @@ def build_timeline_entries_from_roots(
         if timeline_filter and not timeline_filter.search(timeline):
             continue
         records = walk_track_tree(roots, records_by_key, children_by_parent)
-        lines, options, option_routes, duplicate_count, duplicate_option_count = collect_timeline_signals(timeline, records, records_by_key)
+        (
+            lines,
+            options,
+            option_routes,
+            runtime_jump_clips,
+            duplicate_count,
+            duplicate_option_count,
+        ) = collect_timeline_signals(timeline, records, records_by_key)
         if not lines and not options:
             continue
         line_ids = [line["id"] for line in lines]
@@ -1684,6 +1716,10 @@ def build_timeline_entries_from_roots(
             "sourceRoots": [rel_path(root["path"]) for root in sorted(roots, key=lambda item: rel_path(item["path"]))],
             "trackCount": len(records),
             "duplicateClipCount": duplicate_count,
+            # Always emit the key, including an empty list, so downstream
+            # recovery can distinguish "scanned and no jump" from legacy data
+            # that never preserved raw Runtime Jump evidence.
+            "runtimeJumpClips": runtime_jump_clips,
         }
         if option_ids:
             entry["optionIds"] = option_ids

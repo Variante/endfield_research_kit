@@ -4,9 +4,10 @@ Extract Endfield's runtime DialogIdTable into a JSON registry for Story builds.
 
 DialogIdTable is the runtime's authoritative dialog registry: every dialog
 the runtime can load must appear here. Each entry is a MemoryPack-serialized
-DialogBriefInfo record keyed by dialog ID. We don't fully parse the binary,
-but we extract the keys (ASCII tokens) and derive per-scene trunk/line
-structure where present.
+DialogBriefInfo record keyed by dialog ID. The decoded record schema does not
+contain branch or option-position fields, so this helper extracts only the
+printable identifier vocabulary. Per-line/trunk structure below is token-shape
+classification, not recovered runtime routing.
 
 The runtime class for this table is `Beyond.Gameplay.DialogIdTable` with
 records of type `Beyond.Gameplay.DialogIdTable.DialogBriefInfo` (confirmed by
@@ -42,9 +43,11 @@ DEFAULT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_INPUT  = DEFAULT_ROOT / "export_full/structured/StreamingAssets/Data/Json/GameplayConfig/DialogIdTable.json"
 DEFAULT_OUTPUT = DEFAULT_ROOT / "export_full/recovered/dialog_id_table_index.json"
 
-# Identifier extractor. Match dlg_* / radio_* tokens, up to 80 chars.
-# Length lower bound 2 chars after the prefix to avoid garbage matches.
-_ID_RE = re.compile(rb'(dlg_[A-Za-z0-9_]{2,80}|radio_[A-Za-z0-9_]{2,80})')
+# Identifier extractor. Match standalone dlg_* / radio_* tokens, up to 80
+# chars. `option_dlg_*` contains a syntactically valid `dlg_*` substring; the
+# fixed-width negative lookbehind prevents those option-only rows from being
+# misclassified as dialog roots or per-line runtime registrations.
+_ID_RE = re.compile(rb'(?<!option_)(dlg_[A-Za-z0-9_]{2,80}|radio_[A-Za-z0-9_]{2,80})')
 
 # Per-line form: <scene>_<trunkIdx>_<lineDigits>
 # Examples: dlg_e10m3_1_1_001, dlg_a1m10_1_3_002.

@@ -66,7 +66,7 @@ DEFAULT_MEMBER_RE = re.compile(
     re.IGNORECASE,
 )
 
-DEFAULT_IMAGE_RE = re.compile(r"Beyond", re.IGNORECASE)
+DEFAULT_IMAGE_RE = re.compile(r"(?:Beyond|Unity\.Timeline)", re.IGNORECASE)
 
 BODY_TARGET_METHOD_RE = re.compile(
     r"^(?:"
@@ -75,7 +75,8 @@ BODY_TARGET_METHOD_RE = re.compile(
     r"_SelectIndexInTimeline|SelectIndex|OnJumpForward|_TryDoNext|"
     r"DialogChooseOption|DialogTimelineDoNext|DialogTimelineGetAllTimelinePlayable|"
     r"DialogTimelineGetAllActiveClips|DialogTimelineDisableLoopInRange|"
-    r"GetNextIndex|GetChatOptionData|_TryShowOptions|DoExecute|"
+    r"GetNextIndex|_TrySelectBranch|GetChatOptionData|_TryShowOptions|DoExecute|"
+    r"TryGetJumpClip|DoJump|DoReverseJump|_CheckIfTimeJumping|"
     r"StartDialog|Next|SkipToNextShowNode"
     r")$"
 )
@@ -98,6 +99,10 @@ FOCUS_TYPE_NAMES = {
     "DialogTreeOptionNode",
     "DialogTreeOptionInfo",
     "DialogTreeExOptionNode",
+    "RuntimeClip",
+    "RuntimeJumpClip",
+    "TimelinePlayable",
+    "TimelineRuntimeUtils",
 }
 
 

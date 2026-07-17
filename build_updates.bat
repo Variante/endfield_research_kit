@@ -97,6 +97,16 @@ echo                            Report prune deletions without deleting files.
 echo.
 echo Useful after replacing the saved previous export:
 echo   build_updates.bat --refresh-previous-export-baseline
+echo.
+echo Compare any two already extracted versions and build the Updates page:
+echo   build_updates.bat --previous-export-root "D:\exports\Endfield_old" --export-root "D:\exports\Endfield_new" --refresh-previous-export-baseline
+echo.
+echo Output:
+echo   webui\data\updates\latest.json
+echo   reports\updates\game-data-change-summary.json and .md
+echo.
+echo build_updates_by_patch.bat is the installed-VFS patch workflow; it can
+echo detect, stage, archive, publish export_full, and invoke this feed builder.
 echo Use --export-root and --previous-export-root to change the compared export trees.
 echo For repeated runs, edit endfield_paths.bat instead.
 echo Most runs do not need --game-root; it is only for optional decoded-impact mapping.

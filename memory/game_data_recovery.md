@@ -230,20 +230,23 @@ Managed-reference recovery now combines:
 - byte-bounded, type-specific readers;
 - conservative raw-word and aligned-string diagnostics as a final fallback.
 
-A fresh 2026-07-03 MonoBehaviour index, which superseded the stale WebUI
-decoded index, measured:
+The current decoded index and frontier live under
+`webui/data/decoded/index.json` and
+`reports/assets/diagnostics/monobehaviour_frontier_latest.*`; read counts from
+those generated outputs rather than copying them here. The frontier remains
+concentrated in a small number of template families rather than broad across
+the corpus.
 
-- 1,064,294 JSON files;
-- 1,063,560 decoded;
-- 734 partial;
-- 0 unparsed;
-- 21 residual groups.
-
-The leading residuals were concentrated rather than broad: 310 projectile
-templates across both roots, 161 ability-entity templates, 156 enemy templates
-across both roots, 48 LineFollower records, and 28 character templates. Some
-substructures have improved since that census, so regenerate the frontier
-before using those numbers as a current task ranking.
+The tail audit now distinguishes byte-boundary failures from
+`semantic-partial` layouts. All observed projectile roots in both source roots
+consume their structured tails exactly and belong in the semantic-monitor
+queue, even though their enclosing files remain partial for unproven enum/hash
+names, omitted metadata fields, and runtime meaning. The
+`AbilityEntityTemplateData` inherited prefix, opening, and 92-byte
+`surroundingConfig` are now byte-proven across the full current family; the
+remaining body from `followMountPointConfig` is the next parser target.
+Character target selector/settings payloads and the rare enemy EffectActionCfg
+tail are structurally complete and move to semantic monitoring.
 
 ### Proven gameplay payload advances
 
@@ -251,17 +254,40 @@ before using those numbers as a current task ranking.
   structure through skill bundles, command mappings, combo conditions, UI
   data, buff lists, entity blackboards, skill-camera configuration,
   post-camera fields, preload ability entities, and potential buff ids.
-- `AbilityEntityRootComponentData` is exact for the observed current layout;
-  the enclosing `AbilityEntityTemplateData` remains partial.
+- `AbilityEntityRootComponentData` is exact for the observed current layout.
+  All 162 enclosing `AbilityEntityTemplateData` roots now decode their mirrored
+  id/name, faction word, counted GameplayTags, recycle/fade fields, and 833/833
+  component RID links. The guarded ability-specific opening through
+  `useFrameTick` now consumes 60 bytes in 158 roots and 80, 84, or 104 bytes in
+  four keyed Blackboard variants. All 162 linked exact root-component mirrors
+  match for its first five fields; the remaining six scalar names stay visibly
+  qualified as IL2CPP metadata-order evidence. This removes 9,852 bytes (9.01%)
+  from the former raw tails. The following `surroundingConfig` now consumes an
+  exact guarded 92 bytes in all 162 roots, with 14 linked movement mirrors and
+  10 non-consuming next-field rotation mirrors; residuals are now 336-1,084
+  bytes and stop before `followMountPointConfig`. Field order/ownership is
+  proven, while enum/hash runtime meanings remain inferred.
 - Physics and observed NavMesh-obstacle component shapes have guarded readers.
 - `EffectActionCfg` now has exact guarded readers for the observed dead-effect,
-  projectile alert-effect, and projectile effect-list variants. The two
-  observed layouts are not interchangeable.
+  projectile alert-effect, projectile effect-list, and rare 80-word
+  omit-useScaleBB tail variants. The rare shape occurs only in the mirrored
+  `data_eny_0092_slbomb` roots and keeps its field/enum meanings inferred; the
+  enclosing EffectActionCfg remains semantic-partial. The observed layouts are
+  not interchangeable.
 - Projectile component recovery covers the stable prefix, move-mode maps,
-  Bezier records, effect lists, alert effect, sound tail, and final suffix for
-  validated samples. The enclosing projectile template remains a frontier.
-- `SelectorData` and FindTarget actions are byte-proven in MemoryPack BuffData;
-  the result does not automatically transfer to Unity TypeTree serialization.
+  Bezier records, all six effect lists and show flags, alert effect, seven sound
+  hashes, and final distance/factor fields. A full current-family replay across
+  both roots consumed every observed tail exactly with no raw fallback or
+  unparsed node. Remaining projectile `$partial` markers are semantic confidence
+  boundaries, not unfinished byte readers.
+- `SelectorData` and FindTarget actions are byte-proven in MemoryPack BuffData.
+  The separate Unity managed-reference `SelectorData`, `TargetSettings`, and
+  nested `DirectionSettings` layouts are now also exact-consumed across all 74
+  current CharacterTemplateData occurrences: SelectorData is 72 16-byte empty
+  variants plus two 24-byte one-validator variants, TargetSettings is 24
+  100-byte plus 50 108-byte variants, and DirectionSettings is uniformly 40
+  bytes. Enum/hash names and unobserved non-empty post-processor/context or
+  advanced source/target variants remain semantic/fallback boundaries.
 - Simple InteractiveEvent actions such as add/remove tag, animation, sound,
   skill cast/attach, and exit-throw-mode have narrow readers. Complex attach,
   enter-throw, and component records remain partial diagnostics.
@@ -388,6 +414,14 @@ Character and equipment checkpoints similarly expose authored values and costs.
 These links do not prove the runtime getter path, modifier order, live inventory
 rolls, or account progression.
 
+The maintained Progression WebUI payload now materializes this evidence as
+15,691 typed nodes and 37,970 direct, endpoint-valid relations across 9,836
+browsable roots. It includes character and weapon upgrade structures,
+equipment stages, item costs/use/obtain paths, reward bundles and probable
+entries, drop pools, and wiki enemy drops. Each relation retains its source
+table, row, and field path; the graph intentionally makes no live availability,
+account-state, probability, or optimal-plan claim.
+
 ### Factory and world systems
 
 Factory relationships are well represented at the static-config layer:
@@ -474,11 +508,22 @@ Keep these boundaries explicit:
 ## Recovery queue
 
 Prioritize work that improves reusable semantics rather than producing another
-dated inventory snapshot:
+dated inventory snapshot. Projectile inspection, combat relationships, and
+factory/economy browsing are landed with evidence confidence and the
+static/runtime boundary preserved, and the static World explorer now exposes
+authored placements and references. Combat also consumes the exact
+AbilityEntity inherited prefixes and all 833 component RID links, but excludes
+the remaining bytes from `followMountPointConfig` onward. Deeper combat labels
+remain gated on the recovery work below:
 
-1. Regenerate the MonoBehaviour frontier from the current export and finish the
-   concentrated projectile, ability-entity, enemy, and character template
-   tails with guarded readers.
+1. Continue `AbilityEntityTemplateData` from the now-guarded
+   `followMountPointConfig` boundary. The rare enemy EffectActionCfg omit-useScale
+   tail is now exact-consumed in both mirrored roots; retain its field/enum
+   meanings as inferred.
+   Keep structurally complete projectile and selector/target-settings layouts in
+   semantic monitoring unless a future payload variant fails an exact guard.
+   The projectile WebUI already ships from the byte-complete fields; keep its
+   inferred labels qualified until runtime meaning is proven.
 2. Decode the remaining 48 ambiguous BuffData action chains per root, starting
    with repeated action families such as FinishBuffAdvanced,
    CheckBuffStackNumAdvanced, HitStopAction, and SpawnEnemyAction.
@@ -487,11 +532,15 @@ dated inventory snapshot:
    raw scalars separate.
 4. Recover IL2CPP accessor names for the dominant world-streaming FlatBuffer
    root before promoting more field labels or scalar/struct vector decoders.
-5. Expand direct reverse links only when they answer a maintained query. Prefer
-   a new typed graph edge and smoke test over a standalone memory report.
+5. Expand direct reverse links only when they answer a maintained query. The
+   combat relationship explorer is the current maintained consumer: prefer a
+   typed graph edge plus smoke test over a standalone memory report.
 6. Compare StreamingAssets and Persistent binary families when patch behavior
    matters, using hashes and schema-aware diffs rather than assuming mirrors.
-7. Improve per-source/per-object warning attribution if an actual clean-export
+7. Extend the landed factory/economy browser only when new tables add a durable
+   maintained query. Retain raw ids/values and do not promote inferred
+   throughput equations or live shop/activity state.
+8. Improve per-source/per-object warning attribution if an actual clean-export
    certificate becomes necessary; do not infer it from aggregate success.
 
 When one of these changes lands, update this file's current conclusion and
