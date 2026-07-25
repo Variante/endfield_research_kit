@@ -4380,11 +4380,12 @@ def publish_quest_objective_story_scope(
 ) -> dict[str, Any] | None:
     """Publish exact objective-to-LevelScript joins as non-owning quest context.
 
-    The node-attachment audit admits a Story row only when its hosting
-    LevelScript is named by exactly one quest objective in the entire generated
-    pipeline and that quest belongs to the row's mission. The objective may read
-    a different property from the one that causes playback, so these rows are
-    deliberately context, never playback ownership or ordering.
+    The node-attachment audit admits a Story row when its hosting LevelScript is
+    named by exactly one same-mission quest objective in the generated pipeline.
+    When several objectives name the same script, an exact uniquely-decoded
+    quest getter on that Story occurrence's serialized playback path may select
+    one member of that owner set. These rows are deliberately dependency
+    context, never playback ownership or ordering.
     """
     flow_root = story_data_root / language / "mission"
     mission_root = output_root / "missions"
@@ -4424,6 +4425,24 @@ def publish_quest_objective_story_scope(
                 if str(value)
             }
         )
+        discriminator = str(placement.get("scopeDiscriminator") or "")
+        predicate_evidence = [
+            row
+            for row in placement.get("questPredicateEvidence") or []
+            if isinstance(row, dict)
+        ]
+        if discriminator == "exact_playback_path_quest_predicate":
+            evidence_text = (
+                "quest objective names the hosting LevelScript and an exact "
+                "uniquely-decoded quest getter gates this Story playback path"
+            )
+            confidence = "derived_exact_quest_scope_path_predicate"
+        else:
+            evidence_text = (
+                "quest objective names the unique LevelScript that hosts "
+                "this Story occurrence"
+            )
+            confidence = "derived_exact_quest_scope"
         placements_by_mission[mission_id][quest_id].append(
             compact_dict(
                 {
@@ -4433,17 +4452,16 @@ def publish_quest_objective_story_scope(
                     "sourceRelation": placement.get("sourceRelation") or "",
                     "direction": "context",
                     "phase": "objective_scope",
-                    "confidence": "derived_exact_quest_scope",
+                    "confidence": confidence,
                     "scriptIds": script_ids,
+                    "scopeDiscriminator": discriminator,
+                    "questPredicateEvidence": predicate_evidence,
                     "questTriggerStatus": placement.get("questTriggerStatus") or "",
                     "ownershipStatus": "non_owning_context",
                     "playbackOwnership": False,
                     "orderEvidence": False,
                     "source": repo_path(report_json),
-                    "evidence": (
-                        "quest objective names the unique LevelScript that hosts "
-                        "this Story occurrence"
-                    ),
+                    "evidence": evidence_text,
                 }
             )
         )
@@ -4476,6 +4494,7 @@ def publish_quest_objective_story_scope(
                 (
                     str(row.get("key") or ""),
                     str(row.get("sourceRelation") or ""),
+                    str(row.get("scopeDiscriminator") or ""),
                     tuple(row.get("scriptIds") or []),
                 ): row
                 for row in rows
@@ -4485,6 +4504,7 @@ def publish_quest_objective_story_scope(
                 key=lambda row: (
                     str(row.get("key") or ""),
                     str(row.get("sourceRelation") or ""),
+                    str(row.get("scopeDiscriminator") or ""),
                     tuple(row.get("scriptIds") or []),
                 ),
             )
@@ -4511,8 +4531,10 @@ def publish_quest_objective_story_scope(
             "ownershipPromotion": False,
             "orderPromotion": False,
             "boundary": (
-                "A unique objective-to-hosting-LevelScript join proves shared quest "
-                "scope only; it does not prove playback ownership or chronology."
+                "A unique objective owner, or an exact playback-path quest predicate "
+                "selecting one member of the objective-owner set, proves shared quest "
+                "dependency scope only; it does not prove playback ownership or "
+                "chronology."
             ),
         },
         "published": {

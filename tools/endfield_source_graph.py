@@ -9806,6 +9806,10 @@ class SourceGraphBuilder:
                         "relation": context.get("relation"),
                         "sourceRelation": context.get("sourceRelation"),
                         "confidence": context.get("confidence"),
+                        "scopeDiscriminator": context.get("scopeDiscriminator"),
+                        "questPredicateEvidence": context.get(
+                            "questPredicateEvidence"
+                        ),
                         "ownershipStatus": context.get("ownershipStatus"),
                         "playbackOwnership": False,
                         "orderEvidence": False,

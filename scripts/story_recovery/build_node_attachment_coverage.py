@@ -51,7 +51,7 @@ from common import (  # noqa: E402
 )
 
 
-SCHEMA = "nodeAttachmentCoverage.v2"
+SCHEMA = "nodeAttachmentCoverage.v3"
 
 DEFAULT_FLOW_ROOT = ROOT / "webui" / "data" / "lang" / "CN" / "mission"
 DEFAULT_COVERAGE_REPORT = (
@@ -111,42 +111,175 @@ def quest_objective_script_owners(
     return owners
 
 
+def playback_path_getter_evidence(
+    row: dict[str, Any],
+) -> dict[str, list[dict[str, Any]]]:
+    """Return exact quest getters serialized on this Story playback path.
+
+    The Story builder records a branch predicate only when the getter is
+    uniquely decoded from the current-build action payload. Keeping the result
+    keyed by the occurrence's LevelScript id prevents a predicate from one
+    script from selecting an objective owner of another script on a multi-
+    occurrence shell row.
+    """
+    by_script: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for occurrence_index, occurrence in enumerate(row.get("levelScriptOccurrences") or []):
+        if not isinstance(occurrence, dict):
+            continue
+        script_id = safe_key(occurrence.get("scriptId"))
+        if not script_id:
+            continue
+        for owner_index, owner in enumerate(occurrence.get("nativeEventOwners") or []):
+            if not isinstance(owner, dict):
+                continue
+            path = owner.get("path") or []
+            for path_index, step in enumerate(path):
+                if not isinstance(step, dict):
+                    continue
+                predicate = step.get("branchPredicate")
+                if (
+                    not isinstance(predicate, dict)
+                    or safe_key(predicate.get("status")) != "exact_unique_getter"
+                ):
+                    continue
+                for quest_id_raw in predicate.get("getterTexts") or []:
+                    quest_id = safe_key(quest_id_raw)
+                    if not quest_id:
+                        continue
+                    by_script[script_id].append({
+                        "questId": quest_id,
+                        "scriptId": script_id,
+                        "occurrenceIndex": occurrence_index,
+                        "eventOwnerIndex": owner_index,
+                        "pathIndex": path_index,
+                        "pathEdge": safe_key(step.get("edge")),
+                        "selectedBranchEdge": (
+                            safe_key(path[path_index + 1].get("edge"))
+                            if path_index + 1 < len(path)
+                            and isinstance(path[path_index + 1], dict)
+                            else ""
+                        ),
+                        "branchLocalId": step.get("localId"),
+                        "getterLocalId": predicate.get("getterLocalId"),
+                    })
+    return by_script
+
+
 def script_scoped_quest_placements(
     shell_rows: list[dict[str, Any]],
     script_owners: dict[str, set[tuple[str, str]]],
-) -> tuple[list[dict[str, Any]], int]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Shell rows whose hosting LevelScript is named by exactly one quest.
 
     Both halves of the join are already-accepted evidence: the row's
     ``scriptIds`` are the scripts that contain the Story occurrence, and
     ``script_owners`` are quest objective conditions naming a script. The
-    placement is admitted only when the union of owners across the row's
-    scripts is a single quest *and* that quest belongs to the row's own
-    mission, so a script shared by several quests never selects one.
+    placement is admitted when the union of owners across the row's scripts is
+    a single quest in the row's mission. When several objectives name the same
+    script, one additional discriminator is allowed: an exact uniquely-decoded
+    quest getter on the serialized playback path may select that same quest
+    from the objective-owner set. Script-wide strings and unrelated paths are
+    never selectors.
 
     The resulting relation is quest-level context. The objective may read a
     different property of that script than the one that plays the Story, so
     this proves shared quest scope, not playback ownership.
     """
     placements: list[dict[str, Any]] = []
-    ambiguous = 0
+    ambiguities: list[dict[str, Any]] = []
     for row in shell_rows:
         script_ids = [safe_key(value) for value in row.get("scriptIds") or []]
         owners: set[tuple[str, str]] = set()
+        owners_by_script: dict[str, set[tuple[str, str]]] = {}
         matched = False
         for script_id in script_ids:
             if script_id in script_owners:
                 matched = True
-                owners |= script_owners[script_id]
+                owners_by_script[script_id] = set(script_owners[script_id])
+                owners |= owners_by_script[script_id]
         if not matched:
             continue
-        if len(owners) != 1:
-            ambiguous += 1
+
+        owner: tuple[str, str] | None = None
+        discriminator = ""
+        predicate_evidence: list[dict[str, Any]] = []
+        if len(owners) == 1:
+            candidate = next(iter(owners))
+            if candidate[0] == row["missionId"]:
+                owner = candidate
+                discriminator = "globally_unique_objective_script_owner"
+        else:
+            predicates_by_script = playback_path_getter_evidence(row)
+            discriminated: set[tuple[str, str]] = set()
+            for script_id, evidence_rows in predicates_by_script.items():
+                script_owner_rows = owners_by_script.get(script_id, set())
+                predicate_quest_ids = {
+                    safe_key(evidence.get("questId")) for evidence in evidence_rows
+                }
+                for candidate in script_owner_rows:
+                    if (
+                        candidate[0] == row["missionId"]
+                        and candidate[1] in predicate_quest_ids
+                    ):
+                        discriminated.add(candidate)
+            if len(discriminated) == 1:
+                owner = next(iter(discriminated))
+                discriminator = "exact_playback_path_quest_predicate"
+                for script_id, evidence_rows in predicates_by_script.items():
+                    if owner not in owners_by_script.get(script_id, set()):
+                        continue
+                    predicate_evidence.extend(
+                        evidence
+                        for evidence in evidence_rows
+                        if safe_key(evidence.get("questId")) == owner[1]
+                    )
+
+        if owner is None:
+            same_mission_owners = sorted(
+                quest_id
+                for mission_id, quest_id in owners
+                if mission_id == row["missionId"]
+            )
+            foreign_owners = [
+                {"missionId": mission_id, "questId": quest_id}
+                for mission_id, quest_id in sorted(owners)
+                if mission_id != row["missionId"]
+            ]
+            predicates_by_script = playback_path_getter_evidence(row)
+            path_predicates = sorted(
+                {
+                    (script_id, safe_key(evidence.get("questId")))
+                    for script_id, evidence_rows in predicates_by_script.items()
+                    for evidence in evidence_rows
+                    if any(
+                        owner_quest == safe_key(evidence.get("questId"))
+                        for _owner_mission, owner_quest in owners_by_script.get(
+                            script_id, set()
+                        )
+                    )
+                }
+            )
+            if same_mission_owners:
+                reason = "multiple_or_unresolved_same_mission_objective_owners"
+            else:
+                reason = "objective_owner_mission_mismatch"
+            ambiguities.append({
+                "missionId": row["missionId"],
+                "storyKey": row["key"],
+                "kind": safe_key(row.get("kind")),
+                "sourceRelation": safe_key(row.get("relation")),
+                "scriptIds": script_ids,
+                "reason": reason,
+                "sameMissionOwnerQuestIds": same_mission_owners,
+                "foreignOwners": foreign_owners,
+                "playbackPathOwnerQuestPredicates": [
+                    {"scriptId": script_id, "questId": quest_id}
+                    for script_id, quest_id in path_predicates
+                ],
+            })
             continue
-        owner_mission, owner_quest = next(iter(owners))
-        if owner_mission != row["missionId"]:
-            ambiguous += 1
-            continue
+
+        owner_mission, owner_quest = owner
         placements.append({
             "missionId": row["missionId"],
             "questId": owner_quest,
@@ -155,9 +288,14 @@ def script_scoped_quest_placements(
             "sourceRelation": safe_key(row.get("relation")),
             "scriptIds": script_ids,
             "questTriggerStatus": safe_key(row.get("questTriggerStatus")),
+            "scopeDiscriminator": discriminator,
+            "questPredicateEvidence": predicate_evidence,
         })
     placements.sort(key=lambda item: (item["missionId"], item["questId"], item["storyKey"]))
-    return placements, ambiguous
+    ambiguities.sort(
+        key=lambda item: (item["missionId"], item["storyKey"], item["sourceRelation"])
+    )
+    return placements, ambiguities
 
 
 def build_report(
@@ -236,7 +374,7 @@ def build_report(
         if pipeline_mission_root and pipeline_mission_root.is_dir()
         else {}
     )
-    script_placements, script_ambiguous = script_scoped_quest_placements(
+    script_placements, script_ambiguities = script_scoped_quest_placements(
         shell_only_rows, script_owners
     )
 
@@ -277,12 +415,13 @@ def build_report(
                 "regardless of how many quests it names."
             ),
             "scriptScopedQuestPlacement": (
-                "A shell-only row whose hosting LevelScript is named by exactly one "
-                "quest objective condition (typed _scriptId), globally unique and in "
-                "the row's own mission. This establishes shared quest scope: the "
-                "objective reads the same script that hosts the Story. It does not "
-                "prove the quest plays, owns, or completes the Story, because the "
-                "objective may read a different property of that script."
+                "A shell-only row whose hosting LevelScript is named by one or more "
+                "quest objective conditions (typed _scriptId). A globally unique "
+                "same-mission owner is admitted directly. If several quests name the "
+                "same script, only an exact uniquely-decoded quest getter on that "
+                "Story occurrence's serialized playback path may select one of those "
+                "objective owners. This establishes shared quest dependency scope, "
+                "but does not prove the quest plays, owns, or completes the Story."
             ),
             "publicationBoundary": (
                 "Mission Pipeline may expose scriptScopedQuestPlacements on the "
@@ -322,9 +461,10 @@ def build_report(
             "scriptScopedQuestPlacementKeys": len(
                 {row["storyKey"] for row in script_placements}
             ),
-            "scriptScopedQuestPlacementAmbiguous": script_ambiguous,
+            "scriptScopedQuestPlacementAmbiguous": len(script_ambiguities),
         },
         "scriptScopedQuestPlacements": script_placements,
+        "scriptScopedQuestAmbiguities": script_ambiguities,
         "shellOnlyRelationBreakdown": relation_breakdown(shell_only_rows),
         "singleCandidateRelationBreakdown": relation_breakdown(single_candidate_rows),
         "singleCandidateNotBlocked": {
@@ -399,12 +539,33 @@ def render_markdown(report: dict[str, Any]) -> str:
     )
     lines.append("")
     if report["scriptScopedQuestPlacements"]:
-        lines.append("| story key | mission | quest | source relation |")
-        lines.append("| --- | --- | --- | --- |")
+        lines.append("| story key | mission | quest | discriminator | source relation |")
+        lines.append("| --- | --- | --- | --- | --- |")
         for row in report["scriptScopedQuestPlacements"]:
             lines.append(
                 f"| `{md_escape(row['storyKey'])}` | `{md_escape(row['missionId'])}` | "
-                f"`{md_escape(row['questId'])}` | `{md_escape(row['sourceRelation'])}` |"
+                f"`{md_escape(row['questId'])}` | "
+                f"`{md_escape(row.get('scopeDiscriminator'))}` | "
+                f"`{md_escape(row['sourceRelation'])}` |"
+            )
+        lines.append("")
+    if report["scriptScopedQuestAmbiguities"]:
+        lines.append("### Rejected objective/LevelScript joins")
+        lines.append("")
+        lines.append("| story key | shell mission | reason | same-mission owners | foreign owners |")
+        lines.append("| --- | --- | --- | --- | --- |")
+        for row in report["scriptScopedQuestAmbiguities"]:
+            same_mission = ", ".join(
+                f"`{md_escape(value)}`"
+                for value in row.get("sameMissionOwnerQuestIds") or []
+            )
+            foreign = ", ".join(
+                f"`{md_escape(owner.get('missionId'))}:{md_escape(owner.get('questId'))}`"
+                for owner in row.get("foreignOwners") or []
+            )
+            lines.append(
+                f"| `{md_escape(row['storyKey'])}` | `{md_escape(row['missionId'])}` | "
+                f"`{md_escape(row['reason'])}` | {same_mission} | {foreign} |"
             )
         lines.append("")
     lines.append("## All mission-shell-only rows, by relation")
