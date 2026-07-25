@@ -30,6 +30,15 @@ class SourceGraphAssetMapScopeTests(unittest.TestCase):
                                         "relation": "quest_objective_levelscript_scope_context",
                                         "sourceRelation": "levelscript_mission_context",
                                         "confidence": "derived_exact_quest_scope",
+                                        "scopeDiscriminator": (
+                                            "exact_playback_path_quest_predicate"
+                                        ),
+                                        "questPredicateEvidence": [
+                                            {
+                                                "questId": "testm1_q1",
+                                                "scriptId": "70000000001",
+                                            }
+                                        ],
                                         "ownershipStatus": "non_owning_context",
                                         "scriptIds": ["70000000001"],
                                     }
@@ -64,6 +73,14 @@ class SourceGraphAssetMapScopeTests(unittest.TestCase):
                 self.assertEqual(edge_data["ownershipStatus"], "non_owning_context")
                 self.assertFalse(edge_data["playbackOwnership"])
                 self.assertFalse(edge_data["orderEvidence"])
+                self.assertEqual(
+                    edge_data["scopeDiscriminator"],
+                    "exact_playback_path_quest_predicate",
+                )
+                self.assertEqual(
+                    edge_data["questPredicateEvidence"][0]["questId"],
+                    "testm1_q1",
+                )
                 self.assertIsNotNone(
                     builder.db.execute(
                         """

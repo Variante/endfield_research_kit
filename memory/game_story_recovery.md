@@ -2611,17 +2611,38 @@ attachment source.
 
 The node-level mission graph now consumes one exact cross-source join that was
 previously audit-only. For a mission-shell Story row, the builder takes the
-LevelScript ids that host its exact Story occurrence and admits the row only
-when typed quest-objective `_scriptId` operands name exactly one quest globally
-and that quest belongs to the same mission. The current build publishes 35
-context rows covering 33 Story files on 21 quest nodes; ten otherwise matching
-rows are rejected as ambiguous. These are
+LevelScript ids that host its exact Story occurrence and admits the row when
+typed quest-objective `_scriptId` operands name exactly one same-mission quest.
+When several objectives name the same script, only an `exact_unique_getter`
+that names one member of that objective-owner set on the exact serialized
+playback path may disambiguate it. Script-wide quest strings and getters from
+another script remain unusable. The current build publishes 36 context rows
+covering 34 Story files on 22 quest nodes; nine otherwise matching rows remain
+rejected. These are
 `quest_objective_levelscript_scope_context` rows with
 `playbackOwnership=false` and `orderEvidence=false`: the objective may read a
 different property from the one that causes playback. The WebUI and source
 graph expose the relation as shared quest scope, never as ownership,
 completion, branch, or chronology evidence. Reproduce with
 `build_node_attachment_coverage.py` or the normal Mission Pipeline build.
+
+The one newly resolved competition is `radio_sm1l2m4_2`: both
+`sm1l2m4_q#2` and `sm1l2m4_q#8` inspect script `200120007` property
+`puzzleSolved`, but the exact custom-event playback path reaches an
+`IfElseAction` whose uniquely decoded getter names `sm1l2m4_q#8`; the radio is
+on that predicate-controlled path. This selects q#8 dependency scope without
+claiming that q#8 owns or initiates playback. The remaining same-mission
+competition, `cutscene_map01_lv003_downstair`, stays unresolved between
+`sm1l3m3_q#7` and `q#7d1`: both inspect script `300010039` property `isDone`,
+both carry the same tracking position, and the exact trigger-slot-80001
+cutscene path contains no quest getter. The other eight rejected rows are
+foreign-mission shell duplicates whose objective owner belongs to a different
+mission variant; the same-mission gate correctly keeps them unplaced.
+The production source-graph rebuild confirms 36 edges in each direction for
+quest/Story and quest/LevelScript scope. `radio_sm1l2m4_2` has only the q#8
+quest-scope pair, including the exact predicate evidence and explicit false
+ownership/order flags; q#2 and `cutscene_map01_lv003_downstair` have no such
+edges. SQLite `quick_check` passes.
 
 ## Current recovery queue
 

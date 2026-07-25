@@ -1448,10 +1448,16 @@ gameplay-video OCR/audio workflow.
   one quest objective condition (typed `_scriptId`), globally unique and in the
   row's own mission, is reported as a quest-level *scope* placement — the
   objective may read a different property of that script than the one that
-  plays the Story, so this is never playback ownership. Mission Pipeline
-  publishes these admitted rows as `nodes[*].storyScopeContexts` with explicit
-  `playbackOwnership: false` and `orderEvidence: false`; the source graph
-  mirrors the same non-owning quest/LevelScript/Story relation. Emits
+  plays the Story, so this is never playback ownership. When several objectives
+  name the same script, the audit admits one additional discriminator only: an
+  `exact_unique_getter` naming one of those quests must occur on that exact
+  Story playback path in the same script. Script-wide strings and unrelated
+  paths never select a quest. Mission Pipeline publishes admitted rows as
+  `nodes[*].storyScopeContexts` with explicit `playbackOwnership: false` and
+  `orderEvidence: false`; the source graph mirrors the same non-owning
+  quest/LevelScript/Story relation. Rejected rows are retained in
+  `scriptScopedQuestAmbiguities` with same-mission versus foreign-owner
+  classification. Emits
   `reports/mission_graph/node_attachment_coverage.{json,md}`.
 - `story_recovery/build_source_story_partial_order.py`: builds a strict,
   source-only per-mission partial-order and branch audit from the generated

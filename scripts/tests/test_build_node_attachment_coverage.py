@@ -215,6 +215,88 @@ class ScriptScopedPlacementTests(Base):
         counts = report["counts"]
         self.assertEqual(counts["scriptScopedQuestPlacementRows"], 0)
         self.assertEqual(counts["scriptScopedQuestPlacementAmbiguous"], 1)
+        ambiguity = report["scriptScopedQuestAmbiguities"][0]
+        self.assertEqual(
+            ambiguity["sameMissionOwnerQuestIds"],
+            ["alpha_q#1", "alpha_q#2"],
+        )
+        self.assertEqual(
+            ambiguity["reason"],
+            "multiple_or_unresolved_same_mission_objective_owners",
+        )
+
+    def test_exact_playback_path_quest_predicate_disambiguates_objective_owners(self):
+        flow = {
+            "alpha": {
+                "quests": [{"id": "alpha_q#1"}, {"id": "alpha_q#2"}],
+                "missionStoryConnections": [{
+                    "key": "radio_a_1",
+                    "kind": "radio",
+                    "relation": "levelscript_mission_context",
+                    "scriptIds": ["1001"],
+                    "levelScriptOccurrences": [{
+                        "scriptId": "1001",
+                        "nativeEventOwners": [{
+                            "path": [{
+                                "edge": "IfElseAction.falseAction",
+                                "localId": 57,
+                                "branchPredicate": {
+                                    "status": "exact_unique_getter",
+                                    "getterLocalId": 73,
+                                    "getterTexts": ["alpha_q#2"],
+                                },
+                            }],
+                        }],
+                    }],
+                }],
+            }
+        }
+        report = self.make(
+            flow,
+            pipeline={
+                "alpha": pipeline_mission(
+                    "alpha", {"alpha_q#1": ["1001"], "alpha_q#2": ["1001"]}
+                )
+            },
+        )
+        self.assertEqual(report["counts"]["scriptScopedQuestPlacementRows"], 1)
+        self.assertEqual(report["counts"]["scriptScopedQuestPlacementAmbiguous"], 0)
+        placement = report["scriptScopedQuestPlacements"][0]
+        self.assertEqual(placement["questId"], "alpha_q#2")
+        self.assertEqual(
+            placement["scopeDiscriminator"],
+            "exact_playback_path_quest_predicate",
+        )
+        self.assertEqual(
+            placement["questPredicateEvidence"][0]["pathEdge"],
+            "IfElseAction.falseAction",
+        )
+
+    def test_script_wide_quest_text_does_not_disambiguate_objective_owners(self):
+        flow = {
+            "alpha": {
+                "quests": [{"id": "alpha_q#1"}, {"id": "alpha_q#2"}],
+                "missionStoryConnections": [{
+                    "key": "radio_a_1",
+                    "relation": "levelscript_mission_context",
+                    "scriptIds": ["1001"],
+                    "levelScriptOccurrences": [{
+                        "scriptId": "1001",
+                        "sourceMissionishRefs": [{"text": "alpha_q#2"}],
+                    }],
+                }],
+            }
+        }
+        report = self.make(
+            flow,
+            pipeline={
+                "alpha": pipeline_mission(
+                    "alpha", {"alpha_q#1": ["1001"], "alpha_q#2": ["1001"]}
+                )
+            },
+        )
+        self.assertEqual(report["counts"]["scriptScopedQuestPlacementRows"], 0)
+        self.assertEqual(report["counts"]["scriptScopedQuestPlacementAmbiguous"], 1)
 
     def test_owning_quest_in_another_mission_is_rejected(self):
         # A script owned by a quest of a different mission must never place the
@@ -226,6 +308,12 @@ class ScriptScopedPlacementTests(Base):
         counts = report["counts"]
         self.assertEqual(counts["scriptScopedQuestPlacementRows"], 0)
         self.assertEqual(counts["scriptScopedQuestPlacementAmbiguous"], 1)
+        ambiguity = report["scriptScopedQuestAmbiguities"][0]
+        self.assertEqual(ambiguity["reason"], "objective_owner_mission_mismatch")
+        self.assertEqual(
+            ambiguity["foreignOwners"],
+            [{"missionId": "beta", "questId": "beta_q#1"}],
+        )
 
     def test_row_without_script_ids_is_ignored(self):
         flow = {

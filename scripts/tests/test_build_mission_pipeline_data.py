@@ -173,6 +173,10 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             self.assertEqual(context["ownershipStatus"], "non_owning_context")
             self.assertFalse(context["playbackOwnership"])
             self.assertFalse(context["orderEvidence"])
+            self.assertEqual(
+                context["scopeDiscriminator"],
+                "globally_unique_objective_script_owner",
+            )
             self.assertNotIn("storyScopeContexts", payload["nodes"][1])
             self.assertEqual(
                 index["nodeAttachmentCoverage"]["published"],
