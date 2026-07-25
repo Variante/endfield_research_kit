@@ -21,16 +21,19 @@ Consumers, all read by exact field name:
   cluster, carrying ``levelId`` and its member ``npcIds``;
 * ``NpcTable[*].envTalkIds`` -- a character-scoped ambient line set.
 
-Quest context comes from one typed join and nothing else: a MissionRuntime
-objective's ``trackingInfoList[*]`` entry of type ``NpcProxyTrackingInfo``
-names an ``npcProxyId``; when that proxy row carries ``envTalkIds``, the quest
-that tracks it is recorded as *navigation/configuration context*.
+Mission/quest context comes from two typed, exact joins:
 
-That relation is deliberately weak.  It means the quest steers the player to an
-NPC that has ambient lines configured on it.  It does **not** mean the quest
-plays, owns, starts, or completes those lines, and it creates no chronology and
-no server exchange.  This mirrors the existing repo treatment of typed
-``EntityTrackingInfo``: tracking establishes context, never playback ownership.
+* a MissionRuntime objective's ``trackingInfoList[*]`` entry of type
+  ``NpcProxyTrackingInfo`` names an ``npcProxyId``; when that proxy row carries
+  ``envTalkIds``, the quest that tracks it is recorded as navigation context;
+* an atmospheric cluster's complete, non-empty ``npcIds`` set is contained by
+  exactly one active switcher group on the same exact ``levelId``. The matching
+  ``AtmosphericNpcSwitcherGroupConfig.condition`` supplies exact mission/quest
+  state dependencies for the cluster's envTalk.
+
+Both relations are deliberately weak. They explain navigation or world-state
+availability, not playback. They do **not** mean a mission plays, owns, starts,
+or completes the lines, and they create no chronology or server exchange.
 
 Everything else stays honestly unattached.  A proxy or cluster row supplies a
 ``levelId`` scope only; filename fragments that look like level or mission ids
@@ -60,7 +63,7 @@ from common import (  # noqa: E402
 )
 
 
-SCHEMA = "envTalkAttachment.v1"
+SCHEMA = "envTalkAttachment.v2"
 
 DEFAULT_TABLE_ROOT = ROOT / "export_full" / "structured" / "StreamingAssets" / "Table"
 DEFAULT_GAMEPLAY_CONFIG_ROOT = (
@@ -80,9 +83,14 @@ ENV_TALK_SCALAR_FIELD = "envTalkId"
 
 NPC_PROXY_TRACKING_TYPE = "NpcProxyTrackingInfo"
 NPC_PROXY_ID_FIELD = "npcProxyId"
+STATE_CONTEXT_RELATION = "atmosphericSwitcherStateContext"
 
-# Relation labels. Only ``questTrackedNpcProxy`` reaches a quest, and it is
-# context, never ownership.
+ACTIVE_SWITCHER_TABLE = "AtmosphericNpcActiveSwitcherDataTable"
+SWITCHER_CONFIG_TABLE = "AtmosphericNpcSwitcherDataTable"
+CLUSTER_TABLE = "AtmosphericNpcClusterDataTable"
+
+# Primary consumer labels stay independent of atmospheric state context. Both
+# quest-tracked proxy and switcher-state joins are context, never ownership.
 RELATION_QUEST_TRACKED_PROXY = "questTrackedNpcProxy"
 RELATION_LEVEL_SCOPED = "levelScopedConsumer"
 RELATION_CHARACTER_SCOPED = "characterScopedConsumer"
@@ -186,9 +194,13 @@ def collect_consumers(
     return consumers, proxy_env_talk, stats
 
 
-def collect_proxy_tracking(mission_root: Path) -> tuple[dict[str, list[dict[str, Any]]], Counter]:
-    """Return proxy id -> typed tracking records that name it."""
+def collect_proxy_tracking(
+    mission_root: Path,
+) -> tuple[dict[str, list[dict[str, Any]]], dict[str, str], set[str], Counter]:
+    """Return typed proxy tracking plus exact mission and quest registries."""
     tracking: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    quest_owners: dict[str, str] = {}
+    mission_ids: set[str] = set()
     stats: Counter = Counter()
 
     def walk(node: Any, mission_id: str, path: str) -> None:
@@ -232,10 +244,243 @@ def collect_proxy_tracking(mission_root: Path) -> tuple[dict[str, list[dict[str,
     stats["missionsRead"] = len(mission_paths)
     for path in mission_paths:
         document = read_json(path)
-        if document is None:
+        if not isinstance(document, dict):
             continue
-        walk(document, path.stem, "")
-    return tracking, stats
+        mission_id = safe_key(document.get("missionId")) or path.stem
+        mission_ids.add(mission_id)
+        quests = document.get("questDic")
+        if isinstance(quests, dict):
+            for quest_id in quests:
+                if not isinstance(quest_id, str) or not quest_id:
+                    continue
+                prior = quest_owners.setdefault(quest_id, mission_id)
+                if prior != mission_id:
+                    stats["questOwnerConflicts"] += 1
+        walk(document, mission_id, "")
+    stats["missionIds"] = len(mission_ids)
+    stats["questIds"] = len(quest_owners)
+    return tracking, quest_owners, mission_ids, stats
+
+
+def collect_condition_references(node: Any, path: str = ".condition") -> list[dict[str, Any]]:
+    """Collect exact mission/quest fields from one authored condition tree."""
+    references: list[dict[str, Any]] = []
+    if isinstance(node, dict):
+        condition_type = safe_key(node.get("$type"))
+        common = {
+            "conditionType": condition_type,
+            "compareOperator": node.get("compareOperator"),
+            "compareTarget": node.get("compareTarget"),
+            "reverse": node.get("reverse"),
+        }
+        for field, kind in (("missionId", "mission"), ("questId", "quest")):
+            reference_id = safe_key(node.get(field))
+            if reference_id:
+                references.append(
+                    {
+                        "kind": kind,
+                        "id": reference_id,
+                        "jsonPath": f"{path}.{field}",
+                        **common,
+                    }
+                )
+        for key, value in node.items():
+            collect_path = f"{path}.{key}"
+            references.extend(collect_condition_references(value, collect_path))
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            references.extend(collect_condition_references(value, f"{path}[{index}]"))
+    return references
+
+
+def collect_atmospheric_state_contexts(
+    gameplay_root: Path,
+    quest_owners: dict[str, str],
+    mission_ids: set[str],
+) -> tuple[dict[str, list[dict[str, Any]]], Counter]:
+    """Join atmospheric clusters to switcher conditions, failing closed.
+
+    A cluster is accepted only when its complete, non-empty NPC set is a subset
+    of exactly one active switcher group on the same exact level. Partial
+    overlaps, cross-level matches, ambiguous groups, and missing configs are
+    counted but never promoted.
+    """
+    cluster_path = gameplay_root / f"{CLUSTER_TABLE}.json"
+    active_path = gameplay_root / f"{ACTIVE_SWITCHER_TABLE}.json"
+    config_path = gameplay_root / f"{SWITCHER_CONFIG_TABLE}.json"
+    clusters = data_table(read_json(cluster_path))
+    active_by_level = data_table(read_json(active_path))
+    config_payload = read_json(config_path) or {}
+    configs = (
+        config_payload.get("groupConfigs")
+        if isinstance(config_payload, dict)
+        else {}
+    )
+    if not isinstance(configs, dict):
+        configs = {}
+
+    stats: Counter = Counter()
+    for key in (
+        "clustersWithoutJoinIdentity",
+        "ambiguousClusterMatches",
+        "partialOnlyClusterMatches",
+        "crossLevelClusterMatches",
+        "missingClusterMatches",
+        "clustersWithUniqueSwitcherGroup",
+        "matchedGroupsWithoutConfig",
+        "matchedConfigIdentityMismatch",
+        "clustersWithoutStateReference",
+        "stateContextClusters",
+    ):
+        stats[key] = 0
+    stats["atmosphericClusters"] = len(clusters)
+    stats["switcherGroupConfigs"] = len(configs)
+    active_groups: list[dict[str, Any]] = []
+    active_group_ids: list[str] = []
+    empty_active_groups = 0
+    for level_key, switchers in active_by_level.items():
+        if not isinstance(switchers, list):
+            continue
+        for switcher in switchers:
+            if not isinstance(switcher, dict):
+                continue
+            level_id = safe_key(switcher.get("levelId")) or safe_key(level_key)
+            switcher_id = safe_key(switcher.get("switcherId"))
+            group_npcs = switcher.get("groupId2AtmosphericNpcs")
+            if not isinstance(group_npcs, dict):
+                continue
+            for group_id, npc_ids in group_npcs.items():
+                normalized_group_id = safe_key(group_id)
+                active_group_ids.append(normalized_group_id)
+                npc_set = {
+                    value for value in (npc_ids or [])
+                    if isinstance(value, str) and value
+                }
+                if not npc_set:
+                    empty_active_groups += 1
+                    continue
+                active_groups.append(
+                    {
+                        "groupId": normalized_group_id,
+                        "switcherId": switcher_id,
+                        "levelId": level_id,
+                        "npcIds": npc_set,
+                    }
+                )
+    stats["activeSwitcherGroupRows"] = len(active_group_ids)
+    stats["activeSwitcherGroupIds"] = len(set(active_group_ids))
+    stats["activeSwitcherDuplicateGroupRows"] = (
+        len(active_group_ids) - len(set(active_group_ids))
+    )
+    stats["activeSwitcherEmptyGroups"] = empty_active_groups
+    stats["activeSwitcherGroupsWithNpcs"] = len(active_groups)
+
+    by_env_talk: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    state_files: set[str] = set()
+    state_missions: set[str] = set()
+    state_quests: set[str] = set()
+    for cluster_key, cluster in clusters.items():
+        if not isinstance(cluster, dict):
+            continue
+        env_talk_id = safe_key(cluster.get("envTalkId"))
+        cluster_id = safe_key(cluster.get("clusterId")) or safe_key(cluster_key)
+        level_id = safe_key(cluster.get("levelId"))
+        cluster_npcs = {
+            value for value in (cluster.get("npcIds") or [])
+            if isinstance(value, str) and value
+        }
+        if not env_talk_id or not level_id or not cluster_npcs:
+            stats["clustersWithoutJoinIdentity"] += 1
+            continue
+
+        same_level = [group for group in active_groups if group["levelId"] == level_id]
+        matches = [
+            group for group in same_level
+            if cluster_npcs.issubset(group["npcIds"])
+        ]
+        if len(matches) != 1:
+            if len(matches) > 1:
+                stats["ambiguousClusterMatches"] += 1
+            elif any(cluster_npcs & group["npcIds"] for group in same_level):
+                stats["partialOnlyClusterMatches"] += 1
+            elif any(
+                cluster_npcs.issubset(group["npcIds"])
+                for group in active_groups
+                if group["levelId"] != level_id
+            ):
+                stats["crossLevelClusterMatches"] += 1
+            else:
+                stats["missingClusterMatches"] += 1
+            continue
+        stats["clustersWithUniqueSwitcherGroup"] += 1
+        group = matches[0]
+        config = configs.get(group["groupId"])
+        if not isinstance(config, dict):
+            stats["matchedGroupsWithoutConfig"] += 1
+            continue
+        config_level = safe_key(config.get("levelId"))
+        config_switcher = safe_key(config.get("switcherId"))
+        if config_level != level_id or config_switcher != group["switcherId"]:
+            stats["matchedConfigIdentityMismatch"] += 1
+            continue
+
+        condition_references = collect_condition_references(config.get("condition"))
+        condition_missions = sorted({
+            row["id"] for row in condition_references if row["kind"] == "mission"
+        })
+        condition_quests = sorted({
+            row["id"] for row in condition_references if row["kind"] == "quest"
+        })
+        bind_mission_id = safe_key(config.get("bindMissionId"))
+        referenced_missions = set(condition_missions)
+        if bind_mission_id:
+            referenced_missions.add(bind_mission_id)
+        resolved_missions = {value for value in referenced_missions if value in mission_ids}
+        unresolved_missions = referenced_missions - resolved_missions
+        unresolved_quests: list[str] = []
+        resolved_quest_owners: dict[str, str] = {}
+        for quest_id in condition_quests:
+            owner = quest_owners.get(quest_id)
+            if owner:
+                resolved_missions.add(owner)
+                resolved_quest_owners[quest_id] = owner
+            else:
+                unresolved_quests.append(quest_id)
+
+        if not condition_references and not bind_mission_id:
+            stats["clustersWithoutStateReference"] += 1
+            continue
+        context = {
+            "relation": STATE_CONTEXT_RELATION,
+            "clusterId": cluster_id,
+            "switcherId": group["switcherId"],
+            "switcherGroupId": group["groupId"],
+            "levelId": level_id,
+            "npcIds": sorted(cluster_npcs),
+            "bindMissionId": bind_mission_id,
+            "missionIds": sorted(resolved_missions),
+            "conditionMissionIds": condition_missions,
+            "questIds": condition_quests,
+            "questOwners": resolved_quest_owners,
+            "unresolvedMissionIds": sorted(unresolved_missions),
+            "unresolvedQuestIds": sorted(unresolved_quests),
+            "conditionReferences": condition_references,
+            "sourceFiles": {
+                "cluster": rel_path(cluster_path),
+                "activeSwitcher": rel_path(active_path),
+                "switcherConfig": rel_path(config_path),
+            },
+        }
+        by_env_talk[env_talk_id].append(context)
+        stats["stateContextClusters"] += 1
+        state_files.add(env_talk_id)
+        state_missions.update(resolved_missions)
+        state_quests.update(condition_quests)
+
+    stats["stateContextFiles"] = len(state_files)
+    stats["stateContextMissions"] = len(state_missions)
+    stats["stateContextQuests"] = len(state_quests)
+    return by_env_talk, stats
 
 
 def quest_from_path(json_path: str) -> str:
@@ -252,7 +497,12 @@ def build_report(
     definition_ids = sorted(k for k in definitions if isinstance(k, str))
 
     consumers, proxy_env_talk, consumer_stats = collect_consumers(table_root, gameplay_root)
-    tracking, tracking_stats = collect_proxy_tracking(mission_root)
+    tracking, quest_owners, mission_ids, tracking_stats = collect_proxy_tracking(mission_root)
+    state_contexts_by_env_talk, state_stats = collect_atmospheric_state_contexts(
+        gameplay_root,
+        quest_owners,
+        mission_ids,
+    )
 
     # A consumer may name an envTalk id that no EnvTalkTable row defines. Those
     # references are reported rather than dropped, and are never repaired by
@@ -302,6 +552,10 @@ def build_report(
                     }
                 )
         quest_contexts.sort(key=lambda item: (item["missionId"], item["questId"], item["jsonPath"]))
+        state_contexts = sorted(
+            state_contexts_by_env_talk.get(env_talk_id) or [],
+            key=lambda item: (item["levelId"], item["switcherGroupId"], item["clusterId"]),
+        )
 
         if quest_contexts:
             relation = RELATION_QUEST_TRACKED_PROXY
@@ -326,6 +580,7 @@ def build_report(
                     rows, key=lambda item: (item["table"], item["rowKey"])
                 ),
                 "questContexts": quest_contexts,
+                "stateContexts": state_contexts,
             }
         )
 
@@ -354,16 +609,28 @@ def build_report(
                 "to an NPC that has ambient lines configured. It is not playback "
                 "ownership, chronology, a completion callback, or a server exchange."
             ),
+            "atmosphericStateRelation": (
+                "An atmospheric cluster reaches a switcher condition only when its "
+                "complete non-empty npcIds set is contained by exactly one active "
+                "switcher group on the same exact levelId, and that group's config "
+                "identity agrees. Exact missionId/questId fields under condition and "
+                "bindMissionId provide world-state availability context. They do not "
+                "prove envTalk playback, mission ownership, chronology, completion, "
+                "or a server exchange."
+            ),
             "rejected": [
                 "Level or mission ids parsed out of envTalk filenames.",
                 "Proximity between a proxy position and a mission area.",
                 "Promoting a level-scoped consumer to a mission because only one "
                 "mission uses that level.",
+                "Partial NPC overlap, a cross-level NPC-set match, or more than one "
+                "full switcher-group match.",
             ],
             "coverageBound": (
                 "envTalk is ambient world content keyed by NPC, proxy, or cluster. "
-                "No shipped table binds an envTalk id to a mission id, so the mission "
-                "pipeline denominator legitimately excludes these files."
+                "The recovered mission/quest relations explain navigation or NPC-group "
+                "availability; no shipped row makes a mission the playback owner of an "
+                "envTalk id, so the mission Story denominator still excludes these files."
             ),
         },
         "relationSemantics": {relation: RELATION_SUMMARY[relation] for relation in RELATION_ORDER},
@@ -379,11 +646,15 @@ def build_report(
             "proxyRowsWithEnvTalk": len(proxy_env_talk),
             "npcProxyTrackingRows": tracking_stats["trackingRows"],
             "missionsRead": tracking_stats["missionsRead"],
+            "missionIdsRead": tracking_stats["missionIds"],
+            "questIdsRead": tracking_stats["questIds"],
+            "questOwnerConflicts": tracking_stats["questOwnerConflicts"],
             "danglingConsumerReferences": len(dangling),
             "danglingWithSurroundingWhitespace": sum(
                 1 for item in dangling if item["hasSurroundingWhitespace"]
             ),
             "danglingRepairableByTrim": sum(1 for item in dangling if item["trimmedIdIsDefined"]),
+            **{key: value for key, value in state_stats.items()},
             **{key: value for key, value in consumer_stats.items()},
         },
         "danglingConsumerReferences": dangling,
@@ -405,6 +676,19 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.append(
         f"- quest context: {counts['relationCounts'][RELATION_QUEST_TRACKED_PROXY]} files "
         f"across {counts['questContextQuests']} quests in {counts['questContextMissions']} missions"
+    )
+    lines.append(
+        f"- atmospheric switcher state context: {counts['stateContextFiles']} files / "
+        f"{counts['stateContextClusters']} clusters across "
+        f"{counts['stateContextQuests']} quests in {counts['stateContextMissions']} missions"
+    )
+    lines.append(
+        f"- exact cluster/group joins: {counts['clustersWithUniqueSwitcherGroup']} / "
+        f"{counts['atmosphericClusters']} "
+        f"(ambiguous {counts['ambiguousClusterMatches']}, "
+        f"partial-only {counts['partialOnlyClusterMatches']}, "
+        f"cross-level {counts['crossLevelClusterMatches']}, "
+        f"missing {counts['missingClusterMatches']})"
     )
     lines.append(f"- distinct level ids: {counts['distinctLevelIds']}")
     lines.append("")
@@ -455,6 +739,26 @@ def render_markdown(report: dict[str, Any]) -> str:
                 f"`{md_escape(context['levelId'])}` |"
             )
     lines.append("")
+    lines.append("## Atmospheric switcher state context")
+    lines.append("")
+    lines.append(
+        "These rows are exact NPC-group availability dependencies, not envTalk "
+        "playback or mission ownership."
+    )
+    lines.append("")
+    lines.append("| story key | missions | quests | switcher group | cluster | level |")
+    lines.append("| --- | --- | --- | --- | --- | --- |")
+    for entry in report["entries"]:
+        for context in entry["stateContexts"]:
+            missions = ", ".join(f"`{md_escape(value)}`" for value in context["missionIds"])
+            quests = ", ".join(f"`{md_escape(value)}`" for value in context["questIds"])
+            lines.append(
+                f"| `{md_escape(entry['storyKey'])}` | {missions} | {quests} | "
+                f"`{md_escape(context['switcherGroupId'])}` | "
+                f"`{md_escape(context['clusterId'])}` | "
+                f"`{md_escape(context['levelId'])}` |"
+            )
+    lines.append("")
     return "\n".join(lines)
 
 
@@ -482,6 +786,7 @@ def main(argv: list[str] | None = None) -> int:
         f"definitions={counts['definitions']} "
         f"withConsumer={counts['withAuthoredConsumer']} "
         f"questContext={counts['relationCounts'][RELATION_QUEST_TRACKED_PROXY]} "
+        f"stateContext={counts['stateContextFiles']} "
         f"levelScoped={counts['relationCounts'][RELATION_LEVEL_SCOPED]} "
         f"characterScoped={counts['relationCounts'][RELATION_CHARACTER_SCOPED]} "
         f"none={counts['relationCounts'][RELATION_NONE]}"

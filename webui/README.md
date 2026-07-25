@@ -213,6 +213,14 @@ available through expandable guidance.
   in that same script, displays both tracked and event slots, and labels both
   as context rather than playback, chronology, or a server exchange. Raw
   file-wide strings and unrelated getter records never create this relation.
+  Mission summaries also show ambient envTalk context through two exact,
+  non-owning paths: typed quest tracking to an envTalk-carrying NPC proxy, and
+  atmospheric switcher state conditions joined to an envTalk cluster through
+  one same-level active group containing the cluster's complete NPC set.
+  Partial, cross-level, ambiguous, or identity-mismatched joins are rejected.
+  These rows explain navigation or world-state availability only; they do not
+  enter the mission Story coverage denominator and do not claim playback,
+  ownership, order, completion, or a server exchange.
   Non-script tracking may also resolve one counted world-interactive record
   only when component 94 exactly co-carries the mission id, `Dialog(1)`, and
   Story id and every registry/table/template mirror agrees. The current SM1

@@ -33,7 +33,17 @@ def entity_tracking(proxy_id):
 
 
 class Fixture:
-    def __init__(self, *, env_talk=None, proxies=None, clusters=None, npcs=None, missions=None):
+    def __init__(
+        self,
+        *,
+        env_talk=None,
+        proxies=None,
+        clusters=None,
+        npcs=None,
+        missions=None,
+        active_switchers=None,
+        switcher_configs=None,
+    ):
         self._tmp = tempfile.TemporaryDirectory()
         base = Path(self._tmp.name)
         self.table_root = base / "Table"
@@ -50,6 +60,14 @@ class Fixture:
         write(
             self.gameplay_root / "AtmosphericNpcClusterDataTable.json",
             {"dataTable": clusters or {}},
+        )
+        write(
+            self.gameplay_root / "AtmosphericNpcActiveSwitcherDataTable.json",
+            {"dataTable": active_switchers or {}},
+        )
+        write(
+            self.gameplay_root / "AtmosphericNpcSwitcherDataTable.json",
+            {"groupConfigs": switcher_configs or {}},
         )
         for mission_id, document in (missions or {}).items():
             write(self.mission_root / f"{mission_id}.json", document)
@@ -192,6 +210,138 @@ class QuestContextTests(Base):
     def test_quest_context_relation_never_claims_ownership(self):
         policy = eta.RELATION_SUMMARY[eta.RELATION_QUEST_TRACKED_PROXY]
         self.assertIn("never playback ownership", policy)
+
+
+class AtmosphericStateContextTests(Base):
+    CLUSTER = {
+        "cluster_1": {
+            "clusterId": "cluster_1",
+            "envTalkId": "envTalk_a_1",
+            "levelId": "L",
+            "npcIds": ["npc_1", "npc_2"],
+        }
+    }
+    ACTIVE = {
+        "L": [
+            {
+                "switcherId": "switcher_1",
+                "levelId": "L",
+                "groupId2AtmosphericNpcs": {
+                    "group_1": ["npc_1", "npc_2", "npc_3"],
+                },
+            }
+        ]
+    }
+
+    @staticmethod
+    def config(condition=None, **extra):
+        return {
+            "group_1": {
+                "switcherId": "switcher_1",
+                "groupId": "group_1",
+                "levelId": "L",
+                "condition": condition or {},
+                **extra,
+            }
+        }
+
+    def test_full_npc_set_and_same_level_create_exact_quest_state_context(self):
+        report = self.make(
+            env_talk=["envTalk_a_1"],
+            clusters=self.CLUSTER,
+            active_switchers=self.ACTIVE,
+            switcher_configs=self.config({
+                "$type": "Beyond.Gameplay.SimpleConditionCheckQuestState, Gameplay.Beyond",
+                "questId": "alpha_q#1",
+                "compareOperator": 0,
+                "compareTarget": 3,
+            }),
+            missions={"alpha": {"missionId": "alpha", "questDic": {"alpha_q#1": {}}}},
+        ).build()
+        context = report["entries"][0]["stateContexts"][0]
+        self.assertEqual(context["relation"], eta.STATE_CONTEXT_RELATION)
+        self.assertEqual(context["missionIds"], ["alpha"])
+        self.assertEqual(context["questIds"], ["alpha_q#1"])
+        self.assertEqual(context["switcherGroupId"], "group_1")
+        self.assertEqual(report["counts"]["stateContextFiles"], 1)
+
+    def test_partial_npc_overlap_is_rejected(self):
+        active = {
+            "L": [{
+                "switcherId": "switcher_1",
+                "levelId": "L",
+                "groupId2AtmosphericNpcs": {"group_1": ["npc_1"]},
+            }]
+        }
+        report = self.make(
+            env_talk=["envTalk_a_1"],
+            clusters=self.CLUSTER,
+            active_switchers=active,
+            switcher_configs=self.config({"missionId": "alpha"}),
+            missions={"alpha": {"missionId": "alpha", "questDic": {}}},
+        ).build()
+        self.assertEqual(report["entries"][0]["stateContexts"], [])
+        self.assertEqual(report["counts"]["partialOnlyClusterMatches"], 1)
+
+    def test_ambiguous_full_group_matches_are_rejected(self):
+        active = {
+            "L": [{
+                "switcherId": "switcher_1",
+                "levelId": "L",
+                "groupId2AtmosphericNpcs": {
+                    "group_1": ["npc_1", "npc_2"],
+                    "group_2": ["npc_1", "npc_2", "npc_3"],
+                },
+            }]
+        }
+        report = self.make(
+            env_talk=["envTalk_a_1"],
+            clusters=self.CLUSTER,
+            active_switchers=active,
+            switcher_configs=self.config({"missionId": "alpha"}),
+            missions={"alpha": {"missionId": "alpha", "questDic": {}}},
+        ).build()
+        self.assertEqual(report["entries"][0]["stateContexts"], [])
+        self.assertEqual(report["counts"]["ambiguousClusterMatches"], 1)
+
+    def test_cross_level_full_match_is_rejected(self):
+        active = {
+            "OTHER": [{
+                "switcherId": "switcher_1",
+                "levelId": "OTHER",
+                "groupId2AtmosphericNpcs": {"group_1": ["npc_1", "npc_2"]},
+            }]
+        }
+        report = self.make(
+            env_talk=["envTalk_a_1"],
+            clusters=self.CLUSTER,
+            active_switchers=active,
+            switcher_configs=self.config({"missionId": "alpha"}),
+            missions={"alpha": {"missionId": "alpha", "questDic": {}}},
+        ).build()
+        self.assertEqual(report["entries"][0]["stateContexts"], [])
+        self.assertEqual(report["counts"]["crossLevelClusterMatches"], 1)
+
+    def test_bind_mission_is_retained_but_stray_config_field_is_not(self):
+        report = self.make(
+            env_talk=["envTalk_a_1"],
+            clusters=self.CLUSTER,
+            active_switchers=self.ACTIVE,
+            switcher_configs=self.config({}, bindMissionId="alpha", missionId="stray"),
+            missions={
+                "alpha": {"missionId": "alpha", "questDic": {}},
+                "stray": {"missionId": "stray", "questDic": {}},
+            },
+        ).build()
+        context = report["entries"][0]["stateContexts"][0]
+        self.assertEqual(context["bindMissionId"], "alpha")
+        self.assertEqual(context["missionIds"], ["alpha"])
+        self.assertEqual(context["conditionReferences"], [])
+
+    def test_policy_never_promotes_state_context_to_playback_or_ownership(self):
+        policy = self.make(env_talk=[]).build()["evidencePolicy"]["atmosphericStateRelation"]
+        self.assertIn("do not prove envTalk playback", policy)
+        self.assertIn("mission ownership", policy)
 
 
 class DanglingReferenceTests(Base):

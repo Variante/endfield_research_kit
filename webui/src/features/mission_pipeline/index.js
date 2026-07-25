@@ -53,11 +53,14 @@
       missionGraphInterleaving: "Interleaved with",
       missionGraphHint: "Recovered from authored quest conditions that read another mission's or another mission's quest's state. Only \"requires completed\" is precedence; \"requires in progress\" is a co-active window and \"aborts when completed\" is mutual exclusion. Mission unlock order is server-authored, so a missing relation is not evidence that two missions are unordered.",
       missionGraphEdgesStat: "cross-mission precedence",
-      envTalkContext: "Ambient envTalk on tracked NPCs",
+      envTalkContext: "Mission-related ambient envTalk",
       envTalkContextStat: "quest-tracked envTalk",
-      envTalkContextBoundary: "Navigation context, not playback",
-      envTalkContextHint: "A quest objective tracks an NPC proxy through a typed NpcProxyTrackingInfo, and that proxy row configures these ambient envTalk lines. The quest steers the player to that NPC; it does not play, own, start, or complete these lines, and no chronology or server exchange follows from this relation.",
+      envTalkStateContextStat: "state-conditioned envTalk",
+      envTalkContextBoundary: "Navigation/state context, not playback",
+      envTalkContextHint: "Two exact non-owning paths are shown: a typed NpcProxyTrackingInfo can steer a quest to a proxy carrying ambient lines, while an atmospheric switcher condition can gate the unique same-level NPC group containing an envTalk cluster. These paths explain navigation or world-state availability; they do not play, own, start, or complete the lines, and prove no chronology or server exchange.",
       relationEnvTalkTrackedProxy: "ambient lines on a quest-tracked NPC proxy",
+      relationEnvTalkSwitcherState: "ambient cluster under a mission/quest-conditioned NPC switcher",
+      relationEnvTalkMultipleContext: "multiple exact ambient context paths",
       trackedByQuests: "tracked by",
       missionlessSubGameStory: "SubGame-scoped Story",
       missionlessRuntimeStory: "runtime-receiver Story",
@@ -429,11 +432,14 @@
       missionGraphInterleaving: "与之交错",
       missionGraphHint: "来自读取其他使命（或其他使命任务）状态的原始任务条件。只有“需已完成”表示先后顺序；“需进行中”是并行窗口，“完成即中止”是互斥关系。使命解锁顺序由服务端决定，因此没有关系并不能说明两个使命之间没有顺序。",
       missionGraphEdgesStat: "跨使命先后关系",
-      envTalkContext: "任务追踪 NPC 上的环境对话",
+      envTalkContext: "使命相关的环境对话",
       envTalkContextStat: "任务追踪的环境对话",
-      envTalkContextBoundary: "导航上下文，非播放归属",
-      envTalkContextHint: "任务目标通过带类型的 NpcProxyTrackingInfo 追踪某个 NPC 代理，而该代理行配置了这些环境对话。任务只是把玩家引导到该 NPC；它不播放、不拥有、不启动也不完成这些台词，由此也推不出任何时序或服务端交互。",
+      envTalkStateContextStat: "状态条件关联的环境对话",
+      envTalkContextBoundary: "导航/状态上下文，非播放归属",
+      envTalkContextHint: "这里展示两条精确但不表示归属的路径：带类型的 NpcProxyTrackingInfo 可把任务引导到配置了环境台词的 NPC 代理；环境 NPC 切换器条件则可控制包含某个环境对话簇的、同关卡内唯一匹配的 NPC 组。它们只说明导航或世界状态可用性，不会播放、拥有、启动或完成这些台词，也不能证明时序或服务端交互。",
       relationEnvTalkTrackedProxy: "任务追踪 NPC 代理上的环境台词",
+      relationEnvTalkSwitcherState: "受使命/任务状态条件控制的环境 NPC 簇",
+      relationEnvTalkMultipleContext: "多条精确环境对话上下文路径",
       trackedByQuests: "追踪任务",
       missionlessSubGameStory: "SubGame 范围剧情",
       missionlessRuntimeStory: "运行时接收器范围剧情",
@@ -1123,6 +1129,7 @@
       [storyCounts.nonMissionContentFiles, t("nonMissionContentStory")],
       [counts.missionGraphPrecedenceEdges, t("missionGraphEdgesStat")],
       [counts.envTalkQuestContextFiles, t("envTalkContextStat")],
+      [counts.envTalkStateContextFiles, t("envTalkStateContextStat")],
     ];
     if (state.index?.runtimeTrace) stats.push([runtimeCounts.storyPlaybacks, t("runtimeObserved")]);
     node.innerHTML = stats.map(([value, label]) => `<strong>${Number(value || 0).toLocaleString()}</strong><span>${esc(label)}</span>`).join("");
@@ -1424,6 +1431,8 @@
       unassigned_story: "relationUnassignedStory",
       runtime_reference: "relationRuntimeReference",
       env_talk_quest_tracked_proxy: "relationEnvTalkTrackedProxy",
+      env_talk_atmospheric_switcher_state_context: "relationEnvTalkSwitcherState",
+      env_talk_multiple_context: "relationEnvTalkMultipleContext",
     }[relation];
     return key ? t(key) : String(relation || t("relationRuntimeReference"));
   }
@@ -1895,26 +1904,60 @@
   function envTalkContextHtml() {
     const rows = (state.mission?.envTalkContext || []).filter((row) => row && row.storyKey);
     if (!rows.length) return "";
-    // One envTalk file can be tracked by several quests; group so the file is
-    // listed once with every quest that steers the player to that proxy.
+    // One envTalk file can have several exact navigation/state context paths;
+    // list the file once while retaining every typed proxy and switcher join.
     const byKey = new Map();
     rows.forEach((row) => {
-      if (!byKey.has(row.storyKey)) byKey.set(row.storyKey, { row, quests: [], proxies: new Set() });
+      if (!byKey.has(row.storyKey)) {
+        byKey.set(row.storyKey, {
+          row,
+          quests: new Set(),
+          proxies: new Set(),
+          switcherGroups: new Set(),
+          clusters: new Set(),
+          levels: new Set(),
+          hasTrackedProxy: false,
+          hasSwitcherState: false,
+        });
+      }
       const entry = byKey.get(row.storyKey);
-      if (row.questId && !entry.quests.includes(row.questId)) entry.quests.push(row.questId);
+      if (row.questId) entry.quests.add(row.questId);
+      (row.questIds || []).forEach((questId) => entry.quests.add(questId));
       if (row.npcProxyId) entry.proxies.add(row.npcProxyId);
+      if (row.switcherGroupId) entry.switcherGroups.add(row.switcherGroupId);
+      if (row.clusterId) entry.clusters.add(row.clusterId);
+      if (row.levelId) entry.levels.add(row.levelId);
+      entry.hasTrackedProxy ||= row.relation === "questTrackedNpcProxy";
+      entry.hasSwitcherState ||= row.relation === "atmosphericSwitcherStateContext";
     });
     return `<details class="mp-mission-story mp-envtalk-context" data-weight="context">
       <summary>${esc(t("envTalkContext"))} <span>${byKey.size}</span></summary>
       <div class="mp-story-files"><section class="mp-story-group is-context">
-        ${[...byKey.values()].map(({ row, quests, proxies }) => storyConnectionLink({
-          key: row.storyKey,
-          relation: "env_talk_quest_tracked_proxy",
-          direction: "context",
-          confidence: "typed_npc_proxy_tracking",
-          questIds: quests,
-          source: `NpcProxyTrackingInfo → ${[...proxies].join(", ")}${row.levelId ? ` (${row.levelId})` : ""}`,
-        }, "context")).join("")}
+        ${[...byKey.values()].map((entry) => {
+          const relation = entry.hasTrackedProxy && entry.hasSwitcherState
+            ? "env_talk_multiple_context"
+            : entry.hasSwitcherState
+              ? "env_talk_atmospheric_switcher_state_context"
+              : "env_talk_quest_tracked_proxy";
+          const sources = [];
+          if (entry.proxies.size) {
+            sources.push(`NpcProxyTrackingInfo → ${[...entry.proxies].join(", ")}`);
+          }
+          if (entry.switcherGroups.size) {
+            sources.push(
+              `AtmosphericNpcSwitcher ${[...entry.switcherGroups].join(", ")} → cluster ${[...entry.clusters].join(", ")}`,
+            );
+          }
+          if (entry.levels.size) sources.push(`level ${[...entry.levels].join(", ")}`);
+          return storyConnectionLink({
+            key: entry.row.storyKey,
+            relation,
+            direction: "context",
+            confidence: "exact_typed_context",
+            questIds: [...entry.quests].sort(),
+            source: sources.join(" · "),
+          }, "context");
+        }).join("")}
       </section></div>
       <small><strong>${esc(t("envTalkContextBoundary"))}.</strong> ${esc(t("envTalkContextHint"))}</small>
     </details>`;

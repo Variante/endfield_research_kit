@@ -1962,10 +1962,13 @@ plays an envTalk**. The real consumers are
 `NpcTable[*].envTalkIds`. `scripts/story_recovery/build_envtalk_attachment.py`
 reads them by exact field name.
 
-Current split of the 1,988: 57 `questTrackedNpcProxy`, 574
+Current primary-consumer split of the 1,988: 57 `questTrackedNpcProxy`, 574
 `levelScopedConsumer`, 41 `characterScopedConsumer`, 1,316 `noAuthoredConsumer`.
+Atmospheric state context is independent of that primary classification, so a
+file can remain level-scoped while gaining a mission/quest availability
+context.
 
-The only path that reaches a quest is one typed join: an objective's
+The direct navigation path that reaches a quest is one typed join: an objective's
 `trackingInfoList[*]` entry of type `NpcProxyTrackingInfo` names an
 `npcProxyId`, and that proxy row carries `envTalkIds`. 850 such tracking rows
 exist overall; 76 point at envTalk-carrying proxies, covering 57 proxies across
@@ -1981,6 +1984,64 @@ and it yields no chronology and no server exchange. This mirrors the existing
 treatment of typed `EntityTrackingInfo` elsewhere in this note. No mission id
 appears on any envTalk-carrying proxy row: all 256 have blank mission fields,
 consistent with the earlier NpcProxyEx finding.
+
+### Atmospheric switcher state context
+
+The remaining cluster lead now has an exact, fail-closed join:
+
+`AtmosphericNpcClusterDataTable cluster`
+→ complete non-empty `npcIds` set
+→ exactly one same-`levelId` active group in
+`AtmosphericNpcActiveSwitcherDataTable.groupId2AtmosphericNpcs`
+→ the same group's `AtmosphericNpcSwitcherDataTable.groupConfigs` condition.
+
+This is not a proximity or filename match. The cluster's complete NPC set must
+be contained by one and only one active group on the same exact level; partial
+overlap, cross-level containment, multiple full matches, missing config, and
+switcher/config identity mismatch are all rejected. Current data contains 494
+cluster rows, 50 with no envTalk id and 444 actual envTalk clusters. All 444
+envTalk clusters have one exact active-group match, with zero ambiguous,
+partial-only, cross-level, missing, or config-mismatch cases. The active table
+has 335 group rows / 333 distinct group ids (nine empty groups and two duplicate
+rows); 326 non-empty rows participate in matching.
+
+Of those 444 clusters, 380 carry exact `missionId` / `questId` fields under
+their switcher condition; 26 also carry `bindMissionId`. They cover **359
+unique envTalk Story files, 52 quests present in MissionRuntime, and 64 known
+missions**. The condition tree is preserved as a dependency rather than
+collapsed into an ordering rule: combined/reversed predicates can express
+availability windows, exclusion, or co-active state. Three clusters literally
+reference absent quest `f1m9d3_q#15` while binding mission `f1m9d4`; the report
+keeps that quest unresolved and does not infer an owner from its prefix. There
+are no unresolved literal mission ids.
+
+The installed binary establishes what the table fields do. For
+`GameAssembly.dll` SHA-256
+`0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce`
+and `global-metadata.dat` SHA-256
+`90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e`,
+metadata exposes
+`Beyond.Gameplay.Core.AtmosphericNpcSwitcherGroupConfig` with
+`switcherId`, `levelId`, `mapId`, `groupId`, `bindMissionId`,
+`switcherType`, and `condition`; the active/cluster tables expose the group NPC
+map and cluster `envTalkId` / `npcIds`. `AtmosphereNpcMgr` contains
+`CheckSwitcherActive` (`0x06013068`, VA `0x187043084`),
+`CheckNpcBindMission` (`0x06013069`, VA `0x187042fa8`),
+`SetSwitcherActive` (`0x0601306a`, VA `0x183740000`), and
+`SetSwitcherDeActive` (`0x0601306b`, VA `0x187043964`).
+`_BuildNpcGroupInLevel` (`0x06013066`, VA `0x1833e9ce0`) reads
+`ConditionRuntimeBase.GetResult`, registers the group's
+`RuntimeGroupData.OnConditionChange`, and maintains active-group state.
+`NpcClusterRuntimeInst` separately exposes the cluster's envTalk id and NPC
+members while refreshing cluster/NPC visibility.
+
+**This is exact world-state availability context, not playback ownership.**
+The condition controls the atmospheric NPC group containing the envTalk
+cluster. It does not prove that satisfying the condition plays the line, that
+the referenced mission owns it, or that the condition establishes chronology,
+completion, or a server exchange. `env_*` therefore remains outside the 5,273
+mission Story denominator. Mission Pipeline and the Story trigger manifest
+publish these routes with `causality=context`.
 
 ### Five dangling consumer references
 
@@ -3006,10 +3067,13 @@ Current main-story priorities:
    activation surface co-carrying mission identity -- which is the same
    blocker recorded above for Story ownership.
 10. envTalk consumers are enumerated and the 1,316 files with no consumer row
-   are a measured negative, not an unexplored gap. The remaining lead is the
-   `AtmosphericNpcClusterDataTable` -> `npcIds` -> level-entity path, which
-   could scope some ambient lines more tightly than `levelId`. It cannot reach
-   a mission: no envTalk-carrying proxy or cluster row serializes a mission id.
+   are a measured negative, not an unexplored gap. The atmospheric cluster
+   lead is closed: exact same-level full-NPC-set joins recover switcher
+   mission/quest state context for 359 files, while preserving it as
+   availability context rather than playback or ownership. Future work here
+   needs a new source that directly proves ambient playback or trigger choice;
+   looser entity overlap, filename mission fragments, and condition order are
+   not such evidence.
 
 The practical ceiling remains unchanged: original data can recover local
 chains, partial mission graphs, quest forks/merges, verified dialog branches,
