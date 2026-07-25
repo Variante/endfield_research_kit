@@ -1069,7 +1069,7 @@ only modes 2/3 enabling cross-fade. The two transition intervals clamp to
 `[0.001,0.499]` and `[0.501,0.999]`. The selected ribbon renderer is
 `EffectSetting.lodSetting[4]`, with one active distance tier, `lodFadeTime=1`,
 cull distance 100, and no serialized Unity `LODGroup`. Original dither execution
-now has a source-closed writer. `EffectSetting._SetEffectCfgAlpha` iterates the
+has a source-closed general writer. `EffectSetting._SetEffectCfgAlpha` iterates the
 complete `lodSetting` array and `EffectLodCfg.UpdateLodFade` reaches the same
 sink; `EffectLodCfg.SetEffectAlpha` enables manual dither below effective alpha
 `0.95` and writes `1-effectiveAlpha`. UnityPlayer stores that as enable bit 17
@@ -1077,14 +1077,31 @@ and float channel 17 (`+0x44`), the standard flatten path preserves bit 17, and
 `CalculateLODFade` carries it through `RenderNode+0x178/+0x17A` to
 `unity_LODFade.xy`. Camera dither is the distinct channel 18. The separate
 custom-LOD wrappers have only XLua binding-shim direct callers in an exhaustive
-GameAssembly executable-section call scan; indirect Lua/reflection use remains
-fail-closed. The exact frame's effective alpha, packed uint16/mode/sign, and
-final values still require a live capture and must not be inferred from
-`lodFadeTime`. The pinned writer report is
+GameAssembly executable-section call scan. The selected piaodai route is now
+closed more narrowly: its raw GameObject is serialized active; `InitData`
+copies that state into both `m_initActive` and `m_curActive`; the only distance
+tier also requests active; and `_RefreshLod` never arms fade state 1 or 2 when
+desired/current activity already match. Selected auto-fade is off, the Effect
+Timeline has no `RecorderEffectAlpha` asset and animates only
+`material._TintColorAlpha`, and the shipped Gacha Lua calls no alpha, distance-
+LOD, or renderer custom-LOD API. UnityPlayer initializes renderer custom LOD
+disabled with value zero. Consequently no selected runtime writer replaces
+the already recovered neutral `(1000,0,0,0)` carrier. The selected verifier
+and report live under
+`scratch/reverse_engineering/piaodai_lodfade_runtime/`; their SHA-256 values
+are respectively
+`A725388732E458E0D88BBA3AE22FA193AA48C73BD85737D7EA1772451A27099B`
+and
+`8F6B1F0E457A04CFE6AFFB4D27440F5C15C36F83C99CA6A81C9EFDFBA45F8B2B`.
+The regenerated selected-effect contract SHA-256 is
+`8A55C7E074CCDAF323A2B59B09020CD96C5373C0D83107697DFFBF4302AD2A94`.
+A clean Unity `2022.3.62f3` batch import compiled scripts and exited
+successfully; its project-local validation log is
+`unity_endfield_graph_shader_lab/scratch/character_recovery/piaodai_lodfade_runtime/unity_batch_import.log`
+(SHA-256 `7732994713CAA0D5E4B250FBEF1C5E9444205A8FBFA024F3BF9C246752BA82FD`).
+The general writer report remains
 `scratch/reverse_engineering/lodfade_live_writer/lodfade_live_writer.json`
-(SHA-256 `2E8F12DE68A200103F5585845A837AD70547DF7043D7E01C717A5A5CA6F9FCC7`);
-`verify_lodfade_live_writer.py` is
-`C5966977148DE7E4B72515D4A8F819ED3C6167B01CB794ACDBE7CD7A3177A406`.
+(SHA-256 `1B40118C23B3273A458BEE0B8B18C670EDD28B2678501B58741153BA50DB41D5`).
 The original `sceneMV` runtime contract is
 now source-closed from the current installed `GameAssembly.dll`, global
 metadata, forked `UnityPlayer.dll`, and selected VFXBaseV2 vertex bytecode. It
@@ -4068,8 +4085,9 @@ and source JSON but uses
 `Hidden/Endfield/Recovered/VFXUnavailableFailClosed` (`ColorMask 0`). This
 prevents the former default-white geometry without inventing shader semantics.
 The exact parent metadata and Effect Timeline scheduling are now recovered.
-EffectSetting runtime cull/LOD/lifetime control, execution of the active fork
-renderer fields, and visible shader execution remain open implementation
+The selected piaodai EffectSetting cull/LOD path and visible shader execution
+are now closed below; exact execution of the broader active fork renderer
+fields and the other Effect roots' lifetime behavior remain open implementation
 boundaries.
 
 The full `gacha_char_zhuangfy_Effect` Timeline has 16 tracks and ends at
@@ -4338,8 +4356,8 @@ The particle instance helper at `0x181437D40` independently loads
 that exact retail neutral/default payload through `_RecoveredLODFade` and now
 executes the selected piaodai position hash, signed threshold, coverage, and
 alpha-tail equations. `EndfieldRecoveredLodFadePacking` preserves the signed
-custom-alpha path for a future source-proven owner; it does not invent an
-uncaptured manual-alpha transition. A targeted Unity `2022.3.62f3` rebuild and
+custom-alpha path for other source-proven owners; the selected piaodai route is
+proven not to enter one. A targeted Unity `2022.3.62f3` rebuild and
 a separate fresh-editor validation both pass for all three saved non-instanced
 materials, the serialized sentinel, queue 3700, indexed target-1 blend, and
 the exact `ExactSelectedPiaodaiThree` sceneMV admission tag. The maintained
@@ -4351,8 +4369,7 @@ translucent ribbon layers; the report and captures live under the
 self-contained project path
 `unity_endfield_graph_shader_lab/scratch/character_recovery/zhuangfy_piaodai_mrt_probe/`.
 This closes the lab attachment/draw execution, not pixel parity against a
-captured retail frame. Runtime EffectSetting/manual renderer alpha at a
-particular retail frame remains capture-dependent.
+captured retail frame.
 
 The separate custom-job boundary is now closed as non-applicable to the
 selected non-instanced shader, without claiming the job's broader family name.
@@ -4409,9 +4426,7 @@ pass under `2022.3.62f3`; the report SHA-256 is
 
 This does not close final visual parity. The persistent main Camera's carry-in
 `HGCamera.exposureAdaptation` and exact scaled frame-delta sequence,
-captured-frame EffectSetting or
-manual-alpha override and resulting `PerDrawBaseData.lodFade.xy`, the forked
-engine's physical skin-buffer schedule, exact execution of the active
+the forked engine's physical skin-buffer schedule, exact execution of the active
 Endfield particle/renderer extension
 fields, active IFix payloads, engine Awake/OnEnable and first automatic-update
 chronology, native renderer-helper alpha-quad eligibility, and implementation
@@ -4811,7 +4826,7 @@ complete event chronology remain open.
 | Events | Animation events, visibility handlers, audio, material/VFX events, prop toggles, and timeline signals |
 | Item widgets | All 204 owner-qualified item/deco runtime clips validate against their decoded source samples, including six exact Wulfa apple clips, two Pelica visibility curves, Mifu's exact deco-2 owner, and four owner-qualified Pograni copies of the shared disappear PPtr. Exact private controllers now drive known Overview start-to-loop/disappear/displayoff handoffs; 14 private controller sources remain unavailable, and external FX/weapon/creature companions still need separate evidence. |
 | CharInfo scene animation | Floor/grid one-second opened endpoints are recovered, but complete UIAnimation in/out curves and transition policy are not played |
-| FX | Zhuangfy's complete seven-root entrance identity, 16-track Timeline, Effect/EntityVFX scheduling, 92-node/70-particle source prefabs, 60 materials, 14 meshes, 75 textures, and three shader families are recovered. Six exact material tuples now execute identity-scoped BaseV2/RadialBlur/Refract ports through the selected native `A2B10G10R10_UNormPack32` MRT, snapshot-copy, indexed-blend, depth-access, post, and after-post chain; 54 other variants remain `ColorMask 0`. The selected ports preserve the original reciprocal exposure, `_VFXParams0` player/time producer, recovered `_RecoveredLODFade.xy` hash/strength input, target1 equations, radial `_InParticle`, and refraction red/alpha/dissolve behavior. Gacha exposure ownership is source-closed as `Env_gachaRoom_01` Manual target 1 with 0.6/0.6 adaptation on CameraManager's persistent main Camera; only its carry-in exposure and exact scaled frame-delta sequence remain uncaptured. Retail custom-alpha packing/unpacking, the direct non-instanced `PerDrawBaseData` ABI, the separate `SRP_INSTANCING_ON` array ABI, and the neutral `(1000,0,0,0)` disabled sentinel are source-closed. The selected effect has one distance tier, culling and auto-fade disabled, and no stock `LODGroup`; the lab executes the exact dither equations with the neutral payload while synthesizing no uncaptured manual-alpha transition. The final Unity import validates 7 recovered/53 fail-closed assets with zero bounded compiler/shader/runtime errors, and a separate fresh editor validates all three piaodai materials. A compiler-clean D3D12 control probe also executes the three queue-3700 piaodai layers through the owned MRT, changing 7,571 pixels. The current-build total order is source-closed as GBuffer -> ForwardOpaque -> main ForwardOnly -> Distortion -> gated Phase1 -> after-DOF ForwardOnly. Three absent rarity CRCs remain source-proven stale and unbound. The opaque character's raw mesh influence encoding, native row ring, `HGMeshSkinning.compute::CSMain` 128x1x1 producer, 0x38 record ABI, exact batched dispatch, retained current/previous output lifetime, triple descriptor bank, graphics current/previous/source stream rewrite, draw-mode flags, current/previous object and skin records, skipped-generation collapse, selected shader route, and renderer-space bind-pose construction are source-closed. The lab still needs a dedicated unskinned raw indexed CharacterNPR MRT draw; binding the row route to Unity's current `SkinnedMeshRenderer` stream would double-skin. The custom job's raw D3D12 `startInstance` lane is proven absent from the selected shader ABI and is not a piaodai blocker. Also missing are retail RenderDoc attachment/captured-frame pixel comparison, exhaustive world/terrain/foliage/vegetation target-1 admission for general-world parity, the persistent main Camera's captured carry-in exposure/frame-delta sequence, any captured-frame manual LOD override, active fork renderer-field execution, IFix payload capture, Awake/OnEnable/first-automatic-frame chronology, and native alpha-quad eligibility. |
+| FX | Zhuangfy's complete seven-root entrance identity, 16-track Timeline, Effect/EntityVFX scheduling, 92-node/70-particle source prefabs, 60 materials, 14 meshes, 75 textures, and three shader families are recovered. Six exact material tuples now execute identity-scoped BaseV2/RadialBlur/Refract ports through the selected native `A2B10G10R10_UNormPack32` MRT, snapshot-copy, indexed-blend, depth-access, post, and after-post chain; 54 other variants remain `ColorMask 0`. The selected ports preserve the original reciprocal exposure, `_VFXParams0` player/time producer, recovered `_RecoveredLODFade.xy` hash/strength input, target1 equations, radial `_InParticle`, and refraction red/alpha/dissolve behavior. Gacha exposure ownership is source-closed as `Env_gachaRoom_01` Manual target 1 with 0.6/0.6 adaptation on CameraManager's persistent main Camera; only its carry-in exposure and exact scaled frame-delta sequence remain uncaptured. Retail custom-alpha packing/unpacking, the direct non-instanced `PerDrawBaseData` ABI, the separate `SRP_INSTANCING_ON` array ABI, and the neutral `(1000,0,0,0)` disabled sentinel are source-closed. The selected effect has one distance tier, culling and auto-fade disabled, and no stock `LODGroup`; its selected GameObject and sole tier both initialize active, its native refresh never arms a fade state, the selected Timeline has no `RecorderEffectAlpha`, shipped gacha Lua calls no manual alpha/LOD API, and the renderer custom-LOD override remains disabled. The lab therefore executes the exact dither equations with the neutral payload while synthesizing no manual-alpha transition. The final Unity import validates 7 recovered/53 fail-closed assets with zero bounded compiler/shader/runtime errors, and a separate fresh editor validates all three piaodai materials. A compiler-clean D3D12 control probe also executes the three queue-3700 piaodai layers through the owned MRT, changing 7,571 pixels. The current-build total order is source-closed as GBuffer -> ForwardOpaque -> main ForwardOnly -> Distortion -> gated Phase1 -> after-DOF ForwardOnly. Three absent rarity CRCs remain source-proven stale and unbound. The opaque character's raw mesh influence encoding, native row ring, `HGMeshSkinning.compute::CSMain` 128x1x1 producer, 0x38 record ABI, exact batched dispatch, retained current/previous output lifetime, triple descriptor bank, graphics current/previous/source stream rewrite, draw-mode flags, current/previous object and skin records, skipped-generation collapse, selected shader route, and renderer-space bind-pose construction are source-closed. The lab still needs a dedicated unskinned raw indexed CharacterNPR MRT draw; binding the row route to Unity's current `SkinnedMeshRenderer` stream would double-skin. The custom job's raw D3D12 `startInstance` lane is proven absent from the selected shader ABI and is not a piaodai blocker. Also missing are retail RenderDoc attachment/captured-frame pixel comparison, exhaustive world/terrain/foliage/vegetation target-1 admission for general-world parity, the persistent main Camera's captured carry-in exposure/frame-delta sequence, physical fork skin-buffer execution, IFix payload capture, Awake/OnEnable/first-automatic-frame chronology, and native alpha-quad eligibility. |
 | Secondary dynamics | The current BeyondDynamicBone generation, exact four-actor roots/colliders/serialized parameters, CharUI weight bridge, component lifecycle, manager initialization/delegates, wind update ownership, Character Info environment, and local IFix non-replacement are closed. Missing are the seven exact PlayerLoop anchor pairs/placement booleans, Burst job numerics/writeback/cross-frame scheduling, global wind state, numeric original-output fixtures, and an equivalent runtime; execution remains disabled. |
 | Procedural motion | Authored targets are preserved roster-wide and guessed lab IK is fail-closed. Exact Grounder/foot bindings and serialized profiles cover all 30 actors; 28 use world-up and Chen/Li use the recovered root-aligned base path. Three-key lookup/miss behavior, final pelvis recurrence, active `Terrain|IK` mask, quality-3 queries, delegate ownership/order, ECS acceptance, missing-ground continuity, pelvis/leg order, final length clamp, and external hand-target path are source-proven. Runtime implementation is blocked on live controller values and cross-MonoBehaviour/Animator frame chronology, a source-compatible terrain provider, C# profile consumption, the retail solver surface, and numeric fixtures; alternate-quality/overstep/prediction/capsule branches and broader pose drivers remain open. |
 | Broader clip scope | Combat, locomotion, dialog, cutscene, and complete gacha/team libraries are intentionally outside the current UI-first asset set |
@@ -5130,9 +5145,7 @@ rather than another generic fallback.
    current-bone-local-to-world × bind-pose arrays for both current and previous
    ranges without double-skinning, bind it to the opaque target-1 path, and
    capture the exact frame's persistent-main-camera carry-in
-   `HGCamera.exposureAdaptation` and scaled `Time.deltaTime` sequence plus the effective alpha and
-   live owner/value feeding the now source-closed `EffectLodCfg` manual-dither
-   writer and UnityPlayer custom-value pack/unpack path, enumerate world/
+   `HGCamera.exposureAdaptation` and scaled `Time.deltaTime` sequence, enumerate world/
    terrain/foliage/vegetation sceneMV writers only when general-world parity is
    in scope, and recover remaining director/mount behavior. The separate
    custom-job 16-byte lane may still be named for engine-wide archaeology, but

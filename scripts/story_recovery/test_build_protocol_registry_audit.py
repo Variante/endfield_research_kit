@@ -56,7 +56,7 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             815,
         )
 
-    def test_message_125_is_native_proven_while_sibling_schemas_stay_unconfirmed(self):
+    def test_message_125_is_native_proven_while_sibling_fallbacks_are_inactive(self):
         rows = {row["expectedId"]: row for row in audit.RELEVANT_MESSAGES}
         self.assertEqual(rows[125]["classification"], "native_handler_proven")
         self.assertEqual(
@@ -76,14 +76,50 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             "Beyond.KeyGenerator`2.GetKey",
         )
         self.assertIn(
-            "unproven",
+            "no exact authored pair",
             audit.NATIVE_MISSION_EVENT_PATHS[125]["directCallCensus"][
                 "typedPairingStatus"
             ],
         )
-        for message_id in (126, 316, 317):
-            self.assertIn("schema_only", rows[message_id]["classification"])
+        self.assertEqual(
+            rows[126]["classification"],
+            "native_handler_absent_current_fallback",
+        )
+        for message_id in (316, 317):
+            self.assertEqual(
+                rows[message_id]["classification"],
+                "native_sender_absent_current_fallback",
+            )
             self.assertNotIn(message_id, audit.NATIVE_MISSION_EVENT_PATHS)
+
+    def test_message_125_typed_subscriber_shape_is_fail_closed(self):
+        expected = (
+            "Beyond.EventData`1<Beyond.Gameplay.EventData>"
+        )
+        self.assertEqual(
+            audit.expected_event_bus_binding_type(
+                "Beyond.Gameplay.EventData"
+            ),
+            expected,
+        )
+        rows = [
+            {"genericArguments": ["Beyond.EventData`1<int>"]},
+            {"genericArguments": [expected]},
+        ]
+        self.assertEqual(
+            audit.matching_event_bus_subscriber_rows(
+                rows,
+                "Beyond.Gameplay.EventData",
+            ),
+            [rows[1]],
+        )
+        self.assertEqual(
+            audit.matching_event_bus_subscriber_rows(
+                rows[:1],
+                "Beyond.Gameplay.EventData",
+            ),
+            [],
+        )
 
     def test_message_57_preserves_ctx_token_as_non_owning_event_context(self):
         evidence = audit.NATIVE_LEVEL_SCRIPT_EVENT_PATHS[57]
