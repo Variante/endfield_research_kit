@@ -22,6 +22,13 @@ from pack_webui import (
     normalize_inline_image_id,
     resolve_env_emoji_prefab_key,
 )
+from animestudio_object_index import (
+    MERGE_CONTRACT as ANIMESTUDIO_OBJECT_INDEX_MERGE_CONTRACT,
+    PART_SCHEMA_VERSION as ANIMESTUDIO_OBJECT_INDEX_PART_SCHEMA_VERSION,
+    MergeError as AnimeStudioObjectIndexMergeError,
+    merge_parts as merge_animestudio_object_index_parts,
+    sha256_file as sha256_animestudio_object_index_file,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,10 +39,16 @@ DEFAULT_REPORT_RUNS_TO_KEEP = 5
 DEFAULT_ANIMESTUDIO = ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
 DEFAULT_STRUCTURED_DUMPER = DEFAULT_ANIMESTUDIO
 SOURCES = ("StreamingAssets", "Persistent")
+SOURCE_FINGERPRINT_EXCLUDED_TOP_LEVEL = {
+    "Persistent": frozenset({"HGDownload", "Logs", "Temp"}),
+}
 ANIMESTUDIO_STAGES = ("maps", "convert_by_type", "json_by_type")
 ANIMESTUDIO_SCOPES = ("story", "assets", "all")
 ANIMESTUDIO_ASSET_MODES = ("webui", "full", "debug")
 STRUCTURED_DUMP_MODES = ("webui", "full", "debug")
+WORLD_SCENE_CHUNK_SPEC_RE = re.compile(
+    r"^(?P<map>[A-Za-z0-9_]+):(?P<x>-?\d+):(?P<z>-?\d+)$"
+)
 WEBUI_STRUCTURED_REQUIRED_BLOCK_TYPES = (
     "table",
     "json-data",
@@ -73,6 +86,13 @@ ANIMESTUDIO_LOGGER_FLAGS = ("Warning", "Error")
 ANIMESTUDIO_DEFAULT_JOBS = 8
 ANIMESTUDIO_DEFAULT_SHARDS = 16
 ANIMESTUDIO_DUMMY_DLL_ENV = "ANIMESTUDIO_DUMMY_DLLS"
+ANIMESTUDIO_OBJECT_INDEX_TYPES = frozenset({"MonoBehaviour", "PlayableDirector"})
+ANIMESTUDIO_OBJECT_INDEX_IDENTITY = "serialized-file-source-offset-pathid-v1"
+ANIMESTUDIO_OBJECT_INDEX_EXTERNAL_RESOLUTION = "unique-expected-cab-pathid-v1"
+ANIMESTUDIO_OBJECT_INDEX_SCALAR_POLICY = "identifier-and-state-v1"
+ANIMESTUDIO_OBJECT_INDEX_REQUIRED_IMPLEMENTATION_ASSEMBLIES = frozenset(
+    {"AnimeStudio.CLI.dll", "AnimeStudio.dll", "AnimeStudio.Utility.dll"}
+)
 ANIMESTUDIO_MANIFEST_SCHEMA_VERSION = 2
 ANIMESTUDIO_ASSET_CACHE_SCHEMA_VERSION = 1
 ANIMESTUDIO_MANIFEST_MAP_ITEM = "__maps__"
@@ -242,6 +262,7 @@ class CommandResult:
     duration_seconds: float
     stdout_log: str
     stderr_log: str
+    object_index_jsonl: str | None = None
 
 
 @dataclass(frozen=True)
@@ -280,6 +301,45 @@ def stable_hash(data: Any) -> str:
     return hashlib.sha256(
         json.dumps(data, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
+
+
+def build_content_signature(path: Path, *, name: str | None = None) -> dict[str, Any]:
+    stat = path.stat()
+    return {
+        "name": name or path.name,
+        "bytes": stat.st_size,
+        "sha256": sha256_animestudio_object_index_file(path),
+    }
+
+
+def build_animestudio_object_index_cli_provenance(
+    animestudio: Path,
+) -> dict[str, Any]:
+    entrypoint = build_content_signature(animestudio)
+    assembly_paths = {
+        path.name: path
+        for path in animestudio.parent.glob("AnimeStudio*.dll")
+        if path.is_file()
+    }
+    missing = sorted(
+        ANIMESTUDIO_OBJECT_INDEX_REQUIRED_IMPLEMENTATION_ASSEMBLIES
+        - set(assembly_paths)
+    )
+    if missing:
+        raise FileNotFoundError(
+            "AnimeStudio object-index provenance is missing required implementation "
+            "assemblies: " + ", ".join(missing)
+        )
+    implementation_assemblies = [
+        build_content_signature(assembly_paths[name])
+        for name in sorted(assembly_paths, key=str.casefold)
+    ]
+    provenance = {
+        "entrypoint": entrypoint,
+        "implementationAssemblies": implementation_assemblies,
+    }
+    provenance["fingerprint"] = stable_hash(provenance)
+    return provenance
 
 
 def build_file_signature(path: Path) -> dict[str, Any]:
@@ -375,17 +435,15 @@ def build_dummy_dll_signature(path: Path | None) -> dict[str, Any] | None:
     resolved = path.resolve()
     entries: list[dict[str, Any]] = []
     total_bytes = 0
-    latest_mtime_ns = 0
     for dll_path in sorted((item for item in resolved.rglob("*.dll") if item.is_file()), key=lambda p: str(p).lower()):
         stat = dll_path.stat()
         rel = dll_path.relative_to(resolved).as_posix()
         total_bytes += stat.st_size
-        latest_mtime_ns = max(latest_mtime_ns, stat.st_mtime_ns)
         entries.append(
             {
                 "path": rel,
-                "size": stat.st_size,
-                "mtime_ns": stat.st_mtime_ns,
+                "bytes": stat.st_size,
+                "sha256": sha256_animestudio_object_index_file(dll_path),
             }
         )
 
@@ -393,8 +451,8 @@ def build_dummy_dll_signature(path: Path | None) -> dict[str, Any] | None:
         "path": str(resolved),
         "dll_count": len(entries),
         "bytes": total_bytes,
-        "latest_mtime_ns": latest_mtime_ns,
         "fingerprint": stable_hash(entries),
+        "dlls": entries,
     }
     return payload
 
@@ -2013,6 +2071,20 @@ def build_animestudio_stage_signature(stage: str, options: dict[str, Any], type_
         signature["parse_dependencies"] = list(dependencies)
     if type_spec is not None and animestudio_type_name(type_spec) == "MonoBehaviour":
         signature["mono_behaviour_type_tree_priority"] = options.get("mono_behaviour_type_tree_priority")
+    if (
+        options.get("object_index_enabled")
+        and stage == "json_by_type"
+        and type_spec is not None
+        and animestudio_type_name(type_spec) in ANIMESTUDIO_OBJECT_INDEX_TYPES
+    ):
+        signature["object_index"] = {
+            "enabled": True,
+            "part_schema_version": ANIMESTUDIO_OBJECT_INDEX_PART_SCHEMA_VERSION,
+            "merge_contract": ANIMESTUDIO_OBJECT_INDEX_MERGE_CONTRACT,
+            "identity": ANIMESTUDIO_OBJECT_INDEX_IDENTITY,
+            "external_resolution": ANIMESTUDIO_OBJECT_INDEX_EXTERNAL_RESOLUTION,
+            "scalar_policy": ANIMESTUDIO_OBJECT_INDEX_SCALAR_POLICY,
+        }
     return signature
 
 
@@ -2212,6 +2284,17 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--world-scene-chunk",
+        action="append",
+        default=[],
+        metavar="MAP:X:Z",
+        help=(
+            "Export one static world-streaming cell from the Streaming block, including its "
+            "InitChunkData and StreamingChunkData files. May be repeated. Chunk coordinates are "
+            "floor(world X / 128) and floor(world Z / 128); for example map02:2:-13."
+        ),
+    )
+    parser.add_argument(
         "--fluffy",
         dest="structured_dumper",
         help=argparse.SUPPRESS,
@@ -2238,6 +2321,15 @@ def parse_args() -> argparse.Namespace:
         help=(
             "MonoBehaviour TypeTree priority for AnimeStudio JSON export. "
             "`script-first` tries DummyDll script schemas when available and otherwise falls back."
+        ),
+    )
+    parser.add_argument(
+        "--animestudio-object-index",
+        action="store_true",
+        help=(
+            "Build a deterministic original-data object/PPtr index for selected "
+            "MonoBehaviour and PlayableDirector JSON jobs. This is opt-in because "
+            "a broad Story export produces a large diagnostic index."
         ),
     )
     parser.add_argument(
@@ -2426,14 +2518,67 @@ def load_previous_summary(primary_path: Path, legacy_path: Path) -> dict[str, An
 
 
 def structured_dump_steps(mode: str) -> list[dict[str, Any]]:
+    return structured_dump_steps_with_world_scenes(mode, ())
+
+
+def parse_world_scene_chunks(values: list[str] | tuple[str, ...]) -> tuple[tuple[str, int, int], ...]:
+    chunks: list[tuple[str, int, int]] = []
+    seen: set[tuple[str, int, int]] = set()
+    for value in values:
+        text = str(value or "").strip()
+        match = WORLD_SCENE_CHUNK_SPEC_RE.fullmatch(text)
+        if match is None:
+            raise ValueError(
+                f"invalid world scene chunk {text!r}; expected MAP:X:Z, for example map02:2:-13"
+            )
+        chunk = (match.group("map").lower(), int(match.group("x")), int(match.group("z")))
+        if chunk not in seen:
+            chunks.append(chunk)
+            seen.add(chunk)
+    return tuple(chunks)
+
+
+def world_scene_chunk_file_regex(map_name: str, x: int, z: int) -> str:
+    escaped_map = re.escape(map_name)
+    return (
+        rf"^Data/Streaming/PC/{escaped_map}/Streaming/"
+        rf"(?:InitChunkData|StreamingChunkData)_{x}_{z}_[^/]+\.bytes$"
+    )
+
+
+def structured_dump_steps_with_world_scenes(
+    mode: str,
+    world_scene_chunks: tuple[tuple[str, int, int], ...],
+) -> list[dict[str, Any]]:
     if mode == "debug":
         return [{"name": "debug_all", "block_types": (), "file_regexes": ()}]
-    return [
+    steps = [
         {
             "name": "required",
             "block_types": WEBUI_STRUCTURED_REQUIRED_BLOCK_TYPES,
             "file_regexes": (),
         },
+    ]
+    if world_scene_chunks:
+        steps.append(
+            {
+                "name": "world_scene_chunks",
+                "block_types": ("streaming",),
+                "file_regexes": tuple(
+                    world_scene_chunk_file_regex(map_name, x, z)
+                    for map_name, x, z in world_scene_chunks
+                ),
+                "sources": ("StreamingAssets",),
+            }
+        )
+    return steps
+
+
+def structured_dump_steps_for_source(steps: list[dict[str, Any]], source: str) -> list[dict[str, Any]]:
+    return [
+        step
+        for step in steps
+        if not step.get("sources") or source in step["sources"]
     ]
 
 
@@ -2591,6 +2736,72 @@ def animestudio_stage_dir(output_root: Path, source: str, stage: str) -> Path:
     return animestudio_source_root(output_root, source) / stage
 
 
+def animestudio_object_index_dir(output_root: Path, source: str) -> Path:
+    return animestudio_source_root(output_root, source) / "object_index"
+
+
+def animestudio_object_index_part_path(
+    output_root: Path,
+    source: str,
+    command_name: str,
+) -> Path:
+    safe_name = animestudio_log_suffix(command_name)
+    if safe_name != command_name:
+        safe_name = f"{safe_name}_{stable_hash(command_name)[:12]}"
+    return animestudio_object_index_dir(output_root, source) / "parts" / f"{safe_name}.jsonl"
+
+
+def animestudio_object_index_export_is_relevant(
+    stage: str,
+    export_type: str | None,
+    type_specs: tuple[str, ...],
+) -> bool:
+    return (
+        stage == "json_by_type"
+        and str(export_type or "").lower() == "json"
+        and any(
+            animestudio_type_name(type_spec) in ANIMESTUDIO_OBJECT_INDEX_TYPES
+            for type_spec in type_specs
+        )
+    )
+
+
+def animestudio_object_index_plan_is_relevant(
+    stage_plans: dict[str, dict[str, Any]],
+) -> bool:
+    plan = stage_plans.get("json_by_type") or {}
+    selected_items = set(plan.get("selected_items") or [])
+    return any(
+        item.get("item_name") in selected_items
+        and item.get("type_spec") is not None
+        and animestudio_type_name(item["type_spec"])
+        in ANIMESTUDIO_OBJECT_INDEX_TYPES
+        for item in plan.get("items") or []
+        if isinstance(item, dict)
+    )
+
+
+def animestudio_object_index_is_enabled(
+    requested: bool,
+    scope: str,
+    skip_animestudio: bool,
+) -> bool:
+    return bool(requested and not skip_animestudio and scope in {"story", "all"})
+
+
+def invalidate_animestudio_object_index_commit_marker(
+    output_root: Path,
+    source: str,
+) -> None:
+    output_dir = animestudio_object_index_dir(output_root, source)
+    for stale_commit_marker in (
+        output_dir / "summary.json",
+        output_dir / "summary.json.tmp",
+    ):
+        if stale_commit_marker.exists():
+            stale_commit_marker.unlink()
+
+
 def animestudio_work_dir(output_root: Path) -> Path:
     return output_root / "recovered" / "AnimeStudio-cli"
 
@@ -2727,6 +2938,7 @@ def mark_command_result_failed(result: CommandResult) -> CommandResult:
         duration_seconds=result.duration_seconds,
         stdout_log=result.stdout_log,
         stderr_log=result.stderr_log,
+        object_index_jsonl=result.object_index_jsonl,
     )
 
 
@@ -3337,11 +3549,21 @@ def collect_source_sizes(game_root: Path, sources: tuple[str, ...]) -> dict[str,
     result: dict[str, Any] = {}
     for source in sources:
         base = game_root / source
+        excluded_top_level = SOURCE_FINGERPRINT_EXCLUDED_TOP_LEVEL.get(
+            source,
+            frozenset(),
+        )
         total = 0
         files = 0
         latest_mtime_ns = 0
         for path in base.rglob("*"):
             if path.is_file():
+                try:
+                    relative = path.relative_to(base)
+                except ValueError:
+                    continue
+                if relative.parts and relative.parts[0] in excluded_top_level:
+                    continue
                 files += 1
                 stat = path.stat()
                 total += stat.st_size
@@ -3382,9 +3604,11 @@ def run_animestudio_stage(
     types: tuple[str, ...] = (),
     command_name: str | None = None,
     secondary_export: AnimeStudioSecondaryExport | None = None,
+    object_index_enabled: bool = False,
 ) -> CommandResult:
     work_dir = ensure_dir(animestudio_work_dir(output_root))
     stage_out = ensure_dir(animestudio_stage_dir(output_root, source, stage))
+    name = command_name or f"{source}_animestudio_{stage}"
     is_asset_map_load = map_op is not None and "AssetMap" in str(map_op) and "Load" in str(map_op)
     use_map_op = map_op is not None and (not is_asset_map_load or animestudio_map_filter_is_safe(types))
     use_map_filter = use_map_op and is_asset_map_load
@@ -3412,6 +3636,26 @@ def run_animestudio_stage(
             tuple(secondary_export.types),
         )
     combined_type_specs = expanded_types + expanded_secondary_types
+    object_index_jsonl: Path | None = None
+    object_index_relevant = animestudio_object_index_export_is_relevant(
+        stage,
+        export_type,
+        expanded_types,
+    ) or (
+        secondary_export is not None
+        and animestudio_object_index_export_is_relevant(
+            secondary_export.stage,
+            secondary_export.export_type,
+            expanded_secondary_types,
+        )
+    )
+    if object_index_enabled and object_index_relevant:
+        object_index_jsonl = animestudio_object_index_part_path(output_root, source, name)
+        ensure_dir(object_index_jsonl.parent)
+        for stale_path in (object_index_jsonl, object_index_jsonl.with_name(object_index_jsonl.name + ".tmp")):
+            if stale_path.exists():
+                stale_path.unlink()
+        cmd.extend(["--object_index_jsonl", str(object_index_jsonl)])
     if mono_behaviour_type_tree_priority and any(
         animestudio_type_name(type_spec) == "MonoBehaviour" for type_spec in combined_type_specs
     ):
@@ -3438,11 +3682,15 @@ def run_animestudio_stage(
         if expanded_secondary_types:
             cmd.append(ANIMESTUDIO_SECONDARY_EXPORT_FLAGS["types"])
             cmd.extend(expanded_secondary_types)
-    name = command_name or f"{source}_animestudio_{stage}"
     result = run_logged_command(name, cmd, work_dir, reports_dir, stream_output=True)
+    result.object_index_jsonl = str(object_index_jsonl) if object_index_jsonl is not None else None
     if result.returncode == 0 and animestudio_cli_usage_error(result):
         log(f"  animestudio command {name} printed CLI usage/validation output; treating as failed")
-        return mark_command_result_failed(result)
+        result = mark_command_result_failed(result)
+    if result.returncode != 0 and object_index_jsonl is not None:
+        for failed_path in (object_index_jsonl, object_index_jsonl.with_name(object_index_jsonl.name + ".tmp")):
+            if failed_path.exists():
+                failed_path.unlink()
     return result
 
 
@@ -4159,6 +4407,7 @@ def run_animestudio_stage_merge_plan(
     animestudio_dummy_dlls: Path | None,
     stage_plans: dict[str, dict[str, Any]],
     attempt: dict[str, Any],
+    object_index_enabled: bool = False,
     call_pool: AnimeStudioCallPool | None = None,
 ) -> list[CommandResult]:
     primary_stage = attempt["primary_stage"]
@@ -4203,6 +4452,7 @@ def run_animestudio_stage_merge_plan(
             "types": primary_types,
             "command_name": attempt.get("command_name"),
             "secondary_export": secondary_export,
+            "object_index_enabled": object_index_enabled,
         },
     }
     run_animestudio_call_tasks([merge_task], jobs=1, call_pool=call_pool)
@@ -4227,6 +4477,7 @@ def run_animestudio_stage_plan(
     plan: dict[str, Any],
     jobs: int,
     type_job_mode: str,
+    object_index_enabled: bool = False,
     call_pool: AnimeStudioCallPool | None = None,
 ) -> list[CommandResult]:
     options = plan["options"]
@@ -4316,6 +4567,7 @@ def run_animestudio_stage_plan(
             "filter_data": options.get("filter_data"),
             "types": type_specs,
             "command_name": command_name,
+            "object_index_enabled": object_index_enabled,
         }
 
     if normal_items and (stage == "maps" or len(normal_items) <= 1 or merge_normal_items):
@@ -4404,6 +4656,7 @@ def run_animestudio_stage_plan(
                         "filter_data": shard["filter_data"],
                         "types": (type_spec,) if type_spec is not None else (),
                         "command_name": command_name,
+                        "object_index_enabled": object_index_enabled,
                     },
                 }
             )
@@ -4477,6 +4730,308 @@ def run_animestudio_stage_plan(
     return all_results
 
 
+def build_animestudio_object_index_stage_signature(
+    source: str,
+    stage_plans: dict[str, dict[str, Any]],
+    results: list[CommandResult],
+    cli_provenance: dict[str, Any],
+    source_fingerprint: dict[str, Any],
+) -> dict[str, Any]:
+    relevant_items: list[dict[str, Any]] = []
+    for stage in sorted(stage_plans):
+        plan = stage_plans[stage]
+        for item in plan.get("items", []):
+            type_spec = item.get("type_spec")
+            if (
+                stage != "json_by_type"
+                or type_spec is None
+                or animestudio_type_name(type_spec) not in ANIMESTUDIO_OBJECT_INDEX_TYPES
+            ):
+                continue
+            relevant_items.append(
+                {
+                    "item_name": item.get("item_name"),
+                    "stage_signature": item.get("stage_signature"),
+                }
+            )
+    payload = {
+        "source": source,
+        "part_schema_version": ANIMESTUDIO_OBJECT_INDEX_PART_SCHEMA_VERSION,
+        "merge_contract": ANIMESTUDIO_OBJECT_INDEX_MERGE_CONTRACT,
+        "identity": ANIMESTUDIO_OBJECT_INDEX_IDENTITY,
+        "external_resolution": ANIMESTUDIO_OBJECT_INDEX_EXTERNAL_RESOLUTION,
+        "scalar_policy": ANIMESTUDIO_OBJECT_INDEX_SCALAR_POLICY,
+        "cli": cli_provenance,
+        "source_fingerprint": {
+            key: source_fingerprint.get(key)
+            for key in ("files", "bytes", "fingerprint")
+        },
+        "commands": sorted(result.name for result in results),
+        "items": sorted(relevant_items, key=lambda item: str(item.get("item_name") or "")),
+    }
+    return {"sha256": stable_hash(payload), "payload": payload}
+
+
+def merge_animestudio_object_index_for_source(
+    output_root: Path,
+    source: str,
+    stage_plans: dict[str, dict[str, Any]],
+    cli_provenance: dict[str, Any],
+    source_fingerprint: dict[str, Any],
+) -> tuple[dict[str, Any] | None, str | None]:
+    results_by_part: dict[str, CommandResult] = {}
+    collision_error: str | None = None
+    for plan in stage_plans.values():
+        for result in plan.get("command_results", []):
+            if not result.object_index_jsonl:
+                continue
+            previous = results_by_part.get(result.object_index_jsonl)
+            if previous is not None and previous.name != result.name:
+                collision_error = (
+                    "object-index part path collision: "
+                    f"{result.object_index_jsonl}"
+                )
+            results_by_part[result.object_index_jsonl] = result
+    if not results_by_part:
+        return None, None
+
+    results = sorted(results_by_part.values(), key=lambda result: result.name)
+    output_dir = animestudio_object_index_dir(output_root, source)
+    ensure_dir(output_dir)
+    published_summary = output_dir / "summary.json"
+    for stale_summary in (published_summary, published_summary.with_name(published_summary.name + ".tmp")):
+        if stale_summary.exists():
+            stale_summary.unlink()
+
+    try:
+        if collision_error is not None:
+            raise AnimeStudioObjectIndexMergeError(collision_error)
+        failed_names = [result.name for result in results if result.returncode != 0]
+        if failed_names:
+            raise AnimeStudioObjectIndexMergeError(
+                "worker command(s) failed: " + ", ".join(failed_names)
+            )
+        parts = [Path(result.object_index_jsonl) for result in results if result.object_index_jsonl]
+        stage_signature = build_animestudio_object_index_stage_signature(
+            source,
+            stage_plans,
+            results,
+            cli_provenance,
+            source_fingerprint,
+        )
+        return (
+            merge_animestudio_object_index_parts(
+                parts,
+                output_dir,
+                stage_signature=stage_signature,
+            ),
+            None,
+        )
+    except (AnimeStudioObjectIndexMergeError, OSError, ValueError) as exc:
+        for name in (
+            "objects.jsonl.gz.tmp",
+            "schemas.jsonl.gz.tmp",
+            "summary.json.tmp",
+            ".merge.sqlite3.tmp",
+        ):
+            temporary = output_dir / name
+            if temporary.exists():
+                temporary.unlink()
+        return (
+            {
+                "schemaVersion": ANIMESTUDIO_OBJECT_INDEX_PART_SCHEMA_VERSION,
+                "mergeContract": ANIMESTUDIO_OBJECT_INDEX_MERGE_CONTRACT,
+                "complete": False,
+                "inputParts": [Path(path).name for path in sorted(results_by_part)],
+                "errors": [str(exc)],
+            },
+            str(exc),
+        )
+
+
+def validate_animestudio_object_index_cli_provenance(
+    provenance: Any,
+) -> dict[str, Any]:
+    if not isinstance(provenance, dict):
+        raise ValueError("published stage signature has no CLI provenance")
+
+    def is_sha256(value: Any) -> bool:
+        return bool(
+            isinstance(value, str)
+            and len(value) == 64
+            and all(character in "0123456789abcdef" for character in value.lower())
+        )
+
+    def validate_file_signature(value: Any, context: str) -> dict[str, Any]:
+        if not isinstance(value, dict):
+            raise ValueError(f"published {context} signature is missing")
+        name = value.get("name")
+        byte_count = value.get("bytes")
+        sha256 = value.get("sha256")
+        if not isinstance(name, str) or not name:
+            raise ValueError(f"published {context} name is missing")
+        if isinstance(byte_count, bool) or not isinstance(byte_count, int) or byte_count < 0:
+            raise ValueError(f"published {context} byte count is invalid")
+        if not is_sha256(sha256):
+            raise ValueError(f"published {context} SHA-256 is invalid")
+        return {"name": name, "bytes": byte_count, "sha256": sha256.lower()}
+
+    entrypoint = validate_file_signature(provenance.get("entrypoint"), "CLI entrypoint")
+    raw_assemblies = provenance.get("implementationAssemblies")
+    if not isinstance(raw_assemblies, list) or not raw_assemblies:
+        raise ValueError("published CLI implementation assembly provenance is missing")
+    assemblies = [
+        validate_file_signature(item, "CLI implementation assembly")
+        for item in raw_assemblies
+    ]
+    assembly_names = [item["name"] for item in assemblies]
+    if len(set(assembly_names)) != len(assembly_names):
+        raise ValueError("published CLI implementation assembly names are duplicated")
+    if assembly_names != sorted(assembly_names, key=str.casefold):
+        raise ValueError("published CLI implementation assemblies are not canonical")
+    missing = sorted(
+        ANIMESTUDIO_OBJECT_INDEX_REQUIRED_IMPLEMENTATION_ASSEMBLIES
+        - set(assembly_names)
+    )
+    if missing:
+        raise ValueError(
+            "published CLI provenance is missing required implementation assemblies: "
+            + ", ".join(missing)
+        )
+    normalized: dict[str, Any] = {
+        "entrypoint": entrypoint,
+        "implementationAssemblies": assemblies,
+    }
+    dummy_dlls = provenance.get("dummyDlls")
+    if dummy_dlls is not None:
+        if not isinstance(dummy_dlls, dict):
+            raise ValueError("published DummyDll provenance is invalid")
+        for key in ("dll_count", "bytes"):
+            value = dummy_dlls.get(key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"published DummyDll {key} is invalid")
+        dummy_fingerprint = dummy_dlls.get("fingerprint")
+        if not is_sha256(dummy_fingerprint):
+            raise ValueError("published DummyDll fingerprint is invalid")
+        normalized["dummyDlls"] = {
+            "dll_count": dummy_dlls["dll_count"],
+            "bytes": dummy_dlls["bytes"],
+            "fingerprint": dummy_fingerprint,
+        }
+    expected_fingerprint = provenance.get("fingerprint")
+    actual_fingerprint = stable_hash(normalized)
+    if expected_fingerprint != actual_fingerprint:
+        raise ValueError("published CLI provenance fingerprint does not match")
+    normalized["fingerprint"] = actual_fingerprint
+    return normalized
+
+
+def normalize_animestudio_object_index_source_fingerprint(
+    value: Any,
+) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ValueError("published stage signature has no source fingerprint")
+    files = value.get("files")
+    byte_count = value.get("bytes")
+    fingerprint = value.get("fingerprint")
+    if isinstance(files, bool) or not isinstance(files, int) or files < 0:
+        raise ValueError("published source file count is invalid")
+    if isinstance(byte_count, bool) or not isinstance(byte_count, int) or byte_count < 0:
+        raise ValueError("published source byte count is invalid")
+    if (
+        not isinstance(fingerprint, str)
+        or len(fingerprint) != 64
+        or any(character not in "0123456789abcdef" for character in fingerprint.lower())
+    ):
+        raise ValueError("published source fingerprint is invalid")
+    return {"files": files, "bytes": byte_count, "fingerprint": fingerprint}
+
+
+def load_animestudio_object_index_summary(
+    output_root: Path,
+    source: str,
+    *,
+    expected_cli_provenance: dict[str, Any] | None = None,
+    expected_source_fingerprint: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    output_dir = animestudio_object_index_dir(output_root, source)
+    summary_path = output_dir / "summary.json"
+    if not summary_path.is_file():
+        return None
+    try:
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        if not isinstance(summary, dict) or summary.get("complete") is not True:
+            raise ValueError("published summary is not complete")
+        if summary.get("schemaVersion") != ANIMESTUDIO_OBJECT_INDEX_PART_SCHEMA_VERSION:
+            raise ValueError("published summary uses an unsupported schema version")
+        if summary.get("mergeContract") != ANIMESTUDIO_OBJECT_INDEX_MERGE_CONTRACT:
+            raise ValueError("published summary uses an unsupported merge contract")
+        stage_signature = summary.get("stageSignature")
+        if not isinstance(stage_signature, dict):
+            raise ValueError("published summary has no stage signature")
+        signature_payload = stage_signature.get("payload")
+        signature_hash = stage_signature.get("sha256")
+        if not isinstance(signature_payload, dict) or not isinstance(signature_hash, str):
+            raise ValueError("published stage signature is malformed")
+        if stable_hash(signature_payload) != signature_hash:
+            raise ValueError("published stage signature hash does not match")
+        if signature_payload.get("source") != source:
+            raise ValueError("published stage signature source does not match")
+        if signature_payload.get("part_schema_version") != ANIMESTUDIO_OBJECT_INDEX_PART_SCHEMA_VERSION:
+            raise ValueError("published stage signature uses an unsupported part schema")
+        if signature_payload.get("merge_contract") != ANIMESTUDIO_OBJECT_INDEX_MERGE_CONTRACT:
+            raise ValueError("published stage signature uses an unsupported merge contract")
+        if signature_payload.get("identity") != ANIMESTUDIO_OBJECT_INDEX_IDENTITY:
+            raise ValueError("published stage signature uses an unsupported identity contract")
+        if signature_payload.get("external_resolution") != ANIMESTUDIO_OBJECT_INDEX_EXTERNAL_RESOLUTION:
+            raise ValueError("published stage signature uses an unsupported external-resolution contract")
+        if signature_payload.get("scalar_policy") != ANIMESTUDIO_OBJECT_INDEX_SCALAR_POLICY:
+            raise ValueError("published stage signature uses an unsupported scalar policy")
+        published_cli = validate_animestudio_object_index_cli_provenance(
+            signature_payload.get("cli")
+        )
+        published_source = normalize_animestudio_object_index_source_fingerprint(
+            signature_payload.get("source_fingerprint")
+        )
+        if expected_cli_provenance is not None:
+            current_cli = validate_animestudio_object_index_cli_provenance(
+                expected_cli_provenance
+            )
+            if published_cli != current_cli:
+                raise ValueError("published object index was built with different CLI provenance")
+        if expected_source_fingerprint is not None:
+            current_source = normalize_animestudio_object_index_source_fingerprint(
+                expected_source_fingerprint
+            )
+            if published_source != current_source:
+                raise ValueError("published object index was built from a different source fingerprint")
+        outputs = summary.get("outputs")
+        if not isinstance(outputs, dict):
+            raise ValueError("published summary has no outputs")
+        for output_name in ("objects", "schemas"):
+            output = outputs.get(output_name)
+            if not isinstance(output, dict):
+                raise ValueError(f"published summary has no {output_name} output")
+            relative_name = str(output.get("path") or "")
+            if not relative_name or Path(relative_name).name != relative_name:
+                raise ValueError(f"published {output_name} path is not a local filename")
+            output_path = output_dir / relative_name
+            if not output_path.is_file():
+                raise ValueError(f"published {output_name} output is missing")
+            actual_hash = sha256_animestudio_object_index_file(output_path)
+            if actual_hash != output.get("sha256"):
+                raise ValueError(f"published {output_name} hash does not match")
+        return summary
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        return {
+            "schemaVersion": ANIMESTUDIO_OBJECT_INDEX_PART_SCHEMA_VERSION,
+            "mergeContract": ANIMESTUDIO_OBJECT_INDEX_MERGE_CONTRACT,
+            "complete": False,
+            "errors": [str(exc)],
+            "summaryPath": str(summary_path),
+        }
+
+
 def summarize_animestudio_source(
     output_root: Path,
     source: str,
@@ -4486,6 +5041,7 @@ def summarize_animestudio_source(
     selected_stages: tuple[str, ...],
     stage_plans: dict[str, dict[str, Any]],
     source_fingerprint: dict[str, Any],
+    object_index_summary: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     previous_source = ((previous_summary.get("animestudio") or {}).get("sources") or {}).get(source, {})
 
@@ -4538,6 +5094,9 @@ def summarize_animestudio_source(
             ),
         },
     }
+    # The merged summary is a commit marker bound to compressed output hashes.
+    # Never revive a prior report entry when the marker is absent or invalid.
+    result["object_index"] = object_index_summary
     for stage in ANIMESTUDIO_STAGES:
         current = command_results_by_name.get(f"{source}_animestudio_{stage}")
         plan = stage_plans.get(stage)
@@ -4657,7 +5216,22 @@ def main() -> int:
     animestudio = args.animestudio.resolve()
     selected_sources = ordered_unique(args.sources)
     selected_animestudio_stages = ordered_unique(args.animestudio_stages)
-    structured_dump_plan = structured_dump_steps(args.structured_dump_mode)
+    animestudio_object_index_requested = bool(args.animestudio_object_index)
+    animestudio_object_index_enabled = animestudio_object_index_is_enabled(
+        animestudio_object_index_requested,
+        args.animestudio_scope,
+        bool(args.skip_animestudio),
+    )
+    try:
+        world_scene_chunks = parse_world_scene_chunks(args.world_scene_chunk)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+    if world_scene_chunks and args.skip_structured:
+        raise SystemExit("--world-scene-chunk cannot be combined with --skip-structured")
+    structured_dump_plan = structured_dump_steps_with_world_scenes(
+        args.structured_dump_mode,
+        world_scene_chunks,
+    )
     animestudio_stage_options = animestudio_stage_options_for_scope(args.animestudio_scope, args.animestudio_asset_mode)
     animestudio_asset_type_filter = normalize_animestudio_asset_type_filter(tuple(args.animestudio_asset_types))
     if animestudio_asset_type_filter and args.animestudio_scope == "story":
@@ -4692,6 +5266,24 @@ def main() -> int:
     animestudio_mono_behaviour_type_tree_priority = animestudio_cli_type_tree_priority(
         args.animestudio_mono_behaviour_type_tree_priority
     )
+    animestudio_object_index_cli_provenance: dict[str, Any] = {}
+    if animestudio_object_index_enabled:
+        animestudio_object_index_cli_provenance = (
+            build_animestudio_object_index_cli_provenance(animestudio)
+        )
+        dummy_signature = build_dummy_dll_signature(animestudio_dummy_dlls)
+        if dummy_signature is not None:
+            animestudio_object_index_cli_provenance["dummyDlls"] = {
+                key: dummy_signature.get(key)
+                for key in ("dll_count", "bytes", "fingerprint")
+            }
+            animestudio_object_index_cli_provenance["fingerprint"] = stable_hash(
+                {
+                    key: value
+                    for key, value in animestudio_object_index_cli_provenance.items()
+                    if key != "fingerprint"
+                }
+            )
     if args.skip_animestudio:
         animestudio_stage_merge_feature = {
             "contract": "secondary_export_v1",
@@ -4722,6 +5314,14 @@ def main() -> int:
     if not args.skip_structured:
         log(f"  structured dump mode: {args.structured_dump_mode}")
         log(f"  structured dump plan: {describe_structured_dump_steps(structured_dump_plan)}")
+        log(
+            "  world scene chunks: "
+            + (
+                ", ".join(f"{map_name}:{x}:{z}" for map_name, x, z in world_scene_chunks)
+                if world_scene_chunks
+                else "none"
+            )
+        )
     log(f"  vfs index: {'enabled' if vfs_index_enabled else 'disabled'}")
     log("  raw vfs export: disabled")
     log(f"  animestudio export: {'disabled' if args.skip_animestudio else 'enabled'}")
@@ -4750,6 +5350,15 @@ def main() -> int:
     )
     log("  animestudio asset cache: removed (every run re-exports)")
     log(f"  animestudio MonoBehaviour TypeTree priority: {animestudio_mono_behaviour_type_tree_priority}")
+    log(
+        "  animestudio original-data object index: "
+        f"{'enabled' if animestudio_object_index_enabled else 'disabled'}"
+    )
+    if animestudio_object_index_requested and not animestudio_object_index_enabled:
+        log(
+            "  animestudio object index ignored: asset-only scope cannot replace "
+            "the broad Story object index"
+        )
     log(f"  animestudio refresh selectors: {', '.join(refresh_selectors) if refresh_selectors else 'none'}")
     if webui_texture_name_filter is not None and webui_texture_name_filter_signature is not None:
         log(
@@ -4807,6 +5416,9 @@ def main() -> int:
         "webui_texture_name_filter": str(webui_texture_name_filter) if webui_texture_name_filter else None,
         "webui_texture_name_filter_signature": webui_texture_name_filter_signature,
         "mono_behaviour_type_tree_priority": animestudio_mono_behaviour_type_tree_priority,
+        "object_index_requested": animestudio_object_index_requested,
+        "object_index_enabled": animestudio_object_index_enabled,
+        "object_index_merge_contract": ANIMESTUDIO_OBJECT_INDEX_MERGE_CONTRACT,
         "jobs": animestudio_jobs,
         "type_job_mode": args.animestudio_type_job_mode,
         "stage_merge_mode": args.animestudio_stage_merge_mode,
@@ -4824,6 +5436,7 @@ def main() -> int:
     for source in selected_sources:
         source_root = game_root / source
         source_report_dir = ensure_dir(reports_dir / source)
+        source_structured_dump_plan = structured_dump_steps_for_source(structured_dump_plan, source)
         log(f"processing source {source}")
         log(f"  source root: {source_root}")
         log(f"  source reports: {source_report_dir}")
@@ -4871,8 +5484,8 @@ def main() -> int:
             fallback_root = game_root / fallback_source
             if fallback_root is not None and fallback_root.exists():
                 log(f"  using fallback assets from {fallback_root}")
-            for step in structured_dump_plan:
-                command_name = structured_dump_command_name(source, step, len(structured_dump_plan))
+            for step in source_structured_dump_plan:
+                command_name = structured_dump_command_name(source, step, len(source_structured_dump_plan))
                 cmd = [str(structured_dumper), "dump", "-s", str(source_root), "-o", str(structured_out)]
                 for block_type in step.get("block_types") or ():
                     cmd.extend(["-b", str(block_type)])
@@ -4890,8 +5503,8 @@ def main() -> int:
             stdout_parts: list[str] = []
             stderr_parts: list[str] = []
             returncodes: list[int] = []
-            for step in structured_dump_plan:
-                command_name = structured_dump_command_name(source, step, len(structured_dump_plan))
+            for step in source_structured_dump_plan:
+                command_name = structured_dump_command_name(source, step, len(source_structured_dump_plan))
                 stdout_log = source_report_dir / f"{command_name}.stdout.log"
                 stderr_log = source_report_dir / f"{command_name}.stderr.log"
                 stdout_text = stdout_log.read_text(encoding="utf-8") if stdout_log.exists() else ""
@@ -4930,7 +5543,7 @@ def main() -> int:
                     current_structured_returncode if current_structured_returncode is not None else previous_structured.get("returncode")
                 ),
                 "dump_mode": args.structured_dump_mode,
-                "dump_plan": describe_structured_dump_steps(structured_dump_plan),
+                "dump_plan": describe_structured_dump_steps(source_structured_dump_plan),
                 "steps": structured_steps,
                 "block_types": sorted(
                     {str(block_type) for step in structured_steps for block_type in step.get("block_types", [])}
@@ -4949,11 +5562,13 @@ def main() -> int:
             )
 
         animestudio_stage_plans: dict[str, dict[str, Any]] = {}
+        animestudio_object_index_summary: dict[str, Any] | None = None
         if not args.skip_animestudio:
             log(f"  animestudio broad export root: {animestudio_source_root(output_root, source)}")
             for stage in selected_animestudio_stages:
                 options = dict(animestudio_stage_options[stage])
                 options["mono_behaviour_type_tree_priority"] = animestudio_mono_behaviour_type_tree_priority
+                options["object_index_enabled"] = animestudio_object_index_enabled
                 options["asset_cache_enabled"] = False
                 options["asset_shards"] = args.animestudio_shards
                 if stage == "maps":
@@ -4991,6 +5606,50 @@ def main() -> int:
                     log(f"    cache hits: {', '.join(plan['cached_items'])}")
                 if plan["run_items"]:
                     log(f"    pending items: {', '.join(plan['run_items'])}")
+
+            carrier_refresh_will_run = (
+                not args.report_only
+                and args.animestudio_scope in {"story", "all"}
+                and animestudio_object_index_plan_is_relevant(
+                    animestudio_stage_plans
+                )
+            )
+            if carrier_refresh_will_run:
+                invalidate_animestudio_object_index_commit_marker(
+                    output_root,
+                    source,
+                )
+                animestudio_object_index_summary = {
+                    "schemaVersion": ANIMESTUDIO_OBJECT_INDEX_PART_SCHEMA_VERSION,
+                    "mergeContract": ANIMESTUDIO_OBJECT_INDEX_MERGE_CONTRACT,
+                    "enabled": animestudio_object_index_enabled,
+                    "complete": False,
+                    "reason": (
+                        "current Story carrier refresh has not published its replacement "
+                        "object index; prior commit marker invalidated"
+                        if animestudio_object_index_enabled
+                        else
+                        "current Story carrier JSON was refreshed without "
+                        "--animestudio-object-index; prior commit marker invalidated"
+                    ),
+                    "sourceFingerprint": {
+                        key: source_sizes[source].get(key)
+                        for key in ("files", "bytes", "fingerprint")
+                    },
+                }
+            else:
+                animestudio_object_index_summary = (
+                    load_animestudio_object_index_summary(
+                        output_root,
+                        source,
+                        expected_cli_provenance=(
+                            animestudio_object_index_cli_provenance
+                            if animestudio_object_index_enabled
+                            else None
+                        ),
+                        expected_source_fingerprint=source_sizes[source],
+                    )
+                )
 
             stage_merge_attempt = build_animestudio_stage_merge_attempt(
                 source=source,
@@ -5048,6 +5707,7 @@ def main() -> int:
                         plan=plan,
                         jobs=animestudio_jobs,
                         type_job_mode=args.animestudio_type_job_mode,
+                        object_index_enabled=animestudio_object_index_enabled,
                         call_pool=call_pool,
                     )
 
@@ -5073,6 +5733,7 @@ def main() -> int:
                             animestudio_dummy_dlls=animestudio_dummy_dlls,
                             stage_plans=animestudio_stage_plans,
                             attempt=stage_merge_attempt,
+                            object_index_enabled=animestudio_object_index_enabled,
                             call_pool=animestudio_call_pool,
                         )
                         remember_animestudio_results(stage_results)
@@ -5130,6 +5791,51 @@ def main() -> int:
                     else:
                         log(f"  animestudio report-only {stage} for {source}: cache hit")
 
+            if animestudio_object_index_enabled and not args.report_only:
+                (
+                    new_object_index_summary,
+                    object_index_error,
+                ) = merge_animestudio_object_index_for_source(
+                    output_root=output_root,
+                    source=source,
+                    stage_plans=animestudio_stage_plans,
+                    cli_provenance=animestudio_object_index_cli_provenance,
+                    source_fingerprint=source_sizes[source],
+                )
+                if new_object_index_summary is not None:
+                    animestudio_object_index_summary = new_object_index_summary
+                if object_index_error is not None:
+                    failure_name = f"{source}_animestudio_object_index_merge"
+                    stdout_log = source_report_dir / f"{failure_name}.stdout.log"
+                    stderr_log = source_report_dir / f"{failure_name}.stderr.log"
+                    stdout_log.write_text("", encoding="utf-8")
+                    stderr_log.write_text(object_index_error + "\n", encoding="utf-8")
+                    failure_result = CommandResult(
+                        name=failure_name,
+                        argv=["internal:animestudio-object-index-merge"],
+                        cwd=str(ROOT),
+                        returncode=1,
+                        duration_seconds=0.0,
+                        stdout_log=str(stdout_log),
+                        stderr_log=str(stderr_log),
+                    )
+                    command_results.append(failure_result)
+                    command_results_by_name[failure_name] = failure_result
+                    log(f"  animestudio object index for {source}: failed: {object_index_error}")
+                elif new_object_index_summary is None:
+                    log(
+                        f"  animestudio object index for {source}: no selected "
+                        "MonoBehaviour/PlayableDirector JSON worker"
+                    )
+                else:
+                    counts = animestudio_object_index_summary.get("counts") or {}
+                    log(
+                        f"  animestudio object index for {source}: "
+                        f"objects={counts.get('objects', 0)} "
+                        f"monoScripts={counts.get('monoScripts', 0)} "
+                        f"schemas={counts.get('schemas', 0)}"
+                    )
+
             animestudio_summary["sources"][source] = summarize_animestudio_source(
                 output_root=output_root,
                 source=source,
@@ -5139,6 +5845,7 @@ def main() -> int:
                 selected_stages=selected_animestudio_stages,
                 stage_plans=animestudio_stage_plans,
                 source_fingerprint=source_sizes[source],
+                object_index_summary=animestudio_object_index_summary,
             )
             source_info = animestudio_summary["sources"][source]
             log(
@@ -5177,6 +5884,10 @@ def main() -> int:
         "commands": summary_commands,
         "vfs_index": vfs_index_summary,
         "structured": structured_summary,
+        "world_scene_chunks": [
+            {"map": map_name, "x": x, "z": z}
+            for map_name, x, z in world_scene_chunks
+        ],
         "raw_vfs": raw_summary,
         "animestudio": animestudio_summary,
         "failed_to_decode_txt": str(failed_txt),
@@ -5312,6 +6023,11 @@ def main() -> int:
         md_lines.append("- Asset cache: `removed` (every run re-exports)")
         md_lines.append(f"- MonoBehaviour TypeTree priority: `{animestudio_mono_behaviour_type_tree_priority}`")
         md_lines.append(
+            "- Original-data object index: "
+            f"requested=`{animestudio_object_index_requested}`, "
+            f"enabled=`{animestudio_object_index_enabled}`"
+        )
+        md_lines.append(
             f"- DummyDlls: `{animestudio_dummy_dlls}`"
             if animestudio_dummy_dlls
             else "- DummyDlls: `not configured`"
@@ -5328,6 +6044,22 @@ def main() -> int:
             md_lines.append(f"  maps log: `{info.get('maps', {}).get('stdout_log')}`")
             md_lines.append(f"  convert log: `{info.get('convert_by_type', {}).get('stdout_log')}`")
             md_lines.append(f"  json log: `{info.get('json_by_type', {}).get('stdout_log')}`")
+            object_index = info.get("object_index") or {}
+            object_counts = object_index.get("counts") or {}
+            md_lines.append(
+                "  object index: "
+                f"complete=`{object_index.get('complete')}`, "
+                f"objects=`{object_counts.get('objects')}`, "
+                f"monoScripts=`{object_counts.get('monoScripts')}`, "
+                f"schemas=`{object_counts.get('schemas')}`, "
+                f"errors=`{len(object_index.get('errors') or [])}`"
+            )
+            if object_index.get("reason"):
+                md_lines.append(
+                    f"    reason: `{object_index.get('reason')}`"
+                )
+            for object_index_error in (object_index.get("errors") or [])[:5]:
+                md_lines.append(f"    error: `{object_index_error}`")
             for stage in selected_animestudio_stages:
                 stage_info = info.get(stage, {})
                 md_lines.append(

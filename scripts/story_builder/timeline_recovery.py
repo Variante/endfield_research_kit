@@ -26,6 +26,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import time
 from collections import Counter, defaultdict, deque
 from dataclasses import dataclass, field
@@ -34,10 +35,17 @@ from typing import Callable
 
 
 ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_DIR = ROOT / "scripts"
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
+from common import fast_glob_files
+
 EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_RECOVERY_ROOT = EXPORT_ROOT / "recovered" / "AnimeStudio-cli"
 DEFAULT_EXTRACT_DIR = DEFAULT_RECOVERY_ROOT / "timeline_extract"
 DEFAULT_ORDER_OUT = DEFAULT_RECOVERY_ROOT / "timeline_line_orders.json"
+DEFAULT_DIALOG_REGISTRY = EXPORT_ROOT / "recovered" / "dialog_id_table_index.json"
 
 TIMELINE_CONTAINER_RE = re.compile(r"(?:^|/)timeline/(?P<stem>(?:[fm]_)?dlgtl_[^/]+)(?:/|$)", re.IGNORECASE)
 TIMELINE_STEM_RE = re.compile(r"^(?:[fm]_)?dlgtl_.+(?:_sub_\d+|_\d+)$", re.IGNORECASE)
@@ -1749,6 +1757,33 @@ def path_id_suffix(path_id: int) -> str:
     return f"{(int(path_id) & ((1 << 64) - 1)):016X}"
 
 
+def validate_timeline_sources_before_reset(chks: list[str]) -> None:
+    """Fail before replacing a prior extraction when inputs are unavailable."""
+    if not chks:
+        raise FileNotFoundError(
+            "No Timeline source chk files were selected; preserving the prior "
+            "timeline extraction"
+        )
+    missing_chks = [
+        source
+        for source in chks
+        if not (
+            Path(source)
+            if Path(source).is_absolute()
+            else ROOT / Path(source)
+        ).is_file()
+    ]
+    if not missing_chks:
+        return
+    preview = ", ".join(missing_chks[:3])
+    if len(missing_chks) > 3:
+        preview += f", ... (+{len(missing_chks) - 3})"
+    raise FileNotFoundError(
+        "Timeline source chk(s) are unavailable; preserving the prior "
+        f"timeline extraction: {preview}"
+    )
+
+
 def discover_full_monobehaviour_dirs(export_root: Path) -> list[Path]:
     root = recovery_root(export_root)
     candidates = [
@@ -1877,6 +1912,370 @@ def load_targeted_full_monobehaviour_records(
                 queue.append(child["key"])
 
     return records_by_key, children_by_parent, timeline_roots
+
+
+def _black_text_ids_from_payload(payload: dict) -> list[str]:
+    """Return serialized black-screen text ids from a Timeline playable asset."""
+    out: list[str] = []
+    for field_name, value in payload.items():
+        if field_name != "_textId" and not re.fullmatch(r"_textId_\d+", field_name):
+            continue
+        text_id = str(value or "").strip()
+        if text_id.startswith("black_"):
+            out.append(text_id)
+    return sorted(set(out))
+
+
+def _timeline_payload_entries(payload: dict) -> list[tuple[str, dict]]:
+    out: list[tuple[str, dict]] = []
+    if not isinstance(payload, dict):
+        return out
+    for dialog_key, entry in payload.items():
+        if str(dialog_key).startswith("_") or not isinstance(entry, dict):
+            continue
+        variants = entry.get("variants")
+        if isinstance(variants, list) and variants:
+            out.extend(
+                (str(dialog_key), variant)
+                for variant in variants
+                if isinstance(variant, dict)
+            )
+        else:
+            out.append((str(dialog_key), entry))
+    return out
+
+
+def recover_black_timeline_attachments(
+    line_orders_path_str: str = str(DEFAULT_ORDER_OUT),
+    extract_dir_str: str = str(DEFAULT_EXTRACT_DIR),
+    dialog_registry_path_str: str = str(DEFAULT_DIALOG_REGISTRY),
+) -> list[dict]:
+    """Recover exact black-screen -> dialog Timeline containment.
+
+    The join stays entirely on original extracted Unity data:
+    serialized ``_textId[_N]`` fields on subtitle/center-text playable assets,
+    the owning track clip PPtr, the track's ``m_Parent`` chain to its Actor
+    root, and either DialogBriefInfo's exact ``usedDialogTimelineIds`` field or
+    the already-recovered exact root -> dialog entry in
+    ``timeline_line_orders.json``. Roots without either original-data join are
+    returned with an empty ``dialogKey`` and must remain debug-only.
+
+    This targeted pass intentionally indexes filenames lazily instead of
+    reparsing every MonoBehaviour JSON in the large Timeline extraction.
+    """
+    line_orders_path = Path(line_orders_path_str)
+    extract_dir = Path(extract_dir_str)
+    dialog_registry_path = Path(dialog_registry_path_str)
+    if not line_orders_path.is_absolute():
+        line_orders_path = ROOT / line_orders_path
+    if not extract_dir.is_absolute():
+        extract_dir = ROOT / extract_dir
+    if not dialog_registry_path.is_absolute():
+        dialog_registry_path = ROOT / dialog_registry_path
+    if not line_orders_path.is_file() or not extract_dir.is_dir():
+        return []
+    line_orders = load_json(line_orders_path)
+    if not isinstance(line_orders, dict):
+        return []
+
+    dialogs_by_used_timeline: dict[str, set[str]] = defaultdict(set)
+    if dialog_registry_path.is_file():
+        dialog_registry = load_json(dialog_registry_path)
+        if isinstance(dialog_registry, dict):
+            for registered_dialog, info in dialog_registry.items():
+                if not isinstance(info, dict):
+                    continue
+                for used_timeline in info.get("usedDialogTimelineIds") or []:
+                    timeline_id = str(used_timeline or "").strip()
+                    if timeline_id:
+                        dialogs_by_used_timeline[timeline_id].add(
+                            str(registered_dialog)
+                        )
+
+    entries_by_source_timeline: dict[tuple[str, str], list[tuple[str, dict]]] = defaultdict(list)
+    source_dirs: set[str] = set()
+    for dialog_key, entry in _timeline_payload_entries(line_orders):
+        source = str(entry.get("source") or "").replace("\\", "/")
+        timeline = str(entry.get("timeline") or "")
+        if not source or not timeline:
+            continue
+        entries_by_source_timeline[(source, timeline)].append((dialog_key, entry))
+        source_dirs.add(source)
+
+    # Filtered Timeline extraction is disposable and may be absent even while
+    # the exact source objects still exist in AnimeStudio's full typed export.
+    # Build a source/root-identity bridge to those original MonoBehaviour
+    # files instead of silently dropping containment evidence.  A full root is
+    # admitted only when it contains an exact serialized Actor-root filename
+    # already named by timeline_line_orders.json.
+    full_mono_roots = [
+        extract_dir.parent / "StreamingAssets" / "json_by_type" / "MonoBehaviour",
+        extract_dir.parent / "Persistent" / "json_by_type" / "MonoBehaviour",
+    ]
+    allowed_full_mono_roots = {
+        str(path.resolve()).lower()
+        for path in full_mono_roots
+        if path.is_dir()
+    }
+    source_scan_pairs: list[tuple[str, Path, str]] = []
+    missing_sources: set[str] = set()
+    for source in sorted(source_dirs):
+        filtered_mono_dir = Path(source)
+        if not filtered_mono_dir.is_absolute():
+            filtered_mono_dir = ROOT / filtered_mono_dir
+        if filtered_mono_dir.is_dir() and extract_dir in filtered_mono_dir.parents:
+            source_scan_pairs.append((source, filtered_mono_dir, "filtered_timeline_extract"))
+            continue
+        missing_sources.add(source)
+    missing_root_names = sorted({
+        Path(str(root_path or "").replace("\\", "/")).name
+        for (entry_source, _timeline), rows in entries_by_source_timeline.items()
+        if entry_source in missing_sources
+        for _dialog_key, entry in rows
+        for root_path in entry.get("sourceRoots") or []
+        if str(root_path or "")
+    })
+    for full_mono_root in full_mono_roots:
+        if not full_mono_root.is_dir():
+            continue
+        if any(
+            fast_glob_files(full_mono_root, root_name)
+            for root_name in missing_root_names
+        ):
+            # An empty source marker means that the exact Actor-root filename
+            # below must select one unique original line-order source. Scan a
+            # large full MonoBehaviour root only once, even when it replaces
+            # several missing per-CHK filtered directories.
+            source_scan_pairs.append((
+                "",
+                full_mono_root,
+                "full_monobehaviour_exact_root_fallback",
+            ))
+
+    recovered: list[dict] = []
+    for source, mono_dir, mono_source_mode in source_scan_pairs:
+        try:
+            mono_dir_key = str(mono_dir.resolve()).lower()
+            if (
+                not mono_dir.is_dir()
+                or (
+                    extract_dir not in mono_dir.parents
+                    and mono_dir_key not in allowed_full_mono_roots
+                )
+            ):
+                continue
+            asset_paths = sorted({
+                path
+                for pattern in (
+                    "*LeftSubtitlePlayableAsset*.json",
+                    "*DialogCenterTextPlayableAsset*.json",
+                )
+                for path in fast_glob_files(mono_dir, pattern)
+            })
+            track_paths = sorted({
+                path
+                for pattern in (
+                    "*Left Subtitle Track*.json",
+                    "*Dialog Trunk Track*.json",
+                    # Some serialized Dialog Trunk tracks keep only the
+                    # authored object name ``Trunk`` in the export.
+                    "Trunk_p*.json",
+                )
+                for path in fast_glob_files(mono_dir, pattern)
+            })
+        except OSError:
+            continue
+
+        metadata_cache: dict[Path, dict | None] = {}
+
+        def metadata(path: Path) -> dict | None:
+            if path not in metadata_cache:
+                metadata_cache[path] = extract_monobehaviour_metadata(path)
+            return metadata_cache[path]
+
+        def matching_path(source_file: str, path_id: int) -> Path | None:
+            # Parent chains touch only a few dozen exact objects.  Ask NTFS for
+            # the serialized PathID suffix lazily instead of materializing an
+            # index for every MonoBehaviour in the source directory.
+            suffix = path_id_suffix(path_id)
+            patterns = [f"*_p{suffix}.json"]
+            if sys.platform != "win32" and suffix.lower() != suffix:
+                patterns.append(f"*_p{suffix.lower()}.json")
+            candidates = sorted({
+                path
+                for pattern in patterns
+                for path in fast_glob_files(mono_dir, pattern)
+            })
+            for candidate in candidates:
+                candidate_meta = metadata(candidate)
+                if (
+                    candidate_meta
+                    and candidate_meta.get("pathId") == path_id
+                    and candidate_meta.get("sourceFile") == source_file
+                ):
+                    return candidate
+            return None
+
+        black_assets: dict[tuple[str, int], dict] = {}
+        for asset_path in asset_paths:
+            asset_meta = metadata(asset_path)
+            if not asset_meta:
+                continue
+            payload = load_json(asset_path)
+            text_ids = _black_text_ids_from_payload(payload if isinstance(payload, dict) else {})
+            if not text_ids:
+                continue
+            key = (str(asset_meta["sourceFile"]), int(asset_meta["pathId"]))
+            black_assets[key] = {
+                "path": asset_path,
+                "pathId": key[1],
+                "sourceFile": key[0],
+                "name": str(asset_meta.get("name") or asset_path.stem),
+                "textIds": text_ids,
+            }
+        if not black_assets:
+            continue
+
+        for track_path in track_paths:
+            track_meta = metadata(track_path)
+            if not track_meta:
+                continue
+            source_file = str(track_meta["sourceFile"])
+            track_payload = load_json(track_path)
+            if not isinstance(track_payload, dict):
+                continue
+            clips = track_payload.get("m_Clips")
+            if not isinstance(clips, list):
+                continue
+            for clip_index, clip in enumerate(clips):
+                if not isinstance(clip, dict):
+                    continue
+                asset_id = ref_path_id(clip.get("m_Asset"))
+                if asset_id is None:
+                    continue
+                asset = black_assets.get((source_file, asset_id))
+                if not asset:
+                    continue
+
+                root_path: Path | None = None
+                root_meta: dict | None = None
+                timeline = ""
+                parent_id = ref_path_id(track_payload.get("m_Parent"))
+                seen_parents: set[int] = set()
+                while parent_id is not None and parent_id not in seen_parents and len(seen_parents) < 24:
+                    seen_parents.add(parent_id)
+                    parent_path = matching_path(source_file, parent_id)
+                    if parent_path is None:
+                        break
+                    parent_meta = metadata(parent_path)
+                    if not parent_meta:
+                        break
+                    parent_timeline = timeline_name_from_record_name(str(parent_meta.get("name") or ""))
+                    if parent_timeline and is_timeline_root_seed_name(str(parent_meta.get("name") or "")):
+                        root_path = parent_path
+                        root_meta = parent_meta
+                        timeline = parent_timeline
+                        break
+                    parent_id = as_path_id(parent_meta.get("parentId"))
+                if not timeline or root_path is None or root_meta is None:
+                    continue
+
+                candidate_rows = [
+                    (entry_source, dialog_key, entry)
+                    for (entry_source, entry_timeline), rows in entries_by_source_timeline.items()
+                    if entry_timeline == timeline and (not source or entry_source == source)
+                    for dialog_key, entry in rows
+                ]
+                root_rel = rel_path(root_path)
+                exact_root_entries = [
+                    (entry_source, dialog_key, entry)
+                    for entry_source, dialog_key, entry in candidate_rows
+                    if root_rel in {
+                        str(value or "").replace("\\", "/")
+                        for value in entry.get("sourceRoots") or []
+                    }
+                    or root_path.name in {
+                        Path(str(value or "").replace("\\", "/")).name
+                        for value in entry.get("sourceRoots") or []
+                    }
+                ]
+                if (
+                    mono_source_mode == "full_monobehaviour_exact_root_fallback"
+                    and len({entry_source for entry_source, _dialog, _entry in exact_root_entries})
+                    != 1
+                ):
+                    continue
+                matched_source = (
+                    exact_root_entries[0][0]
+                    if exact_root_entries
+                    else source
+                )
+                registered_dialogs = sorted(dialogs_by_used_timeline.get(timeline) or [])
+                if len(registered_dialogs) == 1:
+                    dialog_key = registered_dialogs[0]
+                    join_kind = "dialog_id_table_used_timeline"
+                else:
+                    joined_entries = exact_root_entries
+                    join_kind = "source_timeline_actor_root"
+                    if not joined_entries and len(candidate_rows) == 1:
+                        joined_entries = candidate_rows
+                        join_kind = "source_timeline_unique"
+                    dialog_key = joined_entries[0][1] if len(joined_entries) == 1 else ""
+                for text_id in asset["textIds"]:
+                    black_key = re.sub(r"_\d+$", "", text_id)
+                    if not black_key.startswith("black_") or black_key == text_id:
+                        continue
+                    recovered.append({
+                        "key": black_key,
+                        "textId": text_id,
+                        "dialogKey": dialog_key,
+                        "timeline": timeline,
+                        "source": matched_source,
+                        "monoBehaviourSource": rel_path(mono_dir),
+                        "monoBehaviourSourceMode": mono_source_mode,
+                        "sourceFile": source_file,
+                        "assetPath": rel_path(asset["path"]),
+                        "assetPathId": asset_id,
+                        "assetName": asset["name"],
+                        "trackPath": rel_path(track_path),
+                        "trackPathId": int(track_meta["pathId"]),
+                        "trackName": str(track_meta.get("name") or track_path.stem),
+                        "clipIndex": clip_index,
+                        "clipStart": as_float(clip.get("m_Start")),
+                        "clipDuration": as_float(clip.get("m_Duration")),
+                        "rootPath": root_rel,
+                        "rootPathId": int(root_meta["pathId"]),
+                        "rootName": str(root_meta.get("name") or root_path.stem),
+                        "dialogJoin": join_kind if dialog_key else "unresolved",
+                        **({
+                            "dialogRegistryPath": rel_path(dialog_registry_path),
+                            "dialogRegistryField": "usedDialogTimelineIds",
+                        } if dialog_key and join_kind == "dialog_id_table_used_timeline" else {}),
+                    })
+
+    deduped: dict[tuple, dict] = {}
+    for row in recovered:
+        identity = (
+            row["key"],
+            row["textId"],
+            row["dialogKey"],
+            row["sourceFile"],
+            row["trackPathId"],
+            row["assetPathId"],
+            row["clipIndex"],
+        )
+        deduped[identity] = row
+    return sorted(
+        deduped.values(),
+        key=lambda row: (
+            row["key"],
+            row["dialogKey"],
+            row["source"],
+            row["trackPathId"],
+            row["clipIndex"],
+            row["textId"],
+        ),
+    )
 
 
 def parse_full_monobehaviour_dir(
@@ -2231,6 +2630,12 @@ def recover_timeline_line_orders(config: TimelineRecoveryConfig | None = None) -
     elif config.dry_run:
         extract_skipped_reason = "dry-run"
 
+    chks = sorted(grouped.keys())
+    if config.limit_chks > 0:
+        chks = chks[: config.limit_chks]
+    if should_run_cli:
+        validate_timeline_sources_before_reset(chks)
+
     cli = resolve_cli(config.cli) if should_run_cli else None
     if should_run_cli and not config.keep_extract and extract_dir.exists():
         log(f"wiping {rel_path(extract_dir)}")
@@ -2240,10 +2645,6 @@ def recover_timeline_line_orders(config: TimelineRecoveryConfig | None = None) -
         json.dumps(target_summary, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-
-    chks = sorted(grouped.keys())
-    if config.limit_chks > 0:
-        chks = chks[: config.limit_chks]
 
     if should_process_chks:
         for index, source in enumerate(chks, 1):

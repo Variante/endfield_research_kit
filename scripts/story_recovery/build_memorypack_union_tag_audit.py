@@ -8,8 +8,8 @@ explain the high LevelScript event/gate/terminal family.
 
 Output:
 
-    reports/mission_order/memorypack_union_formatter_tag_audit.json
-    reports/mission_order/memorypack_union_formatter_tag_audit.md
+    reports/story/recovery/memorypack_union_formatter_tag_audit.json
+    reports/story/recovery/memorypack_union_formatter_tag_audit.md
 """
 from __future__ import annotations
 
@@ -31,13 +31,13 @@ for _path in (_REPO_ROOT / "scripts", _REPO_ROOT / "scripts" / "story_recovery")
 from common import ROOT, md_escape, write_report_json, write_text_if_changed  # noqa: E402
 import build_levelscript_actionbase_tag_audit as actionbase_audit  # noqa: E402
 
-REPORT_DIR = ROOT / "reports" / "mission_order"
+REPORT_DIR = ROOT / "reports" / "story" / "recovery"
 CATALOG_HELPER = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
 BODY_HELPER = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 DEFAULT_GAMEASSEMBLY = actionbase_audit.DEFAULT_GAMEASSEMBLY
 DEFAULT_CODE_REGISTRATION = actionbase_audit.DEFAULT_CODE_REGISTRATION
 DEFAULT_IMAGE = "MemoryPack.Beyond.dll"
-DEFAULT_OPCODE_AUDIT = REPORT_DIR / "levelscript_opcode_shape_audit.json"
+DEFAULT_OPCODE_AUDIT = ROOT / "reports" / "mission_order" / "levelscript_opcode_shape_audit.json"
 
 KEYWORD_RE = re.compile(
     r"(LevelScript|ScriptEvent|Trigger|Condition|Gate|Terminal|Listener|Property|Mission|Scene)",

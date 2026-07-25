@@ -7,7 +7,7 @@ from .audio_relink import relink_existing_audio
 from .build_args import parse_args
 from .bundle_support import discover_languages, language_info, normalize_language_selection
 from .context import DEFAULT_LANGUAGE, LANG_DIR, OUT_DIR, write_json
-from .language_bundle import build_language_bundle
+from .language_bundle import build_language_bundle, load_reused_reference_stats
 from .timeline_action_evidence import build_timeline_action_evidence_for_build
 from .timeline_orders import recover_timeline_orders_for_build
 
@@ -32,6 +32,13 @@ def main(argv: list[str] | None = None) -> None:
             + ", ".join(target_languages)
         )
 
+    if args.reuse_reference:
+        for language_code in target_languages:
+            load_reused_reference_stats(
+                LANG_DIR / language_code / "reference",
+                language_code,
+            )
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     LANG_DIR.mkdir(parents=True, exist_ok=True)
     shutil.rmtree(OUT_DIR / "conv", ignore_errors=True)
@@ -44,6 +51,8 @@ def main(argv: list[str] | None = None) -> None:
     print("Profile:", args.profile)
     if args.skip_reference:
         print("Reference bundle: disabled")
+    elif args.reuse_reference:
+        print("Reference bundle: reusing validated generated data")
 
     stats: list[dict] = []
     for language_code in target_languages:
@@ -53,6 +62,7 @@ def main(argv: list[str] | None = None) -> None:
                 LANG_DIR / language_code,
                 profile=args.profile,
                 write_reference=not args.skip_reference,
+                reuse_reference=args.reuse_reference,
             )
         )
 
@@ -67,6 +77,7 @@ def main(argv: list[str] | None = None) -> None:
             "defaultLanguage": default_language,
             "profile": args.profile,
             "reference": not args.skip_reference,
+            "referenceReused": bool(args.reuse_reference),
             "languages": [language_info(code) for code in target_languages],
             "stats": stats,
         },

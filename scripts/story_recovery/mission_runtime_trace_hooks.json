@@ -1,0 +1,607 @@
+{
+  "schema": "missionRuntimeTrace.hooks.v1",
+  "gameBuild": "endfield-2026-07-11-gameassembly-0c557367",
+  "processName": "Endfield.exe",
+  "moduleName": "GameAssembly.dll",
+  "files": {
+    "executable": {
+      "relativePath": "Endfield.exe",
+      "bytes": 827448,
+      "sha256": "a9726459d9ab90cf01d7536a4250315e85ebfe12da493ac16f7bad3b68e7df99"
+    },
+    "gameAssembly": {
+      "relativePath": "GameAssembly.dll",
+      "bytes": 280436712,
+      "sha256": "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
+    },
+    "metadata": {
+      "relativePath": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "bytes": 62925560,
+      "sha256": "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+    }
+  },
+  "hooks": {
+    "levelScript": {
+      "raiseOnScriptEvent": {
+        "symbol": "Beyond.Gameplay.Core.LevelScriptRuntime._RaiseOnScriptEvent",
+        "token": "0x060121a3",
+        "methodIndex": 74146,
+        "rva": "0x34b90c0"
+      },
+      "getLevelId": {
+        "symbol": "Beyond.Gameplay.Core.LevelScriptRuntime.get_levelId",
+        "token": "0x0601213a",
+        "methodIndex": 74041,
+        "rva": "0x11f36e0"
+      },
+      "getScriptId": {
+        "symbol": "Beyond.Gameplay.Core.LevelScriptRuntime.get_scriptId",
+        "token": "0x06012166",
+        "methodIndex": 74085,
+        "rva": "0x36a87b0"
+      }
+    },
+    "levelScriptTask": {
+      "conditionResultChanged": {
+        "symbol": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition._OnConditionResultChanged",
+        "token": "0x060121fe",
+        "methodIndex": 74237,
+        "rva": "0x6fb0f9c",
+        "fieldOffsets": {
+          "scriptId": "0x18",
+          "sceneNumId": "0x28",
+          "taskId": "0x30",
+          "conditionId": "0x38"
+        }
+      },
+      "sendProgress": {
+        "symbol": "Beyond.Gameplay.GameplayNetwork.SendLevelScriptUpdateTaskProgress",
+        "token": "0x06004d91",
+        "methodIndex": 19856,
+        "rva": "0x73825c8",
+        "message": "CS_SCENE_UPDATE_SCRIPT_TASK_PROGRESS",
+        "messageId": 105
+      },
+      "stateUpdate": {
+        "symbol": "Beyond.Gameplay.GameplayNetwork._Handle_LevelScriptTaskStateUpdate",
+        "token": "0x06004dbc",
+        "methodIndex": 19899,
+        "rva": "0x3bd6fa0",
+        "message": "SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE",
+        "messageId": 813,
+        "fieldOffsets": {
+          "sceneNumId": "0x18",
+          "scriptId": "0x20",
+          "taskId": "0x28",
+          "taskState": "0x30"
+        }
+      },
+      "progressUpdate": {
+        "symbol": "Beyond.Gameplay.GameplayNetwork._Handle_LevelScriptTaskProgressUpdate",
+        "token": "0x06004dbd",
+        "methodIndex": 19900,
+        "rva": "0x42ba410",
+        "message": "SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE",
+        "messageId": 815,
+        "fieldOffsets": {
+          "sceneNumId": "0x18",
+          "scriptId": "0x20",
+          "taskId": "0x28",
+          "conditionCompletedMap": "0x30"
+        }
+      },
+      "conditionCompletionChanged": {
+        "symbol": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition.InvokeOnIsCompleteChangeAction",
+        "token": "0x06012207",
+        "methodIndex": 74246,
+        "rva": "0x42bad00",
+        "message": "SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE",
+        "messageId": 815,
+        "captureScope": "only while progressUpdate is active on the same thread",
+        "fieldOffsets": {
+          "scriptId": "0x18",
+          "sceneNumId": "0x28",
+          "taskId": "0x30",
+          "conditionId": "0x38",
+          "isCompleted": "0x50"
+        }
+      },
+      "startFinish": {
+        "symbol": "Beyond.Gameplay.GameplayNetwork._Handle_LevelScriptTaskStartFinish",
+        "token": "0x06004dbe",
+        "methodIndex": 19901,
+        "rva": "0x45e7f50",
+        "message": "SC_SCENE_LEVEL_SCRIPT_TASK_START_FINISH",
+        "messageId": 816,
+        "fieldOffsets": {
+          "sceneNumId": "0x18",
+          "scriptId": "0x20",
+          "taskId": "0x28"
+        }
+      },
+      "scriptSetDone": {
+        "symbol": "Beyond.Gameplay.GameplayNetwork._Handle_SceneLevelScriptStateNotify",
+        "token": "0x06004db6",
+        "methodIndex": 19893,
+        "rva": "0x7386060",
+        "message": "SC_SCENE_LEVEL_SCRIPT_SET_DONE",
+        "messageId": 823,
+        "fieldOffsets": {
+          "sceneNumId": "0x18",
+          "scriptId": "0x20"
+        }
+      }
+    },
+    "actionDispatch": {
+      "actionHeaderProcess": {
+        "symbol": "Beyond.Gameplay.Actions.ActionHeader.Process",
+        "token": "0x06007f17",
+        "methodIndex": 32534,
+        "rva": "0x3d3c9b0"
+      },
+      "actionHeaderDoProcess": {
+        "symbol": "Beyond.Gameplay.Actions.ActionHeader.DoProcess",
+        "token": "0x06007f18",
+        "methodIndex": 32535,
+        "rva": "0x31754f0"
+      },
+      "runAction": {
+        "symbol": "Beyond.Gameplay.Actions.ActionMapAsset.RunAction",
+        "token": "0x06007f2a",
+        "methodIndex": 32553,
+        "rva": "0x75f42fc"
+      },
+      "paramStringGetValue": {
+        "symbol": "current-build Param<string> value resolver",
+        "rva": "0x3d48150"
+      }
+    },
+    "mission": {
+      "getMissionIdByQuestId": {
+        "symbol": "Beyond.Gameplay.MissionSystem.GetMissionIdByQuestId",
+        "token": "0x06005231",
+        "methodIndex": 21040,
+        "rva": "0x33781e0"
+      },
+      "snapshot": {
+        "tick": {
+          "symbol": "Beyond.Gameplay.MissionSystem.Tick",
+          "token": "0x0600522b",
+          "methodIndex": 21034,
+          "rva": "0x34e3890"
+        },
+        "retryEveryTicks": 60,
+        "maxAttempts": 120,
+        "systemFieldOffsets": {
+          "idMap": "0x70",
+          "missions": "0xd8",
+          "currentQuests": "0xe0"
+        },
+        "dictionaryLayout": {
+          "entries": "0x18",
+          "usedCount": "0x20",
+          "version": "0x2c",
+          "arrayLength": "0x18",
+          "arrayData": "0x20",
+          "entryStride": "0x18",
+          "entryHashCode": "0x0",
+          "entryKey": "0x8",
+          "entryValue": "0x10"
+        },
+        "maxUsedCounts": {
+          "idMap": 131072,
+          "missions": 16384,
+          "currentQuests": 65536
+        },
+        "missionData": {
+          "type": "Beyond.Gameplay.MissionSystem+MissionData",
+          "typeToken": "0x02000c94",
+          "idFieldToken": "0x0400487f",
+          "stateFieldToken": "0x04004880",
+          "idFieldOffset": "0x10",
+          "stateFieldOffset": "0x18",
+          "states": {
+            "0": "None",
+            "1": "Available",
+            "2": "Processing",
+            "3": "Completed",
+            "4": "Failed",
+            "5": "Disabled"
+          },
+          "processingState": 2
+        },
+        "questData": {
+          "type": "Beyond.Gameplay.MissionSystem+QuestData",
+          "typeToken": "0x02000c96",
+          "idFieldToken": "0x0400488d",
+          "stateFieldToken": "0x0400488e",
+          "idFieldOffset": "0x10",
+          "stateFieldOffset": "0x18",
+          "states": {
+            "0": "None",
+            "2": "Processing",
+            "3": "Completed",
+            "4": "Failed",
+            "5": "Disabled"
+          },
+          "processingState": 2
+        }
+      },
+      "startMission": {
+        "symbol": "Beyond.Gameplay.MissionSystem.StartMission",
+        "token": "0x0600524f",
+        "methodIndex": 21070,
+        "rva": "0x332abb0"
+      },
+      "completeMission": {
+        "symbol": "Beyond.Gameplay.MissionSystem.CompleteMission",
+        "token": "0x06005253",
+        "methodIndex": 21074,
+        "rva": "0x73b8ac4"
+      },
+      "failMission": {
+        "symbol": "Beyond.Gameplay.MissionSystem.FailMission",
+        "token": "0x06005254",
+        "methodIndex": 21075,
+        "rva": "0x73ba2fc"
+      },
+      "startQuest": {
+        "symbol": "Beyond.Gameplay.MissionSystem.StartQuest",
+        "token": "0x06005247",
+        "methodIndex": 21062,
+        "rva": "0x3a885d0"
+      },
+      "succeedQuest": {
+        "symbol": "Beyond.Gameplay.MissionSystem.SucceedQuest",
+        "token": "0x0600524b",
+        "methodIndex": 21066,
+        "rva": "0x73c32ac"
+      },
+      "failQuest": {
+        "symbol": "Beyond.Gameplay.MissionSystem.FailQuest",
+        "token": "0x0600524c",
+        "methodIndex": 21067,
+        "rva": "0x73bac84"
+      }
+    },
+    "playbackKeyMaps": {
+      "fmv": {
+        "cs_video_c13m3_1": "cutscene_c13m3_1",
+        "cs_video_c33m2_1": "cutscene_c33m2_1",
+        "cs_video_e0m2_1": "cutscene_e0m2_1",
+        "cs_video_e0m2_6": "cutscene_e0m2_6",
+        "cs_video_e11m3_2": "cutscene_e11m3_2",
+        "cs_video_e11m5_2": "cutscene_e11m5_2",
+        "cs_video_e11m7_3": "cutscene_e11m7_3",
+        "cs_video_e1m10_2": "cutscene_e1m10_2",
+        "cs_video_e1m3_1": "cutscene_e1m3_1",
+        "cs_video_e1m8_4": "cutscene_e1m8_4",
+        "cs_video_e2m6_2": "cutscene_e2m6_2",
+        "cs_video_e3m5_1": "cutscene_e3m5_1",
+        "cs_video_e4m1d5_1": "cutscene_e4m1d5_1",
+        "cs_video_e5m1_2": "cutscene_e5m1_2",
+        "cs_video_e6m1_3": "cutscene_e6m1_3",
+        "cs_video_e6m3_1": "cutscene_e6m3_1",
+        "cs_video_e7m4_2": "cutscene_e7m4_2",
+        "cs_video_e8m2_1": "cutscene_e8m2_1",
+        "cs_video_e8m5_1": "cutscene_e8m5_1",
+        "cs_video_e9m3_1": "cutscene_e9m3_1",
+        "cs_video_e9m3_2": "cutscene_e9m3_2",
+        "cs_video_e9m3_3": "cutscene_e9m3_3"
+      }
+    },
+    "playback": [
+      {
+        "actionType": "PlayCutsceneAction",
+        "playbackType": "cutscene",
+        "prefixes": ["cutscene_"],
+        "token": "0x06008e19",
+        "methodIndex": 36376,
+        "rva": "0x7675ea4"
+      },
+      {
+        "actionType": "PlayCutsceneIgnoreCinematicQueue",
+        "playbackType": "cutscene",
+        "prefixes": ["cutscene_"],
+        "token": "0x06008e23",
+        "methodIndex": 36386,
+        "rva": "0x7676618"
+      },
+      {
+        "actionType": "PlayLevelSequenceAction",
+        "playbackType": "cutscene",
+        "prefixes": ["cutscene_"],
+        "token": "0x06008e2e",
+        "methodIndex": 36397,
+        "rva": "0x767713c"
+      },
+      {
+        "actionType": "PlayLevelSequenceAndControlSceneObjectsAction",
+        "symbol": "Beyond.Gameplay.Actions.PlayLevelSequenceAndControlSceneObjectsAction.PlayCinematic",
+        "playbackType": "cutscene",
+        "prefixes": ["cutscene_"],
+        "token": "0x06008e3d",
+        "methodIndex": 36412,
+        "rva": "0x7677b24"
+      },
+      {
+        "actionType": "PlayLevelSequenceAndHideSceneObjectsAction",
+        "symbol": "Beyond.Gameplay.Actions.PlayLevelSequenceAndHideSceneObjectsAction.PlayCinematic",
+        "playbackType": "cutscene",
+        "prefixes": [
+          "cutscene_"
+        ],
+        "token": "0x06008e4c",
+        "methodIndex": 36427,
+        "rva": "0x76781bc"
+      },
+      {
+        "actionType": "PlayFmvAction",
+        "playbackType": "cutscene",
+        "prefixes": ["cutscene_"],
+        "keyMap": "fmv",
+        "token": "0x06008e2b",
+        "methodIndex": 36394,
+        "rva": "0x7676be4"
+      },
+      {
+        "actionType": "StartCutsceneAndControlSceneObjectAction",
+        "symbol": "Beyond.Gameplay.Actions.StartCutsceneAndControlSceneObjectAction.PlayCinematic",
+        "playbackType": "cutscene",
+        "prefixes": ["cutscene_"],
+        "token": "0x06008e8b",
+        "methodIndex": 36490,
+        "rva": "0x767cff4"
+      },
+      {
+        "actionType": "StartCutsceneAndHideSceneObjectAction",
+        "symbol": "Beyond.Gameplay.Actions.StartCutsceneAndHideSceneObjectAction.PlayCinematic",
+        "playbackType": "cutscene",
+        "prefixes": ["cutscene_"],
+        "token": "0x06008ea7",
+        "methodIndex": 36518,
+        "rva": "0x767dd14"
+      },
+      {
+        "actionType": "Play3DRadio",
+        "playbackType": "radio",
+        "prefixes": ["radio_"],
+        "token": "0x06008e0a",
+        "methodIndex": 36361,
+        "rva": "0x7675670"
+      },
+      {
+        "actionType": "Play3DRadioAndWait",
+        "playbackType": "radio",
+        "prefixes": ["radio_"],
+        "token": "0x06008e0f",
+        "methodIndex": 36366,
+        "rva": "0x767514c"
+      },
+      {
+        "actionType": "FlushAndPlayRadio",
+        "playbackType": "radio",
+        "prefixes": [
+          "radio_"
+        ],
+        "token": "0x06008dfb",
+        "methodIndex": 36346,
+        "rva": "0x7672390"
+      },
+      {
+        "actionType": "PlayRadio",
+        "playbackType": "radio",
+        "prefixes": ["radio_"],
+        "token": "0x06008e5a",
+        "methodIndex": 36441,
+        "rva": "0x76787ec"
+      },
+      {
+        "actionType": "PlayRadioAndWait",
+        "playbackType": "radio",
+        "prefixes": ["radio_"],
+        "token": "0x06008e5d",
+        "methodIndex": 36444,
+        "rva": "0x76783f4"
+      },
+      {
+        "actionType": "PlayRemoteComm",
+        "playbackType": "remotecomm",
+        "prefixes": ["remotecomm_"],
+        "token": "0x06008e64",
+        "methodIndex": 36451,
+        "rva": "0x7678a84"
+      },
+      {
+        "actionType": "PlayDialogAndHideSceneObjectAction",
+        "symbol": "Beyond.Gameplay.Actions.PlayDialogAndHideSceneObjectAction.PlayCinematic",
+        "playbackType": "dialog",
+        "prefixes": ["dlg_", "misc_dlg_"],
+        "deferToAcceptedPlayback": "dialog",
+        "token": "0x06008cf2",
+        "methodIndex": 36081,
+        "rva": "0x7669a84"
+      },
+      {
+        "actionType": "StartContinuousDialog",
+        "playbackType": "dialog",
+        "prefixes": [
+          "dlg_",
+          "misc_dlg_"
+        ],
+        "token": "0x06008d39",
+        "methodIndex": 36152,
+        "rva": "0x766dbb4"
+      },
+      {
+        "actionType": "StartDialogAction",
+        "playbackType": "dialog",
+        "prefixes": ["dlg_", "misc_dlg_"],
+        "deferToAcceptedPlayback": "dialog",
+        "token": "0x06008ed7",
+        "methodIndex": 36566,
+        "rva": "0x767e920"
+      },
+      {
+        "actionType": "StartCutsceneAndTeleportAction",
+        "playbackType": "cutscene",
+        "prefixes": ["cutscene_"],
+        "token": "0x06008ec7",
+        "methodIndex": 36550,
+        "rva": "0x767e1ec"
+      },
+      {
+        "actionType": "StartDialogAndTeleportAction",
+        "playbackType": "dialog",
+        "prefixes": ["dlg_", "misc_dlg_"],
+        "deferToAcceptedPlayback": "dialog",
+        "token": "0x06008ede",
+        "methodIndex": 36573,
+        "rva": "0x767f6b0"
+      },
+      {
+        "actionType": "StartRemoteCommAndTeleport",
+        "playbackType": "remotecomm",
+        "prefixes": ["remotecomm_"],
+        "token": "0x06008eed",
+        "methodIndex": 36588,
+        "rva": "0x768008c"
+      },
+      {
+        "actionType": "StartFmvAndTeleportAction",
+        "playbackType": "cutscene",
+        "prefixes": ["cutscene_"],
+        "keyMap": "fmv",
+        "token": "0x06008ee5",
+        "methodIndex": 36580,
+        "rva": "0x767fbe8"
+      },
+      {
+        "actionType": "ComplexNarrativeBlackScreenAction",
+        "playbackType": "black",
+        "prefixes": ["black_"],
+        "keySource": "maskTextList",
+        "token": "0x06008ca9",
+        "methodIndex": 36008,
+        "rva": "0x7660bf0"
+      },
+      {
+        "actionType": "NarrativeBlackScreenAction",
+        "playbackType": "black",
+        "prefixes": ["black_"],
+        "keySource": "maskTextList",
+        "token": "0x06008ce9",
+        "methodIndex": 36072,
+        "rva": "0x7668c84"
+      },
+      {
+        "actionType": "StartNarrativeBlackScreenAndTeleport",
+        "playbackType": "black",
+        "prefixes": ["black_"],
+        "keySource": "maskTextList",
+        "token": "0x06008d45",
+        "methodIndex": 36164,
+        "rva": "0x766e494"
+      }
+    ],
+    "maskPlaybackBoundary": {
+      "symbol": "Beyond.Gameplay.Actions.GameAction.ShowNarrativeBlackScreen",
+      "playbackType": "black",
+      "keySource": "maskTextList",
+      "dataTextListFieldOffset": "0x70",
+      "listItemsFieldOffset": "0x10",
+      "listSizeFieldOffset": "0x18",
+      "arrayDataOffset": "0x20",
+      "lineKeyFieldOffset": "0x10",
+      "lineIdPattern": "^black_.+_\\d{3,}$",
+      "lineSuffixPattern": "_\\d{3,}$",
+      "maxTextItems": 64,
+      "token": "0x0600802b",
+      "methodIndex": 32810,
+      "rva": "0x75ec4b0",
+      "evidence": "Final synchronous boundary called by all three current narrative-black Execute bodies. Current GameAssembly layout is UICommonMaskData.textDataList at +0x70; List items/size at +0x10/+0x18 and array data at +0x20; each CommonMaskTextData embeds LangKey at +0x10 and LangKey.key is its first pointer. All 249 original TextTable black line ids match this suffix transform into 215 exact Story keys; the synthetic WebUI secret notice is absent and cannot match native data."
+    },
+    "asyncSnsPlayback": {
+      "prefixes": ["sns_"],
+      "maxPendingContexts": 256,
+      "request": {
+        "symbol": "Beyond.Gameplay.Actions.GameAction.StartForceSNS",
+        "token": "0x06008049",
+        "methodIndex": 32840,
+        "rva": "0x75ed938"
+      },
+      "queueBoundary": {
+        "symbol": "Beyond.Gameplay.Actions.GameAction.AddCinematicItem2Queue",
+        "itemChatIdFieldOffset": "0x18",
+        "itemStoryKeyFieldOffset": "0x48",
+        "itemShowToastFieldOffset": "0x50",
+        "token": "0x0600804b",
+        "methodIndex": 32842,
+        "rva": "0x75dcf58"
+      },
+      "consumer": {
+        "symbol": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain.StartForceSNS",
+        "handleItemFieldOffset": "0x18",
+        "token": "0x060144a7",
+        "methodIndex": 83110,
+        "rva": "0x70ed65c"
+      },
+      "fieldPlayback": {
+        "actionType": "MainCharForceSNSBrain._StartSNSUI",
+        "storyKeyFieldOffset": "0x128",
+        "contextFieldOffsets": {
+          "chatId": "0x130"
+        }
+      },
+      "evidence": "Exact current-binary object handoff. GameAction.StartForceSNS allocates one ForceSNSQueueItemData, writes chatId/dialogId/showToast at +0x18/+0x48/+0x50, and passes that object to AddCinematicItem2Queue. MainCharForceSNSBrain.StartForceSNS reads the same object pointer from CinematicQueueItemHandle+0x18 and, only on its successful path, copies dialogId/chatId into this+0x128/+0x130 before its start coroutine reaches _StartSNSUI. Pointer identity is the propagation key; copied strings and showToast are fail-closed integrity checks."
+    },
+    "asyncDialogPlayback": {
+      "deferToAcceptedPlayback": "dialog",
+      "prefixes": ["dlg_", "misc_dlg_"],
+      "maxPendingContexts": 256,
+      "request": {
+        "symbol": "Beyond.Gameplay.Actions.GameAction.StartDialog",
+        "token": "0x06008038",
+        "methodIndex": 32823,
+        "rva": "0x75ed524"
+      },
+      "queueBoundary": {
+        "symbol": "Beyond.Gameplay.Actions.GameAction.AddCinematicItem2Queue",
+        "itemStoryKeyFieldOffset": "0x18",
+        "token": "0x0600804b",
+        "methodIndex": 32842,
+        "rva": "0x75dcf58"
+      },
+      "consumer": {
+        "symbol": "Beyond.Gameplay.Core.DialogManager.PlayDialogByHandle",
+        "handleItemFieldOffset": "0x18",
+        "token": "0x0600f777",
+        "methodIndex": 63350,
+        "rva": "0x6e15e40"
+      },
+      "acceptedPlayback": {
+        "symbol": "Beyond.Gameplay.Core.DialogManager._PlayDialogInternal",
+        "token": "0x0600f84e",
+        "methodIndex": 63565,
+        "rva": "0x6e28040"
+      },
+      "evidence": "Exact current-binary accepted-dialog handoff for the three deferred action probes. Their current bodies call GameAction.StartDialog with the Param<string>-resolved key. StartDialog allocates one DialogQueueItemData, writes dialogId at +0x18, passes the object to AddCinematicItem2Queue, and returns true only after that queue call. DialogManager.PlayDialogByHandle reads the same object pointer from CinematicQueueItemHandle+0x18 and passes its get_dialogId result to PlayDialogByJsonId. That method reaches _PlayDialogInternal only after _CheckCanPlayDialog succeeds. Pointer identity is the propagation key; the resolved action parameter, request argument, queue-item field, consumer argument, and accepted-boundary argument must all agree."
+    },
+    "fieldPlayback": [
+      {
+        "symbol": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain._StartSNSUI",
+        "actionType": "MainCharForceSNSBrain._StartSNSUI",
+        "playbackType": "sns",
+        "prefixes": ["sns_"],
+        "storyKeyFieldOffset": "0x128",
+        "contextFieldOffsets": {
+          "chatId": "0x130"
+        },
+        "token": "0x06014493",
+        "methodIndex": 83090,
+        "rva": "0x70ef8b4",
+        "evidence": "Final SNS UI boundary; current fallback body reads m_dialogId at this+0x128 and m_chatId at this+0x130 before the UI call."
+      }
+    ]
+  }
+}

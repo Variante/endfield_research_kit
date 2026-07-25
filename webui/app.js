@@ -5,6 +5,7 @@
 
 const ROW_GROUP_H = 28;
 const ROW_ITEM_H = 50;
+const ROW_ITEM_DEBUG_H = 66;
 const OVERSCAN_PX = 200;
 const WIKI_MEDIA_MAX_IMAGES = 12;
 const WIKI_MEDIA_MAX_VIDEOS = 8;
@@ -73,6 +74,9 @@ const STATE = {
   storySearchLanguage: "",
   storyMediaPayload: null,
   storyMediaPromise: null,
+  storyTriggerManifest: {},
+  storyTriggerPromise: null,
+  storyTriggerLoadState: "idle",
   storyOrderPayload: null,
   storyOrderPromise: null,
   storyOrderOverridePayload: null,
@@ -120,6 +124,7 @@ const {
   splitPathIdExportStem,
   relRequiresPathIdExportName,
 } = window.WebUI;
+const STORY_TRIGGERS = window.WebUIStoryTriggers;
 
 function createDefaultFilters() {
   return {
@@ -1369,6 +1374,57 @@ function optionOverrideSceneForKey(payload, key) {
     if (scene && typeof scene === "object") return scene;
   }
   return null;
+}
+
+function loadStoryTriggerManifest() {
+  if (STATE.storyTriggerLoadState === "loaded") {
+    return Promise.resolve(STATE.storyTriggerManifest);
+  }
+  if (STATE.storyTriggerPromise) return STATE.storyTriggerPromise;
+  STATE.storyTriggerLoadState = "loading";
+  STATE.storyTriggerPromise = fetchJson("data/mission_pipeline/index.json", { fresh: true })
+    .then((res) => {
+      if (!res.ok) throw new Error(`mission_pipeline/index.json HTTP ${res.status}`);
+      return res.json();
+    })
+    .then((payload) => {
+      const coverage = payload && payload.storyCoverage;
+      const manifest = coverage && coverage.storyTriggerManifest;
+      const base = manifest && typeof manifest === "object" ? manifest : {};
+      // Ambient env_* files are tracked in their own manifest so they stay out
+      // of the mission-pipeline coverage denominator. Merge them here so a
+      // Story-page lookup resolves either kind through one map; the key spaces
+      // are disjoint (env_* vs the mission-ownable kinds), so nothing is shadowed.
+      const envTalk = payload && payload.envTalkAttachment && payload.envTalkAttachment.envTalkTriggerManifest;
+      STATE.storyTriggerManifest = envTalk && typeof envTalk === "object"
+        ? Object.assign({}, base, envTalk)
+        : base;
+      STATE.storyTriggerLoadState = "loaded";
+      STATE.storyTriggerPromise = null;
+      return STATE.storyTriggerManifest;
+    })
+    .catch((error) => {
+      console.warn("Unable to load Story trigger evidence", error);
+      STATE.storyTriggerManifest = {};
+      STATE.storyTriggerLoadState = "unavailable";
+      STATE.storyTriggerPromise = null;
+      return STATE.storyTriggerManifest;
+    });
+  return STATE.storyTriggerPromise;
+}
+
+function ensureStoryTriggerManifestForDebug() {
+  if (!STATE.showDebug || STATE.storyTriggerLoadState === "loaded" || STATE.storyTriggerPromise) return;
+  void loadStoryTriggerManifest().then(() => {
+    if (!STATE.showDebug) return;
+    if (typeof rebuildTree === "function") rebuildTree({ resetScroll: false });
+    const cached = STATE.selectedKey ? STATE.convCache.get(STATE.selectedKey) : null;
+    if (cached) renderConv(cached);
+  });
+}
+
+function storyRowItemHeight() {
+  return STATE.showDebug ? ROW_ITEM_DEBUG_H : ROW_ITEM_H;
 }
 
 const OPTION_LAYOUT_RECOVERY_ISSUE_CODES = new Set([
@@ -3119,6 +3175,7 @@ function applyUiStrings() {
   if (brandTitle) brandTitle.textContent = uiText("suiteTitle");
 
   $("#story-tab").textContent = uiText("storyTab");
+  $("#mission-pipeline-tab").textContent = uiText("missionPipelineTab");
   $("#assets-tab").textContent = uiText("assetsTab");
   $("#ui-language-label").textContent = uiText("uiLanguage");
   syncUiLanguageSwitch();
@@ -3220,6 +3277,8 @@ function clearConversationPane() {
   $("#conv-warnings").hidden = true;
   $("#conv-related").replaceChildren();
   $("#conv-related").hidden = true;
+  $("#conv-trigger").replaceChildren();
+  $("#conv-trigger").hidden = true;
   $("#conv-gameplay-link").replaceChildren();
   $("#conv-gameplay-link").hidden = true;
   $("#conv-meta").textContent = "";
@@ -3490,6 +3549,7 @@ function renderList() {
 
   if ((STATE.sortMode || "story") === "story" && STATE.showDebug) {
     ensureStoryOrderOcrPayloadForDebug();
+    ensureStoryTriggerManifestForDebug();
   }
 
   let i = findFirstVisible(startTop);
@@ -3530,6 +3590,58 @@ function renderGroup(row) {
     storyOrderMissionLockControl(row) +
     storyOrderMissionMoveUnusedControl(row);
   return div;
+}
+
+function storyTriggerCategoryLabel(category) {
+  return uiText(({
+    native_playback: "storyTriggerNativePlayback",
+    native_playback_owner_unresolved: "storyTriggerNativePlaybackUnresolved",
+    playback: "storyTriggerPlayback",
+    playback_owner_unresolved: "storyTriggerPlaybackUnresolved",
+    condition: "storyTriggerCondition",
+    context: "storyTriggerContext",
+    dependency: "storyTriggerDependency",
+    definition_only: "storyTriggerDefinition",
+    non_mission_content: "storyTriggerNonMissionContent",
+    ambient_world_content: "storyTriggerAmbientWorldContent",
+    unknown: "storyTriggerUnknown",
+  })[category] || "storyTriggerUnknown");
+}
+
+function storyTriggerView(key) {
+  if (!STORY_TRIGGERS || typeof STORY_TRIGGERS.triggerView !== "function") return null;
+  return STORY_TRIGGERS.triggerView(STATE.storyTriggerManifest, key);
+}
+
+function storyTriggerCompactText(key) {
+  if (STATE.storyTriggerLoadState === "loading" || STATE.storyTriggerLoadState === "idle") {
+    return { category: "loading", text: uiText("storyTriggerLoading"), title: uiText("storyTriggerLoading") };
+  }
+  if (STATE.storyTriggerLoadState === "unavailable") {
+    return { category: "unavailable", text: uiText("storyTriggerUnavailable"), title: uiText("storyTriggerUnavailable") };
+  }
+  const view = storyTriggerView(key);
+  if (!view) {
+    return { category: "unknown", text: uiText("storyTriggerUnknown"), title: uiText("storyTriggerUnknown") };
+  }
+  const compact = STORY_TRIGGERS.compactTrigger(view);
+  const pieces = [];
+  if (compact.event) pieces.push(compact.event);
+  if (compact.actions.length) pieces.push(compact.actions.join(", "));
+  if (!pieces.length && view.hasProvenPlayback && compact.owner) pieces.push(compact.owner);
+  const categoryLabel = storyTriggerCategoryLabel(view.category);
+  const text = pieces.length ? pieces.join(" \u2192 ") : categoryLabel;
+  const qualifiers = [];
+  if (compact.pathCount > 1) {
+    qualifiers.push(`${compact.pathCount} ${uiText("storyTriggerExactPaths")}`);
+  }
+  return {
+    category: view.category,
+    text,
+    title: [categoryLabel, ...qualifiers, compact.owner ? `${uiText("storyTriggerOwner")}: ${compact.owner}` : ""]
+      .filter(Boolean)
+      .join("\n"),
+  };
 }
 
 function renderItem(row) {
@@ -3645,6 +3757,7 @@ function renderItem(row) {
 
   const kindCls = meta.cls;
   const kindNm = meta.name;
+  const triggerSummary = STATE.showDebug ? storyTriggerCompactText(e.k) : null;
 
   div.innerHTML =
     `<div class="item-line1">` +
@@ -3658,7 +3771,12 @@ function renderItem(row) {
       removeFromMissionButton +
       dragHandle +
     `</div>` +
-    `<div class="item-preview">${highlightTextFragment(e.p || uiText("emptyPreview"), STATE.filters.q)}</div>`;
+    `<div class="item-preview">${highlightTextFragment(e.p || uiText("emptyPreview"), STATE.filters.q)}</div>` +
+    (triggerSummary
+      ? `<div class="item-trigger is-${escapeHtml(triggerSummary.category)}" title="${escapeHtml(triggerSummary.title)}">` +
+          `<span>${escapeHtml(uiText("storyTriggerListLabel"))}:</span> ${escapeHtml(triggerSummary.text)}` +
+        `</div>`
+      : "");
   return div;
 }
 
@@ -3736,6 +3854,7 @@ async function loadConv(key, { force = false } = {}) {
   $("#conv-gameplay-link").hidden = true;
   $("#conv-meta").textContent = uiText("loading");
   $("#conv-lines").innerHTML = "";
+  syncStoryTriggerPanel(key);
 
   try {
     const [res, optionOverrides] = await Promise.all([
@@ -6257,6 +6376,174 @@ function syncConvGameplayLink(entry, conv) {
   slot.hidden = !tag;
 }
 
+function storyTriggerStepValue(step) {
+  const values = Array.isArray(step && step.ids) ? step.ids.filter(Boolean) : [];
+  if (values.length) return values.join(", ");
+  return String(step && step.id || "?");
+}
+
+function storyTriggerStepName(kind) {
+  return String(kind || "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function appendStoryTriggerFact(parent, labelText, value, className = "") {
+  const text = String(value || "").trim();
+  if (!text) return;
+  const row = document.createElement("div");
+  row.className = `story-trigger-fact${className ? ` ${className}` : ""}`;
+  const label = document.createElement("span");
+  label.textContent = labelText;
+  const content = document.createElement("code");
+  content.textContent = text;
+  row.append(label, content);
+  parent.appendChild(row);
+}
+
+function renderStoryTriggerNativePath(path, index) {
+  const details = document.createElement("details");
+  details.className = "story-trigger-native-path";
+  const summary = document.createElement("summary");
+  const event = String(path && (path.eventSummary || path.eventName) || "?");
+  const actions = STORY_TRIGGERS.nativePathActions(path);
+  summary.textContent = [
+    `${uiText("storyTriggerEvent")}: ${event}`,
+    actions.length ? `${uiText("storyTriggerAction")}: ${actions.join(" \u2192 ")}` : "",
+  ].filter(Boolean).join(" \u2192 ");
+  if (index === 0) details.open = true;
+  details.appendChild(summary);
+
+  const body = document.createElement("div");
+  body.className = "story-trigger-native-body";
+  appendStoryTriggerFact(body, uiText("storyTriggerEvent"), path && path.eventName);
+  if (path && path.eventSummary && path.eventSummary !== path.eventName) {
+    appendStoryTriggerFact(body, uiText("storyTriggerRoute"), path.eventSummary, "is-summary");
+  }
+  if (path && path.selector && Object.keys(path.selector).length) {
+    appendStoryTriggerFact(body, uiText("storyTriggerSelector"), JSON.stringify(path.selector));
+  }
+  if (path && path.sourceFile) {
+    appendStoryTriggerFact(body, uiText("storyTriggerSource"), path.sourceFile, "is-source");
+  }
+  details.appendChild(body);
+  return details;
+}
+
+function renderStoryTriggerRoute(route, index) {
+  const category = STORY_TRIGGERS.routeCategory(route);
+  const card = document.createElement("section");
+  card.className = `story-trigger-route is-${category}`;
+
+  const header = document.createElement("header");
+  const label = document.createElement("strong");
+  label.textContent = storyTriggerCategoryLabel(category);
+  header.appendChild(label);
+  const paths = STORY_TRIGGERS.nativePaths(route);
+  if (paths.length) {
+    const count = document.createElement("span");
+    count.textContent = `${paths.length} ${uiText("storyTriggerExactPaths")}`;
+    header.appendChild(count);
+  }
+  card.appendChild(header);
+
+  if (paths.length && route.causality === "context") {
+    const note = document.createElement("p");
+    note.className = "story-trigger-boundary";
+    note.textContent = uiText("storyTriggerOwnershipContext");
+    card.appendChild(note);
+  }
+
+  const steps = Array.isArray(route.steps) ? route.steps.filter((step) => step && step.kind) : [];
+  if (steps.length) {
+    const chain = document.createElement("div");
+    chain.className = "story-trigger-chain";
+    steps.forEach((step, stepIndex) => {
+      if (stepIndex) {
+        const arrow = document.createElement("i");
+        arrow.setAttribute("aria-hidden", "true");
+        arrow.textContent = "\u2192";
+        chain.appendChild(arrow);
+      }
+      const chip = document.createElement("span");
+      chip.className = `is-${step.kind}`;
+      const kind = document.createElement("small");
+      kind.textContent = storyTriggerStepName(step.kind);
+      const value = document.createElement("code");
+      value.textContent = storyTriggerStepValue(step);
+      chip.append(kind, value);
+      const summaries = Array.isArray(step.summaries) ? step.summaries.filter(Boolean) : [];
+      if (summaries.length) {
+        const summary = document.createElement("em");
+        summary.textContent = summaries.join("; ");
+        chip.appendChild(summary);
+      }
+      chain.appendChild(chip);
+    });
+    card.appendChild(chain);
+  }
+
+  paths.forEach((path, pathIndex) => {
+    card.appendChild(renderStoryTriggerNativePath(path, pathIndex));
+  });
+  if (!paths.length && Array.isArray(route.sourceFiles) && route.sourceFiles.length) {
+    appendStoryTriggerFact(card, uiText("storyTriggerSource"), route.sourceFiles.join(", "), "is-source");
+  }
+  card.dataset.routeIndex = String(index);
+  return card;
+}
+
+function syncStoryTriggerPanel(key) {
+  const slot = $("#conv-trigger");
+  if (!slot) return;
+  slot.replaceChildren();
+  if (!STATE.showDebug) {
+    slot.hidden = true;
+    return;
+  }
+  slot.hidden = false;
+
+  const panel = document.createElement("div");
+  panel.className = "story-trigger-panel";
+  const heading = document.createElement("div");
+  heading.className = "story-trigger-heading";
+  heading.textContent = uiText("storyTriggerHeading");
+  panel.appendChild(heading);
+
+  if (STATE.storyTriggerLoadState === "loading" || STATE.storyTriggerLoadState === "idle") {
+    const empty = document.createElement("p");
+    empty.className = "story-trigger-empty";
+    empty.textContent = uiText("storyTriggerLoading");
+    panel.appendChild(empty);
+    slot.appendChild(panel);
+    return;
+  }
+  if (STATE.storyTriggerLoadState === "unavailable") {
+    const empty = document.createElement("p");
+    empty.className = "story-trigger-empty";
+    empty.textContent = uiText("storyTriggerUnavailable");
+    panel.appendChild(empty);
+    slot.appendChild(panel);
+    return;
+  }
+
+  const view = storyTriggerView(key);
+  if (!view || !view.routes.length) {
+    const empty = document.createElement("p");
+    empty.className = `story-trigger-empty is-${view ? view.category : "unknown"}`;
+    empty.textContent = storyTriggerCategoryLabel(view ? view.category : "unknown");
+    panel.appendChild(empty);
+    slot.appendChild(panel);
+    return;
+  }
+
+  const routeList = document.createElement("div");
+  routeList.className = "story-trigger-routes";
+  view.routes.forEach((route, index) => routeList.appendChild(renderStoryTriggerRoute(route, index)));
+  panel.appendChild(routeList);
+  slot.appendChild(panel);
+}
+
 function renderConv(conv) {
   if (!conv) return;
   showConvPane();
@@ -6355,6 +6642,7 @@ function renderConv(conv) {
   }
   $("#conv-meta").textContent = meta.join(" | ");
   syncConvGameplayLink(entry, conv);
+  syncStoryTriggerPanel(conv.key);
 
   const warningWrap = $("#conv-warnings");
   warningWrap.replaceChildren();

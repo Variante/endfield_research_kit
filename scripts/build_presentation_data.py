@@ -453,6 +453,50 @@ def graph_freshness_reason(graph: Path) -> str:
                 f"source graph predates {relative(newest)}; rebuild "
                 "tools/endfield_source_graph.py before using presentation edges"
             )
+    try:
+        connection = sqlite3.connect(f"file:{graph.as_posix()}?mode=ro", uri=True)
+        try:
+            row = connection.execute(
+                "SELECT value FROM meta WHERE key = 'asset_map_scope'"
+            ).fetchone()
+            unity_asset_count = int(connection.execute(
+                "SELECT COUNT(*) FROM nodes WHERE kind = 'unity_asset'"
+            ).fetchone()[0])
+            required_row = connection.execute(
+                "SELECT value FROM meta WHERE key = 'asset_map_required_path_ids'"
+            ).fetchone()
+            matched_row = connection.execute(
+                "SELECT value FROM meta WHERE key = 'asset_map_matched_path_ids'"
+            ).fetchone()
+        finally:
+            connection.close()
+    except sqlite3.Error as exc:
+        return f"source graph metadata could not be read: {exc}"
+    # Graphs built before asset-map scope metadata was introduced were always
+    # exhaustive. New no-map graphs must not masquerade as complete merely
+    # because their timestamp is fresh.
+    asset_map_scope = str(row[0] or "") if row else ("full" if unity_asset_count else "none")
+    if asset_map_scope not in {"full", "relevant"}:
+        return (
+            f"source graph asset-map scope is {asset_map_scope or 'unknown'}; "
+            "rebuild with --relevant-asset-maps or the default full maps before "
+            "using presentation edges"
+        )
+    if not unity_asset_count:
+        return "source graph contains no original Unity AssetMap rows"
+    if asset_map_scope == "relevant":
+        if not required_row or not matched_row:
+            return "source graph relevant AssetMap scope has no completed coverage metadata"
+        try:
+            required = int(required_row[0] or 0)
+            matched = int(matched_row[0] or 0)
+        except (TypeError, ValueError):
+            return "source graph relevant AssetMap coverage metadata is invalid"
+        if matched < required:
+            return (
+                f"source graph relevant AssetMap scope matched {matched} of {required} "
+                "required source/PathID identities"
+            )
     return ""
 
 

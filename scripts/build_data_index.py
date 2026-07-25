@@ -436,6 +436,7 @@ MEMORYPACK_FIELD_SCHEMAS = {
         "npcs",
         "patrols",
         "predefinedParams",
+        "riftVolumes",
         "safeZone",
         "sceneId",
         "sludgeDatas",
@@ -2352,7 +2353,7 @@ BUFF_ABILITY_ACTION_TAG_NAMES = {
     0x0108: "Core_RecoverFromPoiseBreak_Data",
     0x010a: "Core_RecoverPoiseAction_Data",
     0x011e: "Core_SelfRotateAction_Data",
-    0x011f: "Core_SendBattleSignalToLevel_Data",
+    0x0134: "Core_SendBattleSignalToLevel_Data",
     0x0133: "Core_ShowComboRingQte_Data",
     0x0135: "Core_ShowHideActorAction_ShowHideActorData",
     0x013d: "Core_SpawnAbilityEntity_Data",
@@ -2400,7 +2401,7 @@ BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS = {
     0x0108: 5,
     0x010a: 11,
     0x011e: 18,
-    0x011f: 6,
+    0x0134: 6,
     0x0133: 8,
     0x0135: 10,
     0x013d: 37,
@@ -2473,7 +2474,7 @@ BUFF_DEBUG_PRINT_ACTION_TAG = 0x008b
 BUFF_CAMERA_IMPULSE_ACTION_TAG = 0x0020
 BUFF_EFFECT_ACTION_TAG = 0x0091
 BUFF_FIND_TARGET_ACTION_TAG = 0x009f
-BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG = 0x011f
+BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG = 0x0134
 BUFF_PLAY_SOUND_ACTION_TAG = 0x00fc
 BUFF_PATROL_TELEPORT_ACTION_TAG = 0x00ef
 BUFF_PLAY_ANIMATION_ACTION_TAG = 0x00f8

@@ -81,7 +81,7 @@
 .mp-corpus {
   display: grid;
   grid-template-columns: auto auto;
-  gap: 0 7px;
+  gap: 3px 8px;
   min-width: 230px;
   padding: 14px 18px;
   border: 1px solid rgba(54, 127, 132, 0.22);
@@ -98,7 +98,11 @@
   text-align: right;
 }
 
-.mp-corpus span { display: none; }
+.mp-corpus span {
+  align-self: center;
+  font-size: 12px;
+  white-space: nowrap;
+}
 
 .mp-boundary-warning {
   position: relative;
@@ -368,11 +372,14 @@
 
 .mp-summary-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 14px 20px;
   padding: 18px 20px;
 }
+
+.mp-summary-head > div:first-child { min-width: 0; flex: 1 1 240px; }
 
 .mp-summary-head h2 {
   display: inline;
@@ -381,28 +388,40 @@
   letter-spacing: -0.025em;
 }
 
+/* The metric row is a fixed-width tile grid rather than a right-aligned flex
+   run, so the tiles line up in columns and reflow predictably instead of
+   forming a ragged single row that shrinks toward the title. */
 .mp-summary-metrics {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  display: grid;
+  flex: 1 1 480px;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
   gap: 7px;
+  max-width: 780px;
 }
 
 .mp-summary-metrics span {
   display: grid;
-  min-width: 67px;
-  padding: 6px 9px;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 9px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 9px;
+  background: linear-gradient(180deg, white, rgba(var(--fg-rgb), 0.03));
   color: var(--muted);
   font-size: 9px;
-  text-align: center;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+  text-align: left;
   text-transform: uppercase;
 }
 
 .mp-summary-metrics strong {
   color: var(--text);
-  font-size: 15px;
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
 .mp-case {
@@ -466,6 +485,301 @@
   font-size: 9px;
 }
 
+/* ---- Summary bands -------------------------------------------------------
+   The evidence blocks are grouped into four named bands with a segmented
+   focus control. Focusing hides sibling bands only; it never changes what a
+   block says, and "All" (the default) shows every block exactly as before. */
+
+.mp-summary-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 9px 20px;
+  border-top: 1px solid var(--border);
+  background: #fbfcfc;
+}
+
+.mp-summary-nav button {
+  padding: 5px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: white;
+  color: var(--muted);
+  font: 700 10px/1.35 inherit;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.mp-summary-nav button:hover,
+.mp-summary-nav button:focus-visible {
+  border-color: var(--mp-dependency);
+  color: var(--mp-dependency);
+  outline: none;
+}
+
+.mp-summary-nav button.is-active {
+  border-color: var(--mp-dependency);
+  background: #f0eaf9;
+  color: var(--mp-dependency);
+}
+
+.mp-summary-section { min-width: 0; }
+
+.mp-summary-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 9px 20px;
+  border-top: 1px solid var(--border);
+  background: linear-gradient(90deg, rgba(var(--fg-rgb), 0.05), rgba(var(--fg-rgb), 0));
+  color: var(--muted);
+  font: 800 9px/1.3 inherit;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.mp-summary-section-head::before {
+  content: "";
+  flex: none;
+  width: 3px;
+  height: 11px;
+  border-radius: 2px;
+  background: var(--mp-dependency);
+}
+
+.mp-summary-section[data-mp-section-id="runtime"] .mp-summary-section-head::before { background: var(--mp-client); }
+.mp-summary-section[data-mp-section-id="queues"] .mp-summary-section-head::before { background: var(--mp-server); }
+
+.mp-summary-section-body { display: grid; min-width: 0; }
+.mp-summary-section-body > :first-child { border-top: 0; }
+
+.mp-mission-story {
+  padding: 0 20px 12px;
+  border-top: 1px solid var(--border);
+  background: #fbfcfc;
+}
+
+/* Evidence weight, shown without any wording: a solid accent rail marks the
+   blocks whose own grouping already reports precedence / typed evidence, and a
+   dashed grey rail plus a muted heading marks the context-only blocks. This
+   mirrors the is-incoming / is-context split already used inside the blocks;
+   the boundary sentences under each block remain the authority. */
+.mp-summary-section-body > [data-weight] {
+  border-left: 3px solid transparent;
+}
+
+.mp-summary-section-body > [data-weight="strong"] {
+  border-left-color: var(--mp-dependency);
+}
+
+.mp-summary-section-body > [data-weight="context"] {
+  border-left-style: dashed;
+  border-left-color: #b3bfc3;
+  background: rgba(var(--fg-rgb), 0.016);
+}
+
+.mp-summary-section-body > [data-weight="context"] > summary { color: var(--muted); }
+
+.mp-summary-section-body > [data-weight="context"] > summary span {
+  background: rgba(var(--fg-rgb), 0.07);
+  color: #657479;
+}
+
+.mp-mission-story > summary {
+  padding: 10px 0 8px;
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.mp-mission-story > summary span {
+  margin-left: 4px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: #eee8f8;
+  color: var(--mp-dependency);
+  font-size: 8px;
+}
+
+.mp-mission-story > .mp-story-files {
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+}
+
+.mp-mission-story > small {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.mp-unassigned-story .mp-story-files,
+.mp-non-mission-content .mp-story-files {
+  max-height: 360px;
+  padding-right: 4px;
+  overflow: auto;
+}
+
+/* Table-proven non-mission content is a closed class, not an open gap. */
+.mp-non-mission-content > summary {
+  color: var(--muted);
+}
+
+/* Cross-mission relations are the only mission-granularity graph we recover,
+   so they lead the summary rather than sitting with the Story attachments. */
+.mp-mission-graph .mp-story-files {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  align-items: start;
+}
+
+/* Each relation group keeps its own heading, but the mission links inside it
+   flow into columns instead of one link per full-width row. */
+.mp-mission-graph .mp-story-group {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  align-items: start;
+}
+
+.mp-mission-graph .mp-story-group > h4 { grid-column: 1 / -1; }
+
+.mp-graph-link {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mp-graph-link:hover,
+.mp-graph-link:focus-visible {
+  border-color: var(--line);
+  background: var(--panel);
+}
+
+.mp-graph-link b {
+  font-weight: 500;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mp-mission-graph-note {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mp-mission-graph-note code {
+  margin: 0 2px;
+}
+
+/* Ambient envTalk is context only; keep it visually subordinate to the
+   mission's own Story attachments so it never reads as playback ownership. */
+.mp-envtalk-context > summary {
+  color: var(--muted);
+}
+
+.mp-envtalk-context .mp-story-files {
+  max-height: 360px;
+  padding-right: 4px;
+  overflow: auto;
+}
+
+/* auto-fill (not auto-fit) so a single shell card keeps a readable column
+   width instead of stretching its protocol rows across the whole pane. */
+.mp-runtime-binding-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 27rem), 1fr));
+  gap: 7px;
+  align-items: start;
+}
+
+.mp-runtime-binding-grid > * { min-width: 0; }
+
+.mp-runtime-binding-grid article {
+  display: grid;
+  gap: 5px;
+  padding: 9px;
+  border: 1px solid rgba(54, 127, 132, 0.24);
+  border-left: 3px solid var(--mp-client);
+  border-radius: 7px;
+  background: white;
+}
+
+.mp-runtime-binding-grid header,
+.mp-runtime-binding-grid p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+}
+
+.mp-runtime-binding-grid header b {
+  color: var(--mp-client);
+  font-size: 7.5px;
+  text-transform: uppercase;
+}
+
+.mp-runtime-binding-grid p span,
+.mp-runtime-binding-grid article > small {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.mp-runtime-binding-grid code {
+  overflow-wrap: anywhere;
+  font-size: 9px;
+}
+
+.mp-runtime-protocol {
+  display: grid;
+  gap: 3px;
+  margin-top: 3px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.mp-runtime-binding-grid .mp-runtime-protocol p {
+  display: grid;
+  justify-content: stretch;
+  gap: 2px;
+  padding: 5px 6px;
+  border-left: 3px solid var(--mp-client);
+  border-radius: 4px;
+  background: rgba(54, 127, 132, 0.06);
+}
+
+.mp-runtime-binding-grid .mp-runtime-protocol p.is-return {
+  border-left-color: var(--mp-server);
+  background: rgba(255, 87, 34, 0.055);
+}
+
+.mp-runtime-protocol p span {
+  color: var(--muted);
+  font-size: 7.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.mp-runtime-protocol p code {
+  font-size: 8px;
+}
+
+.mp-runtime-binding-grid article > small b {
+  color: var(--text);
+}
+
 .mp-contract-details {
   border-top: 1px solid var(--border);
   background: #fbfcfc;
@@ -503,6 +817,356 @@
 .mp-contract-card > code { overflow-wrap: anywhere; color: var(--mp-client); font-size: 8px; }
 .mp-contract-card.is-client_to_server > code { color: var(--mp-server); }
 .mp-contract-card > p { margin: 1px 0 0; color: var(--muted); font-size: 9px; }
+
+.mp-contract-card.is-boundary-only {
+  background: linear-gradient(135deg, white, rgba(var(--fg-rgb), 0.018));
+}
+
+.mp-contract-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.mp-contract-tags > b {
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: var(--mp-client-soft);
+  color: var(--mp-client);
+  font-size: 7.5px;
+  line-height: 1.25;
+}
+
+.mp-contract-card.is-client_to_server .mp-contract-tags > b {
+  background: rgba(255, 87, 34, 0.08);
+  color: var(--mp-server);
+}
+
+.mp-contract-card > small {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.mp-contract-card > small code {
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: rgba(var(--fg-rgb), 0.055);
+  color: var(--text);
+  font-size: 7.5px;
+}
+
+.mp-local-only {
+  margin: 0 20px 12px;
+  padding: 10px 11px;
+  border: 1px solid rgba(138, 111, 39, 0.24);
+  border-radius: 8px;
+  background: rgba(138, 111, 39, 0.035);
+}
+
+.mp-local-only > header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 7px;
+}
+
+.mp-local-only > header strong { font-size: 10px; }
+.mp-local-only > header span {
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: rgba(138, 111, 39, 0.1);
+  color: var(--mp-unknown);
+  font-size: 7.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.mp-local-only > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 7px;
+}
+
+.mp-contract-card.is-local-only { border-left-color: var(--mp-unknown); }
+.mp-contract-card.is-local-only > code { color: var(--mp-unknown); }
+.mp-contract-card.is-local-only .mp-contract-tags > b {
+  background: rgba(138, 111, 39, 0.1);
+  color: var(--mp-unknown);
+}
+
+.mp-gap-queue {
+  margin: 0 20px 12px;
+  padding: 11px 12px;
+  border: 1px solid rgba(119, 89, 168, 0.2);
+  border-radius: 8px;
+  background: rgba(119, 89, 168, 0.035);
+}
+
+.mp-gap-queue > header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-bottom: 9px;
+}
+
+.mp-gap-queue > header strong { font-size: 11px; }
+.mp-gap-queue > header p { margin: 0; color: var(--muted); font-size: 9px; }
+
+.mp-gap-policy {
+  margin: -2px 0 9px;
+  padding: 6px 8px;
+  border-left: 2px solid var(--mp-server);
+  background: rgba(var(--fg-rgb), 0.025);
+  color: var(--muted);
+  font-size: 8.5px;
+}
+
+.mp-gap-policy b { color: var(--mp-server); }
+
+.mp-gap-family-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 5px 14px;
+}
+
+.mp-gap-family-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 68px 24px;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.mp-gap-family-row code {
+  overflow: hidden;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mp-gap-family-row > span {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(119, 89, 168, 0.11);
+}
+
+.mp-gap-family-row i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--mp-dependency);
+}
+
+.mp-gap-family-row b {
+  color: var(--mp-dependency);
+  font-size: 9px;
+  text-align: right;
+}
+
+.mp-missionless-runtime {
+  margin: 0 20px 12px;
+  padding: 11px 12px;
+  border: 1px solid rgba(54, 127, 132, 0.24);
+  border-radius: 8px;
+  background: rgba(54, 127, 132, 0.035);
+}
+
+.mp-missionless-runtime > header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-bottom: 9px;
+}
+
+.mp-missionless-runtime > header strong { font-size: 11px; }
+.mp-missionless-runtime > header strong span {
+  margin-left: 3px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(54, 127, 132, 0.12);
+  color: var(--mp-client);
+  font-size: 8px;
+}
+.mp-missionless-runtime > header p { margin: 0; color: var(--muted); font-size: 9px; }
+
+.mp-missionless-runtime-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 7px;
+}
+
+.mp-missionless-runtime-grid > article {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--mp-client);
+  border-radius: 7px;
+  background: white;
+}
+
+.mp-missionless-runtime-grid > article > header,
+.mp-missionless-runtime-grid > article > p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+}
+
+.mp-missionless-runtime-grid > article > header b {
+  color: var(--mp-unknown);
+  font-size: 7.5px;
+  text-transform: uppercase;
+}
+
+.mp-missionless-runtime-grid > article > p span {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.mp-missionless-runtime-grid code { overflow-wrap: anywhere; font-size: 8.5px; }
+
+.mp-runtime-chain {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 5px 6px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, rgba(54, 127, 132, 0.07), rgba(119, 89, 168, 0.07));
+  font-size: 8px;
+}
+
+.mp-runtime-chain i { color: var(--muted); font-style: normal; }
+.mp-runtime-chain b { color: var(--mp-dependency); }
+
+.mp-native-receiver-runtime {
+  border-color: rgba(119, 89, 168, 0.24);
+  background: rgba(119, 89, 168, 0.035);
+}
+
+.mp-native-receiver-runtime .mp-missionless-runtime-grid > article {
+  border-left-color: var(--mp-dependency);
+}
+
+.mp-runtime-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 4px;
+}
+
+.mp-runtime-selector > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 4px 5px;
+  border: 1px solid rgba(119, 89, 168, 0.13);
+  border-radius: 4px;
+  background: rgba(119, 89, 168, 0.035);
+}
+
+.mp-runtime-selector b {
+  color: var(--muted);
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.mp-missionless-story-links {
+  display: grid;
+  gap: 4px;
+}
+
+.mp-missionless-story-links a {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 6px;
+  border: 1px solid rgba(119, 89, 168, 0.16);
+  border-radius: 5px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.mp-missionless-story-links a:hover { border-color: var(--mp-dependency); }
+.mp-missionless-story-links a > span { color: var(--mp-dependency); font-size: 7.5px; text-transform: uppercase; }
+.mp-missionless-story-links a > b { color: var(--mp-dependency); }
+.mp-missionless-story-links a > small {
+  grid-column: 2 / 4;
+  color: var(--muted);
+  font-size: 7.5px;
+}
+
+.mp-runtime-associations {
+  display: grid;
+  gap: 4px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(138, 111, 39, 0.35);
+}
+
+.mp-runtime-associations > strong {
+  color: var(--mp-unknown);
+  font-size: 7.5px;
+  text-transform: uppercase;
+}
+
+.mp-runtime-associations > div {
+  display: grid;
+  grid-template-columns: minmax(0, auto) auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 6px;
+  border: 1px dashed rgba(138, 111, 39, 0.32);
+  border-radius: 5px;
+  background: rgba(138, 111, 39, 0.045);
+  font-size: 8px;
+}
+
+.mp-runtime-associations > div > * { min-width: 0; }
+.mp-runtime-associations > div > code { overflow-wrap: anywhere; }
+
+.mp-runtime-associations i { color: var(--mp-unknown); font-style: normal; }
+.mp-runtime-associations b { color: var(--mp-unknown); font-size: 7px; text-transform: uppercase; }
+.mp-runtime-associations small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 7.5px;
+  overflow-wrap: anywhere;
+}
+
+.mp-runtime-target {
+  border-top-color: rgba(54, 127, 132, 0.38);
+}
+
+.mp-runtime-target > strong { color: var(--mp-client); }
+
+.mp-runtime-target > div {
+  border-style: solid;
+  border-color: rgba(54, 127, 132, 0.24);
+  background: rgba(54, 127, 132, 0.045);
+}
+
+.mp-runtime-target > div > i,
+.mp-runtime-target > div > b { color: var(--mp-client); }
+
+.mp-runtime-target > .is-boundary {
+  border-style: dashed;
+  border-color: rgba(176, 73, 62, 0.42);
+  background: rgba(176, 73, 62, 0.045);
+}
+
+.mp-runtime-target > .is-boundary > i,
+.mp-runtime-target > .is-boundary > b { color: var(--mp-server); }
 
 .mp-contract-boundary {
   margin: 0;
@@ -591,6 +1255,7 @@
   background-size: 24px 24px;
   cursor: grab;
   touch-action: none;
+  user-select: none;
 }
 
 .mp-viewport::after {
@@ -750,6 +1415,10 @@
 
 .mp-card-badges span.is-hidden { background: rgba(var(--fg-rgb), 0.08); color: var(--muted); }
 .mp-card-badges span.is-story { background: #eee8f8; color: var(--mp-dependency); }
+.mp-card-badges span.is-story.is-incoming { background: #eee8f8; color: var(--mp-dependency); }
+.mp-card-badges span.is-story.is-outgoing { background: var(--mp-client-soft); color: var(--mp-client); }
+.mp-card-badges span.is-story.is-context { background: rgba(var(--fg-rgb), 0.07); color: #657479; }
+.mp-card-badges span.is-runtime { background: #fbf3d9; color: var(--mp-unknown); }
 
 .mp-quest-card > strong {
   display: -webkit-box;
@@ -903,7 +1572,53 @@
 
 .mp-story-files {
   display: grid;
+  gap: 9px;
+}
+
+.mp-story-group {
+  display: grid;
   gap: 5px;
+}
+
+.mp-story-group > h4 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  padding: 4px 7px;
+  border-left: 3px solid var(--mp-dependency);
+  background: #f7f3fc;
+  color: var(--mp-dependency);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.mp-story-group.is-outgoing > h4 {
+  border-left-color: var(--mp-client);
+  background: var(--mp-client-soft);
+  color: var(--mp-client);
+}
+
+.mp-story-group.is-context > h4 {
+  border-left-color: #829297;
+  border-left-style: dashed;
+  background: rgba(var(--fg-rgb), 0.045);
+  color: #657479;
+}
+
+/* Context-only rows read as dashed/desaturated at a glance; ownership-grade
+   rows keep the solid accent rail. Wording is unchanged either way. */
+.mp-story-files a.is-context {
+  border-style: dashed;
+  background: rgba(var(--fg-rgb), 0.022);
+}
+
+.mp-story-files a.is-incoming {
+  border-left: 3px solid var(--mp-dependency);
+}
+
+.mp-story-files a.is-outgoing {
+  border-left: 3px solid var(--mp-client);
 }
 
 .mp-story-files a {
@@ -926,6 +1641,18 @@
   outline: none;
 }
 
+.mp-story-files a.is-outgoing:hover,
+.mp-story-files a.is-outgoing:focus-visible {
+  border-color: var(--mp-client);
+  background: var(--mp-client-soft);
+}
+
+.mp-story-files a.is-context:hover,
+.mp-story-files a.is-context:focus-visible {
+  border-color: #829297;
+  background: #f6f8f7;
+}
+
 .mp-story-files a > span {
   padding: 1px 4px;
   border-radius: 4px;
@@ -944,6 +1671,370 @@
 }
 
 .mp-story-files a > b { color: var(--mp-dependency); }
+.mp-story-files a.is-outgoing > b { color: var(--mp-client); }
+.mp-story-files a.is-context > b { color: #657479; }
+
+.mp-story-files a > em,
+.mp-story-files a > small {
+  grid-column: 1 / -1;
+  overflow-wrap: anywhere;
+  font-style: normal;
+  line-height: 1.35;
+}
+
+.mp-story-files a > em {
+  color: var(--text);
+  font-size: 8.5px;
+  font-weight: 650;
+}
+
+.mp-story-files a > small {
+  margin-top: -2px;
+  color: var(--muted);
+  font-size: 7.5px;
+}
+
+.mp-trigger-route {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 5px;
+  padding: 6px;
+  border: 1px solid rgba(54, 127, 132, 0.2);
+  border-left: 3px solid var(--mp-client);
+  border-radius: 6px;
+  background: rgba(54, 127, 132, 0.045);
+}
+
+.mp-trigger-route.is-condition { border-left-color: var(--mp-dependency); }
+.mp-trigger-route.is-context,
+.mp-trigger-route.is-dependency { border-left-color: #829297; }
+.mp-trigger-route.is-playback_owner_unresolved,
+.mp-trigger-route.is-definition_only {
+  border-left-color: var(--mp-server);
+  background: var(--mp-server-soft);
+}
+
+.mp-trigger-route > header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.mp-trigger-route > header strong {
+  margin-right: auto;
+  color: var(--text);
+  font-size: 8px;
+  text-transform: uppercase;
+}
+
+.mp-trigger-route > header span,
+.mp-trigger-route > header b {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(var(--fg-rgb), 0.06);
+  color: var(--muted);
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.mp-story-order > p {
+  margin: .65rem 0;
+  color: var(--muted);
+}
+
+/* Capped tile width so four numbers do not stretch across a 2000px pane. */
+.mp-order-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 15rem));
+  gap: .5rem;
+  margin: .65rem 0 1rem;
+}
+
+.mp-order-metrics span {
+  display: grid;
+  gap: .15rem;
+  min-width: 0;
+  padding: .55rem .65rem;
+  border: 1px solid var(--border);
+  border-radius: .55rem;
+  background: color-mix(in srgb, var(--panel) 88%, var(--accent) 12%);
+  font-size: .74rem;
+}
+
+.mp-order-metrics b { font-size: 1rem; font-variant-numeric: tabular-nums; }
+
+.mp-story-order section { margin: .85rem 0; }
+.mp-story-order h4 { margin: 0 0 .45rem; }
+
+/* These lists used to be one full-width row per entry, which wasted most of
+   the pane on wide viewports. auto-fit keeps a single entry full width but
+   packs many short entries into columns. */
+.mp-order-edges,
+.mp-order-branches,
+.mp-order-dialog-branches {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: .45rem;
+  align-items: start;
+}
+
+.mp-order-edges > *,
+.mp-order-branches > *,
+.mp-order-dialog-branches > * { min-width: 0; }
+
+.mp-order-edge,
+.mp-order-branches > div,
+.mp-order-branches > details,
+.mp-order-branches > details > div,
+.mp-order-dialog-branches details > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .4rem;
+  padding: .5rem;
+  border: 1px solid var(--border);
+  border-radius: .5rem;
+  background: var(--panel);
+}
+
+.mp-order-branches > details > summary { cursor: pointer; }
+.mp-order-branches > details > small { display: block; margin: .35rem 0; color: var(--muted); }
+.mp-order-branches > details > div { margin-top: .35rem; }
+.mp-native-predicate { display: flex; flex-wrap: wrap; gap: .3rem; margin: .35rem 0; color: var(--muted); }
+
+.mp-order-edge > small { flex-basis: 100%; color: var(--muted); }
+
+.mp-order-component {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .3rem;
+  padding: .3rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: .4rem;
+}
+
+.mp-order-component.is-cycle {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 9%, transparent);
+}
+
+.mp-order-component a { text-decoration: none; }
+
+.mp-order-frontiers { margin: .75rem 0; }
+.mp-order-frontier { display: grid; gap: .35rem; margin: .5rem 0; }
+.mp-order-frontier > span { display: flex; flex-wrap: wrap; gap: .35rem; }
+.mp-order-cycles > .mp-order-component { margin: .2rem; }
+.mp-order-dialog-branches details { border-left: 2px solid var(--accent); padding-left: .55rem; }
+
+.mp-trigger-chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.mp-trigger-chain > i {
+  align-self: center;
+  color: var(--muted);
+  font-style: normal;
+  font-size: 9px;
+}
+
+.mp-trigger-chain > span {
+  display: grid;
+  min-width: 76px;
+  max-width: 100%;
+  gap: 1px;
+  padding: 4px 5px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: white;
+}
+
+.mp-trigger-chain > span.is-ownership_gap {
+  border-style: dashed;
+  border-color: var(--mp-server);
+  background: var(--mp-server-soft);
+}
+
+.mp-trigger-chain > span.is-native_event {
+  border-color: color-mix(in srgb, var(--mp-client) 42%, var(--border));
+  background: color-mix(in srgb, var(--mp-client-soft) 72%, white);
+}
+
+.mp-trigger-chain > span.is-native_action {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+}
+
+.mp-trigger-chain small {
+  color: var(--muted);
+  font-size: 7px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.mp-trigger-chain code {
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: 8px;
+  white-space: normal;
+}
+
+.mp-trigger-chain em {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 7.5px;
+  font-style: normal;
+  line-height: 1.3;
+}
+
+.mp-trigger-events {
+  display: grid;
+  gap: 5px;
+  padding-top: 5px;
+  border-top: 1px solid color-mix(in srgb, var(--mp-client) 18%, var(--border));
+}
+
+.mp-trigger-events > header {
+  display: grid;
+  gap: 1px;
+}
+
+.mp-trigger-events > header strong {
+  color: var(--text);
+  font-size: 8px;
+  text-transform: uppercase;
+}
+
+.mp-trigger-events > header small {
+  color: var(--muted);
+  font-size: 7px;
+  line-height: 1.35;
+}
+
+.mp-trigger-events > div {
+  display: grid;
+  gap: 5px;
+}
+
+.mp-trigger-event-path {
+  display: flex;
+  min-width: 0;
+  align-items: stretch;
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  overflow-x: auto;
+}
+
+.mp-trigger-event-path.is-local {
+  border-left: 3px solid var(--mp-client);
+}
+
+.mp-trigger-event-path.is-server {
+  border-left: 3px solid var(--mp-server);
+}
+
+.mp-trigger-event-path.is-unknown {
+  border-left: 3px dashed #829297;
+}
+
+.mp-trigger-event-path > i {
+  align-self: center;
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 10px;
+  font-style: normal;
+}
+
+.mp-trigger-event-node,
+.mp-trigger-listener-node,
+.mp-trigger-action-node {
+  display: grid;
+  min-width: 112px;
+  max-width: 230px;
+  align-content: start;
+  gap: 2px;
+  padding: 5px 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: #fbfcfc;
+}
+
+.mp-trigger-event-node {
+  min-width: 190px;
+  border-color: color-mix(in srgb, var(--mp-client) 42%, var(--border));
+  background: color-mix(in srgb, var(--mp-client-soft) 72%, white);
+}
+
+.mp-trigger-event-path.is-server .mp-trigger-event-node {
+  border-color: color-mix(in srgb, var(--mp-server) 42%, var(--border));
+  background: color-mix(in srgb, var(--mp-server-soft) 72%, white);
+}
+
+.mp-trigger-action-node {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+
+.mp-trigger-event-node small,
+.mp-trigger-listener-node small,
+.mp-trigger-action-node small {
+  color: var(--muted);
+  font-size: 6.5px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.mp-trigger-event-node code,
+.mp-trigger-listener-node code,
+.mp-trigger-action-node code {
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: 7.5px;
+  white-space: normal;
+}
+
+.mp-trigger-event-node > strong,
+.mp-trigger-listener-node > strong,
+.mp-trigger-action-node > strong {
+  color: var(--text);
+  font-size: 7px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.mp-trigger-event-node > em {
+  color: var(--muted);
+  font-size: 6.5px;
+  font-style: normal;
+  line-height: 1.3;
+}
+
+.mp-trigger-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.mp-trigger-selector span {
+  display: inline-flex;
+  gap: 3px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: rgba(var(--fg-rgb), 0.055);
+  color: var(--text);
+  font: 6.5px/1.25 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.mp-trigger-selector b {
+  color: var(--muted);
+  font-weight: 700;
+}
 
 .mp-objective {
   margin: 0 0 9px;
@@ -998,6 +2089,57 @@
   background: var(--mp-client-soft);
   font-size: 9px;
 }
+
+.mp-runtime-observed > p,
+.mp-runtime-observed-section > p {
+  margin: 0 0 9px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.mp-runtime-observed > section { margin: 10px 0 0; }
+.mp-runtime-observed > section > h4 { margin: 0 0 6px; font-size: 10px; }
+.mp-runtime-observed > small,
+.mp-runtime-observed-section > small {
+  display: block;
+  margin-top: 8px;
+  color: var(--mp-unknown);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.mp-runtime-observation-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: 6px;
+  align-items: start;
+}
+
+.mp-runtime-observation-list > * { min-width: 0; }
+
+.mp-runtime-observation {
+  display: grid;
+  gap: 5px;
+  padding: 7px;
+  border: 1px solid rgba(138, 111, 39, 0.28);
+  border-left: 3px solid var(--mp-unknown);
+  border-radius: 7px;
+  background: rgba(138, 111, 39, 0.055);
+}
+
+.mp-runtime-observation > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mp-runtime-observation a { color: var(--text); text-decoration: none; }
+.mp-runtime-observation a:hover { color: var(--mp-client); text-decoration: underline; }
+.mp-runtime-observation b { color: var(--mp-unknown); font-size: 8px; text-transform: uppercase; }
+.mp-runtime-observation > p { margin: 0; color: var(--muted); font-size: 8.5px; }
+.mp-runtime-observation .mp-trigger-chain { overflow-x: auto; }
 
 .mp-protocol { padding: 0; }
 
@@ -1087,11 +2229,37 @@
   text-align: center;
 }
 
+/* Wide content scrolls inside its own box; one long id or a dense chain must
+   never give the page itself a horizontal scrollbar. */
+.mp-summary-section,
+.mp-summary-section-body,
+.mp-summary-section-body > [data-weight] { min-width: 0; }
+
+/* break-word, not anywhere: ids only break when they genuinely cannot fit, so
+   a short id like f1m18d2 is never split across two lines. */
+.mp-summary-section-body code,
+.mp-summary-section-body > [data-weight] > small { overflow-wrap: break-word; }
+
+.mp-graph-link > code { white-space: nowrap; }
+
+.mp-summary-section-body .mp-trigger-chain,
+.mp-summary-section-body .mp-runtime-chain,
+.mp-summary-section-body .mp-protocol-grid,
+.mp-summary-section-body pre,
+.mp-summary-section-body table {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
 @media (max-width: 1220px) {
   .mp-layout { grid-template-columns: 250px minmax(0, 1fr); }
   .mp-graph-body { grid-template-columns: minmax(420px, 1fr) 340px; }
   .mp-summary-head { align-items: flex-start; flex-direction: column; }
-  .mp-summary-metrics { justify-content: flex-start; }
+  /* In column direction a flex-basis would become a height, so reset both
+     children to auto and let them span the pane. */
+  .mp-summary-head > div:first-child { flex: 0 0 auto; width: 100%; }
+  .mp-summary-metrics { flex: 0 0 auto; width: 100%; max-width: none; }
 }
 
 @media (max-width: 980px) {
@@ -1108,7 +2276,13 @@
   .mp-boundary-warning { margin: 12px 12px 0; }
   .mp-layout { padding: 12px; }
   .mp-summary-head { padding: 14px; }
-  .mp-summary-metrics span { min-width: 58px; }
+  .mp-summary-metrics { grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); }
+  .mp-summary-metrics strong { font-size: 16px; }
+  .mp-summary-nav,
+  .mp-summary-section-head { padding-right: 14px; padding-left: 14px; }
+  .mp-mission-story { padding-right: 14px; padding-left: 14px; }
+  .mp-contract-details > summary,
+  .mp-contract-grid { padding-right: 14px; padding-left: 14px; }
   .mp-mission-handshake { grid-template-columns: 1fr; }
   .mp-mission-handshake > small { grid-column: auto; }
   .mp-mission-handshake > i { display: none; }

@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from scripts.story_builder.level_bindings import (
     _build_levelscript_dialog_exit_scene_pairs,
+    LEVELSCRIPT_DIALOG_EXIT_OPCODE,
 )
 
 
@@ -14,6 +15,9 @@ def resolver_for(*keys: str):
 
 
 class LevelScriptDialogExitEdgeTests(unittest.TestCase):
+    def test_current_build_dialog_exit_opcode(self) -> None:
+        self.assertEqual(LEVELSCRIPT_DIALOG_EXIT_OPCODE, (0x1355, 0x00))
+
     def build(self, row: dict, *keys: str) -> list[dict]:
         with patch(
             "scripts.story_builder.level_bindings._build_levelscript_dialog_exit_text_pairs",

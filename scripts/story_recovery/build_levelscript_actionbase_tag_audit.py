@@ -38,7 +38,7 @@ REPORT_DIR = ROOT / "reports" / "mission_order"
 CATALOG_HELPER = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
 BODY_HELPER = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 DEFAULT_GAMEASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
-DEFAULT_CODE_REGISTRATION = "0x18c439740"
+DEFAULT_CODE_REGISTRATION = "0x18b9217d0"
 ACTIONBASE_FORMATTER_TYPE = (
     "Beyond_Gameplay_Actions_ActionBaseForMemoryPack+"
     "Beyond_Gameplay_Actions_ActionBaseForMemoryPackFormatter"
@@ -69,23 +69,34 @@ SLOT_TARGET_RE = re.compile(r"=> 0x([0-9a-f]+)\]", re.IGNORECASE)
 OPCODE_RE = re.compile(r"^0x([0-9a-f]+)/0x([0-9a-f]+)$", re.IGNORECASE)
 
 SELECTED_OPCODE_KEYS = (
-    "0x02ec/0x0a",  # ManualEndLevelScript
-    "0x02f1/0x0a",  # ManualStartLevelScript
-    "0x03b8/0x0a",  # SetBool
-    "0x03e7/0x0a",  # SetInt
-    "0x03ea/0x0a",  # SetIntIncrease
-    "0x0176/0x08",  # ListClear_float
-    "0x0347/0x0d",  # PlayLevelSequenceAction
-    "0x0348/0x0d",  # PlayLevelSequenceAndControlSceneObjectsAction
-    "0x034a/0x0d",  # PlayRadio
-    "0x034b/0x0d",  # PlayRadioAndWait
-    "0x046c/0x0e",  # StartDialogAction
-    "0x046d/0x10",  # StartDialogAndTeleportAction
+    "0x034a/0x14",  # Play3DRadio
+    "0x034b/0x14",  # Play3DRadioAndWait
+    "0x0357/0x14",  # PlayCutsceneAction
+    "0x0358/0x14",  # PlayCutsceneIgnoreCinematicQueue
+    "0x035a/0x0f",  # PlayDialogAndHideSceneObjectAction
+    "0x0360/0x0f",  # PlayLevelSequenceAction
+    "0x0361/0x12",  # PlayLevelSequenceAndControlSceneObjectsAction
+    "0x0363/0x0d",  # PlayRadio
+    "0x0364/0x0d",  # PlayRadioAndWait
+    "0x049b/0x13",  # StartCutsceneAndControlSceneObjectAction
+    "0x049c/0x12",  # StartCutsceneAndHideSceneObjectAction
+    "0x049d/0x16",  # StartCutsceneAndTeleportAction
+    "0x049e/0x0f",  # StartDialogAction
+    "0x049f/0x10",  # StartDialogAndTeleportAction
+    "0x0455/0x0a",  # SetOverrideInteractDialog
+    "0x045d/0x0a",  # SetScriptTaskPtr
+    "0x04bd/0x09",  # SwitchInt
+    "0x0308/0x0a",  # ManualStartLevelScript
+    "0x0302/0x0a",  # ManualEndLevelScript
+    "0x03da/0x0a",  # SetBool
+    "0x0410/0x0a",  # SetInt
+    "0x0413/0x0a",  # SetIntIncrease
     "0x0a03/0x00",  # high property gate family, absent from ActionBase
     "0x0bed/0x00",  # high terminal family, absent from ActionBase
-    "0x12a1/0x00",  # trigger event family, absent from ActionBase
-    "0x12a3/0x00",  # trigger event family, absent from ActionBase
-    "0x13a5/0x00",  # property changed family, absent from ActionBase
+    "0x12be/0x00",  # current leader-enter header, absent from ActionBase
+    "0x12c0/0x00",  # current leader-leave header, absent from ActionBase
+    "0x1355/0x00",  # current dialog-exit header, absent from ActionBase
+    "0x1385/0x00",  # current quest-state header, absent from ActionBase
 )
 
 
@@ -530,7 +541,7 @@ def key_findings(payload: dict[str, Any]) -> list[str]:
             f"{final_summary.get('minTagHex')}..{final_summary.get('maxTagHex')}"
             + (f" ({final_actions})." if final_actions else ".")
         )
-    for opcode in ("0x03b8/0x0a", "0x03e7/0x0a", "0x03ea/0x0a"):
+    for opcode in ("0x03da/0x0a", "0x0410/0x0a", "0x0413/0x0a"):
         row = by_opcode.get(opcode) or {}
         if row.get("actionName"):
             findings.append(
@@ -543,7 +554,7 @@ def key_findings(payload: dict[str, Any]) -> list[str]:
             f"0x0176/0x08 maps to {row_0176.get('actionName')}, so its property-key "
             "payload is a list-clear target, not setter proof."
         )
-    for opcode in ("0x0a03/0x00", "0x0bed/0x00", "0x13a5/0x00", "0x12a1/0x00", "0x12a3/0x00"):
+    for opcode in ("0x0a03/0x00", "0x0bed/0x00", "0x12be/0x00", "0x12c0/0x00", "0x1355/0x00", "0x1385/0x00"):
         row = by_opcode.get(opcode) or {}
         if row.get("status") == "absent-from-actionbase-tags":
             findings.append(
@@ -732,7 +743,20 @@ def write_markdown(path: Path, payload: dict[str, Any]) -> None:
         lines.append("- None.")
 
     lines.extend(["", "## Tag Samples", ""])
-    sample_tags = [0, 1, 0x0176, 0x03B8, 0x03E7, 0x03EA, 0x0347, 0x034A, 0x034B, 0x046C, 0x046D, 0x04DC]
+    sample_tags = [
+        0,
+        1,
+        0x034A,
+        0x0357,
+        0x0360,
+        0x0363,
+        0x0455,
+        0x045D,
+        0x049E,
+        0x049F,
+        0x04BD,
+        0x0520,
+    ]
     by_tag = {int(row["tag"]): row for row in payload.get("formatterTags") or []}
     lines.append(markdown_table_row(["tag", "ActionBase action", "formatter type"]))
     lines.append(markdown_table_row(["---:", "---", "---"]))

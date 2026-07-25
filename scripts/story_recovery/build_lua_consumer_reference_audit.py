@@ -40,6 +40,46 @@ DEFAULT_TABLE_ROOTS = (
     ROOT / "export_full" / "structured" / "Persistent" / "Table",
     ROOT / "export_full" / "structured" / "StreamingAssets" / "Table",
 )
+DEFAULT_STORY_INDEX = ROOT / "webui" / "data" / "lang" / "CN" / "index.json"
+
+GAME_ACTION_CALL_RE = re.compile(
+    r"\b(?:CS\.Beyond\.Gameplay\.Actions\.)?GameAction\s*\.\s*"
+    r"([A-Za-z_]\w*)\s*\("
+)
+LUA_STRING_ASSIGNMENT_RE = re.compile(
+    r"(?m)^\s*(?:local\s+)?([A-Za-z_]\w*)\s*=\s*([\"'])(.*?)\2\s*$"
+)
+STORY_ID_RE = re.compile(
+    r"^(?:dlg|cutscene|radio|remotecomm|sns|black|text)_[A-Za-z0-9_]+$",
+    re.IGNORECASE,
+)
+
+# Calls that either accept a Story id directly or dispatch an already-created
+# cinematic handle. The audit reports every GameAction call separately, but
+# this bounded set is the Story-playback recovery frontier.
+STORY_PLAYBACK_GAME_ACTIONS: dict[str, dict[str, str]] = {
+    "StartDialog": {"kind": "dialog", "argument": "story_id"},
+    "PlayCutscene": {"kind": "cutscene", "argument": "story_id"},
+    "PlayCutsceneAndGetHandle": {"kind": "cutscene", "argument": "story_id"},
+    "PlayRadio": {"kind": "radio", "argument": "story_id"},
+    "PlayRadioAndWait": {"kind": "radio", "argument": "story_id"},
+    "StartRemoteComm": {"kind": "remotecomm", "argument": "story_id"},
+    "StartForceSNS": {"kind": "sns", "argument": "story_id"},
+    "ShowNarrativeBlackScreen": {"kind": "black", "argument": "story_id_or_data"},
+    "DoPlayDialogByHandle": {"kind": "dialog", "argument": "cinematic_handle"},
+    "DoPlayCutsceneByHandle": {"kind": "cutscene", "argument": "cinematic_handle"},
+    "PlayCGByHandle": {"kind": "cutscene", "argument": "cinematic_handle"},
+    "StartRemoteCommByHandle": {"kind": "remotecomm", "argument": "cinematic_handle"},
+    "ShowNarrativeBlackScreenByHandle": {
+        "kind": "black",
+        "argument": "cinematic_handle",
+    },
+    "ShowUIReadingPopPanelByHandle": {
+        "kind": "reading",
+        "argument": "cinematic_handle",
+    },
+    "DoPlayForceSNSByHandle": {"kind": "sns", "argument": "cinematic_handle"},
+}
 
 REFERENCE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("tables", re.compile(r"\bTables\.([A-Za-z_]\w*)")),
@@ -126,6 +166,106 @@ def add_example(bucket: list[dict[str, Any]], row: dict[str, Any], limit: int) -
     if len(bucket) >= limit:
         return
     bucket.append(row)
+
+
+def first_lua_argument(text: str, open_paren: int) -> str:
+    """Return the first call argument with strings/nested delimiters respected."""
+    depth = 0
+    quote = ""
+    escaped = False
+    start = open_paren + 1
+    for index in range(start, len(text)):
+        char = text[index]
+        if quote:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = ""
+            continue
+        if char in {'"', "'"}:
+            quote = char
+        elif char in "({[":
+            depth += 1
+        elif char in ")}]":
+            if depth == 0:
+                return text[start:index].strip()
+            depth -= 1
+        elif char == "," and depth == 0:
+            return text[start:index].strip()
+    return text[start:].strip()
+
+
+def load_story_keys(path: Path) -> set[str]:
+    if not path.is_file():
+        return set()
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return {
+        str(row.get("k") or "")
+        for row in payload.get("entries") or []
+        if isinstance(row, dict) and row.get("k")
+    }
+
+
+def scan_game_action_calls(
+    text: str,
+    *,
+    rel: str,
+    story_keys: set[str],
+) -> list[dict[str, Any]]:
+    assignments = {
+        match.group(1): match.group(3)
+        for match in LUA_STRING_ASSIGNMENT_RE.finditer(text)
+    }
+    story_keys_folded = {key.casefold(): key for key in story_keys}
+    rows: list[dict[str, Any]] = []
+    for match in GAME_ACTION_CALL_RE.finditer(text):
+        method = match.group(1)
+        argument = first_lua_argument(text, match.end() - 1)
+        resolved = ""
+        resolution = "unresolved_expression"
+        direct = re.fullmatch(r"\s*([\"'])(.*?)\1\s*", argument, re.DOTALL)
+        if direct:
+            resolved = direct.group(2)
+            resolution = "direct_literal"
+        elif re.fullmatch(r"[A-Za-z_]\w*", argument or "") and argument in assignments:
+            resolved = assignments[argument]
+            resolution = "module_constant"
+
+        registry_status = "not_story_shaped"
+        canonical_key = ""
+        if resolved and STORY_ID_RE.fullmatch(resolved):
+            if resolved in story_keys:
+                registry_status = "exact_registry_match"
+                canonical_key = resolved
+            elif resolved.casefold() in story_keys_folded:
+                registry_status = "case_mismatch_registry_match"
+                canonical_key = story_keys_folded[resolved.casefold()]
+            else:
+                registry_status = "story_shaped_not_in_registry"
+
+        window = text[max(0, match.start() - 1200): min(len(text), match.end() + 1200)]
+        nearby_tables = sorted(set(re.findall(r"\bTables\.([A-Za-z_]\w*)", window)))
+        playback = STORY_PLAYBACK_GAME_ACTIONS.get(method)
+        rows.append(
+            {
+                "module": rel,
+                "line": line_number(text, match.start()),
+                "method": method,
+                "classification": "story_playback" if playback else "other_game_action",
+                "playbackKind": playback.get("kind") if playback else None,
+                "argumentSemantics": playback.get("argument") if playback else None,
+                "firstArgument": argument[:300],
+                "literalResolution": resolution,
+                "resolvedLiteral": resolved or None,
+                "registryStatus": registry_status,
+                "canonicalStoryKey": canonical_key or None,
+                "nearbyTables": nearby_tables,
+                "context": line_text(text, match.start()),
+            }
+        )
+    return rows
 
 
 def scan_references(
@@ -245,6 +385,8 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
 
     lua_roots = [root.resolve() for root in (args.lua_root or list(DEFAULT_LUA_ROOTS))]
     table_roots = [root.resolve() for root in (args.table_root or list(DEFAULT_TABLE_ROOTS))]
+    story_index = args.story_index.resolve()
+    story_keys = load_story_keys(story_index)
     table_index, table_root_summaries = build_table_index(table_roots)
     modules: dict[str, dict[str, Any]] = {}
     root_summaries = []
@@ -302,9 +444,13 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
     focus_files: dict[str, list[dict[str, Any]]] = {name: [] for name in focus_names}
     module_findings = []
     table_module_edges = []
+    game_action_calls: list[dict[str, Any]] = []
 
     for rel, row in sorted(modules.items()):
         text = str(row.get("text") or "")
+        game_action_calls.extend(
+            scan_game_action_calls(text, rel=rel, story_keys=story_keys)
+        )
         counts, examples = scan_references(text, rel=rel, example_limit=args.example_limit)
         merge_counter_dicts(global_counts, counts)
         for category, rows in examples.items():
@@ -403,6 +549,15 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         if len(row.get("roots") or []) > 1
     ]
     same_content_count = sum(1 for row in duplicate_modules if row["sameContent"])
+    playback_calls = [
+        row for row in game_action_calls
+        if row["classification"] == "story_playback"
+    ]
+    playback_method_counts = Counter(row["method"] for row in playback_calls)
+    playback_resolution_counts = Counter(
+        row["literalResolution"] for row in playback_calls
+    )
+    playback_registry_counts = Counter(row["registryStatus"] for row in playback_calls)
 
     return {
         "generatedAt": datetime.now(timezone.utc).isoformat(),
@@ -411,6 +566,8 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
             "tableRoots": [repo_rel(root) for root in table_roots],
             "focus": focus_names,
             "unknownFocus": unknown_focus,
+            "storyIndex": repo_rel(story_index),
+            "storyRegistryKeys": len(story_keys),
         },
         "settings": {
             "topLimit": args.top_limit,
@@ -432,6 +589,17 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
             "unmatchedTableReferenceCount": table_availability["unmatchedReferencedTableCount"],
             "tableModuleEdgeCount": len(table_module_edges),
             "focusFileCounts": {name: focus_module_counts[name] for name in focus_names},
+            "gameActionCallCount": len(game_action_calls),
+            "gameActionMethodCount": len({row["method"] for row in game_action_calls}),
+            "storyPlaybackCallCount": len(playback_calls),
+            "storyPlaybackModuleCount": len({row["module"] for row in playback_calls}),
+            "storyPlaybackMethodCounts": dict(sorted(playback_method_counts.items())),
+            "storyPlaybackResolutionCounts": dict(
+                sorted(playback_resolution_counts.items())
+            ),
+            "storyPlaybackRegistryCounts": dict(
+                sorted(playback_registry_counts.items())
+            ),
         },
         "rootSummaries": root_summaries,
         "tableRootSummaries": table_root_summaries,
@@ -445,6 +613,38 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
         "focusAreas": focus_payload,
         "moduleFindings": module_findings[: args.max_module_findings],
         "tableModuleEdges": table_module_edges[: args.max_table_module_edges],
+        "gameActionAudit": {
+            "evidencePolicy": {
+                "scope": (
+                    "All direct GameAction.* calls in each unique Lua module are "
+                    "enumerated. The Story subset is a bounded allowlist of native "
+                    "playback entry points."
+                ),
+                "literalResolution": (
+                    "Only a direct quoted first argument or a module-scope/simple local "
+                    "string assignment is resolved. Table fields, function parameters, "
+                    "handles, concatenation, and control flow remain unresolved."
+                ),
+                "case": (
+                    "Exact registry spelling is proven separately from a case-folded "
+                    "candidate. A case mismatch is never promoted to a Story binding."
+                ),
+                "ownership": (
+                    "A Lua call proves that the controller owns playback. It creates no "
+                    "mission/quest attachment unless the same consumed route carries an "
+                    "exact mission or quest identity."
+                ),
+                "nearbyTables": (
+                    "Table names within a bounded source window are triage hints, not "
+                    "data-flow proof."
+                ),
+            },
+            "methodCounts": dict(sorted(Counter(
+                row["method"] for row in game_action_calls
+            ).items())),
+            "storyPlaybackCalls": playback_calls,
+            "allCalls": game_action_calls,
+        },
         "duplicateModulesSample": duplicate_modules[: args.top_limit],
         "readErrors": read_errors[:100],
     }
@@ -482,6 +682,47 @@ def render_markdown(payload: dict[str, Any]) -> str:
     if unmatched:
         compact_unmatched = ", ".join(f"{item['value']} ({item['count']})" for item in unmatched[:10])
         lines.append(f"- Top unmatched: {md_escape(compact_unmatched)}")
+
+    game_action = payload.get("gameActionAudit") or {}
+    lines.extend(["", "## GameAction Story Playback Census", ""])
+    lines.append(
+        f"- all direct `GameAction.*` calls: `{summary.get('gameActionCallCount')}` "
+        f"across `{summary.get('gameActionMethodCount')}` methods"
+    )
+    lines.append(
+        f"- Story-playback calls: `{summary.get('storyPlaybackCallCount')}` "
+        f"across `{summary.get('storyPlaybackModuleCount')}` modules"
+    )
+    lines.append(
+        f"- registry keys used for exact-case validation: "
+        f"`{(payload.get('metadata') or {}).get('storyRegistryKeys')}`"
+    )
+    for name, value in (summary.get("storyPlaybackRegistryCounts") or {}).items():
+        lines.append(f"- `{md_escape(name)}`: `{value}`")
+    lines.extend(
+        [
+            "",
+            "| module | line | GameAction | first argument | resolution | registry | nearby tables |",
+            "| --- | ---: | --- | --- | --- | --- | --- |",
+        ]
+    )
+    for row in game_action.get("storyPlaybackCalls") or []:
+        tables = ", ".join(row.get("nearbyTables") or [])
+        lines.append(
+            "| `{module}` | {line} | `{method}` | `{argument}` | `{resolution}` | "
+            "`{registry}` | {tables} |".format(
+                module=md_escape(str(row.get("module") or "")),
+                line=row.get("line") or "",
+                method=md_escape(str(row.get("method") or "")),
+                argument=md_escape(str(row.get("firstArgument") or "")),
+                resolution=md_escape(str(row.get("literalResolution") or "")),
+                registry=md_escape(str(row.get("registryStatus") or "")),
+                tables=md_escape(tables),
+            )
+        )
+    policy = game_action.get("evidencePolicy") or {}
+    lines.extend(["", "Evidence boundary:", ""])
+    lines.extend(f"- **{md_escape(key)}:** {md_escape(value)}" for key, value in policy.items())
 
     lines.extend(["", "## Top References", ""])
     for category, rows in (payload.get("topReferences") or {}).items():
@@ -527,6 +768,12 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--lua-root", type=Path, action="append", help="Lua root to scan; repeatable")
     parser.add_argument("--table-root", type=Path, action="append", help="Exported Table JSON root for Tables.* availability checks; repeatable")
+    parser.add_argument(
+        "--story-index",
+        type=Path,
+        default=DEFAULT_STORY_INDEX,
+        help="Generated Story index used only for exact-case literal validation",
+    )
     parser.add_argument("--focus", default="sns,remotecomm,dialog,mapmark,mission")
     parser.add_argument("--json", type=Path, default=DEFAULT_JSON)
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MD)

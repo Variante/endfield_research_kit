@@ -18,6 +18,7 @@ disposable evidence belongs in `scratch/` or `tmp/`.
 .\export.bat
 .\export.bat --with-assets
 .\export.bat --export-from-game
+.\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
 .\build_updates.bat
 .\build_updates.bat --init-build
 .\build_updates_by_patch.bat --init-baseline
@@ -56,8 +57,16 @@ rebuild asset indexes and relink/decode CN audio after generated conversations
 are rebuilt. Combining `--export-from-game --with-assets` runs one AnimeStudio
 Story+asset export instead of separate Story and asset exporter invocations.
 After semantic-view builders and any requested asset/audio work, `export.bat`
-rebuilds `reports/source_graph/endfield_source_graph.sqlite` and then builds the
-Presentation and Combat views. Presentation emits a stable empty degraded
+rebuilds `reports/source_graph/endfield_source_graph.sqlite` with only the exact
+original AssetMap source/PathID rows consumed by WebUI material, shader,
+texture, and FMV edges, then builds the Presentation and Combat views. Pass
+`--full-source-graph` only when exhaustive Unity-object/PathID investigation and
+generated graph follow-up reports are required. Pass `--mission-pipeline-only`
+for the Story/Mission Pipeline edit loop; it stops before unrelated semantic
+views and the graph. Pass `--mission-pipeline-data-only` when generated Story
+bundles/evidence are already current and only Mission Pipeline JSON or frontend
+work changed; it deliberately skips freshness, Story, evidence, other semantic
+views, and the graph. Presentation emits a stable empty degraded
 payload when its graph is missing or older than its generated inputs. The Combat builder refuses graph edges when the database predates
 its Gameplay/manifest/asset/AbilityEntity/CharacterTemplate inputs and records a
 visible degraded-mode reason instead of treating stale edges as direct.
@@ -91,6 +100,12 @@ conversation JSON with playable `audioSrc` links. The default exporter mode is
 JSON types sequentially in isolated processes, and keeps map-filtered asset
 conversion sharded; use `parallel` only when comparing concurrent per-type jobs.
 
+For repeated Mission Pipeline recovery builds with unchanged Timeline and
+Table inputs, use `--mission-pipeline-only --reuse-timeline-orders
+--reuse-reference`. Reference reuse validates the existing localized reference
+index/files and is rejected with `--export-from-game`; omit both reuse flags
+after any installed-game refresh.
+
 Useful direct commands:
 
 ```bat
@@ -104,6 +119,7 @@ python scripts\story_builder\refresh_evidence.py
 python scripts\story_builder\source_links.py
 python scripts\story_builder\build.py --languages CN --default-language CN
 python scripts\story_builder\build.py --languages CN EN JP --default-language CN
+python scripts\build_character_data.py --languages CN --default-language CN
 python scripts\build_mission_pipeline_data.py
 python scripts\build_gameplay_data.py
 python scripts\build_progression_data.py
@@ -152,10 +168,15 @@ Browser behavior:
   manual order-edit controls are behind `Show debug info`.
 - The Story reset button returns filters to Story sort while preserving
   expanded mission groups.
-- Normal semantic navigation exposes Gameplay. Mission Pipeline, Progression, Combat & Projectiles,
-  the retained standalone Combat graph, Factory, World, and Presentation are
-  deferred and hidden unless `Show debug info` is enabled; disabling debug while
-  one is active must normalize to a visible page and URL.
+- Normal semantic navigation exposes Gameplay and Mission Pipeline. Characters,
+  Progression, Combat & Projectiles, the retained standalone Combat graph,
+  Factory, World, and Presentation are deferred and hidden unless the top-right
+  `Show debug info` switch is enabled; disabling debug while one is active must
+  normalize to a visible page and URL.
+- Mission Pipeline Story cards show evidence-typed trigger chains. Preserve an
+  explicit ownership gap for unlinked native playback, keep definition-only
+  rows distinct, and never infer mission order from native registration or code
+  address order.
 - Combat & Projectiles groups records by evidence-backed character/enemy sender
   and must label identifier-only ownership as inferred. World groups by authored
   level IDs and may plot X/Z positions, but rows without an exported level ID
@@ -213,6 +234,7 @@ Browser data inputs and outputs:
   `webui/data/lang/<code>/index.json`, `conv/*.json`, `mission/*.json`,
   `reference/**`, `webui/data/mission_pipeline/index.json`,
   `webui/data/mission_pipeline/missions/*.json`, `webui/data/gameplay/projectiles.json`,
+  `webui/data/lang/<code>/characters/index.json`,
   `webui/data/lang/<code>/progression/index.json`,
   `webui/data/lang/<code>/gameplay/combat_relationships.json`,
   `webui/data/lang/<code>/economy/index.json`,
@@ -436,6 +458,7 @@ WebUI:
 - `scripts/story_builder/source_links.py`
 - `scripts/story_builder/build.py`
 - `scripts/story_builder/timeline_action_evidence.py`
+- `scripts/build_character_data.py`
 - `scripts/build_gameplay_data.py`
 - `scripts/build_mission_pipeline_data.py`
 - `scripts/build_progression_data.py`

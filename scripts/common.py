@@ -3,7 +3,10 @@ from __future__ import annotations
 
 import json
 import fnmatch
+import os
 import re
+import sys
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -33,6 +36,111 @@ SAFE_REPORT_REPLACEMENTS = str.maketrans({
 })
 PATH_ID_EXPORT_STEM_RE = re.compile(r"^(?P<base>.+)_p(?P<path_id>[0-9A-Fa-f]{16})$")
 PATH_ID_EXPORT_SOURCE_FAMILIES = frozenset({"streamingassets", "persistent"})
+
+
+@lru_cache(maxsize=None)
+def _read_bytes_cached_absolute(path_text: str) -> bytes:
+    return Path(path_text).read_bytes()
+
+
+def read_bytes_cached(path: str | Path) -> bytes:
+    """Read one immutable build input once per Python process."""
+    normalized = os.path.normcase(os.path.abspath(os.fspath(path)))
+    export_root = os.path.normcase(os.path.abspath(os.fspath(EXPORT_ROOT)))
+    if normalized != export_root and not normalized.startswith(export_root + os.sep):
+        return Path(normalized).read_bytes()
+    return _read_bytes_cached_absolute(normalized)
+
+
+@lru_cache(maxsize=1)
+def _win32_find_api():
+    """Initialize the Win32 filename-search bindings once per process."""
+    import ctypes
+    from ctypes import wintypes
+
+    class WIN32_FIND_DATAW(ctypes.Structure):
+        _fields_ = [
+            ("dwFileAttributes", wintypes.DWORD),
+            ("ftCreationTime", wintypes.FILETIME),
+            ("ftLastAccessTime", wintypes.FILETIME),
+            ("ftLastWriteTime", wintypes.FILETIME),
+            ("nFileSizeHigh", wintypes.DWORD),
+            ("nFileSizeLow", wintypes.DWORD),
+            ("dwReserved0", wintypes.DWORD),
+            ("dwReserved1", wintypes.DWORD),
+            ("cFileName", wintypes.WCHAR * 260),
+            ("cAlternateFileName", wintypes.WCHAR * 14),
+            ("dwFileType", wintypes.DWORD),
+            ("dwCreatorType", wintypes.DWORD),
+            ("wFinderFlags", wintypes.WORD),
+        ]
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    find_first = kernel32.FindFirstFileW
+    find_first.argtypes = [wintypes.LPCWSTR, ctypes.POINTER(WIN32_FIND_DATAW)]
+    find_first.restype = wintypes.HANDLE
+    find_next = kernel32.FindNextFileW
+    find_next.argtypes = [wintypes.HANDLE, ctypes.POINTER(WIN32_FIND_DATAW)]
+    find_next.restype = wintypes.BOOL
+    find_close = kernel32.FindClose
+    find_close.argtypes = [wintypes.HANDLE]
+    find_close.restype = wintypes.BOOL
+    return ctypes, wintypes, WIN32_FIND_DATAW, find_first, find_next, find_close
+
+
+def fast_glob_files(directory: Path, pattern: str) -> list[Path]:
+    """Return matching files without a full Python directory walk on Windows.
+
+    AnimeStudio type directories can contain more than a million files.  On
+    Windows, ``Path.glob``/``os.scandir`` must materialize every directory
+    entry even for a selective prefix such as ``BeyondFMVPlayableAsset*.json``.
+    The Win32 find API lets NTFS apply that filename filter while preserving a
+    stdlib-only implementation.  Other platforms retain the normal pathlib
+    behavior.
+    """
+    directory = Path(directory)
+    if not directory.is_dir():
+        return []
+    if sys.platform != "win32":
+        return sorted(path for path in directory.glob(pattern) if path.is_file())
+
+    (
+        ctypes,
+        wintypes,
+        find_data_type,
+        find_first,
+        find_next,
+        find_close,
+    ) = _win32_find_api()
+
+    data = find_data_type()
+    search = str(directory / pattern)
+    handle = find_first(search, ctypes.byref(data))
+    invalid_handle = wintypes.HANDLE(-1).value
+    if handle == invalid_handle:
+        error = ctypes.get_last_error()
+        if error in (2, 3, 18):  # file/path not found, no more files
+            return []
+        raise OSError(error, os.strerror(error), search)
+
+    file_attribute_directory = 0x10
+    names: list[str] = []
+    try:
+        while True:
+            name = data.cFileName
+            if (
+                name not in (".", "..")
+                and not data.dwFileAttributes & file_attribute_directory
+            ):
+                names.append(name)
+            if not find_next(handle, ctypes.byref(data)):
+                error = ctypes.get_last_error()
+                if error != 18:
+                    raise OSError(error, os.strerror(error), search)
+                break
+    finally:
+        find_close(handle)
+    return [directory / name for name in sorted(names)]
 
 
 def normalize_posix(value: str | Path) -> str:
@@ -96,12 +204,18 @@ def write_json(
 
 def write_text_if_changed(path: Path, text: str) -> bool:
     path.parent.mkdir(parents=True, exist_ok=True)
+    # Match TextIOWrapper's historical newline translation so this faster
+    # binary comparison does not rewrite platform-native generated files.
+    encoded = text.replace("\n", os.linesep).encode("utf-8")
     try:
-        if path.exists() and path.read_text(encoding="utf-8") == text:
+        # Generated WebUI builds compare thousands of files on every warm run.
+        # Reading bytes avoids a separate ``exists`` stat plus UTF-8 decoding;
+        # the newly serialized text already has to be encoded if it is written.
+        if path.read_bytes() == encoded:
             return False
     except OSError:
         pass
-    path.write_text(text, encoding="utf-8")
+    path.write_bytes(encoded)
     return True
 
 
@@ -180,8 +294,17 @@ def first_string_field(node: Any, field_name: str) -> str | None:
 def rel_path(path: Path | str, root: Path = ROOT) -> str:
     raw_path = Path(path)
     try:
-        return raw_path.resolve().relative_to(root.resolve()).as_posix()
-    except (OSError, ValueError):
+        # These are display/provenance paths, not filesystem identity checks.
+        # ``os.path.relpath`` preserves the prior lexical behavior while
+        # avoiding Path.relative_to's component-object churn on the tens of
+        # thousands of repeated provenance rows in a Story build.
+        absolute_path = os.path.abspath(raw_path)
+        absolute_root = os.path.abspath(root)
+        relative = os.path.relpath(absolute_path, absolute_root)
+        if relative == os.pardir or relative.startswith(os.pardir + os.sep):
+            return raw_path.as_posix()
+        return relative.replace(os.sep, "/")
+    except (OSError, TypeError, ValueError):
         return raw_path.as_posix()
 
 
@@ -236,6 +359,57 @@ def filtered_json_paths(json_dir: Path, filters: list[str]) -> list[Path]:
             if story_matches(path.stem, [item_filter]):
                 paths[path] = None
     return sorted(paths)
+
+
+# Authored tables whose Story ids are structurally not mission narrative.
+# Both are keyed by something other than a mission/scene/script and serialize no
+# mission, quest, scene, or script field, so no mission can ever own their rows.
+# Filename patterns are deliberately NOT used: only authored table contents may
+# admit a key, because filename inference is not original-data proof.
+NON_MISSION_CONTENT_TABLES = (
+    {
+        "table": "AudioRadioContinueTable",
+        "fields": ("selfContinue", "otherContinue"),
+        "keyedBy": "speaker",
+        "content": "per_speaker_radio_continuation_voice",
+    },
+    {
+        "table": "SNSDialogTopicTable",
+        "fields": ("includeDialogIds",),
+        "keyedBy": "topicId",
+        "content": "character_sns_topic",
+    },
+)
+
+
+def non_mission_content_keys(table_root: Path) -> dict[str, dict[str, str]]:
+    """Collect Story keys defined only by non-mission authored content tables.
+
+    Returns ``{sceneKey: {table, field, keyedBy, content}}``. A missing table
+    yields no keys rather than an error, so callers still build on a partial
+    export.
+    """
+    found: dict[str, dict[str, str]] = {}
+    for spec in NON_MISSION_CONTENT_TABLES:
+        payload = read_json(Path(table_root) / f"{spec['table']}.json", {})
+        if not isinstance(payload, dict):
+            continue
+        for row in payload.values():
+            if not isinstance(row, dict):
+                continue
+            for field in spec["fields"]:
+                value = row.get(field)
+                values = value if isinstance(value, list) else [value]
+                for entry in values:
+                    scene_key = safe_key(entry)
+                    if scene_key and scene_key not in found:
+                        found[scene_key] = {
+                            "table": spec["table"],
+                            "field": field,
+                            "keyedBy": spec["keyedBy"],
+                            "content": spec["content"],
+                        }
+    return found
 
 
 def safe_report_suffix(

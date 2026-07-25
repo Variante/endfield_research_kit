@@ -45,14 +45,16 @@ python scripts\verify_export_freshness.py
 ```
 
 If the guard reports stale installed-game sources, refresh with
-`export.bat --export-from-game` before rebuilding the graph. Then use the quick
-build first for story/option/audio lookups:
+`export.bat --export-from-game` before rebuilding the graph. Then use the
+WebUI-relevant build first for story/option/audio and Presentation/Combat work:
 
 ```bat
-python tools\endfield_source_graph.py build --skip-asset-maps --skip-reference-rows --skip-followups
+python tools\endfield_source_graph.py build --relevant-asset-maps --skip-reference-rows --skip-followups
 ```
 
-Use the full build only when asset-map or generated follow-up reports matter:
+This still scans original AssetMaps but inserts only exact material, shader,
+texture, and FMV source/PathID consumers. Use the full build only when generic
+Unity-object/PathID lookup or generated follow-up reports matter:
 
 ```bat
 python tools\endfield_source_graph.py build
@@ -96,7 +98,8 @@ python -c "import sqlite3; c=sqlite3.connect('reports/source_graph/endfield_sour
 - `option_branch_risk`: inferred option branch hints from WebUI recovery.
 - `timeline_route_branch`: Runtime Jump Track recovered option routes.
 - `story_source_links`: mission/runtime source references to story keys.
-- `AnimeStudio/maps`: Unity AssetMap entries; slow/full build only.
+- `AnimeStudio/maps`: Unity AssetMap entries; exact WebUI consumers in relevant
+  mode and all entries in exhaustive mode.
 
 For user answers, report both the resolved relationship and its evidence source
 when the distinction matters.

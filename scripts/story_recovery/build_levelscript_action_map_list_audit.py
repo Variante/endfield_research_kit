@@ -37,18 +37,21 @@ from story_builder.levelscript_binary import (  # noqa: E402
     ACTION_SERIALIZED_MAP_ORDER_EVIDENCE,
     decode_levelscript_action_map_lists,
     decode_levelscript_record_payload,
+    LEVELSCRIPT_NATIVE_HEADER_NAMES,
 )
 
 OUTPUT_DIR = ROOT / "reports" / "mission_order"
-DEFAULT_UNION_AUDIT = OUTPUT_DIR / "memorypack_union_formatter_tag_audit.json"
+DEFAULT_UNION_AUDIT = (
+    ROOT / "reports" / "story" / "recovery" / "memorypack_union_formatter_tag_audit.json"
+)
 SELECTED_OPCODES = (
     "0x0a03/0x00",
     "0x0bed/0x00",
-    "0x12a0/0x00",
-    "0x12a1/0x00",
-    "0x12a3/0x00",
-    "0x12ac/0x00",
-    "0x13a5/0x00",
+    "0x12ba/0x00",
+    "0x12be/0x00",
+    "0x12c0/0x00",
+    "0x1355/0x00",
+    "0x1385/0x00",
 )
 TARGET_UNION_TABLES = {
     "Beyond_Gameplay_Actions_ActionBase",
@@ -56,7 +59,6 @@ TARGET_UNION_TABLES = {
     "Beyond_Gameplay_Actions_ActionHeader",
     "Beyond_Gameplay_Actions_ScriptEventHeader",
 }
-DERIVED_SCRIPT_EVENT_BASES = (0x129E, 0x139E)
 
 
 def repo_rel(path: Path | str) -> str:
@@ -108,12 +110,7 @@ def derived_script_event_name(
 ) -> str:
     if kind != 0:
         return ""
-    script_events = tables.get("Beyond_Gameplay_Actions_ScriptEventHeader") or {}
-    for base in DERIVED_SCRIPT_EVENT_BASES:
-        tag = code - base
-        if tag in script_events:
-            return script_events[tag]
-    return ""
+    return LEVELSCRIPT_NATIVE_HEADER_NAMES.get((code, kind), "")
 
 
 def expected_union_name(
@@ -133,11 +130,11 @@ def expected_union_name(
         if name:
             return f"PureGetter:{name}"
         derived = derived_script_event_name(code=code, kind=kind, tables=tables)
-        return f"ScriptEventHeader:{derived} (derived)" if derived else ""
+        return f"ActionHeader:{derived} (current native)" if derived else ""
     if list_name == "headerList":
         derived = derived_script_event_name(code=code, kind=kind, tables=tables)
         if derived:
-            return f"ScriptEventHeader:{derived} (derived)"
+            return f"ActionHeader:{derived} (current native)"
         name = (tables.get("Beyond_Gameplay_Actions_ActionHeader") or {}).get(code)
         return f"ActionHeader:{name}" if name else ""
     return ""

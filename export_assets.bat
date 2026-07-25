@@ -144,6 +144,9 @@ echo                         aggressive requires CLI secondary-export flag suppo
 echo   --animestudio-dummy-dlls PATH
 echo                         DummyDll directory for AnimeStudio MonoBehaviour schema recovery.
 echo                         Can also be set with ANIMESTUDIO_DUMMY_DLLS.
+echo   --world-scene-chunk MAP:X:Z
+echo                         Static scene chunks require structured export; use this option
+echo                         with export.bat --export-from-game instead of export_assets.bat.
 echo.
 echo If Endfield is installed somewhere else, pass --game-root.
 echo For repeated runs, edit endfield_paths.bat instead.

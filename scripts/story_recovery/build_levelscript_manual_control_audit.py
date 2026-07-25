@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Audit ManualStartLevelScript / ManualEndLevelScript records.
 
-The ActionBase union table names `0x02f1/0x0a` as ManualStartLevelScript and
-`0x02ec/0x0a` as ManualEndLevelScript. This report checks how those records
+The installed ActionBase union table names `0x0308/0x0a` as
+ManualStartLevelScript and `0x0302/0x0a` as ManualEndLevelScript. This report checks how those records
 appear in exported LevelScriptData and whether they carry recoverable target
 `levelId + scriptId` constants or script-id operands.
 
@@ -39,12 +39,12 @@ from build_levelscript_opcode_shape_audit import record_texts  # noqa: E402
 REPORT_DIR = ROOT / "reports" / "mission_order"
 
 MANUAL_OPCODES = {
-    (0x02F1, 0x0A): ("manual-start", "ManualStartLevelScript"),
-    (0x02EC, 0x0A): ("manual-end", "ManualEndLevelScript"),
+    (0x0308, 0x0A): ("manual-start", "ManualStartLevelScript"),
+    (0x0302, 0x0A): ("manual-end", "ManualEndLevelScript"),
 }
-EXPECTED_PREV_HINT = {
-    "manual-start": "script-event-on-leader-enter-trigger-volume",
-    "manual-end": "script-event-on-leader-leave-trigger-volume",
+EXPECTED_EVENT_OPCODES = {
+    "manual-start": (0x12BE, 0x00),
+    "manual-end": (0x12C0, 0x00),
 }
 STORY_PREFIXES = (
     "dlg_",
@@ -223,8 +223,39 @@ def build_audit(*, level_filter: str | None = None, sample_limit: int = 200) -> 
                     by_local=by_local,
                     local_id=(local_id + 1) if local_id is not None else None,
                 )
-                expected_prev_hint = EXPECTED_PREV_HINT.get(role)
-                activation_pair = bool(expected_prev_hint and prev_record.get("hint") == expected_prev_hint)
+                expected_event_opcode = EXPECTED_EVENT_OPCODES.get(role)
+                linked_event_candidates: list[dict[str, Any]] = []
+                for candidate_index, candidate in enumerate(records):
+                    if (candidate.get("code"), candidate.get("kind")) != expected_event_opcode:
+                        continue
+                    candidate_next_start = (
+                        starts[candidate_index + 1]
+                        if candidate_index + 1 < len(starts)
+                        else None
+                    )
+                    candidate_decoded = decode_levelscript_record_payload(
+                        data,
+                        candidate,
+                        next_start=candidate_next_start,
+                    )
+                    candidate_next_id = (
+                        candidate_decoded.get("actionHeader") or {}
+                    ).get("nextId")
+                    if not isinstance(candidate_next_id, int):
+                        candidate_next_id = candidate.get("nextId")
+                    if candidate_next_id == local_id:
+                        linked_event_candidates.append(candidate)
+                activation_pair = len(linked_event_candidates) == 1
+                linked_event = {}
+                if activation_pair:
+                    linked_record = linked_event_candidates[0]
+                    linked_event = adjacent_record_info(
+                        data=data,
+                        records=records,
+                        starts=starts,
+                        by_local=by_local,
+                        local_id=linked_record.get("localId"),
+                    )
                 if activation_pair:
                     counters["activationPairs"] += 1
                 literal_hits = literal_targets(
@@ -264,6 +295,7 @@ def build_audit(*, level_filter: str | None = None, sample_limit: int = 200) -> 
                         "localId": record.get("localId"),
                         "nextId": record.get("nextId"),
                         "activationPair": activation_pair,
+                        "linkedEvent": linked_event,
                         "previousLocal": prev_record,
                         "nextLocal": next_record,
                         "literalTargets": literal_hits,
@@ -302,7 +334,7 @@ def build_audit(*, level_filter: str | None = None, sample_limit: int = 200) -> 
             "ManualStartLevelScript and ManualEndLevelScript are present as ActionBase records.",
             "Most payloads do not contain literal target levelId/scriptId constants; a few carry a script-id operand without a literal level id.",
             "The currently decoded literal script-id operands are self-targets, not cross-script edges.",
-            "Most rows are paired with the preceding trigger-volume enter/leave ScriptEvent by local id; this is script activation evidence, not a cross-script timeline edge.",
+            "Authored ActionHeader.nextId links pair leader-enter with ManualStart and leader-leave with ManualEnd; this is event-to-control-action evidence, not a cross-script timeline edge.",
         ],
         "rows": rows[:sample_limit],
     }
@@ -320,7 +352,7 @@ def markdown_report(payload: dict[str, Any]) -> str:
         f"- Manual control rows: `{summary.get('rows')}`",
         f"- ManualStart rows: `{summary.get('manualStartRows')}`",
         f"- ManualEnd rows: `{summary.get('manualEndRows')}`",
-        f"- Trigger-adjacent activation pairs: `{summary.get('activationPairs')}`",
+        f"- Header-linked activation pairs: `{summary.get('activationPairs')}`",
         f"- Rows with literal script-id operands: `{summary.get('literalTargetRows')}`",
         f"- Literal script-id self-target rows: `{summary.get('literalSelfTargetRows')}`",
         f"- Literal script-id cross-target rows: `{summary.get('literalCrossTargetRows')}`",
@@ -339,7 +371,7 @@ def markdown_report(payload: dict[str, Any]) -> str:
             "",
             "## Rows",
             "",
-            "| file | local | action | activation pair | previous local | next local | story texts in file |",
+            "| file | local | action | linked event | previous local | next local | story texts in file |",
             "| --- | ---: | --- | --- | --- | --- | --- |",
         ]
     )
@@ -364,7 +396,12 @@ def markdown_report(payload: dict[str, Any]) -> str:
                     f"{row.get('levelId')}/{row.get('scriptId')}",
                     row.get("localId"),
                     row.get("action"),
-                    "yes" if row.get("activationPair") else "",
+                    (
+                        f"{(row.get('linkedEvent') or {}).get('localId')} "
+                        f"{(row.get('linkedEvent') or {}).get('opcode')}"
+                        if row.get("activationPair")
+                        else ""
+                    ),
                     prev_text,
                     next_text,
                     ", ".join(row.get("storyTextsInFile") or []),

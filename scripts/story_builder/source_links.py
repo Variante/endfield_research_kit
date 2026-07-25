@@ -212,6 +212,31 @@ def iter_string_nodes(
         yield path_parts, stack, node
 
 
+def is_shadowed_serialized_path(
+    path_parts: tuple[str, ...],
+    stack: tuple[tuple[str, Any], ...],
+    text: str,
+) -> bool:
+    """Reject a serialized variable's default path when constValue differs.
+
+    Endfield variable wrappers can retain an editor/default ``path`` beside
+    the actual runtime ``constValue``. Treating both as live Story ids creates
+    false links such as radio_m1m8_1 in missions whose runtime radio is m1m41.
+    """
+    if not path_parts or path_parts[-1] != "path":
+        return False
+    for _label, owner in reversed(stack):
+        if not isinstance(owner, dict) or owner.get("path") != text:
+            continue
+        const_value = owner.get("constValue")
+        return (
+            isinstance(const_value, str)
+            and bool(const_value)
+            and const_value != text
+        )
+    return False
+
+
 def iter_source_files(roots: list[Path]) -> list[tuple[Path, Path]]:
     files: list[tuple[Path, Path]] = []
     for root in roots:
@@ -247,6 +272,8 @@ def build_source_links(
         source_info = classify_source(path, root)
         matched_file = False
         for path_parts, stack, text in iter_string_nodes(payload):
+            if is_shadowed_serialized_path(path_parts, stack, text):
+                continue
             matches: list[tuple[str, str, str, str]] = []
             for pattern_kind, pattern in ID_PATTERNS:
                 for match in pattern.finditer(text):

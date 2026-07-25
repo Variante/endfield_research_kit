@@ -37,6 +37,7 @@ from build_data_index import (
 )
 EXPORT_ROOT = ROOT / "export_full"
 WEBUI_DATA = ROOT / "webui" / "data"
+MISSION_PIPELINE_ROOT = WEBUI_DATA / "mission_pipeline"
 WEBUI_OPTION_OVERRIDES = ROOT / "webui" / "overrides" / "options.json"
 GAMEPLAY_CONFIG_ROOT = EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json" / "GameplayConfig"
 NPC_PROXY_TABLE_PATH = GAMEPLAY_CONFIG_ROOT / "NpcProxyTable.json"
@@ -3004,6 +3005,7 @@ class SourceGraphBuilder:
         language: str = "CN",
         include_gameplay: bool = True,
         include_asset_maps: bool = True,
+        relevant_asset_maps_only: bool = False,
         include_reference_rows: bool = True,
         include_all_material_json: bool = False,
         include_i18n_values: bool = False,
@@ -3016,6 +3018,14 @@ class SourceGraphBuilder:
         self.include_gameplay = include_gameplay
         self.db_path = db_path
         self.include_asset_maps = include_asset_maps
+        self.relevant_asset_maps_only = relevant_asset_maps_only and include_asset_maps
+        self.asset_map_scope = (
+            "none"
+            if not include_asset_maps
+            else "relevant"
+            if self.relevant_asset_maps_only
+            else "full"
+        )
         self.include_reference_rows = include_reference_rows
         self.include_all_material_json = include_all_material_json
         self.include_i18n_values = include_i18n_values
@@ -3036,6 +3046,8 @@ class SourceGraphBuilder:
         self.audio_dialog_row_cache: dict[str, Any] | None = None
         self.game_system_unlock_type_cache: dict[str, dict[str, Any]] | None = None
         self.alias_count = 0
+        self.asset_map_required_path_ids = 0
+        self.asset_map_matched_path_ids = 0
 
     @property
     def db(self) -> sqlite3.Connection:
@@ -3249,6 +3261,7 @@ class SourceGraphBuilder:
         try:
             self.db.execute("INSERT INTO meta(key, value) VALUES (?, ?)", ("generated", str(int(started))))
             self.db.execute("INSERT INTO meta(key, value) VALUES (?, ?)", ("language", self.language))
+            self.db.execute("INSERT INTO meta(key, value) VALUES (?, ?)", ("asset_map_scope", self.asset_map_scope))
             self.ingest_assets()
             self.commit_step("assets")
             self.ingest_skipped_vfs_block_audits()
@@ -3257,6 +3270,8 @@ class SourceGraphBuilder:
             self.commit_step("videos")
             self.ingest_webui_story()
             self.commit_step("story")
+            self.ingest_mission_pipeline_story_scope()
+            self.commit_step("missionPipelineStoryScope")
             self.ingest_video_bindings()
             self.commit_step("videoBindings")
             self.ingest_narrative_video_override_audit()
@@ -9734,6 +9749,129 @@ class SourceGraphBuilder:
             self.add_narrative_videos(conv, story_node)
             self.add_scene_graph_edges(conv, story_node)
             self.add_recovery_warnings(conv, story_node)
+
+    def ingest_mission_pipeline_story_scope(self) -> None:
+        """Add explicit non-owning quest scope recovered by the pipeline builder."""
+        mission_root = MISSION_PIPELINE_ROOT / "missions"
+        if not mission_root.is_dir():
+            return
+        source = "webui/mission_pipeline"
+        for mission_path in sorted(mission_root.glob("*.json")):
+            payload = read_json(mission_path, {})
+            mission_id = safe_key((payload.get("mission") or {}).get("id")) or mission_path.stem
+            mission_node = self.add_node(
+                "mission",
+                mission_id,
+                name=mission_id,
+                source=source,
+            )
+            file_rel = slash(mission_path)
+            file_node = self.add_file(
+                file_rel,
+                kind="mission_pipeline",
+                source=source,
+            )
+            self.add_edge(
+                file_node,
+                mission_node,
+                "mission_pipeline_defines_mission",
+                source=source,
+                evidence="mission.id",
+            )
+            for node_index, node in enumerate(payload.get("nodes") or []):
+                if not isinstance(node, dict):
+                    continue
+                quest_id = safe_key(node.get("id"))
+                contexts = node.get("storyScopeContexts") or []
+                if not quest_id or not contexts:
+                    continue
+                quest_node = self.add_quest_task_node(quest_id, source=source)
+                self.add_edge(
+                    quest_node,
+                    mission_node,
+                    "quest_task_in_mission",
+                    source=source,
+                    evidence=f"nodes[{node_index}].id",
+                )
+                for context_index, context in enumerate(contexts):
+                    if not isinstance(context, dict):
+                        continue
+                    story_key = safe_key(context.get("key"))
+                    if not story_key:
+                        continue
+                    evidence = (
+                        f"nodes[{node_index}].storyScopeContexts[{context_index}]"
+                    )
+                    boundary = {
+                        "relation": context.get("relation"),
+                        "sourceRelation": context.get("sourceRelation"),
+                        "confidence": context.get("confidence"),
+                        "ownershipStatus": context.get("ownershipStatus"),
+                        "playbackOwnership": False,
+                        "orderEvidence": False,
+                    }
+                    story_node = self.add_node(
+                        "story",
+                        story_key,
+                        name=story_key,
+                        source=source,
+                    )
+                    self.add_alias(
+                        story_key,
+                        story_node,
+                        kind="story_key",
+                        source=source,
+                    )
+                    self.add_edge(
+                        quest_node,
+                        story_node,
+                        "quest_scopes_story_via_objective_level_script",
+                        source=source,
+                        evidence=evidence,
+                        data=boundary,
+                    )
+                    self.add_edge(
+                        story_node,
+                        quest_node,
+                        "story_scoped_to_quest_via_objective_level_script",
+                        source=source,
+                        evidence=evidence,
+                        data=boundary,
+                    )
+                    for script_index, script_id_raw in enumerate(
+                        context.get("scriptIds") or []
+                    ):
+                        script_id = safe_key(script_id_raw)
+                        if not script_id:
+                            continue
+                        script_node = self.add_node(
+                            "level_script",
+                            script_id,
+                            name=script_id,
+                            source=source,
+                        )
+                        self.add_alias(
+                            script_id,
+                            script_node,
+                            kind="level_script_id",
+                            source=source,
+                        )
+                        self.add_edge(
+                            quest_node,
+                            script_node,
+                            "quest_objective_scopes_level_script",
+                            source=source,
+                            evidence=f"{evidence}.scriptIds[{script_index}]",
+                            data=boundary,
+                        )
+                        self.add_edge(
+                            script_node,
+                            story_node,
+                            "level_script_hosts_quest_scoped_story",
+                            source=source,
+                            evidence=f"{evidence}.scriptIds[{script_index}]",
+                            data=boundary,
+                        )
 
     def ingest_option_overrides(self) -> None:
         payload = read_json(WEBUI_OPTION_OVERRIDES, {})
@@ -26331,6 +26469,8 @@ class SourceGraphBuilder:
 
     def ingest_asset_maps(self) -> None:
         dataset = self.add_node("dataset", "animestudio_asset_maps", name="AnimeStudio asset maps")
+        relevant_path_ids = self.relevant_asset_map_path_ids() if self.relevant_asset_maps_only else None
+        matched_relevant_path_ids: set[tuple[str, str]] = set()
         batch = 0
         for source, path in ASSET_MAPS.items():
             if not path.exists():
@@ -26339,6 +26479,10 @@ class SourceGraphBuilder:
             self.add_edge(dataset, source_node, "has_asset_map", source="AnimeStudio/maps")
             for entry in iter_asset_entries(path):
                 path_id = entry.get("PathID")
+                if relevant_path_ids is not None and safe_key(path_id) not in relevant_path_ids.get(source, set()):
+                    continue
+                if relevant_path_ids is not None:
+                    matched_relevant_path_ids.add((source, safe_key(path_id)))
                 name = safe_key(entry.get("Name")) or f"pathid_{path_id}"
                 key = f"{source}:{path_id}" if path_id is not None else f"{source}:{name}:{entry.get('Offset')}"
                 node = self.add_node(
@@ -26376,6 +26520,67 @@ class SourceGraphBuilder:
                 batch += 1
                 if batch % 25000 == 0:
                     self.db.commit()
+
+        if relevant_path_ids is not None:
+            self.asset_map_required_path_ids = sum(
+                len(path_ids) for path_ids in relevant_path_ids.values()
+            )
+            self.asset_map_matched_path_ids = len(matched_relevant_path_ids)
+            self.ingest_counts["assetMaps.relevantPathIds"] = self.asset_map_required_path_ids
+            self.ingest_counts["assetMaps.matchedPathIds"] = self.asset_map_matched_path_ids
+            self.ingest_counts["assetMaps.matchedEntries"] = batch
+            self.db.execute(
+                "INSERT OR REPLACE INTO meta(key, value) VALUES (?, ?)",
+                ("asset_map_required_path_ids", str(self.asset_map_required_path_ids)),
+            )
+            self.db.execute(
+                "INSERT OR REPLACE INTO meta(key, value) VALUES (?, ?)",
+                ("asset_map_matched_path_ids", str(self.asset_map_matched_path_ids)),
+            )
+
+    def relevant_asset_map_path_ids(self) -> dict[str, set[str]]:
+        """Return only original AssetMap identities consumed by WebUI graph edges.
+
+        Material and shader owners carry the exact StreamingAssets/Persistent
+        source used by the original map. FMV owners instead serialize that
+        source in the binding edge payload. Keeping the complete matching map
+        row preserves name/export-base fallback edges while avoiding millions
+        of unrelated Unity rows in the WebUI build.
+        """
+        relevant: dict[str, set[str]] = defaultdict(set)
+        rows = self.db.execute(
+            """
+            SELECT owner.source, pathid.id
+            FROM edges edge
+            JOIN nodes owner ON owner.id = edge.src
+            JOIN nodes pathid ON pathid.id = edge.dst
+            WHERE edge.kind IN (
+                'uses_shader_pathid',
+                'uses_texture_pathid',
+                'shader_program_pathid'
+            )
+            """
+        ).fetchall()
+        for source, pathid_node in rows:
+            source_key = safe_key(source)
+            path_id = node_key(pathid_node)
+            if source_key in ASSET_MAPS and path_id:
+                relevant[source_key].add(path_id)
+
+        fmv_rows = self.db.execute(
+            """
+            SELECT edge.dst, edge.data
+            FROM edges edge
+            WHERE edge.kind = 'fmv_binding_playable_pathid'
+            """
+        ).fetchall()
+        for pathid_node, edge_data in fmv_rows:
+            data = parse_json_text(edge_data) if edge_data else {}
+            source_key = safe_key(data.get("sourceRoot")) if isinstance(data, dict) else ""
+            path_id = node_key(pathid_node)
+            if source_key in ASSET_MAPS and path_id:
+                relevant[source_key].add(path_id)
+        return relevant
 
     def link_material_pathid_unity_assets(self) -> None:
         shader_rows = self.db.execute(
@@ -27399,6 +27604,9 @@ class SourceGraphBuilder:
             "options": {
                 "includeGameplay": self.include_gameplay,
                 "includeAssetMaps": self.include_asset_maps,
+                "assetMapScope": self.asset_map_scope,
+                "assetMapRequiredPathIds": self.asset_map_required_path_ids,
+                "assetMapMatchedPathIds": self.asset_map_matched_path_ids,
                 "includeReferenceRows": self.include_reference_rows,
                 "includeAllMaterialJson": self.include_all_material_json,
                 "includeI18nValues": self.include_i18n_values,
@@ -27425,6 +27633,7 @@ def write_summary(summary: dict[str, Any], *, output_dir: Path = GRAPH_DIR) -> N
         f"- Edges: `{summary['totals']['edges']}`",
         f"- Aliases: `{summary['totals']['aliases']}`",
         f"- Files: `{summary['totals']['files']}`",
+        f"- Asset-map scope: `{summary.get('options', {}).get('assetMapScope', 'full')}`",
         "",
         "## Nodes By Kind",
         "",
@@ -35449,7 +35658,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     build.add_argument("--db", type=Path, default=DEFAULT_DB)
     build.add_argument("--language", default="CN")
     build.add_argument("--skip-gameplay", action="store_true")
-    build.add_argument("--skip-asset-maps", action="store_true")
+    asset_map_mode = build.add_mutually_exclusive_group()
+    asset_map_mode.add_argument("--skip-asset-maps", action="store_true")
+    asset_map_mode.add_argument(
+        "--relevant-asset-maps",
+        action="store_true",
+        help=(
+            "Ingest only original AssetMap rows referenced by material, shader, "
+            "texture, or FMV graph edges. This preserves WebUI Presentation links "
+            "without indexing every unrelated Unity object."
+        ),
+    )
     build.add_argument("--skip-reference-rows", action="store_true")
     build.add_argument("--include-all-material-json", action="store_true")
     build.add_argument("--include-i18n-values", action="store_true", help="Opt in to per-language I18nTextTable_* value nodes; can add many nodes.")
@@ -35705,6 +35924,7 @@ def main(argv: list[str] | None = None) -> int:
             language=getattr(args, "language", "CN"),
             include_gameplay=not getattr(args, "skip_gameplay", False),
             include_asset_maps=not getattr(args, "skip_asset_maps", False),
+            relevant_asset_maps_only=getattr(args, "relevant_asset_maps", False),
             include_reference_rows=not getattr(args, "skip_reference_rows", False),
             include_all_material_json=getattr(args, "include_all_material_json", False),
             include_i18n_values=getattr(args, "include_i18n_values", False),

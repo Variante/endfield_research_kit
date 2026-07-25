@@ -53,7 +53,7 @@ TARGET_PROFILES = [
         "name": "ManualStartLevelScript / ManualEndLevelScript",
         "expectedShape": "levelId string + scriptId in one action payload",
         "status": (
-            "ActionBase tags are present as 0x02f1/0x0a and 0x02ec/0x0a; "
+            "ActionBase tags are present as 0x0308/0x0a and 0x0302/0x0a; "
             "observed payloads do not carry literal target levelId+scriptId values"
         ),
     },
@@ -65,12 +65,12 @@ TARGET_PROFILES = [
     {
         "name": "ScriptEvent.OnLeaderEnterTriggerVolume / OnLeaderLeaveTriggerVolume",
         "expectedShape": "trigger slot filter/output fields",
-        "status": "named by derived ScriptEventHeader mapping: 0x12a1/0x00 and 0x12a3/0x00",
+        "status": "current ActionHeader mappings: 0x12be/0x00 and 0x12c0/0x00",
     },
     {
         "name": "ScriptEvent.OnPropertyChanged",
         "expectedShape": "property key plus oldValue/value outputs",
-        "status": "named by derived ScriptEventHeader mapping: 0x13a5/0x00",
+        "status": "current serialized opcode remains unresolved; do not reuse the historical 0x13a5 inference",
     },
 ]
 

@@ -1538,7 +1538,10 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
     if not isinstance(tree, dict):
         _DIALOG_TREE_SOURCE_CACHE[tree_key] = None
         return None
-    asset_name = str(tree.pop("_assetName", "") or "").strip()
+    # Anime resource payloads are shared across the read-only carrier scans.
+    # Never mutate the cached source object; synthetic node ids are assigned to
+    # the per-call node copies below.
+    asset_name = str(tree.get("_assetName", "") or "").strip()
 
     nodes = [
         dict(node) if isinstance(node, dict) else node

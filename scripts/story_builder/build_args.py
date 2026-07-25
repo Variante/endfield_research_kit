@@ -37,10 +37,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "story-index collection pages."
         ),
     )
-    parser.add_argument(
+    reference_group = parser.add_mutually_exclusive_group()
+    reference_group.add_argument(
         "--skip-reference",
         action="store_true",
         help="Do not write the raw localized table reference bundle.",
+    )
+    reference_group.add_argument(
+        "--reuse-reference",
+        action="store_true",
+        help=(
+            "Preserve and validate the current localized table reference bundle "
+            "instead of rebuilding it. Use only when the exported Table inputs "
+            "have not changed."
+        ),
     )
     parser.add_argument(
         "--timeline-recovery",
