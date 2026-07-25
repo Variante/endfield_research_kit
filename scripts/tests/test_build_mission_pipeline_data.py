@@ -503,6 +503,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertEqual(summary["exactFinishCount"], 1)
 
     def test_build_all_writes_lazy_index_and_mission_payload(self):
+        self.maxDiff = None
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             mission_root = root / "input"
@@ -537,6 +538,8 @@ class MissionPipelineBuilderTests(unittest.TestCase):
                 "missionGraphInterleavings": 0,
                 "envTalkQuestContextFiles": 0,
                 "envTalkQuestContextMissions": 0,
+                "envTalkStateContextFiles": 0,
+                "envTalkStateContextMissions": 0,
             })
             self.assertTrue((output_root / "index.json").is_file())
             self.assertTrue((output_root / "missions" / "testm1.json").is_file())
@@ -1664,6 +1667,84 @@ class EnvTalkContextRegroupTests(unittest.TestCase):
             },
         ]))
         self.assertEqual(grouped, {})
+
+    def test_atmospheric_state_context_is_grouped_only_by_exact_mission_ids(self):
+        grouped = pipeline.env_talk_contexts_by_mission(self.report([
+            {
+                "storyKey": "env_envTalk_a_4",
+                "envTalkId": "envTalk_a_4",
+                "relation": "levelScopedConsumer",
+                "questContexts": [],
+                "stateContexts": [{
+                    "missionIds": ["alpha", "beta"],
+                    "conditionMissionIds": ["beta"],
+                    "questIds": ["alpha_q#1"],
+                    "questOwners": {"alpha_q#1": "alpha"},
+                    "bindMissionId": "",
+                    "clusterId": "cluster_1",
+                    "switcherId": "switcher_1",
+                    "switcherGroupId": "group_1",
+                    "levelId": "L",
+                    "npcIds": ["npc_1", "npc_2"],
+                }],
+            },
+        ]))
+        self.assertEqual(sorted(grouped), ["alpha", "beta"])
+        self.assertEqual(grouped["alpha"][0]["questIds"], ["alpha_q#1"])
+        self.assertEqual(grouped["beta"][0]["questIds"], [])
+        self.assertEqual(
+            grouped["alpha"][0]["relation"],
+            "atmosphericSwitcherStateContext",
+        )
+        self.assertEqual(grouped["alpha"][0]["switcherGroupId"], "group_1")
+
+    def test_atmospheric_context_without_resolved_mission_is_not_widened(self):
+        grouped = pipeline.env_talk_contexts_by_mission(self.report([
+            {
+                "storyKey": "env_envTalk_a_5",
+                "envTalkId": "envTalk_a_5",
+                "relation": "levelScopedConsumer",
+                "questContexts": [],
+                "stateContexts": [{
+                    "missionIds": [],
+                    "questIds": ["unknown_q#1"],
+                    "questOwners": {},
+                    "clusterId": "cluster_2",
+                    "switcherGroupId": "group_2",
+                    "levelId": "L",
+                }],
+            },
+        ]))
+        self.assertEqual(grouped, {})
+
+    def test_trigger_manifest_keeps_atmospheric_route_context_only(self):
+        manifest = pipeline.env_talk_trigger_manifest(self.report([
+            {
+                "storyKey": "env_envTalk_a_6",
+                "envTalkId": "envTalk_a_6",
+                "relation": "levelScopedConsumer",
+                "levelIds": ["L"],
+                "consumerCount": 1,
+                "questContexts": [],
+                "stateContexts": [{
+                    "missionIds": ["alpha"],
+                    "conditionMissionIds": [],
+                    "questIds": ["alpha_q#1"],
+                    "questOwners": {"alpha_q#1": "alpha"},
+                    "clusterId": "cluster_3",
+                    "switcherId": "switcher_1",
+                    "switcherGroupId": "group_3",
+                    "levelId": "L",
+                }],
+            },
+        ]))
+        route = manifest["env_envTalk_a_6"]["routes"][0]
+        self.assertEqual(route["causality"], "context")
+        self.assertEqual(
+            route["relation"],
+            "env_talk_atmospheric_switcher_state_context",
+        )
+        self.assertNotIn("playback", route)
 
 
 class MissionGraphPayloadTests(unittest.TestCase):

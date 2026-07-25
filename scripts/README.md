@@ -1433,11 +1433,16 @@ gameplay-video OCR/audio workflow.
   a verified 1:1 bijection with the `env_<envTalkId>.json` conversation corpus.
   Consumers are read by exact field name from `NpcProxyTable` (including
   nested `lazyDestroyEnvTalkData`), `NpcProxyExDataTable`,
-  `AtmosphericNpcClusterDataTable`, and `NpcTable`. A quest is reached only
-  through a typed `NpcProxyTrackingInfo.npcProxyId` whose proxy carries
-  `envTalkIds`, and that relation is navigation/configuration context, never
-  playback ownership. Consumer references absent from `EnvTalkTable` are
-  reported with a whitespace flag and never repaired by trimming. Emits
+  `AtmosphericNpcClusterDataTable`, and `NpcTable`. Two exact non-owning
+  context joins are retained: a typed `NpcProxyTrackingInfo.npcProxyId` whose
+  proxy carries `envTalkIds`, and a same-level atmospheric cluster whose full,
+  non-empty NPC set is contained by exactly one active switcher group. The
+  latter reads only exact mission/quest fields under that group's condition
+  plus `bindMissionId`; partial, cross-level, ambiguous, and config-identity
+  mismatches fail closed. These relations describe navigation or NPC-group
+  availability, never playback, ownership, chronology, completion, or a
+  server exchange. Consumer references absent from `EnvTalkTable` are reported
+  with a whitespace flag and never repaired by trimming. Emits
   `reports/mission_graph/envtalk_attachment.{json,md}`; Mission Pipeline embeds
   `envTalkContext` per mission and a separate `envTalkTriggerManifest` that is
   deliberately kept out of the Story coverage denominator.

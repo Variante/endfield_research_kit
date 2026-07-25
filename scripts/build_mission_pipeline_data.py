@@ -129,9 +129,9 @@ DEFAULT_REPORT_ROOT = ROOT / "reports" / "story" / "build"
 DEFAULT_ORDER_REPORT_ROOT = ROOT / "reports" / "mission_order"
 DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
-# v3 adds per-mission ``missionGraph`` (cross-mission dependency relations) and
-# ``envTalkContext`` (quest-tracked ambient lines) to every mission payload.
-SCHEMA_VERSION = 3
+# v3 added per-mission ``missionGraph`` and quest-tracked ambient lines. v4
+# extends ``envTalkContext`` with exact atmospheric-switcher state context.
+SCHEMA_VERSION = 4
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -4103,11 +4103,12 @@ def build_mission(
 
 
 def env_talk_contexts_by_mission(report: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
-    """Regroup the envTalk attachment report by the mission that tracks the proxy.
+    """Regroup exact envTalk navigation/state context by mission.
 
-    Only entries whose relation actually reached a quest contribute; level- and
-    character-scoped rows have no mission and are intentionally dropped here
-    rather than being widened into one.
+    Level- and character-scoped rows still have no mission and are intentionally
+    dropped. Atmospheric rows contribute only through their fail-closed,
+    same-level full-NPC-set switcher join; they remain state context, never
+    playback ownership.
     """
     grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for entry in report.get("entries") or []:
@@ -4125,6 +4126,34 @@ def env_talk_contexts_by_mission(report: dict[str, Any]) -> dict[str, list[dict[
                     "relation": entry["relation"],
                 }
             )
+        for context in entry.get("stateContexts") or []:
+            quest_owners = context.get("questOwners") or {}
+            for mission_id in context.get("missionIds") or []:
+                mission_id = str(mission_id or "")
+                if not mission_id:
+                    continue
+                grouped[mission_id].append(
+                    {
+                        "storyKey": entry["storyKey"],
+                        "envTalkId": entry["envTalkId"],
+                        "questIds": sorted(
+                            quest_id
+                            for quest_id, owner in quest_owners.items()
+                            if owner == mission_id
+                        ),
+                        "conditionQuestIds": list(context.get("questIds") or []),
+                        "conditionMissionIds": list(
+                            context.get("conditionMissionIds") or []
+                        ),
+                        "bindMissionId": context.get("bindMissionId") or "",
+                        "clusterId": context.get("clusterId") or "",
+                        "switcherId": context.get("switcherId") or "",
+                        "switcherGroupId": context.get("switcherGroupId") or "",
+                        "npcIds": list(context.get("npcIds") or []),
+                        "levelId": context.get("levelId") or "",
+                        "relation": "atmosphericSwitcherStateContext",
+                    }
+                )
     return grouped
 
 
@@ -4157,6 +4186,37 @@ def env_talk_trigger_manifest(report: dict[str, Any]) -> dict[str, dict[str, Any
             }
             for context in entry.get("questContexts") or []
         ]
+        for context in entry.get("stateContexts") or []:
+            quest_owners = context.get("questOwners") or {}
+            for mission_id in context.get("missionIds") or []:
+                routes.append(
+                    compact_dict(
+                        {
+                            "storyKey": story_key,
+                            "causality": "context",
+                            "relation": "env_talk_atmospheric_switcher_state_context",
+                            "missionId": mission_id,
+                            "questIds": sorted(
+                                quest_id
+                                for quest_id, owner in quest_owners.items()
+                                if owner == mission_id
+                            ),
+                            "conditionQuestIds": list(context.get("questIds") or []),
+                            "conditionMissionIds": list(
+                                context.get("conditionMissionIds") or []
+                            ),
+                            "bindMissionId": context.get("bindMissionId") or "",
+                            "clusterId": context.get("clusterId") or "",
+                            "switcherId": context.get("switcherId") or "",
+                            "switcherGroupId": context.get("switcherGroupId") or "",
+                            "levelId": context.get("levelId") or "",
+                            "evidence": (
+                                f"{context.get('switcherGroupId') or ''} -> "
+                                f"{context.get('clusterId') or ''}"
+                            ),
+                        }
+                    )
+                )
         manifest[story_key] = compact_dict({
             "attachmentStatus": "ambient_world_content",
             "envTalkRelation": entry.get("relation") or "",
@@ -4195,6 +4255,21 @@ def build_all(
         mission_root=mission_root,
     )
     env_talk_by_mission = env_talk_contexts_by_mission(env_talk)
+    env_talk_state_context_files = {
+        row.get("storyKey")
+        for rows in env_talk_by_mission.values()
+        for row in rows
+        if row.get("relation") == "atmosphericSwitcherStateContext"
+        and row.get("storyKey")
+    }
+    env_talk_state_context_missions = {
+        mission_id
+        for mission_id, rows in env_talk_by_mission.items()
+        if any(
+            row.get("relation") == "atmosphericSwitcherStateContext"
+            for row in rows
+        )
+    }
     quest_count = 0
     for path in sorted(mission_root.glob("*.json")):
         if path.name.endswith("_meta.json"):
@@ -4244,6 +4319,8 @@ def build_all(
                 "questTrackedNpcProxy"
             ],
             "envTalkQuestContextMissions": env_talk["counts"]["questContextMissions"],
+            "envTalkStateContextFiles": len(env_talk_state_context_files),
+            "envTalkStateContextMissions": len(env_talk_state_context_missions),
             "serverPlaceholderConditions": sum(row["serverPlaceholderCount"] for row in summaries),
             "serverPlaceholderQuests": sum(row["serverPlaceholderQuestCount"] for row in summaries),
             "serverPlaceholderMissions": sum(1 for row in summaries if row["serverPlaceholderCount"]),
