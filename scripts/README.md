@@ -859,13 +859,18 @@ Expected active inputs and outputs:
   `(missionId, eventName)` pair through `KeyGenerator<T1,T2>` /
   `CombineKeyManager`, and publishes the resulting runtime key through
   `EventManager.SendGlobal`; it does not dispatch to the serialized
-  `MissionEvent_OnCustomEventForMission` family. The direct two-part-key call
-  census finds no exact typed subscriber, while indirect delegate/IFix/XLua
-  dispatch stays outside that bound. The report also records that message 57
+  `MissionEvent_OnCustomEventForMission` family. The report now decodes the
+  IL2CPP generic method-spec table as well: message 125 uses
+  `SendGlobal<Beyond.Gameplay.EventData>`, but zero of 51 current
+  `BindGlobal` specializations has the required
+  `Beyond.EventData<Beyond.Gameplay.EventData>` subscriber shape. That closes
+  compiled managed typed consumers even when their final call form is
+  indirect; native memory manipulation, runtime reflection, future IFix, and
+  future builds remain outside the bound. The report also records that message 57
   preserves a non-empty `ctxToken` in `EventParams` before
   `RaiseScriptEvent`; the opaque token is event context, not mission/quest
-  identity. Messages 126/316/317 remain schema-only and are not inferred to be
-  request/response pairs.
+  identity. Messages 126/316/317 remain present schemas but have no installed
+  fallback handler/sender and are not inferred to be request/response pairs.
   `SC_MISSION_STATE_UPDATE.succeedId` is documented as a completion outcome
   selector rather than a successor mission. Rebuild with:
 

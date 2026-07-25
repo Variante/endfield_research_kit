@@ -732,10 +732,22 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         )
         self.assertIsNone(outbound["dialog-finish"]["correlationId"])
         self.assertEqual(3, len(pipeline.RUNTIME_CONTRACT["protocolOnly"]))
-        self.assertTrue(all(
-            row["confidence"].startswith("protocol_schema_only_")
+        protocol_confidence = {
+            row["id"]: row["confidence"]
             for row in pipeline.RUNTIME_CONTRACT["protocolOnly"]
-        ))
+        }
+        self.assertEqual(
+            "protocol_schema_only_sender_unconfirmed",
+            protocol_confidence["fail-mission-capability"],
+        )
+        self.assertEqual(
+            "native_fallback_sender_and_handler_absent",
+            protocol_confidence["mission-event-capability"],
+        )
+        self.assertEqual(
+            "native_fallback_sender_absent",
+            protocol_confidence["mission-client-trigger-done-capability"],
+        )
         native_rows = {
             row["id"]: row
             for direction in ("outbound", "inbound")
@@ -773,11 +785,15 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             mission_event["address"],
         )
         self.assertEqual(
-            "no_exact_pair_in_direct_call_census",
+            "no_current_aot_typed_subscriber",
             mission_event["typedConsumerStatus"],
         )
         self.assertIn(
             "does not target the serialized",
+            mission_event["effect"],
+        )
+        self.assertIn(
+            "complete current-build AOT table",
             mission_event["effect"],
         )
         trigger_done = next(

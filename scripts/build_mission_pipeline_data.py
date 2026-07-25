@@ -660,17 +660,21 @@ RUNTIME_CONTRACT = {
                 "Interns the exact missionId/eventName pair as a two-part CombineKey and "
                 "publishes it through the global EventManager bus. This does not target "
                 "the serialized MissionEvent_OnCustomEventForMission action family. The "
-                "complete direct-call census finds no typed exact-pair subscriber; "
-                "delegate, vtable, IFix, and XLua indirect consumers remain outside that "
-                "bound. No Story-file, quest-order, branch, or merge edge is created."
+                "exact publisher specialization is SendGlobal<Beyond.Gameplay.EventData>, "
+                "while the complete current-build AOT table contains no required "
+                "BindGlobal<Beyond.EventData<Beyond.Gameplay.EventData>> specialization. "
+                "This closes compiled managed typed subscribers, including indirect final "
+                "call forms. Native memory manipulation, runtime reflection, future IFix, "
+                "and future builds remain outside the bound. No Story-file, quest-order, "
+                "branch, or merge edge is created."
             ),
             "exchangeFamily": "mission_event",
             "exchangeRole": "server_push",
             "runtimeScope": "MissionSystem / keyed global EventManager bus",
             "asynchronous": True,
             "questScoped": False,
-            "typedConsumerStatus": "no_exact_pair_in_direct_call_census",
-            "confidence": "native_proven_direct_consumers_bounded",
+            "typedConsumerStatus": "no_current_aot_typed_subscriber",
+            "confidence": "native_proven_aot_subscriber_absence",
         },
         {
             "id": "full-dialog-sync",
@@ -1682,10 +1686,14 @@ RUNTIME_CONTRACT = {
                 "eventName at +0x20, interns that exact pair through "
                 "KeyGenerator<T1,T2>/CombineKeyManager, and publishes the resulting key "
                 "through EventManager.SendGlobal. It does not target the serialized "
-                "OnCustomEventForMission family. The direct-call key census proves no "
-                "typed exact-pair subscriber; indirect consumers remain unclosed."
+                "OnCustomEventForMission family. The publisher is the exact "
+                "SendGlobal<Beyond.Gameplay.EventData> specialization; zero of 51 current "
+                "BindGlobal specializations has the required "
+                "Beyond.EventData<Beyond.Gameplay.EventData> subscriber shape. Compiled "
+                "managed typed subscribers are absent; native manipulation, reflection, "
+                "future IFix, and future builds remain outside the bound."
             ),
-            "confidence": "native_proven_direct_consumers_bounded",
+            "confidence": "native_proven_aot_subscriber_absence",
         },
         {
             "symbol": "GameplayNetwork._Handle_SceneTriggerClientLevelScriptEvent",
@@ -1790,10 +1798,12 @@ RUNTIME_CONTRACT = {
                 "SC_MISSION_EVENT_TRIGGER (126) { missionId, eventName }"
             ),
             "effect": (
-                "The request and server schemas exist, but an active installed fallback "
-                "sender was not recovered and the server pairing policy is unavailable."
+                "The request and server schemas exist, but the installed fallback has no "
+                "gameplay constructor caller for request 316 and no typed handler for push "
+                "126. They are inactive current-build fallback surfaces, not an inferred "
+                "request/response pair."
             ),
-            "confidence": "protocol_schema_only_sender_unconfirmed",
+            "confidence": "native_fallback_sender_and_handler_absent",
         },
         {
             "id": "mission-client-trigger-done-capability",
@@ -1803,12 +1813,12 @@ RUNTIME_CONTRACT = {
             "fields": ["missionId", "sceneName", "areaId"],
             "possibleServerPush": None,
             "effect": (
-                "The schema exists, but no active installed fallback request sender was "
-                "recovered. Constructor references are limited to generated protobuf copy "
-                "and parser factories. Message 125 has a separate native inbound handler; "
-                "the different fields do not prove that 317 acknowledges it."
+                "The schema exists, but the installed fallback has no gameplay constructor "
+                "caller; references are limited to generated protobuf copy and parser "
+                "factories. Message 125 has a separate native inbound handler, and the "
+                "different fields do not prove that 317 acknowledges it."
             ),
-            "confidence": "protocol_schema_only_sender_unconfirmed",
+            "confidence": "native_fallback_sender_absent",
         },
     ],
 }

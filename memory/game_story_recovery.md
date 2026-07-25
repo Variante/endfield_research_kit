@@ -2166,13 +2166,25 @@ It also bounds message 125 tightly. Within its own key namespace the only
 subscriber-side caller is `SimpleConditionCheckMapVar::InnerStartListening`,
 whose serialized form carries `belongMapId` and `mapVarName`, while the handler
 writes `missionId` and `eventName`. Sharing an interned key namespace is not a
-producer/consumer pairing, so message 125 still reaches **no typed client
-consumer** unless a mission id is authored as a map id. The conclusion in the
+producer/consumer pairing; even a coincidental mission-id/map-id value match
+would not establish the required payload-delegate type. The conclusion in the
 recovery queue is unchanged; only its supporting evidence is now correct.
 
-The census covers direct `E8 rel32` calls across all executable sections. It does
-not cover vtable, delegate, IFix, or XLua indirect dispatch, so it bounds rather
-than closes the consumer question.
+The generic-specialization census now closes the compiled managed typed
+consumer question independently of the final call instruction. The exact
+publisher body at `0x187bdfd38` is
+`EventManager.SendGlobal<Beyond.Gameplay.EventData>`. IL2CPP must retain the
+value-type subscriber shape as
+`BindGlobal<Beyond.EventData<Beyond.Gameplay.EventData>>` in the AOT method-spec
+table even when multiple specializations share one native body or the final
+call is indirect. The current table has 653,319 method specs and 504,620 generic
+method-table rows, resolving to 137 `SendGlobal` and 51 `BindGlobal`
+specializations; the required binding occurs **zero** times. This proves that
+the current authored managed client has no typed message-125 subscriber. Native
+memory manipulation, runtime reflection, a future IFix payload, and a future
+game build remain outside the bound. Reproduce with
+`build_protocol_registry_audit.py`; the generated evidence and exact binary
+hash are in `protocol_registry_audit.{json,md}`.
 
 The Lua subscription bridge is now closed with the right query. Earlier Lua scans
 searched for Story and script *ids*; `AddLuaListenGlobal(eventName)` subscribes by
@@ -2695,12 +2707,18 @@ Current main-story priorities:
    organize evidence but cannot establish ownership. Message 125 closes one
    tempting branch, and its native path is now fully decoded rather than
    assumed: the handler interns `(missionId, eventName)` into a runtime
-   `CombineKey` and raises it on the `EventManager` global bus, whose only
-   same-namespace subscriber reads `belongMapId`/`mapVarName`. It therefore
-   still supplies no LevelScript/Story identity to join. See the global event
-   bus section above for the decode and its bounds; the former
+   `CombineKey` and raises it through
+   `SendGlobal<Beyond.Gameplay.EventData>`. The complete AOT method-spec table
+   contains zero instances of the required
+   `BindGlobal<Beyond.EventData<Beyond.Gameplay.EventData>>` subscriber shape,
+   so compiled managed indirect call forms no longer remain an open caveat.
+   The same-namespace map-var subscriber reads
+   `belongMapId`/`mapVarName` and is not a pair. Message 125 therefore supplies
+   no LevelScript/Story identity to join. See the global event bus section
+   above for the decode and its bounds; the former
    `MissionEvent_OnCustomEventForMission` consumer surface was a label, not a
-   decoded target. Messages 126/316/317 remain schema-only.
+   decoded target. Messages 126/316/317 remain present schemas but have no
+   installed fallback handler/sender.
    Message 57 now has the corresponding context boundary decoded as well:
    `_Handle_SceneTriggerClientLevelScriptEvent` constructs the exact
    `LevelScriptPtr`, allocates `EventParams`, copies a non-empty protobuf
