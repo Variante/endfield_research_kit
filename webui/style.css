@@ -3,6 +3,12 @@
 /* Single light palette —neutral gray + muted teal + slate + orange.
    Palette: #F5F5F5 (bg), #76ABAE (secondary), #303841 (text), #FF5722 (accent). */
 :root {
+  /* There is exactly one palette (light). Declaring it explicitly stops the UA
+     from rendering native widgets (select popups, date pickers, default
+     scrollbars) in dark mode when the OS prefers dark, which previously left
+     dark popups floating over a light UI. */
+  color-scheme: light;
+
   --bg: #f5f5f5;
   --bg-2: #f5f5f5;
   --bg-3: #ffffff;
@@ -14,9 +20,20 @@
   --panel-bg: #ffffff;
   --border: rgba(48, 56, 65, 0.18);
   --text: #303841;
-  --muted: rgba(48, 56, 65, 0.62);
+  /* WCAG AA: at 0.62 alpha this blended to ~#7f8489 (3.8:1 on #fff, 3.6:1 on
+     --bg) and failed 4.5:1 for the 11-12px secondary text it is used for.
+     0.72 blends to ~#696f76 -> 5.1:1 on #fff, 4.7:1 on --bg. */
+  --muted: rgba(48, 56, 65, 0.72);
   --accent: #ff5722;
+  /* --accent as *text* on a light surface is only 3.2:1. Use --accent-text
+     (same hue, darkened) wherever the accent carries a text label. */
+  --accent-text: #c8410f;
   --accent-2: #76abae;
+  /* --accent-2 as text is only 2.6:1 on a light surface. */
+  --accent-2-text: #3d7478;
+  /* One monospace stack for the whole app (four near-identical variants were
+     in use). Existing declarations still resolve the same. */
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
   --hover: rgba(118, 171, 174, 0.14);
   --selected: rgba(118, 171, 174, 0.22);
   --good: #76abae;
@@ -281,6 +298,11 @@ html, body {
   flex-wrap: wrap;
   justify-content: flex-end;
   margin-left: auto;
+}
+
+.topbar-debug-toggle {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .topbar-control {
@@ -985,6 +1007,26 @@ textarea:focus-visible,
   font-size: 12px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.item .item-trigger {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.item .item-trigger > span {
+  color: var(--muted);
+  font-weight: 600;
+}
+.item .item-trigger.is-native_playback,
+.item .item-trigger.is-playback {
+  color: var(--accent-2);
+}
+.item .item-trigger.is-native_playback_owner_unresolved,
+.item .item-trigger.is-playback_owner_unresolved {
+  color: var(--warn);
+}
 .item .badge {
   display: inline-block; padding: 0 5px;
   border-radius: 8px; font-size: 10px;
@@ -1216,6 +1258,135 @@ textarea:focus-visible,
 }
 #conv-related .conv-related-link:hover { color: var(--fg); border-bottom-style: solid; }
 #conv-related .conv-related-count { color: var(--muted); margin-left: 4px; }
+
+#conv-trigger {
+  margin: 8px 24px 0;
+  max-width: 880px;
+}
+.story-trigger-panel {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(var(--fg-rgb), 0.035);
+}
+.story-trigger-heading {
+  margin-bottom: 8px;
+  color: var(--accent-2);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.story-trigger-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.story-trigger-routes {
+  display: grid;
+  gap: 8px;
+}
+.story-trigger-route {
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: 6px;
+  background: rgba(var(--fg-rgb), 0.04);
+}
+.story-trigger-route.is-native_playback,
+.story-trigger-route.is-playback {
+  border-left-color: var(--accent-2);
+}
+.story-trigger-route.is-native_playback_owner_unresolved,
+.story-trigger-route.is-playback_owner_unresolved {
+  border-left-color: var(--warn);
+}
+.story-trigger-route > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+.story-trigger-route > header strong {
+  color: var(--text);
+}
+.story-trigger-route > header span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.story-trigger-boundary {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.story-trigger-chain {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  margin-top: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.story-trigger-chain > i {
+  align-self: center;
+  color: var(--muted);
+  font-style: normal;
+}
+.story-trigger-chain > span {
+  display: grid;
+  min-width: max-content;
+  gap: 2px;
+  padding: 5px 7px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: rgba(var(--fg-rgb), 0.06);
+}
+.story-trigger-chain small {
+  color: var(--muted);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+.story-trigger-chain code {
+  color: var(--text);
+  font-size: 11px;
+}
+.story-trigger-chain em {
+  max-width: 280px;
+  color: var(--muted);
+  font-size: 10px;
+  font-style: normal;
+  white-space: normal;
+}
+.story-trigger-native-path {
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 7px;
+}
+.story-trigger-native-path > summary {
+  color: var(--text);
+  cursor: pointer;
+  font-size: 11px;
+}
+.story-trigger-native-body {
+  display: grid;
+  gap: 4px;
+  margin-top: 7px;
+}
+.story-trigger-fact {
+  display: grid;
+  grid-template-columns: minmax(86px, auto) minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  color: var(--muted);
+  font-size: 10px;
+}
+.story-trigger-fact code {
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: 10px;
+  white-space: normal;
+}
 
 .line-timestamp {
   font-family: ui-monospace, monospace;
@@ -6576,4 +6747,192 @@ body:not(.show-debug) .story-order-remove-from-mission {
   margin-top: 10px;
   padding-top: 8px;
   border-top: 1px solid rgba(var(--fg-rgb), 0.1);
+}
+
+/* =====================================================================
+   GLOBAL SHELL AUDIT — nav layout, focus visibility, contrast, type.
+   Additive only: every rule below re-declares an existing selector or
+   adds a new one. No selector was renamed or removed.
+   ===================================================================== */
+
+/* ------- 1. Top-level navigation -------
+   Before: #view-tabs was `flex: 1 1 auto` + `overflow-x: auto`, so the rail
+   stretched across the whole topbar at 1920px (a mostly-empty pill) while at
+   <=1100px it silently hid tabs behind a horizontal scroller — 45px hidden
+   with the 6 default tabs, 648px hidden with all 13 debug tabs. Tabs are the
+   only way to reach a view, so hiding them behind a scroll gesture is the
+   worst possible failure mode.
+
+   After: the rail hugs its content, wraps instead of scrolling (nothing is
+   ever hidden), and drops to its own full-width row below 1280px. */
+#view-tabs {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  row-gap: 3px;
+  /* visible (not auto) so focus rings on the first/last tab are not clipped
+     by the scroll container, and so wrapped rows are never scrolled away. */
+  overflow: visible;
+  scroll-snap-type: none;
+}
+
+/* Tighter chip metrics: 13 uppercase tabs measured 1221px, which forced a
+   second row even at 1920px. ~1030px fits one row at 1440px and up without
+   giving up any label text. */
+.view-tab {
+  padding: 7px 10px;
+  letter-spacing: 0.02em;
+}
+
+/* Active view was white-on-light-grey with #ff5722 text (3.2:1 — fails AA).
+   Darker accent text + an accent ring makes the current view unmistakable
+   and readable. */
+.view-tab.is-active {
+  color: var(--accent-text);
+  border-color: rgba(var(--accent-rgb), 0.5);
+  box-shadow: 0 1px 3px rgba(var(--fg-rgb), 0.1),
+              inset 0 0 0 1px rgba(var(--accent-rgb), 0.16);
+}
+
+.view-tab:hover {
+  color: var(--text);
+}
+
+/* Give the nav its own full-width row whenever it cannot sit comfortably
+   beside the brand and the language/debug controls:
+     - below 1280px, at any tab count;
+     - whenever the debug switch is on, which adds 7 more tabs (13 total,
+       ~1200px of chips) and does not fit inline even at 1920px.
+   Without this the rail wrapped raggedly AND .topbar-actions stacked into
+   two or three rows (topbar was 132px tall at 1100px). */
+@media (max-width: 1280px) {
+  #topbar {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  #view-tabs {
+    order: 3;
+    flex: 1 0 100%;
+    min-width: 0;
+  }
+
+  .topbar-actions {
+    margin-left: auto;
+  }
+}
+
+body.show-debug #topbar {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+body.show-debug #view-tabs {
+  order: 3;
+  flex: 1 0 100%;
+  min-width: 0;
+}
+
+body.show-debug .topbar-actions {
+  margin-left: auto;
+}
+
+/* ------- 2. Focus visibility -------
+   style.css repeatedly grouped `:hover, :focus-visible { ...; outline: none }`,
+   which removes the keyboard focus ring and leaves only a faint background
+   tint. Restore a real ring on every one of those controls. */
+.story-order-mission-move-unused-button:not(:disabled):focus-visible,
+.story-order-mission-lock-button.is-locked:focus-visible,
+.story-order-mission-lock-button.is-editable:focus-visible,
+.story-order-unused-toggle:focus-visible,
+.story-order-remove-from-mission:focus-visible,
+.wiki-image-item.inline-image-tag:focus-visible,
+.wiki-video-file:focus-visible,
+.media-player-button:focus-visible,
+.pane-splitter:focus-visible,
+.filter-splitter:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* `.filters input[type=search]:focus { outline: none }` outranked the shared
+   `input:focus-visible` ring, so the primary search box had no visible
+   keyboard focus at all. */
+.filters input[type=search]:focus-visible,
+.filter-section-body input[type=search]:focus-visible,
+.filter-control-row input[type=search]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ------- 3. WCAG AA text contrast -------
+   --accent (#ff5722) as a text colour is 3.2:1 on white and 3.0:1 on --bg;
+   --accent-2 (#76abae) is 2.6:1. Both fail AA for the 10-13px labels they are
+   used on. Redirect the *text* uses to the darkened variants; fills, borders
+   and icon tints keep the original brand colours. */
+.brand-link:hover,
+.topbar-title,
+#asset-empty.is-error,
+.filter-section-active-count,
+.story-order-save-status.is-saving,
+.group .label.mono,
+.item .item-key,
+#conv-related .conv-related-link,
+.opt-group-branch-link,
+.trace-json-label,
+.summary-label,
+.narrative-video-box .summary-label,
+.wiki-media-box .summary-label,
+.cutscene-info-box .summary-label,
+.archive-link,
+.flow-dlg-ref,
+.rich-tag,
+.reference-table-prefix-heading .label,
+.reference-text-field,
+.reference-raw-label,
+.gameplay-detail-wiki-link,
+.gameplay-section h2,
+.gameplay-level-num,
+.updates-detail-link,
+.updates-detail-panel h2,
+.updates-decoded-list a,
+.updates-media-open,
+.asset-panel-label,
+.asset-related-item a,
+.asset-badge-video,
+.conv-warning-status.is-missing,
+.conv-warning-section-detail-emphasis {
+  color: var(--accent-text);
+}
+
+.group.lvl-0 .label,
+.item .item-trigger.is-playback,
+#conv-related .conv-related-heading,
+.story-trigger-heading,
+.opt-group-branch-label,
+.conv-warning-status.is-notNeeded,
+.asset-badge-json {
+  color: var(--accent-2-text);
+}
+
+/* ------- 4. Typography and density -------
+   Four near-identical monospace stacks were in use; --mono unifies them for
+   any element that is not already pinned to one. Sizes are unchanged — this
+   is a density-neutral consistency pass. */
+code, kbd, samp, pre, tt {
+  font-family: var(--mono);
+}
+
+/* Sidebar page titles: #left / #asset-left / #reference-left / #updates-left
+   are 15px 700 uppercase; #gameplay-left h1 was the only one left at 16px 600. */
+#gameplay-left h1 {
+  color: var(--text);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 15px;
+}
+
+/* Shared table chrome: tabular figures so dense numeric columns line up. */
+table {
+  font-variant-numeric: tabular-nums;
 }

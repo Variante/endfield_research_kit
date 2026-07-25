@@ -10,11 +10,26 @@ The project is built around reproducible local exports:
 
 - `Story` reconstructs dialog, cutscenes, branches, inline media, audio links,
   story order, and recovery evidence from generated game-data JSON.
+- `人物` / `Characters` gathers character and NPC names from localized text,
+  authored character/NPC rows, Story actor resolution, and exported asset
+  filename evidence, with the source of every name and identifier kept visible.
 - `Gameplay` surfaces curated weapon, character, skill, talent, progression,
   and numeric table records from structured game-data tables.
-- `Mission Pipeline` is an experimental debug-only quest DAG with explicit
-  client-to-server objective/dialog messages, server-to-client state updates,
-  and visibly unknown server successor policy.
+- `Mission Pipeline` is an experimental quest DAG available from the normal
+  navigation, with explicit client-to-server objective/dialog messages,
+  server-to-client state updates,
+  visibly unknown server successor policy, and evidence-typed links between
+  quest blocks and their recovered Story files. Mission-level acceptance/context
+  links and the still-unassigned Story remainder stay visibly separate. Each
+  linked or unresolved Story file can expose its normalized trigger chain from
+  quest/mission ownership through native event, LevelScript, playback action,
+  and the final Story key, with exact serialized control paths retained. A
+  source-only partial-order view keeps proven Story sequence edges, branches,
+  joins, cycles, and unknown pairs separate instead of forcing a total order;
+  decoded native `Split`, `IfElseAction`, and `SwitchInt` arms are shown as
+  explicit control topology rather than sibling file order. Conditional arms
+  also retain the exact event selector and decoded getter/inline predicate
+  operands when the current binary shape proves them.
 - `Progression` traverses direct authored links across character and weapon
   upgrades, equipment stages, item costs/use/obtain paths, reward bundles, and
   drop pools while retaining table/row/path provenance.
@@ -93,7 +108,7 @@ Set `ENDFIELD_GAME_ROOT` to the installed `Endfield_Data` folder. The same file
 also stores the saved previous export folder used by Updates tracking.
 
 The script initializes the AnimeStudio submodule, builds AnimeStudio, verifies
-AnimeStudio's integrated VFS/audio commands, exports Story/Gameplay/Text Tables
+AnimeStudio's integrated VFS/audio commands, exports Story/Characters/Gameplay/Text Tables
 plus Mission Pipeline/Progression/Projectile/Combat/Factory/World/Presentation data
 into `export_full/` and `webui/data/`, then starts or reuses the WebUI server
 at `http://127.0.0.1:8765/`.
@@ -143,18 +158,48 @@ the faster rebuild commands:
 
 ```bat
 .\export.bat
+.\export.bat --mission-pipeline-only
+.\export.bat --mission-pipeline-only --reuse-timeline-orders
+.\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
+.\export.bat --mission-pipeline-data-only
 .\export.bat --with-assets
 .\export_assets.bat
 .\build_updates.bat
 python serve.py
 ```
 
-Plain `export.bat` rebuilds Story, Gameplay, Mission Pipeline, Progression, Projectiles, Combat, Factory, World, Presentation, and
+Plain `export.bat` rebuilds Story, Characters, Gameplay, Mission Pipeline, Progression, Projectiles, Combat, Factory, World, Presentation, and
 Text Tables browser data from
 the existing `export_full/` and verifies freshness first. It rebuilds the local
-source graph after the authored semantic views (and optional assets/audio), then
+source graph after the authored semantic views (and optional assets/audio), using
+only the exact original AssetMap rows required by material, shader, texture, and
+FMV WebUI edges. Then it
 builds Presentation and Combat only from that fresh graph; stale graph evidence degrades visibly
-instead of being emitted as direct. Use `export.bat --with-assets`
+instead of being emitted as direct. Use `export.bat --full-source-graph` when an
+exhaustive Unity-object/PathID investigation needs every AssetMap row and the
+generated graph follow-up reports.
+
+For Mission Pipeline recovery work, `export.bat --mission-pipeline-only`
+refreshes original Story evidence, CN Story/Text Tables, and Mission Pipeline,
+then stops before unrelated semantic views and the SQLite graph. When only
+`build_mission_pipeline_data.py` or frontend graph code changed, run
+`export.bat --mission-pipeline-data-only` (or run
+`python scripts\build_mission_pipeline_data.py` directly); it reuses the current
+generated Story bundles and takes only a few seconds. When Story connection
+code changed but `export_full/` and its recovered Timeline inputs did not, add
+`--reuse-timeline-orders` to the mission-pipeline-only command to skip the
+redundant Timeline recovery preflight. Do not use that flag after a game-data
+refresh; the wrapper rejects it with `--export-from-game`. Use
+`--reuse-reference` in the same unchanged-input iteration loop to validate and
+preserve the existing localized Text Tables reference bundle instead of
+rebuilding its 67 MB of JSON. The wrapper also rejects reference reuse with
+`--export-from-game`; omit it whenever exported Table inputs may have changed.
+The wrapper form of the data-only command still verifies `export_full/`
+freshness first (about half a second on this checkout) and stops when installed
+original data has changed. The direct Python builder is intended only after
+that freshness check has already passed.
+Use
+`export.bat --with-assets`
 when you want Story plus asset indexes and CN audio relinking in one local
 rebuild. Use `export.bat --export-from-game` after the installed game updates,
 after `scripts\verify_export_freshness.py` reports stale source roots, or
@@ -162,6 +207,18 @@ whenever you intentionally want to refresh `export_full/` from the installed
 client. Add `--with-assets` when media or audio should refresh too; that path
 runs one combined AnimeStudio Story+asset export instead of running
 `export.bat` and `export_assets.bat` separately.
+
+To include a specific static world-streaming cell in an installed-game export,
+pass `--world-scene-chunk MAP:X:Z`. Chunk coordinates are
+`floor(world X / 128)` and `floor(world Z / 128)`. For example, the map02 cell
+containing world position `(305.328, -1609.578)` is exported with:
+
+```bat
+.\export.bat --export-from-game --world-scene-chunk map02:2:-13
+```
+
+This writes both matching `InitChunkData` and `StreamingChunkData` payloads
+under `export_full/structured/StreamingAssets/Data/Streaming/PC/<map>/Streaming/`.
 
 `export_assets.bat` without `--export-from-game` remains the asset/audio-only
 path. It reuses existing decoded assets, rebuilds the Assets tab index and

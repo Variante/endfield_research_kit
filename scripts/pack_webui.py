@@ -65,10 +65,10 @@ ASSET_TAB_RE = re.compile(r'(<button\s+id="assets-tab"(?=[\s>]))([^>]*>)', re.IG
 ASSET_SHIM_JS = """(() => {
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-  const AVAILABLE_VIEWS = new Set(["story", "gameplay", "mission-pipeline", "progression", "projectiles", "combat", "economy", "world", "presentation", "reference", "updates"]);
+  const AVAILABLE_VIEWS = new Set(["story", "characters", "gameplay", "mission-pipeline", "progression", "projectiles", "combat", "economy", "world", "presentation", "reference", "updates"]);
   const HIDDEN_VIEWS = new Set(["assets"]);
-  const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline", "progression", "projectiles", "combat", "economy", "world", "presentation"]);
-  const DEBUG_VIEW_FALLBACKS = Object.freeze({ "mission-pipeline": "story", progression: "gameplay", projectiles: "gameplay", combat: "gameplay", economy: "gameplay", world: "gameplay", presentation: "story" });
+  const DEBUG_ONLY_VIEWS = new Set(["characters", "progression", "projectiles", "combat", "economy", "world", "presentation"]);
+  const DEBUG_VIEW_FALLBACKS = Object.freeze({ characters: "story", progression: "gameplay", projectiles: "gameplay", combat: "gameplay", economy: "gameplay", world: "gameplay", presentation: "story" });
   let activeView = "story";
 
   function resolveViewFromHash() {
@@ -168,7 +168,7 @@ Run from this extracted directory:
 
 Then open the printed localhost URL.
 
-This package includes story, gameplay, the experimental mission pipeline, progression/rewards, projectile, combat, factory/economy,
+This package includes story, characters/NPC evidence, gameplay, the experimental mission pipeline, progression/rewards, projectile, combat, factory/economy,
 static world, entity presentation,
 reference text data, WebUI code, emoji
 images, and the compact media indexes. Larger story images and videos are in

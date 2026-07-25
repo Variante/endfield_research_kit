@@ -34,7 +34,7 @@ REPORT_DIR = ROOT / "reports" / "mission_order"
 CATALOG_HELPER = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
 BODY_HELPER = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 DEFAULT_GAMEASSEMBLY = actionbase_audit.DEFAULT_GAMEASSEMBLY
-DEFAULT_CODE_REGISTRATION = "0x18c439740"
+DEFAULT_CODE_REGISTRATION = actionbase_audit.DEFAULT_CODE_REGISTRATION
 
 SELECTOR_TARGETS = (
     {

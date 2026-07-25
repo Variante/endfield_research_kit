@@ -64,11 +64,45 @@ lightweight VFS index, exports the WebUI-facing image/model/Material surface,
 and decodes CN audio. The combined `--with-assets` path shares one AnimeStudio
 run when Story and assets both need an installed-game refresh.
 
+Production structured export continues to skip the broad world-streaming
+blocks by default. Repeatable `--world-scene-chunk MAP:X:Z` selectors provide a
+bounded exception: they dump the matching `InitChunkData` and
+`StreamingChunkData` records from the `Streaming` block for `StreamingAssets`
+only. Coordinates use the 128-unit world grid (`floor(X / 128)`,
+`floor(Z / 128)`). The map02 cell at `(305.328, -1609.578)` resolves to
+`map02:2:-13`; the installed VFS contains `InitChunkData_2_-13_0_0.bytes`
+(398,788 bytes) and `StreamingChunkData_2_-13_0_0.bytes` (81,848 bytes).
+These are proprietary static-scene payloads, not a Unity `.unity` scene or an
+OBJ, so extraction preserves placement evidence but does not itself decode the
+scene graph.
+
 The combined scope must not asset-map-filter its `json_by_type` stage. Story
 `TextAsset` DialogTree sources can sit outside the generated asset map; filtering
 the combined JSON load drops authored option anchors and branch routes even
 though the AnimeStudio command succeeds. Asset-only JSON work may remain
 map-filtered, while Story-only and combined Story+asset JSON loads stay broad.
+
+AnimeStudio JSON now preserves source offsets needed for exact CAB-scoped PPtr
+audits. Top-level `$animestudio.sourceOffset` identifies the owner object;
+every serialized PPtr carries `resolutionStatus`, and non-null references also
+record the expected target source/CAB plus local or external source metadata.
+Resolved references include `targetSourceOffset`. A focused installed-CHK
+probe produced 14,869 resolved, 9,421 external-target-unavailable, and 9,210
+null references, confirming that dependency-file indices can be checked
+without treating an unresolved external target as a filename or global PathID
+join.
+
+Material JSON now also preserves the serialized keyword arrays, lightmap and
+instancing flags, custom render queue, string tags, and disabled shader-pass
+list. These fields are required to distinguish an authored transparent
+Forward-only effect from an opaque fallback even when both reference the same
+mesh. Shader bytecode sidecars inspect each extracted DXBC `SHDR`/`SHEX`
+version token and publish `DecodedProgramStage` plus
+`DecodedProgramEncoding=DXBC`; `SourceSerializedProgramStage` remains as raw
+container evidence because Endfield combined payloads can label both embedded
+programs as vertex. The Zhuang Fangyi piaodai audit uses this distinction to
+pin its selected three-sample and four-sample vertex/fragment pairs instead of
+trusting the misleading outer label.
 
 The normal type-job mode is `auto`: map-filtered JSON requests are merged, while
 broad Story JSON types run sequentially in isolated processes so a large
@@ -339,6 +373,62 @@ DummyDll behavior:
 - script metadata helps identify fields/types but is not a payload boundary
   until replayed against real serialized bytes.
 
+External `MonoScript` identity is independently recoverable from Unity's own
+CAB dependency table and PPtr, even when the matching managed type is absent
+from the local DummyDll set. The dependency-aware
+`cutscene_e11m1_dg011_2` probe resolves
+`CAB-a7c1831c3f9527f9d6e7b6b9dc902957` / PathID
+`-4087699526387706716` to
+`Beyond.Gameplay.View.CutsceneRootComponent` in `Gameplay.Beyond.dll`, whose
+`MonoScript` is PathID `-4607311172223566074` in
+`CAB-5f527d7b7706baccdad9f794cf46420c`. Its embedded serialized TypeTree remains
+valid while script-derived recovery reports `typeDefinitionNotFound`; that
+status does not weaken the original PPtr or serialized layout. Exported
+`MonoScript` JSON now carries the same `$animestudio` source/PPtr provenance as
+other JSON objects plus class, namespace, and assembly.
+
+The CLI's opt-in `--object_index_jsonl FILE` path writes compact `object`,
+`schema`, `monoScript`, and terminal `summary` rows while decoded objects and
+their dependency context are resident. Object identity is the complete
+`(serializedFile, normalized source, sourceOffset, signed PathID)` tuple;
+non-null PPtrs preserve expected external and resolved target identities.
+Identifier-like scalars and typed identity/state integers are retained, while
+prose, curves, vectors, floats, null PPtrs, and other bulk values are omitted.
+The final file is published only after the terminal summary is written. A
+maintained multi-process wrapper merge now writes unique per-worker parts and
+deterministically publishes compressed object/schema streams plus a last-written
+summary commit marker. It rejects incomplete/conflicting parts and promotes an
+external reference only when external CAB filename plus signed PathID resolves
+to one complete physical identity across the full merged index. PathID alone
+and AnimeStudio's filename-first runtime cache are not sufficient global
+identities. Published summaries carry a current source inventory fingerprint
+plus content-hashed CLI apphost, first-party managed-assembly, and optional
+DummyDll provenance; report-only loading fails closed when output hashes or
+current provenance do not match. The installed source fingerprint is a
+files/bytes/latest-mtime guard rather than a full multi-gigabyte content hash.
+
+The first two-process original-bundle validation resolves
+`CutsceneRootComponent` CAB `CAB-a7c1831c3f9527f9d6e7b6b9dc902957`, PathID
+`-4087699526387706716`, through `_director` to PlayableDirector PathID
+`596938598417355940`, then through `m_PlayableAsset` to TimelineAsset CAB
+`CAB-c6363dc615901d4bdcddb393dd5bea77`, PathID `2345692907648257410`. The
+merged component contains 7,476 objects, 1,018 MonoScripts, 73 schemas, and
+7,450 exact external resolutions. The complete reachable component contains no
+mission or quest carrier, so this exact Unity-object chain creates zero Mission
+Pipeline bindings; it is a validated negative boundary, not a filename-based
+cutscene ownership claim.
+
+The corresponding exact-object census contains 26,318 PPtrs, 13,919 exact
+indexed PPtr landings, and 393 connected components with zero ambiguous
+CAB/signed-PathID identities. Although 143 objects carry 55 exact Story ids and
+six objects carry five typed timeline ids, zero scalar value equals any of the
+490 authoritative mission ids or 4,461 quest ids—even before semantic-field
+filtering. Therefore the current MonoBehaviour/PlayableDirector scope produces
+zero safe same-object or PPtr-component mission bindings. A broader Story/all
+index should add GameObject rows and `m_Component` edges before revisiting
+mission-named components; 117 resolved GameObject targets are currently outside
+the indexed type surface.
+
 Managed-reference recovery combines type-tree structure, registry type names,
 RID links, IL2CPP/DummyDll metadata, class-specific bounded readers, and a final
 raw-word/aligned-string diagnostic. A positive managed-reference registry is
@@ -444,7 +534,8 @@ Useful direct shape:
 AnimeStudio.CLI.exe INPUT OUTPUT --game ArknightsEndfield ^
   --logger_flags Warning Error --group_assets ByType ^
   --export_type JSON --types MonoBehaviour:Both ^
-  --filter_data FILTER.json
+  --filter_data FILTER.json ^
+  --object_index_jsonl OUTPUT\objects.part.jsonl
 ```
 
 Add `--dummy_dlls tools\DummyDll` only when script metadata is relevant. Use
@@ -460,11 +551,29 @@ resolution is part of the repro.
    guarded readers. The rare enemy EffectActionCfg tail is structurally closed;
    monitor it and projectile semantics unless a future
    exact-consumption guard fails, and preserve residual bytes on every failure.
-3. Normalize shader sidecar binding metadata enough for repeatable downstream
+3. Use the now-maintained opt-in merged object index and
+   `scripts/story_recovery/build_animestudio_story_carrier_audit.py` to audit
+   the next bounded original-data carrier families. The consumer accepts only
+   exact actionable Story values in typed Story-id fields on fully decoded,
+   schema-backed objects with resolved object/MonoScript type identity and a
+   same-object typed mission/quest or scene/script id. It validates the merge
+   commit marker, stage signature, and output hashes before scanning. The
+   current installed-game Story export has published valid indexes for both
+   sources. The current carrier census scanned 1,335,450 objects against 2,691
+   actionable gap keys: 190 objects contained an exact target value, but zero
+   passed the typed same-object Story plus owner/runtime gate. The visible
+   examples are names such as `TimelineAsset.m_Name` and
+   `CutsceneRootComponent._timelineName`; they remain rejected clues and add no
+   edge. Keep exact external-PPtr ambiguity and unresolved counts visible,
+   keep indexing opt-in until its complete-run cost is acceptable, and promote
+   no mission edge without separately recovered native consumer semantics.
+   The durable generated census is
+   `reports/story/recovery/animestudio_story_carrier_audit.{json,md}`.
+4. Normalize shader sidecar binding metadata enough for repeatable downstream
    lookup without claiming source-level semantics that the bytes do not prove.
-4. Test future Texture2D/Sprite/Animator variants against PathID-based status
+5. Test future Texture2D/Sprite/Animator variants against PathID-based status
    and dependency closure; do not regress to name-only selection.
-5. Continue memory work from process-tree measurements, separating shard size,
+6. Continue memory work from process-tree measurements, separating shard size,
    worker count, type-job mode, and source root.
-6. Retire dated warning snapshots after their root cause, guard, and remaining
+7. Retire dated warning snapshots after their root cause, guard, and remaining
    boundary are represented here or in the owning game-data/render topic.

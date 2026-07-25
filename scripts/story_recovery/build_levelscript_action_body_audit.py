@@ -49,6 +49,7 @@ RUNTIME_EXACT_NAMES = {
     "Beyond.Gameplay.Actions.SetListString",
     "Beyond.Gameplay.Actions.ManualStartLevelScript",
     "Beyond.Gameplay.Actions.ManualEndLevelScript",
+    "Beyond.Gameplay.Actions.Branch",
     "Beyond.Gameplay.Actions.GetLevelScriptPropertyBool",
     "Beyond.Gameplay.Actions.GetLevelScriptPropertyInt",
     "Beyond.Gameplay.Actions.GetLevelScriptPropertyFloat",
@@ -113,6 +114,7 @@ MEMORYPACK_NAME_PARTS = (
     "ListSetValue",
     "ManualStartLevelScript",
     "ManualEndLevelScript",
+    "BranchForMemoryPack",
     "GetLevelScriptPropertyBool",
     "GetLevelScriptPropertyInt",
     "GetLevelScriptPropertyFloat",
@@ -181,6 +183,9 @@ SELECTED_TARGETS = {
     ("Beyond.Gameplay.Actions.ManualStartLevelScript", "Execute"),
     ("Beyond.Gameplay.Actions.ManualEndLevelScript", "CollectParams"),
     ("Beyond.Gameplay.Actions.ManualEndLevelScript", "Execute"),
+    ("Beyond.Gameplay.Actions.Branch", "CollectParams"),
+    ("Beyond.Gameplay.Actions.Branch", "Execute"),
+    ("Beyond.Gameplay.Actions.Branch", "DoClean"),
     ("Beyond.Gameplay.Actions.ScriptEvent.OnPropertyChanged", "CollectParams"),
     ("Beyond.Gameplay.Actions.ScriptEvent.OnPropertyChanged", "Process"),
     ("Beyond.Gameplay.Actions.ScriptEvent.OnPropertyChanged", "OnAfterLevelScriptTriggerRegistered"),
@@ -469,6 +474,50 @@ def build_key_findings(report: dict[str, Any], focused_types: list[dict[str, Any
         "ActionSerializedMapForMemoryPack.Deserialize calls setters in actionList, getterList, headerList order; the setters write runtime ActionSerializedMap fields at +0x18, +0x20, and +0x10 respectively.",
         "ParamVariable._RaiseOnPropertyChangedEvent can call ParamBlackboard.SetVariableValue, so property-change listeners can feed blackboard writes; this still does not identify an authored LevelScript setter opcode.",
     ]
+    branch_execute = find_summary(
+        targets,
+        "Beyond.Gameplay.Actions.Branch",
+        "Execute",
+    )
+    if branch_execute:
+        branch_callees = {
+            (
+                str(resolved.get("type") or ""),
+                str(resolved.get("method") or ""),
+            )
+            for row in branch_execute
+            for call in row.get("directCalls") or []
+            for resolved in call.get("resolved") or []
+        }
+        branch_instructions = [
+            str(instruction.get("text") or "")
+            for row in branch_execute
+            for call in row.get("directCalls") or []
+            for instruction in (
+                (call.get("argumentContext") or {}).get("nearbyInstructions") or []
+            )
+        ]
+        if (
+            ("Beyond.Gameplay.Actions.ActionBase", "SetResultReservedID")
+            in branch_callees
+            and ("Beyond.Gameplay.Actions.ActionBase", "SetResultNextID")
+            in branch_callees
+            and any("[rbx+0xd0]" in text for text in branch_instructions)
+            and any("[rbx+0xd8]" in text for text in branch_instructions)
+        ):
+            findings.append(
+                "Branch.Execute reads the _idList field at +0xd0 and m_index at "
+                "+0xd8, calls ActionBase.SetResultReservedID before non-final "
+                "entries, calls SetResultNextID with the indexed list value, "
+                "increments m_index, and resets it after the list end. "
+                "Branch._idList is ordered continuation, not fan-out."
+            )
+        else:
+            findings.append(
+                "Branch.Execute was body-mapped, but its ordered _idList "
+                "reserved/next contract did not pass the current instruction "
+                "guard; keep Branch sequence traversal disabled."
+            )
     for type_row, name in (
         (set_generic, "Set<T>"),
         (set_list_generic, "SetList<T>"),

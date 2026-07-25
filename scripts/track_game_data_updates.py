@@ -37,6 +37,29 @@ DEFAULT_ANIMESTUDIO = REPO_ROOT / Path(
 SOURCES = ("StreamingAssets", "Persistent")
 JSONL_FORMAT = "animestudio-vfs-index"
 JSONL_ENCODING = "jsonl"
+WEBUI_TRACKED_VFS_BLOCKS = (
+    "InitAudio",
+    "InitBundle",
+    "InitialExtendData",
+    "BundleManifest",
+    "IFixPatchOut",
+    "AuditStreaming",
+    "AuditDynamicStreaming",
+    "AuditIV",
+    "AuditVideo",
+    "Bundle",
+    "Audio",
+    "Video",
+    "IV",
+    "Streaming",
+    "DynamicStreaming",
+    "Lua",
+    "Table",
+    "JsonData",
+    "ExtendData",
+    "HotfixAudio",
+    "AudioChinese",
+)
 
 
 class TrackerError(RuntimeError):
@@ -496,8 +519,15 @@ def _invoke_animestudio(
             "--jsonl",
             "--streaming-assets",
             str(streaming_assets),
+            "--fallback-assets",
+            str(persistent),
             "--output",
             str(outputs["StreamingAssets"]),
+            *(
+                option
+                for block in WEBUI_TRACKED_VFS_BLOCKS
+                for option in ("--block-type", block)
+            ),
         ],
         [
             str(executable),
@@ -509,6 +539,11 @@ def _invoke_animestudio(
             str(streaming_assets),
             "--output",
             str(outputs["Persistent"]),
+            *(
+                option
+                for block in WEBUI_TRACKED_VFS_BLOCKS
+                for option in ("--block-type", block)
+            ),
         ],
     )
     for command in commands:

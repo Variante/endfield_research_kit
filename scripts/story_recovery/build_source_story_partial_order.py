@@ -12,6 +12,7 @@ generated UI rank, ``sceneOrderInfo.questOrder``, or scene-graph node ``order``.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from collections import Counter, defaultdict, deque
 from datetime import datetime, timezone
@@ -37,17 +38,57 @@ from story_builder.mission_recovery import (  # noqa: E402
     natural_key,
     scene_order_infer_kind,
 )
+from story_builder.spawner_binary import (  # noqa: E402
+    SPAWNER_WAVE_RUNTIME_MAPPING_ID,
+    SpawnerWaveDecodeError,
+    decode_spawner_wave_map,
+)
 
 
-SCHEMA = "sourceStoryPartialOrder.v2"
+SCHEMA = "sourceStoryPartialOrder.v11"
+SPAWNER_CONFIG_ROOTS = (
+    ROOT / "export_full" / "structured" / "StreamingAssets"
+    / "Data" / "Json" / "SpawnerConfig",
+    ROOT / "export_full" / "structured" / "Persistent"
+    / "Data" / "Json" / "SpawnerConfig",
+)
 
+# These relations are original-data topology, but not strict chronology.
+#
+# ``questSequence`` is assembled by the Story builder from heterogeneous
+# quest-local reference collections.  The installed QuestInfo/MissionRuntime
+# binary contract exposes ``prevQuestIdList`` and BuildConnectionBetweenLayers,
+# but no playback-order contract for that concatenated collection.
+#
+# ``questFailGuard`` is an authored branch-closing dependency, not proof that
+# both referenced Story files execute in one order. ``authoredMenu`` preserves
+# DialogTree menu/submenu reachability and can be cyclic by design.
+#
+# ``levelscriptSceneChain`` follows generic Story-looking payloads through the
+# legacy UID/nextId chain view. The installed ActionBase formatter table proves
+# that these payloads also occur on preload, remove, override, and stop actions;
+# the old chain view can also cross physical ActionSerializedMap list roots.
+# Preserve the relation as control/configuration topology, but require the
+# typed native playback/control-path decoder for chronology.
+#
 # ``radioContinuation`` combines an authored continuation flag with file-offset
-# adjacency.  The builder currently includes it in STRONG_ORDER_EDGE_KINDS,
-# while the durable evidence notes still call that combination weak.  Preserve
-# it as source evidence without letting it create a proven order relation until
-# that policy conflict is intentionally resolved.
-SUPPORTED_ORDER_EDGE_KINDS = frozenset({"radioContinuation"})
-PROVEN_ORDER_EDGE_KINDS = frozenset(STRONG_ORDER_EDGE_KINDS) - SUPPORTED_ORDER_EDGE_KINDS
+# adjacency. Preserve all four as source evidence without letting them create a
+# proven order relation.
+SUPPORTED_ORDER_EDGE_KINDS = frozenset({
+    "authoredMenu",
+    "levelscriptSceneChain",
+    "questFailGuard",
+    "questSequence",
+    "radioContinuation",
+})
+PROVEN_ORDER_EDGE_KINDS = (
+    frozenset(STRONG_ORDER_EDGE_KINDS) - SUPPORTED_ORDER_EDGE_KINDS
+) | frozenset({
+    "levelscriptNativeControlPath",
+    "levelscriptQuestStateActionPath",
+    "spawnerWaveGroupPartKilled",
+    "spawnerWavePartKilled",
+})
 
 EDGE_EVIDENCE_FIELDS = (
     "source",
@@ -64,9 +105,24 @@ EDGE_EVIDENCE_FIELDS = (
     "firstLvId",
     "fileStems",
     "event",
+    "events",
     "sourceScript",
     "headerLocalId",
     "targetLocalId",
+    "sourceLocalId",
+    "actionPathLocalIds",
+    "questState",
+    "spawnerId",
+    "waveKey",
+    "targetWaveKey",
+    "waveId",
+    "waveMode",
+    "waveModeKillCount",
+    "groupKey",
+    "targetGroupKey",
+    "spawnerDependencyPath",
+    "runtimeMappingId",
+    "schemaMappingId",
 )
 
 SOURCE_STORY_NODE_KINDS = frozenset({
@@ -85,19 +141,31 @@ SOURCE_STORY_NODE_KINDS = frozenset({
 
 EVIDENCE_POLICY = {
     "uses": [
-        "index-backed Story scene membership",
-        "MissionRuntimeAsset questSequence/questPrev/questFailGuard edges",
-        "DialogTree authoredDirect/authoredMenu option routes",
+        "index-backed nominal Story scene membership",
+        "cross-owner Story context only when an exact serialized native control path strictly prefixes or extends an index-backed scene path under the same event header",
+        "MissionRuntimeAsset questPrev edges backed by prevQuestIdList",
+        "DialogTree authoredDirect option routes",
         "DialogTree/DialogTreeFragment option-to-line branchLines verified against sceneGraphLinks",
         "Dialog Timeline Runtime Jump routes with the exact timelineRouteBranches/runtimeJumpTrack signature",
-        "typed LevelScript levelscriptSceneChain edges",
         "LevelScript LevelEvent_OnDialogExit action-chain edges",
+        "exact serialized LevelScript event-to-action strict path-prefix edges",
+        "exact LevelEvent_OnQuestStateChanged typed playback action paths",
+        "exact SpawnerConfig PartKilled target-wave dependencies joined to typed LevelEvent_OnSpawnerWaveBegin playback",
+        "exact SpawnerConfig wave/group nesting and PartKilled gates joined to typed wave/group-begin playback",
+        "exact same-script RaiseCustomScriptEvent relays from typed spawner callbacks to typed Story playback listeners",
         "MissionRuntimeAsset quest branch and merge records",
     ],
     "keepsButDoesNotOrder": [
+        "quest-local Story reference collection order (questSequence)",
+        "MissionRuntimeAsset failed-condition topology (questFailGuard)",
+        "DialogTree menu/submenu reachability (authoredMenu)",
+        "generic LevelScript scene-reference nextId chains (levelscriptSceneChain)",
+        "SpawnerConfig Sequence/Parallel modes and HP-threshold callbacks without an exact named target-wave dependency",
+        "reciprocal questPrev projections between reusable Story file nodes",
         "radioContinuation pending evidence-policy reconciliation",
         "LevelScript file/cross-file order and untyped chain membership",
         "LevelData quest references and PRTS collection order",
+        "divergent Split/IfElseAction/SwitchInt Story arms as topology only",
     ],
     "rejects": [
         "webui/overrides/story_order.json",
@@ -143,6 +211,32 @@ def _edge_sort_key(edge: dict[str, Any]) -> tuple[Any, ...]:
         natural_key(safe_key(edge.get("to"))),
         safe_key(edge.get("kind")),
     )
+
+
+def _demote_reciprocal_quest_projections(edges: list[dict[str, Any]]) -> None:
+    """Keep occurrence-ambiguous quest projections out of the strict DAG.
+
+    ``prevQuestIdList`` orders quest instances. Once multiple quest instances
+    are projected onto the same Story file node, opposite file-level edges can
+    both appear even though the quest DAG itself is directed. That proves
+    attachment/topology, not one global order between the two reusable files.
+    """
+    quest_pairs = {
+        (safe_key(edge.get("from")), safe_key(edge.get("to")))
+        for edge in edges
+        if safe_key(edge.get("kind")) == "questPrev"
+    }
+    reciprocal_pairs = {
+        pair
+        for pair in quest_pairs
+        if (pair[1], pair[0]) in quest_pairs
+    }
+    for edge in edges:
+        pair = (safe_key(edge.get("from")), safe_key(edge.get("to")))
+        if safe_key(edge.get("kind")) != "questPrev" or pair not in reciprocal_pairs:
+            continue
+        edge["tier"] = "supported"
+        edge["demotionReason"] = "reciprocalQuestProjection"
 
 
 def _strongly_connected_components(
@@ -664,6 +758,1081 @@ def _quest_branches_and_merges(timeline_recovery: dict[str, Any]) -> tuple[list[
     return branches, merges
 
 
+NATIVE_OCCURRENCE_FIELDS = (
+    "occurrences",
+    "levelScriptOccurrences",
+    "nativeOccurrences",
+    "nativeBlackActionOccurrences",
+    "parentDialogNativeOccurrences",
+    "preloadOccurrences",
+)
+
+
+def _story_connection_rows(flow: dict[str, Any]) -> Iterable[dict[str, Any]]:
+    for row in flow.get("missionStoryConnections") or []:
+        if isinstance(row, dict):
+            yield row
+    for quest in flow.get("quests") or []:
+        if not isinstance(quest, dict):
+            continue
+        for row in quest.get("storyConnections") or []:
+            if isinstance(row, dict):
+                yield row
+    for field in ("unlinkedNativePlayback", "unlinkedDefinitionOnly"):
+        for row in flow.get(field) or []:
+            if isinstance(row, dict):
+                yield row
+
+
+def _connection_native_occurrences(row: dict[str, Any]) -> list[dict[str, Any]]:
+    occurrences: list[dict[str, Any]] = []
+    for field in NATIVE_OCCURRENCE_FIELDS:
+        occurrences.extend(
+            occurrence
+            for occurrence in row.get(field) or []
+            if isinstance(occurrence, dict)
+        )
+    if not occurrences and isinstance(row.get("nativeEventOwners"), list):
+        occurrences.append({
+            "levelId": next(iter(row.get("levelIds") or []), ""),
+            "scriptId": next(iter(row.get("scriptIds") or []), ""),
+            "sourceFile": next(iter(row.get("sourceFiles") or []), ""),
+            "nativeEventOwners": row.get("nativeEventOwners") or [],
+        })
+    return occurrences
+
+
+def _native_event_story_paths(
+    flow: dict[str, Any],
+    candidate_keys: set[str] | None,
+) -> dict[
+    tuple[str, str, int, str],
+    set[tuple[str, tuple[tuple[Any, ...], ...], str, str]],
+]:
+    event_paths: dict[
+        tuple[str, str, int, str],
+        set[tuple[str, tuple[tuple[Any, ...], ...], str, str]],
+    ] = defaultdict(set)
+    for row in _story_connection_rows(flow):
+        story_key = safe_key(row.get("key"))
+        if candidate_keys is not None and story_key not in candidate_keys:
+            continue
+        for occurrence in _connection_native_occurrences(row):
+            level_id = safe_key(occurrence.get("levelId"))
+            script_id = safe_key(occurrence.get("scriptId"))
+            source_file = safe_key(occurrence.get("sourceFile"))
+            for owner in occurrence.get("nativeEventOwners") or []:
+                if (
+                    not isinstance(owner, dict)
+                    or owner.get("status") != "exact_serialized_control_path"
+                    or not isinstance(owner.get("headerLocalId"), int)
+                ):
+                    continue
+                path = tuple(
+                    (
+                        int(step["localId"]),
+                        safe_key(step.get("edge")),
+                        safe_key(step.get("actionName")),
+                        safe_key(step.get("recordClass")),
+                        json.dumps(
+                            step.get("branchPredicate") or {},
+                            ensure_ascii=False,
+                            sort_keys=True,
+                            separators=(",", ":"),
+                        ),
+                    )
+                    for step in owner.get("path") or []
+                    if isinstance(step, dict) and isinstance(step.get("localId"), int)
+                )
+                if not path:
+                    continue
+                signature = (
+                    level_id,
+                    script_id,
+                    int(owner["headerLocalId"]),
+                    safe_key(owner.get("headerName")),
+                )
+                event_paths[signature].add((
+                    story_key,
+                    path,
+                    source_file,
+                    json.dumps(
+                        owner.get("eventDetail") or {},
+                        ensure_ascii=False,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ),
+                ))
+    return event_paths
+
+
+def _strict_native_path_prefix(
+    source_path: tuple[tuple[Any, ...], ...],
+    target_path: tuple[tuple[Any, ...], ...],
+) -> bool:
+    source_ids = tuple(step[0] for step in source_path)
+    target_ids = tuple(step[0] for step in target_path)
+    return (
+        len(source_ids) < len(target_ids)
+        and target_ids[:len(source_ids)] == source_ids
+    )
+
+
+def _expand_native_control_path_candidates(
+    flow: dict[str, Any],
+    candidate_kinds: dict[str, str],
+) -> tuple[dict[str, str], set[str]]:
+    """Admit only exact native-path neighbors of index-backed mission scenes.
+
+    A Story filename's nominal owner is not a reliable mission boundary. Keep
+    the index set as the anchor, then admit an external Story key only when its
+    exact serialized event-to-action path is prefix-comparable with an anchored
+    scene under the same level/script/event header. Equal and divergent paths,
+    generic scene-graph edges, file order, and stand-alone exact occurrences do
+    not expand mission membership.
+    """
+    expanded = dict(candidate_kinds)
+    anchor_keys = set(candidate_kinds)
+    admitted: set[str] = set()
+    if not anchor_keys:
+        return expanded, admitted
+
+    for rows in _native_event_story_paths(flow, None).values():
+        rows = list(rows)
+        for anchor_key, anchor_path, _source_file, _event_detail in rows:
+            if anchor_key not in anchor_keys:
+                continue
+            for external_key, external_path, _target_file, _target_detail in rows:
+                if external_key in anchor_keys or external_key == anchor_key:
+                    continue
+                if not (
+                    _strict_native_path_prefix(anchor_path, external_path)
+                    or _strict_native_path_prefix(external_path, anchor_path)
+                ):
+                    continue
+                external_kind = scene_order_infer_kind(external_key, "")
+                if external_kind not in SOURCE_STORY_NODE_KINDS:
+                    continue
+                expanded.setdefault(external_key, external_kind)
+                admitted.add(external_key)
+    return expanded, admitted
+
+
+def _native_control_path_story_edges(
+    flow: dict[str, Any],
+    candidate_keys: set[str],
+) -> list[dict[str, Any]]:
+    """Recover strict Story order when one native control path prefixes another."""
+    event_paths = _native_event_story_paths(flow, candidate_keys)
+
+    evidence_by_pair: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for signature, rows in event_paths.items():
+        for source_key, source_path, source_file, source_event_detail in rows:
+            for target_key, target_path, target_file, target_event_detail in rows:
+                if (
+                    source_key == target_key
+                    or not _strict_native_path_prefix(source_path, target_path)
+                ):
+                    continue
+                source_path_ids = tuple(step[0] for step in source_path)
+                target_path_ids = tuple(step[0] for step in target_path)
+                evidence_by_pair[(source_key, target_key)].append({
+                    "levelId": signature[0],
+                    "scriptId": signature[1],
+                    "headerLocalId": signature[2],
+                    "eventName": signature[3],
+                    "eventDetails": [
+                        json.loads(value)
+                        for value in sorted({
+                            source_event_detail,
+                            target_event_detail,
+                        })
+                    ],
+                    "sourcePath": list(source_path_ids),
+                    "targetPath": list(target_path_ids),
+                    "sourceFiles": sorted({source_file, target_file} - {""}),
+                })
+
+    conflicts = {
+        pair
+        for pair in evidence_by_pair
+        if (pair[1], pair[0]) in evidence_by_pair
+    }
+    edges: list[dict[str, Any]] = []
+    for pair, evidence_rows in sorted(
+        evidence_by_pair.items(),
+        key=lambda item: (natural_key(item[0][0]), natural_key(item[0][1])),
+    ):
+        if pair in conflicts:
+            continue
+        edges.append({
+            "from": pair[0],
+            "to": pair[1],
+            "kind": "levelscriptNativeControlPath",
+            "tier": "strong",
+            "source": "exact serialized event-to-action local-id path prefix",
+            "sourceFiles": sorted({
+                source_file
+                for evidence in evidence_rows
+                for source_file in evidence.get("sourceFiles") or []
+            }),
+            "levelIds": sorted({
+                str(evidence.get("levelId") or "")
+                for evidence in evidence_rows
+                if evidence.get("levelId")
+            }),
+            "events": evidence_rows,
+        })
+    return edges
+
+
+def _quest_state_action_path_story_edges(
+    flow: dict[str, Any],
+    candidate_keys: set[str],
+) -> list[dict[str, Any]]:
+    """Recover typed Story order from one exact quest-state action chain."""
+    grouped: dict[tuple[Any, ...], dict[int, set[str]]] = defaultdict(
+        lambda: defaultdict(set)
+    )
+    metadata: dict[tuple[Any, ...], dict[str, Any]] = {}
+    for quest in flow.get("quests") or []:
+        if not isinstance(quest, dict):
+            continue
+        quest_id = safe_key(quest.get("id") or quest.get("questId"))
+        for row in quest.get("storyConnections") or []:
+            if not isinstance(row, dict):
+                continue
+            story_key = safe_key(row.get("key"))
+            relation = safe_key(row.get("relation"))
+            action_path = tuple(
+                int(local_id)
+                for local_id in row.get("actionPathLocalIds") or []
+                if isinstance(local_id, int)
+            )
+            path_index = row.get("actionPathIndex")
+            action_local_id = row.get("actionLocalId")
+            if (
+                story_key not in candidate_keys
+                or relation not in {
+                    "levelscript_quest_completed_action",
+                    "levelscript_quest_processing_action",
+                }
+                or safe_key(row.get("confidence")) != "native_typed_direct"
+                or safe_key(row.get("event")) != "LevelEvent_OnQuestStateChanged"
+                or not safe_key(row.get("nativeMappingId")).startswith("gameassembly-")
+                or not isinstance(path_index, int)
+                or not isinstance(action_local_id, int)
+                or path_index < 0
+                or path_index >= len(action_path)
+                or action_path[path_index] != action_local_id
+            ):
+                continue
+            signature = (
+                quest_id,
+                relation,
+                row.get("questState"),
+                safe_key(row.get("levelId")),
+                safe_key(row.get("scriptId")),
+                row.get("headerLocalId"),
+                safe_key(row.get("sourceFile")),
+                action_path,
+            )
+            grouped[signature][path_index].add(story_key)
+            metadata[signature] = {
+                "questId": quest_id,
+                "levelId": safe_key(row.get("levelId")),
+                "scriptId": safe_key(row.get("scriptId")),
+                "sourceFile": safe_key(row.get("sourceFile")),
+                "headerLocalId": row.get("headerLocalId"),
+                "questState": row.get("questState"),
+                "actionPathLocalIds": list(action_path),
+            }
+
+    evidence_by_pair: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for signature, keys_by_index in grouped.items():
+        ordered_indexes = sorted(keys_by_index)
+        for source_index, target_index in zip(ordered_indexes, ordered_indexes[1:]):
+            for source_key in sorted(keys_by_index[source_index], key=natural_key):
+                for target_key in sorted(keys_by_index[target_index], key=natural_key):
+                    if source_key == target_key:
+                        continue
+                    item = metadata[signature]
+                    evidence_by_pair[(source_key, target_key)].append({
+                        "questId": item["questId"],
+                        "levelId": item["levelId"],
+                        "scriptId": item["scriptId"],
+                        "sourceFile": item["sourceFile"],
+                        "headerLocalId": item["headerLocalId"],
+                        "sourceLocalId": item["actionPathLocalIds"][source_index],
+                        "targetLocalId": item["actionPathLocalIds"][target_index],
+                        "questState": item["questState"],
+                        "actionPathLocalIds": item["actionPathLocalIds"],
+                    })
+
+    edges: list[dict[str, Any]] = []
+    for pair, evidence_rows in sorted(
+        evidence_by_pair.items(),
+        key=lambda item: (natural_key(item[0][0]), natural_key(item[0][1])),
+    ):
+        edges.append({
+            "from": pair[0],
+            "to": pair[1],
+            "kind": "levelscriptQuestStateActionPath",
+            "tier": "strong",
+            "source": (
+                "exact LevelEvent_OnQuestStateChanged ActionHeader.nextId/"
+                "ActionBase.nextId typed playback path"
+            ),
+            "sourceFiles": sorted({
+                row["sourceFile"] for row in evidence_rows if row["sourceFile"]
+            }),
+            "levelIds": sorted({
+                row["levelId"] for row in evidence_rows if row["levelId"]
+            }),
+            "questIds": sorted({
+                row["questId"] for row in evidence_rows if row["questId"]
+            }),
+            "events": evidence_rows,
+        })
+    return edges
+
+
+def _repo_path(path: Path) -> str:
+    try:
+        return path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def _find_spawner_config(
+    level_id: str,
+    spawner_id: int,
+    roots: Iterable[Path],
+) -> Path | None:
+    for root in roots:
+        candidates = sorted({
+            path
+            for path in (root / level_id).glob(f"*_{spawner_id}.json")
+            if path.is_file()
+        }, key=lambda path: path.as_posix().lower())
+        if candidates:
+            return candidates[0] if len(candidates) == 1 else None
+    return None
+
+
+def _event_source_files(event: dict[str, Any]) -> set[str]:
+    return {
+        source_file
+        for source_file in (
+            safe_key(event.get("sourceFile")),
+            *[
+                safe_key(value)
+                for value in event.get("sourceFiles") or []
+            ],
+            *[
+                safe_key(value)
+                for value in event.get("listenerSourceFiles") or []
+            ],
+        )
+        if source_file
+    }
+
+
+def _spawner_story_event_routes(
+    flow: dict[str, Any],
+    candidate_keys: set[str],
+) -> Iterable[tuple[str, str, dict[str, Any], dict[str, Any]]]:
+    """Yield exact direct or local-relayed Story routes from spawner callbacks.
+
+    A Story action may sit directly under a typed spawner event header, or a
+    spawner callback may raise a same-script custom event whose exact listener
+    reaches the Story action.  The latter is accepted only when the generated
+    native evidence preserves the producer control path, exact receiver, exact
+    listener event key, and at least one exact listener route.  Merely matching
+    event-key strings is insufficient.
+    """
+    for row in _story_connection_rows(flow):
+        story_key = safe_key(row.get("key"))
+        if (
+            story_key not in candidate_keys
+            or safe_key(row.get("confidence")) not in {
+                "native_typed_direct",
+                "native_typed_direct_unscoped",
+            }
+            or not safe_key(row.get("nativeMappingId")).startswith("gameassembly-")
+        ):
+            continue
+
+        for occurrence in _connection_native_occurrences(row):
+            if (
+                story_key not in {
+                    safe_key(value)
+                    for value in occurrence.get("allStoryKeysInRecord") or []
+                }
+                or not safe_key(occurrence.get("recordClass")).startswith("play_")
+            ):
+                continue
+            level_id = safe_key(occurrence.get("levelId"))
+            source_file = safe_key(occurrence.get("sourceFile"))
+            for owner in occurrence.get("nativeEventOwners") or []:
+                if not isinstance(owner, dict):
+                    continue
+                yield story_key, level_id, owner, {
+                    "storyKey": story_key,
+                    "sourceFile": source_file,
+                    "scriptId": safe_key(occurrence.get("scriptId")),
+                    "headerLocalId": owner.get("headerLocalId"),
+                    "actionLocalId": occurrence.get("localId"),
+                    "actionName": safe_key(occurrence.get("actionName")),
+                    "eventDetail": owner.get("eventDetail"),
+                    "routeMode": "directPlayback",
+                }
+
+        for producer in row.get("nativeEventProducerRoutes") or []:
+            if not isinstance(producer, dict):
+                continue
+            producer_script_id = safe_key(producer.get("producerScriptId"))
+            target_script_id = safe_key(producer.get("targetScriptId"))
+            raised_event_key = safe_key(producer.get("raisedEventKey"))
+            listener_script_ids = {
+                safe_key(value)
+                for value in producer.get("listenerScriptIds") or []
+                if safe_key(value)
+            }
+            listener_routes = [
+                route
+                for route in producer.get("listenerRoutes") or []
+                if isinstance(route, dict)
+                and safe_key(route.get("listenerScriptId"))
+                == target_script_id
+                and isinstance(route.get("listenerEventOwner"), dict)
+                and route["listenerEventOwner"].get("status")
+                == "exact_serialized_control_path"
+                and safe_key(
+                    (route["listenerEventOwner"].get("eventDetail") or {}).get(
+                        "type"
+                    )
+                )
+                == "ScriptEvent_OnCustomEvent"
+                and safe_key(
+                    (route["listenerEventOwner"].get("eventDetail") or {}).get(
+                        "eventKey"
+                    )
+                )
+                == raised_event_key
+            ]
+            if (
+                producer.get("status") != "exact_serialized_local_producer"
+                or safe_key(producer.get("storyKey")) != story_key
+                or safe_key(producer.get("producerAction"))
+                != "RaiseCustomScriptEvent"
+                or safe_key(producer.get("receiverMode")) != "current_script"
+                or not producer_script_id
+                or target_script_id != producer_script_id
+                or listener_script_ids != {target_script_id}
+                or not raised_event_key
+                or not listener_routes
+                or not safe_key(producer.get("nativeMappingId")).startswith(
+                    "gameassembly-"
+                )
+                or producer.get("serverExchange") is not False
+            ):
+                continue
+            listener_source_files = sorted({
+                safe_key(route.get("listenerSourceFile"))
+                for route in listener_routes
+                if safe_key(route.get("listenerSourceFile"))
+            })
+            producer_source_file = safe_key(producer.get("producerSourceFile"))
+            for owner in producer.get("producerControlPaths") or []:
+                if not isinstance(owner, dict):
+                    continue
+                detail = (
+                    owner.get("eventDetail")
+                    if isinstance(owner.get("eventDetail"), dict)
+                    else {}
+                )
+                level_id = safe_key(detail.get("levelId")) or safe_key(
+                    producer.get("levelId")
+                )
+                yield story_key, level_id, owner, {
+                    "storyKey": story_key,
+                    "sourceFile": producer_source_file,
+                    "sourceFiles": sorted({
+                        producer_source_file,
+                        *listener_source_files,
+                    } - {""}),
+                    "listenerSourceFiles": listener_source_files,
+                    "scriptId": producer_script_id,
+                    "headerLocalId": owner.get("headerLocalId"),
+                    "actionLocalId": producer.get("producerActionLocalId"),
+                    "actionName": "RaiseCustomScriptEvent",
+                    "eventDetail": detail,
+                    "routeMode": "sameScriptCustomEventRelay",
+                    "raisedEventKey": raised_event_key,
+                    "targetScriptId": target_script_id,
+                    "listenerRoutes": listener_routes,
+                }
+
+
+def _spawner_wave_part_killed_story_edges(
+    flow: dict[str, Any],
+    candidate_keys: set[str],
+    *,
+    spawner_roots: Iterable[Path] | None = None,
+) -> list[dict[str, Any]]:
+    """Join typed wave-begin playback through one named PartKilled dependency.
+
+    Current ``TimelineWaveBlock.OnInit`` resolves mode 2's serialized
+    ``waveModeTargetKey`` with ``Timeline.TryGetWaveBlock`` and stores the
+    returned block as ``previousWaveBlock``. ``AllowToSendStart`` then requires
+    that exact block's killed count before the dependent wave can start.
+    Parallel/Sequence modes and unnamed HP callbacks are intentionally ignored.
+    """
+    routes: dict[
+        tuple[str, int],
+        dict[str, dict[str, list[dict[str, Any]]]],
+    ] = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    for story_key, level_id, owner, event in _spawner_story_event_routes(
+        flow,
+        candidate_keys,
+    ):
+        detail = owner.get("eventDetail") if isinstance(owner, dict) else None
+        if (
+            owner.get("status") != "exact_serialized_control_path"
+            or safe_key(owner.get("headerName"))
+            != "LevelEvent_OnSpawnerWaveBegin"
+            or not isinstance(detail, dict)
+            or safe_key(detail.get("type"))
+            != "LevelEvent_OnSpawnerWaveBegin"
+            or safe_key(detail.get("payloadSchemaStatus"))
+            != "exact_current_build_memorypack_fields"
+            or not safe_key(detail.get("payloadSchemaMappingId")).startswith(
+                "gameassembly-"
+            )
+            or not isinstance(detail.get("spawnerFilterId"), int)
+            or not safe_key(detail.get("waveKeyFilter"))
+            or not level_id
+        ):
+            continue
+        spawner_id = int(detail["spawnerFilterId"])
+        wave_key = safe_key(detail.get("waveKeyFilter"))
+        routes[(level_id, spawner_id)][wave_key][story_key].append(event)
+
+    roots = tuple(spawner_roots or SPAWNER_CONFIG_ROOTS)
+    evidence_by_pair: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for (level_id, spawner_id), story_by_wave in sorted(routes.items()):
+        config_path = _find_spawner_config(level_id, spawner_id, roots)
+        if config_path is None:
+            continue
+        try:
+            decoded = decode_spawner_wave_map(config_path.read_bytes())
+        except (OSError, SpawnerWaveDecodeError):
+            continue
+        if safe_key(decoded.get("configId")) != config_path.stem:
+            continue
+        config_source = _repo_path(config_path)
+        for wave in decoded.get("waves") or []:
+            if (
+                not isinstance(wave, dict)
+                or wave.get("waveMode") != 2
+                or not safe_key(wave.get("waveModeTargetKey"))
+            ):
+                continue
+            wave_key = safe_key(wave.get("waveKey"))
+            target_wave_key = safe_key(wave.get("waveModeTargetKey"))
+            parent_rows = story_by_wave.get(target_wave_key) or {}
+            child_rows = story_by_wave.get(wave_key) or {}
+            for parent_key in sorted(parent_rows, key=natural_key):
+                for child_key in sorted(child_rows, key=natural_key):
+                    if parent_key == child_key:
+                        continue
+                    event_sources = sorted({
+                        source_file
+                        for event in (
+                            parent_rows[parent_key] + child_rows[child_key]
+                        )
+                        for source_file in _event_source_files(event)
+                    })
+                    evidence_by_pair[(parent_key, child_key)].append({
+                        "levelId": level_id,
+                        "spawnerId": spawner_id,
+                        "waveId": wave.get("waveId"),
+                        "waveKey": wave_key,
+                        "targetWaveKey": target_wave_key,
+                        "waveMode": "PartKilled",
+                        "waveModeKillCount": wave.get("waveModeKillCount"),
+                        "sourceFiles": [config_source, *event_sources],
+                        "schemaMappingId": safe_key(decoded.get("schemaMappingId")),
+                        "runtimeMappingId": SPAWNER_WAVE_RUNTIME_MAPPING_ID,
+                        "parentEvents": parent_rows[parent_key],
+                        "childEvents": child_rows[child_key],
+                    })
+
+    edges: list[dict[str, Any]] = []
+    for pair, evidence_rows in sorted(
+        evidence_by_pair.items(),
+        key=lambda item: (natural_key(item[0][0]), natural_key(item[0][1])),
+    ):
+        uses_custom_relay = any(
+            event.get("routeMode") == "sameScriptCustomEventRelay"
+            for evidence in evidence_rows
+            for field in ("parentEvents", "childEvents")
+            for event in evidence.get(field) or []
+        )
+        edges.append({
+            "from": pair[0],
+            "to": pair[1],
+            "kind": "spawnerWavePartKilled",
+            "tier": "strong",
+            "source": (
+                "exact SpawnerConfig waveMode=PartKilled target key + exact "
+                "LevelEvent_OnSpawnerWaveBegin typed playback"
+                + (
+                    " through an exact same-script custom-event relay"
+                    if uses_custom_relay
+                    else ""
+                )
+            ),
+            "sourceFiles": sorted({
+                source_file
+                for evidence in evidence_rows
+                for source_file in evidence.get("sourceFiles") or []
+            }),
+            "levelIds": sorted({
+                safe_key(evidence.get("levelId"))
+                for evidence in evidence_rows
+                if safe_key(evidence.get("levelId"))
+            }),
+            "spawnerId": evidence_rows[0]["spawnerId"],
+            "waveId": evidence_rows[0]["waveId"],
+            "waveKey": evidence_rows[0]["waveKey"],
+            "targetWaveKey": evidence_rows[0]["targetWaveKey"],
+            "waveMode": "PartKilled",
+            "waveModeKillCount": evidence_rows[0]["waveModeKillCount"],
+            "schemaMappingId": evidence_rows[0]["schemaMappingId"],
+            "runtimeMappingId": evidence_rows[0]["runtimeMappingId"],
+            "events": evidence_rows,
+        })
+    return edges
+
+
+def _wave_kill_dominating_group_key(wave: dict[str, Any]) -> str:
+    """Return the group whose begin event dominates all spawns in this wave.
+
+    The installed runtime gives group mode 1 (``Sequence``) the immediately
+    preceding ``groupList`` block and mode 2 (``PartKilled``) its named target
+    block.  A mode-0 (``Parallel``) group is independent.  Since
+    ``TimelineWaveBlock.InitWave`` appends group blocks in
+    the decoded ``groupMap`` enumeration order, the first named group dominates
+    every group only when each later block resolves through one of those two
+    predecessor forms back to it.
+    """
+    groups = [
+        group
+        for group in wave.get("groups") or []
+        if isinstance(group, dict)
+    ]
+    if not groups:
+        return ""
+    root_key = safe_key(groups[0].get("groupKey"))
+    if not root_key or groups[0].get("groupMode") not in (0, 1):
+        return ""
+
+    key_to_index = {
+        safe_key(group.get("groupKey")): index
+        for index, group in enumerate(groups)
+        if safe_key(group.get("groupKey"))
+    }
+    dominated = [True]
+    for index, group in enumerate(groups[1:], 1):
+        mode = group.get("groupMode")
+        if mode == 1:
+            dominated.append(dominated[index - 1])
+        elif mode == 2:
+            target_index = key_to_index.get(
+                safe_key(group.get("groupModeTargetKey"))
+            )
+            dominated.append(
+                target_index is not None
+                and target_index < index
+                and dominated[target_index]
+            )
+        else:
+            dominated.append(False)
+    return root_key if all(dominated) else ""
+
+
+def _spawner_wave_group_part_killed_story_edges(
+    flow: dict[str, Any],
+    candidate_keys: set[str],
+    *,
+    spawner_roots: Iterable[Path] | None = None,
+) -> list[dict[str, Any]]:
+    """Recover cross-wave order where exact group and wave callbacks meet.
+
+    ``StartWave`` raises wave begin before ``Tick`` can start a group, and
+    ``StartGroup`` raises group begin before ticking that group's actions.
+    A dependent mode-2 wave cannot start until the named prior wave reaches
+    its serialized kill threshold.  The domination check above additionally
+    requires every possible spawning group in that prior wave to descend from
+    one exact group-begin event.
+    """
+    routes: dict[tuple[str, int], dict[str, Any]] = defaultdict(
+        lambda: {
+            "wave": defaultdict(lambda: defaultdict(list)),
+            "group": defaultdict(lambda: defaultdict(list)),
+        }
+    )
+    for story_key, level_id, owner, event in _spawner_story_event_routes(
+        flow,
+        candidate_keys,
+    ):
+        detail = owner.get("eventDetail") if isinstance(owner, dict) else None
+        header_name = safe_key(owner.get("headerName"))
+        if (
+            owner.get("status") != "exact_serialized_control_path"
+            or header_name not in {
+                "LevelEvent_OnSpawnerWaveBegin",
+                "LevelEvent_OnSpawnerGroupBegin",
+            }
+            or not isinstance(detail, dict)
+            or safe_key(detail.get("type")) != header_name
+            or safe_key(detail.get("payloadSchemaStatus"))
+            != "exact_current_build_memorypack_fields"
+            or not safe_key(detail.get("payloadSchemaMappingId")).startswith(
+                "gameassembly-"
+            )
+            or not isinstance(detail.get("spawnerFilterId"), int)
+            or not level_id
+        ):
+            continue
+        route_kind = (
+            "wave"
+            if header_name == "LevelEvent_OnSpawnerWaveBegin"
+            else "group"
+        )
+        selector_key = safe_key(
+            detail.get(
+                "waveKeyFilter"
+                if route_kind == "wave"
+                else "groupKeyFilter"
+            )
+        )
+        if not selector_key:
+            continue
+        routes[(level_id, int(detail["spawnerFilterId"]))][route_kind][
+            selector_key
+        ][story_key].append(event)
+
+    roots = tuple(spawner_roots or SPAWNER_CONFIG_ROOTS)
+    evidence_by_pair: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for (level_id, spawner_id), route_sets in sorted(routes.items()):
+        config_path = _find_spawner_config(level_id, spawner_id, roots)
+        if config_path is None:
+            continue
+        try:
+            decoded = decode_spawner_wave_map(config_path.read_bytes())
+        except (OSError, SpawnerWaveDecodeError):
+            continue
+        if safe_key(decoded.get("configId")) != config_path.stem:
+            continue
+        config_source = _repo_path(config_path)
+        wave_by_key = {
+            safe_key(wave.get("waveKey")): wave
+            for wave in decoded.get("waves") or []
+            if isinstance(wave, dict) and safe_key(wave.get("waveKey"))
+        }
+        group_to_wave: dict[str, str] = {}
+        duplicate_group_keys: set[str] = set()
+        for wave_key, wave in wave_by_key.items():
+            for group in wave.get("groups") or []:
+                group_key = (
+                    safe_key(group.get("groupKey"))
+                    if isinstance(group, dict)
+                    else ""
+                )
+                if group_key:
+                    if group_key in group_to_wave:
+                        duplicate_group_keys.add(group_key)
+                    else:
+                        group_to_wave[group_key] = wave_key
+        for group_key in duplicate_group_keys:
+            group_to_wave.pop(group_key, None)
+
+        def add_pairs(
+            parents: dict[str, list[dict[str, Any]]],
+            children: dict[str, list[dict[str, Any]]],
+            *,
+            parent_wave_key: str,
+            child_wave_key: str,
+            parent_group_key: str = "",
+            child_group_key: str = "",
+            path: str,
+        ) -> None:
+            for parent_key in sorted(parents, key=natural_key):
+                for child_key in sorted(children, key=natural_key):
+                    if parent_key == child_key:
+                        continue
+                    source_files = sorted({
+                        config_source,
+                        *[
+                            source_file
+                            for event in (
+                                parents[parent_key] + children[child_key]
+                            )
+                            for source_file in _event_source_files(event)
+                        ],
+                    })
+                    evidence_by_pair[(parent_key, child_key)].append({
+                        "levelId": level_id,
+                        "spawnerId": spawner_id,
+                        "waveKey": child_wave_key,
+                        "targetWaveKey": parent_wave_key,
+                        "groupKey": child_group_key,
+                        "targetGroupKey": parent_group_key,
+                        "waveMode": "PartKilled",
+                        "waveModeKillCount":
+                            wave_by_key[child_wave_key].get("waveModeKillCount"),
+                        "spawnerDependencyPath": path,
+                        "sourceFiles": source_files,
+                        "schemaMappingId": safe_key(
+                            decoded.get("schemaMappingId")
+                        ),
+                        "runtimeMappingId": SPAWNER_WAVE_RUNTIME_MAPPING_ID,
+                        "parentEvents": parents[parent_key],
+                        "childEvents": children[child_key],
+                    })
+
+        for child_wave_key, child_wave in wave_by_key.items():
+            parent_wave_key = safe_key(child_wave.get("waveModeTargetKey"))
+            if (
+                child_wave.get("waveMode") != 2
+                or parent_wave_key not in wave_by_key
+            ):
+                continue
+            parent_wave_routes = route_sets["wave"].get(parent_wave_key) or {}
+            for group_key, child_group_routes in route_sets["group"].items():
+                if group_to_wave.get(group_key) != child_wave_key:
+                    continue
+                add_pairs(
+                    parent_wave_routes,
+                    child_group_routes,
+                    parent_wave_key=parent_wave_key,
+                    child_wave_key=child_wave_key,
+                    child_group_key=group_key,
+                    path="parentWaveBegin_to_dependentGroupBegin",
+                )
+
+            root_group_key = _wave_kill_dominating_group_key(
+                wave_by_key[parent_wave_key]
+            )
+            if root_group_key in duplicate_group_keys:
+                root_group_key = ""
+            parent_group_routes = (
+                route_sets["group"].get(root_group_key) or {}
+                if root_group_key
+                else {}
+            )
+            child_wave_routes = route_sets["wave"].get(child_wave_key) or {}
+            add_pairs(
+                parent_group_routes,
+                child_wave_routes,
+                parent_wave_key=parent_wave_key,
+                child_wave_key=child_wave_key,
+                parent_group_key=root_group_key,
+                path="dominatingGroupBegin_to_dependentWaveBegin",
+            )
+            for group_key, child_group_routes in route_sets["group"].items():
+                if group_to_wave.get(group_key) != child_wave_key:
+                    continue
+                add_pairs(
+                    parent_group_routes,
+                    child_group_routes,
+                    parent_wave_key=parent_wave_key,
+                    child_wave_key=child_wave_key,
+                    parent_group_key=root_group_key,
+                    child_group_key=group_key,
+                    path="dominatingGroupBegin_to_dependentGroupBegin",
+                )
+
+    edges: list[dict[str, Any]] = []
+    for pair, evidence_rows in sorted(
+        evidence_by_pair.items(),
+        key=lambda item: (natural_key(item[0][0]), natural_key(item[0][1])),
+    ):
+        uses_custom_relay = any(
+            event.get("routeMode") == "sameScriptCustomEventRelay"
+            for evidence in evidence_rows
+            for field in ("parentEvents", "childEvents")
+            for event in evidence.get(field) or []
+        )
+        edges.append({
+            "from": pair[0],
+            "to": pair[1],
+            "kind": "spawnerWaveGroupPartKilled",
+            "tier": "strong",
+            "source": (
+                "exact SpawnerConfig wave/group nesting + PartKilled gate + "
+                "installed StartWave/StartGroup callback order"
+                + (
+                    " + exact same-script custom-event relay"
+                    if uses_custom_relay
+                    else ""
+                )
+            ),
+            "sourceFiles": sorted({
+                source_file
+                for evidence in evidence_rows
+                for source_file in evidence.get("sourceFiles") or []
+            }),
+            "levelIds": sorted({
+                safe_key(evidence.get("levelId"))
+                for evidence in evidence_rows
+                if safe_key(evidence.get("levelId"))
+            }),
+            "spawnerId": evidence_rows[0]["spawnerId"],
+            "waveKey": evidence_rows[0]["waveKey"],
+            "targetWaveKey": evidence_rows[0]["targetWaveKey"],
+            "groupKey": evidence_rows[0]["groupKey"],
+            "targetGroupKey": evidence_rows[0]["targetGroupKey"],
+            "waveMode": "PartKilled",
+            "waveModeKillCount": evidence_rows[0]["waveModeKillCount"],
+            "spawnerDependencyPath":
+                evidence_rows[0]["spawnerDependencyPath"],
+            "schemaMappingId": evidence_rows[0]["schemaMappingId"],
+            "runtimeMappingId": evidence_rows[0]["runtimeMappingId"],
+            "events": evidence_rows,
+        })
+    return edges
+
+
+def _native_branch_kind(edge: str) -> str:
+    if edge.startswith("Split.actions["):
+        return "splitFanout"
+    if edge in {"IfElseAction.trueAction", "IfElseAction.falseAction"}:
+        return "ifElse"
+    if edge.startswith("SwitchInt.case[") or edge == "SwitchInt.default":
+        return "switch"
+    return ""
+
+
+def _native_control_branches_and_merges(
+    flow: dict[str, Any],
+    candidate_keys: set[str],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Expose exact serialized native branch arms and observed convergence."""
+    branches: list[dict[str, Any]] = []
+    merges: list[dict[str, Any]] = []
+    for signature, routes in _native_event_story_paths(flow, candidate_keys).items():
+        groups: dict[
+            tuple[tuple[int, ...], str],
+            dict[
+                tuple[int, str],
+                set[tuple[str, tuple[tuple[Any, ...], ...], str, str]],
+            ],
+        ] = defaultdict(lambda: defaultdict(set))
+        for story_key, path, source_file, event_detail in routes:
+            for index, step in enumerate(path):
+                branch_kind = _native_branch_kind(step[1])
+                if not branch_kind:
+                    continue
+                prefix = tuple(path_step[0] for path_step in path[:index])
+                groups[(prefix, branch_kind)][(step[0], step[1])].add(
+                    (story_key, path, source_file, event_detail)
+                )
+
+        for (prefix, branch_kind), arms_by_key in groups.items():
+            if len(arms_by_key) < 2:
+                continue
+            arm_rows: list[dict[str, Any]] = []
+            all_routes: list[
+                tuple[str, tuple[tuple[Any, ...], ...], str, str]
+            ] = []
+            for (entry_local_id, edge), arm_routes in sorted(
+                arms_by_key.items(),
+                key=lambda item: (natural_key(item[0][1]), item[0][0]),
+            ):
+                all_routes.extend(arm_routes)
+                arm_rows.append({
+                    "edge": edge,
+                    "entryLocalId": entry_local_id,
+                    "storyKeys": sorted({route[0] for route in arm_routes}, key=natural_key),
+                })
+            source_files = sorted({route[2] for route in all_routes if route[2]})
+            predicate_json_rows = {
+                route[1][len(prefix) - 1][4]
+                for route in all_routes
+                if prefix
+                and len(route[1]) >= len(prefix)
+                and len(route[1][len(prefix) - 1]) > 4
+                and route[1][len(prefix) - 1][4] not in {"", "{}"}
+            }
+            predicates = [json.loads(value) for value in sorted(predicate_json_rows)]
+            event_details = [
+                json.loads(value)
+                for value in sorted({route[3] for route in all_routes})
+            ]
+            branch = {
+                "kind": branch_kind,
+                "levelId": signature[0],
+                "scriptId": signature[1],
+                "headerLocalId": signature[2],
+                "eventName": signature[3],
+                "branchLocalId": prefix[-1] if prefix else None,
+                "branchPath": list(prefix),
+                "arms": arm_rows,
+                "sourceFiles": source_files,
+            }
+            if len(event_details) == 1:
+                branch["eventDetail"] = event_details[0]
+            elif event_details:
+                branch["eventDetails"] = event_details
+            if len(predicates) == 1:
+                branch["predicate"] = predicates[0]
+            elif predicates:
+                branch["predicates"] = predicates
+            branches.append(branch)
+
+            common_ids: set[int] | None = None
+            route_positions: list[dict[int, int]] = []
+            branch_depth = len(prefix) + 1
+            for _story_key, path, _source_file, _event_detail in all_routes:
+                positions = {
+                    step[0]: index
+                    for index, step in enumerate(path)
+                    if index >= branch_depth
+                }
+                route_positions.append(positions)
+                common_ids = set(positions) if common_ids is None else common_ids & set(positions)
+            if common_ids:
+                merge_local_id = min(
+                    common_ids,
+                    key=lambda local_id: (
+                        max(positions[local_id] for positions in route_positions),
+                        sum(positions[local_id] for positions in route_positions),
+                        local_id,
+                    ),
+                )
+                merges.append({
+                    **branch,
+                    "mergeLocalId": merge_local_id,
+                    "downstreamStoryKeys": sorted(
+                        {route[0] for route in all_routes}, key=natural_key
+                    ),
+                })
+
+    sort_key = lambda row: (  # noqa: E731 - shared compact sort key
+        natural_key(safe_key(row.get("levelId"))),
+        natural_key(safe_key(row.get("scriptId"))),
+        int(row.get("headerLocalId") or -1),
+        tuple(row.get("branchPath") or []),
+    )
+    branches.sort(key=sort_key)
+    merges.sort(key=sort_key)
+    return branches, merges
+
+
 def build_mission_partial_order(
     mission: str,
     candidate_kinds: dict[str, str],
@@ -678,6 +1847,9 @@ def build_mission_partial_order(
         mission_payload.get("timelineRecovery")
         if isinstance(mission_payload.get("timelineRecovery"), dict)
         else {}
+    )
+    candidate_kinds, native_context_scene_keys = (
+        _expand_native_control_path_candidates(flow, candidate_kinds)
     )
     candidate_keys = set(candidate_kinds)
     graph_node_kinds = {
@@ -705,6 +1877,14 @@ def build_mission_partial_order(
                 continue
             if graph_node_kinds.get(key) in SOURCE_STORY_NODE_KINDS:
                 unresolved_nodes[key].add(kind)
+
+    direct_edges.extend(_native_control_path_story_edges(flow, candidate_keys))
+    direct_edges.extend(_quest_state_action_path_story_edges(flow, candidate_keys))
+    direct_edges.extend(_spawner_wave_part_killed_story_edges(flow, candidate_keys))
+    direct_edges.extend(
+        _spawner_wave_group_part_killed_story_edges(flow, candidate_keys)
+    )
+    _demote_reciprocal_quest_projections(direct_edges)
 
     direct_edges.sort(key=_edge_sort_key)
     for edge_index, edge in enumerate(direct_edges):
@@ -781,6 +1961,11 @@ def build_mission_partial_order(
         nodes.append({
             "key": scene_key,
             "kind": candidate_kinds.get(scene_key) or "unknown",
+            "membership": (
+                "exactNativeControlPathContext"
+                if scene_key in native_context_scene_keys
+                else "index"
+            ),
             "component": component_by_scene[scene_key],
             "relationStatus": status,
         })
@@ -824,6 +2009,45 @@ def build_mission_partial_order(
     )
 
     quest_branches, quest_merges = _quest_branches_and_merges(timeline)
+    native_control_branches, native_control_merges = _native_control_branches_and_merges(
+        flow, candidate_keys
+    )
+    native_named_predicates = sum(
+        1
+        for row in native_control_branches
+        if safe_key((row.get("predicate") or {}).get("getterName"))
+    )
+    native_inline_predicates = sum(
+        1
+        for row in native_control_branches
+        if safe_key((row.get("predicate") or {}).get("status")) == "exact_inline_param"
+    )
+    native_semantic_predicates = sum(
+        1
+        for row in native_control_branches
+        if row.get("kind") != "splitFanout"
+        and (
+            safe_key((row.get("predicate") or {}).get("status"))
+            == "exact_inline_param"
+            or bool((row.get("predicate") or {}).get("detail"))
+            or bool((row.get("predicate") or {}).get("compareMissionState"))
+        )
+    )
+    native_class_only_predicates = sum(
+        1
+        for row in native_control_branches
+        if row.get("kind") != "splitFanout"
+        and safe_key((row.get("predicate") or {}).get("getterName"))
+        and not (row.get("predicate") or {}).get("detail")
+        and not (row.get("predicate") or {}).get("compareMissionState")
+    )
+    native_unresolved_predicates = sum(
+        1
+        for row in native_control_branches
+        if row.get("kind") != "splitFanout"
+        and not safe_key((row.get("predicate") or {}).get("getterName"))
+        and safe_key((row.get("predicate") or {}).get("status")) != "exact_inline_param"
+    )
     scene_graph_option_branches = _scene_graph_option_branches(direct_edges)
     dialog_line_options: list[dict[str, Any]] = []
     excluded_dialog_line_options: list[dict[str, Any]] = []
@@ -876,6 +2100,7 @@ def build_mission_partial_order(
         "mission": mission,
         "summary": {
             "sceneCount": len(candidate_keys),
+            "nativeControlPathContextSceneCount": len(native_context_scene_keys),
             "directEdgeCount": len(direct_edges),
             "strongEdgeCount": tier_counts.get("strong", 0),
             "supportedEdgeCount": tier_counts.get("supported", 0),
@@ -892,6 +2117,13 @@ def build_mission_partial_order(
             "unorderedScenePairs": total_pairs - comparable_pairs,
             "cyclicInternalPairs": cyclic_internal_pairs,
             "sceneGraphOptionGroupCount": len(scene_graph_option_branches),
+            "nativeControlBranchCount": len(native_control_branches),
+            "nativeControlMergeCount": len(native_control_merges),
+            "nativeNamedPredicateCount": native_named_predicates,
+            "nativeInlinePredicateCount": native_inline_predicates,
+            "nativeSemanticPredicateCount": native_semantic_predicates,
+            "nativeClassOnlyPredicateCount": native_class_only_predicates,
+            "nativeUnresolvedPredicateCount": native_unresolved_predicates,
             "questForkCount": len(quest_branches),
             "questMergeCount": len(quest_merges),
             "dialogLineOptionGroupCount": len(dialog_line_options),
@@ -913,6 +2145,8 @@ def build_mission_partial_order(
         "cycles": cycles,
         "branches": {
             "sceneGraphOptions": scene_graph_option_branches,
+            "nativeControlBranches": native_control_branches,
+            "nativeControlMerges": native_control_merges,
             "dialogLineOptions": dialog_line_options,
             "excludedDialogLineOptions": excluded_dialog_line_options,
             "noExplicitRouteGroups": no_explicit_route_groups,
@@ -922,6 +2156,10 @@ def build_mission_partial_order(
         "isolatedSceneKeys": isolated,
         "weakOnlySceneKeys": weak_only,
         "unknownSceneKeys": unknown,
+        "nativeControlPathContextSceneKeys": sorted(
+            native_context_scene_keys,
+            key=natural_key,
+        ),
         "unresolvedSourceNodes": [
             {
                 "key": key,
@@ -943,8 +2181,12 @@ def _split_missions(values: list[str]) -> set[str]:
     }
 
 
-def build_report(language: str, selected_missions: set[str] | None = None) -> dict[str, Any]:
-    lang_root = ROOT / "webui" / "data" / "lang" / language
+def build_report(
+    language: str,
+    selected_missions: set[str] | None = None,
+    story_data_root: Path | None = None,
+) -> dict[str, Any]:
+    lang_root = (story_data_root or (ROOT / "webui" / "data" / "lang")) / language
     index_path = lang_root / "index.json"
     mission_dir = lang_root / "mission"
     conversation_dir = lang_root / "conv"
@@ -971,8 +2213,16 @@ def build_report(language: str, selected_missions: set[str] | None = None) -> di
             continue
         mission_path = mission_dir / f"{mission}.json"
         mission_payload = read_json(mission_path, {}) if mission_path.is_file() else {}
+        mission_flow = (
+            mission_payload.get("flow")
+            if isinstance(mission_payload.get("flow"), dict)
+            else {}
+        )
+        dialog_candidate_kinds, _native_context_scene_keys = (
+            _expand_native_control_path_candidates(mission_flow, candidate_kinds)
+        )
         dialog_payloads: list[tuple[str, dict[str, Any]]] = []
-        for story_key in sorted(candidate_kinds, key=natural_key):
+        for story_key in sorted(dialog_candidate_kinds, key=natural_key):
             if not story_key.startswith("dlg_"):
                 continue
             conversation_path = conversation_dir / f"{story_key}.json"
@@ -994,6 +2244,9 @@ def build_report(language: str, selected_missions: set[str] | None = None) -> di
         summary = row["summary"]
         totals["missions"] += 1
         totals["scenes"] += summary["sceneCount"]
+        totals["nativeControlPathContextScenes"] += summary[
+            "nativeControlPathContextSceneCount"
+        ]
         totals["directEdges"] += summary["directEdgeCount"]
         totals["strongEdges"] += summary["strongEdgeCount"]
         totals["supportedEdges"] += summary["supportedEdgeCount"]
@@ -1009,6 +2262,13 @@ def build_report(language: str, selected_missions: set[str] | None = None) -> di
         totals["comparableScenePairs"] += summary["comparableScenePairs"]
         totals["unorderedScenePairs"] += summary["unorderedScenePairs"]
         totals["sceneGraphOptionGroups"] += summary["sceneGraphOptionGroupCount"]
+        totals["nativeControlBranches"] += summary["nativeControlBranchCount"]
+        totals["nativeControlMerges"] += summary["nativeControlMergeCount"]
+        totals["nativeNamedPredicates"] += summary["nativeNamedPredicateCount"]
+        totals["nativeInlinePredicates"] += summary["nativeInlinePredicateCount"]
+        totals["nativeSemanticPredicates"] += summary["nativeSemanticPredicateCount"]
+        totals["nativeClassOnlyPredicates"] += summary["nativeClassOnlyPredicateCount"]
+        totals["nativeUnresolvedPredicates"] += summary["nativeUnresolvedPredicateCount"]
         totals["questForks"] += summary["questForkCount"]
         totals["questMerges"] += summary["questMergeCount"]
         totals["dialogLineOptionGroups"] += summary["dialogLineOptionGroupCount"]
@@ -1039,9 +2299,9 @@ def build_report(language: str, selected_missions: set[str] | None = None) -> di
         "_generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "language": language,
         "inputs": {
-            "index": index_path.relative_to(ROOT).as_posix(),
-            "missionDir": mission_dir.relative_to(ROOT).as_posix(),
-            "conversationDir": conversation_dir.relative_to(ROOT).as_posix(),
+            "index": index_path.relative_to(ROOT).as_posix() if index_path.is_relative_to(ROOT) else index_path.as_posix(),
+            "missionDir": mission_dir.relative_to(ROOT).as_posix() if mission_dir.is_relative_to(ROOT) else mission_dir.as_posix(),
+            "conversationDir": conversation_dir.relative_to(ROOT).as_posix() if conversation_dir.is_relative_to(ROOT) else conversation_dir.as_posix(),
         },
         "evidencePolicy": EVIDENCE_POLICY,
         "summary": summary_payload,
@@ -1062,7 +2322,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         "## Summary",
         "",
         f"- missions: `{summary.get('missions', 0)}`",
-        f"- candidate scenes: `{summary.get('scenes', 0)}`",
+        f"- candidate scene placements: `{summary.get('scenes', 0)}` "
+        f"(`{summary.get('nativeControlPathContextScenes', 0)}` admitted only by an "
+        "exact native path to an index-backed mission scene)",
         f"- direct evidence edges: `{summary.get('directEdges', 0)}` "
         f"(`{summary.get('strongEdges', 0)}` strong, `{summary.get('supportedEdges', 0)}` supported, "
         f"`{summary.get('weakEdges', 0)}` weak)",
@@ -1079,6 +2341,12 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- mission-level branches: `{summary.get('questForks', 0)}` quest forks, "
         f"`{summary.get('questMerges', 0)}` quest merges, and "
         f"`{summary.get('sceneGraphOptionGroups', 0)}` authored cross-scene option groups",
+        f"- native control topology: `{summary.get('nativeControlBranches', 0)}` exact "
+        f"Split/IfElse/Switch Story fan-outs and `{summary.get('nativeControlMerges', 0)}` "
+        "observed convergences",
+        f"- conditional predicates: `{summary.get('nativeSemanticPredicates', 0)}` exact "
+        f"operand decodes, `{summary.get('nativeClassOnlyPredicates', 0)}` exact class-only, "
+        f"and `{summary.get('nativeUnresolvedPredicates', 0)}` unresolved",
         f"- excluded option evidence: `{summary.get('excludedDialogLineOptions', 0)}` options "
         f"in `{summary.get('excludedDialogLineOptionGroups', 0)}` groups",
         f"- option groups with no explicit route: `{summary.get('noExplicitRouteGroups', 0)}` "

@@ -40,6 +40,13 @@ DEFAULT_MD = Path("reports/story/recovery/options/option_flow_body_targets_gamea
 # scratch/reverse_engineering/il2cpp_gameplay_sim/stage0/find_code_registration.py and update here.
 # Prior build was 0x18C439740.
 DEFAULT_CODE_REGISTRATION = 0x18B9217D0
+# MetadataRegistration is likewise build-specific. It is only needed to name
+# generic method instantiations, which live in CodeRegistration.genericMethodPointers
+# rather than in the per-image Il2CppCodeGenModule tables. Without it, every call
+# into a generic instantiation reports as an unresolved address, which silently
+# understates the coverage of any direct-call census. Re-derive with
+# find_metadata_registration() after a game update.
+DEFAULT_METADATA_REGISTRATION = 0x18B921C30
 DEFAULT_BODY_SUMMARY_METHOD_RE = (
     r"GenPlayable|InitDialogOptions|"
     r"DialogChooseOption|DialogTimelineDoNext|DialogTimelineGetAllTimelinePlayable|"
@@ -248,6 +255,137 @@ def build_pointer_indexes(
                 method_by_pointer.setdefault(ptr, []).append(method_signature(md, method_index))
         pointers_by_image[image_name] = pointers
     return pointers_by_image, method_by_pointer
+
+
+METADATA_REGISTRATION_FIELDS = (
+    "genericClasses",
+    "genericInsts",
+    "genericMethodTable",
+    "types",
+    "methodSpecs",
+    "fieldOffsets",
+    "typeDefinitionsSizes",
+    "metadataUsages",
+)
+# Il2CppGenericMethodFunctionsDefinitions on this build is
+# (genericMethodIndex, methodIndex, invokerIndex, adjustorThunkIndex).
+GENERIC_METHOD_TABLE_STRIDE = 16
+# Il2CppMethodSpec is (methodDefinitionIndex, classIndexIndex, methodIndexIndex).
+METHOD_SPEC_STRIDE = 12
+
+
+def metadata_registration_summary(pe: PeImage, metadata_registration_va: int) -> dict[str, Any]:
+    """Read the count/pointer pairs of Il2CppMetadataRegistration."""
+    summary: dict[str, Any] = {"va": f"0x{metadata_registration_va:x}"}
+    for index, name in enumerate(METADATA_REGISTRATION_FIELDS):
+        base = metadata_registration_va + index * 0x10
+        summary[f"{name}Count"] = pe.u32_at_va(base)
+        summary[name] = f"0x{pe.u64_at_va(base + 8):x}"
+    return summary
+
+
+def metadata_registration_is_plausible(pe: PeImage, candidate_va: int) -> bool:
+    """Reject candidates whose table pointers fall outside the image."""
+    try:
+        summary = metadata_registration_summary(pe, candidate_va)
+    except (ValueError, struct.error):
+        return False
+    for name in METADATA_REGISTRATION_FIELDS:
+        pointer = int(summary[name], 16)
+        if not pointer:
+            continue
+        file_offset, _, _ = pe.file_offset_for_va(pointer)
+        if file_offset is None:
+            return False
+    return True
+
+
+def find_metadata_registration(pe: PeImage, code_registration_va: int) -> int | None:
+    """Locate MetadataRegistration from the codegen registration call site.
+
+    s_Il2CppCodegenRegistration() loads CodeRegistration and MetadataRegistration
+    with adjacent rip-relative LEAs. CodeRegistration is already known, so scan
+    executable sections for the LEA that resolves to it and validate the nearby
+    LEA targets as MetadataRegistration candidates.
+    """
+    candidates: list[int] = []
+    for section in pe.sections:
+        if not section["rawSize"]:
+            continue
+        data = pe.buf[section["rawPointer"]: section["rawPointer"] + section["rawSize"]]
+        va_base = pe.image_base + section["virtualAddress"]
+        targets: list[tuple[int, int]] = []
+        for offset in range(len(data) - 7):
+            if data[offset] & 0xF8 != 0x48 or data[offset + 1] != 0x8D:
+                continue
+            if (data[offset + 2] & 0xC7) != 0x05:
+                continue
+            disp = struct.unpack_from("<i", data, offset + 3)[0]
+            va = va_base + offset
+            targets.append((va, va + 7 + disp))
+        anchors = [va for va, target in targets if target == code_registration_va]
+        if not anchors:
+            continue
+        for anchor in anchors:
+            for va, target in targets:
+                if va == anchor or abs(va - anchor) > 0x40:
+                    continue
+                if target != code_registration_va:
+                    candidates.append(target)
+    for candidate in candidates:
+        if metadata_registration_is_plausible(pe, candidate):
+            return candidate
+    return None
+
+
+def build_generic_method_index(
+    pe: PeImage,
+    md: Any,
+    code_registration_va: int,
+    metadata_registration_va: int,
+) -> dict[int, list[dict[str, Any]]]:
+    """Map generic instantiation entry points to their open generic definitions.
+
+    genericMethodPointers[slot] is reached through the genericMethodTable row
+    whose indices.methodIndex is that slot; the row's genericMethodIndex selects
+    a methodSpec, whose methodDefinitionIndex names the open generic method.
+    """
+    code_summary = code_registration_summary(pe, code_registration_va)
+    pointer_base = int(code_summary["genericMethodPointers"], 16)
+    pointer_count = code_summary["genericMethodPointersCount"]
+    meta_summary = metadata_registration_summary(pe, metadata_registration_va)
+    table_count = meta_summary["genericMethodTableCount"]
+    table_offset, _, _ = pe.file_offset_for_va(int(meta_summary["genericMethodTable"], 16))
+    spec_offset, _, _ = pe.file_offset_for_va(int(meta_summary["methodSpecs"], 16))
+    spec_count = meta_summary["methodSpecsCount"]
+    if table_offset is None or spec_offset is None or not pointer_base:
+        return {}
+
+    table = pe.buf[table_offset: table_offset + table_count * GENERIC_METHOD_TABLE_STRIDE]
+    slot_to_spec: dict[int, int] = {}
+    for index in range(table_count):
+        generic_method_index, slot = struct.unpack_from(
+            "<ii", table, index * GENERIC_METHOD_TABLE_STRIDE
+        )
+        if 0 <= generic_method_index < spec_count and 0 <= slot < pointer_count:
+            slot_to_spec.setdefault(slot, generic_method_index)
+
+    index: dict[int, list[dict[str, Any]]] = {}
+    for slot, generic_method_index in slot_to_spec.items():
+        pointer = pe.u64_at_va(pointer_base + slot * 8)
+        if not pointer:
+            continue
+        method_definition_index = struct.unpack_from(
+            "<i", pe.buf, spec_offset + generic_method_index * METHOD_SPEC_STRIDE
+        )[0]
+        if not 0 <= method_definition_index < len(md.methods):
+            continue
+        row = method_signature(md, method_definition_index)
+        row["genericInstantiation"] = True
+        row["genericMethodPointerSlot"] = slot
+        row["methodSpecIndex"] = generic_method_index
+        index.setdefault(pointer, []).append(row)
+    return index
 
 
 def decode_modrm(byte: int) -> tuple[int, int, int]:
@@ -820,8 +958,25 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
 def decode_x64_subset(data: bytes, start_va: int, *, stop_offset: int) -> list[dict[str, Any]]:
     instructions: list[dict[str, Any]] = []
     offset = 0
-    while offset < min(stop_offset, len(data)):
-        instr, next_offset = decode_one_x64(data, offset, start_va)
+    limit = min(stop_offset, len(data))
+    while offset < limit:
+        try:
+            instr, next_offset = decode_one_x64(data[:limit], offset, start_va)
+        except (IndexError, struct.error):
+            # Method-span estimates can end on padding or in the prefix/modrm
+            # of an instruction owned by the following method. Preserve those
+            # terminal bytes as unknown data instead of discarding every union
+            # registration already decoded from the bounded method body.
+            for tail_offset in range(offset, limit):
+                instructions.append({
+                    "offset": tail_offset,
+                    "va": f"0x{start_va + tail_offset:x}",
+                    "bytes": f"{data[tail_offset]:02x}",
+                    "text": f"db 0x{data[tail_offset]:02x}",
+                    "write": None,
+                    "truncatedTerminal": True,
+                })
+            break
         instructions.append(instr)
         if next_offset <= offset:
             offset += 1
@@ -2375,6 +2530,28 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     modules = parse_codegen_modules(pe, code_reg)
     ranges = image_method_ranges(md)
     pointers_by_image, method_by_pointer = build_pointer_indexes(pe, md, modules, ranges)
+    generic_index_summary: dict[str, Any] = {"enabled": False}
+    if getattr(args, "include_generic_instantiations", False):
+        metadata_reg = (
+            parse_int(args.metadata_registration)
+            if args.metadata_registration
+            else find_metadata_registration(pe, code_reg)
+        )
+        if metadata_reg is None:
+            generic_index_summary["error"] = "MetadataRegistration not found"
+        else:
+            generic_index = build_generic_method_index(pe, md, code_reg, metadata_reg)
+            added = 0
+            for pointer, rows in generic_index.items():
+                if pointer not in method_by_pointer:
+                    method_by_pointer[pointer] = rows
+                    added += 1
+            generic_index_summary = {
+                "enabled": True,
+                "metadataRegistration": f"0x{metadata_reg:x}",
+                "genericInstantiations": len(generic_index),
+                "namedEntryPointsAdded": added,
+            }
     sorted_all_pointers = sorted(
         {
             pointer
@@ -2471,6 +2648,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "catalogBodyTargetCount": len(catalog.get("bodyTargets", [])),
             "mappedTargetCount": sum(1 for row in mapped_targets if row["mappingStatus"] == "mapped"),
             "codeGenModuleCount": len(modules),
+            "genericInstantiationIndex": generic_index_summary,
             "resolvedDirectCallCount": sum(len(row.get("directCalls", [])) for row in mapped_targets),
             "dialogRelatedDirectCallCount": sum(
                 1
@@ -2919,6 +3097,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metadata", type=Path, default=DEFAULT_METADATA)
     parser.add_argument("--catalog", type=Path, default=DEFAULT_CATALOG)
     parser.add_argument("--code-registration", default=hex(DEFAULT_CODE_REGISTRATION))
+    parser.add_argument(
+        "--include-generic-instantiations",
+        action="store_true",
+        help="Also name generic method instantiations from MetadataRegistration. "
+             "Off by default so existing reports stay byte-identical; enable it "
+             "before concluding that a call target has no consumer.",
+    )
+    parser.add_argument(
+        "--metadata-registration",
+        default="",
+        help="MetadataRegistration VA. Empty re-derives it from the codegen "
+             "registration call site.",
+    )
     parser.add_argument("--out", type=Path, default=DEFAULT_JSON)
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MD)
     parser.add_argument("--head-bytes", type=int, default=32)

@@ -23,16 +23,84 @@
     dragging: null,
     suppressGraphClickUntil: 0,
     expandedMissionTypes: new Set(["e"]),
+    // Which summary band the reader is focused on. "all" keeps every block
+    // rendered and visible; focusing only hides sibling sections.
+    summarySection: "all",
   };
 
   const TEXT = {
     en: {
+      relationQuestProgressLockedInteractive: "every playback occurrence is rooted at an exact interactive entity whose typed progress lock waits for this quest to be Completed (local context, not Story ownership or quest activation/playback/completion causality)",
       eyebrow: "EXPERIMENTAL · CLIENT / SERVER EVIDENCE",
       title: "Mission Pipeline",
       scope: "Authored quest structure with an explicit native client/server boundary.",
       warning: "Predecessor arrows are client-visible prerequisites. The server still decides which quest state to synchronize next.",
       missions: "missions",
       quests: "quests",
+      connectedStory: "Story connected",
+      unlinkedStory: "Story unassigned",
+      nativePlaybackGaps: "exact-native gaps",
+      definitionOnlyStory: "definition-only black text",
+      nonMissionContentStory: "non-mission content",
+      nonMissionContentStoryHint: "Story ids defined only by non-mission authored content tables (per-speaker radio continuation voice, character SNS topics). Those tables are keyed by speaker or topic and serialize no mission, quest, scene, or script field, so no mission can own these rows. Table contents admit a key; filenames never do.",
+      missionGraph: "Cross-mission relations",
+      missionGraphUpstream: "upstream",
+      missionGraphDownstream: "downstream",
+      missionGraphRequiresCompleted: "requires completed",
+      missionGraphRequiresProcessing: "requires in progress",
+      missionGraphAbortsOnCompleted: "aborts when completed",
+      missionGraphUnclassified: "unclassified operands",
+      missionGraphInterleaving: "Interleaved with",
+      missionGraphHint: "Recovered from authored quest conditions that read another mission's or another mission's quest's state. Only \"requires completed\" is precedence; \"requires in progress\" is a co-active window and \"aborts when completed\" is mutual exclusion. Mission unlock order is server-authored, so a missing relation is not evidence that two missions are unordered.",
+      missionGraphEdgesStat: "cross-mission precedence",
+      envTalkContext: "Ambient envTalk on tracked NPCs",
+      envTalkContextStat: "quest-tracked envTalk",
+      envTalkContextBoundary: "Navigation context, not playback",
+      envTalkContextHint: "A quest objective tracks an NPC proxy through a typed NpcProxyTrackingInfo, and that proxy row configures these ambient envTalk lines. The quest steers the player to that NPC; it does not play, own, start, or complete these lines, and no chronology or server exchange follows from this relation.",
+      relationEnvTalkTrackedProxy: "ambient lines on a quest-tracked NPC proxy",
+      trackedByQuests: "tracked by",
+      missionlessSubGameStory: "SubGame-scoped Story",
+      missionlessRuntimeStory: "runtime-receiver Story",
+      nativeGapQueue: "Unlinked original-binary trigger queue",
+      nativeGapQueueHint: "Exact playback exists, but a mission/quest identity is still missing. Counts are unique Story files and can overlap event families.",
+      missionlessSubGameNodes: "Missionless original-data runtime nodes",
+      missionlessSubGameNodesHint: "These are exact SubGame → bindScriptId → native playback → Story chains. They add structure to unlinked files but do not count as mission-owned Story bindings.",
+      noMissionOwner: "no mission owner",
+      exactPlayback: "exact native playback",
+      exactReceiverNodes: "Exact serialized runtime receivers",
+      exactReceiverNodesHint: "Each node is an original LevelScript event selector with an exact control path to Story playback. It organizes more recovered files without claiming a mission or quest owner.",
+      exactRuntimeTarget: "exact original-data runtime target",
+      encounterModule: "Encounter module",
+      modulePointer: "level-script module pointer",
+      activationSlot: "activation trigger slot",
+      battleExitSlot: "battle exit trigger slot",
+      localEntitySlots: "local enemy slots",
+      missingOwnershipBridge: "missing mission / quest foreign key",
+      serializedSelector: "serialized selector",
+      localEvent: "local event",
+      serverBackedEvent: "server-backed event",
+      localProducerChain: "exact local producer chain",
+      abilityProducer: "Ability producer",
+      literalSignal: "literal signal / value",
+      noServerRequestOrReturn: "no server request / return",
+      sameScriptDependency: "same authored LevelScript only",
+      noPlaybackControlPath: "not linked to the Story playback control path",
+      producerBoundaryHint: "The receiver matches only the literal signal. It does not select the producer sender, entity, spawner, mission, or quest; this chain adds causality, not ownership.",
+      mainTasks: "main task ids",
+      exactLevelHost: "exact level host",
+      exactSceneHost: "exact scene host",
+      localOnlyPaths: "native local-only paths",
+      noServerExchange: "no server exchange",
+      nonOwningCrossReference: "non-owning original-data cross-reference",
+      unlockQuestPrerequisite: "unlock quest prerequisite",
+      unlockPreviousSubGame: "prior challenge prerequisite",
+      activityStageAssociation: "activity-stage association",
+      activityStageLevel: "exact activity quest level",
+      activityStageLevelHint: "Typed original stage configuration links this quest to a level; it does not attach Story playback.",
+      runtimeActions: "Non-Story runtime actions",
+      openUiAction: "Open UI terminal",
+      notStoryFile: "typed action resource; not a Story file",
+      evidencePolicy: "Evidence policy",
       search: "Search missions",
       searchPlaceholder: "Mission id, name, level, or condition",
       structure: "Structure",
@@ -100,7 +168,11 @@
       unknownAuthority: "Evaluation ownership is not proven.",
       dialogSend: "CS_FINISH_DIALOG { dialogId, optionIds[], finishNums[] }",
       dialogSendDetail: "Exact outbound payload shape proven in the native client.",
-      serverOwnedDetail: "GameConditionServerPlaceHolder is owned by the server; no condition-specific client send is expected here.",
+      serverOwnedDetail: "The installed-build GameConditionServerPlaceHolder fallback returns int.MaxValue, not ClientOnly, so StartQuest does not bind a client progress callback.",
+      serverPlaceholderKey: "Server objective key",
+      serverPlaceholderNoSend: "No condition-specific client request. This placeholder does not send CS_UPDATE_QUEST_OBJECTIVE on the native fallback path.",
+      serverPlaceholderReturn: "SC_QUEST_OBJECTIVES_UPDATE { questId, questObjectives[{ conditionId, extraDetails, values, isComplete, descriptionIndex }] }",
+      serverPlaceholderReturnDetail: "The server applies progress by the composite (questId, conditionId) identity; conditionId alone is not globally unique.",
       unresolvedDetail: "The exact condition-specific progress/request packet has not been mapped. Do not infer it from a local callback.",
       opaquePolicy: "Validate progress and choose successor(s). Policy is not present in the examined client methods.",
       succeedMessage: "SC_QUEST_STATE_UPDATE { questId, questState = 3 }",
@@ -115,7 +187,7 @@
       condition: "condition",
       evidence: "Evidence overlay",
       confidence: "confidence",
-      noCase: "No curated playback/native case note for this mission; the authored graph remains available.",
+      noCase: "No curated original-data case note for this mission; the authored graph remains available.",
       missionHandshake: "Mission-level handshake",
       acceptRequest: "C→S  CS_ACCEPT_MISSION { missionId }",
       acceptReturn: "S→C  SC_MISSION_STATE_UPDATE { missionState, succeedId, properties… }",
@@ -130,36 +202,275 @@
       activeJoin: "active AND",
       roots: "entries",
       branches: "fan-outs",
+      storyOrder: "Source-proven Story order",
+      storyOrderHint: "This is a partial causal graph. It preserves branches, joins, cycles, and unknown pairs; it is not a guessed total file sequence.",
+      strongEdges: "strong order edges",
+      weakEdges: "context-only edges",
+      orderCycles: "source cycles",
+      unknownPairs: "unordered pairs",
+      partialFrontier: "partial-order frontier",
+      causalEdges: "reduced causal edges",
+      forkMerge: "Authored forks and joins",
+      questFork: "quest fork",
+      questMerge: "quest join",
+      nativeSplitFanout: "native Split fan-out",
+      nativeIfElseBranch: "native If/Else branch",
+      nativeSwitchBranch: "native Switch branch",
+      nativeControlMerge: "native branch convergence",
+      nativeEventSelector: "event selector",
+      nativePredicate: "predicate",
+      nativePredicateOpaque: "inline predicate not semantically decoded",
+      optionBranches: "dialog option branches",
+      isolatedScenes: "isolated Story files",
+      weakOnlyScenes: "weak-context-only files",
+      orderCycleHint: "Files in one cyclic component have no proven internal total order.",
+      orderEvidence: "order evidence",
       exactFinishes: "exact finishes",
       serverPlaceholders: "server gates",
       graph: "Quest graph",
       nativeBoundary: "Native boundary",
       exchanges: "exchanges",
+      asynchronousExchange: "asynchronous",
+      boundaryOnly: "native boundary only",
+      notQuestAttached: "not attached to quest nodes",
+      protocolFields: "fields",
+      exchangeRequest: "request",
+      exchangeRequestAfterLocalEvent: "request after local event",
+      exchangeResponse: "response",
+      exchangeServerUpdateOrConfirmation: "server update / conditional confirmation",
+      exchangeServerPush: "server push",
+      exchangeCompletionAcknowledgement: "completion acknowledgement",
       openEvidence: "Show native evidence",
-      nativeConfidence: "native-proven",
+      nativeConfidence: "installed build · native + IFix audit",
+      actionChainStep: "action-chain step",
       dialogExchange: "Dialog history",
       dialogEcho: "SC_FINISH_DIALOG { dialogId, optionIds[], finishNums[] }",
       progressSend: "CS_UPDATE_QUEST_OBJECTIVE { questId, conditionId, value, isAdd=false }",
-      progressReturn: "SC_QUEST_OBJECTIVES_UPDATE { conditionId, values, isComplete, descriptionIndex }",
+      progressReturn: "SC_QUEST_OBJECTIVES_UPDATE { questId, conditionId, extraDetails, values, isComplete, descriptionIndex }",
       progressCaveat: "Sent when a bound client-side subcondition callback changes; the later state=3 push remains authoritative completion.",
       progressNative: "OnSubConditionProgressChanged (0x183a6fc20) constructs and sends this absolute-value operation.",
       missionDescription: "Mission description",
       descriptionInherited: "mission-level text",
       descriptionOverride: "quest-specific override",
       noDescription: "No localized mission description is exported.",
-      storyFiles: "Attached Story files",
+      storyFiles: "Quest ↔ Story connections",
+      missionStoryFiles: "Mission lifecycle ↔ Story connections",
+      missionStoryHint: "These files attach to mission acceptance or mission-wide authored context, not to an arbitrary quest block.",
+      missionStateDependencies: "Native mission-state → Story dependencies",
+      missionStateDependenciesHint: "These exact local mission-state gates are shown independently from quest ownership. Reading synchronized state sends nothing; any separate interaction request is stated on its own evidence row.",
+      missionStateDependencyBoundary: "Dependency evidence is counted separately from coverage bindings",
+      subGameBindings: "Original-data SubGame runtime shell",
+      subGameBindingsHint: "The shipped typed row carries mission id and bound LevelScript id together. Native code proves WorldChallenge quit can use bindScriptId to end that script, but the audited start paths do not read it. No quest, scene, or Story identity is added from co-membership; OCR, manual, and gameplay cross-references cannot create this edge.",
+      subGameScript: "bound LevelScript",
+      subGameMode: "runtime mode",
+      subGameNetworkKey: "network-authored key",
+      subGameStartSend: "send start request",
+      subGameStartReturn: "expect asynchronous enter/start pushes",
+      subGameCompleteReturn: "server-authored completion/reward pushes",
+      subGameStopSend: "send stop request",
+      subGameStopReturn: "expect asynchronous leave push",
+      subGameLifecycle: "proven lifecycle use",
+      subGameLifecycleHint: "WorldChallengeGame.SendQuit: bindScriptId @ +0x50 → TryGetLevelScript → ManualEnd → stop request",
+      noStoryBinding: "0 Story bindings added",
+      unassignedStory: "Unassigned Story",
+      unassignedStoryHint: "Source files owned by this mission that still lack evidence for a mission lifecycle or quest attachment. They remain visible instead of being guessed onto a block.",
       storyCount: "Story",
+      storyToQuest: "Story → Quest",
+      questToStory: "Quest → Story",
+      storyContext: "Scoped context",
+      storyIncomingBadge: "S→Q",
+      storyOutgoingBadge: "Q→S",
+      storyContextBadge: "CTX",
+      relationObjectiveCondition: "objective waits on Story state",
+      relationFailureCondition: "Story state participates in failure guard",
+      relationClientStart: "quest start launches Story action",
+      relationClientSucceed: "quest success launches Story action",
+      relationClientFailed: "quest failure launches Story action",
+      relationLevelData: "LevelData explicitly places Story on this quest",
+      relationLevelScript: "quest condition scopes this LevelScript Story call",
+      relationQuestObjectiveLevelScriptScope: "the quest objective reads the unique LevelScript that hosts this Story occurrence (shared scope only; not playback ownership or order)",
+      relationLevelScriptMission: "LevelScript action and separate script evidence scope this Story file to the mission",
+      relationLevelDataScriptHost: "mission-named LevelData contains this validated typed-playback script brief (asset context)",
+      relationWorldEntityQuestPlayback: "the quest condition and this leader-trigger playback script reference the same uniquely resolved WorldEntity set (exact foreign-key context, not quest/server activation)",
+      relationMissionAreaLevelDataHost: "typed mission-area parent root scopes this validated LevelData script shell",
+      relationMissionAreaTriggerContext: "mission-area shape exactly matches the Leader trigger that reaches this Story playback (shared trigger context, not a quest gate)",
+      relationAuthoritativeScopeLevelDataHost: "an authoritative mission script and this playback script are siblings in one validated LevelData shell (mission context, not a quest trigger)",
+      relationEntityTrackedInteractive: "quest navigation targets an exact script entity whose InteractiveTable narrative template and type_id configure this Story file (context, not playback)",
+      relationEntityTrackedScript: "quest navigation targets an entity in the exact script containing this typed Story control path (context, no slot bridge)",
+      relationEntityTrackedNativeEvent: "the tracked entity is compared on an exact native event path that raises the custom event playing this Story file (playback context; objective completion remains opaque)",
+      relationEntityTrackedProperty: "quest navigation and an exact SavePropertyChanged listener target the same uniquely resolved world entity (property context; server-placeholder completion remains opaque)",
+      relationEntityTrackedWorldDialog: "quest navigation targets the exact world entity whose counted componentProperties[94] configures this mission and Dialog Story id (navigation/configuration context, not ownership, playback, completion, or a server exchange)",
+      relationSpawnerConfigMission: "an exact server spawner-completion event reaches this Story file and the sole same-level SpawnerConfig names one MissionRuntime (mission context, not one quest)",
+      relationHpSpawnerConfigMission: "an exact spawner spawn → entity-list writer → local HP-threshold playback chain and the sole same-level SpawnerConfig name one MissionRuntime (mission context, not one quest)",
+      relationMissionGlobalVarPlayback: "a client-global-variable event reaches this Story playback and the exact variable key belongs to one mission (mission context, not one quest)",
+      relationNpcReadyPlayback: "an exact WaitForNpcProxyReady path reaches this Story playback and the tracked proxy belongs to one mission (mission context, not one quest)",
+      relationNpcTargetPlayback: "Play3DRadio explicitly targets this tracked NPC proxy in the same scene (mission context, not proof that the quest starts playback)",
+      relationNpcProxySegmentShell: "the tracked NPC proxy occupies the exact authored registry segment whose global id is this Story playback script (mission shell only, not NPC activation)",
+      relationMissionStateDependency: "this mission's exact synchronized client state participates in the native IfElse path selecting the Story action (dependency, not ownership)",
+      relationTaskMissionStateDependency: "the same authored LevelScript contains an exact taskMap mission-state condition and Story playback, but no serialized control path links them (dependency only)",
+      relationMissionStateProcessing: "the exact native true branch plays this Story action while the named mission equals Processing (mission context, not quest causality)",
+      relationRadioTriggerMissionState: "one typed LevelData radio-trigger zone co-carries this radio and the named mission-state boundary; native OnEnter checks that state before playback (context, not quest ownership)",
+      relationNarrativeInteractiveMissionState: "one counted LevelInteractiveData entity co-carries the popup consumer id and mission-state FX key; the original narrative template and native component prove the local playback dependency (not ownership)",
+      relationNativeEventShellPlayback: "a typed custom-event producer reaches this unique Story listener and the producer belongs to one validated mission LevelData shell (mission context, not one quest)",
+      relationManualGuideCompletionPlayback: "an exact client-only guide-group start reaches this completion listener and its producer belongs to one mission-named LevelData shell (mission context, not one quest or a server exchange)",
+      relationVariantRuntime: "variant MissionRuntime attaches this Story file",
+      relationNpcProxy: "unique NPC proxy resolves to this Story file",
+      relationNpcProxyEx: "exact mission + NPC proxy resolves to this quest",
+      relationNpcProxyMission: "NpcProxyEx explicitly scopes this Story file to the mission",
+      relationNpcProxyTrackingDialog: "quest navigation tracks this exact NPC proxy; its current registered interaction dialog contains a typed next-dialog route (navigation/configuration context only)",
+      relationNpcProxyLazyDestroyDialog: "quest navigation tracks this exact NPC proxy; native deactivation applies its authored lazy-destroy dialog as an interaction override (configuration context, not quest activation or playback causality)",
+      relationMissionTrackedNpcPatrol: "typed LevelData resolves the checkpoint listener's NPC alias and patrol, while same-scene quest navigation tracks that exact world entity in one mission (mission context only; candidate quests are not activation, playback, completion, or ownership)",
+      relationMissionTrackedWorldEntityLevelScript: "an exact local Leader-trigger playback script references world entities tracked by only one mission (shared authored script/entity context only; candidate quests do not prove the trigger gate, activation, playback, completion, or ownership)",
+      relationMissionTrackedWorldEntityLevelScriptStage: "the server synchronizes this LevelScript stage before an exact local StageChanged playback path; typed world-entity tracking identifies one mission context, but no candidate quest is proven to write the stage",
+      relationFocusModeRadio: "FocusMode explicitly scopes its interaction-locked radio to this mission",
+      relationSnsMissionLink: "SNS row explicitly links this conversation to the mission",
+      relationTimelineBlack: "serialized Timeline contains this black-screen Story inside a dialog root",
+      relationTimelineBlackUnresolved: "serialized Timeline root is proven; its dialog/mission anchor is unresolved",
+      relationDialogNarrativeAction: "typed DialogTree action presents this black-screen text inside its parent dialog",
+      relationDialogNarrativeActionUnscoped: "typed DialogTree containment is exact; parent mission/quest placement is unresolved",
+      relationDialogLeftSubtitleAction: "typed DialogTree action presents this text in the local left-subtitle UI",
+      relationDialogLeftSubtitleActionUnscoped: "left-subtitle containment is exact; parent mission/quest placement is unresolved",
+      relationDialogStoryPlayback: "binary-proven DialogTree carrier can play this Story file from the parent dialog",
+      relationDialogStoryPlaybackUnscoped: "binary-proven DialogTree playback is exact; parent mission/quest placement is unresolved",
+      relationDialogPrimeStoryPlayback: "binary-proven prime-node route can reach this Story carrier; the quest only observes the parent dialog's completion (dependency, not playback trigger or ownership)",
+      relationDefinitionOnly: "original text definition; no current-build playback consumer recovered",
+      relationMissionAccept: "NPC dialog accepts this mission",
+      relationMissionArea: "Story id is embedded in this objective's mission-area id",
+      relationStoryGraphBranch: "authored dialog route shares this quest anchor",
+      relationLevelScriptSequence: "LevelScript next-id chain shares this quest anchor",
+      relationQuestProcessingAction: "quest Processing event launches this client Story action",
+      relationQuestCompletedAction: "quest-completed LevelScript action launches Story",
+      relationQuestStateGate: "triggered LevelScript playback is gated by this quest being Processing",
+      relationNativeBlackAction: "native client black-screen action plays these exact serialized text lines",
+      relationNativePlaybackUnscoped: "native playback action is proven; mission/quest trigger unresolved",
+      relationUnassignedStory: "no evidence-backed pipeline attachment yet",
+      relationRuntimeReference: "direct runtime reference; timing unresolved",
       openInStory: "Open in Story",
-      storyEvidence: "Only direct quest references and uniquely resolved LevelData/NPC links are attached; same-mission files are not assigned to a block without evidence.",
-      noStoryFiles: "No Story file is directly attached to this quest block.",
+      storyEvidence: "Arrow direction comes from runtime semantics: conditions are Story → Quest; native QuestAction slots and gated completed-quest LevelScript actions are Quest → Story. LevelData, scoped LevelScript, variant-runtime, authored one-hop routes, exact NPC-proxy joins, and unique typed WorldEntity-set joins are context. A shared WorldEntity set does not prove quest or server activation. Typed DialogTree narrative masks are local presentation, never a server exchange. Mission acceptance stays on the mission shell. Spatial and file-order guesses are never promoted.",
+      triggerRoute: "Recovered trigger route",
+      triggerPlayback: "playback",
+      triggerCondition: "condition",
+      triggerContext: "context only",
+      triggerDependency: "dependency only",
+      triggerUnresolved: "trigger known · owner unresolved",
+      triggerDefinition: "definition only · no consumer",
+      triggerQuest: "quest",
+      triggerMission: "mission",
+      triggerOwnershipGap: "missing mission / quest owner",
+      triggerServerMessage: "server message",
+      triggerNativeEvent: "native event",
+      triggerLevelScript: "LevelScript",
+      triggerNativeAction: "playback action",
+      triggerStory: "Story file",
+      triggerExactPaths: "exact native paths",
+      triggerEvents: "Triggering events",
+      triggerEventsHint: "Each row is one exact serialized event-to-action path. Multiple rows are alternatives or distinct occurrences; they are not a guessed sequence.",
+      triggerListener: "listener",
+      triggerActionChain: "action chain",
+      triggerLocalTransport: "local dispatch",
+      triggerServerTransport: "server-backed dispatch",
+      triggerUnknownTransport: "transport unresolved",
+      noStoryFiles: "No evidence-backed Story connection is attached to this quest block.",
+      runtimeObserved: "observed runtime playbacks",
+      runtimeTraceOverlay: "Observed runtime trace",
+      runtimeTraceHint: "Captured execution is shown as an observational overlay. Active quest state is temporal context, not authored Story ownership, and observed sequence does not replace the source-proven partial order.",
+      exactRuntimeChains: "exact event/action/playback chains",
+      observedForks: "observed forks",
+      observedMerges: "observed merges",
+      activeQuestContext: "active quest context",
+      noAuthoredPromotion: "no authored ownership/order promotion",
+      observedRoute: "captured route",
+      runtimeSession: "session",
+      observedSequence: "observed sequence",
+      summarySections: "Summary sections",
+      summaryFocusAll: "All",
+      summarySectionStructure: "Mission structure & order",
+      summarySectionRuntime: "Native & observed runtime",
+      summarySectionStory: "Story attachments",
+      summarySectionQueues: "Unassigned & boundary queues",
     },
     zh: {
+      relationMissionTrackedWorldEntityLevelScript: "精确的本地队长触发器播放脚本引用了仅由一个任务跟踪的世界实体（仅共享的脚本/实体创作上下文；候选任务节点不证明触发门、激活、播放、完成或所有权）",
+      relationMissionTrackedWorldEntityLevelScriptStage: "服务器先同步该 LevelScript 阶段，再进入精确的本地 StageChanged 播放路径；类型化世界实体跟踪只确定唯一任务上下文，不证明任何候选任务节点写入了该阶段",
+      relationQuestProgressLockedInteractive: "每个播放实例都由精确的交互实体事件路径触发；该实体的强类型进度锁等待此任务达到已完成状态（仅为本地上下文，不证明剧情归属，也不证明任务激活、播放或完成因果）",
+      subGameBindings: "原始数据 SubGame 运行时外壳",
+      subGameBindingsHint: "游戏内置的类型化记录同时包含使命 ID 与绑定的 LevelScript ID。原生代码证明 WorldChallenge 退出时可用 bindScriptId 结束该脚本，但已审计的启动路径并不读取它。共同出现不会补出任务、场景或剧情身份；OCR、人工记录和实机交叉参考都不能创建这条边。",
+      subGameScript: "绑定的 LevelScript",
+      subGameMode: "运行模式",
+      subGameNetworkKey: "网络原始键",
+      subGameStartSend: "发送启动请求",
+      subGameStartReturn: "等待异步进入/启动推送",
+      subGameCompleteReturn: "服务器决定的完成/奖励推送",
+      subGameStopSend: "发送停止请求",
+      subGameStopReturn: "等待异步离开推送",
+      subGameLifecycle: "已证明的生命周期用途",
+      subGameLifecycleHint: "WorldChallengeGame.SendQuit：bindScriptId @ +0x50 → TryGetLevelScript → ManualEnd → 停止请求",
+      noStoryBinding: "新增剧情绑定：0",
+      evidencePolicy: "证据政策",
       eyebrow: "实验视图 · 客户端 / 服务器证据",
-      title: "任务管线",
+      title: "任务流程",
       scope: "展示任务节点结构，并明确标出原生客户端与服务器之间的边界。",
       warning: "前置箭头只表示客户端可见的条件关系；下一个同步到客户端的任务状态仍由服务器决定。",
       missions: "个任务",
       quests: "个任务节点",
+      connectedStory: "已连接剧情",
+      unlinkedStory: "未分配剧情",
+      nativePlaybackGaps: "原生路径缺口",
+      definitionOnlyStory: "仅有定义的黑屏文本",
+      nonMissionContentStory: "非使命内容",
+      nonMissionContentStoryHint: "这些剧情 ID 仅由非使命内容表定义（按说话人分的电台续播语音、角色 SNS 话题）。相关表以说话人或话题为键，未序列化任何使命、任务、场景或脚本字段，因此不可能有使命拥有它们。仅依据表内容判定，绝不依据文件名。",
+      missionGraph: "跨使命关系",
+      missionGraphUpstream: "上游",
+      missionGraphDownstream: "下游",
+      missionGraphRequiresCompleted: "需已完成",
+      missionGraphRequiresProcessing: "需进行中",
+      missionGraphAbortsOnCompleted: "完成即中止",
+      missionGraphUnclassified: "操作数未定性",
+      missionGraphInterleaving: "与之交错",
+      missionGraphHint: "来自读取其他使命（或其他使命任务）状态的原始任务条件。只有“需已完成”表示先后顺序；“需进行中”是并行窗口，“完成即中止”是互斥关系。使命解锁顺序由服务端决定，因此没有关系并不能说明两个使命之间没有顺序。",
+      missionGraphEdgesStat: "跨使命先后关系",
+      envTalkContext: "任务追踪 NPC 上的环境对话",
+      envTalkContextStat: "任务追踪的环境对话",
+      envTalkContextBoundary: "导航上下文，非播放归属",
+      envTalkContextHint: "任务目标通过带类型的 NpcProxyTrackingInfo 追踪某个 NPC 代理，而该代理行配置了这些环境对话。任务只是把玩家引导到该 NPC；它不播放、不拥有、不启动也不完成这些台词，由此也推不出任何时序或服务端交互。",
+      relationEnvTalkTrackedProxy: "任务追踪 NPC 代理上的环境台词",
+      trackedByQuests: "追踪任务",
+      missionlessSubGameStory: "SubGame 范围剧情",
+      missionlessRuntimeStory: "运行时接收器范围剧情",
+      nativeGapQueue: "未连接的原始二进制触发队列",
+      nativeGapQueueHint: "播放路径已经精确恢复，但仍缺少使命/任务身份。数量按唯一剧情文件统计，不同事件族可能重叠。",
+      missionlessSubGameNodes: "无使命所有者的原始数据运行时节点",
+      missionlessSubGameNodesHint: "这些是精确的 SubGame → bindScriptId → 原生播放 → 剧情链。它们为未连接文件补充结构，但不计为使命拥有的剧情绑定。",
+      noMissionOwner: "无使命所有者",
+      exactPlayback: "精确原生播放",
+      exactReceiverNodes: "精确序列化运行时接收器",
+      exactReceiverNodesHint: "每个节点都来自原始 LevelScript 事件选择器，并有到剧情播放的精确控制路径；它能组织更多恢复文件，但不声明使命或任务所有者。",
+      exactRuntimeTarget: "精确原始数据运行时目标",
+      encounterModule: "遭遇战模块",
+      modulePointer: "关卡脚本模块指针",
+      activationSlot: "激活触发器槽位",
+      battleExitSlot: "战斗退出触发器槽位",
+      localEntitySlots: "本地敌人槽位",
+      missingOwnershipBridge: "缺少使命 / 任务外键",
+      serializedSelector: "序列化选择器",
+      localEvent: "本地事件",
+      serverBackedEvent: "服务器事件",
+      localProducerChain: "精确本地生产者链",
+      abilityProducer: "Ability 生产者",
+      literalSignal: "字面信号 / 数值",
+      noServerRequestOrReturn: "无服务器请求或返回",
+      sameScriptDependency: "仅限同一条原始 LevelScript",
+      noPlaybackControlPath: "未连接到剧情播放控制路径",
+      producerBoundaryHint: "接收器只匹配字面信号，不选择生产者发送者、实体、生成器、使命或任务；该链只增加因果证据，不增加所有权。",
+      mainTasks: "主任务 ID",
+      exactLevelHost: "精确关卡宿主",
+      exactSceneHost: "精确场景宿主",
+      localOnlyPaths: "原生纯本地路径",
+      noServerExchange: "不与服务器交换",
+      nonOwningCrossReference: "不表示所有权的原始数据交叉参考",
+      unlockQuestPrerequisite: "解锁任务前置条件",
+      unlockPreviousSubGame: "前一挑战前置条件",
+      activityStageAssociation: "活动阶段关联",
       search: "搜索任务",
       searchPlaceholder: "任务 ID、名称、关卡或条件",
       structure: "结构",
@@ -227,7 +538,11 @@
       unknownAuthority: "尚未证明条件的执行归属。",
       dialogSend: "CS_FINISH_DIALOG { dialogId, optionIds[], finishNums[] }",
       dialogSendDetail: "原生客户端已证明的精确出站字段。",
-      serverOwnedDetail: "GameConditionServerPlaceHolder 由服务器判定，此处不预期特定的客户端条件消息。",
+      serverOwnedDetail: "已安装版本中 GameConditionServerPlaceHolder 的回退路径返回 int.MaxValue，而不是 ClientOnly，因此 StartQuest 不会绑定客户端进度回调。",
+      serverPlaceholderKey: "服务端目标键",
+      serverPlaceholderNoSend: "没有该条件专属的客户端请求；原生回退路径不会由此占位条件发送 CS_UPDATE_QUEST_OBJECTIVE。",
+      serverPlaceholderReturn: "SC_QUEST_OBJECTIVES_UPDATE { questId, questObjectives[{ conditionId, extraDetails, values, isComplete, descriptionIndex }] }",
+      serverPlaceholderReturnDetail: "服务器按 (questId, conditionId) 组合身份应用进度；conditionId 本身不是全局唯一。",
       unresolvedDetail: "尚未定位该条件对应的精确进度/请求消息；不能从本地回调推断网络协议。",
       opaquePolicy: "验证进度并选择后继节点；检查过的客户端方法中没有这项策略。",
       succeedMessage: "SC_QUEST_STATE_UPDATE { questId, questState = 3 }",
@@ -242,7 +557,7 @@
       condition: "条件",
       evidence: "证据叠加",
       confidence: "置信度",
-      noCase: "此任务没有整理好的录像/原生案例注释，但原始结构仍可查看。",
+      noCase: "此任务没有整理好的原始游戏数据案例注释，但原始结构仍可查看。",
       missionHandshake: "任务级握手",
       acceptRequest: "客→服  CS_ACCEPT_MISSION { missionId }",
       acceptReturn: "服→客  SC_MISSION_STATE_UPDATE { missionState, succeedId, properties… }",
@@ -262,23 +577,273 @@
       graph: "任务节点图",
       nativeBoundary: "原生实现边界",
       exchanges: "项消息",
+      asynchronousExchange: "异步",
+      boundaryOnly: "仅原生边界",
+      notQuestAttached: "不附加到任意任务节点",
+      protocolFields: "字段",
+      exchangeRequest: "请求",
+      exchangeRequestAfterLocalEvent: "本地事件后的请求",
+      exchangeResponse: "响应",
+      exchangeServerUpdateOrConfirmation: "服务端更新 / 条件确认",
+      exchangeServerPush: "服务端推送",
+      exchangeCompletionAcknowledgement: "完成确认",
       openEvidence: "显示原生证据",
-      nativeConfidence: "原生代码已证明",
+      nativeConfidence: "已安装版本 · 原生与 IFix 审计",
+      actionChainStep: "动作链步骤",
       dialogExchange: "对话历史同步",
       dialogEcho: "SC_FINISH_DIALOG { dialogId, optionIds[], finishNums[] }",
       progressSend: "CS_UPDATE_QUEST_OBJECTIVE { questId, conditionId, value, isAdd=false }",
-      progressReturn: "SC_QUEST_OBJECTIVES_UPDATE { conditionId, values, isComplete, descriptionIndex }",
+      progressReturn: "SC_QUEST_OBJECTIVES_UPDATE { questId, conditionId, extraDetails, values, isComplete, descriptionIndex }",
       progressCaveat: "绑定的客户端子条件回调变化时发送；之后的 state=3 推送仍是权威完成状态。",
       progressNative: "OnSubConditionProgressChanged（0x183a6fc20）构造并发送这个绝对值操作。",
       missionDescription: "任务详细描述",
       descriptionInherited: "任务级描述",
       descriptionOverride: "节点专用描述",
       noDescription: "没有导出本地化的任务详细描述。",
-      storyFiles: "关联的剧情文件",
+      storyFiles: "任务 ↔ 剧情连接",
+      missionStoryFiles: "使命生命周期 ↔ 剧情连接",
+      missionStoryHint: "这些文件连接到使命接受流程或使命级作者上下文，不会被强行归入任意任务节点。",
+      missionStateDependencies: "原生使命状态 → 剧情依赖",
+      missionStateDependenciesHint: "这里单独展示精确的本地使命状态门控，不把它们视为任务归属。读取同步状态本身不会发送数据；若交互流程另有请求，会在对应证据行中单独说明。",
+      missionStateDependencyBoundary: "依赖证据与覆盖绑定分开计数",
+      unassignedStory: "未分配剧情",
+      unassignedStoryHint: "这些源文件属于该使命，但仍缺少可连接到使命生命周期或任务节点的证据；界面保留显示，不会猜测归位。",
       storyCount: "剧情",
+      storyToQuest: "剧情 → 任务",
+      questToStory: "任务 → 剧情",
+      storyContext: "作用域上下文",
+      storyIncomingBadge: "剧→任",
+      storyOutgoingBadge: "任→剧",
+      storyContextBadge: "上下文",
+      relationObjectiveCondition: "任务目标等待剧情状态",
+      relationFailureCondition: "剧情状态参与失败条件",
+      relationClientStart: "任务开始时触发剧情动作",
+      relationClientSucceed: "任务成功后触发剧情动作",
+      relationClientFailed: "任务失败后触发剧情动作",
+      relationLevelData: "LevelData 明确把剧情放到此任务节点",
+      relationLevelScript: "任务条件限定了这条 LevelScript 剧情调用",
+      relationLevelScriptMission: "LevelScript 动作与独立脚本证据共同将剧情限定到该使命",
+      relationLevelDataScriptHost: "使命命名的 LevelData 包含经过结构验证的剧情脚本简表（资源上下文）",
+      relationWorldEntityQuestPlayback: "任务条件与该剧情播放脚本引用同一组唯一解析的世界实体（精确外键上下文，不证明任务或服务器触发）",
+      relationMissionAreaLevelDataHost: "类型化使命区域父根将此已验证 LevelData 脚本外壳限定到使命",
+      relationEntityTrackedInteractive: "任务导航精确指向脚本实体，其 type_id 配置此剧情文件（仅上下文，不代表播放）",
+      relationEntityTrackedScript: "任务导航指向包含该类型化剧情控制路径的同一脚本（仅上下文，未证明槽位桥接）",
+      relationEntityTrackedProperty: "任务导航与精确的 SavePropertyChanged 监听器指向同一个唯一解析的世界实体（属性上下文；服务端占位目标的完成逻辑仍不透明）",
+      relationEntityTrackedWorldDialog: "任务导航指向精确的世界实体，其带计数边界的 componentProperties[94] 同时配置使命与 Dialog 剧情 ID（仅导航/配置上下文，不代表归属、播放、完成或服务端交换）",
+      relationSpawnerConfigMission: "精确的服务端生成器完成事件到达此剧情文件，且同关卡唯一 SpawnerConfig 只指向一个 MissionRuntime（使命上下文，不指定任务节点）",
+      relationHpSpawnerConfigMission: "精确的生成器出生 → 实体列表写入 → 本地生命值阈值播放链与同关卡唯一 SpawnerConfig 共同指向一个 MissionRuntime（使命上下文，不指定任务节点）",
+      relationVariantRuntime: "变体 MissionRuntime 将剧情连接到此节点",
+      relationNpcProxy: "唯一 NPC 代理解析到此剧情文件",
+      relationNpcProxyEx: "精确使命与 NPC 代理共同解析到此任务节点",
+      relationNpcProxyMission: "NpcProxyEx 将此剧情文件明确限定到该使命",
+      relationNpcProxyTrackingDialog: "任务导航跟踪该精确 NPC 代理；其当前注册的交互对话包含类型化后续对话路线（仅导航/配置上下文）",
+      relationNpcProxyLazyDestroyDialog: "任务导航跟踪该精确 NPC 代理；原生停用流程会把其配置的延迟销毁对话应用为交互覆盖（仅配置上下文，不证明任务激活或播放因果）",
+      relationMissionTrackedNpcPatrol: "类型化 LevelData 解析检查点监听器的 NPC 别名与巡逻路线；同场景任务导航在唯一任务中跟踪该精确世界实体（仅任务上下文；候选任务节点不代表激活、播放、完成或所有权）",
+      relationNpcProxySegmentShell: "被跟踪 NPC 代理位于精确的原始注册表片段中，片段全局 ID 与该剧情播放脚本一致（仅使命外壳，不代表 NPC 触发）",
+      relationMissionStateDependency: "该使命已同步到客户端的精确状态参与选择剧情动作的原生 IfElse 路径（依赖，不代表归属）",
+      relationTaskMissionStateDependency: "同一条原始 LevelScript 同时包含精确的 taskMap 使命状态条件和剧情播放，但序列化控制路径并未连接两者（仅依赖证据）",
+      relationMissionStateProcessing: "精确原生 true 分支在该使命等于 Processing 时播放此剧情动作（使命上下文，不代表任务因果）",
+      relationRadioTriggerMissionState: "同一条强类型 LevelData 广播触发区记录同时携带该广播与使命状态边界；原生 OnEnter 在播放前检查该状态（上下文，不代表任务归属）",
+      relationNarrativeInteractiveMissionState: "同一条带计数边界的 LevelInteractiveData 实体同时携带弹窗消费端 ID 与使命状态特效键；原始叙事模板及原生组件证明本地播放依赖（不代表归属）",
+      relationFocusModeRadio: "FocusMode 将交互锁定广播明确限定到该使命",
+      relationSnsMissionLink: "SNS 原始表记录将该会话明确连接到此使命",
+      relationTimelineBlack: "序列化 Timeline 将该黑屏剧情包含在对话根节点中",
+      relationTimelineBlackUnresolved: "已证明序列化 Timeline 根节点，但尚未解析对话或使命锚点",
+      relationDialogNarrativeAction: "类型化 DialogTree 动作在父对话中呈现该黑屏文本",
+      relationDialogNarrativeActionUnscoped: "DialogTree 包含关系精确，但父对话的使命或任务位置尚未解析",
+      relationDialogLeftSubtitleAction: "类型化 DialogTree 动作在本地左侧字幕界面中呈现该文本",
+      relationDialogLeftSubtitleActionUnscoped: "左侧字幕包含关系精确，但父对话的使命或任务位置尚未解析",
+      relationDialogStoryPlayback: "二进制已证明的 DialogTree 载体可从父对话播放此剧情文件",
+      relationDialogStoryPlaybackUnscoped: "DialogTree 播放载体已由二进制证明，但父对话的使命或任务位置尚未解析",
+      relationDialogPrimeStoryPlayback: "二进制证明该 DialogTree 从首节点可到达此剧情播放载体；任务只监听父对话完成状态（依赖关系，不代表任务触发播放或剧情归属）",
+      relationDefinitionOnly: "原始文本定义存在；当前构建未恢复到播放消费端",
+      relationMissionAccept: "NPC 对话接受该使命",
+      relationMissionArea: "目标区域标识中嵌入了剧情 ID",
+      relationStoryGraphBranch: "作者对话路线与此任务锚点相连",
+      relationLevelScriptSequence: "LevelScript next-id 链与此任务锚点相连",
+      relationQuestProcessingAction: "任务进入 Processing 状态时启动该客户端剧情动作",
+      relationQuestCompletedAction: "任务完成事件的 LevelScript 动作启动剧情",
+      relationQuestStateGate: "触发的 LevelScript 播放以此任务处于进行中为门控条件",
+      relationNativeBlackAction: "原生客户端黑屏动作播放这些精确序列化文本行",
+      relationNativePlaybackUnscoped: "已证明原生播放动作；使命或任务触发源仍未解析",
+      relationUnassignedStory: "尚无证据支持的管线连接",
+      relationRuntimeReference: "直接运行时引用；触发时机未解析",
       openInStory: "在剧情页打开",
-      storyEvidence: "只附加该任务节点直接引用、或由 LevelData/NPC 唯一解析出的剧情文件；没有证据时，不会把同任务的所有文件都塞进每个节点。",
-      noStoryFiles: "这个任务节点没有直接关联的剧情文件。",
+      storyEvidence: "箭头方向来自运行时语义：条件是“剧情 → 任务”，原生 QuestAction 槽位与严格门控的任务完成事件是“任务 → 剧情”。LevelData、限定作用域的 LevelScript、变体运行时、作者单跳路线、精确 NPC 代理连接和唯一的类型化世界实体集合连接属于上下文；共享世界实体集合不证明任务或服务器触发。类型化 DialogTree 叙事遮罩只是本地呈现，不会产生服务器交换；使命接受对话保留在使命外壳。空间邻近与文件顺序猜测绝不会升级为连接。",
+      noStoryFiles: "这个任务节点没有可由证据支持的剧情连接。",
+      triggerRoute: "\u6062\u590d\u7684\u89e6\u53d1\u8def\u5f84",
+      triggerPlayback: "\u64ad\u653e\u89e6\u53d1",
+      triggerCondition: "\u5b8c\u6210\u6761\u4ef6",
+      triggerContext: "\u4ec5\u4e0a\u4e0b\u6587",
+      triggerDependency: "\u4ec5\u4f9d\u8d56",
+      triggerUnresolved: "\u89e6\u53d1\u5df2\u77e5 \u00b7 \u5f52\u5c5e\u672a\u89e3\u6790",
+      triggerDefinition: "\u4ec5\u5b9a\u4e49 \u00b7 \u65e0\u6d88\u8d39\u8005",
+      triggerQuest: "\u4efb\u52a1",
+      triggerMission: "\u4f7f\u547d",
+      triggerOwnershipGap: "\u7f3a\u5c11\u4f7f\u547d / \u4efb\u52a1\u5f52\u5c5e",
+      triggerServerMessage: "\u670d\u52a1\u5668\u6d88\u606f",
+      triggerNativeEvent: "\u539f\u751f\u4e8b\u4ef6",
+      triggerLevelScript: "LevelScript",
+      triggerNativeAction: "\u64ad\u653e\u52a8\u4f5c",
+      triggerStory: "\u5267\u60c5\u6587\u4ef6",
+      triggerExactPaths: "\u7cbe\u786e\u539f\u751f\u8def\u5f84",
+      triggerEvents: "\u89e6\u53d1\u4e8b\u4ef6",
+      triggerEventsHint: "\u6bcf\u884c\u90fd\u662f\u4e00\u6761\u7cbe\u786e\u7684\u5e8f\u5217\u5316\u4e8b\u4ef6\u5230\u52a8\u4f5c\u8def\u5f84\u3002\u591a\u884c\u8868\u793a\u5907\u9009\u8def\u5f84\u6216\u4e0d\u540c\u53d1\u751f\u4f4d\u7f6e\uff0c\u4e0d\u4ee3\u8868\u731c\u6d4b\u7684\u987a\u5e8f\u3002",
+      triggerListener: "\u76d1\u542c\u5668",
+      triggerActionChain: "\u52a8\u4f5c\u94fe",
+      triggerLocalTransport: "\u672c\u5730\u6d3e\u53d1",
+      triggerServerTransport: "\u670d\u52a1\u5668\u652f\u6301\u7684\u6d3e\u53d1",
+      triggerUnknownTransport: "\u4f20\u8f93\u8fb9\u754c\u672a\u89e3\u6790",
+      storyOrder: "\u6e90\u6570\u636e\u8bc1\u660e\u7684\u5267\u60c5\u987a\u5e8f",
+      storyOrderHint: "\u8fd9\u662f\u90e8\u5206\u56e0\u679c\u56fe\uff1a\u4fdd\u7559\u5206\u652f\u3001\u6c47\u5408\u3001\u5faa\u73af\u548c\u672a\u77e5\u987a\u5e8f\uff0c\u4e0d\u731c\u6d4b\u552f\u4e00\u6587\u4ef6\u5e8f\u5217\u3002",
+      strongEdges: "\u5f3a\u987a\u5e8f\u8fb9",
+      weakEdges: "\u4ec5\u4e0a\u4e0b\u6587\u8fb9",
+      orderCycles: "\u6e90\u8bc1\u636e\u5faa\u73af",
+      unknownPairs: "\u987a\u5e8f\u672a\u77e5\u5bf9",
+      partialFrontier: "\u90e8\u5206\u987a\u5e8f\u524d\u6cbf",
+      causalEdges: "\u7cbe\u7b80\u56e0\u679c\u8fb9",
+      forkMerge: "\u4f5c\u8005\u5206\u652f\u4e0e\u6c47\u5408",
+      questFork: "\u4efb\u52a1\u5206\u652f",
+      questMerge: "\u4efb\u52a1\u6c47\u5408",
+      nativeSplitFanout: "\u539f\u751f Split \u5206\u6d41",
+      nativeIfElseBranch: "\u539f\u751f If/Else \u5206\u652f",
+      nativeSwitchBranch: "\u539f\u751f Switch \u5206\u652f",
+      nativeControlMerge: "\u539f\u751f\u5206\u652f\u6c47\u5408",
+      nativeEventSelector: "\u4e8b\u4ef6\u9009\u62e9\u5668",
+      nativePredicate: "\u5206\u652f\u6761\u4ef6",
+      nativePredicateOpaque: "\u5185\u8054\u6761\u4ef6\u5c1a\u672a\u8bed\u4e49\u89e3\u7801",
+      optionBranches: "\u5bf9\u8bdd\u9009\u9879\u5206\u652f",
+      isolatedScenes: "\u5b64\u7acb\u5267\u60c5\u6587\u4ef6",
+      weakOnlyScenes: "\u4ec5\u5f31\u4e0a\u4e0b\u6587\u6587\u4ef6",
+      orderCycleHint: "\u540c\u4e00\u5faa\u73af\u5206\u91cf\u5185\u6ca1\u6709\u5df2\u8bc1\u660e\u7684\u552f\u4e00\u987a\u5e8f\u3002",
+      orderEvidence: "\u987a\u5e8f\u8bc1\u636e",
+      activityStageLevel: "\u7cbe\u786e\u6d3b\u52a8\u4efb\u52a1\u5173\u5361",
+      activityStageLevelHint: "\u7c7b\u578b\u5316\u539f\u59cb\u6d3b\u52a8\u9636\u6bb5\u914d\u7f6e\u5c06\u6b64\u4efb\u52a1\u8fde\u5230\u5173\u5361\uff0c\u4f46\u4e0d\u9644\u52a0\u5267\u60c5\u64ad\u653e\u3002",
+      runtimeActions: "\u975e\u5267\u60c5\u8fd0\u884c\u65f6\u52a8\u4f5c",
+      openUiAction: "\u6253\u5f00\u754c\u9762\u7ec8\u7aef",
+      notStoryFile: "\u7c7b\u578b\u5316\u52a8\u4f5c\u8d44\u6e90\uff1b\u4e0d\u662f\u5267\u60c5\u6587\u4ef6",
+      runtimeObserved: "\u5df2\u89c2\u6d4b\u8fd0\u884c\u65f6\u64ad\u653e",
+      runtimeTraceOverlay: "\u5df2\u89c2\u6d4b\u8fd0\u884c\u65f6\u8ffd\u8e2a",
+      runtimeTraceHint: "\u5b9e\u9645\u6267\u884c\u4ec5\u4f5c\u4e3a\u89c2\u6d4b\u8986\u76d6\u5c42\u5c55\u793a\u3002\u6d3b\u52a8\u4efb\u52a1\u72b6\u6001\u662f\u65f6\u5e8f\u4e0a\u4e0b\u6587\uff0c\u4e0d\u662f\u5267\u60c5\u5f52\u5c5e\uff1b\u89c2\u6d4b\u987a\u5e8f\u4e0d\u4f1a\u53d6\u4ee3\u6e90\u8bc1\u636e\u504f\u5e8f\u3002",
+      exactRuntimeChains: "\u7cbe\u786e\u4e8b\u4ef6/\u52a8\u4f5c/\u64ad\u653e\u94fe",
+      observedForks: "\u5df2\u89c2\u6d4b\u5206\u652f",
+      observedMerges: "\u5df2\u89c2\u6d4b\u6c47\u5408",
+      activeQuestContext: "\u6d3b\u52a8\u4efb\u52a1\u4e0a\u4e0b\u6587",
+      noAuthoredPromotion: "\u4e0d\u63d0\u5347\u4e3a\u521b\u4f5c\u5f52\u5c5e/\u987a\u5e8f",
+      observedRoute: "\u5df2\u6355\u83b7\u8def\u5f84",
+      runtimeSession: "\u4f1a\u8bdd",
+      observedSequence: "\u5df2\u89c2\u6d4b\u987a\u5e8f",
+      summarySections: "\u6458\u8981\u5206\u533a",
+      summaryFocusAll: "\u5168\u90e8",
+      summarySectionStructure: "\u4f7f\u547d\u7ed3\u6784\u4e0e\u987a\u5e8f",
+      summarySectionRuntime: "\u539f\u751f\u4e0e\u5b9e\u673a\u8fd0\u884c\u65f6",
+      summarySectionStory: "\u5267\u60c5\u5173\u8054",
+      summarySectionQueues: "\u672a\u5206\u914d\u4e0e\u8fb9\u754c\u961f\u5217",
+    },
+  };
+
+  const SELECTOR_FIELD_LABELS = {
+    en: {
+      levelId: "level",
+      listenerScriptId: "listener LevelScript",
+      listenerHeaderLocalId: "receiver header ID",
+      entitySlotId: "entity slot",
+      entityLogicId: "entity logic ID",
+      entityPropertyPath: "entity property path",
+      entityPropertySource: "entity parameter source",
+      entityListPropertyPath: "entity-list property path",
+      entityListPropertySource: "entity-list parameter source",
+      entityListFilter: "entity-list filter",
+      entityFilter: "entity filter",
+      entityFilters: "entity filters",
+      npcEntityPropertyPath: "NPC entity path",
+      npcEntityPropertySource: "NPC parameter source",
+      npcEntitySlotId: "NPC entity slot",
+      npcEntityLogicId: "NPC entity logic ID",
+      spawnerFilterId: "spawner ID",
+      groupKeyFilter: "spawner group key",
+      waveKeyFilter: "spawner wave key",
+      triggerSlotIdFilter: "trigger-volume slot",
+      eventKey: "event key",
+      signalId: "battle signal",
+      guideIdFilter: "guide group ID",
+      newStageFilter: "script stage",
+      actionIdFilter: "action ID",
+      dialogIdFilter: "dialog ID",
+      npcProxyIdFilter: "NPC proxy ID",
+      checkpointFilter: "checkpoint",
+      patrolIdFilter: "patrol ID",
+      checkpointIndexFilter: "checkpoint index",
+      hpRatio: "HP threshold",
+      changedDirectionName: "threshold direction",
+      entityTemplateIdFilter: "entity template ID",
+      blackboardKeyFilter: "blackboard key",
+      propertyKeyFilter: "script property key",
+      scriptedCharEventKeyFilter: "scripted-character event key",
+      levelScriptVariableFilter: "LevelScript variable pointer",
+      isMonsterFilter: "monster-only filter",
+      filterByList: "use authored entity list",
+      targetScriptId: "target LevelScript",
+    },
+    zh: {
+      levelId: "\u5173\u5361",
+      listenerScriptId: "\u76d1\u542c LevelScript",
+      listenerHeaderLocalId: "\u63a5\u6536\u5668\u5934 ID",
+      entitySlotId: "\u5b9e\u4f53\u69fd\u4f4d",
+      entityLogicId: "\u5b9e\u4f53\u903b\u8f91 ID",
+      entityPropertyPath: "\u5b9e\u4f53\u5c5e\u6027\u8def\u5f84",
+      entityPropertySource: "\u5b9e\u4f53\u53c2\u6570\u6765\u6e90",
+      entityListPropertyPath: "\u5b9e\u4f53\u5217\u8868\u5c5e\u6027\u8def\u5f84",
+      entityListPropertySource: "\u5b9e\u4f53\u5217\u8868\u53c2\u6570\u6765\u6e90",
+      entityListFilter: "\u5b9e\u4f53\u5217\u8868\u7b5b\u9009",
+      entityFilter: "\u5b9e\u4f53\u7b5b\u9009",
+      entityFilters: "\u5b9e\u4f53\u7b5b\u9009\u5217\u8868",
+      npcEntityPropertyPath: "NPC \u5b9e\u4f53\u8def\u5f84",
+      npcEntityPropertySource: "NPC \u53c2\u6570\u6765\u6e90",
+      npcEntitySlotId: "NPC \u5b9e\u4f53\u69fd\u4f4d",
+      npcEntityLogicId: "NPC \u5b9e\u4f53\u903b\u8f91 ID",
+      spawnerFilterId: "\u751f\u6210\u5668 ID",
+      groupKeyFilter: "\u751f\u6210\u7ec4\u952e",
+      waveKeyFilter: "\u751f\u6210\u6ce2\u6b21\u952e",
+      triggerSlotIdFilter: "\u89e6\u53d1\u533a\u5b9e\u4f53\u69fd\u4f4d",
+      eventKey: "\u4e8b\u4ef6\u952e",
+      signalId: "\u6218\u6597\u4fe1\u53f7",
+      guideIdFilter: "\u5f15\u5bfc\u7ec4 ID",
+      newStageFilter: "\u811a\u672c\u9636\u6bb5",
+      actionIdFilter: "\u52a8\u4f5c ID",
+      dialogIdFilter: "\u5bf9\u8bdd ID",
+      npcProxyIdFilter: "NPC \u4ee3\u7406 ID",
+      checkpointFilter: "\u68c0\u67e5\u70b9",
+      patrolIdFilter: "\u5de1\u903b ID",
+      checkpointIndexFilter: "\u68c0\u67e5\u70b9\u5e8f\u53f7",
+      hpRatio: "HP \u9608\u503c",
+      changedDirectionName: "\u9608\u503c\u65b9\u5411",
+      entityTemplateIdFilter: "\u5b9e\u4f53\u6a21\u677f ID",
+      blackboardKeyFilter: "\u9ed1\u677f\u952e",
+      propertyKeyFilter: "\u811a\u672c\u5c5e\u6027\u952e",
+      scriptedCharEventKeyFilter: "\u5267\u60c5\u89d2\u8272\u4e8b\u4ef6\u952e",
+      levelScriptVariableFilter: "LevelScript \u53d8\u91cf\u6307\u9488",
+      isMonsterFilter: "\u4ec5\u602a\u7269",
+      filterByList: "\u4f7f\u7528\u4f5c\u8005\u5b9e\u4f53\u5217\u8868",
+      targetScriptId: "\u76ee\u6807 LevelScript",
+    },
+  };
+  const PROTOCOL_LABELS = {
+    en: {
+      expected: "expected asynchronous server traffic",
+      possible: "possible server traffic (pairing unproven)",
+      capability: "Protocol-capable schemas",
+      schemaOnly: "schema evidence only",
+      senderUnconfirmed: "native sender unconfirmed",
+      runtimeUnconfirmed: "native runtime path unconfirmed",
+    },
+    zh: {
+      expected: "\u9884\u671f\u7684\u5f02\u6b65\u670d\u52a1\u5668\u6d88\u606f",
+      possible: "\u53ef\u80fd\u7684\u670d\u52a1\u5668\u6d88\u606f\uff08\u672a\u8bc1\u660e\u914d\u5bf9\uff09",
+      capability: "\u534f\u8bae\u5df2\u5b9a\u4e49\u7684\u6d88\u606f",
+      schemaOnly: "\u4ec5\u534f\u8bae\u6a21\u5f0f\u8bc1\u636e",
+      senderUnconfirmed: "\u672a\u786e\u8ba4\u539f\u751f\u53d1\u9001\u8def\u5f84",
+      runtimeUnconfirmed: "\u672a\u786e\u8ba4\u539f\u751f\u8fd0\u884c\u8def\u5f84",
     },
   };
 
@@ -286,6 +851,12 @@
   const byId = (id) => document.querySelector(`#${id}`);
   const locale = () => String(window.WEBUI_UI_LOCALE || document.documentElement.lang || "zh").toLowerCase().startsWith("en") ? "en" : "zh";
   const t = (key) => (TEXT[locale()] || TEXT.en)[key] || TEXT.en[key] || key;
+  const selectorFieldLabel = (field) => (SELECTOR_FIELD_LABELS[locale()] || SELECTOR_FIELD_LABELS.en)[field]
+    || SELECTOR_FIELD_LABELS.en[field]
+    || String(field).replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
+  const protocolLabel = (key) => (PROTOCOL_LABELS[locale()] || PROTOCOL_LABELS.en)[key]
+    || PROTOCOL_LABELS.en[key]
+    || key;
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   })[char]);
@@ -384,6 +955,18 @@
       if (button) selectMission(button.dataset.mission);
     });
     byId("mp-mission-list")?.addEventListener("keydown", listKeydown);
+    // Cross-mission graph links live in the summary pane, outside the mission
+    // list's delegation scope, so they need their own handler.
+    byId("mp-mission-summary")?.addEventListener("click", (event) => {
+      const section = event.target.closest("button[data-mp-section]");
+      if (section) {
+        state.summarySection = section.dataset.mpSection;
+        applySummarySection();
+        return;
+      }
+      const button = event.target.closest("button[data-mission]");
+      if (button) selectMission(button.dataset.mission);
+    });
     ["mp-show-hidden", "mp-show-dependencies", "mp-show-edge-labels", "mp-orientation"].forEach((id) => {
       byId(id)?.addEventListener("change", () => {
         if (id === "mp-show-hidden" || id === "mp-orientation") {
@@ -418,6 +1001,10 @@
     });
     window.addEventListener("webui:ui-locale-changed", () => {
       applyUiText();
+      // The corpus bar is otherwise only rendered by load(), which is keyed on
+      // the data language, so a UI-locale switch used to leave its stat labels
+      // in the previous language.
+      updateCorpus();
       renderMissionList();
       if (state.mission) renderMission();
     });
@@ -425,6 +1012,7 @@
 
   function applyUiText() {
     const values = {
+      "mission-pipeline-tab": t("title"),
       "mp-eyebrow": t("eyebrow"), "mp-title": t("title"), "mp-scope": t("scope"),
       "mp-warning": t("warning"), "mp-search-label": t("search"), "mp-structure-label": t("structure"),
       "mp-show-hidden-label": t("showHidden"), "mp-show-dependencies-label": t("dependencies"),
@@ -518,8 +1106,26 @@
 
   function updateCorpus() {
     const counts = state.index?.counts || {};
+    const storyCounts = state.index?.storyCoverage?.counts || {};
+    const runtimeCounts = state.index?.runtimeTrace?.summary || {};
     const node = byId("mp-corpus");
-    if (node) node.innerHTML = `<strong>${Number(counts.missions || 0).toLocaleString()}</strong> ${esc(t("missions"))}<span></span><strong>${Number(counts.quests || 0).toLocaleString()}</strong> ${esc(t("quests"))}`;
+    if (!node) return;
+    const stats = [
+      [counts.missions, t("missions")],
+      [counts.quests, t("quests")],
+      [counts.serverPlaceholderConditions, t("serverPlaceholders")],
+      [storyCounts.connectedUniqueStoryFiles, t("connectedStory")],
+      [storyCounts.unlinkedUniqueStoryFiles, t("unlinkedStory")],
+      [storyCounts.unlinkedNativePlaybackFiles, t("nativePlaybackGaps")],
+      [storyCounts.missionlessSubGameStoryFiles, t("missionlessSubGameStory")],
+      [storyCounts.missionlessNativeRuntimeStoryFiles, t("missionlessRuntimeStory")],
+      [storyCounts.unlinkedDefinitionOnlyFiles, t("definitionOnlyStory")],
+      [storyCounts.nonMissionContentFiles, t("nonMissionContentStory")],
+      [counts.missionGraphPrecedenceEdges, t("missionGraphEdgesStat")],
+      [counts.envTalkQuestContextFiles, t("envTalkContextStat")],
+    ];
+    if (state.index?.runtimeTrace) stats.push([runtimeCounts.storyPlaybacks, t("runtimeObserved")]);
+    node.innerHTML = stats.map(([value, label]) => `<strong>${Number(value || 0).toLocaleString()}</strong><span>${esc(label)}</span>`).join("");
   }
 
   function missionName(id) {
@@ -704,6 +1310,137 @@
     return rows.filter((row) => row && row.key);
   }
 
+  function questRuntimeActions(node, localizedMap = localizedQuestMap()) {
+    const rows = localizedMap.get(node.id)?.runtimeActions || [];
+    return rows.filter((row) => row && row.kind === "dialog_tree_action");
+  }
+
+  function questStoryConnections(node, localizedMap = localizedQuestMap()) {
+    const localized = localizedMap.get(node.id) || {};
+    const localizedRows = (localized.storyConnections || []).filter((row) => row && row.key);
+    const fallbackRows = localizedRows.length
+      ? []
+      : questStoryFiles(node, localizedMap).map((row) => ({
+          ...row,
+          relation: "runtime_reference",
+          direction: "context",
+          phase: "unknown",
+          confidence: "direct_untyped",
+          source: row.evidence || "quest Story reference",
+        }));
+    const scopeRows = (node.storyScopeContexts || []).filter((row) => row && row.key);
+    const unique = new Map();
+    for (const row of [...localizedRows, ...fallbackRows, ...scopeRows]) {
+      const signature = [
+        row.key,
+        row.relation || "",
+        row.sourceRelation || "",
+        (row.scriptIds || []).join(","),
+      ].join("\u0000");
+      if (!unique.has(signature)) unique.set(signature, row);
+    }
+    return [...unique.values()];
+  }
+
+  function storyConnectionCounts(node, localizedMap = localizedQuestMap()) {
+    const counts = { incoming: 0, outgoing: 0, context: 0 };
+    for (const row of questStoryConnections(node, localizedMap)) {
+      if (row.direction === "story_to_quest") counts.incoming += 1;
+      else if (row.direction === "quest_to_story") counts.outgoing += 1;
+      else counts.context += 1;
+    }
+    return counts;
+  }
+
+  function storyRelationLabel(relation) {
+    const key = {
+      objective_condition: "relationObjectiveCondition",
+      failure_condition: "relationFailureCondition",
+      client_action_start: "relationClientStart",
+      client_action_succeed: "relationClientSucceed",
+      client_action_failed: "relationClientFailed",
+      leveldata_quest_reference: "relationLevelData",
+      levelscript_condition_scope: "relationLevelScript",
+      quest_objective_levelscript_scope_context: "relationQuestObjectiveLevelScriptScope",
+      levelscript_mission_context: "relationLevelScriptMission",
+      leveldata_levelscript_mission_context: "relationLevelDataScriptHost",
+      leveldata_world_entity_quest_playback_context: "relationWorldEntityQuestPlayback",
+      quest_progress_locked_interactive_playback_context: "relationQuestProgressLockedInteractive",
+      mission_area_leveldata_mission_context: "relationMissionAreaLevelDataHost",
+      mission_area_trigger_volume_story_context: "relationMissionAreaTriggerContext",
+      authoritative_scope_leveldata_mission_context: "relationAuthoritativeScopeLevelDataHost",
+      entity_tracking_interactive_story_target: "relationEntityTrackedInteractive",
+      entity_tracking_native_playback_context: "relationEntityTrackedScript",
+      entity_tracking_native_event_playback_context: "relationEntityTrackedNativeEvent",
+      entity_tracking_native_property_playback_context: "relationEntityTrackedProperty",
+      entity_tracking_world_interactive_dialog_context: "relationEntityTrackedWorldDialog",
+      spawner_config_authored_mission_context: "relationSpawnerConfigMission",
+      hp_spawner_config_authored_mission_context: "relationHpSpawnerConfigMission",
+      mission_global_var_native_playback_context: "relationMissionGlobalVarPlayback",
+      npc_proxy_wait_native_playback_context: "relationNpcReadyPlayback",
+      npc_proxy_target_native_playback_context: "relationNpcTargetPlayback",
+      npc_proxy_segment_levelscript_mission_context: "relationNpcProxySegmentShell",
+      mission_state_getter_native_dependency: "relationMissionStateDependency",
+      levelscript_task_mission_state_dependency: "relationTaskMissionStateDependency",
+      mission_state_processing_native_playback_context: "relationMissionStateProcessing",
+      radio_trigger_zone_mission_state_dependency: "relationRadioTriggerMissionState",
+      radio_trigger_zone_mission_state_playback_context: "relationRadioTriggerMissionState",
+      narrative_interactive_mission_state_dependency: "relationNarrativeInteractiveMissionState",
+      narrative_interactive_mission_state_playback_context: "relationNarrativeInteractiveMissionState",
+      authoritative_scope_native_event_playback_context: "relationNativeEventShellPlayback",
+      mission_shell_manual_guide_completion_playback_context: "relationManualGuideCompletionPlayback",
+      variant_runtime_attachment: "relationVariantRuntime",
+      unique_npc_proxy: "relationNpcProxy",
+      npc_proxy_attachment: "relationNpcProxy",
+      npc_proxy_ex_attachment: "relationNpcProxyEx",
+      npc_proxy_ex_mission_context: "relationNpcProxyMission",
+      npc_proxy_tracking_dialog_navigation_context: "relationNpcProxyTrackingDialog",
+      npc_proxy_lazy_destroy_dialog_context: "relationNpcProxyLazyDestroyDialog",
+      mission_tracked_npc_patrol_entity_context: "relationMissionTrackedNpcPatrol",
+      mission_tracked_world_entity_levelscript_context: "relationMissionTrackedWorldEntityLevelScript",
+      mission_tracked_world_entity_levelscript_stage_context: "relationMissionTrackedWorldEntityLevelScriptStage",
+      focus_mode_interact_locked_radio: "relationFocusModeRadio",
+      sns_authored_mission_link: "relationSnsMissionLink",
+      timeline_dialog_contains_black: "relationTimelineBlack",
+      timeline_black_root_unresolved: "relationTimelineBlackUnresolved",
+      dialog_tree_narrative_action: "relationDialogNarrativeAction",
+      dialog_tree_narrative_action_unscoped: "relationDialogNarrativeActionUnscoped",
+      dialog_tree_left_subtitle_action: "relationDialogLeftSubtitleAction",
+      dialog_tree_left_subtitle_action_unscoped: "relationDialogLeftSubtitleActionUnscoped",
+      dialog_tree_reachable_story_playback: "relationDialogStoryPlayback",
+      dialog_tree_reachable_story_playback_unscoped: "relationDialogStoryPlaybackUnscoped",
+      dialog_tree_prime_reachable_story_playback_dependency: "relationDialogPrimeStoryPlayback",
+      original_text_definition_without_consumer: "relationDefinitionOnly",
+      mission_accept_dialog: "relationMissionAccept",
+      mission_area_story_reference: "relationMissionArea",
+      story_graph_branch: "relationStoryGraphBranch",
+      levelscript_story_sequence: "relationLevelScriptSequence",
+      levelscript_quest_processing_action: "relationQuestProcessingAction",
+      levelscript_quest_completed_action: "relationQuestCompletedAction",
+      levelscript_quest_state_gate: "relationQuestStateGate",
+      levelscript_native_black_action: "relationNativeBlackAction",
+      native_story_playback_unscoped: "relationNativePlaybackUnscoped",
+      native_black_playback_unscoped: "relationNativePlaybackUnscoped",
+      unassigned_story: "relationUnassignedStory",
+      runtime_reference: "relationRuntimeReference",
+      env_talk_quest_tracked_proxy: "relationEnvTalkTrackedProxy",
+    }[relation];
+    return key ? t(key) : String(relation || t("relationRuntimeReference"));
+  }
+
+  function storyDisplayKind(row) {
+    const key = String(row?.key || "");
+    if (key.startsWith("dlg_") || key.startsWith("misc_dlg_")) return "dialog";
+    if (key.startsWith("radio_")) return "radio";
+    if (key.startsWith("cutscene_")) return "cutscene";
+    if (key.startsWith("remotecomm_")) return "remotecomm";
+    if (key.startsWith("sns_")) return "sns";
+    if (key.startsWith("black_")) return "black";
+    if (key.startsWith("text_")) return "text";
+    if (key.startsWith("env_")) return "envtalk";
+    return String(row?.kind || "story");
+  }
+
   function storyHref(key) {
     const params = new URLSearchParams();
     params.set("lang", state.language || "CN");
@@ -712,10 +1449,690 @@
     return `?${params.toString()}#story`;
   }
 
+  function storyConnectionDetails(row) {
+    return [
+      storyRelationLabel(row.relation),
+      row.phase ? `phase=${row.phase}` : "",
+      row.finishId !== undefined ? `finish=${row.finishId}` : "",
+      row.actionType ? `${row.actionType} / slot ${row.actionSlot ?? "?"}` : "",
+      row.actionName ? row.actionName : "",
+      row.nativeAction ? `native action ${row.nativeAction}` : "",
+      (row.nativeActions || []).length ? `native action ${(row.nativeActions || []).join(", ")}` : "",
+      (row.opcodes || []).length ? `opcode ${(row.opcodes || []).join(", ")}` : "",
+      (row.nativeActionTags || []).length ? `MemoryPack action tag ${(row.nativeActionTags || []).join(", ")}` : "",
+      (row.nativeEventNames || []).length ? `native event ${(row.nativeEventNames || []).join(", ")}` : "",
+      (row.nativeEventTags || []).length ? `MemoryPack event tag ${(row.nativeEventTags || []).join(", ")}` : "",
+      (row.nativeEventOpcodes || []).length ? `legacy decoded pair ${(row.nativeEventOpcodes || []).join(", ")}` : "",
+      (row.nativeEventTexts || []).length ? `event payload ${(row.nativeEventTexts || []).join(", ")}` : "",
+      (row.nativeEventSummaries || []).length ? `event condition ${(row.nativeEventSummaries || []).join(", ")}` : "",
+      (row.triggerSlotIds || []).length ? `trigger slots ${(row.triggerSlotIds || []).join(", ")}` : "",
+      (row.stageFilters || []).length ? `stage filters ${(row.stageFilters || []).join(", ")}` : "",
+      row.nativeControlPathCount ? `exact control paths ${row.nativeControlPathCount}` : "",
+      row.nativeEventOwnerStatus ? `event owner ${row.nativeEventOwnerStatus}` : "",
+      row.nativeEventProducerStatus ? `event producer ${row.nativeEventProducerStatus}` : "",
+      (row.producerAssetIds || []).length ? `producer assets ${(row.producerAssetIds || []).join(", ")}` : "",
+      (row.producerDomains || []).length ? `producer domains ${(row.producerDomains || []).join(", ")}` : "",
+      (row.producerSignals || []).length ? `literal signals ${(row.producerSignals || []).join(", ")}` : "",
+      (row.producerValues || []).length ? `signal values ${(row.producerValues || []).join(", ")}` : "",
+      (row.questIds || []).length ? `${t("trackedByQuests")} ${(row.questIds || []).join(", ")}` : "",
+      row.scriptId ? `LevelScript ${row.scriptId}` : "",
+      (row.scriptIds || []).length ? `scripts ${(row.scriptIds || []).join(", ")}` : "",
+      (row.producerScriptIds || []).length ? `producer scripts ${(row.producerScriptIds || []).join(", ")}` : "",
+      (row.listenerScriptIds || []).length ? `listener scripts ${(row.listenerScriptIds || []).join(", ")}` : "",
+      (row.producerActions || []).length ? `producer actions ${(row.producerActions || []).join(", ")}` : "",
+      (row.raisedEventKeys || []).length ? `raised events ${(row.raisedEventKeys || []).join(", ")}` : "",
+      (row.producerReceiverModes || []).length ? `event receivers ${(row.producerReceiverModes || []).join(", ")}` : "",
+      row.conditionKey ? `condition ${row.conditionKey}` : "",
+      row.taskKey ? `task ${row.taskKey}` : "",
+      row.taskEntryOffsetHex ? `task offset ${row.taskEntryOffsetHex}` : "",
+      row.conditionOffsetHex ? `condition offset ${row.conditionOffsetHex}` : "",
+      row.sameScriptOnly === true ? t("sameScriptDependency") : "",
+      row.controlPathLinked === false ? t("noPlaybackControlPath") : "",
+      row.conditionComparer ? `comparer ${row.conditionComparer}` : "",
+      row.conditionQuestState !== undefined ? `quest state ${row.conditionQuestState}` : "",
+      row.questStateName ? `quest state ${row.questStateName}` : "",
+      row.executionSide ? `executes on ${row.executionSide}` : "",
+      row.networkRole ? `network role ${row.networkRole}` : "",
+      row.serverEvidenceStatus ? `server evidence ${row.serverEvidenceStatus}` : "",
+      row.nativeFallbackCaveat ? `native fallback ${row.nativeFallbackCaveat}` : "",
+      row.consumerSearchStatus ? `consumer search ${row.consumerSearchStatus}` : "",
+      (row.searchedConsumerKinds || []).length ? `searched consumers ${(row.searchedConsumerKinds || []).join(", ")}` : "",
+      row.bindingStatus ? `binding ${row.bindingStatus}` : "",
+      row.nominalStoryGroup ? `nominal Story group ${row.nominalStoryGroup}` : "",
+      row.serverMessage ? `server message ${row.serverMessage}` : "",
+      (row.serverFields || []).length ? `server fields ${(row.serverFields || []).join(", ")}` : "",
+      (row.upstreamServerStateSources || []).length ? `independent upstream pushes ${(row.upstreamServerStateSources || []).join(", ")}` : "",
+      row.upstreamServerStateRole ? row.upstreamServerStateRole : "",
+      row.clientRequest === false ? "no paired client request" : "",
+      row.expectedClientReply === false ? "no expected client reply" : "",
+      row.expectedReturn ? `expected return ${row.expectedReturn}` : "",
+      row.levelScriptMissionId ? `scoped mission ${row.levelScriptMissionId}` : "",
+      row.levelDataHostMissionId ? `LevelData asset host ${row.levelDataHostMissionId}` : "",
+      row.missionAreaHostMissionId ? `mission-area asset host ${row.missionAreaHostMissionId}` : "",
+      row.trackingMissionId ? `tracking mission ${row.trackingMissionId}` : "",
+      (row.candidateQuestIds || []).length ? `tracking quest context ${(row.candidateQuestIds || []).join(", ")}` : "",
+      row.worldEntityId ? `world entity ${row.worldEntityId}` : "",
+      (row.worldEntityIds || []).length > 1 ? `world entities ${(row.worldEntityIds || []).join(", ")}` : "",
+      (row.worldEntityResolutionModes || []).length ? `world-entity join ${(row.worldEntityResolutionModes || []).join(", ")}` : "",
+      (row.levelDataEntityPropertyNames || []).length ? `LevelData entity properties ${(row.levelDataEntityPropertyNames || []).join(", ")}` : "",
+      (row.npcEntityPropertyPaths || []).length ? `LevelData NPC alias ${(row.npcEntityPropertyPaths || []).join(", ")}` : "",
+      (row.patrolIds || []).length ? `patrol ${(row.patrolIds || []).join(", ")}` : "",
+      (row.checkpointIndices || []).length ? `checkpoint ${(row.checkpointIndices || []).join(", ")}` : "",
+      (row.localScriptIds || []).length ? `local scripts ${(row.localScriptIds || []).join(", ")}` : "",
+      (row.entitySlotIds || []).length ? `tracked entity slots ${(row.entitySlotIds || []).join(", ")}` : "",
+      (row.entityLogicIds || []).length ? `entity logic ids ${(row.entityLogicIds || []).join(", ")}` : "",
+      (row.trackedLocalEntityLogicIds || []).length ? `tracked local entity ids ${(row.trackedLocalEntityLogicIds || []).join(", ")}` : "",
+      (row.entityDetailIds || []).length ? `registry details ${(row.entityDetailIds || []).join(", ")}` : "",
+      (row.entityTemplateIds || []).length ? `InteractiveTable templates ${(row.entityTemplateIds || []).join(", ")}` : "",
+      (row.entityTemplatePaths || []).length ? `narrative template paths ${(row.entityTemplatePaths || []).join(", ")}` : "",
+      row.interactivePropertyKey ? `interactive property ${row.interactivePropertyKey}` : "",
+      (row.propertyKeys || []).length ? `property keys ${(row.propertyKeys || []).join(", ")}` : "",
+      row.interactiveEntryOffset !== undefined ? `interactive entry offset ${row.interactiveEntryOffset}` : "",
+      row.interactivePropertyOffset !== undefined ? `property offset ${row.interactivePropertyOffset}` : "",
+      row.trackedSlotBridgeStatus ? `slot bridge ${row.trackedSlotBridgeStatus}` : "",
+      row.producerEventName ? `producer event ${row.producerEventName}` : "",
+      row.producerHeaderLocalId !== undefined ? `producer header local ${row.producerHeaderLocalId}` : "",
+      row.raiseActionLocalId !== undefined ? `raise action local ${row.raiseActionLocalId}` : "",
+      row.raisedEventKey ? `raised event ${row.raisedEventKey}` : "",
+      row.guideGroupId ? `guide group ${row.guideGroupId}` : "",
+      row.producerActionLocalId !== undefined ? `producer action local ${row.producerActionLocalId}` : "",
+      row.missionGlobalVarKey ? `client global var ${row.missionGlobalVarKey}` : "",
+      row.missionStateId ? `mission-state getter ${row.missionStateId}` : "",
+      (row.missionStateGateRoles || []).length ? `selected mission-state branch ${(row.missionStateGateRoles || []).join(", ")}` : "",
+      (row.missionStateGatePredicates || []).length ? `exact predicates ${(row.missionStateGatePredicates || []).join("; ")}` : "",
+      row.radioTriggerId ? `radio-trigger zone ${row.radioTriggerId}` : "",
+      row.useRadioTriggerOnce === true ? "one-shot radio trigger" : "",
+      row.readingPopupId ? `ReadingPopUp ${row.readingPopupId}` : "",
+      row.interactiveListCount ? `LevelInteractiveData list count ${row.interactiveListCount}` : "",
+      row.interactiveRecordIndex !== undefined ? `interactive record index ${row.interactiveRecordIndex}` : "",
+      row.interactiveParamMapOffset !== undefined ? `ParamValue map offset ${row.interactiveParamMapOffset}` : "",
+      row.spawnerConfigMissionId ? `SpawnerConfig mission ${row.spawnerConfigMissionId}` : "",
+      (row.spawnerIds || []).length ? `spawner ids ${(row.spawnerIds || []).join(", ")}` : "",
+      (row.authoredSpawnerTokens || []).length ? `authored spawner ids ${(row.authoredSpawnerTokens || []).join(", ")}` : "",
+      (row.nativeControlPathStatuses || []).length ? `control path status ${(row.nativeControlPathStatuses || []).join(", ")}` : "",
+      row.entityCompareBridge ? `entity comparison ${JSON.stringify(row.entityCompareBridge)}` : "",
+      row.variantMission ? `variant ${row.variantMission}` : "",
+      row.attachmentKind ? `attachment ${row.attachmentKind}` : "",
+      row.npcProxyId ? `NPC ${row.npcProxyId}` : "",
+      (row.npcProxyIds || []).length ? `NPC proxies ${(row.npcProxyIds || []).join(", ")}` : "",
+      (row.segmentIdsGlobal || []).length ? `authored segment scripts ${(row.segmentIdsGlobal || []).join(", ")}` : "",
+      row.npcProxyMissionId ? `mission ${row.npcProxyMissionId}` : "",
+      row.focusModeId ? `FocusMode ${row.focusModeId}` : "",
+      row.focusModeMissionId ? `mission ${row.focusModeMissionId}` : "",
+      row.focusModeField ? `field ${row.focusModeField}` : "",
+      row.snsDialogId ? `SNS ${row.snsDialogId}` : "",
+      row.snsMissionId ? `mission ${row.snsMissionId}` : "",
+      (row.snsContentIds || []).length ? `content ${(row.snsContentIds || []).join(", ")}` : "",
+      row.parentStoryKey ? `parent Story ${row.parentStoryKey}` : "",
+      row.dependencyOnly === true ? "dependency only; no Story ownership" : "",
+      (row.primeNodeIds || []).length ? `prime nodes ${(row.primeNodeIds || []).join(", ")}` : "",
+      row.parentStoryOutKey ? `parent Story output ${row.parentStoryOutKey}` : "",
+      (row.parentStoryKeys || []).length ? `candidate parents ${(row.parentStoryKeys || []).join(", ")}` : "",
+      (row.allParentStoryKeys || []).length > 1 ? `all authored parents ${(row.allParentStoryKeys || []).join(", ")}` : "",
+      (row.unscopedParentStoryKeys || []).length ? `unresolved parent uses ${(row.unscopedParentStoryKeys || []).join(", ")}` : "",
+      row.scopeCompleteness ? `scope ${row.scopeCompleteness}` : "",
+      row.parentStatus ? `parent status ${row.parentStatus}` : "",
+      (row.textIds || []).length ? `text ${(row.textIds || []).join(", ")}` : "",
+      (row.actionKinds || []).length ? `narrative action ${(row.actionKinds || []).join(", ")}` : "",
+      (row.actionTypes || []).length ? `typed class ${(row.actionTypes || []).join(", ")}` : "",
+      (row.actionPaths || []).length ? `DialogTree path ${(row.actionPaths || []).join(", ")}` : "",
+      (row.sourcePathIds || []).length ? `asset PathID ${(row.sourcePathIds || []).join(", ")}` : "",
+      row.evidenceTier ? `evidence tier ${row.evidenceTier}` : "",
+      row.serverExchange === false
+        ? (row.clientNavigationOnly
+          ? "local navigation context; no server exchange"
+          : row.networkRole === "local_trigger_context"
+            ? "local trigger context; no server exchange"
+          : row.networkRole === "local_asset_shell_context"
+              ? "local asset-shell context; no server exchange"
+              : row.networkRole === "local_mission_event_context"
+                ? "local mission-event context; no decoded server exchange"
+                : row.networkRole === "local_npc_ready_context"
+                  ? "local NPC-readiness context; no decoded server exchange"
+                  : row.networkRole === "local_tracked_entity_event_context"
+                    ? "local tracked-entity playback context; objective server response is opaque"
+                    : row.networkRole === "local_navigation_and_property_event_context"
+                      ? "local tracked-entity property context; objective server response is opaque"
+                    : row.networkRole === "local_npc_playback_target_context"
+                      ? "local Play3DRadio NPC-emitter context; no server exchange"
+                      : row.networkRole === "local_asset_shell_custom_event_context"
+                        ? "local asset-shell custom-event playback route; no server exchange"
+                      : row.networkRole === "local_levelscript_event_dispatch"
+                        ? "local LevelScript custom-event dispatch; no server request or response"
+                      : row.networkRole === "local_authored_trigger_volume_event"
+                        ? "local authored trigger-volume event; no server request or response"
+                      : row.networkRole === "local_entity_property_event"
+                        ? "local entity-property event; no packet join proven"
+                      : row.networkRole === "reads_synchronized_local_mission_state"
+                        ? "reads the synchronized local MissionSystem cache; this gate sends no request and expects no direct response"
+                      : row.networkRole === "local_narrative_mission_state_context"
+                        ? "the FX gate reads synchronized local mission state; ClientCollectNarrative is local, while _CollectNarrative may separately request interaction (exact protocol reply not proven)"
+                      : row.networkRole === "local_authored_segment_context"
+                        ? "local authored NPC-proxy segment identity; no server request or response"
+                      : row.networkRole === "local_client_only_guide_group_context"
+                        ? "local client-only guide completion route; CS_COMPLETE_GUIDE_GROUP is skipped"
+                      : row.networkRole === "local_npc_patrol_runtime_event"
+                        ? "local NPC patrol checkpoint event; no client request, server push, or expected reply"
+              : "local presentation; no server exchange")
+        : "",
+      (row.timelines || []).length ? `Timeline ${(row.timelines || []).join(", ")}` : "",
+      (row.rootPaths || []).length ? `root ${(row.rootPaths || []).join(", ")}` : "",
+      row.storyOwnerMission ? `Story owner ${row.storyOwnerMission}` : "",
+      row.occurrenceCount ? `occurrences ${row.occurrenceCount}` : "",
+      row.allOccurrenceCount && row.allOccurrenceCount !== row.occurrenceCount ? `all occurrences ${row.allOccurrenceCount}` : "",
+      row.hasUnscopedOccurrences ? "some occurrences remain unscoped" : "",
+      row.hasUnscopedOrOtherMissionOccurrences ? "some occurrences have other or unresolved mission scope" : "",
+      row.levelDataHostStatus ? `LevelData host ${row.levelDataHostStatus}` : "",
+      (row.scopeEvidenceKinds || []).length ? `scope ${(row.scopeEvidenceKinds || []).join(", ")}` : "",
+      row.questTriggerStatus ? `quest trigger ${row.questTriggerStatus}` : "",
+      row.nativeMappingId ? `mapping ${row.nativeMappingId}` : "",
+      row.acceptModeType ? row.acceptModeType : "",
+      (row.anchors || []).length ? `anchor ${(row.anchors || []).join(", ")}` : "",
+      (row.edgeKinds || []).length ? `edge ${(row.edgeKinds || []).join(", ")}` : "",
+      (row.levelIds || []).length ? `level ${(row.levelIds || []).join(", ")}` : "",
+      (row.levelNums || []).length ? `level number ${(row.levelNums || []).join(", ")}` : "",
+      (row.missionAreaIds || []).length ? `area ${(row.missionAreaIds || []).join(", ")}` : "",
+      row.triggerVolumeType ? `trigger volume ${row.triggerVolumeType}` : "",
+      row.triggerVolumeOffset !== undefined ? `trigger volume offset ${row.triggerVolumeOffset}` : "",
+      row.triggerShapeOffset !== undefined ? `trigger shape offset ${row.triggerShapeOffset}` : "",
+      row.triggerShape ? `Leader trigger shape ${JSON.stringify(row.triggerShape)}` : "",
+      row.missionAreaShape ? `MissionArea shape ${JSON.stringify(row.missionAreaShape)}` : "",
+      (row.subDataParentIds || []).length ? `sub-data roots ${(row.subDataParentIds || []).join(", ")}` : "",
+      (row.conditionTypes || []).length ? `condition type ${(row.conditionTypes || []).join(", ")}` : "",
+      (row.objectiveConditionTypes || []).length ? `objective condition ${(row.objectiveConditionTypes || []).join(", ")}` : "",
+      (row.levelDataFiles || []).length ? `LevelData ${(row.levelDataFiles || []).join(", ")}` : "",
+      (row.levelDataDictionaryEntryCounts || []).length ? `LevelData script entries ${(row.levelDataDictionaryEntryCounts || []).join(", ")}` : "",
+      (row.authoritativeScopeKinds || []).length ? `authoritative mission scope ${(row.authoritativeScopeKinds || []).join(", ")}` : "",
+      (row.anchorQuestIds || []).length ? `scope anchor quests ${(row.anchorQuestIds || []).join(", ")}` : "",
+      (row.anchorScriptIds || []).length ? `scope anchor scripts ${(row.anchorScriptIds || []).join(", ")}` : "",
+      (row.interactiveTableSourceFiles || []).length ? `InteractiveTable ${(row.interactiveTableSourceFiles || []).join(", ")}` : "",
+      (row.missionAreaSourceFiles || []).length ? `mission-area source ${(row.missionAreaSourceFiles || []).join(", ")}` : "",
+      (row.producerSourceFiles || []).length ? `producer source ${(row.producerSourceFiles || []).join(", ")}` : "",
+      (row.sourceFiles || []).length ? `source ${(row.sourceFiles || []).join(", ")}` : "",
+    ].filter(Boolean);
+  }
+
+  function storyTriggerRoutes(row, questId = "") {
+    const manifest = state.index?.storyCoverage?.storyTriggerManifest || {};
+    const routes = (manifest[row?.key]?.routes || []).filter((route) => route && route.storyKey === row?.key);
+    if (!routes.length) return [];
+    const missionId = String(state.missionId || state.mission?.mission?.id || "");
+    const exact = routes.filter((route) => (
+      (!missionId || route.missionId === missionId)
+      && (!questId || route.questId === questId)
+      && (!row.relation || route.relation === row.relation)
+    ));
+    if (exact.length) return exact;
+    const scoped = routes.filter((route) => (
+      (!missionId || route.missionId === missionId)
+      && (!questId || !route.questId || route.questId === questId)
+    ));
+    return scoped.length ? scoped : routes;
+  }
+
+  function triggerCausalityLabel(causality) {
+    return t(({
+      playback: "triggerPlayback",
+      condition: "triggerCondition",
+      context: "triggerContext",
+      dependency: "triggerDependency",
+      playback_owner_unresolved: "triggerUnresolved",
+      definition_only: "triggerDefinition",
+    })[causality] || "triggerContext");
+  }
+
+  function triggerStepLabel(kind) {
+    return t(({
+      quest: "triggerQuest",
+      mission: "triggerMission",
+      ownership_gap: "triggerOwnershipGap",
+      server_message: "triggerServerMessage",
+      native_event: "triggerNativeEvent",
+      levelscript: "triggerLevelScript",
+      native_action: "triggerNativeAction",
+      story: "triggerStory",
+    })[kind] || "triggerContext");
+  }
+
+  function triggerStepValue(step) {
+    const values = (step.ids || []).filter(Boolean);
+    if (values.length) return values.join(", ");
+    return String(step.id || "?");
+  }
+
+  function triggerStepHtml(step) {
+    const summaries = (step.summaries || []).filter(Boolean);
+    return `<span class="is-${esc(step.kind)}">
+      <small>${esc(triggerStepLabel(step.kind))}</small>
+      <code>${esc(triggerStepValue(step))}</code>
+      ${summaries.length ? `<em>${summaries.map(esc).join(" · ")}</em>` : ""}
+    </span>`;
+  }
+
+  function selectorLabel(key) {
+    return String(key || "")
+      .replace(/IdFilter$/, " ID")
+      .replace(/Id$/, " ID")
+      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+      .replace(/^./, (value) => value.toUpperCase());
+  }
+
+  function selectorValue(value) {
+    if (Array.isArray(value)) return value.join(", ");
+    if (value && typeof value === "object") return JSON.stringify(value);
+    return String(value);
+  }
+
+  function nativePathHtml(path) {
+    const actions = (path.steps || []).filter(Boolean);
+    const selectorEntries = Object.entries(path.selector || {}).filter(([key, value]) => (
+      value !== null
+      && value !== undefined
+      && !["levelId", "listenerHeaderLocalId", "listenerScriptId"].includes(key)
+    ));
+    const transportLabel = path.serverExchange === true
+      ? t("triggerServerTransport")
+      : path.serverExchange === false
+        ? t("triggerLocalTransport")
+        : t("triggerUnknownTransport");
+    const listenerId = path.scriptId || path.selector?.listenerScriptId || "?";
+    const listenerMeta = [
+      path.levelId,
+      path.headerLocalId !== null && path.headerLocalId !== undefined ? `header #${path.headerLocalId}` : "",
+    ].filter(Boolean).join(" · ");
+    return `<div class="mp-trigger-event-path ${path.serverExchange === true ? "is-server" : path.serverExchange === false ? "is-local" : "is-unknown"}" title="${esc(path.sourceFile || "")}">
+      <div class="mp-trigger-event-node">
+        <small>${esc(t("triggerNativeEvent"))}</small>
+        <code>${esc(path.eventName || "?")}</code>
+        ${path.eventSummary ? `<strong>${esc(path.eventSummary)}</strong>` : ""}
+        ${selectorEntries.length ? `<div class="mp-trigger-selector">${selectorEntries.map(([key, value]) => `<span><b>${esc(selectorLabel(key))}</b>${esc(selectorValue(value))}</span>`).join("")}</div>` : ""}
+        <em>${esc(transportLabel)}${path.transport ? ` · ${esc(path.transport)}` : ""}</em>
+      </div>
+      <i aria-hidden="true">&rarr;</i>
+      <div class="mp-trigger-listener-node">
+        <small>${esc(t("triggerListener"))}</small>
+        <code>${esc(listenerId)}</code>
+        ${listenerMeta ? `<strong>${esc(listenerMeta)}</strong>` : ""}
+      </div>
+      ${actions.map((step) => {
+        const name = step.actionName || step.recordClass || step.edge || "action";
+        const meta = [
+          step.localId !== null && step.localId !== undefined ? `#${step.localId}` : "",
+          step.edge,
+          step.unionTag,
+        ].filter(Boolean).join(" · ");
+        return `<i aria-hidden="true">&rarr;</i><div class="mp-trigger-action-node">
+          <small>${esc(t("triggerActionChain"))}</small>
+          <code>${esc(name)}</code>
+          ${meta ? `<strong>${esc(meta)}</strong>` : ""}
+        </div>`;
+      }).join("")}
+    </div>`;
+  }
+
+  function triggerRouteHtml(route) {
+    const steps = (route.steps || []).filter((step) => step && step.kind);
+    const paths = (route.nativePaths || []).filter(Boolean);
+    if (!steps.length) return "";
+    return `<div class="mp-trigger-route is-${esc(route.causality || "context")}">
+      <header><strong>${esc(t("triggerRoute"))}</strong><span>${esc(triggerCausalityLabel(route.causality))}</span>${route.controlPathCount ? `<b>${esc(route.controlPathCount)} ${esc(t("triggerExactPaths"))}</b>` : ""}</header>
+      <div class="mp-trigger-chain">${steps.map((step, index) => `${index ? '<i aria-hidden="true">&rarr;</i>' : ""}${triggerStepHtml(step)}`).join("")}</div>
+      ${paths.length ? `<section class="mp-trigger-events"><header><strong>${esc(t("triggerEvents"))}</strong><small>${esc(t("triggerEventsHint"))}</small></header><div>${paths.map(nativePathHtml).join("")}</div></section>` : ""}
+    </div>`;
+  }
+
+  function storyConnectionLink(row, className, questId = "") {
+    const details = storyConnectionDetails(row);
+    const routeHtml = storyTriggerRoutes(row, questId).map(triggerRouteHtml).join("");
+    const evidence = [row.confidence, row.source || row.evidence].filter(Boolean).join(" · ");
+    return `<a class="is-${className}" href="${esc(storyHref(row.key))}" title="${esc(`${t("openInStory")} · ${evidence}`)}">
+      <span>${esc(storyDisplayKind(row))}</span><code>${esc(row.key)}</code><b aria-hidden="true">→</b>
+      <em>${esc(details.join(" · "))}</em>${evidence ? `<small>${esc(evidence)}</small>` : ""}
+      ${routeHtml}
+    </a>`;
+  }
+
+  function missionStoryConnectionsHtml() {
+    const rows = (state.localized?.flow?.missionStoryConnections || []).filter((row) => row && row.key);
+    if (!rows.length) return "";
+    const acceptRows = rows.filter((row) => row.relation === "mission_accept_dialog");
+    const contextRows = rows.filter((row) => row.relation !== "mission_accept_dialog");
+    return `<details class="mp-mission-story" data-weight="${acceptRows.length ? "strong" : "context"}"${acceptRows.length ? " open" : ""}>
+      <summary>${esc(t("missionStoryFiles"))} <span>${rows.length}</span></summary>
+      <div class="mp-story-files">
+        ${acceptRows.length ? `<section class="mp-story-group is-incoming"><h4>${esc(t("relationMissionAccept"))} <span>${acceptRows.length}</span></h4>${acceptRows.map((row) => storyConnectionLink(row, "incoming")).join("")}</section>` : ""}
+        ${contextRows.length ? `<section class="mp-story-group is-context"><h4>${esc(t("storyContext"))} <span>${contextRows.length}</span></h4>${contextRows.map((row) => storyConnectionLink(row, "context")).join("")}</section>` : ""}
+      </div>
+      <small>${esc(t("missionStoryHint"))}</small>
+    </details>`;
+  }
+
+  function missionStateDependenciesHtml() {
+    const rows = (state.localized?.flow?.missionStateStoryDependencies || [])
+      .filter((row) => row && row.key);
+    if (!rows.length) return "";
+    return `<details class="mp-mission-story mp-runtime-bindings mp-state-dependencies" data-weight="context">
+      <summary>${esc(t("missionStateDependencies"))} <span>${rows.length}</span></summary>
+      <div class="mp-story-files"><section class="mp-story-group is-context">
+        ${rows.map((row) => storyConnectionLink(row, "context")).join("")}
+      </section></div>
+      <small><strong>${esc(t("missionStateDependencyBoundary"))}.</strong> ${esc(t("missionStateDependenciesHint"))}</small>
+    </details>`;
+  }
+
+  function nativeRuntimeBindingsHtml() {
+    const rows = (state.mission?.mission?.nativeRuntimeBindings || []).filter((row) => row && row.subGameId && row.bindScriptId);
+    if (!rows.length) return "";
+    return `<details class="mp-mission-story mp-runtime-bindings mp-subgame-bindings" data-weight="strong" open>
+      <summary>${esc(t("subGameBindings"))} <span>${rows.length}</span></summary>
+      <div class="mp-runtime-binding-grid">${rows.map((row) => { const network = row.networkIdentity || {}; return `<article>
+        <header><code>${esc(row.subGameId)}</code><b>${esc(row.confidence || "typed_original_data")}</b></header>
+        <p><span>${esc(t("subGameScript"))}</span><code>${esc(row.bindScriptId)}</code></p>
+        <p><span>${esc(t("subGameMode"))}</span><code>${esc(row.modeId || row.runtimeType || "—")}</code></p>
+        <p><span>${esc(t("subGameNetworkKey"))}</span><code>${esc(network.authoredKeyField || "gameId")}=${esc(network.authoredKeyValue || row.subGameId)}</code></p>
+        <div class="mp-runtime-protocol">
+          <p class="is-send"><span>C → S · ${esc(t("subGameStartSend"))}</span><code>${esc(network.startRequest || "CS_GAME_MECHANICS_REQ_START")}</code></p>
+          <p class="is-return"><span>S → C · ${esc(t("subGameStartReturn"))}</span><code>${esc(network.enterPush || "SC_GAME_MECHANICS_SYNC_ENTER_GAME_INST")} → ${esc(network.challengeStartPush || "SC_GAME_MECHANICS_SYNC_CHALLENGE_START")}</code></p>
+          <p class="is-return"><span>S → C · ${esc(t("subGameCompleteReturn"))}</span><code>${esc(network.challengeCompletePush || "SC_GAME_MECHANICS_SYNC_CHALLENGE_COMPLETE")} → ${esc(network.completionRewardPush || "SC_GAME_MECHANICS_SYNC_COMPLETION_REWARD")}</code></p>
+          <p class="is-send"><span>C → S · ${esc(t("subGameStopSend"))}</span><code>${esc(network.stopRequest || "CS_GAME_MECHANICS_REQ_STOP")}</code></p>
+          <p class="is-return"><span>S → C · ${esc(t("subGameStopReturn"))}</span><code>${esc(network.leavePush || "SC_GAME_MECHANICS_SYNC_LEAVE_GAME_INST")}</code></p>
+        </div>
+        <small>${esc(row.runtimeType || "")}</small>
+        <small><b>${esc(t("subGameLifecycle"))}:</b> ${esc(t("subGameLifecycleHint"))}</small>
+      </article>`; }).join("")}</div>
+      <small><strong>${esc(t("noStoryBinding"))}.</strong> ${esc(t("subGameBindingsHint"))}</small>
+    </details>`;
+  }
+
+  // Relations recovered from authored cross-mission state conditions. Only
+  // requiresCompleted is precedence; the rest are co-active or exclusive and
+  // are rendered in their own groups so they are never read as ordering.
+  const MISSION_GRAPH_RELATIONS = [
+    ["requiresCompleted", "missionGraphRequiresCompleted", true],
+    ["requiresProcessing", "missionGraphRequiresProcessing", false],
+    ["abortsOnCompleted", "missionGraphAbortsOnCompleted", false],
+    ["unclassified", "missionGraphUnclassified", false],
+  ];
+
+  function missionGraphHtml() {
+    const graph = state.mission?.missionGraph || {};
+    const upstream = graph.upstream || {};
+    const downstream = graph.downstream || {};
+    const total = MISSION_GRAPH_RELATIONS.reduce(
+      (sum, [relation]) =>
+        sum + (upstream[relation] || []).length + (downstream[relation] || []).length,
+      0,
+    );
+    if (!total) return "";
+    const interleavings = (state.index?.missionGraph?.interleavings || [])
+      .filter((row) => (row.missions || []).includes(state.mission?.mission?.id));
+    const group = (relation, labelKey, isPrecedence, missions, direction) => {
+      if (!missions.length) return "";
+      return `<section class="mp-story-group ${isPrecedence ? "is-incoming" : "is-context"}">
+        <h4>${esc(t(direction === "upstream" ? "missionGraphUpstream" : "missionGraphDownstream"))} · ${esc(t(labelKey))} <span>${missions.length}</span></h4>
+        ${missions.map((id) => {
+          const name = missionName(id);
+          return `<button class="mp-graph-link" type="button" data-mission="${esc(id)}"><code>${esc(id)}</code>${name && name !== id ? `<b>${esc(name)}</b>` : ""}</button>`;
+        }).join("")}
+      </section>`;
+    };
+    const precedenceCount = (upstream.requiresCompleted || []).length + (downstream.requiresCompleted || []).length;
+    return `<details class="mp-mission-story mp-mission-graph" data-weight="${precedenceCount ? "strong" : "context"}" open>
+      <summary>${esc(t("missionGraph"))} <span>${total}</span></summary>
+      <div class="mp-story-files">
+        ${MISSION_GRAPH_RELATIONS.map(([relation, labelKey, isPrecedence]) =>
+          group(relation, labelKey, isPrecedence, upstream[relation] || [], "upstream"),
+        ).join("")}
+        ${MISSION_GRAPH_RELATIONS.map(([relation, labelKey, isPrecedence]) =>
+          group(relation, labelKey, isPrecedence, downstream[relation] || [], "downstream"),
+        ).join("")}
+      </div>
+      ${interleavings.length ? `<p class="mp-mission-graph-note">${esc(t("missionGraphInterleaving"))}: ${interleavings.map((row) => (row.missions || []).map((id) => `<code>${esc(id)}</code>`).join(" ⇄ ")).join("; ")}</p>` : ""}
+      <small>${esc(t("missionGraphHint"))}</small>
+    </details>`;
+  }
+
+  function envTalkContextHtml() {
+    const rows = (state.mission?.envTalkContext || []).filter((row) => row && row.storyKey);
+    if (!rows.length) return "";
+    // One envTalk file can be tracked by several quests; group so the file is
+    // listed once with every quest that steers the player to that proxy.
+    const byKey = new Map();
+    rows.forEach((row) => {
+      if (!byKey.has(row.storyKey)) byKey.set(row.storyKey, { row, quests: [], proxies: new Set() });
+      const entry = byKey.get(row.storyKey);
+      if (row.questId && !entry.quests.includes(row.questId)) entry.quests.push(row.questId);
+      if (row.npcProxyId) entry.proxies.add(row.npcProxyId);
+    });
+    return `<details class="mp-mission-story mp-envtalk-context" data-weight="context">
+      <summary>${esc(t("envTalkContext"))} <span>${byKey.size}</span></summary>
+      <div class="mp-story-files"><section class="mp-story-group is-context">
+        ${[...byKey.values()].map(({ row, quests, proxies }) => storyConnectionLink({
+          key: row.storyKey,
+          relation: "env_talk_quest_tracked_proxy",
+          direction: "context",
+          confidence: "typed_npc_proxy_tracking",
+          questIds: quests,
+          source: `NpcProxyTrackingInfo → ${[...proxies].join(", ")}${row.levelId ? ` (${row.levelId})` : ""}`,
+        }, "context")).join("")}
+      </section></div>
+      <small><strong>${esc(t("envTalkContextBoundary"))}.</strong> ${esc(t("envTalkContextHint"))}</small>
+    </details>`;
+  }
+
+  function nonMissionContentByKey() {
+    const rows = state.index?.storyCoverage?.nonMissionContentKeys || [];
+    return new Map(rows.filter((row) => row && row.key).map((row) => [row.key, row]));
+  }
+
+  function nonMissionContentHtml(rows) {
+    if (!rows.length) return "";
+    return `<details class="mp-mission-story mp-non-mission-content" data-weight="context">
+      <summary>${esc(t("nonMissionContentStory"))} <span>${rows.length}</span></summary>
+      <div class="mp-story-files"><section class="mp-story-group is-context">
+        ${rows.map((row) => storyConnectionLink({
+          key: row.key,
+          relation: "non_mission_content",
+          direction: "context",
+          confidence: "table_backed_non_mission_content",
+          source: `${row.table}.${row.field} (keyed by ${row.keyedBy})`,
+        }, "context")).join("")}
+      </section></div>
+      <small>${esc(t("nonMissionContentStoryHint"))}</small>
+    </details>`;
+  }
+
+  function unassignedStoryHtml() {
+    const nonMissionContent = nonMissionContentByKey();
+    const allKeys = (state.localized?.flow?.unlinked || []).filter(Boolean);
+    // Table-proven non-mission content is reported as its own class rather than
+    // sitting in the unassigned queue: no mission can ever own those rows.
+    const nonMissionRows = allKeys
+      .filter((key) => nonMissionContent.has(key))
+      .map((key) => nonMissionContent.get(key));
+    const keys = allKeys.filter((key) => !nonMissionContent.has(key));
+    if (!keys.length) return nonMissionContentHtml(nonMissionRows);
+    const nativePlaybackByKey = new Map(
+      (state.localized?.flow?.unlinkedNativePlayback || [])
+        .filter((row) => row && row.key)
+        .map((row) => [row.key, row]),
+    );
+    const timelineContainmentByKey = new Map(
+      (state.localized?.flow?.unlinkedTimelineContainment || [])
+        .filter((row) => row && row.key)
+        .map((row) => [row.key, row]),
+    );
+    const dialogTreeContainmentByKey = new Map(
+      (state.localized?.flow?.unlinkedDialogTreeNarrativeActions || [])
+        .filter((row) => row && row.key)
+        .map((row) => [row.key, row]),
+    );
+    const definitionOnlyByKey = new Map(
+      (state.localized?.flow?.unlinkedDefinitionOnly || [])
+        .filter((row) => row && row.key)
+        .map((row) => [row.key, row]),
+    );
+    return `<details class="mp-mission-story mp-unassigned-story" data-weight="context">
+      <summary>${esc(t("unassignedStory"))} <span>${keys.length}</span></summary>
+      <div class="mp-story-files"><section class="mp-story-group is-context">
+        ${keys.map((key) => {
+          const nativeRow = nativePlaybackByKey.get(key);
+          const timelineRow = timelineContainmentByKey.get(key);
+          const dialogTreeRow = dialogTreeContainmentByKey.get(key);
+          const containmentRow = dialogTreeRow || timelineRow;
+          const evidenceRow = containmentRow ? {
+            ...(nativeRow || {}),
+            ...containmentRow,
+            nativeActions: nativeRow?.nativeActions || [],
+            opcodes: nativeRow?.opcodes || [],
+            nativeMappingId: nativeRow?.nativeMappingId || "",
+            source: [containmentRow.source, nativeRow?.source].filter(Boolean).join("; "),
+          } : (nativeRow || definitionOnlyByKey.get(key));
+          return storyConnectionLink(evidenceRow || {
+            key,
+            relation: "unassigned_story",
+            direction: "context",
+            confidence: "unassigned",
+            source: t("unassignedStoryHint"),
+          }, "context");
+        }).join("")}
+      </section></div>
+      <small>${esc(t("unassignedStoryHint"))}</small>
+    </details>${nonMissionContentHtml(nonMissionRows)}`;
+  }
+
+  function storyOrderHtml() {
+    const order = state.mission?.storyOrder;
+    if (!order?.summary) return "";
+    const summary = order.summary;
+    const components = new Map((order.components || []).map((row) => [row.id, row]));
+    const directEdges = order.directEdges || [];
+    const componentHtml = (componentId) => {
+      const component = components.get(componentId) || {id: componentId, sceneKeys: []};
+      const files = (component.sceneKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join("");
+      return `<span class="mp-order-component${component.cyclic ? " is-cycle" : ""}"><b>${esc(component.id)}</b>${files}</span>`;
+    };
+    const causalEdges = (order.reducedComponentEdges || []).map((edge) => {
+      const evidenceRows = (edge.evidenceEdgeIndexes || []).map((index) => directEdges[index]).filter(Boolean);
+      const evidence = [...new Set(evidenceRows.map((row) => row.kind).filter(Boolean))];
+      return `<div class="mp-order-edge">${componentHtml(edge.from)}<i aria-hidden="true">&rarr;</i>${componentHtml(edge.to)}<small>${esc(t("orderEvidence"))}: ${evidence.map((kind) => `<code>${esc(kind)}</code>`).join(" ")}</small></div>`;
+    }).join("");
+    const frontiers = (order.topologicalLayers || []).map((layer, index) => `<div class="mp-order-frontier"><b>${esc(t("partialFrontier"))} ${index + 1}</b><span>${(layer || []).map(componentHtml).join("")}</span></div>`).join("");
+    const branches = order.branches || {};
+    const questForks = (branches.questForks || []).map((row) => `<div><b>${esc(t("questFork"))}</b><code>${esc(row.questId || "?")}</code><i>&rarr;</i><span>${(row.successorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span></div>`).join("");
+    const questMerges = (branches.questMerges || []).map((row) => `<div><b>${esc(t("questMerge"))}</b><span>${(row.predecessorQuestIds || []).map((id) => `<code>${esc(id)}</code>`).join(" ")}</span><i>&rarr;</i><code>${esc(row.questId || "?")}</code></div>`).join("");
+    const nativeBranchLabel = (kind) => t(kind === "splitFanout" ? "nativeSplitFanout" : kind === "ifElse" ? "nativeIfElseBranch" : "nativeSwitchBranch");
+    const nativeParamText = (label, param) => {
+      if (!param || typeof param !== "object") return "";
+      const source = param.path || (param.paramSource != null ? `source ${param.paramSource}` : "");
+      const value = param.value != null ? String(param.value) : "";
+      return [label, source, value].filter(Boolean).join(":");
+    };
+    const nativeEventDetailHtml = (detail) => {
+      if (!detail || typeof detail !== "object" || !Object.keys(detail).length) return "";
+      const values = [
+        detail.summary,
+        detail.eventKey,
+        detail.signalId,
+        detail.dialogIdFilter,
+        detail.triggerSlotIdFilter != null ? `slot ${detail.triggerSlotIdFilter}` : "",
+        detail.newStageFilter != null ? `stage ${detail.newStageFilter}` : "",
+        detail.questId,
+      ].filter(Boolean);
+      return `<p class="mp-native-predicate"><b>${esc(t("nativeEventSelector"))}</b>${values.map((value) => `<code>${esc(value)}</code>`).join(" ")}</p>`;
+    };
+    const nativePredicateHtml = (predicate) => {
+      if (!predicate || !Object.keys(predicate).length) return "";
+      const compare = predicate.compareMissionState || {};
+      const missionState = predicate.sourceGetter?.getMissionState || {};
+      const detail = predicate.detail || {};
+      const sourceDetail = predicate.sourceGetter?.getterInt || {};
+      const details = [
+        predicate.getterName || "",
+        predicate.getterLocalId != null ? `#${predicate.getterLocalId}` : "",
+        predicate.getterUnionTag || "",
+        predicate.detailKind || "",
+        missionState.missionId || "",
+        compare.comparerName || "",
+        compare.valueBStateName || "",
+        detail.comparerName || detail.operation || "",
+        detail.genderName || "",
+        detail.propertyKey || "",
+        detail.scriptPtr?.mode || detail.targetScript?.mode || "",
+        detail.scriptPtr?.scriptId || detail.targetScript?.scriptId || "",
+        nativeParamText("A", detail.valueA),
+        nativeParamText("B", detail.valueB),
+        nativeParamText("min", detail.minimum),
+        nativeParamText("max", detail.maximum),
+        nativeParamText("value", detail.value),
+        nativeParamText("gender", detail.gender),
+        predicate.sourceGetter?.getterName || "",
+        nativeParamText("source", sourceDetail.value),
+        nativeParamText("value", predicate.param),
+        ...(predicate.getterTexts || predicate.texts || []),
+        ...(predicate.sourceGetter?.getterTexts || []),
+      ].filter(Boolean);
+      return `<p class="mp-native-predicate"><b>${esc(t("nativePredicate"))}</b>${details.length ? details.map((value) => `<code>${esc(value)}</code>`).join(" ") : `<span>${esc(t("nativePredicateOpaque"))}</span>`}</p>`;
+    };
+    const nativeBranches = (branches.nativeControlBranches || []).map((row) => `<details><summary><b>${esc(nativeBranchLabel(row.kind))}</b> <code>${esc(row.levelId || "?")}/${esc(row.scriptId || "?")}#${esc(row.branchLocalId ?? "?")}</code></summary><small>${esc(row.eventName || "")}</small>${nativeEventDetailHtml(row.eventDetail)}${nativePredicateHtml(row.predicate)}${(row.arms || []).map((arm) => `<div><code>${esc(arm.edge || "?")} &rarr; #${esc(arm.entryLocalId ?? "?")}</code><span>${(arm.storyKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("")}</details>`).join("");
+    const nativeMerges = (branches.nativeControlMerges || []).map((row) => `<div><b>${esc(t("nativeControlMerge"))}</b><code>#${esc(row.branchLocalId ?? "?")}</code><i>&rarr;</i><code>#${esc(row.mergeLocalId ?? "?")}</code><span>${(row.downstreamStoryKeys || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("");
+    const sceneOptions = (branches.sceneGraphOptions || []).map((row) => `<div><b>${esc(t("optionBranches"))}</b><a href="${esc(storyHref(row.from))}"><code>${esc(row.from || "?")}</code></a><i>&rarr;</i><span>${(row.arms || []).flatMap((arm) => arm.targets || []).map((key) => `<a href="${esc(storyHref(key))}"><code>${esc(key)}</code></a>`).join(" ")}</span></div>`).join("");
+    const dialogOptions = (branches.dialogLineOptions || []).map((row) => `<details><summary><code>${esc(row.storyKey || "?")}</code> 路 ${esc(t("optionBranches"))} ${esc(row.group ?? "?")}</summary>${(row.options || []).map((option) => `<div><code>${esc(option.optionId || "?")}</code><i>&rarr;</i><span>${(option.branchLineIds || []).map((line) => `<code>${esc(line)}</code>`).join(" ")}</span></div>`).join("")}</details>`).join("");
+    const cycles = (order.cycles || []).map((component) => componentHtml(component.id)).join("");
+    return `<details class="mp-mission-story mp-story-order" data-weight="${Number(summary.strongEdgeCount) ? "strong" : "context"}"${Number(summary.strongEdgeCount) ? " open" : ""}>
+      <summary>${esc(t("storyOrder"))} <span>${Number(summary.sceneCount || 0).toLocaleString()}</span></summary>
+      <p>${esc(t("storyOrderHint"))}</p>
+      <div class="mp-order-metrics"><span><b>${Number(summary.strongEdgeCount || 0).toLocaleString()}</b>${esc(t("strongEdges"))}</span><span><b>${Number(summary.weakEdgeCount || 0).toLocaleString()}</b>${esc(t("weakEdges"))}</span><span><b>${Number(summary.cycleCount || 0).toLocaleString()}</b>${esc(t("orderCycles"))}</span><span><b>${Number(summary.unorderedScenePairs || 0).toLocaleString()}</b>${esc(t("unknownPairs"))}</span></div>
+      ${causalEdges ? `<section><h4>${esc(t("causalEdges"))}</h4><div class="mp-order-edges">${causalEdges}</div></section>` : ""}
+      ${frontiers ? `<details class="mp-order-frontiers"><summary>${esc(t("partialFrontier"))}</summary>${frontiers}</details>` : ""}
+      ${cycles ? `<section class="mp-order-cycles"><h4>${esc(t("orderCycles"))}</h4><p>${esc(t("orderCycleHint"))}</p>${cycles}</section>` : ""}
+      ${questForks || questMerges || nativeBranches || nativeMerges || sceneOptions ? `<section><h4>${esc(t("forkMerge"))}</h4><div class="mp-order-branches">${questForks}${questMerges}${nativeBranches}${nativeMerges}${sceneOptions}</div></section>` : ""}
+      ${dialogOptions ? `<section><h4>${esc(t("optionBranches"))}</h4><div class="mp-order-dialog-branches">${dialogOptions}</div></section>` : ""}
+      <small>${esc(t("isolatedScenes"))}: ${Number(summary.isolatedSceneCount || 0).toLocaleString()} 路 ${esc(t("weakOnlyScenes"))}: ${Number(summary.weakOnlySceneCount || 0).toLocaleString()}</small>
+    </details>`;
+  }
+
   function renderMission() {
     renderMissionSummary();
     renderGraph();
     renderInspector();
+  }
+
+  function runtimeObservationHtml(row) {
+    const route = (row.route || []).map((step) => {
+      const label = step.kind === "levelscript_event"
+        ? `${step.eventName || "LevelScript event"} #${step.headerLocalId ?? "?"}`
+        : `${step.actionType || "action"} #${step.actionLocalId ?? "?"}`;
+      return `<span><small>${esc(step.kind)}</small><code>${esc(label)}</code></span>`;
+    }).join('<i aria-hidden="true">&rarr;</i>');
+    const detail = [
+      `${t("runtimeSession")} ${row.sessionId || "?"} #${row.seq ?? "?"}`,
+      row.triggerStatus,
+      row.actionType,
+      row.scriptId ? `LevelScript ${row.scriptId}` : "",
+    ].filter(Boolean).join(" 路 ");
+    return `<article class="mp-runtime-observation">
+      <header><a href="${esc(storyHref(row.storyKey))}"><code>${esc(row.storyKey)}</code></a><b>${esc(row.playbackType || "Story")}</b></header>
+      <p>${esc(detail)}</p>
+      ${route ? `<div class="mp-trigger-chain"><span><small>${esc(t("observedRoute"))}</small><code>${esc(row.chainId || "?")}</code></span><i aria-hidden="true">&rarr;</i>${route}<i aria-hidden="true">&rarr;</i><span><small>Story</small><code>${esc(row.storyKey)}</code></span></div>` : ""}
+    </article>`;
+  }
+
+  function runtimeTraceHtml() {
+    const trace = state.mission?.runtimeTrace;
+    if (!trace) return "";
+    const globalSummary = state.index?.runtimeTrace?.summary || {};
+    const contextOnly = (trace.missionContextOnly || []).filter((row) => row && row.storyKey);
+    const edges = (trace.observedEdges || []).filter((row) => row && row.source && row.target);
+    const edgeHtml = edges.map((row) => `<div class="mp-order-edge"><a href="${esc(storyHref(row.source))}"><code>${esc(row.source)}</code></a><i>&rarr;</i><a href="${esc(storyHref(row.target))}"><code>${esc(row.target)}</code></a><small>${esc(row.context || t("observedSequence"))} 路 ${esc(row.sessionId || "")}</small></div>`).join("");
+    return `<details class="mp-mission-story mp-runtime-observed" data-weight="context" open>
+      <summary>${esc(t("runtimeTraceOverlay"))} <span>${Number(trace.storyObservationCount || 0).toLocaleString()}</span></summary>
+      <p>${esc(t("runtimeTraceHint"))}</p>
+      <div class="mp-order-metrics"><span><b>${Number(globalSummary.exactEventActionChains || 0).toLocaleString()}</b>${esc(t("exactRuntimeChains"))}</span><span><b>${Number(globalSummary.observedForks || 0).toLocaleString()}</b>${esc(t("observedForks"))}</span><span><b>${Number(globalSummary.observedMerges || 0).toLocaleString()}</b>${esc(t("observedMerges"))}</span><span><b>${Number(trace.questObservationPlacements || 0).toLocaleString()}</b>${esc(t("activeQuestContext"))}</span></div>
+      ${edgeHtml ? `<section><h4>${esc(t("observedSequence"))}</h4><div class="mp-order-edges">${edgeHtml}</div></section>` : ""}
+      ${contextOnly.length ? `<section><h4>${esc(t("runtimeObserved"))} 路 ${esc(t("notQuestAttached"))}</h4><div class="mp-runtime-observation-list">${contextOnly.map(runtimeObservationHtml).join("")}</div></section>` : ""}
+      <small>${esc(t("noAuthoredPromotion"))}</small>
+    </details>`;
   }
 
   function renderMissionSummary() {
@@ -730,7 +2147,12 @@
       [row.fanoutCount || 0, t("branches")],
       [(row.multiPrevJoinCount || 0) + (row.activeJoinCount || 0), t("join")],
       [row.exactFinishCount || 0, t("exactFinishes")],
+      [state.localized?.flow?.unlinked?.length || 0, t("unassignedStory")],
     ];
+    if (state.mission.runtimeTrace) metrics.push([
+      state.mission.runtimeTrace.storyObservationCount || 0,
+      t("runtimeObserved"),
+    ]);
     target.innerHTML = `<div class="mp-summary-head">
         <div><p class="mp-summary-kicker">${esc(mission.levelId || "—")}</p><h2>${esc(missionName(mission.id))}</h2><code>${esc(mission.id)}</code></div>
         <div class="mp-summary-metrics">${metrics.map(([value, label]) => `<span><strong>${value}</strong>${esc(label)}</span>`).join("")}</div>
@@ -746,19 +2168,156 @@
         <span class="is-inbound">${esc(t("acceptReturn"))}</span>
         <small>${esc(t("acceptCaveat"))}</small>
       </div>
-      ${runtimeContractHtml()}`;
+      ${summarySectionsHtml()}`;
+    applySummarySection();
+  }
+
+  // The nine evidence blocks used to render as one flat stack of collapsibles.
+  // They are grouped into four named bands purely for navigation: every block
+  // keeps its own summary, hints and boundary notes verbatim, and the order
+  // inside each band is the order it had in the flat stack.
+  const SUMMARY_SECTIONS = [
+    ["structure", "summarySectionStructure", () => [missionGraphHtml(), storyOrderHtml()]],
+    ["runtime", "summarySectionRuntime", () => [nativeRuntimeBindingsHtml(), runtimeTraceHtml()]],
+    ["story", "summarySectionStory", () => [
+      missionStoryConnectionsHtml(),
+      missionStateDependenciesHtml(),
+      envTalkContextHtml(),
+    ]],
+    ["queues", "summarySectionQueues", () => [unassignedStoryHtml(), runtimeContractHtml()]],
+  ];
+
+  function summarySectionsHtml() {
+    const sections = SUMMARY_SECTIONS
+      .map(([id, labelKey, build]) => ({ id, labelKey, body: build().filter(Boolean).join("") }))
+      .filter((section) => section.body);
+    if (!sections.length) return "";
+    const nav = sections.length > 1
+      ? `<nav class="mp-summary-nav" aria-label="${esc(t("summarySections"))}">
+        <button type="button" data-mp-section="all">${esc(t("summaryFocusAll"))}</button>
+        ${sections.map((section) => `<button type="button" data-mp-section="${esc(section.id)}">${esc(t(section.labelKey))}</button>`).join("")}
+      </nav>`
+      : "";
+    return `${nav}${sections.map((section) => `<section class="mp-summary-section" data-mp-section-id="${esc(section.id)}">
+      <h3 class="mp-summary-section-head">${esc(t(section.labelKey))}</h3>
+      <div class="mp-summary-section-body">${section.body}</div>
+    </section>`).join("")}`;
+  }
+
+  // Focusing a band never re-renders the blocks, so open/closed <details> state
+  // and scroll position survive a focus change.
+  function applySummarySection() {
+    const target = byId("mp-mission-summary");
+    if (!target) return;
+    const sections = [...target.querySelectorAll("[data-mp-section-id]")];
+    let active = state.summarySection || "all";
+    if (active !== "all" && !sections.some((node) => node.dataset.mpSectionId === active)) active = "all";
+    state.summarySection = active;
+    sections.forEach((node) => {
+      node.hidden = active !== "all" && node.dataset.mpSectionId !== active;
+    });
+    target.querySelectorAll("button[data-mp-section]").forEach((node) => {
+      const on = node.dataset.mpSection === active;
+      node.classList.toggle("is-active", on);
+      node.setAttribute("aria-pressed", String(on));
+    });
   }
 
   function runtimeContractHtml() {
     const contract = state.index?.runtimeContract || {};
+    const coveragePolicy = state.index?.storyCoverage?.policy || "";
+    const missionlessNodes = (state.index?.storyCoverage?.missionlessSubGamePlaybackNodes || [])
+      .filter((row) => row && row.subGameId && row.bindScriptId);
+    const receiverNodes = (state.index?.storyCoverage?.missionlessNativeRuntimeNodes || [])
+      .filter((row) => row && row.eventName && row.selector && (row.storyFiles || []).length);
     const rows = [...(contract.outbound || []), ...(contract.inbound || [])];
-    return `<details class="mp-contract-details"><summary>${esc(t("nativeBoundary"))} · ${rows.length} ${esc(t("exchanges"))}</summary>
-      <div class="mp-contract-grid">${rows.map((row) => `<article class="mp-contract-card is-${esc(row.direction)}">
-        <span>${row.direction === "client_to_server" ? "C → S" : "S → C"} · ${esc(row.confidence)}</span>
+    const localRows = (contract.localOnly || []).filter((row) => row && row.event);
+    const protocolOnlyRows = (contract.protocolOnly || []).filter((row) => row && row.message);
+    const eventFamilies = Object.entries(state.index?.storyCoverage?.nativePlaybackEventFamilies || {})
+      .filter(([, count]) => Number(count) > 0)
+      .sort((a, b) => Number(b[1]) - Number(a[1]) || a[0].localeCompare(b[0]));
+    const maxEventFamilyCount = Math.max(1, ...eventFamilies.map(([, count]) => Number(count)));
+    const exchangeRoleLabel = (role) => ({
+      request: t("exchangeRequest"),
+      request_after_local_event: t("exchangeRequestAfterLocalEvent"),
+      response: t("exchangeResponse"),
+      server_update_or_confirmation: t("exchangeServerUpdateOrConfirmation"),
+      server_push: t("exchangeServerPush"),
+      completion_acknowledgement: t("exchangeCompletionAcknowledgement"),
+    })[role] || role || "";
+    return `<details class="mp-contract-details" data-weight="strong"><summary>${esc(t("nativeBoundary"))} · ${rows.length} ${esc(t("exchanges"))}${localRows.length ? ` · ${localRows.length} ${esc(t("localOnlyPaths"))}` : ""}${protocolOnlyRows.length ? ` · ${protocolOnlyRows.length} ${esc(protocolLabel("capability"))}` : ""}</summary>
+      <div class="mp-contract-grid">${rows.map((row) => {
+        const role = exchangeRoleLabel(row.exchangeRole);
+        const fields = (row.fields || []).filter(Boolean);
+        const asyncLabel = row.asynchronous ? `${t("asynchronousExchange")} · ` : "";
+        const expectedTraffic = [
+          row.expectedConfirmation,
+          row.expectedServerPush,
+          ...(row.expectedServerPushes || []),
+        ].filter(Boolean);
+        return `<article class="mp-contract-card is-${esc(row.direction)}${row.questScoped === false ? " is-boundary-only" : ""}">
+        <span>${esc(asyncLabel)}${row.direction === "client_to_server" ? "C → S" : "S → C"} · ${esc(row.confidence)}</span>
         <strong>${esc(row.message)}</strong>
+        ${role || row.runtimeScope || row.questScoped === false ? `<div class="mp-contract-tags">${role ? `<b>${esc(role)}</b>` : ""}${row.runtimeScope ? `<b>${esc(row.runtimeScope)}</b>` : ""}${row.questScoped === false ? `<b>${esc(t("boundaryOnly"))} · ${esc(t("notQuestAttached"))}</b>` : ""}</div>` : ""}
+        ${fields.length ? `<small><b>${esc(t("protocolFields"))}:</b> ${fields.map((field) => `<code>${esc(field)}</code>`).join(" ")}</small>` : ""}
+        ${expectedTraffic.length ? `<small><b>${esc(protocolLabel("expected"))}:</b> ${expectedTraffic.map((message) => `<code>${esc(message)}</code>`).join(" ")}</small>` : ""}
         <code>${esc(row.handler)}${row.address ? ` @ ${esc(row.address)}` : ""}</code>
         <p>${esc(row.effect)}</p>
-      </article>`).join("")}</div>
+      </article>`; }).join("")}</div>
+      ${localRows.length ? `<section class="mp-local-only"><header><strong>${esc(t("localOnlyPaths"))}</strong><span>${esc(t("noServerExchange"))}</span></header><div>${localRows.map((row) => `<article class="mp-contract-card is-local-only"><span>LOCAL · ${esc(row.confidence || "native_proven")}</span><strong>${esc(row.event)}</strong><div class="mp-contract-tags"><b>${esc(t("noServerExchange"))}</b></div>${(row.fields || []).length ? `<small><b>${esc(t("protocolFields"))}:</b> ${(row.fields || []).map((field) => `<code>${esc(field)}</code>`).join(" ")}</small>` : ""}<code>${esc(row.handler || "")}${row.address ? ` @ ${esc(row.address)}` : ""}</code><p>${esc(row.effect || "")}</p></article>`).join("")}</div></section>` : ""}
+      ${protocolOnlyRows.length ? `<section class="mp-local-only mp-protocol-capabilities"><header><strong>${esc(protocolLabel("capability"))}</strong><span>${esc(protocolLabel("schemaOnly"))}</span></header><div>${protocolOnlyRows.map((row) => `<article class="mp-contract-card"><span>${esc(protocolLabel(row.boundary === "runtime_unconfirmed" ? "runtimeUnconfirmed" : "senderUnconfirmed"))}</span><strong>${esc(row.message)}</strong><div class="mp-contract-tags"><b>${esc(row.confidence || "protocol_schema_only")}</b></div>${(row.fields || []).length ? `<small><b>${esc(t("protocolFields"))}:</b> ${(row.fields || []).map((field) => `<code>${esc(field)}</code>`).join(" ")}</small>` : ""}${row.possibleServerPush ? `<small><b>${esc(protocolLabel("possible"))}:</b> <code>${esc(row.possibleServerPush)}</code></small>` : ""}<p>${esc(row.effect || "")}</p></article>`).join("")}</div></section>` : ""}
+      ${eventFamilies.length ? `<section class="mp-gap-queue">
+        <header><strong>${esc(t("nativeGapQueue"))}</strong><p>${esc(t("nativeGapQueueHint"))}</p></header>
+        ${coveragePolicy ? `<p class="mp-gap-policy"><b>${esc(t("evidencePolicy"))}:</b> ${esc(coveragePolicy)}</p>` : ""}
+        <div class="mp-gap-family-list">${eventFamilies.map(([eventName, count]) => `<div class="mp-gap-family-row"><code>${esc(eventName)}</code><span><i style="width:${Math.max(4, Math.round((Number(count) / maxEventFamilyCount) * 100))}%"></i></span><b>${Number(count).toLocaleString()}</b></div>`).join("")}</div>
+      </section>` : ""}
+      ${missionlessNodes.length ? `<section class="mp-missionless-runtime">
+        <header><strong>${esc(t("missionlessSubGameNodes"))} <span>${missionlessNodes.length}</span></strong><p>${esc(t("missionlessSubGameNodesHint"))}</p></header>
+        <div class="mp-missionless-runtime-grid">${missionlessNodes.map((row) => {
+          const stories = (row.storyFiles || []).filter((story) => story && story.key);
+          const levelIds = [...new Set(stories.flatMap((story) => story.levelIds || []))];
+          const associations = (row.associations || []).filter((association) => association && association.targetId);
+          const sceneHosts = (row.sceneHosts || []).filter((host) => host && (host.sceneId || host.levelId));
+          const associationLabel = (relation) => ({
+            subgame_unlock_quest_prerequisite: t("unlockQuestPrerequisite"),
+            subgame_unlock_previous_game_mechanic: t("unlockPreviousSubGame"),
+            activity_stage_mission_association: t("activityStageAssociation"),
+          })[relation] || t("nonOwningCrossReference");
+          return `<article>
+            <header><code>${esc(row.subGameId)}</code><b>${esc(t("noMissionOwner"))}</b></header>
+            <div class="mp-runtime-chain"><span>SubGame</span><i>→</i><code>${esc(row.bindScriptId)}</code><i>→</i><span>${esc(t("exactPlayback"))}</span><i>→</i><b>Story</b></div>
+            <p><span>${esc(t("subGameMode"))}</span><code>${esc(row.modeId || row.runtimeType || "—")}</code></p>
+            ${(row.mainTaskIds || []).length ? `<p><span>${esc(t("mainTasks"))}</span><code>${esc(row.mainTaskIds.join(", "))}</code></p>` : ""}
+            ${levelIds.length ? `<p><span>${esc(t("exactLevelHost"))}</span><code>${esc(levelIds.join(", "))}</code></p>` : ""}
+            ${sceneHosts.map((host) => `<p><span>${esc(t("exactSceneHost"))}</span><code>${esc([host.sceneId, host.levelId, host.dungeonSeriesId].filter(Boolean).join(" · "))}</code></p>`).join("")}
+            <div class="mp-missionless-story-links">${stories.map((story) => `<a href="${esc(storyHref(story.key))}"><span>${esc(story.kind || "story")}</span><code>${esc(story.key)}</code><b aria-hidden="true">↗</b><small>${esc((story.nativeActions || []).join(" · "))}</small></a>`).join("")}</div>
+            ${associations.length ? `<div class="mp-runtime-associations"><strong>${esc(t("nonOwningCrossReference"))}</strong>${associations.map((association) => `<div><span>${esc(associationLabel(association.relation))}</span><i aria-hidden="true">⇢</i><code>${esc(association.targetId)}</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(association.finding || "")}</small></div>`).join("")}</div>` : ""}
+          </article>`;
+        }).join("")}</div>
+      </section>` : ""}
+      ${receiverNodes.length ? `<section class="mp-missionless-runtime mp-native-receiver-runtime">
+        <header><strong>${esc(t("exactReceiverNodes"))} <span>${receiverNodes.length}</span></strong><p>${esc(t("exactReceiverNodesHint"))}</p></header>
+        <div class="mp-missionless-runtime-grid">${receiverNodes.map((row) => {
+          const selector = row.selector || {};
+          const target = row.runtimeTarget && row.runtimeTarget.status === "exact_top_level_encounter_module_target" ? row.runtimeTarget : null;
+          const battlePart = target?.battlePart || {};
+          const enemySlots = [...new Set((target?.enemyPointers || []).map((pointer) => pointer?.slotId).filter(Boolean))];
+          const stories = (row.storyFiles || []).filter((story) => story && story.key);
+          const producers = (row.localProducerRoutes || []).filter((producer) => producer && producer.producerAssetId);
+          const selectorRows = Object.entries(selector).filter(([, value]) => value !== "" && value !== null && value !== undefined);
+          const selectorValue = (value) => typeof value === "object" ? JSON.stringify(value) : String(value);
+          return `<article>
+            <header><code>${esc(row.eventName)}</code><b>${esc(t("noMissionOwner"))}</b></header>
+            <div class="mp-runtime-chain">${target ? `<span>${esc(t("encounterModule"))}</span><code>${esc(target.levelScriptVariablePtr)}</code><i>→</i><span>LOCAL LsmPtr</span><i>→</i>` : producers.length ? `<span>${esc(t("abilityProducer"))}</span><i>→</i><code>LOCAL ${esc(selector.signalId || "signal")}</code><i>→</i>` : `<span>${esc(t("serializedSelector"))}</span><i>→</i>`}<code>${esc(selector.listenerScriptId || "—")}</code><i>→</i><span>${esc(t("exactPlayback"))}</span><i>→</i><b>Story</b></div>
+            <p><span>${esc(row.serverExchange ? t("serverBackedEvent") : t("localEvent"))}</span><code>${esc(row.transport || "—")}</code></p>
+            ${row.eventSummary ? `<p><span>${esc(t("evidence"))}</span><small>${esc(row.eventSummary)}</small></p>` : ""}
+            <div class="mp-runtime-selector">${selectorRows.map(([field, value]) => `<span title="${esc(field)}"><b>${esc(selectorFieldLabel(field))}</b><code>${esc(selectorValue(value))}</code></span>`).join("")}</div>
+            ${target ? `<div class="mp-runtime-associations mp-runtime-target"><strong>${esc(t("exactRuntimeTarget"))}</strong><div><span>${esc(t("modulePointer"))}</span><i aria-hidden="true">→</i><code>${esc(target.levelScriptVariablePtr)}</code><b>${esc(target.moduleType || t("encounterModule"))}</b><small>${esc(`${target.sourceFile || ""} @ ${target.dictionaryOffsetHex || "—"} · union ${target.moduleUnionTag || "—"}/${target.serializedMemberCount || "—"}`)}</small></div><div><span>${esc(t("activationSlot"))}</span><i aria-hidden="true">→</i><code>${esc(target.activateTriggerSlotId ?? "—")}</code><b>LOCAL</b><small>${esc(`${t("battleExitSlot")}: ${battlePart.exitTriggerSlotId ?? "—"}${enemySlots.length ? ` · ${t("localEntitySlots")}: ${enemySlots.join(", ")}` : ""}`)}</small></div><div class="is-boundary"><span>${esc(t("missingOwnershipBridge"))}</span><i aria-hidden="true">⇥</i><code>missionId / questId / MissionArea</code><b>${esc(t("noMissionOwner"))}</b><small>${esc(row.ownershipBoundary || target.ownershipBoundary || "")}</small></div><small>${esc(t("noServerRequestOrReturn"))}</small></div>` : ""}
+            ${producers.length ? `<div class="mp-runtime-associations"><strong>${esc(t("localProducerChain"))}</strong>${producers.map((producer) => `<div><span>${esc(`${t("abilityProducer")} · ${producer.producerDomain || "AbilityActionData"}`)}</span><i aria-hidden="true">→</i><code>${esc(producer.producerAssetId)}</code><b>LOCAL · ${esc(t("noServerRequestOrReturn"))}</b><small>${esc(`${t("literalSignal")}: ${producer.receiverSignalId || "—"} / ${producer.doubleValue?.value ?? "—"} · ${producer.actionUnionTag || ""}/${producer.serializedMemberCount || ""} · ${producer.producerSourceFile || ""} @ ${producer.actionOffset || "—"}`)}</small></div>`).join("")}<small>${esc(t("producerBoundaryHint"))}</small></div>` : ""}
+            <div class="mp-missionless-story-links">${stories.map((story) => `<a href="${esc(storyHref(story.key))}"><span>${esc(story.kind || "story")}</span><code>${esc(story.key)}</code><b aria-hidden="true">→</b><small>${esc((story.nativeActions || []).join(" · "))}</small></a>`).join("")}</div>
+          </article>`;
+        }).join("")}</div>
+      </section>` : ""}
       <p class="mp-contract-boundary">${esc(contract.authority?.boundary || "")}</p>
     </details>`;
   }
@@ -926,17 +2485,35 @@
     if (node.annotation) classes.push("has-annotation");
     if (node.authority === "server") classes.push("is-server-owned");
     const conditions = (node.conditionTypes || []).slice(0, 3);
+    const activityLevels = [...new Set(
+      (node.activityStageHosts || []).map((row) => row.levelId).filter(Boolean),
+    )];
+    const runtimeActions = questRuntimeActions(node, localizedMap);
+    const runtimeObservations = (node.runtimeStoryObservations || []).filter((row) => row && row.storyKey);
     const description = missionDescriptionInfo(node, localizedMap);
-    const storyFiles = questStoryFiles(node, localizedMap);
+    const storyCounts = storyConnectionCounts(node, localizedMap);
     const network = node.network?.outbound;
     const networkLabel = network === "dialog_finish" ? t("clientToServerDialog") : network === "objective_progress" ? t("clientToServerProgress") : network === "server_owned" ? t("serverGate") : t("unresolvedSend");
     const networkClass = network === "dialog_finish" || network === "objective_progress" ? "is-dialog" : network === "server_owned" ? "is-server" : "is-unknown";
-    const tooltip = [objectiveText(node, localizedMap), description.text].filter(Boolean).join("\n\n");
+    const storySummary = [
+      storyCounts.incoming ? `${t("storyToQuest")}: ${storyCounts.incoming}` : "",
+      storyCounts.outgoing ? `${t("questToStory")}: ${storyCounts.outgoing}` : "",
+      storyCounts.context ? `${t("storyContext")}: ${storyCounts.context}` : "",
+      runtimeObservations.length ? `${t("runtimeObserved")}: ${runtimeObservations.length}` : "",
+    ].filter(Boolean).join(" · ");
+    const activitySummary = activityLevels.length
+      ? `${t("activityStageLevel")}: ${activityLevels.join(", ")}`
+      : "";
+    const runtimeSummary = runtimeActions.map((row) => {
+      const activityId = row.paramData?.activityId || row.dialogKey || "";
+      return `${t("openUiAction")}: ${activityId}`;
+    }).join("; ");
+    const tooltip = [objectiveText(node, localizedMap), description.text, activitySummary, runtimeSummary, storySummary].filter(Boolean).join("\n\n");
     return `<button class="${classes.join(" ")}" type="button" data-quest="${esc(node.id)}" aria-pressed="${selected}" style="left:${position.x}px;top:${position.y}px" title="${esc(tooltip)}">
-      <span class="mp-card-top"><code>${esc(questShortLabel(node.id))}</code><span class="mp-card-badges">${node.mainPath ? `<span>${esc(t("main"))}</span>` : ""}${isHiddenQuest(node) ? `<span class="is-hidden">${esc(t("hidden"))}</span>` : ""}${storyFiles.length ? `<span class="is-story">${esc(t("storyCount"))} ${storyFiles.length}</span>` : ""}<span>${esc(t("flow"))} ${Number(node.flowIndex || 0)}</span></span></span>
+      <span class="mp-card-top"><code>${esc(questShortLabel(node.id))}</code><span class="mp-card-badges">${node.mainPath ? `<span>${esc(t("main"))}</span>` : ""}${isHiddenQuest(node) ? `<span class="is-hidden">${esc(t("hidden"))}</span>` : ""}${storyCounts.incoming ? `<span class="is-story is-incoming">${esc(t("storyIncomingBadge"))} ${storyCounts.incoming}</span>` : ""}${storyCounts.outgoing ? `<span class="is-story is-outgoing">${esc(t("storyOutgoingBadge"))} ${storyCounts.outgoing}</span>` : ""}${storyCounts.context ? `<span class="is-story is-context">${esc(t("storyContextBadge"))} ${storyCounts.context}</span>` : ""}${runtimeObservations.length ? `<span class="is-runtime">${esc(t("runtimeObserved"))} ${runtimeObservations.length}</span>` : ""}${runtimeActions.length ? `<span>${esc(t("openUiAction"))} ${runtimeActions.length}</span>` : ""}<span>${esc(t("flow"))} ${Number(node.flowIndex || 0)}</span></span></span>
       <strong>${esc(objectiveText(node, localizedMap))}</strong>
       <span class="mp-card-description">${esc(description.text || t("noDescription"))}</span>
-      <span class="mp-condition-row">${conditions.map((value) => `<span>${esc(value)}</span>`).join("")}${(node.conditionTypes || []).length > 3 ? `<span>+${node.conditionTypes.length - 3}</span>` : ""}</span>
+      <span class="mp-condition-row">${runtimeActions.map((row) => `<span title="${esc(t("notStoryFile"))}">${esc(t("openUiAction"))}: ${esc(row.paramData?.activityId || row.dialogKey || "")}</span>`).join("")}${activityLevels.map((value) => `<span title="${esc(t("activityStageLevelHint"))}">${esc(t("activityStageLevel"))}: ${esc(value)}</span>`).join("")}${conditions.map((value) => `<span>${esc(value)}</span>`).join("")}${(node.conditionTypes || []).length > 3 ? `<span>+${node.conditionTypes.length - 3}</span>` : ""}</span>
       <span class="mp-network-row"><span class="mp-network is-inbound">${esc(t("serverToClient"))}</span><span class="mp-network ${networkClass}">${esc(networkLabel)}</span></span>
       ${node.annotation ? `<span class="mp-annotation-dot" aria-label="${esc(node.annotation)}">◎</span>` : ""}
     </button>`;
@@ -1040,13 +2617,14 @@
     return `<div class="mp-condition-tree"><code>${esc(condition.type)}</code>${factHtml ? `<div class="mp-condition-facts">${factHtml}</div>` : ""}${children ? `<div class="mp-condition-children">${children}</div>` : ""}</div>`;
   }
 
-  function objectiveHtml(objective) {
+  function objectiveHtml(objective, questId) {
     const finishRows = (objective.dialogFinishes || []).map((row) => `<span class="mp-finish-chip"><b>${esc(row.dialogId)}</b> · ${row.finishId < 0 ? esc(t("anyFinish")) : `${esc(t("finish"))} ${esc(row.finishId)}`}</span>`).join("");
     const localIds = new Set((state.mission?.nodes || []).map((node) => node.id));
     const stateRows = (objective.questStateRefs || []).map((row) => `<span class="mp-state-chip${localIds.has(row.questId) ? "" : " is-external"}"><b>${esc(row.questId)}</b> · ${esc(t("state"))} ${esc(row.state ?? "?")}${localIds.has(row.questId) ? "" : ` · ${esc(t("externalDependency"))}`}</span>`).join("");
+    const placeholderRows = (objective.serverPlaceholderConditionIds || []).map((conditionId) => `<span class="mp-finish-chip"><b>${esc(t("serverPlaceholderKey"))}</b> · <code>(${esc(questId)}, ${esc(conditionId)})</code></span>`).join("");
     return `<article class="mp-objective"><header><strong>${esc(t("objectives"))} ${objective.index}</strong><span class="mp-authority is-${esc(objective.authority)}">${esc(objective.authority)}</span></header>
       <p>${esc(objective.descriptionKey || t("noObjective"))}</p>
-      <div class="mp-objective-special">${finishRows}${stateRows}</div>
+      <div class="mp-objective-special">${finishRows}${stateRows}${placeholderRows}</div>
       ${renderConditionTree(objective.condition)}
     </article>`;
   }
@@ -1067,7 +2645,9 @@
       exchangeRows.push(protocolRow(t("outbound"), "", `<strong>${esc(t("dialogSend"))}</strong><span>${esc(fields)}</span>`, `<span>${esc(t("dialogSendDetail"))}</span>`, "is-known-send"));
       exchangeRows.push(protocolRow(t("dialogExchange"), "", `<span>${esc(t("synchronizedHistory"))}</span>`, `<strong>→ ${esc(t("dialogEcho"))}</strong>`, "is-inbound-step"));
     } else if (node.network?.outbound === "server_owned") {
-      exchangeRows.push(protocolRow(t("outbound"), "", `<span>${esc(t("serverOwnedDetail"))}</span>`, `<strong>${esc(t("serverGate"))}</strong>`, "is-server-step"));
+      const keys = (node.serverPlaceholderKeys || []).map((row) => `(${row.questId}, ${row.conditionId})`).join(", ");
+      exchangeRows.push(protocolRow(t("outbound"), "", `<strong>${esc(t("serverPlaceholderNoSend"))}</strong>${keys ? `<span>${esc(t("serverPlaceholderKey"))}: ${esc(keys)}</span>` : ""}`, `<strong>${esc(t("serverGate"))}</strong>`, "is-server-step"));
+      exchangeRows.push(protocolRow(t("returnState"), "", `<span>${esc(t("serverPlaceholderReturnDetail"))}</span>`, `<strong>→ ${esc(t("serverPlaceholderReturn"))}</strong>`, "is-inbound-step"));
     }
     if (node.network?.outbound !== "server_owned" && (node.objectives || []).length) {
       const ids = conditionIds.length ? conditionIds.join(", ") : "conditionId";
@@ -1091,10 +2671,17 @@
   }
 
   function storyFilesHtml(node, localizedMap = localizedQuestMap()) {
-    const files = questStoryFiles(node, localizedMap);
-    const body = files.length ? `<div class="mp-story-files">${files.map((row) => `<a href="${esc(storyHref(row.key))}" title="${esc(`${t("openInStory")} · ${row.evidence || "direct quest reference"}`)}">
-      <span>${esc(row.kind || "story")}</span><code>${esc(row.key)}</code><b aria-hidden="true">↗</b>
-    </a>`).join("")}</div>` : `<p>${esc(t("noStoryFiles"))}</p>`;
+    const connections = questStoryConnections(node, localizedMap);
+    const groups = [
+      ["story_to_quest", t("storyToQuest"), "incoming"],
+      ["quest_to_story", t("questToStory"), "outgoing"],
+      ["context", t("storyContext"), "context"],
+    ];
+    const body = connections.length ? `<div class="mp-story-files">${groups.map(([direction, label, className]) => {
+      const rows = connections.filter((row) => (row.direction || "context") === direction);
+      if (!rows.length) return "";
+      return `<section class="mp-story-group is-${className}"><h4>${esc(label)} <span>${rows.length}</span></h4>${rows.map((row) => storyConnectionLink(row, className, node.id)).join("")}</section>`;
+    }).join("")}</div>` : `<p>${esc(t("noStoryFiles"))}</p>`;
     return `<section class="mp-inspector-section mp-story-section"><h3>${esc(t("storyFiles"))}</h3>${body}<small>${esc(t("storyEvidence"))}</small></section>`;
   }
 
@@ -1103,7 +2690,10 @@
     if (!target || !state.mission) return;
     const node = state.mission.nodes.find((row) => row.id === state.selectedQuestId);
     if (!node) { target.innerHTML = `<div class="mp-empty-inspector">${esc(t("selectMission"))}</div>`; return; }
-    const actionHtml = (node.clientActions || []).map((action) => `<div class="mp-action"><code>${esc(action.type)}</code><span>ID ${esc(action.id ?? "?")} · trigger ${esc(action.trigger ?? "?")}</span></div>`).join("");
+    const actionHtml = (node.clientActions || []).map((action) => `<div class="mp-action"><code>${esc(action.type)}</code><span>ID ${esc(action.id ?? "?")} · ${esc(action.triggerName || `trigger ${action.trigger ?? "?"}`)} · ${esc(t("actionChainStep"))} ${esc(Number(action.chainIndex || 0) + 1)}</span></div>`).join("");
+    const activityHostHtml = (node.activityStageHosts || []).map((row) => `<div class="mp-action"><code>${esc(row.levelId)}</code><span>${esc(row.table)} · ${esc(row.stageId)} · ${esc(t("nonOwningCrossReference"))}</span></div>`).join("");
+    const runtimeActionHtml = questRuntimeActions(node).map((row) => `<div class="mp-action"><code>${esc(row.paramData?.activityId || row.dialogKey || t("openUiAction"))}</code><span>${esc(t("openUiAction"))} · panel ${esc(row.panelType ?? "?")} · ${esc(row.questStateName || row.phase || "")} · ${esc(t("notStoryFile"))}</span><small><code>${esc(row.dialogTreeSource || "")}</code></small></div>`).join("");
+    const runtimeObservedHtml = (node.runtimeStoryObservations || []).map(runtimeObservationHtml).join("");
     const nativeEvidence = (state.index?.runtimeContract?.nativeEvidence || []).map((row) => `<li><code>${esc(row.symbol)}</code><span>${esc(row.finding)}</span></li>`).join("");
     const description = missionDescriptionInfo(node);
     target.innerHTML = `<div class="mp-inspector-head">
@@ -1120,11 +2710,14 @@
       <p class="mp-flow-caveat">${esc(t("flowCaveat"))}</p>
       <section class="mp-inspector-section mp-description-section"><h3>${esc(t("missionDescription"))}</h3><p>${esc(description.text || t("noDescription"))}</p>${description.text ? `<small>${esc(description.source === "quest_override" ? t("descriptionOverride") : t("descriptionInherited"))} · <code>${esc(description.key)}</code></small>` : ""}</section>
       <section class="mp-inspector-section"><h3>${esc(t("authority"))}</h3><p>${esc(conditionAuthorityText(node.authority))}</p></section>
-      <section class="mp-inspector-section"><h3>${esc(t("objectives"))}</h3>${(node.objectives || []).map(objectiveHtml).join("") || `<p>${esc(t("noObjective"))}</p>`}${node.failedCondition ? `<div class="mp-failed-condition"><strong>failedCondition</strong>${renderConditionTree(node.failedCondition)}</div>` : ""}</section>
+      ${activityHostHtml ? `<section class="mp-inspector-section"><h3>${esc(t("activityStageLevel"))}</h3><p>${esc(t("activityStageLevelHint"))}</p>${activityHostHtml}</section>` : ""}
+      ${runtimeActionHtml ? `<section class="mp-inspector-section"><h3>${esc(t("runtimeActions"))}</h3>${runtimeActionHtml}</section>` : ""}
+      <section class="mp-inspector-section"><h3>${esc(t("objectives"))}</h3>${(node.objectives || []).map((objective) => objectiveHtml(objective, node.id)).join("") || `<p>${esc(t("noObjective"))}</p>`}${node.failedCondition ? `<div class="mp-failed-condition"><strong>failedCondition</strong>${renderConditionTree(node.failedCondition)}</div>` : ""}</section>
       ${storyFilesHtml(node)}
+      ${runtimeObservedHtml ? `<section class="mp-inspector-section mp-runtime-observed-section"><h3>${esc(t("runtimeTraceOverlay"))}</h3><p>${esc(t("runtimeTraceHint"))}</p><div class="mp-runtime-observation-list">${runtimeObservedHtml}</div><small>${esc(t("noAuthoredPromotion"))}</small></section>` : ""}
       ${actionHtml ? `<section class="mp-inspector-section"><h3>${esc(t("clientActions"))}</h3>${actionHtml}</section>` : ""}
       ${protocolHtml(node)}
-      <details class="mp-native-details"><summary>${esc(t("openEvidence"))}</summary><ul>${nativeEvidence}</ul><p><strong>${esc(t("source"))}:</strong> <code>${esc(state.mission.mission?.source || "")}</code></p></details>`;
+      <details class="mp-native-details"><summary>${esc(t("openEvidence"))}</summary><p>${esc(state.index?.runtimeContract?.authority?.nativeScope || "")}</p><ul>${nativeEvidence}</ul><p><strong>${esc(t("source"))}:</strong> <code>${esc(state.mission.mission?.source || "")}</code></p></details>`;
   }
 
   function applyTransform() {

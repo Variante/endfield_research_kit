@@ -12,6 +12,7 @@
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
   const AVAILABLE_VIEWS = new Set([
     "story",
+    "characters",
     "gameplay",
     "mission-pipeline",
     "progression",
@@ -24,9 +25,9 @@
     "reference",
     "updates",
   ]);
-  const DEBUG_ONLY_VIEWS = new Set(["mission-pipeline", "progression", "projectiles", "combat", "economy", "world", "presentation"]);
+  const DEBUG_ONLY_VIEWS = new Set(["characters", "progression", "projectiles", "combat", "economy", "world", "presentation"]);
   const DEBUG_VIEW_FALLBACKS = Object.freeze({
-    "mission-pipeline": "story",
+    characters: "story",
     progression: "gameplay",
     projectiles: "gameplay",
     combat: "gameplay",
@@ -646,6 +647,10 @@
   }
 
   function setDocumentTitleForView(view) {
+    if (view === "characters") {
+      document.title = "Endfield Characters and NPC Evidence";
+      return;
+    }
     if (view === "assets") {
       document.title = assetUiText("title");
       return;

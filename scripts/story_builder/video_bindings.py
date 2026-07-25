@@ -65,7 +65,7 @@ SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from common import path_id_export_base_stem
+from common import fast_glob_files, path_id_export_base_stem
 
 EXPORT_ROOT = ROOT / "export_full"
 RECOVERED_DIR = EXPORT_ROOT / "recovered"
@@ -229,7 +229,7 @@ def _iter_mono_behaviour_dirs() -> Iterable[Path]:
 
 def iter_playable_assets() -> Iterable[tuple[Path, dict[str, Any]]]:
     for mb_dir in _iter_mono_behaviour_dirs():
-        for p in sorted(mb_dir.iterdir()):
+        for p in fast_glob_files(mb_dir, "BeyondFMVPlayableAsset*.json"):
             base_stem = anime_export_base_stem(p)
             if not base_stem or not base_stem.startswith("BeyondFMVPlayableAsset"):
                 continue
@@ -244,10 +244,9 @@ def iter_playable_assets() -> Iterable[tuple[Path, dict[str, Any]]]:
 
 def iter_fmv_tracks() -> Iterable[tuple[Path, dict[str, Any]]]:
     for mb_dir in _iter_mono_behaviour_dirs():
-        for p in sorted(mb_dir.iterdir()):
-            base_stem = anime_export_base_stem(p)
-            if not (base_stem.startswith("Beyond FMV Track") or base_stem == "FMV"):
-                continue
+        paths = fast_glob_files(mb_dir, "Beyond FMV Track*.json")
+        paths.extend(fast_glob_files(mb_dir, "FMV_p*.json"))
+        for p in sorted(set(paths)):
             try:
                 payload = json.loads(p.read_text(encoding="utf-8"))
             except (OSError, UnicodeDecodeError, json.JSONDecodeError):

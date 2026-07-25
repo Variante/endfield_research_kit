@@ -24,7 +24,11 @@ From the repo root:
 notepad endfield_paths.bat
 .\setup_first_time.bat
 .\export.bat
+.\export.bat --mission-pipeline-only
+.\export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
+.\export.bat --mission-pipeline-data-only
 .\export.bat --with-assets
+.\export.bat --full-source-graph
 .\export.bat --export-from-game
 .\build_updates.bat
 .\build_updates.bat --init-build
@@ -55,6 +59,19 @@ data should be refreshed and the story export tools should run. Pass
 `--with-assets` when the same command should also rebuild asset indexes and
 relink/decode CN audio; combining it with `--export-from-game` runs one
 AnimeStudio Story+asset export.
+The default graph stage keeps only exact original AssetMap rows needed by WebUI
+material/shader/texture/FMV edges. Use `--full-source-graph` for exhaustive
+Unity-object/PathID investigation. Use `--mission-pipeline-only` for recovery
+iteration when Story evidence, CN Story/Text Tables, and Mission Pipeline are
+the only requested outputs. Use `--mission-pipeline-data-only` when those Story
+outputs are already current and only Mission Pipeline JSON/frontend work needs
+refreshing; it skips freshness, evidence, Story, semantic-view, and source-graph
+stages.
+When Story relations changed but the recovered Timeline and exported Table
+inputs did not, add `--reuse-timeline-orders --reuse-reference`. The latter
+validates the current localized reference index and every indexed file before
+preserving the existing Text Tables payload. Both reuse flags are rejected for
+installed-game refreshes.
 Use `build_updates.bat` as the standalone Updates feed comparison. It reads
 previous/current export roots from `endfield_paths.bat` by default and tracks
 WebUI-facing exported text JSON plus exported image/model/video assets and

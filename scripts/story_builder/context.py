@@ -62,10 +62,12 @@ from common import (
     OUT_DIR,
     STORY_REPORTS_DIR,
     ROOT,
+    fast_glob_files,
     first_string_field as _first_string_field,
     is_present,
     path_id_export_base_stem,
     path_id_export_path_id,
+    read_bytes_cached,
     rel_path as repo_rel,
     rel_requires_path_id_export_name,
     unique_preserve as _unique_preserve,
@@ -83,6 +85,7 @@ if str(SCRIPTS_DIR) not in sys.path:
 
 from source_paths import _existing_unique_paths, _resolve_recovered_dir, _resolve_structured_source_dir
 from .reports import (
+    inferred_option_anchor_row as shared_inferred_option_anchor_row,
     write_inferred_option_anchors_report as shared_write_inferred_option_anchors_report,
     write_scene_order_gap_reports as shared_write_scene_order_gap_reports,
 )
@@ -91,6 +94,7 @@ from .timeline_recovery import (
     TimelineRecoveryConfig,
     default_order_out as timeline_recovery_order_out,
     discover_asset_maps as discover_timeline_asset_maps,
+    recover_black_timeline_attachments,
     recover_timeline_line_orders,
     timeline_order_is_current,
 )
@@ -131,11 +135,13 @@ TABLE_DIR = STREAMING_TABLE_DIR
 DATA_JSON_DIR = STREAMING_ASSETS_DIR / "Data" / "Json"
 LEVELDATA_DIR = DATA_JSON_DIR / "LevelData"
 LEVELSCRIPT_DIR = DATA_JSON_DIR / "LevelScriptData"
+SPAWNER_CONFIG_DIR = DATA_JSON_DIR / "SpawnerConfig"
 GAMEPLAY_CONFIG_DIR = DATA_JSON_DIR / "GameplayConfig"
 MRA_DIR = DATA_JSON_DIR / "MissionRuntimeAsset"
 NPC_PROXY_EX_PATH = GAMEPLAY_CONFIG_DIR / "NpcProxyExDataTable.json"
 NPC_PROXY_TABLE_PATH = GAMEPLAY_CONFIG_DIR / "NpcProxyTable.json"
 ATMOS_CLUSTER_TABLE_PATH = GAMEPLAY_CONFIG_DIR / "AtmosphericNpcClusterDataTable.json"
+FOCUS_MODE_INSTANCE_TABLE_PATH = GAMEPLAY_CONFIG_DIR / "FocusModeInstanceTable.json"
 ANIME_RESOURCE_DIRS = _existing_unique_paths([
     EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "StreamingAssets" / "json_by_type" / "TextAsset",
     EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "Persistent" / "json_by_type" / "TextAsset",
@@ -311,7 +317,7 @@ _LEVELSCRIPT_BINDING_CACHE: dict[str, dict] = {}
 _LEVELDATA_NAMED_TABLE_CACHE: dict[str, list[dict]] = {}
 _LEVELDATA_QUEST_STORY_REF_CACHE: dict[str, dict[str, list[dict]]] | None = None
 _JSON_FILE_CACHE: dict[str, dict] = {}
-_MISSION_AREA_CACHE: dict[str, dict] | None = None
+_MISSION_AREA_CACHE: dict[tuple[str, str], dict] | None = None
 _NPC_PROXY_TABLE_CACHE: dict[str, dict] | None = None
 _CUTSCENE_ASSET_CACHE: dict[str, dict] | None = None
 _CUTSCENE_SUBTITLE_TRACK_CACHE: dict[str, list[dict]] | None = None

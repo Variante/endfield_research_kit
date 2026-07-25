@@ -20,6 +20,7 @@ import json
 import math
 import re
 import struct
+import sys
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -27,6 +28,11 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_DIR = ROOT / "scripts"
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+from common import read_bytes_cached
+
 EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_MRA_DIR = EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json" / "MissionRuntimeAsset"
 DEFAULT_TIMELINE_ORDERS = EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "timeline_line_orders.json"
@@ -128,6 +134,10 @@ TRACKING_COPY_FIELDS = (
     "npcProxyId",
     "missionAreaId",
     "jumpId",
+    "trackScriptEntity",
+    "entityLogicId",
+    "scriptId",
+    "entitySlotId",
     "guidingArea",
     "shapeType",
     "radius",
@@ -166,7 +176,14 @@ def load_json(path: Path) -> Any:
 
 def write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    # This generated evidence payload is currently around 90 MB when pretty
+    # printed. Its paired Markdown report is the human-readable view; compact
+    # JSON preserves the exact data while avoiding tens of megabytes of
+    # indentation and materially reducing every Story rebuild's write cost.
+    path.write_text(
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
 
 
 def short_type(value: str) -> str:
@@ -1252,6 +1269,303 @@ def decode_mission_script_conditions(raw: dict) -> list[dict]:
     return out
 
 
+def decode_mission_interactive_script_entity_conditions(raw: dict) -> list[dict]:
+    """Decode exact ``InteractiveCheckInt`` script-entity candidates.
+
+    ``InteractiveCheckInt._entityId`` is an ``EntityPtr``-like constant, not
+    intrinsically a LevelScript reference.  This helper therefore preserves
+    only the authored tuple and never promotes it by itself.  Callers must
+    additionally prove that ``logicId`` is a current-build
+    ``WorldEntityRegistry`` script id and that the matching LevelScript exists
+    in the exact ``_levelId`` scene.
+
+    Slot-backed pointers are deliberately excluded: their ``logicId`` member
+    is not the selected identity when ``useSlotId`` is true.
+    """
+    out: list[dict] = []
+
+    def walk(value: Any, quest_id: str = "") -> None:
+        if isinstance(value, dict):
+            next_quest_id = quest_id
+            if isinstance(value.get("questId"), str):
+                next_quest_id = value["questId"]
+            type_name = _safe_key(value.get("$type"))
+            short_name = type_name.split(",", 1)[0].rsplit(".", 1)[-1]
+            if short_name == "InteractiveCheckInt":
+                entity_value = _unwrap_const(value.get("_entityId"))
+                level_id = _safe_key(
+                    _unwrap_const(
+                        value.get(
+                            "_levelId",
+                            value.get("levelId", value.get("_sceneId")),
+                        )
+                    )
+                )
+                if (
+                    isinstance(entity_value, dict)
+                    and entity_value.get("useSlotId") is False
+                    and isinstance(entity_value.get("logicId"), int)
+                    and not isinstance(entity_value.get("logicId"), bool)
+                    and 0 < entity_value["logicId"] <= 0xFFFFFFFFFFFFFFFF
+                    and level_id
+                ):
+                    out.append({
+                        "questId": next_quest_id,
+                        "type": type_name,
+                        "mapId": level_id,
+                        "logicId": entity_value["logicId"],
+                        "useSlotId": False,
+                        "slotId": entity_value.get("slotId"),
+                        "key": _safe_key(_unwrap_const(value.get("_key"))),
+                        "compareValue": _unwrap_const(value.get("_compareValue")),
+                        "comparer": _unwrap_const(value.get("_comparer")),
+                    })
+            for child in value.values():
+                walk(child, next_quest_id)
+        elif isinstance(value, list):
+            for child in value:
+                walk(child, quest_id)
+
+    walk(raw)
+    return out
+
+
+def decode_mission_world_entity_condition_refs(raw: dict) -> list[dict]:
+    """Return exact logic-backed EntityPtr references from typed conditions.
+
+    This is a corpus-uniqueness helper for foreign-key joins.  It retains
+    direct ``_entityId`` and ``_enemyIds`` EntityPtr shapes only when the
+    pointer is logic-backed and the containing typed node names a level.
+    """
+    out: list[dict] = []
+    seen: set[tuple[str, str, str, int, str]] = set()
+
+    def logic_id_from_ptr(value: Any) -> int | None:
+        value = _unwrap_const(value)
+        if not isinstance(value, dict) or value.get("useSlotId") is not False:
+            return None
+        logic_id = value.get("logicId")
+        if (
+            not isinstance(logic_id, int)
+            or isinstance(logic_id, bool)
+            or logic_id <= 0
+            or logic_id > 0xFFFFFFFFFFFFFFFF
+        ):
+            return None
+        return logic_id
+
+    def walk(value: Any, quest_id: str = "", path: str = "$") -> None:
+        if isinstance(value, dict):
+            next_quest_id = quest_id
+            if isinstance(value.get("questId"), str):
+                next_quest_id = value["questId"]
+            type_name = _safe_key(value.get("$type"))
+            short_name = type_name.split(",", 1)[0].rsplit(".", 1)[-1]
+            map_id = _safe_key(
+                _unwrap_const(
+                    value.get(
+                        "_levelId",
+                        value.get(
+                            "levelId",
+                            value.get("_sceneId", value.get("sceneId")),
+                        ),
+                    )
+                )
+            )
+            candidates: list[tuple[str, int]] = []
+            direct_logic_id = logic_id_from_ptr(value.get("_entityId"))
+            if direct_logic_id is not None:
+                candidates.append(("_entityId", direct_logic_id))
+            raw_enemy_ids = _unwrap_const(value.get("_enemyIds"))
+            if isinstance(raw_enemy_ids, list):
+                for index, raw_entity in enumerate(raw_enemy_ids):
+                    logic_id = logic_id_from_ptr(raw_entity)
+                    if logic_id is not None:
+                        candidates.append((f"_enemyIds[{index}]", logic_id))
+            if short_name and next_quest_id and map_id:
+                for field_name, logic_id in candidates:
+                    signature = (
+                        next_quest_id,
+                        short_name,
+                        map_id,
+                        logic_id,
+                        field_name,
+                    )
+                    if signature in seen:
+                        continue
+                    seen.add(signature)
+                    out.append({
+                        "questId": next_quest_id,
+                        "type": type_name,
+                        "conditionType": short_name,
+                        "mapId": map_id,
+                        "logicId": logic_id,
+                        "field": field_name,
+                        "conditionPath": path,
+                    })
+            for key, child in value.items():
+                walk(child, next_quest_id, f"{path}.{key}")
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                walk(child, quest_id, f"{path}[{index}]")
+
+    walk(raw)
+    return out
+
+
+def decode_mission_world_entity_condition_groups(raw: dict) -> list[dict]:
+    """Decode authored MissionRuntime condition groups of WorldEntity ids.
+
+    The ids are preserved as foreign keys only.  They are not LevelScript ids
+    and this helper never promotes them by itself.  Callers must prove, from a
+    fully decoded current-build ``LevelScriptBriefData.refWorldEntity`` list,
+    that every member of the group resolves uniquely to one exact script in
+    the same level.
+
+    Two current serialized shapes are accepted fail-closed:
+
+    * ``CheckMonsterKilled._enemyIds``: one typed EntityPtr array;
+    * a ``CombineCondition`` whose direct children are all
+      ``InteractiveCheckInt`` records in one level.
+
+    Slot-backed EntityPtrs, singleton groups, mixed direct children, and
+    cross-level groups are deliberately rejected.
+    """
+    out: list[dict] = []
+    seen: set[tuple[str, str, str, tuple[int, ...]]] = set()
+
+    def logic_id_from_ptr(value: Any) -> int | None:
+        value = _unwrap_const(value)
+        if not isinstance(value, dict) or value.get("useSlotId") is not False:
+            return None
+        logic_id = value.get("logicId")
+        if (
+            not isinstance(logic_id, int)
+            or isinstance(logic_id, bool)
+            or logic_id <= 0
+            or logic_id > 0xFFFFFFFFFFFFFFFF
+        ):
+            return None
+        return logic_id
+
+    def emit(
+        *,
+        quest_id: str,
+        group_type: str,
+        map_id: str,
+        entity_ids: list[int],
+        condition_path: str,
+        condition_types: list[str],
+        condition_eval_string: str = "",
+    ) -> None:
+        entity_ids = list(dict.fromkeys(entity_ids))
+        if not quest_id or not map_id or len(entity_ids) < 2:
+            return
+        signature = (quest_id, group_type, map_id, tuple(sorted(entity_ids)))
+        if signature in seen:
+            return
+        seen.add(signature)
+        row = {
+            "questId": quest_id,
+            "groupType": group_type,
+            "mapId": map_id,
+            "entityLogicIds": entity_ids,
+            "conditionPath": condition_path,
+            "conditionTypes": condition_types,
+        }
+        if condition_eval_string:
+            row["conditionEvalString"] = condition_eval_string
+        out.append(row)
+
+    def walk(value: Any, quest_id: str = "", path: str = "$") -> None:
+        if isinstance(value, dict):
+            next_quest_id = quest_id
+            if isinstance(value.get("questId"), str):
+                next_quest_id = value["questId"]
+            type_name = _safe_key(value.get("$type"))
+            short_name = type_name.split(",", 1)[0].rsplit(".", 1)[-1]
+
+            if short_name == "CheckMonsterKilled":
+                map_id = _safe_key(
+                    _unwrap_const(
+                        value.get(
+                            "_sceneId",
+                            value.get("_levelId", value.get("levelId")),
+                        )
+                    )
+                )
+                raw_enemy_ids = _unwrap_const(value.get("_enemyIds"))
+                entity_ids: list[int] = []
+                valid = isinstance(raw_enemy_ids, list) and bool(raw_enemy_ids)
+                if valid:
+                    for raw_entity in raw_enemy_ids:
+                        logic_id = logic_id_from_ptr(raw_entity)
+                        if logic_id is None:
+                            valid = False
+                            break
+                        entity_ids.append(logic_id)
+                if valid:
+                    emit(
+                        quest_id=next_quest_id,
+                        group_type="check_monster_killed_entity_set",
+                        map_id=map_id,
+                        entity_ids=entity_ids,
+                        condition_path=path,
+                        condition_types=["CheckMonsterKilled"],
+                    )
+
+            if short_name == "CombineCondition":
+                direct_children = value.get("subConditions")
+                if isinstance(direct_children, list) and len(direct_children) >= 2:
+                    map_ids: list[str] = []
+                    entity_ids = []
+                    valid = True
+                    for child in direct_children:
+                        if not isinstance(child, dict):
+                            valid = False
+                            break
+                        child_type = _safe_key(child.get("$type"))
+                        child_short_name = child_type.split(",", 1)[0].rsplit(".", 1)[-1]
+                        if child_short_name != "InteractiveCheckInt":
+                            valid = False
+                            break
+                        map_id = _safe_key(
+                            _unwrap_const(
+                                child.get(
+                                    "_levelId",
+                                    child.get("levelId", child.get("_sceneId")),
+                                )
+                            )
+                        )
+                        logic_id = logic_id_from_ptr(child.get("_entityId"))
+                        if not map_id or logic_id is None:
+                            valid = False
+                            break
+                        map_ids.append(map_id)
+                        entity_ids.append(logic_id)
+                    if valid and len(set(map_ids)) == 1:
+                        emit(
+                            quest_id=next_quest_id,
+                            group_type="combined_interactive_int_entity_set",
+                            map_id=map_ids[0],
+                            entity_ids=entity_ids,
+                            condition_path=path,
+                            condition_types=["InteractiveCheckInt"],
+                            condition_eval_string=_safe_key(
+                                value.get("conditionEvalString")
+                            ),
+                        )
+
+            for key, child in value.items():
+                walk(child, next_quest_id, f"{path}.{key}")
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                walk(child, quest_id, f"{path}[{index}]")
+
+    walk(raw)
+    return out
+
+
 def build_script_condition_ownership(mra_files: list[Path]) -> dict[tuple[str, str], list[str]]:
     """Pre-pass: map every (mapId, scriptId) to the missions whose quests
     reference it via a CheckLevelScriptProperty condition.
@@ -1419,7 +1733,7 @@ def extract_levelscript_float_vectors(source_file: str) -> list[dict]:
         if path.stat().st_size > LEVELSCRIPT_SPATIAL_MAX_FILE_BYTES:
             _LEVELSCRIPT_VECTOR_CACHE[cache_key] = []
             return []
-        data = path.read_bytes()
+        data = read_bytes_cached(path)
     except OSError:
         _LEVELSCRIPT_VECTOR_CACHE[cache_key] = []
         return []
@@ -1534,9 +1848,46 @@ def find_levelscript_spatial_matches(source_file: str, pins: list[dict]) -> list
     if not script_ref:
         return []
 
+    # A 25-unit X/Z threshold only needs the selected grid cell and its eight
+    # neighbors. Preserve original pin order inside that exact candidate set so
+    # equal-distance tie behavior remains identical to the former full scan.
+    cell_size = LEVELSCRIPT_SPATIAL_XZ_THRESHOLD
+    pins_by_cell: dict[tuple[int, int], list[tuple[int, dict]]] = defaultdict(list)
+    for pin_index, pin in enumerate(pins):
+        position = pin.get("position") if isinstance(pin, dict) else None
+        if not isinstance(position, dict):
+            continue
+        try:
+            x = float(position.get("x", 0.0))
+            z = float(position.get("z", 0.0))
+        except (TypeError, ValueError):
+            continue
+        if not (math.isfinite(x) and math.isfinite(z)):
+            continue
+        pins_by_cell[(math.floor(x / cell_size), math.floor(z / cell_size))].append(
+            (pin_index, pin)
+        )
+
     best_by_quest: dict[str, dict] = {}
     for vector in extract_levelscript_float_vectors(source_file):
-        for pin in pins:
+        position = vector.get("position") if isinstance(vector, dict) else None
+        if not isinstance(position, dict):
+            continue
+        try:
+            cell_x = math.floor(float(position.get("x", 0.0)) / cell_size)
+            cell_z = math.floor(float(position.get("z", 0.0)) / cell_size)
+        except (TypeError, ValueError):
+            continue
+        nearby_pins = sorted(
+            (
+                indexed_pin
+                for dx in (-1, 0, 1)
+                for dz in (-1, 0, 1)
+                for indexed_pin in pins_by_cell.get((cell_x + dx, cell_z + dz), [])
+            ),
+            key=lambda item: item[0],
+        )
+        for _pin_index, pin in nearby_pins:
             distance = spatial_distance(vector, pin)
             if distance is None:
                 continue
@@ -1635,6 +1986,7 @@ def attach_levelscript_spatial_proximity(
         pins_by_map[str(pin.get("mapId") or "")].append(pin)
 
     attached: list[dict] = []
+    matches_by_source_file: dict[str, list[dict]] = {}
     for scene_key, row in sorted(scene_placement.items(), key=lambda item: natural_key(item[0])):
         source_files = sorted(
             scene_placement_source_files(row),
@@ -1649,7 +2001,12 @@ def attach_levelscript_spatial_proximity(
             pins = pins_by_map.get(map_id) or []
             if not pins:
                 continue
-            for candidate in find_levelscript_spatial_matches(source_file, pins):
+            if source_file not in matches_by_source_file:
+                matches_by_source_file[source_file] = find_levelscript_spatial_matches(
+                    source_file,
+                    pins,
+                )
+            for candidate in matches_by_source_file[source_file]:
                 marker = spatial_candidate_key(candidate)
                 if marker in seen:
                     continue

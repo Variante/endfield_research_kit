@@ -54,6 +54,49 @@ def write_scene_order_gap_reports(
     }
 
 
+def inferred_option_anchor_row(payload: dict, fallback_key: str = "") -> dict | None:
+    """Return one inferred-anchor audit row from an in-memory conversation."""
+    if not isinstance(payload, dict) or str(payload.get("kind") or "") != "dlg":
+        return None
+    warning = next(
+        (
+            item
+            for item in (payload.get("warnings") or [])
+            if isinstance(item, dict)
+            and item.get("code") == "inferredOptionLayout"
+        ),
+        None,
+    )
+    if not isinstance(warning, dict):
+        return None
+    inferred = [
+        detail
+        for detail in (warning.get("groupDetails") or [])
+        if isinstance(detail, dict)
+        and detail.get("status") == "fallbackAfter"
+        and detail.get("inferredAnchorMode")
+    ]
+    if not inferred:
+        return None
+    return {
+        "key": payload.get("key") or fallback_key,
+        "mission": payload.get("mission") or "",
+        "scene": payload.get("scene"),
+        "lineCount": len(payload.get("lines") or []),
+        "groupCount": len(payload.get("optionGroups") or []),
+        "inferredGroups": [
+            {
+                "g": detail.get("group"),
+                "after": detail.get("after"),
+                "mode": detail.get("inferredAnchorMode"),
+                "optionIds": detail.get("optionIds") or [],
+            }
+            for detail in inferred
+        ],
+        "reason": warning.get("reason") or "",
+    }
+
+
 def collect_inferred_option_anchor_rows(conv_dir: Path) -> list[dict]:
     """Walk every dialog conv JSON and pull rows for option groups that landed
     on inferred fallback anchors. Used to audit how many
@@ -62,56 +105,31 @@ def collect_inferred_option_anchor_rows(conv_dir: Path) -> list[dict]:
     rows: list[dict] = []
     for path in sorted(conv_dir.glob("*.json")):
         payload = read_json(path, {})
-        if not isinstance(payload, dict):
-            continue
-        if str(payload.get("kind") or "") != "dlg":
-            continue
-
-        warning = next(
-            (
-                w
-                for w in (payload.get("warnings") or [])
-                if isinstance(w, dict) and w.get("code") == "inferredOptionLayout"
-            ),
-            None,
-        )
-        if not isinstance(warning, dict):
-            continue
-
-        group_details = warning.get("groupDetails") or []
-        inferred = [
-            detail
-            for detail in group_details
-            if isinstance(detail, dict)
-            and detail.get("status") == "fallbackAfter"
-            and detail.get("inferredAnchorMode")
-        ]
-        if not inferred:
-            continue
-
-        rows.append({
-            "key": payload.get("key") or path.stem,
-            "mission": payload.get("mission") or "",
-            "scene": payload.get("scene"),
-            "lineCount": len(payload.get("lines") or []),
-            "groupCount": len(payload.get("optionGroups") or []),
-            "inferredGroups": [
-                {
-                    "g": detail.get("group"),
-                    "after": detail.get("after"),
-                    "mode": detail.get("inferredAnchorMode"),
-                    "optionIds": detail.get("optionIds") or [],
-                }
-                for detail in inferred
-            ],
-            "reason": warning.get("reason") or "",
-        })
+        row = inferred_option_anchor_row(payload, path.stem)
+        if row is not None:
+            rows.append(row)
     rows.sort(key=lambda row: (row.get("mission") or "", row.get("scene") or 0, row.get("key") or ""))
     return rows
 
 
-def write_inferred_option_anchors_report(reports_dir: Path, language: str, conv_dir: Path) -> dict:
-    rows = collect_inferred_option_anchor_rows(conv_dir)
+def write_inferred_option_anchors_report(
+    reports_dir: Path,
+    language: str,
+    conv_dir: Path,
+    *,
+    rows: list[dict] | None = None,
+) -> dict:
+    if rows is None:
+        rows = collect_inferred_option_anchor_rows(conv_dir)
+    else:
+        rows = list(rows)
+        rows.sort(
+            key=lambda row: (
+                row.get("mission") or "",
+                row.get("scene") or 0,
+                row.get("key") or "",
+            )
+        )
 
     by_mode: dict[str, int] = {}
     for row in rows:

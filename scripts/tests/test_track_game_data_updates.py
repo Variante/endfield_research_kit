@@ -440,6 +440,45 @@ class TrackerTests(unittest.TestCase):
                 )
                 self.assertEqual(baseline.read_bytes(), before)
 
+    def test_live_scan_uses_bidirectional_vfs_fallbacks(self) -> None:
+        game_root = self.root / "Endfield_Data"
+        for source in tracker.SOURCES:
+            catalog = game_root / source / "VFS" / "table" / "table.blc"
+            catalog.parent.mkdir(parents=True)
+            catalog.write_bytes(b"catalog")
+        executable = self.root / "AnimeStudio.CLI.exe"
+        executable.write_bytes(b"")
+        commands: list[list[str]] = []
+
+        def fake_run(command: list[str], **kwargs: object) -> object:
+            commands.append(command)
+            if len(commands) == 1:
+                return subprocess.CompletedProcess(command, 0, stdout="--jsonl", stderr="")
+            return subprocess.CompletedProcess(command, 0)
+
+        with mock.patch.object(tracker.subprocess, "run", side_effect=fake_run):
+            tracker._invoke_animestudio(executable, game_root, self.root / "scan")
+
+        streaming_command, persistent_command = commands[1:]
+        self.assertEqual(
+            streaming_command[streaming_command.index("--fallback-assets") + 1],
+            str(game_root / "Persistent"),
+        )
+        self.assertEqual(
+            persistent_command[persistent_command.index("--fallback-assets") + 1],
+            str(game_root / "StreamingAssets"),
+        )
+        for command in (streaming_command, persistent_command):
+            tracked_blocks = [
+                command[index + 1]
+                for index, value in enumerate(command)
+                if value == "--block-type"
+            ]
+            self.assertEqual(tracked_blocks, list(tracker.WEBUI_TRACKED_VFS_BLOCKS))
+            self.assertIn("AudioChinese", tracked_blocks)
+            self.assertNotIn("AudioEnglish", tracked_blocks)
+            self.assertNotIn("AuditAudio", tracked_blocks)
+
     def test_live_scan_rejects_vfs_metadata_mutation(self) -> None:
         game_root = self.root / "Endfield_Data"
         for source in tracker.SOURCES:

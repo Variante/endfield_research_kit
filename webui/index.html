@@ -5,14 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>&#32456;&#26411;&#22320;&#30740;&#31350;&#24037;&#20855; / Endfield Research Kit</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260701-gp5">
-<link rel="stylesheet" href="style.css?v=20260716-fatalerror1">
+<link rel="stylesheet" href="style.css?v=20260725-shellaudit1">
 <link rel="stylesheet" href="src/features/projectiles/projectiles.css?v=20260715-combatmerge2">
 <link rel="stylesheet" href="src/features/combat/style.css?v=20260715-explain2">
 <link rel="stylesheet" href="src/features/economy/index.css?v=20260715-explain3">
 <link rel="stylesheet" href="src/features/world/style.css?v=20260715-worldmap2">
 <link rel="stylesheet" href="src/features/progression/style.css?v=20260715-explain2">
 <link rel="stylesheet" href="src/features/presentation/index.css?v=20260715-presentation4">
-<link rel="stylesheet" href="src/features/mission_pipeline/style.css?v=20260716-missionpipeline1">
+  <link rel="stylesheet" href="src/features/characters/style.css?v=20260724-characters6">
+    <link rel="stylesheet" href="src/features/mission_pipeline/style.css?v=20260725-mplayout2">
 </head>
 <body data-active-view="story">
 <a class="skip-link" href="#views">Skip to current view</a>
@@ -35,7 +36,8 @@
       <span id="view-tabs-hint" class="sr-only">Use the left and right arrow keys to move between views.</span>
       <button id="story-tab" class="view-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="story-view" tabindex="0" data-view="story">&#21095;&#24773;</button>
       <button id="gameplay-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="gameplay-view" tabindex="-1" data-view="gameplay">Gameplay</button>
-      <button id="mission-pipeline-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="mission-pipeline-view" tabindex="-1" data-view="mission-pipeline" data-debug-view>Mission Pipeline</button>
+      <button id="mission-pipeline-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="mission-pipeline-view" tabindex="-1" data-view="mission-pipeline">Mission Pipeline</button>
+      <button id="characters-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="characters-view" tabindex="-1" data-view="characters" data-debug-view>&#20154;&#29289;</button>
       <button id="progression-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="progression-view" tabindex="-1" data-view="progression" data-debug-view>Progression</button>
       <button id="projectiles-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="projectiles-view" tabindex="-1" data-view="projectiles" data-debug-view>Combat &amp; Projectiles</button>
       <button id="combat-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="combat-view" tabindex="-1" data-view="combat" data-debug-view>Combat</button>
@@ -59,6 +61,7 @@
           <span class="ui-language-option ui-language-option-en" data-locale-label="en">EN</span>
         </button>
       </div>
+      <button id="show-debug" class="header-toggle-button topbar-debug-toggle" type="button" aria-pressed="false"><span id="show-debug-label">&#26174;&#31034;&#35843;&#35797;&#20449;&#24687;</span></button>
     </div>
   </header>
   <div id="shell-status" class="shell-status" role="status" aria-live="polite" aria-atomic="true" hidden></div>
@@ -73,7 +76,6 @@
               <button id="filter-toggle" class="panel-toggle" type="button" aria-controls="filter-panel" aria-expanded="true">&#38544;&#34255;&#31579;&#36873;</button>
               <button id="reset" type="button">&#37325;&#32622;&#31579;&#36873;</button>
               <button id="gender-variant" class="header-toggle-button" type="button" aria-pressed="true"><span id="gender-variant-label">Gender: F</span></button>
-              <button id="show-debug" class="header-toggle-button" type="button" aria-pressed="false"><span id="show-debug-label">&#26174;&#31034;&#35843;&#35797;&#20449;&#24687;</span></button>
             </div>
           </header>
 
@@ -178,6 +180,7 @@
             </header>
             <div id="conv-warnings" hidden></div>
             <div id="conv-related" hidden></div>
+            <div id="conv-trigger" hidden></div>
             <div class="conv-controls">
               <label><input type="checkbox" id="show-empty"> <span id="show-empty-label">&#26174;&#31034;&#31354;&#30333;&#23545;&#35805;&#34892;</span></label>
               <label><input type="checkbox" id="show-raw"> <span id="show-raw-label">&#26174;&#31034;&#21407;&#22987; JSON / &#25991;&#26412;&#26469;&#28304;</span></label>
@@ -254,6 +257,10 @@
           </div>
         </main>
       </div>
+    </section>
+
+    <section id="characters-view" class="page-view" data-view="characters" role="tabpanel" aria-labelledby="characters-tab" tabindex="0" hidden>
+      <div id="characters-app"></div>
     </section>
 
     <section id="gameplay-view" class="page-view" data-view="gameplay" role="tabpanel" aria-labelledby="gameplay-tab" tabindex="0" hidden>
@@ -656,10 +663,12 @@
 <script src="src/ui/media_player.js?v=20260701-gp5"></script>
 <script src="src/ui/splitter.js?v=20260701-gp5"></script>
 <script src="src/ui/filters.js?v=20260701-gp5"></script>
-<script src="app_labels.js?v=20260701-gp5"></script>
-<script src="app_tree.js?v=20260715-debugviews1"></script>
-<script src="app.js?v=20260716-audiolinks1"></script>
-<script src="assets.js?v=20260715-debugviews3"></script>
+<script src="app_labels.js?v=20260725-mplayout2"></script>
+<script src="app_tree.js?v=20260723-storytriggers2"></script>
+<script src="src/features/story_triggers.js?v=20260725-mplayout2"></script>
+<script src="app.js?v=20260725-mplayout2"></script>
+<script src="assets.js?v=20260724-debugviews4"></script>
+  <script src="src/features/characters/index.js?v=20260724-characters6"></script>
 <script src="src/features/gameplay/labels.js?v=20260701-gp5"></script>
 <script src="src/features/gameplay/index.js?v=20260701-gp5"></script>
 <script src="src/features/projectiles/index.js?v=20260715-combatmerge2"></script>
@@ -668,7 +677,7 @@
 <script src="src/features/world/index.js?v=20260715-worldmap2"></script>
 <script src="src/features/progression/index.js?v=20260715-explain2"></script>
 <script src="src/features/presentation/index.js?v=20260715-presentation3"></script>
-<script src="src/features/mission_pipeline/index.js?v=20260716-missionpipeline1"></script>
+    <script src="src/features/mission_pipeline/index.js?v=20260725-mplayout2"></script>
 <script src="src/features/next_views.js?v=20260715-combatmerge1"></script>
 <script src="src/features/reference/index.js?v=20260701-gp5"></script>
 <script src="src/features/updates/index.js?v=20260701-gp5"></script>

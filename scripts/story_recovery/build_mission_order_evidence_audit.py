@@ -389,50 +389,78 @@ def collect_reading_prts_links(keys: list[str]) -> dict[str, dict[str, Any]]:
     for key in keys:
         suffix = story_content_suffix(key)
         normalized_key = key[5:] if key.startswith("misc_") else key
-        candidates = {key, normalized_key}
+        exact_candidates = {key, normalized_key}
+        cross_reference_candidates: set[str] = set()
         allow_row_suffix = False
-        if normalized_key.startswith("radio_"):
-            candidates.add(f"radio_{suffix}")
-        elif normalized_key.startswith("text_"):
-            candidates.add(normalized_key)
+        if normalized_key.startswith("text_"):
             allow_row_suffix = True
         elif normalized_key.startswith(("dlg_", "black_")):
-            candidates.add(f"text_{suffix}")
+            cross_reference_candidates.add(f"text_{suffix}")
             allow_row_suffix = True
         elif normalized_key.startswith("remotecomm_"):
-            candidates.add(f"text_{suffix}")
+            cross_reference_candidates.add(f"text_{suffix}")
         elif normalized_key.startswith("sns_"):
-            candidates.add(normalized_key)
+            exact_candidates.add(normalized_key)
         reading_matches: list[dict[str, Any]] = []
+        cross_references: list[dict[str, Any]] = []
         for row_id, row in (reading_rows or {}).items():
             content_id = safe_key((row or {}).get("contentId"))
             row_id_text = safe_key(row_id)
-            if content_id in candidates or (allow_row_suffix and row_id_text.endswith(suffix)):
+            result = {
+                "table": "ReadingPopUp",
+                "id": row_id_text,
+                "contentId": content_id,
+                "bgType": row.get("bgType"),
+                "iconType": row.get("iconType"),
+            }
+            if content_id in exact_candidates:
+                result["matchType"] = "exact_content_id"
                 reading_matches.append({
-                    "id": row_id_text,
-                    "contentId": content_id,
-                    "bgType": row.get("bgType"),
-                    "iconType": row.get("iconType"),
+                    key: value
+                    for key, value in result.items()
+                    if key != "table"
                 })
+            elif (
+                content_id in cross_reference_candidates
+                or (allow_row_suffix and row_id_text.endswith(suffix))
+            ):
+                result["matchType"] = "suffix_cross_reference"
+                cross_references.append(result)
         prts_matches: list[dict[str, Any]] = []
         for table_name, table in prts_tables:
             for row_id, row in (table or {}).items():
                 content_id = safe_key((row or {}).get("contentId"))
                 row_id_text = safe_key(row_id)
-                if content_id in candidates or (allow_row_suffix and row_id_text.endswith(suffix)):
+                result = {
+                    "table": table_name,
+                    "id": row_id_text,
+                    "contentId": content_id,
+                    "firstLvId": row.get("firstLvId"),
+                    "order": row.get("order"),
+                    "type": row.get("type"),
+                }
+                if content_id in exact_candidates:
+                    result["matchType"] = "exact_content_id"
                     prts_matches.append({
-                        "table": table_name,
-                        "id": row_id_text,
-                        "contentId": content_id,
-                        "firstLvId": row.get("firstLvId"),
-                        "order": row.get("order"),
-                        "type": row.get("type"),
+                        key: value
+                        for key, value in result.items()
                     })
-        if reading_matches or prts_matches:
+                elif (
+                    content_id in cross_reference_candidates
+                    or (allow_row_suffix and row_id_text.endswith(suffix))
+                ):
+                    result["matchType"] = "suffix_cross_reference"
+                    cross_references.append(result)
+        if reading_matches or prts_matches or cross_references:
             by_key[key] = {
                 "readingPopups": reading_matches[:8],
                 "prtsItems": prts_matches[:8],
-                "note": "Reading/PRTS content ownership; order is collection UI order, not story chronology alone.",
+                "crossReferences": cross_references[:8],
+                "note": (
+                    "Only exact contentId matches are links. Same-suffix "
+                    "Reading/PRTS rows are retained as fallible cross-reference "
+                    "and are not ownership, playback, or chronology evidence."
+                ),
             }
     return by_key
 
@@ -874,6 +902,45 @@ def collect_npc_proxy_dialog_hits(
                     "dialogId": dialog_id,
                     "source": safe_key(proxy_ref.get("source")),
                 })
+
+    for connection in flow.get("missionStoryConnections") or []:
+        if not (
+            isinstance(connection, dict)
+            and connection.get("relation") == "npc_proxy_ex_mission_context"
+        ):
+            continue
+        dialog_id = safe_key(connection.get("key"))
+        key = (
+            alias_to_key.get(dialog_id)
+            or alias_to_key.get(normalize_story_ref(dialog_id))
+        )
+        if not key:
+            continue
+        hit = entry_report[key]["hits"].setdefault(
+            "npcProxyDialog",
+            {"count": 0, "quests": []},
+        )
+        hit["count"] += 1
+        mission_contexts = hit.setdefault("missionContexts", [])
+        if len(mission_contexts) < 8:
+            mission_contexts.append({
+                "npcProxyId": safe_key(connection.get("npcProxyId")),
+                "dialogId": dialog_id,
+                "missionId": safe_key(connection.get("npcProxyMissionId")),
+                "storyOwnerMission": safe_key(
+                    connection.get("storyOwnerMission")
+                ),
+                "source": safe_key(connection.get("source")),
+                "selectionOrderStatus": safe_key(
+                    connection.get("selectionOrderStatus")
+                ),
+                "nativeMappingId": safe_key(
+                    connection.get("nativeMappingId")
+                ),
+                "gameAssemblySha256": safe_key(
+                    connection.get("gameAssemblySha256")
+                ),
+            })
     return sum(1 for info in entry_report.values() if info["hits"].get("npcProxyDialog"))
 
 
@@ -967,6 +1034,16 @@ def build_report(
 
     collect_audio_hits(mission, keys, needles, entry_report)
     reading_prts_links = collect_reading_prts_links(keys)
+    reading_prts_exact_linked_count = sum(
+        1
+        for links in reading_prts_links.values()
+        if (links.get("readingPopups") or links.get("prtsItems"))
+    )
+    reading_prts_cross_reference_count = sum(
+        1
+        for links in reading_prts_links.values()
+        if links.get("crossReferences")
+    )
     for key, links in reading_prts_links.items():
         entry_report[key]["hits"]["readingPrts"] = links
     map_table_hits = collect_map_hits(mission, level_ids)
@@ -1052,7 +1129,10 @@ def build_report(
             "levelDataFilesWithMissionHits": len(leveldata_files),
             "levelDataSequentialPairCount": leveldata_pair_count,
             "levelDataQuestOwnerCount": len(leveldata_quest_owners),
-            "readingPrtsLinkedEntryCount": len(reading_prts_links),
+            "readingPrtsLinkedEntryCount": reading_prts_exact_linked_count,
+            "readingPrtsSuffixCrossReferenceEntryCount": (
+                reading_prts_cross_reference_count
+            ),
             "weakOrUnknownCount": len(weak_or_unknown),
             "weakOrUnknownWithNoMissionOrLevelScriptHits": no_mission_or_levelscript,
             "weakOrUnknownWithNoMissionLevelScriptOrLevelDataHits": [
@@ -1133,7 +1213,10 @@ def markdown_report(payload: dict[str, Any]) -> str:
         f"- LevelData files with mission hits: {summary['levelDataFilesWithMissionHits']}",
         f"- LevelData adjacent story pairs: {summary.get('levelDataSequentialPairCount', 0)}",
         f"- LevelData quest owners: {summary.get('levelDataQuestOwnerCount', 0)}",
-        f"- Entries with Reading/PRTS ownership: {summary.get('readingPrtsLinkedEntryCount', 0)}",
+        "- Entries with exact Reading/PRTS content links: "
+        f"{summary.get('readingPrtsLinkedEntryCount', 0)}",
+        "- Entries with suffix-only Reading/PRTS cross-reference: "
+        f"{summary.get('readingPrtsSuffixCrossReferenceEntryCount', 0)}",
         "- Weak/unknown entries with no MissionRuntime/proxy/variant/LevelScript hits: "
         f"{len(summary['weakOrUnknownWithNoMissionOrLevelScriptHits'])}",
         "- Weak/unknown entries with no MissionRuntime/proxy/variant/LevelScript/LevelData hits: "
@@ -1188,15 +1271,30 @@ def markdown_report(payload: dict[str, Any]) -> str:
         proxy_dialog = hits.get("npcProxyDialog")
         proxy_dialog_text = ""
         if proxy_dialog:
-            first = (proxy_dialog.get("quests") or [{}])[0]
-            proxy_dialog_text = (
-                f"{first.get('npcProxyId', '')} <- "
-                f"{first.get('questId', '')}"
+            quest_rows = proxy_dialog.get("quests") or []
+            mission_contexts = proxy_dialog.get("missionContexts") or []
+            first = (quest_rows or mission_contexts or [{}])[0]
+            owner = (
+                first.get("questId")
+                or first.get("missionId")
+                or "mission config"
             )
+            proxy_dialog_text = f"{first.get('npcProxyId', '')} <- {owner}"
             if proxy_dialog.get("count", 0) > 1:
                 proxy_dialog_text += f" (+{proxy_dialog['count'] - 1})"
         graph_order = info.get("graphOrder")
         chunk_id = (scene_placement_index.get(key) or {}).get("chunkId") or ""
+        reading_prts = hits.get("readingPrts", {})
+        reading_prts_exact_count = (
+            len(reading_prts.get("readingPopups") or [])
+            + len(reading_prts.get("prtsItems") or [])
+        )
+        reading_prts_cross_reference_count = len(
+            reading_prts.get("crossReferences") or []
+        )
+        reading_prts_text = str(reading_prts_exact_count)
+        if reading_prts_cross_reference_count:
+            reading_prts_text += f" / xref {reading_prts_cross_reference_count}"
         lines.append(
             "| "
             f"`{md_escape(key)}` "
@@ -1211,7 +1309,7 @@ def markdown_report(payload: dict[str, Any]) -> str:
             f"| {hits.get('levelData', {}).get('count', 0)} "
             f"| {md_escape(radio_text)} "
             f"| {hits.get('audioDialog', {}).get('count', 0)} "
-            f"| {len(hits.get('readingPrts', {}).get('readingPopups') or []) + len(hits.get('readingPrts', {}).get('prtsItems') or [])} "
+            f"| {md_escape(reading_prts_text)} "
             f"| {hits.get('assetMapString', {}).get('count', 0)} "
             f"| {md_escape(play_dir_text)} "
             f"| {md_escape(radio_cont_text)} |"
@@ -1685,7 +1783,7 @@ def markdown_report(payload: dict[str, Any]) -> str:
     if not wrote_leveldata_sequence:
         lines.append("- _(none)_")
 
-    lines.extend(["", "## Reading/PRTS Ownership", ""])
+    lines.extend(["", "## Reading/PRTS Exact Links and Cross-References", ""])
     wrote_reading_prts = False
     for key, info in payload["entries"].items():
         links = info["hits"].get("readingPrts")
@@ -1695,17 +1793,23 @@ def markdown_report(payload: dict[str, Any]) -> str:
         lines.append(f"- `{md_escape(key)}`")
         for row in links.get("readingPopups") or []:
             lines.append(
-                "  - ReadingPopUp "
+                "  - exact ReadingPopUp "
                 f"`{md_escape(row.get('id'))}` content=`{md_escape(row.get('contentId'))}` "
                 f"bg={row.get('bgType')} icon={row.get('iconType')}"
             )
         for row in links.get("prtsItems") or []:
             lines.append(
-                "  - "
+                "  - exact "
                 f"{md_escape(row.get('table'))} `{md_escape(row.get('id'))}` "
                 f"content=`{md_escape(row.get('contentId'))}` "
                 f"firstLv=`{md_escape(row.get('firstLvId'))}` "
                 f"order={row.get('order')} type=`{md_escape(row.get('type'))}`"
+            )
+        for row in links.get("crossReferences") or []:
+            lines.append(
+                "  - suffix cross-reference only (not evidence): "
+                f"{md_escape(row.get('table'))} `{md_escape(row.get('id'))}` "
+                f"content=`{md_escape(row.get('contentId'))}`"
             )
     if not wrote_reading_prts:
         lines.append("- _(none)_")
@@ -1761,10 +1865,10 @@ def markdown_report(payload: dict[str, Any]) -> str:
         "## Interpretation Notes",
         "",
         "- MissionRuntime and UID/control-flow LevelScript evidence can become strong order evidence.",
-        "- NPC proxy dialog evidence means MissionRuntime tracks a unique NPC proxy whose NpcProxyExDataTable row assigns the dialog.",
+        "- Quest-attached NPC proxy evidence can anchor a dialog to that quest. Mission-level NpcProxyEx context proves only that the original runtime can select that mission-scoped dialog row; the server-selected one-based active row is not mission activation or cross-row chronology.",
         "- LevelScript string offset order is weak until record types or trigger ownership are decoded.",
         "- LevelData byte-string hits can expose trigger state and spatial context, but are weak until decoded.",
-        "- Reading/PRTS ownership can expose authored collection-page order; WebUI treats unique same-collection page order as weak only.",
+        "- Exact Reading/PRTS contentId links can expose authored collection membership. Same-number/suffix matches across Story kinds are cross-reference only and are not ownership, playback, or chronology evidence.",
         "- Radio/Audio and AssetMap hits validate file families and line membership, but do not prove inter-file chronology alone.",
         "- Map and spatial data should be used as tie-break or diagnostic evidence unless an explicit quest reference links the same target.",
     ])

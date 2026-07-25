@@ -38,9 +38,9 @@ DATA_JSON_ROOT = ROOT / "export_full" / "structured" / "StreamingAssets" / "Data
 MRA_DIR = DATA_JSON_ROOT / "MissionRuntimeAsset"
 
 SETTER_OPCODES = {
-    (0x03B8, 0x0A): "SetBool",
-    (0x03E7, 0x0A): "SetInt",
-    (0x03EA, 0x0A): "SetIntIncrease",
+    (0x03DA, 0x0A): "SetBool",
+    (0x0410, 0x0A): "SetInt",
+    (0x0413, 0x0A): "SetIntIncrease",
 }
 
 

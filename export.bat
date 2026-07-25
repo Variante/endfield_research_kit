@@ -3,14 +3,22 @@ setlocal
 
 set "EXPORT_ARGS="
 set "AUDIO_ARGS="
+set "FRESHNESS_ARGS="
+set "STORY_BUILD_ARGS="
 set "EXPORT_FROM_GAME=0"
 set "WITH_ASSETS=0"
 set "ASSET_MODE=full"
+set "FULL_SOURCE_GRAPH=0"
+set "MISSION_PIPELINE_ONLY=0"
+set "MISSION_PIPELINE_DATA_ONLY=0"
+set "REUSE_TIMELINE_ORDERS=0"
+set "REUSE_REFERENCE=0"
 
 if exist "%~dp0endfield_paths.bat" call "%~dp0endfield_paths.bat"
 if errorlevel 1 exit /b %errorlevel%
 if defined ENDFIELD_GAME_ROOT set "EXPORT_ARGS=%EXPORT_ARGS% --game-root "%ENDFIELD_GAME_ROOT%""
 if defined ENDFIELD_GAME_ROOT set "AUDIO_ARGS=%AUDIO_ARGS% --game-root "%ENDFIELD_GAME_ROOT%""
+if defined ENDFIELD_GAME_ROOT set "FRESHNESS_ARGS=--game-root "%ENDFIELD_GAME_ROOT%""
 if defined ENDFIELD_EXPORT_ROOT set "AUDIO_ARGS=%AUDIO_ARGS% --export-root "%ENDFIELD_EXPORT_ROOT%""
 
 if not defined ENDFIELD_EXPORT_BENCHMARK_ACTIVE (
@@ -31,6 +39,33 @@ if /I "%~1"=="--export-from-game" (
 )
 if /I "%~1"=="--with-assets" (
   set "WITH_ASSETS=1"
+  shift
+  goto :parse_args
+)
+if /I "%~1"=="--full-source-graph" (
+  set "FULL_SOURCE_GRAPH=1"
+  shift
+  goto :parse_args
+)
+if /I "%~1"=="--mission-pipeline-only" (
+  set "MISSION_PIPELINE_ONLY=1"
+  shift
+  goto :parse_args
+)
+if /I "%~1"=="--mission-pipeline-data-only" (
+  set "MISSION_PIPELINE_DATA_ONLY=1"
+  shift
+  goto :parse_args
+)
+if /I "%~1"=="--reuse-timeline-orders" (
+  set "REUSE_TIMELINE_ORDERS=1"
+  set "STORY_BUILD_ARGS=%STORY_BUILD_ARGS% --timeline-recovery never"
+  shift
+  goto :parse_args
+)
+if /I "%~1"=="--reuse-reference" (
+  set "REUSE_REFERENCE=1"
+  set "STORY_BUILD_ARGS=%STORY_BUILD_ARGS% --reuse-reference"
   shift
   goto :parse_args
 )
@@ -70,6 +105,7 @@ if /I "%~1"=="--game-root" (
   )
   set "EXPORT_ARGS=%EXPORT_ARGS% "%~1" "%~2""
   set "AUDIO_ARGS=%AUDIO_ARGS% "%~1" "%~2""
+  set "FRESHNESS_ARGS=--game-root "%~2""
   shift
   shift
   goto :parse_args
@@ -81,6 +117,53 @@ goto :parse_args
 :parsed_args
 call :validate_asset_mode "%ASSET_MODE%"
 if errorlevel 1 exit /b 2
+if "%MISSION_PIPELINE_ONLY%"=="1" if "%WITH_ASSETS%"=="1" (
+  echo --mission-pipeline-only cannot be combined with --with-assets.
+  exit /b 2
+)
+if "%MISSION_PIPELINE_DATA_ONLY%"=="1" if "%EXPORT_FROM_GAME%"=="1" (
+  echo --mission-pipeline-data-only reuses generated Story data and cannot be combined with --export-from-game.
+  exit /b 2
+)
+if "%MISSION_PIPELINE_DATA_ONLY%"=="1" if "%WITH_ASSETS%"=="1" (
+  echo --mission-pipeline-data-only cannot be combined with asset refresh flags.
+  exit /b 2
+)
+if "%MISSION_PIPELINE_DATA_ONLY%"=="1" if "%FULL_SOURCE_GRAPH%"=="1" (
+  echo --mission-pipeline-data-only cannot be combined with --full-source-graph.
+  exit /b 2
+)
+if "%MISSION_PIPELINE_DATA_ONLY%"=="1" if "%MISSION_PIPELINE_ONLY%"=="1" (
+  echo Choose either --mission-pipeline-only or --mission-pipeline-data-only.
+  exit /b 2
+)
+if "%REUSE_TIMELINE_ORDERS%"=="1" if "%EXPORT_FROM_GAME%"=="1" (
+  echo --reuse-timeline-orders cannot be combined with --export-from-game because refreshed game data may change Timeline order.
+  exit /b 2
+)
+if "%REUSE_TIMELINE_ORDERS%"=="1" if "%MISSION_PIPELINE_DATA_ONLY%"=="1" (
+  echo --mission-pipeline-data-only already skips the Story build; omit --reuse-timeline-orders.
+  exit /b 2
+)
+if "%REUSE_REFERENCE%"=="1" if "%EXPORT_FROM_GAME%"=="1" (
+  echo --reuse-reference cannot be combined with --export-from-game because refreshed Table inputs may change Text Tables.
+  exit /b 2
+)
+if "%REUSE_REFERENCE%"=="1" if "%MISSION_PIPELINE_DATA_ONLY%"=="1" (
+  echo --mission-pipeline-data-only already skips the Story build; omit --reuse-reference.
+  exit /b 2
+)
+if "%MISSION_PIPELINE_DATA_ONLY%"=="1" goto :verify_mission_pipeline_data_only
+goto :normal_webui_build
+
+:verify_mission_pipeline_data_only
+rem The data-only path is intentionally fast, but it must still report when
+rem generated Story inputs no longer match the installed original data.
+python .\scripts\verify_export_freshness.py %FRESHNESS_ARGS%
+if errorlevel 1 exit /b %errorlevel%
+goto :build_mission_pipeline_data_only
+
+:normal_webui_build
 
 rem WebUI export/build pipeline:
 rem - rebuild from existing export_full by default
@@ -110,14 +193,24 @@ if "%WITH_ASSETS%"=="1" (
 
 :after_export_full
 
+python .\scripts\verify_export_freshness.py %FRESHNESS_ARGS%
+if errorlevel 1 exit /b %errorlevel%
+
 python .\scripts\story_builder\refresh_evidence.py
 if errorlevel 1 exit /b %errorlevel%
 
-python .\scripts\story_builder\build.py --languages CN --default-language CN --skip-audio-link
+python .\scripts\story_builder\build.py --languages CN --default-language CN --skip-audio-link %STORY_BUILD_ARGS%
+if errorlevel 1 exit /b %errorlevel%
+
+python .\scripts\build_character_data.py --languages CN --default-language CN
 if errorlevel 1 exit /b %errorlevel%
 
 python .\scripts\build_mission_pipeline_data.py
 if errorlevel 1 exit /b %errorlevel%
+if "%MISSION_PIPELINE_ONLY%"=="1" (
+  echo [export.bat] Mission Pipeline refresh complete; skipped unrelated semantic views and source graph.
+  goto :done
+)
 
 python .\scripts\build_gameplay_data.py --languages CN --default-language CN
 if errorlevel 1 exit /b %errorlevel%
@@ -151,8 +244,18 @@ python .\scripts\build_audio.py %AUDIO_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 
 :build_semantic_graph
+if "%FULL_SOURCE_GRAPH%"=="1" goto :build_full_source_graph
+echo [export.bat] Building WebUI source graph with relevant original AssetMap rows only.
+python .\tools\endfield_source_graph.py build --language CN --relevant-asset-maps --skip-reference-rows --skip-followups
+if errorlevel 1 exit /b %errorlevel%
+goto :after_source_graph
+
+:build_full_source_graph
+echo [export.bat] Building exhaustive investigative source graph.
 python .\tools\endfield_source_graph.py build --language CN
 if errorlevel 1 exit /b %errorlevel%
+
+:after_source_graph
 
 python .\scripts\build_presentation_data.py --languages CN
 if errorlevel 1 exit /b %errorlevel%
@@ -164,6 +267,13 @@ if errorlevel 1 exit /b %errorlevel%
 endlocal
 exit /b 0
 
+:build_mission_pipeline_data_only
+echo [export.bat] Reusing current generated Story bundles and evidence.
+python .\scripts\build_mission_pipeline_data.py
+if errorlevel 1 exit /b %errorlevel%
+echo [export.bat] Mission Pipeline data refresh complete; no Story, evidence, semantic-view, or source-graph rebuild was run.
+goto :done
+
 :validate_asset_mode
 if /I "%~1"=="webui" exit /b 0
 if /I "%~1"=="full" exit /b 0
@@ -173,7 +283,7 @@ echo Expected webui, full, or debug.
 exit /b 2
 
 :help
-echo Usage: export.bat [--export-from-game] [--with-assets] [--game-root PATH] [export_full_from_game.py options]
+echo Usage: export.bat [--export-from-game] [--with-assets] [--mission-pipeline-only] [--mission-pipeline-data-only] [--reuse-timeline-orders] [--reuse-reference] [--full-source-graph] [--game-root PATH] [export_full_from_game.py options]
 echo.
 echo Runs the Story/Reference WebUI refresh from existing export_full by default,
 echo rebuilds source-link evidence, builds CN Story/Text/Gameplay plus the experimental mission pipeline,
@@ -188,6 +298,28 @@ echo   --with-assets         Also rebuild asset indexes and relink/decode CN aud
 echo                         With --export-from-game, this uses one combined
 echo                         AnimeStudio Story+asset export instead of running
 echo                         export.bat and export_assets.bat separately.
+echo   --full-source-graph   Index every original Unity AssetMap row and emit
+echo                         investigative follow-up reports. The default keeps
+echo                         only exact material/shader/texture/FMV map rows needed
+echo                         by WebUI views and omits duplicate reference rows.
+echo   --mission-pipeline-only
+echo                         Refresh original Story evidence, CN Story data, and
+echo                         Mission Pipeline data, then stop before unrelated
+echo                         Gameplay/Progression/Factory/World/graph views.
+echo   --mission-pipeline-data-only
+echo                         Rebuild Mission Pipeline JSON from the current generated
+echo                         Story bundles. Use for pipeline builder or frontend work;
+echo                         it verifies export freshness, then skips evidence, Story,
+echo                         semantic-view, and source-graph stages.
+echo   --reuse-timeline-orders
+echo                         Reuse the current binary-derived Timeline line-order index
+echo                         during a Story rebuild. Use only when export_full and the
+echo                         recovered Timeline inputs have not changed. Incompatible
+echo                         with --export-from-game and unnecessary for data-only builds.
+echo   --reuse-reference     Validate and preserve the current localized Text Tables
+echo                         reference bundle during a Story rebuild. Use only when
+echo                         exported Table inputs have not changed. Incompatible with
+echo                         --export-from-game and unnecessary for data-only builds.
 echo   --full-assets         With --with-assets, use the default WebUI-facing
 echo                         image/model export and full Assets browser index.
 echo   --webui-assets        With --with-assets, use lean WebUI-focused Texture2D media mode.
@@ -212,12 +344,18 @@ echo                         aggressive requires CLI secondary-export flag suppo
 echo   --animestudio-dummy-dlls PATH
 echo                         DummyDll directory for AnimeStudio MonoBehaviour schema recovery.
 echo                         Can also be set with ANIMESTUDIO_DUMMY_DLLS.
+echo   --world-scene-chunk MAP:X:Z
+echo                         Export one static world-streaming cell, including InitChunkData
+echo                         and StreamingChunkData. May be repeated. Chunk X/Z are
+echo                         floor(world X/128) and floor(world Z/128).
 echo.
 echo If Endfield is installed somewhere else, pass --game-root.
 echo For repeated runs, edit endfield_paths.bat instead.
 echo Examples:
 echo   export.bat --export-from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
 echo   export.bat --export-from-game --with-assets --webui-assets
+echo   export.bat --export-from-game --world-scene-chunk map02:2:-13
+echo   export.bat --mission-pipeline-only --reuse-timeline-orders --reuse-reference
 echo.
 echo Other arguments are passed to scripts\export_full_from_game.py only when
 echo --export-from-game is present. The wrapper also forwards --game-root to

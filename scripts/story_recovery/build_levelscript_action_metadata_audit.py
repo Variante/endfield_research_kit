@@ -46,6 +46,7 @@ RUNTIME_EXACT_NAMES = {
     "Beyond.Gameplay.Actions.SetListString",
     "Beyond.Gameplay.Actions.ManualStartLevelScript",
     "Beyond.Gameplay.Actions.ManualEndLevelScript",
+    "Beyond.Gameplay.Actions.Branch",
     "Beyond.Gameplay.Actions.GetLevelScriptPropertyBool",
     "Beyond.Gameplay.Actions.GetLevelScriptPropertyInt",
     "Beyond.Gameplay.Actions.GetLevelScriptPropertyFloat",
@@ -106,6 +107,7 @@ MEMORYPACK_NAME_PARTS = (
     "ListSetValue",
     "ManualStartLevelScript",
     "ManualEndLevelScript",
+    "BranchForMemoryPack",
     "GetLevelScriptPropertyBool",
     "GetLevelScriptPropertyInt",
     "GetLevelScriptPropertyFloat",
@@ -245,6 +247,7 @@ def build_audit(*, metadata_path: Path | None = None) -> dict[str, Any]:
         "genericSetList": "Beyond.Gameplay.Actions.SetList`1",
         "manualStart": "Beyond.Gameplay.Actions.ManualStartLevelScript",
         "manualEnd": "Beyond.Gameplay.Actions.ManualEndLevelScript",
+        "branchSequence": "Beyond.Gameplay.Actions.Branch",
         "propertyGetterBool": "Beyond.Gameplay.Actions.GetLevelScriptPropertyBool",
         "propertyGetterInt": "Beyond.Gameplay.Actions.GetLevelScriptPropertyInt",
         "propertyChangedEvent": "Beyond.Gameplay.Actions.ScriptEvent.OnPropertyChanged",
@@ -283,6 +286,11 @@ def build_audit(*, metadata_path: Path | None = None) -> dict[str, Any]:
                 "ManualStartLevelScript and ManualEndLevelScript runtime fields are "
                 "levelId + scriptId; their MemoryPack wrappers expose setters for "
                 "levelId then scriptId."
+            ),
+            "branchSequenceShape": (
+                "Branch carries _idList + m_index, and its MemoryPack wrapper "
+                "deserializes _idList. The original GameAssembly Execute body is "
+                "still required to distinguish ordered continuation from fan-out."
             ),
             "propertyGetterShape": (
                 "GetLevelScriptPropertyBool/Int runtime fields are _target + _path; "

@@ -57,8 +57,36 @@ Important options:
 --key               XOR byte for MiHoYoBinData.
 --ai_file           Resource index JSON for GI-style container recovery.
 --dummy_dlls        Optional DummyDll folder for MonoBehaviour script schema recovery.
+--object_index_jsonl  Compact object/schema/MonoScript JSONL sidecar for binary-first joins.
 --filter_data       JSON list of source, offset, name, pathID, and type items.
 ```
+
+`--object_index_jsonl` is opt-in and writes schema-v1 rows documented by
+`AnimeStudio.CLI\Resources\ObjectIndexSchemaV1.json`. Use a unique sidecar per
+CLI process. A consumer must reject a missing/non-terminal summary or
+`complete=false`, and must globally uniqueness-check every external CAB
+filename plus PathID before accepting a runtime-resolved external PPtr.
+
+For a complete Story/all wrapper run, pass `--animestudio-object-index`
+directly to `scripts\export_full_from_game.py`. Relevant MonoBehaviour and
+PlayableDirector workers receive unique part paths. The deterministic merger
+publishes, per source:
+
+```text
+<source>\object_index\parts\*.jsonl
+<source>\object_index\objects.jsonl.gz
+<source>\object_index\schemas.jsonl.gz
+<source>\object_index\summary.json
+```
+
+`summary.json` is the last-written commit marker. Loading fails closed on
+missing or malformed stage provenance, content-hash mismatches, stale current
+source/CLI provenance, incomplete parts, conflicting physical identities, or
+ambiguous external CAB-filename/PathID targets. CLI provenance covers the
+apphost and first-party `AnimeStudio*.dll` implementation assemblies; optional
+DummyDll provenance uses per-file content hashes. Story/all refreshes
+invalidate an old marker before carrier workers start. Asset-only and
+`--skip-animestudio` runs cannot publish this broad index.
 
 `--types` replaces the default App.config parse/export surface. It does not layer on top of defaults. If GameObject or Animator export is selected, the CLI also parses dependencies such as Texture2D, Material, Animator, or GameObject as needed.
 

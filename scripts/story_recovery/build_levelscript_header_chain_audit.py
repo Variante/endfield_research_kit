@@ -39,10 +39,14 @@ from story_builder.level_bindings import (  # noqa: E402
 from story_builder.levelscript_binary import (  # noqa: E402
     decode_levelscript_record_payload,
     levelscript_action_map_membership,
+    LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID,
+    LEVELSCRIPT_NATIVE_HEADER_NAMES,
 )
 
 REPORT_DIR = ROOT / "reports" / "mission_order"
-DEFAULT_MAPPING = REPORT_DIR / "memorypack_union_formatter_tag_audit.json"
+DEFAULT_MAPPING = (
+    ROOT / "reports" / "story" / "recovery" / "memorypack_union_formatter_tag_audit.json"
+)
 PLAY_CLASSES = {"play_cutscene", "play_radio", "play_dialog", "play_levelseq"}
 SCENE_PREFIXES = ("cutscene_", "radio_", "dlg_", "misc_dlg_", "levelseq_", "video_cs_video_")
 
@@ -126,6 +130,16 @@ def load_header_mapping(path: Path) -> dict[str, dict[str, Any]]:
                 for row in rows[1:]
                 if safe_text(row.get("band"))
             ],
+        }
+    for (code, kind), header_name in LEVELSCRIPT_NATIVE_HEADER_NAMES.items():
+        opcode = f"0x{code:04x}/0x{kind:02x}"
+        out[opcode] = {
+            "headerName": header_name,
+            "headerBand": "current-native-actionheader",
+            "headerTagHex": f"0x{code & 0xff:02x}",
+            "headerBaseCodeHex": "",
+            "crossCheckBands": [],
+            "nativeMappingId": LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID,
         }
     return out
 

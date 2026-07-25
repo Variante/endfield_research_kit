@@ -982,10 +982,14 @@ function bindEvents() {
       window.dispatchEvent(new CustomEvent("webui:debug-changed", {
         detail: { enabled: next },
       }));
+      if (next && typeof ensureStoryTriggerManifestForDebug === "function") {
+        ensureStoryTriggerManifestForDebug();
+      }
       if (STATE.selectedKey && STATE.convCache.has(STATE.selectedKey)) {
         renderConv(STATE.convCache.get(STATE.selectedKey));
       }
-      if (typeof renderList === "function") renderList();
+      if (typeof rebuildTree === "function") rebuildTree({ resetScroll: false });
+      else if (typeof renderList === "function") renderList();
     });
   }
   $("#inline-tag-mode").addEventListener("change", (ev) => {
@@ -1127,11 +1131,12 @@ function rebuildTree({ resetScroll = true } = {}) {
     return expanded;
   };
   const pushItem = (entry) => {
+    const itemHeight = storyRowItemHeight();
     rows.push({
       type: "item", entry,
-      top: offset, h: ROW_ITEM_H,
+      top: offset, h: itemHeight,
     });
-    offset += ROW_ITEM_H;
+    offset += itemHeight;
   };
 
   const dataTypeKeys = Object.keys(tree).sort(compareDataTypeKeys);
@@ -1203,8 +1208,9 @@ function rebuildFlatSearchList({ resetScroll = true } = {}) {
   const rows = [];
   let offset = 0;
   for (const entry of items) {
-    rows.push({ type: "item", entry, top: offset, h: ROW_ITEM_H });
-    offset += ROW_ITEM_H;
+    const itemHeight = storyRowItemHeight();
+    rows.push({ type: "item", entry, top: offset, h: itemHeight });
+    offset += itemHeight;
   }
 
   STATE.rows = rows;

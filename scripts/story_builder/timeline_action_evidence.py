@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -17,6 +18,12 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_DIR = ROOT / "scripts"
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
+from common import fast_glob_files
+
 EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_RECOVERY_ROOT = EXPORT_ROOT / "recovered" / "AnimeStudio-cli"
 DEFAULT_OUT = DEFAULT_RECOVERY_ROOT / "timeline_action_evidence.json"
@@ -263,9 +270,9 @@ def iter_mono_dirs(roots: list[Path]) -> list[Path]:
         candidates: list[Path] = []
         if root.is_dir() and root.name == "MonoBehaviour":
             candidates.append(root)
-        if (root / "MonoBehaviour").is_dir():
+        elif (root / "MonoBehaviour").is_dir():
             candidates.append(root / "MonoBehaviour")
-        if root.is_dir():
+        elif root.is_dir():
             candidates.extend(sorted(path for path in root.rglob("MonoBehaviour") if path.is_dir()))
         for candidate in candidates:
             key = str(candidate.resolve()).lower()
@@ -280,7 +287,7 @@ def iter_action_candidate_files(mono_dir: Path) -> list[Path]:
     paths: list[Path] = []
     seen: set[str] = set()
     for pattern in ("dlg_*timeline*.json", "f_dlg_*timeline*.json", "m_dlg_*timeline*.json"):
-        for path in sorted(mono_dir.glob(pattern)):
+        for path in fast_glob_files(mono_dir, pattern):
             key = str(path.resolve()).lower()
             if key in seen:
                 continue

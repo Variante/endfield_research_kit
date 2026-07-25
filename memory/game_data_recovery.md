@@ -35,6 +35,131 @@ The current checkout has three complementary evidence layers:
    consumers, decoded audio, and selected exported assets into an evidence-first
    SQLite graph.
 
+The current binary-first system-carrier audit demonstrates the intended
+cross-layer standard. Three typed DomainDepot tables plus native request/reply
+handlers prove 24 residual f1m25 dialog bindings; one SkipChapter row plus its
+native sender/handler proves one e5m1 dialog binding. A
+FactoryBuildingPanelLock row proves only a local two-quest-state radio
+dependency and creates no owner. The strict Mission Pipeline result is now
+4,058 connected of 5,273 unique Story files, leaving 1,215 unlinked.
+
+The current DialogTree pass adds four exact non-owning dependencies without
+changing those ownership counts. It requires exact sequential MemoryPack
+registration in the first 2,633-entry `DialogIdTable` map, a typed registered
+DialogTree asset, exact connection-component reachability to a same-root
+numeric trunk, and typed `CheckQuestState` fields. Installed native consumers
+prove local cache comparison and If/Branch route selection; no direct packet
+belongs to that evaluation. The parser fails closed on duplicate node ids,
+wrong or dangling connection records, dynamic/missing comparers, and nonnumeric
+same-prefix trunks.
+
+The installed binary also proves two true DialogTree playback carriers.
+`DialogTreeTrunkNode._actorNodeData.mfTrunkActionData._trunkId` flows through
+`DTTrunkNodeData.get_trunkId` (token `0x06003977`, VA `0x187292f78`),
+`DialogTreeTrunkNode._DoPlayTrunk` (`0x06003bb6`, `0x1872a80b8`), and
+`DialogManager.PlayTrunkNode` (`0x0600f785`, `0x186e16cc8`).
+`DialogTreeDialogNode._dialogId` flows through its `DoExecute`
+(`0x06003b6e`, `0x1872a3770`) to `DialogManager.PlayNextDialog`
+(`0x0600f78e`, `0x186e168e8`). These are local client playback paths with no
+request/reply. Authored trunk ids remain only reachable possibilities because
+`FindTrunkIdForReplacement` (`0x06003bb3`, `0x1872a76f8`) and
+`DialogPlayTrunkActionData.SetOverrideTrunkId` (`0x06003955`, `0x187297578`)
+can replace them at runtime.
+
+Native graph entry semantics now support a distinct prime-node dependency
+tier. `DialogTreeController.StartDialog` (`0x06003a9b`), both `StartDialogue`
+overloads (`0x06003a92`/`0x06003a96`), `Graph.StartGraph` (`0x06001120`),
+`Graph.get_primeNode` (`0x06001109`), `DialogTree.OnGraphStarted`
+(`0x06003a77`), and `DialogTree.EnterNode` (`0x06003a75`) prove that a fresh
+graph falls back to serialized `allNodes[0]`. They do not prove that a quest
+starts the parent dialog or visits every reachable child. The maintained join
+therefore records only possible local containment plus an exact parent-dialog
+completion dependency, with no ownership, quest playback, or server exchange.
+It additionally requires exact current `DialogTextTable` trunk ids, registered
+child dialog ids, one parent root, and complete typed connection integrity.
+
+The current FMV schemas are also exact. MemoryPack action `0x035e` has 14
+members and serializes `PlayFmvAction._moviePath` as derived member 9;
+`0x04a1` has 16 members and serializes
+`StartFmvAndTeleportAction._fmvId` as the final derived member. The installed
+LevelScript corpus contains 36 such records (33 PlayFmv and three
+StartFmvAndTeleport), all with exact `cs_video_*` identities. Mission placement
+is accepted only when every occurrence for a Story key resolves through
+validated LevelData to the same mission shell. These actions are local
+presentation and serialize no mission, quest, request, or expected reply.
+
+The maintained extractor requires exact sequential DialogIdTable registration,
+an exact matching DialogTree asset name, typed resolved connections, and a
+directed ancestor/descendant path to a same-root numeric trunk anchor. It
+ignores missing-id nodes as unaddressable authoring remnants: 199 of 2,579
+registered assets contain 307 such nodes, while the audited corpus has zero
+duplicate nonempty ids and zero unresolved connection endpoints. A missing-id
+node can never be an anchor or carrier. `CheckTalkOptionFinish._dialogId` is a
+completion dependency and may not create a playback link.
+`DialogLeftSubtitleActionData.text1..text4` is instead decoded as a distinct
+local-presentation relation: the current exact occurrence binds the two
+`black_e0m2_1` LangKeys through parent `dlg_e0m2_4` to the e0m2 mission shell,
+while explicitly denying black/audio playback, quest placement, chronology,
+and a network exchange. The trunk/dialog playback boundary promotes 13 Story
+files through 66 typed occurrences; after the separate SM1 world-interactive
+context below, no typed DialogTree playback file remains unscoped. The last two
+children use stricter child-specific context: a no-bypass all-leaf a1m5
+`CombineCondition` quest-state gate, and one sm2l2m1 q10 tracked proxy joined
+through exact proxy tables/registry to a registered parent and typed
+`PlayNextDialog` child. Both remain possible local routes, not ownership or
+guaranteed playback.
+
+The same audit rejects broader-looking joins when the runtime consumer does not
+carry the required semantics. Seventy-five currently unlinked NpcProxyEx
+dialogs share exact proxy ids with MissionRuntime tracking rows, but proxy ids
+are reused across missions and `NpcProxyTrackingInfo.GetTargetPos` calls only
+`TryGetProxyByProxyId` plus `GetAoiPosition`; dialog selection lives on the
+separate NpcProxy/NpcInteract path. The completed native trace now proves that
+path exactly: `SC_NPC_ENTER_MAP_RESYNC` or `SC_NPC_ACTIVE_CHANGE_NTF` supplies
+`SCD_NPC_PROXY_INFO.activeCondIndex`, the client selects
+`NpcRuntimeProxyData.exDatas[index-1]`, and
+`_TryGetNpcProxyInteractDialogId` reads only `dialogId` at row `+0x28`.
+Adjacent `missionId` at `+0x30` is used separately by `OnDeActive ->
+_IsMissionConflict` to read `MissionData.isPaused`. Of 2,630 total rows, 1,008
+carry a dialog and 453 also carry a mission id, but all 138 currently unlinked
+placements (126 Story files) have a blank mission id. The server pushes carry
+proxyNumId/metaKvs/activeCondIndex, not mission, quest, or dialog identity, so
+the broad proxy-id coincidence still adds zero bindings. The one accepted q10
+navigation relation above requires substantially more independent structure:
+one typed tracking occurrence and scene, one exact registry identity/position,
+one missionless proxy configuration with a sole nonempty registered parent,
+and one typed parent-to-child DialogTree route. Six PRTS matches prove level context only,
+49 SNS rows have no authored mission id, and 13 audio-event rows have no owner
+field. These remain rejected candidates, not weak bindings.
+
+`NpcProxyTable.lazyDestroyOverrideDialogId` is a distinct executable carrier,
+not part of the rejected `NpcProxyEx.activeCondIndex` selector. The current
+table has three nonempty configurations. Only
+`lanshan_map02_v1d4d0_003` combines `lazyDestroy=true`, exact scene
+`map02_lv008`, `dlg_sm2l7m1_18`, and one typed same-scene consumer
+(`sm2l7m1_q#17`). Installed native code closes the field path:
+`NpcProxy.OnDeActive` (`0x187069e7c`) calls
+`NpcProxyMgr.ApplyLazyDestroyData` (`0x187065af4`), which reads
+`NpcRuntimeProxyData+0x258` and calls
+`NpcManager.AddOverrideInteractDialogId` (`0x18705f854`) with priority 2.
+This proves executable lazy-destroy dialog configuration and supports a
+non-owning quest-context edge only. The server-pushed proxy state has no
+mission/quest/dialog id, the client sends no request for this action, and the
+data does not prove that the quest triggers deactivation or playback.
+
+The exact interactive-progress carrier closes another bounded native gap. It
+requires every Story occurrence to be rooted at a constant current-build
+`OnInteractiveStateChanged` entity, directly or through an exact literal
+`RaiseCustomScriptEvent` producer. That entity must resolve to one mirrored
+counted LevelInteractiveData record carrying a complete
+`SimpleConditionCheckQuestState(Equal, Completed)` progress lock, match the
+WorldEntityRegistry type/detail pair, and resolve uniquely to one real
+MissionRuntime quest; every occurrence must agree. The current data yields
+eight `sm2l5m1` Story context rows (seven q1, one q8), six of them net-new in
+coverage. Native dispatch is local. The quest state gates interactive config;
+it does not prove ownership, quest activation/playback/completion, a request,
+or an expected reply.
+
 The graph is broad enough for practical gameplay, progression, economy,
 factory, world, audio, and configuration research. It is not a runtime
 simulator. Values and edges prove what the client authors or references; they
@@ -115,6 +240,26 @@ Important raw families are:
   binary data outside ordinary table/config decoding;
 - Lua: useful consumer-side evidence for table names and gameplay/UI usage.
 
+A full targeted installed-VFS Lua extraction currently yields 1,290 modules
+(one unrelated invalid Markdown entry in the Lua block is not payload data).
+The extraction matches the current installed Lua chunk (`22097503`, MD5
+`1586E385D1FDD76F3C881648007C918A`). No authored `black_*` Story id occurs in
+that corpus. Across the current Mission Pipeline gap it contains zero of the
+182 residual native-playback Story ids and zero of the 106 residual listener or
+target LevelScript ids. Only two of the then-current 1,303 unlinked Story ids
+occur:
+`cutscene_e1m10_1` in `PhaseGenderChange.lua` and `cutscene_e0m0_1` in
+`PhaseGenderSelect.lua`. Both are exact system-phase `GameAction.PlayCutscene*`
+consumers, but neither module carries a mission, quest, or LevelScript identity,
+so they classify playback without creating mission ownership. The exact local
+black-screen runtime route is likewise generic:
+`CinematicSystem._DoAction` dispatches `NarrativeBlackScreen` to
+`GameAction.ShowNarrativeBlackScreenByHandle`, and `RadioSystem` only waits for
+`ON_NARRATIVE_BLACK_SCREEN_END`. This proves local presentation sequencing but
+supplies no mission/quest identity. Selected world-streaming chunks and
+`ExtendData/CompressData.bin` likewise contain no exact cold black Story ids;
+these negative probes must not be promoted into ownership.
+
 Do not infer that a VFS block is irrelevant merely because the normal WebUI
 export skips it. Promote it only when a bounded decoder or query need justifies
 the cost.
@@ -157,8 +302,38 @@ The current binary-config work established these reusable rules:
   serialization order.
 - Polymorphic/union members use a null marker or tag followed by the subtype
   object and its own member-count header.
+- LevelScript ActionBase/ActionHeader union tags `<= 0xf9` use one tag byte;
+  larger tags use `0xfa` plus a little-endian u16. The next byte is the concrete
+  subtype member count and the following common ActionBase byte is the
+  `dontLog` bool, which valid records serialize as either `0` or `1`. Treating
+  `dontLog=1` as an invalid extended record shifts the boundary by two bytes and
+  creates a false compact tag. Both maintained LevelScript parsers now expose
+  `unionTag`, `serializedMemberCount`, `dontLog`, and the tag encoding while
+  retaining the old combined `code/kind` fields only for report compatibility.
 - Generated MemoryPack wrappers and GameAssembly deserializer setter order are
   stronger schema evidence than field declaration order alone.
+
+The installed `ActionHeaderForMemoryPackFormatter..cctor` now has a complete
+native audit: 230 contiguous union registrations `0x0000..0x00e5`, recovered
+from `GameAssembly.dll` and named through `global-metadata.dat`. The maintained
+table is used only for records proved to belong to `headerList`. `ActionBase`,
+`PureGetter`, and `ActionHeader` reuse the same numeric tag space, so applying a
+header name to an unclassified record would be a type collision rather than a
+recovery. The generated evidence is
+`reports/story/recovery/memorypack_union_formatter_tag_audit.{json,md}`.
+
+Not every native data class uses MemoryPack. DialogTree TextAssets use
+ParadoxNotion named JSON inside base64 `m_Script`. Narrative-mask actions are
+discriminated by exact `$type` strings, so member order and omitted default
+members are not byte-schema evidence. The installed binary gives
+`DialogNarrativeMaskActionData.texts` at runtime offset `+0x40` and action enum
+125; `DialogComplexNarrativeMaskActionData.textDataList` is also at `+0x40`
+and its action enum is 144. `UICommonMaskData.textDataList` is at `+0x70`, while
+`CommonMaskTextData` embeds `LangKey` at `+0x10`, `textBeforeTime` at `+0x20`,
+`_useCustomText` at `+0x24`, and `customText` at `+0x28`. The authored JSON
+extractor accepts only the exact DialogTree root, typed node action containers,
+concrete action `$type`, and LangKey field; recursive text search, literal
+stage directions, and custom text cannot create graph relations.
 
 These rules enabled exact recovery of `SelectorData`, `TargetSettings`,
 `DirectionSettings`, `FindTargetAction`, and `ContinuousFindTargetAction` in
@@ -167,6 +342,888 @@ remaining ambiguous BuffData chains are blocked by other action families, not
 selectors. Two selector subtype payloads remain intentionally unsupported
 until samples exist: `ShapeFinder+Data` and `PriorityFilter+Data`.
 
+The current native `LevelDataForMemoryPack.Deserialize` enforces 43 members
+(`0x2b`), not the older 42-member working list. Serialized member 22 is
+`Dictionary<ulong, LevelScriptBriefData>` and member 23 is
+`Dictionary<ulong, string>`; runtime `levelScripts` is not serialized.
+`LevelScriptBriefData` enforces eight members in this order: `dataPath`,
+`levelScriptType`, `maxStage`, `parentLevelScriptId`, `properties`,
+`propertyIdToKeyMap`, `refWorldEntityIdList`, and `scriptId`. The maintained
+Story join parses the complete nested value, requires final `scriptId == key`,
+requires all entries to form one contiguous chain, and verifies the signed
+dictionary count immediately before that chain. Across mission-named current
+LevelData this recovers 2,256 exact entries; the former bare-u64 scan admitted
+seven false host rows. A mission-shaped LevelData filename is asset-shell
+context only, not logical mission or quest ownership; explicit MissionRuntime
+conditions remain the stronger consumer edge.
+
+LevelData member 17 also contains an exact positive state/playback carrier.
+`FunctionAreaSpecificData` union tag `9` selects the seven-member
+`RadioTriggerZoneData`; the maintained decoder requires the immediately
+preceding `specificDatas` count to be exactly one and parses the native
+alphabetical member order `hideAfterMissionId`, `hideBeforeMissionId`,
+`hideCompleteMissionId`, `prtsId`, `radioId`, `triggerId`, and
+`useRadioTriggerOnce`. Four current rows pass every guard and produce six
+mission-state placements for four radios. The native
+`RadioTriggerZoneHandler.OnEnter` consumer calls
+`_GetRadioTriggerMissionState`, which invokes `MissionSystem.GetMissionState`
+for the three mission fields, then reaches `GameAction.PlayRadio`. This proves
+state-gated local playback context. It does not prove quest ownership, and it
+does not create a client request or paired server reply; the mission cache is
+populated by independent synchronization pushes.
+
+LevelData member 20 now has a narrow exact narrative-interactive decoder. It
+accepts only a counted list of 25-member `LevelInteractiveData` records, uses
+the next typed record as the current record's end boundary, and fully decodes
+the installed string ParamValue map rather than scanning a byte window. Two
+current c16 records uniquely co-carry `FX_CHANGE_MISSION_ID=c16m4d5` and
+`TYPE_ID=rp_radio_c16m4_50/51`. The popup table, byte-identical InteractiveTable
+mirrors, exact `int_narrative_common` template union tag `0x00b3`, and installed
+NarrativeComponent state-query/playback bodies complete the original-data
+consumer chain. The result is a mission-state FX/playback dependency, not an
+interactive's mission owner. Other framed ReadingPopUp consumers without a
+mission key remain consumer-only evidence.
+
+The remaining native-playback audit also closes three tempting but invalid
+ownership shortcuts. All 174 distinct residual `(levelId, scriptId)` pairs
+have valid member-22 BriefData entries, but every residual
+`parentLevelScriptId` is zero.
+Serialized member 23 is an exact `Dictionary<ulong, string>`, yet its count is
+zero in all 665 nonempty parsed LevelData blobs. `LevelConfig.m_levelDataPaths`,
+`LevelData.LoadLevelDataFromLevelConfig`, `MergeData`, and
+`LevelScriptManager.OnLevelLoaded` prove level loading/registration only; they
+do not introduce a mission or quest owner.
+
+An independent exact asset-shell join is available through mission areas.
+Typed `MissionAreaTrackingInfo.missionAreaId` values in MissionRuntime resolve
+through `MissionAreaTable.subDataParentId`; when that exact u64 is a root key in
+the same fully validated member-22 dictionary, the file's requested script
+entries inherit mission-area shell context. Every authored parent-root hit in
+the file and every matching file must resolve to one MissionRuntime. Shared
+roots remain rejected; the current c13 root is correctly ambiguous between
+`c13m2` and `c13m2d5`. LevelData filenames do not participate in this join.
+
+The same validated member-22 dictionary can scope a sibling playback script
+when the complete LevelData shell contains authoritative original-data anchors:
+an exact MissionRuntime script reference, a typed MissionArea parent root, or
+an exact mission-shaped LevelData asset identity. All anchors across every
+matching container must union to one mission; otherwise the shell stays shared.
+This recovered 17 current evidence rows, including 14 previously unlinked Story
+files, as mission-shell asset context only. It does not assign a quest or imply
+that an anchored script triggers every sibling script.
+
+Typed `Beyond.Gameplay.EntityTrackingInfo` supplies a separate native runtime
+join. The installed metadata exposes `trackScriptEntity`, `entityLogicId`,
+`scriptId`, and `entitySlotId`. `get_scriptIdGlobal` reads inherited `sceneId`
+and the local script id, then calls `GameUtil.ToGlobalId`; the current binary
+implements `levelNum * 100,000,000 + localScriptId`. The global-id/slot pair is
+resolved through `EntityManager.TryGetScriptEntityLogicIdBySlotId`, with
+`WorldEntityRegistry.TryGetScriptEntityInfo` as the static fallback used for
+position lookup. The exported registry stores aligned
+`m_scriptEntityIdList` / `m_scriptEntityBriefInfo` arrays, so the maintained
+join requires equal lengths, one exact script/slot row, and the matching global
+LevelScript file under the authored `sceneId`.
+
+MissionRuntime also nests this same exact type inside authored
+`multiDescTrackingInfoList[].actualList[]` wrappers. The maintained extractor
+accepts those rows only when `mapTrackingToMultiDesc` is true, the wrapper and
+actual list are structurally exact, the child is `EntityTrackingInfo`, and the
+union of every typed owner source is exactly one mission. This recovers five
+same-script navigation-context radios for `c27m4d5_q#14` through global script
+`26900000008`. It also resolves `c33m1_q#10` through global script
+`2100600007`, registry slot `40001`, `int_narrative_empty`, the exact
+interactive-object table mapping, and the serialized `type_id` property
+`dlg_c33m1_17`. Both joins are configuration/navigation context only; no quest
+playback, ordering, completion, or server exchange is inferred.
+
+This proves the quest's navigation target, not a quest-to-Story playback edge.
+The native `InteractiveTable` reader now validates its complete two-member
+layout: the core-template path map followed by the interactive-object to
+template map, with the StreamingAssets/Persistent copies required to match.
+Only registry objects whose exact table template is `int_narrative_mission`
+may expose the serialized `interactives[entitySlotId].properties[type_id]`
+Story id. The current pipeline has 25 such evidence rows. Arbitrary file
+strings, template-name guesses, and cross-script getter records are rejected.
+A typed Story action in the same resolved script is retained only when it
+belongs to `actionList` and has an exact serialized event/control path, and it
+remains same-script context unless a separate native edge bridges the tracked
+entity slot to that event. This distinction is visible in `sm2l3m4_q#1`: the
+tracked slot is `40002`, while the dialog playback control path is entered
+through trigger slot `80001`.
+
+One current route does contain that missing bridge. For `e0m0_q#2`, the tracked
+travel-pole slot is the exact `ScriptEntityPtr` operand of a typed
+`EntityCompare` getter used by an `IfElseAction` on
+`LevelEvent_OnTravelPoleBegin`; the true branch runs
+`RaiseCustomLevelEvent("PLAY_SEQ_1")`, and one same-level
+`LevelEvent_OnCustomEvent` listener plays `cutscene_e0m0_1stZipline`. This is
+exact client playback context. The quest condition is still
+`GameConditionServerPlaceHolder`; the synchronized objective packet is now
+known, but the server's completion rule and any link from that rule to the
+local playback remain opaque.
+
+Non-script `EntityTrackingInfo` uses a distinct fail-closed bridge. Its local
+`entityLogicId` suffix is grouped against current
+`WorldEntityRegistry.worldEntityBriefInfos`; exactly one global id must exist.
+An exact constant-target `EntityEvent_OnSavePropertyChanged` header can then
+match that global id only in the authored scene. The current join resolves
+`e8m1_q#12` local `83108` to global `23400083108`, property `state`, and an
+exact control path to `radio_e8m1_12`. The listener is local and the objective
+is `GameConditionServerPlaceHolder`, so this remains navigation/property
+context rather than a completion or server-return claim.
+
+The same non-script tracking surface now has one stricter world-interactive
+Dialog bridge. The decoder accepts only a counted, next-record-bounded
+25-member LevelInteractiveData record, locates `componentProperties` at the
+installed inherited-prefix boundary, and fully decodes component key 94's
+heterogeneous ParamValue map. The map must have exactly
+`FX_CHANGE_MISSION_ID`, `TYPE`, and `TYPE_ID`; the first and third are exact
+String values and `TYPE` must be Int value `1` (`NarrativeInteractType.Dialog`).
+The builder then requires one MissionRuntime tracking row, one matching global
+WorldEntityRegistry identity, same entity type/detail id, byte-identical
+StreamingAssets/Persistent LevelData, InteractiveTable, and template files,
+and the exact `int_narrative_common` template mapping. Current data resolves
+only `sm1l1m1_q#6 -> 2100070023 -> dlg_sm1l1m1_17`; the typed DialogTree path
+then gives `dlg_sm1l1m1_16` one possible authored child route. This is local
+navigation/configuration context, never ownership, quest playback/completion,
+chronology, or a server exchange.
+
+The current installed-build binary and complete MissionRuntime corpus now give
+a fail-closed model for `GameConditionServerPlaceHolder`. The audited
+`GameAssembly.dll` SHA-256 is
+`0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE` and
+the matching `global-metadata.dat` SHA-256 is
+`90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E`.
+The type owns `_comparer` and `_progressToCompare`; its installed fallback
+`get_conditionType` at `0x18479ec70` returns `int.MaxValue`. The StartQuest
+callback binder at `0x183a89700` retains a `ResultChange` callback only for
+`ConditionType.ClientOnly=9999`, so this fallback does **not** send
+`CS_UPDATE_QUEST_OBJECTIVE` (message 314). IFix patch id `0x5605` can replace
+the fallback in principle, but the current installed patch path is now audited.
+StreamingAssets contains an empty 73-byte IFix block, while Persistent supplies
+one logical `Data/IFixPatchOut/Windows/Gameplay.Beyond.patch.bytes` payload
+(55,576 bytes after VFS decryption, SHA-256
+`79ad16be86e488eca829ce60b133f1c3c6d3d4c3d180e04621713e57f8c3bbea`).
+Its 18 signature targets match none of `0x5605`, inherited OnActivate
+`0x54d1`, or OnDeactivate `0x54d2`. The effective current behavior is therefore
+the `int.MaxValue` condition type plus no-op server-condition activation and
+deactivation. Future installed patches still require a fresh fail-closed audit.
+
+The mission protocol boundary is asynchronous rather than request/response
+shaped. `CS_ACCEPT_MISSION` message 315 carries only `missionId` and has no
+paired `SC_ACCEPT_MISSION`; the client waits for `SC_MISSION_STATE_UPDATE` 112.
+Only the proven `ClientOnly=9999` callback path sends absolute
+`CS_UPDATE_QUEST_OBJECTIVE` values with `isAdd=false`, after which
+`SC_QUEST_OBJECTIVES_UPDATE` 116 and `SC_QUEST_STATE_UPDATE` 111 are separate
+server pushes. `CS_FINISH_DIALOG` 341 carries dialog id, selected options,
+finish numbers, extra-info type, and optional submit info; `SC_FINISH_DIALOG`
+131 is an asynchronous confirmation echo and the schema has no correlation
+UUID. `CS_FAIL_MISSION`, `CS_MISSION_EVENT_TRIGGER`, and
+`CS_MISSION_CLIENT_TRIGGER_DONE` exist in the protocol schema, but no active
+non-protobuf fallback sender was recovered from the installed binary. They
+must remain protocol-capable with sender unconfirmed, not active graph edges.
+
+The same IFix payload contains 86 exact `dlgtl_*` strings across 16
+mission-shaped families, but its patched target is specifically
+`CinematicTimelineManagerBase._TimelineAsyncCompileProcess`. The generated
+iterator compares `TimelineHandle.data.cutsceneName` against that allowlist and
+calls `_PreBindAnimationOutput`; it is cinematic compilation context, not
+mission dispatch. Fifty-six strings have authored-name Story transforms, 54
+also have typed `timeline_targets_story` containment, and 53 were already
+mission-connected by stronger evidence. The three residual Story files
+(`dlg_e11m5_9`, `dlg_e11m8_9`, `dlg_e5m0d5_1`) have exact Timeline and
+PlayableDirector parents but no typed mission/quest/level/LevelScript owner.
+The IFix allowlist therefore proves zero new pipeline bindings; do not convert
+`dlgtl_`/`dlg_` naming into a mission shell.
+
+The current native narrative-black queue path is also closed as an ownership
+source. `NarrativeBlackScreenAction`, its complex/teleport variants, and
+`NarrativeBlackScreenQueueItemData` carry mask/audio/text/fade data but no
+mission id. `GameAction.ShowNarrativeBlackScreen` writes only the passed
+`UICommonMaskData` pointer at queue-item `+0x48`; the base `cinematicId` is not
+authored on this path, and `ShowNarrativeBlackScreenByHandle` only reads the
+handle back before showing the mask. The current Persistent IFix payload does
+not target either method, so the installed fallback bodies are authoritative.
+Queue ids, handles, and callbacks therefore remain local presentation state,
+not a Story-to-mission bridge.
+
+LevelScript synchronization is likewise runtime state, not mission ownership.
+The installed client sends
+`CS_SCENE_SET_LEVEL_SCRIPT_ACTIVE {sceneNumId, scriptId, isActive, leaderPos}`
+and `CS_SCENE_SET_LEVEL_SCRIPT_START {sceneNumId, scriptId, isStart,
+leaderPos}`; asynchronous server pushes report the same scene/script identity,
+state/stage, and completion flags. These packets contain no MissionRuntime,
+quest, Story, or black-line id. The teleport-coupled black action uses the
+normal `CS_SCENE_TELEPORT` / `SC_SCENE_TELEPORT` / finish-ack lifecycle, which
+also carries no mission/quest ownership field.
+
+The installed binary also separates a client LevelScript request from an
+independent server-pushed client event. `GameplayNetwork` sends
+`CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER {sceneNumId, scriptId, eventName,
+properties, ctxToken}` and receives the fieldless
+`SC_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER` acknowledgement. Separately,
+`GameplayNetwork._Handle_SceneTriggerClientLevelScriptEvent` at `0x187386320`
+consumes `SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT {sceneNumId, scriptId,
+eventName, ctxToken}`, constructs the exact script receiver, and calls
+`LevelEventManager.RaiseScriptEvent` at `0x186f922a4`. The handler allocates
+`EventParams`, sets its receiver to `LevelScriptPtr(scriptId)`, and, when the
+protobuf `ctxToken` bytes are non-empty, stores them in the inherited parameter
+blackboard before dispatch. The token is therefore opaque propagated event
+context rather than an ignored field; the handler does not decode it into a
+mission or quest id. Neither message carries a mission, quest, condition, or
+Story id. The server push is therefore exact runtime causality but not a
+pipeline ownership edge; event-name equality or token presence alone must
+remain unpromoted.
+
+GameAssembly metadata names server-action families such as
+`TriggerLevelScriptCustomEvent`, `TriggerClientLevelScriptEvent`,
+`SetLevelScriptEnabled`, and `UpdateLevelScriptProperty`, but type names alone
+are not serialized instances. Across the current 980 exported
+MissionRuntimeAsset files, `actionMapRaw` exposes 546 client actions and only
+six concrete action types (PlayRadio 366, ShowLimitedGuide 81,
+ManuallyStartGuideGroup 65, ShowChapterCompletedPanel 17,
+ManuallyAcceptClientGuideGroup 16, ShowChapterPanelWaitForFinish 1). It exposes
+no serialized LevelScript/server-action operand that can join a mission to a
+script. Recovering an original server policy/config or activation registry is
+therefore the next distinct ownership surface; the enum catalog is not a
+binding source.
+
+One exact original-data activation registry is now decoded, with a deliberately
+narrow scope. `GameplayConfig/SubGameInstanceDataTable.json` contains 469 typed
+rows; 20 rows carry `id`, UInt64 `bindScriptId`, and nonempty
+`dungeonMissionId` together, yielding 20 conflict-free mission-to-bound-script
+pairs. The installed MemoryPack setter proves the script field is UInt64.
+`SubGameManager.SrvCreateSubGame` at `0x1870b31c8` passes the synchronized
+subgame identity through `GameModeFactory.CreateGame` at `0x186f55a38`, which
+resolves the typed table and constructs the concrete dungeon/week-raid runtime.
+This is exact mission-shell runtime context, not a quest or Story playback edge.
+
+The packet and native boundary is now exact. Client GameMechanics lifecycle
+requests carry `gameId`; `SC_GAME_MECHANICS_SYNC_ENTER_GAME_INST` returns
+`gameId`, `gameInstId`, `gameUniqueId`, and `isReenter`. The enter handler at
+`0x18736b59c` passes `gameId` through the factory lookup, while the instance ids
+remain live-runtime identities. None of the audited lifecycle packets carries
+`missionId`, `questId`, `sceneNumId`, or `bindScriptId`. Start parameters contain
+only start/expiry timestamps and completion parameters contain only pass time.
+
+The installed MemoryPack setter at `0x18a145de8` writes `bindScriptId` to exact
+row offset `+0x50`. The shared SubGame base stores that typed row at runtime
+offset `this+0x60`. `WorldChallengeGame.SendQuit` at `0x186f60cc8` reads the
+same field, constructs a `LevelScriptPtr`, resolves it through
+`LevelScriptManager.TryGetLevelScript`, calls `LevelScriptRuntime.ManualEnd`
+when the script type is not 5, and then sends `CS_GAME_MECHANICS_REQ_STOP`.
+This proves an operational lifecycle/cleanup association. The audited concrete
+`DungeonGame`/`WorldChallengeGame` start bodies and shared `BaseSubGame<T>`
+start body do not read `bindScriptId`; no start/enable consumer was recovered in
+that bounded runtime audit. Do not describe the field as proven activation.
+
+All 20 bound script ids are unique validated LevelData member-22 roots, but all
+have `parentLevelScriptId=0`; their 20 LevelData shells contain no direct or
+transitive script descendants. None intersects the 182 unresolved native-
+playback Story files. The only positive playback control is already connected
+independently, and seven other SubGame/playback intersections have no
+`dungeonMissionId` or other mission owner. Therefore this registry adds zero
+Story bindings, and neither same-level siblings nor filename families may
+inherit its mission. The next useful binary surface must co-carry or resolve a
+full scene/script address and an authored mission/quest owner; the proven quit
+consumer alone cannot provide either missing identity.
+
+Those seven missionless intersections are now represented rather than hidden.
+The coverage builder joins each missionless row's exact `bindScriptId` to the
+same script id on a decoded native playback occurrence, yielding seven runtime
+nodes, eight unique Story files, and eleven SubGame-to-Story placements. The
+four boss-rush rows share `cutscene_e1m8_2`; the three WorldChallenge rows cover
+seven activity Story files. These remain outside connected-mission coverage.
+The strongest original-data owner candidates were also exhausted: boss-rush
+`_01` has a `QuestStateEqual(e1m8_q#4)` unlock prerequisite, not a playback
+owner, while activity stage 6 co-identifies `missionId=a1m6d6` and
+`rankRelatedId=activity_qingxi_qiangti_6` but native runtime storage keeps stage
+mission state separate from rank-related game-mechanic info. Stages 3/4 have
+blank `rankRelatedId`. All seven target scripts are parent-zero roots with one
+MainTask, no mission/quest literal, and no exact MissionRuntime occurrence.
+
+The companion installed-VFS scan also closes the server-action-enum shortcut.
+Across 90,659 JsonData/Table candidates, 532 structured files were schema-
+checked for action ids 2013, 4003, 5106, and 5212. Sixteen scalar matches were
+unrelated table ordinals, priorities, chain ids, or map marks; zero occurred
+under a server-action/action-map field. The native enum values prove protocol
+capability only, not shipped instance ownership.
+
+Server objective progress arrives through `SC_QUEST_OBJECTIVES_UPDATE`
+(message 116): `questId` plus
+`questObjectives[{conditionId, extraDetails, values, isComplete,
+descriptionIndex}]`. `MissionSystem.Handle_QuestObjectiveUpdate` at
+`0x183a882e0` first resolves the exact quest and then refreshes its objective;
+the safe identity is therefore `(questId, conditionId)`, never `conditionId`
+alone. This matters in the current original corpus: 1,933 direct placeholders
+cover 1,931 quests in 377 missions but only 1,844 distinct condition ids; 17
+ids are reused across 106 rows, with one value appearing 59 times. There are no
+nested placeholder instances, and only `sm2l4m1_q#4` contains more than one
+(three). The packet contains no scene, LevelScript, entity, trigger, spawner,
+or Story key, while the corresponding LevelScript protocols contain no
+`questId` or `conditionId`; it is not a Story attachment bridge.
+
+The exact residual-corpus audit reinforces that boundary. All 182 currently
+unassigned native Story keys, organized under 210 exact receiver-to-Story
+placements with zero missing runtime selectors, were checked
+against placeholder actions, tracked scripts/entities and save properties,
+entity suffixes, mission-area geometry, positions, SpawnerConfig, raw
+condition-id bytes, and NPC proxies. None supplies a safe join. Of all
+placeholder rows, 159 carry client actions and 139 have exact Story references;
+those 139 references were already connected by their authored action data, so
+the placeholder itself promotes zero additional Story files.
+
+Current LevelScript branch wrappers are exact enough for diagnostic native
+Story paths. `Split` serializes a u32 count plus that many signed local action
+ids. `IfElseAction` serializes its condition, false action id, then true action
+id; runtime execution schedules the common base `nextId` first and then the
+selected branch. Static traversal therefore retains `nextId` and both typed
+branch ids. Duplicate local ids are accepted only when every serialized record
+has the same typed tag/member count, text operands, `nextId`, and decoded branch
+targets; all equivalent offsets are retained. Conflicting duplicates still
+fail closed. The current ActionBase table also identifies
+`PreloadCutsceneAction` (`0x0376/0x0c`), `RaiseCustomLevelEvent`
+(`0x037e/0x0a`), `RaiseCustomScriptEvent` (`0x0380/0x0b`), and
+`WaitForNpcProxyReady` (`0x04f5/0x09`). Traversal never converts an event or
+trigger slot into mission ownership by itself.
+
+The corresponding PureGetter union now has an exact mission-state path.
+`GetMissionState` is tag/member `0x013a/8` with one constant
+`Param<string> _missionId`; `CompareMissionState` is `0x001f/10` with
+`Param<BoolComparer>`, a referenced mission-state getter, and a constant
+`MissionState`. Installed metadata and native bodies prove `Equal=0`,
+`NotEqual=1`, and `MissionState.Completed=3`. The exact IfElse branch edge is
+therefore a direct mission-to-Story state dependency, including completed
+prerequisites in nested paths; it is not a quest owner. `GetResult` reads
+`GameInstance.player.MissionSystem.GetMissionData(...).state` locally and sends
+nothing. `SC_SYNC_ALL_MISSION` and `SC_MISSION_STATE_UPDATE` are independent
+upstream pushes that populate the cache, not responses to the getter. These
+method semantics describe the installed native fallback and retain an IFix
+re-audit caveat. Only the single-mission `Equal(Processing)` true branch is
+narrow enough for weak mission-shell playback context; the other exact state
+edges remain non-owning dependencies.
+`RaiseCustomScriptEvent` has 11 serialized members. Its exact current payload
+is an 18-byte event-arguments parameter, one tagged event-key parameter and
+12-byte parameter tail, followed by a 29-byte four-member
+`Param<LevelScriptPtr>`. Receiver `ParamSource=1002` is
+`CURRENT_SCRIPT_ID`; the constant form carries one explicit uint64 script id.
+The maintained decoder fails closed on dynamic receiver shapes. Across all
+typed Story listeners it currently recovers 46 producer records for 40 Story
+files; 15 routes appear on 10 still-unassigned pipeline rows. This is exact
+local producer/listener causality, not mission ownership or a server exchange.
+ActionBase tag/member `0x0365/0x11` is now exact `PlayRemoteComm`. It exposes
+`remotecomm_e11m1_1` at `map02_lv007/10200060020` through a Leader-enter
+slot-80002 header and attaches it only because that playback script has a
+separate validated `e11m1` LevelData host. It also exposes the still-unassigned
+`remotecomm_e3m1_2` route at `map01_lv007/2800010027`, where Leader-enter slot
+80001 starts `dlg_e3m1_1d5` and then the remote communication; the event path
+alone does not choose a mission.
+`SwitchInt` is now exact for current tag/member `0x04bd/0x0c`: it serializes a
+u32 case-id count plus signed local ids, a u32 case-value count plus signed
+values, one signed default id, and a typed PureGetter value tail. All 820
+current records decode with equal list lengths; 1,704 positive case targets and
+the one positive default target resolve, while `-1` case and `0` default
+sentinels remain non-edges. This restores exact event-owner paths for the 12
+playback keys that previously stopped before a branch.
+
+The current branch-predicate surface is also typed by PureGetter union tag and
+member count. Exact operand readers cover `BooleanCompare` (`0x0004/10`),
+`FloatNewCompare` (`0x0049/10`), `GetLevelScriptPropertyGenericBool`
+(`0x0100/9`), `GetLevelScriptStage` (`0x012f/8`), `GetterInt`
+(`0x0184/8`), `IntCompare` (`0x01aa/10`), `IntEqual` (`0x01ac/9`),
+`IntGetterRandom` (`0x01ba/9`), and `IsEndminGender` (`0x01c2/8`). They decode
+the authored Param source/path/value tails, comparer enum, referenced local
+getter, LevelScript target, or gender enum and accept only exact subtype EOF or
+one explicit outer ActionMap u32 trailer. The same union map names
+`GetConditionResult` (`0x004e/8`); those branches remain structurally
+traversable, but its delegate-backed inner condition object is a
+bounded semantic stop. Number comparers use `Equal=0`, `NotEqual=1`,
+`GreaterThan=2`, `GreaterEqual=3`, `LessThan=4`, and `LessEqual=5`; bool
+comparers use `Equal=0` and `NotEqual=1`.
+`IntGetterRandomForMemoryPack` serializes `_max` before `_min`; the decoder
+preserves that generated setter order while publishing normalized
+`minimum`/`maximum` fields.
+
+The current event decoder now also covers every selector used by the 71
+Story-bearing native branch groups. `ParamOutput` retains source-100/null-path
+outputs without relabeling them as local property refs; `EntityEventHeader`
+accepts an authored validation getter reference such as id `5`, source `-1`;
+zero-field `ScriptEvent_OnScriptComplete` is decoded from its exact inherited
+prefix even when outer ActionMap bytes follow; and
+`LevelEvent_OnSpawnerEntityDie/Start/End` follows the generated setter order
+entity output, filter type, group filter/output, spawner filter, and wave
+filter/output. The e11m3 current instance decodes an exact constant spawner id
+`23100080001`, null group/wave filters, and all three output refs. These fields
+describe the local runtime receiver only and introduce no mission foreign key.
+
+`Play3DRadio` is exact for tag/member `0x034a/0x14` when its 12-field payload
+consumes the record to EOF. The setter order is attenuation type, advanced
+options, entity pointer, from-begin, index, no-flush, NPC proxy id, only-once,
+radio id, reverb offset, use-NPC-proxy, and voice offset. Native execution
+resolves a true `useNpcProxy` through `NpcProxyMgr` and calls
+`PlayRadioOnEntity`, so the proxy is the actual emitter target. Of 173 current
+field schemas, 159 have the exact EOF-bounded outer form; nonempty proxy text
+alone is never sufficient because 11 records carry it while the flag is false.
+For headerList envelopes, the fixed signed field at record start `+26` is
+`ActionHeader.filterLevel`, not an action edge; the derived payload stores
+`filterMask` at `+0` and the actual `ActionHeader.nextID` at `+5`. Current rows
+prove these values can differ. A fail-closed 84-byte
+`LevelEvent_OnEntityHpChanged` reader also recovers the e11 event as direction
+`Down`, entity slot `40021`, and HP ratio `0.1`; this explains the local event
+condition but supplies no mission owner.
+
+`WorldEntityRegistry.npcProxyBriefInfos` provides a different, weaker exact
+identity. Its dictionary key must equal the row's positive-u64
+`segmentIdGlobal`; when that value also equals a same-scene Story-playing
+LevelScript global id, typed MissionRuntime `NpcProxyTrackingInfo.proxyId` and
+agreeing nonempty `NpcProxyEx.missionId` rows can scope the authored segment to
+one mission shell. Every raw/native occurrence normalized to the Story output
+must resolve through the same mission, or the join fails closed. The current
+census has nine direct normalized outputs; native-black and four
+`dlg -> misc_dlg` aliases explain why an earlier raw-key-only audit saw four.
+This is not a runtime activation chain. `NpcProxyTrackingInfo.GetTargetPos`
+passes only `proxyId` to `NpcProxyMgr.TryGetProxyByProxyId` and reads AOI
+position; it does not consume `segmentIdGlobal` or call the registry. The only
+recovered direct native caller of the registry proxy lookup serves a DomainDepot
+position path, not a LevelScript loader. The relation therefore stays
+`derived_exact_shell`, with no quest/NPC causality and no server exchange.
+Three remaining trigger-volume Story files have the weaker numeric coincidence
+without the typed MissionRuntime tracking carrier:
+`dlg_e3m2_2` shares script/segment `2800010011` with an `e3m4` proxy, while
+`dlg_e3m3_8` and `radio_e3m3_4` share `2800010014` with an `e3m5` proxy. They
+remain unbound. No recovered native consumer interprets `segmentIdGlobal` as a
+LevelScript id, and proxy-table mission ownership alone cannot transfer to every
+action in a numerically equal script.
+
+The HP decoder now also accepts the exact current dynamic-list shape. It keeps
+the LevelScript property source/path, direction, threshold, and null output.
+One fail-closed same-script producer join requires exactly one
+`OnSpawnerEntitySpawn -> ListAddValueEntityPtr -> named list` chain with a
+constant spawner/group and matching `$<header>@_entityOutput` reference. The
+same-level SpawnerConfig mission-token rule then recovers exactly
+`radio_gm02m20_9` and `radio_gm02m20_18` as `gm02m20` mission context via
+spawner `23100270003`, group `101`, list `entity03_01`, and a 1% downward HP
+threshold. HP dispatch is local and the mission objectives are server
+placeholders, so both remain mission-shell context with no quest binding or
+request/response edge. The equivalent e11 `tiger` producer uses spawner
+`10200260005` but its config has no authored mission token; five e11 files stay
+unowned.
+
+The inherited `ScriptEventHeader` layout is now replayed in setter order after
+the variable-length `ActionHeader._validate: Param<bool>` field. This matters
+because values such as `10`, `45`, and `122` in that prefix are validation-node
+`idRef` values, not script ids. `_targetScript: Param<LevelScriptPtr>` follows
+the validate object, then `_triggerTarget` (`SELF=0`, `SPECIFY_SCRIPT=1`). A
+specified pointer can serialize a `scriptId:uint64` but never a mission/quest
+id. All 1,052 current `OnScriptActive` and 455 `OnScriptStageChanged` headers
+use `SELF` with null `_targetScript`. Active has no subtype fields; StageChanged
+adds `_newStageFilter: Param<int>` and `_newStageOutput: ParamOutput<int>`.
+Both headers receive local `LevelScriptRuntime` events, but StageChanged has a
+now-proven upstream server route. One-way
+`SC_SCENE_LEVEL_SCRIPT_STAGE_CHANGE {sceneNumId, scriptId, stage}` reaches
+`GameplayNetwork._Handle_SyncLevelScriptStage` at `0x1873867cc`, resolves the
+exact ready runtime, calls `LevelScriptRuntime.UpdateStage` at `0x186fad930`,
+then raises the local SELF-scoped event. Current metadata has no corresponding
+client request and this route expects no response; the packet still carries no
+mission or quest id.
+
+The residual Story ownership audits now close both lifecycle/trigger families
+more tightly. The original 18-file `OnScriptStageChanged` family has 21 exact
+playback occurrences across 14 owning LevelScripts; all 980 current
+MissionRuntime assets contain zero whole-token references to those script ids,
+the source graph has zero mission/quest/condition incident edges, and LevelData
+member-22 yields no mission host for any pair. The original 74-file
+`OnLeaderEnterTriggerVolume` family has 78 exact playback occurrences, 60 exact
+receiver nodes, and 53 unique level/script owners across 13 levels. Its
+receiver serializes only `_triggerSlotIdFilter` and `_triggerSlotIdOutput`, and
+native `Process` consumes the local trigger-slot event before delegating through
+`ScriptEventHeader`. MissionRuntime has zero exact target-script carrier
+intersections, all 53 `LevelScriptBriefData.parentLevelScriptId` values are
+zero, and the three exact MissionArea host pairs are shared by both `c13m2` and
+`c13m2d5`; there are zero unique hosts. Three target scripts are the
+already-exposed missionless activity SubGame nodes covering seven Story files;
+their rows carry no mission owner. All 60 matched trigger volumes have
+`waitSrvRes=false`. The parallel touch request/response carries scene, script,
+local slot, and enter/leave identity but no mission or quest id, so the event
+and packet alone cannot promote a mission-owned Story attachment.
+
+A separate exact current-build foreign-key route now recovers two quest/script
+contexts and three Story files from that Leader family. Native
+`CheckMonsterKilled` stores its typed WorldEntity list at `+0x98`; the complete
+three-entity set in `e3m2_q#3` exactly equals LevelScript `2800010045`'s
+`LevelScriptBriefData.refWorldEntityIdList`, and the script's exact Leader-enter
+path plays `radio_e3m2_7`. Native `InteractiveCheckInt` stores one
+`EntityPtr` at `+0x90`; the three direct children of `gm02m11_q#4`'s
+`CombineCondition` are a unique subset of script `22800330000`'s five BriefData
+WorldEntity references, and its exact path plays `black_gm02m11_1` before
+`cutscene_gm02m11_Activate`. `EntityPtr.useSlotId=false` resolves `logicId`
+through `WorldEntityRegistry`, not the script-slot namespace. All six entity
+ids are unique to their one canonical MissionRuntime quest and all same-level
+BriefData occurrences agree. This is a shared authored entity context only;
+the recovered schemas do not prove a quest-to-trigger call or paired server
+exchange. The remaining Leader-family queue is 71 Story files.
+
+The same foreign-key rule now closes three more pipeline-relevant Story files
+and three level-owned cutscene Story assets. `e2m5_q#15`'s complete five-enemy
+set selects script `3400010012` and `radio_e2m5_19` under exact stage filter 1.
+`e3m3_q#13`'s two-enemy set selects script `2800010053` and
+`radio_e3m3_7` under exact `EntityEvent_OnInteractiveStateChanged`.
+`sm2l4m2_q#4d5`'s direct six-child all-`InteractiveCheckInt` group selects
+script `23400130004`, `radio_sm2l4m2_3`, and
+`cutscene_map02_lv004_lingyuan_1/2/3` under stage filters 1/2/3. The current
+stage receiver is union tag `0x00c9`, 18 members; the interactive-state receiver
+is tag `0x001e`, 20 members. Stage changes arrive through the one-way
+`SC_SCENE_LEVEL_SCRIPT_STAGE_CHANGE` server push and expect no reply, while the
+interactive-state receiver is a local entity-property event with no packet join
+in this path. Neither route proves condition-to-event activation. The first
+Lingyuan cutscene's same-script `PreloadCutsceneAction` is auxiliary context,
+not playback; unselected occurrences fail closed unless they are that exact
+current-build preload shape. The remaining queues are 16 StageChanged and five
+InteractiveStateChanged Story files.
+
+The broader direct-carrier census reaches 106 distinct residual
+`(levelId, listenerScriptId)` targets and adds zero authoritative owners. Typed
+MissionRuntime LevelScript conditions and mission-named LevelData hosts intersect
+none; MissionArea roots hit four targets but every one is shared. Region,
+domain, dungeon/SubGame, teleport, entity-registry, and residual spawner/HP
+carriers likewise stop before an exact mission-to-script consumer. The strongest
+current native receiver audit maps all 26 residual families and finds no
+serialized receiver `missionId`/`questId` field and no resolved direct receiver
+`Process` call into mission or quest methods. The strongest
+temptation is `e11m1`'s `SimpleConditionCheckPlayerInLevel(indie_dg011)` row,
+where the scene happens to contain only script `36900010001` and four residual
+Story files. Native `GetResultWithoutListening` and `_OnCurrentLevelChanged`
+consume only current-level identity, so singleton scene inventory is not an
+authored activation edge. A future promotion must co-serialize mission/quest
+identity with the exact global script or an exact entity/slot inside it; scene
+membership, coordinates, sibling scripts, and filename tokens remain rejected.
+
+The asset-object reverse census now closes the decoded unnamed-MonoBehaviour
+surface for the 71 remaining Leader-family Story keys. An exact CAB/PPtr pass
+expanded 352 initial file hits to 381 candidates and decoded 15 reachable
+objects. The only new bridge is
+`cutscene_e11m1_dg011_2._timelineName -> _director -> PlayableDirector ->
+m_PlayableAsset -> named Timeline`; its complete reachable component carries
+no typed mission or quest identity. The former 14 unresolved nonzero PPtrs are
+all `m_Script` and are now closed from original Unity data: two resolve in the
+loaded dependency process and twelve resolve uniquely after joining expected
+external CAB filename plus PathID to the 1,018-row `MonoScript` registry. The
+14 MonoBehaviours classify as CutsceneRootComponent,
+DirectorNotificationReceiver, ControlPlayableAsset (5), ControlTrack (5),
+MarkerTrack, and TimelineAsset; all retain usable serialized TypeTrees, while
+none has a usable DummyDll type definition. The fifteenth object is the known
+PlayableDirector. This exact classification still produces zero attachments
+because the complete component contains no typed mission/quest carrier. The
+next exporter task is deterministic multi-process merging of the new compact
+scalar/PPtr index, not further inference from names or component proximity.
+
+Exact EOF-bounded spawner consumers now expose constant `SpawnerPtr.id` plus
+group/wave keys. The current residual set contains six unique
+`OnSpawnerGroupBegin` headers and two `OnSpawnerWaveBegin` headers, all with
+null outputs; one group header feeds two Story actions. Separately, the current
+AbilityActionData formatter maps `Core_SendBattleSignalToLevel_Data` to tag
+`0x0134`, members `6` (the old `0x011f` constant is stale). All 25 residual
+listener signal strings have exact producers in current SkillData/BuffData.
+These facts prove gameplay producer/consumer wiring, not MissionRuntime
+ownership.
+
+The current exact-native unlinked subset contains 16 Story listeners, 12
+signal strings, and 20 exact producer actions across 13 original Skill/Buff
+files. `SendBattleSignalToLevel.ExecuteInternal` at `0x186d27734` resolves the
+signal/value and calls `LevelEventManager.RaiseLevelEvent(0x28)` locally; no
+server packet is involved. `OnBattleSignal.Process` at `0x186aa3260` owns only
+the signal id and float filter, with no sender/entity/spawner/mission/quest
+selector. All 980 MissionRuntime assets have zero relevant identity hits, so
+the local producer chain adds no ownership promotion.
+The generated receiver view contains 13 BattleSignal nodes and 21 exact
+producer-to-receiver routes representing 20 unique producer actions. Every row
+retains `serverExchange=false`, no client request, no expected return, and
+unresolved mission ownership. This is local runtime causality, not an inferred
+mission binding.
+
+The top-level LevelScript task-map decoder now has a narrow, fail-closed
+`CheckMissionState` path for current union tag `0x67` / seven members. It
+requires a uniquely validated script-id tail, present task-map interval, exact
+one-condition `LevelScriptTaskData` envelope, matching task/condition ids,
+constant comparer/mission/state params, and an empty trigger-volume map at EOF.
+Current `map02_lv003/23300090001` decodes task `cf5a771c`, condition
+`cb696abe`, and `e7m4 Equal Completed`. A separate exact black-screen action
+exists in that script, but no control edge joins the task condition to it.
+Accordingly the maintained relation is same-script dependency only. Native
+mission-state evaluation reads the synchronized local MissionSystem cache;
+`SC_SYNC_ALL_MISSION` and `SC_MISSION_STATE_UPDATE` are independent upstream
+pushes, not replies to this condition.
+
+The full battle-signal ownership pass reaches 36 producer actions in 27 files
+(24 SkillData, three BuffData). Exact current AbilitySystemData skill lists
+resolve 31 actions across 22 SkillData files to enemy templates: agtrinit 6,
+palesent 6, palecore 1, reaper 16, and klhound/klhog 2. The five remaining
+actions are two agtrinit subskills and three buff producers whose typed
+intermediate owner is incomplete. None reaches a complete typed producer ->
+owner -> selecting-spawner -> MissionRuntime chain. Agtrinit and palesent
+have no exact spawner/mission edge; palecore's `bossstart` resolves to a
+palecore skill despite a palesent-shaped listener context; reaper lacks a typed
+listener-script mission owner in `indie_dg002`; and hound/hog configs in
+`map02_lv008` are non-unique. Native execution carries only sender, signal
+string, and float through the local level event. This adds zero Story
+attachments.
+
+`LevelEvent_OnSpawnerComplete` is also exact for the current observed 53-byte
+shape: one constant `SpawnerPtr.id`, a null output, and EOF. Runtime completion
+comes from `SC_SCENE_MONSTER_SPAWNER_COMPLETE { sceneNumId, spawnerId }` and is
+a server push. The maintained Story join accepts a mission context only when
+that id has one current same-level SpawnerConfig and its authored ASCII entity
+identifiers contain exactly one delimited current MissionRuntime id. This
+recovers `radio_gm02m20_19 -> gm02m20`; it does not select a quest.
+
+The nine residual group/wave Story playbacks remain unowned after a full typed
+spawner audit. They reduce to eight exact headers in
+`map02_lv007/10200260001`, using spawners `10200260001/4/5`, groups
+`101/201/601/701`, and waves `4/5`. SpawnerConfig, wave/group/action/settings,
+enemy-library, and `LevelSpawnerInstData` schemas carry scene/spawner/wave and
+owning-script identity but no mission or quest field; five MissionRuntime
+assets share the level and none references those script/spawner ids. One real
+cross-script dependency was recovered: LevelScript `10200060009`, task
+`5f624bcc`, condition `87cbeaa6`, uses GameCondition union tag `0x54`
+(`CheckLevelScriptStageReachMax`) with `scriptId=10200260001` at raw offset
+`0x431`. This proves that one script waits for the generic spawner script to
+reach maximum stage, not that either script belongs to a mission. It adds zero
+Story attachments.
+
+The same original spawner data does recover chronology without recovering
+ownership. The installed generated formatters give exact eleven-field wave and
+twelve-field group layouts. A fail-closed decoder uniquely consumes all nine
+waves and 20 nested groups in `sc_map02_lv007_10200260004`; action maps remain
+opaque and no OCR/manual input participates. Installed
+`TimelineWaveBlock.InitWave`, `TimelineGroupBlock.OnInit`,
+`TimelineGroupBlock.AllowToStart`, `TimelineWaveBlock.Tick`, `StartWave`, and
+`StartGroup` establish group-list predecessor resolution, named PartKilled
+targets, and synchronous wave/group-begin callbacks before group action ticks.
+Together with the authored wave kill gates, this produces one wave-to-wave and
+five wave/group cross-gate Story-order edges. The fifth group edge carries an
+exact local relay: group `801` action `105` raises current-script custom event
+`TigerStart`, header `140` is the exact same-script listener, and its typed
+path reaches cutscene action `151`. Wave 8's named PartKilled dependency on
+wave 7 therefore proves `radio_e11m1_45 -> cutscene_e11m1_tiger`. It does not
+order the two Story listeners attached to the same group-201 event and does
+not cross the missing LevelScript-to-MissionRuntime ownership boundary. The
+current Persistent IFix target table contains no `SpawnerRuntime+Timeline*`
+replacement.
+
+Additional exact listener schemas now expose their bounded meaning without
+inventing mission ownership: `OnTeleportFinish.actionId`,
+`OnSquadInFightChanged._inFight`, `OnEntityCastSkill` entity/template/target/
+skill filters and outputs, `OnAnyEntityDie` list/filter fields,
+`OnSpecificEntityDie._filterEntity`, and the encounter-battle/skip-popup
+families. Exact current custom-event producers are also separated by domain:
+`RaiseCustomScriptEvent` targets `CURRENT_SCRIPT_ID`,
+`RaiseCustomLevelEvent` dispatches locally, and
+`SpawnerRuntime.TimelineActionRaiseEvent` calls `LevelEventManager.RaiseLevelEvent`.
+For the residual Story set, exact local producers cover 8/16 ScriptEvent files
+(nine producer/listener pairs because one file has two) and 1/3 LevelEvent
+files. None of the seven producer-backed LevelScript ids occurs in any current
+MissionRuntime asset. The other eight ScriptEvent and two LevelEvent files have
+no matching authored `RaiseCustom*` producer. The transport fields are only
+event key, optional arguments, and for ScriptEvent a LevelScript receiver; they
+contain no mission, quest, or server identity.
+
+The residual `radio_e1m8_4` cast-skill record also establishes an important
+serialization boundary: its exact receiver is a 160-byte
+`LevelEvent_OnEntityCastSkill` subtype prefix followed by 343 bytes of the
+enclosing script container. The decoder now validates the subtype prefix and
+reports the trailing container separately instead of requiring receiver EOF or
+scanning the whole record. Its filter mode is disabled and the decoded fields
+are outputs/local event state, so the row supplies a precise receiver selector
+without inventing a target, mission owner, or server exchange.
+
+Guide-group playback is now separated into its two native ownership modes.
+ActionBase union tag/member-count `0x0304/0x09` is
+`ManuallyStartGuideGroup(_groupId)`. It calls
+`GuideSystem.ManuallyStartGuideGroup`, which enters
+`_TryAddProcessingClientOnlyGuideGroup`. On completion,
+`GuideSystem._CompleteCurGuideGroup` handles that client-only branch locally
+and skips construction of `CS_COMPLETE_GUIDE_GROUP`; only non-client-only
+groups use the request and later server handler. `LevelEvent_OnGuideGroupComplete`
+then compares its exact serialized guide id locally before continuing its
+action chain.
+
+`CheckGuideGroupComplete` itself is a six-member MemoryPack condition carrying
+the common scope/id fields followed by `_completeType` and `_guideGroupId`.
+Its condition type is `11` (`GuideFinish`). `GuideCompleteType` is `All=0`,
+`Manual=1`, and `AutoClose=2`; the current MissionRuntime corpus has 37
+condition occurrences across 21 missions, 36 unique group ids, no missing
+constant group id, and every row uses `All`. The check reads completed server
+groups and current-scope completed client groups, then listens for the local
+completion event. Server-backed groups send
+`CS_COMPLETE_GUIDE_GROUP { GuideGroupId, IsClose }` and receive
+`SC_COMPLETE_GUIDE_GROUP { GuideGroupId, IsClosed }`; these payloads carry no
+mission, quest, or condition id. The Mission Pipeline now retains the authored
+group/mode facts and renders both the server-backed exchange and the distinct
+manual client-only bypass.
+
+The five residual guide-completion Story files use five exact group ids. Four
+groups have an exact manual-start producer: the three `e0m0` tutorial producers
+have no validated mission host, while `guide_group_camille_skill_intro` starts
+in `map01_lv007/2800340004`, whose mission-named LevelData member-22 host is
+`c33m1`. That group also has two exact Story listeners,
+`radio_c33m1_37` and `radio_c33m2_30`, in different LevelScripts. The global
+completion id therefore does not select the second listener's mission. The
+remaining `guide_group_miasma_ghost` has no exact manual-start action in the
+current LevelScript corpus. The maintained join fails closed on multiple Story
+targets, multiple producers, or a missing unique producer host; this pass adds
+zero attachments and never renders a server exchange for a manual guide.
+
+The residual combat/encounter pass covers 17 unique Story files, 18 family
+memberships, and 30 exact event-to-playback routes across
+`OnEntityCastSkill`, `OnEntityHpChanged`, `OnAnyEntityDie`,
+`OnSpecificEntityDie`, `OnEncounterBattlePartBegin`,
+`OnSquadInFightChanged`, and `OnSkipBattlePopupConfirm`. Exact
+constant targets resolve through the current world/entity/template graph where
+present, including slot `40021`, three `eny_0061_palecore` death entities, and
+one `eny_0063_agmelee2_001` entity. Dynamic getter targets and output-only
+headers remain explicitly dynamic. The native manager registers these headers
+from a LevelScript pointer/context and dispatches local `GameLevelEvent` plus
+`EventParams`; all 21 audited producer/manager bodies lack a mission ownership
+bridge. None of the 12 exact owner ids, targets, or configs occurs in the 980
+MissionRuntime assets, and all 12 validated LevelData host joins return no
+row. Ten memberships remain ambiguous and eight are structurally bounded;
+zero are promotable. Reused boss-rush dungeon bindings have empty
+`missionWhitelist` fields. These events prove local combat conditions and
+presentation timing but add no mission/quest attachment or server payload.
+
+Patrol playback is also exact at the local gameplay layer. All six former residual
+`NpcPatrolCheckpointReach` Story files have a same-LevelScript
+`NpcPatrolStart(alias, patrolId)` action, an exact current `NpcPatrolData`
+record, and a listener point index within the recovered patrol point count.
+Their maintained listener decoder now exposes the dynamic NPC property path,
+patrol id, checkpoint index, NPC-position output, and local/no-server boundary.
+Original LevelData type-13 BriefData properties resolve `Robot2`, `Robot3`, and
+`robot` to world entities `23200013030`, `23200013387`, and `23200010664`;
+all are type-256 elf-machine entities rather than NPC proxies. A stricter
+tracking re-audit found 14 qualifying same-scene, non-script
+`EntityTrackingInfo` rows for their local entity ids. Every row belongs to
+`sm2l5m1`, while multiple quests track each entity. The maintained join now
+promotes the six files to one non-owning `sm2l5m1` mission shell only after the
+receiver, property/entity, same-script producer, framed patrol row, checkpoint,
+registry, and tracking mission union all validate. Candidate quest sets and
+visibility filters remain evidence; they do not become activation, playback,
+completion, or ownership. `NpcPatrolStart`, checkpoint dispatch, and Story
+playback are local, with no client request, server push, or expected reply.
+The remaining scripted-character case closes the longer chain:
+`radio_c27m4_9` listens for `patrol2end` in
+`dung02_rdg001/26900000008`; `ScriptedCharPatrolStart` targets alias
+`tangtang` and patrol `26900000020`; that patrol's second point contains
+`CharPatrolPointAction` member-count 18 with native type enum `6=SendEvent`
+and the exact `patrol2end` key. No target LevelScript id, patrol id, or detail
+id occurs in qualified MissionRuntime tracking. A same-level NpcProxy whose name contains
+`tangtang` is authored for `c27m4d5`, but the serialized patrol alias is not a
+typed proxy id and no native alias-to-proxy resolver has been recovered. That
+row remains candidate-only and unowned.
+
+After the six NPC-checkpoint promotions, the remaining lifecycle/navigation
+queue covers 11 Story files and 11 exact listener occurrences across guide
+completion, scripted patrol, teleport finish, dialog exit, and script complete.
+It yields zero further promotable rows, two ambiguities, and nine
+proven-negative joins. The two ambiguities are the Camille
+guide id's two-listener fan-out and the untyped `tangtang` alias-to-NpcProxy
+candidate above. Native playback semantics are local: NPC checkpoint dispatch
+uses `GameLevelEvent.ON_NPC_CHECKPOINT_REACH=0x2a`; ScriptComplete inherits
+SELF scope and `UpdateRuntimeState` raises local enum `8`; DialogExit remains
+distinct from `LevelEvent_OnServerDialogExit`; and teleport's listener
+`actionId` is not the synchronized `tpUuid`. A source-graph ownership scan over
+the 15 target scripts finds no direct typed mission or quest edge.
+
+The remaining interaction/property receiver audit closes 11/11 exact
+`EntityEventHeader -> native control path -> Story` chains. Eight constant
+targets resolve to current world entities; `radio_e3m3_7` resolves script
+`2800010053`, slot `40002` to `int_narrative_iron`; and the dynamic
+`radio_e2m5_2` `liftButton` parameter resolves through the same-script
+LevelData BriefData property map to world entity `3400010152` and
+`int_lifter_button`. `radio_gm01m6_7` instead targets an authored Leader box
+volume at slot `80001`, not a registry entity. Across the current corpus these
+owners have zero exact MissionRuntime objective/condition/tracking references,
+zero of 471 typed `EntityTrackingInfo` rows match, and NPC/LUT/spawner ownership adds no
+edge. Nearby mission coordinates are not identity and remain rejected. The
+receiver bodies are local consumers with no MissionRuntime or protobuf send
+call; this does not claim that the underlying save property can never be
+synchronized elsewhere. All 11 remain unowned.
+
+The broader entity/property audit covers 20 unique Story keys across seven
+event families and recovers an exact serialized event-to-playback route for all
+20. The four `ScriptEvent_OnPropertyChanged` listeners are SELF-scoped with
+authoritative same-script BriefData config, while all four
+`ScriptEvent_OnBBVariableChanged` keys have exact same-script `SetInt`
+producers and local dataflow. `radio_sm2l6m1_29` has exact
+`OnRuneColumnMatch` component semantics and two typed rune-column source
+entities (`25000040034/35`), which remain receiver-ambiguous. Searches across
+980 MissionRuntime files, 490 mission sidecars, all typed tracking rows, and
+validated Mission/MissionArea LevelData hosts produce no identity join. The
+mapped handlers are local subscriptions/dispatch and call no protobuf request,
+network send, or MissionRuntime ownership method. All 20 remain bounded and
+zero are promoted.
+
+The teleport boundary is now complete enough to rule out a false Story join.
+`CS_SCENE_TELEPORT` sends `sceneNumId`, position, rotation, teleport reason,
+pass-through data, `tpPosId`, and one reason-detail case. The server applies
+`SC_SCENE_TELEPORT` with object ids, scene/transform, server time, reason,
+`tpUuid`, and pass-through data; after local completion
+`TeleportProcessor._OnTeleportFinish` at `0x184970510` sends
+`CS_SCENE_TELEPORT_FINISH { tpUuid }`. Separately,
+`LevelEvent.OnTeleportFinish.Process` at `0x186abe000` compares its authored
+string `actionId` filter with the local event's action id. That string is not
+`tpUuid`, is absent from all three network payloads, and carries no
+mission/quest identity. The residual teleport Story listeners therefore remain
+exact native playback routes without a pipeline owner.
+No audited custom producer carries a mission/quest id.
+
+The top-level `LevelScriptTriggerVolumeData` dictionary is now exact for the
+current Leader subtype. Union tag `1` has member count `8`; the base fields are
+`enterCheckOnGround`, `exitShapeStartIndex`, `isImportant`, the typed shape
+list, `slotId`, `triggerCountLimit`, `triggerOnPole`, and `waitSrvRes`.
+Key/slot equality, the `80000..89999` slot range, shape member layout, field
+ranges, and an end cursor exactly at EOF are mandatory. A guarded wrapper form
+is also decoded only when its fixed prologue and inner EOF-bounded map match.
+MissionArea coordinates are joined by authored level identity through
+`LevelBasicInfoTable.idNum`, not by assuming a globally unique area id. The
+pipeline currently emits 79 exact full MissionArea/Leader-trigger geometry
+context rows plus 71 exact `PosTrackingInfo`/trigger-center rows. Full area
+matching requires position, shape type, size/rotation or radius, selected
+trigger slot, and one mission; position-only matching requires the exact center
+to select one mission and does not claim shape equality. Both prove local
+client context, not that entering the volume completes the quest or describes
+a server exchange.
+
+Current client/server boundary recovery is also explicit but remains separate
+from Story ownership. Client global-variable writes send
+`CS_UPDATE_CLIENT_GAME_VAR { key:int32, value:int64 }`; server updates or
+confirmations arrive as
+`SC_UPDATE_GAME_VAR { key:int32, value:int64, type:int32 }`, with `type` kept
+as an uninterpreted discriminator. Spawner wave start sends
+`CS_SCENE_MONSTER_SPAWNER_BEGIN_WAVE { sceneNumId:int32, spawnerId:uint64,
+waveId:int32, clientTimestamp:double }` and receives the same identity tuple in
+`SC_SCENE_MONSTER_SPAWNER_BEGIN_WAVE`; completion is a server push with scene
+and spawner ids, followed by the client's wave-confirm message carrying the
+wave id. These exchanges are asynchronous. Local spawner group-begin and
+global-variable callbacks are derived runtime events, not extra network
+messages. Leader trigger-volume touch sends
+`CS_SCENE_TOUCH_TRIGGER_VOLUME_REQ { sceneNumId, scriptId, scriptLocalId,
+isLeaveAction }`; wait-server paths receive the same identity fields in
+`SC_SCENE_TOUCH_TRIGGER_VOLUME_RSP`. Independent server state pushes use
+`SC_SCENE_MODIFY_TRIGGER_VOLUME_SYNC` with repeated `{ scriptLocalId,
+isHidden, triggerCount }`. These packets identify a LevelScript slot but carry
+no mission/quest id. Protocol rows alone therefore do not attach Story; the one
+SpawnerComplete join above additionally requires exact authored config
+ownership.
+
+`DialogBriefInfoForMemoryPack` is also exact for the current table. Its nine
+serialized members are `afterMaskBlendData`, `beforeMaskBlendData`, `dialogId`,
+`dialogType`, `enableSeamlessStartInSameFrame`, `interactText`, `npcProxyIds`,
+`useBlackScreen`, and `usedDialogTimelineIds`. Sequential decoding of the
+2,633-entry first `DialogIdTable` map yields 413 dialogs with 425 authored
+Timeline-list elements (424 distinct dialog/Timeline pairs), including the
+valid `f_dlgtl_*` prefix. Timeline ownership must come from member 9, not from
+rewriting or scanning a dialog name.
+
 ### Family status
 
 The following table summarizes durable status without reproducing every old
@@ -174,12 +1231,12 @@ per-session count.
 
 | Family | Current recovery status |
 | --- | --- |
-| `DialogIdTable`, `ModelTable`, `ModelRadiusTable`, `InteractiveTable`, `WorldEntityRegistry` | Exact or exact for their maintained top-level/index layouts. |
+| `DialogIdTable`, `ModelTable`, `ModelRadiusTable`, `InteractiveTable`, `WorldEntityRegistry` | Exact or exact for their maintained top-level/index layouts; InteractiveTable's two native maps and DialogBriefInfo's nine-member Timeline ownership field are decoded sequentially. |
 | `NavMesh/*/LunaArea` and `NavMeshStateContainer` | Exact for the observed current variants. |
 | Selected mission-area, teleport, non-generated table, and compact lookup roots | Exact family-specific readers where maintained. |
 | `LevelConfig` | Verified ids, default-state data, path counts, map ids, and numeric transform/bounds tails; middle path/grid body remains bounded. |
-| `LevelData` | Parent scene ids and useful references are verified; much of the 42-member body remains partial. |
-| `LevelScriptData` | Large action/condition surface has typed readers, but unknown action families and some chain boundaries remain. Story ordering conclusions belong in the Story note. |
+| `LevelData` | The 43-member top-level count and member-22 LevelScriptBriefData dictionary are exact. Typed MissionArea sub-data parents can scope a validated file shell when all roots agree; member 23 is empty in the current corpus. Most other heterogeneous members remain partial. |
+| `LevelScriptData` | Large action/condition surface has typed readers, the complete current ActionHeader union table, exact Leader trigger-volume maps, local ScriptActive/StageChanged lifecycle layouts, and exact constant GroupBegin/WaveBegin consumers; unknown action families and some chain boundaries remain. Story ordering conclusions belong in the Story note. |
 | `BuffData` | Top-level schema, large prefix/tail regions, stacking data, action chains, and SelectorData are substantially recovered; 48 ambiguous chains per root remain in non-selector action families. |
 | `SkillData` | Verified id and post-id fields plus the default switch-to-buff branch; action groups and non-default nested bodies remain partial. |
 | `SpawnerConfig` | Exact id and enemy-library rows; waves, routes, and settings remain partial. |
@@ -207,6 +1264,22 @@ interactive/prefab names. Static and dynamic chunk files share the same root
 shape. Negative sampling found no `dlg_*`, `eny_*`, `chr_*`, `npc_*`, or
 `sc_*` identifiers, so this population should be treated as scene
 geometry/lighting/audio streaming rather than a source for Story order.
+
+The separate `DynamicStreaming/PC/Scene/*/fb_main_*.bytes` family is now typed
+from the installed FlatBuffer accessors rather than the generic chunk probe.
+Across 457 current main chunks, `FBDynamicSceneSingleGrid` exposes typed
+`MissionCondition`, `IdComp`, `MissionControlComp`, `ScriptControlComp`, and
+`RootComp` vectors. Native `DynamicSceneIdSystem.AfterRegisterComp` registers
+`IdComp.UniqueId` only in the DynamicScene logic-id-to-entity-id map, while
+`DynamicSceneMissionControlSystem` reacts to mission/quest state changes. The
+scan found 387 mission-controlled roots and 125 numeric identities also present
+as LevelScript ids; 72 of those touch 214 Story actions. This equality is a
+useful authored cross-reference but not an ownership bridge: exhaustive native
+caller scans found no DynamicScene/LevelScript-manager join, and the remaining
+`23200013031` candidate is a mission-controlled world-resource root with no
+script component. Its validated LevelData host is the generic `sub_01`, not the
+mission-named `sub_sm2l5m1`. The three `radio_sm2l5m1_21/_22/_23` rows therefore
+remain unbound under the original-data-only policy.
 
 Do not revive the original permissive slot classifier. The corrected probe
 distinguishes proven table/string vectors from unknown scalar/struct vectors.
@@ -304,10 +1377,10 @@ source graph, and avoid warning-count work that merely hides unresolved bytes.
 skill `.codex/skills/endfield-source-graph/` is the current operational guide;
 this section records the durable model and boundaries.
 
-Quick and full builds:
+WebUI-relevant and exhaustive builds:
 
 ```bat
-python tools\endfield_source_graph.py build --skip-asset-maps
+python tools\endfield_source_graph.py build --relevant-asset-maps --skip-reference-rows --skip-followups
 python tools\endfield_source_graph.py build
 ```
 
@@ -315,6 +1388,7 @@ Useful cost controls:
 
 - `--skip-gameplay`
 - `--skip-asset-maps`
+- `--relevant-asset-maps`
 - `--skip-reference-rows`
 - `--skip-followups`
 - `--include-all-material-json`
@@ -330,11 +1404,20 @@ Core outputs under `reports/source_graph/` are:
 - `map_level_index.json`
 - `semantic_update_summary.json`
 
-The 2026-07-15 full graph summary reports 5,345,967 nodes, 11,182,819 edges,
-5,489,598 aliases, and 499,701 files. It includes 1,075 structured tables,
-159,884 decoded game-data files, 724 Lua modules, and large asset/audio
-indexes. These totals are build artifacts and should be read from the latest
-summary after refresh.
+The current exhaustive cross-check reached 5,797,647 nodes, 11,136,077 edges,
+5,845,781 aliases, and a 10.78 GB database. Generic AssetMap identities account
+for most of the excess: millions of unrelated Unity rows expand into graph
+nodes, aliases, and reverse edges.
+The WebUI-relevant scope selects 1,140 exact `(source, PathID)` identities from
+the same original maps, including complete selected rows so name/export-base
+fallback behavior remains available. The canonical relevant rebuild completed
+in 604.8 seconds with 2,081,132 nodes, 4,723,392 edges, 2,221,525 aliases, a
+4.60 GB database, and all 1,140 required identities matched.
+Presentation (3,893 nodes / 8,373
+edges) and Combat (1,086 nodes / 1,071 edges) payloads were canonically identical
+between relevant and exhaustive graphs. Exhaustive mode remains the evidence
+source for broad generic Unity-object/PathID investigations; changing graph
+scope never substitutes OCR or external evidence for original game data.
 
 Core SQLite tables are:
 
@@ -437,8 +1520,9 @@ scheduling, throughput equation, placement validation, or world/account state.
 
 WorldEntityRegistry and related decoded config provide thousands of static
 placed instances and links to models, interactives, enemies, audio collections,
-and level-script slots. That is sufficient for authored placement queries, not
-a full reconstructed runtime world or scene simulation.
+and level-script slots. The exact EntityTracking join above additionally
+recovers client navigation/configuration context, but still does not reconstruct
+the live world, server quest policy, or a general scene simulation.
 
 ### Combat, abilities, and numeric fields
 
@@ -542,6 +1626,30 @@ remain gated on the recovery work below:
    throughput equations or live shop/activity state.
 8. Improve per-source/per-object warning attribution if an actual clean-export
    certificate becomes necessary; do not infer it from aggregate success.
+9. Continue from the exact `gameId -> SubGameInstanceData` packet/table join and
+   the proven WorldChallenge quit consumer. One narrow typed co-carrier is now
+   recovered: LevelData `RadioTriggerZoneData` directly pairs four radio ids
+   with mission-state boundaries and the native playback consumer, producing
+   six context placements. Two exact member-20 narrative entities also pair
+   `radio_c16m4_50/51` with the `c16m4d5` FX-change mission key through the
+   typed template and native NarrativeComponent. These are local state-gated
+   playback dependencies, not the missing
+   generic mission/quest-to-LevelScript activation registry. The bounded native
+   direct-call and protocol audit found no such generic co-carrier:
+   MissionRuntime actions contain no
+   LevelScript operands, LevelScript activation contains no mission identity,
+   script packets carry scene/script ids without mission ids, and mission-event
+   packets carry mission/event ids without a script address. Lua adds two exact
+   system cutscene consumers but no mission owner. Search other shipped config,
+   indirect-dispatch, or asset-consumer registries for a carrier that resolves
+   both identities, prioritizing the seven missionless SubGame rows with exact
+   native playback. Never promote Story naming, OCR, gameplay observation, or
+   same-LevelData siblings into that missing identity.
+   The new `MissionRuntime WorldEntity condition -> WorldEntityRegistry ->
+   LevelScriptBriefData.refWorldEntityIdList` route is the model for further
+   recovery: require a complete typed group, globally unique mission/quest
+   ownership, and unanimous same-level script hosts, then label the result as
+   context unless native execution proves activation.
 
 When one of these changes lands, update this file's current conclusion and
 queue. Put detailed counts in generated reports and remove obsolete session
