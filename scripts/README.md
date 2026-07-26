@@ -953,6 +953,24 @@ Expected active inputs and outputs:
   python scripts\story_recovery\build_managed_identity_carrier_census.py
   ```
 
+- `story_recovery/build_nested_managed_identity_carrier_census.py`: resolves
+  the installed MetadataRegistration runtime type table, including generic
+  collection arguments, and follows custom managed fields to depth three. It
+  writes
+  `reports/story/recovery/nested_managed_identity_carrier_census.{json,md}`
+  and fails closed on binary, metadata, IFix, candidate-set, or native caller
+  drift. The current result classifies all 25 typed candidates, including 14
+  that depend on a nested path, with zero unreviewed rows. The last newly
+  audited path is
+  `DialogManager.m_pendingItemSubmitter -> InventoryItemSubmitter.questId`:
+  dialog finish could forward that object, but the installed fallback has
+  zero direct callers of both the submitter constructor and
+  `RegisterPendingSubmission`; current IFix replaces none of the path.
+
+  ```bat
+  python scripts\story_recovery\build_nested_managed_identity_carrier_census.py
+  ```
+
 - `story_recovery/import_mission_runtime_trace.py`: validates hook-produced
   JSONL and builds a `missionRuntimeTrace.v1` observational bundle. The input
   fails closed: every session needs one `session_start`, sequence numbers must

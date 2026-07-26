@@ -339,6 +339,15 @@ Mission Pipeline:
   decoded mission/scene pair as HUD/map tracking context, exposes the relevant
   tracking field tokens and native consumer addresses, and keeps the result at
   zero new Story bindings and order edges.
+  Schema v11 adds the MetadataRegistration-backed nested managed-carrier
+  census. The closed-carrier area reports 25 typed candidates, 14 that depend
+  on a nested path, maximum custom-type depth three, and zero unreviewed
+  candidates. Its concrete closure card exposes
+  `DialogManager.m_pendingItemSubmitter@+0x200` and
+  `InventoryItemSubmitter.questId@+0x20`, plus the constructor,
+  `TryGetSubmitMsg`, and registration addresses/caller counts. Zero current
+  constructor and registration callers and zero matching IFix targets keep
+  this at an inactive fallback producer with no quest-to-dialog or order edge.
   Native paths with no network exchange are separated again: BattleSignal is
   shown as local Ability-action dispatch with only signal/value identity, not
   placed into either C->S or S->C lanes.

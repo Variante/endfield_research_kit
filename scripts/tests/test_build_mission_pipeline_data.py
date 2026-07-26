@@ -1040,6 +1040,51 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "all_direct_managed_identity_carriers_reviewed",
         )
 
+    def test_nested_managed_identity_carrier_census_has_no_open_candidate(self):
+        audit = pipeline.RUNTIME_CONTRACT["nestedManagedIdentityCarrierCensus"]
+        metadata = audit["metadata"]
+        self.assertEqual(metadata["managedTypeRecords"], 63987)
+        self.assertEqual(metadata["runtimeTypeEntries"], 272743)
+        self.assertEqual(metadata["maxCustomTypeDepth"], 3)
+        self.assertEqual(metadata["candidateTypes"], 25)
+        self.assertEqual(metadata["directExactCandidateTypes"], 11)
+        self.assertEqual(metadata["nestedDependentCandidateTypes"], 14)
+        self.assertEqual(metadata["reviewedCandidateTypes"], 25)
+        self.assertEqual(metadata["unreviewedCandidateTypes"], 0)
+        submitter = audit["pendingItemSubmitterClosure"]
+        self.assertEqual(
+            submitter["classification"],
+            "inactive_current_fallback_producer",
+        )
+        self.assertEqual(
+            submitter["fields"]["DialogManager.m_pendingItemSubmitter"]["offset"],
+            "0x200",
+        )
+        self.assertEqual(
+            submitter["fields"]["InventoryItemSubmitter.questId"]["offset"],
+            "0x20",
+        )
+        caller_counts = {
+            row["symbol"]: row["directCallerCount"]
+            for row in submitter["methods"]
+        }
+        self.assertEqual(caller_counts["InventoryItemSubmitter..ctor"], 0)
+        self.assertEqual(
+            caller_counts["InventoryItemSubmitter.TryGetSubmitMsg"],
+            1,
+        )
+        self.assertEqual(
+            caller_counts["DialogManager.RegisterPendingSubmission"],
+            0,
+        )
+        self.assertEqual(submitter["installedPatchMatches"], 0)
+        self.assertEqual(audit["storyBindingsAdded"], 0)
+        self.assertEqual(audit["missionOrderEdgesAdded"], 0)
+        self.assertEqual(
+            audit["classification"],
+            "all_nested_managed_identity_carriers_reviewed",
+        )
+
     def test_airwall_contract_is_state_gated_context_not_transition_owner(self):
         audit = pipeline.RUNTIME_CONTRACT["airWallMissionRadioContext"]
         self.assertEqual(audit["memoryPackSchema"]["levelDataMemberCount"], 43)

@@ -159,7 +159,7 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # authored MissionRuntime and LevelScript action surfaces. v10 closes the
 # complete direct managed mission/quest identity co-carrier census and proves
 # the remaining mission/scene pair is HUD/map tracking context.
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 11
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -714,6 +714,78 @@ RUNTIME_CONTRACT = {
         "storyBindingsAdded": 0,
         "missionOrderEdgesAdded": 0,
         "confidence": "metadata_and_native_consumers_bounded",
+    },
+    "nestedManagedIdentityCarrierCensus": {
+        "source": (
+            "reports/story/recovery/nested_managed_identity_carrier_census.json"
+        ),
+        "metadata": {
+            "managedTypeRecords": 63987,
+            "runtimeTypeEntries": 272743,
+            "maxCustomTypeDepth": 3,
+            "candidateTypes": 25,
+            "directExactCandidateTypes": 11,
+            "nestedDependentCandidateTypes": 14,
+            "reviewedCandidateTypes": 25,
+            "unreviewedCandidateTypes": 0,
+        },
+        "pendingItemSubmitterClosure": {
+            "classification": "inactive_current_fallback_producer",
+            "fields": {
+                "DialogManager.m_pendingItemSubmitter": {
+                    "token": "0x0400b304",
+                    "offset": "0x200",
+                },
+                "InventoryItemSubmitter.questId": {
+                    "token": "0x04004759",
+                    "offset": "0x20",
+                },
+            },
+            "methods": [{
+                "symbol": "InventoryItemSubmitter..ctor",
+                "token": "0x060050ef",
+                "address": "0x1873b0234",
+                "directCallerCount": 0,
+            }, {
+                "symbol": "InventoryItemSubmitter.TryGetSubmitMsg",
+                "token": "0x060050f0",
+                "address": "0x1873b0144",
+                "directCallerCount": 1,
+            }, {
+                "symbol": "DialogManager.RegisterPendingSubmission",
+                "token": "0x0600f77e",
+                "address": "0x186e17bc8",
+                "directCallerCount": 0,
+            }],
+            "sendFinishDialog": {
+                "symbol": "CinematicSystem.SendFinishDialog",
+                "token": "0x06004027",
+                "address": "0x1872f0d88",
+            },
+            "installedPatchMatches": 0,
+            "finding": (
+                "Dialog finish can forward one pending item submitter whose payload "
+                "contains questId, but the installed fallback has zero direct callers "
+                "of both the submitter constructor and RegisterPendingSubmission. "
+                "SendFinishDialog is the sole TryGetSubmitMsg caller, and the current "
+                "IFix replaces none of the path."
+            ),
+        },
+        "finding": (
+            "All 25 current managed identity candidates reachable through generic "
+            "or custom typed fields to depth three are reviewed. Productive contexts "
+            "were already recovered; remaining joins are inactive producers, global "
+            "aggregate managers, previously closed paths, or static registries."
+        ),
+        "boundary": (
+            "Reflection/XLua construction, native-only opaque objects, server-only "
+            "state, paths deeper than three custom-type hops, unexported asset kinds, "
+            "future IFix, and future builds remain outside the bound."
+        ),
+        "classification": "all_nested_managed_identity_carriers_reviewed",
+        "storyBindingsAdded": 0,
+        "missionOrderEdgesAdded": 0,
+        "confidence": "metadata_registration_and_native_consumers_bounded",
     },
     "airWallMissionRadioContext": {
         "managedCarrier": {
