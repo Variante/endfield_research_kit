@@ -712,6 +712,27 @@ candidates, and zero new graph edges. This closes direct named-field searches;
 nested object graphs, indirect construction, opaque server state, and
 unexported asset kinds remain distinct frontiers.
 
+The nested managed-type frontier is now resolved independently of DummyDll
+quality through `Il2CppMetadataRegistration.types`. Runtime type decoding
+recovers generic collection arguments and custom object dependencies, and a
+depth-three traversal over 63,208 unique definitions produces 25 exact
+candidate roots: 11 direct-exact and 14 nested-dependent. Every candidate is
+classified, with zero unreviewed rows. Most nested hits are global aggregate
+objects whose independent caches must not be joined; the positive-looking
+rows are already recovered AirWall/FocusMode/NpcProxy/SubGame/DomainDepot/
+RadioTriggerZone contexts.
+
+The last binary check closes the only otherwise novel small path.
+`DialogManager.m_pendingItemSubmitter` is at `+0x200`, while
+`InventoryItemSubmitter.questId` is at `+0x20`.
+`CinematicSystem.SendFinishDialog` is the sole direct
+`TryGetSubmitMsg` caller, but there are zero whole-binary direct callers of
+both the submitter constructor and `RegisterPendingSubmission`, and current
+IFix targets none of them. The hash-pinned report
+`reports/story/recovery/nested_managed_identity_carrier_census.{json,md}`
+therefore adds no graph edge and fails closed if the candidate set, callers,
+binary, metadata, or patch changes.
+
 The non-protobuf runtime-type census found one complete serialized carrier in
 `Beyond.Gameplay.LevelData.airWalls`. The current LevelData MemoryPack root has
 43 members and `airWalls` is member 0. Generated wrapper setters prove the

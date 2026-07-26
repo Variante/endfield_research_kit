@@ -2594,6 +2594,45 @@ Story bindings or order edges. Nested object graphs, reflection/XLua,
 indirect construction, opaque server-only state, unexported asset kinds,
 future IFix, and future builds remain outside this direct-field bound.
 
+### The typed nested managed-carrier surface is exhausted to depth three
+
+The remaining managed-type frontier is now bounded with the installed
+MetadataRegistration runtime type table rather than the stale local DummyDll
+set. Generic collection arguments and custom object fields are followed to
+three hops across 63,987 metadata type records / 63,208 unique definitions and
+272,743 runtime type entries. The exact result is 25 candidate root types:
+11 already co-carry the relevant identity classes directly, 14 require at
+least one nested path, all 25 are reviewed, and none remains unclassified.
+
+The productive rows are not new graph evidence. They are the already recovered
+AirWall, FocusMode, NpcProxy, SubGame, DomainDepot, and
+`RadioTriggerZoneData` contexts. The other paths reduce to previously closed
+mission properties/task callbacks, global aggregate managers such as
+DataManager/LevelScriptData/MissionSystem, or static registries and key
+catalogs. Holding two independently useful subsystem containers on a singleton
+does not make their contents foreign keys.
+
+The one newly traced candidate is
+`DialogManager.m_pendingItemSubmitter (+0x200) ->
+InventoryItemSubmitter.questId (+0x20)`. `DialogManager._SendServer` can pass
+the current dialog id and that object to
+`CinematicSystem.SendFinishDialog`; `InventoryItemSubmitter.TryGetSubmitMsg`
+then supplies the item-submission fields. But a whole-GameAssembly direct-call
+census finds zero callers of both `InventoryItemSubmitter..ctor`
+(`0x1873b0234`) and `DialogManager.RegisterPendingSubmission`
+(`0x186e17bc8`). The only `TryGetSubmitMsg` caller is
+`SendFinishDialog`, and the installed IFix replaces none of this path. The
+carrier is therefore an inactive current-fallback producer, not a recovered
+quest-to-dialog edge.
+
+The maintained fail-closed evidence is
+`reports/story/recovery/nested_managed_identity_carrier_census.{json,md}` with
+classification `all_nested_managed_identity_carriers_reviewed`. It adds zero
+Story bindings and zero order edges. Reflection/XLua construction,
+native-only opaque objects, server-only state, paths deeper than three custom
+type hops, unexported asset kinds, future IFix, and future builds remain
+outside the bound.
+
 ### AirWall state gates recover exact non-owning radio contexts
 
 A broader exact runtime-type census found one productive non-protobuf carrier:
@@ -3163,8 +3202,15 @@ Current main-story priorities:
    zero unreviewed candidates. The only newly decoded pair is mission/scene
    tracking state, whose native consumers add and display HUD/map trackers and
    never call Story playback. Do not repeat direct managed field-pair searches
-   until metadata, binary, authored tables, or IFix changes; the remaining
-   frontier is nested/indirect shipped registries or opaque server state.
+   until metadata, binary, authored tables, or IFix changes.
+   The MetadataRegistration-backed nested census now closes the typed portion
+   of that frontier to three custom-type hops as well: 25 candidates, 14
+   nested-dependent, and zero unreviewed. Its last concrete candidate,
+   `DialogManager.m_pendingItemSubmitter -> InventoryItemSubmitter.questId`,
+   has no current constructor or registration caller and no matching IFix
+   target. Do not repeat this typed traversal until the binary, metadata, or
+   patch changes; only indirect/reflection/XLua construction, deeper object
+   paths, unexported asset kinds, or opaque server state remain outside it.
    The recovered LevelScript task packet family still sharpens the dynamic side
    of the target. Its concrete sender/handlers and decoded object offsets are
    mapped in `mission_runtime_trace_hooks.json`; the guarded message-815
