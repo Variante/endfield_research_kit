@@ -273,6 +273,62 @@ class NativeReceiverActivationFrontierTests(unittest.TestCase):
             ],
         )
 
+    def test_task_source_annotations_require_exact_keys(self) -> None:
+        task_map = {
+            "tasks": [
+                {"taskKey": "fixture_task"},
+                {"taskKey": "unmatched_task"},
+            ]
+        }
+        extra = frontier.script_task_extra_info_rows(
+            {
+                "dataTable": {
+                    "map_fixture": {
+                        "1001": {
+                            "fixture_task": {
+                                "taskTitle": {"key": "fixture_title"},
+                                "objectiveCount": 1,
+                                "trackingInfoDict": {
+                                    "Objective1": {
+                                        "description": {
+                                            "key": "fixture_description"
+                                        },
+                                        "needFormatProgress": True,
+                                        "progressDisplayMode": 0,
+                                    }
+                                },
+                            }
+                        }
+                    }
+                }
+            },
+            source_file="fixture.json",
+        )
+        frontier.annotate_task_sources(
+            task_map,
+            level_id="map_fixture",
+            script_id="1001",
+            subgames=[
+                {
+                    "subGameId": "fixture_game",
+                    "mainTaskIds": ["fixture_task"],
+                    "missionOwnerStatus": "unresolved",
+                }
+            ],
+            extra_info=extra,
+        )
+        task = task_map["tasks"][0]
+        self.assertEqual("fixture_title", task["taskExtraInfo"]["taskTitleKey"])
+        self.assertEqual(
+            "fixture_description",
+            task["taskExtraInfo"]["objectives"][0]["descriptionKey"],
+        )
+        self.assertEqual(
+            "fixture_game",
+            task["subGameMainTaskBindings"][0]["subGameId"],
+        )
+        self.assertNotIn("taskExtraInfo", task_map["tasks"][1])
+
 
 if __name__ == "__main__":
     unittest.main()

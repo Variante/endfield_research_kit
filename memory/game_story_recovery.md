@@ -143,6 +143,15 @@ offline join is therefore to follow each exact entity, spawner, dialog, area,
 property, and foreign LevelScript operand into typed same-level sources and
 accept a mission edge only if that same source also carries an unambiguous
 MissionRuntime/quest foreign key.
+The first complete id census closes the direct task-id route. The 31 task ids
+and 51 distinct condition ids occur only in their LevelScripts, LevelData
+`lt:p`/`lt:mp` bookkeeping, 13 exact `ScriptTaskExtraInfoTable` display rows,
+and 10 exact `SubGameInstanceDataTable.mainTasks` rows. They have zero
+MissionRuntimeAsset occurrences. All ten SubGame task rows target the same
+bound receiver script and all ten have null `dungeonMissionId`; they sharpen
+task purpose/activation scope without adding an owner. The Mission Pipeline
+debug payload now publishes the 13 title/objective metadata rows and ten
+SubGame main-task joins alongside their conditions.
 The durable details live at
 `reports/story/recovery/native_receiver_activation_frontier.{json,md}`.
 Mission Pipeline debug cards expose the start policy, validated LevelData
@@ -2932,9 +2941,12 @@ Current main-story priorities:
    ManualStart searches as generic ownership routes. The task maps themselves
    are now completely decoded for all 24 affected scripts: 31 tasks carry 54
    exact conditions across 11 types, with no `CheckMissionState` condition.
-   Continue from their typed entity/spawner/dialog/area/property/script
-   operands only when an exact same-source foreign key reaches MissionRuntime;
-   condition presence, same level, and evaluation order remain non-owning.
+   A complete 82-id task/condition census finds zero MissionRuntimeAsset use;
+   the only foreign roots are 13 task-display rows and ten null-mission SubGame
+   main-task bindings. Continue from typed entity/spawner/dialog/area/property/
+   script operands only when an exact same-source foreign key reaches
+   MissionRuntime; condition presence, same level, and evaluation order remain
+   non-owning.
    A diagnostic level intersection with the atmospheric switcher context finds
    89 receivers / 103 Story files on 13 shared levels. Four shared levels have
    only one atmospheric route mission, but their native Story families often

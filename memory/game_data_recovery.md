@@ -954,6 +954,12 @@ trailers before emitting anything. It currently handles the 11 concrete
 condition shapes present in the receiver corpus, including string, UInt64,
 entity pointer, and entity-list parameters. All 24 receiver scripts with task
 maps decode completely as 31 tasks and 54 conditions.
+Their 82 distinct task/condition ids have zero MissionRuntimeAsset occurrence.
+Thirteen tasks instead match exact level/script/task keys in
+`ScriptTaskExtraInfoTable`, which supplies display/tracking metadata, and ten
+match `SubGameInstanceDataTable.mainTasks` on the same `bindScriptId`. Every
+matched SubGame row has null `dungeonMissionId`. These are typed task and
+runtime-scope cross-references, not mission ownership.
 
 The existing exact positive remains:
 `map02_lv003/23300090001` decodes task `cf5a771c`, condition `cb696abe`, and

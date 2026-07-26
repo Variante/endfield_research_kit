@@ -2411,7 +2411,12 @@
               ${activationTasks.flatMap((task) => (task.conditions || []).map((conditionRow) => {
                 const condition = conditionRow.condition || {};
                 const detail = conditionDetails(condition);
-                return `<div><span>${esc(`${t("taskConditionEvidence")} · ${task.taskKey} / objective ${conditionRow.objectiveEnum ?? "?"}`)}</span><i aria-hidden="true">→</i><code>${esc(condition.type || "unresolved")}</code><b>${esc(condition.conditionUnionTag || "")}</b>${detail ? `<small>${esc(detail)}</small>` : ""}</div>`;
+                const taskSources = [
+                  task.taskExtraInfo?.taskTitleKey || "",
+                  ...(task.subGameMainTaskBindings || []).map((binding) => `SubGame ${binding.subGameId || "?"}`),
+                ].filter(Boolean);
+                const taskLabel = `${t("taskConditionEvidence")} · ${task.taskKey} / objective ${conditionRow.objectiveEnum ?? "?"}${taskSources.length ? ` · ${taskSources.join(" · ")}` : ""}`;
+                return `<div><span>${esc(taskLabel)}</span><i aria-hidden="true">→</i><code>${esc(condition.type || "unresolved")}</code><b>${esc(condition.conditionUnionTag || "")}</b>${detail ? `<small>${esc(detail)}</small>` : ""}</div>`;
               })).join("")}
               ${activationTasks.length ? `<small>${esc(t("taskConditionBoundary"))}</small>` : ""}
               <div><span>${esc(t("activationClass"))}</span><i aria-hidden="true">→</i><code>${esc(String(activation.activationClass).replaceAll("_", " "))}</code><b>${esc(t("noMissionOwner"))}</b></div>
