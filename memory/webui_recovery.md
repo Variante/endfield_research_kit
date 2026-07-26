@@ -299,6 +299,16 @@ Mission Pipeline:
   `CharacterPositionCorrection` for server-position reconciliation. The one-way
   `SC_SCENE_LEVEL_SCRIPT_STAGE_CHANGE {sceneNumId, scriptId, stage}` row is
   labeled as a server push with no client request or expected response.
+  Mission Pipeline now also exposes exact LevelData AirWall state-gated radio
+  contexts. The generated Story sidecars contain 61 dependency rows and 61
+  visible playback-context rows across 30 missions and 20 radios; reused radio
+  names preserve their separate naming owner. Cards state that synchronized
+  mission/quest state controls the wall and later local contact can play the
+  pushback radio, while explicitly denying transition causality, quest
+  activation/completion, Story ownership, and mission order. The runtime
+  contract is schema v6 and records the complete 958-file/822-group decoder
+  census, 58 accepted contexts, two rejected inconsistent rows, and zero
+  current IFix AirWall replacements.
   Native paths with no network exchange are separated again: BattleSignal is
   shown as local Ability-action dispatch with only signal/value identity, not
   placed into either C->S or S->C lanes.

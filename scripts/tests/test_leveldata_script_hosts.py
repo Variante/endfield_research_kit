@@ -10,6 +10,7 @@ from scripts.story_builder import level_bindings
 from scripts.story_builder.level_bindings import (
     _find_exact_bytes_offsets,
     _parse_leveldata_mission_host_name,
+    build_leveldata_airwall_mission_radio_contexts,
     build_level_function_area_radio_trigger_story_contexts,
     build_level_interactive_narrative_mission_story_contexts,
     build_leveldata_authoritative_scope_script_host_index,
@@ -19,6 +20,7 @@ from scripts.story_builder.level_bindings import (
     build_npc_proxy_segment_script_host_index,
     find_levelscript_brief_data_entries,
     parse_leveldata_levelscript_brief_dictionary,
+    parse_leveldata_airwall_groups,
     parse_level_function_area_radio_trigger_zone_entry,
     parse_level_interactive_narrative_mission_context,
     parse_levelscript_brief_data_entry,
@@ -109,6 +111,68 @@ class LevelDataScriptHostTests(unittest.TestCase):
             + level_bindings._LEVEL_INTERACTIVE_PARAM_STRING_PREFIX
             + cls._mp_string(value)
         )
+
+    @classmethod
+    def _airwall_mission_check(
+        cls,
+        check_id: str,
+        *,
+        is_quest: bool,
+        detail_state: int = 3,
+        is_same: bool = True,
+    ) -> bytes:
+        return (
+            b"\x04"
+            + detail_state.to_bytes(4, "little", signed=True)
+            + cls._mp_string(check_id)
+            + bytes((is_quest, is_same))
+        )
+
+    @classmethod
+    def _airwall_leveldata(
+        cls,
+        *,
+        mission_id: str = "mission_test",
+        quest_id: str = "mission_test_q#1",
+        radio_id: str = "radio_test_airwall",
+        group_members: int = 8,
+    ) -> bytes:
+        down = cls._airwall_mission_check(
+            mission_id,
+            is_quest=False,
+            detail_state=4,
+            is_same=False,
+        )
+        rise = cls._airwall_mission_check(
+            quest_id,
+            is_quest=True,
+            detail_state=3,
+            is_same=True,
+        )
+        mission_total = (
+            b"\x04"
+            + (1).to_bytes(4, "little", signed=True)
+            + down
+            + b"\x00"
+            + b"\x01"
+            + (1).to_bytes(4, "little", signed=True)
+            + rise
+        )
+        group = (
+            bytes((group_members,))
+            + b"\x02"
+            + (b"\x00" * 24)
+            + b"\x02"
+            + (1).to_bytes(4, "little", signed=True)
+            + mission_total
+            + b"\x01"
+            + (123).to_bytes(8, "little")
+            + (-1).to_bytes(4, "little", signed=True)
+            + cls._mp_string(radio_id)
+            + (456).to_bytes(8, "little")
+            + (0xF0000001).to_bytes(4, "little")
+        )
+        return b"\x2b" + (1).to_bytes(4, "little", signed=True) + group
 
     @classmethod
     def _interactive_record(
@@ -411,6 +475,68 @@ class LevelDataScriptHostTests(unittest.TestCase):
                 build_level_function_area_radio_trigger_story_contexts(
                     {"radio_test_1"},
                     {"mission_after"},
+                    leveldata_root=root,
+                ),
+            )
+
+    def test_airwall_group_decodes_exact_nested_state_predicates(self) -> None:
+        rows = parse_leveldata_airwall_groups(self._airwall_leveldata())
+        self.assertEqual(1, len(rows))
+        row = rows[0]
+        self.assertEqual("123", row["groupId"])
+        self.assertEqual("456", row["scriptId"])
+        self.assertEqual(0xF0000001, row["slotId"])
+        self.assertEqual("radio_test_airwall", row["pushBackRadioId"])
+        self.assertTrue(row["defaultOn"])
+        mission_data = row["checkData"]["missionData"]
+        self.assertTrue(mission_data["isRiseAny"])
+        self.assertFalse(mission_data["isDownAny"])
+        self.assertEqual("mission_test_q#1", mission_data["riseReason"][0]["id"])
+        self.assertTrue(mission_data["riseReason"][0]["isQuest"])
+        self.assertEqual("mission_test", mission_data["downReason"][0]["id"])
+        self.assertFalse(mission_data["downReason"][0]["isSame"])
+
+        malformed = self._airwall_leveldata(group_members=7)
+        self.assertEqual([], parse_leveldata_airwall_groups(malformed))
+
+    def test_airwall_context_requires_every_typed_state_check_to_resolve(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "LevelData"
+            level_dir = root / "map_test"
+            level_dir.mkdir(parents=True)
+            (level_dir / "airwalls.json").write_bytes(
+                self._airwall_leveldata()
+            )
+            rows = build_leveldata_airwall_mission_radio_contexts(
+                {"radio_test_airwall"},
+                {"mission_test"},
+                {"mission_test_q#1": "mission_test"},
+                leveldata_root=root,
+            )
+            self.assertEqual(1, len(rows))
+            self.assertEqual(["mission_test"], rows[0]["missionStateIds"])
+            self.assertEqual(
+                {"down", "rise"},
+                {
+                    check["transition"]
+                    for check in rows[0]["missionStateChecks"]
+                },
+            )
+            self.assertEqual(
+                {"equal", "not_equal"},
+                {
+                    check["comparison"]
+                    for check in rows[0]["missionStateChecks"]
+                },
+            )
+            self.assertEqual("map_test", rows[0]["levelId"])
+
+            self.assertEqual(
+                [],
+                build_leveldata_airwall_mission_radio_contexts(
+                    {"radio_test_airwall"},
+                    {"mission_test"},
+                    {},
                     leveldata_root=root,
                 ),
             )

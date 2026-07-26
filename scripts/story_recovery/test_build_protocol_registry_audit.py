@@ -162,6 +162,18 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
             audit.protobuf_identity_field_classes("dialogId_"),
             {"story"},
         )
+        self.assertEqual(
+            audit.protobuf_identity_field_classes("requestId_"),
+            set(),
+        )
+        self.assertEqual(
+            audit.protobuf_identity_field_classes("soilRequestId_"),
+            set(),
+        )
+        self.assertEqual(
+            audit.protobuf_identity_field_classes("cutsceneId_"),
+            {"story"},
+        )
         known = {"Proto.MISSION", "Proto.QUEST", "Proto.UNRELATED"}
         self.assertEqual(
             audit.protobuf_runtime_dependencies(

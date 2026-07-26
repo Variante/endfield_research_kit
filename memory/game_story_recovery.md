@@ -2457,6 +2457,40 @@ consumer. This adds zero ownership or order edges. Opaque bytes, dynamic
 parameter values, server-only schemas, native construction, future IFix, and
 future builds remain outside the bound.
 
+### AirWall state gates recover exact non-owning radio contexts
+
+A broader exact runtime-type census found one productive non-protobuf carrier:
+`Beyond.Gameplay.AirWallManager`. `LevelData.airWalls` is member 0 of the
+current 43-member MemoryPack object. Its typed `AirWallGroup` rows co-carry
+`pushBackRadioId` with `AirWallCheckData -> MissionTotalCheckData ->
+MissionCheckData`, including the exact state id, mission-versus-quest flag,
+detail state, equality mode, and rise/down any/all combination. Generated
+`ForMemoryPack` setters prove the alphabetical eight-member group order:
+`bounds`, `checkData`, `defaultOn`, `groupId`, `polyLineWalls`,
+`pushBackRadioId`, `scriptId`, and `slotId`.
+
+The guarded decoder consumes all 958 LevelData payloads: 228 files contain 822
+AirWall groups with zero parse failures. Of those, 211 are mission checked, 78
+carry a radio, and 60 carry both. Exact Story and MissionRuntime/quest joins
+retain 58 contexts covering 20 radios and 30 missions, producing 61
+record-level mission attachment rows (60 unique mission/radio placements).
+Two `e7m3` rows are rejected as authored type inconsistencies because
+`e7m3_q#24` or `e7m3_q#18` is marked `isQuest=false`; the builder fails the
+whole mixed predicate group closed rather than correcting it from the string.
+Reused radio names are attached to the checked mission/quest identities, not
+to the Story filename's apparent owner.
+
+The installed native chain establishes the semantics. `_InitMissionListener`
+binds mission and quest state events; `_OnMissionStateChanged` and
+`_OnQuestStateChanged` route cared identifiers to `AirWallGroupAgent`, whose
+state handlers re-evaluate the authored checks. `TriggerMainCharGoBack` reads
+the group's pushback radio, and its callback at `0x186f4ecc0` calls
+`GameAction.PlayRadio`. Thus synchronized mission/quest state controls whether
+the wall is active, while later local player contact causes playback. This is
+an exact state-gated playback dependency/context, not playback on the state
+transition, quest activation/completion, Story ownership, or mission order.
+The current 30-target Gameplay IFix replaces no AirWall method.
+
 It does **not** close the join. Message 57 carries scene/script identity and no
 mission or quest identity, exactly mirroring the task packet family. The two
 death/property bridges are likewise capability proofs at the architecture level,
@@ -2907,7 +2941,10 @@ Current main-story priorities:
    add `radio_c16m4_50` and `_51` for `c16m4d5`, bringing the combined
    dependency surface to 15 files across 19 placements without claiming quest
    ownership; FactoryBuildingPanelLock raises it to 16/21 and the four exact
-   DialogTree quest-state gates raise it to 20/25. The next useful step is
+   DialogTree quest-state gates raise it to 20/25. The exact AirWall carrier
+   now adds 20 radio files across 61 record-level mission attachments (60
+   unique mission/radio placements); these are wall-state-gated pushback
+   contexts and remain non-owning. The next useful step is
    no longer another pass over listener names or payload fields: the exact
    interactive progress-lock join has already promoted every current row that
    passes its typed entity/config/quest gates, while the remaining
@@ -2963,7 +3000,10 @@ Current main-story priorities:
    `CharacterPositionCorrection`, not authored scene ownership. Do not repeat
    this schema join until the binary, metadata, or IFix hash changes; search
    non-protobuf config/asset registries or independently typed server-state
-   evidence instead.
+   evidence instead. The AirWall result demonstrates the productive version of
+   that search: prioritize typed config roots whose state predicate and Story
+   consumer coexist in one validated object, then trace both the state listener
+   and playback consumer before promotion.
    The recovered LevelScript task packet family still sharpens the dynamic side
    of the target. Its concrete sender/handlers and decoded object offsets are
    mapped in `mission_runtime_trace_hooks.json`; the guarded message-815

@@ -150,8 +150,9 @@ MISSION_RUNTIME_TRACE_SCHEMA = "missionRuntimeTrace.v1"
 # v3 added per-mission ``missionGraph`` and quest-tracked ambient lines. v4
 # extends ``envTalkContext`` with exact atmospheric-switcher state context. v5
 # adds the recursive protobuf identity-carrier census and closes
-# roleBaseInfo.sceneName as position-reconciliation context.
-SCHEMA_VERSION = 5
+# roleBaseInfo.sceneName as position-reconciliation context. v6 adds exact
+# LevelData AirWall mission/quest-state-gated radio playback contexts.
+SCHEMA_VERSION = 6
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
@@ -407,6 +408,99 @@ RUNTIME_CONTRACT = {
         ),
         "storyBindingsAdded": 0,
         "confidence": "native_proven_bounded",
+    },
+    "airWallMissionRadioContext": {
+        "managedCarrier": {
+            "manager": "Beyond.Gameplay.AirWallManager",
+            "group": "Beyond.Gameplay.AirWallGroup",
+            "checkData": "Beyond.Gameplay.AirWallCheckData",
+            "predicate": "Beyond.Gameplay.MissionCheckData",
+            "levelDataField": "Beyond.Gameplay.LevelData.airWalls",
+        },
+        "memoryPackSchema": {
+            "levelDataMemberCount": 43,
+            "airWallsMemberIndex": 0,
+            "airWallGroupMemberCount": 8,
+            "airWallGroupMemberOrder": [
+                "bounds",
+                "checkData",
+                "defaultOn",
+                "groupId",
+                "polyLineWalls",
+                "pushBackRadioId",
+                "scriptId",
+                "slotId",
+            ],
+            "missionCheckFields": [
+                "detailState",
+                "id",
+                "isQuest",
+                "isSame",
+            ],
+        },
+        "corpus": {
+            "levelDataFiles": 958,
+            "filesWithAirWalls": 228,
+            "airWallGroups": 822,
+            "missionCheckedGroups": 211,
+            "radioGroups": 78,
+            "missionCheckedRadioGroups": 60,
+            "acceptedStoryContexts": 58,
+            "rejectedUnresolvedOrInconsistentContexts": 2,
+            "missionAttachmentEdges": 61,
+            "attachedMissions": 30,
+            "storyRadioIds": 20,
+            "parseFailures": 0,
+        },
+        "nativeChain": [
+            {
+                "symbol": "AirWallManager._InitMissionListener",
+                "token": "0x06001c6f",
+                "address": "0x1845d5df0",
+                "fallbackPatchId": "0x260e",
+                "effect": "binds global mission and quest state listeners",
+            },
+            {
+                "symbol": (
+                    "AirWallManager._OnMissionStateChanged / "
+                    "_OnQuestStateChanged"
+                ),
+                "tokens": ["0x06001c71", "0x06001c72"],
+                "addresses": ["0x186f49038", "0x186f49278"],
+                "fallbackPatchIds": ["0x260f", "0x2610"],
+                "effect": "routes exact cared identifiers to AirWallGroupAgent",
+            },
+            {
+                "symbol": (
+                    "AirWallGroupAgent.OnMissionStateChanged / "
+                    "OnQuestStateChanged"
+                ),
+                "tokens": ["0x06001c5e", "0x06001c5f"],
+                "address": "0x186f45be8 / 0x186f45c50",
+                "effect": "re-evaluates the authored MissionCheckData predicates",
+            },
+            {
+                "symbol": (
+                    "AirWallManager.TriggerMainCharGoBack callback -> "
+                    "GameAction.PlayRadio"
+                ),
+                "token": "0x06001cb9",
+                "address": "0x186f4ecc0 + 0x24a",
+                "effect": "plays pushBackRadioId after local AirWall contact",
+            },
+        ],
+        "installedPatch": {
+            "sha256": "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21",
+            "signatureTargetCount": 30,
+            "matchedAirWallMethods": 0,
+        },
+        "finding": (
+            "This is an exact state-gated playback context: synchronized mission/quest "
+            "state controls an authored AirWall, and later player contact can play its "
+            "pushback radio. It is not a mission-transition playback trigger, quest "
+            "activation/completion edge, Story owner, or ordering edge."
+        ),
+        "confidence": "native_exact_serialized_co_carrier",
     },
     "guideCompletion": {
         "conditionType": 11,
@@ -1992,6 +2086,26 @@ RUNTIME_CONTRACT = {
                 "30-target Gameplay IFix matches none of the two handlers or consumer."
             ),
             "confidence": "native_proven_bounded",
+        },
+        {
+            "symbol": (
+                "AirWallManager mission/quest listeners -> AirWallGroupAgent "
+                "-> TriggerMainCharGoBack -> GameAction.PlayRadio"
+            ),
+            "address": (
+                "0x1845d5df0 -> 0x186f49038 / 0x186f49278 -> "
+                "0x186f45be8 / 0x186f45c50 -> 0x186f4ecc0"
+            ),
+            "finding": (
+                "LevelData member 0 contains 822 exactly decoded AirWallGroup rows. "
+                "Sixty co-carry typed mission/quest predicates and a pushback radio; "
+                "58 resolve completely to 20 Story radios and produce 61 non-owning "
+                "mission context attachments. Mission/quest state changes only "
+                "re-evaluate the wall; radio playback occurs later on local player "
+                "pushback. The current 30-target Gameplay IFix replaces no AirWall "
+                "method."
+            ),
+            "confidence": "native_exact_serialized_co_carrier",
         },
         {
             "symbol": "GameplayNetwork._Handle_SyncLevelScriptStage",

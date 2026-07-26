@@ -13905,6 +13905,17 @@ def build_language_bundle(
             if isinstance(row, dict) and row.get("key")
         )
     mission_runtime_id_set = set(mission_runtime_ids)
+    quest_owner_candidates: dict[str, set[str]] = defaultdict(set)
+    for owner_mission, flow_payload in mission_flows_payload.items():
+        for quest in flow_payload.get("quests") or []:
+            quest_id = str(quest.get("id") or "")
+            if quest_id:
+                quest_owner_candidates[quest_id].add(str(owner_mission))
+    quest_owner_by_id = {
+        quest_id: next(iter(owner_missions))
+        for quest_id, owner_missions in quest_owner_candidates.items()
+        if len(owner_missions) == 1
+    }
 
     # Patrol checkpoint listeners carry no mission or quest id themselves.
     # Bind them only after the complete original-data chain agrees: exact
@@ -16418,6 +16429,159 @@ def build_language_bundle(
                 str(existing.get("relation") or ""),
                 str(existing.get("missionStateId") or ""),
                 str(existing.get("radioTriggerId") or ""),
+            ) == connection_signature for existing in connections if isinstance(existing, dict)):
+                connections.append(connection)
+            preexisting_attached_story_keys_by_mission[target_mission].add(
+                route_story_key
+            )
+    airwall_radio_contexts = build_leveldata_airwall_mission_radio_contexts(
+        set(all_story_entry_keys),
+        mission_runtime_id_set,
+        quest_owner_by_id,
+    )
+    for context in airwall_radio_contexts:
+        route_story_key = resolve_scene_ref_out_key(
+            str(context.get("radioId") or ""),
+            all_story_entry_keys,
+        )
+        if not route_story_key:
+            continue
+        all_state_checks = list(context.get("missionStateChecks") or [])
+        has_quest_checks = any(
+            check.get("isQuest") is True
+            for check in all_state_checks
+        )
+        for target_mission in context.get("missionStateIds") or []:
+            target_mission = str(target_mission or "")
+            if target_mission not in mission_runtime_id_set:
+                continue
+            target_checks = [
+                check
+                for check in all_state_checks
+                if str(check.get("targetMissionId") or "") == target_mission
+            ]
+            if not target_checks:
+                continue
+            dependency = {
+                "key": route_story_key,
+                "kind": story_kind_by_key.get(route_story_key, "radio"),
+                "relation": "airwall_mission_state_radio_dependency",
+                "direction": "dependency",
+                "phase": "airwall_mission_state_gate",
+                "confidence": "native_exact_leveldata_airwall_state_carrier",
+                "source": (
+                    "one exact installed-build LevelData AirWallGroup row "
+                    "co-carries typed MissionCheckData predicates and this "
+                    "pushBackRadioId; native AirWallManager listeners update "
+                    "the wall state and the pushback callback calls "
+                    "GameAction.PlayRadio"
+                ),
+                "storyOwnerMission": (
+                    story_owner_by_key.get(route_story_key) or ""
+                ),
+                "missionStateId": target_mission,
+                "missionStateIds": list(context.get("missionStateIds") or []),
+                "missionStateChecks": all_state_checks,
+                "targetMissionStateChecks": target_checks,
+                "riseCombination": context.get("riseCombination"),
+                "downCombination": context.get("downCombination"),
+                "questTriggerStatus": (
+                    "exact_airwall_state_gated_pushback_playback_context_"
+                    "not_mission_transition_trigger_or_story_ownership"
+                ),
+                "storyBinding": False,
+                "ownership": False,
+                "dependencyOnly": True,
+                "questActivation": False,
+                "questPlayback": False,
+                "questCompletion": False,
+                "executionSide": "client",
+                "networkRole": "reads_synchronized_local_mission_and_quest_state",
+                "serverExchange": False,
+                "clientRequest": False,
+                "expectedClientReply": False,
+                "upstreamServerStateSources": [
+                    "SC_SYNC_ALL_MISSION",
+                    "SC_MISSION_STATE_UPDATE",
+                    *(
+                        ["SC_QUEST_STATE_UPDATE"]
+                        if has_quest_checks
+                        else []
+                    ),
+                ],
+                "upstreamServerStateRole": (
+                    "independent server pushes populate local MissionSystem "
+                    "and QuestSystem state; AirWall state changes and "
+                    "pushback playback send no mission-state query"
+                ),
+                "serverEvidenceStatus": (
+                    "AirWallManager listens to local synchronized mission and "
+                    "quest state; a later local wall pushback invokes the "
+                    "radio callback"
+                ),
+                "nativeMappingId": (
+                    "leveldata-airwall-mission-radio-memorypack-v1d4"
+                ),
+                "nativeConsumer": context.get("nativeConsumer"),
+                "levelIds": [str(context.get("levelId") or "")],
+                "sourceFiles": [str(context.get("sourceFile") or "")],
+                "sourcePath": context.get("sourcePath"),
+                "recordOffset": context.get("recordOffset"),
+                "recordEndOffset": context.get("recordEndOffset"),
+                "serializedMemberCount": context.get(
+                    "serializedMemberCount"
+                ),
+                "airWallGroupId": context.get("groupId"),
+                "airWallScriptId": context.get("scriptId"),
+                "airWallSlotId": context.get("slotId"),
+                "airWallDefaultOn": context.get("defaultOn"),
+            }
+            dependencies = mission_flows_payload[target_mission].setdefault(
+                "missionStateStoryDependencies",
+                [],
+            )
+            dependency_signature = (
+                route_story_key,
+                dependency["relation"],
+                target_mission,
+                str(dependency.get("sourcePath") or ""),
+                int(dependency.get("recordOffset") or 0),
+            )
+            if not any((
+                str(existing.get("key") or ""),
+                str(existing.get("relation") or ""),
+                str(existing.get("missionStateId") or ""),
+                str(existing.get("sourcePath") or ""),
+                int(existing.get("recordOffset") or 0),
+            ) == dependency_signature for existing in dependencies if isinstance(existing, dict)):
+                dependencies.append(dependency)
+
+            connection = {
+                **dependency,
+                "relation": "airwall_mission_state_radio_playback_context",
+                "direction": "context",
+                "confidence": "native_exact_serialized_co_carrier",
+                "evidenceTier": "direct",
+                "storyBinding": True,
+                "dependencyOnly": False,
+            }
+            connections = mission_flows_payload[target_mission].setdefault(
+                "missionStoryConnections",
+                [],
+            )
+            connection_signature = (
+                route_story_key,
+                connection["relation"],
+                target_mission,
+                str(connection.get("sourcePath") or ""),
+                int(connection.get("recordOffset") or 0),
+            )
+            if not any((
+                str(existing.get("key") or ""),
+                str(existing.get("relation") or ""),
+                str(existing.get("missionStateId") or ""),
+                str(existing.get("sourcePath") or ""),
+                int(existing.get("recordOffset") or 0),
             ) == connection_signature for existing in connections if isinstance(existing, dict)):
                 connections.append(connection)
             preexisting_attached_story_keys_by_mission[target_mission].add(
