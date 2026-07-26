@@ -3274,6 +3274,8 @@ class SourceGraphBuilder:
             self.commit_step("missionPipelineStoryScope")
             self.ingest_mission_pipeline_env_talk_context()
             self.commit_step("missionPipelineEnvTalkContext")
+            self.ingest_mission_pipeline_native_runtime_receivers()
+            self.commit_step("missionPipelineNativeRuntimeReceivers")
             self.ingest_video_bindings()
             self.commit_step("videoBindings")
             self.ingest_narrative_video_override_audit()
@@ -10286,6 +10288,381 @@ class SourceGraphBuilder:
         ] = len(condition_quest_ids)
         self.ingest_counts[
             "missionPipelineEnvTalkContext.skippedRows"
+        ] = skipped_rows
+
+    def ingest_mission_pipeline_native_runtime_receivers(self) -> None:
+        """Index exact unowned native playback receivers without mission edges.
+
+        Mission Pipeline publishes one row per current-build serialized event
+        receiver whose complete ActionHeader-to-playback path is known but whose
+        mission/quest producer is not. The receiver identity is the exact
+        level/script/header tuple. Story source files must agree with that tuple
+        before the row is accepted.
+        """
+        index_path = MISSION_PIPELINE_ROOT / "index.json"
+        payload = read_json(index_path, {})
+        if not isinstance(payload, dict):
+            return
+        story_coverage = payload.get("storyCoverage")
+        if not isinstance(story_coverage, dict):
+            return
+        rows = story_coverage.get("missionlessNativeRuntimeNodes")
+        if not isinstance(rows, list):
+            return
+
+        source = "webui/mission_pipeline/native_runtime_receivers"
+        receiver_identity_counts: Counter[tuple[str, str, int]] = Counter()
+        for candidate in rows:
+            if not isinstance(candidate, dict):
+                continue
+            candidate_selector = candidate.get("selector")
+            if not isinstance(candidate_selector, dict):
+                continue
+            candidate_level_id = safe_key(
+                candidate_selector.get("levelId")
+            )
+            candidate_script_id = safe_key(
+                candidate_selector.get("listenerScriptId")
+            )
+            candidate_header_id = candidate_selector.get(
+                "listenerHeaderLocalId"
+            )
+            if (
+                candidate_level_id
+                and candidate_script_id
+                and isinstance(candidate_header_id, int)
+                and candidate_header_id >= 0
+            ):
+                receiver_identity_counts[(
+                    candidate_level_id,
+                    candidate_script_id,
+                    candidate_header_id,
+                )] += 1
+        index_rel = slash(index_path)
+        dataset = self.add_node(
+            "dataset",
+            "mission_pipeline_native_runtime_receiver_frontier",
+            name="Mission Pipeline unresolved native runtime receivers",
+            source=source,
+            path=index_rel,
+            data={
+                "relation": "exact_native_runtime_receiver_playback",
+                "playbackEvidence": True,
+                "missionOwnershipEvidence": False,
+                "orderEvidence": False,
+            },
+        )
+        index_file = self.add_file(
+            index_rel,
+            kind="mission_pipeline",
+            source=source,
+        )
+        accepted_receivers: set[str] = set()
+        accepted_story_keys: set[str] = set()
+        accepted_event_names: set[str] = set()
+        accepted_level_ids: set[str] = set()
+        mapping_ids: set[str] = set()
+        accepted_rows = 0
+        skipped_rows = 0
+
+        for row_index, row in enumerate(rows):
+            if not isinstance(row, dict):
+                skipped_rows += 1
+                continue
+            selector = (
+                row.get("selector")
+                if isinstance(row.get("selector"), dict)
+                else {}
+            )
+            level_id = safe_key(selector.get("levelId"))
+            script_id = safe_key(selector.get("listenerScriptId"))
+            header_local_id = selector.get("listenerHeaderLocalId")
+            event_name = safe_key(row.get("eventName"))
+            mapping_id = safe_key(row.get("payloadSchemaMappingId"))
+            story_files = row.get("storyFiles")
+            receiver_identity_count = (
+                receiver_identity_counts[(
+                    level_id,
+                    script_id,
+                    header_local_id,
+                )]
+                if isinstance(header_local_id, int)
+                else 0
+            )
+            if (
+                safe_key(row.get("relation"))
+                != "exact_native_runtime_receiver_playback"
+                or safe_key(row.get("confidence"))
+                != "exact_current_build_memorypack_fields"
+                or safe_key(row.get("missionOwnerStatus")) != "unresolved"
+                or row.get("storyBinding") is not False
+                or not level_id
+                or not script_id
+                or not isinstance(header_local_id, int)
+                or header_local_id < 0
+                or receiver_identity_count != 1
+                or not event_name
+                or not mapping_id.startswith("gameassembly-")
+                or not isinstance(story_files, list)
+                or not story_files
+            ):
+                skipped_rows += 1
+                continue
+
+            normalized_story_rows: list[dict[str, Any]] = []
+            expected_suffix = (
+                f"/LevelScriptData/{level_id}/{script_id}.json"
+            )
+            row_valid = True
+            for story_index, story_row in enumerate(story_files):
+                if not isinstance(story_row, dict):
+                    row_valid = False
+                    break
+                story_key = safe_key(story_row.get("key"))
+                native_actions = sorted(
+                    {
+                        safe_key(value)
+                        for value in (story_row.get("nativeActions") or [])
+                        if safe_key(value)
+                    }
+                )
+                source_files = sorted(
+                    {
+                        safe_key(value).replace("\\", "/")
+                        for value in (story_row.get("sourceFiles") or [])
+                        if safe_key(value)
+                    }
+                )
+                if (
+                    not story_key
+                    or not native_actions
+                    or not source_files
+                    or not any(
+                        f"/{source_file}".endswith(expected_suffix)
+                        for source_file in source_files
+                    )
+                ):
+                    row_valid = False
+                    break
+                normalized_story_rows.append({
+                    "index": story_index,
+                    "key": story_key,
+                    "kind": safe_key(story_row.get("kind")),
+                    "nativeActions": native_actions,
+                    "sourceFiles": source_files,
+                })
+            if not row_valid:
+                skipped_rows += 1
+                continue
+
+            receiver_key = (
+                f"{level_id}:{script_id}:{header_local_id}"
+            )
+            boundary = {
+                "relation": "exact_native_runtime_receiver_playback",
+                "confidence": "exact_current_build_memorypack_fields",
+                "missionOwnerStatus": "unresolved",
+                "missionStoryBinding": False,
+                "playbackEvidence": True,
+                "playbackOwnership": False,
+                "missionOwnershipEvidence": False,
+                "orderEvidence": False,
+                "completionEvidence": False,
+                "serverExchange": row.get("serverExchange") is True,
+                "transport": safe_key(row.get("transport")),
+                "eventName": event_name,
+                "eventSummary": safe_key(row.get("eventSummary")),
+                "levelId": level_id,
+                "listenerScriptId": script_id,
+                "listenerHeaderLocalId": header_local_id,
+                "payloadSchemaMappingId": mapping_id,
+                "selector": compact_payload(selector, depth=3),
+                "runtimeTarget": compact_payload(
+                    row.get("runtimeTarget"),
+                    depth=3,
+                ),
+                "ownershipBoundary": safe_key(
+                    row.get("ownershipBoundary")
+                ),
+            }
+            receiver_node = self.add_node(
+                "native_runtime_receiver",
+                receiver_key,
+                name=f"{event_name} @ {script_id}#{header_local_id}",
+                source=source,
+                path=index_rel,
+                data=boundary,
+            )
+            self.add_alias(
+                receiver_key,
+                receiver_node,
+                kind="native_runtime_receiver_key",
+                source=source,
+            )
+            self.add_alias(
+                f"{script_id}:{header_local_id}",
+                receiver_node,
+                kind="level_script_header_key",
+                source=source,
+            )
+            event_node = self.add_node(
+                "native_runtime_event",
+                event_name,
+                name=event_name,
+                source=source,
+            )
+            self.add_alias(
+                event_name,
+                event_node,
+                kind="native_runtime_event_name",
+                source=source,
+            )
+            level_node = self.add_level_node(level_id, source=source)
+            script_node = self.add_node(
+                "level_script",
+                script_id,
+                name=script_id,
+                source=source,
+            )
+            self.add_alias(
+                script_id,
+                script_node,
+                kind="level_script_id",
+                source=source,
+            )
+
+            evidence = (
+                "storyCoverage.missionlessNativeRuntimeNodes"
+                f"[{row_index}]"
+            )
+            self.add_edge(
+                dataset,
+                receiver_node,
+                "has_unresolved_native_runtime_receiver",
+                source=source,
+                evidence=evidence,
+                data=boundary,
+            )
+            self.add_edge(
+                index_file,
+                receiver_node,
+                "mission_pipeline_index_has_native_runtime_receiver",
+                source=source,
+                evidence=evidence,
+                data=boundary,
+            )
+            self.add_edge(
+                receiver_node,
+                event_node,
+                "native_runtime_receiver_uses_event",
+                source=source,
+                evidence="eventName",
+                data=boundary,
+            )
+            self.add_edge(
+                receiver_node,
+                script_node,
+                "native_runtime_receiver_uses_level_script",
+                source=source,
+                evidence="selector.listenerScriptId",
+                data=boundary,
+            )
+            if level_node:
+                self.add_edge(
+                    receiver_node,
+                    level_node,
+                    "native_runtime_receiver_in_level",
+                    source=source,
+                    evidence="selector.levelId",
+                    data=boundary,
+                )
+
+            for story_row in normalized_story_rows:
+                story_key = story_row["key"]
+                story_node = self.add_node(
+                    "story",
+                    story_key,
+                    name=story_key,
+                    source=source,
+                )
+                self.add_alias(
+                    story_key,
+                    story_node,
+                    kind="story_key",
+                    source=source,
+                )
+                story_boundary = {
+                    **boundary,
+                    "storyKey": story_key,
+                    "storyKind": story_row["kind"],
+                    "nativeActions": story_row["nativeActions"],
+                    "sourceFiles": story_row["sourceFiles"],
+                }
+                story_evidence = (
+                    f"{evidence}.storyFiles[{story_row['index']}]"
+                )
+                self.add_edge(
+                    receiver_node,
+                    story_node,
+                    "native_runtime_receiver_reaches_story",
+                    source=source,
+                    evidence=story_evidence,
+                    data=story_boundary,
+                )
+                self.add_edge(
+                    story_node,
+                    receiver_node,
+                    "story_has_unresolved_native_runtime_receiver",
+                    source=source,
+                    evidence=story_evidence,
+                    data=story_boundary,
+                )
+                for source_index, source_file in enumerate(
+                    story_row["sourceFiles"]
+                ):
+                    source_file_node = self.add_file(
+                        source_file,
+                        kind="level_script",
+                        source=source,
+                    )
+                    self.add_edge(
+                        source_file_node,
+                        receiver_node,
+                        "level_script_file_defines_native_runtime_receiver",
+                        source=source,
+                        evidence=(
+                            f"{story_evidence}.sourceFiles[{source_index}]"
+                        ),
+                        data=story_boundary,
+                    )
+                accepted_story_keys.add(story_key)
+
+            accepted_receivers.add(receiver_key)
+            accepted_event_names.add(event_name)
+            accepted_level_ids.add(level_id)
+            mapping_ids.add(mapping_id)
+            accepted_rows += 1
+
+        self.ingest_counts[
+            "missionPipelineNativeRuntimeReceivers.rows"
+        ] = accepted_rows
+        self.ingest_counts[
+            "missionPipelineNativeRuntimeReceivers.uniqueReceivers"
+        ] = len(accepted_receivers)
+        self.ingest_counts[
+            "missionPipelineNativeRuntimeReceivers.storyFiles"
+        ] = len(accepted_story_keys)
+        self.ingest_counts[
+            "missionPipelineNativeRuntimeReceivers.eventFamilies"
+        ] = len(accepted_event_names)
+        self.ingest_counts[
+            "missionPipelineNativeRuntimeReceivers.levels"
+        ] = len(accepted_level_ids)
+        self.ingest_counts[
+            "missionPipelineNativeRuntimeReceivers.mappingIds"
+        ] = len(mapping_ids)
+        self.ingest_counts[
+            "missionPipelineNativeRuntimeReceivers.skippedRows"
         ] = skipped_rows
 
     def ingest_option_overrides(self) -> None:
@@ -29348,6 +29725,8 @@ QUERY_KIND_PRIORITY = {
     "animation_cutscene_ref": 88,
     "animation_path_ref": 89,
     "ai_config": 90,
+    "native_runtime_receiver": 90.3,
+    "native_runtime_event": 90.4,
     "atmospheric_npc_switcher": 90.5,
     "atmospheric_npc_switcher_group": 90.6,
     "atmospheric_env_talk_state_context": 90.7,
@@ -30172,6 +30551,8 @@ NODE_ID_PREFIXES = (
     "animation_cutscene_ref",
     "animation_path_ref",
     "ai_config",
+    "native_runtime_receiver",
+    "native_runtime_event",
     "atmospheric_npc_switcher",
     "atmospheric_npc_switcher_group",
     "atmospheric_env_talk_state_context",
@@ -31557,6 +31938,11 @@ MISSION_FLOW_EDGE_KINDS = (
     "atmospheric_switcher_group_contains_env_talk_cluster",
     "atmospheric_env_talk_context_reaches_story",
     "story_has_atmospheric_env_talk_state_context",
+    "native_runtime_receiver_reaches_story",
+    "story_has_unresolved_native_runtime_receiver",
+    "native_runtime_receiver_uses_event",
+    "native_runtime_receiver_uses_level_script",
+    "native_runtime_receiver_in_level",
     "quest_task_rewards",
     "quest_objective_text",
     "quest_description_override_text",

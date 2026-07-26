@@ -1411,8 +1411,8 @@ nodes, aliases, and reverse edges.
 The WebUI-relevant scope selects 1,140 exact `(source, PathID)` identities from
 the same original maps, including complete selected rows so name/export-base
 fallback behavior remains available. The canonical relevant rebuild completed
-in 794.4 seconds with 1,860,441 nodes, 4,400,623 edges, 2,284,922 aliases, a
-4.08 GiB database, and all 1,140 required identities matched.
+in 1,013.5 seconds with 1,860,722 nodes, 4,401,960 edges, 2,285,532 aliases,
+a 4.09 GiB database, and all 1,140 required identities matched.
 Presentation (3,893 nodes / 8,373
 edges) and Combat (1,086 nodes / 1,071 edges) payloads were canonically identical
 between relevant and exhaustive graphs. Exhaustive mode remains the evidence
@@ -1444,6 +1444,18 @@ mission-to-Story edges and every relation records
 `orderEvidence=false`. This makes the recovered world-state dependency
 queryable without turning availability into ownership, playback, chronology,
 completion, or server-exchange evidence.
+
+Mission Pipeline's unresolved native playback frontier is also first-class
+graph evidence under `webui/mission_pipeline/native_runtime_receivers`. A row
+is accepted only when its exact current-build MemoryPack classification,
+unresolved-owner status, unique `(levelId, listenerScriptId,
+listenerHeaderLocalId)` identity, native action, Story key, and LevelScript
+source path all agree. Current inputs contribute 158 receiver nodes and 182
+receiver-to-Story placements covering 153 Story files, 25 event families, and
+23 levels. These edges set `playbackEvidence=true` but
+`missionStoryBinding=false`, `missionOwnershipEvidence=false`,
+`playbackOwnership=false`, and `orderEvidence=false`; the ingestion emits zero
+mission or quest edges.
 
 ### Query surfaces
 
