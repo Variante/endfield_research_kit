@@ -42,6 +42,8 @@ from story_builder.context import (  # noqa: E402
     GAMEPLAY_CONFIG_DIR,
     LEVELDATA_DIR,
     LEVELSCRIPT_DIR,
+    MRA_DIR,
+    SPAWNER_CONFIG_DIR,
 )
 from story_builder.level_bindings import (  # noqa: E402
     _native_vector_close,
@@ -52,9 +54,13 @@ from story_builder.levelscript_binary import (  # noqa: E402
     decode_levelscript_task_conditions,
     decode_levelscript_binary_file,
 )
+from story_builder.mission_recovery import (  # noqa: E402
+    decode_mission_script_conditions,
+    decode_mission_world_entity_condition_refs,
+)
 
 
-SCHEMA = "nativeReceiverActivationFrontier.v3"
+SCHEMA = "nativeReceiverActivationFrontier.v4"
 DEFAULT_PIPELINE_INDEX = ROOT / "webui" / "data" / "mission_pipeline" / "index.json"
 DEFAULT_PIPELINE_MISSION_ROOT = (
     ROOT / "webui" / "data" / "mission_pipeline" / "missions"
@@ -69,6 +75,7 @@ DEFAULT_LEVEL_BASIC_INFO_TABLE = GAMEPLAY_CONFIG_DIR / "LevelBasicInfoTable.json
 DEFAULT_SCRIPT_TASK_EXTRA_INFO_TABLE = (
     GAMEPLAY_CONFIG_DIR / "ScriptTaskExtraInfoTable.json"
 )
+DEFAULT_WORLD_ENTITY_REGISTRY = GAMEPLAY_CONFIG_DIR / "WorldEntityRegistry.json"
 
 
 def safe_text(value: Any) -> str:
@@ -303,6 +310,351 @@ def annotate_task_sources(
             })
         if bindings:
             task["subGameMainTaskBindings"] = bindings
+
+
+def _unwrap_const(value: Any) -> Any:
+    if isinstance(value, dict) and "constValue" in value:
+        return value.get("constValue")
+    return value
+
+
+def _short_type_name(value: Any) -> str:
+    return safe_text(value).split(",", 1)[0].rsplit(".", 1)[-1]
+
+
+def _typed_nodes(
+    value: Any,
+    quest_id: str = "",
+) -> list[tuple[str, dict[str, Any]]]:
+    rows: list[tuple[str, dict[str, Any]]] = []
+    if isinstance(value, dict):
+        next_quest_id = safe_text(value.get("questId")) or quest_id
+        if safe_text(value.get("$type")):
+            rows.append((next_quest_id, value))
+        for child in value.values():
+            rows.extend(_typed_nodes(child, next_quest_id))
+    elif isinstance(value, list):
+        for child in value:
+            rows.extend(_typed_nodes(child, quest_id))
+    return rows
+
+
+def mission_runtime_operand_consumers_from_payloads(
+    payloads: list[tuple[str, dict[str, Any], str]],
+) -> dict[str, dict[tuple[Any, ...], list[dict[str, Any]]]]:
+    """Index typed MissionRuntime condition operands by exact authored key."""
+    indexes: dict[str, dict[tuple[Any, ...], list[dict[str, Any]]]] = {
+        kind: defaultdict(list)
+        for kind in ("dialog", "area", "spawner", "script", "entity")
+    }
+    for mission_id, raw, source_file in payloads:
+        for row in decode_mission_script_conditions(raw):
+            level_id = safe_text(row.get("mapId"))
+            script_id = safe_text(row.get("scriptId"))
+            if level_id and script_id:
+                indexes["script"][(level_id, script_id)].append({
+                    "missionId": mission_id,
+                    "questId": safe_text(row.get("questId")),
+                    "conditionType": _short_type_name(row.get("type")),
+                    "sourceFile": source_file,
+                })
+        for row in decode_mission_world_entity_condition_refs(raw):
+            level_id = safe_text(row.get("mapId"))
+            logic_id = row.get("logicId")
+            if (
+                level_id
+                and isinstance(logic_id, int)
+                and not isinstance(logic_id, bool)
+                and logic_id > 0
+            ):
+                indexes["entity"][(level_id, logic_id)].append({
+                    "missionId": mission_id,
+                    "questId": safe_text(row.get("questId")),
+                    "conditionType": safe_text(row.get("conditionType")),
+                    "conditionPath": safe_text(row.get("conditionPath")),
+                    "sourceFile": source_file,
+                })
+        for quest_id, node in _typed_nodes(raw):
+            condition_type = _short_type_name(node.get("$type"))
+            if condition_type == "CheckTalkOptionFinish":
+                dialog_id = _unwrap_const(
+                    node.get("_dialogId", node.get("dialogId"))
+                )
+                finish_id = _unwrap_const(
+                    node.get("_finishId", node.get("finishId"))
+                )
+                if isinstance(dialog_id, str) and isinstance(finish_id, int):
+                    indexes["dialog"][(dialog_id, finish_id)].append({
+                        "missionId": mission_id,
+                        "questId": quest_id,
+                        "conditionType": condition_type,
+                        "sourceFile": source_file,
+                    })
+            elif condition_type in {"ReachDestination", "TaskReachDestination"}:
+                area_id = _unwrap_const(node.get("_areaId", node.get("areaId")))
+                level_id = _unwrap_const(
+                    node.get(
+                        "_mapId",
+                        node.get(
+                            "mapId",
+                            node.get("_levelId", node.get("levelId")),
+                        ),
+                    )
+                )
+                if isinstance(area_id, str) and isinstance(level_id, str):
+                    indexes["area"][(level_id, area_id)].append({
+                        "missionId": mission_id,
+                        "questId": quest_id,
+                        "conditionType": condition_type,
+                        "sourceFile": source_file,
+                    })
+            elif condition_type == "CheckMonsterSpawnerComplete":
+                spawner_id = _unwrap_const(
+                    node.get("_spawnerId", node.get("spawnerId"))
+                )
+                level_id = _unwrap_const(
+                    node.get(
+                        "_levelId",
+                        node.get(
+                            "levelId",
+                            node.get("_mapId", node.get("mapId")),
+                        ),
+                    )
+                )
+                if (
+                    isinstance(spawner_id, int)
+                    and not isinstance(spawner_id, bool)
+                    and isinstance(level_id, str)
+                ):
+                    indexes["spawner"][(level_id, str(spawner_id))].append({
+                        "missionId": mission_id,
+                        "questId": quest_id,
+                        "conditionType": condition_type,
+                        "sourceFile": source_file,
+                    })
+    return {kind: dict(rows) for kind, rows in indexes.items()}
+
+
+def mission_runtime_operand_consumers(
+    mission_runtime_root: Path = MRA_DIR,
+) -> dict[str, dict[tuple[Any, ...], list[dict[str, Any]]]]:
+    payloads = []
+    if mission_runtime_root.is_dir():
+        for path in sorted(mission_runtime_root.glob("*.json")):
+            if path.stem.endswith("_meta"):
+                continue
+            raw = read_json(path) or {}
+            mission_id = safe_text(raw.get("missionId")) or path.stem
+            payloads.append((mission_id, raw, rel_path(path)))
+    return mission_runtime_operand_consumers_from_payloads(payloads)
+
+
+def world_entity_operand_sources(
+    payload: dict[str, Any],
+) -> tuple[dict[str, dict[str, Any]], dict[tuple[str, int], dict[str, Any]]]:
+    """Build exact logic-id and current-script/slot WorldEntity indexes."""
+    raw_logic_rows = payload.get("worldEntityBriefInfos") or {}
+    if not isinstance(raw_logic_rows, dict):
+        raw_logic_rows = {}
+    logic_rows = {
+        safe_text(logic_id): dict(brief)
+        for logic_id, brief in raw_logic_rows.items()
+        if safe_text(logic_id) and isinstance(brief, dict)
+    }
+    id_rows = payload.get("m_scriptEntityIdList") or []
+    brief_rows = payload.get("m_scriptEntityBriefInfo") or []
+    slot_rows: dict[tuple[str, int], dict[str, Any]] = {}
+    if (
+        isinstance(id_rows, list)
+        and isinstance(brief_rows, list)
+        and len(id_rows) == len(brief_rows)
+    ):
+        candidates: dict[tuple[str, int], list[dict[str, Any]]] = defaultdict(list)
+        for index, (identity, brief) in enumerate(zip(id_rows, brief_rows)):
+            if not isinstance(identity, dict) or not isinstance(brief, dict):
+                continue
+            script_id = safe_text(identity.get("scriptIdGlobal"))
+            slot_id = identity.get("slotId")
+            if (
+                not script_id.isdigit()
+                or not isinstance(slot_id, int)
+                or isinstance(slot_id, bool)
+            ):
+                continue
+            candidates[(script_id, slot_id)].append({
+                "registryIndex": index,
+                "scriptIdGlobal": script_id,
+                "slotId": slot_id,
+                "entityType": brief.get("entityType"),
+                "entityDetailId": safe_text(brief.get("detailId")),
+                "position": brief.get("position"),
+            })
+        slot_rows = {
+            key: rows[0]
+            for key, rows in candidates.items()
+            if len(rows) == 1
+        }
+    return logic_rows, slot_rows
+
+
+def annotate_task_condition_operands(
+    decoded_task_map: dict[str, Any] | None,
+    *,
+    level_id: str,
+    script_id: str,
+    story_keys: list[str],
+    mission_areas: list[dict[str, Any]],
+    logic_entities: dict[str, dict[str, Any]],
+    slot_entities: dict[tuple[str, int], dict[str, Any]],
+    mission_consumers: dict[
+        str,
+        dict[tuple[Any, ...], list[dict[str, Any]]],
+    ],
+    levelscript_root: Path,
+    spawner_root: Path,
+) -> None:
+    """Resolve exact condition operands while preserving non-owning status."""
+    area_by_id = {
+        safe_text(area.get("missionAreaId")): area
+        for area in mission_areas
+        if isinstance(area, dict) and safe_text(area.get("missionAreaId"))
+    }
+    story_key_set = set(story_keys)
+    for task in (decoded_task_map or {}).get("tasks") or []:
+        for condition_row in task.get("conditions") or []:
+            condition = condition_row.get("condition") or {}
+            sources = []
+            consumers = []
+
+            dialog_id = (condition.get("dialogId") or {}).get("value")
+            finish_id = (condition.get("finishId") or {}).get("value")
+            if isinstance(dialog_id, str):
+                if dialog_id in story_key_set:
+                    sources.append({
+                        "kind": "same_receiver_story",
+                        "storyKey": dialog_id,
+                    })
+                if isinstance(finish_id, int):
+                    consumers.extend(
+                        mission_consumers["dialog"].get(
+                            (dialog_id, finish_id),
+                            [],
+                        )
+                    )
+
+            area_id = (condition.get("areaId") or {}).get("value")
+            if isinstance(area_id, str) and area_id in area_by_id:
+                area = area_by_id[area_id]
+                sources.append({
+                    "kind": "same_level_mission_area",
+                    "missionAreaId": area_id,
+                    "subDataParentId": area.get("subDataParentId"),
+                    "shape": area.get("shape"),
+                })
+                consumers.extend(
+                    mission_consumers["area"].get((level_id, area_id), [])
+                )
+
+            spawner_id = (condition.get("spawnerId") or {}).get("value")
+            if isinstance(spawner_id, str):
+                spawner_path = (
+                    spawner_root
+                    / level_id
+                    / f"sc_{level_id}_{spawner_id}.json"
+                )
+                if spawner_path.is_file():
+                    sources.append({
+                        "kind": "same_level_spawner_config",
+                        "spawnerId": spawner_id,
+                        "sourceFile": rel_path(spawner_path),
+                    })
+                consumers.extend(
+                    mission_consumers["spawner"].get(
+                        (level_id, spawner_id),
+                        [],
+                    )
+                )
+
+            script_ptr = condition.get("scriptId") or {}
+            target_script = (
+                script_id
+                if script_ptr.get("mode") == "current_script"
+                else safe_text(script_ptr.get("scriptId"))
+            )
+            if target_script:
+                target_path = (
+                    levelscript_root / level_id / f"{target_script}.json"
+                )
+                if target_path.is_file():
+                    sources.append({
+                        "kind": "same_level_levelscript",
+                        "scriptId": target_script,
+                        "sourceFile": rel_path(target_path),
+                    })
+                consumers.extend(
+                    mission_consumers["script"].get(
+                        (level_id, target_script),
+                        [],
+                    )
+                )
+
+            pointers = []
+            for field in ("entity", "entityId"):
+                if isinstance(condition.get(field), dict):
+                    pointers.append((field, condition[field]))
+            for index, pointer in enumerate(
+                (condition.get("enemyIds") or {}).get("values") or []
+            ):
+                if isinstance(pointer, dict):
+                    pointers.append((f"enemyIds[{index}]", pointer))
+            for field, pointer in pointers:
+                if pointer.get("useSlotId") is True:
+                    slot_id = pointer.get("slotId")
+                    if isinstance(slot_id, int):
+                        source = slot_entities.get((script_id, slot_id))
+                        if source:
+                            sources.append({
+                                "kind": "current_script_slot_entity",
+                                "field": field,
+                                **source,
+                            })
+                elif pointer.get("useSlotId") is False:
+                    logic_text = safe_text(pointer.get("logicId"))
+                    if logic_text.isdigit() and int(logic_text) > 0:
+                        logic_id = int(logic_text)
+                        source = logic_entities.get(logic_text)
+                        if source:
+                            sources.append({
+                                "kind": "world_entity_logic_id",
+                                "field": field,
+                                "logicId": logic_text,
+                                "entityType": source.get("entityType"),
+                                "entityDetailId": safe_text(
+                                    source.get("detailId")
+                                ),
+                                "position": source.get("position"),
+                            })
+                        consumers.extend(
+                            mission_consumers["entity"].get(
+                                (level_id, logic_id),
+                                [],
+                            )
+                        )
+            if sources:
+                condition_row["operandSources"] = sources
+            if consumers:
+                unique_consumers = {
+                    (
+                        safe_text(row.get("missionId")),
+                        safe_text(row.get("questId")),
+                        safe_text(row.get("conditionType")),
+                        safe_text(row.get("sourceFile")),
+                    ): row
+                    for row in consumers
+                }
+                condition_row["missionRuntimeOperandConsumers"] = list(
+                    unique_consumers.values()
+                )
 
 
 def mission_runtime_script_consumers(
@@ -565,7 +917,10 @@ def build_report(
     leveldata_root: Path = LEVELDATA_DIR,
     levelscript_root: Path = LEVELSCRIPT_DIR,
     mission_root: Path = DEFAULT_PIPELINE_MISSION_ROOT,
+    mission_runtime_root: Path = MRA_DIR,
+    spawner_root: Path = SPAWNER_CONFIG_DIR,
     script_task_extra_info_path: Path = DEFAULT_SCRIPT_TASK_EXTRA_INFO_TABLE,
+    world_entity_registry_path: Path = DEFAULT_WORLD_ENTITY_REGISTRY,
 ) -> dict[str, Any]:
     mission_ids = {
         safe_text(row.get("id"))
@@ -580,11 +935,21 @@ def build_report(
         source_file=rel_path(script_task_extra_info_path),
     )
     mission_areas = mission_areas_by_level()
+    mission_operand_consumers = mission_runtime_operand_consumers(
+        mission_runtime_root
+    )
+    logic_entities, slot_entities = world_entity_operand_sources(
+        read_json(world_entity_registry_path) or {}
+    )
     rows: list[dict[str, Any]] = []
     classes: Counter[str] = Counter()
     start_types: Counter[str] = Counter()
     host_shapes: Counter[str] = Counter()
     task_condition_types: Counter[str] = Counter()
+    task_operand_source_types: Counter[str] = Counter()
+    task_mission_consumer_types: Counter[str] = Counter()
+    task_conditions_with_operand_sources = 0
+    task_conditions_with_mission_consumers = 0
 
     for receiver in receiver_script_rows(index_payload):
         level_id = receiver["levelId"]
@@ -627,12 +992,40 @@ def build_report(
             subgames=subgames,
             extra_info=task_extra_info,
         )
+        annotate_task_condition_operands(
+            decoded_task_map,
+            level_id=level_id,
+            script_id=script_id,
+            story_keys=receiver["storyKeys"],
+            mission_areas=mission_areas.get(level_id, []),
+            logic_entities=logic_entities,
+            slot_entities=slot_entities,
+            mission_consumers=mission_operand_consumers,
+            levelscript_root=levelscript_root,
+            spawner_root=spawner_root,
+        )
         for task in (decoded_task_map or {}).get("tasks") or []:
             for condition_row in task.get("conditions") or []:
                 condition = condition_row.get("condition") or {}
                 condition_type = safe_text(condition.get("type"))
                 if condition_type:
                     task_condition_types[condition_type] += 1
+                operand_sources = condition_row.get("operandSources") or []
+                mission_consumers = (
+                    condition_row.get("missionRuntimeOperandConsumers") or []
+                )
+                task_conditions_with_operand_sources += bool(operand_sources)
+                task_conditions_with_mission_consumers += bool(
+                    mission_consumers
+                )
+                for source in operand_sources:
+                    source_type = safe_text(source.get("kind"))
+                    if source_type:
+                        task_operand_source_types[source_type] += 1
+                for consumer in mission_consumers:
+                    consumer_type = safe_text(consumer.get("conditionType"))
+                    if consumer_type:
+                        task_mission_consumer_types[consumer_type] += 1
         classification = activation_class(
             levelscript,
             hosts,
@@ -707,6 +1100,10 @@ def build_report(
             "levelDataRoot": rel_path(leveldata_root),
             "levelScriptRoot": rel_path(levelscript_root),
             "missionPipelineMissionRoot": rel_path(mission_root),
+            "missionRuntimeRoot": rel_path(mission_runtime_root),
+            "spawnerRoot": rel_path(spawner_root),
+            "scriptTaskExtraInfo": rel_path(script_task_extra_info_path),
+            "worldEntityRegistry": rel_path(world_entity_registry_path),
         },
         "evidencePolicy": {
             "purpose": (
@@ -744,6 +1141,13 @@ def build_report(
                 "area, property, stage, and mission operands are dependencies "
                 "or completion gates, not mission ownership, activation order, "
                 "or proof that the task executes."
+            ),
+            "taskOperandBoundary": (
+                "Exact operand-source resolution identifies the authored object "
+                "evaluated by a task condition. Only an exact typed "
+                "MissionRuntime objective consuming the same operand could add "
+                "a mission-side cross-reference; source identity alone proves "
+                "no mission ownership or execution order."
             ),
         },
         "counts": {
@@ -797,6 +1201,18 @@ def build_report(
             "decodedTaskConditionCount": sum(task_condition_types.values()),
             "decodedTaskConditionTypes": dict(
                 sorted(task_condition_types.items())
+            ),
+            "decodedTaskConditionsWithExactOperandSource": (
+                task_conditions_with_operand_sources
+            ),
+            "decodedTaskOperandSourceTypes": dict(
+                sorted(task_operand_source_types.items())
+            ),
+            "decodedTaskConditionsWithMissionRuntimeOperandConsumer": (
+                task_conditions_with_mission_consumers
+            ),
+            "decodedTaskMissionRuntimeOperandConsumerTypes": dict(
+                sorted(task_mission_consumer_types.items())
             ),
             "decodedTasksWithExtraInfo": sum(
                 bool(task.get("taskExtraInfo"))
@@ -965,6 +1381,15 @@ def markdown_report(payload: dict[str, Any]) -> str:
         (
             "- Decoded task condition types: "
             f"`{counts.get('decodedTaskConditionTypes')}`"
+        ),
+        (
+            "- Conditions with exact authored operand sources / source types: "
+            f"`{counts.get('decodedTaskConditionsWithExactOperandSource')}` / "
+            f"`{counts.get('decodedTaskOperandSourceTypes')}`"
+        ),
+        (
+            "- Conditions with an exact typed MissionRuntime operand consumer: "
+            f"`{counts.get('decodedTaskConditionsWithMissionRuntimeOperandConsumer')}`"
         ),
         (
             "- Tasks with exact ScriptTaskExtraInfo / SubGame main-task rows: "

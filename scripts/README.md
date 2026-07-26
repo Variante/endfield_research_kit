@@ -1839,7 +1839,13 @@ gameplay-video OCR/audio workflow.
   `54` conditions across `11` concrete root `GameCondition` types. None is
   `CheckMissionState`; the exact entity, spawner, dialog, area, property,
   stage, monster, and combine operands are published as dependency/completion
-  evidence, not activation or ownership. Exact level/script/task joins add
+  evidence, not activation or ownership. A complete typed operand pass resolves
+  `46` conditions to `53` exact authored sources: `26` current-script entity
+  slots, `15` WorldEntity logic ids, `5` same-level LevelScripts, `3`
+  same-receiver Story keys, `3` same-level MissionArea rows, and `1`
+  same-level SpawnerConfig. Exact MissionRuntime indexes for those operand
+  families find `0` typed consumers, so the source annotations add no owner.
+  Exact level/script/task joins add
   display/tracking metadata for `13` tasks and SubGame main-task bindings for
   `10`; all ten SubGame rows have null `dungeonMissionId`. The `82` distinct
   task/condition ids have zero MissionRuntimeAsset occurrence. Only the already

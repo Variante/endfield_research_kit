@@ -960,6 +960,15 @@ Thirteen tasks instead match exact level/script/task keys in
 match `SubGameInstanceDataTable.mainTasks` on the same `bindScriptId`. Every
 matched SubGame row has null `dungeonMissionId`. These are typed task and
 runtime-scope cross-references, not mission ownership.
+An exhaustive typed operand join now resolves 46 of the 54 conditions to 53
+authored source objects: 26 unique current-script slot entries and 15 logic-id
+entries in `WorldEntityRegistry`, five same-level LevelScript files, three
+same-receiver Story keys, three same-level `MissionAreaTable` rows, and one
+same-level SpawnerConfig. Exact typed MissionRuntime indexes for the matching
+dialog/finish, level/area, level/spawner, level/script, and level/entity
+operands yield zero consumers. This is a full negative for the current receiver
+corpus, not an ambiguity fallback: the remaining eight rows are property/param
+or empty combine conditions with no authored-object operand to resolve.
 
 The existing exact positive remains:
 `map02_lv003/23300090001` decodes task `cf5a771c`, condition `cb696abe`, and

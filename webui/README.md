@@ -292,6 +292,12 @@ available through expandable guidance.
   24 fully decoded task-map scripts, 31 tasks, and 54 conditions. These rows
   describe evaluation/completion requirements only; the UI must not present
   them as activation, mission ownership, or execution order.
+  Each condition also shows an exact authored operand source when available:
+  current-script or logic-id WorldEntity rows, same-level LevelScripts,
+  MissionArea/SpawnerConfig rows, or same-receiver Story keys. The current
+  payload resolves 46 conditions to 53 source rows and finds zero exact typed
+  MissionRuntime consumers for those operands. Source identity is debug
+  context, not a mission edge.
   Where exact level/script/task keys agree, the same rows also show
   `ScriptTaskExtraInfoTable` title keys and SubGame main-task ids. The current
   corpus has 13 task-info joins and ten SubGame task joins; every matched

@@ -82,6 +82,8 @@
       serializedMissionIdTokens: "serialized MissionRuntime ID tokens",
       taskConditionEvidence: "fully decoded task conditions",
       taskConditionBoundary: "task evaluation dependency, not mission ownership or execution order",
+      taskOperandSources: "exact authored operand sources",
+      taskMissionConsumers: "typed MissionRuntime operand consumers",
       exactRuntimeTarget: "exact original-data runtime target",
       encounterModule: "Encounter module",
       modulePointer: "level-script module pointer",
@@ -2361,6 +2363,7 @@
             if (!param || typeof param !== "object") return "";
             if (param.value !== null && param.value !== undefined && param.value !== "") return String(param.value);
             if (param.scriptId) return String(param.scriptId);
+            if (param.mode === "current_script") return "current script";
             return "";
           };
           const entityValue = (param) => {
@@ -2393,6 +2396,20 @@
             if (enemies.length) values.push(["enemies", enemies.join(", ")]);
             return values.map(([label, value]) => `${label}=${value}`).join(" · ");
           };
+          const operandSourceDetail = (source) => {
+            if (!source || typeof source !== "object") return "";
+            const identity = source.storyKey
+              || source.missionAreaId
+              || source.spawnerId
+              || source.scriptId
+              || source.logicId
+              || source.entityDetailId
+              || "";
+            const slotDetail = source.slotId !== null && source.slotId !== undefined
+              ? `slot ${source.slotId}${source.entityDetailId ? ` → ${source.entityDetailId}` : ""}`
+              : `${identity}${source.entityDetailId && source.entityDetailId !== identity ? ` → ${source.entityDetailId}` : ""}`;
+            return `${String(source.kind || "source").replaceAll("_", " ")}=${slotDetail}`;
+          };
           const target = row.runtimeTarget && row.runtimeTarget.status === "exact_top_level_encounter_module_target" ? row.runtimeTarget : null;
           const battlePart = target?.battlePart || {};
           const enemySlots = [...new Set((target?.enemyPointers || []).map((pointer) => pointer?.slotId).filter(Boolean))];
@@ -2410,7 +2427,17 @@
               <strong>${esc(t("activationFrontier"))}</strong>
               ${activationTasks.flatMap((task) => (task.conditions || []).map((conditionRow) => {
                 const condition = conditionRow.condition || {};
-                const detail = conditionDetails(condition);
+                const operandSources = (conditionRow.operandSources || [])
+                  .map((source) => operandSourceDetail(source))
+                  .filter(Boolean);
+                const missionConsumers = (conditionRow.missionRuntimeOperandConsumers || [])
+                  .map((consumer) => `${consumer.missionId || "?"}/${consumer.questId || "?"}`)
+                  .filter(Boolean);
+                const detail = [
+                  conditionDetails(condition),
+                  operandSources.length ? `${t("taskOperandSources")}: ${operandSources.join(", ")}` : "",
+                  missionConsumers.length ? `${t("taskMissionConsumers")}: ${missionConsumers.join(", ")}` : "",
+                ].filter(Boolean).join(" · ");
                 const taskSources = [
                   task.taskExtraInfo?.taskTitleKey || "",
                   ...(task.subGameMainTaskBindings || []).map((binding) => `SubGame ${binding.subGameId || "?"}`),
