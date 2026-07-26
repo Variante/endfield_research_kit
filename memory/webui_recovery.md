@@ -331,6 +331,9 @@ Mission Pipeline:
   data prerequisites/associations are shown as dashed non-owning edges: the
   boss-rush quest/prior-challenge unlock chain and activity stage 6's explicit
   `rankRelatedId`/mission row. Stage 3/4 naming similarities produce no edge.
+  The section header also publishes the complete current exported-reference
+  census boundary: task ids add zero MissionRuntime consumers and all audited
+  rows add zero Story bindings.
 - Renders a second missionless original-binary layer for exact serialized
   runtime receivers. The current payload has 158 receiver nodes covering all
   153 exact-native unlinked Story files and 182 placements; no exact-native

@@ -1739,8 +1739,13 @@ remain gated on the recovery work below:
    `TeleportParam` co-carrier is now closed too: current producers never
    co-populate mission/script identity and current consumers never read its
    `missionId`. Search other shipped config, indirect-dispatch, or
-   asset-consumer registries for a carrier that resolves both identities,
-   prioritizing the seven missionless SubGame rows with exact native playback.
+   asset-consumer registries for a carrier that resolves both identities.
+   The current ten missionless SubGame playback rows are now closed across
+   their complete exported exact-reference and receiver-task surfaces: nine
+   unique Story files across fourteen placements, one non-owning activity
+   mission association, one quest unlock, five prior-challenge gates, and zero
+   MissionRuntime task consumers. Prioritize a different registry surface
+   rather than repeating these SubGame/task/display joins.
    Do not revisit the current loading-pipeline carrier unless the installed
    binary or IFix payload changes. Never promote Story naming, OCR, gameplay
    observation, or same-LevelData siblings into that missing identity.

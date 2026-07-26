@@ -834,6 +834,20 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         )
         self.assertIn("zero ownership or order edges", native["finding"])
 
+    def test_missionless_subgame_reference_audit_rejects_non_owning_joins(self):
+        audit = pipeline.RUNTIME_CONTRACT["subGameMissionRegistry"]["missionlessPlaybackAudit"]
+        self.assertEqual(audit["subGameRows"], 10)
+        self.assertEqual(audit["uniqueStoryFiles"], 9)
+        self.assertEqual(audit["storyPlacements"], 14)
+        self.assertEqual(audit["primaryTaskIds"], 10)
+        self.assertEqual(audit["secondaryTaskIds"], 3)
+        self.assertEqual(audit["exactMissionAssociations"], 1)
+        self.assertEqual(audit["questUnlockPrerequisites"], 1)
+        self.assertEqual(audit["previousSubGamePrerequisites"], 5)
+        self.assertEqual(audit["missionRuntimeTaskConsumers"], 0)
+        self.assertIn("explicitly non-owning", audit["finding"])
+        self.assertEqual(audit["storyBindingsAdded"], 0)
+
     def test_runtime_contract_exposes_global_var_and_spawner_async_boundaries(self):
         rows = {
             row["id"]: row
