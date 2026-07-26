@@ -2,10 +2,10 @@
 """Build and query a local Endfield source graph database.
 
 The graph is intentionally evidence-first. It connects recovered WebUI story
-data, source-link evidence, exported assets, AnimeStudio asset maps, material
-texture references, character recovery manifests, selected structured tables,
-Lua consumer-reference audits, and a few derived follow-up indexes into one
-SQLite database.
+and Mission Pipeline context data, source-link evidence, exported assets,
+AnimeStudio asset maps, material texture references, character recovery
+manifests, selected structured tables, Lua consumer-reference audits, and a few
+derived follow-up indexes into one SQLite database.
 """
 
 from __future__ import annotations
@@ -3272,6 +3272,8 @@ class SourceGraphBuilder:
             self.commit_step("story")
             self.ingest_mission_pipeline_story_scope()
             self.commit_step("missionPipelineStoryScope")
+            self.ingest_mission_pipeline_env_talk_context()
+            self.commit_step("missionPipelineEnvTalkContext")
             self.ingest_video_bindings()
             self.commit_step("videoBindings")
             self.ingest_narrative_video_override_audit()
@@ -9876,6 +9878,415 @@ class SourceGraphBuilder:
                             evidence=f"{evidence}.scriptIds[{script_index}]",
                             data=boundary,
                         )
+
+    def ingest_mission_pipeline_env_talk_context(self) -> None:
+        """Add exact atmospheric-switcher envTalk context without ownership.
+
+        Mission Pipeline has already applied the fail-closed join: a cluster's
+        complete non-empty NPC set must be contained by exactly one active
+        switcher group on the same exact level, and the group/config identities
+        must agree. This consumer accepts only that explicit relation and keeps
+        a context node between mission/quest state and the Story file so no
+        direct mission-to-Story ownership edge can be mistaken for playback.
+        """
+        mission_root = MISSION_PIPELINE_ROOT / "missions"
+        if not mission_root.is_dir():
+            return
+        source = "webui/mission_pipeline/env_talk_context"
+        dataset = self.add_node(
+            "dataset",
+            "mission_pipeline_atmospheric_env_talk_context",
+            name="Mission Pipeline atmospheric envTalk context",
+            source=source,
+            path=slash(MISSION_PIPELINE_ROOT),
+            data={
+                "relation": "atmosphericSwitcherStateContext",
+                "causality": "context",
+                "playbackOwnership": False,
+                "orderEvidence": False,
+            },
+        )
+        accepted_contexts: set[str] = set()
+        accepted_missions: set[str] = set()
+        accepted_story_keys: set[str] = set()
+        condition_quest_ids: set[str] = set()
+        context_rows = 0
+        skipped_rows = 0
+
+        for mission_path in sorted(mission_root.glob("*.json")):
+            payload = read_json(mission_path, {})
+            if not isinstance(payload, dict):
+                continue
+            mission_id = (
+                safe_key((payload.get("mission") or {}).get("id"))
+                or mission_path.stem
+            )
+            mission_node = self.add_mission_ref_node(mission_id, source=source)
+            file_rel = slash(mission_path)
+            file_node = self.add_file(
+                file_rel,
+                kind="mission_pipeline",
+                source=source,
+            )
+            context_rows_payload = payload.get("envTalkContext") or []
+            for context_index, context in enumerate(context_rows_payload):
+                if (
+                    not isinstance(context, dict)
+                    or safe_key(context.get("relation"))
+                    != "atmosphericSwitcherStateContext"
+                ):
+                    continue
+                story_key = safe_key(context.get("storyKey"))
+                env_talk_id = safe_key(context.get("envTalkId"))
+                cluster_id = safe_key(context.get("clusterId"))
+                switcher_id = safe_key(context.get("switcherId"))
+                group_id = safe_key(context.get("switcherGroupId"))
+                level_id = safe_key(context.get("levelId"))
+                npc_ids = sorted(
+                    {
+                        safe_key(value)
+                        for value in (context.get("npcIds") or [])
+                        if safe_key(value)
+                    }
+                )
+                if (
+                    not story_key
+                    or not env_talk_id
+                    or story_key != f"env_{env_talk_id}"
+                    or not cluster_id
+                    or not switcher_id
+                    or not group_id
+                    or not level_id
+                    or not npc_ids
+                ):
+                    skipped_rows += 1
+                    continue
+
+                context_key = f"{switcher_id}:{group_id}:{cluster_id}:{story_key}"
+                evidence = (
+                    f"{mission_path.name}:envTalkContext[{context_index}]"
+                )
+                boundary = {
+                    "relation": "atmosphericSwitcherStateContext",
+                    "causality": "context",
+                    "ownershipStatus": "non_owning_context",
+                    "playbackOwnership": False,
+                    "orderEvidence": False,
+                    "completionEvidence": False,
+                    "serverExchangeEvidence": False,
+                    "joinPolicy": (
+                        "same_level_complete_cluster_npc_set_unique_active_group"
+                    ),
+                    "missionId": mission_id,
+                    "questIds": sorted(
+                        {
+                            safe_key(value)
+                            for value in (context.get("questIds") or [])
+                            if safe_key(value)
+                        }
+                    ),
+                    "conditionMissionIds": sorted(
+                        {
+                            safe_key(value)
+                            for value in (context.get("conditionMissionIds") or [])
+                            if safe_key(value)
+                        }
+                    ),
+                    "conditionQuestIds": sorted(
+                        {
+                            safe_key(value)
+                            for value in (context.get("conditionQuestIds") or [])
+                            if safe_key(value)
+                        }
+                    ),
+                    "bindMissionId": safe_key(context.get("bindMissionId")),
+                    "switcherId": switcher_id,
+                    "switcherGroupId": group_id,
+                    "clusterId": cluster_id,
+                    "levelId": level_id,
+                    "envTalkId": env_talk_id,
+                    "storyKey": story_key,
+                    "clusterNpcIds": npc_ids,
+                }
+                structural_boundary = {
+                    key: value
+                    for key, value in boundary.items()
+                    if key
+                    not in {
+                        "missionId",
+                        "questIds",
+                        "conditionMissionIds",
+                        "conditionQuestIds",
+                        "bindMissionId",
+                    }
+                }
+
+                context_node = self.add_node(
+                    "atmospheric_env_talk_state_context",
+                    context_key,
+                    name=f"{group_id} -> {cluster_id}",
+                    source=source,
+                    path=file_rel,
+                    data=compact_payload(structural_boundary, depth=3),
+                )
+                self.add_alias(
+                    context_key,
+                    context_node,
+                    kind="atmospheric_env_talk_context_id",
+                    source=source,
+                )
+                switcher_node = self.add_node(
+                    "atmospheric_npc_switcher",
+                    switcher_id,
+                    name=switcher_id,
+                    source=source,
+                )
+                self.add_alias(
+                    switcher_id,
+                    switcher_node,
+                    kind="atmospheric_npc_switcher_id",
+                    source=source,
+                )
+                group_node = self.add_node(
+                    "atmospheric_npc_switcher_group",
+                    group_id,
+                    name=group_id,
+                    source=source,
+                    data={"switcherId": switcher_id, "levelId": level_id},
+                )
+                self.add_alias(
+                    group_id,
+                    group_node,
+                    kind="atmospheric_npc_switcher_group_id",
+                    source=source,
+                )
+                cluster_node = self.add_atmospheric_npc_cluster_node(
+                    cluster_id,
+                    source=source,
+                    data={
+                        "clusterId": cluster_id,
+                        "levelId": level_id,
+                        "envTalkId": env_talk_id,
+                        "npcCount": len(npc_ids),
+                    },
+                )
+                env_talk_node = self.add_env_talk_node(
+                    env_talk_id,
+                    source=source,
+                )
+                story_node = self.add_node(
+                    "story",
+                    story_key,
+                    name=story_key,
+                    source=source,
+                )
+                self.add_alias(
+                    story_key,
+                    story_node,
+                    kind="story_key",
+                    source=source,
+                )
+                level_node = self.add_level_node(level_id, source=source)
+
+                self.add_edge(
+                    dataset,
+                    context_node,
+                    "has_atmospheric_env_talk_state_context",
+                    source=source,
+                    evidence=context_key,
+                    data=structural_boundary,
+                )
+                self.add_edge(
+                    file_node,
+                    context_node,
+                    "mission_pipeline_file_has_atmospheric_env_talk_context",
+                    source=source,
+                    evidence=evidence,
+                    data=boundary,
+                )
+                self.add_edge(
+                    mission_node,
+                    context_node,
+                    "mission_has_atmospheric_env_talk_state_context",
+                    source=source,
+                    evidence=evidence,
+                    data=boundary,
+                )
+                self.add_edge(
+                    context_node,
+                    mission_node,
+                    "atmospheric_env_talk_state_context_for_mission",
+                    source=source,
+                    evidence=evidence,
+                    data=boundary,
+                )
+                self.add_edge(
+                    switcher_node,
+                    group_node,
+                    "atmospheric_switcher_has_group",
+                    source=source,
+                    evidence=context_key,
+                    data=structural_boundary,
+                )
+                self.add_edge(
+                    context_node,
+                    group_node,
+                    "atmospheric_env_talk_context_uses_switcher_group",
+                    source=source,
+                    evidence=context_key,
+                    data=structural_boundary,
+                )
+                self.add_edge(
+                    group_node,
+                    cluster_node,
+                    "atmospheric_switcher_group_contains_env_talk_cluster",
+                    source=source,
+                    evidence=context_key,
+                    data=structural_boundary,
+                )
+                self.add_edge(
+                    cluster_node,
+                    group_node,
+                    "atmospheric_env_talk_cluster_matched_by_switcher_group",
+                    source=source,
+                    evidence=context_key,
+                    data=structural_boundary,
+                )
+                self.add_edge(
+                    cluster_node,
+                    env_talk_node,
+                    "atmospheric_cluster_uses_env_talk",
+                    source=source,
+                    evidence="envTalkId",
+                    data=structural_boundary,
+                )
+                self.add_edge(
+                    env_talk_node,
+                    story_node,
+                    "env_talk_has_story_file",
+                    source=source,
+                    evidence=f"storyKey={story_key}",
+                    data=structural_boundary,
+                )
+                self.add_edge(
+                    story_node,
+                    env_talk_node,
+                    "story_represents_env_talk",
+                    source=source,
+                    evidence=f"envTalkId={env_talk_id}",
+                    data=structural_boundary,
+                )
+                self.add_edge(
+                    context_node,
+                    story_node,
+                    "atmospheric_env_talk_context_reaches_story",
+                    source=source,
+                    evidence=context_key,
+                    data=structural_boundary,
+                )
+                self.add_edge(
+                    story_node,
+                    context_node,
+                    "story_has_atmospheric_env_talk_state_context",
+                    source=source,
+                    evidence=context_key,
+                    data=structural_boundary,
+                )
+                if level_node:
+                    self.add_edge(
+                        context_node,
+                        level_node,
+                        "atmospheric_env_talk_context_in_level",
+                        source=source,
+                        evidence="levelId",
+                        data=structural_boundary,
+                    )
+                    self.add_edge(
+                        group_node,
+                        level_node,
+                        "atmospheric_switcher_group_in_level",
+                        source=source,
+                        evidence="levelId",
+                        data=structural_boundary,
+                    )
+
+                for quest_index, quest_id in enumerate(boundary["questIds"]):
+                    quest_node = self.add_quest_task_node(quest_id, source=source)
+                    self.add_edge(
+                        quest_node,
+                        mission_node,
+                        "quest_task_in_mission",
+                        source=source,
+                        evidence=f"{evidence}.questIds[{quest_index}]",
+                        data=boundary,
+                    )
+                for quest_index, quest_id in enumerate(
+                    boundary["conditionQuestIds"]
+                ):
+                    quest_node = self.add_quest_task_node(quest_id, source=source)
+                    self.add_edge(
+                        quest_node,
+                        context_node,
+                        "quest_state_conditions_atmospheric_env_talk_context",
+                        source=source,
+                        evidence=(
+                            f"{evidence}.conditionQuestIds[{quest_index}]"
+                        ),
+                        data=boundary,
+                    )
+                for condition_index, condition_mission_id in enumerate(
+                    boundary["conditionMissionIds"]
+                ):
+                    condition_mission = self.add_mission_ref_node(
+                        condition_mission_id,
+                        source=source,
+                    )
+                    self.add_edge(
+                        condition_mission,
+                        context_node,
+                        "mission_state_conditions_atmospheric_env_talk_context",
+                        source=source,
+                        evidence=(
+                            f"{evidence}.conditionMissionIds[{condition_index}]"
+                        ),
+                        data=boundary,
+                    )
+                if boundary["bindMissionId"]:
+                    bind_mission = self.add_mission_ref_node(
+                        boundary["bindMissionId"],
+                        source=source,
+                    )
+                    self.add_edge(
+                        bind_mission,
+                        context_node,
+                        "mission_binds_atmospheric_env_talk_context",
+                        source=source,
+                        evidence=f"{evidence}.bindMissionId",
+                        data=boundary,
+                    )
+
+                accepted_contexts.add(context_key)
+                accepted_missions.add(mission_id)
+                accepted_story_keys.add(story_key)
+                condition_quest_ids.update(boundary["conditionQuestIds"])
+                context_rows += 1
+
+        self.ingest_counts["missionPipelineEnvTalkContext.rows"] = context_rows
+        self.ingest_counts[
+            "missionPipelineEnvTalkContext.uniqueContexts"
+        ] = len(accepted_contexts)
+        self.ingest_counts[
+            "missionPipelineEnvTalkContext.missions"
+        ] = len(accepted_missions)
+        self.ingest_counts[
+            "missionPipelineEnvTalkContext.storyFiles"
+        ] = len(accepted_story_keys)
+        self.ingest_counts[
+            "missionPipelineEnvTalkContext.conditionQuestIds"
+        ] = len(condition_quest_ids)
+        self.ingest_counts[
+            "missionPipelineEnvTalkContext.skippedRows"
+        ] = skipped_rows
 
     def ingest_option_overrides(self) -> None:
         payload = read_json(WEBUI_OPTION_OVERRIDES, {})
@@ -28937,6 +29348,9 @@ QUERY_KIND_PRIORITY = {
     "animation_cutscene_ref": 88,
     "animation_path_ref": 89,
     "ai_config": 90,
+    "atmospheric_npc_switcher": 90.5,
+    "atmospheric_npc_switcher_group": 90.6,
+    "atmospheric_env_talk_state_context": 90.7,
     "atmospheric_npc_cluster": 91,
     "char_interact_perform_config": 92,
     "char_interact_asset_reference": 93,
@@ -29758,6 +30172,9 @@ NODE_ID_PREFIXES = (
     "animation_cutscene_ref",
     "animation_path_ref",
     "ai_config",
+    "atmospheric_npc_switcher",
+    "atmospheric_npc_switcher_group",
+    "atmospheric_env_talk_state_context",
     "atmospheric_npc_cluster",
     "char_interact_perform_config",
     "char_interact_asset_reference",
@@ -31131,6 +31548,15 @@ MISSION_FLOW_EDGE_KINDS = (
     "mission_runtime_has_quest",
     "quest_task_in_mission",
     "quest_task_depends_on_previous",
+    "mission_has_atmospheric_env_talk_state_context",
+    "atmospheric_env_talk_state_context_for_mission",
+    "quest_state_conditions_atmospheric_env_talk_context",
+    "mission_state_conditions_atmospheric_env_talk_context",
+    "mission_binds_atmospheric_env_talk_context",
+    "atmospheric_env_talk_context_uses_switcher_group",
+    "atmospheric_switcher_group_contains_env_talk_cluster",
+    "atmospheric_env_talk_context_reaches_story",
+    "story_has_atmospheric_env_talk_state_context",
     "quest_task_rewards",
     "quest_objective_text",
     "quest_description_override_text",

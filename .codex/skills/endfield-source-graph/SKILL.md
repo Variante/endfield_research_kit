@@ -98,6 +98,9 @@ python -c "import sqlite3; c=sqlite3.connect('reports/source_graph/endfield_sour
 - `option_branch_risk`: inferred option branch hints from WebUI recovery.
 - `timeline_route_branch`: Runtime Jump Track recovered option routes.
 - `story_source_links`: mission/runtime source references to story keys.
+- `webui/mission_pipeline/env_talk_context`: exact same-level,
+  complete-NPC-set atmospheric switcher state context. It is non-owning
+  availability evidence, never playback or order evidence.
 - `AnimeStudio/maps`: Unity AssetMap entries; exact WebUI consumers in relevant
   mode and all entries in exhaustive mode.
 

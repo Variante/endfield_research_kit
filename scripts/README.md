@@ -79,6 +79,13 @@ Timeline inputs did not, add `--reuse-timeline-orders`; this passes
 installed-VFS preflight. The wrapper rejects this flag with `--export-from-game`
 and with the already Story-free data-only mode so a real game-data refresh
 cannot silently reuse an old order index.
+
+The graph also consumes Mission Pipeline `envTalkContext` rows. It preserves the
+exact mission/quest-state -> atmospheric switcher group -> cluster -> envTalk ->
+Story chain through explicit context nodes. Every edge is marked non-owning
+context with playback and order evidence disabled; no direct mission-to-Story
+edge is emitted.
+
 When the exported Table inputs are also unchanged, add `--reuse-reference` to
 validate and preserve the current localized Text Tables reference index and all
 of its indexed files. The wrapper rejects this mode with `--export-from-game`
