@@ -109,6 +109,21 @@ leaving zero exact-native rows without a decoded runtime selector.
 These nodes expose entity/slot/property, script event, spawner,
 patrol/checkpoint, signal, guide, and stage selectors but do not count as
 mission ownership.
+The maintained offline activation-frontier audit now collapses those 158 nodes
+to 93 hosting LevelScripts and decodes the next static layer. Seventy scripts
+are `Manual`, 13 are `ByEnterStartShape`, and 10 are `SameWithActive`. Ten have
+an exact original-data SubGame `bindScriptId` activation scope; the SubGame
+rows still carry no mission owner. Of the remainder, 54 are Manual with null
+start shapes, null task maps, zero parent script ids, and no incoming literal
+cross-script ManualStart target. Across all 93, zero typed MissionRuntime
+objective operand names the receiver script and the manual-control audit still
+has zero incoming literal cross-script target. Only one receiver script is in
+an exact mission-named LevelData host, which remains loading/registration
+context rather than playback ownership. The durable details live at
+`reports/story/recovery/native_receiver_activation_frontier.{json,md}`.
+Mission Pipeline debug cards expose the start policy, validated LevelData
+container, SubGame carrier when present, and both zero-count ownership checks;
+the audit adds no graph edge.
 In debug mode, the Storyline frontend now consumes this same
 `storyCoverage.storyTriggerManifest` for every file row and selected-file
 detail panel; normal Story browsing does not load or display the trigger
@@ -2877,6 +2892,16 @@ Current main-story priorities:
    LevelScript, header id, selector, event family, native action, and source
    file while emitting zero mission/quest edges. This closes a queryability gap
    without changing the 153-file ownership frontier.
+   The offline activation-frontier pass further divides the 93 hosting scripts
+   into 10 exact SubGame activation scopes, 12 non-SubGame scripts with
+   non-empty start shapes, 17 other non-null static start/task shapes, and 54
+   Manual scripts with no decoded static shape/task/parent carrier. No receiver
+   script is named by a typed MissionRuntime objective and no incoming literal
+   cross-script manual control targets one. This closes broad LevelData,
+   start-type, objective-operand, and literal ManualStart searches as generic
+   ownership routes. Follow the small shaped/task-bearing subsets only when an
+   exact authored foreign key, rather than geometry or name similarity, reaches
+   MissionRuntime.
    A diagnostic level intersection with the atmospheric switcher context finds
    89 receivers / 103 Story files on 13 shared levels. Four shared levels have
    only one atmospheric route mission, but their native Story families often
@@ -2950,7 +2975,19 @@ Current main-story priorities:
    `SimpleConditionCheckPlayerInLevel(indie_dg011)` selects
    only the current level, not its sole exported LevelScript `36900010001`.
    That inventory coincidence covers four residual Story files but is not an
-   authored activation carrier. The newly proved spawner wave-4 -> wave-5
+   authored activation carrier. The activation-frontier audit now proves the
+   stronger shared boundary for both e11m1 receiver scripts:
+   `indie_dg011/36900010001` is the sole member-22 entry in generic
+   `indie_dg011_lv_data_sub_01.json`, while
+   `map02_lv007/10200260001` is the sole entry in generic
+   `map02_lv007_lv_data_sub_MissionDefense.json`, not in the separate
+   mission-named `map02_lv007_lv_data_sub_e11m1.json`. Both scripts serialize
+   `startType=Manual`, null start shapes, null task maps, parent script `0`,
+   zero typed MissionRuntime objective consumers, zero SubGame bind rows, and
+   zero incoming literal cross-script ManualStart controls. Runtime/server
+   state can still activate them through an unexported carrier, but the audited
+   static LevelScript/LevelData fields do not contain it.
+   The newly proved spawner wave-4 -> wave-5
    relation orders two typed radios but supplies no mission/quest identity.
    Pursue a typed scene/script owner rather than more header decoding, HP
    threshold assumptions, or level proximity.

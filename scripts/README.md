@@ -1820,6 +1820,21 @@ gameplay-video OCR/audio workflow.
   ActionHeader `_nextID` event-to-control pairs. Only `4` rows carry literal
   script-id operands, all self-targets, so there are `0` literal cross-script
   targets.
+- `story_recovery/build_native_receiver_activation_frontier.py`: collapses the
+  Mission Pipeline's exact unresolved runtime receivers to their hosting
+  LevelScripts, decodes each top-level start policy and validated LevelData
+  member-22 container, and intersects them with literal manual-control targets,
+  typed MissionRuntime objective operands, and original-data SubGame
+  `bindScriptId` rows. It writes
+  `reports/story/recovery/native_receiver_activation_frontier.json` / `.md`;
+  the normal Mission Pipeline builder also refreshes this report and publishes
+  compact fail-closed annotations on all receiver nodes for the debug UI.
+  Current recovery covers `158` receiver nodes on `93` scripts: `10` have an
+  exact SubGame activation scope, `54` are Manual with no decoded static
+  shape/task/parent carrier, and none is named by a typed MissionRuntime
+  objective or an incoming literal cross-script manual-control row. These
+  classifications narrow the producer queue and create no mission, quest,
+  playback, or order edge.
 - `story_recovery/build_levelscript_property_setter_candidate_audit.py`:
   follows the MissionRuntime property-check bridges into the target
   `LevelScriptData` files, keeps exact key-bearing UID records separate from
