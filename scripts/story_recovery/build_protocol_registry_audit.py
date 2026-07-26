@@ -961,6 +961,301 @@ def message_schema(
     raise RuntimeError(f"metadata type not found: {type_name}")
 
 
+def protobuf_identity_field_classes(field_name: str) -> set[str]:
+    """Classify protobuf storage fields relevant to the missing ownership join."""
+    name = normalized_field_name(field_name)
+    classes: set[str] = set()
+    if "missionid" in name or "questid" in name:
+        classes.add("mission_or_quest")
+    if "scriptid" in name:
+        classes.add("level_script")
+    if (
+        name in {"scenenumid", "sceneid", "scenename", "levelid", "mapid"}
+        or name.endswith(("scenenumid", "sceneid", "levelid"))
+    ):
+        classes.add("scene_host")
+    if any(
+        token in name
+        for token in ("dialogid", "radioid", "cutsceneid", "timelineid", "storyid")
+    ):
+        classes.add("story")
+    return classes
+
+
+def protobuf_runtime_dependencies(
+    runtime_type_name_value: str,
+    known_proto_types: set[str],
+) -> list[str]:
+    """Return exact Proto type dependencies from one recovered runtime type."""
+    return sorted(
+        {
+            candidate
+            for candidate in re.findall(
+                r"Proto\.[A-Za-z0-9_+`]+",
+                runtime_type_name_value,
+            )
+            if candidate in known_proto_types
+        }
+    )
+
+
+def protobuf_identity_carrier_census(
+    metadata: Any,
+    gameassembly_path: Path,
+    registry_rows: list[dict[str, Any]],
+    mapper_path: Path = NATIVE_MAPPER_HELPER,
+) -> dict[str, Any]:
+    """Census direct and nested message identity carriers in the current build."""
+    mapper = load_native_mapper(mapper_path)
+    pe = mapper.PeImage(gameassembly_path)
+    metadata_registration = mapper.find_metadata_registration(
+        pe, mapper.DEFAULT_CODE_REGISTRATION
+    )
+    if metadata_registration is None:
+        raise RuntimeError("could not derive MetadataRegistration from GameAssembly")
+    metadata_summary = mapper.metadata_registration_summary(
+        pe, metadata_registration
+    )
+    runtime_types_va = int(metadata_summary["types"], 16)
+    runtime_type_count = int(metadata_summary["typesCount"])
+    runtime_name_cache: dict[int, str] = {}
+
+    def runtime_field_type_name(type_index: int) -> str:
+        if type_index not in runtime_name_cache:
+            if not 0 <= type_index < runtime_type_count:
+                runtime_name_cache[type_index] = f"<type-index:{type_index}>"
+            else:
+                type_va = pe.u64_at_va(runtime_types_va + type_index * 8)
+                runtime_name_cache[type_index] = runtime_type_name(
+                    pe,
+                    metadata,
+                    type_va,
+                )
+        return runtime_name_cache[type_index]
+
+    proto_types: dict[str, list[dict[str, str]]] = {}
+    cs_sc_type_count = 0
+    for type_def in metadata.types:
+        type_name = metadata.type_full_name(type_def)
+        if not type_name.startswith("Proto."):
+            continue
+        if type_name.startswith(("Proto.CS_", "Proto.SC_")):
+            cs_sc_type_count += 1
+        fields: list[dict[str, str]] = []
+        for field in metadata.fields_for(type_def):
+            storage_name = metadata.string(field.name_index)
+            if not storage_name.endswith("_"):
+                continue
+            fields.append(
+                {
+                    "name": storage_name[:-1],
+                    "runtimeType": runtime_field_type_name(field.type_index),
+                }
+            )
+        proto_types[type_name] = fields
+
+    registry_by_normalized_name = {
+        normalized_field_name(row["name"]): row
+        for row in registry_rows
+    }
+    roots: list[dict[str, Any]] = []
+    for type_name in sorted(proto_types):
+        if not type_name.startswith(("Proto.CS_", "Proto.SC_")):
+            continue
+        registry = registry_by_normalized_name.get(
+            normalized_field_name(type_name.removeprefix("Proto."))
+        )
+        if registry is None:
+            continue
+        roots.append(
+            {
+                "type": type_name,
+                "messageId": registry["id"],
+                "enumName": registry["name"],
+                "direction": (
+                    "client_to_server"
+                    if type_name.startswith("Proto.CS_")
+                    else "server_to_client"
+                ),
+            }
+        )
+
+    known_proto_types = set(proto_types)
+
+    def identity_evidence(root_type: str) -> dict[str, list[dict[str, str]]]:
+        evidence: dict[str, list[dict[str, str]]] = {
+            "mission_or_quest": [],
+            "level_script": [],
+            "scene_host": [],
+            "story": [],
+        }
+        visited: set[str] = set()
+
+        def visit(type_name: str, path: list[str]) -> None:
+            if type_name in visited:
+                return
+            visited.add(type_name)
+            for field in proto_types.get(type_name, []):
+                field_path = [*path, field["name"]]
+                for identity_class in protobuf_identity_field_classes(field["name"]):
+                    evidence[identity_class].append(
+                        {
+                            "path": ".".join(field_path),
+                            "ownerType": type_name,
+                            "field": field["name"],
+                            "runtimeType": field["runtimeType"],
+                        }
+                    )
+                for dependency in protobuf_runtime_dependencies(
+                    field["runtimeType"],
+                    known_proto_types,
+                ):
+                    visit(dependency, field_path)
+
+        visit(root_type, [root_type])
+        return evidence
+
+    mission_roots = 0
+    script_roots = 0
+    exact_candidates: list[dict[str, Any]] = []
+    weak_scene_candidates: list[dict[str, Any]] = []
+    field_bearing_roots = 0
+    for root in roots:
+        if proto_types[root["type"]]:
+            field_bearing_roots += 1
+        evidence = identity_evidence(root["type"])
+        has_mission = bool(evidence["mission_or_quest"])
+        has_script = bool(evidence["level_script"])
+        has_story = bool(evidence["story"])
+        has_scene = bool(evidence["scene_host"])
+        mission_roots += int(has_mission)
+        script_roots += int(has_script)
+        candidate = {
+            **root,
+            "evidence": evidence,
+        }
+        if has_mission and (has_script or has_story):
+            exact_candidates.append(candidate)
+        elif has_mission and has_scene:
+            weak_scene_candidates.append(candidate)
+
+    weak_findings = {
+        "Proto.CS_MISSION_CLIENT_TRIGGER_DONE": {
+            "classification": "inactive_current_fallback_sender",
+            "finding": (
+                "The schema co-carries missionId and sceneName, but the current fallback "
+                "has no gameplay constructor/sender and the installed IFix does not add "
+                "one. It creates no active ownership or order edge."
+            ),
+        },
+        "Proto.SC_MISSION_STATE_UPDATE": {
+            "classification": "role_snapshot_position_correction",
+            "finding": (
+                "roleBaseInfo.sceneName travels with leader position/rotation and is "
+                "consumed by MissionSystem.CharacterPositionCorrection. It selects the "
+                "map for operational character-position reconciliation, not an authored "
+                "mission host, LevelScript, or Story file."
+            ),
+        },
+        "Proto.SC_QUEST_STATE_UPDATE": {
+            "classification": "role_snapshot_position_correction",
+            "finding": (
+                "roleBaseInfo.sceneName travels with leader position/rotation and is "
+                "consumed by MissionSystem.CharacterPositionCorrection. It selects the "
+                "map for operational character-position reconciliation, not an authored "
+                "quest host, LevelScript, or Story file."
+            ),
+        },
+    }
+    for candidate in weak_scene_candidates:
+        candidate.update(
+            weak_findings.get(
+                candidate["type"],
+                {
+                    "classification": "unclassified_scene_co_carrier",
+                    "finding": (
+                        "This message needs native consumer review before its scene field "
+                        "can be treated as host evidence."
+                    ),
+                },
+            )
+        )
+
+    expected_weak_types = set(weak_findings)
+    actual_weak_types = {row["type"] for row in weak_scene_candidates}
+    return {
+        "metadataRegistration": f"0x{metadata_registration:x}",
+        "runtimeTypesTable": f"0x{runtime_types_va:x}",
+        "runtimeTypeCount": runtime_type_count,
+        "protoTypeDefinitions": len(proto_types),
+        "csScTypeDefinitions": cs_sc_type_count,
+        "registryEntries": len(registry_rows),
+        "registryMessageTypes": len(roots),
+        "fieldBearingRegistryMessageTypes": field_bearing_roots,
+        "missionOrQuestMessageTypes": mission_roots,
+        "levelScriptMessageTypes": script_roots,
+        "exactMissionScriptOrStoryCandidates": exact_candidates,
+        "exactMissionScriptOrStoryCandidateCount": len(exact_candidates),
+        "weakMissionSceneCandidates": weak_scene_candidates,
+        "weakMissionSceneCandidateCount": len(weak_scene_candidates),
+        "expectedWeakCandidateTypes": sorted(expected_weak_types),
+        "weakCandidateSetMatchesExpected": actual_weak_types == expected_weak_types,
+        "roleSnapshotConsumer": {
+            "missionHandler": {
+                "symbol": "Beyond.Gameplay.MissionSystem.Handle_MissionStateUpdate",
+                "token": "0x060052a2",
+                "va": "0x1873be300",
+                "fallbackPatchId": "0x5ec5",
+            },
+            "questHandler": {
+                "symbol": "Beyond.Gameplay.MissionSystem.Handle_QuestStateUpdate",
+                "token": "0x0600529e",
+                "va": "0x1873bf0a0",
+                "fallbackPatchId": "0x5ebe",
+            },
+            "consumer": {
+                "symbol": "Beyond.Gameplay.MissionSystem.CharacterPositionCorrection",
+                "token": "0x0600527b",
+                "va": "0x1873b84c4",
+                "fallbackPatchId": "0x5ea7",
+                "fields": [
+                    "roleBaseInfo.leaderPosition",
+                    "roleBaseInfo.leaderRotation",
+                    "roleBaseInfo.sceneName",
+                ],
+                "operation": (
+                    "Resolve sceneName through GameUtil.GetLevelConfigMapIdByLevelId, "
+                    "compare it with the current player/controller level and map, then "
+                    "teleport the squad only when the synchronization guards require it."
+                ),
+            },
+            "installedIfix": {
+                "sha256": (
+                    "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21"
+                ),
+                "signatureTargetCount": 30,
+                "relevantPatchIds": ["0x5ec5", "0x5ebe", "0x5ea7"],
+                "matchedMethods": 0,
+            },
+        },
+        "storyBindingsAdded": 0,
+        "finding": (
+            f"Recursive runtime-type traversal across {len(roots):,} enum-backed "
+            f"message classes found {mission_roots} mission/quest message types and "
+            f"{script_roots} LevelScript message types, with "
+            f"{len(exact_candidates)} message carrying mission/quest identity beside a "
+            "LevelScript or Story identity. The only weaker mission/scene candidates are "
+            "one inactive sender and two operational role-position snapshots."
+        ),
+        "coverage": (
+            "Covers direct and recursively nested Proto fields whose runtime generic "
+            "types are recovered from the current MetadataRegistration type table. "
+            "Opaque bytes, dynamic parameter values, server-only schemas, native memory "
+            "construction, future IFix, and future builds remain outside the bound."
+        ),
+    }
+
+
 def build_report(
     metadata_path: Path,
     helper_path: Path = METADATA_HELPER,
@@ -978,9 +1273,15 @@ def build_report(
         mission_runtime_root,
         union_audit_path,
     )
+    cs = enum_members(metadata, defaults, "Proto.CSMessageID")
+    sc = enum_members(metadata, defaults, "Proto.SCMessageID")
     event_bus_census = event_bus_specialization_census(
+        metadata, gameassembly_path, mapper_path
+    )
+    identity_carrier_census = protobuf_identity_carrier_census(
         metadata,
         gameassembly_path,
+        [*cs, *sc],
         mapper_path,
     )
     native_hooks_by_message_id: dict[int, list[str]] = {}
@@ -988,8 +1289,6 @@ def build_report(
         message_id = hook.get("messageId")
         if isinstance(message_id, int):
             native_hooks_by_message_id.setdefault(message_id, []).append(hook_name)
-    cs = enum_members(metadata, defaults, "Proto.CSMessageID")
-    sc = enum_members(metadata, defaults, "Proto.SCMessageID")
     registry_by_name = {row["name"]: row["id"] for row in (*cs, *sc)}
 
     checks = [
@@ -1024,7 +1323,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v3",
+        "_schema": "endfieldProtocolRegistryAudit.v4",
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -1056,6 +1355,12 @@ def build_report(
             ),
             "message125TypedBindSpecializations": event_bus_census[
                 "matchingBindSpecializationCount"
+            ],
+            "protobufMissionScriptOrStoryCoCarriers": identity_carrier_census[
+                "exactMissionScriptOrStoryCandidateCount"
+            ],
+            "protobufWeakMissionSceneCoCarriers": identity_carrier_census[
+                "weakMissionSceneCandidateCount"
             ],
         },
         "evidencePolicy": {
@@ -1101,6 +1406,14 @@ def build_report(
                 "closes the token as round-trip/correlation context rather than a hidden "
                 "mission/quest carrier, so it creates no Mission Pipeline ownership edge."
             ),
+            "protobufIdentityCarriers": (
+                "A complete recursive runtime-type census of enum-backed protobuf "
+                "messages finds no message that co-carries mission/quest identity with a "
+                "LevelScript or Story identity. The three weaker mission/scene carriers "
+                "are the inactive message 317 sender and roleBaseInfo.sceneName in mission/"
+                "quest state updates; the active pair feeds character-position correction, "
+                "not authored scene ownership."
+            ),
             "traffic": (
                 "Header-only traffic can recover message-type chronology. Payload-aware "
                 "capture is required for missionId, questId, sceneNumId, scriptId, taskId, "
@@ -1112,6 +1425,7 @@ def build_report(
         "nativeTaskPaths": native_task_paths["hooks"],
         "nativeMissionEventPaths": NATIVE_MISSION_EVENT_PATHS,
         "nativeLevelScriptEventPaths": NATIVE_LEVEL_SCRIPT_EVENT_PATHS,
+        "protobufIdentityCarrierCensus": identity_carrier_census,
         "message125EventBusSpecializations": event_bus_census,
         "missionEventConstructorXrefs": MISSION_EVENT_CONSTRUCTOR_XREF_FINDING,
         "missionEventAssetCoverage": mission_event_assets,
@@ -1156,6 +1470,14 @@ def render_markdown(report: dict[str, Any]) -> str:
         (
             "- Message-125 exact typed AOT BindGlobal specializations: "
             f"**{summary['message125TypedBindSpecializations']}**"
+        ),
+        (
+            "- Recursive protobuf mission/quest + LevelScript/Story co-carriers: "
+            f"**{summary['protobufMissionScriptOrStoryCoCarriers']}**"
+        ),
+        (
+            "- Weaker protobuf mission/quest + scene carriers requiring review: "
+            f"**{summary['protobufWeakMissionSceneCoCarriers']}**"
         ),
         f"- Runtime-hook manifest SHA-256: `{report['source']['runtimeHookManifestSha256']}`",
         "",
@@ -1280,6 +1602,61 @@ def render_markdown(report: dict[str, Any]) -> str:
     )
     lines.extend(
         [
+            "",
+            "## Recursive protobuf identity-carrier census",
+            "",
+        ]
+    )
+    carrier_census = report["protobufIdentityCarrierCensus"]
+    lines.extend(
+        [
+            (
+                f"The current enum registry resolves to "
+                f"**{carrier_census['registryMessageTypes']:,}** generated CS/SC message "
+                f"classes. Recursive traversal of exact runtime field types across "
+                f"**{carrier_census['protoTypeDefinitions']:,}** `Proto.*` definitions "
+                f"found **{carrier_census['missionOrQuestMessageTypes']}** mission/quest "
+                f"message types and **{carrier_census['levelScriptMessageTypes']}** "
+                "LevelScript message types."
+            ),
+            "",
+            (
+                f"Exactly **{carrier_census['exactMissionScriptOrStoryCandidateCount']}** "
+                "message carries mission/quest identity beside a LevelScript or Story "
+                "identity. The weaker mission/scene pass produced the following "
+                f"**{carrier_census['weakMissionSceneCandidateCount']}** candidates:"
+            ),
+            "",
+            "| ID | Direction | Message | Classification | Finding |",
+            "|---:|---|---|---|---|",
+        ]
+    )
+    for candidate in carrier_census["weakMissionSceneCandidates"]:
+        lines.append(
+            "| {message_id} | {direction} | `{type_name}` | `{classification}` | "
+            "{finding} |".format(
+                message_id=candidate["messageId"],
+                direction=md_escape(candidate["direction"]),
+                type_name=md_escape(candidate["type"]),
+                classification=md_escape(candidate["classification"]),
+                finding=md_escape(candidate["finding"]),
+            )
+        )
+    role_consumer = carrier_census["roleSnapshotConsumer"]
+    lines.extend(
+        [
+            "",
+            (
+                "For messages 111 and 112, the native handlers pass "
+                "`roleBaseInfo.leaderPosition`, `leaderRotation`, and `sceneName` to "
+                f"`MissionSystem.CharacterPositionCorrection` at "
+                f"`{role_consumer['consumer']['va']}`. The scene value selects the map "
+                "for guarded player-position reconciliation; it is not retained as an "
+                "authored mission/quest scene owner. The current installed 30-target "
+                "Gameplay IFix matches none of the two handlers or that consumer."
+            ),
+            "",
+            carrier_census["coverage"],
             "",
             "## Story-facing message schemas",
             "",

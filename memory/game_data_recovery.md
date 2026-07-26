@@ -600,6 +600,28 @@ remain unpromoted. Separately constructed equal keys, reflection, native
 memory manipulation, future patches, and future builds remain outside this
 bounded result.
 
+The generated protobuf surface has now been checked recursively rather than by
+top-level field names alone. Resolving every field through the installed
+MetadataRegistration runtime type table covers 983 enum-backed CS/SC message
+classes and nested `Proto.*` fields. The census finds 33 mission/quest-bearing
+messages, 29 `scriptId`-bearing messages, and zero message co-carrying
+mission/quest identity with a LevelScript or Story identity. The only weaker
+mission/scene carriers are `CS_MISSION_CLIENT_TRIGGER_DONE` (317), whose
+current fallback sender is absent, and the nested
+`roleBaseInfo.sceneName` fields in `SC_MISSION_STATE_UPDATE` (112) and
+`SC_QUEST_STATE_UPDATE` (111).
+
+Native decoding closes the active pair as operational state. Both handlers
+read `roleBaseInfo.leaderPosition`, `leaderRotation`, and `sceneName` and call
+`MissionSystem.CharacterPositionCorrection` at `0x1873b84c4`. That consumer
+resolves the scene to a map and performs guarded player/squad position
+reconciliation; it does not retain an authored mission/quest scene host or
+address a LevelScript/Story record. The installed 30-target Gameplay IFix
+matches none of the handlers or consumer. The result adds no graph edge and
+must remain bounded to typed current-client schemas; opaque bytes, dynamic
+parameters, server-only data, native construction, and future builds remain
+outside it.
+
 GameAssembly metadata names server-action families such as
 `TriggerLevelScriptCustomEvent`, `TriggerClientLevelScriptEvent`,
 `SetLevelScriptEnabled`, and `UpdateLevelScriptProperty`, but type names alone
@@ -1750,6 +1772,14 @@ remain gated on the recovery work below:
    co-populate mission/script identity and current consumers never read its
    `missionId`. Search other shipped config, indirect-dispatch, or
    asset-consumer registries for a carrier that resolves both identities.
+   The protobuf message registry is now closed as another distinct surface:
+   recursive runtime-type traversal across all 983 current enum-backed CS/SC
+   classes finds no mission/quest + LevelScript/Story co-carrier. Its only
+   active weak scene candidates feed `CharacterPositionCorrection` from the
+   synchronized role snapshot and are not authored hosts. Do not repeat either
+   the message-schema or role-snapshot join until the metadata, binary, or IFix
+   hash changes; prioritize non-protobuf server-state/config and asset-consumer
+   registries.
    The current ten missionless SubGame playback rows are now closed across
    their complete exported exact-reference and receiver-task surfaces: nine
    unique Story files across fourteen placements, one non-owning activity

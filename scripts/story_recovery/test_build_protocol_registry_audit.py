@@ -145,6 +145,39 @@ class ProtocolRegistryAuditTests(unittest.TestCase):
         self.assertEqual(reader["missionQuestReaders"], 0)
         self.assertEqual(reader["storyBindingsAdded"], 0)
 
+    def test_protobuf_identity_classifier_and_nested_type_parser_are_exact(self):
+        self.assertEqual(
+            audit.protobuf_identity_field_classes("missionId_"),
+            {"mission_or_quest"},
+        )
+        self.assertEqual(
+            audit.protobuf_identity_field_classes("scriptId_"),
+            {"level_script"},
+        )
+        self.assertEqual(
+            audit.protobuf_identity_field_classes("sceneName_"),
+            {"scene_host"},
+        )
+        self.assertEqual(
+            audit.protobuf_identity_field_classes("dialogId_"),
+            {"story"},
+        )
+        known = {"Proto.MISSION", "Proto.QUEST", "Proto.UNRELATED"}
+        self.assertEqual(
+            audit.protobuf_runtime_dependencies(
+                "Google.Protobuf.Collections.MapField<string, Proto.MISSION>",
+                known,
+            ),
+            ["Proto.MISSION"],
+        )
+        self.assertEqual(
+            audit.protobuf_runtime_dependencies(
+                "System.Tuple<Proto.QUEST, Proto.MISSION>",
+                known,
+            ),
+            ["Proto.MISSION", "Proto.QUEST"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
