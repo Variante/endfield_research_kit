@@ -119,7 +119,12 @@ cross-script ManualStart target. Across all 93, zero typed MissionRuntime
 objective operand names the receiver script and the manual-control audit still
 has zero incoming literal cross-script target. Only one receiver script is in
 an exact mission-named LevelData host, which remains loading/registration
-context rather than playback ownership. The durable details live at
+context rather than playback ownership. The 12 non-SubGame scripts with
+non-empty authored start shapes also have zero complete exact matches against
+every MissionArea shape on their level under the same 0.001 native-vector
+tolerance used by accepted trigger-geometry joins. Nearby areas frequently
+differ in type, radius, size, or rotation and remain rejected proximity clues.
+The durable details live at
 `reports/story/recovery/native_receiver_activation_frontier.{json,md}`.
 Mission Pipeline debug cards expose the start policy, validated LevelData
 container, SubGame carrier when present, and both zero-count ownership checks;
@@ -2897,11 +2902,13 @@ Current main-story priorities:
    non-empty start shapes, 17 other non-null static start/task shapes, and 54
    Manual scripts with no decoded static shape/task/parent carrier. No receiver
    script is named by a typed MissionRuntime objective and no incoming literal
-   cross-script manual control targets one. This closes broad LevelData,
-   start-type, objective-operand, and literal ManualStart searches as generic
-   ownership routes. Follow the small shaped/task-bearing subsets only when an
-   exact authored foreign key, rather than geometry or name similarity, reaches
-   MissionRuntime.
+   cross-script manual control targets one. The 12 shaped scripts have zero
+   complete exact same-level MissionArea shape matches; nearby centers with
+   mismatched shape fields do not qualify. This closes broad LevelData,
+   start-type, start-shape, objective-operand, and literal ManualStart searches
+   as generic ownership routes. Follow the remaining task-bearing subset only
+   when an exact authored foreign key, rather than geometry or name similarity,
+   reaches MissionRuntime.
    A diagnostic level intersection with the atmospheric switcher context finds
    89 receivers / 103 Story files on 13 shared levels. Four shared levels have
    only one atmospheric route mission, but their native Story families often

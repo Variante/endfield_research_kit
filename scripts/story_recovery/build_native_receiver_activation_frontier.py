@@ -38,8 +38,13 @@ from common import (  # noqa: E402
     write_report_json,
     write_text_if_changed,
 )
-from story_builder.context import LEVELDATA_DIR, LEVELSCRIPT_DIR  # noqa: E402
+from story_builder.context import (  # noqa: E402
+    GAMEPLAY_CONFIG_DIR,
+    LEVELDATA_DIR,
+    LEVELSCRIPT_DIR,
+)
 from story_builder.level_bindings import (  # noqa: E402
+    _native_vector_close,
     _parse_leveldata_mission_host_name,
     parse_leveldata_levelscript_brief_dictionary,
 )
@@ -58,6 +63,8 @@ DEFAULT_MANUAL_CONTROL_AUDIT = (
 )
 DEFAULT_JSON = STORY_RECOVERY_REPORTS_DIR / "native_receiver_activation_frontier.json"
 DEFAULT_MARKDOWN = STORY_RECOVERY_REPORTS_DIR / "native_receiver_activation_frontier.md"
+DEFAULT_MISSION_AREA_TABLE = GAMEPLAY_CONFIG_DIR / "MissionAreaTable.json"
+DEFAULT_LEVEL_BASIC_INFO_TABLE = GAMEPLAY_CONFIG_DIR / "LevelBasicInfoTable.json"
 
 
 def safe_text(value: Any) -> str:
@@ -232,6 +239,98 @@ def mission_runtime_script_consumers(
     return consumers
 
 
+def mission_areas_by_level(
+    mission_area_path: Path = DEFAULT_MISSION_AREA_TABLE,
+    level_basic_info_path: Path = DEFAULT_LEVEL_BASIC_INFO_TABLE,
+) -> dict[str, list[dict[str, Any]]]:
+    """Resolve authored MissionArea rows to their exact LevelBasicInfo level."""
+    mission_area_payload = read_json(mission_area_path) or {}
+    level_rows = read_json(level_basic_info_path) or {}
+    area_groups = (
+        mission_area_payload.get("m_areas")
+        if isinstance(mission_area_payload, dict)
+        else None
+    )
+    if not isinstance(area_groups, dict) or not isinstance(level_rows, dict):
+        return {}
+
+    out: dict[str, list[dict[str, Any]]] = {}
+    for level_id, level_row in level_rows.items():
+        if not isinstance(level_row, dict):
+            continue
+        level_num = safe_text(level_row.get("idNum"))
+        group = area_groups.get(level_num)
+        if not isinstance(group, dict):
+            continue
+        out[safe_text(level_id)] = [
+            {
+                "missionAreaId": safe_text(area_id),
+                **area,
+            }
+            for area_id, area in sorted(group.items())
+            if isinstance(area, dict)
+        ]
+    return out
+
+
+def exact_start_shape_mission_area_matches(
+    shapes: list[dict[str, Any]],
+    mission_areas: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Match complete authored shapes; proximity and names are never enough."""
+    matches: list[dict[str, Any]] = []
+    for shape_index, shape in enumerate(shapes):
+        if not isinstance(shape, dict):
+            continue
+        try:
+            shape_type = int(shape.get("typeRaw"))
+        except (TypeError, ValueError):
+            continue
+        for area in mission_areas:
+            area_shape = area.get("shape") if isinstance(area, dict) else None
+            if not isinstance(area_shape, dict):
+                continue
+            try:
+                area_type = int(area_shape.get("type"))
+            except (TypeError, ValueError):
+                continue
+            if shape_type != area_type or not _native_vector_close(
+                shape.get("position"),
+                area_shape.get("position"),
+            ):
+                continue
+            if shape_type == 1 and (
+                not _native_vector_close(shape.get("size"), area_shape.get("size"))
+                or not _native_vector_close(
+                    shape.get("eulerAngles"),
+                    area_shape.get("eulerAngles"),
+                    angular=True,
+                )
+            ):
+                continue
+            if shape_type == 2:
+                try:
+                    radius_delta = abs(
+                        float(shape.get("radius") or 0.0)
+                        - float(area_shape.get("radius") or 0.0)
+                    )
+                except (TypeError, ValueError):
+                    continue
+                if radius_delta > 0.001:
+                    continue
+            matches.append(
+                {
+                    "startShapeIndex": shape_index,
+                    "startShapeOffset": safe_text(shape.get("offset")),
+                    "missionAreaId": safe_text(area.get("missionAreaId")),
+                    "subDataParentId": area.get("subDataParentId"),
+                    "shape": area_shape,
+                    "status": "exact_complete_authored_shape_match",
+                }
+            )
+    return matches
+
+
 def validated_leveldata_hosts(
     level_id: str,
     target_script_id: str,
@@ -359,6 +458,7 @@ def build_report(
     incoming_by_target = manual_control_targets(manual_control_payload)
     subgames_by_script = subgame_script_bindings(index_payload)
     consumers_by_script = mission_runtime_script_consumers(mission_root)
+    mission_areas = mission_areas_by_level()
     rows: list[dict[str, Any]] = []
     classes: Counter[str] = Counter()
     start_types: Counter[str] = Counter()
@@ -379,6 +479,10 @@ def build_report(
         incoming = incoming_by_target.get((level_id, script_id), [])
         subgames = subgames_by_script.get(script_id, [])
         consumers = consumers_by_script.get(script_id, [])
+        start_shape_area_matches = exact_start_shape_mission_area_matches(
+            levelscript.get("startShapeListShapes") or [],
+            mission_areas.get(level_id, []),
+        )
         classification = activation_class(
             levelscript,
             hosts,
@@ -431,6 +535,7 @@ def build_report(
                 "incomingLiteralManualControls": incoming,
                 "subGameBindings": subgames,
                 "missionRuntimeScriptConsumers": consumers,
+                "startShapeMissionAreaMatches": start_shape_area_matches,
                 "activationClass": classification,
                 "missionOwnerStatus": "unresolved",
                 "evidenceBoundary": (
@@ -505,6 +610,13 @@ def build_report(
             "scriptsWithMissionRuntimeObjectiveConsumer": sum(
                 bool(row["missionRuntimeScriptConsumers"]) for row in rows
             ),
+            "scriptsWithStartShapes": sum(
+                bool((row.get("levelScript") or {}).get("startShapeListShapes"))
+                for row in rows
+            ),
+            "scriptsWithExactStartShapeMissionAreaMatch": sum(
+                bool(row["startShapeMissionAreaMatches"]) for row in rows
+            ),
         },
         "manualControlAuditSummary": manual_control_payload.get("summary") or {},
         "rows": rows,
@@ -569,6 +681,9 @@ def publish_to_pipeline_index(
             "missionRuntimeObjectiveConsumerCount": len(
                 row.get("missionRuntimeScriptConsumers") or []
             ),
+            "exactStartShapeMissionAreaMatchCount": len(
+                row.get("startShapeMissionAreaMatches") or []
+            ),
         }
         annotated += 1
 
@@ -618,6 +733,11 @@ def markdown_report(payload: dict[str, Any]) -> str:
         (
             "- Scripts named by a typed MissionRuntime objective operand: "
             f"`{counts.get('scriptsWithMissionRuntimeObjectiveConsumer')}`"
+        ),
+        (
+            "- Scripts with authored start shapes / exact complete MissionArea "
+            f"shape matches: `{counts.get('scriptsWithStartShapes')}` / "
+            f"`{counts.get('scriptsWithExactStartShapeMissionAreaMatch')}`"
         ),
         "",
         "The report is fail-closed: these fields narrow the missing activation "

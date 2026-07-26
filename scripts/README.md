@@ -1832,7 +1832,9 @@ gameplay-video OCR/audio workflow.
   Current recovery covers `158` receiver nodes on `93` scripts: `10` have an
   exact SubGame activation scope, `54` are Manual with no decoded static
   shape/task/parent carrier, and none is named by a typed MissionRuntime
-  objective or an incoming literal cross-script manual-control row. These
+  objective or an incoming literal cross-script manual-control row. All `12`
+  non-SubGame scripts with non-empty authored start shapes have zero complete
+  exact shape matches in the same-level MissionArea table. These
   classifications narrow the producer queue and create no mission, quest,
   playback, or order edge.
 - `story_recovery/build_levelscript_property_setter_candidate_audit.py`:
