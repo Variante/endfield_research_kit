@@ -1834,7 +1834,11 @@ gameplay-video OCR/audio workflow.
   shape/task/parent carrier, and none is named by a typed MissionRuntime
   objective or an incoming literal cross-script manual-control row. All `12`
   non-SubGame scripts with non-empty authored start shapes have zero complete
-  exact shape matches in the same-level MissionArea table. These
+  exact shape matches in the same-level MissionArea table. Of `24` receiver
+  scripts with task maps, only the already SubGame-scoped
+  `map02_lv002/22800950006` contains exact serialized MissionRuntime-id string
+  tokens (`a1m6d6`, `a1m6d7`); all `83` non-SubGame receiver scripts contain
+  none. These
   classifications narrow the producer queue and create no mission, quest,
   playback, or order edge.
 - `story_recovery/build_levelscript_property_setter_candidate_audit.py`:

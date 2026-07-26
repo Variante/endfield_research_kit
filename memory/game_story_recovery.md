@@ -124,6 +124,13 @@ non-empty authored start shapes also have zero complete exact matches against
 every MissionArea shape on their level under the same 0.001 native-vector
 tolerance used by accepted trigger-geometry joins. Nearby areas frequently
 differ in type, radius, size, or rotation and remain rejected proximity clues.
+An exact positive-length MemoryPack string-token census adds a second bounded
+negative: 24 receiver scripts have task maps, but only the already
+SubGame-scoped `map02_lv002/22800950006` contains any current MissionRuntime id
+token (`a1m6d6`, `a1m6d7`). None of the 83 non-SubGame receiver scripts embeds
+one. This closes literal mission-id constants across the complete receiver
+LevelScript blobs, including their task maps; it does not close dynamic params,
+indirect registries, or server-authored activation.
 The durable details live at
 `reports/story/recovery/native_receiver_activation_frontier.{json,md}`.
 Mission Pipeline debug cards expose the start policy, validated LevelData
@@ -2904,11 +2911,14 @@ Current main-story priorities:
    script is named by a typed MissionRuntime objective and no incoming literal
    cross-script manual control targets one. The 12 shaped scripts have zero
    complete exact same-level MissionArea shape matches; nearby centers with
-   mismatched shape fields do not qualify. This closes broad LevelData,
-   start-type, start-shape, objective-operand, and literal ManualStart searches
-   as generic ownership routes. Follow the remaining task-bearing subset only
-   when an exact authored foreign key, rather than geometry or name similarity,
-   reaches MissionRuntime.
+   mismatched shape fields do not qualify. Across the 24 task-map scripts, the
+   only serialized MissionRuntime-id constants are `a1m6d6`/`a1m6d7` in the
+   already SubGame-scoped `22800950006`; all 83 non-SubGame receiver scripts
+   have zero exact mission-id string tokens. This closes broad LevelData,
+   start-type, start-shape, objective-operand, literal mission-id, and literal
+   ManualStart searches as generic ownership routes. Further task-map work is
+   useful only if dynamic parameter semantics or another exact authored
+   foreign key reaches MissionRuntime.
    A diagnostic level intersection with the atmospheric switcher context finds
    89 receivers / 103 Story files on 13 shared levels. Four shared levels have
    only one atmospheric route mission, but their native Story families often

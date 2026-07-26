@@ -331,6 +331,22 @@ def exact_start_shape_mission_area_matches(
     return matches
 
 
+def exact_memorypack_string_tokens(
+    data: bytes,
+    values: set[str],
+) -> list[str]:
+    """Return exact positive-length MemoryPack string constants in one blob."""
+    hits: list[str] = []
+    for value in sorted(values):
+        encoded = value.encode("utf-8")
+        if not encoded:
+            continue
+        token = len(encoded).to_bytes(4, "little", signed=True) + encoded
+        if token in data:
+            hits.append(value)
+    return hits
+
+
 def validated_leveldata_hosts(
     level_id: str,
     target_script_id: str,
@@ -469,6 +485,10 @@ def build_report(
         script_id = receiver["scriptId"]
         script_path = levelscript_root / level_id / f"{script_id}.json"
         levelscript = decode_levelscript_binary_file(script_path, script_id)
+        try:
+            script_data = read_bytes_cached(script_path)
+        except OSError:
+            script_data = b""
         hosts = validated_leveldata_hosts(
             level_id,
             script_id,
@@ -482,6 +502,10 @@ def build_report(
         start_shape_area_matches = exact_start_shape_mission_area_matches(
             levelscript.get("startShapeListShapes") or [],
             mission_areas.get(level_id, []),
+        )
+        serialized_mission_ids = exact_memorypack_string_tokens(
+            script_data,
+            mission_ids,
         )
         classification = activation_class(
             levelscript,
@@ -536,6 +560,7 @@ def build_report(
                 "subGameBindings": subgames,
                 "missionRuntimeScriptConsumers": consumers,
                 "startShapeMissionAreaMatches": start_shape_area_matches,
+                "serializedMissionRuntimeIdTokens": serialized_mission_ids,
                 "activationClass": classification,
                 "missionOwnerStatus": "unresolved",
                 "evidenceBoundary": (
@@ -580,6 +605,12 @@ def build_report(
                 "the script shell, but a SubGame row without dungeonMissionId "
                 "does not identify a mission or quest owner."
             ),
+            "literalMissionIdBoundary": (
+                "An exact MemoryPack string token proves only that the literal "
+                "mission id exists somewhere in the LevelScript blob. Absence "
+                "closes literal-constant carriers, not dynamic, indirect, or "
+                "server-authored activation."
+            ),
         },
         "counts": {
             "receiverNodes": sum(row["receiverNodeCount"] for row in rows),
@@ -616,6 +647,28 @@ def build_report(
             ),
             "scriptsWithExactStartShapeMissionAreaMatch": sum(
                 bool(row["startShapeMissionAreaMatches"]) for row in rows
+            ),
+            "scriptsWithTaskMap": sum(
+                safe_text((row.get("levelScript") or {}).get("taskMapStatus"))
+                == "present"
+                for row in rows
+            ),
+            "scriptsWithSerializedMissionRuntimeIdToken": sum(
+                bool(row["serializedMissionRuntimeIdTokens"]) for row in rows
+            ),
+            "nonSubGameScriptsWithSerializedMissionRuntimeIdToken": sum(
+                bool(row["serializedMissionRuntimeIdTokens"])
+                and not row["subGameBindings"]
+                for row in rows
+            ),
+            "nonSubGameTaskMapScriptsWithSerializedMissionRuntimeIdToken": sum(
+                bool(row["serializedMissionRuntimeIdTokens"])
+                and not row["subGameBindings"]
+                and safe_text(
+                    (row.get("levelScript") or {}).get("taskMapStatus")
+                )
+                == "present"
+                for row in rows
             ),
         },
         "manualControlAuditSummary": manual_control_payload.get("summary") or {},
@@ -684,6 +737,9 @@ def publish_to_pipeline_index(
             "exactStartShapeMissionAreaMatchCount": len(
                 row.get("startShapeMissionAreaMatches") or []
             ),
+            "serializedMissionRuntimeIdTokens": (
+                row.get("serializedMissionRuntimeIdTokens") or []
+            ),
         }
         annotated += 1
 
@@ -738,6 +794,16 @@ def markdown_report(payload: dict[str, Any]) -> str:
             "- Scripts with authored start shapes / exact complete MissionArea "
             f"shape matches: `{counts.get('scriptsWithStartShapes')}` / "
             f"`{counts.get('scriptsWithExactStartShapeMissionAreaMatch')}`"
+        ),
+        (
+            "- Scripts with task maps / exact serialized MissionRuntime-id "
+            f"tokens: `{counts.get('scriptsWithTaskMap')}` / "
+            f"`{counts.get('scriptsWithSerializedMissionRuntimeIdToken')}`"
+        ),
+        (
+            "- Non-SubGame task-map scripts with a serialized MissionRuntime-id "
+            "token: "
+            f"`{counts.get('nonSubGameTaskMapScriptsWithSerializedMissionRuntimeIdToken')}`"
         ),
         "",
         "The report is fail-closed: these fields narrow the missing activation "
