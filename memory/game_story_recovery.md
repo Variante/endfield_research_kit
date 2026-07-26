@@ -1845,8 +1845,8 @@ orders.
 ## Source graph and generated audit surface
 
 The source graph is an evidence index, not runtime simulation. The current
-canonical relevant-AssetMap CN rebuild contains 2,081,132 nodes, 4,723,392
-edges, and 2,221,525 aliases; all 1,140 required original AssetMap identities
+canonical relevant-AssetMap CN rebuild contains 1,860,441 nodes, 4,400,623
+edges, and 2,284,922 aliases; all 1,140 required original AssetMap identities
 matched. Story-recovery queries include:
 
 ```bat
@@ -2007,9 +2007,10 @@ rows); 326 non-empty rows participate in matching.
 
 Of those 444 clusters, 380 carry exact `missionId` / `questId` fields under
 their switcher condition; 26 also carry `bindMissionId`. They cover **359
-unique envTalk Story files, 52 quests present in MissionRuntime, and 64 known
-missions**. The condition tree is preserved as a dependency rather than
-collapsed into an ordering rule: combined/reversed predicates can express
+unique envTalk Story files, 52 literal quest references (51 present in
+MissionRuntime), and 64 known missions**. The condition tree is preserved as a
+dependency rather than collapsed into an ordering rule: combined/reversed
+predicates can express
 availability windows, exclusion, or co-active state. Three clusters literally
 reference absent quest `f1m9d3_q#15` while binding mission `f1m9d4`; the report
 keeps that quest unresolved and does not infer an owner from its prefix. There
@@ -2042,6 +2043,14 @@ the referenced mission owns it, or that the condition establishes chronology,
 completion, or a server exchange. `env_*` therefore remains outside the 5,273
 mission Story denominator. Mission Pipeline and the Story trigger manifest
 publish these routes with `causality=context`.
+
+The source graph now mirrors the same boundary with 380 explicit atmospheric
+state-context nodes and 490 mission-scoped routes. Queries can traverse
+mission/quest state -> switcher group -> cluster -> envTalk -> Story, but there
+is deliberately no direct mission-to-Story edge. All edges carry
+`ownershipStatus=non_owning_context`, `playbackOwnership=false`, and
+`orderEvidence=false`, so graph consumers cannot silently promote availability
+into playback, ownership, or mission order.
 
 ### Five dangling consumer references
 

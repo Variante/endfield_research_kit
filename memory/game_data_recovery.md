@@ -1411,8 +1411,8 @@ nodes, aliases, and reverse edges.
 The WebUI-relevant scope selects 1,140 exact `(source, PathID)` identities from
 the same original maps, including complete selected rows so name/export-base
 fallback behavior remains available. The canonical relevant rebuild completed
-in 604.8 seconds with 2,081,132 nodes, 4,723,392 edges, 2,221,525 aliases, a
-4.60 GB database, and all 1,140 required identities matched.
+in 794.4 seconds with 1,860,441 nodes, 4,400,623 edges, 2,284,922 aliases, a
+4.08 GiB database, and all 1,140 required identities matched.
 Presentation (3,893 nodes / 8,373
 edges) and Combat (1,086 nodes / 1,071 edges) payloads were canonically identical
 between relevant and exhaustive graphs. Exhaustive mode remains the evidence
@@ -1431,6 +1431,19 @@ Edges should preserve evidence quality. Direct authored foreign keys,
 byte-proven decoded fields, filename/path aliases, normalized identifiers, and
 inferred bridges are different claims and must remain distinguishable in edge
 kinds or edge data.
+
+Mission Pipeline atmospheric envTalk context is now a first-class graph
+relation sourced from `webui/mission_pipeline/env_talk_context`. The canonical
+generated inputs contribute 490 mission-scoped rows across 380 unique context
+nodes, 359 Story files, 64 missions, and 52 literal condition quest ids (51
+resolve in MissionRuntime; `f1m9d3_q#15` remains an explicit unresolved
+reference). The path is represented as mission/quest state -> context ->
+switcher group -> cluster -> envTalk -> Story. It emits zero direct
+mission-to-Story edges and every relation records
+`ownershipStatus=non_owning_context`, `playbackOwnership=false`, and
+`orderEvidence=false`. This makes the recovered world-state dependency
+queryable without turning availability into ownership, playback, chronology,
+completion, or server-exchange evidence.
 
 ### Query surfaces
 

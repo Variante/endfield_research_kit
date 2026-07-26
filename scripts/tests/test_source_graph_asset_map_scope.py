@@ -92,6 +92,217 @@ class SourceGraphAssetMapScopeTests(unittest.TestCase):
             finally:
                 builder.close()
 
+    def test_atmospheric_envtalk_context_is_queryable_and_non_owning(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            mission_root = root / "mission_pipeline" / "missions"
+            mission_root.mkdir(parents=True)
+            (mission_root / "alpha.json").write_text(
+                json.dumps(
+                    {
+                        "mission": {"id": "alpha"},
+                        "envTalkContext": [
+                            {
+                                "relation": "atmosphericSwitcherStateContext",
+                                "storyKey": "env_envTalk_a_1",
+                                "envTalkId": "envTalk_a_1",
+                                "questIds": ["alpha_q#1"],
+                                "conditionQuestIds": [
+                                    "alpha_q#1",
+                                    "missing_q#9",
+                                ],
+                                "conditionMissionIds": ["beta"],
+                                "bindMissionId": "gamma",
+                                "clusterId": "cluster_1",
+                                "switcherId": "switcher_1",
+                                "switcherGroupId": "group_1",
+                                "levelId": "level_1",
+                                "npcIds": ["npc_2", "npc_1"],
+                            },
+                            {
+                                # Exact identity mismatch must fail closed.
+                                "relation": "atmosphericSwitcherStateContext",
+                                "storyKey": "env_wrong",
+                                "envTalkId": "envTalk_a_2",
+                                "clusterId": "cluster_2",
+                                "switcherId": "switcher_2",
+                                "switcherGroupId": "group_2",
+                                "levelId": "level_1",
+                                "npcIds": ["npc_3"],
+                            },
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            builder = endfield_source_graph.SourceGraphBuilder(
+                db_path=root / "graph.sqlite",
+                include_asset_maps=False,
+            )
+            builder.open()
+            try:
+                with patch.object(
+                    endfield_source_graph,
+                    "MISSION_PIPELINE_ROOT",
+                    root / "mission_pipeline",
+                ):
+                    builder.ingest_mission_pipeline_env_talk_context()
+
+                context_key = (
+                    "switcher_1:group_1:cluster_1:env_envTalk_a_1"
+                )
+                node_ids = [
+                    "mission:alpha",
+                    f"atmospheric_env_talk_state_context:{context_key}",
+                    "atmospheric_npc_switcher_group:group_1",
+                    "atmospheric_npc_cluster:cluster_1",
+                    "env_talk:envTalk_a_1",
+                    "story:env_envTalk_a_1",
+                ]
+                edge_kinds = [
+                    "mission_has_atmospheric_env_talk_state_context",
+                    "atmospheric_env_talk_context_uses_switcher_group",
+                    "atmospheric_switcher_group_contains_env_talk_cluster",
+                    "atmospheric_cluster_uses_env_talk",
+                    "env_talk_has_story_file",
+                ]
+                for source_id, target_id, edge_kind in zip(
+                    node_ids,
+                    node_ids[1:],
+                    edge_kinds,
+                ):
+                    row = builder.db.execute(
+                        """
+                        SELECT data FROM edges
+                        WHERE src = ? AND dst = ? AND kind = ?
+                        """,
+                        (source_id, target_id, edge_kind),
+                    ).fetchone()
+                    self.assertIsNotNone(row, edge_kind)
+                    edge_data = json.loads(row[0])
+                    self.assertEqual(edge_data["causality"], "context")
+                    self.assertEqual(
+                        edge_data["ownershipStatus"],
+                        "non_owning_context",
+                    )
+                    self.assertFalse(edge_data["playbackOwnership"])
+                    self.assertFalse(edge_data["orderEvidence"])
+
+                self.assertIsNone(
+                    builder.db.execute(
+                        """
+                        SELECT 1 FROM edges
+                        WHERE src = 'mission:alpha'
+                          AND dst = 'story:env_envTalk_a_1'
+                        """
+                    ).fetchone()
+                )
+                self.assertIsNotNone(
+                    builder.db.execute(
+                        """
+                        SELECT 1 FROM edges
+                        WHERE src = 'quest_task:alpha_q#1'
+                          AND dst = 'mission:alpha'
+                          AND kind = 'quest_task_in_mission'
+                        """
+                    ).fetchone()
+                )
+                self.assertIsNotNone(
+                    builder.db.execute(
+                        """
+                        SELECT 1 FROM edges
+                        WHERE src = 'quest_task:missing_q#9'
+                          AND kind =
+                              'quest_state_conditions_atmospheric_env_talk_context'
+                        """
+                    ).fetchone()
+                )
+                self.assertIsNone(
+                    builder.db.execute(
+                        """
+                        SELECT 1 FROM edges
+                        WHERE src = 'quest_task:missing_q#9'
+                          AND kind = 'quest_task_in_mission'
+                        """
+                    ).fetchone()
+                )
+                self.assertIsNotNone(
+                    builder.db.execute(
+                        """
+                        SELECT 1 FROM edges
+                        WHERE src = 'mission:beta'
+                          AND kind =
+                              'mission_state_conditions_atmospheric_env_talk_context'
+                        """
+                    ).fetchone()
+                )
+                self.assertIsNotNone(
+                    builder.db.execute(
+                        """
+                        SELECT 1 FROM edges
+                        WHERE src = 'mission:gamma'
+                          AND kind = 'mission_binds_atmospheric_env_talk_context'
+                        """
+                    ).fetchone()
+                )
+                source_rows = builder.db.execute(
+                    """
+                    SELECT kind, data FROM edges
+                    WHERE source = 'webui/mission_pipeline/env_talk_context'
+                    """
+                ).fetchall()
+                self.assertTrue(source_rows)
+                for edge_kind, edge_json in source_rows:
+                    edge_data = json.loads(edge_json)
+                    self.assertEqual(
+                        edge_data["ownershipStatus"],
+                        "non_owning_context",
+                        edge_kind,
+                    )
+                    self.assertFalse(
+                        edge_data["playbackOwnership"],
+                        edge_kind,
+                    )
+                    self.assertFalse(edge_data["orderEvidence"], edge_kind)
+                self.assertEqual(
+                    builder.ingest_counts[
+                        "missionPipelineEnvTalkContext.rows"
+                    ],
+                    1,
+                )
+                self.assertEqual(
+                    builder.ingest_counts[
+                        "missionPipelineEnvTalkContext.uniqueContexts"
+                    ],
+                    1,
+                )
+                self.assertEqual(
+                    builder.ingest_counts[
+                        "missionPipelineEnvTalkContext.missions"
+                    ],
+                    1,
+                )
+                self.assertEqual(
+                    builder.ingest_counts[
+                        "missionPipelineEnvTalkContext.storyFiles"
+                    ],
+                    1,
+                )
+                self.assertEqual(
+                    builder.ingest_counts[
+                        "missionPipelineEnvTalkContext.conditionQuestIds"
+                    ],
+                    2,
+                )
+                self.assertEqual(
+                    builder.ingest_counts[
+                        "missionPipelineEnvTalkContext.skippedRows"
+                    ],
+                    1,
+                )
+            finally:
+                builder.close()
+
     def test_relevant_scope_keeps_only_consumed_original_map_rows(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
