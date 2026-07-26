@@ -905,6 +905,39 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         )
         self.assertIn("zero mission/quest + LevelScript/Story", native["finding"])
 
+    def test_mission_option_carrier_is_alternate_action_not_dialog_bridge(self):
+        audit = pipeline.RUNTIME_CONTRACT["missionOptionCarrierAudit"]
+        fields = {
+            row["name"]: row
+            for row in audit["managedCarrier"]["fields"]
+        }
+        self.assertEqual(fields["missionId"]["offset"], "0x68")
+        self.assertEqual(fields["callDialogId"]["offset"], "0x70")
+        self.assertEqual(
+            audit["managedCarrier"]["handlerType"]["name"],
+            "Mission",
+        )
+        consumer = audit["nativeConsumer"]
+        self.assertEqual(consumer["token"], "0x0600fa1a")
+        self.assertIn("then jump to end", consumer["callDialogBranch"])
+        self.assertIn(
+            "only when callDialogId is empty",
+            consumer["missionBranch"],
+        )
+        search = audit["authoredInstanceSearch"]
+        self.assertEqual(search["monoBehaviourRows"], 1325026)
+        self.assertEqual(search["textAssets"], 8195)
+        self.assertEqual(search["structuredJsonFiles"], 179925)
+        self.assertEqual(search["installedLuaFiles"], 1291)
+        self.assertEqual(search["matches"], 0)
+        self.assertEqual(audit["installedPatch"]["matchedMethods"], 0)
+        self.assertIn("mutually exclusive", audit["finding"])
+        self.assertEqual(audit["storyBindingsAdded"], 0)
+        self.assertEqual(
+            audit["classification"],
+            "schema_only_current_export_absent",
+        )
+
     def test_airwall_contract_is_state_gated_context_not_transition_owner(self):
         audit = pipeline.RUNTIME_CONTRACT["airWallMissionRadioContext"]
         self.assertEqual(audit["memoryPackSchema"]["levelDataMemberCount"], 43)

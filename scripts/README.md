@@ -892,6 +892,21 @@ Expected active inputs and outputs:
   python scripts\story_recovery\build_protocol_registry_audit.py
   ```
 
+- `story_recovery/build_mission_option_carrier_audit.py`: verifies the
+  hash-pinned `MissionOptionData` and `MissionOptionHandler` native bodies,
+  scans the complete exported MonoBehaviour indexes, decoded TextAsset
+  scripts, structured JsonData roots, and installed VFS Lua corpus, and writes
+  `reports/story/recovery/mission_option_carrier_audit.{json,md}`. The current
+  `_DoAction` fallback gives `callDialogId` priority and jumps to the end after
+  playback; it calls `AcceptMission(missionId)` only when `callDialogId` is
+  empty. The two fields are alternate actions, not a mission-to-dialog edge.
+  The audit fails closed if the installed binary/metadata hashes change, an
+  authored instance appears, or current IFix starts replacing the path.
+
+  ```bat
+  python scripts\story_recovery\build_mission_option_carrier_audit.py
+  ```
+
 - `story_recovery/import_mission_runtime_trace.py`: validates hook-produced
   JSONL and builds a `missionRuntimeTrace.v1` observational bundle. The input
   fails closed: every session needs one `session_start`, sequence numbers must
