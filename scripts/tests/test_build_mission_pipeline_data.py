@@ -1054,7 +1054,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         submitter = audit["pendingItemSubmitterClosure"]
         self.assertEqual(
             submitter["classification"],
-            "inactive_current_fallback_producer",
+            "active_shipped_xlua_producer_without_concrete_authored_join",
         )
         self.assertEqual(
             submitter["fields"]["DialogManager.m_pendingItemSubmitter"]["offset"],
@@ -1065,7 +1065,7 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             "0x20",
         )
         caller_counts = {
-            row["symbol"]: row["directCallerCount"]
+            row["symbol"]: row["nativeDirectCallerCount"]
             for row in submitter["methods"]
         }
         self.assertEqual(caller_counts["InventoryItemSubmitter..ctor"], 0)
@@ -1077,6 +1077,25 @@ class MissionPipelineBuilderTests(unittest.TestCase):
             caller_counts["DialogManager.RegisterPendingSubmission"],
             0,
         )
+        self.assertEqual(
+            submitter["nativeOpenUiBridge"]["callee"][
+                "nativeDirectCallerCount"
+            ],
+            2,
+        )
+        self.assertEqual(
+            submitter["shippedLuaProducer"][
+                "constructorAndRegistrationCalls"
+            ],
+            1,
+        )
+        authored = submitter["authoredOpenUiActions"]
+        self.assertEqual(authored["typedTerminalActions"], 95)
+        self.assertEqual(authored["submitItemPanelType"], 9)
+        self.assertEqual(authored["submitItemActions"], 13)
+        self.assertEqual(authored["placeholderSubmitItemActions"], 3)
+        self.assertEqual(authored["emptyParamSubmitItemActions"], 10)
+        self.assertEqual(authored["concreteQuestIdActions"], 0)
         self.assertEqual(submitter["installedPatchMatches"], 0)
         self.assertEqual(audit["storyBindingsAdded"], 0)
         self.assertEqual(audit["missionOrderEdgesAdded"], 0)

@@ -17,7 +17,9 @@ import importlib.util
 import json
 import re
 import struct
+import subprocess
 import sys
+import tempfile
 from collections import Counter
 from functools import lru_cache
 from pathlib import Path
@@ -29,6 +31,9 @@ if str(ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(ROOT / "scripts"))
 
 from common import md_escape, write_report_json, write_text_if_changed  # noqa: E402
+from story_builder.anime_assets import (  # noqa: E402
+    recover_dialog_tree_open_ui_actions,
+)
 
 
 METADATA_HELPER = (
@@ -43,6 +48,10 @@ PROTOCOL_AUDIT = (
 DEFAULT_GAME_ROOT = Path(r"D:\Program Files\Endfield Game\Endfield_Data")
 DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
 DEFAULT_METADATA = DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
+DEFAULT_ANIMESTUDIO_CLI = (
+    ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release"
+    / "net9.0-windows" / "AnimeStudio.CLI.exe"
+)
 DEFAULT_IFIX_AUDIT = (
     ROOT / "reports" / "story" / "recovery" / "current_ifix_mission_graph_audit.json"
 )
@@ -64,6 +73,25 @@ EXPECTED_METADATA_SHA256 = (
 EXPECTED_IFIX_SHA256 = (
     "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21"
 )
+SUBMIT_ITEM_LUA_LOGICAL_PATH = (
+    "Data/LuaScripts/UI/Panels/SubmitItem/SubmitItemCtrl.lua"
+)
+EXPECTED_SUBMIT_ITEM_LUA_SHA256 = (
+    "1c2a81f42d5512fc0bcfa35b78820d6482af15e2a2c8189fe85d81199286128e"
+)
+SUBMIT_ITEM_PANEL_TYPE = 9
+SUBMIT_ITEM_PLACEHOLDER_PARAM = {
+    "submitId": "提交id",
+    "questId": "任务questId",
+    "objId": "可选参数",
+}
+EXPECTED_OPEN_UI_COUNTS = {
+    "typedTerminalActions": 95,
+    "submitItemActions": 13,
+    "parameterizedSubmitItemActions": 3,
+    "placeholderSubmitItemActions": 3,
+    "concreteQuestIdActions": 0,
+}
 MAX_DEPTH = 3
 
 
@@ -89,9 +117,9 @@ CLASSIFICATIONS = {
         "updates MissionSystem objective progress and does not play Story.",
     ),
     "Beyond.Gameplay.Core.DialogManager": (
-        "closed_inactive_pending_item_submitter",
-        "The pending item submitter could forward questId with dialog finish, but "
-        "the installed fallback has no constructor or registration caller.",
+        "recovered_xlua_pending_item_submitter_bridge",
+        "Shipped SubmitItemCtrl Lua constructs and registers the pending submitter. "
+        "Current typed DialogTree actions expose no concrete quest id to join.",
     ),
     "Beyond.Gameplay.Core.DialogManager+<>c__DisplayClass674_0": (
         "closed_global_dialog_manager_closure",
@@ -213,6 +241,28 @@ ITEM_SUBMITTER_TARGETS = {
     },
 }
 
+DIALOG_OPEN_UI_TARGET = {
+    "symbol": "Beyond.Gameplay.Actions.GameAction.DialogOpenUIPanel",
+    "methodIndex": 32816,
+    "token": "0x06008031",
+    "address": "0x1875e0224",
+}
+
+DIALOG_OPEN_UI_CALLERS = [{
+    "symbol": "Beyond.Gameplay.Core.DialogManager.OpenUI",
+    "methodIndex": 63380,
+    "token": "0x0600f795",
+    "address": "0x186e145d8",
+}, {
+    "symbol": (
+        "XLua.CSObjectWrap.BeyondGameplayActionsGameActionWrap."
+        "_m_DialogOpenUIPanel_xlua_st_"
+    ),
+    "methodIndex": 111616,
+    "token": "0x060033f2",
+    "address": "0x18630c078",
+}]
+
 
 def load_module(name: str, path: Path) -> Any:
     spec = importlib.util.spec_from_file_location(name, path)
@@ -230,6 +280,198 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def dump_submit_item_lua(
+    *,
+    animestudio_cli: Path,
+    game_root: Path,
+    lua_source: Path | None,
+) -> tuple[bytes, dict[str, Any]]:
+    """Read a supplied plaintext Lua file or target-dump it from installed VFS."""
+    if lua_source is not None:
+        raw = lua_source.read_bytes()
+        return raw, {
+            "mode": "supplied_plaintext",
+            "path": str(lua_source.resolve()),
+            "logicalPath": SUBMIT_ITEM_LUA_LOGICAL_PATH,
+        }
+
+    streaming_assets = game_root / "StreamingAssets"
+    if not animestudio_cli.is_file():
+        raise FileNotFoundError(f"AnimeStudio CLI not found: {animestudio_cli}")
+    if not streaming_assets.is_dir():
+        raise FileNotFoundError(
+            f"installed StreamingAssets not found: {streaming_assets}"
+        )
+    with tempfile.TemporaryDirectory(
+        prefix="endfield-submit-item-lua-"
+    ) as temp_name:
+        output_root = Path(temp_name)
+        command = [
+            str(animestudio_cli),
+            "dump",
+            "--streaming-assets",
+            str(streaming_assets),
+            "--fallback-assets",
+            str(game_root),
+            "--output",
+            str(output_root),
+            "--block-type",
+            "lua",
+            "--file-regex",
+            r"SubmitItemCtrl\.lua$",
+        ]
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        if completed.returncode:
+            raise RuntimeError(
+                "AnimeStudio targeted Lua dump failed "
+                f"({completed.returncode}): {completed.stderr or completed.stdout}"
+            )
+        matches = list(output_root.rglob("SubmitItemCtrl.lua"))
+        if len(matches) != 1:
+            raise RuntimeError(
+                "AnimeStudio targeted Lua dump returned "
+                f"{len(matches)} SubmitItemCtrl.lua files"
+            )
+        raw = matches[0].read_bytes()
+    return raw, {
+        "mode": "targeted_installed_vfs_dump",
+        "logicalPath": SUBMIT_ITEM_LUA_LOGICAL_PATH,
+        "animeStudioCli": str(animestudio_cli.resolve()),
+        "animeStudioCliSha256": sha256_file(animestudio_cli),
+        "streamingAssets": str(streaming_assets.resolve()),
+    }
+
+
+def lua_line_number(text: str, needle: str) -> int | None:
+    for line_number, line in enumerate(text.splitlines(), 1):
+        if needle in line:
+            return line_number
+    return None
+
+
+def audit_submit_item_lua(raw: bytes, source: dict[str, Any]) -> dict[str, Any]:
+    text = raw.decode("utf-8-sig")
+    constructor_call = (
+        "GameWorld.dialogManager:RegisterPendingSubmission("
+        "CS.Beyond.Gameplay.InventoryItemSubmitter("
+    )
+    direct_submit_call = "GameInstance.player.inventory:SubmitItem("
+    argument_sequence = re.compile(
+        r"InventoryItemSubmitter\(\s*"
+        r"Utils\.getCurrentScope\(\),\s*"
+        r"Utils\.getCurrentChapterId\(\),\s*"
+        r"self\.m_info\.submitId,\s*"
+        r"self\.m_info\.questId,\s*"
+        r"self\.m_info\.objId,\s*"
+        r"selectInstIds,\s*"
+        r"selectItemIds\s*\)",
+        re.MULTILINE,
+    )
+    return {
+        "source": {
+            **source,
+            "sha256": hashlib.sha256(raw).hexdigest(),
+            "bytes": len(raw),
+        },
+        "controller": "SubmitItemCtrl",
+        "producerKind": "shipped_xlua_managed_constructor",
+        "constructorAndRegistrationCalls": text.count(constructor_call),
+        "directInventorySubmissionCalls": text.count(direct_submit_call),
+        "orderedConstructorArgumentMatches": len(argument_sequence.findall(text)),
+        "constructorArguments": [
+            "scope",
+            "chapterId",
+            "submitId",
+            "questId",
+            "objId",
+            "instItems",
+            "itemIds",
+        ],
+        "branches": {
+            "fromDialog": text.count("if self.m_info.fromDialog then"),
+            "syncSubmitToServerImmediately": text.count(
+                "self.m_info.actionData.syncSubmitToServerImmediately"
+            ),
+            "dialogManagerPlaying": text.count(
+                "elseif GameWorld.dialogManager.isPlaying then"
+            ),
+        },
+        "lines": {
+            "fromDialog": lua_line_number(
+                text, "if self.m_info.fromDialog then"
+            ),
+            "constructorAndRegistration": lua_line_number(
+                text, constructor_call
+            ),
+            "directInventorySubmission": lua_line_number(
+                text, direct_submit_call
+            ),
+        },
+        "finding": (
+            "The shipped SubmitItem controller constructs "
+            "InventoryItemSubmitter through XLua and registers it on the active "
+            "DialogManager when submission originated from a playing dialog and "
+            "is not configured for immediate server submission."
+        ),
+    }
+
+
+def audit_authored_submit_item_actions() -> dict[str, Any]:
+    rows = recover_dialog_tree_open_ui_actions()
+    submit_rows = [
+        row for row in rows if row.get("panelType") == SUBMIT_ITEM_PANEL_TYPE
+    ]
+    parameterized = [
+        row for row in submit_rows if bool(row.get("paramData"))
+    ]
+    placeholders = [
+        row
+        for row in parameterized
+        if row.get("paramData") == SUBMIT_ITEM_PLACEHOLDER_PARAM
+    ]
+    concrete = [
+        row
+        for row in parameterized
+        if str((row.get("paramData") or {}).get("questId") or "").strip()
+        not in {"", SUBMIT_ITEM_PLACEHOLDER_PARAM["questId"]}
+    ]
+    return {
+        "source": (
+            "typed DialogTreeOpenUINode -> DialogOpenUIAction terminals from "
+            "exported AnimeStudio TextAssets"
+        ),
+        "panelType": SUBMIT_ITEM_PANEL_TYPE,
+        "panelClassification": "SubmitItem_by_exact_parameter_template",
+        "typedTerminalActions": len(rows),
+        "submitItemActions": len(submit_rows),
+        "parameterizedSubmitItemActions": len(parameterized),
+        "placeholderSubmitItemActions": len(placeholders),
+        "emptyParamSubmitItemActions": sum(
+            not bool(row.get("paramData")) for row in submit_rows
+        ),
+        "concreteQuestIdActions": len(concrete),
+        "placeholderParam": SUBMIT_ITEM_PLACEHOLDER_PARAM,
+        "actions": [{
+            "dialogKey": row.get("dialogKey"),
+            "paramData": row.get("paramData"),
+            "finishIds": row.get("finishIds"),
+            "sourceFile": row.get("sourceFile"),
+        } for row in submit_rows],
+        "finding": (
+            "Thirteen typed panelType 9 terminals exist. Three carry the exact "
+            "DIALOG_OPEN_UI_PARAM_SUBMITITEM authoring placeholder and ten have "
+            "empty params; none exports a concrete quest id."
+        ),
+    }
 
 
 def scan_direct_callers(
@@ -274,6 +516,9 @@ def build_report(
     game_assembly: Path,
     metadata_path: Path,
     ifix_audit_path: Path,
+    game_root: Path,
+    animestudio_cli: Path,
+    lua_source: Path | None,
 ) -> dict[str, Any]:
     metadata_module = load_module("nested_carrier_metadata", METADATA_HELPER)
     mapper = load_module("nested_carrier_mapper", MAPPER_HELPER)
@@ -474,9 +719,19 @@ def build_report(
         int(row["address"], 16): name
         for name, row in ITEM_SUBMITTER_TARGETS.items()
     }
+    target_by_va[int(DIALOG_OPEN_UI_TARGET["address"], 16)] = (
+        DIALOG_OPEN_UI_TARGET["symbol"]
+    )
     direct_callers = scan_direct_callers(
         pe, method_by_pointer, method_pointers, target_by_va
     )
+    lua_raw, lua_source_info = dump_submit_item_lua(
+        animestudio_cli=animestudio_cli,
+        game_root=game_root,
+        lua_source=lua_source,
+    )
+    lua_producer = audit_submit_item_lua(lua_raw, lua_source_info)
+    authored_open_ui = audit_authored_submit_item_actions()
     ifix_audit = json.loads(ifix_audit_path.read_text(encoding="utf-8"))
     fixed_signatures = [
         str(row.get("signature") or "")
@@ -529,6 +784,51 @@ def build_report(
         errors.append(
             f"item submitter IFix targets appeared: {submitter_ifix_matches}"
         )
+    lua_sha = lua_producer["source"]["sha256"]
+    if lua_sha != EXPECTED_SUBMIT_ITEM_LUA_SHA256:
+        errors.append("SubmitItemCtrl.lua SHA256 changed")
+    if lua_producer["constructorAndRegistrationCalls"] != 1:
+        errors.append(
+            "SubmitItemCtrl constructor/registration call count changed: "
+            f"{lua_producer['constructorAndRegistrationCalls']}"
+        )
+    if lua_producer["orderedConstructorArgumentMatches"] != 1:
+        errors.append(
+            "SubmitItemCtrl ordered constructor arguments changed: "
+            f"{lua_producer['orderedConstructorArgumentMatches']}"
+        )
+    if lua_producer["directInventorySubmissionCalls"] != 1:
+        errors.append(
+            "SubmitItemCtrl direct submission call count changed: "
+            f"{lua_producer['directInventorySubmissionCalls']}"
+        )
+    actual_open_ui_counts = {
+        key: authored_open_ui[key] for key in EXPECTED_OPEN_UI_COUNTS
+    }
+    if actual_open_ui_counts != EXPECTED_OPEN_UI_COUNTS:
+        errors.append(
+            f"authored SubmitItem OpenUI counts changed: {actual_open_ui_counts}"
+        )
+    open_ui_callers = direct_callers[DIALOG_OPEN_UI_TARGET["symbol"]]
+    if len(open_ui_callers) != 2:
+        errors.append(
+            "DialogOpenUIPanel native direct caller count changed: "
+            f"{len(open_ui_callers)}"
+        )
+    else:
+        resolved_open_ui_callers = {
+            f"{row.get('type')}.{row.get('method')}"
+            for caller in open_ui_callers
+            for row in caller.get("resolved", [])
+        }
+        expected_open_ui_callers = {
+            row["symbol"] for row in DIALOG_OPEN_UI_CALLERS
+        }
+        if resolved_open_ui_callers != expected_open_ui_callers:
+            errors.append(
+                "DialogOpenUIPanel direct callers changed: "
+                f"{sorted(resolved_open_ui_callers)}"
+            )
 
     direct_exact_count = sum(
         "mission_or_quest" in row["directClasses"]
@@ -539,7 +839,7 @@ def build_report(
         for row in candidates
     )
     return {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "source": {
             "gameAssembly": str(game_assembly.resolve()),
             "gameAssemblySha256": game_sha,
@@ -597,11 +897,27 @@ def build_report(
             "methods": {
                 name: {
                     **row,
-                    "directCallerCount": caller_counts[name],
-                    "directCallers": direct_callers[name],
+                    "nativeDirectCallerCount": caller_counts[name],
+                    "nativeDirectCallers": direct_callers[name],
                 }
                 for name, row in ITEM_SUBMITTER_TARGETS.items()
             },
+            "nativeOpenUiBridge": {
+                "callers": DIALOG_OPEN_UI_CALLERS,
+                "callee": {
+                    **DIALOG_OPEN_UI_TARGET,
+                    "nativeDirectCallerCount": len(open_ui_callers),
+                    "nativeDirectCallers": open_ui_callers,
+                },
+                "finding": (
+                    "DialogManager.OpenUI and the generated XLua wrapper both "
+                    "directly call GameAction.DialogOpenUIPanel. The former "
+                    "supplies the typed DialogOpenUIAction; the latter proves "
+                    "the native method is exposed to Lua UI dispatch."
+                ),
+            },
+            "shippedLuaProducer": lua_producer,
+            "authoredOpenUiActions": authored_open_ui,
             "sendFinishDialog": {
                 "symbol": "Beyond.Gameplay.CinematicSystem.SendFinishDialog",
                 "token": "0x06004027",
@@ -613,28 +929,35 @@ def build_report(
                 ),
             },
             "installedPatchMatches": submitter_ifix_matches,
-            "classification": "inactive_current_fallback_producer",
+            "classification": (
+                "active_shipped_xlua_producer_without_concrete_authored_join"
+            ),
             "finding": (
-                "The object shape could carry questId into a dialog-finish item "
-                "submission, but the installed fallback has zero direct callers of "
-                "both InventoryItemSubmitter..ctor and "
-                "DialogManager.RegisterPendingSubmission. The sole "
-                "TryGetSubmitMsg caller is SendFinishDialog, and the current IFix "
-                "replaces none of the path."
+                "The shipped SubmitItemCtrl Lua is the missing producer: it "
+                "constructs InventoryItemSubmitter and calls "
+                "RegisterPendingSubmission through XLua, so zero native direct "
+                "callers never implied inactivity. The typed authored census finds "
+                "13 SubmitItem OpenUI terminals, but three contain only the stock "
+                "placeholder params, ten contain no params, and none exports a "
+                "concrete quest id. The active bridge therefore adds no exact "
+                "quest-to-dialog or order edge."
             ),
         },
         "finding": (
             "All 25 current managed identity candidates reachable through generic "
             "or custom typed fields to depth three are reviewed. Productive AirWall, "
             "FocusMode, NpcProxy, SubGame, DomainDepot, and RadioTriggerZone contexts "
-            "were already recovered; the remaining nested joins are inactive "
-            "producers, global aggregate managers, previously closed property/task "
-            "paths, or static registries rather than new mission graph edges."
+            "were already recovered. The remaining joins are global aggregate "
+            "managers, previously closed property/task paths, static registries, or "
+            "the active XLua pending-submission bridge whose current authored "
+            "actions expose no concrete quest id."
         ),
         "boundary": (
-            "Reflection/XLua construction, native-only opaque objects, server-only "
-            "state, paths deeper than three custom-type hops, unexported asset kinds, "
-            "future IFix, and future builds remain outside the bound."
+            "The exact shipped SubmitItem XLua producer is included. Other "
+            "reflection/XLua construction, runtime-substituted OpenUI params, "
+            "native-only opaque objects, server-only state, paths deeper than three "
+            "custom-type hops, unexported asset kinds, future IFix, and future builds "
+            "remain outside the bound."
         ),
         "classification": "all_nested_managed_identity_carriers_reviewed",
         "storyBindingsAdded": 0,
@@ -647,6 +970,8 @@ def build_report(
 def render_markdown(report: dict[str, Any]) -> str:
     census = report["census"]
     closure = report["pendingItemSubmitterClosure"]
+    lua_producer = closure["shippedLuaProducer"]
+    authored = closure["authoredOpenUiActions"]
     lines = [
         "# Nested managed identity carrier census",
         "",
@@ -664,13 +989,37 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         closure["finding"],
         "",
-        "| Method | Token | Address | Direct callers |",
+        "### Shipped XLua producer",
+        "",
+        lua_producer["finding"],
+        "",
+        f"- Logical path: `{lua_producer['source']['logicalPath']}`",
+        f"- SHA-256: `{lua_producer['source']['sha256']}`",
+        "- Constructor/registration calls: "
+        f"`{lua_producer['constructorAndRegistrationCalls']}`",
+        "- Ordered constructor argument matches: "
+        f"`{lua_producer['orderedConstructorArgumentMatches']}`",
+        "",
+        "### Typed authored OpenUI terminals",
+        "",
+        authored["finding"],
+        "",
+        f"- Typed terminal actions: `{authored['typedTerminalActions']}`",
+        f"- SubmitItem panel actions: `{authored['submitItemActions']}`",
+        "- Parameterized / placeholder / concrete quest-id actions: "
+        f"`{authored['parameterizedSubmitItemActions']}` / "
+        f"`{authored['placeholderSubmitItemActions']}` / "
+        f"`{authored['concreteQuestIdActions']}`",
+        "",
+        "### Native fallback path",
+        "",
+        "| Method | Token | Address | Native direct callers |",
         "| --- | --- | --- | ---: |",
     ]
     for name, row in closure["methods"].items():
         lines.append(
             f"| `{md_escape(name)}` | `{row['token']}` | `{row['address']}` | "
-            f"{row['directCallerCount']} |"
+            f"{row['nativeDirectCallerCount']} |"
         )
     lines.extend([
         "",
@@ -716,6 +1065,20 @@ def main() -> int:
     parser.add_argument("--gameassembly", type=Path, default=DEFAULT_GAME_ASSEMBLY)
     parser.add_argument("--metadata", type=Path, default=DEFAULT_METADATA)
     parser.add_argument("--ifix-audit", type=Path, default=DEFAULT_IFIX_AUDIT)
+    parser.add_argument("--game-root", type=Path, default=DEFAULT_GAME_ROOT)
+    parser.add_argument(
+        "--animestudio-cli",
+        type=Path,
+        default=DEFAULT_ANIMESTUDIO_CLI,
+    )
+    parser.add_argument(
+        "--lua-source",
+        type=Path,
+        help=(
+            "Optional plaintext SubmitItemCtrl.lua override. By default the "
+            "single file is target-dumped from the installed VFS."
+        ),
+    )
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MARKDOWN)
     args = parser.parse_args()
@@ -723,6 +1086,9 @@ def main() -> int:
         game_assembly=args.gameassembly,
         metadata_path=args.metadata,
         ifix_audit_path=args.ifix_audit,
+        game_root=args.game_root,
+        animestudio_cli=args.animestudio_cli,
+        lua_source=args.lua_source,
     )
     write_report_json(args.out, report)
     write_text_if_changed(args.markdown, render_markdown(report))
