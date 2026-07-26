@@ -812,6 +812,28 @@ class MissionPipelineBuilderTests(unittest.TestCase):
         self.assertIsNone(trigger_done["possibleServerPush"])
         self.assertIn("separate native inbound handler", trigger_done["effect"])
 
+    def test_teleport_param_contract_rejects_unused_mission_script_carrier(self):
+        contract = pipeline.RUNTIME_CONTRACT["teleportMissionScriptCarrier"]
+        self.assertEqual(contract["type"], "Beyond.Gameplay.TeleportParam")
+        self.assertEqual(contract["size"], "0x38")
+        self.assertEqual(contract["layout"]["missionId"], "0x18")
+        self.assertEqual(contract["layout"]["levelScriptId"], "0x20")
+        self.assertEqual(contract["directCallerCensus"]["GameLevelLoader.OpenLevel"], 2)
+        self.assertEqual(
+            contract["directCallerCensus"]["GameLevelLoader.LoadAtPosInCurrentMap"],
+            2,
+        )
+        self.assertIn("no audited producer co-populates", contract["producerFinding"])
+        self.assertIn("No audited current consumer reads missionId", contract["consumerFinding"])
+        self.assertEqual(contract["storyBindingsAdded"], 0)
+        self.assertEqual(contract["confidence"], "native_proven_bounded")
+        native = next(
+            row
+            for row in pipeline.RUNTIME_CONTRACT["nativeEvidence"]
+            if row["symbol"] == "TeleportParam -> LoadingPipeline.LoadFinishStep"
+        )
+        self.assertIn("zero ownership or order edges", native["finding"])
+
     def test_runtime_contract_exposes_global_var_and_spawner_async_boundaries(self):
         rows = {
             row["id"]: row
